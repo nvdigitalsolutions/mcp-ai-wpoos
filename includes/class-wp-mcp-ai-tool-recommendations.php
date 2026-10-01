@@ -191,6 +191,8 @@ class WP_MCP_AI_Tool_Recommendations {
 				'describe_image_layout',
 				'ocr_image_classic',
 				'search_similar_images',
+				'rfdetr_detect',
+				'rfdetr_catalog_search',
 				'vectorize_image',
 				'resize_image',
 				'crop_image',

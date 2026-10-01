@@ -32,6 +32,22 @@
 
 	var EDGE_BUDGET = 2000;    // max rendered edges (perf budget).
 	var DENSITY_AT  = 500;     // auto-density above this many edges.
+	var EDGE_FLOW_MAX = 300;   // marching-dash cap (continuous redraw cost).
+	var EDGE_FLOW_PERIOD = 10; // dash pattern 6+4 — one full cycle.
+
+	// Hover focus + tooltip state (Bloom-style neighborhood spotlight).
+	var hoverNode = null;
+	var tooltipEl = null;
+	var containerEl = null;
+
+	// Search state (debounced highlight + match count + Enter-to-focus).
+	var searchTimer = null;
+	var searchMatches = null;
+
+	// Edge flow (marching dashes) state.
+	var edgeFlowOn = false;
+	var edgeFlowRaf = null;
+	var edgeFlowOffset = 0;
 
 	/**
 	 * Humanize a slug ("shop_order" -> "Shop order").
@@ -169,6 +185,9 @@
 				e.data( d );
 			} );
 		} );
+
+		// Directional dash flow follows the active edge style.
+		startEdgeFlow();
 	}
 
 	/**
@@ -237,7 +256,14 @@
 			return;
 		}
 
-		$container.html( '<p style="padding:20px;color:#888;">' + ( ( config.i18n && config.i18n.loading ) || 'Loading graph…' ) + '</p>' );
+		$container.html(
+			'<div class="nvoos-cg-loading" role="status">' +
+			'<div class="nvoos-cg-loading-bar"></div>' +
+			'<div class="nvoos-cg-loading-bar"></div>' +
+			'<div class="nvoos-cg-loading-bar"></div>' +
+			'<p class="nvoos-cg-loading-text">' + ( ( config.i18n && config.i18n.loading ) || 'Loading graph…' ) + '</p>' +
+			'</div>'
+		);
 
 		$.ajax( {
 			url:     config.rest_url + '/nodes',
@@ -340,6 +366,11 @@
 
 		tokens = theme.tokens( visual );
 
+		// Entrance fade (skipped under reduced motion).
+		if ( theme.motionAllowed( visual ) ) {
+			$container.addClass( 'nvoos-cg-pending' );
+		}
+
 		// Resolve colors/icons/shapes/sizes up front (one pass, batched).
 		$.each( elements, function ( _, el ) {
 			var d = el.data;
@@ -357,10 +388,12 @@
 			elements:  elements,
 			style:     theme.buildStylesheet( visual, { cy: null } ), // placeholder, restyled below.
 			// Perf knobs for large graphs (texture-on-viewport rendering,
-			// 1:1 pixel ratio, edge culling outside the viewport).
+			// 1:1 pixel ratio, edge culling outside the viewport). Motion
+			// blur makes frame transitions read smoother on interaction.
 			pixelRatio: 1,
 			textureOnViewport: true,
 			hideEdgesOnViewport: true,
+			motionBlur: true,
 			layout:    theme.layoutPresets( visual )[ 'fcose-balanced' ].options
 		} );
 
@@ -371,6 +404,18 @@
 
 		theme.applyChrome( $container[ 0 ], visual );
 
+		// Reveal after the first paint so the entrance fade runs while the
+		// layout settles (motion-gated: pending is only ever added above).
+		if ( $container.hasClass( 'nvoos-cg-pending' ) ) {
+			if ( window.requestAnimationFrame ) {
+				window.requestAnimationFrame( function () {
+					$container.removeClass( 'nvoos-cg-pending' ).addClass( 'nvoos-cg-revealed' );
+				} );
+			} else {
+				$container.removeClass( 'nvoos-cg-pending' ).addClass( 'nvoos-cg-revealed' );
+			}
+		}
+
 		$container.find( '#nvoos-content-graph-legend' ).length === 0 && $container.prepend(
 			'<div id="nvoos-content-graph-legend" class="nvoos-cg-legend" hidden></div>' +
 			'<div id="nvoos-content-graph-minimap" class="nvoos-cg-minimap" hidden><canvas id="nvoos-content-graph-minimap-canvas" width="160" height="100"></canvas></div>'
@@ -379,6 +424,7 @@
 		renderLegend();
 		initMinimap();
 		bindCytoscapeEvents();
+		startEdgeFlow();
 		restoreView();
 	}
 
@@ -393,7 +439,7 @@
 		// Click background: clear selection and filters.
 		cy.on( 'tap', function ( e ) {
 			if ( e.target === cy ) {
-				cy.elements().removeClass( 'faded highlighted' );
+				cy.elements().removeClass( 'faded highlighted hover-dimmed hover-focus hover-strong' );
 				cy.edges().removeClass( 'edge-label-on' );
 				$( '#nvoos-content-graph-sidebar' ).hide();
 			}
@@ -401,8 +447,28 @@
 
 		// Click node: show info and highlight connections.
 		cy.on( 'tap', 'node', function ( e ) {
+			hideTooltip();
 			loadNodeDetails( e.target.id() );
 		} );
+
+		// Hover focus (Bloom-style): spotlight the node's closed
+		// neighborhood and follow the cursor with a quick-info tooltip.
+		if ( visual.hover_focus !== false ) {
+			cy.on( 'mouseover', 'node', function ( e ) {
+				hoverNode = e.target;
+				applyHoverFocus( e.target );
+				showTooltip( e.target, e );
+			} );
+			cy.on( 'mousemove', 'node', function ( e ) {
+				positionTooltip( e );
+			} );
+			cy.on( 'mouseout', 'node', function () {
+				if ( hoverNode ) {
+					hoverNode = null;
+					clearHoverFocus();
+				}
+			} );
+		}
 
 		// Hover/tap edge: reveal relation label (hover mode).
 		if ( ( visual.edge_labels || 'hover' ) === 'hover' ) {
@@ -412,6 +478,7 @@
 
 		cy.on( 'zoom pan', function () {
 			$( '#nvoos-content-graph-zoom-badge' ).text( Math.round( cy.zoom() * 100 ) + '%' );
+			hideTooltip();
 			markMinimapDirty();
 			scheduleViewSave();
 		} );
@@ -501,6 +568,265 @@
 			).show();
 		} );
 	}
+
+	// -------------------------------------------------------------------------
+	// Hover focus + tooltip + camera (motion-gated via theme.motionAllowed)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Escape a value for safe innerHTML use.
+	 */
+	function escapeHtml( value ) {
+		return $( '<div/>' ).text( value || '' ).html();
+	}
+
+	/**
+	 * Get (or lazily create) the single shared tooltip element.
+	 */
+	function tooltipElement() {
+		if ( ! tooltipEl ) {
+			containerEl = document.getElementById( 'nvoos-content-graph-explorer' );
+			if ( ! containerEl ) {
+				return null;
+			}
+			tooltipEl = document.createElement( 'div' );
+			tooltipEl.id = 'nvoos-content-graph-tooltip';
+			tooltipEl.className = 'nvoos-cg-tooltip';
+			tooltipEl.setAttribute( 'role', 'status' );
+			tooltipEl.hidden = true;
+			containerEl.appendChild( tooltipEl );
+		}
+		return tooltipEl;
+	}
+
+	/**
+	 * Position the tooltip at the event's rendered (viewport) position.
+	 */
+	function positionTooltip( e ) {
+		if ( ! tooltipEl || ! e || ! e.renderedPosition ) {
+			return;
+		}
+		tooltipEl.style.left = Math.round( e.renderedPosition.x ) + 'px';
+		tooltipEl.style.top  = Math.round( e.renderedPosition.y ) + 'px';
+	}
+
+	/**
+	 * Show the quick-info tooltip for a node.
+	 */
+	function showTooltip( node, e ) {
+		var el = tooltipElement();
+		if ( ! el ) {
+			return;
+		}
+		var d    = node.data();
+		var i18n = config.i18n || {};
+		var type = ( config.type_labels && config.type_labels[ d.type ] ) || humanizeSlug( d.type );
+		var html = '<strong>' + escapeHtml( d.label || d.id ) + '</strong>' +
+			'<span class="nvoos-cg-tooltip-meta">' + escapeHtml( type ) +
+			' &bull; ' + ( parseInt( d.degree, 10 ) || 0 ) + ' ' + escapeHtml( i18n.connections || 'connections' ) + '</span>';
+		if ( d.community_id ) {
+			html += '<span class="nvoos-cg-tooltip-meta">' + escapeHtml( i18n.community || 'Community' ) +
+				': ' + escapeHtml( d.community_id ) + '</span>';
+		}
+		el.innerHTML = html;
+		positionTooltip( e );
+		el.hidden = false;
+	}
+
+	/**
+	 * Hide the tooltip.
+	 */
+	function hideTooltip() {
+		if ( tooltipEl ) {
+			tooltipEl.hidden = true;
+		}
+	}
+
+	/**
+	 * Spotlight a node: dim everything outside its closed neighborhood,
+	 * brighten its incident edges, and give it a focus ring.
+	 */
+	function applyHoverFocus( node ) {
+		if ( ! cy ) {
+			return;
+		}
+		cy.batch( function () {
+			cy.elements().addClass( 'hover-dimmed' ).removeClass( 'hover-focus hover-strong' );
+			node.closedNeighborhood().removeClass( 'hover-dimmed' );
+			node.connectedEdges().addClass( 'hover-strong' );
+			node.addClass( 'hover-focus' );
+		} );
+		if ( ! containerEl ) {
+			containerEl = document.getElementById( 'nvoos-content-graph-explorer' );
+		}
+		if ( containerEl ) {
+			containerEl.classList.add( 'nvoos-cg-node-hover' );
+		}
+	}
+
+	/**
+	 * Undo the hover spotlight.
+	 */
+	function clearHoverFocus() {
+		hideTooltip();
+		if ( cy ) {
+			cy.batch( function () {
+				cy.elements().removeClass( 'hover-dimmed hover-focus hover-strong' );
+			} );
+		}
+		if ( ! containerEl ) {
+			containerEl = document.getElementById( 'nvoos-content-graph-explorer' );
+		}
+		if ( containerEl ) {
+			containerEl.classList.remove( 'nvoos-cg-node-hover' );
+		}
+	}
+
+	/**
+	 * Animate the viewport (zoom/pan) with easing, or jump instantly when
+	 * the OS requests reduced motion or animation is disabled.
+	 */
+	function animateCamera( zoom, pan, duration ) {
+		if ( ! cy ) {
+			return;
+		}
+		var dur = ( typeof duration === 'number' ) ? duration : 280;
+		if ( ! theme.motionAllowed( visual ) ) {
+			if ( typeof zoom === 'number' && zoom > 0 ) {
+				cy.zoom( { level: zoom } );
+			}
+			if ( pan ) {
+				cy.pan( pan );
+			}
+			return;
+		}
+		cy.stop();
+		var opts = { duration: dur, easing: 'ease-out-cubic' };
+		if ( typeof zoom === 'number' && zoom > 0 ) {
+			opts.zoom = zoom;
+		}
+		if ( pan ) {
+			opts.pan = pan;
+		}
+		cy.animate( opts );
+	}
+
+	/**
+	 * Select a node, glide the camera onto it, and open its details.
+	 */
+	function focusNode( node, openDetails ) {
+		if ( ! node ) {
+			return;
+		}
+		cy.elements().removeClass( 'faded highlighted' );
+		node.select();
+		animateCamera( Math.max( cy.zoom(), 1.4 ), node.position() );
+		if ( openDetails !== false ) {
+			loadNodeDetails( node.id() );
+		}
+	}
+
+	/**
+	 * Highlight nodes whose label matches the query, dim the rest, and
+	 * update the match-count badge.
+	 */
+	function applySearch( query ) {
+		if ( ! cy ) {
+			return;
+		}
+		var q = ( query || '' ).toLowerCase().trim();
+		var $badge = $( '#nvoos-content-graph-search-count' );
+
+		searchMatches = null;
+		cy.elements().removeClass( 'faded highlighted' );
+		if ( ! q ) {
+			if ( $badge.length ) {
+				$badge.attr( 'hidden', true ).text( '' );
+			}
+			return;
+		}
+
+		searchMatches = cy.nodes().filter( function ( n ) {
+			return ( n.data( 'label' ) || '' ).toLowerCase().indexOf( q ) !== -1;
+		} );
+		cy.elements().addClass( 'faded' );
+		searchMatches.removeClass( 'faded' ).addClass( 'highlighted' );
+
+		if ( $badge.length ) {
+			var i18n = config.i18n || {};
+			$badge.text( searchMatches.length + ' ' + ( i18n.matches || 'matches' ) ).removeAttr( 'hidden' );
+		}
+	}
+
+	/**
+	 * Whether the current edge style supports the directional dash flow.
+	 */
+	function edgeFlowApplicable() {
+		var mode = visual.edge_style || 'plain';
+		if ( mode === 'auto' ) {
+			mode = edgeCountRendered > DENSITY_AT ? 'density' : 'plain';
+		}
+		return mode === 'arrows' || mode === 'tapered';
+	}
+
+	/**
+	 * Start the marching-dash flow on directional edges (opt-in, capped).
+	 */
+	function startEdgeFlow() {
+		stopEdgeFlow();
+		if ( ! cy || visual.edge_flow !== true || ! theme.motionAllowed( visual ) || ! edgeFlowApplicable() ) {
+			return;
+		}
+		if ( edgeCountRendered > EDGE_FLOW_MAX ) {
+			return; // Dense graphs: skip the continuous redraw.
+		}
+		cy.edges().addClass( 'edge-flow' );
+		edgeFlowOn = true;
+		edgeFlowOffset = 0;
+		if ( window.requestAnimationFrame ) {
+			edgeFlowRaf = window.requestAnimationFrame( edgeFlowTick );
+		}
+	}
+
+	/**
+	 * One frame of the dash march: advance the offset, wrap at one period.
+	 */
+	function edgeFlowTick() {
+		if ( ! edgeFlowOn || ! cy ) {
+			return;
+		}
+		edgeFlowOffset -= 1.2;
+		if ( edgeFlowOffset <= -EDGE_FLOW_PERIOD ) {
+			edgeFlowOffset = 0;
+		}
+		cy.edges( '.edge-flow' ).style( 'lineDashOffset', edgeFlowOffset );
+		if ( window.requestAnimationFrame ) {
+			edgeFlowRaf = window.requestAnimationFrame( edgeFlowTick );
+		}
+	}
+
+	/**
+	 * Stop the dash flow and restore static edges.
+	 */
+	function stopEdgeFlow() {
+		edgeFlowOn = false;
+		if ( edgeFlowRaf && window.cancelAnimationFrame ) {
+			window.cancelAnimationFrame( edgeFlowRaf );
+		}
+		edgeFlowRaf = null;
+		if ( cy ) {
+			cy.edges( '.edge-flow' ).removeClass( 'edge-flow' ).style( 'lineDashOffset', 0 );
+		}
+	}
+
+	// Pause the dash loop when the tab is hidden; resume on return.
+	$( document ).on( 'visibilitychange', function () {
+		if ( document.hidden ) {
+			stopEdgeFlow();
+		} else {
+			startEdgeFlow();
+		}
+	} );
 
 	// -------------------------------------------------------------------------
 	// Legend + minimap
@@ -631,7 +957,17 @@
 	// -------------------------------------------------------------------------
 
 	$( document ).on( 'click', '#nvoos-content-graph-fit-btn', function () {
-		if ( cy ) {
+		if ( ! cy ) {
+			return;
+		}
+		if ( theme.motionAllowed( visual ) ) {
+			cy.stop();
+			cy.animate( {
+				fit:      { eles: cy.elements(), padding: 30 },
+				duration: 320,
+				easing:   'ease-out-cubic'
+			} );
+		} else {
 			cy.fit( undefined, 30 );
 		}
 	} );
@@ -712,15 +1048,24 @@
 		if ( ! cy ) {
 			return;
 		}
-		var q = $( this ).val().toLowerCase().trim();
-		if ( ! q ) {
-			cy.elements().removeClass( 'faded highlighted' );
+		var q = $( this ).val();
+		if ( searchTimer ) {
+			clearTimeout( searchTimer );
+		}
+		searchTimer = setTimeout( function () {
+			applySearch( q );
+		}, 150 );
+	} );
+
+	// Enter focuses the first search match with an animated camera glide.
+	$( document ).on( 'keydown', '#nvoos-content-graph-search', function ( e ) {
+		if ( e.key !== 'Enter' || ! cy ) {
 			return;
 		}
-		cy.elements().addClass( 'faded' );
-		cy.nodes().filter( function ( n ) {
-			return n.data( 'label' ).toLowerCase().indexOf( q ) !== -1;
-		} ).removeClass( 'faded' ).addClass( 'highlighted' );
+		e.preventDefault();
+		if ( searchMatches && searchMatches.length ) {
+			focusNode( searchMatches[ 0 ] );
+		}
 	} );
 
 	$( document ).on( 'change', '#nvoos-content-graph-type-filter', function () {
@@ -757,21 +1102,20 @@
 				e.preventDefault();
 				target = nearestNode( focused, e.key );
 				if ( target ) {
-					cy.elements().removeClass( 'faded highlighted' );
-					target.select();
-					loadNodeDetails( target.id() );
+					focusNode( target );
 				}
 				break;
 			case 'Enter':
 			case ' ':
 				if ( focused.length ) {
 					e.preventDefault();
-					loadNodeDetails( focused.id() );
+					focusNode( focused );
 				}
 				break;
 			case 'Escape':
-				cy.elements().removeClass( 'faded highlighted' );
+				cy.elements().removeClass( 'faded highlighted hover-dimmed hover-focus hover-strong' );
 				cy.elements().unselect();
+				hideTooltip();
 				$( '#nvoos-content-graph-sidebar' ).hide();
 				break;
 			case '+':

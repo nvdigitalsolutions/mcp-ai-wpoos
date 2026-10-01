@@ -349,16 +349,246 @@ class WP_MCP_AI_MCP_App_Registry {
 			return array();
 		}
 
+		// Credentials are stored encrypted at rest; decrypt them for consumers.
+		// Legacy plaintext rows decrypt as themselves (idempotent).
+		foreach ( $apps as $index => $app ) {
+			if ( is_array( $app ) ) {
+				$apps[ $index ] = self::decrypt_app_secrets( $app );
+			}
+		}
+
 		return $apps;
+	}
+
+	/**
+	 * Load the Remote Site Manager so its crypto helpers are available.
+	 *
+	 * @since 1.9.x
+	 * @return bool True when encrypt_value()/decrypt_value() are callable.
+	 */
+	protected static function maybe_load_crypto() {
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return true;
+		}
+
+		// Prefer the canonical addon constant; fall back to this file's
+		// location (addons/pro/includes/mcp-apps/ -> addons/pro/).
+		$manager_file = defined( 'WP_MCP_AI_PRO_PATH' )
+			? WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php'
+			: dirname( __DIR__, 2 ) . '/includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+
+		if ( file_exists( $manager_file ) ) {
+			require_once $manager_file;
+		}
+
+		return class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' );
+	}
+
+	/**
+	 * Encrypt the secret fields of an inline app config for storage.
+	 *
+	 * Uses the same AES-256-CBC scheme as the Remote Sites store (with a
+	 * legacy XOR fallback), so credentials share one format across Pro.
+	 * Values already encrypted are left untouched. Reference entries carry
+	 * no inline secrets and pass through unchanged.
+	 *
+	 * @since 1.9.x
+	 * @param array $app App configuration (sanitized, plaintext secrets).
+	 * @return array App configuration with secrets encrypted.
+	 */
+	protected static function encrypt_app_secrets( array $app ) {
+		if ( ! self::maybe_load_crypto() ) {
+			return $app;
+		}
+
+		$manager = 'WP_MCP_AI_Pro_Remote_Site_Manager';
+
+		if ( ! empty( $app['token'] ) && ! $manager::is_value_encrypted( (string) $app['token'] ) ) {
+			$encrypted = $manager::encrypt_value( (string) $app['token'] );
+			if ( '' !== $encrypted ) {
+				$app['token'] = $encrypted;
+			}
+		}
+
+		foreach ( array( 'access_token', 'refresh_token' ) as $field ) {
+			if ( empty( $app['oauth_data'][ $field ] ) || $manager::is_value_encrypted( (string) $app['oauth_data'][ $field ] ) ) {
+				continue;
+			}
+			$encrypted = $manager::encrypt_value( (string) $app['oauth_data'][ $field ] );
+			if ( '' !== $encrypted ) {
+				$app['oauth_data'][ $field ] = $encrypted;
+			}
+		}
+
+		return $app;
+	}
+
+	/**
+	 * Decrypt the secret fields of a stored app config.
+	 *
+	 * Idempotent for legacy plaintext values: decrypt_value() returns
+	 * non-encrypted strings unchanged.
+	 *
+	 * @since 1.9.x
+	 * @param array $app Stored app configuration.
+	 * @return array App configuration with secrets decrypted.
+	 */
+	protected static function decrypt_app_secrets( array $app ) {
+		if ( ! self::maybe_load_crypto() ) {
+			return $app;
+		}
+
+		$manager = 'WP_MCP_AI_Pro_Remote_Site_Manager';
+
+		if ( ! empty( $app['token'] ) ) {
+			$app['token'] = $manager::decrypt_value( (string) $app['token'] );
+		}
+
+		foreach ( array( 'access_token', 'refresh_token' ) as $field ) {
+			if ( ! empty( $app['oauth_data'][ $field ] ) ) {
+				$app['oauth_data'][ $field ] = $manager::decrypt_value( (string) $app['oauth_data'][ $field ] );
+			}
+		}
+
+		return $app;
+	}
+
+	/**
+	 * Read the stored OAuth token data for a single app.
+	 *
+	 * Used by the tool bridge to re-hydrate the registration-time config
+	 * snapshot with the freshest credentials before executing a remote
+	 * tool, so a refresh persisted by a previous call is not lost.
+	 *
+	 * @since 1.9.x
+	 * @param int    $assistant_id Assistant post ID.
+	 * @param string $server_url   MCP server URL of the app.
+	 * @return array|null Stored oauth_data array, or null when the app is
+	 *                    not found or is a centrally managed reference entry.
+	 */
+	public function get_stored_oauth_data( $assistant_id, $server_url ) {
+		foreach ( $this->get_apps( $assistant_id ) as $app ) {
+			if ( ! is_array( $app ) || empty( $app['server_url'] ) || $app['server_url'] !== $server_url ) {
+				continue;
+			}
+
+			// Reference entries resolve their credentials centrally; the
+			// post meta never carries oauth_data for them.
+			if ( ! empty( $app['connection_ref'] ) ) {
+				return null;
+			}
+
+			return isset( $app['oauth_data'] ) && is_array( $app['oauth_data'] ) ? $app['oauth_data'] : array();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Persist refreshed OAuth token data.
+	 *
+	 * Called after an automatic token refresh so rotated access/refresh
+	 * tokens survive the current request.
+	 *
+	 * Inline apps are updated in post meta. Centrally managed reference
+	 * entries (matched by $connection_ref) are updated in the encrypted
+	 * Remote Sites store instead — their credentials never touch post meta.
+	 *
+	 * @since 1.9.x
+	 * @param int    $assistant_id   Assistant post ID (0 when unknown).
+	 * @param string $server_url     MCP server URL identifying the inline app.
+	 * @param array  $oauth_data     Fresh token data from the OAuth client.
+	 * @param string $connection_ref Central connection ID for reference entries.
+	 * @return bool True when the stored credential changed (or was current).
+	 */
+	public function update_app_oauth_data( $assistant_id, $server_url, array $oauth_data, $connection_ref = '' ) {
+		if ( empty( $oauth_data['access_token'] ) ) {
+			return false;
+		}
+
+		// Central reference path: the credential lives in the Remote Sites
+		// store and needs no assistant or URL context.
+		if ( '' !== $connection_ref ) {
+			return $this->update_reference_oauth_data( $connection_ref, $oauth_data );
+		}
+
+		$assistant_id = absint( $assistant_id );
+		if ( ! $assistant_id || '' === (string) $server_url ) {
+			return false;
+		}
+
+		$apps    = $this->get_apps( $assistant_id );
+		$changed = false;
+
+		foreach ( $apps as $index => $app ) {
+			if ( ! is_array( $app ) ) {
+				continue;
+			}
+
+			// Reference entries are never written back to post meta.
+			if ( ! empty( $app['connection_ref'] ) ) {
+				continue;
+			}
+
+			if ( empty( $app['server_url'] ) || $app['server_url'] !== $server_url ) {
+				continue;
+			}
+
+			if ( 'oauth' !== ( isset( $app['auth_type'] ) ? $app['auth_type'] : '' ) ) {
+				return false;
+			}
+
+			$existing = isset( $app['oauth_data'] ) && is_array( $app['oauth_data'] ) ? $app['oauth_data'] : array();
+			$incoming = $oauth_data;
+
+			// Some providers omit scope from the refresh response. Preserve the
+			// stored value so the metabox "Scope: …" label does not degrade.
+			if ( empty( $incoming['scope'] ) && ! empty( $existing['scope'] ) ) {
+				$incoming['scope'] = $existing['scope'];
+			}
+
+			$merged = array_merge( $existing, $incoming );
+
+			// No-op when nothing changed (e.g. an in-window refresh attempt).
+			if ( $merged != $existing ) { // phpcs:ignore Universal.Operators.StrictComparisons.LooseNotEqual -- Loose comparison ignores key order.
+				$apps[ $index ]['oauth_data'] = $merged;
+				$changed                      = true;
+			}
+			break;
+		}
+
+		if ( ! $changed ) {
+			return false;
+		}
+
+		return $this->save_apps( $assistant_id, $apps );
+	}
+
+	/**
+	 * Persist refreshed OAuth token data into the central Remote Sites store.
+	 *
+	 * @since 1.9.x
+	 * @param string $connection_ref Central mcp_server connection ID.
+	 * @param array  $oauth_data     Fresh token data from the OAuth client.
+	 * @return bool True on success, false when the connection is unavailable.
+	 */
+	protected function update_reference_oauth_data( $connection_ref, array $oauth_data ) {
+		if ( ! self::maybe_load_crypto() ) {
+			return false;
+		}
+
+		return WP_MCP_AI_Pro_Remote_Site_Manager::update_mcp_oauth( $connection_ref, $oauth_data );
 	}
 
 	/**
 	 * Resolve an assistant's MCP Apps, expanding global connection references.
 	 *
-	 * Entries carrying `connection_ref` point at a `mcp_server` connection in
-	 * the Pro Remote Sites store. Resolution decrypts the central credential
-	 * on demand (per-request static cache) and merges it into a runtime config
-	 * — the credentials are never written back to post meta.
+	 * Entries carrying `connection_ref` point at a centrally managed
+	 * connection in the Pro Remote Sites store — a `mcp_server` connection or
+	 * an Upwork connection running in MCP mode. Resolution decrypts the
+	 * central credential on demand (per-request static cache) and merges it
+	 * into a runtime config — the credentials are never written back to post
+	 * meta.
 	 *
 	 * A reference that cannot be resolved (missing connection, wrong type, or
 	 * Remote Sites unavailable) is skipped and recorded as an error status
@@ -413,7 +643,11 @@ class WP_MCP_AI_MCP_App_Registry {
 	/**
 	 * Resolve a single `connection_ref` entry against the Remote Sites store.
 	 *
+	 * Accepts `mcp_server` connections and Upwork connections in MCP mode
+	 * (the official Upwork MCP gateway).
+	 *
 	 * @since 1.1.85
+	 * @since 1.1.90 Upwork MCP connections resolve against the official gateway.
 	 *
 	 * @param array $app Stored MCP App entry with `connection_ref` set.
 	 * @return array|null Resolved runtime config, or null when unresolvable.
@@ -440,11 +674,22 @@ class WP_MCP_AI_MCP_App_Registry {
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $ref );
 
-		if ( null === $connection || 'mcp_server' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+		if ( null === $connection ) {
 			return null;
 		}
 
-		$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
+
+		if ( 'mcp_server' === $connection_type ) {
+			$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
+		} elseif ( 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' ) ) {
+			// Upwork MCP connections authenticate against the official gateway
+			// through the MCP Apps OAuth flow; the token blob lives in the
+			// encrypted central `mcp_oauth` field like any MCP Server connection.
+			$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_upwork_mcp_app_config( $connection );
+		} else {
+			return null;
+		}
 
 		return array_merge(
 			$app,
@@ -485,15 +730,22 @@ class WP_MCP_AI_MCP_App_Registry {
 			}
 		}
 
-		if ( empty( $sanitized_apps ) ) {
+		// Encrypt inline credentials at rest (AES-256-CBC, same scheme as the
+		// Remote Sites store). Reference entries carry no inline secrets.
+		$encrypted_apps = array();
+		foreach ( $sanitized_apps as $app ) {
+			$encrypted_apps[] = self::encrypt_app_secrets( $app );
+		}
+
+		if ( empty( $encrypted_apps ) ) {
 			delete_post_meta( $assistant_id, self::META_KEY );
 		} else {
-			update_post_meta( $assistant_id, self::META_KEY, $sanitized_apps );
+			update_post_meta( $assistant_id, self::META_KEY, $encrypted_apps );
 		}
 
 		// Prune connection status records for apps that no longer exist.
 		$kept_keys = array();
-		foreach ( $sanitized_apps as $app ) {
+		foreach ( $encrypted_apps as $app ) {
 			$kept_keys[] = $this->get_app_status_key( $app );
 		}
 		$kept_keys = array_flip( $kept_keys );
@@ -569,6 +821,9 @@ class WP_MCP_AI_MCP_App_Registry {
 				'expires_in'    => isset( $app['oauth_data']['expires_in'] ) ? absint( $app['oauth_data']['expires_in'] ) : 3600,
 				'scope'         => isset( $app['oauth_data']['scope'] ) ? sanitize_text_field( $app['oauth_data']['scope'] ) : '',
 				'issued_at'     => isset( $app['oauth_data']['issued_at'] ) ? absint( $app['oauth_data']['issued_at'] ) : time(),
+				// Dynamic client ID required for public-client token/refresh
+				// requests (e.g. Upwork).
+				'client_id'     => isset( $app['oauth_data']['client_id'] ) ? sanitize_text_field( $app['oauth_data']['client_id'] ) : '',
 			);
 		} elseif ( 'oauth' === $sanitized['auth_type'] ) {
 			// Preserve existing oauth_data from previous config if not being updated.
@@ -582,14 +837,23 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * Create an MCP App Client from a configuration.
 	 *
 	 * When the config uses auth_type 'oauth', attaches an OAuth client
-	 * for automatic token management and refresh.
+	 * for automatic token management and refresh. When $assistant_id is
+	 * provided, a successful in-flight token refresh is persisted back to
+	 * the assistant's stored app config so the rotated credentials survive
+	 * the current request.
 	 *
 	 * @since 1.8.0
-	 * @param array $app_config MCP App configuration.
+	 * @since 1.9.x Added the $assistant_id parameter for refresh persistence.
+	 * @param array $app_config   MCP App configuration.
+	 * @param int   $assistant_id Assistant post ID the app belongs to (0 = no persistence).
 	 * @return WP_MCP_AI_MCP_App_Client
 	 */
-	public function create_client( array $app_config ) {
+	public function create_client( array $app_config, $assistant_id = 0 ) {
 		$config = $app_config;
+
+		if ( absint( $assistant_id ) ) {
+			$config['assistant_id'] = absint( $assistant_id );
+		}
 
 		// For OAuth apps, ensure the token is populated from oauth_data.
 		if ( 'oauth' === ( $config['auth_type'] ?? 'none' ) ) {
@@ -602,6 +866,11 @@ class WP_MCP_AI_MCP_App_Registry {
 				$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $config['server_url'] );
 				if ( ! empty( $config['oauth_data'] ) && is_array( $config['oauth_data'] ) ) {
 					$oauth_client->set_token_data( $config['oauth_data'] );
+					// Public clients (e.g. Upwork) require the client ID in
+					// token/refresh requests.
+					if ( ! empty( $config['oauth_data']['client_id'] ) ) {
+						$oauth_client->set_client_id( $config['oauth_data']['client_id'] );
+					}
 				}
 				$config['oauth_client'] = $oauth_client;
 				$config['oauth_data']   = isset( $config['oauth_data'] ) ? $config['oauth_data'] : array();
@@ -627,7 +896,7 @@ class WP_MCP_AI_MCP_App_Registry {
 
 		foreach ( $this->collect_remote_tools( $assistant_id ) as $entry ) {
 			foreach ( $entry['tools'] as $remote_tool ) {
-				$bridge = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, $entry['app_config'], $entry['label'] );
+				$bridge = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, $entry['app_config'], $entry['label'], $assistant_id );
 				$slug   = $bridge->get_slug();
 
 				// Avoid duplicate registration.
@@ -674,7 +943,7 @@ class WP_MCP_AI_MCP_App_Registry {
 
 		foreach ( $this->collect_remote_tools( $assistant_id ) as $entry ) {
 			foreach ( $entry['tools'] as $remote_tool ) {
-				$bridge  = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, $entry['app_config'], $entry['label'] );
+				$bridge  = new WP_MCP_AI_MCP_App_Tool_Bridge( $remote_tool, $entry['app_config'], $entry['label'], $assistant_id );
 				$slugs[] = $bridge->get_slug();
 			}
 		}
@@ -732,7 +1001,7 @@ class WP_MCP_AI_MCP_App_Registry {
 				continue;
 			}
 
-			$tools = $this->discover_tools( $app_config );
+			$tools = $this->discover_tools( $app_config, false, $assistant_id );
 
 			if ( is_wp_error( $tools ) ) {
 				$this->record_app_status(
@@ -781,18 +1050,22 @@ class WP_MCP_AI_MCP_App_Registry {
 	/**
 	 * Discover tools from a single MCP App server.
 	 *
-	 * Uses transient caching to avoid repeated requests. Attempts the
-	 * stateless server/discover handshake first, falling back to the legacy
+	 * Uses transient caching to avoid repeated requests. Dialect negotiation
+	 * is delegated to {@see WP_MCP_AI_MCP_App_Client::handshake()}: the
+	 * stateless server/discover probe runs first, falling back to the legacy
 	 * sessionful initialize handshake (which captures Mcp-Session-Id) for
-	 * pre-2026-07-28 servers.
+	 * pre-2026-07-28 servers. A cached legacy-dialect hint skips the probe
+	 * once the server is known to reject it.
 	 *
 	 * @since 1.8.0
 	 * @since 1.9.1 Added sessionful fallback and $refresh parameter.
-	 * @param array $app_config MCP App configuration.
-	 * @param bool  $refresh    Whether to bypass the transient cache.
+	 * @since 1.9.5 Handshake delegated to the client's handshake() (legacy-dialect hint).
+	 * @param array $app_config   MCP App configuration.
+	 * @param bool  $refresh      Whether to bypass the transient cache.
+	 * @param int   $assistant_id Assistant post ID (0 = no refresh persistence).
 	 * @return array|WP_Error Array of tool definitions or WP_Error.
 	 */
-	public function discover_tools( array $app_config, $refresh = false ) {
+	public function discover_tools( array $app_config, $refresh = false, $assistant_id = 0 ) {
 		$cache_key = self::CACHE_PREFIX . md5( wp_json_encode( $app_config ) );
 
 		if ( ! $refresh ) {
@@ -809,26 +1082,15 @@ class WP_MCP_AI_MCP_App_Registry {
 			}
 		}
 
-		$client = $this->create_client( $app_config );
+		$client = $this->create_client( $app_config, $assistant_id );
 
-		$init_result = $client->discover();
-		if ( is_wp_error( $init_result ) ) {
-			$error_data = $init_result->get_error_data();
-			$rpc_code   = is_array( $error_data ) && isset( $error_data['rpc_code'] ) ? $error_data['rpc_code'] : 0;
-			$message    = strtolower( $init_result->get_error_message() );
+		// The client's handshake() encapsulates the probe/fallback logic and
+		// the cached legacy-dialect hint, so discovery here is a single call.
+		$handshake = $client->handshake();
 
-			// Sessionful servers reject server/discover with -32601 (unknown
-			// method) or -32600 (e.g. "Missing Mcp-Session-Id header").
-			if ( -32601 === $rpc_code || -32600 === $rpc_code || false !== strpos( $message, 'session' ) ) {
-				$init_result = $client->initialize();
-				if ( is_wp_error( $init_result ) ) {
-					$this->cache_discovery_failure( $cache_key, $init_result );
-					return $init_result;
-				}
-			} else {
-				$this->cache_discovery_failure( $cache_key, $init_result );
-				return $init_result;
-			}
+		if ( is_wp_error( $handshake ) ) {
+			$this->cache_discovery_failure( $cache_key, $handshake );
+			return $handshake;
 		}
 
 		$tools = $client->list_tools();
@@ -864,7 +1126,7 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * @return void
 	 */
 	public function clear_tool_cache( $assistant_id ) {
-		$apps = get_post_meta( absint( $assistant_id ), self::META_KEY, true );
+		$apps = $this->get_apps( absint( $assistant_id ) );
 
 		if ( ! is_array( $apps ) ) {
 			return;
@@ -881,11 +1143,12 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * Test connection to a specific MCP App.
 	 *
 	 * @since 1.8.0
-	 * @param array $app_config MCP App configuration.
+	 * @param array $app_config   MCP App configuration.
+	 * @param int   $assistant_id Assistant post ID (0 = no refresh persistence).
 	 * @return array|WP_Error Connection test result.
 	 */
-	public function test_connection( array $app_config ) {
-		$client = $this->create_client( $app_config );
+	public function test_connection( array $app_config, $assistant_id = 0 ) {
+		$client = $this->create_client( $app_config, $assistant_id );
 		return $client->test_connection();
 	}
 

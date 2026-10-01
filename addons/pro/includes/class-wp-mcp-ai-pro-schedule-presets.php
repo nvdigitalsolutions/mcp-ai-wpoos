@@ -3378,10 +3378,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 								// treats an omitted filter as "any", and the preset
 								// uses the CRM toolkit Search Defaults (keywords,
 								// location) configured in the CRM settings page.
+								// exclude_keywords applies the industry-standard
+								// academic-noise guardrail (GigRadar's global
+								// exclusions) so the fallback SERP stays free of
+								// homework/essay spam; QA lanes should edit this.
 								'arguments' => array(
-									'query' => '',
-									'sort'  => 'recency',
-									'limit' => 20,
+									'query'            => '',
+									'sort'             => 'recency',
+									'limit'            => 20,
+									'exclude_keywords' => array( 'homework', 'school', 'assignment', 'unpaid', 'free', 'essay' ),
 								),
 								'label'     => __( 'Search for new matching jobs', 'mcp-ai-wpoos-pro' ),
 							),

@@ -1,0 +1,62 @@
+<!-- nds-email-wrapper:minimal -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>{{subject}}</title>
+<style>
+  @media (prefers-color-scheme: dark) {
+    .nds-page { background-color: var(--nds-email-page-bg-dark) !important; }
+    .nds-card { background-color: var(--nds-email-card-bg-dark) !important; }
+    .nds-body { color: var(--nds-email-body-text-dark) !important; }
+    .nds-divider { border-color: var(--nds-email-divider-dark) !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:var(--nds-email-page-bg); font-family:var(--nds-email-font);">
+
+<table class="nds-page" width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background-color:var(--nds-email-page-bg);">
+  <tr>
+    <td align="center" style="padding:40px 16px 48px;">
+
+      <table class="nds-card" width="600" cellpadding="0" cellspacing="0" border="0" role="presentation" style="max-width:600px; width:100%; background-color:var(--nds-email-card-bg); border:1px solid var(--nds-email-divider);">
+
+        <!-- HEADER -->
+        <tr>
+          <td style="padding:40px 48px 24px; border-bottom:1px solid var(--nds-email-divider);">
+            <img src="{{logo_url}}" width="120" alt="" style="display:block; border:0;">
+            <h1 style="margin:20px 0 0 0; font-family:var(--nds-email-font); font-size:24px; color:var(--nds-email-body-text); font-weight:bold; line-height:1.2;">{{site_name}}</h1>
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td style="padding:32px 48px 40px;">
+            <div class="nds-body" style="font-family:var(--nds-email-font); font-size:var(--nds-email-body-size); line-height:var(--nds-email-body-height); color:var(--nds-email-body-text);">
+              {{body}}
+            </div>
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="padding:20px 48px 32px; border-top:1px solid var(--nds-email-divider);">
+            <p style="margin:0; font-family:var(--nds-email-font); font-size:12px; color:var(--nds-email-muted); line-height:1.8;">
+              <a href="{{site_url}}" style="color:var(--nds-email-accent-2); text-decoration:none;">{{site_domain}}</a>
+              &nbsp;·&nbsp; <a href="mailto:{{admin_email}}" style="color:var(--nds-email-accent-2); text-decoration:none;">{{admin_email}}</a>
+              &nbsp;·&nbsp; © {{year}} {{site_name}}
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+<!-- /nds-email-wrapper:minimal -->

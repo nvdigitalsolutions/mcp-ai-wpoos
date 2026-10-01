@@ -83,6 +83,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$hosts[] = 'accounts.google.com';
 		$hosts[] = 'login.microsoftonline.com';
 		$hosts[] = 'www.upwork.com'; // Upwork OAuth2 authorization endpoint.
+		$hosts[] = 'www.linkedin.com'; // LinkedIn OAuth2 authorization endpoint.
 		return $hosts;
 	}
 
@@ -225,6 +226,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		// Handle Google Calendar OAuth callback action.
 		if ( 'google_calendar_oauth_callback' === $oauth_handler ) {
 			$this->handle_google_calendar_oauth_callback();
+		}
+
+		// Handle Google Classroom OAuth connect action.
+		if ( 'google_classroom_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'google_classroom_oauth_connect_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_google_classroom_oauth_start( $connection_id );
+		}
+
+		// Handle Google Classroom OAuth callback action.
+		if ( 'google_classroom_oauth_callback' === $oauth_handler ) {
+			$this->handle_google_classroom_oauth_callback();
 		}
 
 		// Handle Upwork OAuth connect action.
@@ -502,6 +520,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$refresh_token = isset( $_POST['google_calendar_refresh_token'] ) ? wp_unslash( $_POST['google_calendar_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$user_email    = isset( $_POST['google_calendar_user_email'] ) ? sanitize_email( wp_unslash( $_POST['google_calendar_user_email'] ) ) : '';
 					break;
+				case 'google_classroom':
+					$client_id     = isset( $_POST['google_classroom_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_classroom_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['google_classroom_client_secret'] ) ? wp_unslash( $_POST['google_classroom_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$refresh_token = isset( $_POST['google_classroom_refresh_token'] ) ? wp_unslash( $_POST['google_classroom_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$user_email    = isset( $_POST['google_classroom_user_email'] ) ? sanitize_email( wp_unslash( $_POST['google_classroom_user_email'] ) ) : '';
+					break;
 				case 'upwork':
 					$client_id     = isset( $_POST['upwork_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_client_id'] ) ) : '';
 					$client_secret = isset( $_POST['upwork_client_secret'] ) ? wp_unslash( $_POST['upwork_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -634,6 +658,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( 'google_calendar' === $connection_type ) {
 				$url       = 'https://www.googleapis.com/calendar/v3';
 				$auth_type = 'none'; // Google Calendar uses OAuth, not standard auth types.
+			}
+
+			// For Google Classroom connections, always use the Classroom API URL.
+			if ( 'google_classroom' === $connection_type ) {
+				$url       = 'https://classroom.googleapis.com/v1';
+				$auth_type = 'none'; // Google Classroom uses OAuth, not standard auth types.
 			}
 
 			// For Upwork connections, always use the Upwork GraphQL API URL.
@@ -854,6 +884,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'proxy_url'                      => isset( $_POST['flowhub_proxy_url'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_proxy_url'] ) ) : '',
 				'proxy_username'                 => isset( $_POST['flowhub_proxy_username'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_proxy_username'] ) ) : '',
 				'proxy_password'                 => isset( $_POST['flowhub_proxy_password'] ) ? wp_unslash( $_POST['flowhub_proxy_password'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password; stored as-is for encryption.
+				// FlowHub connection mode: 'api' (default) or 'mcp' (MCP server backend).
+				'flowhub_mode'                   => isset( $_POST['flowhub_mode'] ) && in_array( $_POST['flowhub_mode'], array( 'api', 'mcp' ), true )
+					? sanitize_key( wp_unslash( $_POST['flowhub_mode'] ) )
+					: 'api',
 				'enabled'                        => ! empty( $_POST['enabled'] ),
 				'cache_ttl'                      => isset( $_POST['cache_ttl'] ) ? max( 0, min( 3600, absint( $_POST['cache_ttl'] ) ) ) : 300,
 				'test_endpoint'                  => isset( $_POST['test_endpoint'] ) ? sanitize_text_field( wp_unslash( $_POST['test_endpoint'] ) ) : '',
@@ -868,11 +902,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Drive connection's folder scope.
 				'calendar_id'                    => isset( $_POST['google_calendar_calendar_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_calendar_calendar_id'] ) ) : '',
 				'scope_profile'                  => isset( $_POST['google_calendar_scope_profile'] ) ? sanitize_key( wp_unslash( $_POST['google_calendar_scope_profile'] ) ) : '',
+				// Google Classroom-specific fields. `scope_profile` is shared with the
+				// Calendar select, so a Classroom save captures its own profile value
+				// into the same key.
+				'classroom_course_id'            => isset( $_POST['google_classroom_course_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_classroom_course_id'] ) ) : '',
+				'classroom_sync_enabled'         => ! empty( $_POST['google_classroom_sync_enabled'] ),
+				'classroom_scope_profile'        => isset( $_POST['google_classroom_scope_profile'] ) ? sanitize_key( wp_unslash( $_POST['google_classroom_scope_profile'] ) ) : '',
 				// Upwork-specific fields.
 				'upwork_username'                => isset( $_POST['upwork_user_email'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_user_email'] ) ) : '',
-				'upwork_mode'                    => isset( $_POST['upwork_mode'] ) && in_array( $_POST['upwork_mode'], array( 'api', 'web_search' ), true )
+				'upwork_mode'                    => isset( $_POST['upwork_mode'] ) && in_array( $_POST['upwork_mode'], array( 'api', 'web_search', 'mcp' ), true )
 					? sanitize_key( wp_unslash( $_POST['upwork_mode'] ) )
 					: 'api',
+				'upwork_mcp_url'                 => isset( $_POST['upwork_mcp_url'] ) ? esc_url_raw( wp_unslash( $_POST['upwork_mcp_url'] ) ) : '',
+				'upwork_org_uid'                 => isset( $_POST['upwork_org_uid'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_org_uid'] ) ) : '',
 				'upwork_search_query'            => isset( $_POST['upwork_search_query'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_search_query'] ) ) : '',
 				'upwork_search_category'         => isset( $_POST['upwork_search_category'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_search_category'] ) ) : '',
 				'upwork_search_job_type'         => isset( $_POST['upwork_search_job_type'] ) && in_array( $_POST['upwork_search_job_type'], array( 'hourly', 'fixed' ), true )
@@ -1047,6 +1089,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					? absint( $_POST['mcp_timeout'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- absint above.
 					: 30,
 			);
+
+			// Google Classroom uses its own scope-profile select; fold it into the
+			// shared `scope_profile` key so the manager's generic field survives.
+			if ( 'google_classroom' === $connection_type ) {
+				$connection_data['scope_profile'] = isset( $connection_data['classroom_scope_profile'] )
+					? $connection_data['classroom_scope_profile']
+					: '';
+				unset( $connection_data['classroom_scope_profile'] );
+			}
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
@@ -1854,6 +1905,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'gmail'              => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
 									'google_drive'       => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
 									'google_calendar'    => __( 'Google Calendar', 'mcp-ai-wpoos-pro' ),
+									'google_classroom'   => __( 'Google Classroom', 'mcp-ai-wpoos-pro' ),
 									'upwork'             => __( 'Upwork', 'mcp-ai-wpoos-pro' ),
 									'telegram'           => __( 'Telegram', 'mcp-ai-wpoos-pro' ),
 									'whatsapp'           => __( 'WhatsApp', 'mcp-ai-wpoos-pro' ),
@@ -1886,6 +1938,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'gmail'              => '#ea4335', // Google red color.
 									'google_drive'       => '#4285f4', // Google blue color.
 									'google_calendar'    => '#0b8043', // Google Calendar green.
+									'google_classroom'   => '#f9ab00', // Google Classroom amber.
 									'upwork'             => '#14a800', // Upwork green.
 									'telegram'           => '#0088cc', // Telegram blue.
 									'whatsapp'           => '#25d366', // WhatsApp green.
@@ -2216,6 +2269,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="google_calendar" <?php selected( $connection_type, 'google_calendar' ); ?>>
 								<?php esc_html_e( 'Google Calendar (Scheduling)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="google_classroom" <?php selected( $connection_type, 'google_classroom' ); ?>>
+								<?php esc_html_e( 'Google Classroom (Education)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="upwork" <?php selected( $connection_type, 'upwork' ); ?>>
 								<?php esc_html_e( 'Upwork (Freelance Marketplace)', 'mcp-ai-wpoos-pro' ); ?>
@@ -3248,6 +3304,27 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- FlowHub connection mode: direct API/sync only, or the designated
+					backend for the FlowHub toolkit MCP server (assistant settings).
+					Mirrors the Upwork API vs MCP mode pattern. -->
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="flowhub_mode"><?php esc_html_e( 'Connection Mode', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php
+						$saved_flowhub_mode = $is_edit && 'flowhub' === $connection_type && ! empty( $connection['flowhub_mode'] )
+							? $connection['flowhub_mode']
+							: 'api';
+						?>
+						<select name="flowhub_mode" id="flowhub_mode">
+							<option value="api" <?php selected( $saved_flowhub_mode, 'api' ); ?>><?php esc_html_e( 'API — direct FlowHub POS access (sync + tool calls)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="mcp" <?php selected( $saved_flowhub_mode, 'mcp' ); ?>><?php esc_html_e( 'MCP — designated backend for the FlowHub toolkit MCP server', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'API mode uses this connection for syncs and direct tool calls. MCP mode additionally binds the FlowHub toolkit MCP server (the MCP toggle in assistant settings) to this connection, so assistant MCP-triggered services route through these credentials and the proxy settings above.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<!-- Type-specific fields for PayHere -->
 				<tr class="payhere-only-field" style="display: none;">
 					<th scope="row">
@@ -3905,6 +3982,170 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</tr>
 				<?php endif; ?>
 
+				<!-- Type-specific fields for Google Classroom -->
+				<tr class="google_classroom-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_classroom_client_id"><?php esc_html_e( 'OAuth Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="google_classroom_client_id" id="google_classroom_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console. The Google Classroom API must be enabled for the project. Classroom scopes are restricted, so keep the project in internal/testing publishing status for a school domain, or complete OAuth app verification for public distribution.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_classroom-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_classroom_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="google_classroom_client_secret" id="google_classroom_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit && ! empty( $connection['client_secret'] ) ) : ?>
+							<p class="description"><?php esc_html_e( 'A client secret is already stored. Leave blank to keep it unchanged.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_classroom-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Authorized Redirect URI', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						// Built via the shared service so the authorize request and the
+						// token exchange cannot drift apart.
+						require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
+						$google_classroom_redirect_uri = WP_MCP_AI_Google_OAuth_Service::build_remote_redirect_uri( 'google_classroom_oauth_callback' );
+						?>
+						<input type="text" readonly="readonly" value="<?php echo esc_url( $google_classroom_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description">
+							<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'mcp-ai-wpoos-pro' ); ?>
+							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
+								<?php esc_html_e( 'Open Google Cloud Console', 'mcp-ai-wpoos-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+							</a>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="google_classroom-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_classroom_scope_profile"><?php esc_html_e( 'Permission Level', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-classroom-scopes.php';
+						$gclassroom_profile  = WP_MCP_AI_Google_Classroom_Scopes::normalise_profile(
+							$is_edit && isset( $connection['scope_profile'] ) ? $connection['scope_profile'] : ''
+						);
+						$gclassroom_profiles = WP_MCP_AI_Google_Classroom_Scopes::get_profiles();
+						?>
+						<select name="google_classroom_scope_profile" id="google_classroom_scope_profile" class="regular-text">
+							<?php foreach ( $gclassroom_profiles as $gclassroom_slug => $gclassroom_definition ) : ?>
+								<option value="<?php echo esc_attr( $gclassroom_slug ); ?>" <?php selected( $gclassroom_profile, $gclassroom_slug ); ?>>
+									<?php echo esc_html( $gclassroom_definition['label'] ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php echo esc_html( WP_MCP_AI_Google_Classroom_Scopes::get_profile_description( $gclassroom_profile ) ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="google_classroom-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_classroom_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<textarea name="google_classroom_refresh_token" id="google_classroom_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
+						<?php if ( $is_edit && ! empty( $connection['refresh_token'] ) ) : ?>
+							<p class="description"><?php esc_html_e( 'A refresh token is already stored. Leave blank to keep it unchanged.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<p class="description"><?php esc_html_e( 'Usually obtained automatically via the OAuth connect button below.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_classroom-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_classroom_course_id"><?php esc_html_e( 'Default Course ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="google_classroom_course_id" id="google_classroom_course_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['classroom_course_id'] ) ? esc_attr( $connection['classroom_course_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Google Classroom course used when a tool does not specify one. Paste the numeric course ID from the Classroom URL.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_classroom-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_classroom_sync_enabled"><?php esc_html_e( 'Periodic Sync', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="checkbox" name="google_classroom_sync_enabled" id="google_classroom_sync_enabled" value="1" <?php checked( $is_edit && ! empty( $connection['classroom_sync_enabled'] ) ); ?>>
+						<label for="google_classroom_sync_enabled"><?php esc_html_e( 'Reconcile linked rosters and courses on a jittered schedule', 'mcp-ai-wpoos-pro' ); ?></label>
+						<p class="description"><?php esc_html_e( 'Runs the Classroom-to-ECA roster and course sync in the background, in addition to any push notifications.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_classroom-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_classroom_user_email"><?php esc_html_e( 'Google User Email (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="email" name="google_classroom_user_email" id="google_classroom_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="user@example.com">
+						<p class="description"><?php esc_html_e( 'The Google account email associated with this connection. Also used to attribute per-user API quota.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<?php if ( $is_edit && ! empty( $connection['granted_scopes'] ) ) : ?>
+					<tr class="google_classroom-only-field" style="display: none;">
+						<th scope="row"><?php esc_html_e( 'Granted Permissions', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<code style="word-break: break-all;"><?php echo esc_html( $connection['granted_scopes'] ); ?></code>
+							<p class="description"><?php esc_html_e( 'Google granular consent may grant a subset of the requested permissions; tools gate on what was actually granted.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+				<?php endif; ?>
+
+				<?php if ( $is_edit && 'google_classroom' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+					<tr class="google_classroom-only-field" style="display: none;">
+						<th scope="row">
+							<label><?php esc_html_e( 'OAuth Connection', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<?php
+							$gclassroom_oauth_url = wp_nonce_url(
+								add_query_arg(
+									array(
+										'page'          => 'wp-mcp-ai-remote-sites',
+										'oauth_handler' => 'google_classroom_oauth_connect',
+										'connection_id' => $connection['id'],
+									),
+									admin_url( 'admin.php' )
+								),
+								'google_classroom_oauth_connect_' . $connection['id']
+							);
+							?>
+							<a href="<?php echo esc_url( $gclassroom_oauth_url ); ?>" class="button button-secondary">
+								<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Connect to Google Classroom', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+							<p class="description">
+								<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain a refresh token. Save the Client ID and Client Secret first.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
+								<p class="description" style="color: #46b450;">
+									<span class="dashicons dashicons-yes-alt"></span>
+									<?php esc_html_e( 'This connection is already authorized. Click the button above to re-authorize if needed.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
+							<p class="description">
+								<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'While the Google Cloud OAuth consent screen is in "Testing" status, Google issues refresh tokens that expire after 7 days. Set the publishing status to "In production" for a durable connection. Classroom scopes are restricted: internal school domains need no Google review, public distribution requires OAuth app verification.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+				<?php endif; ?>
+
 				<!-- Type-specific fields for Upwork -->
 				<tr class="upwork-only-field" style="display: none;">
 					<th scope="row">
@@ -3919,8 +4160,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<select name="upwork_mode" id="upwork_mode" onchange="toggleUpworkMode(this.value)">
 							<option value="api" <?php selected( $saved_upwork_mode, 'api' ); ?>><?php esc_html_e( 'API — direct Upwork GraphQL access (requires OAuth)', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="web_search" <?php selected( $saved_upwork_mode, 'web_search' ); ?>><?php esc_html_e( 'Web Search — AI-powered job discovery (no OAuth needed)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="mcp" <?php selected( $saved_upwork_mode, 'mcp' ); ?>><?php esc_html_e( 'MCP — official Upwork MCP gateway (agentic access, OAuth login)', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
-						<p class="description"><?php esc_html_e( 'API mode uses the Upwork GraphQL API for real-time results. Web Search mode uses AI-powered web search for job discovery without requiring OAuth credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'API mode uses the Upwork GraphQL API for real-time results. Web Search mode uses AI-powered web search for job discovery without requiring OAuth credentials. MCP mode talks to the official Upwork MCP server (mcp.upwork.com) and imports results into the CRM pipeline.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -4060,6 +4302,53 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</span>
 						<?php endif; ?>
 						<p class="description"><?php esc_html_e( 'Click to authorize this plugin to access your Upwork account via OAuth 2.0.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<?php endif; ?>
+
+				<!-- Upwork MCP-mode fields (shown when mode is mcp) -->
+				<tr class="upwork-only-field upwork-mcp-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_mcp_url"><?php esc_html_e( 'MCP Server URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="upwork_mcp_url" id="upwork_mcp_url" class="large-text code" value="<?php echo $is_edit && ! empty( $connection['upwork_mcp_url'] ) ? esc_url( $connection['upwork_mcp_url'] ) : esc_url( 'https://mcp.upwork.com/mcp' ); ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'The official Upwork MCP gateway endpoint. Leave the default unless Upwork documents a new one.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="upwork-only-field upwork-mcp-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_org_uid"><?php esc_html_e( 'Organization ID (org_uid)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="upwork_org_uid" id="upwork_org_uid" class="regular-text" value="<?php echo $is_edit && ! empty( $connection['upwork_org_uid'] ) ? esc_attr( $connection['upwork_org_uid'] ) : ''; ?>" autocomplete="off" placeholder="e.g. 1234567890123456">
+						<p class="description"><?php esc_html_e( 'Optional — resolved automatically from your account list when left empty.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<?php if ( $is_edit && 'upwork' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+				<tr class="upwork-only-field upwork-mcp-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Connect Upwork MCP Account', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" class="button button-primary" id="upwork_mcp_connect">
+							<?php esc_html_e( '🔗 Connect via Upwork Login', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<?php if ( ! empty( $connection['mcp_oauth'] ) ) : ?>
+							<span class="dashicons dashicons-yes" style="color: green; vertical-align: middle; margin-left: 8px;"></span>
+							<span style="color: green;"><?php esc_html_e( 'Connected', 'mcp-ai-wpoos-pro' ); ?></span>
+						<?php endif; ?>
+						<div id="upwork_mcp_oauth_paste" style="display: none; margin-top: 10px;">
+							<p class="description">
+								<?php esc_html_e( 'Upwork only allows localhost callback URLs, so the login tab ends on an address that does not load. Copy the full address from that tab’s address bar, paste it below, and click Complete Login.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<input type="text" id="upwork_mcp_callback_url" class="large-text code" placeholder="http://localhost:NNNNN/callback?code=…&state=…" autocomplete="off">
+							<p style="margin-top: 8px;">
+								<button type="button" class="button button-primary" id="upwork_mcp_complete">
+									<?php esc_html_e( 'Complete Login', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</p>
+						</div>
+						<p id="upwork_mcp_status" class="description"></p>
+						<p class="description"><?php esc_html_e( 'Connects your Upwork account to the official MCP gateway (OAuth 2.1). Jobs searched in this mode flow through the usual CRM search → score → import pipeline.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 				<?php endif; ?>
@@ -5182,7 +5471,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="whatsapp_verify_token"><?php esc_html_e( 'Verify Token', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" name="whatsapp_verify_token" id="whatsapp_verify_token" class="regular-text" value="<?php echo $is_edit && isset( $connection['verify_token'] ) ? esc_attr( $connection['verify_token'] ) : ''; ?>" autocomplete="off">
+						<input type="text" name="whatsapp_verify_token" id="whatsapp_verify_token" class="regular-text" value="" autocomplete="off" placeholder="<?php echo $is_edit && isset( $connection['verify_token'] ) ? esc_attr__( '•••••••• (unchanged)', 'mcp-ai-wpoos-pro' ) : ''; ?>">
 						<p class="description"><?php esc_html_e( 'Use this token when setting up webhooks in WhatsApp Business settings.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -6187,7 +6476,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="messenger_verify_token"><?php esc_html_e( 'Verify Token', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" name="messenger_verify_token" id="messenger_verify_token" class="regular-text" value="<?php echo $is_edit && isset( $connection['verify_token'] ) ? esc_attr( $connection['verify_token'] ) : ''; ?>" autocomplete="off">
+						<input type="text" name="messenger_verify_token" id="messenger_verify_token" class="regular-text" value="" autocomplete="off" placeholder="<?php echo $is_edit && isset( $connection['verify_token'] ) ? esc_attr__( '•••••••• (unchanged)', 'mcp-ai-wpoos-pro' ) : ''; ?>">
 						<p class="description"><?php esc_html_e( 'Use this when setting up webhook subscription in Messenger settings.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -6554,7 +6843,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="google_chat_verification_token"><?php esc_html_e( 'Verification Token', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" name="google_chat_verification_token" id="google_chat_verification_token" class="regular-text" value="<?php echo $is_edit && isset( $connection['verification_token'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['verification_token'] ) : ''; ?>" autocomplete="off">
+						<input type="text" name="google_chat_verification_token" id="google_chat_verification_token" class="regular-text" value="" autocomplete="off" placeholder="<?php echo $is_edit && isset( $connection['verification_token'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr__( '•••••••• (unchanged)', 'mcp-ai-wpoos-pro' ) : ''; ?>">
 						<p class="description"><?php esc_html_e( 'Shared-secret token used to authenticate webhook requests when OIDC Verification is disabled above. Requests must include it via the ?token= URL parameter or the X-Google-Chat-Token header.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -7580,6 +7869,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var gmailFields = document.querySelectorAll('.gmail-only-field');
 			var googleDriveFields = document.querySelectorAll('.google_drive-only-field');
 			var googleCalendarFields = document.querySelectorAll('.google_calendar-only-field');
+			var googleClassroomFields = document.querySelectorAll('.google_classroom-only-field');
 			var telegramFields = document.querySelectorAll('.telegram-only-field');
 			var whatsappFields = document.querySelectorAll('.whatsapp-only-field');
 			var slackFields = document.querySelectorAll('.slack-only-field');
@@ -7639,6 +7929,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			googleCalendarFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			googleClassroomFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 			telegramFields.forEach(function(field) {
@@ -7811,6 +8104,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				// Google Calendar doesn't use the standard auth_type, it has its own OAuth flow
+				authTypeSelect.value = 'none';
+			} else if (connectionType === 'google_classroom') {
+				googleClassroomFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Google Classroom uses OAuth, set URL to Google's Classroom API
+				urlField.value = 'https://classroom.googleapis.com/v1';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				// Google Classroom doesn't use the standard auth_type, it has its own OAuth flow
 				authTypeSelect.value = 'none';
 			} else if (connectionType === 'upwork') {
 				upworkFields.forEach(function(field) {
@@ -8133,22 +8437,116 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		/**
-		 * Show/hide Upwork API vs Web Search sub-fields based on the selected mode.
+		 * Show/hide Upwork API vs Web Search vs MCP sub-fields based on the selected mode.
 		 *
-		 * @param {string} mode 'api' or 'web_search'
+		 * @param {string} mode 'api', 'web_search', or 'mcp'
 		 */
 		function toggleUpworkMode(mode) {
-			var apiFields   = document.querySelectorAll('.upwork-api-field');
+			var apiFields    = document.querySelectorAll('.upwork-api-field');
 			var searchFields = document.querySelectorAll('.upwork-web-search-field');
+			var mcpFields    = document.querySelectorAll('.upwork-mcp-field');
 
 			if (mode === 'web_search') {
 				apiFields.forEach(function(f) { f.style.display = 'none'; });
 				searchFields.forEach(function(f) { f.style.display = 'table-row'; });
+				mcpFields.forEach(function(f) { f.style.display = 'none'; });
+			} else if (mode === 'mcp') {
+				apiFields.forEach(function(f) { f.style.display = 'none'; });
+				searchFields.forEach(function(f) { f.style.display = 'none'; });
+				mcpFields.forEach(function(f) { f.style.display = 'table-row'; });
 			} else {
 				apiFields.forEach(function(f) { f.style.display = 'table-row'; });
 				searchFields.forEach(function(f) { f.style.display = 'none'; });
+				mcpFields.forEach(function(f) { f.style.display = 'none'; });
 			}
 		}
+
+		/**
+		 * Wire the Upwork MCP OAuth connect flow: initiate via the MCP Apps
+		 * REST endpoint (with the connection_ref), open the login tab, and
+		 * complete the manual loopback flow by pasting the callback URL.
+		 */
+		(function () {
+			var connectBtn  = document.getElementById('upwork_mcp_connect');
+			var completeBtn = document.getElementById('upwork_mcp_complete');
+			if (!connectBtn) { return; }
+
+			var nonce     = <?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>;
+			var initUrl   = <?php echo wp_json_encode( rest_url( 'mcp-ai/v1/mcp-apps/oauth/init' ) ); ?>;
+			var completeUrl = <?php echo wp_json_encode( rest_url( 'mcp-ai/v1/mcp-apps/oauth/complete' ) ); ?>;
+			var connId    = <?php echo wp_json_encode( isset( $connection['id'] ) ? $connection['id'] : '' ); ?>;
+			var state     = '';
+
+			function setStatus(msg, isError) {
+				var el = document.getElementById('upwork_mcp_status');
+				if (!el) { return; }
+				el.textContent = msg;
+				el.style.color = isError ? '#b32d2e' : '#0a7d18';
+			}
+
+			connectBtn.addEventListener('click', function () {
+				var urlInput = document.getElementById('upwork_mcp_url');
+				var serverUrl = urlInput ? urlInput.value.trim() : 'https://mcp.upwork.com/mcp';
+				setStatus('Starting Upwork login…', false);
+
+				fetch(initUrl, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': nonce
+					},
+					body: JSON.stringify({ server_url: serverUrl, connection_ref: connId })
+				})
+				.then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+				.then(function (res) {
+					if (!res.ok || !res.data.success) {
+						var msg = res.data && res.data.message ? res.data.message : 'Could not start the Upwork login flow.';
+						setStatus(msg, true);
+						return;
+					}
+					state = res.data.state;
+					window.open(res.data.authorization_url, '_blank');
+					document.getElementById('upwork_mcp_oauth_paste').style.display = 'block';
+					setStatus('Login tab opened — paste the address from that tab below.', false);
+				})
+				.catch(function () {
+					setStatus('Network error while starting the Upwork login flow.', true);
+				});
+			});
+
+			if (completeBtn) {
+				completeBtn.addEventListener('click', function () {
+					var callbackUrl = document.getElementById('upwork_mcp_callback_url').value.trim();
+					if (!callbackUrl) {
+						setStatus('Paste the login tab address first.', true);
+						return;
+					}
+					setStatus('Completing login…', false);
+
+					fetch(completeUrl, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-WP-Nonce': nonce
+						},
+						body: JSON.stringify({ state: state, callback_url: callbackUrl })
+					})
+					.then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+					.then(function (res) {
+						if (!res.ok || !res.data.success) {
+							var msg = res.data && res.data.message ? res.data.message : 'Could not complete the Upwork login.';
+							setStatus(msg, true);
+							return;
+						}
+						document.getElementById('upwork_mcp_oauth_paste').style.display = 'none';
+						setStatus('Upwork MCP account connected — save the connection to keep it.', false);
+					})
+					.catch(function () {
+						setStatus('Network error while completing the Upwork login.', true);
+					});
+				});
+			}
+		})();
 
 		/**
 		 * Show/hide LinkedIn API vs Web Search sub-fields based on the selected mode.
@@ -11428,6 +11826,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	}
 
 	/**
+	 * Load the shared Google OAuth and Classroom service classes.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	protected function require_google_classroom_services() {
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-classroom-scopes.php';
+	}
+
+	/**
 	 * Handle Google Calendar OAuth start for a remote connection.
 	 *
 	 * Delegates state handling, redirect-URI construction, and authorization-URL
@@ -11604,6 +12014,189 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$email_address
 			)
 			: __( 'Google Calendar connected successfully!', 'mcp-ai-wpoos-pro' );
+
+		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
+	}
+
+	/**
+	 * Handle Google Classroom OAuth start for a remote connection.
+	 *
+	 * Delegates state handling, redirect-URI construction, and authorization-URL
+	 * building to WP_MCP_AI_Google_OAuth_Service so this flow cannot drift from
+	 * the Calendar flow. Requested scopes come from the Classroom scope registry
+	 * for the connection's chosen profile.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return void
+	 */
+	protected function handle_google_classroom_oauth_start( $connection_id ) {
+		$this->require_google_classroom_services();
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		if ( 'google_classroom' !== $connection['connection_type'] ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Classroom connection.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$profile = WP_MCP_AI_Google_Classroom_Scopes::normalise_profile(
+			isset( $connection['scope_profile'] ) ? $connection['scope_profile'] : ''
+		);
+
+		$state = WP_MCP_AI_Google_OAuth_Service::store_state(
+			'google_classroom_remote',
+			array( 'connection_id' => $connection_id )
+		);
+
+		$authorize_url = WP_MCP_AI_Google_OAuth_Service::build_authorize_url(
+			array(
+				'client_id'    => $connection['client_id'],
+				'redirect_uri' => WP_MCP_AI_Google_OAuth_Service::build_remote_redirect_uri( 'google_classroom_oauth_callback' ),
+				'scope'        => WP_MCP_AI_Google_Classroom_Scopes::get_profile_scope_string( $profile ),
+				'state'        => $state,
+				'login_hint'   => isset( $connection['user_email'] ) ? (string) $connection['user_email'] : '',
+			)
+		);
+
+		if ( is_wp_error( $authorize_url ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $authorize_url->get_error_message() ) ) );
+		}
+
+		$this->redirect_and_exit( $authorize_url );
+	}
+
+	/**
+	 * Handle Google Classroom OAuth callback for a remote connection.
+	 *
+	 * CSRF protection comes from the single-use `state` transient rather than a
+	 * nonce, because Google controls the inbound request.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	protected function handle_google_classroom_oauth_callback() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$this->require_google_classroom_services();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+
+		if ( $error ) {
+			$this->redirect_and_exit(
+				admin_url(
+					'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode(
+						sprintf(
+							/* translators: %s: OAuth error from Google */
+							__( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ),
+							$error
+						)
+					)
+				)
+			);
+		}
+
+		$state_data = WP_MCP_AI_Google_OAuth_Service::consume_state( 'google_classroom_remote', $state );
+
+		if ( is_wp_error( $state_data ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( $state_data->get_error_message() ) ) );
+		}
+
+		if ( empty( $code ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$connection_id = isset( $state_data['connection_id'] ) ? sanitize_key( $state_data['connection_id'] ) : '';
+		$connection    = '' !== $connection_id ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+
+		if ( ! $connection ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+
+		$tokens = WP_MCP_AI_Google_OAuth_Service::exchange_code(
+			array(
+				'code'          => $code,
+				'client_id'     => $connection['client_id'],
+				'client_secret' => $client_secret,
+				// Must byte-match the authorize request.
+				'redirect_uri'  => WP_MCP_AI_Google_OAuth_Service::build_remote_redirect_uri( 'google_classroom_oauth_callback' ),
+			)
+		);
+
+		if ( is_wp_error( $tokens ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $tokens->get_error_message() ) ) );
+		}
+
+		$refresh_token = isset( $tokens['refresh_token'] ) ? trim( (string) $tokens['refresh_token'] ) : '';
+		$access_token  = isset( $tokens['access_token'] ) ? trim( (string) $tokens['access_token'] ) : '';
+		$granted       = isset( $tokens['scope'] ) ? trim( (string) $tokens['scope'] ) : '';
+
+		// Google omits the refresh token on re-consent when one already exists.
+		if ( '' === $refresh_token && ! empty( $connection['refresh_token'] ) ) {
+			$refresh_token = $connection['refresh_token'];
+		}
+
+		if ( '' === $refresh_token ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$email_address = WP_MCP_AI_Google_OAuth_Service::fetch_userinfo_email( $access_token );
+
+		$update_data = array(
+			'id'                     => $connection_id,
+			'name'                   => $connection['name'],
+			'url'                    => $connection['url'],
+			'connection_type'        => 'google_classroom',
+			'auth_type'              => 'none',
+			'client_id'              => $connection['client_id'],
+			'client_secret'          => '', // Preserve the stored encrypted value.
+			'refresh_token'          => $refresh_token,
+			'user_email'             => $email_address ? $email_address : $connection['user_email'],
+			'classroom_course_id'    => isset( $connection['classroom_course_id'] ) ? $connection['classroom_course_id'] : '',
+			'classroom_sync_enabled' => isset( $connection['classroom_sync_enabled'] ) ? $connection['classroom_sync_enabled'] : false,
+			'scope_profile'          => isset( $connection['scope_profile'] ) ? $connection['scope_profile'] : '',
+			'granted_scopes'         => $granted,
+			'enabled'                => $connection['enabled'],
+		);
+
+		// Tell the manager the omitted client_secret is already encrypted so it is
+		// preserved rather than blanked or double-encrypted.
+		$update_data['_client_secret_encrypted'] = true;
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		if ( is_wp_error( $result ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
+		}
+
+		// A rotated refresh token invalidates any cached access token.
+		WP_MCP_AI_Google_OAuth_Service::forget_access_token( 'classroom-connection:' . $connection_id );
+
+		$success_message = $email_address
+			? sprintf(
+				/* translators: %s: email address */
+				__( 'Google Classroom connected successfully for %s!', 'mcp-ai-wpoos-pro' ),
+				$email_address
+			)
+			: __( 'Google Classroom connected successfully!', 'mcp-ai-wpoos-pro' );
 
 		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
 	}

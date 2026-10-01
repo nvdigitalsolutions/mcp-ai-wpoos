@@ -115,7 +115,7 @@
             // Check wpMcpAiOrchestration
             if (typeof wpMcpAiOrchestration !== 'undefined') {
                 html += '<div class="test-result pass">✓ wpMcpAiOrchestration is defined</div>';
-                html += '<pre>' + JSON.stringify(wpMcpAiOrchestration, null, 2) + '</pre>';
+                html += '<pre>' + escapeHtml( JSON.stringify(wpMcpAiOrchestration, null, 2) ) + '</pre>';
                 
                 // Check required properties
                 if (wpMcpAiOrchestration.ajaxUrl) {
@@ -168,7 +168,7 @@
                 },
                 success: function(response) {
                     let html = '<div class="test-result pass">✓ AJAX request succeeded</div>';
-                    html += '<pre>' + JSON.stringify(response, null, 2) + '</pre>';
+                    html += '<pre>' + escapeHtml( JSON.stringify(response, null, 2) ) + '</pre>';
                     
                     if (response.success) {
                         html += '<div class="test-result pass">✓ Response indicates success</div>';
@@ -196,9 +196,9 @@
                 },
                 error: function(xhr, status, error) {
                     let html = '<div class="test-result fail">✗ AJAX request failed</div>';
-                    html += '<div class="test-result fail">Status: ' + status + '</div>';
-                    html += '<div class="test-result fail">Error: ' + error + '</div>';
-                    html += '<pre>Response: ' + xhr.responseText + '</pre>';
+                    html += '<div class="test-result fail">Status: ' + escapeHtml( status ) + '</div>';
+                    html += '<div class="test-result fail">Error: ' + escapeHtml( error ) + '</div>';
+                    html += '<pre>Response: ' + escapeHtml( xhr.responseText ) + '</pre>';
                     resultDiv.innerHTML = html;
                 }
             });

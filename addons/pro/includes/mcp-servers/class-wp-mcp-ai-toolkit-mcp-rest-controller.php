@@ -469,6 +469,11 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 		$id      = isset( $payload['id'] ) ? $payload['id'] : null;
 		$method  = isset( $payload['method'] ) ? (string) $payload['method'] : '';
 		$jsonrpc = isset( $payload['jsonrpc'] ) ? (string) $payload['jsonrpc'] : '';
+		$params  = isset( $payload['params'] ) && is_array( $payload['params'] ) ? $payload['params'] : array();
+
+		// Assistant-scoped requests carry the acting assistant's ID in params.
+		// 0 means "not assistant-scoped" (plain authenticated client).
+		$assistant_id = isset( $params['assistant_id'] ) ? absint( $params['assistant_id'] ) : 0;
 
 		if ( '2.0' !== $jsonrpc ) {
 			return rest_ensure_response(
@@ -495,6 +500,31 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 					),
 				)
 			);
+		}
+
+		// Assistant grant gate — deny by default. When the request acts on
+		// behalf of an assistant, that assistant must hold an explicit grant
+		// for this server (Toolkit MCP Servers metabox on the assistant edit
+		// screen). initialize/ping stay open so clients can handshake and
+		// read their grants from the `toolkitServers` metadata.
+		if ( $assistant_id && class_exists( 'WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers' ) && ! in_array( $method, array( 'initialize', 'ping' ), true ) ) {
+			$granted = WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::get_allowed_servers( $assistant_id );
+			if ( ! in_array( $slug, $granted, true ) ) {
+				return rest_ensure_response(
+					array(
+						'jsonrpc' => '2.0',
+						'id'      => $id,
+						'error'   => array(
+							'code'    => -32601,
+							'message' => __( 'Server not granted to this assistant', 'mcp-ai-wpoos-pro' ),
+							'data'    => array(
+								'assistant_id' => $assistant_id,
+								'server'       => $slug,
+							),
+						),
+					)
+				);
+			}
 		}
 
 		// Phase 3c — payload + rate limits. Skip for cheap probe methods.
@@ -525,9 +555,6 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 
 		switch ( $method ) {
 			case 'initialize':
-				$params       = isset( $payload['params'] ) && is_array( $payload['params'] ) ? $payload['params'] : array();
-				$assistant_id = isset( $params['assistant_id'] ) ? absint( $params['assistant_id'] ) : 0;
-
 				// Negotiate protocol version with the client.
 				$negotiated_version = $this->negotiate_protocol_version( $params );
 
@@ -583,27 +610,25 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 					}
 
 					// Inject toolkit grouping metadata from the assistant→server bridge.
+					// Grants are deny-by-default, so toolkitServers lists exactly the
+					// servers this assistant has been granted (possibly empty).
 					if ( class_exists( 'WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers' ) ) {
 						$allowed_servers = WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::get_allowed_servers( $assistant_id );
-						if ( ! empty( $allowed_servers ) ) {
-							$registry     = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
-							$toolkit_meta = array();
-							foreach ( $allowed_servers as $server_slug ) {
-								$linked = $registry->get( $server_slug );
-								if ( null === $linked ) {
-									continue;
-								}
-								$toolkit_meta[] = array(
-									'slug'        => $linked->get_slug(),
-									'name'        => $linked->get_name(),
-									'description' => $linked->get_description(),
-									'enabled'     => $linked instanceof WP_MCP_AI_Toolkit_Server_Base && $linked->is_enabled(),
-								);
+						$registry        = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
+						$toolkit_meta    = array();
+						foreach ( $allowed_servers as $server_slug ) {
+							$linked = $registry->get( $server_slug );
+							if ( null === $linked ) {
+								continue;
 							}
-							if ( ! empty( $toolkit_meta ) ) {
-												$result['toolkitServers'] = $toolkit_meta;
-							}
+							$toolkit_meta[] = array(
+								'slug'        => $linked->get_slug(),
+								'name'        => $linked->get_name(),
+								'description' => $linked->get_description(),
+								'enabled'     => $linked instanceof WP_MCP_AI_Toolkit_Server_Base && $linked->is_enabled(),
+							);
 						}
+						$result['toolkitServers'] = $toolkit_meta;
 					}
 				}
 
@@ -868,6 +893,18 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 					),
 				)
 			);
+		}
+
+		// Bind the server's designated Remote Sites connection when the caller
+		// did not supply one. Servers whose live services route through a
+		// connection (e.g. FlowHub) declare it via get_mcp_connection_id();
+		// injecting it routes the tool through the explicit-connection path so
+		// live calls inherit that connection's credentials and proxy.
+		if ( $server instanceof WP_MCP_AI_Toolkit_Server_Base ) {
+			$server_connection_id = $server->get_mcp_connection_id();
+			if ( '' !== $server_connection_id && empty( $arguments['connection_id'] ) ) {
+				$arguments['connection_id'] = sanitize_key( $server_connection_id );
+			}
 		}
 
 		/**

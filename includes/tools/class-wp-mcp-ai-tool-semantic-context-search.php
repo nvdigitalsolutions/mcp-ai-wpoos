@@ -45,7 +45,7 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Search agent contexts using semantic similarity based on vector embeddings. More accurate than keyword matching for understanding context relevance. Requires OpenAI API key for embedding generation.', 'mcp-ai-wpoos' );
+		return __( 'Search agent contexts using semantic similarity based on vector embeddings. More accurate than keyword matching for understanding context relevance. When agent_id is omitted, the tool searches the memory of the assistant executing it; searching another agent\'s memory requires the manage_options capability. Requires OpenAI API key for embedding generation.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -58,7 +58,7 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 			'when_to_use'     => __( 'Ranking agent contexts by semantic similarity when keyword matching misses meaning; filter by agent and context type.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Hierarchical recall; use recall_memory for wing/room recall or retrieve_agent_memory for context IDs and filters.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'retrieve_agent_memory', 'recall_memory', 'semantic_content_search' ),
-			'notes'           => __( 'Requires an OpenAI API key for embeddings; scope with agent_id and filters to keep results relevant.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'Omit agent_id to search your own memory; cross-agent search requires manage_options. Requires an OpenAI API key for embeddings; scope with filters to keep results relevant.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -71,7 +71,7 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'agent_id'             => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional. Agent assistant ID (post ID) or virtual agent identifier. When omitted, the tool searches the memory of the assistant executing it. Searching another agent\'s memory requires the manage_options capability.', 'mcp-ai-wpoos' ),
 				),
 				'query'                => array(
 					'type'        => 'string',
@@ -120,7 +120,7 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 					'description' => __( 'Optional override: when set, forces (true) or disables (false) the Phase 4 RRF fusion retrieval path. Leave unset (null) to use the site-wide `wp_mcp_ai_memory_rrf_default_enabled` filter (default true when the master switch is on).', 'mcp-ai-wpoos' ),
 				),
 			),
-			'required'             => array( 'agent_id', 'query' ),
+			'required'             => array( 'query' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -140,13 +140,33 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 	 * @return array Tool results.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// Validate required parameters.
-		if ( empty( $arguments['agent_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_error', __( 'Agent ID is required.', 'mcp-ai-wpoos' ) );
-		}
-
 		if ( empty( $arguments['query'] ) ) {
 			return new WP_Error( 'wp_mcp_ai_error', __( 'Search query is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Resolve the effective agent identity: explicit argument (scope-checked
+		// override) or the calling assistant's own id from the execution
+		// context. Fail loudly — never guess.
+		$requested = isset( $arguments['agent_id'] ) ? $arguments['agent_id'] : null;
+		$identity  = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution( $requested, $context )
+			: $this->fallback_identity( $requested, $context );
+
+		if ( empty( $identity['agent_id'] ) ) {
+			return new WP_Error(
+				'mcp_ai_memory_no_agent',
+				__( 'No agent_id supplied and the execution context provided none.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Scope gate: searching another agent's memory requires manage_options.
+		$user_id     = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$scope_error = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id )
+			: null;
+		if ( is_wp_error( $scope_error ) ) {
+			return $scope_error;
 		}
 
 		// Check if OpenAI is configured.
@@ -161,7 +181,7 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Sanitize inputs.
-		$agent_id             = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
+		$agent_id             = is_numeric( $identity['agent_id'] ) ? absint( $identity['agent_id'] ) : sanitize_text_field( $identity['agent_id'] );
 		$query                = sanitize_text_field( $arguments['query'] );
 		$filters              = isset( $arguments['filters'] ) && is_array( $arguments['filters'] ) ? $arguments['filters'] : array();
 		$limit                = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
@@ -212,17 +232,19 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 
 		$total_count = count( $contexts );
 		$response    = array(
-			'success'  => true,
-			'message'  => sprintf(
+			'success'           => true,
+			'message'           => sprintf(
 				/* translators: %d: number of contexts found */
 				_n( 'Found %d semantically similar context.', 'Found %d semantically similar contexts.', $total_count, 'mcp-ai-wpoos' ),
 				$total_count
 			),
-			'contexts' => $contexts,
-			'count'    => $total_count,
-			'query'    => $query,
-			'method'   => 'semantic_similarity',
-			'model'    => WP_MCP_AI_Vector_Context_Service::EMBEDDING_MODEL,
+			'contexts'          => $contexts,
+			'count'             => $total_count,
+			'query'             => $query,
+			'method'            => 'semantic_similarity',
+			'model'             => WP_MCP_AI_Vector_Context_Service::EMBEDDING_MODEL,
+			'resolved_agent_id' => $agent_id,
+			'resolution_source' => $identity['resolution_source'],
 		);
 
 		if ( null !== $vector_store_info ) {
@@ -241,6 +263,46 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Minimal identity resolution used only when the shared resolver class
+	 * is unavailable (e.g. a standalone tool load).
+	 *
+	 * @param int|string|null $requested Explicit agent_id argument.
+	 * @param array           $context   Execution context.
+	 * @return array Resolution shape compatible with
+	 *               WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution().
+	 */
+	private function fallback_identity( $requested, array $context ) {
+		if ( null !== $requested && '' !== (string) $requested && '0' !== (string) $requested ) {
+			$agent_id = is_numeric( $requested ) ? absint( $requested ) : sanitize_text_field( $requested );
+			return array(
+				'agent_id'          => $agent_id,
+				'original'          => (string) $requested,
+				'resolved'          => false,
+				'canonical'         => is_numeric( $requested ),
+				'resolution_source' => 'parameter',
+			);
+		}
+
+		if ( ! empty( $context['assistant_id'] ) && is_numeric( $context['assistant_id'] ) ) {
+			return array(
+				'agent_id'          => absint( $context['assistant_id'] ),
+				'original'          => '',
+				'resolved'          => false,
+				'canonical'         => true,
+				'resolution_source' => 'context',
+			);
+		}
+
+		return array(
+			'agent_id'          => '',
+			'original'          => '',
+			'resolved'          => false,
+			'canonical'         => false,
+			'resolution_source' => '',
+		);
 	}
 
 	/**

@@ -29,6 +29,13 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
+	 * Seconds below which a non-expired context is flagged as expiring soon.
+	 *
+	 * @var int
+	 */
+	const NEAR_EXPIRY_SECONDS = 604800; // 7 days.
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -46,7 +53,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves previously stored agent context and memory. Search by context ID for specific retrieval, or by agent ID, type, tags, and query for semantic search. Returns relevant contexts ranked by relevance and importance.', 'mcp-ai-wpoos' );
+		return __( 'Retrieves previously stored agent context and memory. When agent_id is omitted, the tool reads the memory of the assistant executing it (resolved from the execution context). Reading another agent\'s memory requires the manage_options capability. Search by context ID for specific retrieval, or by agent ID, type, tags, and query for semantic search. Returns relevant contexts ranked by relevance and importance.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -59,7 +66,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			'when_to_use'     => __( 'Reading stored agent memory by context ID or semantically searching contexts by agent, type, tags, and query.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Writing or wing-scoped recall; use store_agent_context to persist and recall_memory for hierarchical wing recall.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'store_agent_context', 'recall_memory', 'semantic_context_search' ),
-			'notes'           => __( 'Results rank by relevance and importance; set include_expired=true to include expired contexts.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'Omit agent_id to read your own memory; cross-agent reads require manage_options. Results rank by relevance and importance; set include_expired=true to include expired contexts.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -72,7 +79,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'agent_id'             => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional. Agent assistant ID (post ID) or virtual agent identifier. When omitted, the tool resolves to the assistant executing it. Reading another agent\'s memory requires the manage_options capability.', 'mcp-ai-wpoos' ),
 				),
 				'context_id'           => array(
 					'type'        => 'string',
@@ -143,7 +150,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 					'default'     => true,
 				),
 			),
-			'required'             => array( 'agent_id' ),
+			'required'             => array(),
 			'additionalProperties' => false,
 		);
 	}
@@ -163,13 +170,40 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 	 * @return array Tool results.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// Validate required parameters.
-		if ( empty( $arguments['agent_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_error', __( 'Agent ID is required.', 'mcp-ai-wpoos' ) );
+		// Resolve the effective agent identity. Precedence:
+		// 1. Explicit agent_id argument (scope-checked override).
+		// 2. The calling assistant's own id from the execution context.
+		// 3. Fail loudly — never guess.
+		$requested = isset( $arguments['agent_id'] ) ? $arguments['agent_id'] : null;
+
+		if ( class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' ) ) {
+			$identity = WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution( $requested, $context );
+		} else {
+			// Resolver unavailable (standalone load) — fall back to the
+			// explicit argument or the context identity, without aliasing.
+			$identity = $this->fallback_identity( $requested, $context );
+		}
+
+		if ( empty( $identity['agent_id'] ) ) {
+			return new WP_Error(
+				'mcp_ai_memory_no_agent',
+				__( 'No agent_id supplied and the execution context provided none.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Scope gate: own memory is always readable, but reading another
+		// agent's store requires manage_options on the acting user.
+		$acting_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$scope_error    = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $acting_user_id )
+			: null;
+		if ( is_wp_error( $scope_error ) ) {
+			return $scope_error;
 		}
 
 		// Sanitize inputs.
-		$agent_id             = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
+		$agent_id             = is_numeric( $identity['agent_id'] ) ? absint( $identity['agent_id'] ) : sanitize_text_field( $identity['agent_id'] );
 		$context_id           = isset( $arguments['context_id'] ) ? sanitize_text_field( $arguments['context_id'] ) : null;
 		$query                = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
 		$filters              = isset( $arguments['filters'] ) && is_array( $arguments['filters'] ) ? $arguments['filters'] : array();
@@ -186,6 +220,13 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			$vector_store_id = sanitize_text_field( $context['assistant_config']['vector_store_id'] );
 		}
 
+		// Echo the resolved scope on every success path so callers can
+		// distinguish "empty for agent X" from "empty for the wrong agent".
+		$scope_meta = array(
+			'resolved_agent_id' => $agent_id,
+			'resolution_source' => $identity['resolution_source'],
+		);
+
 		// If context_id is provided, retrieve specific context.
 		if ( $context_id ) {
 			$specific_result = $this->retrieve_specific_context( $agent_id, $context_id, $include_expired );
@@ -197,7 +238,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			if ( ! empty( $vector_store_id ) ) {
 				$specific_result['vector_store_id'] = $vector_store_id;
 			}
-			return $specific_result;
+			return array_merge( $specific_result, $scope_meta );
 		}
 
 		// Otherwise, search all contexts for this agent.
@@ -208,7 +249,47 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		if ( ! empty( $vector_store_id ) ) {
 			$search_result['vector_store_id'] = $vector_store_id;
 		}
-		return $search_result;
+		return array_merge( $search_result, $scope_meta );
+	}
+
+	/**
+	 * Minimal identity resolution used only when the shared resolver class
+	 * is unavailable (e.g. a standalone tool load).
+	 *
+	 * @param int|string|null $requested Explicit agent_id argument.
+	 * @param array           $context   Execution context.
+	 * @return array Resolution shape compatible with
+	 *               WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution().
+	 */
+	private function fallback_identity( $requested, array $context ) {
+		if ( null !== $requested && '' !== (string) $requested && '0' !== (string) $requested ) {
+			$agent_id = is_numeric( $requested ) ? absint( $requested ) : sanitize_text_field( $requested );
+			return array(
+				'agent_id'          => $agent_id,
+				'original'          => (string) $requested,
+				'resolved'          => false,
+				'canonical'         => is_numeric( $requested ),
+				'resolution_source' => 'parameter',
+			);
+		}
+
+		if ( ! empty( $context['assistant_id'] ) && is_numeric( $context['assistant_id'] ) ) {
+			return array(
+				'agent_id'          => absint( $context['assistant_id'] ),
+				'original'          => '',
+				'resolved'          => false,
+				'canonical'         => true,
+				'resolution_source' => 'context',
+			);
+		}
+
+		return array(
+			'agent_id'          => '',
+			'original'          => '',
+			'resolved'          => false,
+			'canonical'         => false,
+			'resolution_source' => '',
+		);
 	}
 
 	/**
@@ -540,6 +621,13 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 	 * @return array Formatted result.
 	 */
 	private function format_context_result( $context_record, $relevance_score = null ) {
+		// Expiry signalling: silent expiry is the reason memories disappear
+		// without warning — surface the remaining lifetime so callers can
+		// re-store before a record drops out of default retrieval.
+		$expires_at = isset( $context_record['expires_at'] ) ? (string) $context_record['expires_at'] : '';
+		$expires_ts = '' !== $expires_at ? strtotime( $expires_at ) : false;
+		$expires_in = false !== $expires_ts ? $expires_ts - time() : null;
+
 		$result = array(
 			'context_id'   => $context_record['context_id'],
 			'context_type' => $context_record['context_type'],
@@ -552,8 +640,17 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			'room'         => isset( $context_record['room'] ) ? $context_record['room'] : '',
 			'verbatim'     => ! empty( $context_record['verbatim'] ),
 			'stored_at'    => $context_record['stored_at'],
-			'expires_at'   => $context_record['expires_at'],
+			'expires_at'   => $expires_at,
+			'expires_in'   => $expires_in,
+			'expires_soon' => ( null !== $expires_in && $expires_in > 0 && $expires_in <= self::NEAR_EXPIRY_SECONDS ),
 		);
+
+		// Surface the credential-pattern flag recorded on store so a
+		// retrieved record containing secrets is visible as such.
+		$result['sensitive_patterns'] = isset( $context_record['sensitive_patterns'] ) && is_array( $context_record['sensitive_patterns'] )
+			? $context_record['sensitive_patterns']
+			: array();
+		$result['contains_sensitive'] = ! empty( $result['sensitive_patterns'] );
 
 		if ( null !== $relevance_score ) {
 			$result['relevance_score'] = round( $relevance_score, 2 );

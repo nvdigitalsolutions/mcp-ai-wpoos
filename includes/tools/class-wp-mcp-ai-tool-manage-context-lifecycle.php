@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 				),
 				'agent_id'    => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional. Agent assistant ID (post ID) or virtual agent identifier. When omitted, the tool operates on the memory of the assistant executing it. Operating on another agent\'s memory requires the manage_options capability.', 'mcp-ai-wpoos' ),
 				),
 				'context_id'  => array(
 					'type'        => 'string',
@@ -146,7 +146,7 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 					),
 				),
 			),
-			'required'             => array( 'action', 'agent_id' ),
+			'required'             => array( 'action' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -174,40 +174,66 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		if ( empty( $arguments['agent_id'] ) ) {
+		// Resolve the effective agent identity: explicit argument (scope-checked
+		// override) or the calling assistant's own id from the execution
+		// context. Fail loudly — never guess.
+		$requested = isset( $arguments['agent_id'] ) ? $arguments['agent_id'] : null;
+		$identity  = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution( $requested, $context )
+			: $this->fallback_identity( $requested, $context );
+
+		if ( empty( $identity['agent_id'] ) ) {
 			return new WP_Error(
-				'wp_mcp_ai_error',
-				__( 'Agent ID is required.', 'mcp-ai-wpoos' )
+				'mcp_ai_memory_no_agent',
+				__( 'No agent_id supplied and the execution context provided none.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
 			);
+		}
+
+		// Scope gate: lifecycle operations on another agent's memory require
+		// manage_options.
+		$user_id     = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$scope_error = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id )
+			: null;
+		if ( is_wp_error( $scope_error ) ) {
+			return $scope_error;
 		}
 
 		// Sanitize inputs.
 		$action   = sanitize_key( $arguments['action'] );
-		$agent_id = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
+		$agent_id = is_numeric( $identity['agent_id'] ) ? absint( $identity['agent_id'] ) : sanitize_text_field( $identity['agent_id'] );
 		$options  = isset( $arguments['options'] ) && is_array( $arguments['options'] ) ? $arguments['options'] : array();
 
 		// Route to action handler.
 		switch ( $action ) {
 			case 'refresh':
-				return $this->refresh_context( $agent_id, $arguments, $options );
+				$result = $this->refresh_context( $agent_id, $arguments, $options );
+				break;
 
 			case 'compress':
-				return $this->compress_context( $agent_id, $arguments, $options );
+				$result = $this->compress_context( $agent_id, $arguments, $options );
+				break;
 
 			case 'merge':
-				return $this->merge_contexts( $agent_id, $arguments, $options );
+				$result = $this->merge_contexts( $agent_id, $arguments, $options );
+				break;
 
 			case 'analyze':
-				return $this->analyze_lifecycle( $agent_id );
+				$result = $this->analyze_lifecycle( $agent_id );
+				break;
 
 			case 'prune':
-				return $this->prune_unused_contexts( $agent_id, $options );
+				$result = $this->prune_unused_contexts( $agent_id, $options );
+				break;
 
 			case 'update':
-				return $this->update_context( $agent_id, $arguments, $options );
+				$result = $this->update_context( $agent_id, $arguments, $options );
+				break;
 
 			case 'delete':
-				return $this->delete_context( $agent_id, $arguments );
+				$result = $this->delete_context( $agent_id, $arguments );
+				break;
 
 			default:
 				return new WP_Error(
@@ -215,6 +241,60 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 					__( 'Invalid action.', 'mcp-ai-wpoos' )
 				);
 		}
+
+		// Echo the resolved scope on success so callers can confirm the
+		// operation targeted the intended agent.
+		if ( is_wp_error( $result ) || ! is_array( $result ) ) {
+			return $result;
+		}
+
+		return array_merge(
+			$result,
+			array(
+				'resolved_agent_id' => $agent_id,
+				'resolution_source' => $identity['resolution_source'],
+			)
+		);
+	}
+
+	/**
+	 * Minimal identity resolution used only when the shared resolver class
+	 * is unavailable (e.g. a standalone tool load).
+	 *
+	 * @param int|string|null $requested Explicit agent_id argument.
+	 * @param array           $context   Execution context.
+	 * @return array Resolution shape compatible with
+	 *               WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution().
+	 */
+	private function fallback_identity( $requested, array $context ) {
+		if ( null !== $requested && '' !== (string) $requested && '0' !== (string) $requested ) {
+			$agent_id = is_numeric( $requested ) ? absint( $requested ) : sanitize_text_field( $requested );
+			return array(
+				'agent_id'          => $agent_id,
+				'original'          => (string) $requested,
+				'resolved'          => false,
+				'canonical'         => is_numeric( $requested ),
+				'resolution_source' => 'parameter',
+			);
+		}
+
+		if ( ! empty( $context['assistant_id'] ) && is_numeric( $context['assistant_id'] ) ) {
+			return array(
+				'agent_id'          => absint( $context['assistant_id'] ),
+				'original'          => '',
+				'resolved'          => false,
+				'canonical'         => true,
+				'resolution_source' => 'context',
+			);
+		}
+
+		return array(
+			'agent_id'          => '',
+			'original'          => '',
+			'resolved'          => false,
+			'canonical'         => false,
+			'resolution_source' => '',
+		);
 	}
 
 	/**

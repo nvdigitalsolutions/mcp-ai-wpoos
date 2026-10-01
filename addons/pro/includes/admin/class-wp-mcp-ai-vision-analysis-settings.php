@@ -268,6 +268,85 @@ class WP_MCP_AI_Vision_Analysis_Settings {
 				'placeholder' => '',
 			)
 		);
+
+		// RF-DETR / Roboflow section.
+		add_settings_section(
+			'wp_mcp_ai_va_roboflow',
+			__( 'RF-DETR (Roboflow)', 'mcp-ai-wpoos-pro' ),
+			function () {
+				echo '<p>' . esc_html__( 'RF-DETR is a state-of-the-art real-time detection transformer (Apache 2.0). Run it self-hosted via a Roboflow Inference Docker container (no API key needed locally), through the Serverless Cloud API, or against your own fine-tuned model. Self-hosted endpoints keep image bytes on your network.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'va_roboflow_api_url',
+			__( 'Inference Endpoint', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_va_roboflow',
+			array(
+				'setting_key' => 'va_roboflow_api_url',
+				'description' => __( 'Deployment target. Default: https://serverless.roboflow.com (hosted). For a self-hosted server use http://<host>:9001 (loopback/private hosts only; no API key required).', 'mcp-ai-wpoos-pro' ),
+				'placeholder' => 'https://serverless.roboflow.com',
+			)
+		);
+
+		add_settings_field(
+			'va_roboflow_api_key',
+			__( 'Roboflow API Key', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_va_roboflow',
+			array(
+				'setting_key' => 'va_roboflow_api_key',
+				'description' => __( 'Roboflow API key for the Serverless Cloud API or a dedicated deployment. Not required for self-hosted Inference servers.', 'mcp-ai-wpoos-pro' ),
+				'placeholder' => '',
+			)
+		);
+
+		add_settings_field(
+			'va_roboflow_model',
+			__( 'Detection Model', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_select' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_va_roboflow',
+			array(
+				'setting_key' => 'va_roboflow_model',
+				'description' => __( 'Default RF-DETR detection checkpoint. Larger models are more accurate; nano is fastest. Default: rfdetr-small.', 'mcp-ai-wpoos-pro' ),
+				'options'     => array(
+					'rfdetr-nano'   => __( 'RF-DETR Nano (fastest)', 'mcp-ai-wpoos-pro' ),
+					'rfdetr-small'  => __( 'RF-DETR Small', 'mcp-ai-wpoos-pro' ),
+					'rfdetr-medium' => __( 'RF-DETR Medium', 'mcp-ai-wpoos-pro' ),
+					'rfdetr-large'  => __( 'RF-DETR Large (most accurate)', 'mcp-ai-wpoos-pro' ),
+				),
+			)
+		);
+
+		add_settings_field(
+			'va_roboflow_catalog_model',
+			__( 'Catalog Model (fine-tuned)', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_va_roboflow',
+			array(
+				'setting_key' => 'va_roboflow_catalog_model',
+				'description' => __( 'Optional fine-tuned model for the rfdetr_catalog_search tool. Accepts an RF-DETR alias or a workspace/project/version path (e.g. myworkspace/myproject/3). Empty disables catalog search.', 'mcp-ai-wpoos-pro' ),
+				'placeholder' => '',
+			)
+		);
+
+		add_settings_field(
+			'va_roboflow_allow_pml',
+			__( 'Allow PML-licensed Models', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_checkbox' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_va_roboflow',
+			array(
+				'setting_key' => 'va_roboflow_allow_pml',
+				'description' => __( 'Enable RF-DETR-XL/2XL. These checkpoints are licensed under PML 1.0 (restricted commercial use) — enable only after reviewing the license.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
 	}
 
 	/**
@@ -321,6 +400,26 @@ class WP_MCP_AI_Vision_Analysis_Settings {
 		$current['va_serpapi_api_key'] = isset( $input['va_serpapi_api_key'] )
 			? sanitize_text_field( $input['va_serpapi_api_key'] )
 			: '';
+
+		$current['va_roboflow_api_url'] = isset( $input['va_roboflow_api_url'] )
+			? esc_url_raw( sanitize_text_field( $input['va_roboflow_api_url'] ), array( 'http', 'https' ) )
+			: '';
+
+		$current['va_roboflow_api_key'] = isset( $input['va_roboflow_api_key'] )
+			? sanitize_text_field( $input['va_roboflow_api_key'] )
+			: '';
+
+		$allowed_roboflow_models      = array( 'rfdetr-nano', 'rfdetr-small', 'rfdetr-medium', 'rfdetr-large' );
+		$submitted_roboflow_model     = isset( $input['va_roboflow_model'] ) ? $input['va_roboflow_model'] : 'rfdetr-small';
+		$current['va_roboflow_model'] = in_array( $submitted_roboflow_model, $allowed_roboflow_models, true )
+			? sanitize_text_field( $submitted_roboflow_model )
+			: 'rfdetr-small';
+
+		$current['va_roboflow_catalog_model'] = isset( $input['va_roboflow_catalog_model'] )
+			? sanitize_text_field( $input['va_roboflow_catalog_model'] )
+			: '';
+
+		$current['va_roboflow_allow_pml'] = ! empty( $input['va_roboflow_allow_pml'] );
 
 		return $current;
 	}

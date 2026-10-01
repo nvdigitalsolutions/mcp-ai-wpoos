@@ -275,6 +275,32 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 		}
 
 		/**
+		 * Allow the Mailjet OAuth authorize endpoint host when using wp_safe_redirect().
+		 *
+		 * @param string[] $allowed_hosts Existing list of allowed hosts.
+		 * @param string   $redirect      Requested redirect destination.
+		 *
+		 * @return string[]
+		 */
+		public function allow_mailjet_oauth_redirect_host( $allowed_hosts, $redirect = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress filter signature.
+			/**
+			 * Filter the Mailjet OAuth authorize endpoint.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $endpoint OAuth authorize endpoint.
+			 */
+			$authorize_endpoint = apply_filters( 'wp_mcp_ai_mailjet_oauth_authorize_endpoint', self::MAILJET_OAUTH_AUTHORIZE_ENDPOINT );
+			$mailjet_host       = wp_parse_url( $authorize_endpoint, PHP_URL_HOST );
+
+			if ( $mailjet_host ) {
+				$allowed_hosts[] = $mailjet_host;
+			}
+
+			return array_values( array_unique( $allowed_hosts ) );
+		}
+
+		/**
 		 * Get the OAuth redirect URI for Mailjet.
 		 *
 		 * @return string

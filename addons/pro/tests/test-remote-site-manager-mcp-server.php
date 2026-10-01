@@ -395,4 +395,288 @@ class Test_Remote_Site_Manager_MCP_Server extends WP_UnitTestCase {
 		$this->assertCount( 1, $mcp );
 		$this->assertSame( 'Elementor MCP', $mcp[0]['name'] );
 	}
+
+	/**
+	 * Update_mcp_oauth() merges rotated tokens into the encrypted blob,
+	 * preserves scope/client_id, and stays a no-op on identical data.
+	 */
+	public function test_update_mcp_oauth_merges_rotated_tokens_and_stays_encrypted() {
+		$id = $this->save_mcp_connection(
+			array(
+				'auth_type' => 'oauth',
+				'username'  => '',
+				'password'  => '',
+				'mcp_oauth' => wp_json_encode(
+					array(
+						'access_token'  => 'tok-old',
+						'refresh_token' => 'ref-old',
+						'token_type'    => 'Bearer',
+						'expires_in'    => 3600,
+						'scope'         => 'jobs.read',
+						'issued_at'     => time() - 7200,
+						'client_id'     => 'upwork-client-123',
+					)
+				),
+			)
+		);
+
+		$this->assertNotWPError( $id );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::update_mcp_oauth(
+			$id,
+			array(
+				'access_token'  => 'tok-new',
+				'refresh_token' => 'ref-new',
+				'token_type'    => 'Bearer',
+				'expires_in'    => 3600,
+				'scope'         => '',
+				'issued_at'     => time(),
+			)
+		);
+
+		$this->assertTrue( $updated );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+
+		// Still encrypted at rest: no plaintext token material.
+		$this->assertStringNotContainsString( 'tok-new', (string) $connection['mcp_oauth'] );
+		$this->assertStringNotContainsString( 'ref-new', (string) $connection['mcp_oauth'] );
+
+		$decoded = json_decode( WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['mcp_oauth'] ), true );
+		$this->assertIsArray( $decoded );
+		$this->assertSame( 'tok-new', $decoded['access_token'] );
+		$this->assertSame( 'ref-new', $decoded['refresh_token'] );
+		// Stored scope survives a refresh response that omits it.
+		$this->assertSame( 'jobs.read', $decoded['scope'] );
+		// The dynamic client ID must never be dropped.
+		$this->assertSame( 'upwork-client-123', $decoded['client_id'] );
+
+		// Re-applying identical data is a no-op.
+		$again = WP_MCP_AI_Pro_Remote_Site_Manager::update_mcp_oauth(
+			$id,
+			array(
+				'access_token'  => 'tok-new',
+				'refresh_token' => 'ref-new',
+				'token_type'    => 'Bearer',
+				'expires_in'    => 3600,
+				'scope'         => '',
+				'issued_at'     => $decoded['issued_at'],
+			)
+		);
+		$this->assertTrue( $again );
+	}
+
+	/**
+	 * Update_mcp_oauth() refuses to touch non-OAuth MCP Server connections.
+	 */
+	public function test_update_mcp_oauth_rejects_non_oauth_connections() {
+		$id = $this->save_mcp_connection();
+		$this->assertNotWPError( $id );
+
+		$before = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::update_mcp_oauth(
+			$id,
+			array(
+				'access_token'  => 'tok-new',
+				'refresh_token' => 'ref-new',
+				'issued_at'     => time(),
+			)
+		);
+
+		$this->assertFalse( $updated );
+
+		$after = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+		$this->assertSame( $before['mcp_oauth'], $after['mcp_oauth'] );
+	}
+
+	/**
+	 * A successful central refresh records an activity entry so operators can
+	 * see token rotation in the logs — without ever logging credential material.
+	 */
+	public function test_update_mcp_oauth_logs_activity_event() {
+		// Enable logging and reset the static settings cache so the logger's
+		// base gate observes the test's write.
+		$previous_settings          = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                   = is_array( $previous_settings ) ? $previous_settings : array();
+		$settings['enable_logging'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'reset_settings_cache' ) ) {
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
+		}
+
+		try {
+			$id = $this->save_mcp_connection(
+				array(
+					'auth_type' => 'oauth',
+					'username'  => '',
+					'password'  => '',
+					'mcp_oauth' => wp_json_encode(
+						array(
+							'access_token'  => 'tok-old',
+							'refresh_token' => 'ref-old',
+							'expires_in'    => 3600,
+							'issued_at'     => time() - 7200,
+						)
+					),
+				)
+			);
+			$this->assertNotWPError( $id );
+
+			WP_MCP_AI_Pro_Remote_Site_Manager::update_mcp_oauth(
+				$id,
+				array(
+					'access_token'  => 'tok-new',
+					'refresh_token' => 'ref-new',
+					'token_type'    => 'Bearer',
+					'expires_in'    => 3600,
+					'issued_at'     => time(),
+				)
+			);
+
+			if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+				$this->markTestSkipped( 'WP_MCP_AI_Logger is not available.' );
+			}
+
+			$entries = WP_MCP_AI_Logger::get_recent_activity_entries( 50, array( 'mcp_oauth_refresh' ), 0, 'OAuth token refreshed' );
+
+			$found = null;
+			foreach ( $entries as $entry ) {
+				if ( isset( $entry['context']['connection_id'] ) && $entry['context']['connection_id'] === $id ) {
+					$found = $entry;
+					break;
+				}
+			}
+
+			$this->assertNotNull( $found, 'Expected an activity entry for the central OAuth refresh.' );
+			$this->assertSame( 'mcp_oauth_refresh', $found['type'] );
+			$this->assertTrue( ! empty( $found['context']['refresh_token_rotated'] ) );
+			$this->assertSame( 3600, (int) $found['context']['expires_in'] );
+
+			// The entry must never carry credential material.
+			$serialized = wp_json_encode( $found );
+			$this->assertStringNotContainsString( 'tok-new', $serialized );
+			$this->assertStringNotContainsString( 'ref-new', $serialized );
+			$this->assertStringNotContainsString( 'tok-old', $serialized );
+			$this->assertStringNotContainsString( 'ref-old', $serialized );
+		} finally {
+			update_option( 'wp_mcp_ai_settings', $previous_settings );
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'reset_settings_cache' ) ) {
+				WP_MCP_AI_Admin_Settings::reset_settings_cache();
+			}
+		}
+	}
+
+	/**
+	 * Save an Upwork connection fixture in MCP mode.
+	 *
+	 * @param array $overrides Field overrides.
+	 * @return string|WP_Error Connection ID or error.
+	 */
+	protected function save_upwork_mcp_connection( array $overrides = array() ) {
+		$data = array_merge(
+			array(
+				'name'            => 'Upwork MCP',
+				'url'             => 'https://api.upwork.com/graphql',
+				'connection_type' => 'upwork',
+				'upwork_mode'     => 'mcp',
+				'enabled'         => true,
+			),
+			$overrides
+		);
+
+		return WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $data );
+	}
+
+	/**
+	 * Get_upwork_mcp_connections() only returns Upwork connections in MCP mode.
+	 */
+	public function test_get_upwork_mcp_connections_filters_by_type_and_mode() {
+		$this->save_upwork_mcp_connection();
+		$this->save_upwork_mcp_connection(
+			array(
+				'name'          => 'Upwork API',
+				'upwork_mode'   => 'api',
+				'client_id'     => 'cid',
+				'client_secret' => 'csecret',
+			)
+		);
+		$this->save_mcp_connection();
+
+		$upwork = WP_MCP_AI_Pro_Remote_Site_Manager::get_upwork_mcp_connections();
+
+		$this->assertCount( 1, $upwork );
+		$this->assertSame( 'Upwork MCP', $upwork[0]['name'] );
+	}
+
+	/**
+	 * Is_mcp_app_connection() accepts mcp_server and Upwork MCP connections only.
+	 */
+	public function test_is_mcp_app_connection_accepts_referenceable_types() {
+		$mcp_id    = $this->save_mcp_connection();
+		$upwork_id = $this->save_upwork_mcp_connection();
+		$api_id    = $this->save_upwork_mcp_connection(
+			array(
+				'name'          => 'Upwork API',
+				'upwork_mode'   => 'api',
+				'client_id'     => 'cid',
+				'client_secret' => 'csecret',
+			)
+		);
+
+		$this->assertNotWPError( $mcp_id );
+		$this->assertNotWPError( $upwork_id );
+		$this->assertNotWPError( $api_id );
+
+		$this->assertTrue( WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $mcp_id ) ) );
+		$this->assertTrue( WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $upwork_id ) ) );
+		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $api_id ) ) );
+		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( 'not-an-array' ) );
+	}
+
+	/**
+	 * Get_mcp_app_connections() merges MCP Server and Upwork MCP connections.
+	 */
+	public function test_get_mcp_app_connections_merges_both_kinds() {
+		$this->save_mcp_connection();
+		$this->save_upwork_mcp_connection();
+
+		$all = WP_MCP_AI_Pro_Remote_Site_Manager::get_mcp_app_connections();
+
+		$this->assertCount( 2, $all );
+
+		$types = wp_list_pluck( $all, 'connection_type' );
+		$this->assertContains( 'mcp_server', $types );
+		$this->assertContains( 'upwork', $types );
+	}
+
+	/**
+	 * Build_upwork_mcp_app_config() resolves the gateway URL and the encrypted
+	 * OAuth blob into an MCP App client config.
+	 */
+	public function test_build_upwork_mcp_config_uses_gateway_and_decrypts_blob() {
+		$id = $this->save_upwork_mcp_connection(
+			array(
+				'mcp_oauth' => wp_json_encode(
+					array(
+						'access_token'  => 'upwork-access',
+						'refresh_token' => 'upwork-refresh',
+						'token_type'    => 'Bearer',
+						'expires_in'    => 3600,
+						'issued_at'     => time(),
+						'client_id'     => 'upwork-client',
+					)
+				),
+			)
+		);
+		$this->assertNotWPError( $id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+		$config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_upwork_mcp_app_config( $connection );
+
+		$this->assertSame( 'https://mcp.upwork.com/mcp', $config['server_url'] );
+		$this->assertSame( 'oauth', $config['auth_type'] );
+		$this->assertSame( 'upwork-access', $config['oauth_data']['access_token'] );
+		$this->assertSame( 'upwork-client', $config['oauth_data']['client_id'] );
+	}
 }

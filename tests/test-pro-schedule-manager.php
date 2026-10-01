@@ -503,6 +503,127 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that workflow_steps replace the existing tool chain on workflow
+	 * schedules, with per-step sanitisation.
+	 */
+	public function test_update_schedule_workflow_steps_replaces_steps() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'  => 'workflow',
+				'name'           => 'Discovery Scan',
+				'schedule'       => 'single',
+				'timestamp'      => time() + 120,
+				'workflow_steps' => array(
+					array(
+						'tool_slug' => 'search_upwork_jobs',
+						'arguments' => array(
+							'query' => '',
+							'limit' => 20,
+						),
+						'label'     => 'Search jobs',
+					),
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array(
+				'workflow_steps' => array(
+					array(
+						'tool_slug' => 'search_upwork_jobs',
+						'arguments' => array(
+							'query' => 'wordpress developer',
+							'sort'  => 'recency',
+							'limit' => 20,
+						),
+						'label'     => 'Search for matching jobs <b>bold</b>',
+					),
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $result );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertCount( 1, $schedule['workflow_steps'] );
+		$this->assertSame( 'search_upwork_jobs', $schedule['workflow_steps'][0]['tool_slug'] );
+		$this->assertSame( 'wordpress developer', $schedule['workflow_steps'][0]['arguments']['query'] );
+		$this->assertSame( 'Search for matching jobs bold', $schedule['workflow_steps'][0]['label'] );
+	}
+
+	/**
+	 * Test that workflow_steps without any valid tool_slug are rejected.
+	 */
+	public function test_update_schedule_workflow_steps_rejects_invalid_steps() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'  => 'workflow',
+				'name'           => 'Discovery Scan',
+				'schedule'       => 'single',
+				'timestamp'      => time() + 120,
+				'workflow_steps' => array(
+					array(
+						'tool_slug' => 'search_upwork_jobs',
+						'arguments' => array(),
+					),
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array(
+				'workflow_steps' => array(
+					array( 'label' => 'Step without a tool slug' ),
+					'not-an-array',
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'invalid_workflow_steps', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that workflow_steps are rejected for non-workflow schedule types.
+	 */
+	public function test_update_schedule_workflow_steps_rejected_for_task_type() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'my_hook',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array(
+				'workflow_steps' => array(
+					array( 'tool_slug' => 'search_upwork_jobs' ),
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'invalid_schedule_type', $result->get_error_code() );
+	}
+
+	/**
 	 * Test updating an assistant_run schedule's message via assistant_config.
 	 */
 	public function test_update_assistant_run_schedule_changes_message() {

@@ -43,6 +43,20 @@ class NVOOS_SaaS_Stub_Mutating_Client extends NVOOS_SaaS_Controller_Cloudflare_M
 	public $next_kv     = null;
 
 	/**
+	 * Canned next Worker-secret response.
+	 *
+	 * @var array|WP_Error|null
+	 */
+	public $next_secret = null;
+
+	/**
+	 * Canned next D1 SQL response.
+	 *
+	 * @var array|WP_Error|null
+	 */
+	public $next_d1_sql = null;
+
+	/**
 	 * Canned next gateway response.
 	 *
 	 * @var array|WP_Error|null
@@ -196,6 +210,35 @@ class NVOOS_SaaS_Stub_Mutating_Client extends NVOOS_SaaS_Controller_Cloudflare_M
 				'size'        => strlen( $script_body ),
 			)
 			: $this->next_worker;
+	}
+
+	/**
+	 * Put a Worker secret (records call and returns canned result).
+	 *
+	 * @param string $script_name Worker name.
+	 * @param string $secret_name Secret name.
+	 * @param string $value       Secret value.
+	 * @return array|WP_Error
+	 */
+	public function put_worker_secret( $script_name, $secret_name, $value ) {
+		$this->calls[] = array( 'secret', $script_name, $secret_name, $value );
+		return null === $this->next_secret
+			? array( 'name' => $secret_name, 'type' => 'secret_text' )
+			: $this->next_secret;
+	}
+
+	/**
+	 * Execute D1 SQL (records call and returns canned result).
+	 *
+	 * @param string $database_id D1 database uuid.
+	 * @param string $sql         SQL batch.
+	 * @return array|WP_Error
+	 */
+	public function execute_d1_sql( $database_id, $sql ) {
+		$this->calls[] = array( 'd1_sql', $database_id, $sql );
+		return null === $this->next_d1_sql
+			? array( array( 'meta' => array( 'changed_db' => true ), 'success' => true ) )
+			: $this->next_d1_sql;
 	}
 }
 
@@ -586,6 +629,8 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertContains( 'd1', $types );
 		$this->assertContains( 'kv_namespace', $types );
 		$this->assertContains( 'plain_text', $types );
+		$this->assertArrayHasKey( 'compatibility_flags', $call_meta );
+		$this->assertContains( 'nodejs_compat', $call_meta['compatibility_flags'] );
 	}
 
 	/**
@@ -974,6 +1019,111 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 1, $out['summary']['error'] );
 		$this->assertSame( 'error', $out['results'][0]['status'] );
 		$this->assertStringContainsString( 'Forbidden', $out['results'][0]['message'] );
+	}
+
+	/**
+	 * worker_secret rows resolve the credential store at run time.
+	 *
+	 * @return void
+	 */
+	public function test_apply_worker_secret_row_resolves_credential_store() {
+		NVOOS_SaaS_Controller_Credential_Store::instance()->clear_all();
+		NVOOS_SaaS_Controller_Credential_Store::instance()->set(
+			array(
+				'cloudflare_account_id' => 'acct-123',
+				'cloudflare_api_token'  => 'tok-123',
+				'openrouter_api_key'    => 'sk-or-super-secret',
+			)
+		);
+
+		$stub   = new NVOOS_SaaS_Stub_Mutating_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $stub );
+		$result = $engine->apply_row(
+			array(
+				'kind'   => 'worker_secret',
+				'name'   => 'OPENROUTER_API_KEY',
+				'source' => 'openrouter_api_key',
+				'worker' => 'mcp-oos-worker',
+			),
+			'create'
+		);
+
+		$this->assertSame( 'ok', $result['status'] );
+		$this->assertCount( 1, $stub->calls );
+		$this->assertSame( 'secret', $stub->calls[0][0] );
+		$this->assertSame( 'mcp-oos-worker', $stub->calls[0][1] );
+		$this->assertSame( 'OPENROUTER_API_KEY', $stub->calls[0][2] );
+		$this->assertSame( 'sk-or-super-secret', $stub->calls[0][3] );
+
+		// The result row must never echo the value.
+		$this->assertStringNotContainsString( 'sk-or-super-secret', wp_json_encode( $result ) );
+		NVOOS_SaaS_Controller_Credential_Store::instance()->clear_all();
+	}
+
+	/**
+	 * worker_secret rows skip when the source credential is empty.
+	 *
+	 * @return void
+	 */
+	public function test_apply_worker_secret_row_skips_when_credential_empty() {
+		NVOOS_SaaS_Controller_Credential_Store::instance()->clear_all();
+		NVOOS_SaaS_Controller_Credential_Store::instance()->set(
+			array(
+				'cloudflare_account_id' => 'acct-123',
+				'cloudflare_api_token'  => 'tok-123',
+			)
+		);
+
+		$stub   = new NVOOS_SaaS_Stub_Mutating_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $stub );
+		$result = $engine->apply_row(
+			array(
+				'kind'   => 'worker_secret',
+				'name'   => 'STRIPE_SECRET_KEY',
+				'source' => 'stripe_secret_key',
+				'worker' => 'mcp-oos-worker',
+			),
+			'create'
+		);
+
+		$this->assertSame( 'skipped', $result['status'] );
+		$this->assertCount( 0, $stub->calls );
+	}
+
+	/**
+	 * d1_schema rows execute the normalised schema.sql batch.
+	 *
+	 * @return void
+	 */
+	public function test_apply_d1_schema_row_executes_normalised_schema() {
+		NVOOS_SaaS_Controller_Credential_Store::instance()->clear_all();
+		NVOOS_SaaS_Controller_Credential_Store::instance()->set(
+			array(
+				'cloudflare_account_id' => 'acct-123',
+				'cloudflare_api_token'  => 'tok-123',
+			)
+		);
+
+		$stub   = new NVOOS_SaaS_Stub_Mutating_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $stub );
+		$result = $engine->apply_row(
+			array(
+				'kind' => 'd1_schema',
+				'name' => 'mcp-oos',
+				'uuid' => 'db-111',
+			),
+			'create'
+		);
+
+		$this->assertSame( 'ok', $result['status'] );
+		$this->assertCount( 1, $stub->calls );
+		$this->assertSame( 'd1_sql', $stub->calls[0][0] );
+		$this->assertSame( 'db-111', $stub->calls[0][1] );
+		$sql = $stub->calls[0][2];
+		$this->assertStringContainsString( 'CREATE TABLE IF NOT EXISTS wallets', $sql );
+		$this->assertStringNotContainsString( 'PRAGMA', $sql );
+		$this->assertStringNotContainsString( '--', $sql );
+		NVOOS_SaaS_Controller_Credential_Store::instance()->clear_all();
 	}
 }
 

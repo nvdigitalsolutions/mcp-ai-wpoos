@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.83"
-  plugin-version-tested: "1.1.83"
-  last-updated: "2026-09-21"
+  plugin-version: "1.1.91"
+  plugin-version-tested: "1.1.91"
+  last-updated: "2026-10-01"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -54,11 +54,11 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-1. **Read the template plans** — the latest executed plan (e.g.
-   `v1.1.83-post-docs-catch-up.md` — the first post-window pass, executed when
-   PRs merged after the catch-up but before the next version bump) plus
-   `v1.1.83-docs-catch-up.md` and `v1.1.58`/`v1.1.59` for the original
-   structure.
+1. **Read the template plans** — the latest executed plan (`v1.1.91-docs-catch-up.md`,
+   with `v1.1.90-docs-catch-up.md` as the previous pass) plus the
+   `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
+   merged after the catch-up but before the next version bump) and
+   `v1.1.58`/`v1.1.59` for the original structure.
 4. **Identify the PR window** — everything merged on `alpha-working` after the
    previous catch-up merge. Classify every PR: production-touching (file + change
    table), test-only, docs-only, build-only, closed-unmerged docs PRs.
@@ -134,6 +134,100 @@ weekly (or on demand), independent of any release.
   build/release-only (no production file table); their only real effect is
   dropping already-stale build ZIPs (the v1.1.86 pass's #6770 is the
   precedent).
+- **The stale-ZIP set follows the full build set, not just the wp.org root.**
+  When a release ships, remove the whole previous-version artifact set — root
+  `build/` ZIPs + `.sha256` pairs **plus** `build/optional-components/` and
+  `build/toolkit-addons/` (the v1.1.85 pass's "30 files" shape — 9 + 2 + 19 —
+  repeated by the v1.1.87 pass for the 1.1.85 set).
+- **An introducing PR may pre-stage the readme.txt release entry.** A feature
+  PR can add a `= X.Y.Z - Unreleased =` changelog paragraph before the
+  catch-up runs (the v1.1.87 window's #6780 did) — the catch-up converts it
+  into the dated release entry and extends it with the rest of the window;
+  never keep two entries for the same version.
+- **Sub-project window PRs are flagged-not-edited even when they carry their
+  own changelog surfaces.** PRs that update `plugins/nvoos-content-graph`'s
+  own CHANGELOG.md/readme.txt/.pot (the v1.1.87 window's #6782/#6783) keep
+  their own version track (1.0.8) — the catch-up notes them in the plan and
+  the changelog's sub-project paragraph but edits nothing under `plugins/`.
+- **Wrong-version `@since` groups with unusual tags record like any other OI-1
+  group.** The v1.1.87 window shipped `@since 2.12.0` ×139 (outbound-booking
+  toolkit + Upwork files) — record the group with its counts and locations;
+  parked reconciliation (OI-1) still applies, no in-pass fixes.
+- **A PR merged between the previous plan's window map and its catch-up merge
+  belongs to the new window when the previous changelog never covered it.**
+  The tree diff alone misses such PRs (they sit inside the previous catch-up's
+  tree). Cross-check the previous changelog for the PR number during
+  orientation — the v1.1.88 window's #6787 (gateway express bump) merged
+  24 min before the #6788 catch-up and was absent from the 1.1.87 changelog.
+- **A PR may explicitly defer its own changelog entry to the catch-up.** The
+  v1.1.88 window's #6792 (decision-model Phase A) carried a "CHANGELOG entry
+  at merge time (v1.1.88+ window)" note — grep PR bodies for
+  changelog/release-note deferrals during orientation; the catch-up owns the
+  entry.
+- **Addon sub-projects with their own version tracks may update `ADDON_INVENTORY.md`
+  in-window** (the v1.1.88 window's #6797 set the saas-controller row to 0.3.0)
+  — the pass refreshes only the header stamp, and the addon's versioning goes
+  in the changelog's sub-project paragraph, not a new inventory row.
+- **In-window skill updates are not proof the skills are current.** The v1.1.88
+  window updated `design-crm` (#6790) and `design-elementor-mcp-connection`
+  (#6799) in place, yet #6793 then reverted the URL canonical form #6790 had
+  just documented, the bundled `design-crm` copy was two windows behind the
+  Zed copy, and the elementor skill's security rules still claimed inline
+  secrets were plaintext after #6798 encrypted them. After mapping the window,
+  diff each updated skill against the code it documents and `diff -q` the
+  Zed/bundled pairs — the catch-up owns the reconciliation.
+- **A PR may pre-stage a `## [Unreleased]` CHANGELOG section, not just a
+  readme.txt entry.** The v1.1.89 window's #6809 added an `[Unreleased]`
+  block (the Google Classroom content) at the top of `CHANGELOG.md` before the
+  catch-up ran — the catch-up converts it into the dated release section and
+  extends it with the rest of the window; never keep two entries for the same
+  version (the same rule as the readme.txt pre-staging).
+- **Verify addon rows in `ADDON_INVENTORY.md` against the addon's own version
+  constant.** The v1.1.89 window's #6810 updated the Design System row
+  in-window but wrote **0.2.0** while the addon's header + `NVOOS_DESIGN_SYSTEM_VERSION`
+  + PR body say **0.3.0** (the proposals README even said "v0.2.0 → v0.3.0").
+  The catch-up corrects a factually wrong in-window row version in-pass (the
+  "refreshes only the header stamp" rule assumes the row was right).
+- **Addon-level wrong-version `@since` waves record like any other OI-1 group.**
+  #6810 shipped 33 × `@since 0.2.0` across the renamed/new
+  `addons/nvoos-design-system/` files while the addon shipped **0.3.0** (2
+  files correctly tagged 0.3.0) — the addon-version convention (SaaS Controller
+  precedent) requires tags to match the shipped addon version. Record the
+  group with its counts; parked reconciliation applies.
+- **Tools registered by standalone addons via `wp_mcp_ai_register_tools` are
+  described in the changelog but never counted in base/Pro totals.** The
+  v1.1.89 window's 8 `nds_*` email tools (Design System addon) join the same
+  registry the algorave/embedded/graphify/page-agent addon tools use — the
+  base/Pro count lines track plugin + `addons/pro` registrations only (the
+  algorave "9 tools" entry is the precedent: described, not counted).
+- **Folder/file `@since` conventions override the wrong-version rule.** The new
+  `includes/google/` Classroom files carry `@since 1.0.0` ×71 like their
+  Calendar siblings (which already had 31), and the Pro remote-site files'
+  `@since 1.0.0` additions follow each file's dominant pre-existing tag —
+  local convention, not a new OI-1 group.
+- **Track B: the migration-trigger line now covers per-provider settings keys.**
+  #6805 extended `WP_MCP_AI_Model_Catalog_Migration` to rewrite
+  `deepseek_model`/`default_gemini_model`/`anthropic_model`/`kimi_model`
+  alongside `default_model` — the rewrite still only runs on a catalog
+  version bump, so a migration-behavior change without a bump is dormant until
+  the next one.
+- **The plugin skill keeps a companion `RELEASE-NOTES.md` and must stay under
+  the Zed 100KB skill-size limit.** #6822 moved the per-version release-note
+  tail out of `mcp-ai-wpoos-plugin/SKILL.md` (103KB → 46KB) into a companion
+  `RELEASE-NOTES.md` — **future version notes append to RELEASE-NOTES.md, not
+  SKILL.md**. When a structural change like this lands on the Zed copy, sync
+  the base bundled copy byte-identical (SKILL.md + companion) — stamp-only is
+  not enough; the CG AI platform bundled copy is a deliberately trimmed
+  variant and keeps stamp-only treatment.
+- **In-window tool-reference edits may update the header note without the
+  count line.** #6824 added the RF-DETR entries + the "+2 Pro in v1.1.90"
+  note but left the main count line at ~1,299/~1,646 — the catch-up
+  reconciles the count line (and the Last Updated stamp) in-pass.
+- **An introducing PR may complete the A5 skill-count bookkeeping itself.**
+  #6820 (the dependabot-loop skill) bumped 60 → 61 in `AGENTS.md` §1,
+  `.github/copilot-instructions.md`, and the `README.md` repo map in-window —
+  the catch-up verifies (grep for the old count) rather than assuming the
+  fold-in is owed.
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -238,7 +332,9 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
   `status`, `sunset_date`, `notes`.
 - **Migration trigger:** `WP_MCP_AI_Model_Catalog_Migration` runs once per
   catalog `version` bump and rewrites stored references (`wp_mcp_ai_model_configs`
-  option, assistant `_wp_mcp_ai_model` meta, `wp_mcp_ai_settings.default_model`).
+  option, assistant `_wp_mcp_ai_model` meta, `wp_mcp_ai_settings.default_model`
+  plus the per-provider keys `deepseek_model`/`default_gemini_model`/
+  `anthropic_model`/`kimi_model` since #6805).
   **Always bump `version` + `updated_at` when editing the JSON.**
 - **Discovery is suggestion-only:** the daily `wp_mcp_ai_model_catalog_discovery`
   cron writes diffs to the Suggestions panel — they are **never** auto-applied.
@@ -620,12 +716,37 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.83-post-docs-catch-up.md`,
   `docs/project/plans/v1.1.84-docs-catch-up.md`,
   `docs/project/plans/v1.1.85-docs-catch-up.md`,
-  `docs/project/plans/v1.1.86-docs-catch-up.md` (latest executed — the v1.1.86
-  pass over PRs #6761–#6773: MCP Apps as a Remote Sites connection type +
-  reference mode, the Higgsfield media provider (+4 base tools), the
-  get_system_logs since/levels/search filters, tool-cost response labels,
-  action-items delivery templates, and the stale 1.1.84 ZIP removal; also the
-  first pass to fold a skipped skill-count bookkeeping into the release)
+  `docs/project/plans/v1.1.86-docs-catch-up.md`,
+  `docs/project/plans/v1.1.87-docs-catch-up.md`,
+  `docs/project/plans/v1.1.88-docs-catch-up.md`,
+  `docs/project/plans/v1.1.89-docs-catch-up.md`,
+  `docs/project/plans/v1.1.90-docs-catch-up.md`,
+  `docs/project/plans/v1.1.91-docs-catch-up.md` (latest executed — the v1.1.91
+  pass over PRs #6825, #6827–#6836: the FlowHub MCP-mode connection proxy
+  binding (#6836, pre-staged [Unreleased] CHANGELOG block converted), the
+  MCP App OAuth discovery chain per MCP spec (#6835), the OAuth redirect
+  allowlists (#6831/#6832), the orchestration CCT physical-table gate +
+  DB output guard (#6827), the security-events display + double-render
+  fixes (#6829/#6830), the RF-DETR presets/manifest repair (#6828), the
+  nodemailer 10.x + fast-uri advisory patches (#6833/#6834), the RF-DETR
+  CG Pro ecosystem port (#6825), five skill reconciliations (plugin ×3 +
+  elementor ×2 + dependabot-loop + test-suite patterns 54/55 +
+  ecosystem-port + updates), the stale 1.1.89 build-set removal (30
+  files), and an unchanged tool count)
+
+Preceding windows:
+  `docs/project/plans/v1.1.89-docs-catch-up.md` (the v1.1.89
+  pass over PRs #6802 + #6804–#6810: the Google Classroom ECA integration
+  (proposal 046, 12 flag-gated Pro tools + base foundation + new webhook
+  route), the Design System addon rename + token-driven email module
+  (proposal 047/048, 8 addon-provided nds tools, 0.1.0 → 0.3.0), the Upwork
+  MCP connection mode (#6804), the vision/remote/EZuite live-site fixes
+  (#6805), the MCP legacy-dialect handshake cache (#6802), the CodeQL closure
+  + dependency advisory patches (#6807/#6806), the coverage-manifest repair
+  (#6808), three skill reconciliations (design-elementor-mcp-connection
+  bundled sync + stamps, design-email-marketing bundled sync, design-crm MCP
+  mode), the in-window ADDON_INVENTORY version correction (0.2.0 → 0.3.0),
+  the stale 1.1.87 build-set removal (30 files), and +12 Pro tool-count)
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete

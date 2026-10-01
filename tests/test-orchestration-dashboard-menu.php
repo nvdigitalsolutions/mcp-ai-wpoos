@@ -193,4 +193,61 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 			'Base orchestration dashboard menu item should exist to verify page title'
 		);
 	}
+
+	/**
+	 * Test that the orchestration dashboard page renders exactly once.
+	 *
+	 * Regression guard for the double instantiation of
+	 * WP_MCP_AI_Admin_Orchestration_Dashboard: the class file
+	 * self-instantiates at the bottom AND the bootstrap loader used to
+	 * `new` it again. Two distinct instances register render_dashboard
+	 * twice on the same page hook, so WordPress fired it twice and the
+	 * dashboard rendered twice.
+	 */
+	public function test_orchestration_dashboard_renders_once() {
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Orchestration_Dashboard' ) ) {
+			$this->markTestSkipped( 'Orchestration dashboard class not loaded' );
+		}
+
+		// Trigger the admin_menu action to register menus.
+		do_action( 'admin_menu' );
+
+		$hook = get_plugin_page_hookname( 'mcp-ai-orchestration', 'wp-mcp-ai-dashboard' );
+
+		global $wp_filter;
+		$render_callbacks = 0;
+		if ( isset( $wp_filter[ $hook ] ) ) {
+			foreach ( $wp_filter[ $hook ]->callbacks as $priority_callbacks ) {
+				foreach ( $priority_callbacks as $callback ) {
+					if (
+						isset( $callback['function'] ) &&
+						is_array( $callback['function'] ) &&
+						2 === count( $callback['function'] ) &&
+						'WP_MCP_AI_Admin_Orchestration_Dashboard' === get_class( $callback['function'][0] ) &&
+						'render_dashboard' === $callback['function'][1]
+					) {
+						++$render_callbacks;
+					}
+				}
+			}
+		}
+
+		$this->assertSame(
+			1,
+			$render_callbacks,
+			'render_dashboard must be registered exactly once on the orchestration page hook'
+		);
+
+		// Fire the page hook and assert the dashboard wrapper renders exactly
+		// once — the user-visible symptom of the double render.
+		ob_start();
+		do_action( $hook );
+		$output = ob_get_clean();
+
+		$this->assertSame(
+			1,
+			substr_count( $output, 'class="wrap wp-mcp-ai-orchestration-dashboard"' ),
+			'Orchestration dashboard wrapper must be rendered exactly once'
+		);
+	}
 }

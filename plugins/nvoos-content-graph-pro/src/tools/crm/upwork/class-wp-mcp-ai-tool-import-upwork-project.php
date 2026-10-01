@@ -234,10 +234,15 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		// Include Upwork job URL.
+		// Include Upwork job URL. Upwork resolves by the `~<jobId>` suffix; the
+		// title slug is cosmetic, and the bare-id form redirects to the
+		// listing, so both a missing slug and a missing `~` prefix are handled
+		// defensively to guarantee a resolvable link.
 		$upwork_url = '';
 		if ( ! empty( $job_id ) ) {
-			$upwork_url   = 'https://www.upwork.com/jobs/' . $job_id;
+			$job_ref      = 0 === strpos( $job_id, '~' ) ? $job_id : '~' . $job_id;
+			$slug         = sanitize_title( $job_title );
+			$upwork_url   = 'https://www.upwork.com/jobs/' . ( '' !== $slug ? $slug . '_' : '' ) . $job_ref . '/';
 			$description .= sprintf(
 				/* translators: %s: Upwork job URL */
 				__( 'Upwork URL: %s', 'nvoos-content-graph-pro' ) . "\n",

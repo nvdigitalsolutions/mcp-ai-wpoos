@@ -102,6 +102,27 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	protected $verify_ssl;
 
 	/**
+	 * Timeout for individual discovery probes in seconds.
+	 *
+	 * Discovery issues several sequential requests; capping each probe
+	 * keeps the whole chain responsive even when a server is unreachable.
+	 *
+	 * @since 1.9.5
+	 * @var int
+	 */
+	protected $discovery_timeout;
+
+	/**
+	 * Which discovery step produced the current metadata.
+	 *
+	 * One of '', 'as_metadata', 'protected_resource', 'www_authenticate'.
+	 *
+	 * @since 1.9.5
+	 * @var string
+	 */
+	protected $metadata_source = '';
+
+	/**
 	 * Stored token data.
 	 *
 	 * @var array
@@ -121,20 +142,37 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * }
 	 */
 	public function __construct( $server_url, array $options = array() ) {
-		$this->server_url   = esc_url_raw( $server_url );
-		$this->timeout      = isset( $options['timeout'] ) ? max( 1, min( 120, absint( $options['timeout'] ) ) ) : 30;
-		$this->verify_ssl   = isset( $options['verify_ssl'] ) ? (bool) $options['verify_ssl'] : true;
-		$this->redirect_uri = rest_url( 'mcp-ai/v1/mcp-apps/oauth/callback' );
+		$this->server_url        = esc_url_raw( $server_url );
+		$this->timeout           = isset( $options['timeout'] ) ? max( 1, min( 120, absint( $options['timeout'] ) ) ) : 30;
+		$this->discovery_timeout = max( 3, min( 10, $this->timeout ) );
+		$this->verify_ssl        = isset( $options['verify_ssl'] ) ? (bool) $options['verify_ssl'] : true;
+		$this->redirect_uri      = rest_url( 'mcp-ai/v1/mcp-apps/oauth/callback' );
 	}
 
 	/**
 	 * Discover OAuth 2.0 Authorization Server metadata from the remote server.
 	 *
-	 * First tries the standard /.well-known/oauth-authorization-server endpoint.
-	 * Falls back to checking the WWW-Authenticate header on a 401 response from
-	 * the MCP endpoint.
+	 * Follows the MCP Authorization Specification discovery chain:
+	 *
+	 * 1. RFC 8414 authorization server metadata on the MCP origin, including
+	 *    the path-insertion variant (RFC 8414 §3.2) for path-scoped servers
+	 *    (e.g. https://mcp.atlassian.com/v1/mcp).
+	 * 2. RFC 9728 protected resource metadata
+	 *    (/.well-known/oauth-protected-resource, plus the path-insertion
+	 *    variant) — every advertised authorization server is tried, not just
+	 *    the first.
+	 * 3. A 401 WWW-Authenticate probe of the MCP endpoint, following the
+	 *    resource_metadata pointer when the server challenges.
+	 * 4. OpenID Connect discovery (/.well-known/openid-configuration) as a
+	 *    compatibility fallback for gateways fronting Auth0/Okta/Cognito.
+	 * 5. The WordPress REST metadata endpoint for self-hosted WP MCP servers.
+	 *
+	 * Every attempt is recorded so failures surface actionable diagnostics
+	 * (URL, HTTP status, or transport error) instead of a generic message.
 	 *
 	 * @since 1.9.0
+	 * @since 1.9.5 Extended with RFC 9728 / path-insertion / OIDC discovery
+	 *              and per-attempt diagnostics.
 	 * @return array|WP_Error OAuth metadata on success, WP_Error on failure.
 	 */
 	public function discover_metadata() {
@@ -142,62 +180,206 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			return $this->metadata;
 		}
 
-		// Try the well-known discovery endpoint first.
-		$well_known_url = $this->build_well_known_url();
+		$attempts        = array();
+		$transport_error = '';
 
-		$response = wp_remote_get(
-			$well_known_url,
-			array(
-				'timeout'   => $this->timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array(
-					'Accept' => 'application/json',
-				),
-			)
-		);
-
-		if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
-			$body = wp_remote_retrieve_body( $response );
-			$data = json_decode( $body, true );
-
-			if ( is_array( $data ) && ! empty( $data['authorization_endpoint'] ) ) {
-				$this->metadata = $data;
+		// 1. RFC 8414 authorization server metadata on the MCP origin.
+		foreach ( $this->build_as_metadata_urls() as $url ) {
+			$data = $this->fetch_metadata_document( $url, 'as', $attempts, $transport_error );
+			if ( is_array( $data ) ) {
+				$this->metadata        = $data;
+				$this->metadata_source = 'as_metadata';
 				return $this->metadata;
 			}
 		}
 
-		// Fallback: try the REST endpoint directly.
-		// WordPress sites may expose metadata at /wp-json/mcp-ai/v1/oauth/metadata
-		// without the .well-known rewrite rule being active.
-		$rest_metadata_url = $this->build_rest_metadata_url();
-		if ( '' !== $rest_metadata_url && $rest_metadata_url !== $well_known_url ) {
-			$rest_response = wp_remote_get(
-				$rest_metadata_url,
-				array(
-					'timeout'   => $this->timeout,
-					'sslverify' => $this->verify_ssl,
-					'headers'   => array(
-						'Accept' => 'application/json',
-					),
-				)
+		// 2. RFC 9728 protected resource metadata → follow every authorization server.
+		foreach ( $this->build_prm_urls() as $url ) {
+			$prm = $this->fetch_metadata_document( $url, 'prm', $attempts, $transport_error );
+			if ( ! is_array( $prm ) ) {
+				continue;
+			}
+
+			$metadata = $this->resolve_authorization_server_metadata( $prm, $attempts, $transport_error );
+			if ( is_array( $metadata ) ) {
+				$this->metadata        = $metadata;
+				$this->metadata_source = 'protected_resource';
+				return $this->metadata;
+			}
+		}
+
+		// 3. 401 WWW-Authenticate probe of the MCP endpoint.
+		$metadata = $this->discover_via_www_authenticate( $attempts, $transport_error );
+		if ( is_array( $metadata ) ) {
+			$this->metadata        = $metadata;
+			$this->metadata_source = 'www_authenticate';
+			return $this->metadata;
+		}
+
+		$message = __( 'Could not discover OAuth metadata from the remote MCP server. The server may not support OAuth 2.0 authentication.', 'mcp-ai-wpoos-pro' );
+
+		// Surface the underlying transport failure (cURL, DNS, TLS) so the
+		// admin can tell "server has no OAuth" from "site could not reach it".
+		if ( '' !== $transport_error ) {
+			$message .= ' ' . sprintf(
+				/* translators: %s: Underlying transport error, e.g. a cURL failure. */
+				__( 'The last request failed with: %s', 'mcp-ai-wpoos-pro' ),
+				$transport_error
 			);
+		}
 
-			if ( ! is_wp_error( $rest_response ) && 200 === wp_remote_retrieve_response_code( $rest_response ) ) {
-				$body = wp_remote_retrieve_body( $rest_response );
-				$data = json_decode( $body, true );
+		return new WP_Error(
+			'wp_mcp_ai_mcp_app_oauth_no_metadata',
+			$message,
+			array(
+				'attempts'   => $attempts,
+				'hint'       => __( 'If this server uses an API key or bearer token instead of browser sign-in, choose that authentication type and skip the web login.', 'mcp-ai-wpoos-pro' ),
+				'server_url' => $this->server_url,
+			)
+		);
+	}
 
-				if ( is_array( $data ) && ! empty( $data['authorization_endpoint'] ) ) {
-					$this->metadata = $data;
-					return $this->metadata;
+	/**
+	 * Fetch and validate a discovery candidate document.
+	 *
+	 * Records the outcome in the attempt log so the caller can surface
+	 * per-URL diagnostics when the whole chain fails.
+	 *
+	 * @since 1.9.5
+	 * @param string $url             Candidate URL.
+	 * @param string $kind            Document kind: 'as' (RFC 8414) or 'prm' (RFC 9728).
+	 * @param array  $attempts        Attempt log (by reference).
+	 * @param string $transport_error Last transport error message (by reference).
+	 * @return array|null Decoded document, or null when unavailable/invalid.
+	 */
+	protected function fetch_metadata_document( $url, $kind, &$attempts, &$transport_error ) {
+		if ( '' === $url ) {
+			return null;
+		}
+
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout'   => $this->discovery_timeout,
+				'sslverify' => $this->verify_ssl,
+				'headers'   => array( 'Accept' => 'application/json' ),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			$transport_error = $response->get_error_message();
+			$attempts[]      = array(
+				'url'    => $url,
+				'result' => 'transport_error',
+				'status' => 0,
+				'error'  => $transport_error,
+			);
+			return null;
+		}
+
+		$status = (int) wp_remote_retrieve_response_code( $response );
+		$data   = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== $status || ! is_array( $data ) ) {
+			$attempts[] = array(
+				'url'    => $url,
+				'result' => ( 200 === $status ) ? 'invalid_json' : 'http_' . $status,
+				'status' => $status,
+			);
+			return null;
+		}
+
+		$valid      = ( 'as' === $kind ) ? $this->metadata_is_valid( $data ) : $this->prm_is_valid( $data );
+		$attempts[] = array(
+			'url'    => $url,
+			'result' => $valid ? 'ok' : 'invalid_metadata',
+			'status' => $status,
+		);
+
+		return $valid ? $data : null;
+	}
+
+	/**
+	 * Whether an RFC 8414 authorization server metadata document is usable.
+	 *
+	 * RFC 8414 §2 requires both authorization_endpoint and token_endpoint
+	 * (the token endpoint is omitted only for the implicit grant, which the
+	 * MCP authorization code flow never uses).
+	 *
+	 * @since 1.9.5
+	 * @param array $data Decoded metadata document.
+	 * @return bool
+	 */
+	protected function metadata_is_valid( $data ) {
+		return ! empty( $data['authorization_endpoint'] ) && ! empty( $data['token_endpoint'] );
+	}
+
+	/**
+	 * Whether an RFC 9728 protected resource metadata document is usable.
+	 *
+	 * @since 1.9.5
+	 * @param array $data Decoded metadata document.
+	 * @return bool
+	 */
+	protected function prm_is_valid( $data ) {
+		return ! empty( $data['authorization_servers'] );
+	}
+
+	/**
+	 * Fetch RFC 8414 metadata from every authorization server advertised in
+	 * a protected resource metadata document (RFC 9728 §2).
+	 *
+	 * The MCP Authorization Specification instructs clients to try each
+	 * advertised server, not just the first — providers commonly rotate or
+	 * regionalise their authorization servers.
+	 *
+	 * @since 1.9.5
+	 * @param array  $prm             Protected resource metadata document.
+	 * @param array  $attempts        Attempt log (by reference).
+	 * @param string $transport_error Last transport error message (by reference).
+	 * @return array|null RFC 8414 metadata, or null when none resolve.
+	 */
+	protected function resolve_authorization_server_metadata( $prm, &$attempts, &$transport_error ) {
+		$servers = $prm['authorization_servers'];
+		if ( ! is_array( $servers ) ) {
+			$servers = array( $servers );
+		}
+
+		foreach ( $servers as $auth_server ) {
+			$auth_server = is_string( $auth_server ) ? trim( $auth_server ) : '';
+			if ( '' === $auth_server ) {
+				continue;
+			}
+
+			foreach ( $this->build_as_metadata_urls_for_server( $auth_server ) as $url ) {
+				$data = $this->fetch_metadata_document( $url, 'as', $attempts, $transport_error );
+				if ( is_array( $data ) ) {
+					return $data;
 				}
 			}
 		}
 
-		// Fallback: probe the MCP endpoint and check WWW-Authenticate header.
+		return null;
+	}
+
+	/**
+	 * Probe the MCP endpoint and follow a 401 WWW-Authenticate challenge.
+	 *
+	 * Per the MCP Authorization Specification, servers that require OAuth
+	 * respond to unauthenticated requests with:
+	 * WWW-Authenticate: Bearer resource_metadata="https://…"
+	 *
+	 * @since 1.9.0
+	 * @since 1.9.5 Reworked onto the shared attempt log + PRM/AS resolvers.
+	 * @param array  $attempts        Attempt log (by reference).
+	 * @param string $transport_error Last transport error message (by reference).
+	 * @return array|null RFC 8414 metadata, or null when the probe fails.
+	 */
+	protected function discover_via_www_authenticate( &$attempts, &$transport_error ) {
 		$mcp_response = wp_remote_post(
 			$this->server_url,
 			array(
-				'timeout'   => $this->timeout,
+				'timeout'   => $this->discovery_timeout,
 				'sslverify' => $this->verify_ssl,
 				'headers'   => array(
 					'Content-Type' => 'application/json',
@@ -214,89 +396,51 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			)
 		);
 
-		if ( ! is_wp_error( $mcp_response ) ) {
-			$status_code = wp_remote_retrieve_response_code( $mcp_response );
+		$status_code = is_wp_error( $mcp_response ) ? 0 : (int) wp_remote_retrieve_response_code( $mcp_response );
+		$attempts[]  = array(
+			'url'    => $this->server_url,
+			'result' => is_wp_error( $mcp_response ) ? 'transport_error' : 'http_' . $status_code,
+			'status' => $status_code,
+			'error'  => is_wp_error( $mcp_response ) ? $mcp_response->get_error_message() : '',
+		);
 
-			if ( 401 === $status_code || 403 === $status_code ) {
-				$www_auth = wp_remote_retrieve_header( $mcp_response, 'www-authenticate' );
+		if ( is_wp_error( $mcp_response ) ) {
+			$transport_error = $mcp_response->get_error_message();
+			return null;
+		}
 
-				// Fallback: if no WWW-Authenticate header, check JSON error body.
-				// Some servers embed OAuth metadata in the error response JSON.
-				if ( empty( $www_auth ) ) {
-					$resp_body = wp_remote_retrieve_body( $mcp_response );
-					$json_data = json_decode( $resp_body, true );
-					if ( is_array( $json_data ) && ! empty( $json_data['data']['www_authenticate'] ) ) {
-						$www_auth = $json_data['data']['www_authenticate'];
-					}
-				}
+		if ( 401 !== $status_code && 403 !== $status_code ) {
+			return null;
+		}
 
-				if ( ! empty( $www_auth ) ) {
-					$parsed = $this->parse_www_authenticate( $www_auth );
+		$www_auth = wp_remote_retrieve_header( $mcp_response, 'www-authenticate' );
 
-					if ( ! empty( $parsed['resource_metadata'] ) ) {
-						// Fetch protected resource metadata (RFC 9728).
-						$meta_response = wp_remote_get(
-							$parsed['resource_metadata'],
-							array(
-								'timeout'   => $this->timeout,
-								'sslverify' => $this->verify_ssl,
-								'headers'   => array( 'Accept' => 'application/json' ),
-							)
-						);
-
-						if ( ! is_wp_error( $meta_response ) && 200 === wp_remote_retrieve_response_code( $meta_response ) ) {
-							$meta_body = wp_remote_retrieve_body( $meta_response );
-							$meta_data = json_decode( $meta_body, true );
-
-							if ( is_array( $meta_data ) && ! empty( $meta_data['authorization_servers'] ) ) {
-								$auth_server = is_array( $meta_data['authorization_servers'] )
-									? reset( $meta_data['authorization_servers'] )
-									: $meta_data['authorization_servers'];
-
-								// Fetch authorization server metadata.
-								// Try well-known URL first, then REST API fallback.
-								$metadata_fetched = false;
-								$auth_meta_urls   = array(
-									rtrim( $auth_server, '/' ) . '/.well-known/oauth-authorization-server',
-									rtrim( $auth_server, '/' ) . '/wp-json/mcp-ai/v1/oauth/metadata',
-								);
-
-								foreach ( $auth_meta_urls as $auth_meta_url ) {
-									$auth_response = wp_remote_get(
-										$auth_meta_url,
-										array(
-											'timeout'   => $this->timeout,
-											'sslverify' => $this->verify_ssl,
-											'headers'   => array( 'Accept' => 'application/json' ),
-										)
-									);
-
-									if ( ! is_wp_error( $auth_response ) && 200 === wp_remote_retrieve_response_code( $auth_response ) ) {
-										$auth_body = wp_remote_retrieve_body( $auth_response );
-										$auth_data = json_decode( $auth_body, true );
-
-										if ( is_array( $auth_data ) && ! empty( $auth_data['authorization_endpoint'] ) ) {
-											$this->metadata   = $auth_data;
-											$metadata_fetched = true;
-											break;
-										}
-									}
-								}
-
-								if ( $metadata_fetched ) {
-									return $this->metadata;
-								}
-							}
-						}
-					}
-				}
+		// Fallback: if no WWW-Authenticate header, check JSON error body.
+		// Some servers embed OAuth metadata in the error response JSON.
+		if ( empty( $www_auth ) ) {
+			$resp_body = wp_remote_retrieve_body( $mcp_response );
+			$json_data = json_decode( $resp_body, true );
+			if ( is_array( $json_data ) && ! empty( $json_data['data']['www_authenticate'] ) ) {
+				$www_auth = $json_data['data']['www_authenticate'];
 			}
 		}
 
-		return new WP_Error(
-			'wp_mcp_ai_mcp_app_oauth_no_metadata',
-			__( 'Could not discover OAuth metadata from the remote MCP server. The server may not support OAuth 2.0 authentication.', 'mcp-ai-wpoos-pro' )
-		);
+		if ( empty( $www_auth ) ) {
+			return null;
+		}
+
+		$parsed = $this->parse_www_authenticate( $www_auth );
+		if ( empty( $parsed['resource_metadata'] ) ) {
+			return null;
+		}
+
+		// Fetch protected resource metadata (RFC 9728).
+		$prm = $this->fetch_metadata_document( $parsed['resource_metadata'], 'prm', $attempts, $transport_error );
+		if ( ! is_array( $prm ) ) {
+			return null;
+		}
+
+		return $this->resolve_authorization_server_metadata( $prm, $attempts, $transport_error );
 	}
 
 	/**
@@ -332,7 +476,8 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		if ( empty( $registration_endpoint ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mcp_app_oauth_no_registration',
-				__( 'The remote MCP server does not support dynamic client registration.', 'mcp-ai-wpoos-pro' )
+				__( 'The remote MCP server does not support dynamic client registration.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
 			);
 		}
 
@@ -364,7 +509,8 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 					/* translators: %s: Error message. */
 					__( 'Failed to register OAuth client: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
-				)
+				),
+				array( 'status' => 502 )
 			);
 		}
 
@@ -377,18 +523,29 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			return new WP_Error(
 				'wp_mcp_ai_mcp_app_oauth_registration_error',
 				$error_desc,
-				array( 'status' => $status_code )
+				array(
+					'status'      => $status_code,
+					// Surface the OAuth error code (e.g. invalid_redirect_uri)
+					// so callers can react, e.g. by falling back to a loopback
+					// redirect URI for providers like Upwork.
+					'oauth_error' => isset( $data['error'] ) ? sanitize_key( $data['error'] ) : '',
+				)
 			);
 		}
 
 		if ( ! is_array( $data ) || empty( $data['client_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mcp_app_oauth_registration_invalid',
-				__( 'Invalid registration response from remote server.', 'mcp-ai-wpoos-pro' )
+				__( 'Invalid registration response from remote server.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 502 )
 			);
 		}
 
-		$this->client_id = sanitize_key( $data['client_id'] );
+		// Preserve the client ID verbatim — dynamic-registration client IDs
+		// are opaque strings that may carry characters sanitize_key() would
+		// strip (underscores, dots, case), which would break the callback
+		// exchange. sanitize_text_field() only removes HTML/whitespace noise.
+		$this->client_id = sanitize_text_field( $data['client_id'] );
 
 		return $data;
 	}
@@ -471,6 +628,10 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 
 		if ( null !== $scope && '' !== $scope ) {
 			$params['scope'] = $scope;
+		} elseif ( ! empty( $metadata['default_scope'] ) ) {
+			// Providers such as Flowhub advertise a default scope in their
+			// metadata; use it when the caller did not request one.
+			$params['scope'] = $metadata['default_scope'];
 		}
 
 		// Include resource indicator for the MCP server (RFC 8707).
@@ -512,18 +673,14 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			'resource'      => $this->server_url,
 		);
 
-		$response = wp_remote_post(
-			$token_endpoint,
-			array(
-				'timeout'   => $this->timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array(
-					'Content-Type' => 'application/json',
-					'Accept'       => 'application/json',
-				),
-				'body'      => wp_json_encode( $body ),
-			)
-		);
+		// Public clients (token_endpoint_auth_method=none) still identify
+		// themselves in the token request; providers such as Upwork reject
+		// the exchange without it ("Missing parameters: client_id").
+		if ( ! empty( $this->client_id ) ) {
+			$body['client_id'] = $this->client_id;
+		}
+
+		$response = $this->post_token_endpoint( $token_endpoint, $body );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
@@ -589,18 +746,13 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			'resource'      => $this->server_url,
 		);
 
-		$response = wp_remote_post(
-			$token_endpoint,
-			array(
-				'timeout'   => $this->timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array(
-					'Content-Type' => 'application/json',
-					'Accept'       => 'application/json',
-				),
-				'body'      => wp_json_encode( $body ),
-			)
-		);
+		// Same as the code exchange: providers such as Upwork require the
+		// client ID for public clients on refresh as well.
+		if ( ! empty( $this->client_id ) ) {
+			$body['client_id'] = $this->client_id;
+		}
+
+		$response = $this->post_token_endpoint( $token_endpoint, $body );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
@@ -666,17 +818,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			return false;
 		}
 
-		$response = wp_remote_post(
-			$revocation_endpoint,
-			array(
-				'timeout'   => $this->timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array(
-					'Content-Type' => 'application/json',
-				),
-				'body'      => wp_json_encode( array( 'token' => $token ) ),
-			)
-		);
+		$response = $this->post_token_endpoint( $revocation_endpoint, array( 'token' => $token ) );
 
 		return ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response );
 	}
@@ -792,6 +934,18 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	}
 
 	/**
+	 * Get which discovery step produced the current metadata.
+	 *
+	 * One of '', 'as_metadata', 'protected_resource', 'www_authenticate'.
+	 *
+	 * @since 1.9.5
+	 * @return string
+	 */
+	public function get_metadata_source() {
+		return $this->metadata_source;
+	}
+
+	/**
 	 * Get the registered client ID.
 	 *
 	 * @since 1.9.0
@@ -812,9 +966,87 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		$this->client_id = sanitize_key( $client_id );
 	}
 
+	/**
+	 * Set the redirect URI.
+	 *
+	 * Used to restore the flow-specific redirect URI during the callback
+	 * exchange (which runs in a fresh request). Required for manual loopback
+	 * flows where the authorize request used a localhost URI that differs
+	 * from the default REST callback URL.
+	 *
+	 * @since 1.9.0
+	 * @param string $redirect_uri Redirect URI.
+	 * @return void
+	 */
+	public function set_redirect_uri( $redirect_uri ) {
+		$this->redirect_uri = esc_url_raw( $redirect_uri );
+	}
+
+	/**
+	 * Set the OAuth state value.
+	 *
+	 * The callback exchange runs in a fresh request, so the CSRF state
+	 * generated during initiation must be restored before the code exchange
+	 * validates it.
+	 *
+	 * @since 1.9.0
+	 * @param string $state State value.
+	 * @return void
+	 */
+	public function set_state( $state ) {
+		$this->state = sanitize_text_field( $state );
+	}
+
 	// -----------------------------------------------------------------------
 	// Utility Methods
 	// -----------------------------------------------------------------------
+
+	/**
+	 * POST to an OAuth endpoint with content negotiation.
+	 *
+	 * OAuth 2.0 token/revocation requests are specified as form-encoded, but
+	 * some providers only accept JSON while others (e.g. Upwork) reject JSON
+	 * with HTTP 415. Send JSON first to preserve existing behaviour, then
+	 * retry with form-encoding when the endpoint refuses the media type.
+	 *
+	 * @since 1.9.0
+	 * @param string $endpoint Endpoint URL.
+	 * @param array  $body     Request parameters.
+	 * @return array|WP_Error Response array or WP_Error from wp_remote_post.
+	 */
+	protected function post_token_endpoint( $endpoint, array $body ) {
+		$response = wp_remote_post(
+			$endpoint,
+			array(
+				'timeout'   => $this->timeout,
+				'sslverify' => $this->verify_ssl,
+				'headers'   => array(
+					'Content-Type' => 'application/json',
+					'Accept'       => 'application/json',
+				),
+				'body'      => wp_json_encode( $body ),
+			)
+		);
+
+		if ( ! is_wp_error( $response ) && 415 === wp_remote_retrieve_response_code( $response ) ) {
+			// The endpoint does not accept JSON. Retry with form-encoded
+			// parameters, which WordPress encodes from the array body.
+			$response = wp_remote_post(
+				$endpoint,
+				array(
+					'timeout'   => $this->timeout,
+					'sslverify' => $this->verify_ssl,
+					'headers'   => array(
+						'Content-Type' => 'application/x-www-form-urlencoded',
+						'Accept'       => 'application/json',
+					),
+					'body'      => $body,
+				)
+			);
+		}
+
+		return $response;
+	}
 
 	/**
 	 * Compute PKCE S256 challenge from verifier.
@@ -842,17 +1074,38 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	/**
 	 * Parse the WWW-Authenticate header to extract OAuth metadata.
 	 *
+	 * Handles multiple comma-separated challenges per RFC 7235 §2.1 and
+	 * collects the key="value" parameters from each (RFC 7235 §2.2 quoted
+	 * strings), which is how the MCP Authorization Specification transports
+	 * the resource_metadata and scope pointers:
+	 *
+	 *   WWW-Authenticate: Bearer resource_metadata="https://…", scope="mcp"
+	 *
 	 * @since 1.9.0
+	 * @since 1.9.5 Rewritten to split challenges instead of matching across
+	 *              the whole header, so a leading Basic challenge (or any
+	 *              other comma-separated challenge) no longer corrupts the
+	 *              parameter extraction.
 	 * @param string $header WWW-Authenticate header value.
-	 * @return array Parsed parameters.
+	 * @return array Parsed parameters (lowercased keys).
 	 */
 	protected function parse_www_authenticate( $header ) {
 		$params = array();
 
-		// Match key="value" pairs.
-		if ( preg_match_all( '/([a-zA-Z_]+)\s*=\s*"([^"]*)"/', $header, $matches, PREG_SET_ORDER ) ) {
-			foreach ( $matches as $match ) {
-				$params[ strtolower( $match[1] ) ] = $match[2];
+		foreach ( $this->split_challenges( (string) $header ) as $challenge ) {
+			// Strip the auth-scheme token when present (e.g. "Bearer …").
+			$param_string = $challenge;
+			if ( preg_match( '/^([a-zA-Z0-9._~+\/-]+)\s+(.+)$/', $challenge, $scheme_match ) ) {
+				$param_string = $scheme_match[2];
+			}
+
+			if ( preg_match_all( '/([a-zA-Z_][a-zA-Z0-9_-]*)\s*=\s*"([^"]*)"/', $param_string, $matches, PREG_SET_ORDER ) ) {
+				foreach ( $matches as $match ) {
+					$key = strtolower( $match[1] );
+					if ( ! isset( $params[ $key ] ) ) {
+						$params[ $key ] = $match[2];
+					}
+				}
 			}
 		}
 
@@ -860,12 +1113,49 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	}
 
 	/**
-	 * Build the well-known OAuth metadata URL from the server URL.
+	 * Split a WWW-Authenticate header into individual challenges.
 	 *
-	 * @since 1.9.0
-	 * @return string
+	 * Challenges are comma-separated, but commas inside quoted strings are
+	 * data — split only on commas outside quotes (RFC 7235 §2.1).
+	 *
+	 * @since 1.9.5
+	 * @param string $header WWW-Authenticate header value.
+	 * @return string[] Non-empty trimmed challenges.
 	 */
-	protected function build_well_known_url() {
+	protected function split_challenges( $header ) {
+		$challenges = array();
+		$current    = '';
+		$in_quotes  = false;
+		$length     = strlen( $header );
+
+		for ( $i = 0; $i < $length; $i++ ) {
+			$char = $header[ $i ];
+
+			if ( '"' === $char ) {
+				$in_quotes = ! $in_quotes;
+			}
+
+			if ( ',' === $char && ! $in_quotes ) {
+				$challenges[] = trim( $current );
+				$current      = '';
+				continue;
+			}
+
+			$current .= $char;
+		}
+
+		$challenges[] = trim( $current );
+
+		return array_values( array_filter( $challenges ) );
+	}
+
+	/**
+	 * Get the origin (scheme://host[:port]) of the configured server URL.
+	 *
+	 * @since 1.9.5
+	 * @return string Origin, or '' when the URL is malformed.
+	 */
+	protected function get_origin() {
 		$parts = wp_parse_url( $this->server_url );
 		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
 			return '';
@@ -875,7 +1165,124 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		$host   = $parts['host'];
 		$port   = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
 
-		return $scheme . '://' . $host . $port . '/.well-known/oauth-authorization-server';
+		return $scheme . '://' . $host . $port;
+	}
+
+	/**
+	 * Get the normalized path of the configured server URL.
+	 *
+	 * @since 1.9.5
+	 * @return string Path with leading slash and no trailing slash, or ''.
+	 */
+	protected function get_path() {
+		$parts = wp_parse_url( $this->server_url );
+		if ( ! is_array( $parts ) ) {
+			return '';
+		}
+
+		$path = trim( isset( $parts['path'] ) ? $parts['path'] : '', '/' );
+
+		return '' === $path ? '' : '/' . $path;
+	}
+
+	/**
+	 * Build RFC 8414 authorization server metadata candidate URLs for the
+	 * configured server, in priority order.
+	 *
+	 * @since 1.9.5
+	 * @return string[] Candidate URLs.
+	 */
+	protected function build_as_metadata_urls() {
+		$origin = $this->get_origin();
+		if ( '' === $origin ) {
+			return array();
+		}
+
+		$urls = $this->build_as_metadata_urls_for_server( $origin );
+
+		// RFC 8414 §3.2 path insertion — insert the resource path after the
+		// well-known segment (e.g. /.well-known/oauth-authorization-server/v1/mcp).
+		$path = $this->get_path();
+		if ( '' !== $path ) {
+			$urls[] = $origin . '/.well-known/oauth-authorization-server' . $path;
+		}
+
+		// Self-hosted WordPress MCP servers expose the same document at the
+		// REST endpoint when the .well-known rewrite rule is not active.
+		$rest_url = $this->build_rest_metadata_url();
+		if ( '' !== $rest_url ) {
+			$urls[] = $rest_url;
+		}
+
+		return array_values( array_unique( $urls ) );
+	}
+
+	/**
+	 * Build RFC 8414 metadata candidate URLs for an authorization server URL.
+	 *
+	 * Includes the path-insertion variant (RFC 8414 §3.2) for path-scoped
+	 * servers and the OpenID Connect discovery endpoint as a compatibility
+	 * fallback for gateways fronting Auth0 / Okta / Cognito / Keycloak.
+	 *
+	 * @since 1.9.5
+	 * @param string $server_url Authorization server URL.
+	 * @return string[] Candidate URLs.
+	 */
+	protected function build_as_metadata_urls_for_server( $server_url ) {
+		// Some servers advertise the full metadata URL itself in
+		// authorization_servers — fetch it directly in that case.
+		if ( false !== strpos( $server_url, '/.well-known/oauth-authorization-server' ) ) {
+			return array( rtrim( $server_url, '/' ) );
+		}
+
+		$parts = wp_parse_url( $server_url );
+		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
+			return array();
+		}
+
+		$scheme = isset( $parts['scheme'] ) ? $parts['scheme'] : 'https';
+		$origin = $scheme . '://' . $parts['host'] . ( isset( $parts['port'] ) ? ':' . $parts['port'] : '' );
+		$path   = trim( isset( $parts['path'] ) ? $parts['path'] : '', '/' );
+
+		$urls = array( $origin . '/.well-known/oauth-authorization-server' );
+
+		// RFC 8414 §3.2 path insertion — e.g. /.well-known/oauth-authorization-server/v1/mcp.
+		if ( '' !== $path ) {
+			$urls[] = $origin . '/.well-known/oauth-authorization-server/' . $path;
+		}
+
+		// OIDC discovery fallback (see method docblock).
+		$urls[] = $origin . '/.well-known/openid-configuration';
+
+		// Self-hosted WordPress authorization servers expose the document at
+		// the REST endpoint when the .well-known rewrite rule is inactive.
+		$urls[] = $origin . '/wp-json/mcp-ai/v1/oauth/metadata';
+
+		return array_values( array_unique( $urls ) );
+	}
+
+	/**
+	 * Build RFC 9728 protected resource metadata candidate URLs.
+	 *
+	 * @since 1.9.5
+	 * @return string[] Candidate URLs.
+	 */
+	protected function build_prm_urls() {
+		$origin = $this->get_origin();
+		if ( '' === $origin ) {
+			return array();
+		}
+
+		$urls = array( $origin . '/.well-known/oauth-protected-resource' );
+
+		// Path-insertion variant — API gateways commonly serve the document
+		// at /.well-known/oauth-protected-resource/mcp.
+		$path = $this->get_path();
+		if ( '' !== $path ) {
+			$urls[] = $origin . '/.well-known/oauth-protected-resource' . $path;
+		}
+
+		return array_values( array_unique( $urls ) );
 	}
 
 	/**

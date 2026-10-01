@@ -258,12 +258,12 @@ if ( ! class_exists( 'WP_MCP_AI_Addons_Page' ) ) {
 					'requires'    => __( 'NV oOS', 'mcp-ai-wpoos-pro' ),
 					'license'     => __( 'Proprietary', 'mcp-ai-wpoos-pro' ),
 				),
-				'crocoblock-ds'              => array(
-					'name'        => __( 'Crocoblock DS', 'mcp-ai-wpoos-pro' ),
+				'nvoos-design-system'        => array(
+					'name'        => __( 'Design System', 'mcp-ai-wpoos-pro' ),
 					'icon'        => '🎨',
-					'description' => __( 'Design token system for the Crocoblock suite with DTCG export and accessibility tokens.', 'mcp-ai-wpoos-pro' ),
-					'plugin_file' => 'nvoos-crocoblock-ds/nvoos-crocoblock-ds.php',
-					'zip_pattern' => 'nvoos-crocoblock-ds-v*.zip',
+					'description' => __( 'Design token system with DTCG export, accessibility tokens, token-driven email templates, and AI email-template tools.', 'mcp-ai-wpoos-pro' ),
+					'plugin_file' => 'nvoos-design-system/nvoos-design-system.php',
+					'zip_pattern' => 'nvoos-design-system-v*.zip',
 					'requires'    => __( 'None', 'mcp-ai-wpoos-pro' ),
 					'license'     => __( 'GPL-3.0', 'mcp-ai-wpoos-pro' ),
 				),

@@ -21,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cloud-vision-client.php';
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-url-guard.php';
 require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-image-dhash.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
@@ -317,6 +318,29 @@ class WP_MCP_AI_Tool_Identify_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			}
 		}
 
+		// ── Rung 3c: RF-DETR detection (Pro, config-gated, deterministic) ──
+		// Reported as an additional detection source alongside the Cloud Vision
+		// rung. Class-guarded so Base installs (no Pro addon) skip cleanly.
+		if ( class_exists( 'WP_MCP_AI_Roboflow_Inference_Service' ) ) {
+			$rfdetr_service = new WP_MCP_AI_Roboflow_Inference_Service();
+
+			if ( $rfdetr_service->is_configured() ) {
+				$rfdetr_result = $this->run_rfdetr_detection( $rfdetr_service, $image_url, $image_content, $attachment_id, $context );
+
+				if ( is_wp_error( $rfdetr_result ) ) {
+					$skipped['rfdetr_detection'] = $rfdetr_result->get_error_code();
+				} elseif ( ! empty( $rfdetr_result['detections'] ) ) {
+					$data['rfdetr_detections'] = $rfdetr_result;
+				} else {
+					$skipped['rfdetr_detection'] = 'no_detections';
+				}
+			} else {
+				$skipped['rfdetr_detection'] = 'not_configured';
+			}
+		} else {
+			$skipped['rfdetr_detection'] = 'pro_addon_required';
+		}
+
 		// ── Rung 4: reverse-image web search (opt-in, Pro, key-gated) ──
 		if ( $include_web_search ) {
 			if ( class_exists( 'WP_MCP_AI_Tool_Search_Similar_Images' ) ) {
@@ -376,6 +400,129 @@ class WP_MCP_AI_Tool_Identify_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	}
 
 	/**
+	 * Run the RF-DETR rung through the Pro Roboflow service.
+	 *
+	 * Only invoked when WP_MCP_AI_Roboflow_Inference_Service exists (Pro addon
+	 * active) and is configured. Resolves the image to local bytes, enforces
+	 * the payload cap, and returns a slim detection payload — never a vision
+	 * LLM call.
+	 *
+	 * @param WP_MCP_AI_Roboflow_Inference_Service $service       Roboflow service.
+	 * @param string                               $image_url     Public image URL (may be empty).
+	 * @param string                               $image_content Base64 image content (may be empty).
+	 * @param int                                  $attachment_id Local attachment ID (0 when absent).
+	 * @param array                                $context       Execution context.
+	 * @return array|WP_Error Slim detection payload or error.
+	 */
+	private function run_rfdetr_detection( $service, $image_url, $image_content, $attachment_id, array $context ) {
+		$file_path = '';
+		$is_temp   = false;
+
+		if ( $attachment_id > 0 ) {
+			$file_path = get_attached_file( $attachment_id );
+		} elseif ( ! empty( $image_url ) ) {
+			$resolved_id = attachment_url_to_postid( $image_url );
+
+			if ( $resolved_id > 0 && 'attachment' === get_post_type( $resolved_id ) ) {
+				$file_path = get_attached_file( $resolved_id );
+			} else {
+				$guard = WP_MCP_AI_Url_Guard::validate( $image_url );
+				if ( is_wp_error( $guard ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_identify_image_rfdetr_blocked_url',
+						$guard->get_error_message(),
+						array( 'status' => 403 )
+					);
+				}
+
+				if ( ! function_exists( 'download_url' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/file.php';
+				}
+
+				$file_path = download_url( $image_url, 30 );
+				$is_temp   = true;
+			}
+		} elseif ( ! empty( $image_content ) ) {
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding caller-provided image content for inference; no secret handling involved.
+			$decoded = base64_decode( $image_content, true );
+
+			if ( false === $decoded || '' === $decoded ) {
+				return new WP_Error(
+					'wp_mcp_ai_identify_image_rfdetr_invalid_content',
+					__( 'image_content is not valid base64-encoded image data.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$file_path = wp_tempnam( 'wpoos-identify-rfdetr' );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing temporary image for inference.
+			if ( false === file_put_contents( $file_path, $decoded ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_identify_image_rfdetr_temp_error',
+					__( 'Could not write the image content to a temporary file.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			$is_temp = true;
+		}
+
+		if ( '' === $file_path || ! file_exists( $file_path ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_identify_image_rfdetr_no_source',
+				__( 'No readable image source for RF-DETR detection.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$image_data = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
+
+		if ( $is_temp ) {
+			wp_delete_file( $file_path );
+		}
+
+		if ( false === $image_data ) {
+			return new WP_Error(
+				'wp_mcp_ai_identify_image_rfdetr_unreadable',
+				__( 'The image could not be read for RF-DETR detection.', 'mcp-ai-wpoos' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
+		$encoded = base64_encode( $image_data );
+
+		if ( strlen( $encoded ) > WP_MCP_AI_Roboflow_Inference_Service::MAX_PAYLOAD_BYTES ) {
+			return new WP_Error(
+				'wp_mcp_ai_identify_image_rfdetr_too_large',
+				__( 'The image exceeds the maximum inference payload size.', 'mcp-ai-wpoos' ),
+				array( 'status' => 413 )
+			);
+		}
+
+		$result = $service->infer( $encoded, $service->get_default_model(), 0.5 );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$detections = array();
+		foreach ( $result['detections'] as $det ) {
+			$detections[] = array(
+				'label'      => $det['label'],
+				'confidence' => $det['confidence'],
+				'box'        => isset( $det['box'] ) ? $det['box'] : null,
+			);
+		}
+
+		return array(
+			'provider'    => 'roboflow',
+			'model'       => $result['model'],
+			'detections'  => $detections,
+			'total_count' => count( $detections ),
+		);
+	}
+
+	/**
 	 * Compute a weighted confidence score across completed rungs.
 	 *
 	 * @param array $data Completed rung data.
@@ -424,6 +571,20 @@ class WP_MCP_AI_Tool_Identify_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			}
 
 			$confidence += 0.5 * $top_score;
+		}
+
+		// RF-DETR detection (Pro rung): deterministic boxes corroborate —
+		// weighted by the strongest detection confidence.
+		if ( ! empty( $data['rfdetr_detections']['detections'] ) ) {
+			$top_confidence = 0.0;
+
+			foreach ( $data['rfdetr_detections']['detections'] as $detection ) {
+				if ( $detection['confidence'] > $top_confidence ) {
+					$top_confidence = $detection['confidence'];
+				}
+			}
+
+			$confidence += 0.4 * $top_confidence;
 		}
 
 		// Layout composition adds mild corroboration.

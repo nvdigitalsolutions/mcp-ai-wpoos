@@ -520,6 +520,30 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				// Allow updating the broadcast message / channels in update_schedule.
 				$updated['broadcast_config'] = $data['broadcast_config'];
 			}
+			if ( isset( $data['workflow_steps'] ) && is_array( $data['workflow_steps'] ) ) {
+				// Workflow steps replace the existing ordered tool chain — the
+				// same semantics as create_schedule — so step arguments can be
+				// corrected in place instead of recreating the schedule.
+				if ( self::TYPE_WORKFLOW !== ( isset( $existing['schedule_type'] ) ? $existing['schedule_type'] : '' ) ) {
+					return new WP_Error( 'invalid_schedule_type', __( 'workflow_steps can only be updated on workflow-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+
+				$sanitized_steps = array();
+				foreach ( $data['workflow_steps'] as $step ) {
+					if ( ! is_array( $step ) || empty( $step['tool_slug'] ) ) {
+						continue;
+					}
+					$sanitized_steps[] = array(
+						'tool_slug' => sanitize_key( $step['tool_slug'] ),
+						'arguments' => isset( $step['arguments'] ) && is_array( $step['arguments'] ) ? $step['arguments'] : array(),
+						'label'     => isset( $step['label'] ) ? sanitize_text_field( $step['label'] ) : '',
+					);
+				}
+				if ( empty( $sanitized_steps ) ) {
+					return new WP_Error( 'invalid_workflow_steps', __( 'No valid workflow steps were provided.', 'mcp-ai-wpoos-pro' ) );
+				}
+				$updated['workflow_steps'] = $sanitized_steps;
+			}
 			if ( isset( $data['assistant_config'] ) && is_array( $data['assistant_config'] ) ) {
 				// Merge with the stored config so fields not exposed in the edit modal
 				// (context, max_agentic_iterations) survive partial updates.

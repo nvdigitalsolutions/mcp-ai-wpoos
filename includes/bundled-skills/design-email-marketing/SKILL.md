@@ -20,7 +20,19 @@ Use this skill when creating email campaigns, writing newsletters, designing aut
 | `toolkit_cpt` (action: `get_schema` on `mcp_ai_customer` / `mcp_ai_lead`) | Discover available CRM fields before querying customer or lead records |
 | `create_post_validated` | Create email newsletter drafts as WordPress posts for review |
 | `paper_store_write` | Save email templates and sequences to the Paper Store for reuse |
+| `nds_list_email_templates` / `nds_preview_email_template` | List and preview the NV oOS Design System email templates (built-in + custom + AI drafts) |
+| `nds_generate_email_template` | Generate a new branded email template from a prompt — saved as a draft with an audit report (activate separately after review) |
+| `nds_audit_email_template` | Audit a template against WCAG/EMC accessibility, structure, dark mode, and the 100 KB size budget before activation |
+| `nds_set_active_email_template` / `nds_test_send_email` | Activate the template that wraps all outgoing `wp_mail()` emails (gated) and send a test |
+| `nds_export_email_template` / `nds_import_email_template` | JSON backup/transfer — export can also mirror to the Paper Store (`mirror_to_paper_store`) and import from it (`paper_store_collection` + `paper_store_record_id`) |
 | `nv_oos_*_agent_remote_wp_connection` | Pull customer/order data from remote WooCommerce sites for email targeting |
+
+> **Template/branding note:** the NV oOS Design System addon is the
+> template layer for these campaigns — the active template wraps every
+> outgoing WordPress email with brand tokens (Settings → Design System →
+> Emails). This skill writes the copy; the `nds_*` tools own the template
+> and branding. The WooCommerce rebrand toggle (`nds_email_wc_rebrand`)
+> styles WC order emails from the same token palette.
 
 > **CRM note:** Use `design-crm` to manage the full customer and lead lifecycle — this skill focuses on email content and segmentation, not CRM record management.
 
@@ -355,6 +367,7 @@ RIGHT:
 - **SMS-only workflows** — use `design-communications` for transactional SMS and chat-based customer interactions.
 - **Analytics and performance tracking** — use `design-analytics-reporting` to measure open rates, click rates, and conversion data.
 - **Content creation for social/website** — use `design-social-content` or `design-content-research` for non-email content.
+- **Email template/branding infrastructure** — use the NV oOS Design System addon's `nds_*` tools (Settings → Design System → Emails) for template generation, auditing, activation, and Paper Store mirroring.
 
 ## Cross-references
 
@@ -365,3 +378,4 @@ RIGHT:
 - Run **`design-brand-kit`** to ensure email visuals and tone match brand guidelines.
 - Run **`design-image-generation`** to create email hero images — check your tool list for the Gemini image tool.
 - Run **`design-crm`** to manage customer and lead records — use `toolkit_cpt` on `mcp_ai_customer` and `mcp_ai_lead` for segmentation data.
+- Run the **`nds_*` tools** (NV oOS Design System addon) to build, audit, and brand the templates these campaigns send through — see the Available Tools table.

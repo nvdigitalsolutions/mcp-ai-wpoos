@@ -6,16 +6,16 @@ license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.84"
-  plugin-version-tested: "1.1.84"
-  last-updated: "2026-09-24"
+  plugin-version: "1.1.91"
+  plugin-version-tested: "1.1.91"
+  last-updated: "2026-10-01"
 ---
 
 # Elementor MCP Connections — MCP Apps on NV oOS Assistants
 
 Operational guide for connecting Elementor MCP servers (remote WordPress +
 Elementor sites) to NV oOS assistants through the Pro "MCP Apps" subsystem.
-Verified against plugin v1.1.84 source (`addons/pro/includes/mcp-apps/`,
+Verified against plugin v1.1.91 source (`addons/pro/includes/mcp-apps/`,
 `includes/assistants/metaboxes/class-wp-mcp-ai-metabox-mcp-apps.php`,
 `addons/pro/includes/slash-commands/`) and the Elementor MCP / WordPress MCP
 Adapter public documentation (2026-09).
@@ -125,6 +125,13 @@ storage), create it once in **NV oOS Pro → Remote Sites → Add Connection**:
    (`connection_ref` + label + enabled) — the credential lives centrally and
    is resolved (decrypt-on-use) at chat time. Rotating the application
    password in Remote Sites updates every referencing assistant.
+   **(v1.1.90):** the dropdown also lists **Upwork-in-MCP-mode** connections
+   (labelled `Name (Upwork MCP — https://mcp.upwork.com/mcp)`) —
+   `resolve_connection_ref()` resolves those refs via
+   `build_upwork_mcp_app_config()` (official gateway + the decrypted central
+   `mcp_oauth` blob), the import validator no longer auto-disables them, and
+   `finalize_oauth_flow()` persists the reference entry onto the assistant
+   after the OAuth login completes.
 
 ### Path B — inline MCP App (per-assistant)
 
@@ -135,7 +142,7 @@ by `WP_MCP_AI_MCP_App_Registry::sanitize_app_config()`):
 |---|---|
 | `label` | Friendly name; drives the bridge slug (`mcp_app_<label>_<tool>`). Use something short like `elementor` so slugs read `mcp_app_elementor_read_page`. |
 | `server_url` | Full MCP endpoint URL from the Elementor-generated prompt. Must pass `is_url_allowed()` (scheme http/https + host + allowlist when configured). Omitted on reference entries. |
-| `connection_ref` | (Reference mode) ID of a central `mcp_server` Remote Sites connection. Resolved at chat time; the row renders read-only with a "Managed in Remote Sites" badge. |
+| `connection_ref` | (Reference mode) ID of a central Remote Sites connection — `mcp_server` or Upwork-in-MCP-mode (v1.1.90+). Resolved at chat time; the row renders read-only with a "Managed in Remote Sites" badge. |
 | `auth_type` | `none`, `bearer`, `basic`, `header`, or `oauth`. See the mapping below. |
 | `token` | Bearer token / Basic credentials / raw header value / OAuth access token. Masked in the UI — never echoed back after save; leaving it blank preserves the stored value. |
 | `header_name` | Custom header name, only for `auth_type: header`. |
@@ -165,6 +172,17 @@ mappings, pick by what the server expects:
 
 `oauth` is for servers running real OAuth 2.0 (metadata discovery, DCR, PKCE,
 refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
+Discovery (v1.1.91+) walks the full MCP Authorization spec chain:
+`WP_MCP_AI_MCP_App_OAuth_Client::discover_metadata()` tries RFC 8414 metadata
+on the MCP origin + the §3.2 path-insertion variant, then RFC 9728
+protected-resource metadata (every advertised `authorization_servers` entry),
+then the 401 `WWW-Authenticate: Bearer resource_metadata` probe, then OIDC
+`.well-known/openid-configuration`, then the WordPress REST metadata fallback.
+RFC 8414 documents are accepted only with both `authorization_endpoint` and
+`token_endpoint`; every attempt is recorded and the metabox failure alert
+surfaces the real transport error (`attempts` + `hint`), the
+server-advertised `default_scope` is honored, and per-probe timeouts cap at
+10 s — so a "discovery failed" alert now tells you *which* step failed.
 
 ### Test, discover, import
 
@@ -198,7 +216,8 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
 - `POST /mcp-apps/discover` — `server_url`, `assistant_id` → tool list.
 - `GET /mcp-apps/{assistant_id}` — stored configs (tokens redacted in output —
   verify masking before claiming otherwise).
-- `POST /mcp-apps/oauth/{probe,init,refresh,revoke}`, `GET /mcp-apps/oauth/callback`.
+- `POST /mcp-apps/oauth/{probe,init,refresh,revoke}`, `GET /mcp-apps/oauth/callback`,
+  `POST /mcp-apps/oauth/complete` (manual loopback paste-back, 10-min state TTL).
 
 ### Failure patterns (root-cause order)
 
@@ -215,32 +234,83 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
    open to arbitrary upstream servers. Recommend always configuring one.
 2. **Test Connection fails on an older server** — the client first attempts
    the stateless `server/discover` handshake (protocol `2026-07-28`) and
-   auto-falls back to the legacy sessionful `initialize` handshake
-   (echoing `Mcp-Session-Id`, advertising the negotiated version) when the
-   server returns `-32601`/`-32600`. A bare "connection failed" with a 2xx
-   response usually means the URL points at the wrong route slug — re-check
-   against the generated prompt.
+   auto-falls back to the legacy sessionful `initialize` handshake when the
+   server returns `-32601`/`-32600`/`session` errors **or a bare HTTP
+   400/404/405/501 without a JSON-RPC error envelope** (strict 2025-era
+   gateways reject the unknown method that way). The fallback `initialize`
+   handshake and every request inside a legacy session omit the 2026-only
+   `MCP-Protocol-Version`/`Mcp-Method` routing headers and the `_meta`
+   envelope, so they look exactly like a 2025-era client (Claude Desktop /
+   Cursor shape). Once a legacy fallback succeeds, a per-URL **dialect hint**
+   (transient `wp_mcp_ai_mcp_app_legacy_<md5>`, 24h) skips the doomed probe on
+   subsequent tests/connects (saves one round trip per connect cycle; visible
+   as `Handshake: initialize` with no `server/discover` on the wire). A stale
+   hint self-heals: if `initialize` is rejected with a stateless signature
+   (`-32601`/`-32600` or HTTP 400/404/405/501), the hint is cleared and
+   `discover()` is retried. A bare "connection failed" with a 2xx response
+   usually means the URL points at the wrong route slug — re-check against the
+   generated prompt.
 3. **Tools discovered but missing from chat** — bridged tools require the
    `edit_posts` capability check at execution and are only appended when the
    effective-tools seam resolves the assistant ID. Check: app `enabled` is
    true, the discovery cache isn't stale (re-run Discover Tools), and the
    negative cache (60 s) isn't masking a temporarily-down server. Saving apps
    invalidates both the discovery cache and the `/tools` REST listing cache.
-4. **Response errors mid-chat** — remote bodies are capped at 2 MB; a larger
+4. **"Tool enumeration failed: MCP server returned invalid JSON"** — some
+   gateways (Envoy AI Gateway / Agent Router) answer `initialize` with plain
+   JSON but every post-initialize request (`tools/list`, `tools/call`) with an
+   **SSE stream** (`text/event-stream`, `event: message` + `data: {…}`). The
+   client now detects SSE via the `Content-Type` header **or** `data:` body
+   sniffing (some gateways mislabel SSE as `application/json`) and extracts
+   the JSON-RPC message via `parse_sse_payload()`; an empty stream surfaces
+   the dedicated `wp_mcp_ai_mcp_app_empty_sse` error. On older builds, update
+   the plugin and re-run Test Connection.
+5. **"No OAuth access token available" after a successful web login** — the
+   metabox never sends `oauth_data` back (credentials are masked server-side).
+   Current builds restore the stored `oauth_data` blob (including `client_id`,
+   which Upwork requires on token/refresh requests) in `resolve_stored_token()`,
+   persist rotated tokens (inline assistant meta / central `update_mcp_oauth()`),
+   and re-hydrate the freshest credentials before each bridge execution.
+6. **"Response errors mid-chat"** — remote bodies are capped at 2 MB; a larger
    payload surfaces a truncation error, not a silent drop. `verify_ssl: false`
    is only for self-signed staging endpoints — prefer adding the CA instead.
-5. **Elementor tools exist but calls are denied** — the remote WordPress user
+7. **Elementor tools exist but calls are denied** — the remote WordPress user
    (application password owner) lacks the capability; fix the role on the
    Elementor site, not the NV oOS config.
-6. **"connection_ref not found in Remote Sites"** — a reference entry points
+8. **"connection_ref not found in Remote Sites"** — a reference entry points
    at a deleted/renamed central connection. Recreate the connection in Remote
    Sites, or remove the reference row from the MCP Apps metabox. Imported
    bundles with missing references are auto-disabled with a warning
    (`wp_mcp_ai_mcp_apps_validate_imported_refs`).
-7. **Restricted-host rejection (Remote Sites)** — the `mcp_server` type runs
+9. **Restricted-host rejection (Remote Sites)** — the `mcp_server` type runs
    the manager's private/reserved-range guard (no bypass); localhost/private
    endpoints must use the inline MCP App path (Path B), while the site's own
    public hostname still routes in-process via the same-site bridge.
+10. **Upwork MCP (`https://mcp.upwork.com/mcp`) returns "HTTP 400"** — Upwork's
+   gateway rejects the 2026-07-28 `server/discover` probe with a bare HTTP
+   400, which older client builds never fell back from. Verified fix (client
+   + registry fallback on 400/404/405/501, legacy-header omission) shipped in
+   the mcp-apps cluster — deploy it and re-run Test Connection / Discover
+   Tools. **Remote Sites freelance-marketplace mode:** Upwork connections
+   (`connection_type: upwork`) also accept `upwork_mode: mcp`, which drives
+   the CRM search/import tools through the same gateway (`upwork__find_jobs`
+   action `search`/`get`, `upwork__list_accounts` for `org_uid`); the login
+   flow is the MCP Apps REST flow with `connection_ref` set to the Upwork
+   connection ID, persisting tokens to its encrypted `mcp_oauth` field.
+   Diagnostics caveat: Upwork binds OAuth access tokens to the
+   originating server IP, so reproducing the handshake with `curl` from
+   another machine returns 401 even with a valid token — validate on the site
+   itself (the HTTP-error `WP_Error` data now includes a 400-char response
+   body snippet). Upwork auth is OAuth 2.1 with DCR and **loopback-only
+   redirect URIs**: the login tab ends on
+   `http://localhost:<port>/callback?code=...&state=...` that never loads —
+   paste that URL into the metabox's manual paste field and click **Complete
+   Login** within the 10-minute state TTL. An expired state returns "This
+   login link has expired" — re-initiate and paste the new URL. The paste-back
+   box is **always visible** for unauthenticated OAuth rows (survives page
+   reloads), and token exchange/refresh now send `client_id` in the request
+   body (Upwork rejects requests without it with
+   `invalid_request: Missing parameters: client_id`).
 
 ## Security rules (industry + plugin)
 
@@ -249,9 +319,17 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
   still pass per-tool capability gating (`edit_posts`).
 - **Central connections are encrypted at rest.** `mcp_server` Remote Sites
   credentials (password, token, `mcp_oauth` blob) use the manager's AES-256-CBC
-  scheme — prefer Path A for production. Inline MCP App tokens (Path B) live
-  in assistant post meta plaintext (UI-masked) — do not echo them into chat
-  logs, commits, or docs. Record them in the Vault (see `design-vault`).
+  scheme — prefer Path A for production. Inline MCP App secrets (Path B: token,
+  `oauth_data` access/refresh) are **also encrypted at rest since v1.1.88**
+  (same scheme) and masked in the metabox with blank-submit preservation —
+  never echo them into chat logs, commits, or docs. Record them in the Vault
+  (see `design-vault`). Remote Sites `verify_token` (WhatsApp/Messenger) and
+  `verification_token` (Google Chat) are encrypted too, centrally decrypted in
+  `get_connection()`; the three raw-store webhook read sites decrypt
+  explicitly. Legacy plaintext rows keep working (decrypt-on-read is
+  idempotent) and encrypt on their next save. Rotated OAuth tokens persist
+  back to assistant meta / the central `mcp_oauth` blob, and central rotations
+  emit `mcp_oauth_refresh` activity events with metadata only.
 - **Revoke when done.** Rotate/revoke the application password on the
   Elementor site when a connection is decommissioned; deleting the NV oOS app
   row or Remote Sites connection does not revoke the remote credential.
@@ -270,7 +348,7 @@ refresh) — Elementor MCP does not use it; use `basic`/`header` instead.
   any other tool; MCP Server test/discover events are activity-logged; review
   logs after Elementor write operations.
 
-## Code map (verified, v1.1.85)
+## Code map (verified, v1.1.90)
 
 | Concern | Location |
 |---|---|

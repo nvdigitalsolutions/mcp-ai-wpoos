@@ -1,0 +1,567 @@
+/* ==========================================================================
+   NV oOS Design System — Component Styles
+   ==========================================================================
+   Maps --nds-* design tokens to actual Crocoblock widget selectors.
+
+   Legacy note: the addon was previously released as the "Crocoblock Design
+   System" with --cds-* variables and .cds-* classes. Both selector sets are
+   shipped here for the transition release (removed in v1.0.0).
+
+   This file is additive — it layers on top of existing Crocoblock styles.
+   It does NOT use !important unless absolutely necessary (form inputs only,
+   because JFB hardcodes inline styles in some configurations).
+   ========================================================================== */
+
+/* ── JetFormBuilder ─────────────────────────────────────────────────────── */
+
+/* --- Container --- */
+.nds-form .jet-form-builder,
+.cds-form .jet-form-builder {
+  background: var(--nds-color-surface);
+  border: var(--nds-border-width) solid var(--nds-color-border);
+  border-radius: var(--nds-radius-lg);
+  padding: var(--nds-space-lg);
+  font-family: var(--nds-font-family);
+  color: var(--nds-color-text-primary);
+}
+
+/* --- Labels --- */
+.nds-form .jet-form-builder__label,
+.nds-form .jet-form-builder__label-text,
+.nds-form .jet-form-builder label,
+.cds-form .jet-form-builder__label,
+.cds-form .jet-form-builder__label-text,
+.cds-form .jet-form-builder label {
+  color: var(--nds-color-text-secondary);
+  font-size: var(--nds-font-size-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-family: var(--nds-font-family);
+}
+
+/* --- Inputs --- */
+.nds-form .jet-form-builder input[type="text"],
+.nds-form .jet-form-builder input[type="email"],
+.nds-form .jet-form-builder input[type="tel"],
+.nds-form .jet-form-builder input[type="number"],
+.nds-form .jet-form-builder input[type="url"],
+.nds-form .jet-form-builder input[type="date"],
+.nds-form .jet-form-builder select,
+.nds-form .jet-form-builder textarea,
+.cds-form .jet-form-builder input[type="text"],
+.cds-form .jet-form-builder input[type="email"],
+.cds-form .jet-form-builder input[type="tel"],
+.cds-form .jet-form-builder input[type="number"],
+.cds-form .jet-form-builder input[type="url"],
+.cds-form .jet-form-builder input[type="date"],
+.cds-form .jet-form-builder select,
+.cds-form .jet-form-builder textarea {
+  background: var(--nds-color-surface) !important;
+  color: var(--nds-color-text-primary) !important;
+  border: var(--nds-border-width) solid var(--nds-color-border) !important;
+  border-radius: var(--nds-radius-md) !important;
+  padding: var(--nds-space-sm) var(--nds-space-md) !important;
+  height: var(--nds-input-height);
+  font-family: var(--nds-font-family);
+  font-size: var(--nds-font-size-base);
+  transition:
+    border-color var(--nds-transition-fast),
+    background var(--nds-transition-fast);
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.nds-form .jet-form-builder textarea,
+.cds-form .jet-form-builder textarea {
+  min-height: 150px;
+  resize: vertical;
+  height: auto;
+}
+
+.nds-form .jet-form-builder input:focus,
+.nds-form .jet-form-builder select:focus,
+.nds-form .jet-form-builder textarea:focus,
+.cds-form .jet-form-builder input:focus,
+.cds-form .jet-form-builder select:focus,
+.cds-form .jet-form-builder textarea:focus {
+  border-color: var(--nds-color-accent) !important;
+  background: var(--nds-color-surface-hover) !important;
+}
+
+.nds-form .jet-form-builder input::placeholder,
+.nds-form .jet-form-builder textarea::placeholder,
+.cds-form .jet-form-builder input::placeholder,
+.cds-form .jet-form-builder textarea::placeholder {
+  color: var(--nds-color-text-secondary);
+  opacity: 0.6;
+}
+
+/* --- Select dropdown options --- */
+.nds-form .jet-form-builder select option,
+.cds-form .jet-form-builder select option {
+  background: var(--nds-color-surface);
+  color: var(--nds-color-text-primary);
+}
+
+/* --- Range slider --- */
+.nds-form .jet-form-builder input[type="range"].range-field,
+.cds-form .jet-form-builder input[type="range"].range-field {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  padding: 0 !important;
+  margin: 24px 0 12px !important;
+  background: var(--nds-color-border);
+  border: 0 !important;
+  outline: none !important;
+  cursor: pointer;
+}
+
+.nds-form .jet-form-builder input[type="range"].range-field::-webkit-slider-thumb,
+.cds-form .jet-form-builder input[type="range"].range-field::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -7px;
+  border-radius: 50%;
+  border: 1px solid var(--nds-color-border);
+  background: var(--nds-color-accent);
+  cursor: pointer;
+}
+
+.nds-form .jet-form-builder input[type="range"].range-field::-moz-range-thumb,
+.cds-form .jet-form-builder input[type="range"].range-field::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--nds-color-accent);
+  cursor: pointer;
+}
+
+.nds-form .jet-form-builder .range-value,
+.cds-form .jet-form-builder .range-value {
+  margin-top: 12px;
+  text-align: right;
+  color: var(--nds-color-text-primary);
+  font-size: var(--nds-font-size-lg);
+}
+
+/* --- Radio / Checkbox --- */
+.nds-form .jet-form-builder input[type="radio"],
+.nds-form .jet-form-builder input[type="checkbox"],
+.cds-form .jet-form-builder input[type="radio"],
+.cds-form .jet-form-builder input[type="checkbox"] {
+  accent-color: var(--nds-color-accent);
+}
+
+.nds-form .jet-form-builder__fields-group.checkradio-wrap,
+.cds-form .jet-form-builder__fields-group.checkradio-wrap {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: var(--nds-space-sm) !important;
+}
+
+.nds-form .jet-form-builder__fields-group.checkradio-wrap
+  > .jet-form-builder__field-wrap
+  > label,
+.cds-form .jet-form-builder__fields-group.checkradio-wrap
+  > .jet-form-builder__field-wrap
+  > label {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  padding: var(--nds-space-md) !important;
+  border: var(--nds-border-width) solid var(--nds-color-border);
+  border-radius: var(--nds-radius-md);
+  background: var(--nds-color-surface);
+  transition:
+    border-color var(--nds-transition-fast),
+    background var(--nds-transition-fast);
+  cursor: pointer;
+  color: var(--nds-color-text-primary);
+}
+
+.nds-form .jet-form-builder__fields-group.checkradio-wrap
+  > .jet-form-builder__field-wrap
+  > label:hover,
+.cds-form .jet-form-builder__fields-group.checkradio-wrap
+  > .jet-form-builder__field-wrap
+  > label:hover {
+  border-color: var(--nds-color-accent);
+}
+
+.nds-form .jet-form-builder__fields-group.checkradio-wrap
+  > .jet-form-builder__field-wrap
+  > label:has(input:checked),
+.cds-form .jet-form-builder__fields-group.checkradio-wrap
+  > .jet-form-builder__field-wrap
+  > label:has(input:checked) {
+  border-color: var(--nds-color-accent);
+  background: var(--nds-color-surface-hover);
+}
+
+/* --- Buttons --- */
+.nds-form .jet-form-builder button,
+.nds-form .jet-form-builder .jet-form-builder__action-button,
+.nds-form .jet-form-builder input[type="submit"],
+.nds-form .jet-form-builder__submit,
+.nds-form .jet-form-builder__next-page,
+.nds-form .jet-form-builder__prev-page,
+.cds-form .jet-form-builder button,
+.cds-form .jet-form-builder .jet-form-builder__action-button,
+.cds-form .jet-form-builder input[type="submit"],
+.cds-form .jet-form-builder__submit,
+.cds-form .jet-form-builder__next-page,
+.cds-form .jet-form-builder__prev-page {
+  appearance: none;
+  background: var(--nds-color-accent) !important;
+  color: var(--nds-color-text-primary) !important;
+  border: 0 !important;
+  border-radius: var(--nds-radius-sm) !important;
+  padding: var(--nds-space-sm) var(--nds-space-lg) !important;
+  font-family: var(--nds-font-family);
+  font-size: var(--nds-font-size-sm);
+  font-weight: var(--nds-font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition:
+    opacity var(--nds-transition-fast),
+    transform var(--nds-transition-fast);
+}
+
+.nds-form .jet-form-builder button:hover,
+.nds-form .jet-form-builder .jet-form-builder__action-button:hover,
+.nds-form .jet-form-builder input[type="submit"]:hover,
+.cds-form .jet-form-builder button:hover,
+.cds-form .jet-form-builder .jet-form-builder__action-button:hover,
+.cds-form .jet-form-builder input[type="submit"]:hover {
+  opacity: 0.9;
+}
+
+.nds-form .jet-form-builder__prev-page,
+.cds-form .jet-form-builder__prev-page {
+  background: var(--nds-color-surface-hover) !important;
+}
+
+/* --- Success --- */
+.nds-form .jet-form-builder-message--success,
+.cds-form .jet-form-builder-message--success {
+  background: var(--nds-color-success);
+  color: var(--nds-color-text-primary);
+  border-radius: var(--nds-radius-md);
+  padding: var(--nds-space-md);
+  opacity: 0.15;
+}
+
+/* --- Errors --- */
+.nds-form .jet-form-builder__error,
+.nds-form .jet-form-builder .error-message,
+.cds-form .jet-form-builder__error,
+.cds-form .jet-form-builder .error-message {
+  color: var(--nds-color-warning);
+  font-size: var(--nds-font-size-xs);
+}
+
+/* --- Progress bar (multi-step forms) --- */
+.nds-form .jet-form-builder-progress-pages,
+.cds-form .jet-form-builder-progress-pages {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: var(--nds-space-sm);
+  margin-bottom: var(--nds-space-lg) !important;
+}
+
+.nds-form .jet-form-builder-progress-pages__item--label,
+.cds-form .jet-form-builder-progress-pages__item--label {
+  color: var(--nds-color-text-secondary);
+  font-size: var(--nds-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.nds-form .jet-form-builder-progress-pages__item--wrapper.active-page
+  .jet-form-builder-progress-pages__item--label,
+.nds-form .jet-form-builder-progress-pages__item--wrapper.passed-page
+  .jet-form-builder-progress-pages__item--label,
+.cds-form .jet-form-builder-progress-pages__item--wrapper.active-page
+  .jet-form-builder-progress-pages__item--label,
+.cds-form .jet-form-builder-progress-pages__item--wrapper.passed-page
+  .jet-form-builder-progress-pages__item--label {
+  color: var(--nds-color-text-primary);
+  font-weight: var(--nds-font-weight-bold);
+}
+
+/* --- Form rows --- */
+.nds-form .jet-form-builder-row,
+.cds-form .jet-form-builder-row {
+  margin-bottom: var(--nds-space-md);
+}
+
+/* --- Description text --- */
+.nds-form .jet-form-builder__desc,
+.nds-form .jet-form-builder .jet-form-builder-message,
+.cds-form .jet-form-builder__desc,
+.cds-form .jet-form-builder .jet-form-builder-message {
+  color: var(--nds-color-text-secondary);
+  font-size: var(--nds-font-size-xs);
+}
+
+
+/* ── JetSmartFilters ────────────────────────────────────────────────────── */
+
+/* --- Color / Image filter buttons --- */
+.nds-filter-bar .jet-color-image-list__row,
+.cds-filter-bar .jet-color-image-list__row {
+  display: inline-block;
+  margin-bottom: var(--nds-space-sm);
+}
+
+.nds-filter-bar .jet-color-image-list-wrapper,
+.cds-filter-bar .jet-color-image-list-wrapper {
+  gap: var(--nds-gap-filter);
+}
+
+.nds-filter-bar .jet-color-image-list__button,
+.cds-filter-bar .jet-color-image-list__button {
+  color: var(--nds-color-text-primary);
+  background: transparent;
+  padding: var(--nds-space-xs) var(--nds-space-sm);
+  border-radius: var(--nds-radius-sm);
+  border: var(--nds-border-width) solid transparent;
+  transition:
+    background var(--nds-transition-fast),
+    border-color var(--nds-transition-fast);
+}
+
+.nds-filter-bar .jet-color-image-list__button:hover,
+.cds-filter-bar .jet-color-image-list__button:hover {
+  background: var(--nds-color-surface-hover);
+}
+
+.nds-filter-bar .jet-color-image-list__input:checked ~ .jet-color-image-list__button,
+.cds-filter-bar .jet-color-image-list__input:checked ~ .jet-color-image-list__button {
+  background: var(--nds-color-accent);
+  border-color: var(--nds-color-accent);
+}
+
+.nds-filter-bar .jet-color-image-list__label,
+.cds-filter-bar .jet-color-image-list__label {
+  font-family: var(--nds-font-family);
+  font-size: var(--nds-font-size-sm);
+}
+
+.nds-filter-bar .jet-color-image-list__decorator .jet-color-image-list__image,
+.cds-filter-bar .jet-color-image-list__decorator .jet-color-image-list__image {
+  width: 25px;
+}
+
+.nds-filter-bar .jet-color-image-list__decorator > *,
+.cds-filter-bar .jet-color-image-list__decorator > * {
+  border-radius: var(--nds-radius-sm);
+  overflow: hidden;
+}
+
+/* --- Filter label (the header above a filter group) --- */
+.nds-filter-bar .jet-filter-label,
+.cds-filter-bar .jet-filter-label {
+  font-family: var(--nds-font-family);
+  font-size: var(--nds-font-size-xl);
+  color: var(--nds-color-text-primary);
+}
+
+/* --- Search filter --- */
+.nds-filter-bar .jet-search-filter__input,
+.cds-filter-bar .jet-search-filter__input {
+  font-family: var(--nds-font-family);
+  font-size: var(--nds-font-size-base);
+  color: var(--nds-color-text-primary);
+  background-color: var(--nds-color-surface);
+  border: var(--nds-border-width) solid var(--nds-color-border);
+  border-radius: var(--nds-radius-sm);
+  padding: var(--nds-space-sm) var(--nds-space-md);
+  height: var(--nds-input-height);
+  transition:
+    border-color var(--nds-transition-fast);
+}
+
+.nds-filter-bar .jet-search-filter__input::placeholder,
+.cds-filter-bar .jet-search-filter__input::placeholder {
+  color: var(--nds-color-text-secondary);
+}
+
+.nds-filter-bar .jet-search-filter__input:focus,
+.cds-filter-bar .jet-search-filter__input:focus {
+  border-color: var(--nds-color-accent);
+  outline: none;
+}
+
+.nds-filter-bar .jet-search-filter__input-clear,
+.nds-filter-bar .jet-search-filter__input-loading,
+.cds-filter-bar .jet-search-filter__input-clear,
+.cds-filter-bar .jet-search-filter__input-loading {
+  color: var(--nds-color-text-secondary);
+}
+
+/* --- Sorting dropdown --- */
+.nds-filter-bar .jet-sorting-select,
+.cds-filter-bar .jet-sorting-select {
+  font-family: var(--nds-font-family);
+  font-size: var(--nds-font-size-base);
+  color: var(--nds-color-text-primary);
+  background-color: var(--nds-color-surface);
+  border: var(--nds-border-width) solid var(--nds-color-border);
+  border-radius: var(--nds-radius-sm);
+  padding: var(--nds-space-sm) var(--nds-space-md);
+  height: var(--nds-input-height);
+}
+
+/* --- Active filter / remove-filter tags --- */
+.nds-filter-bar .jet-filter-tag,
+.cds-filter-bar .jet-filter-tag {
+  background: var(--nds-color-accent);
+  color: var(--nds-color-text-primary);
+  border-radius: var(--nds-radius-sm);
+  padding: 2px 8px;
+  font-size: var(--nds-font-size-xs);
+  font-family: var(--nds-font-family);
+}
+
+
+/* ── JetEngine Listing Grid ─────────────────────────────────────────────── */
+
+/* --- Grid wrapper --- */
+.nds-grid,
+.cds-grid {
+  gap: var(--nds-gap-grid);
+}
+
+/* --- Individual listing item / card --- */
+.nds-card,
+.cds-card {
+  background: var(--nds-color-surface);
+  border: var(--nds-border-width) solid var(--nds-color-border);
+  border-radius: var(--nds-radius-md);
+  box-shadow: var(--nds-shadow-card);
+  overflow: hidden;
+  transition:
+    box-shadow var(--nds-transition-normal),
+    transform var(--nds-transition-normal);
+}
+
+.nds-card:hover,
+.cds-card:hover {
+  box-shadow: var(--nds-shadow-card-hover);
+}
+
+/* --- Card image area --- */
+.nds-card .jet-listing-dynamic-image img,
+.nds-card .nds-card-image,
+.cds-card .jet-listing-dynamic-image img,
+.cds-card .cds-card-image {
+  width: 100%;
+  height: var(--nds-card-image-height);
+  object-fit: cover;
+  display: block;
+}
+
+/* --- Card body --- */
+.nds-card .nds-card-body,
+.cds-card .cds-card-body {
+  padding: var(--nds-space-md);
+}
+
+/* --- Category / type label --- */
+.nds-card .nds-card-category,
+.cds-card .cds-card-category {
+  font-family: var(--nds-font-family);
+  font-size: var(--nds-font-size-sm);
+  color: var(--nds-color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* --- Product / item name --- */
+.nds-card .nds-card-title,
+.cds-card .cds-card-title {
+  font-family: var(--nds-font-family);
+  font-size: var(--nds-font-size-lg);
+  font-weight: var(--nds-font-weight-bold);
+  color: var(--nds-color-text-primary);
+  margin: 4px 0;
+  line-height: var(--nds-line-height);
+}
+
+/* --- Meta / location --- */
+.nds-card .nds-card-meta,
+.cds-card .cds-card-meta {
+  font-family: var(--nds-font-family);
+  font-size: var(--nds-font-size-xs);
+  color: var(--nds-color-text-secondary);
+}
+
+/* --- Price --- */
+.nds-card .nds-card-price,
+.cds-card .cds-card-price {
+  font-family: var(--nds-font-family);
+  font-size: var(--nds-font-size-base);
+  font-weight: var(--nds-font-weight-bold);
+  color: var(--nds-color-accent);
+  margin-top: var(--nds-space-sm);
+}
+
+/* --- Stock badge --- */
+.nds-card .nds-card-stock,
+.cds-card .cds-card-stock {
+  display: inline-block;
+  font-size: var(--nds-font-size-xs);
+  padding: 2px 10px;
+  border-radius: var(--nds-radius-sm);
+}
+
+.nds-card .nds-card-stock.in-stock,
+.cds-card .cds-card-stock.in-stock {
+  background: var(--nds-color-success);
+  color: #fff;
+  opacity: 0.12;
+}
+
+.nds-card .nds-card-stock.out-of-stock,
+.cds-card .cds-card-stock.out-of-stock {
+  background: var(--nds-color-warning);
+  color: #fff;
+  opacity: 0.12;
+}
+
+
+/* ── Mobile ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .nds-form .jet-form-builder,
+  .cds-form .jet-form-builder {
+    padding: var(--nds-space-md);
+  }
+
+  .nds-form .jet-form-builder__fields-group.checkradio-wrap,
+  .cds-form .jet-form-builder__fields-group.checkradio-wrap {
+    grid-template-columns: 1fr !important;
+  }
+
+  .nds-form .jet-form-builder button,
+  .nds-form .jet-form-builder .jet-form-builder__action-button,
+  .nds-form .jet-form-builder input[type="submit"],
+  .cds-form .jet-form-builder button,
+  .cds-form .jet-form-builder .jet-form-builder__action-button,
+  .cds-form .jet-form-builder input[type="submit"] {
+    width: 100%;
+  }
+
+  .nds-filter-bar .jet-color-image-list__row,
+  .cds-filter-bar .jet-color-image-list__row {
+    margin-right: calc(var(--nds-gap-filter) / 4);
+    margin-left: calc(var(--nds-gap-filter) / 4);
+  }
+}

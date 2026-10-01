@@ -189,6 +189,32 @@ final class Tokens {
 	}
 
 	/**
+	 * Categorical fallback palette for unknown node types (Okabe-Ito).
+	 *
+	 * Custom post types, JetEngine CCTs, and remote-source types that have
+	 * no curated color draw from this palette by a stable hash of the type
+	 * slug. The Okabe-Ito set stays distinguishable under protanopia,
+	 * deuteranopia, and tritanopia, and every entry is lightness-corrected
+	 * per theme at render time (ensure_contrast).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string[]
+	 */
+	public static function fallback_palette(): array {
+		return array(
+			'#E69F00',
+			'#56B4E9',
+			'#009E73',
+			'#F0E442',
+			'#0072B2',
+			'#D55E00',
+			'#CC79A7',
+			'#000000',
+		);
+	}
+
+	/**
 	 * Icon catalog: slug => translatable label.
 	 *
 	 * The glyph geometry itself lives in assets/js/content-graph-icons.js;
@@ -286,6 +312,8 @@ final class Tokens {
 			'visual_size_max'        => 60,
 			'visual_label_font_size' => 10,
 			'visual_anim_enabled'    => 1,
+			'visual_hover_focus'     => 1,
+			'visual_edge_flow'       => 0,
 			'visual_type_colors'     => array(),
 			'visual_type_icons'      => array(),
 		);
@@ -403,6 +431,10 @@ final class Tokens {
 	 * Adjust a color's lightness until it meets a minimum contrast ratio
 	 * against the given canvas. Hue and saturation are preserved.
 	 *
+	 * Stops only when the next step would leave the RGB gamut, so extreme
+	 * inputs (pure black/white) are corrected to the nearest passing
+	 * lightness instead of bailing on the first step.
+	 *
 	 * Deterministic and pure — the JS theme engine mirrors this algorithm.
 	 *
 	 * @since 1.0.4
@@ -429,10 +461,11 @@ final class Tokens {
 		$step = ( self::relative_luminance( $canvas ) < 0.5 ) ? 0.015 : -0.015;
 
 		for ( $i = 0; $i < 40; $i++ ) {
-			$l += $step;
-			if ( $l <= 0.02 || $l >= 0.98 ) {
-				break;
+			$next_l = $l + $step;
+			if ( $next_l < 0.0 || $next_l > 1.0 ) {
+				break; // Would leave the RGB gamut — keep the last valid value.
 			}
+			$l    = $next_l;
 			$next = self::hsl_to_hex( $h, $s, $l );
 			if ( self::contrast_ratio( $next, $canvas ) >= $min ) {
 				return $next;
@@ -440,7 +473,7 @@ final class Tokens {
 		}
 
 		// Give up gracefully: return the lightest/darkest tried value.
-		return self::hsl_to_hex( $h, $s, max( 0.02, min( 0.98, $l ) ) );
+		return self::hsl_to_hex( $h, $s, max( 0.0, min( 1.0, $l ) ) );
 	}
 
 	// ─── Config delivery ────────────────────────────────────────
@@ -513,6 +546,8 @@ final class Tokens {
 		$showLegend  = isset( $settings['visual_show_legend'] ) ? $settings['visual_show_legend'] : $defaults['visual_show_legend'];
 		$nodeShapes  = isset( $settings['visual_node_shapes'] ) ? $settings['visual_node_shapes'] : $defaults['visual_node_shapes'];
 		$animEnabled = isset( $settings['visual_anim_enabled'] ) ? $settings['visual_anim_enabled'] : $defaults['visual_anim_enabled'];
+		$hoverFocus  = isset( $settings['visual_hover_focus'] ) ? $settings['visual_hover_focus'] : $defaults['visual_hover_focus'];
+		$edgeFlow    = isset( $settings['visual_edge_flow'] ) ? $settings['visual_edge_flow'] : $defaults['visual_edge_flow'];
 
 		$typeColors = self::sanitize_type_colors( isset( $settings['visual_type_colors'] ) && is_array( $settings['visual_type_colors'] ) ? $settings['visual_type_colors'] : array() );
 		$typeIcons  = self::sanitize_type_icons( isset( $settings['visual_type_icons'] ) && is_array( $settings['visual_type_icons'] ) ? $settings['visual_type_icons'] : array() );
@@ -532,12 +567,15 @@ final class Tokens {
 			'size_max'          => $sizeMax,
 			'label_font_size'   => $fontSize,
 			'anim_enabled'      => ! empty( $animEnabled ),
+			'hover_focus'       => ! empty( $hoverFocus ),
+			'edge_flow'         => ! empty( $edgeFlow ),
 			'type_colors'       => (object) $typeColors,
 			'type_icons'        => (object) $typeIcons,
 			'type_palette'      => (object) self::type_palette(),
 			'type_icon_map'     => (object) self::type_icon_map(),
 			'community_palette' => self::community_palette(),
 			'degree_ramp'       => self::degree_ramp(),
+			'fallback_palette'  => self::fallback_palette(),
 			'themes'            => self::themes(),
 			'edge_families'     => self::edge_families(),
 			'shape_map'         => self::shape_map(),

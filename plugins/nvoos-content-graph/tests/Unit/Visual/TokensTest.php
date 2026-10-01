@@ -135,13 +135,38 @@ class TokensTest extends WP_UnitTestCase {
 		$this->assertSame( 'dark', $config['theme'] );
 		$this->assertSame( 'type', $config['color_by'] );
 		$this->assertTrue( $config['show_icons'] );
+		$this->assertTrue( $config['hover_focus'] );
+		$this->assertFalse( $config['edge_flow'] );
 		$this->assertArrayHasKey( 'type_palette', $config );
 		$this->assertArrayHasKey( 'community_palette', $config );
 		$this->assertArrayHasKey( 'degree_ramp', $config );
+		$this->assertArrayHasKey( 'fallback_palette', $config );
+		$this->assertNotEmpty( $config['fallback_palette'] );
 		$this->assertArrayHasKey( 'edge_families', $config );
 		$this->assertArrayHasKey( 'shape_map', $config );
 		$this->assertArrayHasKey( 'dark', $config['themes'] );
 		$this->assertArrayHasKey( 'light', $config['themes'] );
+	}
+
+	/**
+	 * The Okabe-Ito fallback palette (unknown node types) must also pass
+	 * the 3:1 contrast gate on both canvases after correction.
+	 *
+	 * @return void
+	 */
+	public function test_fallback_palette_passes_contrast_gate_on_both_themes(): void {
+		$themes = Tokens::themes();
+
+		$this->assertNotEmpty( Tokens::fallback_palette() );
+		foreach ( Tokens::fallback_palette() as $color ) {
+			foreach ( array( 'dark', 'light' ) as $theme ) {
+				$canvas  = $themes[ $theme ]['canvas'];
+				$fixed   = Tokens::ensure_contrast( $color, $canvas );
+				$message = sprintf( 'Fallback color %s must reach 3:1 on the %s canvas (got %s).', $color, $theme, $fixed );
+
+				$this->assertGreaterThanOrEqual( 3.0, Tokens::contrast_ratio( $fixed, $canvas ), $message );
+			}
+		}
 	}
 
 	/**

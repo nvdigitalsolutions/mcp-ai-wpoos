@@ -96,6 +96,67 @@ class WP_MCP_AI_Describe_Image_Layout_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * RF-DETR-shaped boxes ({x,y,width,height}, normalized) compose the same
+	 * quadrant prose once converted to [x1,y1,x2,y2] — the layout composer is
+	 * detector-agnostic.
+	 */
+	public function test_rfdetr_shaped_boxes_compose() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		// Canonical RF-DETR service output shape.
+		$rfdetr_boxes = array(
+			array(
+				'label'      => 'bottle',
+				'confidence' => 0.91,
+				'box'        => array(
+					'x'      => 0.8,
+					'y'      => 0.05,
+					'width'  => 0.15,
+					'height' => 0.15,
+				),
+			),
+			array(
+				'label'      => 'person',
+				'confidence' => 0.85,
+				'box'        => array(
+					'x'      => 0.3,
+					'y'      => 0.3,
+					'width'  => 0.4,
+					'height' => 0.4,
+				),
+			),
+		);
+
+		// Consumer-side transform into the composer's [x1,y1,x2,y2] shape.
+		$boxes = array();
+		foreach ( $rfdetr_boxes as $det ) {
+			$boxes[] = array(
+				'label' => $det['label'],
+				'box'   => array(
+					$det['box']['x'],
+					$det['box']['y'],
+					$det['box']['x'] + $det['box']['width'],
+					$det['box']['y'] + $det['box']['height'],
+				),
+				'score' => $det['confidence'],
+			);
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Describe_Image_Layout();
+		$result = $tool->execute(
+			array( 'boxes' => wp_json_encode( $boxes ) ),
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'top-right', $result['objects'][0]['quadrant'] );
+		$this->assertSame( 'center', $result['objects'][1]['quadrant'] );
+		$this->assertStringContainsString( 'bottle occupies the top-right quadrant', $result['layout_prose'] );
+	}
+
+	/**
 	 * Google normalizedVertices format must parse into boxes.
 	 */
 	public function test_parses_source_tool_result() {
@@ -190,7 +251,7 @@ class WP_MCP_AI_Describe_Image_Layout_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * auto_detect must short-circuit without a configured key (no HTTP).
+	 * Auto_detect must short-circuit without a configured key (no HTTP).
 	 */
 	public function test_auto_detect_requires_key() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -224,7 +285,7 @@ class WP_MCP_AI_Describe_Image_Layout_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * auto_detect with a key must send an OBJECT_LOCALIZATION request.
+	 * Auto_detect with a key must send an OBJECT_LOCALIZATION request.
 	 */
 	public function test_auto_detect_sends_localization_request() {
 		update_option(

@@ -245,6 +245,24 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 	}
 
 	/**
+	 * The Remote Sites connection a toolkit's live services should bind to
+	 * when tools are invoked through this MCP server.
+	 *
+	 * Servers whose tools run live outbound services through a Remote Sites
+	 * connection (e.g. FlowHub) override this to return the admin-designated
+	 * connection ID. The toolkit MCP REST controller merges it into the tool
+	 * arguments when the caller does not pass an explicit `connection_id`, so
+	 * live calls inherit that connection's credentials and proxy.
+	 *
+	 * @since 1.1.91
+	 *
+	 * @return string Connection ID (conn_...), or '' when no binding applies.
+	 */
+	public function get_mcp_connection_id() {
+		return '';
+	}
+
+	/**
 	 * Get the effective set of native ingestion surfaces (after admin disable).
 	 *
 	 * @return array<int,array<string,mixed>>

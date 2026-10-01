@@ -19,6 +19,20 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_Webhook_Handler' ) ) {
 	require_once __DIR__ . '/class-wp-mcp-ai-mailjet-webhook-handler.php';
 }
 
+// Load the Mailjet OAuth handler class.
+if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
+	require_once __DIR__ . '/class-wp-mcp-ai-mailjet-oauth-handler.php';
+}
+
+// Allow the Mailjet authorize host so wp_safe_redirect() reaches the
+// consent page instead of falling back to admin_url().
+add_filter(
+	'allowed_redirect_hosts',
+	array( new WP_MCP_AI_Mailjet_OAuth_Handler(), 'allow_mailjet_oauth_redirect_host' ),
+	10,
+	2
+);
+
 // Register the Mailjet webhook handler with the container.
 add_action(
 	'wp_mcp_ai_register_services',

@@ -3,9 +3,9 @@
  * Toolkit MCP Servers Metabox for Assistants.
  *
  * Renders on the mcp_ai_assistant edit screen and lets editors choose which
- * per-toolkit MCP servers this assistant is allowed to invoke. Enabled servers
- * are persisted in post-meta so the REST controller can gate access per-
- * assistant when needed.
+ * per-toolkit MCP servers this assistant is allowed to invoke. Grants are
+ * deny-by-default: only checked servers are invocable by the assistant, and
+ * the toolkit MCP REST controller enforces the persisted grants per request.
  *
  * @package WP_MCP_AI_Pro
  * @since   1.4.0
@@ -105,7 +105,7 @@ class WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers {
 
 		?>
 		<p class="description" style="margin-bottom:8px;">
-			<?php esc_html_e( 'Select which toolkit MCP servers this assistant may invoke. Leave all unchecked to allow access to all enabled servers.', 'mcp-ai-wpoos-pro' ); ?>
+			<?php esc_html_e( 'Select which toolkit MCP servers this assistant may invoke. Unchecked servers cannot be invoked by this assistant.', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 
 		<div style="max-height:280px;overflow-y:auto;border:1px solid #ddd;padding:8px;background:#fff;">
@@ -178,7 +178,7 @@ class WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers {
 			);
 			update_post_meta( $post_id, self::META_KEY, $slugs );
 		} else {
-			// Empty array = allow all.
+			// No selection posted = no grants (deny by default).
 			delete_post_meta( $post_id, self::META_KEY );
 		}
 	}
@@ -186,7 +186,8 @@ class WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers {
 	/**
 	 * Return the list of allowed server slugs for a given assistant.
 	 *
-	 * An empty array means "allow all enabled servers".
+	 * An empty array means the assistant has no toolkit MCP server grants
+	 * (deny by default — unchecked servers are never invocable).
 	 *
 	 * @since 1.4.0
 	 *

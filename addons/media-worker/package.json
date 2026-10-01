@@ -45,8 +45,8 @@
 		"marked": "^9.1.6",
 		"mathjs": "^15.2.0",
 		"mjml": "^5.0.0",
-		"multer": "^2.3.0",
-		"nodemailer": "^9.1.1",
+		"multer": "^2.4.0",
+		"nodemailer": "^10.0.9",
 		"openai": "^4.52.0",
 		"pdf-lib": "^1.17.1",
 		"pdf-parse": "^1.1.4",
@@ -73,7 +73,7 @@
 		"deepmerge-ts": "^8.0.0",
 		"svgo": ">=4.1.0",
 		"mailparser": {
-			"nodemailer": ">=9.1.1"
+			"nodemailer": ">=10.0.9"
 		}
 	}
 }

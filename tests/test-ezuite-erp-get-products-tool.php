@@ -280,6 +280,116 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Some ERP deployments ignore the LX_ItemPull Item_Code filter and return
+	 * the full item list. The tool must enforce the requested code on the
+	 * formatted rows so it never reports stock or pricing for an unrelated
+	 * product.
+	 */
+	public function test_item_code_filter_enforced_client_side() {
+		wp_set_current_user( $this->admin_id );
+
+		$connection_id = $this->create_test_connection();
+
+		$http_stub = function () {
+			return array(
+				'body'     => wp_json_encode(
+					array(
+						'Status_Code'   => 200,
+						'Message'       => 'OK',
+						'Response_Body' => array(
+							array(
+								'Item_Code'     => 'C316/L17/ITM-1',
+								'Item_Name'     => 'Millenia: Case for Apple Watch',
+								'Qty'           => 12,
+								'Selling_Price' => 129.00,
+							),
+							array(
+								'Item_Code'     => 'JCB21',
+								'Item_Name'     => 'Jacket Black 21',
+								'Qty'           => 4,
+								'Selling_Price' => 89.50,
+							),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'headers'  => array(),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $this->tool->execute(
+			array(
+				'connection_id' => $connection_id,
+				'item_code'     => 'JCB21',
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 1, $result['count'] );
+		$this->assertSame( 'JCB21', $result['products'][0]['item_code'] );
+		$this->assertStringNotContainsString( 'Swarovski', wp_json_encode( $result['products'] ) );
+	}
+
+	/**
+	 * When the requested item code has no exact match in the ERP response the
+	 * tool returns an empty list with an explanatory note instead of
+	 * unrelated items.
+	 */
+	public function test_item_code_no_match_returns_empty_with_note() {
+		wp_set_current_user( $this->admin_id );
+
+		$connection_id = $this->create_test_connection();
+
+		$http_stub = function () {
+			return array(
+				'body'     => wp_json_encode(
+					array(
+						'Status_Code'   => 200,
+						'Message'       => 'OK',
+						'Response_Body' => array(
+							array(
+								'Item_Code'     => 'C316/L17/ITM-1',
+								'Item_Name'     => 'Millenia: Case for Apple Watch',
+								'Qty'           => 12,
+								'Selling_Price' => 129.00,
+							),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'headers'  => array(),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $this->tool->execute(
+			array(
+				'connection_id' => $connection_id,
+				'item_code'     => 'JCB21',
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 0, $result['count'] );
+		$this->assertStringContainsString( 'No exact match', $result['summary'] );
+	}
+
+	/**
 	 * Helper method to create a test connection.
 	 *
 	 * @param string $connection_type Connection type (default: ezuite_erp).

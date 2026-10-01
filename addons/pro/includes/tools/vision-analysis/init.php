@@ -57,5 +57,10 @@ function wp_mcp_ai_vision_analysis_get_settings() {
 		'reverse_search_provider' => isset( $all['va_reverse_search_provider'] ) ? sanitize_text_field( $all['va_reverse_search_provider'] ) : 'auto',
 		'bing_visual_search_key'  => isset( $all['va_bing_visual_search_key'] ) ? sanitize_text_field( $all['va_bing_visual_search_key'] ) : '',
 		'serpapi_api_key'         => isset( $all['va_serpapi_api_key'] ) ? sanitize_text_field( $all['va_serpapi_api_key'] ) : '',
+		'roboflow_api_url'        => isset( $all['va_roboflow_api_url'] ) && '' !== $all['va_roboflow_api_url'] ? sanitize_text_field( $all['va_roboflow_api_url'] ) : '',
+		'roboflow_api_key'        => isset( $all['va_roboflow_api_key'] ) ? sanitize_text_field( $all['va_roboflow_api_key'] ) : '',
+		'roboflow_model'          => isset( $all['va_roboflow_model'] ) && '' !== $all['va_roboflow_model'] ? sanitize_text_field( $all['va_roboflow_model'] ) : 'rfdetr-small',
+		'roboflow_catalog_model'  => isset( $all['va_roboflow_catalog_model'] ) ? sanitize_text_field( $all['va_roboflow_catalog_model'] ) : '',
+		'roboflow_allow_pml'      => ! empty( $all['va_roboflow_allow_pml'] ),
 	);
 }

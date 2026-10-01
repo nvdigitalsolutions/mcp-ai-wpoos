@@ -126,12 +126,31 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 	const DEFAULT_COMPATIBILITY_DATE = '2024-12-30';
 
 	/**
+	 * Default compatibility flags for the deployed Worker. The production
+	 * bundle embeds the Stripe Node SDK, which requires `nodejs_compat`
+	 * (matching `addons/cloud-worker/wrangler.toml`). Filterable via
+	 * `nvoos_saas_controller_worker_compatibility_flags`.
+	 *
+	 * @var string[]
+	 */
+	const DEFAULT_COMPATIBILITY_FLAGS = array( 'nodejs_compat' );
+
+	/**
 	 * Default relative path inside the addon to the built ESM Worker
 	 * bundle. Filterable via `nvoos_saas_controller_worker_dist_path`.
 	 *
 	 * @var string
 	 */
 	const DEFAULT_WORKER_DIST = 'worker/dist/index.js';
+
+	/**
+	 * Default relative path inside the addon to the D1 schema file applied
+	 * by the Phase 12 `d1_schema` rows. Filterable via
+	 * `nvoos_saas_controller_worker_schema_path`.
+	 *
+	 * @var string
+	 */
+	const DEFAULT_SCHEMA_FILE = 'worker/schema.sql';
 
 	/**
 	 * Mutating Cloudflare client.
@@ -673,6 +692,10 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 				return $this->apply_create_stripe_price( $row );
 			case 'openrouter_key':
 				return $this->apply_create_openrouter_key( $row );
+			case 'worker_secret':
+				return $this->apply_create_worker_secret( $row );
+			case 'd1_schema':
+				return $this->apply_create_d1_schema( $row );
 			default:
 				return array(
 					'kind'    => $kind,
@@ -1120,10 +1143,29 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			self::DEFAULT_COMPATIBILITY_DATE
 		);
 
+		/**
+		 * Compatibility flags for the deployed Worker.
+		 *
+		 * The production bundle embeds the Stripe Node SDK, which needs
+		 * `nodejs_compat` — matching `addons/cloud-worker/wrangler.toml`,
+		 * so a Worker deployed through the Apply step behaves identically
+		 * to one deployed with wrangler.
+		 *
+		 * @since 0.2.0
+		 *
+		 * @param string[] $flags Compatibility flags.
+		 */
+		$compat_flags = (array) apply_filters(
+			'nvoos_saas_controller_worker_compatibility_flags',
+			self::DEFAULT_COMPATIBILITY_FLAGS
+		);
+		$compat_flags = array_values( array_filter( array_map( 'strval', $compat_flags ) ) );
+
 		$metadata = array(
-			'main_module'        => 'index.js',
-			'compatibility_date' => $compat_date,
-			'bindings'           => $bindings,
+			'main_module'         => 'index.js',
+			'compatibility_date'  => $compat_date,
+			'compatibility_flags' => $compat_flags,
+			'bindings'            => $bindings,
 		);
 
 		/**
@@ -1357,6 +1399,222 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			),
 			'detail'  => $result,
 		);
+	}
+
+	/**
+	 * Apply a `worker_secret` create/update row (Phase 12).
+	 *
+	 * Resolves the plaintext from the credential store at run time (the plan
+	 * carries only the secret name + source key, never the value) and PUTs it
+	 * to the Worker's secrets API. Result rows never echo the value.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param array $row Plan row `{ kind:'worker_secret', name, source, worker }`.
+	 * @return array
+	 */
+	protected function apply_create_worker_secret( array $row ) {
+		$name   = isset( $row['name'] ) ? (string) $row['name'] : '';
+		$worker = isset( $row['worker'] ) ? (string) $row['worker'] : '';
+		$target = ( '' !== $worker ? $worker . '/' : '' ) . $name;
+
+		$value = $this->resolve_worker_secret_value( $row );
+		if ( is_wp_error( $value ) ) {
+			return array(
+				'kind'    => 'worker_secret',
+				'target'  => $target,
+				'status'  => 'skipped',
+				'message' => $value->get_error_message(),
+			);
+		}
+		if ( '' === $value ) {
+			return array(
+				'kind'    => 'worker_secret',
+				'target'  => $target,
+				'status'  => 'skipped',
+				'message' => __( 'Source credential is empty; configure it in the Credentials tab before applying.', 'nvoos-saas-controller' ),
+			);
+		}
+
+		$client = $this->client;
+
+		$result = $client->put_worker_secret( $worker, $name, $value );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'worker_secret',
+				'target'  => $target,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+
+		return array(
+			'kind'    => 'worker_secret',
+			'target'  => $target,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: %s: secret binding name. */
+				__( 'Worker secret "%s" set.', 'nvoos-saas-controller' ),
+				$name
+			),
+			'detail'  => array(
+				'name' => isset( $result['name'] ) ? (string) $result['name'] : $name,
+				'type' => isset( $result['type'] ) ? (string) $result['type'] : 'secret_text',
+			),
+		);
+	}
+
+	/**
+	 * Resolve the plaintext for a `worker_secret` row from the credential
+	 * store. `CF_AI_GATEWAY_URL` is derived from the account id + AI Gateway
+	 * slug (source key `gateway:<slug>`); everything else maps 1:1 to a
+	 * credential-store key.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param array $row Plan row.
+	 * @return string|WP_Error WP_Error when the source is unknown.
+	 */
+	protected function resolve_worker_secret_value( array $row ) {
+		$source = isset( $row['source'] ) ? (string) $row['source'] : '';
+		$creds  = NVOOS_SaaS_Controller_Credential_Store::instance()->get_all();
+
+		if ( 0 === strpos( $source, 'gateway:' ) ) {
+			$slug       = substr( $source, strlen( 'gateway:' ) );
+			$account_id = isset( $creds['cloudflare_account_id'] ) ? (string) $creds['cloudflare_account_id'] : '';
+			if ( '' === $account_id || '' === $slug ) {
+				return new WP_Error(
+					'gateway_url_underivable',
+					__( 'AI Gateway URL requires both the Cloudflare account ID and a gateway slug.', 'nvoos-saas-controller' )
+				);
+			}
+			return 'https://gateway.ai.cloudflare.com/v1/' . rawurlencode( $account_id ) . '/' . rawurlencode( $slug ) . '/openrouter';
+		}
+
+		if ( isset( $creds[ $source ] ) ) {
+			return (string) $creds[ $source ];
+		}
+		return new WP_Error(
+			'unknown_secret_source',
+			sprintf(
+				/* translators: %s: plan-row source key. */
+				__( 'Unknown secret source "%s".', 'nvoos-saas-controller' ),
+				$source
+			)
+		);
+	}
+
+	/**
+	 * Apply a `d1_schema` create row (Phase 12).
+	 *
+	 * Reads `worker/schema.sql`, strips SQL comments and the PRAGMA preamble
+	 * (D1 enables foreign keys by default and the API batch endpoint does not
+	 * accept the wrangler-oriented preamble), and executes the batch through
+	 * the D1 `/raw` endpoint. Idempotent by design (`CREATE TABLE IF NOT
+	 * EXISTS`).
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param array $row Plan row `{ kind:'d1_schema', name, uuid }`.
+	 * @return array
+	 */
+	protected function apply_create_d1_schema( array $row ) {
+		$name = isset( $row['name'] ) ? (string) $row['name'] : '';
+		$uuid = isset( $row['uuid'] ) ? (string) $row['uuid'] : '';
+
+		$sql = $this->load_worker_schema_sql();
+		if ( is_wp_error( $sql ) ) {
+			return array(
+				'kind'    => 'd1_schema',
+				'target'  => $name,
+				'status'  => 'error',
+				'message' => $sql->get_error_message(),
+			);
+		}
+
+		$client = $this->client;
+
+		$result = $client->execute_d1_sql( $uuid, $sql );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'd1_schema',
+				'target'  => $name,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+
+		return array(
+			'kind'    => 'd1_schema',
+			'target'  => $name,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: %s: D1 database name. */
+				__( 'D1 schema applied to "%s".', 'nvoos-saas-controller' ),
+				$name
+			),
+			'detail'  => array( 'uuid' => $uuid ),
+		);
+	}
+
+	/**
+	 * Read and normalise `worker/schema.sql` for the D1 `/raw` endpoint.
+	 *
+	 * Full-line and inline `--` comments are stripped (the API batch endpoint
+	 * accepts only bare SQL), as is the PRAGMA preamble — D1 enables foreign
+	 * keys by default and rejects pragma statements in an API batch.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @return string|WP_Error
+	 */
+	protected function load_worker_schema_sql() {
+		$relative = (string) apply_filters( 'nvoos_saas_controller_worker_schema_path', self::DEFAULT_SCHEMA_FILE );
+		$base     = defined( 'NVOOS_SAAS_CONTROLLER_PATH' ) ? NVOOS_SAAS_CONTROLLER_PATH : dirname( __DIR__, 2 ) . '/';
+		$path     = $base . ltrim( $relative, '/' );
+
+		if ( ! is_readable( $path ) ) {
+			return new WP_Error(
+				'worker_schema_missing',
+				sprintf(
+					/* translators: %s: relative path to the missing schema file. */
+					__( 'D1 schema file not found at %s.', 'nvoos-saas-controller' ),
+					$relative
+				)
+			);
+		}
+
+		$raw = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		if ( false === $raw ) {
+			return new WP_Error(
+				'worker_schema_unreadable',
+				sprintf(
+					/* translators: %s: relative path. */
+					__( 'D1 schema at %s is unreadable.', 'nvoos-saas-controller' ),
+					$relative
+				)
+			);
+		}
+
+		$statements = array();
+		foreach ( preg_split( '/\R/', $raw ) as $line ) {
+			$line = trim( $line );
+			if ( '' === $line || 0 === strpos( $line, '--' ) ) {
+				continue;
+			}
+			if ( 0 === stripos( $line, 'PRAGMA ' ) ) {
+				continue;
+			}
+			$pos = strpos( $line, '--' );
+			if ( false !== $pos ) {
+				$line = rtrim( substr( $line, 0, $pos ) );
+			}
+			if ( '' !== $line ) {
+				$statements[] = $line;
+			}
+		}
+
+		return implode( "\n", $statements );
 	}
 
 	/**

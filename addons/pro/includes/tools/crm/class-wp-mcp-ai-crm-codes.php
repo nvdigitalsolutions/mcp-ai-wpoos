@@ -42,6 +42,7 @@ class WP_MCP_AI_CRM_Codes {
 		'telegram',
 		'google_chat',
 		'linkedin_dm',
+		'instagram_dm',
 		'phone_call',
 		'web_form',
 		'webchat',

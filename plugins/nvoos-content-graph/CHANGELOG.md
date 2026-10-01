@@ -1,5 +1,65 @@
 # NV oOS Content Graph — Changelog
 
+## Unreleased
+
+### Fixed — Remote source drivers misconfigured or broken
+
+- **Generic REST API** — the config schema omitted every edge-mapping
+  field the driver actually reads (`edge_path`, `edge_source_field`,
+  `edge_target_field`, `edge_relation_field`), so edges could never be
+  configured or imported. The schema now also exposes `max_items`,
+  optional offset/page pagination (`page_param`, `page_size_param`,
+  `page_size`), and query-param token auth (`auth_query_param`).
+  fetchNodes/fetchEdges honor the item cap, walk paginated endpoints
+  until an empty page, and check HTTP status; the Test button now
+  validates JSON, the results path, and the label field instead of
+  reporting any 2xx as success
+- **Wikidata** — search terms were pre-encoded before `add_query_arg`,
+  double-encoding spaces (`%2520`) and breaking every reconciliation
+  lookup; testConnection now uses the configured language
+- **SPARQL** — the query was pre-encoded (same `%2520` breakage), and
+  testConnection appended `LIMIT 1` even to queries that already carry
+  one (invalid SPARQL). Both fixed; the endpoint probe now validates
+  status and the JSON results shape
+- **RSS / Sitemap** — the parser read a `feed_type` override that the
+  schema never exposed; the field is now a select (auto/rss/atom/sitemap)
+- **Add Source modal** — the slug field is auto-generated from the label
+  (editable), and driver schemas now support `select` fields
+- **Connection testing UX** — a *Test Connection* button in the modal
+  probes the unsaved config, and the table's Test button shows the
+  driver's message inline instead of a bare `alert()`; failed probes
+  now return a proper error envelope (they previously reported
+  `success: true` with the failure buried in the payload), and saved
+  sources can be tested while disabled
+- **Tests** — new `tests/Unit/Remote/Drivers/` suite (45 tests, 128
+  assertions) pins every driver's behavior with mocked HTTP, and
+  `tests/Unit/Admin/RemoteAdminTest.php` (6 tests) covers the
+  connection-test AJAX endpoint
+
+## Unreleased (explorer motion — merged in #6782)
+
+### Changed — Explorer interaction & motion polish
+
+- **Hover focus + tooltip** (new Appearance setting *Hover focus*, default
+  on) — hovering a node now spotlights its closed neighborhood (Bloom-style
+  dim-out), brightens the incident edges, and follows the cursor with a
+  quick-info tooltip (label, type, degree, community). Same gesture works on
+  front-end embeds; auto-disabled under reduced motion
+- **Animated camera** — search-Enter, arrow-key navigation, and the Fit
+  button now glide the viewport with eased animation instead of jumping;
+  instant under reduced motion or with animations off
+- **Search UX** — debounced highlighting, a live match-count badge, and
+  Enter-to-focus on the first match
+- **Edge flow animation** (new Appearance setting *Edge flow animation*,
+  default off) — marching dashes along arrowed/tapered edges convey
+  direction; capped at 300 edges and paused while the tab is hidden
+- **Entrance & loading polish** — skeleton loading state, fade-in reveal
+  after first paint, and `motionBlur` for smoother frame transitions on
+  both admin and front-end graphs
+- **CVD-safe fallback palette** — unknown node types now draw from the
+  Okabe-Ito 8-color palette (colorblind-safe by design) instead of a
+  hashed hue wheel; still contrast-corrected per theme
+
 ## 1.0.8 — 2026-09-13
 
 ### Fixed — Stripe checkout failed for non-EU buyers
