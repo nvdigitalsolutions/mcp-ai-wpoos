@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 55 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals, WP_CLI stub constant leak, self-instantiating double-render, wpdb error-HTML envelope leaks), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 57 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals, WP_CLI stub constant leak, self-instantiating double-render, wpdb error-HTML envelope leaks, provider array content, coverage-manifest drift), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-01"
+  last-updated: "2026-10-02"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -765,6 +765,41 @@ the changed files is the substantive gate; plan CI waits accordingly.
       suppressed, failure logged, response still valid JSON). Never assert
       raw `$wpdb->last_error` text — assert the envelope + the guard's log
       event.
+
+  56. **Provider returns array `message.content` → `preg_match(): Argument #2
+      ($subject) must be of type string, array given` (v1.1.92, PR #6845).**
+      Gemini (and some OpenAI-compatible gateways, incl. DeepSeek endpoints)
+      return `message.content` as an **array of parts**, not a string — any
+      consumer feeding it straight into `preg_match()`/`json_decode()`/
+      string functions fatals. The six research tools all did (provider
+      response, parse entry, and array content nested inside the JSON body).
+      Fix layers:
+
+      - **Normalize at every choke point** — the shared
+        `WP_MCP_AI_Tool_Research_Content_Normalization` trait flattens
+        content-part arrays to strings before any string operation; apply it
+        on the provider response, the parsed entry, and nested array content.
+      - **Normalize in the client** —
+        `WP_MCP_AI_DeepSeek_Client::normalize_response()` flattens array
+        `message.content` blocks so every DeepSeek consumer (chat,
+        transcripts, tools) gets a string; leave `reasoning_content` and
+        `tool_calls` untouched.
+      - **Test both shapes** — assert the tool handles array content **and**
+        plain-string content identically (the normalization suite feeds both
+        shapes through each choke point); a regression is re-feeding the raw
+        array into a string function.
+
+  57. **Pro tool coverage manifest CI failure —
+      `test_tool_class_manifest_is_up_to_date` (v1.1.92, PR #6847; the #6828
+      precedent).** Every new Pro tool class must land in
+      `addons/pro/tests/tools/.coverage-manifest.txt` — a PR that registers
+      tools without regenerating the manifest fails the registry-coverage
+      suite. Fix: run `bin/generate-tool-coverage-manifest.sh` in the same PR
+      and commit the manifest diff with the tools. The manifest lists tool
+      **classes** — a shared non-tool class in the same folder (e.g. the
+      fashion transform) appears there without adding a slug to the
+      registration count, so don't assert slug counts from the manifest
+      alone.
 
 ## Production fix vs test fix
 

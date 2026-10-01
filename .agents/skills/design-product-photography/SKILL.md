@@ -143,6 +143,17 @@ Angle:       Slight 3/4 turn (not perfectly flat — show depth)
 | Seasonal or themed versions | AI (add holiday props, change background season) |
 | Color variants of same product | AI editing (`edit_gemini_image_validated`) |
 
+### Media Studio Fashion Production Suite (NV oOS v1.1.92+)
+
+The Media Studio addon ships a production-grade AI fashion photography stack (addon **0.6.0**, PRs #6839/#6844 — plans: `docs/project/plans/media-studio-fashion-photography-*.md`). Use it when the brief needs on-model apparel work at scale:
+
+- **`fashion-studio` SPA mode** — the `[nvoos_media_studio_app]` shortcode gains a `fashion-studio` mode (media-library source picker, presets, review-confirm + one-time acknowledgment dialogs, result grid with compliance chips).
+- **Eight AI transforms** (`NV_oOS_Media_Studio_AI_Service`, Gemini via `edit_gemini_image`): on-model, model-swap, face-swap, background, recolor, packshot, detail-repair, try-on. **Face outputs carry a forced disclosure watermark** and the disclosure-policy floor stays at `metadata`.
+- **Consent + cost rails** — D-1 one-time acknowledgment; D-3 cost tripwires ($0.25 per-image / $10 per-job review, $100 hard cap, unknown pricing → review).
+- **Pro batch/review queue** — `mcp_ai_fashion_job` CPT with approve/reject/reroll and WooCommerce + media collection export; fashion identity library on `mcp_ai_fashion_model` (consent-gated); **8 Pro tools** (`fashion_onmodel_generate`, `fashion_model_swap`, `fashion_background_generate`, `fashion_recolor`, `fashion_packshot`, `fashion_virtual_tryon`, `fashion_batch_job`, `fashion_identity_manage`).
+- **Marketplace output pipeline** — amazon/woocommerce/social/web profiles with format conversion, alt text, and white-background validation.
+- **Provenance** — IPTC 2025.1 XMP (JPEG/PNG/WebP) + best-effort C2PA; keep provenance metadata when exporting marketplace assets.
+
 ### Product Actualization (AI Scene Generation)
 
 Use `product_actualization` to place a real product image into an AI-generated scene:
