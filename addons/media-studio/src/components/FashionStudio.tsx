@@ -4,7 +4,8 @@
  * SPA surface for the AI fashion production pipeline:
  *   - input image from the Media Library (wp.media) or the `src` shortcode attr
  *   - industry transform set (on-model, model-swap, face-swap, background,
- *     recolor, packshot, detail-repair, try-on) driven by `/ai/capabilities`
+ *     recolor, packshot, detail-repair, try-on, video) driven by
+ *     `/ai/capabilities`
  *   - cost-review confirm flow + one-time disclosure acknowledgment
  *   - result grid with re-roll and compliance chips (provider, model,
  *     disclosure, watermark, white-background check)
@@ -81,6 +82,7 @@ const TRANSFORM_LABELS: Record< string, string > = {
 	packshot: __( 'Packshot', 'nvoos-media-studio' ),
 	'detail-repair': __( 'Detail repair', 'nvoos-media-studio' ),
 	'try-on': __( 'Try-on', 'nvoos-media-studio' ),
+	video: __( 'Fashion video', 'nvoos-media-studio' ),
 };
 
 function reviewReasonLabel( reason: string ): string {
@@ -117,6 +119,7 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 	const [ identityId, setIdentityId ] = useState( 0 );
 	const [ count, setCount ] = useState( 1 );
 	const [ seed, setSeed ] = useState( '' );
+	const [ duration, setDuration ] = useState( 5 );
 
 	const [ busy, setBusy ] = useState( false );
 	const [ status, setStatus ] = useState( '' );
@@ -240,9 +243,10 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 			identity_id: identityId > 0 ? identityId : undefined,
 			count,
 			seed: seed !== '' ? parseInt( seed, 10 ) : undefined,
+			duration,
 			...overrides,
 		} ),
-		[ source, transform, description, color, backgroundStyle, aspectRatio, identityId, count, seed ]
+		[ source, transform, description, color, backgroundStyle, aspectRatio, identityId, count, seed, duration ]
 	);
 
 	const runGenerate = useCallback(
@@ -508,30 +512,53 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 						</label>
 					) }
 
-					<label className="nvoos-ms-fs-field">
-						<span>{ __( 'Aspect ratio', 'nvoos-media-studio' ) }</span>
-						<select value={ aspectRatio } onChange={ ( event ) => setAspectRatio( event.target.value ) }>
-							{ ASPECT_RATIOS.map( ( option ) => (
-								<option key={ option.value } value={ option.value }>
-									{ option.label }
-								</option>
-							) ) }
-						</select>
-					</label>
+					{ transform === 'video' && (
+						<label className="nvoos-ms-fs-field">
+							<span>{ __( 'Clip duration (seconds)', 'nvoos-media-studio' ) }</span>
+							<select value={ duration } onChange={ ( event ) => setDuration( parseInt( event.target.value, 10 ) ) }>
+								{ [ 5, 8, 10, 15 ].map( ( value ) => (
+									<option key={ value } value={ value }>
+										{ value } s
+									</option>
+								) ) }
+							</select>
+							<span className="nvoos-ms-fs-hint">
+								{ __(
+									'Rendered by the media-worker sidecar (Replicate stable-video-diffusion). The clip URL is returned directly — it is not stored in the Media Library.',
+									'nvoos-media-studio'
+								) }
+							</span>
+						</label>
+					) }
 
-					<label className="nvoos-ms-fs-field">
-						<span>{ __( 'Planned variants (cost preview)', 'nvoos-media-studio' ) }</span>
-						<select value={ count } onChange={ ( event ) => setCount( parseInt( event.target.value, 10 ) ) }>
-							{ [ 1, 2, 3, 4 ].map( ( value ) => (
-								<option key={ value } value={ value }>
-									{ value }
-								</option>
-							) ) }
-						</select>
-						<span className="nvoos-ms-fs-hint">
-							{ __( 'Runs one generation per click; the count feeds the batch cost estimate (batch jobs ship in Phase 2).', 'nvoos-media-studio' ) }
-						</span>
-					</label>
+					{ transform !== 'video' && (
+						<label className="nvoos-ms-fs-field">
+							<span>{ __( 'Aspect ratio', 'nvoos-media-studio' ) }</span>
+							<select value={ aspectRatio } onChange={ ( event ) => setAspectRatio( event.target.value ) }>
+								{ ASPECT_RATIOS.map( ( option ) => (
+									<option key={ option.value } value={ option.value }>
+										{ option.label }
+									</option>
+								) ) }
+							</select>
+						</label>
+					) }
+
+					{ transform !== 'video' && (
+						<label className="nvoos-ms-fs-field">
+							<span>{ __( 'Planned variants (cost preview)', 'nvoos-media-studio' ) }</span>
+							<select value={ count } onChange={ ( event ) => setCount( parseInt( event.target.value, 10 ) ) }>
+								{ [ 1, 2, 3, 4 ].map( ( value ) => (
+									<option key={ value } value={ value }>
+										{ value }
+									</option>
+								) ) }
+							</select>
+							<span className="nvoos-ms-fs-hint">
+								{ __( 'Runs one generation per click; the count feeds the batch cost estimate (batch jobs ship in Phase 2).', 'nvoos-media-studio' ) }
+							</span>
+						</label>
+					) }
 
 					<label className="nvoos-ms-fs-field">
 						<span>{ __( 'Seed (optional)', 'nvoos-media-studio' ) }</span>
@@ -637,8 +664,23 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 				) : (
 					<ul className="nvoos-ms-fs-results">
 						{ results.map( ( result ) => (
-							<li key={ `${ result.attachment_id }-${ result.transform }` } className="nvoos-ms-fs-result">
-								<img className="nvoos-ms-fs-result-img" src={ result.url } alt={ result.transform } />
+							<li
+								key={
+									result.video_url
+										? `video-${ result.prediction_id ?? result.video_url }`
+										: `${ result.attachment_id }-${ result.transform }`
+								}
+								className="nvoos-ms-fs-result"
+							>
+								{ result.video_url ? (
+									<video className="nvoos-ms-fs-result-img" controls src={ result.video_url }>
+										{ /* Caption slot: no captions exist for freshly generated clips; a track can be attached when a VTT is produced. */ }
+										<track kind="captions" />
+										{ __( 'Your browser does not support inline video playback.', 'nvoos-media-studio' ) }
+									</video>
+								) : (
+									<img className="nvoos-ms-fs-result-img" src={ result.url } alt={ result.transform } />
+								) }
 								<div className="nvoos-ms-fs-chip" aria-label={ __( 'Compliance details', 'nvoos-media-studio' ) }>
 									<span className="nvoos-ms-fs-chip-item">
 										{ __( 'Provider', 'nvoos-media-studio' ) }: { result.provider }
@@ -646,6 +688,11 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 									{ result.model && (
 										<span className="nvoos-ms-fs-chip-item">
 											{ __( 'Model', 'nvoos-media-studio' ) }: { result.model }
+										</span>
+									) }
+									{ result.duration && (
+										<span className="nvoos-ms-fs-chip-item">
+											{ result.duration } s
 										</span>
 									) }
 									<span className="nvoos-ms-fs-chip-item">
@@ -691,14 +738,15 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 									</button>
 									<a
 										className="nvoos-ms-toolbar-btn"
-										href={ result.url }
+										href={ result.video_url ?? result.url }
 										download
 										aria-label={ __( 'Download variant', 'nvoos-media-studio' ) }
 									>
 										{ __( 'Download', 'nvoos-media-studio' ) }
 									</a>
 								</div>
-								{ Object.keys( capabilities?.profiles ?? {} ).length > 0 && (
+								{ result.attachment_id > 0 &&
+									Object.keys( capabilities?.profiles ?? {} ).length > 0 && (
 									<div className="nvoos-ms-fs-result-actions">
 										<label className="nvoos-ms-fs-field">
 											<span className="screen-reader-text">
