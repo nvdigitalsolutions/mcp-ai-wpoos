@@ -33,7 +33,7 @@ class Test_Media_Studio_XMP_Writer extends WP_UnitTestCase {
 		$img = imagecreatetruecolor( 40, 40 );
 		imagefilledrectangle( $img, 0, 0, 40, 40, imagecolorallocate( $img, 200, 200, 200 ) );
 		ob_start();
-		$ok = $render( $img );
+		$ok    = $render( $img );
 		$bytes = ob_get_clean();
 		imagedestroy( $img );
 		if ( ! $ok || '' === $bytes ) {

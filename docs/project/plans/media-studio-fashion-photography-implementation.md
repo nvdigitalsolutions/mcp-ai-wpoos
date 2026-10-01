@@ -1,6 +1,6 @@
 # Media Studio AI Fashion Production — Implementation Plan
 
-> **Status:** In progress — Phase 0 + 1 (base), Phase 2 (Pro), Phase 3 (base pipeline), and Phase 4 (base provenance/compliance) implemented; Phase 5 pending.
+> **Status:** ✅ Complete — all six phases (Phase 0+1 base AI service, Phase 2 Pro identities/batch, Phase 3 marketplace output pipeline, Phase 4 IPTC/C2PA provenance, Phase 5 video + assistant tooling) implemented and validated on WP 6.9 and WP 7.1.
 > **Parent plan:** `media-studio-fashion-photography-enhancement-plan.md` (research, gaps G-01…G-10, architecture)
 > **Date:** 2026-10-01
 
@@ -210,16 +210,47 @@ visible-disclosure path (D-1).
 
 ---
 
-## 7. Phase 5 — Video & Assistant Tooling (Pro, optional) ⏳ PENDING
+## 7. Phase 5 — Video & Assistant Tooling (Pro, optional) ✅ IMPLEMENTED
 
-- Fashion video: media-worker `/api/video/generate` driven from an approved still;
-  `video` transform in the SPA; `extract_video_frames` for thumbnails.
-- 8 `fashion_*` Pro tools (`fashion_onmodel_generate`, `fashion_model_swap`,
-  `fashion_background_generate`, `fashion_recolor`, `fashion_packshot`,
-  `fashion_virtual_tryon`, `fashion_batch_job`, `fashion_identity_manage`) —
-  canonical envelope + two-gate sanitization + `get_usage_guidance` +
-  capability declarations; base-version gating.
-- Workflow Builder: expose transforms as workflow node input types.
+- Fashion video: `video` transform in the base AI service (`execute_video()` +
+  `request_sidecar_video()` in `class-nvoos-media-studio-ai-service.php`), POST
+  `{WP_MEDIA_WORKER_URL}/api/video/generate` (synchronous Replicate text-to-video,
+  model `stable-video-diffusion`, 5–15s clips, optional seed). Unknown sidecar
+  pricing → `nvoos_ms_review_required` until `confirmed=true` (D-3). The envelope
+  carries `video_url` + `prediction_id`; clips are NOT sideloaded into the Media
+  Library in v1. Filter seam `nvoos_media_studio_video_generate` for tests and
+  alternate providers. SPA: `video` in `TRANSFORM_LABELS` with a duration
+  selector, `<video>` result player + download link (no marketplace processing
+  for sidecar clips); `duration` REST arg on `/ai/generate`; version bumped to
+  0.6.0.
+- 8 `fashion_*` Pro tools in `addons/pro/includes/tools/fashion/` (shared abstract
+  `WP_MCP_AI_Fashion_Transform_Tool`):
+
+  | Tool slug | Wraps | Capability (declared / escalated) |
+  |---|---|---|
+  | `fashion_onmodel_generate` | AI service `on-model` | `upload_files` |
+  | `fashion_model_swap` | `model-swap` | `upload_files` |
+  | `fashion_background_generate` | `background` | `upload_files` |
+  | `fashion_recolor` | `recolor` | `upload_files` |
+  | `fashion_packshot` | `packshot` | `upload_files` |
+  | `fashion_virtual_tryon` | `try-on` (consent-gated) | `upload_files` |
+  | `fashion_batch_job` | `WP_MCP_AI_Fashion_Batch` create/get/list/review | `edit_posts` / create → `upload_files` |
+  | `fashion_identity_manage` | `WP_MCP_AI_Fashion_Model_CPT` list/create/update/delete/set_consent | `edit_posts` / delete+set_consent → `manage_options` |
+
+  Canonical envelope + two-gate sanitization + `get_usage_guidance` +
+  `additionalProperties => false` schemas. Each tool self-gates via static
+  `is_available()` (Media Studio addon active) so the registration loop marks
+  them unavailable otherwise; registered in the main `$pro_tools` map of
+  `wp_mcp_ai_pro_register_tools()` and grouped under `external-tools`.
+- Workflow Builder: new `fashion` preset category + `fashion_product_creative`
+  DAG (input attachment → `fashion_onmodel_generate` → `fashion_packshot` →
+  output) in `WP_MCP_AI_Pro_Workflow_Presets::get_fashion_presets()`.
+- Tests: `addons/pro/tests/test-fashion-tools.php` (registration shape,
+  transform-through-seam, color entry sanitization, batch/identity capability
+  escalation, workflow preset); video coverage in
+  `addons/media-studio/tests/test-ai-service.php`; SPA coverage in
+  `fashion-studio.test.tsx` (video button gating, duration field, video player,
+  no marketplace processing).
 
 ---
 

@@ -44,7 +44,7 @@ class NV_oOS_Media_Studio_AI_Service {
 	 *
 	 * @var array
 	 */
-	const TRANSFORMS = array( 'on-model', 'model-swap', 'face-swap', 'background', 'recolor', 'packshot', 'detail-repair', 'try-on' );
+	const TRANSFORMS = array( 'on-model', 'model-swap', 'face-swap', 'background', 'recolor', 'packshot', 'detail-repair', 'try-on', 'video' );
 
 	/**
 	 * Transforms subject to the face-output disclosure policy (D-1).
@@ -91,6 +91,7 @@ class NV_oOS_Media_Studio_AI_Service {
 		'packshot'      => 'Convert this to a clean e-commerce packshot: the garment perfectly centered, ghost-mannequin or flat presentation, on a pure white background (RGB 255,255,255), evenly lit, no shadows on the background.',
 		'detail-repair' => 'Repair and restore this product image: fix or sharpen logos, text, and print details while preserving the overall garment appearance, lighting, and composition.',
 		'try-on'        => 'Show this person wearing the garment described below. Preserve the person, pose, and lighting exactly; render the garment with natural fit and realistic fabric behavior.',
+		'video'         => 'Fashion video of the garment shown in the source image. Keep the garment, colors, and fabric identical across frames; smooth camera motion.',
 	);
 
 	/**
@@ -108,6 +109,8 @@ class NV_oOS_Media_Studio_AI_Service {
 		'packshot'      => 'edit_gemini_image',
 		'detail-repair' => 'edit_gemini_image',
 		'try-on'        => 'edit_gemini_image',
+		// Sidecar-only (Phase 5): the media-worker /api/video/generate route.
+		'video'         => '',
 	);
 
 	/**
@@ -184,6 +187,16 @@ class NV_oOS_Media_Studio_AI_Service {
 
 		$transforms = array();
 		foreach ( self::TRANSFORMS as $slug ) {
+			if ( 'video' === $slug ) {
+				// Phase 5: sidecar-only transform — no core tool backend.
+				$transforms[ $slug ] = array(
+					'available'        => self::is_sidecar_available(),
+					'backend'          => self::is_sidecar_available() ? 'sidecar' : 'none',
+					'fidelity'         => 'prompt-bound',
+					'requires_consent' => false,
+				);
+				continue;
+			}
 			$tool                = self::TRANSFORM_TOOLS[ $slug ];
 			$available           = $registry instanceof WP_MCP_AI_Tool_Registry ? ( null !== $registry->get_tool( $tool ) ) : false;
 			$transforms[ $slug ] = array(
@@ -560,6 +573,161 @@ class NV_oOS_Media_Studio_AI_Service {
 	}
 
 	/**
+	 * Execute the sidecar-only video transform (Phase 5).
+	 *
+	 * The media-worker `/api/video/generate` route is synchronous text-to-video
+	 * (Replicate-backed, internal polling); the approved still drives the prompt
+	 * via a garment-continuity description. Results are NOT sideloaded into the
+	 * Media Library in v1 — the envelope carries the remote video URL.
+	 *
+	 * @param int   $attachment_id Source attachment ID (drives the prompt).
+	 * @param array $args          Transform arguments (duration, description, seed, confirmed).
+	 * @param int   $user_id       Acting user ID.
+	 * @return array|WP_Error
+	 */
+	public static function execute_video( $attachment_id, $args, $user_id ) {
+		$settings = self::get_settings();
+
+		// Cost gate: sidecar pricing is unknown to the core cost tracker, so
+		// the D-3 unknown-pricing tripwire requires an explicit confirm.
+		$review = self::review_required( 'video', $args, 1 );
+		if ( $review['required'] ) {
+			if ( ! empty( $review['blocked'] ) ) {
+				return new WP_Error( 'nvoos_ms_hard_cap', __( 'Estimated cost exceeds the configured hard cap.', 'nvoos-media-studio' ), array( 'status' => 402 ) );
+			}
+			if ( empty( $args['confirmed'] ) ) {
+				$error = new WP_Error(
+					'nvoos_ms_review_required',
+					__( 'This generation requires review before running.', 'nvoos-media-studio' ),
+					array( 'status' => 409 )
+				);
+				$error->add_data(
+					array(
+						'status' => 409,
+						'review' => $review,
+					),
+					'nvoos_ms_review_required'
+				);
+				return $error;
+			}
+		}
+
+		$duration = isset( $args['duration'] ) ? min( 15, max( 5, absint( $args['duration'] ) ) ) : 5;
+		$seed     = isset( $args['seed'] ) ? absint( $args['seed'] ) : 0;
+		$title    = get_the_title( $attachment_id );
+		$prompt   = 'Fashion video of the garment shown in the source image (' . sanitize_text_field( $title ) . '). Keep the garment, colors, and fabric identical across frames; smooth camera motion.';
+		$custom   = self::sanitize_user_text( isset( $args['description'] ) ? $args['description'] : '' );
+		if ( '' !== $custom ) {
+			$prompt .= ' ' . $custom;
+		}
+
+		$context = array( 'user_id' => $user_id );
+
+		/**
+		 * Filter the video generation result (tests, alternate providers).
+		 * Return null to call the media-worker sidecar.
+		 *
+		 * @param mixed  $result        Override result or null.
+		 * @param string $prompt        Video prompt.
+		 * @param array  $args          Transform arguments.
+		 * @param array  $context       Execution context.
+		 */
+		$result = apply_filters( 'nvoos_media_studio_video_generate', null, $prompt, $args, $context );
+
+		if ( null === $result ) {
+			$result = self::request_sidecar_video( $prompt, $duration, $seed );
+		}
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		if ( ! is_array( $result ) || empty( $result['video_url'] ) ) {
+			return new WP_Error( 'nvoos_ms_video_failed', __( 'The video provider returned no usable clip.', 'nvoos-media-studio' ), array( 'status' => 502 ) );
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'media_studio_transform',
+				sprintf( 'Media Studio video transform (source %d)', $attachment_id ),
+				array(
+					'transform'    => 'video',
+					'source'       => $attachment_id,
+					'user_id'      => $user_id,
+					'estimate_usd' => $review['estimate_usd'],
+					'provider'     => 'media-worker',
+				)
+			);
+		}
+
+		return array(
+			'attachment_id' => 0,
+			'url'           => '',
+			'video_url'     => esc_url_raw( $result['video_url'] ),
+			'prediction_id' => isset( $result['prediction_id'] ) ? sanitize_text_field( $result['prediction_id'] ) : '',
+			'transform'     => 'video',
+			'provider'      => 'media-worker',
+			'model'         => isset( $result['model'] ) ? sanitize_text_field( $result['model'] ) : '',
+			'duration'      => $duration,
+			'disclosure'    => $settings['ai_disclosure'],
+			'watermarked'   => false,
+			'xmp_embedded'  => false,
+			'c2pa_signed'   => false,
+			'estimate_usd'  => $review['estimate_usd'],
+			'per_image_usd' => $review['per_image_usd'],
+		);
+	}
+
+	/**
+	 * Call the media-worker sidecar video route.
+	 *
+	 * @param string $prompt   Video prompt.
+	 * @param int    $duration Clip length in seconds (5–15).
+	 * @param int    $seed     Optional seed.
+	 * @return array|WP_Error
+	 */
+	protected static function request_sidecar_video( $prompt, $duration, $seed = 0 ) {
+		if ( ! self::is_sidecar_available() ) {
+			return new WP_Error( 'nvoos_ms_sidecar_unavailable', __( 'The media-worker sidecar is not configured.', 'nvoos-media-studio' ), array( 'status' => 503 ) );
+		}
+
+		$body = array(
+			'prompt'   => $prompt,
+			'duration' => $duration,
+			'model'    => 'stable-video-diffusion',
+		);
+		if ( $seed > 0 ) {
+			$body['seed'] = $seed;
+		}
+
+		$response = wp_remote_post(
+			untrailingslashit( WP_MEDIA_WORKER_URL ) . '/api/video/generate',
+			array(
+				'timeout' => 300, // The sidecar polls Replicate internally.
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => wp_json_encode( $body ),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error( 'nvoos_ms_video_unreachable', __( 'Could not reach the media-worker video service.', 'nvoos-media-studio' ), array( 'status' => 502 ) );
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== $code || ! is_array( $data ) || empty( $data['video_url'] ) ) {
+			$message = is_array( $data ) && ! empty( $data['error'] ) ? sanitize_text_field( $data['error'] ) : __( 'The video service rejected the request.', 'nvoos-media-studio' );
+			return new WP_Error( 'nvoos_ms_video_rejected', $message, array( 'status' => 502 ) );
+		}
+
+		return array(
+			'video_url'     => esc_url_raw( $data['video_url'] ),
+			'prediction_id' => isset( $data['prediction_id'] ) ? sanitize_text_field( $data['prediction_id'] ) : '',
+			'model'         => isset( $data['model'] ) ? sanitize_text_field( $data['model'] ) : '',
+		);
+	}
+
+	/**
 	 * Execute one transform on one attachment.
 	 *
 	 * @param string $transform     Transform slug.
@@ -586,6 +754,12 @@ class NV_oOS_Media_Studio_AI_Service {
 
 		$user_id  = $user_id ? absint( $user_id ) : get_current_user_id();
 		$settings = self::get_settings();
+
+		// Phase 5: the video transform is sidecar-only and returns a video
+		// URL instead of a Media Library attachment.
+		if ( 'video' === $transform ) {
+			return self::execute_video( $attachment_id, $args, $user_id );
+		}
 
 		$identity_id = isset( $args['identity_id'] ) ? absint( $args['identity_id'] ) : 0;
 		$count       = isset( $args['count'] ) ? absint( $args['count'] ) : 1;

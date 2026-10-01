@@ -139,6 +139,7 @@ export interface GenerateArgs {
 	identity_id?: number;
 	count?: number;
 	seed?: number;
+	duration?: number;
 	confirmed?: boolean;
 	acknowledged?: boolean;
 }
@@ -155,7 +156,10 @@ export interface GenerateResult {
 	c2pa_signed: boolean;
 	estimate_usd: number | null;
 	per_image_usd: number | null;
-	white_background: WhiteBackgroundCheck | null;
+	white_background?: WhiteBackgroundCheck | null;
+	video_url?: string;
+	prediction_id?: string;
+	duration?: number;
 }
 
 export interface Preset {

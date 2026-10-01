@@ -64,7 +64,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				self::get_communication_presets(),
 				self::get_maintenance_presets(),
 				self::get_onboarding_presets(),
-				self::get_crm_support_presets()
+				self::get_crm_support_presets(),
+				self::get_fashion_presets()
 			);
 
 			return $presets;
@@ -124,6 +125,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				'maintenance'   => __( 'Site Maintenance', 'mcp-ai-wpoos-pro' ),
 				'onboarding'    => __( 'User & Content Onboarding', 'mcp-ai-wpoos-pro' ),
 				'crm_support'   => __( 'CRM — Support & Ticket Management', 'mcp-ai-wpoos-pro' ),
+				'fashion'       => __( 'AI Fashion Production', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -3230,6 +3232,106 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Onboarding Initiated', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Welcome activity created, onboarding sequence started.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
+						),
+					),
+				),
+			);
+		}
+
+		// ------------------------------------------------------------------
+		// Fashion presets
+		// ------------------------------------------------------------------
+
+		/**
+		 * Get AI fashion production workflow presets.
+		 *
+		 * These presets reference the fashion_* Pro tools, which only
+		 * register when the NV oOS Media Studio addon is active; the
+		 * builder marks missing tools as unavailable nodes.
+		 *
+		 * @since  1.1.91
+		 * @return array<string, array> Fashion preset definitions.
+		 */
+		private static function get_fashion_presets() {
+			return array(
+				'fashion_product_creative' => array(
+					'name'        => __( 'Product Image Creative Pipeline', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Turn a flat product photo into an on-model lifestyle image, then a marketplace-ready packshot.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'fashion',
+					'icon'        => 'dashicons-businessperson',
+					'tags'        => array( 'fashion', 'media', 'ecommerce', 'ai' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Product Image', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Media Library attachment ID of the product photo.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Generate On-Model', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'fashion_onmodel_generate',
+								'arguments'   => array( 'attachment_id' => '{{input.attachment_id}}' ),
+								'description' => __( 'Render the garment on an AI model.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Marketplace Packshot', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'fashion_packshot',
+								'arguments'   => array( 'attachment_id' => '{{node_2.attachment_id}}' ),
+								'description' => __( 'Produce a white-background packshot of the on-model result.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Creative Ready', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'On-model lifestyle and packshot variants are ready for review.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
 					),
