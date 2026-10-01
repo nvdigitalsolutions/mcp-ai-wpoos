@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.90
+Stable tag: 1.1.91
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.91 - October 1, 2026 =
+
+FlowHub MCP mode and MCP App OAuth discovery release. Added: a FlowHub Connection MCP mode (#6836) — FlowHub Remote Sites connections gain a flowhub_mode selector (api default | mcp); MCP mode designates the connection as the backend for the FlowHub toolkit MCP server, and MCP-triggered refresh/sync calls now inherit the connection's encrypted proxy (WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id() resolves the first enabled MCP-mode connection and the toolkit MCP REST controller injects its ID only when the caller passes none — explicit connection_id always wins, and without an MCP-designated connection behavior is unchanged); the seam is generic via WP_MCP_AI_Toolkit_Server_Base::get_mcp_connection_id(). Fixed: MCP App OAuth discovery now walks the full MCP spec chain (#6835) — RFC 8414 metadata with §3.2 path insertion, RFC 9728 protected-resource metadata trying every authorization_servers entry, the 401 WWW-Authenticate probe, OIDC fallback, and WordPress REST fallback — with both-endpoints validation, per-attempt diagnostics surfaced in the failure alert (real cURL/DNS/TLS errors instead of the generic message), server-advertised default_scope honored, multi-challenge parsing, and a 10s per-probe cap; OAuth redirect allowlists for LinkedIn, QuickBooks, Mailjet, and Yahoo (#6831/#6832) — connect buttons no longer bounce to wp-admin via the wp_safe_redirect fallback; orchestration CCT reads now gate on the physical table (is_storage_ready: table + every required column) and the new WP_MCP_AI_Db_Output_Guard wraps the central tool dispatch so no surface can leak database error HTML into a JSON response (#6827); the Security tab's recent-events table and the compliance CSV exporter read the canonical event_type/ip_address keys (#6829); the orchestration dashboard no longer renders twice (#6830); rfdetr_catalog_search joins the ecommerce preset and the Pro coverage manifest is regenerated (#6828). Security: nodemailer ^10.0.9 in pro + media-worker (GHSA-g57g-f23g-4646) with the vendor bundle refreshed, and the fast-uri override floor raised to >=4.1.5 across four trees (GHSA-jvvf-x445-j334) — four Dependabot alerts each. Tool count: ~347 base + ~1,301 Pro (~1,648 total; unchanged; live registry authoritative). Model catalog: v2026.09.22 (unchanged). Stale build ZIPs removed: the 1.1.89 build set (30 files).
 
 = 1.1.90 - September 30, 2026 =
 
