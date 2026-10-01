@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Media Studio
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: NV oOS Media Studio — React-based SPA surface for the NV oOS plugin. Generated from the Toolkit SPA Blueprint.
- * Version:     0.1.0
+ * Version:     0.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: NV Digital Solutions
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version — must match package.json. */
-define( 'NVOOS_MEDIA_STUDIO_VERSION', '0.1.0' );
+define( 'NVOOS_MEDIA_STUDIO_VERSION', '0.2.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_MEDIA_STUDIO_FILE', __FILE__ );
@@ -34,6 +34,7 @@ define( 'NVOOS_MEDIA_STUDIO_URL', plugin_dir_url( __FILE__ ) );
 
 require_once NVOOS_MEDIA_STUDIO_PATH . 'includes/class-nvoos-media-studio-plugin.php';
 require_once NVOOS_MEDIA_STUDIO_PATH . 'includes/rest/class-nvoos-media-studio-rest.php';
+require_once NVOOS_MEDIA_STUDIO_PATH . 'includes/ai/class-nvoos-media-studio-ai-service.php';
 require_once NVOOS_MEDIA_STUDIO_PATH . 'includes/shortcode/class-nvoos-media-studio-shortcode.php';
 require_once NVOOS_MEDIA_STUDIO_PATH . 'includes/block/class-nvoos-media-studio-block.php';
 
