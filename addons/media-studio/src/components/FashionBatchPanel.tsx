@@ -25,6 +25,7 @@ interface FashionBatchPanelProps {
 	backgroundStyle: string;
 	aspectRatio: string;
 	identityId: number;
+	profiles: Record< string, { label: string } >;
 }
 
 const VARIANT_STATUS_LABELS: Record< string, string > = {
@@ -43,9 +44,11 @@ export function FashionBatchPanel( {
 	backgroundStyle,
 	aspectRatio,
 	identityId,
+	profiles,
 }: FashionBatchPanelProps ) {
 	const [ jobs, setJobs ] = useState< FashionJob[] >( [] );
 	const [ sourceIds, setSourceIds ] = useState( '' );
+	const [ profile, setProfile ] = useState( '' );
 	const [ busy, setBusy ] = useState( false );
 	const [ status, setStatus ] = useState( '' );
 	const [ review, setReview ] = useState< ReviewInfo | null >( null );
@@ -116,10 +119,11 @@ export function FashionBatchPanel( {
 				background_style: backgroundStyle,
 				aspect_ratio: aspectRatio,
 				identity_id: identityId > 0 ? identityId : undefined,
+				profile: profile !== '' ? profile : undefined,
 				...overrides,
 			};
 		},
-		[ sourceIds, transform, description, color, backgroundStyle, aspectRatio, identityId ]
+		[ sourceIds, transform, description, color, backgroundStyle, aspectRatio, identityId, profile ]
 	);
 
 	const runCreate = useCallback(
@@ -202,6 +206,14 @@ export function FashionBatchPanel( {
 					</span>
 				) }
 			</div>
+			{ variant.processed_url && (
+				<p className="nvoos-ms-fs-hint">
+					{ __( 'Marketplace output:', 'nvoos-media-studio' ) }{ ' ' }
+					<a href={ variant.processed_url } download>
+						{ __( 'Download', 'nvoos-media-studio' ) }
+					</a>
+				</p>
+			) }
 			{ variant.error && (
 				<p className="nvoos-ms-error" role="alert">
 					{ variant.error }
@@ -251,6 +263,19 @@ export function FashionBatchPanel( {
 						className="nvoos-ms-fs-batch-ids"
 					/>
 				</label>
+				{ Object.keys( profiles ).length > 0 && (
+					<label className="nvoos-ms-fs-field">
+						<span>{ __( 'Marketplace profile', 'nvoos-media-studio' ) }</span>
+						<select value={ profile } onChange={ ( event ) => setProfile( event.target.value ) }>
+							<option value="">{ __( '— None —', 'nvoos-media-studio' ) }</option>
+							{ Object.entries( profiles ).map( ( [ slug, definition ] ) => (
+								<option key={ slug } value={ slug }>
+									{ definition.label }
+								</option>
+							) ) }
+						</select>
+					</label>
+				) }
 				<button
 					type="button"
 					className="nvoos-ms-toolbar-btn nvoos-ms-toolbar-btn--primary"
@@ -350,6 +375,11 @@ export function FashionBatchPanel( {
 							</button>
 							{ expanded === job.id && (
 								<div className="nvoos-ms-fs-job-body">
+									{ job.profile && (
+										<p className="nvoos-ms-fs-hint">
+											{ __( 'Marketplace profile:', 'nvoos-media-studio' ) } { job.profile }
+										</p>
+									) }
 									{ job.variants.length > 0 ? (
 										<ul className="nvoos-ms-fs-variants">{ job.variants.map( ( variant ) => renderVariant( job, variant ) ) }</ul>
 									) : (

@@ -1,6 +1,6 @@
 # Media Studio AI Fashion Production — Implementation Plan
 
-> **Status:** In progress — Phase 0 + Phase 1 (base plugin) and Phase 2 (Pro) implemented; Phase 3–5 pending.
+> **Status:** In progress — Phase 0 + Phase 1 (base), Phase 2 (Pro), and Phase 3 (base output pipeline) implemented; Phase 4–5 pending.
 > **Parent plan:** `media-studio-fashion-photography-enhancement-plan.md` (research, gaps G-01…G-10, architecture)
 > **Date:** 2026-10-01
 
@@ -162,15 +162,21 @@ change-set against the normal flow.
 
 ---
 
-## 5. Phase 3 — Marketplace-Compliant Output Pipeline (base) ⏳ PARTIALLY IMPLEMENTED
+## 5. Phase 3 — Marketplace-Compliant Output Pipeline (base) ✅ IMPLEMENTED
 
-- [x] White-background validation (edge pixel sampling, tolerance math) — implemented
-      as `NV_oOS_Media_Studio_AI_Service::validate_white_background()` and used by
-      `packshot`.
-- [x] Provenance naming on AI outputs (`fashion-<transform>-<hash>` — never `IMG_xxxx`).
-- [ ] Dimension profiles (amazon/woocommerce/social/web) + auto-resize — pending.
-- [ ] Format/optimization (WebP vs JPEG per marketplace) via media-worker `/optimize` — pending.
-- [ ] Auto alt text via `generate_image_alt_text_validated` on export — pending.
+Shared `NV_oOS_Media_Studio_Output_Pipeline` (`addons/media-studio/includes/ai/class-nvoos-media-studio-output-pipeline.php`):
+
+- [x] **Dimension profiles** — `amazon` (1600px square, JPEG, white-bg required), `woocommerce` (≥800px, WebP), `social` (≥1080px, WebP), `web` (≥2000px, WebP).
+- [x] **Bounded upscaling** — GD `imagecopyresampled` resample up to 2× (`MAX_UPSCALE_FACTOR`); beyond that `nvoos_ms_insufficient_resolution` (409). WP 6.9 removed the `image_resize_upscale` filter, so upscaling is GD-direct; downscale/crop uses `wp_get_image_editor` center-crop squares.
+- [x] **White-background validation** on Amazon outputs (edge sampling, tolerance math) — surfaced as `white_background` in the payload.
+- [x] **Format conversion** via `WP_Image_Editor::save()` with a JPEG fallback when WebP/PNG encoders are missing; derived meta `_nvoos_ai_derived_from|_nvoos_ai_output_profile|_nvoos_ai_upscaled`.
+- [x] **Naming** — `<source-base>-<profile>-<variant>.<ext>`, `IMG_*`/`DSC_*`-style bases scrubbed to `media-studio`.
+- [x] **Alt text** — auto via the core `generate_image_alt_text` tool (filter seam `nvoos_media_studio_alt_text`), opt-out per call, source alt carries over on failure.
+- [x] **REST** — `POST /ai/pipeline` (attachment_id, profile, alt_text, variant) with `upload_files` gate; profiles exposed in `/ai/capabilities`.
+- [x] **SPA** — per-result "Process for marketplace" (profile select + processed output chip incl. white-bg status); batch creation gains a profile select.
+- [x] **Pro batch** — job-level `profile`/`alt_text` meta; approve runs the pipeline and exports the processed asset to the WooCommerce gallery/collection (errors surface in `export_error`).
+
+- [ ] Media-worker `/api/image/optimize` sidecar routing — pending (GD/Imagick path is the shipped default).
 
 ---
 

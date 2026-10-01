@@ -24,6 +24,7 @@ import {
 	type FashionModel,
 	type GenerateResult,
 	type Preset,
+	type ProcessedPayload,
 	type ReviewInfo,
 } from '../hooks/useAiApi';
 import { FashionBatchPanel } from './FashionBatchPanel';
@@ -120,6 +121,8 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 	const [ busy, setBusy ] = useState( false );
 	const [ status, setStatus ] = useState( '' );
 	const [ results, setResults ] = useState< GenerateResult[] >( [] );
+	const [ processedById, setProcessedById ] = useState< Record< number, ProcessedPayload > >( {} );
+	const [ profileById, setProfileById ] = useState< Record< number, string > >( {} );
 
 	const [ pendingReview, setPendingReview ] = useState< ReviewInfo | null >( null );
 	const [ ackNeeded, setAckNeeded ] = useState( false );
@@ -312,6 +315,30 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 		}
 		announce( __( 'Preset applied.', 'nvoos-media-studio' ) );
 	}, [ announce ] );
+
+	const handleProcess = useCallback(
+		( result: GenerateResult ) => {
+			const profileSlugs = Object.keys( capabilities?.profiles ?? {} );
+			if ( profileSlugs.length === 0 ) {
+				announce( __( 'No marketplace profiles are available.', 'nvoos-media-studio' ) );
+				return;
+			}
+			const profile = profileById[ result.attachment_id ] ?? profileSlugs[ 0 ];
+			setBusy( true );
+			announce( __( 'Processing for marketplace…', 'nvoos-media-studio' ) );
+			aiApi
+				.runPipeline( result.attachment_id, profile )
+				.then( ( processed ) => {
+					setProcessedById( ( current ) => ( { ...current, [ result.attachment_id ]: processed } ) );
+					announce( __( 'Marketplace output ready.', 'nvoos-media-studio' ) );
+				} )
+				.catch( ( error: Error ) => announce( error.message ) )
+				.finally( () => setBusy( false ) );
+		},
+		[ capabilities, profileById, announce ]
+	);
+
+	const defaultProfileSlug = Object.keys( capabilities?.profiles ?? {} )[ 0 ] ?? '';
 
 	if ( loadError ) {
 		return <p className="nvoos-ms-error" role="alert">{ loadError }</p>;
@@ -661,6 +688,59 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 										{ __( 'Download', 'nvoos-media-studio' ) }
 									</a>
 								</div>
+								{ Object.keys( capabilities?.profiles ?? {} ).length > 0 && (
+									<div className="nvoos-ms-fs-result-actions">
+										<label className="nvoos-ms-fs-field">
+											<span className="screen-reader-text">
+												{ __( 'Marketplace profile', 'nvoos-media-studio' ) }
+											</span>
+											<select
+												value={ profileById[ result.attachment_id ] ?? defaultProfileSlug }
+												onChange={ ( event ) =>
+													setProfileById( ( current ) => ( {
+														...current,
+														[ result.attachment_id ]: event.target.value,
+													} ) )
+												}
+											>
+												{ Object.entries( capabilities?.profiles ?? {} ).map( ( [ slug, profile ] ) => (
+													<option key={ slug } value={ slug }>
+														{ profile.label }
+													</option>
+												) ) }
+											</select>
+										</label>
+										<button
+											type="button"
+											className="nvoos-ms-toolbar-btn"
+											onClick={ () => handleProcess( result ) }
+											disabled={ busy }
+										>
+											{ __( 'Process for marketplace', 'nvoos-media-studio' ) }
+										</button>
+									</div>
+								) }
+								{ processedById[ result.attachment_id ] && (
+									<div className="nvoos-ms-fs-chip">
+										<span className="nvoos-ms-fs-chip-item">
+											{ processedById[ result.attachment_id ].profile }
+										</span>
+										{ processedById[ result.attachment_id ].white_background && (
+											<span className="nvoos-ms-fs-chip-item">
+												{ processedById[ result.attachment_id ].white_background?.is_white
+													? __( 'White background ✓', 'nvoos-media-studio' )
+													: __( 'White background — needs review', 'nvoos-media-studio' ) }
+											</span>
+										) }
+										<a
+											className="nvoos-ms-fs-chip-item"
+											href={ processedById[ result.attachment_id ].url }
+											download
+										>
+											{ __( 'Download output', 'nvoos-media-studio' ) }
+										</a>
+									</div>
+								) }
 							</li>
 						) ) }
 					</ul>
@@ -675,6 +755,7 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 					backgroundStyle={ backgroundStyle }
 					aspectRatio={ aspectRatio }
 					identityId={ identityId }
+					profiles={ capabilities.profiles }
 				/>
 			) }
 
