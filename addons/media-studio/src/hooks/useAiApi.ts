@@ -52,6 +52,8 @@ export interface ProcessedPayload {
 	source_id: number;
 	upscaled: boolean;
 	alt_text: string;
+	xmp_embedded: boolean;
+	c2pa_signed: boolean;
 	white_background: WhiteBackgroundCheck | null;
 }
 
@@ -149,6 +151,8 @@ export interface GenerateResult {
 	model: string;
 	disclosure: string;
 	watermarked: boolean;
+	xmp_embedded: boolean;
+	c2pa_signed: boolean;
 	estimate_usd: number | null;
 	per_image_usd: number | null;
 	white_background: WhiteBackgroundCheck | null;

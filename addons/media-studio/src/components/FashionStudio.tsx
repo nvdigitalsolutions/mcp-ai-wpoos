@@ -656,6 +656,16 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 											{ __( 'Watermarked', 'nvoos-media-studio' ) }
 										</span>
 									) }
+									{ result.xmp_embedded && (
+										<span className="nvoos-ms-fs-chip-item">
+											{ __( 'XMP provenance', 'nvoos-media-studio' ) }
+										</span>
+									) }
+									{ result.c2pa_signed && (
+										<span className="nvoos-ms-fs-chip-item">
+											{ __( 'C2PA signed', 'nvoos-media-studio' ) }
+										</span>
+									) }
 									{ result.estimate_usd !== null && (
 										<span className="nvoos-ms-fs-chip-item">
 											${ ' ' }
