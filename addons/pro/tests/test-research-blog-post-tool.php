@@ -210,6 +210,106 @@ class Test_Research_Blog_Post_Tool extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------
+	// Parse-results robustness tests (regression: preg_match() on arrays).
+	// -----------------------------------------------------------------
+
+	/**
+	 * Invoke the protected parse_research_results method.
+	 *
+	 * @param array $research_result AI response envelope.
+	 * @return array|WP_Error Parsed post data or error.
+	 */
+	private function invoke_parse_results( $research_result ) {
+		$method = new ReflectionMethod( $this->tool, 'parse_research_results' );
+		$method->setAccessible( true );
+
+		return $method->invoke( $this->tool, $research_result, 'Test topic', 'block-editor', '', 'full' );
+	}
+
+	/**
+	 * Test parse_research_results handles array content parts (Gemini format).
+	 */
+	public function test_parse_results_handles_array_content_parts() {
+		$json = wp_json_encode(
+			array(
+				'title'   => 'Test Post',
+				'content' => '<h2>Section</h2><p>Body text.</p>',
+				'excerpt' => 'A short excerpt.',
+			)
+		);
+
+		$result = $this->invoke_parse_results(
+			array(
+				'content'  => array(
+					array(
+						'type' => 'text',
+						'text' => $json,
+					),
+				),
+				'provider' => 'gemini',
+				'model'    => 'gemini-2.5-flash',
+			)
+		);
+
+		$this->assertNotWPError( $result );
+		$this->assertIsArray( $result );
+		$this->assertSame( 'Test Post', $result['title'] );
+		$this->assertStringContainsString( '<h2>Section</h2>', $result['content'] );
+	}
+
+	/**
+	 * Test parse_research_results handles array content inside the JSON body.
+	 */
+	public function test_parse_results_handles_array_post_content() {
+		$json = wp_json_encode(
+			array(
+				'title'   => 'Test Post',
+				'content' => array( '<h2>Section</h2>', '<p>Body text.</p>' ),
+			)
+		);
+
+		$result = $this->invoke_parse_results(
+			array(
+				'content'  => $json,
+				'provider' => 'openai',
+				'model'    => 'gpt-4.1',
+			)
+		);
+
+		$this->assertNotWPError( $result );
+		$this->assertIsArray( $result );
+		$this->assertSame( 'Test Post', $result['title'] );
+		$this->assertStringContainsString( '<h2>Section</h2>', $result['content'] );
+		$this->assertStringContainsString( '<p>Body text.</p>', $result['content'] );
+	}
+
+	/**
+	 * Test the content parts normalizer flattens mixed segments.
+	 */
+	public function test_normalize_content_parts() {
+		$method = new ReflectionMethod( $this->tool, 'normalize_content_parts' );
+		$method->setAccessible( true );
+
+		$flattened = $method->invoke(
+			$this->tool,
+			array(
+				array(
+					'type' => 'text',
+					'text' => 'First part.',
+				),
+				'Plain string part.',
+				array( 'content' => 'Third part.' ),
+				array(
+					'type'  => 'image',
+					'image' => 'not text',
+				),
+			)
+		);
+
+		$this->assertSame( "First part.\n\nPlain string part.\n\nThird part.", $flattened );
+	}
+
+	// -----------------------------------------------------------------
 	// Execute validation tests (no AI call — validate param handling)
 	// -----------------------------------------------------------------
 

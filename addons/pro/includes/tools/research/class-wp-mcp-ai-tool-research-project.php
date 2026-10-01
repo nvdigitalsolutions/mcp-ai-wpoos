@@ -15,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-research-content-normalization.php';
+
 /**
  * Research Project Tool
  *
@@ -23,6 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Research_Content_Normalization;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -661,8 +664,16 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
+		// Some providers (e.g. Gemini) return message content as an array of
+		// parts instead of a plain string. Flatten it so downstream parsers
+		// can safely run string functions on it.
+		$content = $result['choices'][0]['message']['content'];
+		if ( is_array( $content ) ) {
+			$content = $this->normalize_content_parts( $content );
+		}
+
 		return array(
-			'content'  => $result['choices'][0]['message']['content'],
+			'content'  => $content,
 			'provider' => $provider,
 			'model'    => $model,
 		);
@@ -955,15 +966,18 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array|WP_Error Parsed project data or error.
 	 */
 	protected function parse_research_results( $research_result, $query ) {
-		$content = $research_result['content'];
+		$content = isset( $research_result['content'] ) ? $research_result['content'] : '';
+		if ( is_array( $content ) ) {
+			$content = $this->normalize_content_parts( $content );
+		}
 
 		// Try to extract JSON from the response.
-		$json_pattern = '/```( ? ( :json)?\s*(\{.*?\})\s*```/s';
+		$json_pattern = '/```(?: ?json)?\s*(\{.*?\})\s*```/s';
 		if ( preg_match( $json_pattern, $content, $matches ) ) {
 			$json_str = $matches[1];
 		} else {
 			// Try to find JSON without code blocks.
-			$json_pattern = '/(\{[^{}]*( ? ( :\{[^{}]*\}[^{}]*)*\})/s';
+			$json_pattern = '/(\{(?:[^{}]|\{[^{}]*\})*\})/s';
 			if ( preg_match( $json_pattern, $content, $matches ) ) {
 				$json_str = $matches[1];
 			} else {
