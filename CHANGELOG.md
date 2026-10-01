@@ -1,5 +1,12 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Fixed — Provider-Side Image Download Failures (Inline Data URLs + Payload Optimization)
+
+- **`submit_document_prompt` (and every vision chat path) no longer hands remote image URLs to OpenAI/DeepSeek to download.** The new `WP_MCP_AI_Image_Data_Url` helper converts image segments into base64 data URLs using the WordPress server as the fetcher — local attachment files are read straight off disk, remote URLs are downloaded server-side — so provider fetches that fail on hotlink protection, CDN rules, staging auth, or freshly uploaded media no longer break the request. Both OpenAI payload paths (Chat Completions `convert_image_files_to_image_url` and Responses `populate_responses_image_segment`) and the DeepSeek `convert_image_segments_for_payload` prefer the inline bytes and fall back to the original URL when inlining is impossible (oversized, non-image MIME, download failure). Gemini/Anthropic/Ollama already fetched server-side. Request logs truncate data URLs to 80 chars.
+- **Inline payload optimization (admin toggle + filters)** — oversized JPEG/PNG images are downscaled to a 2048px vision-tile dimension cap and opaque PNGs are re-encoded as JPEG (alpha PNGs keep their PNG encoding; GIFs keep animation; WebP untouched). This keeps provider requests lean and cuts vision token costs, which scale with resolution. A cheap header-only probe (PNG IHDR / JPEG SOF) catches well-compressed-but-huge images; the original upload is never modified and the original bytes are used whenever the re-encode is not smaller. New **Chat Client → Features → Inline Image Optimization** toggle (default on); filters: `wp_mcp_ai_image_inline_optimize` (bool), `wp_mcp_ai_image_inline_optimize_min_bytes` (1 MB), `wp_mcp_ai_image_inline_max_dimension` (2048), `wp_mcp_ai_image_inline_jpeg_quality` (82) — plus the existing `wp_mcp_ai_image_inline_max_bytes` (10 MB) and `wp_mcp_ai_image_inline_mime_types`.
+
 ## [1.1.91] - 2026-10-01
 
 ### Added — FlowHub Connection MCP Mode (Proxy for Assistant MCP Services) (PR #6836)

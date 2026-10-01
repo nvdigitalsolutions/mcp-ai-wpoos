@@ -1220,6 +1220,20 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 						}
 					}
 
+					if ( '' !== $image_url && 0 !== stripos( $image_url, 'data:' ) ) {
+						// Prefer inline bytes so DeepSeek never has to download our URL.
+						if ( ! class_exists( 'WP_MCP_AI_Image_Data_Url' ) && defined( 'WP_MCP_AI_PATH' ) ) {
+							require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-image-data-url.php';
+						}
+
+						if ( class_exists( 'WP_MCP_AI_Image_Data_Url' ) ) {
+							$data_url = WP_MCP_AI_Image_Data_Url::from_segment( $segment );
+							if ( '' !== $data_url ) {
+								$image_url = $data_url;
+							}
+						}
+					}
+
 					if ( '' !== $image_url ) {
 						$converted[] = array(
 							'type'      => 'image_url',
