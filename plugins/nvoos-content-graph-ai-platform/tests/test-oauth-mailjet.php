@@ -88,6 +88,28 @@ class Test_OAuth_Mailjet extends \WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_settings', MailjetOAuthHandler::OPTION_NAME );
 	}
 
+	public function test_allow_mailjet_oauth_redirect_host_default(): void {
+		$handler = new MailjetOAuthHandler();
+		$hosts   = $handler->allow_mailjet_oauth_redirect_host( array( 'example.com' ), '' );
+
+		$this->assertContains( 'app.mailjet.com', $hosts );
+		$this->assertContains( 'example.com', $hosts );
+	}
+
+	public function test_allow_mailjet_oauth_redirect_host_filtered_endpoint(): void {
+		$filter = static function () {
+			return 'https://mailjet-enterprise.example.com/oauth/authorize';
+		};
+		add_filter( 'wp_mcp_ai_mailjet_oauth_authorize_endpoint', $filter );
+
+		$handler = new MailjetOAuthHandler();
+		$hosts   = $handler->allow_mailjet_oauth_redirect_host( array(), '' );
+
+		remove_filter( 'wp_mcp_ai_mailjet_oauth_authorize_endpoint', $filter );
+
+		$this->assertContains( 'mailjet-enterprise.example.com', $hosts );
+	}
+
 	public function test_state_transient_key_format(): void {
 		$seam = new MailjetOAuthHandlerSeam();
 

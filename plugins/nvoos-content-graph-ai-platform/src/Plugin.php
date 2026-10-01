@@ -619,6 +619,7 @@ final class Plugin {
 			add_action( 'admin_post_wp_mcp_ai_quickbooks_oauth_start', array( $quickbooks, 'handle_quickbooks_oauth_start' ) );
 			add_action( 'admin_post_wp_mcp_ai_quickbooks_oauth_callback', array( $quickbooks, 'handle_quickbooks_oauth_callback' ) );
 			add_action( 'admin_post_wp_mcp_ai_quickbooks_disconnect', array( $quickbooks, 'handle_quickbooks_disconnect' ) );
+			add_filter( 'allowed_redirect_hosts', array( $quickbooks, 'allow_quickbooks_oauth_redirect_host' ), 10, 2 );
 			add_action(
 				'admin_notices',
 				static function (): void {
@@ -648,8 +649,13 @@ final class Plugin {
 		}
 
 		// Mailjet: byte-identical to the base — its integration init wires
-		// only the webhook handler; the OAuth handler is a static token
-		// utility with no hooks of its own.
+		// only the webhook handler; the OAuth handler has no admin_post hooks
+		// of its own. The redirect-host filter is still registered so the
+		// authorize redirect works the day the flow is wired up.
+		if ( class_exists( __NAMESPACE__ . '\Integrations\MailjetOAuthHandler' ) ) {
+			$mailjet = new \NvoosContentGraphAiPlatform\Integrations\MailjetOAuthHandler();
+			add_filter( 'allowed_redirect_hosts', array( $mailjet, 'allow_mailjet_oauth_redirect_host' ), 10, 2 );
+		}
 	}
 
 	/**

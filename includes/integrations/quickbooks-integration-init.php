@@ -51,6 +51,10 @@ add_action(
 		add_action( 'admin_post_wp_mcp_ai_quickbooks_oauth_start', array( $handler, 'handle_quickbooks_oauth_start' ) );
 		add_action( 'admin_post_wp_mcp_ai_quickbooks_oauth_callback', array( $handler, 'handle_quickbooks_oauth_callback' ) );
 		add_action( 'admin_post_wp_mcp_ai_quickbooks_disconnect', array( $handler, 'handle_quickbooks_disconnect' ) );
+
+		// Allow the Intuit authorize host so wp_safe_redirect() reaches the
+		// consent page instead of falling back to admin_url().
+		add_filter( 'allowed_redirect_hosts', array( $handler, 'allow_quickbooks_oauth_redirect_host' ), 10, 2 );
 	}
 );
 
