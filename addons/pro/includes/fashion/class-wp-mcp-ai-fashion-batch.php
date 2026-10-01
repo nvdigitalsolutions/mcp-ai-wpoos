@@ -76,6 +76,8 @@ class WP_MCP_AI_Fashion_Batch {
 	const META_ACTION_IDS = '_fashion_job_action_ids';
 	const META_PRODUCT_ID = '_fashion_job_product_id';
 	const META_COLLECTION = '_fashion_job_collection_id';
+	const META_PROFILE    = '_fashion_job_profile';
+	const META_ALT_TEXT   = '_fashion_job_alt_text';
 
 	/**
 	 * Initialize the job post type and the AS processor hook.
@@ -214,6 +216,13 @@ class WP_MCP_AI_Fashion_Batch {
 			'identity_id'      => $identity_id,
 		);
 
+		// Phase 3: optional marketplace output profile applied on approve.
+		$profile  = isset( $args['profile'] ) ? sanitize_key( $args['profile'] ) : '';
+		$alt_text = ! isset( $args['alt_text'] ) || ! empty( $args['alt_text'] );
+		if ( '' !== $profile && class_exists( 'NV_oOS_Media_Studio_Output_Pipeline' ) && ! NV_oOS_Media_Studio_Output_Pipeline::is_valid_profile( $profile ) ) {
+			return new WP_Error( 'nvoos_ms_invalid_profile', __( 'Unknown output profile.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
+		}
+
 		$variants = array();
 		foreach ( $ids as $index => $source_id ) {
 			$variants[] = array(
@@ -250,6 +259,8 @@ class WP_MCP_AI_Fashion_Batch {
 					self::META_ACTION_IDS => array(),
 					self::META_PRODUCT_ID => isset( $args['product_id'] ) ? absint( $args['product_id'] ) : 0,
 					self::META_COLLECTION => isset( $args['collection_id'] ) ? absint( $args['collection_id'] ) : 0,
+					self::META_PROFILE    => $profile,
+					self::META_ALT_TEXT   => $alt_text,
 				),
 			)
 		);
@@ -402,19 +413,46 @@ class WP_MCP_AI_Fashion_Batch {
 			}
 			$variant['status'] = self::VARIANT_APPROVED;
 
+			$export_errors = array();
+
+			// Phase 3: run the marketplace output pipeline when a profile is set.
+			$profile    = sanitize_key( (string) get_post_meta( $job_id, self::META_PROFILE, true ) );
+			$alt_text   = (bool) get_post_meta( $job_id, self::META_ALT_TEXT, true );
+			$export_id  = absint( $variant['attachment_id'] );
+			$export_url = '';
+
+			if ( '' !== $profile && class_exists( 'NV_oOS_Media_Studio_Output_Pipeline' ) && $export_id > 0 ) {
+				$processed = NV_oOS_Media_Studio_Output_Pipeline::process(
+					$export_id,
+					$profile,
+					array(
+						'alt_text' => $alt_text,
+						'variant'  => $variant_key,
+					),
+					$user_id
+				);
+				if ( is_wp_error( $processed ) ) {
+					$export_errors[] = $processed->get_error_message();
+				} else {
+					$export_id                = absint( $processed['attachment_id'] );
+					$export_url               = esc_url_raw( $processed['url'] );
+					$variant['processed_id']  = $export_id;
+					$variant['processed_url'] = $export_url;
+				}
+			}
+
 			// Export pipeline: WooCommerce gallery + media collection.
 			$product_id    = isset( $options['product_id'] ) ? absint( $options['product_id'] ) : absint( get_post_meta( $job_id, self::META_PRODUCT_ID, true ) );
 			$collection_id = isset( $options['collection_id'] ) ? absint( $options['collection_id'] ) : absint( get_post_meta( $job_id, self::META_COLLECTION, true ) );
 
-			$export_errors = array();
-			if ( $product_id > 0 && ! empty( $variant['attachment_id'] ) ) {
-				$attach_result = self::attach_to_product_gallery( $variant['attachment_id'], $product_id );
+			if ( $product_id > 0 && $export_id > 0 ) {
+				$attach_result = self::attach_to_product_gallery( $export_id, $product_id );
 				if ( is_wp_error( $attach_result ) ) {
 					$export_errors[] = $attach_result->get_error_message();
 				}
 			}
-			if ( $collection_id > 0 && ! empty( $variant['attachment_id'] ) ) {
-				$collection_result = self::add_to_collection( array( $variant['attachment_id'] ), $collection_id );
+			if ( $collection_id > 0 && $export_id > 0 ) {
+				$collection_result = self::add_to_collection( array( $export_id ), $collection_id );
 				if ( is_wp_error( $collection_result ) ) {
 					$export_errors[] = $collection_result->get_error_message();
 				}
@@ -693,6 +731,8 @@ class WP_MCP_AI_Fashion_Batch {
 			'status'        => isset( $variant['status'] ) ? sanitize_key( $variant['status'] ) : self::VARIANT_FAILED,
 			'attachment_id' => isset( $variant['attachment_id'] ) ? absint( $variant['attachment_id'] ) : 0,
 			'url'           => isset( $variant['url'] ) ? esc_url_raw( $variant['url'] ) : '',
+			'processed_id'  => isset( $variant['processed_id'] ) ? absint( $variant['processed_id'] ) : 0,
+			'processed_url' => isset( $variant['processed_url'] ) ? esc_url_raw( $variant['processed_url'] ) : '',
 			'error'         => isset( $variant['error'] ) ? sanitize_text_field( $variant['error'] ) : '',
 			'export_error'  => isset( $variant['export_error'] ) ? sanitize_text_field( $variant['export_error'] ) : '',
 			'reroll_of'     => isset( $variant['reroll_of'] ) ? absint( $variant['reroll_of'] ) : 0,
@@ -728,6 +768,7 @@ class WP_MCP_AI_Fashion_Batch {
 			'per_image_usd' => get_post_meta( $job_id, self::META_PER_IMAGE, true ),
 			'product_id'    => absint( get_post_meta( $job_id, self::META_PRODUCT_ID, true ) ),
 			'collection_id' => absint( get_post_meta( $job_id, self::META_COLLECTION, true ) ),
+			'profile'       => sanitize_key( (string) get_post_meta( $job_id, self::META_PROFILE, true ) ),
 			'created'       => get_the_date( 'c', $job_id ),
 			'variants'      => $variants,
 		);

@@ -48,6 +48,10 @@ function baseCapabilities() {
 			per_job_ceiling: 10,
 			hard_cap: 100,
 		},
+		profiles: {
+			amazon: { label: 'Amazon', min_side: 1600, square: true, format: 'image/jpeg', white_bg: true },
+			woocommerce: { label: 'WooCommerce', min_side: 800, square: false, format: 'image/webp', white_bg: false },
+		},
 		sidecar: false,
 		wc_active: false,
 		pro_active: false,

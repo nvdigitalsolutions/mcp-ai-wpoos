@@ -160,6 +160,36 @@ class NV_oOS_Media_Studio_REST {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
+			'/ai/pipeline',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'ai_pipeline' ),
+				'permission_callback' => array( __CLASS__, 'upload_permission' ),
+				'args'                => array(
+					'attachment_id' => array(
+						'required'          => true,
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+					),
+					'profile'       => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'alt_text'      => array(
+						'type'    => 'boolean',
+						'default' => true,
+					),
+					'variant'       => array(
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
 			'/ai/export',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -357,6 +387,34 @@ class NV_oOS_Media_Studio_REST {
 
 		$result = NV_oOS_Media_Studio_AI_Service::import_attachment(
 			$request->get_param( 'attachment_id' ),
+			get_current_user_id()
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Pipeline endpoint — process an attachment into a marketplace profile.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function ai_pipeline( WP_REST_Request $request ) {
+		if ( ! class_exists( 'NV_oOS_Media_Studio_Output_Pipeline' ) ) {
+			return new WP_Error( 'nvoos_ms_pipeline_missing', __( 'The output pipeline is not available.', 'nvoos-media-studio' ), array( 'status' => 503 ) );
+		}
+
+		$result = NV_oOS_Media_Studio_Output_Pipeline::process(
+			$request->get_param( 'attachment_id' ),
+			$request->get_param( 'profile' ),
+			array(
+				'alt_text' => (bool) $request->get_param( 'alt_text' ),
+				'variant'  => $request->get_param( 'variant' ),
+			),
 			get_current_user_id()
 		);
 

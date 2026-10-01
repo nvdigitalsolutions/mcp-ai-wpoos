@@ -40,6 +40,7 @@ function makeJob( overrides: Record< string, unknown > = {} ) {
 		per_image_usd: 0.5,
 		product_id: 0,
 		collection_id: 0,
+		profile: '',
 		created: '2026-10-01T00:00:00+00:00',
 		variants: [
 			{
@@ -48,6 +49,8 @@ function makeJob( overrides: Record< string, unknown > = {} ) {
 				status: 'generated',
 				attachment_id: 99,
 				url: 'http://example.org/out.png',
+				processed_id: 0,
+				processed_url: '',
 				error: '',
 				export_error: '',
 				reroll_of: 0,
@@ -64,6 +67,10 @@ const baseProps = {
 	backgroundStyle: 'studio',
 	aspectRatio: 'auto',
 	identityId: 0,
+	profiles: {
+		amazon: { label: 'Amazon' },
+		woocommerce: { label: 'WooCommerce' },
+	},
 };
 
 beforeEach( () => {
@@ -119,6 +126,25 @@ describe( 'FashionBatchPanel', () => {
 		await waitFor( () => expect( createJobMock ).toHaveBeenLastCalledWith( expect.objectContaining( { confirmed: true } ) ) );
 		expect( createJobMock ).toHaveBeenLastCalledWith(
 			expect.objectContaining( { attachment_ids: [ 7, 8 ], transform: 'background' } )
+		);
+	} );
+
+	it( 'passes the selected marketplace profile into the create call', async () => {
+		render( <FashionBatchPanel { ...baseProps } /> );
+		await waitFor( () => expect( screen.getByRole( 'button', { name: /Create batch/i } ) ).toBeInTheDocument() );
+
+		fireEvent.change( screen.getByPlaceholderText( /Source attachment IDs/i ), {
+			target: { value: '7' },
+		} );
+		fireEvent.change( screen.getByRole( 'combobox', { name: /Marketplace profile/i } ), {
+			target: { value: 'amazon' },
+		} );
+		fireEvent.click( screen.getByRole( 'button', { name: /Create batch/i } ) );
+
+		await waitFor( () =>
+			expect( createJobMock ).toHaveBeenCalledWith(
+				expect.objectContaining( { attachment_ids: [ 7 ], profile: 'amazon' } )
+			)
 		);
 	} );
 

@@ -195,6 +195,7 @@ class NV_oOS_Media_Studio_AI_Service {
 			'version'    => defined( 'NVOOS_MEDIA_STUDIO_VERSION' ) ? NVOOS_MEDIA_STUDIO_VERSION : 'unknown',
 			'providers'  => $providers,
 			'transforms' => $transforms,
+			'profiles'   => class_exists( 'NV_oOS_Media_Studio_Output_Pipeline' ) ? NV_oOS_Media_Studio_Output_Pipeline::get_profiles() : array(),
 			'settings'   => array(
 				'ai_disclosure'     => $settings['ai_disclosure'],
 				'watermark_face'    => $settings['watermark_face'],

@@ -349,6 +349,68 @@ class Test_Fashion_Batch extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test the marketplace profile flows create → approve through the pipeline.
+	 */
+	public function test_profile_flow_create_to_approve() {
+		if ( ! function_exists( 'imagecreatetruecolor' ) ) {
+			$this->markTestSkipped( 'GD is not available.' );
+		}
+		require_once dirname( __DIR__, 2 ) . '/media-studio/includes/ai/class-nvoos-media-studio-output-pipeline.php';
+
+		$this->force_cheap_estimate();
+		$source = $this->create_image_attachment();
+		$output = $this->create_image_attachment();
+
+		add_filter(
+			'nvoos_media_studio_execute_tool',
+			static function () use ( $output ) {
+				return array(
+					'attachment_id' => $output,
+					'url'           => 'http://example.org/out.png',
+					'provider'      => 'gemini',
+				);
+			}
+		);
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		// woocommerce profile: min 800px — the 40px fixtures upscale by factor
+		// 20 which exceeds the pipeline ceiling, so approve must surface the
+		// pipeline error in export_error without breaking the review.
+		$job = WP_MCP_AI_Fashion_Batch::create_job(
+			array( $source ),
+			'background',
+			array(
+				'confirmed' => true,
+				'profile'   => 'woocommerce',
+				'alt_text'  => false,
+			),
+			$user_id
+		);
+		$this->assertSame( 'woocommerce', $job['profile'] );
+
+		$this->run_all_variants( $job['id'] );
+		$full = WP_MCP_AI_Fashion_Batch::get_job( $job['id'], $user_id );
+
+		$variant = WP_MCP_AI_Fashion_Batch::review_variant( $job['id'], $full['variants'][0]['key'], 'approve', $user_id );
+		$this->assertSame( 'approved', $variant['status'] );
+		$this->assertStringContainsString( 'resolution', $variant['export_error'] );
+
+		// Invalid profiles are rejected at create time.
+		$bad = WP_MCP_AI_Fashion_Batch::create_job(
+			array( $source ),
+			'background',
+			array(
+				'confirmed' => true,
+				'profile'   => 'bogus',
+			),
+			$user_id
+		);
+		$this->assertWPError( $bad );
+		$this->assertSame( 'nvoos_ms_invalid_profile', $bad->get_error_code() );
+	}
+
+	/**
 	 * Test WooCommerce gallery attachment (WC-loaded or graceful error).
 	 */
 	public function test_attach_to_product_gallery() {

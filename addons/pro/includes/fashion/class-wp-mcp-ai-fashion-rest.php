@@ -88,6 +88,14 @@ class WP_MCP_AI_Fashion_REST {
 							'type'              => 'integer',
 							'sanitize_callback' => 'absint',
 						),
+						'profile'          => array(
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_key',
+						),
+						'alt_text'         => array(
+							'type'    => 'boolean',
+							'default' => true,
+						),
 						'confirmed'        => array(
 							'type'    => 'boolean',
 							'default' => false,
@@ -230,6 +238,8 @@ class WP_MCP_AI_Fashion_REST {
 				'identity_id'      => $request->get_param( 'identity_id' ),
 				'product_id'       => $request->get_param( 'product_id' ),
 				'collection_id'    => $request->get_param( 'collection_id' ),
+				'profile'          => $request->get_param( 'profile' ),
+				'alt_text'         => (bool) $request->get_param( 'alt_text' ),
 				'confirmed'        => (bool) $request->get_param( 'confirmed' ),
 			),
 			$user_id
