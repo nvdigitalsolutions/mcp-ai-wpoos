@@ -66,6 +66,40 @@ reuses the MCP Apps REST endpoints (`/mcp-apps/oauth/init` +
 tokens persist to the encrypted central store (`mcp_oauth`, auto-refresh
 via `update_mcp_oauth()`).
 
+### FlowHub (POS/Retail) Connection Modes (v1.1.91)
+
+FlowHub connections accept two operation modes (`flowhub_mode`):
+
+| Mode | Transport | Meaning |
+|---|---|---|
+| `api` | Direct FlowHub POS API (`https://api.flowhub.co`, `clientId` + `key` headers) | Default — used for syncs and direct tool calls only |
+| `mcp` | Same POS API, but the connection is the **designated backend for the FlowHub toolkit MCP server** | MCP-triggered services bind to this connection's credentials and proxy |
+
+Unlike Upwork, FlowHub has no separate MCP gateway — the MCP toggle in
+assistant settings (Toolkit MCP Servers → FlowHub Inventory Sync) exposes
+FlowHub **tools**, whose live services (`refresh`, `sync_now`) still call
+`api.flowhub.co`. MCP mode therefore marks *which* Remote Sites connection
+serves those MCP-triggered calls:
+
+- `WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id()` resolves
+  the first **enabled** FlowHub connection with `flowhub_mode = mcp` (and
+  credentials).
+- The toolkit MCP REST controller injects that connection ID into tool
+  arguments when the MCP caller did not pass an explicit `connection_id`,
+  routing the call through the explicit-connection path — credentials and
+  the connection's **proxy** (`proxy_url` / `proxy_username` /
+  `proxy_password`, encrypted at rest) are applied via `http_api_curl`.
+- An explicit `connection_id` argument always wins; when no connection is
+  designated as MCP, behavior is unchanged (the tools' existing resolver
+  chain: explicit → toolkit settings → sync connections → first enabled
+  connection).
+
+Set the mode on the FlowHub connection edit form (**Connection Mode**
+select, mirroring the Upwork pattern). Designating one connection as MCP
+is the recommended fix when FlowHub MCP services fail with auth errors
+because egress must go through a forward proxy (a whitelisted egress IP
+that FlowHub accepts).
+
 ### Post Type Access Controls (v1.1.52 Update)
 
 The admin interface for remote connection post type access has been enhanced:
