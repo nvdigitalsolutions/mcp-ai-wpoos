@@ -643,6 +643,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'chat_enable_regenerate'                => true,
 				'chat_allowed_file_types'               => '',
 				'chat_max_file_size_mb'                 => 10,
+				'chat_inline_image_optimization'        => true,
 				'chat_preset_applied'                   => '',
 				'chat_llm_sanitize_level'               => 'moderate',
 				'chat_llm_max_response_length'          => 0,
