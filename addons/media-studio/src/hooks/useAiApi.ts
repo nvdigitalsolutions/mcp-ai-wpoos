@@ -32,6 +32,59 @@ export interface Capabilities {
 	sidecar: boolean;
 	wc_active: boolean;
 	pro_active: boolean;
+	batch: boolean;
+}
+
+export interface FashionModel {
+	id: number;
+	name: string;
+	thumb_url: string;
+	gender: string;
+	skin_tone: string;
+	body_type: string;
+	age_group: string;
+	consent_status: string;
+	is_custom: boolean;
+}
+
+export interface BatchVariant {
+	key: number;
+	source_id: number;
+	status: string;
+	attachment_id: number;
+	url: string;
+	error: string;
+	export_error: string;
+	reroll_of: number;
+}
+
+export interface FashionJob {
+	id: number;
+	status: string;
+	transform: string;
+	total: number;
+	done: number;
+	estimate_usd: number | null;
+	per_image_usd: number | null;
+	product_id: number;
+	collection_id: number;
+	created: string;
+	variants: BatchVariant[];
+}
+
+export interface CreateJobArgs {
+	attachment_ids: number[];
+	transform: string;
+	description?: string;
+	color?: string;
+	background_style?: string;
+	aspect_ratio?: string;
+	mime_type?: string;
+	identity_id?: number;
+	product_id?: number;
+	collection_id?: number;
+	confirmed?: boolean;
+	acknowledged?: boolean;
 }
 
 export interface ReviewInfo {
@@ -146,9 +199,21 @@ async function request< T >( path: string, options: RequestInit = {} ): Promise<
 export const aiApi = {
 	capabilities: () => request< Capabilities >( '/ai/capabilities' ),
 	presets: () => request< Preset[] >( '/ai/presets' ),
-	models: () => request< Record< string, unknown >[] >( '/ai/models' ),
+	models: () => request< FashionModel[] >( '/ai/models' ),
 	generate: ( args: GenerateArgs ) =>
 		request< GenerateResult >( '/ai/generate', { method: 'POST', body: JSON.stringify( args ) } ),
+	createJob: ( args: CreateJobArgs ) =>
+		request< FashionJob >( '/ai/jobs', { method: 'POST', body: JSON.stringify( args ) } ),
+	listJobs: () => request< FashionJob[] >( '/ai/jobs' ),
+	getJob: ( jobId: number ) => request< FashionJob >( `/ai/jobs/${ jobId }` ),
+	reviewJob: (
+		jobId: number,
+		args: { variant_key: number; action: 'approve' | 'reject' | 'reroll'; product_id?: number; collection_id?: number }
+	) =>
+		request< BatchVariant >( `/ai/jobs/${ jobId }/review`, {
+			method: 'POST',
+			body: JSON.stringify( args ),
+		} ),
 	importAttachment: ( attachmentId: number ) =>
 		request< ImportResult >( '/ai/import', {
 			method: 'POST',

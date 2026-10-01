@@ -51,6 +51,7 @@ function baseCapabilities() {
 		sidecar: false,
 		wc_active: false,
 		pro_active: false,
+		batch: false,
 	};
 }
 
