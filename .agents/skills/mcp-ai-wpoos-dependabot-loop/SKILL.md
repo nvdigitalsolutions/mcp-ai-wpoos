@@ -5,9 +5,9 @@ description: "Operational guide for the NV oOS Dependabot alert triage-and-remed
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.90"
-  plugin-version-tested: "1.1.90"
-  last-updated: "2026-09-30"
+  plugin-version: "1.1.91"
+  plugin-version-tested: "1.1.91"
+  last-updated: "2026-10-01"
 ---
 
 # NV oOS Dependabot Loop — Alert Triage, Safe Bumps & Dismissal
@@ -125,6 +125,12 @@ a patch bump, raise the existing `overrides` value in each affected
 `package.json` (e.g. `"js-yaml": ">=4.3.0"` → `">=5.4.1"`) and regenerate the
 lockfiles (Step 6). No dependency ranges change; only the override.
 
+Floor-raise variant (the 2026-10-01 fast-uri run, PR #6834): when the advisory's
+vulnerable range is a *minor* inside the override's major (`>= 4.1.3, < 4.1.5`
+vs the `>=4.1.4` floor), just raise the floor (`>=4.1.4` → `>=4.1.5`, resolving
+4.2.1) — same lockfile-only diff, but run the npm-pack `index.d.ts` diff anyway
+(it showed an additive optional `ipv6Zone` field only) and cite it in the PR.
+
 ### B. Scoped override (`@version` syntax) — do not force unrelated majors
 
 A blanket override (`"webpack-dev-middleware": ">=8.3.0"`) applies to ALL
@@ -158,6 +164,30 @@ streaming. The entire 2.x line is vulnerable (no backport), so the only fix is
 the `@ai-sdk/react` 1.x → 2.x migration — file a tracking issue instead
 (Step 8). Never ship an override you have not verified against the consumer's
 call sites.
+
+Case study — a verified-safe cross-major bump that SHIPPED (the 2026-10-01
+nodemailer run, PR #6833): the advisory's patched range (`>= 10.0.9`) excluded
+the whole installed 9.x line, so this was a major migration in `addons/pro` +
+`addons/media-worker`. It shipped because the proof was strong:
+
+1. npm-pack diff showed the mailparser deep-import
+   (`nodemailer/lib/addressparser`) still resolves through nodemailer 10's
+exports map as a callable CJS export.
+2. A/B-testing 9.1.1 vs 10.0.9 on quoted local-part / group / encoded-name /
+   plain inputs was **byte-identical** (and 10.x preserves the quoted local
+   part, which is the advisory's required behavior).
+3. nodemailer 10 has zero runtime deps and requires Node ≥ 20 — the
+   media-worker sidecar already runs `node:22-alpine`; CI passes
+   `--ignore-engines` on the 18/20 matrix (EBADENGINE warnings only).
+
+**Vendor-bundle gotcha specific to this repo:** nodemailer 10 ships **no
+top-level `lib/`** — the `copy-dependencies.js` vendor copy spec had to switch
+from copying `lib/` to copying `dist/`, and `assets/vendor/nodemailer` was
+refreshed 8.0.5 → 10.0.9 with the old `lib/` removed so vulnerable code is
+never distributed. When a major bump touches a package this repo vendors
+(`copy-dependencies.js` + `assets/vendor/`), updating the copy spec + bundle is
+part of the fix — a lockfile-only bump leaves the vulnerable vendored code in
+the tree.
 
 ### D. Stale alerts — no code change
 

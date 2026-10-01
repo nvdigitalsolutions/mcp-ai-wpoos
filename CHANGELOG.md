@@ -1,12 +1,67 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.1.91] - 2026-10-01
 
 ### Added — FlowHub Connection MCP Mode (Proxy for Assistant MCP Services) (PR #6836)
 
 - **FlowHub Remote Sites connections gain a `flowhub_mode` selector** (`api` default | `mcp`), mirroring the Upwork connection's API/MCP mode pattern. MCP mode designates the connection as the backend for the FlowHub toolkit MCP server (the MCP toggle in assistant settings).
 - **MCP-triggered FlowHub services now inherit the connection's proxy** — `WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id()` resolves the first enabled MCP-mode connection; the toolkit MCP REST controller injects its ID into tool arguments when the caller supplies none, routing live calls (refresh/sync) through the explicit-connection path so credentials and the connection's encrypted proxy apply via `http_api_curl`. Fixes auth failures when FlowHub MCP services must egress through a forward proxy.
 - **Explicit `connection_id` arguments always win**; with no MCP-designated connection, behavior is unchanged (existing resolver chain). The seam is generic — any toolkit MCP server can declare a binding via `WP_MCP_AI_Toolkit_Server_Base::get_mcp_connection_id()`.
+
+### Fixed — MCP App OAuth Discovery per MCP Spec (PR #6835)
+
+- **`WP_MCP_AI_MCP_App_OAuth_Client::discover_metadata()` now walks the full discovery chain** instead of trying only the bare `/.well-known/oauth-authorization-server` URL (which made fully-OAuth-capable servers like FlowHub fail with the generic "OAuth 2.0 discovery failed"):
+  1. RFC 8414 metadata on the MCP origin + the RFC 8414 §3.2 path-insertion variant (for path-scoped servers like Atlassian's `/v1/mcp`);
+  2. RFC 9728 protected-resource metadata (root + path-inserted), trying **every** advertised `authorization_servers` entry;
+  3. the 401 `WWW-Authenticate: Bearer resource_metadata="…"` probe;
+  4. OIDC `/.well-known/openid-configuration` fallback for Auth0/Okta/Cognito gateways;
+  5. WordPress REST metadata fallback for self-hosted WP servers.
+- **Validation + diagnostics** — RFC 8414 documents are accepted only with both `authorization_endpoint` and `token_endpoint`; every attempt is recorded (URL → HTTP status / transport error) and the failure alert surfaces the real underlying transport error (cURL/DNS/TLS) instead of the generic message; server-advertised `default_scope` is honored when no scope is requested; `parse_www_authenticate()` splits multiple challenges per RFC 7235 §2.1; per-probe timeout capped at 10 s.
+
+### Fixed — OAuth Redirect Allowlists (LinkedIn, QuickBooks, Mailjet, Yahoo) (PRs #6831, #6832)
+
+- Clicking a provider Connect button silently bounced to the wp-admin dashboard because `wp_safe_redirect()` rejected the off-site consent-page hosts missing from the `allowed_redirect_hosts` allowlist. Four flows fixed: **LinkedIn** (`www.linkedin.com`, Pro Remote Sites admin), **QuickBooks** (`appcenter.intuit.com`), **Mailjet** (`app.mailjet.com`), and **Yahoo Sports** (`api.login.yahoo.com`) — each new filter derives the host from the provider's authorize-endpoint filter (the GitHub/Meta pattern). Platform ports in `nvoos-content-graph-ai-platform` + regression tests for every flow.
+
+### Fixed — Orchestration CCT Gating + JSON Envelope Protection (PR #6827)
+
+- **CCT reads now gate on the physical table** — `table_exists()` probes + `is_storage_ready()` (table present **and** every required column; schema drift trips the gate) with a per-request cache and a `reset_storage_cache()` test seam. Consumers fall back to transients instead of emitting `$wpdb` error HTML into the dashboard's 5-second JSON poll (the `parsererror: Unexpected token '<'` failure).
+- **No surface can leak DB error HTML into a JSON response again** — the new `WP_MCP_AI_Db_Output_Guard::run()` suppresses `$wpdb` error output (logging failures with the last query) and wraps the central tool dispatch (`WP_MCP_AI_Tool_Registry::execute_tool()` + both REST tool handlers); the four agent-command-center read AJAX handlers gain `with_suppressed_db_errors()`.
+
+### Fixed — Security Events Display Keys & Double-Rendered Orchestration Dashboard (PRs #6829, #6830)
+
+- **Security events table** (#6829) — the "Recent Security Events (last 10)" table and the compliance CSV exporter read `event`/`type`/`ip` — keys `log_security_event()` never stores — so Event/IP rendered `—`. Both readers now use the canonical `event_type`/`ip_address` keys (with legacy fallbacks), label known event slugs, and show user display names (Guest for unauthenticated). No data migration needed — stored entries were always correct.
+- **Orchestration dashboard double-render** (#6830) — the self-instantiating `WP_MCP_AI_Admin_Orchestration_Dashboard` gained a duplicate `new` in the bootstrap loader, registering two distinct callbacks on the same admin page hook (duplicate DOM IDs breaking the auto-refresh JS). The redundant `new` is removed; the `require_once` stays outside the `is_admin()` gate.
+
+### Fixed — RF-DETR Tool Presets + Coverage Manifest (PR #6828)
+
+- `rfdetr_catalog_search` joins the `ecommerce` preset ("Product operations"); `rfdetr_detect` is deliberately left out of presets (gated behind `enable_vision_analysis_toolkit`, matching its siblings `analyze_image_objects`/`search_similar_images`); the Pro tool coverage manifest is regenerated with the two missing class basenames — the two CI failures the RF-DETR cluster introduced are closed.
+
+### Security — Dependency Advisories (PRs #6833, #6834)
+
+- **nodemailer 9.1.1 → ^10.0.9** in `addons/pro` + `addons/media-worker` (GHSA-g57g-f23g-4646 — quoted local-part envelope injection; Dependabot alerts #977/#978). nodemailer 10 ships no top-level `lib/`, so `copy-dependencies.js` now copies `dist/` (the exports map keeps `nodemailer/lib/addressparser` deep imports resolving for mailparser); the `assets/vendor/nodemailer` bundle is refreshed 8.0.5 → 10.0.9 with the old `lib/` removed. A/B-tested byte-identical parsing; Node ≥ 20 engine (EBADENGINE on the 18/20 matrix).
+- **fast-uri override floor ≥4.1.4 → ≥4.1.5** across the four alert-bearing trees (resolves 4.2.1; GHSA-jvvf-x445-j334 — mailto header injection; alerts #979–#982). npm-pack diff shows an additive-only API change; `npm ci --dry-run` passes in all 14 npm trees.
+
+### Ecosystem Port — RF-DETR Vision Cluster → Content Graph Pro (PR #6825)
+
+- Wave F3 sub-cluster 1 ports the RF-DETR surface byte-identical into `nvoos-content-graph-pro` (with the documented deviations): the Roboflow inference service (three trust tiers, fail-closed credentials, SSRF/HTTPS discipline, Apache/PML alias gate), `WP_MCP_AI_Tool_Rfdetr_Detect`, the vision count normalizer, the e-commerce `WP_MCP_AI_Pro_Tool_Rfdetr_Catalog_Search` (44-tool e-commerce registration), the D8-compat image-dHash copy, and the slim standalone `src/tools/vision-analysis/init.php` — plus the `toolkit_vision_analysis` module-registry gate (byte-identical `enable_vision_analysis_toolkit`) and the autoloader probe. Dual-matrix green + 8 characterization tests; the ecosystem tracker's F3 row is appended in-window (sub-cluster 1 complete).
+
+### Tests
+
+- **PR #6835** — new `tests/mcp-apps/test-mcp-app-oauth-discovery-chain.php` (11 tests) on WP 6.9 + WP 7.1; existing MCP Apps suites 53/53; live end-to-end discovery against `https://mcp.flowhub.com` succeeds.
+- **PR #6827** — new gate + guard suites: 56/56 on WP 6.9, 98/98 on WP 7.1 (incl. agent-command-center + performance suites); zero risky tests (two zero-assertion orchestrator tests fixed).
+- **PR #6831** — Pro remote-sites-admin suite 46 tests / 200 assertions (new LinkedIn OAuth regression test).
+- **PR #6832** — base OAuth suites (QuickBooks/Mailjet/Yahoo + neighbors) 44 tests / 120 assertions; platform `test-oauth-{quickbooks,mailjet,manager}` 44 tests in both matrices (monolith + standalone).
+- **PR #6830** — `test-orchestration-dashboard-menu.php` 5/5 under both phpunit configs (re-adding the duplicate `new` fails the new assertion); 175 related dashboard/AJAX tests green.
+- **PR #6836** — `test-flowhub-connection-helper.php` 23/23 + `test-toolkit-server-execution.php` 17/17 (WP 6.9; 40/40 on WP 7.1) + neighbors 110/110.
+- **PR #6825** — CG Pro dual-matrix green (21–32 test batches, 0 failures; standalone matrix 0 failures) + byte-identity verification (service/normalizer/dHash full-file; tool bodies hunk-level).
+
+### Docs
+
+- `docs/features/remote-sites.md` (+34) and `docs/toolkits/flowhub-integration.md` gain the FlowHub MCP-mode documentation in-window (#6836).
+
+### Versioning
+
+- Bumped to 1.1.91 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.91. Media Worker: **v3.2.0** (unchanged — the #6833 nodemailer bump carries no version change). SaaS Controller addon: **0.3.0** (unchanged). Design System addon: **0.3.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged — OAuth fix ports + build refresh). nvoos-content-graph-pro: **1.0.0** (unchanged — two in-feature ports landed: the RF-DETR cluster (#6825, tracker row F3) and the FlowHub MCP-mode mirrors (#6836)). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.5.1** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Chat SPA addon: **0.7.0** (unchanged). Canvas Toolkit addon: **0.2.0** (unchanged). Model catalog: **v2026.09.22** (unchanged — no model PRs in-window). Tool count: **~347 base + ~1,301 Pro (~1,648 total — unchanged)** — no tool registrations in-window (FlowHub MCP mode is a connection-binding seam; #6828 only wires the existing RF-DETR pair into presets/manifest); live registry authoritative. Providers: 15 chat providers (unchanged). Addons: **28** (unchanged). Bundled skills: **75 base + 41 Pro** (unchanged). Coding-time agent skills: **61** (unchanged). Stale build ZIPs removed: the 1.1.89 build set (30 files: 9 in `build/` incl. 3 `.sha256`, 2 in `build/optional-components/`, 19 in `build/toolkit-addons/`); the 1.1.90 wp.org package set (built in-window) is the current release artifact set.
 
 ## [1.1.90] - 2026-09-30
 

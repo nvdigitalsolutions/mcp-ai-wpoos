@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.83"
-  plugin-version-tested: "1.1.83"
-  last-updated: "2026-09-21"
+  plugin-version: "1.1.91"
+  plugin-version-tested: "1.1.91"
+  last-updated: "2026-10-01"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-1. **Read the template plans** — the latest executed plan (`v1.1.90-docs-catch-up.md`,
-   with `v1.1.89-docs-catch-up.md` as the previous pass) plus the
+1. **Read the template plans** — the latest executed plan (`v1.1.91-docs-catch-up.md`,
+   with `v1.1.90-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -720,18 +720,19 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.87-docs-catch-up.md`,
   `docs/project/plans/v1.1.88-docs-catch-up.md`,
   `docs/project/plans/v1.1.89-docs-catch-up.md`,
-  `docs/project/plans/v1.1.90-docs-catch-up.md` (latest executed — the v1.1.90
-  pass over PRs #6815–#6824: the RF-DETR vision cognition enhancement
-  (proposal 049, Roboflow service + 2 Pro tools + identify_image rung 3c),
-  the strict MCP assistant-scope toggle (#6819, pre-staged [Unreleased]
-  CHANGELOG block converted), Upwork MCP as first-class MCP Apps references
-  (#6823), the memory identity + IDOR closure (#6815), the letterhead
-  personalization + registry transport fix (#6816), the js-yaml /
-  webpack-dev-middleware advisory floors (#6817), the plugin-skill slim +
-  RELEASE-NOTES.md companion (#6822), the new dependabot-loop skill with
-  in-window count bookkeeping (#6820), a pre-staged readme.txt 1.1.90 entry
-  converted (#6824), the base-bundled plugin-skill resync, the stale 1.1.88
-  build-set removal (30 files), and +2 Pro tool-count)
+  `docs/project/plans/v1.1.90-docs-catch-up.md`,
+  `docs/project/plans/v1.1.91-docs-catch-up.md` (latest executed — the v1.1.91
+  pass over PRs #6825, #6827–#6836: the FlowHub MCP-mode connection proxy
+  binding (#6836, pre-staged [Unreleased] CHANGELOG block converted), the
+  MCP App OAuth discovery chain per MCP spec (#6835), the OAuth redirect
+  allowlists (#6831/#6832), the orchestration CCT physical-table gate +
+  DB output guard (#6827), the security-events display + double-render
+  fixes (#6829/#6830), the RF-DETR presets/manifest repair (#6828), the
+  nodemailer 10.x + fast-uri advisory patches (#6833/#6834), the RF-DETR
+  CG Pro ecosystem port (#6825), five skill reconciliations (plugin ×3 +
+  elementor ×2 + dependabot-loop + test-suite patterns 54/55 +
+  ecosystem-port + updates), the stale 1.1.89 build-set removal (30
+  files), and an unchanged tool count)
 
 Preceding windows:
   `docs/project/plans/v1.1.89-docs-catch-up.md` (the v1.1.89

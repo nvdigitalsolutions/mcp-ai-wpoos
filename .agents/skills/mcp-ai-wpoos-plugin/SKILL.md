@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.90"
-  plugin-version-tested: "1.1.90"
-  last-updated: "2026-09-30"
+  plugin-version: "1.1.91"
+  plugin-version-tested: "1.1.91"
+  last-updated: "2026-10-01"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -743,7 +743,7 @@ Import external AI conversation exports into the JetEngine
 
 ## Release Notes (per version)
 
-Historical per-version release notes (v1.1.66 through v1.1.90) moved to
+Historical per-version release notes (v1.1.66 through v1.1.91) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
 
@@ -864,6 +864,16 @@ update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'web_search', 'creat
 
 **Cause (v1.1.90+):** opt-in `mcp_require_assistant_scope` (Security → Access & Identity, default OFF) is on and the request resolves to no assistant (no explicit `assistant_id`, no token-bound assistant, no `default_assistant`).
 **Fix:** pass `assistant_id`, bind the credential to an assistant, set `default_assistant`, or turn the toggle off.
+
+### MCP App OAuth connect fails with "OAuth 2.0 discovery failed" (v1.1.91+)
+
+**Cause:** the older client only probed the bare `/.well-known/oauth-authorization-server` URL, so path-scoped or RFC 9728-style OAuth servers looked unsupported even when they fully implement OAuth.
+**Fix (v1.1.91+):** `discover_metadata()` walks the full chain — RFC 8414 metadata (+ §3.2 path insertion), RFC 9728 protected-resource metadata (every advertised `authorization_servers` entry), the 401 `WWW-Authenticate` probe, OIDC `.well-known/openid-configuration`, then the WordPress REST fallback. The metabox failure alert now shows every attempt (URL → HTTP status / transport error) and the real cURL/DNS/TLS error instead of the generic message — read the `attempts` + `hint` in the alert before assuming the server has no OAuth.
+
+### Provider Connect buttons bounce to the wp-admin dashboard (OAuth redirects)
+
+**Cause:** `wp_safe_redirect()` rejects off-site consent-page hosts missing from the `allowed_redirect_hosts` allowlist and silently falls back to `admin_url()` — the connect click lands on the dashboard instead of the provider's consent page.
+**Fix (v1.1.91+):** LinkedIn (`www.linkedin.com`), QuickBooks (`appcenter.intuit.com`), Mailjet (`app.mailjet.com`), and Yahoo Sports (`api.login.yahoo.com`) are now allowlisted via per-provider filters deriving the host from the authorize-endpoint filter. When wiring a **new** OAuth flow, register its consent host the same way — the GitHub/Meta pattern in `includes/integrations/` is the template.
 
 ### "No AI providers configured" / tools return errors
 

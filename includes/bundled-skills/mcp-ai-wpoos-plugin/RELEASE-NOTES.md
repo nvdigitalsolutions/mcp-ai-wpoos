@@ -1,9 +1,20 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.90)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.91)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## FlowHub MCP Mode, OAuth Discovery & JSON Envelope Protection (v1.1.91)
+
+- **FlowHub Connection MCP mode (PR #6836)** — FlowHub Remote Sites connections gain a `flowhub_mode` selector (`api` default | `mcp`); MCP mode designates the connection as the backend for the FlowHub toolkit MCP server. `WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id()` resolves the first enabled MCP-mode connection; the toolkit MCP REST controller injects its `connection_id` only when the caller passes none — MCP-triggered refresh/sync calls route through the explicit-connection path (decrypted credentials + the connection's encrypted proxy via `http_api_curl`). Explicit `connection_id` always wins; the seam is generic (`WP_MCP_AI_Toolkit_Server_Base::get_mcp_connection_id()`).
+- **MCP App OAuth discovery per MCP spec (PR #6835)** — `discover_metadata()` walks the full chain: RFC 8414 metadata (+ §3.2 path insertion) → RFC 9728 protected-resource metadata (every `authorization_servers` entry) → 401 `WWW-Authenticate` probe → OIDC → WordPress REST fallback. RFC 8414 docs accepted only with both endpoints; per-attempt diagnostics surface real transport errors; server-advertised `default_scope` honored; multi-challenge parsing; 10 s per-probe cap. See SKILL.md Troubleshooting for the discovery entry.
+- **OAuth redirect allowlists (PRs #6831/#6832)** — LinkedIn, QuickBooks, Mailjet, and Yahoo Sports connect buttons no longer bounce to wp-admin (hosts added to `allowed_redirect_hosts` via per-provider filters). See SKILL.md Troubleshooting.
+- **JSON envelope protection (PR #6827)** — orchestration CCTs gate on the physical table (`is_storage_ready()`: table + every required column → transients fallback); the new `WP_MCP_AI_Db_Output_Guard` wraps `execute_tool()` + both REST tool handlers — no surface leaks `$wpdb` error HTML into a JSON response.
+- **Fixes (PRs #6829/#6830/#6828)** — Security events table + CSV exporter read canonical `event_type`/`ip_address` keys; the orchestration dashboard no longer renders twice (duplicate loader `new` removed); `rfdetr_catalog_search` joins the `ecommerce` preset + Pro coverage manifest regenerated.
+- **Dependency advisories (PRs #6833/#6834)** — `nodemailer` `^10.0.9` in pro + media-worker (GHSA-g57g-f23g-4646; vendor bundle refreshed 8.0.5 → 10.0.9); `fast-uri` ≥4.1.5 across 4 trees (GHSA-jvvf-x445-j334).
+- **Ecosystem port (PR #6825)** — the RF-DETR vision cluster ports byte-identical into `nvoos-content-graph-pro` (Wave F3 sub-cluster 1; tracker row appended).
+- **Tool counts** — ~347 base + ~1,301 Pro (~1,648 total; unchanged).
 
 ## Telegram Delivery Fixes, Memory Bridge & Wave F2 Toolkit Completions (v1.1.75+)
 

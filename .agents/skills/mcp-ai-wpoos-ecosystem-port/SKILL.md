@@ -11,7 +11,7 @@ byte-identical into the standalone `plugins/nvoos-content-graph-pro` addon,
 wires standalone-only tool/module registration, validates both test matrices,
 then self-merges after the two `PHPUnit Pro Addon` CI checks pass. Distilled
 from the Wave F2 toolkit clusters (CRM through comic-creation, ending at
-#6508).
+#6508) and the Wave F3 RF-DETR cluster (#6825, sub-cluster 1 complete).
 
 ## Canonical references (read before starting a wave)
 
