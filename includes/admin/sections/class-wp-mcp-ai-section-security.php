@@ -116,6 +116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						// REST API protection.
 						'require_auth_chat_endpoints',
 						'require_auth_tool_execution',
+						'mcp_require_assistant_scope',
 						'require_auth_assistant_management',
 						'require_auth_transcripts',
 						'require_auth_file_operations',
@@ -350,6 +351,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'label'          => __( 'Protect Tool Execution', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Require authentication for tool execution endpoints', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Prevents unauthenticated users from executing tools.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'mcp_require_assistant_scope'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Require Assistant Scope for MCP', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Reject MCP requests that do not resolve to an assistant (403)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Fail closed: when enabled, tools/list and tools/call return 403 instead of falling back to the full tool registry when no assistant resolves (no explicit assistant_id, no token-bound assistant, no default assistant).', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'require_auth_assistant_management'        => array(
@@ -1314,12 +1322,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					</tr>
 				</thead>
 				<tbody>
-				<?php foreach ( $recent_events as $event ) : ?>
+				<?php
+				// Human-readable labels for event types written by
+				// WP_MCP_AI_Security_Manager::log_security_event().
+				$event_labels = array(
+					'auth_success'      => __( 'Successful authentication', 'mcp-ai-wpoos' ),
+					'auth_failure'      => __( 'Failed authentication', 'mcp-ai-wpoos' ),
+					'ip_block'          => __( 'IP blocked', 'mcp-ai-wpoos' ),
+					'https_violation'   => __( 'HTTPS violation', 'mcp-ai-wpoos' ),
+					'role_denied'       => __( 'Access denied (role)', 'mcp-ai-wpoos' ),
+					'capability_denied' => __( 'Access denied (capability)', 'mcp-ai-wpoos' ),
+					'file_access'       => __( 'File access', 'mcp-ai-wpoos' ),
+				);
+				foreach ( $recent_events as $event ) :
+					$event_type  = $event['event_type'] ?? $event['event'] ?? $event['type'] ?? '';
+					$event_label = isset( $event_labels[ $event_type ] ) ? $event_labels[ $event_type ] : ( '' !== $event_type ? $event_type : '—' );
+					$user_id     = isset( $event['user_id'] ) ? absint( $event['user_id'] ) : 0;
+					if ( 0 === $user_id ) {
+						$user_display = __( 'Guest', 'mcp-ai-wpoos' );
+					} else {
+						$user         = get_userdata( $user_id );
+						$user_display = $user ? $user->display_name : sprintf( '#%d', $user_id );
+					}
+					?>
 					<tr>
 						<td><?php echo esc_html( isset( $event['timestamp'] ) ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $event['timestamp'] ) ) : '—' ); ?></td>
-						<td><?php echo esc_html( $event['event'] ?? $event['type'] ?? '—' ); ?></td>
-						<td><?php echo esc_html( $event['ip'] ?? '—' ); ?></td>
-						<td><?php echo esc_html( $event['user_id'] ?? '—' ); ?></td>
+						<td><?php echo esc_html( $event_label ); ?></td>
+						<td><?php echo esc_html( $event['ip_address'] ?? $event['ip'] ?? '—' ); ?></td>
+						<td><?php echo esc_html( $user_display ); ?></td>
 					</tr>
 				<?php endforeach; ?>
 				</tbody>

@@ -74,11 +74,12 @@ class Wikidata implements RemoteSource {
 	}
 
 	public function testConnection(): array {
+		$lang   = sanitize_text_field( (string) ( $this->config['language'] ?? 'en' ) );
 		$url    = add_query_arg(
 			array(
 				'action'   => 'wbsearchentities',
 				'search'   => 'WordPress',
-				'language' => 'en',
+				'language' => $lang ?: 'en',
 				'limit'    => 1,
 				'format'   => 'json',
 			),
@@ -140,7 +141,9 @@ class Wikidata implements RemoteSource {
 		$url    = add_query_arg(
 			array(
 				'action'   => 'wbsearchentities',
-				'search'   => rawurlencode( $label ),
+				// Not pre-encoded: add_query_arg() URL-encodes the value itself.
+				// Pre-encoding would double-encode spaces (%2520) and break search.
+				'search'   => $label,
 				'language' => $lang,
 				'limit'    => 5,
 				'format'   => 'json',

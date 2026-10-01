@@ -1490,6 +1490,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description'    => __( 'Pro research tools (research_eca, generate_research_report) ask Jev whether each cited source passage supports the claim it is cited for, and attach the checks to the report envelope. Fails open — on any error the checks are simply omitted.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+				'enable_jev_citation_escalation'     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Jev Citation Escalation', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Revise unsupported report claims with a verification-tier model (Pro research tools)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'With the Pro addon and Jev Citation Checking enabled, each claim whose cited source fails to support it is verified with a two-question Jev battery, then revised once by the verification-tier model so it is strictly supported. Single escalation per claim, capped at 3 revisions per report (filter: wp_mcp_ai_citation_escalation_max). Fails open — any error keeps the original claim.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_jev_tier_routing'            => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Jev Tier-Routing Signal', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Feed a Jev complexity read into draft/verification tier selection (Pro)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'With the Pro addon, the first user message of a chat request is classified by Jev (task type, complexity, frontier need) and the result feeds the orchestration depth scheduler and tiered model selection as a semantic confidence signal. Jev never picks a model directly — every threshold stays in code, and an uncertain decision (complexity confidence below 0.5) falls back to the neutral default. Only the first user message is sent, never tool results or transcripts. Fails open when Jev is unreachable or unconfigured.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 
 				// DigitalOcean Serverless Inference Settings.
 				'enable_digitalocean'                => array(
@@ -1737,7 +1751,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'typesafe',
 					'label'  => __( 'TypeSafe (Jev)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-yes-alt',
-					'fields' => array( 'enable_typesafe', 'typesafe_api_key', 'typesafe_model', 'typesafe_base_url', 'typesafe_endpoint', 'enable_typesafe_cache', 'enable_jev_research_filter', 'enable_jev_guest_guardrail', 'enable_jev_citation_check' ),
+					'fields' => array( 'enable_typesafe', 'typesafe_api_key', 'typesafe_model', 'typesafe_base_url', 'typesafe_endpoint', 'enable_typesafe_cache', 'enable_jev_research_filter', 'enable_jev_guest_guardrail', 'enable_jev_citation_check', 'enable_jev_citation_escalation', 'enable_jev_tier_routing' ),
 				),
 				'digitalocean'         => array(
 					'id'     => 'digitalocean',

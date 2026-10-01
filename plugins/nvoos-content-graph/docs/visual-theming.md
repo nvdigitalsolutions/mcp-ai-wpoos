@@ -23,6 +23,8 @@ Open **NV Content Graph → Appearance** in wp-admin. The tab contains:
 | **Show legend** | Auto-generated legend with swatches, icons, and click-to-filter rows. |
 | **Edge style** | `Plain`, `Arrows`, `Tapered` (thickness by confidence), `Density` (fast haystack mode), or `Auto` (density above 500 edges). |
 | **Edge labels** | `Off`, `On hover / selection`, or `Always`. |
+| **Hover focus** | Dim the rest of the graph and show a quick-info tooltip while hovering a node, so its neighborhood stands out. Disabled under reduced motion. |
+| **Edge flow animation** | Animate dashes along arrowed/tapered edges to show direction. Off by default — continuous redraw is heavier on dense graphs (applies up to 300 edges). |
 | **Node size min/max** | Bounds for the degree-based sizing ramp (square-root scale — hubs dominate less than a linear ramp). |
 | **Label font size** | 9–16 px. |
 | **Label zoom threshold** | Labels hide below this zoom level (0 = always visible). |
@@ -68,6 +70,15 @@ The admin explorer toolbar now includes:
   breadth-first layouts.
 - **Zoom cluster** (in/out/fit + zoom badge), **minimap** (click or drag to
   pan; hidden on small screens and above 2,000 nodes), and **fullscreen**.
+- **Hover focus + tooltip** — hovering a node dims the rest of the graph
+  (Bloom-style neighborhood spotlight), brightens its edges, and follows the
+  cursor with a quick-info tooltip (label, type, degree, community).
+- **Animated camera** — search-Enter, arrow-key navigation, and Fit glide
+  the viewport with eased animation; instant under reduced motion.
+- **Search** — debounced highlighting, a live match-count badge, and
+  Enter-to-focus on the first match.
+- **Edge flow** — marching dashes along arrowed/tapered edges convey
+  direction (opt-in Appearance setting, capped at 300 edges).
 - **Keyboard navigation** — focus the explorer and use arrow keys to move
   between nodes, Enter/Space for details, Escape to clear, `+`/`−` to zoom,
   `0` to fit.
@@ -150,3 +161,5 @@ if ( window.nvoosContentGraphTheme ) {
   denser graphs fall back to the haystack mode and cap the set.
 - The minimap is hidden below 768 px viewport width and above 2,000 rendered
   nodes to protect the frame budget.
+- The edge-flow animation drives a continuous redraw, so it is opt-in and
+  caps at 300 rendered edges (and pauses while the tab is hidden).

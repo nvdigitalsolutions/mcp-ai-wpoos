@@ -140,17 +140,38 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 				</button>
 				<?php
 				// Remote Sites integration (Pro): offer centrally managed MCP Server
-				// connections as one-click reference entries.
+				// connections and Upwork MCP connections as one-click reference entries.
 				$remote_mcp_connections = array();
 				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-					$remote_mcp_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_mcp_server_connections();
+					if ( method_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager', 'get_mcp_app_connections' ) ) {
+						$remote_mcp_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_mcp_app_connections();
+					} else {
+						$remote_mcp_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_mcp_server_connections();
+					}
 				}
 				if ( ! empty( $remote_mcp_connections ) ) :
 					?>
 					<select id="wp-mcp-ai-add-from-remote" style="vertical-align: middle; margin-left: 6px;">
-						<?php foreach ( $remote_mcp_connections as $remote_mcp ) : ?>
-							<option value="<?php echo esc_attr( isset( $remote_mcp['id'] ) ? $remote_mcp['id'] : '' ); ?>" data-name="<?php echo esc_attr( isset( $remote_mcp['name'] ) ? $remote_mcp['name'] : '' ); ?>">
-								<?php echo esc_html( ( isset( $remote_mcp['name'] ) ? $remote_mcp['name'] : '' ) . ' (' . ( isset( $remote_mcp['url'] ) ? $remote_mcp['url'] : '' ) . ')' ); ?>
+						<?php
+						foreach ( $remote_mcp_connections as $remote_mcp ) :
+							$remote_type        = isset( $remote_mcp['connection_type'] ) ? $remote_mcp['connection_type'] : 'mcp_server';
+							$remote_name        = isset( $remote_mcp['name'] ) ? $remote_mcp['name'] : '';
+							$remote_url         = isset( $remote_mcp['url'] ) ? $remote_mcp['url'] : '';
+							$remote_server_url  = '';
+							$remote_option_text = $remote_name . ' (' . $remote_url . ')';
+
+							if ( 'upwork' === $remote_type && method_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager', 'build_upwork_mcp_app_config' ) ) {
+								$remote_config      = WP_MCP_AI_Pro_Remote_Site_Manager::build_upwork_mcp_app_config( $remote_mcp );
+								$remote_server_url  = isset( $remote_config['server_url'] ) ? $remote_config['server_url'] : '';
+								$remote_option_text = $remote_name . ' (' . __( 'Upwork MCP', 'mcp-ai-wpoos' ) . ' — ' . $remote_server_url . ')';
+							}
+							?>
+							<option
+								value="<?php echo esc_attr( isset( $remote_mcp['id'] ) ? $remote_mcp['id'] : '' ); ?>"
+								data-name="<?php echo esc_attr( $remote_name ); ?>"
+								data-type="<?php echo esc_attr( $remote_type ); ?>"
+								data-server-url="<?php echo esc_url( $remote_server_url ); ?>">
+								<?php echo esc_html( $remote_option_text ); ?>
 							</option>
 						<?php endforeach; ?>
 					</select>
@@ -254,6 +275,18 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 					$raw_app['token'] = $existing_apps[ $index ]['token'];
 				}
 
+				// OAuth credentials are never echoed back into the form (they
+				// are stored encrypted at rest). Restore the stored blob when
+				// the submitted fields are blank so saving the page cannot
+				// wipe an authenticated app.
+				if (
+					'oauth' === ( isset( $raw_app['auth_type'] ) ? $raw_app['auth_type'] : '' ) &&
+					empty( $raw_app['oauth_data']['access_token'] ) &&
+					! empty( $existing_apps[ $index ]['oauth_data']['access_token'] )
+				) {
+					$raw_app['oauth_data'] = $existing_apps[ $index ]['oauth_data'];
+				}
+
 				$sanitized = WP_MCP_AI_MCP_App_Registry::sanitize_app_config( $raw_app );
 				if ( ! empty( $sanitized['server_url'] ) || ! empty( $sanitized['connection_ref'] ) ) {
 					$apps[] = $sanitized;
@@ -328,6 +361,23 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		// Reference rows: the connection lives in Remote Sites (Pro) and the
 		// credentials/URL are managed centrally. Render a read-only row.
 		if ( ! empty( $app['connection_ref'] ) ) :
+			// Upwork MCP references carry an OAuth login (loopback paste-back)
+			// so the account can be connected from the assistant page itself.
+			$is_upwork_ref  = false;
+			$ref_server_url = '';
+			$ref_authed     = false;
+			if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$ref_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $app['connection_ref'] );
+				if ( is_array( $ref_connection ) && method_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager', 'is_mcp_app_connection' ) ) {
+					$is_upwork_ref = 'upwork' === ( isset( $ref_connection['connection_type'] ) ? $ref_connection['connection_type'] : '' )
+						&& 'mcp' === ( isset( $ref_connection['upwork_mode'] ) ? $ref_connection['upwork_mode'] : '' );
+					if ( $is_upwork_ref && method_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager', 'build_upwork_mcp_app_config' ) ) {
+						$ref_config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_upwork_mcp_app_config( $ref_connection );
+						$ref_server_url = isset( $ref_config['server_url'] ) ? $ref_config['server_url'] : '';
+						$ref_authed     = ! empty( $ref_connection['mcp_oauth'] );
+					}
+				}
+			}
 			?>
 			<div class="wp-mcp-ai-mcp-app-row" style="border: 1px solid #dcdcde; border-radius: 3px; padding: 15px; margin: 10px 0; background: #fff;">
 				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -366,13 +416,50 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 				<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[auth_type]" value="none" />
 				<p class="description" style="margin: 0;">
 					<?php
-					printf(
-						/* translators: %s: Remote Sites admin URL. */
-						esc_html__( 'This app connects through a centrally managed MCP Server connection. Credentials and endpoint are managed on the %s page.', 'mcp-ai-wpoos' ),
-						'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) . '" target="_blank">' . esc_html__( 'Remote Sites', 'mcp-ai-wpoos' ) . '</a>'
-					);
+					if ( $is_upwork_ref ) {
+						esc_html_e( 'This app connects to the official Upwork MCP gateway through a centrally managed Remote Sites connection. Complete the OAuth login below to finish setup.', 'mcp-ai-wpoos' );
+					} else {
+						printf(
+							/* translators: %s: Remote Sites admin URL. */
+							esc_html__( 'This app connects through a centrally managed MCP Server connection. Credentials and endpoint are managed on the %s page.', 'mcp-ai-wpoos' ),
+							'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) . '" target="_blank">' . esc_html__( 'Remote Sites', 'mcp-ai-wpoos' ) . '</a>'
+						);
+					}
 					?>
 				</p>
+				<?php if ( $is_upwork_ref ) : ?>
+				<div class="wp-mcp-ai-ref-oauth-row" style="margin-top: 10px;">
+					<?php if ( $ref_authed ) : ?>
+						<p>
+							<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span>
+							<?php esc_html_e( 'Authenticated via Upwork OAuth login. Tokens are stored centrally and refreshed automatically.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php else : ?>
+						<p class="description">
+							<?php esc_html_e( 'Click the button below to connect via browser-based OAuth 2.1 login.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+					<button type="button" class="button wp-mcp-ai-connect-oauth"
+						data-server-url="<?php echo esc_url( $ref_server_url ); ?>"
+						<?php echo $ref_authed ? 'style="display:none;"' : ''; ?>>
+						<?php esc_html_e( 'Connect via Web Login', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<button type="button" class="button wp-mcp-ai-reconnect-oauth"
+						data-server-url="<?php echo esc_url( $ref_server_url ); ?>"
+						<?php echo ! $ref_authed ? 'style="display:none;"' : ''; ?>>
+						<?php esc_html_e( 'Re-authenticate', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<div class="wp-mcp-ai-oauth-manual" style="display:none; margin-top: 10px;">
+						<p class="description">
+							<?php esc_html_e( 'Upwork only allows "localhost" callback URLs, so the login tab ends on a localhost address that does not load. If that happens: copy the full address from the login tab\'s address bar, paste it below, and click Complete Login.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<a href="#" class="wp-mcp-ai-oauth-open-link" target="_blank" rel="noopener noreferrer" style="display: block; margin-bottom: 6px;"><?php esc_html_e( 'Open the login page', 'mcp-ai-wpoos' ); ?></a>
+						<input type="text" class="regular-text wp-mcp-ai-oauth-callback-url" placeholder="http://localhost:PORT/callback?code=...&state=..." />
+						<button type="button" class="button button-primary wp-mcp-ai-complete-oauth"><?php esc_html_e( 'Complete Login', 'mcp-ai-wpoos' ); ?></button>
+						<span class="spinner wp-mcp-ai-oauth-complete-spinner" style="display:none; float:none; margin: 0 0 0 6px;"></span>
+					</div>
+				</div>
+				<?php endif; ?>
 			</div>
 			<?php
 			return;
@@ -498,11 +585,21 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 								<?php echo ! $has_oauth ? 'style="display:none;"' : ''; ?>>
 								<?php esc_html_e( 'Re-authenticate', 'mcp-ai-wpoos' ); ?>
 							</button>
+							<div class="wp-mcp-ai-oauth-manual" style="<?php echo $has_oauth ? 'display:none;' : ''; ?>margin-top: 10px;">
+								<p class="description">
+									<?php esc_html_e( 'Some servers (e.g. Upwork) only allow "localhost" callback URLs, so the login tab ends on a localhost address that does not load. If that happens: copy the full address from the login tab\'s address bar, paste it below, and click Complete Login.', 'mcp-ai-wpoos' ); ?>
+								</p>
+								<a href="#" class="wp-mcp-ai-oauth-open-link" target="_blank" rel="noopener noreferrer" style="display: block; margin-bottom: 6px;"><?php esc_html_e( 'Open the login page', 'mcp-ai-wpoos' ); ?></a>
+								<input type="text" class="regular-text wp-mcp-ai-oauth-callback-url" placeholder="http://localhost:PORT/callback?code=...&state=..." />
+								<button type="button" class="button button-primary wp-mcp-ai-complete-oauth"><?php esc_html_e( 'Complete Login', 'mcp-ai-wpoos' ); ?></button>
+								<span class="spinner wp-mcp-ai-oauth-complete-spinner" style="display:none; float:none; margin: 0 0 0 6px;"></span>
+							</div>
 							<?php
-							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at' ) as $field ) {
-								$value = isset( $app['oauth_data'][ $field ] ) ? $app['oauth_data'][ $field ] : '';
+							// Secrets are stored encrypted and never echoed back into the page.
+							// Blank submissions preserve the stored credentials (see save()).
+							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at', 'client_id' ) as $field ) {
 								?>
-								<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[oauth_data][<?php echo esc_attr( $field ); ?>]" value="<?php echo esc_attr( (string) $value ); ?>" />
+								<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[oauth_data][<?php echo esc_attr( $field ); ?>]" value="" />
 								<?php
 							}
 							?>
@@ -624,8 +721,17 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 							<button type="button" class="button wp-mcp-ai-reconnect-oauth" style="display:none;">
 								<?php esc_html_e( 'Re-authenticate', 'mcp-ai-wpoos' ); ?>
 							</button>
+							<div class="wp-mcp-ai-oauth-manual" style="margin-top: 10px;">
+								<p class="description">
+									<?php esc_html_e( 'Some servers (e.g. Upwork) only allow "localhost" callback URLs, so the login tab ends on a localhost address that does not load. If that happens: copy the full address from the login tab\'s address bar, paste it below, and click Complete Login.', 'mcp-ai-wpoos' ); ?>
+								</p>
+								<a href="#" class="wp-mcp-ai-oauth-open-link" target="_blank" rel="noopener noreferrer" style="display: block; margin-bottom: 6px;"><?php esc_html_e( 'Open the login page', 'mcp-ai-wpoos' ); ?></a>
+								<input type="text" class="regular-text wp-mcp-ai-oauth-callback-url" placeholder="http://localhost:PORT/callback?code=...&state=..." />
+								<button type="button" class="button button-primary wp-mcp-ai-complete-oauth"><?php esc_html_e( 'Complete Login', 'mcp-ai-wpoos' ); ?></button>
+								<span class="spinner wp-mcp-ai-oauth-complete-spinner" style="display:none; float:none; margin: 0 0 0 6px;"></span>
+							</div>
 							<?php
-							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at' ) as $field ) {
+							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at', 'client_id' ) as $field ) {
 								?>
 								<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][oauth_data][<?php echo esc_attr( $field ); ?>]" value="" />
 								<?php
@@ -667,32 +773,50 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 				<div class="wp-mcp-ai-mcp-app-result" style="display:none; margin-top: 10px;"></div>
 			</div>
 		</script>
-		<script type="text/html" id="tmpl-wp-mcp-ai-mcp-app-ref-row">
-			<div class="wp-mcp-ai-mcp-app-row" style="border: 1px solid #dcdcde; border-radius: 3px; padding: 15px; margin: 10px 0; background: #fff;">
-				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-					<span>
-						<strong class="wp-mcp-ai-mcp-app-title"><?php esc_html_e( 'Remote Sites MCP Server', 'mcp-ai-wpoos' ); ?></strong>
-						<span class="wp-mcp-ai-mcp-app-status-badge wp-mcp-ai-mcp-app-status-unknown">
-							<span class="wp-mcp-ai-mcp-app-status-dot"></span>
-							<span class="wp-mcp-ai-mcp-app-status-text"><?php esc_html_e( 'Not tested', 'mcp-ai-wpoos' ); ?></span>
+			<script type="text/html" id="tmpl-wp-mcp-ai-mcp-app-ref-row">
+				<div class="wp-mcp-ai-mcp-app-row" style="border: 1px solid #dcdcde; border-radius: 3px; padding: 15px; margin: 10px 0; background: #fff;">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+						<span>
+							<strong class="wp-mcp-ai-mcp-app-title"><?php esc_html_e( 'Remote Sites MCP Server', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="wp-mcp-ai-mcp-app-status-badge wp-mcp-ai-mcp-app-status-unknown">
+								<span class="wp-mcp-ai-mcp-app-status-dot"></span>
+								<span class="wp-mcp-ai-mcp-app-status-text"><?php esc_html_e( 'Not tested', 'mcp-ai-wpoos' ); ?></span>
+							</span>
+							<span class="wp-mcp-ai-mcp-app-managed-badge"><?php esc_html_e( 'Managed in Remote Sites', 'mcp-ai-wpoos' ); ?></span>
 						</span>
-						<span class="wp-mcp-ai-mcp-app-managed-badge"><?php esc_html_e( 'Managed in Remote Sites', 'mcp-ai-wpoos' ); ?></span>
-					</span>
-					<div>
-						<label style="margin-right: 10px;">
-							<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][enabled]" value="0" />
-							<input type="checkbox" name="wp_mcp_ai_mcp_apps[{{data.index}}][enabled]" value="1" checked />
-							<?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?>
-						</label>
-						<button type="button" class="button button-link-delete wp-mcp-ai-remove-mcp-app"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button>
+						<div>
+							<label style="margin-right: 10px;">
+								<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][enabled]" value="0" />
+								<input type="checkbox" name="wp_mcp_ai_mcp_apps[{{data.index}}][enabled]" value="1" checked />
+								<?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?>
+							</label>
+							<button type="button" class="button button-link-delete wp-mcp-ai-remove-mcp-app"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button>
+						</div>
+					</div>
+					<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][connection_ref]" value="" />
+					<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][label]" value="" />
+					<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][auth_type]" value="none" />
+					<p class="description wp-mcp-ai-ref-description" style="margin: 0;"><?php esc_html_e( 'This app connects through a centrally managed MCP Server connection. Credentials and endpoint are managed on the Remote Sites page.', 'mcp-ai-wpoos' ); ?></p>
+					<div class="wp-mcp-ai-ref-oauth-row" style="display: none; margin-top: 10px;">
+						<p class="description"><?php esc_html_e( 'Click the button below to connect via browser-based OAuth 2.1 login.', 'mcp-ai-wpoos' ); ?></p>
+						<button type="button" class="button wp-mcp-ai-connect-oauth">
+							<?php esc_html_e( 'Connect via Web Login', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<button type="button" class="button wp-mcp-ai-reconnect-oauth" style="display:none;">
+							<?php esc_html_e( 'Re-authenticate', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<div class="wp-mcp-ai-oauth-manual" style="display: none; margin-top: 10px;">
+							<p class="description">
+								<?php esc_html_e( 'Some servers (e.g. Upwork) only allow "localhost" callback URLs, so the login tab ends on a localhost address that does not load. If that happens: copy the full address from the login tab\'s address bar, paste it below, and click Complete Login.', 'mcp-ai-wpoos' ); ?>
+							</p>
+							<a href="#" class="wp-mcp-ai-oauth-open-link" target="_blank" rel="noopener noreferrer" style="display: block; margin-bottom: 6px;"><?php esc_html_e( 'Open the login page', 'mcp-ai-wpoos' ); ?></a>
+							<input type="text" class="regular-text wp-mcp-ai-oauth-callback-url" placeholder="http://localhost:PORT/callback?code=...&state=..." />
+							<button type="button" class="button button-primary wp-mcp-ai-complete-oauth"><?php esc_html_e( 'Complete Login', 'mcp-ai-wpoos' ); ?></button>
+							<span class="spinner wp-mcp-ai-oauth-complete-spinner" style="display:none; float:none; margin: 0 0 0 6px;"></span>
+						</div>
 					</div>
 				</div>
-				<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][connection_ref]" value="" />
-				<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][label]" value="" />
-				<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][auth_type]" value="none" />
-				<p class="description" style="margin: 0;"><?php esc_html_e( 'This app connects through a centrally managed MCP Server connection. Credentials and endpoint are managed on the Remote Sites page.', 'mcp-ai-wpoos' ); ?></p>
-			</div>
-		</script>
+			</script>
 		<?php
 	}
 
@@ -719,6 +843,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		$lbl_import_limit = esc_js( __( 'Importing these servers would exceed the maximum number of MCP Apps.', 'mcp-ai-wpoos' ) );
 		$lbl_loopback     = esc_js( __( 'This server is on this WordPress site. Same-site REST endpoints are routed in-process to avoid TLS loopback deadlocks.', 'mcp-ai-wpoos' ) );
 		$lbl_managed      = esc_js( __( 'Managed in Remote Sites — run Test Connection or Discover Tools from the Remote Sites page.', 'mcp-ai-wpoos' ) );
+		$lbl_upwork_ref   = esc_js( __( 'This app connects to the official Upwork MCP gateway through a centrally managed Remote Sites connection. Complete the OAuth login below to finish setup.', 'mcp-ai-wpoos' ) );
 
 		ob_start();
 		?>
@@ -739,6 +864,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 					var lblImportLimit = <?php echo wp_json_encode( $lbl_import_limit ); ?>;
 					var lblLoopback = <?php echo wp_json_encode( $lbl_loopback ); ?>;
 					var lblManaged = <?php echo wp_json_encode( $lbl_managed ); ?>;
+					var lblUpworkRef = <?php echo wp_json_encode( $lbl_upwork_ref ); ?>;
 					var maxAppsMessage = <?php echo wp_json_encode( $max_apps_message ); ?>;
 					var mcpAppLabel = <?php echo wp_json_encode( $mcp_app_label ); ?>;
 
@@ -1040,6 +1166,8 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 								var opt = remoteSelect.options[ remoteSelect.selectedIndex ];
 								var ref = opt ? opt.value : '';
 								var name = opt ? ( opt.getAttribute( 'data-name' ) || '' ) : '';
+								var type = opt ? ( opt.getAttribute( 'data-type' ) || '' ) : '';
+								var serverUrl = opt ? ( opt.getAttribute( 'data-server-url' ) || '' ) : '';
 								if ( ! ref ) {
 									return;
 								}
@@ -1071,6 +1199,24 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 								var titleEl = row.querySelector( '.wp-mcp-ai-mcp-app-title' );
 								if ( titleEl ) {
 									titleEl.textContent = name || mcpAppLabel;
+								}
+
+								// Upwork MCP connections authenticate through the OAuth login
+								// flow — surface the login UI on the new reference row.
+								if ( type === 'upwork' ) {
+									var oauthRow = row.querySelector( '.wp-mcp-ai-ref-oauth-row' );
+									if ( oauthRow ) {
+										oauthRow.style.display = '';
+									}
+									row.querySelectorAll( '.wp-mcp-ai-connect-oauth, .wp-mcp-ai-reconnect-oauth' ).forEach( function( b ) {
+										if ( serverUrl ) {
+											b.setAttribute( 'data-server-url', serverUrl );
+										}
+									} );
+									var descEl = row.querySelector( '.wp-mcp-ai-ref-description' );
+									if ( descEl ) {
+										descEl.textContent = lblUpworkRef;
+									}
 								}
 
 								if ( emptyEl ) {
@@ -1211,11 +1357,85 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 									return;
 								}
 
+								if ( event.target.closest( '.wp-mcp-ai-oauth-open-link' ) ) {
+									var openLink = event.target.closest( '.wp-mcp-ai-oauth-open-link' );
+									if ( ! openLink.getAttribute( 'href' ) || openLink.getAttribute( 'href' ) === '#' ) {
+										event.preventDefault();
+										window.alert( 'Click "Connect via Web Login" first to start the login.' );
+									}
+									return;
+								}
+
+								if ( event.target.closest( '.wp-mcp-ai-complete-oauth' ) ) {
+									event.preventDefault();
+									var completeBtn = event.target.closest( '.wp-mcp-ai-complete-oauth' );
+									var completeRow = completeBtn.closest( '.wp-mcp-ai-mcp-app-row' );
+									var urlField = completeRow ? completeRow.querySelector( '.wp-mcp-ai-oauth-callback-url' ) : null;
+									var callbackUrl = urlField ? urlField.value.trim() : '';
+									if ( ! callbackUrl ) {
+										window.alert( 'Paste the full localhost URL from the address bar of the login tab first.' );
+										return;
+									}
+
+									// Extract the state from the pasted URL so it always
+									// agrees with the value embedded in the callback.
+									var stateMatch = ( callbackUrl.split( '?' )[ 1 ] || '' ).match( /(^|&)state=([^&]*)/ );
+									if ( ! stateMatch ) {
+										window.alert( 'The pasted URL is missing the state parameter. Copy the full address bar URL.' );
+										return;
+									}
+									var stateParam = decodeURIComponent( stateMatch[ 2 ] );
+
+									var spinner = completeRow ? completeRow.querySelector( '.wp-mcp-ai-oauth-complete-spinner' ) : null;
+									completeBtn.disabled = true;
+									if ( spinner ) {
+										spinner.style.display = 'inline-block';
+									}
+
+									var cxhr = new XMLHttpRequest();
+									cxhr.open( 'POST', '<?php echo esc_url_raw( rest_url( 'mcp-ai/v1/mcp-apps/oauth/complete' ) ); ?>' );
+									cxhr.setRequestHeader( 'Content-Type', 'application/json' );
+									cxhr.setRequestHeader( 'X-WP-Nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?> );
+									cxhr.onload = function() {
+										var cdata = {};
+										try {
+											cdata = JSON.parse( cxhr.responseText );
+										} catch ( e ) {
+											cdata = {};
+										}
+										if ( cxhr.status === 200 && cdata.success ) {
+											window.alert( cdata.message || 'MCP App connected successfully.' );
+											window.location.reload();
+										} else {
+											window.alert( cdata.message || 'Failed to complete the OAuth login. Please try again.' );
+											completeBtn.disabled = false;
+											if ( spinner ) {
+												spinner.style.display = 'none';
+											}
+										}
+									};
+									cxhr.onerror = function() {
+										window.alert( 'Network error. Please try again.' );
+										completeBtn.disabled = false;
+										if ( spinner ) {
+											spinner.style.display = 'none';
+										}
+									};
+									cxhr.send( JSON.stringify( { state: stateParam, callback_url: callbackUrl } ) );
+									return;
+								}
+
 								if ( event.target.closest( '.wp-mcp-ai-connect-oauth' ) || event.target.closest( '.wp-mcp-ai-reconnect-oauth' ) ) {
 									event.preventDefault();
 									var btn = event.target.closest( '.wp-mcp-ai-connect-oauth' ) || event.target.closest( '.wp-mcp-ai-reconnect-oauth' );
 									var serverUrl = btn.getAttribute( 'data-server-url' ) || '';
 									var row = btn.closest( '.wp-mcp-ai-mcp-app-row' );
+
+									// Centrally managed reference rows carry the Remote Sites
+									// connection ID; the OAuth completion then persists the
+									// tokens to the encrypted central store.
+									var refInput = row ? row.querySelector( 'input[name$="[connection_ref]"]' ) : null;
+									var connectionRef = ( refInput && refInput.value ) ? refInput.value : '';
 
 									// Read the server URL from the row's input field if data attribute is empty (new rows).
 									if ( ! serverUrl && row ) {
@@ -1242,14 +1462,61 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 										if ( xhr.status === 200 ) {
 											var data = JSON.parse( xhr.responseText );
 											if ( data.authorization_url ) {
-												window.location.href = data.authorization_url;
+												if ( data.redirect_mode === 'manual_loopback' ) {
+													// Providers like Upwork only accept localhost redirect
+												// URIs: open the login in a new tab and let the admin
+												// paste the resulting callback URL back here.
+													window.open( data.authorization_url, '_blank' );
+													if ( row ) {
+														var manualBox = row.querySelector( '.wp-mcp-ai-oauth-manual' );
+														if ( manualBox ) {
+															manualBox.style.display = '';
+														}
+														var openLink = row.querySelector( '.wp-mcp-ai-oauth-open-link' );
+														if ( openLink ) {
+															openLink.href = data.authorization_url;
+														}
+													}
+												} else {
+													window.location.href = data.authorization_url;
+												}
 											} else {
 												window.alert( 'Failed to start OAuth flow.' );
-												btn.disabled = false;
-												btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
 											}
+											btn.disabled = false;
+											btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
 										} else {
-											window.alert( 'OAuth initiation failed. Check the server URL and try again.' );
+											// Surface the REST error message (e.g. the OAuth
+											// discovery failure) plus the per-attempt
+											// diagnostics and hint, so the admin can tell
+											// "server has no OAuth" from "site could not
+											// reach it" and knows the API-key alternative.
+											var message = 'OAuth initiation failed. Check the server URL and try again.';
+											try {
+												var errData = JSON.parse( xhr.responseText );
+												if ( errData && errData.message ) {
+													message = errData.message;
+												}
+												if ( errData && errData.data ) {
+													if ( errData.data.hint ) {
+														message += '\n\n' + errData.data.hint;
+													}
+													var attempts = errData.data.attempts || [];
+													if ( attempts.length ) {
+														message += '\n\nDiscovery attempts:';
+														attempts.slice( 0, 4 ).forEach( function( attempt ) {
+															var outcome = attempt.status ? 'HTTP ' + attempt.status : ( attempt.error || attempt.result || 'failed' );
+															message += '\n• ' + attempt.url + ' — ' + outcome;
+														} );
+														if ( attempts.length > 4 ) {
+															message += '\n… and ' + ( attempts.length - 4 ) + ' more';
+														}
+													}
+												}
+											} catch ( e ) {
+												// Non-JSON error body — keep the generic message.
+											}
+											window.alert( message );
 											btn.disabled = false;
 											btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
 										}
@@ -1259,7 +1526,11 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 										btn.disabled = false;
 										btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
 									};
-									xhr.send( JSON.stringify( { server_url: serverUrl, assistant_id: getAssistantId() } ) );
+									var payload = { server_url: serverUrl, assistant_id: getAssistantId() };
+									if ( connectionRef ) {
+										payload.connection_ref = connectionRef;
+									}
+									xhr.send( JSON.stringify( payload ) );
 								}
 							} );
 

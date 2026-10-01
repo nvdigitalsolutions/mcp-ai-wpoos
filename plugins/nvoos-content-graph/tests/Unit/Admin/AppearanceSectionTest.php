@@ -46,20 +46,24 @@ class AppearanceSectionTest extends WP_UnitTestCase {
 				'visual_label_font_size' => '99',
 				'visual_min_label_zoom'  => '7',
 				'visual_anim_enabled'    => '1',
+				'visual_hover_focus'     => '0',
+				'visual_edge_flow'       => '1',
 			)
 		);
 
-		$this->assertSame( 'dark', $out['visual_theme'] ); // invalid -> default.
-		$this->assertSame( 'community', $out['visual_color_by'] );
-		$this->assertSame( 0, $out['visual_show_icons'] );
-		$this->assertSame( 'outline', $out['visual_icon_mode'] );
-		$this->assertSame( 'density', $out['visual_edge_style'] );
-		$this->assertSame( 'always', $out['visual_edge_labels'] );
-		$this->assertSame( 8, $out['visual_size_min'] );   // clamped to min.
-		$this->assertSame( 120, $out['visual_size_max'] ); // clamped to max.
-		$this->assertSame( 16, $out['visual_label_font_size'] );
-		$this->assertSame( 1.0, $out['visual_min_label_zoom'] ); // clamped 0..1.
-		$this->assertSame( 1, $out['visual_anim_enabled'] );
+			$this->assertSame( 'dark', $out['visual_theme'] ); // invalid -> default.
+			$this->assertSame( 'community', $out['visual_color_by'] );
+			$this->assertSame( 0, $out['visual_show_icons'] );
+			$this->assertSame( 'outline', $out['visual_icon_mode'] );
+			$this->assertSame( 'density', $out['visual_edge_style'] );
+			$this->assertSame( 'always', $out['visual_edge_labels'] );
+			$this->assertSame( 8, $out['visual_size_min'] );   // clamped to min.
+			$this->assertSame( 120, $out['visual_size_max'] ); // clamped to max.
+			$this->assertSame( 16, $out['visual_label_font_size'] );
+			$this->assertSame( 1.0, $out['visual_min_label_zoom'] ); // clamped 0..1.
+			$this->assertSame( 1, $out['visual_anim_enabled'] );
+			$this->assertSame( 0, $out['visual_hover_focus'] );
+			$this->assertSame( 1, $out['visual_edge_flow'] );
 	}
 
 	/**

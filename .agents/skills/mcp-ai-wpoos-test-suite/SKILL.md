@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 48 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 55 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals, WP_CLI stub constant leak, self-instantiating double-render, wpdb error-HTML envelope leaks), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-09-19"
+  last-updated: "2026-10-01"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -643,6 +643,128 @@ the changed files is the substantive gate; plan CI waits accordingly.
     `phpcs:disable InterpolatedNotPrepared` block for the
     esc_sql()-escaped `{$table}`. Behavior-identical; also run phpcbf or
     align `=` spacing manually (WPCS alignment warnings follow).
+
+51. **Addon tool classes fatal in standalone suites (trait/interface not found).**
+    `Trait "WP_MCP_AI_Tool_Default_Capability" not found` / `Interface
+    "WP_MCP_AI_Tool_Interface" not found` in the `test (standalone)` jobs
+    (`plugins/nvoos-content-graph-{ai,ai-platform,pro}/phpunit.xml.dist`).
+    Cause: an addon's `tests/bootstrap.php` — loaded from the shared root
+    bootstrap — requires tool classes that `implements
+    WP_MCP_AI_Tool_Interface` + `use WP_MCP_AI_Tool_Default_Capability`,
+    contracts that only exist when the base plugin is loaded; the
+    standalone matrixes boot through the root bootstrap WITHOUT the base
+    plugin, so the require fatals before any test runs. Fix (three layers,
+    as in `addons/nvoos-design-system`, PR #6810):
+
+    - **Self-guard the production files** — after the ABSPATH guard:
+      `if ( ! interface_exists( 'WP_MCP_AI_Tool_Interface' ) ||
+      ! trait_exists( 'WP_MCP_AI_Tool_Default_Capability' ) ) { return; }`.
+      This also keeps the addon's autoloader safe standalone (class_exists
+      returns false instead of fataling).
+    - **Guard the addon's tests/bootstrap.php** requires with the same
+      interface/trait check.
+    - **`markTestSkipped()`** in the dependent test when the contracts are
+      absent.
+    Verify in two ISOLATED processes: no-contracts (require tools + entry →
+    no fatal, tool classes undefined, core classes load) and with-contracts
+    (tools load, capability correct).
+
+    **Gotcha:** PHP binds unconditional top-level `interface`/`trait`
+    declarations at COMPILE time — defining the contracts later in the same
+    file/process makes them exist from line 1, silently invalidating a
+    "contracts absent" harness. Always simulate the standalone state in a
+    separate process (`php -r` or a second file).
+
+52. **`Call to undefined method WP_CLI::add_hook()` when a test constructs
+    real WooCommerce (stub constant leak).** A suite that instantiates the
+    real `WooCommerce` class fatals because another test file's **file-scope**
+    `WP_CLI` stub — loaded eagerly during PHPUnit discovery, before any test
+    runs — defines the `WP_CLI` constant + a minimal class without
+    `add_hook()` (the `addons/pro/tests/test-pro-cli-mcp-server-command.php`
+    stub is the in-repo offender). WooCommerce's `WC_CLI` then passes its
+    `defined('WP_CLI') && WP_CLI` guard and calls the missing method during
+    `new WooCommerce()`. Fix (both layers, as in the v1.1.89 CI repair):
+
+    - **Never construct a second real WooCommerce in a test.** When
+      `class_exists( 'WooCommerce' )`, drive the code under test against the
+      real singleton (`WC()->mailer()`) instead; snapshot
+      `$GLOBALS['wp_filter']['woocommerce_init']` before any
+      `remove_all_actions()` and restore it — plus the removed `WC_Emails`
+      `email_header`/`email_footer` handlers — in tearDown (removing the
+      real mailer's handlers without restoring them is order-dependent
+      pollution for later WooCommerce suites).
+    - **Defense in depth:** every file-scope `WP_CLI` stub must include a
+      no-op `add_hook( $when, $callback )` — defining the `WP_CLI` constant
+      alone makes real-WC boot paths assume the full WP-CLI API.
+
+    **Gotcha:** `class_exists( 'WooCommerce' )` is true in CI (the root
+    `tests/bootstrap.php` loads WC when `wp-content/plugins/woocommerce`
+    exists) but false on minimal local copies — the same suite must exercise
+    **both** branches, and only the stub branch may construct `WooCommerce`
+    freely.
+
+53. **Bundled asset reads via the WP Filesystem API silently no-op in Docker
+    (template registry + merge-context assertions).** An addon's template
+    registry (`NV_oOS_Design_System_Email_Template_Registry::get_builtin_html()`,
+    the v1.1.90 letterhead fix) read bundled templates only through the WP
+    Filesystem API, which falls back to `ftpsockets` when the `direct`
+    transport is unavailable (e.g. Docker dev containers) — every read
+    silently failed, and tests asserting rendered output went red in
+    environment-dependent ways. Fix (both layers, as in PR #6816):
+
+    - **Prefer the `direct` transport with a plain local-read fallback** —
+      bundled files never need FTP/SSH; keep the WP Filesystem path only as
+      the direct-transport branch.
+    - **Assert on the merge context, not the rendered output, when the
+      template never renders the token.** The wrapper/renderer supported
+      `{{to_name}}` but the letterhead template never used it — the test
+      asserted the recipient name in rendered output and failed; assert the
+      assert the `nds_email_context` merge context instead (and cover the conditional
+      block's both branches: name present / absent).
+
+  54. **Self-instantiating class + duplicate `new` in the bootstrap loader →
+      double render (v1.1.91, PR #6830).** An admin class that
+      self-instantiates at the bottom of its own file
+      (`WP_MCP_AI_Admin_Orchestration_Dashboard` — the
+      `WP_MCP_AI_Admin_Multi_Agent_Dashboard` pattern) gained a second
+      `new` in `includes/bootstrap/loader.php`. `add_submenu_page()`
+      registers the page hook via `add_action($page_hook, $callback)` — two
+      distinct instances are two distinct callbacks, so firing the hook
+      rendered the dashboard **twice** (duplicate DOM IDs breaking
+      auto-refresh JS). Symptom in tests: `assertSame( 1, ... )` on the
+      number of callbacks for the page hook fails with 2. Fix: remove the
+      redundant `new` (keep the `require_once` outside the `is_admin()` gate
+      so CLI/test contexts still get the registration); assert exactly one
+      callback via `$GLOBALS['wp_filter'][ $page_hook ]` counting and
+      fire the hook to assert the wrapper renders once. Regression-proof:
+      re-adding the duplicate `new` makes the assertion fail — that is the
+      test's job.
+
+  55. **`$wpdb` error HTML leaking into JSON responses (v1.1.91, PR #6827).**
+      With WP_DEBUG + `show_errors` on, `$wpdb` prints a WordPress database
+      error HTML block *before* `wp_send_json_success()` — the AJAX client
+      fails with `parsererror: Unexpected token '<'` (the Pro orchestration
+      monitor polled every 5 s). Root cause was gating JetEngine CCT reads on
+      `is_available()` (content type *registered*) instead of the **physical
+      table** existing with the full schema. Fix layers:
+
+      - **Gate on storage readiness** — `table_exists()` probe
+        (`SELECT 1 … LIMIT 1`) → `is_storage_ready()` (table + every
+        required column derived from `get_meta_fields()`); consumers fall
+        back to transients; schema drift trips the gate and logs missing
+        columns; expose a `reset_storage_cache()` test seam for the
+        per-request cache.
+      - **Defense in depth** — the new `WP_MCP_AI_Db_Output_Guard::run()`
+        suppresses `$wpdb` error output around a callback (logging the
+        failure with the last query) and wraps the central dispatch
+        (`WP_MCP_AI_Tool_Registry::execute_tool()` + both REST tool
+        handlers); read AJAX handlers use `with_suppressed_db_errors()`.
+
+      Test both halves: the gate suite (table present / absent /
+      schema-drifted × consumer fallback) and the guard suite (error HTML
+      suppressed, failure logged, response still valid JSON). Never assert
+      raw `$wpdb->last_error` text — assert the envelope + the guard's log
+      event.
 
 ## Production fix vs test fix
 

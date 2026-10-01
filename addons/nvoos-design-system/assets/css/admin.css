@@ -1,0 +1,288 @@
+/* ==========================================================================
+   NV oOS Design System — Admin Styles
+   ========================================================================== */
+
+/* Layout */
+.nvoos-nds-layout {
+	display: grid;
+	grid-template-columns: 1fr 380px;
+	gap: 24px;
+	margin-top: 16px;
+	align-items: start;
+}
+
+@media (max-width: 1024px) {
+	.nvoos-nds-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Preset bar */
+.nvoos-nds-preset-bar {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin-bottom: 16px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.nvoos-nds-preset-bar label {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+/* Settings bar (@property toggle, legacy aliases, DTCG export) */
+.nvoos-nds-settings-bar {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin-bottom: 24px;
+}
+
+.nvoos-nds-settings-row {
+	margin-bottom: 10px;
+}
+
+.nvoos-nds-settings-row:last-child {
+	margin-bottom: 0;
+}
+
+.nvoos-nds-settings-row .description {
+	margin-top: 4px;
+	margin-left: 24px;
+}
+
+/* Token groups */
+.nvoos-nds-group {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	margin-bottom: 20px;
+}
+
+.nvoos-nds-group-title {
+	margin: 0;
+	padding: 12px 16px;
+	font-size: 15px;
+	border-bottom: 1px solid #e5e5e5;
+	background: #f9f9f9;
+}
+
+.nvoos-nds-tokens-table {
+	margin: 0;
+}
+
+.nvoos-nds-tokens-table th {
+	padding: 14px 16px 14px 20px;
+	width: 220px;
+	vertical-align: middle;
+}
+
+.nvoos-nds-tokens-table td {
+	padding: 10px 16px;
+	vertical-align: middle;
+}
+
+.nvoos-nds-tokens-table .description {
+	margin-top: 4px;
+	font-weight: 400;
+}
+
+/* CSS variable badge */
+.nvoos-nds-css-var {
+	display: inline-block;
+	margin-left: 10px;
+	font-size: 12px;
+	color: #646970;
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+}
+
+/* Color picker */
+.nvoos-nds-color-picker {
+	width: 60px;
+	height: 32px;
+	padding: 2px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+	cursor: pointer;
+	vertical-align: middle;
+}
+
+/* Reset button */
+.nvoos-nds-reset-token {
+	margin-left: 8px;
+	vertical-align: middle;
+}
+
+/* Preview pane */
+.nvoos-nds-preview-pane {
+	margin-bottom: 20px;
+}
+
+.nvoos-nds-preview-sample {
+	padding: 16px;
+	background: var(--nds-color-surface, #1a1a1a);
+	border-radius: var(--nds-radius-md, 6px);
+	color: var(--nds-color-text-primary, #f5f0e8);
+	font-family: var(--nds-font-family, sans-serif);
+	margin-bottom: 16px;
+}
+
+.nds-preview-card {
+	border: 1px solid var(--nds-color-border, #333);
+	border-radius: var(--nds-radius-md, 6px);
+	overflow: hidden;
+	margin-bottom: 16px;
+	box-shadow: var(--nds-shadow-card, 0 2px 8px rgba(0,0,0,0.15));
+	background: var(--nds-color-surface, #1a1a1a);
+}
+
+.nds-preview-card-image {
+	height: var(--nds-card-image-height, 200px);
+	background: var(--nds-color-surface-hover, #2a2a2a);
+}
+
+.nds-preview-card-body {
+	padding: var(--nds-space-md, 16px);
+}
+
+.nds-preview-card-category {
+	font-size: var(--nds-font-size-sm, 14px);
+	color: var(--nds-color-text-secondary, #9a9488);
+}
+
+.nds-preview-card-title {
+	font-size: var(--nds-font-size-lg, 20px);
+	font-weight: var(--nds-font-weight-bold, 700);
+	margin: 4px 0;
+}
+
+.nds-preview-card-meta {
+	font-size: var(--nds-font-size-xs, 12px);
+	color: var(--nds-color-text-secondary, #9a9488);
+}
+
+.nds-preview-card-price {
+	font-size: var(--nds-font-size-base, 16px);
+	font-weight: var(--nds-font-weight-bold, 700);
+	margin-top: 8px;
+	color: var(--nds-color-accent, #8b9f48);
+}
+
+/* Preview filter bar */
+.nds-preview-filter-bar {
+	display: flex;
+	gap: var(--nds-gap-filter, 30px);
+	flex-wrap: wrap;
+}
+
+.nds-preview-filter-pill {
+	padding: 6px 14px;
+	border: 1px solid var(--nds-color-border, #333);
+	border-radius: var(--nds-radius-sm, 3px);
+	font-size: var(--nds-font-size-sm, 14px);
+	transition: background var(--nds-transition-fast, 150ms ease),
+	            color var(--nds-transition-fast, 150ms ease);
+	cursor: default;
+}
+
+.nds-preview-filter-pill.active {
+	background: var(--nds-color-accent, #8b9f48);
+	border-color: var(--nds-color-accent, #8b9f48);
+}
+
+/* CSS output */
+.nvoos-nds-css-output {
+	background: #f6f7f7;
+	padding: 12px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	overflow-x: auto;
+	max-height: 300px;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+/* Export section */
+.nvoos-nds-export textarea {
+	margin-bottom: 10px;
+	font-family: monospace;
+	font-size: 12px;
+}
+
+/* ── Email tab ──────────────────────────────────────────────────────────── */
+
+.nvoos-nds-email-wrap {
+	max-width: 1100px;
+}
+
+.nvoos-nds-email-table code {
+	font-size: 11px;
+	color: #646970;
+}
+
+.nvoos-nds-inline-form {
+	display: inline-block;
+	margin-right: 6px;
+}
+
+.nvoos-nds-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 1px;
+	margin-left: 8px;
+	vertical-align: middle;
+}
+
+.nvoos-nds-badge-active {
+	background: #d1e7dd;
+	color: #0a3622;
+}
+
+.nvoos-nds-badge-draft {
+	background: #f8d7da;
+	color: #58151c;
+}
+
+.nvoos-nds-audit {
+	display: inline-block;
+	min-width: 48px;
+	text-align: center;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-weight: 700;
+}
+
+.nvoos-nds-audit-good {
+	background: #d1e7dd;
+	color: #0a3622;
+}
+
+.nvoos-nds-audit-bad {
+	background: #f8d7da;
+	color: #58151c;
+}
+
+/* Email preview frame */
+.nvoos-nds-preview-frame {
+	margin-top: 12px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 16px;
+	background: #f0f0f1;
+	overflow-x: auto;
+}
+
+.nvoos-nds-preview-frame table {
+	margin-left: auto;
+	margin-right: auto;
+}

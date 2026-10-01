@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.1.86' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.1.91' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -594,6 +594,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			WP_MCP_AI_Pro_Jev_Guardrail::register();
 		}
 
+		// Jev tier-routing signal (opt-in via enable_jev_tier_routing).
+		// Feeds the decision-model complexity read into the base
+		// wp_mcp_ai_tiered_model_selection and
+		// wp_mcp_ai_execution_depth_confidence filters; fail-open by design.
+		$jev_tier_routing_file = WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-tier-routing.php';
+		if ( file_exists( $jev_tier_routing_file ) && ! class_exists( 'WP_MCP_AI_Pro_Jev_Tier_Routing' ) ) {
+			require_once $jev_tier_routing_file;
+		}
+		if ( class_exists( 'WP_MCP_AI_Pro_Jev_Tier_Routing' ) ) {
+			WP_MCP_AI_Pro_Jev_Tier_Routing::register();
+		}
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 
@@ -796,6 +808,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php',
 			// Product Price Lookup tool.
 			'WP_MCP_AI_Pro_Tool_Lookup_Product_Price'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-lookup-product-price.php',
+			// RF-DETR catalog search (fine-tuned model detection, 1.1.90).
+			'WP_MCP_AI_Pro_Tool_Rfdetr_Catalog_Search'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-rfdetr-catalog-search.php',
 			// Listing image download tools (Google Maps, Facebook, Instagram).
 			'WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-download-google-maps-images.php',
 			'WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-download-facebook-page-images.php',
@@ -1097,6 +1111,25 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Import_ECAs_CSV'           => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-import-ecas-csv.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $eca_tools );
+
+			// Add Google Classroom ECA integration tools when the integration is enabled.
+			if ( ! empty( $settings['enable_eca_classroom_integration'] ) ) {
+				$eca_classroom_tools = array(
+					'WP_MCP_AI_Tool_List_Classroom_Courses'            => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-list-classroom-courses.php',
+					'WP_MCP_AI_Tool_Sync_Classroom_Roster_To_Students' => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-sync-classroom-roster-to-students.php',
+					'WP_MCP_AI_Tool_Sync_Classroom_Courses_To_ECAs'    => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-sync-classroom-courses-to-ecas.php',
+					'WP_MCP_AI_Tool_Link_Classroom_Course_To_ECA'      => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-link-classroom-course-to-eca.php',
+					'WP_MCP_AI_Tool_Create_Classroom_Course'           => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-create-classroom-course.php',
+					'WP_MCP_AI_Tool_Update_Classroom_Course'           => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-update-classroom-course.php',
+					'WP_MCP_AI_Tool_Post_Classroom_Announcement'       => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-post-classroom-announcement.php',
+					'WP_MCP_AI_Tool_Create_Classroom_Coursework'       => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-create-classroom-coursework.php',
+					'WP_MCP_AI_Tool_List_Classroom_Submissions'        => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-list-classroom-submissions.php',
+					'WP_MCP_AI_Tool_Classroom_Course_Analytics'        => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-classroom-course-analytics.php',
+					'WP_MCP_AI_Tool_List_Classroom_Guardians'          => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-list-classroom-guardians.php',
+					'WP_MCP_AI_Tool_Manage_Classroom_Push_Watch'       => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-manage-classroom-push-watch.php',
+				);
+				$pro_tools           = array_merge( $pro_tools, $eca_classroom_tools );
+			}
 		}
 
 		// Add quiz tools if enabled.
@@ -1368,7 +1401,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Scan_Orphaned_Media'       => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-scan-orphaned-media.php',
 				'WP_MCP_AI_Tool_Cleanup_Orphaned_Media'    => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-cleanup-orphaned-media.php',
 				// Classic (non-LLM) tesseract OCR for the image identification ladder.
-				'WP_MCP_AI_Tool_Ocr_Image_Classic'        => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-ocr-image-classic.php',
+				'WP_MCP_AI_Tool_Ocr_Image_Classic'         => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-ocr-image-classic.php',
 			);
 			$pro_tools           = array_merge( $pro_tools, $media_toolkit_tools );
 		}
@@ -2055,6 +2088,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$vision_analysis_tools = array(
 				'WP_MCP_AI_Tool_Analyze_Image_Objects' => WP_MCP_AI_PRO_PATH . 'includes/tools/vision-analysis/class-wp-mcp-ai-tool-analyze-image-objects.php',
 				'WP_MCP_AI_Tool_Search_Similar_Images' => WP_MCP_AI_PRO_PATH . 'includes/tools/vision-analysis/class-wp-mcp-ai-tool-search-similar-images.php',
+				'WP_MCP_AI_Tool_Rfdetr_Detect'         => WP_MCP_AI_PRO_PATH . 'includes/tools/vision-analysis/class-wp-mcp-ai-tool-rfdetr-detect.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $vision_analysis_tools );
 		}
@@ -2503,6 +2537,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['sync_students_from_isams'] = 'wordpress-core';
 			$pro_tools['sync_ecas_from_isams']     = 'wordpress-core';
 			$pro_tools['research_eca']             = 'wordpress-core';
+			// Google Classroom integration tools.
+			$pro_tools['list_classroom_courses']            = 'wordpress-core';
+			$pro_tools['sync_classroom_roster_to_students'] = 'wordpress-core';
+			$pro_tools['sync_classroom_courses_to_ecas']    = 'wordpress-core';
+			$pro_tools['link_classroom_course_to_eca']      = 'wordpress-core';
+			$pro_tools['create_classroom_course']           = 'wordpress-core';
+			$pro_tools['update_classroom_course']           = 'wordpress-core';
+			$pro_tools['post_classroom_announcement']       = 'wordpress-core';
+			$pro_tools['create_classroom_coursework']       = 'wordpress-core';
+			$pro_tools['list_classroom_submissions']        = 'wordpress-core';
+			$pro_tools['classroom_course_analytics']        = 'wordpress-core';
+			$pro_tools['list_classroom_guardians']          = 'wordpress-core';
+			$pro_tools['manage_classroom_push_watch']       = 'wordpress-core';
 			// Attendance & participation tools.
 			$pro_tools['mark_eca_attendance']               = 'wordpress-core';
 			$pro_tools['get_eca_attendance_report']         = 'wordpress-core';

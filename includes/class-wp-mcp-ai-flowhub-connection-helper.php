@@ -52,6 +52,15 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 		const CONNECTION_TYPE = 'flowhub';
 
 		/**
+		 * Connection mode value designating a connection as the backend for
+		 * the FlowHub toolkit MCP server (assistant settings).
+		 *
+		 * @since 1.1.91
+		 * @var string
+		 */
+		const MCP_MODE = 'mcp';
+
+		/**
 		 * Resolve the effective FlowHub connection for a tool call.
 		 *
 		 * Priority order:
@@ -377,6 +386,52 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 			}
 
 			return null;
+		}
+
+		/**
+		 * Find the connection designated as the FlowHub toolkit MCP backend.
+		 *
+		 * A FlowHub Remote Sites connection whose mode is `mcp` is the admin's
+		 * explicit choice for serving the FlowHub toolkit MCP server (the MCP
+		 * toggle in assistant settings). MCP-triggered tool calls bind to this
+		 * connection so live services inherit its credentials and proxy.
+		 *
+		 * @since 1.1.91
+		 *
+		 * @return string Connection ID (conn_...), or '' when no connection is
+		 *                designated or usable.
+		 */
+		public static function get_mcp_connection_id() {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				return '';
+			}
+
+			foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $connection_id => $connection ) {
+				if ( ! is_array( $connection ) ) {
+					continue;
+				}
+
+				if ( self::CONNECTION_TYPE !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+					continue;
+				}
+
+				if ( empty( $connection['enabled'] ) ) {
+					continue;
+				}
+
+				if ( self::MCP_MODE !== ( isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : '' ) ) {
+					continue;
+				}
+
+				// Skip connections without stored credentials — they cannot serve requests.
+				if ( empty( $connection['client_id'] ) || empty( $connection['api_key'] ) ) {
+					continue;
+				}
+
+				return (string) $connection_id;
+			}
+
+			return '';
 		}
 
 		/**

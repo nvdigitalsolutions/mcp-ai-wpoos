@@ -77,9 +77,15 @@ class OAuth1Helper {
     }
     getNonce() {
         const wordCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        // nv oOS local patch: derive the OAuth1 nonce from a CSPRNG instead of
+        // Math.random() so nonces are not predictable (CodeQL: insecure randomness).
+        // Oversampling plus rejection sampling avoids modulo bias.
+        const bytes = crypto.randomBytes(this.nonceLength * 2);
         let result = '';
-        for (let i = 0; i < this.nonceLength; i++) {
-            result += wordCharacters[Math.trunc(Math.random() * wordCharacters.length)];
+        for (let i = 0; i < bytes.length && result.length < this.nonceLength; i++) {
+            if (bytes[i] < 248) {
+                result += wordCharacters[bytes[i] % wordCharacters.length];
+            }
         }
         return result;
     }

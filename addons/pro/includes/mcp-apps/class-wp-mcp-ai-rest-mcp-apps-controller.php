@@ -210,21 +210,55 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 					'callback'            => array( $this, 'initiate_oauth' ),
 					'permission_callback' => array( $this, 'check_admin_permissions' ),
 					'args'                => array(
-						'server_url'   => array(
+						'server_url'     => array(
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'esc_url_raw',
 						),
-						'assistant_id' => array(
+						'assistant_id'   => array(
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
 							'default'           => 0,
 						),
-						'scope'        => array(
+						'scope'          => array(
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'connection_ref' => array(
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_key',
+							'description'       => __( 'Optional central Remote Sites connection ID; tokens persist to its encrypted store instead of assistant meta.', 'mcp-ai-wpoos-pro' ),
+						),
+					),
+				),
+			)
+		);
+
+		// OAuth: complete a manual loopback flow. Providers such as Upwork only
+		// accept localhost redirect URIs, so the admin pastes the callback URL
+		// (copied from the browser address bar) back into the admin UI.
+		register_rest_route(
+			self::NAMESPACE,
+			'/mcp-apps/oauth/complete',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'complete_oauth' ),
+					'permission_callback' => array( $this, 'check_admin_permissions' ),
+					'args'                => array(
+						'state'        => array(
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'callback_url' => array(
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'esc_url_raw',
+							'description'       => __( 'The full localhost callback URL copied from the browser address bar.', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),
@@ -242,13 +276,16 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 					'callback'            => array( $this, 'handle_oauth_callback' ),
 					'permission_callback' => '__return_true',
 					'args'                => array(
+						// Deliberately NOT required: authorization servers redirect
+						// back with only ?error=...&error_description=... on denial,
+						// and the handler renders a human-facing page for that case.
+						// Marking them required would make REST validation reject the
+						// request before the handler runs, showing a raw JSON error.
 						'code'  => array(
-							'type'     => 'string',
-							'required' => true,
+							'type' => 'string',
 						),
 						'state' => array(
-							'type'     => 'string',
-							'required' => true,
+							'type' => 'string',
 						),
 					),
 				),
@@ -358,7 +395,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		$config = $this->resolve_stored_token( $assistant_id, $config );
 
 		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
-		$result   = $registry->test_connection( $config );
+		$result   = $registry->test_connection( $config, $assistant_id );
 
 		if ( $assistant_id ) {
 			if ( is_wp_error( $result ) ) {
@@ -424,20 +461,35 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 	 * @return array Config with the stored token restored when applicable.
 	 */
 	protected function resolve_stored_token( $assistant_id, array $config ) {
-		if ( ! empty( $config['token'] ) || ! $assistant_id ) {
+		if ( ! $assistant_id ) {
 			return $config;
 		}
 
 		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
 		foreach ( $registry->get_apps( $assistant_id ) as $saved ) {
-			if (
-				isset( $saved['server_url'] ) &&
-				$saved['server_url'] === $config['server_url'] &&
-				! empty( $saved['token'] )
-			) {
-				$config['token'] = $saved['token'];
-				break;
+			if ( ! isset( $saved['server_url'] ) || $saved['server_url'] !== $config['server_url'] ) {
+				continue;
 			}
+
+			// Bearer/basic/header credentials are masked in the UI, so a test
+			// payload may omit them. Restore the stored token when the caller
+			// did not submit one.
+			if ( empty( $config['token'] ) && ! empty( $saved['token'] ) ) {
+				$config['token'] = $saved['token'];
+			}
+
+			// OAuth apps keep their credentials in oauth_data, which is never
+			// sent back to the browser. Restore the stored OAuth blob so the
+			// OAuth client can resolve an access token (and refresh it when
+			// expired) instead of failing with "no access token available".
+			if ( empty( $config['oauth_data'] ) && ! empty( $saved['oauth_data']['access_token'] ) ) {
+				$config['oauth_data'] = $saved['oauth_data'];
+				if ( empty( $config['token'] ) ) {
+					$config['token'] = $saved['oauth_data']['access_token'];
+				}
+			}
+
+			break;
 		}
 
 		return $config;
@@ -472,7 +524,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		$config = $this->resolve_stored_token( $assistant_id, $config );
 
 		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
-		$tools    = $registry->discover_tools( $config, $refresh );
+		$tools    = $registry->discover_tools( $config, $refresh, $assistant_id );
 
 		if ( is_wp_error( $tools ) ) {
 			if ( $assistant_id ) {
@@ -606,13 +658,25 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		$metadata     = $oauth_client->discover_metadata();
 
 		if ( is_wp_error( $metadata ) ) {
-			return rest_ensure_response(
-				array(
-					'success'        => true,
-					'supports_oauth' => false,
-					'message'        => $metadata->get_error_message(),
-				)
+			$error_data = $metadata->get_error_data();
+			$response   = array(
+				'success'        => true,
+				'supports_oauth' => false,
+				'message'        => $metadata->get_error_message(),
 			);
+
+			// Surface per-attempt diagnostics (URL → status/transport error)
+			// and the actionable hint so the UI can explain the failure.
+			if ( is_array( $error_data ) ) {
+				if ( ! empty( $error_data['attempts'] ) ) {
+					$response['attempts'] = $error_data['attempts'];
+				}
+				if ( ! empty( $error_data['hint'] ) ) {
+					$response['hint'] = $error_data['hint'];
+				}
+			}
+
+			return rest_ensure_response( $response );
 		}
 
 		$scopes           = isset( $metadata['scopes_supported'] ) ? $metadata['scopes_supported'] : array();
@@ -623,6 +687,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 				'success'                => true,
 				'supports_oauth'         => true,
 				'has_registration'       => $has_registration,
+				'discovery_method'       => $oauth_client->get_metadata_source(),
 				'scopes_supported'       => $scopes,
 				'authorization_endpoint' => isset( $metadata['authorization_endpoint'] ) ? $metadata['authorization_endpoint'] : '',
 				'metadata'               => array(
@@ -644,9 +709,10 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function initiate_oauth( WP_REST_Request $request ) {
-		$server_url   = $request->get_param( 'server_url' );
-		$assistant_id = $request->get_param( 'assistant_id' );
-		$scope        = $request->get_param( 'scope' );
+		$server_url     = $request->get_param( 'server_url' );
+		$assistant_id   = $request->get_param( 'assistant_id' );
+		$scope          = $request->get_param( 'scope' );
+		$connection_ref = $request->get_param( 'connection_ref' );
 
 		if ( ! class_exists( 'WP_MCP_AI_MCP_App_OAuth_Client' ) ) {
 			return new WP_Error(
@@ -661,6 +727,24 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		// Check if OAuth is supported.
 		$discovery = $oauth_client->discover_metadata();
 		if ( is_wp_error( $discovery ) ) {
+			$error_data = $discovery->get_error_data();
+			$data       = array(
+				'status'     => 400,
+				'error_code' => $discovery->get_error_code(),
+				'message'    => $discovery->get_error_message(),
+			);
+
+			// Pass the per-attempt diagnostics and hint through so the metabox
+			// can show which discovery step failed and why.
+			if ( is_array( $error_data ) ) {
+				if ( ! empty( $error_data['attempts'] ) ) {
+					$data['attempts'] = $error_data['attempts'];
+				}
+				if ( ! empty( $error_data['hint'] ) ) {
+					$data['hint'] = $error_data['hint'];
+				}
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_mcp_app_oauth_not_supported',
 				sprintf(
@@ -669,18 +753,34 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 					$server_url,
 					$discovery->get_error_message()
 				),
-				array(
-					'status'     => 400,
-					'error_code' => $discovery->get_error_code(),
-					'message'    => $discovery->get_error_message(),
-				)
+				$data
 			);
 		}
 
-		// Register client if supported.
-		$reg_result = $oauth_client->register_client();
+		// Register client if supported. Some providers (e.g. Upwork) only
+		// accept loopback redirect URIs, so when the registration rejects the
+		// site's callback URL we fall back to a manual loopback flow in which
+		// the admin pastes the localhost callback URL back into the UI.
+		$reg_result    = $oauth_client->register_client();
+		$redirect_mode = 'redirect';
+
 		if ( is_wp_error( $reg_result ) ) {
-			return $reg_result;
+			$error_data = $reg_result->get_error_data();
+			$oauth_code = is_array( $error_data ) && ! empty( $error_data['oauth_error'] ) ? $error_data['oauth_error'] : '';
+
+			if ( 'invalid_redirect_uri' !== $oauth_code ) {
+				return $reg_result;
+			}
+
+			// Re-register with a loopback redirect URI (RFC 8252 §7.3 style).
+			// The port is arbitrary — nothing listens there; the admin copies
+			// the resulting callback URL from the browser address bar.
+			$oauth_client->set_redirect_uri( 'http://localhost:' . wp_rand( 1024, 49151 ) . '/callback' );
+			$reg_result = $oauth_client->register_client();
+			if ( is_wp_error( $reg_result ) ) {
+				return $reg_result;
+			}
+			$redirect_mode = 'manual_loopback';
 		}
 
 		// Generate PKCE and state.
@@ -695,13 +795,16 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 
 		// Store flow state in a transient for the callback.
 		$flow_state = array(
-			'server_url'    => $server_url,
-			'assistant_id'  => absint( $assistant_id ),
-			'code_verifier' => $oauth_client->get_code_verifier(),
-			'client_id'     => $oauth_client->get_client_id(),
-			'redirect_uri'  => $oauth_client->get_redirect_uri(),
-			'scope'         => $scope,
-			'created_at'    => time(),
+			'server_url'     => $server_url,
+			'assistant_id'   => absint( $assistant_id ),
+			'connection_ref' => ! empty( $connection_ref ) ? sanitize_key( $connection_ref ) : '',
+			'code_verifier'  => $oauth_client->get_code_verifier(),
+			'client_id'      => $oauth_client->get_client_id(),
+			'redirect_uri'   => $oauth_client->get_redirect_uri(),
+			'redirect_mode'  => $redirect_mode,
+			'state'          => $state,
+			'scope'          => $scope,
+			'created_at'     => time(),
 		);
 
 		set_transient( self::OAUTH_STATE_TRANSIENT . $state, $flow_state, self::OAUTH_STATE_TTL );
@@ -712,6 +815,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 				'authorization_url' => $auth_url,
 				'state'             => $state,
 				'client_id'         => $oauth_client->get_client_id(),
+				'redirect_mode'     => $redirect_mode,
 			)
 		);
 	}
@@ -770,9 +874,12 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		// Clean up the transient immediately.
 		delete_transient( self::OAUTH_STATE_TRANSIENT . $state );
 
-		// Exchange the authorization code for tokens.
+		// Exchange the authorization code for tokens. Restore the flow-specific
+		// redirect URI and CSRF state, both of which the fresh request has lost.
 		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $flow_state['server_url'] );
 		$oauth_client->set_client_id( $flow_state['client_id'] );
+		$oauth_client->set_redirect_uri( ! empty( $flow_state['redirect_uri'] ) ? $flow_state['redirect_uri'] : $oauth_client->get_redirect_uri() );
+		$oauth_client->set_state( $state );
 
 		$token_result = $oauth_client->exchange_code( $code, $state, $flow_state['code_verifier'] );
 
@@ -791,40 +898,237 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		}
 
 		// If an assistant ID was provided, auto-save the OAuth config.
-		$assistant_id = absint( $flow_state['assistant_id'] );
-		if ( $assistant_id ) {
-			$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
-			$existing = $registry->get_apps( $assistant_id );
-
-			// Build app config with OAuth data.
-			$new_app = array(
-				'label'      => wp_parse_url( $flow_state['server_url'], PHP_URL_HOST ),
-				'server_url' => $flow_state['server_url'],
-				'auth_type'  => 'oauth',
-				'enabled'    => true,
-				'timeout'    => 30,
-				'verify_ssl' => true,
-				'oauth_data' => $token_result,
-			);
-
-			// Check for existing app with same URL to update.
-			$updated = false;
-			foreach ( $existing as $i => $app ) {
-				if ( isset( $app['server_url'] ) && $app['server_url'] === $flow_state['server_url'] ) {
-					$existing[ $i ] = array_merge( $app, $new_app );
-					$updated        = true;
-					break;
-				}
-			}
-			if ( ! $updated ) {
-				$existing[] = $new_app;
-			}
-
-			$registry->save_apps( $assistant_id, $existing );
-		}
+		$this->finalize_oauth_flow( $flow_state, $token_result );
 
 		// Render success page and terminate (browser-facing callback).
-		$this->render_oauth_success_page( $flow_state['server_url'], $token_result, $assistant_id );
+		$this->render_oauth_success_page( $flow_state['server_url'], $token_result, absint( $flow_state['assistant_id'] ) );
+	}
+
+	/**
+	 * Persist the OAuth token data onto the assistant's MCP App config.
+	 *
+	 * Shared by the browser-redirect callback and the manual loopback
+	 * completion endpoint.
+	 *
+	 * @since 1.9.0
+	 * @param array $flow_state  Flow state stored at initiation time.
+	 * @param array $token_data  Token response from the token endpoint.
+	 * @return void
+	 */
+	protected function finalize_oauth_flow( $flow_state, $token_data ) {
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+
+		// Upwork MCP tokens persist the dynamic client ID so auto-refresh can
+		// identify itself (providers such as Upwork reject refresh requests
+		// that lack it).
+		$token_data = array_merge(
+			$token_data,
+			array(
+				'client_id' => isset( $flow_state['client_id'] ) ? $flow_state['client_id'] : '',
+			)
+		);
+
+		// Centrally managed connections (Remote Sites, e.g. an Upwork
+		// freelance-marketplace connection in MCP mode) persist to the
+		// encrypted central store via their connection_ref.
+		if ( ! empty( $flow_state['connection_ref'] ) ) {
+			$registry->update_app_oauth_data( 0, $flow_state['server_url'], $token_data, $flow_state['connection_ref'] );
+
+			// When the login was started from the assistant editor, persist the
+			// reference entry itself too (mirrors the inline path below) so it
+			// survives the page reload that follows the loopback completion.
+			$ref_assistant_id = absint( $flow_state['assistant_id'] );
+			if ( $ref_assistant_id ) {
+				$ref = $flow_state['connection_ref'];
+
+				$ref_label = '';
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					$ref_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $ref );
+					if ( is_array( $ref_connection ) && ! empty( $ref_connection['name'] ) ) {
+						$ref_label = $ref_connection['name'];
+					}
+				}
+				if ( '' === $ref_label ) {
+					$ref_label = (string) wp_parse_url( $flow_state['server_url'], PHP_URL_HOST );
+				}
+
+				$existing = $registry->get_apps( $ref_assistant_id );
+				$updated  = false;
+				foreach ( $existing as $i => $app ) {
+					if ( isset( $app['connection_ref'] ) && $app['connection_ref'] === $ref ) {
+						$existing[ $i ]['enabled'] = true;
+						$updated                   = true;
+						break;
+					}
+				}
+				if ( ! $updated ) {
+					$existing[] = array(
+						'label'          => $ref_label,
+						'connection_ref' => $ref,
+						'enabled'        => true,
+					);
+				}
+				$registry->save_apps( $ref_assistant_id, $existing );
+			}
+
+			return;
+		}
+
+		// If an assistant ID was provided, auto-save the OAuth config.
+		$assistant_id = absint( $flow_state['assistant_id'] );
+		if ( ! $assistant_id ) {
+			return;
+		}
+
+		$existing = $registry->get_apps( $assistant_id );
+
+		// Build app config with OAuth data.
+		$new_app = array(
+			'label'      => wp_parse_url( $flow_state['server_url'], PHP_URL_HOST ),
+			'server_url' => $flow_state['server_url'],
+			'auth_type'  => 'oauth',
+			'enabled'    => true,
+			'timeout'    => 30,
+			'verify_ssl' => true,
+			'oauth_data' => $token_data,
+		);
+
+		// Check for existing app with same URL to update.
+		$updated = false;
+		foreach ( $existing as $i => $app ) {
+			if ( isset( $app['server_url'] ) && $app['server_url'] === $flow_state['server_url'] ) {
+				$existing[ $i ] = array_merge( $app, $new_app );
+				$updated        = true;
+				break;
+			}
+		}
+		if ( ! $updated ) {
+			$existing[] = $new_app;
+		}
+
+		$registry->save_apps( $assistant_id, $existing );
+	}
+
+	/**
+	 * Complete a manual loopback OAuth flow.
+	 *
+	 * For providers that reject non-localhost redirect URIs (e.g. Upwork),
+	 * the browser is sent to a localhost callback URL that never loads. The
+	 * admin copies that URL — which carries the authorization code and state
+	 * — back into the admin UI, and this endpoint exchanges it.
+	 *
+	 * @since 1.9.0
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function complete_oauth( WP_REST_Request $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_OAuth_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_oauth_unavailable',
+				__( 'OAuth client is not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$callback_url = $request->get_param( 'callback_url' );
+		$state_arg    = $request->get_param( 'state' );
+
+		$query  = wp_parse_url( $callback_url, PHP_URL_QUERY );
+		$params = array();
+		if ( $query ) {
+			wp_parse_str( $query, $params );
+		}
+
+		// The pasted URL must be the loopback callback the flow was built for.
+		$host = wp_parse_url( $callback_url, PHP_URL_HOST );
+		if ( ! in_array( $host, array( 'localhost', '127.0.0.1' ), true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_oauth_bad_callback',
+				__( 'This does not look like the localhost callback URL. Copy the full address from the browser bar of the tab that opened after login.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( ! empty( $params['error'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_oauth_authorization_error',
+				sprintf(
+					/* translators: 1: Error code, 2: Error description. */
+					__( 'OAuth authorization failed: %1$s — %2$s', 'mcp-ai-wpoos-pro' ),
+					sanitize_text_field( $params['error'] ),
+					! empty( $params['error_description'] ) ? sanitize_text_field( $params['error_description'] ) : __( 'No description.', 'mcp-ai-wpoos-pro' )
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		$code  = isset( $params['code'] ) ? sanitize_text_field( $params['code'] ) : '';
+		$state = isset( $params['state'] ) ? sanitize_text_field( $params['state'] ) : '';
+
+		if ( empty( $code ) || empty( $state ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_oauth_missing_params',
+				__( 'The pasted URL is missing the code or state parameter. Copy the full address from the browser bar.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// The state embedded in the URL and the requested state must agree,
+		// and must identify a manual loopback flow.
+		if ( $state !== $state_arg ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_oauth_state_mismatch',
+				__( 'OAuth state mismatch. Please start the connection again.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$flow_state = get_transient( self::OAUTH_STATE_TRANSIENT . $state );
+		if ( ! is_array( $flow_state ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_oauth_state_expired',
+				__( 'This login link has expired or is no longer valid. Click "Connect via Web Login" again and paste the new callback URL from the login tab.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( empty( $flow_state['redirect_mode'] ) || 'manual_loopback' !== $flow_state['redirect_mode'] ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_oauth_wrong_flow',
+				__( 'This connection does not use the manual login flow. Please try again.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Clean up the transient immediately.
+		delete_transient( self::OAUTH_STATE_TRANSIENT . $state );
+
+		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $flow_state['server_url'] );
+		$oauth_client->set_client_id( $flow_state['client_id'] );
+		$oauth_client->set_redirect_uri( ! empty( $flow_state['redirect_uri'] ) ? $flow_state['redirect_uri'] : $oauth_client->get_redirect_uri() );
+		$oauth_client->set_state( $state );
+
+		$token_result = $oauth_client->exchange_code( $code, $state, $flow_state['code_verifier'] );
+		if ( is_wp_error( $token_result ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_oauth_token_error',
+				sprintf(
+					/* translators: %s: Error message. */
+					__( 'Failed to exchange authorization code: %s', 'mcp-ai-wpoos-pro' ),
+					$token_result->get_error_message()
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		$this->finalize_oauth_flow( $flow_state, $token_result );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'message' => __( 'MCP App connected successfully.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
 	}
 
 	/**

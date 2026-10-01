@@ -52,7 +52,7 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Hierarchical MemPalace recall. Filters by wing (project / client / matter / patient / deal) and optional room before semantic ranking, then always includes every core-tier memory of that wing. Supports bi-temporal queries via as_of (Zep). Use this when you want "everything we remember about <wing>" instead of a flat keyword search.', 'mcp-ai-wpoos' );
+		return __( 'Hierarchical MemPalace recall. Filters by wing (project / client / matter / patient / deal) and optional room before semantic ranking, then always includes every core-tier memory of that wing. When agent_id is omitted, the tool recalls from the assistant executing it; recalling another agent\'s wings requires the manage_options capability. Supports bi-temporal queries via as_of (Zep). Use this when you want "everything we remember about <wing>" instead of a flat keyword search.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'when_to_use'     => __( 'Recalling everything a wing remembers across tiers and rooms, including all core-tier memories, with optional as_of time travel.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Flat similarity lookups across wings; use retrieve_agent_memory for generic search and semantic_context_search for raw embedding queries.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'retrieve_agent_memory', 'semantic_context_search', 'store_agent_context' ),
-			'notes'           => __( 'Every core-tier memory of the requested wing is always included; as_of enables bi-temporal (Zep) queries.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'Omit agent_id to recall your own wings; cross-agent recall requires manage_options. Every core-tier memory of the requested wing is always included; as_of enables bi-temporal (Zep) queries.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties'           => array(
 				'agent_id'      => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional. Agent assistant ID (post ID) or virtual agent identifier. When omitted, the tool resolves to the assistant executing it. Recalling another agent\'s wings requires the manage_options capability.', 'mcp-ai-wpoos' ),
 				),
 				'wing'          => array(
 					'type'        => 'string',
@@ -117,7 +117,7 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					'description' => __( 'Optional override: when true, re-rank the ranked-slot pool using the Phase 4 RRF fusion service (BM25 + vector + graph). When false, use the legacy importance + token-overlap ranking. Leave unset (null) to honour the `wp_mcp_ai_memory_rrf_default_enabled` filter.', 'mcp-ai-wpoos' ),
 				),
 			),
-			'required'             => array( 'agent_id', 'wing' ),
+			'required'             => array( 'wing' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -149,24 +149,40 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
-		$agent_id = isset( $arguments['agent_id'] ) ? $arguments['agent_id'] : '';
-		if ( is_numeric( $agent_id ) ) {
-			$agent_id = absint( $agent_id );
-		} else {
-			$agent_id = sanitize_text_field( (string) $agent_id );
+		// Resolve the effective agent identity: explicit argument (scope-checked
+		// override) or the calling assistant's own id from the execution
+		// context. Fail loudly — never guess.
+		$requested = isset( $arguments['agent_id'] ) ? $arguments['agent_id'] : null;
+		$identity  = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution( $requested, $context )
+			: $this->fallback_identity( $requested, $context );
+
+		if ( empty( $identity['agent_id'] ) ) {
+			return new WP_Error(
+				'mcp_ai_memory_no_agent',
+				__( 'No agent_id supplied and the execution context provided none.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
 		}
-		$wing  = isset( $arguments['wing'] ) ? sanitize_text_field( (string) $arguments['wing'] ) : '';
-		$room  = isset( $arguments['room'] ) ? sanitize_text_field( (string) $arguments['room'] ) : '';
-		$query = isset( $arguments['query'] ) ? sanitize_text_field( (string) $arguments['query'] ) : '';
-		$as_of = isset( $arguments['as_of'] ) ? sanitize_text_field( (string) $arguments['as_of'] ) : '';
-		$limit = isset( $arguments['limit'] ) ? max( 1, min( 50, absint( $arguments['limit'] ) ) ) : 10;
-		$tiers = isset( $arguments['include_tiers'] ) && is_array( $arguments['include_tiers'] )
+
+		// Scope gate: recalling another agent's wings requires manage_options.
+		$scope_error = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id )
+			: null;
+		if ( is_wp_error( $scope_error ) ) {
+			return $scope_error;
+		}
+
+		$agent_id = is_numeric( $identity['agent_id'] ) ? absint( $identity['agent_id'] ) : sanitize_text_field( (string) $identity['agent_id'] );
+		$wing     = isset( $arguments['wing'] ) ? sanitize_text_field( (string) $arguments['wing'] ) : '';
+		$room     = isset( $arguments['room'] ) ? sanitize_text_field( (string) $arguments['room'] ) : '';
+		$query    = isset( $arguments['query'] ) ? sanitize_text_field( (string) $arguments['query'] ) : '';
+		$as_of    = isset( $arguments['as_of'] ) ? sanitize_text_field( (string) $arguments['as_of'] ) : '';
+		$limit    = isset( $arguments['limit'] ) ? max( 1, min( 50, absint( $arguments['limit'] ) ) ) : 10;
+		$tiers    = isset( $arguments['include_tiers'] ) && is_array( $arguments['include_tiers'] )
 			? array_intersect( $arguments['include_tiers'], array( 'core', 'recall', 'archival' ) )
 			: array( 'core', 'recall' );
 
-		if ( empty( $agent_id ) ) {
-			return new WP_Error( 'recall_missing_agent', __( 'agent_id is required.', 'mcp-ai-wpoos' ) );
-		}
 		if ( '' === $wing ) {
 			return new WP_Error( 'recall_missing_wing', __( 'wing is required (e.g. "patient/jane-doe", "matter/123").', 'mcp-ai-wpoos' ) );
 		}
@@ -273,15 +289,57 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return array(
-			'success'         => true,
-			'wing'            => $wing,
-			'room'            => $room,
-			'as_of'           => gmdate( 'Y-m-d H:i:s', $as_of_ts ),
-			'candidate_count' => count( $candidates ),
-			'pool_count'      => count( $valid_now ),
-			'core_count'      => count( $core_records ),
-			'returned_count'  => count( $result ),
-			'memories'        => $result,
+			'success'           => true,
+			'wing'              => $wing,
+			'room'              => $room,
+			'as_of'             => gmdate( 'Y-m-d H:i:s', $as_of_ts ),
+			'resolved_agent_id' => $agent_id,
+			'resolution_source' => $identity['resolution_source'],
+			'candidate_count'   => count( $candidates ),
+			'pool_count'        => count( $valid_now ),
+			'core_count'        => count( $core_records ),
+			'returned_count'    => count( $result ),
+			'memories'          => $result,
+		);
+	}
+
+	/**
+	 * Minimal identity resolution used only when the shared resolver class
+	 * is unavailable (e.g. a standalone tool load).
+	 *
+	 * @param int|string|null $requested Explicit agent_id argument.
+	 * @param array           $context   Execution context.
+	 * @return array Resolution shape compatible with
+	 *               WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution().
+	 */
+	private function fallback_identity( $requested, array $context ) {
+		if ( null !== $requested && '' !== (string) $requested && '0' !== (string) $requested ) {
+			$agent_id = is_numeric( $requested ) ? absint( $requested ) : sanitize_text_field( $requested );
+			return array(
+				'agent_id'          => $agent_id,
+				'original'          => (string) $requested,
+				'resolved'          => false,
+				'canonical'         => is_numeric( $requested ),
+				'resolution_source' => 'parameter',
+			);
+		}
+
+		if ( ! empty( $context['assistant_id'] ) && is_numeric( $context['assistant_id'] ) ) {
+			return array(
+				'agent_id'          => absint( $context['assistant_id'] ),
+				'original'          => '',
+				'resolved'          => false,
+				'canonical'         => true,
+				'resolution_source' => 'context',
+			);
+		}
+
+		return array(
+			'agent_id'          => '',
+			'original'          => '',
+			'resolved'          => false,
+			'canonical'         => false,
+			'resolution_source' => '',
 		);
 	}
 

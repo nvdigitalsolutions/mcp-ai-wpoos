@@ -63,6 +63,7 @@ This document explains how they work together and provides configuration example
 ├── allow_guest_access                (Whether guest tokens work)
 ├── require_auth_chat_endpoints       (Require auth for /chat)
 ├── require_auth_tool_execution       (Require auth for tools)
+├── mcp_require_assistant_scope       (Fail-closed MCP tools/list & tools/call without an assistant scope)
 ├── require_auth_assistant_management (Require auth for assistants)
 ├── protect_media_urls                (Require auth for uploads)
 ├── enable_ip_whitelist               (IP filtering)

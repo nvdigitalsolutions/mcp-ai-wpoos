@@ -35,6 +35,18 @@ compiled artifact does.
 advisory in `wrangler pages deploy` (verified via the GitHub Advisory Database
 during planning; do not relax this floor).
 
+### Bucket A runtime — bundled into `worker/dist/index.js`
+
+Unlike the build-time tooling above, these two packages are **runtime**
+dependencies of the Worker: esbuild embeds them into the shipped
+`worker/dist/index.js` bundle (the production NV oOS Cloud handler), so their
+code is redistributed inside the plugin ZIP as part of that compiled artifact.
+
+| Package | Version | License | Copyright | Homepage |
+|---|---|---|---|---|
+| `hono` | ^4.13.7 | MIT | © Yusuke Wada & hono contributors | <https://hono.dev/> |
+| `stripe` | ^17.4.0 | MIT | © Stripe, Inc. | <https://github.com/stripe/stripe-node> |
+
 ---
 
 ## Bucket B — Admin UI runtime (bundled into `assets/build/`)

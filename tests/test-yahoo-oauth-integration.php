@@ -43,6 +43,19 @@ class Test_Yahoo_OAuth_Integration extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the redirect host filter allows the Yahoo authorize host.
+	 */
+	public function test_yahoo_oauth_redirect_host_filter() {
+		$oauth_manager = new WP_MCP_AI_OAuth_Manager();
+
+		$allowed_hosts = array( 'example.com' );
+		$result        = $oauth_manager->allow_yahoo_oauth_redirect_host( $allowed_hosts );
+
+		$this->assertContains( 'api.login.yahoo.com', $result );
+		$this->assertContains( 'example.com', $result );
+	}
+
+	/**
 	 * Test Yahoo Sports footer rendering includes OAuth button when credentials exist.
 	 */
 	public function test_yahoo_footer_rendering() {

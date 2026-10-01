@@ -89,6 +89,28 @@ class Test_OAuth_Quickbooks extends \WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_settings', QuickbooksOAuthHandler::OPTION_NAME );
 	}
 
+	public function test_allow_quickbooks_oauth_redirect_host_default(): void {
+		$handler = new QuickbooksOAuthHandler();
+		$hosts   = $handler->allow_quickbooks_oauth_redirect_host( array( 'example.com' ), '' );
+
+		$this->assertContains( 'appcenter.intuit.com', $hosts );
+		$this->assertContains( 'example.com', $hosts );
+	}
+
+	public function test_allow_quickbooks_oauth_redirect_host_filtered_endpoint(): void {
+		$filter = static function () {
+			return 'https://qb-enterprise.example.com/connect/oauth2';
+		};
+		add_filter( 'wp_mcp_ai_quickbooks_oauth_authorize_endpoint', $filter );
+
+		$handler = new QuickbooksOAuthHandler();
+		$hosts   = $handler->allow_quickbooks_oauth_redirect_host( array(), '' );
+
+		remove_filter( 'wp_mcp_ai_quickbooks_oauth_authorize_endpoint', $filter );
+
+		$this->assertContains( 'qb-enterprise.example.com', $hosts );
+	}
+
 	public function test_state_transient_key_format(): void {
 		$seam = new QuickbooksOAuthHandlerSeam();
 

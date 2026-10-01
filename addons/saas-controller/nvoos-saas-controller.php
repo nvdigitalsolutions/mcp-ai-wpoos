@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS SaaS Controller
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Operator-side toolkit to deploy and manage the NV oOS Cloud control plane (Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter). Provides a One-Click Wizard, Plan/Apply dashboard, drift detector, audit log, and smoke tests inside WP-Admin. Requires NV oOS base plugin.
- * Version:     0.1.0
+ * Version:     0.3.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_SAAS_CONTROLLER_VERSION', '0.1.0' );
+define( 'NVOOS_SAAS_CONTROLLER_VERSION', '0.3.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_SAAS_CONTROLLER_FILE', __FILE__ );

@@ -59,6 +59,18 @@ wp-mcp-ai-jetengine-cpt-research-init
 wp-mcp-ai-law-firm-access
 wp-mcp-ai-law-firm-calculator
 wp-mcp-ai-lighting-analyzer
+wp-mcp-ai-oa-angle-cpt
+wp-mcp-ai-oa-booking
+wp-mcp-ai-oa-booking-link-cpt
+wp-mcp-ai-oa-channels
+wp-mcp-ai-oa-dashboard
+wp-mcp-ai-oa-engine
+wp-mcp-ai-oa-import
+wp-mcp-ai-oa-notifications
+wp-mcp-ai-oa-outbox
+wp-mcp-ai-oa-rest
+wp-mcp-ai-oa-settings
+wp-mcp-ai-oa-templates
 wp-mcp-ai-openmed-client
 wp-mcp-ai-pm-capabilities
 wp-mcp-ai-pm-codes
@@ -192,6 +204,7 @@ wp-mcp-ai-pro-tool-quick-add-google-calendar-event
 wp-mcp-ai-pro-tool-quickbooks-desktop-sync
 wp-mcp-ai-pro-tool-remove-google-chat-space-member
 wp-mcp-ai-pro-tool-render-schedule-result
+wp-mcp-ai-pro-tool-rfdetr-catalog-search
 wp-mcp-ai-pro-tool-schedule-all-export
 wp-mcp-ai-pro-tool-schedule-all-import
 wp-mcp-ai-pro-tool-schedule-channel-broadcast
@@ -330,6 +343,7 @@ wp-mcp-ai-tool-churn-prediction
 wp-mcp-ai-tool-classify-email-hygiene
 wp-mcp-ai-tool-classify-message-intent
 wp-mcp-ai-tool-classify-support-ticket
+wp-mcp-ai-tool-classroom-course-analytics
 wp-mcp-ai-tool-cleanup-orphaned-media
 wp-mcp-ai-tool-client-communication-log
 wp-mcp-ai-tool-close-sprint
@@ -437,6 +451,8 @@ wp-mcp-ai-tool-cre-asset-disposition-analyzer
 wp-mcp-ai-tool-create-allergy
 wp-mcp-ai-tool-create-appointment
 wp-mcp-ai-tool-create-checkup
+wp-mcp-ai-tool-create-classroom-course
+wp-mcp-ai-tool-create-classroom-coursework
 wp-mcp-ai-tool-create-client-profile
 wp-mcp-ai-tool-create-comic-layout
 wp-mcp-ai-tool-create-company
@@ -942,9 +958,13 @@ wp-mcp-ai-tool-lf-time-entry-recorder
 wp-mcp-ai-tool-lf-trial-preparation-checklist
 wp-mcp-ai-tool-lf-trust-account-manager
 wp-mcp-ai-tool-lf-trust-reconciliation-tool
+wp-mcp-ai-tool-link-classroom-course-to-eca
 wp-mcp-ai-tool-link-prescription-to-record
 wp-mcp-ai-tool-list-allergies
 wp-mcp-ai-tool-list-checkups
+wp-mcp-ai-tool-list-classroom-courses
+wp-mcp-ai-tool-list-classroom-guardians
+wp-mcp-ai-tool-list-classroom-submissions
 wp-mcp-ai-tool-list-crm-activities
 wp-mcp-ai-tool-list-customers
 wp-mcp-ai-tool-list-deals
@@ -980,6 +1000,7 @@ wp-mcp-ai-tool-low-stock-alert-automation
 wp-mcp-ai-tool-macro-data-fetcher
 wp-mcp-ai-tool-manage-architectural-precedents
 wp-mcp-ai-tool-manage-care-plan
+wp-mcp-ai-tool-manage-classroom-push-watch
 wp-mcp-ai-tool-manage-crm-contact
 wp-mcp-ai-tool-manage-eca-term
 wp-mcp-ai-tool-manage-eca-waitlist
@@ -1020,6 +1041,9 @@ wp-mcp-ai-tool-optimize-image-sharp
 wp-mcp-ai-tool-optimize-schedule
 wp-mcp-ai-tool-optimize-space-layout
 wp-mcp-ai-tool-options-chain-fetcher
+wp-mcp-ai-tool-outbound-import-leads
+wp-mcp-ai-tool-outbound-manage-angle
+wp-mcp-ai-tool-outbound-pipeline
 wp-mcp-ai-tool-outpaint-background
 wp-mcp-ai-tool-paper-store-export
 wp-mcp-ai-tool-paper-store-import
@@ -1036,6 +1060,7 @@ wp-mcp-ai-tool-plan-sprint
 wp-mcp-ai-tool-pm-capture-decision
 wp-mcp-ai-tool-portfolio-transaction-log
 wp-mcp-ai-tool-portfolio-visualizer
+wp-mcp-ai-tool-post-classroom-announcement
 wp-mcp-ai-tool-post-to-multiple-platforms
 wp-mcp-ai-tool-prepare-file-for-vector-store
 wp-mcp-ai-tool-price-alerts
@@ -1103,6 +1128,7 @@ wp-mcp-ai-tool-resolve-support-ticket
 wp-mcp-ai-tool-retirement-calculator
 wp-mcp-ai-tool-revenue-forecast
 wp-mcp-ai-tool-revoke-consent
+wp-mcp-ai-tool-rfdetr-detect
 wp-mcp-ai-tool-rotate-leads
 wp-mcp-ai-tool-route-knowledge-query
 wp-mcp-ai-tool-rtl-content-optimization
@@ -1168,6 +1194,8 @@ wp-mcp-ai-tool-submit-registration
 wp-mcp-ai-tool-submit-to-authority
 wp-mcp-ai-tool-suggest-placement
 wp-mcp-ai-tool-suggest-template-patterns
+wp-mcp-ai-tool-sync-classroom-courses-to-ecas
+wp-mcp-ai-tool-sync-classroom-roster-to-students
 wp-mcp-ai-tool-sync-eca-enrollments-from-isams
 wp-mcp-ai-tool-sync-ecas-from-isams
 wp-mcp-ai-tool-sync-ecas-from-socs
@@ -1201,6 +1229,7 @@ wp-mcp-ai-tool-trim-video
 wp-mcp-ai-tool-update-allergy
 wp-mcp-ai-tool-update-appointment
 wp-mcp-ai-tool-update-checkup
+wp-mcp-ai-tool-update-classroom-course
 wp-mcp-ai-tool-update-customer
 wp-mcp-ai-tool-update-deal
 wp-mcp-ai-tool-update-eca
@@ -1244,6 +1273,7 @@ wp-mcp-ai-tool-vin-decode
 wp-mcp-ai-tool-web-browser
 wp-mcp-ai-tool-withdrawal-strategy-planner
 wp-mcp-ai-tool-withdraw-student-eca
+wp-mcp-ai-upwork-mcp-bridge
 wp-mcp-ai-vision-annotator
 wp-mcp-ai-vision-count-normalizer
 wp-mcp-ai-vision-vlm-client

@@ -47,6 +47,30 @@ class WP_MCP_AI_MCP_App_Client {
 	const PROTOCOL_VERSION = '2026-07-28';
 
 	/**
+	 * Transient key prefix caching a per-server "legacy dialect" hint.
+	 *
+	 * When a server is observed rejecting the stateless server/discover
+	 * probe and completing the legacy initialize() handshake instead, the
+	 * hint lets subsequent connections skip the doomed probe and open with
+	 * initialize() directly — saving a full HTTP round trip on strict
+	 * 2025-era gateways (e.g. Upwork's Envoy AI Gateway answers the probe
+	 * with a bare HTTP 400).
+	 *
+	 * @var string
+	 */
+	const LEGACY_HINT_PREFIX = 'wp_mcp_ai_mcp_app_legacy_';
+
+	/**
+	 * Time to live for the legacy dialect hint.
+	 *
+	 * Dialect changes on a deployed server are rare, so a day is a safe
+	 * default; a stale hint self-heals (see handshake()).
+	 *
+	 * @var int
+	 */
+	const LEGACY_HINT_TTL = DAY_IN_SECONDS;
+
+	/**
 	 * Server endpoint URL.
 	 *
 	 * @var string
@@ -66,6 +90,27 @@ class WP_MCP_AI_MCP_App_Client {
 	 * @var WP_MCP_AI_MCP_App_OAuth_Client|null
 	 */
 	protected $oauth_client = null;
+
+	/**
+	 * Assistant post ID the app belongs to.
+	 *
+	 * When non-zero, a successful automatic OAuth token refresh is
+	 * persisted back to the assistant's stored app config so rotated
+	 * credentials survive the current request.
+	 *
+	 * @var int
+	 */
+	protected $assistant_id = 0;
+
+	/**
+	 * Central Remote Sites connection ID for reference entries.
+	 *
+	 * When non-empty, automatic OAuth refreshes persist to the encrypted
+	 * Remote Sites store (mcp_server connections) instead of post meta.
+	 *
+	 * @var string
+	 */
+	protected $connection_ref = '';
 
 	/**
 	 * Request timeout in seconds.
@@ -124,6 +169,8 @@ class WP_MCP_AI_MCP_App_Client {
 	 *     @type string $header_name Custom header name when auth_type is 'header'.
 	 *     @type array  $oauth_data  OAuth token data (access_token, refresh_token, expires_in, issued_at) when auth_type is 'oauth'.
 	 *     @type WP_MCP_AI_MCP_App_OAuth_Client $oauth_client Pre-configured OAuth client instance (optional, used for auto-refresh).
+	 *     @type int    $assistant_id Assistant post ID for persisting automatic OAuth refreshes. Default 0.
+	 *     @type string $connection_ref Central Remote Sites connection ID for persisting automatic OAuth refreshes of reference entries. Default ''.
 	 *     @type int    $timeout     Request timeout in seconds. Default 30.
 	 *     @type bool   $verify_ssl  Whether to verify SSL. Default true.
 	 * }
@@ -149,6 +196,8 @@ class WP_MCP_AI_MCP_App_Client {
 		);
 		$this->timeout    = max( 1, min( 120, absint( $config['timeout'] ) ) );
 		$this->verify_ssl = (bool) $config['verify_ssl'];
+		$this->assistant_id = isset( $config['assistant_id'] ) ? absint( $config['assistant_id'] ) : 0;
+		$this->connection_ref = isset( $config['connection_ref'] ) ? sanitize_key( (string) $config['connection_ref'] ) : '';
 
 		// Attach OAuth client if provided.
 		if ( isset( $config['oauth_client'] ) && $config['oauth_client'] instanceof WP_MCP_AI_MCP_App_OAuth_Client ) {
@@ -253,6 +302,165 @@ class WP_MCP_AI_MCP_App_Client {
 	}
 
 	/**
+	 * Perform the connection handshake, negotiating the dialect per server.
+	 *
+	 * Order of operations:
+	 *
+	 * 1. A cached legacy-dialect hint skips the stateless server/discover
+	 *    probe entirely — the probe is doomed on strict 2025-era gateways
+	 *    (e.g. Upwork) that answer it with a bare HTTP 400, and skipping it
+	 *    saves a full round trip.
+	 * 2. Otherwise probe with server/discover (2026-07-28). When the server
+	 *    answers with a legacy rejection signature, fall back to initialize()
+	 *    and record the hint.
+	 * 3. A stale hint self-heals: if initialize() is itself rejected with a
+	 *    stateless signature (the server was upgraded), clear the hint and
+	 *    fall forward to discover().
+	 *
+	 * @since 1.9.5
+	 * @return array|WP_Error On success, array with `method` (discover or
+	 *                         initialize) and `result` (the raw handshake
+	 *                         result); WP_Error when both paths fail.
+	 */
+	public function handshake() {
+		if ( $this->has_legacy_hint() ) {
+			$result = $this->initialize();
+
+			if ( ! is_wp_error( $result ) ) {
+				// Refresh the hint TTL while the server keeps accepting the
+				// legacy handshake.
+				$this->set_legacy_hint();
+
+				return array(
+					'method' => 'initialize',
+					'result' => $result,
+				);
+			}
+
+			if ( ! $this->is_stateless_rejection( $result ) ) {
+				// The server is unreachable or errored without implying a
+				// dialect change — keep the hint and surface the error.
+				return $result;
+			}
+
+			// Stale hint: the server no longer implements initialize().
+			$this->clear_legacy_hint();
+		}
+
+		$result = $this->discover();
+
+		if ( ! is_wp_error( $result ) ) {
+			return array(
+				'method' => 'discover',
+				'result' => $result,
+			);
+		}
+
+		if ( ! $this->is_legacy_rejection( $result ) ) {
+			return $result;
+		}
+
+		$init_result = $this->initialize();
+
+		if ( is_wp_error( $init_result ) ) {
+			return $init_result;
+		}
+
+		$this->set_legacy_hint();
+
+		return array(
+			'method' => 'initialize',
+			'result' => $init_result,
+		);
+	}
+
+	/**
+	 * Whether a handshake error is the signature of a sessionful (legacy,
+	 * pre-2026-07-28) server rejecting the stateless server/discover probe.
+	 *
+	 * Matches JSON-RPC -32601/-32600 codes, "session" in the error message,
+	 * or a bare HTTP 400/404/405/501 without a JSON-RPC error envelope —
+	 * strict 2025-era gateways (e.g. Upwork) answer the unknown probe method
+	 * with a bare HTTP 400.
+	 *
+	 * @since 1.9.5
+	 * @param WP_Error $error Handshake error.
+	 * @return bool True when the error implies a legacy sessionful server.
+	 */
+	protected function is_legacy_rejection( WP_Error $error ) {
+		$data      = $error->get_error_data();
+		$rpc_code  = is_array( $data ) && isset( $data['rpc_code'] ) ? $data['rpc_code'] : 0;
+		$http_code = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
+		$message   = strtolower( $error->get_error_message() );
+
+		return in_array( $rpc_code, array( -32601, -32600 ), true )
+			|| false !== strpos( $message, 'session' )
+			|| in_array( $http_code, array( 400, 404, 405, 501 ), true );
+	}
+
+	/**
+	 * Whether an initialize() error is the signature of a stateless
+	 * (2026-07-28) server that no longer implements the legacy handshake —
+	 * i.e. the cached legacy hint has gone stale.
+	 *
+	 * Deliberately does not treat a "session" message as a stateless
+	 * signature: a sessionful server complaining about its session is still
+	 * a legacy server.
+	 *
+	 * @since 1.9.5
+	 * @param WP_Error $error Handshake error.
+	 * @return bool True when the error implies the server upgraded dialects.
+	 */
+	protected function is_stateless_rejection( WP_Error $error ) {
+		$data      = $error->get_error_data();
+		$rpc_code  = is_array( $data ) && isset( $data['rpc_code'] ) ? $data['rpc_code'] : 0;
+		$http_code = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
+
+		return in_array( $rpc_code, array( -32601, -32600 ), true )
+			|| in_array( $http_code, array( 400, 404, 405, 501 ), true );
+	}
+
+	/**
+	 * Build the transient key for this server's legacy-dialect hint.
+	 *
+	 * @since 1.9.5
+	 * @return string Transient key (prefix + md5 of the server URL).
+	 */
+	protected function legacy_hint_key() {
+		return self::LEGACY_HINT_PREFIX . md5( $this->server_url );
+	}
+
+	/**
+	 * Whether a legacy-dialect hint is cached for this server.
+	 *
+	 * @since 1.9.5
+	 * @return bool True when the hint is present and unexpired.
+	 */
+	protected function has_legacy_hint() {
+		return false !== get_transient( $this->legacy_hint_key() );
+	}
+
+	/**
+	 * Record a legacy-dialect hint for this server.
+	 *
+	 * @since 1.9.5
+	 * @return void
+	 */
+	protected function set_legacy_hint() {
+		set_transient( $this->legacy_hint_key(), 1, self::LEGACY_HINT_TTL );
+	}
+
+	/**
+	 * Clear the legacy-dialect hint for this server.
+	 *
+	 * @since 1.9.5
+	 * @return void
+	 */
+	protected function clear_legacy_hint() {
+		delete_transient( $this->legacy_hint_key() );
+	}
+
+	/**
 	 * Discover available tools from the remote MCP server.
 	 *
 	 * @since 1.8.0
@@ -327,10 +535,12 @@ class WP_MCP_AI_MCP_App_Client {
 	/**
 	 * Test connectivity to the remote MCP server.
 	 *
-	 * Performs a server/discover probe with initialize() fallback.
+	 * Performs a server/discover probe with initialize() fallback and the
+	 * cached legacy-dialect hint (see handshake()).
 	 *
 	 * @since 1.8.0
 	 * @since 1.9.0 Uses discover() for 2026-07-28 servers with initialize() fallback.
+	 * @since 1.9.5 Handshake delegated to handshake() with legacy-dialect hint.
 	 * @return array|WP_Error Connection test result on success, WP_Error on failure.
 	 */
 	public function test_connection() {
@@ -352,30 +562,16 @@ class WP_MCP_AI_MCP_App_Client {
 
 		$start_time = microtime( true );
 
-		// Try discover() first; fall back to initialize() for sessionful
-		// (pre-2026-07-28) servers.
-		$handshake_method = 'discover';
-		$result           = $this->discover();
+		// handshake() encapsulates the probe/fallback negotiation and the
+		// cached legacy-dialect hint.
+		$handshake = $this->handshake();
 
-		if ( is_wp_error( $result ) ) {
-			$error_data = $result->get_error_data();
-			$rpc_code   = is_array( $error_data ) && isset( $error_data['rpc_code'] ) ? $error_data['rpc_code'] : 0;
-
-			// Fall back to the legacy initialize handshake when the server
-			// does not implement server/discover (-32601) or rejects the
-			// stateless request (e.g. -32600 "Missing Mcp-Session-Id header").
-			$message = strtolower( $result->get_error_message() );
-			if ( -32601 !== $rpc_code && -32600 !== $rpc_code && false === strpos( $message, 'session' ) ) {
-				return $result;
-			}
-
-			$handshake_method = 'initialize';
-			$result           = $this->initialize();
-
-			if ( is_wp_error( $result ) ) {
-				return $result;
-			}
+		if ( is_wp_error( $handshake ) ) {
+			return $handshake;
 		}
+
+		$handshake_method = $handshake['method'];
+		$result           = $handshake['result'];
 
 		// Normalize the handshake result into a canonical payload. discover()
 		// returns pre-extracted keys while initialize() returns the raw result.
@@ -503,6 +699,25 @@ class WP_MCP_AI_MCP_App_Client {
 			);
 		}
 
+		// Sessionful (2025-era) Streamable HTTP servers may answer any
+		// post-initialize request with an SSE stream instead of a JSON body —
+		// the Envoy AI Gateway does this for tools/list and tools/call. The
+		// client advertises Accept: text/event-stream, so it must actually
+		// speak it: extract the JSON-RPC message from the SSE payload before
+		// decoding.
+		if ( $this->is_sse_response( $response, $body ) ) {
+			$sse_payload = $this->parse_sse_payload( $body );
+
+			if ( '' === $sse_payload ) {
+				return new WP_Error(
+					'wp_mcp_ai_mcp_app_empty_sse',
+					__( 'MCP server returned an SSE stream without a JSON-RPC message.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$body = $sse_payload;
+		}
+
 		$decoded = json_decode( $body, true );
 
 		if ( $status_code < 200 || $status_code >= 300 ) {
@@ -529,7 +744,13 @@ class WP_MCP_AI_MCP_App_Client {
 					$status_code,
 					$this->server_url
 				),
-				array( 'status' => $status_code )
+				array(
+					'status' => $status_code,
+					// Include a truncated body snippet for diagnostics (e.g. the
+					// gateway's 400 explanation), without leaking it into the
+					// user-facing error message.
+					'body'   => substr( $body, 0, 400 ),
+				)
 			);
 		}
 
@@ -805,6 +1026,94 @@ class WP_MCP_AI_MCP_App_Client {
 	}
 
 	/**
+	 * Check whether an HTTP response is an SSE (Server-Sent Events) stream.
+	 *
+	 * Trusts the Content-Type header first and falls back to sniffing the
+	 * body for `data:` framing — some gateways send SSE despite labeling the
+	 * response application/json, so an SSE-framed body is treated as SSE
+	 * regardless of the header.
+	 *
+	 * @since 1.9.3
+	 * @param array|WP_Error $response wp_remote_request()-style response.
+	 * @param string         $body     Raw response body.
+	 * @return bool True when the response is an SSE stream.
+	 */
+	protected function is_sse_response( $response, $body ) {
+		$content_type = wp_remote_retrieve_header( $response, 'content-type' );
+
+		if ( is_string( $content_type ) && false !== stripos( $content_type, 'text/event-stream' ) ) {
+			return true;
+		}
+
+		foreach ( preg_split( '/\r\n|\r|\n/', $body ) as $line ) {
+			if ( 0 === strpos( $line, 'data:' ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Extract the JSON-RPC message payload from an SSE stream body.
+	 *
+	 * Per the MCP Streamable HTTP transport, the JSON-RPC response arrives as
+	 * the `data` field of a `message` event. Comment lines (keep-alive pings),
+	 * `event:` / `id:` / `retry:` fields, and blank-line event separators are
+	 * handled per the SSE spec; multi-line data fields are joined with
+	 * newlines. The first `message` event wins — one request yields exactly
+	 * one JSON-RPC response.
+	 *
+	 * @since 1.9.3
+	 * @param string $body Raw SSE stream body.
+	 * @return string JSON payload of the message event, empty string when none.
+	 */
+	protected function parse_sse_payload( $body ) {
+		$lines = preg_split( '/\r\n|\r|\n/', $body );
+		$data  = array();
+		$event = 'message';
+
+		foreach ( $lines as $line ) {
+			if ( '' === $line ) {
+				// Blank line dispatches the pending event.
+				if ( 'message' === $event && ! empty( $data ) ) {
+					return implode( "\n", $data );
+				}
+
+				$data  = array();
+				$event = 'message';
+				continue;
+			}
+
+			if ( 0 === strpos( $line, ':' ) ) {
+				continue; // Comment line.
+			}
+
+			if ( 0 === strpos( $line, 'event:' ) ) {
+				$event = trim( substr( $line, 6 ) );
+				continue;
+			}
+
+			if ( 0 === strpos( $line, 'data:' ) ) {
+				// Strip the single optional space after "data:".
+				$payload = substr( $line, 5 );
+				if ( 0 === strpos( $payload, ' ' ) ) {
+					$payload = substr( $payload, 1 );
+				}
+				$data[] = $payload;
+			}
+			// id: and retry: fields carry no JSON-RPC payload — ignored.
+		}
+
+		// Streams may end without a trailing blank line.
+		if ( 'message' === $event && ! empty( $data ) ) {
+			return implode( "\n", $data );
+		}
+
+		return '';
+	}
+
+	/**
 	 * Build request headers including authentication and routing.
 	 *
 	 * @since 1.8.0
@@ -826,17 +1135,27 @@ class WP_MCP_AI_MCP_App_Client {
 			$headers['Mcp-Session-Id'] = $this->session_id;
 		}
 
-		// MCP 2026-07-28 routing headers (SEP-2243). When a legacy session
-		// negotiated an older protocol version, advertise that version so the
-		// server accepts the request.
-		$headers['MCP-Protocol-Version'] = '' !== $this->negotiated_protocol_version ? $this->negotiated_protocol_version : self::PROTOCOL_VERSION;
+		// MCP 2026-07-28 routing headers (SEP-2243). These headers exist only
+		// in the 2026-07-28 dialect: send them for the stateless discover
+		// handshake and everything that follows it. The legacy initialize
+		// handshake — and any session a pre-2026-07-28 server negotiated —
+		// must look exactly like a 2025-era client: no MCP-Protocol-Version,
+		// no Mcp-Method. Strict 2025-era gateways (e.g. Upwork) reject
+		// unknown methods and routing headers with a bare HTTP 400 that never
+		// carries a JSON-RPC error code, so sending them can turn a working
+		// fallback handshake into another opaque failure.
+		$is_legacy_dialect = '' !== $this->negotiated_protocol_version && self::PROTOCOL_VERSION !== $this->negotiated_protocol_version;
 
-		if ( ! empty( $method ) ) {
-			$headers['Mcp-Method'] = $method;
+		if ( 'initialize' !== $method && ! $is_legacy_dialect ) {
+			$headers['MCP-Protocol-Version'] = self::PROTOCOL_VERSION;
 
-			// Mcp-Name required for tools/call, resources/read, prompts/get.
-			if ( in_array( $method, array( 'tools/call', 'resources/read', 'prompts/get' ), true ) ) {
-				$headers['Mcp-Name'] = isset( $params['name'] ) ? $params['name'] : '';
+			if ( ! empty( $method ) ) {
+				$headers['Mcp-Method'] = $method;
+
+				// Mcp-Name required for tools/call, resources/read, prompts/get.
+				if ( in_array( $method, array( 'tools/call', 'resources/read', 'prompts/get' ), true ) ) {
+					$headers['Mcp-Name'] = isset( $params['name'] ) ? $params['name'] : '';
+				}
 			}
 		}
 
@@ -919,11 +1238,59 @@ class WP_MCP_AI_MCP_App_Client {
 	protected function resolve_oauth_token() {
 		// If we have an OAuth client with auto-refresh capability, use it.
 		if ( null !== $this->oauth_client ) {
-			return $this->oauth_client->get_access_token();
+			$before = $this->oauth_client->get_token_data();
+			$token  = $this->oauth_client->get_access_token();
+
+			if ( ! is_wp_error( $token ) ) {
+				$after = $this->oauth_client->get_token_data();
+
+				// A refresh rotated the token data — keep the in-flight client
+				// current and persist the new credentials so subsequent
+				// requests (and tool calls sharing this request) reuse them
+				// instead of re-refreshing with a stale refresh token.
+				if ( is_array( $after ) && $after !== $before ) {
+					$this->update_oauth_token( $after );
+					$this->persist_oauth_token( $after );
+				}
+			}
+
+			return $token;
 		}
 
 		// Fallback: use static token from config.
 		return $this->auth['token'];
+	}
+
+	/**
+	 * Persist refreshed OAuth credentials.
+	 *
+	 * Reference entries persist to the encrypted Remote Sites store
+	 * (needing no assistant context); inline apps persist to the assistant's
+	 * stored app config. No-op when neither context is available.
+	 *
+	 * @since 1.9.x
+	 * @param array $token_data Fresh token data from the OAuth client.
+	 * @return void
+	 */
+	protected function persist_oauth_token( array $token_data ) {
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
+			return;
+		}
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+
+		// Central Remote Sites connections carry their credentials in the
+		// encrypted store — no assistant meta is involved.
+		if ( '' !== $this->connection_ref ) {
+			$registry->update_app_oauth_data( 0, '', $token_data, $this->connection_ref );
+			return;
+		}
+
+		if ( ! $this->assistant_id || empty( $this->server_url ) ) {
+			return;
+		}
+
+		$registry->update_app_oauth_data( $this->assistant_id, $this->server_url, $token_data );
 	}
 
 	/**

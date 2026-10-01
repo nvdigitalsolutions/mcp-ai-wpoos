@@ -670,6 +670,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'tool_rate_limit_max'                   => 300,
 				'tool_rate_limit_window'                => 60,
 				'tool_rate_limit_exempt_tokens'         => true,
+				'mcp_require_assistant_scope'           => false,
 				'enable_ip_whitelist'                   => false,
 				'enable_ip_blacklist'                   => false,
 				'require_https'                         => false,

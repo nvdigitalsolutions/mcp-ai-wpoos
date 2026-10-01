@@ -2,7 +2,7 @@
 
 > **Specification:** [agentskills.io](https://agentskills.io/specification)  
 > **Since:** 1.7.0  
-> **Available in:** Base plugin (skill registry + 45 bundled skills) and Pro add-on (Skill Manager UI + extra plugin-ecosystem skills)
+> **Available in:** Base plugin (skill registry + 75 bundled skills) and Pro add-on (Skill Manager UI + extra plugin-ecosystem skills)
 
 Agent Skills are portable, reusable behaviour packages that teach an assistant how to handle a specific class of task. Each skill is a single `SKILL.md` file — standard Markdown with a small YAML frontmatter block — stored under `wp-content/uploads/mcp-ai-skills/{skill-name}/SKILL.md`. When an assistant runs, any skills assigned to it are automatically injected into the system prompt so the model knows exactly when and how to use them.
 

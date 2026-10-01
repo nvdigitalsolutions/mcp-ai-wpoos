@@ -14,7 +14,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class Test_Model_Catalog extends WP_UnitTestCase {
 
 	/**
@@ -223,6 +222,38 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'gpt-4o-mini', $configs, 'Successor key should be created.' );
 
 		$this->assertSame( 'gpt-4o-mini', get_post_meta( $post_id, '_wp_mcp_ai_model', true ) );
+	}
+
+	/**
+	 * The migration also rewrites retired ids stored under per-provider
+	 * default model settings (e.g. deepseek_model) so stale defaults cannot
+	 * leak a retired model into provider-specific resolution.
+	 */
+	public function test_migration_rewrites_provider_model_settings() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'deepseek_model'       => 'deepseek-v4-flash',
+				'default_model'        => 'gpt-3.5-turbo',
+				'openai_base_url'      => 'https://api.openai.com/v1',
+				'request_timeout'      => 30,
+				'default_gemini_model' => 'gemini-2.5-flash',
+			)
+		);
+
+		// Force a re-run by using a fresh catalog version key.
+		delete_option( WP_MCP_AI_Model_Catalog_Migration::OPTION_KEY );
+		WP_MCP_AI_Model_Catalog_Migration::run_if_needed( 'test-' . time() );
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		$this->assertSame( 'deepseek-flash', $settings['deepseek_model'] );
+		$this->assertSame( 'gpt-4o-mini', $settings['default_model'] );
+		$this->assertSame( 'gemini-2.5-flash', $settings['default_gemini_model'] );
+
+		// Non-model keys must be left untouched.
+		$this->assertSame( 'https://api.openai.com/v1', $settings['openai_base_url'] );
+		$this->assertSame( 30, $settings['request_timeout'] );
 	}
 
 	/**

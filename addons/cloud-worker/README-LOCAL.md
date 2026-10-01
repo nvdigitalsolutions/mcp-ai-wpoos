@@ -102,10 +102,20 @@ npm run test:watch   # Watch mode
 
 ## Current Token (if you ran the seeding above)
 
-- **Token:** `nvc_WgkuQv8pW7b6FKh-EUOymaKvu74NWM2mMK2A8DTrUAA`
-- **Site URL:** `http://localhost:8000`
-- **Balance:** $100.00 USD
-- **Status:** Active
+> **The seed script prints a fresh token on every run** — the plaintext token
+> is shown only once (D1 stores only its SHA-256 hash). Use the `nvc_…` value
+> from your most recent `node scripts/seed-local.mjs` output:
+>
+> ```
+> CONNECT TOKEN  (save this — it is shown ONLY ONCE)
+>   nvc_XXXXXXXX…
+> ```
+>
+> For reference, a seeded run looks like:
+>
+> - **Site URL:** `http://localhost:8000`
+> - **Balance:** $100.00 USD
+> - **Status:** Active
 
 > **Important:** Change your WordPress site URL to `http://localhost:8000` for
 > the token site-binding to match. Or modify the `site_url` in the connect_tokens

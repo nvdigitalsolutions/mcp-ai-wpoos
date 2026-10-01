@@ -67,7 +67,8 @@ export type CredentialKey =
 	| 'cloudflare_api_token'
 	| 'stripe_secret_key'
 	| 'stripe_webhook_secret'
-	| 'openrouter_api_key';
+	| 'openrouter_api_key'
+	| 'saas_api_key';
 
 export type CredentialValues = Partial<Record<CredentialKey, string>>;
 

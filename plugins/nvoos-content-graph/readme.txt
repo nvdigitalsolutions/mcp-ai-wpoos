@@ -28,7 +28,7 @@ Click "Build Graph" and ~10-30 seconds later, your entire site becomes a visual 
 Explore your content visually using Cytoscape.js. Search for nodes by label, click for details, zoom and pan. Color-coded by content type (posts, pages, terms, users).
 
 = Visual Theming & Styling =
-Style the graph to match your brand from the new Appearance tab: dark, light, auto, and WordPress-admin themes; per-type colors and icons (colorblind-safe defaults with automatic WCAG 2.2 contrast correction); color-by-type/community/degree modes; an interactive legend; edge style presets; layout presets; a minimap; keyboard navigation; and theme-aware PNG export. See `docs/visual-theming.md`.
+Style the graph to match your brand from the new Appearance tab: dark, light, auto, and WordPress-admin themes; per-type colors and icons (colorblind-safe defaults with automatic WCAG 2.2 contrast correction); color-by-type/community/degree modes; an interactive legend; edge style presets; layout presets; a minimap; keyboard navigation; hover focus with quick-info tooltips; optional directional edge-flow animation; and theme-aware PNG export. See `docs/visual-theming.md`.
 
 = Content Gap Analysis =
 Discover orphan content (no internal links), thin topic clusters, and missing link opportunities. Generate actionable content strategy recommendations.

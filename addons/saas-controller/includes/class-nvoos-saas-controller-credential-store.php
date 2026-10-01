@@ -53,6 +53,11 @@ class NVOOS_SaaS_Controller_Credential_Store {
 		// cannot manage other keys). Only the provisioning key has scope
 		// over `/api/v1/keys`.
 		'openrouter_provisioning_key',
+		// Phase 12: optional shared secret between the deployed Cloud Worker
+		// and the WordPress platform plugin (tenant provisioning / usage
+		// heartbeat auth). Only pushed to the Worker when configured — the
+		// tenant/subscription surface is optional.
+		'saas_api_key',
 	);
 
 	/**

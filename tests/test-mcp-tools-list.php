@@ -95,6 +95,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
@@ -384,5 +385,161 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'error', $data );
 		$this->assertArrayHasKey( 'code', $data['error'] );
 		$this->assertSame( -32601, $data['error']['code'] );
+	}
+
+	/**
+	 * Install the settings fixture for the strict assistant-scope toggle.
+	 *
+	 * Sets the toggle to the requested state and clears the default assistant
+	 * so that requests without an explicit assistant_id (and without a
+	 * token-bound assistant) resolve to nothing.
+	 *
+	 * @param bool $require_scope Value for mcp_require_assistant_scope.
+	 */
+	private function set_assistant_scope_settings( $require_scope ) {
+		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['default_assistant']           = 0;
+		$settings['mcp_require_assistant_scope'] = (bool) $require_scope;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+	}
+
+	/**
+	 * Build a JSON-RPC request for the MCP endpoint.
+	 *
+	 * @param int    $id     JSON-RPC request id.
+	 * @param string $method MCP method (e.g. tools/list).
+	 * @param array  $params Method params.
+	 * @return WP_REST_Request
+	 */
+	private function build_mcp_request( $id, $method, $params = array() ) {
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'jsonrpc' => '2.0',
+					'id'      => $id,
+					'method'  => $method,
+					'params'  => $params,
+				)
+			)
+		);
+
+		return $request;
+	}
+
+	/**
+	 * With the strict scope toggle ON and no assistant resolvable, tools/list
+	 * must fail closed with HTTP 403 and the wp_mcp_ai_assistant_scope_required
+	 * refusal instead of returning the full tool registry.
+	 */
+	public function test_tools_list_fails_closed_when_strict_scope_on_and_no_assistant() {
+		$this->set_assistant_scope_settings( true );
+
+		$response = rest_get_server()->dispatch( $this->build_mcp_request( 7, 'tools/list' ) );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 403, $response->get_status(), 'tools/list should fail closed with HTTP 403 when strict scope is required and no assistant resolves' );
+
+		$data = $response->get_data();
+
+		$this->assertArrayHasKey( 'error', $data );
+		$this->assertSame( -32603, $data['error']['code'] );
+		$this->assertStringContainsString( 'requires an assistant scope', $data['error']['message'] );
+		$this->assertArrayHasKey( 'data', $data['error'] );
+		$this->assertArrayHasKey( 'status', $data['error']['data'] );
+		$this->assertSame( 403, $data['error']['data']['status'] );
+		$this->assertArrayNotHasKey( 'result', $data );
+	}
+
+	/**
+	 * With the strict scope toggle ON and no assistant resolvable, tools/call
+	 * must fail closed with HTTP 403 before the tool executor is reached, so
+	 * full-registry tools cannot be invoked by name.
+	 */
+	public function test_tools_call_fails_closed_when_strict_scope_on_and_no_assistant() {
+		$this->set_assistant_scope_settings( true );
+
+		$response = rest_get_server()->dispatch(
+			$this->build_mcp_request(
+				8,
+				'tools/call',
+				array(
+					'name'      => 'list_cron_jobs',
+					'arguments' => array(),
+				)
+			)
+		);
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 403, $response->get_status(), 'tools/call should fail closed with HTTP 403 when strict scope is required and no assistant resolves' );
+
+		$data = $response->get_data();
+
+		$this->assertArrayHasKey( 'error', $data );
+		$this->assertSame( -32603, $data['error']['code'] );
+		$this->assertStringContainsString( 'requires an assistant scope', $data['error']['message'] );
+		$this->assertArrayHasKey( 'data', $data['error'] );
+		$this->assertArrayHasKey( 'status', $data['error']['data'] );
+		$this->assertSame( 403, $data['error']['data']['status'] );
+		$this->assertArrayNotHasKey( 'result', $data );
+	}
+
+	/**
+	 * With the strict scope toggle ON but an explicit assistant_id, both
+	 * methods keep serving the assistant-scoped payload (the gate only
+	 * rejects requests that resolve to nothing).
+	 */
+	public function test_strict_scope_on_allows_explicit_assistant() {
+		$this->set_assistant_scope_settings( true );
+
+		$response = rest_get_server()->dispatch(
+			$this->build_mcp_request( 9, 'tools/list', array( 'assistant_id' => $this->assistant_id ) )
+		);
+
+		$this->assertSame( 200, $response->get_status(), 'tools/list with an explicit assistant_id should succeed even with strict scope enabled' );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'result', $data );
+		$this->assertArrayHasKey( 'tools', $data['result'] );
+		$this->assertNotEmpty( $data['result']['tools'] );
+	}
+
+	/**
+	 * With the strict scope toggle OFF, behavior is unchanged: tools/list
+	 * still falls back to the full tool registry and tools/call still returns
+	 * the existing missing-assistant error envelope when nothing resolves.
+	 */
+	public function test_strict_scope_off_preserves_existing_behavior() {
+		$this->set_assistant_scope_settings( false );
+
+		// tools/list → full registry fallback.
+		$response = rest_get_server()->dispatch( $this->build_mcp_request( 10, 'tools/list' ) );
+
+		$this->assertSame( 200, $response->get_status(), 'tools/list should still return the full registry when the toggle is off' );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'result', $data );
+		$this->assertArrayHasKey( 'tools', $data['result'] );
+		$this->assertNotEmpty( $data['result']['tools'] );
+
+		// tools/call → the existing missing-assistant error envelope (HTTP 200).
+		$response = rest_get_server()->dispatch(
+			$this->build_mcp_request(
+				11,
+				'tools/call',
+				array(
+					'name'      => 'list_cron_jobs',
+					'arguments' => array(),
+				)
+			)
+		);
+
+		$this->assertSame( 200, $response->get_status(), 'tools/call should keep the existing HTTP 200 error envelope when the toggle is off' );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'error', $data );
+		$this->assertSame( -32603, $data['error']['code'] );
+		$this->assertStringContainsString( 'No assistant was provided', $data['error']['message'] );
 	}
 }

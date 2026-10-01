@@ -67,6 +67,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		'public_key',
 		'encryption_key',
 		'mcp_oauth',
+		'verify_token',
+		'verification_token',
 	);
 
 	/**
@@ -85,11 +87,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * false so they will be encrypted on the next save.
 	 *
 	 * @since 1.1.35
+	 * @since 1.9.x Made public so the MCP Apps registry can reuse the same
+	 *              detection before encrypting inline app credentials.
 	 *
 	 * @param string $value Stored credential value.
 	 * @return bool True if the value appears already encrypted.
 	 */
-	private static function is_value_encrypted( $value ) {
+	public static function is_value_encrypted( $value ) {
 		if ( '' === $value ) {
 			return false;
 		}
@@ -148,7 +152,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Get a specific remote site connection by ID.
 	 *
+	 * The webhook verify/shared-secret tokens (`verify_token`,
+	 * `verification_token`) are decrypted here so every consumer reads the
+	 * plaintext values transparently. Other secret fields keep the
+	 * established decrypt-on-use pattern.
+	 *
 	 * @since 1.0.0
+	 * @since 1.9.x Central decryption for verify_token/verification_token.
 	 *
 	 * @param string $connection_id Connection ID.
 	 * @return array|null Connection data or null if not found.
@@ -158,7 +168,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$connection_id = sanitize_key( $connection_id );
 
 		if ( isset( $connections[ $connection_id ] ) ) {
-			return $connections[ $connection_id ];
+			$connection = $connections[ $connection_id ];
+
+			if ( ! empty( $connection['verify_token'] ) ) {
+				$connection['verify_token'] = self::decrypt_value( (string) $connection['verify_token'] );
+			}
+			if ( ! empty( $connection['verification_token'] ) ) {
+				$connection['verification_token'] = self::decrypt_value( (string) $connection['verification_token'] );
+			}
+
+			return $connection;
 		}
 
 		return null;
@@ -318,6 +337,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				}
 			}
 
+			// Same preservation for Google Classroom fields: the OAuth callback
+			// re-saves a partial connection and must not blank the default course
+			// or the sync flag.
+			foreach ( array( 'classroom_course_id', 'classroom_sync_enabled' ) as $gclassroom_field ) {
+				if ( empty( $connection_data[ $gclassroom_field ] ) && ! empty( $existing_connection[ $gclassroom_field ] ) ) {
+					$connection_data[ $gclassroom_field ] = $existing_connection[ $gclassroom_field ];
+				}
+			}
+
 			// Preserve existing proxy_password if not provided.
 			if ( empty( $connection_data['proxy_password'] ) && ! empty( $existing_connection['proxy_password'] ) ) {
 				$connection_data['proxy_password']            = $existing_connection['proxy_password'];
@@ -328,6 +356,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( empty( $connection_data['webhook_secret'] ) && ! empty( $existing_connection['webhook_secret'] ) ) {
 				$connection_data['webhook_secret']            = $existing_connection['webhook_secret'];
 				$connection_data['_webhook_secret_encrypted'] = self::is_value_encrypted( $existing_connection['webhook_secret'] );
+			}
+
+			// Preserve existing verification_token (Google Chat shared secret) if not provided.
+			if ( empty( $connection_data['verification_token'] ) && ! empty( $existing_connection['verification_token'] ) ) {
+				$connection_data['verification_token']            = $existing_connection['verification_token'];
+				$connection_data['_verification_token_encrypted'] = self::is_value_encrypted( $existing_connection['verification_token'] );
 			}
 
 			// Preserve existing upwork_username (Upwork) if not provided.
@@ -416,11 +450,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// For Google Chat the Audience URL (verify_token) is an optional field that is always
 			// rendered and submitted in the edit form, so allow the user to clear it.
 			// For WhatsApp and Messenger the verify_token is a required webhook secret; preserve
-			// the stored value when the submitted field is empty to avoid accidental erasure.
+			// Preserve the stored value when the submitted field is empty to avoid accidental erasure.
 			$saved_connection_type = isset( $connection_data['connection_type'] ) ? $connection_data['connection_type'] : '';
 			if ( empty( $connection_data['verify_token'] ) && ! empty( $existing_connection['verify_token'] )
 				&& 'google_chat' !== $saved_connection_type ) {
-				$connection_data['verify_token'] = $existing_connection['verify_token'];
+				$connection_data['verify_token']            = $existing_connection['verify_token'];
+				$connection_data['_verify_token_encrypted'] = self::is_value_encrypted( $existing_connection['verify_token'] );
 			}
 
 			if ( empty( $connection_data['graph_api_version'] ) && ! empty( $existing_connection['graph_api_version'] ) ) {
@@ -585,6 +620,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( ! isset( $connection_data['upwork_mode'] ) && isset( $existing_connection['upwork_mode'] ) ) {
 				$connection_data['upwork_mode'] = $existing_connection['upwork_mode'];
 			}
+			if ( ! isset( $connection_data['upwork_mcp_url'] ) && isset( $existing_connection['upwork_mcp_url'] ) ) {
+				$connection_data['upwork_mcp_url'] = $existing_connection['upwork_mcp_url'];
+			}
+			if ( ! isset( $connection_data['upwork_org_uid'] ) && isset( $existing_connection['upwork_org_uid'] ) ) {
+				$connection_data['upwork_org_uid'] = $existing_connection['upwork_org_uid'];
+			}
 			if ( ! isset( $connection_data['upwork_search_query'] ) && isset( $existing_connection['upwork_search_query'] ) ) {
 				$connection_data['upwork_search_query'] = $existing_connection['upwork_search_query'];
 			}
@@ -602,6 +643,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 			if ( ! isset( $connection_data['linkedin_search_location'] ) && isset( $existing_connection['linkedin_search_location'] ) ) {
 				$connection_data['linkedin_search_location'] = $existing_connection['linkedin_search_location'];
+			}
+
+			// Preserve the FlowHub MCP-mode designation when updating.
+			if ( ! isset( $connection_data['flowhub_mode'] ) && isset( $existing_connection['flowhub_mode'] ) ) {
+				$connection_data['flowhub_mode'] = $existing_connection['flowhub_mode'];
 			}
 
 			// Preserve created timestamp.
@@ -643,6 +689,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'proxy_url'                      => isset( $connection_data['proxy_url'] ) ? sanitize_text_field( $connection_data['proxy_url'] ) : '',
 			'proxy_username'                 => isset( $connection_data['proxy_username'] ) ? sanitize_text_field( $connection_data['proxy_username'] ) : '',
 			'proxy_password'                 => isset( $connection_data['proxy_password'] ) ? $connection_data['proxy_password'] : '',
+			// FlowHub operation mode: 'api' (direct POS API/sync only, default)
+			// or 'mcp' (designated backend for the FlowHub toolkit MCP server —
+			// MCP-triggered services bind to this connection's credentials and
+			// proxy). Mirrors the Upwork connection-mode pattern.
+			'flowhub_mode'                   => isset( $connection_data['flowhub_mode'] ) && in_array( $connection_data['flowhub_mode'], array( 'api', 'mcp' ), true )
+				? $connection_data['flowhub_mode']
+				: 'api',
 			'has_woocommerce'                => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'                        => ! empty( $connection_data['enabled'] ),
 			'created'                        => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
@@ -658,6 +711,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'calendar_id'                    => isset( $connection_data['calendar_id'] ) ? sanitize_text_field( $connection_data['calendar_id'] ) : '',
 			'scope_profile'                  => isset( $connection_data['scope_profile'] ) ? sanitize_key( $connection_data['scope_profile'] ) : '',
 			'granted_scopes'                 => isset( $connection_data['granted_scopes'] ) ? sanitize_text_field( $connection_data['granted_scopes'] ) : '',
+			// Google Classroom-specific fields.
+			'classroom_course_id'            => isset( $connection_data['classroom_course_id'] ) ? sanitize_text_field( $connection_data['classroom_course_id'] ) : '',
+			'classroom_sync_enabled'         => isset( $connection_data['classroom_sync_enabled'] ) ? (bool) $connection_data['classroom_sync_enabled'] : false,
 			'sync_token'                     => isset( $connection_data['sync_token'] ) ? sanitize_text_field( $connection_data['sync_token'] ) : '',
 			'channel_id'                     => isset( $connection_data['channel_id'] ) ? sanitize_text_field( $connection_data['channel_id'] ) : '',
 			'channel_resource_id'            => isset( $connection_data['channel_resource_id'] ) ? sanitize_text_field( $connection_data['channel_resource_id'] ) : '',
@@ -779,13 +835,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shipstation_carrier_code'       => isset( $connection_data['shipstation_carrier_code'] )
 				? sanitize_text_field( $connection_data['shipstation_carrier_code'] )
 				: 'stamps_com',
-			// Upwork/LinkedIn operation mode: 'api' (OAuth) or 'web_search' (AI-powered web search).
+			// Upwork operation mode: 'api' (GraphQL OAuth), 'web_search' (AI-powered
+			// web search), or 'mcp' (the official Upwork MCP gateway).
 			// The Upwork account username/display name is stored here, not in
 			// user_email (which is sanitized as an email address).
 			'upwork_username'                => isset( $connection_data['upwork_username'] ) ? sanitize_text_field( $connection_data['upwork_username'] ) : '',
-			'upwork_mode'                    => isset( $connection_data['upwork_mode'] ) && in_array( $connection_data['upwork_mode'], array( 'api', 'web_search' ), true )
+			'upwork_mode'                    => isset( $connection_data['upwork_mode'] ) && in_array( $connection_data['upwork_mode'], array( 'api', 'web_search', 'mcp' ), true )
 				? $connection_data['upwork_mode']
 				: 'api',
+			'upwork_mcp_url'                 => isset( $connection_data['upwork_mcp_url'] ) && '' !== trim( (string) $connection_data['upwork_mcp_url'] )
+				? esc_url_raw( $connection_data['upwork_mcp_url'] )
+				: 'https://mcp.upwork.com/mcp',
+			'upwork_org_uid'                 => isset( $connection_data['upwork_org_uid'] ) ? sanitize_text_field( $connection_data['upwork_org_uid'] ) : '',
 			'upwork_search_query'            => isset( $connection_data['upwork_search_query'] ) ? sanitize_text_field( $connection_data['upwork_search_query'] ) : '',
 			'upwork_search_category'         => isset( $connection_data['upwork_search_category'] ) ? sanitize_text_field( $connection_data['upwork_search_category'] ) : '',
 			'upwork_search_job_type'         => isset( $connection_data['upwork_search_job_type'] ) && in_array( $connection_data['upwork_search_job_type'], array( 'hourly', 'fixed', '' ), true )
@@ -873,6 +934,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$connection['mcp_oauth'] = self::encrypt_value( $connection['mcp_oauth'] );
 		}
 
+		// Webhook verify token (WhatsApp/Messenger verification handshake).
+		if ( ! empty( $connection['verify_token'] ) && empty( $connection_data['_verify_token_encrypted'] ) ) {
+			$connection['verify_token'] = self::encrypt_value( $connection['verify_token'] );
+		}
+
+		// Google Chat shared-secret fallback token (OIDC bypass authentication).
+		if ( ! empty( $connection['verification_token'] ) && empty( $connection_data['_verification_token_encrypted'] ) ) {
+			$connection['verification_token'] = self::encrypt_value( $connection['verification_token'] );
+		}
+
 		$connections[ $connection_id ] = $connection;
 
 		$updated = update_option( self::OPTION_NAME, $connections );
@@ -926,6 +997,108 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$connections[ $connection_id ]['api_key'] = self::encrypt_value( $new_token );
 
 		return (bool) update_option( self::OPTION_NAME, $connections );
+	}
+
+	/**
+	 * Merge refreshed OAuth token data into an MCP Server connection's
+	 * stored token blob.
+	 *
+	 * Lightweight alternative to save_connection() for the automatic-refresh
+	 * path: it touches only the encrypted `mcp_oauth` field of an existing
+	 * `mcp_server` connection, so no other stored credential is re-processed
+	 * and no validation can reject the write.
+	 *
+	 * @since 1.9.x
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param array  $oauth_data    Fresh token data (access_token, refresh_token,
+	 *                              token_type, expires_in, scope, issued_at).
+	 * @return bool True when the blob was updated (or was already current).
+	 */
+	public static function update_mcp_oauth( $connection_id, array $oauth_data ) {
+		$connections   = self::get_all_connections();
+		$connection_id = sanitize_key( $connection_id );
+
+		if ( ! isset( $connections[ $connection_id ] ) || empty( $oauth_data['access_token'] ) ) {
+			return false;
+		}
+
+		$connection = $connections[ $connection_id ];
+
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
+		$auth_type       = isset( $connection['auth_type'] ) ? $connection['auth_type'] : '';
+
+		// Only OAuth MCP Server connections and Upwork connections in MCP mode
+		// carry an mcp_oauth blob.
+		$is_mcp_server = 'mcp_server' === $connection_type && 'oauth' === $auth_type;
+		$is_upwork_mcp = 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' );
+		if ( ! $is_mcp_server && ! $is_upwork_mcp ) {
+			return false;
+		}
+
+		// Decrypt and decode the stored blob (a JSON string at rest).
+		$stored_blob = isset( $connection['mcp_oauth'] ) ? self::decrypt_value( (string) $connection['mcp_oauth'] ) : '';
+		$existing    = array();
+		if ( '' !== $stored_blob ) {
+			$decoded = json_decode( $stored_blob, true );
+			if ( is_array( $decoded ) ) {
+				$existing = $decoded;
+			}
+		}
+
+		// Some providers omit scope from the refresh response; keep the
+		// previously stored value in that case.
+		$incoming = $oauth_data;
+		if ( empty( $incoming['scope'] ) && ! empty( $existing['scope'] ) ) {
+			$incoming['scope'] = $existing['scope'];
+		}
+
+		$merged = array_merge( $existing, $incoming );
+
+		// No-op when nothing changed.
+		if ( $merged == $existing ) { // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual -- Loose comparison ignores key order.
+			return true;
+		}
+
+		$connections[ $connection_id ]['mcp_oauth'] = self::encrypt_value( wp_json_encode( $merged ) );
+
+		$written = update_option( self::OPTION_NAME, $connections );
+
+		if ( false === $written ) {
+			// The in-flight request still uses the refreshed token; surface the
+			// persistence failure for operators without failing the refresh.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'MCP Server OAuth token refresh could not be persisted',
+					array(
+						'connection_id'   => $connection_id,
+						'connection_type' => $connection_type,
+					)
+				);
+			}
+
+			return false;
+		}
+
+		// Give operators visibility into automatic token rotation. The event type
+		// is allowlisted in the recent-activity buffer; never log the credential
+		// material itself — only rotation metadata.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_event' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'mcp_oauth_refresh',
+				'MCP Server OAuth token refreshed',
+				array(
+					'connection_id'         => $connection_id,
+					'connection_type'       => $connection_type,
+					'url'                   => isset( $connection['url'] ) ? $connection['url'] : '',
+					'scope'                 => isset( $merged['scope'] ) ? sanitize_text_field( $merged['scope'] ) : '',
+					'expires_in'            => isset( $merged['expires_in'] ) ? absint( $merged['expires_in'] ) : 0,
+					'refresh_token_rotated' => ( ! empty( $incoming['refresh_token'] ) && ( isset( $existing['refresh_token'] ) ? $existing['refresh_token'] : '' ) !== $incoming['refresh_token'] ),
+				)
+			);
+		}
+
+		return true;
 	}
 
 	/**
@@ -1226,8 +1399,19 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_google_calendar_connection( $connection );
 		}
 
+		// Handle Google Classroom connections separately. Same real-probe policy
+		// as Calendar: reachability is only reported once OAuth has completed.
+		if ( 'google_classroom' === $connection_type ) {
+			return self::test_google_classroom_connection( $connection );
+		}
+
 		// Handle Upwork connections separately.
 		if ( 'upwork' === $connection_type ) {
+			$upwork_mode = isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : 'api';
+			if ( 'mcp' === $upwork_mode ) {
+				return self::test_upwork_mcp_connection( $connection );
+			}
+
 			return array(
 				'success' => true,
 				'upwork'  => true,
@@ -1393,6 +1577,108 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Map a stored Upwork connection (MCP mode) onto an MCP App client config.
+	 *
+	 * The Upwork MCP gateway authenticates via the MCP OAuth 2.1 flow; the
+	 * token blob lives in the encrypted `mcp_oauth` field like any other MCP
+	 * Server connection. The endpoint defaults to the official gateway.
+	 *
+	 * @since 1.1.88
+	 *
+	 * @param array $connection Stored Upwork connection array.
+	 * @return array MCP App client config.
+	 */
+	public static function build_upwork_mcp_app_config( $connection ) {
+		$server_url = isset( $connection['upwork_mcp_url'] ) && '' !== trim( (string) $connection['upwork_mcp_url'] )
+			? esc_url_raw( $connection['upwork_mcp_url'] )
+			: 'https://mcp.upwork.com/mcp';
+
+		$config = array(
+			'server_url' => $server_url,
+			'auth_type'  => 'oauth',
+			'token'      => '',
+			'timeout'    => 30,
+			'verify_ssl' => true,
+		);
+
+		$oauth_blob = isset( $connection['mcp_oauth'] ) ? self::decrypt_value( (string) $connection['mcp_oauth'] ) : '';
+		if ( '' !== $oauth_blob ) {
+			$decoded = json_decode( $oauth_blob, true );
+			if ( is_array( $decoded ) ) {
+				$config['oauth_data'] = $decoded;
+				if ( ! empty( $decoded['access_token'] ) ) {
+					$config['token'] = $decoded['access_token'];
+				}
+			}
+		}
+
+		// Route automatic OAuth refreshes back to the central store.
+		if ( ! empty( $connection['id'] ) ) {
+			$config['connection_ref'] = $connection['id'];
+		}
+
+		return $config;
+	}
+
+	/**
+	 * Test an Upwork MCP-mode connection with a real JSON-RPC handshake.
+	 *
+	 * Mirrors {@see test_mcp_server_connection()} for the freelance
+	 * marketplace connection type: without stored tokens the result is a
+	 * saved-credentials acknowledgement instead of a failed handshake.
+	 *
+	 * @since 1.1.88
+	 *
+	 * @param array $connection Stored Upwork connection array.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_upwork_mcp_connection( $connection ) {
+		$config = self::build_upwork_mcp_app_config( $connection );
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_mcp_client_missing',
+				__( 'The MCP App client is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $config['token'] ) ) {
+			return array(
+				'success' => true,
+				'upwork'  => true,
+				'mcp'     => true,
+				'message' => __( 'Upwork MCP credentials saved. Connect your Upwork account via the MCP login button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		$client = new WP_MCP_AI_MCP_App_Client( $config );
+		$result = $client->test_connection();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'success'     => true,
+			'upwork'      => true,
+			'mcp'         => true,
+			'message'     => __( 'Upwork MCP handshake successful.', 'mcp-ai-wpoos-pro' ),
+			'handshake'   => isset( $result['handshake'] ) ? $result['handshake'] : '',
+			'protocol'    => isset( $result['protocol'] ) ? $result['protocol'] : '',
+			'server_info' => isset( $result['server_info'] ) ? $result['server_info'] : array(),
+			'tool_count'  => isset( $result['tool_count'] ) ? $result['tool_count'] : null,
+			'latency_ms'  => isset( $result['latency_ms'] ) ? $result['latency_ms'] : null,
+		);
+	}
+
+	/**
 	 * Test an MCP Server connection with a real JSON-RPC handshake.
 	 *
 	 * For OAuth connections without stored tokens yet, returns a
@@ -1405,6 +1691,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 */
 	protected static function test_mcp_server_connection( $connection ) {
 		$config = self::build_mcp_app_config_from_connection( $connection );
+
+		// Route automatic OAuth refreshes back to the central store.
+		if ( ! empty( $connection['id'] ) ) {
+			$config['connection_ref'] = $connection['id'];
+		}
 
 		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
 			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
@@ -1474,6 +1765,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		$config = self::build_mcp_app_config_from_connection( $connection );
+
+		// Route automatic OAuth refreshes back to the central store.
+		if ( ! empty( $connection['id'] ) ) {
+			$config['connection_ref'] = $connection['id'];
+		}
 
 		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
 			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
@@ -1562,6 +1858,74 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Whether a stored connection can back an MCP App reference entry.
+	 *
+	 * Reference entries may point at dedicated MCP Server connections or at
+	 * Upwork connections running in MCP mode (the official Upwork MCP
+	 * gateway, authenticated through the MCP Apps OAuth flow).
+	 *
+	 * @since 1.1.90
+	 *
+	 * @param array $connection Stored connection array.
+	 * @return bool True when the connection is referenceable from MCP Apps.
+	 */
+	public static function is_mcp_app_connection( $connection ) {
+		if ( ! is_array( $connection ) ) {
+			return false;
+		}
+
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
+
+		if ( 'mcp_server' === $connection_type ) {
+			return true;
+		}
+
+		return 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' );
+	}
+
+	/**
+	 * List stored Upwork connections configured in MCP mode.
+	 *
+	 * Upwork MCP connections authenticate against the official Upwork MCP
+	 * gateway through the MCP Apps OAuth flow and are offered alongside
+	 * mcp_server connections in the assistant MCP Apps metabox.
+	 *
+	 * @since 1.1.90
+	 *
+	 * @return array<int, array> Upwork MCP connection arrays.
+	 */
+	public static function get_upwork_mcp_connections() {
+		$upwork = array();
+
+		foreach ( self::get_all_connections() as $connection ) {
+			if (
+				is_array( $connection ) &&
+				'upwork' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) &&
+				'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' )
+			) {
+				$upwork[] = $connection;
+			}
+		}
+
+		return $upwork;
+	}
+
+	/**
+	 * List stored connections that can back an MCP App reference entry.
+	 *
+	 * Merges dedicated MCP Server connections with Upwork connections in
+	 * MCP mode. Used by the assistant MCP Apps metabox to offer centrally
+	 * managed connections as one-click reference entries.
+	 *
+	 * @since 1.1.90
+	 *
+	 * @return array<int, array> Referenceable connection arrays.
+	 */
+	public static function get_mcp_app_connections() {
+		return array_merge( self::get_mcp_server_connections(), self::get_upwork_mcp_connections() );
+	}
+
+	/**
 	 * Test Google Chat API connection.
 	 *
 	 * Supports Service Account JSON key, OAuth refresh token, or OAuth
@@ -1644,6 +2008,81 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'message'         => $calendar_count > 0
 				? __( 'Connected to Google Calendar successfully.', 'mcp-ai-wpoos-pro' )
 				: __( 'Connected to Google Calendar, but no calendars were returned. Check that the account has at least one calendar and that the granted permissions include calendar list access.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test a Google Classroom connection.
+	 *
+	 * Performs a real single-item `courses.list` probe once a refresh token
+	 * exists, so the result reflects actual reachability rather than merely
+	 * confirming that the credential fields were saved. Before authorisation it
+	 * falls back to a saved-credentials acknowledgement, matching the Calendar
+	 * behaviour.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_google_classroom_connection( $connection ) {
+		$client_id     = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+		$client_secret = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
+		$refresh_token = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
+
+		if ( '' === $refresh_token ) {
+			return array(
+				'success'          => true,
+				'google_classroom' => true,
+				'message'          => __( 'Google Classroom OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-classroom-credentials.php';
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-classroom-client.php';
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		$credentials = array(
+			'client_id'         => $client_id,
+			'client_secret'     => self::decrypt_value( $client_secret ),
+			'refresh_token'     => self::decrypt_value( $refresh_token ),
+			'access_token'      => '',
+			'user_email'        => isset( $connection['user_email'] ) ? (string) $connection['user_email'] : '',
+			'default_course_id' => isset( $connection['classroom_course_id'] ) ? (string) $connection['classroom_course_id'] : '',
+			'granted_scopes'    => isset( $connection['granted_scopes'] ) ? (string) $connection['granted_scopes'] : '',
+			'scope_profile'     => isset( $connection['scope_profile'] ) ? (string) $connection['scope_profile'] : '',
+			'cache_key'         => '' !== $connection_id ? 'classroom-connection:' . $connection_id : 'classroom-connection:test',
+		);
+
+		$client = WP_MCP_AI_Google_Classroom_Credentials::make_client( $credentials );
+
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
+		$result = $client->list_courses( array( 'pageSize' => 1 ) );
+
+		if ( is_wp_error( $result ) ) {
+			$needs_reconnect = WP_MCP_AI_Google_Classroom_Client::is_auth_failure( $result );
+
+			return new WP_Error(
+				'wp_mcp_ai_pro_google_classroom_test_failed',
+				$needs_reconnect
+					? __( 'Google rejected the stored credentials. Reconnect this Google Classroom connection.', 'mcp-ai-wpoos-pro' )
+					: $result->get_error_message(),
+				array( 'needs_reconnect' => $needs_reconnect )
+			);
+		}
+
+		$course_count = isset( $result['courses'] ) && is_array( $result['courses'] ) ? count( $result['courses'] ) : 0;
+
+		return array(
+			'success'          => true,
+			'google_classroom' => true,
+			'message'          => $course_count > 0
+				? __( 'Connected to Google Classroom successfully.', 'mcp-ai-wpoos-pro' )
+				: __( 'Connected to Google Classroom, but no courses were returned. Check that the account teaches or administers at least one course and that the granted permissions include course access.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -3291,6 +3730,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$error_message .= ': ' . $decoded['message'];
 			}
 
+			// A WordPress rest_no_route 404 means the remote site received the
+			// request but has no matching REST route. Give the agent actionable
+			// causes instead of a bare 404 so it can self-correct.
+			if ( 404 === $status_code && isset( $decoded['code'] ) && 'rest_no_route' === $decoded['code'] ) {
+				$error_message .= ' ' . __( 'The remote site answered that no matching REST route exists. Check that the NV oOS plugin (or the required companion plugin) is installed and active on the remote site, that its permalinks are not set to Plain (re-save them), and that the connection Base URL points at the site root.', 'mcp-ai-wpoos-pro' );
+			}
+
 			return new WP_Error( 'wp_mcp_ai_pro_http_error', $error_message );
 		}
 
@@ -3787,16 +4233,30 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Note: scope_profile is optional - normalised to the default profile when blank.
 		}
 
+		if ( 'google_classroom' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_google_classroom_credentials',
+					__( 'OAuth Client ID and client secret are required for Google Classroom connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through the OAuth flow.
+			// Note: classroom_course_id is optional - used as the default course for tools.
+			// Note: scope_profile is optional - normalised to the read-only default when blank.
+		}
+
 		if ( 'upwork' === $connection_type ) {
 			$upwork_mode = isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : 'api';
 			if ( 'api' === $upwork_mode ) {
 				if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_pro_missing_upwork_credentials',
-						__( 'OAuth Client ID and client secret are required for Upwork API connections. Switch to Web Search mode to use without OAuth credentials.', 'mcp-ai-wpoos-pro' )
+						__( 'OAuth Client ID and client secret are required for Upwork API connections. Switch to Web Search or MCP mode to use without API OAuth credentials.', 'mcp-ai-wpoos-pro' )
 					);
 				}
 			}
+			// MCP mode authenticates via the MCP OAuth flow; the token blob is
+			// optional at save time (connect afterwards via the edit form).
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
 		}
 

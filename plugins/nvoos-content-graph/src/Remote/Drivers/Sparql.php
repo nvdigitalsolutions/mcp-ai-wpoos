@@ -11,9 +11,9 @@ use function is_array;
 use function is_wp_error;
 use function json_decode;
 use function md5;
-use function rawurlencode;
 use function sanitize_key;
 use function sanitize_text_field;
+use function sprintf;
 
 /**
  * SPARQL endpoint remote source driver.
@@ -95,7 +95,7 @@ class Sparql implements RemoteSource {
 			);
 		}
 
-		$query = $this->config['query'] ?? '';
+		$query = trim( (string) ( $this->config['query'] ?? '' ) );
 		if ( empty( $query ) ) {
 			return array(
 				'success' => false,
@@ -103,9 +103,14 @@ class Sparql implements RemoteSource {
 			);
 		}
 
-		// Test with a simple LIMIT 1 query.
-		$testQuery = $query . ' LIMIT 1';
-		$result    = $this->executeQuery( $testQuery );
+		// Probe with the user's query capped at one row. Appending LIMIT
+		// blindly breaks queries that already carry one (or a trailing
+		// comment), so only append when the query has no LIMIT yet.
+		if ( ! preg_match( '/\bLIMIT\s+\d+\s*$/i', $query ) ) {
+			$query = rtrim( $query, "; \t\n\r" ) . ' LIMIT 1';
+		}
+
+		$result = $this->executeQuery( $query );
 		if ( is_wp_error( $result ) ) {
 			return array(
 				'success' => false,
@@ -236,7 +241,10 @@ class Sparql implements RemoteSource {
 
 		$url = add_query_arg(
 			array(
-				'query'  => rawurlencode( $query ),
+				// Not pre-encoded: add_query_arg() URL-encodes the value itself.
+				// Pre-encoding would double-encode (%20 -> %2520) and the
+				// endpoint would receive a syntactically broken query.
+				'query'  => $query,
 				'format' => 'json',
 			),
 			$endpoint
@@ -251,9 +259,17 @@ class Sparql implements RemoteSource {
 			return $result;
 		}
 
+		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
+			return new \WP_Error(
+				'http_' . $result['status'],
+				/* translators: %d HTTP status code */
+				sprintf( __( 'HTTP %d from SPARQL endpoint.', 'nvoos-content-graph' ), $result['status'] )
+			);
+		}
+
 		$data = json_decode( $result['body'], true );
 		if ( ! is_array( $data ) || ! isset( $data['results']['bindings'] ) ) {
-			return array();
+			return new \WP_Error( 'sparql_invalid_json', __( 'SPARQL endpoint did not return JSON results.', 'nvoos-content-graph' ) );
 		}
 
 		return $data['results']['bindings'];

@@ -316,6 +316,7 @@ class SettingsPage {
 				<h2><?php esc_html_e( 'Graph Explorer', 'nvoos-content-graph' ); ?></h2>
 				<div class="nvoos-content-graph-explorer-toolbar">
 					<input type="text" id="nvoos-content-graph-search" placeholder="<?php esc_attr_e( 'Search nodes…', 'nvoos-content-graph' ); ?>">
+					<span id="nvoos-content-graph-search-count" class="nvoos-cg-search-count" aria-live="polite" hidden></span>
 					<select id="nvoos-content-graph-type-filter">
 						<option value=""><?php esc_html_e( 'All types', 'nvoos-content-graph' ); ?></option>
 					</select>

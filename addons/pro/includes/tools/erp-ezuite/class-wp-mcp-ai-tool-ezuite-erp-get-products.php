@@ -264,8 +264,15 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 			return $result;
 		}
 
-		// Parse and format the response.
-		$products = $this->format_products( $result, $limit );
+		// Parse and format the response. When an item_code was requested, scan the
+		// full formatted window (some ERP deployments ignore the pull filter and
+		// return the whole item list), then enforce the code client-side so the
+		// tool never reports stock or pricing for the wrong product.
+		$products = $this->format_products( $result, ! empty( $item_code ) ? self::MAX_LIMIT : $limit );
+
+		if ( ! empty( $item_code ) ) {
+			$products = $this->filter_products_by_item_code( $products, $item_code, $limit );
+		}
 
 		// Generate rich product cards for chat display.
 		$summary = sprintf(
@@ -274,6 +281,14 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 			count( $products ),
 			$connection['name']
 		);
+
+		if ( ! empty( $item_code ) && empty( $products ) ) {
+			$summary .= ' ' . sprintf(
+				/* translators: %s: requested item code */
+				__( 'No exact match for item code "%s" was found in the ERP response.', 'mcp-ai-wpoos-pro' ),
+				$item_code
+			);
+		}
 		$cards_message = $this->format_product_cards(
 			$products,
 			'ezuite',
@@ -289,7 +304,47 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 			'count'           => count( $products ),
 			'connection_name' => $connection['name'],
 			'location_code'   => $location_code,
+			'item_code'       => $item_code,
 		);
+	}
+
+	/**
+	 * Filter formatted products to an exact item code match.
+	 *
+	 * The EZuite LX_ItemPull endpoint is documented as accepting an
+	 * Item_Code pull filter, but some deployments ignore it and return the
+	 * full item list. This backstop enforces the requested code on the
+	 * formatted rows (case-insensitive) so callers never receive unrelated
+	 * items when they asked for a specific SKU.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array  $products  Formatted product rows.
+	 * @param string $item_code Requested item code.
+	 * @param int    $limit     Maximum rows to return.
+	 * @return array Filtered product rows.
+	 */
+	protected function filter_products_by_item_code( array $products, $item_code, $limit ) {
+		$requested = strtolower( trim( (string) $item_code ) );
+		if ( '' === $requested ) {
+			return $products;
+		}
+
+		$filtered = array();
+		foreach ( $products as $product ) {
+			$candidate = isset( $product['item_code'] ) ? strtolower( trim( (string) $product['item_code'] ) ) : '';
+			if ( $candidate !== $requested ) {
+				continue;
+			}
+
+			$filtered[] = $product;
+
+			if ( count( $filtered ) >= $limit ) {
+				break;
+			}
+		}
+
+		return $filtered;
 	}
 
 	/**

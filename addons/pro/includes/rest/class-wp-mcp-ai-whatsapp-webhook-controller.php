@@ -2548,7 +2548,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		foreach ( $connections as $connection ) {
 			// The verify token is stored in the 'verify_token' field.
 			if ( isset( $connection['verify_token'] ) && ! empty( $connection['verify_token'] ) ) {
-				return $connection['verify_token'];
+				return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( (string) $connection['verify_token'] );
 			}
 		}
 

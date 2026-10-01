@@ -238,24 +238,45 @@ class WP_MCP_AI_Model_Catalog_Migration {
 	}
 
 	/**
-	 * Rewrite the global default_model setting if it points at a removed id.
+	 * Rewrite global model settings that point at removed ids.
+	 *
+	 * Covers the OpenAI-oriented `default_model` key plus the per-provider
+	 * default chat-model keys, so a retired id stored under e.g.
+	 * `deepseek_model` is migrated to its successor too.
 	 *
 	 * @param array $map Legacy id => successor id.
-	 * @return int 1 if rewritten, 0 otherwise.
+	 * @return int Number of rewritten settings keys.
 	 */
 	protected static function migrate_default_model_setting( array $map ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( ! is_array( $settings ) || empty( $settings['default_model'] ) ) {
+		if ( ! is_array( $settings ) ) {
 			return 0;
 		}
 
-		$current = $settings['default_model'];
-		if ( ! isset( $map[ $current ] ) ) {
-			return 0;
+		// Settings keys that hold a plain chat-model id (not base URLs,
+		// embeddings, or vision-specific pins).
+		$model_keys = array(
+			'default_model',
+			'default_gemini_model',
+			'anthropic_model',
+			'deepseek_model',
+			'kimi_model',
+		);
+
+		$rewritten = 0;
+		foreach ( $model_keys as $key ) {
+			if ( empty( $settings[ $key ] ) || ! isset( $map[ $settings[ $key ] ] ) ) {
+				continue;
+			}
+
+			$settings[ $key ] = $map[ $settings[ $key ] ];
+			++$rewritten;
 		}
 
-		$settings['default_model'] = $map[ $current ];
-		update_option( 'wp_mcp_ai_settings', $settings );
-		return 1;
+		if ( $rewritten > 0 ) {
+			update_option( 'wp_mcp_ai_settings', $settings );
+		}
+
+		return $rewritten;
 	}
 }

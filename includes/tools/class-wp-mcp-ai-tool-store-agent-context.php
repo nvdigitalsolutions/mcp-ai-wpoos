@@ -58,7 +58,7 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Stores important context, learnings, or information for an agent to remember. Supports automatic content ingestion from Vector Stores, WordPress posts/pages, and URLs. Use this to persist knowledge across sessions, track important facts, or maintain agent memory. Context can be retrieved later using retrieve_agent_memory.', 'mcp-ai-wpoos' );
+		return __( 'Stores important context, learnings, or information for an agent to remember. When agent_id is omitted, the memory is stored under the assistant executing the tool (resolved from the execution context). Writing another agent\'s memory requires the manage_options capability. Supports automatic content ingestion from Vector Stores, WordPress posts/pages, and URLs. Use this to persist knowledge across sessions, track important facts, or maintain agent memory. Context can be retrieved later using retrieve_agent_memory.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -71,7 +71,7 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 			'when_to_use'     => __( 'Persisting facts, learnings, or decisions an agent should remember, optionally ingesting a URL, WordPress post, or vector store.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Reading memory back; use retrieve_agent_memory for lookups and wake_up_context to preload memory at session boot.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'retrieve_agent_memory', 'wake_up_context', 'memory_audit_trail' ),
-			'notes'           => __( 'Supports wing/room scoping and a 30-day default TTL; ingested source content is capped at 8000 characters per record.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'Omit agent_id to store under your own identity; cross-agent writes require manage_options. Supports wing/room scoping and a 30-day default TTL; ingested source content is capped at 8000 characters per record.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -84,7 +84,7 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 			'properties'           => array(
 				'agent_id'       => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional. Agent assistant ID (post ID) or virtual agent identifier. When omitted, the memory is stored under the assistant executing the tool. Writing another agent\'s memory requires the manage_options capability.', 'mcp-ai-wpoos' ),
 				),
 				'context_type'   => array(
 					'type'        => 'string',
@@ -181,7 +181,7 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 					'required'    => array( 'type' ),
 				),
 			),
-			'required'             => array( 'agent_id', 'context_type', 'context_data' ),
+			'required'             => array( 'context_type', 'context_data' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -211,14 +211,9 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
-		// Validate required parameters.
-		if ( empty( $arguments['agent_id'] ) ) {
-			return new WP_Error(
-				'store_agent_context_missing_agent_id',
-				__( 'Agent ID is required.', 'mcp-ai-wpoos' )
-			);
-		}
-
+		// Validate required parameters. agent_id is optional — when omitted it
+		// resolves to the calling assistant via the execution context, so read
+		// and write always agree on the same bucket.
 		if ( empty( $arguments['context_type'] ) ) {
 			return new WP_Error(
 				'store_agent_context_missing_context_type',
@@ -233,29 +228,45 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
+		// Agent identity resolution: an explicit agent_id is honoured (and
+		// scope-gated), otherwise the calling assistant's own id is taken
+		// from the execution context. Fail loudly when neither exists — a
+		// mis-keyed write silently fragments the store.
+		$requested = isset( $arguments['agent_id'] ) ? $arguments['agent_id'] : null;
+
+		if ( class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' ) ) {
+			$agent_resolution = WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution( $requested, $context );
+		} else {
+			// Resolver unavailable (standalone load) — fall back to the
+			// explicit argument or the context identity, without aliasing.
+			$agent_resolution = $this->fallback_identity( $requested, $context );
+		}
+
+		if ( empty( $agent_resolution['agent_id'] ) ) {
+			return new WP_Error(
+				'store_agent_context_missing_agent_id',
+				__( 'Agent ID is required.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$agent_id = $agent_resolution['agent_id'];
+
+		// Scope gate: writing another agent's store requires manage_options.
+		$scope_error = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
+			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $agent_id, $context, $user_id )
+			: null;
+		if ( is_wp_error( $scope_error ) ) {
+			return $scope_error;
+		}
+
 		// Sanitize inputs.
-		$agent_id     = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
+		$agent_id     = is_numeric( $agent_id ) ? absint( $agent_id ) : sanitize_text_field( $agent_id );
 		$context_type = sanitize_key( $arguments['context_type'] );
 		$context_data = $this->sanitize_context_data( $arguments['context_data'] );
 		$ttl          = isset( $arguments['ttl'] ) ? absint( $arguments['ttl'] ) : 2592000; // 30 days default.
 
-		// Agent identity resolution (memory-layer fix #1): when the caller
-		// passes a virtual / non-numeric agent key, resolve it to the
-		// canonical assistant post ID carried in the execution context so the
-		// record lands in the same bucket the chat-memory drawer recalls
-		// from. The alias is persisted so future stores resolve identically
-		// even without context.
-		$original_agent_id = $agent_id;
-		$agent_resolution  = array(
-			'agent_id'  => $agent_id,
-			'original'  => (string) $agent_id,
-			'resolved'  => false,
-			'canonical' => is_numeric( $agent_id ),
-		);
-		if ( class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' ) ) {
-			$agent_resolution = WP_MCP_AI_Agent_Identity_Resolver::resolve( $agent_id, $context );
-			$agent_id         = $agent_resolution['agent_id'];
-		}
+		// Keep the caller-supplied identifier for echo and event payloads.
+		$original_agent_id = $agent_resolution['original'];
 
 		// Sanitize MemPalace-inspired hierarchical scope and verbatim discipline fields.
 		$wing     = isset( $arguments['wing'] ) ? sanitize_text_field( $arguments['wing'] ) : '';
@@ -386,18 +397,25 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 			}
 		}
 
+		// Credential-pattern scan (additive, non-blocking): flag records that
+		// appear to contain secrets so retrieval can warn instead of silently
+		// echoing them. Hard redaction belongs in the pre-store transform
+		// filter above.
+		$sensitive_patterns = $this->detect_sensitive_patterns( $context_data );
+
 		// Prepare context record.
 		$context_record = array(
-			'context_id'   => $context_id,
-			'agent_id'     => $agent_id,
-			'context_type' => $context_type,
-			'data'         => $context_data,
-			'stored_at'    => current_time( 'mysql' ),
-			'expires_at'   => gmdate( 'Y-m-d H:i:s', time() + $ttl ),
-			'ttl'          => $ttl,
-			'wing'         => $wing,
-			'room'         => $room,
-			'verbatim'     => $verbatim,
+			'context_id'         => $context_id,
+			'agent_id'           => $agent_id,
+			'context_type'       => $context_type,
+			'data'               => $context_data,
+			'stored_at'          => current_time( 'mysql' ),
+			'expires_at'         => gmdate( 'Y-m-d H:i:s', time() + $ttl ),
+			'ttl'                => $ttl,
+			'wing'               => $wing,
+			'room'               => $room,
+			'verbatim'           => $verbatim,
+			'sensitive_patterns' => $sensitive_patterns,
 		);
 
 		// Store context using transient (WordPress built-in caching).
@@ -456,7 +474,7 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		 * Payload keys:
 		 *   - context_id      string   Stable identifier (`ctx_*`).
 		 *   - agent_id        int|str  Resolved agent id (canonical post ID when the caller passed a virtual key).
-		 *   - original_agent_id int|str Caller-supplied agent id before resolution (same as agent_id when unresolved).
+		 *   - original_agent_id int|str Caller-supplied agent id before resolution ('' when omitted).
 		 *   - agent_id_resolved bool   Whether the virtual key was remapped to a canonical ID.
 		 *   - context_type    string   Sanitized type slug (e.g. `learning`, `fact`).
 		 *   - content         string   Final stored content (post-transform unless verbatim).
@@ -466,6 +484,7 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		 *   - wing            string   MemPalace wing scope (may be empty).
 		 *   - room            string   MemPalace room scope (may be empty).
 		 *   - verbatim        bool     Verbatim discipline flag.
+		 *   - sensitive_patterns array Credential-pattern names detected on store.
 		 *   - source_post_id  int      WordPress post ID (0 when not derived from a post).
 		 *   - source_url      string   Source URL (empty when not URL-derived).
 		 *   - source_type     string   `vector_store|post|url|''` from content_source.
@@ -480,57 +499,149 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		do_action(
 			'wp_mcp_ai_memory_stored',
 			array(
-				'context_id'        => $context_id,
-				'agent_id'          => $agent_id,
-				'original_agent_id' => $original_agent_id,
-				'agent_id_resolved' => (bool) $agent_resolution['resolved'],
-				'context_type'      => $context_type,
-				'content'           => isset( $context_data['content'] ) ? (string) $context_data['content'] : '',
-				'title'             => isset( $context_data['title'] ) ? (string) $context_data['title'] : '',
-				'importance'        => isset( $context_data['importance'] ) ? (string) $context_data['importance'] : 'medium',
-				'tags'              => isset( $context_data['tags'] ) && is_array( $context_data['tags'] ) ? array_values( $context_data['tags'] ) : array(),
-				'wing'              => $wing,
-				'room'              => $room,
-				'verbatim'          => $verbatim,
-				'source_post_id'    => $src_post_id,
-				'source_url'        => $src_url,
-				'source_type'       => $src_type,
-				'stored_at'         => $context_record['stored_at'],
-				'expires_at'        => $context_record['expires_at'],
-				'ttl'               => $ttl,
+				'context_id'         => $context_id,
+				'agent_id'           => $agent_id,
+				'original_agent_id'  => $original_agent_id,
+				'agent_id_resolved'  => (bool) $agent_resolution['resolved'],
+				'context_type'       => $context_type,
+				'content'            => isset( $context_data['content'] ) ? (string) $context_data['content'] : '',
+				'title'              => isset( $context_data['title'] ) ? (string) $context_data['title'] : '',
+				'importance'         => isset( $context_data['importance'] ) ? (string) $context_data['importance'] : 'medium',
+				'tags'               => isset( $context_data['tags'] ) && is_array( $context_data['tags'] ) ? array_values( $context_data['tags'] ) : array(),
+				'wing'               => $wing,
+				'room'               => $room,
+				'verbatim'           => $verbatim,
+				'sensitive_patterns' => $sensitive_patterns,
+				'source_post_id'     => $src_post_id,
+				'source_url'         => $src_url,
+				'source_type'        => $src_type,
+				'stored_at'          => $context_record['stored_at'],
+				'expires_at'         => $context_record['expires_at'],
+				'ttl'                => $ttl,
 			)
 		);
 
 		// Fix #2 — echo the resolved identity back so the assistant can
 		// detect "I saved under X, the drawer watches Y" immediately.
 		return array(
-			'success'           => true,
-			'message'           => __( 'Context stored successfully.', 'mcp-ai-wpoos' ),
-			'context_id'        => $context_id,
-			'agent_id'          => $agent_id,
-			'original_agent_id' => $original_agent_id,
-			'agent_id_resolved' => (bool) $agent_resolution['resolved'],
-			'wing'              => $wing,
-			'room'              => $room,
-			'verbatim'          => $verbatim,
-			'stored_at'         => $context_record['stored_at'],
-			'expires_at'        => $context_record['expires_at'],
-			'ttl_seconds'       => $ttl,
-			'ttl_human'         => $this->format_ttl( $ttl ),
-			'storage'         => array(
+			'success'            => true,
+			'message'            => __( 'Context stored successfully.', 'mcp-ai-wpoos' ),
+			'context_id'         => $context_id,
+			'agent_id'           => $agent_id,
+			'original_agent_id'  => $original_agent_id,
+			'agent_id_resolved'  => (bool) $agent_resolution['resolved'],
+			'resolution_source'  => isset( $agent_resolution['resolution_source'] ) ? $agent_resolution['resolution_source'] : 'parameter',
+			'wing'               => $wing,
+			'room'               => $room,
+			'verbatim'           => $verbatim,
+			'sensitive_patterns' => $sensitive_patterns,
+			'contains_sensitive' => ! empty( $sensitive_patterns ),
+			'stored_at'          => $context_record['stored_at'],
+			'expires_at'         => $context_record['expires_at'],
+			'ttl_seconds'        => $ttl,
+			'ttl_human'          => $this->format_ttl( $ttl ),
+			'storage'            => array(
 				'method' => 'WordPress Transient',
 				'key'    => $transient_key,
 			),
-			'ingested_source' => $ingested_source ? array(
+			'ingested_source'    => $ingested_source ? array(
 				'type'    => isset( $ingested_source['source_type'] ) ? $ingested_source['source_type'] : 'unknown',
 				'summary' => isset( $ingested_source['summary'] ) ? $ingested_source['summary'] : '',
 			) : null,
-			'next_steps'      => array(
+			'next_steps'         => array(
 				/* translators: %s: context_id value */
 				sprintf( __( 'Retrieve this context later using retrieve_agent_memory with context_id: "%s"', 'mcp-ai-wpoos' ), $context_id ),
 				/* translators: %s: agent_id value */
 				sprintf( __( 'Or search all contexts for agent_id: "%s" using retrieve_agent_memory', 'mcp-ai-wpoos' ), $agent_id ),
 			),
+		);
+	}
+
+	/**
+	 * Scan the final stored content for high-signal credential patterns.
+	 *
+	 * Purely additive: matching never blocks the write — the
+	 * `wp_mcp_ai_memory_pre_store_transform` filter remains the hook for
+	 * hard redaction. The matched pattern names are persisted on the record
+	 * and echoed in the store response so retrieval can warn about secrets
+	 * that landed in memory accidentally.
+	 *
+	 * @param array $context_data Sanitized context data (post-transform).
+	 * @return array<int,string> Matched pattern names.
+	 */
+	private function detect_sensitive_patterns( array $context_data ) {
+		$haystacks = array();
+		if ( isset( $context_data['title'] ) && is_string( $context_data['title'] ) ) {
+			$haystacks[] = $context_data['title'];
+		}
+		if ( isset( $context_data['content'] ) && is_string( $context_data['content'] ) ) {
+			$haystacks[] = $context_data['content'];
+		}
+		if ( empty( $haystacks ) ) {
+			return array();
+		}
+
+		$patterns = array(
+			'openai_api_key'   => '/\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b/',
+			'google_api_key'   => '/\bAIza[0-9A-Za-z_-]{30,}\b/',
+			'credential_token' => '/\bcred_[a-z0-9]{4,}\.[A-Za-z0-9_-]{8,}\b/',
+			'bearer_token'     => '/\bbearer\s+[A-Za-z0-9._-]{16,}\b/i',
+			'private_key'      => '/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/',
+			'aws_access_key'   => '/\bAKIA[0-9A-Z]{16}\b/',
+		);
+
+		$found = array();
+		foreach ( $haystacks as $haystack ) {
+			foreach ( $patterns as $name => $pattern ) {
+				if ( isset( $found[ $name ] ) ) {
+					continue;
+				}
+				if ( preg_match( $pattern, $haystack ) ) {
+					$found[ $name ] = true;
+				}
+			}
+		}
+
+		return array_keys( $found );
+	}
+
+	/**
+	 * Minimal identity resolution used only when the shared resolver class
+	 * is unavailable (e.g. a standalone tool load).
+	 *
+	 * @param int|string|null $requested Explicit agent_id argument.
+	 * @param array           $context   Execution context.
+	 * @return array Resolution shape compatible with
+	 *               WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution().
+	 */
+	private function fallback_identity( $requested, array $context ) {
+		if ( null !== $requested && '' !== (string) $requested && '0' !== (string) $requested ) {
+			$agent_id = is_numeric( $requested ) ? absint( $requested ) : sanitize_text_field( $requested );
+			return array(
+				'agent_id'          => $agent_id,
+				'original'          => (string) $requested,
+				'resolved'          => false,
+				'canonical'         => is_numeric( $requested ),
+				'resolution_source' => 'parameter',
+			);
+		}
+
+		if ( ! empty( $context['assistant_id'] ) && is_numeric( $context['assistant_id'] ) ) {
+			return array(
+				'agent_id'          => absint( $context['assistant_id'] ),
+				'original'          => '',
+				'resolved'          => false,
+				'canonical'         => true,
+				'resolution_source' => 'context',
+			);
+		}
+
+		return array(
+			'agent_id'          => '',
+			'original'          => '',
+			'resolved'          => false,
+			'canonical'         => false,
+			'resolution_source' => '',
 		);
 	}
 

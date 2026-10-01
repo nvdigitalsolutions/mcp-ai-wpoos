@@ -92,6 +92,21 @@ namespace { // phpcs:ignore Universal.Namespaces.DisallowCurlyBraceSyntax,Univer
 			public static $last_line = '';
 
 			public static function add_command( $name, $class ) {} // phpcs:ignore
+
+			/**
+			 * No-op hook registration.
+			 *
+			 * Real WooCommerce calls `WP_CLI::add_hook()` from `WC_CLI` when the
+			 * `WP_CLI` constant is set — which this file's stub does at load time.
+			 * Without this method, any test (or plugin code) that boots
+			 * WooCommerce after this file is loaded fatals with "Call to
+			 * undefined method WP_CLI::add_hook()".
+			 *
+			 * @param string   $when     Hook timing (e.g. 'after_wp_load').
+			 * @param callable $callback Hooked callback.
+			 */
+			public static function add_hook( $when, $callback ) {} // phpcs:ignore
+
 			public static function error( $msg, $exit = true ) { // phpcs:ignore
 				self::$last_error = $msg;
 				if ( $exit ) {

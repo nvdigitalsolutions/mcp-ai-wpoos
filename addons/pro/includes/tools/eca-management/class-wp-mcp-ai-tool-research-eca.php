@@ -315,6 +315,11 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$citation_checks = $this->maybe_jev_check_citations( $eca_data, $search_results );
 		if ( ! empty( $citation_checks ) ) {
 			$eca_data['citation_checks'] = $citation_checks;
+
+			// Optional escalation: revise flagged claims on the verification
+			// tier (single rung, capped). Fail-open — the original text is
+			// kept on any error.
+			$this->maybe_jev_escalate_citations( $eca_data, $search_results, $citation_checks );
 		}
 
 		// Cache the results for 24 hours.
@@ -418,9 +423,79 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			return array();
 		}
 
-		$checks = WP_MCP_AI_Pro_Jev_Classifier::check_citations( $report_text, $search_results['sources'] );
+		$escalate_enabled = ! empty( $settings['enable_jev_citation_escalation'] );
+
+		if ( $escalate_enabled ) {
+			// Cascade variant: a two-head "bad = true" battery per claim so
+			// fired claims can be escalated below.
+			$checks = WP_MCP_AI_Pro_Jev_Classifier::check_citations_cascade( $report_text, $search_results['sources'] );
+		} else {
+			$checks = WP_MCP_AI_Pro_Jev_Classifier::check_citations( $report_text, $search_results['sources'] );
+		}
 
 		return is_array( $checks ) ? $checks : array();
+	}
+
+	/**
+	 * Optionally revise flagged citation claims on the verification tier.
+	 *
+	 * Gated by the `enable_jev_citation_escalation` setting (in addition to
+	 * `enable_jev_citation_check`) and fail-open: when the setting is off,
+	 * no checks fired, or any revision errors, the report text is left
+	 * unchanged. Successful revisions are swapped into the report field and
+	 * the full replacement list is attached as `escalated_claims`.
+	 *
+	 * @param array $data           ECA research data (mutated in place).
+	 * @param array $search_results Search results array.
+	 * @param array $checks         Citation checks.
+	 * @return void
+	 */
+	protected function maybe_jev_escalate_citations( &$data, $search_results, $checks ) {
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+
+		if ( empty( $settings['enable_jev_citation_escalation'] ) ) {
+			return;
+		}
+
+		if ( empty( $checks ) || ! is_array( $checks ) || empty( $search_results['sources'] ) || ! is_array( $search_results['sources'] ) ) {
+			return;
+		}
+
+		$report_key = '';
+		foreach ( array( 'report', 'content', 'summary', 'research', 'analysis' ) as $key ) {
+			if ( isset( $data[ $key ] ) && is_string( $data[ $key ] ) ) {
+				$report_key = $key;
+				break;
+			}
+		}
+
+		if ( '' === $report_key ) {
+			return;
+		}
+
+		$report_text = $data[ $report_key ];
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-jev-classifier.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Jev_Classifier' ) ) {
+			return;
+		}
+
+		$replacements = WP_MCP_AI_Pro_Jev_Classifier::escalate_flagged_citations( $report_text, $search_results['sources'], $checks );
+
+		if ( empty( $replacements ) ) {
+			return;
+		}
+
+		$applied = WP_MCP_AI_Pro_Jev_Classifier::apply_claim_replacements( $report_text, $replacements );
+
+		if ( $applied['replaced_count'] > 0 ) {
+			$data[ $report_key ] = $applied['text'];
+		}
+
+		$data['escalated_claims'] = $replacements;
 	}
 
 	/**

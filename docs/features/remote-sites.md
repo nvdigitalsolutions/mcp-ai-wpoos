@@ -29,6 +29,9 @@ WordPress MCP Adapter endpoints, or any JSON-RPC 2.0 Streamable HTTP MCP server:
   (header name + value), `bearer`, and `oauth`.
 - **Test Connection** performs a real MCP handshake (`server/discover` with the
   legacy `initialize` fallback) and reports protocol, server info, and tool count.
+  Once a server is observed rejecting the stateless probe, a 24h dialect hint
+  skips it on subsequent tests/connects (see the MCP Apps protocol-negotiation
+  docs).
 - **Discover Tools** (via `WP_MCP_AI_Pro_Remote_Site_Manager::discover_mcp_server_tools()`)
   enumerates the remote tools and persists the snapshot (`mcp_tool_count`,
   `mcp_discovered_at`, `mcp_last_test`) on the connection.
@@ -38,6 +41,64 @@ WordPress MCP Adapter endpoints, or any JSON-RPC 2.0 Streamable HTTP MCP server:
   (`connection_ref`) instead of duplicating credentials — see
   `docs/assistant-import-export.md` (redaction policy) and the MCP Apps
   metabox on the assistant editor.
+
+### Upwork (Freelance Marketplace) Connection Modes (v1.1.88)
+
+Upwork connections accept three operation modes (`upwork_mode`):
+
+| Mode | Transport | Credentials |
+|---|---|---|
+| `api` | Upwork GraphQL API (`https://api.upwork.com/graphql`) | OAuth client ID + secret + refresh token |
+| `web_search` | AI-powered web search (no Upwork access) | none |
+| `mcp` | Official Upwork MCP gateway (`https://mcp.upwork.com/mcp`) | MCP OAuth 2.1 (DCR + PKCE, login button on the edit form) |
+
+MCP mode routes the CRM Upwork tools (`search_upwork_jobs`,
+`import_upwork_project`) through the MCP Apps client: a sessionful
+`initialize` handshake against the gateway, `upwork__find_jobs`
+(action `search`/`get`) for discovery and details, and
+`upwork__list_accounts` for `org_uid` resolution (stored on the
+connection when provided). Results normalize into the same job envelope
+as API mode, so the CRM refresh pipeline (search → score → import) works
+unchanged and imported deals/projects still carry `_external_source_id` /
+`_external_source_platform = upwork` dedupe meta. The OAuth login flow
+reuses the MCP Apps REST endpoints (`/mcp-apps/oauth/init` +
+`/complete`) with `connection_ref` pointing at the Upwork connection, so
+tokens persist to the encrypted central store (`mcp_oauth`, auto-refresh
+via `update_mcp_oauth()`).
+
+### FlowHub (POS/Retail) Connection Modes (v1.1.91)
+
+FlowHub connections accept two operation modes (`flowhub_mode`):
+
+| Mode | Transport | Meaning |
+|---|---|---|
+| `api` | Direct FlowHub POS API (`https://api.flowhub.co`, `clientId` + `key` headers) | Default — used for syncs and direct tool calls only |
+| `mcp` | Same POS API, but the connection is the **designated backend for the FlowHub toolkit MCP server** | MCP-triggered services bind to this connection's credentials and proxy |
+
+Unlike Upwork, FlowHub has no separate MCP gateway — the MCP toggle in
+assistant settings (Toolkit MCP Servers → FlowHub Inventory Sync) exposes
+FlowHub **tools**, whose live services (`refresh`, `sync_now`) still call
+`api.flowhub.co`. MCP mode therefore marks *which* Remote Sites connection
+serves those MCP-triggered calls:
+
+- `WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id()` resolves
+  the first **enabled** FlowHub connection with `flowhub_mode = mcp` (and
+  credentials).
+- The toolkit MCP REST controller injects that connection ID into tool
+  arguments when the MCP caller did not pass an explicit `connection_id`,
+  routing the call through the explicit-connection path — credentials and
+  the connection's **proxy** (`proxy_url` / `proxy_username` /
+  `proxy_password`, encrypted at rest) are applied via `http_api_curl`.
+- An explicit `connection_id` argument always wins; when no connection is
+  designated as MCP, behavior is unchanged (the tools' existing resolver
+  chain: explicit → toolkit settings → sync connections → first enabled
+  connection).
+
+Set the mode on the FlowHub connection edit form (**Connection Mode**
+select, mirroring the Upwork pattern). Designating one connection as MCP
+is the recommended fix when FlowHub MCP services fail with auth errors
+because egress must go through a forward proxy (a whitelisted egress IP
+that FlowHub accepts).
 
 ### Post Type Access Controls (v1.1.52 Update)
 

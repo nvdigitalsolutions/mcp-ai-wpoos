@@ -466,6 +466,146 @@ class Test_Analyze_Image_Objects extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Detection mode with provider=roboflow routes through the RF-DETR service.
+	 */
+	public function test_detection_mode_roboflow_provider() {
+		$this->require_gd();
+		$attachment_id = $this->create_test_attachment();
+
+		$settings                        = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['va_roboflow_api_url'] = 'http://localhost:9001';
+		$settings['va_roboflow_api_key'] = '';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) {
+				if ( false !== strpos( $url, 'localhost:9001/infer/' ) ) {
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'image'       => array(
+									'width'  => 100,
+									'height' => 80,
+								),
+								'predictions' => array(
+									array(
+										'x'          => 50,
+										'y'          => 40,
+										'width'      => 40,
+										'height'     => 30,
+										'confidence' => 0.9,
+										'class'      => 'dog',
+										'class_id'   => 16,
+									),
+									array(
+										'x'          => 20,
+										'y'          => 20,
+										'width'      => 10,
+										'height'     => 10,
+										'confidence' => 0.6,
+										'class'      => 'dog',
+										'class_id'   => 16,
+									),
+								),
+							)
+						),
+					);
+				}
+				return $pre;
+			},
+			10,
+			3
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'attachment_id'  => $attachment_id,
+				'mode'           => 'detection',
+				'provider'       => 'roboflow',
+				'min_confidence' => 0.5,
+			),
+			array( 'user_id' => $this->admin_user_id )
+		);
+
+		$this->assertNotWPError( $result, is_wp_error( $result ) ? wp_json_encode( $result->get_error_data() ) : '' );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'detection', $result['mode'] );
+		$this->assertSame( 'roboflow', $result['provider'] );
+		$this->assertSame( 2, $result['total_items'] );
+		$this->assertSame( 'dog', $result['counts'][0]['label'] );
+		$this->assertSame( 2, $result['counts'][0]['count'] );
+
+		wp_delete_file( $this->test_image_path );
+	}
+
+	/**
+	 * Auto provider prefers a configured RF-DETR service over Ollama when no
+	 * HuggingFace key is present.
+	 */
+	public function test_auto_provider_prefers_roboflow() {
+		$this->require_gd();
+		$attachment_id = $this->create_test_attachment();
+
+		$settings                             = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['huggingface_api_key']      = '';
+		$settings['huggingface_endpoint_url'] = '';
+		$settings['va_roboflow_api_url']      = 'http://localhost:9001';
+		$settings['va_roboflow_api_key']      = '';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) {
+				if ( false !== strpos( $url, 'localhost:9001/infer/' ) ) {
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'image'       => array(
+									'width'  => 100,
+									'height' => 80,
+								),
+								'predictions' => array(
+									array(
+										'x'          => 50,
+										'y'          => 40,
+										'width'      => 20,
+										'height'     => 20,
+										'confidence' => 0.8,
+										'class'      => 'cat',
+										'class_id'   => 15,
+									),
+								),
+							)
+						),
+					);
+				}
+				return $pre;
+			},
+			10,
+			3
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'attachment_id' => $attachment_id,
+				'mode'          => 'detection',
+				'provider'      => 'auto',
+			),
+			array( 'user_id' => $this->admin_user_id )
+		);
+
+		$this->assertNotWPError( $result, is_wp_error( $result ) ? wp_json_encode( $result->get_error_data() ) : '' );
+		$this->assertSame( 'roboflow', $result['provider'] );
+		$this->assertSame( 1, $result['total_items'] );
+		$this->assertSame( 'cat', $result['counts'][0]['label'] );
+
+		wp_delete_file( $this->test_image_path );
+	}
+
+	/**
 	 * VLM mode returns a normalized breakdown (mocked OpenAI).
 	 */
 	public function test_vlm_mode_returns_breakdown() {

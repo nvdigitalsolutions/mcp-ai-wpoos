@@ -106,4 +106,114 @@ class Test_Agent_Identity_Resolver extends WP_UnitTestCase {
 		$this->assertFalse( WP_MCP_AI_Agent_Identity_Resolver::register_alias( '953', 953 ) );
 		$this->assertSame( array(), WP_MCP_AI_Agent_Identity_Resolver::get_aliases( 953 ) );
 	}
+
+	/**
+	 * An explicit argument is preferred over the context identity and is
+	 * reported as the parameter resolution source.
+	 */
+	public function test_resolve_for_execution_prefers_explicit_argument() {
+		$resolved = WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution(
+			8859,
+			array( 'assistant_id' => 953 )
+		);
+
+		$this->assertSame( 8859, $resolved['agent_id'] );
+		$this->assertSame( 'parameter', $resolved['resolution_source'] );
+	}
+
+	/**
+	 * An omitted argument resolves to the context assistant id — the runtime
+	 * identity the model must not be asked to guess.
+	 */
+	public function test_resolve_for_execution_falls_back_to_context() {
+		$resolved = WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution(
+			null,
+			array( 'assistant_id' => 953 )
+		);
+
+		$this->assertSame( 953, $resolved['agent_id'] );
+		$this->assertSame( 'context', $resolved['resolution_source'] );
+		$this->assertTrue( $resolved['canonical'] );
+	}
+
+	/**
+	 * Empty strings, zero and null are all treated as "not supplied".
+	 */
+	public function test_resolve_for_execution_treats_falsy_values_as_omitted() {
+		foreach ( array( null, '', 0, '0' ) as $supplied ) {
+			$resolved = WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution(
+				$supplied,
+				array( 'assistant_id' => 953 )
+			);
+
+			$this->assertSame( 953, $resolved['agent_id'], 'Falsy argument must take the context path.' );
+			$this->assertSame( 'context', $resolved['resolution_source'] );
+		}
+	}
+
+	/**
+	 * With neither an argument nor a context identity the result is empty —
+	 * callers must fail loudly, never guess.
+	 */
+	public function test_resolve_for_execution_returns_empty_without_identity() {
+		$resolved = WP_MCP_AI_Agent_Identity_Resolver::resolve_for_execution( null, array() );
+
+		$this->assertSame( '', $resolved['agent_id'] );
+		$this->assertSame( '', $resolved['resolution_source'] );
+	}
+
+	/**
+	 * Own-memory access is always allowed.
+	 */
+	public function test_check_scope_allows_own_memory() {
+		$error = WP_MCP_AI_Agent_Identity_Resolver::check_scope(
+			953,
+			array( 'assistant_id' => 953 ),
+			1
+		);
+
+		$this->assertNull( $error );
+	}
+
+	/**
+	 * Cross-agent access without manage_options is denied with a 403.
+	 */
+	public function test_check_scope_denies_cross_agent_without_manage_options() {
+		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		$error = WP_MCP_AI_Agent_Identity_Resolver::check_scope(
+			8859,
+			array( 'assistant_id' => 953 ),
+			$subscriber
+		);
+
+		$this->assertWPError( $error );
+		$this->assertSame( 'mcp_ai_memory_scope_denied', $error->get_error_code() );
+		$this->assertSame( 403, $error->get_error_data()['status'] );
+	}
+
+	/**
+	 * Cross-agent access with manage_options is allowed.
+	 */
+	public function test_check_scope_allows_cross_agent_for_administrator() {
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$error = WP_MCP_AI_Agent_Identity_Resolver::check_scope(
+			8859,
+			array( 'assistant_id' => 953 ),
+			$admin
+		);
+
+		$this->assertNull( $error );
+	}
+
+	/**
+	 * When the runtime identity is unknown (no assistant_id in context) the
+	 * check is a no-op so legacy direct callers keep working.
+	 */
+	public function test_check_scope_noops_without_runtime_identity() {
+		$error = WP_MCP_AI_Agent_Identity_Resolver::check_scope( 8859, array(), 1 );
+
+		$this->assertNull( $error );
+	}
 }

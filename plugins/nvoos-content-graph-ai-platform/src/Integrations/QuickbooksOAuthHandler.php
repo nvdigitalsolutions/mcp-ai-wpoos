@@ -361,6 +361,32 @@ class QuickbooksOAuthHandler {
 	}
 
 	/**
+	 * Allow the QuickBooks OAuth authorize endpoint host when using wp_safe_redirect().
+	 *
+	 * @param string[] $allowed_hosts Existing list of allowed hosts.
+	 * @param string   $redirect      Requested redirect destination.
+	 *
+	 * @return string[]
+	 */
+	public function allow_quickbooks_oauth_redirect_host( $allowed_hosts, $redirect = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress filter signature.
+		/**
+		 * Filter the QuickBooks OAuth authorize endpoint.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param string $endpoint OAuth authorize endpoint.
+		 */
+		$authorize_endpoint = apply_filters( 'wp_mcp_ai_quickbooks_oauth_authorize_endpoint', self::QUICKBOOKS_OAUTH_AUTHORIZE_ENDPOINT );
+		$quickbooks_host    = wp_parse_url( $authorize_endpoint, PHP_URL_HOST );
+
+		if ( $quickbooks_host ) {
+			$allowed_hosts[] = $quickbooks_host;
+		}
+
+		return array_values( array_unique( $allowed_hosts ) );
+	}
+
+	/**
 	 * Get the OAuth redirect URI for QuickBooks.
 	 *
 	 * @return string

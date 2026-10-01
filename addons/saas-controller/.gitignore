@@ -1,3 +1,4 @@
 node_modules/
 .wrangler/
 *.log
+worker/dist/README.md

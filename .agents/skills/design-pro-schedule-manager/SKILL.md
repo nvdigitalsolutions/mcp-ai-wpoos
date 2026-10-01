@@ -108,6 +108,27 @@ Use this to:
 - Adjust arguments (e.g., batch size, timeout).
 - Rename for clarity.
 - Change recurrence timing.
+- **Edit workflow steps in place** — `workflow_steps` replaces the whole ordered
+  tool chain on `workflow`-type schedules, so a step's arguments can be
+  corrected without recreating the schedule (rejected with
+  `invalid_schedule_type` on non-workflow schedules, `invalid_workflow_steps`
+  when no valid step survives sanitisation):
+
+```json
+{
+  "name": "update_pro_schedule",
+  "arguments": {
+    "schedule_id": "abc123…",
+    "workflow_steps": [
+      {
+        "tool_slug": "search_upwork_jobs",
+        "arguments": { "query": "wordpress developer", "sort": "recency", "limit": 20 },
+        "label": "Search for new matching jobs"
+      }
+    ]
+  }
+}
+```
 
 ### 3. `delete_pro_schedule`
 

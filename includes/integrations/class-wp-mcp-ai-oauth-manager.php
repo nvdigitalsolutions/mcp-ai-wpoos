@@ -341,6 +341,19 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		}
 
 		/**
+		 * Allow the Yahoo OAuth authorize host when using wp_safe_redirect().
+		 *
+		 * @since 1.1.90
+		 *
+		 * @param string[] $allowed_hosts Existing list of allowed hosts.
+		 * @return string[]
+		 */
+		public function allow_yahoo_oauth_redirect_host( $allowed_hosts ) {
+			$allowed_hosts[] = 'api.login.yahoo.com';
+			return array_values( array_unique( $allowed_hosts ) );
+		}
+
+		/**
 		 * Build Google OAuth authorization URL manually.
 		 *
 		 * Used as a fallback when Google API Client is not available.
@@ -762,6 +775,9 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				),
 				'https://api.login.yahoo.com/oauth2/request_auth'
 			);
+
+			// Add Yahoo OAuth domain to allowed redirect hosts.
+			add_filter( 'allowed_redirect_hosts', array( $this, 'allow_yahoo_oauth_redirect_host' ) );
 
 			wp_safe_redirect( $auth_url );
 			exit;

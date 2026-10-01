@@ -125,6 +125,18 @@ class WP_MCP_AI_ECA_Management_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base 
 				'sync_students_from_isams',
 				'sync_ecas_from_socs',
 				'isams_query',
+				'list_classroom_courses',
+				'sync_classroom_roster_to_students',
+				'sync_classroom_courses_to_ecas',
+				'link_classroom_course_to_eca',
+				'create_classroom_course',
+				'update_classroom_course',
+				'post_classroom_announcement',
+				'create_classroom_coursework',
+				'list_classroom_submissions',
+				'classroom_course_analytics',
+				'list_classroom_guardians',
+				'manage_classroom_push_watch',
 			)
 		);
 	}

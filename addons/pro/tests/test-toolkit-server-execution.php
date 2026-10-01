@@ -68,9 +68,75 @@ if ( ! class_exists( 'WP_MCP_AI_Toolkit_MCP_Test_Echo_Tool' ) ) {
 		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			return array(
-				'echo'    => isset( $arguments['msg'] ) ? (string) $arguments['msg'] : '',
-				'context' => isset( $context['toolkit_mcp_server'] ) ? (string) $context['toolkit_mcp_server'] : '',
+				'echo'          => isset( $arguments['msg'] ) ? (string) $arguments['msg'] : '',
+				'context'       => isset( $context['toolkit_mcp_server'] ) ? (string) $context['toolkit_mcp_server'] : '',
+				'connection_id' => isset( $arguments['connection_id'] ) ? (string) $arguments['connection_id'] : '',
 			);
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_MCP_AI_Toolkit_MCP_Test_Binding_Server' ) ) {
+	/**
+	 * Test server stub declaring a Remote Sites connection binding.
+	 */
+	class WP_MCP_AI_Toolkit_MCP_Test_Binding_Server extends WP_MCP_AI_Toolkit_Server_Base {
+
+		/**
+		 * Get slug.
+		 *
+		 * @return string
+		 */
+		public function get_slug() {
+			return 'binding-test';
+		}
+
+		/**
+		 * Get name.
+		 *
+		 * @return string
+		 */
+		public function get_name() {
+			return 'Binding Test';
+		}
+
+		/**
+		 * Get description.
+		 *
+		 * @return string
+		 */
+		public function get_description() {
+			return 'Binding test server';
+		}
+
+		/**
+		 * Get candidate tool slugs.
+		 *
+		 * @return string[]
+		 */
+		public function candidate_tool_slugs() {
+			return apply_filters(
+				'wp_mcp_ai_toolkit_mcp_server_binding_test_candidate_tools',
+				array( 'toolkit_mcp_test_echo' )
+			);
+		}
+
+		/**
+		 * Get ingestion surfaces.
+		 *
+		 * @return array<int,array<string,mixed>>
+		 */
+		public function ingestion_surfaces() {
+			return array();
+		}
+
+		/**
+		 * Declare the connection this server's live services bind to.
+		 *
+		 * @return string
+		 */
+		public function get_mcp_connection_id() {
+			return 'conn_binding_test';
 		}
 	}
 }
@@ -237,6 +303,174 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		);
 		$this->assertArrayHasKey( 'error', $data );
 		$this->assertSame( -32601, $data['error']['code'] );
+	}
+
+	/** Test a server-declared connection binding is injected into tool arguments.
+	 *
+	 * Servers whose live services route through a Remote Sites connection
+	 * (e.g. FlowHub) declare it via get_mcp_connection_id(); the controller
+	 * injects it when the caller did not supply a connection_id.
+	 */
+	public function test_tools_call_injects_server_connection_binding() {
+		WP_MCP_AI_Toolkit_Server_Registry::get_instance()->register( new WP_MCP_AI_Toolkit_MCP_Test_Binding_Server() );
+
+		$data = $this->rpc(
+			'binding-test',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 21,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'toolkit_mcp_test_echo',
+					'arguments' => array( 'msg' => 'bound' ),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey( 'result', $data, 'Expected success result, got: ' . wp_json_encode( $data ) );
+		$payload = json_decode( $data['result']['content'][0]['text'], true );
+		$this->assertSame( 'conn_binding_test', $payload['connection_id'], 'The server-designated connection should be injected.' );
+	}
+
+	/** Test an explicit caller-supplied connection_id wins over the server binding.
+	 */
+	public function test_tools_call_explicit_connection_overrides_binding() {
+		WP_MCP_AI_Toolkit_Server_Registry::get_instance()->register( new WP_MCP_AI_Toolkit_MCP_Test_Binding_Server() );
+
+		$data = $this->rpc(
+			'binding-test',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 22,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'toolkit_mcp_test_echo',
+					'arguments' => array(
+						'msg'           => 'bound',
+						'connection_id' => 'conn_explicit',
+					),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey( 'result', $data, 'Expected success result, got: ' . wp_json_encode( $data ) );
+		$payload = json_decode( $data['result']['content'][0]['text'], true );
+		$this->assertSame( 'conn_explicit', $payload['connection_id'], 'An explicit connection_id must not be overwritten.' );
+	}
+
+	/** Test assistant-scoped tools call is rejected when the assistant has no grant.
+	 *
+	 * Deny-by-default: an assistant with an empty allowlist (no checked
+	 * servers in the Toolkit MCP Servers metabox) must not invoke the server.
+	 */
+	public function test_tools_call_rejected_for_ungranted_assistant() {
+		$assistant_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
+
+		$data = $this->rpc(
+			'crm',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 11,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'assistant_id' => $assistant_id,
+					'name'         => 'toolkit_mcp_test_echo',
+					'arguments'    => array(),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey( 'error', $data, wp_json_encode( $data ) );
+		$this->assertSame( -32601, $data['error']['code'] );
+		$this->assertSame( $assistant_id, $data['error']['data']['assistant_id'] );
+		$this->assertSame( 'crm', $data['error']['data']['server'] );
+	}
+
+	/** Test assistant-scoped tools call succeeds when the assistant holds a grant.
+	 */
+	public function test_tools_call_allowed_for_granted_assistant() {
+		$assistant_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_pro_allowed_mcp_servers', array( 'crm' ) );
+
+		$data = $this->rpc(
+			'crm',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 12,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'assistant_id' => $assistant_id,
+					'name'         => 'toolkit_mcp_test_echo',
+					'arguments'    => array( 'msg' => 'granted' ),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey( 'result', $data, wp_json_encode( $data ) );
+		$payload = json_decode( $data['result']['content'][0]['text'], true );
+		$this->assertSame( 'granted', $payload['echo'] );
+	}
+
+	/** Test non-assistant-scoped calls bypass the grant gate (backward compat).
+	 */
+	public function test_tools_call_without_assistant_id_bypasses_grant_gate() {
+		$data = $this->rpc(
+			'crm',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 13,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'toolkit_mcp_test_echo',
+					'arguments' => array( 'msg' => 'plain-client' ),
+				),
+			)
+		);
+
+		$this->assertArrayHasKey( 'result', $data, wp_json_encode( $data ) );
+		$payload = json_decode( $data['result']['content'][0]['text'], true );
+		$this->assertSame( 'plain-client', $payload['echo'] );
+	}
+
+	/** Test initialize lists only granted servers in toolkitServers metadata.
+	 */
+	public function test_initialize_toolkit_servers_metadata_reflects_grants() {
+		$assistant_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_pro_allowed_mcp_servers', array( 'crm' ) );
+
+		$data = $this->rpc(
+			'crm',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 14,
+				'method'  => 'initialize',
+				'params'  => array( 'assistant_id' => $assistant_id ),
+			)
+		);
+
+		$this->assertArrayHasKey( 'result', $data, wp_json_encode( $data ) );
+		$this->assertArrayHasKey( 'toolkitServers', $data['result'] );
+		$slugs = wp_list_pluck( $data['result']['toolkitServers'], 'slug' );
+		$this->assertSame( array( 'crm' ), $slugs );
+	}
+
+	/** Test initialize returns an empty toolkitServers list when the assistant has no grants.
+	 */
+	public function test_initialize_toolkit_servers_metadata_empty_without_grants() {
+		$assistant_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
+
+		$data = $this->rpc(
+			'crm',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 15,
+				'method'  => 'initialize',
+				'params'  => array( 'assistant_id' => $assistant_id ),
+			)
+		);
+
+		$this->assertArrayHasKey( 'result', $data, wp_json_encode( $data ) );
+		$this->assertSame( array(), $data['result']['toolkitServers'] );
 	}
 
 	/** Test resources read returns descriptor for native uri.

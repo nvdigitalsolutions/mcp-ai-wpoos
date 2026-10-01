@@ -51,7 +51,8 @@ class Test_Tool_Manage_Context_Lifecycle extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Missing agent_id returns success=false with message.
+	 * Missing agent_id (with no context identity) returns the loud 400 error
+	 * instead of guessing an agent.
 	 */
 	public function test_missing_agent_id_returns_error_result() {
 		$result = $this->tool->execute(
@@ -60,7 +61,7 @@ class Test_Tool_Manage_Context_Lifecycle extends WP_UnitTestCase {
 		);
 
 		$this->assertInstanceOf( 'WP_Error', $result );
-		$this->assertStringContainsString( 'Agent ID', $result->get_error_message() );
+		$this->assertSame( 'mcp_ai_memory_no_agent', $result->get_error_code() );
 	}
 
 	/**

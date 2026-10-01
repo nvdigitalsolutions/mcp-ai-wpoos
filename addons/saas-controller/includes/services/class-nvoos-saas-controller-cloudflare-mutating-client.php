@@ -11,6 +11,10 @@
  *   • POST /accounts/{account_id}/ai-gateway/gateways   — create an AI Gateway.
  *   • PUT  /accounts/{account_id}/workers/scripts/{name} — upload a Worker
  *     script (module-worker, multipart/form-data; Phase 5d).
+ *   • PUT  /accounts/{account_id}/workers/scripts/{name}/secrets — set a
+ *     Worker secret (Phase 12; values never logged or echoed).
+ *   • POST /accounts/{account_id}/d1/database/{uuid}/raw — execute SQL
+ *     against a D1 database (Phase 12 schema apply).
  *
  * Every call records exactly one entry in
  * {@see NVOOS_SaaS_Controller_Audit_Log} on the `cloudflare` channel —
@@ -305,6 +309,93 @@ class NVOOS_SaaS_Controller_Cloudflare_Mutating_Client {
 	}
 
 	/**
+	 * Set a Worker secret (Phase 12).
+	 *
+	 * PUT /accounts/{account_id}/workers/scripts/{name}/secrets with the
+	 * `secret_text` body shape Cloudflare documents:
+	 * `{ "name": "OPENROUTER_API_KEY", "text": "…", "type": "secret_text" }`.
+	 * The API treats this as an upsert — a second PUT with a new value
+	 * overwrites the binding (the operator rotates credentials by updating
+	 * the credential store and re-applying).
+	 *
+	 * The secret VALUE is never written to the audit log, never echoed in
+	 * results, and never returned by the API (only the name is confirmed).
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param string $script_name Worker script slug.
+	 * @param string $secret_name Secret binding name (e.g. `OPENROUTER_API_KEY`).
+	 * @param string $value       Plaintext secret value.
+	 * @return array|WP_Error `[ 'name' => …, 'type' => 'secret_text' ]` on success.
+	 */
+	public function put_worker_secret( $script_name, $secret_name, $value ) {
+		$slug  = (string) $script_name;
+		$name  = (string) $secret_name;
+		$value = (string) $value;
+		if ( '' === $slug ) {
+			return new WP_Error( 'invalid_name', __( 'Worker script name is required.', 'nvoos-saas-controller' ) );
+		}
+		if ( '' === $name ) {
+			return new WP_Error( 'invalid_secret_name', __( 'Secret name is required.', 'nvoos-saas-controller' ) );
+		}
+		if ( '' === $value ) {
+			return new WP_Error( 'empty_secret', __( 'Secret value is empty — refusing to write a blank secret.', 'nvoos-saas-controller' ) );
+		}
+
+		$result = $this->put(
+			'/accounts/' . rawurlencode( $this->account_id ) . '/workers/scripts/' . rawurlencode( $slug ) . '/secrets',
+			array(
+				'name' => $name,
+				'text' => $value,
+				'type' => 'secret_text',
+			),
+			'put_worker_secret',
+			$slug . '/' . $name
+		);
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'name' => isset( $result['name'] ) ? (string) $result['name'] : $name,
+			'type' => isset( $result['type'] ) ? (string) $result['type'] : 'secret_text',
+		);
+	}
+
+	/**
+	 * Execute SQL against a D1 database (Phase 12 schema apply).
+	 *
+	 * POST /accounts/{account_id}/d1/database/{uuid}/raw with a single
+	 * `{ "sql": … }` body. The `/raw` endpoint executes multiple statements
+	 * joined by semicolons as a batch — the same shape `wrangler d1 execute
+	 * --file` uses. The schema is authored idempotently
+	 * (`CREATE TABLE IF NOT EXISTS`), so re-applying is safe.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param string $database_id D1 database uuid.
+	 * @param string $sql         SQL batch (multiple statements allowed).
+	 * @return array|WP_Error Cloudflare `result` array (per-statement objects).
+	 */
+	public function execute_d1_sql( $database_id, $sql ) {
+		$uuid = (string) $database_id;
+		if ( '' === $uuid ) {
+			return new WP_Error( 'invalid_uuid', __( 'D1 database uuid is required.', 'nvoos-saas-controller' ) );
+		}
+		$sql = (string) $sql;
+		if ( '' === $sql ) {
+			return new WP_Error( 'empty_sql', __( 'SQL is required.', 'nvoos-saas-controller' ) );
+		}
+
+		return $this->post(
+			'/accounts/' . rawurlencode( $this->account_id ) . '/d1/database/' . rawurlencode( $uuid ) . '/raw',
+			array( 'sql' => $sql ),
+			'execute_d1_sql',
+			$uuid
+		);
+	}
+
+	/**
 	 * Delete a D1 database by uuid (Phase 10 — orphan cleanup).
 	 *
 	 * Cloudflare's D1 API exposes destructive deletion at
@@ -448,6 +539,40 @@ class NVOOS_SaaS_Controller_Cloudflare_Mutating_Client {
 		}
 		$out .= '--' . $boundary . '--' . $crlf;
 		return $out;
+	}
+
+	/**
+	 * Issue a single PUT request with a JSON body, parse the Cloudflare
+	 * envelope, and record exactly one audit-log entry regardless of outcome.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param string $path   API path (must start with `/`).
+	 * @param array  $body   Request body (will be JSON-encoded).
+	 * @param string $action Audit-log `action` verb.
+	 * @param string $target Audit-log `target`.
+	 * @return array|WP_Error
+	 */
+	protected function put( $path, array $body, $action, $target ) {
+		$started_us = microtime( true );
+		$response   = wp_remote_request(
+			self::BASE_URL . $path,
+			array(
+				'method'    => 'PUT',
+				'timeout'   => self::TIMEOUT,
+				'sslverify' => true,
+				'headers'   => array(
+					'Authorization' => 'Bearer ' . $this->api_token,
+					'Accept'        => 'application/json',
+					'Content-Type'  => 'application/json',
+				),
+				'body'      => wp_json_encode( $body ),
+			)
+		);
+
+		$result = $this->parse_response( $response, $path );
+		$this->record_audit( $action, $target, $result, $started_us );
+		return $result;
 	}
 
 	/**

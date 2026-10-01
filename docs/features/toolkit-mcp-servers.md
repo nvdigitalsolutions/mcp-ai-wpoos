@@ -337,11 +337,11 @@ Query parameters:
 
 ### Assistant "Toolkit MCP Servers" Metabox
 
-A metabox on the `mcp_ai_assistant` CPT edit screen lets editors choose which per-toolkit MCP servers that assistant may invoke.
+A metabox on the `mcp_ai_assistant` CPT edit screen lets editors choose which per-toolkit MCP servers that assistant may invoke. Grants are **deny-by-default**: unchecked servers are never invocable by the assistant.
 
 - **Class:** `WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers`
 - **Meta key:** `_wp_mcp_ai_pro_allowed_mcp_servers` (array of slugs)
-- **Empty array** = allow all enabled servers (default behaviour).
+- **Empty array** = no servers granted (assistant may invoke none).
 - Static helper: `WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::get_allowed_servers( $post_id )` → `string[]`
 
 ### Observability Dashboard Card
