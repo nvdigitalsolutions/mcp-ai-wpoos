@@ -415,8 +415,13 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				10
 			);
 			// Auto-apply tags with score >= 8 (slightly lower bar for tags).
+			// Only multi-word tags are applied silently: single-word tags are
+			// too generic and produced noisy auto-tagging (e.g. "post",
+			// "car", "thor", "red"). Single-word matches are still returned
+			// as suggestions for the caller to choose explicitly.
 			foreach ( $suggested_tags as $tag ) {
-				if ( $tag['score'] >= 8 ) {
+				$is_multi_word = ( false !== strpos( $tag['name'], ' ' ) || false !== strpos( $tag['name'], '-' ) );
+				if ( $tag['score'] >= 8 && $is_multi_word ) {
 					$auto_applied_tags[] = (int) $tag['term_id'];
 				}
 			}
@@ -596,7 +601,10 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$score           = 0;
 
 			// Full name match (e.g., "artificial intelligence" in content).
-			$name_count = mb_substr_count( $combined, $term_name_lower );
+			// Word boundaries keep short terms from matching inside longer
+			// words ("thor" inside "author", "car" inside "caribbean",
+			// "red" inside "hundred", "tag" inside "tagged").
+			$name_count = preg_match_all( '/\b' . preg_quote( $term_name_lower, '/' ) . '\b/u', $combined, $name_matches );
 			if ( $name_count > 0 ) {
 				$score += $name_count * 10;
 			}

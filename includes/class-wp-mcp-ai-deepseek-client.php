@@ -1558,6 +1558,14 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			$message = isset( $choice['message'] ) ? $choice['message'] : array();
 			$content = isset( $message['content'] ) ? $message['content'] : '';
 
+			// Some upstreams (e.g. OpenAI-compatible gateways) return message
+			// content as an array of content blocks. The plugin's internal
+			// contract expects a string, so flatten text blocks.
+			if ( isset( $message['content'] ) && is_array( $message['content'] ) ) {
+				$message['content'] = $this->normalize_content_blocks( $message['content'] );
+				$content            = $message['content'];
+			}
+
 			$raw_usage = isset( $decoded['usage'] ) ? $decoded['usage'] : array();
 			// Extract DeepSeek disk cache metrics.
 			if ( isset( $raw_usage['prompt_cache_hit_tokens'] ) ) {
@@ -1592,6 +1600,36 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			}
 
 			return $normalized;
+		}
+
+		/**
+		 * Flatten an array of content blocks into a plain string.
+		 *
+		 * Each block may be a string or an array carrying a 'text' or
+		 * 'content' key; non-text blocks (e.g. tool results) are skipped.
+		 *
+		 * @param array $blocks Content blocks array.
+		 * @return string Flattened text content.
+		 */
+		protected function normalize_content_blocks( array $blocks ) {
+			$parts = array();
+
+			foreach ( $blocks as $block ) {
+				if ( is_string( $block ) || is_numeric( $block ) ) {
+					$parts[] = (string) $block;
+					continue;
+				}
+				if ( ! is_array( $block ) ) {
+					continue;
+				}
+				if ( isset( $block['text'] ) && ( is_string( $block['text'] ) || is_numeric( $block['text'] ) ) ) {
+					$parts[] = (string) $block['text'];
+				} elseif ( isset( $block['content'] ) && ( is_string( $block['content'] ) || is_numeric( $block['content'] ) ) ) {
+					$parts[] = (string) $block['content'];
+				}
+			}
+
+			return implode( "\n\n", $parts );
 		}
 	}
 }
