@@ -449,6 +449,15 @@ class NV_oOS_Media_Studio_Output_Pipeline {
 			}
 		}
 
+		// Phase 4: derived-asset provenance (XMP after all pixel work).
+		$provenance = array(
+			'xmp_embedded' => false,
+			'c2pa_signed'  => false,
+		);
+		if ( class_exists( 'NV_oOS_Media_Studio_Provenance' ) ) {
+			$provenance = NV_oOS_Media_Studio_Provenance::record_derived( $derived_id, $user_id );
+		}
+
 		return array(
 			'attachment_id'    => $derived_id,
 			'url'              => esc_url_raw( wp_get_attachment_url( $derived_id ) ),
@@ -457,6 +466,8 @@ class NV_oOS_Media_Studio_Output_Pipeline {
 			'source_id'        => $attachment_id,
 			'upscaled'         => (bool) $resized['upscaled'],
 			'alt_text'         => $alt_text,
+			'xmp_embedded'     => ! empty( $provenance['xmp_embedded'] ),
+			'c2pa_signed'      => ! empty( $provenance['c2pa_signed'] ),
 			'white_background' => $white_check,
 		);
 	}

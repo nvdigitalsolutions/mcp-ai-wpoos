@@ -1,6 +1,6 @@
 # Media Studio → AI Fashion Production Suite — Enhancement Plan
 
-> **Status:** Phase 0 + Phase 1 (base), Phase 2 (Pro — identities, presets, batch/review), and Phase 3 (base — marketplace output pipeline) implemented 2026-10-01. Phase 4–5 pending. Execution details in `media-studio-fashion-photography-implementation.md`.
+> **Status:** Phase 0 + Phase 1 (base), Phase 2 (Pro — identities, presets, batch/review), Phase 3 (base — marketplace output pipeline), and Phase 4 (base — IPTC 2025.1 XMP provenance + best-effort C2PA) implemented 2026-10-01. Phase 5 pending. Execution details in `media-studio-fashion-photography-implementation.md`.
 > **Date:** 2026-10-01
 > **Scope:** `addons/media-studio` (primary), `addons/pro` (supporting), `addons/media-worker` (optional sidecar)
 > **Source research:** Claid.ai "7 best AI tools for fashion photography in 2026" (Sep 2026) + direct web research on all seven promoted platforms (Botika, Ayna, FASHN AI, MODA AI, On-Model by PiktID, Caimera, Claid), EU AI Act / C2PA provenance standards, Amazon marketplace image requirements, and VTON technical literature (IDM-VTON, CatVTON, TryOffDiff).

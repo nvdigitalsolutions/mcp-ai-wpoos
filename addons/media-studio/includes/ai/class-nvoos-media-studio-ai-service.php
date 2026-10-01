@@ -123,6 +123,8 @@ class NV_oOS_Media_Studio_AI_Service {
 			'per_image_ceiling' => self::DEFAULT_PER_IMAGE_CEILING,
 			'per_job_ceiling'   => self::DEFAULT_PER_JOB_CEILING,
 			'hard_cap'          => self::DEFAULT_HARD_CAP,
+			// Phase 4: optional C2PA signing service (best-effort, https only).
+			'c2pa_sign_url'     => '',
 		);
 
 		$saved = get_option( self::OPTION_KEY, array() );
@@ -141,6 +143,7 @@ class NV_oOS_Media_Studio_AI_Service {
 		$settings['per_image_ceiling'] = max( 0.0, (float) $settings['per_image_ceiling'] );
 		$settings['per_job_ceiling']   = max( 0.0, (float) $settings['per_job_ceiling'] );
 		$settings['hard_cap']          = max( 0.0, (float) $settings['hard_cap'] );
+		$settings['c2pa_sign_url']     = isset( $settings['c2pa_sign_url'] ) ? esc_url_raw( trim( (string) $settings['c2pa_sign_url'] ) ) : '';
 
 		return $settings;
 	}
@@ -196,6 +199,7 @@ class NV_oOS_Media_Studio_AI_Service {
 			'providers'  => $providers,
 			'transforms' => $transforms,
 			'profiles'   => class_exists( 'NV_oOS_Media_Studio_Output_Pipeline' ) ? NV_oOS_Media_Studio_Output_Pipeline::get_profiles() : array(),
+			'compliance' => class_exists( 'NV_oOS_Media_Studio_Provenance' ) ? NV_oOS_Media_Studio_Provenance::get_compliance_block() : array(),
 			'settings'   => array(
 				'ai_disclosure'     => $settings['ai_disclosure'],
 				'watermark_face'    => $settings['watermark_face'],
@@ -664,6 +668,16 @@ class NV_oOS_Media_Studio_AI_Service {
 			$watermarked = self::apply_disclosure_watermark( $output_id );
 		}
 
+		// Phase 4: IPTC 2025.1 XMP provenance + best-effort C2PA (after the
+		// watermark so the metadata describes the final pixels).
+		$provenance = array(
+			'xmp_embedded' => false,
+			'c2pa_signed'  => false,
+		);
+		if ( class_exists( 'NV_oOS_Media_Studio_Provenance' ) ) {
+			$provenance = NV_oOS_Media_Studio_Provenance::record( $output_id, $user_id );
+		}
+
 		// Post-check for packshots (Phase 3 validator).
 		$white_check = null;
 		if ( 'packshot' === $transform ) {
@@ -696,6 +710,8 @@ class NV_oOS_Media_Studio_AI_Service {
 			'model'            => isset( $result['model'] ) ? sanitize_text_field( $result['model'] ) : '',
 			'disclosure'       => $settings['ai_disclosure'],
 			'watermarked'      => $watermarked,
+			'xmp_embedded'     => ! empty( $provenance['xmp_embedded'] ),
+			'c2pa_signed'      => ! empty( $provenance['c2pa_signed'] ),
 			'estimate_usd'     => $review['estimate_usd'],
 			'per_image_usd'    => $review['per_image_usd'],
 			'white_background' => $white_check,
@@ -952,6 +968,9 @@ class NV_oOS_Media_Studio_AI_Service {
 				array( 'provider' => 'media-studio-export' ),
 				0
 			);
+			if ( class_exists( 'NV_oOS_Media_Studio_Provenance' ) ) {
+				NV_oOS_Media_Studio_Provenance::record( $attachment_id, isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0 );
+			}
 		}
 
 		return array(

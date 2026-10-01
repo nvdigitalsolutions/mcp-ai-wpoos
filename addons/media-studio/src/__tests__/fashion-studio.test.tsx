@@ -137,6 +137,8 @@ describe( 'FashionStudio', () => {
 				model: 'nano-banana',
 				disclosure: 'metadata',
 				watermarked: false,
+				xmp_embedded: true,
+				c2pa_signed: false,
 				estimate_usd: null,
 				per_image_usd: null,
 				white_background: null,
@@ -205,6 +207,8 @@ describe( 'FashionStudio', () => {
 			model: 'nano-banana',
 			disclosure: 'metadata',
 			watermarked: false,
+			xmp_embedded: true,
+			c2pa_signed: false,
 			estimate_usd: 0.05,
 			per_image_usd: 0.05,
 			white_background: { is_white: true, max_delta: 0, tolerance: 8 },
@@ -221,5 +225,6 @@ describe( 'FashionStudio', () => {
 
 		await waitFor( () => expect( screen.getByText( /White background ✓/i ) ).toBeInTheDocument() );
 		expect( screen.getByText( /Provider/i ) ).toBeInTheDocument();
+		expect( screen.getByText( /XMP provenance/i ) ).toBeInTheDocument();
 	} );
 } );
