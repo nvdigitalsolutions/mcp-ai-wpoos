@@ -1,0 +1,232 @@
+/**
+ * NV oOS Media Studio — Fashion Studio mode styles.
+ *
+ * @since 0.2.0
+ */
+
+.nvoos-ms-loading {
+	padding: 2rem;
+	text-align: center;
+	opacity: 0.8;
+}
+
+.nvoos-ms-fashion {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	padding: 1rem;
+}
+
+.nvoos-ms-fs-panel {
+	border: 1px solid rgba( 0, 0, 0, 0.1 );
+	border-radius: 8px;
+	padding: 1rem;
+	background: rgba( 255, 255, 255, 0.02 );
+}
+
+.nvoos-media-studio-app[data-theme="dark"] .nvoos-ms-fs-panel {
+	border-color: rgba( 255, 255, 255, 0.1 );
+}
+
+.nvoos-ms-fs-heading {
+	margin: 0 0 0.75rem;
+	font-size: 0.9rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	opacity: 0.75;
+}
+
+.nvoos-ms-fs-source {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.nvoos-ms-fs-source-info {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.nvoos-ms-fs-thumb {
+	width: 72px;
+	height: 72px;
+	object-fit: cover;
+	border-radius: 6px;
+	border: 1px solid rgba( 0, 0, 0, 0.15 );
+}
+
+.nvoos-ms-fs-source-title {
+	margin: 0;
+	font-weight: 600;
+}
+
+.nvoos-ms-fs-source-meta,
+.nvoos-ms-fs-hint {
+	margin: 0.25rem 0 0;
+	font-size: 0.85rem;
+	opacity: 0.75;
+}
+
+.nvoos-ms-fs-source-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.nvoos-ms-fs-inline input {
+	padding: 0.4rem 0.5rem;
+	border: 1px solid rgba( 0, 0, 0, 0.2 );
+	border-radius: 4px;
+}
+
+.nvoos-ms-fs-presets,
+.nvoos-ms-fs-transforms {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.nvoos-ms-fs-transform-btn {
+	padding: 0.45rem 0.8rem;
+	border: 1px solid rgba( 0, 0, 0, 0.2 );
+	border-radius: 20px;
+	background: transparent;
+	cursor: pointer;
+	font-size: 0.85rem;
+}
+
+.nvoos-ms-fs-transform-btn--active {
+	background: #2271b1;
+	border-color: #2271b1;
+	color: #fff;
+}
+
+.nvoos-ms-fs-transform-btn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.nvoos-ms-fs-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	margin-top: 0.75rem;
+}
+
+.nvoos-ms-fs-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	font-size: 0.85rem;
+}
+
+.nvoos-ms-fs-field textarea,
+.nvoos-ms-fs-field select,
+.nvoos-ms-fs-field input {
+	padding: 0.4rem 0.5rem;
+	border: 1px solid rgba( 0, 0, 0, 0.2 );
+	border-radius: 4px;
+	font: inherit;
+}
+
+.nvoos-ms-fs-field textarea {
+	min-width: 260px;
+	resize: vertical;
+}
+
+.nvoos-ms-fs-consent-note {
+	margin: 0.75rem 0 0;
+	font-size: 0.85rem;
+	padding: 0.5rem 0.75rem;
+	border-left: 3px solid #dba617;
+	background: rgba( 219, 166, 23, 0.08 );
+}
+
+.nvoos-ms-fs-confirm {
+	margin-top: 0.75rem;
+	padding: 0.75rem;
+	border: 1px solid #dba617;
+	border-radius: 6px;
+	background: rgba( 219, 166, 23, 0.08 );
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.nvoos-ms-fs-confirm p {
+	margin: 0;
+	flex-basis: 100%;
+}
+
+.nvoos-ms-fs-results {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 220px, 1fr ) );
+	gap: 1rem;
+}
+
+.nvoos-ms-fs-result {
+	border: 1px solid rgba( 0, 0, 0, 0.12 );
+	border-radius: 8px;
+	overflow: hidden;
+	background: rgba( 255, 255, 255, 0.03 );
+}
+
+.nvoos-ms-fs-result-img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+}
+
+.nvoos-ms-fs-chip {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 0.5rem;
+	padding: 0.5rem;
+	font-size: 0.75rem;
+}
+
+.nvoos-ms-fs-chip-item {
+	padding: 0.1rem 0.45rem;
+	border-radius: 10px;
+	background: rgba( 0, 0, 0, 0.06 );
+}
+
+.nvoos-ms-fs-result-actions {
+	display: flex;
+	gap: 0.5rem;
+	padding: 0.5rem;
+}
+
+.nvoos-ms-fs-result-actions .nvoos-ms-toolbar-btn {
+	font-size: 0.8rem;
+	text-decoration: none;
+}
+
+.nvoos-ms-status {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect( 0 0 0 0 );
+	white-space: nowrap;
+}
+
+.nvoos-ms-save-note {
+	font-size: 0.8rem;
+	margin-left: 0.5rem;
+}
+
+.nvoos-ms-save-note--saved {
+	color: #00a32a;
+}
+
+.nvoos-ms-save-note--error {
+	color: #d63638;
+}

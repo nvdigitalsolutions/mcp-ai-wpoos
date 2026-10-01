@@ -52,7 +52,7 @@ class NV_oOS_Media_Studio_Shortcode {
 			return '';
 		}
 
-		$allowed_modes = array( 'image-editor', 'media-player', 'audio-waveform' );
+		$allowed_modes = array( 'image-editor', 'media-player', 'audio-waveform', 'fashion-studio' );
 		$mode          = sanitize_key( $atts['mode'] );
 		if ( ! in_array( $mode, $allowed_modes, true ) ) {
 			$mode = 'image-editor';
