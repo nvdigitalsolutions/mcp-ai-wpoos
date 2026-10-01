@@ -103,6 +103,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$hosts[] = 'accounts.google.com';
 		$hosts[] = 'login.microsoftonline.com';
 		$hosts[] = 'www.upwork.com'; // Upwork OAuth2 authorization endpoint.
+		$hosts[] = 'www.linkedin.com'; // LinkedIn OAuth2 authorization endpoint.
 		return $hosts;
 	}
 

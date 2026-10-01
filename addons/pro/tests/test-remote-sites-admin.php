@@ -801,6 +801,64 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test LinkedIn OAuth state parameter generation and redirect target.
+	 *
+	 * Verifies OAuth 2.0 CSRF protection via state parameter and that
+	 * wp_safe_redirect targets the LinkedIn authorization endpoint (not the
+	 * wp-admin fallback — www.linkedin.com must be in allowed_redirect_hosts).
+	 */
+	public function test_linkedin_oauth_state_parameter_validation() {
+		// Create a test LinkedIn connection.
+		$connection_data = array(
+			'name'            => 'Test LinkedIn',
+			'url'             => 'https://api.linkedin.com/rest',
+			'connection_type' => 'linkedin',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_linkedin_client_id',
+			'client_secret'   => 'test_linkedin_client_secret',
+			'enabled'         => true,
+		);
+		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Invoke handle_linkedin_oauth_start via reflection.
+		$admin      = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$reflection = new ReflectionClass( $admin );
+		$method     = $reflection->getMethod( 'handle_linkedin_oauth_start' );
+		$method->setAccessible( true );
+
+		// Capture redirect to extract state parameter.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
+		$this->redirect_url = '';
+
+		try {
+			$method->invoke( $admin, $connection_id );
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
+
+		// Verify redirect URL contains LinkedIn OAuth authorization endpoint.
+		$this->assertStringContainsString( 'www.linkedin.com/oauth/v2/authorization', $redirect_url, 'Should redirect to LinkedIn OAuth endpoint' );
+
+		// Extract state parameter from redirect URL.
+		$parsed = wp_parse_url( $redirect_url );
+		parse_str( $parsed['query'], $params );
+		$this->assertArrayHasKey( 'state', $params, 'State parameter should be present' );
+
+		$state         = $params['state'];
+		$transient_key = 'wp_mcp_ai_linkedin_oauth_state_' . md5( $state );
+		$state_data    = get_transient( $transient_key );
+		$this->assertNotFalse( $state_data, 'State data transient should exist' );
+		$this->assertEquals( $connection_id, $state_data, 'State data should hold the connection ID' );
+
+		// Clean up.
+		delete_transient( $transient_key );
+	}
+
+	/**
 	 * Test Gmail OAuth callback with valid authorization code.
 	 *
 	 * Verifies successful token exchange and connection update.
