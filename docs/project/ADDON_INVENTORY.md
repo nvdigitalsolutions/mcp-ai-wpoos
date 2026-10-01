@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** October 1, 2026 (v1.1.91 — no addon version changes in-window; media-worker keeps v3.2.0 with the nodemailer 10.x bump; the content-graph-ai-platform build refreshed on 2.0.0; CG Pro gained two in-feature ports on 1.0.0)
+> **Last Updated:** October 2, 2026 (v1.1.92 — Media Studio **0.1.0 → 0.6.0** in-window with the fashion production suite (#6839/#6844; the inventory row was already updated to 0.6.0 in-window); no other addon version changes; all other addons unchanged)
 
 ---
 
