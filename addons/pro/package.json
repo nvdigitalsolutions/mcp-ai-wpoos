@@ -41,7 +41,7 @@
 		"mathjs": "^15.2.0",
 		"mjml": "^5.0.0-alpha.10",
 		"node-ensure": "^0.0.0",
-		"nodemailer": "^9.1.1",
+		"nodemailer": "^10.0.9",
 		"p-queue": "^8.0.1",
 		"pdf-lib": "^1.17.1",
 		"pdf-parse": "^1.1.4",
@@ -101,7 +101,7 @@
 		"svgo": ">=4.1.0",
 		"linkify-it": ">=5.0.2",
 		"mailparser": {
-			"nodemailer": ">=9.1.1"
+			"nodemailer": ">=10.0.9"
 		},
 		"deepmerge-ts": "^8.0.0",
 		"postcss-selector-parser": ">=7.1.3"
