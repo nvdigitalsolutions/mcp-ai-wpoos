@@ -1,6 +1,6 @@
 # Media Studio AI Fashion Production — Implementation Plan
 
-> **Status:** In progress — Phase 0 + Phase 1 (base plugin) implemented; Phase 2–5 (Pro) pending.
+> **Status:** In progress — Phase 0 + Phase 1 (base plugin) and Phase 2 (Pro) implemented; Phase 3–5 pending.
 > **Parent plan:** `media-studio-fashion-photography-enhancement-plan.md` (research, gaps G-01…G-10, architecture)
 > **Date:** 2026-10-01
 
@@ -104,37 +104,61 @@ change-set against the normal flow.
 
 ---
 
-## 4. Phase 2 — Identities, Presets, Batch & Review (Pro) ⏳ PENDING
+## 4. Phase 2 — Identities, Presets, Batch & Review (Pro) ✅ IMPLEMENTED
 
 ### 4.1 AI Model Identity library (Pro)
 
-- CPT `mcp_ai_fashion_model` (Pro): `title`, featured image, meta
-  `_fashion_model_gender|skin_tone|body_type|age_group|height|consent_status|prompt_embed|is_custom`.
-- Seeded starter library (prompt-only identities, diverse demographics) using the
-  versioned seeding pattern (`wp_mcp_ai_fashion_models_seeded`).
-- Consent gate: identity unusable for face-swap/try-on until
-  `_fashion_model_consent_status = granted`; audit-log usage per job.
-- `/ai/models` (base route) returns the library when Pro active.
+- CPT `mcp_ai_fashion_model` (`addons/pro/includes/fashion/class-wp-mcp-ai-fashion-model-cpt.php`):
+  `title` + featured image; meta `_fashion_model_gender|skin_tone|body_type|age_group|height|consent_status|prompt_embed|is_custom`
+  (all `register_post_meta` with sanitize callbacks + REST exposure).
+- Seeded starter library (6 prompt-only identities across demographics, consent `none`)
+  using the versioned seeding pattern (`wp_mcp_ai_fashion_models_seeded`).
+- Consent gate: `consent_filter()` hooks `nvoos_media_studio_identity_consent`;
+  face transforms reject non-`granted` identities. Audit-log usage per job via the base service.
+- `/ai/models` returns the library when Pro is active.
 
 ### 4.2 Fashion presets (Pro)
 
-- Extend `addons/pro/includes/class-wp-mcp-ai-media-template-presets.php`:
-  new category `fashion`, preset shape
-  `{ operation: 'fashion_generate', parameters: { transform, lighting, background, style_tokens, composition, aspect_ratio, fidelity_level } }`.
-- Ship PDP-white, PDP-lifestyle, editorial, lookbook, social-variant presets
-  (two-stage chain: generate → existing social resize presets).
+- `WP_MCP_AI_Media_Template_Presets::get_presets()` gains the `fashion` category
+  (PDP-white, PDP-lifestyle, editorial, lookbook, social-variant) with
+  `operation => 'fashion_generate'` and the plan's parameter shape
+  (`transform, lighting, background, style_tokens, composition, aspect_ratio, fidelity_level`).
+- `get_fashion_presets()` converts them to the SPA payload shape and merges into
+  the `/ai/presets` endpoint via the `nvoos_media_studio_presets` filter.
 
 ### 4.3 Batch jobs & review queue (Pro)
 
-- Job store: Action Scheduler group `nvoos_media_studio_batch` + indexed job mirror
-  (pending/processing/review/completed/failed, variant approve/reject).
-- Endpoints: `POST /ai/jobs`, `GET /ai/jobs`, `GET /ai/jobs/<id>`, `POST /ai/jobs/<id>/review`.
-- Review UX in the SPA review grid; approve → export pipeline; reject → re-roll.
-- D-3 tripwires evaluated per job (per-image estimate × count).
+- Job store: private CPT `mcp_ai_fashion_job` (`class-wp-mcp-ai-fashion-batch.php`)
+  with statuses `pending|processing|review|completed|failed` and per-variant state
+  (`pending|generated|approved|rejected|replaced|failed`) in `_fashion_job_variants`.
+- Action Scheduler dispatch (group `nvoos_media_studio_batch`) with an **inline
+  fallback** when AS is unavailable or enqueue fails (robustness on managed hosts
+  and in test environments without AS tables).
+- Endpoints (`class-wp-mcp-ai-fashion-rest.php`, registered into the shared
+  `nvoos-media-studio/v1` namespace): `POST /ai/jobs`, `GET /ai/jobs`,
+  `GET /ai/jobs/<id>`, `POST /ai/jobs/<id>/review`.
+- Review UX in the SPA (`src/components/FashionBatchPanel.tsx`): source-ID batch
+  creation with the same review-confirm + ack flows as single runs, auto-refreshing
+  job list, expandable variant grid with approve/reject/re-roll.
+- D-3 tripwires evaluated per job (per-image estimate × source count); hard cap
+  blocks, tripwires require confirm, consent transforms require ack.
+- Per-job cost surfaced from the base cost tracker via the
+  `nvoos_media_studio_cost_estimate` filter seam.
+- Approve runs the export pipeline: WooCommerce gallery attach
+  (`_product_image_gallery`, `edit_products`-capable) + media collection add.
 
 ### 4.4 Media collections (Pro)
 
-- Reuse `mcp_ai_media_collection` CPT to group per-SKU outputs and link to product ID.
+- `add_to_collection()` appends approved attachments to the existing
+  `mcp_ai_media_coll` CPT's `_mcp_ai_collection_items` meta; job-level
+  `collection_id`/`product_id` flow through create → approve.
+
+### 4.5 Loading
+
+- New Pro module `fashion_studio` in `WP_MCP_AI_Pro_Module_Registry` (depends on
+  `toolkit_media`, requires `NV_oOS_Media_Studio_AI_Service`) →
+  `addons/pro/includes/fashion/init.php` wires CPT init, AS hook, REST routes, and
+  the `nvoos_media_studio_{models,identity_consent,presets}` seams.
 
 ---
 

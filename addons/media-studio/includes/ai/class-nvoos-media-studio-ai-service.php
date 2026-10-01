@@ -206,6 +206,8 @@ class NV_oOS_Media_Studio_AI_Service {
 			'sidecar'    => self::is_sidecar_available(),
 			'wc_active'  => class_exists( 'WooCommerce' ),
 			'pro_active' => defined( 'WP_MCP_AI_PRO_PATH' ),
+			// Pro registers the batch surface (identities, jobs) into this namespace.
+			'batch'      => class_exists( 'WP_MCP_AI_Fashion_Batch' ),
 		);
 	}
 

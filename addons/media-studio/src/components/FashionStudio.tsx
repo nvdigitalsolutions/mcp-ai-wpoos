@@ -21,10 +21,12 @@ import {
 	aiApi,
 	type AiApiErrorShape,
 	type Capabilities,
+	type FashionModel,
 	type GenerateResult,
 	type Preset,
 	type ReviewInfo,
 } from '../hooks/useAiApi';
+import { FashionBatchPanel } from './FashionBatchPanel';
 import '../styles/fashion-studio.css';
 
 interface FashionStudioProps {
@@ -67,6 +69,8 @@ const BACKGROUND_STYLES = [
 	{ value: 'editorial', label: __( 'Editorial', 'nvoos-media-studio' ) },
 ];
 
+const IDENTITY_TRANSFORMS = [ 'model-swap', 'face-swap', 'try-on' ];
+
 const TRANSFORM_LABELS: Record< string, string > = {
 	'on-model': __( 'On-model', 'nvoos-media-studio' ),
 	'model-swap': __( 'Model swap', 'nvoos-media-studio' ),
@@ -98,6 +102,7 @@ function reviewReasonLabel( reason: string ): string {
 export function FashionStudio( { src }: FashionStudioProps ) {
 	const [ capabilities, setCapabilities ] = useState< Capabilities | null >( null );
 	const [ presets, setPresets ] = useState< Preset[] >( [] );
+	const [ models, setModels ] = useState< FashionModel[] >( [] );
 	const [ loadError, setLoadError ] = useState( '' );
 
 	const [ source, setSource ] = useState< SourceImage | null >( null );
@@ -108,6 +113,7 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 	const [ color, setColor ] = useState( '#c0392b' );
 	const [ backgroundStyle, setBackgroundStyle ] = useState( 'studio' );
 	const [ aspectRatio, setAspectRatio ] = useState( 'auto' );
+	const [ identityId, setIdentityId ] = useState( 0 );
 	const [ count, setCount ] = useState( 1 );
 	const [ seed, setSeed ] = useState( '' );
 
@@ -130,13 +136,14 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 
 	useEffect( () => {
 		let cancelled = false;
-		Promise.all( [ aiApi.capabilities(), aiApi.presets() ] )
-			.then( ( [ caps, presetList ] ) => {
+		Promise.all( [ aiApi.capabilities(), aiApi.presets(), aiApi.models() ] )
+			.then( ( [ caps, presetList, modelList ] ) => {
 				if ( cancelled ) {
 					return;
 				}
 				setCapabilities( caps );
 				setPresets( presetList );
+				setModels( modelList );
 			} )
 			.catch( ( error: Error ) => {
 				if ( ! cancelled ) {
@@ -227,11 +234,12 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 			color,
 			background_style: backgroundStyle,
 			aspect_ratio: aspectRatio,
+			identity_id: identityId > 0 ? identityId : undefined,
 			count,
 			seed: seed !== '' ? parseInt( seed, 10 ) : undefined,
 			...overrides,
 		} ),
-		[ source, transform, description, color, backgroundStyle, aspectRatio, count, seed ]
+		[ source, transform, description, color, backgroundStyle, aspectRatio, identityId, count, seed ]
 	);
 
 	const runGenerate = useCallback(
@@ -443,6 +451,36 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 						</label>
 					) }
 
+					{ IDENTITY_TRANSFORMS.includes( transform ) && models.length > 0 && (
+						<label className="nvoos-ms-fs-field">
+							<span>{ __( 'Model identity', 'nvoos-media-studio' ) }</span>
+							<select
+								value={ identityId }
+								onChange={ ( event ) => setIdentityId( parseInt( event.target.value, 10 ) ) }
+							>
+								<option value={ 0 }>{ __( '— None (prompt guidance only) —', 'nvoos-media-studio' ) }</option>
+								{ models.map( ( model ) => (
+									<option key={ model.id } value={ model.id }>
+										{ model.name }
+										{ model.consent_status !== 'granted'
+											? ` (${ __( 'consent required', 'nvoos-media-studio' ) })`
+											: '' }
+									</option>
+								) ) }
+							</select>
+							{ identityId > 0 && (
+								<span className="nvoos-ms-fs-hint">
+									{ models.find( ( model ) => model.id === identityId )?.consent_status !== 'granted'
+										? __(
+												'This identity has not granted consent — face transforms will be rejected until an administrator grants it.',
+												'nvoos-media-studio'
+										  )
+										: __( 'Consent granted — usable for face transforms.', 'nvoos-media-studio' ) }
+								</span>
+							) }
+						</label>
+					) }
+
 					<label className="nvoos-ms-fs-field">
 						<span>{ __( 'Aspect ratio', 'nvoos-media-studio' ) }</span>
 						<select value={ aspectRatio } onChange={ ( event ) => setAspectRatio( event.target.value ) }>
@@ -628,6 +666,17 @@ export function FashionStudio( { src }: FashionStudioProps ) {
 					</ul>
 				) }
 			</section>
+
+			{ capabilities?.batch && (
+				<FashionBatchPanel
+					transform={ transform }
+					description={ description }
+					color={ color }
+					backgroundStyle={ backgroundStyle }
+					aspectRatio={ aspectRatio }
+					identityId={ identityId }
+				/>
+			) }
 
 			{ /* Live status for assistive tech */ }
 			<p className="nvoos-ms-status" ref={ statusRef } role="status" aria-live="polite">

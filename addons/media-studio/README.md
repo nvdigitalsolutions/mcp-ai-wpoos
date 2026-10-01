@@ -66,6 +66,15 @@ buttons):
 | `/ai/generate` | POST | `upload_files` | run one transform on one attachment |
 | `/ai/import` | POST | `upload_files` | register an attachment as editor source |
 | `/ai/export` | POST | `upload_files` | persist a canvas/dataURL into the Media Library |
+| `/ai/jobs` (Pro) | POST / GET | `upload_files` / `edit_posts` | create / list batch jobs |
+| `/ai/jobs/<id>` (Pro) | GET | `edit_posts` | job detail + variants |
+| `/ai/jobs/<id>/review` (Pro) | POST | `upload_files` | approve / reject / re-roll a variant |
+
+The Pro addon registers the `/ai/jobs*` routes (plus the identity library via
+`/ai/models` and fashion presets via `/ai/presets`) — see
+`addons/pro/includes/fashion/`. Batch dispatch uses Action Scheduler
+(group `nvoos_media_studio_batch`) with an inline fallback when AS is
+unavailable; per-job cost gates follow the same review tripwires as single runs.
 
 Cookie nonce auth (`X-WP-Nonce`); the SPA never holds provider credentials —
 execution routes through the core tool registry (`edit_gemini_image` et al.)
