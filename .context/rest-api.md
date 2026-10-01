@@ -1,7 +1,8 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: October 1, 2026 (v1.1.91).
+> Last reviewed: October 2, 2026 (v1.1.92).
+> **New in v1.1.92 (no new core routes):** no `mcp-ai/v1/` routes added or re-shaped in-window. The Media Studio fashion surface (PRs #6839/#6844) is **addon-owned** — the `NV_oOS_Media_Studio_REST` `/ai/*` routes (capabilities, presets, models, generate, import, export) and the Pro fashion REST surface register under the addon's own namespaces, not the core REST namespace; the D-1 consent/ack + D-3 cost gates live in those handlers. #6846 (inline data URLs) and #6845 (content normalization / credential resolution) are client- and tool-level — no route changes.
 > **New in v1.1.91 (no new routes):** no routes added or re-shaped in-window. The toolkit MCP REST controller (Pro) injects the resolved MCP-mode `connection_id` into FlowHub tool arguments when the caller supplies none (#6836) — an argument-injection seam, not a route change. The MCP App OAuth discovery chain (#6835) is client-HTTP (RFC 8414/9728 metadata fetches), not a WP REST surface. #6831/#6832 are `allowed_redirect_hosts` filter registrations on the existing OAuth flows; #6827's `WP_MCP_AI_Db_Output_Guard` wraps the existing tool REST handlers (no route changes).
 >
 > **New in v1.1.90 (no new routes):** no routes added or re-shaped in-window — the strict MCP assistant-scope toggle (PR #6819) is JSON-RPC-level: with `mcp_require_assistant_scope` enabled, `tools/list` and `tools/call` fail closed with HTTP 403 (`wp_mcp_ai_assistant_scope_required`) when no assistant resolves (the JSON-RPC error envelope is still delivered; all other MCP errors keep the HTTP 200 envelope contract). Behavioral note (PR #6823): `/mcp-apps/oauth/*` `finalize_oauth_flow()` now also persists the `connection_ref` entry onto the assistant when the login started from the assistant editor — no new params or routes.

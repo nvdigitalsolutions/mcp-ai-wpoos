@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.91"
-  plugin-version-tested: "1.1.91"
-  last-updated: "2026-10-01"
+  plugin-version: "1.1.92"
+  plugin-version-tested: "1.1.92"
+  last-updated: "2026-10-02"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-1. **Read the template plans** — the latest executed plan (`v1.1.91-docs-catch-up.md`,
-   with `v1.1.90-docs-catch-up.md` as the previous pass) plus the
+1. **Read the template plans** — the latest executed plan (`v1.1.92-docs-catch-up.md`,
+   with `v1.1.91-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -721,18 +721,21 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.88-docs-catch-up.md`,
   `docs/project/plans/v1.1.89-docs-catch-up.md`,
   `docs/project/plans/v1.1.90-docs-catch-up.md`,
-  `docs/project/plans/v1.1.91-docs-catch-up.md` (latest executed — the v1.1.91
-  pass over PRs #6825, #6827–#6836: the FlowHub MCP-mode connection proxy
-  binding (#6836, pre-staged [Unreleased] CHANGELOG block converted), the
-  MCP App OAuth discovery chain per MCP spec (#6835), the OAuth redirect
-  allowlists (#6831/#6832), the orchestration CCT physical-table gate +
-  DB output guard (#6827), the security-events display + double-render
-  fixes (#6829/#6830), the RF-DETR presets/manifest repair (#6828), the
-  nodemailer 10.x + fast-uri advisory patches (#6833/#6834), the RF-DETR
-  CG Pro ecosystem port (#6825), five skill reconciliations (plugin ×3 +
-  elementor ×2 + dependabot-loop + test-suite patterns 54/55 +
-  ecosystem-port + updates), the stale 1.1.89 build-set removal (30
-  files), and an unchanged tool count)
+  `docs/project/plans/v1.1.91-docs-catch-up.md`,
+  `docs/project/plans/v1.1.92-docs-catch-up.md` (latest executed — the v1.1.92
+  pass over PRs #6839–#6847: the Media Studio fashion production suite
+  (#6839/#6844 — the squash-merged chain; addon 0.1.0 → 0.6.0, 8 `fashion_*`
+  Pro tools self-gated on the Media Studio AI service, the 10th Workflow
+  Builder preset category, +8 Pro tool count), the inline vision data URLs +
+  payload optimization (#6846, pre-staged [Unreleased] CHANGELOG block
+  converted), the provider content/credential fixes (#6845), the Pro coverage
+  manifest regeneration (#6847), four new OI-1 groups (38: `@since 1.2.0`
+  research trait; 39: `@since 1.1.91` workflow-presets one-behind; 40: Media
+  Studio 0.2.0–0.5.0 addon-tag wave; 41: missing tags on the fashion Pro
+  stack), five skill reconciliations (plugin ×3 + workflow-builder ×2 +
+  product-photography ×2 + test-suite patterns 56/57 + updates), the stale
+  1.1.90 build-set removal (30 files), and the OI-8 extension (8 fashion
+  slugs missing from tool-status.txt))
 
 Preceding windows:
   `docs/project/plans/v1.1.89-docs-catch-up.md` (the v1.1.89

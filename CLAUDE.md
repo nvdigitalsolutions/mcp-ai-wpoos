@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **October 1, 2026** · Version: **2.45**
+> Last reviewed: **October 2, 2026** · Version: **2.46**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,648 tools (~347 base + ~1,301 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,656 tools (~347 base + ~1,309 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,7 +50,7 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,648 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,656 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
@@ -188,7 +188,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~347 base tool classes) or `false` (~1,648 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~347 base tool classes) or `false` (~1,656 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -498,6 +498,10 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **Security events display + double-render fixes** (v1.1.91, PRs #6829/#6830) — the Security tab's recent-events table + CSV exporter read canonical `event_type`/`ip_address` keys (legacy fallbacks, event labels, display names); the orchestration dashboard's duplicate loader `new` removed (two callbacks on one page hook → double render).
 - **Dependency advisories** (v1.1.91, PRs #6833/#6834) — `nodemailer` `^10.0.9` in pro + media-worker (GHSA-g57g-f23g-4646; `copy-dependencies.js` copies `dist/` — nodemailer 10 has no top-level `lib/`; vendor bundle refreshed 8.0.5 → 10.0.9); `fast-uri` ≥4.1.5 across 4 trees (GHSA-jvvf-x445-j334; additive-only per npm-pack diff).
 - **Ecosystem port — RF-DETR cluster → CG Pro** (v1.1.91, PR #6825) — the Roboflow service, `WP_MCP_AI_Tool_Rfdetr_Detect`, count normalizer, e-commerce catalog search, dHash copy, and standalone init port byte-identical into `nvoos-content-graph-pro` (Wave F3 sub-cluster 1; `toolkit_vision_analysis` module gate; tracker row appended).
+- **Media Studio fashion production suite** (v1.1.92, PRs #6839/#6844 — addon 0.1.0 → 0.6.0) — `fashion-studio` AI mode with 8 Gemini-driven transforms (`NV_oOS_Media_Studio_AI_Service` via `edit_gemini_image`), D-1 consent + D-3 cost tripwires, disclosure watermark on face outputs; Pro fashion identities + batch queue (`mcp_ai_fashion_model`/`mcp_ai_fashion_job` CPTs, `fashion_studio` module); marketplace output pipeline; IPTC 2025.1 XMP + best-effort C2PA; fashion video transform; **8 new Pro tools** (`fashion_*`, self-gated via `is_available()` on the Media Studio AI service); Workflow Builder `fashion` preset category (10th). **Tool counts +8 Pro → ~347 base + ~1,309 Pro, ~1,656 total.**
+- **Inline vision data URLs + payload optimization** (v1.1.92, PR #6846) — `WP_MCP_AI_Image_Data_Url` inlines server-fetched base64 bytes for OpenAI/DeepSeek vision paths (no provider-side downloads; URL fallback on failure); 2048px vision-tile cap + opaque-PNG→JPEG q82 (originals never modified); new **Chat Client → Features → Inline Image Optimization** toggle (default on) + `wp_mcp_ai_image_inline_*` filters.
+- **Provider content + credential fixes** (v1.1.92, PR #6845) — `WP_MCP_AI_Tool_Research_Content_Normalization` trait flattens array `message.content` parts across the six research tools (no more `preg_match()` TypeErrors; `research_project` regexes repaired); `WP_MCP_AI_DeepSeek_Client` flattens array content blocks; `create_post` matches tags on word boundaries (single-word tags suggested only); vision tools resolve keys via the merged settings + `WP_MCP_AI_Credential_Resolver`.
+- **Pro tool coverage manifest** (v1.1.92, PR #6847) — regenerated with the 9 fashion-stack classes (fixes `test_tool_class_manifest_is_up_to_date`).
 - **RF-DETR vision cognition** (v1.1.90, PR #6824, Proposal 049) — Pro `WP_MCP_AI_Roboflow_Inference_Service` (one HTTP client, three trust tiers: key-less self-host loopback/private, dedicated, Serverless Cloud API with fail-closed raw-`Authorization` credentials; SSRF-guarded endpoint URLs; Apache-2.0 aliases by default, XL/2XL PML behind a consent toggle) + **2 new Pro tools** (`rfdetr_detect` boxes/masks/keypoints, `rfdetr_catalog_search` fine-tuned catalog models with a per-model + dHash 5-min cache). The `roboflow` provider joins `analyze_image_objects` (no new slug); `identify_image` rung 3c reports `rfdetr_detections` (class-guarded — Base installs skip cleanly). **Tool counts +2 Pro → ~347 base + ~1,301 Pro, ~1,648 total.**
 - **Strict MCP assistant-scope toggle** (v1.1.90, PR #6819) — opt-in `mcp_require_assistant_scope` (Security → Access & Identity, default OFF) fails `tools/list`/`tools/call` closed with HTTP 403 (`wp_mcp_ai_assistant_scope_required`) when no assistant resolves; the 403 special-case is scoped to this one error code (all other MCP errors keep the HTTP 200 JSON-RPC envelope). Closes #6769.
 - **Upwork MCP as first-class MCP Apps references** (v1.1.90, PR #6823) — Upwork-in-MCP-mode connections appear in the assistant "Add from Remote Sites" dropdown with the full OAuth login UI; `resolve_connection_ref()` resolves them at chat time via `build_upwork_mcp_app_config()` (official gateway + decrypted central `mcp_oauth`); the import validator no longer auto-disables them; `finalize_oauth_flow()` persists the reference entry post-login.

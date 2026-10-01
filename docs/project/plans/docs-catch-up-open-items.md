@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-30 (v1.1.90 pass — no new OI-1 groups; OI-2 label refreshed; OI-8 extended with the two `rfdetr_*` slugs)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.90-docs-catch-up.md`](v1.1.90-docs-catch-up.md).
+> **Last reviewed:** 2026-10-02 (v1.1.92 pass — four new OI-1 groups (38–41); OI-2 label refreshed; OI-8 extended with the eight `fashion_*` slugs)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.92-docs-catch-up.md`](v1.1.92-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -54,6 +54,10 @@
 | 35 | `@since 0.2.0` | **addon-level** — the Design System rename wave, 33 instances across the renamed/new `addons/nvoos-design-system/` files (PR #6810). The addon ships **0.3.0** (header + `NVOOS_DESIGN_SYSTEM_VERSION`) and 2 files (`class-nvoos-nds-email-paper-store.php`, `class-nvoos-nds-integration-woocommerce.php`) correctly say 0.3.0; proposal 047's status line also says "v0.2.0". The SaaS Controller precedent requires addon tags to match the shipped addon version | 1.1.89 | v1.1.89 plan |
 | 36 | `@since 1.9.5` | the MCP Apps OAuth discovery rewrite — 16 instances in `addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-oauth-client.php` + 2 in `tests/mcp-apps/test-mcp-app-oauth-discovery-chain.php` (PR #6835). MCP Apps module-version convention — same pattern as groups 25 (`1.9.1/1.9.2/1.9.4`) and 32 (`1.9.0/1.9.x/1.9.3`); the file's pre-existing 29 × `1.9.0` confirm the local convention | 1.1.91 | v1.1.91 plan |
 | 37 | `@since 1.1.90` | `includes/class-wp-mcp-ai-oauth-manager.php` — `allow_yahoo_oauth_redirect_host()`, 1 instance (PR #6832; tagged with the version current at write time, one version behind the 1.1.91 ship — the group-30 pattern) | 1.1.91 | v1.1.91 plan |
+| 38 | `@since 1.2.0` | `addons/pro/includes/tools/research/trait-wp-mcp-ai-tool-research-content-normalization.php` — 1 instance (PR #6845; the `1.2.0` anomaly — the folder's only other 1.2.0 tag is the equally anomalous `trait-wp-mcp-ai-tool-research-template-analysis.php`) | 1.1.92 | v1.1.92 plan |
+| 39 | `@since 1.1.91` | `addons/pro/includes/class-wp-mcp-ai-pro-workflow-presets.php` — `get_fashion_presets()`, 1 instance (PR #6844; tagged with the version current at write time, one version behind the 1.1.92 ship — the group-30/37 pattern) | 1.1.92 | v1.1.92 plan |
+| 40 | `@since 0.2.0`/`0.3.0`/`0.4.0`/`0.5.0` | **addon-level** — the Media Studio fashion-stack wave, 12 instances across 8 files (PRs #6839/#6844): `class-nvoos-media-studio-ai-service.php` (2× 0.2.0), `class-nvoos-media-studio-output-pipeline.php` (2× 0.4.0), `class-nvoos-media-studio-provenance.php` (2× 0.5.0), `class-nvoos-media-studio-xmp-writer.php` (2× 0.5.0), `FashionBatchPanel.tsx` (0.3.0), `FashionStudio.tsx` (0.2.0), `useAiApi.ts` (0.2.0), `fashion-studio.css` (0.2.0). The addon ships **0.6.0** (0.1.0 → 0.2.0 at the #6839 merge, → 0.6.0 at #6844) — the group-35 addon-version convention (the 0.2.0 tags were correct only at the intermediate merge) | 1.1.92 | v1.1.92 plan |
+| 41 | *missing* | the entire new fashion Pro stack — 13 new files with zero `@since` tags (PR #6844): `addons/pro/includes/fashion/` (4 files: batch, model-cpt, rest, init) + `addons/pro/includes/tools/fashion/` (9 files incl. the shared transform) — the group-14 missing-tag pattern | 1.1.92 | v1.1.92 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -63,7 +67,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.91):** ~347 base + ~1,301 Pro (~1,648 total), live-registry caveat retained on every count surface. (Delta-derived; **unchanged in-window** — no tool registrations.)
+- **Current figure (v1.1.92):** ~347 base + ~1,309 Pro (~1,656 total), live-registry caveat retained on every count surface. (Delta-derived; **+8 Pro in-window** — the fashion set, #6844.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
@@ -112,8 +116,8 @@
 ### OI-8 · `tool-status.txt` missing all 40 new window slugs + stale header totals (recorded 2026-09-27 by the v1.1.87 pass)
 
 - **Status:** 🟡 Open. Recorded, not fixed (doc-file gap left by three introducing PRs).
-- **What:** none of #6777's 30 parity tools, #6780's 5 base + 2 Pro image tools, or #6786's 3 outbound tools were added to `docs/reference/tools/tool-status.txt` (the v1.1.86 window's #6772 did add its Higgsfield slugs, so the omission is an inconsistency, not a convention). The file's own header is also stale — "Last Updated: April 30, 2026 · Total Tools: 912 (Base: 224, Pro: 688)" vs the current ~1,648/~347/~1,301. Note: `tool-reference.md` gained the `identify_image` entry in-window (#6780), but the parity suite + outbound tools are undocumented there too (header note added by the v1.1.87 pass). **Extended by the v1.1.89 pass:** the 12 classroom slugs were added in-window by #6809 — but the 8 `nds_*` email slugs (#6810) remain missing, and the header totals are still stale. **Extended by the v1.1.90 pass:** the two `rfdetr_*` slugs (#6824) are also missing (0 matches), and the header totals are still stale.
-- **Suggested owner:** docs workstream — add the 40 slugs + the `nds_*` 8 + the `rfdetr_*` 2 (and re-derive or drop the stale header totals).
+- **What:** none of #6777's 30 parity tools, #6780's 5 base + 2 Pro image tools, or #6786's 3 outbound tools were added to `docs/reference/tools/tool-status.txt` (the v1.1.86 window's #6772 did add its Higgsfield slugs, so the omission is an inconsistency, not a convention). The file's own header is also stale — "Last Updated: April 30, 2026 · Total Tools: 912 (Base: 224, Pro: 688)" vs the current ~1,656/~347/~1,309. Note: `tool-reference.md` gained the `identify_image` entry in-window (#6780), but the parity suite + outbound tools are undocumented there too (header note added by the v1.1.87 pass). **Extended by the v1.1.89 pass:** the 12 classroom slugs were added in-window by #6809 — but the 8 `nds_*` email slugs (#6810) remain missing, and the header totals are still stale. **Extended by the v1.1.90 pass:** the two `rfdetr_*` slugs (#6824) are also missing (0 matches), and the header totals are still stale. **Extended by the v1.1.92 pass:** the 8 `fashion_*` slugs (#6844) are also missing (0 matches), and the header totals are still stale.
+- **Suggested owner:** docs workstream — add the 40 slugs + the `nds_*` 8 + the `rfdetr_*` 2 + the `fashion_*` 8 (and re-derive or drop the stale header totals).
 - **First noted in:** v1.1.87 plan.
 
 ### OI-9 · CG AI `ToolTokenLimits` mirror missing the #6776 session-budget changes (recorded 2026-09-27 by the v1.1.87 pass)

@@ -1,9 +1,17 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.91)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.92)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## Media Studio Fashion Production, Inline Vision Data URLs & Provider-Content Fixes (v1.1.92)
+
+- **Media Studio fashion production suite (PRs #6839/#6844 — addon 0.1.0 → 0.6.0)** — the `fashion-studio` AI mode lands in Media Studio: eight Gemini-driven transforms (on-model, model-swap, face-swap, background, recolor, packshot, detail-repair, try-on) via `edit_gemini_image`, REST `/ai/*` routes with the D-1 consent/acknowledgment gate + D-3 cost tripwires ($0.25 per-image / $10 per-job review, $100 hard cap), a lazy-loaded SPA mode, and forced disclosure watermarks on face outputs. Pro Phase 2 adds the fashion identity library (`mcp_ai_fashion_model` CPT + consent gating), the batch/review queue (`mcp_ai_fashion_job` CPT, approve/reject/reroll, WooCommerce + media collection export), and the `fashion_studio` Pro module; Phase 3 ships the marketplace output pipeline (amazon/woocommerce/social/web profiles); Phase 4 ships IPTC 2025.1 XMP + best-effort C2PA provenance; Phase 5 ships a sidecar-backed fashion `video` transform and **8 new Pro tools** (`fashion_onmodel_generate`, `fashion_model_swap`, `fashion_background_generate`, `fashion_recolor`, `fashion_packshot`, `fashion_virtual_tryon`, `fashion_batch_job`, `fashion_identity_manage` — self-gated via `is_available()` on the Media Studio AI service) plus the Workflow Builder `fashion` preset category (10th).
+- **Inline vision data URLs + payload optimization (PR #6846)** — OpenAI/DeepSeek vision paths now inline server-fetched base64 bytes (local attachments read off disk, remote URLs downloaded by WordPress) instead of handing URLs to provider servers — fixes `Failed to download image from …` on hotlink-protected/CDN/staging media. Oversized JPEG/PNG downscaled to a 2048px vision-tile cap, opaque PNGs re-encoded JPEG q82, originals never modified. New **Chat Client → Features → Inline Image Optimization** toggle (default on) + `wp_mcp_ai_image_inline_*` filters. See SKILL.md Troubleshooting for the download-failure entry.
+- **Provider content + credential fixes (PR #6845)** — the six research tools no longer fatal on array AI content (shared `WP_MCP_AI_Tool_Research_Content_Normalization` trait; `research_project` JSON regexes repaired); `WP_MCP_AI_DeepSeek_Client` flattens array content blocks; `create_post` matches tags on word boundaries (single-word tags suggested only); the vision tools resolve keys via the merged settings + `WP_MCP_AI_Credential_Resolver` (see SKILL.md Troubleshooting).
+- **Coverage manifest (PR #6847)** — the Pro tool coverage manifest is regenerated with the 9 fashion-stack classes.
+- **Tool counts** — ~347 base + ~1,309 Pro (~1,656 total; +8 Pro).
 
 ## FlowHub MCP Mode, OAuth Discovery & JSON Envelope Protection (v1.1.91)
 

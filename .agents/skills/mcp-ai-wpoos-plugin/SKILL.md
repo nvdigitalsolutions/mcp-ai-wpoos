@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.91"
-  plugin-version-tested: "1.1.91"
-  last-updated: "2026-10-01"
+  plugin-version: "1.1.92"
+  plugin-version-tested: "1.1.92"
+  last-updated: "2026-10-02"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -743,7 +743,7 @@ Import external AI conversation exports into the JetEngine
 
 ## Release Notes (per version)
 
-Historical per-version release notes (v1.1.66 through v1.1.91) moved to
+Historical per-version release notes (v1.1.66 through v1.1.92) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
 
@@ -874,6 +874,16 @@ update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'web_search', 'creat
 
 **Cause:** `wp_safe_redirect()` rejects off-site consent-page hosts missing from the `allowed_redirect_hosts` allowlist and silently falls back to `admin_url()` — the connect click lands on the dashboard instead of the provider's consent page.
 **Fix (v1.1.91+):** LinkedIn (`www.linkedin.com`), QuickBooks (`appcenter.intuit.com`), Mailjet (`app.mailjet.com`), and Yahoo Sports (`api.login.yahoo.com`) are now allowlisted via per-provider filters deriving the host from the authorize-endpoint filter. When wiring a **new** OAuth flow, register its consent host the same way — the GitHub/Meta pattern in `includes/integrations/` is the template.
+
+### Vision requests fail with "Failed to download image from https://…" (OpenAI/DeepSeek)
+
+**Cause:** pre-1.1.92 clients handed the raw image URL to the provider's servers to download — that fetch fails on hotlink-protected, CDN-fronted, staged, or freshly uploaded media, and the whole request errors (`execution failed: …[image[0]: Failed to download image…`).
+**Fix (v1.1.92+):** the WordPress server fetches and inlines the image as a base64 data URL (`WP_MCP_AI_Image_Data_Url` — local attachments read straight off disk, remote URLs downloaded server-side), and the provider receives the bytes instead of a URL. Oversized JPEG/PNG images are downscaled to a 2048px vision-tile cap and opaque PNGs re-encoded as JPEG q82 before inlining (**Chat Client → Features → Inline Image Optimization**, default on — `wp_mcp_ai_image_inline_*` filters fine-tune it; originals are never modified). When inlining is impossible (oversized, non-image MIME, download failure) the original URL is kept as the fallback.
+
+### Vision tools report "OpenAI API key is not configured" despite a configured key
+
+**Cause (pre-1.1.92):** `generate_image_alt_text`/`generate_image_caption`/`analyze_comment_content` read the raw `wp_mcp_ai_settings` option, while the settings dashboard stores keys in the separate `wp_mcp_ai_credentials` option.
+**Fix (v1.1.92+):** those tools resolve keys through the merged settings view plus the `WP_MCP_AI_Credential_Resolver` fallback (PR #6845).
 
 ### "No AI providers configured" / tools return errors
 
