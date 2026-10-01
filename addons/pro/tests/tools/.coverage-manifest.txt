@@ -42,6 +42,7 @@ wp-mcp-ai-dicomweb-client
 wp-mcp-ai-document-gen-optimization
 wp-mcp-ai-ecommerce-helpers
 wp-mcp-ai-ecommerce-optimization
+wp-mcp-ai-fashion-transform-tool
 wp-mcp-ai-flowhub-alert-manager
 wp-mcp-ai-harmonization-compositor
 wp-mcp-ai-healthcare-audit
@@ -667,6 +668,14 @@ wp-mcp-ai-tool-extract-video-frames
 wp-mcp-ai-tool-extract-video-metadata
 wp-mcp-ai-tool-ezuite-erp
 wp-mcp-ai-tool-ezuite-erp-get-products
+wp-mcp-ai-tool-fashion-background-generate
+wp-mcp-ai-tool-fashion-batch-job
+wp-mcp-ai-tool-fashion-identity-manage
+wp-mcp-ai-tool-fashion-model-swap
+wp-mcp-ai-tool-fashion-onmodel-generate
+wp-mcp-ai-tool-fashion-packshot
+wp-mcp-ai-tool-fashion-recolor
+wp-mcp-ai-tool-fashion-virtual-tryon
 wp-mcp-ai-tool-financial-health-score
 wp-mcp-ai-tool-financial-logic-visualizer
 wp-mcp-ai-tool-financial-news-aggregator
