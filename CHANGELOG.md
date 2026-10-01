@@ -1,11 +1,45 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.1.92] - 2026-10-02
 
-### Fixed — Provider-Side Image Download Failures (Inline Data URLs + Payload Optimization)
+### Added — Media Studio AI Fashion Production Suite (PRs #6839, #6844)
+
+- **`fashion-studio` AI mode lands in Media Studio (addon 0.1.0 → 0.6.0).** The new `NV_oOS_Media_Studio_AI_Service` drives eight industry transforms (on-model, model-swap, face-swap, background, recolor, packshot, detail-repair, try-on) through Gemini via `edit_gemini_image`; REST `/ai/*` routes (capabilities, presets, models, generate, import, export) carry the D-1 consent/acknowledgment gate and D-3 cost tripwires ($0.25 per-image / $10 per-job review, $100 hard cap, unknown pricing → review, consent transforms always review); a lazy-loaded `fashion-studio` SPA mode (media-library picker, presets, review-confirm dialogs, compliance chips) joins the existing shortcode. Face outputs carry a forced disclosure watermark and the disclosure policy floor stays at `metadata` (never downgradable).
+- **Phase 2 (Pro) — fashion identity library + batch/review queue.** `mcp_ai_fashion_model` CPT with consent gating; `mcp_ai_fashion_job` CPT batch queue (D-3 gates, approve/reject/reroll, WooCommerce + media collection export); fashion REST surface; the `fashion_studio` Pro module (deps: `toolkit_media`; self-gates on the Media Studio AI service); fashion presets.
+- **Phase 3 (base) — marketplace output pipeline.** Amazon/WooCommerce/social/web output profiles, GD upscaling ≤2×, format conversion, alt text, white-background validation.
+- **Phase 4 (base) — provenance.** IPTC 2025.1 XMP written into JPEG/PNG/WebP containers, provenance service, best-effort C2PA.
+- **Phase 5 — fashion video + assistant tools.** Sidecar-backed fashion `video` transform (SPA + REST + D-3 review gate); **8 new Pro tools** — `fashion_onmodel_generate`, `fashion_model_swap`, `fashion_background_generate`, `fashion_recolor`, `fashion_packshot`, `fashion_virtual_tryon`, `fashion_batch_job`, `fashion_identity_manage` — registered in the main `$pro_tools` map (self-gate via `is_available()` on the Media Studio AI service); Workflow Builder gains the **`fashion` preset category** (10th category, "AI Fashion Production"); docs completion (`media-studio-fashion-photography-*` plans, fashion READMEs).
+
+### Fixed — Provider-Side Image Download Failures (Inline Data URLs + Payload Optimization) (PR #6846)
 
 - **`submit_document_prompt` (and every vision chat path) no longer hands remote image URLs to OpenAI/DeepSeek to download.** The new `WP_MCP_AI_Image_Data_Url` helper converts image segments into base64 data URLs using the WordPress server as the fetcher — local attachment files are read straight off disk, remote URLs are downloaded server-side — so provider fetches that fail on hotlink protection, CDN rules, staging auth, or freshly uploaded media no longer break the request. Both OpenAI payload paths (Chat Completions `convert_image_files_to_image_url` and Responses `populate_responses_image_segment`) and the DeepSeek `convert_image_segments_for_payload` prefer the inline bytes and fall back to the original URL when inlining is impossible (oversized, non-image MIME, download failure). Gemini/Anthropic/Ollama already fetched server-side. Request logs truncate data URLs to 80 chars.
 - **Inline payload optimization (admin toggle + filters)** — oversized JPEG/PNG images are downscaled to a 2048px vision-tile dimension cap and opaque PNGs are re-encoded as JPEG (alpha PNGs keep their PNG encoding; GIFs keep animation; WebP untouched). This keeps provider requests lean and cuts vision token costs, which scale with resolution. A cheap header-only probe (PNG IHDR / JPEG SOF) catches well-compressed-but-huge images; the original upload is never modified and the original bytes are used whenever the re-encode is not smaller. New **Chat Client → Features → Inline Image Optimization** toggle (default on); filters: `wp_mcp_ai_image_inline_optimize` (bool), `wp_mcp_ai_image_inline_optimize_min_bytes` (1 MB), `wp_mcp_ai_image_inline_max_dimension` (2048), `wp_mcp_ai_image_inline_jpeg_quality` (82) — plus the existing `wp_mcp_ai_image_inline_max_bytes` (10 MB) and `wp_mcp_ai_image_inline_mime_types`.
+
+### Fixed — AI Provider Content & Credential Edge Cases (PR #6845)
+
+- **Research tools no longer fatal on array AI content.** Gemini (and some OpenAI-compatible gateways, incl. DeepSeek endpoints) return `message.content` as an array of parts — all six research tools fed it straight into `preg_match()`/`json_decode()` ("Argument #2 ($subject) must be of type string, array given"). The new shared `WP_MCP_AI_Tool_Research_Content_Normalization` trait flattens content-part arrays at every choke point (provider response, parse entry, and array content inside the JSON body) and repairs `research_project`'s JSON-extraction regexes, which failed to compile (unbalanced parens) and made the tool return a parse error for every input.
+- **DeepSeek array content blocks flattened.** `WP_MCP_AI_DeepSeek_Client::normalize_response()` now flattens array `message.content` blocks from gateways/proxies to a string so every DeepSeek consumer (chat, transcripts, tools) works; `reasoning_content` and `tool_calls` are untouched.
+- **`create_post` stops auto-applying noisy tags.** Taxonomy auto-apply scored term names with substring matching, so single-word tags matched inside longer words (`thor → author`, `car → Caribbean`, `Red → hundred`). Term names now match on word boundaries, and single-word tags are never auto-applied (still returned as suggestions).
+- **Vision tools see the configured OpenAI key.** `generate_image_alt_text` (+ `_validated`), `generate_image_caption`, and `analyze_comment_content` read only the raw `wp_mcp_ai_settings` option while the settings dashboard stores API keys in the separate `wp_mcp_ai_credentials` option — they returned "OpenAI API key is not configured." even with the provider page configured. They now use the merged settings view plus the `WP_MCP_AI_Credential_Resolver` fallback.
+
+### Fixed — Pro Tool Coverage Manifest (PR #6847)
+
+- `bin/generate-tool-coverage-manifest.sh` regenerates the Pro coverage manifest with the 9 fashion-stack tool classes (#6839/#6844) — the `test_tool_class_manifest_is_up_to_date` CI failure is closed.
+
+### Tests
+
+- **PR #6844** — `Test_Media_Studio|Test_Fashion|Test_Pro_Tools_Loading|Test_Pro_Workflow_Presets` **122/122** green on WP 6.9 (Docker); SPA typecheck + vitest + lint:a11y green.
+- **PR #6845** — WP 6.9: 82/82 (vision, create-post, research tools, DeepSeek suites); WP 7.1: 56/56 research+DeepSeek, 22/22 create-post, 4/4 vision; phpcs 0 errors; PHPCompatibilityWP 7.4–8.3 clean.
+- **PR #6846** — new `tests/test-image-data-url.php` (local attachment read, server-side URL download, HTTP-error/oversize/non-image rejection, opaque-PNG→JPEG, dimension downscale, alpha-PNG preservation, data-URL passthrough, max-bytes filter, optimize-filter off, admin-toggle off) + OpenAI/DeepSeek image tests asserting inline `data:image/...;base64` bytes; 101/101 pass on WP 6.9 (349 assertions).
+- **PR #6839** — PHPUnit `Test_Media_Studio` green on WP 6.9 + WP 7.1 (Docker); phpcs clean.
+
+### Docs
+
+- New `docs/project/plans/media-studio-fashion-photography-enhancement-plan.md` + `media-studio-fashion-photography-implementation.md` (in-window, #6839); `addons/media-studio/README.md`, `addons/pro/includes/fashion/README.md`, `addons/pro/includes/tools/fashion/README.md`, and the research READMEs updated in-window.
+
+### Versioning
+
+Bumped to **1.1.92** across all version-bearing files. Pro addon: 1.1.92. **Media Studio: 0.1.0 → 0.6.0** (own track — the fashion production suite). Media Worker: **v3.2.0** (unchanged). SaaS Controller: **0.3.0** (unchanged). Design System addon: **0.3.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — no port waves in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.5.1** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.09.22** (unchanged — zero `includes/data/` diff in-window). Tool count: **~347 base + ~1,309 Pro (~1,656 total — +8 Pro)** — the fashion set (registered in the main `$pro_tools` map, self-gated via `is_available()` on the Media Studio AI service; live registry authoritative). Provider count: **15** chat providers (unchanged). Addon count: **28** (unchanged). Bundled skills: **75** base + **41** Pro (unchanged). Coding-time agent skills: **61** (unchanged). Stale build ZIPs removed: the 1.1.90 build set (30 files: 9 in `build/` incl. 3 `.sha256`, 2 in `build/optional-components/`, 19 in `build/toolkit-addons/`).
 
 ## [1.1.91] - 2026-10-01
 

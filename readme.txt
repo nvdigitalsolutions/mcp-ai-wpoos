@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.91
+Stable tag: 1.1.92
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.92 - October 2, 2026 =
+
+Media Studio AI fashion production release. Added: the Media Studio addon gains a fashion-studio AI mode (0.1.0 → 0.6.0) — eight AI transforms (on-model, model-swap, face-swap, background, recolor, packshot, detail-repair, try-on) driven by Gemini via edit_gemini_image behind the D-1 consent gate and D-3 cost tripwires, a lazy-loaded fashion-studio SPA mode, forced disclosure watermarks on face outputs, and a metadata disclosure floor (#6839); Pro fashion identities + batch/review queue (mcp_ai_fashion_model + mcp_ai_fashion_job CPTs, approve/reject/reroll, WooCommerce + media collection export) and the fashion_studio Pro module (#6844); a marketplace output pipeline (amazon/woocommerce/social/web profiles); IPTC 2025.1 XMP + best-effort C2PA provenance; a sidecar-backed fashion video transform; eight new Pro tools (fashion_onmodel_generate, fashion_model_swap, fashion_background_generate, fashion_recolor, fashion_packshot, fashion_virtual_tryon, fashion_batch_job, fashion_identity_manage — self-gated on the Media Studio AI service); and the Workflow Builder fashion preset category (#6844). Fixed: provider-side image download failures — submit_document_prompt and every vision chat path now inline base64 data URLs fetched by the WordPress server instead of handing remote URLs to OpenAI/DeepSeek, with a new Inline Image Optimization toggle (Chat Client → Features, default on) that downscales oversized images to 2048px and re-encodes opaque PNGs as JPEG (#6846); research tools no longer fatal on array AI content from Gemini/OpenAI-compatible gateways (shared content-normalization trait) and research_project's JSON extraction is repaired; DeepSeek flattens array content blocks; create_post stops auto-applying noisy substring tags (word-boundary matching, single-word tags suggested only); vision tools resolve API keys through the merged settings + credential resolver (#6845); Pro tool coverage manifest regenerated (#6847). Tool count: ~347 base + ~1,309 Pro (~1,656 total; +8 Pro; live registry authoritative). Model catalog: v2026.09.22 (unchanged). Stale build ZIPs removed: the 1.1.90 build set (30 files).
 
 = 1.1.91 - October 1, 2026 =
 
