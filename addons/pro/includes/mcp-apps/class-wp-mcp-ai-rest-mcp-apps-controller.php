@@ -658,13 +658,25 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		$metadata     = $oauth_client->discover_metadata();
 
 		if ( is_wp_error( $metadata ) ) {
-			return rest_ensure_response(
-				array(
-					'success'        => true,
-					'supports_oauth' => false,
-					'message'        => $metadata->get_error_message(),
-				)
+			$error_data = $metadata->get_error_data();
+			$response   = array(
+				'success'        => true,
+				'supports_oauth' => false,
+				'message'        => $metadata->get_error_message(),
 			);
+
+			// Surface per-attempt diagnostics (URL → status/transport error)
+			// and the actionable hint so the UI can explain the failure.
+			if ( is_array( $error_data ) ) {
+				if ( ! empty( $error_data['attempts'] ) ) {
+					$response['attempts'] = $error_data['attempts'];
+				}
+				if ( ! empty( $error_data['hint'] ) ) {
+					$response['hint'] = $error_data['hint'];
+				}
+			}
+
+			return rest_ensure_response( $response );
 		}
 
 		$scopes           = isset( $metadata['scopes_supported'] ) ? $metadata['scopes_supported'] : array();
@@ -675,6 +687,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 				'success'                => true,
 				'supports_oauth'         => true,
 				'has_registration'       => $has_registration,
+				'discovery_method'       => $oauth_client->get_metadata_source(),
 				'scopes_supported'       => $scopes,
 				'authorization_endpoint' => isset( $metadata['authorization_endpoint'] ) ? $metadata['authorization_endpoint'] : '',
 				'metadata'               => array(
@@ -714,6 +727,24 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		// Check if OAuth is supported.
 		$discovery = $oauth_client->discover_metadata();
 		if ( is_wp_error( $discovery ) ) {
+			$error_data = $discovery->get_error_data();
+			$data       = array(
+				'status'     => 400,
+				'error_code' => $discovery->get_error_code(),
+				'message'    => $discovery->get_error_message(),
+			);
+
+			// Pass the per-attempt diagnostics and hint through so the metabox
+			// can show which discovery step failed and why.
+			if ( is_array( $error_data ) ) {
+				if ( ! empty( $error_data['attempts'] ) ) {
+					$data['attempts'] = $error_data['attempts'];
+				}
+				if ( ! empty( $error_data['hint'] ) ) {
+					$data['hint'] = $error_data['hint'];
+				}
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_mcp_app_oauth_not_supported',
 				sprintf(
@@ -722,11 +753,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 					$server_url,
 					$discovery->get_error_message()
 				),
-				array(
-					'status'     => 400,
-					'error_code' => $discovery->get_error_code(),
-					'message'    => $discovery->get_error_message(),
-				)
+				$data
 			);
 		}
 

@@ -1487,13 +1487,31 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 											btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
 										} else {
 											// Surface the REST error message (e.g. the OAuth
-											// discovery failure) so the admin can act on it
-											// instead of guessing at the generic hint.
+											// discovery failure) plus the per-attempt
+											// diagnostics and hint, so the admin can tell
+											// "server has no OAuth" from "site could not
+											// reach it" and knows the API-key alternative.
 											var message = 'OAuth initiation failed. Check the server URL and try again.';
 											try {
 												var errData = JSON.parse( xhr.responseText );
 												if ( errData && errData.message ) {
 													message = errData.message;
+												}
+												if ( errData && errData.data ) {
+													if ( errData.data.hint ) {
+														message += '\n\n' + errData.data.hint;
+													}
+													var attempts = errData.data.attempts || [];
+													if ( attempts.length ) {
+														message += '\n\nDiscovery attempts:';
+														attempts.slice( 0, 4 ).forEach( function( attempt ) {
+															var outcome = attempt.status ? 'HTTP ' + attempt.status : ( attempt.error || attempt.result || 'failed' );
+															message += '\n• ' + attempt.url + ' — ' + outcome;
+														} );
+														if ( attempts.length > 4 ) {
+															message += '\n… and ' + ( attempts.length - 4 ) + ' more';
+														}
+													}
 												}
 											} catch ( e ) {
 												// Non-JSON error body — keep the generic message.
