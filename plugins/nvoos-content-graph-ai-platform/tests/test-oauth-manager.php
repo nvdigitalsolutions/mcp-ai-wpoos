@@ -126,6 +126,13 @@ class Test_OAuth_Manager extends \WP_UnitTestCase {
 		$this->assertSame( 10, has_action( 'admin_init', array( $this->manager, 'handle_oauth_callback' ) ) );
 	}
 
+	public function test_allow_yahoo_oauth_redirect_host(): void {
+		$hosts = $this->manager->allow_yahoo_oauth_redirect_host( array( 'example.com' ) );
+
+		$this->assertContains( 'api.login.yahoo.com', $hosts );
+		$this->assertContains( 'example.com', $hosts );
+	}
+
 	public function test_handle_oauth_callback_no_param_returns(): void {
 		unset( $_GET['wp_mcp_ai_oauth'] );
 
