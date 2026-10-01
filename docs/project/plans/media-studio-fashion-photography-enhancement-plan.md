@@ -1,6 +1,6 @@
 # Media Studio → AI Fashion Production Suite — Enhancement Plan
 
-> **Status:** Phase 0 + Phase 1 (base), Phase 2 (Pro — identities, presets, batch/review), Phase 3 (base — marketplace output pipeline), and Phase 4 (base — IPTC 2025.1 XMP provenance + best-effort C2PA) implemented 2026-10-01. Phase 5 pending. Execution details in `media-studio-fashion-photography-implementation.md`.
+> **Status:** ✅ Complete — Phase 0 + Phase 1 (base), Phase 2 (Pro — identities, presets, batch/review), Phase 3 (base — marketplace output pipeline), Phase 4 (base — IPTC 2025.1 XMP provenance + best-effort C2PA), and Phase 5 (base video transform + Pro `fashion_*` assistant tools + Workflow Builder preset) implemented 2026-10-01 and validated on WP 6.9 + WP 7.1. Execution details in `media-studio-fashion-photography-implementation.md`.
 > **Date:** 2026-10-01
 > **Scope:** `addons/media-studio` (primary), `addons/pro` (supporting), `addons/media-worker` (optional sidecar)
 > **Source research:** Claid.ai "7 best AI tools for fashion photography in 2026" (Sep 2026) + direct web research on all seven promoted platforms (Botika, Ayna, FASHN AI, MODA AI, On-Model by PiktID, Caimera, Claid), EU AI Act / C2PA provenance standards, Amazon marketplace image requirements, and VTON technical literature (IDM-VTON, CatVTON, TryOffDiff).
@@ -290,7 +290,7 @@ A shared `NV_oOS_Media_Studio_Output_Pipeline` (base) consumed by SPA export and
 
 ### 10.2 `fashion_*` tools for assistants (G-10)
 
-Registered in Pro (`addons/pro/includes/tools/` new subfolder `fashion/`, wired via the pro tools registration pattern + a `fashion-toolkit-init.php` gate):
+Registered in Pro (`addons/pro/includes/tools/fashion/`, wired via the main `$pro_tools` map in `wp_mcp_ai_pro_register_tools()` — each tool self-gates with a static `is_available()` on the Media Studio addon, so the registration loop marks them unavailable when the addon is inactive):
 
 | Tool slug | Wraps | Notes |
 |---|---|---|

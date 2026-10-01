@@ -129,6 +129,10 @@ class NV_oOS_Media_Studio_REST {
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
 					),
+					'duration'         => array(
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+					),
 					'confirmed'        => array(
 						'type'    => 'boolean',
 						'default' => false,
@@ -357,6 +361,7 @@ class NV_oOS_Media_Studio_REST {
 			'identity_id'      => $request->get_param( 'identity_id' ),
 			'count'            => $request->get_param( 'count' ),
 			'seed'             => $request->get_param( 'seed' ),
+			'duration'         => $request->get_param( 'duration' ),
 			'confirmed'        => (bool) $request->get_param( 'confirmed' ),
 		);
 
