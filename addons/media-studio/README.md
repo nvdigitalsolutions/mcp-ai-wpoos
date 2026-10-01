@@ -13,7 +13,7 @@ toolkits with three production-ready modes.
 | `media-player` | `mode="media-player"` | ✅ shipped | react-player (YouTube, Vimeo, MP4, MP3, HLS…), playback speed, fullscreen, keyboard shortcuts |
 | `audio-waveform` | `mode="audio-waveform"` | ✅ shipped | wavesurfer.js 7 waveform + zoom + playback speed |
 | `drawing` | `mode="drawing"` | ✅ shipped (v0.3.0) | Integrated into image-editor mode — Konva canvas drawing tools with brush, eraser, shapes, text, undo/redo |
-| `fashion-studio` | `mode="fashion-studio"` | ✅ shipped (v0.4.0) | AI fashion production suite: on-model, model-swap, face-swap, background, recolor, packshot, detail-repair, try-on transforms with cost-review gates, consent/acknowledgment flows, disclosure watermark on face outputs, Pro identities + batch/review queue, and the marketplace output pipeline (Amazon/WooCommerce/social/web profiles) with compliance chips (see `docs/project/plans/media-studio-fashion-photography-enhancement-plan.md`) |
+| `fashion-studio` | `mode="fashion-studio"` | ✅ shipped (v0.5.0) | AI fashion production suite: on-model, model-swap, face-swap, background, recolor, packshot, detail-repair, try-on transforms with cost-review gates, consent/acknowledgment flows, disclosure watermark on face outputs, Pro identities + batch/review queue, the marketplace output pipeline (Amazon/WooCommerce/social/web profiles), and IPTC 2025.1 XMP provenance + best-effort C2PA signing with compliance chips (see `docs/project/plans/media-studio-fashion-photography-enhancement-plan.md`) |
 
 Unknown values fall back to `image-editor`.
 
@@ -82,6 +82,17 @@ execution routes through the core tool registry (`edit_gemini_image` et al.)
 or the `nvoos_media_studio_execute_tool` filter (sidecar seam). AI outputs carry
 `_nvoos_ai_*` provenance meta; face outputs get a forced GD disclosure
 watermark and a one-time acknowledgment gate (EU AI Act Art. 50 posture).
+
+**Phase 4 provenance:** every AI output and pipeline-derived asset embeds the
+IPTC Photo Metadata Standard 2025.1 AI fields
+(`DigitalSourceType`, `AISystemUsed`, `AISystemVersionUsed`,
+`AIPromptWriterName`) as XMP into JPEG (APP1), PNG (iTXt), and WebP (RIFF
+`XMP ` chunk). `AIPromptInformation` is deliberately omitted — prompts are
+stored only as hashes. Best-effort C2PA signing is available by setting
+`c2pa_sign_url` (https) in `nvoos_media_studio_settings`; without a signing
+service the assets carry the IPTC fields + the D-1 visible-disclosure path.
+Note that XMP injection invalidates any existing C2PA signature, so signing
+runs after the XMP write.
 
 ## Version bump rule
 

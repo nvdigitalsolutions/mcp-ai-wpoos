@@ -27,6 +27,12 @@ class Test_Media_Studio_AI_Service extends WP_UnitTestCase {
 		if ( ! class_exists( self::SERVICE ) ) {
 			require_once dirname( __DIR__ ) . '/includes/ai/class-nvoos-media-studio-ai-service.php';
 		}
+		if ( ! class_exists( 'NV_oOS_Media_Studio_XMP_Writer' ) ) {
+			require_once dirname( __DIR__ ) . '/includes/ai/class-nvoos-media-studio-xmp-writer.php';
+		}
+		if ( ! class_exists( 'NV_oOS_Media_Studio_Provenance' ) ) {
+			require_once dirname( __DIR__ ) . '/includes/ai/class-nvoos-media-studio-provenance.php';
+		}
 		delete_option( NV_oOS_Media_Studio_AI_Service::OPTION_KEY );
 		remove_all_filters( 'nvoos_media_studio_execute_tool' );
 		remove_all_filters( 'nvoos_media_studio_cost_estimate' );
@@ -314,6 +320,10 @@ class Test_Media_Studio_AI_Service extends WP_UnitTestCase {
 		$this->assertSame( '1', get_post_meta( $output_id, NV_oOS_Media_Studio_AI_Service::META_GENERATED, true ) );
 		$this->assertSame( 'background', get_post_meta( $output_id, NV_oOS_Media_Studio_AI_Service::META_TRANSFORM, true ) );
 		$this->assertNotEmpty( get_post_meta( $output_id, NV_oOS_Media_Studio_AI_Service::META_PROMPT_HASH, true ) );
+
+		// Phase 4: IPTC 2025.1 XMP provenance is embedded in the output file.
+		$this->assertTrue( $result['xmp_embedded'] );
+		$this->assertFalse( $result['c2pa_signed'] );
 
 		remove_all_filters( 'nvoos_media_studio_execute_tool' );
 	}

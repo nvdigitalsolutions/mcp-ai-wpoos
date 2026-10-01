@@ -1,6 +1,6 @@
 # Media Studio AI Fashion Production — Implementation Plan
 
-> **Status:** In progress — Phase 0 + Phase 1 (base), Phase 2 (Pro), and Phase 3 (base output pipeline) implemented; Phase 4–5 pending.
+> **Status:** In progress — Phase 0 + 1 (base), Phase 2 (Pro), Phase 3 (base pipeline), and Phase 4 (base provenance/compliance) implemented; Phase 5 pending.
 > **Parent plan:** `media-studio-fashion-photography-enhancement-plan.md` (research, gaps G-01…G-10, architecture)
 > **Date:** 2026-10-01
 
@@ -180,18 +180,33 @@ Shared `NV_oOS_Media_Studio_Output_Pipeline` (`addons/media-studio/includes/ai/c
 
 ---
 
-## 6. Phase 4 — Provenance, Disclosure & Compliance (base) ⏳ PARTIALLY IMPLEMENTED
+## 6. Phase 4 — Provenance, Disclosure & Compliance (base) ✅ IMPLEMENTED
 
-- [x] Attachment meta on every AI output: `_nvoos_ai_generated`, `_nvoos_ai_provider`,
-      `_nvoos_ai_model`, `_nvoos_ai_prompt_hash`, `_nvoos_ai_transform`, `_nvoos_ai_identity_id`.
-- [x] D-1 policy: disclosure setting (metadata floor), forced GD watermark on face
-      outputs, per-user one-time ack for face transforms.
-- [x] Consent gating for face-swap/try-on identities (filter seam
-      `nvoos_media_studio_identity_consent`; Pro CPT plugs in during Phase 2).
-- [x] Prompt-injection hardening on user-supplied text (length cap + instruction-strip).
-- [x] Audit logging of every generate/export.
-- [ ] IPTC 2025.1 XMP fields (small PHP XMP writer) — pending.
-- [ ] C2PA manifest via media-worker (best-effort, optional signing key) — pending.
+- [x] Attachment meta on every AI output (Phase 0) — `_nvoos_ai_generated|provider|model|prompt_hash|transform|identity_id`.
+- [x] D-1 policy (Phase 0): disclosure setting with metadata floor, forced GD watermark on face outputs, per-user one-time ack.
+- [x] Consent gating (Phase 2) and prompt-injection hardening (Phase 0).
+- [x] Audit logging of every generate/export (Phase 0) plus `media_studio_provenance` / `media_studio_c2pa` events.
+- [x] **IPTC 2025.1 XMP fields** — `NV_oOS_Media_Studio_XMP_Writer` embeds
+      `Iptc4xmpExt:DigitalSourceType` (`trainedAlgorithmicMedia` / `compositeSynthetic`),
+      `AISystemUsed`, `AISystemVersionUsed`, `AIPromptWriterName`, plus
+      `photoshop:Credit`/`Source` into JPEG (APP1), PNG (iTXt), and WebP (RIFF
+      `XMP ` chunk with VP8X insertion + flag bit). `AIPromptInformation` is
+      intentionally omitted (prompts are retained only as hashes — privacy-aware
+      default; the standard marks the field optional). Filter seams:
+      `nvoos_media_studio_xmp_fields` / `nvoos_media_studio_xmp_packet`.
+- [x] **Derived assets** — the output pipeline records `compositeSynthetic` and
+      carries the source's AI fields forward (`record_derived`).
+- [x] **C2PA** — best-effort signing round-trip via an optional `c2pa_sign_url`
+      setting (https-only, never fatal); success sets `_nvoos_c2pa_signed`.
+      Signing runs AFTER the XMP write (XMP injection invalidates existing C2PA
+      signatures — documented limitation without a signing service).
+- [x] **SPA** — capabilities expose the `compliance` block (disclosure policy,
+      XMP format support, C2PA configured); result chips show `XMP provenance`
+      and `C2PA signed`.
+
+C2PA note: no signing service is bundled — a c2patool-backed endpoint is
+required for cryptographic manifests; otherwise assets carry the IPTC fields + the
+visible-disclosure path (D-1).
 
 ---
 
