@@ -645,6 +645,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['linkedin_search_location'] = $existing_connection['linkedin_search_location'];
 			}
 
+			// Preserve the FlowHub MCP-mode designation when updating.
+			if ( ! isset( $connection_data['flowhub_mode'] ) && isset( $existing_connection['flowhub_mode'] ) ) {
+				$connection_data['flowhub_mode'] = $existing_connection['flowhub_mode'];
+			}
+
 			// Preserve created timestamp.
 			if ( ! isset( $connection_data['created'] ) && ! empty( $existing_connection['created'] ) ) {
 				$connection_data['created'] = $existing_connection['created'];
@@ -684,6 +689,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'proxy_url'                      => isset( $connection_data['proxy_url'] ) ? sanitize_text_field( $connection_data['proxy_url'] ) : '',
 			'proxy_username'                 => isset( $connection_data['proxy_username'] ) ? sanitize_text_field( $connection_data['proxy_username'] ) : '',
 			'proxy_password'                 => isset( $connection_data['proxy_password'] ) ? $connection_data['proxy_password'] : '',
+			// FlowHub operation mode: 'api' (direct POS API/sync only, default)
+			// or 'mcp' (designated backend for the FlowHub toolkit MCP server —
+			// MCP-triggered services bind to this connection's credentials and
+			// proxy). Mirrors the Upwork connection-mode pattern.
+			'flowhub_mode'                   => isset( $connection_data['flowhub_mode'] ) && in_array( $connection_data['flowhub_mode'], array( 'api', 'mcp' ), true )
+				? $connection_data['flowhub_mode']
+				: 'api',
 			'has_woocommerce'                => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'                        => ! empty( $connection_data['enabled'] ),
 			'created'                        => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),

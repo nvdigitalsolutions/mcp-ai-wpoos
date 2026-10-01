@@ -41,7 +41,7 @@ FlowHub is the leading cannabis dispensary POS in the US, serving 1,000+ dispens
    - **Bidirectional** — Stock changes sync both ways
 7. Optionally enable WooCommerce stock writeback
 8. Set your low-stock threshold (items below this count will be flagged)
-9. If behind a forward proxy, enable **proxy support** (uses `http_api_curl` hook — proxy settings resolved from the Remote Sites connection first, then toolkit config)
+9. If behind a forward proxy, enable **proxy support** (uses `http_api_curl` hook — proxy settings resolved from the Remote Sites connection first, then toolkit config). For assistant MCP-triggered services, also set the connection's **Connection Mode → MCP** in Remote Sites so the FlowHub toolkit MCP server binds to this proxied connection.
 10. Save settings
 
 ### Step 3: Run Initial Sync
@@ -72,6 +72,8 @@ FlowHub API ──(Action Scheduler, 1–60 min)──▶ JetEngine CCT (flowhub
 **Key principle:** All AI tool reads hit the CCT cache — zero FlowHub API calls per query. The Action Scheduler background job pulls fresh data from FlowHub on your configured interval. This means AI assistants can run hundreds of inventory queries without hitting FlowHub's rate limits.
 
 **Credential resolution:** The AI tools (base `flowhub_*` tools and Pro toolkit tools) resolve their FlowHub connection in this order: an explicit `connection_id` argument, the toolkit settings credentials, the toolkit's configured sync connections, then the first enabled FlowHub Remote Sites connection. Tools work even when credentials live only on a Remote Sites connection (for example, a synced connection such as "Kaya Flowhub").
+
+**MCP backend designation (proxy for MCP services):** The FlowHub toolkit MCP server (assistant settings → Toolkit MCP Servers → FlowHub Inventory Sync) exposes six tools whose live services (`refresh`, `sync_now`) call `api.flowhub.co` directly. If your server must egress through a forward proxy (e.g. a whitelisted egress IP FlowHub accepts), designate the proxied connection as the MCP backend: edit the FlowHub connection in **Remote Sites**, set **Connection Mode → MCP**, and keep its proxy fields filled. MCP-triggered tool calls then bind to that connection — credentials and proxy included — unless the assistant passes an explicit `connection_id`. This mirrors the Upwork connection's API/MCP mode split.
 
 ## Using the AI Tools
 

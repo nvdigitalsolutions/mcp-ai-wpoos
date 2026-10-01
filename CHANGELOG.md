@@ -1,5 +1,13 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — FlowHub Connection MCP Mode (Proxy for Assistant MCP Services) (PR #6836)
+
+- **FlowHub Remote Sites connections gain a `flowhub_mode` selector** (`api` default | `mcp`), mirroring the Upwork connection's API/MCP mode pattern. MCP mode designates the connection as the backend for the FlowHub toolkit MCP server (the MCP toggle in assistant settings).
+- **MCP-triggered FlowHub services now inherit the connection's proxy** — `WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id()` resolves the first enabled MCP-mode connection; the toolkit MCP REST controller injects its ID into tool arguments when the caller supplies none, routing live calls (refresh/sync) through the explicit-connection path so credentials and the connection's encrypted proxy apply via `http_api_curl`. Fixes auth failures when FlowHub MCP services must egress through a forward proxy.
+- **Explicit `connection_id` arguments always win**; with no MCP-designated connection, behavior is unchanged (existing resolver chain). The seam is generic — any toolkit MCP server can declare a binding via `WP_MCP_AI_Toolkit_Server_Base::get_mcp_connection_id()`.
+
 ## [1.1.90] - 2026-09-30
 
 ### Added — RF-DETR Vision Cognition (Proposal 049, PR #6824)

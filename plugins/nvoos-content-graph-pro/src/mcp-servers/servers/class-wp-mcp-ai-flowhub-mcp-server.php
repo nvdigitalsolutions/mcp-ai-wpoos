@@ -118,4 +118,28 @@ class WP_MCP_AI_FlowHub_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 	public function get_sync_hook_name() {
 		return 'wp_mcp_ai_flowhub_full_sync';
 	}
+
+	/**
+	 * Get the Remote Sites connection serving live FlowHub calls through
+	 * this MCP server.
+	 *
+	 * Returns the connection the admin designated with the MCP mode in the
+	 * FlowHub Remote Sites connection editor. When set, the toolkit MCP REST
+	 * controller injects the connection ID into tool arguments so live
+	 * services (refresh/sync) inherit that connection's credentials and
+	 * proxy. (Standalone deviation: no path constants — the base plugin's
+	 * connection helper is only available in monolith installs, so this
+	 * resolves nothing when the helper class is absent.)
+	 *
+	 * @since 1.1.91
+	 *
+	 * @return string Connection ID (conn_...), or '' when none is designated.
+	 */
+	public function get_mcp_connection_id() {
+		if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
+			return '';
+		}
+
+		return WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id();
+	}
 }

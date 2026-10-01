@@ -382,4 +382,67 @@ class Test_FlowHub_Connection_Helper extends WP_UnitTestCase {
 	public function test_is_configured_false_when_nothing_exists() {
 		$this->assertFalse( WP_MCP_AI_FlowHub_Connection_Helper::is_configured() );
 	}
+
+	// ------------------------------------------------------------------ //
+	// MCP backend designation (get_mcp_connection_id)
+	// ------------------------------------------------------------------ //
+
+	/**
+	 * MCP designation: empty when no connections exist.
+	 */
+	public function test_get_mcp_connection_id_empty_without_connections() {
+		$this->assertSame( '', WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id() );
+	}
+
+	/**
+	 * MCP designation: API-mode connections are not MCP backends.
+	 */
+	public function test_get_mcp_connection_id_skips_api_mode_connections() {
+		$this->create_flowhub_connection(); // Defaults to API mode.
+
+		$this->assertSame( '', WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id() );
+	}
+
+	/**
+	 * MCP designation: an MCP-mode connection resolves as the MCP backend.
+	 */
+	public function test_get_mcp_connection_id_returns_designated_mcp_connection() {
+		$connection_id = $this->create_flowhub_connection( array( 'flowhub_mode' => 'mcp' ) );
+
+		$this->assertSame( $connection_id, WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id() );
+	}
+
+	/**
+	 * MCP designation: disabled MCP-mode connections are skipped.
+	 */
+	public function test_get_mcp_connection_id_skips_disabled_mcp_connections() {
+		$this->create_flowhub_connection(
+			array(
+				'flowhub_mode' => 'mcp',
+				'enabled'      => false,
+			)
+		);
+
+		$this->assertSame( '', WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id() );
+	}
+
+	/**
+	 * MCP designation: the first eligible MCP-mode connection wins.
+	 */
+	public function test_get_mcp_connection_id_prefers_first_mcp_connection() {
+		$this->create_flowhub_connection(
+			array(
+				'name'         => 'API First',
+				'flowhub_mode' => 'api',
+			)
+		);
+		$mcp_connection = $this->create_flowhub_connection(
+			array(
+				'name'         => 'MCP Backend',
+				'flowhub_mode' => 'mcp',
+			)
+		);
+
+		$this->assertSame( $mcp_connection, WP_MCP_AI_FlowHub_Connection_Helper::get_mcp_connection_id() );
+	}
 }

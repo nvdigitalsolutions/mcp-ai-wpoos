@@ -884,6 +884,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'proxy_url'                      => isset( $_POST['flowhub_proxy_url'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_proxy_url'] ) ) : '',
 				'proxy_username'                 => isset( $_POST['flowhub_proxy_username'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_proxy_username'] ) ) : '',
 				'proxy_password'                 => isset( $_POST['flowhub_proxy_password'] ) ? wp_unslash( $_POST['flowhub_proxy_password'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password; stored as-is for encryption.
+				// FlowHub connection mode: 'api' (default) or 'mcp' (MCP server backend).
+				'flowhub_mode'                   => isset( $_POST['flowhub_mode'] ) && in_array( $_POST['flowhub_mode'], array( 'api', 'mcp' ), true )
+					? sanitize_key( wp_unslash( $_POST['flowhub_mode'] ) )
+					: 'api',
 				'enabled'                        => ! empty( $_POST['enabled'] ),
 				'cache_ttl'                      => isset( $_POST['cache_ttl'] ) ? max( 0, min( 3600, absint( $_POST['cache_ttl'] ) ) ) : 300,
 				'test_endpoint'                  => isset( $_POST['test_endpoint'] ) ? sanitize_text_field( wp_unslash( $_POST['test_endpoint'] ) ) : '',
@@ -3297,6 +3301,27 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing proxy password.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
+					</td>
+				</tr>
+
+				<!-- FlowHub connection mode: direct API/sync only, or the designated
+					backend for the FlowHub toolkit MCP server (assistant settings).
+					Mirrors the Upwork API vs MCP mode pattern. -->
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="flowhub_mode"><?php esc_html_e( 'Connection Mode', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php
+						$saved_flowhub_mode = $is_edit && 'flowhub' === $connection_type && ! empty( $connection['flowhub_mode'] )
+							? $connection['flowhub_mode']
+							: 'api';
+						?>
+						<select name="flowhub_mode" id="flowhub_mode">
+							<option value="api" <?php selected( $saved_flowhub_mode, 'api' ); ?>><?php esc_html_e( 'API — direct FlowHub POS access (sync + tool calls)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="mcp" <?php selected( $saved_flowhub_mode, 'mcp' ); ?>><?php esc_html_e( 'MCP — designated backend for the FlowHub toolkit MCP server', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'API mode uses this connection for syncs and direct tool calls. MCP mode additionally binds the FlowHub toolkit MCP server (the MCP toggle in assistant settings) to this connection, so assistant MCP-triggered services route through these credentials and the proxy settings above.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 

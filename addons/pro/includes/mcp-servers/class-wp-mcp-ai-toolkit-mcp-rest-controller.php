@@ -895,6 +895,18 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 			);
 		}
 
+		// Bind the server's designated Remote Sites connection when the caller
+		// did not supply one. Servers whose live services route through a
+		// connection (e.g. FlowHub) declare it via get_mcp_connection_id();
+		// injecting it routes the tool through the explicit-connection path so
+		// live calls inherit that connection's credentials and proxy.
+		if ( $server instanceof WP_MCP_AI_Toolkit_Server_Base ) {
+			$server_connection_id = $server->get_mcp_connection_id();
+			if ( '' !== $server_connection_id && empty( $arguments['connection_id'] ) ) {
+				$arguments['connection_id'] = sanitize_key( $server_connection_id );
+			}
+		}
+
 		/**
 		 * Fires before a tool is executed through a per-toolkit MCP server.
 		 *
