@@ -573,6 +573,32 @@ class NV_oOS_Media_Studio_AI_Service {
 	}
 
 	/**
+	 * Resolve the Gemini image model for edit transforms.
+	 *
+	 * Mirrors the edit tool's own default resolution (settings
+	 * `gemini_image_model`, falling back to `gemini-3.1-flash-image`) and
+	 * restricts the result to the tool rules' `model_requirements` allowlist
+	 * so the registry's pre-execution validation cannot reject the call.
+	 *
+	 * @return string
+	 */
+	protected static function resolve_edit_model() {
+		$fallback = 'gemini-3.1-flash-image';
+		$allowed  = array( 'gemini-3.1-flash-image', 'gemini-2.5-flash-image', 'gemini-exp-1206' );
+		$model    = $fallback;
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings  = WP_MCP_AI_Admin_Settings::get_settings();
+			$candidate = isset( $settings['gemini_image_model'] ) ? sanitize_text_field( $settings['gemini_image_model'] ) : '';
+			if ( '' !== $candidate && in_array( $candidate, $allowed, true ) ) {
+				$model = $candidate;
+			}
+		}
+
+		return $model;
+	}
+
+	/**
 	 * Execute the sidecar-only video transform (Phase 5).
 	 *
 	 * The media-worker `/api/video/generate` route is synchronous text-to-video
@@ -802,6 +828,11 @@ class NV_oOS_Media_Studio_AI_Service {
 			'aspect_ratio'  => self::resolve_aspect_ratio( $args ),
 			'mime_type'     => self::resolve_mime_type( $args ),
 			'file_name'     => self::build_file_name( $transform, $attachment_id ),
+			// The registry validates `model_requirements.required` against the
+			// tool rules before executing; a missing model surfaces as an
+			// unhandled 500 on the REST route. Resolve the same default the
+			// Gemini edit tool itself would use.
+			'model'         => self::resolve_edit_model(),
 		);
 
 		$context = array( 'user_id' => $user_id );

@@ -399,6 +399,45 @@ class Test_Media_Studio_AI_Service extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test execute_transform passes a resolved Gemini model so the registry's
+	 * model_requirements validation (which 500s on a missing model) passes.
+	 */
+	public function test_execute_transform_passes_resolved_model() {
+		$source_id = $this->create_image_attachment();
+		$output_id = $this->create_image_attachment();
+		$captured  = null;
+
+		add_filter(
+			'nvoos_media_studio_execute_tool',
+			static function ( $result, $transform, $tool, $tool_args ) use ( &$captured, $output_id ) {
+				$captured = $tool_args;
+				return array(
+					'attachment_id' => $output_id,
+					'url'           => 'http://example.org/out.png',
+					'provider'      => 'gemini',
+					'model'         => 'test-model',
+				);
+			},
+			10,
+			4
+		);
+
+		$result = NV_oOS_Media_Studio_AI_Service::execute_transform(
+			'background',
+			$source_id,
+			array( 'confirmed' => true ),
+			0
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertIsArray( $captured, 'Tool args should be captured.' );
+		$this->assertArrayHasKey( 'model', $captured );
+		$this->assertNotEmpty( $captured['model'] );
+
+		remove_all_filters( 'nvoos_media_studio_execute_tool' );
+	}
+
+	/**
 	 * Test invalid transforms are rejected.
 	 */
 	public function test_execute_transform_rejects_unknown_transform() {
