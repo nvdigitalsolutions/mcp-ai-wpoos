@@ -584,8 +584,9 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * Resolve an assistant's MCP Apps, expanding global connection references.
 	 *
 	 * Entries carrying `connection_ref` point at a centrally managed
-	 * connection in the Pro Remote Sites store — a `mcp_server` connection or
-	 * an Upwork connection running in MCP mode. Resolution decrypts the
+	 * connection in the Pro Remote Sites store — a `mcp_server` connection, an
+	 * Upwork connection running in MCP mode, or a FlowHub connection running
+	 * in MCP mode. Resolution decrypts the
 	 * central credential on demand (per-request static cache) and merges it
 	 * into a runtime config — the credentials are never written back to post
 	 * meta.
@@ -643,11 +644,13 @@ class WP_MCP_AI_MCP_App_Registry {
 	/**
 	 * Resolve a single `connection_ref` entry against the Remote Sites store.
 	 *
-	 * Accepts `mcp_server` connections and Upwork connections in MCP mode
-	 * (the official Upwork MCP gateway).
+	 * Accepts `mcp_server` connections, Upwork connections in MCP mode (the
+	 * official Upwork MCP gateway), and FlowHub connections in MCP mode (the
+	 * official FlowHub MCP gateway).
 	 *
 	 * @since 1.1.85
 	 * @since 1.1.90 Upwork MCP connections resolve against the official gateway.
+	 * @since 1.1.92 FlowHub MCP connections resolve against the official gateway.
 	 *
 	 * @param array $app Stored MCP App entry with `connection_ref` set.
 	 * @return array|null Resolved runtime config, or null when unresolvable.
@@ -687,6 +690,11 @@ class WP_MCP_AI_MCP_App_Registry {
 			// through the MCP Apps OAuth flow; the token blob lives in the
 			// encrypted central `mcp_oauth` field like any MCP Server connection.
 			$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_upwork_mcp_app_config( $connection );
+		} elseif ( 'flowhub' === $connection_type && 'mcp' === ( isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : '' ) ) {
+			// FlowHub MCP connections authenticate against the official gateway
+			// through the MCP Apps OAuth flow; the token blob lives in the
+			// encrypted central `mcp_oauth` field like any MCP Server connection.
+			$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $connection );
 		} else {
 			return null;
 		}

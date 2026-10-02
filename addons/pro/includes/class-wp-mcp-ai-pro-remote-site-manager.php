@@ -649,6 +649,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( ! isset( $connection_data['flowhub_mode'] ) && isset( $existing_connection['flowhub_mode'] ) ) {
 				$connection_data['flowhub_mode'] = $existing_connection['flowhub_mode'];
 			}
+			if ( ! isset( $connection_data['flowhub_mcp_url'] ) && isset( $existing_connection['flowhub_mcp_url'] ) ) {
+				$connection_data['flowhub_mcp_url'] = $existing_connection['flowhub_mcp_url'];
+			}
 
 			// Preserve created timestamp.
 			if ( ! isset( $connection_data['created'] ) && ! empty( $existing_connection['created'] ) ) {
@@ -696,6 +699,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'flowhub_mode'                   => isset( $connection_data['flowhub_mode'] ) && in_array( $connection_data['flowhub_mode'], array( 'api', 'mcp' ), true )
 				? $connection_data['flowhub_mode']
 				: 'api',
+			// FlowHub MCP gateway endpoint override (defaults to the official
+			// gateway in build_flowhub_mcp_app_config()).
+			'flowhub_mcp_url'                => isset( $connection_data['flowhub_mcp_url'] ) ? esc_url_raw( $connection_data['flowhub_mcp_url'] ) : '',
 			'has_woocommerce'                => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'                        => ! empty( $connection_data['enabled'] ),
 			'created'                        => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
@@ -1028,11 +1034,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
 		$auth_type       = isset( $connection['auth_type'] ) ? $connection['auth_type'] : '';
 
-		// Only OAuth MCP Server connections and Upwork connections in MCP mode
-		// carry an mcp_oauth blob.
-		$is_mcp_server = 'mcp_server' === $connection_type && 'oauth' === $auth_type;
-		$is_upwork_mcp = 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' );
-		if ( ! $is_mcp_server && ! $is_upwork_mcp ) {
+		// Only OAuth MCP Server connections, Upwork connections in MCP mode, and
+		// FlowHub connections in MCP mode carry an mcp_oauth blob.
+		$is_mcp_server  = 'mcp_server' === $connection_type && 'oauth' === $auth_type;
+		$is_upwork_mcp  = 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' );
+		$is_flowhub_mcp = 'flowhub' === $connection_type && 'mcp' === ( isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : '' );
+		if ( ! $is_mcp_server && ! $is_upwork_mcp && ! $is_flowhub_mcp ) {
 			return false;
 		}
 
@@ -1345,6 +1352,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Handle Flowhub connections separately.
 		if ( 'flowhub' === $connection_type ) {
+			$flowhub_mode = isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : 'api';
+			if ( 'mcp' === $flowhub_mode ) {
+				return self::test_flowhub_mcp_connection( $connection );
+			}
+
 			return self::test_flowhub_connection( $connection );
 		}
 
@@ -1621,6 +1633,50 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Map a stored FlowHub connection (MCP mode) onto an MCP App client config.
+	 *
+	 * The FlowHub MCP gateway authenticates via the MCP OAuth 2.1 flow; the
+	 * token blob lives in the encrypted `mcp_oauth` field like any other MCP
+	 * Server connection. The endpoint defaults to the official gateway.
+	 *
+	 * @since 1.1.92
+	 *
+	 * @param array $connection Stored FlowHub connection array.
+	 * @return array MCP App client config.
+	 */
+	public static function build_flowhub_mcp_app_config( $connection ) {
+		$server_url = isset( $connection['flowhub_mcp_url'] ) && '' !== trim( (string) $connection['flowhub_mcp_url'] )
+			? esc_url_raw( $connection['flowhub_mcp_url'] )
+			: 'https://mcp.flowhub.com';
+
+		$config = array(
+			'server_url' => $server_url,
+			'auth_type'  => 'oauth',
+			'token'      => '',
+			'timeout'    => 30,
+			'verify_ssl' => true,
+		);
+
+		$oauth_blob = isset( $connection['mcp_oauth'] ) ? self::decrypt_value( (string) $connection['mcp_oauth'] ) : '';
+		if ( '' !== $oauth_blob ) {
+			$decoded = json_decode( $oauth_blob, true );
+			if ( is_array( $decoded ) ) {
+				$config['oauth_data'] = $decoded;
+				if ( ! empty( $decoded['access_token'] ) ) {
+					$config['token'] = $decoded['access_token'];
+				}
+			}
+		}
+
+		// Route automatic OAuth refreshes back to the central store.
+		if ( ! empty( $connection['id'] ) ) {
+			$config['connection_ref'] = $connection['id'];
+		}
+
+		return $config;
+	}
+
+	/**
 	 * Test an Upwork MCP-mode connection with a real JSON-RPC handshake.
 	 *
 	 * Mirrors {@see test_mcp_server_connection()} for the freelance
@@ -1670,6 +1726,64 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'upwork'      => true,
 			'mcp'         => true,
 			'message'     => __( 'Upwork MCP handshake successful.', 'mcp-ai-wpoos-pro' ),
+			'handshake'   => isset( $result['handshake'] ) ? $result['handshake'] : '',
+			'protocol'    => isset( $result['protocol'] ) ? $result['protocol'] : '',
+			'server_info' => isset( $result['server_info'] ) ? $result['server_info'] : array(),
+			'tool_count'  => isset( $result['tool_count'] ) ? $result['tool_count'] : null,
+			'latency_ms'  => isset( $result['latency_ms'] ) ? $result['latency_ms'] : null,
+		);
+	}
+
+	/**
+	 * Test a FlowHub MCP-mode connection with a real JSON-RPC handshake.
+	 *
+	 * Mirrors {@see test_upwork_mcp_connection()} for the dispensary connection
+	 * type: without stored tokens the result is a saved-credentials
+	 * acknowledgement instead of a failed handshake.
+	 *
+	 * @since 1.1.92
+	 *
+	 * @param array $connection Stored FlowHub connection array.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_flowhub_mcp_connection( $connection ) {
+		$config = self::build_flowhub_mcp_app_config( $connection );
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_mcp_client_missing',
+				__( 'The MCP App client is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $config['token'] ) ) {
+			return array(
+				'success' => true,
+				'flowhub' => true,
+				'mcp'     => true,
+				'message' => __( 'FlowHub MCP credentials saved. Connect your FlowHub account via the MCP login button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		$client = new WP_MCP_AI_MCP_App_Client( $config );
+		$result = $client->test_connection();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'success'     => true,
+			'flowhub'     => true,
+			'mcp'         => true,
+			'message'     => __( 'FlowHub MCP handshake successful.', 'mcp-ai-wpoos-pro' ),
 			'handshake'   => isset( $result['handshake'] ) ? $result['handshake'] : '',
 			'protocol'    => isset( $result['protocol'] ) ? $result['protocol'] : '',
 			'server_info' => isset( $result['server_info'] ) ? $result['server_info'] : array(),
@@ -1860,11 +1974,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Whether a stored connection can back an MCP App reference entry.
 	 *
-	 * Reference entries may point at dedicated MCP Server connections or at
+	 * Reference entries may point at dedicated MCP Server connections, at
 	 * Upwork connections running in MCP mode (the official Upwork MCP
-	 * gateway, authenticated through the MCP Apps OAuth flow).
+	 * gateway), or at FlowHub connections running in MCP mode (the official
+	 * FlowHub MCP gateway) — all authenticated through the MCP Apps OAuth flow.
 	 *
 	 * @since 1.1.90
+	 * @since 1.1.92 FlowHub MCP-mode connections are referenceable.
 	 *
 	 * @param array $connection Stored connection array.
 	 * @return bool True when the connection is referenceable from MCP Apps.
@@ -1880,7 +1996,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return true;
 		}
 
-		return 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' );
+		if ( 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' ) ) {
+			return true;
+		}
+
+		return 'flowhub' === $connection_type && 'mcp' === ( isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : '' );
 	}
 
 	/**
@@ -1911,18 +2031,50 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * List stored FlowHub connections configured in MCP mode.
+	 *
+	 * FlowHub MCP connections authenticate against the official FlowHub MCP
+	 * gateway through the MCP Apps OAuth flow and are offered alongside
+	 * mcp_server connections in the assistant MCP Apps metabox.
+	 *
+	 * @since 1.1.92
+	 *
+	 * @return array<int, array> FlowHub MCP connection arrays.
+	 */
+	public static function get_flowhub_mcp_connections() {
+		$flowhub = array();
+
+		foreach ( self::get_all_connections() as $connection ) {
+			if (
+				is_array( $connection ) &&
+				'flowhub' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) &&
+				'mcp' === ( isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : '' )
+			) {
+				$flowhub[] = $connection;
+			}
+		}
+
+		return $flowhub;
+	}
+
+	/**
 	 * List stored connections that can back an MCP App reference entry.
 	 *
-	 * Merges dedicated MCP Server connections with Upwork connections in
-	 * MCP mode. Used by the assistant MCP Apps metabox to offer centrally
-	 * managed connections as one-click reference entries.
+	 * Merges dedicated MCP Server connections with Upwork and FlowHub
+	 * connections in MCP mode. Used by the assistant MCP Apps metabox to
+	 * offer centrally managed connections as one-click reference entries.
 	 *
 	 * @since 1.1.90
+	 * @since 1.1.92 FlowHub MCP-mode connections are included.
 	 *
 	 * @return array<int, array> Referenceable connection arrays.
 	 */
 	public static function get_mcp_app_connections() {
-		return array_merge( self::get_mcp_server_connections(), self::get_upwork_mcp_connections() );
+		return array_merge(
+			self::get_mcp_server_connections(),
+			self::get_upwork_mcp_connections(),
+			self::get_flowhub_mcp_connections()
+		);
 	}
 
 	/**
@@ -4055,13 +4207,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		if ( 'flowhub' === $connection_type ) {
-			if ( empty( $connection['api_key'] ) || empty( $connection['client_id'] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_pro_missing_flowhub_credentials',
-					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
-				);
+			// MCP mode authenticates via the MCP OAuth flow against the official
+			// FlowHub MCP gateway; POS API credentials are optional at save time
+			// (connect afterwards from the assistant MCP Apps metabox). Mirrors
+			// the Upwork MCP-mode validation.
+			$flowhub_mode = isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : 'api';
+			if ( 'api' === $flowhub_mode ) {
+				if ( empty( $connection['api_key'] ) || empty( $connection['client_id'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_missing_flowhub_credentials',
+						__( 'API key (key header) and client ID (clientId header) are required for FlowHub connections. Switch to MCP mode to connect through the official FlowHub MCP gateway instead.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				// Location ID is optional: the root /inventoryNonZero endpoint works without it.
 			}
-			// Location ID is optional: the root /inventoryNonZero endpoint works without it.
 		}
 
 		if ( 'printful' === $connection_type ) {
