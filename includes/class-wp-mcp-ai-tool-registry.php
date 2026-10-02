@@ -1670,7 +1670,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			}
 
 			if ( ! empty( $errors ) ) {
-				return new WP_Error( 'tool_validation_failed', implode( '; ', $errors ), array( 'errors' => $errors ) );
+				return new WP_Error(
+					'tool_validation_failed',
+					implode( '; ', $errors ),
+					array(
+						'status' => 400,
+						'errors' => $errors,
+					)
+				);
 			}
 
 			return true;
@@ -1814,6 +1821,19 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 					} else {
 						// New format: just the key name (e.g., 'openai_api_key').
 						$value = isset( $settings[ $setting_key ] ) ? $settings[ $setting_key ] : '';
+					}
+
+					// Fall back to the credential resolver so keys configured via
+					// WP 7.0 Connectors, environment variables, or PHP constants
+					// (which the provider clients honour) also satisfy the gate.
+					if ( empty( $value ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+						$provider = str_replace( array( 'wp_mcp_ai_', '_api_key' ), '', $setting_key );
+						if ( '' !== $provider ) {
+							$resolved = WP_MCP_AI_Credential_Resolver::get_api_key( $provider );
+							if ( ! empty( $resolved ) ) {
+								$value = $resolved;
+							}
+						}
 					}
 
 					if ( empty( $value ) ) {
