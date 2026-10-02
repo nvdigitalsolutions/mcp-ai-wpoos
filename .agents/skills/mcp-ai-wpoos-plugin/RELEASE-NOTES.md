@@ -1,9 +1,20 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.92)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.93)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## Fleet Status Monitoring, WP-CLI Parity, FlowHub MCP Apps & October Model Catalog (v1.1.93)
+
+- **Media worker fleet status monitoring (PR #6849 — worker 3.2.0 → 3.3.0)** — the media worker becomes the fleet status/monitoring service, all opt-in behind `STATUS_ENABLED=1`: `POST /api/status/heartbeat`, `GET /api/status/summary|sites/:slug|history/:slug|metrics`, OpenMetrics, and a public allowlisted `GET /status` page (heartbeat validation, `at_risk` → `major_outage` state machine, dead man's switch sweeper, synthetic HTTP/TLS checks through the SSRF guard, HMAC-signed webhook + email alerts). The plugin half ships `WP_MCP_AI_Media_Worker_Config`, an opt-in heartbeat emitter, the `WP_MCP_AI_Status_Alert_Poller`, the `remote_monitor` service-status source, **2 new base tools** (`get_fleet_status`, `get_site_uptime`), `GET /mcp-ai/v1/status/sites`, and the `/status fleet` slash sub-command; Pro adds incident auto-create/resolve + the Status Dashboard Fleet section.
+- **WP-CLI parity & hardening (PR #6852, Proposal 050)** — `wp mcp-ai tool call <slug> --args='{…}'` mirrors REST `POST /tools`; new `wp mcp-ai security` (posture, audit, purge-audit, gate, keys) + `wp mcp-ai model` (list, suggestions, discover) Base commands; nine new Pro command trees (`crm`, `incident`, `maintenance`, `schedule`, `workflow`, `vault` metadata-only, `remote-site`, `communication`, `media-studio`); `--fields`/`--field`/`--format=count`; every mutating subcommand gates on `manage_options`; canonical `mcp-ai calendar/place` + `mcp-ai ezuite/flowhub/shopify-sync/profession` namespaces (legacy top-level names remain as aliases); full operator reference in `docs/operations/wp-cli.md`; WP-CLI 2.9+ minimum.
+- **FlowHub MCP Apps (PRs #6854/#6861)** — FlowHub-in-MCP-mode connections now appear in the assistant MCP Apps "Add from Remote Sites" dropdown (labelled `Name (FlowHub MCP — https://mcp.flowhub.com)`) with the full OAuth login flow; the connection's proxy (`proxy_url`/`proxy_auth`) now carries into the MCP Apps gateway path so geo-blocked deployments need no direct egress to `mcp.flowhub.com`.
+- **Financial Planner OpenStock parity (PR #6857, Proposal 051)** — Finnhub BYO-key market data (masked key inputs), **+3 Pro tools** (`watchlist_sync`, `market_overview_widget`, the orphaned `import_financial_planning_blueprint` registered), `price_alerts` data-mode parity, and an `openstock-market-analyst` blueprint.
+- **October 2026 model catalog (PR #6863)** — catalog **v2026.10.03**, 238 models, **18 providers — Z.AI joins**: `gpt-6-sol`/`gpt-6-luna`, `claude-sonnet-5-5`/`claude-opus-5-5`/`claude-mythos-5-1`, `gemini-3.8-live`, `gemini-omni-1.1-flash`, Cloudflare Workers AI refresh, Z.AI `glm-5.3` family; codex-line/Kimi-k2 removals with migration entries; deprecations with sunset dates (`gpt-4o` 2026-10-23, `gpt-5` family 2026-12-11, …); defaults refreshed (`default_gemini_model` → `gemini-3.8-flash`, `gemini_live_model` → `gemini-3.8-live`, `openai_realtime_model` → `gpt-realtime-2.1`, Anthropic sonnet-5-5/opus-5-5, Z.AI `glm-5.3`).
+- **Media Studio 0.6.1 + schedules + validated-tool parity fixed (PRs #6853/#6855/#6856/#6858/#6859)** — fashion transforms pass the resolved Gemini image model (no more `/ai/generate` 500); tool-rule validation failures now return HTTP 400 with the error list; `required_settings` falls back to the credential resolver; **Media Studio 0.6.0 → 0.6.1** (the version `/health` + `/ai/capabilities` + `wp mcp-ai media-studio status` report). Schedules no longer trigger on create/save (timing-change-only reschedules; recurring starts one interval out). `aspect_ratio: 'auto'` passes the validated Gemini tools.
+- **Dependency advisory (PR #6850)** — undici 7.30.0 across 8 addon lockfiles (GHSA-w293-vg96-wgc3, CVE-2026-84961; lockfile-only).
+- **Tool counts** — ~349 base + ~1,312 Pro (~1,661 total; +2 base +3 Pro).
 
 ## Media Studio Fashion Production, Inline Vision Data URLs & Provider-Content Fixes (v1.1.92)
 

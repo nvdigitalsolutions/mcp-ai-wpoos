@@ -40,7 +40,7 @@ Key `mcp-ai` WP-CLI commands for product research. Run via `terminal`:
 |---|---|
 | `wp mcp-ai harness` | Semantic search across product catalogs |
 | `wp mcp-ai content` | Search existing product content |
-| `wp ezuite low-stock-report` | ERP inventory research |
+| `wp mcp-ai ezuite low-stock-report` | ERP inventory research |
 
 ## When to use this skill
 
