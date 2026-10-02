@@ -1,16 +1,24 @@
 # oOS – Changelog
 
-## [Unreleased] — WP-CLI Parity & Hardening (Proposal 050)
+## [1.1.93] - 2026-10-03
 
-### Fixed — FlowHub MCP Apps ignored the connection proxy
+### Added — Media Worker Fleet Status Monitoring (PR #6849)
 
-- **Assistant FlowHub MCP gateway traffic now inherits the Remote Sites connection's proxy.** `build_flowhub_mcp_app_config()` carries the connection's `proxy_url`/`proxy_auth` (proxy password decrypted from the connection record, with the FlowHub toolkit settings proxy as fallback — the same resolution order as the sync engine), and `WP_MCP_AI_MCP_App_Client` + `WP_MCP_AI_MCP_App_OAuth_Client` apply that proxy to every outbound gateway request (JSON-RPC dispatch, OAuth discovery, token refresh) via the `http_api_curl` cURL layer. Geo-blocked deployments no longer need a direct egress route to `mcp.flowhub.com`.
+- **The media worker becomes the fleet status/monitoring service (worker 3.2.0 → 3.3.0; plugin v1.1.93).** A new opt-in (`STATUS_ENABLED=1`) `src/status/` module: heartbeat validation (payload-v1 allowlist + credential-shape rejection), a state machine (`at_risk` → `major_outage` with confirm thresholds), Redis/in-memory store, dead man's switch sweeper, synthetic HTTP/TLS checks through the shared SSRF guard, HMAC-signed webhook + email alerts with cooldown, OpenMetrics, a public allowlisted status page, and `POST /api/status/heartbeat` + `GET /api/status/summary|sites/:slug|history/:slug|metrics`. The plugin half ships the shared `WP_MCP_AI_Media_Worker_Config` (URL/token chain), an opt-in `WP_MCP_AI_Status_Heartbeat` emitter on the five-minute tick, the `WP_MCP_AI_Status_Alert_Poller` (pull-diff → `wp_mcp_ai_site_status_event`), the `remote_monitor` service-status source, **2 new base tools** (`get_fleet_status`, `get_site_uptime`), REST `GET /mcp-ai/v1/status/sites`, and the `/status fleet` slash sub-command. Pro adds `WP_MCP_AI_Pro_Status_Alerts` (opt-in incident auto-create/resolve via the `WP_MCP_AI_Incident_CPT` machinery) and a server-rendered Fleet section on the Pro Status Dashboard.
 
-### Fixed — Media Studio `/ai/generate` returning 500 in fashion mode (PR #6853)
+### Added — FlowHub MCP Connections in MCP Apps (PR #6854)
 
-- **Fashion transforms no longer 500 on the registry's model-requirements gate.** `NV_oOS_Media_Studio_AI_Service` executed `edit_gemini_image` without a `model` argument, and the tool rules' `model_requirements.required` validation rejected the call — a `WP_Error` with no HTTP status, which the REST layer rendered as 500. Transforms now resolve the Gemini image model (`gemini_image_model` setting, falling back to `gemini-3.1-flash-image`, restricted to the tool's allowlist) and pass it with every execution. Tool-rule validation failures now return **HTTP 400** with the error list, and the `required_settings` API-key gate falls back to `WP_MCP_AI_Credential_Resolver` (env vars, PHP constants, WP 7.0 Connectors). **Media Studio addon bumped 0.6.0 → 0.6.1.**
+- **FlowHub-in-MCP-mode Remote Sites connections now get first-class MCP Apps treatment.** FlowHub MCP connections (v1.1.91) appear in the assistant MCP Apps "Add from Remote Sites" dropdown (labelled `Name (FlowHub MCP — https://mcp.flowhub.com)`) with the full OAuth login UI (web login / loopback paste-back / authenticated state), mirroring Upwork. `get_mcp_app_connections()` merges them, `is_mcp_app_connection()` accepts them (fixing the import validator via the shared predicate), `update_mcp_oauth()` persists their OAuth to the encrypted central store, and `test_connection()` routes them through a real JSON-RPC handshake (`test_flowhub_mcp_connection()`). `resolve_connection_ref()` resolves FlowHub refs at chat time via the new `build_flowhub_mcp_app_config()`.
 
-### Added — WP-CLI parity & hardening
+### Added — OpenStock Parity for the Financial Planner Toolkit (PR #6857, Proposal 051)
+
+- **Native market-data parity for the Financial Planner toolkit (phases B1–B3, no AGPL code imported).** The new `WP_MCP_AI_Finnhub_Provider` (quotes, OHLCV history, search, batch quotes, company profiles, news) runs BYO-key with comma-separated key rotation on 401/403/429, SWR transient caching, and `cached` (900 s) / `realtime` (60 s) data modes — plugged at the yfinance filter seam (priority 5, ahead of the Node client; disabled/failing ⇒ the keyless Stooq/Nasdaq/FRED chain runs exactly as before). **+3 Pro tools** — `watchlist_sync` (per-user user-meta watchlist, max 100, unique symbols, `list|add|remove|bulk_quote`), `market_overview_widget` (TradingView embeds + top-movers summary), and the previously orphaned `import_financial_planning_blueprint` now registered in the toolkit map. `price_alerts` gains `data_mode` parity (hourly cron + hourly re-arm window on Finnhub realtime; schedule rebuilt when the mode changes); a new `openstock-market-analyst` assistant blueprint (15 tools, educational-disclaimer prompt) ships; Financial Planner Settings gains a Market Data Providers section with masked key input (full keys never echoed back).
+
+### Added — October 2026 Model Catalog Refresh (PR #6863)
+
+- **Catalog v2026.10.03 — 238 models, 18 providers, Z.AI joins.** New models: OpenAI `gpt-6-sol`/`gpt-6-luna`, Anthropic `claude-sonnet-5-5`/`claude-opus-5-5`/`claude-mythos-5-1`, Gemini `gemini-3.8-live` + `gemini-omni-1.1-flash`, a Cloudflare Workers AI 12-model refresh, and Z.AI's `glm-5.3` family. Removed with migration-map entries: the OpenAI codex line, `gemini-2.5-flash-image` (→ `gemini-3.1-flash-image`), `gemini-live-2.5-flash-preview` (→ `gemini-3.8-live`), `claude-3-5-haiku/sonnet-20241022`, and Kimi `k2`/`k2.5`/`k2-thinking`/`moonshot-v1-*` (→ `kimi-k3`). Deprecated with sunset dates (migration deferred per the deepseek-v4-pro precedent): `gpt-4o`/`gpt-4.1-nano` (2026-10-23), `gpt-5` family (2026-12-11), `gpt-5.1`/`gpt-5.3-codex`/`gpt-5.4-nano` (2027-04-01), `claude-sonnet-4-5-20250929` (2026-11-30), `gemini-3.1-flash-lite` (2027-05-07). Defaults refreshed (`default_gemini_model` → `gemini-3.8-flash`, `gemini_live_model` → `gemini-3.8-live`, `openai_realtime_model` → `gpt-realtime-2.1`, Anthropic → sonnet-5-5/opus-5-5, Z.AI → `glm-5.3`, `gemini_video_model` → `gemini-omni-1.1-flash`; the TTS default deliberately stays — speech tools call `/audio/speech` while OpenAI's replacement targets the Realtime API, documented with the 2027-01-06 retirement); router draft/verification lanes + research-tool fallbacks refreshed. Pricing fixes: Cloudflare `@cf/meta/llama-4-scout` output + `@cf/google/gemma-3-12b-it` (was ~2× off).
+
+### Added — WP-CLI Parity & Hardening (PR #6852, Proposal 050)
 
 - **Extracted legacy dispatcher commands into `includes/cli/`** (`mcp-ai` status/cleanup-cct/remote, `plugins`, `queue`, `token`, `rabbitmq`, `stdio`, `health`, `cache clear`, `version`) onto `WP_MCP_AI_CLI_Base_Command` with `manage_options` gating on every mutating subcommand and `@when after_wp_load` annotations; the dispatcher is now a loader shim.
 - **`wp mcp-ai tool call <slug>`** — one-shot tool execution with per-tool `required_capability` checks and `--args='{…}'` JSON input, mirroring REST `POST /tools`.
@@ -19,11 +27,49 @@
 - **New Pro commands** — `crm` (lead/deal/company/customer/activity/ticket), `incident`, `maintenance`, `schedule`, `workflow`, `vault` (metadata-only), `remote-site`, `communication`, `media-studio`.
 - **Flag centralization** — `--fields`/`--field` support, `--format=count`, and a `confirm()` that prompts when `--yes` is absent.
 - **Namespace unification** — `mcp-ai calendar/place` and `mcp-ai ezuite/flowhub/shopify-sync/profession` are canonical; legacy names remain as aliases.
-- **Operator reference** — new `docs/operations/wp-cli.md`; fixed the stale root README CLI table (`slash-command` → `slash`).
+- **Operator reference** — new `docs/operations/wp-cli.md`; fixed the stale root README CLI table (`slash-command` → `slash`). WP-CLI 2.9+ declared.
+
+### Fixed — FlowHub MCP Apps ignored the connection proxy
+
+- **Assistant FlowHub MCP gateway traffic now inherits the Remote Sites connection's proxy.** `build_flowhub_mcp_app_config()` carries the connection's `proxy_url`/`proxy_auth` (proxy password decrypted from the connection record, with the FlowHub toolkit settings proxy as fallback — the same resolution order as the sync engine), and `WP_MCP_AI_MCP_App_Client` + `WP_MCP_AI_MCP_App_OAuth_Client` apply that proxy to every outbound gateway request (JSON-RPC dispatch, OAuth discovery, token refresh) via the `http_api_curl` cURL layer. Geo-blocked deployments no longer need a direct egress route to `mcp.flowhub.com`.
+
+### Fixed — Media Studio `/ai/generate` returning 500 in fashion mode (PRs #6853, #6858)
+
+- **Fashion transforms no longer 500 on the registry's model-requirements gate.** `NV_oOS_Media_Studio_AI_Service` executed `edit_gemini_image` without a `model` argument, and the tool rules' `model_requirements.required` validation rejected the call — a `WP_Error` with no HTTP status, which the REST layer rendered as 500. Transforms now resolve the Gemini image model (`gemini_image_model` setting, falling back to `gemini-3.1-flash-image`, restricted to the tool's allowlist) and pass it with every execution. Tool-rule validation failures now return **HTTP 400** with the error list, and the `required_settings` API-key gate falls back to `WP_MCP_AI_Credential_Resolver` (env vars, PHP constants, WP 7.0 Connectors). **Media Studio addon bumped 0.6.0 → 0.6.1** so deployed sites can verify they carry the fix (`/health`, `/ai/capabilities`, `wp mcp-ai media-studio status`).
+
+### Fixed — Schedules Triggering on Create and Save (PRs #6855, #6856)
+
+- **Editing or creating a Pro Schedule no longer triggers an immediate run.** `update_schedule()` un-scheduled and re-scheduled the WP cron event on every save using the stored first-run timestamp — once a schedule had run, that timestamp was in the past and WP cron fired the overdue event on the next spawn, so every metadata-only save re-triggered it. The cron event is now touched only when the timing actually changed (explicit timestamp, interval change, or re-enabling); a consumed one-shot is never re-armed by a save, and a reschedule without an explicit timestamp computes now + interval — never a stale past time. On create, one-shot schedules keep the documented 60-second default while recurring schedules start one full interval from creation; re-enabling schedules one interval out (the Run action is for immediate runs). The schedule-manager JS no longer sends `workflow_steps` on non-workflow schedule edits (the edit modal's document-wide selector always matched the hidden create form) and the edit modal's duplicate-ID injection is removed.
+
+### Fixed — `aspect_ratio: 'auto'` Rejected by Validated Gemini Tools (PR #6859)
+
+- **Media Studio's default `aspect_ratio: 'auto'` no longer 500s through the validated image tools.** The registry auto-upgrades `edit_gemini_image` to its `_validated` variant whenever registered (PHP 8+ with Symfony — the default), whose `Choice` constraint allowed only `1:1, 3:4, 4:3, 9:16, 16:9` while the base tool advertises `'auto'` in `get_allowed_aspect_ratios()` — the rejected value surfaced as a status-less `validation_failed` → REST 500, masked by `api_error_verbosity: safe`. `'auto'` joins the validated `aspect_ratio` Choices for both Gemini image tools (unknown ratios still fail).
+
+### Fixed — Dependency Advisory + Preset/Manifest Repairs (PRs #6850, #6851)
+
+- **undici 7.30.0 across 8 addon lockfiles** (GHSA-w293-vg96-wgc3, CVE-2026-84961 — TLS certificate validation bypass in BalancedPool; vulnerable range ≥7.24.1, <7.29.1): `npm update undici --package-lock-only` re-resolved jsdom's nested 7.29.0 and hoisted a single patched copy per tree (chat-spa, spa-v2, toolkit-shell, docs-hub, media-studio, canvas-toolkit, comic-reader, document-editor) — lockfile-only, no `package.json` range changes; alerts #993/#995–#1001 resolved.
+- **Preset/manifest test repairs** — `get_fleet_status`/`get_site_uptime` join the `site_management` preset (the all-tools-accounted-for gate) and the base coverage manifest gains both classes; the image-inline test asserts the post-#6846 `data:image/jpeg;base64,` form.
 
 ### Changed — CLI capability gating
 
 - Mutating WP-CLI subcommands now require `manage_options`; the fleet-operator `mcp-ai operator` credential CLI is gated the same way. `wp mcp-ai vault` gates reads on `manage_options` and never renders secret material.
+
+### Tests
+
+- **PR #6849** — 5 new suites (fleet-status tools, pro-status-alerts, status-alert-poller, status-heartbeat, status-remote-monitor-source): 26 tests / 81 assertions on WP 6.9 + WP 7.1 (Docker); worker `npm test` green (6 pre-existing monorepo-root npm failures unrelated).
+- **PR #6852** — 122 tests / 337 assertions incl. the command-tree regression suite (62 registration assertions + aliases + Pro gating).
+- **PR #6857** — 142 tests / 3,635 assertions: full registry coverage (`test-tool-registry-coverage.php` incl. manifest-sync + per-tool schema/capability contracts) + the financial cluster (20 new: `test-finnhub-provider.php`, `test-watchlist-sync.php`).
+- **PR #6861** — `test-mcp-app-client-connection-enhancements.php` + `test-remote-site-manager-mcp-server.php` 44/44; full `tests/mcp-apps/` 64/64; FlowHub + remote-site manager 110/110.
+- **PR #6863** — 463 model-related tests + 21 diagnostics/resolver tests (cross-worktree Docker runner, WP 6.9); individual suites run clean.
+- **PRs #6853/#6855/#6856/#6859** — ai-service 26/26; registry 29/29; validated-tool suites 29/29 incl. the new `'auto'`-passes/unknown-fails pair; 5 schedule regression tests; schedule-manager JS eslint clean.
+
+### Docs
+
+- New `docs/operations/wp-cli.md` operator reference + proposals 050/051 (PRs #6852, #6857); `docs/features/remote-sites.md` gains the FlowHub MCP Apps proxy subsection (PR #6861); `docs/project/plans/media-worker-status-monitoring-plan.md` ships in-window (PR #6849); the October 2026 model-catalog run is documented in the model process docs (PR #6863); `addons/media-studio/README.md` gains the 0.6.1 changelog (PR #6858).
+
+### Versioning
+
+Bumped to **1.1.93** across all version-bearing files. Pro addon: 1.1.93. **Media Worker: v3.2.0 → v3.3.0** (the fleet status module). **Media Studio: 0.6.0 → 0.6.1** (the `/ai/generate` fix). SaaS Controller: **0.3.0** (unchanged). Design System addon: **0.3.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — no port waves in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.5.1** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.10.03** (238 models; Z.AI joins). Tool count: **~349 base + ~1,312 Pro (~1,661 total — +2 base +3 Pro)** — the fleet pair (`get_fleet_status`/`get_site_uptime`) and the financial trio (`watchlist_sync`/`market_overview_widget` + the previously orphaned `import_financial_planning_blueprint`; live registry authoritative). Provider count: **18** chat providers (Z.AI joins the catalog). Addon count: **28** (unchanged). Bundled skills: **75** base + **41** Pro (unchanged). Coding-time agent skills: **61** (unchanged). Stale build ZIPs removed: the 1.1.91 oOS set (6 files) + the superseded media-studio (0.1.0/0.2.0/0.6.0) and saas-controller (0.1.0/0.2.0) addon ZIPs (5 files — 11 total).
 
 ## [1.1.92] - 2026-10-02
 
