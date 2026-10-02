@@ -1025,6 +1025,7 @@ wp-mcp-ai-tool-manage-template-versions
 wp-mcp-ai-tool-manage-workflow-rules
 wp-mcp-ai-tool-mark-eca-attendance
 wp-mcp-ai-tool-market-forecast-analyzer
+wp-mcp-ai-tool-market-overview-widget
 wp-mcp-ai-tool-market-screener
 wp-mcp-ai-tool-market-sentiment-analyzer
 wp-mcp-ai-tool-matrix-operations
@@ -1279,6 +1280,7 @@ wp-mcp-ai-tool-vehicle-cleaning-estimate
 wp-mcp-ai-tool-vehicle-repair-estimate
 wp-mcp-ai-tool-verify-prescription-interactions
 wp-mcp-ai-tool-vin-decode
+wp-mcp-ai-tool-watchlist-sync
 wp-mcp-ai-tool-web-browser
 wp-mcp-ai-tool-withdrawal-strategy-planner
 wp-mcp-ai-tool-withdraw-student-eca

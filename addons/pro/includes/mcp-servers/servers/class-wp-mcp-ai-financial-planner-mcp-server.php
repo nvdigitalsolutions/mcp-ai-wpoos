@@ -113,6 +113,9 @@ class WP_MCP_AI_Financial_Planner_MCP_Server extends WP_MCP_AI_Toolkit_Server_Ba
 				'investment_signal_tracker',
 				'stock_data_fetcher',
 				'financial_logic_visualizer',
+				// OpenStock parity tools (proposal 051).
+				'watchlist_sync',
+				'market_overview_widget',
 			)
 		);
 	}

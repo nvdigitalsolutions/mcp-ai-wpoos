@@ -1729,6 +1729,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Portfolio_Transaction_Log' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-portfolio-transaction-log.php',
 				// Price alerts (OpenTerminal lessons).
 				'WP_MCP_AI_Tool_Price_Alerts'              => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-price-alerts.php',
+				// Watchlist & market overview (OpenStock parity, proposal 051).
+				'WP_MCP_AI_Tool_Watchlist_Sync'            => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-watchlist-sync.php',
+				'WP_MCP_AI_Tool_Market_Overview_Widget'    => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-market-overview-widget.php',
+				// Financial planning assistant blueprints.
+				'WP_MCP_AI_Tool_Import_Financial_Planning_Blueprint' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/examples/class-wp-mcp-ai-tool-import-financial-planning-blueprint.php',
 			);
 			$pro_tools                       = array_merge( $pro_tools, $financial_planner_toolkit_tools );
 		}
