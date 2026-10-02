@@ -49,7 +49,8 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'gpt-5.3-codex', $configs );
 		$this->assertArrayHasKey( 'gpt-5.1', $configs );
 		$this->assertArrayHasKey( 'gpt-5.2', $configs );
-		$this->assertArrayHasKey( 'gpt-5.2-codex', $configs );
+		$this->assertArrayHasKey( 'gpt-6-sol', $configs );
+		$this->assertArrayHasKey( 'gpt-6-luna', $configs );
 		$this->assertArrayHasKey( 'gpt-5', $configs );
 		$this->assertArrayHasKey( 'gpt-4.1', $configs );
 		$this->assertArrayHasKey( 'gpt-4.1-mini', $configs );
@@ -57,7 +58,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'claude-opus-4-6', $configs );
 		$this->assertArrayHasKey( 'claude-sonnet-4-6', $configs );
 		$this->assertArrayHasKey( 'claude-sonnet-4-5-20250929', $configs );
-		$this->assertArrayHasKey( 'claude-3-5-sonnet-20241022', $configs );
+		$this->assertArrayHasKey( 'claude-sonnet-5-5', $configs );
 		$this->assertArrayHasKey( 'gemini-3.1-pro', $configs );
 		$this->assertArrayHasKey( 'gemini-2.5-flash', $configs );
 		$this->assertArrayHasKey( 'qwen/qwen3-coder-30b', $configs );
@@ -421,15 +422,15 @@ class Test_Model_Config extends WP_UnitTestCase {
 	 */
 	public function test_gpt_5_2_models_configuration() {
 		$gpt_5_2_models = array(
-			'gpt-5.2'       => array(
+			'gpt-5.2'   => array(
 				'name'           => 'GPT-5.2 with enhanced reasoning for coding, math, writing. 128k standard context',
 				'context_window' => 128000,
 				'cost_per_1k'    => 0.00175,
 			),
-			'gpt-5.2-codex' => array(
-				'name'           => 'GPT-5.2 Codex',
-				'context_window' => 400000,
-				'cost_per_1k'    => 0.00175,
+			'gpt-6-sol' => array(
+				'name'           => 'GPT-6 Sol (September 22, 2026)',
+				'context_window' => 1050000,
+				'cost_per_1k'    => 0.002,
 			),
 		);
 

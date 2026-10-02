@@ -414,3 +414,97 @@ remains the recommended default).
   model mirrors keep their own tracks.
 - `plugins/nvoos-content-graph-ai/` mirrors the catalog in its own
   `src/Model/model-catalog.json` — flagged for the content-graph workstream.
+
+---
+
+## This Month's Changes (October 2026)
+
+Full refresh as of 2026-10-03 (catalog version 2026.10.03, 238 models across 18
+providers — the `zai` provider joins the catalog for the first time). Sources:
+OpenAI deprecations + endoflife.date (fetched 2026-10-03), Anthropic model
+deprecations page, Google Gemini deprecations + changelog, Kimi model list,
+Cloudflare Workers AI pricing (updated 2026-10-01), Z.AI pricing pages, DeepSeek
+pricing page (unchanged).
+
+### New Models Added to Catalog
+| Model | Provider | Notes |
+|---|---|---|
+| `gpt-6-sol` | openai | Sep 22, 2026. $2/$10 per 1M, 1.05M ctx. Replacement for the legacy gpt-5.1/gpt-5.3-codex line. |
+| `gpt-6-luna` | openai | Sep 22, 2026. $0.10/$0.50 per 1M, 1.05M ctx. |
+| `claude-sonnet-5-5` | anthropic | Sep 28, 2026. $2/$10 per 1M (Sonnet 5 pricing). |
+| `claude-opus-5-5` | anthropic | Sep 22, 2026. $4/$20 per 1M (20% cut from Opus 5). |
+| `claude-mythos-5-1` | anthropic | Sep 1, 2026. Invitation-gated; $10/$50 per 1M. |
+| `gemini-3.8-live` | gemini | Sep 15, 2026 GA. Speech-to-speech; $0.75/$4.50 text, $3/$12 audio. |
+| `gemini-omni-1.1-flash` | gemini | Aug 27, 2026 GA (renamed from `gemini-omni-flash`). |
+| `@cf/google/gemma-4-26b-a4b-it`, `@cf/moonshotai/kimi-k2.6`, `@cf/moonshotai/kimi-k2.7-code`, `@cf/zai-org/glm-4.7-flash`, `@cf/zai-org/glm-5.2`, `@cf/zai-org/glm-5.3`, `@cf/zai-org/glm-5.3-flash`, `@cf/nvidia/nemotron-3-120b-a12b`, `@cf/openai/gpt-oss-120b`, `@cf/openai/gpt-oss-20b`, `@cf/deepseek-ai/deepseek-v4-flash-0731`, `@cf/deepseek-ai/deepseek-v4-pro-0813` | cloudflare | Workers AI catalog refresh; pricing from the 2026-10-01 pricing page. |
+| `glm-5.3`, `glm-5.3-flash`, `glm-5.3-flashx`, `glm-5.2` | zai | New Z.AI provider entries (GLM-5.3 Aug 18, 2026). |
+
+### Status Changes / Removals
+| Model | Change | Reason |
+|---|---|---|
+| `gpt-5-codex`, `gpt-5.1-codex`, `gpt-5.1-codex-max`, `gpt-5.1-codex-mini`, `gpt-5.2-codex` | Removed | OpenAI shut these down 2026-07-23. |
+| `gpt-5` / `-mini` / `-nano` / `-pro` | Deprecated | OpenAI shutdown 2026-12-11. |
+| `gpt-5.1`, `gpt-5.3-codex`, `gpt-5.4-nano` | Deprecated | OpenAI shutdown 2027-04-01. |
+| `gpt-4o`, `gpt-4.1-nano` | Deprecated | OpenAI shutdown 2026-10-23 (documented successors gpt-5.6-sol / gpt-5.6-luna). Pinned-ID test updated to the deprecated+successor contract. |
+| `claude-3-5-haiku-20241022`, `claude-3-5-sonnet-20241022` | Removed | Retired by Anthropic (Feb 19 / Oct 28 2025). |
+| `claude-sonnet-4-5-20250929` | Sunset set | Retirement 2026-11-30 → claude-sonnet-5-5. |
+| `gemini-2.5-flash-image` | Removed | Shutdown 2026-10-02 (sunset passed) → gemini-3.1-flash-image. |
+| `gemini-live-2.5-flash-preview` | Removed | Shutdown passed → gemini-3.8-live. |
+| `gemini-3.1-flash-lite` | Deprecated | Google shutdown 2027-05-07 → gemini-3.5-flash-lite. |
+| `kimi-k2`, `kimi-k2.5`, `kimi-k2-thinking`, `moonshot-v1-8k/32k/128k` | Removed | Discontinued (k2 series 2026-05-25; k2.5 + moonshot-v1 2026-08-31) → kimi-k3. |
+| `@cf/google/gemma-3-12b-it` | Deprecated | Cloudflare catalog refresh 2026-05-30 → gemma-4-26b-a4b-it. |
+
+### Default Changes
+| Setting | Old | New |
+|---|---|---|
+| `default_gemini_model` | `gemini-3.6-flash` | `gemini-3.8-flash` |
+| `gemini_live_model` + Gemini Live client `DEFAULT_MODEL` | `gemini-3.1-flash-live-preview` | `gemini-3.8-live` |
+| `openai_realtime_model` + realtime client `DEFAULT_MODEL` | `gpt-realtime-2` | `gpt-realtime-2.1` |
+| `openai_transcribe_model` | `gpt-4o-mini-transcribe` | `gpt-transcribe` |
+| Anthropic `resolve_model()` / list order | `claude-sonnet-5` | `claude-sonnet-5-5` |
+| Router verification: anthropic | `claude-opus-5` | `claude-opus-5-5` |
+| Router draft: openai | `gpt-4.1-nano` | `gpt-6-luna` |
+| Router draft: gemini | `gemini-2.5-flash` | `gemini-3.5-flash-lite` |
+| Router draft/verification: zai | `glm-4-flash` / `glm-4-plus` | `glm-5.3-flash` / `glm-5.3` |
+| Z.AI client `DEFAULT_MODEL` + section default | `glm-5.2` | `glm-5.3` |
+| `gemini_video_model` + Omni service `OMNI_MODEL` + Veo tool default | `gemini-omni-flash` | `gemini-omni-1.1-flash` |
+| Kimi dropdowns + client lists | k2/k2.5/k2-thinking/moonshot-v1 | current k3/k2.7-code(+highspeed)/k2.6 only |
+| Research-tool zai fallbacks (pro ×10 + deep-research) | `glm-4` | `glm-5.3-flash` |
+| Model-service lanes (openai/anthropic/gemini) | gpt-5.4 / sonnet-4-6 / 2.5-flash | gpt-6-sol/luna / sonnet-5-5 / 3.8-flash |
+
+### Pricing Fixes
+| Model | Old | New | Notes |
+|---|---|---|---|
+| `@cf/meta/llama-4-scout-17b-16e-instruct` output | $0.81/1M | $0.85/1M | Workers AI pricing page. |
+| `@cf/google/gemma-3-12b-it` | $0.15/$0.45 | $0.345/$0.556 | Catalog was ~2x off; deprecated but still billed. |
+
+### Migration Map Fixes
+| Legacy ID | Old Target | New Target |
+|---|---|---|
+| `gpt-5-codex` / `-5.1-codex` / `-5.1-codex-max` / `-5.2-codex` | — | `gpt-5.6-sol` |
+| `gpt-5.1-codex-mini` | — | `gpt-5.6-terra` |
+| `gpt-5-chat-latest` / `gpt-5.1-chat-latest` / `gpt-5.2-chat-latest` / `gpt-5.3-chat-latest` | — | `gpt-5.6-sol` |
+| `claude-3-5-haiku-20241022` | — | `claude-haiku-4-5` |
+| `claude-3-5-sonnet-20241022` | — | `claude-sonnet-4-6` |
+| `gemini-2.0-flash-image` / `gemini-2.5-flash-image` | 2.5 / preview | `gemini-3.1-flash-image` |
+| `gemini-live-2.5-flash-preview` | — | `gemini-3.8-live` |
+| `gemini-omni-flash` | — | `gemini-omni-1.1-flash` |
+| `kimi-latest` / `kimi-k2` / `kimi-k2-thinking` / `kimi-k2.5` / `moonshot-v1-*` | — | `kimi-k3` |
+| `o1` / `o1-preview` / `o1-pro` | `o3-mini` / `o3-pro` (absent from catalog) | `gpt-5.6-sol` |
+| `o1-mini` | `o3-mini` (absent) | `gpt-5.6-terra` |
+
+### Deferred (still servable — no migration entries yet)
+`gpt-4o`, `gpt-4.1-nano`, `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5-pro`,
+`gpt-5.1`, `gpt-5.3-codex`, `gpt-5.4-nano` stay deprecated-with-sunset in the
+catalog; the post-sunset refresh adds their migration entries (the
+`deepseek-v4-pro` precedent).
+
+### Notes
+- TTS default (`openai_speech_model`) deliberately unchanged: the speech tools
+  call the `/audio/speech` TTS endpoint, and OpenAI's replacement
+  (`gpt-realtime-2.1-mini`) targets the Realtime API. The section description
+  now documents the 2027-01-06 TTS retirement.
+- DeepSeek, TypeSafe Jev, NVIDIA NIM, and the local providers needed no changes
+  this month.
+- `plugins/nvoos-content-graph-ai/` mirrors (catalog, UsageTracker, realtime
+  client) were flagged, not edited.

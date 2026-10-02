@@ -584,7 +584,7 @@ class NV_oOS_Media_Studio_AI_Service {
 	 */
 	protected static function resolve_edit_model() {
 		$fallback = 'gemini-3.1-flash-image';
-		$allowed  = array( 'gemini-3.1-flash-image', 'gemini-2.5-flash-image', 'gemini-exp-1206' );
+		$allowed  = array( 'gemini-3.1-flash-image', 'gemini-exp-1206' );
 		$model    = $fallback;
 
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {

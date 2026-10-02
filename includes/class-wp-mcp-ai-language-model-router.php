@@ -530,8 +530,8 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 */
 		public function get_draft_model_for_provider( string $provider ): array {
 			$draft_models = array(
-				'openai'       => 'gpt-4.1-nano',
-				'gemini'       => 'gemini-2.5-flash',
+				'openai'       => 'gpt-6-luna',
+				'gemini'       => 'gemini-3.5-flash-lite',
 				'anthropic'    => 'claude-haiku-4-5',
 				'deepseek'     => 'deepseek-flash',
 				'ollama'       => 'llama3.2:3b',
@@ -542,7 +542,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 				'baseten'      => 'llama-3.2-3b-instruct',
 				'digitalocean' => 'llama-3.2-3b-instruct',
 				'kimi'         => 'kimi-k2.6',
-				'zai'          => 'glm-4-flash',
+				'zai'          => 'glm-5.3-flash',
 				'openrouter'   => 'openai/gpt-4.1-mini',
 				'embedded'     => 'llama-3.2-3b-instruct',
 			);
@@ -585,7 +585,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$verification_models = array(
 				'openai'       => 'gpt-4.1',
 				'gemini'       => 'gemini-3.1-pro',
-				'anthropic'    => 'claude-opus-5',
+				'anthropic'    => 'claude-opus-5-5',
 				'deepseek'     => 'deepseek-flash',
 				'ollama'       => 'qwen2.5:72b',
 				'huggingface'  => 'meta-llama/Llama-3.3-70B-Instruct',
@@ -595,7 +595,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 				'baseten'      => 'llama-3.3-70b-instruct',
 				'digitalocean' => 'llama-3.3-70b-instruct',
 				'kimi'         => 'kimi-k3',
-				'zai'          => 'glm-4-plus',
+				'zai'          => 'glm-5.3',
 				'openrouter'   => 'anthropic/claude-sonnet-5',
 				'embedded'     => 'qwen2.5-72b-instruct',
 			);

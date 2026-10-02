@@ -24,9 +24,10 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 	 * Supports chat completions, tool/function calling, streaming (SSE identical
 	 * to OpenAI), JSON mode, live model listing, and token counting.
 	 *
-	 * Note on tool calling: kimi-k2-thinking and kimi-k1.5-* are reasoning
-	 * models that do not support function/tool calling. All moonshot-v1-* and
-	 * kimi-k2/k2.5/k2.6 models support tools.
+	 * Note on tool calling: kimi-k1.5-* are reasoning models that do not
+	 * support function/tool calling. All current kimi-k2.x/kimi-k3 models
+	 * support tools. The kimi-k2.5/kimi-k2/moonshot-v1 lines were discontinued
+	 * (2026-05-25 / 2026-08-31 respectively).
 	 *
 	 * Note on embeddings: Kimi does not currently expose a public embeddings
 	 * endpoint. No WP_MCP_AI_Embedding_Provider_Kimi is registered.
@@ -91,22 +92,19 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		const MODELS_WITH_TOOL_CALLING = array(
 			'kimi-k3',
 			'kimi-k2.7-code',
+			'kimi-k2.7-code-highspeed',
 			'kimi-k2.6',
-			'kimi-k2.5',
-			'kimi-k2',
 		);
 
 		/**
 		 * Models that do not support tool/function calling.
 		 *
-		 * The kimi-k2-thinking model is a chain-of-thought model that rejects the `tools`
-		 * parameter. kimi-k1.5-* are long-context reasoning models without tool
+		 * The kimi-k1.5-* models are long-context reasoning models without tool
 		 * support. Tools are stripped automatically when these models are selected.
 		 *
 		 * @var array
 		 */
 		const MODELS_WITHOUT_TOOL_CALLING = array(
-			'kimi-k2-thinking',
 			'kimi-k1.5-32k',
 			'kimi-k1.5-128k',
 		);
@@ -117,16 +115,10 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		 * @var array
 		 */
 		const MODEL_CONTEXT_WINDOWS = array(
-			'kimi-k3'          => 1048576,
-			'kimi-k2.7-code'   => 256000,
-			'kimi-k2.6'        => 256000,
-			'kimi-k2.5'        => 256000,
-			'kimi-k2'          => 256000,
-			'kimi-k1.5'        => 131072,
-			'moonshot-v1-8k'   => 8192,
-			'moonshot-v1-32k'  => 32768,
-			'moonshot-v1-128k' => 131072,
-			'moonshot-v1'      => 131072,
+			'kimi-k3'        => 1048576,
+			'kimi-k2.7-code' => 256000,
+			'kimi-k2.6'      => 256000,
+			'kimi-k1.5'      => 131072,
 		);
 
 		// -------------------------------------------------------------------------

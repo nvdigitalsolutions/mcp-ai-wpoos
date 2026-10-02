@@ -430,8 +430,18 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		public function list_models( array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- $options reserved for future API-based enumeration.
 			return array(
 				array(
+					'id'             => 'claude-opus-5-5',
+					'name'           => __( 'Claude Opus 5.5 (September 2026 - flagship)', 'mcp-ai-wpoos' ),
+					'context_window' => 1000000,
+				),
+				array(
+					'id'             => 'claude-sonnet-5-5',
+					'name'           => __( 'Claude Sonnet 5.5 (September 2026 - default)', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+				array(
 					'id'             => 'claude-opus-5',
-					'name'           => __( 'Claude Opus 5 (July 2026 - default flagship)', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Opus 5 (July 2026)', 'mcp-ai-wpoos' ),
 					'context_window' => 1000000,
 				),
 				array(
@@ -440,13 +450,18 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					'context_window' => 200000,
 				),
 				array(
+					'id'             => 'claude-mythos-5-1',
+					'name'           => __( 'Claude Mythos 5.1 (invitation-only top tier)', 'mcp-ai-wpoos' ),
+					'context_window' => 1000000,
+				),
+				array(
 					'id'             => 'claude-mythos-5',
 					'name'           => __( 'Claude Mythos 5 (invitation-only top tier)', 'mcp-ai-wpoos' ),
 					'context_window' => 1000000,
 				),
 				array(
 					'id'             => 'claude-sonnet-5',
-					'name'           => __( 'Claude Sonnet 5 (June 2026 - default)', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Sonnet 5 (June 2026)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
@@ -476,17 +491,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				),
 				array(
 					'id'             => 'claude-sonnet-4-5',
-					'name'           => __( 'Claude Sonnet 4.5 (legacy)', 'mcp-ai-wpoos' ),
-					'context_window' => 200000,
-				),
-				array(
-					'id'             => 'claude-3-5-sonnet-20241022',
-					'name'           => __( 'Claude 3.5 Sonnet (legacy, sunset 2026-09-30)', 'mcp-ai-wpoos' ),
-					'context_window' => 200000,
-				),
-				array(
-					'id'             => 'claude-3-5-haiku-20241022',
-					'name'           => __( 'Claude 3.5 Haiku (legacy, sunset 2026-09-30)', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Sonnet 4.5 (legacy - retires 2026-11-30)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 			);
@@ -651,7 +656,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				return $model;
 			}
 
-			return 'claude-sonnet-5';
+			return 'claude-sonnet-5-5';
 		}
 
 		/**

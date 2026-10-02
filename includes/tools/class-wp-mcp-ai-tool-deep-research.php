@@ -956,7 +956,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! in_array( 'zai', $exclude_providers, true ) && ! empty( $settings['zai_api_key'] ) && class_exists( 'WP_MCP_AI_ZAI_Client' ) ) {
 			$client = new WP_MCP_AI_ZAI_Client();
-			$model  = ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-4';
+			$model  = ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-5.3-flash';
 			return array(
 				'client'   => $client,
 				'provider' => 'zai',
