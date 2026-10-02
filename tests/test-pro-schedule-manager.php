@@ -502,6 +502,172 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 		$this->assertSame( 'not_found', $result->get_error_code() );
 	}
 
+	// -------------------------------------------------------------------------
+	// Cron re-scheduling regressions (create/save must not trigger a run)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * A recurring schedule created without an explicit timestamp must start one
+	 * full interval from now — not 60 seconds after creation.
+	 */
+	public function test_create_recurring_schedule_without_timestamp_starts_next_interval() {
+		$before = time();
+
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_test_recurring_no_ts',
+				'name'          => 'Recurring no timestamp',
+				'schedule'      => 'daily',
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		$next = wp_next_scheduled( WP_MCP_AI_Pro_Schedule_Manager::DISPATCH_HOOK, array( $id ) );
+		$this->assertNotFalse( $next );
+		$this->assertGreaterThanOrEqual( $before + DAY_IN_SECONDS - 5, $next );
+	}
+
+	/**
+	 * Saving metadata (name/priority) on an armed recurring schedule must not
+	 * re-schedule the cron event — the event keeps its original next-run time
+	 * instead of being re-armed at the stale stored timestamp (which WP cron
+	 * would fire immediately on the next spawn).
+	 */
+	public function test_update_schedule_metadata_only_keeps_existing_cron_event() {
+		$original_ts = time() + HOUR_IN_SECONDS;
+
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_test_keep_event',
+				'name'          => 'Original name',
+				'schedule'      => 'daily',
+				'timestamp'     => $original_ts,
+			),
+			$this->admin_id
+		);
+
+		// Simulate a schedule that has been running for a while: its stored
+		// first-run timestamp is now in the past.
+		$schedules                     = get_option( WP_MCP_AI_Pro_Schedule_Manager::SCHEDULES_OPTION, array() );
+		$schedules[ $id ]['timestamp'] = time() - HOUR_IN_SECONDS;
+		update_option( WP_MCP_AI_Pro_Schedule_Manager::SCHEDULES_OPTION, $schedules );
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+			WP_MCP_AI_Cache_Helper::delete( 'pro_schedules' );
+		}
+
+		WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array( 'name' => 'Renamed only' ),
+			$this->admin_id
+		);
+
+		$next = wp_next_scheduled( WP_MCP_AI_Pro_Schedule_Manager::DISPATCH_HOOK, array( $id ) );
+		$this->assertSame( $original_ts, $next );
+		$this->assertSame( 'daily', wp_get_schedule( WP_MCP_AI_Pro_Schedule_Manager::DISPATCH_HOOK, array( $id ) ) );
+	}
+
+	/**
+	 * Saving a one-shot schedule that has already run must not re-arm it.
+	 */
+	public function test_update_schedule_does_not_rearm_consumed_single_schedule() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_test_consumed_single',
+				'name'          => 'One-shot',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 3600,
+			),
+			$this->admin_id
+		);
+
+		// Simulate the post-run state: cron consumed the single event, the
+		// stored first-run timestamp is in the past, and the run counter moved.
+		wp_clear_scheduled_hook( WP_MCP_AI_Pro_Schedule_Manager::DISPATCH_HOOK, array( $id ) );
+		$schedules                           = get_option( WP_MCP_AI_Pro_Schedule_Manager::SCHEDULES_OPTION, array() );
+		$schedules[ $id ]['timestamp']       = time() - 3600;
+		$schedules[ $id ]['run_count']       = 1;
+		$schedules[ $id ]['last_run_status'] = 'success';
+		update_option( WP_MCP_AI_Pro_Schedule_Manager::SCHEDULES_OPTION, $schedules );
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+			WP_MCP_AI_Cache_Helper::delete( 'pro_schedules' );
+		}
+
+		WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array( 'name' => 'Renamed one-shot' ),
+			$this->admin_id
+		);
+
+		$this->assertFalse( wp_next_scheduled( WP_MCP_AI_Pro_Schedule_Manager::DISPATCH_HOOK, array( $id ) ) );
+	}
+
+	/**
+	 * Providing an explicit future timestamp on update still reschedules.
+	 */
+	public function test_update_schedule_explicit_timestamp_reschedules() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_test_explicit_ts',
+				'name'          => 'Explicit ts',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		$new_ts = time() + 900;
+
+		WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array( 'timestamp' => $new_ts ),
+			$this->admin_id
+		);
+
+		$next = wp_next_scheduled( WP_MCP_AI_Pro_Schedule_Manager::DISPATCH_HOOK, array( $id ) );
+		$this->assertSame( $new_ts, $next );
+	}
+
+	/**
+	 * Re-enabling a disabled schedule must schedule a future run, not fire
+	 * immediately via a stale past timestamp.
+	 */
+	public function test_toggle_on_consumed_single_schedules_future_run() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_test_toggle_on',
+				'name'          => 'Toggle on',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		// Simulate a consumed, then disabled, one-shot.
+		wp_clear_scheduled_hook( WP_MCP_AI_Pro_Schedule_Manager::DISPATCH_HOOK, array( $id ) );
+		$schedules                     = get_option( WP_MCP_AI_Pro_Schedule_Manager::SCHEDULES_OPTION, array() );
+		$schedules[ $id ]['timestamp'] = time() - 3600;
+		$schedules[ $id ]['run_count'] = 1;
+		$schedules[ $id ]['enabled']   = false;
+		update_option( WP_MCP_AI_Pro_Schedule_Manager::SCHEDULES_OPTION, $schedules );
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+			WP_MCP_AI_Cache_Helper::delete( 'pro_schedules' );
+		}
+
+		$before = time();
+		WP_MCP_AI_Pro_Schedule_Manager::toggle_schedule( $id, true, $this->admin_id );
+
+		$next = wp_next_scheduled( WP_MCP_AI_Pro_Schedule_Manager::DISPATCH_HOOK, array( $id ) );
+		$this->assertNotFalse( $next );
+		$this->assertGreaterThanOrEqual( $before + 55, $next );
+	}
+
 	/**
 	 * Test that workflow_steps replace the existing tool chain on workflow
 	 * schedules, with per-step sanitisation.
