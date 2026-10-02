@@ -69,6 +69,8 @@ The umbrella verbs that remain in the top-level dispatcher (`includes/class-wp-m
 
 Folder-specific deltas:
 
+- **Minimum WP-CLI version: 2.9** (`WP_CLI::halt`, `WP_CLI\Utils\get_flag_value`, class-registration help). Older WP-CLI versions are untested.
+- **Deprecation policy:** renamed commands keep their legacy names registered as aliases for one minor release, then the alias is removed. Current aliases: `mcp calendar` → `mcp-ai calendar`, `mcp place` → `mcp-ai place`, top-level `ezuite`/`flowhub`/`shopify-sync`/`profession` → `mcp-ai …`.
 - Every concrete command extends `WP_MCP_AI_CLI_Base_Command` (which itself extends `WP_CLI_Command`) so progress bars, batch counters, and error/success summaries stay consistent — **including `DLQ` and `SLA`**, which were migrated to extend `Base_Command`.
 - Each file MUST be a no-op outside WP-CLI — guard with `if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) { return; }` at the top.
 - Operator-facing output goes through `WP_CLI::log` / `WP_CLI::success` / `WP_CLI::warning` / `WP_CLI::error`; never `echo` or `print_r`.

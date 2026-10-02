@@ -37,7 +37,8 @@
         "guzzlehttp/guzzle": "^7.15.2"
     },
     "suggest": {
-        "rahul900day/tiktoken-php": "Provides token counting for OpenAI models. Without this, token counting is estimated."
+        "rahul900day/tiktoken-php": "Provides token counting for OpenAI models. Without this, token counting is estimated.",
+        "wp-cli/wp-cli": "WP-CLI 2.9+ powers the wp mcp-ai command tree (see docs/operations/wp-cli.md)."
     },
     "require-dev": {
         "cweagans/composer-patches": "^2.0",
