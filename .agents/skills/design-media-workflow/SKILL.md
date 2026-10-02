@@ -101,12 +101,12 @@ The mcp-ai-wpoos plugin registers these WP-CLI commands useful for design workfl
 
 | Command | Use for |
 |---|---|
-| `wp ezuite status` | EZuite ERP connection status |
-| `wp ezuite trigger` | Trigger ERP data sync |
-| `wp ezuite low-stock-report` | Low stock inventory report |
-| `wp shopify-sync status` | Shopify sync status |
-| `wp shopify-sync trigger` | Trigger Shopify sync |
-| `wp shopify-sync cost-report` | Shopify API cost report |
+| `wp mcp-ai ezuite status` | EZuite ERP connection status |
+| `wp mcp-ai ezuite trigger` | Trigger ERP data sync |
+| `wp mcp-ai ezuite low-stock-report` | Low stock inventory report |
+| `wp mcp-ai shopify-sync status` | Shopify sync status |
+| `wp mcp-ai shopify-sync trigger` | Trigger Shopify sync |
+| `wp mcp-ai shopify-sync cost-report` | Shopify API cost report |
 
 All commands support `--help` for subcommand details.
 
