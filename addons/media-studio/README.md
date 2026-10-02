@@ -96,13 +96,42 @@ runs after the XMP write.
 
 ## Version bump rule
 
-When the SPA bundle changes, bump **all three** in the same commit:
+When the SPA bundle changes, bump **all four** in the same commit:
 
 1. `Version:` header in `nvoos-media-studio.php`
 2. `define( 'NVOOS_MEDIA_STUDIO_VERSION', '…' );`
 3. `"version"` in `package.json`
+4. The root `"version"` in `package-lock.json` (top level **and** the
+   `packages[""]` block) — `npm ci` refuses to install on a mismatch
 
-This forces `?ver=` query strings to invalidate browser caches.
+Bumping the bundle version forces `?ver=` query strings to invalidate browser
+caches. PHP-only fixes bump the same places too: the constant is what
+`/health`, `/ai/capabilities`, and `wp mcp-ai media-studio status` report, so
+a bump is the only way a deployed site can verify it has the fix.
+
+## Changelog
+
+### 0.6.1 — 2026-10-02
+
+- **Fix `/ai/generate` returning HTTP 500 in fashion mode (#6853).** Transforms
+executed `edit_gemini_image` without a `model` argument, tripping the core
+tool registry's `model_requirements.required` gate — a validation `WP_Error`
+with no HTTP status, which the REST layer rendered as 500. Transforms now
+resolve the Gemini image model (`gemini_image_model` setting, falling back to
+`gemini-3.1-flash-image`, restricted to the tool's allowlist) and pass it with
+every execution. The companion core change returns HTTP 400 for tool-rule
+validation failures and lets the API-key gate fall back to
+`WP_MCP_AI_Credential_Resolver` (env vars, PHP constants, WP 7.0 Connectors) —
+sites must update the core plugin alongside the addon.
+
+### 0.6.0 — 2026-10-01
+
+- **AI fashion production suite** — the `fashion-studio` mode with eight
+Gemini-driven transforms (on-model, model-swap, face-swap, background,
+recolor, packshot, detail-repair, try-on), a sidecar-backed fashion `video`
+transform, consent/acknowledgment gates, D-3 cost tripwires, forced
+disclosure watermarks on face outputs, the marketplace output pipeline, and
+IPTC 2025.1 XMP + best-effort C2PA provenance (PRs #6839, #6844).
 
 ## Credits
 
