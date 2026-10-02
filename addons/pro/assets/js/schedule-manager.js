@@ -72,15 +72,22 @@
 				$( '#sm-notify-channels-row' ).toggle( checked );
 			} );
 
-			// Add workflow step.
+			// Add workflow step (create form).
 			$( document ).on( 'click', '#sm-add-step', function () {
 				self.addWorkflowStep();
 			} );
 
-			// Remove workflow step (delegated).
+			// Add workflow step (edit modal).
+			$( document ).on( 'click', '#edit-sm-add-step', function () {
+				self.addWorkflowStep( null, $( '#edit-sm-workflow-steps' ) );
+			} );
+
+			// Remove workflow step (delegated). Scope renumbering to the container
+			// the row lives in — the create form and edit modal each hold a list.
 			$( document ).on( 'click', '.wp-mcp-ai-sm-remove-step', function () {
+				const $list = $( this ).closest( '#sm-workflow-steps, #edit-sm-workflow-steps' );
 				$( this ).closest( '.wp-mcp-ai-sm-step-row' ).remove();
-				self.renumberSteps();
+				self.renumberSteps( $list );
 			} );
 
 			// Create button.
@@ -381,9 +388,9 @@
 		/** ------------------------------------------------------------------ *
 		 *  Workflow step builder
 		 * ------------------------------------------------------------------ */
-		addWorkflowStep: function ( step ) {
-			step = step || { tool_slug: '', arguments: {}, label: '' };
-			const $list  = $( '#sm-workflow-steps' );
+		addWorkflowStep: function ( step, $list ) {
+			step   = step || { tool_slug: '', arguments: {}, label: '' };
+			$list  = $list || $( '#sm-workflow-steps' );
 			const index  = $list.children().length;
 			const strings = wpMcpAiScheduleManager.strings;
 
@@ -400,18 +407,21 @@
 			$list.append( $row );
 		},
 
-		renumberSteps: function () {
-			$( '.wp-mcp-ai-sm-step-row' ).each( function ( i ) {
+		renumberSteps: function ( $list ) {
+			$list = $list || $( '#sm-workflow-steps' );
+			$list.find( '.wp-mcp-ai-sm-step-row' ).each( function ( i ) {
 				$( this ).find( '.wp-mcp-ai-sm-step-num' ).text( i + 1 );
 				$( this ).attr( 'data-step', i );
 			} );
 		},
 
-		collectWorkflowSteps: function () {
+		collectWorkflowSteps: function ( $list ) {
 			const steps   = [];
 			let hasError  = false;
 
-			$( '#sm-workflow-steps .wp-mcp-ai-sm-step-row' ).each( function () {
+			$list = $list || $( '#sm-workflow-steps' );
+
+			$list.find( '.wp-mcp-ai-sm-step-row' ).each( function () {
 				const $row    = $( this );
 				const $argsEl = $row.find( '.sm-step-args' );
 				const slug    = $row.find( '.sm-step-slug' ).val().trim();
@@ -1297,8 +1307,11 @@
 				}.bind( this ) );
 				html += this.editRow(
 					'Workflow Steps',
-					'<div id="sm-workflow-steps">' + stepsHtml + '</div>' +
-					'<button type="button" class="button" id="sm-add-step">+ Add Step</button>'
+					// Unique IDs — the create form also renders a #sm-workflow-steps /
+					// #sm-add-step pair, and duplicate IDs make jQuery target the
+					// wrong container (first match in document order).
+					'<div id="edit-sm-workflow-steps">' + stepsHtml + '</div>' +
+					'<button type="button" class="button" id="edit-sm-add-step">+ Add Step</button>'
 				);
 			}
 
@@ -1423,12 +1436,21 @@
 				notify_email:     $( '#edit-notify-email' ).val().trim(),
 			};
 
-			// Workflow steps.
-			if ( $( '#sm-workflow-steps' ).length ) {
-				const steps = self.collectWorkflowSteps();
+			// Workflow steps — scoped to the edit modal. The create form also
+			// renders a #sm-workflow-steps container, so a document-wide check
+			// would always pass and send workflow_steps for every schedule type
+			// (rejected server-side for non-workflow schedules).
+			const $editSteps = $( '#edit-sm-workflow-steps' );
+			if ( $editSteps.length ) {
+				const steps = self.collectWorkflowSteps( $editSteps );
 				if ( null === steps ) {
 					$btn.prop( 'disabled', false ).text( 'Save Changes' );
 					alert( 'One or more workflow step arguments contain invalid JSON. Please fix the highlighted fields.' );
+					return;
+				}
+				if ( ! steps.length ) {
+					$btn.prop( 'disabled', false ).text( 'Save Changes' );
+					alert( 'At least one workflow step is required.' );
 					return;
 				}
 				data.workflow_steps = steps;
