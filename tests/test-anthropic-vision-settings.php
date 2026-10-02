@@ -130,8 +130,8 @@ class WP_MCP_AI_Vision_Tools_Settings_Test extends WP_UnitTestCase {
 			'default_model'              => 'gpt-4o',
 			'enable_anthropic'           => true,
 			'anthropic_api_key'          => 'sk-ant-test-key',
-			'anthropic_model'            => 'claude-3-5-sonnet-20241022',
-			'anthropic_vision_model'     => 'claude-3-5-sonnet-20241022',
+			'anthropic_model'            => 'claude-sonnet-4-6',
+			'anthropic_vision_model'     => 'claude-sonnet-4-6',
 			'anthropic_max_image_tokens' => '1568',
 		);
 
@@ -142,8 +142,8 @@ class WP_MCP_AI_Vision_Tools_Settings_Test extends WP_UnitTestCase {
 		$posted_settings = array(
 			'enable_anthropic'           => '1',
 			'anthropic_api_key'          => 'sk-ant-test-key-updated',
-			'anthropic_model'            => 'claude-3-5-haiku-20241022',
-			'anthropic_vision_model'     => 'claude-3-5-haiku-20241022',
+			'anthropic_model'            => 'claude-haiku-4-5',
+			'anthropic_vision_model'     => 'claude-haiku-4-5',
 			'anthropic_max_image_tokens' => '2048',
 		);
 
@@ -179,7 +179,7 @@ class WP_MCP_AI_Vision_Tools_Settings_Test extends WP_UnitTestCase {
 
 		// Anthropic vision settings should be updated.
 		$this->assertSame(
-			'claude-3-5-haiku-20241022',
+			'claude-haiku-4-5',
 			$merged['anthropic_vision_model'],
 			'anthropic_vision_model should be updated'
 		);

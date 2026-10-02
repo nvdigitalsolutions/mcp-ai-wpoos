@@ -6,9 +6,9 @@ license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.91"
-  plugin-version-tested: "1.1.91"
-  last-updated: "2026-10-01"
+  plugin-version: "1.1.93"
+  plugin-version-tested: "1.1.93"
+  last-updated: "2026-10-03"
 ---
 
 # Elementor MCP Connections — MCP Apps on NV oOS Assistants
@@ -132,6 +132,24 @@ storage), create it once in **NV oOS Pro → Remote Sites → Add Connection**:
    `mcp_oauth` blob), the import validator no longer auto-disables them, and
    `finalize_oauth_flow()` persists the reference entry onto the assistant
    after the OAuth login completes.
+   **(v1.1.93):** **FlowHub-in-MCP-mode** connections get the same treatment
+   (PR #6854) — the dropdown labels them
+   `Name (FlowHub MCP — https://mcp.flowhub.com)`, `get_mcp_app_connections()`
+   merges them, `is_mcp_app_connection()` accepts them (import-validator
+   fix via the shared predicate), `update_mcp_oauth()` persists their OAuth
+   to the encrypted central store, `test_connection()` runs a real JSON-RPC
+   handshake (`test_flowhub_mcp_connection()`), and `resolve_connection_ref()`
+   resolves FlowHub refs via `build_flowhub_mcp_app_config()` (optional
+   `flowhub_mcp_url` override, decrypted `mcp_oauth`, `connection_ref`
+   auto-refresh). **Proxy inheritance (PR #6861):** `build_flowhub_mcp_app_config()`
+   maps the connection's proxy into the app config as `proxy_url`/`proxy_auth`
+   (proxy password decrypted from the connection record, FlowHub toolkit
+   settings proxy as fallback — the same resolution order as the sync engine);
+   `WP_MCP_AI_MCP_App_Client` + `WP_MCP_AI_MCP_App_OAuth_Client` (all five
+   outbound call sites via `run_proxied_request()`) route FlowHub gateway
+   traffic through the proxy via the `http_api_curl` cURL layer — geo-blocked
+   deployments need no direct egress to `mcp.flowhub.com`. In-process
+   same-origin dispatch stays direct.
 
 ### Path B — inline MCP App (per-assistant)
 
@@ -142,7 +160,7 @@ by `WP_MCP_AI_MCP_App_Registry::sanitize_app_config()`):
 |---|---|
 | `label` | Friendly name; drives the bridge slug (`mcp_app_<label>_<tool>`). Use something short like `elementor` so slugs read `mcp_app_elementor_read_page`. |
 | `server_url` | Full MCP endpoint URL from the Elementor-generated prompt. Must pass `is_url_allowed()` (scheme http/https + host + allowlist when configured). Omitted on reference entries. |
-| `connection_ref` | (Reference mode) ID of a central Remote Sites connection — `mcp_server` or Upwork-in-MCP-mode (v1.1.90+). Resolved at chat time; the row renders read-only with a "Managed in Remote Sites" badge. |
+| `connection_ref` | (Reference mode) ID of a central Remote Sites connection — `mcp_server`, Upwork-in-MCP-mode (v1.1.90+), or FlowHub-in-MCP-mode (v1.1.93+). Resolved at chat time; the row renders read-only with a "Managed in Remote Sites" badge. |
 | `auth_type` | `none`, `bearer`, `basic`, `header`, or `oauth`. See the mapping below. |
 | `token` | Bearer token / Basic credentials / raw header value / OAuth access token. Masked in the UI — never echoed back after save; leaving it blank preserves the stored value. |
 | `header_name` | Custom header name, only for `auth_type: header`. |

@@ -19,8 +19,8 @@ Key `mcp-ai` WP-CLI commands for reporting. Run via `terminal`:
 |---|---|
 | `wp mcp-ai log` | View execution logs for report data extraction |
 | `wp mcp-ai health` | System health check before generating reports |
-| `wp ezuite low-stock-report` | ERP low stock report for e-commerce analytics |
-| `wp shopify-sync cost-report` | Shopify API cost analysis |
+| `wp mcp-ai ezuite low-stock-report` | ERP low stock report for e-commerce analytics |
+| `wp mcp-ai shopify-sync cost-report` | Shopify API cost analysis |
 
 ## When to use this skill
 

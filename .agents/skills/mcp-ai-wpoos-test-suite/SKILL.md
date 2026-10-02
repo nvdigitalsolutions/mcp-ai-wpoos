@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 57 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals, WP_CLI stub constant leak, self-instantiating double-render, wpdb error-HTML envelope leaks, provider array content, coverage-manifest drift), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 60 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-02"
+  last-updated: "2026-10-03"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -800,6 +800,51 @@ the changed files is the substantive gate; plan CI waits accordingly.
       fashion transform) appears there without adding a slug to the
       registration count, so don't assert slug counts from the manifest
       alone.
+
+  58. **New registry tools missing from every assistant preset →
+      `test_all_tools_accounted_for_in_presets` (v1.1.93, PR #6851).** When a
+      PR registers new tools in `includes/class-wp-mcp-ai-tool-registry.php`
+      (or the Pro map) without adding them to an assistant preset, the
+      all-tools-accounted-for gate fails. Fix layers:
+
+      - **Add the tools to a preset** — `get_fleet_status`/`get_site_uptime`
+        joined the `site_management` preset (site-information block); pick the
+        preset that matches the tool family.
+      - **Both coverage manifests** — the **base** manifest lives at
+        `tests/tools/.coverage-manifest.txt` (the Pro one at
+        `addons/pro/tests/tools/.coverage-manifest.txt`, pattern 57); new base
+        tool classes must land in both the preset(s) and the base manifest, or
+        `test_tool_class_manifest_is_up_to_date` fails too.
+      - **Image/attachment assertions follow the pipeline** — a test pinning
+        an earlier behavior (e.g. `convert_image_files_to_image_url` asserting
+        `http` URLs after #6846 switched to inline `data:image/…;base64`)
+        must move to the new contract when the production path changes.
+
+  59. **Tool-rule validation failures rendered as HTTP 500 — a `WP_Error`
+      without an HTTP status (v1.1.93, PR #6853).** `validate_tool_execution()`
+      returned `tool_validation_failed` with no `status` key, and the WP REST
+      layer converts a status-less `WP_Error` into a raw 500 (masked further by
+      `api_error_verbosity: safe`). Fix: every validation `WP_Error` carries
+      `status => 400` with the error list, so failures surface as readable 400s
+      with the real reason. Regression-test the failure path asserting both the
+      HTTP status **and** the error payload, and verify the credential gate:
+      `validate_dependencies()` must resolve `required_settings` keys through
+      `WP_MCP_AI_Credential_Resolver` (env vars, constants, WP 7.0 Connectors)
+      so keys configured outside the settings array can't false-negative the
+      gate.
+
+  60. **Registry auto-upgrade to the `_validated` variant rejects values the
+      base tool advertises (v1.1.93, PR #6859).**
+      `WP_MCP_AI_Tool_Registry::get_tool()` auto-upgrades
+      `edit_gemini_image`/`generate_gemini_image` to their `_validated`
+      wrappers whenever registered (PHP 8+ with Symfony — the default), so the
+      validator's constraints are the real gate. The validated `aspect_ratio`
+      `Choice` allowed only `1:1, 3:4, 4:3, 9:16, 16:9` while the base tools
+      advertise `'auto'` in `get_allowed_aspect_ratios()` — callers passing the
+      advertised default got a status-less `validation_failed` → REST 500. Fix:
+      keep every validated `Choice`/constraint in sync with the base tool's
+      advertised set, and regression-test both directions (the advertised
+      value passes; an unknown value still fails).
 
 ## Production fix vs test fix
 

@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.92"
-  plugin-version-tested: "1.1.92"
-  last-updated: "2026-10-02"
+  plugin-version: "1.1.93"
+  plugin-version-tested: "1.1.93"
+  last-updated: "2026-10-03"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -258,14 +258,32 @@ Verified on the Design Stack (2026-09):
 # 1. Discover valid tool slugs before assigning.
 wp mcp-ai tool list               # base registry: slug + enabled + capability
 wp mcp-ai toolkit list            # Pro toolkit settings keys
+wp mcp-ai tool call <slug> --args='{...}' --assistant-id=<id> --format=json
+wp mcp-ai security posture --format=json    # v1.1.93+ (audit, purge-audit, gate, keys)
+wp mcp-ai model list|suggestions|discover    # v1.1.93+
+wp mcp-ai crm lead list          # v1.1.93+ Pro entity trees: crm, incident,
+wp mcp-ai schedule list          #   maintenance, schedule, workflow, vault
+wp mcp-ai workflow list          #   (metadata-only), remote-site, communication,
+wp mcp-ai media-studio status    #   media-studio — all manage_options-gated.
+# Full operator reference: docs/operations/wp-cli.md (WP-CLI 2.9+ minimum).
+# Canonical namespaces are mcp-ai calendar/place + mcp-ai ezuite/flowhub/
+# shopify-sync/profession; legacy top-level names remain as aliases.
 
 # 2. Create the assistant record.
 wp mcp-ai assistant create --title="Brand Assistant" --status=publish --porcelain
 # → prints the new assistant ID
 
-# 3. Set runtime meta. NOTE: assistant create/update --model / --system-prompt
-#    write legacy mcp_ai_model / mcp_ai_system_prompt keys that the runtime
-#    does NOT read. The runtime reads _wp_mcp_ai_* — set those explicitly.
+# 3. Set runtime meta (v1.1.93+, PR #6852): assistant create/update/get and
+#    assistant tools list/add/remove now write/read the canonical
+#    _wp_mcp_ai_* keys directly — --provider / --model / --system-prompt /
+#    --tools flags are supported, so the post-meta workaround below is only
+#    needed on pre-1.1.93 installs.
+wp mcp-ai assistant update <id> --provider=openai --model=gpt-4o-mini \
+  --system-prompt="$(cat assistant-system-prompt.md)"
+wp mcp-ai assistant tools add <id> web_search deep_research create_post
+
+# Pre-1.1.93 fallback: the legacy create/update wrote mcp_ai_model /
+# mcp_ai_system_prompt keys the runtime did NOT read.
 wp post meta update <id> _wp_mcp_ai_provider openai
 wp post meta update <id> _wp_mcp_ai_model gpt-4o-mini
 wp post meta update <id> _wp_mcp_ai_temperature 0.7
@@ -743,9 +761,19 @@ Import external AI conversation exports into the JetEngine
 
 ## Release Notes (per version)
 
-Historical per-version release notes (v1.1.66 through v1.1.92) moved to
+Historical per-version release notes (v1.1.66 through v1.1.93) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.1.93 operational quick notes** (full detail in RELEASE-NOTES.md): the
+media worker doubles as the fleet status service (opt-in `STATUS_ENABLED=1`);
+the plugin gains `get_fleet_status`/`get_site_uptime` + `GET
+/mcp-ai/v1/status/sites` + `/status fleet`; `wp mcp-ai` grows `tool call`,
+`security`, `model`, and nine Pro entity trees (all mutating subcommands
+`manage_options`-gated, `docs/operations/wp-cli.md`); FlowHub MCP connections
+surface in MCP Apps with proxy inheritance; Media Studio 0.6.1 fixes the
+`/ai/generate` 500; the October catalog refresh (v2026.10.03) adds Z.AI and
+refreshes defaults (`gemini-3.8-flash`, `gemini-3.8-live`, `gpt-realtime-2.1`).
 
 ---
 

@@ -21,7 +21,7 @@ class WP_MCP_AI_Transcription_Settings_Test extends WP_UnitTestCase {
 
 		// Verify all transcription settings are present with correct defaults.
 		$this->assertArrayHasKey( 'openai_transcribe_model', $defaults );
-		$this->assertSame( 'gpt-4o-mini-transcribe', $defaults['openai_transcribe_model'] );
+		$this->assertSame( 'gpt-transcribe', $defaults['openai_transcribe_model'] );
 
 		$this->assertArrayHasKey( 'openai_transcribe_response_format', $defaults );
 		$this->assertSame( 'verbose_json', $defaults['openai_transcribe_response_format'] );

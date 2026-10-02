@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.92"
-  plugin-version-tested: "1.1.92"
-  last-updated: "2026-10-02"
+  plugin-version: "1.1.93"
+  plugin-version-tested: "1.1.93"
+  last-updated: "2026-10-03"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -722,22 +722,46 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.89-docs-catch-up.md`,
   `docs/project/plans/v1.1.90-docs-catch-up.md`,
   `docs/project/plans/v1.1.91-docs-catch-up.md`,
-  `docs/project/plans/v1.1.92-docs-catch-up.md` (latest executed — the v1.1.92
+  `docs/project/plans/v1.1.92-docs-catch-up.md`,
+  `docs/project/plans/v1.1.93-docs-catch-up.md` (latest executed — the v1.1.93
+  pass over PRs #6849–#6863: the media-worker fleet status monitoring (#6849 —
+  worker 3.2.0 → 3.3.0, the opt-in STATUS_ENABLED status module, +2 base tools
+  `get_fleet_status`/`get_site_uptime`, `GET /mcp-ai/v1/status/sites`, the Pro
+  Status Dashboard fleet section), the WP-CLI parity & hardening (#6852,
+  Proposal 050 — dispatcher extraction, `tool call`, 11 new commands,
+  `manage_options` gating, `docs/operations/wp-cli.md`), the FlowHub MCP Apps
+  surfacing + proxy carry (#6854/#6861), the Financial Planner OpenStock
+  parity (#6857, Proposal 051 — Finnhub provider, +3 Pro tools incl. the
+  orphaned blueprint registration), the October 2026 Track B model-catalog
+  refresh (#6863 — v2026.10.03, 238 models, **18 providers — Z.AI joins**,
+  provider-count line 15 → 18 with the FOR_REVIEWERS provider-list fix), the
+  Media Studio 0.6.1 `/ai/generate` fix (#6853/#6858), the schedule
+  create/save trigger fixes (#6855/#6856), the validated-tool `auto`
+  aspect-ratio fix (#6859), the undici 7.30.0 advisory (#6850), the
+  preset/manifest repairs (#6851), the in-window dependabot-skill edit
+  (#6862), four new OI-1 groups (42: `@since 1.1.90` financial wave ×62; 43:
+  `@since 1.3.0` Pro CLI ×25; 44: `@since 1.2.0` base CLI + tests ×11; 45:
+  `@since 1.1.92` remote-site-manager/mcp-app-registry ×6 one-behind), six
+  skill reconciliations (plugin ×3 + RELEASE-NOTES, elementor ×2,
+  schedule-manager ×2 + drift repair, analytics-reporting/media-workflow/
+  product-research CLI canonicalization ×2 each, test-suite patterns 58–60,
+  updates), the in-window tool-reference partial count edit reconciled (+3
+  Pro), the ADDON_INVENTORY Media Worker 3.2.0 → 3.3.0 row correction, the
+  stale 1.1.91 build-set removal (6 files) + superseded media-studio and
+  saas-controller addon ZIPs (5 files), and the OI-8 extension (5 new slugs
+  missing from tool-status.txt))
+
+Preceding windows:
+  `docs/project/plans/v1.1.92-docs-catch-up.md` (the v1.1.92
   pass over PRs #6839–#6847: the Media Studio fashion production suite
   (#6839/#6844 — the squash-merged chain; addon 0.1.0 → 0.6.0, 8 `fashion_*`
   Pro tools self-gated on the Media Studio AI service, the 10th Workflow
   Builder preset category, +8 Pro tool count), the inline vision data URLs +
   payload optimization (#6846, pre-staged [Unreleased] CHANGELOG block
   converted), the provider content/credential fixes (#6845), the Pro coverage
-  manifest regeneration (#6847), four new OI-1 groups (38: `@since 1.2.0`
-  research trait; 39: `@since 1.1.91` workflow-presets one-behind; 40: Media
-  Studio 0.2.0–0.5.0 addon-tag wave; 41: missing tags on the fashion Pro
-  stack), five skill reconciliations (plugin ×3 + workflow-builder ×2 +
-  product-photography ×2 + test-suite patterns 56/57 + updates), the stale
-  1.1.90 build-set removal (30 files), and the OI-8 extension (8 fashion
-  slugs missing from tool-status.txt))
-
-Preceding windows:
+  manifest regeneration (#6847), four new OI-1 groups (38–41), five skill
+  reconciliations, the stale 1.1.90 build-set removal (30 files), and the OI-8
+  extension),
   `docs/project/plans/v1.1.89-docs-catch-up.md` (the v1.1.89
   pass over PRs #6802 + #6804–#6810: the Google Classroom ECA integration
   (proposal 046, 12 flag-gated Pro tools + base foundation + new webhook
