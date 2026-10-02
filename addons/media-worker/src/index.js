@@ -11,6 +11,7 @@ import {
 	browserLimiter,
 	crawlLimiter,
 	workflowLimiter,
+	statusLimiter,
 } from './middleware/rate-limit.js';
 import { detectCapabilities } from './utils/capabilities.js';
 import { isMultiTenant, cleanupSiteTemp, tempStats } from './utils/site-paths.js';
@@ -31,6 +32,11 @@ import { dataRouter } from './routes/data.js';
 import { browserRouter } from './routes/browser.js';
 import { crawlRouter } from './routes/crawl.js';
 import { crawl4aiRouter } from './routes/crawl4ai.js';
+import { statusRouter, counters, alertBus, buildSummary } from './routes/status.js';
+import { startSweeper } from './status/sweeper.js';
+import { publicSummary, renderStatusPage } from './status/page.js';
+import { siteConfig } from './status/config.js';
+import { store } from './status/store.js';
 
 dotenv.config();
 
@@ -69,13 +75,48 @@ app.get( '/api/health', (_req, res) => {
 	res.json( {
 		status: 'ok',
 		service: 'design-media-worker',
-		version: '3.2.0',
+		version: '3.3.0',
 		uptime: process.uptime(),
 	} );
 } );
 
 // ── Authentication gate (everything below /api) ────────────
 app.use( '/api', authMiddleware );
+
+// ── Status monitoring module (opt-in via STATUS_ENABLED=1) ──
+// Heartbeats from connected sites flow through the existing auth gate
+// (X-Site-Token → req.site); the dead man's switch sweeper detects
+// silence; the public /status page stays outside /api on purpose.
+if ( siteConfig( 'default' ).enabled ) {
+	app.use( '/api/status', statusLimiter, statusRouter );
+
+	// Alert adapters + sweeper (inert until a transition occurs).
+	const bus = alertBus();
+	counters.alertBus = bus;
+	startSweeper( { store, alertBus: bus } );
+
+	// Public, allowlisted fleet status (Statuspage-style).
+	if ( siteConfig( 'default' ).publicPage ) {
+		app.get( '/status', async ( _req, res ) => {
+			try {
+				const summary = publicSummary( await buildSummary() );
+				if ( 'html' === String( _req.query.format || '' ).toLowerCase() ) {
+					return res.type( 'html' ).send( renderStatusPage( summary ) );
+				}
+				return res.json( summary );
+			} catch {
+				return res.status( 500 ).json( { error: 'status_unavailable' } );
+			}
+		} );
+	}
+} else {
+	app.get( '/api/status/summary', (_req, res) =>
+		res.status( 503 ).json( { error: 'status_not_enabled' } )
+	);
+	app.post( '/api/status/heartbeat', (_req, res) =>
+		res.status( 503 ).json( { error: 'status_not_enabled' } )
+	);
+}
 
 // ── Health (full matrix, authenticated) ────────────────────
 app.get( '/api/health/full', async (_req, res) => {
@@ -121,7 +162,7 @@ app.get( '/api/health/full', async (_req, res) => {
 		res.json( {
 			status: 'ok',
 			service: 'design-media-worker',
-			version: '3.2.0',
+			version: '3.3.0',
 			uptime: process.uptime(),
 			environment: process.env.NODE_ENV || 'development',
 			tenants,

@@ -1896,6 +1896,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_OpenAI_Usage_Analytics'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-openai-usage-analytics.php',
 				'WP_MCP_AI_Tool_Get_Site_Health'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-health.php',
 				'WP_MCP_AI_Tool_Get_Environment_Status'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-environment-status.php',
+				'WP_MCP_AI_Tool_Get_Fleet_Status'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-fleet-status.php',
+				'WP_MCP_AI_Tool_Get_Site_Uptime'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-uptime.php',
 				'WP_MCP_AI_Tool_Generate_Auth0_Token'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php',
 				'WP_MCP_AI_Tool_Get_NHC_Active_Storms'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-nhc-active-storms.php',
 				'WP_MCP_AI_Tool_Search_Attachments'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-attachments.php',

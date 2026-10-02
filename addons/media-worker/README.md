@@ -187,6 +187,36 @@ surface is designed so that never matters:
 | `CRAWL_LLM_TIMEOUT_MS` | 60000 | LLM extraction call budget |
 | `RATE_LIMIT_CRAWL` | 20 / 10 min | Crawl-group rate limit (per-site overrides supported) |
 
+## Status Monitoring (v3.3.0+)
+
+Opt-in fleet monitoring: the worker doubles as the **status service for every
+site connected to it**. Each connected WordPress site pushes a signed
+heartbeat; the worker detects silence (dead man's switch), optionally probes
+public sites externally, computes per-site state + daily uptime, and exposes
+summary/history/metrics APIs.
+
+- `POST /api/status/heartbeat` — ingest a heartbeat (auth: `X-Site-Token`;
+  the site slug is always derived from the token, never from the payload).
+- `GET /api/status/summary` — fleet summary + worst-status rollup.
+- `GET /api/status/sites/:slug` — site detail (components, meta, synthetic).
+- `GET /api/status/history/:slug?days=30` — daily uptime percentages (Statuspage
+  rule: only major/partial outages count as downtime).
+- `GET /api/status/metrics` — OpenMetrics exposition for Prometheus/Grafana
+  (`STATUS_METRICS=1`).
+- `GET /status` (public, outside `/api`) — allowlisted fleet page, JSON or
+  `?format=html` (`STATUS_PUBLIC_PAGE=1`).
+
+Enable with `STATUS_ENABLED=1`. Heartbeats are expected every
+`STATUS_HEARTBEAT_INTERVAL_MS` (300 s default, matching the plugin's
+five-minute tick); a site flips to `at_risk` on its first miss and to
+`major_outage` after `STATUS_CONFIRM_MISSES` consecutive misses (2 default).
+Synthetic external checks (`STATUS_SYNTHETIC_ENABLED=1`) probe
+`<site>/wp-json/mcp-ai/v1/status` over the SSRF guard — a heartbeat-fresh site
+whose frontend is unreachable reports `partial_outage` (split-brain).
+Alerts (HMAC-signed webhooks and/or email) fire on confirmed transitions;
+see `.env.example` for the full `STATUS_*` table. Full design:
+`docs/project/plans/media-worker-status-monitoring-plan.md`.
+
 ## Job Queue Processors (v3.1.1+)
 
 Queue processors were previously never registered — `async_mode` workflow

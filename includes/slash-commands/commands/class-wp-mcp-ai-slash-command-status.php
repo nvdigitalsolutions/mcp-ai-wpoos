@@ -47,6 +47,11 @@ class WP_MCP_AI_Slash_Command_Status {
 
 		$as_json = isset( $flags['json'] );
 
+		// Fleet view: `/status fleet` — sites monitored by the Media Worker.
+		if ( ! empty( $args ) && 'fleet' === sanitize_key( $args[0] ) ) {
+			return $this->render_fleet( $as_json );
+		}
+
 		$data = array();
 
 		// 1. Async health.
@@ -221,6 +226,89 @@ class WP_MCP_AI_Slash_Command_Status {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Render the fleet view (`/status fleet`) from the Media Worker summary.
+	 *
+	 * @param bool $as_json Whether the caller requested JSON output.
+	 * @return array Command response.
+	 */
+	private function render_fleet( $as_json ) {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Worker_Config' ) || ! WP_MCP_AI_Media_Worker_Config::is_configured() ) {
+			return array(
+				'success' => true,
+				'message' => __( 'Fleet monitoring is not connected. Configure the Media Worker URL and enable the status heartbeat.', 'mcp-ai-wpoos' ),
+				'data'    => array( 'sites' => array() ),
+			);
+		}
+
+		$summary = WP_MCP_AI_Media_Worker_Config::request( '/api/status/summary', 'GET', array(), 5 );
+
+		if ( is_wp_error( $summary ) ) {
+			return array(
+				'success' => true,
+				'message' => sprintf(
+					/* translators: %s: error message */
+					__( 'Fleet monitor unreachable: %s', 'mcp-ai-wpoos' ),
+					$summary->get_error_message()
+				),
+				'data'    => array( 'sites' => array() ),
+			);
+		}
+
+		$sites_raw = isset( $summary['sites'] ) && is_array( $summary['sites'] ) ? $summary['sites'] : array();
+		$sites     = array();
+
+		foreach ( $sites_raw as $site ) {
+			if ( ! is_array( $site ) || empty( $site['slug'] ) ) {
+				continue;
+			}
+			$sites[] = array(
+				'slug'   => sanitize_key( $site['slug'] ),
+				'status' => sanitize_key( isset( $site['status'] ) ? $site['status'] : 'unknown' ),
+			);
+		}
+
+		$overall = isset( $summary['overall_status'] ) ? sanitize_key( $summary['overall_status'] ) : 'unknown';
+
+		if ( $as_json ) {
+			return array(
+				'success' => true,
+				'message' => wp_json_encode(
+					array(
+						'overall_status' => $overall,
+						'sites'          => $sites,
+					)
+				),
+				'data'    => array(
+					'overall_status' => $overall,
+					'sites'          => $sites,
+				),
+			);
+		}
+
+		$out  = sprintf( "## Fleet Status — %s\n\n", esc_html( $overall ) );
+		$out .= "| Site | Status |\n";
+		$out .= "|------|--------|\n";
+
+		foreach ( $sites as $site ) {
+			$icon = 'operational' === $site['status'] ? '✅' : ( 'unknown' === $site['status'] ? '⚠️' : '❌' );
+			$out .= sprintf( "| %s | %s %s |\n", esc_html( $site['slug'] ), $icon, esc_html( $site['status'] ) );
+		}
+
+		if ( empty( $sites ) ) {
+			$out .= __( 'No sites have reported a heartbeat yet.', 'mcp-ai-wpoos' ) . "\n";
+		}
+
+		return array(
+			'success' => true,
+			'message' => $out,
+			'data'    => array(
+				'overall_status' => $overall,
+				'sites'          => $sites,
+			),
+		);
 	}
 
 	/**
