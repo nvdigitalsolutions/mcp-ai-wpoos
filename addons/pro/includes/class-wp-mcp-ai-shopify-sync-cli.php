@@ -568,14 +568,24 @@ class WP_MCP_AI_Shopify_Sync_CLI {
 	}
 }
 
-// Register commands with WP-CLI.
+// Register commands under the canonical mcp-ai tree, keeping the legacy
+// top-level `shopify-sync` names as aliases (Proposal 050 namespace unification).
 if ( class_exists( 'WP_CLI' ) ) {
-	WP_CLI::add_command( 'shopify-sync status', array( 'WP_MCP_AI_Shopify_Sync_CLI', 'status' ) );
-	WP_CLI::add_command( 'shopify-sync trigger', array( 'WP_MCP_AI_Shopify_Sync_CLI', 'trigger' ) );
-	WP_CLI::add_command( 'shopify-sync clear-cache', array( 'WP_MCP_AI_Shopify_Sync_CLI', 'clear_cache' ) );
-	WP_CLI::add_command( 'shopify-sync register-webhooks', array( 'WP_MCP_AI_Shopify_Sync_CLI', 'register_webhooks' ) );
-	WP_CLI::add_command( 'shopify-sync unregister-webhooks', array( 'WP_MCP_AI_Shopify_Sync_CLI', 'unregister_webhooks' ) );
-	WP_CLI::add_command( 'shopify-sync cost-report', array( 'WP_MCP_AI_Shopify_Sync_CLI', 'cost_report' ) );
-	WP_CLI::add_command( 'shopify-sync list-connections', array( 'WP_MCP_AI_Shopify_Sync_CLI', 'list_connections' ) );
-	WP_CLI::add_command( 'shopify-sync sync-log', array( 'WP_MCP_AI_Shopify_Sync_CLI', 'sync_log' ) );
+	$shopify_verbs = array(
+		'status'               => 'status',
+		'trigger'              => 'trigger',
+		'clear-cache'          => 'clear_cache',
+		'register-webhooks'    => 'register_webhooks',
+		'unregister-webhooks'  => 'unregister_webhooks',
+		'cost-report'          => 'cost_report',
+		'list-connections'     => 'list_connections',
+		'sync-log'             => 'sync_log',
+	);
+
+	foreach ( $shopify_verbs as $shopify_verb => $shopify_method ) {
+		WP_CLI::add_command( 'mcp-ai shopify-sync ' . $shopify_verb, array( 'WP_MCP_AI_Shopify_Sync_CLI', $shopify_method ) );
+		WP_CLI::add_command( 'shopify-sync ' . $shopify_verb, array( 'WP_MCP_AI_Shopify_Sync_CLI', $shopify_method ) );
+	}
+
+	unset( $shopify_verbs, $shopify_verb, $shopify_method );
 }

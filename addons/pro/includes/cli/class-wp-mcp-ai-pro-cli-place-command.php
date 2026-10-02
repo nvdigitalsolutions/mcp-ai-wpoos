@@ -990,7 +990,9 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	}
 }
 
-// Register the command.
+// Register the command under the canonical tree, keeping `mcp place`
+// as a legacy alias (Proposal 050 namespace unification).
 if ( class_exists( 'WP_CLI' ) ) {
+	WP_CLI::add_command( 'mcp-ai place', 'WP_MCP_AI_Pro_CLI_Place_Command' );
 	WP_CLI::add_command( 'mcp place', 'WP_MCP_AI_Pro_CLI_Place_Command' );
 }

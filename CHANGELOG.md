@@ -1,5 +1,22 @@
 # oOS – Changelog
 
+## [Unreleased] — WP-CLI Parity & Hardening (Proposal 050)
+
+### Added — WP-CLI parity & hardening
+
+- **Extracted legacy dispatcher commands into `includes/cli/`** (`mcp-ai` status/cleanup-cct/remote, `plugins`, `queue`, `token`, `rabbitmq`, `stdio`, `health`, `cache clear`, `version`) onto `WP_MCP_AI_CLI_Base_Command` with `manage_options` gating on every mutating subcommand and `@when after_wp_load` annotations; the dispatcher is now a loader shim.
+- **`wp mcp-ai tool call <slug>`** — one-shot tool execution with per-tool `required_capability` checks and `--args='{…}'` JSON input, mirroring REST `POST /tools`.
+- **Assistant meta fidelity** — `assistant create/update/get` and the new `assistant tools list/add/remove` write/read the canonical `_wp_mcp_ai_*` keys (`--provider`, `--tools` added), fixing the legacy `mcp_ai_model` mismatch.
+- **New Base commands** — `wp mcp-ai security` (posture, audit, purge-audit, gate, keys) and `wp mcp-ai model` (list, suggestions, discover).
+- **New Pro commands** — `crm` (lead/deal/company/customer/activity/ticket), `incident`, `maintenance`, `schedule`, `workflow`, `vault` (metadata-only), `remote-site`, `communication`, `media-studio`.
+- **Flag centralization** — `--fields`/`--field` support, `--format=count`, and a `confirm()` that prompts when `--yes` is absent.
+- **Namespace unification** — `mcp-ai calendar/place` and `mcp-ai ezuite/flowhub/shopify-sync/profession` are canonical; legacy names remain as aliases.
+- **Operator reference** — new `docs/operations/wp-cli.md`; fixed the stale root README CLI table (`slash-command` → `slash`).
+
+### Changed — CLI capability gating
+
+- Mutating WP-CLI subcommands now require `manage_options`; the fleet-operator `mcp-ai operator` credential CLI is gated the same way. `wp mcp-ai vault` gates reads on `manage_options` and never renders secret material.
+
 ## [1.1.92] - 2026-10-02
 
 ### Added — Media Studio AI Fashion Production Suite (PRs #6839, #6844)
