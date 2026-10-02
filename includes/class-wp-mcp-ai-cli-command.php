@@ -28,6 +28,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once __DIR__ . '/cli/class-wp-mcp-ai-cli-health-command.php';
 	require_once __DIR__ . '/cli/class-wp-mcp-ai-cli-cache-command.php';
 	require_once __DIR__ . '/cli/class-wp-mcp-ai-cli-version-command.php';
+	require_once __DIR__ . '/cli/class-wp-mcp-ai-cli-security-command.php';
+	require_once __DIR__ . '/cli/class-wp-mcp-ai-cli-model-command.php';
 
 	// Load additional CLI command classes.
 	if ( ! class_exists( 'WP_MCP_AI_CLI_DLQ' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-dlq.php' ) ) {

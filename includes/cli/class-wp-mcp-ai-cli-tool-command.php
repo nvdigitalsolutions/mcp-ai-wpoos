@@ -60,6 +60,9 @@ class WP_MCP_AI_CLI_Tool_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *   - ids
 	 * ---
 	 *
+	 * [--fields=<fields>]
+	 * : Comma-separated columns to render (default: slug,name,status,capability).
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     # List all tools.
@@ -78,7 +81,8 @@ class WP_MCP_AI_CLI_Tool_Command extends WP_MCP_AI_CLI_Base_Command {
 	 */
 	public function list( $args, $assoc_args ) {
 		$status_filter = \WP_CLI\Utils\get_flag_value( $assoc_args, 'status', '' );
-		$format        = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
+		$format        = $this->get_format( $assoc_args );
+		$fields        = $this->get_fields( $assoc_args, array( 'slug', 'name', 'status', 'capability' ) );
 
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			WP_CLI::error( __( 'Tool registry is not available.', 'mcp-ai-wpoos' ) );
@@ -123,7 +127,7 @@ class WP_MCP_AI_CLI_Tool_Command extends WP_MCP_AI_CLI_Base_Command {
 			return;
 		}
 
-		\WP_CLI\Utils\format_items( $format, $items, array( 'slug', 'name', 'status', 'capability' ) );
+		\WP_CLI\Utils\format_items( $format, $items, $fields );
 	}
 
 	/**

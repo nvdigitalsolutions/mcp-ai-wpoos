@@ -232,14 +232,21 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 	/**
 	 * Ask user for confirmation.
 	 *
-	 * @param string $question Confirmation question.
+	 * When `--yes` (or `-y`) is passed the prompt is skipped and the
+	 * confirmation succeeds. Otherwise the standard WP_CLI::confirm() prompt
+	 * is shown, which exits when declined.
+	 *
+	 * @param string $question   Confirmation question.
 	 * @param array  $assoc_args Associative arguments.
-	 * @return bool True if confirmed.
+	 * @return bool True when confirmed (always true — declining exits).
 	 */
 	protected function confirm( $question, $assoc_args = array() ) {
-		// Use WP-CLI utility to check for yes flag or prompt user.
-		return WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false ) ||
-			WP_CLI\Utils\get_flag_value( $assoc_args, 'y', false );
+		if ( WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false ) || WP_CLI\Utils\get_flag_value( $assoc_args, 'y', false ) ) {
+			return true;
+		}
+
+		WP_CLI::confirm( $question );
+		return true;
 	}
 
 	/**
@@ -455,8 +462,35 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 	 */
 	protected function get_format( $assoc_args, $fallback = 'table' ) {
 		$format  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', $fallback );
-		$allowed = array( 'table', 'json', 'yaml', 'csv', 'ids' );
+		$allowed = array( 'table', 'json', 'yaml', 'csv', 'ids', 'count' );
 		return in_array( $format, $allowed, true ) ? $format : $fallback;
+	}
+
+	/**
+	 * Resolve the output fields from --fields / --field flags.
+	 *
+	 * WP-CLI's standard `--fields` convention: a comma-separated column list
+	 * (or a single `--field`) overriding the command's default columns.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array    $assoc_args     Associative arguments from the command.
+	 * @param string[] $default_fields Default columns when no flag is given.
+	 * @return string[] Columns to render.
+	 */
+	protected function get_fields( $assoc_args, $default_fields ) {
+		$fields = \WP_CLI\Utils\get_flag_value( $assoc_args, 'fields', '' );
+		if ( '' !== $fields ) {
+			$columns = array_map( 'trim', explode( ',', (string) $fields ) );
+			return array_values( array_filter( $columns ) );
+		}
+
+		$field = \WP_CLI\Utils\get_flag_value( $assoc_args, 'field', '' );
+		if ( '' !== $field ) {
+			return array( trim( (string) $field ) );
+		}
+
+		return $default_fields;
 	}
 
 	/**

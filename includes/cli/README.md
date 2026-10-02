@@ -20,7 +20,18 @@ The folder's external contract is the **`wp mcp-ai <subcommand>`** invocation, n
 | Symbol | File | Description | Used by |
 |---|---|---|---|
 | `WP_MCP_AI_CLI_Base_Command` (abstract) | `class-wp-mcp-ai-cli-base-command.php` | Abstract base for all concrete CLI commands | All concrete commands in this folder |
-| `WP_MCP_AI_CLI_Assistant_Command` → `wp mcp-ai assistant` | `class-wp-mcp-ai-cli-assistant-command.php` | Full CRUD: `list`, `get`, `create`, `delete`, `update`, `import`, `export` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Command` → `wp mcp-ai` | `class-wp-mcp-ai-cli-root-command.php` | `status`, `cleanup-cct` (gated), `remote` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Plugins_Command` → `wp mcp-ai plugins` | `class-wp-mcp-ai-cli-plugins-command.php` | `list`, `activate`, `deactivate` (mutations gated) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Queue_Command` → `wp mcp-ai queue` | `class-wp-mcp-ai-cli-queue-command.php` | `stats`, `process`, `clear`, `retry`, `show` (mutations gated) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Token_Command` → `wp mcp-ai token` | `class-wp-mcp-ai-cli-token-command.php` | `migrate-providers` (gated) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_RabbitMQ_Command` → `wp mcp-ai rabbitmq` | `class-wp-mcp-ai-cli-rabbitmq-command.php` | `status`, `test-connection`, `setup`, `list-queues`, `send-test-message`, `worker` (mutations gated) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_STDIO_Command` → `wp mcp-ai stdio` | `class-wp-mcp-ai-cli-stdio-command.php` | MCP stdio server (gated) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Health_Command` → `wp mcp-ai health` | `class-wp-mcp-ai-cli-health-command.php` | Unified diagnostic health check | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Cache_Command` → `wp mcp-ai cache clear` | `class-wp-mcp-ai-cli-cache-command.php` | `clear` (gated) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Version_Command` → `wp mcp-ai version` | `class-wp-mcp-ai-cli-version-command.php` | Plugin version information | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Security_Command` → `wp mcp-ai security` | `class-wp-mcp-ai-cli-security-command.php` | `posture`, `audit`, `purge-audit` (gated), `gate`, `keys` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Model_Command` → `wp mcp-ai model` | `class-wp-mcp-ai-cli-model-command.php` | `list`, `suggestions`, `discover` (gated, `--dry-run`) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Assistant_Command` → `wp mcp-ai assistant` | `class-wp-mcp-ai-cli-assistant-command.php` | Full CRUD: `list`, `get`, `create`, `delete`, `update`, `import`, `export`, `tools` (list/add/remove); writes canonical `_wp_mcp_ai_*` meta via `WP_MCP_AI_Assistant_Meta_Map` | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Approval_Command` → `wp mcp-ai approval` | `class-wp-mcp-ai-cli-approval-command.php` | Approval workflow: `list`, `approve`, `reject` | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Bulk_Command` → `wp mcp-ai bulk` | `class-wp-mcp-ai-cli-bulk-command.php` | Bulk operations: `audit`, `cleanup-artifacts`, `dispatch`, `retry-failed`, `status` | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Cache_Command` → `wp mcp-ai cache` | `../class-wp-mcp-ai-cli-command.php` | `clear` (use `wp mcp-ai cache clear` directly) | WP-CLI runtime |
@@ -39,11 +50,11 @@ The folder's external contract is the **`wp mcp-ai <subcommand>`** invocation, n
 | `WP_MCP_AI_CLI_SLA` → `wp mcp-ai sla` | `class-wp-mcp-ai-cli-sla.php` | `status`, `tune`, `analyze`, `enable`, `disable` | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Slash_Command` → `wp mcp-ai slash` | `class-wp-mcp-ai-cli-slash-command.php` | `execute`, `list`, `help` | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Thread_Command` → `wp mcp-ai thread` | `class-wp-mcp-ai-cli-thread-command.php` | `list`, `get`, `delete`, `compact` | WP-CLI runtime |
-| `WP_MCP_AI_CLI_Tool_Command` → `wp mcp-ai tool` | `class-wp-mcp-ai-cli-tool-command.php` | `list`, `enable`, `disable` (gated: `manage_options`; disable requires `--yes`) | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Tool_Command` → `wp mcp-ai tool` | `class-wp-mcp-ai-cli-tool-command.php` | `list`, `enable`, `disable` (gated: `manage_options`; disable requires `--yes`), `call` (per-tool capability; `--args` JSON) | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Transcript_Command` → `wp mcp-ai transcript` | `class-wp-mcp-ai-cli-transcript-command.php` | `mine`/`list`, `status`, `cancel` (accepts `--assistant`/`--assistant-id`) | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Version_Command` → `wp mcp-ai version` | `../class-wp-mcp-ai-cli-command.php` | Plugin version information | WP-CLI runtime |
 
-The umbrella verbs (`mcp-ai`, `mcp-ai plugins`, `mcp-ai queue`, `mcp-ai token`, `mcp-ai rabbitmq`, `mcp-ai stdio`) live in the top-level `includes/class-wp-mcp-ai-cli-command.php` for historical reasons. The `mcp-ai conversation-import` umbrella (`detect`, `import`, `status`, `delete`) lives in the sibling top-level class `includes/class-wp-mcp-ai-cli-conversation-import-command.php` (JetEngine-gated).
+The umbrella verbs that remain in the top-level dispatcher (`includes/class-wp-mcp-ai-cli-command.php`, now a loader shim): `mcp-ai conversation-import` (`detect`, `import`, `status`, `delete` — JetEngine-gated) plus the lazy registrations for `dlq`, `sla`, `restrictions`, `harness`, and `profession`.
 
 ## Inputs / Outputs / Neighbors
 
