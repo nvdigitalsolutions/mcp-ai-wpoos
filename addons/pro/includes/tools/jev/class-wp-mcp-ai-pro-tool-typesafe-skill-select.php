@@ -203,6 +203,9 @@ class WP_MCP_AI_Pro_Tool_Typesafe_Skill_Select implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * Execute the tool.
 	 *
+	 * @decision-domain operations
+	 * @decision-authority suggest
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context including user_id.
 	 * @return array|WP_Error Tool results or error.
@@ -356,6 +359,9 @@ class WP_MCP_AI_Pro_Tool_Typesafe_Skill_Select implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * Send a decision through the chosen transport.
 	 *
+	 * @decision-domain operations
+	 * @decision-authority suggest
+	 *
 	 * @param string $transport 'typesafe' or 'openrouter'.
 	 * @param mixed  $state     Decision state.
 	 * @param array  $questions Question map.
@@ -363,6 +369,24 @@ class WP_MCP_AI_Pro_Tool_Typesafe_Skill_Select implements WP_MCP_AI_Tool_Interfa
 	 * @return array|WP_Error Normalised decision or WP_Error.
 	 */
 	private function decide( $transport, $state, $questions, $options ) {
+		// Decision-scope gate (Proposal 052): skill rankings are suggestions
+		// the assistant acts on — operations / suggest.
+		if ( ! class_exists( 'WP_MCP_AI_Decision_Scope_Guard' ) ) {
+			return new WP_Error( 'wp_mcp_ai_decision_guard_unavailable', __( 'The decision-scope guard is not available.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$gate = WP_MCP_AI_Decision_Scope_Guard::gate(
+			WP_MCP_AI_Decision_Scope_Guard::DOMAIN_OPERATIONS,
+			WP_MCP_AI_Decision_Scope_Guard::AUTHORITY_SUGGEST,
+			static function () {
+				return new WP_Error( 'wp_mcp_ai_decision_scope_gated', __( 'This decision path is gated by the decision-scope guard.', 'mcp-ai-wpoos-pro' ) );
+			}
+		);
+
+		if ( true !== $gate ) {
+			return $gate;
+		}
+
 		if ( 'openrouter' === $transport ) {
 			if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_client_unavailable', __( 'The OpenRouter client is not available.', 'mcp-ai-wpoos-pro' ) );

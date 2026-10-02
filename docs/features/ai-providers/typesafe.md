@@ -197,6 +197,15 @@ While TypeSafe early access is waitlisted, an existing OpenRouter key reaches Je
 - **"Zero hallucination" is schema conformance, not factual accuracy.** Jev cannot return a value outside your schema; it can return the wrong valid value. Its benchmarks are vendor-run against model-generated reference labels — evaluate on your own traffic before trusting thresholds.
 - **Jev cannot look anything up.** It only knows the state you send. Retrieve and filter in code first, then send only the fields the question needs (context rot degrades accuracy).
 
+### Decision-Scope Guard (Proposal 052)
+
+Every Jev dispatch in NV oOS passes through `WP_MCP_AI_Decision_Scope_Guard` (`includes/services/`), which enforces the two boundaries a formula must respect:
+
+- **Domain** — what kind of thing is being decided: `advisory` (assistant-facing verdicts; reported, never executed), `content` (classification, moderation, re-ranking), `operations` (routing, skill selection), or `verification` (claim/citation checks). Domains where the thing decided is a human being or a moral value (`life`, `people`, `ethics`, `identity`) are **banned**: the guard fails closed to the caller's fallback and the model never sees the request.
+- **Authority ceiling** — how far a verdict may reach: `inform` → `suggest` → `act`. `act` is denied for every domain unless explicitly granted via the `wp_mcp_ai_decision_act_domains` filter, and banned domains can never be granted.
+
+The six current dispatch sites declare their scope (`@decision-domain` / `@decision-authority` docblock tags) and gate before every call: `typesafe_decide` (advisory/inform), `typesafe_guardrail` (content/inform), the verification cascade (verification/suggest), the Pro Jev classifier (operations/suggest), `typesafe_rerank` (content/suggest), and `typesafe_skill_select` (operations/suggest). The custom PHPCS sniff `WPMCPAI.Decisions.ScopeDeclared` fails CI on any `->decide()` / `->create_decision()` dispatch without a declaration, so new integrations cannot ship undeclared. See [`052-decision-scope-guard.md`](../../project/proposals/052-decision-scope-guard.md).
+
 ---
 
 ## Known Limitations

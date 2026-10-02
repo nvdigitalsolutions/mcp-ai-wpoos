@@ -191,6 +191,9 @@ class WP_MCP_AI_Pro_Tool_Typesafe_Rerank implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Execute the tool.
 	 *
+	 * @decision-domain content
+	 * @decision-authority suggest
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context including user_id.
 	 * @return array|WP_Error Tool results or error.
@@ -250,6 +253,24 @@ class WP_MCP_AI_Pro_Tool_Typesafe_Rerank implements WP_MCP_AI_Tool_Interface, WP
 					__( 'Directly relevant and detailed', 'mcp-ai-wpoos-pro' ),
 				),
 			);
+		}
+
+		// Decision-scope gate (Proposal 052): relevance scores re-order and
+		// trim candidates with a keep-min floor — content / suggest.
+		if ( ! class_exists( 'WP_MCP_AI_Decision_Scope_Guard' ) ) {
+			return new WP_Error( 'wp_mcp_ai_decision_guard_unavailable', __( 'The decision-scope guard is not available.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$gate = WP_MCP_AI_Decision_Scope_Guard::gate(
+			WP_MCP_AI_Decision_Scope_Guard::DOMAIN_CONTENT,
+			WP_MCP_AI_Decision_Scope_Guard::AUTHORITY_SUGGEST,
+			static function () {
+				return new WP_Error( 'wp_mcp_ai_decision_scope_gated', __( 'This decision path is gated by the decision-scope guard.', 'mcp-ai-wpoos-pro' ) );
+			}
+		);
+
+		if ( true !== $gate ) {
+			return $gate;
 		}
 
 		if ( 'openrouter' === $transport ) {
