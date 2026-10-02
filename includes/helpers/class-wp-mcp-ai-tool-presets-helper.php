@@ -563,6 +563,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_update_status',
 					'get_site_health',
 					'get_environment_status',
+					// Fleet & uptime monitoring.
+					'get_fleet_status',
+					'get_site_uptime',
 					'check_site_security',
 					'research_site_best_practices',
 					// Comment moderation (ported from docdyhr/mcp-wordpress, MIT).
