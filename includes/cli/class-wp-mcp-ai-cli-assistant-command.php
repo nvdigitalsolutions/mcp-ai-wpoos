@@ -19,6 +19,7 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 }
 
 require_once __DIR__ . '/class-wp-mcp-ai-cli-base-command.php';
+require_once __DIR__ . '/class-wp-mcp-ai-assistant-meta-map.php';
 
 /**
  * Manage NV oOS assistants from the command line.
@@ -94,7 +95,10 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		$items = array();
 		foreach ( $posts as $post ) {
-			$model   = get_post_meta( $post->ID, 'mcp_ai_model', true );
+			// Runtime key first; legacy `mcp_ai_model` kept as a fallback for
+			// assistants created before the canonical meta keys were adopted.
+			$model   = get_post_meta( $post->ID, WP_MCP_AI_Assistant_Meta_Map::key( 'model' ), true );
+			$model   = $model ? $model : get_post_meta( $post->ID, 'mcp_ai_model', true );
 			$items[] = array(
 				'ID'     => $post->ID,
 				'title'  => $post->post_title,
@@ -152,12 +156,15 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 			WP_CLI::error( sprintf( __( 'Assistant %d not found.', 'mcp-ai-wpoos' ), $id ) );
 		}
 
+		// Render plugin-owned meta under BOTH key families — the canonical
+		// runtime keys (`_wp_mcp_ai_*`) and the legacy unprefixed family — so
+		// `get` is usable for configuration audits.
 		$all_meta = get_post_meta( $id );
 		$meta     = array();
-		foreach ( $all_meta as $key => $values ) {
-			if ( 0 === strpos( $key, 'mcp_ai_' ) ) {
-				$clean_key          = substr( $key, strlen( 'mcp_ai_' ) );
-				$meta[ $clean_key ] = $values[0] ?? '';
+		foreach ( $all_meta as $meta_key => $values ) {
+			if ( 0 === strpos( $meta_key, 'mcp_ai_' ) || 0 === strpos( $meta_key, '_wp_mcp_ai_' ) ) {
+				$raw               = $values[0] ?? '';
+				$meta[ $meta_key ] = maybe_unserialize( $raw );
 			}
 		}
 
@@ -219,8 +226,14 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * [--model=<model>]
 	 * : AI model to assign (e.g. gpt-4o, gemini-2.0-flash).
 	 *
+	 * [--provider=<provider>]
+	 * : AI provider to assign (e.g. openai, gemini, anthropic).
+	 *
 	 * [--system-prompt=<prompt>]
 	 * : System / persona prompt text for the assistant.
+	 *
+	 * [--tools=<csv>]
+	 * : Comma-separated tool slugs to assign (e.g. web_search,get_post).
 	 *
 	 * [--porcelain]
 	 * : Output only the created assistant ID.
@@ -241,7 +254,9 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		$title         = \WP_CLI\Utils\get_flag_value( $assoc_args, 'title', '' );
 		$status        = \WP_CLI\Utils\get_flag_value( $assoc_args, 'status', 'draft' );
 		$model         = \WP_CLI\Utils\get_flag_value( $assoc_args, 'model', '' );
+		$provider      = \WP_CLI\Utils\get_flag_value( $assoc_args, 'provider', '' );
 		$system_prompt = \WP_CLI\Utils\get_flag_value( $assoc_args, 'system-prompt', '' );
+		$tools         = \WP_CLI\Utils\get_flag_value( $assoc_args, 'tools', '' );
 		$porcelain     = \WP_CLI\Utils\get_flag_value( $assoc_args, 'porcelain', false );
 
 		$title = sanitize_text_field( $title );
@@ -268,11 +283,19 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		}
 
 		if ( $model ) {
-			update_post_meta( $id, 'mcp_ai_model', sanitize_text_field( $model ) );
+			update_post_meta( $id, WP_MCP_AI_Assistant_Meta_Map::key( 'model' ), WP_MCP_AI_Assistant_Meta_Map::sanitize( 'model', $model ) );
+		}
+
+		if ( $provider ) {
+			update_post_meta( $id, WP_MCP_AI_Assistant_Meta_Map::key( 'provider' ), WP_MCP_AI_Assistant_Meta_Map::sanitize( 'provider', $provider ) );
 		}
 
 		if ( $system_prompt ) {
-			update_post_meta( $id, 'mcp_ai_system_prompt', sanitize_textarea_field( $system_prompt ) );
+			update_post_meta( $id, WP_MCP_AI_Assistant_Meta_Map::key( 'system-prompt' ), WP_MCP_AI_Assistant_Meta_Map::sanitize( 'system-prompt', $system_prompt ) );
+		}
+
+		if ( '' !== $tools ) {
+			update_post_meta( $id, WP_MCP_AI_Assistant_Meta_Map::key( 'tools' ), WP_MCP_AI_Assistant_Meta_Map::sanitize( 'tools', $tools ) );
 		}
 
 		if ( $porcelain ) {
@@ -548,8 +571,14 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * [--model=<model>]
 	 * : AI model to assign (e.g. gpt-4o, gemini-2.0-flash).
 	 *
+	 * [--provider=<provider>]
+	 * : AI provider to assign (e.g. openai, gemini, anthropic).
+	 *
 	 * [--system-prompt=<prompt>]
 	 * : System / persona prompt text for the assistant.
+	 *
+	 * [--tools=<csv>]
+	 * : Comma-separated tool slugs to replace the assigned tool set.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -568,7 +597,9 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		$title         = \WP_CLI\Utils\get_flag_value( $assoc_args, 'title', null );
 		$status        = \WP_CLI\Utils\get_flag_value( $assoc_args, 'status', null );
 		$model         = \WP_CLI\Utils\get_flag_value( $assoc_args, 'model', null );
+		$provider      = \WP_CLI\Utils\get_flag_value( $assoc_args, 'provider', null );
 		$system_prompt = \WP_CLI\Utils\get_flag_value( $assoc_args, 'system-prompt', null );
+		$tools         = \WP_CLI\Utils\get_flag_value( $assoc_args, 'tools', null );
 
 		if ( ! $id ) {
 			WP_CLI::error( __( 'Please provide a valid assistant ID.', 'mcp-ai-wpoos' ) );
@@ -582,8 +613,8 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		}
 
 		// At least one field must be provided to update.
-		if ( null === $title && null === $status && null === $model && null === $system_prompt ) {
-			WP_CLI::error( __( 'Please provide at least one field to update (--title, --status, --model, or --system-prompt).', 'mcp-ai-wpoos' ) );
+		if ( null === $title && null === $status && null === $model && null === $provider && null === $system_prompt && null === $tools ) {
+			WP_CLI::error( __( 'Please provide at least one field to update (--title, --status, --model, --provider, --system-prompt, or --tools).', 'mcp-ai-wpoos' ) );
 		}
 
 		$post_data = array(
@@ -614,13 +645,21 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 			}
 		}
 
-		// Update meta fields.
+		// Update meta fields via the canonical runtime keys.
 		if ( null !== $model ) {
-			update_post_meta( $id, 'mcp_ai_model', sanitize_text_field( $model ) );
+			update_post_meta( $id, WP_MCP_AI_Assistant_Meta_Map::key( 'model' ), WP_MCP_AI_Assistant_Meta_Map::sanitize( 'model', $model ) );
+		}
+
+		if ( null !== $provider ) {
+			update_post_meta( $id, WP_MCP_AI_Assistant_Meta_Map::key( 'provider' ), WP_MCP_AI_Assistant_Meta_Map::sanitize( 'provider', $provider ) );
 		}
 
 		if ( null !== $system_prompt ) {
-			update_post_meta( $id, 'mcp_ai_system_prompt', sanitize_textarea_field( $system_prompt ) );
+			update_post_meta( $id, WP_MCP_AI_Assistant_Meta_Map::key( 'system-prompt' ), WP_MCP_AI_Assistant_Meta_Map::sanitize( 'system-prompt', $system_prompt ) );
+		}
+
+		if ( null !== $tools ) {
+			update_post_meta( $id, WP_MCP_AI_Assistant_Meta_Map::key( 'tools' ), WP_MCP_AI_Assistant_Meta_Map::sanitize( 'tools', $tools ) );
 		}
 
 		// Re-fetch the post to get the current title for the success message.
@@ -809,6 +848,115 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 				$report['errors']
 			)
 		);
+	}
+
+	/**
+	 * Manage the tool set assigned to an assistant.
+	 *
+	 * Mirrors the tool assignment from the assistant admin screen, using the
+	 * canonical `_wp_mcp_ai_tools` array meta (never the legacy string shape).
+	 *
+	 * ## OPTIONS
+	 *
+	 * <action>
+	 * : Action to perform.
+	 * ---
+	 * options:
+	 *   - list
+	 *   - add
+	 *   - remove
+	 * ---
+	 *
+	 * <id>
+	 * : The assistant post ID.
+	 *
+	 * [--tools=<csv>]
+	 * : Comma-separated tool slugs (required for add and remove).
+	 *
+	 * [--format=<format>]
+	 * : Output format for the list action.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - json
+	 *   - yaml
+	 *   - csv
+	 *   - ids
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # List the tools assigned to assistant 42.
+	 *     $ wp mcp-ai assistant tools list 42
+	 *
+	 *     # Assign two tools.
+	 *     $ wp mcp-ai assistant tools add 42 --tools=web_search,get_post
+	 *
+	 *     # Remove one tool.
+	 *     $ wp mcp-ai assistant tools remove 42 --tools=get_post
+	 *
+	 * @subcommand tools
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 * @when after_wp_load
+	 */
+	public function tools( $args, $assoc_args ) {
+		$action = isset( $args[0] ) ? sanitize_key( $args[0] ) : '';
+		$id     = isset( $args[1] ) ? absint( $args[1] ) : 0;
+
+		$allowed = array( 'list', 'add', 'remove' );
+		if ( ! in_array( $action, $allowed, true ) ) {
+			WP_CLI::error( __( 'Please provide a valid action: list, add, or remove.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( ! $id ) {
+			WP_CLI::error( __( 'Please provide a valid assistant ID.', 'mcp-ai-wpoos' ) );
+		}
+
+		$post = get_post( $id );
+		if ( ! $post || 'mcp_ai_assistant' !== $post->post_type ) {
+			/* translators: %d: assistant ID */
+			WP_CLI::error( sprintf( __( 'Assistant %d not found.', 'mcp-ai-wpoos' ), $id ) );
+		}
+
+		$tools = WP_MCP_AI_Assistant_Meta_Map::get_tools( $id );
+
+		if ( 'list' === $action ) {
+			$format = $this->get_format( $assoc_args );
+
+			if ( 'ids' === $format ) {
+				WP_CLI::line( implode( ' ', $tools ) );
+				return;
+			}
+
+			if ( empty( $tools ) ) {
+				WP_CLI::log( __( 'No tools are assigned to this assistant.', 'mcp-ai-wpoos' ) );
+				return;
+			}
+
+			$items = array();
+			foreach ( $tools as $slug ) {
+				$items[] = array( 'slug' => $slug );
+			}
+			\WP_CLI\Utils\format_items( $format, $items, array( 'slug' ) );
+			return;
+		}
+
+		// Mutating actions.
+		$this->require_capability( 'manage_options' );
+
+		$delta = WP_MCP_AI_Assistant_Meta_Map::sanitize( 'tools', \WP_CLI\Utils\get_flag_value( $assoc_args, 'tools', '' ) );
+		if ( empty( $delta ) ) {
+			WP_CLI::error( __( 'Please provide --tools=<csv> with at least one tool slug.', 'mcp-ai-wpoos' ) );
+		}
+
+		$updated = 'add' === $action ? array_values( array_unique( array_merge( $tools, $delta ) ) ) : array_values( array_diff( $tools, $delta ) );
+
+		update_post_meta( $id, WP_MCP_AI_Assistant_Meta_Map::key( 'tools' ), $updated );
+
+		/* translators: 1: tool count, 2: assistant post ID */
+		WP_CLI::success( sprintf( __( 'Assistant %2$d now has %1$d tool(s) assigned.', 'mcp-ai-wpoos' ), count( $updated ), $id ) );
 	}
 }
 

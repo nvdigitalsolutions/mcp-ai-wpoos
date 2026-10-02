@@ -31,6 +31,24 @@ class WP_MCP_AI_Operator_CLI {
 	}
 
 	/**
+	 * Require the manage_options capability (credential management surface).
+	 *
+	 * Operator credentials grant access to the assistant tool set, so every
+	 * subcommand — including the read-only listing — is gated the same way as
+	 * `wp mcp-ai credential`.
+	 *
+	 * @return void
+	 */
+	private static function require_capability() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			WP_CLI::error(
+				/* translators: %s: WordPress capability name */
+				sprintf( __( 'Sorry, you are not allowed to perform this action. Required capability: %s', 'mcp-ai-wpoos' ), 'manage_options' )
+			);
+		}
+	}
+
+	/**
 	 * Create an operator credential.
 	 *
 	 * ## OPTIONS
@@ -58,6 +76,8 @@ class WP_MCP_AI_Operator_CLI {
 	 * @return void
 	 */
 	public function create( $args, $assoc_args ) {
+		self::require_capability();
+
 		$label   = isset( $args[0] ) ? $args[0] : '';
 		$user_id = isset( $assoc_args['user'] ) ? absint( $assoc_args['user'] ) : 1;
 		$mode    = isset( $assoc_args['mode'] ) ? $assoc_args['mode'] : 'readwrite';
@@ -92,6 +112,7 @@ class WP_MCP_AI_Operator_CLI {
 	 */
 	public function list( $args, $assoc_args ) {
 		unset( $args, $assoc_args );
+		self::require_capability();
 
 		$records = WP_MCP_AI_Operator_Credential_Repository::get_all();
 		if ( empty( $records ) ) {
@@ -128,6 +149,7 @@ class WP_MCP_AI_Operator_CLI {
 	 */
 	public function revoke( $args, $assoc_args ) {
 		unset( $assoc_args );
+		self::require_capability();
 
 		$id      = isset( $args[0] ) ? sanitize_key( $args[0] ) : '';
 		$revoked = WP_MCP_AI_Operator_Credential_Repository::revoke( $id );
@@ -158,6 +180,8 @@ class WP_MCP_AI_Operator_CLI {
 	 * @return void
 	 */
 	public function config( $args, $assoc_args ) {
+		self::require_capability();
+
 		$id    = isset( $args[0] ) ? sanitize_key( $args[0] ) : '';
 		$token = isset( $assoc_args['token'] ) ? sanitize_text_field( $assoc_args['token'] ) : '';
 		$site  = isset( $assoc_args['site'] ) ? esc_url_raw( $assoc_args['site'] ) : untrailingslashit( home_url( '/' ) );
