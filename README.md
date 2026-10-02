@@ -3093,7 +3093,7 @@ Manage the NV oOS environment from the command line when WP-CLI is available.
 | `wp mcp-ai slash list` | Lists registered slash commands. Also supports `execute <command>` and `help <command>`. |
 | `wp mcp-ai settings get` | Retrieves all NV oOS settings. |
 | `wp mcp-ai cache clear` | Clears the NV oOS object cache. |
-| `wp mcp-ai security posture` | Security posture score with all 21 signals. Also supports `audit`, `purge-audit`, `gate`, and `keys`. |
+| `wp mcp-ai security posture` | Security posture score with every signal. Also supports `audit`, `purge-audit`, `gate`, and `keys`. |
 | `wp mcp-ai model list --provider=<slug>` | Lists catalog models per provider. Also supports `suggestions` and `discover`. |
 
 > **Full reference:** see [`docs/operations/wp-cli.md`](docs/operations/wp-cli.md) for the

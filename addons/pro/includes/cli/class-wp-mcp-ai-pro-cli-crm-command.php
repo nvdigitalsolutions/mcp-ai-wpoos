@@ -34,10 +34,13 @@ class WP_MCP_AI_Pro_CLI_CRM_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	/**
 	 * Show the CRM entity subcommands available on this site.
 	 *
+	 * A regular verb (not __invoke) so `mcp-ai crm` remains a namespace
+	 * node that WP-CLI can attach the entity subcommands to.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     # List CRM entities.
-	 *     $ wp mcp-ai crm
+	 *     $ wp mcp-ai crm entities
 	 *
 	 *     # List leads.
 	 *     $ wp mcp-ai crm lead list
@@ -46,7 +49,7 @@ class WP_MCP_AI_Pro_CLI_CRM_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 * @param array $assoc_args Associative arguments.
 	 * @when after_wp_load
 	 */
-	public function __invoke( $args, $assoc_args ) {
+	public function entities( $args, $assoc_args ) {
 		$this->assert_pro_loaded();
 		$this->assert_toolkit_enabled( 'enable_crm_toolkit', 'CRM Toolkit' );
 

@@ -29,7 +29,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-cli-base-command.php';
  *
  * ## EXAMPLES
  *
- *     # Print the security posture score and all 21 signals.
+ *     # Print the security posture score and every signal.
  *     $ wp mcp-ai security posture
  *
  *     # Tail the security audit log.
