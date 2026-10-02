@@ -871,7 +871,20 @@ class WP_MCP_AI_MCP_App_Registry {
 
 			// Attach OAuth client for auto-refresh.
 			if ( class_exists( 'WP_MCP_AI_MCP_App_OAuth_Client' ) ) {
-				$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $config['server_url'] );
+				$oauth_options = array(
+					'timeout'    => isset( $config['timeout'] ) ? absint( $config['timeout'] ) : 30,
+					'verify_ssl' => isset( $config['verify_ssl'] ) ? (bool) $config['verify_ssl'] : true,
+				);
+
+				// Mirror the client's outbound proxy onto the OAuth client so
+				// discovery and token refresh honor it too (geo-blocked
+				// gateways such as FlowHub).
+				if ( ! empty( $config['proxy_url'] ) ) {
+					$oauth_options['proxy_url']  = (string) $config['proxy_url'];
+					$oauth_options['proxy_auth'] = isset( $config['proxy_auth'] ) ? (string) $config['proxy_auth'] : '';
+				}
+
+				$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $config['server_url'], $oauth_options );
 				if ( ! empty( $config['oauth_data'] ) && is_array( $config['oauth_data'] ) ) {
 					$oauth_client->set_token_data( $config['oauth_data'] );
 					// Public clients (e.g. Upwork) require the client ID in

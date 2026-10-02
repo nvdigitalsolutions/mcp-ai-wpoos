@@ -32,6 +32,7 @@ class Test_Remote_Site_Manager_MCP_Server extends WP_UnitTestCase {
 		parent::setUp();
 
 		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
+		delete_option( 'wp_mcp_ai_flowhub_toolkit_settings' );
 
 		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
@@ -44,6 +45,7 @@ class Test_Remote_Site_Manager_MCP_Server extends WP_UnitTestCase {
 	public function tearDown(): void {
 		remove_all_filters( 'pre_http_request' );
 		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
+		delete_option( 'wp_mcp_ai_flowhub_toolkit_settings' );
 
 		parent::tearDown();
 	}
@@ -784,5 +786,112 @@ class Test_Remote_Site_Manager_MCP_Server extends WP_UnitTestCase {
 		$config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $connection );
 
 		$this->assertSame( 'https://mcp.example.com/flowhub', $config['server_url'] );
+	}
+
+	/**
+	 * The MCP app config carries the connection's proxy (with the stored
+	 * proxy password decrypted) so assistant gateway calls route through it.
+	 */
+	public function test_build_flowhub_mcp_config_maps_connection_proxy() {
+		$id = $this->save_flowhub_mcp_connection(
+			array(
+				'proxy_enabled'  => true,
+				'proxy_url'      => 'p.webshare.io:80',
+				'proxy_username' => 'proxy-user',
+				'proxy_password' => 'proxy-pass',
+			)
+		);
+		$this->assertNotWPError( $id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+		$config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $connection );
+
+		$this->assertSame( 'p.webshare.io:80', $config['proxy_url'] );
+		$this->assertSame( 'proxy-user:proxy-pass', $config['proxy_auth'] );
+	}
+
+	/**
+	 * An unauthenticated connection proxy maps to an empty auth string.
+	 */
+	public function test_build_flowhub_mcp_config_maps_proxy_without_credentials() {
+		$id = $this->save_flowhub_mcp_connection(
+			array(
+				'proxy_enabled' => true,
+				'proxy_url'     => 'proxy.example.com:3128',
+			)
+		);
+		$this->assertNotWPError( $id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+		$config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $connection );
+
+		$this->assertSame( 'proxy.example.com:3128', $config['proxy_url'] );
+		$this->assertSame( '', $config['proxy_auth'] );
+	}
+
+	/**
+	 * A disabled connection proxy falls back to the FlowHub toolkit settings
+	 * proxy — mirroring the sync engine's resolution order.
+	 */
+	public function test_build_flowhub_mcp_config_falls_back_to_toolkit_settings_proxy() {
+		update_option(
+			'wp_mcp_ai_flowhub_toolkit_settings',
+			array(
+				'proxy_enabled'  => true,
+				'proxy_url'      => 'toolkit-proxy.example.com:3128',
+				'proxy_username' => 'tk-user',
+				'proxy_password' => 'tk-pass',
+			)
+		);
+
+		$id = $this->save_flowhub_mcp_connection();
+		$this->assertNotWPError( $id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+		$config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $connection );
+
+		$this->assertSame( 'toolkit-proxy.example.com:3128', $config['proxy_url'] );
+		$this->assertSame( 'tk-user:tk-pass', $config['proxy_auth'] );
+	}
+
+	/**
+	 * An enabled connection proxy wins over the toolkit settings proxy.
+	 */
+	public function test_build_flowhub_mcp_config_connection_proxy_wins_over_toolkit() {
+		update_option(
+			'wp_mcp_ai_flowhub_toolkit_settings',
+			array(
+				'proxy_enabled' => true,
+				'proxy_url'     => 'toolkit-proxy.example.com:3128',
+			)
+		);
+
+		$id = $this->save_flowhub_mcp_connection(
+			array(
+				'proxy_enabled' => true,
+				'proxy_url'     => 'p.webshare.io:80',
+			)
+		);
+		$this->assertNotWPError( $id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+		$config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $connection );
+
+		$this->assertSame( 'p.webshare.io:80', $config['proxy_url'] );
+	}
+
+	/**
+	 * No proxy keys are emitted when neither the connection nor the toolkit
+	 * settings declare a proxy.
+	 */
+	public function test_build_flowhub_mcp_config_omits_proxy_when_unconfigured() {
+		$id = $this->save_flowhub_mcp_connection();
+		$this->assertNotWPError( $id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+		$config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $connection );
+
+		$this->assertArrayNotHasKey( 'proxy_url', $config );
+		$this->assertArrayNotHasKey( 'proxy_auth', $config );
 	}
 }

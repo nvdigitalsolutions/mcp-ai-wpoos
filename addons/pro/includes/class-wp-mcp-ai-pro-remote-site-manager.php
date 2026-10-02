@@ -1637,9 +1637,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * The FlowHub MCP gateway authenticates via the MCP OAuth 2.1 flow; the
 	 * token blob lives in the encrypted `mcp_oauth` field like any other MCP
-	 * Server connection. The endpoint defaults to the official gateway.
+	 * Server connection. The endpoint defaults to the official gateway. The
+	 * connection's proxy (falling back to the FlowHub toolkit settings proxy)
+	 * is carried as `proxy_url`/`proxy_auth` so assistant gateway traffic
+	 * routes through it like the sync engine's API traffic.
 	 *
 	 * @since 1.1.92
+	 * @since 1.1.93 Carries the connection's proxy configuration.
 	 *
 	 * @param array $connection Stored FlowHub connection array.
 	 * @return array MCP App client config.
@@ -1656,6 +1660,34 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'timeout'    => 30,
 			'verify_ssl' => true,
 		);
+
+		// Resolve the outbound proxy the same way the sync engine and the
+		// live FlowHub tools do: the connection's proxy wins when enabled,
+		// falling back to the FlowHub toolkit settings proxy. FlowHub
+		// geo-blocks some server locations, so assistant gateway calls must
+		// inherit this proxy instead of dialing mcp.flowhub.com directly.
+		$proxy_url  = '';
+		$proxy_auth = '';
+
+		if ( ! empty( $connection['proxy_enabled'] ) && ! empty( $connection['proxy_url'] ) ) {
+			$proxy_url      = (string) $connection['proxy_url'];
+			$proxy_username = isset( $connection['proxy_username'] ) ? trim( (string) $connection['proxy_username'] ) : '';
+			$proxy_password = isset( $connection['proxy_password'] ) ? self::decrypt_value( (string) $connection['proxy_password'] ) : '';
+			$proxy_auth     = ( '' !== $proxy_username || '' !== $proxy_password ) ? $proxy_username . ':' . $proxy_password : '';
+		} else {
+			$toolkit_settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			if ( ! empty( $toolkit_settings['proxy_enabled'] ) && ! empty( $toolkit_settings['proxy_url'] ) ) {
+				$proxy_url      = (string) wp_unslash( $toolkit_settings['proxy_url'] );
+				$proxy_username = isset( $toolkit_settings['proxy_username'] ) ? trim( (string) wp_unslash( $toolkit_settings['proxy_username'] ) ) : '';
+				$proxy_password = isset( $toolkit_settings['proxy_password'] ) ? (string) wp_unslash( $toolkit_settings['proxy_password'] ) : '';
+				$proxy_auth     = ( '' !== $proxy_username || '' !== $proxy_password ) ? $proxy_username . ':' . $proxy_password : '';
+			}
+		}
+
+		if ( '' !== $proxy_url ) {
+			$config['proxy_url']  = $proxy_url;
+			$config['proxy_auth'] = $proxy_auth;
+		}
 
 		$oauth_blob = isset( $connection['mcp_oauth'] ) ? self::decrypt_value( (string) $connection['mcp_oauth'] ) : '';
 		if ( '' !== $oauth_blob ) {
