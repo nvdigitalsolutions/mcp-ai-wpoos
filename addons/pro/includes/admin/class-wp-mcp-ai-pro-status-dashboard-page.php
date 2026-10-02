@@ -227,6 +227,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Status_Dashboard_Page' ) ) {
 					</div>
 				</div>
 
+				<!-- Fleet monitoring (server-rendered; rich JS tab is a follow-up) -->
+				<?php $this->render_fleet_section(); ?>
+
 				<!-- Shortcode usage help -->
 				<div class="wp-mcp-ai-pro-status-help" style="margin-top:30px;background:#f0f6fc;border:1px solid #c5d9ed;padding:16px;border-radius:6px;">
 					<h3><?php esc_html_e( 'Public Status Page', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -236,6 +239,100 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Status_Dashboard_Page' ) ) {
 					</code>
 					<p style="margin-top:8px;color:#50575e;"><?php esc_html_e( 'Options: show_history="true" compact="true"', 'mcp-ai-wpoos-pro' ); ?></p>
 				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render the fleet monitoring section (server-rendered from the
+		 * Media Worker summary; shown only when fleet monitoring is configured).
+		 *
+		 * @since 1.1.93
+		 *
+		 * @return void
+		 */
+		public function render_fleet_section(): void {
+			if ( ! class_exists( 'WP_MCP_AI_Media_Worker_Config' ) || ! WP_MCP_AI_Media_Worker_Config::is_configured() ) {
+				return;
+			}
+
+			$summary = WP_MCP_AI_Media_Worker_Config::request( '/api/status/summary', 'GET', array(), 5 );
+			if ( is_wp_error( $summary ) ) {
+				return;
+			}
+
+			$sites_raw = isset( $summary['sites'] ) && is_array( $summary['sites'] ) ? $summary['sites'] : array();
+			$overall   = isset( $summary['overall_status'] ) ? sanitize_key( $summary['overall_status'] ) : 'unknown';
+			$status_labels = array(
+				'operational'          => __( 'Operational', 'mcp-ai-wpoos-pro' ),
+				'under_maintenance'    => __( 'Maintenance', 'mcp-ai-wpoos-pro' ),
+				'degraded_performance' => __( 'Degraded', 'mcp-ai-wpoos-pro' ),
+				'partial_outage'       => __( 'Partial Outage', 'mcp-ai-wpoos-pro' ),
+				'major_outage'         => __( 'Major Outage', 'mcp-ai-wpoos-pro' ),
+				'at_risk'              => __( 'At Risk', 'mcp-ai-wpoos-pro' ),
+				'unknown'              => __( 'Unknown', 'mcp-ai-wpoos-pro' ),
+			);
+			$status_colors = array(
+				'operational'          => '#46b450',
+				'under_maintenance'    => '#ffb900',
+				'degraded_performance' => '#ffb900',
+				'partial_outage'       => '#dba617',
+				'major_outage'         => '#d63638',
+				'at_risk'              => '#ffb900',
+				'unknown'              => '#8c8f94',
+			);
+			?>
+			<div class="wp-mcp-ai-pro-status-fleet" style="margin-top:30px;">
+				<h2>
+					<?php esc_html_e( 'Fleet Status (Media Worker)', 'mcp-ai-wpoos-pro' ); ?>
+					<span style="margin-left:8px;font-size:12px;color:#50575e;">
+						<?php
+						printf(
+							/* translators: %s: overall fleet status slug */
+							esc_html__( 'Overall: %s', 'mcp-ai-wpoos-pro' ),
+							esc_html( $overall )
+						);
+						?>
+					</span>
+				</h2>
+				<?php if ( empty( $sites_raw ) ) : ?>
+					<p><?php esc_html_e( 'No sites have reported a heartbeat yet.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<?php else : ?>
+					<table class="widefat striped" style="max-width:960px;">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Site', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Heartbeat Age', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Message', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $sites_raw as $site ) : ?>
+								<?php
+								if ( ! is_array( $site ) || empty( $site['slug'] ) ) {
+									continue;
+								}
+								$status = isset( $site['status'] ) ? sanitize_key( $site['status'] ) : 'unknown';
+								$color  = isset( $status_colors[ $status ] ) ? $status_colors[ $status ] : $status_colors['unknown'];
+								$label  = isset( $status_labels[ $status ] ) ? $status_labels[ $status ] : $status;
+								$age    = isset( $site['heartbeat_age_s'] ) ? (int) $site['heartbeat_age_s'] : null;
+								$age_text = null === $age ? '—' : sprintf(
+									/* translators: %d: seconds since the last heartbeat */
+									_n( '%d second', '%d seconds', $age, 'mcp-ai-wpoos-pro' ),
+									$age
+								);
+								?>
+								<tr>
+									<td><code><?php echo esc_html( sanitize_key( $site['slug'] ) ); ?></code></td>
+									<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:<?php echo esc_attr( $color ); ?>;margin-right:6px;"></span><?php echo esc_html( $label ); ?></td>
+									<td><?php echo esc_html( $age_text ); ?></td>
+									<td><?php echo esc_html( isset( $site['message'] ) ? sanitize_text_field( $site['message'] ) : '' ); ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
 			</div>
 			<?php
 		}

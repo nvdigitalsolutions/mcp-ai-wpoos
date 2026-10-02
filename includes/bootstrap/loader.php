@@ -703,6 +703,20 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-worker-usage-reporter.php';
 }
 WP_MCP_AI_Media_Worker_Usage_Reporter::init();
+// Fleet status monitoring: shared worker config, heartbeat emitter, and the
+// pull-diff alert poller. All opt-in — nothing is sent unless the heartbeat
+// option is enabled and a worker URL is configured.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-worker-config.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-worker-config.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-heartbeat.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-heartbeat.php';
+}
+WP_MCP_AI_Status_Heartbeat::init();
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-alert-poller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-alert-poller.php';
+}
+WP_MCP_AI_Status_Alert_Poller::init();
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dhash-backfill.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dhash-backfill.php';
 }
@@ -805,6 +819,9 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/
 	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-registry.php';
 }
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-default-sources.php';
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-remote-monitor-source.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-remote-monitor-source.php';
+}
 WP_MCP_AI_Service_Status_Default_Sources_Bootstrap::register();
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-service-status-cpt.php';
 add_action( 'init', array( 'WP_MCP_AI_Service_Status_CPT', 'register' ), 11 );

@@ -462,6 +462,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					$this->req( $p . 'class-wp-mcp-ai-incident-rest.php' );
 					$this->req( $p . 'class-wp-mcp-ai-incident-notifier.php' );
 					$this->req( $p . 'class-wp-mcp-ai-incident-lesson-bridge.php' );
+					$this->req( $p . 'class-wp-mcp-ai-pro-status-alerts.php' );
 				}
 			);
 

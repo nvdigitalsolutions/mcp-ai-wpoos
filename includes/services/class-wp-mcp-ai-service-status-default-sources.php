@@ -443,6 +443,14 @@ class WP_MCP_AI_Service_Status_Default_Sources_Bootstrap {
 				$sources['ai_providers']  = new WP_MCP_AI_Service_Status_AI_Providers();
 				$sources['tool_registry'] = new WP_MCP_AI_Service_Status_Tool_Registry();
 				$sources['queue_health']  = new WP_MCP_AI_Service_Status_Queue_Health();
+
+				// Fleet monitor bridge: only register when the heartbeat
+				// feature is enabled and a worker URL is configured, so
+				// sites without a worker keep today's behavior unchanged.
+				if ( class_exists( 'WP_MCP_AI_Status_Heartbeat' ) && WP_MCP_AI_Status_Heartbeat::is_enabled() ) {
+					$sources['remote_monitor'] = new WP_MCP_AI_Service_Status_Remote_Monitor_Source();
+				}
+
 				return $sources;
 			},
 			10,

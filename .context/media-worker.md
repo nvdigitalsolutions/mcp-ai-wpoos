@@ -1,7 +1,7 @@
 # NV oOS Media Worker Sidecar
 
 > **GSD Context File** — Load this when working on the media worker (`addons/media-worker/`), the plugin sidecar client, or any Pro service that routes through the worker.
-> Last reviewed: September 4, 2026 (v1.1.69, worker v3.2.0).
+> Last reviewed: October 2, 2026 (v1.1.93, worker v3.3.0).
 
 ---
 
@@ -16,13 +16,13 @@ existing local fallbacks run unchanged.
 - Monorepo folder is mirrored one-way to the standalone repo
   `mcp-ai-wpoos-media-worker` via `.github/workflows/sync-media-worker.yml`
   — never commit to the standalone repo directly.
-- Version: **v3.2.0** (multi-tenant v2.4.0 → Phase 2 → Phase 3 W1–W7 → crawling + Crawl4AI facade).
+- Version: **v3.3.0** (multi-tenant v2.4.0 → Phase 2 → Phase 3 W1–W7 → crawling + Crawl4AI facade → status monitoring module).
 
 ## Key Paths
 
 | Area | Files |
 |---|---|
-| Worker server / routes | `addons/media-worker/src/` (`index.js`, `routes/*.js`, `middleware/*.js`, `utils/*.js`) — incl. `routes/crawl.js` (native crawling), `routes/crawl4ai.js` (Crawl4AI facade), `utils/crawl-extract.js`, `utils/llm-extract.js` |
+| Worker server / routes | `addons/media-worker/src/` (`index.js`, `routes/*.js`, `middleware/*.js`, `utils/*.js`) — incl. `routes/crawl.js` (native crawling), `routes/crawl4ai.js` (Crawl4AI facade), `utils/crawl-extract.js`, `utils/llm-extract.js`, `routes/status.js` + `status/*` (fleet monitoring, v3.3.0) |
 | Env configuration | `addons/media-worker/.env.example` (canonical variable reference) |
 | Deployment guides | `docs/operations/deployment/media-worker-docker-setup.md`, `media-worker-velocity-setup.md` |
 | Load testing | `addons/media-worker/bin/load-test/` (k6 kit + split decision table) |
@@ -71,10 +71,35 @@ existing local fallbacks run unchanged.
 - **TEMP_ROOT allowlist (proposal 028 Q5):** under `STRICT_PATHS=1` (or `STRICT_PDF_PATHS=1`) an explicit `TEMP_ROOT` is the allowlisted sandbox root in single-tenant mode; the strict-path default flip stays deferred to worker 4.0.0.
 - Worker version stays **v3.2.0** — the feature shipped without a package bump; treat `package.json` as authoritative over the proposal's stale "3.2.1+" note (reconciled in the v1.1.65 pass).
 
+## Status Monitoring Module (v3.3.0)
+
+- Opt-in (`STATUS_ENABLED=1`): the worker doubles as the fleet status
+  service. Connected sites push signed heartbeats to
+  `POST /api/status/heartbeat` (slug always derived from `X-Site-Token`,
+  never the payload); the dead man's switch sweeper (`status/sweeper.js`)
+  flips sites to `at_risk` then `major_outage` on missed beats.
+- Summary/history/metrics: `GET /api/status/summary`, `/sites/:slug`,
+  `/history/:slug?days=`, `/metrics` (OpenMetrics, opt-in). Public,
+  allowlisted page at `GET /status` behind `STATUS_PUBLIC_PAGE=1`.
+- Synthetic checks (`STATUS_SYNTHETIC_ENABLED=1`) probe public sites over
+  the shared SSRF guard (`status/checks.js`); heartbeat-fresh + synthetic-
+  down = `partial_outage` (split-brain).
+- Status taxonomy is the plugin's five-value service-status taxonomy plus
+  the internal `at_risk` band (`status/state.js` severity table) — keep
+  them in sync with `Interface_WP_MCP_AI_Service_Status_Source`.
+- Plugin side (`includes/`, v1.1.93): `WP_MCP_AI_Media_Worker_Config`
+  (shared URL/token chain), `WP_MCP_AI_Status_Heartbeat` (5-min-tick
+  emitter, opt-in), `WP_MCP_AI_Status_Alert_Poller` (pull-diff
+  `wp_mcp_ai_site_status_event`), `remote_monitor` status source, tools
+  `get_fleet_status` / `get_site_uptime`, REST `GET /mcp-ai/v1/status/sites`,
+  and Pro incident automation (`WP_MCP_AI_Pro_Status_Alerts`).
+- Full design: `docs/project/plans/media-worker-status-monitoring-plan.md`.
+
 ## Canonical Facts (avoid drift)
 
-- 11 route groups: browser, code, data, document, email, image, ocr, pdf,
-  social, video, workflow — plus `crawl` and `crawl4ai` (v3.2.0).
+- 12 route groups: browser, code, data, document, email, image, ocr, pdf,
+  social, video, workflow — plus `crawl`, `crawl4ai` (v3.2.0) and `status`
+  (v3.3.0).
 - Security baseline: timing-safe `X-Site-Token` auth, SSRF guard, sandboxed
   Puppeteer, express-rate-limit, Helmet, structured logs, split health
   endpoints (`/api/health/basic`, `/api/health/full`).
@@ -94,6 +119,7 @@ existing local fallbacks run unchanged.
 - `.context/security-checklist.md` — worker hardening entries (always)
 - `.context/settings-storage.md` — how the plugin stores worker tokens/options
 - `.context/pro-vs-base.md` — worker routing lives in Pro services; the trait
-  is Base
+  and the status heartbeat/config/poller are Base
 - `addons/media-worker/README.md` — worker-side docs
+- `docs/project/plans/media-worker-status-monitoring-plan.md` — status module design
 - Folder READMEs for `addons/pro/includes/services/` when editing a routed service
