@@ -1,7 +1,12 @@
 # Proposal 050 — WP-CLI Parity & Hardening: Implementation Plan
 
-**Status:** In progress (branch `feat/wp-cli-parity-hardening`, base `sync/alpha-working-2026-10-02` ← `origin/alpha-working` @ `ddf27edec`)
+**Status:** ✅ Phases A–D implemented (branch `feat/wp-cli-parity-hardening`, base `sync/alpha-working-2026-10-02` ← `origin/alpha-working` @ `ddf27edec`)
 **Proposal:** [050-wp-cli-hardening-proposal.md](./050-wp-cli-hardening-proposal.md) · **Gap analysis:** [050-wp-cli-gap-analysis.md](./050-wp-cli-gap-analysis.md)
+
+> **Remaining follow-ups:** full CRUD verbs for the new Pro entities (crm
+> create/update/delete, schedule create/update/delete, etc.) are deliberately
+> read-first in this pass; the docblock example sweep (C3 second examples) is
+> partial. Both are tracked for the next release cycle.
 
 ---
 

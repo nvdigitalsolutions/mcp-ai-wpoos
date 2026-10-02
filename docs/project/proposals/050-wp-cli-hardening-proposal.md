@@ -1,6 +1,6 @@
 # Proposal 050: WP-CLI Parity & Hardening — Gap Remediation
 
-**Status:** Draft
+**Status:** ✅ Implemented (Phases A–D) — see [implementation plan](./050-wp-cli-hardening-implementation-plan.md)
 **Author:** AI Agent Review (2026-10-02)
 **Target:** mcp-ai-wpoos v1.2.x (P0/P2) → v1.3.x (P1/P3)
 **Scope:** Base + Pro + addon WP-CLI command surface
