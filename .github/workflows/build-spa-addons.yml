@@ -351,6 +351,18 @@ jobs:
           tools: composer:v2, wp-cli
           coverage: none
 
+      # setup-php's wp-cli tool occasionally fails to install ("Could not
+      # setup wp-cli" — GitHub API hiccup), and the step does not fail the
+      # job, so later `wp` invocations die with exit 127. Install the phar
+      # directly as a deterministic fallback.
+      - name: Install WP-CLI (fallback)
+        run: |
+          if ! command -v wp >/dev/null 2>&1; then
+            curl -sSL https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp
+            chmod +x /usr/local/bin/wp
+          fi
+          wp --info --allow-root
+
       - name: Bootstrap a temporary WordPress install
         run: |
           set -euo pipefail
