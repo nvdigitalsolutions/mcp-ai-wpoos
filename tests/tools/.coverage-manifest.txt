@@ -134,6 +134,7 @@ wp-mcp-ai-tool-get-cron-job
 wp-mcp-ai-tool-get-elementor-form-submissions
 wp-mcp-ai-tool-get-elementor-templates
 wp-mcp-ai-tool-get-environment-status
+wp-mcp-ai-tool-get-fleet-status
 wp-mcp-ai-tool-get-gdacs-events
 wp-mcp-ai-tool-get-image-metadata
 wp-mcp-ai-tool-get-jetengine-items
@@ -155,6 +156,7 @@ wp-mcp-ai-tool-get-session-status
 wp-mcp-ai-tool-get-site-health
 wp-mcp-ai-tool-get-site-settings
 wp-mcp-ai-tool-get-site-summary
+wp-mcp-ai-tool-get-site-uptime
 wp-mcp-ai-tool-get-system-logs
 wp-mcp-ai-tool-get-system-logs-validated
 wp-mcp-ai-tool-get-task-plan

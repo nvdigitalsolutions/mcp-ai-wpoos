@@ -629,6 +629,22 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 			}
 		}
 
+		// Test fleet monitoring tools in site_management preset.
+		$fleet_tools = array(
+			'get_fleet_status',
+			'get_site_uptime',
+		);
+
+		if ( isset( $presets['site_management']['tools'] ) ) {
+			foreach ( $fleet_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['site_management']['tools'],
+					"Fleet tool '{$tool}' should be in site_management preset"
+				);
+			}
+		}
+
 		// Test mcp-wordpress parity SEO toolkit in seo_marketing preset.
 		$parity_seo_tools = array(
 			'seo_analyze_content',
