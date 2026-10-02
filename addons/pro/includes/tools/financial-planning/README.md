@@ -1,6 +1,6 @@
 # Financial Planning Toolkit
 
-This directory contains 42 financial planning tools for the NV oOS WordPress plugin.
+This directory contains 44 financial planning tools for the NV oOS WordPress plugin.
 
 ## Tools Created:
 
@@ -64,11 +64,18 @@ Keyless public-endpoint tools with provider fallback chains, stale-while-revalid
 39. ✓ options_chain_fetcher - Nasdaq public API: calls/puts with strike, bid/ask, volume, OI, ITM
 40. ✓ crypto_market_data - CoinGecko (Binance fallback): crypto board, quotes, OHLC history
 41. ✓ portfolio_transaction_log - Buy/sell ledger with average cost + realized/unrealized P&L (mcp_ai_fin_txn CPT)
-42. ✓ price_alerts - Price alerts with daily cron evaluation + wp_mcp_ai_price_alert_triggered delivery hook
+42. ✓ price_alerts - Price alerts with cron evaluation + wp_mcp_ai_price_alert_triggered delivery hook (mode-aware: hourly in Finnhub realtime mode)
+
+### Watchlist & Market Overview (2 tools — OpenStock parity, proposal 051)
+43. ✓ watchlist_sync - Per-user watchlist (user meta) with list/add/remove/bulk_quote
+44. ✓ market_overview_widget - TradingView embed URLs (chart/heatmap/tickers/timeline/screener) + top-movers summary
+
+### Finnhub optional primary provider
+Configure `finnhub_api_keys` under Financial Planner Settings → Market Data Providers to route quotes, OHLCV history, search, batch quotes, profiles, and news through Finnhub (BYO key, rotation, SWR cache) ahead of the yfinance microservice. `data_mode` cached|realtime controls cache TTL and the price-alert cron interval.
 
 Plus: stock_data_fetcher gains an `indicators` action (SMA/EMA/VWAP/Bollinger/RSI/MACD computed in PHP from cached OHLCV), and financial_news_aggregator de-duplicates headlines across sources.
 
 ## Implementation Status:
-- 42/42 tools fully implemented (100% complete)
+- 44/44 tools fully implemented (100% complete)
 
 All tools follow WordPress Coding Standards and implement required interfaces.

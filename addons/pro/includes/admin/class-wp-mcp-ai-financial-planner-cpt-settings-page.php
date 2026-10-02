@@ -122,6 +122,8 @@ class WP_MCP_AI_Financial_Planner_CPT_Settings_Page extends WP_MCP_AI_CPT_Settin
 			'tax_estimator'                => __( 'Tax Estimator', 'mcp-ai-wpoos-pro' ),
 			'college_savings_calculator'   => __( 'College Savings Calculator', 'mcp-ai-wpoos-pro' ),
 			'insurance_needs_analyzer'     => __( 'Insurance Needs Analyzer', 'mcp-ai-wpoos-pro' ),
+			'watchlist_sync'               => __( 'Watchlist Sync', 'mcp-ai-wpoos-pro' ),
+			'market_overview_widget'       => __( 'Market Overview Widget', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -178,6 +180,30 @@ class WP_MCP_AI_Financial_Planner_CPT_Settings_Page extends WP_MCP_AI_CPT_Settin
 			array( $this, 'render_bank_sync_field' ),
 			$this->option_name,
 			$this->option_name . '_api_section'
+		);
+
+		// Market data providers (OpenStock parity, proposal 051).
+		add_settings_section(
+			$this->option_name . '_market_data_section',
+			__( 'Market Data Providers (Optional)', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_market_data_section_description' ),
+			$this->option_name
+		);
+
+		add_settings_field(
+			'finnhub_api_keys',
+			__( 'Finnhub API Keys', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_finnhub_keys_field' ),
+			$this->option_name,
+			$this->option_name . '_market_data_section'
+		);
+
+		add_settings_field(
+			'finnhub_data_mode',
+			__( 'Market Data Mode', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_finnhub_data_mode_field' ),
+			$this->option_name,
+			$this->option_name . '_market_data_section'
 		);
 	}
 
@@ -255,6 +281,84 @@ class WP_MCP_AI_Financial_Planner_CPT_Settings_Page extends WP_MCP_AI_CPT_Settin
 	}
 
 	/**
+	 * Render market data providers section description.
+	 *
+	 * @since 1.1.90
+	 */
+	public function render_market_data_section_description() {
+		echo '<p>' . esc_html__( 'Optional: bring-your-own-key market data providers that upgrade quote quality and freshness. The toolkit works fully without them via keyless public endpoints.', 'mcp-ai-wpoos-pro' ) . '</p>';
+	}
+
+	/**
+	 * Render the Finnhub API keys field (masked — full keys are never echoed back).
+	 *
+	 * @since 1.1.90
+	 */
+	public function render_finnhub_keys_field() {
+		$options = get_option( $this->option_name, array() );
+		$stored  = isset( $options['finnhub_api_keys'] ) ? $options['finnhub_api_keys'] : '';
+
+		if ( class_exists( 'WP_MCP_AI_Finnhub_Provider' ) ) {
+			$keys = WP_MCP_AI_Finnhub_Provider::get_keys();
+		} else {
+			$keys = array_filter( array_map( 'trim', explode( ',', (string) $stored ) ) );
+		}
+
+		$masked = array();
+		foreach ( $keys as $key ) {
+			$len      = strlen( $key );
+			$masked[] = ( $len > 8 ? substr( $key, 0, 2 ) . str_repeat( '*', 6 ) . substr( $key, -4 ) : '******' );
+		}
+		?>
+		<input type="password" name="<?php echo esc_attr( $this->option_name ); ?>[finnhub_api_keys]"
+			value="<?php echo esc_attr( implode( ',', $masked ) ); ?>"
+			placeholder="<?php esc_attr_e( 'e.g. c1234...,c5678... (comma-separated)', 'mcp-ai-wpoos-pro' ); ?>"
+			class="regular-text" autocomplete="new-password" />
+		<p class="description">
+			<?php
+			printf(
+				/* translators: 1: number of configured keys, 2: free-tier request cap */
+				esc_html__( '%1$d key(s) configured. Comma-separate multiple keys for rotation — the free tier allows 60 requests/minute per key. Keys are stored server-side and never displayed in full.', 'mcp-ai-wpoos-pro' ),
+				count( $keys ),
+				60
+			);
+			?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render the market data mode field (cached vs realtime).
+	 *
+	 * @since 1.1.90
+	 */
+	public function render_finnhub_data_mode_field() {
+		$options = get_option( $this->option_name, array() );
+		$mode    = isset( $options['finnhub_data_mode'] ) ? sanitize_key( $options['finnhub_data_mode'] ) : 'cached';
+
+		if ( class_exists( 'WP_MCP_AI_Finnhub_Provider' ) ) {
+			$mode = WP_MCP_AI_Finnhub_Provider::get_data_mode();
+		}
+		?>
+		<label>
+			<input type="radio" name="<?php echo esc_attr( $this->option_name ); ?>[finnhub_data_mode]"
+				value="cached" <?php checked( $mode, 'cached' ); ?> />
+			<?php esc_html_e( 'Cached (default)', 'mcp-ai-wpoos-pro' ); ?>
+			— <?php esc_html_e( 'quotes refresh hourly, gentlest on rate limits', 'mcp-ai-wpoos-pro' ); ?>
+		</label><br />
+		<label>
+			<input type="radio" name="<?php echo esc_attr( $this->option_name ); ?>[finnhub_data_mode]"
+				value="realtime" <?php checked( $mode, 'realtime' ); ?> />
+			<?php esc_html_e( 'Realtime (opt-in)', 'mcp-ai-wpoos-pro' ); ?>
+			— <?php esc_html_e( '60-second cache and hourly price-alert checks; consumes the free tier faster', 'mcp-ai-wpoos-pro' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'Finnhub free-tier data may still be delayed 15+ minutes for non-US exchanges. See Finnhub terms for commercial use.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
 	 * Sanitize settings.
 	 *
 	 * @param array $input Settings input.
@@ -281,6 +385,32 @@ class WP_MCP_AI_Financial_Planner_CPT_Settings_Page extends WP_MCP_AI_CPT_Settin
 
 		// Sanitize bank sync.
 		$sanitized['enable_bank_sync'] = isset( $input['enable_bank_sync'] ) ? (bool) $input['enable_bank_sync'] : false;
+
+		// Sanitize Finnhub API keys. A masked placeholder (contains * chars)
+		// means "keep existing" — never overwrite real keys with the mask.
+		if ( isset( $input['finnhub_api_keys'] ) ) {
+			$raw_keys = sanitize_text_field( $input['finnhub_api_keys'] );
+
+			if ( '' === trim( $raw_keys ) ) {
+				$sanitized['finnhub_api_keys'] = '';
+			} elseif ( false === strpos( $raw_keys, '*' ) ) {
+				$keys    = explode( ',', $raw_keys );
+				$cleaned = array();
+				foreach ( $keys as $key ) {
+					$key = trim( $key );
+					if ( '' !== $key && preg_match( '/^[A-Za-z0-9_-]{8,64}$/', $key ) ) {
+						$cleaned[] = $key;
+					}
+				}
+				$sanitized['finnhub_api_keys'] = implode( ',', $cleaned );
+			}
+		}
+
+		// Sanitize Finnhub data mode.
+		if ( isset( $input['finnhub_data_mode'] ) ) {
+			$mode                           = sanitize_key( $input['finnhub_data_mode'] );
+			$sanitized['finnhub_data_mode'] = 'realtime' === $mode ? 'realtime' : 'cached';
+		}
 
 		return $sanitized;
 	}
