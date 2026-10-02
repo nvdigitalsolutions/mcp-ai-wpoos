@@ -144,7 +144,9 @@ class WP_MCP_AI_Pro_CLI_Calendar_Command extends WP_MCP_AI_Pro_CLI_Base_Command 
 	}
 }
 
-// Register the command.
+// Register the command under the canonical tree, keeping `mcp calendar`
+// as a legacy alias (Proposal 050 namespace unification).
 if ( class_exists( 'WP_CLI' ) ) {
+	WP_CLI::add_command( 'mcp-ai calendar', 'WP_MCP_AI_Pro_CLI_Calendar_Command' );
 	WP_CLI::add_command( 'mcp calendar', 'WP_MCP_AI_Pro_CLI_Calendar_Command' );
 }

@@ -138,8 +138,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		WP_CLI::add_command( 'mcp-ai restrictions', 'WP_MCP_AI_CLI_Restriction_Command' );
 	}
 
-	// Register Profession Orchestration commands.
+	// Register Profession Orchestration commands (canonical mcp-ai tree with
+	// the legacy top-level `profession` names kept as aliases).
 	if ( class_exists( 'WP_MCP_AI_Profession_Orchestration_CLI' ) ) {
+		WP_CLI::add_command( 'mcp-ai profession seed-orchestration', array( 'WP_MCP_AI_Profession_Orchestration_CLI', 'seed_orchestration' ) );
+		WP_CLI::add_command( 'mcp-ai profession orchestration-stats', array( 'WP_MCP_AI_Profession_Orchestration_CLI', 'orchestration_stats' ) );
 		WP_CLI::add_command( 'profession seed-orchestration', array( 'WP_MCP_AI_Profession_Orchestration_CLI', 'seed_orchestration' ) );
 		WP_CLI::add_command( 'profession orchestration-stats', array( 'WP_MCP_AI_Profession_Orchestration_CLI', 'orchestration_stats' ) );
 	}

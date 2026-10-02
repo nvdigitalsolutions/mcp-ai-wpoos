@@ -3083,16 +3083,22 @@ Manage the NV oOS environment from the command line when WP-CLI is available.
 | `wp mcp-ai chat <message>` | Sends a one-shot chat message to an assistant via the language model router. Accepts `--assistant`, `--model`, `--provider`, `--temperature`, `--max-tokens`, `--stream`, and `--format` flags. |
 | `wp mcp-ai memory recall` | Recalls agent memory entries. Use `--assistant` to scope operations. |
 | `wp mcp-ai thread list` | Lists chat threads. Use `--assistant` to filter. Also supports `get` and `delete` subcommands with `--thread-id`. |
-| `wp mcp-ai provider list` | Lists all 15 AI providers with enabled/disabled status. Also supports `test <slug>` and `models <slug>` subcommands. |
+| `wp mcp-ai provider list` | Lists all AI providers with enabled/disabled status. Also supports `test <slug>` and `models <slug>` subcommands. |
 | `wp mcp-ai cron list` | Lists scheduled cron jobs tracked by NV oOS. Also supports `run <job-id>` and `delete <job-id>` subcommands. |
 | `wp mcp-ai transcript list` | Lists transcripts eligible for mining. Use `--assistant` to filter. Also supports `mine` subcommand for batch mining. |
 | `wp mcp-ai approval list` | Lists pending human-in-the-loop approval items. Accepts `--format` flag. Also supports `approve` and `reject` subcommands with `--item-id`. |
-| `wp mcp-ai tool list` | Lists all registered tools with status, capability, and toolkit metadata. Accepts `--status`, `--format`, `--toolkit`, and `--search` flags. Also supports `enable <slug>` and `disable <slug>`. |
-| `wp mcp-ai assistant list` | Lists all published AI assistants. Accepts `--status` and `--format` flags. |
+| `wp mcp-ai tool list` | Lists all registered tools with status and capability. Accepts `--status`, `--format`, and `--fields` flags. Also supports `enable <slug>`, `disable <slug>`, and `call <slug> --args='{"…":…}'`. |
+| `wp mcp-ai assistant list` | Lists all AI assistants. Accepts `--status` and `--format` flags. |
 | `wp mcp-ai credential list` | Lists API credentials configured for an assistant. |
-| `wp mcp-ai slash-command list` | Lists registered slash commands. |
+| `wp mcp-ai slash list` | Lists registered slash commands. Also supports `execute <command>` and `help <command>`. |
 | `wp mcp-ai settings get` | Retrieves all NV oOS settings. |
 | `wp mcp-ai cache clear` | Clears the NV oOS object cache. |
+| `wp mcp-ai security posture` | Security posture score with all 21 signals. Also supports `audit`, `purge-audit`, `gate`, and `keys`. |
+| `wp mcp-ai model list --provider=<slug>` | Lists catalog models per provider. Also supports `suggestions` and `discover`. |
+
+> **Full reference:** see [`docs/operations/wp-cli.md`](docs/operations/wp-cli.md) for the
+> complete Base + Pro + addon command tree, capability matrix, and scripting
+> patterns.
 
 `wp mcp-ai remote` accepts additional flags so you can mirror the authentication mode used by your deployment while exercising TLS and timeout controls:
 

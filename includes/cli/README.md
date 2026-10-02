@@ -93,7 +93,7 @@ CLI tests bootstrap WP-CLI in headless mode via `tests/bootstrap.php` and assert
 - [`.context/security-checklist.md`](../../.context/security-checklist.md) — capability + sanitisation rules (always)
 - [`.context/tool-registry.md`](../../.context/tool-registry.md) — for `wp mcp-ai tool …`
 - [`.context/testing.md`](../../.context/testing.md) — running CLI tests
-- [`docs/guides/operator/wp-cli.md`](../../docs/guides/operator/wp-cli.md) — operator-facing command reference (if present)
+- [`docs/operations/wp-cli.md`](../../docs/operations/wp-cli.md) — operator-facing command reference
 
 ## See Also
 
