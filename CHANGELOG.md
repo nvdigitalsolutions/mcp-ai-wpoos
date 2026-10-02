@@ -2,6 +2,10 @@
 
 ## [Unreleased] — WP-CLI Parity & Hardening (Proposal 050)
 
+### Fixed — FlowHub MCP Apps ignored the connection proxy
+
+- **Assistant FlowHub MCP gateway traffic now inherits the Remote Sites connection's proxy.** `build_flowhub_mcp_app_config()` carries the connection's `proxy_url`/`proxy_auth` (proxy password decrypted from the connection record, with the FlowHub toolkit settings proxy as fallback — the same resolution order as the sync engine), and `WP_MCP_AI_MCP_App_Client` + `WP_MCP_AI_MCP_App_OAuth_Client` apply that proxy to every outbound gateway request (JSON-RPC dispatch, OAuth discovery, token refresh) via the `http_api_curl` cURL layer. Geo-blocked deployments no longer need a direct egress route to `mcp.flowhub.com`.
+
 ### Fixed — Media Studio `/ai/generate` returning 500 in fashion mode (PR #6853)
 
 - **Fashion transforms no longer 500 on the registry's model-requirements gate.** `NV_oOS_Media_Studio_AI_Service` executed `edit_gemini_image` without a `model` argument, and the tool rules' `model_requirements.required` validation rejected the call — a `WP_Error` with no HTTP status, which the REST layer rendered as 500. Transforms now resolve the Gemini image model (`gemini_image_model` setting, falling back to `gemini-3.1-flash-image`, restricted to the tool's allowlist) and pass it with every execution. Tool-rule validation failures now return **HTTP 400** with the error list, and the `required_settings` API-key gate falls back to `WP_MCP_AI_Credential_Resolver` (env vars, PHP constants, WP 7.0 Connectors). **Media Studio addon bumped 0.6.0 → 0.6.1.**

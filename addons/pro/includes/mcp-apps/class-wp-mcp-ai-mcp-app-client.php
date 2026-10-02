@@ -127,6 +127,25 @@ class WP_MCP_AI_MCP_App_Client {
 	protected $verify_ssl;
 
 	/**
+	 * Outbound HTTP proxy (host:port) applied to gateway requests.
+	 *
+	 * Empty when the connection does not declare a proxy. Supports HTTP
+	 * proxies; applied at the cURL layer via the `http_api_curl` action.
+	 *
+	 * @var string
+	 */
+	protected $proxy_url = '';
+
+	/**
+	 * Outbound HTTP proxy credentials (user:pass).
+	 *
+	 * Empty when the proxy is unauthenticated or unused.
+	 *
+	 * @var string
+	 */
+	protected $proxy_auth = '';
+
+	/**
 	 * JSON-RPC request counter.
 	 *
 	 * @var int
@@ -173,6 +192,8 @@ class WP_MCP_AI_MCP_App_Client {
 	 *     @type string $connection_ref Central Remote Sites connection ID for persisting automatic OAuth refreshes of reference entries. Default ''.
 	 *     @type int    $timeout     Request timeout in seconds. Default 30.
 	 *     @type bool   $verify_ssl  Whether to verify SSL. Default true.
+	 *     @type string $proxy_url   Optional outbound HTTP proxy (host:port) for gateway requests.
+	 *     @type string $proxy_auth  Optional proxy credentials (user:pass).
 	 * }
 	 */
 	public function __construct( array $config ) {
@@ -185,18 +206,22 @@ class WP_MCP_AI_MCP_App_Client {
 				'header_name' => '',
 				'timeout'     => 30,
 				'verify_ssl'  => true,
+				'proxy_url'   => '',
+				'proxy_auth'  => '',
 			)
 		);
 
-		$this->server_url = esc_url_raw( $config['server_url'] );
-		$this->auth       = array(
+		$this->server_url     = esc_url_raw( $config['server_url'] );
+		$this->auth           = array(
 			'type'        => sanitize_key( $config['auth_type'] ),
 			'token'       => $config['token'],
 			'header_name' => sanitize_text_field( $config['header_name'] ),
 		);
-		$this->timeout    = max( 1, min( 120, absint( $config['timeout'] ) ) );
-		$this->verify_ssl = (bool) $config['verify_ssl'];
-		$this->assistant_id = isset( $config['assistant_id'] ) ? absint( $config['assistant_id'] ) : 0;
+		$this->timeout        = max( 1, min( 120, absint( $config['timeout'] ) ) );
+		$this->verify_ssl     = (bool) $config['verify_ssl'];
+		$this->proxy_url      = isset( $config['proxy_url'] ) ? (string) $config['proxy_url'] : '';
+		$this->proxy_auth     = isset( $config['proxy_auth'] ) ? (string) $config['proxy_auth'] : '';
+		$this->assistant_id   = isset( $config['assistant_id'] ) ? absint( $config['assistant_id'] ) : 0;
 		$this->connection_ref = isset( $config['connection_ref'] ) ? sanitize_key( (string) $config['connection_ref'] ) : '';
 
 		// Attach OAuth client if provided.
@@ -864,7 +889,33 @@ class WP_MCP_AI_MCP_App_Client {
 			}
 		}
 
-		return wp_remote_request( $this->server_url, $args );
+		if ( '' === $this->proxy_url ) {
+			return wp_remote_request( $this->server_url, $args );
+		}
+
+		// Route the outbound gateway request through the configured proxy at
+		// the cURL layer — wp_remote_request() has no proxy API of its own.
+		// Geo-blocked gateways (e.g. FlowHub) need this to accept the request.
+		$proxy_url   = $this->proxy_url;
+		$proxy_auth  = $this->proxy_auth;
+		$apply_proxy = static function ( $handle ) use ( $proxy_url, $proxy_auth ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- Proxy support requires cURL-level configuration.
+			curl_setopt( $handle, CURLOPT_PROXY, $proxy_url );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+			curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+			if ( '' !== $proxy_auth ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+				curl_setopt( $handle, CURLOPT_PROXYUSERPWD, $proxy_auth );
+			}
+		};
+
+		add_action( 'http_api_curl', $apply_proxy, 10, 1 );
+
+		try {
+			return wp_remote_request( $this->server_url, $args );
+		} finally {
+			remove_action( 'http_api_curl', $apply_proxy, 10 );
+		}
 	}
 
 	/**
