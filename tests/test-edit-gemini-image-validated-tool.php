@@ -234,4 +234,42 @@ class Test_WP_MCP_AI_Tool_Edit_Gemini_Image_Validated extends WP_UnitTestCase {
 		$shortcuts = $this->tool->get_shortcut_tasks();
 		$this->assertIsArray( $shortcuts );
 	}
+
+	/**
+	 * Test the aspect_ratio 'auto' value passes validation.
+	 *
+	 * The registry auto-upgrades edit_gemini_image to this validated variant,
+	 * and the base tool's get_allowed_aspect_ratios() advertises 'auto'
+	 * ("Let AI decide"). The validated contract must accept it too — the
+	 * Media Studio fashion transforms pass 'auto' by default and were
+	 * rejected with a status-less validation_failed WP_Error (HTTP 500).
+	 */
+	public function test_aspect_ratio_auto_passes_validation() {
+		$service = \WP_MCP_AI\Validators\WP_MCP_AI_Validator_Service::get_instance();
+		$this->assertNotNull( $service, 'Symfony Validator service should be available.' );
+
+		$args                = new \WP_MCP_AI\Tools\Arguments\EditGeminiImageArguments();
+		$args->prompt        = 'Remove background';
+		$args->attachment_id = 1;
+		$args->aspect_ratio  = 'auto';
+
+		$violations = $service->validate( $args );
+		$this->assertSame( 0, count( $violations ), '"auto" should be an accepted aspect ratio.' );
+	}
+
+	/**
+	 * Test an aspect ratio outside the advertised set still fails.
+	 */
+	public function test_aspect_ratio_unknown_value_fails_validation() {
+		$service = \WP_MCP_AI\Validators\WP_MCP_AI_Validator_Service::get_instance();
+		$this->assertNotNull( $service, 'Symfony Validator service should be available.' );
+
+		$args                = new \WP_MCP_AI\Tools\Arguments\EditGeminiImageArguments();
+		$args->prompt        = 'Remove background';
+		$args->attachment_id = 1;
+		$args->aspect_ratio  = '2:1';
+
+		$violations = $service->validate( $args );
+		$this->assertGreaterThan( 0, count( $violations ), 'Unknown ratios should be rejected.' );
+	}
 }
