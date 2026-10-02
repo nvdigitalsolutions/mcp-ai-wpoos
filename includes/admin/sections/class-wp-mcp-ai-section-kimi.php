@@ -75,12 +75,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 					'label'       => __( 'Default Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Select the default Kimi model to use.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'kimi-k3'          => __( 'Kimi K3 (2.8T MoE, 1M Context, Open Weights)', 'mcp-ai-wpoos' ),
-						'kimi-k2.7-code'   => __( 'Kimi K2.7 Code (Multimodal, 256K)', 'mcp-ai-wpoos' ),
-						'kimi-k2.6'        => __( 'Kimi K2.6 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
-						'kimi-k2.5'        => __( 'Kimi K2.5 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
-						'kimi-k2'          => __( 'Kimi K2 (Base, 256K)', 'mcp-ai-wpoos' ),
-						'kimi-k2-thinking' => __( 'Kimi K2 Thinking (Chain-of-thought, 256K)', 'mcp-ai-wpoos' ),
+						'kimi-k3'                  => __( 'Kimi K3 (2.8T MoE, 1M Context, Open Weights)', 'mcp-ai-wpoos' ),
+						'kimi-k2.7-code'           => __( 'Kimi K2.7 Code (Multimodal, 256K)', 'mcp-ai-wpoos' ),
+						'kimi-k2.7-code-highspeed' => __( 'Kimi K2.7 Code High-Speed (Multimodal, 256K)', 'mcp-ai-wpoos' ),
+						'kimi-k2.6'                => __( 'Kimi K2.6 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'kimi-k3',
 				),
@@ -152,12 +150,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 		 */
 		public static function get_available_models() {
 			return array(
-				'kimi-k3'          => __( 'Kimi K3 (2.8T MoE, 1M Context, Open Weights)', 'mcp-ai-wpoos' ),
-				'kimi-k2.7-code'   => __( 'Kimi K2.7 Code (Multimodal, 256K)', 'mcp-ai-wpoos' ),
-				'kimi-k2.6'        => __( 'Kimi K2.6 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
-				'kimi-k2.5'        => __( 'Kimi K2.5 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
-				'kimi-k2'          => __( 'Kimi K2 (Base, 256K)', 'mcp-ai-wpoos' ),
-				'kimi-k2-thinking' => __( 'Kimi K2 Thinking (Chain-of-thought, 256K)', 'mcp-ai-wpoos' ),
+				'kimi-k3'                  => __( 'Kimi K3 (2.8T MoE, 1M Context, Open Weights)', 'mcp-ai-wpoos' ),
+				'kimi-k2.7-code'           => __( 'Kimi K2.7 Code (Multimodal, 256K)', 'mcp-ai-wpoos' ),
+				'kimi-k2.7-code-highspeed' => __( 'Kimi K2.7 Code High-Speed (Multimodal, 256K)', 'mcp-ai-wpoos' ),
+				'kimi-k2.6'                => __( 'Kimi K2.6 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
 			);
 		}
 

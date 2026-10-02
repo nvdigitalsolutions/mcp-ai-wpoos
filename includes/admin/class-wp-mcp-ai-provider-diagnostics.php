@@ -185,7 +185,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Default Model', 'mcp-ai-wpoos' ); ?></th>
-								<td><code><?php echo esc_html( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-4-5' ); ?></code></td>
+								<td><code><?php echo esc_html( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-5-5' ); ?></code></td>
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Provider Status', 'mcp-ai-wpoos' ); ?></th>
@@ -258,7 +258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Default Model', 'mcp-ai-wpoos' ); ?></th>
-								<td><code><?php echo esc_html( isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash' ); ?></code></td>
+								<td><code><?php echo esc_html( isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-3.8-flash' ); ?></code></td>
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'High Token Fallback Model', 'mcp-ai-wpoos' ); ?></th>
@@ -1063,7 +1063,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						</p>
 					<?php else : ?>
 						<p class="description" style="margin-top: 10px;">
-							<?php esc_html_e( 'Kimi (Moonshot AI) provides OpenAI-compatible models. kimi-k2.x models are the latest agentic generation with 256K context and tool calling. moonshot-v1-* models are stable general-purpose models. kimi-k2-thinking is a chain-of-thought model without tool calling.', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Kimi (Moonshot AI) provides OpenAI-compatible models. kimi-k3 (July 2026) is the 2.8T flagship with 1M context and vision. kimi-k2.6 / kimi-k2.7-code are the current 256K agentic and coding models. The kimi-k2/k2.5 and moonshot-v1 lines were discontinued in 2026.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					<?php endif; ?>
 					</div>
@@ -1199,7 +1199,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							<tr>
 								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<code><?php echo esc_html( isset( $settings['zai_model'] ) && '' !== $settings['zai_model'] ? $settings['zai_model'] : 'glm-5.2' ); ?></code>
+									<code><?php echo esc_html( isset( $settings['zai_model'] ) && '' !== $settings['zai_model'] ? $settings['zai_model'] : 'glm-5.3' ); ?></code>
 								</td>
 							</tr>
 							<tr>
@@ -1235,7 +1235,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						</p>
 					<?php else : ?>
 						<p class="description" style="margin-top: 10px;">
-							<?php esc_html_e( 'Z.AI (Zhipu AI) provides the GLM model family with up to 1M context windows. GLM-5.2 features tool calling, thinking mode, and day-one coding agent compatibility via OpenAI-compatible and Anthropic Messages endpoints.', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Z.AI (Zhipu AI) provides the GLM model family with up to 1M context windows. GLM-5.3 (August 2026) features tool calling, thinking mode, and day-one coding agent compatibility via OpenAI-compatible and Anthropic Messages endpoints; GLM-5.3 Flash is the budget tier.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					<?php endif; ?>
 				</div>
@@ -2036,7 +2036,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			try {
 				// Test by making a simple completion request.
 				$api_key = $settings['anthropic_api_key'];
-				$model   = isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-4-5';
+				$model   = isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-5-5';
 
 				$response = wp_remote_post(
 					'https://api.anthropic.com/v1/messages',
@@ -2197,7 +2197,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						'message' => __( 'Gemini connection successful!', 'mcp-ai-wpoos' ),
 						'details' => array(
 							__( 'Models Available', 'mcp-ai-wpoos' ) => $model_count,
-							__( 'Default Model', 'mcp-ai-wpoos' ) => isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash',
+							__( 'Default Model', 'mcp-ai-wpoos' ) => isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-3.8-flash',
 						),
 					)
 				);

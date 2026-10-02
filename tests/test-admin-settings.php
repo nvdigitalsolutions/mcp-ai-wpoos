@@ -27,7 +27,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'default_model', $defaults );
 		$this->assertSame( 'gpt-4.1', $defaults['default_model'] );
 		$this->assertArrayHasKey( 'default_gemini_model', $defaults );
-		$this->assertSame( 'gemini-3.6-flash', $defaults['default_gemini_model'] );
+		$this->assertSame( 'gemini-3.8-flash', $defaults['default_gemini_model'] );
 		$this->assertArrayHasKey( 'default_provider', $defaults );
 		$this->assertSame( 'openai', $defaults['default_provider'] );
 		$this->assertArrayHasKey( 'openai_image_model', $defaults );
@@ -47,7 +47,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
 
 		$this->assertArrayHasKey( 'openai_transcribe_model', $defaults );
-		$this->assertSame( 'gpt-4o-mini-transcribe', $defaults['openai_transcribe_model'] );
+		$this->assertSame( 'gpt-transcribe', $defaults['openai_transcribe_model'] );
 		$this->assertArrayHasKey( 'openai_transcribe_response_format', $defaults );
 		$this->assertSame( 'verbose_json', $defaults['openai_transcribe_response_format'] );
 		$this->assertArrayHasKey( 'openai_transcribe_language', $defaults );
@@ -90,7 +90,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Verify some key models are present.
 		$this->assertArrayHasKey( 'gpt-5', $choices );
 		$this->assertArrayHasKey( 'gpt-5-mini', $choices );
-		$this->assertArrayHasKey( 'gpt-5-codex', $choices );
+		$this->assertArrayHasKey( 'gpt-6-sol', $choices );
 		$this->assertArrayHasKey( 'gpt-4o', $choices );
 		$this->assertArrayHasKey( 'gpt-4o-mini', $choices );
 		$this->assertArrayHasKey( 'gpt-4.1', $choices );

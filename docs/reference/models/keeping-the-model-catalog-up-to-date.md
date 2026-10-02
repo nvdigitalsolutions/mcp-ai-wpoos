@@ -1,6 +1,6 @@
 # Keeping the Model Catalog Up to Date
 
-> Last reviewed: September 10, 2026
+> Last reviewed: October 3, 2026
 >
 > **See also**: [`model-update-process-2026-07.md`](model-update-process-2026-07.md) — complete step-by-step checklist covering all files that need updating when model lineups change.
 

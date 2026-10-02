@@ -1143,7 +1143,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				return ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';
 
 			case 'zai':
-				return ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-4';
+				return ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-5.3-flash';
 
 			default:
 				return new WP_Error(

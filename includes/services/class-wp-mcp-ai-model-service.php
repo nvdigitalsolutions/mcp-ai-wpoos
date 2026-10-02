@@ -370,7 +370,7 @@ class WP_MCP_AI_Model_Service {
 		$models['gemini-2.5-flash-preview-09-2025'] = 'Gemini 2.5 Flash (Sep 2025 Preview)';
 
 		// Gemini 2.5 specialized models.
-		$models['gemini-live-2.5-flash-preview']                = 'Gemini Live 2.5 Flash (Voice/Multimodal)';
+		$models['gemini-3.8-live']                              = 'Gemini 3.8 Live (Voice/Multimodal, GA September 2026)';
 		$models['gemini-2.5-flash-preview-native-audio-dialog'] = 'Gemini 2.5 Native Audio Dialog';
 		$models['gemini-2.5-flash-preview-tts']                 = 'Gemini 2.5 Flash TTS';
 		$models['gemini-2.5-pro-preview-tts']                   = 'Gemini 2.5 Pro TTS';
@@ -378,7 +378,6 @@ class WP_MCP_AI_Model_Service {
 		// Image generation model - only for image generation/editing tools.
 		if ( $requires_image_gen ) {
 			$models['gemini-3.1-flash-image'] = 'Gemini 3.1 Flash Image — Nano Banana 2 (Recommended)';
-			$models['gemini-2.5-flash-image'] = 'Gemini 2.5 Flash Image — Nano Banana (Legacy)';
 		}
 
 		// Gemini 2.0 series (stable).
@@ -1024,7 +1023,7 @@ class WP_MCP_AI_Model_Service {
 
 		// DeepSeek current lineup: V4.1 Flash flagship; V4 Pro stays servable
 		// (DeepSeek continues it past 2026-09-14, billing unchanged).
-		$models['deepseek-flash'] = 'DeepSeek V4.1 Flash (1M Context, Vision)';
+		$models['deepseek-flash']  = 'DeepSeek V4.1 Flash (1M Context, Vision)';
 		$models['deepseek-v4-pro'] = 'DeepSeek V4 Pro (Reasoning, 1M Context)';
 
 		return $models;
@@ -1166,24 +1165,24 @@ class WP_MCP_AI_Model_Service {
 		$provider_lanes = array(
 			'openai'       => array(
 				'stable'    => 'gpt-4.1',
-				'latest'    => 'gpt-5.4',
-				'budget'    => 'gpt-5.4-mini',
+				'latest'    => 'gpt-6-sol',
+				'budget'    => 'gpt-6-luna',
 				'vision'    => 'gpt-4.1',
 				'image'     => 'gpt-image-2',
-				'audio_in'  => 'gpt-4o-mini-transcribe',
+				'audio_in'  => 'gpt-transcribe',
 				'audio_out' => 'gpt-4o-mini-tts',
 			),
 			'anthropic'    => array(
-				'stable' => 'claude-sonnet-4-6',
-				'latest' => 'claude-opus-4-6',
+				'stable' => 'claude-sonnet-5-5',
+				'latest' => 'claude-opus-5-5',
 				'budget' => 'claude-haiku-4-5',
-				'vision' => 'claude-sonnet-4-6',
+				'vision' => 'claude-sonnet-5-5',
 			),
 			'gemini'       => array(
-				'stable' => 'gemini-2.5-flash',
-				'latest' => 'gemini-2.5-pro',
-				'budget' => 'gemini-2.5-flash',
-				'vision' => 'gemini-2.5-flash',
+				'stable' => 'gemini-3.8-flash',
+				'latest' => 'gemini-3.8-flash',
+				'budget' => 'gemini-3.5-flash-lite',
+				'vision' => 'gemini-3.8-flash',
 				'image'  => 'gemini-3.1-flash-image',
 			),
 			'huggingface'  => array(
@@ -1212,8 +1211,8 @@ class WP_MCP_AI_Model_Service {
 			),
 			'openrouter'   => array(
 				'stable' => 'openai/gpt-4.1',
-				'latest' => 'openai/gpt-5.4',
-				'budget' => 'openai/gpt-5.4-mini',
+				'latest' => 'openai/gpt-6-sol',
+				'budget' => 'openai/gpt-6-luna',
 			),
 			'digitalocean' => array(
 				'stable' => 'meta-llama/llama-3.3-70b-instruct',
