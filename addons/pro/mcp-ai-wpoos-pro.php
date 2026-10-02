@@ -2960,6 +2960,15 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 		'class-wp-mcp-ai-pro-cli-place-command.php',
 		'class-wp-mcp-ai-pro-cli-calendar-command.php',
 		'class-wp-mcp-ai-pro-cli-composition-command.php',
+		'class-wp-mcp-ai-pro-cli-crm-command.php',
+		'class-wp-mcp-ai-pro-cli-incident-command.php',
+		'class-wp-mcp-ai-pro-cli-maintenance-command.php',
+		'class-wp-mcp-ai-pro-cli-schedule-command.php',
+		'class-wp-mcp-ai-pro-cli-workflow-command.php',
+		'class-wp-mcp-ai-pro-cli-vault-command.php',
+		'class-wp-mcp-ai-pro-cli-remote-site-command.php',
+		'class-wp-mcp-ai-pro-cli-communication-command.php',
+		'class-wp-mcp-ai-pro-cli-media-studio-command.php',
 	);
 
 	foreach ( $wp_mcp_ai_pro_cli_files as $wp_mcp_ai_pro_cli_file ) {
