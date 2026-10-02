@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.91"
   plugin-version-tested: "1.1.91"
-  last-updated: "2026-10-01"
+  last-updated: "2026-10-03"
 ---
 
 # NV oOS Dependabot Loop — Alert Triage, Safe Bumps & Dismissal
@@ -64,16 +64,35 @@ For one alert's advisory details: `gh api .../dependabot/alerts/{n}` and read
 `security_advisory.description` (the description names the affected code path —
 e.g. GHSA-866g-f22w-33x8 names `createJsonResponseHandler`).
 
+**Multi-line advisory gotcha (the 2026-10-03 undici family):** the alert's
+top-level `security_vulnerability` exposes only ONE vulnerable range, but recent
+advisories declare several — one per supported major line, each with its own
+patch. Read the full `security_advisory.vulnerabilities[]` array, not just the
+top-level field. The undici family published 2026-09-29 patches three lines at
+once: `6.x → 6.28.1`, `7.x → 7.29.1`, `8.x → 8.10.2`. The Step 1 aggregate
+dedupes by the single-range `first_patched_version`, so a manifest whose top
+copy is patched can still hide a vulnerable copy on another major line — always
+check every copy against every range (a three-line range checker is in the
+2026-10-03 triage below).
+
 ## Step 2 — Staleness forensics (which alerts are real?)
 
 Dependabot's state machine only auto-transitions alerts to `fixed` when the
 default branch is clean, and re-scans lag pushes. So verify versions yourself.
 
-**A. Scan the local lockfiles** (all 13 npm trees in this repo — root + 12
-addons, each with its own `package-lock.json`):
+**A. Scan the local lockfiles** (21 npm trees as of 2026-10-03 — root + 20
+addons, each with its own `package-lock.json`; the set grows, so `find_path` for
+`**/package-lock.json` first):
 
 ```sh
-node -e "const fs=require('fs'); const files=['package-lock.json','addons/pro/package-lock.json','addons/pro/assets/spa/package-lock.json','addons/pro/assets/spa-v2/package-lock.json','addons/chat-spa/package-lock.json','addons/saas-controller/package-lock.json','addons/toolkit-shell/package-lock.json','addons/docs-hub/package-lock.json','addons/media-studio/package-lock.json','addons/canvas-toolkit/package-lock.json','addons/comic-reader/package-lock.json','addons/cloudways-dashboard/package-lock.json','addons/document-editor/package-lock.json','addons/mcp-wordpress-gateway/package-lock.json']; const names=['js-yaml','undici','webpack-dev-middleware','body-parser','qs','@ai-sdk/provider-utils']; for(const f of files){ if(!fs.existsSync(f)) continue; const l=JSON.parse(fs.readFileSync(f,'utf8')); const pk=l.packages||{}; for(const p in pk){ const n=p.split('node_modules/').pop(); if(names.includes(n)) console.log(f,'|',p,'|',pk[p].version); } }"
+node -e "const fs=require('fs'); const files=['package-lock.json','addons/pro/package-lock.json','addons/pro/assets/spa/package-lock.json','addons/pro/assets/spa-v2/package-lock.json','addons/chat-spa/package-lock.json','addons/cloud-worker/package-lock.json','addons/cloudways-dashboard/package-lock.json','addons/saas-controller/package-lock.json','addons/toolkit-shell/package-lock.json','addons/docs-hub/package-lock.json','addons/media-studio/package-lock.json','addons/media-worker/package-lock.json','addons/canvas-toolkit/package-lock.json','addons/comic-reader/package-lock.json','addons/document-editor/package-lock.json','addons/funiq-bridge/package-lock.json','addons/librechat/package-lock.json','addons/page-agent/package-lock.json','addons/schedule-anything-spa/package-lock.json','addons/tenant-router/package-lock.json','addons/mcp-wordpress-gateway/package-lock.json']; const names=['js-yaml','undici','webpack-dev-middleware','body-parser','qs','@ai-sdk/provider-utils']; for(const f of files){ if(!fs.existsSync(f)) continue; const l=JSON.parse(fs.readFileSync(f,'utf8')); const pk=l.packages||{}; for(const p in pk){ const n=p.split('node_modules/').pop(); if(names.includes(n)) console.log(f,'|',p,'|',pk[p].version); } }"
+```
+
+Multi-line range checker (flags any copy inside any undici advisory range; adapt
+the thresholds per package):
+
+```sh
+node -e "const fs=require('fs'); const files=['addons/media-worker/package-lock.json']; const vuln=(v)=>{ if(/^6\./.test(v)) return v<'6.28.1'; if(/^7\./.test(v)) return v<'7.29.1'; if(/^8\./.test(v)) return v<'8.10.2'; return false; }; for(const f of files){ const pk=JSON.parse(fs.readFileSync(f,'utf8')).packages||{}; for(const p in pk){ if(p.endsWith('node_modules/undici') && vuln(pk[p].version)) console.log('VULNERABLE', f, p, pk[p].version); } }"
 ```
 
 Print the **full path** (not just the name) — multiple copies of the same
@@ -95,6 +114,15 @@ gh api "repos/nvdigitalsolutions/mcp-ai-wpoos/contents/addons/pro/package-lock.j
   auto-dismiss after the fix reaches `main` (or dismiss manually, Step 7).
 - **Genuinely vulnerable** — a copy inside `vulnerable_version_range` exists.
   Proceed to Step 3–4.
+- **Stale-graph false positive** — the alert fired against an outdated
+  dependency-graph snapshot even though the CURRENT default-branch lockfile is
+  already patched. Seen 2026-10-03: 7 media-worker undici alerts fired
+  2026-10-02 against `main`'s already-clean lockfile (7.29.1/6.28.1 patched by
+  PR #6806, in `main` since the v1.1.92 squash merge of 2026-10-01 — before the
+  alerts were created). Verify `main` directly (Step 2B) before assuming an
+  alert is real; if the manifest is clean on `main`, dismiss as `inaccurate`
+  with the evidence in the comment. Don't expect a re-scan to clear these until
+  the next push to `main`.
 
 2026-09-30 example: `undici` (31 alerts), gateway `body-parser`/`qs` were
 stale on `alpha-working` but still vulnerable on `main` (`undici@8.10.0`,
@@ -284,7 +312,10 @@ vulnerable until alpha-working merges — call that out and recommend the merge.
 
 - Default shell is `sh`: no `dir`, no `bc` (use `ls`, node arithmetic).
 - `/tmp` written by sh resolves to git-bash's `/tmp`, but node.exe sees
-  `F:\tmp` — use repo-relative paths for handoffs between the two.
+  `F:\tmp` — use repo-relative paths for handoffs between the two. Best of all:
+  pipe `gh api` raw output straight into `node -e` on stdin and skip temp files.
+- Older `gh` versions have no `-o/--output` flag on `gh api` — redirecting with
+  `-o /tmp/x.json` fails with "unknown shorthand flag"; use `| node` instead.
 - GitHub contents API: >1 MB files need
   `-H "Accept: application/vnd.github.raw"` (see Step 2B).
 - The root `package-lock.json` carries a stale `version` until regen — the
@@ -295,11 +326,24 @@ vulnerable until alpha-working merges — call that out and recommend the merge.
 ## References
 
 - PR #6817 — executed 2026-09-30 sweep (js-yaml + webpack-dev-middleware).
+- PR #6850 — merged 2026-10-02: jsdom's undici 7.29.0 → 7.30.0 in 8 addons
+  (fixes the 2026-09-29 undici advisory family on `alpha-working`; clears
+  `main`'s alerts once alpha-working merges).
+- PR #6806 — merged 2026-09-29: patched media-worker's undici to 7.29.1
+  (the fix behind the stale-graph false positives dismissed 2026-10-03).
+- 2026-10-03 triage sweep — 39 open alerts, all undici, all already patched on
+  `alpha-working`: 32 dismissed `fix_started` (PR #6850 awaiting main merge)
+  and 7 media-worker alerts dismissed `inaccurate` (stale graph). No lockfile
+  changes required.
 - Issue #6647 — AI SDK v1→v5 migration tracker (canonical for provider-utils).
 - Advisories seen in this repo: GHSA-r3ph-w7gj-g6xm (js-yaml),
   GHSA-g84c-rxfj-3j2c (webpack-dev-middleware),
   GHSA-866g-f22w-33x8 (@ai-sdk/provider-utils), plus the undici/body-parser/qs
-  families (GHSA-rfgv-xxqx-mfg5 and siblings).
+  families (GHSA-rfgv-xxqx-mfg5 and siblings). The 2026-09-29 undici family:
+  GHSA-3xpg-4rpp-hhhm, GHSA-pmjh-fq2x-6v4x, GHSA-2gqq-gqf2-x968,
+  GHSA-rx4f-c7p8-82vq, GHSA-rfgv-xxqx-mfg5, GHSA-r53p-7pc4-xj5r,
+  GHSA-2jfj-6hjv-fm6j (plus GHSA-w293-vg96-wgc3 fixed earlier) — three patched
+  lines: 6.28.1 / 7.29.1 / 8.10.2.
 - npm/cli#7447 — the EEXIST cacache race behind the flaky CI job.
 - `mcp-ai-wpoos-updates` skill §A5 — new-skill bookkeeping rules (counts in
   `AGENTS.md` §1, `.github/copilot-instructions.md`, `README.md`).
