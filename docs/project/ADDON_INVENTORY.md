@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** October 2, 2026 (v1.1.92 — Media Studio **0.1.0 → 0.6.0** in-window with the fashion production suite (#6839/#6844; the inventory row was already updated to 0.6.0 in-window); no other addon version changes; all other addons unchanged)
+> **Last Updated:** October 2, 2026 (v1.1.92 — Media Studio **0.1.0 → 0.6.0** in-window with the fashion production suite (#6839/#6844; the inventory row was already updated to 0.6.0 in-window); Media Studio **0.6.0 → 0.6.1** with the `/ai/generate` 500 fix (#6853); no other addon version changes; all other addons unchanged)
 
 ---
 
@@ -67,7 +67,7 @@
 |---|---|---|---|---|---|---|---|
 | 23 | **Canvas Toolkit** | `addons/canvas-toolkit/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Provides a canvas-based surface for the plugin. |
 | 24 | **Document Editor** | `addons/document-editor/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Document editing surface. |
-| 25 | **Media Studio** | `addons/media-studio/` | 0.6.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Media management surface with zoom/pan/drawing tools, plus the AI fashion production suite (`fashion-studio` mode: transforms, video, provenance, marketplace pipeline). |
+| 25 | **Media Studio** | `addons/media-studio/` | 0.6.1 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Media management surface with zoom/pan/drawing tools, plus the AI fashion production suite (`fashion-studio` mode: transforms, video, provenance, marketplace pipeline). |
 | 26 | **Toolkit Shell** | `addons/toolkit-shell/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Pro addon | Manifest-driven React SPA shell. One bundle drives multiple toolkit SPAs (CRM, calendar, financial, legal, ecommerce, etc.) via per-toolkit JSON manifests. |
 
 ### Non-WordPress Components

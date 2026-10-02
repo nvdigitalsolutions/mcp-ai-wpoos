@@ -2,6 +2,10 @@
 
 ## [Unreleased] — WP-CLI Parity & Hardening (Proposal 050)
 
+### Fixed — Media Studio `/ai/generate` returning 500 in fashion mode (PR #6853)
+
+- **Fashion transforms no longer 500 on the registry's model-requirements gate.** `NV_oOS_Media_Studio_AI_Service` executed `edit_gemini_image` without a `model` argument, and the tool rules' `model_requirements.required` validation rejected the call — a `WP_Error` with no HTTP status, which the REST layer rendered as 500. Transforms now resolve the Gemini image model (`gemini_image_model` setting, falling back to `gemini-3.1-flash-image`, restricted to the tool's allowlist) and pass it with every execution. Tool-rule validation failures now return **HTTP 400** with the error list, and the `required_settings` API-key gate falls back to `WP_MCP_AI_Credential_Resolver` (env vars, PHP constants, WP 7.0 Connectors). **Media Studio addon bumped 0.6.0 → 0.6.1.**
+
 ### Added — WP-CLI parity & hardening
 
 - **Extracted legacy dispatcher commands into `includes/cli/`** (`mcp-ai` status/cleanup-cct/remote, `plugins`, `queue`, `token`, `rabbitmq`, `stdio`, `health`, `cache clear`, `version`) onto `WP_MCP_AI_CLI_Base_Command` with `manage_options` gating on every mutating subcommand and `@when after_wp_load` annotations; the dispatcher is now a loader shim.
