@@ -610,12 +610,14 @@ class Test_Remote_Site_Manager_MCP_Server extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Is_mcp_app_connection() accepts mcp_server and Upwork MCP connections only.
+	 * Is_mcp_app_connection() accepts mcp_server, Upwork MCP, and FlowHub MCP
+	 * connections only.
 	 */
 	public function test_is_mcp_app_connection_accepts_referenceable_types() {
-		$mcp_id    = $this->save_mcp_connection();
-		$upwork_id = $this->save_upwork_mcp_connection();
-		$api_id    = $this->save_upwork_mcp_connection(
+		$mcp_id         = $this->save_mcp_connection();
+		$upwork_id      = $this->save_upwork_mcp_connection();
+		$flowhub_id     = $this->save_flowhub_mcp_connection();
+		$api_id         = $this->save_upwork_mcp_connection(
 			array(
 				'name'          => 'Upwork API',
 				'upwork_mode'   => 'api',
@@ -623,31 +625,46 @@ class Test_Remote_Site_Manager_MCP_Server extends WP_UnitTestCase {
 				'client_secret' => 'csecret',
 			)
 		);
+		$flowhub_api_id = $this->save_flowhub_mcp_connection(
+			array(
+				'name'         => 'FlowHub API',
+				'flowhub_mode' => 'api',
+				'client_id'    => 'cid',
+				'api_key'      => 'key',
+			)
+		);
 
 		$this->assertNotWPError( $mcp_id );
 		$this->assertNotWPError( $upwork_id );
+		$this->assertNotWPError( $flowhub_id );
 		$this->assertNotWPError( $api_id );
+		$this->assertNotWPError( $flowhub_api_id );
 
 		$this->assertTrue( WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $mcp_id ) ) );
 		$this->assertTrue( WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $upwork_id ) ) );
+		$this->assertTrue( WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $flowhub_id ) ) );
 		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $api_id ) ) );
+		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $flowhub_api_id ) ) );
 		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( 'not-an-array' ) );
 	}
 
 	/**
-	 * Get_mcp_app_connections() merges MCP Server and Upwork MCP connections.
+	 * Get_mcp_app_connections() merges MCP Server, Upwork MCP, and FlowHub MCP
+	 * connections.
 	 */
-	public function test_get_mcp_app_connections_merges_both_kinds() {
+	public function test_get_mcp_app_connections_merges_all_kinds() {
 		$this->save_mcp_connection();
 		$this->save_upwork_mcp_connection();
+		$this->save_flowhub_mcp_connection();
 
 		$all = WP_MCP_AI_Pro_Remote_Site_Manager::get_mcp_app_connections();
 
-		$this->assertCount( 2, $all );
+		$this->assertCount( 3, $all );
 
 		$types = wp_list_pluck( $all, 'connection_type' );
 		$this->assertContains( 'mcp_server', $types );
 		$this->assertContains( 'upwork', $types );
+		$this->assertContains( 'flowhub', $types );
 	}
 
 	/**
@@ -678,5 +695,94 @@ class Test_Remote_Site_Manager_MCP_Server extends WP_UnitTestCase {
 		$this->assertSame( 'oauth', $config['auth_type'] );
 		$this->assertSame( 'upwork-access', $config['oauth_data']['access_token'] );
 		$this->assertSame( 'upwork-client', $config['oauth_data']['client_id'] );
+	}
+
+	/**
+	 * Save a FlowHub connection fixture in MCP mode.
+	 *
+	 * @param array $overrides Field overrides.
+	 * @return string|WP_Error Connection ID or error.
+	 */
+	protected function save_flowhub_mcp_connection( array $overrides = array() ) {
+		$data = array_merge(
+			array(
+				'name'            => 'FlowHub MCP',
+				'url'             => 'https://api.flowhub.co',
+				'connection_type' => 'flowhub',
+				'flowhub_mode'    => 'mcp',
+				'enabled'         => true,
+			),
+			$overrides
+		);
+
+		return WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $data );
+	}
+
+	/**
+	 * Get_flowhub_mcp_connections() only returns FlowHub connections in MCP mode.
+	 */
+	public function test_get_flowhub_mcp_connections_filters_by_type_and_mode() {
+		$this->save_flowhub_mcp_connection();
+		$this->save_flowhub_mcp_connection(
+			array(
+				'name'         => 'FlowHub API',
+				'flowhub_mode' => 'api',
+				'client_id'    => 'cid',
+				'api_key'      => 'key',
+			)
+		);
+		$this->save_mcp_connection();
+
+		$flowhub = WP_MCP_AI_Pro_Remote_Site_Manager::get_flowhub_mcp_connections();
+
+		$this->assertCount( 1, $flowhub );
+		$this->assertSame( 'FlowHub MCP', $flowhub[0]['name'] );
+	}
+
+	/**
+	 * Build_flowhub_mcp_app_config() resolves the gateway URL and the encrypted
+	 * OAuth blob into an MCP App client config.
+	 */
+	public function test_build_flowhub_mcp_config_uses_gateway_and_decrypts_blob() {
+		$id = $this->save_flowhub_mcp_connection(
+			array(
+				'mcp_oauth' => wp_json_encode(
+					array(
+						'access_token'  => 'flowhub-access',
+						'refresh_token' => 'flowhub-refresh',
+						'token_type'    => 'Bearer',
+						'expires_in'    => 3600,
+						'issued_at'     => time(),
+						'client_id'     => 'flowhub-client',
+					)
+				),
+			)
+		);
+		$this->assertNotWPError( $id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+		$config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $connection );
+
+		$this->assertSame( 'https://mcp.flowhub.com', $config['server_url'] );
+		$this->assertSame( 'oauth', $config['auth_type'] );
+		$this->assertSame( 'flowhub-access', $config['oauth_data']['access_token'] );
+		$this->assertSame( 'flowhub-client', $config['oauth_data']['client_id'] );
+	}
+
+	/**
+	 * A stored flowhub_mcp_url override wins over the default gateway.
+	 */
+	public function test_build_flowhub_mcp_config_honors_url_override() {
+		$id = $this->save_flowhub_mcp_connection(
+			array(
+				'flowhub_mcp_url' => 'https://mcp.example.com/flowhub',
+			)
+		);
+		$this->assertNotWPError( $id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $id );
+		$config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $connection );
+
+		$this->assertSame( 'https://mcp.example.com/flowhub', $config['server_url'] );
 	}
 }
