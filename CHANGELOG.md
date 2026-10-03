@@ -1,5 +1,19 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — Registry Toolkit Resolution Labels Pro Tools in the Catalogue
+
+- **`list_mcp_tools` now surfaces a toolkit namespace for tools that never declared one.** The new `WP_MCP_AI_Tool_Registry::get_tool_toolkit()` resolves the `toolkit` key from `get_definition()` when present and otherwise derives the namespace from the declaring folder directly under a `tools/` directory (`tools/document-generation/` → `document_generation`, `tools/video-production/` → `video_production`), normalising hyphens to underscores; wrapped legacy tools resolve through the inner class, and the `wp_mcp_ai_tool_toolkit` filter lets addons override the result. `list_mcp_tools` consumes the resolver, so previously-unlabelled Pro tools (e.g. `pro_pdf_document`, `transcode_video`, `extract_video_frames`, `okf_*`) now carry a toolkit value and respond to `toolkit=`-filtered searches; tools declared directly in a flat `tools/` folder still resolve to an empty string rather than a fabricated label.
+
+### Fixed — Newsletter Test Plugin Killed the Local PHPUnit Bootstrap
+
+- **Newsletter 9.4.6+ fatals `tests/bootstrap.php` on a fresh test database.** The plugin instantiates at include time, and with no `newsletter_logger_secret` option present its constructor chain reaches `NewsletterModule::get_token()` → `wp_generate_password()` — a pluggable function that does not exist on `muplugins_loaded` (real sites never hit this because the option is created at activation time). The optional-plugins loader now requires Newsletter separately on `plugins_loaded` (priority 1, after `pluggable.php` and before the tool registry boots at priority 20), so every local/container PHPUnit run no longer dies in the bootstrap. The newsletter capability-flags test now asserts the standard `write`/`state-changing` vocabulary the tool actually declares (the interface's canonical flags).
+
+### Changed — CRM `create_company` Uses Canonical Capability Flags
+
+- **`create_company` (Pro addon + Content Graph port) now declares the standard `write`/`state-changing` flags instead of the non-canonical `modifies-data`.** The canonical vocabulary in `includes/interfaces/interface-wp-mcp-ai-tool.php` documents `write`/`state-changing`; `modifies-data` existed in this one tool only (a CRM outlier). The Content Graph proof test asserts the canonical flags.
+
 ## [1.1.94] - 2026-10-03
 
 ### Added — ChatGPT Plugin Addon & OAuth 2.1 Resource-Server Contract (PR #6871)

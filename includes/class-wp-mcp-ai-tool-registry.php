@@ -1262,6 +1262,115 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Resolve the toolkit namespace for a tool instance or slug.
+		 *
+		 * The `toolkit` key declared inside `get_definition()` wins when
+		 * present. Tools without one (most Pro addon classes) fall back to a
+		 * directory-derived namespace: the folder directly under a `tools/`
+		 * directory that declares the class (e.g. `tools/document-generation/`
+		 * → `document_generation`). Hyphens are normalised to underscores to
+		 * match the declared-toolkit convention. Classes declared directly
+		 * inside a flat `tools/` folder resolve to an empty string.
+		 *
+		 * @since 1.1.95
+		 *
+		 * @param WP_MCP_AI_Tool_Interface|string $tool_or_slug Tool instance or registered slug.
+		 * @return string Toolkit namespace, empty when unknown.
+		 */
+		public function get_tool_toolkit( $tool_or_slug ) {
+			$tool = is_string( $tool_or_slug ) ? $this->get_tool( $tool_or_slug ) : $tool_or_slug;
+
+			if ( ! is_object( $tool ) ) {
+				return '';
+			}
+
+			$toolkit = '';
+
+			// Explicit declaration wins.
+			if ( method_exists( $tool, 'get_definition' ) ) {
+				$definition = $tool->get_definition();
+				if ( is_array( $definition ) && ! empty( $definition['toolkit'] ) ) {
+					$toolkit = trim( (string) $definition['toolkit'] );
+				}
+			}
+
+			// Directory-derived fallback for tools that never declared one.
+			if ( '' === $toolkit ) {
+				$toolkit = $this->derive_tool_toolkit_from_declaring_file( $tool );
+			}
+
+			$slug = method_exists( $tool, 'get_slug' ) ? (string) $tool->get_slug() : '';
+
+			/**
+			 * Filter the toolkit namespace resolved for a tool.
+			 *
+			 * Lets addons override or annotate namespaces (for example, mapping
+			 * a folder-derived slug to the canonical toolkit label) without
+			 * editing every tool class.
+			 *
+			 * @since 1.1.95
+			 *
+			 * @param string $toolkit Resolved toolkit namespace (declared or directory-derived).
+			 * @param string $slug    Tool slug.
+			 * @param object $tool    Tool instance.
+			 */
+			return (string) apply_filters( 'wp_mcp_ai_tool_toolkit', $toolkit, $slug, $tool );
+		}
+
+		/**
+		 * Derive a toolkit namespace from the declaring class file's location.
+		 *
+		 * Tool classes bundled under a `tools/<toolkit>/` folder are assumed to belong
+		 * to that toolkit. Wrapped legacy tools resolve through the inner class
+		 * (`get_inner_class_name()`) so the wrapper's own file location never
+		 * masks the real declaring folder.
+		 *
+		 * @since 1.1.95
+		 *
+		 * @param object $tool Tool instance.
+		 * @return string Toolkit namespace, empty when not derivable.
+		 */
+		private function derive_tool_toolkit_from_declaring_file( $tool ) {
+			$class_name = method_exists( $tool, 'get_inner_class_name' )
+				? $tool->get_inner_class_name()
+				: get_class( $tool );
+
+			try {
+				$file = ( new ReflectionClass( $class_name ) )->getFileName();
+			} catch ( ReflectionException $e ) {
+				return '';
+			}
+
+			if ( ! $file ) {
+				return '';
+			}
+
+			$dir = dirname( wp_normalize_path( $file ) );
+
+			// Declared directly inside a flat `tools/` folder — no toolkit dir.
+			if ( 'tools' === basename( $dir ) ) {
+				return '';
+			}
+
+			// Walk up to the segment directly below the enclosing `tools/`
+			// folder, so nested helper folders still map to the toolkit.
+			$guard = 0;
+			while ( $guard < 8 ) {
+				$parent = dirname( $dir );
+				if ( 'tools' === basename( $parent ) ) {
+					return str_replace( '-', '_', basename( $dir ) );
+				}
+				if ( $parent === $dir ) {
+					break;
+				}
+				$dir = $parent;
+				++$guard;
+			}
+
+			return '';
+		}
+
+		/**
 		 * Get capability flags for all registered tools.
 		 *
 		 * Returns a map of tool slugs to their capability flags arrays.
