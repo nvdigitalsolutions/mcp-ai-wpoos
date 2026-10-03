@@ -324,7 +324,12 @@ The plugin ships 7 security infrastructure classes in `includes/security/`. When
 - SSE connection slot limiting
 - JSON depth enforcement
 - Request body size enforcement
-- Error verbosity filtering (Safe/Moderate/Debug tiers)
+- Error verbosity filtering (Safe/Moderate/Debug tiers). Since 1.1.94, masked
+  errors carry a `ref` correlation ID that maps to a server-side entry in the
+  Recent Errors log (full code/message/data kept server-side), the original
+  HTTP status is carried through instead of being forced to 500, and admins
+  can see unredacted detail per request while a site stays in Safe mode by
+  appending `?verbose_errors=1` to the plugin REST URL.
 - Asset version stripping (`?ver=` query string removal)
 
 ### Security Posture

@@ -965,7 +965,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				'api_error_verbosity'                      => array(
 					'type'        => 'select',
 					'label'       => __( 'Error Detail Level', 'mcp-ai-wpoos' ),
-					'description' => __( 'Controls how much internal detail is included in REST API error responses. Production sites should use "Safe" to avoid information disclosure.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls how much internal detail is included in REST API error responses. Production sites should use "Safe" to avoid information disclosure. In Safe mode, masked errors carry a correlation reference logged to the Recent Errors view, and administrators can see full detail per request by appending ?verbose_errors=1 to a plugin REST URL.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'safe'    => __( 'Safe — generic messages only (recommended for production)', 'mcp-ai-wpoos' ),
 						'normal'  => __( 'Normal — actionable errors for authenticated users', 'mcp-ai-wpoos' ),

@@ -128,8 +128,8 @@ class Test_Request_Guard extends \WP_UnitTestCase {
 	public function test_error_verbosity_safe_strips_internal_keys(): void {
 		$this->set_setting( 'api_error_verbosity', 'safe' );
 
-		$request  = new \WP_REST_Request( 'GET', '/mcp-ai/v1/security/events' );
-		$error    = new \WP_Error(
+		$request = new \WP_REST_Request( 'GET', '/mcp-ai/v1/security/events' );
+		$error   = new \WP_Error(
 			'boom',
 			'Detailed internal message',
 			array(
@@ -149,6 +149,115 @@ class Test_Request_Guard extends \WP_UnitTestCase {
 		$this->assertSame( 30, $data['retry_after'] );
 		$this->assertArrayNotHasKey( 'internal', $data );
 		$this->assertArrayNotHasKey( 'stack', $data );
+		$this->assertMatchesRegularExpression( '/^[a-z0-9]{10}$/', $data['ref'] );
+	}
+
+	public function test_error_verbosity_safe_preserves_original_status(): void {
+		$this->set_setting( 'api_error_verbosity', 'safe' );
+
+		$request  = new \WP_REST_Request( 'GET', '/mcp-ai/v1/security/events' );
+		$error    = new \WP_Error(
+			'validation_failed',
+			'Validation failed',
+			array(
+				'status' => 400,
+				'field'  => 'aspect_ratio',
+			)
+		);
+		$filtered = RequestGuard::filter_error_verbosity( $error, null, $request );
+
+		$data = $filtered->get_error_data();
+		$this->assertSame( 400, $data['status'] );
+		$this->assertArrayNotHasKey( 'field', $data );
+	}
+
+	public function test_error_verbosity_safe_defaults_status_to_500_when_absent(): void {
+		$this->set_setting( 'api_error_verbosity', 'safe' );
+
+		$request  = new \WP_REST_Request( 'GET', '/mcp-ai/v1/security/events' );
+		$error    = new \WP_Error( 'boom', 'msg', array( 'internal' => 'secret' ) );
+		$filtered = RequestGuard::filter_error_verbosity( $error, null, $request );
+
+		$this->assertSame( 500, $filtered->get_error_data()['status'] );
+	}
+
+	public function test_error_verbosity_safe_treats_numeric_datum_as_status(): void {
+		$this->set_setting( 'api_error_verbosity', 'safe' );
+
+		$request  = new \WP_REST_Request( 'GET', '/mcp-ai/v1/security/events' );
+		$error    = new \WP_Error( 'boom', 'msg', 400 );
+		$filtered = RequestGuard::filter_error_verbosity( $error, null, $request );
+
+		$this->assertSame( 400, $filtered->get_error_data()['status'] );
+	}
+
+	public function test_error_verbosity_safe_masks_admins_without_override(): void {
+		$this->set_setting( 'api_error_verbosity', 'safe' );
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		\wp_set_current_user( $admin_id );
+
+		$request  = new \WP_REST_Request( 'GET', '/mcp-ai/v1/security/events' );
+		$error    = new \WP_Error( 'boom', 'msg', array( 'internal' => 'secret' ) );
+		$filtered = RequestGuard::filter_error_verbosity( $error, null, $request );
+
+		$this->assertNotSame( $error, $filtered );
+		$this->assertArrayNotHasKey( 'internal', $filtered->get_error_data() );
+	}
+
+	public function test_error_verbosity_safe_spares_admins_with_verbose_override(): void {
+		$this->set_setting( 'api_error_verbosity', 'safe' );
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		\wp_set_current_user( $admin_id );
+
+		$request = new \WP_REST_Request( 'GET', '/mcp-ai/v1/security/events' );
+		$request->set_query_params( array( 'verbose_errors' => '1' ) );
+		$error = new \WP_Error( 'boom', 'msg', array( 'internal' => 'secret' ) );
+
+		$this->assertSame( $error, RequestGuard::filter_error_verbosity( $error, null, $request ) );
+	}
+
+	public function test_verbose_errors_override_is_ignored_for_guests(): void {
+		$this->set_setting( 'api_error_verbosity', 'safe' );
+
+		\wp_set_current_user( 0 );
+
+		$request = new \WP_REST_Request( 'GET', '/mcp-ai/v1/security/events' );
+		$request->set_query_params( array( 'verbose_errors' => '1' ) );
+		$error    = new \WP_Error( 'boom', 'msg', array( 'internal' => 'secret' ) );
+		$filtered = RequestGuard::filter_error_verbosity( $error, null, $request );
+
+		$this->assertNotSame( $error, $filtered );
+		$this->assertArrayNotHasKey( 'internal', $filtered->get_error_data() );
+	}
+
+	public function test_error_verbosity_safe_strips_rest_response_and_attaches_ref(): void {
+		$this->set_setting( 'api_error_verbosity', 'safe' );
+
+		$request  = new \WP_REST_Request( 'GET', '/mcp-ai/v1/security/events' );
+		$response = new \WP_REST_Response(
+			array(
+				'code'    => 'validation_failed',
+				'message' => 'Validation failed',
+				'data'    => array(
+					'status' => 400,
+					'field'  => 'aspect_ratio',
+					'params' => array( '1:1', '16:9' ),
+				),
+			),
+			400
+		);
+
+		$filtered = RequestGuard::filter_error_verbosity( $response, null, $request );
+
+		$this->assertSame( 400, $filtered->get_status() );
+		$data = $filtered->get_data();
+		$this->assertSame( 'validation_failed', $data['code'] );
+		$this->assertMatchesRegularExpression( '/^[a-z0-9]{10}$/', $data['ref'] );
+		$this->assertSame( 400, $data['data']['status'] );
+		$this->assertArrayNotHasKey( 'field', $data['data'] );
+		$this->assertArrayNotHasKey( 'params', $data['data'] );
 	}
 
 	public function test_error_verbosity_verbose_passes_through(): void {
