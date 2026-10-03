@@ -1,0 +1,8 @@
+{
+	"mcpServers": {
+		"nvoos_site": {
+			"type": "http",
+			"url": "https://YOUR-SITE.DOMAIN/wp-json/mcp-ai/v1/mcp"
+		}
+	}
+}

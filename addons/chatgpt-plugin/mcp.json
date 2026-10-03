@@ -1,0 +1,9 @@
+{
+	"$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+	"mcpServers": {
+		"nvoos_site": {
+			"type": "streamable-http",
+			"url": "https://YOUR-SITE.DOMAIN/wp-json/mcp-ai/v1/mcp"
+		}
+	}
+}
