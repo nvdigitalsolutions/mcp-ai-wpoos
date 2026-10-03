@@ -148,6 +148,9 @@ class WP_MCP_AI_Pro_Jev_Classifier {
 	/**
 	 * Send a decision request through the best available transport.
 	 *
+	 * @decision-domain operations
+	 * @decision-authority suggest
+	 *
 	 * @since 1.9.0
 	 *
 	 * @param mixed $state     Content to evaluate (string|object|array).
@@ -167,6 +170,31 @@ class WP_MCP_AI_Pro_Jev_Classifier {
 		$transport = self::get_transport();
 		if ( is_wp_error( $transport ) ) {
 			return $transport;
+		}
+
+		// Decision-scope gate (Proposal 052): the classifier steers routing
+		// and filtering; every caller decides what to do with the output, so
+		// no verdict may act on its own — operations / suggest.
+		if ( ! class_exists( 'WP_MCP_AI_Decision_Scope_Guard' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_decision_guard_unavailable',
+				__( 'The decision-scope guard is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$gate = WP_MCP_AI_Decision_Scope_Guard::gate(
+			WP_MCP_AI_Decision_Scope_Guard::DOMAIN_OPERATIONS,
+			WP_MCP_AI_Decision_Scope_Guard::AUTHORITY_SUGGEST,
+			static function () {
+				return new WP_Error(
+					'wp_mcp_ai_decision_scope_gated',
+					__( 'This decision path is gated by the decision-scope guard.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		);
+
+		if ( true !== $gate ) {
+			return $gate;
 		}
 
 		if ( 'typesafe' === $transport ) {

@@ -246,6 +246,9 @@ class WP_MCP_AI_Verification_Cascade {
 	/**
 	 * Evaluate a battery in one (chunked) batched decision call.
 	 *
+	 * @decision-domain verification
+	 * @decision-authority suggest
+	 *
 	 * Aggregates with `max`: any question probability above the threshold
 	 * fires. One confident red flag escalates — it is never averaged into
 	 * silence. Fail-open per chunk: a transport error skips the chunk and
@@ -269,6 +272,32 @@ class WP_MCP_AI_Verification_Cascade {
 		);
 
 		if ( empty( $questions ) ) {
+			return $result;
+		}
+
+		// Decision-scope gate (Proposal 052): verification verdicts may only
+		// suggest escalation — the caller decides. A gated path returns the
+		// neutral fail-open result with the error recorded, never a verdict.
+		if ( ! class_exists( 'WP_MCP_AI_Decision_Scope_Guard' ) ) {
+			$result['error'] = __( 'The decision-scope guard is not available.', 'mcp-ai-wpoos' );
+
+			return $result;
+		}
+
+		$gate = WP_MCP_AI_Decision_Scope_Guard::gate(
+			WP_MCP_AI_Decision_Scope_Guard::DOMAIN_VERIFICATION,
+			WP_MCP_AI_Decision_Scope_Guard::AUTHORITY_SUGGEST,
+			static function () {
+				return new WP_Error(
+					'wp_mcp_ai_decision_scope_gated',
+					__( 'This decision path is gated by the decision-scope guard.', 'mcp-ai-wpoos' )
+				);
+			}
+		);
+
+		if ( true !== $gate ) {
+			$result['error'] = is_wp_error( $gate ) ? $gate->get_error_message() : '';
+
 			return $result;
 		}
 
