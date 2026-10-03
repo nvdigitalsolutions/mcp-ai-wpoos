@@ -628,16 +628,24 @@ class WP_MCP_AI_REST_Authenticator {
 
 		$audience = isset( $settings['auth0_audience'] ) ? $settings['auth0_audience'] : '';
 		if ( ! empty( $audience ) && ! $this->audience_matches( $payload, $audience ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_bearer_audience',
-				__( 'The bearer token was not issued for this MCP API.', 'mcp-ai-wpoos' ),
-				array(
-					'status'  => 403,
-					'actions' => array(
-						'request_correct_audience' => __( 'Request an Auth0 access token that includes the configured API audience.', 'mcp-ai-wpoos' ),
-					),
-				)
-			);
+			// ChatGPT plugin OAuth tokens are minted for the RFC 9728
+			// `resource` identifier (the MCP endpoint URL), which may differ
+			// from the legacy configured audience — accept either.
+			$resource_accepted = class_exists( 'WP_MCP_AI_OAuth_Resource_Server' )
+				&& WP_MCP_AI_OAuth_Resource_Server::audience_matches_resource( isset( $payload['aud'] ) ? $payload['aud'] : '' );
+
+			if ( ! $resource_accepted ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_bearer_audience',
+					__( 'The bearer token was not issued for this MCP API.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 403,
+						'actions' => array(
+							'request_correct_audience' => __( 'Request an Auth0 access token that includes the configured API audience.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
 		}
 
 		$required_scope = isset( $settings['auth0_required_scope'] ) ? $settings['auth0_required_scope'] : '';

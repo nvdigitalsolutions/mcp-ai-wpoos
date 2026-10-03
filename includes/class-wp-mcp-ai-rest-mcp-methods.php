@@ -278,11 +278,23 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		if ( is_wp_error( $result ) ) {
 			$error_code = $result->get_error_code();
+			$error_data = $result->get_error_data();
+
+			// ChatGPT plugin linking: attach the OAuth challenge to auth-type
+			// errors so clients surface their sign-in UI (MCP authorization
+			// spec `_meta["mcp/www_authenticate"]`).
+			if ( class_exists( 'WP_MCP_AI_OAuth_Resource_Server' )
+				&& WP_MCP_AI_OAuth_Resource_Server::is_configured()
+				&& WP_MCP_AI_OAuth_Resource_Server::is_auth_error_code( $error_code ) ) {
+				$error_data                                 = is_array( $error_data ) ? $error_data : array();
+				$error_data['_meta']['mcp/www_authenticate'] = WP_MCP_AI_OAuth_Resource_Server::build_tool_auth_challenge( 'insufficient_scope' );
+			}
+
 			$response   = $this->mcp_error_response(
 				$id,
 				'wp_mcp_ai_method_not_found' === $error_code ? -32601 : -32603,
 				$result->get_error_message(),
-				$result->get_error_data()
+				$error_data
 			);
 
 			// The strict assistant-scope toggle is a fail-closed
@@ -976,6 +988,18 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				$annotations = $this->build_tool_annotations( $tool );
 				if ( ! empty( $annotations ) ) {
 					$tool_entry['annotations'] = $annotations;
+				}
+
+				// ChatGPT plugin contract: per-tool OAuth security schemes and
+				// profile-tool metadata — only advertised when an
+				// authorization server (Auth0) is configured.
+				if ( class_exists( 'WP_MCP_AI_OAuth_Resource_Server' ) && WP_MCP_AI_OAuth_Resource_Server::is_configured() ) {
+					$tool_entry['securitySchemes'] = $this->build_tool_security_schemes( $tool );
+
+					if ( 'nvoos_get_profile' === $tool->get_slug() ) {
+						$tool_entry['_meta']        = array( 'openai/profile' => true );
+						$tool_entry['outputSchema'] = WP_MCP_AI_OAuth_Resource_Server::get_profile_output_schema();
+					}
 				}
 
 				$mcp_tools[] = $tool_entry;
@@ -2276,6 +2300,45 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		);
 
 		return new stdClass();
+	}
+
+	/**
+	 * Build per-tool OAuth security schemes for the ChatGPT plugin contract.
+	 *
+	 * Read-only tools request `site:read`; write tools add `content:write`.
+	 * No `noauth` entries are emitted: the MCP endpoint requires
+	 * authentication for every call, and advertised schemes must match
+	 * enforced behaviour (reviewers compare the two).
+	 *
+	 * @since 1.1.94
+	 *
+	 * @param object $tool Tool instance (may implement WP_MCP_AI_Tool_Capability_Flags_Interface).
+	 * @return array Security scheme list.
+	 */
+	protected function build_tool_security_schemes( $tool ) {
+		$flags = ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface )
+			? $tool->get_capability_flags()
+			: array();
+
+		$read_only = is_array( $flags ) && in_array( 'read-only', $flags, true );
+		$scopes    = $read_only ? array( 'site:read' ) : array( 'site:read', 'content:write' );
+
+		$schemes = array(
+			array(
+				'type'   => 'oauth2',
+				'scopes' => $scopes,
+			),
+		);
+
+		/**
+		 * Filter the security schemes advertised for a tool.
+		 *
+		 * @since 1.1.94
+		 *
+		 * @param array  $schemes Security scheme list.
+		 * @param object $tool    Tool instance.
+		 */
+		return apply_filters( 'wp_mcp_ai_tool_security_schemes', $schemes, $tool );
 	}
 
 	/**

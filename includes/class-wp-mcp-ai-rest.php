@@ -2636,18 +2636,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Per MCP spec: include WWW-Authenticate header with resource_metadata URL.
-			if ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
-				$www_auth = WP_MCP_AI_OAuth_Server::build_www_authenticate( $mcp_url );
-				$error->add_data(
-					array(
-						'www_authenticate' => $www_auth,
-					)
-				);
-				// Also send as an actual HTTP header so clients can discover OAuth support.
-				if ( ! headers_sent() ) {
-					header( 'WWW-Authenticate: ' . $www_auth );
+				// Prefer the Auth0-backed resource-server contract (ChatGPT plugin
+				// bridge) when configured; fall back to the Pro authorization
+				// server's challenge for sites that self-host OAuth.
+				$www_auth = '';
+				if ( class_exists( 'WP_MCP_AI_OAuth_Resource_Server' ) && WP_MCP_AI_OAuth_Resource_Server::is_configured() ) {
+					$www_auth = WP_MCP_AI_OAuth_Resource_Server::build_www_authenticate();
+				} elseif ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+					$www_auth = WP_MCP_AI_OAuth_Server::build_www_authenticate( $mcp_url );
 				}
-			}
+				if ( '' !== $www_auth ) {
+					$error->add_data(
+						array(
+							'www_authenticate' => $www_auth,
+						)
+					);
+					// Also send as an actual HTTP header so clients can discover OAuth support.
+					if ( ! headers_sent() ) {
+						header( 'WWW-Authenticate: ' . $www_auth );
+					}
+				}
 
 				return $error;
 		}
