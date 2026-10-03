@@ -136,7 +136,8 @@ class Test_Newsletter_Tools extends WP_UnitTestCase {
 		$flags    = $registry->get_tool_capability_flags( 'newsletter_add_subscriber' );
 
 		$this->assertContains( 'requires-capability', $flags );
-		$this->assertContains( 'modifies-data', $flags );
+		$this->assertContains( 'write', $flags );
+		$this->assertContains( 'state-changing', $flags );
 		$this->assertContains( 'local-only', $flags );
 	}
 
