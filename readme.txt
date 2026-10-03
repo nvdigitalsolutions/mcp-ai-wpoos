@@ -5,11 +5,11 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.93
+Stable tag: 1.1.94
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with 15 AI providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio & Ollama. 300+ built-in tools.
+AI Assistant framework with 18 AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Azure, TypeSafe Jev, WebLLM & embedded engines). 300+ built-in tools.
 
 == Submission Scope ==
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.94 - October 3, 2026 =
+
+ChatGPT plugin addon, decision-scope guard, and MCP grant enforcement release. Added: the ChatGPT / Codex plugin addon (addons/chatgpt-plugin/, 0.1.0) — portable plugin.json + mcp.json (Agent Plugins schema) plus a .codex-plugin compatibility overlay pointing at the site's native MCP bridge (POST /wp-json/mcp-ai/v1/mcp), three runtime skills (site-operations, content-studio, commerce-desk), dependency-free bin/ scripts, and subtree-split sync to the nvoos-chatgpt-plugin mirror (#6871); the base OAuth 2.1 resource-server contract (RFC 9728) — /.well-known/oauth-protected-resource + /.well-known/openai-apps-challenge endpoints, 401 WWW-Authenticate on the MCP route, per-tool securitySchemes in tools/list, and the nvoos_get_profile tool (+1 base) with the OpenAI profile schema (#6871); the Decision-Scope Guard (Proposal 052) — every decision-model dispatch now declares a domain (advisory/content/operations/verification) and an authority ceiling (inform → suggest → act), banned domains (life, people, ethics, identity) fail closed, act authority requires the wp_mcp_ai_decision_act_domains filter, and the new WPMCPAI.Decisions.ScopeDeclared PHPCS sniff makes undeclared dispatches a CI build failure — all six existing Jev dispatch sites declared and gated with zero behavior change (#6866). Fixed: the toolkit MCP server grant gate now actually runs outside wp-admin — non-granted assistant-scoped tools/call requests return -32601 and initialize always echoes the exact grant list, and granted servers' tools now flow into the chat payload, tools/list, and the context-window estimate (#6872); the OOS chat path now runs the same tool-slug pipeline as the legacy path and the WordPress EventDispatcher translates domain events into the documented legacy hook argument tuples — fixing the ArgumentCountError → HTTP 500 on every OOS chat (#6872); the FlowHub MCP Apps OAuth login flow now carries the connection proxy through discovery, DCR, and token exchange (flow-state persistence) so geo-blocked deployments can log in (#6867); api_error_verbosity safe no longer hides REST error detail from admins — ?verbose_errors=1 opt-in per request, a 10-char correlation ref mapped to a server-side log entry, and the original HTTP status preserved (#6869); get_site_health no longer fatals on WordPress 6.9 (wp_check_php_version redeclare) and Site Health stops flagging never-written options and cold analytics caches (#6870). Changed: markdown-it override floor >=14.2.0 → >=14.3.1 <15 across three trees (GHSA-253c-mchw-3w2r, #6868). Tool count: ~350 base + ~1,312 Pro (~1,662 total; +1 base; live registry authoritative). Model catalog: v2026.10.03 (unchanged; 18 providers). Stale build ZIPs removed: the 1.1.92 oOS build set (30 files).
 
 = 1.1.93 - October 3, 2026 =
 
