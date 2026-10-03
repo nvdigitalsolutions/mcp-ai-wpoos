@@ -1,19 +1,62 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.1.94] - 2026-10-03
 
-### Fixed — Toolkit MCP Server Grants Never Enforced at Runtime
+### Added — ChatGPT Plugin Addon & OAuth 2.1 Resource-Server Contract (PR #6871)
+
+- **The ChatGPT / Codex plugin addon (`addons/chatgpt-plugin/`, 0.1.0) packages the site's native MCP bridge for OpenAI agent surfaces.** Portable `plugin.json` + `mcp.json` (Agent Plugins schema) and a `.codex-plugin` compatibility overlay, both pointing at `POST /wp-json/mcp-ai/v1/mcp` (stamped per site); three runtime skills (`site-operations`, `content-studio`, `commerce-desk`); a local/Git-backed marketplace entry; dependency-free `bin/` scripts (`stamp-site`, `package-plugin` — ZIP verified with a single top-level folder — and `validate` as the in-addon CI gate); subtree-split sync (`sync-chatgpt-plugin.yml`) to the `nvdigitalsolutions/nvoos-chatgpt-plugin` mirror with a secret-presence guard (skips instead of red CI until `CHATGPT_PLUGIN_REPO_TOKEN` exists). Tier 1–2 (local/team) works today with assistant credentials; Tier 3 (public ChatGPT plugin) is the OAuth path below.
+- **Base OAuth 2.1 resource-server contract (RFC 9728)** — new `includes/mcp/` classes: `WP_MCP_AI_OAuth_Resource_Server` (document builder, `WWW-Authenticate`/tool-call challenges, scopes, audience acceptance, OpenAI profile schema), `/.well-known/oauth-protected-resource` + `/.well-known/openai-apps-challenge` endpoints (the Pro `/.well-known/mcp` rewrite pattern), 401 `WWW-Authenticate` on the MCP route (Auth0 contract preferred; Pro's existing `WP_MCP_AI_OAuth_Server` fallback preserved), per-tool `securitySchemes` in `tools/list` (read-only → `site:read`; writes add `content:write`; no `noauth` entries), the **`nvoos_get_profile` tool (+1 base)** (stable opaque HMAC id) with `_meta["openai/profile"]` + `outputSchema`, and the REST authenticator now accepts tokens minted against the RFC 9728 resource identifier alongside the legacy `auth0_audience`.
+
+### Added — Decision-Scope Guard for TypeSafe Jev (PR #6866, Proposal 052)
+
+- **Every decision-model dispatch now declares its domain and authority ceiling.** The new base `WP_MCP_AI_Decision_Scope_Guard` (`includes/services/`) gates `->decide()`/`->create_decision()` calls on a **domain** (`advisory`/`content`/`operations`/`verification`) and an **authority ceiling** (`inform` → `suggest` → `act`); banned domains (`life`, `people`, `ethics`, `identity`) fail closed to the caller's deterministic fallback (the formula never runs); `act` authority is denied unless the domain is listed in the `wp_mcp_ai_decision_act_domains` filter, and banned domains can never be granted. The new **`WPMCPAI.Decisions.ScopeDeclared`** PHPCS sniff (severity-5 CI error) requires every dispatch to sit in a method declaring `@decision-domain` + `@decision-authority` — decision-model creep becomes a build failure. All six existing dispatch sites (`typesafe_decide`, `typesafe_guardrail`, the verification cascade, the Pro Jev classifier funnel, `typesafe_rerank`, `typesafe_skill_select`) are declared and gated with **zero behavior change** (1,180 insertions, 0 deletions). Phase 2+ (identity-field scrub, cascade authority budget, fallback-bias tests, integration registry + Site Health panel) is deferred in the proposal.
+
+### Fixed — Toolkit MCP Server Grants Never Enforced at Runtime (PR #6872)
 
 - **The deny-by-default grant gate from v1.1.88 (PR #6796) was dead code outside wp-admin.** The grant lookup class (`WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers`) loaded only in admin context, so the `class_exists()` guards in `handle_jsonrpc()` silently skipped the gate and the `toolkitServers` metadata on real REST requests — `tools/call` for an ungranted assistant sailed straight through. `mcp-servers-init.php` now loads the class definition in every context (hooks still bind only when the admin module instantiates the metabox), so non-granted assistant-scoped calls return `-32601` and `initialize` always echoes the exact grant list.
 
-### Changed — Toolkit MCP Server Grants Now Expose Tools to the Assistant
+### Changed — Toolkit MCP Server Grants Now Expose Tools to the Assistant (PR #6872)
 
 - **Checking a server in the Toolkit MCP Servers metabox now does something for the in-plugin assistant.** `wp_mcp_ai_toolkit_servers_expose_tools()` appends the granted **and enabled** servers' effective tool slugs on the `wp_mcp_ai_chat_effective_tools` seam, so the chat payload, the monolithic MCP `tools/list`, direct tool execution, and `list_mcp_tools` all expose the granted tools (per-tool capability checks still apply downstream; the server-level enable toggle stays authoritative). The Context Window Estimator counts the same slugs via the new `wp_mcp_ai_prompt_window_toolkit_tool_slugs` filter, so "Tools Selected" matches the chat payload.
 
-### Changed — OOS Engine Chat Path Tool-Slug + Hook Parity
+### Changed — OOS Engine Chat Path Tool-Slug + Hook Parity (PR #6872)
 
 - **`handle_chat_request_oos()` now runs the same tool-slug pipeline as the legacy `build_tools_payload()`** — `wp_mcp_ai_attention_tool_slugs` (attention routing for oversized lists, fed by `_last_user_message`) followed by `wp_mcp_ai_chat_effective_tools` (MCP App bridge tools, granted toolkit MCP server tools) — before the orchestrator resolves definitions.
 - **The WordPress `EventDispatcher` translates the four mapped domain events into their documented legacy `wp_mcp_ai_*` argument tuples before firing the hooks.** Previously the hooks fired with a single domain-event object, which crashed every legacy subscriber with required parameters (`WP_MCP_AI_Response_Attachments::handle_chat_response()` threw `ArgumentCountError` on every OOS chat → HTTP 500). The `$request` slot is null on the OOS path; all core subscribers are null-safe. Unknown mapped events keep the single-event shape.
+
+### Fixed — FlowHub MCP OAuth Login Ignored the Connection Proxy (PR #6867)
+
+- **The MCP Apps OAuth login flow for FlowHub now carries the connection proxy.** `WP_MCP_AI_REST_MCP_Apps_Controller::get_oauth_client_options()` resolves proxy/timeout/SSL options from the `connection_ref` (FlowHub MCP → `build_flowhub_mcp_app_config()`, Upwork MCP, `mcp_server`) with a gateway-URL-match fallback for inline rows typed without a ref; `initiate_oauth()` passes the options to the OAuth client **and persists them in the flow-state transient**, so the follow-up token exchange inherits the proxy; `handle_oauth_callback()`, `complete_oauth()`, `probe_oauth()`, `refresh_oauth_token()`, and `revoke_oauth_token()` rebuild the client with the resolved options. Geo-blocked deployments previously passed the Remote Sites connection test (proxied) yet failed the web login with "OAuth 2.0 discovery failed … HTTP 403".
+
+### Fixed — Safe-Mode REST Error Masking Hid Detail from Admins (PR #6869, closes #6860)
+
+- **`api_error_verbosity: safe` no longer masks plugin REST error detail from everyone.** `WP_MCP_AI_Request_Guard::filter_error_verbosity()` masked the detail (and sometimes the real HTTP status) with no way to recover it from the admin UI. Admins (`manage_options`) can now opt in per request via `?verbose_errors=1` on a plugin REST URL (`normal`/`verbose` unchanged); every masked response carries a 10-char lowercase correlation `ref` (Cloudflare/GitHub-style) that maps to a server-side Recent Errors entry (`WP_MCP_AI_Logger::log_error()` keyed by `ref` — no-op when the logger is unavailable or logging is disabled); and `sanitize_error()` preserves the original HTTP status (500 only as the default; a bare numeric error datum is treated as a status). Ported byte-identical to the Content Graph AI addon `RequestGuard` with a standalone seam (monolith installs log through the base `WP_MCP_AI_Logger`); the settings UI description and `.context/security-checklist.md` updated.
+
+### Fixed — Site Health Fatal + False Positives (PR #6870)
+
+- **`get_site_health` no longer fatals on WordPress 6.9, and Site Health stops reporting false positives.** The tool (and the CG AI mirror) now pre-load `wp-admin/includes/misc.php` when `wp_check_php_version()` is missing before declaring the polyfill — previously a later core lazy-require re-declared the function (`Cannot redeclare wp_check_php_version()` → critical-error page). `test_database_schema()` now checks `wp_mcp_ai_activated_version` (the option activation actually persists) instead of two never-written options, and a cold analytics cache (0 hits + 0 misses) no longer reports a 0% hit rate as a warning. The Docker dev environment hardens in the same PR: Apache listens on 8000 in-container (loopback self-checks succeed), startup `chown` normalizes file ownership (Windows bind mount skipped), `DISABLE_WP_CRON` + a 60-second in-container `wp-cron.php` loop, PHP images bumped to 8.3, `WP_DEBUG_LOG` moved to `/tmp/wp-debug.log` (outside the webroot — `get_system_logs` resolves the constant), and the `wp-cli` service runs as `user: "33:33"`.
+
+### Changed — markdown-it Bumped to Patched Versions (PR #6868)
+
+- **The `markdown-it` override floor rises `>=14.2.0` → `>=14.3.1 <15`** across the three alert-bearing trees (root, `addons/pro/assets/spa`, `addons/saas-controller`) with lockfiles regenerated (→ 14.3.2). Resolves GHSA-253c-mchw-3w2r (quadratic paths with `linkify: true`; dependabot alerts #1074–#1076). The `<15` bound keeps npm on the 14.x legacy line (an unbounded floor resolved to 15.0.2); the consumer is dev-only tooling (`@wordpress/scripts` → `markdownlint-cli` → `markdown-it`, linkify off).
+
+### Tests
+
+- **PR #6866** — guard suite 11/11 (44 assertions) + adjacent Jev suites 84/84 (258) on WP 6.9, 95/95 (302) on WP 7.1; new-sniff full-tree run: 0 findings.
+- **PR #6869** — new `tests/security/test-request-guard.php` (11 tests) + CG AI ecosystem extension (18 total); monolith + standalone both 18/18; security-center + request-guard combined 51/51.
+- **PR #6871** — new `tests/rest/test-rest-mcp-oauth-resource-server.php` (11) + `tests/security/test-mcp-oauth-token-validation.php` (8) green; regressions `test-mcp-endpoint` (16), `test-mcp-tools-list` (11), `test-rest-authenticator` (27), `test-rest-mcp-controller` (13) green; addon `bin/validate.mjs` green.
+- **PR #6872** — new `addons/pro/tests/test-toolkit-server-chat-exposure.php` (11 tests) + `tests/test-oos-chat-effective-tools.php` (2 end-to-end); 82/82 across the OOS parity, chat lifecycle hooks, turn observer, REST model defaults, assistant tools, MCP-app exposure, and toolkit server suites; phpcs 0 new findings.
+- **PR #6867** — 4 new regression tests in `tests/mcp-apps/test-mcp-app-connection-refs.php`; all 86 `tests/mcp-apps/` tests pass (386 assertions).
+- **PR #6865** — test-drift fixes in `test-anthropic-vision-settings.php`, `test-tool-token-limits.php`, `test-transcription-settings.php` (26/26 tests, 100 assertions).
+- **PR #6870** — `get_site_health` verified to run to completion in the web process (~4 s) with the fatal gone.
+
+### Docs
+
+- Proposals 052 (decision-scope guard — merged #6866) and 053 (ChatGPT plugin addon — #6871); `docs/features/ai-providers/typesafe.md` gains the scope-guard section; `docs/features/oos-engine.md` + `docs/features/toolkit-mcp-servers.md` document the #6872 parity + grant exposure; `docs/getting-started/installation-setup/remote-client-setup.md` + `docs/reference/api/mcp-server-authentication.md` replace the outdated client-credentials ChatGPT guidance; `includes/mcp/README.md` + the affected folder READMEs ship in-window; the catch-up updates the proposals index, the addon inventory, and the skill set (plugin, elementor, test-suite, dependabot-loop, updates).
+
+### Versioning
+
+Bumped to **1.1.94** across all version-bearing files. Pro addon: 1.1.94. **ChatGPT Plugin addon: 0.1.0 (new — inventory #30)**. Media Worker: **3.3.0** (unchanged). Media Studio: **0.6.1** (unchanged). SaaS Controller: **0.3.0** (unchanged). Design System addon: **0.3.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged — in-window RequestGuard/GetSiteHealthTool/OosShadowRunner ports keep the sub-project track). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — no port waves in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.5.1** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.10.03** (unchanged — #6865 is test-drift-only). Tool count: **~350 base + ~1,312 Pro (~1,662 total — +1 base)** — `nvoos_get_profile` (the ChatGPT-plugin profile tool; live registry authoritative). Provider count: **18** chat providers (unchanged). Addon count: **29** (+1 — the ChatGPT Plugin addon). Bundled skills: **75** base + **41** Pro (unchanged). Coding-time agent skills: **61** (unchanged). Stale build ZIPs removed: the 1.1.92 oOS set (9 root + 2 optional-components + 19 toolkit-addons = 30 files).
 
 ## [1.1.93] - 2026-10-03
 

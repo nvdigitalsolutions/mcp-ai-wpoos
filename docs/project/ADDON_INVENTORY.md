@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** October 3, 2026 (v1.1.93 — Media Worker **3.2.0 → 3.3.0** in-window with the fleet status monitoring module (#6849; the row below was still at 3.2.0, corrected in-pass); Media Studio **0.6.0 → 0.6.1** with the `/ai/generate` 500 fix (#6858; row updated in-window); no other addon version changes)
+> **Last Updated:** October 3, 2026 (v1.1.94 — the **ChatGPT Plugin** addon lands as entry #30 in-window (#6871, `addons/chatgpt-plugin/`, 0.1.0 — a portable Agent-Plugins package with a subtree-split mirror sync, not a deployable WordPress addon); no existing addon version changes in-window (Media Worker 3.3.0, Media Studio 0.6.1, SaaS Controller 0.3.0, Design System 0.3.0 all unchanged)
 
 ---
 

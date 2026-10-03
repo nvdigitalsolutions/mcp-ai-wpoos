@@ -5,8 +5,8 @@ description: "Operational guide for the NV oOS Dependabot alert triage-and-remed
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.91"
-  plugin-version-tested: "1.1.91"
+  plugin-version: "1.1.94"
+  plugin-version-tested: "1.1.94"
   last-updated: "2026-10-03"
 ---
 
@@ -158,6 +158,18 @@ vulnerable range is a *minor* inside the override's major (`>= 4.1.3, < 4.1.5`
 vs the `>=4.1.4` floor), just raise the floor (`>=4.1.4` → `>=4.1.5`, resolving
 4.2.1) — same lockfile-only diff, but run the npm-pack `index.d.ts` diff anyway
 (it showed an additive optional `ipv6Zone` field only) and cite it in the PR.
+
+Bounded-floor variant (the 2026-10-03 markdown-it run, PR #6868): when the
+advisory's patched line is a minor bump but the **next major exists and is
+undesired**, bound the override — `">=14.2.0"` → `">=14.3.1 <15"` across the
+three trees (root, `addons/pro/assets/spa`, `addons/saas-controller`) so npm
+stays on 14.x (an unbounded floor resolved to 15.0.2). Same discipline:
+npm-pack diff the minor (14.3.0 → 14.3.1: internal rule/helper files + dist
+bundles only, no `lib/index.mjs` delta), note the consumer is dev-only tooling
+(`@wordpress/scripts` → `markdownlint-cli` → `markdown-it`, linkify off —
+availability-only advisory, medium severity), and remember sibling-alert notes
+(the 9 jsdom-nested undici alerts clear only when `alpha-working` merges to
+`main`; media-worker undici alerts are stale-graph false positives).
 
 ### B. Scoped override (`@version` syntax) — do not force unrelated majors
 
