@@ -26,7 +26,7 @@ NV oOS exposes a Model Context Protocol (MCP) server through its REST API at `/w
 The plugin supports multiple authentication methods to accommodate different client types:
 
 - **Assistant-issued credentials** – Bearer tokens generated per-assistant (recommended for Claude Desktop and LM Studio)
-- **Auth0 bearer tokens** – OAuth tokens for enterprise deployments (required for ChatGPT connectors)
+- **Auth0 bearer tokens** – OAuth 2.1 tokens minted by an Auth0 tenant (published ChatGPT plugins use the interactive authorization-code + PKCE flow; legacy client-credentials tokens remain valid for other integrators)
 - **WordPress REST nonces** – For same-origin dashboard usage
 - **Guest tokens** – For public chat interfaces with limited capabilities
 
@@ -208,64 +208,44 @@ If using LM Studio's JSON config file (usually `~/.lmstudio/mcp.json` or similar
 
 ## ChatGPT Connector Setup
 
-⚠️ **Note:** OpenAI's ChatGPT connector currently requires Auth0 authentication. Assistant-issued credentials are not supported by ChatGPT at this time.
+> OpenAI's plugin program no longer accepts machine-to-machine grants
+> (client credentials, service accounts, or JWT bearer assertions) for
+> ChatGPT connections. Pick the tier below that matches your use case.
 
-### Prerequisites
+### Tier 1 — Local / personal (Codex CLI, ChatGPT desktop, Agents API)
 
-- An Auth0 account and tenant
-- Auth0 configured in **Settings → NV oOS** on your WordPress site
-- Machine-to-Machine application created in Auth0 for the MCP API
+The site's assistant credentials (`cred_xxx.SECRET`) work directly through a
+bearer-token environment variable. The packaged plugin lives in
+`addons/chatgpt-plugin/` (see its README for the full flow):
 
-### Step 1: Configure Auth0 in WordPress
+1. Generate an assistant credential (**AI Assistants → API Credentials**).
+2. Stamp your site URL: `node bin/stamp-site.mjs https://your-site.com`
+   inside `addons/chatgpt-plugin/`.
+3. Export `NVOOS_MCP_TOKEN=cred_xxxxx.SECRET` and register the connection
+   with `bearer_token_env_var: NVOOS_MCP_TOKEN` (developer mode / Codex
+   config), or install the local marketplace:
+   `codex plugin marketplace add ./addons/chatgpt-plugin`.
+4. For Agents API sessions, copy the plugin folder into the workspace and
+   list it under `environment.capability_directories`, or upload the ZIP
+   built by `node bin/package-plugin.mjs` via `environment.plugins`.
 
-1. Navigate to **Settings → NV oOS**
-2. Scroll to **Auth0 Configuration**
-3. Enter:
-   - **Auth0 Domain:** `your-tenant.auth0.com`
-   - **Auth0 Audience:** Your API identifier (e.g., `https://your-site.com/mcp-api`)
-   - **Auth0 Required Scope:** (optional, e.g., `read:assistants write:chat`)
+### Tier 2 — Team / workspace
 
-4. Save changes
+Workspace admins publish the locally installed plugin to their ChatGPT
+workspace (Plugins → Personal → Publish). Each user links their own
+credential or OAuth account; the site's per-assistant tool allowlist is the
+authorization boundary.
 
-### Step 2: Generate Auth0 Access Token
+### Tier 3 — Public ChatGPT plugin (OAuth 2.1)
 
-Using Auth0's dashboard or API:
-
-1. Go to **Applications → Machine to Machine**
-2. Select your MCP application
-3. Request an access token with the configured audience
-4. The token will have format: `eyJhbGci...` (JWT)
-
-Or use the Auth0 Management API:
-
-```bash
-curl -X POST https://your-tenant.auth0.com/oauth/token \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "client_id": "YOUR_CLIENT_ID",
-    "client_secret": "YOUR_CLIENT_SECRET",
-    "audience": "https://your-site.com/mcp-api",
-    "grant_type": "client_credentials"
-  }'
-```
-
-### Step 3: Configure ChatGPT Connector
-
-1. Log in to OpenAI's ChatGPT interface
-2. Navigate to **Custom GPTs** or **Connectors** (if available in your account)
-3. Create a new connector with:
-   - **Name:** WordPress MCP
-   - **Base URL:** `https://your-site.com/wp-json/mcp-ai/v1`
-   - **Authentication:** OAuth 2.0 / Bearer Token
-   - **Token:** `eyJhbGci...` (your Auth0 access token)
-
-4. Save and test the connection
-
-### Limitations
-
-- ChatGPT connectors are currently in beta and may have limited availability
-- Requires Auth0 infrastructure (not suitable for simple deployments)
-- For simpler setups, use Claude Desktop or LM Studio instead
+Published plugins that expose user data or writes must authenticate with
+OAuth 2.1 authorization-code + PKCE against an authorization server.
+NV oOS sites with Auth0 configured automatically advertise the
+required resource-server contract (RFC 9728
+`/.well-known/oauth-protected-resource`, `WWW-Authenticate` challenges,
+per-tool `securitySchemes`, and the `nvoos_get_profile` tool). See
+`docs/project/proposals/053-chatgpt-plugin-addon-implementation-plan.md`
+for the Auth0 CIMD setup and submission checklist.
 
 ---
 

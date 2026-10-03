@@ -1,0 +1,54 @@
+name: Sync chatgpt-plugin
+
+# Syncs addons/chatgpt-plugin to the standalone mirror repo
+# nvdigitalsolutions/nvoos-chatgpt-plugin (git subtree split, force-push
+# to main) — same pattern as sync-mcp-wordpress-gateway.yml.
+#
+# The check-secret guard keeps CI green if the workflow is merged before the
+# CHATGPT_PLUGIN_REPO_TOKEN secret exists (GitHub forbids secrets.* in `if`
+# expressions, so presence is probed through a run-step env var). Remove the
+# guard job once the secret is permanently configured.
+#
+# See docs/project/proposals/053-chatgpt-plugin-addon-implementation-plan.md
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'addons/chatgpt-plugin/**'
+
+jobs:
+  check-secret:
+    runs-on: ubuntu-latest
+    outputs:
+      has_token: ${{ steps.check.outputs.has_token }}
+    steps:
+      - id: check
+        env:
+          TOKEN: ${{ secrets.CHATGPT_PLUGIN_REPO_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CHATGPT_PLUGIN_REPO_TOKEN not set; skipping chatgpt-plugin sync"
+          fi
+
+  sync:
+    needs: check-secret
+    if: needs.check-secret.outputs.has_token == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=addons/chatgpt-plugin --branch=chatgpt-plugin-split
+
+      - name: Push to nvoos-chatgpt-plugin
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.CHATGPT_PLUGIN_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-chatgpt-plugin.git chatgpt-plugin-split:main --force

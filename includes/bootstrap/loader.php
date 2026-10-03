@@ -989,6 +989,22 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php';
 }
+
+// ---------------------------------------------------------------------------
+// ChatGPT plugin bridge — MCP OAuth resource-server contract (RFC 9728)
+// ---------------------------------------------------------------------------
+
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-oauth-resource-server.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-oauth-resource-server.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-well-known-oauth-protected-resource.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-well-known-oauth-protected-resource.php';
+}
+WP_MCP_AI_Well_Known_OAuth_Protected_Resource::init();
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-well-known-openai-challenge.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-well-known-openai-challenge.php';
+}
+WP_MCP_AI_Well_Known_OpenAI_Challenge::init();
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 }

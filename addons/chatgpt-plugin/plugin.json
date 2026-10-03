@@ -1,0 +1,35 @@
+{
+	"$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+	"name": "nvoos-site-bridge",
+	"version": "0.1.0",
+	"description": "Operate a WordPress site running NV oOS (Open Operator System) through its native MCP bridge: content research and publishing, WooCommerce operations, media workflows, and site administration tools packaged as ChatGPT and Codex skills.",
+	"author": {
+		"name": "NV Digital Solutions",
+		"url": "https://github.com/nvdigitalsolutions"
+	},
+	"homepage": "https://github.com/nvdigitalsolutions/nvoos-chatgpt-plugin",
+	"repository": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
+	"license": "GPL-3.0-or-later",
+	"keywords": [ "wordpress", "woocommerce", "mcp", "nvoos", "ai-agent" ],
+	"extensions": {
+		"com.openai": {
+			"interface": {
+				"displayName": "NV oOS Site Bridge",
+				"shortDescription": "ChatGPT and Codex access to NV oOS-powered WordPress sites over MCP.",
+				"longDescription": "Connects ChatGPT and Codex to the MCP bridge of a WordPress site running NV oOS (base + Pro). Bundles skills for site operations, content research and publishing, and WooCommerce store management, with the site's own assistant-scoped credentials enforcing least-privilege access.",
+				"developerName": "NV Digital Solutions",
+				"category": "Productivity",
+				"capabilities": [ "Read", "Write" ],
+				"websiteURL": "https://github.com/nvdigitalsolutions/nvoos-chatgpt-plugin",
+				"privacyPolicyURL": "https://nvdigitalsolutions.github.io/mcp-ai-wpoos/privacy",
+				"termsOfServiceURL": "https://nvdigitalsolutions.github.io/mcp-ai-wpoos/terms",
+				"defaultPrompt": [
+					"Use the NV oOS site bridge to list the most recent posts on the connected WordPress site."
+				],
+				"composerIcon": "./assets/icon.png",
+				"logo": "./assets/logo.png",
+				"screenshots": []
+			}
+		}
+	}
+}
