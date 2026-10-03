@@ -1,11 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 60 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 63 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   last-updated: "2026-10-03"
+  plugin-version: "1.1.94"
+  plugin-version-tested: "1.1.94"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -845,6 +847,43 @@ the changed files is the substantive gate; plan CI waits accordingly.
       keep every validated `Choice`/constraint in sync with the base tool's
       advertised set, and regression-test both directions (the advertised
       value passes; an unknown value still fails).
+
+  61. **New severity-5 PHPCS sniffs gate previously-unchecked dispatch
+      patterns (v1.1.94, PR #6866).** The `WPMCPAI.Decisions.ScopeDeclared`
+      sniff requires every `->decide()` / `->create_decision()` call to sit in
+      a method whose docblock declares `@decision-domain` +
+      `@decision-authority` — an existing dispatch that predates the sniff
+      (e.g. the verification cascade, `typesafe_*` tools) fails CI until the
+      docblock + `WP_MCP_AI_Decision_Scope_Guard::gate()` call are added.
+      Triage: run the sniff standalone over the tree first (`phpcs --sniffs=
+      WPMCPAI.Decisions.ScopeDeclared`), fix the declarations before touching
+      behavior (the guard must be a zero-behavior-change pass), and assert the
+      banned-domain fail-closed path (the formula never runs — assert the
+      deterministic fallback result, not an absence of calls).
+
+  62. **`wp_check_php_version()` polyfill declared before the admin-includes
+      load → `Cannot redeclare` fatal (v1.1.94, PR #6870).** `get_site_health`
+      pre-loaded `wp-admin/includes/misc.php` only when `WP_Site_Health`
+      wasn't loaded — in REST/CLI/chat contexts the file was skipped, the
+      polyfill declared, and core's later lazy require re-declared the
+      function → critical-error page. Fix: `file_exists()`/`function_exists()`
+      guard the **pre-load** (`require_once ABSPATH . 'wp-admin/includes/misc.php'`
+      when the function is missing) *before* declaring the polyfill, and
+      regression-test with `WP_Site_Health` already loaded (the exact
+      condition that used to skip the require).
+
+  63. **A domain-event object fired through a legacy `wp_mcp_ai_*` hook
+      crashes every subscriber with required parameters → HTTP 500 on the
+      OOS path (v1.1.94, PR #6872).** The WordPress `EventDispatcher` fired
+      the four mapped domain events as raw event objects; legacy subscribers
+      like `WP_MCP_AI_Response_Attachments::handle_chat_response()` declared
+      `( $content, $assistant_id, $request )` and threw `ArgumentCountError`.
+      Fix: the dispatcher translates mapped events into the documented legacy
+      argument tuples before firing (unknown events keep the single-event
+      shape), and every subscriber must stay null-safe for the `$request`
+      slot (it is null on the OOS path). Regression-test the end-to-end
+      dispatch (REST request with the OOS engine enabled + intercepted
+      provider HTTP) rather than the hook alone.
 
 ## Production fix vs test fix
 

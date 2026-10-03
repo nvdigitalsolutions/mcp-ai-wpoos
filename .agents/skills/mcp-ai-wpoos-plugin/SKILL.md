@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.93"
-  plugin-version-tested: "1.1.93"
+  plugin-version: "1.1.94"
+  plugin-version-tested: "1.1.94"
   last-updated: "2026-10-03"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -761,9 +761,22 @@ Import external AI conversation exports into the JetEngine
 
 ## Release Notes (per version)
 
-Historical per-version release notes (v1.1.66 through v1.1.93) moved to
+Historical per-version release notes (v1.1.66 through v1.1.94) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.1.94 operational quick notes** (full detail in RELEASE-NOTES.md): the
+ChatGPT plugin addon (`addons/chatgpt-plugin/`) + the base OAuth 2.1
+resource-server contract (`/.well-known/oauth-protected-resource`,
+`/.well-known/openai-apps-challenge`, 401 `WWW-Authenticate` on the MCP route,
+per-tool `securitySchemes`, the `nvoos_get_profile` tool — +1 base); the
+decision-scope guard bounds every Jev dispatch (domain + authority ceiling,
+banned domains fail closed, `WPMCPAI.Decisions.ScopeDeclared` sniff fails CI on
+undeclared dispatches); the toolkit MCP grant gate now actually runs outside
+wp-admin and granted servers' tools flow into chat/`tools/list`; the OOS chat
+path reaches tool-slug + hook parity (`?verbose_errors=1` for admins on masked
+REST errors with a correlation `ref`; `get_site_health` WP 6.9 fatal fixed;
+FlowHub MCP OAuth login rides the connection proxy).
 
 **v1.1.93 operational quick notes** (full detail in RELEASE-NOTES.md): the
 media worker doubles as the fleet status service (opt-in `STATUS_ENABLED=1`);

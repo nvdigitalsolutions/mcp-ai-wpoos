@@ -6,8 +6,8 @@ license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.93"
-  plugin-version-tested: "1.1.93"
+  plugin-version: "1.1.94"
+  plugin-version-tested: "1.1.94"
   last-updated: "2026-10-03"
 ---
 
@@ -149,7 +149,14 @@ storage), create it once in **NV oOS Pro → Remote Sites → Add Connection**:
    outbound call sites via `run_proxied_request()`) route FlowHub gateway
    traffic through the proxy via the `http_api_curl` cURL layer — geo-blocked
    deployments need no direct egress to `mcp.flowhub.com`. In-process
-   same-origin dispatch stays direct.
+   same-origin dispatch stays direct. **(v1.1.94):** the proxy now also rides
+   the **OAuth login flow** (PR #6867) —
+   `WP_MCP_AI_REST_MCP_Apps_Controller::get_oauth_client_options()` resolves
+   proxy/timeout/SSL options from the `connection_ref` (or a gateway-URL
+   match for inline rows) and `initiate_oauth()` persists them in the
+   flow-state transient, so the callback/complete/probe/refresh/revoke
+   handlers rebuild the client with the same options — geo-blocked
+   deployments can complete the web login, not just the connection test.
 
 ### Path B — inline MCP App (per-assistant)
 

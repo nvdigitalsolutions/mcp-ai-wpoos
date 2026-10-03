@@ -1,7 +1,7 @@
 # NV oOS OOS Engine Context
 
 > **GSD Context File** — Load this when working on the OOS (Open Operator System) engine: `includes/oos/`, `includes/bootstrap/oos-bridge.php`, the `lib/core` orchestrator/session/tool-scope domain, the Pro composition subsystem, or the parity CLIs.
-> Last reviewed: October 3, 2026 (v1.1.93+ — chat tool-slug parity + legacy hook arg translation).
+> Last reviewed: October 3, 2026 (v1.1.94 — chat tool-slug parity + legacy hook arg translation).
 
 ---
 

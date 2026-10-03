@@ -5,8 +5,8 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.93"
-  plugin-version-tested: "1.1.93"
+  plugin-version: "1.1.94"
+  plugin-version-tested: "1.1.94"
   last-updated: "2026-10-03"
 ---
 
@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-1. **Read the template plans** — the latest executed plan (`v1.1.92-docs-catch-up.md`,
-   with `v1.1.91-docs-catch-up.md` as the previous pass) plus the
+3. **Read the template plans** — the latest executed plan (`v1.1.94-docs-catch-up.md`,
+   with `v1.1.93-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -723,24 +723,52 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.90-docs-catch-up.md`,
   `docs/project/plans/v1.1.91-docs-catch-up.md`,
   `docs/project/plans/v1.1.92-docs-catch-up.md`,
-  `docs/project/plans/v1.1.93-docs-catch-up.md` (latest executed — the v1.1.93
+  `docs/project/plans/v1.1.93-docs-catch-up.md`,
+  `docs/project/plans/v1.1.94-docs-catch-up.md` (latest executed — the v1.1.94
+  pass over PRs #6865–#6872: the ChatGPT plugin addon + OAuth 2.1
+  resource-server contract (#6871 — `addons/chatgpt-plugin/` 0.1.0,
+  `WP_MCP_AI_OAuth_Resource_Server` + the two `/.well-known/` endpoints, 401
+  `WWW-Authenticate` on the MCP route, per-tool `securitySchemes`,
+  `nvoos_get_profile` +1 base, RFC-9728 token acceptance, proposals 053,
+  inventory #30), the Decision-Scope Guard (#6866, Proposal 052 — domain +
+  authority ceilings, banned domains fail closed, the
+  `WPMCPAI.Decisions.ScopeDeclared` severity-5 sniff), the toolkit MCP grant
+  runtime enforcement + tool exposure + OOS chat parity (#6872 — the
+  pre-staged [Unreleased] CHANGELOG converted), the FlowHub MCP OAuth login
+  proxy carry (#6867), the safe-mode REST error masking admin opt-in +
+  correlation `ref` (#6869, closes #6860), the Site Health fatal/false-positive
+  fixes + Docker hardening (#6870), the markdown-it bounded-floor bump
+  (#6868), the test-drift fixes (#6865), a new OI-1 group (46: `@since 1.4.0`
+  ×1 in `assistant-cpt.php` — the mcp-servers folder's module tags are the
+  convention, group-23 extension: `@since 2026.10` ×6 in the
+  decision-scope-guard), the in-window readme.txt/mcp-ai-wpoos.php provider
+  header 15 → 18 correction (v1.1.93-pass missed spot), four skill
+  reconciliations (plugin ×3 + RELEASE-NOTES, elementor ×2,
+  test-suite patterns 61–63, dependabot-loop bounded-floor case, updates),
+  the in-window ADDON_INVENTORY #30 entry + header refresh, the proposals
+  README 052 move + 053 addition, the stale 1.1.92 build-set removal
+  (30 files — 9 + 2 + 19), and the OI-8 extension (`nvoos_get_profile` missing
+  from tool-status.txt))
+
+Preceding windows:
+  `docs/project/plans/v1.1.93-docs-catch-up.md` (the v1.1.93
   pass over PRs #6849–#6863: the media-worker fleet status monitoring (#6849 —
   worker 3.2.0 → 3.3.0, the opt-in STATUS_ENABLED status module, +2 base tools
   `get_fleet_status`/`get_site_uptime`, `GET /mcp-ai/v1/status/sites`, the Pro
-  Status Dashboard fleet section), the WP-CLI parity & hardening (#6852,
-  Proposal 050 — dispatcher extraction, `tool call`, 11 new commands,
-  `manage_options` gating, `docs/operations/wp-cli.md`), the FlowHub MCP Apps
-  surfacing + proxy carry (#6854/#6861), the Financial Planner OpenStock
-  parity (#6857, Proposal 051 — Finnhub provider, +3 Pro tools incl. the
-  orphaned blueprint registration), the October 2026 Track B model-catalog
-  refresh (#6863 — v2026.10.03, 238 models, **18 providers — Z.AI joins**,
-  provider-count line 15 → 18 with the FOR_REVIEWERS provider-list fix), the
-  Media Studio 0.6.1 `/ai/generate` fix (#6853/#6858), the schedule
-  create/save trigger fixes (#6855/#6856), the validated-tool `auto`
-  aspect-ratio fix (#6859), the undici 7.30.0 advisory (#6850), the
-  preset/manifest repairs (#6851), the in-window dependabot-skill edit
-  (#6862), four new OI-1 groups (42: `@since 1.1.90` financial wave ×62; 43:
-  `@since 1.3.0` Pro CLI ×25; 44: `@since 1.2.0` base CLI + tests ×11; 45:
+  Status Dashboard fleet section), the WP-CLI
+  parity & hardening (#6852, Proposal 050 — dispatcher extraction, `tool
+  call`, 11 new commands, `manage_options` gating, `docs/operations/wp-cli.md`),
+  the FlowHub MCP Apps surfacing + proxy carry (#6854/#6861), the Financial
+  Planner OpenStock parity (#6857, Proposal 051 — Finnhub provider, +3 Pro
+  tools incl. the orphaned blueprint registration), the October 2026 Track B
+  model-catalog refresh (#6863 — v2026.10.03, 238 models, **18 providers —
+  Z.AI joins**, provider-count line 15 → 18 with the FOR_REVIEWERS
+  provider-list fix), the Media Studio 0.6.1 `/ai/generate` fix
+  (#6853/#6858), the schedule create/save trigger fixes (#6855/#6856), the
+  validated-tool `auto` aspect-ratio fix (#6859), the undici 7.30.0 advisory
+  (#6850), the preset/manifest repairs (#6851), the in-window dependabot-skill
+  edit (#6862), four new OI-1 groups (42: `@since 1.1.90` financial wave ×62;
+  43: `@since 1.3.0` Pro CLI ×25; 44: `@since 1.2.0` base CLI + tests ×11; 45:
   `@since 1.1.92` remote-site-manager/mcp-app-registry ×6 one-behind), six
   skill reconciliations (plugin ×3 + RELEASE-NOTES, elementor ×2,
   schedule-manager ×2 + drift repair, analytics-reporting/media-workflow/
@@ -749,9 +777,7 @@ previous window — the user will usually want it back-dated.
   Pro), the ADDON_INVENTORY Media Worker 3.2.0 → 3.3.0 row correction, the
   stale 1.1.91 build-set removal (6 files) + superseded media-studio and
   saas-controller addon ZIPs (5 files), and the OI-8 extension (5 new slugs
-  missing from tool-status.txt))
-
-Preceding windows:
+  missing from tool-status.txt)),
   `docs/project/plans/v1.1.92-docs-catch-up.md` (the v1.1.92
   pass over PRs #6839–#6847: the Media Studio fashion production suite
   (#6839/#6844 — the squash-merged chain; addon 0.1.0 → 0.6.0, 8 `fashion_*`
