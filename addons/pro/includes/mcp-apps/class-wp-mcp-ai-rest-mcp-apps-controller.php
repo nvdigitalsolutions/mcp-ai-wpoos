@@ -634,6 +634,203 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 	// -----------------------------------------------------------------------
 
 	/**
+	 * Lazy-load the Remote Site Manager class.
+	 *
+	 * OAuth flow requests are standalone REST calls, so the admin bootstrap
+	 * may not have loaded the manager yet.
+	 *
+	 * @since 1.1.94
+	 * @return bool True when the class is available.
+	 */
+	protected function load_remote_site_manager() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$manager_file = defined( 'WP_MCP_AI_PRO_PATH' )
+				? WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php'
+				: dirname( __DIR__, 2 ) . '/includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			if ( file_exists( $manager_file ) ) {
+				require_once $manager_file;
+			}
+		}
+
+		return class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' );
+	}
+
+	/**
+	 * Map a central Remote Sites connection onto an MCP App client config.
+	 *
+	 * Mirrors {@see WP_MCP_AI_MCP_App_Registry::resolve_connection_ref()}: only
+	 * MCP-capable connections map, and the result carries the connection's
+	 * proxy (FlowHub MCP mode), timeout, and SSL settings.
+	 *
+	 * @since 1.1.94
+	 * @param array $connection Stored Remote Sites connection.
+	 * @return array MCP App client config (empty when not MCP-capable).
+	 */
+	protected function map_connection_to_app_config( $connection ) {
+		$type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
+
+		if ( 'flowhub' === $type && 'mcp' === ( isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : '' ) ) {
+			return WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $connection );
+		}
+
+		if ( 'upwork' === $type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' ) ) {
+			return WP_MCP_AI_Pro_Remote_Site_Manager::build_upwork_mcp_app_config( $connection );
+		}
+
+		if ( 'mcp_server' === $type ) {
+			return WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
+		}
+
+		return array();
+	}
+
+	/**
+	 * Resolve a central connection ID onto an MCP App client config.
+	 *
+	 * @since 1.1.94
+	 * @param string $connection_ref Remote Sites connection ID.
+	 * @return array MCP App client config (empty when unresolvable).
+	 */
+	protected function resolve_connection_app_config( $connection_ref ) {
+		if ( '' === $connection_ref || ! $this->load_remote_site_manager() ) {
+			return array();
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_ref );
+		if ( ! is_array( $connection ) ) {
+			return array();
+		}
+
+		return $this->map_connection_to_app_config( $connection );
+	}
+
+	/**
+	 * Locate a central connection whose gateway URL matches a server URL.
+	 *
+	 * Used when the OAuth flow is started without an explicit connection_ref
+	 * (e.g. an inline MCP App row pointing at the FlowHub gateway). An exact
+	 * URL match wins; otherwise the first connection sharing the same origin
+	 * is used so proxy inheritance still applies.
+	 *
+	 * @since 1.1.94
+	 * @param string $server_url MCP server URL.
+	 * @return array MCP App client config (empty when no match).
+	 */
+	protected function find_connection_app_config_by_url( $server_url ) {
+		if ( '' === $server_url || ! $this->load_remote_site_manager() ) {
+			return array();
+		}
+
+		$normalized = strtolower( rtrim( $server_url, '/' ) );
+		$origin     = wp_parse_url( $normalized, PHP_URL_SCHEME ) . '://' . wp_parse_url( $normalized, PHP_URL_HOST );
+		$fallback   = null;
+
+		foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $connection ) {
+			if ( ! is_array( $connection ) ) {
+				continue;
+			}
+
+			$type      = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
+			$candidate = '';
+
+			if ( 'flowhub' === $type && 'mcp' === ( isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : '' ) ) {
+				$candidate = isset( $connection['flowhub_mcp_url'] ) && '' !== trim( (string) $connection['flowhub_mcp_url'] )
+					? esc_url_raw( $connection['flowhub_mcp_url'] )
+					: 'https://mcp.flowhub.com';
+			} elseif ( 'upwork' === $type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' ) ) {
+				$candidate = isset( $connection['upwork_mcp_url'] ) && '' !== trim( (string) $connection['upwork_mcp_url'] )
+					? esc_url_raw( $connection['upwork_mcp_url'] )
+					: 'https://mcp.upwork.com/mcp';
+			} elseif ( 'mcp_server' === $type ) {
+				$candidate = isset( $connection['url'] ) ? (string) $connection['url'] : '';
+			}
+
+			if ( '' === $candidate ) {
+				continue;
+			}
+
+			$candidate_normalized = strtolower( rtrim( $candidate, '/' ) );
+			if ( $candidate_normalized === $normalized ) {
+				return $this->map_connection_to_app_config( $connection );
+			}
+
+			if ( null === $fallback ) {
+				$candidate_origin = wp_parse_url( $candidate_normalized, PHP_URL_SCHEME ) . '://' . wp_parse_url( $candidate_normalized, PHP_URL_HOST );
+				if ( $candidate_origin === $origin ) {
+					$fallback = $connection;
+				}
+			}
+		}
+
+		return null === $fallback ? array() : $this->map_connection_to_app_config( $fallback );
+	}
+
+	/**
+	 * Build OAuth client options for a server URL, inheriting proxy settings
+	 * from a matching central Remote Sites connection.
+	 *
+	 * Geo-blocked gateways (e.g. FlowHub's MCP endpoint) require OAuth
+	 * discovery, DCR, and token traffic to route through the connection's
+	 * outbound proxy — the same proxy the Remote Sites connection test and
+	 * the chat-time bridge use. Without it, OAuth web login fails with HTTP
+	 * 403 outside allowed regions even though the connection itself tests
+	 * fine.
+	 *
+	 * @since 1.1.94
+	 * @param string $server_url     MCP server URL.
+	 * @param string $connection_ref Optional central Remote Sites connection ID.
+	 * @return array OAuth client options (timeout, verify_ssl, proxy_url, proxy_auth).
+	 */
+	protected function get_oauth_client_options( $server_url, $connection_ref = '' ) {
+		$options = array(
+			'timeout'    => 30,
+			'verify_ssl' => true,
+		);
+
+		$config = array();
+		if ( '' !== $connection_ref ) {
+			$config = $this->resolve_connection_app_config( $connection_ref );
+		}
+		if ( empty( $config ) && '' !== $server_url ) {
+			$config = $this->find_connection_app_config_by_url( $server_url );
+		}
+
+		if ( ! empty( $config['proxy_url'] ) ) {
+			$options['proxy_url']  = (string) $config['proxy_url'];
+			$options['proxy_auth'] = isset( $config['proxy_auth'] ) ? (string) $config['proxy_auth'] : '';
+		}
+		if ( isset( $config['timeout'] ) ) {
+			$options['timeout'] = max( 1, min( 120, absint( $config['timeout'] ) ) );
+		}
+		if ( isset( $config['verify_ssl'] ) ) {
+			$options['verify_ssl'] = (bool) $config['verify_ssl'];
+		}
+
+		return $options;
+	}
+
+	/**
+	 * Rebuild OAuth client options from the flow state stored at initiation.
+	 *
+	 * @since 1.1.94
+	 * @param array $flow_state Flow state stored in the OAuth state transient.
+	 * @return array OAuth client options.
+	 */
+	protected function oauth_options_from_flow_state( $flow_state ) {
+		$options = array(
+			'timeout'    => ! empty( $flow_state['timeout'] ) ? absint( $flow_state['timeout'] ) : 30,
+			'verify_ssl' => isset( $flow_state['verify_ssl'] ) ? (bool) $flow_state['verify_ssl'] : true,
+		);
+
+		if ( ! empty( $flow_state['proxy_url'] ) ) {
+			$options['proxy_url']  = (string) $flow_state['proxy_url'];
+			$options['proxy_auth'] = isset( $flow_state['proxy_auth'] ) ? (string) $flow_state['proxy_auth'] : '';
+		}
+
+		return $options;
+	}
+
+	/**
 	 * Probe whether a remote MCP server supports OAuth web login.
 	 *
 	 * Attempts OAuth metadata discovery from the remote server and returns
@@ -654,7 +851,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			);
 		}
 
-		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $server_url );
+		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $server_url, $this->get_oauth_client_options( $server_url ) );
 		$metadata     = $oauth_client->discover_metadata();
 
 		if ( is_wp_error( $metadata ) ) {
@@ -722,7 +919,8 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			);
 		}
 
-		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $server_url );
+		$oauth_options = $this->get_oauth_client_options( $server_url, $connection_ref );
+		$oauth_client  = new WP_MCP_AI_MCP_App_OAuth_Client( $server_url, $oauth_options );
 
 		// Check if OAuth is supported.
 		$discovery = $oauth_client->discover_metadata();
@@ -805,6 +1003,13 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			'state'          => $state,
 			'scope'          => $scope,
 			'created_at'     => time(),
+			// Carry the resolved outbound proxy so the token exchange (a
+			// separate request) routes through it too — geo-blocked gateways
+			// such as FlowHub otherwise reject the token call with 403.
+			'proxy_url'      => isset( $oauth_options['proxy_url'] ) ? $oauth_options['proxy_url'] : '',
+			'proxy_auth'     => isset( $oauth_options['proxy_auth'] ) ? $oauth_options['proxy_auth'] : '',
+			'timeout'        => isset( $oauth_options['timeout'] ) ? $oauth_options['timeout'] : 30,
+			'verify_ssl'     => isset( $oauth_options['verify_ssl'] ) ? $oauth_options['verify_ssl'] : true,
 		);
 
 		set_transient( self::OAUTH_STATE_TRANSIENT . $state, $flow_state, self::OAUTH_STATE_TTL );
@@ -875,8 +1080,9 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		delete_transient( self::OAUTH_STATE_TRANSIENT . $state );
 
 		// Exchange the authorization code for tokens. Restore the flow-specific
-		// redirect URI and CSRF state, both of which the fresh request has lost.
-		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $flow_state['server_url'] );
+		// redirect URI, CSRF state, and outbound proxy options, all of which
+		// the fresh request has lost.
+		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $flow_state['server_url'], $this->oauth_options_from_flow_state( $flow_state ) );
 		$oauth_client->set_client_id( $flow_state['client_id'] );
 		$oauth_client->set_redirect_uri( ! empty( $flow_state['redirect_uri'] ) ? $flow_state['redirect_uri'] : $oauth_client->get_redirect_uri() );
 		$oauth_client->set_state( $state );
@@ -1103,7 +1309,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		// Clean up the transient immediately.
 		delete_transient( self::OAUTH_STATE_TRANSIENT . $state );
 
-		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $flow_state['server_url'] );
+		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $flow_state['server_url'], $this->oauth_options_from_flow_state( $flow_state ) );
 		$oauth_client->set_client_id( $flow_state['client_id'] );
 		$oauth_client->set_redirect_uri( ! empty( $flow_state['redirect_uri'] ) ? $flow_state['redirect_uri'] : $oauth_client->get_redirect_uri() );
 		$oauth_client->set_state( $state );
@@ -1150,7 +1356,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			);
 		}
 
-		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $server_url );
+		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $server_url, $this->get_oauth_client_options( $server_url ) );
 		$result       = $oauth_client->refresh_token( $refresh_token );
 
 		if ( is_wp_error( $result ) ) {
@@ -1184,7 +1390,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			);
 		}
 
-		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $server_url );
+		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $server_url, $this->get_oauth_client_options( $server_url ) );
 		$success      = $oauth_client->revoke_token( $token );
 
 		return rest_ensure_response(
