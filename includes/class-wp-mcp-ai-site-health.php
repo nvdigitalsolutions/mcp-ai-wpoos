@@ -473,10 +473,13 @@ class WP_MCP_AI_Site_Health {
 			return $result;
 		}
 
-		// Check for required options.
+		// Check for required options. The plugin persists its installed
+		// version under `wp_mcp_ai_activated_version` (written on every
+		// activation by wp_mcp_ai_activate_single_site()); the legacy
+		// `wp_mcp_ai_version` / `wp_mcp_ai_tool_registry` option names
+		// were never written by any release and produced false positives.
 		$required_options = array(
-			'wp_mcp_ai_version',
-			'wp_mcp_ai_tool_registry',
+			'wp_mcp_ai_activated_version',
 		);
 
 		$missing_options = array();
