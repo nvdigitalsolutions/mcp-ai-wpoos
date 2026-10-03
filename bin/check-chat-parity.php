@@ -42,6 +42,13 @@ $features = array(
         'status'  => 'parity',
     ),
     array(
+        'feature' => 'Tool-slug pipeline (attention narrowing + dynamic effective-tools appends)',
+        'legacy'  => 'WP_MCP_AI_REST::build_tools_payload — wp_mcp_ai_attention_tool_slugs then wp_mcp_ai_chat_effective_tools',
+        'libcore' => 'WP_MCP_AI_REST::handle_chat_request_oos — the same filters run before ChatOrchestrator::buildAllowedTools',
+        'status'  => 'parity',
+        'note'    => 'MCP App bridge tools and granted toolkit MCP server tools reach both paths; appended slugs still pass per-tool capability checks',
+    ),
+    array(
         'feature' => 'Tool execution via registry',
         'legacy'  => 'WP_MCP_AI_Chat_Service::execute_tool_calls',
         'libcore' => 'ChatOrchestrator (tools->execute inline)',
@@ -123,8 +130,9 @@ $features = array(
     array(
         'feature' => 'Before/after chat hooks',
         'legacy'  => 'wp_mcp_ai_before_chat_request / wp_mcp_ai_after_chat_request',
-        'libcore' => 'BeforeChatRequest / AfterChatResponse domain events',
+        'libcore' => 'BeforeChatRequest / AfterChatResponse domain events (WordPress EventDispatcher translates them to the documented legacy hook argument tuples)',
         'status'  => 'parity',
+        'note'    => 'The request slot is null on the OOS path — subscribers must stay null-safe',
     ),
     array(
         'feature' => 'Agentic iteration events',

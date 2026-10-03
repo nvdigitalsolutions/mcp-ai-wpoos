@@ -2276,6 +2276,30 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			if ( ! is_array( $selected_tools ) ) {
 				$selected_tools = array();
 			}
+
+			/**
+			 * Filters additional tool slugs counted by the context-window estimator.
+			 *
+			 * Pro's toolkit-MCP-server bridge appends the granted servers' effective
+			 * tool slugs here (they are added to the chat payload by the
+			 * `wp_mcp_ai_chat_effective_tools` filter), so the estimate matches the
+			 * tool definitions actually sent to the model. Returns an empty array
+			 * on base-only installs.
+			 *
+			 * @since 1.4.0
+			 *
+			 * @param string[] $tool_slugs Extra tool slugs to count.
+			 * @param int      $post_id    Assistant post ID.
+			 */
+			$extra_tool_slugs = apply_filters( 'wp_mcp_ai_prompt_window_toolkit_tool_slugs', array(), $post->ID );
+			if ( is_array( $extra_tool_slugs ) && ! empty( $extra_tool_slugs ) ) {
+				$selected_tools = array_values(
+					array_unique(
+						array_merge( $selected_tools, array_map( 'sanitize_key', $extra_tool_slugs ) )
+					)
+				);
+			}
+
 			$tool_count = count( $selected_tools );
 
 			$primary_roles = get_post_meta( $post->ID, self::META_PRIMARY_ROLES, true );

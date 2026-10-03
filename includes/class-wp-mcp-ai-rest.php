@@ -13258,6 +13258,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Parity with the legacy loop: run the same tool-slug pipeline that
+			// build_tools_payload() applies before it resolves tool definitions.
+			// The attention router narrows oversized lists (>100 tools) using the
+			// last user message, and the effective-tools seam appends dynamically
+			// registered tools (MCP App bridge tools, granted toolkit MCP server
+			// tools) that cannot be selected in the Tools metabox.
+			$assistant_config['_last_user_message'] = $last_user_message;
+
+			$effective_tool_slugs = isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+
+			$filtered_slugs = apply_filters( 'wp_mcp_ai_attention_tool_slugs', array(), $effective_tool_slugs, $assistant_config );
+			if ( ! empty( $filtered_slugs ) && is_array( $filtered_slugs ) ) {
+				$effective_tool_slugs = array_values( array_intersect( $filtered_slugs, $effective_tool_slugs ) );
+			}
+
+			$effective_tool_slugs = apply_filters( 'wp_mcp_ai_chat_effective_tools', $effective_tool_slugs, $assistant_config, absint( $assistant_id ) );
+			if ( ! is_array( $effective_tool_slugs ) ) {
+				$effective_tool_slugs = array();
+			}
+
+			$assistant_config['tools'] = array_values(
+				array_unique(
+					array_filter( array_map( 'sanitize_key', $effective_tool_slugs ) )
+				)
+			);
+
 												// Build options.
 												$options     = array();
 												$raw_options = $request->get_param( 'options' );
