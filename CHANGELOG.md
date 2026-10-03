@@ -1,5 +1,20 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Fixed — Toolkit MCP Server Grants Never Enforced at Runtime
+
+- **The deny-by-default grant gate from v1.1.88 (PR #6796) was dead code outside wp-admin.** The grant lookup class (`WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers`) loaded only in admin context, so the `class_exists()` guards in `handle_jsonrpc()` silently skipped the gate and the `toolkitServers` metadata on real REST requests — `tools/call` for an ungranted assistant sailed straight through. `mcp-servers-init.php` now loads the class definition in every context (hooks still bind only when the admin module instantiates the metabox), so non-granted assistant-scoped calls return `-32601` and `initialize` always echoes the exact grant list.
+
+### Changed — Toolkit MCP Server Grants Now Expose Tools to the Assistant
+
+- **Checking a server in the Toolkit MCP Servers metabox now does something for the in-plugin assistant.** `wp_mcp_ai_toolkit_servers_expose_tools()` appends the granted **and enabled** servers' effective tool slugs on the `wp_mcp_ai_chat_effective_tools` seam, so the chat payload, the monolithic MCP `tools/list`, direct tool execution, and `list_mcp_tools` all expose the granted tools (per-tool capability checks still apply downstream; the server-level enable toggle stays authoritative). The Context Window Estimator counts the same slugs via the new `wp_mcp_ai_prompt_window_toolkit_tool_slugs` filter, so "Tools Selected" matches the chat payload.
+
+### Changed — OOS Engine Chat Path Tool-Slug + Hook Parity
+
+- **`handle_chat_request_oos()` now runs the same tool-slug pipeline as the legacy `build_tools_payload()`** — `wp_mcp_ai_attention_tool_slugs` (attention routing for oversized lists, fed by `_last_user_message`) followed by `wp_mcp_ai_chat_effective_tools` (MCP App bridge tools, granted toolkit MCP server tools) — before the orchestrator resolves definitions.
+- **The WordPress `EventDispatcher` translates the four mapped domain events into their documented legacy `wp_mcp_ai_*` argument tuples before firing the hooks.** Previously the hooks fired with a single domain-event object, which crashed every legacy subscriber with required parameters (`WP_MCP_AI_Response_Attachments::handle_chat_response()` threw `ArgumentCountError` on every OOS chat → HTTP 500). The `$request` slot is null on the OOS path; all core subscribers are null-safe. Unknown mapped events keep the single-event shape.
+
 ## [1.1.93] - 2026-10-03
 
 ### Added — Media Worker Fleet Status Monitoring (PR #6849)

@@ -95,7 +95,8 @@ class OosShadowRunner {
 	 *  - shadow mode enabled and the global OOS flag off (shadow only
 	 *    shadows the legacy path);
 	 *  - the 4th arg is a real REST request (the OOS path fires the same
-	 *    hook with an event object — never shadow there);
+	 *    hook with a null request via the legacy-args adapter — never
+	 *    shadow there);
 	 *  - sampling decision;
 	 *  - try/catch + deadline — the shadow run can never break the
 	 *    legacy response.
@@ -108,7 +109,7 @@ class OosShadowRunner {
 	 * @param mixed $assistant_id Assistant ID (int).
 	 * @param mixed $messages     OpenAI-format messages.
 	 * @param mixed $options      Chat options.
-	 * @param mixed $request      WP_REST_Request or event object.
+	 * @param mixed $request      WP_REST_Request, event object, or null.
 	 * @return void
 	 */
 	public static function maybe_run( $assistant_id = null, $messages = null, $options = null, $request = null ): void {
