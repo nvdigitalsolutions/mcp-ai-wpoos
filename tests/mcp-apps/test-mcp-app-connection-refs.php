@@ -560,4 +560,203 @@ class Test_MCP_App_Connection_Refs extends WP_UnitTestCase {
 		$apps = $registry->get_apps( $this->assistant_id );
 		$this->assertTrue( $apps[0]['enabled'] );
 	}
+
+	// -------------------------------------------------------------------------
+	// OAuth login flow — proxy inheritance for geo-blocked gateways
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Seed a FlowHub MCP-mode connection with an outbound proxy.
+	 *
+	 * @return string Connection ID.
+	 */
+	protected function seed_remote_flowhub_mcp_connection_with_proxy() {
+		return WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'FlowHub MCP Proxied',
+				'url'             => 'https://api.flowhub.co',
+				'connection_type' => 'flowhub',
+				'flowhub_mode'    => 'mcp',
+				'proxy_enabled'   => true,
+				'proxy_url'       => 'proxy.example.com:8080',
+				'proxy_username'  => 'proxyuser',
+				'proxy_password'  => 'proxypass',
+				'enabled'         => true,
+			)
+		);
+	}
+
+	/**
+	 * Load the MCP Apps REST controller + OAuth client classes for flow tests.
+	 *
+	 * @return void
+	 */
+	protected function load_oauth_flow_classes() {
+		$pro_dir = defined( 'WP_MCP_AI_PRO_PATH' ) ? WP_MCP_AI_PRO_PATH : WP_MCP_AI_PATH . 'addons/pro/';
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_OAuth_Client' ) ) {
+			require_once $pro_dir . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-oauth-client.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_REST_MCP_Apps_Controller' ) ) {
+			require_once $pro_dir . 'includes/mcp-apps/class-wp-mcp-ai-rest-mcp-apps-controller.php';
+		}
+	}
+
+	/**
+	 * Install a pre_http_request mock for the FlowHub MCP OAuth discovery + DCR
+	 * flow (no live HTTP requests are made).
+	 *
+	 * @param array $captured Reference collecting the requested URLs.
+	 * @return void
+	 */
+	protected function install_flowhub_oauth_mock( &$captured ) {
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( &$captured ) {
+				unset( $pre, $args );
+				$captured[] = $url;
+
+				if ( false !== strpos( $url, '/.well-known/oauth-authorization-server' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'issuer'                 => 'https://mcp.flowhub.com',
+								'authorization_endpoint' => 'https://mcp.flowhub.com/oauth/authorize',
+								'token_endpoint'         => 'https://mcp.flowhub.com/oauth/token',
+								'registration_endpoint'  => 'https://mcp.flowhub.com/oauth/register',
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				if ( false !== strpos( $url, '/oauth/register' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'client_id' => 'flowhub-dyn-client',
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				return array(
+					'headers'  => array(),
+					'body'     => wp_json_encode( new stdClass() ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+				);
+			},
+			10,
+			3
+		);
+	}
+
+	/**
+	 * The OAuth login flow for a FlowHub reference carries the connection's
+	 * proxy into the flow state so the follow-up token exchange routes through
+	 * it too (geo-blocked deployments would otherwise get HTTP 403).
+	 */
+	public function test_oauth_init_inherits_flowhub_connection_proxy() {
+		$this->load_oauth_flow_classes();
+		$captured      = array();
+		$connection_id = $this->seed_remote_flowhub_mcp_connection_with_proxy();
+		$this->assertNotWPError( $connection_id );
+
+		$this->install_flowhub_oauth_mock( $captured );
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp-apps/oauth/init' );
+		$request->set_param( 'server_url', 'https://mcp.flowhub.com' );
+		$request->set_param( 'connection_ref', $connection_id );
+
+		$response = $controller->initiate_oauth( $request );
+
+		$this->assertNotWPError( $response );
+		$data = $response->get_data();
+		$this->assertTrue( $data['success'] );
+		$this->assertNotEmpty( $data['state'] );
+
+		// The stored flow state must carry the resolved proxy credentials so
+		// handle_oauth_callback()/complete_oauth() rebuild the OAuth client
+		// with them on the token exchange.
+		$flow_state = get_transient( WP_MCP_AI_REST_MCP_Apps_Controller::OAUTH_STATE_TRANSIENT . $data['state'] );
+		$this->assertIsArray( $flow_state );
+		$this->assertSame( 'proxy.example.com:8080', $flow_state['proxy_url'] );
+		$this->assertSame( 'proxyuser:proxypass', $flow_state['proxy_auth'] );
+		$this->assertSame( $connection_id, $flow_state['connection_ref'] );
+
+		// Discovery and DCR requests were made (through the client seam the
+		// proxy applies to at the cURL layer in production).
+		$this->assertNotEmpty( $captured );
+	}
+
+	/**
+	 * The OAuth client options resolver reads the proxy from the connection
+	 * referenced by connection_ref.
+	 */
+	public function test_oauth_client_options_resolve_proxy_from_connection_ref() {
+		$this->load_oauth_flow_classes();
+		$connection_id = $this->seed_remote_flowhub_mcp_connection_with_proxy();
+		$this->assertNotWPError( $connection_id );
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$method     = new ReflectionMethod( $controller, 'get_oauth_client_options' );
+		$method->setAccessible( true );
+
+		$options = $method->invokeArgs( $controller, array( 'https://mcp.flowhub.com', $connection_id ) );
+
+		$this->assertSame( 'proxy.example.com:8080', $options['proxy_url'] );
+		$this->assertSame( 'proxyuser:proxypass', $options['proxy_auth'] );
+		$this->assertSame( 30, $options['timeout'] );
+		$this->assertTrue( $options['verify_ssl'] );
+	}
+
+	/**
+	 * Without an explicit connection_ref the resolver still finds the proxy by
+	 * matching the gateway URL against central FlowHub MCP connections.
+	 */
+	public function test_oauth_client_options_fallback_by_gateway_url() {
+		$this->load_oauth_flow_classes();
+		$connection_id = $this->seed_remote_flowhub_mcp_connection_with_proxy();
+		$this->assertNotWPError( $connection_id );
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$method     = new ReflectionMethod( $controller, 'get_oauth_client_options' );
+		$method->setAccessible( true );
+
+		$options = $method->invokeArgs( $controller, array( 'https://mcp.flowhub.com', '' ) );
+
+		$this->assertSame( 'proxy.example.com:8080', $options['proxy_url'] );
+		$this->assertSame( 'proxyuser:proxypass', $options['proxy_auth'] );
+	}
+
+	/**
+	 * Servers that match no central connection get default options without a
+	 * proxy.
+	 */
+	public function test_oauth_client_options_defaults_without_match() {
+		$this->load_oauth_flow_classes();
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$method     = new ReflectionMethod( $controller, 'get_oauth_client_options' );
+		$method->setAccessible( true );
+
+		$options = $method->invokeArgs( $controller, array( 'https://unrelated.example.com/mcp', '' ) );
+
+		$this->assertArrayNotHasKey( 'proxy_url', $options );
+		$this->assertArrayNotHasKey( 'proxy_auth', $options );
+		$this->assertSame( 30, $options['timeout'] );
+		$this->assertTrue( $options['verify_ssl'] );
+	}
 }
