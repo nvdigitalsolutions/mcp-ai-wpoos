@@ -104,7 +104,8 @@ class Test_Crm_Tool_Proof extends WP_UnitTestCase {
 		$this->assertSame( 'standard', $definition['risk_level'] );
 		$this->assertSame( 'Create Company', $definition['name'] );
 
-		$this->assertContains( 'modifies-data', $tool->get_capability_flags() );
+		$this->assertContains( 'write', $tool->get_capability_flags() );
+		$this->assertContains( 'state-changing', $tool->get_capability_flags() );
 		$this->assertContains( 'requires-capability', $tool->get_capability_flags() );
 	}
 
