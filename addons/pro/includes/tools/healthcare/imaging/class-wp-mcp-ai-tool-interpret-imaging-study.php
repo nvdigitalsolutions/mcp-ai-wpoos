@@ -320,15 +320,15 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 			return $result;
 		}
 
-		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
+		$interpretation = $this->flatten_response_content( $result );
+		if ( '' === $interpretation ) {
 			return new WP_Error(
 				'imaging_ai_empty_response',
 				__( 'The AI model returned an empty response.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
-		$interpretation = $result['choices'][0]['message']['content'];
-		$disclaimer     = $this->get_disclaimer();
+		$disclaimer = $this->get_disclaimer();
 
 		return array(
 			'study_uid'      => get_post_meta( $post->ID, '_imaging_study_instance_uid', true ),
@@ -347,6 +347,42 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	// =========================================================================
 	// AI provider helpers.
 	// =========================================================================
+
+	/**
+	 * Flatten the message content from a chat-completion response.
+	 *
+	 * Gemini's normalize_response() (and some OpenAI-compatible gateways such
+	 * as vLLM) return `choices[0].message.content` as an array of {type,text}
+	 * parts; string providers return it as a plain string. Normalise both
+	 * shapes here so the downstream concatenation never sees an array.
+	 *
+	 * @param array $result Provider response.
+	 * @return string Flattened text ('' when the field is missing or empty).
+	 */
+	private function flatten_response_content( $result ) {
+		if ( ! is_array( $result ) || ! isset( $result['choices'][0]['message']['content'] ) ) {
+			return '';
+		}
+
+		$content = $result['choices'][0]['message']['content'];
+		if ( is_string( $content ) ) {
+			return trim( $content );
+		}
+		if ( ! is_array( $content ) ) {
+			return '';
+		}
+
+		$text = '';
+		foreach ( $content as $part ) {
+			if ( is_array( $part ) && isset( $part['text'] ) ) {
+				$text .= $part['text'];
+			} elseif ( is_string( $part ) ) {
+				$text .= $part;
+			}
+		}
+
+		return trim( $text );
+	}
 
 	/**
 	 * Select the best available AI provider.

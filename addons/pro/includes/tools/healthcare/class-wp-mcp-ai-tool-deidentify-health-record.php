@@ -235,8 +235,8 @@ class WP_MCP_AI_Tool_Deidentify_Health_Record implements WP_MCP_AI_Tool_Interfac
 				'phi_deidentified',
 				'health_record',
 				isset( $arguments['record_id'] ) ? absint( $arguments['record_id'] ) : 0,
-				$user_id,
 				array(
+					'user_id'             => $user_id,
 					'method'              => $method,
 					'original_length'     => strlen( $text ),
 					'deidentified_length' => isset( $result['deidentified_text'] ) ? strlen( $result['deidentified_text'] ) : 0,
@@ -255,12 +255,13 @@ class WP_MCP_AI_Tool_Deidentify_Health_Record implements WP_MCP_AI_Tool_Interfac
 		 * @param string $method            The de-identification method used.
 		 * @param int    $user_id           The user who performed the operation.
 		 */
-		do_action( 'wp_mcp_ai_after_health_record_deidentified', $result['deidentified_text'], $method, $user_id );
+		$deidentified_text = isset( $result['deidentified_text'] ) ? $result['deidentified_text'] : '';
+		do_action( 'wp_mcp_ai_after_health_record_deidentified', $deidentified_text, $method, $user_id );
 
 		return array(
 			'success' => true,
 			'data'    => array(
-				'deidentified_text'  => isset( $result['deidentified_text'] ) ? $result['deidentified_text'] : '',
+				'deidentified_text'  => $deidentified_text,
 				'entities_found'     => isset( $result['entities_found'] ) ? absint( $result['entities_found'] ) : 0,
 				'entities'           => isset( $result['entities'] ) ? $result['entities'] : array(),
 				'method_used'        => $method,
