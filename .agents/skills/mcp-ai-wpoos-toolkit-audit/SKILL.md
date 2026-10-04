@@ -228,7 +228,7 @@ then move to the next toolkit.
 - [ ] financial-planning
 - [ ] flowhub
 - [ ] google-workspace
-- [ ] healthcare
+- [x] healthcare — 2026-10-04 (case study below)
 - [x] image-production — 2026-10-04 (case study below)
 - [ ] infrastructure
 - [ ] jetengine
@@ -259,6 +259,50 @@ then move to the next toolkit.
 Also sweep the loose tools directly in `addons/pro/includes/tools/*.php`
 (incident/maintenance tools) and the shared `addons/pro/includes/services/`
 classes each toolkit routes through.
+
+## Case study — healthcare
+
+What the sixth audit found (class 3; plus class-2 dead audit trail and two
+bonus TypeErrors exposed by the new tests; everything else verified clean):
+
+1. `interpret_imaging_study::action_interpret()` — concatenated
+   `$result['choices'][0]['message']['content']` straight into the
+   interpretation text. Gemini (and OpenAI-compatible gateways such as vLLM)
+   return that field as an array of parts → literal "Array" text in every
+   Gemini-served interpretation. Added a `flatten_response_content()` helper
+   at the response boundary; empty content now returns the honest
+   `imaging_ai_empty_response` WP_Error.
+2. `export_fhir_data` + wellness `init.php` — called the nonexistent global
+   `wp_mcp_ai_log_activity()` (no definition anywhere in the repo; guarded so
+   it never fataled, but the HIPAA audit trail silently never fired).
+   Rewired to `WP_MCP_AI_Healthcare_Audit::record()` (the unified PHI ledger
+   every other healthcare tool writes to) and `WP_MCP_AI_Logger::log_event()`
+   for the migration.
+3. Bonus (tests exposed): `deidentify_health_record` + `extract_clinical_entities`
+   passed `$user_id` in the `array $meta` slot of
+   `WP_MCP_AI_Healthcare_Audit::record()` → `TypeError` on every execution once
+   the audit class loads. Moved `user_id` into the meta array. Also guarded the
+   OpenMed response boundary (`entities` non-array → empty list;
+   `deidentified_text` missing → '' in the completion action).
+
+Verified clean this cluster: zero shell/exec anywhere in the toolkit; all
+client methods exist (create_chat_completion on OpenAI/Gemini/Anthropic,
+create_embedding(s) on Gemini/OpenAI, OpenMed client methods, Media Worker
+sidecar trait, imaging CPT/audit classes, batch iterator, migration class);
+all advertised enums match their service switches (species human/canine/feline
+in the engine reference tables, vitals units, DICOMweb auth types, EHR vendors,
+FHIR formats, NER models, deidentify methods); HTTP paths already hardened
+(DICOMweb status + JSON validation + SSRF guard on save, OpenMed client,
+EHR connect SSRF guard + status + JSON).
+
+Tests landed: `addons/pro/tests/test-healthcare-toolkit-hardening.php` (new,
+7 tests / 27 assertions — flatten shape matrix, Gemini array-of-parts
+end-to-end through `execute()`, OpenAI string passthrough, empty-content error,
+FHIR export audit-trail entry, OpenMed non-array entities guard, missing
+`deidentified_text` guard). Validation: 139 healthcare-cluster tests green
+(isolated DB `wordpress_test_muted_moth`), 38 CG Pro healthcare tests green
+(isolated DB `wordpress_test_muted_moth_cg`); phpcs 0 errors on both
+standards; UTF-8 clean. PR #6887.
 
 ## Case study — ecommerce
 
@@ -314,7 +358,7 @@ shell-tools gate for the Node runner + both generation methods with temp
 file cleanup assertions, invoice HTML escaping, JSON input roundtrip).
 Validation: 250 ecommerce-cluster tests green; phpcs 0 errors on both
 standards; UTF-8 clean. Note: the test never defines
-`WP_MCP_AI_ALLOW_SHELL_TOOLS` — defining it would pollute every later suite
+\`WP_MCP_AI_ALLOW_SHELL_TOOLS\` — defining it would pollute every later suite
 in the shared process.
 
 ## Case study — eca-management
