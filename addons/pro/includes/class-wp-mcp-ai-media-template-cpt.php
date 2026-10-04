@@ -694,6 +694,10 @@ class WP_MCP_AI_Media_Template_CPT {
 			array( 'user_id' => get_current_user_id() )
 		);
 
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
 		if ( ! empty( $result['success'] ) ) {
 			wp_send_json_success( $result );
 		} else {

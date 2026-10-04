@@ -178,9 +178,9 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -188,6 +188,29 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 		$scan_type  = isset( $arguments['scan_type'] ) ? sanitize_text_field( $arguments['scan_type'] ) : 'all';
 		$limit      = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 500;
 		$year_month = isset( $arguments['year_month'] ) ? sanitize_text_field( $arguments['year_month'] ) : '';
+
+		// Validate scan_type against the advertised schema.
+		$valid_scan_types = array( 'all', 'unreferenced', 'missing_files', 'unregistered' );
+		if ( ! in_array( $scan_type, $valid_scan_types, true ) ) {
+			return new WP_Error(
+				'tool_error',
+				sprintf(
+					/* translators: %s: comma-separated list of valid scan types */
+					__( 'Invalid scan_type. Valid scan types: %s', 'mcp-ai-wpoos-pro' ),
+					implode( ', ', $valid_scan_types )
+				)
+			);
+		}
+
+		// Validate year_month strictly (YYYY/MM). Anything else is rejected —
+		// it is later concatenated into an uploads-directory path and must
+		// not be able to traverse out of that directory.
+		if ( '' !== $year_month && ! preg_match( '/^\d{4}\/\d{2}$/', $year_month ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid year_month format. Expected YYYY/MM (e.g. "2024/01").', 'mcp-ai-wpoos-pro' )
+			);
+		}
 
 		$results = array(
 			'success'           => true,
@@ -425,6 +448,75 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 			}
 		}
 
+		// Check 4: Is it referenced from post meta or options (galleries,
+		// ACF fields, theme mods)? Those references never appear in
+		// post_content but are just as real.
+		if ( $this->is_attachment_referenced_in_meta( $attachment_id, $filenames ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check whether an attachment is referenced from post meta or options.
+	 *
+	 * Covers references that never appear in post_content: comma-separated
+	 * and serialized attachment IDs (WooCommerce product galleries, ACF),
+	 * stored URLs (Elementor/ACF URL fields), and well-known single-ID
+	 * options (site icon, custom logo, WooCommerce placeholders).
+	 *
+	 * Best-effort and fail-safe: a false positive only skips a deletion,
+	 * never causes one.
+	 *
+	 * @since 2.7.0
+	 * @param int      $attachment_id Attachment ID.
+	 * @param string[] $filenames     Filenames to search for (URLs stored in meta).
+	 * @return bool True when referenced from meta or options.
+	 */
+	private function is_attachment_referenced_in_meta( $attachment_id, $filenames ) {
+		global $wpdb;
+
+		$attachment_id = (int) $attachment_id;
+
+		$clauses   = array();
+		$clauses[] = $wpdb->prepare( 'meta_value = %s', (string) $attachment_id );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', $attachment_id . ',%' );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%,' . $attachment_id );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%,' . $attachment_id . ',%' );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%i:' . $attachment_id . ';%' );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%"' . $attachment_id . '"%' );
+
+		foreach ( $filenames as $filename ) {
+			$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%' . $wpdb->esc_like( $filename ) . '%' );
+		}
+
+		$where = implode( ' OR ', $clauses );
+
+		// Exclude the attachment's own file-info meta — it always contains
+		// the filename and would otherwise self-match on every attachment.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Clauses are individually prepare()d above.
+		$sql = $wpdb->prepare(
+			"SELECT 1 FROM {$wpdb->postmeta} WHERE ({$where}) AND NOT ( post_id = %d AND meta_key IN ( '_wp_attached_file', '_wp_attachment_metadata' ) ) LIMIT 1",
+			$attachment_id
+		);
+		// phpcs:enable
+
+		if ( $wpdb->get_var( $sql ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return true;
+		}
+
+		// Well-known single-ID options. Deliberately NOT a table-wide LIKE
+		// scan: serialized blobs (transients such as the WooCommerce blocks
+		// patterns cache) contain i:<id>; for every index, which would
+		// classify every attachment as referenced.
+		$known_options = array( 'site_icon', 'custom_logo', 'woocommerce_placeholder_image', 'woocommerce_thumbnail_image' );
+		foreach ( $known_options as $option ) {
+			if ( (int) get_option( $option ) === $attachment_id ) {
+				return true;
+			}
+		}
+
 		return false;
 	}
 
@@ -526,11 +618,17 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 		} else {
 			// Scan year/month subdirectories in the uploads root.
 			$years = glob( $base_dir . '/*', GLOB_ONLYDIR );
+			if ( ! is_array( $years ) ) {
+				return $result;
+			}
 			foreach ( $years as $year_dir ) {
 				if ( ! is_numeric( basename( $year_dir ) ) ) {
 					continue;
 				}
 				$months = glob( $year_dir . '/*', GLOB_ONLYDIR );
+				if ( ! is_array( $months ) ) {
+					continue;
+				}
 				foreach ( $months as $month_dir ) {
 					if ( is_numeric( basename( $month_dir ) ) ) {
 						$scan_dirs[] = $month_dir;
@@ -609,6 +707,10 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 			$file = get_attached_file( $attachment_id );
 			if ( $file && file_exists( $file ) ) {
 				$registered[] = wp_normalize_path( $file );
+			}
+
+			if ( ! $file ) {
+				continue;
 			}
 
 			// Also include size variants.

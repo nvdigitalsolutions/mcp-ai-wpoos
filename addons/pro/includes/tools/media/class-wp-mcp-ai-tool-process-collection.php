@@ -229,11 +229,15 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 				$item_result = array(
 					'attachment_id' => $attachment_id,
 					'template_id'   => $template_id,
-					'success'       => ! empty( $result['success'] ),
+					'success'       => false,
 				);
 
-				if ( ! empty( $result['success'] ) ) {
+				if ( is_wp_error( $result ) ) {
+					++$error_count;
+					$item_result['error'] = $result->get_error_message();
+				} elseif ( ! empty( $result['success'] ) ) {
 					++$success_count;
+					$item_result['success']   = true;
 					$item_result['output_id']  = isset( $result['attachment_id'] ) ? $result['attachment_id'] : null;
 					$item_result['output_url'] = isset( $result['url'] ) ? $result['url'] : null;
 				} else {
