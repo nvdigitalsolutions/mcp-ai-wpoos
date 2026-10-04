@@ -34,6 +34,33 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Resolve_Incident' ) ) {
 
 		/**
 		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_name(): string {
+			return __( 'Resolve Incident', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_description(): string {
+			return __( 'Mark an operational incident as resolved.', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_required_capability(): string {
+			return 'manage_options';
+		}
+
+		/**
+		 * {@inheritdoc}
 		 */
 		public function get_definition(): array {
 			return array(
@@ -96,8 +123,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Resolve_Incident' ) ) {
 		 * @param array $context   Execution context.
 		 * @return array|WP_Error
 		 */
-		public function execute( array $arguments, array $context = array() ) {
-			$incident_id = absint( $arguments['incident_id'] );
+		public function execute( array $arguments = array(), array $context = array() ) {
+			$incident_id = isset( $arguments['incident_id'] ) ? absint( $arguments['incident_id'] ) : 0;
 			$message     = isset( $arguments['message'] ) ? sanitize_text_field( $arguments['message'] ) : '';
 
 			if ( ! class_exists( 'WP_MCP_AI_Incident_CPT' ) ) {

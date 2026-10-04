@@ -40,11 +40,41 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Get_Service_Status' ) ) {
 		 *
 		 * @since 1.4.0
 		 */
+		public function get_name(): string {
+			return __( 'Get Service Status', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_description(): string {
+			return __( 'Query the current status of one or all monitored service components.', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
 		public function get_definition(): array {
 			return array(
 				'name'        => __( 'Get Service Status', 'mcp-ai-wpoos' ),
 				'description' => __( 'Query the current status of one or all monitored service components.', 'mcp-ai-wpoos' ),
 				'parameters'  => $this->get_parameters_schema(),
+			);
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_capability_flags(): array {
+			return array(
+				'state_changing' => false,
+				'risk_level'     => 'low',
 			);
 		}
 
@@ -88,7 +118,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Get_Service_Status' ) ) {
 		 * @param array $context   Execution context.
 		 * @return array|WP_Error
 		 */
-		public function execute( array $arguments, array $context = array() ) {
+		public function execute( array $arguments = array(), array $context = array() ) {
 			$slug = isset( $arguments['component_slug'] ) ? sanitize_text_field( $arguments['component_slug'] ) : '';
 
 			if ( ! class_exists( 'WP_MCP_AI_Service_Status_Registry' ) ) {

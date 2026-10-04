@@ -448,7 +448,10 @@ class WP_MCP_AI_Finnhub_Provider {
 			return $this->serve_stale( $cache_key, $data );
 		}
 
-		if ( empty( $data['t'] ) || 'ok' !== strtolower( isset( $data['s'] ) ? $data['s'] : '' ) ) {
+		// `s` (status) is a string and `t` (timestamps) an array by contract;
+		// guard both so malformed payloads degrade to no-data instead of
+		// strtolower()/count() TypeErrors on PHP 8.
+		if ( empty( $data['t'] ) || ! is_array( $data['t'] ) || 'ok' !== strtolower( isset( $data['s'] ) && is_string( $data['s'] ) ? $data['s'] : '' ) ) {
 			return new WP_Error( 'wp_mcp_ai_provider_no_data', __( 'Finnhub returned no history for this symbol.', 'mcp-ai-wpoos-pro' ) );
 		}
 

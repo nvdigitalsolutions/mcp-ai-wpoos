@@ -527,7 +527,10 @@ class WP_MCP_AI_Vector_Store_Adapter {
 		}
 
 		// Ensure the collection exists (idempotent).
-		$this->qdrant_ensure_collection( $namespace, $base_url, $api_key, count( $points[0]['vector'] ) );
+		$ensure = $this->qdrant_ensure_collection( $namespace, $base_url, $api_key, count( $points[0]['vector'] ) );
+		if ( is_wp_error( $ensure ) ) {
+			return $ensure;
+		}
 
 		// Upsert points.
 		$response = wp_remote_request(
@@ -645,8 +648,21 @@ class WP_MCP_AI_Vector_Store_Adapter {
 			);
 		}
 
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( $code < 200 || $code >= 300 ) {
+			return new WP_Error(
+				'wp_mcp_ai_qdrant_query_http',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: response body */
+					__( 'Qdrant returned HTTP %1$d: %2$s', 'mcp-ai-wpoos' ),
+					$code,
+					wp_remote_retrieve_body( $response )
+				)
+			);
+		}
+
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-		if ( ! is_array( $body ) || ! isset( $body['result'] ) ) {
+		if ( ! is_array( $body ) || ! isset( $body['result'] ) || ! is_array( $body['result'] ) ) {
 			return array(
 				'success'   => true,
 				'backend'   => 'qdrant',
@@ -686,7 +702,7 @@ class WP_MCP_AI_Vector_Store_Adapter {
 	 * @param string $base_url  Qdrant base URL.
 	 * @param string $api_key   Qdrant API key.
 	 * @param int    $dim       Vector dimension.
-	 * @return void
+	 * @return WP_Error|null WP_Error when collection creation fails.
 	 */
 	private function qdrant_ensure_collection( $namespace, $base_url, $api_key, $dim ) {
 		// Check if collection exists.
@@ -699,11 +715,11 @@ class WP_MCP_AI_Vector_Store_Adapter {
 		);
 
 		if ( ! is_wp_error( $check ) && 200 === (int) wp_remote_retrieve_response_code( $check ) ) {
-			return; // Already exists.
+			return null; // Already exists.
 		}
 
 		// Create the collection with HNSW indexing.
-		wp_remote_request(
+		$created = wp_remote_request(
 			$base_url . '/collections/' . rawurlencode( $namespace ),
 			array(
 				'method'  => 'PUT',
@@ -726,5 +742,32 @@ class WP_MCP_AI_Vector_Store_Adapter {
 				),
 			)
 		);
+
+		if ( is_wp_error( $created ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_qdrant_collection_create_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Qdrant collection create failed: %s', 'mcp-ai-wpoos' ),
+					$created->get_error_message()
+				)
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $created );
+		// 409 means the collection already exists (race or stale check).
+		if ( ( $code < 200 || $code >= 300 ) && 409 !== $code ) {
+			return new WP_Error(
+				'wp_mcp_ai_qdrant_collection_http',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: response body */
+					__( 'Qdrant returned HTTP %1$d creating the collection: %2$s', 'mcp-ai-wpoos' ),
+					$code,
+					wp_remote_retrieve_body( $created )
+				)
+			);
+		}
+
+		return null;
 	}
 }

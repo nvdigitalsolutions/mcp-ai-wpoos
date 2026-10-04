@@ -40,6 +40,33 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Incident' ) ) {
 		 *
 		 * @since 1.4.0
 		 */
+		public function get_name(): string {
+			return __( 'Create Incident', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_description(): string {
+			return __( 'Create a new operational incident for tracking service disruptions.', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_required_capability(): string {
+			return 'manage_options';
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
 		public function get_definition(): array {
 			return array(
 				'name'                => __( 'Create Incident', 'mcp-ai-wpoos' ),
@@ -116,13 +143,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Incident' ) ) {
 		 * @param array $context   Execution context.
 		 * @return array|WP_Error
 		 */
-		public function execute( array $arguments, array $context = array() ) {
-			$title    = sanitize_text_field( $arguments['title'] );
+		public function execute( array $arguments = array(), array $context = array() ) {
+			$title    = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
 			$severity = isset( $arguments['severity'] ) ? sanitize_text_field( $arguments['severity'] ) : 'minor';
 			$message  = isset( $arguments['message'] ) ? sanitize_text_field( $arguments['message'] ) : '';
 			$services = isset( $arguments['services'] ) && is_array( $arguments['services'] )
 				? array_map( 'sanitize_text_field', $arguments['services'] )
 				: array();
+
+			if ( '' === $title ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_title',
+					__( 'An incident title is required.', 'mcp-ai-wpoos' )
+				);
+			}
 
 			if ( ! class_exists( 'WP_MCP_AI_Incident_CPT' ) ) {
 				return new WP_Error(

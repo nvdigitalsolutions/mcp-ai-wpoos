@@ -113,36 +113,37 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 	 * @return array|WP_Error|null
 	 */
 	public function guard_agent_prompt( $result, $agent_id, $prompt, $context ) {
+		// $agent_id / $context are reserved for surface-specific policy
+		// (e.g. per-agent guardrail overrides) and intentionally unused here.
+		unset( $agent_id, $context );
+
 		// Respect any prior short-circuit decision.
 		if ( null !== $result ) {
 			return $result;
 		}
 
-		if ( ! class_exists( 'WP_MCP_AI_Prompt_Injection_Detector' ) ) {
+		// Phase-1 guardrail: reuse the harness heuristics (jailbreak /
+		// injection / diversion). The legacy WP_MCP_AI_Prompt_Injection_Detector
+		// class never existed in this repo, so the previous class_exists()
+		// guard made this filter permanently inert.
+		if ( ! class_exists( 'WP_MCP_AI_Guardrails' ) ) {
 			return $result;
 		}
 
-		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
-		$analysis     = WP_MCP_AI_Prompt_Injection_Detector::analyze(
-			(string) $prompt,
-			$assistant_id,
-			array(
-				'source' => 'pro_workflow_agent_node',
-				'agent'  => (string) $agent_id,
-			)
+		$analysis = WP_MCP_AI_Guardrails::analyze_message( (string) $prompt, 'medium' );
+
+		if ( WP_MCP_AI_Guardrails::RESULT_SAFE === $analysis['result'] ) {
+			return $result;
+		}
+
+		// Block jailbreak/injection detections (mirrors the harness
+		// screen_message() policy); diversion signals are logged by the
+		// caller's workflow log but never block agent prompts.
+		$should_block = in_array(
+			$analysis['result'],
+			array( WP_MCP_AI_Guardrails::RESULT_JAILBREAK, WP_MCP_AI_Guardrails::RESULT_INJECTION ),
+			true
 		);
-
-		if ( ! is_array( $analysis ) || empty( $analysis['flagged'] ) ) {
-			return $result;
-		}
-
-		// Only block when the global block-on-detect setting is enabled OR
-		// the analysis itself returned `block => true`.
-		$should_block = ! empty( $analysis['block'] );
-		if ( ! $should_block ) {
-			$opt_block    = get_option( WP_MCP_AI_Prompt_Injection_Detector::OPTION_BLOCK_ON_DETECT, 0 );
-			$should_block = (bool) $opt_block;
-		}
 
 		if ( ! $should_block ) {
 			return $result;

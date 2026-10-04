@@ -231,8 +231,10 @@ class WP_MCP_AI_CRM_Gmail_Client {
 
 					if ( ! empty( $msg_data['payload']['headers'] ) && is_array( $msg_data['payload']['headers'] ) ) {
 						foreach ( $msg_data['payload']['headers'] as $header ) {
-							$name  = isset( $header['name'] ) ? strtolower( $header['name'] ) : '';
-							$value = isset( $header['value'] ) ? $header['value'] : '';
+							// Gmail header fields are strings by contract; an array value
+							// would TypeError inside strtolower()/preg_match() below.
+							$name  = isset( $header['name'] ) && is_string( $header['name'] ) ? strtolower( $header['name'] ) : '';
+							$value = isset( $header['value'] ) && is_string( $header['value'] ) ? $header['value'] : '';
 							if ( 'from' === $name ) {
 								$from = $value;
 							} elseif ( 'subject' === $name ) {
@@ -463,13 +465,13 @@ class WP_MCP_AI_CRM_Gmail_Client {
 		$body   = wp_remote_retrieve_body( $response );
 		$data   = json_decode( $body, true );
 
-		if ( 200 !== $status || JSON_ERROR_NONE !== json_last_error() || empty( $data['access_token'] ) ) {
+		if ( 200 !== $status || JSON_ERROR_NONE !== json_last_error() || empty( $data['access_token'] ) || ! is_string( $data['access_token'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_crm_gmail_token_failed',
 				__( 'Failed to obtain Gmail access token.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
-		return (string) $data['access_token'];
+		return $data['access_token'];
 	}
 }
