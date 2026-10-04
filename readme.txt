@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.94
+Stable tag: 1.1.95
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.95 - October 4, 2026 =
+
+Toolkit hardening wave, real image processing, toolkit labels, and SSE keepalives release. Added: the four placeholder image tools now run real processing through the media worker sidecar (worker 3.3.0 → 3.4.0, issue #6877) — Wave 1 Sharp-native `POST /api/image/enhance` + `/api/image/upscale` with the new Pro `WP_MCP_AI_Sharp_Image_Processing` trait behind `enhance_image_quality`/`upscale_image_ai`, and Wave 2 `POST /api/image/edit` (colorize/style_transfer, Gemini → OpenAI → Replicate auto-resolution) with the `WP_MCP_AI_Provider_Image_Edit` trait behind `colorize_image`/`apply_artistic_style` — success meta written only on real success (#6881); inter-step SSE keepalive comment frames on the chat stream at four boundaries, so long agentic tool runs no longer get reset by proxy idle-read timeouts (#6879); `list_mcp_tools` now labels previously-unlabelled Pro tools with their toolkit namespace via the new `WP_MCP_AI_Tool_Registry::get_tool_toolkit()` resolver + `wp_mcp_ai_tool_toolkit` filter (#6874). Fixed: the nine-toolkit hardening wave — document-generation (`shell_exec()` unguarded, the nonexistent Gemini `generate_content()` call, array-content flattening, the repaired fenced-JSON regex, the Anthropic OCR provider, #6875), image-production (provider bypass in the prompt optimizer, Stability parsing, sidecar guards, #6876), CRM (the Gemini `trim()` fatal in draft_upwork_proposal, the permanently-dead `wp_mcp_ai_chat_completion()` path in draft_lead_reply, #6882), ECA management (the research_eca `preg_match()` fatal, #6883), ecommerce (unguarded `exec()` gated behind `WP_MCP_AI_ALLOW_SHELL_TOOLS` + Process Service, #6885), media (nested `WP_Error` reads, non-canonical envelopes, the `year_month` directory traversal closed, the unreferenced-media meta fail-safe, #6886), healthcare (audit-trail rewire + OpenMed guards, #6887), shopify-sync (the `count(null)` fatal on the failure path + MCP-server descriptor wiring, #6889), orchestration (envelope + parser flattening, cross-tool `is_wp_error()` guards, #6892), and the loose incident tools + shared services (never-loadable `execute()` signatures, the nonexistent Paper Store `maybe_commit()`, Qdrant/gmail/roboflow/data-quality guards, #6893) — all mirrored byte-identical to nvoos-content-graph-pro where mirrors exist; the Newsletter 9.4.6+ bootstrap fatal (the optional-plugins loader now requires Newsletter on `plugins_loaded`, #6874). Changed: the email-marketing toolkit audit verified clean (tests only, #6891); `create_company` uses the canonical `write`/`state-changing` capability flags (#6874). New coding-time skill `mcp-ai-wpoos-toolkit-audit` (62 skills, #6875). Tool count: ~350 base + ~1,312 Pro (~1,662 total; unchanged; live registry authoritative). Model catalog: v2026.10.03 (unchanged; 18 providers). Stale build ZIPs removed: the 1.1.93 oOS build set (30 files).
 
 = 1.1.94 - October 3, 2026 =
 

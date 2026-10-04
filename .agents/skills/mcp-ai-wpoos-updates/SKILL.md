@@ -5,8 +5,8 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.94"
-  plugin-version-tested: "1.1.94"
+  plugin-version: "1.1.95"
+  plugin-version-tested: "1.1.95"
   last-updated: "2026-10-03"
 ---
 
@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (`v1.1.94-docs-catch-up.md`,
-   with `v1.1.93-docs-catch-up.md` as the previous pass) plus the
+3. **Read the template plans** — the latest executed plan (`v1.1.95-docs-catch-up.md`,
+   with `v1.1.94-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -724,7 +724,31 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.91-docs-catch-up.md`,
   `docs/project/plans/v1.1.92-docs-catch-up.md`,
   `docs/project/plans/v1.1.93-docs-catch-up.md`,
-  `docs/project/plans/v1.1.94-docs-catch-up.md` (latest executed — the v1.1.94
+  `docs/project/plans/v1.1.94-docs-catch-up.md`,
+  `docs/project/plans/v1.1.95-docs-catch-up.md` (latest executed — the v1.1.95
+  pass over PRs #6874–#6893: the nine-toolkit hardening wave (#6875/#6876/
+  #6882/#6883/#6885/#6886/#6887/#6889/#6892/#6893 — the per-toolkit audit loop
+  under the new `mcp-ai-wpoos-toolkit-audit` skill, 62 skills; email-marketing
+  verified clean #6891; confirmed fatals: unguarded `shell_exec()`, the
+  nonexistent Gemini `generate_content()` + global `wp_mcp_ai_chat_completion()`,
+  array-content `preg_match()`/`trim()` fatals, the media `year_month` traversal
+  closed, the never-loadable loose incident tools), the real image processing
+  for the four placeholder tools (#6881, issue #6877 — Media Worker 3.3.0 →
+  3.4.0, the `/api/image/enhance|upscale|edit` routes + the two new Pro traits),
+  the `list_mcp_tools` toolkit labels + Newsletter bootstrap fix (#6874 — the
+  pre-staged [Unreleased] CHANGELOG converted), the inter-step SSE keepalives
+  (#6879 + the Phase 4b offload proposal), the fixture swaps (#6886/#6890),
+  a new OI-1 group (47: `@since 1.9.5` ×1 in the keepalive test — plus
+  convention notes for the 1.4.0/2.10.0/2.7.0/2.1.0/1.5.0/1.1.55 additions),
+  the OI-9 extension (the #6883 port-wide unguarded-resolver sweep queue),
+  two skill reconciliations (test-suite description 63 → 64 patterns, the
+  README repo-map 61 → 62 fold-in), the FOR_REVIEWERS addon-count 27 → 29 +
+  Media Worker 3.4.0 corrections, the proposals-README SSE entry, the
+  ADDON_INVENTORY Media Worker row, the stale 1.1.93 build-set removal
+  (30 files — 9 + 2 + 19), and zero tool-count change (no registrations))
+
+Preceding windows:
+  `docs/project/plans/v1.1.94-docs-catch-up.md` (the v1.1.94
   pass over PRs #6865–#6872: the ChatGPT plugin addon + OAuth 2.1
   resource-server contract (#6871 — `addons/chatgpt-plugin/` 0.1.0,
   `WP_MCP_AI_OAuth_Resource_Server` + the two `/.well-known/` endpoints, 401

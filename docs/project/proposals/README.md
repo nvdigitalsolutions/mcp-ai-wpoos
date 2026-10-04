@@ -1,6 +1,6 @@
 # NV oOS Proposals Directory
 
-**Last Updated:** October 3, 2026
+**Last Updated:** October 4, 2026
 **Total Proposals:** 100+ files (see [RELATED_PROPOSALS_INDEX.md](./RELATED_PROPOSALS_INDEX.md) for cross-reference map)
 **Completed:** 30+ | **In Progress:** 4 | **Pending:** ~30 (many stale)
 
@@ -48,6 +48,7 @@ This directory contains proposals, research, and implementation status for major
 - **Layer I Guardrails** — Jailbreak prevention (v1.1.29, Jun 12)
 
 ### 🚧 Currently In Progress
+- **SSE Stream Hardening — Long-Run Offload (Phase 4b)** — proposal added 2026-10-04 (#6879): Phase 4a shipped (inter-step SSE keepalive comment frames at four chat-stream boundaries via `send_sse_keepalive()` — idle-read timeouts no longer reset long agentic streams); Phase 4b designs the deadline-triggered offload for single tool calls longer than the proxy timeout (~75 s threshold, continuation snapshot + Action Scheduler worker + `chat:resumed` frame buffer delivery) (see [`sse-stream-hardening-long-run-offload-proposal.md`](./sse-stream-hardening-long-run-offload-proposal.md))
 - **MCP Apps as a Remote Sites Connection Type (041)** — Phases 0–2 implemented (2026-09-24): `mcp_server` Remote Sites connection type with encrypted central credentials, JSON-RPC Test/Discover, and per-assistant `connection_ref` reference mode (decrypt-on-use, import-ref validation); restricted-host enforcement and activity logging partial. Remaining: server-card discovery, full admin OAuth flow, adopt-into-Remote-Sites flow (see [`041-mcp-apps-remote-sites-connection-type.md`](./041-mcp-apps-remote-sites-connection-type.md))
 - **TypeSafe Jev Enhancements (040)** — fidelity fixes (noul criteria, structured fields, retry, OpenRouter model normalization, `min_confidence`), new tools/services (`typesafe_guardrail`, `typesafe_rerank`, decision evals, skill selection, citation checking), and cost/reach work (decision cache, token estimation, gateway access) — **Phases 0–2 implemented (PR #6747)**: fidelity fixes, the base `typesafe_guardrail` + the `mcp-ai-wpoos-jev-decisions` bundled skill, and the Pro guardrail/citation/rerank/eval/skill-select set; Phase 3 cost/docs work plus the extraction tools and the CG port cluster remain deferred (see [`040-typesafe-jev-enhancements.md`](./040-typesafe-jev-enhancements.md))
 - **Content Graph Visual Experience System** — Theme engine, icons, legend, minimap, edge styling, Appearance tab implemented on branch `content-graph-visual-experience-104` (plugin v1.0.4; PR pending) (see [`034-nvoos-content-graph-visual-experience-enhancement.md`](./034-nvoos-content-graph-visual-experience-enhancement.md))

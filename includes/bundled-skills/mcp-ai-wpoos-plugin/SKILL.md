@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.94"
-  plugin-version-tested: "1.1.94"
-  last-updated: "2026-10-03"
+  plugin-version: "1.1.95"
+  plugin-version-tested: "1.1.95"
+  last-updated: "2026-10-04"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -761,9 +761,22 @@ Import external AI conversation exports into the JetEngine
 
 ## Release Notes (per version)
 
-Historical per-version release notes (v1.1.66 through v1.1.94) moved to
+Historical per-version release notes (v1.1.66 through v1.1.95) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.1.95 operational quick notes** (full detail in RELEASE-NOTES.md): the
+four placeholder image tools now run real processing through the media worker
+sidecar (**worker 3.4.0** — `/api/image/enhance`, `/api/image/upscale`,
+`/api/image/edit` with the new Pro `WP_MCP_AI_Sharp_Image_Processing` /
+`WP_MCP_AI_Provider_Image_Edit` traits); the nine-toolkit hardening wave
+(PRs #6875–#6893 — shell gating behind `WP_MCP_AI_ALLOW_SHELL_TOOLS`,
+`flatten_response_content()` at provider response boundaries, canonical
+`WP_Error` envelopes, the media `year_month` traversal closed);
+`list_mcp_tools` now labels previously-unlabelled Pro tools via the new
+`get_tool_toolkit()` resolver + `wp_mcp_ai_tool_toolkit` filter; inter-step
+SSE keepalive frames keep long agentic chat streams alive through proxies;
+the Newsletter 9.4.6+ test-bootstrap fatal is fixed.
 
 **v1.1.94 operational quick notes** (full detail in RELEASE-NOTES.md): the
 ChatGPT plugin addon (`addons/chatgpt-plugin/`) + the base OAuth 2.1
