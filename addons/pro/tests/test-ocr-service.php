@@ -601,6 +601,33 @@ class Test_WP_MCP_AI_OCR_Service extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Imagick extension is not available.' );
 		}
 
+		// The extension alone is not sufficient: PDF rasterization requires
+		// the ImageMagick PDF delegate (Ghostscript) and a policy.xml that
+		// permits it — GitHub runners ship a policy that blocks PDF reads.
+		// Probe the exact operation the service performs and skip when the
+		// environment cannot rasterize PDFs.
+		try {
+			$probe_path = sys_get_temp_dir() . '/ocr_probe_' . uniqid() . '.pdf';
+			$probe      = new Imagick();
+			$probe->newImage( 2, 2, new ImagickPixel( 'white' ) );
+			$probe->setImageFormat( 'pdf' );
+			$probe->writeImages( $probe_path, true );
+			$probe->clear();
+			$probe->destroy();
+
+			$reader = new Imagick();
+			$reader->setResolution( 72, 72 );
+			$reader->readImage( $probe_path );
+			$reader->clear();
+			$reader->destroy();
+			wp_delete_file( $probe_path );
+		} catch ( Throwable $e ) {
+			if ( isset( $probe_path ) && file_exists( $probe_path ) ) {
+				wp_delete_file( $probe_path );
+			}
+			$this->markTestSkipped( 'Imagick PDF rasterization is unavailable in this environment: ' . $e->getMessage() );
+		}
+
 		$this->reset_key_state();
 		update_option(
 			'wp_mcp_ai_settings',
