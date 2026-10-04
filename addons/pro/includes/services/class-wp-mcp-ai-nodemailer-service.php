@@ -202,6 +202,12 @@ class WP_MCP_AI_Nodemailer_Service {
 		}
 
 		foreach ( $variables as $key => $value ) {
+			// str_replace() switches to search/replace-array pairing when a
+			// value is an array, silently emitting garbage — skip non-scalar
+			// placeholders instead.
+			if ( ! is_scalar( $value ) && null !== $value ) {
+				continue;
+			}
 			$template = str_replace( '{{' . $key . '}}', $value, $template );
 		}
 

@@ -256,9 +256,98 @@ then move to the next toolkit.
 - [ ] vision-analysis
 - [ ] wp-all-import-export
 
-Also sweep the loose tools directly in `addons/pro/includes/tools/*.php`
-(incident/maintenance tools) and the shared `addons/pro/includes/services/`
-classes each toolkit routes through.
+- [x] Loose incident/maintenance tools (`addons/pro/includes/tools/*.php`) +
+      shared `addons/pro/includes/services/` sweep — 2026-10-04 (case study below)
+
+## Case study — loose incident tools + shared services sweep
+
+What the ninth audit found (one latent compile-fatal family, two fatals, and
+nine data-quality/latent-fatal guards; classes 1 and 4 verified clean across
+all 34 service files):
+
+1. **Loose incident tools were never loadable (compile fatal).** All five
+   files declared `execute( array $arguments, … )` while
+   `WP_MCP_AI_Tool_Interface` declares
+   `execute( array $arguments = array(), … )` — a missing-parameter-default
+   incompatibility that fatals at class declaration; `get_service_status`
+   also lacked `get_capability_flags()` and all five lacked the modern
+   `get_name()` / `get_description()`. No loader requires these files (the
+   Incident REST controller has its own callbacks), so the fatals were
+   latent. Aligned every signature with the interface, added the missing
+   methods (the four state-changing tools declare
+   `get_required_capability()` → `manage_options`; the status tool keeps the
+   trait default), and guarded the required-arg reads with honest errors
+   (`wp_mcp_ai_missing_title` when `title` is absent).
+2. `result-delivery-service::send_paper_store()` — called
+   `WP_MCP_AI_Paper_Git_Sync::get_instance()->maybe_commit()`, a method that
+   never existed (the real API is `sync()`): every git_commit delivery
+   fataled inside the try/catch and was mis-reported as a
+   `paper_store_error` even though the record saved. Now calls `sync()` and
+   logs sync failures without failing the delivery.
+3. `hf-vision-inference-service::post_inference()` — returned valid-JSON
+   scalar bodies (`null`, strings) raw into the `array`-typed
+   `normalize_detection_result()` / `normalize_classification_result()` →
+   TypeError. Added an `is_array` guard with an honest WP_Error.
+4. `crm-gmail-client` — array-shaped Gmail header values reached
+   `strtolower()`/`preg_match()` (TypeError) and a non-string
+   `access_token` was `(string)`-cast; both now is_string-guarded.
+   **Mirrored to CG Pro.**
+5. `vector-store-adapter` — `qdrant_query()` parsed non-2xx bodies as
+   silent empty-success and iterated a non-array `result`; status gate +
+   `is_array` guard added. `qdrant_ensure_collection()` ignored the
+   collection-create response entirely; it now returns `WP_Error|null`
+   (409 tolerated as already-exists) and `qdrant_upsert()` propagates.
+   **Mirrored to CG Pro.**
+6. `roboflow-inference-service` — `(string)` cast of a possibly-array
+   detection `class` produced literal "Array" labels; `is_string` guard
+   with COCO fallback. **Mirrored to CG Pro.**
+7. `pro-workflow-bridge::guard_agent_prompt()` — the Phase-1 injection
+   guardrail referenced `WP_MCP_AI_Prompt_Injection_Detector`, a class that
+   exists nowhere in the repo; the `class_exists` guard made the filter
+   permanently inert. Rewired to `WP_MCP_AI_Guardrails::analyze_message()`
+   (blocks jailbreak/injection, mirroring the harness `screen_message()`
+   policy; diversion signals never block).
+8. Data-quality guards: `nv-cloud-billing-observer` (array model → "Array"
+   in the ledger; is_scalar guard), `content-template-engine` (array
+   topic/primary_keyword into sprintf; scalar guards), `finnhub-provider`
+   (`strtolower( $data['s'] )` / `count( $data['t'] )` without guards →
+   TypeErrors on malformed payloads), `markdown-converter` ((string) cast
+   of arrays), `nodemailer-service` (array template values flipped
+   `str_replace` into search/replace pairing; non-scalars skipped).
+
+Verified clean this cluster: zero unguarded shell across all 34 service
+files (the OCR service was hardened in the document-generation cluster;
+fluent-ffmpeg's cURL paths gate on the trait's `curl_file_create`
+availability check; jukebox/prettier route through the Process Service);
+every client method call exists (Ollama
+`create_chat_completion`/`get_endpoint_url`, Typesafe `decide`, OpenRouter
+`create_decision`, `Language_Model_Router` constructor + completion,
+`WP_MCP_AI_Guardrails::analyze_message`, the Paper Store repository/driver
+API); enums honest (incident phases vs `VALID_TRANSITIONS`, severity enum,
+roboflow Apache/PML aliases, jev transports); HTTP hardening present
+everywhere else (finnhub seam + key rotation + status checks, market-data
+status validation, skill-catalogue SSRF pinning, webhook is_wp_error +
+status). The result-delivery envelope boundary already `(string)`-casts at
+`format_for_channel()` and the schedule-manager producer stringifies
+`full_response` — no flatten needed there.
+
+Tests landed: `addons/pro/tests/test-loose-incident-tools-hardening.php`
+(new, 12 tests / 36 assertions — full incident lifecycle through the CPT,
+transition-table rejection, timeline append, resolution timestamp,
+maintenance date/range validation, status registry wiring with a stub
+source) and `addons/pro/tests/test-services-sweep-hardening.php` (new,
+21 tests / 54 assertions — gmail token/header shape matrix, Qdrant
+status/non-array-result/ensure-collection matrix via mocked
+`pre_http_request`, roboflow array-label fallback, HF-vision scalar-body
+guard, content-template coercion, finnhub malformed shapes via the
+`wp_mcp_ai_market_data_http_response` seam, markdown/nodemailer guards,
+ledger model guard, workflow-bridge jailbreak/safe matrix, Paper Store
+git_commit delivery regression). Validation: 33/33 green standalone and
+229/229 green across the 21-suite related cluster (vector-store, gmail,
+result-delivery, service-status, guardrail, paper-store families) on the
+isolated DB `wordpress_test_muted_moth`; phpcs 0 errors on both standards;
+UTF-8 clean; WP 7.1 matrix not runnable locally (container artifact
+absent) — CI covers it.
 
 ## Case study — orchestration
 

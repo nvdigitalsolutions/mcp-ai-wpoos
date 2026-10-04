@@ -65,8 +65,10 @@ if ( ! class_exists( 'WP_MCP_AI_Content_Template_Engine' ) ) {
 				$data['target_word_count_max'] = absint( $variables['word_count'] );
 			}
 
-			$topic           = isset( $variables['topic'] ) ? $variables['topic'] : '{{auto_from_research}}';
-			$primary_keyword = isset( $variables['primary_keyword'] ) ? $variables['primary_keyword'] : '';
+			// Scalar guard: an array value would print the literal word "Array"
+			// inside the assembled prompt via sprintf().
+			$topic           = isset( $variables['topic'] ) && is_scalar( $variables['topic'] ) ? (string) $variables['topic'] : '{{auto_from_research}}';
+			$primary_keyword = isset( $variables['primary_keyword'] ) && is_scalar( $variables['primary_keyword'] ) ? (string) $variables['primary_keyword'] : '';
 
 			return self::assemble_prompt( $data, $topic, $primary_keyword, $variables );
 		}

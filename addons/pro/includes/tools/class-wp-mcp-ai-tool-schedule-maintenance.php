@@ -34,6 +34,33 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Schedule_Maintenance' ) ) {
 
 		/**
 		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_name(): string {
+			return __( 'Schedule Maintenance', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_description(): string {
+			return __( 'Schedule a new maintenance window.', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_required_capability(): string {
+			return 'manage_options';
+		}
+
+		/**
+		 * {@inheritdoc}
 		 */
 		public function get_definition(): array {
 			return array(
@@ -111,14 +138,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Schedule_Maintenance' ) ) {
 		 * @param array $context   Execution context.
 		 * @return array|WP_Error
 		 */
-		public function execute( array $arguments, array $context = array() ) {
-			$title    = sanitize_text_field( $arguments['title'] );
-			$start    = sanitize_text_field( $arguments['start'] );
-			$end      = sanitize_text_field( $arguments['end'] );
+		public function execute( array $arguments = array(), array $context = array() ) {
+			$title    = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+			$start    = isset( $arguments['start'] ) ? sanitize_text_field( $arguments['start'] ) : '';
+			$end      = isset( $arguments['end'] ) ? sanitize_text_field( $arguments['end'] ) : '';
 			$message  = isset( $arguments['message'] ) ? sanitize_text_field( $arguments['message'] ) : '';
 			$services = isset( $arguments['services'] ) && is_array( $arguments['services'] )
 				? array_map( 'sanitize_text_field', $arguments['services'] )
 				: array();
+
+			if ( '' === $title ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_title',
+					__( 'A maintenance window title is required.', 'mcp-ai-wpoos' )
+				);
+			}
 
 			if ( ! class_exists( 'WP_MCP_AI_Maintenance_CPT' ) ) {
 				return new WP_Error(
