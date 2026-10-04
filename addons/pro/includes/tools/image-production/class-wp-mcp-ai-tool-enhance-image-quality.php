@@ -1,9 +1,12 @@
 <?php
 /**
- * Tool for AI-powered image quality enhancement.
+ * Tool for image quality enhancement via Sharp.
  *
- * Enhances image quality including sharpness, colors, contrast, and removes artifacts.
- * Uses various AI models for different enhancement types.
+ * Enhances image quality including sharpness, saturation, contrast, and
+ * denoising with real Sharp processing — the local bundled Sharp runtime
+ * (Node.js subprocess) or the Media Worker sidecar /api/image/enhance
+ * route. When neither backend is available the tool returns an honest
+ * wp_mcp_ai_sharp_unavailable error instead of claiming success.
  *
  * @package WP_MCP_AI
  * @since 1.0.0
@@ -19,11 +22,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-sharp-image-processing.php';
 
 /**
- * Enhance image quality using AI.
+ * Enhance image quality with real Sharp processing.
  */
 class WP_MCP_AI_Tool_Enhance_Image_Quality extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
+
+	use WP_MCP_AI_Sharp_Image_Processing;
 
 	/**
 	 * {@inheritdoc}
@@ -43,7 +49,7 @@ class WP_MCP_AI_Tool_Enhance_Image_Quality extends WP_MCP_AI_Tool_Image_Base imp
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Enhance image quality using AI. Improves sharpness, colors, contrast, and removes artifacts and noise.', 'mcp-ai-wpoos-pro' );
+		return __( 'Enhance image quality with real Sharp processing. Improves sharpness, saturation, contrast, and reduces noise via the local Sharp runtime or the Media Worker sidecar.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,10 +57,10 @@ class WP_MCP_AI_Tool_Enhance_Image_Quality extends WP_MCP_AI_Tool_Image_Base imp
 	 */
 	public function get_usage_guidance() {
 		return array(
-			'when_to_use'     => __( 'Use to improve sharpness, color, contrast, and reduce noise or artifacts on an existing image with AI enhancement.', 'mcp-ai-wpoos-pro' ),
+			'when_to_use'     => __( 'Use to improve sharpness, saturation, contrast, and reduce noise or artifacts on an existing image with real Sharp enhancement.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Use upscale_image_ai to increase resolution, or compress_image to reduce file size without visual changes.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'upscale_image_ai', 'compress_image', 'colorize_image' ),
-			'notes'           => __( 'Enhancements: sharpness, color, contrast, denoise, auto; strength is 0-1.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Enhancements: sharpness, color (saturation), contrast, denoise, auto; strength is 0-1. Requires local Sharp or a Media Worker sidecar — without either the tool errors honestly.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -85,7 +91,7 @@ class WP_MCP_AI_Tool_Enhance_Image_Quality extends WP_MCP_AI_Tool_Image_Base imp
 					),
 					'use_remote'   => array(
 						'type'        => 'boolean',
-						'description' => __( 'Use remote GPU processing for faster enhancement.', 'mcp-ai-wpoos-pro' ),
+						'description' => __( 'Prefer the Media Worker sidecar over the local Sharp subprocess.', 'mcp-ai-wpoos-pro' ),
 						'default'     => false,
 					),
 				)
@@ -103,10 +109,49 @@ class WP_MCP_AI_Tool_Enhance_Image_Quality extends WP_MCP_AI_Tool_Image_Base imp
 			'pro',
 			'requires-capability',
 			'write',
-			'gpu-accelerated',
+			'external-dependency',
 			'performance-impact',
 			'idempotent',
 		);
+	}
+
+	/**
+	 * Map the enhancements enum onto worker/sharp-process fields.
+	 *
+	 * 'auto' expands to all four operations. Multipliers are derived from
+	 * the 0-1 master strength: saturation = 1 + 0.5*strength, contrast =
+	 * 1 + 0.4*strength, numeric sharpen = strength. Denoise is a boolean.
+	 *
+	 * @param array $enhancements Enhancement slugs.
+	 * @param float $strength     Master strength 0-1.
+	 * @return array Processing fields for the enhance engines.
+	 */
+	protected function map_enhancements_to_fields( array $enhancements, $strength ) {
+		if ( in_array( 'auto', $enhancements, true ) ) {
+			$enhancements = array( 'sharpness', 'color', 'contrast', 'denoise' );
+		}
+
+		$fields = array();
+		foreach ( $enhancements as $enhancement ) {
+			switch ( $enhancement ) {
+				case 'sharpness':
+					if ( $strength > 0 ) {
+						$fields['sharpen'] = $strength;
+					}
+					break;
+				case 'color':
+					$fields['saturation'] = 1 + 0.5 * $strength;
+					break;
+				case 'contrast':
+					$fields['contrast'] = 1 + 0.4 * $strength;
+					break;
+				case 'denoise':
+					$fields['denoise'] = true;
+					break;
+			}
+		}
+
+		return $fields;
 	}
 
 	/**
@@ -140,110 +185,110 @@ class WP_MCP_AI_Tool_Enhance_Image_Quality extends WP_MCP_AI_Tool_Image_Base imp
 		$strength     = isset( $arguments['strength'] ) ? floatval( $arguments['strength'] ) : 0.5;
 		$strength     = max( 0, min( 1, $strength ) );
 
-		// Apply enhancements.
-		$result = $this->apply_enhancements( $source_image, $enhancements, $strength, $arguments, $context );
+		// Map onto the engine fields and reject empty requests.
+		$fields = $this->map_enhancements_to_fields( $enhancements, $strength );
+		if ( empty( $fields ) ) {
+			$this->cleanup_source_image( $source_image, $arguments );
+			return new WP_Error(
+				'wp_mcp_ai_invalid_arguments',
+				__( 'No enhancement operations requested. Pass at least one enhancement or "auto".', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Determine the processing backends.
+		$sharp_available   = $this->is_local_sharp_available();
+		$sidecar_supported = $this->is_sidecar_upload_supported();
+
+		if ( ! $sharp_available && ! $sidecar_supported ) {
+			$this->cleanup_source_image( $source_image, $arguments );
+			return new WP_Error(
+				'wp_mcp_ai_sharp_unavailable',
+				__( 'Image enhancement requires local Sharp (Node.js) or a Media Worker sidecar, and neither is available. Install Sharp via "npm install --include=optional" in the addons/pro directory, or configure the Media Worker sidecar in Settings → Media Worker.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Build the operation parameters.
+		$source_path = isset( $source_image->source_file_path ) && is_string( $source_image->source_file_path )
+			? $source_image->source_file_path
+			: '';
+		$source_ext  = $source_path ? preg_replace( '/[^a-zA-Z0-9]/', '', (string) pathinfo( $source_path, PATHINFO_EXTENSION ) ) : '';
+		if ( '' === $source_ext ) {
+			$source_ext = 'jpg';
+		}
+
+		$params = array_merge(
+			array(
+				'source'    => $source_path,
+				'operation' => 'enhance',
+				'format'    => $source_ext,
+			),
+			$fields
+		);
+
+		// Process: use_remote prefers the sidecar; the default path prefers
+		// the local Sharp subprocess, with the other backend as fallback.
+		$use_remote = ! empty( $arguments['use_remote'] );
+		$engine     = '';
+
+		if ( $use_remote && $sidecar_supported ) {
+			$result = $this->process_image_via_sidecar( '/api/image/enhance', $source_path, $fields, $source_ext );
+			$engine = 'sidecar';
+		} elseif ( $sharp_available ) {
+			$result = $this->process_image_with_sharp( $params );
+			$engine = 'local_sharp';
+		} elseif ( $sidecar_supported ) {
+			$result = $this->process_image_via_sidecar( '/api/image/enhance', $source_path, $fields, $source_ext );
+			$engine = 'sidecar';
+		} else {
+			$result = array( 'error' => __( 'No processing backend available.', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		// Clean up source image if it was a temp file.
 		$this->cleanup_source_image( $source_image, $arguments );
 
-		return $result;
-	}
-
-	/**
-	 * Apply image enhancements.
-	 *
-	 * @param WP_Image_Editor $source_image Source image.
-	 * @param array           $enhancements Enhancements to apply.
-	 * @param float           $strength     Enhancement strength.
-	 * @param array           $arguments    Tool arguments.
-	 * @param array           $context      Execution context.
-	 * @return array|WP_Error Enhancement results or error.
-	 */
-	protected function apply_enhancements( $source_image, $enhancements, $strength, $arguments, $context ) {
-		// Auto-enhance if 'auto' is in enhancements.
-		if ( in_array( 'auto', $enhancements, true ) ) {
-			$enhancements = array( 'sharpness', 'color', 'contrast', 'denoise' );
+		if ( ! $result || isset( $result['error'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_sharp_process_failed',
+				isset( $result['error'] ) ? $result['error'] : __( 'Image enhancement failed.', 'mcp-ai-wpoos-pro' )
+			);
 		}
 
-		// Apply each enhancement using WordPress image editor.
-		foreach ( $enhancements as $enhancement ) {
-			switch ( $enhancement ) {
-				case 'sharpness':
-					// WordPress doesn't have built-in sharpness, but GD has imagefilter.
-					$this->apply_sharpness( $source_image, $strength );
-					break;
-				case 'color':
-					$this->apply_color_enhancement( $source_image, $strength );
-					break;
-				case 'contrast':
-					$this->apply_contrast( $source_image, $strength );
-					break;
-				case 'denoise':
-					$this->apply_denoise( $source_image, $strength );
-					break;
-			}
+		if ( empty( $result['output_path'] ) || ! file_exists( $result['output_path'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_sharp_process_failed',
+				__( 'Image enhancement produced no output file.', 'mcp-ai-wpoos-pro' )
+			);
 		}
 
-		// Save as attachment.
-		$saved_file = $source_image->save();
-		if ( is_wp_error( $saved_file ) ) {
-			return $saved_file;
+		// Land the processed file in the media library.
+		$parent_id = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
+		/* translators: %s: engine name */
+		$title         = sprintf( __( 'Enhanced Image (%s)', 'mcp-ai-wpoos-pro' ), 'sidecar' === $engine ? __( 'Worker', 'mcp-ai-wpoos-pro' ) : __( 'Sharp', 'mcp-ai-wpoos-pro' ) );
+		$attachment_id = $this->upload_processed_image( $result['output_path'], $parent_id, $title );
+		wp_delete_file( $result['output_path'] );
+
+		if ( ! $attachment_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_attachment_error',
+				__( 'Failed to create attachment for the enhanced image.', 'mcp-ai-wpoos-pro' )
+			);
 		}
 
-		$attachment_id = $this->save_as_attachment( $saved_file['path'], $arguments, $context );
-		if ( is_wp_error( $attachment_id ) ) {
-			return $attachment_id;
-		}
+		$response = $this->format_attachment_response( $attachment_id, $arguments );
 
-		return $this->format_attachment_response( $attachment_id );
-	}
+		$response['text'] = sprintf(
+			/* translators: %s: processing engine */
+			__( 'Image enhanced successfully with %s.', 'mcp-ai-wpoos-pro' ),
+			'sidecar' === $engine ? __( 'the Media Worker sidecar', 'mcp-ai-wpoos-pro' ) : __( 'local Sharp', 'mcp-ai-wpoos-pro' )
+		);
+		$response['engine']         = $engine;
+		$response['enhancements']   = array_keys( $fields );
+		$response['strength']       = $strength;
+		$response['original_size']  = isset( $result['original_size'] ) ? $result['original_size'] : null;
+		$response['optimized_size'] = isset( $result['optimized_size'] ) ? $result['optimized_size'] : null;
+		$response['dimensions']     = isset( $result['dimensions'] ) ? $result['dimensions'] : null;
 
-	/**
-	 * Apply sharpness enhancement.
-	 *
-	 * @param WP_Image_Editor $image    Image editor.
-	 * @param float           $strength Strength.
-	 * @return void
-	 */
-	protected function apply_sharpness( $image, $strength ) {
-		// This would use imagefilter with IMG_FILTER_SHARPEN or a custom kernel.
-		// For now, this is a placeholder.
-	}
-
-	/**
-	 * Apply color enhancement.
-	 *
-	 * @param WP_Image_Editor $image    Image editor.
-	 * @param float           $strength Strength.
-	 * @return void
-	 */
-	protected function apply_color_enhancement( $image, $strength ) {
-		// This would adjust saturation and vibrancy.
-		// For now, this is a placeholder.
-	}
-
-	/**
-	 * Apply contrast enhancement.
-	 *
-	 * @param WP_Image_Editor $image    Image editor.
-	 * @param float           $strength Strength.
-	 * @return void
-	 */
-	protected function apply_contrast( $image, $strength ) {
-		// This would use imagefilter with IMG_FILTER_CONTRAST.
-		// For now, this is a placeholder.
-	}
-
-	/**
-	 * Apply denoising.
-	 *
-	 * @param WP_Image_Editor $image    Image editor.
-	 * @param float           $strength Strength.
-	 * @return void
-	 */
-	protected function apply_denoise( $image, $strength ) {
-		// This would apply noise reduction filters.
-		// For now, this is a placeholder.
+		return $response;
 	}
 
 	/**
