@@ -4371,6 +4371,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Set up SSE headers.
 			$this->send_sse_headers();
 
+			// Establish the stream through proxy layers (nginx, Cloudflare)
+			// immediately. Without this frame the connection can sit silent
+			// during the pre-flight work below; proxies with a ~100 s
+			// read-timeout reset connections they consider idle.
+			$this->send_sse_keepalive();
+
 			// Phase 3: agentic-loop output guard (streaming branch).
 			$budget_tracker = new WP_MCP_AI_Data_Budget_Tracker( 'chat-stream-' . $assistant_id . '-' . wp_generate_uuid4() );
 
@@ -4517,6 +4523,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					};
 				}
 			}
+
+			// Flush a keepalive frame before the (potentially long and
+			// silent) initial LLM call. When native streaming is disabled
+			// the full model latency passes before the first byte reaches
+			// the client; this frame resets proxy idle-timeout counters.
+			$this->send_sse_keepalive();
 
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
@@ -4687,6 +4699,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'timestamp' => time(),
 						)
 					);
+
+					// Keepalive before tool execution. PHP is single-threaded
+					// and blocked inside the tool call (which can take tens of
+					// seconds, e.g. OCR/document generation), so no frames can
+					// be emitted DURING it. Sending one here guarantees the
+					// stream's last byte is recent when the tool starts, which
+					// keeps proxy idle-timeouts (Cloudflare 524, nginx
+					// proxy_read_timeout) from resetting the connection.
+					$this->send_sse_keepalive();
 
 					// Wrap tool execution in try-catch to handle any uncaught exceptions
 					// and ensure SSE stream continues even if tool execution fails.
@@ -5074,6 +5095,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$this->send_sse_event( 'message', $chunk );
 					};
 				}
+
+				// Keepalive before the in-loop LLM call; the model may think
+				// silently for a while before emitting tokens (or none at all
+				// when native streaming is disabled).
+				$this->send_sse_keepalive();
+
 				$response = $this->client->create_chat_completion( $messages, $options );
 				unset( $options['stream'], $options['stream_callback'] );
 
@@ -5519,6 +5546,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function send_sse_headers() {
 			$this->sse_handler->send_sse_headers();
+		}
+
+		/**
+		 * Send an SSE keepalive comment frame.
+		 *
+		 * SSE comment lines are ignored by EventSource clients but flush the
+		 * output buffers through nginx and Cloudflare, resetting their idle
+		 * read-timeout counters. Chat streams go silent while PHP is blocked
+		 * inside a tool call or waiting on the model, and proxies reset
+		 * connections they consider idle (Cloudflare 524, HTTP/2 stream
+		 * resets). The streaming chat path therefore emits a keepalive at
+		 * every inter-step boundary: after the SSE headers, before the initial
+		 * LLM call, immediately before each tool execution, and before each
+		 * in-loop LLM call.
+		 *
+		 * @since 1.9.5
+		 */
+		protected function send_sse_keepalive() {
+			$this->sse_handler->send_sse_comment( 'keepalive' );
 		}
 
 		/**
