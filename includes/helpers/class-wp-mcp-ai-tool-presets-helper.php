@@ -104,6 +104,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'route_knowledge_query',
 					// Users & system.
 					'get_user_info',
+					// OAuth profile identity (ChatGPT/Codex plugin resource server).
+					'nvoos_get_profile',
 					// Communication.
 					'send_group_email',
 					// Visualization.

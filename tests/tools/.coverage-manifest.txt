@@ -219,6 +219,7 @@ wp-mcp-ai-tool-newsletter-get-emails
 wp-mcp-ai-tool-newsletter-get-subscribers
 wp-mcp-ai-tool-newsletter-get-subscriber-stats
 wp-mcp-ai-tool-newsletter-unsubscribe
+wp-mcp-ai-tool-nvoos-get-profile
 wp-mcp-ai-tool-okf-browse
 wp-mcp-ai-tool-okf-delete-concept
 wp-mcp-ai-tool-okf-import-bundle

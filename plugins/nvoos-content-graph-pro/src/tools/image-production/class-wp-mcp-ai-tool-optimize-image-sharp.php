@@ -527,7 +527,7 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'output_path'       => $final_path,
 			'original_size'     => isset( $sidecar['original_size'] ) ? (int) $sidecar['original_size'] : filesize( $source_path ),
-			'optimized_size'    => (int) $sidecar['optimized_size'],
+			'optimized_size'    => isset( $sidecar['optimized_size'] ) ? (int) $sidecar['optimized_size'] : filesize( $final_path ),
 			'reduction_percent' => $reduction,
 			'dimensions'        => isset( $sidecar['width'] ) ? array(
 				'width'  => (int) $sidecar['width'],

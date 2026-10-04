@@ -223,8 +223,20 @@ class WP_MCP_AI_Tool_Generate_Scene_Background extends WP_MCP_AI_Tool_Harmonizat
 				if ( is_wp_error( $resp ) ) {
 					return $resp;
 				}
+				$code = (int) wp_remote_retrieve_response_code( $resp );
+				if ( 200 !== $code ) {
+					return new WP_Error(
+						'wp_mcp_ai_image_download_failed',
+						sprintf(
+							/* translators: %d: HTTP status code */
+							__( 'OpenAI image URL returned HTTP %d.', 'nvoos-content-graph-pro' ),
+							$code
+						)
+					);
+				}
 				return (string) wp_remote_retrieve_body( $resp );
 			}
+			return new WP_Error( 'wp_mcp_ai_empty_result', __( 'OpenAI returned no usable image.', 'nvoos-content-graph-pro' ) );
 			return new WP_Error( 'wp_mcp_ai_empty_result', __( 'OpenAI returned no usable image.', 'nvoos-content-graph-pro' ) );
 		}
 
