@@ -238,7 +238,7 @@ then move to the next toolkit.
 - [x] media — 2026-10-04 (case study below; CG Pro mirror not yet ported)
 - [ ] multilingual
 - [ ] okf
-- [ ] orchestration
+- [x] orchestration — 2026-10-04 (case study below; CG Pro mirror has no tool files yet — base-tree only)
 - [ ] outbound-booking
 - [ ] paper-store
 - [ ] places
@@ -259,6 +259,80 @@ then move to the next toolkit.
 Also sweep the loose tools directly in `addons/pro/includes/tools/*.php`
 (incident/maintenance tools) and the shared `addons/pro/includes/services/`
 classes each toolkit routes through.
+
+## Case study — orchestration
+
+What the ninth audit found (class 3 confirmed from the CRM-audit follow-up
+queue, plus envelope canon, argument-shape, and enum-honesty issues; classes
+1, 2, and provider enums verified clean):
+
+1. `generate_research_report::perform_ai_research()` — passed
+   `$result['choices'][0]['message']['content']` through raw, and
+   `parse_and_format_research()` fed it straight into `preg_match()` and
+   `json_decode()` — `preg_match(): Argument #2 ($subject) must be of type
+   string, array given` on the first Gemini-served report (Gemini and
+   OpenAI-compatible gateways return message.content as an array of parts).
+   Added a `flatten_response_content()` helper at the response boundary plus
+   a defensive flatten in the parser; empty content now returns the honest
+   `wp_mcp_ai_invalid_response` WP_Error instead of a JSON parse error.
+2. Non-canonical `array( 'success' => false, ... )` envelopes across 8
+   tools (15 sites: aggregate-research-data, convert-html-to-markdown,
+   extract-structured-data, generate-password, get-session-status,
+   get-task-plan, list-templates, update-task-plan) → all converted to
+   WP_Error with prefixed codes. **Consumer ripple (same as the media
+   cluster):** `detect_completion_indicators::check_plan_completion()` and
+   `get_session_status::get_task_plan()` (pro AND base-tree mirrors in
+   `includes/tools/orchestration/`) read `$result['success']` off
+   get-task-plan's result → `Cannot use object of type WP_Error as array`
+   the moment the nested call failed. Guarded all four call sites with
+   `is_wp_error()`. The base `WP_MCP_AI_Tool_Get_Task_Plan` already used
+   canonical WP_Errors — the pro copy was the outlier.
+3. `generate_password::execute()` — the Vault service's
+   `generate_password()` returns `string|WP_Error`, but the tool only
+   checked `! $password` (a WP_Error is truthy) → the error path fell
+   through to `calculate_password_strength( WP_Error )`. Now returns the
+   WP_Error directly (bonus find, same cluster).
+4. Argument-shape fatals (class 3, tool-argument variant):
+   aggregate-research-data fed raw `$source['content']` into md5()/
+   similar_text()/substr()/stripos()/preg_split() (now normalized to a
+   string at both the dedupe and aggregate loops); verify-information fed
+   `$source['content']` into stripos() without an isset/is_string guard;
+   convert-html-to-markdown and extract-structured-data fed raw
+   `$arguments['html']`/`$arguments['content']` into preg_replace()/
+   preg_match_all(); instantiate-template fed unvalidated variables (array
+   values → str_replace TypeError), config_overrides, and json_decode()
+   null into array_merge(). All now guarded with canonical WP_Error
+   validation or safe normalization/skip.
+5. `analyze_data_patterns` advertised `frequency|correlation|outliers` in
+   its enum but only implemented `trend` — the other three silently
+   returned base stats. Implemented all three (bucket counts, Pearson r
+   against position, 1.5xIQR fences + nearest-rank percentile helper).
+
+Verified clean this cluster: zero shell/exec anywhere in the toolkit; all
+14 provider clients instantiated by `get_ai_client()` have
+`create_chat_completion()` and the three provider switches
+(get_research_provider / get_research_model / get_ai_client) cover the same
+14 providers (class 2/4 clean); Jev classifier methods and Paper Store
+manager/repository APIs all exist; create-pro-schedule /
+schedule-channel-broadcast channel enums match the chat-channels
+vocabulary; calculate-orchestration-capacity / configure-circuit-breaker /
+create-template enums match their switches; blueprint-installer JSON paths
+are is_array-guarded. CG Pro mirror: only the blueprint installer exists in
+`plugins/nvoos-content-graph-pro/src/tools/orchestration/` — no tool files
+were changed there (ecosystem-port decision, out of scope).
+
+Tests landed: `addons/pro/tests/test-orchestration-toolkit-hardening.php`
+(new, 26 tests / 92 assertions — flatten shape matrix + Gemini
+array-of-parts end-to-end through perform_ai_research via mocked
+`pre_http_request`, empty-content error paths, canonical WP_Error matrix
+for all 8 converted tools, consumer degradation guards, generate-password
+bounds + happy path, html/content/selector type rejection,
+aggregate/verify array-content tolerance + URL dedupe,
+analyze-data-patterns full enum matrix, instantiate-template end-to-end
+through a CPT fixture with a non-scalar variable). Validation: 26/26 green
+standalone and 41/41 with the Jev suites + 43/43 with the base-tree
+round-trip/signature suites (isolated DB wordpress_test_orchestration);
+phpcs 0 errors on both orchestration trees + the new test; UTF-8 clean.
 
 ## Case study — media
 
@@ -605,9 +679,9 @@ are heuristic; enum/service surfaces match.
 Follow-up queue for later clusters (same `['choices'][0]['message']['content']`
 string-assumption found globally): eca-management research-eca ✅ (done, this
 file), ecommerce validate-image-for-product/vehicle ✅ (trim + json_decode,
-done 2026-10-04), healthcare interpret-imaging-study, multilingual
-auto-translate-content (also raw `wp_remote_post`), orchestration
-generate-research-report, places research-place.
+done 2026-10-04), healthcare interpret-imaging-study ✅ (done 2026-10-04),
+multilingual auto-translate-content (also raw `wp_remote_post`), orchestration
+generate-research-report ✅ (done 2026-10-04), places research-place.
 
 Tests landed: `addons/pro/tests/test-crm-toolkit-hardening.php` (new, 7 tests
 / 19 assertions — response-shape matrix for both tools via mocked

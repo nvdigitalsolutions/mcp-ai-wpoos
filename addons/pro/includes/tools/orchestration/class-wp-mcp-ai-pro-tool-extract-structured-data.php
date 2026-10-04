@@ -86,9 +86,23 @@ class WP_MCP_AI_Pro_Tool_Extract_Structured_Data {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['content'] ) || empty( $arguments['selectors'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Content and selectors are required',
+			return new WP_Error(
+				'wp_mcp_ai_content_selectors_required',
+				__( 'Content and selectors are required', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( ! is_string( $arguments['content'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_content',
+				__( 'Content must be a string', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( ! is_array( $arguments['selectors'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_selectors',
+				__( 'Selectors must be an object of field names to selectors', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -123,6 +137,13 @@ class WP_MCP_AI_Pro_Tool_Extract_Structured_Data {
 
 		// Simple extraction using regex patterns.
 		foreach ( $selectors as $field => $selector ) {
+			// A non-string selector (nested array) cannot be compiled; report
+			// the field as unmatched instead of fataling in preg_match_all().
+			if ( ! is_string( $selector ) ) {
+				$data[ $field ] = '';
+				continue;
+			}
+
 			// If selector looks like HTML tag, extract it.
 			if ( preg_match( '/^[a-z0-9\-\.#\[\]]+$/i', $selector ) ) {
 				$data[ $field ] = $this->extract_by_tag( $content, $selector );

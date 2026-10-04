@@ -86,9 +86,16 @@ class WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['html'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'HTML content is required',
+			return new WP_Error(
+				'wp_mcp_ai_html_required',
+				__( 'HTML content is required', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( ! is_string( $arguments['html'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_html',
+				__( 'HTML content must be a string', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

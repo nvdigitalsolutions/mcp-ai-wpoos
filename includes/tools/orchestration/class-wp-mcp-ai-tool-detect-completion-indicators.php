@@ -216,7 +216,7 @@ class WP_MCP_AI_Tool_Detect_Completion_Indicators implements WP_MCP_AI_Tool_Inte
 			array()
 		);
 
-		if ( empty( $result['success'] ) ) {
+		if ( is_wp_error( $result ) || empty( $result['success'] ) ) {
 			return null;
 		}
 

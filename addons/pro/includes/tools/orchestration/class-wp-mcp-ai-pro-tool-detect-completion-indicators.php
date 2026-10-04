@@ -208,7 +208,7 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 			array()
 		);
 
-		if ( empty( $result['success'] ) ) {
+		if ( is_wp_error( $result ) || empty( $result['success'] ) ) {
 			return null;
 		}
 
