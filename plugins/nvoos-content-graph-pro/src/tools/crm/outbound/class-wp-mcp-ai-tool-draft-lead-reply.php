@@ -8,19 +8,25 @@
  * installs — the addon's autoloader skips its copy when
  * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry).
  *
- * Draft Lead Reply — AI-assisted reply draft using the WP MCP AI provider.
+ * Draft Lead Reply — AI-assisted reply draft using the configured AI provider.
  *
  * Previously used hardcoded templates. Now sends a prompt to the configured
- * AI provider (via wp_mcp_ai_chat_completion) to generate a contextual reply
- * draft. Falls back to template-based drafts when no AI provider is available.
+ * AI provider (OpenAI / Gemini / Anthropic clients) to generate a contextual
+ * reply draft. Falls back to template-based drafts when no AI provider is
+ * available.
  *
  *
  * Documented deviations: `declare(strict_types=1)` added; text domain
- * `nvoos-content-graph-pro`.
+ * `nvoos-content-graph-pro`; `get_ai_provider()` gained wave-proof
+ * `class_exists( 'WP_MCP_AI_Credential_Resolver' )` guards — the base
+ * plugin owns the resolver (root classmap); real standalone installs
+ * degrade to the same no-ai-provider error.
  *
  * @package NvoosContentGraphPro
  * @since 2.3.0
- * @since 2.4.0 Uses wp_mcp_ai_chat_completion for real AI drafting; template fallback retained.
+ * @since 2.4.0 Uses the AI provider for real AI drafting; template fallback retained.
+ * @since 2.10.0 Provider call routed through the OpenAI/Gemini/Anthropic clients;
+ *                the previous wp_mcp_ai_chat_completion() helper never existed.
  */
 
 declare(strict_types=1);
@@ -29,11 +35,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
 /**
- * Draft Lead Reply — AI-assisted reply draft using the WP MCP AI provider.
+ * Draft Lead Reply — AI-assisted reply draft using the configured AI provider.
  *
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
- * @since 2.4.0 Uses wp_mcp_ai_chat_completion for real AI drafting.
+ * @since 2.4.0 Uses the AI provider for real AI drafting.
  */
 class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
@@ -181,9 +187,16 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
-	 * Generate an AI-powered reply draft using wp_mcp_ai_chat_completion.
+	 * Generate an AI-powered reply draft using the configured AI provider.
+	 *
+	 * Routes through the OpenAI / Gemini / Anthropic provider clients
+	 * (resolved via the credential resolver) instead of a helper function.
 	 *
 	 * @since 2.4.0
+	 * @since 2.10.0 Rewritten around the provider clients; the previous
+	 *               implementation called the nonexistent
+	 *               wp_mcp_ai_chat_completion() helper and could never
+	 *               reach a provider.
 	 *
 	 * @param string $incoming      The incoming message to reply to.
 	 * @param string $tone          Desired tone (friendly, professional, concise, urgent).
@@ -192,8 +205,18 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string|WP_Error AI-generated draft or WP_Error.
 	 */
 	private function generate_ai_draft( $incoming, $tone, $channel, $context_notes ) {
-		if ( ! function_exists( 'wp_mcp_ai_chat_completion' ) ) {
-			return new WP_Error( 'ai_unavailable', __( 'AI chat completion function not available.', 'nvoos-content-graph-pro' ) );
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$provider = $this->get_ai_provider();
+
+		if ( is_wp_error( $provider ) ) {
+			return $provider;
+		}
+
+		$model  = $this->get_ai_model( $provider, $settings );
+		$client = $this->get_ai_client( $provider );
+
+		if ( is_wp_error( $client ) ) {
+			return $client;
 		}
 
 		// Channel-specific length limits.
@@ -230,7 +253,7 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$prompt .= "INCOMING MESSAGE:\n" . $incoming . "\n\nDRAFT REPLY:";
 
-		$response = wp_mcp_ai_chat_completion(
+		$response = $client->create_chat_completion(
 			array(
 				array(
 					'role'    => 'user',
@@ -238,6 +261,7 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 			),
 			array(
+				'model'       => $model,
 				'max_tokens'  => max( 100, min( 800, (int) ( $max_length / 2 ) ) ),
 				'temperature' => 0.7,
 			)
@@ -247,7 +271,17 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 			return $response;
 		}
 
-		$content = isset( $response['content'] ) ? trim( $response['content'] ) : '';
+		// Some providers (Gemini, and OpenAI-compatible gateways such as vLLM)
+		// return message.content as an array of parts; flatten before any
+		// string operation to avoid the fatal `trim(): Argument #1 ($value)
+		// must be of type string, array given`.
+		$content = $this->flatten_response_content(
+			isset( $response['choices'][0]['message']['content'] )
+				? $response['choices'][0]['message']['content']
+				: ( isset( $response['content'] ) ? $response['content'] : '' )
+		);
+
+		$content = trim( $content );
 
 		if ( empty( $content ) ) {
 			return new WP_Error( 'ai_empty_response', __( 'AI returned an empty draft.', 'nvoos-content-graph-pro' ) );
@@ -258,6 +292,120 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 		$content = preg_replace( '/\n```\s*$/', '', $content );
 
 		return $content;
+	}
+
+	/**
+	 * Get the best available AI provider from plugin settings.
+	 *
+	 * Deviation: wave-proof guard — the base plugin owns the credential
+	 * resolver (root classmap); real standalone installs degrade to the
+	 * same no-ai-provider error.
+	 *
+	 * @since 2.10.0
+	 *
+	 * @return string|WP_Error Provider name or WP_Error.
+	 */
+	private function get_ai_provider() {
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) && WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) ) {
+			return 'openai';
+		}
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) && WP_MCP_AI_Credential_Resolver::has_credentials( 'gemini' ) ) {
+			return 'gemini';
+		}
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) && WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' ) ) {
+			return 'anthropic';
+		}
+		return new WP_Error(
+			'wp_mcp_ai_no_ai_provider',
+			__( 'No AI provider configured. Please add an OpenAI, Gemini, or Anthropic API key in plugin settings.', 'nvoos-content-graph-pro' )
+		);
+	}
+
+	/**
+	 * Get a suitable AI model identifier for the provider.
+	 *
+	 * @since 2.10.0
+	 *
+	 * @param string $provider Provider name.
+	 * @param array  $settings Plugin settings.
+	 * @return string Model identifier.
+	 */
+	private function get_ai_model( $provider, $settings ) {
+		switch ( $provider ) {
+			case 'openai':
+				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4.1';
+			case 'gemini':
+				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';
+			case 'anthropic':
+				return 'claude-sonnet-4-5-20250929';
+			default:
+				return 'gpt-4.1';
+		}
+	}
+
+	/**
+	 * Instantiate the AI client for the given provider.
+	 *
+	 * @since 2.10.0
+	 *
+	 * @param string $provider Provider name.
+	 * @return object|WP_Error AI client instance or WP_Error.
+	 */
+	private function get_ai_client( $provider ) {
+		switch ( $provider ) {
+			case 'openai':
+				if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+					return new WP_Error( 'wp_mcp_ai_client_unavailable', __( 'OpenAI client not available.', 'nvoos-content-graph-pro' ) );
+				}
+				return new WP_MCP_AI_OpenAI_Client();
+
+			case 'gemini':
+				if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+					return new WP_Error( 'wp_mcp_ai_client_unavailable', __( 'Gemini client not available.', 'nvoos-content-graph-pro' ) );
+				}
+				return new WP_MCP_AI_Gemini_Client();
+
+			case 'anthropic':
+				if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
+					return new WP_Error( 'wp_mcp_ai_client_unavailable', __( 'Anthropic client not available.', 'nvoos-content-graph-pro' ) );
+				}
+				return new WP_MCP_AI_Anthropic_Client();
+
+			default:
+				return new WP_Error( 'wp_mcp_ai_unsupported_provider', __( 'Unsupported AI provider.', 'nvoos-content-graph-pro' ) );
+		}
+	}
+
+	/**
+	 * Flatten a provider response content value into a string.
+	 *
+	 * Handles the three shapes seen in the wild: a plain string (OpenAI),
+	 * an array of `{type,text}` parts (Gemini `normalize_response()`),
+	 * and an array of strings.
+	 *
+	 * @since 2.10.0
+	 *
+	 * @param mixed $content Raw message content.
+	 * @return string Flattened text.
+	 */
+	private function flatten_response_content( $content ) {
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( is_array( $content ) ) {
+			$text = '';
+			foreach ( $content as $part ) {
+				if ( is_array( $part ) && isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				} elseif ( is_string( $part ) ) {
+					$text .= $part;
+				}
+			}
+			return $text;
+		}
+
+		return '';
 	}
 
 	/**
