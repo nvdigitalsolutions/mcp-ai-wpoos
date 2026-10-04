@@ -1347,13 +1347,10 @@ JAVASCRIPT;
 				return $response;
 			}
 
-			// Extract content from response.
-			$content = '';
-			if ( isset( $response['choices'][0]['message']['content'] ) ) {
-				$content = $response['choices'][0]['message']['content'];
-			} elseif ( isset( $response['content'] ) ) {
-				$content = $response['content'];
-			}
+			// Extract content from response. Gemini (and some OpenAI-compatible
+			// gateways) return message.content as an array of parts — flatten
+			// to a string before any regex/JSON parsing.
+			$content = $this->flatten_response_content( $response );
 
 			return array( 'content' => $content );
 
@@ -1370,14 +1367,59 @@ JAVASCRIPT;
 	}
 
 	/**
+	 * Flatten a provider response into a plain-text content string.
+	 *
+	 * Gemini normalizes message.content to an array of parts and some
+	 * OpenAI-compatible gateways do the same; preg_match()/json_decode()
+	 * fatal on arrays, so content must be flattened before parsing.
+	 *
+	 * @param array $response Provider response payload.
+	 * @return string Flattened content (may be empty).
+	 */
+	protected function flatten_response_content( $response ) {
+		$content = '';
+		if ( isset( $response['choices'][0]['message']['content'] ) ) {
+			$content = $response['choices'][0]['message']['content'];
+		} elseif ( isset( $response['content'] ) ) {
+			$content = $response['content'];
+		}
+
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( is_array( $content ) ) {
+			$text = '';
+			foreach ( $content as $part ) {
+				if ( is_array( $part ) && isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				} elseif ( is_string( $part ) ) {
+					$text .= $part;
+				}
+			}
+			return $text;
+		}
+
+		return '';
+	}
+
+	/**
 	 * Try to parse JSON response from AI model.
 	 *
 	 * @param string $content Response content.
 	 * @return array|false Parsed JSON or false if not valid JSON.
 	 */
 	protected function try_parse_json_response( $content ) {
+		// Defensive: flatten array-of-parts content instead of fataling in
+		// preg_match() (Gemini and some gateways return content as parts).
+		if ( ! is_string( $content ) ) {
+			$content = is_array( $content )
+				? $this->flatten_response_content( array( 'content' => $content ) )
+				: '';
+		}
+
 		// Try to find JSON in the response (may be wrapped in markdown code blocks).
-		$json_pattern = '/```( ? ( :json)?\s*(\{.*?\})\s*```/s';
+		$json_pattern = '/```(?:json)?\s*(\{.*?\})\s*```/s';
 		if ( preg_match( $json_pattern, $content, $matches ) ) {
 			$json_str = $matches[1];
 		} elseif ( preg_match( '/\{.*\}/s', $content, $matches ) ) {
