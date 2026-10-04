@@ -221,7 +221,7 @@ then move to the next toolkit.
 - [ ] dj-management
 - [x] eca-management — 2026-10-04 (case study below)
 - [x] ecommerce — 2026-10-04 (case study below)
-- [ ] email-marketing
+- [x] email-marketing — 2026-10-04 (verified clean — case study below)
 - [ ] erp-ezuite
 - [ ] extended-cognition
 - [ ] fashion
@@ -317,6 +317,45 @@ status-stale/connection-status matrix). Validation: 126 tests / 1198
 assertions green across the 9-suite shopify-sync cluster; CG Pro MCP server
 matrix green (7 tests / 64 assertions, 3 pre-existing standalone skips);
 phpcs 0 errors on both standards; UTF-8 clean. PR #6889.
+
+## Case study — email-marketing
+
+What the eighth audit found: **all four failure classes verified clean**.
+This is a verified-clean cluster; the deliverable is the regression suite
+that locks the verified contracts, because the Brevo trio plus the blueprint
+importer previously had zero test coverage.
+
+- Class 1: zero shell/exec/proc_open/popen anywhere in the toolkit. The
+  loose incident/maintenance tools (`addons/pro/includes/tools/*.php`, 5
+  files) also scanned clean on the same patterns.
+- Class 2: no provider clients are instantiated at all; the only cross-class
+  calls are `WP_MCP_AI_Logger::log_event()` / `log_error()` and
+  `WP_MCP_AI_Blueprint_Installer::load_blueprint()` / `install()`, all of
+  which exist.
+- Class 3: no provider responses are parsed — every tool is a pure HTTP
+  wrapper; all `json_decode()` sites are `is_array()`-guarded and every
+  `wp_remote_*` call carries is_wp_error + status-code checks.
+- Class 4: every enum matches its switch — brevo statistics
+  `campaigns|transactional` vs the execute() branch, brevo contacts
+  8-action enum vs the 8-case switch, mailjet contacts 4-action enum vs
+  switch, mailjet statistics CounterSource/CounterTiming pass through to
+  the Mailjet API vocabulary, blueprint enum vs `BLUEPRINT_SLUGS`.
+
+Tests landed: `addons/pro/tests/test-email-marketing-toolkit-hardening.php`
+(new, 15 tests / 91 assertions — credential/capability gates, payload
+normalisation incl. recipient dedupe and tag truncation to 10, HTTP
+status/transport/shape error paths, an enum-to-handler routing loop driven
+from the live schema, per-type endpoint routing, blueprint slug rejection).
+Mailgun/Mailjet were already covered by `tests/test-mailgun-tool.php` and
+`tests/test-mailjet-tool.php`; Brevo had none. Validation: 15/15 green
+standalone and 29/29 green combined with the mailgun/mailjet suites on the
+isolated DB `wordpress_test_muted_moth`; phpcs 0 errors on the base
+standard; UTF-8 clean (ASCII-only).
+
+CG Pro note: the email-marketing toolkit has not been ported to
+`plugins/nvoos-content-graph-pro/src/tools/` yet — no mirror exists to
+sync, so this cluster is base-tree only (porting stays on the
+ecosystem-port track).
 
 ## Case study — healthcare
 
