@@ -890,6 +890,29 @@ the changed files is the substantive gate; plan CI waits accordingly.
       dispatch (REST request with the OOS engine enabled + intercepted
       provider HTTP) rather than the hook alone.
 
+  64. **Chat SSE streams reset by proxies during long agentic tool runs —
+      `net::ERR_HTTP2_PROTOCOL_ERROR` / `SSE stream processing error`.
+      Cloudflare (~100 s read timeout) and nginx (`proxy_read_timeout`, often
+      60 s on Cloudways) reset connections that sit idle while PHP is blocked
+      inside a tool call or waiting on the model. PHP is single-threaded, so
+      NO frames can be emitted during a blocking tool call — server-side
+      headers alone cannot fix this. The shipped fix (v1.9.5) emits SSE
+      keepalive comment frames (`send_sse_keepalive()` →
+      `WP_MCP_AI_SSE_Handler::send_sse_comment()`) at every inter-step
+      boundary in `handle_chat_request_with_streaming()`: after the SSE
+      headers, before the initial LLM call, between `tool_start` and
+      `execute_tool_call_internal()`, and before each in-loop LLM call.
+      Comment frames are invisible to EventSource clients but flush through
+      proxies and reset idle counters. Test via an anonymous recording
+      `WP_MCP_AI_SSE_Handler` subclass injected through the REST constructor's
+      `$sse_handler` param (don't delegate to the parent — it echoes and
+      touches headers) + a mock router returning tool_calls then a final
+      response; assert the ordered call log
+      (`tests/rest/test-sse-stream-keepalive.php`). Limits: a single tool
+      call longer than the proxy timeout still kills the stream — the durable
+      fix is deadline-triggered offload to the job stream (proposal:
+      `docs/project/proposals/sse-stream-hardening-long-run-offload-proposal.md`).
+
 ## Production fix vs test fix
 
 - **Fix production** when the test exposes a genuine bug: unsafe coercion
