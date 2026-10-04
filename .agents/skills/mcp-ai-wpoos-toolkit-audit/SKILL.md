@@ -220,7 +220,7 @@ then move to the next toolkit.
 - [ ] dietpi
 - [ ] dj-management
 - [x] eca-management — 2026-10-04 (case study below)
-- [ ] ecommerce
+- [x] ecommerce — 2026-10-04 (case study below)
 - [ ] email-marketing
 - [ ] erp-ezuite
 - [ ] extended-cognition
@@ -228,7 +228,7 @@ then move to the next toolkit.
 - [ ] financial-planning
 - [ ] flowhub
 - [ ] google-workspace
-- [ ] healthcare
+- [x] healthcare — 2026-10-04 (case study below)
 - [x] image-production — 2026-10-04 (case study below)
 - [ ] infrastructure
 - [ ] jetengine
@@ -247,7 +247,7 @@ then move to the next toolkit.
 - [ ] regulatory-registration
 - [ ] remote-connections
 - [ ] research
-- [ ] shopify-sync
+- [x] shopify-sync — 2026-10-04 (case study below)
 - [ ] site-creator-toolkit
 - [ ] social-media
 - [ ] vault
@@ -262,7 +262,7 @@ classes each toolkit routes through.
 
 ## Case study — media
 
-What the fifth audit found (class 2 variant, envelope, security; classes 1
+What the eighth audit found (class 2 variant, envelope, security; classes 1
 and 4 verified clean):
 
 1. `process_collection::execute()` — read the nested `apply_media_template`
@@ -335,6 +335,165 @@ media toolkit has no `plugins/nvoos-content-graph-pro/src/tools/media/`
 mirror yet — porting is an ecosystem-port decision, out of scope for this
 audit.
 
+## Case study — shopify-sync
+
+What the seventh audit found (a class-3-family error-path fatal and a
+class-4 descriptor/wiring mismatch; everything else verified clean):
+
+1. `shopify_sync_orders::handle_order_analytics()` — `$edges` was only
+   assigned inside the `! is_wp_error( $orders_result )` branch, then
+   `count( $edges )` ran unconditionally — `count(null)` **TypeError** on
+   exactly the error path meant to degrade gracefully (API down, missing
+   token, rate limit). Initialized `$edges = array()` before the guarded
+   block; the error path now returns the canonical envelope with zeros.
+2. `WP_MCP_AI_Shopify_Sync_MCP_Server` — three descriptor wiring
+   mismatches fed by the shared `WP_MCP_AI_Scheduled_Toolkit_Server_Trait`:
+   - `get_sync_hook_name()` advertised `wp_mcp_ai_shopify_sync_full_sync`,
+     a hook the engine never schedules (it schedules per-connection
+     `wp_mcp_ai_shopify_full_sync_{conn_id}`) → `get_sync_status()` always
+     "unknown"/0;
+   - the trait's `get_sync_interval()` read a slug-derived option
+     (`wp_mcp_ai_shopify-sync_settings`) the toolkit never writes, in
+     seconds, while the toolkit stores **minutes** in
+     `wp_mcp_ai_shopify_sync_toolkit_settings` → advertised
+     `sync_interval_seconds` stuck at the 300s default;
+   - the trait's `get_connection_status()` read
+     `wp_mcp_ai_remote_connections`, an option the toolkit never
+     populates → always false.
+   Overrode all three: per-connection last-sync option aggregation
+   (`{last_sync, status, row_count}` shape preserved + the trait's
+   `wp_mcp_ai_scheduled_toolkit_sync_status` filter), minutes→seconds
+   interval conversion, and Remote-Sites-manager resolution of enabled
+   synced Shopify connections. Mirrored byte-identically to the CG Pro
+   MCP server file (text-domain deviation only); `class_exists` guards
+   degrade gracefully there because the sync engine/CCT manager are not
+   yet ported to CG Pro.
+
+Verified clean this cluster: zero shell/exec in the toolkit and all
+backing services; every client/service method call exists on its class
+(`WP_MCP_AI_Shopify_Client` get_orders/get_order/get_shop_info/bulk_query/
+catalog_request/get_api_mode/get_catalog_shop_id, CCT manager read/write/
+sync methods, engine consts + dispatch pair, `WP_MCP_AI_Sync_Log_Manager`
+start_run/log_item/end_run, `wp_mcp_ai_log()`, `WP_MCP_AI_Logger::log_event()`,
+Remote Site Manager get_all_connections/get_connection/decrypt_value); HTTP
+paths already hardened (client graphql/bulk_query/catalog_request carry
+status+JSON+size validation via `wp_safe_remote_*`; webhook handler verifies
+HMAC with `hash_equals` + decrypted secret before any state change, with
+`__return_true` permission_callback as the documented webhook-auth pattern);
+all advertised enums match their switches (5 action enums, stock_status,
+product status, sync_direction, sync_interval diffed against the executing
+switch statements).
+
+Tests landed: `addons/pro/tests/test-shopify-sync-toolkit-hardening.php`
+(new, 11 tests / 25 assertions — orders-analytics error-path regression +
+happy-path aggregation through mocked `pre_http_request`, MCP server hook
+prefix/interval-minutes/interval-default/status-aggregation/status-unknown/
+status-stale/connection-status matrix). Validation: 126 tests / 1198
+assertions green across the 9-suite shopify-sync cluster; CG Pro MCP server
+matrix green (7 tests / 64 assertions, 3 pre-existing standalone skips);
+phpcs 0 errors on both standards; UTF-8 clean. PR #6889.
+
+## Case study — healthcare
+
+What the sixth audit found (class 3; plus class-2 dead audit trail and two
+bonus TypeErrors exposed by the new tests; everything else verified clean):
+
+1. `interpret_imaging_study::action_interpret()` — concatenated
+   `$result['choices'][0]['message']['content']` straight into the
+   interpretation text. Gemini (and OpenAI-compatible gateways such as vLLM)
+   return that field as an array of parts → literal "Array" text in every
+   Gemini-served interpretation. Added a `flatten_response_content()` helper
+   at the response boundary; empty content now returns the honest
+   `imaging_ai_empty_response` WP_Error.
+2. `export_fhir_data` + wellness `init.php` — called the nonexistent global
+   `wp_mcp_ai_log_activity()` (no definition anywhere in the repo; guarded so
+   it never fataled, but the HIPAA audit trail silently never fired).
+   Rewired to `WP_MCP_AI_Healthcare_Audit::record()` (the unified PHI ledger
+   every other healthcare tool writes to) and `WP_MCP_AI_Logger::log_event()`
+   for the migration.
+3. Bonus (tests exposed): `deidentify_health_record` + `extract_clinical_entities`
+   passed `$user_id` in the `array $meta` slot of
+   `WP_MCP_AI_Healthcare_Audit::record()` → `TypeError` on every execution once
+   the audit class loads. Moved `user_id` into the meta array. Also guarded the
+   OpenMed response boundary (`entities` non-array → empty list;
+   `deidentified_text` missing → '' in the completion action).
+
+Verified clean this cluster: zero shell/exec anywhere in the toolkit; all
+client methods exist (create_chat_completion on OpenAI/Gemini/Anthropic,
+create_embedding(s) on Gemini/OpenAI, OpenMed client methods, Media Worker
+sidecar trait, imaging CPT/audit classes, batch iterator, migration class);
+all advertised enums match their service switches (species human/canine/feline
+in the engine reference tables, vitals units, DICOMweb auth types, EHR vendors,
+FHIR formats, NER models, deidentify methods); HTTP paths already hardened
+(DICOMweb status + JSON validation + SSRF guard on save, OpenMed client,
+EHR connect SSRF guard + status + JSON).
+
+Tests landed: `addons/pro/tests/test-healthcare-toolkit-hardening.php` (new,
+7 tests / 27 assertions — flatten shape matrix, Gemini array-of-parts
+end-to-end through `execute()`, OpenAI string passthrough, empty-content error,
+FHIR export audit-trail entry, OpenMed non-array entities guard, missing
+`deidentified_text` guard). Validation: 139 healthcare-cluster tests green
+(isolated DB `wordpress_test_muted_moth`), 38 CG Pro healthcare tests green
+(isolated DB `wordpress_test_muted_moth_cg`); phpcs 0 errors on both
+standards; UTF-8 clean. PR #6887.
+
+## Case study — ecommerce
+
+What the fifth audit found (classes 1 and 3, plus two feature-dead Node paths):
+
+1. `validate-image-for-product::validate_with_vision_ai()` and
+   `validate-image-for-vehicle::validate_with_vision_ai()` —
+   `trim( $response['choices'][0]['message']['content'] )` string-assuming
+   (class 3): OpenAI-compatible gateways can return message.content as an
+   array of parts, so `trim()` fatals on the first such response. Added a
+   `flatten_response_content()` helper at the response boundary plus an
+   honest empty-content `wp_mcp_ai_invalid_response` WP_Error.
+2. `export_products_report::generate_excel_file()` and
+   `generate_woocommerce_order_invoice_pdf::generate_pdf()` — unguarded
+   `exec()` (class 1) AND doubly broken invocations: the script path was
+   `WP_MCP_AI_PRO_PATH . 'addons/pro/scripts/...'` (doubled — `PRO_PATH`
+   already ends in `addons/pro/`), the invoice tool pointed at
+   `generate-invoice.js` which does not exist anywhere in the repo, and both
+   passed inline JSON on the command line while the bundled scripts take
+   `<json_file> <output_file>` argv. Both are now gated behind
+   `WP_MCP_AI_ALLOW_SHELL_TOOLS` + Node availability via the shared
+   `wp_mcp_ai_ecommerce_run_node_script()` helper (helpers file, both trees)
+   and execute through the Process Service (`run_silent()` array form — no
+   shell interpolation); the Excel tool writes a JSON input file and the
+   invoice tool renders an escaped HTML invoice through the bundled
+   `generate-pdf.js` (copied into the CG Pro scripts dir).
+3. `lookup_product_price` — Crawl4AI `markdown`/`text` fields and
+   submit_document_prompt `text`/`content`/`response` fields fed into
+   `preg_match()`/`explode()`/`json_decode()` without a string guarantee
+   (class 3, tool-result variant): `parse_crawl_result_for_product()`,
+   `parse_search_results()`, `extract_text_from_document()`,
+   `extract_line_items_from_text()` now flatten at every response boundary;
+   `extract_price_from_content()` and `parse_json_from_text()` carry
+   defensive `! is_string()` guards.
+4. `product_actualization::generate_ai_integrated_image_openai()` — the
+   OpenAI-`url` fallback branch downloaded the image without checking the
+   HTTP status (error HTML saved as image bytes); added a status gate.
+
+Verified clean this cluster: all Shopify/Printful/Roboflow client method
+calls exist on their classes (class 2); every advertised enum matches its
+service switch — Printful action enum ↔ switch, product-actualization
+provider enum ↔ `detect_preferred_provider()`, QuickBooks accounting-method
+and import-duty country enums validated against their maps (class 4);
+get-import-duty / quickbooks-report / quickbooks-desktop-sync HTTP paths
+carry is_wp_error + status + JSON validation; zero remaining shell calls in
+the toolkit.
+
+Tests landed: `addons/pro/tests/test-ecommerce-toolkit-hardening.php` (new,
+14 tests / 43 assertions — flatten shape matrix for both vision tools via
+mocked `pre_http_request` with string AND array-of-parts content, empty
+content honest-error paths, crawl-markdown flatten, price/JSON parse guards,
+shell-tools gate for the Node runner + both generation methods with temp
+file cleanup assertions, invoice HTML escaping, JSON input roundtrip).
+Validation: 250 ecommerce-cluster tests green; phpcs 0 errors on both
+standards; UTF-8 clean. Note: the test never defines
+\`WP_MCP_AI_ALLOW_SHELL_TOOLS\` — defining it would pollute every later suite
+in the shared process.
+
 ## Case study — eca-management
 
 What the fourth audit found (class 3; everything else verified clean):
@@ -406,10 +565,10 @@ are heuristic; enum/service surfaces match.
 
 Follow-up queue for later clusters (same `['choices'][0]['message']['content']`
 string-assumption found globally): eca-management research-eca ✅ (done, this
-file), ecommerce validate-image-for-product/vehicle (trim + json_decode),
-healthcare interpret-imaging-study, multilingual auto-translate-content (also
-raw `wp_remote_post`), orchestration generate-research-report, places
-research-place.
+file), ecommerce validate-image-for-product/vehicle ✅ (trim + json_decode,
+done 2026-10-04), healthcare interpret-imaging-study, multilingual
+auto-translate-content (also raw `wp_remote_post`), orchestration
+generate-research-report, places research-place.
 
 Tests landed: `addons/pro/tests/test-crm-toolkit-hardening.php` (new, 7 tests
 / 19 assertions — response-shape matrix for both tools via mocked
