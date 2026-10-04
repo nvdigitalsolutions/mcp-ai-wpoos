@@ -27,7 +27,7 @@ class WP_MCP_AI_Attachment_Image_URL_Structure_Test extends WP_UnitTestCase {
 	 */
 	public function test_image_segment_with_attachment_id_includes_image_url() {
 		// Create a test image attachment.
-		$filename      = WP_MCP_AI_PATH . 'tests/fixtures/test-image.jpg';
+		$filename      = WP_MCP_AI_PATH . 'tests/fixtures/sample-image.png';
 		$attachment_id = $this->factory->attachment->create_upload_object( $filename );
 		$this->assertGreaterThan( 0, $attachment_id );
 
@@ -101,7 +101,7 @@ class WP_MCP_AI_Attachment_Image_URL_Structure_Test extends WP_UnitTestCase {
 	 */
 	public function test_image_segment_with_file_id_includes_image_url() {
 		// Create a test image attachment with OpenAI file metadata.
-		$filename      = WP_MCP_AI_PATH . 'tests/fixtures/test-image.jpg';
+		$filename      = WP_MCP_AI_PATH . 'tests/fixtures/sample-image.png';
 		$attachment_id = $this->factory->attachment->create_upload_object( $filename );
 		$this->assertGreaterThan( 0, $attachment_id );
 
@@ -172,7 +172,7 @@ class WP_MCP_AI_Attachment_Image_URL_Structure_Test extends WP_UnitTestCase {
 	 */
 	public function test_image_url_structure_matches_openai_pattern() {
 		// Create a test image attachment.
-		$filename      = WP_MCP_AI_PATH . 'tests/fixtures/test-image.jpg';
+		$filename      = WP_MCP_AI_PATH . 'tests/fixtures/sample-image.png';
 		$attachment_id = $this->factory->attachment->create_upload_object( $filename );
 		$this->assertGreaterThan( 0, $attachment_id );
 
@@ -210,7 +210,7 @@ class WP_MCP_AI_Attachment_Image_URL_Structure_Test extends WP_UnitTestCase {
 	 */
 	public function test_attached_file_creates_openai_compatible_structure() {
 		// Create a test image attachment (simulates file upload).
-		$filename      = WP_MCP_AI_PATH . 'tests/fixtures/test-image.jpg';
+		$filename      = WP_MCP_AI_PATH . 'tests/fixtures/sample-image.png';
 		$attachment_id = $this->factory->attachment->create_upload_object( $filename );
 		$this->assertGreaterThan( 0, $attachment_id );
 
