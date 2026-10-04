@@ -247,7 +247,7 @@ then move to the next toolkit.
 - [ ] regulatory-registration
 - [ ] remote-connections
 - [ ] research
-- [ ] shopify-sync
+- [x] shopify-sync — 2026-10-04 (case study below)
 - [ ] site-creator-toolkit
 - [ ] social-media
 - [ ] vault
@@ -259,6 +259,64 @@ then move to the next toolkit.
 Also sweep the loose tools directly in `addons/pro/includes/tools/*.php`
 (incident/maintenance tools) and the shared `addons/pro/includes/services/`
 classes each toolkit routes through.
+
+## Case study — shopify-sync
+
+What the seventh audit found (a class-3-family error-path fatal and a
+class-4 descriptor/wiring mismatch; everything else verified clean):
+
+1. `shopify_sync_orders::handle_order_analytics()` — `$edges` was only
+   assigned inside the `! is_wp_error( $orders_result )` branch, then
+   `count( $edges )` ran unconditionally — `count(null)` **TypeError** on
+   exactly the error path meant to degrade gracefully (API down, missing
+   token, rate limit). Initialized `$edges = array()` before the guarded
+   block; the error path now returns the canonical envelope with zeros.
+2. `WP_MCP_AI_Shopify_Sync_MCP_Server` — three descriptor wiring
+   mismatches fed by the shared `WP_MCP_AI_Scheduled_Toolkit_Server_Trait`:
+   - `get_sync_hook_name()` advertised `wp_mcp_ai_shopify_sync_full_sync`,
+     a hook the engine never schedules (it schedules per-connection
+     `wp_mcp_ai_shopify_full_sync_{conn_id}`) → `get_sync_status()` always
+     "unknown"/0;
+   - the trait's `get_sync_interval()` read a slug-derived option
+     (`wp_mcp_ai_shopify-sync_settings`) the toolkit never writes, in
+     seconds, while the toolkit stores **minutes** in
+     `wp_mcp_ai_shopify_sync_toolkit_settings` → advertised
+     `sync_interval_seconds` stuck at the 300s default;
+   - the trait's `get_connection_status()` read
+     `wp_mcp_ai_remote_connections`, an option the toolkit never
+     populates → always false.
+   Overrode all three: per-connection last-sync option aggregation
+   (`{last_sync, status, row_count}` shape preserved + the trait's
+   `wp_mcp_ai_scheduled_toolkit_sync_status` filter), minutes→seconds
+   interval conversion, and Remote-Sites-manager resolution of enabled
+   synced Shopify connections. Mirrored byte-identically to the CG Pro
+   MCP server file (text-domain deviation only); `class_exists` guards
+   degrade gracefully there because the sync engine/CCT manager are not
+   yet ported to CG Pro.
+
+Verified clean this cluster: zero shell/exec in the toolkit and all
+backing services; every client/service method call exists on its class
+(`WP_MCP_AI_Shopify_Client` get_orders/get_order/get_shop_info/bulk_query/
+catalog_request/get_api_mode/get_catalog_shop_id, CCT manager read/write/
+sync methods, engine consts + dispatch pair, `WP_MCP_AI_Sync_Log_Manager`
+start_run/log_item/end_run, `wp_mcp_ai_log()`, `WP_MCP_AI_Logger::log_event()`,
+Remote Site Manager get_all_connections/get_connection/decrypt_value); HTTP
+paths already hardened (client graphql/bulk_query/catalog_request carry
+status+JSON+size validation via `wp_safe_remote_*`; webhook handler verifies
+HMAC with `hash_equals` + decrypted secret before any state change, with
+`__return_true` permission_callback as the documented webhook-auth pattern);
+all advertised enums match their switches (5 action enums, stock_status,
+product status, sync_direction, sync_interval diffed against the executing
+switch statements).
+
+Tests landed: `addons/pro/tests/test-shopify-sync-toolkit-hardening.php`
+(new, 11 tests / 25 assertions — orders-analytics error-path regression +
+happy-path aggregation through mocked `pre_http_request`, MCP server hook
+prefix/interval-minutes/interval-default/status-aggregation/status-unknown/
+status-stale/connection-status matrix). Validation: 126 tests / 1198
+assertions green across the 9-suite shopify-sync cluster; CG Pro MCP server
+matrix green (7 tests / 64 assertions, 3 pre-existing standalone skips);
+phpcs 0 errors on both standards; UTF-8 clean. PR #6889.
 
 ## Case study — healthcare
 
