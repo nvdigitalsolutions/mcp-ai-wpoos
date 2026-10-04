@@ -961,4 +961,53 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'streamGenerateContent', $captured_request['url'] );
 		$this->assertStringContainsString( 'alt=sse', $captured_request['url'] );
 	}
+
+	/**
+	 * Ensure format_image_part accepts an inline base64 'data' segment and
+	 * rejects invalid base64 instead of forwarding it.
+	 */
+	public function test_format_image_part_accepts_inline_data() {
+		$client     = new WP_MCP_AI_Gemini_Client();
+		$reflection = new ReflectionClass( $client );
+		$method     = $reflection->getMethod( 'format_image_part' );
+		$method->setAccessible( true );
+
+		$valid_data = base64_encode( 'fake-bytes' );
+
+		$part = $method->invoke(
+			$client,
+			array(
+				'type'      => 'image_url',
+				'data'      => $valid_data,
+				'mime_type' => 'image/png',
+			)
+		);
+
+		$this->assertIsArray( $part );
+		$this->assertSame( $valid_data, $part['inlineData']['data'] );
+		$this->assertSame( 'image/png', $part['inlineData']['mimeType'] );
+
+		// Invalid base64 must be rejected (null), never forwarded.
+		$invalid = $method->invoke(
+			$client,
+			array(
+				'type'      => 'image_url',
+				'data'      => 'not base64!!!',
+				'mime_type' => 'image/png',
+			)
+		);
+
+		$this->assertNull( $invalid );
+
+		// A missing MIME type must be rejected as well.
+		$no_mime = $method->invoke(
+			$client,
+			array(
+				'type' => 'image_url',
+				'data' => $valid_data,
+			)
+		);
+
+		$this->assertNull( $no_mime );
+	}
 }
