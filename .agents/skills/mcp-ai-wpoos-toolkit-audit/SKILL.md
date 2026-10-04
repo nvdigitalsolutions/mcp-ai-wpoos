@@ -219,7 +219,7 @@ then move to the next toolkit.
 - [ ] developer
 - [ ] dietpi
 - [ ] dj-management
-- [ ] eca-management
+- [x] eca-management — 2026-10-04 (case study below)
 - [ ] ecommerce
 - [ ] email-marketing
 - [ ] erp-ezuite
@@ -260,6 +260,43 @@ Also sweep the loose tools directly in `addons/pro/includes/tools/*.php`
 (incident/maintenance tools) and the shared `addons/pro/includes/services/`
 classes each toolkit routes through.
 
+## Case study — eca-management
+
+What the fourth audit found (class 3; everything else verified clean):
+
+1. `research_eca::perform_ai_research()` — passed
+   `$result['choices'][0]['message']['content']` through raw; Gemini (and
+   OpenAI-compatible gateways such as vLLM) return that field as an array of
+   parts, and `parse_research_results()` fed it straight into `preg_match()` —
+   `preg_match(): Argument #2 ($subject) must be of type string, array given`
+   on the first Gemini-served research call. Added a
+   `flatten_response_content()` helper at the response boundary plus a
+   defensive flatten in `parse_research_results()`; empty content now returns
+   the honest `wp_mcp_ai_invalid_response` WP_Error.
+
+Verified clean this cluster: zero shell/exec; all 14 provider client classes
+in `get_ai_client()` exist with matching `get_research_provider()` selection
+(class 4 clean — no advertised enum, provider auto-selected from credentials);
+Google Classroom client methods (`list_courses`, `list_students`,
+`list_coursework`, `list_student_submissions`, `create_course`,
+`create_coursework`, `get_course`, `list_guardians`, `paginate`) and
+`Google_Classroom_Credentials::require_scope` / `Google_Classroom_Push`
+all exist in `includes/google/`; iSAMS/SOCS/Gmail HTTP paths carry
+is_wp_error + status + JSON validation; CSV import gates on `manage_options`.
+
+Port-level note (tracked as issue #6884): the CG Pro mirror's
+`get_research_provider()` calls `WP_MCP_AI_Credential_Resolver::has_credentials()`
+and `WP_MCP_AI_Tool_Registry::get_instance()` unguarded, while the crm upwork
+mirror carries the wave-proof `class_exists` guard deviation. The unguarded
+pattern predates this audit and spans many CG Pro toolkits
+(ai-tool-builder, chat-channels, crm, quiz-management, site-creator-toolkit) —
+queued as a port-wide sweep rather than a per-toolkit fix.
+
+Tests landed: `addons/pro/tests/test-eca-toolkit-hardening.php` (new, 6 tests
+/ 19 assertions — flatten shape matrix, Gemini array-of-parts end-to-end
+through the real client, fenced-JSON parse, empty-content error). Validation:
+44 eca-cluster tests green; phpcs 0 errors on both standards; UTF-8 clean.
+
 ## Case study — crm
 
 What the third audit found (classes 2 and 3; everything else verified clean):
@@ -293,10 +330,10 @@ pure-PHP socket with guarded ext-imap fallback; classifiers (intent/support)
 are heuristic; enum/service surfaces match.
 
 Follow-up queue for later clusters (same `['choices'][0]['message']['content']`
-string-assumption found globally): eca-management research-eca, ecommerce
-validate-image-for-product/vehicle (trim + json_decode), healthcare
-interpret-imaging-study, multilingual auto-translate-content (also raw
-`wp_remote_post`), orchestration generate-research-report, places
+string-assumption found globally): eca-management research-eca ✅ (done, this
+file), ecommerce validate-image-for-product/vehicle (trim + json_decode),
+healthcare interpret-imaging-study, multilingual auto-translate-content (also
+raw `wp_remote_post`), orchestration generate-research-report, places
 research-place.
 
 Tests landed: `addons/pro/tests/test-crm-toolkit-hardening.php` (new, 7 tests
