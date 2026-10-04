@@ -2525,12 +2525,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return bool|WP_Error
 		 */
 		public function permissions_check_mcp( WP_REST_Request $request ) {
-				$this->reset_auth_context();
+			$this->reset_auth_context();
 
-				$mcp_url = rest_url( 'mcp-ai/v1/mcp' );
+			$mcp_url = rest_url( 'mcp-ai/v1/mcp' );
 
-				// Check for mesh API key authentication.
-				$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+			// Check for mesh API key authentication.
+			$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
 			if ( ! empty( $mesh_key ) ) {
 				$mesh_validated = $this->validate_mesh_key( $mesh_key );
 				if ( true === $mesh_validated ) {
@@ -2541,8 +2541,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-				// Check for bearer token authentication.
-				$bearer = $request->get_header( 'Authorization' );
+			// Check for bearer token authentication.
+			$bearer = $request->get_header( 'Authorization' );
 			if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
 				$token = trim( $matches[1] );
 
@@ -2571,21 +2571,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
-				/**
-				 * Allow raw assistant credentials (cred_xxx.yyy) without the
-				 * "Bearer " scheme prefix.
-				 *
-				 * Some agent configurations forward the Authorization header value
-				 * verbatim as configured (e.g. Cloudways Agent). The credential
-				 * itself is the secret; the scheme label adds no security, so we
-				 * accept the raw form for compatibility. Disable this filter to
-				 * require strict RFC 6750 bearer syntax.
-				 *
-				 * @since 1.1.55
-				 *
-				 * @param bool $accept_raw_credential_header Whether to accept raw credential headers. Default true.
-				 */
-				$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
+			/**
+			 * Allow raw assistant credentials (cred_xxx.yyy) without the
+			 * "Bearer " scheme prefix.
+			 *
+			 * Some agent configurations forward the Authorization header value
+			 * verbatim as configured (e.g. Cloudways Agent). The credential
+			 * itself is the secret; the scheme label adds no security, so we
+			 * accept the raw form for compatibility. Disable this filter to
+			 * require strict RFC 6750 bearer syntax.
+			 *
+			 * @since 1.1.55
+			 *
+			 * @param bool $accept_raw_credential_header Whether to accept raw credential headers. Default true.
+			 */
+			$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
 			if ( $accept_raw_credential && ! empty( $bearer ) && preg_match( '/^cred_[A-Za-z0-9]+\.[A-Za-z0-9_-]{8,}$/', trim( $bearer ) ) ) {
 				$token = trim( $bearer );
 
@@ -2598,7 +2598,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-				// Check for WordPress Basic auth (Application Passwords).
+			// Check for WordPress Basic auth (Application Passwords).
 			if ( ! empty( $bearer ) && 0 === stripos( $bearer, 'Basic ' ) ) {
 				$basic_result = $this->validate_wp_basic_auth( $request );
 				if ( true === $basic_result ) {
@@ -2608,7 +2608,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-				// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
+			// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
 			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
 				$internal_header = $request->get_header( 'X-WP-MCP-AI-Internal-Diagnostic' );
 				$is_local_origin = isset( $_SERVER['HTTP_ORIGIN'] )
@@ -2620,44 +2620,44 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-				// 401 — return WWW-Authenticate header per MCP Authorization spec.
-				$error = new WP_Error(
-					'wp_mcp_ai_mcp_auth_required',
-					__( 'Authentication required. Use a Bearer token, OAuth 2.0, Application Password (Basic auth), or Mesh Key.', 'mcp-ai-wpoos' ),
+			// 401 — return WWW-Authenticate header per MCP Authorization spec.
+			$error = new WP_Error(
+				'wp_mcp_ai_mcp_auth_required',
+				__( 'Authentication required. Use a Bearer token, OAuth 2.0, Application Password (Basic auth), or Mesh Key.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 401,
+					'actions' => array(
+						'supply_bearer_token' => __( 'Add an Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
+						'connect_via_oauth'   => __( 'Connect via OAuth 2.0 using an MCP client that supports it (Codex, Claude Desktop).', 'mcp-ai-wpoos' ),
+						'use_app_password'    => __( 'Use Authorization: Basic with a WordPress Application Password.', 'mcp-ai-wpoos' ),
+						'supply_mesh_key'     => __( 'Use the X-WP-MCP-AI-Mesh-Key header for mesh network access.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+
+			// Per MCP spec: include WWW-Authenticate header with resource_metadata URL.
+			// Prefer the Auth0-backed resource-server contract (ChatGPT plugin
+			// bridge) when configured; fall back to the Pro authorization
+			// server's challenge for sites that self-host OAuth.
+			$www_auth = '';
+			if ( class_exists( 'WP_MCP_AI_OAuth_Resource_Server' ) && WP_MCP_AI_OAuth_Resource_Server::is_configured() ) {
+				$www_auth = WP_MCP_AI_OAuth_Resource_Server::build_www_authenticate();
+			} elseif ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+				$www_auth = WP_MCP_AI_OAuth_Server::build_www_authenticate( $mcp_url );
+			}
+			if ( '' !== $www_auth ) {
+				$error->add_data(
 					array(
-						'status'  => 401,
-						'actions' => array(
-							'supply_bearer_token' => __( 'Add an Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
-							'connect_via_oauth'   => __( 'Connect via OAuth 2.0 using an MCP client that supports it (Codex, Claude Desktop).', 'mcp-ai-wpoos' ),
-							'use_app_password'    => __( 'Use Authorization: Basic with a WordPress Application Password.', 'mcp-ai-wpoos' ),
-							'supply_mesh_key'     => __( 'Use the X-WP-MCP-AI-Mesh-Key header for mesh network access.', 'mcp-ai-wpoos' ),
-						),
+						'www_authenticate' => $www_auth,
 					)
 				);
-
-				// Per MCP spec: include WWW-Authenticate header with resource_metadata URL.
-				// Prefer the Auth0-backed resource-server contract (ChatGPT plugin
-				// bridge) when configured; fall back to the Pro authorization
-				// server's challenge for sites that self-host OAuth.
-				$www_auth = '';
-				if ( class_exists( 'WP_MCP_AI_OAuth_Resource_Server' ) && WP_MCP_AI_OAuth_Resource_Server::is_configured() ) {
-					$www_auth = WP_MCP_AI_OAuth_Resource_Server::build_www_authenticate();
-				} elseif ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
-					$www_auth = WP_MCP_AI_OAuth_Server::build_www_authenticate( $mcp_url );
+				// Also send as an actual HTTP header so clients can discover OAuth support.
+				if ( ! headers_sent() ) {
+					header( 'WWW-Authenticate: ' . $www_auth );
 				}
-				if ( '' !== $www_auth ) {
-					$error->add_data(
-						array(
-							'www_authenticate' => $www_auth,
-						)
-					);
-					// Also send as an actual HTTP header so clients can discover OAuth support.
-					if ( ! headers_sent() ) {
-						header( 'WWW-Authenticate: ' . $www_auth );
-					}
-				}
+			}
 
-				return $error;
+			return $error;
 		}
 
 		/**
