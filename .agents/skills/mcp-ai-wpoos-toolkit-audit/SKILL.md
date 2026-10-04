@@ -83,15 +83,21 @@ mcp-ai-wpoos/addons/pro/includes/tools/<toolkit>/**/*.php
 mcp-ai-wpoos/plugins/nvoos-content-graph-pro/src/tools/<toolkit>/**/*.php
 ```
 
-Run these five scans per toolkit (each covers classes 1–4):
+Run these seven scans per toolkit (each covers classes 1–4):
 
 ```text
 shell_exec|exec\(|proc_open|passthru|system\(|popen
 ->generate_content|->generate\(|->log_activity|log_activity\(
-preg_match.*content|trim\( \$response|choices\[0\]|candidates\[0\]
+preg_match.*content|trim\( \$response|choices\[0\]|choices'\]\[0\]|candidates\[0\]
 (\(string\) \$data|\(string\) \$response|->create_chat_completion|new WP_MCP_AI_[A-Za-z_]+Client
 enum|provider
+wp_remote_post|wp_remote_get|message'\]\['content
+wp_mcp_ai_[a-z_]+\(   (then verify each global helper has a function definition somewhere)
 ```
+
+Note: the class-3 grep must include BOTH `choices[0]` and `choices'][0]`
+spellings — the crm toolkit wrote `$result['choices'][0]['message']['content']`
+and a `choices\[0\]`-only scan produced a false negative.
 
 Then read every hit. Do not trust "No matches found" until the glob is the
 rooted `**/*.php` form. Tools in a toolkit delegate to services under
@@ -209,7 +215,7 @@ then move to the next toolkit.
 - [ ] comic-creation
 - [ ] composio
 - [ ] cre-debt
-- [ ] crm
+- [x] crm — 2026-10-04 (case study below)
 - [ ] developer
 - [ ] dietpi
 - [ ] dj-management
@@ -253,6 +259,51 @@ then move to the next toolkit.
 Also sweep the loose tools directly in `addons/pro/includes/tools/*.php`
 (incident/maintenance tools) and the shared `addons/pro/includes/services/`
 classes each toolkit routes through.
+
+## Case study — crm
+
+What the third audit found (classes 2 and 3; everything else verified clean):
+
+1. `draft_upwork_proposal::generate_proposal()` —
+   `trim( $result['choices'][0]['message']['content'] )` string-assuming
+   (class 3): Gemini `normalize_response()` returns `message.content` as an
+   array of `{type,text}` parts, so the `isset()` guard passes and `trim()`
+   fatals on the first Gemini-served proposal. Added a
+   `flatten_response_content()` helper at the response boundary; empty
+   content now returns the honest `wp_mcp_ai_invalid_ai_response` WP_Error
+   instead of an empty-string “success”.
+2. `draft_lead_reply::generate_ai_draft()` — called the nonexistent global
+   `wp_mcp_ai_chat_completion()` (class 2, function variant): no such
+   function exists anywhere in the repo, so the AI path was permanently dead
+   (silent template fallback on every call). Rewrote around the
+   OpenAI/Gemini/Anthropic provider clients (Credential_Resolver →
+   provider/model/client plumbing, same as the upwork tool) with the same
+   flatten helper; template fallback preserved on any WP_Error.
+3. Scan-regression note: the standard class-3 grep `choices[0]` missed this
+   toolkit's hits because the code writes `['choices'][0]` — also scan for
+   `choices'\]\[0\]`. And scan for `wp_mcp_ai_*()` global-helper calls with no
+   function definition anywhere in the repo (dead-code smell).
+
+Verified clean this cluster: zero shell/exec anywhere in the toolkit; all
+client methods exist (Gmail service `search_leads`, LinkedIn
+`get_me`/`search_jobs`, Upwork `graphql`, MCP App clients,
+`WP_MCP_AI_Validator_Service::is_email`/`is_phone_number`) with hardened
+HTTP paths (is_wp_error + status + JSON validation); IMAP listener is
+pure-PHP socket with guarded ext-imap fallback; classifiers (intent/support)
+are heuristic; enum/service surfaces match.
+
+Follow-up queue for later clusters (same `['choices'][0]['message']['content']`
+string-assumption found globally): eca-management research-eca, ecommerce
+validate-image-for-product/vehicle (trim + json_decode), healthcare
+interpret-imaging-study, multilingual auto-translate-content (also raw
+`wp_remote_post`), orchestration generate-research-report, places
+research-place.
+
+Tests landed: `addons/pro/tests/test-crm-toolkit-hardening.php` (new, 7 tests
+/ 19 assertions — response-shape matrix for both tools via mocked
+`pre_http_request`, Gemini array-of-parts end-to-end through the real
+clients, template-fallback regression). Validation: 7/7 green + 354
+crm/docgen cluster green; phpcs 0 errors on both standards; UTF-8 clean.
 
 ## Case study — image-production
 
