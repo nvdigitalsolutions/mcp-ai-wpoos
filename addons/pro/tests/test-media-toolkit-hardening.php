@@ -96,7 +96,7 @@ class Test_Media_Toolkit_Hardening extends WP_UnitTestCase {
 	 */
 	private function create_test_attachment() {
 		$attachment_id = $this->factory->attachment->create_upload_object(
-			dirname( __DIR__, 3 ) . '/tests/data/test-image.png'
+			dirname( __DIR__, 3 ) . '/tests/fixtures/sample-image.png'
 		);
 
 		$this->assertNotWPError( $attachment_id );
@@ -355,6 +355,99 @@ class Test_Media_Toolkit_Hardening extends WP_UnitTestCase {
 		$this->assertTrue( $result['success'] );
 		$this->assertTrue( $result['dry_run'] );
 		$this->assertEquals( 0, $result['deleted']['count_attachments'] );
+	}
+
+	/**
+	 * Test scan_orphaned_media treats postmeta references as referenced.
+	 */
+	public function test_scan_orphaned_media_respects_postmeta_references() {
+		$gallery_id      = $this->create_test_attachment();
+		$serialized_id   = $this->create_test_attachment();
+		$url_id          = $this->create_test_attachment();
+		$unreferenced_id = $this->create_test_attachment();
+
+		$post_id = wp_insert_post(
+			array(
+				'post_title'   => 'Meta host',
+				'post_content' => '',
+				'post_status'  => 'publish',
+			)
+		);
+
+		update_post_meta( $post_id, '_product_image_gallery', $gallery_id . ',' . 99991 );
+		update_post_meta( $post_id, 'custom_image_field', array( $serialized_id ) );
+		update_post_meta( $post_id, 'custom_url_field', wp_get_attachment_url( $url_id ) );
+
+		$tool   = new WP_MCP_AI_Tool_Scan_Orphaned_Media();
+		$result = $tool->execute(
+			array( 'scan_type' => 'unreferenced' ),
+			array( 'user_id' => $this->admin_user )
+		);
+
+		$this->assertTrue( $result['success'] );
+
+		$ids = wp_list_pluck( $result['unreferenced']['items'], 'id' );
+		$this->assertNotContains( $gallery_id, $ids );
+		$this->assertNotContains( $serialized_id, $ids );
+		$this->assertNotContains( $url_id, $ids );
+		$this->assertContains( $unreferenced_id, $ids );
+	}
+
+	/**
+	 * Test scan_orphaned_media respects well-known option references (site icon).
+	 */
+	public function test_scan_orphaned_media_respects_site_icon_option() {
+		$icon_id         = $this->create_test_attachment();
+		$unreferenced_id = $this->create_test_attachment();
+
+		update_option( 'site_icon', $icon_id );
+
+		$tool   = new WP_MCP_AI_Tool_Scan_Orphaned_Media();
+		$result = $tool->execute(
+			array( 'scan_type' => 'unreferenced' ),
+			array( 'user_id' => $this->admin_user )
+		);
+
+		$this->assertTrue( $result['success'] );
+
+		$ids = wp_list_pluck( $result['unreferenced']['items'], 'id' );
+		$this->assertNotContains( $icon_id, $ids );
+		$this->assertContains( $unreferenced_id, $ids );
+
+		delete_option( 'site_icon' );
+	}
+
+	/**
+	 * Test cleanup keeps meta-referenced attachments with delete_unreferenced enabled.
+	 */
+	public function test_cleanup_keeps_postmeta_referenced_attachments() {
+		$referenced_id   = $this->create_test_attachment();
+		$unreferenced_id = $this->create_test_attachment();
+
+		$post_id = wp_insert_post(
+			array(
+				'post_title'   => 'Gallery host',
+				'post_content' => '',
+				'post_status'  => 'publish',
+			)
+		);
+		update_post_meta( $post_id, '_product_image_gallery', $referenced_id );
+
+		$tool   = new WP_MCP_AI_Tool_Cleanup_Orphaned_Media();
+		$result = $tool->execute(
+			array(
+				'cleanup_type'        => 'unreferenced',
+				'dry_run'             => true,
+				'delete_unreferenced' => true,
+			),
+			array( 'user_id' => $this->admin_user )
+		);
+
+		$this->assertTrue( $result['success'] );
+
+		$listed = wp_list_pluck( $result['deleted']['attachments'], 'id' );
+		$this->assertNotContains( $referenced_id, $listed );
+		$this->assertContains( $unreferenced_id, $listed );
 	}
 
 	/**

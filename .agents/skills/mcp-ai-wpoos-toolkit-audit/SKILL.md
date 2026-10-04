@@ -294,6 +294,24 @@ and 4 verified clean):
    passes), glob metacharacters escaped in `delete_size_variants` patterns,
    `glob()` false guards, and `get_all_registered_files()` no longer calls
    `dirname( false )` for attachments without `_wp_attached_file` meta.
+6. Unreferenced-detection safety (bonus find, same cluster): the reference
+   check only looked at post_parent / featured image / post_content, so
+   `delete_unreferenced=true` could delete attachments referenced from post
+   meta or options (WooCommerce `_product_image_gallery`, serialized ACF
+   arrays, URL-in-meta, site icon / custom logo). Added a fail-safe
+   `is_attachment_referenced_in_meta()` to both tools (comma-list, exact,
+   serialized-int and quoted-ID LIKE patterns over postmeta + filename/URL
+   patterns, self-rows excluded via post_id + reserved meta-key clause, plus
+   targeted well-known options). **Gotcha:** do NOT do a table-wide
+   options LIKE scan for `i:<id>;` — serialized blobs like the WooCommerce
+   blocks-patterns transient contain `i:<n>;` for every index and classify
+   *every* attachment as referenced (ID-dependent flakiness). Targeted
+   options only.
+7. Test-fixture fix: both media suites pointed at
+   `tests/data/test-image.png` — a gitignored file that never existed, so
+   attachments were created with no physical file (getimagesize error
+   notices; real-file branches never exercised). Switched to the committed
+   `tests/fixtures/sample-image.png` (1×1 PNG).
 
 Verified clean this cluster: zero shell/exec anywhere in the toolkit;
 `ocr_image_classic` pins `tesseract` which the OCR service switch handles
@@ -305,15 +323,17 @@ covers these tools (no per-tool check gap — unlike the CRM/ECA pattern,
 no in-tool user_can needed).
 
 Tests landed: `addons/pro/tests/test-media-toolkit-hardening.php` (new,
-12 tests / 41 assertions — nested-tool WP_Error matrix through registry
+15 tests / 60 assertions — nested-tool WP_Error matrix through registry
 stubs, envelope/validation regressions, year_month traversal matrix, scan
-referenced-vs-unreferenced fixture, bulk-action regression) plus
+referenced-vs-unreferenced fixture, postmeta/option reference safety, admin
+bulk-action regression) plus
 `addons/pro/tests/class-wp-mcp-ai-media-toolkit-stub.php` (single
 configurable stub — the custom sniff allows one object structure per file).
-Validation: 31 media-cluster tests green + 12 fashion-batch green; phpcs
-0 errors; UTF-8 clean. CG Pro note: the media toolkit has no
-`plugins/nvoos-content-graph-pro/src/tools/media/` mirror yet — porting is
-an ecosystem-port decision, out of scope for this audit.
+Validation: 34 media-cluster tests green (hardening + integration + tools)
++ 12 fashion-batch green; phpcs 0 errors; UTF-8 clean. CG Pro note: the
+media toolkit has no `plugins/nvoos-content-graph-pro/src/tools/media/`
+mirror yet — porting is an ecosystem-port decision, out of scope for this
+audit.
 
 ## Case study — eca-management
 

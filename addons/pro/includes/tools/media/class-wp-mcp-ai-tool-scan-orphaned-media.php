@@ -448,6 +448,75 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 			}
 		}
 
+		// Check 4: Is it referenced from post meta or options (galleries,
+		// ACF fields, theme mods)? Those references never appear in
+		// post_content but are just as real.
+		if ( $this->is_attachment_referenced_in_meta( $attachment_id, $filenames ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check whether an attachment is referenced from post meta or options.
+	 *
+	 * Covers references that never appear in post_content: comma-separated
+	 * and serialized attachment IDs (WooCommerce product galleries, ACF),
+	 * stored URLs (Elementor/ACF URL fields), and well-known single-ID
+	 * options (site icon, custom logo, WooCommerce placeholders).
+	 *
+	 * Best-effort and fail-safe: a false positive only skips a deletion,
+	 * never causes one.
+	 *
+	 * @since 2.7.0
+	 * @param int      $attachment_id Attachment ID.
+	 * @param string[] $filenames     Filenames to search for (URLs stored in meta).
+	 * @return bool True when referenced from meta or options.
+	 */
+	private function is_attachment_referenced_in_meta( $attachment_id, $filenames ) {
+		global $wpdb;
+
+		$attachment_id = (int) $attachment_id;
+
+		$clauses   = array();
+		$clauses[] = $wpdb->prepare( 'meta_value = %s', (string) $attachment_id );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', $attachment_id . ',%' );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%,' . $attachment_id );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%,' . $attachment_id . ',%' );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%i:' . $attachment_id . ';%' );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%"' . $attachment_id . '"%' );
+
+		foreach ( $filenames as $filename ) {
+			$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%' . $wpdb->esc_like( $filename ) . '%' );
+		}
+
+		$where = implode( ' OR ', $clauses );
+
+		// Exclude the attachment's own file-info meta — it always contains
+		// the filename and would otherwise self-match on every attachment.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Clauses are individually prepare()d above.
+		$sql = $wpdb->prepare(
+			"SELECT 1 FROM {$wpdb->postmeta} WHERE ({$where}) AND NOT ( post_id = %d AND meta_key IN ( '_wp_attached_file', '_wp_attachment_metadata' ) ) LIMIT 1",
+			$attachment_id
+		);
+		// phpcs:enable
+
+		if ( $wpdb->get_var( $sql ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return true;
+		}
+
+		// Well-known single-ID options. Deliberately NOT a table-wide LIKE
+		// scan: serialized blobs (transients such as the WooCommerce blocks
+		// patterns cache) contain i:<id>; for every index, which would
+		// classify every attachment as referenced.
+		$known_options = array( 'site_icon', 'custom_logo', 'woocommerce_placeholder_image', 'woocommerce_thumbnail_image' );
+		foreach ( $known_options as $option ) {
+			if ( (int) get_option( $option ) === $attachment_id ) {
+				return true;
+			}
+		}
+
 		return false;
 	}
 
