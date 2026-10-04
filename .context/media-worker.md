@@ -1,7 +1,7 @@
 # NV oOS Media Worker Sidecar
 
 > **GSD Context File** — Load this when working on the media worker (`addons/media-worker/`), the plugin sidecar client, or any Pro service that routes through the worker.
-> Last reviewed: October 2, 2026 (v1.1.93, worker v3.3.0).
+> Last reviewed: October 4, 2026 (v1.1.95, worker v3.4.0).
 
 ---
 
@@ -16,7 +16,7 @@ existing local fallbacks run unchanged.
 - Monorepo folder is mirrored one-way to the standalone repo
   `mcp-ai-wpoos-media-worker` via `.github/workflows/sync-media-worker.yml`
   — never commit to the standalone repo directly.
-- Version: **v3.3.0** (multi-tenant v2.4.0 → Phase 2 → Phase 3 W1–W7 → crawling + Crawl4AI facade → status monitoring module).
+- Version: **v3.4.0** (multi-tenant v2.4.0 → Phase 2 → Phase 3 W1–W7 → crawling + Crawl4AI facade → status monitoring module → Wave 1 image enhance/upscale routes).
 
 ## Key Paths
 
@@ -51,6 +51,39 @@ existing local fallbacks run unchanged.
 5. **Plugin-side token chain (multisite-aware, Phase 3 W1):**
    `WP_MEDIA_WORKER_TOKEN` constant → per-blog option →
    `wp_mcp_ai_media_worker_token` site option.
+
+## Image Enhance / Upscale / Edit Routes (v3.4.0, W1a + W2a)
+
+Sharp-native real implementations behind the plugin's placeholder
+image-production tools (issue #6877, plan
+`docs/project/plans/image-production-sidecar-cluster-plan.md`).
+
+- `POST /api/image/enhance` — multipart `file` + fields `sharpen` (bool or
+  0–1 strength), `contrast` (multiplier, default 1), `saturation`
+  (multiplier, default 1), `denoise` (bool → `.median(1)`), `strength`
+  (0–1 master scaling toward neutral). Envelope mirrors `/optimize` +
+  `width`/`height` + an `enhancements` echo of the ops actually applied.
+- `POST /api/image/upscale` — multipart `file` + `factor` (2/4/8, validated)
+  + `kernel` (`nearest`/`cubic`/`lanczos3`, default lanczos3). Output
+  dimensions capped at **8192px** per side (shared constant with
+  `addons/pro/bin/sharp-process.js` and the
+  `WP_MCP_AI_Sharp_Image_Processing` Pro trait). Responds with honest
+  `upscale_method: 'lanczos3'` until Wave 3 lands an AI engine.
+- `POST /api/image/edit` (W2a) — multipart `file` + `operation`
+  (`colorize` | `style_transfer`), `style` (preset slug; the
+  `STYLE_PROMPTS` map mirrors the plugin tools' `get_style_prompts()`),
+  `prompt` (optional override), `provider` (`auto` default → Gemini →
+  OpenAI → Replicate key chain). Gemini edits via
+  `gemini-3.1-flash-image` (inline source image), OpenAI via
+  `gpt-image-1` `images.edit`, Replicate via predictions polling
+  (`REPLICATE_COLORIZE_MODEL`, default `deoldify/deoldify`;
+  `REPLICATE_STYLE_TRANSFER_MODEL` required for style_transfer — no
+  deterministic default is assumed). No key → `503
+  capability_unavailable` (capability `image_editing`) per the existing
+  contract.
+- All three routes preserve the source image format and carry the standard
+  `success`/`original_size`/`optimized_size`/`savings_*`/`b64` envelope so
+  the plugin's `WP_MCP_AI_Media_Worker_Client` needs no new parsing paths.
 
 ## Crawling & Crawl4AI Facade (v3.2.0)
 
@@ -99,7 +132,8 @@ existing local fallbacks run unchanged.
 
 - 12 route groups: browser, code, data, document, email, image, ocr, pdf,
   social, video, workflow — plus `crawl`, `crawl4ai` (v3.2.0) and `status`
-  (v3.3.0).
+  (v3.3.0); image gained `enhance` + `upscale` (W1a) and `edit` (W2a) in
+  v3.4.0.
 - Security baseline: timing-safe `X-Site-Token` auth, SSRF guard, sandboxed
   Puppeteer, express-rate-limit, Helmet, structured logs, split health
   endpoints (`/api/health/basic`, `/api/health/full`).

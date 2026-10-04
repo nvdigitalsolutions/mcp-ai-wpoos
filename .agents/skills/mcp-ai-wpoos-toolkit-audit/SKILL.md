@@ -295,6 +295,16 @@ Documented, out of scope: `upscale_image_ai` / `colorize_image` /
 implementations (no actual AI processing — they re-save the source and claim
 success); `enhance_image_quality`'s sharpen/color/contrast/denoise helpers
 are no-ops. Not failure-class bugs; a feature-completeness track.
+**Wave 1 landed (2026-10-04):** `enhance_image_quality` + `upscale_image_ai`
+now run real Sharp processing via the dual-path
+`WP_MCP_AI_Sharp_Image_Processing` trait (local subprocess → worker sidecar
+→ honest error). **Wave 2 landed (2026-10-04):** `colorize_image` +
+`apply_artistic_style` now run real AI edits via the worker
+`/api/image/edit` route (Gemini/OpenAI/Replicate) or the PHP provider
+clients through the `WP_MCP_AI_Provider_Image_Edit` trait — see issue #6877
+and
+`docs/project/plans/image-production-sidecar-cluster-plan.md`. Wave 3
+(Real-ESRGAN) remains deferred.
 
 Tests landed: `addons/pro/tests/test-image-production-hardening.php` (new,
 12 tests / 39 assertions — prompt-optimizer response-shape matrix,

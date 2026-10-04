@@ -1,6 +1,7 @@
 <?php
 /**
- * Image-production tool batch (ecosystem port - Wave F2, image-production toolkit).
+ * Image-production tool batch (ecosystem port - Wave 2, image-production
+ * sidecar cluster, issue #6877).
  *
  * Ported from the base Pro addon's `addons/pro/includes/tools/image-production/` directory for the
  * standalone `nvoos-content-graph-pro` addon. Kept byte-identical. The base Pro addon owns the class in
@@ -8,13 +9,18 @@
  *
  * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`; the
  * base-owned `WP_MCP_AI_PATH` interface/image-base/trait requires gain exists-check seams resolving from
- * the addon's D8-compat `src/` copies; the import tool's `NVOOS_CONTENT_GRAPH_PRO_PATH` refs swap to
- * `NVOOS_CONTENT_GRAPH_PRO_PATH` with the `src/` root.
+ * the addon's D8-compat `src/` copies; the usage-guidance block and interface port with this cluster
+ * (guidance-sweep ride-along, PR #6740 precedent).
  *
  * Tool for AI-powered image colorization.
  *
- * Colorizes black and white or grayscale images using AI.
- * Automatically detects appropriate colors based on image content.
+ * Colorizes black and white or grayscale images with real AI processing —
+ * the Media Worker sidecar /api/image/edit route (Gemini/OpenAI/Replicate
+ * provider chain on the worker) or the PHP Gemini/OpenAI provider clients
+ * as the local fallback. When neither backend can serve the request the
+ * tool returns an honest wp_mcp_ai_no_provider error instead of claiming
+ * success. The _wp_mcp_ai_colorized meta is written only when real
+ * colorization happened.
  *
  * @package WP_MCP_AI
  * @since 1.0.0
@@ -43,11 +49,26 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Image_Base' ) ) {
 		require_once $nvoos_content_graph_pro_image_base;
 	}
 }
+if ( ! trait_exists( 'WP_MCP_AI_Sharp_Image_Processing' ) ) {
+	$nvoos_content_graph_pro_sharp_image_processing = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/traits/trait-wp-mcp-ai-sharp-image-processing.php';
+	if ( file_exists( $nvoos_content_graph_pro_sharp_image_processing ) ) {
+		require_once $nvoos_content_graph_pro_sharp_image_processing;
+	}
+}
+if ( ! trait_exists( 'WP_MCP_AI_Provider_Image_Edit' ) ) {
+	$nvoos_content_graph_pro_provider_image_edit = NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/traits/trait-wp-mcp-ai-provider-image-edit.php';
+	if ( file_exists( $nvoos_content_graph_pro_provider_image_edit ) ) {
+		require_once $nvoos_content_graph_pro_provider_image_edit;
+	}
+}
 
 /**
- * Colorize black and white images using AI.
+ * Colorize black and white images with real AI processing.
  */
-class WP_MCP_AI_Tool_Colorize_Image extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Colorize_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
+
+	use WP_MCP_AI_Sharp_Image_Processing;
+	use WP_MCP_AI_Provider_Image_Edit;
 
 	/**
 	 * {@inheritdoc}
@@ -67,7 +88,19 @@ class WP_MCP_AI_Tool_Colorize_Image extends WP_MCP_AI_Tool_Image_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Colorize black and white or grayscale images using AI. Automatically detects and applies realistic colors.', 'nvoos-content-graph-pro' );
+		return __( 'Colorize black and white or grayscale images with real AI processing via the Media Worker sidecar or the Gemini/OpenAI provider clients.', 'nvoos-content-graph-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_usage_guidance() {
+		return array(
+			'when_to_use'     => __( 'Use to add realistic color to black-and-white or grayscale photos with AI, choosing auto, vibrant, or subtle color modes.', 'nvoos-content-graph-pro' ),
+			'when_not_to_use' => __( 'Use enhance_image_quality to correct color and contrast on already-color images, or apply_artistic_style for artistic recoloring.', 'nvoos-content-graph-pro' ),
+			'related_tools'   => array( 'enhance_image_quality', 'apply_artistic_style', 'generate_image_variations' ),
+			'notes'           => __( 'Requires a Media Worker sidecar or a Gemini/OpenAI API key — without either the tool errors honestly. Set use_remote=true to prefer the sidecar.', 'nvoos-content-graph-pro' ),
+		);
 	}
 
 	/**
@@ -87,7 +120,7 @@ class WP_MCP_AI_Tool_Colorize_Image extends WP_MCP_AI_Tool_Image_Base {
 					),
 					'use_remote' => array(
 						'type'        => 'boolean',
-						'description' => __( 'Use remote GPU processing for faster colorization.', 'nvoos-content-graph-pro' ),
+						'description' => __( 'Prefer the Media Worker sidecar over the PHP provider clients.', 'nvoos-content-graph-pro' ),
 						'default'     => false,
 					),
 				)
@@ -105,10 +138,43 @@ class WP_MCP_AI_Tool_Colorize_Image extends WP_MCP_AI_Tool_Image_Base {
 			'pro',
 			'requires-capability',
 			'write',
-			'gpu-accelerated',
+			'external-api',
 			'performance-impact',
 			'idempotent',
 		);
+	}
+
+	/**
+	 * The color_mode → prompt map (single source of truth, mirrored to the
+	 * worker's /api/image/edit route).
+	 *
+	 * @return array Prompt per color mode.
+	 */
+	protected function get_colorize_prompts() {
+		return array(
+			'auto'    => __( 'Colorize this black-and-white photo, preserving realism and natural colors.', 'nvoos-content-graph-pro' ),
+			'vibrant' => __( 'Colorize this black-and-white photo using vibrant, bold, saturated colors.', 'nvoos-content-graph-pro' ),
+			'subtle'  => __( 'Colorize this black-and-white photo using subtle, muted, natural tones.', 'nvoos-content-graph-pro' ),
+		);
+	}
+
+	/**
+	 * Human-readable label for a processing engine.
+	 *
+	 * @param string $engine Engine id.
+	 * @return string Label.
+	 */
+	protected function get_engine_label( $engine ) {
+		switch ( $engine ) {
+			case 'sidecar':
+				return __( 'the Media Worker sidecar', 'nvoos-content-graph-pro' );
+			case 'gemini':
+				return __( 'Gemini', 'nvoos-content-graph-pro' );
+			case 'openai':
+				return __( 'OpenAI', 'nvoos-content-graph-pro' );
+			default:
+				return $engine;
+		}
 	}
 
 	/**
@@ -137,45 +203,151 @@ class WP_MCP_AI_Tool_Colorize_Image extends WP_MCP_AI_Tool_Image_Base {
 			return $source_image;
 		}
 
-		// Get color mode.
+		// Get and validate the color mode.
 		$color_mode = isset( $arguments['color_mode'] ) ? sanitize_text_field( $arguments['color_mode'] ) : 'auto';
+		$prompts    = $this->get_colorize_prompts();
+		if ( ! isset( $prompts[ $color_mode ] ) ) {
+			$this->cleanup_source_image( $source_image, $arguments );
+			return new WP_Error(
+				'wp_mcp_ai_invalid_arguments',
+				__( 'Unknown color_mode. Allowed: auto, vibrant, subtle.', 'nvoos-content-graph-pro' )
+			);
+		}
+		$prompt = $prompts[ $color_mode ];
 
-		// Apply colorization (placeholder - would use actual AI model).
-		$result = $this->colorize_image( $source_image, $color_mode, $arguments, $context );
+		// Determine the processing backends.
+		$source_path = isset( $source_image->source_file_path ) && is_string( $source_image->source_file_path )
+			? $source_image->source_file_path
+			: '';
+		$source_ext  = $source_path ? preg_replace( '/[^a-zA-Z0-9]/', '', (string) pathinfo( $source_path, PATHINFO_EXTENSION ) ) : '';
+		if ( '' === $source_ext ) {
+			$source_ext = 'jpg';
+		}
+
+		$sidecar_supported = $this->is_sidecar_upload_supported();
+		$gemini_available  = $this->provider_has_credentials( 'gemini' );
+		$openai_available  = $this->provider_has_credentials( 'openai' );
+
+		if ( ! $sidecar_supported && ! $gemini_available && ! $openai_available ) {
+			$this->cleanup_source_image( $source_image, $arguments );
+			return new WP_Error(
+				'wp_mcp_ai_no_provider',
+				__( 'Image colorization requires a Media Worker sidecar or a Gemini/OpenAI API key, and neither is available. Configure a provider key in the NV oOS settings or set up the Media Worker sidecar.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// Build the backend attempt chain: use_remote prefers the sidecar;
+		// the default path prefers the PHP provider clients.
+		$use_remote = ! empty( $arguments['use_remote'] );
+		$attempts   = array();
+		if ( $use_remote && $sidecar_supported ) {
+			$attempts[] = 'sidecar';
+		}
+		if ( $gemini_available ) {
+			$attempts[] = 'gemini';
+		}
+		if ( $openai_available ) {
+			$attempts[] = 'openai';
+		}
+		if ( ! $use_remote && $sidecar_supported ) {
+			$attempts[] = 'sidecar';
+		}
+
+		$processed  = false;
+		$final_path = '';
+		$engine     = '';
+		$last_error = '';
+
+		foreach ( $attempts as $attempt ) {
+			if ( 'sidecar' === $attempt ) {
+				$result = $this->process_image_via_sidecar(
+					'/api/image/edit',
+					$source_path,
+					array(
+						'operation'  => 'colorize',
+						'color_mode' => $color_mode,
+					),
+					$source_ext
+				);
+				if ( is_array( $result ) && ! isset( $result['error'] ) && ! empty( $result['output_path'] ) && file_exists( $result['output_path'] ) ) {
+					$processed  = true;
+					$final_path = $result['output_path'];
+					$engine     = 'sidecar';
+					break;
+				}
+				$last_error = is_array( $result ) && isset( $result['error'] ) ? $result['error'] : __( 'Worker image editing failed.', 'nvoos-content-graph-pro' );
+				continue;
+			}
+
+			$edited = $this->ai_edit_image_bytes( $source_path, $prompt, $attempt );
+			if ( is_wp_error( $edited ) ) {
+				$last_error = $edited->get_error_message();
+				continue;
+			}
+			if ( '' === $edited ) {
+				$last_error = __( 'Provider returned empty image data.', 'nvoos-content-graph-pro' );
+				continue;
+			}
+
+			// Write provider bytes to a temp file for the media upload.
+			if ( ! function_exists( 'wp_tempnam' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+			$base       = wp_tempnam( 'colorize-output-' );
+			$final_path = $base . '.png';
+			wp_delete_file( $base );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing provider-returned image bytes to a site temp file.
+			if ( false === file_put_contents( $final_path, $edited ) ) {
+				$this->cleanup_source_image( $source_image, $arguments );
+				return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to write the colorized image file.', 'nvoos-content-graph-pro' ) );
+			}
+			$processed = true;
+			$engine    = $attempt;
+			break;
+		}
 
 		// Clean up source image if it was a temp file.
 		$this->cleanup_source_image( $source_image, $arguments );
 
-		return $result;
-	}
-
-	/**
-	 * Colorize the image.
-	 *
-	 * @param WP_Image_Editor $source_image Source image.
-	 * @param string          $color_mode   Color mode.
-	 * @param array           $arguments    Tool arguments.
-	 * @param array           $context      Execution context.
-	 * @return array|WP_Error Colorization results or error.
-	 */
-	protected function colorize_image( $source_image, $color_mode, $arguments, $context ) {
-		// This would use an AI colorization model like DeOldify.
-		// For now, save the image as-is (placeholder).
-		$saved_file = $source_image->save();
-		if ( is_wp_error( $saved_file ) ) {
-			return $saved_file;
+		if ( ! $processed ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_provider',
+				sprintf(
+					/* translators: %s: last backend error message */
+					__( 'Image colorization failed on every available backend (%s).', 'nvoos-content-graph-pro' ),
+					'' !== $last_error ? $last_error : __( 'unknown error', 'nvoos-content-graph-pro' )
+				)
+			);
 		}
 
-		$attachment_id = $this->save_as_attachment( $saved_file['path'], $arguments, $context );
-		if ( is_wp_error( $attachment_id ) ) {
-			return $attachment_id;
+		// Land the processed file in the media library.
+		$parent_id     = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
+		$attachment_id = $this->upload_processed_image( $final_path, $parent_id, __( 'Colorized Image', 'nvoos-content-graph-pro' ) );
+		wp_delete_file( $final_path );
+
+		if ( ! $attachment_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_attachment_error',
+				__( 'Failed to create attachment for the colorized image.', 'nvoos-content-graph-pro' )
+			);
 		}
 
-		// Save colorization metadata.
+		// Honest metadata: written only after real colorization succeeded.
 		update_post_meta( $attachment_id, '_wp_mcp_ai_colorized', true );
 		update_post_meta( $attachment_id, '_wp_mcp_ai_color_mode', $color_mode );
 
-		return $this->format_attachment_response( $attachment_id );
+		$response = $this->format_attachment_response( $attachment_id, $arguments );
+
+		$response['text'] = sprintf(
+			/* translators: %s: processing engine */
+			__( 'Image colorized successfully with %s.', 'nvoos-content-graph-pro' ),
+			$this->get_engine_label( $engine )
+		);
+		$response['engine']     = $engine;
+		$response['color_mode'] = $color_mode;
+		$response['prompt']     = $prompt;
+
+		return $response;
 	}
 
 	/**

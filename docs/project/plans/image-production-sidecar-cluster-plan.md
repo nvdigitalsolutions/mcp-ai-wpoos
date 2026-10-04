@@ -1,6 +1,6 @@
 # Image-Production Sidecar Cluster — Real Implementations for the Placeholder AI Tools
 
-> Status: **Planned** · Issue: (filed with this plan) · Owner: toolkit-audit / media-worker tracks
+> Status: **Wave 1 + Wave 2 implemented** (slices 1–5; Wave 3 optional, deferred) · Issue: [#6877](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/6877) · Owner: toolkit-audit / media-worker tracks
 > Created: 2026-10-04 · Last reviewed: 2026-10-04
 
 ## Context
@@ -203,6 +203,73 @@ slice, per the ecosystem-port discipline):
 1. Worker route names: dedicated `/api/image/enhance` + `/api/image/upscale`
    (this plan's default — clean contracts) vs extending `/api/image/optimize`
    with operations. Recommend dedicated routes.
+   **Resolved (2026-10-04): dedicated routes shipped with Wave 1.**
 2. `enhance_image_quality`'s `use_remote` default stays false (local-first)
    — confirm no site depends on the current no-op being "instant success".
+   **Resolved (2026-10-04): default kept false; use_remote is a sidecar
+   preference.**
 3. Style preset map: ship the 9 existing enum presets only, or extend?
+   (Wave 2 — still open.)
+   **Implemented (2026-10-04): the 9 existing enum presets shipped; the
+   map lives in the plugin tools (`get_style_prompts()`) and mirrors the
+   worker's `STYLE_PROMPTS`.**
+
+## Wave 1 implementation notes (2026-10-04)
+
+- Worker v3.4.0 routes landed (`/api/image/enhance`, `/api/image/upscale`,
+  8192px dimension cap shared with `sharp-process.js` and the Pro trait;
+  worker contract preserved for the plugin client). Jest-adjacent coverage in
+  `routes/image.test.js` uses the repo's actual `node:test` runner.
+- `bin/sharp-process.js` enhance/upscale operations are byte-compatible with
+  the existing optimize/resize/convert paths.
+- The Pro `WP_MCP_AI_Sharp_Image_Processing` trait centralises availability
+  probing, the subprocess runner, the sidecar decode path, and media-library
+  upload; both tools adopt it (mirrored byte-identical into CG Pro with its
+  own text domain + D8-compat seams).
+- W1d: `optimize_image_sharp::optimize_via_sidecar()` re-routes `enhance` to
+  `/api/image/enhance` (blur remains local-Sharp-only, documented).
+- Finding beyond the plan: WP image editors cannot upscale
+  (`image_resize_dimensions()` rejects enlargements), so the
+  `upscale_image_ai` no-backend degrade surfaces a clear honest
+  `wp_mcp_ai_sharp_unavailable` error rather than a broken resize — the
+  "standard-scaling degrade" wording in Wave 1 is corrected accordingly.
+- Guidance-port ride-along: the two rewritten tools port their
+  `get_usage_guidance()` blocks + interface to CG Pro (#6741, #6740
+  precedent), shrinking the drift by two files.
+
+## Wave 2 implementation notes (2026-10-04)
+
+- Worker `/api/image/edit` shipped: `colorize` + `style_transfer`
+  operations, prompt presets (mirrored with the plugin tools), prompt
+  override, `provider` auto-resolution (Gemini → OpenAI → Replicate),
+  400/503 validation contracts, and the standard b64 envelope. Gemini
+  edits use `gemini-3.1-flash-image` with the inline source image; OpenAI
+  uses `gpt-image-1` `images.edit`; Replicate uses predictions polling
+  with `REPLICATE_COLORIZE_MODEL` (default `deoldify/deoldify`) and
+  `REPLICATE_STYLE_TRANSFER_MODEL` (required for style_transfer — no
+  deterministic default model assumed, honest error otherwise).
+- The Pro `WP_MCP_AI_Provider_Image_Edit` trait promotes the harmonization
+  `ai_edit_image()` helper with an upfront credential gate
+  (`provider_has_credentials()` via the Credential_Resolver);
+  harmonization-base is deliberately left unrefactored.
+- `colorize_image`: `color_mode` → prompt map; backend chain sidecar →
+  Gemini → OpenAI (use_remote=true prefers the sidecar);
+  `_wp_mcp_ai_colorized`/`_wp_mcp_ai_color_mode` meta written only on
+  real success.
+- `apply_artistic_style`: 9-preset prompt map + deterministic strength
+  bands (>= 0.75 strong, <= 0.35 subtle) appended to the prompt; unknown
+  presets rejected; `style_image` accepted but honestly reported as
+  `style_image_applied: false` until a reference-image path exists;
+  `_wp_mcp_ai_artistic_style`/`_wp_mcp_ai_style_strength` meta written
+  only on real success.
+- Both tools mirrored byte-identical to CG Pro (own text domain + seams,
+  guidance ride-along).
+- Worker coverage: `routes/image.test.js` grown to 16 node:test cases
+  (provider fetch stubs with a 127.0.0.1 pass-through); the OpenAI SDK is
+  constructed with an explicit `fetch: globalThis.fetch` binding so the
+  transport is stub-able.
+
+## Wave 3 (optional, deferred)
+
+Replicate Real-ESRGAN on `/api/image/upscale` via an `engine: 'ai'` field
+— not required for honesty (lanczos3 is a real, high-quality upscale).

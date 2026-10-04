@@ -18,6 +18,8 @@ Shared PHP traits for Pro addon toolkits — reusable behaviour that crosses too
 | Symbol | File | Used by |
 |---|---|---|
 | `WP_MCP_AI_CRM_Relevance_Search` | `trait-wp-mcp-ai-relevance-search.php` | CRM + Healthcare search tools |
+| `WP_MCP_AI_Sharp_Image_Processing` | `trait-wp-mcp-ai-sharp-image-processing.php` | Image-production `enhance_image_quality` + `upscale_image_ai` (also hosts the sidecar/upload plumbing for the Wave 2 tools) |
+| `WP_MCP_AI_Provider_Image_Edit` | `trait-wp-mcp-ai-provider-image-edit.php` | Image-production `colorize_image` + `apply_artistic_style` |
 
 ## Inputs / Outputs / Neighbors
 
@@ -34,6 +36,14 @@ Shared PHP traits for Pro addon toolkits — reusable behaviour that crosses too
 - Traits are NOT autoloaded — consuming classes must `require_once` them explicitly.
 - Each trait must declare `@subpackage Traits` in its file header.
 - TF-IDF and BM25 computations are idempotent and stateless — no side effects, no DB writes.
+- `WP_MCP_AI_Sharp_Image_Processing` composes the base-owned
+  `WP_MCP_AI_NodeJS_Subprocess` and `WP_MCP_AI_Media_Worker_Client` traits;
+  consuming tools therefore need no additional trait requires. The
+  `wp_mcp_ai_local_sharp_available` and `wp_mcp_ai_sharp_process_image`
+  filters are the test seams for the two processing paths.
+- `WP_MCP_AI_Provider_Image_Edit` promotes the harmonization
+  `ai_edit_image()` helper with an upfront `provider_has_credentials()`
+  gate; the no-key case is an honest `wp_mcp_ai_no_api_key` error.
 
 ## Tests
 
