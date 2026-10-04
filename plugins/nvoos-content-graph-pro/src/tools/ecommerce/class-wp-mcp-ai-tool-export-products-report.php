@@ -322,7 +322,7 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 
 		// Add category filter.
 		if ( ! empty( $filter['category'] ) ) {
-			$args['tax_query'] = array(
+			$args['tax_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Intentional filtered catalog export.
 				array(
 					'taxonomy' => 'product_cat',
 					'field'    => 'slug',
@@ -333,7 +333,7 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 
 		// Add stock status filter.
 		if ( ! empty( $filter['stock_status'] ) ) {
-			$args['meta_query'] = array(
+			$args['meta_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Intentional filtered catalog export.
 				array(
 					'key'   => '_stock_status',
 					'value' => sanitize_text_field( $filter['stock_status'] ),
@@ -529,8 +529,8 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 
 		// Prepare data for Excel generation.
 		$sheet_data = array(
-			'name'    => 'Products',
-			'columns' => array_map(
+			'name'       => 'Products',
+			'columns'    => array_map(
 				function ( $header ) {
 					return array(
 						'header' => $header,
@@ -540,7 +540,8 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 				},
 				$data['headers']
 			),
-			'data'    => array(),
+			'data'       => array(),
+			'has_header' => true,
 		);
 
 		// Convert rows to associative arrays.
@@ -553,41 +554,75 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 			$sheet_data['data'][] = $row_data;
 		}
 
-		// Use Node.js script to generate Excel file.
+		// The bundled Node script reads its input from a JSON file and writes
+		// the workbook to the output path passed as its second argument.
 		$script_path = NVOOS_CONTENT_GRAPH_PRO_PATH . 'scripts/generate-excel.js';
-		$input_data  = wp_json_encode(
+		$input_file  = $this->write_node_input_file(
 			array(
-				'sheets'     => array( $sheet_data ),
-				'outputFile' => $file_path,
-				'creator'    => 'WP MCP AI Pro',
-			)
+				'author' => 'NV oOS Pro',
+				'sheets' => array( $sheet_data ),
+			),
+			$temp_dir
 		);
 
-		// Execute Node.js script.
-		$node_path = 'node'; // Assume node is in PATH.
-		$command   = sprintf(
-			'%s %s %s 2>&1',
-			escapeshellcmd( $node_path ),
-			escapeshellarg( $script_path ),
-			escapeshellarg( $input_data )
-		);
+		if ( is_wp_error( $input_file ) ) {
+			return $input_file;
+		}
 
-		$output     = array();
-		$return_var = 0;
-		exec( $command, $output, $return_var ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		$result = wp_mcp_ai_ecommerce_run_node_script( $script_path, $input_file, $file_path );
+		wp_delete_file( $input_file );
 
-		if ( 0 !== $return_var || ! file_exists( $file_path ) ) {
+		if ( is_wp_error( $result ) ) {
+			if ( file_exists( $file_path ) ) {
+				wp_delete_file( $file_path );
+			}
 			return new WP_Error(
 				'excel_generation_failed',
 				sprintf(
-					/* translators: %s: error output */
+					/* translators: %s: error message */
 					__( 'Failed to generate Excel file: %s', 'nvoos-content-graph-pro' ),
-					implode( "\n", $output )
+					$result->get_error_message()
 				)
 			);
 		}
 
+		if ( ! file_exists( $file_path ) ) {
+			return new WP_Error(
+				'excel_generation_failed',
+				__( 'Failed to generate Excel file: no output was produced.', 'nvoos-content-graph-pro' )
+			);
+		}
+
 		return $file_path;
+	}
+
+	/**
+	 * Write a JSON payload for a bundled Node.js script to a temp file.
+	 *
+	 * @param array  $payload  Payload to encode.
+	 * @param string $temp_dir Directory to write into.
+	 * @return string|WP_Error Temp file path or error.
+	 */
+	protected function write_node_input_file( array $payload, $temp_dir ) {
+		$input_file = $temp_dir . '/node-input-' . wp_generate_password( 12, false ) . '.json';
+		$encoded    = wp_json_encode( $payload );
+
+		if ( false === $encoded ) {
+			return new WP_Error(
+				'excel_generation_failed',
+				__( 'Failed to encode Excel generation input.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Required for the Node script input.
+		if ( false === file_put_contents( $input_file, $encoded ) ) {
+			return new WP_Error(
+				'excel_generation_failed',
+				__( 'Failed to write Excel generation input file.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		return $input_file;
 	}
 
 	/**

@@ -865,7 +865,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 
 		$mime_info     = wp_check_filetype( $product_path );
 		$mime_type     = ( isset( $mime_info['type'] ) && '' !== $mime_info['type'] ) ? $mime_info['type'] : 'image/png';
-		$encoded_image = base64_encode( $image_data );
+		$encoded_image = base64_encode( $image_data ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding binary image data for the provider API.
 
 		$client  = new WP_MCP_AI_Gemini_Client();
 		$options = array(
@@ -956,6 +956,20 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			if ( is_wp_error( $response ) ) {
 				return $response;
 			}
+
+			$status_code = (int) wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $status_code ) {
+				return new WP_Error(
+					'wp_mcp_ai_download_failed',
+					sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'Failed to download the generated image (HTTP %d).', 'nvoos-content-graph-pro' ),
+						$status_code
+					),
+					array( 'status' => $status_code )
+				);
+			}
+
 			$raw_data = wp_remote_retrieve_body( $response );
 		}
 
@@ -979,7 +993,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	 */
 	protected function save_ai_result_to_temp( $image_data, $format = 'png', $is_base64 = true ) {
 		if ( $is_base64 ) {
-			$raw_data = base64_decode( $image_data, true );
+			$raw_data = base64_decode( $image_data, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding binary image data from API response.
 			if ( false === $raw_data ) {
 				return new WP_Error(
 					'wp_mcp_ai_decode_failed',
@@ -1592,7 +1606,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		$file_name = 'product-actualization-' . gmdate( 'Ymd-His' ) . '.png';
 
 		// Read file contents.
-		$file_contents = file_get_contents( $file_path );
+		$file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local composited image for media upload.
 		if ( false === $file_contents ) {
 			return new WP_Error(
 				'wp_mcp_ai_read_failed',

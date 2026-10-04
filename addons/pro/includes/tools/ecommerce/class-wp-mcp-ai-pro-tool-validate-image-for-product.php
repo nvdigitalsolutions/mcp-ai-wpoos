@@ -638,6 +638,37 @@ class WP_MCP_AI_Pro_Tool_Validate_Image_For_Product implements WP_MCP_AI_Tool_In
 	}
 
 	/**
+	 * Flatten a provider message content field into plain text.
+	 *
+	 * OpenAI-compatible gateways (and Gemini-shaped responses) can return
+	 * message.content as an array of {type,text} parts instead of a string.
+	 * Flattening at the response boundary keeps every downstream string
+	 * operation (trim, json_decode) safe from "array given" fatals.
+	 *
+	 * @param mixed $content Raw content from the provider response.
+	 * @return string Flattened text (empty string when unflattenable).
+	 */
+	private function flatten_response_content( $content ) {
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( is_array( $content ) ) {
+			$text = '';
+			foreach ( $content as $part ) {
+				if ( is_array( $part ) && isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				} elseif ( is_string( $part ) ) {
+					$text .= $part;
+				}
+			}
+			return $text;
+		}
+
+		return '';
+	}
+
+	/**
 	 * Validate image using AI vision analysis.
 	 *
 	 * Uses OpenAI Vision API to analyze the image for body part visibility,
@@ -717,7 +748,17 @@ class WP_MCP_AI_Pro_Tool_Validate_Image_For_Product implements WP_MCP_AI_Tool_In
 			);
 		}
 
-		$raw_content     = trim( $response['choices'][0]['message']['content'] );
+		$raw_content = $this->flatten_response_content( $response['choices'][0]['message']['content'] );
+
+		if ( '' === $raw_content ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_response',
+				__( 'OpenAI Vision API returned an empty analysis.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$raw_content     = trim( $raw_content );
 		$vision_analysis = json_decode( $raw_content, true );
 
 		if ( ! is_array( $vision_analysis ) ) {
