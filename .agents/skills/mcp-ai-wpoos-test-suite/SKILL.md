@@ -5,7 +5,7 @@ description: Repair and triage guide for the NV oOS PHPUnit test suite — Docke
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-03"
+  last-updated: "2026-10-04"
   plugin-version: "1.1.94"
   plugin-version-tested: "1.1.94"
 ---
@@ -25,6 +25,11 @@ repair loop runs.
 - "Continue the test-suite cluster" / "fix the next cluster" requests
 - Deciding whether a failure is test drift or a production bug
 - Opening the cluster PR (branch/commit/validation conventions)
+
+For **proactive per-toolkit hardening audits** (shell-call guards, nonexistent
+client methods, provider array-content parsing, enum/service mismatches) use
+the `mcp-ai-wpoos-toolkit-audit` skill — it drives the audit loop and reuses
+this skill's cluster/PR/validation mechanics.
 
 ## Test environment (Docker)
 
@@ -1023,6 +1028,7 @@ than trusting an old list.
 - Test-writing patterns & coverage policy: `.context/testing.md`
 - Remaining-fixes tracker: `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`
 - Plugin operational guide: `.agents/skills/mcp-ai-wpoos-plugin/SKILL.md`
+- Per-toolkit hardening audit loop: `.agents/skills/mcp-ai-wpoos-toolkit-audit/SKILL.md`
 - **ID-handoff contract suites (permanent CI infrastructure):**
   `tests/test-tool-id-handoff-contract.php` (L1 honesty — checks
   `tests/fixtures/tool-contract-manifest.php` against the live registry in
