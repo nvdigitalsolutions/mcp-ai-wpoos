@@ -228,6 +228,18 @@ weekly (or on demand), independent of any release.
   `.github/copilot-instructions.md`, and the `README.md` repo map in-window —
   the catch-up verifies (grep for the old count) rather than assuming the
   fold-in is owed.
+- **An in-window addon version bump must be verified against every
+  runtime-reported version string, not just the package manifests.** The
+  v1.1.95 window's #6881 bumped the media worker to 3.4.0 in `package.json` +
+  `package-lock.json` but left `src/index.js`'s two health-endpoint `version:`
+  fields and `src/status/handlers.js`'s `WORKER_VERSION` at 3.3.0 (a deployed
+  3.4.0 worker reported 3.3.0 on `/api/health*` and in status heartbeats — the
+  #6849 precedent had kept all five in sync; `WORKER_VERSION` even carries the
+  comment "kept in sync with package.json by the release process"). Fixed
+  post-window by #6895. When an addon's version moves in-window, grep the
+  addon tree for the old version and treat every non-historical hit (health
+  payloads, status constants, headers) as a release-blocking miss — the
+  ADDON_INVENTORY row update alone is not proof the addon is consistent.
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -745,7 +757,9 @@ previous window — the user will usually want it back-dated.
   README repo-map 61 → 62 fold-in), the FOR_REVIEWERS addon-count 27 → 29 +
   Media Worker 3.4.0 corrections, the proposals-README SSE entry, the
   ADDON_INVENTORY Media Worker row, the stale 1.1.93 build-set removal
-  (30 files — 9 + 2 + 19), and zero tool-count change (no registrations))
+  (30 files — 9 + 2 + 19), and zero tool-count change (no registrations);
+  post-window #6895 fixed the worker's three missed runtime version strings
+  (the partial-bump miss now codified as an A2 scope rule))
 
 Preceding windows:
   `docs/project/plans/v1.1.94-docs-catch-up.md` (the v1.1.94

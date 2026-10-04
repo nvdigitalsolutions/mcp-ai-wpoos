@@ -1,7 +1,7 @@
 # NV oOS Media Worker Sidecar
 
 > **GSD Context File** — Load this when working on the media worker (`addons/media-worker/`), the plugin sidecar client, or any Pro service that routes through the worker.
-> Last reviewed: October 4, 2026 (v1.1.95, worker v3.4.0).
+> Last reviewed: October 5, 2026 (v1.1.95, worker v3.4.0 — the version-sync note added after the #6881 partial-bump fix, #6895).
 
 ---
 
@@ -17,6 +17,15 @@ existing local fallbacks run unchanged.
   `mcp-ai-wpoos-media-worker` via `.github/workflows/sync-media-worker.yml`
   — never commit to the standalone repo directly.
 - Version: **v3.4.0** (multi-tenant v2.4.0 → Phase 2 → Phase 3 W1–W7 → crawling + Crawl4AI facade → status monitoring module → Wave 1 image enhance/upscale routes).
+- **Version sync (all five spots must move together on every bump — the
+  #6881 miss, fixed by #6895, is the precedent):** `package.json` →
+  `package-lock.json` (root `packages[""]` + the `design-media-worker` entry) →
+  `src/index.js`'s `/api/health` `version:` field → `src/index.js`'s
+  `/api/health/full` `version:` field → `src/status/handlers.js`
+  `WORKER_VERSION` (feeds the fleet-status heartbeat payload). A partial bump
+  leaves a deployed worker reporting the old version on `/api/health*` and in
+  every status heartbeat — grep `addons/media-worker/src/` for the old version
+  string after any bump.
 
 ## Key Paths
 
