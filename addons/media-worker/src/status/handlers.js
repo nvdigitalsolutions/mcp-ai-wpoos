@@ -13,7 +13,7 @@ import { store } from './store.js';
 import { emitTransitionAlerts } from './sweeper.js';
 
 /** Worker version (kept in sync with package.json by the release process). */
-const WORKER_VERSION = '3.3.0';
+const WORKER_VERSION = '3.4.0';
 
 /** Monotonic counters for the metrics endpoint. */
 export const counters = {

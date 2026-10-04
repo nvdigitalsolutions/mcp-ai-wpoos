@@ -75,7 +75,7 @@ app.get( '/api/health', (_req, res) => {
 	res.json( {
 		status: 'ok',
 		service: 'design-media-worker',
-		version: '3.3.0',
+		version: '3.4.0',
 		uptime: process.uptime(),
 	} );
 } );
@@ -162,7 +162,7 @@ app.get( '/api/health/full', async (_req, res) => {
 		res.json( {
 			status: 'ok',
 			service: 'design-media-worker',
-			version: '3.3.0',
+			version: '3.4.0',
 			uptime: process.uptime(),
 			environment: process.env.NODE_ENV || 'development',
 			tenants,
