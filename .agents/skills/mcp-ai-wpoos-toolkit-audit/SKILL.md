@@ -223,7 +223,7 @@ then move to the next toolkit.
 - [ ] flowhub
 - [ ] google-workspace
 - [ ] healthcare
-- [ ] image-production
+- [x] image-production — 2026-10-04 (case study below)
 - [ ] infrastructure
 - [ ] jetengine
 - [ ] jev
@@ -253,6 +253,55 @@ then move to the next toolkit.
 Also sweep the loose tools directly in `addons/pro/includes/tools/*.php`
 (incident/maintenance tools) and the shared `addons/pro/includes/services/`
 classes each toolkit routes through.
+
+## Case study — image-production
+
+What the second audit found (classes 1, 3, 4; plus defensive fixes):
+
+1. `text_to_image_prompt_optimizer` — raw `wp_remote_post()` to a hardcoded
+   `api.openai.com/v1/chat/completions` URL bypassing the OpenAI client
+   (custom `openai_base_url`, org/project headers, Credential_Resolver all
+   ignored), `trim( $data['choices'][0]['message']['content'] )`
+   string-assuming (fatal on array-of-parts content from OpenAI-compatible
+   gateways), no HTTP status check, and fenced ```json``` payloads never
+   parsed (the model is asked for JSON; fences are common). Rewrote around
+   `WP_MCP_AI_OpenAI_Client::create_chat_completion()` with a
+   `flatten_response_content()` helper, a `get_api_key()` credential gate,
+   and fence-stripping in `parse_optimization_response()`.
+2. `generate_image_ai` Stability path — `list( $w, $h ) = explode( 'x', $size )`
+   left `$height` undefined (→ 0) for malformed sizes, and non-200
+   responses fell through to the generic missing-artifacts error. Fixed with
+   `array_pad` + absint guards and a status check that surfaces Stability's
+   own `message` field.
+3. `optimize_image_sharp::optimize_via_sidecar()` —
+   `(int) $sidecar['optimized_size']` undefined-index notice + 0 when the
+   worker omits the field. Guarded with a `filesize()` fallback.
+4. Harmonization `ai_edit_image()` / `generate_background()` — the
+   OpenAI-`url` fallback branch downloaded the image without checking the
+   HTTP status (error HTML would be saved as image bytes), and a
+   neither-b64-nor-url response fell through to the misleading
+   "no supported provider" error. Added a status gate + an honest
+   `wp_mcp_ai_empty_result`.
+
+Verified-clean this cluster: the `WP_MCP_AI_NodeJS_Subprocess` trait
+(already Process Service-only), the Media Worker sidecar trait, the remove.bg
+helper (upload-dir containment + status-aware error parsing), the
+harmonization URL downloader (`wp_safe_remote_get` + image content-type
+check), and all Gemini/OpenAI `generate_image`/`edit_image` call sites
+(signatures and return shapes match the real client APIs).
+
+Documented, out of scope: `upscale_image_ai` / `colorize_image` /
+`enhance_image_quality` / `apply_artistic_style` are placeholder
+implementations (no actual AI processing — they re-save the source and claim
+success); `enhance_image_quality`'s sharpen/color/contrast/denoise helpers
+are no-ops. Not failure-class bugs; a feature-completeness track.
+
+Tests landed: `addons/pro/tests/test-image-production-hardening.php` (new,
+12 tests / 39 assertions — prompt-optimizer response-shape matrix,
+fence-stripping, Stability dimension/error paths, Gemini+OpenAI image-edit
+round-trips through mocked HTTP, sidecar missing-field guard). Validation:
+12+22 green across the image-production cluster; phpcs 0 errors on both
+standards; UTF-8 clean.
 
 ## Case study — document-generation
 
