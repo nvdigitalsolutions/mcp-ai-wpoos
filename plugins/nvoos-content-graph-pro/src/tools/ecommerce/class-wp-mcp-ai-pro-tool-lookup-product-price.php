@@ -631,6 +631,37 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
+	 * Flatten a provider/tool content field into plain text.
+	 *
+	 * Crawl4AI results and submit_document_prompt responses can carry their
+	 * text as an array of {type,text} parts instead of a string. Flattening
+	 * at every response boundary keeps downstream preg_match(), explode(),
+	 * and json_decode() calls safe from "array given" fatals.
+	 *
+	 * @param mixed $content Raw content from a tool or provider response.
+	 * @return string Flattened text (empty string when unflattenable).
+	 */
+	protected function flatten_response_content( $content ) {
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( is_array( $content ) ) {
+			$text = '';
+			foreach ( $content as $part ) {
+				if ( is_array( $part ) && isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				} elseif ( is_string( $part ) ) {
+					$text .= $part;
+				}
+			}
+			return $text;
+		}
+
+		return '';
+	}
+
+	/**
 	 * Extract text from document file.
 	 *
 	 * @param string $file_path Document file path.
@@ -717,11 +748,11 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 
 		// Extract text from response.
 		if ( isset( $doc_result['text'] ) ) {
-			return $doc_result['text'];
+			return $this->flatten_response_content( $doc_result['text'] );
 		} elseif ( isset( $doc_result['content'] ) ) {
-			return $doc_result['content'];
+			return $this->flatten_response_content( $doc_result['content'] );
 		} elseif ( isset( $doc_result['response'] ) ) {
-			return $doc_result['response'];
+			return $this->flatten_response_content( $doc_result['response'] );
 		}
 
 		return new WP_Error(
@@ -809,11 +840,11 @@ If no line items are found, return an empty array [].';
 		// Parse the response to extract JSON.
 		$response_text = '';
 		if ( isset( $doc_result['text'] ) ) {
-			$response_text = $doc_result['text'];
+			$response_text = $this->flatten_response_content( $doc_result['text'] );
 		} elseif ( isset( $doc_result['content'] ) ) {
-			$response_text = $doc_result['content'];
+			$response_text = $this->flatten_response_content( $doc_result['content'] );
 		} elseif ( isset( $doc_result['response'] ) ) {
-			$response_text = $doc_result['response'];
+			$response_text = $this->flatten_response_content( $doc_result['response'] );
 		}
 
 		if ( empty( $response_text ) ) {
@@ -925,7 +956,7 @@ If no line items are found, return an empty array [].';
 
 		// Check if results contain markdown content we can parse.
 		if ( isset( $crawl_result['results'][0]['markdown'] ) ) {
-			$markdown = $crawl_result['results'][0]['markdown'];
+			$markdown = $this->flatten_response_content( $crawl_result['results'][0]['markdown'] );
 			// Simple heuristic: extract first heading as title.
 			if ( preg_match( '/^#\s+(.+)$/m', $markdown, $matches ) ) {
 				$product['title'] = trim( $matches[1] );
@@ -934,7 +965,7 @@ If no line items are found, return an empty array [].';
 
 		// Try to extract from HTML/text if available.
 		if ( empty( $product['title'] ) && isset( $crawl_result['results'][0]['text'] ) ) {
-			$text = $crawl_result['results'][0]['text'];
+			$text = $this->flatten_response_content( $crawl_result['results'][0]['text'] );
 			// Take first non-empty line as title.
 			$lines = explode( "\n", $text );
 			foreach ( $lines as $line ) {
@@ -948,7 +979,7 @@ If no line items are found, return an empty array [].';
 
 		// Try to extract price using common patterns.
 		if ( isset( $crawl_result['results'][0]['markdown'] ) || isset( $crawl_result['results'][0]['text'] ) ) {
-			$content    = isset( $crawl_result['results'][0]['markdown'] ) ? $crawl_result['results'][0]['markdown'] : $crawl_result['results'][0]['text'];
+			$content    = isset( $crawl_result['results'][0]['markdown'] ) ? $this->flatten_response_content( $crawl_result['results'][0]['markdown'] ) : $this->flatten_response_content( $crawl_result['results'][0]['text'] );
 			$price_data = $this->extract_price_from_content( $content );
 			if ( $price_data ) {
 				$product['price']    = $price_data['price'];
@@ -966,6 +997,12 @@ If no line items are found, return an empty array [].';
 	 * @return array|null Price data or null.
 	 */
 	protected function extract_price_from_content( $content ) {
+		// Only string content can carry price patterns; array-of-parts
+		// content must be flattened by the caller.
+		if ( ! is_string( $content ) ) {
+			return null;
+		}
+
 		// Common price patterns.
 		$patterns = array(
 			'/\$\s*([0-9,]+\.?\d{0,2})\s*USD/i',      // $123.45 USD.
@@ -1156,7 +1193,7 @@ If no line items are found, return an empty array [].';
 			return null;
 		}
 
-		$content    = isset( $crawl_result['results'][0]['markdown'] ) ? $crawl_result['results'][0]['markdown'] : '';
+		$content    = isset( $crawl_result['results'][0]['markdown'] ) ? $this->flatten_response_content( $crawl_result['results'][0]['markdown'] ) : '';
 		$price_data = $this->extract_price_from_content( $content );
 
 		if ( ! $price_data ) {
@@ -1299,6 +1336,15 @@ If no line items are found, return an empty array [].';
 	 * @return array|WP_Error Parsed array or error.
 	 */
 	protected function parse_json_from_text( $text ) {
+		// Array-of-parts text cannot carry a JSON array; flatten at the
+		// response boundary instead of string-assuming here.
+		if ( ! is_string( $text ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_response',
+				__( 'LLM response content was not a string.', 'nvoos-content-graph-pro' )
+			);
+		}
+
 		// Try to find JSON array in the text.
 		// Look for array pattern: [...].
 		if ( preg_match( '/\[\s*\{.*\}\s*\]/s', $text, $matches ) ) {

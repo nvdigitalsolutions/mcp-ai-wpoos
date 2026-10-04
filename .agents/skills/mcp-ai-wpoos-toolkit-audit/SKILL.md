@@ -220,7 +220,7 @@ then move to the next toolkit.
 - [ ] dietpi
 - [ ] dj-management
 - [x] eca-management — 2026-10-04 (case study below)
-- [ ] ecommerce
+- [x] ecommerce — 2026-10-04 (case study below)
 - [ ] email-marketing
 - [ ] erp-ezuite
 - [ ] extended-cognition
@@ -262,7 +262,7 @@ classes each toolkit routes through.
 
 ## Case study — healthcare
 
-What the fifth audit found (class 3; plus class-2 dead audit trail and two
+What the sixth audit found (class 3; plus class-2 dead audit trail and two
 bonus TypeErrors exposed by the new tests; everything else verified clean):
 
 1. `interpret_imaging_study::action_interpret()` — concatenated
@@ -303,6 +303,63 @@ FHIR export audit-trail entry, OpenMed non-array entities guard, missing
 (isolated DB `wordpress_test_muted_moth`), 38 CG Pro healthcare tests green
 (isolated DB `wordpress_test_muted_moth_cg`); phpcs 0 errors on both
 standards; UTF-8 clean. PR #6887.
+
+## Case study — ecommerce
+
+What the fifth audit found (classes 1 and 3, plus two feature-dead Node paths):
+
+1. `validate-image-for-product::validate_with_vision_ai()` and
+   `validate-image-for-vehicle::validate_with_vision_ai()` —
+   `trim( $response['choices'][0]['message']['content'] )` string-assuming
+   (class 3): OpenAI-compatible gateways can return message.content as an
+   array of parts, so `trim()` fatals on the first such response. Added a
+   `flatten_response_content()` helper at the response boundary plus an
+   honest empty-content `wp_mcp_ai_invalid_response` WP_Error.
+2. `export_products_report::generate_excel_file()` and
+   `generate_woocommerce_order_invoice_pdf::generate_pdf()` — unguarded
+   `exec()` (class 1) AND doubly broken invocations: the script path was
+   `WP_MCP_AI_PRO_PATH . 'addons/pro/scripts/...'` (doubled — `PRO_PATH`
+   already ends in `addons/pro/`), the invoice tool pointed at
+   `generate-invoice.js` which does not exist anywhere in the repo, and both
+   passed inline JSON on the command line while the bundled scripts take
+   `<json_file> <output_file>` argv. Both are now gated behind
+   `WP_MCP_AI_ALLOW_SHELL_TOOLS` + Node availability via the shared
+   `wp_mcp_ai_ecommerce_run_node_script()` helper (helpers file, both trees)
+   and execute through the Process Service (`run_silent()` array form — no
+   shell interpolation); the Excel tool writes a JSON input file and the
+   invoice tool renders an escaped HTML invoice through the bundled
+   `generate-pdf.js` (copied into the CG Pro scripts dir).
+3. `lookup_product_price` — Crawl4AI `markdown`/`text` fields and
+   submit_document_prompt `text`/`content`/`response` fields fed into
+   `preg_match()`/`explode()`/`json_decode()` without a string guarantee
+   (class 3, tool-result variant): `parse_crawl_result_for_product()`,
+   `parse_search_results()`, `extract_text_from_document()`,
+   `extract_line_items_from_text()` now flatten at every response boundary;
+   `extract_price_from_content()` and `parse_json_from_text()` carry
+   defensive `! is_string()` guards.
+4. `product_actualization::generate_ai_integrated_image_openai()` — the
+   OpenAI-`url` fallback branch downloaded the image without checking the
+   HTTP status (error HTML saved as image bytes); added a status gate.
+
+Verified clean this cluster: all Shopify/Printful/Roboflow client method
+calls exist on their classes (class 2); every advertised enum matches its
+service switch — Printful action enum ↔ switch, product-actualization
+provider enum ↔ `detect_preferred_provider()`, QuickBooks accounting-method
+and import-duty country enums validated against their maps (class 4);
+get-import-duty / quickbooks-report / quickbooks-desktop-sync HTTP paths
+carry is_wp_error + status + JSON validation; zero remaining shell calls in
+the toolkit.
+
+Tests landed: `addons/pro/tests/test-ecommerce-toolkit-hardening.php` (new,
+14 tests / 43 assertions — flatten shape matrix for both vision tools via
+mocked `pre_http_request` with string AND array-of-parts content, empty
+content honest-error paths, crawl-markdown flatten, price/JSON parse guards,
+shell-tools gate for the Node runner + both generation methods with temp
+file cleanup assertions, invoice HTML escaping, JSON input roundtrip).
+Validation: 250 ecommerce-cluster tests green; phpcs 0 errors on both
+standards; UTF-8 clean. Note: the test never defines
+\`WP_MCP_AI_ALLOW_SHELL_TOOLS\` — defining it would pollute every later suite
+in the shared process.
 
 ## Case study — eca-management
 
@@ -375,10 +432,10 @@ are heuristic; enum/service surfaces match.
 
 Follow-up queue for later clusters (same `['choices'][0]['message']['content']`
 string-assumption found globally): eca-management research-eca ✅ (done, this
-file), ecommerce validate-image-for-product/vehicle (trim + json_decode),
-healthcare interpret-imaging-study, multilingual auto-translate-content (also
-raw `wp_remote_post`), orchestration generate-research-report, places
-research-place.
+file), ecommerce validate-image-for-product/vehicle ✅ (trim + json_decode,
+done 2026-10-04), healthcare interpret-imaging-study, multilingual
+auto-translate-content (also raw `wp_remote_post`), orchestration
+generate-research-report, places research-place.
 
 Tests landed: `addons/pro/tests/test-crm-toolkit-hardening.php` (new, 7 tests
 / 19 assertions — response-shape matrix for both tools via mocked
