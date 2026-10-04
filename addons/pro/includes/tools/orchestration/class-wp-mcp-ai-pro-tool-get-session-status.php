@@ -81,9 +81,9 @@ class WP_MCP_AI_Pro_Tool_Get_Session_Status {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
+			return new WP_Error(
+				'wp_mcp_ai_missing_session_id',
+				__( 'Missing required argument: session_id', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -94,9 +94,13 @@ class WP_MCP_AI_Pro_Tool_Get_Session_Status {
 		$session = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
+			return new WP_Error(
+				'wp_mcp_ai_session_not_found',
+				sprintf(
+					/* translators: %s: session ID */
+					__( 'Session %s not found', 'mcp-ai-wpoos-pro' ),
+					$session_id
+				)
 			);
 		}
 
@@ -328,7 +332,7 @@ class WP_MCP_AI_Pro_Tool_Get_Session_Status {
 			array()
 		);
 
-		if ( empty( $result['success'] ) ) {
+		if ( is_wp_error( $result ) || empty( $result['success'] ) ) {
 			return null;
 		}
 

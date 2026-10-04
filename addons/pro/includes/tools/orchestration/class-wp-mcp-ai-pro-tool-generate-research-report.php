@@ -997,7 +997,10 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 			return $result;
 		}
 
-		// Extract the content from the response.
+		// Extract the content from the response. Gemini normalizes
+		// message.content as an array of {type,text} parts and
+		// OpenAI-compatible gateways (DeepSeek, vLLM) can do the same, so
+		// flatten it before it reaches the JSON parser below.
 		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
@@ -1005,11 +1008,51 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 			);
 		}
 
+		$content = $this->flatten_response_content( $result['choices'][0]['message']['content'] );
+
+		if ( '' === $content ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_response',
+				__( 'AI provider returned an empty response.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
 		return array(
-			'content'  => $result['choices'][0]['message']['content'],
+			'content'  => $content,
 			'provider' => $provider,
 			'model'    => $model,
 		);
+	}
+
+	/**
+	 * Flatten an AI response content field into a plain string.
+	 *
+	 * Gemini normalizes message.content as an array of {type,text} parts and
+	 * OpenAI-compatible gateways (DeepSeek, vLLM) can do the same. Feeding
+	 * that array into preg_match() or json_decode() is fatal, so every
+	 * response boundary must reduce it to a string first.
+	 *
+	 * @param string|array $content Raw content field.
+	 * @return string Flattened text.
+	 */
+	protected function flatten_response_content( $content ) {
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( is_array( $content ) ) {
+			$text = '';
+			foreach ( $content as $part ) {
+				if ( is_array( $part ) && isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				} elseif ( is_string( $part ) ) {
+					$text .= $part;
+				}
+			}
+			return $text;
+		}
+
+		return '';
 	}
 
 	/**
@@ -1295,7 +1338,17 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 	 * @return array|WP_Error Formatted report data or error.
 	 */
 	protected function parse_and_format_research( $research_result, $topic, $report_type, $search_results ) {
-		$content = $research_result['content'];
+		// Defensive flatten: subclasses and tests may hand this method a raw
+		// provider payload rather than the perform_ai_research() shape, and
+		// preg_match()/json_decode() fatal on array content.
+		$content = isset( $research_result['content'] ) ? $this->flatten_response_content( $research_result['content'] ) : '';
+
+		if ( '' === $content ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_response',
+				__( 'AI provider returned an empty response.', 'mcp-ai-wpoos-pro' )
+			);
+		}
 
 		// Extract JSON from markdown code blocks if present.
 		if ( preg_match( '/```json\s*(.*?)\s*```/s', $content, $matches ) ) {
