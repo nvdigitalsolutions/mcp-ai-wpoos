@@ -187,9 +187,9 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -199,6 +199,27 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 		$attachment_ids      = isset( $arguments['attachment_ids'] ) && is_array( $arguments['attachment_ids'] ) ? array_map( 'absint', $arguments['attachment_ids'] ) : array();
 		$delete_unreferenced = isset( $arguments['delete_unreferenced'] ) ? (bool) $arguments['delete_unreferenced'] : false;
 		$limit               = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 100;
+
+		// Validate cleanup_type against the advertised schema.
+		$valid_cleanup_types = array( 'all', 'missing_files', 'unregistered', 'unreferenced', 'ids' );
+		if ( ! in_array( $cleanup_type, $valid_cleanup_types, true ) ) {
+			return new WP_Error(
+				'tool_error',
+				sprintf(
+					/* translators: %s: comma-separated list of valid cleanup types */
+					__( 'Invalid cleanup_type. Valid cleanup types: %s', 'mcp-ai-wpoos-pro' ),
+					implode( ', ', $valid_cleanup_types )
+				)
+			);
+		}
+
+		// "ids" mode requires an explicit list of attachments.
+		if ( 'ids' === $cleanup_type && empty( $attachment_ids ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'attachment_ids must be provided when cleanup_type is "ids".', 'mcp-ai-wpoos-pro' )
+			);
+		}
 
 		$results = array(
 			'success'      => true,
@@ -384,6 +405,10 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 		$processed = 0;
 		$years     = glob( $base_dir . '/*', GLOB_ONLYDIR );
 
+		if ( ! is_array( $years ) ) {
+			return;
+		}
+
 		foreach ( $years as $year_dir ) {
 			if ( $processed >= $limit ) {
 				break;
@@ -394,6 +419,9 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 			}
 
 			$months = glob( $year_dir . '/*', GLOB_ONLYDIR );
+			if ( ! is_array( $months ) ) {
+				continue;
+			}
 			foreach ( $months as $month_dir ) {
 				if ( $processed >= $limit ) {
 					break;
@@ -633,9 +661,11 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 			return false;
 		}
 
-		// Double-check we're deleting from the uploads directory.
+		// Double-check we're deleting from the uploads directory. The trailing
+		// separator ensures the check is a path-component boundary, not a
+		// string prefix (uploads-evil/… must not pass).
 		$upload_dir = wp_upload_dir();
-		$base_dir   = wp_normalize_path( $upload_dir['basedir'] );
+		$base_dir   = trailingslashit( wp_normalize_path( $upload_dir['basedir'] ) );
 		$file_path  = wp_normalize_path( $file_path );
 
 		if ( 0 !== strpos( $file_path, $base_dir ) ) {
@@ -665,8 +695,12 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 		$ext       = false !== $ext_pos ? substr( $basename, $ext_pos ) : '';
 
 		$bytes_freed = 0;
-		$pattern     = $dir . '/' . $name_base . '-*' . $ext;
-		$variants    = glob( $pattern );
+		// Escape glob metacharacters so filenames containing [ ] * ? { }
+		// cannot redirect the pattern to unrelated files.
+		$name_base = preg_replace( '/([\[\]{}*?\\])/', '[$1]', $name_base );
+		$ext       = preg_replace( '/([\[\]{}*?\\])/', '[$1]', $ext );
+		$pattern   = $dir . '/' . $name_base . '-*' . $ext;
+		$variants  = glob( $pattern );
 
 		if ( ! is_array( $variants ) ) {
 			return $bytes_freed;
@@ -721,6 +755,10 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 			$file = get_attached_file( $attachment_id );
 			if ( $file && file_exists( $file ) ) {
 				$registered[] = wp_normalize_path( $file );
+			}
+
+			if ( ! $file ) {
+				continue;
 			}
 
 			$metadata = wp_get_attachment_metadata( $attachment_id );

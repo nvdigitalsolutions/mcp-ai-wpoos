@@ -178,9 +178,9 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -188,6 +188,29 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 		$scan_type  = isset( $arguments['scan_type'] ) ? sanitize_text_field( $arguments['scan_type'] ) : 'all';
 		$limit      = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 500;
 		$year_month = isset( $arguments['year_month'] ) ? sanitize_text_field( $arguments['year_month'] ) : '';
+
+		// Validate scan_type against the advertised schema.
+		$valid_scan_types = array( 'all', 'unreferenced', 'missing_files', 'unregistered' );
+		if ( ! in_array( $scan_type, $valid_scan_types, true ) ) {
+			return new WP_Error(
+				'tool_error',
+				sprintf(
+					/* translators: %s: comma-separated list of valid scan types */
+					__( 'Invalid scan_type. Valid scan types: %s', 'mcp-ai-wpoos-pro' ),
+					implode( ', ', $valid_scan_types )
+				)
+			);
+		}
+
+		// Validate year_month strictly (YYYY/MM). Anything else is rejected —
+		// it is later concatenated into an uploads-directory path and must
+		// not be able to traverse out of that directory.
+		if ( '' !== $year_month && ! preg_match( '/^\d{4}\/\d{2}$/', $year_month ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid year_month format. Expected YYYY/MM (e.g. "2024/01").', 'mcp-ai-wpoos-pro' )
+			);
+		}
 
 		$results = array(
 			'success'           => true,
@@ -526,11 +549,17 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 		} else {
 			// Scan year/month subdirectories in the uploads root.
 			$years = glob( $base_dir . '/*', GLOB_ONLYDIR );
+			if ( ! is_array( $years ) ) {
+				return $result;
+			}
 			foreach ( $years as $year_dir ) {
 				if ( ! is_numeric( basename( $year_dir ) ) ) {
 					continue;
 				}
 				$months = glob( $year_dir . '/*', GLOB_ONLYDIR );
+				if ( ! is_array( $months ) ) {
+					continue;
+				}
 				foreach ( $months as $month_dir ) {
 					if ( is_numeric( basename( $month_dir ) ) ) {
 						$scan_dirs[] = $month_dir;
@@ -609,6 +638,10 @@ class WP_MCP_AI_Tool_Scan_Orphaned_Media implements WP_MCP_AI_Tool_Interface, WP
 			$file = get_attached_file( $attachment_id );
 			if ( $file && file_exists( $file ) ) {
 				$registered[] = wp_normalize_path( $file );
+			}
+
+			if ( ! $file ) {
+				continue;
 			}
 
 			// Also include size variants.

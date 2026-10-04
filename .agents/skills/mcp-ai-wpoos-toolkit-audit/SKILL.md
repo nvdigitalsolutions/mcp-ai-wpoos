@@ -235,7 +235,7 @@ then move to the next toolkit.
 - [ ] jev
 - [ ] law-firm
 - [ ] math
-- [ ] media
+- [x] media — 2026-10-04 (case study below; CG Pro mirror not yet ported)
 - [ ] multilingual
 - [ ] okf
 - [ ] orchestration
@@ -259,6 +259,61 @@ then move to the next toolkit.
 Also sweep the loose tools directly in `addons/pro/includes/tools/*.php`
 (incident/maintenance tools) and the shared `addons/pro/includes/services/`
 classes each toolkit routes through.
+
+## Case study — media
+
+What the fifth audit found (class 2 variant, envelope, security; classes 1
+and 4 verified clean):
+
+1. `process_collection::execute()` — read the nested `apply_media_template`
+   result with `! empty( $result['success'] )` although `execute()` returns a
+   success array **or** a WP_Error (invalid template params, missing
+   graphic_editor_plus, provider failure) → fatal `Cannot use object of type
+   WP_Error as array` on the first failing item. The same array assumption
+   sat in the admin bulk action (`handle_bulk_actions`) and the Quick Process
+   AJAX (`ajax_quick_process_collection`), which read `$result['success']`
+   off process_collection's own WP_Error returns. Guarded with is_wp_error +
+   per-item error propagation in the tool and is_wp_error checks in both
+   admin callers.
+2. `apply_collection_template::execute()` — same WP_Error-as-array fatal on
+   the nested process_collection call, plus non-canonical
+   `array( 'success' => false, ... )` validation envelopes → converted to
+   WP_Error.
+3. `scan_orphaned_media` / `cleanup_orphaned_media` — non-canonical
+   `array( 'success' => false, ... )` envelopes; and `scan_type` /
+   `cleanup_type` were never validated in execute() (bogus values reported
+   success with zero results). Both now reject unknown enum values with a
+   WP_Error; `cleanup_type=ids` requires `attachment_ids`.
+4. `scan_orphaned_media::scan_unregistered_files()` — `year_month` passed
+   through `sanitize_text_field` and concatenated into an uploads path
+   (`$base_dir . '/' . trim( $year_month, '/' )`) → `../`-style values listed
+   arbitrary directories (info disclosure). Now strictly validated as
+   `^\d{4}/\d{2}$` before any path use.
+5. Defensive hardening: `delete_file_safe` containment upgraded to a
+   path-component boundary (trailing separator, `uploads-evil/` no longer
+   passes), glob metacharacters escaped in `delete_size_variants` patterns,
+   `glob()` false guards, and `get_all_registered_files()` no longer calls
+   `dirname( false )` for attachments without `_wp_attached_file` meta.
+
+Verified clean this cluster: zero shell/exec anywhere in the toolkit;
+`ocr_image_classic` pins `tesseract` which the OCR service switch handles
+(its CLI path was already hardened in the document-generation cluster); the
+7-operation template enum matches graphic_editor_plus's full local + AI
+operation set (class 4); the Blueprint Installer methods used by the
+unregistered `examples/` tool exist; the central registry capability gate
+covers these tools (no per-tool check gap — unlike the CRM/ECA pattern,
+no in-tool user_can needed).
+
+Tests landed: `addons/pro/tests/test-media-toolkit-hardening.php` (new,
+12 tests / 41 assertions — nested-tool WP_Error matrix through registry
+stubs, envelope/validation regressions, year_month traversal matrix, scan
+referenced-vs-unreferenced fixture, bulk-action regression) plus
+`addons/pro/tests/class-wp-mcp-ai-media-toolkit-stub.php` (single
+configurable stub — the custom sniff allows one object structure per file).
+Validation: 31 media-cluster tests green + 12 fashion-batch green; phpcs
+0 errors; UTF-8 clean. CG Pro note: the media toolkit has no
+`plugins/nvoos-content-graph-pro/src/tools/media/` mirror yet — porting is
+an ecosystem-port decision, out of scope for this audit.
 
 ## Case study — eca-management
 
