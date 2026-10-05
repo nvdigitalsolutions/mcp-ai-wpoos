@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-cron-status",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "SSE-first cron/job status monitor with REST polling fallback - Extracted from NV Open Operator System",
   "main": "dist/nvoos-cron-status.js",
   "module": "dist/nvoos-cron-status.js",

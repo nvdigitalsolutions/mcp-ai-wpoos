@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-vad",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "Browser Voice Activity Detection (VAD) using the Web Audio API — extracted from NV Open Operator System",
   "main": "dist/nvoos-vad.js",
   "module": "dist/nvoos-vad.js",

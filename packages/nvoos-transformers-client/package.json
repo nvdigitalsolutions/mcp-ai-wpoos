@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-transformers-client",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "HuggingFace Transformers.js task wrapper (summarization, sentiment, NER, translation, QA, embeddings) - Extracted from NV Open Operator System",
   "main": "dist/nvoos-transformers-client.js",
   "module": "dist/nvoos-transformers-client.js",

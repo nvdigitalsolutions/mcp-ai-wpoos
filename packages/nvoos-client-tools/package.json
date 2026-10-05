@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-client-tools",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "Browser-native AI tool registry (summarize, sentiment, translate, embed, image, audio) using Transformers.js - Extracted from NV Open Operator System",
   "main": "dist/nvoos-client-tools.js",
   "module": "dist/nvoos-client-tools.js",
