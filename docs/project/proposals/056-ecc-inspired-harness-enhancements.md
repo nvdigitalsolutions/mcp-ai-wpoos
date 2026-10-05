@@ -124,22 +124,33 @@ assistant meta later. The classifier and validator are constructor-injected
 contracts — the WP adapter will supply a Jev-backed implementation
 (proposal 039 client) in a follow-up; until then the router is inert.
 
-### P1-legacy — Cascade on the live base+pro path
+### P1-legacy — Cascade on the live base+pro paths
 
-The live chat path (`WP_MCP_AI_REST` →
-`WP_MCP_AI_Language_Model_Router::create_chat_completion()`) does **not** go
-through lib/core, so the framework-agnostic router alone would be inert in
-the plugin. `WP_MCP_AI_Cascade_Executor` (base) brings the same cascade to
-that path: a gate at the top of `create_chat_completion()` consults the
-executor, which is inert unless `wp_mcp_ai_cascade_enabled` is on, a
-classifier filter supplies a verdict, and a tier-1 target is configured.
-Streaming requests never cascade; tier-1 calls carry a bypass flag so the
-gate cannot re-enter itself; a deterministic default validator
-(error shapes, empty content) works without Pro. The Pro addon wires the
-existing Jev routing signal (proposal 045) into
-`wp_mcp_ai_cascade_classifier` via `WP_MCP_AI_Pro_Jev_Tier_Routing::cascade_classifier()`
-with code-owned tier thresholds. `wp_mcp_ai_cascade_decision` fires with
-accepted/escalated outcomes for audit and cost-tracker subscribers.
+Chat flows on TWO paths, both covered:
+
+1. **Default legacy path** (`WP_MCP_AI_REST` →
+   `WP_MCP_AI_Language_Model_Router::create_chat_completion()`):
+   `WP_MCP_AI_Cascade_Executor` (base) gates the top of
+   `create_chat_completion()`. Inert unless `wp_mcp_ai_cascade_enabled` is
+   on, a classifier filter supplies a verdict, and a tier-1 target is
+   configured. Streaming requests never cascade; tier-1 calls carry a
+   bypass flag so the gate cannot re-enter itself; a deterministic default
+   validator (error shapes, empty content) works without Pro.
+2. **Opt-in OOS engine path** (flag → `handle_chat_request_oos()` →
+   `ChatOrchestrator` → `ProviderRouter::chat()`): `CascadeRouter` extends
+   `ProviderRouter` and is injected by the OOS factory with two WordPress
+   adapters (`CascadeClassifier`, `CascadeValidator`) that bridge the SAME
+   `wp_mcp_ai_cascade_enabled` / `wp_mcp_ai_cascade_classifier` /
+   `wp_mcp_ai_cascade_validator` filter seams. One switch and one classifier
+   govern both paths.
+
+The Pro addon wires the existing Jev routing signal (proposal 045) into
+`wp_mcp_ai_cascade_classifier` via
+`WP_MCP_AI_Pro_Jev_Tier_Routing::cascade_classifier()` with code-owned tier
+thresholds, so both paths classify semantically. `wp_mcp_ai_cascade_decision`
+fires with accepted/escalated outcomes for audit and cost-tracker
+subscribers on the legacy path; the core router records the same outcomes
+in its own stats.
 
 ### P2 — `run_assistant_eval` base tool
 

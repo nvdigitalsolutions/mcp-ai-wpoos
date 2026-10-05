@@ -2,11 +2,15 @@
 /**
  * CascadeRouter — cheap-model-first routing with judge-verified escalation.
  *
- * Wraps {@see ProviderRouter} and implements the FrugalGPT / RouteLLM /
+ * Extends {@see ProviderRouter} and implements the FrugalGPT / RouteLLM /
  * AutoMix cascade pattern: a complexity classifier routes the easy majority
  * of requests to a cheap tier-1 model, and a response validator acts as the
  * "stop judge" — a tier-1 answer is only returned when it validates, and the
  * request escalates to the primary (frontier) provider otherwise.
+ *
+ * Because it IS a ProviderRouter, it can be injected anywhere a
+ * ProviderRouter is consumed (e.g. ChatOrchestrator on the WordPress OOS
+ * engine path) without touching the consuming code.
  *
  * The router is deliberately inert by default:
  *   - No classifier or validator → every request passes through to
@@ -33,10 +37,12 @@ declare(strict_types=1);
 namespace Nvoos\Core\Application\Provider;
 
 use Nvoos\Core\Domain\Contract\ComplexityClassifierInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\ResponseValidatorInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
 
-class CascadeRouter {
+class CascadeRouter extends ProviderRouter {
 
 	/**
 	 * Default validator-confidence threshold for accepting a tier-1 answer.
@@ -49,19 +55,22 @@ class CascadeRouter {
 	 * @var array<string, int>
 	 */
 	private array $stats = array(
-		'requests'       => 0,
-		'routed_simple'  => 0,
-		'accepted'       => 0,
-		'escalated'      => 0,
-		'tier1_errors'   => 0,
-		'passthrough'    => 0,
+		'requests'      => 0,
+		'routed_simple' => 0,
+		'accepted'      => 0,
+		'escalated'     => 0,
+		'tier1_errors'  => 0,
+		'passthrough'   => 0,
 	);
 
 	public function __construct(
-		private readonly ProviderRouter $router,
+		SettingsStoreInterface $settings,
+		private readonly ErrorFactoryInterface $errors,
 		private readonly ?ComplexityClassifierInterface $classifier = null,
 		private readonly ?ResponseValidatorInterface $validator = null,
-	) {}
+	) {
+		parent::__construct( $settings, $errors );
+	}
 
 	/**
 	 * Send a chat completion through the cascade.
@@ -79,7 +88,7 @@ class CascadeRouter {
 		// Inert without both judge components and a tier-1 target.
 		if ( null === $this->classifier || null === $this->validator || ! $this->hasTier1Target( $options, $assistantConfig ) ) {
 			$this->stats['passthrough']++;
-			return $this->router->chat( $messages, $options, $assistantConfig );
+			return parent::chat( $messages, $options, $assistantConfig );
 		}
 
 		$threshold = $this->resolveThreshold( $options, $assistantConfig );
@@ -89,17 +98,17 @@ class CascadeRouter {
 
 		if ( 'simple' !== $tier ) {
 			// Hard requests skip the cheap tier entirely.
-			return $this->router->chat( $messages, $options, $assistantConfig );
+			return parent::chat( $messages, $options, $assistantConfig );
 		}
 
 		$this->stats['routed_simple']++;
 
-		$tier1Client   = $this->resolveTier1Client( $options, $assistantConfig );
-		$tier1Options  = $this->buildTier1Options( $options, $assistantConfig );
+		$tier1Client  = $this->resolveTier1Client( $options, $assistantConfig );
+		$tier1Options = $this->buildTier1Options( $options, $assistantConfig );
 
 		if ( null === $tier1Client ) {
 			$this->stats['passthrough']++;
-			return $this->router->chat( $messages, $options, $assistantConfig );
+			return parent::chat( $messages, $options, $assistantConfig );
 		}
 
 		$tier1Result = $tier1Client->chat( $messages, $tier1Options );
@@ -107,10 +116,10 @@ class CascadeRouter {
 		if ( $this->isError( $tier1Result ) ) {
 			$this->stats['tier1_errors']++;
 			$this->stats['escalated']++;
-			return $this->router->chat( $messages, $options, $assistantConfig );
+			return parent::chat( $messages, $options, $assistantConfig );
 		}
 
-		$verdict = $this->validator->validate( $tier1Result, $messages, $options );
+		$verdict    = $this->validator->validate( $tier1Result, $messages, $options );
 		$acceptable = \is_array( $verdict ) && ! empty( $verdict['acceptable'] );
 		$confidence = \is_array( $verdict ) && isset( $verdict['confidence'] )
 			? (float) $verdict['confidence']
@@ -118,40 +127,11 @@ class CascadeRouter {
 
 		if ( ! $acceptable || $confidence < $threshold ) {
 			$this->stats['escalated']++;
-			return $this->router->chat( $messages, $options, $assistantConfig );
+			return parent::chat( $messages, $options, $assistantConfig );
 		}
 
 		$this->stats['accepted']++;
 		return $tier1Result;
-	}
-
-	/**
-	 * Stream a chat completion through the cascade.
-	 *
-	 * Streaming cannot be validated after the fact, so this path routes the
-	 * full request through the primary provider and never through tier 1 —
-	 * a cascade that streams a weak answer cannot retract it.
-	 *
-	 * @param array<int, array<string, mixed>> $messages    Chat messages.
-	 * @param array<string, mixed>             $options     Request options.
-	 * @param array<string, mixed>             $assistantConfig Assistant config.
-	 * @param callable|null                    $onChunk     Chunk callback.
-	 * @return mixed Provider response or error.
-	 */
-	public function stream( array $messages, array $options = array(), array $assistantConfig = array(), ?callable $onChunk = null ): mixed {
-		$this->stats['requests']++;
-		return $this->router->stream( $messages, $options, $assistantConfig, $onChunk );
-	}
-
-	/**
-	 * Resolve the primary provider client (the cascade's escalation target).
-	 *
-	 * @param array<string, mixed> $options         Request options.
-	 * @param array<string, mixed> $assistantConfig Assistant configuration.
-	 * @return AbstractProviderClient|null
-	 */
-	public function resolvePrimary( array $options = array(), array $assistantConfig = array() ): ?AbstractProviderClient {
-		return $this->router->resolveForChat( $options, $assistantConfig );
 	}
 
 	/**
@@ -193,9 +173,8 @@ class CascadeRouter {
 	/**
 	 * Resolve the tier-1 client.
 	 *
-	 * `cascade_tier_1_provider` wins when set (with slug normalization
-	 * delegated to the wrapped router's registry); otherwise the primary
-	 * client carries the tier-1 model override.
+	 * `cascade_tier_1_provider` wins when set; otherwise the primary client
+	 * carries the tier-1 model override.
 	 *
 	 * @param array<string, mixed> $options         Request options.
 	 * @param array<string, mixed> $assistantConfig Assistant configuration.
@@ -205,10 +184,10 @@ class CascadeRouter {
 		$tier1Provider = (string) ( $options['cascade_tier_1_provider'] ?? $assistantConfig['cascade_tier_1_provider'] ?? '' );
 
 		if ( '' !== $tier1Provider ) {
-			return $this->router->get( $tier1Provider );
+			return $this->get( $tier1Provider );
 		}
 
-		return $this->router->resolveForChat( $options, $assistantConfig );
+		return $this->resolveForChat( $options, $assistantConfig );
 	}
 
 	/**
@@ -240,14 +219,15 @@ class CascadeRouter {
 	/**
 	 * Whether a provider result represents an error.
 	 *
-	 * Mirrors {@see ProviderRouter} error detection: a \WP_Error instance or
-	 * an array envelope carrying an `error` key.
+	 * Delegates to the injected {@see ErrorFactoryInterface} (no framework
+	 * coupling) and additionally treats array envelopes carrying an `error`
+	 * key as errors, mirroring {@see ProviderRouter}'s detection.
 	 *
 	 * @param mixed $result Provider response.
 	 * @return bool
 	 */
 	private function isError( mixed $result ): bool {
-		if ( $result instanceof \WP_Error ) {
+		if ( $this->errors->isError( $result ) ) {
 			return true;
 		}
 

@@ -103,13 +103,13 @@ $features = array(
     		'libcore' => 'ProviderRouter::resolveForChat',
     		'status'  => 'parity',
     	),
-    	array(
-    		'feature' => 'Cascade routing (cheap tier + judge-verified escalation)',
-    		'legacy'  => 'WP_MCP_AI_Cascade_Executor::maybe_route (inside Language_Model_Router::create_chat_completion)',
-    		'libcore' => 'CascadeRouter::chat',
-    		'status'  => 'parity',
-    		'note'    => 'Proposal 056 (P1); both layers inert unless enabled via filters/configuration',
-    	),
+	array(
+		'feature' => 'Cascade routing (cheap tier + judge-verified escalation)',
+		'legacy'  => 'WP_MCP_AI_Cascade_Executor::maybe_route (inside Language_Model_Router::create_chat_completion)',
+		'libcore' => 'CascadeRouter::chat (injected into ChatOrchestrator on the OOS engine path)',
+		'status'  => 'parity',
+		'note'    => 'Proposal 056 (P1); both layers inert unless enabled via filters/configuration and share one classifier seam (wp_mcp_ai_cascade_classifier)',
+	),
     array(
         'feature' => 'OpenAI-compatible base class (shared chat/stream logic)',
         'legacy'  => 'Individual clients duplicate chat-completion logic',

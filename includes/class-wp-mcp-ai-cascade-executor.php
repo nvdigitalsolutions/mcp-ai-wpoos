@@ -2,12 +2,17 @@
 /**
  * Cascade Executor — legacy-layer cascade routing for the base plugin.
  *
- * The live base+pro chat path runs through
- * {@see WP_MCP_AI_Language_Model_Router::create_chat_completion()} — it does
- * NOT pass through the framework-agnostic `lib/core` engine. This class
- * brings the FrugalGPT / RouteLLM cascade pattern (Proposal 056, P1) to that
- * legacy path with the same contract shapes as
- * `Nvoos\Core\Application\Provider\CascadeRouter`:
+ * The default base+pro chat path runs through
+ * {@see WP_MCP_AI_Language_Model_Router::create_chat_completion()}. When the
+ * opt-in OOS engine flag is on, chat instead flows through lib/core's
+ * ChatOrchestrator, where
+ * `Nvoos\Core\Application\Provider\CascadeRouter` (with the WordPress
+ * `CascadeClassifier` / `CascadeValidator` adapters) applies the same
+ * cascade over the SAME filter seams documented here — one switch governs
+ * both paths.
+ *
+ * This class brings the FrugalGPT / RouteLLM cascade pattern (Proposal 056,
+ * P1) to the legacy path with the same contract shapes as the core router:
  *
  *   classify → route cheap tier → validate the cheap answer → escalate to
  *   the primary provider when the validator or confidence demands it.

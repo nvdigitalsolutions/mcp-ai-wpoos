@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Unit\Application\Provider;
 
 use Nvoos\Core\Application\Provider\CascadeRouter;
-use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Domain\Contract\ComplexityClassifierInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
@@ -38,8 +37,6 @@ final class CascadeRouterTest extends TestCase {
 	 */
 	private AbstractProviderClient $cheap;
 
-	private ProviderRouter $router;
-
 	protected function setUp(): void {
 		parent::setUp();
 
@@ -48,10 +45,6 @@ final class CascadeRouterTest extends TestCase {
 
 		$this->primary = $this->createClient( 'openai', $settings, $errors );
 		$this->cheap   = $this->createClient( 'cheap', $settings, $errors );
-
-		$this->router = new ProviderRouter( $settings, $errors );
-		$this->router->register( $this->primary );
-		$this->router->register( $this->cheap );
 	}
 
 	private function createSettings(): SettingsStoreInterface {
@@ -219,7 +212,11 @@ final class CascadeRouterTest extends TestCase {
 	}
 
 	private function cascade( ?ComplexityClassifierInterface $classifier, ?ResponseValidatorInterface $validator ): CascadeRouter {
-		return new CascadeRouter( $this->router, $classifier, $validator );
+		$cascade = new CascadeRouter( $this->createSettings(), $this->createErrors(), $classifier, $validator );
+		$cascade->register( $this->primary );
+		$cascade->register( $this->cheap );
+
+		return $cascade;
 	}
 
 	public function test_passthrough_when_unconfigured(): void {
@@ -346,14 +343,14 @@ final class CascadeRouterTest extends TestCase {
 		$this->assertSame( 1, $cascade->getStats()['passthrough'] );
 	}
 
-	public function test_stream_delegates_to_primary_provider(): void {
+	public function test_stream_uses_inherited_primary_dispatch(): void {
 		$cascade = $this->cascade( $this->classifier( 'simple' ), $this->validator() );
 		$config  = array( 'provider' => 'openai', 'cascade_tier_1_model' => 'openai-mini' );
 
 		$result = $cascade->stream( $this->messages(), array(), $config );
 
 		$this->assertSame( 'openai-stream', $result['content'] );
-		$this->assertSame( 1, $cascade->getStats()['requests'] );
+		$this->assertCount( 1, $this->primary->calls );
 		$this->assertSame( 0, $cascade->getStats()['accepted'] );
 	}
 }

@@ -15,14 +15,18 @@ Files:
 |------|---------|
 | `lib/core/src/Domain/Contract/ComplexityClassifierInterface.php` | Classify message lists into tiers with confidence |
 | `lib/core/src/Domain/Contract/ResponseValidatorInterface.php` | Judge whether a tier-1 response is acceptable |
-| `lib/core/src/Application/Provider/CascadeRouter.php` | Cascade orchestration wrapping `ProviderRouter` |
+| `lib/core/src/Application/Provider/CascadeRouter.php` | Cascade orchestration — **extends `ProviderRouter`** so it injects anywhere a ProviderRouter is consumed |
 | `lib/core/tests/Unit/Application/Provider/CascadeRouterTest.php` | Unit coverage |
-| `includes/class-wp-mcp-ai-cascade-executor.php` | **Legacy-layer cascade** — the live base+pro chat path does NOT go through lib/core; this gates `WP_MCP_AI_Language_Model_Router::create_chat_completion()` |
+| `lib/wordpress-adapter/src/Adapter/CascadeClassifier.php` | WP bridge: `wp_mcp_ai_cascade_enabled` + `wp_mcp_ai_cascade_classifier` → `ComplexityClassifierInterface` (fail-closed) |
+| `lib/wordpress-adapter/src/Adapter/CascadeValidator.php` | WP bridge: deterministic default + `wp_mcp_ai_cascade_validator` → `ResponseValidatorInterface` |
+| `includes/bootstrap/oos-bridge.php` | **OOS engine path wiring** — the orchestrator factory now injects `CascadeRouter` (+ adapters) instead of the raw `ProviderRouter` |
+| `includes/class-wp-mcp-ai-cascade-executor.php` | **Legacy-layer cascade** — gates the default path at `WP_MCP_AI_Language_Model_Router::create_chat_completion()` |
 | `includes/class-wp-mcp-ai-language-model-router.php` | Cascade gate at the top of `create_chat_completion()` (one surgical edit covers every legacy caller: REST, CLI, tools, services) |
 | `tests/test-cascade-executor.php` | Legacy executor + router-gate coverage |
+| `tests/test-oos-cascade-adapters.php` | WP adapter coverage |
 | `addons/pro/includes/services/class-wp-mcp-ai-pro-jev-tier-routing.php` | Pro wiring: `wp_mcp_ai_cascade_classifier` filter backed by the existing Jev routing signal (proposal 045) + `map_signal_to_tier()` |
 | `addons/pro/tests/test-pro-cascade-bridge.php` | Pro bridge coverage |
-| `bin/check-chat-parity.php` | Parity row: legacy executor ↔ lib/core `CascadeRouter` |
+| `bin/check-chat-parity.php` | Parity row: legacy executor + OOS CascadeRouter ↔ lib/core `CascadeRouter` |
 
 Acceptance criteria:
 
