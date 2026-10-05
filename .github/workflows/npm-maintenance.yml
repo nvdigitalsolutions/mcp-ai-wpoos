@@ -1,0 +1,90 @@
+# NPM Registry Maintenance Workflow
+#
+# Manual, safe-by-default operations against the public npm registry using
+# the NPM_TOKEN secret. Everything is a dry run unless dry_run is set to
+# false explicitly.
+#
+# Operations:
+#   - unpublish:   remove a version (allowed only within 72 hours of publish;
+#                  `--force` is required for versions younger than 72h).
+#   - dist-tag-add: point a dist-tag at a version (e.g. move `latest`).
+#
+# Example dispatches:
+#   unpublish:    operation=unpublish packages="nvoos-sse-client" version=0.0.0-stage
+#   dist-tag-add: operation=dist-tag-add packages="nvoos-api nvoos-sse-client" version=0.1.0-alpha.4 tag=latest
+
+name: NPM Registry Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Operation to perform'
+        required: true
+        type: choice
+        options:
+          - unpublish
+          - dist-tag-add
+      packages:
+        description: 'Space-separated package names (e.g. nvoos-storage nvoos-events)'
+        required: true
+        type: string
+      version:
+        description: 'Version to unpublish (unpublish) or to point the tag at (dist-tag-add)'
+        required: true
+        type: string
+      tag:
+        description: 'Dist-tag to move (dist-tag-add only)'
+        required: false
+        type: string
+        default: 'latest'
+      dry_run:
+        description: 'Dry run (print commands only — nothing is changed)'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  maintain:
+    name: Maintain @nvdigitalsolutions packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Run operation
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -e
+          OP="${{ github.event.inputs.operation }}"
+          VERSION="${{ github.event.inputs.version }}"
+          TAG="${{ github.event.inputs.tag }}"
+          DRY="${{ github.event.inputs.dry_run }}"
+
+          for pkg in ${{ github.event.inputs.packages }}; do
+            FULL="@nvdigitalsolutions/${pkg}"
+            if [ "$OP" = "unpublish" ]; then
+              echo "▶ npm unpublish ${FULL}@${VERSION} --force"
+              if [ "$DRY" != "true" ]; then
+                npm unpublish "${FULL}@${VERSION}" --force
+                echo "✅ Unpublished ${FULL}@${VERSION}"
+              fi
+            else
+              echo "▶ npm dist-tag add ${FULL}@${VERSION} ${TAG}"
+              if [ "$DRY" != "true" ]; then
+                npm dist-tag add "${FULL}@${VERSION}" "${TAG}"
+                echo "✅ ${TAG} → ${VERSION} on ${FULL}"
+              fi
+            fi
+          done
+
+          if [ "$DRY" = "true" ]; then
+            echo "🏃 Dry run complete — nothing was changed."
+          fi
