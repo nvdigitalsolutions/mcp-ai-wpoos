@@ -43,8 +43,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Trait providing inline-async-tick fallback primitives.
  *
+ * The early-return guard makes the file idempotent: addons that ship a no-op
+ * stub of this trait for bare environments (docs-hub, graphify,
+ * saas-controller) may declare it before the base plugin loads during plugin
+ * activation, and a second unconditional declaration would fatal. When the
+ * stub is already in place this file exits and consumers use the stub.
+ *
  * @since 1.2.0
  */
+if ( trait_exists( 'WP_MCP_AI_Inline_Async_Tick_Trait' ) ) {
+	return;
+}
+
 trait WP_MCP_AI_Inline_Async_Tick_Trait {
 
 	/**

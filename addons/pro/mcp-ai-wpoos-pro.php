@@ -3143,6 +3143,72 @@ add_action(
 	100
 );
 
+if ( ! function_exists( 'wp_mcp_ai_pro_repair_option_autoload' ) ) {
+	/**
+	 * One-time repair: flip the autoload flag to 'no' for Pro options that
+	 * store unbounded blobs (remote sites incl. encrypted credentials, workflow
+	 * definitions, per-workflow execution logs, alert/approval stores and
+	 * media worker settings).
+	 *
+	 * These options were historically written via
+	 * update_option( $key, $value ), which autoloads them into every
+	 * request's alloptions payload. New writes pass false as the autoload
+	 * argument; this routine retro-fixes existing installs once, tracked by
+	 * the wp_mcp_ai_pro_autoload_repair_v1 marker.
+	 *
+	 * @since 1.1.96
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_pro_repair_option_autoload() {
+		if ( get_option( 'wp_mcp_ai_pro_autoload_repair_v1' ) ) {
+			return;
+		}
+
+		global $wpdb;
+
+		$keys = array(
+			'wp_mcp_ai_pro_remote_sites',
+			'wp_mcp_ai_pro_workflows',
+			'wp_mcp_ai_ezuite_alerted_skus',
+			'wp_mcp_ai_agent_approvals',
+			'wp_mcp_ai_media_worker_url',
+			'wp_mcp_ai_media_worker_token',
+			'wp_mcp_ai_price_changes',
+			'wp_mcp_ai_last_pricing_check',
+			'wp_mcp_ai_slash_command_history',
+			'wp_mcp_ai_pro_license_key',
+		);
+
+		// Per-workflow execution logs live in prefixed keys (one per workflow ID).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time repair; raw option-name read is intentional and needs no cache.
+		$execution_keys = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+				'wp_mcp_ai_workflow_executions\_%'
+			)
+		);
+
+		if ( is_array( $execution_keys ) ) {
+			$keys = array_merge( $keys, $execution_keys );
+		}
+
+		foreach ( $keys as $key ) {
+			if ( null !== get_option( $key, null ) ) {
+				// wp_set_option_autoload() is WordPress 6.4+; skip the repair on
+				// older cores instead of fatalling for admins.
+				if ( function_exists( 'wp_set_option_autoload' ) ) {
+					wp_set_option_autoload( $key, false );
+				}
+			}
+		}
+
+		update_option( 'wp_mcp_ai_pro_autoload_repair_v1', time(), false );
+	}
+
+	add_action( 'admin_init', 'wp_mcp_ai_pro_repair_option_autoload', 9 );
+}
+
 // Load Media Worker Sidecar Settings Page (eager — registers admin_menu hook).
 $media_worker_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-worker-settings.php';
 if ( file_exists( $media_worker_page ) ) {

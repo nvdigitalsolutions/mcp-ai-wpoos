@@ -1643,7 +1643,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 			wp_send_json_error( array( 'message' => __( 'Approval not found or already resolved.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		update_option( self::APPROVALS_OPTION, $approvals );
+		update_option( self::APPROVALS_OPTION, $approvals, false );
 
 		wp_send_json_success( array( 'message' => __( 'Approval decision recorded.', 'mcp-ai-wpoos-pro' ) ) );
 	}

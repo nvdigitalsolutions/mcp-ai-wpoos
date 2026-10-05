@@ -176,11 +176,11 @@ class WP_MCP_AI_Media_Worker_Settings {
 		check_admin_referer( 'wp_mcp_ai_media_worker_settings', 'wp_mcp_ai_media_worker_nonce' );
 		if ( ! defined( 'WP_MEDIA_WORKER_URL' ) ) {
 			$u = isset( $_POST['wp_mcp_ai_media_worker_url'] ) ? esc_url_raw( wp_unslash( $_POST['wp_mcp_ai_media_worker_url'] ) ) : '';
-			update_option( self::OPTION_URL, $u );
+			update_option( self::OPTION_URL, $u, false );
 		}
 		if ( ! defined( 'WP_MEDIA_WORKER_TOKEN' ) ) {
 			$t = isset( $_POST['wp_mcp_ai_media_worker_token'] ) ? sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_media_worker_token'] ) ) : '';
-			update_option( self::OPTION_TOKEN, $t );
+			update_option( self::OPTION_TOKEN, $t, false );
 		}
 		delete_transient( self::HEALTH_TRANSIENT );
 		wp_safe_redirect(

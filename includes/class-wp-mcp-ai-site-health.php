@@ -95,6 +95,11 @@ class WP_MCP_AI_Site_Health {
 			'test'  => array( $this, 'test_security_posture' ),
 		);
 
+		$tests['direct']['wp_mcp_ai_file_integrity'] = array(
+			'label' => __( 'Open Operator System — File Integrity', 'mcp-ai-wpoos' ),
+			'test'  => array( $this, 'test_file_integrity' ),
+		);
+
 		return $tests;
 	}
 
@@ -111,6 +116,53 @@ class WP_MCP_AI_Site_Health {
 		);
 
 		return $debug_info;
+	}
+
+	/**
+	 * Test plugin file integrity
+	 *
+	 * @return array Test result
+	 */
+	public function test_file_integrity() {
+		$result = array(
+			'label'       => __( 'Open Operator System — File Integrity', 'mcp-ai-wpoos' ),
+			'status'      => 'good',
+			'badge'       => array(
+				'label' => __( 'Files', 'mcp-ai-wpoos' ),
+				'color' => 'blue',
+			),
+			'description' => '',
+			'actions'     => '',
+			'test'        => 'wp_mcp_ai_file_integrity',
+		);
+
+		if ( function_exists( 'wp_mcp_ai_prune_missing_files_option' ) ) {
+			wp_mcp_ai_prune_missing_files_option();
+		}
+
+		$missing = get_option( 'wp_mcp_ai_missing_files', array() );
+		$missing = is_array( $missing ) ? $missing : array();
+
+		if ( empty( $missing ) ) {
+			$result['description'] = sprintf(
+				'<p>%s</p>',
+				__( 'All plugin files present.', 'mcp-ai-wpoos' )
+			);
+		} else {
+			$result['status'] = 'critical';
+			/* translators: Plugin files missing from disk */
+			$result['label']       = __( 'Plugin files missing', 'mcp-ai-wpoos' );
+			$result['description'] = sprintf(
+				'<p>%s</p>',
+				__( 'Some plugin files are missing from this installation (likely an incomplete update). Reinstall or update the plugin to restore them.', 'mcp-ai-wpoos' )
+			);
+			$result['actions']     = sprintf(
+				'<p><code>%s</code></p>',
+				implode( '</code>, <code>', array_map( 'esc_html', $missing ) )
+			);
+		}
+
+		return $result;
 	}
 
 	/**
