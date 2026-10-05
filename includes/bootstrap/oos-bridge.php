@@ -124,7 +124,16 @@ function wp_mcp_ai_oos_orchestrator() {
 
 	// ─── Provider Clients ──────────────────────────────────────────
 
-	$router = new Nvoos\Core\Application\Provider\ProviderRouter( $settings, $error_factory );
+	// Proposal 056 (P1): cascade-aware router. CascadeRouter extends
+	// ProviderRouter and is inert with the default fail-closed adapters —
+	// every request dispatches to the primary provider exactly as before
+	// unless cascade routing is enabled AND classified.
+	$router = new Nvoos\Core\Application\Provider\CascadeRouter(
+		$settings,
+		$error_factory,
+		new Nvoos\WordPress\Adapter\CascadeClassifier(),
+		new Nvoos\WordPress\Adapter\CascadeValidator(),
+	);
 
 	// Attach health tracker for provider failover (Proposal 017, Wave 3).
 	$router->setHealthTracker( new Nvoos\Core\Application\Provider\ProviderHealthTracker() );

@@ -2096,6 +2096,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Add_Model_Config'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-add-model-config.php',
 				'WP_MCP_AI_Tool_Typesafe_Decide'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-typesafe-decide.php',
 				'WP_MCP_AI_Tool_Typesafe_Guardrail'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-typesafe-guardrail.php',
+				'WP_MCP_AI_Tool_Run_Assistant_Eval'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-assistant-eval.php',
+				'WP_MCP_AI_Tool_Scan_Assistant_Security'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-scan-assistant-security.php',
 				'WP_MCP_AI_Tool_Discover_New_Models'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-discover-new-models.php',
 				'WP_MCP_AI_Tool_Create_Text_Embeddings'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-text-embeddings.php',
 				// OpenAI API Integration - Phase 2 Tools.

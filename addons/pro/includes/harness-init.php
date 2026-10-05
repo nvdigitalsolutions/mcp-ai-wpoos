@@ -26,7 +26,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_harness_tools' ) ) {
 	 * @return array
 	 */
 	function wp_mcp_ai_pro_register_harness_tools( $tools ) {
-		$tools['WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum'] = WP_MCP_AI_PRO_PATH . 'includes/harness/class-wp-mcp-ai-tool-export-fine-tune-curriculum.php';
+		$tools['WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum']    = WP_MCP_AI_PRO_PATH . 'includes/harness/class-wp-mcp-ai-tool-export-fine-tune-curriculum.php';
+		$tools['WP_MCP_AI_Tool_Suggest_Workflows_From_History'] = WP_MCP_AI_PRO_PATH . 'includes/harness/class-wp-mcp-ai-tool-suggest-workflows-from-history.php';
 		return $tools;
 	}
 }

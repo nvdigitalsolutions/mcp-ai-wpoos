@@ -1204,6 +1204,7 @@ wp-mcp-ai-tool-submit-registration
 wp-mcp-ai-tool-submit-to-authority
 wp-mcp-ai-tool-suggest-placement
 wp-mcp-ai-tool-suggest-template-patterns
+wp-mcp-ai-tool-suggest-workflows-from-history
 wp-mcp-ai-tool-sync-classroom-courses-to-ecas
 wp-mcp-ai-tool-sync-classroom-roster-to-students
 wp-mcp-ai-tool-sync-eca-enrollments-from-isams

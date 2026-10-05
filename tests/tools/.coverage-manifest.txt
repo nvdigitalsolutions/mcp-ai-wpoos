@@ -261,6 +261,7 @@ wp-mcp-ai-tool-responsive-image-validator
 wp-mcp-ai-tool-retrieve-agent-memory
 wp-mcp-ai-tool-retrieve-with-provenance
 wp-mcp-ai-tool-rotate-image
+wp-mcp-ai-tool-run-assistant-eval
 wp-mcp-ai-tool-run-crawl4ai-job
 wp-mcp-ai-tool-run-crawl4ai-job-validated
 wp-mcp-ai-tool-run-gemini-managed-agent
@@ -268,6 +269,7 @@ wp-mcp-ai-tool-run-openai-external-action
 wp-mcp-ai-tool-save-post
 wp-mcp-ai-tool-save-post-validated
 wp-mcp-ai-tool-save-profession
+wp-mcp-ai-tool-scan-assistant-security
 wp-mcp-ai-tool-scope-memory
 wp-mcp-ai-tool-scrape-product
 wp-mcp-ai-tool-scrape-product-validated
