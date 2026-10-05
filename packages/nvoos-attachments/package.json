@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-attachments",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "File attachment helpers: type detection, validation, normalisation, and segment builders for AI chat - Extracted from NV Open Operator System",
   "main": "dist/nvoos-attachments.js",
   "module": "dist/nvoos-attachments.js",

@@ -2,7 +2,7 @@
 #
 # This workflow publishes alpha versions of all NPM packages to the public NPM registry.
 #
-# Packages published (9 total):
+# Packages published (23 total):
 # - @nvdigitalsolutions/nvoos-storage
 # - @nvdigitalsolutions/nvoos-markdown
 # - @nvdigitalsolutions/nvoos-events
@@ -12,6 +12,22 @@
 # - @nvdigitalsolutions/nvoos-slash-commands
 # - @nvdigitalsolutions/nvoos-audio
 # - @nvdigitalsolutions/nvoos-dom-batcher
+# - @nvdigitalsolutions/nvoos-llm-worker
+# - @nvdigitalsolutions/nvoos-model-loader
+# - @nvdigitalsolutions/nvoos-transformers-client
+# - @nvdigitalsolutions/nvoos-client-tools
+# - @nvdigitalsolutions/nvoos-chat-memory
+# - @nvdigitalsolutions/nvoos-types
+# - @nvdigitalsolutions/nvoos-api
+# - @nvdigitalsolutions/nvoos-sse-client
+# - @nvdigitalsolutions/nvoos-attachments
+# - @nvdigitalsolutions/nvoos-cron-status
+# - @nvdigitalsolutions/nvoos-transcription
+# - @nvdigitalsolutions/nvoos-chat-bubble
+# - @nvdigitalsolutions/nvoos-chat-memory-ui
+# - @nvdigitalsolutions/nvoos-vad
+# (nvoos-mcp-bridge is excluded — it has its own publish workflow with
+# provenance + drift gates: npm-publish-nvoos-mcp-bridge.yml)
 #
 # Trigger: Push tags matching v*.*.*-alpha.*
 # Example: v0.1.0-alpha.1, v0.2.0-alpha.2, etc.
@@ -52,7 +68,11 @@ env:
   PACKAGES: >-
     nvoos-storage nvoos-markdown nvoos-events nvoos-clipboard
     nvoos-http-client nvoos-offline-sync nvoos-slash-commands
-    nvoos-audio nvoos-dom-batcher
+    nvoos-audio nvoos-dom-batcher nvoos-llm-worker nvoos-model-loader
+    nvoos-transformers-client nvoos-client-tools nvoos-chat-memory
+    nvoos-types nvoos-api nvoos-sse-client nvoos-attachments
+    nvoos-cron-status nvoos-transcription nvoos-chat-bubble
+    nvoos-chat-memory-ui nvoos-vad
 
 jobs:
   publish:
@@ -150,86 +170,19 @@ jobs:
             cd ../..
           done
 
-      - name: Publish @nvdigitalsolutions/nvoos-storage
+      - name: Publish all packages to npm
         if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          cd packages/nvoos-storage
-          npm publish --tag alpha --access public
-          echo "✅ Published @nvdigitalsolutions/nvoos-storage@${{ steps.version.outputs.version }}"
+          for pkg in $PACKAGES; do
+            echo "📦 Publishing @nvdigitalsolutions/${pkg}@${{ steps.version.outputs.version }}..."
+            cd packages/${pkg}
+            npm publish --tag alpha --access public
+            echo "✅ Published @nvdigitalsolutions/${pkg}@${{ steps.version.outputs.version }}"
+            cd ../..
+          done
 
-      - name: Publish @nvdigitalsolutions/nvoos-markdown
-        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cd packages/nvoos-markdown
-          npm publish --tag alpha --access public
-          echo "✅ Published @nvdigitalsolutions/nvoos-markdown@${{ steps.version.outputs.version }}"
-
-      - name: Publish @nvdigitalsolutions/nvoos-events
-        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cd packages/nvoos-events
-          npm publish --tag alpha --access public
-          echo "✅ Published @nvdigitalsolutions/nvoos-events@${{ steps.version.outputs.version }}"
-
-      - name: Publish @nvdigitalsolutions/nvoos-clipboard
-        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cd packages/nvoos-clipboard
-          npm publish --tag alpha --access public
-          echo "✅ Published @nvdigitalsolutions/nvoos-clipboard@${{ steps.version.outputs.version }}"
-
-      - name: Publish @nvdigitalsolutions/nvoos-http-client
-        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cd packages/nvoos-http-client
-          npm publish --tag alpha --access public
-          echo "✅ Published @nvdigitalsolutions/nvoos-http-client@${{ steps.version.outputs.version }}"
-
-      - name: Publish @nvdigitalsolutions/nvoos-offline-sync
-        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cd packages/nvoos-offline-sync
-          npm publish --tag alpha --access public
-          echo "✅ Published @nvdigitalsolutions/nvoos-offline-sync@${{ steps.version.outputs.version }}"
-
-      - name: Publish @nvdigitalsolutions/nvoos-slash-commands
-        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cd packages/nvoos-slash-commands
-          npm publish --tag alpha --access public
-          echo "✅ Published @nvdigitalsolutions/nvoos-slash-commands@${{ steps.version.outputs.version }}"
-
-      - name: Publish @nvdigitalsolutions/nvoos-audio
-        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cd packages/nvoos-audio
-          npm publish --tag alpha --access public
-          echo "✅ Published @nvdigitalsolutions/nvoos-audio@${{ steps.version.outputs.version }}"
-
-      - name: Publish @nvdigitalsolutions/nvoos-dom-batcher
-        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cd packages/nvoos-dom-batcher
-          npm publish --tag alpha --access public
-          echo "✅ Published @nvdigitalsolutions/nvoos-dom-batcher@${{ steps.version.outputs.version }}"
 
       - name: Dry run summary
         if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run == 'true'
@@ -246,7 +199,7 @@ jobs:
         if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          echo "## 🎉 All 9 alpha packages published successfully to NPM!"
+          echo "## 🎉 All 23 alpha packages published successfully to NPM!"
           echo ""
           echo "### Published Packages"
           echo ""

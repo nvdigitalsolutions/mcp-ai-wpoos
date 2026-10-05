@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-types",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "Canonical TypeScript type definitions for the NV Open Operator System (oOS) — AI providers, chat messages, tool execution, SSE streaming, attachments, history, memory, agents, and WordPress global augmentations",
   "main": "./dist/index.d.ts",
   "types": "./dist/index.d.ts",
