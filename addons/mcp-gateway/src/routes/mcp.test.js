@@ -121,6 +121,43 @@ test( 'initialize is answered gateway-level', async () => {
 	const body = await res.json();
 	assert.strictEqual( body.result.serverInfo.name, 'NV oOS Gateway' );
 	assert.strictEqual( body.id, 1 );
+	assert.strictEqual( body.result.protocolVersion, '2024-11-05', 'no client version → oldest supported dialect' );
+	assert.strictEqual( siteA.requests.length, 0, 'initialize must not hit upstream' );
+
+	await close();
+	await siteA.close();
+} );
+
+test( 'initialize negotiates the protocol version with the client', async () => {
+	const siteA = await startFakeSite( 'site-a' );
+	const { baseUrl, close } = await startTestServer( createApp( { config: gatewayConfig( { 'site-a': siteA } ) } ) );
+
+	const cases = [
+		{ params: { protocolVersion: '2026-07-28' }, expect: '2026-07-28' },
+		{ params: { protocolVersion: '2025-06-18' }, expect: '2025-06-18' },
+		{ params: { protocolVersion: '2025-03-26' }, expect: '2025-03-26' },
+		{ params: { protocolVersion: '2024-11-05' }, expect: '2024-11-05' },
+		{ params: { protocolVersion: '2027-01-01' }, expect: '2024-11-05' },
+		{ params: { supportedProtocolVersions: [ '2025-03-26', '2025-06-18' ] }, expect: '2025-06-18' },
+		{
+			params: { protocolVersion: '2027-01-01', supportedProtocolVersions: [ '2025-03-26' ] },
+			expect: '2025-03-26',
+		},
+	];
+
+	for ( const { params, expect } of cases ) {
+		const res = await post(
+			baseUrl,
+			{ jsonrpc: '2.0', id: 1, method: 'initialize', params },
+			KEY_MULTI
+		);
+		const body = await res.json();
+		assert.strictEqual(
+			body.result.protocolVersion,
+			expect,
+			`initialize ${ JSON.stringify( params ) } → ${ expect }`
+		);
+	}
 	assert.strictEqual( siteA.requests.length, 0, 'initialize must not hit upstream' );
 
 	await close();
