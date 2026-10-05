@@ -160,7 +160,7 @@ jobs:
       # ------------------------------------------------------------------
       - name: ZAP Baseline Scan
         id: zap
-        uses: zaproxy/action-baseline@v0.13.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: ${{ steps.zap_target.outputs.url }}
           # Phase 1: advisory only — warn on findings, never fail the build.
