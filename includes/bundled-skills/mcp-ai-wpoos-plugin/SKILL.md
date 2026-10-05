@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.95"
-  plugin-version-tested: "1.1.95"
-  last-updated: "2026-10-04"
+  plugin-version: "1.1.96"
+  plugin-version-tested: "1.1.96"
+  last-updated: "2026-10-05"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -502,13 +502,17 @@ a different credential get 404. Caps: 5 sessions/credential, 20 global,
 |--------|-----------|
 | Zed / Cursor / LM Studio / new SDKs | Native Streamable HTTP (`url` = `/mcp`) |
 | Python MCP SDK | `streamable_http_client(url, headers=...)` works; `sse_client(url)` **requires v1.1.55+** for the handshake |
+| **`npx nvoos-mcp-bridge` (v1.1.96+)** | The first-party package — `npx -y @nvdigitalsolutions/nvoos-mcp-bridge nvoos-mcp <url> --token <cred>` relays stdio ↔ Streamable HTTP for Zed / Claude Desktop / Cursor / Codex; `nvoos-mcp-ssh` adds the SSH port-forward for no-public-route sites (byte-identical to `bin/mcp-bridge*.js` via CI) |
 | mcp-remote bridge (Claude Desktop, older agents) | `npx -y mcp-remote@latest <url> --header "Authorization: Bearer <token>"` — connects via Streamable HTTP, needs Node 24+ |
-| Cloudways Agent 0.19.0 / Codex-style agents | A bare `url:` is treated as **SSE transport** — use the mcp-remote stdio bridge, or point at the `/mcp` endpoint on v1.1.55+ |
+| Cloudways Agent 0.19.0 / Codex-style agents | A bare `url:` is treated as **SSE transport** — use the npx bridge package or the mcp-remote stdio bridge, or point at the `/mcp` endpoint on v1.1.55+ |
 
 ### mcp-remote stdio bridge pattern (verified)
 
 For agents whose MCP client only speaks legacy SSE over a configured URL
-(Cloudways Agent, Claude Desktop):
+(Cloudways Agent, Claude Desktop). **On v1.1.96+ sites, prefer the first-party
+`npx -y @nvdigitalsolutions/nvoos-mcp-bridge nvoos-mcp <url> --token <cred>`
+package** — same stdio relay, zero third-party dependency, byte-synced from
+this repo's `bin/`:
 
 ```yaml
 mcp_servers:
@@ -529,13 +533,16 @@ for server-initiated messages and retries it on failure — on pre-1.1.55
 servers that GET hits the request rate limiter, and the retry loop can burn
 the whole hourly quota (see Rate Limiting below).
 
-### SSH-only sites — `bin/mcp-bridge-ssh.js` (Zed stdio over SSH)
+### SSH-only sites — `nvoos-mcp-ssh` / `bin/mcp-bridge-ssh.js` (Zed stdio over SSH)
 
 For sites with **no public web route** (SSH is the only way in), use the
 repo's own bridge, which owns the SSH port-forward and delegates to
 `bin/mcp-bridge.js` (newline-delimited stdio ↔ Streamable HTTP relay). No
 manual tunnel, no mcp-remote, no npm dependencies — Zed spawns it as a stdio
-context server.
+context server. **Since v1.1.96 the same bridge ships as an npm package:**
+`npx -y @nvdigitalsolutions/nvoos-mcp-bridge nvoos-mcp-ssh` (identical env
+vars below, byte-synced from `bin/`); the Fleet Operator addon's
+`generate_zed_json()` emits the ready-to-paste `context_servers` block.
 
 **Prerequisite:** SSH key auth (`ssh <user>@<host> -p <port>` must succeed
 non-interactively). Password prompts are impossible for a spawned process
@@ -761,9 +768,28 @@ Import external AI conversation exports into the JetEngine
 
 ## Release Notes (per version)
 
-Historical per-version release notes (v1.1.66 through v1.1.95) moved to
+Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.1.96 operational quick notes** (full detail in RELEASE-NOTES.md): the
+**`@nvdigitalsolutions/nvoos-mcp-bridge` npx package** is now the canonical
+zero-config path for Zed / Claude Desktop / Cursor / Codex (`npx -y
+@nvdigitalsolutions/nvoos-mcp-bridge nvoos-mcp <url>`; `nvoos-mcp-ssh` for
+SSH-only sites) — it supersedes the manual `bin/mcp-bridge*.js` spawns below
+(the package syncs byte-identical from `bin/` via CI); the Fleet Operator
+addon emits copy-paste Zed / VS Code / Claude Desktop config blocks
+(`generate_zed_json()`/`generate_claude_json()`); the new **MCP Gateway
+addon** (`addons/mcp-gateway/`, 0.1.0) exposes the whole fleet as one public
+streamable-HTTP MCP endpoint (API-key auth + rotation, per-key rate limits,
+`<site-slug>.<tool>` namespacing, fail-closed config); **plain front-end
+requests no longer load the ~350-tool registry** (lazy defaults via
+`wp_mcp_ai_is_plugin_runtime_context()`, ~32 MB/request saved — REST/admin/
+AJAX/cron/CLI behave as before) and the OOS engine pre-warm is gated off
+page views; the **bootstrap-integrity guard** + fail-soft loader make missing
+files after a partial update degrade instead of fataling (one-time admin
+notice, self-healing prune, Site Health `wp_mcp_ai_file_integrity`); the
+media worker's runtime version strings report 3.4.0 again.
 
 **v1.1.95 operational quick notes** (full detail in RELEASE-NOTES.md): the
 four placeholder image tools now run real processing through the media worker

@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.95
+Stable tag: 1.1.96
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.96 - October 5, 2026 =
+
+NV oOS MCP bridge npx package, MCP Gateway addon, and per-request memory cut release. Added: the @nvdigitalsolutions/nvoos-mcp-bridge zero-dependency stdio↔HTTP relay npm package — `npx` connects Zed / Claude Desktop / Cursor / Codex to any NV oOS site (`nvoos-mcp` + `nvoos-mcp-ssh` bins, byte-identity CI sync from bin/, hermetic node:test suites, opt-in Docker E2E, npm-publish workflow; the public publish itself is deferred on the npm scope claim + NPM_TOKEN) (#6897, Proposals 054/055); the Fleet Operator addon's Zed / VS Code / Claude Desktop config generators (`generate_zed_json()` / `generate_claude_json()` emit copy-paste `context_servers` / `mcpServers` blocks through the npx package) alongside the Hermes YAML (#6897); and the MCP Gateway addon (`addons/mcp-gateway/`, 0.1.0) — a public fleet MCP endpoint (stateless streamable HTTP, MCP 2026-07-28) with public API-key auth and rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, and fail-closed env config (#6897). Changed: the per-request memory cut + bootstrap hardening — plain front-end requests no longer load ~350 tool classes (the registry defers defaults until first tool access; REST/admin/AJAX/cron/CLI load eagerly; third-party tools win slug conflicts), the OOS engine pre-warm is gated off front-end page views, the model-catalog migration reads the catalog only on filemtime change, Pro blob options (remote sites, workflows, execution logs, approvals, pricing buffers, slash-command history, license key) write with autoload=false plus a one-time repair, and a bootstrap-integrity guard + fail-soft loader chain make missing files degrade instead of fataling (one-time admin notice, self-healing prune, updater VERIFY_FILES +17 paths, new Site Health wp_mcp_ai_file_integrity test); nine dead FF/Yahoo registry entries removed and the Inline_Async_Tick_Trait double-declaration activation fatal fixed — A/B probe 42 MB vs 74 MB per front-end render (#6896). Fixed: the media worker's runtime version strings now report 3.4.0 (the #6881 bump missed both /api/health version fields and the WORKER_VERSION heartbeat constant) (#6895). Tool count: ~350 base + ~1,312 Pro (~1,662 total; unchanged; live registry authoritative). Model catalog: v2026.10.03 (unchanged; 18 providers). Stale build ZIPs removed: the 1.1.94 oOS build set (30 files).
 
 = 1.1.95 - October 4, 2026 =
 

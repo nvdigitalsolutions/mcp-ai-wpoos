@@ -1,7 +1,8 @@
 # NV oOS OOS Engine Context
 
 > **GSD Context File** — Load this when working on the OOS (Open Operator System) engine: `includes/oos/`, `includes/bootstrap/oos-bridge.php`, the `lib/core` orchestrator/session/tool-scope domain, the Pro composition subsystem, or the parity CLIs.
-> Last reviewed: October 3, 2026 (v1.1.94 — chat tool-slug parity + legacy hook arg translation).
+> Last reviewed: October 5, 2026 (v1.1.96 — OOS pre-warm gated on front-end page views).
+> **New in v1.1.96 (PR #6896):** the OOS orchestrator pre-warm in `includes/bootstrap/oos-bridge.php` is now gated on `wp_mcp_ai_is_plugin_runtime_context()` — the second engine (12 adapters + 12 provider clients + ~140 core tools) is **no longer built on plain front-end page views** (REST/admin/AJAX/cron/CLI/test contexts still warm it). Keep the gate when extending the bridge — front-end renders must not construct the engine.
 
 ---
 

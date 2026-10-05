@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-10-04 (v1.1.95 pass — one new OI-1 group (47); OI-2 label refreshed; OI-9 extended with the #6883 port-wide sweep queue)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.95-docs-catch-up.md`](v1.1.95-docs-catch-up.md).
+> **Last reviewed:** 2026-10-05 (v1.1.96 pass — one new OI-1 group (48); OI-2 label refreshed)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.96-docs-catch-up.md`](v1.1.96-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -64,6 +64,7 @@
 | 45 | `@since 1.1.92` | the FlowHub MCP Apps wave — 6 instances (PRs #6854/#6861): `addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php` (5) + `addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-registry.php` (1) — tagged with the version current at write time, one version behind the 1.1.93 ship (the group-30/37 pattern) | 1.1.93 | v1.1.93 plan |
 | 46 | `@since 1.4.0` | `includes/assistants/class-wp-mcp-ai-assistant-cpt.php` — 1 instance (PR #6872, the `wp_mcp_ai_prompt_window_toolkit_tool_slugs` estimator filter) — a **base** file tagged with the toolkit-MCP-server module convention. **Convention note, not part of this group:** the same PR's 3 × `1.4.0` in `addons/pro/includes/mcp-servers/mcp-servers-init.php` follow the folder's module-version convention (the dir carries 1.2.0 ×10 / 1.3.0 ×8 / 1.4.0 ×11 / 1.5.0 ×11 — the MCP Apps 1.9.x pattern), and the 6 × `@since 2026.10` in `includes/services/class-wp-mcp-ai-decision-scope-guard.php` extend group 23's date-format convention | 1.1.94 | v1.1.94 plan |
 | 47 | `@since 1.9.5` | `tests/rest/test-sse-stream-keepalive.php` — 1 instance (PR #6879; the MCP Apps module tag on an unrelated chat-stream suite — `tests/rest/` has no folder convention, so this is an anomaly, not a convention). **Convention notes, not part of this group (the v1.1.95 window's other tag additions all continue pre-existing file/folder tag families — verified against the pre-window tree):** the loose incident/maintenance tools gained `1.4.0` ×15 (#6893 — each file's dominant pre-existing tag is 1.4.0, the incident module convention); CRM `draft-lead-reply` gained `2.10.0` ×6 (#6882 — the CRM outbound folder's 2.x module family, already recorded as group 29); media `scan`/`cleanup-orphaned-media` gained `2.7.0` ×2 (#6886 — the files' only tag); `ecommerce-helpers.php` gained `2.1.0` ×1 (#6885 — the file's only tag); the shopify-sync MCP server gained `1.5.0` ×1 (#6889 — the mcp-servers module convention); `includes/class-wp-mcp-ai-rest.php` gained `1.1.55` + `1.9.5` (#6879 — both pre-existing tag families in the file) | 1.1.95 | v1.1.95 plan |
+| 48 | `@since 1.2.0` | `includes/class-wp-mcp-ai-tool-registry.php` — 1 instance (PR #6896: the pre-existing `wp_mcp_ai_tools_init` hook gained a docblock tagged 1.2.0; the hook was actually introduced 2026-08-19 in `b3729b8232` (~v1.1.58 era) — not a folder convention, an anomaly) | 1.1.96 | v1.1.96 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -73,7 +74,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.95):** ~350 base + ~1,312 Pro (~1,662 total), live-registry caveat retained on every count surface. (Delta-derived; **unchanged in-window** — no registrations in the v1.1.95 window.)
+- **Current figure (v1.1.96):** ~350 base + ~1,312 Pro (~1,662 total), live-registry caveat retained on every count surface. (Delta-derived; **unchanged in-window** — no registrations in the v1.1.96 window.)
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 

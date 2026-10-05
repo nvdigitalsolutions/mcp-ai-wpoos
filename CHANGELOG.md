@@ -1,5 +1,47 @@
 # oOS – Changelog
 
+## [1.1.96] - 2026-10-05
+
+### Added — NV oOS MCP Bridge npx Package (PR #6897, Proposals 054/055)
+
+- **`@nvdigitalsolutions/nvoos-mcp-bridge` connects Zed / Claude Desktop / Cursor / Codex to any NV oOS site with one `npx` command.** The new zero-dependency `packages/nvoos-mcp-bridge/` package ships two bins — `nvoos-mcp` (newline-delimited stdio ↔ Streamable HTTP relay) and `nvoos-mcp-ssh` (SSH port-forward + relay for sites with no public web route) — as a public-npm package with a byte-identity CI drift gate against `bin/` (the repo `bin/mcp-bridge.js`/`bin/mcp-bridge-ssh.js` stay the source of truth), hermetic `node:test` suites (14/14), opt-in Docker E2E against a live site, and the `.github/workflows/npm-publish-nvoos-mcp-bridge.yml` publish workflow. **Deferred on maintainer credentials:** the public npm publish itself (npmjs.com scope claim + `NPM_TOKEN` secret).
+
+### Added — Fleet Operator Editor Config Generators (PR #6897)
+
+- **The Fleet Operator addon now emits copy-paste MCP config blocks for Zed / VS Code / Claude Desktop alongside the Hermes YAML.** `generate_zed_json()` / `generate_claude_json()` render `context_servers` / `mcpServers` blocks that route through the npx bridge package, and both the one-time operator result and the admin page offer the editor blocks next to the existing Hermes config generator. Fleet Operator stays **1.0.0** (feature addition, no version bump).
+
+### Added — MCP Gateway Addon: Public Fleet MCP Endpoint (PR #6897, Proposal 055)
+
+- **`addons/mcp-gateway/` (0.1.0) exposes the whole fleet as one public MCP endpoint.** A media-worker-style Express service speaking stateless streamable HTTP (MCP 2026-07-28) at the planned `mcp.nvoos.pro`: public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` tool namespacing against the per-site MCP bridges, graceful per-site degradation (one bad site never takes down the fleet), and fail-closed env config (missing config refuses to start). Ships 39/39 `node:test` suites, the subtree-mirror workflow (`sync-mcp-gateway.yml`), and the Velocity deployment guide. **Deferred on maintainer credentials:** the `nvdigitalsolutions/nvoos-mcp-gateway` mirror repo (`MCP_GATEWAY_REPO_TOKEN`), the Velocity deployment + `mcp.nvoos.pro` DNS/TLS, and the directory submissions (mcpservers.org, mcp.directory, pulsemcp, official MCP Registry).
+
+### Changed — Per-Request Memory Cut and Bootstrap Hardening (PR #6896)
+
+- **Production incident follow-up: the plugin no longer loads its full weight on plain front-end page views.** A site reported PHP workers at 400 MB+ each on minimal traffic plus per-request fatals after a partial update left missing files. Four changes cut the footprint (A/B probe on a front-end render: **42 MB deferred vs 74 MB eager, ~32 MB saved per request**):
+  - **Tool registry deferral** — plain front-end requests no longer load ~350 tool classes. Defaults (and the `wp_mcp_ai_register_tools` / `wp_mcp_ai_tools_init` hooks) now load lazily on first tool access via `should_eager_load_default_tools()` → `wp_mcp_ai_is_plugin_runtime_context()` (REST/admin/AJAX/cron/CLI/WP-CLI/installing/test contexts load eagerly; the `wp_mcp_ai_is_plugin_runtime_context` filter lets hosts force eager loading), with `ensure_default_tools_loaded()` on first access. **Third-party tools win slug conflicts over deferred defaults** (their hooks fire before the defaults load).
+  - **OOS orchestrator pre-warm gated** — the second engine (12 adapters + 12 provider clients + ~140 core tools) is no longer built on front-end page views.
+  - **Model-catalog migration short-circuit** — the ~250–400 KB catalog JSON is no longer read + `json_decode`d on every request; a `filemtime` comparison (one stat call) replaces it.
+  - **Autoloaded-option bloat fixed** — `wp_mcp_ai_pro_remote_sites` (encrypted credentials), `wp_mcp_ai_pro_workflows`, per-workflow execution logs, Ezuite alerted SKUs, agent approvals, media-worker secrets, pricing buffers (capped at 500), slash-command history, and the Pro license key now write with `autoload=false`; `wp_mcp_ai_pro_repair_option_autoload()` retroactively flips existing rows once (tracked by the `wp_mcp_ai_pro_autoload_repair_v1` marker).
+- **Missing-file / incomplete-update resilience.** A bootstrap-integrity guard in `mcp-ai-wpoos.php` + a fail-soft loader chain (`wp_mcp_ai_require_if_exists()`) skip missing files, record them in a non-autoloaded option, surface a one-time admin notice, and self-heal (prune) once the files are restored. The updater's `VERIFY_FILES` gains 17 bootstrap/tool-chain paths so future partial extractions roll back before the first request runs, and a new Site Health direct test (`wp_mcp_ai_file_integrity`) reports the current state. The `WP_MCP_AI_AUTOLOAD_CLASSES=false` legacy path still fatals on missing files (opt-in debug mode only).
+- **Registry cleanup + trait fatal fix.** Nine dead registry entries pointing at FF/Yahoo tool files that never existed in `includes/tools/` (they ship in the fantasy-football addon) are removed — no tool-count change. The `WP_MCP_AI_Inline_Async_Tick_Trait` double-declaration fatal — which broke plugin activation whenever an addon shipping a trait stub (docs-hub, graphify, saas-controller) was active — is fixed with a `trait_exists()` guard.
+
+### Fixed — Media Worker Runtime Version Strings (PR #6895)
+
+- **A deployed 3.4.0 media worker no longer reports 3.3.0.** PR #6881 bumped `package.json` + `package-lock.json` to 3.4.0 but missed the three runtime version strings — both `/api/health` response `version:` fields and the `WORKER_VERSION` heartbeat constant. All three now say 3.4.0, `.context/media-worker.md` gains the five-spot version-sync checklist, and the updates skill gains the scope rule that every in-window addon version bump must be verified against every runtime-reported version string.
+
+### Tests
+
+- **PR #6895** — `node --check` on both worker files; zero remaining `3.3.0` strings under `addons/media-worker/src/`.
+- **PR #6896** — 311 tests / 5,720 assertions / 0 failures across the registry, site-health, logger, pricing, activation, hooks, container, REST, trait, and model-catalog suites; behavior probes verified end-to-end (front-end page fires zero tool hooks, REST fires them, missing-file record → restore → prune cycle, autoload column flipped to off, catalog mtime locked after first request); same-stack A/B memory probe (42 MB vs 74 MB); plugin activation/deactivation re-tested with addons active (the trait-collision scenario).
+- **PR #6897** — bridge: 14/14 `node:test` suites + Docker E2E (`initialize` + `tools/list` roundtrip) + `npm pack --dry-run` (7 files, 21.3 kB); Fleet Operator: new `tests/fleet-operator/test-operator-config-generator-zed.php` (6 tests / 23 assertions) + `php -l` clean; mcp-gateway: 39/39 `npm test` + `node --check` + `npm audit` 0 vulnerabilities + a live smoke test (discovery, initialize, namespaced `tools/list`, health registry). Known flake (pre-existing, 054 Phase 0): `bin/test-mcp-bridge-ssh.js`'s notification test fails 1/4 runs (Windows timing race in the harness) — flagged for follow-up before CI gates on it.
+
+### Docs
+
+- **PR #6897** — `docs/project/proposals/054-nvoos-mcp-bridge-npx-implementation-plan.md`, `docs/project/proposals/055-nvoos-mcp-gateway-proposal.md` + implementation plan, and `docs/operations/deployment/mcp-gateway-velocity-setup.md` (the proposals README entries landed in-window).
+
+### Versioning
+
+Bumped to **1.1.96** across all version-bearing files. Pro addon: 1.1.96. **Media Worker: 3.4.0** (unchanged — #6895 completes the #6881 bump's missed runtime strings). **Fleet Operator: 1.0.0** (unchanged — the ADDON_INVENTORY row correction from the stale 0.1.0, no bump; the config generators ship on the existing line). **MCP Gateway: 0.1.0 (new — inventory #31)**. Media Studio: **0.6.1** (unchanged). SaaS Controller: **0.3.0** (unchanged). Design System addon: **0.3.0** (unchanged). ChatGPT Plugin addon: **0.1.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — zero `plugins/` diff in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.5.1** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.10.03** (unchanged — zero catalog diff in-window). Tool count: **~350 base + ~1,312 Pro (~1,662 total — unchanged)** — no registrations in-window (live registry authoritative; the bridge/gateway tools live outside the WP plugin registry). Provider count: **18** chat providers (unchanged). Addon count: **30** (+1 — the MCP Gateway addon). Bundled skills: **75** base + **41** Pro (unchanged). Coding-time agent skills: **62** (unchanged). Stale build ZIPs removed: the 1.1.94 oOS set (9 root + 2 optional-components + 19 toolkit-addons = 30 files).
+
 ## [1.1.95] - 2026-10-04
 
 ### Added — Registry Toolkit Resolution Labels Pro Tools in the Catalogue (PR #6874)

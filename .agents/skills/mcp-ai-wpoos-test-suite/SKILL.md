@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 64 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 65 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-04"
-  plugin-version: "1.1.95"
-  plugin-version-tested: "1.1.95"
+  last-updated: "2026-10-05"
+  plugin-version: "1.1.96"
+  plugin-version-tested: "1.1.96"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -912,6 +912,23 @@ the changed files is the substantive gate; plan CI waits accordingly.
       call longer than the proxy timeout still kills the stream — the durable
       fix is deadline-triggered offload to the job stream (proposal:
       `docs/project/proposals/sse-stream-hardening-long-run-offload-proposal.md`).
+  65. **A test context mysteriously lacks tools after v1.1.96 — the lazy
+      registry, not a missing registration.** #6896 defers the ~350 default
+      tool loads on plain front-end requests; `wp_mcp_ai_is_plugin_runtime_context()`
+      returns true for REST/admin/AJAX/cron/CLI/WP-CLI/installing **and when
+      `WP_TESTS_CONFIG_FILE_PATH` is defined**, so PHPUnit runs still get the
+      eager defaults. A test that runs in a non-runtime context (e.g. a raw
+      front-end `do_action('wp')` simulation or a hand-rolled bootstrap that
+      unsets the config constant) will see third-party tools but no defaults
+      until first access — assert through `ensure_default_tools_loaded()`
+      (protected; exercise via a real execution or Reflection) or set the
+      `wp_mcp_ai_is_plugin_runtime_context` filter to true in `setUp()`. Also
+      from #6896: the `WP_MCP_AI_Inline_Async_Tick_Trait` double-declaration
+      fatal — addons shipping a trait stub (docs-hub, graphify, saas-controller)
+      crashed plugin activation in tests with addons loaded; the fix is the
+      `trait_exists()` guard pattern — when a plugin trait may collide with an
+      addon stub, guard every `require` of the trait file with `trait_exists()`
+      (never rely on require_once ordering alone).
 
 ## Production fix vs test fix
 
