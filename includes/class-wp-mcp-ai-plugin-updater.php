@@ -65,7 +65,10 @@ class WP_MCP_AI_Plugin_Updater {
 	 * These are loaded via require_once without file_exists() guards in the
 	 * main plugin bootstrap. If any are missing after an update, the plugin
 	 * will fatal on the next request. We verify them post-install to catch
-	 * partial extractions (common on Cloudways/distributed filesystems).
+	 * partial extractions (common on Cloudways/distributed filesystems). The
+	 * bootstrap chain (constants/autoload/helpers/cron/hooks/loader) and the
+	 * tool-registry dependencies are covered so a truncated extraction is
+	 * detected before the first request even runs.
 	 *
 	 * Paths are relative to the plugin root (WP_MCP_AI_PATH).
 	 */
@@ -87,6 +90,23 @@ class WP_MCP_AI_Plugin_Updater {
 		'includes/bridge/bridge-init.php',
 		'includes/bridge/class-wp-mcp-ai-wp70-bridge.php',
 		'includes/bridge/class-wp-mcp-ai-credential-resolver.php',
+		'includes/bootstrap/constants.php',
+		'includes/bootstrap/autoload.php',
+		'includes/bootstrap/helpers.php',
+		'includes/bootstrap/cron.php',
+		'includes/bootstrap/hooks.php',
+		'includes/bootstrap/loader.php',
+		'includes/bootstrap/activation.php',
+		'includes/bootstrap/oos-bridge.php',
+		'includes/bootstrap/oos-bridge-wave2.php',
+		'includes/class-wp-mcp-ai-tool-registry.php',
+		'includes/class-wp-mcp-ai-logger.php',
+		'includes/container-helpers.php',
+		'includes/interfaces/interface-wp-mcp-ai-tool.php',
+		'includes/class-wp-mcp-ai-db-output-guard.php',
+		'includes/tools/trait-wp-mcp-ai-tool-envelope.php',
+		'includes/tools/trait-wp-mcp-ai-tool-chat-response.php',
+		'includes/tools/trait-wp-mcp-ai-tool-product-card.php',
 	);
 
 	/**

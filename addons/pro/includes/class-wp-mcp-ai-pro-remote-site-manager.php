@@ -952,7 +952,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		$connections[ $connection_id ] = $connection;
 
-		$updated = update_option( self::OPTION_NAME, $connections );
+		$updated = update_option( self::OPTION_NAME, $connections, false );
 
 		if ( false === $updated && ! isset( $connections[ $connection_id ] ) ) {
 			// update_option returns false if the value is the same, which shouldn't happen here
@@ -1002,7 +1002,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		$connections[ $connection_id ]['api_key'] = self::encrypt_value( $new_token );
 
-		return (bool) update_option( self::OPTION_NAME, $connections );
+		return (bool) update_option( self::OPTION_NAME, $connections, false );
 	}
 
 	/**
@@ -1069,7 +1069,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		$connections[ $connection_id ]['mcp_oauth'] = self::encrypt_value( wp_json_encode( $merged ) );
 
-		$written = update_option( self::OPTION_NAME, $connections );
+		$written = update_option( self::OPTION_NAME, $connections, false );
 
 		if ( false === $written ) {
 			// The in-flight request still uses the refreshed token; surface the
@@ -1304,7 +1304,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		unset( $connections[ $connection_id ] );
 
-		return update_option( self::OPTION_NAME, $connections );
+		return update_option( self::OPTION_NAME, $connections, false );
 	}
 
 	/**
@@ -1965,7 +1965,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					'at'      => time(),
 				);
 			}
-			update_option( self::OPTION_NAME, $connections );
+			update_option( self::OPTION_NAME, $connections, false );
 		}
 
 		if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_event' ) ) {
@@ -4629,7 +4629,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Save migrated data if changes were made.
 		if ( $needs_migration ) {
-			update_option( self::OPTION_NAME, $migrated );
+			update_option( self::OPTION_NAME, $migrated, false );
 		}
 
 		return $migrated;

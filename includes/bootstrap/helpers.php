@@ -85,6 +85,191 @@ if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_is_plugin_runtime_context' ) ) {
+	/**
+	 * Determine whether the current request needs the full plugin runtime.
+	 *
+	 * Plain front-end page views render no server-side AI features (the chat
+	 * UI calls the REST API instead), so heavy bootstrap work is deferred for
+	 * them. Admin screens, AJAX, cron, REST, WP-CLI, installs and tests always
+	 * get the full runtime.
+	 *
+	 * @since 1.1.96
+	 *
+	 * @return bool True when the request needs the full plugin runtime.
+	 */
+	function wp_mcp_ai_is_plugin_runtime_context() {
+		if (
+			is_admin()
+			|| wp_doing_ajax()
+			|| wp_doing_cron()
+			|| ( defined( 'REST_REQUEST' ) && REST_REQUEST )
+			|| ( defined( 'WP_CLI' ) && WP_CLI )
+			|| ( defined( 'WP_INSTALLING' ) && WP_INSTALLING )
+			|| ( defined( 'WP_TESTS_CONFIG_FILE_PATH' ) )
+		) {
+			return true;
+		}
+
+		/**
+		 * Filters whether the current request is treated as a plugin runtime
+		 * context. Hosts can force eager loading on plain front-end views.
+		 *
+		 * @since 1.1.96
+		 *
+		 * @param bool $is_runtime_context Whether the request is a runtime context.
+		 */
+		return (bool) apply_filters( 'wp_mcp_ai_is_plugin_runtime_context', false );
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_record_missing_file' ) ) {
+	/**
+	 * Record a plugin file that failed to load during bootstrap.
+	 *
+	 * Stores the plugin-relative path in a non-autoloaded option (capped at
+	 * the 25 most recent entries) so the admin notice and Site Health file
+	 * integrity test can surface incomplete updates.
+	 *
+	 * @since 1.1.96
+	 *
+	 * @param string $file_path Absolute path to the missing file.
+	 * @return void
+	 */
+	function wp_mcp_ai_record_missing_file( $file_path ) {
+		if ( ! is_string( $file_path ) || '' === $file_path ) {
+			return;
+		}
+
+		$plugin_path  = wp_normalize_path( WP_MCP_AI_PATH );
+		$missing_path = wp_normalize_path( $file_path );
+		if ( 0 === strpos( $missing_path, $plugin_path ) ) {
+			$relative = substr( $missing_path, strlen( $plugin_path ) );
+		} else {
+			$relative = $missing_path;
+		}
+		$relative = ltrim( $relative, '/\\' );
+
+		$missing = get_option( 'wp_mcp_ai_missing_files', array() );
+		if ( ! is_array( $missing ) ) {
+			$missing = array();
+		}
+		if ( in_array( $relative, $missing, true ) ) {
+			return;
+		}
+
+		$missing[] = $relative;
+		$missing   = array_slice( $missing, -25 );
+		update_option( 'wp_mcp_ai_missing_files', $missing, false );
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Diagnostic logging for incomplete plugin installs.
+			error_log( '[NV oOS] Missing plugin file skipped: ' . $relative . ' — reinstall/update the plugin to restore the feature.' );
+		}
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_prune_missing_files_option' ) ) {
+	/**
+	 * Drop recorded missing-file entries whose files now exist on disk.
+	 *
+	 * Self-heals the option after a reinstall/update restores the missing
+	 * files, so the admin notice and Site Health test stop reporting stale
+	 * entries. Cheap: bounded by the option's 25-entry cap.
+	 *
+	 * @since 1.1.96
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_prune_missing_files_option() {
+		$missing = get_option( 'wp_mcp_ai_missing_files', array() );
+		if ( ! is_array( $missing ) || empty( $missing ) ) {
+			return;
+		}
+
+		$pruned = array();
+		foreach ( $missing as $relative ) {
+			if ( ! is_string( $relative ) || '' === $relative ) {
+				continue;
+			}
+			if ( ! file_exists( WP_MCP_AI_PATH . ltrim( $relative, '/\\' ) ) ) {
+				$pruned[] = $relative;
+			}
+		}
+
+		if ( count( $pruned ) !== count( $missing ) ) {
+			if ( empty( $pruned ) ) {
+				delete_option( 'wp_mcp_ai_missing_files' );
+			} else {
+				update_option( 'wp_mcp_ai_missing_files', $pruned, false );
+			}
+		}
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_require_if_exists' ) ) {
+	/**
+	 * Require a plugin file only when it exists on disk.
+	 *
+	 * Missing files are recorded (see wp_mcp_ai_record_missing_file) so the
+	 * plugin degrades gracefully instead of fatalling after an incomplete
+	 * update, and admins are alerted via an admin notice.
+	 *
+	 * @since 1.1.96
+	 *
+	 * @param string $file_path Absolute path to the file to load.
+	 * @return bool True when the file was required, false when missing.
+	 */
+	function wp_mcp_ai_require_if_exists( $file_path ) {
+		if ( ! is_string( $file_path ) || '' === $file_path || ! file_exists( $file_path ) ) {
+			wp_mcp_ai_record_missing_file( $file_path );
+			return false;
+		}
+
+		require_once $file_path;
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_missing_files_admin_notice' ) ) {
+	/**
+	 * Render an admin notice listing plugin files that are missing from disk.
+	 *
+	 * @since 1.1.96
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_missing_files_admin_notice() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		wp_mcp_ai_prune_missing_files_option();
+
+		$missing = get_option( 'wp_mcp_ai_missing_files', array() );
+		if ( ! is_array( $missing ) || empty( $missing ) ) {
+			return;
+		}
+
+		if ( get_option( 'wp_mcp_ai_missing_files_notice_seen', false ) ) {
+			return;
+		}
+		update_option( 'wp_mcp_ai_missing_files_notice_seen', time(), false );
+
+		$first_five = array_slice( $missing, 0, 5 );
+
+		printf(
+			'<div class="notice notice-error"><p><strong>%1$s</strong> %2$s</p><p><code>%3$s</code></p></div>',
+			esc_html__( 'Open Operator System:', 'mcp-ai-wpoos' ),
+			esc_html__( 'Some plugin files are missing from this installation — likely an incomplete update. Reinstall or update the plugin to restore full functionality.', 'mcp-ai-wpoos' ),
+			implode( '</code>, <code>', array_map( 'esc_html', $first_five ) )
+		);
+	}
+}
+
+add_action( 'admin_notices', 'wp_mcp_ai_missing_files_admin_notice' );
+
 if ( ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
 	/**
 	 * Retrieve the capability required to access the chat interface.

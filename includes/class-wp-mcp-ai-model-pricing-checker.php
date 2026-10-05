@@ -103,13 +103,16 @@ class WP_MCP_AI_Model_Pricing_Checker {
 		}
 
 		// Save updated pricing data.
-		update_option( self::OPTION_LAST_CHECK, $previous_pricing );
+		update_option( self::OPTION_LAST_CHECK, $previous_pricing, false );
 
 		// If there are price changes, store them for admin notification.
 		if ( ! empty( $price_changes ) ) {
 			$existing_changes = get_option( self::OPTION_PRICE_CHANGES, array() );
 			$all_changes      = array_merge( $existing_changes, $price_changes );
-			update_option( self::OPTION_PRICE_CHANGES, $all_changes );
+			if ( is_array( $all_changes ) && count( $all_changes ) > 500 ) {
+				$all_changes = array_slice( $all_changes, -500 );
+			}
+			update_option( self::OPTION_PRICE_CHANGES, $all_changes, false );
 
 			// Log the event.
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {

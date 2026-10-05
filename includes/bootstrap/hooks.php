@@ -217,8 +217,30 @@ if ( ! function_exists( 'wp_mcp_ai_run_model_catalog_migration' ) ) {
 			return;
 		}
 
+		// Short-circuit on an unchanged catalog mtime: this avoids a ~250-400KB
+		// file read + json_decode on every page request and replaces it with a
+		// single filemtime stat.
+		$catalog_path  = WP_MCP_AI_PATH . 'includes/data/model-catalog.json';
+		$catalog_mtime = ( file_exists( $catalog_path ) && is_readable( $catalog_path ) ) ? (int) filemtime( $catalog_path ) : -1;
+		$seen_mtime    = (int) get_option( 'wp_mcp_ai_model_catalog_mtime', -2 );
+
+		/**
+		 * Filters whether the catalog mtime short-circuit is in effect.
+		 *
+		 * @since 1.1.96
+		 *
+		 * @param bool $check_mtime Whether to skip the migration when the
+		 *                          catalog file mtime is unchanged.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_model_catalog_mtime_check', true ) ) {
+			$seen_mtime = -2;
+		}
+
+		if ( $seen_mtime === $catalog_mtime ) {
+			return;
+		}
+
 		$catalog_version = '';
-		$catalog_path    = WP_MCP_AI_PATH . 'includes/data/model-catalog.json';
 		if ( file_exists( $catalog_path ) && is_readable( $catalog_path ) ) {
 			$raw     = file_get_contents( $catalog_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading bundled JSON catalog.
 			$decoded = json_decode( (string) $raw, true );
@@ -242,6 +264,10 @@ if ( ! function_exists( 'wp_mcp_ai_run_model_catalog_migration' ) ) {
 		}
 
 		WP_MCP_AI_Model_Catalog_Migration::run_if_needed( $catalog_version );
+
+		// Record the mtime in every branch (valid, invalid, and missing JSON)
+		// so the short-circuit above engages on subsequent requests.
+		update_option( 'wp_mcp_ai_model_catalog_mtime', $catalog_mtime, false );
 	}
 }
 

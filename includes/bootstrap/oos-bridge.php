@@ -995,6 +995,13 @@ if ( file_exists( $wave2_bridge ) ) {
 add_action(
 	'wp_mcp_ai_bootstrapped',
 	function () {
+		// Plain front-end page views skip the orchestrator pre-warm: they render
+		// no server-side AI features and the orchestrator is built lazily on
+		// first use (e.g. when the chat REST endpoint is hit).
+		if ( ! wp_mcp_ai_is_plugin_runtime_context() ) {
+			return;
+		}
+
 		// Pre-warm the orchestrator so it's ready when a chat request arrives.
 		// Wrap in a try-catch so a broken lib/ or missing dependency doesn't
 		// crash the entire WordPress request.
