@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.95"
-  plugin-version-tested: "1.1.95"
-  last-updated: "2026-10-03"
+  plugin-version: "1.1.96"
+  plugin-version-tested: "1.1.96"
+  last-updated: "2026-10-05"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -54,7 +54,7 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (`v1.1.95-docs-catch-up.md`,
+3. **Read the template plans** — the latest executed plan (`v1.1.96-docs-catch-up.md`,
    with `v1.1.94-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
@@ -737,8 +737,31 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.92-docs-catch-up.md`,
   `docs/project/plans/v1.1.93-docs-catch-up.md`,
   `docs/project/plans/v1.1.94-docs-catch-up.md`,
-  `docs/project/plans/v1.1.95-docs-catch-up.md` (latest executed — the v1.1.95
-  pass over PRs #6874–#6893: the nine-toolkit hardening wave (#6875/#6876/
+  `docs/project/plans/v1.1.95-docs-catch-up.md`,
+  `docs/project/plans/v1.1.96-docs-catch-up.md` (latest executed — the v1.1.96
+  pass over PRs #6895–#6897: the `@nvdigitalsolutions/nvoos-mcp-bridge` npx
+  package + Fleet Operator editor config generators + the `addons/mcp-gateway/`
+  public fleet MCP endpoint (Proposals 054/055, addon 0.1.0 → inventory #31,
+  addon count 29 → 30, the npm-publish/mirror/Velocity/directory deferrals
+  noted), the per-request memory cut + bootstrap hardening (#6896 — the lazy
+  tool registry with third-party-wins slug conflicts, the gated OOS pre-warm,
+  the catalog-migration `filemtime` short-circuit, the `autoload=false` Pro
+  blob options + one-time repair, the bootstrap-integrity guard + fail-soft
+  loader, the updater `VERIFY_FILES` +17, the new Site Health
+  `wp_mcp_ai_file_integrity` test, 9 dead FF/Yahoo registry entries removed,
+  the `Inline_Async_Tick_Trait` double-declaration fatal fixed — 42 MB vs
+  74 MB A/B), the worker runtime-version completion (#6895), a new OI-1 group
+  (48: `@since 1.2.0` ×1 in the registry's `wp_mcp_ai_tools_init` docblock),
+  three skill reconciliations (plugin ×3 + RELEASE-NOTES with the npx-bridge
+  transport pointers, test-suite 64 → 65 patterns, updates), the
+  FOR_REVIEWERS addon-count 29 → 30 + Fleet Operator 1.0.0 + MCP Gateway rows,
+  the ADDON_INVENTORY Fleet Operator row correction (0.1.0 → 1.0.0) + new
+  MCP Gateway row #31, the stale 1.1.94 build-set removal (30 files — 9 + 2
+  + 19), and zero tool-count change (no registrations))
+
+Preceding windows:
+  `docs/project/plans/v1.1.95-docs-catch-up.md` (the v1.1.95
+  pass over PRs #6874–#6893:the nine-toolkit hardening wave (#6875/#6876/
   #6882/#6883/#6885/#6886/#6887/#6889/#6892/#6893 — the per-toolkit audit loop
   under the new `mcp-ai-wpoos-toolkit-audit` skill, 62 skills; email-marketing
   verified clean #6891; confirmed fatals: unguarded `shell_exec()`, the
