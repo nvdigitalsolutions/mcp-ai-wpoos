@@ -99,19 +99,19 @@ jobs:
           npm pkg set version="${{ steps.version.outputs.version }}"
           echo "✅ package.json set to ${{ steps.version.outputs.version }}"
 
-      - name: Gate: sync drift check (byte-identity with repo bin/)
+      - name: 'Gate: sync drift check (byte-identity with repo bin/)'
         run: |
           cd packages/nvoos-mcp-bridge
           npm run sync -- --check
           echo "✅ Package bin/ is byte-identical to repo bin/"
 
-      - name: Gate: hermetic unit tests
+      - name: 'Gate: hermetic unit tests'
         run: |
           cd packages/nvoos-mcp-bridge
           npm test
           echo "✅ All unit tests passed"
 
-      - name: Gate: inspect tarball contents
+      - name: 'Gate: inspect tarball contents'
         run: |
           cd packages/nvoos-mcp-bridge
           npm pack --dry-run
