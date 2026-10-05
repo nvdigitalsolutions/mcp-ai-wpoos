@@ -7,7 +7,13 @@
 # Operations:
 #   - unpublish:   remove a version (allowed only within 72 hours of publish;
 #                  `--force` is required for versions younger than 72h).
-#   - dist-tag-add: point a dist-tag at a version (e.g. move `latest`).
+#                  NOTE: npmjs blocks this for granular/automation tokens that
+#                  bypass 2FA (403 "Granular access tokens that bypass two-factor
+#                  authentication may not perform this action") — with the
+#                  current NPM_TOKEN, unpublish must be run locally by a
+#                  maintainer via `npm login` + `npm unpublish <pkg>@<ver> --force`.
+#   - dist-tag-add: point a dist-tag at a version (e.g. move `latest`). Works
+#                  with the automation token.
 #
 # Example dispatches:
 #   unpublish:    operation=unpublish packages="nvoos-sse-client" version=0.0.0-stage
