@@ -73,6 +73,11 @@ TRUST_PROXY=1
 
 ## Behavior & security
 
+- Protocol negotiation: `initialize` echoes the highest protocol version both
+  sides support (`2026-07-28` → `2024-11-05`), defaulting to `2024-11-05`
+  when the client sends no version — strict clients (Zed, Claude Desktop)
+  abort with "Unsupported protocol version" when the server hardcodes a
+  version they do not speak.
 - Stateless — no sessions, no SSE in v1 (the July 2026 spec revision makes
   stateless transport first-class).
 - Fail-closed: no keys configured in strict mode → boot refuses; a key bound

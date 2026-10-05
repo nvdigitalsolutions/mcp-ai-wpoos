@@ -32,6 +32,60 @@ const PROTOCOL_VERSION = '2026-07-28';
 const UPSTREAM_TIMEOUT_MS = Number( process.env.UPSTREAM_TIMEOUT_MS ) || 20000;
 
 /**
+ * Protocol versions this gateway can speak, newest first. Mirrors the
+ * plugin's own MCP negotiation list so every NV oOS surface agrees.
+ */
+const SUPPORTED_PROTOCOL_VERSIONS = [
+	PROTOCOL_VERSION,
+	'2025-06-18',
+	'2025-03-26',
+	'2024-11-05',
+];
+
+/**
+ * Negotiate the protocol version for an initialize handshake.
+ *
+ * Clients (Zed, Claude Desktop, Cursor) declare the newest version they
+ * support in `protocolVersion` and, on newer SDKs, may also send the full
+ * `supportedProtocolVersions` list. Answering with a version the client did
+ * not offer makes strict clients abort the connection with "Unsupported
+ * protocol version" — so the gateway echoes the highest mutually supported
+ * version, defaulting to the oldest supported dialect (2024-11-05) when the
+ * client provides no version information or nothing matches. Semantics
+ * mirror the WordPress plugin's `negotiate_protocol_version()`.
+ *
+ * @param {object} params Client's initialize params.
+ * @return {string} Negotiated protocol version.
+ */
+function negotiateProtocolVersion( params ) {
+	const clientVersions = [];
+
+	if ( 'string' === typeof params?.protocolVersion ) {
+		clientVersions.push( params.protocolVersion );
+	}
+	if ( Array.isArray( params?.supportedProtocolVersions ) ) {
+		for ( const version of params.supportedProtocolVersions ) {
+			if ( 'string' === typeof version ) {
+				clientVersions.push( version );
+			}
+		}
+	}
+
+	const unique = [ ...new Set( clientVersions ) ];
+	if ( 0 === unique.length ) {
+		return '2024-11-05';
+	}
+
+	for ( const serverVersion of SUPPORTED_PROTOCOL_VERSIONS ) {
+		if ( unique.includes( serverVersion ) ) {
+			return serverVersion;
+		}
+	}
+
+	return '2024-11-05';
+}
+
+/**
  * JSON-RPC error envelope factory.
  *
  * @param {*} id      Request id (null for parse errors).
@@ -45,18 +99,21 @@ function rpcError( id, code, message ) {
 
 /**
  * Gateway-level initialize response (stateless, mirrors the upstream sites'
- * discovery surface without leaking bound-site names).
+ * discovery surface without leaking bound-site names). The protocol version
+ * is negotiated with the client instead of being hardcoded, so strict
+ * clients (Zed, Claude Desktop) do not abort on an unsupported version.
  *
- * @param {object} req Express request.
- * @param {*}      id  Request id.
+ * @param {object} req    Express request.
+ * @param {*}      id     Request id.
+ * @param {object} params Client's initialize params.
  * @return {object} Response envelope.
  */
-function respondInitialize( req, id ) {
+function respondInitialize( req, id, params ) {
 	return {
 		jsonrpc: '2.0',
 		id,
 		result: {
-			protocolVersion: PROTOCOL_VERSION,
+			protocolVersion: negotiateProtocolVersion( params ),
 			capabilities: {
 				tools: { listChanged: true },
 				resources: { subscribe: false, listChanged: true },
@@ -193,7 +250,7 @@ async function dispatch( ctx, msg ) {
 
 	switch ( method ) {
 		case 'initialize':
-			return respondInitialize( ctx.req, id );
+			return respondInitialize( ctx.req, id, params );
 
 		case 'ping':
 			return { jsonrpc: '2.0', id, result: {} };
