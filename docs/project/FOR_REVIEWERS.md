@@ -14,12 +14,12 @@ Architecturally, the project has undergone a major framework extraction: the AI 
 The repo is a **monorepo** containing:
 - The **base plugin** (GPLv3, ships to WordPress.org) — `mcp-ai-wpoos.php` + `includes/`
 - A **Pro addon** (commercial/proprietary) — `addons/pro/`
-- **29 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.4.0, Checkout API v0.1.2)
+- **30 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.4.0, MCP Gateway v0.1.0, Checkout API v0.1.2)
 - The **extracted AI engine** (framework-agnostic, Hexagonal Architecture) — `lib/core/`
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.95 (October 2026)
+**Current version:** 1.1.96 (October 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
 **Total tools:** ~1,662 (~350 base + ~1,312 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
@@ -96,7 +96,7 @@ core/
 
 ## 4. Addon Inventory (Production vs Experimental)
 
-The monorepo contains **29 addon directories** under `addons/` (30 entries in the [ADDON_INVENTORY.md](ADDON_INVENTORY.md) inventory, including the standalone `core/` plugin). See the inventory for full details including license, version, and dependencies.
+The monorepo contains **30 addon directories** under `addons/` (31 entries in the [ADDON_INVENTORY.md](ADDON_INVENTORY.md) inventory, including the standalone `core/` plugin). See the inventory for full details including license, version, and dependencies.
 
 ### Production (actively maintained — review priority)
 
@@ -116,7 +116,7 @@ The monorepo contains **29 addon directories** under `addons/` (30 entries in th
 | **Comic Reader** | 0.2.0 | GPLv3 | CBR/CBZ/CB7/CBT comic reader & AI-powered creator. React reading interface. |
 | **Funiq Bridge** | 1.0.0 | GPLv3 | Payload CMS → WordPress bridge for Funiq React PWA. REST API, CPTs, taxonomies, React admin SPA. |
 | **LibreChat** | 0.1.0 | GPLv3 | Sandboxed Python/JavaScript code interpreter, TTS/STT speech services, web search reranker. |
-| **Fleet Operator** | 0.1.0 | GPLv3 | External-operator governance (Hermes or any MCP/A2A host). Scoped `op_` credentials with audience binding, expiry, rate limits, revocation; MCP `tools/list` scoping + `tools/call` enforcement; admin page, WP-CLI, config generator, skills pack. |
+| **Fleet Operator** | 1.0.0 | GPLv3 | External-operator governance (Hermes or any MCP/A2A host). Scoped `op_` credentials with audience binding, expiry, rate limits, revocation; MCP `tools/list` scoping + `tools/call` enforcement; admin page, WP-CLI, Hermes YAML + Zed/VS Code/Claude Desktop config generators (`generate_zed_json()`/`generate_claude_json()` through the npx bridge), skills pack. |
 | **Media Worker** | 3.4.0 | GPLv3 | Docker-based Node.js sidecar. 11 route handlers (image, video, pdf, ocr, email, social, code, data, document, browser, workflow) plus native `/api/crawl/*` endpoints (single-URL Markdown, batched crawling, link scans) and a Crawl4AI-compatible facade. Queue module with concurrent processing. Multi-tenant shared worker mode since v2.4.0 (`SITE_TOKENS` per-site isolation, per-site rate limits); Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`) + usage counters + grouped temp TTLs; Phase 3 scale features (opt-in Redis rate-limit store, provider-keys file hot-reload). Timing-safe token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet. Worker routing with local fallbacks. |
 
 ### Experimental (works but limited testing)
@@ -124,6 +124,7 @@ The monorepo contains **29 addon directories** under `addons/` (30 entries in th
 | Addon | Version | License | Notes |
 |---|---|---|---|
 | **Page Agent** | 0.1.0 | GPLv3 | Alibaba Page Agent (MIT) browser copilot. Natural-language page control — click, type, navigate. Client-side only. |
+| **MCP Gateway** | 0.1.0 | GPLv3 | Public fleet MCP endpoint (Express service, streamable HTTP MCP 2026-07-28). Public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, fail-closed env config. Subtree mirror to `nvoos-mcp-gateway`. |
 | **Schedule Anything** | 0.1.0 | Proprietary | Full SaaS booking platform with Stripe, calendar management, multi-tenant architecture. |
 | **Schedule Anything SPA** | 0.1.0 | Proprietary | React SPA frontend (Vite + Tailwind) for Schedule Anything. |
 | **Crocoblock DS** | 0.1.0 | GPLv3 | Design token system. 55+ CSS tokens, admin editor, DTCG export, a11y tokens. |
