@@ -563,6 +563,22 @@ function wp_mcp_ai_oos_orchestrator() {
 		}
 	);
 
+	// Parity bridge for wp_mcp_ai_agentic_iteration_complete (Proposal 029
+	// G2 closure): the legacy loop fires it after every tool round-trip; the
+	// OOS engine dispatches AgenticIterationComplete with the same pair.
+	$events->listen(
+		Nvoos\Core\Domain\Event\AgenticIterationComplete::class,
+		static function ( object $event ): void {
+			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+			do_action(
+				'wp_mcp_ai_agentic_iteration_complete',
+				$event->iteration,
+				$event->assistantId
+			);
+			// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		}
+	);
+
 	// Fail-loud audit: log assistant-configured tool slugs that the OOS
 	// registry cannot resolve instead of dropping them silently.
 	$events->listen(

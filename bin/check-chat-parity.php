@@ -134,12 +134,32 @@ $features = array(
         'status'  => 'parity',
         'note'    => 'The request slot is null on the OOS path — subscribers must stay null-safe',
     ),
-    array(
-        'feature' => 'Agentic iteration events',
-        'legacy'  => 'WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled + error_log',
-        'libcore' => 'AgenticIterationComplete / AgenticLoopCompleted events',
-        'status'  => 'parity',
-    ),
+    	array(
+    		'feature' => 'Agentic iteration events',
+    		'legacy'  => 'do_action( wp_mcp_ai_agentic_iteration_complete, $iteration, $assistant_id ) in the loop',
+    		'libcore' => 'AgenticIterationComplete domain event → oos-bridge listener fires the same hook with the same pair',
+    		'status'  => 'parity',
+    	),
+    	array(
+    		'feature' => 'Security/budget gate envelopes (destructive confirmation, concurrency, cost)',
+    		'legacy'  => 'Typed catch blocks in handle_tool_request / execute_tool_call_internal → to_wp_error() envelopes (e.g. HTTP 428)',
+    		'libcore' => 'handle_chat_request_oos typed catch before the generic catch → WP_MCP_AI_REST::translate_gate_exception()',
+    		'status'  => 'parity',
+    		'note'    => 'The destructive-ops gate fires on the OOS path via the BeforeToolExecution event mapping; a 500 here would mean a regression',
+    	),
+    	array(
+    		'feature' => 'Output guardrail + citation verifier (wp_mcp_ai_pre_response_render)',
+    		'legacy'  => 'WP_MCP_AI_REST::apply_pre_response_render() at the final payload (non-streaming + streaming final event)',
+    		'libcore' => 'WP_MCP_AI_REST::apply_pre_response_render() at the handle_chat_request_oos final payload',
+    		'status'  => 'parity',
+    		'note'    => 'Non-streaming + final SSE event only; mid-stream chunks are unfiltered on BOTH paths',
+    	),
+    	array(
+    		'feature' => 'Necessity gate / queue manager / workflow cache (wp_mcp_ai_before_tool_execute)',
+    		'legacy'  => 'WP_MCP_AI_Tool_WordPress_Native::do_before_execute (native trait)',
+    		'libcore' => 'oos-bridge tools/execute waterfall listener (native OOS tools) + LegacyToolAdapter trait for legacy tools',
+    		'status'  => 'parity',
+    	),
 
     // ── GAPS: Features in legacy only ──────────────────────────────
     array(
