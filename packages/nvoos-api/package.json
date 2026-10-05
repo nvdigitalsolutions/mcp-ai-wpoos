@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-api",
-  "version": "0.1.0-alpha.3",
+  	"version": "0.1.0-alpha.4",
   "description": "Typed REST API client for NV Open Operator System (oOS) — endpoint builders, request helpers, and payload constructors with full TypeScript definitions",
   "main": "dist/nvoos-api.js",
   "module": "dist/nvoos-api.js",

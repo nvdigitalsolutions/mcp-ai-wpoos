@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-sse-client",
-  "version": "0.1.0-alpha.3",
+  	"version": "0.1.0-alpha.4",
   "description": "TypeScript-native SSE connection manager with lifecycle tracking, per-connection status, and automatic cleanup — companion to nvoos-events",
   "main": "dist/nvoos-sse-client.js",
   "module": "dist/nvoos-sse-client.js",

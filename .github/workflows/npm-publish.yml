@@ -57,6 +57,11 @@ on:
         required: false
         type: boolean
         default: false
+      packages:
+        description: 'Space-separated package names to publish (default: all in PACKAGES).'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -138,8 +143,9 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           echo "📝 Updating package.json files to version ${VERSION}..."
+          SELECTED="${{ github.event.inputs.packages }}"
 
-          for pkg in $PACKAGES; do
+          for pkg in ${SELECTED:-$PACKAGES}; do
             cd packages/${pkg}
             npm pkg set version="${VERSION}"
             echo "✅ Updated @nvdigitalsolutions/${pkg} to ${VERSION}"
@@ -149,7 +155,8 @@ jobs:
       - name: Build all packages
         if: steps.check_auth.outputs.has_token == 'true'
         run: |
-          for pkg in $PACKAGES; do
+          SELECTED="${{ github.event.inputs.packages }}"
+          for pkg in ${SELECTED:-$PACKAGES}; do
             echo "🔨 Building @nvdigitalsolutions/${pkg}..."
             cd packages/${pkg}
             npm run build
@@ -162,7 +169,8 @@ jobs:
         if: steps.check_auth.outputs.has_token == 'true'
         run: |
           echo "📦 Verifying package contents before publishing..."
-          for pkg in $PACKAGES; do
+          SELECTED="${{ github.event.inputs.packages }}"
+          for pkg in ${SELECTED:-$PACKAGES}; do
             echo ""
             echo "=== @nvdigitalsolutions/${pkg} ==="
             cd packages/${pkg}
@@ -175,7 +183,8 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          for pkg in $PACKAGES; do
+          SELECTED="${{ github.event.inputs.packages }}"
+          for pkg in ${SELECTED:-$PACKAGES}; do
             echo "📦 Publishing @nvdigitalsolutions/${pkg}@${{ steps.version.outputs.version }}..."
             cd packages/${pkg}
             npm publish --tag alpha --access public
@@ -191,7 +200,8 @@ jobs:
           echo "🏃 Dry run complete - no packages were published"
           echo ""
           echo "The following packages would have been published to NPM:"
-          for pkg in $PACKAGES; do
+          SELECTED="${{ github.event.inputs.packages }}"
+          for pkg in ${SELECTED:-$PACKAGES}; do
             echo "  - @nvdigitalsolutions/${pkg}@${VERSION}"
           done
 
@@ -203,7 +213,8 @@ jobs:
           echo ""
           echo "### Published Packages"
           echo ""
-          for pkg in $PACKAGES; do
+          SELECTED="${{ github.event.inputs.packages }}"
+          for pkg in ${SELECTED:-$PACKAGES}; do
             echo "✅ **@nvdigitalsolutions/${pkg}@${VERSION}**"
             echo "   Install: \`npm install @nvdigitalsolutions/${pkg}@alpha\`"
             echo "   NPM: https://www.npmjs.com/package/@nvdigitalsolutions/${pkg}"
