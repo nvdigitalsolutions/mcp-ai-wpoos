@@ -641,6 +641,7 @@ naming:
 | **Cognee** | Knowledge-graph-first memory retrieval | <https://github.com/topoteretes/cognee> |
 | **BMAD Method** | Six-agent role split (Analyst / PM / Architect / SM / Dev / QA) inside `.bmad/agents/` | <https://github.com/bmadcode/BMAD-METHOD> |
 | **GSD** | "Get Stuff Done" 30% rule for context-window discipline; 10-phase workflow gates | (community-curated; informal) |
+| **ECC (affaan-m/ECC)** | Hook profiles (`ECC_HOOK_PROFILE`, `ECC_DISABLED_HOOKS`), session summaries, eval/verification loops, config security scanning (AgentShield), and instinct-style pattern extraction → workflow suggestions. Cited in `@credit` tags on `CascadeRouter` (lib/core), `WP_MCP_AI_Hook_Profiles`, `WP_MCP_AI_Session_Distiller`, `run_assistant_eval`, `scan_assistant_security`, and the Pro `WP_MCP_AI_Workflow_Suggestion_Miner`. See [Proposal 056](docs/project/proposals/056-ecc-inspired-harness-enhancements.md) | <https://github.com/affaan-m/ECC> |
 
 See [`docs/AGENT-MEMORY-COMPLETE-GUIDE.md`](docs/AGENT-MEMORY-COMPLETE-GUIDE.md)
 and [`AGENTS.md`](AGENTS.md) for fuller context.

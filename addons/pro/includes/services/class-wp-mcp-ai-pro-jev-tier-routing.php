@@ -53,6 +53,82 @@ class WP_MCP_AI_Pro_Jev_Tier_Routing {
 	public static function register() {
 		add_filter( 'wp_mcp_ai_tiered_model_selection', array( __CLASS__, 'enrich_selection' ), 20, 3 );
 		add_filter( 'wp_mcp_ai_execution_depth_confidence', array( __CLASS__, 'execution_depth_confidence' ), 20, 3 );
+		add_filter( 'wp_mcp_ai_cascade_classifier', array( __CLASS__, 'cascade_classifier' ), 20, 3 );
+	}
+
+	/**
+	 * Supply the legacy cascade (Proposal 056, P1) with a Jev classification.
+	 *
+	 * Runs on the base `wp_mcp_ai_cascade_classifier` filter. The mapping
+	 * stays in code (proposal 045 discipline): the decision model supplies
+	 * complexity / frontier-read signals and {@see map_signal_to_tier()}
+	 * owns the tier translation. Returning the incoming verdict unchanged
+	 * (null) leaves the cascade inactive for the request — fail-closed by
+	 * design.
+	 *
+	 * @since 1.1.97
+	 *
+	 * @param array|null $verdict  Incoming classification or null.
+	 * @param array      $messages Chat messages.
+	 * @param array      $options  Request options.
+	 * @return array|null Classification verdict or null.
+	 */
+	public static function cascade_classifier( $verdict, $messages, $options ) {
+		// The third argument is part of the base filter contract; the signal
+		// is derived from the messages, not the options.
+		unset( $options );
+
+		if ( null !== $verdict ) {
+			// An earlier (higher-priority) classifier already answered.
+			return $verdict;
+		}
+
+		if ( ! self::is_enabled() ) {
+			return null;
+		}
+
+		$signal = self::get_signal( $messages );
+		if ( null === $signal ) {
+			return null;
+		}
+
+		$tier = self::map_signal_to_tier( $signal );
+
+		return array(
+			'tier'       => $tier,
+			'confidence' => max( 0.0, min( 1.0, isset( $signal['confidence'] ) ? (float) $signal['confidence'] : 0.0 ) ),
+			'reason'     => sprintf(
+				/* translators: 1: complexity score, 2: frontier-read score. */
+				__( 'jev-tier-routing (complexity %1$s, frontier %2$s)', 'mcp-ai-wpoos' ),
+				number_format_i18n( isset( $signal['complexity'] ) ? (float) $signal['complexity'] : 0.0, 2 ),
+				number_format_i18n( isset( $signal['needs_frontier'] ) ? (float) $signal['needs_frontier'] : 0.0, 2 )
+			),
+		);
+	}
+
+	/**
+	 * Map a Jev routing signal to a cascade tier.
+	 *
+	 * Code-owned thresholds (proposal 045 discipline):
+	 *  - frontier-read ≥ 0.7 → complex (skip the cheap tier);
+	 *  - otherwise cheap-tier confidence ≥ 0.5 → simple;
+	 *  - anything weaker → complex (fail closed).
+	 *
+	 * @since 1.1.97
+	 *
+	 * @param array $signal Routing signal from
+	 *                      `WP_MCP_AI_Pro_Jev_Classifier::routing_signal_for()`.
+	 * @return string 'simple' or 'complex'.
+	 */
+	public static function map_signal_to_tier( $signal ) {
+		$needs_frontier = isset( $signal['needs_frontier'] ) ? (float) $signal['needs_frontier'] : 0.0;
+		$confidence     = isset( $signal['confidence'] ) ? (float) $signal['confidence'] : 0.0;
+
+		if ( $needs_frontier >= 0.7 ) {
+			return 'complex';
+		}
+
+		return $confidence >= 0.5 ? 'simple' : 'complex';
 	}
 
 	/**

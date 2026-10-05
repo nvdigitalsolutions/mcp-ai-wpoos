@@ -203,6 +203,16 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 * @return array|WP_Error
 		 */
 		public function create_chat_completion( array $messages, array $options = array() ) {
+			// Proposal 056 (P1): legacy-layer cascade routing. The executor
+			// returns null unless cascade routing is enabled, configured, and
+			// classified — zero behavior change on the default path.
+			if ( class_exists( 'WP_MCP_AI_Cascade_Executor' ) ) {
+				$cascade = WP_MCP_AI_Cascade_Executor::maybe_route( $this, $messages, $options );
+				if ( null !== $cascade ) {
+					return $cascade;
+				}
+			}
+
 			$provider = isset( $options['provider'] ) ? sanitize_key( $options['provider'] ) : '';
 
 			// Log system prompt state before routing to provider.
