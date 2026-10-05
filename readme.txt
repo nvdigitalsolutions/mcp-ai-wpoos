@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.96
+Stable tag: 1.1.97
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.97 - October 6, 2026 =
+
+ECC-inspired agent-harness enhancements, OOS parity-gap closure, and gateway protocol negotiation release. Added: six inert-by-default harness enhancements from Proposal 056 (#6912) — cascade model routing on both engines (the framework-core `CascadeRouter` injects into the OOS engine via WordPress `CascadeClassifier`/`CascadeValidator` adapters, and `WP_MCP_AI_Cascade_Executor` gates the legacy `create_chat_completion()` path; one `wp_mcp_ai_cascade_enabled` switch + Jev classifier govern both, with post-call validation + escalation added to the previously dormant tier machinery), the `run_assistant_eval` base tool (three trajectory judges + deterministic checks, +1 base), hook profiles (minimal/standard/strict gating, master switch + kill list), the `scan_assistant_security` base tool (OWASP-informed config audit with masked secret evidence, +1 base), the session distiller (session-end transcript → canonical `wp_mcp_ai_memory_stored` event, zero provider cost by default), and the `suggest_workflows_from_history` Pro tool (harness trace-store mining, frequency × recency × success, +1 Pro); ECC MIT attribution in CREDITS.md. Changed: the four Proposal 029 G2 guardrail gaps are closed (#6913) — the destructive-ops gate no longer becomes an HTTP 500 on the OOS path (typed catch → canonical 428/429 envelopes via `WP_MCP_AI_REST::translate_gate_exception()`), `apply_pre_response_render()` runs the Output Guardrail + Citation Verifier at the final payload on all three chat surfaces, the OOS bridge fires `wp_mcp_ai_agentic_iteration_complete`, the before-tool-execute waterfall bridge gains regression tests, and `bin/check-chat-parity.php` now tracks all four surfaces (35 → 38 features, 100% parity) with a parity-check CI job. Fixed: the MCP Gateway's `initialize` now negotiates the protocol version (`negotiateProtocolVersion()`, `2024-11-05` fallback) so Zed and other strict MCP clients stop aborting with "Unsupported protocol version" (#6914); the npm publish wave — the YAML `name:` quoting fix (#6898), the provenance `id-token: write` grant (#6904), the bare-npx bin alias (#6905), and the TypeScript-in-JS tarballs republished as valid JS (#6908). Build: all 23 `packages/` now live on the public npm registry (0.1.0-alpha.3; nvoos-api/nvoos-sse-client 0.1.0-alpha.4; nvoos-mcp-bridge `latest` = 0.1.0-alpha.3 — the v1.1.96-deferred publish executed), GitHub Packages parity + the npm-maintenance workflow (#6907/#6909/#6911). Tool count: ~352 base + ~1,313 Pro (~1,665 total; +2 base +1 Pro; live registry authoritative). Model catalog: v2026.10.03 (unchanged; 18 providers). Stale build ZIPs removed: the 1.1.95 oOS build set (30 files).
 
 = 1.1.96 - October 5, 2026 =
 

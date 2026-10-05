@@ -1,5 +1,48 @@
 # oOS – Changelog
 
+## [1.1.97] - 2026-10-06
+
+### Added — ECC-Inspired Agent-Harness Enhancements (PR #6912, Proposal 056)
+
+- **Six research-grounded harness enhancements, all inert by default** (FrugalGPT cascades, 2026 LLM-as-judge standards, OWASP LLM Top 10 2026, tiered-memory literature — ECC, MIT, credited in `CREDITS.md` and `@credit` tags on derived classes):
+  - **Cascade model routing** — cheap-tier escalation with judge-verified promotion on **both** engines: `lib/core`'s new `CascadeRouter` (extends `ProviderRouter`, so it injects anywhere the router is consumed — including the opt-in OOS engine via the bridge factory's WordPress `CascadeClassifier`/`CascadeValidator` adapters) and the live legacy base+Pro path (`WP_MCP_AI_Cascade_Executor` gating `WP_MCP_AI_Language_Model_Router::create_chat_completion()`), with Pro Jev classifier wiring via the proposal-045 routing signal. One `wp_mcp_ai_cascade_enabled` switch + one classifier/validator seam govern both paths; this complements the previously dormant tier machinery with the missing post-call validation + escalation step.
+  - **`run_assistant_eval` (+1 base tool)** — three separate trajectory judges (tool selection / tool use / response quality) with deterministic checks and the `wp_mcp_ai_eval_judge` seam.
+  - **Hook profiles** — minimal / standard / strict gating for harness hooks with meta → filter → option → constant resolution, a master switch, and a kill list (`includes/hooks/`).
+  - **`scan_assistant_security` (+1 base tool)** — an OWASP-informed assistant-config audit with masked secret evidence and a posture score.
+  - **Session distiller** — the session-end transcript → canonical `wp_mcp_ai_memory_stored` event so MemPalace / CCT / Graphify / recall hydrate (zero provider cost by default).
+  - **`suggest_workflows_from_history` (+1 Pro tool)** — mines the harness trace store for recurring tool chains, scored by frequency × recency × success rate.
+
+### Changed — OOS Parity Gaps Closed (PR #6913)
+
+- **The four Proposal 029 G2 guardrail gaps that blocked promoting the OOS engine switch are closed** — guardrails and security gates now produce equivalent decisions on both paths:
+  - **Destructive-ops gate → HTTP 500 on OOS fixed** — a typed catch (`WP_MCP_AI_Destructive_Confirmation_Required` | `Concurrency_Limit_Reached` | `Cost_Budget_Exceeded`) routes through the shared `WP_MCP_AI_REST::translate_gate_exception()` to the canonical 428 confirmation / 429 limits envelopes.
+  - **`wp_mcp_ai_pre_response_render` (Output Guardrail + Citation Verifier) now applies at the final payload on all three surfaces** via the new `apply_pre_response_render()` — legacy non-streaming, legacy streaming's final SSE event (blocked → `error` event), and the OOS handler (WP_Error blocking + type-contract protection). Mid-stream chunks stay unfiltered on both paths (symmetric).
+  - **`wp_mcp_ai_agentic_iteration_complete` bridged** — the OOS bridge listens to the `AgenticIterationComplete` domain event and fires the legacy hook with the same `(iteration, assistant_id)` pair.
+  - **`wp_mcp_ai_before_tool_execute` verified bridged** — the existing `tools/execute` waterfall bridge confirmed in code with regression tests (WP_Error short-circuits dispatch).
+  - **Regression-proofing** — `bin/check-chat-parity.php` now tracks all four surfaces (**35 → 38 features, still 100% parity**) and a `parity-check` CI job runs the script so the surfaces can't drift silently.
+
+### Fixed — MCP Protocol Negotiation in the Gateway Initialize (PR #6914)
+
+- **Zed and other strict MCP clients no longer abort with "Unsupported protocol version" against the live gateway.** `respondInitialize()` hardcoded `2026-07-28`; the new `negotiateProtocolVersion()` mirrors the plugin's own `negotiate_protocol_version()` (PR #6754, v1.1.85) — echoes the highest mutually supported version (`2026-07-28` → `2024-11-05`), reads both `protocolVersion` and `supportedProtocolVersions`, and defaults to `2024-11-05` when the client sends nothing or nothing matches. 40/40 gateway tests pass.
+
+### Build & npm — the 23-Package Public Publish Wave (PRs #6898, #6904–#6909, #6911)
+
+- **The v1.1.96-deferred public npm publish is executed.** All **23 publishable `packages/`** are now live on the public npm registry at **0.1.0-alpha.3** (`nvoos-mcp-bridge` `latest` = 0.1.0-alpha.3 — the bare `npx -y @nvdigitalsolutions/nvoos-mcp-bridge` form resolves the bin alias from #6905; `nvoos-api` and `nvoos-sse-client` republished at **0.1.0-alpha.4** after #6908 stripped the TypeScript from their shipped `.js` files). The publish workflow moved from 9 hardcoded steps to a 23-package loop with an optional `packages` subset input, GitHub Packages publish covers all 23, and the new `npm-maintenance.yml` adds dry-run-by-default `unpublish`/`dist-tag-add` maintenance (#6907/#6908/#6909). Supporting fixes: the YAML `name:` quoting that unblocked the bridge workflow (#6898), the `id-token: write` grant for `npm publish --provenance` (#6904), and the docs note that `unpublish` via the maintenance workflow is blocked for 2FA-bypassing granular tokens (npmjs 403 — maintainer-local only; #6911).
+
+### Tests
+
+- **PR #6912** — 78 tests / 207 assertions green on WP 6.9 (Docker); existing router suites with the new cascade gate 46/46 (non-breaking proven); `lib/core` 458 tests / 1,436 assertions; registry coverage + preset-accounting CI gates green; phpcs 0/0; PHP 7.4–8.3 clean. Not run locally: the WP 7.1 matrix and the full ~17k-test root suite (CI covers both).
+- **PR #6913** — new `tests/test-oos-parity-gaps.php` (9 tests: 428/429 + null gate-envelope translation, pre-response-render apply/block/passthrough/type-guard, iteration-event mapping via the live orchestrator factory, waterfall bridge pass-through + short-circuit); OOS-path + legacy-path regression suites 15/15; `php bin/check-chat-parity.php` exit 0 at 100% parity.
+- **PR #6914** — `addons/mcp-gateway` 40/40 `node:test`; live `mcp.nvoos.pro` health verified (goes live after the mirror sync + Velocity redeploy).
+
+### Docs
+
+- **PR #6912** — `docs/project/proposals/056-ecc-inspired-harness-enhancements.md` + `056-ecc-inspired-harness-enhancements-implementation-plan.md` (the proposals README entry lands with this catch-up); `includes/hooks/README.md` (new).
+
+### Versioning
+
+Bumped to **1.1.97** across all version-bearing files. Pro addon: 1.1.97. **MCP Gateway: 0.1.0** (unchanged — #6914 is a protocol-negotiation fix on the shipped line). **nvoos-mcp-bridge: 0.1.0-alpha.3** (published on the public npm registry, `latest` — the v1.1.96-deferred publish now executed; nvoos-api/nvoos-sse-client at 0.1.0-alpha.4; the other 21 packages at 0.1.0-alpha.3). Media Worker: **3.4.0** (unchanged). Media Studio: **0.6.1** (unchanged). SaaS Controller: **0.3.0** (unchanged). Design System addon: **0.3.0** (unchanged). ChatGPT Plugin addon: **0.1.0** (unchanged). Fleet Operator: **1.0.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — zero `plugins/` diff in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.5.1** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.10.03** (unchanged — zero catalog diff in-window). Tool count: **~352 base + ~1,313 Pro (~1,665 total — +2 base +1 Pro)** — `run_assistant_eval` + `scan_assistant_security` (base) and `suggest_workflows_from_history` (Pro) from #6912 (live registry authoritative; the dual-layer `lib/core` `CascadeRouter` is never counted). Provider count: **18** chat providers (unchanged). Addon count: **30** (unchanged). Bundled skills: **75** base + **41** Pro (unchanged). Coding-time agent skills: **62** (unchanged). Stale build ZIPs removed: the 1.1.95 oOS set (9 root + 2 optional-components + 19 toolkit-addons = 30 files).
+
 ## [1.1.96] - 2026-10-05
 
 ### Added — NV oOS MCP Bridge npx Package (PR #6897, Proposals 054/055)
