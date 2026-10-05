@@ -1,0 +1,25 @@
+name: Sync mcp-gateway
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'addons/mcp-gateway/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=addons/mcp-gateway --branch=mcp-gateway-split
+
+      - name: Push to nvoos-mcp-gateway
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.MCP_GATEWAY_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-mcp-gateway.git mcp-gateway-split:main --force
