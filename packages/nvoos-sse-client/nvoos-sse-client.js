@@ -9,7 +9,7 @@
  * @since   0.1.0-alpha.1
  */
 
-import { fetchEventSource, type EventSourceMessage } from '@microsoft/fetch-event-source';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -19,62 +19,33 @@ export const READY_STATE = {
   CONNECTING: 0,
   OPEN: 1,
   CLOSED: 2,
-} as const;
+};
 
-export type ReadyState = (typeof READY_STATE)[keyof typeof READY_STATE];
-
-const READY_STATE_NAMES: Record<number, string> = {
+const READY_STATE_NAMES = {
   0: 'CONNECTING',
   1: 'OPEN',
   2: 'CLOSED',
 };
 
-export type ConnectionStatus = 'connecting' | 'open' | 'closed';
-
 // ── Types ────────────────────────────────────────────────────────────
-
-export interface SseConnectionOptions {
-  /** HTTP method (default "GET"). */
-  method?: string;
-  /** Request headers. */
-  headers?: Record<string, string>;
-  /** Body for POST/PUT requests (string or JSON-serialisable). */
-  body?: string | Record<string, unknown>;
-  /** Generic message handler. */
-  onMessage?: (data: unknown, event: EventSourceMessage) => void;
-  /** Fatal/non-recoverable error handler. */
-  onError?: (error: unknown) => void;
-  /** Called when the connection opens successfully. */
-  onOpen?: (response: Response) => void;
-  /** Named event handlers (keyed by SSE event type). */
-  eventHandlers?: Record<string, (data: unknown, event: EventSourceMessage) => void>;
-  /** Keep connection alive when the tab is hidden. */
-  openWhenHidden?: boolean;
-}
-
-interface ConnectionEntry {
-  ctrl: AbortController;
-  url: string;
-  createdAt: number;
-  promise: Promise<void>;
-  status: ConnectionStatus;
-}
+// Type contracts (ReadyState, ConnectionStatus, SseConnectionOptions,
+// ConnectionEntry) live in dist/nvoos-sse-client.d.ts.
 
 // ── Service ──────────────────────────────────────────────────────────
 
-const connections: Record<string, ConnectionEntry> = {};
+const connections = {};
 
-function generateConnectionKey(url: string): string {
+function generateConnectionKey(url) {
   return 'sse_fetch_' + url.replace(/[^a-zA-Z0-9]/g, '_') + '_' + Date.now();
 }
 
 /** Check if the runtime supports SSE (fetch + AbortController). */
-export function isSseSupported(): boolean {
+export function isSseSupported() {
   return typeof fetch !== 'undefined' && typeof AbortController !== 'undefined';
 }
 
 /** Return the human-readable name for a ready-state value. */
-export function getReadyStateName(readyState: number): string {
+export function getReadyStateName(readyState) {
   return READY_STATE_NAMES[readyState] || 'UNKNOWN';
 }
 
@@ -84,15 +55,7 @@ export function getReadyStateName(readyState: number): string {
  * Returns a handle with `ctrl` (AbortController), `close()`, `abort()`,
  * and `getStatus()`. Returns `null` if SSE is not supported.
  */
-export function connect(
-  url: string,
-  options: SseConnectionOptions = {},
-): {
-  ctrl: AbortController;
-  close: () => void;
-  abort: () => void;
-  getStatus: () => ConnectionStatus;
-} | null {
+export function connect(url, options = {}) {
   if (!isSseSupported()) {
     options.onError?.(new Error('fetch or AbortController not supported'));
     return null;
@@ -107,7 +70,7 @@ export function connect(
     const connectionKey = generateConnectionKey(url);
     let reconnectAttempts = 0;
 
-    const fetchOptions: Parameters<typeof fetchEventSource>[1] = {
+    const fetchOptions = {
       method: options.method || 'GET',
       headers: options.headers || {},
       signal: ctrl.signal,
@@ -136,7 +99,7 @@ export function connect(
         try {
           if (event.data === '[DONE]') return;
 
-          let data: unknown = event.data;
+          let data = event.data;
           try {
             data = JSON.parse(event.data);
           } catch {
@@ -148,9 +111,7 @@ export function connect(
           }
           options.onMessage?.(data, event);
         } catch (_parseError) {
-          if (
-            (globalThis as unknown as { console?: Console }).console?.error
-          ) {
+          if (globalThis.console?.error) {
             console.error('[nvoos-sse-client] Failed to parse message:', _parseError);
           }
         }
@@ -213,7 +174,7 @@ export function connect(
 }
 
 /** Close a specific connection by its key. */
-export function closeConnection(key: string): void {
+export function closeConnection(key) {
   if (connections[key]) {
     connections[key].ctrl.abort();
     delete connections[key];
@@ -221,19 +182,19 @@ export function closeConnection(key: string): void {
 }
 
 /** Close all active connections. */
-export function closeAll(): void {
+export function closeAll() {
   for (const key of Object.keys(connections)) {
     closeConnection(key);
   }
 }
 
 /** Number of currently tracked connections. */
-export function getConnectionCount(): number {
+export function getConnectionCount() {
   return Object.keys(connections).length;
 }
 
 /** Get the status of a connection by URL (first match). */
-export function getConnectionStatus(url: string): ConnectionStatus {
+export function getConnectionStatus(url) {
   for (const key of Object.keys(connections)) {
     const conn = connections[key];
     if (conn?.url === url) {
