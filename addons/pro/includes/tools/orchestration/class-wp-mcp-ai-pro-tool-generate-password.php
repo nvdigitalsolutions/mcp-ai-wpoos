@@ -121,25 +121,25 @@ class WP_MCP_AI_Pro_Tool_Generate_Password {
 
 		// Validate length.
 		if ( $length < 12 || $length > 128 ) {
-			return array(
-				'success' => false,
-				'error'   => 'Password length must be between 12 and 128 characters',
+			return new WP_Error(
+				'wp_mcp_ai_invalid_password_length',
+				__( 'Password length must be between 12 and 128 characters', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate count.
 		if ( $count < 1 || $count > 10 ) {
-			return array(
-				'success' => false,
-				'error'   => 'Count must be between 1 and 10',
+			return new WP_Error(
+				'wp_mcp_ai_invalid_password_count',
+				__( 'Count must be between 1 and 10', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate at least one character set is selected.
 		if ( ! $uppercase && ! $lowercase && ! $numbers && ! $symbols ) {
-			return array(
-				'success' => false,
-				'error'   => 'At least one character set must be enabled (uppercase, lowercase, numbers, or symbols)',
+			return new WP_Error(
+				'wp_mcp_ai_no_character_sets',
+				__( 'At least one character set must be enabled (uppercase, lowercase, numbers, or symbols)', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -156,10 +156,14 @@ class WP_MCP_AI_Pro_Tool_Generate_Password {
 				$avoid_ambiguous
 			);
 
+			if ( is_wp_error( $password ) ) {
+				return $password;
+			}
+
 			if ( ! $password ) {
-				return array(
-					'success' => false,
-					'error'   => 'Failed to generate password',
+				return new WP_Error(
+					'wp_mcp_ai_password_generation_failed',
+					__( 'Failed to generate password', 'mcp-ai-wpoos-pro' )
 				);
 			}
 

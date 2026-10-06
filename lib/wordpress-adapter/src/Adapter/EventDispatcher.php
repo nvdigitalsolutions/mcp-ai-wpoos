@@ -86,10 +86,43 @@ class EventDispatcher implements EventDispatcherInterface, WaterfallEventDispatc
 		// 2. Fire the WordPress action hook for backward compatibility.
 		$hookName = $this->eventHookMap[ $eventClass ] ?? null;
 		if ( null !== $hookName && \has_action( $hookName ) ) {
-			\do_action( $hookName, $event );
+			\do_action( $hookName, ...$this->legacyArgsFor( $event ) );
 		}
 
 		return $event;
+	}
+
+	/**
+	 * Translate a domain event into the legacy wp_mcp_ai_* argument tuple.
+	 *
+	 * Existing WordPress subscribers register against the documented legacy
+	 * shapes (e.g. `wp_mcp_ai_after_chat_response( $assistant_id, $response,
+	 * $request )`), so firing the hook with the raw event object breaks every
+	 * subscriber that declares required parameters. Known chat/tool lifecycle
+	 * events are translated to their legacy shapes; unknown events keep the
+	 * single-event shape.
+	 *
+	 * @param object $event Domain event instance.
+	 * @return array<int, mixed> Legacy hook arguments.
+	 */
+	private function legacyArgsFor( object $event ): array {
+		if ( $event instanceof \Nvoos\Core\Domain\Event\BeforeChatRequest ) {
+			return array( $event->assistantId, $event->messages, $event->options, null );
+		}
+
+		if ( $event instanceof \Nvoos\Core\Domain\Event\AfterChatResponse ) {
+			return array( $event->assistantId, $event->response, null );
+		}
+
+		if ( $event instanceof \Nvoos\Core\Domain\Event\BeforeToolExecution ) {
+			return array( $event->toolSlug, $event->arguments, $event->context );
+		}
+
+		if ( $event instanceof \Nvoos\Core\Domain\Event\AfterToolExecution ) {
+			return array( $event->toolSlug, $event->arguments, $event->context, $event->result );
+		}
+
+		return array( $event );
 	}
 
 	public function filter( string $eventName, mixed $value, mixed ...$args ): mixed {

@@ -341,7 +341,7 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 
 		// Should include Anthropic models.
 		$this->assertArrayHasKey( 'anthropic_group', $models );
-		$this->assertArrayHasKey( 'claude-3-5-sonnet-20241022', $models['anthropic_group']['options'] );
+		$this->assertArrayHasKey( 'claude-sonnet-4-6', $models['anthropic_group']['options'] );
 
 		// Should include Gemini models.
 		$this->assertArrayHasKey( 'gemini_group', $models );

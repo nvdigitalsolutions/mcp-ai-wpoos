@@ -124,7 +124,16 @@ function wp_mcp_ai_oos_orchestrator() {
 
 	// ─── Provider Clients ──────────────────────────────────────────
 
-	$router = new Nvoos\Core\Application\Provider\ProviderRouter( $settings, $error_factory );
+	// Proposal 056 (P1): cascade-aware router. CascadeRouter extends
+	// ProviderRouter and is inert with the default fail-closed adapters —
+	// every request dispatches to the primary provider exactly as before
+	// unless cascade routing is enabled AND classified.
+	$router = new Nvoos\Core\Application\Provider\CascadeRouter(
+		$settings,
+		$error_factory,
+		new Nvoos\WordPress\Adapter\CascadeClassifier(),
+		new Nvoos\WordPress\Adapter\CascadeValidator(),
+	);
 
 	// Attach health tracker for provider failover (Proposal 017, Wave 3).
 	$router->setHealthTracker( new Nvoos\Core\Application\Provider\ProviderHealthTracker() );
@@ -563,6 +572,22 @@ function wp_mcp_ai_oos_orchestrator() {
 		}
 	);
 
+	// Parity bridge for wp_mcp_ai_agentic_iteration_complete (Proposal 029
+	// G2 closure): the legacy loop fires it after every tool round-trip; the
+	// OOS engine dispatches AgenticIterationComplete with the same pair.
+	$events->listen(
+		Nvoos\Core\Domain\Event\AgenticIterationComplete::class,
+		static function ( object $event ): void {
+			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+			do_action(
+				'wp_mcp_ai_agentic_iteration_complete',
+				$event->iteration,
+				$event->assistantId
+			);
+			// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		}
+	);
+
 	// Fail-loud audit: log assistant-configured tool slugs that the OOS
 	// registry cannot resolve instead of dropping them silently.
 	$events->listen(
@@ -995,6 +1020,13 @@ if ( file_exists( $wave2_bridge ) ) {
 add_action(
 	'wp_mcp_ai_bootstrapped',
 	function () {
+		// Plain front-end page views skip the orchestrator pre-warm: they render
+		// no server-side AI features and the orchestrator is built lazily on
+		// first use (e.g. when the chat REST endpoint is hit).
+		if ( ! wp_mcp_ai_is_plugin_runtime_context() ) {
+			return;
+		}
+
 		// Pre-warm the orchestrator so it's ready when a chat request arrives.
 		// Wrap in a try-catch so a broken lib/ or missing dependency doesn't
 		// crash the entire WordPress request.

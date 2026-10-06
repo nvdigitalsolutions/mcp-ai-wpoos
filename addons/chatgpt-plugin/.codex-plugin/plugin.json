@@ -1,0 +1,7 @@
+{
+	"name": "nvoos-site-bridge",
+	"version": "0.1.0",
+	"description": "Operate a WordPress site running NV oOS (Open Operator System) through its native MCP bridge: content research and publishing, WooCommerce operations, media workflows, and site administration tools packaged as ChatGPT and Codex skills.",
+	"skills": "./skills/",
+	"mcpServers": "./.mcp.json"
+}

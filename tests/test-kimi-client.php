@@ -149,11 +149,10 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 	 * Test get_context_window returns correct value for known models.
 	 */
 	public function test_get_context_window_for_known_models() {
+		$this->assertEquals( 1048576, $this->client->get_context_window( 'kimi-k3' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.7-code' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.6' ) );
-		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.5' ) );
-		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2' ) );
-		$this->assertEquals( 131072, $this->client->get_context_window( 'moonshot-v1' ) );
+		$this->assertEquals( 131072, $this->client->get_context_window( 'kimi-k1.5' ) );
 	}
 
 	/**
@@ -170,11 +169,11 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 		// Models that support tools.
 		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.7-code' ) );
 		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.6' ) );
-		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.5' ) );
-		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2' ) );
+		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k3' ) );
 
 		// Models that don't support tools.
-		$this->assertFalse( $this->client->model_supports_tools( 'kimi-k2-thinking' ) );
+		$this->assertFalse( $this->client->model_supports_tools( 'kimi-k1.5-32k' ) );
+		$this->assertFalse( $this->client->model_supports_tools( 'kimi-k1.5-128k' ) );
 	}
 
 	/**
@@ -275,7 +274,7 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 	 * Test models with tool calling constant.
 	 */
 	public function test_models_with_tool_calling_constant() {
-		$expected = array( 'kimi-k3', 'kimi-k2.7-code', 'kimi-k2.6', 'kimi-k2.5', 'kimi-k2' );
+		$expected = array( 'kimi-k3', 'kimi-k2.7-code', 'kimi-k2.7-code-highspeed', 'kimi-k2.6' );
 		$this->assertEquals( $expected, WP_MCP_AI_Kimi_Client::MODELS_WITH_TOOL_CALLING );
 	}
 
@@ -283,7 +282,7 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 	 * Test models without tool calling constant.
 	 */
 	public function test_models_without_tool_calling_constant() {
-		$expected = array( 'kimi-k2-thinking', 'kimi-k1.5-32k', 'kimi-k1.5-128k' );
+		$expected = array( 'kimi-k1.5-32k', 'kimi-k1.5-128k' );
 		$this->assertEquals( $expected, WP_MCP_AI_Kimi_Client::MODELS_WITHOUT_TOOL_CALLING );
 	}
 }

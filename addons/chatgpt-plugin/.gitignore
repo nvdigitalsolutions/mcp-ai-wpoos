@@ -1,0 +1,15 @@
+# Build output
+dist/
+*.zip
+
+# Local env / secrets
+.env
+.env.*
+
+# Dependencies (none at runtime; bin scripts use Node built-ins only)
+node_modules/
+
+# Note: mcp.json and .mcp.json are TRACKED with the YOUR-SITE.DOMAIN
+# placeholder so the synced mirror repo always ships valid configs.
+# bin/stamp-site.mjs rewrites them in place for local installs — those
+# modifications always show in `git status`, so do not commit them.

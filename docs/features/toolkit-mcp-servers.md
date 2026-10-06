@@ -344,6 +344,12 @@ A metabox on the `mcp_ai_assistant` CPT edit screen lets editors choose which pe
 - **Empty array** = no servers granted (assistant may invoke none).
 - Static helper: `WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::get_allowed_servers( $post_id )` → `string[]`
 
+**Runtime wiring (v1.1.88+):** the class definition is loaded in every context by `mcp-servers-init.php` (the `admin_toolkit_mcp` module instantiates the metabox on the edit screen; the definition-only require serves REST/front-end). Three consumers read the grants:
+
+1. **JSON-RPC grant gate** — `handle_jsonrpc()` rejects assistant-scoped (`params.assistant_id`) calls to non-granted servers with `-32601`; `initialize`/`ping` stay ungated and `initialize` echoes the exact grant list as `toolkitServers[]`.
+2. **Chat-tool bridge** — `wp_mcp_ai_toolkit_servers_expose_tools()` on the `wp_mcp_ai_chat_effective_tools` filter appends the granted **and enabled** servers' `effective_tool_slugs()` to the assistant's effective tool list, so the in-plugin chat payload, the monolithic MCP `tools/list`, and the direct tool-execution surfaces all expose the granted servers' tools (per-tool capability checks still apply downstream).
+3. **Context Window Estimator** — `wp_mcp_ai_toolkit_servers_estimator_tool_slugs()` feeds the same slugs into the `wp_mcp_ai_prompt_window_toolkit_tool_slugs` filter so the estimator's "Tools Selected" count matches the chat payload.
+
 ### Observability Dashboard Card
 
 `WP_MCP_AI_Pro_Toolkit_MCP_Observability_Card` injects a summary card into the  

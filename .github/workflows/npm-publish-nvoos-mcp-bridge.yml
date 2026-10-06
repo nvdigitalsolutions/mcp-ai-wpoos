@@ -1,0 +1,148 @@
+# NV oOS MCP Bridge — public npm publishing workflow
+#
+# Publishes @nvdigitalsolutions/nvoos-mcp-bridge to the PUBLIC npm registry
+# (registry.npmjs.org) so that `npx -y @nvdigitalsolutions/nvoos-mcp-bridge`
+# works with zero configuration for consumers. This is deliberate: the
+# GitHub Packages workflow (npm-publish-alpha.yml) requires consumer
+# .npmrc + PAT auth, which breaks the npx experience — that pipeline stays
+# for the browser-side library packages.
+#
+# Gates before publishing:
+#   1. sync drift check — package bin/ must be byte-identical to repo bin/
+#   2. hermetic unit tests (node:test, no infra needed)
+#   3. npm pack --dry-run tarball inspection
+#
+# Triggers:
+#   - workflow_dispatch (version + tag inputs)
+#   - push tags matching v*.*.*-mcpbridge.* (e.g. v0.1.0-mcpbridge.1)
+#
+# Setup required (one-time, maintainer):
+#   - NPM_TOKEN automation token (publish access to the
+#     @nvdigitalsolutions scope on registry.npmjs.org) as a repo secret
+
+name: Publish nvoos-mcp-bridge to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.1.0-alpha.1). Leave blank to use package.json.'
+        required: false
+        type: string
+        default: ''
+      tag:
+        description: 'Dist-tag (alpha or latest)'
+        required: false
+        type: choice
+        options:
+          - alpha
+          - latest
+        default: alpha
+      dry_run:
+        description: 'Dry run (skip actual publishing)'
+        required: false
+        type: boolean
+        default: false
+  push:
+    tags:
+      - 'v*.*.*-mcpbridge.*'
+
+permissions:
+  contents: read
+  id-token: write # Required by `npm publish --provenance` (OIDC attestation).
+
+jobs:
+  publish:
+    name: Publish @nvdigitalsolutions/nvoos-mcp-bridge
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Resolve version and dist-tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION=$(node -p "require('./packages/nvoos-mcp-bridge/package.json').version")
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG=alpha
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "📦 Publishing @nvdigitalsolutions/nvoos-mcp-bridge@${VERSION} (tag: ${TAG})"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.-]+)?$ ]]; then
+            echo "❌ Invalid semver: $VERSION"
+            exit 1
+          fi
+          echo "✅ Version format valid: $VERSION"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Apply version to package.json
+        run: |
+          cd packages/nvoos-mcp-bridge
+          npm pkg set version="${{ steps.version.outputs.version }}"
+          echo "✅ package.json set to ${{ steps.version.outputs.version }}"
+
+      - name: 'Gate: sync drift check (byte-identity with repo bin/)'
+        run: |
+          cd packages/nvoos-mcp-bridge
+          npm run sync -- --check
+          echo "✅ Package bin/ is byte-identical to repo bin/"
+
+      - name: 'Gate: hermetic unit tests'
+        run: |
+          cd packages/nvoos-mcp-bridge
+          npm test
+          echo "✅ All unit tests passed"
+
+      - name: 'Gate: inspect tarball contents'
+        run: |
+          cd packages/nvoos-mcp-bridge
+          npm pack --dry-run
+          echo "✅ Tarball contents verified"
+
+      - name: Publish to public npm registry
+        if: github.event.inputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd packages/nvoos-mcp-bridge
+          npm publish --access public --provenance --tag "${{ steps.version.outputs.tag }}"
+          echo "✅ Published @nvdigitalsolutions/nvoos-mcp-bridge@${{ steps.version.outputs.version }} (tag: ${{ steps.version.outputs.tag }})"
+
+      - name: Dry run summary
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "🏃 Dry run complete — nothing was published."
+          echo "Would have published: @nvdigitalsolutions/nvoos-mcp-bridge@${{ steps.version.outputs.version }} (tag: ${{ steps.version.outputs.tag }})"
+
+      - name: Publication summary
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          echo "## 🎉 @nvdigitalsolutions/nvoos-mcp-bridge@${{ steps.version.outputs.version }} published to npm"
+          echo ""
+          echo "Consumers (zero config):"
+          echo '  npx -y @nvdigitalsolutions/nvoos-mcp-bridge'
+          echo '  npx -y @nvdigitalsolutions/nvoos-mcp-bridge@latest'
+          echo ""
+          echo "Zed context_servers template:"
+          echo '  "nv-oos": { "source": "custom", "command": { "path": "npx", "args": ["-y", "@nvdigitalsolutions/nvoos-mcp-bridge@latest"], "env": { "MCP_AI_BASE_URL": "https://your-site/wp-json/mcp-ai/v1/mcp", "MCP_AI_TOKEN": "cred_xxxxx.SECRET" } } }'
+          echo ""
+          echo "Package page: https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-mcp-bridge"

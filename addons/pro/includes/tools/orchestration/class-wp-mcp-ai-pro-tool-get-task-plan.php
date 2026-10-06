@@ -82,9 +82,9 @@ class WP_MCP_AI_Pro_Tool_Get_Task_Plan {
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate arguments.
 		if ( empty( $arguments['plan_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: plan_id',
+			return new WP_Error(
+				'wp_mcp_ai_missing_plan_id',
+				__( 'Missing required argument: plan_id', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -94,9 +94,13 @@ class WP_MCP_AI_Pro_Tool_Get_Task_Plan {
 		$plan = $this->get_plan( $plan_id );
 
 		if ( ! $plan ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Task plan #%d not found', $plan_id ),
+			return new WP_Error(
+				'wp_mcp_ai_task_plan_not_found',
+				sprintf(
+					/* translators: %d: task plan ID */
+					__( 'Task plan #%d not found', 'mcp-ai-wpoos-pro' ),
+					$plan_id
+				)
 			);
 		}
 

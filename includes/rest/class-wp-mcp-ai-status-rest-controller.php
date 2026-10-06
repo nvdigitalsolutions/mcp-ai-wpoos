@@ -92,6 +92,17 @@ class WP_MCP_AI_Status_REST_Controller {
 				),
 			)
 		);
+
+		// Fleet status (connected sites monitored by the Media Worker).
+		register_rest_route(
+			'mcp-ai/v1',
+			'/status/sites',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'get_sites' ),
+				'permission_callback' => '__return_true',
+			)
+		);
 	}
 
 	/**
@@ -154,6 +165,61 @@ class WP_MCP_AI_Status_REST_Controller {
 		if ( ! $is_private ) {
 			header( 'Cache-Control: public, max-age=60, s-maxage=60' );
 		}
+
+		return rest_ensure_response( $response );
+	}
+
+	/**
+	 * Get the fleet status of sites connected to the Media Worker.
+	 *
+	 * Public, allowlisted fields only (slug, status, message, timestamps) —
+	 * the same shape as the worker's public /status surface. Answers an
+	 * empty list when fleet monitoring is not configured.
+	 *
+	 * @since 1.1.93
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public static function get_sites( $request ) {
+		unset( $request );
+
+		$response = array(
+			'sites'          => array(),
+			'overall_status' => 'unknown',
+		);
+
+		if ( ! class_exists( 'WP_MCP_AI_Media_Worker_Config' ) || ! WP_MCP_AI_Media_Worker_Config::is_configured() ) {
+			header( 'Cache-Control: public, max-age=60, s-maxage=60' );
+			return rest_ensure_response( $response );
+		}
+
+		$summary = WP_MCP_AI_Media_Worker_Config::request( '/api/status/summary', 'GET', array(), 5 );
+		if ( is_wp_error( $summary ) ) {
+			header( 'Cache-Control: public, max-age=60, s-maxage=60' );
+			return rest_ensure_response( $response );
+		}
+
+		$response['overall_status'] = isset( $summary['overall_status'] )
+			? sanitize_key( $summary['overall_status'] )
+			: 'unknown';
+
+		$sites_raw = isset( $summary['sites'] ) && is_array( $summary['sites'] ) ? $summary['sites'] : array();
+		foreach ( $sites_raw as $site ) {
+			if ( ! is_array( $site ) || empty( $site['slug'] ) ) {
+				continue;
+			}
+
+			$response['sites'][] = array(
+				'slug'              => sanitize_key( $site['slug'] ),
+				'status'            => sanitize_key( isset( $site['status'] ) ? $site['status'] : 'unknown' ),
+				'message'           => sanitize_text_field( isset( $site['message'] ) ? $site['message'] : '' ),
+				'last_heartbeat_at' => isset( $site['last_heartbeat_at'] ) ? absint( $site['last_heartbeat_at'] ) : null,
+				'since'             => isset( $site['since'] ) ? absint( $site['since'] ) : null,
+			);
+		}
+
+		header( 'Cache-Control: public, max-age=60, s-maxage=60' );
 
 		return rest_ensure_response( $response );
 	}

@@ -908,4 +908,117 @@ class Test_MCP_App_Client_Connection_Enhancements extends WP_UnitTestCase {
 		// The hint must survive — the server is down, not upgraded.
 		$this->assertNotFalse( get_transient( $hint_key ) );
 	}
+
+	/**
+	 * Count the callbacks currently attached to the http_api_curl action.
+	 *
+	 * Other plugin code (docs hub, FlowHub client) attaches transient
+	 * handlers to this action, so tests assert against the count delta
+	 * rather than the absolute presence of a handler. Empty priority
+	 * buckets left behind by prior add/remove cycles are not counted.
+	 *
+	 * @return int
+	 */
+	protected function curl_hook_count() {
+		global $wp_filter;
+
+		if ( empty( $wp_filter['http_api_curl'] ) ) {
+			return 0;
+		}
+
+		$hook = $wp_filter['http_api_curl'];
+		if ( ! $hook instanceof WP_Hook ) {
+			return 0;
+		}
+
+		$count = 0;
+		foreach ( $hook->callbacks as $callbacks ) {
+			$count += count( $callbacks );
+		}
+
+		return $count;
+	}
+
+	/**
+	 * A client with a proxy configured attaches the cURL proxy wiring for the
+	 * duration of the outbound request and removes it afterwards.
+	 */
+	public function test_proxy_configured_attaches_curl_wiring_during_request() {
+		$baseline = $this->curl_hook_count();
+		$during   = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( &$during ) {
+				unset( $pre, $args, $url );
+
+				// By the time pre_http_request fires, dispatch_request() has
+				// already attached the proxy action for the in-flight call.
+				$during = $this->curl_hook_count();
+
+				return array(
+					'headers'  => array(),
+					'body'     => $this->rpc_result( array( 'ok' => true ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$client = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://example.com/mcp',
+				'proxy_url'  => 'proxy.example.com:8080',
+				'proxy_auth' => 'user:pass',
+			)
+		);
+
+		$result = $client->call_tool( 'remote/tool', array( 'x' => 1 ) );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( $baseline + 1, $during, 'The client proxy action should be attached while dispatching.' );
+		$this->assertSame( $baseline, $this->curl_hook_count(), 'The proxy action must be removed after the request.' );
+	}
+
+	/**
+	 * A client without a proxy never touches the http_api_curl action.
+	 */
+	public function test_no_proxy_configured_skips_curl_wiring() {
+		$baseline = $this->curl_hook_count();
+		$during   = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( &$during ) {
+				unset( $pre, $args, $url );
+				$during = $this->curl_hook_count();
+
+				return array(
+					'headers'  => array(),
+					'body'     => $this->rpc_result( array( 'ok' => true ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$client = new WP_MCP_AI_MCP_App_Client(
+			array(
+				'server_url' => 'https://example.com/mcp',
+			)
+		);
+
+		$result = $client->call_tool( 'remote/tool', array() );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( $baseline, $during, 'No proxy wiring should be attached for a direct connection.' );
+	}
 }

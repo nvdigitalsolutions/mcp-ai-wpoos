@@ -560,14 +560,52 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 			return $result;
 		}
 
-		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
+		// Some providers (Gemini, and OpenAI-compatible gateways such as vLLM)
+		// return message.content as an array of parts. Flatten before any
+		// string operation to avoid the fatal `trim(): Argument #1 ($value)
+		// must be of type string, array given`.
+		$content = $this->flatten_response_content( $result['choices'][0]['message']['content'] );
+
+		if ( '' === trim( $content ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_ai_response',
 				__( 'Invalid response from AI provider.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
-		return trim( $result['choices'][0]['message']['content'] );
+		return trim( $content );
+	}
+
+	/**
+	 * Flatten a provider response content value into a string.
+	 *
+	 * Handles the three shapes seen in the wild: a plain string (OpenAI),
+	 * an array of `{type,text}` parts (Gemini `normalize_response()`),
+	 * and an array of strings.
+	 *
+	 * @since 2.10.0
+	 *
+	 * @param mixed $content Raw message content.
+	 * @return string Flattened text.
+	 */
+	private function flatten_response_content( $content ) {
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( is_array( $content ) ) {
+			$text = '';
+			foreach ( $content as $part ) {
+				if ( is_array( $part ) && isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				} elseif ( is_string( $part ) ) {
+					$text .= $part;
+				}
+			}
+			return $text;
+		}
+
+		return '';
 	}
 
 	/**

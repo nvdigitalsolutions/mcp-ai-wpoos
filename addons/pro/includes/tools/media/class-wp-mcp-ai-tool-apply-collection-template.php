@@ -164,25 +164,25 @@ class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interfa
 		$process       = isset( $arguments['process'] ) ? (bool) $arguments['process'] : true;
 
 		if ( empty( $collection_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Collection ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Collection ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $template_ids ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'At least one template ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'At least one template ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Verify collection exists.
 		$collection = get_post( $collection_id );
 		if ( ! $collection || 'mcp_ai_media_coll' !== $collection->post_type || 'publish' !== $collection->post_status ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid collection ID or collection is not published.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid collection ID or collection is not published.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -190,13 +190,13 @@ class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interfa
 		foreach ( $template_ids as $template_id ) {
 			$template = get_post( $template_id );
 			if ( ! $template || 'mcp_ai_media_tpl' !== $template->post_type || 'publish' !== $template->post_status ) {
-				return array(
-					'success' => false,
-					'error'   => sprintf(
+				return new WP_Error(
+					'tool_error',
+					sprintf(
 						/* translators: %d: template ID */
 						__( 'Invalid template ID %d or template is not published.', 'mcp-ai-wpoos-pro' ),
 						$template_id
-					),
+					)
 				);
 			}
 		}
@@ -249,7 +249,13 @@ class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interfa
 			);
 
 			// Merge process results.
-			if ( ! empty( $process_result['success'] ) ) {
+			if ( is_wp_error( $process_result ) ) {
+				$response['warning'] = sprintf(
+					/* translators: %s: error message */
+					__( 'Templates assigned but processing failed: %s', 'mcp-ai-wpoos-pro' ),
+					$process_result->get_error_message()
+				);
+			} elseif ( ! empty( $process_result['success'] ) ) {
 				$response['processing'] = array(
 					'statistics' => isset( $process_result['statistics'] ) ? $process_result['statistics'] : array(),
 					'results'    => isset( $process_result['results'] ) ? $process_result['results'] : array(),

@@ -36,6 +36,15 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 10.00, // $10 per 1M input tokens.
 				'output' => 50.00, // $50 per 1M output tokens.
 			),
+			// GPT-6 Sol / Luna (September 22, 2026).
+			'gpt-6-sol'                    => array(
+				'input'  => 2.00,  // $2 per 1M input tokens.
+				'output' => 10.00, // $10 per 1M output tokens.
+			),
+			'gpt-6-luna'                   => array(
+				'input'  => 0.10,  // $0.10 per 1M input tokens.
+				'output' => 0.50,  // $0.50 per 1M output tokens.
+			),
 			// GPT-5.6 series (July 2026). Sol/Terra/Luna tiers.
 			'gpt-5.6-sol'                  => array(
 				'input'  => 4.00,  // $4 per 1M input tokens (promo through Nov 21, 2026; standard $5).
@@ -215,6 +224,10 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.75,   // $0.75 per 1M (text).
 				'output' => 4.50,   // $4.50 per 1M (text).
 			),
+			'gemini-3.8-live'               => array(
+				'input'  => 0.75,   // $0.75 per 1M (text); $3.00 per 1M (audio).
+				'output' => 4.50,   // $4.50 per 1M (text); $12.00 per 1M (audio).
+			),
 			// Gemini 2.5 series (still supported, May 2026 pricing).
 			'gemini-2.5-pro'                => array(
 				'input'  => 1.25,   // $1.25 per 1M (<=200K ctx).
@@ -232,11 +245,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.50,   // $0.50 per 1M (text/image).
 				'output' => 60.00,  // $60 per 1M (images, ~$0.067/image at 1024x1024).
 			),
-			// [DEPRECATED] Gemini 2.5 Flash Image — migrate to gemini-3.1-flash-image.
-			'gemini-2.5-flash-image'        => array(
-				'input'  => 0.30,   // $0.30 per 1M (text).
-				'output' => 30.00,  // $30 per 1M (images, ~$0.039/image at 1024x1024).
-			),
+			// [RETIRED] Gemini 2.5 Flash Image shut down 2026-10-02 — use gemini-3.1-flash-image.
 			// [DEPRECATED] Legacy entries.
 			// Veo 3.1 video generation ($0.40/sec standard).
 			'veo-3.1-generate-preview'      => array(
@@ -248,8 +257,8 @@ class WP_MCP_AI_Cost_Calculator {
 			'veo-2.0-generate-001'          => array(
 				'per_second' => 0.020,
 			),
-			// Gemini Omni Flash video generation (replaces Veo, mid-2026).
-			'gemini-omni-flash'             => array(
+			// Gemini Omni 1.1 Flash video generation (GA August 2026; replaces Veo).
+			'gemini-omni-1.1-flash'         => array(
 				'per_second' => 0.040,
 			),
 		),
@@ -259,12 +268,22 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 10.00,  // $10 per 1M input tokens.
 				'output' => 50.00,  // $50 per 1M output tokens.
 			),
+			// Claude Mythos 5.1 (September 2026 - invitation-gated top tier).
+			'claude-mythos-5-1'          => array(
+				'input'  => 10.00,  // $10 per 1M input tokens.
+				'output' => 50.00,  // $50 per 1M output tokens.
+			),
 			// Claude Mythos 5 (July 2026 - invitation-gated top tier).
 			'claude-mythos-5'            => array(
 				'input'  => 10.00,  // $10 per 1M input tokens.
 				'output' => 50.00,  // $50 per 1M output tokens.
 			),
-			// Claude Opus 5 (July 2026 - new default flagship).
+			// Claude Opus 5.5 (September 2026 - new default flagship, $4/$20).
+			'claude-opus-5-5'            => array(
+				'input'  => 4.00,   // $4 per 1M input tokens.
+				'output' => 20.00,  // $20 per 1M output tokens.
+			),
+			// Claude Opus 5 (July 2026).
 			'claude-opus-5'              => array(
 				'input'  => 5.00,   // $5 per 1M input tokens.
 				'output' => 25.00,  // $25 per 1M output tokens.
@@ -274,7 +293,12 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 10.00,  // $10 per 1M input tokens.
 				'output' => 50.00,  // $50 per 1M output tokens.
 			),
-			// Claude Sonnet 5 (June 2026 - now the default, intro pricing).
+			// Claude Sonnet 5.5 (September 2026 - current default).
+			'claude-sonnet-5-5'          => array(
+				'input'  => 2.00,   // $2 per 1M input tokens.
+				'output' => 10.00,  // $10 per 1M output tokens.
+			),
+			// Claude Sonnet 5 (June 2026).
 			'claude-sonnet-5'            => array(
 				'input'  => 2.00,   // $2 per 1M input tokens.
 				'output' => 10.00,  // $10 per 1M output tokens.
@@ -318,15 +342,6 @@ class WP_MCP_AI_Cost_Calculator {
 			'claude-haiku-4-5-20251001'  => array(
 				'input'  => 1.00,
 				'output' => 5.00,
-			),
-			// Claude 3.5 series (deprecated; sunset 2026-09-30).
-			'claude-3-5-sonnet-20241022' => array(
-				'input'  => 3.00,
-				'output' => 15.00,
-			),
-			'claude-3-5-haiku-20241022'  => array(
-				'input'  => 0.80,
-				'output' => 4.00,
 			),
 		),
 		'ollama'       => array(

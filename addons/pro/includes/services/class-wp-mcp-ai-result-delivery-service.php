@@ -1891,8 +1891,22 @@ if ( ! class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
 				}
 
 				// Trigger Git auto-commit when configured and the Pro driver supports it.
+				// WP_MCP_AI_Paper_Git_Sync exposes sync() (maybe_commit() never existed;
+				// the previous call fataled inside the catch below and masked every
+				// paper_store delivery as failed). Sync failures are logged, never
+				// allowed to fail the delivery — the record is already saved.
 				if ( ! empty( $config['git_commit'] ) && class_exists( 'WP_MCP_AI_Paper_Git_Sync' ) ) {
-					WP_MCP_AI_Paper_Git_Sync::get_instance()->maybe_commit();
+					$git_sync = WP_MCP_AI_Paper_Git_Sync::get_instance()->sync();
+					if ( is_wp_error( $git_sync ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'error',
+							sprintf(
+								/* translators: %s: error message */
+								__( 'Paper Store git auto-commit failed: %s', 'mcp-ai-wpoos-pro' ),
+								$git_sync->get_error_message()
+							)
+						);
+					}
 				}
 
 				return true;

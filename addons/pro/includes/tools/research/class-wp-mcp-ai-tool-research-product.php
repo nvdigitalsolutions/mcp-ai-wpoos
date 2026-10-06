@@ -15,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-research-content-normalization.php';
+
 /**
  * Tool for researching product information.
  *
@@ -30,6 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Research_Content_Normalization;
 
 	/**
 	 * {@inheritdoc}
@@ -895,8 +898,16 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
+		// Some providers (e.g. Gemini) return message content as an array of
+		// parts instead of a plain string. Flatten it so downstream parsers
+		// can safely run string functions on it.
+		$content = $result['choices'][0]['message']['content'];
+		if ( is_array( $content ) ) {
+			$content = $this->normalize_content_parts( $content );
+		}
+
 		return array(
-			'content'  => $result['choices'][0]['message']['content'],
+			'content'  => $content,
 			'provider' => $provider,
 			'model'    => $model,
 		);
@@ -1019,7 +1030,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 				return ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';
 
 			case 'zai':
-				return ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-4';
+				return ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-5.3-flash';
 
 			default:
 				return new WP_Error(
@@ -1189,7 +1200,10 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array|WP_Error Parsed product data or error.
 	 */
 	protected function parse_research_results( $research_result, $query, $reference ) {
-		$content = $research_result['content'];
+		$content = isset( $research_result['content'] ) ? $research_result['content'] : '';
+		if ( is_array( $content ) ) {
+			$content = $this->normalize_content_parts( $content );
+		}
 
 		// Extract JSON from markdown code blocks if present.
 		if ( preg_match( '/```json\s*(.*?)\s*```/s', $content, $matches ) ) {

@@ -493,12 +493,22 @@ class WP_MCP_AI_EZuite_CLI {
 	}
 }
 
-// Register commands.
+// Register commands under the canonical mcp-ai tree, keeping the legacy
+// top-level `ezuite` names as aliases (Proposal 050 namespace unification).
 if ( class_exists( 'WP_CLI' ) ) {
-	WP_CLI::add_command( 'ezuite status', array( 'WP_MCP_AI_EZuite_CLI', 'status' ) );
-	WP_CLI::add_command( 'ezuite trigger', array( 'WP_MCP_AI_EZuite_CLI', 'trigger' ) );
-	WP_CLI::add_command( 'ezuite clear-cache', array( 'WP_MCP_AI_EZuite_CLI', 'clear_cache' ) );
-	WP_CLI::add_command( 'ezuite test-connection', array( 'WP_MCP_AI_EZuite_CLI', 'test_connection' ) );
-	WP_CLI::add_command( 'ezuite low-stock-report', array( 'WP_MCP_AI_EZuite_CLI', 'low_stock_report' ) );
-	WP_CLI::add_command( 'ezuite sync-log', array( 'WP_MCP_AI_EZuite_CLI', 'sync_log' ) );
+	$ezuite_verbs = array(
+		'status'             => 'status',
+		'trigger'            => 'trigger',
+		'clear-cache'        => 'clear_cache',
+		'test-connection'    => 'test_connection',
+		'low-stock-report'   => 'low_stock_report',
+		'sync-log'           => 'sync_log',
+	);
+
+	foreach ( $ezuite_verbs as $ezuite_verb => $ezuite_method ) {
+		WP_CLI::add_command( 'mcp-ai ezuite ' . $ezuite_verb, array( 'WP_MCP_AI_EZuite_CLI', $ezuite_method ) );
+		WP_CLI::add_command( 'ezuite ' . $ezuite_verb, array( 'WP_MCP_AI_EZuite_CLI', $ezuite_method ) );
+	}
+
+	unset( $ezuite_verbs, $ezuite_verb, $ezuite_method );
 }

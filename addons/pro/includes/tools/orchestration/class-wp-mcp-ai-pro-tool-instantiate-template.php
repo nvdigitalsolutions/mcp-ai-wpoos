@@ -96,8 +96,8 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Extract arguments.
 		$template_id      = absint( $arguments['template_id'] ?? 0 );
-		$variables        = $arguments['variables'] ?? array();
-		$config_overrides = $arguments['config_overrides'] ?? array();
+		$variables        = isset( $arguments['variables'] ) && is_array( $arguments['variables'] ) ? $arguments['variables'] : array();
+		$config_overrides = isset( $arguments['config_overrides'] ) && is_array( $arguments['config_overrides'] ) ? $arguments['config_overrides'] : array();
 		$project_id       = absint( $arguments['project_id'] ?? 0 );
 
 		// Validate template_id.
@@ -129,9 +129,9 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 				);
 			}
 
-			$template_name     = $template['template_name'] ?? '';
-			$markdown_template = $template['markdown_template'] ?? '';
-			$default_config    = json_decode( $template['default_config'] ?? '{}', true );
+			$template_name     = isset( $template['template_name'] ) && is_string( $template['template_name'] ) ? $template['template_name'] : '';
+			$markdown_template = isset( $template['markdown_template'] ) && is_string( $template['markdown_template'] ) ? $template['markdown_template'] : '';
+			$default_config    = json_decode( isset( $template['default_config'] ) && is_string( $template['default_config'] ) ? $template['default_config'] : '{}', true );
 		} else {
 			$template = get_post( $template_id );
 			if ( ! $template || 'mcp_task_template' !== $template->post_type ) {
@@ -146,11 +146,15 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 			$default_config    = get_post_meta( $template_id, 'default_config', true ) ? get_post_meta( $template_id, 'default_config', true ) : array();
 		}
 
-		// Replace placeholders.
+		// Replace placeholders. Non-scalar variable values cannot be rendered
+		// into the markdown and are skipped rather than cast to "Array".
 		$markdown_content = $markdown_template;
 		foreach ( $variables as $key => $value ) {
+			if ( ! is_scalar( $value ) ) {
+				continue;
+			}
 			$placeholder      = '{{' . $key . '}}';
-			$markdown_content = str_replace( $placeholder, $value, $markdown_content );
+			$markdown_content = str_replace( $placeholder, (string) $value, $markdown_content );
 		}
 
 		// Check for unreplaced placeholders.
@@ -164,7 +168,11 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 			);
 		}
 
-		// Merge configurations.
+		// Merge configurations. json_decode() yields null on malformed JSON,
+		// which would fatal array_merge(), so normalize both sides first.
+		if ( ! is_array( $default_config ) ) {
+			$default_config = array();
+		}
 		$final_config = array_merge( $default_config, $config_overrides );
 
 		// Extract goal from first line or use template name.

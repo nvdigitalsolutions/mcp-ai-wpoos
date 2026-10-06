@@ -1,0 +1,20 @@
+{
+	"name": "nvoos-chatgpt-plugin",
+	"interface": {
+		"displayName": "NV oOS Site Bridge"
+	},
+	"plugins": [
+		{
+			"name": "nvoos-site-bridge",
+			"source": {
+				"source": "local",
+				"path": "./"
+			},
+			"policy": {
+				"installation": "AVAILABLE",
+				"authentication": "ON_INSTALL"
+			},
+			"category": "Productivity"
+		}
+	]
+}

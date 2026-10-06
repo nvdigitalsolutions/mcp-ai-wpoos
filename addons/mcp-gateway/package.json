@@ -1,0 +1,21 @@
+{
+	"name": "design-mcp-gateway",
+	"version": "0.1.1",
+	"description": "NV oOS MCP Gateway — public, fleet-scoped MCP endpoint (streamable HTTP) proxying NV oOS WordPress sites with API-key auth, rate limiting, and tool namespacing",
+	"type": "module",
+	"main": "src/index.js",
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"scripts": {
+		"start": "node src/index.js",
+		"dev": "node --watch src/index.js",
+		"test": "node --test src/**/*.test.js"
+	},
+	"dependencies": {
+		"cors": "^2.8.5",
+		"express": "^4.21.0",
+		"express-rate-limit": "^7.5.0",
+		"helmet": "^8.0.0"
+	}
+}

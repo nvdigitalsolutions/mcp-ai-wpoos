@@ -108,9 +108,9 @@ class WP_MCP_AI_Pro_Tool_List_Templates {
 			// Query templates using CCT.
 			$handler = WP_MCP_AI_Task_Templates_CCT::get_item_handler();
 			if ( ! $handler ) {
-				return array(
-					'success' => false,
-					'error'   => 'CCT handler not available',
+				return new WP_Error(
+					'wp_mcp_ai_cct_handler_unavailable',
+					__( 'CCT handler not available', 'mcp-ai-wpoos-pro' )
 				);
 			}
 

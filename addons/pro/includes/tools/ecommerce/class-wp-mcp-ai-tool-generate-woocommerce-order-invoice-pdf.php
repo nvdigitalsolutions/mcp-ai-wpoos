@@ -116,7 +116,7 @@ class WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF implements WP_MCP_AI
 			'when_to_use'     => __( 'Creating a branded PDF invoice for one WooCommerce order, optionally uploaded to the media library.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Order data or status changes; use woo_orders to read orders and process_order_workflow for transitions.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'woo_orders', 'process_order_workflow', 'refund_order_advanced' ),
-			'notes'           => __( 'PDF generation requires Node.js on the server; set upload false to skip the media library.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'PDF generation requires Node.js on the server and the WP_MCP_AI_ALLOW_SHELL_TOOLS constant; set upload false to skip the media library.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -283,7 +283,7 @@ class WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF implements WP_MCP_AI
 
 			if ( is_wp_error( $upload_result ) ) {
 				// Clean up temp file.
-				@unlink( $pdf_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				wp_delete_file( $pdf_path );
 				return $upload_result;
 			}
 
@@ -294,7 +294,7 @@ class WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF implements WP_MCP_AI
 			update_post_meta( $order_id, '_invoice_pdf_id', $attachment_id );
 
 			// Clean up temp file.
-			@unlink( $pdf_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			wp_delete_file( $pdf_path );
 		} else {
 			$file_url = $pdf_path;
 		}
@@ -432,41 +432,188 @@ class WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF implements WP_MCP_AI
 		}
 
 		$file_path   = $temp_dir . '/invoice-' . $invoice_data['order_id'] . '-' . time() . '.pdf';
-		$script_path = WP_MCP_AI_PRO_PATH . 'addons/pro/scripts/generate-invoice.js';
+		$script_path = WP_MCP_AI_PRO_PATH . 'scripts/generate-pdf.js';
 
-		// Use Node.js script to generate PDF.
-		$input_data = wp_json_encode(
+		// The bundled Node script reads its input from a JSON file and writes
+		// the PDF to the output path passed as its second argument.
+		$input_file = $this->write_invoice_input_file(
 			array(
-				'invoiceData' => $invoice_data,
-				'outputFile'  => $file_path,
-			)
+				'title'        => $invoice_data['invoice_number'],
+				'author'       => isset( $invoice_data['company']['name'] ) ? $invoice_data['company']['name'] : '',
+				'html_content' => $this->build_invoice_html( $invoice_data ),
+			),
+			$temp_dir
 		);
 
-		// Execute Node.js script.
-		$node_path = 'node'; // Assume node is in PATH.
-		$command   = sprintf(
-			'%s %s %s 2>&1',
-			escapeshellcmd( $node_path ),
-			escapeshellarg( $script_path ),
-			escapeshellarg( $input_data )
-		);
+		if ( is_wp_error( $input_file ) ) {
+			return $input_file;
+		}
 
-		$output     = array();
-		$return_var = 0;
-		exec( $command, $output, $return_var ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		$result = wp_mcp_ai_ecommerce_run_node_script( $script_path, $input_file, $file_path );
+		wp_delete_file( $input_file );
 
-		if ( 0 !== $return_var || ! file_exists( $file_path ) ) {
+		if ( is_wp_error( $result ) ) {
+			if ( file_exists( $file_path ) ) {
+				wp_delete_file( $file_path );
+			}
 			return new WP_Error(
 				'pdf_generation_failed',
 				sprintf(
-					/* translators: %s: error output */
+					/* translators: %s: error message */
 					__( 'Failed to generate invoice PDF: %s', 'mcp-ai-wpoos-pro' ),
-					implode( "\n", $output )
+					$result->get_error_message()
 				)
 			);
 		}
 
+		if ( ! file_exists( $file_path ) ) {
+			return new WP_Error(
+				'pdf_generation_failed',
+				__( 'Failed to generate invoice PDF: no output was produced.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
 		return $file_path;
+	}
+
+	/**
+	 * Write the invoice JSON payload for the Node PDF script to a temp file.
+	 *
+	 * @param array  $payload  Payload to encode.
+	 * @param string $temp_dir Directory to write into.
+	 * @return string|WP_Error Temp file path or error.
+	 */
+	protected function write_invoice_input_file( array $payload, $temp_dir ) {
+		$input_file = $temp_dir . '/invoice-input-' . wp_generate_password( 12, false ) . '.json';
+		$encoded    = wp_json_encode( $payload );
+
+		if ( false === $encoded ) {
+			return new WP_Error(
+				'pdf_generation_failed',
+				__( 'Failed to encode invoice generation input.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Required for the Node script input.
+		if ( false === file_put_contents( $input_file, $encoded ) ) {
+			return new WP_Error(
+				'pdf_generation_failed',
+				__( 'Failed to write invoice generation input file.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return $input_file;
+	}
+
+	/**
+	 * Build the invoice HTML body for the Node PDF renderer.
+	 *
+	 * @param array $invoice_data Prepared invoice data.
+	 * @return string HTML fragment (escaped).
+	 */
+	protected function build_invoice_html( array $invoice_data ) {
+		$company  = isset( $invoice_data['company'] ) ? $invoice_data['company'] : array();
+		$customer = isset( $invoice_data['customer'] ) ? $invoice_data['customer'] : array();
+		$totals   = isset( $invoice_data['totals'] ) ? $invoice_data['totals'] : array();
+		$payment  = isset( $invoice_data['payment'] ) ? $invoice_data['payment'] : array();
+
+		$html = '<h2>' . esc_html( isset( $company['name'] ) ? $company['name'] : '' ) . '</h2>';
+
+		if ( ! empty( $company['address'] ) ) {
+			$html .= '<p>' . esc_html( $company['address'] ) . '</p>';
+		}
+
+		$contact_bits = array();
+		if ( ! empty( $company['email'] ) ) {
+			$contact_bits[] = esc_html( $company['email'] );
+		}
+		if ( ! empty( $company['phone'] ) ) {
+			$contact_bits[] = esc_html( $company['phone'] );
+		}
+		if ( ! empty( $company['website'] ) ) {
+			$contact_bits[] = esc_html( $company['website'] );
+		}
+		if ( ! empty( $contact_bits ) ) {
+			$html .= '<p>' . implode( ' | ', $contact_bits ) . '</p>';
+		}
+
+		$html .= '<h3>' . esc_html( isset( $invoice_data['invoice_number'] ) ? $invoice_data['invoice_number'] : '' ) . '</h3>';
+
+		$meta_lines = array();
+		if ( ! empty( $invoice_data['order_number'] ) ) {
+			$meta_lines[] = esc_html__( 'Order', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( $invoice_data['order_number'] );
+		}
+		if ( ! empty( $invoice_data['order_date'] ) ) {
+			$meta_lines[] = esc_html__( 'Date', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( $invoice_data['order_date'] );
+		}
+		if ( ! empty( $meta_lines ) ) {
+			$html .= '<p>' . implode( '<br/>', $meta_lines ) . '</p>';
+		}
+
+		$html .= '<h4>' . esc_html__( 'Bill To', 'mcp-ai-wpoos-pro' ) . '</h4>';
+		$html .= '<p>' . esc_html( isset( $customer['name'] ) ? $customer['name'] : '' ) . '</p>';
+
+		if ( ! empty( $customer['billing_address'] ) ) {
+			$html .= '<p>' . esc_html( $customer['billing_address'] ) . '</p>';
+		}
+
+		if ( ! empty( $invoice_data['items'] ) ) {
+			$html .= '<table>';
+			$html .= '<tr><th>' . esc_html__( 'Item', 'mcp-ai-wpoos-pro' ) . '</th><th>' . esc_html__( 'SKU', 'mcp-ai-wpoos-pro' ) . '</th><th>' . esc_html__( 'Qty', 'mcp-ai-wpoos-pro' ) . '</th><th>' . esc_html__( 'Price', 'mcp-ai-wpoos-pro' ) . '</th><th>' . esc_html__( 'Total', 'mcp-ai-wpoos-pro' ) . '</th></tr>';
+			foreach ( $invoice_data['items'] as $item ) {
+				$html .= '<tr>';
+				$html .= '<td>' . esc_html( $item['name'] ) . '</td>';
+				$html .= '<td>' . esc_html( isset( $item['sku'] ) ? $item['sku'] : '' ) . '</td>';
+				$html .= '<td>' . esc_html( (string) $item['quantity'] ) . '</td>';
+				$html .= '<td>' . esc_html( (string) $item['price'] ) . '</td>';
+				$html .= '<td>' . esc_html( (string) $item['total'] ) . '</td>';
+				$html .= '</tr>';
+			}
+			$html .= '</table>';
+		}
+
+		if ( ! empty( $invoice_data['shipping'] ) ) {
+			foreach ( $invoice_data['shipping'] as $shipping_item ) {
+				$html .= '<p>' . esc_html( $shipping_item['method'] ) . ': ' . esc_html( (string) $shipping_item['cost'] ) . '</p>';
+			}
+		}
+
+		if ( ! empty( $invoice_data['taxes'] ) ) {
+			foreach ( $invoice_data['taxes'] as $tax ) {
+				$html .= '<p>' . esc_html( $tax['label'] ) . ': ' . esc_html( (string) $tax['amount'] ) . '</p>';
+			}
+		}
+
+		if ( ! empty( $totals ) ) {
+			$html .= '<h4>' . esc_html__( 'Totals', 'mcp-ai-wpoos-pro' ) . '</h4>';
+
+			$total_lines   = array();
+			$total_lines[] = esc_html__( 'Subtotal', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( isset( $totals['subtotal'] ) ? (string) $totals['subtotal'] : '' );
+			if ( isset( $totals['shipping_total'] ) && '' !== $totals['shipping_total'] ) {
+				$total_lines[] = esc_html__( 'Shipping', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( (string) $totals['shipping_total'] );
+			}
+			if ( isset( $totals['tax_total'] ) && '' !== $totals['tax_total'] ) {
+				$total_lines[] = esc_html__( 'Tax', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( (string) $totals['tax_total'] );
+			}
+			$total_lines[] = esc_html__( 'Total', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( isset( $totals['total'] ) ? (string) $totals['total'] : '' ) . ' ' . esc_html( isset( $totals['currency'] ) ? $totals['currency'] : '' );
+			$html         .= '<p>' . implode( '<br/>', $total_lines ) . '</p>';
+		}
+
+		if ( ! empty( $payment['method'] ) ) {
+			$html .= '<p>' . esc_html__( 'Payment', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( $payment['method'] ) . '</p>';
+		}
+
+		if ( ! empty( $invoice_data['notes'] ) ) {
+			$html .= '<h4>' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</h4>';
+			$html .= '<p>' . esc_html( $invoice_data['notes'] ) . '</p>';
+		}
+
+		if ( ! empty( $invoice_data['terms'] ) ) {
+			$html .= '<h4>' . esc_html__( 'Terms', 'mcp-ai-wpoos-pro' ) . '</h4>';
+			$html .= '<p>' . esc_html( $invoice_data['terms'] ) . '</p>';
+		}
+
+		return $html;
 	}
 
 	/**

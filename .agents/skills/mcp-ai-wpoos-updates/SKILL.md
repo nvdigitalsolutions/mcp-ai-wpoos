@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.91"
-  plugin-version-tested: "1.1.91"
-  last-updated: "2026-10-01"
+  plugin-version: "1.1.97"
+  plugin-version-tested: "1.1.97"
+  last-updated: "2026-10-05"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-1. **Read the template plans** — the latest executed plan (`v1.1.91-docs-catch-up.md`,
-   with `v1.1.90-docs-catch-up.md` as the previous pass) plus the
+3. **Read the template plans** — the latest executed plan (`v1.1.97-docs-catch-up.md`,
+   with `v1.1.96-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -228,6 +228,18 @@ weekly (or on demand), independent of any release.
   `.github/copilot-instructions.md`, and the `README.md` repo map in-window —
   the catch-up verifies (grep for the old count) rather than assuming the
   fold-in is owed.
+- **An in-window addon version bump must be verified against every
+  runtime-reported version string, not just the package manifests.** The
+  v1.1.95 window's #6881 bumped the media worker to 3.4.0 in `package.json` +
+  `package-lock.json` but left `src/index.js`'s two health-endpoint `version:`
+  fields and `src/status/handlers.js`'s `WORKER_VERSION` at 3.3.0 (a deployed
+  3.4.0 worker reported 3.3.0 on `/api/health*` and in status heartbeats — the
+  #6849 precedent had kept all five in sync; `WORKER_VERSION` even carries the
+  comment "kept in sync with package.json by the release process"). Fixed
+  post-window by #6895. When an addon's version moves in-window, grep the
+  addon tree for the old version and treat every non-historical hit (health
+  payloads, status constants, headers) as a release-blocking miss — the
+  ADDON_INVENTORY row update alone is not proof the addon is consistent.
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -721,20 +733,143 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.88-docs-catch-up.md`,
   `docs/project/plans/v1.1.89-docs-catch-up.md`,
   `docs/project/plans/v1.1.90-docs-catch-up.md`,
-  `docs/project/plans/v1.1.91-docs-catch-up.md` (latest executed — the v1.1.91
-  pass over PRs #6825, #6827–#6836: the FlowHub MCP-mode connection proxy
-  binding (#6836, pre-staged [Unreleased] CHANGELOG block converted), the
-  MCP App OAuth discovery chain per MCP spec (#6835), the OAuth redirect
-  allowlists (#6831/#6832), the orchestration CCT physical-table gate +
-  DB output guard (#6827), the security-events display + double-render
-  fixes (#6829/#6830), the RF-DETR presets/manifest repair (#6828), the
-  nodemailer 10.x + fast-uri advisory patches (#6833/#6834), the RF-DETR
-  CG Pro ecosystem port (#6825), five skill reconciliations (plugin ×3 +
-  elementor ×2 + dependabot-loop + test-suite patterns 54/55 +
-  ecosystem-port + updates), the stale 1.1.89 build-set removal (30
-  files), and an unchanged tool count)
+  `docs/project/plans/v1.1.91-docs-catch-up.md`,
+  `docs/project/plans/v1.1.92-docs-catch-up.md`,
+  `docs/project/plans/v1.1.93-docs-catch-up.md`,
+  `docs/project/plans/v1.1.94-docs-catch-up.md`,
+  `docs/project/plans/v1.1.95-docs-catch-up.md`,
+  `docs/project/plans/v1.1.97-docs-catch-up.md` (latest executed — the v1.1.97
+  pass over PRs #6898–#6914: the ECC-inspired agent-harness enhancements
+  (#6912, Proposal 056 — cascade routing on both engines via the lib/core
+  `CascadeRouter` + the legacy `WP_MCP_AI_Cascade_Executor` gate with Pro Jev
+  classifier wiring, the +2 base tools `run_assistant_eval` + `scan_assistant_security`,
+  hook profiles, the session distiller's canonical `wp_mcp_ai_memory_stored`
+  event, the +1 Pro `suggest_workflows_from_history` miner — all inert by
+  default, CREDITS attribution), the OOS parity-gap closure (#6913 — 428/429
+  gate envelopes via `translate_gate_exception()`, `apply_pre_response_render()`
+  on all three surfaces, the agentic-iteration bridge, the parity script
+  35 → 38 features + the `parity-check` CI job), the gateway protocol
+  negotiation (#6914), the 23-package public npm publish wave (#6898/#6904–#6909/#6911
+  — the v1.1.96-deferred publish executed), tool counts +2 base +1 Pro →
+  ~352/~1,313/~1,665, four skill reconciliations (plugin ×3 + RELEASE-NOTES,
+  test-suite 65 → 66 patterns with the parity-check gate, updates, the
+  workflow-builder cross-reference), the proposals-README 056 entry, the
+  stale 1.1.95 build-set removal (30 files — 9 + 2 + 19) with the
+  ollama-demo.json URL carry, and **no new OI-1 group** (all 30 in-window
+  `@since` tags correctly pre-tagged 1.1.97). **Post-window:** #6925 (branched off this catch-up and squash-merged — PR #6924 closed as superseded) added the non-force gateway mirror sync + bumped the gateway addon 0.1.0 → 0.1.1; the 0.1.1 pins were reconciled into the current-release surfaces by the `chore/1.1.97-post-gateway-bump-docs` follow-up — when a squash of a catch-up branch lands with an addon bump of its own, sweep the just-written version pins before closing the superseded PR)
 
 Preceding windows:
+  `docs/project/plans/v1.1.96-docs-catch-up.md` (the v1.1.96
+  pass over PRs #6895–#6897: the `@nvdigitalsolutions/nvoos-mcp-bridge` npx
+  package + Fleet Operator editor config generators + the `addons/mcp-gateway/`
+  public fleet MCP endpoint (Proposals 054/055, addon 0.1.0 → inventory #31,
+  addon count 29 → 30, the npm-publish/mirror/Velocity/directory deferrals
+  noted), the per-request memory cut + bootstrap hardening (#6896 — the lazy
+  tool registry with third-party-wins slug conflicts, the gated OOS pre-warm,
+  the catalog-migration `filemtime` short-circuit, the `autoload=false` Pro
+  blob options + one-time repair, the bootstrap-integrity guard + fail-soft
+  loader, the updater `VERIFY_FILES` +17, the new Site Health
+  `wp_mcp_ai_file_integrity` test, 9 dead FF/Yahoo registry entries removed,
+  the `Inline_Async_Tick_Trait` double-declaration fatal fixed — 42 MB vs
+  74 MB A/B), the worker runtime-version completion (#6895), a new OI-1 group
+  (48: `@since 1.2.0` ×1 in the registry's `wp_mcp_ai_tools_init` docblock),
+  three skill reconciliations (plugin ×3 + RELEASE-NOTES with the npx-bridge
+  transport pointers, test-suite 64 → 65 patterns, updates), the
+  FOR_REVIEWERS addon-count 29 → 30 + Fleet Operator 1.0.0 + MCP Gateway rows,
+  the ADDON_INVENTORY Fleet Operator row correction (0.1.0 → 1.0.0) + new
+  MCP Gateway row #31, the stale 1.1.94 build-set removal (30 files — 9 + 2
+  + 19), and zero tool-count change (no registrations))
+
+Preceding windows:
+  `docs/project/plans/v1.1.95-docs-catch-up.md` (the v1.1.95
+  pass over PRs #6874–#6893:the nine-toolkit hardening wave (#6875/#6876/
+  #6882/#6883/#6885/#6886/#6887/#6889/#6892/#6893 — the per-toolkit audit loop
+  under the new `mcp-ai-wpoos-toolkit-audit` skill, 62 skills; email-marketing
+  verified clean #6891; confirmed fatals: unguarded `shell_exec()`, the
+  nonexistent Gemini `generate_content()` + global `wp_mcp_ai_chat_completion()`,
+  array-content `preg_match()`/`trim()` fatals, the media `year_month` traversal
+  closed, the never-loadable loose incident tools), the real image processing
+  for the four placeholder tools (#6881, issue #6877 — Media Worker 3.3.0 →
+  3.4.0, the `/api/image/enhance|upscale|edit` routes + the two new Pro traits),
+  the `list_mcp_tools` toolkit labels + Newsletter bootstrap fix (#6874 — the
+  pre-staged [Unreleased] CHANGELOG converted), the inter-step SSE keepalives
+  (#6879 + the Phase 4b offload proposal), the fixture swaps (#6886/#6890),
+  a new OI-1 group (47: `@since 1.9.5` ×1 in the keepalive test — plus
+  convention notes for the 1.4.0/2.10.0/2.7.0/2.1.0/1.5.0/1.1.55 additions),
+  the OI-9 extension (the #6883 port-wide unguarded-resolver sweep queue),
+  two skill reconciliations (test-suite description 63 → 64 patterns, the
+  README repo-map 61 → 62 fold-in), the FOR_REVIEWERS addon-count 27 → 29 +
+  Media Worker 3.4.0 corrections, the proposals-README SSE entry, the
+  ADDON_INVENTORY Media Worker row, the stale 1.1.93 build-set removal
+  (30 files — 9 + 2 + 19), and zero tool-count change (no registrations);
+  post-window #6895 fixed the worker's three missed runtime version strings
+  (the partial-bump miss now codified as an A2 scope rule))
+
+Preceding windows:
+  `docs/project/plans/v1.1.94-docs-catch-up.md` (the v1.1.94
+  pass over PRs #6865–#6872: the ChatGPT plugin addon + OAuth 2.1
+  resource-server contract (#6871 — `addons/chatgpt-plugin/` 0.1.0,
+  `WP_MCP_AI_OAuth_Resource_Server` + the two `/.well-known/` endpoints, 401
+  `WWW-Authenticate` on the MCP route, per-tool `securitySchemes`,
+  `nvoos_get_profile` +1 base, RFC-9728 token acceptance, proposals 053,
+  inventory #30), the Decision-Scope Guard (#6866, Proposal 052 — domain +
+  authority ceilings, banned domains fail closed, the
+  `WPMCPAI.Decisions.ScopeDeclared` severity-5 sniff), the toolkit MCP grant
+  runtime enforcement + tool exposure + OOS chat parity (#6872 — the
+  pre-staged [Unreleased] CHANGELOG converted), the FlowHub MCP OAuth login
+  proxy carry (#6867), the safe-mode REST error masking admin opt-in +
+  correlation `ref` (#6869, closes #6860), the Site Health fatal/false-positive
+  fixes + Docker hardening (#6870), the markdown-it bounded-floor bump
+  (#6868), the test-drift fixes (#6865), a new OI-1 group (46: `@since 1.4.0`
+  ×1 in `assistant-cpt.php` — the mcp-servers folder's module tags are the
+  convention, group-23 extension: `@since 2026.10` ×6 in the
+  decision-scope-guard), the in-window readme.txt/mcp-ai-wpoos.php provider
+  header 15 → 18 correction (v1.1.93-pass missed spot), four skill
+  reconciliations (plugin ×3 + RELEASE-NOTES, elementor ×2,
+  test-suite patterns 61–63, dependabot-loop bounded-floor case, updates),
+  the in-window ADDON_INVENTORY #30 entry + header refresh, the proposals
+  README 052 move + 053 addition, the stale 1.1.92 build-set removal
+  (30 files — 9 + 2 + 19), and the OI-8 extension (`nvoos_get_profile` missing
+  from tool-status.txt))
+
+Preceding windows:
+  `docs/project/plans/v1.1.93-docs-catch-up.md` (the v1.1.93
+  pass over PRs #6849–#6863: the media-worker fleet status monitoring (#6849 —
+  worker 3.2.0 → 3.3.0, the opt-in STATUS_ENABLED status module, +2 base tools
+  `get_fleet_status`/`get_site_uptime`, `GET /mcp-ai/v1/status/sites`, the Pro
+  Status Dashboard fleet section), the WP-CLI
+  parity & hardening (#6852, Proposal 050 — dispatcher extraction, `tool
+  call`, 11 new commands, `manage_options` gating, `docs/operations/wp-cli.md`),
+  the FlowHub MCP Apps surfacing + proxy carry (#6854/#6861), the Financial
+  Planner OpenStock parity (#6857, Proposal 051 — Finnhub provider, +3 Pro
+  tools incl. the orphaned blueprint registration), the October 2026 Track B
+  model-catalog refresh (#6863 — v2026.10.03, 238 models, **18 providers —
+  Z.AI joins**, provider-count line 15 → 18 with the FOR_REVIEWERS
+  provider-list fix), the Media Studio 0.6.1 `/ai/generate` fix
+  (#6853/#6858), the schedule create/save trigger fixes (#6855/#6856), the
+  validated-tool `auto` aspect-ratio fix (#6859), the undici 7.30.0 advisory
+  (#6850), the preset/manifest repairs (#6851), the in-window dependabot-skill
+  edit (#6862), four new OI-1 groups (42: `@since 1.1.90` financial wave ×62;
+  43: `@since 1.3.0` Pro CLI ×25; 44: `@since 1.2.0` base CLI + tests ×11; 45:
+  `@since 1.1.92` remote-site-manager/mcp-app-registry ×6 one-behind), six
+  skill reconciliations (plugin ×3 + RELEASE-NOTES, elementor ×2,
+  schedule-manager ×2 + drift repair, analytics-reporting/media-workflow/
+  product-research CLI canonicalization ×2 each, test-suite patterns 58–60,
+  updates), the in-window tool-reference partial count edit reconciled (+3
+  Pro), the ADDON_INVENTORY Media Worker 3.2.0 → 3.3.0 row correction, the
+  stale 1.1.91 build-set removal (6 files) + superseded media-studio and
+  saas-controller addon ZIPs (5 files), and the OI-8 extension (5 new slugs
+  missing from tool-status.txt)),
+  `docs/project/plans/v1.1.92-docs-catch-up.md` (the v1.1.92
+  pass over PRs #6839–#6847: the Media Studio fashion production suite
+  (#6839/#6844 — the squash-merged chain; addon 0.1.0 → 0.6.0, 8 `fashion_*`
+  Pro tools self-gated on the Media Studio AI service, the 10th Workflow
+  Builder preset category, +8 Pro tool count), the inline vision data URLs +
+  payload optimization (#6846, pre-staged [Unreleased] CHANGELOG block
+  converted), the provider content/credential fixes (#6845), the Pro coverage
+  manifest regeneration (#6847), four new OI-1 groups (38–41), five skill
+  reconciliations, the stale 1.1.90 build-set removal (30 files), and the OI-8
+  extension),
   `docs/project/plans/v1.1.89-docs-catch-up.md` (the v1.1.89
   pass over PRs #6802 + #6804–#6810: the Google Classroom ECA integration
   (proposal 046, 12 flag-gated Pro tools + base foundation + new webhook

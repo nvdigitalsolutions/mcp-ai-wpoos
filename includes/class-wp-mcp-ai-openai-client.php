@@ -4488,9 +4488,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 							if ( 'input_image' === $type ) {
 								if ( isset( $segment['image_url']['url'] ) ) {
-									$segment_copy['image_url']['url'] = esc_url_raw( $segment['image_url']['url'] );
+									$raw_url = (string) $segment['image_url']['url'];
+									// esc_url_raw drops data: URLs entirely; truncate them instead
+									// so payload logs still show what was sent without the bytes.
+									$segment_copy['image_url']['url'] = 0 === stripos( $raw_url, 'data:' )
+										? substr( $raw_url, 0, 80 ) . '…'
+										: esc_url_raw( $raw_url );
 								} elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
-									$segment_copy['image_url'] = esc_url_raw( $segment['image_url'] );
+									$raw_url                   = (string) $segment['image_url'];
+									$segment_copy['image_url'] = 0 === stripos( $raw_url, 'data:' )
+										? substr( $raw_url, 0, 80 ) . '…'
+										: esc_url_raw( $raw_url );
 								}
 
 								if ( isset( $segment['file_id'] ) ) {
@@ -5004,6 +5012,37 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
+		 * Prefer a base64 data URL for an image segment, falling back to the URL.
+		 *
+		 * The provider receives inline bytes (fetched by the WordPress server)
+		 * instead of a remote URL its own servers must download, which fails
+		 * for hotlink-protected, staged, or freshly uploaded media.
+		 *
+		 * @since 1.1.92
+		 *
+		 * @param array  $segment Image segment (may carry attachment_id / url metadata).
+		 * @param string $url     Sanitized fallback URL (may be empty).
+		 * @return string Data URL or the original URL.
+		 */
+		protected function resolve_image_url_with_inline_data( array $segment, $url ) {
+			if ( 0 === stripos( $url, 'data:' ) ) {
+				return $url;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Image_Data_Url' ) && defined( 'WP_MCP_AI_PATH' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-image-data-url.php';
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Image_Data_Url' ) ) {
+				return $url;
+			}
+
+			$data_url = WP_MCP_AI_Image_Data_Url::from_segment( $segment );
+
+			return '' !== $data_url ? $data_url : $url;
+		}
+
+		/**
 		 * Hydrate an image segment with inline attachment data when available.
 		 *
 		 * @param array $segment     Segment definition.
@@ -5054,9 +5093,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				if ( isset( $segment['image_url']['detail'] ) && ! isset( $segment['detail'] ) ) {
 					$segment['detail'] = sanitize_key( $segment['image_url']['detail'] );
 				}
-				$segment['image_url'] = esc_url_raw( (string) $segment['image_url']['url'] );
+
+				// Prefer inline bytes so OpenAI never has to download our URL.
+				$segment['image_url'] = $this->resolve_image_url_with_inline_data( $segment, esc_url_raw( (string) $segment['image_url']['url'] ) );
 			} elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
-				$segment['image_url'] = esc_url_raw( $segment['image_url'] );
+				$segment['image_url'] = $this->resolve_image_url_with_inline_data( $segment, esc_url_raw( $segment['image_url'] ) );
 			}
 
 			if ( isset( $segment['image'] ) && is_array( $segment['image'] ) ) {
@@ -5525,6 +5566,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 							}
 
 							if ( '' !== $image_url ) {
+								// Prefer inline bytes so the provider never has to download our URL.
+								$image_url = $this->resolve_image_url_with_inline_data( $segment, $image_url );
+
 								// Convert to image_url type with proper structure.
 
 								$converted_segment = array(
@@ -5576,46 +5620,57 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						// If we can get a URL for the image, use image_url format.
 
 						if ( $attachment_id > 0 ) {
-							// Verify attachment exists and get its post status.
+							// Expose the attachment on the segment so the inline-data
+							// helper can read the file straight off disk. Inlining
+							// also works for non-public attachments (the user
+							// attached the image to this conversation), so try the
+							// data URL before falling back to the public URL.
+							$segment['attachment_id'] = $attachment_id;
+							$image_url                = $this->resolve_image_url_with_inline_data( $segment, '' );
 
-							$attachment_post = get_post( $attachment_id );
-							$can_use_url     = false;
+							if ( '' === $image_url ) {
+								// Verify attachment exists and get its post status.
 
-							if ( $attachment_post && 'attachment' === $attachment_post->post_type ) {
-								$public_statuses = get_post_stati( array( 'public' => true ) );
-								if ( ! is_array( $public_statuses ) ) {
-									$public_statuses = array( 'publish' );
+								$attachment_post = get_post( $attachment_id );
+								$can_use_url     = false;
+
+								if ( $attachment_post && 'attachment' === $attachment_post->post_type ) {
+									$public_statuses = get_post_stati( array( 'public' => true ) );
+									if ( ! is_array( $public_statuses ) ) {
+										$public_statuses = array( 'publish' );
+									}
+
+									// Check if attachment or its parent is publicly accessible.
+
+									if ( in_array( $attachment_post->post_status, $public_statuses, true ) || 'inherit' === $attachment_post->post_status ) {
+										$can_use_url = true;
+									}
 								}
 
-								// Check if attachment or its parent is publicly accessible.
-
-								if ( in_array( $attachment_post->post_status, $public_statuses, true ) || 'inherit' === $attachment_post->post_status ) {
-									$can_use_url = true;
+								if ( $can_use_url ) {
+									$image_url = esc_url_raw( (string) wp_get_attachment_url( $attachment_id ) );
 								}
 							}
 
-							if ( $can_use_url ) {
-								$image_url = wp_get_attachment_url( $attachment_id );
-								if ( $image_url ) {
-									$converted_segment = array(
-										'type'      => 'image_url',
-										'image_url' => array( 'url' => esc_url_raw( $image_url ) ),
-									);
+							if ( '' !== $image_url ) {
+								$converted_segment = array(
+									'type'      => 'image_url',
+									'image_url' => array( 'url' => $image_url ),
+								);
 
-									// Preserve detail level if present.
+								// Preserve detail level if present.
 
-									if ( isset( $segment['detail'] ) && '' !== $segment['detail'] ) {
-										$converted_segment['image_url']['detail'] = sanitize_key( $segment['detail'] );
-									}
-
-									// Note: OpenAI's Chat Completions API only accepts 'type' and 'image_url' fields
-									// in image_url content parts. Additional metadata fields (attachment_id, url,
-									// file_name, mime_type, bytes) cause "Unexpected keys in a message content image dict" errors.
-									// Tools can receive these fields directly as tool arguments instead.
-
-									$converted_segments[] = $converted_segment;
-									continue;
+								if ( isset( $segment['detail'] ) && '' !== $segment['detail'] ) {
+									$converted_segment['image_url']['detail'] = sanitize_key( $segment['detail'] );
 								}
+
+								// Note: OpenAI's Chat Completions API only accepts 'type' and 'image_url' fields
+								// in image_url content parts. Additional metadata fields (attachment_id, url,
+								// file_name, mime_type, bytes) cause "Unexpected keys in a message content image dict" errors.
+								// Tools can receive these fields directly as tool arguments instead.
+
+								$converted_segments[] = $converted_segment;
+								continue;
 							}
 						}
 

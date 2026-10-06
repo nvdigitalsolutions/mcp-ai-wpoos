@@ -888,6 +888,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'flowhub_mode'                   => isset( $_POST['flowhub_mode'] ) && in_array( $_POST['flowhub_mode'], array( 'api', 'mcp' ), true )
 					? sanitize_key( wp_unslash( $_POST['flowhub_mode'] ) )
 					: 'api',
+				'flowhub_mcp_url'                => isset( $_POST['flowhub_mcp_url'] ) ? esc_url_raw( wp_unslash( $_POST['flowhub_mcp_url'] ) ) : '',
 				'enabled'                        => ! empty( $_POST['enabled'] ),
 				'cache_ttl'                      => isset( $_POST['cache_ttl'] ) ? max( 0, min( 3600, absint( $_POST['cache_ttl'] ) ) ) : 300,
 				'test_endpoint'                  => isset( $_POST['test_endpoint'] ) ? sanitize_text_field( wp_unslash( $_POST['test_endpoint'] ) ) : '',
@@ -16412,7 +16413,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 			if ( is_array( $all_connections ) && isset( $all_connections[ $connection_id ] ) ) {
 				$all_connections[ $connection_id ]['secret_token'] = WP_MCP_AI_Pro_Remote_Site_Manager::encrypt_value( $secret_token );
-				update_option( 'wp_mcp_ai_pro_remote_sites', $all_connections );
+				update_option( 'wp_mcp_ai_pro_remote_sites', $all_connections, false );
 			}
 		}
 

@@ -5,17 +5,27 @@
  *   - `image-editor`    — react-konva canvas + react-image-crop overlay.
  *   - `media-player`    — react-player universal video/audio player.
  *   - `audio-waveform`  — wavesurfer.js waveform visualizer.
+ *   - `fashion-studio`  — AI fashion production suite (lazy-loaded).
+ *
+ * `fashion-studio` is lazy so pages using the other modes defer its render
+ * cost. (esbuild iife output bundles the chunk inline — the dynamic import
+ * defers rendering via React.lazy; true network-level splitting would require
+ * an esm-format build.)
  *
  * @since 0.1.0
  */
 
-import type { ReactElement } from 'react';
+import { lazy, Suspense, type ReactElement } from 'react';
 import { __ } from '@wordpress/i18n';
 import { ImageEditor } from './components/ImageEditor';
 import { MediaPlayer } from './components/MediaPlayer';
 import { AudioWaveform } from './components/AudioWaveform';
 
-export type MediaMode = 'image-editor' | 'media-player' | 'audio-waveform';
+const FashionStudio = lazy( () =>
+	import( './components/FashionStudio' ).then( ( module ) => ( { default: module.FashionStudio } ) )
+);
+
+export type MediaMode = 'image-editor' | 'media-player' | 'audio-waveform' | 'fashion-studio';
 
 interface AppProps {
 	config: {
@@ -28,7 +38,7 @@ interface AppProps {
 	};
 }
 
-const ALLOWED_MODES: MediaMode[] = [ 'image-editor', 'media-player', 'audio-waveform' ];
+const ALLOWED_MODES: MediaMode[] = [ 'image-editor', 'media-player', 'audio-waveform', 'fashion-studio' ];
 
 export function App( { config }: AppProps ) {
 	const mode: MediaMode =
@@ -44,6 +54,19 @@ export function App( { config }: AppProps ) {
 			break;
 		case 'audio-waveform':
 			surface = <AudioWaveform src={ config.src } toolkit={ config.toolkit } />;
+			break;
+		case 'fashion-studio':
+			surface = (
+				<Suspense
+					fallback={
+						<div className="nvoos-ms-loading" role="status">
+							{ __( 'Loading Fashion Studio…', 'nvoos-media-studio' ) }
+						</div>
+					}
+				>
+					<FashionStudio src={ config.src } toolkit={ config.toolkit } />
+				</Suspense>
+			);
 			break;
 		case 'image-editor':
 		default:
@@ -66,4 +89,3 @@ export function App( { config }: AppProps ) {
 		</div>
 	);
 }
-

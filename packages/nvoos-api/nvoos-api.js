@@ -13,64 +13,57 @@
 
 // ── Config ──────────────────────────────────────────────────────────
 
-/** Minimal config needed by the endpoint builders. */
-export interface ApiConfig {
-  /** Base REST URL (e.g. "https://example.com/wp-json/mcp-ai/v1"). */
-  restUrl: string;
-  /** Optional upload endpoint override. */
-  uploadEndpoint?: string;
-  /** Optional transcripts endpoint override. */
-  transcriptsEndpoint?: string;
-  /** WordPress REST nonce for authenticated requests. */
-  nonce?: string;
-}
+/**
+ * Minimal config needed by the endpoint builders.
+ * (Type contract: see dist/nvoos-api.d.ts → ApiConfig.)
+ *
+ * @typedef {object} ApiConfig
+ * @property {string} restUrl Base REST URL (e.g. "https://example.com/wp-json/mcp-ai/v1").
+ * @property {string} [uploadEndpoint] Optional upload endpoint override.
+ * @property {string} [transcriptsEndpoint] Optional transcripts endpoint override.
+ * @property {string} [nonce] WordPress REST nonce for authenticated requests.
+ */
 
 // ── Endpoint Builders ────────────────────────────────────────────────
 
-function restBase(config: ApiConfig): string {
+function restBase(config) {
   return config.restUrl.replace(/\/+$/, '');
 }
 
 /** Chat endpoint (POST). */
-export function chatEndpoint(config: ApiConfig): string {
+export function chatEndpoint(config) {
   return `${restBase(config)}/chat`;
 }
 
 /** Chat-client endpoint (POST, for SPA / SSE adapter). */
-export function chatClientEndpoint(config: ApiConfig): string {
+export function chatClientEndpoint(config) {
   return `${restBase(config)}/chat-client`;
 }
 
 /** Tools list endpoint (GET). */
-export function toolsListEndpoint(config: ApiConfig): string {
+export function toolsListEndpoint(config) {
   return `${restBase(config)}/tools`;
 }
 
 /** Tool execution endpoint (POST). */
-export function toolExecuteEndpoint(config: ApiConfig): string {
+export function toolExecuteEndpoint(config) {
   return `${restBase(config)}/tools/execute`;
 }
 
 /** Upload endpoint (POST multipart). */
-export function uploadEndpoint(config: ApiConfig): string {
+export function uploadEndpoint(config) {
   return config.uploadEndpoint || `${restBase(config)}/upload`;
 }
 
 /** Transcripts endpoint (GET / POST / DELETE). */
-export function transcriptsEndpoint(
-  config: ApiConfig,
-  sessionKey?: string,
-): string {
+export function transcriptsEndpoint(config, sessionKey) {
   const base = config.transcriptsEndpoint || `${restBase(config)}/transcripts`;
   if (!sessionKey) return base;
   return `${base}/${encodeURIComponent(sessionKey)}`;
 }
 
 /** History sessions endpoint (GET). */
-export function historyEndpoint(
-  config: ApiConfig,
-  params?: Record<string, string | number>,
-): string {
+export function historyEndpoint(config, params) {
   let url = `${restBase(config)}/history`;
   if (params) {
     const qs = Object.entries(params)
@@ -82,10 +75,7 @@ export function historyEndpoint(
 }
 
 /** SSE endpoint (GET, EventSource). */
-export function sseEndpoint(
-  config: ApiConfig,
-  params?: Record<string, string | number>,
-): string {
+export function sseEndpoint(config, params) {
   let url = `${restBase(config)}/sse`;
   if (params) {
     const qs = Object.entries(params)
@@ -98,17 +88,18 @@ export function sseEndpoint(
 
 // ── Payload Builders ─────────────────────────────────────────────────
 
-export interface ToolExecutionPayload {
-  tool: string;
-  arguments: Record<string, unknown>;
-  assistant_id?: string | number;
-}
+/**
+ * Payload for a tool execution request.
+ * (Type contract: see dist/nvoos-api.d.ts → ToolExecutionPayload.)
+ *
+ * @typedef {object} ToolExecutionPayload
+ * @property {string} tool
+ * @property {Record<string, unknown>} arguments
+ * @property {string|number} [assistant_id]
+ */
 
 /** Build the payload for a chat request (non-streaming). */
-export function buildChatPayload(
-  assistantId: string | number,
-  messages: unknown[],
-): Record<string, unknown> {
+export function buildChatPayload(assistantId, messages) {
   return {
     assistant_id: assistantId,
     messages,
@@ -117,9 +108,7 @@ export function buildChatPayload(
 }
 
 /** Build the payload for a tool execution request. */
-export function buildToolExecutionPayload(
-  payload: ToolExecutionPayload,
-): Record<string, unknown> {
+export function buildToolExecutionPayload(payload) {
   return {
     tool: payload.tool,
     arguments: payload.arguments,
@@ -130,8 +119,8 @@ export function buildToolExecutionPayload(
 // ── Auth Headers ─────────────────────────────────────────────────────
 
 /** Build authenticated WP REST headers. */
-export function buildAuthHeaders(config: ApiConfig): Record<string, string> {
-  const headers: Record<string, string> = {
+export function buildAuthHeaders(config) {
+  const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   };
@@ -142,7 +131,7 @@ export function buildAuthHeaders(config: ApiConfig): Record<string, string> {
 }
 
 /** Build guest (unauthenticated) WP REST headers. */
-export function buildGuestHeaders(): Record<string, string> {
+export function buildGuestHeaders() {
   return {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -153,11 +142,7 @@ export function buildGuestHeaders(): Record<string, string> {
 // ── Typed Fetch Helpers ──────────────────────────────────────────────
 
 /** Perform a typed GET request. */
-export async function wpGet<T>(
-  url: string,
-  headers: Record<string, string>,
-  signal?: AbortSignal,
-): Promise<T> {
+export async function wpGet(url, headers, signal) {
   const response = await fetch(url, {
     method: 'GET',
     headers,
@@ -166,23 +151,16 @@ export async function wpGet<T>(
   });
 
   if (!response.ok) {
-    const errorBody: unknown = await response.json().catch(() => null);
-    const message =
-      (errorBody as Record<string, string> | null)?.message ??
-      response.statusText;
+    const errorBody = await response.json().catch(() => null);
+    const message = errorBody?.message ?? response.statusText;
     throw new Error(`WP REST GET ${url} ${response.status}: ${message}`);
   }
 
-  return response.json() as Promise<T>;
+  return response.json();
 }
 
 /** Perform a typed POST request. */
-export async function wpPost<T>(
-  url: string,
-  body: unknown,
-  headers: Record<string, string>,
-  signal?: AbortSignal,
-): Promise<T> {
+export async function wpPost(url, body, headers, signal) {
   const response = await fetch(url, {
     method: 'POST',
     headers,
@@ -192,24 +170,17 @@ export async function wpPost<T>(
   });
 
   if (!response.ok) {
-    const errorBody: unknown = await response.json().catch(() => null);
-    const message =
-      (errorBody as Record<string, string> | null)?.message ??
-      response.statusText;
+    const errorBody = await response.json().catch(() => null);
+    const message = errorBody?.message ?? response.statusText;
     throw new Error(`WP REST POST ${url} ${response.status}: ${message}`);
   }
 
-  return response.json() as Promise<T>;
+  return response.json();
 }
 
 /** Upload a file via multipart POST. */
-export async function wpUpload<T>(
-  url: string,
-  file: File,
-  headers: Record<string, string>,
-  signal?: AbortSignal,
-): Promise<T> {
-  const uploadHeaders: Record<string, string> = {};
+export async function wpUpload(url, file, headers, signal) {
+  const uploadHeaders = {};
   for (const [key, value] of Object.entries(headers)) {
     if (key.toLowerCase() !== 'content-type') {
       uploadHeaders[key] = value;
@@ -225,25 +196,23 @@ export async function wpUpload<T>(
   });
 
   if (!response.ok) {
-    const errorBody: unknown = await response.json().catch(() => null);
-    const message =
-      (errorBody as Record<string, string> | null)?.message ??
-      response.statusText;
+    const errorBody = await response.json().catch(() => null);
+    const message = errorBody?.message ?? response.statusText;
     throw new Error(`WP REST upload ${url} ${response.status}: ${message}`);
   }
 
-  return response.json() as Promise<T>;
+  return response.json();
 }
 
 // ── Utilities ────────────────────────────────────────────────────────
 
 /** Sanitise a string for safe use as a session / storage key. */
-export function sanitizeSessionKey(raw: string): string {
+export function sanitizeSessionKey(raw) {
   return raw.replace(/[^0-9a-zA-Z_-]/g, '_');
 }
 
 /** Format bytes to a human-readable string. */
-export function formatBytes(bytes: number, decimals = 1): string {
+export function formatBytes(bytes, decimals = 1) {
   if (bytes === 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];

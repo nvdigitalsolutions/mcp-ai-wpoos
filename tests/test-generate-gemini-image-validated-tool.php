@@ -230,4 +230,23 @@ class Test_WP_MCP_AI_Tool_Generate_Gemini_Image_Validated extends WP_UnitTestCas
 		$this->assertIsArray( $shortcuts );
 		$this->assertNotEmpty( $shortcuts );
 	}
+
+	/**
+	 * Test the aspect_ratio 'auto' value passes validation.
+	 *
+	 * The registry auto-upgrades generate_gemini_image to this validated
+	 * variant, and the base tool's get_allowed_aspect_ratios() advertises
+	 * 'auto' ("Let AI decide"). The validated contract must accept it too.
+	 */
+	public function test_aspect_ratio_auto_passes_validation() {
+		$service = \WP_MCP_AI\Validators\WP_MCP_AI_Validator_Service::get_instance();
+		$this->assertNotNull( $service, 'Symfony Validator service should be available.' );
+
+		$args               = new \WP_MCP_AI\Tools\Arguments\GenerateGeminiImageArguments();
+		$args->prompt       = 'A red scarf on a white background';
+		$args->aspect_ratio = 'auto';
+
+		$violations = $service->validate( $args );
+		$this->assertSame( 0, count( $violations ), '"auto" should be an accepted aspect ratio.' );
+	}
 }

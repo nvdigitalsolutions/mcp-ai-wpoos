@@ -1,11 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 55 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates, addon-tool standalone contract fatals, WP_CLI stub constant leak, self-instantiating double-render, wpdb error-HTML envelope leaks), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 66 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-01"
+  last-updated: "2026-10-05"
+  plugin-version: "1.1.97"
+  plugin-version-tested: "1.1.97"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -23,6 +25,11 @@ repair loop runs.
 - "Continue the test-suite cluster" / "fix the next cluster" requests
 - Deciding whether a failure is test drift or a production bug
 - Opening the cluster PR (branch/commit/validation conventions)
+
+For **proactive per-toolkit hardening audits** (shell-call guards, nonexistent
+client methods, provider array-content parsing, enum/service mismatches) use
+the `mcp-ai-wpoos-toolkit-audit` skill — it drives the audit loop and reuses
+this skill's cluster/PR/validation mechanics.
 
 ## Test environment (Docker)
 
@@ -766,6 +773,177 @@ the changed files is the substantive gate; plan CI waits accordingly.
       raw `$wpdb->last_error` text — assert the envelope + the guard's log
       event.
 
+  56. **Provider returns array `message.content` → `preg_match(): Argument #2
+      ($subject) must be of type string, array given` (v1.1.92, PR #6845).**
+      Gemini (and some OpenAI-compatible gateways, incl. DeepSeek endpoints)
+      return `message.content` as an **array of parts**, not a string — any
+      consumer feeding it straight into `preg_match()`/`json_decode()`/
+      string functions fatals. The six research tools all did (provider
+      response, parse entry, and array content nested inside the JSON body).
+      Fix layers:
+
+      - **Normalize at every choke point** — the shared
+        `WP_MCP_AI_Tool_Research_Content_Normalization` trait flattens
+        content-part arrays to strings before any string operation; apply it
+        on the provider response, the parsed entry, and nested array content.
+      - **Normalize in the client** —
+        `WP_MCP_AI_DeepSeek_Client::normalize_response()` flattens array
+        `message.content` blocks so every DeepSeek consumer (chat,
+        transcripts, tools) gets a string; leave `reasoning_content` and
+        `tool_calls` untouched.
+      - **Test both shapes** — assert the tool handles array content **and**
+        plain-string content identically (the normalization suite feeds both
+        shapes through each choke point); a regression is re-feeding the raw
+        array into a string function.
+
+  57. **Pro tool coverage manifest CI failure —
+      `test_tool_class_manifest_is_up_to_date` (v1.1.92, PR #6847; the #6828
+      precedent).** Every new Pro tool class must land in
+      `addons/pro/tests/tools/.coverage-manifest.txt` — a PR that registers
+      tools without regenerating the manifest fails the registry-coverage
+      suite. Fix: run `bin/generate-tool-coverage-manifest.sh` in the same PR
+      and commit the manifest diff with the tools. The manifest lists tool
+      **classes** — a shared non-tool class in the same folder (e.g. the
+      fashion transform) appears there without adding a slug to the
+      registration count, so don't assert slug counts from the manifest
+      alone.
+
+  58. **New registry tools missing from every assistant preset →
+      `test_all_tools_accounted_for_in_presets` (v1.1.93, PR #6851).** When a
+      PR registers new tools in `includes/class-wp-mcp-ai-tool-registry.php`
+      (or the Pro map) without adding them to an assistant preset, the
+      all-tools-accounted-for gate fails. Fix layers:
+
+      - **Add the tools to a preset** — `get_fleet_status`/`get_site_uptime`
+        joined the `site_management` preset (site-information block); pick the
+        preset that matches the tool family.
+      - **Both coverage manifests** — the **base** manifest lives at
+        `tests/tools/.coverage-manifest.txt` (the Pro one at
+        `addons/pro/tests/tools/.coverage-manifest.txt`, pattern 57); new base
+        tool classes must land in both the preset(s) and the base manifest, or
+        `test_tool_class_manifest_is_up_to_date` fails too.
+      - **Image/attachment assertions follow the pipeline** — a test pinning
+        an earlier behavior (e.g. `convert_image_files_to_image_url` asserting
+        `http` URLs after #6846 switched to inline `data:image/…;base64`)
+        must move to the new contract when the production path changes.
+
+  59. **Tool-rule validation failures rendered as HTTP 500 — a `WP_Error`
+      without an HTTP status (v1.1.93, PR #6853).** `validate_tool_execution()`
+      returned `tool_validation_failed` with no `status` key, and the WP REST
+      layer converts a status-less `WP_Error` into a raw 500 (masked further by
+      `api_error_verbosity: safe`). Fix: every validation `WP_Error` carries
+      `status => 400` with the error list, so failures surface as readable 400s
+      with the real reason. Regression-test the failure path asserting both the
+      HTTP status **and** the error payload, and verify the credential gate:
+      `validate_dependencies()` must resolve `required_settings` keys through
+      `WP_MCP_AI_Credential_Resolver` (env vars, constants, WP 7.0 Connectors)
+      so keys configured outside the settings array can't false-negative the
+      gate.
+
+  60. **Registry auto-upgrade to the `_validated` variant rejects values the
+      base tool advertises (v1.1.93, PR #6859).**
+      `WP_MCP_AI_Tool_Registry::get_tool()` auto-upgrades
+      `edit_gemini_image`/`generate_gemini_image` to their `_validated`
+      wrappers whenever registered (PHP 8+ with Symfony — the default), so the
+      validator's constraints are the real gate. The validated `aspect_ratio`
+      `Choice` allowed only `1:1, 3:4, 4:3, 9:16, 16:9` while the base tools
+      advertise `'auto'` in `get_allowed_aspect_ratios()` — callers passing the
+      advertised default got a status-less `validation_failed` → REST 500. Fix:
+      keep every validated `Choice`/constraint in sync with the base tool's
+      advertised set, and regression-test both directions (the advertised
+      value passes; an unknown value still fails).
+
+  61. **New severity-5 PHPCS sniffs gate previously-unchecked dispatch
+      patterns (v1.1.94, PR #6866).** The `WPMCPAI.Decisions.ScopeDeclared`
+      sniff requires every `->decide()` / `->create_decision()` call to sit in
+      a method whose docblock declares `@decision-domain` +
+      `@decision-authority` — an existing dispatch that predates the sniff
+      (e.g. the verification cascade, `typesafe_*` tools) fails CI until the
+      docblock + `WP_MCP_AI_Decision_Scope_Guard::gate()` call are added.
+      Triage: run the sniff standalone over the tree first (`phpcs --sniffs=
+      WPMCPAI.Decisions.ScopeDeclared`), fix the declarations before touching
+      behavior (the guard must be a zero-behavior-change pass), and assert the
+      banned-domain fail-closed path (the formula never runs — assert the
+      deterministic fallback result, not an absence of calls).
+
+  62. **`wp_check_php_version()` polyfill declared before the admin-includes
+      load → `Cannot redeclare` fatal (v1.1.94, PR #6870).** `get_site_health`
+      pre-loaded `wp-admin/includes/misc.php` only when `WP_Site_Health`
+      wasn't loaded — in REST/CLI/chat contexts the file was skipped, the
+      polyfill declared, and core's later lazy require re-declared the
+      function → critical-error page. Fix: `file_exists()`/`function_exists()`
+      guard the **pre-load** (`require_once ABSPATH . 'wp-admin/includes/misc.php'`
+      when the function is missing) *before* declaring the polyfill, and
+      regression-test with `WP_Site_Health` already loaded (the exact
+      condition that used to skip the require).
+
+  63. **A domain-event object fired through a legacy `wp_mcp_ai_*` hook
+      crashes every subscriber with required parameters → HTTP 500 on the
+      OOS path (v1.1.94, PR #6872).** The WordPress `EventDispatcher` fired
+      the four mapped domain events as raw event objects; legacy subscribers
+      like `WP_MCP_AI_Response_Attachments::handle_chat_response()` declared
+      `( $content, $assistant_id, $request )` and threw `ArgumentCountError`.
+      Fix: the dispatcher translates mapped events into the documented legacy
+      argument tuples before firing (unknown events keep the single-event
+      shape), and every subscriber must stay null-safe for the `$request`
+      slot (it is null on the OOS path). Regression-test the end-to-end
+      dispatch (REST request with the OOS engine enabled + intercepted
+      provider HTTP) rather than the hook alone.
+
+  64. **Chat SSE streams reset by proxies during long agentic tool runs —
+      `net::ERR_HTTP2_PROTOCOL_ERROR` / `SSE stream processing error`.
+      Cloudflare (~100 s read timeout) and nginx (`proxy_read_timeout`, often
+      60 s on Cloudways) reset connections that sit idle while PHP is blocked
+      inside a tool call or waiting on the model. PHP is single-threaded, so
+      NO frames can be emitted during a blocking tool call — server-side
+      headers alone cannot fix this. The shipped fix (v1.9.5) emits SSE
+      keepalive comment frames (`send_sse_keepalive()` →
+      `WP_MCP_AI_SSE_Handler::send_sse_comment()`) at every inter-step
+      boundary in `handle_chat_request_with_streaming()`: after the SSE
+      headers, before the initial LLM call, between `tool_start` and
+      `execute_tool_call_internal()`, and before each in-loop LLM call.
+      Comment frames are invisible to EventSource clients but flush through
+      proxies and reset idle counters. Test via an anonymous recording
+      `WP_MCP_AI_SSE_Handler` subclass injected through the REST constructor's
+      `$sse_handler` param (don't delegate to the parent — it echoes and
+      touches headers) + a mock router returning tool_calls then a final
+      response; assert the ordered call log
+      (`tests/rest/test-sse-stream-keepalive.php`). Limits: a single tool
+      call longer than the proxy timeout still kills the stream — the durable
+      fix is deadline-triggered offload to the job stream (proposal:
+      `docs/project/proposals/sse-stream-hardening-long-run-offload-proposal.md`).
+  65. **A test context mysteriously lacks tools after v1.1.96 — the lazy
+      registry, not a missing registration.** #6896 defers the ~350 default
+      tool loads on plain front-end requests; `wp_mcp_ai_is_plugin_runtime_context()`
+      returns true for REST/admin/AJAX/cron/CLI/WP-CLI/installing **and when
+      `WP_TESTS_CONFIG_FILE_PATH` is defined**, so PHPUnit runs still get the
+      eager defaults. A test that runs in a non-runtime context (e.g. a raw
+      front-end `do_action('wp')` simulation or a hand-rolled bootstrap that
+      unsets the config constant) will see third-party tools but no defaults
+      until first access — assert through `ensure_default_tools_loaded()`
+      (protected; exercise via a real execution or Reflection) or set the
+      `wp_mcp_ai_is_plugin_runtime_context` filter to true in `setUp()`. Also
+      from #6896: the `WP_MCP_AI_Inline_Async_Tick_Trait` double-declaration
+      fatal — addons shipping a trait stub (docs-hub, graphify, saas-controller)
+      crashed plugin activation in tests with addons loaded; the fix is the
+      `trait_exists()` guard pattern — when a plugin trait may collide with an
+      addon stub, guard every `require` of the trait file with `trait_exists()`
+      (never rely on require_once ordering alone).
+  66. **The `parity-check` CI job fails after touching a chat/guardrail surface
+      (v1.1.97+).** #6913 added a CI job that runs `bin/check-chat-parity.php`,
+      which now tracks **all four** OOS/legacy guardrail surfaces (35 → 38
+      features, 100% parity): the gate-exception → envelope translation
+      (428 confirmation / 429 limits via `translate_gate_exception()`),
+      `apply_pre_response_render()` at the final payload (legacy non-streaming,
+      legacy streaming's final SSE event, OOS handler), the
+      `wp_mcp_ai_agentic_iteration_complete` domain-event bridge, and the
+      `wp_mcp_ai_before_tool_execute` waterfall bridge. Any PR that adds,
+      moves, or gates one of those surfaces without updating the script's
+      feature assertions fails the `parity-check` job — extend the script in
+      the same PR (the script is the regression net for guardrail symmetry
+      between the legacy and OOS paths; its 100% parity is asserted by
+      `tests/test-oos-parity-gaps.php`).
+
 ## Production fix vs test fix
 
 - **Fix production** when the test exposes a genuine bug: unsafe coercion
@@ -904,6 +1082,7 @@ than trusting an old list.
 - Test-writing patterns & coverage policy: `.context/testing.md`
 - Remaining-fixes tracker: `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`
 - Plugin operational guide: `.agents/skills/mcp-ai-wpoos-plugin/SKILL.md`
+- Per-toolkit hardening audit loop: `.agents/skills/mcp-ai-wpoos-toolkit-audit/SKILL.md`
 - **ID-handoff contract suites (permanent CI infrastructure):**
   `tests/test-tool-id-handoff-contract.php` (L1 honesty — checks
   `tests/fixtures/tool-contract-manifest.php` against the live registry in

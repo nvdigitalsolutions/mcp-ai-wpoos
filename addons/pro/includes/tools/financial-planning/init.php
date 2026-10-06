@@ -37,6 +37,11 @@ if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 	add_action( WP_MCP_AI_Tool_Price_Alerts::CRON_HOOK, array( 'WP_MCP_AI_Tool_Price_Alerts', 'run_daily_check' ) );
 	WP_MCP_AI_Tool_Price_Alerts::maybe_schedule_cron();
 
+	// Finnhub optional primary provider (OpenStock parity, proposal 051).
+	// Hooks the yfinance filter seam at priority 5, ahead of the Node client.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-finnhub-provider.php';
+	WP_MCP_AI_Finnhub_Provider::register_filters();
+
 	// Register Financial Account meta fields with JetEngine for listing/discovery.
 	if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
 		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( 'mcp_ai_fin_account' );

@@ -264,6 +264,17 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/update.php' );
 		}
 
+		// Pre-load misc.php whenever wp_check_php_version() is absent. Core's
+		// get_test_authorization_header() requires misc.php lazily (for
+		// got_mod_rewrite()); if the polyfill below declared the function
+		// first, that later require would fatal with "Cannot redeclare
+		// wp_check_php_version()". Loading the real definition here keeps
+		// the polyfill active only on WordPress versions where misc.php does
+		// not provide the function.
+		if ( ! function_exists( 'wp_check_php_version' ) ) {
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/misc.php' );
+		}
+
 		// If WP_Site_Health is already loaded we only need the remaining polyfills
 		// below.  Skip the heavier admin-includes loading.
 		if ( ! class_exists( 'WP_Site_Health', false ) ) {

@@ -157,7 +157,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 				),
 				'model'              => array(
 					'type'        => 'string',
-					'description' => __( 'AI model to use. For OpenAI: gpt-image-2 (Images 2.0, recommended), gpt-image-1.5, gpt-image-1, dall-e-3. For Gemini: gemini-3.1-flash-image (Nano Banana 2, recommended), gemini-2.5-flash-image.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'AI model to use. For OpenAI: gpt-image-2 (Images 2.0, recommended), gpt-image-1.5, gpt-image-1, dall-e-3. For Gemini: gemini-3.1-flash-image (Nano Banana 2, recommended).', 'mcp-ai-wpoos-pro' ),
 					'default'     => self::DEFAULT_MODEL,
 				),
 				'size'               => array(
@@ -1137,7 +1137,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		return array(
 			'model_requirements'    => array(
 				'providers' => array( 'openai', 'gemini' ),
-				'models'    => array( 'gpt-image-2', 'gpt-image-1.5', 'gpt-image-1', 'dall-e-3', 'gemini-3.1-flash-image', 'gemini-2.5-flash-image' ),
+				'models'    => array( 'gpt-image-2', 'gpt-image-1.5', 'gpt-image-1', 'dall-e-3', 'gemini-3.1-flash-image' ),
 				'required'  => true,
 			),
 			'parameter_constraints' => array(

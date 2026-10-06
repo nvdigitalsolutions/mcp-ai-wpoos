@@ -33,10 +33,11 @@ Stable contract: REST namespace `mcp-ai-pro/v1`, routes `/mcp`, `/mcp/{slug}`, `
 
 - **Reads from:** the global tool registry (each toolkit server exposes a *subset* of registered tools), per-server option key `wp_mcp_ai_toolkit_mcp_server_{slug}` (enabled flag, tool allow-list, disabled surfaces, disabled mounts, rate limit, payload cap, max iterations), per-server tokens issued through `Pro_Toolkit_Server_Token`, JSON-RPC request bodies on the REST routes.
 - **Writes to:** the toolkit-server option keys above (via `admin-post.php` action `wp_mcp_ai_save_toolkit_mcp_server`), the cross-mount audit log, JSON-RPC response payloads.
-- **Upstream callers:** external MCP clients (Claude Desktop, other LLM agents), the Pro admin page [`WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page`](../admin/class-wp-mcp-ai-pro-toolkit-mcp-servers-page.php), the `/mcp-server` slash command and `wp pro mcp-server` CLI command.
+- **Upstream callers:** external MCP clients (Claude Desktop, other LLM agents), the Pro admin page [`WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page`](../admin/class-wp-mcp-ai-pro-toolkit-mcp-servers-page.php), the `/mcp-server` slash command and `wp pro mcp-server` CLI command, and the assistant chat pipeline via the `wp_mcp_ai_chat_effective_tools` bridge below.
 - **Downstream collaborators:** [`includes/tools/`](../../../../includes/tools/) (each server resolves tools via the registry), [`includes/measurement/`](../../../../includes/measurement/) (observability card and audit log emit metric events).
 - **Events fired:** `wp_mcp_ai_register_toolkit_servers` (the registry's bootstrap action — every server registers itself here).
-- **Events listened to:** `init` priority 12 (bootstrap), `rest_api_init` (route registration), `admin_post_wp_mcp_ai_save_toolkit_mcp_server` (settings persistence).
+- **Events listened to:** `init` priority 12 (bootstrap), `rest_api_init` (route registration), `admin_post_wp_mcp_ai_save_toolkit_mcp_server` (settings persistence), `wp_mcp_ai_chat_effective_tools` (chat-tool exposure), `wp_mcp_ai_prompt_window_toolkit_tool_slugs` (context-window estimator).
+- **Cross-folder load:** `mcp-servers-init.php` `require_once`s [`../admin/class-wp-mcp-ai-pro-metabox-toolkit-mcp-servers.php`](../admin/class-wp-mcp-ai-pro-metabox-toolkit-mcp-servers.php) (definition only — no instantiation) so the assistant-grant lookup (`get_allowed_servers()`) resolves in REST/front-end contexts, where the `admin_toolkit_mcp` module's admin gate never runs. The JSON-RPC grant gate, the `initialize` `toolkitServers` metadata, and the chat bridge all depend on that load.
 
 ## Conventions
 

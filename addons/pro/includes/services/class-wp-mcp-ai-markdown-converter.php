@@ -35,7 +35,9 @@ if ( ! class_exists( 'WP_MCP_AI_Markdown_Converter' ) ) {
 		 * @return string Sanitized HTML fragment, or empty string on empty input.
 		 */
 		public static function to_html( $markdown ) {
-			$md = (string) $markdown;
+			// Reject array-shaped input instead of casting it to the literal
+			// string "Array" (e.g. a provider content-parts array).
+			$md = is_string( $markdown ) ? $markdown : ( is_scalar( $markdown ) ? (string) $markdown : '' );
 			$md = str_replace( array( "\r\n", "\r" ), "\n", $md );
 
 			if ( '' === trim( $md ) ) {

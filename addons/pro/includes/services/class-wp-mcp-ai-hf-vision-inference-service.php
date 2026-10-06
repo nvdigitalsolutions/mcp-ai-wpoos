@@ -799,6 +799,17 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 			);
 		}
 
+		// A valid-JSON scalar body (null, string, number) would otherwise hit the
+		// `array` type hints on normalize_detection_result() /
+		// normalize_classification_result() and TypeError on PHP 8.
+		if ( ! is_array( $decoded ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_hf_vision_unexpected_body',
+				__( 'HuggingFace returned an unexpected response shape.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => $code )
+			);
+		}
+
 		return $decoded;
 	}
 

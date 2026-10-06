@@ -263,6 +263,9 @@ class WP_MCP_AI_Tool_Typesafe_Decide implements WP_MCP_AI_Tool_Interface, WP_MCP
 	/**
 	 * Execute the tool.
 	 *
+	 * @decision-domain advisory
+	 * @decision-authority inform
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context including user_id.
 	 * @return array|WP_Error Tool results or error.
@@ -324,6 +327,30 @@ class WP_MCP_AI_Tool_Typesafe_Decide implements WP_MCP_AI_Tool_Interface, WP_MCP
 				}
 				$weights[ $name ] = (float) $weight;
 			}
+		}
+
+		// Decision-scope gate (Proposal 052): this tool reports verdicts to
+		// the caller and never executes them itself — advisory / inform.
+		if ( ! class_exists( 'WP_MCP_AI_Decision_Scope_Guard' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_decision_guard_unavailable',
+				__( 'The decision-scope guard is not available.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$gate = WP_MCP_AI_Decision_Scope_Guard::gate(
+			WP_MCP_AI_Decision_Scope_Guard::DOMAIN_ADVISORY,
+			WP_MCP_AI_Decision_Scope_Guard::AUTHORITY_INFORM,
+			static function () {
+				return new WP_Error(
+					'wp_mcp_ai_decision_scope_gated',
+					__( 'This decision path is gated by the decision-scope guard.', 'mcp-ai-wpoos' )
+				);
+			}
+		);
+
+		if ( true !== $gate ) {
+			return $gate;
 		}
 
 		if ( 'openrouter' === $transport ) {

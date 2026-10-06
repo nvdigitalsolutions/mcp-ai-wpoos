@@ -102,6 +102,22 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	protected $verify_ssl;
 
 	/**
+	 * Outbound HTTP proxy (host:port) for discovery/token requests.
+	 *
+	 * Empty when no proxy applies.
+	 *
+	 * @var string
+	 */
+	protected $proxy_url = '';
+
+	/**
+	 * Outbound HTTP proxy credentials (user:pass).
+	 *
+	 * @var string
+	 */
+	protected $proxy_auth = '';
+
+	/**
 	 * Timeout for individual discovery probes in seconds.
 	 *
 	 * Discovery issues several sequential requests; capping each probe
@@ -137,8 +153,10 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @param array  $options {
 	 *     Optional. OAuth client options.
 	 *
-	 *     @type int  $timeout    HTTP request timeout in seconds. Default 30.
-	 *     @type bool $verify_ssl Whether to verify SSL. Default true.
+	 *     @type int    $timeout    HTTP request timeout in seconds. Default 30.
+	 *     @type bool   $verify_ssl Whether to verify SSL. Default true.
+	 *     @type string $proxy_url  Optional outbound HTTP proxy (host:port).
+	 *     @type string $proxy_auth Optional proxy credentials (user:pass).
 	 * }
 	 */
 	public function __construct( $server_url, array $options = array() ) {
@@ -146,6 +164,8 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		$this->timeout           = isset( $options['timeout'] ) ? max( 1, min( 120, absint( $options['timeout'] ) ) ) : 30;
 		$this->discovery_timeout = max( 3, min( 10, $this->timeout ) );
 		$this->verify_ssl        = isset( $options['verify_ssl'] ) ? (bool) $options['verify_ssl'] : true;
+		$this->proxy_url         = isset( $options['proxy_url'] ) ? (string) $options['proxy_url'] : '';
+		$this->proxy_auth        = isset( $options['proxy_auth'] ) ? (string) $options['proxy_auth'] : '';
 		$this->redirect_uri      = rest_url( 'mcp-ai/v1/mcp-apps/oauth/callback' );
 	}
 
@@ -257,13 +277,17 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			return null;
 		}
 
-		$response = wp_remote_get(
-			$url,
-			array(
-				'timeout'   => $this->discovery_timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array( 'Accept' => 'application/json' ),
-			)
+		$response = $this->run_proxied_request(
+			function () use ( $url ) {
+				return wp_remote_get(
+					$url,
+					array(
+						'timeout'   => $this->discovery_timeout,
+						'sslverify' => $this->verify_ssl,
+						'headers'   => array( 'Accept' => 'application/json' ),
+					)
+				);
+			}
 		);
 
 		if ( is_wp_error( $response ) ) {
@@ -376,24 +400,28 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return array|null RFC 8414 metadata, or null when the probe fails.
 	 */
 	protected function discover_via_www_authenticate( &$attempts, &$transport_error ) {
-		$mcp_response = wp_remote_post(
-			$this->server_url,
-			array(
-				'timeout'   => $this->discovery_timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array(
-					'Content-Type' => 'application/json',
-					'Accept'       => 'application/json',
-				),
-				'body'      => wp_json_encode(
+		$mcp_response = $this->run_proxied_request(
+			function () {
+				return wp_remote_post(
+					$this->server_url,
 					array(
-						'jsonrpc' => '2.0',
-						'id'      => 0,
-						'method'  => 'tools/list',
-						'params'  => new stdClass(),
+						'timeout'   => $this->discovery_timeout,
+						'sslverify' => $this->verify_ssl,
+						'headers'   => array(
+							'Content-Type' => 'application/json',
+							'Accept'       => 'application/json',
+						),
+						'body'      => wp_json_encode(
+							array(
+								'jsonrpc' => '2.0',
+								'id'      => 0,
+								'method'  => 'tools/list',
+								'params'  => new stdClass(),
+							)
+						),
 					)
-				),
-			)
+				);
+			}
 		);
 
 		$status_code = is_wp_error( $mcp_response ) ? 0 : (int) wp_remote_retrieve_response_code( $mcp_response );
@@ -489,17 +517,21 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			'application_type'           => 'web',
 		);
 
-		$response = wp_remote_post(
-			$registration_endpoint,
-			array(
-				'timeout'   => $this->timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array(
-					'Content-Type' => 'application/json',
-					'Accept'       => 'application/json',
-				),
-				'body'      => wp_json_encode( $body ),
-			)
+		$response = $this->run_proxied_request(
+			function () use ( $registration_endpoint, $body ) {
+				return wp_remote_post(
+					$registration_endpoint,
+					array(
+						'timeout'   => $this->timeout,
+						'sslverify' => $this->verify_ssl,
+						'headers'   => array(
+							'Content-Type' => 'application/json',
+							'Accept'       => 'application/json',
+						),
+						'body'      => wp_json_encode( $body ),
+					)
+				);
+			}
 		);
 
 		if ( is_wp_error( $response ) ) {
@@ -997,9 +1029,48 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		$this->state = sanitize_text_field( $state );
 	}
 
-	// -----------------------------------------------------------------------
+	// ----------------------------------------------------------------------- //
 	// Utility Methods
-	// -----------------------------------------------------------------------
+	// ----------------------------------------------------------------------- //
+
+	/**
+	 * Run an outbound HTTP call through the configured proxy.
+	 *
+	 * The WordPress HTTP API has no per-request proxy arguments, so the
+	 * proxy is attached at the cURL layer via the `http_api_curl` action
+	 * and removed again in a finally block — the same pattern the FlowHub
+	 * client uses. When no proxy is configured the callback runs unchanged.
+	 *
+	 * @since 1.1.93
+	 * @param callable $request Callable performing the wp_remote_*() call.
+	 * @return mixed The callable's return value.
+	 */
+	protected function run_proxied_request( $request ) {
+		if ( '' === $this->proxy_url ) {
+			return $request();
+		}
+
+		$proxy_url   = $this->proxy_url;
+		$proxy_auth  = $this->proxy_auth;
+		$apply_proxy = static function ( $handle ) use ( $proxy_url, $proxy_auth ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- Proxy support requires cURL-level configuration.
+			curl_setopt( $handle, CURLOPT_PROXY, $proxy_url );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+			curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+			if ( '' !== $proxy_auth ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt
+				curl_setopt( $handle, CURLOPT_PROXYUSERPWD, $proxy_auth );
+			}
+		};
+
+		add_action( 'http_api_curl', $apply_proxy, 10, 1 );
+
+		try {
+			return $request();
+		} finally {
+			remove_action( 'http_api_curl', $apply_proxy, 10 );
+		}
+	}
 
 	/**
 	 * POST to an OAuth endpoint with content negotiation.
@@ -1015,33 +1086,41 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return array|WP_Error Response array or WP_Error from wp_remote_post.
 	 */
 	protected function post_token_endpoint( $endpoint, array $body ) {
-		$response = wp_remote_post(
-			$endpoint,
-			array(
-				'timeout'   => $this->timeout,
-				'sslverify' => $this->verify_ssl,
-				'headers'   => array(
-					'Content-Type' => 'application/json',
-					'Accept'       => 'application/json',
-				),
-				'body'      => wp_json_encode( $body ),
-			)
+		$response = $this->run_proxied_request(
+			function () use ( $endpoint, $body ) {
+				return wp_remote_post(
+					$endpoint,
+					array(
+						'timeout'   => $this->timeout,
+						'sslverify' => $this->verify_ssl,
+						'headers'   => array(
+							'Content-Type' => 'application/json',
+							'Accept'       => 'application/json',
+						),
+						'body'      => wp_json_encode( $body ),
+					)
+				);
+			}
 		);
 
 		if ( ! is_wp_error( $response ) && 415 === wp_remote_retrieve_response_code( $response ) ) {
 			// The endpoint does not accept JSON. Retry with form-encoded
 			// parameters, which WordPress encodes from the array body.
-			$response = wp_remote_post(
-				$endpoint,
-				array(
-					'timeout'   => $this->timeout,
-					'sslverify' => $this->verify_ssl,
-					'headers'   => array(
-						'Content-Type' => 'application/x-www-form-urlencoded',
-						'Accept'       => 'application/json',
-					),
-					'body'      => $body,
-				)
+			$response = $this->run_proxied_request(
+				function () use ( $endpoint, $body ) {
+					return wp_remote_post(
+						$endpoint,
+						array(
+							'timeout'   => $this->timeout,
+							'sslverify' => $this->verify_ssl,
+							'headers'   => array(
+								'Content-Type' => 'application/x-www-form-urlencoded',
+								'Accept'       => 'application/json',
+							),
+							'body'      => $body,
+						)
+					);
+				}
 			);
 		}
 

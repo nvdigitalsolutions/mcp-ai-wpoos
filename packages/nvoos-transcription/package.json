@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-transcription",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "MediaRecorder-based audio recording + tool-call transcription pipeline for AI chat surfaces - Extracted from NV Open Operator System",
   "main": "dist/nvoos-transcription.js",
   "module": "dist/nvoos-transcription.js",

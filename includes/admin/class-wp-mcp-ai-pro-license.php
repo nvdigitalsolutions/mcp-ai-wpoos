@@ -156,7 +156,7 @@ class WP_MCP_AI_Pro_License {
 		$result = $this->activate_license( $license_key );
 
 		if ( ! is_wp_error( $result ) && ! empty( $result['success'] ) ) {
-			update_option( 'wp_mcp_ai_pro_license_key', $license_key );
+			update_option( 'wp_mcp_ai_pro_license_key', $license_key, false );
 			update_option( 'wp_mcp_ai_pro_license_status', 'valid' );
 			update_option( 'wp_mcp_ai_pro_plan', $result['plan'] ?? 'compliance' );
 			update_option( 'wp_mcp_ai_pro_license_expires', $result['expires'] ?? '' );

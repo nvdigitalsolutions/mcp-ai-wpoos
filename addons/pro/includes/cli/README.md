@@ -26,6 +26,15 @@ The contract is the **`wp mcp-ai <subcommand>`** invocation, not the PHP class. 
 | `WP_MCP_AI_Pro_CLI_Mcp_Server_Command` → `wp mcp-ai mcp-server` | `class-wp-mcp-ai-pro-cli-mcp-server-command.php` | `list`, `get`, `enable`, `disable`, `tools`, `token-generate`, `token-list`, `token-revoke`. Reference implementation. | WP-CLI runtime |
 | `WP_MCP_AI_Pro_CLI_Toolkit_Command` → `wp mcp-ai toolkit` | `class-wp-mcp-ai-pro-cli-toolkit-command.php` | `list`, `enable`, `disable` (accepts `--yes`). 24 toolkits. | WP-CLI runtime |
 | `WP_MCP_AI_Pro_CLI_Status_Command` → `wp mcp-ai pro status` | `class-wp-mcp-ai-pro-cli-status-command.php` | Default action showing Pro version, core version, active toolkits, remote connections. | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_CRM_Command` → `wp mcp-ai crm` | `class-wp-mcp-ai-pro-cli-crm-command.php` | `lead`, `deal`, `company`, `customer`, `activity`, `ticket` × list/get (CRM toolkit). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Incident_Command` → `wp mcp-ai incident` | `class-wp-mcp-ai-pro-cli-incident-command.php` | `list`, `get`, `resolve` (gated `manage_options`). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Maintenance_Command` → `wp mcp-ai maintenance` | `class-wp-mcp-ai-pro-cli-maintenance-command.php` | `list`, `get`, `cancel` (gated). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Schedule_Command` → `wp mcp-ai schedule` | `class-wp-mcp-ai-pro-cli-schedule-command.php` | `list`, `get`, `run` (gated, `--dry-run`). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Workflow_Command` → `wp mcp-ai workflow` | `class-wp-mcp-ai-pro-cli-workflow-command.php` | `list`, `get`, `validate`. | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Vault_Command` → `wp mcp-ai vault` | `class-wp-mcp-ai-pro-cli-vault-command.php` | `list`, `get` (metadata only — never renders secret material; gated). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Remote_Site_Command` → `wp mcp-ai remote-site` | `class-wp-mcp-ai-pro-cli-remote-site-command.php` | `list`, `get`, `test`, `peer-list` (read-only). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Communication_Command` → `wp mcp-ai communication` | `class-wp-mcp-ai-pro-cli-communication-command.php` | `contacts`, `messages` (chat-channels toolkit). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Media_Studio_Command` → `wp mcp-ai media-studio` | `class-wp-mcp-ai-pro-cli-media-studio-command.php` | `status`, `list-jobs`. | WP-CLI runtime |
 
 ## Inputs / Outputs / Neighbors
 

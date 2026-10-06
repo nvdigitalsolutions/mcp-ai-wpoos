@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-model-loader",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "Progressive AI model loading UI with 4-stage progress tracking - Extracted from NV Open Operator System",
   "main": "dist/nvoos-model-loader.js",
   "module": "dist/nvoos-model-loader.js",

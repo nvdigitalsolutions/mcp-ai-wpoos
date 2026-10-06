@@ -1,7 +1,9 @@
 # NV oOS OOS Engine Context
 
 > **GSD Context File** — Load this when working on the OOS (Open Operator System) engine: `includes/oos/`, `includes/bootstrap/oos-bridge.php`, the `lib/core` orchestrator/session/tool-scope domain, the Pro composition subsystem, or the parity CLIs.
-> Last reviewed: August 18, 2026 (v1.1.58, Proposal 029 Phases 0–5.8).
+> Last reviewed: October 6, 2026 (v1.1.97 — the four Proposal 029 G2 parity gaps closed + the cascade router wired in).
+> **New in v1.1.97 (PR #6913):** the four Proposal 029 G2 guardrail gaps that blocked promoting the OOS engine switch are **closed** — guardrails and security gates now produce equivalent decisions on both paths. (1) The destructive-ops gate no longer becomes an HTTP 500 on the OOS path — `handle_chat_request_oos()` catches the typed gate exceptions (`WP_MCP_AI_Destructive_Confirmation_Required` | `Concurrency_Limit_Reached` | `Cost_Budget_Exceeded`) before the generic catch and routes them through the shared `WP_MCP_AI_REST::translate_gate_exception()` to the canonical 428 confirmation / 429 limits envelopes. (2) `apply_pre_response_render()` runs the Output Guardrail + Citation Verifier at the **final payload** on all three surfaces (legacy non-streaming, legacy streaming's final SSE event — blocked → `error` event, and the OOS handler); mid-stream chunks stay unfiltered on both paths (symmetric). (3) The OOS bridge listens to the `AgenticIterationComplete` domain event and fires `wp_mcp_ai_agentic_iteration_complete` with the same `(iteration, assistant_id)` pair. (4) The `tools/execute` waterfall bridge (`wp_mcp_ai_before_tool_execute`) was verified already bridged and gains regression tests (WP_Error short-circuits dispatch). **`bin/check-chat-parity.php` now tracks all four surfaces — 35 → 38 features, still 100% parity — and a `parity-check` CI job runs the script, so any PR touching a chat/guardrail surface must keep it in sync.**
+> **New in v1.1.97 (PR #6912):** `lib/core`'s new `CascadeRouter` extends `ProviderRouter`, so it injects anywhere the router is consumed — the OOS bridge factory supplies it with the WordPress `CascadeClassifier`/`CascadeValidator` adapters that bridge the same `wp_mcp_ai_cascade_enabled`/`classifier`/`validator` filter seams as the legacy executor. **One switch and one Jev classifier now govern both the default legacy path and the opt-in OOS engine path** (inert by default).
 
 ---
 
@@ -18,6 +20,10 @@ The OOS engine is the framework-agnostic orchestrator in `lib/core` (`ChatOrches
 The bridge (`includes/bootstrap/oos-bridge.php`) is the composition root: PHP 8.1 runtime gate, erlang-c concurrency, rate limiter, semantic compressor, data-budget tracker, tool resolver, and the shadow-runner bootstrap.
 
 **Rate limiting (v1.1.60):** the chat rate limit (previously a hardcoded 60 requests/minute) is configurable via the **`wp_mcp_ai_chat_rate_limit`** and **`wp_mcp_ai_chat_rate_limit_window`** filters applied in the WordPress bridge (`ChatOrchestrator::setChatRateLimit()` clamps values). The `RateLimiter` adapter fires **`wp_mcp_ai_rate_limit_exceeded`** when a window is exhausted — the restriction registry subscribes to persist a reviewable restriction record (see `docs/features/security/user-restrictions.md`).
+
+**Chat tool-slug parity (v1.1.93+):** `handle_chat_request_oos()` runs the same tool-slug pipeline as the legacy `build_tools_payload()` — `wp_mcp_ai_attention_tool_slugs` (narrows oversized lists) then `wp_mcp_ai_chat_effective_tools` (appends dynamically registered tools: MCP App bridge tools, granted toolkit MCP server tools) — before handing `$assistant_config` to the orchestrator.
+
+**Legacy hook arg translation (v1.1.93+):** the WordPress `EventDispatcher` adapter translates the four mapped domain events (`BeforeChatRequest`, `AfterChatResponse`, `BeforeToolExecution`, `AfterToolExecution`) into their documented legacy `wp_mcp_ai_*` argument tuples before firing the hooks. Never fire those hooks with the raw event object — legacy subscribers declare required parameters against the documented shapes (`( $assistant_id, $response, $request )` etc.) and the request slot is null on the OOS path. Unknown mapped events keep the single-event shape.
 
 ## Key subsystems & files
 

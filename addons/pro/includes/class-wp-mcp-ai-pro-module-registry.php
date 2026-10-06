@@ -462,6 +462,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					$this->req( $p . 'class-wp-mcp-ai-incident-rest.php' );
 					$this->req( $p . 'class-wp-mcp-ai-incident-notifier.php' );
 					$this->req( $p . 'class-wp-mcp-ai-incident-lesson-bridge.php' );
+					$this->req( $p . 'class-wp-mcp-ai-pro-status-alerts.php' );
 				}
 			);
 
@@ -725,6 +726,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				),
 				function () use ( $p ) {
 					require_once $p . 'tools/media/init.php';
+				}
+			);
+
+			$this->add_module(
+				'fashion_studio',
+				'Fashion Studio Bridge',
+				array( 'toolkit_media' ),
+				array(
+					'requires' => array( 'NV_oOS_Media_Studio_AI_Service' ),
+				),
+				function () use ( $p ) {
+					require_once $p . 'fashion/init.php';
 				}
 			);
 

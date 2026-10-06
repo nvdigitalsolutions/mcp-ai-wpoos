@@ -136,10 +136,18 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 			}
 		}
 
-		$user_pinned = array( 'gpt-4.1', 'gpt-4o', 'gpt-4o-mini', 'gpt-4.1-mini', 'gpt-4.1-nano' );
-		foreach ( $user_pinned as $id ) {
+		$user_pinned_active = array( 'gpt-4.1', 'gpt-4o-mini', 'gpt-4.1-mini' );
+		foreach ( $user_pinned_active as $id ) {
 			$this->assertArrayHasKey( $id, $status_by_name, "User-pinned id {$id} must exist in catalog." );
 			$this->assertSame( 'active', $status_by_name[ $id ], "User-pinned id {$id} must remain ACTIVE." );
+		}
+
+		// OpenAI announced retirements for these pinned ids (shutdown 2026-10-23) —
+		// they stay servable (deprecated) with a documented successor until sunset.
+		$user_pinned_deprecated = array( 'gpt-4o', 'gpt-4.1-nano' );
+		foreach ( $user_pinned_deprecated as $id ) {
+			$this->assertArrayHasKey( $id, $status_by_name, "User-pinned id {$id} must exist in catalog." );
+			$this->assertSame( 'deprecated', $status_by_name[ $id ], "User-pinned id {$id} must stay DEPRECATED (servable) with a successor." );
 		}
 	}
 
@@ -158,14 +166,29 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 			'o1',
 			'o1-mini',
 			'o1-preview',
+			'gpt-5-codex',
+			'gpt-5.1-codex',
+			'gpt-5.1-codex-max',
+			'gpt-5.1-codex-mini',
+			'gpt-5.2-codex',
 			'gemini-1.5-pro',
 			'gemini-1.5-flash',
 			'gemini-pro',
 			'gemini-3-pro-preview',
+			'gemini-2.5-flash-image',
+			'gemini-live-2.5-flash-preview',
 			'claude-3-opus-20240229',
 			'claude-mythos-preview',
+			'claude-3-5-sonnet-20241022',
+			'claude-3-5-haiku-20241022',
 			'deepseek-v4-flash',
 			'deepseek-v4-flash-vision-exp',
+			'kimi-k2',
+			'kimi-k2.5',
+			'kimi-k2-thinking',
+			'moonshot-v1-8k',
+			'moonshot-v1-32k',
+			'moonshot-v1-128k',
 		);
 
 		foreach ( $removed as $id ) {
@@ -274,37 +297,34 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 		$dropdown_keys = array(
 			// OpenAI fallback list.
 			'gpt-6-astra',
+			'gpt-6-sol',
+			'gpt-6-luna',
 			'gpt-5.6-sol',
 			'gpt-5.6-terra',
 			'gpt-5.6-luna',
 			'gpt-5.4',
 			'gpt-5.4-mini',
-			'gpt-5.4-nano',
 			'gpt-5.5',
-			'gpt-5',
-			'gpt-5-mini',
-			'gpt-5-nano',
 			'gpt-4.1',
 			'gpt-4.1-mini',
-			'gpt-4.1-nano',
-			'gpt-4o',
 			'gpt-4o-mini',
 			// Anthropic fallback list.
+			'claude-opus-5-5',
 			'claude-opus-5',
 			'claude-fable-5.1',
+			'claude-sonnet-5-5',
 			'claude-sonnet-5',
 			'claude-opus-4-7',
 			'claude-opus-4-6',
 			'claude-sonnet-4-6',
 			'claude-haiku-4-5',
 			// Gemini fallback list.
-				'gemini-3.8-flash',
+			'gemini-3.8-flash',
 			'gemini-3.7-flash',
 			'gemini-3.6-flash',
 			'gemini-3.5-flash',
 			'gemini-3.5-flash-lite',
 			'gemini-3.1-pro',
-			'gemini-3.1-flash-lite',
 			'gemini-2.5-pro',
 			'gemini-2.5-flash',
 			// DeepSeek fallback list.
@@ -313,6 +333,11 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 			'kimi-k3',
 			'kimi-k2.7-code',
 			'kimi-k2.6',
+			// Z.AI (GLM) catalog entries.
+			'glm-5.3',
+			'glm-5.3-flash',
+			'glm-5.3-flashx',
+			'glm-5.2',
 		);
 
 		foreach ( $dropdown_keys as $id ) {

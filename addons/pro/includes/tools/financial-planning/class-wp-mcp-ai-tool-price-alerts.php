@@ -37,7 +37,10 @@ class WP_MCP_AI_Tool_Price_Alerts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	const MAX_ALERTS = 50;
 
 	/**
-	 * Daily evaluation cron hook.
+	 * Alert evaluation cron hook.
+	 *
+	 * Runs daily in cached mode; hourly when Finnhub realtime data mode is
+	 * enabled (OpenStock parity, proposal 051).
 	 */
 	const CRON_HOOK = 'wp_mcp_ai_price_alert_check_daily';
 
@@ -422,7 +425,24 @@ class WP_MCP_AI_Tool_Price_Alerts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	}
 
 	/**
-	 * Whether an alert already fired today (daily re-arm).
+	 * Whether the tool runs in realtime mode (Finnhub enabled + realtime).
+	 *
+	 * @since 1.1.90
+	 *
+	 * @return bool
+	 */
+	public static function is_realtime() {
+		if ( ! class_exists( 'WP_MCP_AI_Finnhub_Provider' ) || ! WP_MCP_AI_Finnhub_Provider::is_enabled() ) {
+			return false;
+		}
+
+		return 'realtime' === WP_MCP_AI_Finnhub_Provider::get_data_mode();
+	}
+
+	/**
+	 * Whether an alert already fired inside the current re-arm window.
+	 *
+	 * Cached mode re-arms daily; realtime mode re-arms hourly.
 	 *
 	 * @since 1.1.80
 	 *
@@ -432,6 +452,12 @@ class WP_MCP_AI_Tool_Price_Alerts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	public static function already_triggered_today( $alert ) {
 		if ( empty( $alert['last_triggered_at'] ) ) {
 			return false;
+		}
+
+		if ( self::is_realtime() ) {
+			$last = strtotime( (string) $alert['last_triggered_at'] );
+
+			return false !== $last && ( time() - $last ) < HOUR_IN_SECONDS;
 		}
 
 		return gmdate( 'Y-m-d' ) === substr( (string) $alert['last_triggered_at'], 0, 10 );
@@ -582,14 +608,22 @@ class WP_MCP_AI_Tool_Price_Alerts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	}
 
 	/**
-	 * Schedule the daily evaluation cron (idempotent).
+	 * Schedule the alert evaluation cron (idempotent, mode-aware).
+	 *
+	 * Daily in cached mode; hourly when realtime mode is enabled. When the
+	 * configured mode changes, the stored schedule is rebuilt.
 	 *
 	 * @since 1.1.80
 	 */
 	public static function maybe_schedule_cron() {
-		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CRON_HOOK );
+		$interval = self::is_realtime() ? 'hourly' : 'daily';
+
+		if ( wp_get_schedule( self::CRON_HOOK ) === $interval ) {
+			return;
 		}
+
+		wp_clear_scheduled_hook( self::CRON_HOOK );
+		wp_schedule_event( time() + HOUR_IN_SECONDS, $interval, self::CRON_HOOK );
 	}
 
 	/**

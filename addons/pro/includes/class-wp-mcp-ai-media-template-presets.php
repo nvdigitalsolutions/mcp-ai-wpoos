@@ -262,6 +262,83 @@ class WP_MCP_AI_Media_Template_Presets {
 					'quality'        => 90,
 				),
 			),
+
+			// Fashion Presets (Media Studio fashion pipeline, Phase 2).
+			'fashion_pdp_white'     => array(
+				'title'       => __( 'Fashion — PDP Pure White', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Marketplace packshot on a pure white background (RGB 255,255,255)', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'fashion',
+				'operation'   => 'fashion_generate',
+				'parameters'  => array(
+					'transform'      => 'packshot',
+					'lighting'       => 'even, shadow-free',
+					'background'     => 'studio',
+					'style_tokens'   => 'clean e-commerce',
+					'composition'    => 'centered',
+					'aspect_ratio'   => 'square',
+					'fidelity_level' => 'high',
+				),
+			),
+			'fashion_pdp_lifestyle' => array(
+				'title'       => __( 'Fashion — PDP Lifestyle', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'On-model lifestyle scene for product detail pages', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'fashion',
+				'operation'   => 'fashion_generate',
+				'parameters'  => array(
+					'transform'      => 'background',
+					'lighting'       => 'natural ambient',
+					'background'     => 'lifestyle',
+					'style_tokens'   => 'approachable, true-to-product',
+					'composition'    => 'rule of thirds',
+					'aspect_ratio'   => 'portrait',
+					'fidelity_level' => 'high',
+				),
+			),
+			'fashion_editorial'     => array(
+				'title'       => __( 'Fashion — Editorial', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Editorial campaign look with dramatic lighting', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'fashion',
+				'operation'   => 'fashion_generate',
+				'parameters'  => array(
+					'transform'      => 'on-model',
+					'lighting'       => 'dramatic magazine',
+					'background'     => 'editorial',
+					'style_tokens'   => 'campaign, editorial',
+					'composition'    => 'full-length',
+					'aspect_ratio'   => 'portrait',
+					'fidelity_level' => 'medium',
+				),
+			),
+			'fashion_lookbook'      => array(
+				'title'       => __( 'Fashion — Lookbook', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Consistent lookbook frames for collection pages', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'fashion',
+				'operation'   => 'fashion_generate',
+				'parameters'  => array(
+					'transform'      => 'model-swap',
+					'lighting'       => 'soft studio',
+					'background'     => 'studio',
+					'style_tokens'   => 'lookbook, consistent framing',
+					'composition'    => 'three-quarter',
+					'aspect_ratio'   => 'portrait',
+					'fidelity_level' => 'high',
+				),
+			),
+			'fashion_social'        => array(
+				'title'       => __( 'Fashion — Social Variant', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Story-format social variant (two-stage: generate → social resize)', 'mcp-ai-wpoos-pro' ),
+				'category'    => 'fashion',
+				'operation'   => 'fashion_generate',
+				'parameters'  => array(
+					'transform'      => 'background',
+					'lighting'       => 'bright social',
+					'background'     => 'gradient',
+					'style_tokens'   => 'social, bold',
+					'composition'    => 'centered',
+					'aspect_ratio'   => 'story',
+					'fidelity_level' => 'medium',
+				),
+			),
 		);
 	}
 
@@ -292,7 +369,36 @@ class WP_MCP_AI_Media_Template_Presets {
 				'name'        => __( 'Marketing', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Promotional banners, badges, and event graphics', 'mcp-ai-wpoos-pro' ),
 			),
+			'fashion'      => array(
+				'name'        => __( 'Fashion', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'AI fashion production presets for the Media Studio fashion pipeline', 'mcp-ai-wpoos-pro' ),
+			),
 		);
+	}
+
+	/**
+	 * Fashion presets in the SPA payload shape (slugs match get_presets()).
+	 *
+	 * Hooked into the Media Studio addon's `nvoos_media_studio_presets` filter.
+	 *
+	 * @return array
+	 */
+	public static function get_fashion_presets() {
+		$presets = self::get_presets();
+		$spa     = array();
+		foreach ( $presets as $slug => $preset ) {
+			if ( 'fashion' !== $preset['category'] || 'fashion_generate' !== $preset['operation'] ) {
+				continue;
+			}
+			$parameters = isset( $preset['parameters'] ) && is_array( $preset['parameters'] ) ? $preset['parameters'] : array();
+			$spa[]      = array(
+				'slug'       => sanitize_key( $slug ),
+				'label'      => sanitize_text_field( $preset['title'] ),
+				'transform'  => isset( $parameters['transform'] ) ? sanitize_key( $parameters['transform'] ) : 'background',
+				'background' => isset( $parameters['background'] ) ? sanitize_key( $parameters['background'] ) : 'studio',
+			);
+		}
+		return $spa;
 	}
 
 	/**

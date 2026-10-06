@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-http-client",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "Resilient HTTP client with automatic retry, exponential backoff, and request hooks - Extracted from NV Open Operator System",
   "main": "dist/nvoos-http-client.js",
   "module": "dist/nvoos-http-client.js",

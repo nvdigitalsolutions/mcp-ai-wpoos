@@ -129,7 +129,7 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 				),
 				'timestamp'                  => array(
 					'type'        => 'integer',
-					'description' => __( 'Unix timestamp for the first (or only) execution. Defaults to 60 seconds from now.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Unix timestamp for the first (or only) execution. Defaults to 60 seconds from now for one-time runs, or one full interval from now for recurring schedules.', 'mcp-ai-wpoos-pro' ),
 				),
 				'args'                       => array(
 					'type'        => 'array',

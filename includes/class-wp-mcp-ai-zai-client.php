@@ -73,7 +73,7 @@ if ( ! class_exists( 'WP_MCP_AI_ZAI_Client' ) ) {
 		 *
 		 * @var string
 		 */
-		const DEFAULT_MODEL = 'glm-5.2';
+		const DEFAULT_MODEL = 'glm-5.3';
 
 		/**
 		 * Models that do not support tool/function calling.
@@ -91,13 +91,16 @@ if ( ! class_exists( 'WP_MCP_AI_ZAI_Client' ) ) {
 		 * @var array
 		 */
 		const MODEL_CONTEXT_WINDOWS = array(
-			'glm-5.2'     => 1000000,
-			'glm-5'       => 1000000,
-			'glm-5-turbo' => 256000,
-			'glm-4.7'     => 256000,
-			'glm-4-flash' => 128000,
-			'glm-4'       => 128000,
-			'chatglm'     => 32768,
+			'glm-5.3'        => 1000000,
+			'glm-5.3-flash'  => 1000000,
+			'glm-5.3-flashx' => 1000000,
+			'glm-5.2'        => 1000000,
+			'glm-5'          => 1000000,
+			'glm-5-turbo'    => 256000,
+			'glm-4.7'        => 256000,
+			'glm-4-flash'    => 128000,
+			'glm-4'          => 128000,
+			'chatglm'        => 32768,
 		);
 
 		// -------------------------------------------------------------------------

@@ -121,7 +121,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$model_names = array_column( $anthropic_models, 'model_name' );
 		$this->assertContains( 'claude-opus-4-6', $model_names );
 		$this->assertContains( 'claude-sonnet-4-6', $model_names );
-		$this->assertContains( 'claude-3-5-sonnet-20241022', $model_names );
+		$this->assertContains( 'claude-sonnet-5-5', $model_names );
 	}
 
 	/**
@@ -173,7 +173,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		// Providers whose catalog entries legitimately carry zero TPM limits
 		// (local deployments or marketplaces without published rate limits),
 		// plus image-generation models that do not bill per token.
-		$zero_tpm_providers = array( 'embedded', 'lm_studio', 'ollama', 'webllm', 'kimi', 'openrouter', 'digitalocean', 'baseten' );
+		$zero_tpm_providers = array( 'embedded', 'lm_studio', 'ollama', 'webllm', 'kimi', 'openrouter', 'digitalocean', 'baseten', 'zai' );
 
 		foreach ( $default_models as $model ) {
 			$this->assertArrayHasKey( 'tpm_limit', $model );
@@ -448,29 +448,33 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$model_names = array_column( $gemini_models, 'model_name' );
 
 		// Check that Gemini image models are included.
-		$this->assertContains( 'gemini-2.5-flash-image', $model_names, 'Gemini 2.5 Flash Image should be in default models' );
+		// gemini-2.5-flash-image shut down on 2026-10-02 and must be absent.
+		$this->assertNotContains( 'gemini-2.5-flash-image', $model_names, 'Gemini 2.5 Flash Image shut down 2026-10-02 and should be absent from default models' );
 
 		// Check that Gemini 3.1 Flash Image is included (latest).
 		$this->assertContains( 'gemini-3.1-flash-image', $model_names, 'Gemini 3.1 Flash Image should be in default models' );
 
-		// Check that the Gemini 3.1 Flash Image preview is included (migration target for gemini-2.5-flash-image).
+		// Check that the Gemini 3.1 Flash Image preview is included.
 		$this->assertContains( 'gemini-3.1-flash-image-preview', $model_names, 'Gemini 3.1 Flash Image preview should be in default models' );
+
+		// Check that the GA Gemini 3.8 Live audio model is included.
+		$this->assertContains( 'gemini-3.8-live', $model_names, 'Gemini 3.8 Live should be in default models' );
 
 		// Imagen 4 was shut down on 2026-08-17 and must no longer appear.
 		$this->assertNotContains( 'imagen-4', $model_names, 'Imagen 4 was retired on 2026-08-17 and should be absent from default models' );
 
-		// Verify Gemini 2.5 Flash Image has correct configuration.
-		$gemini_25_flash_image = array_values(
+		// Verify Gemini 3.1 Flash Image has correct configuration.
+		$gemini_31_flash_image = array_values(
 			array_filter(
 				$default_models,
 				function ( $model ) {
-					return 'gemini-2.5-flash-image' === $model['model_name'];
+					return 'gemini-3.1-flash-image' === $model['model_name'];
 				}
 			)
 		);
 
-		$this->assertNotEmpty( $gemini_25_flash_image, 'Should find gemini-2.5-flash-image in defaults' );
-		$model = reset( $gemini_25_flash_image );
+		$this->assertNotEmpty( $gemini_31_flash_image, 'Should find gemini-3.1-flash-image in defaults' );
+		$model = reset( $gemini_31_flash_image );
 
 		// Verify key properties.
 		$this->assertSame( 'gemini', $model['provider'], 'Provider should be gemini' );
@@ -479,7 +483,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertFalse( $model['supports_streaming'], 'Image models should not support streaming' );
 		$this->assertFalse( $model['supports_function_calling'], 'Image models should not support function calling' );
 		$this->assertTrue( $model['supports_vision'], 'Image models should support vision' );
-		$this->assertSame( 0.03, $model['cost_per_1k_output_tokens'], 'Output token cost should be $0.03 per 1K' );
+		$this->assertSame( 0.06, $model['cost_per_1k_output_tokens'], 'Output token cost should be $0.06 per 1K' );
 	}
 
 	/**

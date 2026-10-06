@@ -1,0 +1,47 @@
+{
+	"name": "@nvdigitalsolutions/nvoos-mcp-bridge",
+	"version": "0.1.0-alpha.3",
+	"description": "Zero-dependency MCP stdio↔HTTP relay for NV oOS (Open Operator System) WordPress sites. Connect Zed, Claude Desktop, Cursor, and Codex to any NV oOS site over HTTPS or SSH.",
+	"keywords": [
+		"mcp",
+		"model-context-protocol",
+		"wordpress",
+		"nvoos",
+		"zed",
+		"claude",
+		"cursor",
+		"codex",
+		"stdio",
+		"bridge"
+	],
+	"license": "GPL-3.0-or-later",
+	"author": "NV Digital Solutions",
+	"homepage": "https://nvdigitalsolutions.com/wpoos",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+		"directory": "packages/nvoos-mcp-bridge"
+	},
+	"bin": {
+		"nvoos-mcp-bridge": "bin/nvoos-mcp.js",
+		"nvoos-mcp": "bin/nvoos-mcp.js",
+		"nvoos-mcp-ssh": "bin/mcp-bridge-ssh.js"
+	},
+	"files": [
+		"bin/",
+		"README.md",
+		"LICENSE"
+	],
+	"engines": {
+		"node": ">=18"
+	},
+	"scripts": {
+		"sync": "node sync-from-bin.js",
+		"test": "node --test test/relay.test.js test/ssh.test.js test/sync.test.js",
+		"test:e2e": "node test/e2e-docker.js",
+		"pack:dry-run": "npm pack --dry-run"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

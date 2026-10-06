@@ -307,6 +307,78 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'Let me think step by step...', $normalized['reasoning_content'] );
 	}
 
+	/**
+	 * Test normalize_response flattens array content blocks into a string.
+	 */
+	public function test_normalize_response_flattens_array_content() {
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'normalize_response' );
+		$method->setAccessible( true );
+
+		$raw = array(
+			'id'      => 'chatcmpl-blocks',
+			'model'   => 'deepseek-chat',
+			'choices' => array(
+				array(
+					'message'       => array(
+						'role'    => 'assistant',
+						'content' => array(
+							array(
+								'type' => 'text',
+								'text' => 'First block.',
+							),
+							'Plain string block.',
+							array( 'content' => 'Third block.' ),
+							array(
+								'type'  => 'image',
+								'image' => 'not text',
+							),
+						),
+					),
+					'finish_reason' => 'stop',
+				),
+			),
+			'usage'   => array(),
+		);
+
+		$normalized = $method->invoke( $this->client, $raw );
+
+		$expected = "First block.\n\nPlain string block.\n\nThird block.";
+		$this->assertIsString( $normalized['content'] );
+		$this->assertSame( $expected, $normalized['content'] );
+		$this->assertIsString( $normalized['choices'][0]['message']['content'] );
+		$this->assertSame( $expected, $normalized['choices'][0]['message']['content'] );
+	}
+
+	/**
+	 * Test normalize_response leaves string content untouched.
+	 */
+	public function test_normalize_response_keeps_string_content() {
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'normalize_response' );
+		$method->setAccessible( true );
+
+		$raw = array(
+			'id'      => 'chatcmpl-str',
+			'model'   => 'deepseek-chat',
+			'choices' => array(
+				array(
+					'message'       => array(
+						'role'    => 'assistant',
+						'content' => 'Plain answer.',
+					),
+					'finish_reason' => 'stop',
+				),
+			),
+			'usage'   => array(),
+		);
+
+		$normalized = $method->invoke( $this->client, $raw );
+
+		$this->assertSame( 'Plain answer.', $normalized['content'] );
+		$this->assertSame( 'Plain answer.', $normalized['choices'][0]['message']['content'] );
+	}
+
 	// -------------------------------------------------------------------------
 	// handle_api_error.
 	// -------------------------------------------------------------------------

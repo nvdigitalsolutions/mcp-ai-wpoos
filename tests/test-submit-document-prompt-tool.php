@@ -17,6 +17,13 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-docume
  */
 class WP_MCP_AI_Submit_Document_Prompt_Tool_Test extends WP_UnitTestCase {
 	/**
+	 * 1x1 transparent PNG fixture.
+	 *
+	 * @var string
+	 */
+	const PNG_FIXTURE_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
+	/**
 	 * Clean up globals between tests.
 	 */
 	public function tearDown(): void {
@@ -353,6 +360,13 @@ class WP_MCP_AI_Submit_Document_Prompt_Tool_Test extends WP_UnitTestCase {
 		$this->assertSame( 'text', $segments[0]['type'] );
 		$this->assertSame( 'image_url', $segments[1]['type'] );
 		$this->assertNotEmpty( $segments[1]['image_url']['url'] );
+
+		// The provider must receive inline bytes, not a URL its servers would
+		// have to download (hotlink protection / CDN / fresh-upload failures).
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding a static PNG fixture for an image-upload test.
+		$png = base64_decode( self::PNG_FIXTURE_BASE64 );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding a static PNG fixture for an image-upload test.
+		$this->assertSame( 'data:image/png;base64,' . base64_encode( $png ), $segments[1]['image_url']['url'] );
 	}
 
 	/**
@@ -439,6 +453,12 @@ class WP_MCP_AI_Submit_Document_Prompt_Tool_Test extends WP_UnitTestCase {
 		$this->assertCount( 2, $segments );
 		$this->assertSame( 'image_url', $segments[1]['type'] );
 		$this->assertNotEmpty( $segments[1]['image_url']['url'] );
+
+		// DeepSeek must receive inline bytes too, never a URL to download.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding a static PNG fixture for an image-upload test.
+		$png = base64_decode( self::PNG_FIXTURE_BASE64 );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding a static PNG fixture for an image-upload test.
+		$this->assertSame( 'data:image/png;base64,' . base64_encode( $png ), $segments[1]['image_url']['url'] );
 	}
 
 	/**
@@ -450,7 +470,7 @@ class WP_MCP_AI_Submit_Document_Prompt_Tool_Test extends WP_UnitTestCase {
 	protected function create_image_attachment( $filename ) {
 		// 1x1 transparent PNG fixture (base64 is a fixed test fixture, not obfuscation).
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding a static PNG fixture for an image-upload test.
-		$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' );
+		$png = base64_decode( self::PNG_FIXTURE_BASE64 );
 		$this->assertNotEmpty( $png );
 
 		$upload = wp_upload_bits( $filename, null, $png );

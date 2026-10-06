@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.91"
-  plugin-version-tested: "1.1.91"
-  last-updated: "2026-10-01"
+  plugin-version: "1.1.97"
+  plugin-version-tested: "1.1.97"
+  last-updated: "2026-10-05"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -258,14 +258,32 @@ Verified on the Design Stack (2026-09):
 # 1. Discover valid tool slugs before assigning.
 wp mcp-ai tool list               # base registry: slug + enabled + capability
 wp mcp-ai toolkit list            # Pro toolkit settings keys
+wp mcp-ai tool call <slug> --args='{...}' --assistant-id=<id> --format=json
+wp mcp-ai security posture --format=json    # v1.1.93+ (audit, purge-audit, gate, keys)
+wp mcp-ai model list|suggestions|discover    # v1.1.93+
+wp mcp-ai crm lead list          # v1.1.93+ Pro entity trees: crm, incident,
+wp mcp-ai schedule list          #   maintenance, schedule, workflow, vault
+wp mcp-ai workflow list          #   (metadata-only), remote-site, communication,
+wp mcp-ai media-studio status    #   media-studio — all manage_options-gated.
+# Full operator reference: docs/operations/wp-cli.md (WP-CLI 2.9+ minimum).
+# Canonical namespaces are mcp-ai calendar/place + mcp-ai ezuite/flowhub/
+# shopify-sync/profession; legacy top-level names remain as aliases.
 
 # 2. Create the assistant record.
 wp mcp-ai assistant create --title="Brand Assistant" --status=publish --porcelain
 # → prints the new assistant ID
 
-# 3. Set runtime meta. NOTE: assistant create/update --model / --system-prompt
-#    write legacy mcp_ai_model / mcp_ai_system_prompt keys that the runtime
-#    does NOT read. The runtime reads _wp_mcp_ai_* — set those explicitly.
+# 3. Set runtime meta (v1.1.93+, PR #6852): assistant create/update/get and
+#    assistant tools list/add/remove now write/read the canonical
+#    _wp_mcp_ai_* keys directly — --provider / --model / --system-prompt /
+#    --tools flags are supported, so the post-meta workaround below is only
+#    needed on pre-1.1.93 installs.
+wp mcp-ai assistant update <id> --provider=openai --model=gpt-4o-mini \
+  --system-prompt="$(cat assistant-system-prompt.md)"
+wp mcp-ai assistant tools add <id> web_search deep_research create_post
+
+# Pre-1.1.93 fallback: the legacy create/update wrote mcp_ai_model /
+# mcp_ai_system_prompt keys the runtime did NOT read.
 wp post meta update <id> _wp_mcp_ai_provider openai
 wp post meta update <id> _wp_mcp_ai_model gpt-4o-mini
 wp post meta update <id> _wp_mcp_ai_temperature 0.7
@@ -484,13 +502,17 @@ a different credential get 404. Caps: 5 sessions/credential, 20 global,
 |--------|-----------|
 | Zed / Cursor / LM Studio / new SDKs | Native Streamable HTTP (`url` = `/mcp`) |
 | Python MCP SDK | `streamable_http_client(url, headers=...)` works; `sse_client(url)` **requires v1.1.55+** for the handshake |
+| **`npx nvoos-mcp-bridge` (v1.1.96+)** | The first-party package — `npx -y @nvdigitalsolutions/nvoos-mcp-bridge nvoos-mcp <url> --token <cred>` relays stdio ↔ Streamable HTTP for Zed / Claude Desktop / Cursor / Codex; `nvoos-mcp-ssh` adds the SSH port-forward for no-public-route sites (byte-identical to `bin/mcp-bridge*.js` via CI) |
 | mcp-remote bridge (Claude Desktop, older agents) | `npx -y mcp-remote@latest <url> --header "Authorization: Bearer <token>"` — connects via Streamable HTTP, needs Node 24+ |
-| Cloudways Agent 0.19.0 / Codex-style agents | A bare `url:` is treated as **SSE transport** — use the mcp-remote stdio bridge, or point at the `/mcp` endpoint on v1.1.55+ |
+| Cloudways Agent 0.19.0 / Codex-style agents | A bare `url:` is treated as **SSE transport** — use the npx bridge package or the mcp-remote stdio bridge, or point at the `/mcp` endpoint on v1.1.55+ |
 
 ### mcp-remote stdio bridge pattern (verified)
 
 For agents whose MCP client only speaks legacy SSE over a configured URL
-(Cloudways Agent, Claude Desktop):
+(Cloudways Agent, Claude Desktop). **On v1.1.96+ sites, prefer the first-party
+`npx -y @nvdigitalsolutions/nvoos-mcp-bridge nvoos-mcp <url> --token <cred>`
+package** — same stdio relay, zero third-party dependency, byte-synced from
+this repo's `bin/`:
 
 ```yaml
 mcp_servers:
@@ -511,13 +533,16 @@ for server-initiated messages and retries it on failure — on pre-1.1.55
 servers that GET hits the request rate limiter, and the retry loop can burn
 the whole hourly quota (see Rate Limiting below).
 
-### SSH-only sites — `bin/mcp-bridge-ssh.js` (Zed stdio over SSH)
+### SSH-only sites — `nvoos-mcp-ssh` / `bin/mcp-bridge-ssh.js` (Zed stdio over SSH)
 
 For sites with **no public web route** (SSH is the only way in), use the
 repo's own bridge, which owns the SSH port-forward and delegates to
 `bin/mcp-bridge.js` (newline-delimited stdio ↔ Streamable HTTP relay). No
 manual tunnel, no mcp-remote, no npm dependencies — Zed spawns it as a stdio
-context server.
+context server. **Since v1.1.96 the same bridge ships as an npm package:**
+`npx -y @nvdigitalsolutions/nvoos-mcp-bridge nvoos-mcp-ssh` (identical env
+vars below, byte-synced from `bin/`); the Fleet Operator addon's
+`generate_zed_json()` emits the ready-to-paste `context_servers` block.
 
 **Prerequisite:** SSH key auth (`ssh <user>@<host> -p <port>` must succeed
 non-interactively). Password prompts are impossible for a spawned process
@@ -743,9 +768,89 @@ Import external AI conversation exports into the JetEngine
 
 ## Release Notes (per version)
 
-Historical per-version release notes (v1.1.66 through v1.1.91) moved to
+Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.1.97 operational quick notes** (full detail in RELEASE-NOTES.md): the
+**Proposal 056 harness** (PR #6912, all inert by default) — cascade model
+routing now governs both engines from one `wp_mcp_ai_cascade_enabled` switch
+(cheap tier + judge-verified escalation; the framework-core `CascadeRouter`
+feeds the OOS engine via WordPress `CascadeClassifier`/`CascadeValidator`
+adapters, `WP_MCP_AI_Cascade_Executor` gates the legacy chat path, and the
+Pro Jev classifier wires in via the proposal-045 routing signal); the new
+base tools `run_assistant_eval` (trajectory judges + deterministic checks)
+and `scan_assistant_security` (OWASP-informed config audit, masked secret
+evidence); **hook profiles** (minimal/standard/strict, master switch + kill
+list); the **session distiller** emits the canonical `wp_mcp_ai_memory_stored`
+event (MemPalace/CCT/Graphify/recall hydrate); the Pro
+`suggest_workflows_from_history` tool mines the harness trace store. The
+**OOS parity gaps are closed** (PR #6913) — the destructive-ops gate no
+longer 500s on the OOS path (canonical 428/429 envelopes via
+`translate_gate_exception()`), the Output Guardrail + Citation Verifier run
+at the final payload on all three chat surfaces, and
+`bin/check-chat-parity.php` (35 → 38 features) has a `parity-check` CI job.
+The **MCP Gateway now negotiates protocol versions** (PR #6914,
+`2024-11-05` fallback — Zed and other strict clients connect). The **public
+npm publish shipped** (PRs #6907/#6908): all 23 `packages/` are live at
+0.1.0-alpha.3 (`nvoos-mcp-bridge` `latest` = alpha.3; nvoos-api/nvoos-sse-client
+republished at alpha.4 with valid JS). Tool counts: ~352 base + ~1,313 Pro
+(~1,665 total).
+
+**v1.1.96 operational quick notes** (full detail in RELEASE-NOTES.md): the
+**`@nvdigitalsolutions/nvoos-mcp-bridge` npx package** is now the canonical
+zero-config path for Zed / Claude Desktop / Cursor / Codex (`npx -y
+@nvdigitalsolutions/nvoos-mcp-bridge nvoos-mcp <url>`; `nvoos-mcp-ssh` for
+SSH-only sites) — it supersedes the manual `bin/mcp-bridge*.js` spawns below
+(the package syncs byte-identical from `bin/` via CI); the Fleet Operator
+addon emits copy-paste Zed / VS Code / Claude Desktop config blocks
+(`generate_zed_json()`/`generate_claude_json()`); the new **MCP Gateway
+addon** (`addons/mcp-gateway/`, 0.1.0) exposes the whole fleet as one public
+streamable-HTTP MCP endpoint (API-key auth + rotation, per-key rate limits,
+`<site-slug>.<tool>` namespacing, fail-closed config); **plain front-end
+requests no longer load the ~350-tool registry** (lazy defaults via
+`wp_mcp_ai_is_plugin_runtime_context()`, ~32 MB/request saved — REST/admin/
+AJAX/cron/CLI behave as before) and the OOS engine pre-warm is gated off
+page views; the **bootstrap-integrity guard** + fail-soft loader make missing
+files after a partial update degrade instead of fataling (one-time admin
+notice, self-healing prune, Site Health `wp_mcp_ai_file_integrity`); the
+media worker's runtime version strings report 3.4.0 again.
+
+**v1.1.95 operational quick notes** (full detail in RELEASE-NOTES.md): the
+four placeholder image tools now run real processing through the media worker
+sidecar (**worker 3.4.0** — `/api/image/enhance`, `/api/image/upscale`,
+`/api/image/edit` with the new Pro `WP_MCP_AI_Sharp_Image_Processing` /
+`WP_MCP_AI_Provider_Image_Edit` traits); the nine-toolkit hardening wave
+(PRs #6875–#6893 — shell gating behind `WP_MCP_AI_ALLOW_SHELL_TOOLS`,
+`flatten_response_content()` at provider response boundaries, canonical
+`WP_Error` envelopes, the media `year_month` traversal closed);
+`list_mcp_tools` now labels previously-unlabelled Pro tools via the new
+`get_tool_toolkit()` resolver + `wp_mcp_ai_tool_toolkit` filter; inter-step
+SSE keepalive frames keep long agentic chat streams alive through proxies;
+the Newsletter 9.4.6+ test-bootstrap fatal is fixed.
+
+**v1.1.94 operational quick notes** (full detail in RELEASE-NOTES.md): the
+ChatGPT plugin addon (`addons/chatgpt-plugin/`) + the base OAuth 2.1
+resource-server contract (`/.well-known/oauth-protected-resource`,
+`/.well-known/openai-apps-challenge`, 401 `WWW-Authenticate` on the MCP route,
+per-tool `securitySchemes`, the `nvoos_get_profile` tool — +1 base); the
+decision-scope guard bounds every Jev dispatch (domain + authority ceiling,
+banned domains fail closed, `WPMCPAI.Decisions.ScopeDeclared` sniff fails CI on
+undeclared dispatches); the toolkit MCP grant gate now actually runs outside
+wp-admin and granted servers' tools flow into chat/`tools/list`; the OOS chat
+path reaches tool-slug + hook parity (`?verbose_errors=1` for admins on masked
+REST errors with a correlation `ref`; `get_site_health` WP 6.9 fatal fixed;
+FlowHub MCP OAuth login rides the connection proxy).
+
+**v1.1.93 operational quick notes** (full detail in RELEASE-NOTES.md): the
+media worker doubles as the fleet status service (opt-in `STATUS_ENABLED=1`);
+the plugin gains `get_fleet_status`/`get_site_uptime` + `GET
+/mcp-ai/v1/status/sites` + `/status fleet`; `wp mcp-ai` grows `tool call`,
+`security`, `model`, and nine Pro entity trees (all mutating subcommands
+`manage_options`-gated, `docs/operations/wp-cli.md`); FlowHub MCP connections
+surface in MCP Apps with proxy inheritance; Media Studio 0.6.1 fixes the
+`/ai/generate` 500; the October catalog refresh (v2026.10.03) adds Z.AI and
+refreshes defaults (`gemini-3.8-flash`, `gemini-3.8-live`, `gpt-realtime-2.1`).
 
 ---
 
@@ -874,6 +979,16 @@ update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'web_search', 'creat
 
 **Cause:** `wp_safe_redirect()` rejects off-site consent-page hosts missing from the `allowed_redirect_hosts` allowlist and silently falls back to `admin_url()` — the connect click lands on the dashboard instead of the provider's consent page.
 **Fix (v1.1.91+):** LinkedIn (`www.linkedin.com`), QuickBooks (`appcenter.intuit.com`), Mailjet (`app.mailjet.com`), and Yahoo Sports (`api.login.yahoo.com`) are now allowlisted via per-provider filters deriving the host from the authorize-endpoint filter. When wiring a **new** OAuth flow, register its consent host the same way — the GitHub/Meta pattern in `includes/integrations/` is the template.
+
+### Vision requests fail with "Failed to download image from https://…" (OpenAI/DeepSeek)
+
+**Cause:** pre-1.1.92 clients handed the raw image URL to the provider's servers to download — that fetch fails on hotlink-protected, CDN-fronted, staged, or freshly uploaded media, and the whole request errors (`execution failed: …[image[0]: Failed to download image…`).
+**Fix (v1.1.92+):** the WordPress server fetches and inlines the image as a base64 data URL (`WP_MCP_AI_Image_Data_Url` — local attachments read straight off disk, remote URLs downloaded server-side), and the provider receives the bytes instead of a URL. Oversized JPEG/PNG images are downscaled to a 2048px vision-tile cap and opaque PNGs re-encoded as JPEG q82 before inlining (**Chat Client → Features → Inline Image Optimization**, default on — `wp_mcp_ai_image_inline_*` filters fine-tune it; originals are never modified). When inlining is impossible (oversized, non-image MIME, download failure) the original URL is kept as the fallback.
+
+### Vision tools report "OpenAI API key is not configured" despite a configured key
+
+**Cause (pre-1.1.92):** `generate_image_alt_text`/`generate_image_caption`/`analyze_comment_content` read the raw `wp_mcp_ai_settings` option, while the settings dashboard stores keys in the separate `wp_mcp_ai_credentials` option.
+**Fix (v1.1.92+):** those tools resolve keys through the merged settings view plus the `WP_MCP_AI_Credential_Resolver` fallback (PR #6845).
 
 ### "No AI providers configured" / tools return errors
 

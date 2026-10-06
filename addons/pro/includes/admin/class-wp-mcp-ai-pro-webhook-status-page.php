@@ -557,7 +557,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Webhook_Status_Page' ) ) {
 				$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 				if ( is_array( $all_connections ) && isset( $all_connections[ $connection_id ] ) ) {
 					$all_connections[ $connection_id ]['secret_token'] = WP_MCP_AI_Pro_Remote_Site_Manager::encrypt_value( $secret_token );
-					update_option( 'wp_mcp_ai_pro_remote_sites', $all_connections );
+					update_option( 'wp_mcp_ai_pro_remote_sites', $all_connections, false );
 				}
 			}
 

@@ -14,14 +14,23 @@
  *
  * Parameters (JSON file):
  *   source          - Absolute path to the source image file (required)
- *   operation       - One of: "optimize", "resize", "convert", "enhance" (default: "optimize")
+ *   operation       - One of: "optimize", "resize", "convert", "enhance",
+ *                     "upscale" (default: "optimize")
  *   quality         - Output quality 1-100 (default: 80)
  *   maintain_aspect - Whether to maintain aspect ratio when resizing (default: true)
  *   width           - Target width in pixels (for resize)
  *   height          - Target height in pixels (for resize)
  *   format          - Target format: "webp", "avif", "jpeg", "png" (for convert)
- *   sharpen         - Apply sharpening filter true/false (for enhance)
+ *   sharpen         - Apply sharpening filter true/false or 0-1 strength (for enhance)
+ *   contrast        - Contrast multiplier, 1 = neutral (for enhance)
+ *   saturation      - Saturation multiplier, 1 = neutral (for enhance)
+ *   denoise         - Apply single-pass median denoising true/false (for enhance)
+ *   strength        - Master strength 0-1 scaling contrast/saturation/sharpen
+ *                     toward neutral, 1 = no scaling (for enhance)
  *   blur            - Blur sigma 0.3-1000 (for enhance)
+ *   factor          - Upscale factor: 2, 4, 8 (for upscale)
+ *   kernel          - Resize kernel: "nearest", "cubic", "lanczos2",
+ *                     "lanczos3" (default: "lanczos3") (for upscale)
  *   rotate          - Rotation angle in degrees: 0, 90, 180, 270
  *
  * Output (JSON to stdout):
@@ -58,6 +67,54 @@ const os   = require( 'os' );
  * (two levels up from this script in addons/pro/bin/).
  */
 const SHARP_VENDOR_PATH = path.join( __dirname, '..', 'assets', 'vendor', 'sharp', 'lib', 'index.js' );
+
+/**
+ * Maximum output dimension (px) for upscale operations.
+ * Mirrored with the worker's /api/image/upscale route and the plugin's
+ * WP_MCP_AI_Sharp_Image_Processing trait.
+ */
+const MAX_UPSCALE_DIMENSION = 8192;
+
+/** Allowed upscale factors. */
+const UPSCALE_FACTORS = [ 2, 4, 8 ];
+
+/** Allowed upscale resize kernels. */
+const UPSCALE_KERNELS = [ 'nearest', 'cubic', 'lanczos2', 'lanczos3' ];
+
+/**
+ * Parse a numeric value with a fallback for absent/invalid input.
+ *
+ * @param {*}      value    Raw value.
+ * @param {number} fallback Fallback when the value is not finite.
+ * @return {number} Finite numeric value.
+ */
+function toNumber( value, fallback ) {
+	const n = parseFloat( value );
+	return Number.isFinite( n ) ? n : fallback;
+}
+
+/**
+ * Clamp a value to a range.
+ *
+ * @param {number} value Value.
+ * @param {number} min   Minimum.
+ * @param {number} max   Maximum.
+ * @return {number} Clamped value.
+ */
+function clamp( value, min, max ) {
+	return Math.min( max, Math.max( min, value ) );
+}
+
+/**
+ * Scale a multiplier toward neutral (1) by a 0-1 master strength.
+ *
+ * @param {number} multiplier Raw multiplier (1 = neutral).
+ * @param {number} strength   Master strength 0-1.
+ * @return {number} Effective multiplier.
+ */
+function scaleToNeutral( multiplier, strength ) {
+	return 1 + ( multiplier - 1 ) * strength;
+}
 
 /**
  * Output a JSON result and exit.
@@ -175,12 +232,71 @@ async function main() {
 			} );
 		}
 	} else if ( 'enhance' === operation ) {
+		// Master strength (0-1, default 1 = no scaling) pulls contrast and
+		// saturation multipliers toward neutral and scales numeric sharpen.
+		const enhanceStrength = clamp( toNumber( params.strength, 1 ), 0, 1 );
+
+		// Sharpen: boolean or 0-1 strength (numeric maps to a Sharp sigma).
 		if ( params.sharpen ) {
-			pipeline = pipeline.sharpen();
+			if ( 'boolean' === typeof params.sharpen ) {
+				pipeline = pipeline.sharpen();
+			} else {
+				const sharpenStrength = clamp( toNumber( params.sharpen, 0 ), 0, 1 ) * enhanceStrength;
+				if ( sharpenStrength > 0 ) {
+					pipeline = pipeline.sharpen( 0.5 + 1.5 * sharpenStrength );
+				}
+			}
 		}
+
+		// Contrast multiplier applied around the mid-gray point.
+		const contrast = scaleToNeutral( toNumber( params.contrast, 1 ), enhanceStrength );
+		if ( Math.abs( contrast - 1 ) > 0.001 ) {
+			pipeline = pipeline.linear( contrast, 128 * ( 1 - contrast ) );
+		}
+
+		// Saturation multiplier (1 = neutral).
+		const saturation = scaleToNeutral( toNumber( params.saturation, 1 ), enhanceStrength );
+		if ( Math.abs( saturation - 1 ) > 0.001 ) {
+			pipeline = pipeline.modulate( { saturation } );
+		}
+
+		// Denoise: single-pass median filter.
+		if ( params.denoise ) {
+			pipeline = pipeline.median( 1 );
+		}
+
 		if ( params.blur && parseFloat( params.blur ) >= 0.3 ) {
 			pipeline = pipeline.blur( parseFloat( params.blur ) );
 		}
+	} else if ( 'upscale' === operation ) {
+		const factor = parseInt( params.factor, 10 ) || 2;
+		if ( ! UPSCALE_FACTORS.includes( factor ) ) {
+			exit( {
+				success: false,
+				error:   `Invalid upscale factor: ${ params.factor }. Allowed: 2, 4, 8.`,
+				code:    'INVALID_FACTOR',
+			}, 1 );
+		}
+
+		const kernel = UPSCALE_KERNELS.includes( params.kernel ) ? params.kernel : 'lanczos3';
+		const metadata = await sharp( sourceFile ).metadata();
+		const targetWidth  = Math.round( ( metadata.width || 0 ) * factor );
+		const targetHeight = Math.round( ( metadata.height || 0 ) * factor );
+
+		if ( targetWidth > MAX_UPSCALE_DIMENSION || targetHeight > MAX_UPSCALE_DIMENSION ) {
+			exit( {
+				success: false,
+				error:   `Upscaled dimensions ${ targetWidth }x${ targetHeight } exceed the ${ MAX_UPSCALE_DIMENSION }px cap.`,
+				code:    'DIMENSION_CAP',
+			}, 3 );
+		}
+
+		pipeline = pipeline.resize( {
+			width:  targetWidth,
+			height: targetHeight,
+			kernel,
+			withoutEnlargement: false,
+		} );
 	}
 
 	// Determine output format and apply quality settings.

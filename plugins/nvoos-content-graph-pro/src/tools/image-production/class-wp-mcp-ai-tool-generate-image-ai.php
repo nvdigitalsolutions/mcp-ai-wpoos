@@ -278,10 +278,17 @@ class WP_MCP_AI_Tool_Generate_Image_AI extends WP_MCP_AI_Tool_Image_Base {
 		$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'stable-diffusion-xl-1024-v1-0';
 		$size  = isset( $arguments['size'] ) ? sanitize_text_field( $arguments['size'] ) : '1024x1024';
 
-		// Parse size.
-		list( $width, $height ) = explode( 'x', $size );
-		$width                  = absint( $width );
-		$height                 = absint( $height );
+		// Parse size defensively: a malformed size (e.g. "1024") must degrade
+		// to the default dimensions instead of an undefined height of 0.
+		$dimensions = array_pad( explode( 'x', $size ), 2, '1024' );
+		$width      = absint( $dimensions[0] );
+		$height     = absint( $dimensions[1] );
+		if ( 0 === $width ) {
+			$width = 1024;
+		}
+		if ( 0 === $height ) {
+			$height = 1024;
+		}
 
 		// Make API request.
 		$response = wp_remote_post(
@@ -316,6 +323,24 @@ class WP_MCP_AI_Tool_Generate_Image_AI extends WP_MCP_AI_Tool_Image_Base {
 
 		$body = wp_remote_retrieve_body( $response );
 		$data = json_decode( $body, true );
+		$code = (int) wp_remote_retrieve_response_code( $response );
+
+		// Surface Stability API errors (quota, auth, content filters) instead
+		// of the generic missing-artifacts message.
+		if ( 200 !== $code ) {
+			$error_message = isset( $data['message'] ) ? sanitize_text_field( $data['message'] ) : __( 'Unknown error from Stability AI.', 'nvoos-content-graph-pro' );
+
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				sprintf(
+					/* translators: 1: HTTP response code, 2: Error message */
+					__( 'Stability AI returned error %1$d: %2$s', 'nvoos-content-graph-pro' ),
+					$code,
+					$error_message
+				),
+				array( 'status' => $code )
+			);
+		}
 
 		if ( ! isset( $data['artifacts'] ) || empty( $data['artifacts'] ) ) {
 			return new WP_Error(

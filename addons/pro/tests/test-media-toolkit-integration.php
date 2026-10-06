@@ -93,7 +93,7 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 
 		for ( $i = 0; $i < $count; $i++ ) {
 			$attachment_id = $this->factory->attachment->create_upload_object(
-				dirname( __DIR__, 3 ) . '/tests/data/test-image.png'
+				dirname( __DIR__, 3 ) . '/tests/fixtures/sample-image.png'
 			);
 
 			if ( ! is_wp_error( $attachment_id ) ) {

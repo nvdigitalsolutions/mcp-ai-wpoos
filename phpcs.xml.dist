@@ -98,10 +98,12 @@
 </rule>
 
 <!--
-	Custom capabilities registered by the Healthcare Imaging module.
-	WP_MCP_AI_Imaging_Capabilities::add_caps() grants them to the
-	administrator role on plugin activation, so the WordPress.WP.Capabilities
-	sniff should not flag them as unknown/typoed capabilities.
+	Custom capabilities registered by the Healthcare Imaging module and by
+	WooCommerce. WP_MCP_AI_Imaging_Capabilities::add_caps() grants the
+	healthcare caps to the administrator role on plugin activation, and
+	WooCommerce registers manage_woocommerce for shop managers, so the
+	WordPress.WP.Capabilities sniff should not flag them as unknown or
+	typoed capabilities.
 -->
 <rule ref="WordPress.WP.Capabilities">
 	<properties>
@@ -111,6 +113,7 @@
 			<element value="delete_medical_imaging"/>
 			<element value="manage_medical_imaging"/>
 			<element value="wpcode_edit_snippets"/>
+			<element value="manage_woocommerce"/>
 		</property>
 	</properties>
 </rule>
@@ -197,6 +200,25 @@
 	docs/features/tool-description-guidelines.md.
 -->
 <rule ref="./phpcs/WPMCPAI/Sniffs/Tools/ToolDescriptionGuidanceSniff.php">
+	<severity>5</severity>
+</rule>
+
+<!--
+	Decision-Scope Guard (Proposal 052): every `->decide()` /
+	`->create_decision()` dispatch to a decision model must sit inside a
+	function whose docblock declares `@decision-domain` and
+	`@decision-authority` (values from WP_MCP_AI_Decision_Scope_Guard's
+	constant lists). This is an ERROR at severity 5, so an undeclared
+	decision dispatch fails CI — decision-model creep becomes a build
+	failure instead of a review comment.
+
+	Exemptions live in the sniff itself: files under tests/ (transport
+	tests, not integrations) and methods whose enclosing class implements
+	Interface_WP_MCP_AI_Decision_Client (pure transport adapters).
+
+	See docs/project/proposals/052-decision-scope-guard.md.
+-->
+<rule ref="./phpcs/WPMCPAI/Sniffs/Decisions/ScopeDeclaredSniff.php">
 	<severity>5</severity>
 </rule>
 

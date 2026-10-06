@@ -36,6 +36,8 @@ Examples (agent name varies per installation):
 | Alt text / captions | `generate_image_alt_text_validated`, `generate_image_caption_validated` | — |
 | Video frame extraction | `extract_video_frames` | — |
 | Video processing | — | `/api/video/process` (FFmpeg) |
+| Page crawling | `run_crawl4ai_job` (remote mode) | `/api/crawl/markdown`, `/api/crawl/markdown-batch`, `/api/crawl/links` (worker v3.2.0+) |
+| Crawl4AI extraction | `run_crawl4ai_job` | `/api/crawl4ai/*` (Crawl4AI-compatible facade, worker v3.2.0+) |
 | Social publishing | `schedule_social_post` | `/api/social/post` |
 | WordPress post CRUD | `create_post`, `save_post` | — |
 | JetEngine CCT operations | `jetengine` (direct CRUD) | `remote_wp_connection` (CCT via REST) |
@@ -48,6 +50,25 @@ Examples (agent name varies per installation):
 | Bulk tag media | `bulk_tag_media` | — |
 | Sync media to remote | `sync_media_to_remote` | — |
 | Import media from URL | `import_media_from_url` | — |
+
+### Tool Rate Limits & Reliability (agent workflows)
+
+- The server rate-limits tool executions (oOS → Security → **Tool Rate
+  Limiting**: default 300 calls/min window, `tool_rate_limit_exempt_tokens`
+  defaults to ON for credential-token/agent traffic) and general API requests
+  (`rate_limit_requests` — use 1000 for agent sites).
+- On servers **older than v1.1.55**, tool errors were returned as HTTP 500
+  and some MCP SDKs silently dropped them — tool calls looked like they
+  returned nothing. On v1.1.55+ JSON-RPC errors always reach the agent.
+- Network-dependent tools (`remote_wp_connection`, `ezuite_erp`) can run
+  through the async job queue; on v1.1.55+ the MCP wait is bounded to ~45s
+  and returns a visible timeout error instead of hanging.
+- Batch-heavy pipelines (bulk_tag, collections, multi-site sync) should
+  prefer the media worker / Redis queue for volume, and treat each MCP tool
+  call as one rate-limit unit.
+- Connection details and full troubleshooting:
+  `.agents/skills/mcp-ai-wpoos-plugin/SKILL.md` (transports, mcp-remote
+  bridge, rate limits).
 
 ## WP-CLI Commands
 
@@ -80,12 +101,12 @@ The mcp-ai-wpoos plugin registers these WP-CLI commands useful for design workfl
 
 | Command | Use for |
 |---|---|
-| `wp ezuite status` | EZuite ERP connection status |
-| `wp ezuite trigger` | Trigger ERP data sync |
-| `wp ezuite low-stock-report` | Low stock inventory report |
-| `wp shopify-sync status` | Shopify sync status |
-| `wp shopify-sync trigger` | Trigger Shopify sync |
-| `wp shopify-sync cost-report` | Shopify API cost report |
+| `wp mcp-ai ezuite status` | EZuite ERP connection status |
+| `wp mcp-ai ezuite trigger` | Trigger ERP data sync |
+| `wp mcp-ai ezuite low-stock-report` | Low stock inventory report |
+| `wp mcp-ai shopify-sync status` | Shopify sync status |
+| `wp mcp-ai shopify-sync trigger` | Trigger Shopify sync |
+| `wp mcp-ai shopify-sync cost-report` | Shopify API cost report |
 
 All commands support `--help` for subcommand details.
 

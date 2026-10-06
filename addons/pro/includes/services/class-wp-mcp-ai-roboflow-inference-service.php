@@ -619,7 +619,7 @@ class WP_MCP_AI_Roboflow_Inference_Service {
 			$confidence = isset( $pred['confidence'] ) ? (float) $pred['confidence'] : 0.0;
 			$class_id   = isset( $pred['class_id'] ) ? absint( $pred['class_id'] ) : -1;
 
-			$label = isset( $pred['class'] ) && '' !== (string) $pred['class']
+			$label = isset( $pred['class'] ) && is_string( $pred['class'] ) && '' !== $pred['class']
 				? sanitize_text_field( $pred['class'] )
 				: ( isset( self::COCO_CLASSES[ $class_id ] ) ? self::COCO_CLASSES[ $class_id ] : '' );
 

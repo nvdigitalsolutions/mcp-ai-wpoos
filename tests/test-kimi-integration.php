@@ -227,9 +227,8 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 	public function test_model_configuration_is_respected() {
 		$models = array(
 			'kimi-k2.6',
-			'kimi-k2.5',
-			'kimi-k2',
-			'kimi-k2-thinking',
+			'kimi-k2.7-code',
+			'kimi-k3',
 		);
 
 		foreach ( $models as $model ) {
@@ -254,22 +253,20 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 		// Models that support tools.
 		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.7-code' ) );
 		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.6' ) );
-		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.5' ) );
-		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2' ) );
+		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k3' ) );
 
 		// Models that don't support tools.
-		$this->assertFalse( $this->client->model_supports_tools( 'kimi-k2-thinking' ) );
+		$this->assertFalse( $this->client->model_supports_tools( 'kimi-k1.5-32k' ) );
 	}
 
 	/**
 	 * Test context window sizes are correct.
 	 */
 	public function test_context_window_sizes() {
+		$this->assertEquals( 1048576, $this->client->get_context_window( 'kimi-k3' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.7-code' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.6' ) );
-		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.5' ) );
-		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2' ) );
-		$this->assertEquals( 131072, $this->client->get_context_window( 'moonshot-v1' ) );
+		$this->assertEquals( 131072, $this->client->get_context_window( 'kimi-k1.5' ) );
 	}
 
 	/**
@@ -399,11 +396,10 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 	public function test_available_models_list() {
 		$models = WP_MCP_AI_Section_Kimi::get_available_models();
 
+		$this->assertArrayHasKey( 'kimi-k3', $models );
 		$this->assertArrayHasKey( 'kimi-k2.7-code', $models );
+		$this->assertArrayHasKey( 'kimi-k2.7-code-highspeed', $models );
 		$this->assertArrayHasKey( 'kimi-k2.6', $models );
-		$this->assertArrayHasKey( 'kimi-k2.5', $models );
-		$this->assertArrayHasKey( 'kimi-k2', $models );
-		$this->assertArrayHasKey( 'kimi-k2-thinking', $models );
 
 		$this->assertStringContainsString( 'K2.7', $models['kimi-k2.7-code'] );
 		$this->assertStringContainsString( '256K', $models['kimi-k2.7-code'] );
@@ -480,8 +476,8 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 		$payload = $method->invoke( $this->client, $messages, $options, 'kimi-k2.6' );
 		$this->assertArrayHasKey( 'tools', $payload );
 
-		// Tools should be excluded for thinking model.
-		$payload = $method->invoke( $this->client, $messages, $options, 'kimi-k2-thinking' );
+		// Tools should be excluded for k1.5 reasoning models.
+		$payload = $method->invoke( $this->client, $messages, $options, 'kimi-k1.5-32k' );
 		$this->assertArrayNotHasKey( 'tools', $payload );
 	}
 

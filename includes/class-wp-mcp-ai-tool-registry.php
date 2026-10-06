@@ -12,11 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-db-output-guard.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-envelope.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-product-card.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-db-output-guard.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-envelope.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-product-card.php' );
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 	/**
@@ -43,6 +43,23 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @var bool
 		 */
 		protected $bootstrapped = false;
+
+		/**
+		 * Whether the default tool suite has been loaded (eagerly at init() or
+		 * lazily via ensure_default_tools_loaded()).
+		 *
+		 * @var bool
+		 */
+		protected $default_tools_loaded = false;
+
+		/**
+		 * Whether defaults are currently being loaded in deferred mode, in
+		 * which third-party tools registered via the wp_mcp_ai_register_tools
+		 * / wp_mcp_ai_tools_init hooks win slug conflicts over defaults.
+		 *
+		 * @var bool
+		 */
+		protected $deferred_loading = false;
 
 		/**
 		 * Human readable messages describing tools that were skipped.
@@ -133,12 +150,76 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			$this->bootstrapped = true;
 
-			$this->load_default_tools();
+			$eager_load = $this->should_eager_load_default_tools();
+
+			if ( $eager_load ) {
+				$this->load_default_tools();
+			}
 
 			if ( is_admin() && ! empty( $this->unavailable_tool_messages ) ) {
 				// Register admin_notices on init to avoid early translation loading (WordPress 6.7.0+).
 				add_action( 'init', array( $this, 'register_admin_notices' ) );
 			}
+
+			if ( $eager_load ) {
+				/**
+				 * Allow third parties to register additional tools.
+				 *
+				 * @param WP_MCP_AI_Tool_Registry $registry Registry instance.
+				 */
+				do_action( 'wp_mcp_ai_register_tools', $this );
+
+				/**
+				 * Fires after default and third-party tool registration so
+				 * side-loaders (e.g. the core orchestration tools registered by
+				 * includes/orchestration-init.php) can register their tools.
+				 *
+				 * @since 1.2.0
+				 *
+				 * @param WP_MCP_AI_Tool_Registry $registry Registry instance.
+				 */
+				do_action( 'wp_mcp_ai_tools_init', $this );
+
+				// Auto-disable tools marked with "bug" status.
+				$this->auto_disable_bug_tools();
+
+				$this->default_tools_loaded = true;
+			}
+		}
+
+		/**
+		 * Whether the default tool suite should be loaded eagerly at init().
+		 *
+		 * Defers the ~350 default tool class loads on plain front-end page views
+		 * (which render no server-side AI features); the suite is loaded lazily by
+		 * {@see self::ensure_default_tools_loaded()} on first actual use. The
+		 * wp_mcp_ai_is_plugin_runtime_context filter forces eager loading.
+		 *
+		 * @since 1.1.96
+		 *
+		 * @return bool True when the default tool suite should load eagerly.
+		 */
+		protected function should_eager_load_default_tools() {
+			return wp_mcp_ai_is_plugin_runtime_context();
+		}
+
+		/**
+		 * Load the default tool suite lazily when it was deferred at init().
+		 *
+		 * Third-party tools register first (both registration hooks fire before
+		 * the defaults), so they win slug conflicts against the default suite.
+		 *
+		 * @since 1.1.96
+		 *
+		 * @return void
+		 */
+		protected function ensure_default_tools_loaded() {
+			if ( $this->default_tools_loaded ) {
+				return;
+			}
+
+			$this->default_tools_loaded = true;
+			$this->deferred_loading     = true;
 
 			/**
 			 * Allow third parties to register additional tools.
@@ -148,9 +229,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			do_action( 'wp_mcp_ai_register_tools', $this );
 
 			/**
-			 * Fires after default and third-party tool registration so
-			 * side-loaders (e.g. the core orchestration tools registered by
-			 * includes/orchestration-init.php) can register their tools.
+			 * Fires after third-party tool registration so side-loaders (e.g. the
+			 * core orchestration tools registered by includes/orchestration-init.php)
+			 * can register their tools before the deferred defaults.
 			 *
 			 * @since 1.2.0
 			 *
@@ -158,8 +239,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			 */
 			do_action( 'wp_mcp_ai_tools_init', $this );
 
-			// Auto-disable tools marked with "bug" status.
+			$this->load_default_tools();
 			$this->auto_disable_bug_tools();
+
+			$this->deferred_loading = false;
 		}
 
 		/**
@@ -438,6 +521,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		public function get_tool( $slug ) {
 			// Ensure registry is initialized before retrieving tools.
 			$this->init();
+			$this->ensure_default_tools_loaded();
 
 			$slug = sanitize_key( $slug );
 
@@ -466,6 +550,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		public function get_tools() {
 			// Ensure registry is initialized before retrieving tools.
 			$this->init();
+			$this->ensure_default_tools_loaded();
 
 			return array_values( $this->tools );
 		}
@@ -501,6 +586,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		public function get_all_tools() {
 			// Ensure registry is initialized before retrieving tools.
 			$this->init();
+			$this->ensure_default_tools_loaded();
 
 			return $this->tools;
 		}
@@ -1262,6 +1348,115 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Resolve the toolkit namespace for a tool instance or slug.
+		 *
+		 * The `toolkit` key declared inside `get_definition()` wins when
+		 * present. Tools without one (most Pro addon classes) fall back to a
+		 * directory-derived namespace: the folder directly under a `tools/`
+		 * directory that declares the class (e.g. `tools/document-generation/`
+		 * → `document_generation`). Hyphens are normalised to underscores to
+		 * match the declared-toolkit convention. Classes declared directly
+		 * inside a flat `tools/` folder resolve to an empty string.
+		 *
+		 * @since 1.1.95
+		 *
+		 * @param WP_MCP_AI_Tool_Interface|string $tool_or_slug Tool instance or registered slug.
+		 * @return string Toolkit namespace, empty when unknown.
+		 */
+		public function get_tool_toolkit( $tool_or_slug ) {
+			$tool = is_string( $tool_or_slug ) ? $this->get_tool( $tool_or_slug ) : $tool_or_slug;
+
+			if ( ! is_object( $tool ) ) {
+				return '';
+			}
+
+			$toolkit = '';
+
+			// Explicit declaration wins.
+			if ( method_exists( $tool, 'get_definition' ) ) {
+				$definition = $tool->get_definition();
+				if ( is_array( $definition ) && ! empty( $definition['toolkit'] ) ) {
+					$toolkit = trim( (string) $definition['toolkit'] );
+				}
+			}
+
+			// Directory-derived fallback for tools that never declared one.
+			if ( '' === $toolkit ) {
+				$toolkit = $this->derive_tool_toolkit_from_declaring_file( $tool );
+			}
+
+			$slug = method_exists( $tool, 'get_slug' ) ? (string) $tool->get_slug() : '';
+
+			/**
+			 * Filter the toolkit namespace resolved for a tool.
+			 *
+			 * Lets addons override or annotate namespaces (for example, mapping
+			 * a folder-derived slug to the canonical toolkit label) without
+			 * editing every tool class.
+			 *
+			 * @since 1.1.95
+			 *
+			 * @param string $toolkit Resolved toolkit namespace (declared or directory-derived).
+			 * @param string $slug    Tool slug.
+			 * @param object $tool    Tool instance.
+			 */
+			return (string) apply_filters( 'wp_mcp_ai_tool_toolkit', $toolkit, $slug, $tool );
+		}
+
+		/**
+		 * Derive a toolkit namespace from the declaring class file's location.
+		 *
+		 * Tool classes bundled under a `tools/<toolkit>/` folder are assumed to belong
+		 * to that toolkit. Wrapped legacy tools resolve through the inner class
+		 * (`get_inner_class_name()`) so the wrapper's own file location never
+		 * masks the real declaring folder.
+		 *
+		 * @since 1.1.95
+		 *
+		 * @param object $tool Tool instance.
+		 * @return string Toolkit namespace, empty when not derivable.
+		 */
+		private function derive_tool_toolkit_from_declaring_file( $tool ) {
+			$class_name = method_exists( $tool, 'get_inner_class_name' )
+				? $tool->get_inner_class_name()
+				: get_class( $tool );
+
+			try {
+				$file = ( new ReflectionClass( $class_name ) )->getFileName();
+			} catch ( ReflectionException $e ) {
+				return '';
+			}
+
+			if ( ! $file ) {
+				return '';
+			}
+
+			$dir = dirname( wp_normalize_path( $file ) );
+
+			// Declared directly inside a flat `tools/` folder — no toolkit dir.
+			if ( 'tools' === basename( $dir ) ) {
+				return '';
+			}
+
+			// Walk up to the segment directly below the enclosing `tools/`
+			// folder, so nested helper folders still map to the toolkit.
+			$guard = 0;
+			while ( $guard < 8 ) {
+				$parent = dirname( $dir );
+				if ( 'tools' === basename( $parent ) ) {
+					return str_replace( '-', '_', basename( $dir ) );
+				}
+				if ( $parent === $dir ) {
+					break;
+				}
+				$dir = $parent;
+				++$guard;
+			}
+
+			return '';
+		}
+
+		/**
 		 * Get capability flags for all registered tools.
 		 *
 		 * Returns a map of tool slugs to their capability flags arrays.
@@ -1297,6 +1492,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		public function get_tools_by_capability_flag( $flag ) {
 			// Ensure registry is initialized before retrieving tools.
 			$this->init();
+			$this->ensure_default_tools_loaded();
 
 			$matching_tools = array();
 
@@ -1332,6 +1528,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'list_terms'                         => 'wordpress-core',
 				'list_taxonomies'                    => 'wordpress-core',
 				'get_user_info'                      => 'wordpress-core',
+				'nvoos_get_profile'                  => 'wordpress-core',
 				'get_site_summary'                   => 'wordpress-core',
 				'get_system_logs'                    => 'wordpress-core',
 				'get_update_status'                  => 'wordpress-core',
@@ -1670,7 +1867,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			}
 
 			if ( ! empty( $errors ) ) {
-				return new WP_Error( 'tool_validation_failed', implode( '; ', $errors ), array( 'errors' => $errors ) );
+				return new WP_Error(
+					'tool_validation_failed',
+					implode( '; ', $errors ),
+					array(
+						'status' => 400,
+						'errors' => $errors,
+					)
+				);
 			}
 
 			return true;
@@ -1816,6 +2020,19 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 						$value = isset( $settings[ $setting_key ] ) ? $settings[ $setting_key ] : '';
 					}
 
+					// Fall back to the credential resolver so keys configured via
+					// WP 7.0 Connectors, environment variables, or PHP constants
+					// (which the provider clients honour) also satisfy the gate.
+					if ( empty( $value ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+						$provider = str_replace( array( 'wp_mcp_ai_', '_api_key' ), '', $setting_key );
+						if ( '' !== $provider ) {
+							$resolved = WP_MCP_AI_Credential_Resolver::get_api_key( $provider );
+							if ( ! empty( $resolved ) ) {
+								$value = $resolved;
+							}
+						}
+					}
+
 					if ( empty( $value ) ) {
 						return new WP_Error( 'missing_setting', "Required setting '{$setting}' is not configured" );
 					}
@@ -1865,6 +2082,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Recent_Posts'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php',
 				'WP_MCP_AI_Tool_Search_Content'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-content.php',
 				'WP_MCP_AI_Tool_Get_User_Info'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info.php',
+				'WP_MCP_AI_Tool_Nvoos_Get_Profile'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-nvoos-get-profile.php',
 				'WP_MCP_AI_Tool_Get_Site_Summary'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
 				'WP_MCP_AI_Tool_Count_Tokens'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-count-tokens.php',
 				'WP_MCP_AI_Tool_List_MCP_Tools'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-mcp-tools.php',
@@ -1878,6 +2096,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Add_Model_Config'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-add-model-config.php',
 				'WP_MCP_AI_Tool_Typesafe_Decide'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-typesafe-decide.php',
 				'WP_MCP_AI_Tool_Typesafe_Guardrail'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-typesafe-guardrail.php',
+				'WP_MCP_AI_Tool_Run_Assistant_Eval'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-assistant-eval.php',
+				'WP_MCP_AI_Tool_Scan_Assistant_Security'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-scan-assistant-security.php',
 				'WP_MCP_AI_Tool_Discover_New_Models'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-discover-new-models.php',
 				'WP_MCP_AI_Tool_Create_Text_Embeddings'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-text-embeddings.php',
 				// OpenAI API Integration - Phase 2 Tools.
@@ -1896,6 +2116,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_OpenAI_Usage_Analytics'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-openai-usage-analytics.php',
 				'WP_MCP_AI_Tool_Get_Site_Health'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-health.php',
 				'WP_MCP_AI_Tool_Get_Environment_Status'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-environment-status.php',
+				'WP_MCP_AI_Tool_Get_Fleet_Status'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-fleet-status.php',
+				'WP_MCP_AI_Tool_Get_Site_Uptime'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-uptime.php',
 				'WP_MCP_AI_Tool_Generate_Auth0_Token'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php',
 				'WP_MCP_AI_Tool_Get_NHC_Active_Storms'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-nhc-active-storms.php',
 				'WP_MCP_AI_Tool_Search_Attachments'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-attachments.php',
@@ -2104,16 +2326,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			// Additional tools that require third-party plugins or external API credentials.
 			$extended_tools = array(
-				// Yahoo Fantasy Football Toolkit.
-				'WP_MCP_AI_Tool_Yahoo_FF_Auth'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-auth.php',
-				'WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-leagues.php',
-				'WP_MCP_AI_Tool_Yahoo_FF_Get_Roster'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-roster.php',
-				'WP_MCP_AI_Tool_Yahoo_FF_Get_Player_Stats' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php',
-				'WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php',
-				'WP_MCP_AI_Tool_Yahoo_FF_League_Standings' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-league-standings.php',
-				'WP_MCP_AI_Tool_FF_Generate_Team_Logo'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-generate-team-logo.php',
-				'WP_MCP_AI_Tool_FF_Create_League_Report'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-create-league-report.php',
-				'WP_MCP_AI_Tool_FF_Player_Research'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-player-research.php',
+				// Yahoo Fantasy Football Toolkit: registered by the
+				// addons/fantasy-football addon from its own tool paths.
 				'WP_MCP_AI_Tool_Get_Elementor_Templates'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-templates.php',
 				'WP_MCP_AI_Tool_Import_Elementor_Template_Kit' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php',
 				'WP_MCP_AI_Tool_Get_Elementor_Form_Submissions' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-form-submissions.php',
@@ -2200,6 +2414,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			foreach ( $default_tools as $class => $file ) {
 				if ( file_exists( $file ) ) {
 					require_once $file;
+				} else {
+					wp_mcp_ai_record_missing_file( $file );
 				}
 
 				if ( class_exists( $class ) ) {
@@ -2227,6 +2443,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 						// successfully via the wrapper.
 						if ( ! $tool instanceof WP_MCP_AI_Tool_Interface && class_exists( 'WP_MCP_AI_Legacy_Tool_Wrapper' ) ) {
 							$tool = new WP_MCP_AI_Legacy_Tool_Wrapper( $tool );
+						}
+
+						// In deferred mode third-party tools registered via the
+						// wp_mcp_ai_register_tools / wp_mcp_ai_tools_init hooks
+						// win slug conflicts over the default suite.
+						if ( $this->deferred_loading && method_exists( $tool, 'get_slug' ) && isset( $this->tools[ sanitize_key( (string) $tool->get_slug() ) ] ) ) {
+							continue;
 						}
 
 						$registered = $this->register_tool( $tool );
@@ -2488,6 +2711,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 */
 		public function get_tools_by_context( $context ) {
 			$this->init();
+			$this->ensure_default_tools_loaded();
 
 			if ( 'client' === $context ) {
 				return $this->get_client_executable_tools();
@@ -2543,6 +2767,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 */
 		public function get_tool_metadata( $slug ) {
 			$this->init();
+			$this->ensure_default_tools_loaded();
 
 			$slug = sanitize_key( $slug );
 

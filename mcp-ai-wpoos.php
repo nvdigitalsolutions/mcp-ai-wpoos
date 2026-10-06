@@ -2,8 +2,8 @@
 /**
  * Plugin Name: NV Digital Open Operator System (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
-	Description: AI Assistant framework with 15 AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama & more). Includes 300+ tools for content management, media generation, research, and site operations out of the box. Optional Pro addon (PHP 8.1+) adds advanced AI toolkits on top. Framework-agnostic OOS core extracted for cross-platform use (Laravel, Craft CMS adapters).
-	 * Version: 1.1.91
+	Description: AI Assistant framework with 18 AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Azure, TypeSafe Jev, WebLLM & embedded engines). Includes 300+ tools for content management, media generation, research, and site operations out of the box. Optional Pro addon (PHP 8.1+) adds advanced AI toolkits on top. Framework-agnostic OOS core extracted for cross-platform use (Laravel, Craft CMS adapters).
+	 * Version: 1.1.97
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.10
@@ -76,6 +76,57 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 
 	add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
 	add_action( 'admin_init', 'wp_mcp_ai_deactivate_self' );
+
+	return;
+}
+
+/**
+ * Bootstrap-integrity guard.
+ *
+ * A partial plugin update can leave core bootstrap files missing, which would
+ * otherwise cascade into fatal errors on every request. This block is fully
+ * self-contained (it must not depend on helpers.php, which may itself be
+ * missing): it stat()s the critical bootstrap chain against __DIR__ and, when
+ * any file is absent, bails out before the require chain runs.
+ *
+ * The admin_notices closure only runs after init, so esc_html__() is safe here
+ * despite the textdomain not being loadable yet during file parsing.
+ *
+ * @since 1.1.96
+ */
+$wp_mcp_ai_required_bootstrap = array(
+	'includes/bootstrap/constants.php',
+	'includes/bootstrap/autoload.php',
+	'includes/bootstrap/helpers.php',
+	'includes/bootstrap/cron.php',
+	'includes/bootstrap/hooks.php',
+	'includes/bootstrap/loader.php',
+	'includes/bootstrap/activation.php',
+	'includes/class-wp-mcp-ai-plugin.php',
+	'includes/bootstrap/oos-bridge.php',
+);
+$wp_mcp_ai_missing_bootstrap  = array();
+foreach ( $wp_mcp_ai_required_bootstrap as $wp_mcp_ai_bootstrap_file ) {
+	if ( ! file_exists( __DIR__ . '/' . $wp_mcp_ai_bootstrap_file ) ) {
+		$wp_mcp_ai_missing_bootstrap[] = $wp_mcp_ai_bootstrap_file;
+	}
+}
+if ( ! empty( $wp_mcp_ai_missing_bootstrap ) ) {
+	if ( is_admin() ) {
+		add_action(
+			'admin_notices',
+			function () use ( $wp_mcp_ai_missing_bootstrap ) {
+				if ( ! current_user_can( 'manage_options' ) ) {
+					return;
+				}
+				printf(
+					'<div class="notice notice-error"><p><strong>Open Operator System:</strong> %s</p><p><code>%s</code></p></div>',
+					esc_html__( 'Critical plugin files are missing from this installation (incomplete update). Reinstall or update the plugin to restore it.', 'mcp-ai-wpoos' ),
+					implode( '</code>, <code>', array_map( 'esc_html', array_slice( $wp_mcp_ai_missing_bootstrap, 0, 5 ) ) )
+				);
+			}
+		);
+	}
 
 	return;
 }

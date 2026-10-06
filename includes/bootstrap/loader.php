@@ -45,15 +45,17 @@ if ( ! function_exists( 'wp_mcp_ai_class_exists_via_autoload' ) ) {
 	 * @since 1.2.0
 	 *
 	 * @param string $file_path Absolute path to a class-only PHP file.
-	 * @return bool True if the class is already loaded and the
-	 *              require_once can be skipped.
+	 * @return bool True when the class is already loaded (the require_once
+	 *              can be skipped) OR when the file is missing (the require
+	 *              is skipped and the install degrades instead of fatalling).
 	 */
 	function wp_mcp_ai_class_exists_via_autoload( $file_path ) {
 		if ( ! defined( 'WP_MCP_AI_AUTOLOAD_CLASSES' ) || ! WP_MCP_AI_AUTOLOAD_CLASSES ) {
 			return false; // Autoloading disabled — force require.
 		}
 		if ( ! file_exists( $file_path ) ) {
-			return false;
+			wp_mcp_ai_record_missing_file( $file_path );
+			return true;
 		}
 		// Check if the file only defines a class/interface/trait and that
 		// class is already loaded (by Composer's classmap autoloader).
@@ -274,18 +276,18 @@ if ( is_admin() ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/measurement/class-wp-mcp-ai-admin-measurement-dashboard.php';
 	}
 }
-require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-measurement-bootstrap.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-measurement-bootstrap.php' );
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
 }
 
 // Google Calendar: shared OAuth/API services, sync engine, and push receiver.
 // Self-gating - nothing is scheduled until a connection is authorised.
-require_once WP_MCP_AI_PATH . 'includes/google/google-calendar-init.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/google/google-calendar-init.php' );
 
 // Google Classroom: shared foundation (scopes, client, credentials, push
 // receiver). Consumers live in the Pro addon; self-gating like Calendar.
-require_once WP_MCP_AI_PATH . 'includes/google/google-classroom-init.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/google/google-classroom-init.php' );
 
 // ---------------------------------------------------------------------------
 // Infrastructure utilities (must load early)
@@ -324,7 +326,7 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/infrastru
 }
 
 // HTTP helper prevents SSL issues with loopback addresses.
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http-helper.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http-helper.php' );
 WP_MCP_AI_HTTP_Helper::init();
 
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php' ) ) {
@@ -348,7 +350,7 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/helpers/c
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-tool-payload-advisor.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-tool-payload-advisor.php';
 }
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php' );
 
 // ---------------------------------------------------------------------------
 // Core plugin classes
@@ -482,9 +484,9 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/container-helpers.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
 }
-require_once WP_MCP_AI_PATH . 'includes/services-init.php';
-require_once WP_MCP_AI_PATH . 'includes/agents-init.php';
-require_once WP_MCP_AI_PATH . 'includes/content-assistant-init.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/services-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/agents-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/content-assistant-init.php' );
 
 // ---------------------------------------------------------------------------
 // AI provider clients and model infrastructure
@@ -527,7 +529,7 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-data-budget-tracker.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-data-budget-tracker.php';
 }
-require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-async-scheduler-bridge.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-async-scheduler-bridge.php' );
 WP_MCP_AI_Async_Scheduler_Bridge::register_hooks();
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
@@ -538,7 +540,7 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 // plugins_loaded action has already fired, init() never runs, the table is
 // never created, and WP_MCP_AI_Load_Guard spams "table doesn't exist" SQL
 // errors on every REST dispatch.
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-async-job-queue.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-async-job-queue.php' );
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-sla-manager.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-sla-manager.php';
 }
@@ -623,6 +625,9 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/interface
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-typesafe-client.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-typesafe-client.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-decision-scope-guard.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-decision-scope-guard.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-digitalocean-client.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-digitalocean-client.php';
 }
@@ -687,7 +692,7 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/infrastru
 // infrastructure so Credential_Resolver is available when
 // WP_MCP_AI_Model_Config::get_available_providers() is called.
 // ---------------------------------------------------------------------------
-require_once WP_MCP_AI_PATH . 'includes/bridge/bridge-init.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/bridge/bridge-init.php' );
 
 // ---------------------------------------------------------------------------
 // Tool infrastructure and utilities
@@ -699,10 +704,27 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/tool-resp
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cascade-executor.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cascade-executor.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-worker-usage-reporter.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-worker-usage-reporter.php';
 }
 WP_MCP_AI_Media_Worker_Usage_Reporter::init();
+// Fleet status monitoring: shared worker config, heartbeat emitter, and the
+// pull-diff alert poller. All opt-in — nothing is sent unless the heartbeat
+// option is enabled and a worker URL is configured.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-worker-config.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-worker-config.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-heartbeat.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-heartbeat.php';
+}
+WP_MCP_AI_Status_Heartbeat::init();
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-alert-poller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-alert-poller.php';
+}
+WP_MCP_AI_Status_Alert_Poller::init();
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dhash-backfill.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dhash-backfill.php';
 }
@@ -746,6 +768,12 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-transcript-recorder.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-transcript-recorder.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/hooks/class-wp-mcp-ai-hook-profiles.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/hooks/class-wp-mcp-ai-hook-profiles.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-session-distiller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-session-distiller.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 }
@@ -755,7 +783,7 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/crawler/class-wp-mcp-ai-crawler.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/crawler/class-wp-mcp-ai-crawler.php';
 }
-require_once WP_MCP_AI_PATH . 'includes/job-notifier-init.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/job-notifier-init.php' );
 
 // ---------------------------------------------------------------------------
 // Async chat continuation — durable correlation between async jobs and the
@@ -764,7 +792,7 @@ require_once WP_MCP_AI_PATH . 'includes/job-notifier-init.php';
 // priority 10) so the chat session can be resumed off-hook and the LLM can
 // produce a follow-up message. See docs/features/chat/async-continuation.md
 // ---------------------------------------------------------------------------
-require_once WP_MCP_AI_PATH . 'includes/chat-continuation-init.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/chat-continuation-init.php' );
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-response-cache.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-response-cache.php';
 }
@@ -804,13 +832,16 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-registry.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-registry.php';
 }
-require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-default-sources.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-default-sources.php' );
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-remote-monitor-source.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-remote-monitor-source.php';
+}
 WP_MCP_AI_Service_Status_Default_Sources_Bootstrap::register();
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-service-status-cpt.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-service-status-cpt.php' );
 add_action( 'init', array( 'WP_MCP_AI_Service_Status_CPT', 'register' ), 11 );
-require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-status-rest-controller.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-status-rest-controller.php' );
 add_action( 'rest_api_init', array( 'WP_MCP_AI_Status_REST_Controller', 'register_routes' ) );
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-shortcode.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-shortcode.php' );
 add_shortcode( 'nvoos_status', array( 'WP_MCP_AI_Status_Shortcode', 'render' ) );
 
 // Pro addon (must load BEFORE tools-init.php so Pro tools are registered first).
@@ -828,14 +859,14 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 // Orchestration, tools, validators, and repositories
 // ---------------------------------------------------------------------------
 
-require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
-require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
-require_once WP_MCP_AI_PATH . 'includes/markup-init.php';
-require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
-require_once WP_MCP_AI_PATH . 'includes/abilities/abilities-init.php';
-require_once WP_MCP_AI_PATH . 'includes/data/data-init.php';
-require_once WP_MCP_AI_PATH . 'includes/services/content-embedding-init.php';
-require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/orchestration-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/markup-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/tools-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/abilities/abilities-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/data/data-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/services/content-embedding-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php' );
 
 // ---------------------------------------------------------------------------
 // LLM Harnessing subsystem (Layers A-F: prompt cues, reasoning trace,
@@ -843,15 +874,15 @@ require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';
 // Behaviour-preserving by default — every layer is gated by a per-assistant
 // harness profile that ships in the "off" state.
 // ---------------------------------------------------------------------------
-require_once WP_MCP_AI_PATH . 'includes/harness/harness-init.php';
-require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-otel-span-exporter.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/harness/harness-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-otel-span-exporter.php' );
 // Register span exporter — no-op unless `wp_mcp_ai_otel_endpoint` is configured.
 WP_MCP_AI_Otel_Span_Exporter::register();
-require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
-require_once WP_MCP_AI_PATH . 'includes/paper-store/paper-store-init.php';
-require_once WP_MCP_AI_PATH . 'includes/okf/okf-init.php';
-require_once WP_MCP_AI_PATH . 'includes/professions/professions-init.php';
-require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/repositories-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/paper-store/paper-store-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/okf/okf-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/professions/professions-init.php' );
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/teams/teams-init.php' );
 
 // ---------------------------------------------------------------------------
 // HITL Approval Queue (Phase 2 — Human-in-the-Loop)
@@ -862,19 +893,19 @@ require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
 // an init hook rather than called during file loading, so it does not
 // interfere with JetEngine's cron-based CCT table caching.
 // ---------------------------------------------------------------------------
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-approval-queue.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-approval-queue.php' );
 add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cpt' ), 11 );
 add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cron' ), 1 );
 
 // ---------------------------------------------------------------------------
 // PR-E: base-plugin job-source adapters (transcript mining, Crawl4AI, HITL)
 // ---------------------------------------------------------------------------
-require_once WP_MCP_AI_PATH . 'includes/services/job-sources/job-sources-init.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/services/job-sources/job-sources-init.php' );
 
 // ---------------------------------------------------------------------------
 // Phase 3 — Workflow CPT + Engine V2
 // ---------------------------------------------------------------------------
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-cpt.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-cpt.php' );
 add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_cpt' ), 12 );
 add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_meta' ), 12 );
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php' ) ) {
@@ -887,7 +918,7 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 // ---------------------------------------------------------------------------
 // Phase 4 — Workflow Run CPT (durable execution event log)
 // ---------------------------------------------------------------------------
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-run-cpt.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-run-cpt.php' );
 add_action( 'init', array( 'WP_MCP_AI_Workflow_Run_CPT', 'register_cpt' ), 13 );
 add_action( 'init', array( 'WP_MCP_AI_Workflow_Run_CPT', 'register_meta' ), 13 );
 
@@ -897,11 +928,11 @@ add_action( 'init', array( 'WP_MCP_AI_Workflow_Run_CPT', 'register_meta' ), 13 )
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-trigger-registry.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-trigger-registry.php';
 }
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-trigger-cpt.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-trigger-cpt.php' );
 add_action( 'init', array( 'WP_MCP_AI_Workflow_Trigger_CPT', 'register_cpt' ), 14 );
 add_action( 'init', array( 'WP_MCP_AI_Workflow_Trigger_CPT', 'register_meta' ), 14 );
 add_action( 'init', array( 'WP_MCP_AI_Workflow_Trigger_CPT', 'register_all_triggers' ), 20 );
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-outbound-webhook.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-outbound-webhook.php' );
 add_action(
 	'init',
 	function () {
@@ -969,6 +1000,22 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php';
 }
+
+// ---------------------------------------------------------------------------
+// ChatGPT plugin bridge — MCP OAuth resource-server contract (RFC 9728)
+// ---------------------------------------------------------------------------
+
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-oauth-resource-server.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-oauth-resource-server.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-well-known-oauth-protected-resource.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-well-known-oauth-protected-resource.php';
+}
+WP_MCP_AI_Well_Known_OAuth_Protected_Resource::init();
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-well-known-openai-challenge.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/mcp/class-wp-mcp-ai-well-known-openai-challenge.php';
+}
+WP_MCP_AI_Well_Known_OpenAI_Challenge::init();
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 }
@@ -981,15 +1028,15 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 // endpoint at /assets/discover runs in non-admin context (is_admin() returns
 // false for /wp-json/* requests).  The admin UI wrapper stays inside the
 // is_admin() guard below.
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php' );
 WP_MCP_AI_Asset_Inventory::get_instance();
 
 // Same for security-training and supplier-security: their REST endpoints also
 // resolve get_instance() outside of admin context.
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-training.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-training.php' );
 WP_MCP_AI_Security_Training::get_instance();
 
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-supplier-security.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-supplier-security.php' );
 WP_MCP_AI_Supplier_Security::get_instance();
 
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-asset-inventory-rest.php' ) ) {
@@ -1037,7 +1084,7 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-reader.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-reader.php';
 	}
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-migrator.php';
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-migrator.php' );
 	WP_MCP_AI_Agent_Memory_CCT_Migrator::bootstrap();
 	// Conversation import pipeline (external exports → ai_chat_transcripts CCT).
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/interface-wp-mcp-ai-conversation-import-adapter.php' ) ) {
@@ -1127,15 +1174,15 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php';
 	}
-	require_once WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php';
-	require_once WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php';
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php' );
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php' );
 	// Cloudways integration has been migrated to the Pro addon's cloudways-toolkit.
 	// The settings fields (cloudways_email, cloudways_api_key, etc.) remain in base.
 	// AJAX connection handlers have been updated to use the API v2 client.
-	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudflare-integration-init.php';
-	require_once WP_MCP_AI_PATH . 'includes/integrations/mailjet-integration-init.php';
-	require_once WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php';
-	require_once WP_MCP_AI_PATH . 'includes/integrations/sitekit-integration-init.php';
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/integrations/cloudflare-integration-init.php' );
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/integrations/mailjet-integration-init.php' );
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php' );
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/integrations/sitekit-integration-init.php' );
 } elseif ( wp_mcp_ai_is_jetengine_available() ) {
 	// Base version with JetEngine: only load minimal CCT for chat transcript storage.
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php' ) ) {
@@ -1152,7 +1199,7 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-reader.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-reader.php';
 	}
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-migrator.php';
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-migrator.php' );
 	WP_MCP_AI_Agent_Memory_CCT_Migrator::bootstrap();
 	// Conversation import pipeline (external exports → ai_chat_transcripts CCT).
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/interface-wp-mcp-ai-conversation-import-adapter.php' ) ) {
@@ -1230,13 +1277,13 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/
 // Memory Layer 2026 Enhancements Phase 1 — privacy filter must load before
 // any memory write happens so the `wp_mcp_ai_memory_pre_store_transform`
 // hook is registered at priority 5 (before user transforms at priority 10).
-require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-privacy-filter.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-privacy-filter.php' );
 WP_MCP_AI_Memory_Privacy_Filter::bootstrap();
 
 // Memory Layer 2026 Enhancements Phase 3 — auto-capture service (default OFF).
 // Hooks `wp_mcp_ai_tool_executed` and `wp_mcp_ai_before_chat_request`
 // silently. Master kill: filter `wp_mcp_ai_memory_auto_capture_enabled`.
-	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-auto-capture-service.php';
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-auto-capture-service.php' );
 	WP_MCP_AI_Memory_Auto_Capture_Service::bootstrap();
 
 	// Transparency & Compliance (Proposal 017) — boot AI disclosure, consent, provenance.
@@ -1253,7 +1300,7 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/
 
 // DSpark efficiency hooks — data collectors for the orchestration dashboard.
 // Registers filters that count depth tiers and track routing cost savings.
-require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-dspark-hooks.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-dspark-hooks.php' );
 WP_MCP_AI_DSpark_Hooks::register();
 
 // Elementor integration is available for all versions.
@@ -1291,7 +1338,7 @@ unset(
 // Settings section autoloader — MUST be available outside is_admin() so CLI
 // test runs can resolve WP_MCP_AI_Section_* classes during instantiation.
 // ---------------------------------------------------------------------------
-require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
+wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php' );
 
 // Base orchestration dashboard — loaded unconditionally so its admin_menu
 // registration also exists in CLI/test contexts (mirrors
@@ -1369,19 +1416,19 @@ if ( is_admin() ) {
 	new WP_MCP_AI_Admin_Slash_Commands_Dashboard();
 
 	// ISO 27001 compliance systems.
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php' );
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-asset-inventory-admin.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-asset-inventory-admin.php';
 	}
 	WP_MCP_AI_Asset_Inventory::get_instance();
 
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-training.php';
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-training.php' );
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-training-admin.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-training-admin.php';
 	}
 	WP_MCP_AI_Security_Training::get_instance();
 
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-supplier-security.php';
+	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-supplier-security.php' );
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-supplier-security-admin.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-supplier-security-admin.php';
 	}

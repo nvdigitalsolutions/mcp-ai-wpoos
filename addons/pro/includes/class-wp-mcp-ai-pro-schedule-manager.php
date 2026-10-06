@@ -312,7 +312,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			// Capture current time once for consistent comparisons throughout this method.
 			$now       = time();
-			$timestamp = isset( $data['timestamp'] ) ? absint( $data['timestamp'] ) : $now + 60;
+			$timestamp = isset( $data['timestamp'] ) ? absint( $data['timestamp'] ) : 0;
+
+			// Without an explicit first-run time, one-shot schedules keep the
+			// documented 60-second default, while recurring schedules start one
+			// full interval from now. Previously every type defaulted to +60 s, so a
+			// "daily" schedule fired almost immediately after creation.
+			if ( 0 === $timestamp ) {
+				if ( 'single' === $schedule ) {
+					$timestamp = $now + 60;
+				} else {
+					$schedules_map = wp_get_schedules();
+					$interval      = isset( $schedules_map[ $schedule ]['interval'] ) ? (int) $schedules_map[ $schedule ]['interval'] : 0;
+					$timestamp     = $now + max( 60, $interval );
+				}
+			}
 
 			if ( $timestamp < $now ) {
 				return new WP_Error( 'past_timestamp', __( 'Schedule timestamp must be in the future.', 'mcp-ai-wpoos-pro' ) );
@@ -624,14 +638,41 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$updated['updated_at'] = time();
 			$updated['updated_by'] = (int) $user_id;
 
-			// Re-schedule WP cron.
-			self::unschedule_wp_cron( $schedule_id );
+			// Re-schedule WP cron — but only when the timing actually changed.
+			// WP cron runs events whose timestamp has already passed on the very
+			// next spawn, so re-scheduling with the stored (stale) timestamp made
+			// a plain edit-and-save re-trigger the schedule immediately.
+			$now = time();
 
-			if ( $updated['enabled'] ) {
-				$ts        = isset( $updated['timestamp'] ) ? $updated['timestamp'] : time() + 60;
-				$scheduled = self::schedule_wp_cron( $schedule_id, $updated['schedule'], $ts );
-				if ( is_wp_error( $scheduled ) ) {
-					return $scheduled;
+			if ( empty( $updated['enabled'] ) ) {
+				self::unschedule_wp_cron( $schedule_id );
+			} else {
+				$timestamp_provided = isset( $data['timestamp'] );
+				$interval_changed   = isset( $data['schedule'] ) && (string) $updated['schedule'] !== (string) $existing['schedule'];
+				$turning_on         = empty( $existing['enabled'] );
+				$had_event          = (bool) wp_next_scheduled( self::DISPATCH_HOOK, array( (string) $schedule_id ) );
+
+				if ( $timestamp_provided || $interval_changed || $turning_on || ! $had_event ) {
+					self::unschedule_wp_cron( $schedule_id );
+
+					if ( $timestamp_provided ) {
+						// Explicit first-run time (already validated as future above).
+						$ts = (int) $updated['timestamp'];
+					} elseif ( 'single' === (string) $updated['schedule'] && (int) $updated['run_count'] > 0 && ! $turning_on ) {
+						// A consumed one-shot must not be re-armed by a metadata-only save.
+						$ts = 0;
+					} else {
+						$schedules_map = wp_get_schedules();
+						$interval      = isset( $schedules_map[ $updated['schedule'] ]['interval'] ) ? (int) $schedules_map[ $updated['schedule'] ]['interval'] : 0;
+						$ts            = $now + max( 60, $interval );
+					}
+
+					if ( $ts > 0 ) {
+						$scheduled = self::schedule_wp_cron( $schedule_id, $updated['schedule'], $ts );
+						if ( is_wp_error( $scheduled ) ) {
+							return $scheduled;
+						}
+					}
 				}
 			}
 

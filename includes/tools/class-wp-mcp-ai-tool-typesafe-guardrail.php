@@ -268,6 +268,9 @@ class WP_MCP_AI_Tool_Typesafe_Guardrail implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Execute the tool.
 	 *
+	 * @decision-domain content
+	 * @decision-authority inform
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context including user_id.
 	 * @return array|WP_Error Tool results or error.
@@ -313,6 +316,30 @@ class WP_MCP_AI_Tool_Typesafe_Guardrail implements WP_MCP_AI_Tool_Interface, WP_
 				'type'         => 'noul',
 				'instructions' => $definition['instructions'],
 			);
+		}
+
+		// Decision-scope gate (Proposal 052): hazard verdicts are advisory;
+		// enforcement stays in code — content / inform.
+		if ( ! class_exists( 'WP_MCP_AI_Decision_Scope_Guard' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_decision_guard_unavailable',
+				__( 'The decision-scope guard is not available.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$gate = WP_MCP_AI_Decision_Scope_Guard::gate(
+			WP_MCP_AI_Decision_Scope_Guard::DOMAIN_CONTENT,
+			WP_MCP_AI_Decision_Scope_Guard::AUTHORITY_INFORM,
+			static function () {
+				return new WP_Error(
+					'wp_mcp_ai_decision_scope_gated',
+					__( 'This decision path is gated by the decision-scope guard.', 'mcp-ai-wpoos' )
+				);
+			}
+		);
+
+		if ( true !== $gate ) {
+			return $gate;
 		}
 
 		if ( 'openrouter' === $transport ) {

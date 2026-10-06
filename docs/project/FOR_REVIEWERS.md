@@ -7,22 +7,22 @@
 
 ## 1. What is this project? (TL;DR)
 
-NV oOS (Open Operator System) is a WordPress plugin that turns a WordPress site into an AI-powered assistant. It connects to 15 language-model providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Flowhub) and exposes ~300+ tools the AI can use — everything from creating posts to managing WooCommerce products to running shell commands (gated behind an opt-in constant).
+NV oOS (Open Operator System) is a WordPress plugin that turns a WordPress site into an AI-powered assistant. It connects to 18 language-model providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Azure, TypeSafe Jev, plus local WebLLM + embedded engines) and exposes ~300+ tools the AI can use — everything from creating posts to managing WooCommerce products to running shell commands (gated behind an opt-in constant).
 
 Architecturally, the project has undergone a major framework extraction: the AI orchestration engine (`lib/core/`) is now a framework-agnostic Hexagonal Architecture package (`nvoos/core`) with 32 domain contracts, 21 WordPress adapters, and 109+ migrated tools. The plugin also includes the **OKF v0.1** (Open Knowledge Format) engine for curated deterministic knowledge, and the **Meta-Harness** trace optimization system.
 
 The repo is a **monorepo** containing:
 - The **base plugin** (GPLv3, ships to WordPress.org) — `mcp-ai-wpoos.php` + `includes/`
 - A **Pro addon** (commercial/proprietary) — `addons/pro/`
-- **26 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.2.0, Checkout API v0.1.2)
+- **30 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.4.0, MCP Gateway v0.1.1, Checkout API v0.1.2)
 - The **extracted AI engine** (framework-agnostic, Hexagonal Architecture) — `lib/core/`
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.91 (October 2026)
+**Current version:** 1.1.97 (October 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
-**Total tools:** ~1,648 (~347 base + ~1,301 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,665 (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 
@@ -50,7 +50,7 @@ includes/                     ← 1,060 PHP files
 ├── class-wp-mcp-ai-plugin.php ← Kernel / DI container / singleton
 ├── class-wp-mcp-ai-rest.php   ← REST route registration (151 calls, 36 files)
 ├── class-wp-mcp-ai-tool-registry.php ← Central tool registry
-├── tools/                     ← ~347 base tool classes (~1,648 total registered through the singleton registry)
+├── tools/                     ← ~352 base tool classes (~1,665 total registered through the singleton registry)
 ├── admin/                     ← Admin UI, settings, dashboards
 ├── rest/                      ← REST controllers (chat, MCP, webhooks)
 ├── assistants/                ← Assistant CPT & CCT management
@@ -96,7 +96,7 @@ core/
 
 ## 4. Addon Inventory (Production vs Experimental)
 
-The monorepo contains **28 addon directories** under `addons/` (29 entries in the [ADDON_INVENTORY.md](ADDON_INVENTORY.md) inventory, including the standalone `core/` plugin). See the inventory for full details including license, version, and dependencies.
+The monorepo contains **30 addon directories** under `addons/` (31 entries in the [ADDON_INVENTORY.md](ADDON_INVENTORY.md) inventory, including the standalone `core/` plugin). See the inventory for full details including license, version, and dependencies.
 
 ### Production (actively maintained — review priority)
 
@@ -116,14 +116,15 @@ The monorepo contains **28 addon directories** under `addons/` (29 entries in th
 | **Comic Reader** | 0.2.0 | GPLv3 | CBR/CBZ/CB7/CBT comic reader & AI-powered creator. React reading interface. |
 | **Funiq Bridge** | 1.0.0 | GPLv3 | Payload CMS → WordPress bridge for Funiq React PWA. REST API, CPTs, taxonomies, React admin SPA. |
 | **LibreChat** | 0.1.0 | GPLv3 | Sandboxed Python/JavaScript code interpreter, TTS/STT speech services, web search reranker. |
-| **Fleet Operator** | 0.1.0 | GPLv3 | External-operator governance (Hermes or any MCP/A2A host). Scoped `op_` credentials with audience binding, expiry, rate limits, revocation; MCP `tools/list` scoping + `tools/call` enforcement; admin page, WP-CLI, config generator, skills pack. |
-| **Media Worker** | 3.2.0 | GPLv3 | Docker-based Node.js sidecar. 11 route handlers (image, video, pdf, ocr, email, social, code, data, document, browser, workflow) plus native `/api/crawl/*` endpoints (single-URL Markdown, batched crawling, link scans) and a Crawl4AI-compatible facade. Queue module with concurrent processing. Multi-tenant shared worker mode since v2.4.0 (`SITE_TOKENS` per-site isolation, per-site rate limits); Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`) + usage counters + grouped temp TTLs; Phase 3 scale features (opt-in Redis rate-limit store, provider-keys file hot-reload). Timing-safe token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet. Worker routing with local fallbacks. |
+| **Fleet Operator** | 1.0.0 | GPLv3 | External-operator governance (Hermes or any MCP/A2A host). Scoped `op_` credentials with audience binding, expiry, rate limits, revocation; MCP `tools/list` scoping + `tools/call` enforcement; admin page, WP-CLI, Hermes YAML + Zed/VS Code/Claude Desktop config generators (`generate_zed_json()`/`generate_claude_json()` through the npx bridge), skills pack. |
+| **Media Worker** | 3.4.0 | GPLv3 | Docker-based Node.js sidecar. 11 route handlers (image, video, pdf, ocr, email, social, code, data, document, browser, workflow) plus native `/api/crawl/*` endpoints (single-URL Markdown, batched crawling, link scans) and a Crawl4AI-compatible facade. Queue module with concurrent processing. Multi-tenant shared worker mode since v2.4.0 (`SITE_TOKENS` per-site isolation, per-site rate limits); Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`) + usage counters + grouped temp TTLs; Phase 3 scale features (opt-in Redis rate-limit store, provider-keys file hot-reload). Timing-safe token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet. Worker routing with local fallbacks. |
 
 ### Experimental (works but limited testing)
 
 | Addon | Version | License | Notes |
 |---|---|---|---|
 | **Page Agent** | 0.1.0 | GPLv3 | Alibaba Page Agent (MIT) browser copilot. Natural-language page control — click, type, navigate. Client-side only. |
+| **MCP Gateway** | 0.1.0 | GPLv3 | Public fleet MCP endpoint (Express service, streamable HTTP MCP 2026-07-28). Public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, fail-closed env config. Subtree mirror to `nvoos-mcp-gateway`. |
 | **Schedule Anything** | 0.1.0 | Proprietary | Full SaaS booking platform with Stripe, calendar management, multi-tenant architecture. |
 | **Schedule Anything SPA** | 0.1.0 | Proprietary | React SPA frontend (Vite + Tailwind) for Schedule Anything. |
 | **Crocoblock DS** | 0.1.0 | GPLv3 | Design token system. 55+ CSS tokens, admin editor, DTCG export, a11y tokens. |
@@ -213,7 +214,7 @@ If you have limited budget for a review, focus on this order:
 ### Phase 2: Architecture review (~3-4 hours)
 4. **Plugin architecture** — DI container usage, class loading, lifecycle hooks (60+), singleton patterns
 5. **Base/Pro separation** — Verify no pro feature gating in base plugin
-6. **Tool registry** — How ~1,648 tools are registered and discovered
+6. **Tool registry** — How ~1,665 tools are registered and discovered
 7. **lib/core extraction** — Hexagonal Architecture (32 domain contracts, 21 WordPress adapters), agentic loop, provider routing, 109+ migrated tools. `includes/bridge/` adapters.
 
 ### Phase 3: Deep dives (~4-6 hours, if budget allows)

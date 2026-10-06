@@ -1845,8 +1845,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			// Provider-specific fallbacks (September 2026).
 			$fallbacks = array(
 				'openai'      => 'gpt-4.1',
-				'anthropic'   => 'claude-sonnet-5',
-				'gemini'      => 'gemini-3.6-flash',
+				'anthropic'   => 'claude-sonnet-5-5',
+				'gemini'      => 'gemini-3.8-flash',
 				'ollama'      => 'llama4',
 				'lm_studio'   => 'local',
 				'cloudflare'  => '@cf/meta/llama-4-scout-17b-16e-instruct',

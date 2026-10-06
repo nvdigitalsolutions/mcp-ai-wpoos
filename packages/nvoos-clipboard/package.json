@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-clipboard",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "Clipboard copy utilities with Clipboard API and legacy execCommand fallback - Extracted from NV Open Operator System",
   "main": "dist/nvoos-clipboard.js",
   "module": "dist/nvoos-clipboard.js",

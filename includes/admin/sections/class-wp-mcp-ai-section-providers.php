@@ -255,14 +255,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to curated list when catalog is not available.
 			if ( empty( $kimi_models ) ) {
 				$kimi_models = array(
-					'kimi-k2.7-code'   => 'Kimi K2.7 Code (Latest, 256K, Recommended)',
-					'kimi-k2.6'        => 'Kimi K2.6 (256K, tool calling)',
-					'kimi-k2.5'        => 'Kimi K2.5 (256K, tool calling)',
-					'kimi-k2'          => 'Kimi K2 (256K, tool calling)',
-					'kimi-k2-thinking' => 'Kimi K2 Thinking (256K, no tools)',
-					'moonshot-v1-128k' => 'Moonshot V1 128K (128K, tool calling)',
-					'moonshot-v1-32k'  => 'Moonshot V1 32K',
-					'moonshot-v1-8k'   => 'Moonshot V1 8K',
+					'kimi-k3'        => 'Kimi K3 (2.8T MoE, 1M Context, Recommended)',
+					'kimi-k2.7-code' => 'Kimi K2.7 Code (256K, tool calling)',
+					'kimi-k2.6'      => 'Kimi K2.6 (256K, tool calling)',
 				);
 			}
 
@@ -291,12 +286,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to curated list when catalog is not available.
 			if ( empty( $zai_models ) ) {
 				$zai_models = array(
-					'glm-5.2'     => 'GLM-5.2 (Latest, 1M Context, Recommended)',
-					'glm-5'       => 'GLM-5 (1M Context, tool calling)',
-					'glm-5-turbo' => 'GLM-5 Turbo (256K, fast)',
-					'glm-4.7'     => 'GLM-4.7 (256K)',
-					'glm-4-flash' => 'GLM-4 Flash (128K, fast)',
-					'glm-4'       => 'GLM-4 (128K)',
+					'glm-5.3'        => 'GLM-5.3 (Latest, 1M Context, Recommended)',
+					'glm-5.3-flash'  => 'GLM-5.3 Flash (Fast, budget)',
+					'glm-5.3-flashx' => 'GLM-5.3 FlashX (High-speed)',
+					'glm-5.2'        => 'GLM-5.2 (1M Context, tool calling)',
+					'glm-5'          => 'GLM-5 (1M Context, tool calling)',
+					'glm-4.7'        => 'GLM-4.7 (256K)',
+					'glm-4-flash'    => 'GLM-4 Flash (128K, fast)',
+					'glm-4'          => 'GLM-4 (128K)',
 				);
 			}
 
@@ -452,11 +449,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'OpenAI Transcription Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default model for audio transcription. gpt-4o-mini-transcribe is the current recommended default offering superior accuracy. gpt-4o-transcribe provides highest quality. whisper-1 is the legacy Whisper model.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gpt-4o-mini-transcribe' => 'GPT-4o Mini Transcribe (Recommended)',
-						'gpt-4o-transcribe'      => 'GPT-4o Transcribe (Highest Quality)',
-						'whisper-1'              => 'Whisper-1 (Legacy)',
+						'gpt-transcribe'         => 'GPT-Transcribe (Recommended)',
+						'gpt-live-transcribe'    => 'GPT-Live-Transcribe (Live)',
+						'gpt-4o-mini-transcribe' => 'GPT-4o Mini Transcribe (Deprecated — shuts down 2027-02-26)',
+						'gpt-4o-transcribe'      => 'GPT-4o Transcribe (Deprecated — shuts down 2027-02-26)',
+						'whisper-1'              => 'Whisper-1 (Deprecated — shuts down 2027-02-26)',
 					),
-					'default'     => 'gpt-4o-mini-transcribe',
+					'default'     => 'gpt-transcribe',
 				),
 				'openai_transcribe_response_format'  => array(
 					'type'        => 'select',
@@ -483,7 +482,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_speech_model'                => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Text-to-Speech Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for text-to-speech (TTS) generation. gpt-4o-mini-tts is the current recommended model with natural speech and voice presets. tts-1 and tts-1-hd are legacy models.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for text-to-speech (TTS) generation. gpt-4o-mini-tts is the current recommended model with natural speech and voice presets. Note: OpenAI deprecates the TTS models on January 6, 2027 in favour of gpt-realtime-2.1-mini (Realtime API). tts-1 and tts-1-hd are legacy models.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'gpt-4o-mini-tts' => 'GPT-4o Mini TTS (Recommended)',
 						'tts-1'           => 'TTS-1 (Legacy Standard)',
@@ -731,9 +730,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'default_gemini_model'               => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Gemini Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default model to use for Gemini requests. Gemini 2.5 Pro is the flagship model with best performance. Gemini 2.5 Flash is the latest stable model with multimodal support (text, image, video). Gemini 2.0 Flash is the previous stable generation. Gemini 1.5 Pro provides proven performance, while 1.5 Flash is faster and more economical.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Gemini requests. Gemini 3.8 Flash is the latest stable generation (September 2026). Gemini 2.5 Flash / 2.5 Pro remain available for existing users but Google limits new projects to the 3.x line.', 'mcp-ai-wpoos' ),
 					'options'     => $gemini_models,
-					'default'     => 'gemini-2.5-flash',
+					'default'     => 'gemini-3.8-flash',
 				),
 				'gemini_fallback_model'              => array(
 					'type'        => 'select',
@@ -757,10 +756,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'gemini_image_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Image Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for image generation via Gemini. gemini-3.1-flash-image (Nano Banana 2) is the latest specialized image generation model with support for new resolutions (0.5K/2K/4K), aspect ratios (1:4/4:1/1:8/8:1), Image Search Grounding, and Thinking mode. gemini-2.5-flash-image is the previous generation.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for image generation via Gemini. gemini-3.1-flash-image (Nano Banana 2) is the latest specialized image generation model with support for new resolutions (0.5K/2K/4K), aspect ratios (1:4/4:1/1:8/8:1), Image Search Grounding, and Thinking mode. gemini-2.5-flash-image shut down on October 2, 2026.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'gemini-3.1-flash-image' => 'Gemini 3.1 Flash Image — Nano Banana 2 (Latest)',
-						'gemini-2.5-flash-image' => 'Gemini 2.5 Flash Image — Nano Banana (Legacy)',
 						'gemini-exp-1206'        => 'Gemini Exp 1206 (Experimental)',
 					),
 					'default'     => 'gemini-3.1-flash-image',
@@ -793,13 +791,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'gemini_video_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for video generation via Gemini. gemini-omni-flash is the latest any-to-any multimodal model (May 2026) replacing Veo — supports text/images/audio/video → video, 10s duration, native audio, multi-turn conversational editing. Veo 3.1 remains available as fallback. Note: Veo 2.0 was deprecated by Google in mid-2026 and is no longer available via the Gemini API.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for video generation via Gemini. gemini-omni-1.1-flash (August 2026) is the current any-to-any multimodal model replacing Veo — supports text/images/audio/video → video, 10s duration, native audio, multi-turn conversational editing. Veo 3.1 previews shut down October 22, 2026.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gemini-omni-flash'        => 'Gemini Omni Flash (Recommended — 10s, Audio, Editing)',
+						'gemini-omni-1.1-flash'    => 'Gemini Omni 1.1 Flash (Recommended — 10s, Audio, Editing)',
 						'veo-3.1-generate-preview' => 'Veo 3.1 Generate Preview (Legacy — Audio, 1080p)',
 						'veo-2.0-generate-001'     => 'Veo 2.0 Generate (Deprecated — No longer available)',
 					),
-					'default'     => 'gemini-omni-flash',
+					'default'     => 'gemini-omni-1.1-flash',
 				),
 				'gemini_video_resolution'            => array(
 					'type'        => 'select',
@@ -1550,7 +1548,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Kimi Provider', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Kimi (Moonshot AI) as an available provider', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Kimi is Moonshot AI\'s OpenAI-compatible large language model family. moonshot-v1-* models support tool calling and long context. kimi-k1.5-* models are reasoning-focused and do not support tools. kimi-k2-* models offer advanced agentic capabilities with tool calling.', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Kimi is Moonshot AI\'s OpenAI-compatible large language model family. kimi-k3 (July 2026) is the 2.8T-parameter flagship with 1M context; kimi-k2.6/k2.7-code remain available. The kimi-k2.5/kimi-k2/moonshot-v1 lines were discontinued in 2026.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'kimi_api_key'                       => array(
@@ -1568,9 +1566,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'kimi_model'                         => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Kimi Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default Kimi model to use. kimi-k2.6 is the latest agentic model with 256K context and tool calling (recommended). moonshot-v1-128k is the stable general-purpose option. kimi-k2-thinking is a chain-of-thought reasoning model without tool support.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default Kimi model to use. kimi-k3 is the flagship with 1M context and vision (recommended). kimi-k2.7-code is the coding specialist; kimi-k2.6 is the stable 256K agentic model.', 'mcp-ai-wpoos' ),
 					'options'     => $kimi_models,
-					'default'     => 'kimi-k2.6',
+					'default'     => 'kimi-k3',
 				),
 				'kimi_base_url'                      => array(
 					'type'        => 'url',
@@ -1636,9 +1634,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'zai_model'                          => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Z.AI Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default Z.AI (GLM) model to use. GLM-5.2 is the latest with 1M context and tool calling (recommended). GLM-5 Turbo is optimized for speed and agentic coding tasks.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default Z.AI (GLM) model to use. GLM-5.3 is the latest with 1M context, tool calling, and reasoning (recommended). GLM-5.3 Flash is the budget tier; GLM-5.3 FlashX is the high-speed tier.', 'mcp-ai-wpoos' ),
 					'options'     => $zai_models,
-					'default'     => 'glm-5.2',
+					'default'     => 'glm-5.3',
 				),
 				'zai_base_url'                       => array(
 					'type'        => 'url',
