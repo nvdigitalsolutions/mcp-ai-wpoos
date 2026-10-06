@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.96"
-  plugin-version-tested: "1.1.96"
+  plugin-version: "1.1.97"
+  plugin-version-tested: "1.1.97"
   last-updated: "2026-10-05"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -771,6 +771,31 @@ Import external AI conversation exports into the JetEngine
 Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.1.97 operational quick notes** (full detail in RELEASE-NOTES.md): the
+**Proposal 056 harness** (PR #6912, all inert by default) — cascade model
+routing now governs both engines from one `wp_mcp_ai_cascade_enabled` switch
+(cheap tier + judge-verified escalation; the framework-core `CascadeRouter`
+feeds the OOS engine via WordPress `CascadeClassifier`/`CascadeValidator`
+adapters, `WP_MCP_AI_Cascade_Executor` gates the legacy chat path, and the
+Pro Jev classifier wires in via the proposal-045 routing signal); the new
+base tools `run_assistant_eval` (trajectory judges + deterministic checks)
+and `scan_assistant_security` (OWASP-informed config audit, masked secret
+evidence); **hook profiles** (minimal/standard/strict, master switch + kill
+list); the **session distiller** emits the canonical `wp_mcp_ai_memory_stored`
+event (MemPalace/CCT/Graphify/recall hydrate); the Pro
+`suggest_workflows_from_history` tool mines the harness trace store. The
+**OOS parity gaps are closed** (PR #6913) — the destructive-ops gate no
+longer 500s on the OOS path (canonical 428/429 envelopes via
+`translate_gate_exception()`), the Output Guardrail + Citation Verifier run
+at the final payload on all three chat surfaces, and
+`bin/check-chat-parity.php` (35 → 38 features) has a `parity-check` CI job.
+The **MCP Gateway now negotiates protocol versions** (PR #6914,
+`2024-11-05` fallback — Zed and other strict clients connect). The **public
+npm publish shipped** (PRs #6907/#6908): all 23 `packages/` are live at
+0.1.0-alpha.3 (`nvoos-mcp-bridge` `latest` = alpha.3; nvoos-api/nvoos-sse-client
+republished at alpha.4 with valid JS). Tool counts: ~352 base + ~1,313 Pro
+(~1,665 total).
 
 **v1.1.96 operational quick notes** (full detail in RELEASE-NOTES.md): the
 **`@nvdigitalsolutions/nvoos-mcp-bridge` npx package** is now the canonical

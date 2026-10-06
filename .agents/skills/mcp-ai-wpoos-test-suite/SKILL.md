@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 65 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 66 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   last-updated: "2026-10-05"
-  plugin-version: "1.1.96"
-  plugin-version-tested: "1.1.96"
+  plugin-version: "1.1.97"
+  plugin-version-tested: "1.1.97"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -929,6 +929,20 @@ the changed files is the substantive gate; plan CI waits accordingly.
       `trait_exists()` guard pattern — when a plugin trait may collide with an
       addon stub, guard every `require` of the trait file with `trait_exists()`
       (never rely on require_once ordering alone).
+  66. **The `parity-check` CI job fails after touching a chat/guardrail surface
+      (v1.1.97+).** #6913 added a CI job that runs `bin/check-chat-parity.php`,
+      which now tracks **all four** OOS/legacy guardrail surfaces (35 → 38
+      features, 100% parity): the gate-exception → envelope translation
+      (428 confirmation / 429 limits via `translate_gate_exception()`),
+      `apply_pre_response_render()` at the final payload (legacy non-streaming,
+      legacy streaming's final SSE event, OOS handler), the
+      `wp_mcp_ai_agentic_iteration_complete` domain-event bridge, and the
+      `wp_mcp_ai_before_tool_execute` waterfall bridge. Any PR that adds,
+      moves, or gates one of those surfaces without updating the script's
+      feature assertions fails the `parity-check` job — extend the script in
+      the same PR (the script is the regression net for guardrail symmetry
+      between the legacy and OOS paths; its 100% parity is asserted by
+      `tests/test-oos-parity-gaps.php`).
 
 ## Production fix vs test fix
 
