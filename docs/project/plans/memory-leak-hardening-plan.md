@@ -1,6 +1,6 @@
 # Memory Leak Hardening Plan — Base + Pro Plugin
 
-> Status: **Implemented (2026-10-06)** · Audit + all Phases 1–3 fixes landed; Phase 4 partially (Node regression tests + docs done; PHP regression tests & PHPCS sniff deferred — see §6).
+> Status: **Implemented (2026-10-06, PR #6937)** · Audit + all Phases 1–3 fixes landed; Phase 4 partially (Node regression tests + docs done; PHP regression tests & PHPCS sniff deferred — see §6). Release-note surfaces extend the 1.1.98 section in place (post-window pass: `v1.1.98-post-docs-catch-up.md`).
 > Scope: `includes/` + `lib/` (base PHP), `addons/pro/includes/` (pro PHP), Node workers (`addons/media-worker`, `addons/cloud-worker`, `addons/pro/node-services`, `addons/mcp-gateway`), browser JS (`assets/js/chat.js`, SPA).
 > Method: targeted grep sweeps + section reads, split across three parallel read-only agents, spot-verified against source. No code changed.
 
@@ -140,6 +140,28 @@ Verified clean: `mcp-gateway` (stateless, `AbortSignal.timeout()`), `cloud-worke
 
 All findings in §2 were fixed (34 files, +1204/−274), including one extra
 regression test each for the queue retry cap and the crawl4ai store cap.
+Shipped as PR #6937 (39 files, +1521/−285) together with the DLQ/SLA-layer
+extension below.
+
+### DLQ / SLA layer review (post-audit extension)
+
+- **SLA Manager** (`includes/class-wp-mcp-ai-sla-manager.php`) — stateful
+  (`wp_mcp_ai_sla_compliance_log` option) but capped at 1,000 entries
+  (`array_slice(-999)` before append) — **verified bounded, no change**.
+- **Erlang-C queue-health** snapshots capped at 100 — **verified, no change**.
+- **Dead-letter queue** — `MAX_ITEMS=1000` cap, non-autoloaded storage,
+  guarded purge cron, LIMIT'd admin listing — **verified, no change**.
+- **Job notifier — two HIGH issues found & fixed**: `cleanup_expired_jobs()`
+  compared serialized option blobs against an int, so the hourly cron wiped
+  **all fresh** job-status transients and orphaned their timeout rows — now a
+  canonical paired `_transient_timeout_*` delete; and the webhook registry
+  (`wp_mcp_ai_job_webhooks`) now prunes job-scoped entries after 30 days
+  (`*` wildcard always preserved).
+- **Recommended follow-ups (not fixed, recorded)**: webhook-dispatch dedupe
+  (payload-signature risk), DLQ `retry_history` ring-buffer + max-retry gate,
+  async-queue stale `running`/`queued` reaper, and two latent calls to
+  nonexistent methods (`WP_MCP_AI_Dead_Letter_Queue::add_to_queue()`,
+  `WP_MCP_AI_Job_Notifier::notify()`).
 
 ### Verified
 - **PHP**: `php -l` on all 21 changed files — clean. `phpcs
