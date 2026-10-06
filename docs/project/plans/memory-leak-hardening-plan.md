@@ -165,6 +165,13 @@ extension below.
   calls to nonexistent methods replaced with the real APIs
   (`WP_MCP_AI_Dead_Letter_Queue::add( TYPE_JOB_QUEUE, … )` and
   `WP_MCP_AI_Job_Notifier::handle_job_completed()`).
+- **PHPUnit regression tests added (third code commit)** — new suites
+  `tests/test-semantic-cache.php`, `tests/test-async-job-queue-cleanup.php`,
+  `tests/test-evolved-role-registry.php` plus additions to
+  `test-dead-letter-queue.php`, `test-job-notifier.php`, `test-rest-cache.php`
+  (16 tests, 47/47 green in the Docker runner against the isolated
+  `wordpress_test_pearl` DB). The evolved-role registry option (the last
+  remaining PHP follow-up) landed in the same commit.
 
 ### Verified
 - **PHP**: `php -l` on all 21 changed files — clean. `phpcs

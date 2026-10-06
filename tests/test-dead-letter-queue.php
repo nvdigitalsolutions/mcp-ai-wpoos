@@ -338,4 +338,79 @@ class Test_Dead_Letter_Queue extends WP_UnitTestCase {
 		// The job should have been moved to DLQ after 3 failed retries.
 		$this->assertGreaterThanOrEqual( 1, count( $dlq_items ) );
 	}
+
+	/**
+	 * Retry is refused once the max-retry gate is reached (a repeatedly
+	 * failed item must not be retried forever).
+	 */
+	public function test_retry_max_retries_gate() {
+		$history = array();
+		for ( $i = 0; $i < WP_MCP_AI_Dead_Letter_Queue::DEFAULT_MAX_RETRIES; $i++ ) {
+			$history[] = array(
+				'timestamp'     => time() - $i,
+				'result'        => 'failed',
+				'error_message' => 'Intentional failure',
+			);
+		}
+
+		WP_MCP_AI_Dead_Letter_Queue::add(
+			WP_MCP_AI_Dead_Letter_Queue::TYPE_CRON_JOB,
+			'gated_item',
+			array(
+				'hook' => 'test_hook',
+				'args' => array(),
+			),
+			'Failure',
+			$history
+		);
+
+		$items = WP_MCP_AI_Dead_Letter_Queue::get_all();
+		$item  = reset( $items );
+
+		$result = WP_MCP_AI_Dead_Letter_Queue::retry( $item['id'] );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'max_retries_exceeded', $result->get_error_code() );
+	}
+
+	/**
+	 * Retry history is ring-buffered at MAX_RETRY_HISTORY entries so a
+	 * repeatedly-retried item cannot grow its stored history without bound.
+	 */
+	public function test_retry_history_is_capped() {
+		add_filter(
+			'wp_mcp_ai_dlq_max_retries',
+			static function () {
+				return 100;
+			}
+		);
+
+		$history = array();
+		for ( $i = 0; $i < 12; $i++ ) {
+			$history[] = array(
+				'timestamp'     => time() - $i,
+				'result'        => 'failed',
+				'error_message' => 'Failure ' . $i,
+			);
+		}
+
+		WP_MCP_AI_Dead_Letter_Queue::add(
+			WP_MCP_AI_Dead_Letter_Queue::TYPE_CRON_JOB,
+			'capped_item',
+			array( 'hook' => 'test_hook' ), // Missing 'args' → retry fails → history appended.
+			'Failure',
+			$history
+		);
+
+		$items = WP_MCP_AI_Dead_Letter_Queue::get_all();
+		$item  = reset( $items );
+
+		WP_MCP_AI_Dead_Letter_Queue::retry( $item['id'] );
+
+		$after = WP_MCP_AI_Dead_Letter_Queue::get( $item['id'] );
+		$this->assertCount( WP_MCP_AI_Dead_Letter_Queue::MAX_RETRY_HISTORY, $after['retry_history'] );
+		$this->assertEquals( WP_MCP_AI_Dead_Letter_Queue::MAX_RETRY_HISTORY, $after['retry_count'] );
+
+		remove_all_filters( 'wp_mcp_ai_dlq_max_retries' );
+	}
 }
