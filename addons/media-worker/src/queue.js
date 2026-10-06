@@ -99,7 +99,7 @@ class JobQueue extends EventEmitter {
    * Add a job to the queue.
    * @param {string} type - Job type identifier
    * @param {object} data - Job payload
-   * @param {object} options - { delay, attempts, priority }
+   * @param {object} options - { delay, attempts, priority, initialAttempts }
    */
   async add(type, data, options = {}) {
     const job = {
@@ -108,7 +108,10 @@ class JobQueue extends EventEmitter {
       data,
       options,
       createdAt: new Date().toISOString(),
-      attempts: 0,
+      // `initialAttempts` seeds the attempt count for retries so a
+      // re-added job keeps counting toward options.attempts instead of
+      // resetting to 0 and retrying forever.
+      attempts: options.initialAttempts || 0,
     };
 
     const redis = await getRedis();
@@ -125,10 +128,13 @@ class JobQueue extends EventEmitter {
     } else {
       // In-memory fallback
       if (options.delay && options.delay > 0) {
-        setTimeout(() => {
+        // unref() so a pending delayed job does not hold the event
+        // loop open (mirrors the idle-tick pattern below).
+        const timer = setTimeout(() => {
           this._inMemory.push(job);
           this._wake();
         }, options.delay);
+        timer.unref();
       } else {
         this._inMemory.push(job);
         this._wake();
@@ -203,9 +209,11 @@ class JobQueue extends EventEmitter {
 
             const maxAttempts = job.options?.attempts || 3;
             if (job.attempts < maxAttempts) {
-              // Retry with exponential backoff
+              // Retry with exponential backoff, carrying the attempt
+              // count over so the re-added job still fails permanently
+              // once maxAttempts is reached.
               const delay = Math.min(1000 * Math.pow(2, job.attempts), 60000);
-              await this.add(job.type, job.data, { ...job.options, delay });
+              await this.add(job.type, job.data, { ...job.options, delay, initialAttempts: job.attempts });
               this.emit('retrying', job);
             } else {
               this.emit('failed', job);
@@ -267,4 +275,38 @@ function getQueue(name, site = '') {
   return queues.get(key);
 }
 
-export { JobQueue, getQueue, getRedis };
+/**
+ * All queue instances created so far (for shutdown / introspection).
+ *
+ * @return {JobQueue[]} Queue instances.
+ */
+function getAllQueues() {
+  return Array.from(queues.values());
+}
+
+/**
+ * Stop every queue's processing loop (graceful shutdown).
+ */
+function stopAllQueues() {
+  for (const queue of queues.values()) {
+    queue.stop();
+  }
+}
+
+/**
+ * Disconnect the shared Redis client (graceful shutdown). No-op when Redis
+ * was never connected. Keeps keep-alive sockets from pinning server.close().
+ */
+async function disconnectRedis() {
+  if (redisClient) {
+    try {
+      await redisClient.disconnect();
+    } catch {
+      // Best effort — the client is already unusable.
+    }
+  }
+  redisClient = null;
+  redisAvailable = false;
+}
+
+export { JobQueue, getQueue, getRedis, getAllQueues, stopAllQueues, disconnectRedis };

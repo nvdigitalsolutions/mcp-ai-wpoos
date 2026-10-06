@@ -197,4 +197,20 @@ class StatusStore {
 /** Shared singleton store (module-scoped, per process). */
 const store = new StatusStore();
 
-export { StatusStore, store };
+/**
+ * Disconnect the status-store Redis client (graceful shutdown). No-op when
+ * Redis was never connected.
+ */
+async function disconnectStoreRedis() {
+	if ( redisClient ) {
+		try {
+			await redisClient.disconnect();
+		} catch {
+			// Best effort.
+		}
+	}
+	redisClient = null;
+	redisAvailable = false;
+}
+
+export { StatusStore, store, disconnectStoreRedis };

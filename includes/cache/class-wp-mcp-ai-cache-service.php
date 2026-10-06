@@ -89,14 +89,26 @@ class WP_MCP_AI_Cache_Service {
 		// Try Redis if available and configured.
 		if ( $this->is_redis_available() ) {
 			try {
-				$redis = new \Redis();
-				$host  = defined( 'WP_REDIS_HOST' ) ? WP_REDIS_HOST : '127.0.0.1';
-				$port  = defined( 'WP_REDIS_PORT' ) ? WP_REDIS_PORT : 6379;
+				$redis   = new \Redis();
+				$host    = defined( 'WP_REDIS_HOST' ) ? WP_REDIS_HOST : '127.0.0.1';
+				$port    = defined( 'WP_REDIS_PORT' ) ? WP_REDIS_PORT : 6379;
+				$timeout = 1.0;
 
-				if ( $redis->connect( $host, $port ) ) {
-					$this->adapter_type = 'redis';
-					return new RedisTagAwareAdapter( $redis, 'wp_mcp_ai' );
+				try {
+					// Persistent connection: reuses a pooled socket instead of
+					// paying a fresh TCP handshake on every request.
+					$redis->pconnect( $host, $port, $timeout );
+					// Health check — throws if the pooled socket is stale.
+					$redis->ping();
+				} catch ( \Exception $e ) {
+					// Pooled socket may be dead (e.g. Redis restarted); fall back
+					// to a fresh non-persistent connection.
+					$redis->connect( $host, $port, $timeout );
+					$redis->ping();
 				}
+
+				$this->adapter_type = 'redis';
+				return new RedisTagAwareAdapter( $redis, 'wp_mcp_ai' );
 			} catch ( \Exception $e ) {
 				// Fall through to next adapter.
 				error_log( 'WP MCP AI: Redis connection failed: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback when the Redis adapter fails; no alternative logging mechanism is available during the adapter selection phase.

@@ -54,6 +54,40 @@ class WP_MCP_AI_Semantic_Cache {
 	const MAX_ENTRIES = 1000;
 
 	/**
+	 * Transient key prefix for per-entry semantic cache storage.
+	 *
+	 * @var string
+	 */
+	const SEMANTIC_KEY_PREFIX = 'wp_mcp_ai_semcache_';
+
+	/**
+	 * Option key for the semantic cache generation counter.
+	 *
+	 * Bumped on flush() so stale per-hash transients from a previous
+	 * generation are ignored without needing to enumerate them.
+	 *
+	 * @var string
+	 */
+	const GENERATION_KEY = 'wp_mcp_ai_semantic_cache_generation';
+
+	/**
+	 * Option key for the non-autoloaded registry of active entry keys.
+	 *
+	 * @var string
+	 */
+	const REGISTRY_KEY = 'wp_mcp_ai_semcache_registry';
+
+	/**
+	 * Hard cap on the key registry.
+	 *
+	 * MAX_ENTRIES remains the soft cap enforced by maybe_prune(); this bound
+	 * keeps the registry option itself from growing without limit.
+	 *
+	 * @var int
+	 */
+	const REGISTRY_CAP = 1200;
+
+	/**
 	 * Whether the cache is enabled globally.
 	 *
 	 * @return bool
@@ -172,7 +206,17 @@ class WP_MCP_AI_Semantic_Cache {
 	 */
 	public static function flush() {
 		wp_cache_flush_group( self::CACHE_GROUP_EXACT );
+
+		// Bump the generation counter so stale per-hash transients from the
+		// previous generation are ignored on read and reclaimed via TTL.
+		$generation = (int) get_option( self::GENERATION_KEY, 0 );
+		update_option( self::GENERATION_KEY, $generation + 1, false );
+
+		delete_option( self::REGISTRY_KEY );
+
+		// Remove the legacy single-blob store if it still exists.
 		delete_option( 'wp_mcp_ai_semcache_semantic_store' );
+
 		return true;
 	}
 
@@ -212,31 +256,116 @@ class WP_MCP_AI_Semantic_Cache {
 	/**
 	 * Get all semantic cache entries from persistent storage.
 	 *
+	 * Entries live in individual per-hash transients (rather than one large
+	 * option blob) and are enumerated via the key registry.
+	 *
 	 * @return array Array of cache entries.
 	 */
 	private static function get_semantic_cache_entries() {
-		$entries = get_option( 'wp_mcp_ai_semcache_semantic_store', array() );
-		if ( ! is_array( $entries ) ) {
+		$generation = self::get_generation();
+		$registry   = get_option( self::REGISTRY_KEY, array() );
+
+		if ( ! is_array( $registry ) ) {
 			return array();
 		}
+
+		$entries = array();
+		$now     = time();
+		$changed = false;
+
+		foreach ( $registry as $index => $key ) {
+			$entry = get_transient( $key );
+
+			if ( false === $entry || ! is_array( $entry ) ) {
+				// Expired or corrupted — drop from the registry.
+				unset( $registry[ $index ] );
+				$changed = true;
+				continue;
+			}
+
+			// Guard against keys surviving a flush() race.
+			if ( ! isset( $entry['generation'] ) || (int) $entry['generation'] !== $generation ) {
+				delete_transient( $key );
+				unset( $registry[ $index ] );
+				$changed = true;
+				continue;
+			}
+
+			if ( isset( $entry['expires'] ) && $entry['expires'] <= $now ) {
+				unset( $registry[ $index ] );
+				$changed = true;
+				continue;
+			}
+
+			$entries[] = $entry;
+		}
+
+		if ( $changed ) {
+			if ( empty( $registry ) ) {
+				delete_option( self::REGISTRY_KEY );
+			} else {
+				update_option( self::REGISTRY_KEY, array_values( $registry ), false );
+			}
+		}
+
 		return $entries;
 	}
 
 	/**
 	 * Add a semantic cache entry to persistent storage.
 	 *
+	 * Stores the entry in its own per-hash transient and tracks the key in
+	 * the FIFO-capped registry.
+	 *
 	 * @param array $entry Cache entry with embedding.
 	 */
 	private static function add_semantic_cache_entry( $entry ) {
-		$entries   = self::get_semantic_cache_entries();
-		$entries[] = $entry;
+		$generation = self::get_generation();
+		$ttl        = isset( $entry['expires'] ) ? max( 1, (int) $entry['expires'] - time() ) : self::DEFAULT_TTL;
+		$key        = self::SEMANTIC_KEY_PREFIX . $generation . '_' . md5( $entry['prompt_hash'] );
 
-		// Keep only the most recent entries.
-		if ( count( $entries ) > self::MAX_ENTRIES ) {
-			$entries = array_slice( $entries, -self::MAX_ENTRIES );
+		$entry['generation'] = $generation;
+
+		set_transient( $key, $entry, $ttl );
+
+		// Maintain the registry (FIFO-capped) so entries remain enumerable.
+		$registry = get_option( self::REGISTRY_KEY, array() );
+
+		if ( ! is_array( $registry ) ) {
+			$registry = array();
 		}
 
-		update_option( 'wp_mcp_ai_semcache_semantic_store', $entries, false );
+		if ( ! in_array( $key, $registry, true ) ) {
+			// FIFO cap: evict the oldest tracked keys beyond the cap so the
+			// registry cannot grow without bound.
+			if ( count( $registry ) >= self::REGISTRY_CAP ) {
+				$excess  = count( $registry ) - self::REGISTRY_CAP + 1;
+				$evicted = array_splice( $registry, 0, $excess );
+				foreach ( $evicted as $evicted_key ) {
+					delete_transient( $evicted_key );
+				}
+			}
+
+			$registry[] = $key;
+			update_option( self::REGISTRY_KEY, $registry, false );
+		}
+	}
+
+	/**
+	 * Get the current cache generation counter, initializing it if needed.
+	 *
+	 * @return int Generation number.
+	 */
+	private static function get_generation() {
+		$generation = get_option( self::GENERATION_KEY, null );
+
+		if ( null === $generation ) {
+			// Initialize the generation counter (fresh site).
+			$generation = 0;
+			update_option( self::GENERATION_KEY, 0, false );
+		}
+
+		return (int) $generation;
 	}
 
 	/**
@@ -270,20 +399,47 @@ class WP_MCP_AI_Semantic_Cache {
 	 * Prune expired and excess cache entries.
 	 */
 	private static function maybe_prune() {
-		$entries = self::get_semantic_cache_entries();
-		$now     = time();
-		$pruned  = array();
+		$generation = self::get_generation();
+		$registry   = get_option( self::REGISTRY_KEY, array() );
 
-		foreach ( $entries as $entry ) {
-			if ( isset( $entry['expires'] ) && $entry['expires'] > $now ) {
-				$pruned[] = $entry;
+		if ( ! is_array( $registry ) ) {
+			return;
+		}
+
+		$now  = time();
+		$kept = array();
+
+		foreach ( $registry as $key ) {
+			$entry = get_transient( $key );
+
+			if ( false === $entry || ! is_array( $entry ) ) {
+				continue;
 			}
+
+			if ( ! isset( $entry['generation'] ) || (int) $entry['generation'] !== $generation ) {
+				delete_transient( $key );
+				continue;
+			}
+
+			if ( isset( $entry['expires'] ) && $entry['expires'] <= $now ) {
+				delete_transient( $key );
+				continue;
+			}
+
+			$kept[] = $key;
 		}
 
-		if ( count( $pruned ) > self::MAX_ENTRIES ) {
-			$pruned = array_slice( $pruned, -self::MAX_ENTRIES );
+		// Soft cap: delete the oldest entries beyond MAX_ENTRIES.
+		if ( count( $kept ) > self::MAX_ENTRIES ) {
+			$excess = array_slice( $kept, 0, count( $kept ) - self::MAX_ENTRIES );
+			foreach ( $excess as $key ) {
+				delete_transient( $key );
+			}
+			$kept = array_slice( $kept, -self::MAX_ENTRIES );
 		}
 
-		update_option( 'wp_mcp_ai_semcache_semantic_store', $pruned, false );
+		if ( $kept !== $registry ) {
+			update_option( self::REGISTRY_KEY, $kept, false );
+		}
 	}
 }

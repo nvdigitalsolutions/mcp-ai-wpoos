@@ -135,6 +135,34 @@ test( 'getTaskStatus 404s for unknown tasks', () => {
 	assert.equal( status.statusCode, 404 );
 } );
 
+test( 'storeTask evicts the oldest task beyond the store cap', () => {
+	clearTasks();
+
+	const makeTask = ( id ) => ( {
+		task_id: id,
+		site: 'default',
+		status: 'pending',
+		urls: [ PUBLIC_URL ],
+		strategy: 'NoExtractionStrategy',
+		word_count_threshold: null,
+		llm_instruction: null,
+		css_schema: null,
+		results: [],
+		metadata: {},
+		created_at: Date.now(),
+	} );
+
+	storeTask( makeTask( 'mw-cap-oldest' ) );
+	for ( let i = 0; i < 200; i++ ) {
+		storeTask( makeTask( `mw-cap-${ i }` ) );
+	}
+
+	// The store is capped at 200 entries, so the first task was evicted.
+	assert.equal( fetchTask( 'mw-cap-oldest' ), undefined );
+	assert.ok( fetchTask( 'mw-cap-199' ) );
+	clearTasks();
+} );
+
 test( 'processTask completes a task with per-URL results', async () => {
 	clearTasks();
 	storeTask( {

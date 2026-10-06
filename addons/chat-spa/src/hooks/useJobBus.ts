@@ -63,6 +63,54 @@ function isTerminal( s: JobStatus ): boolean {
 	return s === 'completed' || s === 'failed' || s === 'cancelled';
 }
 
+/** Maximum number of jobs retained in the map (auto-pruned). */
+const MAX_JOBS = 100;
+
+/**
+ * Remove entries beyond `limit`, evicting the oldest terminal jobs first
+ * (falling back to oldest overall) so the job map cannot grow unbounded
+ * during a long SPA session.
+ */
+function pruneJobs(
+	jobs: Record< string, JobRecord >,
+	limit: number
+): Record< string, JobRecord > {
+	const ids = Object.keys( jobs );
+	const overflow = ids.length - limit;
+	if ( overflow <= 0 ) {
+		return jobs;
+	}
+
+	const oldestFirst = ( a: string, b: string ): number =>
+		( jobs[ a ].startedAt || 0 ) - ( jobs[ b ].startedAt || 0 );
+
+	const evict = new Set(
+		ids
+			.filter( ( id ) => isTerminal( jobs[ id ].status ) )
+			.sort( oldestFirst )
+			.slice( 0, overflow )
+	);
+	if ( evict.size < overflow ) {
+		ids.sort( oldestFirst );
+		for ( const id of ids ) {
+			if ( evict.size >= overflow ) {
+				break;
+			}
+			if ( ! evict.has( id ) ) {
+				evict.add( id );
+			}
+		}
+	}
+
+	const next: Record< string, JobRecord > = {};
+	for ( const id of ids ) {
+		if ( ! evict.has( id ) ) {
+			next[ id ] = jobs[ id ];
+		}
+	}
+	return next;
+}
+
 // ── Hook ──────────────────────────────────────────────────────────────────
 
 export function useJobBus(
@@ -90,6 +138,12 @@ export function useJobBus(
 			const type = e.type;
 
 			setJobs( ( prev ) => {
+				// Auto-prune so the map cannot grow unbounded over a long
+				// session; adding a new job is the only growth point.
+				if ( ! prev[ jobId ] && Object.keys( prev ).length >= MAX_JOBS ) {
+					prev = pruneJobs( prev, MAX_JOBS - 1 );
+				}
+
 				const existing = prev[ jobId ];
 
 				if ( type === 'job:cancelled' ) {

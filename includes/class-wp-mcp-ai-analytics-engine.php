@@ -714,104 +714,112 @@ class WP_MCP_AI_Analytics_Engine {
 
 		// Build query to fetch transcripts using a single wpdb->prepare() call.
 		// Table name is validated via $repository->table_exists() above and escaped for defense-in-depth.
+		// Keyset-paginate the scan in bounded chunks so the entire transcript
+		// table is never loaded into memory at once.
 		$safe_table = esc_sql( $table );
-		if ( $user_id > 0 ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $safe_table is escaped with esc_sql() and validated above; WP_Query does not support CCT tables.
-			$transcripts = $wpdb->get_results( $wpdb->prepare( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$safe_table} WHERE cct_author_id = %d ORDER BY request_started_at ASC", $user_id ) );
-		} else {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $safe_table is escaped with esc_sql() and validated above; WP_Query does not support CCT tables. No user-supplied values; table name escaped via esc_sql().
-			$transcripts = $wpdb->get_results( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$safe_table} ORDER BY request_started_at ASC" );
-		}
-
-		if ( empty( $transcripts ) ) {
-			return $results;
-		}
-
+		$page_size  = 500;
+		$last_id    = 0;
 		$users_data = array();
 
-		foreach ( $transcripts as $transcript ) {
-			++$results['transcripts_processed'];
-
-			$transcript_user_id = absint( $transcript->cct_author_id );
-			if ( ! $transcript_user_id ) {
-				continue;
+		do {
+			if ( $user_id > 0 ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $safe_table is escaped with esc_sql() and validated above; WP_Query does not support CCT tables.
+				$transcripts = $wpdb->get_results( $wpdb->prepare( "SELECT _ID, cct_author_id, metadata, request_started_at, _ID AS transcript_id FROM {$safe_table} WHERE cct_author_id = %d AND _ID > %d ORDER BY _ID ASC LIMIT %d", $user_id, $last_id, $page_size ) );
+			} else {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $safe_table is escaped with esc_sql() and validated above; WP_Query does not support CCT tables.
+				$transcripts = $wpdb->get_results( $wpdb->prepare( "SELECT _ID, cct_author_id, metadata, request_started_at, _ID AS transcript_id FROM {$safe_table} WHERE _ID > %d ORDER BY _ID ASC LIMIT %d", $last_id, $page_size ) );
 			}
 
-			// Parse metadata.
-			$metadata = maybe_unserialize( $transcript->metadata );
-			if ( ! is_string( $metadata ) ) {
-				$metadata = wp_json_encode( $metadata );
+			foreach ( $transcripts as $transcript ) {
+				// Advance the keyset cursor before any per-row `continue` so rows
+				// that skip aggregation cannot stall pagination.
+				$last_id = max( $last_id, absint( $transcript->transcript_id ) );
+
+				++$results['transcripts_processed'];
+
+				$transcript_user_id = absint( $transcript->cct_author_id );
+				if ( ! $transcript_user_id ) {
+					continue;
+				}
+
+				// Parse metadata.
+				$metadata = maybe_unserialize( $transcript->metadata );
+				if ( ! is_string( $metadata ) ) {
+					$metadata = wp_json_encode( $metadata );
+				}
+				$metadata = json_decode( $metadata, true );
+
+				if ( ! isset( $metadata['usage'] ) || ! is_array( $metadata['usage'] ) ) {
+					continue;
+				}
+
+				$usage_data = $metadata['usage'];
+
+				// Extract token counts.
+				$prompt_tokens     = isset( $usage_data['prompt_tokens'] ) ? absint( $usage_data['prompt_tokens'] ) : 0;
+				$completion_tokens = isset( $usage_data['completion_tokens'] ) ? absint( $usage_data['completion_tokens'] ) : 0;
+				$total_tokens      = isset( $usage_data['total_tokens'] ) ? absint( $usage_data['total_tokens'] ) : ( $prompt_tokens + $completion_tokens );
+
+				if ( $total_tokens <= 0 ) {
+					continue;
+				}
+
+				$results['tokens_recovered'] += $total_tokens;
+
+				// Parse timestamp.
+				$timestamp = strtotime( $transcript->request_started_at );
+				if ( ! $timestamp ) {
+					$timestamp = time();
+				}
+
+				$date_key = gmdate( 'Y-m-d', $timestamp );
+				$hour_key = gmdate( 'Y-m-d-H', $timestamp );
+
+				// Initialize user data structure if not exists.
+				if ( ! isset( $users_data[ $transcript_user_id ] ) ) {
+					$users_data[ $transcript_user_id ] = array();
+				}
+
+				// Use a generic tool name for chat interactions.
+				$tool_slug = 'chat_interaction';
+
+				if ( ! isset( $users_data[ $transcript_user_id ][ $tool_slug ] ) ) {
+					$users_data[ $transcript_user_id ][ $tool_slug ] = array(
+						'total_tokens' => 0,
+						'requests'     => 0,
+						'first_used'   => '',
+						'last_used'    => '',
+						'daily'        => array(),
+						'hourly'       => array(),
+					);
+				}
+
+				// Aggregate data.
+				$users_data[ $transcript_user_id ][ $tool_slug ]['total_tokens'] += $total_tokens;
+				++$users_data[ $transcript_user_id ][ $tool_slug ]['requests'];
+
+				// Track first/last usage.
+				$current_timestamp = gmdate( 'Y-m-d H:i:s', $timestamp );
+				if ( empty( $users_data[ $transcript_user_id ][ $tool_slug ]['first_used'] ) ) {
+					$users_data[ $transcript_user_id ][ $tool_slug ]['first_used'] = $current_timestamp;
+				}
+				$users_data[ $transcript_user_id ][ $tool_slug ]['last_used'] = $current_timestamp;
+
+				// Aggregate daily usage.
+				if ( ! isset( $users_data[ $transcript_user_id ][ $tool_slug ]['daily'][ $date_key ] ) ) {
+					$users_data[ $transcript_user_id ][ $tool_slug ]['daily'][ $date_key ] = 0;
+				}
+				$users_data[ $transcript_user_id ][ $tool_slug ]['daily'][ $date_key ] += $total_tokens;
+
+				// Aggregate hourly usage.
+				if ( ! isset( $users_data[ $transcript_user_id ][ $tool_slug ]['hourly'][ $hour_key ] ) ) {
+					$users_data[ $transcript_user_id ][ $tool_slug ]['hourly'][ $hour_key ] = 0;
+				}
+				$users_data[ $transcript_user_id ][ $tool_slug ]['hourly'][ $hour_key ] += $total_tokens;
 			}
-			$metadata = json_decode( $metadata, true );
 
-			if ( ! isset( $metadata['usage'] ) || ! is_array( $metadata['usage'] ) ) {
-				continue;
-			}
-
-			$usage_data = $metadata['usage'];
-
-			// Extract token counts.
-			$prompt_tokens     = isset( $usage_data['prompt_tokens'] ) ? absint( $usage_data['prompt_tokens'] ) : 0;
-			$completion_tokens = isset( $usage_data['completion_tokens'] ) ? absint( $usage_data['completion_tokens'] ) : 0;
-			$total_tokens      = isset( $usage_data['total_tokens'] ) ? absint( $usage_data['total_tokens'] ) : ( $prompt_tokens + $completion_tokens );
-
-			if ( $total_tokens <= 0 ) {
-				continue;
-			}
-
-			$results['tokens_recovered'] += $total_tokens;
-
-			// Parse timestamp.
-			$timestamp = strtotime( $transcript->request_started_at );
-			if ( ! $timestamp ) {
-				$timestamp = time();
-			}
-
-			$date_key = gmdate( 'Y-m-d', $timestamp );
-			$hour_key = gmdate( 'Y-m-d-H', $timestamp );
-
-			// Initialize user data structure if not exists.
-			if ( ! isset( $users_data[ $transcript_user_id ] ) ) {
-				$users_data[ $transcript_user_id ] = array();
-			}
-
-			// Use a generic tool name for chat interactions.
-			$tool_slug = 'chat_interaction';
-
-			if ( ! isset( $users_data[ $transcript_user_id ][ $tool_slug ] ) ) {
-				$users_data[ $transcript_user_id ][ $tool_slug ] = array(
-					'total_tokens' => 0,
-					'requests'     => 0,
-					'first_used'   => '',
-					'last_used'    => '',
-					'daily'        => array(),
-					'hourly'       => array(),
-				);
-			}
-
-			// Aggregate data.
-			$users_data[ $transcript_user_id ][ $tool_slug ]['total_tokens'] += $total_tokens;
-			++$users_data[ $transcript_user_id ][ $tool_slug ]['requests'];
-
-			// Track first/last usage.
-			$current_timestamp = gmdate( 'Y-m-d H:i:s', $timestamp );
-			if ( empty( $users_data[ $transcript_user_id ][ $tool_slug ]['first_used'] ) ) {
-				$users_data[ $transcript_user_id ][ $tool_slug ]['first_used'] = $current_timestamp;
-			}
-			$users_data[ $transcript_user_id ][ $tool_slug ]['last_used'] = $current_timestamp;
-
-			// Aggregate daily usage.
-			if ( ! isset( $users_data[ $transcript_user_id ][ $tool_slug ]['daily'][ $date_key ] ) ) {
-				$users_data[ $transcript_user_id ][ $tool_slug ]['daily'][ $date_key ] = 0;
-			}
-			$users_data[ $transcript_user_id ][ $tool_slug ]['daily'][ $date_key ] += $total_tokens;
-
-			// Aggregate hourly usage.
-			if ( ! isset( $users_data[ $transcript_user_id ][ $tool_slug ]['hourly'][ $hour_key ] ) ) {
-				$users_data[ $transcript_user_id ][ $tool_slug ]['hourly'][ $hour_key ] = 0;
-			}
-			$users_data[ $transcript_user_id ][ $tool_slug ]['hourly'][ $hour_key ] += $total_tokens;
-		}
+			$rows_fetched = count( $transcripts );
+		} while ( $rows_fetched === $page_size );
 
 		// Update user meta for each user.
 		foreach ( $users_data as $uid => $tools_data ) {

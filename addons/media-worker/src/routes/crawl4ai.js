@@ -59,6 +59,11 @@ const CRAWL_TASK_TTL_MS = taskTtlMs();
 const tasks = new Map();
 const handledQueues = new WeakSet();
 
+// Bound the in-memory task store: crawl results are large (markdown per
+// URL), and between TTL sweeps a busy worker should evict the oldest task
+// instead of growing without limit.
+const MAX_STORED_TASKS = 200;
+
 setInterval( () => sweepTasks(), 5 * 60 * 1000 ).unref();
 
 /**
@@ -80,6 +85,13 @@ export function sweepTasks( now = Date.now() ) {
  * @param {Object} task Task descriptor.
  */
 export function storeTask( task ) {
+	if ( tasks.size >= MAX_STORED_TASKS && ! tasks.has( task.task_id ) ) {
+		// Map iteration order is insertion order — evict the oldest entry.
+		const oldest = tasks.keys().next().value;
+		if ( oldest ) {
+			tasks.delete( oldest );
+		}
+	}
 	tasks.set( task.task_id, task );
 }
 

@@ -6,6 +6,12 @@ const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const path = require('path');
 
+// Hard timeout for a single ffmpeg run: a hung child must never keep this
+// per-request CLI process alive forever. Overridable via FFMPEG_TIMEOUT_MS.
+const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS) > 0
+    ? Number(process.env.FFMPEG_TIMEOUT_MS)
+    : 10 * 60 * 1000;
+
 async function getMetadata(videoPath) {
     return new Promise((resolve, reject) => {
         if (!fs.existsSync(videoPath)) {
@@ -36,10 +42,24 @@ async function transcodeVideo(videoPath, outputPath, options = {}) {
         if (options.fps) command = command.fps(options.fps);
         if (options.format) command = command.format(options.format);
         
+        let killTimer = null;
         command
             .output(outputPath)
-            .on('end', () => resolve(outputPath))
-            .on('error', (err) => reject(new Error(`Transcode failed: ${err.message}`)))
+            .on('start', () => {
+                killTimer = setTimeout(() => {
+                    try { command.kill('SIGKILL'); } catch (e) { /* best effort */ }
+                    reject(new Error(`Transcode timed out after ${FFMPEG_TIMEOUT_MS}ms`));
+                }, FFMPEG_TIMEOUT_MS);
+                if (killTimer.unref) killTimer.unref();
+            })
+            .on('end', () => {
+                if (killTimer) clearTimeout(killTimer);
+                resolve(outputPath);
+            })
+            .on('error', (err) => {
+                if (killTimer) clearTimeout(killTimer);
+                reject(new Error(`Transcode failed: ${err.message}`));
+            })
             .run();
     });
 }

@@ -47,6 +47,16 @@ class WP_MCP_AI_REST_Cache {
 	const GLOBAL_REGISTRY_KEY = 'wp_mcp_ai_cache_endpoints';
 
 	/**
+	 * Maximum number of cache keys tracked per endpoint.
+	 *
+	 * Caps the per-endpoint registry option FIFO: when exceeded, the oldest
+	 * tracked keys are evicted and their transients deleted.
+	 *
+	 * @var int
+	 */
+	const REGISTRY_MAX_KEYS = 200;
+
+	/**
 	 * Default cache expiration time (5 minutes)
 	 *
 	 * @var int
@@ -187,6 +197,16 @@ class WP_MCP_AI_REST_Cache {
 		}
 
 		if ( ! in_array( $cache_key, $keys, true ) ) {
+			// FIFO cap: evict the oldest tracked keys beyond the cap so the
+			// registry option cannot grow without bound.
+			if ( count( $keys ) >= self::REGISTRY_MAX_KEYS ) {
+				$excess  = count( $keys ) - self::REGISTRY_MAX_KEYS + 1;
+				$evicted = array_splice( $keys, 0, $excess );
+				foreach ( $evicted as $evicted_key ) {
+					delete_transient( $evicted_key );
+				}
+			}
+
 			$keys[] = $cache_key;
 			update_option( $registry_option, $keys, false );
 			self::register_endpoint( $endpoint_key );
