@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://nvoos.example/schemas/design-figma-to-elementor/build-manifest.schema.json",
+  "title": "NV oOS Figma → Elementor Build Manifest",
+  "description": "The plan artifact emitted at the Plan stage of the design-to-build pipeline and approved by a human before any Elementor write. Version 1.0.",
+  "type": "object",
+  "required": ["manifest_version", "source", "target", "sections", "approval"],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "description": "Schema version this manifest conforms to.",
+      "const": "1.0"
+    },
+    "source": {
+      "type": "object",
+      "required": ["file_key", "page", "node_id"],
+      "additionalProperties": true,
+      "properties": {
+        "file_key": { "type": "string", "description": "Figma file key." },
+        "page": { "type": "string", "description": "Figma page/canvas name." },
+        "node_id": { "type": "string", "description": "Figma node id the build is scoped to." },
+        "design_context_call": { "type": "string", "description": "The get_design_context call that produced the plan." }
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": ["site", "page_title"],
+      "additionalProperties": true,
+      "properties": {
+        "site": { "type": "string", "description": "Remote Sites connection label or host." },
+        "page_title": { "type": "string" },
+        "page_slug": { "type": "string" },
+        "template": { "type": "string", "description": "WP template to assign the page." }
+      }
+    },
+    "tokens": {
+      "type": "array",
+      "description": "Variable → token mapping. Every color/font/spacing value used by sections MUST appear here; raw values in widgets are a validation error.",
+      "items": {
+        "type": "object",
+        "required": ["figma_variable", "target"],
+        "additionalProperties": true,
+        "properties": {
+          "figma_variable": { "type": "string", "description": "Figma variable name, e.g. color/primary/500." },
+          "resolved_value": { "type": ["string", "number"], "description": "Value read from get_variable_defs." },
+          "target": {
+            "type": "string",
+            "enum": ["elementor_global_color", "elementor_global_font", "nds_token", "elementor_global_class"],
+            "description": "Where the token is applied."
+          },
+          "target_name": { "type": "string", "description": "Global name / --nds-* token id." },
+          "fallback": { "type": ["string", "number"], "description": "Fallback when the global is unavailable." }
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "description": "Images and illustrations to export from Figma and upload to the media library.",
+      "items": {
+        "type": "object",
+        "required": ["figma_node", "filename", "used_in"],
+        "additionalProperties": true,
+        "properties": {
+          "figma_node": { "type": "string" },
+          "filename": { "type": "string" },
+          "used_in": { "type": "string", "description": "Widget/field that consumes the asset." },
+          "alt": { "type": "string", "description": "Alt text; required for meaningful images." }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Elementor sections in build order.",
+      "items": {
+        "type": "object",
+        "required": ["name", "widgets"],
+        "additionalProperties": true,
+        "properties": {
+          "name": { "type": "string" },
+          "layout": {
+            "type": "string",
+            "enum": ["single", "two-column", "three-column", "four-column", "full-width"],
+            "description": "Column structure."
+          },
+          "background": { "type": "string", "description": "Token reference from tokens[]." },
+          "widgets": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["widget"],
+              "additionalProperties": true,
+              "properties": {
+                "widget": { "type": "string", "description": "Elementor widget type." },
+                "content": { "type": "string" },
+                "color": { "type": "string", "description": "Token reference, never a raw hex." },
+                "typography": { "type": "string", "description": "Token reference." },
+                "asset": { "type": "string", "description": "Filename from assets[]." },
+                "link": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responsive": {
+      "type": "object",
+      "description": "Per-section tablet/mobile adjustments.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "tablet": { "type": "object", "additionalProperties": true },
+          "mobile": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": true,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"],
+          "description": "Build refuses to start unless approved."
+        },
+        "reviewer": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "description": "Added by the Verify stage after the build.",
+      "additionalProperties": true,
+      "properties": {
+        "overall_status": { "type": "string", "enum": ["pass", "partial", "fail"] },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "name": { "type": "string" },
+              "status": { "type": "string", "enum": ["pass", "partial", "fail"] },
+              "deviations": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "token_violations": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
