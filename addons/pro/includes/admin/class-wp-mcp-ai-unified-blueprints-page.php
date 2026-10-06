@@ -250,9 +250,27 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 			</div>
 
 			<?php if ( empty( $toolkits ) ) : ?>
+				<?php
+				// Distinguish "no toolkits enabled" from "library missing from this
+				// build" (release builds used to strip the examples directories).
+				$enabled_toolkit_found = false;
+				$settings_check        = get_option( 'wp_mcp_ai_settings', array() );
+				foreach ( self::$toolkit_enable_keys as $enable_keys ) {
+					foreach ( $enable_keys as $enable_key ) {
+						if ( ! empty( $settings_check[ $enable_key ] ) ) {
+							$enabled_toolkit_found = true;
+							break 2;
+						}
+					}
+				}
+				?>
 				<div class="nv-bp-empty">
 					<span class="dashicons dashicons-cloud" style="font-size: 48px; color: #c3c4c7; display: block; margin-bottom: 12px;"></span>
-					<p><?php esc_html_e( 'No blueprints found. Enable a toolkit to see its blueprints here.', 'mcp-ai-wpoos-pro' ); ?></p>
+					<?php if ( $enabled_toolkit_found ) : ?>
+						<p><?php esc_html_e( 'No blueprints found. The blueprint library is missing from this installation — reinstall the latest plugin build or restore the addons/pro/includes/tools/*/examples directories.', 'mcp-ai-wpoos-pro' ); ?></p>
+					<?php else : ?>
+						<p><?php esc_html_e( 'No blueprints found. Enable a toolkit to see its blueprints here.', 'mcp-ai-wpoos-pro' ); ?></p>
+					<?php endif; ?>
 				</div>
 			<?php else : ?>
 				<div class="nv-bp-filters">
