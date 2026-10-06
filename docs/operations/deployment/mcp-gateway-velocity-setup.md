@@ -133,6 +133,25 @@ left Velocity's clone on stale commits and silently disabled auto-deploys.
    version in `addons/mcp-gateway/package.json`, and
    `POST /mcp` → `initialize` must echo a negotiated `protocolVersion`.
 
+### If the sync workflow never ran after a merge
+
+1. Check the merge commit's **full message** — if the squash body absorbed a
+   CI-skip marker from any commit merged into the PR branch, GitHub skips
+   every workflow for that push (incident: the #6925 merge ran zero
+   workflows and the mirror never received `0.1.1`).
+2. Recover by merging a clean follow-up PR touching `addons/mcp-gateway/**`,
+   or dispatch manually (workflow_dispatch, added in 0.1.1):
+   `gh workflow run sync-mcp-gateway.yml --ref alpha-working`.
+
+### Sync safety rails (0.1.1)
+
+- The sync pushes **without `--force`** — the mirror main stays a linear
+  fast-forward line, which is what keeps auto-deploys firing.
+- The sync is **version-guarded**: a push whose incoming `package.json`
+  version is older than the mirror tip's is skipped with a notice, so stale
+  `main` promotions or out-of-order sync runs can never roll the public
+  endpoint backwards.
+
 ---
 
 See also the media-worker guide (`media-worker-velocity-setup.md`) for the

@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.97"
   plugin-version-tested: "1.1.97"
-  last-updated: "2026-10-05"
+  last-updated: "2026-10-06"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -298,10 +298,25 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
 ### A7. Branch + PR (required)
 
 - **Do NOT commit directly to `alpha-working`.**
-- `git checkout -b chore/[VERSION]-docs-catch-up`, commit there, reset local
-  `alpha-working` to `origin/alpha-working`, push the branch.
-- Open a PR against `alpha-working` with Summary / What's in / Validation /
-  Notes structure, listing deferred open items explicitly.
+- Cut the branch from a **fresh** `origin/alpha-working`
+  (`git fetch origin alpha-working && git checkout -b chore/[VERSION]-docs-catch-up origin/alpha-working`),
+  commit there, push the branch.
+- Open the PR **against `alpha-working`** — never against `main`. A branch cut
+  from the alpha line but targeted at `main` (the default base) reports a huge
+  conflict list across every file where the two lines have diverged — the fix
+  is `gh pr edit <n> --base alpha-working`, not conflict resolution.
+  (Incident: PR #6926, 2026-10-06, ~5k-file "conflict" that vanished on re-base.)
+- **Keep every commit message free of CI-skip markers** (the bracketed
+  `skip ci` / `no ci` forms). GitHub skips **all** workflows for a merge push
+  when a marker appears anywhere in the squashed message — including bullets
+  inherited from commits merged into the PR branch. This repo's build commits
+  carry such markers routinely, so an absorbed commit can silently suppress
+  the post-merge syncs. (Incident: the #6925 merge push ran zero workflows and
+  the mcp-gateway mirror sync never fired.) Recovery: merge a clean follow-up
+  PR touching the same paths, or dispatch manually —
+  `gh workflow run sync-mcp-gateway.yml --ref alpha-working`.
+- PR structure: Summary / What's in / Validation / Notes, listing deferred
+  open items explicitly.
 
 ---
 
