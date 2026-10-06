@@ -146,7 +146,7 @@ class WP_MCP_AI_Pro_Tool_Check_Google_Calendar_Availability implements WP_MCP_AI
 			$this
 		);
 
-		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
+		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via the wp_mcp_ai_check_google_calendar_availability_capability filter (default manage_options).
 			return new WP_Error( 'wp_mcp_ai_calendar_forbidden', __( 'You do not have permission to check Google Calendar availability.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
 

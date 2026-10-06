@@ -59,7 +59,7 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, W
 			'when_to_use'     => __( 'Reading an entire Gmail conversation by thread ID, newest first, to absorb invoice, support, or notification chains in one call.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Reading a single message; use get_gmail_message. Finding threads; use search_gmail. Label or read-state changes; use modify_gmail_message.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'search_gmail', 'get_gmail_message', 'modify_gmail_message' ),
-			'notes'           => __( 'Returns up to max_messages (1-50, default 10) with each body capped at max_chars; message_count vs returned_count shows truncation.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Returns up to max_messages (1-50, default 10) with each body capped at max_chars; message_count vs returned_count shows truncation. Per message, body_source shows which part supplied the text and an empty body carries body_empty_reason (e.g. no_text_parts for attachment-only emails).', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -128,7 +128,7 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, W
 
 		$required_capability = apply_filters( 'wp_mcp_ai_get_gmail_thread_capability', 'manage_options', $context, $arguments, $this );
 
-		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
+		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via the wp_mcp_ai_get_gmail_thread_capability filter (default manage_options).
 			return new WP_Error( 'wp_mcp_ai_gmail_forbidden', __( 'You do not have permission to read Gmail threads.', 'mcp-ai-wpoos-pro' ) );
 		}
 
