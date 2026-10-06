@@ -6,7 +6,7 @@ monitoring) as the public, fleet-scoped MCP endpoint at
 `https://mcp.nvoos.pro`, and submit it to MCP directories.
 
 > **Prerequisite:** the mirror repo `nvdigitalsolutions/nvoos-mcp-gateway`
-> must exist and receive the one-way subtree sync from
+> must exist and receive the one-way sync from
 > `addons/mcp-gateway/` (root workflow `.github/workflows/sync-mcp-gateway.yml`,
 > secret `MCP_GATEWAY_REPO_TOKEN`).
 > Never expose an older build on a public URL — auth is the product.
@@ -107,6 +107,31 @@ official MCP Registry:
 - [ ] GitHub repo: `nvdigitalsolutions/nvoos-mcp-gateway` (public)
 - [ ] Logo + one-line description (NV oOS branding)
 - [ ] Uptime monitor on `/health`
+
+## 7. Deployment Flow & Auto-Deploy
+
+```
+monorepo PR (addons/mcp-gateway/**)
+  → merge to alpha-working/main
+  → sync-mcp-gateway.yml (snapshot commit, fast-forward push, no --force)
+  → push main on nvoos-mcp-gateway
+  → Velocity auto-deploy (webhook fires on the normal push)
+```
+
+The sync deliberately pushes **without `--force`**: the mirror main is a
+linear fast-forward line, so the Velocity auto-deploy webhook fires on every
+sync. The earlier subtree-split force-push rewrote history each run, which
+left Velocity's clone on stale commits and silently disabled auto-deploys.
+
+### If auto-deploy stops firing (stale build)
+
+1. In Deployment Manager, check the **Commit** column of the latest
+   deployment against the mirror's `main` tip — a SHA that does not exist
+   in the mirror history means the clone is stale.
+2. **Disconnect and reconnect the GitHub repo** (fresh clone), then deploy.
+3. Verify the live build via the version marker: `/health` must report the
+   version in `addons/mcp-gateway/package.json`, and
+   `POST /mcp` → `initialize` must echo a negotiated `protocolVersion`.
 
 ---
 
