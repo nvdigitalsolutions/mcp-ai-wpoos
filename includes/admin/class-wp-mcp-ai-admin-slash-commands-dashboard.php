@@ -1006,6 +1006,6 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		// Keep only last MAX_HISTORY_ENTRIES entries.
 		$history = array_slice( $history, 0, self::MAX_HISTORY_ENTRIES );
 
-		update_option( 'wp_mcp_ai_slash_command_history', $history );
+		update_option( 'wp_mcp_ai_slash_command_history', $history, false );
 	}
 }

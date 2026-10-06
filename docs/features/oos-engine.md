@@ -46,13 +46,15 @@ REST Controller                       REST Controller
 
 **82 of ~195 base tools (42%)** run through the OOS engine. These include all content CRUD tools, external API tools, HuggingFace datasets, client-side AI, cache/queue/settings/file utilities, skills, and site admin tools. The remaining ~113 tools fall back to the legacy execution path. See the [gap analysis](../project/proposals/cross-platform-extraction-gap-analysis.md) for the full inventory.
 
+**Tool selection parity:** `handle_chat_request_oos()` applies the same tool-slug pipeline as the legacy `build_tools_payload()` — the `wp_mcp_ai_attention_tool_slugs` filter (attention routing for oversized lists) followed by `wp_mcp_ai_chat_effective_tools` (which appends dynamically registered tools such as MCP App bridge tools and granted toolkit MCP server tools) — before the orchestrator resolves definitions via `buildAllowedTools()`. The orchestrator only resolves migrated slugs; unmigrated slugs are dropped loudly via the `UnresolvedToolRequested` event.
+
 ### Providers
 
 All 15 AI providers work identically — the provider clients in `lib/core/src/Infrastructure/Provider/` are used by both paths. Providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi (Moonshot), Ollama, LM Studio, DigitalOcean, NVIDIA NIM, Cloudflare, HuggingFace, Baseten, OpenAiCompatible (base), and a shared AbstractProviderClient.
 
 ### Events
 
-WordPress hooks continue to fire. The `EventDispatcher` adapter bridges domain events to `wp_mcp_ai_*` hooks via `mapEventToHook()`. The domain event system no longer extends PSR-14 — it uses fully domain-owned contracts.
+WordPress hooks continue to fire. The `EventDispatcher` adapter bridges domain events to `wp_mcp_ai_*` hooks via `mapEventToHook()`. The four mapped lifecycle events (`BeforeChatRequest`, `AfterChatResponse`, `BeforeToolExecution`, `AfterToolExecution`) are translated into the documented legacy hook argument tuples before the hook fires (`( $assistant_id, $response, $request )` etc.) — never the raw event object, because legacy subscribers declare required parameters against the documented shapes. The `$request` slot is `null` on the OOS path. The domain event system no longer extends PSR-14 — it uses fully domain-owned contracts.
 
 ## Performance
 

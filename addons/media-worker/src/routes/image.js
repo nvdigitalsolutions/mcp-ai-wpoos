@@ -702,6 +702,254 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// ── Enhance / Upscale shared helpers (W1a) ─────────────────
+const UPSCALE_FACTORS = new Set([2, 4, 8]);
+const UPSCALE_KERNELS = new Set(['nearest', 'cubic', 'lanczos3']);
+
+/**
+ * Maximum output dimension (px) for upscale operations.
+ * Mirrored with the plugin's bin/sharp-process.js and the
+ * WP_MCP_AI_Sharp_Image_Processing trait.
+ */
+const MAX_UPSCALE_DIMENSION = 8192;
+
+function toNumber(value, fallback) {
+  const n = parseFloat(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function scaleToNeutral(multiplier, strength) {
+  return 1 + (multiplier - 1) * strength;
+}
+
+/**
+ * Encode a Sharp pipeline in the source image's own format.
+ *
+ * @param {Sharp}  pipeline Sharp pipeline (resize/enhance already applied).
+ * @param {Object} metadata Source metadata (format detection).
+ * @return {Promise<Buffer>} Encoded output buffer.
+ */
+async function encodeInSourceFormat(pipeline, metadata) {
+  switch (metadata.format) {
+    case 'png':
+      return pipeline.png().toBuffer();
+    case 'webp':
+      return pipeline.webp({ quality: 90 }).toBuffer();
+    case 'avif':
+      return pipeline.avif({ quality: 90 }).toBuffer();
+    case 'jpeg':
+    case 'jpg':
+    default:
+      return pipeline.jpeg({ quality: 90 }).toBuffer();
+  }
+}
+
+// ── AI image edit (colorize / style_transfer) — W2a ──────
+const EDIT_GEMINI_MODEL = 'gemini-3.1-flash-image';
+const EDIT_OPENAI_MODEL = 'gpt-image-1';
+
+const EDIT_PROVIDER_KEYS = {
+  gemini: 'GEMINI_API_KEY',
+  openai: 'OPENAI_API_KEY',
+  replicate: 'REPLICATE_API_KEY',
+};
+
+/** Colorize prompt per color_mode (mirrored in the plugin tools). */
+const COLORIZE_PROMPTS = {
+  auto: 'Colorize this black-and-white photo, preserving realism and natural colors.',
+  vibrant: 'Colorize this black-and-white photo using vibrant, bold, saturated colors.',
+  subtle: 'Colorize this black-and-white photo using subtle, muted, natural tones.',
+};
+
+/** Style-transfer prompt per preset slug (mirrored in the plugin tools). */
+const STYLE_PROMPTS = {
+  van_gogh: 'Restyle this image as an oil painting in the style of Vincent van Gogh, with bold swirling brushstrokes and vivid colors.',
+  picasso: 'Restyle this image in the Cubist style of Pablo Picasso, with fragmented geometric forms.',
+  monet: 'Restyle this image in the Impressionist style of Claude Monet, with soft light and visible brushstrokes.',
+  kandinsky: 'Restyle this image in the abstract style of Wassily Kandinsky, with bold shapes and color fields.',
+  'ukiyo-e': 'Restyle this image as a traditional Japanese ukiyo-e woodblock print, with flat colors and strong outlines.',
+  pop_art: 'Restyle this image in the pop art style, with bold colors, high contrast, and halftone dots.',
+  watercolor: 'Restyle this image as a delicate watercolor painting, with soft washes and light pigment.',
+  oil_painting: 'Restyle this image as a classical oil painting, with rich texture and layered brushwork.',
+  sketch: 'Restyle this image as a detailed pencil sketch, monochrome with fine linework.',
+};
+
+/**
+ * Resolve the edit provider for a site.
+ *
+ * 'auto' prefers Gemini, then OpenAI, then Replicate (colorize always;
+ * style_transfer only when REPLICATE_STYLE_TRANSFER_MODEL is configured,
+ * since no deterministic default model is assumed).
+ *
+ * @param {string}      site      Site slug.
+ * @param {string|null} requested Requested provider id or null for auto.
+ * @param {string}      operation Edit operation (colorize|style_transfer).
+ * @return {Object} { id } when resolved, { unavailable } with the 503
+ *                  contract fields when no key resolves, or { unknown }
+ *                  when the requested provider id is not an edit provider.
+ */
+function resolveEditProvider(site, requested, operation) {
+  if (requested) {
+    const envVar = EDIT_PROVIDER_KEYS[requested];
+    if (!envVar) {
+      return { unknown: true, provider: requested };
+    }
+    if (!getCredential(site, envVar)) {
+      return {
+        unavailable: true,
+        provider: requested,
+        env_var: envVar,
+        tip: `Set ${envVar} in the environment or SITE_PROVIDER_KEYS for this site.`,
+      };
+    }
+    return { id: requested };
+  }
+
+  if (getCredential(site, 'GEMINI_API_KEY')) {
+    return { id: 'gemini' };
+  }
+  if (getCredential(site, 'OPENAI_API_KEY')) {
+    return { id: 'openai' };
+  }
+  if (getCredential(site, 'REPLICATE_API_KEY')) {
+    const styleModel = process.env.REPLICATE_STYLE_TRANSFER_MODEL || '';
+    if ('colorize' === operation || styleModel) {
+      return { id: 'replicate' };
+    }
+  }
+
+  return {
+    unavailable: true,
+    provider: 'auto',
+    tip: 'Configure GEMINI_API_KEY, OPENAI_API_KEY, or REPLICATE_API_KEY (style_transfer on Replicate additionally needs REPLICATE_STYLE_TRANSFER_MODEL).',
+  };
+}
+
+/**
+ * Run an AI edit through the resolved provider and return base64 bytes.
+ *
+ * @param {string} providerId Provider id (gemini|openai|replicate).
+ * @param {Buffer} buffer     Source image bytes.
+ * @param {string} mime       Source image MIME type.
+ * @param {string} prompt     Effective edit prompt.
+ * @param {string} operation  Edit operation (colorize|style_transfer).
+ * @param {string} site       Site slug.
+ * @return {Promise<{b64: string, model: string}>} Edited image.
+ */
+async function editWithProvider(providerId, buffer, mime, prompt, operation, site) {
+  switch (providerId) {
+
+    // ── Gemini image edit (flash-image model, inline source) ──
+    case 'gemini': {
+      const genAI = new GoogleGenerativeAI(getCredential(site, 'GEMINI_API_KEY'));
+      const genModel = genAI.getGenerativeModel({
+        model: EDIT_GEMINI_MODEL,
+        generationConfig: { responseModalities: ['Text', 'Image'] },
+      });
+
+      const result = await genModel.generateContent([
+        { text: prompt },
+        { inlineData: { mimeType: mime, data: buffer.toString('base64') } },
+      ]);
+
+      for (const part of result.response.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData) {
+          return { b64: part.inlineData.data, model: EDIT_GEMINI_MODEL };
+        }
+      }
+      throw new Error('Gemini returned no image data for the edit.');
+    }
+
+    // ── OpenAI gpt-image edit ───────────────────────────────
+    case 'openai': {
+      // Bind the SDK to the ambient fetch so stubbed transports (tests)
+      // and worker-level fetch policies apply; the SDK otherwise captures
+      // the real fetch internally.
+      const openai = new OpenAI({
+        apiKey: getCredential(site, 'OPENAI_API_KEY'),
+        fetch: globalThis.fetch,
+      });
+      const response = await openai.images.edit({
+        model: EDIT_OPENAI_MODEL,
+        image: [buffer],
+        prompt,
+        n: 1,
+      });
+
+      const first = response.data?.[0];
+      if (first?.b64_json) {
+        return { b64: first.b64_json, model: EDIT_OPENAI_MODEL };
+      }
+      if (first?.url) {
+        const download = await axios.get(first.url, { responseType: 'arraybuffer', timeout: 60000 });
+        return { b64: Buffer.from(download.data).toString('base64'), model: EDIT_OPENAI_MODEL };
+      }
+      throw new Error('OpenAI edit returned no usable image.');
+    }
+
+    // ── Replicate (deoldify for colorize; env-configured style model) ──
+    case 'replicate': {
+      const version = 'colorize' === operation
+        ? (process.env.REPLICATE_COLORIZE_MODEL || 'deoldify/deoldify')
+        : process.env.REPLICATE_STYLE_TRANSFER_MODEL;
+      if (!version) {
+        throw new Error('No Replicate style-transfer model configured (set REPLICATE_STYLE_TRANSFER_MODEL).');
+      }
+
+      const dataUrl = `data:${mime};base64,${buffer.toString('base64')}`;
+      const input = 'colorize' === operation
+        ? { image: dataUrl }
+        : { image: dataUrl, prompt };
+
+      const resp = await axios.post(
+        'https://api.replicate.com/v1/predictions',
+        { version, input },
+        {
+          headers: {
+            Authorization: `Bearer ${getCredential(site, 'REPLICATE_API_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 60000,
+        }
+      );
+
+      const predictionId = resp.data.id;
+      let prediction = resp.data;
+
+      while (prediction.status !== 'succeeded' && prediction.status !== 'failed' && prediction.status !== 'canceled') {
+        await sleep(1500);
+        const pollResp = await axios.get(
+          `https://api.replicate.com/v1/predictions/${predictionId}`,
+          {
+            headers: { Authorization: `Bearer ${getCredential(site, 'REPLICATE_API_KEY')}` },
+            timeout: 30000,
+          }
+        );
+        prediction = pollResp.data;
+      }
+
+      if (prediction.status === 'failed') {
+        throw new Error(`Replicate edit failed: ${prediction.error}`);
+      }
+
+      const output = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+      if (!output) {
+        throw new Error('Replicate edit returned no output.');
+      }
+
+      const download = await axios.get(output, { responseType: 'arraybuffer', timeout: 60000 });
+      return { b64: Buffer.from(download.data).toString('base64'), model: version };
+    }
+
+    default:
+      throw new Error(`Unknown edit provider: ${providerId}`);
+  }
+}
+
 // ── Image Optimization ────────────────────────────────────
 router.post('/optimize', upload.single('file'), async (req, res) => {
   try {
@@ -757,6 +1005,244 @@ router.post('/optimize', upload.single('file'), async (req, res) => {
   } catch (err) {
     console.error('[Image Optimize]', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /enhance — Sharp-native enhancement (W1a) ──
+// Fields: sharpen (bool or 0-1 strength), contrast (multiplier, default 1),
+// saturation (multiplier, default 1), denoise (bool), strength (0-1 master).
+router.post('/enhance', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const {
+      sharpen = false,
+      contrast = 1,
+      saturation = 1,
+      denoise = false,
+      strength = 1,
+    } = req.body;
+
+    const strengthN = clamp(toNumber(strength, 1), 0, 1);
+    let pipeline = sharp(req.file.buffer);
+    const metadata = await pipeline.metadata();
+    const applied = [];
+
+    // Sharpen: boolean or 0-1 strength (numeric maps to a Sharp sigma).
+    if (sharpen && sharpen !== 'false' && sharpen !== '0') {
+      if (sharpen === true || sharpen === 'true' || sharpen === '1') {
+        pipeline = pipeline.sharpen();
+        applied.push('sharpen');
+      } else {
+        const sharpenN = clamp(toNumber(sharpen, 0), 0, 1) * strengthN;
+        if (sharpenN > 0) {
+          pipeline = pipeline.sharpen(0.5 + 1.5 * sharpenN);
+          applied.push(`sharpen:${sharpenN.toFixed(2)}`);
+        }
+      }
+    }
+
+    // Contrast multiplier applied around the mid-gray point.
+    const contrastN = scaleToNeutral(toNumber(contrast, 1), strengthN);
+    if (Math.abs(contrastN - 1) > 0.001) {
+      pipeline = pipeline.linear(contrastN, 128 * (1 - contrastN));
+      applied.push(`contrast:${contrastN.toFixed(2)}`);
+    }
+
+    // Saturation multiplier (1 = neutral).
+    const saturationN = scaleToNeutral(toNumber(saturation, 1), strengthN);
+    if (Math.abs(saturationN - 1) > 0.001) {
+      pipeline = pipeline.modulate({ saturation: saturationN });
+      applied.push(`saturation:${saturationN.toFixed(2)}`);
+    }
+
+    // Denoise: single-pass median filter.
+    if (denoise && denoise !== 'false' && denoise !== '0') {
+      pipeline = pipeline.median(1);
+      applied.push('denoise');
+    }
+
+    if (applied.length === 0) {
+      return res.status(400).json({ error: 'No enhancement operations requested' });
+    }
+
+    const outputBuffer = await encodeInSourceFormat(pipeline, metadata);
+    const outputBase64 = outputBuffer.toString('base64');
+    const savings = req.file.size - outputBuffer.length;
+    const savingsPercent = ((savings / req.file.size) * 100).toFixed(1);
+
+    res.json({
+      success: true,
+      original_size: req.file.size,
+      optimized_size: outputBuffer.length,
+      savings_bytes: savings,
+      savings_percent: `${savingsPercent}%`,
+      format: metadata.format,
+      width: metadata.width,
+      height: metadata.height,
+      enhancements: applied,
+      b64: outputBase64,
+    });
+  } catch (err) {
+    console.error('[Image Enhance]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /upscale — Sharp-native high-quality upscale (W1a) ──
+// Fields: factor (2/4/8), kernel (nearest/cubic/lanczos3, default lanczos3).
+// Honest branding: upscale_method reports the real kernel until an AI
+// super-resolution engine lands (Wave 3).
+router.post('/upscale', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { factor = 2, kernel = 'lanczos3' } = req.body;
+    const factorN = parseInt(factor, 10);
+
+    if (!UPSCALE_FACTORS.has(factorN)) {
+      return res.status(400).json({
+        error: `Invalid upscale factor: ${factor}. Allowed: 2, 4, 8.`,
+        allowed_factors: [...UPSCALE_FACTORS],
+      });
+    }
+
+    const kernelId = UPSCALE_KERNELS.has(kernel) ? kernel : 'lanczos3';
+
+    let pipeline = sharp(req.file.buffer);
+    const metadata = await pipeline.metadata();
+
+    const targetWidth = Math.round((metadata.width || 0) * factorN);
+    const targetHeight = Math.round((metadata.height || 0) * factorN);
+
+    if (targetWidth > MAX_UPSCALE_DIMENSION || targetHeight > MAX_UPSCALE_DIMENSION) {
+      return res.status(400).json({
+        error: `Upscaled dimensions ${targetWidth}x${targetHeight} exceed the ${MAX_UPSCALE_DIMENSION}px cap.`,
+        max_dimension: MAX_UPSCALE_DIMENSION,
+      });
+    }
+
+    pipeline = pipeline.resize({
+      width: targetWidth,
+      height: targetHeight,
+      kernel: kernelId,
+      withoutEnlargement: false,
+    });
+
+    const outputBuffer = await encodeInSourceFormat(pipeline, metadata);
+    const outputBase64 = outputBuffer.toString('base64');
+    const savings = req.file.size - outputBuffer.length;
+    const savingsPercent = ((savings / req.file.size) * 100).toFixed(1);
+
+    res.json({
+      success: true,
+      original_size: req.file.size,
+      optimized_size: outputBuffer.length,
+      savings_bytes: savings,
+      savings_percent: `${savingsPercent}%`,
+      format: metadata.format,
+      width: targetWidth,
+      height: targetHeight,
+      factor: factorN,
+      kernel: kernelId,
+      upscale_method: 'lanczos3',
+      b64: outputBase64,
+    });
+  } catch (err) {
+    console.error('[Image Upscale]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /edit — AI image editing (colorize / style_transfer) (W2a) ──
+// Fields: operation (colorize|style_transfer), style (preset slug),
+// prompt (optional override), provider (auto|gemini|openai|replicate).
+// Provider keys resolve per-site → shared pool → 503 capability_unavailable.
+router.post('/edit', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { operation, style = '', prompt, provider = 'auto' } = req.body;
+
+    if (!['colorize', 'style_transfer'].includes(operation)) {
+      return res.status(400).json({
+        error: `Unknown edit operation: ${operation}. Allowed: colorize, style_transfer.`,
+        allowed_operations: ['colorize', 'style_transfer'],
+      });
+    }
+
+    if ('style_transfer' === operation && style && !STYLE_PROMPTS[style]) {
+      return res.status(400).json({
+        error: `Unknown style preset: ${style}.`,
+        allowed_styles: Object.keys(STYLE_PROMPTS),
+      });
+    }
+
+    const effectivePrompt = prompt
+      || ('colorize' === operation ? COLORIZE_PROMPTS.auto : STYLE_PROMPTS[style] || STYLE_PROMPTS.van_gogh);
+
+    const resolved = resolveEditProvider(req.site, 'auto' === provider ? null : provider, operation);
+
+    if (resolved.unknown) {
+      return res.status(400).json({
+        error: `Unknown edit provider: ${resolved.provider}. Allowed: auto, gemini, openai, replicate.`,
+        allowed_providers: ['auto', 'gemini', 'openai', 'replicate'],
+      });
+    }
+
+    if (resolved.unavailable) {
+      recordUsage(req.site, 'auto' === resolved.provider ? null : resolved.provider, 'missing_key');
+      return res.status(503).json({
+        error: 'No AI provider key is configured for image editing',
+        capability: 'image_editing',
+        provider: resolved.provider,
+        env_var: resolved.env_var || null,
+        site: req.site,
+        tip: resolved.tip,
+      });
+    }
+
+    const providerId = resolved.id;
+    const mime = req.file.mimetype || 'image/png';
+
+    const { b64, model } = await editWithProvider(providerId, req.file.buffer, mime, effectivePrompt, operation, req.site);
+
+    recordUsage(req.site, providerId, 'success');
+
+    const metadata = await sharp(req.file.buffer).metadata();
+    const outputBuffer = Buffer.from(b64, 'base64');
+
+    res.json({
+      success: true,
+      provider: providerId,
+      model,
+      operation,
+      style: 'style_transfer' === operation ? (style || 'van_gogh') : null,
+      original_size: req.file.size,
+      optimized_size: outputBuffer.length,
+      savings_bytes: req.file.size - outputBuffer.length,
+      savings_percent: `${(((req.file.size - outputBuffer.length) / req.file.size) * 100).toFixed(1)}%`,
+      format: metadata.format,
+      width: metadata.width,
+      height: metadata.height,
+      b64,
+    });
+  } catch (err) {
+    console.error('[Image Edit]', err.message);
+    if (err.response) {
+      recordUsage(req.site, null, 'provider_error');
+    }
+    const status = err.response?.status || err.status || 500;
+    res.status(status).json({
+      error: err.message,
+      provider_error: err.response?.data || null,
+    });
   }
 });
 

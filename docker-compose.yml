@@ -33,7 +33,7 @@ services:
 
   # ── Plugin Seed (auto-installs WP + integration plugins, idempotent) ─
   wp-plugin-seed:
-    image: wordpress:cli-php8.2
+    image: wordpress:cli-php8.3
     container_name: oos-wp-plugin-seed
     # The WordPress Apache image runs www-data as UID 33, but the CLI
     # image uses UID 82.  Align to the Apache image's UID so the seed
@@ -56,11 +56,12 @@ services:
       # the shared wp-config.php eval() picks up memory/debug defines.
       WORDPRESS_CONFIG_EXTRA: |
         /* ── Development overrides ── */
-        define( 'WP_DEBUG_LOG', true );
+        define( 'WP_DEBUG_LOG', '/tmp/wp-debug.log' );
         define( 'WP_DEBUG_DISPLAY', false );
         define( 'SCRIPT_DEBUG', true );
         define( 'WP_ENVIRONMENT_TYPE', 'development' );
         define( 'WP_MEMORY_LIMIT', '512M' );
+        define( 'DISABLE_WP_CRON', true );
 
         /* ── Docker: skip chmod (named volumes don't support it) ── */
         define( 'FS_CHMOD_DIR', ( 0755 & ~ umask() ) );
@@ -133,7 +134,7 @@ services:
 
   # ── WordPress Application Server ─────────────────────────
   wordpress:
-    image: wordpress:6.9-php8.2-apache
+    image: wordpress:6.9-php8.3-apache
     container_name: oos-wp
     restart: unless-stopped
     depends_on:
@@ -141,6 +142,23 @@ services:
         condition: service_healthy
     ports:
       - "8000:80"
+    # The site URL is http://localhost:8000 (host port 8000 -> container 80).
+    # Loopback requests from inside the container (Site Health, wp-cron
+    # spawn, REST self-checks) target localhost:8000, so Apache must also
+    # listen on 8000 inside the container.  The chown step normalises file
+    # ownership (skipping the Windows bind mount) so core/plugin updates
+    # use the direct filesystem method instead of FTP.
+    command:
+      - sh
+      - -c
+      - |
+        printf 'Listen 8000\n' > /etc/apache2/conf-enabled/loopback-ports.conf
+        find /var/www/html -path /var/www/html/wp-content/plugins/mcp-ai-wpoos -prune -o -exec chown www-data:www-data {} +
+        # System cron: with DISABLE_WP_CRON set, page hits no longer spawn
+        # wp-cron; this loop keeps scheduled events (Action Scheduler,
+        # NV oOS schedules, WooCommerce) running on time.
+        ( while true; do curl -s -o /dev/null http://localhost:8000/wp-cron.php; sleep 60; done ) &
+        exec apache2-foreground
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_NAME: wordpress
@@ -149,11 +167,12 @@ services:
       WORDPRESS_DEBUG: "true"
       WORDPRESS_CONFIG_EXTRA: |
         /* ── Development overrides ── */
-        define( 'WP_DEBUG_LOG', true );
+        define( 'WP_DEBUG_LOG', '/tmp/wp-debug.log' );
         define( 'WP_DEBUG_DISPLAY', false );
         define( 'SCRIPT_DEBUG', true );
         define( 'WP_ENVIRONMENT_TYPE', 'development' );
         define( 'WP_MEMORY_LIMIT', '512M' );
+        define( 'DISABLE_WP_CRON', true );
 
         /* ── Docker: skip chmod (named volumes don't support it) ── */
         define( 'FS_CHMOD_DIR', ( 0755 & ~ umask() ) );
@@ -230,10 +249,13 @@ services:
 
   # ── WP-CLI (on-demand only, not auto-started) ──────────
   wp-cli:
-    image: wordpress:cli-php8.2
+    image: wordpress:cli-php8.3
     container_name: oos-wp-cli
     profiles:
       - tools
+    # The CLI image's www-data is UID 82; align to the Apache image's UID 33
+    # so the container can write to the shared wp_core volume.
+    user: "33:33"
     depends_on:
       wordpress:
         condition: service_healthy
@@ -244,11 +266,12 @@ services:
       WORDPRESS_DB_PASSWORD: wordpress
       WORDPRESS_CONFIG_EXTRA: |
         /* ── Development overrides ── */
-        define( 'WP_DEBUG_LOG', true );
+        define( 'WP_DEBUG_LOG', '/tmp/wp-debug.log' );
         define( 'WP_DEBUG_DISPLAY', false );
         define( 'SCRIPT_DEBUG', true );
         define( 'WP_ENVIRONMENT_TYPE', 'development' );
         define( 'WP_MEMORY_LIMIT', '512M' );
+        define( 'DISABLE_WP_CRON', true );
 
         /* ── Docker: skip chmod (named volumes don't support it) ── */
         define( 'FS_CHMOD_DIR', ( 0755 & ~ umask() ) );

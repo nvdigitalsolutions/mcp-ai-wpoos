@@ -1,9 +1,15 @@
 <?php
 /**
- * Tool for AI-powered image upscaling.
+ * Tool for high-quality image upscaling via Sharp.
  *
- * Upscales images using AI to increase resolution while preserving quality.
- * Supports 2x, 4x, and 8x upscaling factors.
+ * Upscales images 2x, 4x, or 8x with the local bundled Sharp runtime
+ * (Node.js subprocess) or the Media Worker sidecar /api/image/upscale
+ * route, both using the lanczos3 kernel. The response honestly reports
+ * upscale_method: 'lanczos3' until an AI super-resolution engine lands
+ * (Wave 3). When neither backend is available the tool attempts the
+ * standard WordPress image scaling degrade; because WP image editors
+ * cannot upscale, that path surfaces an honest wp_mcp_ai_sharp_unavailable
+ * error instead of a fake success.
  *
  * @package WP_MCP_AI
  * @since 1.0.0
@@ -19,11 +25,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-sharp-image-processing.php';
 
 /**
- * Upscale images using AI super-resolution.
+ * Upscale images with real high-quality Sharp scaling.
  */
 class WP_MCP_AI_Tool_Upscale_Image_AI extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Usage_Guidance_Interface {
+
+	use WP_MCP_AI_Sharp_Image_Processing;
 
 	/**
 	 * {@inheritdoc}
@@ -43,7 +52,7 @@ class WP_MCP_AI_Tool_Upscale_Image_AI extends WP_MCP_AI_Tool_Image_Base implemen
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Upscale images using AI super-resolution. Increase resolution by 2x, 4x, or 8x while preserving quality and details.', 'mcp-ai-wpoos-pro' );
+		return __( 'Upscale images 2x, 4x, or 8x with real high-quality lanczos3 scaling via local Sharp or the Media Worker sidecar, preserving detail.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,10 +60,10 @@ class WP_MCP_AI_Tool_Upscale_Image_AI extends WP_MCP_AI_Tool_Image_Base implemen
 	 */
 	public function get_usage_guidance() {
 		return array(
-			'when_to_use'     => __( 'Increasing image resolution by 2x, 4x, or 8x with super-resolution models while preserving detail and reducing noise.', 'mcp-ai-wpoos-pro' ),
+			'when_to_use'     => __( 'Increasing image resolution by 2x, 4x, or 8x with high-quality lanczos3 scaling while preserving detail.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Plain dimension resize: use resize_image_smart. Shrinking for the web: use optimize_for_web.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'resize_image_smart', 'enhance_image_quality', 'optimize_image_sharp' ),
-			'notes'           => __( 'Model options: real-esrgan, esrgan, anime. Local path falls back to standard scaling when Real-ESRGAN is absent.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Uses real lanczos3 scaling; upscale_method reports honestly. AI super-resolution models (real-esrgan, esrgan, anime) are planned for a future release — the model argument is accepted for compatibility but does not change the engine yet.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -75,20 +84,20 @@ class WP_MCP_AI_Tool_Upscale_Image_AI extends WP_MCP_AI_Tool_Image_Base implemen
 					),
 					'model'        => array(
 						'type'        => 'string',
-						'description' => __( 'AI model: "real-esrgan" (general), "esrgan" (photos), "anime" (illustrations).', 'mcp-ai-wpoos-pro' ),
+						'description' => __( 'Super-resolution model preference: "real-esrgan" (general), "esrgan" (photos), "anime" (illustrations). Accepted for compatibility; all models currently use lanczos3 scaling until the AI engine lands.', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'real-esrgan', 'esrgan', 'anime' ),
 						'default'     => 'real-esrgan',
 					),
 					'denoise'      => array(
 						'type'        => 'number',
-						'description' => __( 'Denoising strength (0-1). Higher values remove more noise.', 'mcp-ai-wpoos-pro' ),
+						'description' => __( 'Denoising strength (0-1). Accepted for compatibility; lanczos3 scaling does not denoise. Wired when the AI super-resolution engine lands.', 'mcp-ai-wpoos-pro' ),
 						'minimum'     => 0,
 						'maximum'     => 1,
 						'default'     => 0.5,
 					),
 					'use_remote'   => array(
 						'type'        => 'boolean',
-						'description' => __( 'Use remote GPU processing for faster upscaling.', 'mcp-ai-wpoos-pro' ),
+						'description' => __( 'Prefer the Media Worker sidecar over the local Sharp subprocess.', 'mcp-ai-wpoos-pro' ),
 						'default'     => false,
 					),
 				)
@@ -106,7 +115,7 @@ class WP_MCP_AI_Tool_Upscale_Image_AI extends WP_MCP_AI_Tool_Image_Base implemen
 			'pro',
 			'requires-capability',
 			'write',
-			'gpu-accelerated',
+			'external-dependency',
 			'performance-impact',
 			'idempotent',
 			'cpu-intensive',
@@ -145,69 +154,154 @@ class WP_MCP_AI_Tool_Upscale_Image_AI extends WP_MCP_AI_Tool_Image_Base implemen
 			$scale_factor = 2;
 		}
 
-		// Get model.
+		// Get model preference (accepted for compatibility until Wave 3).
 		$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'real-esrgan';
 
-		// Use remote processing if requested.
-		if ( ! empty( $arguments['use_remote'] ) ) {
-			$result = $this->upscale_remote( $source_image, $scale_factor, $model, $arguments, $context );
-		} else {
-			$result = $this->upscale_local( $source_image, $scale_factor, $model, $arguments, $context );
+		// Get denoise strength (accepted for compatibility until Wave 3).
+		$denoise = isset( $arguments['denoise'] ) ? floatval( $arguments['denoise'] ) : 0.5;
+
+		// Determine the processing backends.
+		$sharp_available   = $this->is_local_sharp_available();
+		$sidecar_supported = $this->is_sidecar_upload_supported();
+
+		$source_path = isset( $source_image->source_file_path ) && is_string( $source_image->source_file_path )
+			? $source_image->source_file_path
+			: '';
+		$source_ext  = $source_path ? preg_replace( '/[^a-zA-Z0-9]/', '', (string) pathinfo( $source_path, PATHINFO_EXTENSION ) ) : '';
+		if ( '' === $source_ext ) {
+			$source_ext = 'jpg';
 		}
 
-		// Clean up source image if it was a temp file.
-		$this->cleanup_source_image( $source_image, $arguments );
+		// Reject inputs whose upscaled dimensions would breach the shared cap.
+		$size = $source_image->get_size();
+		if ( isset( $size['width'], $size['height'] )
+			&& ( $size['width'] * $scale_factor > self::MAX_UPSCALE_DIMENSION || $size['height'] * $scale_factor > self::MAX_UPSCALE_DIMENSION ) ) {
+			$this->cleanup_source_image( $source_image, $arguments );
+			return new WP_Error(
+				'wp_mcp_ai_dimension_cap',
+				sprintf(
+					/* translators: %d: maximum dimension in pixels */
+					__( 'Upscaled dimensions would exceed the %dpx cap. Choose a smaller source or scale factor.', 'mcp-ai-wpoos-pro' ),
+					self::MAX_UPSCALE_DIMENSION
+				)
+			);
+		}
 
-		return $result;
-	}
+		$result = null;
+		$engine = '';
 
-	/**
-	 * Upscale image locally using Real-ESRGAN.
-	 *
-	 * @param WP_Image_Editor $source_image Source image.
-	 * @param int             $scale_factor Scale factor.
-	 * @param string          $model        AI model.
-	 * @param array           $arguments    Tool arguments.
-	 * @param array           $context      Execution context.
-	 * @return array|WP_Error Upscaling results or error.
-	 */
-	protected function upscale_local( $source_image, $scale_factor, $model, $arguments, $context ) {
-		// This would use a Python library like Real-ESRGAN.
-		// For now, we'll use basic WordPress image scaling as fallback.
-		$size     = $source_image->get_size();
+		$use_remote = ! empty( $arguments['use_remote'] );
+
+		if ( $use_remote && $sidecar_supported ) {
+			$result = $this->process_image_via_sidecar(
+				'/api/image/upscale',
+				$source_path,
+				array( 'factor' => $scale_factor ),
+				$source_ext
+			);
+			$engine = 'sidecar';
+		} elseif ( $sharp_available ) {
+			$result = $this->process_image_with_sharp(
+				array(
+					'source'    => $source_path,
+					'operation' => 'upscale',
+					'format'    => $source_ext,
+					'factor'    => $scale_factor,
+				)
+			);
+			$engine = 'local_sharp';
+		} elseif ( $sidecar_supported ) {
+			$result = $this->process_image_via_sidecar(
+				'/api/image/upscale',
+				$source_path,
+				array( 'factor' => $scale_factor ),
+				$source_ext
+			);
+			$engine = 'sidecar';
+		}
+
+		if ( $result && ! isset( $result['error'] ) && ! empty( $result['output_path'] ) && file_exists( $result['output_path'] ) ) {
+			$this->cleanup_source_image( $source_image, $arguments );
+
+			// Land the processed file in the media library.
+			$parent_id     = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
+			$attachment_id = $this->upload_processed_image( $result['output_path'], $parent_id, __( 'Upscaled Image', 'mcp-ai-wpoos-pro' ) );
+			wp_delete_file( $result['output_path'] );
+
+			if ( ! $attachment_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_attachment_error',
+					__( 'Failed to create attachment for the upscaled image.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$response = $this->format_attachment_response( $attachment_id, $arguments );
+
+			$response['text'] = sprintf(
+				/* translators: %s: processing engine */
+				__( 'Image upscaled successfully with %s.', 'mcp-ai-wpoos-pro' ),
+				'sidecar' === $engine ? __( 'the Media Worker sidecar', 'mcp-ai-wpoos-pro' ) : __( 'local Sharp', 'mcp-ai-wpoos-pro' )
+			);
+			$response['engine']          = $engine;
+			$response['scale_factor']    = $scale_factor;
+			$response['upscale_method']  = 'lanczos3';
+			$response['requested_model'] = $model;
+			$response['original_size']   = isset( $result['original_size'] ) ? $result['original_size'] : null;
+			$response['optimized_size']  = isset( $result['optimized_size'] ) ? $result['optimized_size'] : null;
+			$response['dimensions']      = isset( $result['dimensions'] ) ? $result['dimensions'] : null;
+
+			if ( $denoise > 0 ) {
+				$response['denoise_applied'] = false;
+			}
+
+			return $response;
+		}
+
+		// Honest no-backend degrade: standard WordPress image scaling, clearly
+		// labelled — never branded as AI super-resolution.
+		if ( is_wp_error( $result ) || ( is_array( $result ) && isset( $result['error'] ) ) ) {
+			$error_message = is_array( $result ) && isset( $result['error'] ) ? $result['error'] : __( 'No processing backend available.', 'mcp-ai-wpoos-pro' );
+		} else {
+			$error_message = __( 'No processing backend available.', 'mcp-ai-wpoos-pro' );
+		}
+
+		// Run the standard WP image editor resize as the documented degrade.
 		$new_size = array(
-			'width'  => $size['width'] * $scale_factor,
-			'height' => $size['height'] * $scale_factor,
+			'width'  => isset( $size['width'] ) ? $size['width'] * $scale_factor : 0,
+			'height' => isset( $size['height'] ) ? $size['height'] * $scale_factor : 0,
 		);
 
 		$resize = $source_image->resize( $new_size['width'], $new_size['height'], false );
 		if ( is_wp_error( $resize ) ) {
-			return $resize;
+			$this->cleanup_source_image( $source_image, $arguments );
+			return new WP_Error(
+				'wp_mcp_ai_sharp_unavailable',
+				sprintf(
+					/* translators: %s: underlying editor error message */
+					__( 'No upscaling backend is available: standard WordPress scaling cannot upscale images (%s). Install local Sharp (Node.js) or configure a Media Worker sidecar for real upscaling.', 'mcp-ai-wpoos-pro' ),
+					$resize->get_error_message()
+				)
+			);
 		}
 
-		// Save as attachment.
-		$attachment_id = $this->save_as_attachment( $source_image->generate_filename(), $arguments, $context );
-		if ( is_wp_error( $attachment_id ) ) {
-			return $attachment_id;
+		$saved = $this->save_as_attachment( $source_image, $arguments, $user_id, 'upscale' );
+
+		$this->cleanup_source_image( $source_image, $arguments );
+
+		if ( is_wp_error( $saved ) ) {
+			return $saved;
 		}
 
-		return $this->format_attachment_response( $attachment_id );
-	}
+		$response = $this->format_image_response( $saved, $arguments );
 
-	/**
-	 * Upscale image using remote GPU processing.
-	 *
-	 * @param WP_Image_Editor $source_image Source image.
-	 * @param int             $scale_factor Scale factor.
-	 * @param string          $model        AI model.
-	 * @param array           $arguments    Tool arguments.
-	 * @param array           $context      Execution context.
-	 * @return array|WP_Error Upscaling results or error.
-	 */
-	protected function upscale_remote( $source_image, $scale_factor, $model, $arguments, $context ) {
-		// This would delegate to a remote upscaling service.
-		// For now, fall back to local processing.
-		return $this->upscale_local( $source_image, $scale_factor, $model, $arguments, $context );
+		$response['text']            = __( 'No Sharp runtime or Media Worker sidecar was available; applied standard WordPress image scaling (not AI super-resolution).', 'mcp-ai-wpoos-pro' );
+		$response['engine']          = 'wp_image_editor';
+		$response['scale_factor']    = $scale_factor;
+		$response['upscale_method']  = 'standard';
+		$response['requested_model'] = $model;
+		$response['backend_error']   = $error_message;
+
+		return $response;
 	}
 
 	/**

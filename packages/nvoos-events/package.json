@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-events",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "Real-time event coordination with SSE client and job event bus - Extracted from NV Open Operator System",
   "main": "dist/nvoos-events.js",
   "module": "dist/nvoos-events.js",

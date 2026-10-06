@@ -159,7 +159,18 @@ class WP_MCP_AI_YFinance_Service {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$ttl      = isset( $settings['yfinance_cache_ttl'] ) ? absint( $settings['yfinance_cache_ttl'] ) : 0;
 
-		return $ttl > 0 ? $ttl * 60 : self::DEFAULT_CACHE_TTL;
+		$ttl = $ttl > 0 ? $ttl * 60 : self::DEFAULT_CACHE_TTL;
+
+		/**
+		 * Filter the market-data cache TTL.
+		 *
+		 * The Finnhub provider shortens this in `realtime` data mode.
+		 *
+		 * @since 1.1.90
+		 *
+		 * @param int $ttl TTL in seconds.
+		 */
+		return (int) apply_filters( 'wp_mcp_ai_yfinance_cache_ttl', $ttl );
 	}
 
 	/**

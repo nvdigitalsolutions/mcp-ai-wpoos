@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'ocr_provider'  => array(
 					'type'        => 'string',
-					'enum'        => array( 'auto', 'openai', 'gemini', 'ollama', 'tesseract' ),
+					'enum'        => array( 'auto', 'openai', 'gemini', 'anthropic', 'ollama', 'tesseract', 'unlimited_ocr', 'deepseek_ocr' ),
 					'description' => __( 'OCR provider to use when OCR is needed. "auto" selects best available. Default: auto', 'mcp-ai-wpoos-pro' ),
 				),
 			),
@@ -534,10 +534,10 @@ Failed to extract text from PDF: %s',
 			return $node_result;
 		}
 
-		// Secondary method: Try pdftotext command-line tool (if available on system).
-		$pdftotext = shell_exec( 'which pdftotext 2>/dev/null' );
-
-		if ( ! empty( $pdftotext ) ) {
+		// Secondary method: Try pdftotext command-line tool (if available on
+		// system). The probe is guarded — on PHP 8+ calling a function listed
+		// in disable_functions throws a fatal Error that @ cannot suppress.
+		if ( $this->is_cli_tool_available( 'pdftotext' ) ) {
 			$output_file = wp_mcp_ai_tempnam( 'txt_', '.txt' );
 			if ( is_wp_error( $output_file ) ) {
 				$output_file = tempnam( sys_get_temp_dir(), 'txt_' ); // Fallback.
@@ -549,12 +549,17 @@ Failed to extract text from PDF: %s',
 				escapeshellarg( $output_file )
 			);
 
-			exec( $cmd, $output, $return_code );
+			$result = $this->run_cli_command( $cmd );
 
-			if ( 0 === $return_code && file_exists( $output_file ) ) {
+			if ( ! $result['disabled'] && 0 === $result['return_code'] && file_exists( $output_file ) ) {
 				$text = file_get_contents( $output_file );
 				@unlink( $output_file );
 				return $text;
+			}
+
+			// Clean up a partial output file.
+			if ( file_exists( $output_file ) ) {
+				wp_delete_file( $output_file );
 			}
 		}
 
@@ -620,25 +625,33 @@ Failed to extract text from PDF: %s',
 			)
 		);
 
-		// Execute Node.js service.
+		// Execute Node.js service (guarded — on PHP 8+ calling a function in
+		// disable_functions throws a fatal Error that @ cannot suppress).
 		$cmd = sprintf(
 			'node %s extract %s 2>&1',
 			escapeshellarg( $service_path ),
 			escapeshellarg( $args )
 		);
 
-		exec( $cmd, $output, $return_code );
+		$result = $this->run_cli_command( $cmd );
 
 		// Check for execution errors.
-		if ( 0 !== $return_code ) {
+		if ( $result['disabled'] ) {
+			return new WP_Error(
+				'node_service_unavailable',
+				'Node.js PDF extraction service is unavailable: process execution (exec/proc_open) is disabled on this server.'
+			);
+		}
+
+		if ( 0 !== $result['return_code'] ) {
 			return new WP_Error(
 				'node_service_failed',
-				'Node.js PDF extraction service failed: ' . implode( "\n", $output )
+				'Node.js PDF extraction service failed: ' . $result['output']
 			);
 		}
 
 		// Parse JSON response.
-		$result = json_decode( implode( "\n", $output ), true );
+		$result = json_decode( $result['output'], true );
 
 		if ( isset( $result['error'] ) ) {
 			return new WP_Error( 'extraction_error', $result['error'] );
@@ -649,5 +662,94 @@ Failed to extract text from PDF: %s',
 		}
 
 		return $result['text'];
+	}
+
+	/**
+	 * Safely probe whether a command-line tool is available.
+	 *
+	 * Never calls exec() when it is disabled (disable_functions) — on PHP 8+
+	 * that throws a fatal Error. Falls back to the Process Service
+	 * (proc_open), which reports unavailable instead of throwing.
+	 *
+	 * @param string $command Command name (e.g. 'pdftotext', 'node').
+	 * @return bool True when the command is available.
+	 */
+	private function is_cli_tool_available( $command ) {
+		if ( function_exists( 'exec' ) ) {
+			$output = array();
+			$return = null;
+			$which  = stripos( PHP_OS, 'WIN' ) === 0 ? 'where' : 'which';
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec,WordPress.PHP.NoSilencedErrors.Discouraged
+			@exec( $which . ' ' . escapeshellarg( $command ) . ' 2>&1', $output, $return );
+
+			return 0 === $return && ! empty( $output );
+		}
+
+		if ( class_exists( '\WP_MCP_AI\Services\WP_MCP_AI_Process_Service' ) ) {
+			$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+			return $process_service->is_command_available( $command );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Safely run a command-line tool, capturing output and exit code.
+	 *
+	 * Uses exec() when available (legacy behaviour) and falls back to the
+	 * Process Service (proc_open) when exec() is disabled — on PHP 8+ calling
+	 * a disabled function throws a fatal Error.
+	 *
+	 * @param string $command Full shell command (arguments must be escaped by the caller).
+	 * @param int    $timeout Timeout in seconds for the Process Service fallback.
+	 * @return array {
+	 *     @type string $output      Combined stdout/stderr output.
+	 *     @type int    $return_code Exit code (-1 when unavailable).
+	 *     @type bool   $disabled    Whether process execution is disabled on this server.
+	 * }
+	 */
+	private function run_cli_command( $command, $timeout = 120 ) {
+		if ( function_exists( 'exec' ) ) {
+			$output      = array();
+			$return_code = null;
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec,WordPress.PHP.NoSilencedErrors.Discouraged
+			@exec( $command, $output, $return_code );
+
+			return array(
+				'output'      => implode( "\n", $output ),
+				'return_code' => null === $return_code ? -1 : (int) $return_code,
+				'disabled'    => false,
+			);
+		}
+
+		if ( class_exists( '\WP_MCP_AI\Services\WP_MCP_AI_Process_Service' ) ) {
+			$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+			$result          = $process_service->run_silent( $command, array( 'timeout' => $timeout ) );
+
+			if ( ! empty( $result['disabled'] ) ) {
+				return array(
+					'output'      => '',
+					'return_code' => -1,
+					'disabled'    => true,
+				);
+			}
+
+			$output = trim( $result['output'] );
+			if ( ! empty( $result['error'] ) ) {
+				$output = trim( $output . "\n" . $result['error'] );
+			}
+
+			return array(
+				'output'      => $output,
+				'return_code' => isset( $result['exit_code'] ) ? (int) $result['exit_code'] : -1,
+				'disabled'    => false,
+			);
+		}
+
+		return array(
+			'output'      => '',
+			'return_code' => -1,
+			'disabled'    => true,
+		);
 	}
 }

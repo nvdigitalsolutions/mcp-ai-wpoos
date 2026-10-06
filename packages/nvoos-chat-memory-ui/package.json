@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-chat-memory-ui",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "Chat memory drawer UI — side panel for viewing, editing, scoping, and exporting long-term AI memories — extracted from NV Open Operator System",
   "main": "dist/nvoos-chat-memory-ui.js",
   "module": "dist/nvoos-chat-memory-ui.js",

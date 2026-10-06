@@ -15,6 +15,7 @@ import { render } from '@testing-library/react';
 vi.mock( '../components/ImageEditor', () => ( { ImageEditor: () => null } ) );
 vi.mock( '../components/MediaPlayer', () => ( { MediaPlayer: () => null } ) );
 vi.mock( '../components/AudioWaveform', () => ( { AudioWaveform: () => null } ) );
+vi.mock( '../components/FashionStudio', () => ( { FashionStudio: () => null } ) );
 
 import { App, type MediaMode } from '../App';
 
@@ -40,6 +41,11 @@ describe( 'App', () => {
 	it( 'sets data-mode="audio-waveform" when mode="audio-waveform" is given', () => {
 		const { container } = render( <App config={ { mode: 'audio-waveform' } } /> );
 		expect( container.querySelector( '[data-mode="audio-waveform"]' ) ).not.toBeNull();
+	} );
+
+	it( 'sets data-mode="fashion-studio" when mode="fashion-studio" is given', () => {
+		const { container } = render( <App config={ { mode: 'fashion-studio' } } /> );
+		expect( container.querySelector( '[data-mode="fashion-studio"]' ) ).not.toBeNull();
 	} );
 
 	it( 'falls back to image-editor for an unknown mode string', () => {

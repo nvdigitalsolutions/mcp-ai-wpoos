@@ -336,7 +336,7 @@ class WP_MCP_AI_Tool_Get_Session_Status implements WP_MCP_AI_Tool_Interface, WP_
 			array()
 		);
 
-		if ( empty( $result['success'] ) ) {
+		if ( is_wp_error( $result ) || empty( $result['success'] ) ) {
 			return null;
 		}
 

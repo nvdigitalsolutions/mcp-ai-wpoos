@@ -36,6 +36,7 @@ const GROUPS = {
 	browser: { windowMs: 10 * 60 * 1000, limit: 30, envKey: 'BROWSER' },
 	crawl: { windowMs: 10 * 60 * 1000, limit: 20, envKey: 'CRAWL' },
 	workflow: { windowMs: 10 * 60 * 1000, limit: 30, envKey: 'WORKFLOW' },
+	status: { windowMs: 10 * 60 * 1000, limit: 120, envKey: 'STATUS' },
 };
 
 /** All limiter instances (in-memory store by default; swappable). */
@@ -171,3 +172,6 @@ export const crawlLimiter = ( req, res, next ) => limiterFor( req, 'crawl' )( re
 
 /** Workflow orchestration — multi-step pipelines. */
 export const workflowLimiter = ( req, res, next ) => limiterFor( req, 'workflow' )( req, res, next );
+
+/** Status monitoring — heartbeats are frequent (5 min/site) but cheap. */
+export const statusLimiter = ( req, res, next ) => limiterFor( req, 'status' )( req, res, next );

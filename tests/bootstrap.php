@@ -806,12 +806,9 @@ function wp_mcp_ai_load_optional_test_plugins() {
 		define( 'WP_MCP_AI_TEST_JETFORMBUILDER_ACTIVE', true );
 	}
 
-	// Load Newsletter if available.
-	if ( file_exists( $plugins_dir . '/newsletter/plugin.php' ) ) {
-		require_once $plugins_dir . '/newsletter/plugin.php';
-		$loaded_plugins[] = 'newsletter';
-		define( 'WP_MCP_AI_TEST_NEWSLETTER_ACTIVE', true );
-	}
+	// Newsletter is loaded on plugins_loaded instead of here — see
+	// wp_mcp_ai_load_newsletter_test_plugin() for why (it calls pluggable
+	// functions at include time on a fresh test DB).
 
 	// Load WP All Import (lite) if available.
 	//
@@ -838,6 +835,32 @@ function wp_mcp_ai_load_optional_test_plugins() {
 }
 
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_load_optional_test_plugins', 5 );
+
+/**
+ * Load the Newsletter optional test plugin on plugins_loaded.
+ *
+ * Newsletter 9.4.6+ instantiates at include time, and on a fresh test
+ * database the missing `newsletter_logger_secret` option drives its
+ * constructor chain through NewsletterModule::get_token() →
+ * wp_generate_password(). Real sites never hit this because the option is
+ * created at activation time (admin context, pluggable functions loaded);
+ * under PHPUnit the option does not exist, so the plugin may only be
+ * required once pluggable.php has loaded — plugins_loaded, never
+ * muplugins_loaded.
+ */
+function wp_mcp_ai_load_newsletter_test_plugin() {
+	$wp_core_dir     = getenv( 'WP_CORE_DIR' );
+	$wordpress_path  = $wp_core_dir ? $wp_core_dir : dirname( __DIR__ ) . '/.codex-wordpress/wordpress';
+	$newsletter_file = $wordpress_path . '/wp-content/plugins/newsletter/plugin.php';
+
+	if ( file_exists( $newsletter_file ) && ! defined( 'WP_MCP_AI_TEST_NEWSLETTER_ACTIVE' ) ) {
+		require_once $newsletter_file;
+		define( 'WP_MCP_AI_TEST_NEWSLETTER_ACTIVE', true );
+		fwrite( STDOUT, "\nLoaded optional test plugin (plugins_loaded): newsletter\n\n" );
+	}
+}
+
+tests_add_filter( 'plugins_loaded', 'wp_mcp_ai_load_newsletter_test_plugin', 1 );
 
 /**
  * Set up test environment with admin user and authentication.

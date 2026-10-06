@@ -506,13 +506,23 @@ class WP_MCP_AI_FlowHub_CLI {
 	}
 }
 
-// Register commands.
+// Register commands under the canonical mcp-ai tree, keeping the legacy
+// top-level `flowhub` names as aliases (Proposal 050 namespace unification).
 if ( class_exists( 'WP_CLI' ) ) {
-	WP_CLI::add_command( 'flowhub status', array( 'WP_MCP_AI_FlowHub_CLI', 'status' ) );
-	WP_CLI::add_command( 'flowhub trigger', array( 'WP_MCP_AI_FlowHub_CLI', 'trigger' ) );
-	WP_CLI::add_command( 'flowhub clear-cache', array( 'WP_MCP_AI_FlowHub_CLI', 'clear_cache' ) );
-	WP_CLI::add_command( 'flowhub test-connection', array( 'WP_MCP_AI_FlowHub_CLI', 'test_connection' ) );
-	WP_CLI::add_command( 'flowhub compliance-report', array( 'WP_MCP_AI_FlowHub_CLI', 'compliance_report' ) );
-	WP_CLI::add_command( 'flowhub low-stock-report', array( 'WP_MCP_AI_FlowHub_CLI', 'low_stock_report' ) );
-	WP_CLI::add_command( 'flowhub sync-log', array( 'WP_MCP_AI_FlowHub_CLI', 'sync_log' ) );
+	$flowhub_verbs = array(
+		'status'             => 'status',
+		'trigger'            => 'trigger',
+		'clear-cache'        => 'clear_cache',
+		'test-connection'    => 'test_connection',
+		'compliance-report'  => 'compliance_report',
+		'low-stock-report'   => 'low_stock_report',
+		'sync-log'           => 'sync_log',
+	);
+
+	foreach ( $flowhub_verbs as $flowhub_verb => $flowhub_method ) {
+		WP_CLI::add_command( 'mcp-ai flowhub ' . $flowhub_verb, array( 'WP_MCP_AI_FlowHub_CLI', $flowhub_method ) );
+		WP_CLI::add_command( 'flowhub ' . $flowhub_verb, array( 'WP_MCP_AI_FlowHub_CLI', $flowhub_method ) );
+	}
+
+	unset( $flowhub_verbs, $flowhub_verb, $flowhub_method );
 }

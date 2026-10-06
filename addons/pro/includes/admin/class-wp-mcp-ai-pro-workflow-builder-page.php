@@ -682,7 +682,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		);
 
 		// Save workflows.
-		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows );
+		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows, false );
 
 		if ( $result ) {
 			wp_send_json_success(
@@ -753,7 +753,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 		unset( $workflows[ $workflow_id ] );
 
-		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows );
+		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows, false );
 
 		if ( $result ) {
 			wp_send_json_success( array( 'message' => __( 'Workflow deleted successfully.', 'mcp-ai-wpoos' ) ) );
@@ -883,7 +883,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			'updated_at'  => time(),
 		);
 
-		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows );
+		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows, false );
 
 		// update_option returns false both on failure and when the value is unchanged.
 		// Since we always add a new key, verify success by checking the stored data.
@@ -945,7 +945,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		$workflows[ $new_id ]['name']       = $new_name;
 		$workflows[ $new_id ]['updated_at'] = time();
 
-		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows );
+		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows, false );
 
 		// update_option returns false both on failure and when the value is unchanged.
 		// Verify success by checking the stored data contains the new key.
@@ -1496,7 +1496,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			$log = array_slice( $log, 0, 100 );
 		}
 
-		update_option( $log_key, $log );
+		update_option( $log_key, $log, false );
 
 		/**
 		 * Fires after a Pro workflow execution record has been persisted.

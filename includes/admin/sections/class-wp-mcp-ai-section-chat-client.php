@@ -360,6 +360,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'min'         => 0,
 					'max'         => 100,
 				),
+				'chat_inline_image_optimization'    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Inline Image Optimization', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Downscale and compress images before sending them to AI providers', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Images attached in chat and via document tools are sent to the provider as inline data (never a URL to download). When enabled, oversized JPEG/PNG images are downscaled to 2048px and opaque PNGs are re-encoded as JPEG so requests stay lean and vision token costs stay low. Transparent PNGs, animated GIFs, and WebP are left untouched; your original uploads are never modified.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
 				// Presets subtab (no form fields, handled via custom rendering).
 				'chat_preset_applied'               => array(
 					'type'    => 'hidden',
@@ -679,6 +686,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 						'chat_enable_regenerate',
 						'chat_allowed_file_types',
 						'chat_max_file_size_mb',
+						'chat_inline_image_optimization',
 					),
 				),
 				'llm_sanitization'     => array(

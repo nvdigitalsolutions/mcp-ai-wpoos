@@ -119,16 +119,16 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate inputs.
 		if ( empty( $arguments['sources'] ) || ! is_array( $arguments['sources'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Sources array is required',
+			return new WP_Error(
+				'wp_mcp_ai_sources_required',
+				__( 'Sources array is required', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
-		if ( empty( $arguments['topic'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Research topic is required',
+		if ( empty( $arguments['topic'] ) || ! is_string( $arguments['topic'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_topic_required',
+				__( 'Research topic is required', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -185,12 +185,17 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 				continue;
 			}
 
+			// Normalize the content field: provider or upstream tool payloads
+			// can carry it as an array, while md5() and similar_text()
+			// require strings.
+			$content = isset( $source['content'] ) && is_string( $source['content'] ) ? $source['content'] : '';
+
 			// Check content similarity.
-			$content_hash = md5( $source['content'] );
+			$content_hash = md5( $content );
 			$is_duplicate = false;
 
 			foreach ( $seen_content_hashes as $existing_hash => $existing_content ) {
-				$similarity = $this->calculate_similarity( $source['content'], $existing_content );
+				$similarity = $this->calculate_similarity( $content, $existing_content );
 				if ( $similarity >= $threshold ) {
 					$is_duplicate = true;
 					break;
@@ -202,7 +207,7 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 				if ( ! empty( $source['url'] ) ) {
 					$seen_urls[] = $source['url'];
 				}
-				$seen_content_hashes[ $content_hash ] = $source['content'];
+				$seen_content_hashes[ $content_hash ] = $content;
 			}
 		}
 
@@ -239,11 +244,16 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 		);
 
 		foreach ( $sources as $source ) {
+			// Normalize the content field the same way deduplicate_sources()
+			// does: upstream payloads can carry it as an array, while
+			// substr()/stripos()/preg_split() require strings.
+			$content = isset( $source['content'] ) && is_string( $source['content'] ) ? $source['content'] : '';
+
 			// Store source info.
 			$data['sources'][] = array(
 				'url'     => isset( $source['url'] ) ? $source['url'] : '',
 				'title'   => isset( $source['title'] ) ? $source['title'] : 'Untitled',
-				'excerpt' => substr( $source['content'], 0, 200 ) . '...',
+				'excerpt' => substr( $content, 0, 200 ) . '...',
 			);
 
 			// Collect dates and authors.
@@ -257,9 +267,9 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 			// Extract key points (sentences ending with important keywords).
 			$key_patterns = array( 'important', 'significant', 'critical', 'essential', 'key finding', 'shows that', 'reveals that' );
 			foreach ( $key_patterns as $pattern ) {
-				if ( stripos( $source['content'], $pattern ) !== false ) {
+				if ( stripos( $content, $pattern ) !== false ) {
 					// Extract sentence containing the pattern.
-					$sentences = preg_split( '/(?<=[.?!])\s+/', $source['content'], -1, PREG_SPLIT_NO_EMPTY );
+					$sentences = preg_split( '/(?<=[.?!])\s+/', $content, -1, PREG_SPLIT_NO_EMPTY );
 					foreach ( $sentences as $sentence ) {
 						if ( stripos( $sentence, $pattern ) !== false && ! in_array( $sentence, $data['key_points'], true ) ) {
 							$data['key_points'][] = $sentence;

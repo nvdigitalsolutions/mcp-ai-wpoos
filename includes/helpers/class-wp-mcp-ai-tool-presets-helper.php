@@ -104,6 +104,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'route_knowledge_query',
 					// Users & system.
 					'get_user_info',
+					// OAuth profile identity (ChatGPT/Codex plugin resource server).
+					'nvoos_get_profile',
 					// Communication.
 					'send_group_email',
 					// Visualization.
@@ -210,6 +212,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'check_workflow_health',
 					'validate_workflow',
 					'visualize_workflow_metrics',
+					'suggest_workflows_from_history',
 					// Supporting tools for agentic operations.
 					'list_professions',
 					'get_profession',
@@ -563,6 +566,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_update_status',
 					'get_site_health',
 					'get_environment_status',
+					// Fleet & uptime monitoring.
+					'get_fleet_status',
+					'get_site_uptime',
 					'check_site_security',
 					'research_site_best_practices',
 					// Comment moderation (ported from docdyhr/mcp-wordpress, MIT).
@@ -1106,6 +1112,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'delete_application_password',
 					// Security checks.
 					'check_site_security',
+					'scan_assistant_security',
 					'get_site_health',
 					// Vault management (Pro).
 					'vault_access',
@@ -1222,6 +1229,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'export_assistant_blueprint',
 					'probe_chat',
 					'probe_remote_mcp',
+					'run_assistant_eval',
+					'scan_assistant_security',
 					'query_mesh_intelligent',
 					'list_professions',
 					'get_profession',

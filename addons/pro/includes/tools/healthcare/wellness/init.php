@@ -40,11 +40,16 @@ add_action(
 			// Run migration automatically.
 			$result = WP_MCP_AI_Migrate_Medical_Record_Post_Type::run();
 
-			// Log result.
-			if ( 'success' === $result['status'] && function_exists( 'wp_mcp_ai_log_activity' ) ) {
-				wp_mcp_ai_log_activity(
+			// Log result through the base plugin's activity logger so the
+			// migration ends up in the standard audit trail.
+			if ( 'success' === $result['status'] && class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
 					'migration_medical_record_post_type',
-					sprintf( 'Migrated %d medical records from mcp_ai_medical_record to mcp_ai_med_record', $result['migrated'] )
+					sprintf(
+						/* translators: %d: number of migrated records */
+						'Migrated %d medical records from mcp_ai_medical_record to mcp_ai_med_record',
+						$result['migrated']
+					)
 				);
 			}
 		}

@@ -119,10 +119,12 @@ if ( ! class_exists( 'WP_MCP_AI_NV_Cloud_Billing_Observer' ) ) {
 			$service_fee = $this->service->compute_markup( $wholesale );
 			$total       = $wholesale + $service_fee;
 
+			// is_scalar() keeps the ledger clean: a non-empty array model field
+			// would cast to the literal string "Array" in the usage record.
 			$model = '';
-			if ( is_array( $response ) && ! empty( $response['model'] ) ) {
+			if ( is_array( $response ) && ! empty( $response['model'] ) && is_scalar( $response['model'] ) ) {
 				$model = (string) $response['model'];
-			} elseif ( is_array( $request ) && ! empty( $request['model'] ) ) {
+			} elseif ( is_array( $request ) && ! empty( $request['model'] ) && is_scalar( $request['model'] ) ) {
 				$model = (string) $request['model'];
 			}
 

@@ -450,9 +450,9 @@ class WP_MCP_AI_Self_Hosted_OCR_Client {
 
 		$raw_text = '';
 		if ( isset( $data['choices'][0]['message']['content'] ) ) {
-			$raw_text = (string) $data['choices'][0]['message']['content'];
+			$raw_text = $this->flatten_content( $data['choices'][0]['message']['content'] );
 		} elseif ( isset( $data['choices'][0]['text'] ) ) {
-			$raw_text = (string) $data['choices'][0]['text'];
+			$raw_text = $this->flatten_content( $data['choices'][0]['text'] );
 		}
 
 		// Post-process the response.
@@ -490,6 +490,36 @@ class WP_MCP_AI_Self_Hosted_OCR_Client {
 		);
 
 		return $result;
+	}
+
+	/**
+	 * Flatten a provider content field into a string.
+	 *
+	 * Servers built on vLLM can return message.content as an array of parts;
+	 * casting an array to string yields "Array" and silently loses the OCR
+	 * text.
+	 *
+	 * @param mixed $content Content field (string or array of parts).
+	 * @return string Flattened text.
+	 */
+	private function flatten_content( $content ) {
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( is_array( $content ) ) {
+			$text = '';
+			foreach ( $content as $part ) {
+				if ( is_array( $part ) && isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				} elseif ( is_string( $part ) ) {
+					$text .= $part;
+				}
+			}
+			return $text;
+		}
+
+		return '';
 	}
 
 	/**

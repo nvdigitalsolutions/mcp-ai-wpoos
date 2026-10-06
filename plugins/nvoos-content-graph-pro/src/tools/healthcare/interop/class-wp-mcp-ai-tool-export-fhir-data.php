@@ -219,14 +219,16 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 			$output = $fhir_resources;
 		}
 
-		// Log export activity for HIPAA compliance.
-		if ( function_exists( 'wp_mcp_ai_log_activity' ) ) {
-			wp_mcp_ai_log_activity(
+		// Log export activity for HIPAA compliance. The unified PHI audit
+		// ledger is the same append-only store every healthcare tool writes to.
+		if ( class_exists( 'WP_MCP_AI_Healthcare_Audit' ) ) {
+			WP_MCP_AI_Healthcare_Audit::record(
 				'fhir_data_export',
-				sprintf(
-					'Exported FHIR data for member %d (%d resources)',
-					$member_id,
-					count( $fhir_resources )
+				'member',
+				$member_id,
+				array(
+					'resources' => count( $fhir_resources ),
+					'format'    => $format,
 				)
 			);
 		}

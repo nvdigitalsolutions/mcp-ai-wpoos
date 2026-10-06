@@ -311,6 +311,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Sync_Orders implements WP_MCP_AI_Tool_Interface
 		$orders        = array();
 		$total_revenue = 0.0;
 		$status_counts = array();
+		$edges         = array();
 
 		if ( ! is_wp_error( $orders_result ) ) {
 			$edges = isset( $orders_result['data']['orders']['edges'] ) ? $orders_result['data']['orders']['edges'] : array();

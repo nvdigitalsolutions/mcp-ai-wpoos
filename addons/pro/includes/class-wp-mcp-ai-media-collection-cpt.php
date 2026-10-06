@@ -436,10 +436,10 @@ class WP_MCP_AI_Media_Collection_CPT {
 					array( 'user_id' => get_current_user_id() )
 				);
 
-				if ( ! empty( $result['success'] ) ) {
-					++$processed;
-				} else {
+				if ( is_wp_error( $result ) || empty( $result['success'] ) ) {
 					++$errors;
+				} else {
+					++$processed;
 				}
 			}
 
@@ -568,6 +568,10 @@ class WP_MCP_AI_Media_Collection_CPT {
 			array( 'collection_id' => $collection_id ),
 			array( 'user_id' => get_current_user_id() )
 		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
 
 		if ( ! empty( $result['success'] ) ) {
 			wp_send_json_success( $result );

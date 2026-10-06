@@ -14,7 +14,7 @@ class WP_MCP_AI_File_Attachment_Flow_Test extends WP_UnitTestCase {
 	 */
 	public function test_image_attachment_segment_creation() {
 		// Create a test image attachment.
-		$attachment_id = $this->factory->attachment->create_upload_object( WP_MCP_AI_PATH . 'tests/fixtures/test-image.jpg' );
+		$attachment_id = $this->factory->attachment->create_upload_object( WP_MCP_AI_PATH . 'tests/fixtures/sample-image.png' );
 		$this->assertGreaterThan( 0, $attachment_id );
 
 		// Create attachment helper. Use a provider without a remote file API
@@ -117,7 +117,7 @@ class WP_MCP_AI_File_Attachment_Flow_Test extends WP_UnitTestCase {
 		$other_user    = $this->factory->user->create();
 		$attachment_id = $this->factory->attachment->create_object(
 			array(
-				'file'        => WP_MCP_AI_PATH . 'tests/fixtures/test-image.jpg',
+				'file'        => WP_MCP_AI_PATH . 'tests/fixtures/sample-image.png',
 				'post_author' => $other_user,
 				'post_status' => 'private',
 			)

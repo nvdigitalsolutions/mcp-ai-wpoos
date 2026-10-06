@@ -2525,12 +2525,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return bool|WP_Error
 		 */
 		public function permissions_check_mcp( WP_REST_Request $request ) {
-				$this->reset_auth_context();
+			$this->reset_auth_context();
 
-				$mcp_url = rest_url( 'mcp-ai/v1/mcp' );
+			$mcp_url = rest_url( 'mcp-ai/v1/mcp' );
 
-				// Check for mesh API key authentication.
-				$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+			// Check for mesh API key authentication.
+			$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
 			if ( ! empty( $mesh_key ) ) {
 				$mesh_validated = $this->validate_mesh_key( $mesh_key );
 				if ( true === $mesh_validated ) {
@@ -2541,8 +2541,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-				// Check for bearer token authentication.
-				$bearer = $request->get_header( 'Authorization' );
+			// Check for bearer token authentication.
+			$bearer = $request->get_header( 'Authorization' );
 			if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
 				$token = trim( $matches[1] );
 
@@ -2571,21 +2571,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
-				/**
-				 * Allow raw assistant credentials (cred_xxx.yyy) without the
-				 * "Bearer " scheme prefix.
-				 *
-				 * Some agent configurations forward the Authorization header value
-				 * verbatim as configured (e.g. Cloudways Agent). The credential
-				 * itself is the secret; the scheme label adds no security, so we
-				 * accept the raw form for compatibility. Disable this filter to
-				 * require strict RFC 6750 bearer syntax.
-				 *
-				 * @since 1.1.55
-				 *
-				 * @param bool $accept_raw_credential_header Whether to accept raw credential headers. Default true.
-				 */
-				$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
+			/**
+			 * Allow raw assistant credentials (cred_xxx.yyy) without the
+			 * "Bearer " scheme prefix.
+			 *
+			 * Some agent configurations forward the Authorization header value
+			 * verbatim as configured (e.g. Cloudways Agent). The credential
+			 * itself is the secret; the scheme label adds no security, so we
+			 * accept the raw form for compatibility. Disable this filter to
+			 * require strict RFC 6750 bearer syntax.
+			 *
+			 * @since 1.1.55
+			 *
+			 * @param bool $accept_raw_credential_header Whether to accept raw credential headers. Default true.
+			 */
+			$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
 			if ( $accept_raw_credential && ! empty( $bearer ) && preg_match( '/^cred_[A-Za-z0-9]+\.[A-Za-z0-9_-]{8,}$/', trim( $bearer ) ) ) {
 				$token = trim( $bearer );
 
@@ -2598,7 +2598,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-				// Check for WordPress Basic auth (Application Passwords).
+			// Check for WordPress Basic auth (Application Passwords).
 			if ( ! empty( $bearer ) && 0 === stripos( $bearer, 'Basic ' ) ) {
 				$basic_result = $this->validate_wp_basic_auth( $request );
 				if ( true === $basic_result ) {
@@ -2608,7 +2608,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-				// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
+			// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
 			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
 				$internal_header = $request->get_header( 'X-WP-MCP-AI-Internal-Diagnostic' );
 				$is_local_origin = isset( $_SERVER['HTTP_ORIGIN'] )
@@ -2620,24 +2620,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-				// 401 — return WWW-Authenticate header per MCP Authorization spec.
-				$error = new WP_Error(
-					'wp_mcp_ai_mcp_auth_required',
-					__( 'Authentication required. Use a Bearer token, OAuth 2.0, Application Password (Basic auth), or Mesh Key.', 'mcp-ai-wpoos' ),
-					array(
-						'status'  => 401,
-						'actions' => array(
-							'supply_bearer_token' => __( 'Add an Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
-							'connect_via_oauth'   => __( 'Connect via OAuth 2.0 using an MCP client that supports it (Codex, Claude Desktop).', 'mcp-ai-wpoos' ),
-							'use_app_password'    => __( 'Use Authorization: Basic with a WordPress Application Password.', 'mcp-ai-wpoos' ),
-							'supply_mesh_key'     => __( 'Use the X-WP-MCP-AI-Mesh-Key header for mesh network access.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
+			// 401 — return WWW-Authenticate header per MCP Authorization spec.
+			$error = new WP_Error(
+				'wp_mcp_ai_mcp_auth_required',
+				__( 'Authentication required. Use a Bearer token, OAuth 2.0, Application Password (Basic auth), or Mesh Key.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 401,
+					'actions' => array(
+						'supply_bearer_token' => __( 'Add an Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
+						'connect_via_oauth'   => __( 'Connect via OAuth 2.0 using an MCP client that supports it (Codex, Claude Desktop).', 'mcp-ai-wpoos' ),
+						'use_app_password'    => __( 'Use Authorization: Basic with a WordPress Application Password.', 'mcp-ai-wpoos' ),
+						'supply_mesh_key'     => __( 'Use the X-WP-MCP-AI-Mesh-Key header for mesh network access.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
 
-				// Per MCP spec: include WWW-Authenticate header with resource_metadata URL.
-			if ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+			// Per MCP spec: include WWW-Authenticate header with resource_metadata URL.
+			// Prefer the Auth0-backed resource-server contract (ChatGPT plugin
+			// bridge) when configured; fall back to the Pro authorization
+			// server's challenge for sites that self-host OAuth.
+			$www_auth = '';
+			if ( class_exists( 'WP_MCP_AI_OAuth_Resource_Server' ) && WP_MCP_AI_OAuth_Resource_Server::is_configured() ) {
+				$www_auth = WP_MCP_AI_OAuth_Resource_Server::build_www_authenticate();
+			} elseif ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
 				$www_auth = WP_MCP_AI_OAuth_Server::build_www_authenticate( $mcp_url );
+			}
+			if ( '' !== $www_auth ) {
 				$error->add_data(
 					array(
 						'www_authenticate' => $www_auth,
@@ -2649,7 +2657,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-				return $error;
+			return $error;
 		}
 
 		/**
@@ -4268,6 +4276,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$payload['tool_results'] = $tool_result_messages;
 			}
 
+			// Output-guardrail parity: run the Output Guardrail and Citation
+			// Verifier before the response leaves the REST layer (both the
+			// SSE event payload and the plain JSON return path).
+			$guarded_data = $this->apply_pre_response_render( $payload['data'] ?? array(), $assistant_id, $request );
+			if ( is_wp_error( $guarded_data ) ) {
+				return $guarded_data;
+			}
+			$payload['data'] = $guarded_data;
+
 			if ( $this->request_wants_event_stream( $request ) ) {
 				return $this->stream_event_stream_payload( $payload, 'message' );
 			}
@@ -4362,6 +4379,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		protected function handle_chat_request_with_streaming( $assistant_id, $messages, $options, $assistant_config, $transcript_context, $request, $user_id, $max_iterations ) {
 			// Set up SSE headers.
 			$this->send_sse_headers();
+
+			// Establish the stream through proxy layers (nginx, Cloudflare)
+			// immediately. Without this frame the connection can sit silent
+			// during the pre-flight work below; proxies with a ~100 s
+			// read-timeout reset connections they consider idle.
+			$this->send_sse_keepalive();
 
 			// Phase 3: agentic-loop output guard (streaming branch).
 			$budget_tracker = new WP_MCP_AI_Data_Budget_Tracker( 'chat-stream-' . $assistant_id . '-' . wp_generate_uuid4() );
@@ -4509,6 +4532,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					};
 				}
 			}
+
+			// Flush a keepalive frame before the (potentially long and
+			// silent) initial LLM call. When native streaming is disabled
+			// the full model latency passes before the first byte reaches
+			// the client; this frame resets proxy idle-timeout counters.
+			$this->send_sse_keepalive();
 
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
@@ -4679,6 +4708,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'timestamp' => time(),
 						)
 					);
+
+					// Keepalive before tool execution. PHP is single-threaded
+					// and blocked inside the tool call (which can take tens of
+					// seconds, e.g. OCR/document generation), so no frames can
+					// be emitted DURING it. Sending one here guarantees the
+					// stream's last byte is recent when the tool starts, which
+					// keeps proxy idle-timeouts (Cloudflare 524, nginx
+					// proxy_read_timeout) from resetting the connection.
+					$this->send_sse_keepalive();
 
 					// Wrap tool execution in try-catch to handle any uncaught exceptions
 					// and ensure SSE stream continues even if tool execution fails.
@@ -5066,6 +5104,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$this->send_sse_event( 'message', $chunk );
 					};
 				}
+
+				// Keepalive before the in-loop LLM call; the model may think
+				// silently for a while before emitting tokens (or none at all
+				// when native streaming is disabled).
+				$this->send_sse_keepalive();
+
 				$response = $this->client->create_chat_completion( $messages, $options );
 				unset( $options['stream'], $options['stream_callback'] );
 
@@ -5371,6 +5415,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'data'         => $response,
 			);
 
+			// Output-guardrail parity: the final (complete) message event runs
+			// through the Output Guardrail / Citation Verifier like the
+			// non-streaming return path. Mid-stream chunks are already on the
+			// wire and stay unfiltered — same on the OOS streaming path.
+			$guarded_data = $this->apply_pre_response_render( $payload['data'], $assistant_id, $request );
+			if ( is_wp_error( $guarded_data ) ) {
+				$this->send_sse_event( 'error', array( 'message' => $guarded_data->get_error_message() ) );
+				$this->finish_sse();
+				return;
+			}
+			$payload['data'] = $guarded_data;
+
 			// Include cost data if available (Phase 7 Week 5-6).
 			if ( $cost_data ) {
 				$payload['cost'] = $cost_data;
@@ -5511,6 +5567,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function send_sse_headers() {
 			$this->sse_handler->send_sse_headers();
+		}
+
+		/**
+		 * Send an SSE keepalive comment frame.
+		 *
+		 * SSE comment lines are ignored by EventSource clients but flush the
+		 * output buffers through nginx and Cloudflare, resetting their idle
+		 * read-timeout counters. Chat streams go silent while PHP is blocked
+		 * inside a tool call or waiting on the model, and proxies reset
+		 * connections they consider idle (Cloudflare 524, HTTP/2 stream
+		 * resets). The streaming chat path therefore emits a keepalive at
+		 * every inter-step boundary: after the SSE headers, before the initial
+		 * LLM call, immediately before each tool execution, and before each
+		 * in-loop LLM call.
+		 *
+		 * @since 1.9.5
+		 */
+		protected function send_sse_keepalive() {
+			$this->sse_handler->send_sse_comment( 'keepalive' );
 		}
 
 		/**
@@ -13250,6 +13325,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Parity with the legacy loop: run the same tool-slug pipeline that
+			// build_tools_payload() applies before it resolves tool definitions.
+			// The attention router narrows oversized lists (>100 tools) using the
+			// last user message, and the effective-tools seam appends dynamically
+			// registered tools (MCP App bridge tools, granted toolkit MCP server
+			// tools) that cannot be selected in the Tools metabox.
+			$assistant_config['_last_user_message'] = $last_user_message;
+
+			$effective_tool_slugs = isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+
+			$filtered_slugs = apply_filters( 'wp_mcp_ai_attention_tool_slugs', array(), $effective_tool_slugs, $assistant_config );
+			if ( ! empty( $filtered_slugs ) && is_array( $filtered_slugs ) ) {
+				$effective_tool_slugs = array_values( array_intersect( $filtered_slugs, $effective_tool_slugs ) );
+			}
+
+			$effective_tool_slugs = apply_filters( 'wp_mcp_ai_chat_effective_tools', $effective_tool_slugs, $assistant_config, absint( $assistant_id ) );
+			if ( ! is_array( $effective_tool_slugs ) ) {
+				$effective_tool_slugs = array();
+			}
+
+			$assistant_config['tools'] = array_values(
+				array_unique(
+					array_filter( array_map( 'sanitize_key', $effective_tool_slugs ) )
+				)
+			);
+
 												// Build options.
 												$options     = array();
 												$raw_options = $request->get_param( 'options' );
@@ -13397,6 +13498,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					options: $options,
 					cancellation: $cancellation,
 				);
+			} catch ( WP_MCP_AI_Destructive_Confirmation_Required | WP_MCP_AI_Concurrency_Limit_Reached | WP_MCP_AI_Cost_Budget_Exceeded $e ) {
+				// Parity with the legacy path: security/budget gates surface their
+				// canonical envelopes (e.g. HTTP 428 confirmation) instead of a
+				// generic 500. Proposal 029 G2 closure (Proposal 056 follow-up).
+				return self::translate_gate_exception( $e );
 			} catch ( \Exception $e ) {
 				WP_MCP_AI_Logger::log_error(
 					'oos_engine_exception',
@@ -13478,7 +13584,108 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$payload['iterations'] = $result['iterations'];
 				}
 
+				// Output-guardrail parity (Proposal 029 G2 closure): apply the
+				// pre-response-render filter (Output Guardrail, Citation Verifier)
+				// before the response leaves the REST layer, exactly like the
+				// legacy path.
+				$guarded_data = $this->apply_pre_response_render( $payload['data'], $assistant_id, $request );
+				if ( is_wp_error( $guarded_data ) ) {
+					return $guarded_data;
+				}
+				$payload['data'] = $guarded_data;
+
 				return rest_ensure_response( $payload );
+		}
+
+		/**
+		 * Translate a security/budget gate exception into its canonical WP_Error
+		 * envelope.
+		 *
+		 * Parity seam shared by the legacy and OOS paths: the destructive-ops
+		 * gate, concurrency guard, and cost tracker raise typed exceptions from
+		 * the tool-execution hooks; both loops must surface their envelopes
+		 * (e.g. HTTP 428 confirmation) instead of a generic 500.
+		 *
+		 * @since 1.1.97
+		 *
+		 * @param mixed $exception Raised exception.
+		 * @return WP_Error|null Canonical envelope, or null when the exception is
+		 *                       not a known gate exception.
+		 */
+		public static function translate_gate_exception( $exception ) {
+			if ( $exception instanceof WP_MCP_AI_Destructive_Confirmation_Required
+				|| $exception instanceof WP_MCP_AI_Concurrency_Limit_Reached
+				|| $exception instanceof WP_MCP_AI_Cost_Budget_Exceeded ) {
+				return $exception->to_wp_error();
+			}
+
+			return null;
+		}
+
+		/**
+		 * Apply the pre-response-render filter to a response payload's content.
+		 *
+		 * Subscribers (Output Guardrail, Citation Verifier) receive the raw
+		 * assistant message content plus a context block and may sanitise it or
+		 * block it with a WP_Error. Non-string content passes through untouched
+		 * (the filter contract is string|WP_Error).
+		 *
+		 * @since 1.1.97
+		 *
+		 * @param mixed           $payload_data Response `data` block.
+		 * @param int             $assistant_id Assistant post ID.
+		 * @param WP_REST_Request $request      REST request instance.
+		 * @return mixed|WP_Error Filtered data block, or WP_Error when a
+		 *                        subscriber blocks the response.
+		 */
+		protected function apply_pre_response_render( $payload_data, $assistant_id, $request ) {
+			if ( ! is_array( $payload_data ) ) {
+				return $payload_data;
+			}
+
+			$content = isset( $payload_data['choices'][0]['message']['content'] )
+				? $payload_data['choices'][0]['message']['content']
+				: '';
+
+			if ( ! is_string( $content ) ) {
+				// Non-text content (structured provider payloads) is out of scope
+				// for the text-oriented guardrails — pass through untouched.
+				return $payload_data;
+			}
+
+			/**
+			 * Filters the assistant response content before it is rendered.
+			 *
+			 * @since 1.1.97
+			 *
+			 * @param string          $content      Raw response content.
+			 * @param int             $assistant_id Assistant post ID.
+			 * @param array           $context      Context block (surface, request).
+			 * @return string|WP_Error Sanitized content or WP_Error to block.
+			 */
+			$filtered = apply_filters(
+				'wp_mcp_ai_pre_response_render',
+				$content,
+				absint( $assistant_id ),
+				array(
+					'surface' => 'rest_chat',
+					'request' => $request,
+				)
+			);
+
+			if ( is_wp_error( $filtered ) ) {
+				return $filtered;
+			}
+
+			if ( ! is_string( $filtered ) ) {
+				// Filters must preserve the type contract; a broken subscriber
+				// cannot corrupt the payload.
+				return $payload_data;
+			}
+
+			$payload_data['choices'][0]['message']['content'] = $filtered;
+
+			return $payload_data;
 		}
 	}
 }

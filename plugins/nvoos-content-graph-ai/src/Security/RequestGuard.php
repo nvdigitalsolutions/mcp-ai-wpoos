@@ -13,6 +13,10 @@
  * - Settings reads go through `get_setting()` — the base settings
  *   repository in monolith installs, the content-graph settings store
  *   in standalone installs.
+ * - Masked-error correlation logging goes through the base
+ *   `WP_MCP_AI_Logger` (Recent Errors) when available; standalone
+ *   installs skip the server-side copy while the correlation ref and
+ *   the admin `verbose_errors=1` override still apply.
  * - The unified SSE connection path delegates to the base
  *   `WP_MCP_AI_SSE_Rate_Limiter` in monolith installs and the ported
  *   `SseRateLimiter` (Wave D1b) standalone; the legacy transient counter
@@ -469,6 +473,10 @@ class RequestGuard {
 	 * Filter error responses to strip detail when verbosity is 'safe'.
 	 *
 	 * Hooked on rest_post_dispatch at priority 20 (after augment_error_actions).
+	 * Masked errors carry a correlation reference with a server-side copy
+	 * kept in the Recent Errors log (monolith installs), and admins can see
+	 * full detail while the site stays in 'safe' mode by appending
+	 * `?verbose_errors=1` to a plugin REST URL.
 	 *
 	 * @param WP_REST_Response|WP_Error $response Response object.
 	 * @param WP_REST_Server            $server   REST server.
@@ -488,21 +496,36 @@ class RequestGuard {
 			return $response;
 		}
 
-		// 'normal' mode: only filter for non-admin users.
-		if ( 'normal' === $verbosity && current_user_can( 'manage_options' ) ) {
-			return $response;
+		if ( current_user_can( 'manage_options' ) ) {
+			// 'normal' mode: only filter for non-admin users.
+			if ( 'normal' === $verbosity ) {
+				return $response;
+			}
+
+			// 'safe' mode: admins opt in per request.
+			if ( self::admin_requested_verbose_errors( $request ) ) {
+				return $response;
+			}
 		}
 
 		// 'safe' mode (or 'normal' for non-admins): strip internal detail.
 		if ( is_wp_error( $response ) ) {
-			return self::sanitize_error( $response );
+			return self::sanitize_error( $response, $request );
 		}
 
 		if ( $response instanceof \WP_REST_Response && $response->is_error() ) {
 			$data = $response->get_data();
 			if ( is_array( $data ) ) {
-				$data = self::strip_internal_keys( $data );
-				$response->set_data( $data );
+				$ref = self::generate_error_ref();
+				self::log_masked_error(
+					$ref,
+					$request,
+					isset( $data['code'] ) ? (string) $data['code'] : 'rest_error',
+					isset( $data['message'] ) ? (string) $data['message'] : '',
+					isset( $data['data'] ) ? $data['data'] : array(),
+					(int) $response->get_status()
+				);
+				$response->set_data( self::strip_internal_keys( $data, $ref ) );
 			}
 		}
 
@@ -510,19 +533,96 @@ class RequestGuard {
 	}
 
 	/**
+	 * Whether the current admin explicitly opted into full error detail.
+	 *
+	 * Admins can append `?verbose_errors=1` to a plugin REST URL to see
+	 * unredacted errors while the site stays in 'safe' mode for everyone
+	 * else. Only honored together with the manage_options capability.
+	 *
+	 * @param WP_REST_Request $request Current request.
+	 * @return bool
+	 */
+	private static function admin_requested_verbose_errors( $request ) {
+		if ( ! $request instanceof \WP_REST_Request ) {
+			return false;
+		}
+
+		$flag = $request->get_param( 'verbose_errors' );
+
+		return in_array( $flag, array( '1', 1, 'true', true ), true );
+	}
+
+	/**
+	 * Generate a short correlation reference for a masked error.
+	 *
+	 * The reference is returned to the client and maps to the full error
+	 * recorded server-side by log_masked_error().
+	 *
+	 * @return string Lowercase alphanumeric reference.
+	 */
+	private static function generate_error_ref() {
+		return strtolower( wp_generate_password( 10, false, false ) );
+	}
+
+	/**
+	 * Record a masked error server-side so admins can recover full detail.
+	 *
+	 * Seam: monolith installs log through the base `WP_MCP_AI_Logger` (the
+	 * Recent Errors admin view shows the entry keyed by $ref); standalone
+	 * installs skip the server-side copy while the correlation ref and the
+	 * admin override still apply.
+	 *
+	 * @param string          $ref     Correlation reference.
+	 * @param WP_REST_Request $request Current request.
+	 * @param string          $code    Error code.
+	 * @param string          $message Error message.
+	 * @param mixed           $data    Original error data.
+	 * @param int             $status  HTTP status.
+	 * @return void
+	 */
+	private static function log_masked_error( $ref, $request, $code, $message, $data, $status ) {
+		if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+			return;
+		}
+
+		$route  = $request instanceof \WP_REST_Request ? $request->get_route() : '';
+		$method = $request instanceof \WP_REST_Request ? $request->get_method() : '';
+
+		\WP_MCP_AI_Logger::log_error(
+			sprintf(
+				/* translators: 1=HTTP method, 2=route, 3=correlation reference. */
+				__( 'REST error detail masked (%1$s %2$s, ref %3$s)', 'nvoos-content-graph-ai' ),
+				$method,
+				$route,
+				$ref
+			),
+			array(
+				'ref'     => $ref,
+				'route'   => $route,
+				'method'  => $method,
+				'code'    => $code,
+				'message' => $message,
+				'status'  => $status,
+				'data'    => $data,
+			)
+		);
+	}
+
+	/**
 	 * Strip internal/sensitive keys from an error response.
 	 *
 	 * Only the following keys are safe to expose:
 	 * code, message, status, retry_after, actions, user_message, suggestions.
+	 * The original HTTP status is carried through; 500 is only the default
+	 * when the original error did not declare one.
 	 *
-	 * @param WP_Error $error The error object.
+	 * @param WP_Error        $error   The error object.
+	 * @param WP_REST_Request $request Current request.
 	 * @return WP_Error Sanitized error.
 	 */
-	private static function sanitize_error( $error ) {
+	private static function sanitize_error( $error, $request ) {
 		$data     = $error->get_error_data();
-		$filtered = array(
-			'status' => 500,
-		);
+		$filtered = array();
 
 		if ( is_array( $data ) ) {
 			// Keep only safe keys.
@@ -532,7 +632,27 @@ class RequestGuard {
 					$filtered[ $key ] = $data[ $key ];
 				}
 			}
+		} elseif ( is_numeric( $data ) ) {
+			// A bare numeric error datum is an HTTP status.
+			$filtered['status'] = (int) $data;
 		}
+
+		// Default to 500 only when the original error declared no status.
+		if ( ! isset( $filtered['status'] ) ) {
+			$filtered['status'] = 500;
+		}
+
+		$ref             = self::generate_error_ref();
+		$filtered['ref'] = $ref;
+
+		self::log_masked_error(
+			$ref,
+			$request,
+			$error->get_error_code(),
+			$error->get_error_message(),
+			$data,
+			(int) $filtered['status']
+		);
 
 		return new \WP_Error(
 			$error->get_error_code(),
@@ -544,10 +664,14 @@ class RequestGuard {
 	/**
 	 * Strip internal keys from a response data array.
 	 *
-	 * @param array $data Response data.
+	 * @param array  $data Response data.
+	 * @param string $ref  Correlation reference.
 	 * @return array Filtered data.
 	 */
-	private static function strip_internal_keys( $data ) {
+	private static function strip_internal_keys( $data, $ref ) {
+		// Correlation reference maps to the full error logged server-side.
+		$data['ref'] = $ref;
+
 		// If the response has nested data, strip that too.
 		if ( isset( $data['data'] ) && is_array( $data['data'] ) ) {
 			$safe_data = array();

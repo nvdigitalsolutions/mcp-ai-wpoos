@@ -683,6 +683,8 @@ class WP_MCP_AI_OCR_Service {
 						return $this->extract_with_openai( $image_path, $options );
 					case 'gemini':
 						return $this->extract_with_gemini( $image_path, $options );
+					case 'anthropic':
+						return $this->extract_with_anthropic( $image_path, $options );
 					case 'ollama':
 						return $this->extract_with_ollama( $image_path, $options );
 					case 'tesseract':
@@ -779,8 +781,12 @@ class WP_MCP_AI_OCR_Service {
 			);
 		}
 
-		if ( isset( $response['choices'][0]['message']['content'] ) ) {
-			return trim( $response['choices'][0]['message']['content'] );
+		// Some OpenAI-compatible gateways return message.content as an array of
+		// parts — use the shared shape-tolerant extractor.
+		$text = $this->extract_text_from_response( $response );
+
+		if ( '' !== $text ) {
+			return $text;
 		}
 
 		return new WP_Error( 'invalid_response', __( 'Invalid response from OpenAI API. Will try fallback provider.', 'nvoos-content-graph-pro' ) );
@@ -811,26 +817,34 @@ class WP_MCP_AI_OCR_Service {
 		}
 		$client = self::$gemini_client;
 
-		$request = array(
-			'contents' => array(
-				array(
-					'parts' => array(
-						array(
-							'text' => 'Extract all text from this image. Return only the extracted text, maintaining the original layout and structure as much as possible.',
-						),
-						array(
-							'inline_data' => array(
-								'mime_type' => $mime_type,
-								'data'      => $base64,
-							),
-						),
+		$model = isset( $settings['default_gemini_model'] ) && '' !== $settings['default_gemini_model'] ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
+
+		// The client's public API is create_chat_completion() — pass the
+		// image as an inline-base64 segment (format_image_part turns the
+		// 'data' key into a Gemini inlineData part).
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Extract all text from this image. Return only the extracted text, maintaining the original layout and structure as much as possible.',
+					),
+					array(
+						'type'      => 'image_url',
+						'data'      => $base64,
+						'mime_type' => $mime_type,
 					),
 				),
 			),
 		);
 
-		$model    = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
-		$response = $client->generate_content( $model, $request, $settings );
+		$response = $client->create_chat_completion(
+			$messages,
+			array(
+				'model' => $model,
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			WP_MCP_AI_Logger::log_event(
@@ -848,11 +862,145 @@ class WP_MCP_AI_OCR_Service {
 			);
 		}
 
-		if ( isset( $response['candidates'][0]['content']['parts'][0]['text'] ) ) {
-			return trim( $response['candidates'][0]['content']['parts'][0]['text'] );
+		// create_chat_completion() normalises the Gemini response to the
+		// OpenAI shape (message.content may be a segments array); keep a raw-
+		// candidates fallback for custom base URLs returning the native
+		// Gemini envelope.
+		$text = $this->extract_text_from_response( $response );
+
+		if ( '' !== $text ) {
+			return $text;
 		}
 
 		return new WP_Error( 'invalid_response', __( 'Invalid response from Gemini API. Will try fallback provider.', 'nvoos-content-graph-pro' ) );
+	}
+
+	/**
+	 * Extract plain text from a normalized provider response message.
+	 *
+	 * Providers normalize to an OpenAI-style shape, but some clients return
+	 * message.content as an array of parts instead of a string.
+	 *
+	 * @param array $response Provider response payload.
+	 * @return string Extracted text (may be empty).
+	 */
+	protected function extract_text_from_response( $response ) {
+		$message = isset( $response['choices'][0]['message'] ) ? $response['choices'][0]['message'] : array();
+
+		if ( isset( $message['content'] ) ) {
+			if ( is_string( $message['content'] ) ) {
+				return trim( $message['content'] );
+			}
+
+			if ( is_array( $message['content'] ) ) {
+				$text = '';
+				foreach ( $message['content'] as $part ) {
+					if ( is_array( $part ) && isset( $part['text'] ) ) {
+						$text .= $part['text'];
+					} elseif ( is_string( $part ) ) {
+						$text .= $part;
+					}
+				}
+				return trim( $text );
+			}
+		}
+
+		// Raw candidates shape (custom base URLs).
+		if ( isset( $response['candidates'][0]['content']['parts'] ) && is_array( $response['candidates'][0]['content']['parts'] ) ) {
+			$text = '';
+			foreach ( $response['candidates'][0]['content']['parts'] as $part ) {
+				if ( isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				}
+			}
+			return trim( $text );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Extract text using Anthropic Claude Vision.
+	 *
+	 * @param string $image_path Path to image file.
+	 * @param array  $options    Extraction options.
+	 * @return string|WP_Error Extracted text or error.
+	 */
+	protected function extract_with_anthropic( $image_path, $options = array() ) {
+		if ( ! WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' ) ) {
+			return new WP_Error( 'no_api_key', __( 'Anthropic API key not configured.', 'nvoos-content-graph-pro' ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
+			return new WP_Error( 'missing_client', __( 'Anthropic client class not found.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		// Encode image to base64 and build a data URL — the Anthropic
+		// client already knows how to turn that into a base64 image block.
+		$image_data = file_get_contents( $image_path );
+		if ( false === $image_data ) {
+			return new WP_Error( 'read_failed', __( 'Failed to read image file for OCR.', 'nvoos-content-graph-pro' ) );
+		}
+		$mime_type = $this->get_mime_type( $image_path );
+		$data_url  = 'data:' . $mime_type . ';base64,' . base64_encode( $image_data );
+
+		$model = isset( $settings['anthropic_vision_model'] ) && '' !== $settings['anthropic_vision_model']
+			? $settings['anthropic_vision_model']
+			: ( isset( $settings['anthropic_model'] ) && '' !== $settings['anthropic_model'] ? $settings['anthropic_model'] : 'claude-sonnet-4-6' );
+
+		$client = new WP_MCP_AI_Anthropic_Client();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type'      => 'image_url',
+						'image_url' => array( 'url' => $data_url ),
+					),
+					array(
+						'type' => 'text',
+						'text' => 'Extract all text from this image. Return only the extracted text, maintaining the original layout and structure as much as possible.',
+					),
+				),
+			),
+		);
+
+		$response = $client->create_chat_completion(
+			$messages,
+			array(
+				'model'      => $model,
+				'max_tokens' => 4096,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'ocr_anthropic_failed',
+				'Anthropic Vision OCR failed',
+				array( 'error' => $response->get_error_message() )
+			);
+			return new WP_Error(
+				'ocr_anthropic_failed',
+				sprintf(
+					/* translators: %s: error message from API */
+					__( 'Anthropic Vision OCR failed: %s. Will try fallback provider.', 'nvoos-content-graph-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		// Anthropic normalizes content blocks into message.content (may be an
+		// array of parts) — use the shared shape-tolerant extractor.
+		$text = $this->extract_text_from_response( $response );
+
+		if ( '' !== $text ) {
+			return $text;
+		}
+
+		return new WP_Error( 'invalid_response', __( 'Invalid response from Anthropic API. Will try fallback provider.', 'nvoos-content-graph-pro' ) );
 	}
 
 	/**

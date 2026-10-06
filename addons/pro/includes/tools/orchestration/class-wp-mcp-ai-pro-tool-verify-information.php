@@ -100,7 +100,9 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 		$contradicting = array();
 
 		foreach ( $sources as $source ) {
-			$content     = $source['content'];
+			// Normalize the content field: upstream tool payloads can carry it
+			// as an array, while stripos() requires a string.
+			$content     = isset( $source['content'] ) && is_string( $source['content'] ) ? $source['content'] : '';
 			$credibility = isset( $source['credibility'] ) ? $source['credibility'] : 'medium';
 
 			// Simple keyword matching (in production, use semantic analysis).

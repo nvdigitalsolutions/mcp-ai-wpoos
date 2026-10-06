@@ -454,6 +454,10 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 			'quality' => isset( $params['quality'] ) ? absint( $params['quality'] ) : 80,
 		);
 
+		// Default to the optimize route; the enhance operation re-routes to
+		// the dedicated /api/image/enhance route (added in worker v3.4.0).
+		$sidecar_route = '/api/image/optimize';
+
 		switch ( $operation ) {
 			case 'resize':
 				if ( ! empty( $params['height'] ) && empty( $params['width'] ) ) {
@@ -471,15 +475,24 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 				break;
 
 			case 'enhance':
+				if ( ! empty( $params['blur'] ) ) {
+					return array( 'error' => __( 'The worker enhance route does not support blur — install local Sharp to use it.', 'nvoos-content-graph-pro' ) );
+				}
+				if ( ! empty( $params['sharpen'] ) ) {
+					$fields['sharpen'] = true;
+				}
+				$sidecar_route = '/api/image/enhance';
+				break;
+
 			case 'rotate':
-				return array( 'error' => __( 'The worker image API does not support the requested operation (enhance/rotate) — install local Sharp to use it.', 'nvoos-content-graph-pro' ) );
+				return array( 'error' => __( 'The worker image API does not support the requested operation (rotate) — install local Sharp to use it.', 'nvoos-content-graph-pro' ) );
 
 			case 'optimize':
 			default:
 				break;
 		}
 
-		$sidecar = $this->sidecar_upload( '/api/image/optimize', $source_path, $fields, 120 );
+		$sidecar = $this->sidecar_upload( $sidecar_route, $source_path, $fields, 120 );
 
 		if ( is_wp_error( $sidecar ) ) {
 			return array( 'error' => $sidecar->get_error_message() );
@@ -498,6 +511,9 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$format = isset( $fields['format'] ) ? $fields['format'] : 'webp';
+		if ( isset( $sidecar['format'] ) && preg_match( '/^[a-zA-Z0-9]+$/', (string) $sidecar['format'] ) ) {
+			$format = (string) $sidecar['format'];
+		}
 		if ( ! function_exists( 'wp_tempnam' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
@@ -527,11 +543,11 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'output_path'       => $final_path,
 			'original_size'     => isset( $sidecar['original_size'] ) ? (int) $sidecar['original_size'] : filesize( $source_path ),
-			'optimized_size'    => (int) $sidecar['optimized_size'],
+			'optimized_size'    => isset( $sidecar['optimized_size'] ) ? (int) $sidecar['optimized_size'] : filesize( $final_path ),
 			'reduction_percent' => $reduction,
 			'dimensions'        => isset( $sidecar['width'] ) ? array(
 				'width'  => (int) $sidecar['width'],
-				'height' => null,
+				'height' => isset( $sidecar['height'] ) ? (int) $sidecar['height'] : null,
 			) : null,
 		);
 	}

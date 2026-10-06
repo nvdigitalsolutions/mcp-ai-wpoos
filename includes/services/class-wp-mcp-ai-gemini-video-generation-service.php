@@ -780,7 +780,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					$error_code    = 'wp_mcp_ai_veo_model_not_available';
 					$error_message = sprintf(
 						/* translators: 1: model name, 2: API error message */
-						__( 'The Veo model "%1$s" is no longer available via the Gemini API. Google deprecated Veo 2.0 in mid-2026 and may have restricted Veo 3.1 access. Use Gemini Omni Flash (gemini-omni-flash) for video generation — it is the recommended replacement with 10s duration, native audio, and multi-turn editing. Original error: %2$s', 'mcp-ai-wpoos' ),
+						__( 'The Veo model "%1$s" is no longer available via the Gemini API. Google deprecated Veo 2.0 in mid-2026 and may have restricted Veo 3.1 access. Use Gemini Omni Flash (gemini-omni-1.1-flash) for video generation — it is the recommended replacement with 10s duration, native audio, and multi-turn editing. Original error: %2$s', 'mcp-ai-wpoos' ),
 						$model,
 						$api_error_message
 					);

@@ -210,12 +210,9 @@ class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					}
 				}
 
-				// Determine toolkit from definition.
-				$tool_toolkit = '';
-				if ( method_exists( $tool, 'get_definition' ) ) {
-					$def          = $tool->get_definition();
-					$tool_toolkit = isset( $def['toolkit'] ) ? $def['toolkit'] : '';
-				}
+				// Determine toolkit via the registry (declared definition key,
+				// falling back to the declaring folder under `*/tools/`).
+				$tool_toolkit = $registry->get_tool_toolkit( $tool );
 
 				// Apply toolkit filter.
 				if ( ! empty( $toolkit ) && $toolkit !== $tool_toolkit ) {

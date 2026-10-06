@@ -454,4 +454,60 @@ class Test_WP_MCP_AI_Tool_Create_Post extends WP_UnitTestCase {
 		$this->assertEquals( 'This is a test excerpt', $post->post_excerpt );
 		$this->assertEquals( 'custom-test-slug', $post->post_name );
 	}
+
+	/**
+	 * Test taxonomy suggestions ignore substring matches inside longer words.
+	 */
+	public function test_suggest_taxonomy_terms_ignores_substring_matches() {
+		wp_insert_term( 'thor', 'post_tag' );
+		wp_insert_term( 'car', 'post_tag' );
+		wp_insert_term( 'red', 'post_tag' );
+
+		$reflection = new ReflectionMethod( $this->tool, 'suggest_taxonomy_terms' );
+		$reflection->setAccessible( true );
+
+		$suggestions = $reflection->invoke(
+			$this->tool,
+			'Jamaica Travel Guide',
+			'The author writes about Caribbean travel for hundreds of visitors.',
+			'post',
+			'post_tag',
+			10
+		);
+
+		$names = wp_list_pluck( $suggestions, 'name' );
+		$this->assertNotContains( 'thor', $names );
+		$this->assertNotContains( 'car', $names );
+		$this->assertNotContains( 'red', $names );
+	}
+
+	/**
+	 * Test single-word tags are never auto-applied; multi-word tags are.
+	 */
+	public function test_auto_apply_skips_single_word_tags() {
+		wp_insert_term( 'thor', 'post_tag' );
+		wp_insert_term( 'car', 'post_tag' );
+		wp_insert_term( 'red', 'post_tag' );
+		$good_term = wp_insert_term( 'Cannabis Tourism', 'post_tag' );
+
+		$result = $this->tool->execute(
+			array(
+				'title'   => 'Cannabis Etiquette for Jamaica Visitors',
+				'content' => 'The author explains cannabis tourism rules in this post: every post about etiquette is useful, so visitors should read this post.',
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
+		$this->assertIsArray( $result );
+
+		$tag_ids = wp_get_post_tags( $result['post_id'], array( 'fields' => 'ids' ) );
+		$this->assertContains( (int) $good_term['term_id'], $tag_ids );
+
+		foreach ( array( 'thor', 'car', 'red', 'post' ) as $noise ) {
+			$term = get_term_by( 'name', $noise, 'post_tag' );
+			if ( $term ) {
+				$this->assertNotContains( (int) $term->term_id, $tag_ids, $noise . ' must not be auto-applied.' );
+			}
+		}
+	}
 }

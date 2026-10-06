@@ -174,8 +174,8 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		// Get settings.
-		$settings         = get_option( 'wp_mcp_ai_settings', array() );
+		// Get settings (merged view: includes the wp_mcp_ai_credentials option).
+		$settings         = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 
 		// Build prompt.
@@ -242,7 +242,8 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	 * @return array|WP_Error Response with metadata or error.
 	 */
 	private function call_vision_model( $image_url, $image_content, $prompt, $provider, $timeout = 30 ) {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		// Merged view: includes the wp_mcp_ai_credentials option.
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 
 		if ( 'gemini' === $provider ) {
 			return $this->call_gemini_vision( $image_url, $image_content, $prompt, $settings, $timeout );
@@ -266,6 +267,9 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	 */
 	private function call_openai_vision( $image_url, $image_content, $prompt, $settings, $timeout = 30 ) {
 		$api_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+		if ( empty( $api_key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			$api_key = WP_MCP_AI_Credential_Resolver::get_api_key( 'openai' ) ?? '';
+		}
 
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
@@ -374,6 +378,9 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	 */
 	private function call_gemini_vision( $image_url, $image_content, $prompt, $settings, $timeout = 30 ) {
 		$api_key = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+		if ( empty( $api_key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			$api_key = WP_MCP_AI_Credential_Resolver::get_api_key( 'gemini' ) ?? '';
+		}
 
 		if ( empty( $api_key ) ) {
 			return new WP_Error(

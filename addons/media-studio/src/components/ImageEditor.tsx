@@ -19,6 +19,7 @@ import { Stage, Layer, Image as KonvaImage } from 'react-konva';
 import ReactCrop, { type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import type Konva from 'konva';
+import { aiApi } from '../hooks/useAiApi';
 
 interface ImageEditorProps {
 	src?: string;
@@ -31,6 +32,18 @@ interface ImageState {
 	flipV: boolean;
 	brightness: number; // -1.0 to 1.0
 	contrast: number;   // -1.0 to 1.0
+}
+
+interface WpMediaFrame {
+	on: ( event: string, callback: () => void ) => void;
+	open: () => void;
+	state: () => {
+		get: ( key: string ) => { toJSON: () => Array< { id: number; url: string } > | undefined };
+	};
+}
+
+interface WpGlobal {
+	media?: ( options: { title: string; library: { type: string }; multiple: boolean } ) => WpMediaFrame;
 }
 
 const DEFAULT_STATE: ImageState = {
@@ -58,12 +71,14 @@ function applyFilters( node: Konva.Image, state: ImageState ) {
 }
 
 export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
-	const [ imgEl, setImgEl ] = useState<HTMLImageElement | null>( null );
+	const [ imgEl, setImgEl ] = useState<HTMLImageElement | null >( null );
 	const [ state, setState ] = useState<ImageState>( DEFAULT_STATE );
-	const [ crop, setCrop ] = useState<Crop | undefined>( undefined );
+	const [ crop, setCrop ] = useState<Crop | undefined >( undefined );
 	const [ cropMode, setCropMode ] = useState( false );
 	const [ loadError, setLoadError ] = useState( false );
-	const imgNodeRef = useRef<Konva.Image | null>( null );
+	const [ saveState, setSaveState ] = useState< 'idle' | 'busy' | 'saved' | 'error' >( 'idle' );
+	const [ saveMessage, setSaveMessage ] = useState( '' );
+	const imgNodeRef = useRef<Konva.Image | null >( null );
 	const fileRef = useRef<HTMLInputElement>( null );
 
 	/** Load image from URL or after upload. */
@@ -114,6 +129,48 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 		a.download = 'media-studio-export.png';
 		a.click();
 	};
+
+	/** Save the current canvas as a Media Library attachment via the AI bridge. */
+	const handleSaveToLibrary = async () => {
+		const stage = imgNodeRef.current?.getStage();
+		if ( ! stage ) {
+			return;
+		}
+		setSaveState( 'busy' );
+		setSaveMessage( '' );
+		try {
+			const dataUrl = stage.toDataURL( { mimeType: 'image/png' } );
+			const exported = await aiApi.exportImage( dataUrl, { title: 'Media Studio export' } );
+			setSaveState( 'saved' );
+			setSaveMessage( `${ __( 'Saved to Media Library (ID', 'nvoos-media-studio' ) } ${ exported.attachment_id }).` );
+		} catch ( error ) {
+			setSaveState( 'error' );
+			setSaveMessage( ( error as Error ).message );
+		}
+	};
+
+	/** Load an image from the WordPress Media Library (admin contexts). */
+	const openLibrary = useCallback( () => {
+		const wp = ( window as unknown as { wp?: WpGlobal } ).wp;
+		if ( ! wp?.media ) {
+			setSaveState( 'error' );
+			setSaveMessage( __( 'Media Library picker is unavailable in this context.', 'nvoos-media-studio' ) );
+			return;
+		}
+		const frame = wp.media( {
+			title: __( 'Choose an image', 'nvoos-media-studio' ),
+			library: { type: 'image' },
+			multiple: false,
+		} );
+		frame.on( 'select', () => {
+			const selection = frame.state().get( 'selection' ).toJSON();
+			const attachment = selection?.[ 0 ];
+			if ( attachment?.url ) {
+				loadSrc( attachment.url );
+			}
+		} );
+		frame.open();
+	}, [ loadSrc ] );
 
 	const imgWidth = imgEl ? Math.min( imgEl.width, STAGE_WIDTH ) : STAGE_WIDTH;
 	const imgHeight = imgEl
@@ -215,6 +272,24 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 				>
 					Reset
 				</button>
+				<span className="nvoos-ms-toolbar-sep" aria-hidden="true" />
+				<button
+					type="button"
+					className="nvoos-ms-toolbar-btn"
+					onClick={ openLibrary }
+					aria-label={ __( 'Load from Media Library', 'nvoos-media-studio' ) }
+				>
+					{ __( 'Library', 'nvoos-media-studio' ) }
+				</button>
+				<button
+					type="button"
+					className="nvoos-ms-toolbar-btn"
+					onClick={ () => void handleSaveToLibrary() }
+					disabled={ ! imgEl || saveState === 'busy' }
+					aria-label={ __( 'Save to Media Library', 'nvoos-media-studio' ) }
+				>
+					{ saveState === 'busy' ? __( 'Saving…', 'nvoos-media-studio' ) : __( 'Save', 'nvoos-media-studio' ) }
+				</button>
 				<button
 					type="button"
 					className="nvoos-ms-toolbar-btn nvoos-ms-toolbar-btn--primary"
@@ -224,6 +299,14 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 				>
 					↓ PNG
 				</button>
+				{ saveMessage && (
+					<span
+						className={ 'nvoos-ms-save-note nvoos-ms-save-note--' + saveState }
+						role="status"
+					>
+						{ saveMessage }
+					</span>
+				) }
 			</div>
 
 			{ /* Canvas area */ }

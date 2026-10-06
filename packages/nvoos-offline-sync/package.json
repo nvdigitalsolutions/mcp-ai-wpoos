@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-offline-sync",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "IndexedDB-backed offline-first sync manager with automatic server sync on reconnect - Extracted from NV Open Operator System",
   "main": "dist/nvoos-offline-sync.js",
   "module": "dist/nvoos-offline-sync.js",

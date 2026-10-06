@@ -99,7 +99,12 @@ class EditGeminiImageArguments {
 	 */
 	#[Assert\Type( type: 'string', message: 'Aspect ratio must be a string.' )]
 	#[Assert\Choice(
-		choices: array( '1:1', '3:4', '4:3', '9:16', '16:9' ),
+		// 'auto' mirrors the base tool's get_allowed_aspect_ratios() — the
+		// registry auto-upgrades edit_gemini_image to this validated variant,
+		// so the validated contract must accept every value the base tool
+		// advertises or the swap breaks callers (Media Studio fashion
+		// transforms pass 'auto' by default; see #6853 regression).
+		choices: array( 'auto', '1:1', '3:4', '4:3', '9:16', '16:9' ),
 		message: 'Aspect ratio must be one of: {{ choices }}.'
 	)]
 	public $aspect_ratio = null;

@@ -472,6 +472,15 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.01,  // $10.00/1M.
 				'output_cost_per_1k' => 0.05,  // $50.00/1M.
 			),
+			// OpenAI GPT-6 Sol / Luna (September 22, 2026).
+			'gpt-6-sol'                                    => array(
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M.
+				'output_cost_per_1k' => 0.01,   // $10.00/1M.
+			),
+			'gpt-6-luna'                                   => array(
+				'input_cost_per_1k'  => 0.0001, // $0.10/1M.
+				'output_cost_per_1k' => 0.0005, // $0.50/1M.
+			),
 			// OpenAI GPT-5.6 series (July 2026). Sol/Terra/Luna tiers.
 			'gpt-5.6-sol'                                  => array(
 				'input_cost_per_1k'  => 0.004, // $4.00/1M (promo through Nov 21, 2026; standard $5).
@@ -663,6 +672,14 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.005,
 				'output_cost_per_1k' => 0.025,
 			),
+			'claude-opus-5-5'                              => array(
+				'input_cost_per_1k'  => 0.004,  // $4.00/1M.
+				'output_cost_per_1k' => 0.02,   // $20.00/1M.
+			),
+			'claude-mythos-5-1'                            => array(
+				'input_cost_per_1k'  => 0.01,
+				'output_cost_per_1k' => 0.05,
+			),
 			// Anthropic Claude Fable 5 / Sonnet 5 (June 2026).
 			'claude-fable-5'                               => array(
 				'input_cost_per_1k'  => 0.01,
@@ -671,6 +688,10 @@ class WP_MCP_AI_Usage_Tracker {
 			'claude-sonnet-5'                              => array(
 				'input_cost_per_1k'  => 0.002,
 				'output_cost_per_1k' => 0.01,
+			),
+			'claude-sonnet-5-5'                            => array(
+				'input_cost_per_1k'  => 0.002, // $2.00/1M.
+				'output_cost_per_1k' => 0.01,  // $10.00/1M.
 			),
 			// Anthropic Claude 4.8/4.7/4.6 series (February 2026).
 			'claude-sonnet-4-6'                            => array(
@@ -895,7 +916,19 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K.
 				'output_cost_per_1k' => 0.0022, // $2.20 per 1M tokens = $0.0022 per 1K.
 			),
-			// Z.AI GLM-5.x direct models (as of June 2026).
+			// Z.AI GLM-5.x direct models (as of October 2026).
+			'glm-5.3'                                      => array(
+				'input_cost_per_1k'  => 0.0014, // $1.40 per 1M tokens.
+				'output_cost_per_1k' => 0.0044, // $4.40 per 1M tokens.
+			),
+			'glm-5.3-flash'                                => array(
+				'input_cost_per_1k'  => 0.00008, // $0.08 per 1M tokens.
+				'output_cost_per_1k' => 0.00025, // $0.25 per 1M tokens.
+			),
+			'glm-5.3-flashx'                               => array(
+				'input_cost_per_1k'  => 0.00037, // $0.37 per 1M tokens.
+				'output_cost_per_1k' => 0.00125, // $1.25 per 1M tokens.
+			),
 			'glm-5.2'                                      => array(
 				'input_cost_per_1k'  => 0.0014, // $1.40 per 1M tokens.
 				'output_cost_per_1k' => 0.0044, // $4.40 per 1M tokens.

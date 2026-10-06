@@ -181,8 +181,15 @@ class WP_MCP_AI_Analytics_Site_Health {
 		$cache    = WP_MCP_AI_Analytics_Cache::instance();
 		$stats    = $cache->get_stats();
 		$hit_rate = isset( $stats['hit_rate'] ) ? $stats['hit_rate'] : 0;
+		$hits     = isset( $stats['hits'] ) ? (int) $stats['hits'] : 0;
+		$misses   = isset( $stats['misses'] ) ? (int) $stats['misses'] : 0;
 
-		if ( $hit_rate > 70 ) {
+		if ( 0 === ( $hits + $misses ) ) {
+			// No requests recorded yet — a cold cache says nothing about
+			// cache effectiveness, so report it as healthy.
+			$status = 'good';
+			$color  = 'green';
+		} elseif ( $hit_rate > 70 ) {
 			$status = 'good';
 			$color  = 'green';
 		} elseif ( $hit_rate > 30 ) {

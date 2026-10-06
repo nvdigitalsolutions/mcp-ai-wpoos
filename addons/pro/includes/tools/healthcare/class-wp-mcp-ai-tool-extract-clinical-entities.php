@@ -208,7 +208,7 @@ class WP_MCP_AI_Tool_Extract_Clinical_Entities implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// ── Normalize entities ──────────────────────────────────────────
-		$entities = isset( $result['entities'] ) ? $result['entities'] : array();
+		$entities = isset( $result['entities'] ) && is_array( $result['entities'] ) ? $result['entities'] : array();
 		$entities = $this->normalize_entities( $entities, $min_confidence );
 
 		// ── Audit ───────────────────────────────────────────────────────
@@ -219,8 +219,8 @@ class WP_MCP_AI_Tool_Extract_Clinical_Entities implements WP_MCP_AI_Tool_Interfa
 				'clinical_entities_extracted',
 				'health_record',
 				isset( $arguments['record_id'] ) ? absint( $arguments['record_id'] ) : 0,
-				$user_id,
 				array(
+					'user_id'            => $user_id,
 					'model'              => $model,
 					'entities_count'     => count( $entities ),
 					'processing_time_ms' => $processing_time_ms,

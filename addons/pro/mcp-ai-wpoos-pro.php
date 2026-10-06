@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.1.91' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.1.97' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -677,6 +677,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Extract_Video_Frames'          => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-extract-video-frames.php',
 			'WP_MCP_AI_Tool_Get_Video_Metadata'            => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-get-video-metadata.php',
 			'WP_MCP_AI_Tool_Remove_Background'             => WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/class-wp-mcp-ai-tool-remove-background.php',
+			// Fashion Studio tools (Media Studio addon, Phase 5) — self-gate via is_available().
+			'WP_MCP_AI_Tool_Fashion_Onmodel_Generate'      => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-onmodel-generate.php',
+			'WP_MCP_AI_Tool_Fashion_Model_Swap'            => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-model-swap.php',
+			'WP_MCP_AI_Tool_Fashion_Background_Generate'   => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-background-generate.php',
+			'WP_MCP_AI_Tool_Fashion_Recolor'               => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-recolor.php',
+			'WP_MCP_AI_Tool_Fashion_Packshot'              => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-packshot.php',
+			'WP_MCP_AI_Tool_Fashion_Virtual_Tryon'         => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-virtual-tryon.php',
+			'WP_MCP_AI_Tool_Fashion_Batch_Job'             => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-batch-job.php',
+			'WP_MCP_AI_Tool_Fashion_Identity_Manage'       => WP_MCP_AI_PRO_PATH . 'includes/tools/fashion/class-wp-mcp-ai-tool-fashion-identity-manage.php',
 			'WP_MCP_AI_Tool_Generate_Jukebox_Music'        => WP_MCP_AI_PRO_PATH . 'includes/tools/dj-management/class-wp-mcp-ai-tool-generate-jukebox-music.php',
 			'WP_MCP_AI_Tool_Check_Jukebox_Status'          => WP_MCP_AI_PRO_PATH . 'includes/tools/dj-management/class-wp-mcp-ai-tool-check-jukebox-status.php',
 			// Architectural Drawing tool (Pro feature).
@@ -1720,6 +1729,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Portfolio_Transaction_Log' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-portfolio-transaction-log.php',
 				// Price alerts (OpenTerminal lessons).
 				'WP_MCP_AI_Tool_Price_Alerts'              => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-price-alerts.php',
+				// Watchlist & market overview (OpenStock parity, proposal 051).
+				'WP_MCP_AI_Tool_Watchlist_Sync'            => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-watchlist-sync.php',
+				'WP_MCP_AI_Tool_Market_Overview_Widget'    => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-market-overview-widget.php',
+				// Financial planning assistant blueprints.
+				'WP_MCP_AI_Tool_Import_Financial_Planning_Blueprint' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/examples/class-wp-mcp-ai-tool-import-financial-planning-blueprint.php',
 			);
 			$pro_tools                       = array_merge( $pro_tools, $financial_planner_toolkit_tools );
 		}
@@ -2333,6 +2347,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'extract_video_frames'               => 'wordpress-core',
 			'get_video_metadata'                 => 'wordpress-core',
 			'remove_background'                  => 'wordpress-core',
+			// Fashion Studio tools - Media Studio addon + Gemini/media-worker providers.
+			'fashion_onmodel_generate'           => 'external-tools',
+			'fashion_model_swap'                 => 'external-tools',
+			'fashion_background_generate'        => 'external-tools',
+			'fashion_recolor'                    => 'external-tools',
+			'fashion_packshot'                   => 'external-tools',
+			'fashion_virtual_tryon'              => 'external-tools',
+			'fashion_batch_job'                  => 'external-tools',
+			'fashion_identity_manage'            => 'external-tools',
 			'generate_jukebox_music'             => 'external-tools',
 			'check_jukebox_status'               => 'external-tools',
 			// Product Actualization - Requires external APIs (OpenAI, Gemini).
@@ -2942,6 +2965,15 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 		'class-wp-mcp-ai-pro-cli-place-command.php',
 		'class-wp-mcp-ai-pro-cli-calendar-command.php',
 		'class-wp-mcp-ai-pro-cli-composition-command.php',
+		'class-wp-mcp-ai-pro-cli-crm-command.php',
+		'class-wp-mcp-ai-pro-cli-incident-command.php',
+		'class-wp-mcp-ai-pro-cli-maintenance-command.php',
+		'class-wp-mcp-ai-pro-cli-schedule-command.php',
+		'class-wp-mcp-ai-pro-cli-workflow-command.php',
+		'class-wp-mcp-ai-pro-cli-vault-command.php',
+		'class-wp-mcp-ai-pro-cli-remote-site-command.php',
+		'class-wp-mcp-ai-pro-cli-communication-command.php',
+		'class-wp-mcp-ai-pro-cli-media-studio-command.php',
 	);
 
 	foreach ( $wp_mcp_ai_pro_cli_files as $wp_mcp_ai_pro_cli_file ) {
@@ -3110,6 +3142,72 @@ add_action(
 	},
 	100
 );
+
+if ( ! function_exists( 'wp_mcp_ai_pro_repair_option_autoload' ) ) {
+	/**
+	 * One-time repair: flip the autoload flag to 'no' for Pro options that
+	 * store unbounded blobs (remote sites incl. encrypted credentials, workflow
+	 * definitions, per-workflow execution logs, alert/approval stores and
+	 * media worker settings).
+	 *
+	 * These options were historically written via
+	 * update_option( $key, $value ), which autoloads them into every
+	 * request's alloptions payload. New writes pass false as the autoload
+	 * argument; this routine retro-fixes existing installs once, tracked by
+	 * the wp_mcp_ai_pro_autoload_repair_v1 marker.
+	 *
+	 * @since 1.1.96
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_pro_repair_option_autoload() {
+		if ( get_option( 'wp_mcp_ai_pro_autoload_repair_v1' ) ) {
+			return;
+		}
+
+		global $wpdb;
+
+		$keys = array(
+			'wp_mcp_ai_pro_remote_sites',
+			'wp_mcp_ai_pro_workflows',
+			'wp_mcp_ai_ezuite_alerted_skus',
+			'wp_mcp_ai_agent_approvals',
+			'wp_mcp_ai_media_worker_url',
+			'wp_mcp_ai_media_worker_token',
+			'wp_mcp_ai_price_changes',
+			'wp_mcp_ai_last_pricing_check',
+			'wp_mcp_ai_slash_command_history',
+			'wp_mcp_ai_pro_license_key',
+		);
+
+		// Per-workflow execution logs live in prefixed keys (one per workflow ID).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time repair; raw option-name read is intentional and needs no cache.
+		$execution_keys = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+				'wp_mcp_ai_workflow_executions\_%'
+			)
+		);
+
+		if ( is_array( $execution_keys ) ) {
+			$keys = array_merge( $keys, $execution_keys );
+		}
+
+		foreach ( $keys as $key ) {
+			if ( null !== get_option( $key, null ) ) {
+				// wp_set_option_autoload() is WordPress 6.4+; skip the repair on
+				// older cores instead of fatalling for admins.
+				if ( function_exists( 'wp_set_option_autoload' ) ) {
+					wp_set_option_autoload( $key, false );
+				}
+			}
+		}
+
+		update_option( 'wp_mcp_ai_pro_autoload_repair_v1', time(), false );
+	}
+
+	add_action( 'admin_init', 'wp_mcp_ai_pro_repair_option_autoload', 9 );
+}
 
 // Load Media Worker Sidecar Settings Page (eager — registers admin_menu hook).
 $media_worker_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-worker-settings.php';

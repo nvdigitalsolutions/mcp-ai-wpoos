@@ -492,7 +492,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						<div class="wp-mcp-ai-sm-form-group">
 							<label for="sm-timestamp"><?php esc_html_e( 'First Run (local time)', 'mcp-ai-wpoos-pro' ); ?></label>
 							<input type="datetime-local" id="sm-timestamp" class="regular-text">
-							<p class="description"><?php esc_html_e( 'Leave blank to run 60 s from now.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to start on the next interval (one-time runs: 60 s from now).', 'mcp-ai-wpoos-pro' ); ?></p>
 						</div>
 					</div>
 

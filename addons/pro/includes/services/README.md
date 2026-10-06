@@ -29,11 +29,13 @@ Services are consumed by Pro tools, Pro REST controllers, Pro admin pages, and s
 | `WP_MCP_AI_OCR_Service` | `class-wp-mcp-ai-ocr-service.php` | OCR / PDF-text tools, healthcare imaging |
 | `WP_MCP_AI_Jukebox_Service` | `class-wp-mcp-ai-jukebox-service.php` | DJ-management toolkit |
 | `WP_MCP_AI_YFinance_Service` | `class-wp-mcp-ai-yfinance-service.php` | Financial Planner toolkit + settings page |
+| `WP_MCP_AI_Finnhub_Provider` | `class-wp-mcp-ai-finnhub-provider.php` | Financial Planner toolkit — optional primary market-data provider (BYO key, key rotation, SWR cache); hooks the yfinance filter seam at priority 5 |
 | `WP_MCP_AI_Language_Detection_Service` | `class-wp-mcp-ai-language-detection-service.php` | Multilingual toolkit |
 | `WP_MCP_AI_Contact_Importer_Service` | `class-wp-mcp-ai-contact-importer-service.php` | CRM toolkit (CSV import) |
 | `WP_MCP_AI_Video_Frame_Extractor_Service` | `class-wp-mcp-ai-video-frame-extractor-service.php` | Video-production toolkit, OCR feeders |
 | `WP_MCP_AI_Structured_Extraction_Service` | `class-wp-mcp-ai-structured-extraction-service.php` | Pro OCR tools (`pro_unlimited_ocr`) — parses `<\|det\|>` markers, extracts tables and form fields from self-hosted OCR output |
 | `WP_MCP_AI_Roboflow_Inference_Service` | `class-wp-mcp-ai-roboflow-inference-service.php` | Vision Analysis toolkit — RF-DETR detection/segmentation/keypoints via self-hosted Roboflow Inference, the Serverless Cloud API, or fine-tuned models (`analyze_image_objects` provider, `rfdetr_detect`, `rfdetr_catalog_search`) |
+| `WP_MCP_AI_Pro_Jev_Classifier` (+ `_Jev_Eval`, `_Jev_Guardrail`, `_Jev_Tier_Routing`) | `class-wp-mcp-ai-pro-jev-*.php` | Pro Jev decision surfaces (routing signal, research filtering, guest-chat guardrail, citation checks) — every dispatch declares `@decision-domain`/`@decision-authority` and gates through the Base `WP_MCP_AI_Decision_Scope_Guard` (see [`docs/project/proposals/052-decision-scope-guard.md`](../../../../docs/project/proposals/052-decision-scope-guard.md)) |
 | `services-init-phase6.php` | bootstrap | Pro plugin loader |
 
 Other classes here are internal helpers; depend on the ones listed above.

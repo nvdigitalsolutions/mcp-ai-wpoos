@@ -308,7 +308,9 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertSame( 'image_url', $segment['type'] );
 		$this->assertArrayHasKey( 'image_url', $segment );
 		$this->assertArrayHasKey( 'url', $segment['image_url'] );
-		$this->assertStringContainsString( 'http', $segment['image_url']['url'] );
+		// Local attachment bytes are inlined as a data URL so the provider never
+		// has to download our URL (inline-first, http fallback).
+		$this->assertStringStartsWith( 'data:image/jpeg;base64,', $segment['image_url']['url'] );
 		$this->assertSame( 'high', $segment['image_url']['detail'] );
 	}
 

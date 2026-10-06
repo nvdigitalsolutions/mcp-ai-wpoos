@@ -70,18 +70,18 @@ class WP_MCP_AI_Operator_Admin {
 			<div class="notice notice-info inline">
 				<p>
 				<?php
-				echo wp_kses(
-					sprintf(
-						/* translators: 1: MCP endpoint URL, 2: operators page URL */
-						__( 'Issue scoped credentials so a supervisor agent (Hermes or any MCP/A2A host) can operate this site within an allowlist. MCP endpoint: <code>%1$s</code>. See the <a href="%2$s">Fleet Operator implementation plan</a>.', 'mcp-ai-wpoos' ),
-						esc_html( $mcp_url ),
-						'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/project/proposals/024-hermes-agent-fleet-operator-implementation-plan.md'
-					),
-					array(
-						'code' => array(),
-						'a'    => array( 'href' => array() ),
-					)
-				);
+					echo wp_kses(
+						sprintf(
+							/* translators: 1: MCP endpoint URL, 2: operators page URL */
+							__( 'Issue scoped credentials so a supervisor agent (Hermes, Zed, Claude Desktop, or any MCP/A2A host) can operate this site within an allowlist. MCP endpoint: <code>%1$s</code>. Editor clients connect via the published npx bridge: <code>npx -y @nvdigitalsolutions/nvoos-mcp-bridge</code>. See the <a href="%2$s">Fleet Operator implementation plan</a>.', 'mcp-ai-wpoos' ),
+							esc_html( $mcp_url ),
+							'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/project/proposals/024-hermes-agent-fleet-operator-implementation-plan.md'
+						),
+						array(
+							'code' => array(),
+							'a'    => array( 'href' => array() ),
+						)
+					);
 				?>
 				</p>
 			</div>
@@ -94,6 +94,14 @@ class WP_MCP_AI_Operator_Admin {
 					<pre><?php echo esc_html( $result['env'] ); ?></pre>
 					<p><?php esc_html_e( 'Add to ~/.hermes/config.yaml:', 'mcp-ai-wpoos' ); ?></p>
 					<pre><?php echo esc_html( $result['yaml'] ); ?></pre>
+					<?php if ( ! empty( $result['zed'] ) ) : ?>
+						<p><?php esc_html_e( 'Add to Zed (settings.json → context_servers):', 'mcp-ai-wpoos' ); ?></p>
+						<pre><?php echo esc_html( $result['zed'] ); ?></pre>
+					<?php endif; ?>
+					<?php if ( ! empty( $result['claude'] ) ) : ?>
+						<p><?php esc_html_e( 'Add to Claude Desktop / Cursor / VS Code (mcpServers):', 'mcp-ai-wpoos' ); ?></p>
+						<pre><?php echo esc_html( $result['claude'] ); ?></pre>
+					<?php endif; ?>
 				</div>
 				<?php
 				delete_transient( $transient );
@@ -254,6 +262,28 @@ class WP_MCP_AI_Operator_Admin {
 				<li><?php esc_html_e( 'Run "hermes /reload-mcp" (or restart the desktop app) and ask Hermes to list the tools.', 'mcp-ai-wpoos' ); ?></li>
 				<li><?php esc_html_e( 'Keep "trust: untrusted" so every write-capable call asks you for approval.', 'mcp-ai-wpoos' ); ?></li>
 			</ol>
+
+			<h2><?php esc_html_e( 'How to wire Zed / VS Code / Claude Desktop', 'mcp-ai-wpoos' ); ?></h2>
+			<ol>
+				<li><?php esc_html_e( 'Create an operator above and copy the JSON block.', 'mcp-ai-wpoos' ); ?></li>
+				<li>
+				<?php
+				echo wp_kses(
+					sprintf(
+						/* translators: 1: Zed settings.json, 2: context_servers, 3: claude_desktop_config.json, 4: mcpServers */
+						__( 'Paste it into <code>%1$s</code> under <code>%2$s</code> (or <code>%3$s</code> under <code>%4$s</code> for Claude Desktop / Cursor / VS Code).', 'mcp-ai-wpoos' ),
+						'zed/settings.json',
+						'context_servers',
+						'claude_desktop_config.json',
+						'mcpServers'
+					),
+					array( 'code' => array() )
+				);
+				?>
+				</li>
+				<li><?php esc_html_e( 'Reload the Agent Panel (or restart the editor/app) and ask the agent to list its tools.', 'mcp-ai-wpoos' ); ?></li>
+				<li><?php esc_html_e( 'Only allowlisted tools are exposed — the site enforces the scope server-side.', 'mcp-ai-wpoos' ); ?></li>
+			</ol>
 		</div>
 		<?php
 	}
@@ -293,12 +323,28 @@ class WP_MCP_AI_Operator_Admin {
 			$created['record']['allowed_tools']
 		);
 
+		$site_url = untrailingslashit( home_url( '/' ) );
+		$zed      = WP_MCP_AI_Operator_Config_Generator::generate_zed_json(
+			$created['record']['label'],
+			$site_url,
+			$created['token'],
+			$created['record']['allowed_tools']
+		);
+		$claude   = WP_MCP_AI_Operator_Config_Generator::generate_claude_json(
+			$created['record']['label'],
+			$site_url,
+			$created['token'],
+			$created['record']['allowed_tools']
+		);
+
 		set_transient(
 			self::RESULT_TRANSIENT . get_current_user_id(),
 			array(
-				'token' => $created['token'],
-				'yaml'  => $generated['yaml'],
-				'env'   => $generated['env'],
+				'token'  => $created['token'],
+				'yaml'   => $generated['yaml'],
+				'env'    => $generated['env'],
+				'zed'    => $zed,
+				'claude' => $claude,
 			),
 			10 * MINUTE_IN_SECONDS
 		);

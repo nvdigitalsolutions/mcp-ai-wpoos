@@ -87,6 +87,23 @@ Key parameters:
 - `first_run` — ISO 8601 timestamp for the first execution.
 - `enabled` — whether the schedule is active immediately.
 
+**v1.1.93 semantics (PR #6856) — cron re-arm discipline:**
+- **Create:** one-shot schedules keep the documented 60-second default first
+  run; **recurring schedules start one full interval from creation** (a daily
+  schedule fires ~24h later, not ~60s later).
+- **Update (metadata-only saves do NOT re-arm):** `update_schedule()` touches
+  the WP cron event only when the timing actually changed (explicit
+  `first_run`, interval change, or re-enabling). Saving a title/args tweak
+  leaves the existing event and cadence untouched, and a **consumed one-shot
+  schedule is never re-armed by a save** (pre-1.1.93, every save un-scheduled
+  and re-scheduled the stored — now-past — timestamp, so WP cron fired the
+  overdue event immediately on the next spawn).
+- **Re-enable:** schedules the next run one interval out; use the **Run**
+  action for an immediate execution.
+- **UI (PR #6855):** the edit modal only sends `workflow_steps` for
+  `workflow`-type schedules (the document-wide selector previously always
+  matched the hidden create form, so every edit was rejected server-side).
+
 ### 2. `update_pro_schedule`
 
 Modify an existing schedule. All fields are optional — only provided fields change.
@@ -108,6 +125,27 @@ Use this to:
 - Adjust arguments (e.g., batch size, timeout).
 - Rename for clarity.
 - Change recurrence timing.
+- **Edit workflow steps in place** — `workflow_steps` replaces the whole ordered
+  tool chain on `workflow`-type schedules, so a step's arguments can be
+  corrected without recreating the schedule (rejected with
+  `invalid_schedule_type` on non-workflow schedules, `invalid_workflow_steps`
+  when no valid step survives sanitisation):
+
+```json
+{
+  "name": "update_pro_schedule",
+  "arguments": {
+    "schedule_id": "abc123…",
+    "workflow_steps": [
+      {
+        "tool_slug": "search_upwork_jobs",
+        "arguments": { "query": "wordpress developer", "sort": "recency", "limit": 20 },
+        "label": "Search for new matching jobs"
+      }
+    ]
+  }
+}
+```
 
 ### 3. `delete_pro_schedule`
 

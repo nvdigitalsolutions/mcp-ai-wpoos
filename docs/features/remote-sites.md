@@ -100,6 +100,20 @@ is the recommended fix when FlowHub MCP services fail with auth errors
 because egress must go through a forward proxy (a whitelisted egress IP
 that FlowHub accepts).
 
+#### FlowHub MCP Apps inherit the connection proxy (v1.1.93)
+
+FlowHub connections in MCP mode can also be surfaced in the assistant's
+MCP Apps metabox, where the assistant talks to the official
+`mcp.flowhub.com` gateway. That gateway path is subject to the same
+egress restrictions as the POS API, so `build_flowhub_mcp_app_config()`
+now carries the connection's proxy (`proxy_url` / `proxy_auth`, with the
+proxy password decrypted from the connection record) into the MCP App
+client config — falling back to the FlowHub toolkit settings proxy when
+the connection declares none, mirroring the sync engine's resolution
+order. The MCP App client and its OAuth client apply that proxy to every
+outbound gateway request (JSON-RPC dispatch, discovery, token refresh)
+via the `http_api_curl` cURL layer.
+
 ### Post Type Access Controls (v1.1.52 Update)
 
 The admin interface for remote connection post type access has been enhanced:

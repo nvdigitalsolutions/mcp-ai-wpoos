@@ -187,9 +187,9 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -199,6 +199,27 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 		$attachment_ids      = isset( $arguments['attachment_ids'] ) && is_array( $arguments['attachment_ids'] ) ? array_map( 'absint', $arguments['attachment_ids'] ) : array();
 		$delete_unreferenced = isset( $arguments['delete_unreferenced'] ) ? (bool) $arguments['delete_unreferenced'] : false;
 		$limit               = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 100;
+
+		// Validate cleanup_type against the advertised schema.
+		$valid_cleanup_types = array( 'all', 'missing_files', 'unregistered', 'unreferenced', 'ids' );
+		if ( ! in_array( $cleanup_type, $valid_cleanup_types, true ) ) {
+			return new WP_Error(
+				'tool_error',
+				sprintf(
+					/* translators: %s: comma-separated list of valid cleanup types */
+					__( 'Invalid cleanup_type. Valid cleanup types: %s', 'mcp-ai-wpoos-pro' ),
+					implode( ', ', $valid_cleanup_types )
+				)
+			);
+		}
+
+		// "ids" mode requires an explicit list of attachments.
+		if ( 'ids' === $cleanup_type && empty( $attachment_ids ) ) {
+			return new WP_Error(
+				'tool_error',
+				__( 'attachment_ids must be provided when cleanup_type is "ids".', 'mcp-ai-wpoos-pro' )
+			);
+		}
 
 		$results = array(
 			'success'      => true,
@@ -384,6 +405,10 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 		$processed = 0;
 		$years     = glob( $base_dir . '/*', GLOB_ONLYDIR );
 
+		if ( ! is_array( $years ) ) {
+			return;
+		}
+
 		foreach ( $years as $year_dir ) {
 			if ( $processed >= $limit ) {
 				break;
@@ -394,6 +419,9 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 			}
 
 			$months = glob( $year_dir . '/*', GLOB_ONLYDIR );
+			if ( ! is_array( $months ) ) {
+				continue;
+			}
 			foreach ( $months as $month_dir ) {
 				if ( $processed >= $limit ) {
 					break;
@@ -544,6 +572,13 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 				continue;
 			}
 
+			// Skip when referenced from post meta or options (galleries, ACF
+			// fields, theme mods) — those references never appear in
+			// post_content but are just as real. Fail-safe: keep the file.
+			if ( $this->is_attachment_referenced_in_meta( $attachment_id, $filenames ) ) {
+				continue;
+			}
+
 			++$processed;
 
 			if ( $dry_run ) {
@@ -622,6 +657,68 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
+	 * Check whether an attachment is referenced from post meta or options.
+	 *
+	 * Covers references that never appear in post_content: comma-separated
+	 * and serialized attachment IDs (WooCommerce product galleries, ACF),
+	 * stored URLs (Elementor/ACF URL fields), and well-known single-ID
+	 * options (site icon, custom logo, WooCommerce placeholders).
+	 *
+	 * Best-effort and fail-safe: a false positive only skips a deletion,
+	 * never causes one.
+	 *
+	 * @since 2.7.0
+	 * @param int      $attachment_id Attachment ID.
+	 * @param string[] $filenames     Filenames to search for (URLs stored in meta).
+	 * @return bool True when referenced from meta or options.
+	 */
+	private function is_attachment_referenced_in_meta( $attachment_id, $filenames ) {
+		global $wpdb;
+
+		$attachment_id = (int) $attachment_id;
+
+		$clauses   = array();
+		$clauses[] = $wpdb->prepare( 'meta_value = %s', (string) $attachment_id );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', $attachment_id . ',%' );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%,' . $attachment_id );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%,' . $attachment_id . ',%' );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%i:' . $attachment_id . ';%' );
+		$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%"' . $attachment_id . '"%' );
+
+		foreach ( $filenames as $filename ) {
+			$clauses[] = $wpdb->prepare( 'meta_value LIKE %s', '%' . $wpdb->esc_like( $filename ) . '%' );
+		}
+
+		$where = implode( ' OR ', $clauses );
+
+		// Exclude the attachment's own file-info meta — it always contains
+		// the filename and would otherwise self-match on every attachment.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Clauses are individually prepare()d above.
+		$sql = $wpdb->prepare(
+			"SELECT 1 FROM {$wpdb->postmeta} WHERE ({$where}) AND NOT ( post_id = %d AND meta_key IN ( '_wp_attached_file', '_wp_attachment_metadata' ) ) LIMIT 1",
+			$attachment_id
+		);
+		// phpcs:enable
+
+		if ( $wpdb->get_var( $sql ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return true;
+		}
+
+		// Well-known single-ID options. Deliberately NOT a table-wide LIKE
+		// scan: serialized blobs (transients such as the WooCommerce blocks
+		// patterns cache) contain i:<id>; for every index, which would
+		// classify every attachment as referenced.
+		$known_options = array( 'site_icon', 'custom_logo', 'woocommerce_placeholder_image', 'woocommerce_thumbnail_image' );
+		foreach ( $known_options as $option ) {
+			if ( (int) get_option( $option ) === $attachment_id ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Safely delete a file and log errors.
 	 *
 	 * @since 2.7.0
@@ -633,9 +730,11 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 			return false;
 		}
 
-		// Double-check we're deleting from the uploads directory.
+		// Double-check we're deleting from the uploads directory. The trailing
+		// separator ensures the check is a path-component boundary, not a
+		// string prefix (uploads-evil/… must not pass).
 		$upload_dir = wp_upload_dir();
-		$base_dir   = wp_normalize_path( $upload_dir['basedir'] );
+		$base_dir   = trailingslashit( wp_normalize_path( $upload_dir['basedir'] ) );
 		$file_path  = wp_normalize_path( $file_path );
 
 		if ( 0 !== strpos( $file_path, $base_dir ) ) {
@@ -665,8 +764,12 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 		$ext       = false !== $ext_pos ? substr( $basename, $ext_pos ) : '';
 
 		$bytes_freed = 0;
-		$pattern     = $dir . '/' . $name_base . '-*' . $ext;
-		$variants    = glob( $pattern );
+		// Escape glob metacharacters so filenames containing [ ] * ? { }
+		// cannot redirect the pattern to unrelated files.
+		$name_base = preg_replace( '/([\[\]{}*?\\])/', '[$1]', $name_base );
+		$ext       = preg_replace( '/([\[\]{}*?\\])/', '[$1]', $ext );
+		$pattern   = $dir . '/' . $name_base . '-*' . $ext;
+		$variants  = glob( $pattern );
 
 		if ( ! is_array( $variants ) ) {
 			return $bytes_freed;
@@ -721,6 +824,10 @@ class WP_MCP_AI_Tool_Cleanup_Orphaned_Media implements WP_MCP_AI_Tool_Interface,
 			$file = get_attached_file( $attachment_id );
 			if ( $file && file_exists( $file ) ) {
 				$registered[] = wp_normalize_path( $file );
+			}
+
+			if ( ! $file ) {
+				continue;
 			}
 
 			$metadata = wp_get_attachment_metadata( $attachment_id );

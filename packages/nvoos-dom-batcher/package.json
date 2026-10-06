@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-dom-batcher",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "requestAnimationFrame DOM update batcher, scroll batcher, and UI utilities for high-frequency streaming UIs - Extracted from NV Open Operator System",
   "main": "dist/nvoos-dom-batcher.js",
   "module": "dist/nvoos-dom-batcher.js",

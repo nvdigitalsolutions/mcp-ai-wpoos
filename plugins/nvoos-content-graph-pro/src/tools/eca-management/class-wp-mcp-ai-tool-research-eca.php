@@ -653,7 +653,11 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			return $result;
 		}
 
-		// Extract the content from the response.
+		// Extract the content from the response. Some providers (Gemini, and
+		// OpenAI-compatible gateways such as vLLM) return message.content as
+		// an array of parts — flatten before any downstream string operation
+		// (parse_research_results() feeds the value into preg_match(), which
+		// fatals on arrays).
 		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
@@ -661,11 +665,52 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
+		$content = $this->flatten_response_content( $result['choices'][0]['message']['content'] );
+
+		if ( '' === trim( $content ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_response',
+				__( 'Invalid response from AI provider.', 'nvoos-content-graph-pro' )
+			);
+		}
+
 		return array(
-			'content'  => $result['choices'][0]['message']['content'],
+			'content'  => $content,
 			'provider' => $provider,
 			'model'    => $model,
 		);
+	}
+
+	/**
+	 * Flatten a provider response content value into a string.
+	 *
+	 * Handles the three shapes seen in the wild: a plain string (OpenAI),
+	 * an array of `{type,text}` parts (Gemini `normalize_response()`),
+	 * and an array of strings.
+	 *
+	 * @since 2.10.0
+	 *
+	 * @param mixed $content Raw message content.
+	 * @return string Flattened text.
+	 */
+	protected function flatten_response_content( $content ) {
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( is_array( $content ) ) {
+			$text = '';
+			foreach ( $content as $part ) {
+				if ( is_array( $part ) && isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				} elseif ( is_string( $part ) ) {
+					$text .= $part;
+				}
+			}
+			return $text;
+		}
+
+		return '';
 	}
 
 	/**
@@ -920,7 +965,11 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @return array|WP_Error Parsed ECA data or error.
 	 */
 	protected function parse_research_results( $research_result, $query ) {
-		$content = $research_result['content'];
+		// Flatten defensively: subclasses or filters may pass the raw provider
+		// shape (Gemini normalises message.content to an array of parts).
+		$content = $this->flatten_response_content(
+			isset( $research_result['content'] ) ? $research_result['content'] : ''
+		);
 
 		// Extract JSON from markdown code blocks if present.
 		if ( preg_match( '/```json\s*(.*?)\s*```/s', $content, $matches ) ) {

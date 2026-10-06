@@ -22,6 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/trait-wp-mcp-ai-tool-research-template-analysis.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-research-content-normalization.php';
 
 /**
  * Research Page Tool
@@ -32,6 +33,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-research-template-analysis.php';
 class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Research_Template_Analysis;
+	use WP_MCP_AI_Tool_Research_Content_Normalization;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -1009,8 +1011,16 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
+		// Some providers (e.g. Gemini) return message content as an array of
+		// parts instead of a plain string. Flatten it so downstream parsers
+		// can safely run string functions on it.
+		$content = $result['choices'][0]['message']['content'];
+		if ( is_array( $content ) ) {
+			$content = $this->normalize_content_parts( $content );
+		}
+
 		return array(
-			'content'  => $result['choices'][0]['message']['content'],
+			'content'  => $content,
 			'provider' => $provider,
 			'model'    => $model,
 		);
@@ -1133,7 +1143,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				return ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';
 
 			case 'zai':
-				return ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-4';
+				return ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-5.3-flash';
 
 			default:
 				return new WP_Error(
@@ -1305,7 +1315,10 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return array|WP_Error Parsed page data or error.
 	 */
 	protected function parse_research_results( $research_result, $topic, $page_type, $template, $custom_format_description = '' ) {
-		$content = $research_result['content'];
+		$content = isset( $research_result['content'] ) ? $research_result['content'] : '';
+		if ( is_array( $content ) ) {
+			$content = $this->normalize_content_parts( $content );
+		}
 
 		// Extract JSON from markdown code blocks if present.
 		if ( preg_match( '/```json\s*(.*?)\s*```/s', $content, $matches ) ) {
@@ -1342,12 +1355,20 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
+		// The model may emit content as an array of blocks instead of a string;
+		// flatten it before sanitising so the rest of the pipeline can assume
+		// a string.
+		$raw_content = $data['content'];
+		if ( is_array( $raw_content ) ) {
+			$raw_content = $this->normalize_content_parts( $raw_content );
+		}
+
 		// Build page data structure compatible with create_post tool.
 		$page_data = array(
 			'success'                   => true,
 			'topic'                     => $topic,
 			'title'                     => sanitize_text_field( $data['title'] ),
-			'content'                   => wp_kses_post( $data['content'] ),
+			'content'                   => wp_kses_post( (string) $raw_content ),
 			'post_type'                 => 'page',
 			'status'                    => 'draft',
 			'page_type'                 => $page_type,

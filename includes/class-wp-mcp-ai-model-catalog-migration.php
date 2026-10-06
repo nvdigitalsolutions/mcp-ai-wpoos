@@ -43,10 +43,10 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			'gpt-4-turbo'                          => 'gpt-4.1',
 			'gpt-4-1106-preview'                   => 'gpt-4.1',
 			'gpt-4-vision-preview'                 => 'gpt-4.1',
-			'o1'                                   => 'o3-mini',
-			'o1-mini'                              => 'o3-mini',
-			'o1-preview'                           => 'o3-mini',
-			'o1-pro'                               => 'o3-pro',
+			'o1'                                   => 'gpt-5.6-sol',
+			'o1-mini'                              => 'gpt-5.6-terra',
+			'o1-preview'                           => 'gpt-5.6-sol',
+			'o1-pro'                               => 'gpt-5.6-sol',
 			'gpt-4.1-2025-04-14'                   => 'gpt-4.1',
 			'chatgpt-4o-latest'                    => 'gpt-4.1',
 			// Anthropic retired.
@@ -65,6 +65,9 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			'claude-haiku-4.5'                     => 'claude-haiku-4-5',
 			'claude-opus-4.1'                      => 'claude-opus-4-6',
 			'claude-opus-4.0'                      => 'claude-opus-4-6',
+			// Anthropic retired (October 2026 refresh).
+			'claude-3-5-haiku-20241022'            => 'claude-haiku-4-5',
+			'claude-3-5-sonnet-20241022'           => 'claude-sonnet-4-6',
 			// Gemini sunset.
 			'gemini-pro'                           => 'gemini-2.5-pro',
 			'gemini-pro-vision'                    => 'gemini-2.5-pro',
@@ -74,8 +77,10 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			'gemini-1.5-flash-002'                 => 'gemini-2.5-flash',
 			'gemini-2.0-flash'                     => 'gemini-2.5-flash',
 			'gemini-2.0-flash-lite'                => 'gemini-2.5-flash-lite',
-			'gemini-2.0-flash-image'               => 'gemini-2.5-flash-image',
-			'gemini-2.5-flash-image'               => 'gemini-3.1-flash-image-preview',
+			'gemini-2.0-flash-image'               => 'gemini-3.1-flash-image',
+			'gemini-2.5-flash-image'               => 'gemini-3.1-flash-image',
+			'gemini-live-2.5-flash-preview'        => 'gemini-3.8-live',
+			'gemini-omni-flash'                    => 'gemini-omni-1.1-flash',
 			'gemini-3-pro-preview'                 => 'gemini-3.1-pro',
 			'gemini-3-flash-preview'               => 'gemini-3.5-flash',
 			'gemini-3.1-pro-preview'               => 'gemini-3.1-pro',
@@ -104,6 +109,29 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			'deepseek-coder'                       => 'deepseek-flash',
 			'deepseek-v4-flash'                    => 'deepseek-flash',
 			'deepseek-v4-flash-vision-exp'         => 'deepseek-flash',
+			// OpenAI codex line shut down 2026-07-23 → gpt-5.6 tiers.
+			'gpt-5-codex'                          => 'gpt-5.6-sol',
+			'gpt-5.1-codex'                        => 'gpt-5.6-sol',
+			'gpt-5.1-codex-max'                    => 'gpt-5.6-sol',
+			'gpt-5.1-codex-mini'                   => 'gpt-5.6-terra',
+			'gpt-5.2-codex'                        => 'gpt-5.6-sol',
+			'gpt-5-chat-latest'                    => 'gpt-5.6-sol',
+			'gpt-5.1-chat-latest'                  => 'gpt-5.6-sol',
+			'gpt-5.2-chat-latest'                  => 'gpt-5.6-sol',
+			'gpt-5.3-chat-latest'                  => 'gpt-5.6-sol',
+			// Kimi / Moonshot discontinued (k2 series 2026-05-25; k2.5 + moonshot-v1
+			// series 2026-08-31) → kimi-k3.
+			'kimi-latest'                          => 'kimi-k3',
+			'kimi-k2'                              => 'kimi-k3',
+			'kimi-k2-thinking'                     => 'kimi-k3',
+			'kimi-k2.5'                            => 'kimi-k3',
+			'moonshot-v1-auto'                     => 'kimi-k3',
+			'moonshot-v1-8k'                       => 'kimi-k3',
+			'moonshot-v1-32k'                      => 'kimi-k3',
+			'moonshot-v1-128k'                     => 'kimi-k3',
+			'moonshot-v1-8k-vision-preview'        => 'kimi-k3',
+			'moonshot-v1-32k-vision-preview'       => 'kimi-k3',
+			'moonshot-v1-128k-vision-preview'      => 'kimi-k3',
 		);
 	}
 

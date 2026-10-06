@@ -39,7 +39,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Live_Client' ) ) {
 		 * @since 1.2.0
 		 * @var string
 		 */
-		const DEFAULT_MODEL = 'gemini-3.1-flash-live-preview';
+		const DEFAULT_MODEL = 'gemini-3.8-live';
 
 		/**
 		 * Default voice preset name for Gemini.

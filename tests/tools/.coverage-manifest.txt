@@ -134,6 +134,7 @@ wp-mcp-ai-tool-get-cron-job
 wp-mcp-ai-tool-get-elementor-form-submissions
 wp-mcp-ai-tool-get-elementor-templates
 wp-mcp-ai-tool-get-environment-status
+wp-mcp-ai-tool-get-fleet-status
 wp-mcp-ai-tool-get-gdacs-events
 wp-mcp-ai-tool-get-image-metadata
 wp-mcp-ai-tool-get-jetengine-items
@@ -155,6 +156,7 @@ wp-mcp-ai-tool-get-session-status
 wp-mcp-ai-tool-get-site-health
 wp-mcp-ai-tool-get-site-settings
 wp-mcp-ai-tool-get-site-summary
+wp-mcp-ai-tool-get-site-uptime
 wp-mcp-ai-tool-get-system-logs
 wp-mcp-ai-tool-get-system-logs-validated
 wp-mcp-ai-tool-get-task-plan
@@ -217,6 +219,7 @@ wp-mcp-ai-tool-newsletter-get-emails
 wp-mcp-ai-tool-newsletter-get-subscribers
 wp-mcp-ai-tool-newsletter-get-subscriber-stats
 wp-mcp-ai-tool-newsletter-unsubscribe
+wp-mcp-ai-tool-nvoos-get-profile
 wp-mcp-ai-tool-okf-browse
 wp-mcp-ai-tool-okf-delete-concept
 wp-mcp-ai-tool-okf-import-bundle
@@ -258,6 +261,7 @@ wp-mcp-ai-tool-responsive-image-validator
 wp-mcp-ai-tool-retrieve-agent-memory
 wp-mcp-ai-tool-retrieve-with-provenance
 wp-mcp-ai-tool-rotate-image
+wp-mcp-ai-tool-run-assistant-eval
 wp-mcp-ai-tool-run-crawl4ai-job
 wp-mcp-ai-tool-run-crawl4ai-job-validated
 wp-mcp-ai-tool-run-gemini-managed-agent
@@ -265,6 +269,7 @@ wp-mcp-ai-tool-run-openai-external-action
 wp-mcp-ai-tool-save-post
 wp-mcp-ai-tool-save-post-validated
 wp-mcp-ai-tool-save-profession
+wp-mcp-ai-tool-scan-assistant-security
 wp-mcp-ai-tool-scope-memory
 wp-mcp-ai-tool-scrape-product
 wp-mcp-ai-tool-scrape-product-validated

@@ -66,9 +66,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Realtime_Client' ) ) {
 		 *
 		 * @since 1.2.0
 		 * @since 1.3.0 Changed from 'gpt-realtime' to 'gpt-realtime-2'.
+		 * @since 1.1.93 Changed from 'gpt-realtime-2' to 'gpt-realtime-2.1'.
 		 * @var string
 		 */
-		const DEFAULT_MODEL = 'gpt-realtime-2';
+		const DEFAULT_MODEL = 'gpt-realtime-2.1';
 
 		/**
 		 * Supported realtime models.
@@ -77,7 +78,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Realtime_Client' ) ) {
 		 * @var array
 		 */
 		const SUPPORTED_MODELS = array(
-			'gpt-realtime-2'   => 'GPT-Realtime-2 (reasoning voice, recommended)',
+			'gpt-realtime-2.1' => 'GPT-Realtime-2.1 (reasoning voice, recommended)',
+			'gpt-realtime-2'   => 'GPT-Realtime-2 (reasoning voice)',
 			'gpt-realtime-1.5' => 'GPT-Realtime-1.5 (non-reasoning, fast)',
 		);
 
@@ -461,8 +463,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Realtime_Client' ) ) {
 				'temperature'         => 0.8,
 			);
 
-			// Add reasoning configuration for gpt-realtime-2.
-			if ( 'gpt-realtime-2' === $model ) {
+			// Add reasoning configuration for the reasoning voice models.
+			if ( 'gpt-realtime-2' === $model || 'gpt-realtime-2.1' === $model ) {
 				$session['reasoning'] = array( 'effort' => $reasoning );
 			}
 

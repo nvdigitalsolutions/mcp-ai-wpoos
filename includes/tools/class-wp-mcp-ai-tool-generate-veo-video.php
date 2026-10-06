@@ -298,7 +298,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Determine which model/service to use.
 		$model    = isset( $generation_args['model'] ) ? $generation_args['model'] : '';
-		$use_omni = ( 'gemini-omni-flash' === $model || 'omni' === $model );
+		$use_omni = ( 'gemini-omni-1.1-flash' === $model || 'gemini-omni-flash' === $model || 'omni' === $model );
 
 		if ( $use_omni ) {
 			// Route through Omni service (recommended, replaces Veo).
@@ -487,7 +487,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	protected function get_default_video_settings() {
 		$defaults = array(
-			'model'        => 'gemini-omni-flash', // Omni Flash is the recommended default (Veo 2.0 deprecated mid-2026).
+			'model'        => 'gemini-omni-1.1-flash', // Omni 1.1 Flash is the recommended default (Veo previews shut down October 22, 2026).
 			'resolution'   => '720p',
 			'aspect_ratio' => '3:2',
 			'duration'     => 5,

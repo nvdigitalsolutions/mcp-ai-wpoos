@@ -2883,8 +2883,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * Priority order:
 		 * 1. Gemini File API name (file_id starting with "files/") -- fileData
 		 * 2. Explicit Gemini file URI (file_uri / uri) -- fileData
-		 * 3. Local WordPress attachment file (via attachment_id) -- inlineData
-		 * 4. Remote image URL (image_url.url / url) -- inlineData via HTTP download
+		 * 3. Inline base64 payload supplied by the caller (data + mime_type) -- inlineData
+		 * 4. Local WordPress attachment file (via attachment_id) -- inlineData
+		 * 5. Remote image URL (image_url.url / url) -- inlineData via HTTP download
 		 *
 		 * @param array $segment {
 		 *     Image segment of type input_image / image_url / image_file.
@@ -2895,6 +2896,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 *     @type int    $attachment_id Optional. WordPress attachment post ID for local file reads.
 		 *     @type array  $image_url     Optional. Array with 'url' key for remote image download.
 		 *     @type string $url           Optional. Direct image URL fallback.
+		 *     @type string $data          Optional. Raw base64-encoded image bytes (requires mime_type).
 		 *     @type string $mime_type     Optional. MIME type of the image (e.g., "image/jpeg").
 		 *     @type string $mimeType      Optional. Camel-case alias for mime_type.
 		 * }
@@ -2949,7 +2951,27 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 			}
 
-			// 3. Read binary data from the local WordPress attachment (fastest path).
+			// 3. Inline base64 payload supplied directly by the caller (no file I/O).
+			if ( isset( $segment['data'] ) && is_string( $segment['data'] ) && '' !== $segment['data'] ) {
+				if ( '' === $mime_type ) {
+					return null;
+				}
+
+				// Strict-decode to validate the payload before sending it.
+				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Validating binary image data for Gemini inlineData.
+				if ( false === base64_decode( $segment['data'], true ) ) {
+					return null;
+				}
+
+				return array(
+					'inlineData' => array(
+						'data'     => $segment['data'],
+						'mimeType' => $mime_type,
+					),
+				);
+			}
+
+			// 4. Read binary data from the local WordPress attachment (fastest path).
 			if ( ! empty( $segment['attachment_id'] ) ) {
 				$attachment_id = absint( $segment['attachment_id'] );
 				$file_path     = get_attached_file( $attachment_id );
@@ -2977,7 +2999,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 			}
 
-			// 4. Download from URL as a last resort.
+			// 5. Download from URL as a last resort.
 			$url = '';
 			if ( ! empty( $segment['image_url'] ) && is_array( $segment['image_url'] ) && ! empty( $segment['image_url']['url'] ) ) {
 				$url = esc_url_raw( $segment['image_url']['url'] );

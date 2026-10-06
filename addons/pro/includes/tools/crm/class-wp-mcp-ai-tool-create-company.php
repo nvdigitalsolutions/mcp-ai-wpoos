@@ -288,7 +288,8 @@ class WP_MCP_AI_Tool_Create_Company implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	public function get_capability_flags() {
 		return array(
 			'requires-capability',  // Requires user capabilities.
-			'modifies-data',        // Creates new data.
+			'write',                // Creates new data.
+			'state-changing',       // Modifies database state.
 			'local-only',           // No external API calls.
 		);
 	}

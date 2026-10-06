@@ -246,7 +246,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Alert_Manager' ) ) {
 
 			if ( ! in_array( $sku, $skus, true ) ) {
 				$skus[] = $sku;
-				update_option( self::ALERTED_SKUS_OPTION, $skus );
+				update_option( self::ALERTED_SKUS_OPTION, $skus, false );
 			}
 		}
 

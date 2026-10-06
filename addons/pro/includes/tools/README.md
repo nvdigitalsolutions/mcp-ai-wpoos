@@ -22,7 +22,8 @@ The contract is the **tool slug** registered with `WP_MCP_AI_Tool_Registry` — 
 | `WP_MCP_AI_Tool_Registry::get_tools()` | [`includes/class-wp-mcp-ai-tool-registry.php`](../../../../includes/class-wp-mcp-ai-tool-registry.php) (Base) | All callers — REST, CLI, agentic loop, chat |
 | `WP_MCP_AI_Pro_Tool_*` and `WP_MCP_AI_Tool_*` classes (one per file) | `class-wp-mcp-ai-{pro-}tool-*.php` | Registry only — never instantiated directly |
 | `WP_MCP_AI_Pro_Tool_CPT` | `class-wp-mcp-ai-pro-tool-cpt.php` (mirrored under `../src/Tools/`) | Generic CRUD/search for Pro toolkit CPTs |
-| `Trait WP_MCP_AI_Tool_Research_Template_Analysis` | `trait-wp-mcp-ai-tool-research-template-analysis.php` | Research-* tools in this folder |
+| `Trait WP_MCP_AI_Tool_Research_Template_Analysis` | `research/trait-wp-mcp-ai-tool-research-template-analysis.php` | Research-* tools in `research/` |
+| `Trait WP_MCP_AI_Tool_Research_Content_Normalization` | `research/trait-wp-mcp-ai-tool-research-content-normalization.php` | Research-* tools in `research/` — flattens array content parts (e.g. Gemini) into strings |
 | `Trait WP_MCP_AI_Shopify_Connection_Resolver`, `WP_MCP_AI_Shopify_Smart_Search` | `../src/Tools/trait-wp-mcp-ai-shopify-*.php` | Shopify tools (lazy-required) |
 
 Tool **categories** (each lives in its own subdirectory with its own topic-specific README):

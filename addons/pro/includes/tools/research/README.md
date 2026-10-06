@@ -17,9 +17,10 @@ Cross-cutting research tools that perform web research, data gathering, and AI-a
 | Research Product | `research_product` | Research product information and specs |
 | Research Project | `research_project` | Research project-related content |
 
-## Shared Trait
+## Shared Traits
 
-`Trait_WP_MCP_AI_Tool_Research_Template_Analysis` — provides template analysis and structured data extraction shared across research tools.
+- `WP_MCP_AI_Tool_Research_Template_Analysis` — provides template analysis and structured data extraction shared across research tools.
+- `WP_MCP_AI_Tool_Research_Content_Normalization` — flattens provider message content that arrives as an array of parts/blocks (e.g. Gemini) into a plain string before parsing.
 
 ## Dependencies
 

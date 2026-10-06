@@ -21,6 +21,15 @@ require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-audit-log.php';
 require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-mcp-observability-card.php';
 require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-server-token.php';
 
+// The assistant-grant lookup lives in the admin metabox class, but the
+// JSON-RPC grant gate (deny-by-default) and the chat-tool bridge below run
+// in every context — REST requests are never admin. Loading the class
+// definition here (not instantiating; hooks only bind in its constructor)
+// makes get_allowed_servers() resolvable outside wp-admin. The
+// admin_toolkit_mcp module still instantiates the metabox on the edit
+// screen via its own require_once, so this is a no-op there.
+require_once dirname( __DIR__ ) . '/admin/class-wp-mcp-ai-pro-metabox-toolkit-mcp-servers.php';
+
 // Phase 8 — shared trait for Action Scheduler-backed sync servers.
 require_once __DIR__ . '/trait-wp-mcp-ai-scheduled-toolkit-server.php';
 
@@ -225,3 +234,100 @@ add_action(
 		exit;
 	}
 );
+
+/**
+ * Resolve the effective tool slugs for an assistant's granted toolkit
+ * MCP servers.
+ *
+ * Returns the union of every granted server's effective tool allowlist,
+ * skipping servers that are not enabled (the master toggle is authoritative
+ * — the same rule the per-toolkit JSON-RPC surface enforces).
+ *
+ * @since 1.4.0
+ *
+ * @param int $assistant_id Assistant post ID.
+ * @return string[] Tool slugs exposed by the assistant's granted servers.
+ */
+function wp_mcp_ai_toolkit_servers_granted_tool_slugs( $assistant_id ) {
+	$assistant_id = absint( $assistant_id );
+	if ( ! $assistant_id
+		|| ! class_exists( 'WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers' )
+		|| ! class_exists( 'WP_MCP_AI_Toolkit_Server_Registry' )
+	) {
+		return array();
+	}
+
+	$granted = WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::get_allowed_servers( $assistant_id );
+	if ( empty( $granted ) ) {
+		return array();
+	}
+
+	$registry = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
+	$slugs    = array();
+	foreach ( $granted as $server_slug ) {
+		$server = $registry->get( $server_slug );
+		if ( ! ( $server instanceof WP_MCP_AI_Toolkit_Server_Base ) || ! $server->is_enabled() ) {
+			continue;
+		}
+		$slugs = array_merge( $slugs, $server->effective_tool_slugs() );
+	}
+
+	return array_values( array_unique( array_map( 'sanitize_key', $slugs ) ) );
+}
+
+/**
+ * Expose granted toolkit MCP servers' tools on the assistant's effective
+ * tool list.
+ *
+ * The base plugin applies this filter seam everywhere the assistant tool
+ * set is assembled (chat payload, monolithic MCP tools/list, direct tool
+ * execution, list_mcp_tools), so a metabox grant makes the server's tools
+ * invocable by the assistant on every surface. Downstream capability checks
+ * still apply per tool.
+ *
+ * @since 1.4.0
+ *
+ * @param array $slugs            Effective tool slugs.
+ * @param array $assistant_config Assistant configuration.
+ * @param int   $assistant_id     Resolved assistant post ID (0 when unknown).
+ * @return array Effective tool slugs including granted toolkit tools.
+ */
+function wp_mcp_ai_toolkit_servers_expose_tools( $slugs, $assistant_config, $assistant_id = 0 ) {
+	$slugs = is_array( $slugs ) ? $slugs : array();
+
+	$assistant_id = absint( $assistant_id );
+	if ( ! $assistant_id && isset( $assistant_config['ID'] ) ) {
+		$assistant_id = absint( $assistant_config['ID'] );
+	} elseif ( ! $assistant_id && isset( $assistant_config['id'] ) ) {
+		$assistant_id = absint( $assistant_config['id'] );
+	}
+
+	$extra = wp_mcp_ai_toolkit_servers_granted_tool_slugs( $assistant_id );
+	if ( empty( $extra ) ) {
+		return $slugs;
+	}
+
+	return array_values( array_unique( array_merge( $slugs, $extra ) ) );
+}
+add_filter( 'wp_mcp_ai_chat_effective_tools', 'wp_mcp_ai_toolkit_servers_expose_tools', 10, 3 );
+
+/**
+ * Feed the Context Window Estimator the granted toolkit servers' tool slugs.
+ *
+ * The base estimator counts only the Tools metabox selection; this filter
+ * appends the granted servers' effective tools so the estimate matches the
+ * chat payload the bridge above produces.
+ *
+ * @since 1.4.0
+ *
+ * @param array $tool_slugs Extra tool slugs counted by the estimator.
+ * @param int   $post_id    Assistant post ID.
+ * @return array Extra tool slugs.
+ */
+function wp_mcp_ai_toolkit_servers_estimator_tool_slugs( $tool_slugs, $post_id ) {
+	$tool_slugs = is_array( $tool_slugs ) ? $tool_slugs : array();
+	$extra      = wp_mcp_ai_toolkit_servers_granted_tool_slugs( absint( $post_id ) );
+
+	return empty( $extra ) ? $tool_slugs : array_values( array_unique( array_merge( $tool_slugs, $extra ) ) );
+}
+add_filter( 'wp_mcp_ai_prompt_window_toolkit_tool_slugs', 'wp_mcp_ai_toolkit_servers_estimator_tool_slugs', 10, 2 );

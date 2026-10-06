@@ -142,8 +142,8 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		$user_ip         = isset( $arguments['user_ip'] ) ? sanitize_text_field( $arguments['user_ip'] ) : '';
 		$sensitivity     = isset( $arguments['sensitivity'] ) ? sanitize_text_field( $arguments['sensitivity'] ) : 'medium';
 
-		// Get settings.
-		$settings         = get_option( 'wp_mcp_ai_settings', array() );
+		// Get settings (merged view: includes the wp_mcp_ai_credentials option).
+		$settings         = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 
 		// Build analysis prompt.
@@ -260,7 +260,8 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 	 * @return array|WP_Error Analysis result with metadata or error.
 	 */
 	private function call_ai_model( $prompt, $provider ) {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		// Merged view: includes the wp_mcp_ai_credentials option.
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 
 		if ( 'gemini' === $provider ) {
 			return $this->call_gemini( $prompt, $settings );
@@ -279,6 +280,9 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 	 */
 	private function call_openai( $prompt, $settings ) {
 		$api_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+		if ( empty( $api_key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			$api_key = WP_MCP_AI_Credential_Resolver::get_api_key( 'openai' ) ?? '';
+		}
 
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
@@ -367,6 +371,9 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 	 */
 	private function call_gemini( $prompt, $settings ) {
 		$api_key = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+		if ( empty( $api_key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			$api_key = WP_MCP_AI_Credential_Resolver::get_api_key( 'gemini' ) ?? '';
+		}
 
 		if ( empty( $api_key ) ) {
 			return new WP_Error(

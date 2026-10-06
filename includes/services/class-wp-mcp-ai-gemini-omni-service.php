@@ -54,7 +54,7 @@ class WP_MCP_AI_Gemini_Omni_Service {
 	 *
 	 * @var string
 	 */
-	const OMNI_MODEL = 'gemini-omni-flash';
+	const OMNI_MODEL = 'gemini-omni-1.1-flash';
 
 	/**
 	 * Veo 3.1 model (fallback when Omni is unavailable).

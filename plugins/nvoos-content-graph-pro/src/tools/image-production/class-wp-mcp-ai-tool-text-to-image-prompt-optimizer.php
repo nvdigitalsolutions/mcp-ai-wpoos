@@ -147,56 +147,59 @@ class WP_MCP_AI_Tool_Text_To_Image_Prompt_Optimizer implements WP_MCP_AI_Tool_In
 		$system_prompt = $this->build_system_prompt( $provider, $enhance_mode );
 		$user_prompt   = $this->build_user_prompt( $prompt, $style );
 
-		// Use OpenAI API to optimize the prompt.
-		$api_key = wp_mcp_ai_get_api_key( 'openai_api_key' );
-		if ( empty( $api_key ) ) {
+		// Use the OpenAI client so custom base URLs, org/project headers, and
+		// the credential resolver all apply. The client also normalises the
+		// response envelope and surfaces HTTP errors as WP_Error.
+		if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_settings_not_available',
+				__( 'The OpenAI client is not available.', 'nvoos-content-graph-pro' )
+			);
+		}
+
+		$client = new WP_MCP_AI_OpenAI_Client();
+		if ( empty( $client->get_api_key() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_credentials',
 				__( 'OpenAI API key not configured.', 'nvoos-content-graph-pro' )
 			);
 		}
 
-		$response = wp_remote_post(
-			'https://api.openai.com/v1/chat/completions',
+		$result = $client->create_chat_completion(
 			array(
-				'timeout' => 30,
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
+				array(
+					'role'    => 'system',
+					'content' => $system_prompt,
 				),
-				'body'    => wp_json_encode(
-					array(
-						'model'    => 'gpt-4o-mini',
-						'messages' => array(
-							array(
-								'role'    => 'system',
-								'content' => $system_prompt,
-							),
-							array(
-								'role'    => 'user',
-								'content' => $user_prompt,
-							),
-						),
-					)
+				array(
+					'role'    => 'user',
+					'content' => $user_prompt,
 				),
-			)
+			),
+			array( 'model' => 'gpt-4o-mini' )
 		);
 
-		if ( is_wp_error( $response ) ) {
-			return $response;
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( ! isset( $data['choices'][0]['message']['content'] ) ) {
+		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_api_error',
 				__( 'Failed to optimize prompt.', 'nvoos-content-graph-pro' )
 			);
 		}
 
-		$optimized_prompt = trim( $data['choices'][0]['message']['content'] );
+		// OpenAI-compatible gateways can return the content as an array of
+		// parts; flatten before any string operation to avoid the fatal
+		// `trim(): Argument #1 ($string) must be of type string`.
+		$optimized_prompt = trim( $this->flatten_response_content( $result['choices'][0]['message']['content'] ) );
+		if ( '' === $optimized_prompt ) {
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				__( 'Failed to optimize prompt.', 'nvoos-content-graph-pro' )
+			);
+		}
 
 		// Parse the response to extract structured data.
 		$result = $this->parse_optimization_response( $optimized_prompt );
@@ -259,12 +262,49 @@ class WP_MCP_AI_Tool_Text_To_Image_Prompt_Optimizer implements WP_MCP_AI_Tool_In
 	}
 
 	/**
+	 * Flatten a provider message content field into a string.
+	 *
+	 * OpenAI-compatible providers may return `message.content` as an array of
+	 * text parts; string-assuming callers fatal on that shape.
+	 *
+	 * @param string|array $content Raw content field.
+	 * @return string Flattened text.
+	 */
+	protected function flatten_response_content( $content ) {
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( is_array( $content ) ) {
+			$text = '';
+			foreach ( $content as $part ) {
+				if ( is_array( $part ) && isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				} elseif ( is_string( $part ) ) {
+					$text .= $part;
+				}
+			}
+			return $text;
+		}
+
+		return '';
+	}
+
+	/**
 	 * Parse optimization response.
 	 *
 	 * @param string $response AI response.
 	 * @return array Parsed data.
 	 */
 	protected function parse_optimization_response( $response ) {
+		$response = trim( (string) $response );
+
+		// Models frequently wrap the requested JSON in markdown fences;
+		// strip them before decoding so fenced payloads actually parse.
+		if ( preg_match( '/^```(?:json)?\s*(.+?)\s*```$/s', $response, $matches ) ) {
+			$response = $matches[1];
+		}
+
 		// Try to parse as JSON.
 		$data = json_decode( $response, true );
 

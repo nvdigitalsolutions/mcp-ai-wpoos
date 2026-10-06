@@ -39,6 +39,33 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Update_Incident' ) ) {
 		 *
 		 * @since 1.4.0
 		 */
+		public function get_name(): string {
+			return __( 'Update Incident', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_description(): string {
+			return __( 'Update the phase of an existing incident and add a timeline entry.', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
+		public function get_required_capability(): string {
+			return 'manage_options';
+		}
+
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @since 1.4.0
+		 */
 		public function get_definition(): array {
 			return array(
 				'name'                => __( 'Update Incident', 'mcp-ai-wpoos' ),
@@ -109,8 +136,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Update_Incident' ) ) {
 		 * @param array $context   Execution context.
 		 * @return array|WP_Error
 		 */
-		public function execute( array $arguments, array $context = array() ) {
-			$incident_id = absint( $arguments['incident_id'] );
+		public function execute( array $arguments = array(), array $context = array() ) {
+			$incident_id = isset( $arguments['incident_id'] ) ? absint( $arguments['incident_id'] ) : 0;
 			$phase       = isset( $arguments['phase'] ) ? sanitize_text_field( $arguments['phase'] ) : '';
 			$message     = isset( $arguments['message'] ) ? sanitize_text_field( $arguments['message'] ) : '';
 

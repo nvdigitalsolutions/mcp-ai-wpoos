@@ -64,7 +64,8 @@ class WP_MCP_AI_OOS_Shadow_Runner {
 	 *  - shadow mode enabled and the global OOS flag off (shadow only
 	 *    shadows the legacy path);
 	 *  - the 4th arg is a real REST request (the OOS path fires the same
-	 *    hook with an event object — never shadow there);
+	 *    hook with a null request via the legacy-args adapter — never
+	 *    shadow there);
 	 *  - sampling decision;
 	 *  - try/catch + deadline — the shadow run can never break the
 	 *    legacy response.

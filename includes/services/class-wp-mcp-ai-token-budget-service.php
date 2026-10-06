@@ -95,6 +95,9 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'claude-opus-4-5'                => 200000,
 		'claude-sonnet-4-5'              => 200000,
 		'claude-haiku-4-5'               => 200000,
+		'claude-mythos-5-1'              => 1000000,
+		'claude-opus-5-5'                => 1000000,
+		'claude-sonnet-5-5'              => 200000,
 		'claude-3-5-sonnet'              => 200000,
 		'claude-3-opus'                  => 200000,
 		'claude-3-haiku'                 => 200000,
@@ -112,7 +115,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gemini-2.5-pro'                 => 1048576,
 		'gemini-3.1-flash-image-preview' => 131072,
 		'gemini-3.1-flash-image'         => 131072,
-		'gemini-2.5-flash-image'         => 1048576,
+		'gemini-3.8-live'                => 1048576,
 		'gemini-2.0-flash-image'         => 1048576,
 		'gemini-2.5-flash'               => 2097152,
 		'gemini-1.5-flash'               => 1048576,
@@ -126,10 +129,8 @@ class WP_MCP_AI_Token_Budget_Manager {
 		// Kimi / Moonshot AI.
 		'kimi-k3'                        => 1048576,
 		'kimi-k2.7-code'                 => 256000,
+		'kimi-k2.7-code-highspeed'       => 256000,
 		'kimi-k2.6'                      => 262144,
-		'kimi-k2.5'                      => 262144,
-		'kimi-k2'                        => 262144,
-		'kimi-k2-thinking'               => 262144,
 		// Meta Llama.
 		'llama4'                         => 131072,
 		'llama3.3'                       => 131072,
@@ -168,8 +169,11 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 */
 	protected static $default_tpm_limits = array(
 		// Anthropic Claude models — Tier 1 defaults.
+		'claude-mythos-5-1' => 40000,
 		'claude-mythos-5'   => 40000,
+		'claude-opus-5-5'   => 40000,
 		'claude-opus-5'     => 40000,
+		'claude-sonnet-5-5' => 80000,
 		'claude-sonnet-5'   => 80000,
 		'claude-opus-4-6'   => 40000,
 		'claude-sonnet-4-6' => 80000,
@@ -190,8 +194,11 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 * @var array
 	 */
 	protected static $model_max_output_tokens = array(
+		'claude-mythos-5-1' => 128000,
 		'claude-mythos-5'   => 128000,
+		'claude-opus-5-5'   => 128000,
 		'claude-opus-5'     => 128000,
+		'claude-sonnet-5-5' => 128000,
 		'claude-sonnet-5'   => 128000,
 		'claude-opus-4-6'   => 128000,
 		'claude-sonnet-4-6' => 64000,
