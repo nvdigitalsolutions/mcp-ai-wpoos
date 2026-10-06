@@ -276,6 +276,7 @@ RIGHT: { "summary": "{{node_2.result.summary}}", "urls": "{{node_2.result.source
 - The `execute_workflow` MCP tool is the programmatic interface for running workflows on-demand.
 - Run `design-crm` to build CRM automation workflows — lead scoring, auto-assignment, deal stage progression using `toolkit_cpt` nodes in the builder.
 - Run `design-project-management` to build PM automation workflows — task creation from templates, sprint status roll-ups, project health checks.
+- **Workflow discovery from history:** the Pro `suggest_workflows_from_history` tool (v1.1.97, #6912) mines the harness trace store for recurring tool chains — scored frequency × recency × success — a discovery path into the preset categories when designing new workflows from real assistant behavior.
 
 ## What this skill does NOT cover
 

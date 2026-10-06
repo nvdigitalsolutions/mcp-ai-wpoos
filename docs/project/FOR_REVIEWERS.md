@@ -19,10 +19,10 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.96 (October 2026)
+**Current version:** 1.1.97 (October 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
-**Total tools:** ~1,662 (~350 base + ~1,312 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,665 (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 
@@ -50,7 +50,7 @@ includes/                     ← 1,060 PHP files
 ├── class-wp-mcp-ai-plugin.php ← Kernel / DI container / singleton
 ├── class-wp-mcp-ai-rest.php   ← REST route registration (151 calls, 36 files)
 ├── class-wp-mcp-ai-tool-registry.php ← Central tool registry
-├── tools/                     ← ~350 base tool classes (~1,662 total registered through the singleton registry)
+├── tools/                     ← ~352 base tool classes (~1,665 total registered through the singleton registry)
 ├── admin/                     ← Admin UI, settings, dashboards
 ├── rest/                      ← REST controllers (chat, MCP, webhooks)
 ├── assistants/                ← Assistant CPT & CCT management
@@ -214,7 +214,7 @@ If you have limited budget for a review, focus on this order:
 ### Phase 2: Architecture review (~3-4 hours)
 4. **Plugin architecture** — DI container usage, class loading, lifecycle hooks (60+), singleton patterns
 5. **Base/Pro separation** — Verify no pro feature gating in base plugin
-6. **Tool registry** — How ~1,662 tools are registered and discovered
+6. **Tool registry** — How ~1,665 tools are registered and discovered
 7. **lib/core extraction** — Hexagonal Architecture (32 domain contracts, 21 WordPress adapters), agentic loop, provider routing, 109+ migrated tools. `includes/bridge/` adapters.
 
 ### Phase 3: Deep dives (~4-6 hours, if budget allows)

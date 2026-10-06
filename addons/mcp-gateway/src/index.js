@@ -20,7 +20,7 @@ import { healthRouter } from './routes/health.js';
 import { landingRouter } from './routes/landing.js';
 import { mcpRouter, discoveryHandler } from './routes/mcp.js';
 
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.1';
 
 /**
  * Build the gateway app.

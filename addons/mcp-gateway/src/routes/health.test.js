@@ -28,7 +28,7 @@ test( 'GET /health is public and reports the site registry', async () => {
 	const body = await res.json();
 	assert.strictEqual( body.status, 'ok' );
 	assert.strictEqual( body.service, 'design-mcp-gateway' );
-	assert.strictEqual( body.version, '0.1.0' );
+	assert.strictEqual( body.version, '0.1.1' );
 	assert.deepStrictEqual( body.sites, { 'site-a': 'ok' } );
 	await close();
 } );

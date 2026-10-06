@@ -1,11 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.96
-**Last Updated:** October 5, 2026
+**Version:** 1.1.97
+**Last Updated:** October 6, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (October 2026)
+
+- **v1.1.97** (October 6): ECC-inspired harness enhancements, OOS parity closure & gateway protocol negotiation. **Agent-harness enhancements (#6912, Proposal 056 — inert by default)** — cascade model routing on both engines (framework-core `CascadeRouter` + legacy `WP_MCP_AI_Cascade_Executor` gate, one switch + Pro Jev classifier), the `run_assistant_eval` + `scan_assistant_security` base tools, hook profiles (minimal/standard/strict), the session distiller's canonical `wp_mcp_ai_memory_stored` event, and the Pro `suggest_workflows_from_history` trace-store miner. **OOS parity gaps closed (#6913)** — the destructive-ops gate no longer 500s on the OOS path (canonical 428/429 envelopes), the Output Guardrail + Citation Verifier apply at the final payload on all three surfaces, and `bin/check-chat-parity.php` (35 → 38 features) gains a `parity-check` CI job. **Fixed (#6914)** — the MCP Gateway negotiates protocol versions (`2024-11-05` fallback), so Zed and other strict clients connect. **npm (#6898/#6904–#6909/#6911)** — all 23 `packages/` live on the public registry (bridge `latest` = 0.1.0-alpha.3; nvoos-api/nvoos-sse-client 0.1.0-alpha.4 with valid JS). Tool count: ~352 base + ~1,313 Pro (~1,665 total; +2 base +1 Pro). Stale 1.1.95 build ZIPs removed (30 files). See `docs/project/plans/v1.1.97-docs-catch-up.md`.
 
 - **v1.1.96** (October 5): NV oOS MCP bridge npx package, MCP Gateway addon & per-request memory cut. **nvoos-mcp-bridge (#6897, Proposals 054/055)** — the zero-dependency `@nvdigitalsolutions/nvoos-mcp-bridge` npm package connects Zed / Claude Desktop / Cursor / Codex to any NV oOS site with one `npx` command (`nvoos-mcp` stdio↔HTTP relay + `nvoos-mcp-ssh` for SSH-only sites; byte-identity CI sync from `bin/`); the Fleet Operator addon's `generate_zed_json()`/`generate_claude_json()` emit copy-paste `context_servers`/`mcpServers` blocks alongside the Hermes YAML. **MCP Gateway addon (#6897, 0.1.0)** — a public fleet MCP endpoint (streamable HTTP, MCP 2026-07-28) with public API-key auth + rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, and fail-closed env config. **Per-request memory cut + bootstrap hardening (#6896)** — plain front-end requests no longer load ~350 tool classes (lazy registry via `wp_mcp_ai_is_plugin_runtime_context()`, third-party-wins slug conflicts), the OOS engine pre-warm is gated off page views, the model catalog is read on `filemtime` change only, Pro blob options write `autoload=false` with a one-time repair, and the bootstrap-integrity guard + fail-soft loader make partial updates degrade instead of fataling (A/B probe: 42 MB vs 74 MB per front-end render). **Fixed (#6895)** — the media worker's runtime version strings report 3.4.0 again. Tool count: ~350 base + ~1,312 Pro (~1,662 total; unchanged). Stale 1.1.94 build ZIPs removed (30 files). See `docs/project/plans/v1.1.96-docs-catch-up.md`.
 
@@ -729,7 +731,7 @@ Discovery endpoint: `GET /.well-known/mcp` (returns JSON array of all enabled to
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All ~1,662 tools detailed (~350 base + ~1,312 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- [Tool Reference](reference/tools/tool-reference.md) - All ~1,665 tools detailed (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](developer/architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 

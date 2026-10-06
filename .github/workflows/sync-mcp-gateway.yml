@@ -1,10 +1,24 @@
 name: Sync mcp-gateway
 
+# One-way mirror: addons/mcp-gateway/ -> nvdigitalsolutions/nvoos-mcp-gateway
+# (main). Each sync snapshots the subtree as ONE commit whose parent is the
+# mirror's current main tip and pushes WITHOUT --force, keeping the mirror
+# main a clean fast-forward line. The old subtree-split force-push rewrote
+# history on every run, which hosting platforms (Cloudways Velocity) did not
+# auto-deploy from — force-pushed refs left their clones on stale commits.
+# A linear mirror main fixes that: every sync is a normal push event.
+
 on:
   push:
     branches: [main, alpha-working]
     paths:
       - 'addons/mcp-gateway/**'
+
+# Newest run wins. A sync snapshots the full subtree content at HEAD, so an
+# older in-flight sync can never contain anything the newer one lacks.
+concurrency:
+  group: sync-mcp-gateway
+  cancel-in-progress: true
 
 jobs:
   sync:
@@ -15,11 +29,38 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Split subtree
+      - name: Mirror the subtree with a fast-forward push
+        env:
+          TOKEN: ${{ secrets.MCP_GATEWAY_REPO_TOKEN }}
         run: |
-          git subtree split --prefix=addons/mcp-gateway --branch=mcp-gateway-split
+          set -euo pipefail
 
-      - name: Push to nvoos-mcp-gateway
-        run: |
-          git config --local --unset-all http.https://github.com/.extraheader
-          git push https://x-access-token:${{ secrets.MCP_GATEWAY_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-mcp-gateway.git mcp-gateway-split:main --force
+          # The ambient GITHUB_TOKEN extraheader would override the token
+          # URL auth below — drop it for the rest of the job.
+          git config --local --unset-all http.https://github.com/.extraheader || true
+          git config --local user.name 'github-actions[bot]'
+          git config --local user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          MIRROR_URL="https://x-access-token:${TOKEN}@github.com/nvdigitalsolutions/nvoos-mcp-gateway.git"
+          MSG="$(git log -1 --format='%s%n%n%b' -- addons/mcp-gateway)"
+          TREE="$(git rev-parse HEAD:addons/mcp-gateway)"
+
+          # Retry loop: a concurrent sync (or any direct push) may advance
+          # mirror main between our fetch and push. Refetch the tip and
+          # rebuild the snapshot commit on top of it instead of force-pushing.
+          # Fetch into FETCH_HEAD (not a named ref): a shallow --depth=1
+          # fetch grafts the tip and would break the local fast-forward check
+          # on the retry fetch.
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet --depth=1 "$MIRROR_URL" main
+            SYNC_COMMIT="$(printf '%s\n' "$MSG" | git commit-tree "$TREE" -p FETCH_HEAD)"
+            if git push --quiet "$MIRROR_URL" "$SYNC_COMMIT:main"; then
+              echo "Pushed ${SYNC_COMMIT} to nvoos-mcp-gateway:main"
+              exit 0
+            fi
+            echo "Push rejected (mirror main advanced) — attempt ${attempt}/5, retrying"
+            sleep 5
+          done
+
+          echo "::error::Gave up after 5 attempts — mirror main kept advancing"
+          exit 1

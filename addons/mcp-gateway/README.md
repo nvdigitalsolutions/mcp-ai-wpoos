@@ -18,7 +18,11 @@ Deployment target: **Cloudways Velocity** (managed Node hosting) at
 
 > **One-way mirror:** this addon is the canonical source and is synced to
 > the standalone repo `nvdigitalsolutions/nvoos-mcp-gateway` (branch `main`)
-> by the subtree-mirror workflow — same discipline as `addons/media-worker`.
+> by `sync-mcp-gateway.yml`, which snapshots the subtree as one commit per
+> sync and pushes **without `--force`** — the mirror main stays a linear
+> fast-forward line, so hosting platforms (Cloudways Velocity) auto-deploy
+> on every sync. Never commit to the standalone repo directly — the next
+> sync overwrites it.
 
 ---
 

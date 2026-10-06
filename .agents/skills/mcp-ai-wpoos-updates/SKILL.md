@@ -5,8 +5,8 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.96"
-  plugin-version-tested: "1.1.96"
+  plugin-version: "1.1.97"
+  plugin-version-tested: "1.1.97"
   last-updated: "2026-10-05"
 ---
 
@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (`v1.1.96-docs-catch-up.md`,
-   with `v1.1.94-docs-catch-up.md` as the previous pass) plus the
+3. **Read the template plans** — the latest executed plan (`v1.1.97-docs-catch-up.md`,
+   with `v1.1.96-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -738,7 +738,28 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.93-docs-catch-up.md`,
   `docs/project/plans/v1.1.94-docs-catch-up.md`,
   `docs/project/plans/v1.1.95-docs-catch-up.md`,
-  `docs/project/plans/v1.1.96-docs-catch-up.md` (latest executed — the v1.1.96
+  `docs/project/plans/v1.1.97-docs-catch-up.md` (latest executed — the v1.1.97
+  pass over PRs #6898–#6914: the ECC-inspired agent-harness enhancements
+  (#6912, Proposal 056 — cascade routing on both engines via the lib/core
+  `CascadeRouter` + the legacy `WP_MCP_AI_Cascade_Executor` gate with Pro Jev
+  classifier wiring, the +2 base tools `run_assistant_eval` + `scan_assistant_security`,
+  hook profiles, the session distiller's canonical `wp_mcp_ai_memory_stored`
+  event, the +1 Pro `suggest_workflows_from_history` miner — all inert by
+  default, CREDITS attribution), the OOS parity-gap closure (#6913 — 428/429
+  gate envelopes via `translate_gate_exception()`, `apply_pre_response_render()`
+  on all three surfaces, the agentic-iteration bridge, the parity script
+  35 → 38 features + the `parity-check` CI job), the gateway protocol
+  negotiation (#6914), the 23-package public npm publish wave (#6898/#6904–#6909/#6911
+  — the v1.1.96-deferred publish executed), tool counts +2 base +1 Pro →
+  ~352/~1,313/~1,665, four skill reconciliations (plugin ×3 + RELEASE-NOTES,
+  test-suite 65 → 66 patterns with the parity-check gate, updates, the
+  workflow-builder cross-reference), the proposals-README 056 entry, the
+  stale 1.1.95 build-set removal (30 files — 9 + 2 + 19) with the
+  ollama-demo.json URL carry, and **no new OI-1 group** (all 30 in-window
+  `@since` tags correctly pre-tagged 1.1.97))
+
+Preceding windows:
+  `docs/project/plans/v1.1.96-docs-catch-up.md` (the v1.1.96
   pass over PRs #6895–#6897: the `@nvdigitalsolutions/nvoos-mcp-bridge` npx
   package + Fleet Operator editor config generators + the `addons/mcp-gateway/`
   public fleet MCP endpoint (Proposals 054/055, addon 0.1.0 → inventory #31,
