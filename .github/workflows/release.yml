@@ -242,7 +242,11 @@ jobs:
             --exclude 'patches'
             --exclude 'docs'
             --exclude 'archive'
-            --exclude 'examples'
+            # Root-anchored deliberately: the Pro blueprint library lives in
+            # addons/pro/includes/tools/*/examples/ and MUST ship in the full
+            # and complete builds. An unanchored `examples` pattern would
+            # strip it, leaving the unified Blueprints page empty (PR #6933).
+            --exclude '/examples'
             --exclude 'packages'
             --exclude 'src'
             --exclude 'ARCHITECTURE.md'
@@ -256,7 +260,7 @@ jobs:
             --exclude '*.zip'
             --exclude '*.tar.gz'
             --exclude '.distignore'
-            --exclude 'assets/examples'
+            --exclude '/assets/examples'
             --exclude 'mcp-ai-wpoos-base.php'
             --exclude 'mcp-diagnostic-debug.php'
             --exclude 'test-storage-service.html'
@@ -327,6 +331,19 @@ jobs:
             exit 1
           fi
           echo "✅ Base-only build verified: no addons/ paths present"
+
+      - name: Assert blueprint examples present in full build
+        run: |
+          set -euo pipefail
+          # The full/complete builds ship the Pro blueprint library
+          # (addons/pro/includes/tools/*/examples/). An unanchored `examples`
+          # rsync exclude would strip it, leaving the unified Blueprints page
+          # empty on packaged installs (see PR #6933).
+          if ! find build-full/${PLUGIN_SLUG}/addons/pro/includes/tools -type d -name 'examples' -print -quit | grep -q .; then
+            echo "::error::Full build is missing the Pro blueprint examples/ directories."
+            exit 1
+          fi
+          echo "✅ Full build verified: Pro blueprint examples/ present"
 
       - name: Assert single text domain in base-only build
         run: |
