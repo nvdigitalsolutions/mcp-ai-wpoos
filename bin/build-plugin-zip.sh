@@ -270,6 +270,8 @@ if [ "$BUILD_BASE" = true ]; then
     # standalone add-on plugins shipped as their own zips (see
     # build-nvoos-content-graph*.yml workflows) and would be dead weight
     # nested inside this package (WordPress cannot activate them from here).
+    # `examples` / `assets/examples` exclusions are root-anchored (mirrors
+    # .gitattributes / .distignore); the addons tree is excluded here anyway.
     rsync -av --quiet . "build/${BASE_SLUG}/" \
         --include 'bin/' \
         --include 'bin/vectorize-image.js' \
@@ -342,9 +344,9 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
         --exclude 'addons' \
-        --exclude 'assets/examples' \
-        --exclude 'assets/csv-templates' \
-        --exclude 'examples' \
+        --exclude '/assets/examples' \
+        --exclude '/assets/csv-templates' \
+        --exclude '/examples' \
         --exclude 'jest.setup.js' \
         --exclude '.zap-rules.tsv' \
         --exclude '*.map' \
@@ -564,7 +566,7 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'Tests' \
             --exclude 'docs' \
             --exclude '*.zip' \
-            --exclude 'assets/examples' \
+            --exclude '/assets/examples' \
             --exclude 'composer.lock' \
             --exclude 'package-lock.json' \
             --exclude 'package.json' \
@@ -764,6 +766,8 @@ if [ "$BUILD_COMBINED" = true ]; then
     # Exclude mcp-ai-wpoos-base.php to prevent duplicate plugin detection in WordPress
     # Exclude plugins/ (nvoos-content-graph, -ai, -ai-platform): standalone
     # add-ons distributed as their own zips, not part of the complete package.
+    # `examples` / `assets/examples` exclusions are root-anchored so the Pro
+    # blueprint library at addons/pro/includes/tools/*/examples/ still ships.
     rsync -av --quiet . "build/${COMBINED_SLUG}/" \
         --include 'bin/' \
         --include 'bin/vectorize-image.js' \
@@ -834,9 +838,9 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '*.zip' \
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
-        --exclude 'assets/examples' \
-        --exclude 'assets/csv-templates' \
-        --exclude 'examples' \
+        --exclude '/assets/examples' \
+        --exclude '/assets/csv-templates' \
+        --exclude '/examples' \
         --exclude '/lib' \
         --exclude 'jest.setup.js' \
         --exclude '.zap-rules.tsv' \
