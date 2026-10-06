@@ -276,6 +276,16 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 				'manifest_path'  => '',
 				'last_refreshed' => 0,
 			),
+			array(
+				'id'             => 'figma-skills',
+				'label'          => 'Figma Agent Skills',
+				'type'           => 'github',
+				'owner'          => 'figma',
+				'repo'           => 'mcp-server-guide',
+				'ref'            => 'main',
+				'manifest_path'  => '',
+				'last_refreshed' => 0,
+			),
 		);
 	}
 
@@ -632,7 +642,8 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 	 * @return array
 	 */
 	protected function normalise_manifest_skills( $skills ) {
-		$out = array();
+		$out  = array();
+		$seen = array(); // Skill name => index of the kept entry in $out.
 		foreach ( $skills as $sk ) {
 			if ( ! is_array( $sk ) ) {
 				continue;
@@ -646,12 +657,24 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 			if ( false !== strpos( $path, '..' ) || 0 === strpos( $path, '/' ) ) {
 				continue;
 			}
-			$out[] = array(
+			$entry = array(
 				'name'        => $name,
 				'description' => isset( $sk['description'] ) ? wp_strip_all_tags( (string) $sk['description'] ) : '',
 				'path'        => $path,
 				'sha'         => isset( $sk['sha'] ) ? sanitize_text_field( (string) $sk['sha'] ) : '',
 			);
+			// Deduplicate by skill name: repos sometimes vendor the same skill
+			// at multiple paths (e.g. mirrored trees). The install slug is the
+			// name, so keep the shortest path (first entry on a tie).
+			if ( isset( $seen[ $name ] ) ) {
+				if ( strlen( $out[ $seen[ $name ] ]['path'] ) <= strlen( $path ) ) {
+					continue;
+				}
+				$out[ $seen[ $name ] ] = $entry;
+				continue;
+			}
+			$seen[ $name ] = count( $out );
+			$out[]         = $entry;
 		}
 		return $out;
 	}

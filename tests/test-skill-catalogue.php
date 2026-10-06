@@ -171,6 +171,7 @@ class WP_MCP_AI_Skill_Catalogue_Test extends WP_Test_REST_TestCase {
 		$ids = wp_list_pluck( $sources, 'id' );
 		$this->assertContains( 'wp-agent-skills', $ids );
 		$this->assertContains( 'anthropics-skills', $ids );
+		$this->assertContains( 'figma-skills', $ids );
 	}
 
 	/**
@@ -290,6 +291,71 @@ class WP_MCP_AI_Skill_Catalogue_Test extends WP_Test_REST_TestCase {
 			$this->assertStringNotContainsString( '..', $sk['path'] );
 			$this->assertNotSame( 0, strncmp( $sk['path'], '/', 1 ) );
 		}
+	}
+
+	/**
+	 * Duplicate skill names collapse to the shortest path entry.
+	 *
+	 * Mirrors real repos (e.g. figma/mcp-server-guide ships `skills/` and
+	 * `skills-figquery/` copies of the same skills). The install slug is the
+	 * skill name, so the manifest must not list colliding duplicates.
+	 */
+	public function test_manifest_deduplicates_duplicate_skill_names() {
+		$svc = WP_MCP_AI_Skill_Catalogue_Service::instance();
+		$svc->save_sources(
+			array(
+				array(
+					'id'    => 'dup',
+					'owner' => 'x',
+					'repo'  => 'y',
+					'ref'   => 'main',
+				),
+			)
+		);
+
+		$this->http_stubs = array(
+			'/x/y/main/catalogue.json' => array(
+				'body' => wp_json_encode(
+					array(
+						'skills' => array(
+							array(
+								'name' => 'figma-use',
+								'path' => 'skills-figquery/figma-use',
+							),
+							array(
+								'name' => 'figma-use',
+								'path' => 'skills/figma-use',
+							),
+							array(
+								'name' => 'tie-a',
+								'path' => 'aa/tie-a',
+							),
+							array(
+								'name' => 'tie-a',
+								'path' => 'bb/tie-a',
+							),
+							array(
+								'name' => 'solo',
+								'path' => 'solo',
+							),
+						),
+					)
+				),
+			),
+		);
+
+		$manifest = $svc->get_manifest( 'dup', true );
+		$this->assertNotWPError( $manifest );
+
+		$by_name = array();
+		foreach ( $manifest['skills'] as $sk ) {
+			$by_name[ $sk['name'] ] = $sk['path'];
+		}
+
+		$this->assertCount( 3, $manifest['skills'] );
+		$this->assertSame( 'skills/figma-use', $by_name['figma-use'] );
+		$this->assertSame( 'aa/tie-a', $by_name['tie-a'] );
+		$this->assertSame( 'solo', $by_name['solo'] );
 	}
 
 	/**

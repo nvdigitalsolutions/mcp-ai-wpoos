@@ -52,6 +52,7 @@ class Test_Skill_Catalogue_Service extends WP_UnitTestCase {
 
 		$ids = wp_list_pluck( $sources, 'id' );
 		$this->assertContains( 'wp-agent-skills', $ids );
+		$this->assertContains( 'figma-skills', $ids );
 
 		foreach ( $sources as $source ) {
 			foreach ( array( 'id', 'label', 'type', 'owner', 'repo', 'ref', 'manifest_path' ) as $key ) {
