@@ -256,6 +256,160 @@ class WP_MCP_AI_Gmail_Read_Tools_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * An empty placeholder plain part must not mask the HTML part content.
+	 *
+	 * Gmail frequently returns zero-size text/plain parts (no data key)
+	 * beside the real text/html content; extraction must fall through.
+	 */
+	public function test_client_extract_body_skips_empty_plain_part() {
+		$payload = $this->message_payload(
+			'msg-1',
+			'thread-1',
+			1700000000000,
+			array(
+				array(
+					'mimeType' => 'text/plain',
+					'headers'  => array(),
+					'body'     => array( 'size' => 0 ),
+				),
+				$this->html_part( '<p>Real content in HTML.</p>' ),
+			)
+		);
+
+		$body = WP_MCP_AI_Pro_Gmail_Client::extract_body( $payload, 'plain' );
+
+		$this->assertStringContainsString( 'Real content in HTML.', $body );
+	}
+
+	/**
+	 * Attachment-only payloads report no_text_parts instead of a silent empty string.
+	 */
+	public function test_client_extract_body_reports_no_text_parts() {
+		$payload = $this->message_payload(
+			'msg-1',
+			'thread-1',
+			1700000000000,
+			array(
+				array(
+					'mimeType' => 'application/pdf',
+					'filename' => 'invoice.pdf',
+					'body'     => array( 'attachmentId' => 'att-1' ),
+				),
+			)
+		);
+
+		$status = '';
+		$body   = WP_MCP_AI_Pro_Gmail_Client::extract_body( $payload, 'plain', $status );
+
+		$this->assertSame( '', $body );
+		$this->assertSame( 'no_text_parts', $status );
+	}
+
+	/**
+	 * Forwarded messages keep their text inside message/rfc822 parts.
+	 */
+	public function test_client_extract_body_recovers_text_from_rfc822_part() {
+		$payload = $this->message_payload(
+			'msg-1',
+			'thread-1',
+			1700000000000,
+			array(
+				array(
+					'mimeType' => 'message/rfc822',
+					'filename' => 'forwarded.eml',
+					'parts'    => array(
+						array(
+							'mimeType' => 'text/plain',
+							'body'     => array(
+								'data' => $this->b64url( 'Forwarded message body.' ),
+							),
+						),
+					),
+				),
+			)
+		);
+
+		$body = WP_MCP_AI_Pro_Gmail_Client::extract_body( $payload, 'plain' );
+
+		$this->assertSame( 'Forwarded message body.', $body );
+	}
+
+	/**
+	 * Base64 transfer-encoded parts decode twice (wire base64 inside base64url data).
+	 */
+	public function test_client_decode_part_body_base64_transfer_encoding() {
+		$inner = 'Plain ASCII body.';
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding fixture data for Gmail API stubs.
+		$wire = base64_encode( $inner );
+
+		$part = array(
+			'mimeType' => 'text/plain',
+			'headers'  => array(
+				array(
+					'name'  => 'Content-Transfer-Encoding',
+					'value' => 'base64',
+				),
+			),
+			'body'     => array(
+				'data' => $this->b64url( $wire ),
+			),
+		);
+
+		$decoded = WP_MCP_AI_Pro_Gmail_Client::decode_part_body( $part );
+
+		$this->assertSame( $inner, $decoded );
+	}
+
+	/**
+	 * Normalised messages expose body_empty_reason when nothing could be extracted.
+	 */
+	public function test_normalize_message_reports_empty_body_reason() {
+		$payload = $this->message_payload(
+			'msg-1',
+			'thread-1',
+			1700000000000,
+			array(
+				array(
+					'mimeType' => 'application/pdf',
+					'filename' => 'invoice.pdf',
+					'body'     => array( 'attachmentId' => 'att-1' ),
+				),
+			)
+		);
+
+		$message = WP_MCP_AI_Pro_Gmail_Client::normalize_message( $payload, 'plain', 4000 );
+
+		$this->assertSame( '', $message['body'] );
+		$this->assertSame( 'no_text_parts', $message['body_source'] );
+		$this->assertSame( 'no_text_parts', $message['body_empty_reason'] );
+	}
+
+	/**
+	 * Normalised messages record the html fallback as the body source.
+	 */
+	public function test_normalize_message_records_html_fallback_source() {
+		$payload = $this->message_payload(
+			'msg-1',
+			'thread-1',
+			1700000000000,
+			array(
+				array(
+					'mimeType' => 'text/plain',
+					'headers'  => array(),
+					'body'     => array( 'size' => 0 ),
+				),
+				$this->html_part( '<p>Only the HTML part has content.</p>' ),
+			)
+		);
+
+		$message = WP_MCP_AI_Pro_Gmail_Client::normalize_message( $payload, 'plain', 4000 );
+
+		$this->assertSame( 'html', $message['body_source'] );
+		$this->assertStringContainsString( 'Only the HTML part has content.', $message['body'] );
+		$this->assertArrayNotHasKey( 'body_empty_reason', $message );
+	}
+
+	/**
 	 * HTML format output must be sanitised: scripts and images removed.
 	 */
 	public function test_get_gmail_message_html_format_is_sanitised() {

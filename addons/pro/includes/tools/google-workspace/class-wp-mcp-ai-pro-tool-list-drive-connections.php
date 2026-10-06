@@ -97,7 +97,7 @@ class WP_MCP_AI_Pro_Tool_List_Drive_Connections implements WP_MCP_AI_Tool_Interf
 
 		$required_capability = apply_filters( 'wp_mcp_ai_list_drive_connections_capability', 'manage_options', $context, $arguments, $this );
 
-		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
+		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via the wp_mcp_ai_list_drive_connections_capability filter (default manage_options).
 			return new WP_Error( 'wp_mcp_ai_drive_forbidden', __( 'You do not have permission to list Google Drive connections.', 'mcp-ai-wpoos-pro' ) );
 		}
 

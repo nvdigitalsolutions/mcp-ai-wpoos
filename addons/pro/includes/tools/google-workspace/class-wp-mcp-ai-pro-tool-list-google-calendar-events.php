@@ -181,7 +181,7 @@ class WP_MCP_AI_Pro_Tool_List_Google_Calendar_Events implements WP_MCP_AI_Tool_I
 			$this
 		);
 
-		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
+		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via the wp_mcp_ai_list_google_calendar_events_capability filter (default manage_options).
 			return new WP_Error( 'wp_mcp_ai_calendar_forbidden', __( 'You do not have permission to read Google Calendar events.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
 

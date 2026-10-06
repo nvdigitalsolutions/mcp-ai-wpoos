@@ -46,7 +46,7 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Message implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Reads a single Gmail message by ID and returns its full body as plain text (default) or sanitised HTML, with sender, subject, labels, timestamp, and attachment names. Use message IDs from search_gmail results. Bodies longer than max_chars are truncated at a word boundary with the truncated flag set.', 'mcp-ai-wpoos-pro' );
+		return __( 'Reads a single Gmail message by ID and returns its full body as plain text (default) or sanitised HTML, with sender, subject, labels, timestamp, and attachment names. Use message IDs from search_gmail results. Extraction falls back across plain/html automatically; body_source records which part supplied the text, and an empty body carries body_empty_reason (e.g. no_text_parts for attachment-only emails). Bodies longer than max_chars are truncated at a word boundary with the truncated flag set.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -59,7 +59,7 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Message implements WP_MCP_AI_Tool_Interface, 
 			'when_to_use'     => __( 'Reading the full body of one known Gmail message by ID, including sender, subject, labels, timestamp, and attachment names.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Finding messages; use search_gmail. Reading whole conversations; use get_gmail_thread. Label or read-state changes; use modify_gmail_message.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'search_gmail', 'get_gmail_thread', 'modify_gmail_message' ),
-			'notes'           => __( 'Bodies truncate at max_chars (100-50000, default 4000) with a truncated flag. format plain is default; html is sanitised.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Bodies truncate at max_chars (100-50000, default 4000) with a truncated flag. format plain is default; html is sanitised. body_source shows which part supplied the text; an empty body carries body_empty_reason (e.g. no_text_parts for attachment-only emails) instead of failing silently.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -126,7 +126,7 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Message implements WP_MCP_AI_Tool_Interface, 
 
 		$required_capability = apply_filters( 'wp_mcp_ai_get_gmail_message_capability', 'manage_options', $context, $arguments, $this );
 
-		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
+		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via the wp_mcp_ai_get_gmail_message_capability filter (default manage_options).
 			return new WP_Error( 'wp_mcp_ai_gmail_forbidden', __( 'You do not have permission to read Gmail messages.', 'mcp-ai-wpoos-pro' ) );
 		}
 

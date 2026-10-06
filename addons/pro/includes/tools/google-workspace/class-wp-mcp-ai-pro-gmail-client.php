@@ -284,9 +284,10 @@ class WP_MCP_AI_Pro_Gmail_Client {
 
 		$headers = isset( $payload['payload']['headers'] ) && is_array( $payload['payload']['headers'] ) ? $payload['payload']['headers'] : array();
 
-		$body  = self::extract_body( $payload, $format );
-		$cut   = self::truncate_text( $body, $max_chars );
-		$names = self::get_attachment_names( $payload );
+		$status = 'empty';
+		$body   = self::extract_body( $payload, $format, $status );
+		$cut    = self::truncate_text( $body, $max_chars );
+		$names  = self::get_attachment_names( $payload );
 
 		$message = array(
 			'id'              => isset( $payload['id'] ) ? (string) $payload['id'] : (string) $fallback_id,
@@ -299,11 +300,20 @@ class WP_MCP_AI_Pro_Gmail_Client {
 			'timestamp'       => self::get_timestamp( $payload ),
 			'body_format'     => $format,
 			'body'            => $cut['text'],
+			'body_source'     => $status,
 			'truncated'       => $cut['truncated'],
 			'body_chars'      => self::mb_strlen_safe( $cut['text'] ),
 			'has_attachments' => count( $names ) > 0,
 			'permalink'       => sprintf( 'https://mail.google.com/mail/u/0/#all/%s', rawurlencode( (string) ( isset( $payload['id'] ) ? $payload['id'] : $fallback_id ) ) ),
 		);
+
+		// When no text could be extracted, tell the caller why instead of
+		// returning a bare empty string: no_text_parts means the message is
+		// attachment-only (or the text lives somewhere unusual), empty_parts
+		// means text parts exist but none decoded to non-empty text.
+		if ( '' === $cut['text'] ) {
+			$message['body_empty_reason'] = ( 'no_text_parts' === $status ) ? 'no_text_parts' : 'empty_parts';
+		}
 
 		if ( $include_attachments ) {
 			$message['attachment_names'] = $names;
@@ -318,70 +328,89 @@ class WP_MCP_AI_Pro_Gmail_Client {
 	/**
 	 * Extract a readable body from a Gmail message payload.
 	 *
-	 * Prefers the text/plain part (plain format) or the text/html part (html
-	 * format) and falls back to the other when missing. HTML is sanitised to a
-	 * narrow allowlist that excludes images, styles, and scripts (no tracking
-	 * pixels). Plain output strips tags and inserts line breaks for blocks.
+	 * Prefers the requested format (text/plain for "plain", text/html for
+	 * "html") and falls back to the other format when the preferred parts are
+	 * missing or decode to empty text — Gmail frequently returns zero-size
+	 * placeholder text/plain parts next to the real text/html content. HTML is
+	 * sanitised to a narrow allowlist that excludes images, styles, and scripts
+	 * (no tracking pixels). Plain output strips tags and inserts line breaks
+	 * for blocks. When nothing decodable exists, the optional $status
+	 * reference reports why: "plain", "html", "no_text_parts", or
+	 * "empty_parts".
 	 *
-	 * @param array  $payload Raw Gmail message payload.
-	 * @param string $format  Body format: "plain" or "html".
+	 * @param array       $payload Raw Gmail message payload.
+	 * @param string      $format  Body format: "plain" or "html".
+	 * @param string|null $status  Optional output: body source or empty reason.
 	 * @return string Extracted body text.
 	 */
-	public static function extract_body( $payload, $format = 'plain' ) {
+	public static function extract_body( $payload, $format = 'plain', &$status = null ) {
 		$format = ( 'html' === $format ) ? 'html' : 'plain';
+		$status = 'empty';
 
 		$root       = isset( $payload['payload'] ) && is_array( $payload['payload'] ) ? $payload['payload'] : array();
 		$candidates = array();
 		self::collect_body_parts( $root, $candidates );
 
-		$plain_part = null;
-		$html_part  = null;
-		foreach ( $candidates as $candidate ) {
-			$mime = isset( $candidate['mimeType'] ) ? strtolower( (string) $candidate['mimeType'] ) : '';
-			if ( 'text/plain' === $mime && null === $plain_part ) {
-				$plain_part = $candidate;
-			}
-			if ( 'text/html' === $mime && null === $html_part ) {
-				$html_part = $candidate;
-			}
+		if ( empty( $candidates ) ) {
+			// Attached/forwarded emails keep their text inside message/rfc822
+			// parts; those are skipped in the main pass because they are
+			// attachments, but when nothing else exists they are the only
+			// place body text can be.
+			self::collect_body_parts( $root, $candidates, true );
 		}
 
-		if ( 'html' === $format ) {
-			$chosen = null !== $html_part ? $html_part : $plain_part;
-		} else {
-			$chosen = null !== $plain_part ? $plain_part : $html_part;
-		}
-		if ( null === $chosen ) {
+		if ( empty( $candidates ) ) {
+			$status = 'no_text_parts';
+
 			return '';
 		}
 
-		$text = self::decode_part_body( $chosen );
-		if ( '' === $text ) {
-			return '';
+		$preferred = ( 'html' === $format ) ? array( 'text/html', 'text/plain' ) : array( 'text/plain', 'text/html' );
+
+		foreach ( $preferred as $mime ) {
+			foreach ( $candidates as $candidate ) {
+				$candidate_mime = isset( $candidate['mimeType'] ) ? strtolower( (string) $candidate['mimeType'] ) : '';
+				if ( $mime !== $candidate_mime ) {
+					continue;
+				}
+
+				$text = self::decode_part_body( $candidate );
+				if ( '' === trim( $text ) ) {
+					continue;
+				}
+
+				$status = ( 'text/html' === $candidate_mime ) ? 'html' : 'plain';
+
+				if ( 'text/html' === $candidate_mime && 'plain' === $format ) {
+					return wp_strip_all_tags( self::html_to_plain_lines( $text ) );
+				}
+				if ( 'text/html' === $candidate_mime && 'html' === $format ) {
+					return wp_kses( $text, self::get_html_allowlist() );
+				}
+
+				return $text;
+			}
 		}
 
-		$mime = isset( $chosen['mimeType'] ) ? strtolower( (string) $chosen['mimeType'] ) : '';
-		if ( 'text/html' === $mime && 'plain' === $format ) {
-			return wp_strip_all_tags( self::html_to_plain_lines( $text ) );
-		}
-		if ( 'text/html' === $mime && 'html' === $format ) {
-			return wp_kses( $text, self::get_html_allowlist() );
-		}
+		$status = 'empty_parts';
 
-		return $text;
+		return '';
 	}
 
 	/**
 	 * Recursively collect body-capable parts from a MIME part tree.
 	 *
-	 * Attached emails (message/rfc822) are deliberately skipped: they are
-	 * attachments, not body candidates.
+	 * Attached emails (message/rfc822) are skipped by default: they are
+	 * attachments, not body candidates. Set $include_rfc822 to also descend
+	 * into them — used as a last resort when the outer message carries no
+	 * text of its own.
 	 *
-	 * @param array $part       MIME part.
-	 * @param array $candidates Accumulator for body-capable parts.
+	 * @param array $part           MIME part.
+	 * @param array $candidates     Accumulator for body-capable parts.
+	 * @param bool  $include_rfc822 Whether to descend into message/rfc822 parts.
 	 * @return void
 	 */
-	private static function collect_body_parts( $part, &$candidates ) {
+	private static function collect_body_parts( $part, &$candidates, $include_rfc822 = false ) {
 		if ( ! is_array( $part ) ) {
 			return;
 		}
@@ -397,16 +426,17 @@ class WP_MCP_AI_Pro_Gmail_Client {
 					continue;
 				}
 				$child_mime = isset( $child['mimeType'] ) ? strtolower( (string) $child['mimeType'] ) : '';
-				if ( 'message/rfc822' === $child_mime ) {
+				if ( 'message/rfc822' === $child_mime && ! $include_rfc822 ) {
 					continue;
 				}
-				self::collect_body_parts( $child, $candidates );
+				self::collect_body_parts( $child, $candidates, $include_rfc822 );
 			}
 		}
 	}
 
 	/**
-	 * Decode a MIME part body (base64url + optional quoted-printable).
+	 * Decode a MIME part body (base64url + optional base64/quoted-printable
+	 * transfer encoding).
 	 *
 	 * @param array $part MIME part with body.data.
 	 * @return string Decoded, UTF-8-safe text (empty on failure).
@@ -425,7 +455,16 @@ class WP_MCP_AI_Pro_Gmail_Client {
 
 		$headers  = isset( $part['headers'] ) && is_array( $part['headers'] ) ? $part['headers'] : array();
 		$encoding = strtolower( self::find_header_value( $headers, 'Content-Transfer-Encoding' ) );
-		if ( 'quoted-printable' === $encoding ) {
+		if ( 'base64' === $encoding ) {
+			// A base64 transfer-encoded part stores base64-ASCII on the wire,
+			// so the first decode yields another base64 layer. Tolerate
+			// whitespace and absent padding on the inner layer.
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding Gmail message-part bodies is the documented API behaviour.
+			$inner = base64_decode( preg_replace( '/\s+/', '', $decoded ) );
+			if ( false !== $inner ) {
+				$decoded = $inner;
+			}
+		} elseif ( 'quoted-printable' === $encoding ) {
 			$decoded = quoted_printable_decode( $decoded );
 		}
 

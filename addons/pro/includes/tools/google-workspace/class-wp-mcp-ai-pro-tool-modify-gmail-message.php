@@ -141,7 +141,7 @@ class WP_MCP_AI_Pro_Tool_Modify_Gmail_Message implements WP_MCP_AI_Tool_Interfac
 
 		$required_capability = apply_filters( 'wp_mcp_ai_modify_gmail_message_capability', 'manage_options', $context, $arguments, $this );
 
-		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
+		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability resolved via the wp_mcp_ai_modify_gmail_message_capability filter (default manage_options).
 			return new WP_Error( 'wp_mcp_ai_gmail_forbidden', __( 'You do not have permission to modify Gmail messages.', 'mcp-ai-wpoos-pro' ) );
 		}
 
