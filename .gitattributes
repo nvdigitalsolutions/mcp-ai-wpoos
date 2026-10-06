@@ -164,9 +164,13 @@ Dockerfile                  export-ignore
 # Documentation (dev-only; readme.txt / README.md / CHANGELOG.md / CONTRIBUTING.md kept)
 docs/                       export-ignore
 
-# Examples (dev/demo material)
-examples/                   export-ignore
-assets/examples/            export-ignore
+# Examples (dev/demo material).
+# Root-anchored deliberately: the Pro blueprint library lives in
+# addons/pro/includes/tools/*/examples/ and MUST ship in release ZIPs —
+# an unanchored `examples/` pattern would strip it from `git archive`
+# (GitHub release ZIPs), leaving the unified Blueprints page empty.
+/examples/                  export-ignore
+/assets/examples/           export-ignore
 
 # Source files (only built bundles ship)
 src/                        export-ignore

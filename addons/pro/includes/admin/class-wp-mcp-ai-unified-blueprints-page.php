@@ -47,6 +47,45 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 	private static $toolkit_labels = array();
 
 	/**
+	 * Map of toolkit directory name → settings keys that enable the toolkit.
+	 *
+	 * Mirrors the availability gate of each toolkit's import tool
+	 * (WP_MCP_AI_Tool_Import_*_Blueprint::is_available()). A toolkit's
+	 * blueprints are only listed when at least one of its keys is truthy in
+	 * `wp_mcp_ai_settings`. Unmapped directories stay visible so toolkits
+	 * without an enable toggle (e.g. email-marketing) are never hidden.
+	 *
+	 * @var array<string,string[]>
+	 */
+	private static $toolkit_enable_keys = array(
+		'ai-tool-builder'         => array( 'enable_ai_tool_builder_toolkit' ),
+		'analytics'               => array( 'enable_analytics_toolkit' ),
+		'architectural-design'    => array( 'enable_architectural_design_toolkit' ),
+		'calendar-booking'        => array( 'enable_calendar_booking_toolkit' ),
+		'chat-channels'           => array( 'enable_chat_channels_toolkit' ),
+		'comic-creation'          => array( 'enable_comic_creation_toolkit' ),
+		'cre-debt'                => array( 'enable_cre_debt_toolkit' ),
+		'crm'                     => array( 'enable_crm_toolkit' ),
+		'dietpi'                  => array( 'enable_dietpi_toolkit' ),
+		'dj-management'           => array( 'enable_dj_management_toolkit' ),
+		'document-generation'     => array( 'enable_document_generation_toolkit' ),
+		'eca-management'          => array( 'enable_eca_management' ),
+		'ecommerce'               => array( 'enable_ecommerce_toolkit' ),
+		'extended-cognition'      => array( 'enable_extended_cognition_toolkit' ),
+		'financial-planning'      => array( 'enable_financial_planner_toolkit' ),
+		'healthcare'              => array( 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_medical_vitals' ),
+		'image-production'        => array( 'enable_image_production_toolkit' ),
+		'law-firm'                => array( 'enable_law_firm_toolkit' ),
+		'media'                   => array( 'enable_media_toolkit' ),
+		'multilingual'            => array( 'enable_multilingual_toolkit' ),
+		'project-management'      => array( 'enable_project_management' ),
+		'regulatory-registration' => array( 'enable_regulatory_registration_toolkit' ),
+		'site-creator-toolkit'    => array( 'enable_site_creator_toolkit' ),
+		'social-media'            => array( 'enable_social_media_toolkit' ),
+		'video-production'        => array( 'enable_video_production_toolkit' ),
+	);
+
+	/**
 	 * Initialise hooks.
 	 */
 	public static function init() {
@@ -240,7 +279,8 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 						<div class="nv-bp-grid">
 							<?php foreach ( $bp_list as $slug => $bp ) : ?>
 								<?php
-								$is_installed = isset( $installed[ $bp['name'] ] );
+								$bp_name      = $bp['name'] ?? $bp['post_title'] ?? '';
+								$is_installed = isset( $installed[ $bp_name ] );
 								$tool_count   = 0;
 								$meta         = $bp['meta'] ?? $bp['meta_input'] ?? array();
 								$tools        = $meta['available_tools'] ?? $meta['_wp_mcp_ai_tools'] ?? array();
@@ -248,9 +288,9 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 									$tool_count = count( $tools );
 								}
 								?>
-								<div class="nv-bp-card" data-blueprint="<?php echo esc_attr( $slug ); ?>" data-toolkit="<?php echo esc_attr( $dir ); ?>" data-name="<?php echo esc_attr( strtolower( $bp['name'] ) ); ?>" data-desc="<?php echo esc_attr( strtolower( $bp['description'] ?? '' ) ); ?>">
+								<div class="nv-bp-card" data-blueprint="<?php echo esc_attr( $slug ); ?>" data-toolkit="<?php echo esc_attr( $dir ); ?>" data-name="<?php echo esc_attr( strtolower( $bp_name ) ); ?>" data-desc="<?php echo esc_attr( strtolower( $bp['description'] ?? '' ) ); ?>">
 									<span class="nv-bp-toolkit-badge"><?php echo esc_html( self::$toolkit_labels[ $dir ] ?? ucfirst( $dir ) ); ?></span>
-									<h3><?php echo esc_html( $bp['name'] ); ?></h3>
+									<h3><?php echo esc_html( $bp_name ); ?></h3>
 									<div class="nv-bp-desc"><?php echo esc_html( $bp['description'] ?? '' ); ?></div>
 									<?php if ( $tool_count > 0 ) : ?>
 										<div class="nv-bp-stats">
@@ -265,7 +305,7 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 									</div>
 									<div class="nv-bp-actions">
 										<?php if ( $is_installed ) : ?>
-											<a href="<?php echo esc_url( admin_url( 'post.php?action=edit&post=' . absint( $installed[ $bp['name'] ] ) ) ); ?>" class="button">
+											<a href="<?php echo esc_url( admin_url( 'post.php?action=edit&post=' . absint( $installed[ $bp_name ] ) ) ); ?>" class="button">
 												<?php esc_html_e( 'View Assistant', 'mcp-ai-wpoos-pro' ); ?>
 											</a>
 										<?php else : ?>
@@ -289,7 +329,7 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 	}
 
 	/**
-	 * Get all blueprints grouped by toolkit directory.
+	 * Get all blueprints for enabled toolkits, grouped by toolkit directory.
 	 *
 	 * @return array<string,array>
 	 */
@@ -310,13 +350,19 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 		$result       = array();
 
 		foreach ( $toolkit_dirs as $toolkit_path ) {
+			$dir_name = basename( $toolkit_path );
+
+			// Only surface blueprints for toolkits the admin has enabled.
+			if ( ! self::is_toolkit_enabled( $dir_name ) ) {
+				continue;
+			}
+
 			$examples_dir = $toolkit_path . '/examples';
 			if ( ! is_dir( $examples_dir ) ) {
 				continue;
 			}
 
-			$dir_name = basename( $toolkit_path );
-			$slugs    = WP_MCP_AI_Blueprint_Installer::list_blueprints( $examples_dir );
+			$slugs = WP_MCP_AI_Blueprint_Installer::list_blueprints( $examples_dir );
 
 			foreach ( $slugs as $slug ) {
 				$data = WP_MCP_AI_Blueprint_Installer::load_blueprint( $examples_dir, $slug );
@@ -328,6 +374,28 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Whether a toolkit's blueprints should be listed.
+	 *
+	 * @param string $dir Toolkit directory name.
+	 * @return bool
+	 */
+	private static function is_toolkit_enabled( $dir ) {
+		if ( ! isset( self::$toolkit_enable_keys[ $dir ] ) ) {
+			return true;
+		}
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		foreach ( self::$toolkit_enable_keys[ $dir ] as $key ) {
+			if ( ! empty( $settings[ $key ] ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -390,6 +458,14 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 			wp_send_json_error( array( 'message' => __( 'Missing parameters.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
+		if ( ! self::is_toolkit_enabled( $toolkit ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'This toolkit is not enabled. Enable it in Settings → NV oOS to install its blueprints.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
 		$examples_dir = self::resolve_examples_dir( $toolkit );
 
 		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
@@ -431,6 +507,14 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 
 		if ( empty( $slug ) || empty( $toolkit ) ) {
 			wp_send_json_error( array( 'message' => __( 'Missing parameters.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		if ( ! self::is_toolkit_enabled( $toolkit ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'This toolkit is not enabled. Enable it in Settings → NV oOS to see its blueprints.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
 		}
 
 		$examples_dir = self::resolve_examples_dir( $toolkit );

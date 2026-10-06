@@ -154,8 +154,12 @@ lib
 mcp-ai-wpoos-base.php
 mcp-diagnostic-debug.php
 test-storage-service.html
-examples
-assets/examples
+
+# Root-level examples only (rsync --exclude-from: unanchored `examples` would
+# also strip addons/pro/includes/tools/*/examples/ — the blueprint library
+# that the unified Blueprints page and per-toolkit import tools depend on).
+/examples
+/assets/examples
 
 # CDN-dependent features (not compliant with WordPress.org)
 # These files load external runtime dependencies from jsdelivr CDN
