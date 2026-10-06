@@ -587,6 +587,14 @@ console — its WebUI API over public HTTPS — see `bin/hermes-mcp-server.js`
 (`HERMES_SYNC_SKILLS_ON_START=1`, default); the standalone CLI
 `bin/sync-skills-to-hermes.js` does the same from cron or a git post-merge hook.
 
+**Verifying a bridge from inside a Zed session:** once any of these bridges
+is connected, the remote tools appear as plain functions in the session tool
+list (never under the server name), and `list_agents_and_models` will NOT
+list the NV oOS assistant — detect enablement by tool-surface signature plus
+a live probe, and re-probe rather than trusting earlier checks. See
+`design-ai-assistant-admin` → "Detecting NV oOS agent enablement from a
+coding-agent session (Zed)".
+
 ---
 
 ## Rate Limiting & Agent Traffic
