@@ -1379,7 +1379,7 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,662 tools documented (~350 base + ~1,312 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,665 tools documented (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
