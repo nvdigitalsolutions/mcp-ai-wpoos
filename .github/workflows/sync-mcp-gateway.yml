@@ -7,12 +7,18 @@ name: Sync mcp-gateway
 # history on every run, which hosting platforms (Cloudways Velocity) did not
 # auto-deploy from — force-pushed refs left their clones on stale commits.
 # A linear mirror main fixes that: every sync is a normal push event.
+#
+# Triggered on both main and alpha-working: alpha-working is the active
+# development line (fast deploys), and main promotions carry the same
+# content after releases. A version guard turns stale promotions into
+# no-ops so an older branch can never regress the public mirror.
 
 on:
   push:
     branches: [main, alpha-working]
     paths:
       - 'addons/mcp-gateway/**'
+  workflow_dispatch:
 
 # Newest run wins. A sync snapshots the full subtree content at HEAD, so an
 # older in-flight sync can never contain anything the newer one lacks.
@@ -44,6 +50,7 @@ jobs:
           MIRROR_URL="https://x-access-token:${TOKEN}@github.com/nvdigitalsolutions/nvoos-mcp-gateway.git"
           MSG="$(git log -1 --format='%s%n%n%b' -- addons/mcp-gateway)"
           TREE="$(git rev-parse HEAD:addons/mcp-gateway)"
+          INCOMING_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('addons/mcp-gateway/package.json','utf8')).version")"
 
           # Retry loop: a concurrent sync (or any direct push) may advance
           # mirror main between our fetch and push. Refetch the tip and
@@ -53,6 +60,17 @@ jobs:
           # on the retry fetch.
           for attempt in 1 2 3 4 5; do
             git fetch --quiet --depth=1 "$MIRROR_URL" main
+
+            # Version guard: never let a stale branch promotion (or an
+            # out-of-order sync run) roll the public mirror backwards.
+            MIRROR_VERSION="$(git show FETCH_HEAD:package.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version" 2>/dev/null || true)"
+            if [ -n "$MIRROR_VERSION" ] \
+              && [ "$INCOMING_VERSION" != "$MIRROR_VERSION" ] \
+              && [ "$(printf '%s\n%s\n' "$INCOMING_VERSION" "$MIRROR_VERSION" | sort -V | head -n1)" = "$INCOMING_VERSION" ]; then
+              echo "::notice::Skipping — incoming ${INCOMING_VERSION} is older than the mirror's ${MIRROR_VERSION} (stale branch promotion)"
+              exit 0
+            fi
+
             SYNC_COMMIT="$(printf '%s\n' "$MSG" | git commit-tree "$TREE" -p FETCH_HEAD)"
             if git push --quiet "$MIRROR_URL" "$SYNC_COMMIT:main"; then
               echo "Pushed ${SYNC_COMMIT} to nvoos-mcp-gateway:main"
