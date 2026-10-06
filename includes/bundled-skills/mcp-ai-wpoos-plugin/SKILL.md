@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.97"
-  plugin-version-tested: "1.1.97"
-  last-updated: "2026-10-05"
+  plugin-version: "1.1.98"
+  plugin-version-tested: "1.1.98"
+  last-updated: "2026-10-06"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -587,6 +587,14 @@ console — its WebUI API over public HTTPS — see `bin/hermes-mcp-server.js`
 (`HERMES_SYNC_SKILLS_ON_START=1`, default); the standalone CLI
 `bin/sync-skills-to-hermes.js` does the same from cron or a git post-merge hook.
 
+**Verifying a bridge from inside a Zed session:** once any of these bridges
+is connected, the remote tools appear as plain functions in the session tool
+list (never under the server name), and `list_agents_and_models` will NOT
+list the NV oOS assistant — detect enablement by tool-surface signature plus
+a live probe, and re-probe rather than trusting earlier checks. See
+`design-ai-assistant-admin` → "Detecting NV oOS agent enablement from a
+coding-agent session (Zed)".
+
 ---
 
 ## Rate Limiting & Agent Traffic
@@ -771,6 +779,21 @@ Import external AI conversation exports into the JetEngine
 Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.1.98 operational quick notes** (full detail in RELEASE-NOTES.md): the
+**Figma-to-Elementor design-to-build pipeline** (PR #6934, Proposals
+057–059 — docs + the new `design-figma-to-elementor` skill, no PHP) — the
+7-stage pipeline (Scope → Read → Plan → Tokenize → Build → Verify →
+Handoff) rides the shipped MCP Apps / OAuth / A2A / per-toolkit MCP server
+machinery (Figma MCP read, Elementor MCP write; drafts only, never
+publish); Phase 3 (demo + Verify seed) deferred on live endpoints. The
+**Unified Blueprints page is fixed** (PR #6933) — root-anchored `examples`
+exclusions stop release builds from stripping all 65 blueprint JSONs, and
+the page now gates blueprints on toolkit enablement. The **gateway mirror
+sync** gains `workflow_dispatch` + a version guard against stale
+promotions (PR #6927). The **dependabot sweep** (PR #6931) resolves 138 of
+166 open npm alerts across 17 trees (28 deferred in issue #6930; dashboard
+dismissed). Counts unchanged: ~352 base + ~1,313 Pro (~1,665 total).
 
 **v1.1.97 operational quick notes** (full detail in RELEASE-NOTES.md): the
 **Proposal 056 harness** (PR #6912, all inert by default) — cascade model

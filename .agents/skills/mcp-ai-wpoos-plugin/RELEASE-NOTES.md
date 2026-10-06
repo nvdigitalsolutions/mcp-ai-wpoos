@@ -1,9 +1,17 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.97)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.98)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## Figma-to-Elementor Pipeline, Unified Blueprints Fixes & the Dependabot Sweep (v1.1.98)
+
+- **Figma-to-Elementor design-to-build pipeline (PR #6934, Proposals 057–059 — docs + skill, no PHP)** — the 7-stage agentic pipeline (Scope → Read → Plan → Tokenize → Build → Verify → Handoff) rides the shipped MCP Apps / OAuth / A2A / per-toolkit MCP server machinery: Figma MCP on the read side, Elementor MCP on the write side, single-assistant and split topologies, normative rules (`get_design_context` first, tokenize-before-build, drafts only, never publish, Figma read-only), and the build-manifest contract + JSON Schema. The new bundled skill `design-figma-to-elementor` ships with it (**coding-time 62 → 63, base bundled 75 → 76**) + the user guide. Proposal 058 (transactional DTCG token import) is the user-facing follow-up; Proposal 057 (SPA toolkit design-file system) is parked as reference; Phase 3 (end-to-end demo + Verify seed test) is deferred on live endpoints (Figma account + Elementor 4.3+ site).
+- **Unified Blueprints fixed (PR #6933)** — (1) the unanchored `examples` exclusions in `.gitattributes`/`.distignore` matched every directory named `examples`, stripping all 65 toolkit blueprint JSONs + the per-toolkit import tools from `git archive`/release ZIPs — both rules are now root-anchored (`/examples`, `/assets/examples`); (2) the page now gates blueprints on toolkit enablement (`$toolkit_enable_keys` mirrors each import tool's `is_available()` gate; `get_all_blueprints_grouped()` skips disabled toolkits; both AJAX handlers reject them; `post_title` card fallback).
+- **Gateway sync dispatch + changelog (PR #6927)** — `sync-mcp-gateway.yml` gains `workflow_dispatch` (manual syncs always possible) + a version guard (syncs skip when the incoming `package.json` is older than the mirror tip — out-of-order runs can never roll `nvoos-mcp-gateway:main` backwards); `addons/mcp-gateway/CHANGELOG.md` tracks 0.1.0 → 0.1.1.
+- **Dependabot sweep (PR #6931)** — 138 of 166 open npm alerts resolved via bounded in-major bumps across 17 trees (axios ≥1.20.0 <2, brace-expansion@^1 ≥1.1.21 <2, source-map-js ≥1.2.2 <2, dompurify, proxy-addr, compression, joi, katex ^0.18.2, moment, simple-git ≥4.0.1 + @simple-git/argv-parser, basic-ftp, postcss-selector-parser@^7, webpack-dev-middleware) with npm-pack evidence for each cross-version move; 28 deferred in issue #6930; dashboard dismissed (138 `fix_started` + 28 `tolerable_risk` → 0 open alerts).
+- **Tool counts** — ~352 base + ~1,313 Pro (~1,665 total; unchanged).
 
 ## NV oOS MCP Bridge npx Package, MCP Gateway Addon & Per-Request Memory Cut (v1.1.96)
 
