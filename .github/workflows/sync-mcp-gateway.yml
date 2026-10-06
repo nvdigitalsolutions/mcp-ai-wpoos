@@ -13,6 +13,7 @@ on:
     branches: [main, alpha-working]
     paths:
       - 'addons/mcp-gateway/**'
+  workflow_dispatch:
 
 # Newest run wins. A sync snapshots the full subtree content at HEAD, so an
 # older in-flight sync can never contain anything the newer one lacks.
