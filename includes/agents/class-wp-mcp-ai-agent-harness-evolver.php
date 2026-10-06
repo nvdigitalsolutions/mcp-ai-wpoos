@@ -90,6 +90,16 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 	const EVOLVED_ROLE_OPTION_PREFIX = 'wp_mcp_ai_evolved_role_';
 
 	/**
+	 * Registry option tracking every evolved-role option name so the
+	 * wp_mcp_ai_agent_roles filter can resolve roles without LIKE-scanning
+	 * wp_options. Stored non-autoloaded; rebuilt lazily from the LIKE scan
+	 * when absent (pre-registry installs).
+	 *
+	 * @since 1.1.98
+	 */
+	const EVOLVED_ROLE_REGISTRY_OPTION = 'wp_mcp_ai_evolved_role_registry';
+
+	/**
 	 * Post meta key for the evolved (refiner-suggested) system prompt.
 	 *
 	 * @since 1.2.0
@@ -997,6 +1007,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 
 				$stored = $this->dry_run ? true : update_option( self::EVOLVED_ROLE_OPTION_PREFIX . $type, $role_data, false );
 				if ( $stored ) {
+					$this->add_role_to_registry( $type );
 					++$created;
 				}
 			}
@@ -1024,6 +1035,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 				$existing['updated_at'] = time();
 				$stored                 = $this->dry_run ? true : update_option( self::EVOLVED_ROLE_OPTION_PREFIX . $type, $existing, false );
 				if ( $stored ) {
+					$this->add_role_to_registry( $type );
 					++$updated;
 				}
 			}
@@ -2489,6 +2501,25 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 		);
 	}
 
+	/**
+	 * Track an evolved role's option name in the role registry (idempotent).
+	 *
+	 * @param string $type Evolved role type.
+	 * @return void
+	 */
+	private function add_role_to_registry( $type ) {
+		$registry = get_option( self::EVOLVED_ROLE_REGISTRY_OPTION, array() );
+		if ( ! is_array( $registry ) ) {
+			$registry = array();
+		}
+
+		$option_name = self::EVOLVED_ROLE_OPTION_PREFIX . $type;
+		if ( ! in_array( $option_name, $registry, true ) ) {
+			$registry[] = $option_name;
+			update_option( self::EVOLVED_ROLE_REGISTRY_OPTION, $registry, false );
+		}
+	}
+
 	// -------------------------------------------------------------------------
 	// Private Helpers — Evolved Role Registration
 	// -------------------------------------------------------------------------
@@ -2496,8 +2527,9 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 	/**
 	 * Register evolved roles via the wp_mcp_ai_agent_roles filter.
 	 *
-	 * Reads all options with the evolved role prefix and makes them available
-	 * through the standard agent roles filter.
+	 * Resolves roles from the dedicated registry option when present (no
+	 * options-table scan); falls back to the bounded LIKE scan on
+	 * pre-registry installs and rebuilds the registry lazily.
 	 *
 	 * @since 1.2.0
 	 *
@@ -2511,20 +2543,46 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 					$roles = array();
 				}
 
-				// Discover all evolved role options. These are stored
-				// non-autoloaded (update_option with $autoload = false), so the
-				// query scans the options table. The cap bounds worst-case
-				// scans on busy sites; a dedicated role-registry option is the
-				// longer-term fix.
-				global $wpdb;
-				$prefix = self::EVOLVED_ROLE_OPTION_PREFIX;
+				$prefix   = self::EVOLVED_ROLE_OPTION_PREFIX;
+				$registry = get_option( self::EVOLVED_ROLE_REGISTRY_OPTION, null );
 
-				$results = $wpdb->get_results(
-					$wpdb->prepare(
-						"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s LIMIT 100",
-						$wpdb->esc_like( $prefix ) . '%'
-					)
-				);
+				if ( is_array( $registry ) ) {
+					// Registry path: read each tracked role option directly.
+					$results = array();
+					foreach ( $registry as $option_name ) {
+						// Defensive: only accept names matching the prefix.
+						if ( ! is_string( $option_name ) || 0 !== strpos( $option_name, $prefix ) ) {
+							continue;
+						}
+						$value = get_option( $option_name, null );
+						if ( null === $value ) {
+							continue;
+						}
+						$results[] = (object) array(
+							'option_name'  => $option_name,
+							'option_value' => $value,
+						);
+					}
+				} else {
+					// Legacy path (pre-registry): bounded LIKE scan, then build
+					// the registry lazily so subsequent requests skip the scan.
+					global $wpdb;
+
+					$results = $wpdb->get_results(
+						$wpdb->prepare(
+							"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s LIMIT 100",
+							$wpdb->esc_like( $prefix ) . '%'
+						)
+					);
+
+					if ( is_array( $results ) ) {
+						$discovered = array();
+						foreach ( $results as $row ) {
+							$discovered[] = $row->option_name;
+						}
+						update_option( self::EVOLVED_ROLE_REGISTRY_OPTION, $discovered, false );
+					}
+				}
 
 				if ( ! is_array( $results ) ) {
 					return $roles;
