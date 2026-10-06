@@ -756,7 +756,7 @@ previous window — the user will usually want it back-dated.
   workflow-builder cross-reference), the proposals-README 056 entry, the
   stale 1.1.95 build-set removal (30 files — 9 + 2 + 19) with the
   ollama-demo.json URL carry, and **no new OI-1 group** (all 30 in-window
-  `@since` tags correctly pre-tagged 1.1.97))
+  `@since` tags correctly pre-tagged 1.1.97). **Post-window:** #6925 (branched off this catch-up and squash-merged — PR #6924 closed as superseded) added the non-force gateway mirror sync + bumped the gateway addon 0.1.0 → 0.1.1; the 0.1.1 pins were reconciled into the current-release surfaces by the `chore/1.1.97-post-gateway-bump-docs` follow-up — when a squash of a catch-up branch lands with an addon bump of its own, sweep the just-written version pins before closing the superseded PR)
 
 Preceding windows:
   `docs/project/plans/v1.1.96-docs-catch-up.md` (the v1.1.96
