@@ -908,6 +908,17 @@ class WP_MCP_AI_Job_Notifier {
 				continue;
 			}
 
+			// Coalesce bursts: at most one scheduled delivery per
+			// (webhook, job, event) within the dedupe window. High-frequency
+			// progress ticks otherwise stack a full-payload single event each
+			// into the autoloaded cron option between cron ticks.
+			$dedupe_ttl = (int) apply_filters( 'wp_mcp_ai_webhook_dedupe_ttl', 5 * MINUTE_IN_SECONDS );
+			$dedupe_key = 'wp_mcp_ai_webhook_dedupe_' . md5( $webhook['url'] . '|' . $job_id . '|' . $event );
+			if ( get_transient( $dedupe_key ) ) {
+				continue;
+			}
+			set_transient( $dedupe_key, 1, $dedupe_ttl );
+
 			// Send webhook asynchronously to avoid blocking.
 			$timestamp = time();
 			$payload   = array(

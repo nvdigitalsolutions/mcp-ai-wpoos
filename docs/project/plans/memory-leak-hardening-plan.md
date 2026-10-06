@@ -157,11 +157,14 @@ extension below.
   canonical paired `_transient_timeout_*` delete; and the webhook registry
   (`wp_mcp_ai_job_webhooks`) now prunes job-scoped entries after 30 days
   (`*` wildcard always preserved).
-- **Recommended follow-ups (not fixed, recorded)**: webhook-dispatch dedupe
-  (payload-signature risk), DLQ `retry_history` ring-buffer + max-retry gate,
-  async-queue stale `running`/`queued` reaper, and two latent calls to
-  nonexistent methods (`WP_MCP_AI_Dead_Letter_Queue::add_to_queue()`,
-  `WP_MCP_AI_Job_Notifier::notify()`).
+- **Follow-ups closed in the same PR (second code commit)**: webhook-dispatch
+  dedupe (transient coalescing gate, `wp_mcp_ai_webhook_dedupe_ttl` filter),
+  DLQ `retry_history` ring-buffer (`MAX_RETRY_HISTORY=10`) + max-retry gate
+  (`wp_mcp_ai_dlq_max_retries`, default 10), the async-queue stale-job reaper
+  (`wp_mcp_ai_job_queue_stale_age_days`, default 7d), and the two latent
+  calls to nonexistent methods replaced with the real APIs
+  (`WP_MCP_AI_Dead_Letter_Queue::add( TYPE_JOB_QUEUE, … )` and
+  `WP_MCP_AI_Job_Notifier::handle_job_completed()`).
 
 ### Verified
 - **PHP**: `php -l` on all 21 changed files — clean. `phpcs
