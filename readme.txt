@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.97
+Stable tag: 1.1.98
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.98 - October 6, 2026 =
+
+Figma-to-Elementor design-to-build pipeline, Unified Blueprints fixes, and dependabot sweep release. Added: the Figma-to-Elementor design-to-build pipeline (#6934, Proposals 057-059) — the 7-stage pipeline (Scope → Read → Plan → Tokenize → Build → Verify → Handoff) riding the shipped MCP Apps / OAuth / A2A / per-toolkit MCP server machinery with Figma MCP on the read side and Elementor MCP on the write side, single-assistant and split topologies, the normative stage rules (get_design_context first, tokenize-before-build, drafts only, never publish, Figma read-only), and the build-manifest contract + JSON Schema; the new bundled skill design-figma-to-elementor (coding-time skills 62 → 63, base bundled 75 → 76) + the user guide; Proposal 058 (transactional DTCG token import) is the user-facing follow-up and Proposal 057 (SPA toolkit design-file system) stays parked as reference; Phase 3 (end-to-end demo + Verify seed test) deferred on live endpoints; the gateway mirror sync gains a workflow_dispatch trigger + a version guard against stale promotions and addons/mcp-gateway/CHANGELOG.md now tracks 0.1.0 → 0.1.1 (#6927). Fixed: the Unified Blueprints page no longer ships empty in release builds — the unanchored examples exclusions that stripped all 65 toolkit blueprint JSONs are now root-anchored — and the page now gates blueprints on toolkit enablement (both AJAX handlers reject disabled toolkits, post_title card fallback) (#6933). Security: 138 of 166 open npm alerts resolved via bounded in-major bumps across 17 trees (axios, brace-expansion@^1, source-map-js, dompurify, proxy-addr, compression, joi, katex, moment, simple-git + argv-parser, basic-ftp, postcss-selector-parser@^7, webpack-dev-middleware; 28 deferred in #6930 — the dashboard is closed out: 138 fix_started + 28 tolerable_risk) (#6931). Tool count: ~352 base + ~1,313 Pro (~1,665 total; unchanged; live registry authoritative). Model catalog: v2026.10.03 (unchanged; 18 providers). Stale build ZIPs removed: the 1.1.96 oOS build set (30 files).
 
 = 1.1.97 - October 6, 2026 =
 

@@ -5,8 +5,8 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.97"
-  plugin-version-tested: "1.1.97"
+  plugin-version: "1.1.98"
+  plugin-version-tested: "1.1.98"
   last-updated: "2026-10-06"
 ---
 
@@ -54,7 +54,7 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (`v1.1.97-docs-catch-up.md`,
+3. **Read the template plans** — the latest executed plan (`v1.1.98-docs-catch-up.md`,
    with `v1.1.96-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
@@ -753,7 +753,29 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.93-docs-catch-up.md`,
   `docs/project/plans/v1.1.94-docs-catch-up.md`,
   `docs/project/plans/v1.1.95-docs-catch-up.md`,
-  `docs/project/plans/v1.1.97-docs-catch-up.md` (latest executed — the v1.1.97
+  `docs/project/plans/v1.1.97-docs-catch-up.md`,
+  `docs/project/plans/v1.1.98-docs-catch-up.md` (latest executed — the v1.1.98
+  pass over PRs #6927–#6934: the Figma-to-Elementor design-to-build pipeline
+  (#6934, Proposals 057–059 — docs + the new `design-figma-to-elementor`
+  skill, coding-time 62 → 63, base bundled 75 → 76, the README repo-map
+  fold-in owed — A5's "the introducing PR may skip the count bookkeeping"
+  rule fired again: AGENTS.md/copilot-instructions/agent-skills.md were
+  updated in-window but the README row was missed; Phase 3 demo/verify
+  deferred on live endpoints), the Unified Blueprints release-build + gating
+  fixes (#6933 — root-anchored `examples` exclusions, toolkit-enablement
+  gating), the gateway sync dispatch + changelog (#6927), the dependabot
+  sweep (#6931 — 138/166 alerts via bounded in-major bumps, 28 deferred in
+  #6930, dashboard dismissed same-day), three skill reconciliations (plugin
+  ×3 + RELEASE-NOTES with the bundled-base sync of #6932's cross-reference,
+  ai-assistant-admin bundled ← Zed — the bundled copy was still the
+  pre-v1.1.79 rewrite, updates, dependabot-loop reference), the
+  proposals-README 057/058/059 entries, the stale 1.1.96 build-set removal
+  (30 files — 9 + 2 + 19) with the ollama-demo.json URL carry, zero
+  tool-count change, and **no new OI-1 group** (zero added `@since` tags
+  in-window))
+
+Preceding windows:
+  `docs/project/plans/v1.1.97-docs-catch-up.md` (the v1.1.97
   pass over PRs #6898–#6914: the ECC-inspired agent-harness enhancements
   (#6912, Proposal 056 — cascade routing on both engines via the lib/core
   `CascadeRouter` + the legacy `WP_MCP_AI_Cascade_Executor` gate with Pro Jev

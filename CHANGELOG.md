@@ -1,5 +1,39 @@
 # oOS – Changelog
 
+## [1.1.98] - 2026-10-06
+
+### Added — Figma-to-Elementor Design-to-Build Pipeline (PR #6934, Proposals 057–059)
+
+- **The agentic design-to-build pipeline ships as documentation, a bundled skill, and a user guide — no PHP changes** (it rides the shipped MCP Apps / OAuth / A2A / per-toolkit MCP server machinery):
+  - **Proposal 059 + implementation plan** — the 7-stage pipeline (Scope → Read → Plan → Tokenize → Build → Verify → Handoff) using Figma MCP on the read side and Elementor MCP on the write side, standalone. Two topologies: single-assistant (both MCP Apps on the NV oOS assistant) and split (Figma MCP on Claude Code/another client, the build manifest handed off via A2A artifacts, the per-toolkit MCP server endpoints, or paste). Normative stage rules (`get_design_context` first, tokenize-before-build, drafts only, never publish, Figma read-only) + the build-manifest contract (schema in `reference/build-manifest.schema.json`) + the design-file contract. Phase 0–2 shipped; **Phase 3 (end-to-end demo + Verify seed test) deferred — needs a Figma account + an Elementor 4.3+ site**.
+  - **Proposal 058** — transactional DTCG token import ("import my Figma design"), the user-facing follow-up that upgrades 059's Tokenize stage.
+  - **Proposal 057** — the Figma design-file system for the SPA toolkit family (23-surface registry, tiered waves) — **parked by decision, kept as reference**.
+  - **New bundled skill `design-figma-to-elementor`** (Zed + `includes/bundled-skills/` mirrors, byte-identical) — 7-stage pipeline rules, build-manifest spec + JSON Schema, design-file contract, wiring recipes, troubleshooting. **Coding-time skills 62 → 63; base bundled skills 75 → 76.** New user guide `docs/user-guides/figma-to-elementor-pipeline.md`. The skill-count bookkeeping landed in-window for AGENTS.md / copilot-instructions / agent-skills.md; the README repo-map row fold-in lands with this catch-up.
+
+### Added — Gateway Sync Dispatch + Changelog (PR #6927)
+
+- **The mirror sync can no longer be silently skipped or run backwards.** The #6925 merge push produced zero workflow runs (its squashed message absorbed a CI-suppression marker from the catch-up commits), so `nvoos-mcp-gateway:main` stayed on the 0.1.0 build. `sync-mcp-gateway.yml` gains a **`workflow_dispatch` trigger** (manual syncs always possible via `gh workflow run`) and a **version guard** — the sync skips with a notice when the incoming `package.json` version is older than the mirror tip's, so a lagging promotion or out-of-order sync run can never roll the public mirror backwards. New `addons/mcp-gateway/CHANGELOG.md` covers **0.1.0 → 0.1.1** (protocol negotiation + non-force mirror sync).
+
+### Fixed — Unified Blueprints Release-Build Stripping & Toolkit Gating (PR #6933)
+
+- **The blueprints page no longer ships empty and no longer lists disabled toolkits** (diagnosed live on console.nvoos.cloud — "No blueprints found" with toolkits enabled, complete bundle v1.1.95):
+  - **Blueprint library stripped from release builds** — the unanchored `examples/` export-ignore (`.gitattributes`) and `examples` distignore (`.distignore`) rules matched **every** directory named `examples` in the tree, removing all 65 toolkit blueprint JSONs + the per-toolkit import tools from `git archive` / release ZIPs. Both rules are now root-anchored (`/examples`, `/assets/examples`) so only the base demo folders are excluded (`bin/strip-dev-files.sh` was already anchored).
+  - **Toolkit enablement gating** — the page listed every toolkit on disk, contradicting its own empty state and the per-toolkit import tools' `is_available()` gates. A new `$toolkit_enable_keys` map mirrors each import tool's availability gate (e.g. `healthcare` → health-wellness/imaging/vitals; `email-marketing` stays always-visible), `get_all_blueprints_grouped()` skips disabled toolkits, both AJAX handlers (`install`, `get_details`) reject disabled toolkits, and card rendering falls back to `post_title` for Healthcare-style JSONs.
+
+### Security & Dependencies — the 14-Package Dependabot Sweep (PR #6931)
+
+- **138 of 166 open npm alerts resolved** via bounded in-major override/dependency bumps across 17 manifest trees (each regenerated with `npm install --package-lock-only`, `--legacy-peer-deps` for `addons/pro`, every tree passing `npm ci --dry-run`): `axios` ≥1.20.0 <2 (51 alerts), `brace-expansion@^1` ≥1.1.21 <2 (41), `source-map-js` ≥1.2.2 <2 (16), `dompurify` ^3.4.16 (8), `proxy-addr` ≥2.0.8 <3 (4), `compression` ≥1.8.2 <2 (3), `joi` (3), `katex` ^0.18.2 (3 — 0.16→0.18 typings byte-identical via npm-pack diff), `moment` ≥2.31.0 <3 (3), `simple-git` ≥4.0.1 <5 + `@simple-git/argv-parser` ≥2.0.1 <3 (4 — API surface identical), `basic-ftp` ≥6.2.1 <7 (1), `postcss-selector-parser@^7` ≥7.1.6 <8, `webpack-dev-middleware` ≥7.4.6 <8. **28 deferred in issue #6930** — postcss-selector-parser 6.x copies (6→7 flips whitespace-preservation defaults), sentry-pinned `@opentelemetry/instrumentation-*` (cross-minor 0.x bumps), react-cosmos `webpack-dev-middleware@6.1.3` (6→7 major), and the 11 no-patch advisories (`sprintf-js`, `braces`, `http-cache-semantics`). **Dashboard close-out executed same-day: 138 dismissed `fix_started` (PR #6931) + 28 `tolerable_risk` (#6930) — 0 open alerts** (main clears once alpha-working merges).
+
+### Docs
+
+- **PR #6929** — PR-hygiene + sync-recovery lessons (cut branches from a fresh `origin/alpha-working`, always base PRs against `alpha-working`, keep CI-skip markers out of commit messages — with recovery steps) in the `mcp-ai-wpoos-updates` skill + `docs/operations/deployment/mcp-gateway-velocity-setup.md` §7 troubleshooting.
+- **PR #6932** — NV oOS agent-enablement detection from a coding-agent session (Zed): new section in the `design-ai-assistant-admin` skill (two registries, tool-group signatures, detection procedure, verified example) + the `mcp-ai-wpoos-plugin` cross-reference.
+- **PR #6934** — the proposals 057–059 docs, the new `design-figma-to-elementor` skill (×2 mirrors + `reference/` contract files), and the user guide (listed above).
+
+### Versioning
+
+Bumped to **1.1.98** across all version-bearing files. Pro addon: 1.1.98. **MCP Gateway: 0.1.1** (unchanged — #6927 adds dispatch safety + the addon changelog on the shipped line). **nvoos-mcp-bridge: 0.1.0-alpha.3** (unchanged). Media Worker: **3.4.0** (unchanged). Media Studio: **0.6.1** (unchanged). SaaS Controller: **0.3.0** (unchanged). Design System addon: **0.3.0** (unchanged). ChatGPT Plugin addon: **0.1.0** (unchanged). Fleet Operator: **1.0.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — zero `plugins/` diff in-window). Checkout API: **0.1.2** (unchanged). Docs Hub addon: **0.5.1** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Model catalog: **v2026.10.03** (unchanged — zero catalog diff in-window). Tool count: **~352 base + ~1,313 Pro (~1,665 total — unchanged)** — zero registry-map diff in-window (#6933 is a Pro admin-page fix; #6934/#6929/#6932 are docs/skills; #6931 is lockfile-only; live registry authoritative). Provider count: **18** chat providers (unchanged). Addon count: **30** (unchanged). Bundled skills: **76** base + **41** Pro (**75 → 76** — the new `design-figma-to-elementor` skill, #6934). Coding-time agent skills: **63** (**62 → 63** — the same skill; the README repo-map row fold-in lands here). Stale build ZIPs removed: the 1.1.96 oOS set (9 root + 2 optional-components + 19 toolkit-addons = 30 files).
+
 ## [1.1.97] - 2026-10-06
 
 ### Added — ECC-Inspired Agent-Harness Enhancements (PR #6912, Proposal 056)

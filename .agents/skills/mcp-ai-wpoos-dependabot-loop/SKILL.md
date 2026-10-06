@@ -337,6 +337,19 @@ vulnerable until alpha-working merges — call that out and recommend the merge.
 
 ## References
 
+- PR #6931 — executed 2026-10-06 sweep: 14 packages bumped via **bounded
+  in-major overrides** across 17 manifest trees (axios ≥1.20.0 <2, brace-expansion@^1
+  ≥1.1.21 <2, source-map-js ≥1.2.2 <2, dompurify, proxy-addr ≥2.0.8 <3,
+  compression ≥1.8.2 <2, joi, katex ^0.18.2, moment ≥2.31.0 <3, simple-git
+  ≥4.0.1 <5 + @simple-git/argv-parser ≥2.0.1 <3, basic-ftp ≥6.2.1 <7,
+  postcss-selector-parser@^7 ≥7.1.6 <8, webpack-dev-middleware ≥7.4.6 <8) —
+  **138 of 166 open alerts**; every cross-version move npm-pack-diffed.
+  **28 deferred in issue #6930** — postcss-selector-parser 6.x copies
+  (6→7 flips whitespace defaults), sentry-pinned @opentelemetry/instrumentation-*
+  (cross-minor 0.x), react-cosmos webpack-dev-middleware 6.1.3 (6→7 major),
+  and 11 no-patch advisories (sprintf-js, braces, http-cache-semantics).
+  Same-day dashboard close-out: 138 dismissed `fix_started` + 28
+  `tolerable_risk` → 0 open alerts (main clears once alpha-working merges).
 - PR #6817 — executed 2026-09-30 sweep (js-yaml + webpack-dev-middleware).
 - PR #6850 — merged 2026-10-02: jsdom's undici 7.29.0 → 7.30.0 in 8 addons
   (fixes the 2026-09-29 undici advisory family on `alpha-working`; clears
