@@ -27,6 +27,14 @@ RUN apk add --no-cache \
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
+# Memory guardrails: bound the V8 old-space heap (set at build via
+# NODE_MAX_OLD_SPACE_SIZE, or override NODE_OPTIONS wholesale at runtime)
+# and capture heap snapshots just before an OOM for post-mortem diagnosis.
+ENV NODE_MAX_OLD_SPACE_SIZE=2048
+ENV NODE_OPTIONS="--max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE} --heapsnapshot-near-heap-limit=2"
+ENV DIAGNOSTIC_DIR=/tmp/heapsnapshots
+RUN mkdir -p /tmp/heapsnapshots && chown node:node /tmp/heapsnapshots
+
 WORKDIR /app
 
 # Install dependencies (native modules like canvas need build tools above)

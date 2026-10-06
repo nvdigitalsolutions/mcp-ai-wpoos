@@ -1513,11 +1513,13 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		// Count total stored contexts.
 		$total_contexts = 0;
+		// Dashboard summary only: cap the scan so a large context-index
+		// transient population cannot blow out memory while rendering.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached with transient API above.
 		$transients = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value FROM {$wpdb->options} 
-				WHERE option_name LIKE %s",
+				WHERE option_name LIKE %s LIMIT 500",
 				$wpdb->esc_like( '_transient_mcp_ai_ctx_index_' ) . '%'
 			)
 		);

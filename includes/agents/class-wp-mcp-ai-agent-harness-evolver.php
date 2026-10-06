@@ -2511,13 +2511,17 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 					$roles = array();
 				}
 
-				// Discover all evolved role options.
+				// Discover all evolved role options. These are stored
+				// non-autoloaded (update_option with $autoload = false), so the
+				// query scans the options table. The cap bounds worst-case
+				// scans on busy sites; a dedicated role-registry option is the
+				// longer-term fix.
 				global $wpdb;
 				$prefix = self::EVOLVED_ROLE_OPTION_PREFIX;
 
 				$results = $wpdb->get_results(
 					$wpdb->prepare(
-						"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
+						"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s LIMIT 100",
 						$wpdb->esc_like( $prefix ) . '%'
 					)
 				);

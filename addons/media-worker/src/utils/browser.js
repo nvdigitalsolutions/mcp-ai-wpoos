@@ -9,7 +9,8 @@
  *   - Requests made by rendered pages are intercepted and re-validated
  *     (resolved IPs must be publicly routable) — a browser-level SSRF guard.
  *   - Downloads from rendered pages are denied.
- *   - Concurrent browser launches are capped to bound memory usage.
+ *   - Concurrent *live* browser instances are capped (slot held until the
+ *     browser disconnects) to bound memory usage.
  *
  * Constrained local environments may set ALLOW_NO_SANDBOX=1 to fall back to
  * --no-sandbox when the sandbox cannot start. Never set it on a publicly
@@ -73,8 +74,9 @@ export async function launchHardenedBrowser() {
 			executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
 			args,
 		};
+		let browser;
 		try {
-			return await puppeteer.launch( options );
+			browser = await puppeteer.launch( options );
 		} catch ( err ) {
 			if ( '1' === process.env.ALLOW_NO_SANDBOX && /sandbox/i.test( err.message ) ) {
 				console.warn(
@@ -82,15 +84,23 @@ export async function launchHardenedBrowser() {
 					'--no-sandbox because ALLOW_NO_SANDBOX=1. Do NOT use this on ' +
 					'publicly reachable deployments.'
 				);
-				return await puppeteer.launch( {
+				browser = await puppeteer.launch( {
 					...options,
 					args: [ ...options.args, '--no-sandbox', '--disable-setuid-sandbox' ],
 				} );
+			} else {
+				throw err;
 			}
-			throw err;
 		}
-	} finally {
+		// Hold the concurrency slot for the browser's entire lifetime:
+		// the limiter must bound *alive* Chromium processes (100s of MB
+		// each), not just concurrent launches. Callers close browsers in
+		// finally blocks, which fires 'disconnected' and releases the slot.
+		browser.once( 'disconnected', () => release() );
+		return browser;
+	} catch ( err ) {
 		release();
+		throw err;
 	}
 }
 

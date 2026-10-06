@@ -81,6 +81,31 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	const SAME_SESSION_WINDOW_MINUTES = 5;
 
 	/**
+	 * Default row cap for member history reads when no limit is supplied.
+	 */
+	const DEFAULT_LIMIT = 500;
+
+	/**
+	 * Retention sweep cron hook.
+	 */
+	const CRON_HOOK = 'wp_mcp_ai_vitals_log_retention_sweep';
+
+	/**
+	 * Vitals rows older than this many days are pruned by the daily sweep.
+	 */
+	const RETENTION_DAYS = 365;
+
+	/**
+	 * Rows deleted per batch during the retention sweep.
+	 */
+	const PRUNE_BATCH_SIZE = 1000;
+
+	/**
+	 * Maximum batches processed per sweep run.
+	 */
+	const PRUNE_MAX_BATCHES = 50;
+
+	/**
 	 * Hook into JetEngine to provision the content type.
 	 */
 	public static function bootstrap() {
@@ -95,6 +120,9 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_columns_v4' ), 104 );
 		// v5 migration: ensure hemoglobin column is present (ADD if missing, MODIFY to DECIMAL).
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_columns_v5' ), 105 );
+		// Daily retention sweep: prune vitals rows older than a year.
+		add_action( self::CRON_HOOK, array( __CLASS__, 'run_retention_sweep' ) );
+		add_action( 'init', array( __CLASS__, 'maybe_schedule_retention' ), 106 );
 	}
 
 	/**
@@ -700,7 +728,8 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	 * @param string $after_date Optional ISO date string 'YYYY-MM-DD'. Only
 	 *                           records with measurement_date >= this value are
 	 *                           returned.
-	 * @param int    $limit      Maximum number of rows to return (0 = all).
+	 * @param int    $limit      Maximum number of rows to return (0 = capped
+	 *                           default of DEFAULT_LIMIT).
 	 * @return array             Array of CCT row objects, newest first.
 	 */
 	public static function get_for_member( $member_id, $after_date = '', $limit = 0 ) {
@@ -709,26 +738,24 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			return array();
 		}
 
+		// Bound unbounded reads: without this cap a member with years of
+		// vitals rows would be loaded in full on every history request.
+		$limit = absint( $limit );
+		if ( $limit <= 0 ) {
+			$limit = self::DEFAULT_LIMIT;
+		}
+
 		global $wpdb;
 		$table = self::get_table_name();
 
 		if ( $after_date ) {
 			$after_date = sanitize_text_field( $after_date );
-			if ( $limit > 0 ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $after_date, $limit ) );
-			}
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC", $member_id, $after_date ) );
-		}
-
-		if ( $limit > 0 ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $limit ) );
+			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $after_date, $limit ) );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC", $member_id ) );
+		return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $limit ) );
 	}
 
 	/**
@@ -780,6 +807,40 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		$result = $wpdb->delete( self::get_table_name(), array( '_ID' => $item_id ), array( '%d' ) );
 
 		return false !== $result && $result > 0;
+	}
+
+	/**
+	 * Schedule the daily retention sweep (idempotent).
+	 */
+	public static function maybe_schedule_retention() {
+		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CRON_HOOK );
+		}
+	}
+
+	/**
+	 * Daily retention sweep: delete vitals rows older than RETENTION_DAYS.
+	 *
+	 * Deletes in bounded batches so a single sweep never issues one huge DELETE.
+	 */
+	public static function run_retention_sweep() {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// logged_at is stored as a MySQL datetime (YYYY-MM-DD HH:MM:SS).
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( self::RETENTION_DAYS * DAY_IN_SECONDS ) );
+
+		for ( $i = 0; $i < self::PRUNE_MAX_BATCHES; $i++ ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$deleted = $wpdb->query( $wpdb->prepare( "DELETE FROM `{$table}` WHERE logged_at < %s LIMIT %d", $cutoff, self::PRUNE_BATCH_SIZE ) );
+			if ( ! $deleted || $deleted < self::PRUNE_BATCH_SIZE ) {
+				break;
+			}
+		}
 	}
 
 	/**

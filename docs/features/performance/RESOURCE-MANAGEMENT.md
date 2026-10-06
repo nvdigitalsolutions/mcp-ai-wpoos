@@ -544,3 +544,32 @@ Potential future improvements to the resource management system:
 3. **Multi-tier Caching**: Cache responses based on resource tier
 4. **Resource Pooling**: Share resources across multiple concurrent requests
 5. **Admin UI**: Provide settings page for manual tier override and monitoring
+
+## Memory Budgets & Leak Prevention (2026-10 hardening)
+
+Beyond per-request budgets, the plugin enforces storage-level memory discipline.
+See [memory-leak-hardening-plan.md](../../../project/plans/memory-leak-hardening-plan.md)
+for the full audit; the rules below are the standing conventions.
+
+1. **Autoloaded options** stay scalar-only; append-style buffers (logger, sync
+   logs, schedule history, health reminders, semantic-cache registry,
+   chat-response-cache registry, tool-load-monitor data) are always stored
+   **non-autoloaded** and carry explicit caps.
+2. **Direct DB reads are bounded**: keyset/LIMIT paging is mandatory for
+   transcript, provenance, contacts, orders, vitals, and execution-history
+   scans. New code must not `SELECT *` a growable table without a LIMIT.
+3. **Retention crons** (daily, `wp_next_scheduled`-guarded) prune token
+   usage, transcripts, provenance, vitals logs, and execution history.
+4. **High-churn caches use per-entry transients with TTLs** (semantic cache,
+   chat response cache) rather than single large option blobs, with FIFO-capped
+   registries so evicted keys are actively deleted instead of relying on lazy
+   transient expiry alone.
+5. **Action Scheduler jobs are deduped** (`as_has_scheduled_action` against the
+   exact hook + args) before enqueue, especially for at-least-once sources like
+   Gmail Pub/Sub, and `wp_schedule_event`/`wp_schedule_single_event` calls are
+   guarded with `wp_next_scheduled`.
+6. **Media worker guardrails**: V8 heap capped via `NODE_OPTIONS
+   --max-old-space-size` (env-tunable in `addons/media-worker/Dockerfile`),
+   heap snapshots taken on near-OOM (`--heapsnapshot-near-heap-limit=2`),
+   graceful shutdown disconnects Redis + SMTP and stops queue loops, and
+   `/api/health` exposes `process.memoryUsage()`.

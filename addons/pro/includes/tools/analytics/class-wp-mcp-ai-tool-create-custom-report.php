@@ -457,6 +457,10 @@ class WP_MCP_AI_Tool_Create_Custom_Report implements WP_MCP_AI_Tool_Interface, W
 
 		$interval = isset( $intervals[ $schedule ] ) ? $intervals[ $schedule ] : WEEK_IN_SECONDS;
 
-		wp_schedule_event( time() + $interval, $schedule, 'wp_mcp_ai_send_report', array( $report_id ) );
+		// Guard against duplicate recurring events: repeated tool calls with the
+		// same report must not stack identical entries in the cron option.
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_send_report', array( $report_id ) ) ) {
+			wp_schedule_event( time() + $interval, $schedule, 'wp_mcp_ai_send_report', array( $report_id ) );
+		}
 	}
 }

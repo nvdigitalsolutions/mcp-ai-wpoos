@@ -483,8 +483,9 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	protected function get_conversations_merged( $page, $per_page, $channel, $crm_status, $search, $conversation_type = '' ) {
-		// Fetch all matching contacts from CCT (unpaginated so we can merge).
-		$cct_items = $this->get_conversations_items_from_cct( $channel, $crm_status, $search, $conversation_type );
+		// Fetch the requested page of contacts from CCT (bounded so a single
+		// request never loads the whole conversations table).
+		$cct_items = $this->get_conversations_items_from_cct( $channel, $crm_status, $search, $conversation_type, $page, $per_page );
 
 		// Build a lookup set of channel+contact_id+connection keys already in CCT.
 		$cct_keys = array();
@@ -527,17 +528,24 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Retrieve all matching conversation items from CCT (no pagination).
+	 * Retrieve a page of matching conversation items from CCT.
 	 *
 	 * @param string $channel           Optional channel filter.
 	 * @param string $crm_status        Optional CRM status filter.
 	 * @param string $search            Optional search term.
 	 * @param string $conversation_type Optional conversation type filter.
+	 * @param int    $page              Page number (1-based).
+	 * @param int    $per_page          Items per page (default 100, max 500).
 	 * @return array[] Formatted contact items.
 	 */
-	protected function get_conversations_items_from_cct( $channel, $crm_status, $search, $conversation_type = '' ) {
+	protected function get_conversations_items_from_cct( $channel, $crm_status, $search, $conversation_type = '', $page = 1, $per_page = 100 ) {
 		global $wpdb;
 		$table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+
+		// Bound the page size so an unbounded request cannot return the full table.
+		$page     = max( 1, absint( $page ) );
+		$per_page = min( 500, max( 1, absint( $per_page ) ) );
+		$offset   = ( $page - 1 ) * $per_page;
 
 		$where  = array( 'cct_status = %s' );
 		$values = array( 'publish' );
@@ -566,9 +574,11 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		}
 
 		$where_sql = implode( ' AND ', $where );
+		$values[]  = $per_page;
+		$values[]  = $offset;
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE {$where_sql} ORDER BY last_message_at DESC", $values ), ARRAY_A );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE {$where_sql} ORDER BY last_message_at DESC LIMIT %d OFFSET %d", $values ), ARRAY_A );
 
 		$items = array();
 		foreach ( (array) $rows as $row ) {

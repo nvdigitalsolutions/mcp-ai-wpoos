@@ -565,7 +565,11 @@ export class WorkflowExecutor {
 	async waitForResume() {
 		return new Promise( ( resolve ) => {
 			const checkInterval = setInterval( () => {
-				if ( ! this.state.pauseRequested ) {
+				// Also stop waiting on cancel: the caller's cancel check right
+				// after this promise settles throws the cancellation error, so
+				// a paused-and-cancelled run can no longer pin this interval
+				// (and an unsettled promise) forever.
+				if ( ! this.state.pauseRequested || this.state.cancelRequested ) {
 					clearInterval( checkInterval );
 					resolve();
 				}

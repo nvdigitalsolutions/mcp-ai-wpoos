@@ -20,11 +20,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Manages real-time notifications for async jobs via SSE and webhooks.
  */
 class WP_MCP_AI_Job_Notifier {
-	const CACHE_PREFIX         = 'wp_mcp_ai_job_status_';
-	const CACHE_DURATION       = 3600; // 1 hour.
-	const WEBHOOK_OPTION_KEY   = 'wp_mcp_ai_job_webhooks';
-	const MAX_WEBHOOKS_PER_JOB = 10;
-	const MAX_STEPS_PER_JOB    = 50;
+	const CACHE_PREFIX           = 'wp_mcp_ai_job_status_';
+	const CACHE_DURATION         = 3600; // 1 hour.
+	const WEBHOOK_OPTION_KEY     = 'wp_mcp_ai_job_webhooks';
+	const MAX_WEBHOOKS_PER_JOB   = 10;
+	const MAX_STEPS_PER_JOB      = 50;
+	const WEBHOOK_RETENTION_DAYS = 30;
 
 	/**
 	 * Initialize hooks and filters.
@@ -1066,16 +1067,55 @@ class WP_MCP_AI_Job_Notifier {
 	public static function cleanup_expired_jobs() {
 		global $wpdb;
 
-		// Clean up old transients.
-		$pattern = $wpdb->esc_like( '_transient_' . self::CACHE_PREFIX ) . '%';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
+		// Delete expired job-status transients together with their timeout rows.
+		// Matching on the timeout row's timestamp means only genuinely expired
+		// entries are removed. The previous query compared the value row's
+		// serialized blob against an integer, which matched every row: fresh
+		// statuses were wiped hourly and their timeout rows orphaned.
+		$timeout_pattern = $wpdb->esc_like( '_transient_timeout_' . self::CACHE_PREFIX ) . '%';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on the options table; WP_Query does not cover transient expiry sweeps.
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s AND option_value < %d",
-				$pattern,
-				time() - self::CACHE_DURATION
+				"DELETE a, b FROM {$wpdb->options} a, {$wpdb->options} b
+				WHERE b.option_name LIKE %s
+				AND a.option_name = CONCAT( '_transient_', SUBSTRING( b.option_name, CHAR_LENGTH( '_transient_timeout_' ) + 1 ) )
+				AND b.option_value < %d",
+				$timeout_pattern,
+				time()
 			)
 		);
+
+		// Prune stale job-scoped webhook registrations. Job IDs are unique per
+		// run, so without pruning this registry grows without bound as jobs
+		// accumulate. The wildcard ('*') registration is long-lived and is
+		// always preserved.
+		$webhooks = get_option( self::WEBHOOK_OPTION_KEY, array() );
+		if ( ! empty( $webhooks ) && is_array( $webhooks ) ) {
+			$cutoff = time() - ( self::WEBHOOK_RETENTION_DAYS * DAY_IN_SECONDS );
+			$dirty  = false;
+
+			foreach ( $webhooks as $key => $registrations ) {
+				if ( '*' === $key || ! is_array( $registrations ) ) {
+					continue;
+				}
+
+				$latest = 0;
+				foreach ( $registrations as $registration ) {
+					if ( ! empty( $registration['created_at'] ) ) {
+						$latest = max( $latest, strtotime( $registration['created_at'] ) );
+					}
+				}
+
+				if ( 0 === $latest || $latest < $cutoff ) {
+					unset( $webhooks[ $key ] );
+					$dirty = true;
+				}
+			}
+
+			if ( $dirty ) {
+				update_option( self::WEBHOOK_OPTION_KEY, $webhooks );
+			}
+		}
 	}
 
 	/**

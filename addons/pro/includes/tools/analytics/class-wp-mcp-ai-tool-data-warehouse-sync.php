@@ -30,6 +30,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Data_Warehouse_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
 	/**
+	 * Rows fetched per chunk when paging through date-range sync queries.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @var int
+	 */
+	const SYNC_CHUNK_SIZE = 500;
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.1.0
@@ -253,16 +262,29 @@ class WP_MCP_AI_Tool_Data_Warehouse_Sync implements WP_MCP_AI_Tool_Interface, WP
 		switch ( $data_type ) {
 			case 'orders':
 				if ( class_exists( 'WooCommerce' ) ) {
-					$data = $wpdb->get_results(
-						$wpdb->prepare(
-							"SELECT * FROM {$wpdb->posts} 
-							WHERE post_type = 'shop_order' 
-							AND post_date >= %s AND post_date <= %s",
-							$start_date,
-							$end_date
-						),
-						ARRAY_A
-					);
+					$data   = array();
+					$offset = 0;
+					// Page through the result in bounded chunks so a wide date
+					// range never loads every order into memory at once.
+					do {
+						$chunk = $wpdb->get_results(
+							$wpdb->prepare(
+								"SELECT * FROM {$wpdb->posts}
+								WHERE post_type = 'shop_order'
+								AND post_date >= %s AND post_date <= %s
+								ORDER BY ID
+								LIMIT %d OFFSET %d",
+								$start_date,
+								$end_date,
+								self::SYNC_CHUNK_SIZE,
+								$offset
+							),
+							ARRAY_A
+						);
+						$data         = array_merge( $data, $chunk );
+						$offset       = $offset + self::SYNC_CHUNK_SIZE;
+						$chunk_count  = count( $chunk );
+					} while ( $chunk_count >= self::SYNC_CHUNK_SIZE );
 				}
 				break;
 
@@ -270,16 +292,29 @@ class WP_MCP_AI_Tool_Data_Warehouse_Sync implements WP_MCP_AI_Tool_Interface, WP
 				$table_name = $wpdb->prefix . 'mcp_ai_custom_metrics';
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) === $table_name ) {
-					$data = $wpdb->get_results(
-						$wpdb->prepare(
-							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic table name
-							"SELECT * FROM {$table_name}
-							WHERE recorded_at >= %s AND recorded_at <= %s",
-							$start_date,
-							$end_date
-						),
-						ARRAY_A
-					);
+					$data   = array();
+					$offset = 0;
+					// Page through the result in bounded chunks (id is the
+					// AUTO_INCREMENT primary key, so ordering is stable).
+					do {
+						$chunk = $wpdb->get_results(
+							$wpdb->prepare(
+								// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic table name
+								"SELECT * FROM {$table_name}
+								WHERE recorded_at >= %s AND recorded_at <= %s
+								ORDER BY id
+								LIMIT %d OFFSET %d",
+								$start_date,
+								$end_date,
+								self::SYNC_CHUNK_SIZE,
+								$offset
+							),
+							ARRAY_A
+						);
+						$data         = array_merge( $data, $chunk );
+						$offset       = $offset + self::SYNC_CHUNK_SIZE;
+						$chunk_count  = count( $chunk );
+					} while ( $chunk_count >= self::SYNC_CHUNK_SIZE );
 				}
 				break;
 

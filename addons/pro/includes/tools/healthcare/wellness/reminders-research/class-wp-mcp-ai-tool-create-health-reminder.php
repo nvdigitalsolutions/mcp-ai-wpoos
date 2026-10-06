@@ -19,6 +19,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	/**
+	 * Maximum number of reminders retained in the wp_mcp_ai_health_reminders
+	 * option. The array grows one entry per reminder, so it is capped to keep
+	 * the (non-autoloaded) option bounded.
+	 */
+	const MAX_STORED_REMINDERS = 200;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -284,18 +291,28 @@ class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface,
 		// Store reminder in options table (transient-like storage).
 		$all_reminders                 = get_option( 'wp_mcp_ai_health_reminders', array() );
 		$all_reminders[ $reminder_id ] = $reminder_data;
-		update_option( 'wp_mcp_ai_health_reminders', $all_reminders );
+
+		// Keep the stored array bounded: retain only the most recent reminders.
+		if ( count( $all_reminders ) > self::MAX_STORED_REMINDERS ) {
+			$all_reminders = array_slice( $all_reminders, -self::MAX_STORED_REMINDERS, null, true );
+		}
+
+		update_option( 'wp_mcp_ai_health_reminders', $all_reminders, false );
 
 		// Schedule WordPress cron job for notification.
 		$hook_name = 'wp_mcp_ai_health_reminder_notification';
-		wp_schedule_single_event(
-			$notification_timestamp,
-			$hook_name,
-			array(
-				'reminder_id'   => $reminder_id,
-				'reminder_data' => $reminder_data,
-			)
+		$cron_args = array(
+			'reminder_id'   => $reminder_id,
+			'reminder_data' => $reminder_data,
 		);
+		// Guard against duplicate single events for the same reminder.
+		if ( ! wp_next_scheduled( $hook_name, $cron_args ) ) {
+			wp_schedule_single_event(
+				$notification_timestamp,
+				$hook_name,
+				$cron_args
+			);
+		}
 
 		// If recurring, schedule the next occurrence.
 		if ( $is_recurring && $recurrence_rule ) {
@@ -304,7 +321,7 @@ class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface,
 				// Store recurring schedule info.
 				$reminder_data['next_occurrence'] = $next_occurrence;
 				$all_reminders[ $reminder_id ]    = $reminder_data;
-				update_option( 'wp_mcp_ai_health_reminders', $all_reminders );
+				update_option( 'wp_mcp_ai_health_reminders', $all_reminders, false );
 			}
 		}
 

@@ -20,6 +20,31 @@ class WP_MCP_AI_Execution_History_CCT {
 	const SLUG = 'mcp_execution_history';
 
 	/**
+	 * Default row cap for session-history reads when no limit is supplied.
+	 */
+	const DEFAULT_QUERY_LIMIT = 500;
+
+	/**
+	 * Retention sweep cron hook.
+	 */
+	const CRON_HOOK = 'wp_mcp_ai_execution_history_retention_sweep';
+
+	/**
+	 * Execution-history rows older than this many days are pruned daily.
+	 */
+	const RETENTION_DAYS = 90;
+
+	/**
+	 * Rows deleted per batch during the retention sweep.
+	 */
+	const PRUNE_BATCH_SIZE = 1000;
+
+	/**
+	 * Maximum batches processed per sweep run.
+	 */
+	const PRUNE_MAX_BATCHES = 50;
+
+	/**
 	 * Base ID for meta field identifiers.
 	 * Using 32000 range to avoid conflicts with other CCT fields.
 	 */
@@ -47,6 +72,10 @@ class WP_MCP_AI_Execution_History_CCT {
 
 		// Ensure data stores module is enabled when JetEngine is active.
 		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
+
+		// Daily retention sweep: prune execution-history rows older than 90 days.
+		add_action( self::CRON_HOOK, array( __CLASS__, 'run_retention_sweep' ) );
+		add_action( 'init', array( __CLASS__, 'maybe_schedule_retention' ), 12 );
 	}
 
 	/**
@@ -217,6 +246,12 @@ class WP_MCP_AI_Execution_History_CCT {
 
 		$args = wp_parse_args( $args, $defaults );
 
+		// Bound unbounded reads: a long-running session can accumulate tens of
+		// thousands of rows, which must never be loaded in a single query.
+		if ( empty( $args['limit'] ) ) {
+			$args['limit'] = self::DEFAULT_QUERY_LIMIT;
+		}
+
 		$items = $factory->db->query( $args );
 
 		return is_array( $items ) ? $items : array();
@@ -249,6 +284,40 @@ class WP_MCP_AI_Execution_History_CCT {
 		$items = $factory->db->query( $query );
 
 		return is_array( $items ) ? count( $items ) : 0;
+	}
+
+	/**
+	 * Schedule the daily retention sweep (idempotent).
+	 */
+	public static function maybe_schedule_retention() {
+		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CRON_HOOK );
+		}
+	}
+
+	/**
+	 * Daily retention sweep: delete rows older than RETENTION_DAYS.
+	 *
+	 * Deletes in bounded batches so a single sweep never issues one huge DELETE.
+	 */
+	public static function run_retention_sweep() {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'jet_cct_' . self::SLUG;
+
+		// cct_created is the JetEngine built-in MySQL datetime creation stamp.
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( self::RETENTION_DAYS * DAY_IN_SECONDS ) );
+
+		for ( $i = 0; $i < self::PRUNE_MAX_BATCHES; $i++ ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed plugin-owned table name; batched delete avoids huge single statements.
+			$deleted = $wpdb->query( $wpdb->prepare( "DELETE FROM `{$table}` WHERE cct_created < %s LIMIT %d", $cutoff, self::PRUNE_BATCH_SIZE ) );
+			if ( ! $deleted || $deleted < self::PRUNE_BATCH_SIZE ) {
+				break;
+			}
+		}
 	}
 
 	/**
