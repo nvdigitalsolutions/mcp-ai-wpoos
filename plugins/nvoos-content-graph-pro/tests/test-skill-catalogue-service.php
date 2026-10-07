@@ -53,6 +53,9 @@ class Test_Skill_Catalogue_Service extends WP_UnitTestCase {
 		$ids = wp_list_pluck( $sources, 'id' );
 		$this->assertContains( 'wp-agent-skills', $ids );
 		$this->assertContains( 'figma-skills', $ids );
+		// The awesome-list repo carries zero SKILL.md files and can never list
+		// skills — it must not be seeded as a default source.
+		$this->assertNotContains( 'awesome-agent-skills', $ids );
 
 		foreach ( $sources as $source ) {
 			foreach ( array( 'id', 'label', 'type', 'owner', 'repo', 'ref', 'manifest_path' ) as $key ) {
