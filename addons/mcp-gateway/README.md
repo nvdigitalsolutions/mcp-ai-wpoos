@@ -49,6 +49,9 @@ Deployment target: **Cloudways Velocity** (managed Node hosting) at
 | `AUTH_MODE` | no | `strict` (default) fails closed at boot when no keys are set |
 | `UPSTREAM_TIMEOUT_MS` | no | Per-site timeout for tools/list + notifications (default 20000) |
 | `UPSTREAM_TOOL_TIMEOUT_MS` | no | tools/call budget only — long-running tools get more room without slowing tools/list (default: `UPSTREAM_TIMEOUT_MS`) |
+| `GATEWAY_OAUTH_ISSUER` | no | OAuth 2.1 authorization server issuer (e.g. Auth0 tenant). Setting it turns the gateway into an RFC 9728 protected resource — see the OAuth section below |
+| `GATEWAY_OAUTH_JWKS_URI` | no | JWKS override (default: issuer's `/.well-known/jwks.json`) |
+| `GATEWAY_OAUTH_RESOURCE` | no | RFC 8707 resource identifier / token audience (default `https://mcp.nvoos.pro`) |
 | `TRUST_PROXY` | yes on Velocity | `1` — NGINX sets X-Forwarded-For |
 | `ALLOWED_ORIGINS` | no | Comma-separated CORS origins for browser-based clients |
 | `MAX_JSON_BODY` | no | Body limit (default `1mb`) |
@@ -108,6 +111,32 @@ doubles as the marketplace source:
 Enabling the plugin prompts for the gateway API key (stored securely as a
 sensitive `userConfig` option) and substitutes it into the MCP server's
 `Authorization` header.
+
+## OAuth 2.1 resource server (opt-in)
+
+With `GATEWAY_OAUTH_ISSUER` set, the gateway acts as an RFC 9728 protected
+resource **alongside** static keys:
+
+- `GET /.well-known/oauth-protected-resource` (+ the `/mcp` path-insertion
+  variant) serves the protected-resource metadata document (inert 404 when
+  OAuth is unconfigured).
+- 401 responses carry `WWW-Authenticate: Bearer resource_metadata="…",
+  scope="…"` so MCP clients can run the OAuth 2.1 authorization-code + PKCE
+  flow against the configured authorization server.
+- JWT bearer tokens validate against the AS JWKS (cached, fail-closed):
+  signature, `iss`, `aud` (RFC 8707 resource binding), `exp`/`nbf`, and
+  scope.
+- Site binding is scope-based: each `site:<slug>` scope grants access to
+  that bound site (the read-only `site:read` scope is advertised for future
+  fine-grained enforcement). Tokens granting no configured site get 403
+  `insufficient_scope`.
+- Upstream proxying is unchanged: the gateway always exchanges for the
+  site's own Fleet Operator token — OAuth tokens are never forwarded
+  upstream (no confused-deputy passthrough).
+
+Authorization server: any OAuth 2.1 AS with RFC 8414 metadata + JWKS
+(Auth0 is the platform convention). Dynamic client registration (RFC 7591)
+belongs to the AS, not the gateway.
 
 ## Development
 

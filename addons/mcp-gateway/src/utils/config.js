@@ -27,10 +27,81 @@
  *                                  long-running tools (deep_research etc.)
  *                                  get more room without slowing tools/list.
  *                                  Defaults to UPSTREAM_TIMEOUT_MS.
+ *   GATEWAY_OAUTH_ISSUER           OAuth 2.1 authorization server issuer URL
+ *                                  (e.g. an Auth0 tenant, trailing slash ok).
+ *                                  When set, the gateway acts as an RFC 9728
+ *                                  protected resource: well-known metadata,
+ *                                  WWW-Authenticate challenges, and JWT
+ *                                  bearer tokens alongside static keys.
+ *   GATEWAY_OAUTH_JWKS_URI         Optional JWKS override (defaults to the
+ *                                  issuer's /.well-known/jwks.json).
+ *   GATEWAY_OAUTH_RESOURCE         RFC 8707 resource identifier — the
+ *                                  canonical audience for access tokens
+ *                                  (default https://mcp.nvoos.pro).
  */
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,39}$/;
 const MIN_KEY_LENGTH = 16;
+const DEFAULT_OAUTH_RESOURCE = 'https://mcp.nvoos.pro';
+
+/**
+ * Normalise an issuer URL: trim whitespace, keep one trailing slash.
+ *
+ * @param {string} raw Raw issuer value.
+ * @return {string} Normalised issuer (may be empty).
+ */
+export function normalizeIssuer( raw ) {
+	return String( raw || '' ).trim().replace( /\/+$/, '' ) + '/';
+}
+
+/**
+ * Join an issuer and a well-known path into one URL without doubled slashes.
+ *
+ * @param {string} issuer Normalised issuer (trailing slash).
+ * @param {string} path   Relative path without leading slash.
+ * @return {string} Absolute URL.
+ */
+export function issuerUrl( issuer, path ) {
+	return issuer.replace( /\/$/, '' ) + '/' + String( path ).replace( /^\/+/, '' );
+}
+
+/**
+ * Parse the OAuth 2.1 resource-server configuration.
+ *
+ * Inert unless GATEWAY_OAUTH_ISSUER is set (fail-closed on invalid values —
+ * problems are reported through the shared errors array).
+ *
+ * @param {object} env    Env object.
+ * @param {string[]} errors Shared error collector.
+ * @return {object} `{ enabled, issuer, jwksUri, resource }`.
+ */
+export function parseOAuthConfig( env, errors ) {
+	const rawIssuer = String( env.GATEWAY_OAUTH_ISSUER || '' ).trim();
+	if ( ! rawIssuer ) {
+		return { enabled: false, issuer: '', jwksUri: '', resource: DEFAULT_OAUTH_RESOURCE };
+	}
+
+	const issuer = normalizeIssuer( rawIssuer );
+	const resource = String( env.GATEWAY_OAUTH_RESOURCE || '' ).trim() || DEFAULT_OAUTH_RESOURCE;
+	const jwksUri = String( env.GATEWAY_OAUTH_JWKS_URI || '' ).trim() || issuerUrl( issuer, '.well-known/jwks.json' );
+
+	for ( const [ label, value ] of [
+		[ 'GATEWAY_OAUTH_ISSUER', issuer ],
+		[ 'GATEWAY_OAUTH_RESOURCE', resource ],
+		[ 'GATEWAY_OAUTH_JWKS_URI', jwksUri ],
+	] ) {
+		try {
+			const parsed = new URL( value );
+			if ( 'https:' !== parsed.protocol ) {
+				throw new Error( 'protocol' );
+			}
+		} catch {
+			errors.push( `OAuth ${ label } must be an absolute https URL.` );
+		}
+	}
+
+	return { enabled: true, issuer, jwksUri, resource };
+}
 
 /**
  * Environment suffix for a site slug: `site-a` → `SITE_A`.
@@ -165,7 +236,10 @@ export function loadConfig( env = process.env ) {
 		);
 	}
 
-	return { keys, previousKeys, sites, errors };
+	// ── OAuth 2.1 resource server (opt-in, inert unless configured) ──
+	const oauth = parseOAuthConfig( env, errors );
+
+	return { keys, previousKeys, sites, oauth, errors };
 }
 
 /**
