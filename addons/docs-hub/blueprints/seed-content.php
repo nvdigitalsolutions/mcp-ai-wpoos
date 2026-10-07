@@ -26,6 +26,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Ensure the plugin is loaded and active before the demo code runs.
+ *
+ * The wp.org Live Preview installs the plugin WITHOUT activating it, so
+ * the seed must activate it itself — otherwise the first reference to a
+ * plugin class fatals with "Class not found". The standalone demo
+ * installs with activate=true, making this a no-op there. When activation
+ * is unavailable, the plugin file is loaded directly as a fallback.
+ *
+ * @return void
+ */
+function nvoos_dh_demo_ensure_plugin_active(): void {
+	if ( class_exists( 'NV_oOS_Docs_Hub_Plugin' ) ) {
+		return;
+	}
+	if ( ! function_exists( 'is_plugin_active' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+	}
+	if ( ! is_plugin_active( 'nvoos-docs-hub/nvoos-docs-hub.php' ) ) {
+		$activated = activate_plugin( 'nvoos-docs-hub/nvoos-docs-hub.php' );
+		if ( is_wp_error( $activated ) && ! class_exists( 'NV_oOS_Docs_Hub_Plugin' ) ) {
+			$plugin_file = WP_PLUGIN_DIR . '/nvoos-docs-hub/nvoos-docs-hub.php';
+			if ( file_exists( $plugin_file ) ) {
+				include_once $plugin_file;
+			}
+		}
+	}
+}
+
+/**
  * The demo documentation set: filename => Markdown body.
  *
  * Front matter sets the nav title and sidebar order. The bodies showcase
@@ -350,6 +379,8 @@ function nvoos_dh_demo_seed(): void {
 		return;
 	}
 
+	nvoos_dh_demo_ensure_plugin_active();
+
 	// 1. Pretty permalinks so the /docs/ landing page resolves.
 	global $wp_rewrite;
 	if ( '/%postname%/' !== get_option( 'permalink_structure' ) ) {
@@ -362,7 +393,12 @@ function nvoos_dh_demo_seed(): void {
 	}
 
 	// 2. Write the demo docs into the plugin's default local content folder.
-	$dir = NV_oOS_Docs_Hub_Plugin::uploads_docs_dir();
+	if ( class_exists( 'NV_oOS_Docs_Hub_Plugin' ) ) {
+		$dir = NV_oOS_Docs_Hub_Plugin::uploads_docs_dir();
+	} else {
+		$info = wp_upload_dir();
+		$dir  = ( isset( $info['basedir'] ) ? (string) $info['basedir'] : '' ) . '/nvoos-docs-hub/content';
+	}
 	if ( ! is_dir( $dir ) && ! wp_mkdir_p( $dir ) ) {
 		return;
 	}
