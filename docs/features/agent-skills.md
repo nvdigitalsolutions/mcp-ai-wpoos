@@ -250,13 +250,15 @@ The Pro add-on's dedicated **Skill Manager** page adds:
 
 ### Skill Catalogues (Pro)
 
-A *catalogue* is a public Git repository (currently GitHub-only) containing one or more `SKILL.md` files. Pre-seeded with:
+A *catalogue* is a public Git repository (currently GitHub-only) containing one or more `SKILL.md` files. Pre-seeded (11 default sources, v1.1.99):
 
 - **`Lonsdale201/wp-agent-skills`** — MIT-licensed WordPress-developer catalogue (security audits, REST/HTML/i18n APIs, plugin scaffold, WooCommerce, JetEngine, JetFormBuilder, WP Rocket).
 - **`anthropics/skills`** — Anthropic's own catalogue of general-purpose skills.
 - **`figma/mcp-server-guide`** — Figma's MCP skills repo (14 Figma skills — design-to-code, generate-design, implement-motion, use-figjam, … — + 2 workflow skills), added in v1.1.99 (#6938). The figma repo mirrors the same 14 skills in two trees (`skills/` + `skills-figquery/`), so `normalise_manifest_skills()` dedupes by name keeping the shortest path — install slugs never collide.
+- **`WesleySmits/agent-skills`**, **`phuryn/pm-skills`**, **`google/skills`**, **`openai/skills`**, **`googleworkspace/cli`**, **`cloudflare/skills`**, **`WordPress/agent-skills`**, **`brave/brave-search-skills`**.
+- (The `VoltAgent/awesome-agent-skills` source was removed in v1.1.99 — it is an awesome-list repo with zero `SKILL.md` files and could never list anything. Existing installs that saved it can delete it on the Catalogues settings tab.)
 
-Existing installs keep their saved source list; the new default source appears after **Restore Default Catalogues** in Skill Settings → Catalogues.
+Existing installs keep their saved source list; new/removed default sources apply after **Restore Default Catalogues** in Skill Settings → Catalogues.
 
 Manage sources at **Assistants → Skill Settings → Catalogues**. Each source carries an `id`, `owner`, `repo`, and `ref` (branch, tag, or commit SHA — pin to a SHA for reproducibility).
 
@@ -266,6 +268,10 @@ Each source is read in this order:
 2. Otherwise the **GitHub Git Tree API** is walked to discover every `SKILL.md` and the manifest is built on-the-fly.
 
 Manifests are cached in WordPress transients (24-hour TTL by default; filterable with `wp_mcp_ai_skill_catalogue_manifest_ttl`) and refreshed daily by a `wp_mcp_ai_skill_catalogue_refresh` WP-Cron job (`wp_mcp_ai_skill_catalogue_refresh_cadence` filter).
+
+**GitHub API budget (v1.1.99):** catalogue requests authenticate with a GitHub token when one is configured — resolution order: the `WP_MCP_AI_SKILL_CATALOGUE_GITHUB_TOKEN` constant, the `wp_mcp_ai_skill_catalogue_github_token` filter, then the plugin setting **`github_access_token`** (the same Settings → Tools key the GitHub client + OAuth handler use). Anonymous requests run on the shared 60 req/hr budget, so the frontmatter-description enrichment is capped at 10 skills per source (60 with a token; filterable via `wp_mcp_ai_skill_catalogue_enrich_cap`) and stops immediately on a 403/429 instead of burning the remaining budget. The token is only ever sent to `api.github.com` / `raw.githubusercontent.com`.
+
+**Install completeness (v1.1.99):** `install_from_catalogue()` fetches the skill's supporting subtree (one Git Tree call + one raw fetch per accepted sidecar, capped at 40 files — filters: `wp_mcp_ai_skill_catalogue_fetch_sidecars`, `wp_mcp_ai_skill_catalogue_sidecar_file_cap`, `wp_mcp_ai_skill_catalogue_sidecar_extensions`), so subfolder-structured skills (figma's `references/`, `scripts/`) install with their docs. Executable extensions (`.js`, `.py`, …) and dot-folders are excluded by design — the registry allowlist (`md`, `txt`, `json`, `yaml`, `yml`, `png`, `jpg`, `jpeg`, `gif`, `webp`) governs what is written, and a failed sidecar fetch never blocks the `SKILL.md`-only install.
 
 **Security**: catalogue fetches reuse the same SSRF-safe HTTPS-only helper that protects `/skills/install-url` (private/loopback/reserved-IP rejection, DNS-rebind pinning, response-size cap), and the actual skill install funnels through `WP_MCP_AI_Skill_Registry::install_skill()` so the existing extension allowlist + decompression-bomb cap apply unchanged. Only paths present in the manifest may be installed — user-supplied paths are rejected.
 
