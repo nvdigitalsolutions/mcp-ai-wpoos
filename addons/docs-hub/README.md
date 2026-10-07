@@ -1,5 +1,7 @@
 # NV oOS Docs Hub
 
+[![Demo Docs Hub](https://img.shields.io/badge/Demo_Docs_Hub-Playground-blueviolet?style=for-the-badge&logo=wordpress&logoColor=white)](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/alpha-working/addons/docs-hub/blueprints/demo.json)
+
 A React-based documentation browser SPA bundled as a NV oOS addon.
 
 It discovers, indexes, and renders Markdown documentation from the base plugin
