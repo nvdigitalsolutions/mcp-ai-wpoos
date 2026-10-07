@@ -401,9 +401,10 @@ rsync -a "addons/docs-hub/" "${TMP_DIR}/docs-hub-stage/nvoos-docs-hub/" \
 --exclude 'vendor/' \
 --exclude 'composer.json' \
 --exclude 'composer.lock' \
---exclude 'docs/' \
---exclude '*.md' \
+--exclude 'docs/'
+--exclude '*.md'
 --exclude '.wordpress-org/'
+--exclude 'blueprints/'
 (
 cd "${TMP_DIR}/docs-hub-stage"
 zip -r -q "${ROOT_DIR}/${DOCS_HUB_ZIP}" nvoos-docs-hub/

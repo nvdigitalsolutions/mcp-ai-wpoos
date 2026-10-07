@@ -234,11 +234,12 @@ jobs:
             --exclude='.gitignore'
             --exclude='.distignore'
             --exclude='.DS_Store'
-            --exclude='vendor/'
-            --exclude='composer.json'
-            --exclude='composer.lock'
-            --exclude='docs/'
-            --exclude='.wordpress-org/'
+            --exclude 'vendor/'
+            --exclude 'composer.json'
+            --exclude 'composer.lock'
+            --exclude 'docs/'
+            --exclude '.wordpress-org/'
+            --exclude 'blueprints/'
           )
 
           # WordPress.org zip: docs-hub ships only readme.txt — strip all
