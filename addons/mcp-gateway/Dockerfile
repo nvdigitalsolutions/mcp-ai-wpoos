@@ -13,6 +13,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
 
 COPY src/ ./src/
+COPY assets/ ./assets/
 
 EXPOSE 8080
 CMD ["npm", "start"]

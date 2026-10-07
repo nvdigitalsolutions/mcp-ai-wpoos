@@ -9,6 +9,7 @@
  * Env reference: see README.md and src/utils/config.js.
  */
 
+import path from 'node:path';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -60,6 +61,14 @@ export function createApp( overrides = {} ) {
 	// OWASP: keep the JSON body small — MCP payloads are tiny; 1 MB default.
 	app.use( express.json( { limit: process.env.MAX_JSON_BODY || '1mb' } ) );
 	app.use( express.urlencoded( { extended: true, limit: '1mb' } ) );
+
+	// Static assets (landing page icon). Same origin, cache-friendly.
+	app.use(
+		'/assets',
+		express.static( path.join( import.meta.dirname, '..', 'assets' ), {
+			maxAge: '1d',
+		} )
+	);
 
 	// ── Public surfaces (no auth) ─────────────────────────────────
 	app.use( '/', landingRouter() );

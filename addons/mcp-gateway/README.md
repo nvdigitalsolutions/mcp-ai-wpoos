@@ -1,6 +1,8 @@
 # NV oOS MCP Gateway
 # ==================
 
+<p align="center"><img src="assets/mcp-gateway.svg" alt="NV oOS MCP Gateway" width="128"></p>
+
 A public, fleet-scoped **Model Context Protocol** endpoint for the
 [NV oOS (Open Operator System)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos)
 WordPress platform. One API key, every bound site — tools appear namespaced
