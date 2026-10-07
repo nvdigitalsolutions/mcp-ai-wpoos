@@ -3,17 +3,19 @@
  */
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from 'reactflow';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
-interface ToolNodeData {
+type ToolNodeData = {
   toolSlug: string;
   toolName: string;
   toolkit: string;
   arguments: Record<string, unknown>;
   label?: string;
-}
+};
 
-function ToolNodeComponent({ data, selected }: NodeProps<ToolNodeData>) {
+type ToolNodeType = Node<ToolNodeData, 'toolNode'>;
+
+function ToolNodeComponent({ data, selected }: NodeProps<ToolNodeType>) {
   return (
     <div
       className={`

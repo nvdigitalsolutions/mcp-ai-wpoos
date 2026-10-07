@@ -9,6 +9,7 @@ import { useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { __, sprintf } from '@/lib/i18n';
 import clsx from 'clsx';
 
 interface AppLayoutProps {
@@ -16,12 +17,12 @@ interface AppLayoutProps {
 }
 
 const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { path: '/schedules', label: 'Schedules', icon: '⚡' },
-  { path: '/presets', label: 'Presets', icon: '📋' },
-  { path: '/history', label: 'Run History', icon: '📜' },
-  { path: '/analytics', label: 'Analytics', icon: '📈' },
-  { path: '/settings', label: 'Settings', icon: '⚙️' },
+  { path: '/dashboard', label: __( 'Dashboard', 'schedule-anything-spa' ), icon: '📊' },
+  { path: '/schedules', label: __( 'Schedules', 'schedule-anything-spa' ), icon: '⚡' },
+  { path: '/presets', label: __( 'Presets', 'schedule-anything-spa' ), icon: '📋' },
+  { path: '/history', label: __( 'Run History', 'schedule-anything-spa' ), icon: '📜' },
+  { path: '/analytics', label: __( 'Analytics', 'schedule-anything-spa' ), icon: '📈' },
+  { path: '/settings', label: __( 'Settings', 'schedule-anything-spa' ), icon: '⚙️' },
 ];
 
 const TENANT_TIER_BADGES: Record<string, string> = {
@@ -53,7 +54,9 @@ export function AppLayout({ children }: AppLayoutProps) {
             {sidebarOpen ? '◀' : '▶'}
           </button>
           {sidebarOpen && (
-            <span className="ml-3 font-semibold text-sm">Schedule Anything</span>
+            <span className="ml-3 font-semibold text-sm">
+              { __( 'Schedule Anything', 'schedule-anything-spa' ) }
+            </span>
           )}
         </div>
 
@@ -97,7 +100,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         {/* User info */}
         {sidebarOpen && auth.isLoggedIn && (
           <div className="px-4 py-3 border-t border-gray-700">
-            <p className="text-xs text-gray-400">User ID: {auth.userId}</p>
+            <p className="text-xs text-gray-400">
+              { /* translators: %s: WordPress user id */ }
+              { sprintf( __( 'User ID: %s', 'schedule-anything-spa' ), String( auth.userId ?? '' ) ) }
+            </p>
           </div>
         )}
       </aside>

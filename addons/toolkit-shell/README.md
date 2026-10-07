@@ -6,6 +6,11 @@
 > `addons/pro/config/spa-manifests/<slug>.json` and the shell automatically
 > exposes a list/table view backed by the toolkit's existing `mcp-ai-pro/v1`
 > REST endpoints.
+>
+> **0.3.0** adds the headless UI layer: Radix primitives (dialog, dropdown,
+> select, tabs, checkbox), TanStack Table sorting, @dnd-kit kanban drag-and-
+> drop, react-hook-form + zod form validation, sonner toasts, and
+> `--nds-*` design-token theming from the NV oOS Design System addon.
 
 This addon is the canonical Phase 1 implementation of the
 [Toolkit SPA Blueprint](../../docs/addons/toolkit-spa-blueprint.md). Use it
@@ -77,7 +82,20 @@ This addon depends on the following third-party libraries — see
 
 - [React](https://github.com/facebook/react) — MIT
 - [React DOM](https://github.com/facebook/react) — MIT
+- [Radix UI primitives](https://github.com/radix-ui/primitives) — MIT
+- [TanStack Table](https://github.com/TanStack/table) — MIT
+- [dnd-kit](https://github.com/clauderic/dnd-kit) — MIT
+- [react-hook-form](https://github.com/react-hook-form/react-hook-form) — MIT
+- [zod](https://github.com/colinhacks/zod) — MIT
+- [sonner](https://github.com/emilkowalski/sonner) — MIT
+- [class-variance-authority](https://github.com/joe-bell/cva) — Apache-2.0
+- [clsx](https://github.com/lukeed/clsx) — MIT
 - [esbuild](https://github.com/evanw/esbuild) (devDep) — MIT
 - [TypeScript](https://github.com/microsoft/TypeScript) (devDep) — Apache-2.0
+
+**Dual-React guard:** this bundle ships its own React 19. Importing
+`@wordpress/element` or `@wordpress/components` (WP core's React 18) is
+blocked by an ESLint `no-restricted-imports` rule — only the React-free
+`@wordpress/i18n` may be imported.
 
 The addon is licensed GPLv3 to match the base NV oOS plugin.
