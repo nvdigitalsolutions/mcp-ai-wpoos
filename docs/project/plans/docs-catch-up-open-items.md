@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-10-06 (v1.1.98 pass — **no new OI-1 group** (zero added `@since` tags in-window); no OI-8 extension (zero new slugs); OI-2 label refreshed)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.98-docs-catch-up.md`](v1.1.98-docs-catch-up.md).
+> **Last reviewed:** 2026-10-07 (v1.1.99 pass — **no new OI-1 group** (the window's `@since 0.3.0` ×12 are the toolkit-shell addon-version convention; #6937's post-window 1.1.98/1.1.0 tags were reconciled by its own docs commit — the 1.1.0 tag follows the analytics file's dominant pre-existing tag); no OI-8 extension (zero new slugs); the three skill-catalogue findings from the figma verification are recorded in the v1.1.99 plan's hand-offs, not this tracker)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.99-docs-catch-up.md`](v1.1.99-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
