@@ -943,6 +943,20 @@ the changed files is the substantive gate; plan CI waits accordingly.
       the same PR (the script is the regression net for guardrail symmetry
       between the legacy and OOS paths; its 100% parity is asserted by
       `tests/test-oos-parity-gaps.php`).
+  67. **Helper/stub files in a `suffix=".php"`-scanned test dir must be
+      excluded in `phpunit.xml.dist` (v1.1.95+, PR #6886 follow-up).** The
+      root config scans `addons/pro/tests` (and the other addon test dirs)
+      with `suffix=".php"`, so every PHP file there is loaded as a test
+      file. A helper whose declared class does not match the
+      filename-derived name emits a PHPUnit runner warning: `Class
+      class-wp-mcp-ai-media-toolkit-stub cannot be found in
+      .../addons/pro/tests/class-wp-mcp-ai-media-toolkit-stub.php`. Fix:
+      add an `<exclude>` entry next to the
+      `class-wp-mcp-ai-workflow-log-context-recorder-tool.php` precedent
+      (the stub stays `require_once`'d by its test, so the tests keep
+      running). Every new `class-*.php` / `trait-*.php` helper added to a
+      scanned dir needs the exclude in the same PR; the toolkit-audit loop
+      generates these regularly.
 
 ## Production fix vs test fix
 
@@ -988,6 +1002,12 @@ fwrite( STDERR, 'STATE: ' . wp_json_encode( $data ) . PHP_EOL );
   test). Always `--log-events-text /tmp/events.txt` with a host-mounted
   `/tmp` so the per-suite order survives even if the run is killed by
   `timeout`.
+- **Config/exclude changes: verify via `--list-tests`.** Loader warnings
+  ("Class X cannot be found in Y") fire at suite construction, so
+  `php -d memory_limit=1G vendor/bin/phpunit --list-tests --no-coverage`
+  (no tests executed) reproduces them in minutes instead of a full run.
+  Grep the output for `warning` and the suspect filename to confirm the
+  fix before running any suite.
 - **CI-log archaeology.** Progress lines (`NNNN / 17245 (NN%)`) plus
   `[NV oOS]` debug lines locate suites; a suite whose logging gate is off
   emits no `[NV oOS]` lines while its neighbours do. Consecutive failing
@@ -1002,8 +1022,9 @@ Canonical scan dirs: `tests`, `addons/pro/tests`,
 `tests/regression`, `tests/helpers`, all `bootstrap.php` /
 `wp-tests-config.php` / `wp-cli-smoke.php` files, the abilities mock tool and
 bootstrap trait, the paper-store helpers trait, the graphify and
-saas-controller bootstraps, and
-`addons/pro/tests/class-wp-mcp-ai-workflow-log-context-recorder-tool.php`.
+saas-controller bootstraps,
+`addons/pro/tests/class-wp-mcp-ai-workflow-log-context-recorder-tool.php`,
+and `addons/pro/tests/class-wp-mcp-ai-media-toolkit-stub.php`.
 Batched runs sort the remaining files alphabetically and resume from a
 suffix index (chunk manifests list files, they are not inputs).
 
