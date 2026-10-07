@@ -154,16 +154,6 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 				'last_refreshed' => 0,
 			),
 			array(
-				'id'             => 'awesome-agent-skills',
-				'label'          => 'Awesome Agent Skills (VoltAgent)',
-				'type'           => 'github',
-				'owner'          => 'VoltAgent',
-				'repo'           => 'awesome-agent-skills',
-				'ref'            => 'main',
-				'manifest_path'  => '',
-				'last_refreshed' => 0,
-			),
-			array(
 				'id'             => 'wsmits-agent-skills',
 				'label'          => 'Agent Skills (WesleySmits)',
 				'type'           => 'github',
@@ -548,14 +538,27 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 		}
 
 		// Optionally enrich descriptions from frontmatter for the first N skills
-		// to keep the manifest lightweight on huge repos. The cap is filterable.
-		$enrich_cap = (int) apply_filters( 'wp_mcp_ai_skill_catalogue_enrich_cap', 60, $source );
+		// to keep the manifest lightweight on huge repos. The cap is filterable;
+		// anonymous requests get a small default cap (10) so one large source
+		// cannot exhaust the shared unauthenticated GitHub budget (60 req/hr)
+		// before the other sources are refreshed. Authenticated requests keep
+		// the larger cap.
+		$has_token  = ( '' !== $this->get_github_token() );
+		$enrich_cap = (int) apply_filters( 'wp_mcp_ai_skill_catalogue_enrich_cap', $has_token ? 60 : 10, $source );
 		$enriched   = array();
 		$count      = 0;
+		$limited    = false;
 		foreach ( $skills as $skill ) {
-			if ( $count < $enrich_cap ) {
+			if ( $count < $enrich_cap && ! $limited ) {
 				$desc = $this->fetch_description( $source, $skill['path'] . '/SKILL.md' );
-				if ( ! is_wp_error( $desc ) ) {
+				if ( is_wp_error( $desc ) ) {
+					if ( $this->is_rate_limited( $desc ) ) {
+						// Stop enrichment on 403/429 instead of burning the remaining
+						// hourly budget; every skill stays listed (descriptions just
+						// stay empty for the rest).
+						$limited = true;
+					}
+				} else {
 					$skill['description'] = $desc;
 				}
 				++$count;
@@ -647,6 +650,95 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 	}
 
 	/**
+	 * Collect supporting files under a skill folder for a complete install.
+	 *
+	 * Walks the repository Git Tree API once, then fetches each accepted
+	 * sidecar individually. Executable extensions are excluded (the registry's
+	 * install pipeline rejects them anyway), dot-entries are skipped, and the
+	 * file count is capped. Best-effort: any failure returns what has been
+	 * collected so far and never blocks the SKILL.md-only install.
+	 *
+	 * @since 1.11.0
+	 * @param array  $source     Source array.
+	 * @param string $skill_path Manifest skill path (repo-relative folder).
+	 * @return array<string,string> Relative path => content.
+	 */
+	protected function collect_skill_sidecars( $source, $skill_path ) {
+		$extra_files = array();
+
+		if ( ! apply_filters( 'wp_mcp_ai_skill_catalogue_fetch_sidecars', true, $source, $skill_path ) ) {
+			return $extra_files;
+		}
+
+		$endpoint = sprintf(
+			'https://api.github.com/repos/%s/%s/git/trees/%s?recursive=1',
+			rawurlencode( $source['owner'] ),
+			rawurlencode( $source['repo'] ),
+			rawurlencode( $source['ref'] )
+		);
+		$body     = $this->safe_get( $endpoint, array( 'Accept' => 'application/vnd.github+json' ) );
+		if ( is_wp_error( $body ) ) {
+			return $extra_files;
+		}
+		$decoded = json_decode( $body, true );
+		if ( ! is_array( $decoded ) || empty( $decoded['tree'] ) || ! is_array( $decoded['tree'] ) ) {
+			return $extra_files;
+		}
+
+		$prefix = rtrim( $skill_path, '/' ) . '/';
+		$exts   = array_filter(
+			array_map(
+				'strtolower',
+				(array) apply_filters(
+					'wp_mcp_ai_skill_catalogue_sidecar_extensions',
+					array( 'md', 'txt', 'json', 'yaml', 'yml', 'png', 'jpg', 'jpeg', 'gif', 'webp' )
+				)
+			)
+		);
+		$cap    = (int) apply_filters( 'wp_mcp_ai_skill_catalogue_sidecar_file_cap', 40, $source );
+		if ( $cap < 1 ) {
+			return $extra_files;
+		}
+
+		$candidates = array();
+		foreach ( $decoded['tree'] as $entry ) {
+			if ( count( $candidates ) >= $cap ) {
+				break;
+			}
+			if ( ! isset( $entry['type'], $entry['path'] ) || 'blob' !== $entry['type'] ) {
+				continue;
+			}
+			$path = (string) $entry['path'];
+			if ( 0 !== strpos( $path, $prefix ) ) {
+				continue;
+			}
+			$relative = substr( $path, strlen( $prefix ) );
+			if ( '' === $relative || 'SKILL.md' === $relative || false !== strpos( $relative, '..' ) ) {
+				continue;
+			}
+			// Skip dot-entries (e.g. skills/.system/… curation folders).
+			if ( preg_match( '#(^|/)\.#', $relative ) ) {
+				continue;
+			}
+			$ext = strtolower( (string) pathinfo( $relative, PATHINFO_EXTENSION ) );
+			if ( '' === $ext || ! in_array( $ext, $exts, true ) ) {
+				continue;
+			}
+			$candidates[] = $relative;
+		}
+
+		foreach ( $candidates as $relative ) {
+			$content = $this->fetch_raw( $source, $skill_path . '/' . $relative );
+			if ( is_wp_error( $content ) ) {
+				continue;
+			}
+			$extra_files[ $relative ] = (string) $content;
+		}
+
+		return $extra_files;
+	}
+
+	/**
 	 * Install a single skill identified by its catalogue path. Funnels into
 	 * `WP_MCP_AI_Skill_Registry::install_skill( $content, $extra_files )` so
 	 * the existing extension allowlist + decompression cap apply.
@@ -702,18 +794,24 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 			return $skill_md;
 		}
 
-		// 2) Optionally fetch known companion files. We only fetch a small
-		// set of well-known names rather than walking the tree per-skill,
-		// because doing so would multiply the API surface and is not
-		// necessary for the v1 install flow.
+		// 2) Collect the skill's supporting files so subfolder-structured skills
+		// (e.g. the figma catalogue's `references/` trees) install complete.
+		// One tree call + one raw fetch per accepted sidecar, capped and
+		// best-effort — a failed sidecar fetch never blocks the install.
+		$extra_files = $this->collect_skill_sidecars( $source, $skill_path );
+
+		// 3) Root-level companions (a filterable well-known set) supplement the
+		// subtree walk for catalogues whose tree fetch is unavailable.
 		$companion_names = (array) apply_filters(
 			'wp_mcp_ai_skill_catalogue_companion_files',
 			array( 'reference.md', 'examples.md', 'NOTES.md', 'LICENSE' )
 		);
-		$extra_files     = array();
 		foreach ( $companion_names as $companion ) {
 			$companion = ltrim( (string) $companion, '/' );
 			if ( '' === $companion || false !== strpos( $companion, '..' ) ) {
+				continue;
+			}
+			if ( isset( $extra_files[ $companion ] ) ) {
 				continue;
 			}
 			$body = $this->fetch_raw( $source, $skill_path . '/' . $companion );
@@ -722,7 +820,7 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 			}
 		}
 
-		// 3) Install via the registry's hardened pipeline.
+		// 4) Install via the registry's hardened pipeline.
 		if ( ! class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_skill_registry_missing',
@@ -768,6 +866,49 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 		);
 
 		return $this->safe_get( $url );
+	}
+
+	/**
+	 * Resolve the GitHub token used to authenticate catalogue requests.
+	 *
+	 * Resolution order: the `WP_MCP_AI_SKILL_CATALOGUE_GITHUB_TOKEN` constant,
+	 * then the `wp_mcp_ai_skill_catalogue_github_token` filter, then the plugin
+	 * setting `github_access_token` (the same key the GitHub client and OAuth
+	 * handler already use). An empty result means "anonymous" (60 req/hr on
+	 * api.github.com); a token raises the budget to 5,000 req/hr.
+	 *
+	 * @since 1.11.0
+	 * @return string Token (possibly empty).
+	 */
+	protected function get_github_token() {
+		$token = '';
+		if ( defined( 'WP_MCP_AI_SKILL_CATALOGUE_GITHUB_TOKEN' ) ) {
+			$token = (string) WP_MCP_AI_SKILL_CATALOGUE_GITHUB_TOKEN;
+		}
+		$token = (string) apply_filters( 'wp_mcp_ai_skill_catalogue_github_token', $token );
+		if ( '' === trim( $token ) ) {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( is_array( $settings ) && ! empty( $settings['github_access_token'] ) ) {
+				$token = (string) $settings['github_access_token'];
+			}
+		}
+		return sanitize_text_field( trim( $token ) );
+	}
+
+	/**
+	 * Whether an HTTP fetch error signals a GitHub rate-limit response.
+	 *
+	 * @since 1.11.0
+	 * @param WP_Error $error Fetch error.
+	 * @return bool True for 403/429, false otherwise.
+	 */
+	protected function is_rate_limited( $error ) {
+		if ( ! is_wp_error( $error ) ) {
+			return false;
+		}
+		$data   = $error->get_error_data();
+		$status = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
+		return 403 === $status || 429 === $status;
 	}
 
 	/**
@@ -818,6 +959,17 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 			'Accept'     => 'text/plain, application/json, */*;q=0.5',
 		);
 		$headers         = array_merge( $default_headers, is_array( $headers ) ? $headers : array() );
+
+		// Attach the GitHub token (when configured) so catalogue refreshes get
+		// the authenticated budget (5,000 req/hr) instead of the shared
+		// anonymous one (60 req/hr). The token is only ever sent to GitHub
+		// hosts — never to any other catalogue host.
+		if ( 'api.github.com' === $host || 'raw.githubusercontent.com' === $host ) {
+			$token = $this->get_github_token();
+			if ( '' !== $token ) {
+				$headers['Authorization'] = 'Bearer ' . $token;
+			}
+		}
 
 		$resolve_entry = $host . ':' . $port . ':' . $resolved_ip;
 		$curl_pin      = static function ( $handle ) use ( $resolve_entry ) {

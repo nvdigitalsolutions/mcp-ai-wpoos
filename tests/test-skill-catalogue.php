@@ -42,6 +42,13 @@ class WP_MCP_AI_Skill_Catalogue_Test extends WP_Test_REST_TestCase {
 	private $http_stubs = array();
 
 	/**
+	 * Captured request headers keyed by URL (assertion aid).
+	 *
+	 * @var array<string, array<string, string>>
+	 */
+	private $captured_headers = array();
+
+	/**
 	 * Set up fixtures.
 	 */
 	public function setUp(): void {
@@ -117,6 +124,7 @@ class WP_MCP_AI_Skill_Catalogue_Test extends WP_Test_REST_TestCase {
 	 * @return array|WP_Error
 	 */
 	public function intercept_http( $pre, $args, $url ) {
+		$this->captured_headers[ $url ] = isset( $args['headers'] ) && is_array( $args['headers'] ) ? $args['headers'] : array();
 		foreach ( $this->http_stubs as $needle => $stub ) {
 			if ( false !== strpos( $url, $needle ) ) {
 				return array(
@@ -172,6 +180,9 @@ class WP_MCP_AI_Skill_Catalogue_Test extends WP_Test_REST_TestCase {
 		$this->assertContains( 'wp-agent-skills', $ids );
 		$this->assertContains( 'anthropics-skills', $ids );
 		$this->assertContains( 'figma-skills', $ids );
+		// The awesome-list repo carries zero SKILL.md files and can never list
+		// skills — it must not be seeded as a default source.
+		$this->assertNotContains( 'awesome-agent-skills', $ids );
 	}
 
 	/**
@@ -474,6 +485,257 @@ class WP_MCP_AI_Skill_Catalogue_Test extends WP_Test_REST_TestCase {
 		$installed = $registry->get_skill( 'demo' );
 		$this->assertNotNull( $installed );
 		$this->assertSame( 'demo', $installed['name'] );
+	}
+
+	/**
+	 * A configured GitHub token is sent as a Bearer Authorization header on
+	 * every GitHub catalogue request (api.github.com + raw.githubusercontent.com).
+	 */
+	public function test_github_token_attaches_authorization_header() {
+		$svc = WP_MCP_AI_Skill_Catalogue_Service::instance();
+		$svc->save_sources(
+			array(
+				array(
+					'id'    => 'tok',
+					'owner' => 'x',
+					'repo'  => 'y',
+					'ref'   => 'main',
+				),
+			)
+		);
+
+		$this->http_stubs = array(
+			'api.github.com/repos/x/y/git/trees' => array(
+				'body' => wp_json_encode(
+					array(
+						'tree' => array(
+							array(
+								'type' => 'blob',
+								'path' => 'skills/demo/SKILL.md',
+								'sha'  => str_repeat( 'a', 40 ),
+							),
+						),
+					)
+				),
+			),
+		);
+
+		add_filter( 'wp_mcp_ai_skill_catalogue_github_token', array( $this, 'return_test_github_token' ) );
+		$manifest = $svc->get_manifest( 'tok', true );
+		remove_filter( 'wp_mcp_ai_skill_catalogue_github_token', array( $this, 'return_test_github_token' ) );
+
+		$this->assertNotWPError( $manifest );
+		$this->assertNotEmpty( $this->captured_headers );
+		foreach ( $this->captured_headers as $url => $headers ) {
+			$found = false;
+			foreach ( $headers as $key => $value ) {
+				if ( 'authorization' === strtolower( $key ) && 'Bearer ghp_test123' === $value ) {
+					$found = true;
+					break;
+				}
+			}
+			$this->assertTrue( $found, 'Expected Bearer header missing for ' . $url );
+		}
+	}
+
+	/**
+	 * The settings-level `github_access_token` is the anonymous fallback when
+	 * no constant/filter token is set.
+	 */
+	public function test_github_token_falls_back_to_settings() {
+		$svc = WP_MCP_AI_Skill_Catalogue_Service::instance();
+		$svc->save_sources(
+			array(
+				array(
+					'id'    => 'tok-settings',
+					'owner' => 'x',
+					'repo'  => 'y',
+					'ref'   => 'main',
+				),
+			)
+		);
+
+		update_option( 'wp_mcp_ai_settings', array( 'github_access_token' => 'ghs_settings123' ) );
+
+		$this->http_stubs = array(
+			'api.github.com/repos/x/y/git/trees' => array(
+				'body' => wp_json_encode(
+					array(
+						'tree' => array(
+							array(
+								'type' => 'blob',
+								'path' => 'skills/demo/SKILL.md',
+								'sha'  => str_repeat( 'a', 40 ),
+							),
+						),
+					)
+				),
+			),
+		);
+
+		$manifest = $svc->get_manifest( 'tok-settings', true );
+
+		$this->assertNotWPError( $manifest );
+		$this->assertNotEmpty( $this->captured_headers );
+		foreach ( $this->captured_headers as $url => $headers ) {
+			$found = false;
+			foreach ( $headers as $key => $value ) {
+				if ( 'authorization' === strtolower( $key ) && 'Bearer ghs_settings123' === $value ) {
+					$found = true;
+					break;
+				}
+			}
+			$this->assertTrue( $found, 'Expected settings-token header missing for ' . $url );
+		}
+	}
+
+	/**
+	 * Enrichment stops on a 403/429 instead of burning the anonymous budget,
+	 * and the skill list itself stays complete.
+	 */
+	public function test_enrichment_stops_after_rate_limit_response() {
+		update_option( 'wp_mcp_ai_settings', array() ); // Force the anonymous path.
+
+		$svc = WP_MCP_AI_Skill_Catalogue_Service::instance();
+		$svc->save_sources(
+			array(
+				array(
+					'id'    => 'rl',
+					'owner' => 'x',
+					'repo'  => 'y',
+					'ref'   => 'main',
+				),
+			)
+		);
+
+		$tree = array( 'tree' => array() );
+		foreach ( array( 'a', 'b', 'c', 'd', 'e' ) as $slug ) {
+			$tree['tree'][] = array(
+				'type' => 'blob',
+				'path' => 'skills/' . $slug . '/SKILL.md',
+				'sha'  => str_repeat( $slug, 40 ),
+			);
+		}
+
+		$this->http_stubs = array(
+			'api.github.com/repos/x/y/git/trees' => array( 'body' => wp_json_encode( $tree ) ),
+			'raw.githubusercontent.com/x/y/main/skills/a/SKILL.md' => array(
+				'code' => 403,
+				'body' => '',
+			),
+		);
+
+		$manifest = $svc->get_manifest( 'rl', true );
+		$this->assertNotWPError( $manifest );
+		// All five skills stay listed despite the rate-limit response.
+		$this->assertCount( 5, $manifest['skills'] );
+
+		// Only the first description fetch happened — the 403 stopped the loop.
+		$description_fetches = 0;
+		foreach ( $this->captured_headers as $url => $headers ) {
+			if ( false !== strpos( $url, 'raw.githubusercontent.com/x/y/main/skills/' ) ) {
+				++$description_fetches;
+			}
+		}
+		$this->assertSame( 1, $description_fetches );
+	}
+
+	/**
+	 * Install fetches the skill subtree: reference files under the skill folder
+	 * are written alongside SKILL.md, while executable and dot-path sidecars
+	 * are excluded by design.
+	 */
+	public function test_install_fetches_subfolder_sidecars() {
+		$svc = WP_MCP_AI_Skill_Catalogue_Service::instance();
+		$svc->save_sources(
+			array(
+				array(
+					'id'    => 'sc',
+					'owner' => 'x',
+					'repo'  => 'y',
+					'ref'   => 'main',
+				),
+			)
+		);
+
+		$skill_md = "---\nname: sidecar-demo\ndescription: Sidecar demo skill.\nlicense: MIT\n---\n\n# Sidecar Demo\n";
+
+		$tree = array(
+			'tree' => array(
+				array(
+					'type' => 'blob',
+					'path' => 'skills/sidecar-demo/SKILL.md',
+					'sha'  => str_repeat( 'a', 40 ),
+				),
+				array(
+					'type' => 'tree',
+					'path' => 'skills/sidecar-demo/references',
+				),
+				array(
+					'type' => 'blob',
+					'path' => 'skills/sidecar-demo/references/guide.md',
+					'sha'  => str_repeat( 'b', 40 ),
+				),
+				array(
+					'type' => 'blob',
+					'path' => 'skills/sidecar-demo/scripts/build.js',
+					'sha'  => str_repeat( 'c', 40 ),
+				),
+				array(
+					'type' => 'blob',
+					'path' => 'skills/sidecar-demo/.hidden/secret.md',
+					'sha'  => str_repeat( 'd', 40 ),
+				),
+				array(
+					'type' => 'blob',
+					'path' => 'skills/other/SKILL.md',
+					'sha'  => str_repeat( 'e', 40 ),
+				),
+			),
+		);
+
+		$this->http_stubs = array(
+			'/x/y/main/catalogue.json'           => array(
+				'body' => wp_json_encode(
+					array(
+						'skills' => array(
+							array(
+								'name' => 'sidecar-demo',
+								'path' => 'skills/sidecar-demo',
+							),
+						),
+					)
+				),
+			),
+			'api.github.com/repos/x/y/git/trees' => array( 'body' => wp_json_encode( $tree ) ),
+			'raw.githubusercontent.com/x/y/main/skills/sidecar-demo/SKILL.md' => array( 'body' => $skill_md ),
+			'raw.githubusercontent.com/x/y/main/skills/sidecar-demo/references/guide.md' => array( 'body' => 'guide content' ),
+		);
+
+		$result = $svc->install_from_catalogue( 'sc', 'skills/sidecar-demo' );
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'sidecar-demo', $result['name'] );
+
+		$registry  = WP_MCP_AI_Skill_Registry::instance();
+		$skill_dir = trailingslashit( $registry->get_skills_dir() ) . 'sidecar-demo';
+
+		$this->assertFileExists( $skill_dir . '/SKILL.md' );
+		$this->assertFileExists( $skill_dir . '/references/guide.md' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Test fixture read from the isolated uploads dir.
+		$this->assertSame( 'guide content', file_get_contents( $skill_dir . '/references/guide.md' ) );
+		// Executable + dot-path sidecars are excluded by design (the registry
+		// allowlist would reject them anyway).
+		$this->assertFileDoesNotExist( $skill_dir . '/scripts/build.js' );
+		$this->assertFileDoesNotExist( $skill_dir . '/.hidden/secret.md' );
+	}
+
+	/**
+	 * Token-provider fixture for the token-header test.
+	 *
+	 * @return string
+	 */
+	public function return_test_github_token() {
+		return 'ghp_test123';
 	}
 
 	/* ─── REST: permissions ──────────────────────────────────────────────── */
