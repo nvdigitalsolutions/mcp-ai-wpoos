@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.98
+Stable tag: 1.1.99
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.99 - October 7, 2026 =
+
+SPA UI stack enhancement, gateway OAuth 2.1 resource server, and Docs Hub Playground release. Added: Proposal 060 — the SPA UI stack enhancement (#6952) upgrades toolkit-shell 0.2.0 → 0.3.0 (Radix Dialog/ConfirmDialog/DropdownMenu/Select/Tabs/Checkbox + CVA Button primitives, a TanStack TableView with sortable headers and ConfirmDialog deletes, a @dnd-kit KanbanView with persisted reorder + cross-column moves, a react-hook-form + zod FormView built from the manifest at runtime, sonner toasts, 14 --nds-* design-token references, and an ESLint dual-React guard) and schedule-anything-spa → 0.2.0 (Tailwind v3 → v4, a 16-primitive shadcn-style UI kit, @xyflow/react v12, route-level code splitting, i18n bootstrap, axe + jsx-a11y gate) with shipped test suites (31/31 + 23/23). Added: the MCP Gateway OAuth 2.1 resource server (#6945, Phase 1) — RFC 9728 metadata endpoints, WWW-Authenticate challenges with resource_metadata + scopes, zero-dependency JWT validation (RS256/384/512 + ES256/384, JWKS cache with rotation refetch, strict iss/aud/exp/nbf/scope, fail-closed), scope-based site binding (site:<slug>), no token passthrough, inert when GATEWAY_OAUTH_ISSUER is unset; Phases 2-5 (Auth0 provisioning, PKCE e2e, registry submission, deployment guide) deferred. Added: the Docs Hub Playground demo + wp.org Live Preview (#6944/#6946-#6949) — an idempotent local-first seed, a standalone demo.json, the Live Preview blueprint with a self-activate loader fix, a 10-page plugin wiki seed, a full-page /docs/ SPA demo, and a Playground badge. Added: the figma/mcp-server-guide default skill catalogue with name-dedupe (#6938) and the gateway listing prep (GPL LICENSE + license field + directory-submission doc), icon, and Claude Code plugin + /connect command (#6941-#6943). Fixed: Gmail body extraction — empty-part skipping, text/plain ↔ text/html fallback, message/rfc822 recovery, base64 decoding, and actionable body_source/body_empty_reason fields (#6939); the Complete ZIP shipped 0 of 65 blueprint JSONs in 1.1.98 — the remaining unanchored 'examples' excludes in bin/build-plugin-zip.sh and release.yml are now root-anchored with a hard CI guard (#6936/#6940); the media worker's synthetic external targets (STATUS_EXTERNAL_TARGETS, synthetic-only mode) with the split-brain checkedAt and sweeper downSince fixes (#6941); and the docs-hub rsync line-continuation build abort (#6951). Security: Fleet Operator tokens are no longer printed in plaintext — readonly password input with Show/Hide + Copy and collapsed credential blocks (#6950). Tool count: ~352 base + ~1,313 Pro (~1,665 total; unchanged; live registry authoritative). Model catalog: v2026.10.03 (unchanged; 18 providers). Stale build ZIPs removed: the 1.1.97 oOS build set (6 files) + the superseded toolkit-shell v0.2.0 ZIP.
 
 = 1.1.98 - October 6, 2026 =
 
