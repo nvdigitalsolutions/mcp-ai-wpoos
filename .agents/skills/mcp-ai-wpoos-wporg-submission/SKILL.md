@@ -440,6 +440,12 @@ in PR #6662: its inline rsync list drifted from `.distignore`, a dev
 file. Playground-demo dev folders and their exclusion checklist live in the
 `mcp-ai-wpoos-playground-demos` skill.
 
+**Windows local builds** — when the msys `rsync`/`zip` binaries are broken
+(missing DLLs — hit on the docs-hub 0.5.1 trunk build), stage with GNU
+`tar` using the same exclude set and zip with Python `zipfile` (normalize
+entry names to forward slashes, verify the listing, and check `readme.txt`
+sits at the ZIP root) before uploading.
+
 ## .wordpress-org assets
 
 Layout mirrors `plugins/nvoos-content-graph/.wordpress-org/`:
@@ -456,6 +462,18 @@ Layout mirrors `plugins/nvoos-content-graph/.wordpress-org/`:
   inside the ZIP.
 - PNGs are gitignored locally via `.git/info/exclude` (`*.png`) — stage with
   `git add -f` (content-graph precedent).
+- **Live Preview (`assets/blueprints/blueprint.json`)** — enables the
+  Playground preview button on the plugin page (docs:
+  developer.wordpress.org → Previews and Blueprints). Committers see a
+  "Test Preview" button as soon as the file is committed; it only becomes
+  public when a committer marks the preview public in the plugin's
+  Advanced view. The preview loader pre-installs the plugin **without
+  activating it**, and it injects its own installPlugin step before the
+  blueprint's steps — runPHP steps must self-activate or avoid plugin
+  classes entirely (patterns + the docs-hub case study in the
+  `mcp-ai-wpoos-playground-demos` skill). Assets-only SVN commits do NOT
+  change plugin visibility — the plugin goes public on the first `trunk/`
+  code commit.
 
 ### Screenshot capture (Playwright)
 

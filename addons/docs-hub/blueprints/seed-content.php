@@ -555,7 +555,8 @@ function nvoos_dh_demo_page_css( int $page_id ): string {
 		. "\t" . 'margin-right: calc(var(--wp--style--root--padding-right, 0px) * -1) !important;' . "\n"
 		. "\t" . 'min-height: calc(100vh - 32px);' . "\n"
 		. '}' . "\n"
-		. 'body.page-id-' . $page_id . ':not(.admin-bar) .nvoos-docs-hub-root { min-height: 100vh; }' . "\n";
+		. 'body.page-id-' . $page_id . ':not(.admin-bar) .nvoos-docs-hub-root { min-height: 100vh; }' . "\n"
+		. 'body.page-id-' . $page_id . ' .dh-skip-link { display: none; }' . "\n";
 }
 
 /**
