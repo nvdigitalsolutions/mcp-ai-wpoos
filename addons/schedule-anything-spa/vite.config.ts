@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   // esbuild >= 0.27.7 refuses to lower destructuring when a build target
   // includes Safari < 14.1 / iOS < 14.5 (evanw/esbuild#4436). Vite's default
   // 'modules' target includes safari14, which makes production builds fail.

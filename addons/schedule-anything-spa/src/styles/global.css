@@ -1,8 +1,21 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Schedule Anything SPA — Global Styles */
+/* ---------------------------------------------------------------------------
+ * Schedule Anything SPA — Global Styles (Tailwind CSS v4, CSS-first config)
+ * ------------------------------------------------------------------------- */
+
+/*
+ * Theme aliases — consume NV oOS Design System tokens when that plugin is
+ * active on the hosting WordPress site; fall back to the SPA's brand values.
+ * `@theme inline` emits the var() reference itself so utilities like
+ * `bg-primary-500` resolve against the live token.
+ */
+@theme inline {
+  --color-primary-500: var(--nds-color-accent, #3b82f6);
+  --color-primary-600: var(--nds-color-accent-hover, #2563eb);
+  --font-sans: var(--nds-font-family, ui-sans-serif, system-ui, sans-serif);
+  --radius-lg: var(--nds-space-xs, 0.5rem);
+}
 
 /* Smooth transitions for sidebar */
 .sidebar-enter {
@@ -36,7 +49,7 @@ aside::-webkit-scrollbar-thumb {
 
 /* Focus visible outlines for keyboard navigation */
 *:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--color-primary-500, #3b82f6);
   outline-offset: 2px;
 }
 
@@ -55,4 +68,13 @@ aside::-webkit-scrollbar-thumb {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-enter-active {
+    transition: none;
+  }
+  .skeleton {
+    animation: none;
+  }
 }

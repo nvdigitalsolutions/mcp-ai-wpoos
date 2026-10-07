@@ -7,6 +7,7 @@
 
 import { __ } from '@wordpress/i18n';
 import type { Resource } from '../api/types';
+import { Button } from './ui/button';
 
 interface DetailViewProps {
 	resource: Resource;
@@ -24,14 +25,14 @@ export function DetailView( { resource, row, loading, error, onClose, onEdit }: 
 				<h3>{ resource.label || resource.name }</h3>
 				<div className="nvoos-toolkit-shell-detail-actions">
 					{ onEdit && (
-						<button type="button" onClick={ onEdit }>
+						<Button variant="secondary" size="sm" onClick={ onEdit }>
 							{ __( 'Edit', 'nvoos-toolkit-shell' ) }
-						</button>
+						</Button>
 					) }
 					{ onClose && (
-						<button type="button" onClick={ onClose }>
+						<Button variant="ghost" size="sm" onClick={ onClose }>
 							{ __( 'Close', 'nvoos-toolkit-shell' ) }
-						</button>
+						</Button>
 					) }
 				</div>
 			</header>

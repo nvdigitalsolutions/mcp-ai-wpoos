@@ -10,18 +10,23 @@
  */
 
 import { useCallback, useRef, useState, type DragEvent } from 'react';
-import ReactFlow, {
+import { __, sprintf } from '@/lib/i18n';
+import {
+  ReactFlow,
   Background,
   Controls,
   MiniMap,
   addEdge,
   useNodesState,
   useEdgesState,
-  type Node,
-  type Connection,
   ReactFlowProvider,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+  type Node,
+  type Edge,
+  type Connection,
+  type NodeTypes,
+  type ReactFlowInstance,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 
 import { ToolNode } from './ToolNode';
 import { TriggerNode } from './TriggerNode';
@@ -29,16 +34,16 @@ import { PropertyPanel } from './PropertyPanel';
 import { useCreateSchedule } from '@/hooks/useSchedules';
 import type { Schedule } from '@/hooks/useSchedules';
 
-const nodeTypes = {
+const nodeTypes: NodeTypes = {
   toolNode: ToolNode,
   triggerNode: TriggerNode,
 };
 
 export function FlowCanvas() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [scheduleName, setScheduleName] = useState('');
   const [scheduleType, setScheduleType] = useState<Schedule['schedule_type']>('task');
@@ -78,7 +83,7 @@ export function FlowCanvas() {
       const toolData = JSON.parse(event.dataTransfer.getData('application/reactflow'));
 
       const bounds = reactFlowWrapper.current.getBoundingClientRect();
-      const position = reactFlowInstance.project({
+      const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX - bounds.left - 90,
         y: event.clientY - bounds.top - 25,
       });
@@ -110,7 +115,7 @@ export function FlowCanvas() {
       data: {
         triggerType: 'cron',
         schedule: cronInterval,
-        label: 'Scheduled Trigger',
+        label: __('Scheduled Trigger', 'schedule-anything-spa'),
       },
     };
     setNodes((nds) => {
@@ -141,7 +146,7 @@ export function FlowCanvas() {
   // Serialize and save
   const handleSave = useCallback(async () => {
     if (!scheduleName.trim()) {
-      alert('Please enter a schedule name.');
+      alert(__('Please enter a schedule name.', 'schedule-anything-spa'));
       return;
     }
 
@@ -165,7 +170,13 @@ export function FlowCanvas() {
       // Redirect to schedules page on success
       window.location.href = '/schedules';
     } catch (err) {
-      alert('Failed to create schedule: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      alert(
+        sprintf(
+          /* translators: %s: error message */
+          __('Failed to create schedule: %s', 'schedule-anything-spa'),
+          err instanceof Error ? err.message : __('Unknown error', 'schedule-anything-spa')
+        )
+      );
     }
   }, [scheduleName, scheduleType, cronInterval, nodes, createSchedule]);
 
@@ -174,7 +185,9 @@ export function FlowCanvas() {
       {/* Left: Tool Palette */}
       <div className="w-56 border-r border-gray-200 bg-white overflow-y-auto">
         <div className="p-3 border-b border-gray-100">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tools</h3>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            { __('Tools', 'schedule-anything-spa') }
+          </h3>
         </div>
         <ToolPaletteContent />
       </div>
@@ -187,7 +200,7 @@ export function FlowCanvas() {
             type="text"
             value={scheduleName}
             onChange={(e) => setScheduleName(e.target.value)}
-            placeholder="Schedule name..."
+            placeholder={ __('Schedule name…', 'schedule-anything-spa') }
             className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <select
@@ -195,10 +208,10 @@ export function FlowCanvas() {
             onChange={(e) => setScheduleType(e.target.value as Schedule['schedule_type'])}
             className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg bg-white"
           >
-            <option value="task">Task</option>
-            <option value="workflow">Workflow</option>
-            <option value="assistant_run">AI Assistant</option>
-            <option value="channel_broadcast">Broadcast</option>
+            <option value="task">{ __('Task', 'schedule-anything-spa') }</option>
+            <option value="workflow">{ __('Workflow', 'schedule-anything-spa') }</option>
+            <option value="assistant_run">{ __('AI Assistant', 'schedule-anything-spa') }</option>
+            <option value="channel_broadcast">{ __('Broadcast', 'schedule-anything-spa') }</option>
           </select>
           <select
             value={cronInterval}
@@ -208,25 +221,27 @@ export function FlowCanvas() {
             }}
             className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg bg-white"
           >
-            <option value="hourly">Hourly</option>
-            <option value="daily">Daily</option>
-            <option value="wp_mcp_ai_every_6_hours">Every 6h</option>
-            <option value="wp_mcp_ai_every_30_minutes">Every 30m</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
+            <option value="hourly">{ __('Hourly', 'schedule-anything-spa') }</option>
+            <option value="daily">{ __('Daily', 'schedule-anything-spa') }</option>
+            <option value="wp_mcp_ai_every_6_hours">{ __('Every 6 hours', 'schedule-anything-spa') }</option>
+            <option value="wp_mcp_ai_every_30_minutes">{ __('Every 30 minutes', 'schedule-anything-spa') }</option>
+            <option value="weekly">{ __('Weekly', 'schedule-anything-spa') }</option>
+            <option value="monthly">{ __('Monthly', 'schedule-anything-spa') }</option>
           </select>
           <button
             onClick={addTriggerNode}
             className="px-3 py-1.5 text-xs bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors"
           >
-            + Trigger
+            { __('+ Trigger', 'schedule-anything-spa') }
           </button>
           <button
             onClick={handleSave}
             disabled={createSchedule.isPending}
             className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium"
           >
-            {createSchedule.isPending ? 'Saving...' : 'Save Schedule'}
+            {createSchedule.isPending
+              ? __('Saving…', 'schedule-anything-spa')
+              : __('Save Schedule', 'schedule-anything-spa')}
           </button>
         </div>
 

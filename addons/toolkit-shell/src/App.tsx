@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { __, sprintf } from '@wordpress/i18n';
+import { toast } from 'sonner';
 import { fetchManifest } from './api/manifest-client';
 import {
 	createResource,
@@ -24,6 +25,8 @@ import { TableView } from './components/TableView';
 import { KanbanView } from './components/KanbanView';
 import { DetailView } from './components/DetailView';
 import { FormView } from './components/FormView';
+import { Toaster } from './components/toaster';
+import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
 
 interface AppProps {
 	config: {
@@ -111,6 +114,7 @@ export function App( { config }: AppProps ) {
 					/>
 				) }
 			</main>
+			<Toaster />
 		</div>
 	);
 }
@@ -124,28 +128,19 @@ function ViewTabs( {
 	active: string | undefined;
 	onChange: ( name: string ) => void;
 } ) {
-	if ( manifest.views.length <= 1 ) {
+	if ( manifest.views.length <= 1 || ! active ) {
 		return null;
 	}
 	return (
-		<div className="nvoos-toolkit-shell-tabs" role="tablist">
-			{ manifest.views.map( ( v ) => (
-				<button
-					key={ v.name }
-					type="button"
-					role="tab"
-					aria-selected={ v.name === active }
-					className={
-						v.name === active
-							? 'nvoos-toolkit-shell-tab is-active'
-							: 'nvoos-toolkit-shell-tab'
-					}
-					onClick={ () => onChange( v.name ) }
-				>
-					{ v.label || v.name }
-				</button>
-			) ) }
-		</div>
+		<Tabs value={ active } onValueChange={ onChange }>
+			<TabsList aria-label={ __( 'Views', 'nvoos-toolkit-shell' ) }>
+				{ manifest.views.map( ( v ) => (
+					<TabsTrigger key={ v.name } value={ v.name }>
+						{ v.label || v.name }
+					</TabsTrigger>
+				) ) }
+			</TabsList>
+		</Tabs>
 	);
 }
 
@@ -240,8 +235,14 @@ function ViewSurface( { manifest, viewName, mode, setMode }: ViewSurfaceProps ) 
 					setFormSaving( true );
 					setFormError( null );
 					createResource( manifest.rest_namespace, resource, values )
-						.then( () => setMode( { kind: 'list' } ) )
-						.catch( ( err: Error ) => setFormError( err.message ) )
+						.then( () => {
+							toast.success( __( 'Record created.', 'nvoos-toolkit-shell' ) );
+							setMode( { kind: 'list' } );
+						} )
+						.catch( ( err: Error ) => {
+							setFormError( err.message );
+							toast.error( err.message );
+						} )
 						.finally( () => setFormSaving( false ) );
 				} }
 			/>
@@ -261,8 +262,14 @@ function ViewSurface( { manifest, viewName, mode, setMode }: ViewSurfaceProps ) 
 					setFormSaving( true );
 					setFormError( null );
 					updateResource( manifest.rest_namespace, resource, mode.id, values )
-						.then( () => setMode( { kind: 'detail', id: mode.id } ) )
-						.catch( ( err: Error ) => setFormError( err.message ) )
+						.then( () => {
+							toast.success( __( 'Record saved.', 'nvoos-toolkit-shell' ) );
+							setMode( { kind: 'detail', id: mode.id } );
+						} )
+						.catch( ( err: Error ) => {
+							setFormError( err.message );
+							toast.error( err.message );
+						} )
 						.finally( () => setFormSaving( false ) );
 				} }
 			/>
@@ -310,6 +317,16 @@ function ViewSurface( { manifest, viewName, mode, setMode }: ViewSurfaceProps ) 
 					view={ view }
 					rows={ list.items }
 					onRowClick={ ( id ) => setMode( { kind: 'detail', id } ) }
+					onMove={ view.group_by ? ( column, id ) => {
+						updateResource( manifest.rest_namespace, resource, id, {
+							[ view.group_by as string ]: column,
+						} )
+							.then( () => {
+								toast.success( __( 'Card moved.', 'nvoos-toolkit-shell' ) );
+								reloadList();
+							} )
+							.catch( ( err: Error ) => toast.error( err.message ) );
+					} : undefined }
 				/>
 			) }
 			{ ! listLoading && view.type !== 'kanban' && (
@@ -318,12 +335,15 @@ function ViewSurface( { manifest, viewName, mode, setMode }: ViewSurfaceProps ) 
 					rows={ list.items }
 					onRowClick={ ( id ) => setMode( { kind: 'detail', id } ) }
 					onDelete={ ( id ) => {
-						if ( ! confirm( __( 'Delete this record?', 'nvoos-toolkit-shell' ) ) ) {
-							return;
-						}
 						deleteResource( manifest.rest_namespace, resource, id )
-							.then( () => reloadList() )
-							.catch( ( err: Error ) => setListError( err.message ) );
+							.then( () => {
+								toast.success( __( 'Record deleted.', 'nvoos-toolkit-shell' ) );
+								reloadList();
+							} )
+							.catch( ( err: Error ) => {
+								setListError( err.message );
+								toast.error( err.message );
+							} );
 					} }
 				/>
 			) }
