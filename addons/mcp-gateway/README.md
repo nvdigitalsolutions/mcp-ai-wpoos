@@ -93,6 +93,20 @@ TRUST_PROXY=1
 - Auth: static API keys in v1; OAuth 2.1 (RFC 8414 + dynamic client
   registration) is the documented upgrade path.
 
+## Claude Code plugin
+
+The addon ships a Claude Code plugin (`.claude-plugin/plugin.json`,
+`commands/connect.md`, `skills/gateway/`) that syncs to the mirror repo and
+doubles as the marketplace source:
+
+```
+/plugin marketplace add nvdigitalsolutions/nvoos-mcp-gateway
+```
+
+Enabling the plugin prompts for the gateway API key (stored securely as a
+sensitive `userConfig` option) and substitutes it into the MCP server's
+`Authorization` header.
+
 ## Development
 
 ```bash

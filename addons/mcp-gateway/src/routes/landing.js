@@ -42,15 +42,18 @@ GET  /mcp   (server discovery JSON)</pre>
 		Operator allowlist.
 	</p>
 	<h2>Example (Claude Desktop)</h2>
-	<pre>{
-  "mcpServers": {
-    "nvoos": {
-      "type": "http",
-      "url": "https://mcp.nvoos.pro/mcp",
-      "headers": { "Authorization": "Bearer YOUR_KEY" }
-    }
-  }
-}</pre>
+		<pre>{
+	  "mcpServers": {
+	    "nvoos": {
+	      "type": "http",
+	      "url": "https://mcp.nvoos.pro/mcp",
+	      "headers": { "Authorization": "Bearer YOUR_KEY" }
+	    }
+	  }
+	}</pre>
+		<h2>Example (Claude Code)</h2>
+		<pre>claude mcp add --transport http nvoos https://mcp.nvoos.pro/mcp --header "Authorization: Bearer YOUR_KEY"
+	# or install the plugin: /plugin marketplace add nvdigitalsolutions/nvoos-mcp-gateway</pre>
 	<p>For editors, the <code>nvoos-mcp-bridge</code> npm package provides a stdio relay:</p>
 	<pre>npx -y @nvdigitalsolutions/nvoos-mcp-bridge
 # env: MCP_AI_BASE_URL=https://mcp.nvoos.pro/mcp
