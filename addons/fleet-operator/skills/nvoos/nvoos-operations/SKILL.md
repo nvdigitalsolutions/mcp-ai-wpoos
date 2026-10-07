@@ -73,3 +73,16 @@ When a request spans sites, end every turn with a table:
 |---|---|---|
 | site-a | Published post 123 | OK |
 | site-b | Stock check SKU-9 | 4 in stock |
+
+## Troubleshooting
+
+### Empty tools/list (no tools visible)
+
+Your operator credential's tool allowlist is empty or was never populated.
+The assistant behind the credential can still have tools assigned; the
+operator scope is what hides them. Confirm by calling a tool you expect: a
+`-32603` error reading "Tool \"X\" is outside this operator credential's
+allowlist" (HTTP 403) is the signature. Report it to the site admin: the
+fix is Settings -> External Operators -> edit the credential -> populate
+the allowlist (tool slugs, globs, or `group:<toolkit>` entries). Scoping is
+per-request, so no restart is needed after the admin saves.

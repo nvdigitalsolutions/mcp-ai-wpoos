@@ -31,6 +31,7 @@
             <exclude>tests/graphify/bootstrap.php</exclude>
             <exclude>tests/paper-store/trait-paper-store-test-helpers.php</exclude>
             <exclude>addons/pro/tests/class-wp-mcp-ai-workflow-log-context-recorder-tool.php</exclude>
+            <exclude>addons/pro/tests/class-wp-mcp-ai-media-toolkit-stub.php</exclude>
             <exclude>addons/saas-controller/tests/bootstrap.php</exclude>
             <exclude>addons/checkout-api/tests/bootstrap.php</exclude>
             <exclude>addons/nvoos-design-system/tests/bootstrap.php</exclude>

@@ -27,10 +27,16 @@ right after rebuilding the ZIPs.
 
 1. `login` → admin session for the admin-side views.
 2. `setSiteOptions` → demo blog name / tagline.
-3. `runPHP` (seed) → pretty permalinks, six Markdown files written into
-   `wp-content/uploads/nvoos-docs-hub/content/` (the local-first source
-   folder), and a published `/docs/` page embedding `[nvoos_docs]`.
-   Idempotent via the `nvoos_dh_demo_seeded` option.
+3. `runPHP` (seed) → pretty permalinks, a ten-page plugin wiki written
+   into `wp-content/uploads/nvoos-docs-hub/content/` (the local-first
+   source folder; `README.md` owns the `readme` slug so the default home
+   page opens the wiki), and a published `/docs/` page containing ONLY
+   the `[nvoos_docs]` shortcode. The seed also applies the theme's
+   `page-no-title.html` template when it exists and writes full-page demo
+   CSS via WordPress core Additional CSS (scoped to `body.page-id-{ID}`,
+   using the theme's own alignfull mechanism) so the docs browser fills
+   the whole page like a standalone SPA. Idempotent via the
+   `nvoos_dh_demo_seeded` option.
 4. `runPHP` (build) → deterministic synchronous rebuild
    (`NV_oOS_Docs_Hub_Rebuild_Job::run()`), summary stored in the
    `nvoos_dh_demo_build` option.
