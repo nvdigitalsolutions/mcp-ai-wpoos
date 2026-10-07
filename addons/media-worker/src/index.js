@@ -34,6 +34,7 @@ import { crawlRouter } from './routes/crawl.js';
 import { crawl4aiRouter } from './routes/crawl4ai.js';
 import { statusRouter, counters, alertBus, buildSummary } from './routes/status.js';
 import { startSweeper } from './status/sweeper.js';
+import { startSyntheticLoop, seedExternalTargets } from './status/synthetic.js';
 import { publicSummary, renderStatusPage } from './status/page.js';
 import { siteConfig } from './status/config.js';
 import { store, disconnectStoreRedis } from './status/store.js';
@@ -103,6 +104,16 @@ if ( siteConfig( 'default' ).enabled ) {
 	const bus = alertBus();
 	counters.alertBus = bus;
 	startSweeper( { store, alertBus: bus } );
+
+	// External targets (no heartbeats — e.g. the MCP gateway) + the
+	// synthetic probe loop. Seeding is best-effort and never blocks boot;
+	// the loop writes probe results only — the sweeper owns status
+	// transitions.
+	const externalTargets = siteConfig( 'default' ).externalTargets;
+	seedExternalTargets( store, externalTargets ).catch( ( err ) => {
+		console.warn( '[Status] External target seeding failed:', err.message );
+	} );
+	startSyntheticLoop( { store, counters } );
 
 	// Public, allowlisted fleet status (Statuspage-style).
 	if ( siteConfig( 'default' ).publicPage ) {

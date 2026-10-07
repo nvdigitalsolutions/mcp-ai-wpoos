@@ -83,7 +83,7 @@ export function computeState( record, now, cfg ) {
 	const heartbeatAge = now - lastHeartbeatAt;
 	const maintenanceUntil = Math.max( record.maintenanceUntil || 0, maintenanceOverride( cfg ) );
 	const synthetic = record.synthetic || {};
-	const syntheticEnabled = cfg.syntheticEnabled || ( record.synthetic && record.synthetic.checked );
+	const syntheticEnabled = cfg.syntheticEnabled || ( record.synthetic && Number.isFinite( record.synthetic.checkedAt ) );
 
 	let missCount = 0;
 	if ( record.missCount ) {
@@ -133,6 +133,19 @@ export function computeState( record, now, cfg ) {
 
 	// No heartbeat yet, or heartbeat is stale.
 	if ( 0 === lastHeartbeatAt ) {
+		// Synthetic-only external targets (no heartbeat emitter — e.g. the
+		// MCP gateway): the synthetic probe is the single source of truth.
+		// No completed check yet -> unknown; a check flips the site between
+		// operational and major_outage.
+		if ( record.syntheticOnly && Number.isFinite( synthetic.checkedAt ) ) {
+			return {
+				status: false === synthetic.ok ? 'major_outage' : 'operational',
+				missCount: 0,
+				since: false === synthetic.ok ? record.downSince || now : record.since || now,
+				lastSeenAt: 0,
+			};
+		}
+
 		return {
 			status: syntheticEnabled && false === synthetic.ok ? 'major_outage' : 'unknown',
 			missCount: 0,
