@@ -1,9 +1,22 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.98)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.1.99)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## SPA UI Stack, Gateway OAuth 2.1 & the Docs Hub Playground (v1.1.99)
+
+- **SPA UI stack enhancement (PR #6952, Proposal 060)** — toolkit-shell **0.2.0 → 0.3.0** (Radix Dialog/ConfirmDialog/DropdownMenu/Select/Tabs/Checkbox + CVA Button, TanStack TableView with ConfirmDialog deletes, @dnd-kit Kanban with persisted moves, react-hook-form + zod FormView built from the manifest at runtime, sonner toasts, 14 `--nds-*` tokens, ESLint dual-React guard) and schedule-anything-spa → **0.2.0** (Tailwind v4, 16 shadcn-style primitives, @xyflow/react v12, route-level code splitting, `@wordpress/i18n`, axe + jsx-a11y gate); shipped suites 31/31 + 23/23.
+- **MCP Gateway OAuth 2.1 resource server (PR #6945, Phase 1)** — RFC 9728 metadata (`GET /.well-known/oauth-protected-resource` + `/mcp` variant), 401 `WWW-Authenticate` challenges with `resource_metadata`/scopes, zero-dependency JWT validation (node:crypto RS/ES, JWKS cache + rotation refetch, strict iss/aud/exp/nbf/scope, fail-closed), scope-based site binding (`site:<slug>`), and **no token passthrough** (OAuth tokens never travel upstream — confused-deputy discipline); inert until `GATEWAY_OAUTH_ISSUER`; Phases 2–5 (Auth0 provisioning, PKCE e2e, registry submission, deployment guide) deferred. Gateway stays 0.1.1.
+- **Docs Hub Playground demo + wp.org Live Preview (PRs #6944/#6946–#6949)** — local-first seed + standalone `demo.json` + Live Preview `blueprint.json` (dev-only across all three exclusion lists), the preview-loader self-activate fix (`activate_plugin()` + `include_once` fallback), the 10-page wiki seed, the full-page `/docs/` SPA demo (zero-margin full-bleed), and the Playground badge.
+- **Gateway listing prep + Claude Code plugin (PRs #6941–#6943)** — GPL LICENSE + `license` field + the directory-submission doc, the `mcp-gateway.svg` icon + `/assets` static serving, `.claude-plugin/plugin.json` + `/connect` (mirror sync = marketplace source).
+- **Figma Agent Skills catalogue (PR #6938)** — `figma/mcp-server-guide` default source + name-dedupe in `normalise_manifest_skills()`; CG Pro mirror byte-identical; Restore Default Catalogues surfaces it for existing installs.
+- **Gmail body extraction fixed (PR #6939)** — empty-part skipping, `text/plain` ↔ `text/html` fallback, `message/rfc822` recovery, base64 decoding, actionable `body_source`/`body_empty_reason`.
+- **Complete-ZIP blueprint stripping fixed (PRs #6936/#6940)** — the 1.1.98 Complete ZIP shipped 0 of 65 blueprint JSONs; `bin/build-plugin-zip.sh` + `release.yml` excludes root-anchored + a CI guard.
+- **Media worker synthetic external targets (PR #6941)** — `STATUS_EXTERNAL_TARGETS`, synthetic-only mode, split-brain `checkedAt` + sweeper `downSince` fixes; worker stays 3.4.0 (bump deferred to the release process).
+- **Fleet Operator token masking (PR #6950)** — no plaintext operator tokens (readonly password input + collapsed credential blocks).
+- **Tool counts** — ~352 base + ~1,313 Pro (~1,665 total; unchanged).
 
 ## Figma-to-Elementor Pipeline, Unified Blueprints Fixes & the Dependabot Sweep (v1.1.98)
 

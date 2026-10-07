@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.98"
-  plugin-version-tested: "1.1.98"
-  last-updated: "2026-10-06"
+  plugin-version: "1.1.99"
+  plugin-version-tested: "1.1.99"
+  last-updated: "2026-10-07"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (`v1.1.98-docs-catch-up.md`,
-   with `v1.1.96-docs-catch-up.md` as the previous pass) plus the
+3. **Read the template plans** — the latest executed plan (`v1.1.99-docs-catch-up.md`,
+   with `v1.1.98-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -240,6 +240,20 @@ weekly (or on demand), independent of any release.
   addon tree for the old version and treat every non-historical hit (health
   payloads, status constants, headers) as a release-blocking miss — the
   ADDON_INVENTORY row update alone is not proof the addon is consistent.
+- **The partial-bump rule covers test-file version pins too.** The v1.1.99
+  window's #6952 bumped toolkit-shell to 0.3.0 everywhere (package.json,
+  plugin header, runtime constants) but left the three test files defining
+  `NVOOS_TOOLKIT_SHELL_VERSION` at 0.2.0 — the catch-up fixes such pins
+  in-pass (a separate `fix:` commit), since tests pinning the old version
+  are exactly the kind of silent drift the rule exists to catch.
+- **An in-window SPA addon version bump supersedes its committed
+  `build/nvoos-<slug>-v<old>.zip` before the workflow has built the new
+  one.** The `build-spa-addons.yml` run on the bump's merge commit produces
+  the `v<new>` ZIP asynchronously (a later `build: add SPA addon ZIPs`
+  commit on alpha-working) — the catch-up removes the superseded old ZIP
+  (the v1.1.93 superseded-addon-zip precedent) and notes the in-flight run
+  in the plan; a build that fails simply leaves no current ZIP, which is
+  still the correct state (the old artifact is stale by definition).
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -754,7 +768,36 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.94-docs-catch-up.md`,
   `docs/project/plans/v1.1.95-docs-catch-up.md`,
   `docs/project/plans/v1.1.97-docs-catch-up.md`,
-  `docs/project/plans/v1.1.98-docs-catch-up.md` (latest executed — the v1.1.98
+  `docs/project/plans/v1.1.98-docs-catch-up.md`,
+  `docs/project/plans/v1.1.99-docs-catch-up.md` (latest executed — the v1.1.99
+  pass over PRs #6936 + #6938–#6952: the SPA UI stack enhancement (#6952,
+  Proposal 060 — toolkit-shell 0.2.0 → 0.3.0 + schedule-anything-spa →
+  0.2.0 with shipped vitest suites; the addon partial-bump rule fired on
+  the three toolkit-shell test files still pinning 0.2.0 — fixed in-pass),
+  the MCP Gateway OAuth 2.1 resource server (#6945, Phase 1 — RFC 9728
+  metadata + challenges, zero-dep JWT, scope site-binding, no passthrough;
+  Phases 2–5 deferred; gateway stays 0.1.1 with an Unreleased changelog
+  section), the Docs Hub Playground demo + wp.org Live Preview
+  (#6944/#6946–#6949), the gateway listing prep + icon + Claude Code
+  plugin (#6941–#6943), the Figma skills catalogue (#6938 — the
+  agent-skills.md catalogue-section fold-in owed), the Gmail body fixes
+  (#6939), the Complete-ZIP blueprint stripping (#6936/#6940 — #6936
+  merged 14 s before the #6935 catch-up and joined this window per the
+  #6787 rule), the Fleet Operator token masking (#6950), the #6941
+  deferral executed in-pass (.env.example `STATUS_EXTERNAL_TARGETS` +
+  `.context/media-worker.md` external-targets notes), four skill
+  reconciliations (test-suite description 66 → 67, playground-demos
+  description + docs-hub demo, plugin ×3 + RELEASE-NOTES v1.1.99 section
+  with the bundled-base sync, the gateway addon skill's OAuth section),
+  the proposals-README 060 entry, the stale 1.1.97 build-set removal
+  (6 root files) + the superseded nvoos-toolkit-shell-v0.2.0.zip (the
+  v0.3.0 ZIP lands via the in-flight build-spa-addons run), zero
+  tool-count change, and **no new OI-1 group** (the window's `@since
+  0.3.0` ×12 are the toolkit-shell addon convention; #6937's post-window
+  1.1.98/1.1.0 tags were already reconciled))
+
+Preceding windows:
+  `docs/project/plans/v1.1.98-docs-catch-up.md` (the v1.1.98
   pass over PRs #6927–#6934: the Figma-to-Elementor design-to-build pipeline
   (#6934, Proposals 057–059 — docs + the new `design-figma-to-elementor`
   skill, coding-time 62 → 63, base bundled 75 → 76, the README repo-map

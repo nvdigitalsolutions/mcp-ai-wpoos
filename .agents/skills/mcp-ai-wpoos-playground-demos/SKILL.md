@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-playground-demos
-description: "Operational guide for the NV oOS WordPress Playground demo blueprints — the Content Graph \"Project Asteria\" demo and the Complete bundle × local Ollama demo. Covers blueprint authoring patterns (embedded runPHP seed snippets, generator scripts, preview-safe vs standalone split), CORS hosting gotchas, the CI Plugin Check gate (built-ZIP scan, rsync/distignore sync, ABSPATH guards), Playground worker crash modes (PHP-side localhost fetches, inline-script UTF-8, SPA SSE-hold mount bursts, crash-truncation SyntaxErrors), local Ollama integration (OLLAMA_ORIGINS, browser policy matrix, plugin settings + assistant meta keys), and the CLI validation harness (probe builder, mount quirks, server-mode 502 boot). Use when extending or debugging the demo blueprints, adding a new Playground demo, or triaging a crashing Playground instance."
+description: "Operational guide for the NV oOS WordPress Playground demo blueprints — the Content Graph \"Project Asteria\" demo, the Complete bundle × local Ollama demo, and the Docs Hub wp.org Live Preview demo. Covers blueprint authoring patterns (embedded runPHP seed snippets, generator scripts, preview-safe vs standalone split), CORS hosting gotchas, the CI Plugin Check gate (built-ZIP scan, rsync/distignore sync, ABSPATH guards), Playground worker crash modes (PHP-side localhost fetches, inline-script UTF-8, SPA SSE-hold mount bursts, crash-truncation SyntaxErrors), local Ollama integration (OLLAMA_ORIGINS, browser policy matrix, plugin settings + assistant meta keys), and the CLI validation harness (probe builder, mount quirks, server-mode 502 boot). Use when extending or debugging the demo blueprints, adding a new Playground demo, or triaging a crashing Playground instance."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.81"
-  plugin-version-tested: "1.1.81"
-  last-updated: "2026-09-18"
+  plugin-version: "1.1.99"
+  plugin-version-tested: "1.1.99"
+  last-updated: "2026-10-07"
 ---
 
 # NV oOS Playground Demos — Blueprint Authoring & Local-Ollama Playbook

@@ -254,6 +254,9 @@ A *catalogue* is a public Git repository (currently GitHub-only) containing one 
 
 - **`Lonsdale201/wp-agent-skills`** — MIT-licensed WordPress-developer catalogue (security audits, REST/HTML/i18n APIs, plugin scaffold, WooCommerce, JetEngine, JetFormBuilder, WP Rocket).
 - **`anthropics/skills`** — Anthropic's own catalogue of general-purpose skills.
+- **`figma/mcp-server-guide`** — Figma's MCP skills repo (14 Figma skills — design-to-code, generate-design, implement-motion, use-figjam, … — + 2 workflow skills), added in v1.1.99 (#6938). The figma repo mirrors the same 14 skills in two trees (`skills/` + `skills-figquery/`), so `normalise_manifest_skills()` dedupes by name keeping the shortest path — install slugs never collide.
+
+Existing installs keep their saved source list; the new default source appears after **Restore Default Catalogues** in Skill Settings → Catalogues.
 
 Manage sources at **Assistants → Skill Settings → Catalogues**. Each source carries an `id`, `owner`, `repo`, and `ref` (branch, tag, or commit SHA — pin to a SHA for reproducibility).
 

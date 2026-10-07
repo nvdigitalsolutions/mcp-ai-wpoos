@@ -1,5 +1,71 @@
 # oOS – Changelog
 
+## [1.1.99] - 2026-10-07
+
+### Added — SPA UI Stack Enhancement (PR #6952, Proposal 060)
+
+- **Two SPA addons move onto a shared headless UI stack** (research + implementation plan + verification notes in `docs/project/proposals/060-*`):
+  - **toolkit-shell 0.2.0 → 0.3.0** — Radix Dialog/ConfirmDialog/DropdownMenu/Select/Tabs/Checkbox + CVA Button primitives, a TanStack TableView with sortable headers and ConfirmDialog deletes (replacing `window.confirm`), a @dnd-kit KanbanView with persisted reorder + cross-column moves, a react-hook-form + zod FormView built from the manifest at runtime with per-field `role="alert"` errors, sonner toasts, and 14 `--nds-*` Design System token references with wp-admin fallbacks; an ESLint no-restricted-imports guard keeps the addon's bundled React 19 off `@wordpress/element`/`components` (WP core React 18).
+  - **schedule-anything-spa 0.1.0 → 0.2.0** — Tailwind v3 → v4 (CSS-first config, `@theme inline` NDS token aliases), a 16-primitive shadcn-style UI kit (Radix + CVA + tailwind-merge + sonner), @xyflow/react v12 (strict `Node<T>` typing), route-level code splitting (Builder 63.4 KB gz + Analytics on demand), `@wordpress/i18n` bootstrap, and an axe + jsx-a11y lint gate (6 pre-existing PropertyPanel label issues fixed).
+  - **Tests ship with the addons** — 31/31 toolkit-shell + 23/23 schedule-anything-spa on a shared vitest + jsdom + Testing Library stack; three bugs caught before shipping (empty numeric fields coerced to `0`, RHF resolver-identity churn resetting Radix inputs, a Kanban nested-interactive a11y violation). toolkit-shell ≈164 KB gzip — zod flagged as the P1 size-pass candidate.
+
+### Added — MCP Gateway OAuth 2.1 Resource Server (PR #6945)
+
+- **Phase 1 of the gateway's OAuth upgrade path** (research: MCP authorization spec 2025-06-18, RFC 9728/8414/7591/8707, OpenAI's MCP server requirements) — with `GATEWAY_OAUTH_ISSUER` set the gateway becomes an RFC 9728 protected resource **alongside** static API keys; everything stays inert (404 / unchanged 401s) when OAuth is unconfigured:
+  - **RFC 9728 metadata** — `GET /.well-known/oauth-protected-resource` + the `/mcp` path-insertion variant (each asserts its matching `resource` identifier per §3.3).
+  - **WWW-Authenticate challenges** — 401s carry `resource_metadata` + the supported-scope list; scope-less tokens get 403 `insufficient_scope`.
+  - **Zero-dependency JWT validation** (`src/oauth/jwt.js`) — node:crypto RS256/384/512 + ES256/384, in-memory JWKS cache with TTL + rotation refetch, strict `iss`/`aud` (RFC 8707 resource binding, accepting the `/mcp` variant)/`exp`/`nbf`/scope checks; fail-closed on any fetch or parse failure.
+  - **Scope-based site binding** — `site:<slug>` scopes grant access to bound sites (mirroring static-key semantics); `site:read` advertised for future fine-grained enforcement.
+  - **No token passthrough** — the gateway keeps exchanging for per-site Fleet Operator tokens; OAuth tokens never travel upstream (confused-deputy discipline required by the spec).
+  - 58/58 tests (13 JWT unit + 7 integration + config parsing). **Phases 2–5 deferred** — Auth0 tenant provisioning (RFC 8414 + DCR + PKCE), scripted PKCE end-to-end + ChatGPT "Add custom MCP server" test, `server.json` + `mcp-publisher` registry submission, deployment guide + submission pack.
+
+### Added — Docs Hub Playground Demo & wp.org Live Preview (PRs #6944, #6946–#6949)
+
+- **The Docs Hub addon gains a WordPress Playground demo mirroring the Content Graph "Project Asteria" pattern (#6662)**:
+  - **`addons/docs-hub/blueprints/`** — an idempotent local-first seed (six self-documenting Markdown pages written into `wp-content/uploads/nvoos-docs-hub/content/` + a published `/docs/` page embedding `[nvoos_docs]`; no remote calls, no API keys), a standalone shareable `demo.json` (self-installs the newest build ZIP), the wp.org **Live Preview** `blueprint.json` (the preview loader pre-installs the plugin), `bin/generate-docs-hub-blueprint.php`, and a runbook; `blueprints/` is dev-only across all three packaging exclusion lists. SVN assets live (r3731775).
+  - **Live Preview self-activate fix (#6946)** — the preview loader installs without activating, so the seed's plugin-class references fatalled (exit 255); both runPHP steps now `activate_plugin()` when installed-but-inactive with an `include_once` fallback, compute the uploads path directly as a last resort, and store a `plugin-unavailable` marker instead of fatalling. Reproduced + verified with `npx @wp-playground/cli@3.1.54 run-blueprint`.
+  - **10-page plugin wiki seed + full-page SPA demo (#6947)** — `README.md` owns the `readme` slug (fixes the "No documents indexed yet / 404 readme" Live Preview state); `/docs/` now embeds ONLY `[nvoos_docs]` (no-title template, Additional-CSS full-bleed, hidden site chrome, demo-scoped skip-link removal).
+  - **Zero page margins (#6949)** — the demo CSS zeroes margins/paddings across `body`/`.wp-site-blocks`/`main`/`.entry-content` with `width:100%; max-width:none` instead of the calc() negative-margin trick; syncs the repo with the live SVN blueprint (r3731969).
+  - **Playground badge (#6948)** — a shields.io button in `addons/docs-hub/README.md` boots the standalone demo on playground.wordpress.net.
+
+### Added — Figma Agent Skills in the Default Catalogues (PR #6938)
+
+- **`figma/mcp-server-guide` joins the Pro Skill Catalogue default sources** — its 14 Figma skills (design-to-code, generate-design, implement-motion, use-figjam, …) + 2 workflow skills become installable on demand from the Skill Catalogue UI. `normalise_manifest_skills()` now **dedupes by name** (the figma repo mirrors the same 14 skills in two trees — 28 colliding entries would overwrite each other; shortest path wins deterministically). The CG Pro service mirrors with the documented per-mode deviations only. Existing installs keep their saved source list; the new source appears after **Restore Default Catalogues** in Skill Settings → Catalogues. **Catalogue verification (this pass, against the live repo tree):** the walker discovers any-depth `SKILL.md` files and the figma source resolves to **16 entries** after dedupe (14 skills + 2 workflow skills) — correct; three adjacent catalogue gaps recorded for follow-up: the v1 install flow fetches only `SKILL.md` + four well-known companions (subfolder `references/`/`scripts/` sidecars the figma skills depend on don't install), the unauthenticated GitHub API calls (60 req/hr) get exhausted by a single large source's description enrichment, and the `VoltAgent/awesome-agent-skills` default is an awesome-list repo with zero `SKILL.md` files (always-empty listing).
+
+### Added — Gateway Listing Prep, Icon & Claude Code Plugin (PRs #6941–#6943)
+
+- **Listing prep (#6941)** — the gateway gains a GPL-3.0-or-later `LICENSE` + `license` field (the public mirror 404'd on LICENSE and showed as unlicensed) and a ready-to-paste `docs/operations/deployment/mcp-gateway-directory-submission.md` (mcpservers.org / mcp.directory / pulsemcp fields + per-directory notes); the Velocity guide's §5/§6 are marked to reality with the in-fleet monitoring option.
+- **Icon (#6942)** — `mcp-gateway.svg` ships inside the addon subtree; `express.static` serves `/assets` (same-origin, 1-day cache) before the auth/404 layers; the landing page shows the 88px logo + favicon; the Dockerfile copies the asset.
+- **Claude Code plugin + CLI example (#6943)** — a `.claude-plugin/plugin.json` (sensitive `userConfig` key feeding the MCP Authorization header via `${user_config.api_key}`), a `/connect` command, a gateway skill teaching tool namespacing/scoping/background mode, the landing-page one-liner, and the README marketplace path; the mirror sync doubles as the marketplace source.
+
+### Fixed — Gmail Body Extraction (PR #6939)
+
+- **Assistants no longer report "the email body couldn't be retrieved" on well-formed Gmail messages.** `WP_MCP_AI_Pro_Gmail_Client::extract_body()` walks candidates in preferred-format order, skips parts that decode to empty/whitespace, and falls back across `text/plain` ↔ `text/html` before giving up; `message/rfc822` parts are searched last (forwarded/attached emails); base64 transfer-encoded parts are decoded. `normalize_message()` now reports `body_source` (`plain`/`html`/`no_text_parts`/`empty_parts`) on every message and `body_empty_reason` when empty — assistants get an actionable reason (e.g. attachment-only email) instead of a silent empty body. The get-gmail tools document both fields; all 18 google-workspace tool files gain the filter-derived `user_can()` phpcs annotations (comment-only). 27/27 tests.
+
+### Fixed — Complete-ZIP Blueprint Stripping (PRs #6936, #6940)
+
+- **The Complete bundle shipped 0 of 65 blueprint JSONs in v1.1.98** — `bin/build-plugin-zip.sh` and `release.yml`'s `COMMON_EXCLUDES` each carried their own unanchored `--exclude 'examples'` (rsync strips any path component named `examples`), on top of the `.gitattributes`/`.distignore` rules #6933 already anchored. All three build surfaces now root-anchor (`/examples`, `/assets/examples`, `/assets/csv-templates`), `release.yml` gains a hard CI guard (`Assert blueprint examples present in full build`), and the blueprints empty state distinguishes "library missing from installation" from "toolkit disabled". Sites on affected packages need a rebuilt ZIP (or manually copying the `addons/pro/includes/tools/*/examples/` directories).
+
+### Fixed — Media Worker Synthetic External Targets & Split-Brain Latent Bug (PR #6941)
+
+- **Heartbeat-less external targets can now be monitored** — `seedExternalTargets()` + `startSyntheticLoop()` probe enabled targets and write only `record.synthetic` (the sweeper stays the single owner of status transitions); `STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health` registers targets, `STATUS_<SLUG>_SYNTHETIC=1` enables probing, `STATUS_<SLUG>_SYNTHETIC_URL` overrides the URL. Synthetic-only mode reports `operational`/`major_outage`/`unknown` before the first probe. Two real fixes: the split-brain fallback checked `record.synthetic.checked` (set by no code — now `checkedAt`), and the sweeper clears `downSince` on recovery. 46/46 status tests.
+
+### Security — Fleet Operator Token Masking (PR #6950)
+
+- **Newly created operator tokens are no longer printed in plaintext** on the External Operators page — the token renders in a readonly `type="password"` input (`autocomplete="new-password"`) with Show/Hide + Copy (`navigator.clipboard` with an `execCommand` fallback), and all credential blocks collapse behind a `<details>` element. Fixes the plaintext token visible on console.nvoos.cloud (the console site needs the updated fleet-operator build deployed post-merge).
+
+### Build — Docs-Hub rsync Continuation (PR #6951)
+
+- **`bin/build-addon-zips.sh` no longer aborts with exit 127** — the docs-hub rsync block's `--exclude 'docs/'` line was missing its trailing `\`, so `--exclude '*.md'` executed as a standalone command and killed the CI build before any of the 8 plugin ZIPs were produced.
+
+### Docs
+
+- **PR #6947** — the `mcp-ai-wpoos-playground-demos` skill gains the docs-hub demo (wp.org no-activation trap + self-activation pattern, full-page SPA embed patterns, browser verification loop, docs-hub signatures), `mcp-ai-wpoos-wporg-submission` gains the Live Preview blueprints section (committer-only visibility, no-activation loader, first-trunk-commit-goes-public + Windows tar/Python-zipfile packaging fallback), `mcp-ai-wpoos-test-suite` gains **pattern 67** (loader-exclude + `--list-tests` validation), and the `nvoos-operations` + `mcp-gateway` addon skills are updated; `phpunit.xml.dist` gains the loader excludes.
+
+### Versioning
+
+Bumped to **1.1.99** across all version-bearing files. Pro addon: 1.1.99. **Toolkit Shell: 0.2.0 → 0.3.0** (#6952 — verified across `package.json` + plugin header + runtime version strings; the three test-file pins fixed in this pass). **Schedule Anything SPA: 0.1.0 → 0.2.0** (#6952). **MCP Gateway: 0.1.1** (unchanged — the window's five gateway PRs ride the shipped line; `addons/mcp-gateway/CHANGELOG.md` gains an Unreleased section). Media Worker: **3.4.0** (unchanged — #6941 defers the bump to the release process). Docs Hub addon: **0.5.1** (unchanged). Fleet Operator: **1.0.0** (unchanged). Media Studio: **0.6.1** (unchanged). SaaS Controller: **0.3.0** (unchanged). Design System addon: **0.3.0** (unchanged). ChatGPT Plugin addon: **0.1.0** (unchanged). nvoos-content-graph: **1.0.8** (unchanged). nvoos-content-graph-ai: **1.0.4** (unchanged). nvoos-content-graph-ai-platform: **2.0.0** (unchanged). nvoos-content-graph-pro: **1.0.0** (unchanged — #6938's skill-catalogue mirror carries the documented per-mode deviations). Checkout API: **0.1.2** (unchanged). Comic Reader addon: **0.5.0** (unchanged). Chat SPA addon: **0.7.0** (unchanged). Canvas Toolkit addon: **0.2.0** (unchanged). Model catalog: **v2026.10.03** (unchanged — zero catalog diff in-window). Tool count: **~352 base + ~1,313 Pro (~1,665 total — unchanged)** — zero registry-map diff in-window (the SPA addon tools register nothing; #6938 is a catalogue source; live registry authoritative). Provider count: **18** chat providers (unchanged). Addon count: **30** (unchanged). Bundled skills: **76** base + **41** Pro (unchanged). Coding-time agent skills: **63** (unchanged — the test-suite skill gains pattern 67, the playground-demos skill gains the docs-hub demo). Stale build ZIPs removed: the 1.1.97 oOS set (6 root files — 3 ZIPs + 3 `.sha256`) + the superseded `nvoos-toolkit-shell-v0.2.0.zip` (the v0.3.0 ZIP built by the `build-spa-addons` run on the #6952 merge commit and committed to alpha-working post-branch-cut — the workflow adds without deleting the old one).
+
 ## [1.1.98] - 2026-10-06
 
 ### Added — Figma-to-Elementor Design-to-Build Pipeline (PR #6934, Proposals 057–059)
