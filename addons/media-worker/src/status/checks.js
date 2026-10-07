@@ -101,7 +101,9 @@ export function runTlsCheck( host, port = 443, timeoutMs = 10000, nowMs = Date.n
  */
 export async function runSyntheticCheck( site, cfg, now = Date.now ) {
 	const target =
-		cfg.syntheticUrl || ( site.siteUrl ? `${ site.siteUrl.replace( /\/$/, '' ) }/wp-json/mcp-ai/v1/status` : '' );
+		cfg.syntheticUrl ||
+		site.syntheticUrl ||
+		( site.siteUrl ? `${ site.siteUrl.replace( /\/$/, '' ) }/wp-json/mcp-ai/v1/status` : '' );
 
 	if ( ! target ) {
 		return { ok: false, checkedAt: now(), statusCode: 0, latencyMs: null, tlsDaysLeft: null, error: 'no target url' };

@@ -2,6 +2,7 @@
 	"name": "design-mcp-gateway",
 	"version": "0.1.1",
 	"description": "NV oOS MCP Gateway — public, fleet-scoped MCP endpoint (streamable HTTP) proxying NV oOS WordPress sites with API-key auth, rate limiting, and tool namespacing",
+	"license": "GPL-3.0-or-later",
 	"type": "module",
 	"main": "src/index.js",
 	"engines": {

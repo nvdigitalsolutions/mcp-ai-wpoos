@@ -95,6 +95,7 @@ test( 'a fresh heartbeat resets the site to operational and fires recovery', asy
 	sweeper.stop();
 
 	assert.equal( store.records.get( 'site-a' ).status, 'operational' );
+	assert.equal( store.records.get( 'site-a' ).downSince, 0 );
 	assert.deepEqual( bus.events, [ { event: 'site.recovered', slug: 'site-a', status: 'operational' } ] );
 } );
 
