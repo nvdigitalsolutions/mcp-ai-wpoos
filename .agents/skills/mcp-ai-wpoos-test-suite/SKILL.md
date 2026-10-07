@@ -31,6 +31,11 @@ client methods, provider array-content parsing, enum/service mismatches) use
 the `mcp-ai-wpoos-toolkit-audit` skill — it drives the audit loop and reuses
 this skill's cluster/PR/validation mechanics.
 
+For **SPA/JS tests** (vitest + jsdom + Testing Library in the toolkit-shell,
+chat-spa, and schedule-anything-spa addons — Radix polyfills, jsdom gotchas,
+bundle gates) use the `mcp-ai-wpoos-spa-ui` skill. This skill covers the
+PHPUnit suite only; the two stacks are disjoint.
+
 ## Test environment (Docker)
 
 The test suite runs inside the `oos-wp` container (plugin bind-mounted at
