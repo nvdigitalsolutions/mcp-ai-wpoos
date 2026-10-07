@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.98"
-  plugin-version-tested: "1.1.98"
-  last-updated: "2026-10-06"
+  plugin-version: "1.1.99"
+  plugin-version-tested: "1.1.99"
+  last-updated: "2026-10-07"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -779,6 +779,23 @@ Import external AI conversation exports into the JetEngine
 Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.1.99 operational quick notes** (full detail in RELEASE-NOTES.md): the
+**SPA UI stack enhancement** (PR #6952, Proposal 060) — toolkit-shell
+0.2.0 → 0.3.0 (Radix primitives, TanStack TableView, @dnd-kit Kanban,
+RHF+zod FormView, sonner, `--nds-*` tokens) and schedule-anything-spa →
+0.2.0 (Tailwind v4, shadcn-style kit, @xyflow/react v12); shipped suites
+31/31 + 23/23. The **MCP Gateway gains an OAuth 2.1 resource server** (PR
+#6945, Phase 1) — RFC 9728 metadata + `WWW-Authenticate` challenges,
+zero-dependency JWT validation, scope site-binding, no token passthrough;
+inert until `GATEWAY_OAUTH_ISSUER`; Phases 2–5 deferred (gateway stays
+0.1.1). The **Docs Hub Playground demo + wp.org Live Preview** ships (PRs
+#6944/#6946–#6949 — the self-activate loader fix, the 10-page wiki seed,
+the full-page `/docs/` SPA demo). **Gmail body extraction** is fixed (PR
+#6939 — fallback chain + `body_source`/`body_empty_reason`). **Fleet
+Operator tokens are masked** (PR #6950). **Figma skills join the default
+catalogues** (PR #6938). **Complete-ZIP blueprint stripping fixed** (PRs
+#6936/#6940). Counts unchanged: ~352 base + ~1,313 Pro (~1,665 total).
 
 **v1.1.98 operational quick notes** (full detail in RELEASE-NOTES.md): the
 **Figma-to-Elementor design-to-build pipeline** (PR #6934, Proposals

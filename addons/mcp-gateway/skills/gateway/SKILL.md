@@ -24,6 +24,37 @@ never strip the prefix.
   can only see and call what the site's operator credential permits.
 - Read-only keys exist (demo keys): write-capable tools fail with 403.
 
+## OAuth 2.1 resource server (Phase 1, PR #6945)
+
+With `GATEWAY_OAUTH_ISSUER` set, the gateway is an RFC 9728 protected
+resource **alongside** static API keys; everything stays inert (404 /
+unchanged 401s) when OAuth is unconfigured.
+
+- **Metadata** — `GET /.well-known/oauth-protected-resource` and the
+  `/mcp` path-insertion variant (each asserts its matching `resource`
+  identifier per RFC 9728 §3.3).
+- **Challenges** — 401s carry `WWW-Authenticate: Bearer` with
+  `resource_metadata` + the supported-scope list; scope-less tokens get
+  403 `insufficient_scope`.
+- **Tokens** — zero-dependency JWT validation (`src/oauth/jwt.js`):
+  node:crypto RS256/384/512 + ES256/384, in-memory JWKS cache with TTL +
+  rotation refetch, strict `iss` / `aud` (accepting the `/mcp` variant) /
+  `exp` / `nbf` / scope checks — **fail-closed** on any fetch or parse
+  failure.
+- **Site binding** — `site:<slug>` scopes grant access to bound sites
+  (mirroring static-key semantics); `site:read` is advertised for future
+  fine-grained enforcement.
+- **No token passthrough** — the gateway keeps exchanging for per-site
+  Fleet Operator tokens; OAuth tokens never travel upstream
+  (confused-deputy discipline required by the spec).
+- **Config** — `GATEWAY_OAUTH_ISSUER` / `GATEWAY_OAUTH_JWKS_URI` /
+  `GATEWAY_OAUTH_RESOURCE`, validated as absolute https URLs (boot fails
+  closed on invalid values).
+
+Phases 2–5 (Auth0 tenant provisioning with DCR + PKCE, scripted PKCE
+end-to-end + ChatGPT "Add custom MCP server" test, `server.json` +
+`mcp-publisher` registry submission, deployment guide) are deferred.
+
 ## Long-running tools
 
 Tools such as `deep_research` (standard/comprehensive depth) can exceed

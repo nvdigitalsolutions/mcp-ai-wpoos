@@ -5,9 +5,9 @@ description: "Operational guide for WordPress.org submission readiness of NV oOS
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.71"
-  plugin-version-tested: "1.1.71"
-  last-updated: "2026-09-29"
+  plugin-version: "1.1.99"
+  plugin-version-tested: "1.1.99"
+  last-updated: "2026-10-07"
 ---
 
 # NV oOS WordPress.org Submission — Readiness Playbook
