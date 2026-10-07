@@ -532,31 +532,45 @@ function nvoos_dh_demo_page_content(): string {
  * Demo CSS that makes the docs browser the entire page.
  *
  * Written to WordPress core Additional CSS (wp_update_custom_css_post),
- * scoped to the demo page via its body.page-id-{ID} class. The
- * full-bleed technique mirrors the theme's own alignfull mechanism
- * (negating the global-padding custom properties), so it works with
- * block themes without fragile 100vw tricks.
+ * scoped to the demo page via its body.page-id-{ID} class. Margins and
+ * paddings are zeroed explicitly across the theme's wrapper chain
+ * (site blocks, main, entry content) and the app root is forced to full
+ * width — deliberately blunt so it survives theme template variations.
  *
  * @param int $page_id The published demo page ID.
  * @return string CSS.
  */
 function nvoos_dh_demo_page_css( int $page_id ): string {
+	$scope = 'body.page-id-' . $page_id;
+
 	return '/* NV oOS Docs Hub — Playground demo: the docs browser is the whole page. */' . "\n"
-		. 'body.page-id-' . $page_id . ' .wp-site-blocks > header,' . "\n"
-		. 'body.page-id-' . $page_id . ' .wp-site-blocks > footer,' . "\n"
-		. 'body.page-id-' . $page_id . ' h1.wp-block-post-title { display: none !important; }' . "\n"
-		. 'body.page-id-' . $page_id . ' .wp-site-blocks { padding: 0 !important; }' . "\n"
-		. 'body.page-id-' . $page_id . ' main#wp--skip-link--target { margin-top: 0 !important; }' . "\n"
-		. 'body.page-id-' . $page_id . ' .entry-content.has-global-padding { padding-left: 0 !important; padding-right: 0 !important; }' . "\n"
-		. 'body.page-id-' . $page_id . ' .wp-block-post-content.is-layout-constrained { max-width: none !important; }' . "\n"
-		. 'body.page-id-' . $page_id . ' .nvoos-docs-hub-root {' . "\n"
-		. "\t" . 'max-width: none !important;' . "\n"
-		. "\t" . 'margin-left: calc(var(--wp--style--root--padding-left, 0px) * -1) !important;' . "\n"
-		. "\t" . 'margin-right: calc(var(--wp--style--root--padding-right, 0px) * -1) !important;' . "\n"
-		. "\t" . 'min-height: calc(100vh - 32px);' . "\n"
+		. $scope . ',' . "\n"
+		. $scope . ' .wp-site-blocks,' . "\n"
+		. $scope . ' main#wp--skip-link--target,' . "\n"
+		. $scope . ' .entry-content,' . "\n"
+		. $scope . ' .nvoos-docs-hub-root {' . "\n"
+		. "\t" . 'margin-left: 0 !important;' . "\n"
+		. "\t" . 'margin-right: 0 !important;' . "\n"
 		. '}' . "\n"
-		. 'body.page-id-' . $page_id . ':not(.admin-bar) .nvoos-docs-hub-root { min-height: 100vh; }' . "\n"
-		. 'body.page-id-' . $page_id . ' .dh-skip-link { display: none; }' . "\n";
+		. $scope . ' .wp-site-blocks,' . "\n"
+		. $scope . ' main#wp--skip-link--target,' . "\n"
+		. $scope . ' .entry-content {' . "\n"
+		. "\t" . 'padding-left: 0 !important;' . "\n"
+		. "\t" . 'padding-right: 0 !important;' . "\n"
+		. '}' . "\n"
+		. $scope . ' .wp-block-post-content,' . "\n"
+		. $scope . ' .nvoos-docs-hub-root {' . "\n"
+		. "\t" . 'max-width: none !important;' . "\n"
+		. "\t" . 'width: 100% !important;' . "\n"
+		. '}' . "\n"
+		. $scope . ' .wp-site-blocks > header,' . "\n"
+		. $scope . ' .wp-site-blocks > footer,' . "\n"
+		. $scope . ' h1.wp-block-post-title { display: none !important; }' . "\n"
+		. $scope . ' .wp-site-blocks { padding-top: 0 !important; padding-bottom: 0 !important; }' . "\n"
+		. $scope . ' main#wp--skip-link--target { margin-top: 0 !important; }' . "\n"
+		. $scope . ' .nvoos-docs-hub-root { min-height: calc(100vh - 32px); }' . "\n"
+		. $scope . ':not(.admin-bar) .nvoos-docs-hub-root { min-height: 100vh; }' . "\n"
+		. $scope . ' .dh-skip-link { display: none; }' . "\n";
 }
 
 /**
