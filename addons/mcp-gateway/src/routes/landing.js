@@ -16,12 +16,12 @@ const PAGE = `<!doctype html>
 	<title>NV oOS MCP Gateway</title>
 	<link rel="icon" type="image/svg+xml" href="/assets/mcp-gateway.svg">
 	<style>
-		body { font-family: system-ui, sans-serif; max-width: 720px; margin: 3rem auto; padding: 0 1rem; line-height: 1.6; color: #1f2937; }
-		code, pre { background: #f3f4f6; border-radius: 6px; }
+		body { font-family: system-ui, sans-serif; max-width: 720px; margin: 3rem auto; padding: 0 1rem; line-height: 1.6; background: #f6f0de; color: #1b1e2e; }
+		code, pre { background: #efe7cd; border-radius: 6px; }
 		code { padding: 0.1rem 0.35rem; }
-		pre { padding: 1rem; overflow-x: auto; }
-		h1 { border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; }
-		a { color: #2563eb; }
+		pre { padding: 1rem; overflow-x: auto; border: 1px solid #e4dabd; }
+		h1 { border-bottom: 2px solid #e4dabd; padding-bottom: 0.5rem; }
+		a { color: #053c5b; }
 		header { display: flex; align-items: center; gap: 1rem; margin: 1rem 0 0.5rem; }
 		header img { width: 88px; height: 88px; }
 		header h1 { border-bottom: 0; padding-bottom: 0; margin: 0; }
