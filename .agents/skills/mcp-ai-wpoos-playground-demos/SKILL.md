@@ -14,7 +14,9 @@ metadata:
 
 Playbook distilled from building and debugging the two Playground demo
 blueprints in PR #6662 (Content Graph) and PR #6663 (Complete × Ollama),
-including two full Playground-instance crashes and their fixes.
+the docs-hub demo (PRs #6944/#6946 — incl. the wp.org Live Preview
+no-activation trap and the full-page SPA embed), including two full
+Playground-instance crashes and their fixes.
 
 ## When to use this skill
 
@@ -30,12 +32,14 @@ including two full Playground-instance crashes and their fixes.
 |---|---|---|---|---|
 | Content Graph "Project Asteria" (26 posts + 5 pages, graph pre-built) | #6662 | `plugins/nvoos-content-graph/blueprints/seed-content.php` | `…/blueprints/demo.json` (standalone) + `…/.wordpress-org/blueprints/blueprint.json` (wp.org Preview; mirrors SVN `assets/blueprints/blueprint.json`) | `/wp-admin/admin.php?page=nvoos-content-graph` |
 | Complete bundle × local Ollama ("Oma" assistant + legacy `[mcp_ai_chat]` on the main page; Pro SPA v2 on a secondary page) | #6663 | `blueprints/ollama-demo.php` (repo root) | `blueprints/ollama-demo.json` | `/ollama-test-lab/` |
+| Docs Hub wiki + full-page SPA (10-page plugin wiki seeded into the uploads content folder; `/docs/` embeds ONLY `[nvoos_docs]`) | #6944 + #6946 | `addons/docs-hub/blueprints/seed-content.php` | `…/blueprints/demo.json` (standalone) + `…/.wordpress-org/blueprints/blueprint.json` (wp.org Preview) | `/docs/` |
 
 Generators (commit the generated JSON; re-run after editing the seed):
 
 ```bash
 php bin/generate-content-graph-blueprint.php   # emits both content-graph files
 php bin/generate-ollama-blueprint.php          # emits blueprints/ollama-demo.json
+php bin/generate-docs-hub-blueprint.php        # emits both docs-hub files
 ```
 
 The Ollama demo's `installPlugin` step points at the **newest**
@@ -75,6 +79,60 @@ Design plan + full validation checklist:
   self-install replaces the trunk build being previewed). The standalone
   `demo.json` owns the `installPlugin` step. Two files until
   `ifAlreadyInstalled` behavior is verified.
+- **The wp.org preview does NOT activate the plugin.** The preview loader
+  injects its own installPlugin step BEFORE the blueprint's steps (this
+  shifts step numbers by one in error messages — a "step #4" runPHP failure
+  on a blueprint with three steps is the injected install). runPHP steps
+  must therefore never assume plugin classes exist. Either avoid plugin
+  class references entirely (content-graph's approach — core WP functions +
+  `do_action` only) or self-activate first (docs-hub's approach):
+
+  ```php
+  if ( ! class_exists( 'Your_Plugin_Class' ) ) {
+      if ( ! function_exists( 'is_plugin_active' ) ) {
+          require_once ABSPATH . 'wp-admin/includes/plugin.php';
+      }
+      if ( ! is_plugin_active( 'your-slug/your-slug.php' ) ) {
+          $activated = activate_plugin( 'your-slug/your-slug.php' );
+          if ( is_wp_error( $activated ) && ! class_exists( 'Your_Plugin_Class' ) ) {
+              $plugin_file = WP_PLUGIN_DIR . '/your-slug/your-slug.php';
+              if ( file_exists( $plugin_file ) ) {
+                  include_once $plugin_file;
+              }
+          }
+      }
+  }
+  ```
+
+  Symptom without the guard: the step dies with exit 255 and the
+  WordPress "There has been a critical error on this website" page (the
+  HTML lands in the step's stdout) at the first plugin-class reference.
+  The CLI harness does NOT reproduce this — the standalone demo's
+  installPlugin runs with `activate: true`.
+- **Demo page chrome — full-page SPA embeds.** When the landing page should
+  be "just the app":
+  - Post content cannot carry a raw `<style>` block — `wpautop`/texturize
+    wraps it in a `<p>` and entity-escapes it. Use WordPress core
+    Additional CSS instead: `wp_update_custom_css_post( $css )`.
+    Idempotency note: `wp_get_custom_css()` returns entity-escaped CSS,
+    so match the marker on a plain-ASCII substring.
+  - A literal `[shortcode]` inside `<code>` tags in post content still
+    EXECUTES (docs-hub rendered TWO app instances because of this) — keep
+    the demo page content to the bare shortcode, nothing else.
+  - Insert the page first, then build the CSS against its ID and scope it
+    to `body.page-id-{ID}`. Full-bleed without scrollbar overflow: negate
+    the block theme's global-padding vars (the theme's own alignfull
+    mechanism) — `margin-left/right: calc(var(--wp--style--root--
+    padding-left, 0px) * -1) !important` + `max-width: none !important`
+    (the `!important`s beat the constrained-layout `margin: auto
+    !important` rules). Add `min-height: calc(100vh - 32px)` (and `100vh`
+    under `body:not(.admin-bar)`), hide `.wp-site-blocks > header/footer`
+    and `h1.wp-block-post-title`, and zero the `.entry-content.has-
+    global-padding` and `.wp-site-blocks` padding.
+  - Apply the theme's no-title template when it ships:
+    `update_post_meta( $page_id, '_wp_page_template',
+    'page-no-title.html' )` (Twenty Twenty-Five+; detect via
+    `glob( get_stylesheet_directory() . '/templates/*.html' )`).
 - **`installPlugin` zips** must have exactly one plugin folder at the zip
   root; `activate` goes inside `options`; `landingPage` is a relative path;
   `preferredVersions` holds only `php`/`wp`; use `phpExtensionBundles:
@@ -255,6 +313,33 @@ Known CLI quirks:
   `run-blueprint` + the probe for regular validation.
 - The mounted guest dir is created lazily — `mkdir()` subdirectories (e.g.
   `/verify-out/js`) inside the probe before writing into them.
+
+### Browser verification (for preview-loader and frontend bugs)
+
+The CLI cannot reproduce the preview loader's injected install (no
+activation), browser-only rendering, or page-chrome issues. When the
+failure report comes from playground.wordpress.net, verify there:
+
+1. Host the blueprint where the browser can fetch it. The inline
+   `#<json>` hash form fails with "Blueprint could not be downloaded" —
+   use `?blueprint-url=` with a real URL instead. A GitHub gist works:
+   `gh gist create blueprint.json` — gist.githubusercontent.com serves
+   `Access-Control-Allow-Origin: *` (verify with
+   `curl -s -D - -o /dev/null -H "Origin: https://playground.wordpress.net" <url>`).
+   Add a query param (`&v=N`) to the playground URL to force a fresh site
+   (OPFS-backed sites persist per URL). Delete the gist afterwards.
+2. Once booted, the page exposes in-page WebMCP tools — probe the live
+   instance via `webmcp_playground_execute_php` (options, classes,
+   rebuilds), `webmcp_playground_request` (REST endpoints), `webmcp_
+   playground_list_files` (did the seed's file writes land?), and
+   `webmcp_playground_get_current_url` (where did the SPA route land?).
+   This is ground truth for "boots but looks wrong" reports.
+3. Docs-hub specifics learned this way: the SPA's default home slug is
+   `readme` (settings `default_home`), so a demo whose docs lack a
+   README.md boots to `/docs/#/readme` with "No documents indexed yet"
+   and a 404 — the files ARE indexed; the home page is missing. And
+   `get_manifest()` returns an associative array (9 keys) — read
+   `total_pages`, don't `count()` it.
 - **Server mode runs the blueprint lazily IN THE BACKGROUND after the first
   request** — the site answers `502` immediately, then serves while
   `installPlugin` + the seed are still running (observed: the seeded page
@@ -273,7 +358,8 @@ Known CLI quirks:
 ## 8. Checklist when adding a demo blueprint
 
 1. Seed snippet: idempotent, `ABSPATH` guard, no namespace, token links map
-   to real slugs.
+   to real slugs, and NO bare plugin-class references unless the seed
+   self-activates first (the wp.org preview does not activate — see §2).
 2. Generator in `bin/`; generated JSONs committed; bundle URL pinned.
 3. Exclusions: plugin `.distignore` + CI workflow rsync (where applicable) +
    `bin/build-plugin-zip.sh` (both blocks) + root `.distignore` — the

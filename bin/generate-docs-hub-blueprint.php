@@ -105,6 +105,27 @@ $seedStep = array(
 // ─── runPHP step: publish the docs (deterministic rebuild) ──────
 $buildCode = <<<'PHP'
 <?php require_once '/wordpress/wp-load.php';
+// Ensure the plugin is active before the deterministic rebuild. The wp.org
+// Live Preview installs the plugin without activating it; the standalone
+// demo installs with activate=true, making this a no-op there.
+if ( ! class_exists( 'NV_oOS_Docs_Hub_Rebuild_Job' ) ) {
+	if ( ! function_exists( 'is_plugin_active' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+	}
+	if ( ! is_plugin_active( 'nvoos-docs-hub/nvoos-docs-hub.php' ) ) {
+		$activated = activate_plugin( 'nvoos-docs-hub/nvoos-docs-hub.php' );
+		if ( is_wp_error( $activated ) && ! class_exists( 'NV_oOS_Docs_Hub_Rebuild_Job' ) ) {
+			$plugin_file = WP_PLUGIN_DIR . '/nvoos-docs-hub/nvoos-docs-hub.php';
+			if ( file_exists( $plugin_file ) ) {
+				include_once $plugin_file;
+			}
+		}
+	}
+}
+if ( ! class_exists( 'NV_oOS_Docs_Hub_Rebuild_Job' ) ) {
+	update_option( 'nvoos_dh_demo_build', array( 'success' => false, 'pages' => 0, 'error' => 'plugin-unavailable' ) );
+	return;
+}
 // Deterministic synchronous rebuild (the async path schedules WP-Cron
 // ticks, which are non-deterministic inside the Playground runtime).
 try {

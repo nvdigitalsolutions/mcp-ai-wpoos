@@ -41,6 +41,38 @@ client-side tool timeouts in immediate mode. Prefer:
 - `-32603` with "upstream timeout" means the site is slow or the gateway
   budget was exceeded — retry with background mode for long tools.
 
+## Empty tools/list -- diagnosis (verified 2026-10)
+
+An empty `tools: []` with **no** `_meta.gateway.errors` entry means the bound
+upstream(s) answered -- it is a scoping problem, not an outage. Work the
+chain in order:
+
+1. `GET /health` (public) and `GET /health/full` (Bearer key): check the
+   key's `bindings` (which sites this key reaches), each site's upstream
+   `url`, and `lastOkAt`/`lastError`.
+2. Call the site's native MCP endpoint directly
+   (`https://<site>/wp-json/mcp-ai/v1/mcp`) with the site's Fleet Operator
+   token (`op_xxxx.SECRET`) -- the credential family the gateway uses
+   upstream. Per-assistant `cred_...` tokens are a different family and do
+   not reflect the gateway's view.
+3. `initialize` reveals the bound assistant (`serverInfo.name`) and plugin
+   version. If that assistant has tools assigned (check
+   `GET /wp-json/mcp-ai/v1/assistants` with the same token -- the roster
+   includes each assistant's `tools` array) but `tools/list` is still
+   empty, the scoping layer is the Fleet Operator allowlist.
+4. Confirm with `tools/call` on a tool the assistant definitely has: a
+   `-32603` error reading "Tool \"X\" is outside this operator credential's
+   allowlist" (HTTP 403) is the signature of an empty operator allowlist.
+5. Fix on the site, not the gateway: Settings -> External Operators, edit
+   the operator credential, and populate the tool allowlist (slugs, fnmatch
+   globs, `group:<toolkit>` entries, or `*` for a wide-open demo). Scoping
+   is per-request and stateless -- no gateway restart or key rotation is
+   needed; the namespaced tools appear on the next `tools/list`.
+
+Two gateway bindings may point at the same site host with different
+operator credentials; each binding is scoped independently, so one key can
+see zero tools for a site while another key sees the full roster.
+
 ## Conventions
 
 - Prefer read-only tools for checks; keep writes explicit and minimal.
