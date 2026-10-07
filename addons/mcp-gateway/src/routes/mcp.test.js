@@ -21,6 +21,7 @@ const KEY_SINGLE = 'key-single-1234567890abcd';
  *
  * @param {string} slug     Site slug.
  * @param {object} opts     `tools` (tool list), `fail` (500 on tools/list),
+ *                          `delayMs` (slow tools/call responses),
  *                          `token` (expected upstream bearer).
  * @return {Promise<{baseUrl: string, close: Function, requests: object[]}>}
  */
@@ -46,13 +47,15 @@ async function startFakeSite( slug, opts = {} ) {
 			} );
 		}
 		if ( 'tools/call' === method ) {
-			return res.json( {
-				jsonrpc: '2.0',
-				id,
-				result: {
-					content: [ { type: 'text', text: `${ slug } ran ${ req.body.params.name }` } ],
-				},
-			} );
+			const reply = () =>
+				res.json( {
+					jsonrpc: '2.0',
+					id,
+					result: {
+						content: [ { type: 'text', text: `${ slug } ran ${ req.body.params.name }` } ],
+					},
+				} );
+			return opts.delayMs ? setTimeout( reply, opts.delayMs ) : reply();
 		}
 		return res.json( { jsonrpc: '2.0', id, result: { echo: req.body } } );
 	} );
@@ -292,6 +295,45 @@ test( 'batch requests return an array of responses', async () => {
 	assert.strictEqual( body.length, 2, 'the notification contributes no response' );
 	assert.strictEqual( body[ 0 ].result && Object.keys( body[ 0 ].result ).length, 0 );
 	assert.strictEqual( body[ 1 ].result.tools[ 0 ].name, 'site-a.make_site_a' );
+
+	await close();
+	await siteA.close();
+} );
+
+test( 'tools/call honors UPSTREAM_TOOL_TIMEOUT_MS without touching tools/list', async () => {
+	const siteA = await startFakeSite( 'site-a', { delayMs: 400 } );
+	const { baseUrl, close } = await startTestServer( createApp( { config: gatewayConfig( { 'site-a': siteA } ) } ) );
+
+	// A short tool-call budget aborts the slow tool with a gateway error.
+	process.env.UPSTREAM_TOOL_TIMEOUT_MS = '150';
+	try {
+		const timedOut = await (
+			await post(
+				baseUrl,
+				{ jsonrpc: '2.0', id: 20, method: 'tools/call', params: { name: 'make_site_a', arguments: {} } },
+				KEY_SINGLE
+			)
+		).json();
+		assert.strictEqual( timedOut.error.code, -32603 );
+		assert.match( timedOut.error.message, /upstream timeout/ );
+	} finally {
+		delete process.env.UPSTREAM_TOOL_TIMEOUT_MS;
+	}
+
+	// A generous budget lets the same slow tool complete.
+	process.env.UPSTREAM_TOOL_TIMEOUT_MS = '2000';
+	try {
+		const ok = await (
+			await post(
+				baseUrl,
+				{ jsonrpc: '2.0', id: 21, method: 'tools/call', params: { name: 'make_site_a', arguments: {} } },
+				KEY_SINGLE
+			)
+		).json();
+		assert.strictEqual( ok.result.content[ 0 ].text, 'site-a ran make_site_a' );
+	} finally {
+		delete process.env.UPSTREAM_TOOL_TIMEOUT_MS;
+	}
 
 	await close();
 	await siteA.close();

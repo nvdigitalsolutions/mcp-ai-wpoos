@@ -22,6 +22,11 @@
  *   AUTH_MODE                      `strict` (default) fails closed at boot
  *                                  when no public keys are configured.
  *   UPSTREAM_TIMEOUT_MS            Per-site request timeout (default 20000).
+ *                                  Applies to tools/list and notifications.
+ *   UPSTREAM_TOOL_TIMEOUT_MS        Budget for tools/call proxying only —
+ *                                  long-running tools (deep_research etc.)
+ *                                  get more room without slowing tools/list.
+ *                                  Defaults to UPSTREAM_TIMEOUT_MS.
  */
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,39}$/;

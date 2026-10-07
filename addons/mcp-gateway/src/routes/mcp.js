@@ -32,6 +32,20 @@ const PROTOCOL_VERSION = '2026-07-28';
 const UPSTREAM_TIMEOUT_MS = Number( process.env.UPSTREAM_TIMEOUT_MS ) || 20000;
 
 /**
+ * Timeout budget for tools/call proxying (read per call so tests and ops can
+ * tune it without a restart). Long-running tools (deep_research at
+ * standard/comprehensive depth, background-style generations) outlive the
+ * default list/notification budget; tools/list keeps the snappy default so
+ * one slow site never stalls discovery for every key.
+ *
+ * @return {number} Effective tool-call timeout in ms.
+ */
+function toolCallTimeoutMs() {
+	const value = Number( process.env.UPSTREAM_TOOL_TIMEOUT_MS );
+	return Number.isFinite( value ) && value > 0 ? value : UPSTREAM_TIMEOUT_MS;
+}
+
+/**
  * Protocol versions this gateway can speak, newest first. Mirrors the
  * plugin's own MCP negotiation list so every NV oOS surface agrees.
  */
@@ -201,14 +215,15 @@ async function listTools( ctx, id ) {
  * @param {object} ctx    Request context.
  * @param {string} slug   Target site slug.
  * @param {object} payload Full JSON-RPC request (original id preserved).
+ * @param {number} [timeoutMs] Upstream budget (defaults to the shared list budget).
  * @return {Promise<object>} Upstream envelope, or a gateway error envelope.
  */
-async function proxyToSite( ctx, slug, payload ) {
+async function proxyToSite( ctx, slug, payload, timeoutMs = UPSTREAM_TIMEOUT_MS ) {
 	const site = ctx.cfg.sites.get( slug );
 	if ( ! site ) {
 		return rpcError( payload.id ?? null, -32602, `Unknown site slug "${ slug }".` );
 	}
-	const outcome = await callUpstream( site, payload, UPSTREAM_TIMEOUT_MS );
+	const outcome = await callUpstream( site, payload, timeoutMs );
 	recordSiteHealth( slug, outcome.ok, outcome.error || '' );
 	if ( ! outcome.ok ) {
 		return rpcError(
@@ -285,7 +300,8 @@ async function dispatch( ctx, msg ) {
 			return proxyToSite(
 				ctx,
 				slug,
-				{ jsonrpc: '2.0', id, method, params: { ...params, name: toolName } }
+				{ jsonrpc: '2.0', id, method, params: { ...params, name: toolName } },
+				toolCallTimeoutMs()
 			);
 		}
 
