@@ -339,6 +339,30 @@ test( 'tools/call honors UPSTREAM_TOOL_TIMEOUT_MS without touching tools/list', 
 	await siteA.close();
 } );
 
+test( 'tools/list appends a background-run hint to long-running tools', async () => {
+	const siteA = await startFakeSite( 'site-a', {
+		tools: [
+			{ name: 'deep_research', description: 'Research topic.', inputSchema: { type: 'object' } },
+			{ name: 'make_site_a', description: 'd', inputSchema: { type: 'object' } },
+		],
+	} );
+	const { baseUrl, close } = await startTestServer( createApp( { config: gatewayConfig( { 'site-a': siteA } ) } ) );
+
+	const body = await (
+		await post( baseUrl, { jsonrpc: '2.0', id: 30, method: 'tools/list', params: {} }, KEY_MULTI )
+	).json();
+	const byName = Object.fromEntries( body.result.tools.map( ( t ) => [ t.name, t ] ) );
+
+	const hinted = byName[ 'site-a.deep_research' ].description;
+	assert.match( hinted, /run_mode/ );
+	assert.match( hinted, /background/ );
+	assert.ok( hinted.startsWith( 'Research topic.' ), 'the upstream description is preserved' );
+	assert.doesNotMatch( byName[ 'site-a.make_site_a' ].description, /run_mode/ );
+
+	await close();
+	await siteA.close();
+} );
+
 test( 'unknown methods → -32601, invalid json → -32700, no key → 401', async () => {
 	const siteA = await startFakeSite( 'site-a' );
 	const { baseUrl, close } = await startTestServer( createApp( { config: gatewayConfig( { 'site-a': siteA } ) } ) );

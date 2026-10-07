@@ -46,6 +46,16 @@ function toolCallTimeoutMs() {
 }
 
 /**
+ * Description hints appended to known long-running tools in tools/list, so
+ * clients can self-select background execution before hitting client-side
+ * tool timeouts. Keyed by the unprefixed upstream tool slug.
+ */
+const TOOL_DESCRIPTION_HINTS = {
+	deep_research:
+		' Long-running: for standard/comprehensive depth prefer run_mode: "background" (returns immediately; results are cached for one hour) — immediate mode may exceed client-side tool timeouts.',
+};
+
+/**
  * Protocol versions this gateway can speak, newest first. Mirrors the
  * plugin's own MCP negotiation list so every NV oOS surface agrees.
  */
@@ -195,7 +205,12 @@ async function listTools( ctx, id ) {
 		}
 		for ( const tool of outcome.data.result.tools ) {
 			if ( tool && 'string' === typeof tool.name ) {
-				tools.push( prefixTool( slug, tool ) );
+				const prefixed = prefixTool( slug, tool );
+				const hint = TOOL_DESCRIPTION_HINTS[ tool.name ];
+				if ( hint && 'string' === typeof prefixed.description ) {
+					prefixed.description += hint;
+				}
+				tools.push( prefixed );
 			}
 		}
 	}
