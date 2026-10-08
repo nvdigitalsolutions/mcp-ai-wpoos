@@ -491,7 +491,12 @@ Applying that split to the 17 tables:
 
 ## 9. Open Items for Vijay
 
-1. Approve the **menu-engineering quadrant** as the one industry extension beyond the spec.
-2. Confirm the Google Drive folder structure + service-account scoping approach for the demo.
-3. Confirm DeepSeek as the demo model (cost table in the implementation plan).
-4. Decide whether MCP exposure (open question 7) is in the demo or after it.
+1. Confirm the Google Drive folder structure + service-account scoping approach for the demo.
+2. Confirm DeepSeek as the demo model (cost table in the implementation plan).
+3. Decide whether MCP exposure (open question 7) is in the demo or after it.
+
+## 10. Decisions Log
+
+| Date | Decision | Approved by | Effect |
+|---|---|---|---|
+| 2026-10-08 | Menu-engineering quadrant (Stars/Plowhorses/Puzzles/Dogs) included as the one industry extension beyond the spec | Vijay | `fnb_dish_margin` computes the quadrant from M-21 + popularity share; surfaces in R-01/R-07; §3.4, §4.6, §5.4 |
