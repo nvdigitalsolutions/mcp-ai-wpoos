@@ -13,8 +13,10 @@
 ## 1. Build Order (critical path first)
 
 The demo runs Thursday 8 October 2026. Phases are ordered so the demo-critical
-path (data access → metrics → reports → assistants) completes first; scheduling,
-MCP exposure and polish are demo-optional.
+path (data access → metrics → reports → assistants) completes first; MCP
+exposure is **included** for the demo (decision 2026-10-08 — the CEO uses
+Claude and ChatGPT, open question 7); scheduling and polish remain
+demo-optional.
 
 | Phase | Content | Demo-critical | Est. |
 |---|---|---|---|
@@ -24,7 +26,7 @@ MCP exposure and polish are demo-optional.
 | 3 | Report generators R-01…R-13 + draft writer (`fnb_save_draft`) | ✅ | 6h |
 | 4 | Assistant packs A1–A4 (instructions, allowlists, settings) | ✅ | 3h |
 | 5 | Scheduling (Pro Schedule Manager) + audit viewer | optional | 3h |
-| 6 | MCP exposure (bridge, read+draft subset) | optional | 2h |
+| 6 | MCP exposure (bridge, read+draft subset) | ✅ | 2h |
 | 7 | Test hardening: oracle tests, phpcs, audit-skill checklist | ✅ | 4h |
 | 8 | Demo dry-run + A4 image-tool wiring (default Off) | ✅ | 3h |
 | 9 | **Native storage (CPTs/CCTs) + import bridge** — post-demo | ❌ | 10h |
@@ -215,10 +217,15 @@ no unguarded shell calls, string/array-safe parsing of Sheets responses
 - **Acceptance:** dry-run a scheduled R-03; audit log shows tool calls;
   disabled broadcast schedule refuses to fire (capability gate).
 
-### Phase 6 — MCP exposure (2h, optional)
-- Expose A1–A4 via the existing bridge with read+draft-only tool subsets.
-- **Acceptance:** an external MCP client can list/read/draft; ACT tools return
-  capability errors.
+### Phase 6 — MCP exposure (2h, in demo)
+- Expose A1–A4 via the existing MCP bridge with read+draft-only tool subsets
+  (per assistant allowlists); API-key auth required; no anonymous access.
+- Verify from an external client that ACT-tier tools are absent from the
+  advertised tool lists and return capability errors if invoked directly.
+- **Acceptance:** Claude Desktop / ChatGPT connector can list tools, read
+  tables, run metrics and save a draft as A1–A4; the demo script includes one
+  live question asked from an external client; zero write/ACT calls in the
+  audit log.
 
 ### Phase 7 — Test hardening (4h)
 - Oracle tests (§3); permission tests; report smoke tests; phpcs both

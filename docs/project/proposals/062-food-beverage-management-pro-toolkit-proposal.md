@@ -403,7 +403,8 @@ builder → A1-04 (identical figures) holds by construction.
   rides the same pattern — a scheduled `task` type behind the Appendix A
   approval lifecycle.
 - MCP: the four assistants exposed via the existing bridge with their allowlists
-  (read + draft only) for Claude/ChatGPT (open question 7).
+  (read + draft only) for Claude/ChatGPT (open Q7) — **included in the demo**
+  per the §10 decision; API-key auth, per-assistant tool subsets.
 - `fnb_audit_log`: read-only viewer (date range, tool, assistant) for the CEO.
 
 ### 5.8 Native storage layer (CPT/CCT) — post-demo product path
@@ -543,10 +544,10 @@ verified against each toolkit's README/tool files).
 
 1. Confirm the Google Drive folder structure + service-account scoping approach for the demo.
 2. Confirm DeepSeek as the demo model (cost table in the implementation plan).
-3. Decide whether MCP exposure (open question 7) is in the demo or after it.
 
 ## 10. Decisions Log
 
 | Date | Decision | Approved by | Effect |
 |---|---|---|---|
 | 2026-10-08 | Menu-engineering quadrant (Stars/Plowhorses/Puzzles/Dogs) included as the one industry extension beyond the spec | Vijay | `fnb_dish_margin` computes the quadrant from M-21 + popularity share; surfaces in R-01/R-07; §3.4, §4.6, §5.4 |
+| 2026-10-08 | MCP exposure (open question 7) **included in the demo** | Vijay | Phase 6 becomes demo-critical: A1–A4 exposed via the existing MCP bridge with read+draft-only tool subsets, so the CEO can use them from Claude/ChatGPT |
