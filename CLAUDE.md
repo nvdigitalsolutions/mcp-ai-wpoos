@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **October 7, 2026** · Version: **2.53**
+> Last reviewed: **October 8, 2026** · Version: **2.54**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,665 tools (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare, Z.AI), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,692 tools (~353 base + ~1,339 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare, Z.AI), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,7 +50,7 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,665 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,692 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
@@ -188,7 +188,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~352 base tool classes) or `false` (~1,665 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~353 base tool classes) or `false` (~1,692 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -512,6 +512,13 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **Media worker synthetic external targets** (v1.1.99, PR #6941) — `STATUS_EXTERNAL_TARGETS` seeds heartbeat-less targets, synthetic-only mode (sweeper stays the single transition owner), the split-brain `checkedAt` fix + sweeper `downSince` clear; worker stays **3.4.0** (bump deferred to the release process).
 - **Fleet Operator token masking** (v1.1.99, PR #6950) — no more plaintext operator tokens on the External Operators page (readonly password input + Show/Hide/Copy + `<details>`-collapsed credential blocks); the console site needs the updated fleet-operator build deployed.
 - **No tool-count change: ~352 base + ~1,313 Pro, ~1,665 total.**
+- **Food & Beverage Management Pro Toolkit** (v1.2.1, PR #6962, Proposal 062) — 21 `fnb_*` Pro tools in `addons/pro/includes/tools/food-beverage/` gated behind `enable_fnb_toolkit` (default off): a deterministic metric engine (M-01…M-21 + Kasavana & Smith menu-engineering quadrants + as-of price joins + incurred-vs-paid split) over a 17-table registry (column-alias drift tolerance) with Drive + CSV fixture readers, report builder R-01…R-13, drafts-only writer; **20/20 Check-totals oracle PASS** against the demo workbook (food cost % 26.88%, beverage % 28.15%, total opex 9,988,745.79); 5 schedule + 2 workflow presets + SA Toolkit Manager + WP-CLI. Phases 4/5b/6/8/9/10 deferred per the implementation plan. The new `mcp-ai-wpoos-toolkit-creation` skill documents the pattern.
+- **Docs Hub content management tools** (v1.2.1, PR #6964) — five `docs_hub_*` Pro tools (write/read/list/delete/rebuild) in the Document Generation toolkit with a shared traversal-safe validator (no `..`/absolute/drive-letter paths, realpath containment, 2 MB cap); active-plugin integration via `uploads_docs_dir()` + `NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async()`, graceful degradation when inactive; writes `manage_options`, reads `edit_posts`.
+- **MCP server identity discovery** (v1.2.1, PR #6956) — new base tool `mcp_server_info` (+1 base) with a deliberately non-sensitive identity payload (the `wp_mcp_ai_mcp_server_identity` filter docblock forbids secrets; `read` capability); `list_mcp_tools` gains the shared `_meta` block (opt-out `include_meta=false`); `X-MCP-Bridge-Name` flows sanitized + 120-char capped into `$context['bridge_name']` — **informational only, never used for authorization**. CG-AI `ListMcpToolsTool` sync recorded as a Pending-sync ecosystem-tracker row.
+- **Docs Hub checkout upsell** (v1.2.1, PR #6963 — addon 0.5.1 → 0.5.2) — the Content Graph commerce stack ports into the wp.org Docs Hub plugin: five-class `includes/checkout/` (config, vendor client for the `nvoos-checkout` API, autoload-free license store, `Plugin_Upgrader` installer + base-plugin conflict guard, admin-only REST `/nvoos-docs/v1/payments/*` with per-user throttling + the already-licensed short-circuit) and the `nvoos-dh-*` purchase modal (on-demand Stripe.js, ToS/refund consent + buyer email + EU VAT, pending-intent recovery, manual ZIP download); `== External Services ==` disclosure + commerce review notes; POT 193 → 271 msgids. Follow-up: tag `docs-hub-v0.5.2` + SVN upload.
+- **Skill-catalogue gaps closed** (v1.2.1, PR #6954) — `install_from_catalogue()` walks the Git Tree once for supporting subtrees (non-executable extensions, 40-file cap, best-effort); `safe_get()` attaches a GitHub token (constant → filter → the existing `github_access_token` setting; GitHub hosts only) with anonymous enrichment capped at 10 skills per source + stopped on the first 403/429; the empty `VoltAgent/awesome-agent-skills` default removed. 17/17 tests.
+- **Elementor partial-deploy warning flood fixed** (v1.2.1, PR #6961) — `class_exists( $widget_class, false )` keeps the widget-registration loop off the Composer autoloader; a truncated upload now degrades silently instead of two warnings per missing class per `elementor/widgets/register` fire.
+- **Sub-projects** (v1.2.1) — nvoos-content-graph **1.0.8 → 1.0.9** (#6959: pre-init cron → `init`, packaging tri-sync, free-base-version disclosure, regenerated POT, PCP 0 errors) with the checkout-modal polish (#6958: Stripe loading spinner, filterable free base-version link, dev-status note); Proposal 061 (MCP registry publishing, docs-only) Phase 2 executed (bridge published to the official registry + npm 0.1.0-alpha.4). **Tool counts +1 base +26 Pro → ~353 base + ~1,339 Pro, ~1,692 total.**
 - **Figma-to-Elementor design-to-build pipeline** (v1.1.98, PR #6934, Proposals 057–059 — docs + skill, no PHP) — the 7-stage agentic pipeline (Scope → Read → Plan → Tokenize → Build → Verify → Handoff) rides the shipped MCP Apps / OAuth / A2A / per-toolkit MCP server machinery (Figma MCP read side, Elementor MCP write side, single-assistant + split topologies); normative rules (`get_design_context` first, tokenize-before-build, drafts only, never publish, Figma read-only) + the build-manifest contract + JSON Schema. The new bundled skill `design-figma-to-elementor` ships with it (**coding-time 62 → 63, base bundled 75 → 76**); Proposal 058 (DTCG token import) is the follow-up, 057 parked as reference, Phase 3 (demo + Verify seed) deferred on live endpoints.
 - **Unified Blueprints release-build + gating fixes** (v1.1.98, PR #6933) — the unanchored `examples` exclusions in `.gitattributes`/`.distignore` were stripping all 65 toolkit blueprint JSONs from `git archive`/release ZIPs (now root-anchored `/examples` + `/assets/examples`); the page now gates blueprints on toolkit enablement (`$toolkit_enable_keys` mirrors each import tool's `is_available()` gate; `get_all_blueprints_grouped()` skips disabled toolkits; both AJAX handlers reject them; `post_title` card fallback).
 - **Gateway sync dispatch + changelog** (v1.1.98, PR #6927) — `sync-mcp-gateway.yml` gains `workflow_dispatch` + a version guard (syncs skip when the incoming `package.json` is older than the mirror tip — out-of-order runs can never roll `nvoos-mcp-gateway:main` backwards); `addons/mcp-gateway/CHANGELOG.md` tracks 0.1.0 → 0.1.1.

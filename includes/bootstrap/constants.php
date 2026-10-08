@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
-	define( 'WP_MCP_AI_VERSION', '1.1.99' );
+	define( 'WP_MCP_AI_VERSION', '1.2.1' );
 }
 
 if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
