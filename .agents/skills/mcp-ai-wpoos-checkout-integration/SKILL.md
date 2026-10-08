@@ -186,6 +186,15 @@ buyer_email (current user's own address), eu_countries, and the full i18n map.
   artifact (bundle active), content-graph keeps the legacy-addon branch.
   Don't copy CG's `bundle_active: false` messaging into a plugin that never
   sold the addon.
+- **The localize object name and the JS global must match exactly.** The
+  docs-hub port renamed the config to `NVOOS_DH_CHECKOUT` on the PHP side
+  (matching the plugin's own `NVOOS_DH_SETTINGS_PAGE` convention) but left
+  the JS reading `window.nvoosDocsHubCheckout` — `config` fell back to
+  `{}`, so every purchase call hit `/wp-admin/undefined/payments/session`
+  (404) and checkout was silently dead. After any rename, grep both sides
+  for the old name and keep the docs-hub regression test
+  (`test_checkout_localize_name_matches_js`) — it asserts the localize
+  payload, the JS global, and the absence of the old name.
 
 ## References
 

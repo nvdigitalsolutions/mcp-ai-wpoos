@@ -220,6 +220,31 @@ class Test_Docs_Hub_Checkout extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The localized checkout config object name matches what the JS reads.
+	 *
+	 * The purchase-modal script reads `window.NVOOS_DH_CHECKOUT`; when the
+	 * wp_localize_script object name and the JS global drift apart,
+	 * `rest_url` and `nonce` are undefined and every /payments call hits
+	 * `/wp-admin/undefined/...` (404). This guards both sides.
+	 *
+	 * @return void
+	 */
+	public function test_checkout_localize_name_matches_js() {
+		NV_oOS_Docs_Hub_Settings::enqueue_admin_assets( 'toplevel_page_nvoos-docs-hub' );
+
+		$scripts = wp_scripts();
+		$this->assertArrayHasKey( 'nvoos-dh-checkout', $scripts->registered );
+		$this->assertStringContainsString(
+			'NVOOS_DH_CHECKOUT',
+			$scripts->registered['nvoos-dh-checkout']->extra['data']
+		);
+
+		$source = (string) file_get_contents( NVOOS_DOCS_HUB_PATH . 'assets/admin/docs-hub-checkout.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local plugin asset, not a remote URL.
+		$this->assertStringContainsString( 'window.NVOOS_DH_CHECKOUT', $source );
+		$this->assertStringNotContainsString( 'nvoosDocsHubCheckout', $source );
+	}
+
+	/**
 	 * The vendor purchase payload carries the product, site, and version.
 	 *
 	 * @return void

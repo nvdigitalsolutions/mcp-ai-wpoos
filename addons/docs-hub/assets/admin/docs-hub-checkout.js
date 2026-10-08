@@ -19,7 +19,7 @@
 ( function () {
 	'use strict';
 
-	var config = window.nvoosDocsHubCheckout || {};
+	var config = window.NVOOS_DH_CHECKOUT || {};
 	var i18n = config.i18n || {};
 
 	var stripe = null;
