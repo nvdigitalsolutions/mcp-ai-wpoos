@@ -1,5 +1,48 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.5.2 — 2026-10-08
+
+NV oOS Complete checkout upsell — the optional, opt-in purchase flow for
+the full NV oOS bundle, ported from the Content Graph plugin's commerce
+stack.
+
+- **Settings-page upsell card.** After the settings form's Save button,
+an "Unlock AI-powered features" card offers the NV oOS Complete bundle
+(rendered only while the bundle is not active). "Get NV oOS Complete"
+opens an in-dashboard Stripe checkout modal; "Learn more" links to the
+public repository. No site-wide notices, no pop-ups — checkout opens only
+on click.
+- **Checkout service integration.** New `includes/checkout/` classes
+(config, vendor HTTP client, license store, installer, REST controller)
+proxy the vendor checkout API at `nvdigitalsolutions.com/wp-json/nvoos-checkout/v1/`
+— the plugin never touches Stripe keys. New admin-only routes under
+`/wp-json/nvoos-docs/v1/payments/`: `session`, `verify`, `health`, with
+per-user rate limiting and an already-licensed short-circuit so a second
+charge is impossible from the purchase screen.
+- **Purchase fulfillment.** After payment the license key is recorded in
+an autoload-free option and the Complete bundle is offered for automatic
+install via the WordPress upgrader; the signed download URL is always
+surfaced for manual installation. The installer refuses when another copy
+of NV oOS already exists on the site (duplicate constants/classes would
+fatal).
+- **New assets.** `assets/admin/docs-hub-checkout.js` (purchase modal,
+Stripe.js loaded on demand) and `assets/admin/docs-hub-checkout.css`,
+ported from the Content Graph commerce assets with the `nvoos-dh-*` class
+prefix.
+- **New filters.** `nvoos_docs_hub_checkout_vendor_api_url`,
+`nvoos_docs_hub_checkout_price_cents`, `nvoos_docs_hub_checkout_addon_version`,
+`nvoos_docs_hub_checkout_zip_url`, `nvoos_docs_hub_checkout_base_version_url`,
+`nvoos_docs_hub_checkout_fallback_url`, `nvoos_docs_hub_checkout_terms_url`,
+`nvoos_docs_hub_checkout_refund_policy_url`,
+`nvoos_docs_hub_checkout_roadmap_url`, `nvoos_docs_hub_checkout_changelog_url`,
+`nvoos_docs_hub_checkout_support_email`,
+`nvoos_docs_hub_checkout_eu_countries`,
+`nvoos_docs_hub_checkout_skip_base_plugin_detection`. New action:
+`nvoos_docs_hub_checkout_purchase_recorded`.
+- **readme.txt** now discloses the optional checkout service under
+`== External Services ==` (servers contacted, data sent, consent flow) for
+the WordPress.org review team.
+
 ## 0.5.1 — 2026-09-24
 
 WordPress.org review response pass (sixth round) — uploads folder naming

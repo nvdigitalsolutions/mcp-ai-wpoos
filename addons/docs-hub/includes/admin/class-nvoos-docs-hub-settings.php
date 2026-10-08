@@ -105,6 +105,127 @@ class NV_oOS_Docs_Hub_Settings {
 				),
 			)
 		);
+
+		// NV oOS Complete purchase modal. Stripe.js itself is NOT enqueued
+		// here — docs-hub-checkout.js injects https://js.stripe.com/v3/ on
+		// demand when the user opens the purchase modal, so Stripe is never
+		// contacted by merely visiting this settings page.
+		wp_enqueue_script(
+			'nvoos-dh-checkout',
+			NVOOS_DOCS_HUB_URL . 'assets/admin/docs-hub-checkout.js',
+			array(),
+			NVOOS_DOCS_HUB_VERSION,
+			true
+		);
+
+		wp_enqueue_style(
+			'nvoos-dh-checkout',
+			NVOOS_DOCS_HUB_URL . 'assets/admin/docs-hub-checkout.css',
+			array(),
+			NVOOS_DOCS_HUB_VERSION
+		);
+
+		// Checkout config. No Stripe keys live in this plugin — the
+		// publishable key is returned per-session by the vendor checkout
+		// API. The vendor's session response may also override the
+		// legal-document URLs; these are the client-side defaults that keep
+		// the consent links present.
+		wp_localize_script(
+			'nvoos-dh-checkout',
+			'NVOOS_DH_CHECKOUT',
+			self::checkout_script_config()
+		);
+	}
+
+	/**
+	 * Build the checkout script configuration (localize payload).
+	 *
+	 * @since 0.5.2
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function checkout_script_config() {
+		return array(
+			'rest_url'          => esc_url_raw( rest_url( NV_oOS_Docs_Hub_REST::NAMESPACE ) ),
+			'nonce'             => wp_create_nonce( 'wp_rest' ),
+			'price_label'       => NV_oOS_Docs_Hub_Checkout::price_label(),
+			'fallback_url'      => esc_url_raw( NV_oOS_Docs_Hub_Checkout::fallback_product_url() ),
+			'terms_url'         => esc_url_raw( NV_oOS_Docs_Hub_Checkout::terms_url() ),
+			'refund_policy_url' => esc_url_raw( NV_oOS_Docs_Hub_Checkout::refund_policy_url() ),
+			'roadmap_url'       => esc_url_raw( NV_oOS_Docs_Hub_Checkout::roadmap_url() ),
+			'changelog_url'     => esc_url_raw( NV_oOS_Docs_Hub_Checkout::changelog_url() ),
+			'base_version_url'  => esc_url_raw( NV_oOS_Docs_Hub_Checkout::base_version_url() ),
+			'buyer_email'       => sanitize_email( (string) wp_get_current_user()->user_email ),
+			'eu_countries'      => NV_oOS_Docs_Hub_Checkout::eu_country_codes(),
+			'i18n'              => array(
+				'title'                        => __( 'Get NV oOS Complete', 'nvoos-docs-hub' ),
+				'pay'                          => __( 'Pay', 'nvoos-docs-hub' ),
+				'cancel'                       => __( 'Cancel', 'nvoos-docs-hub' ),
+				'close'                        => __( 'Close', 'nvoos-docs-hub' ),
+				'secure_note'                  => __( 'Payments are processed securely by Stripe. Your card never touches this server.', 'nvoos-docs-hub' ),
+				'stripe_setup_error'           => __( 'The payment form could not be started. Please reload the page and try again.', 'nvoos-docs-hub' ),
+				'payment_loading'              => __( 'Loading secure payment form…', 'nvoos-docs-hub' ),
+				'free_option'                  => __( 'Get the free NV oOS base version — no payment required', 'nvoos-docs-hub' ),
+				'dev_status'                   => __( 'NV oOS is still in active development and testing. Your purchase includes updates and email support — and is covered by our 30-day money-back guarantee.', 'nvoos-docs-hub' ),
+				'price_one_time'               => __( 'One-time payment — no subscription', 'nvoos-docs-hub' ),
+				'price_subject_change'         => __( 'Introductory price — prices are subject to change.', 'nvoos-docs-hub' ),
+				'price_vat_note'               => __( 'VAT may be added at checkout based on your country.', 'nvoos-docs-hub' ),
+				'price_license_scope'          => __( 'Includes 1 year of updates and email support on this site.', 'nvoos-docs-hub' ),
+				'trust_guarantee'              => __( 'Try it risk-free — 30-day money-back guarantee', 'nvoos-docs-hub' ),
+				'trust_instant'                => __( 'Instant download and automatic install', 'nvoos-docs-hub' ),
+				'includes_title'               => __( 'Included in NV oOS Complete', 'nvoos-docs-hub' ),
+				'includes_full'                => __( 'The full NV oOS plugin — base + Pro', 'nvoos-docs-hub' ),
+				'includes_updates'             => __( '1 year of updates', 'nvoos-docs-hub' ),
+				'includes_support'             => __( 'Email support directly from the developer', 'nvoos-docs-hub' ),
+				'includes_roadmap'             => __( 'Access to the NV oOS ecosystem when it launches — included at no extra cost', 'nvoos-docs-hub' ),
+				'roadmap_funded'               => __( 'Your purchase directly funds the next features. Owners like you shape the roadmap — tell us what to build next.', 'nvoos-docs-hub' ),
+				'roadmap_link_label'           => __( 'Share your ideas', 'nvoos-docs-hub' ),
+				'terms_eu_withdrawal'          => __( 'Delivery starts immediately. By downloading, you acknowledge that you lose your EU right of withdrawal for this digital content.', 'nvoos-docs-hub' ),
+				'success_steps_title'          => __( 'What happens next', 'nvoos-docs-hub' ),
+				'success_step_receipt'         => __( 'A receipt is on its way to your email.', 'nvoos-docs-hub' ),
+				'success_step_installed'       => __( 'NV oOS Complete is installed and activated.', 'nvoos-docs-hub' ),
+				'success_step_license'         => __( 'Your license key is saved — keep it safe.', 'nvoos-docs-hub' ),
+				'success_step_roadmap'         => __( 'Watch the changelog for updates — your NV oOS ecosystem access arrives with the launch, at no extra cost.', 'nvoos-docs-hub' ),
+				'changelog_link'               => __( 'View changelog', 'nvoos-docs-hub' ),
+				'support_line'                 => sprintf(
+					/* translators: %s: support email address. */
+					__( 'Questions? Email %s', 'nvoos-docs-hub' ),
+					NV_oOS_Docs_Hub_Checkout::support_email()
+				),
+				'generic_error'                => __( 'Something went wrong. Please try again.', 'nvoos-docs-hub' ),
+				'stripe_load_error'            => __( 'Stripe failed to load. Check your network connection and try again.', 'nvoos-docs-hub' ),
+				'installing'                   => __( 'Recording your license and installing NV oOS Complete…', 'nvoos-docs-hub' ),
+				'success_title'                => __( 'You’re all set!', 'nvoos-docs-hub' ),
+				'refresh'                      => __( 'Reload page', 'nvoos-docs-hub' ),
+				'license_label'                => __( 'License key', 'nvoos-docs-hub' ),
+				'test_mode'                    => __( 'Test mode — no real payment will be taken.', 'nvoos-docs-hub' ),
+				'pending_retry'                => __( 'Check again', 'nvoos-docs-hub' ),
+				'pending_new'                  => __( 'Start a new purchase', 'nvoos-docs-hub' ),
+				'fallback_note'                => __( 'The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…', 'nvoos-docs-hub' ),
+				'verify'                       => __( 'Verify', 'nvoos-docs-hub' ),
+				'payment_processing'           => __( 'Payment is still processing. Click Verify once it completes.', 'nvoos-docs-hub' ),
+				'payment_incomplete'           => __( 'Payment did not complete. Status: ', 'nvoos-docs-hub' ),
+				'download_zip'                 => __( 'Download ZIP manually', 'nvoos-docs-hub' ),
+				'terms_consent'                => __( 'I have read and agree to the Terms of Service and the Refund Policy, including the 30-day money-back guarantee.', 'nvoos-docs-hub' ),
+				'terms_link'                   => __( 'Terms of Service', 'nvoos-docs-hub' ),
+				'refund_link'                  => __( 'Refund Policy', 'nvoos-docs-hub' ),
+				'terms_required'               => __( 'Please agree to the Terms of Service and Refund Policy to continue.', 'nvoos-docs-hub' ),
+				'email_label'                  => __( 'Email for receipt and refunds', 'nvoos-docs-hub' ),
+				'email_placeholder'            => __( 'you@example.com', 'nvoos-docs-hub' ),
+				'email_invalid'                => __( 'Please enter a valid email address for your receipt.', 'nvoos-docs-hub' ),
+				'manual_install_note'          => __( 'Prefer to install manually? Download the ZIP and upload it via Plugins → Add New Plugin → Upload Plugin.', 'nvoos-docs-hub' ),
+				'country_label'                => __( 'Country (for VAT records)', 'nvoos-docs-hub' ),
+				'country_other'                => __( 'Other / Non-EU', 'nvoos-docs-hub' ),
+				'address_line1_label'          => __( 'Street address', 'nvoos-docs-hub' ),
+				'address_city_label'           => __( 'City', 'nvoos-docs-hub' ),
+				'address_postal_label'         => __( 'Postal code (optional)', 'nvoos-docs-hub' ),
+				'address_required'             => __( 'EU purchases require a billing address. Please complete the address fields.', 'nvoos-docs-hub' ),
+				// Never rendered for docs-hub (no legacy addon artifact);
+				// kept as an empty string so the shared JS is identical to
+				// the Content Graph original.
+				'success_step_installed_addon' => '',
+			),
+		);
 	}
 
 	/**
@@ -1042,6 +1163,8 @@ class NV_oOS_Docs_Hub_Settings {
 				?>
 				</form>
 
+			<?php self::render_checkout_upsell(); ?>
+
 				<hr />
 
 				<h2><?php esc_html_e( 'Export / Import Settings', 'nvoos-docs-hub' ); ?></h2>
@@ -1080,6 +1203,49 @@ class NV_oOS_Docs_Hub_Settings {
 
 			</div>
 			<?php
+	}
+
+	/**
+	 * Render the NV oOS Complete upsell card after the settings form.
+	 *
+	 * Shown only while the Complete bundle is not active, pointing users
+	 * at the AI features they can unlock. The "Get NV oOS Complete"
+	 * button opens the checkout modal (assets/admin/docs-hub-checkout.js)
+	 * which talks to the vendor checkout API — no Stripe keys live in
+	 * this plugin.
+	 *
+	 * @since 0.5.2
+	 *
+	 * @return void
+	 */
+	private static function render_checkout_upsell() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// The purchase artifact is the Complete bundle; once it is active
+		// the upsell no longer applies.
+		if ( NV_oOS_Docs_Hub_Checkout_Installer::is_bundle_active() ) {
+			return;
+		}
+		?>
+		<div class="nvoos-docs-hub-upsell-card" style="background:#f0f6fc;border:1px solid #c5d9ed;border-left:4px solid #0073aa;padding:12px 16px;margin-top:16px;max-width:700px;">
+			<p style="margin:0 0 8px;">
+				<strong><?php esc_html_e( 'Unlock AI-powered features', 'nvoos-docs-hub' ); ?></strong>
+			</p>
+			<p style="margin:0 0 8px;">
+				<?php esc_html_e( 'Install the NV oOS Complete bundle to enable semantic extraction, AI chat, embeddings, and agent memory for your documentation site. Supports 13 AI providers with a single API key.', 'nvoos-docs-hub' ); ?>
+			</p>
+			<p style="margin:0;">
+				<button type="button" class="button button-primary nvoos-docs-hub-buy-complete">
+					<?php esc_html_e( 'Get NV oOS Complete', 'nvoos-docs-hub' ); ?>
+				</button>
+				<a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos" class="button button-link" target="_blank" rel="noopener">
+					<?php esc_html_e( 'Learn more', 'nvoos-docs-hub' ); ?>
+				</a>
+			</p>
+		</div>
+		<?php
 	}
 
 		/**

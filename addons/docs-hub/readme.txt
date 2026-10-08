@@ -4,7 +4,7 @@ Tags: documentation, markdown, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.5.1
+Stable tag: 0.5.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -223,7 +223,43 @@ https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 GitHub Privacy Statement:
 https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
 
+This plugin also offers an **optional, opt-in checkout for the NV oOS
+Complete bundle** — the full NV oOS plugin (base + Pro), which is a
+separate plugin sold off-directory by NV Digital Unlocked LLC (the seller
+of record, under license from NV Digital Solutions). The checkout opens
+**only when an administrator clicks "Get NV oOS Complete"** on this
+plugin's own settings page; nothing runs in the background and the free
+plugin is complete without it. No Stripe keys ship in this plugin — the
+vendor's own checkout server creates and verifies payments, and Stripe.js
+is loaded from `js.stripe.com` only when the purchase modal opens.
+
+All checkout requests are **user-initiated, server-side only, over
+HTTPS**, and only to:
+
+* `nvdigitalsolutions.com` — the vendor checkout API
+  (`/wp-json/nvoos-checkout/v1/`): creates the Stripe payment session and
+  verifies the completed payment, issuing the license key and a signed,
+  expiring download URL. Sent: product name, site URL, Stripe payment
+  intent ID, buyer email, buyer country, Terms-consent timestamp.
+* `js.stripe.com` — Stripe's payment form (loaded by the browser when the
+  modal opens). Card details are entered in Stripe's own iframe; this
+  plugin never sees them.
+* `github.com` — only an HTTPS download of the purchased ZIP (a signed
+  vendor URL, or the public release asset fallback); no data sent.
+
+Purchases require explicit agreement to the Terms of Service and Refund
+Policy (consent timestamp recorded with the purchase) and a buyer email
+address for the receipt. The Terms of Service and Refund Policy for the
+vendor service are published at https://nvdigitalsolutions.com/terms-of-service
+and https://nvdigitalsolutions.com/refund-policy.
+
 == Changelog ==
+
+= 0.5.2 =
+* Added: optional "Get NV oOS Complete" upsell on the settings page (shown only while the Complete bundle is not active) with an in-dashboard Stripe checkout — payment sessions are created and verified by the vendor checkout service at `nvdigitalsolutions.com`; no Stripe keys ship in the plugin, and the purchase modal opens only on click.
+* Added: after a purchase, the license key is stored locally and the bundle is offered for automatic install (manual ZIP download is always available); the installer refuses when another copy of NV oOS already exists.
+* Added: admin-only `payments/session`, `payments/verify`, and `payments/health` REST routes under `/wp-json/nvoos-docs/v1/`, with per-user rate limiting.
+* Added: new filters — `nvoos_docs_hub_checkout_*` (vendor URL, price, versions, legal URLs, EU country list).
 
 = 0.5.1 =
 * Changed: the uploads content folder moved from `wp-content/uploads/docs/` to `wp-content/uploads/nvoos-docs-hub/content/` — nested inside the plugin's slug-named uploads directory, per the WordPress.org plugin guidelines. Existing content is migrated automatically on activation or first admin visit.
@@ -327,6 +363,9 @@ https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-s
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.5.2 =
+Adds an optional "Get NV oOS Complete" upsell on the settings page. The plugin remains fully functional without a purchase — nothing is locked behind it.
 
 = 0.5.1 =
 The uploads content folder moved from `wp-content/uploads/docs/` to `wp-content/uploads/nvoos-docs-hub/content/`. Existing content is migrated automatically — no action needed.
