@@ -208,8 +208,12 @@ no unguarded shell calls, string/array-safe parsing of Sheets responses
 ### Phase 5 — Scheduling + audit (3h)
 - Pro Schedule Manager entries: R-01 daily 08:00, R-02 Mon 08:00, R-03 Thu
   09:00, R-05 Mon, R-13 Mon (orchestration toolkit `create-pro-schedule`).
+- Delivery schedules: `channel_broadcast`-type entries for R-02/R-03 push to
+  the approver's WhatsApp/email — registered but **disabled** for the demo
+  (ACT tier off per spec); enableable via `update-pro-schedule`.
 - `fnb_audit_log` read-only viewer.
-- **Acceptance:** dry-run a scheduled R-03; audit log shows tool calls.
+- **Acceptance:** dry-run a scheduled R-03; audit log shows tool calls;
+  disabled broadcast schedule refuses to fire (capability gate).
 
 ### Phase 6 — MCP exposure (2h, optional)
 - Expose A1–A4 via the existing bridge with read+draft-only tool subsets.

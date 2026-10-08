@@ -394,6 +394,14 @@ builder → A1-04 (identical figures) holds by construction.
 - Pro Schedule Manager entries: R-01 daily 08:00, R-02 Mon 08:00, R-03 Thu 09:00,
   R-05 Mon, R-13 Mon — each runs the assistant's `fnb_generate_report` +
   `fnb_save_draft` chain and logs to the audit trail.
+- **Delivery of scheduled reports** is a Pro Scheduler first-class feature via its
+  `channel_broadcast` schedule type (`schedule-channel-broadcast`): the Monday
+  brief and Thursday weekend plan can be pushed to the approver over
+  WhatsApp/email when the ACT tier is enabled. The demo keeps delivery **off**
+  per the spec ("Send message — Off, needs approval — None in demo"); enabling
+  it is a schedule-configuration change, not a code change. Supplier ordering
+  rides the same pattern — a scheduled `task` type behind the Appendix A
+  approval lifecycle.
 - MCP: the four assistants exposed via the existing bridge with their allowlists
   (read + draft only) for Claude/ChatGPT (open question 7).
 - `fnb_audit_log`: read-only viewer (date range, tool, assistant) for the CEO.
@@ -442,8 +450,11 @@ Applying that split to the 17 tables:
 
 ## 6. Out of Scope (anti-gold-plating)
 
-- No POS/ERP integrations, no WhatsApp/email sending, no supplier ordering, no
-  record editing (per spec: ACT tier off).
+- No POS/ERP integrations (permanent exclusion). WhatsApp/email sending,
+  supplier ordering and record editing are **off for the demo** (ACT tier
+  default-off per the spec) — but they are designed-in, not excluded:
+  scheduled delivery via the Pro Scheduler's `channel_broadcast` type and
+  ordering via the Appendix A approval lifecycle (§5.7).
 - No image generation **enabled** in the demo — the spec keeps "Generate image"
   default-off and A4 returns prompts only (A4-05). The `image-production` tool
   wiring itself **is in scope** (ACT-tier, default Off, enableable per assistant);
