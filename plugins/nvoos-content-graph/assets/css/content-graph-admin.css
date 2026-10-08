@@ -622,6 +622,15 @@
 	border-radius: 6px;
 }
 
+/* Product-status note — development/testing + guarantee, muted under the
+   "What you get" block. */
+.nvoos-cg-dev-status {
+	margin: -8px 0 16px;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #646970;
+}
+
 .nvoos-cg-includes-title {
 	margin: 0 0 8px;
 	font-size: 13px;
@@ -862,6 +871,21 @@
 
 .nvoos-cg-modal-footer .nvoos-cg-pay-btn {
 	min-width: 160px;
+}
+
+/* Free base-version download — left-aligned in the footer; the auto
+   margin pushes Cancel/Pay to the right. The row is removed with the
+   footer on success and hidden once the buyer commits to paying. */
+.nvoos-cg-free-option {
+	margin-right: auto;
+	font-size: 12px;
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.nvoos-cg-free-option:hover,
+.nvoos-cg-free-option:focus {
+	text-decoration: underline;
 }
 
 /* ---- Remote Sources tab: row status + modal message ---- */

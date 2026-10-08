@@ -24,6 +24,8 @@
 	var overlay = null;
 	var dialog = null;
 	var errorBox = null;
+	var payBoxEl = null;
+	var freeOptionRow = null;
 	var consentCheckbox = null;
 	var consentAt = 0;
 	var euWithdrawalNote = null;
@@ -124,6 +126,7 @@
 	function showError( message ) {
 		errorBox.textContent = message || i18n.generic_error || 'Something went wrong.';
 		errorBox.style.display = 'block';
+		clearPayLoading();
 		setBusy( false );
 	}
 
@@ -658,6 +661,8 @@
 		overlay = null;
 		dialog = null;
 		errorBox = null;
+		payBoxEl = null;
+		freeOptionRow = null;
 	}
 
 	/**
@@ -684,6 +689,15 @@
 		modalBody.appendChild( renderPriceBlock() );
 		modalBody.appendChild( renderTrustList() );
 		modalBody.appendChild( renderIncludesBlock() );
+
+		// Honest product-status note: the ecosystem is still in active
+		// development/testing, and the purchase carries the money-back
+		// guarantee. Omitted when the vendor ships no copy.
+		var devNote = i18n.dev_status || '';
+		if ( devNote ) {
+			modalBody.appendChild( el( 'p', 'nvoos-cg-dev-status', devNote ) );
+		}
+
 		modalBody.appendChild( renderEmailRow() );
 		modalBody.appendChild( renderBillingRow() );
 
@@ -692,9 +706,21 @@
 		modalBody.appendChild( errorBox );
 
 		var payBox = el( 'div', 'nvoos-cg-pay-element' );
+		payBoxEl = payBox;
 		modalBody.appendChild( payBox );
+		renderPayLoading();
 
 		var footer = el( 'div', 'nvoos-cg-modal-footer' );
+
+		// The free base-version download sits left in the footer, pushing
+		// Cancel/Pay to the right. Hidden once the buyer commits (verify)
+		// and cleared entirely with the footer on success/fallback.
+		var freeRow = renderFreeOption();
+		if ( freeRow ) {
+			freeOptionRow = freeRow;
+			footer.appendChild( freeRow );
+		}
+
 		var cancelBtn = el( 'button', 'button nvoos-cg-cancel-btn', i18n.cancel || 'Cancel' );
 		cancelBtn.type = 'button';
 		cancelBtn.addEventListener( 'click', closeModal );
@@ -753,6 +779,56 @@
 		} catch ( e ) {
 			// Ignore.
 		}
+	}
+
+	/**
+	 * Render the "secure payment form is loading" placeholder in the pay area.
+	 *
+	 * Stripe.js is injected on demand and the payment session needs a server
+	 * round-trip, so on slower sites the card form can take a moment to
+	 * appear. This placeholder keeps the modal from looking broken while the
+	 * Payment Element mounts.
+	 *
+	 * @return {void}
+	 */
+	function renderPayLoading() {
+		if ( ! payBoxEl ) {
+			return;
+		}
+		var loading = el( 'div', 'nvoos-cg-installing', i18n.payment_loading || 'Loading secure payment form…' );
+		loading.setAttribute( 'role', 'status' );
+		payBoxEl.appendChild( loading );
+	}
+
+	/**
+	 * Remove the loading placeholder from the pay area.
+	 *
+	 * No-op once the Payment Element is mounted, so late errors (e.g. a
+	 * declined payment) never destroy a form the buyer can retry.
+	 *
+	 * @return {void}
+	 */
+	function clearPayLoading() {
+		if ( payBoxEl && ! paymentElement ) {
+			payBoxEl.innerHTML = '';
+		}
+	}
+
+	/**
+	 * Build the "free option" link: the free base plugin release, offered
+	 * as an alternative to the paid Complete bundle.
+	 *
+	 * Returns null when the URL is unset (or not http(s)) so the caller can
+	 * omit the row entirely.
+	 *
+	 * @return {HTMLElement|null}
+	 */
+	function renderFreeOption() {
+		var url = String( config.base_version_url || '' ).trim();
+		if ( ! url || ! /^https?:\/\//i.test( url ) ) {
+			return null;
+		}
+		return linkEl( 'nvoos-cg-free-option', i18n.free_option || 'Get the free NV oOS base version', url );
 	}
 
 	/**
@@ -851,6 +927,10 @@
 			}
 
 			stripe = window.Stripe( result.data.publishable_key );
+
+			// The Payment Element mounts into the pay area — remove the
+			// loading placeholder first.
+			clearPayLoading();
 
 			// Stripe element setup failures (invalid element name, blocked
 			// iframe, extension interference) must surface in the modal —
@@ -1046,6 +1126,12 @@
 		var spinner = el( 'div', 'nvoos-cg-installing', i18n.installing || 'Installing…' );
 		payBox.innerHTML = '';
 		payBox.appendChild( spinner );
+
+		// The buyer has committed — the free alternative is no longer
+		// relevant; drop it while the install runs.
+		if ( freeOptionRow ) {
+			freeOptionRow.style.display = 'none';
+		}
 
 		var verifyBody = { payment_intent: paymentIntentId };
 		if ( consentAt > 0 ) {
