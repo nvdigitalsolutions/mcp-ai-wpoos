@@ -1,7 +1,7 @@
 # NV oOS MCP Registry & Directory Publishing — Comprehensive Implementation Plan
 
 **Date:** 2026-10-08
-**Status:** 🔮 PENDING (repo-side prerequisites shipped with this plan; external publishes gated on §Decision Gates)
+**Status:** 🔮 PENDING — Phase 1 + Phase 2 executed 2026-10-08 (npm 0.1.0-alpha.4 live with the `mcpName` marker); Phases 3–6 gated on §Decision Gates
 **Estimated Effort:** 10–14 hours core + 3 h optional (Phases 0–6)
 **Priority:** MEDIUM
 **Related:** [061-mcp-registry-publishing-proposal.md](./061-mcp-registry-publishing-proposal.md), [054-nvoos-mcp-bridge-npx-implementation-plan.md](./054-nvoos-mcp-bridge-npx-implementation-plan.md), [055-nvoos-mcp-gateway-proposal.md](./055-nvoos-mcp-gateway-proposal.md), [mcp-server-directory-addon-proposal.md](./mcp-server-directory-addon-proposal.md), `.github/workflows/npm-publish-nvoos-mcp-bridge.yml`, `packages/nvoos-mcp-bridge/`
@@ -69,24 +69,48 @@ executed by a maintainer with org credentials.
   - `package.json` version left at `0.1.0-alpha.3` — the publish workflow
     sets the version at release time; the marker ships with the next release.
 
-## Phase 2 — npm release carrying the marker (1 h)
+## Phase 2 — npm release carrying the marker (1 h) — **EXECUTED 2026-10-08**
 
 The current `latest` (alpha.3) predates `mcpName` and would fail registry
 validation — **never register alpha.3**.
 
-- [ ] Run the existing publish workflow for `0.1.0-alpha.4`:
-  - Option A (tag push): `git tag v0.1.0-alpha.4 && git push origin v0.1.0-alpha.4`
-  - Option B (manual): `npm-publish-nvoos-mcp-bridge.yml` → workflow_dispatch,
-    version `0.1.0-alpha.4`, tag `latest`, DRY_RUN off.
-- [ ] Verify the marker is live on npm:
-  - `npm view @nvdigitalsolutions/nvoos-mcp-bridge@0.1.0-alpha.4 mcpName`
-    → `io.github.nvdigitalsolutions/nvoos-mcp-bridge`
-  - `npm view @nvdigitalsolutions/nvoos-mcp-bridge@0.1.0-alpha.4 dist-tags --json`
-    → `latest` now points at alpha.4
-- [ ] Re-run the smoke suite against the published tarball:
-  - `npx -y @nvdigitalsolutions/nvoos-mcp-bridge@0.1.0-alpha.4` with
-    `MCP_AI_BASE_URL` set to a test site → `tools/list` round-trips
-    (documented in `packages/nvoos-mcp-bridge/README.md`).
+**Two workflow nuances discovered during execution (plan corrections):**
+
+- The tag trigger is `v*.*.*-mcpbridge.*`, **not** plain `v*.*.*` — the
+  original "Option A" tag would never fire, and a matching tag would have
+  produced the wrong npm version string (`0.1.0-mcpbridge.N`). The
+  workflow_dispatch path (Option B) is the correct one for `alpha.*`
+  versions.
+- The repo's **default branch is `main`**; the marker commit lives on
+  `alpha-working`. A dispatch without `--ref alpha-working` would have
+  checked out `main`'s package.json (no marker) and published a bad
+  release. Always pass `--ref alpha-working` (or the branch that carries
+  the marker) until the commit lands on `main`.
+
+Execution record:
+
+- [x] Commit `f5b2d7f6bc` (→ rebased `62917e9714` on `origin/alpha-working`
+      after a remote build commit landed): marker + `server.json` + docs.
+- [x] `gh workflow run npm-publish-nvoos-mcp-bridge.yml --ref alpha-working
+      -f version=0.1.0-alpha.4 -f tag=latest -f dry_run=false`
+      → run [37735273749](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/runs/37735273749):
+      all gates green, publish step succeeded,
+      provenance in sigstore (logIndex 3142271471).
+- [x] Verified on npm (after the registry's async processing window — the
+      version 404s for a few minutes while npm "processes" provenance-signed
+      publishes; poll with `--prefer-online`):
+  - `npm view @nvdigitalsolutions/nvoos-mcp-bridge@0.1.0-alpha.4 version mcpName`
+    → `version = '0.1.0-alpha.4'`, `mcpName = 'io.github.nvdigitalsolutions/nvoos-mcp-bridge'`
+  - `npm view @nvdigitalsolutions/nvoos-mcp-bridge dist-tags --json`
+    → `latest: 0.1.0-alpha.4`
+- [x] Smoke against the **published** tarball (npx, local dev site
+      `oos-wp` on `localhost:8000`): bin resolved, stdio↔HTTP relay
+      round-tripped, the site's structured 401
+      (`wp_mcp_ai_mcp_auth_required`) relayed transparently — transport
+      verified end-to-end.
+- [ ] Maintainer follow-up (one command, needs a credential):
+      `printf '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}\n' | MCP_AI_BASE_URL=https://<site>/wp-json/mcp-ai/v1/mcp MCP_AI_TOKEN=cred_xxxxx.SECRET npx -y @nvdigitalsolutions/nvoos-mcp-bridge@0.1.0-alpha.4`
+      → expect a `tools` array in the stdout response.
 
 ## Phase 3 — First registry publish (manual, device-flow) (2 h)
 
