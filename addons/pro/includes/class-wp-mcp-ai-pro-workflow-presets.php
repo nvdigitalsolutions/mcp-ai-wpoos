@@ -65,10 +65,151 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				self::get_maintenance_presets(),
 				self::get_onboarding_presets(),
 				self::get_crm_support_presets(),
-				self::get_fashion_presets()
+				self::get_fashion_presets(),
+				self::get_fnb_presets()
 			);
 
 			return $presets;
+		}
+
+		/**
+		 * Food & Beverage Management toolkit workflows.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @return array<string,array> F&B workflow presets.
+		 */
+		private static function get_fnb_presets() {
+			return array(
+				'fnb_weekend_prep'   => array(
+					'name'        => __( 'Weekend Prep Plan', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Forecast weekend covers and portions, check stock shortfalls and supplier cut-offs, then save the R-03 plan as a draft.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'fnb',
+					'icon'        => 'dashicons-calendar-alt',
+					'tags'        => array( 'fnb', 'weekend', 'stock' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Weekend Friday', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'The Friday of the weekend to plan (Y-m-d).', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 75,
+							),
+							'data'     => array(
+								'label'       => __( 'Weekend Demand', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'fnb_weekend_demand',
+								'arguments'   => array( 'friday' => '{{input.friday}}' ),
+								'description' => __( 'Expected covers, portions, shortfalls and supplier cut-offs (M-12/M-13).', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Generate R-03', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'fnb_generate_report',
+								'arguments'   => array(
+									'report_id' => 'R-03',
+									'date'      => '{{input.friday}}',
+								),
+								'description' => __( 'Build the weekend prep plan in the Report-library layout.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 225,
+							),
+							'data'     => array(
+								'label'       => __( 'Draft Plan', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Save the R-03 output as a draft for the head chef and bar manager.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'fnb_monthly_review' => array(
+					'name'        => __( 'Monthly Cost Review', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Compare the month against budget and the previous month, split volume vs per-cover effects, then save the R-08 review as a draft.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'fnb',
+					'icon'        => 'dashicons-chart-line',
+					'tags'        => array( 'fnb', 'monthly', 'cost' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Month', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'The month to review (Y-m).', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 75,
+							),
+							'data'     => array(
+								'label'       => __( 'Compare Periods', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'fnb_compare_periods',
+								'arguments'   => array( 'month' => '{{input.month}}' ),
+								'description' => __( 'Headline metrics month on month.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Generate R-08', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'fnb_generate_report',
+								'arguments'   => array(
+									'report_id' => 'R-08',
+									'month'     => '{{input.month}}',
+								),
+								'description' => __( 'Actual vs budget vs last month with the volume/per-cover split.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 225,
+							),
+							'data'     => array(
+								'label'       => __( 'Draft Review', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Save the R-08 output as a draft for the CEO.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+			);
 		}
 
 		/**
