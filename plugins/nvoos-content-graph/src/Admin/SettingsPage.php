@@ -553,6 +553,7 @@ class SettingsPage {
 				'refund_policy_url' => esc_url_raw( \NvoosContentGraph\Commerce\Payments::refundPolicyUrl() ),
 				'roadmap_url'       => esc_url_raw( \NvoosContentGraph\Commerce\Payments::roadmapUrl() ),
 				'changelog_url'     => esc_url_raw( \NvoosContentGraph\Commerce\Payments::changelogUrl() ),
+				'base_version_url'  => esc_url_raw( \NvoosContentGraph\Commerce\Payments::baseVersionUrl() ),
 				'buyer_email'       => sanitize_email( (string) wp_get_current_user()->user_email ),
 				'eu_countries'      => \NvoosContentGraph\Commerce\Payments::euCountryCodes(),
 				'i18n'              => array(
@@ -563,6 +564,8 @@ class SettingsPage {
 					'secure_note'            => __( 'Payments are processed securely by Stripe. Your card never touches this server.', 'nvoos-content-graph' ),
 					'stripe_setup_error'     => __( 'The payment form could not be started. Please reload the page and try again.', 'nvoos-content-graph' ),
 					'payment_loading'        => __( 'Loading secure payment form…', 'nvoos-content-graph' ),
+					'free_option'            => __( 'Get the free NV oOS base version — no payment required', 'nvoos-content-graph' ),
+					'dev_status'             => __( 'NV oOS is still in active development and testing. Your purchase includes updates and email support — and is covered by our 30-day money-back guarantee.', 'nvoos-content-graph' ),
 					'price_one_time'         => __( 'One-time payment — no subscription', 'nvoos-content-graph' ),
 					'price_subject_change'   => __( 'Introductory price — prices are subject to change.', 'nvoos-content-graph' ),
 					'price_vat_note'         => __( 'VAT may be added at checkout based on your country.', 'nvoos-content-graph' ),

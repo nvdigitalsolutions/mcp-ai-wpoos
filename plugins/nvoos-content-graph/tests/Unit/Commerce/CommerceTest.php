@@ -179,6 +179,27 @@ class CommerceTest extends WP_UnitTestCase {
 	}
 
 	/** @test */
+	public function baseVersionUrlTargetsFreeBaseReleaseAsset(): void {
+		$url = Payments::baseVersionUrl();
+
+		$this->assertStringContainsString( '/releases/download/nvdigital-oos-v', $url );
+		$this->assertStringContainsString( 'nvdigital-open-operator-system-oos-', $url );
+		$this->assertStringNotContainsString( '-complete-', $url );
+		$this->assertStringEndsWith( '.zip', $url );
+	}
+
+	/** @test */
+	public function baseVersionUrlIsFilterable(): void {
+		add_filter( Schema::FILTER_BASE_VERSION_URL, static fn() => 'https://example.com/base.zip' );
+		$this->assertSame( 'https://example.com/base.zip', Payments::baseVersionUrl() );
+
+		// An empty value hides the free-option link in the modal.
+		add_filter( Schema::FILTER_BASE_VERSION_URL, static fn() => '' );
+		$this->assertSame( '', Payments::baseVersionUrl() );
+		remove_all_filters( Schema::FILTER_BASE_VERSION_URL );
+	}
+
+	/** @test */
 	public function installerDetectsExistingBasePlugin(): void {
 		// A known NV oOS distribution folder present on disk must be detected.
 		$fakeDir  = WP_PLUGIN_DIR . '/nvdigital-open-operator-system-oos';

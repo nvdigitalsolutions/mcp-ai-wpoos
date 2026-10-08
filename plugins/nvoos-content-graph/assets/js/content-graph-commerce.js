@@ -25,6 +25,7 @@
 	var dialog = null;
 	var errorBox = null;
 	var payBoxEl = null;
+	var freeOptionRow = null;
 	var consentCheckbox = null;
 	var consentAt = 0;
 	var euWithdrawalNote = null;
@@ -661,6 +662,7 @@
 		dialog = null;
 		errorBox = null;
 		payBoxEl = null;
+		freeOptionRow = null;
 	}
 
 	/**
@@ -687,6 +689,15 @@
 		modalBody.appendChild( renderPriceBlock() );
 		modalBody.appendChild( renderTrustList() );
 		modalBody.appendChild( renderIncludesBlock() );
+
+		// Honest product-status note: the ecosystem is still in active
+		// development/testing, and the purchase carries the money-back
+		// guarantee. Omitted when the vendor ships no copy.
+		var devNote = i18n.dev_status || '';
+		if ( devNote ) {
+			modalBody.appendChild( el( 'p', 'nvoos-cg-dev-status', devNote ) );
+		}
+
 		modalBody.appendChild( renderEmailRow() );
 		modalBody.appendChild( renderBillingRow() );
 
@@ -700,6 +711,16 @@
 		renderPayLoading();
 
 		var footer = el( 'div', 'nvoos-cg-modal-footer' );
+
+		// The free base-version download sits left in the footer, pushing
+		// Cancel/Pay to the right. Hidden once the buyer commits (verify)
+		// and cleared entirely with the footer on success/fallback.
+		var freeRow = renderFreeOption();
+		if ( freeRow ) {
+			freeOptionRow = freeRow;
+			footer.appendChild( freeRow );
+		}
+
 		var cancelBtn = el( 'button', 'button nvoos-cg-cancel-btn', i18n.cancel || 'Cancel' );
 		cancelBtn.type = 'button';
 		cancelBtn.addEventListener( 'click', closeModal );
@@ -791,6 +812,23 @@
 		if ( payBoxEl && ! paymentElement ) {
 			payBoxEl.innerHTML = '';
 		}
+	}
+
+	/**
+	 * Build the "free option" link: the free base plugin release, offered
+	 * as an alternative to the paid Complete bundle.
+	 *
+	 * Returns null when the URL is unset (or not http(s)) so the caller can
+	 * omit the row entirely.
+	 *
+	 * @return {HTMLElement|null}
+	 */
+	function renderFreeOption() {
+		var url = String( config.base_version_url || '' ).trim();
+		if ( ! url || ! /^https?:\/\//i.test( url ) ) {
+			return null;
+		}
+		return linkEl( 'nvoos-cg-free-option', i18n.free_option || 'Get the free NV oOS base version', url );
 	}
 
 	/**
@@ -1088,6 +1126,12 @@
 		var spinner = el( 'div', 'nvoos-cg-installing', i18n.installing || 'Installing…' );
 		payBox.innerHTML = '';
 		payBox.appendChild( spinner );
+
+		// The buyer has committed — the free alternative is no longer
+		// relevant; drop it while the install runs.
+		if ( freeOptionRow ) {
+			freeOptionRow.style.display = 'none';
+		}
 
 		var verifyBody = { payment_intent: paymentIntentId };
 		if ( consentAt > 0 ) {

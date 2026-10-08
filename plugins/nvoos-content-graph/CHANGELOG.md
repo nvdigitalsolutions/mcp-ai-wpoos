@@ -2,13 +2,23 @@
 
 ## Unreleased
 
-### Added — Payment-form loading indicator
+### Added — Purchase modal polish (loading state + free option)
 
-- **Purchase modal** — the pay area now shows a "Loading secure payment
-  form…" spinner the moment the modal opens, until Stripe's Payment
-  Element mounts, so slower sites no longer present an empty card slot
-  while Stripe.js loads and the session round-trip completes. The
+- **Loading indicator** — the pay area now shows a "Loading secure
+  payment form…" spinner the moment the modal opens, until Stripe's
+  Payment Element mounts, so slower sites no longer present an empty card
+  slot while Stripe.js loads and the session round-trip completes. The
   placeholder is cleared on mount and on every error path.
+- **Free base-version link** — the modal footer now offers "Get the free
+  NV oOS base version — no payment required", linking to the latest free
+  base release ZIP (override via
+  `nvoos_content_graph/payments/base_version_url`; an empty value hides
+  the link). The link disappears once the buyer commits and never shows
+  on the success screen.
+- **Development-status note** — a muted line under the "What you get"
+  block states that NV oOS is still in active development and testing,
+  and restates the 30-day money-back guarantee, so buyers see both facts
+  before paying.
 
 ### Fixed — Remote source drivers misconfigured or broken
 
