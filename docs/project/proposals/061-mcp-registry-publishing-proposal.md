@@ -252,11 +252,15 @@ the registry ecosystem); the fallback if moderation objects is documented in
 
 ### 4.6 Explicitly out of scope (this proposal)
 
-- Listing the deployed `addons/mcp-gateway/` or
-  `addons/mcp-wordpress-gateway/` instances as `remotes` — they are
-  API-key-gated and per-deployment; the registry excludes private remote
-  servers, and listings would 401 for consumers. Revisit only if a public
-  demo endpoint (auth-free or demo-credentialed) is provisioned.
+- Listing the deployed `addons/mcp-wordpress-gateway/` instances as
+  `remotes` — per-deployment, API-key-gated, no public endpoint; the
+  registry excludes private remote servers. The **fleet gateway**
+  (`addons/mcp-gateway/` at `mcp.nvoos.pro`) is a different case: its
+  endpoint is live, publicly reachable, and bearer-key auth fits the
+  registry's `headers`/`isSecret` model, so a `remotes` draft landed with
+  the implementation plan (`addons/mcp-gateway/server.json`, Appendix E).
+  Publishing it is decision **D6**, pending the `ideabits` upstream-401 fix
+  and the public key-issuance story.
 - Claiming a DNS namespace (`com.nvdigitalsolutions.*`) — unnecessary until
   we host custom-domain remote servers.
 - Paid tiers ($39 × mcpservers.org/mcp.so) — decision-gated, see §8.
@@ -355,8 +359,14 @@ the registry ecosystem); the fallback if moderation objects is documented in
    mcp.so) — $39 one-time each, dofollow link + badge + faster review.
 4. **Approve** OIDC-based automated registry publishing in CI, with
    maintainer device-flow as backup.
-5. **Confirm** the honest-relay positioning of the description (vs deferring
-   until a tool-bearing server entry — e.g., the fleet gateway — exists).
+5. **Confirm** the honest-relay positioning of the bridge description (vs
+   deferring until a tool-bearing server entry — e.g., the fleet gateway —
+   exists).
+6. **Approve** the gateway `remotes` entry —
+   `io.github.nvdigitalsolutions/nvoos-mcp-gateway` for
+   `https://mcp.nvoos.pro/mcp` (draft: `addons/mcp-gateway/server.json`,
+   Appendix E) — including the public key-issuance expectation, and fix the
+   `ideabits` upstream 401 before publishing.
 
 ---
 
@@ -440,6 +450,54 @@ demand appears.
 
 (Placement in the WordPress/Cloud Platforms section per the list's current
 README structure; PR must follow its contribution guidelines.)
+
+## Appendix E — Draft `server.json` (fleet gateway, remotes entry)
+
+Committed at `addons/mcp-gateway/server.json`:
+
+```json
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.nvdigitalsolutions/nvoos-mcp-gateway",
+  "title": "NV oOS Gateway",
+  "description": "Streamable HTTP MCP gateway exposing your NV oOS WordPress fleet behind one API key.",
+  "websiteUrl": "https://mcp.nvoos.pro/",
+  "repository": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
+    "source": "github",
+    "subfolder": "addons/mcp-gateway"
+  },
+  "version": "0.1.1",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.nvoos.pro/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Gateway API key issued by NV Digital Solutions, bound to one or more site slugs. Send as \"Authorization: Bearer <key>\".",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "tool": "mcp-publisher",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+Notes: remote-only entries need no `packages`/ownership marker (registry
+remote-servers doc); the URL is verified live (protocol 2026-07-28, bearer
+auth, `GET /` landing page for reviewers); **each remote URL can be claimed
+by only one server name** — publish under this name only; description is 84
+chars (limit 100); registry version aligned to the live gateway version
+(0.1.1). The actual API key is never embedded — hosts surface the declared
+secret header and users supply their own key.
 
 ## Appendix D — Sources
 

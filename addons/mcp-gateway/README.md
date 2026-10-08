@@ -156,6 +156,17 @@ PORT=8899 npm start
 # → curl http://127.0.0.1:8899/mcp
 ```
 
+## Ecosystem discovery
+
+The public endpoint `https://mcp.nvoos.pro/mcp` is listed in the **official
+MCP Registry** (`registry.modelcontextprotocol.io`) as
+`io.github.nvdigitalsolutions/nvoos-mcp-gateway` — a streamable-HTTP remote
+with a required `Authorization` header. The registry metadata lives in
+[`server.json`](./server.json) and is published with the `mcp-publisher`
+CLI. Community directories (mcpservers.org, mcp.directory, PulseMCP, Glama)
+carry entries that point back here; the `GET /` landing page is the
+directory-reviewer surface.
+
 ## License
 
 GPL-3.0-or-later — see the repository LICENSE.

@@ -123,16 +123,14 @@ Execution record:
       token in the gateway env; re-run tools/list until `tools` is non-empty.
       Also rotate the public gateway key shared during testing
       (`GATEWAY_PUBLIC_KEYS_PREVIOUS` overlap).
-- [ ] Registry opportunity (owner decision, gated on D1/D2):
-      `mcp.nvoos.pro/mcp` is a public bearer-auth streamable-HTTP endpoint
-      and is therefore eligible for a `remotes` entry with
-      `headers: [{ name: "Authorization", isRequired: true, isSecret: true }]`
-      — proposal §4.6 revisit. Candidate name:
-      `io.github.nvdigitalsolutions/nvoos-mcp-gateway` (a second server
-      entry, next to the bridge's stdio entry). Requires the gateway to be
-      open to key issuance and the `ideabits` 401 fixed first.
+- [x] Registry opportunity — **draft prepared 2026-10-08**:
+      `addons/mcp-gateway/server.json` (proposal Appendix E) — remote-only
+      entry (`streamable-http` + `Authorization` header `isSecret`), eligible
+      because `mcp.nvoos.pro/mcp` is public and bearer-authenticated. The
+      actual publish stays gated on decision **D6**; prerequisites: the
+      `ideabits` upstream 401 fixed and the key-issuance story confirmed.
 
-## Phase 3 — First registry publish (manual, device-flow) (2 h)
+## Phase 3 — First registry publishes: bridge + gateway (manual, device-flow) (2.5 h)
 
 - [ ] Install `mcp-publisher` (prebuilt binary). Windows (maintainer host):
   ```powershell
@@ -143,20 +141,43 @@ Execution record:
   macOS/Linux: Homebrew (`brew install mcp-publisher`) or the curl+tar
   one-liner from the registry quickstart.
 - [ ] `mcp-publisher login github` → device-code OAuth as the org member.
-- [ ] **Version sync** — `server.json` must match the published npm version
-      exactly (currently `0.1.0-alpha.4`). If the release version differs,
-      update `version` (top-level) and `packages[0].version` first. One-liner:
+- [ ] **Run the publisher from each project directory** (the CLI resolves
+      `server.json` from the working directory — there is one per entry):
+  - bridge: `packages/nvoos-mcp-bridge/server.json`
+  - gateway: `addons/mcp-gateway/server.json`
+- [ ] **Version sync (bridge)** — `server.json` must match the published npm
+      version exactly (currently `0.1.0-alpha.4`). If the release version
+      differs, update `version` (top-level) and `packages[0].version` first.
+      One-liner:
   ```sh
   V=$(npm pkg get version --workspaces=false) # run inside packages/nvoos-mcp-bridge
   node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('server.json','utf8'));s.version=process.argv[1];s.packages[0].version=process.argv[1];fs.writeFileSync('server.json',JSON.stringify(s,null,2)+'\n')" "$V"
   ```
-- [ ] `mcp-publisher validate` — must pass before any publish (catches the
-      100-char description limit, `_meta` restrictions, package marker
-      mismatches).
-- [ ] `mcp-publisher publish`.
-- [ ] Verify:
+- [ ] `mcp-publisher validate` (bridge dir) — must pass before any publish
+      (catches the 100-char description limit, `_meta` restrictions, package
+      marker mismatches).
+- [ ] `mcp-publisher publish` (bridge dir).
+- [ ] Verify (bridge):
   - `curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.nvdigitalsolutions/nvoos-mcp-bridge"` → entry present, `_meta.status: active`, `isLatest: true`
   - `curl "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.nvdigitalsolutions%2Fnvoos-mcp-bridge"` → metadata matches `server.json`
+- [ ] **Gateway pre-flight (before publishing the remotes entry):**
+  - [x] Draft landed: `addons/mcp-gateway/server.json` — remote-only entry
+        (no `packages`/ownership marker required per the registry
+        remote-servers doc); URL verified live 2026-10-08 (protocol
+        2026-07-28, bearer auth, `GET /` reviewer landing page).
+  - [ ] Fix the `ideabits` upstream 401 — re-mint the site's `op_` token in
+        Fleet Operator, update the Velocity env, redeploy, and re-verify
+        `tools/list` returns a non-empty `tools` array.
+  - [ ] Confirm the key-issuance story (D6) — the registry models it via the
+        declared `Authorization` header (`isSecret: true`); each consumer
+        supplies their own key; the real key is never embedded in metadata.
+  - [ ] One-URL rule: each remote URL can be claimed by only one server name
+        — publish under `io.github.nvdigitalsolutions/nvoos-mcp-gateway`
+        only, never a duplicate entry.
+- [ ] `mcp-publisher validate` (gateway dir) → `mcp-publisher publish`
+      (gateway dir).
+- [ ] Verify (gateway):
+  - `curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.nvdigitalsolutions/nvoos-mcp-gateway"` → entry present, `remotes[0].url` = `https://mcp.nvoos.pro/mcp`
 - [ ] Record the publish evidence (API JSON) in the Phase 0 baseline folder.
 
 ## Phase 4 — CI automation (GitHub OIDC) (3 h)
@@ -266,6 +287,8 @@ Approvals from proposal §10, mapped to phases:
 |---|---|
 | `packages/nvoos-mcp-bridge/package.json` | + `mcpName` ownership marker |
 | `packages/nvoos-mcp-bridge/server.json` | New — registry metadata (proposal Appendix A) |
+| `addons/mcp-gateway/server.json` | New — gateway `remotes` entry (proposal Appendix E) |
+| `addons/mcp-gateway/README.md` | + "Ecosystem discovery" section |
 | `packages/nvoos-mcp-bridge/README.md` | + "Ecosystem discovery" section |
 | `docs/project/proposals/README.md` | 061 entries + date bump |
 | `docs/project/proposals/061-mcp-registry-publishing-proposal.md` | New (previous change) |
