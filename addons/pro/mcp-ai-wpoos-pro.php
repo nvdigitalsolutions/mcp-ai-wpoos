@@ -1512,6 +1512,34 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools            = array_merge( $pro_tools, $ezuite_toolkit_tools );
 		}
 
+		// Add Food & Beverage Management Toolkit tools if enabled (Pro feature — F&B ops: metrics, reports, drafts).
+		if ( ! empty( $settings['enable_fnb_toolkit'] ) ) {
+			$fnb_toolkit_tools = array(
+				'WP_MCP_AI_Tool_Fnb_Read_Table'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-read-table.php',
+				'WP_MCP_AI_Tool_Fnb_Search_Table'        => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-search-table.php',
+				'WP_MCP_AI_Tool_Fnb_Calculate_Metric'    => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-calculate-metric.php',
+				'WP_MCP_AI_Tool_Fnb_Compare_Periods'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-compare-periods.php',
+				'WP_MCP_AI_Tool_Fnb_Variance_Split'      => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-variance-split.php',
+				'WP_MCP_AI_Tool_Fnb_Stock_Used'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-stock-used.php',
+				'WP_MCP_AI_Tool_Fnb_Expected_Use'        => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-expected-use.php',
+				'WP_MCP_AI_Tool_Fnb_Stock_Variance'      => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-stock-variance.php',
+				'WP_MCP_AI_Tool_Fnb_Waste_Analysis'      => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-waste-analysis.php',
+				'WP_MCP_AI_Tool_Fnb_Days_Of_Cover'       => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-days-of-cover.php',
+				'WP_MCP_AI_Tool_Fnb_Weekend_Demand'      => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-weekend-demand.php',
+				'WP_MCP_AI_Tool_Fnb_Price_Change_Impact' => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-price-change-impact.php',
+				'WP_MCP_AI_Tool_Fnb_Budget_Variance'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-budget-variance.php',
+				'WP_MCP_AI_Tool_Fnb_Dish_Margin'         => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-dish-margin.php',
+				'WP_MCP_AI_Tool_Fnb_Duplicate_Invoice_Scan' => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-duplicate-invoice-scan.php',
+				'WP_MCP_AI_Tool_Fnb_Labour_Analysis'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-labour-analysis.php',
+				'WP_MCP_AI_Tool_Fnb_Utilities_Per_Cover' => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-utilities-per-cover.php',
+				'WP_MCP_AI_Tool_Fnb_Generate_Report'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-generate-report.php',
+				'WP_MCP_AI_Tool_Fnb_Save_Draft'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-save-draft.php',
+				'WP_MCP_AI_Tool_Fnb_List_Drafts'         => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-list-drafts.php',
+				'WP_MCP_AI_Tool_Fnb_Audit_Log'           => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-audit-log.php',
+			);
+			$pro_tools         = array_merge( $pro_tools, $fnb_toolkit_tools );
+		}
+
 		// Add Shopify Sync Toolkit tools if enabled (Pro feature — Shopify↔WooCommerce sync with CCT cache).
 		if ( ! empty( $settings['enable_shopify_sync_toolkit'] ) && class_exists( 'WooCommerce' ) && class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 			$shopify_sync_toolkit_tools = array(

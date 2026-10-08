@@ -730,6 +730,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => false,
 				),
 
+				// Food & Beverage Management Toolkit.
+				'enable_fnb_toolkit'                     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Food & Beverage Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Food & Beverage operations metrics, reports and drafts (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the Food & Beverage Management toolkit: reads restaurant operating data (menu, recipes, stock, sales, covers, purchases, waste, labour, utilities, budgets, bookings) from Google Drive or CSV, computes the 21 F&B metrics (M-01…M-21) deterministically, and generates the 13 report layouts (R-01…R-13) as drafts. Outputs are drafts only — no sending, ordering or record changes. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// Shopify Sync Toolkit.
 				'enable_shopify_sync_toolkit'            => array(
 					'type'           => 'checkbox',

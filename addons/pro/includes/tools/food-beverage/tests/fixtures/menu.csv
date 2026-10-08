@@ -1,0 +1,60 @@
+Item ID,Menu,Section,Item,Price (LKR),Type,Source,Recipe cost (LKR),Gross margin (LKR),Food or drink cost %
+F-01,Beach Club,Snacks,Chicken skins,750,Food,"Published menu, Sep 2026",102,648,0.136
+F-02,Beach Club,Snacks,Rolled cucumber,900,Food,"Published menu, Sep 2026",89.5,810.5,0.09944444444
+F-03,Beach Club,Snacks,Mutton croquettes,1600,Food,"Published menu, Sep 2026",527.6,1072.4,0.32975
+F-04,Beach Club,Snacks,Roasted cashews,1400,Food,"Published menu, Sep 2026",472.5,927.5,0.3375
+F-05,Beach Club,Snacks,Crispy whitebait,1300,Food,"Published menu, Sep 2026",239.4,1060.6,0.1841538462
+F-06,Beach Club and Club,Sides,Double cooked fries,1100,Food,"Published menu, Sep 2026",294,806,0.2672727273
+F-07,Beach Club,Salads,Upcountry green salad,2000,Food,"Published menu, Sep 2026",463.5,1536.5,0.23175
+F-08,Beach Club,Salads,Chicken Caesar salad,2600,Food,"Published menu, Sep 2026",780,1820,0.3
+F-09,Beach Club,Salads,Tomato salad,2200,Food,"Published menu, Sep 2026",543.4,1656.6,0.247
+F-10,Beach Club,"Burgers, sandwiches and wraps",Prawn burger,2900,Food,"Published menu, Sep 2026",868.5,2031.5,0.2994827586
+F-11,Beach Club,"Burgers, sandwiches and wraps",Beef burger,2900,Food,"Published menu, Sep 2026",832,2068,0.2868965517
+F-12,Beach Club,"Burgers, sandwiches and wraps",Tuna wrap,2700,Food,"Published menu, Sep 2026",565.5,2134.5,0.2094444444
+F-13,Beach Club,"Burgers, sandwiches and wraps",Vegetable wrap,2200,Food,"Published menu, Sep 2026",221.5,1978.5,0.1006818182
+F-14,Beach Club,"Burgers, sandwiches and wraps",Southern spiced chicken wrap,2600,Food,"Published menu, Sep 2026",375.5,2224.5,0.1444230769
+F-15,Beach Club,"Burgers, sandwiches and wraps",Wild mushroom ciabatta,2300,Food,"Published menu, Sep 2026",547.5,1752.5,0.2380434783
+F-16,Beach Club,"Burgers, sandwiches and wraps",Grilled tuna focaccia,2700,Food,"Published menu, Sep 2026",813.5,1886.5,0.3012962963
+F-17,Beach Club,Plates,Fish and chips,2500,Food,"Published menu, Sep 2026",862,1638,0.3448
+F-18,Beach Club and Club,Pasta and rice,Clam and prawn linguine,3500,Food,"Published menu, Sep 2026",1091,2409,0.3117142857
+F-19,Beach Club and Club,Pasta and rice,Surf Club seafood rice,2400,Food,"Published menu, Sep 2026",715.5,1684.5,0.298125
+F-20,Beach Club,Rice and curry,"Rice and curry, chicken",2000,Food,"Published menu, Sep 2026",549.5,1450.5,0.27475
+F-21,Beach Club,Rice and curry,"Rice and curry, fish",2000,Food,"Published menu, Sep 2026",722,1278,0.361
+F-22,Beach Club,Rice and curry,"Rice and curry, mutton",2300,Food,"Published menu, Sep 2026",842,1458,0.3660869565
+F-23,Beach Club,Rice and curry,"Rice and curry, prawn",2300,Food,"Published menu, Sep 2026",965,1335,0.4195652174
+F-24,Club,Small plates,Mixed ceviche,2200,Food,"Published menu, Sep 2026",638.1,1561.9,0.2900454545
+F-25,Club,Small plates,Southern tuna sashimi,2400,Food,"Published menu, Sep 2026",428.6,1971.4,0.1785833333
+F-26,Club,Small plates,Scorched baby squid,1900,Food,"Published menu, Sep 2026",405,1495,0.2131578947
+F-27,Club,Small plates,Braised octopus,2200,Food,"Published menu, Sep 2026",554.4,1645.6,0.252
+F-28,Club,Small plates,Beef tartare,2400,Food,"Published menu, Sep 2026",587.2,1812.8,0.2446666667
+F-29,Club,Small plates,Smoked carrot,1300,Food,"Published menu, Sep 2026",139.5,1160.5,0.1073076923
+F-30,Club,Small plates,Dressed hung curd,1800,Food,"Published menu, Sep 2026",227.1,1572.9,0.1261666667
+F-31,Club,Large plates,Yellowfin tuna steak,3600,Food,"Published menu, Sep 2026",795,2805,0.2208333333
+F-32,Club,Large plates,Charred chicken,2900,Food,"Published menu, Sep 2026",654.5,2245.5,0.2256896552
+F-33,Club,Large plates,Green chilli prawn,4600,Food,"Published menu, Sep 2026",1265,3335,0.275
+F-34,Club,Large plates,Grilled eggplant,2200,Food,"Published menu, Sep 2026",341,1859,0.155
+F-35,Club,Large plates,Seasonal whole fish (700g),5700,Food,"Published menu, Sep 2026",1762,3938,0.309122807
+F-36,Club,Large plates,Grilled octopus,4600,Food,"Published menu, Sep 2026",946,3654,0.2056521739
+F-37,Beach Club and Club,Sides,Mashed potato,1000,Food,"Published menu, Sep 2026",208,792,0.208
+F-38,Beach Club and Club,Sides,Grilled seasonal vegetables,1500,Food,"Published menu, Sep 2026",212.5,1287.5,0.1416666667
+F-39,Beach Club and Club,Sides,Ghee rice,800,Food,"Published menu, Sep 2026",175.5,624.5,0.219375
+F-40,Beach Club and Club,Sides,Jasmine rice,800,Food,"Published menu, Sep 2026",78,722,0.0975
+F-41,Beach Club and Club,Sides,Mixed market salad,900,Food,"Published menu, Sep 2026",168.5,731.5,0.1872222222
+F-42,Beach Club and Club,Sides,House bread,800,Food,"Published menu, Sep 2026",174.6,625.4,0.21825
+B-01,Bar,Craft cocktails,Gold standard,2700,Beverage,"Published menu, Sep 2026",641.1428571,2058.857143,0.2374603175
+B-02,Bar,Craft cocktails,Green apple,2700,Beverage,"Published menu, Sep 2026",991.5,1708.5,0.3672222222
+B-03,Bar,Craft cocktails,Tamarind,2500,Beverage,"Published menu, Sep 2026",342,2158,0.1368
+B-04,Bar,Craft cocktails,Strawberry,2600,Beverage,"Published menu, Sep 2026",819.1428571,1780.857143,0.3150549451
+B-05,Bar,Craft cocktails,Grilled pineapple marg,3300,Beverage,"Published menu, Sep 2026",1231.142857,2068.857143,0.3730735931
+B-06,Bar,"Coffee, matcha and fresh juice",Coconut coffee,950,Beverage,Demo assumption,152.4,797.6,0.1604210526
+B-07,Bar,"Coffee, matcha and fresh juice",Flat white,850,Beverage,Demo assumption,153.9,696.1,0.1810588235
+B-08,Bar,"Coffee, matcha and fresh juice",Long black,700,Beverage,Demo assumption,86.4,613.6,0.1234285714
+B-09,Bar,"Coffee, matcha and fresh juice",Iced matcha,1100,Beverage,Demo assumption,174,926,0.1581818182
+B-10,Bar,"Coffee, matcha and fresh juice",Fresh juice,1000,Beverage,Demo assumption,200,800,0.2
+B-11,Bar,Soft drinks,King coconut,600,Beverage,Demo assumption,120,480,0.2
+B-12,Bar,Soft drinks,Soft drink,500,Beverage,Demo assumption,110,390,0.22
+B-13,Bar,Beer and wine,Local lager 330ml,1400,Beverage,Demo assumption,380,1020,0.2714285714
+B-14,Bar,Beer and wine,Imported beer 330ml,1900,Beverage,Demo assumption,620,1280,0.3263157895
+B-15,Bar,Beer and wine,"House white, glass",2600,Beverage,Demo assumption,720,1880,0.2769230769
+B-16,Bar,Beer and wine,"House rosé, glass",2600,Beverage,Demo assumption,720,1880,0.2769230769
+B-17,Bar,Beer and wine,"House red, glass",2600,Beverage,Demo assumption,780,1820,0.3
