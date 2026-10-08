@@ -1,7 +1,7 @@
 # NV oOS MCP Registry & Directory Publishing — Comprehensive Implementation Plan
 
 **Date:** 2026-10-08
-**Status:** 🔮 PENDING — Phase 1 + Phase 2 executed 2026-10-08 (npm 0.1.0-alpha.4 live with the `mcpName` marker); Phases 3–6 gated on §Decision Gates
+**Status:** ⏳ ACTIVE — Phases 1–2 executed and the **bridge registry entry published 2026-10-08** (`io.github.nvdigitalsolutions/nvoos-mcp-bridge@0.1.0-alpha.4`, status `active`, `isLatest`); gateway publish + Phases 4–6 gated on D3–D6
 **Estimated Effort:** 10–14 hours core + 3 h optional (Phases 0–6)
 **Priority:** MEDIUM
 **Related:** [061-mcp-registry-publishing-proposal.md](./061-mcp-registry-publishing-proposal.md), [054-nvoos-mcp-bridge-npx-implementation-plan.md](./054-nvoos-mcp-bridge-npx-implementation-plan.md), [055-nvoos-mcp-gateway-proposal.md](./055-nvoos-mcp-gateway-proposal.md), [mcp-server-directory-addon-proposal.md](./mcp-server-directory-addon-proposal.md), `.github/workflows/npm-publish-nvoos-mcp-bridge.yml`, `packages/nvoos-mcp-bridge/`
@@ -132,34 +132,39 @@ Execution record:
 
 ## Phase 3 — First registry publishes: bridge + gateway (manual, device-flow) (2.5 h)
 
-- [ ] Install `mcp-publisher` (prebuilt binary). Windows (maintainer host):
-  ```powershell
-  $arch = if ([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq "Arm64") { "arm64" } else { "amd64" }
-  Invoke-WebRequest -Uri "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_windows_$arch.tar.gz" -OutFile "mcp-publisher.tar.gz"
-  tar xf mcp-publisher.tar.gz mcp-publisher.exe; rm mcp-publisher.tar.gz
-  ```
-  macOS/Linux: Homebrew (`brew install mcp-publisher`) or the curl+tar
-  one-liner from the registry quickstart.
-- [ ] `mcp-publisher login github` → device-code OAuth as the org member.
-- [ ] **Run the publisher from each project directory** (the CLI resolves
+- [x] **Install `mcp-publisher`** (executed 2026-10-08, Windows/MINGW64
+      host): prebuilt `mcp-publisher_windows_amd64.tar.gz` from the registry
+      releases, extracted to `C:/Users/rasta/.mcp-publisher/mcp-publisher.exe`
+      (outside the repo). macOS/Linux alternative: Homebrew or the curl+tar
+      one-liner from the registry quickstart.
+- [x] `mcp-publisher login github` — interactive device flow, completed
+      2026-10-08 (org-member account; note: the first device code expired —
+      the second attempt authorized within the window). The saved session
+      remains on this machine for the gateway publish.
+- [x] **Run the publisher from each project directory** (the CLI resolves
       `server.json` from the working directory — there is one per entry):
-  - bridge: `packages/nvoos-mcp-bridge/server.json`
-  - gateway: `addons/mcp-gateway/server.json`
-- [ ] **Version sync (bridge)** — `server.json` must match the published npm
-      version exactly (currently `0.1.0-alpha.4`). If the release version
-      differs, update `version` (top-level) and `packages[0].version` first.
-      One-liner:
+  - bridge: `packages/nvoos-mcp-bridge/server.json` ✓ (published)
+  - gateway: `addons/mcp-gateway/server.json` (pending D6)
+- [x] **Version sync (bridge)** — `server.json` version `0.1.0-alpha.4`
+      matches the published npm version (re-verified via `npm view` before
+      publishing). One-liner (if a future release version differs):
   ```sh
   V=$(npm pkg get version --workspaces=false) # run inside packages/nvoos-mcp-bridge
   node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('server.json','utf8'));s.version=process.argv[1];s.packages[0].version=process.argv[1];fs.writeFileSync('server.json',JSON.stringify(s,null,2)+'\n')" "$V"
   ```
-- [ ] `mcp-publisher validate` (bridge dir) — must pass before any publish
-      (catches the 100-char description limit, `_meta` restrictions, package
-      marker mismatches).
-- [ ] `mcp-publisher publish` (bridge dir).
-- [ ] Verify (bridge):
-  - `curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.nvdigitalsolutions/nvoos-mcp-bridge"` → entry present, `_meta.status: active`, `isLatest: true`
-  - `curl "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.nvdigitalsolutions%2Fnvoos-mcp-bridge"` → metadata matches `server.json`
+- [x] `mcp-publisher validate` (bridge dir) — "✅ server.json is valid"
+      (2026-10-08, offline — no auth needed).
+- [x] Pre-flight: registry search for `nvoos` → `count: 0` (name unclaimed).
+- [x] `mcp-publisher publish` (bridge dir) — "✓ Server
+      io.github.nvdigitalsolutions/nvoos-mcp-bridge version 0.1.0-alpha.4"
+      (2026-10-08 07:23:51 UTC).
+- [x] Verify (bridge):
+  - `curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.nvdigitalsolutions/nvoos-mcp-bridge"`
+    → `count: 1`, `_meta.status: active`, `isLatest: true`, metadata matches
+    `server.json` (packages/env/`_meta` all preserved).
+  - NOTE: the per-server path `/v0.1/servers/<name>` 404s ("Endpoint not
+    found") — the search endpoint is the verification surface; the exact
+    single-record URL lives in the registry's API docs.
 - [ ] **Gateway pre-flight (before publishing the remotes entry):**
   - [x] Draft landed: `addons/mcp-gateway/server.json` — remote-only entry
         (no `packages`/ownership marker required per the registry
@@ -273,11 +278,12 @@ Approvals from proposal §10, mapped to phases:
 
 | Gate | Decision | Blocks |
 |---|---|---|
-| D1 | Approve public namespace `io.github.nvdigitalsolutions/nvoos-mcp-bridge` | Phase 3 |
-| D2 | Approve listing copy (Appendices A–C) | Phases 3, 5 |
+| D1 | Approve public namespace `io.github.nvdigitalsolutions/nvoos-mcp-bridge` | ✅ executed 2026-10-08 (entry published under it) |
+| D2 | Approve listing copy (Appendices A–C) | ✅ bridge copy published as drafted |
 | D3 | Free vs premium tiers (mcpservers.org / mcp.so, $39 one-time each) | Phase 5 |
 | D4 | Approve OIDC CI publishing + maintainer device-flow backup | Phase 4 |
-| D5 | Confirm honest "relay" positioning (vs deferring to a tool-bearing entry) | Phases 3, 5 |
+| D5 | Confirm honest "relay" positioning (vs deferring to a tool-bearing entry) | ✅ relay wording published for the bridge |
+| D6 | Approve gateway `remotes` entry (draft Appendix E) incl. key-issuance story + `ideabits` 401 fix | Phase 3 (gateway) |
 
 ## File manifest
 
