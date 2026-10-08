@@ -17,6 +17,7 @@ plugin's WordPress.org SVN repository (excluded from distribution builds via
 | `assets/screenshot-2.png` | Settings — remote repositories + file/folder tree picker |
 | `assets/screenshot-3.png` | Frontend `[nvoos_docs]` embed — sidebar, content, TOC |
 | `assets/screenshot-4.png` | Frontend `[nvoos_docs]` embed — full-text search |
+| `assets/screenshot-5.png` | Settings — Save button + "Get NV oOS Complete" upsell card |
 
 ### Playground blueprints
 
@@ -48,7 +49,7 @@ Screenshots are captured from a running QA site at 1440×900 viewport with the
 plugin active and a configured remote repository (so the browser shows real
 docs). The capture script is `bin/capture-nvoos-docs-hub-screenshots.js`
 (Playwright, modeled on `bin/capture-nvoos-content-graph-screenshots.js`).
-The four PNGs below are already generated and committed here.
+The five PNGs below are already generated and committed here.
 
 Capture workflow (if the assets ever need refreshing):
 
@@ -59,7 +60,7 @@ Capture workflow (if the assets ever need refreshing):
    (`wp nvoos-docs rebuild --sync`).
 3. Publish a page containing the `[nvoos_docs]` shortcode (the script defaults
    to `/docs-hub-test/`; override via `DOCS_PAGE_PATH`).
-4. Run `node bin/capture-nvoos-docs-hub-screenshots.js` and review the four
+4. Run `node bin/capture-nvoos-docs-hub-screenshots.js` and review the five
    PNGs (the script logs in as admin for the settings shots and captures the
    frontend as a guest; it widens the theme's content CSS so the three-pane
    embed renders at listing width).

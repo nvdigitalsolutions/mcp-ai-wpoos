@@ -178,6 +178,7 @@ listed in `package.json` and `package-lock.json` in the public repository.
 2. Settings — remote repositories with the GitHub file/folder tree picker.
 3. Frontend `[nvoos_docs]` embed — sidebar, content, and table of contents.
 4. Frontend `[nvoos_docs]` embed — full-text search.
+5. Settings — Save button and the "Get NV oOS Complete" upsell card.
 
 == External Services ==
 

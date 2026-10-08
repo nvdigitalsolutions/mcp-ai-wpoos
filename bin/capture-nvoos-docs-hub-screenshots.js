@@ -15,6 +15,7 @@
  *   2. Settings — remote repository row + GitHub file/folder tree picker
  *   3. Frontend [nvoos_docs] embed — sidebar, content, TOC
  *   4. Frontend [nvoos_docs] embed — full-text search
+ *   5. Settings — Save button + "Get NV oOS Complete" upsell card
  *
  * Usage:
  *   node bin/capture-nvoos-docs-hub-screenshots.js
@@ -101,6 +102,38 @@ async function main() {
 		await page.waitForTimeout( 1000 );
 		const repoRow = page.locator( '.nvoos-dh-remote-repo-row' ).first();
 		await repoRow.screenshot( { path: path.join( OUT_DIR, 'screenshot-2.png' ) } );
+
+		// ── 5. Save button + NV oOS Complete upsell card ──────────
+		// The upsell card sits directly below the settings form's Save
+		// button. Reload first (screenshot-2 leaves the tree-picker modal
+		// open), then capture the two together so the listing shows both
+		// the submit control and the optional upgrade path in context.
+		console.log( 'Capturing screenshot-5.png (save button + upsell card)...' );
+		await page.goto(
+			BASE_URL + '/wp-admin/options-general.php?page=nvoos-docs-hub',
+			{ waitUntil: 'load' }
+		);
+		const upsellCard = page.locator( '.nvoos-docs-hub-upsell-card' );
+		await upsellCard.waitFor( { state: 'visible', timeout: 120000 } );
+		await upsellCard.scrollIntoViewIfNeeded();
+		await page.waitForTimeout( 1000 );
+		const submitBox = await page.locator( '.wrap p.submit' ).boundingBox();
+		const upsellBox = await upsellCard.boundingBox();
+		const wrap5 = page.locator( '.wrap' );
+		const wrap5Box = await wrap5.boundingBox();
+		if ( submitBox && upsellBox && wrap5Box ) {
+			await page.screenshot( {
+				path: path.join( OUT_DIR, 'screenshot-5.png' ),
+				clip: {
+					x: Math.round( wrap5Box.x ),
+					y: Math.round( submitBox.y ) - 10,
+					width: Math.round( wrap5Box.width ),
+					height: Math.round( upsellBox.y + upsellBox.height - submitBox.y + 20 ),
+				},
+			} );
+		} else {
+			await upsellCard.screenshot( { path: path.join( OUT_DIR, 'screenshot-5.png' ) } );
+		}
 		await adminContext.close();
 
 		// ── Frontend context (guest — public access) ─────────────
@@ -154,7 +187,7 @@ async function main() {
 		await guestContext.close();
 
 		console.log( '\nAll screenshots captured:' );
-		for ( let i = 1; i <= 4; i++ ) {
+		for ( let i = 1; i <= 5; i++ ) {
 			const file = path.join( OUT_DIR, 'screenshot-' + i + '.png' );
 			console.log( '  ' + file + ' (' + ( fs.statSync( file ).size / 1024 ).toFixed( 1 ) + ' KB)' );
 		}
