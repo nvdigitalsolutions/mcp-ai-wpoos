@@ -111,3 +111,57 @@ price-subject-to-change note). All were re-checked before upload:
   folded into 1.0.7.
 - ZIP rebuilt (480 KB) via `bin/build-nvoos-content-graph.sh`;
   SHA-256 recorded alongside the artifact in `build/`.
+
+## Re-verification (2026-10-08, 1.0.9 pre-upload pass)
+
+The 1.0.9 release folds in the purchase-modal polish (loading indicator,
+free base-version link, development-status note), the remote-source driver
+fixes, and the wp.org review findings fixed in this pass. Everything below
+was re-checked against guidelines 1–18 before upload:
+
+- **Reviewer-category fix — pre-init cron scheduling:** the boot-path
+  `syncRebuildSchedule()` call ran on `plugins_loaded`; when no rebuild
+  event existed, `wp_schedule_event()` consulted `wp_get_schedules()`
+  before translations load on WP 6.7+, so a WooCommerce site could emit the
+  "translation loading triggered too early" notice. Scheduling now hooks to
+  `init` (activation-time scheduling is unchanged — it runs post-init).
+- **Tri-sync fix:** `bin/build-nvoos-content-graph.sh` was missing the
+  `blueprints/` rsync exclude that the CI workflow and `.distignore`
+  already carried (the PR #6662 drift class). Added, so local rebuilds can
+  no longer leak the dev blueprint seeds into the ZIP.
+- **Readme disclosure:** the new free base-version download link is
+  disclosed in `== External services ==` (browser-side GitHub link, no data
+  sent) and the payment FAQ; the 1.0.9 changelog entry lists the modal
+  changes and the cron fix.
+- **Guideline 15 — version bump:** header `Version` and
+  `NVOOS_CONTENT_GRAPH_VERSION` 1.0.8 → 1.0.9; readme `Stable tag: 1.0.9`;
+  readme changelog 1.0.9 entry dated 2026-10-08; `CHANGELOG.md` top
+  "Unreleased" section folded into 1.0.9.
+- **i18n:** POT regenerated via `wp i18n make-pot` — `Project-Id-Version`
+  1.0.9, +3 msgids (payment loading, free option, dev status), 0 msgids
+  lost. Text Domain `nvoos-content-graph` == slug throughout.
+- **Sweeps re-run clean:** no `Tested up to` in the PHP header (readme
+  only); no `load_plugin_textdomain` calls; admin notices plugin-page
+  scoped + dismissible (transient success self-removes); no secrets in
+  localized payloads; every REST route has a named capability callback
+  (commerce routes `manage_options`-only, no `__return_true`);
+  deactivation clears all cron hooks and uninstall.php drops tables,
+  options, transients, and hooks with no recursive file deletes.
+- **Commerce copy:** loading spinner, free-version link, and the
+  development-status note are benign, honest additions (no dates, no
+  urgency tactics); the guarantee wording matches the published Refund
+  Policy. Commerce notes updated (`WPORG-REVIEW-COMMERCE-NOTES.md` v1.0.9).
+- **Automated gates:** PHPUnit Unit 154 tests / 725 assertions and
+  Integration 18 tests / 57 assertions green (Docker, WP 6.9); `node
+  scripts/verify-commerce-fallback.js` 7/7; phpcs 0 errors on changed
+  files; `php -l` clean. Local PCP run on the ZIP-shaped tree: see the
+  1.0.9 check record below.
+
+### PCP (Plugin Check) — 1.0.9 pre-upload run
+
+Executed 2026-10-08 on a ZIP-shaped tree staged with the workflow's exact
+rsync exclude list (4,879 files, `readme.txt` at the root, `vendor/autoload.php`
+intact): **PCP exit 0, 0 ERRORs, 161 WARNINGs** — all in the known non-blocking
+categories (constant-derived table names flagged as DirectDB/UnescapedDBParameter,
+dynamic hook names derived from prefixed constants, slow meta-query pattern on
+the graph tables). No new categories versus the 1.0.7 record (160).
