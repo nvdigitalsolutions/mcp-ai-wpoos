@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-3.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Content Graph 1.0.8\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-content-graph\n"
+"Project-Id-Version: NV oOS Content Graph 1.0.9\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/plugin\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-26T17:54:26+00:00\n"
+"POT-Creation-Date: 2026-10-08T09:53:43+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nvoos-content-graph\n"
@@ -238,7 +238,7 @@ msgstr ""
 #: src/Admin/RemoteAdmin.php:440
 #: src/Admin/RemoteAdmin.php:471
 #: src/Admin/RemoteAdmin.php:649
-#: src/Admin/SettingsPage.php:639
+#: src/Admin/SettingsPage.php:643
 #: src/Tools/SyncRemoteSource.php:79
 msgid "Permission denied."
 msgstr ""
@@ -308,7 +308,7 @@ msgid "Test Connection"
 msgstr ""
 
 #: src/Admin/RemoteAdmin.php:702
-#: src/Admin/SettingsPage.php:561
+#: src/Admin/SettingsPage.php:562
 msgid "Cancel"
 msgstr ""
 
@@ -678,7 +678,7 @@ msgstr ""
 
 #: src/Admin/Sections/BuildSection.php:136
 #: src/Admin/Sections/EmbeddingsSection.php:128
-#: src/Admin/SettingsPage.php:559
+#: src/Admin/SettingsPage.php:560
 msgid "Get NV oOS Complete"
 msgstr ""
 
@@ -1092,225 +1092,237 @@ msgstr ""
 msgid "Graph explorer. Use arrow keys to move between nodes, Enter to open details, Escape to clear, + and - to zoom."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:560
+#: src/Admin/SettingsPage.php:561
 msgid "Pay"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:562
+#: src/Admin/SettingsPage.php:563
 msgid "Close"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:563
+#: src/Admin/SettingsPage.php:564
 msgid "Payments are processed securely by Stripe. Your card never touches this server."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:564
+#: src/Admin/SettingsPage.php:565
 msgid "The payment form could not be started. Please reload the page and try again."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:565
-msgid "One-time payment — no subscription"
-msgstr ""
-
 #: src/Admin/SettingsPage.php:566
-msgid "Introductory price — prices are subject to change."
+msgid "Loading secure payment form…"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:567
-msgid "VAT may be added at checkout based on your country."
+msgid "Get the free NV oOS base version — no payment required"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:568
-msgid "Includes 1 year of updates and email support on this site."
+msgid "NV oOS is still in active development and testing. Your purchase includes updates and email support — and is covered by our 30-day money-back guarantee."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:569
-msgid "Try it risk-free — 30-day money-back guarantee"
+msgid "One-time payment — no subscription"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:570
-msgid "Instant download and automatic install"
+msgid "Introductory price — prices are subject to change."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:571
-msgid "Included in NV oOS Complete"
+msgid "VAT may be added at checkout based on your country."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:572
-msgid "The full NV oOS plugin — base + Pro"
+msgid "Includes 1 year of updates and email support on this site."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:573
-msgid "1 year of updates"
+msgid "Try it risk-free — 30-day money-back guarantee"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:574
-msgid "Email support directly from the developer"
+msgid "Instant download and automatic install"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:575
-msgid "Access to the NV oOS Content Graph ecosystem when it launches — included at no extra cost"
+msgid "Included in NV oOS Complete"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:576
-msgid "Your purchase directly funds the next features. Owners like you shape the roadmap — tell us what to build next."
+msgid "The full NV oOS plugin — base + Pro"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:577
-msgid "Share your ideas"
+msgid "1 year of updates"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:578
-msgid "Delivery starts immediately. By downloading, you acknowledge that you lose your EU right of withdrawal for this digital content."
+msgid "Email support directly from the developer"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:579
-msgid "What happens next"
+msgid "Access to the NV oOS Content Graph ecosystem when it launches — included at no extra cost"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:580
-msgid "A receipt is on its way to your email."
+msgid "Your purchase directly funds the next features. Owners like you shape the roadmap — tell us what to build next."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:581
-msgid "NV oOS Complete is installed and activated."
+msgid "Share your ideas"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:582
-msgid "Your NV oOS Content Graph — AI addon is installed and activated."
+msgid "Delivery starts immediately. By downloading, you acknowledge that you lose your EU right of withdrawal for this digital content."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:583
-msgid "Your license key is saved — keep it safe."
+msgid "What happens next"
 msgstr ""
 
 #: src/Admin/SettingsPage.php:584
-msgid "Watch the changelog for updates — your Content Graph ecosystem access arrives with the launch, at no extra cost."
+msgid "A receipt is on its way to your email."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:585
+msgid "NV oOS Complete is installed and activated."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:586
+msgid "Your NV oOS Content Graph — AI addon is installed and activated."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:587
+msgid "Your license key is saved — keep it safe."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:588
+msgid "Watch the changelog for updates — your Content Graph ecosystem access arrives with the launch, at no extra cost."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:589
 msgid "View changelog"
 msgstr ""
 
 #. translators: %s: support email address.
-#: src/Admin/SettingsPage.php:588
+#: src/Admin/SettingsPage.php:592
 #, php-format
 msgid "Questions? Email %s"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:591
+#: src/Admin/SettingsPage.php:595
 msgid "Something went wrong. Please try again."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:592
+#: src/Admin/SettingsPage.php:596
 msgid "Stripe failed to load. Check your network connection and try again."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:593
+#: src/Admin/SettingsPage.php:597
 msgid "Recording your license and installing NV oOS Complete…"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:594
+#: src/Admin/SettingsPage.php:598
 msgid "You’re all set!"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:595
+#: src/Admin/SettingsPage.php:599
 msgid "Reload page"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:596
+#: src/Admin/SettingsPage.php:600
 msgid "License key"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:597
+#: src/Admin/SettingsPage.php:601
 msgid "Test mode — no real payment will be taken."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:598
+#: src/Admin/SettingsPage.php:602
 msgid "Check again"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:599
+#: src/Admin/SettingsPage.php:603
 msgid "Start a new purchase"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:600
+#: src/Admin/SettingsPage.php:604
 msgid "The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:601
+#: src/Admin/SettingsPage.php:605
 msgid "Verify"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:602
+#: src/Admin/SettingsPage.php:606
 msgid "Payment is still processing. Click Verify once it completes."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:603
+#: src/Admin/SettingsPage.php:607
 msgid "Payment did not complete. Status: "
 msgstr ""
 
-#: src/Admin/SettingsPage.php:604
+#: src/Admin/SettingsPage.php:608
 msgid "Download ZIP manually"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:605
+#: src/Admin/SettingsPage.php:609
 msgid "I have read and agree to the Terms of Service and the Refund Policy, including the 30-day money-back guarantee."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:606
+#: src/Admin/SettingsPage.php:610
 msgid "Terms of Service"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:607
+#: src/Admin/SettingsPage.php:611
 msgid "Refund Policy"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:608
+#: src/Admin/SettingsPage.php:612
 msgid "Please agree to the Terms of Service and Refund Policy to continue."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:609
+#: src/Admin/SettingsPage.php:613
 msgid "Email for receipt and refunds"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:610
+#: src/Admin/SettingsPage.php:614
 msgid "you@example.com"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:611
+#: src/Admin/SettingsPage.php:615
 msgid "Please enter a valid email address for your receipt."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:612
+#: src/Admin/SettingsPage.php:616
 msgid "Prefer to install manually? Download the ZIP and upload it via Plugins → Add New Plugin → Upload Plugin."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:613
+#: src/Admin/SettingsPage.php:617
 msgid "Country (for VAT records)"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:614
+#: src/Admin/SettingsPage.php:618
 msgid "Other / Non-EU"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:615
+#: src/Admin/SettingsPage.php:619
 msgid "Street address"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:616
+#: src/Admin/SettingsPage.php:620
 msgid "City"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:617
+#: src/Admin/SettingsPage.php:621
 msgid "Postal code (optional)"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:618
+#: src/Admin/SettingsPage.php:622
 msgid "EU purchases require a billing address. Please complete the address fields."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:691
+#: src/Admin/SettingsPage.php:695
 msgid "Build failed due to an unexpected error. See the error notice on the settings page for details."
 msgstr ""
 
@@ -1434,15 +1446,15 @@ msgstr ""
 msgid "%1$s #%2$d"
 msgstr ""
 
-#: src/Plugin.php:384
+#: src/Plugin.php:389
 msgid "NV oOS Content Graph: Knowledge graph built successfully! View it in the Graph Explorer."
 msgstr ""
 
-#: src/Plugin.php:397
+#: src/Plugin.php:402
 msgid "NV oOS Content Graph: The OpenSSL PHP extension is not available. Remote-source credentials (API keys, tokens) will be stored with weak encryption. Please enable the OpenSSL extension for secure credential storage."
 msgstr ""
 
-#: src/Plugin.php:405
+#: src/Plugin.php:410
 msgid "NV oOS Content Graph is installed but the graph is not enabled. Go to Settings → NV oOS Content Graph to enable it."
 msgstr ""
 

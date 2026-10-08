@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -94,7 +94,7 @@ The core graph engine runs entirely on your server. The optional "Resolve Extern
 
 = Do I have to pay for the NV oOS Complete bundle? =
 
-No. This plugin is complete and fully functional for free. The NV oOS Complete bundle (the full NV oOS plugin, base + Pro) is an optional, separately installed paid product, sold off-directory by NV Digital Unlocked LLC under license from NV Digital Solutions. Purchases are covered by a 30-day money-back guarantee; see the vendor's Terms of Service and Refund Policy linked in the checkout.
+No. This plugin is complete and fully functional for free. The NV oOS Complete bundle (the full NV oOS plugin, base + Pro) is an optional, separately installed paid product, sold off-directory by NV Digital Unlocked LLC under license from NV Digital Solutions. Purchases are covered by a 30-day money-back guarantee; see the vendor's Terms of Service and Refund Policy linked in the checkout. Prefer the free route? The checkout modal also links to a free download of the latest NV oOS base release.
 
 = Does it work on multisite? =
 
@@ -143,6 +143,10 @@ The "Get NV oOS Complete" buttons on the plugin's settings page open an optional
 
 After a successful purchase you can download the NV oOS Complete ZIP and install it manually via **Plugins → Add New Plugin → Upload Plugin** — this is the recommended, fully transparent path. The plugin also offers an optional automatic installation (a convenience that downloads the ZIP and runs WordPress' built-in installer for you). Either way, the ZIP comes from a signed, short-lived URL provided by the vendor's checkout service (which serves the package from the project's GitHub release page, `github.com`). No data is sent to GitHub.
 
+**Free base version download**
+
+The purchase modal also offers a "Get the free NV oOS base version — no payment required" link. It opens the project's GitHub release page (`github.com/nvdigitalsolutions/mcp-ai-wpoos`) in a new browser tab so you can download the free base plugin yourself. The link is fetched entirely by your browser — the plugin sends no data to GitHub and contacts no server when the link is shown.
+
 == Third-Party Libraries ==
 
 This plugin bundles the following open-source libraries:
@@ -164,6 +168,13 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
+
+= 1.0.9 — 2026-10-08 =
+* Loading indicator in the purchase modal: the pay area shows a spinner until Stripe's Payment Element mounts, so slower sites never present an empty card slot
+* Free base-version download link at the bottom of the checkout ("Get the free NV oOS base version — no payment required")
+* Development-status note in the purchase modal: NV oOS is still in active development and testing, and purchases are covered by the 30-day money-back guarantee
+* Remote source drivers overhauled: fixed config schemas and double-encoded lookup terms for Generic REST, Wikidata, SPARQL, and RSS/Sitemap sources; new pagination/auth options; inline Test Connection results; select-type schema fields
+* Rebuild cron scheduling moved from plugins_loaded to init, preventing the "translation loading triggered too early" notice when WooCommerce is active
 
 = 1.0.8 — 2026-09-13 =
 * Fixed Stripe checkout failing for non-EU buyers: the Payment Element no longer requires a billing-address country that the modal only collects from EU buyers

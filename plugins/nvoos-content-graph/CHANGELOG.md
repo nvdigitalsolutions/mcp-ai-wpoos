@@ -1,6 +1,6 @@
 # NV oOS Content Graph — Changelog
 
-## Unreleased
+## 1.0.9 — 2026-10-08
 
 ### Added — Purchase modal polish (loading state + free option)
 
