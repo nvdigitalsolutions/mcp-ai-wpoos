@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live; nvoos-design-system next in the pipeline — issue #6811). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy from the real 0.4.3 review, related-issue sweep checklist, reply-email template), packaging exclusion tri-sync, readme.txt standards, and .wordpress-org listing assets. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, or triaging PCP findings."
+description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live; nvoos-content-graph live in the re-submission loop; nvoos-design-system next in the pipeline — issue #6811). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy from the real 0.4.3 review, related-issue sweep checklist, reply-email template), packaging exclusion tri-sync, readme.txt standards, and .wordpress-org listing assets. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, or triaging PCP findings."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-07"
+  last-updated: "2026-10-08"
 ---
 
 # NV oOS WordPress.org Submission — Readiness Playbook
@@ -266,6 +266,44 @@ behind `class_exists`, AI keys behind `function_exists`, WooCommerce behind
 the `wp_generate_uuid4()` polyfill above, and a `plugin-check` CI job — plus
 owner-side steps: standalone repo, subtree-sync workflow + deploy token
 (mirror `sync-nvoos-docs-hub.yml`), wp.org slug request, SVN submission.
+
+### Third standalone plugin: nvoos-content-graph (live + re-submission loop)
+
+Content Graph is LIVE on the directory (first approved as 1.0.3; 1.0.7
+signoff uploaded; 1.0.8 released; 1.0.9 pre-upload pass PR #6959). It
+carries its own review-artifact convention next to the docs-hub one:
+
+- `plugins/nvoos-content-graph/WPORG-REVIEW-{FINDINGS,REPLY,18POINT-SIGNOFF,DETAILED-REPORT,COMMERCE-NOTES}.md`
+  — excluded from the ZIP via `.distignore` (`WPORG-REVIEW-*.md`); the
+  signoff holds per-version re-verification sections (1.0.7 pass + 1.0.9
+  pre-upload pass) — append one per re-submission.
+- **Commerce surface discipline:** every new remote link/flow in the
+  purchase modal needs a matching `== External services ==` disclosure in
+  the same PR. The 1.0.9 free base-version download link (browser-side
+  GitHub link, no data sent) is the latest example; keep
+  `WPORG-REVIEW-COMMERCE-NOTES.md` current for the review team.
+- **Reviewer categories recur across plugins — sweep siblings:** the 0.4.7
+  "cron scheduled before init" category also existed in content-graph
+  (boot-path `syncRebuildSchedule()` on `plugins_loaded`, only when no
+  rebuild event existed — the WC translated-interval notice on WP 6.7+).
+  Fixed in 1.0.9 by hooking `init`; the activation-hook scheduling was
+  already safe (post-init). The 0.4.6 "Tested up to in the PHP header"
+  sweep also applies (content-graph header is clean — readme-only).
+- **Tri-sync: fix ALL THREE legs.** #6662 fixed the workflow rsync list,
+  but `bin/build-nvoos-content-graph.sh` still lacked `blueprints/` until
+  the 1.0.9 pass — when one leg drifts, diff all three before closing.
+- **PCP profile (1.0.9, WP latest):** 0 ERRORs, ~161 WARNINGs — all known
+  non-blocking categories (DirectDB on constant-derived table names,
+  dynamic-hook indirection from prefixed constants, slow meta-query pattern
+  on the graph tables). No allowlist required; a new category = stop and
+  triage.
+- **POT regeneration gotchas:** `wp i18n make-pot` via a one-off
+  `wordpress:cli` container with the plugin dir mounted (no DB needed).
+  Do NOT put the version in `--package-name` — wp-cli appends the
+  plugin-header version itself, so "Name 1.0.9" produces
+  "Project-Id-Version: Name 1.0.9 1.0.9". Verify with a msgid set-diff:
+  `comm -23 <(git show HEAD:<pot> | grep '^msgid "' | sort) <(grep '^msgid "' <pot> | sort)`
+  must be empty (1.0.9: +3 msgids, 0 lost).
 
 ## The reviewer reply pass (0.4.3 → 0.4.4, PR #6606)
 
