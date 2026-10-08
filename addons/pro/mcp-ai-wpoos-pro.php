@@ -1900,6 +1900,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Uninvoiced_Orders'  => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-get-uninvoiced-orders.php',
 				'WP_MCP_AI_Tool_Archive_Documents'      => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-archive-documents.php',
 				'WP_MCP_AI_Tool_Generate_Invoice_Batch' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-invoice-batch.php',
+				// Docs Hub content management tools (v2.10.0) — Markdown/text files
+				// in the standalone Docs Hub plugin's uploads content folder.
+				'WP_MCP_AI_Tool_Docs_Hub_Write_Doc'     => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docs-hub-write-doc.php',
+				'WP_MCP_AI_Tool_Docs_Hub_Read_Doc'      => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docs-hub-read-doc.php',
+				'WP_MCP_AI_Tool_Docs_Hub_List_Docs'     => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docs-hub-list-docs.php',
+				'WP_MCP_AI_Tool_Docs_Hub_Delete_Doc'    => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docs-hub-delete-doc.php',
+				'WP_MCP_AI_Tool_Docs_Hub_Rebuild'       => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docs-hub-rebuild.php',
 			);
 				$pro_tools             = array_merge( $pro_tools, $document_generation_tools );
 		}
@@ -2751,6 +2758,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_uninvoiced_orders']  = 'wordpress-core';
 			$pro_tools['archive_documents']      = 'wordpress-core';
 			$pro_tools['generate_invoice_batch'] = 'wordpress-core';
+			// Docs Hub content management tools (v2.10.0) — require the
+			// standalone Docs Hub plugin for indexing.
+			$pro_tools['docs_hub_write_doc']  = 'wordpress-plugins';
+			$pro_tools['docs_hub_read_doc']   = 'wordpress-plugins';
+			$pro_tools['docs_hub_list_docs']  = 'wordpress-plugins';
+			$pro_tools['docs_hub_delete_doc'] = 'wordpress-plugins';
+			$pro_tools['docs_hub_rebuild']    = 'wordpress-plugins';
 		}
 
 		// Add Architectural Design Toolkit tool mappings if enabled.
