@@ -167,7 +167,11 @@ class WP_MCP_AI_Elementor_Integration {
 			);
 
 			foreach ( $widget_classes as $widget_class ) {
-				if ( class_exists( $widget_class ) ) {
+				// Autoloading is disabled on purpose: the files were require_once'd above, and a
+				// Composer classmap that is newer than the files on disk (partial deploy) would
+				// otherwise trigger include() warnings for missing widget files on every
+				// elementor/widgets/register run.
+				if ( class_exists( $widget_class, false ) ) {
 					$widgets_manager->register( new $widget_class() );
 				}
 			}
