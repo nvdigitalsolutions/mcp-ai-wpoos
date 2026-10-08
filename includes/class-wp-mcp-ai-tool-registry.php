@@ -2086,6 +2086,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Site_Summary'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
 				'WP_MCP_AI_Tool_Count_Tokens'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-count-tokens.php',
 				'WP_MCP_AI_Tool_List_MCP_Tools'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-mcp-tools.php',
+				'WP_MCP_AI_Tool_MCP_Server_Info'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-mcp-server-info.php',
 				'WP_MCP_AI_Tool_Load_Skill'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-load-skill.php',
 				// OpenAI API Integration - Phase 1 Tools.
 				'WP_MCP_AI_Tool_List_OpenAI_Files'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-openai-files.php',

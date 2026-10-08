@@ -208,6 +208,7 @@ wp-mcp-ai-tool-login-security-monitor
 wp-mcp-ai-tool-manage-autonomous-session
 wp-mcp-ai-tool-manage-context-lifecycle
 wp-mcp-ai-tool-manage-vector-store-files
+wp-mcp-ai-tool-mcp-server-info
 wp-mcp-ai-tool-media-library-optimizer
 wp-mcp-ai-tool-memory-audit-trail
 wp-mcp-ai-tool-mine-agent-memory

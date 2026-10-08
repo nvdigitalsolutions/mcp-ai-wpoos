@@ -6303,6 +6303,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Bridge identity — a bridge or gateway in front of this request
+			// (Zed MCP servers, the fleet gateway, bin/mcp-bridge*.js) may
+			// declare itself via the X-MCP-Bridge-Name header. Purely
+			// informational metadata surfaced by the mcp_server_info tool and
+			// the list_mcp_tools _meta block; it is NEVER used for
+			// authorization or any other security decision.
+			$bridge_name = $request->get_header( 'X-MCP-Bridge-Name' );
+			if ( null !== $bridge_name ) {
+				$bridge_name = sanitize_text_field( wp_unslash( $bridge_name ) );
+				$max_length  = class_exists( 'WP_MCP_AI_Tool_MCP_Server_Info' )
+					? WP_MCP_AI_Tool_MCP_Server_Info::BRIDGE_NAME_MAX_LENGTH
+					: 120;
+				if ( function_exists( 'mb_substr' ) ) {
+					$bridge_name = mb_substr( $bridge_name, 0, $max_length );
+				} else {
+					$bridge_name = substr( $bridge_name, 0, $max_length );
+				}
+				if ( '' !== $bridge_name ) {
+					$context['bridge_name'] = $bridge_name;
+				}
+			}
+
 			if ( empty( $context['user_id'] ) && empty( $auth_context['token_authenticated'] ) && ! $is_guest ) {
 				return new WP_Error( 'wp_mcp_ai_anonymous_user', __( 'You must be logged in to execute tools.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 			}
