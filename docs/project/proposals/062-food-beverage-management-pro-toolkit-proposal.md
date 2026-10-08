@@ -244,7 +244,7 @@ sheet name (the spec warns "table and column names may change").
 | # | Question | Resolution |
 |---|---|---|
 | 1 | Read Google Sheets in Drive: existing or new tool? | **New**: `fnb_read_table` / `fnb_search_table` on top of the existing `google-workspace` `Google_Drive_Client`; Sheets exported to tabular rows with caching. |
-| 2 | Which calculation tool? | **New metric engine** (deterministic PHP) — `fnb_calculate_metric` + composite tools; `math` toolkit excluded from demo allowlists. |
+| 2 | Which calculation tool? | **New metric engine** (deterministic PHP) — `fnb_calculate_metric` + composite tools. The only in-repo calculation toolkit is `math` (symbolic: derivatives, integrals, matrices, truth tables — no business arithmetic), and a generic calculation surface would let the model choose its own formulas, violating G-08 (use only the Metric definitions sheet) and A1-04 (identical figures across assistants). The metric engine is G-02's "the calculation tool"; `math` is excluded from demo allowlists for that reason. |
 | 3 | Create Google Doc/Sheet in a set Drive folder? | **New**: `fnb_save_draft` / `fnb_create_sheet` scoped to the configured Drafts folder ID (Drive API create-in-folder). |
 | 4 | Per-tool on/off per assistant, write tools off by default? | **Yes**: assistant tool allowlists (existing per-assistant tool config) + capability checks in every tool; ACT-tier tools ship `required_capability` = `manage_options` and disabled in demo packs. |
 | 5 | Report library / Metrics sheets at runtime or pasted into instructions? | **Runtime read** via `fnb_read_table` from the "Assistant setup" folder → HODs can edit report layouts without code changes; instructions only carry a pointer + the G-rules. |
