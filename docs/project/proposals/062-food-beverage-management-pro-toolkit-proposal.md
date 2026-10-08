@@ -446,6 +446,56 @@ Applying that split to the 17 tables:
 - Adapters in §5.3 mean the demo is Sheets-backed while product deployments can
   be CPT/CCT-backed with zero metric/report changes.
 
+### 5.9 Adjacent Pro toolkit reuse review
+
+Review of the ~60 existing Pro toolkits for reuse opportunities (all claims
+verified against each toolkit's README/tool files).
+
+**Already wired into this plan:**
+
+| Toolkit | Role |
+|---|---|
+| `google-workspace` | Drive client + connections — backs the Sheets reader and Drafts writer (open Q1/Q3) |
+| `orchestration` | Pro Schedule Manager (`create-pro-schedule`, `channel_broadcast`, dry-run) — scheduled reports + delivery (§5.7) |
+| `document-generation` | QMS engine (`mcp_ai_doc_record` + workflow) for purchase-request approval (Appendix A); Doc/Sheet generation patterns |
+| `image-production` | A4's image tools (`generate_image_ai`, `generate_image_variations`, `image_inpainting`, `text_to_image_prompt_optimizer`) — default Off (open Q10) |
+| `jetengine` | CCT fields for reference tables + reader adapter (Phase 9, §5.8) |
+| `jev` | decision-only provider for rankings/approval decisions (open Q9) |
+
+**Wire post-demo (ACT tier, same default-Off treatment):**
+
+| Toolkit | F&B role | Why post-demo |
+|---|---|---|
+| `chat-channels` | WhatsApp/Telegram/email sending + unified broadcast — the channel layer under the spec's "Send message" row and `channel_broadcast` schedules | sending is ACT-off in the demo; wiring identical to the image-tools pattern |
+| `social-media` | `schedule_social_post` / `post_to_multiple_platforms` for A4 — spec: "Post to social media — Off, needs approval", posting stays with the CEO (A4-05) | same toggle pattern; prompts-only demo |
+| `calendar-booking` | booking lifecycle (create/update/cancel/reschedule) for table 16 (day beds, tables, groups) instead of a custom booking tool | demo bookings are read-only Drive rows; no booking writes in scope |
+
+**Excluded, with reason:**
+
+| Toolkit | Reason |
+|---|---|
+| `math` | symbolic maths only; a generic calculation surface would break G-08/A1-04 (documented in open Q2 resolution) |
+| `financial-planning` | generic finance calculators — same formula-drift risk as `math`; M-01…M-21 stay in the metric engine |
+| `outbound-booking` | B2B sales-call booking engine (CRM + calendar) — wrong domain for restaurant ops |
+| `ecommerce` / `shopify-sync` | POS/ERP-adjacent; spec excludes POS integrations |
+| `healthcare`, `law-firm`, `automotive`, `fashion`, `dj-management`, `cre-debt`, `quiz-management`, `comic-creation`, `architect*`, `site-creator`, `places`, `cloudways`, `dietpi`, `infrastructure`, `developer`, `flowhub`, `erp-ezuite`, `composio`, `eca-management`, `regulatory-registration`, `capture` | domain-specific or infra tooling; no F&B surface |
+
+**Watch-list (future ideas, no commitment):**
+
+| Toolkit | Possible future use |
+|---|---|
+| `analytics` | warehouse sync of the metric engine for cross-venue dashboards |
+| `remote-connections` | multi-site operators (beach club + chalets or second venue) with per-site data scoping |
+| `vision-analysis` | photo-based waste logging / plating QA |
+| `video-production` | A4 reel/short-video content |
+| `multilingual` | Sinhala/Tamil/English content for A4 |
+| `vault` | supplier contracts + credential storage |
+| `okf` | deterministic knowledge packs (food-safety SOPs, supplier terms) |
+| `email-marketing` | restaurant promotions/newsletters via Brevo/Mailjet/Mailgun |
+| `wp-all-import-export` | bulk table import alternative to `fnb_import_table` for large back-fills |
+| `project-management` | maintenance task tracking (the Sep maintenance spike in the demo data) |
+| `crm` | guest database for repeat-cover marketing |
+
 ---
 
 ## 6. Out of Scope (anti-gold-plating)
