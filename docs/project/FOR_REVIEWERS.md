@@ -19,10 +19,10 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.99 (October 2026)
+**Current version:** 1.2.1 (October 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
-**Total tools:** ~1,665 (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,692 (~353 base + ~1,339 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 
@@ -35,7 +35,7 @@ The repo is a **monorepo** containing:
 | Is it safe to run on production? | The base plugin passes all WP.org guidelines. The April 2026 security audit found 0 Critical, 5 High (3 Fixed, 2 Partially Fixed — both in addons). May–June 2026 hardening resolved 1 Critical + 5 Warnings. July–August 2026 Phase 3 hardening added 10 security classes, CORS posture, error-verbosity control, auth brute-force detection, and asset-fingerprinting prevention. See [Security Posture](../operations/security/SECURITY_POSTURE.md). |
 | What PHP version is required? | **Base: 7.4+** · **Pro addon: 8.1+** (due to npm packages like sharp/fluent-ffmpeg) · **lib/core: 8.1+** |
 | What WP version? | 6.0+, tested up to 6.10 |
-| Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~1,301 advanced tools (commercial license). Base never gates features behind a license check. |
+| Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~1,339 advanced tools (commercial license). Base never gates features behind a license check. |
 | Was it rejected from WordPress.org? | Yes — the 90-day window expired before all fixes were completed. All rejection reasons are now resolved. See [Compliance Traceability](../operations/compliance/TRACEABILITY.md). |
 | Can it be resubmitted to .org? | Possibly, but the window has closed. The author is seeking professional review before deciding next steps. |
 
@@ -50,7 +50,7 @@ includes/                     ← 1,060 PHP files
 ├── class-wp-mcp-ai-plugin.php ← Kernel / DI container / singleton
 ├── class-wp-mcp-ai-rest.php   ← REST route registration (151 calls, 36 files)
 ├── class-wp-mcp-ai-tool-registry.php ← Central tool registry
-├── tools/                     ← ~352 base tool classes (~1,665 total registered through the singleton registry)
+├── tools/                     ← ~353 base tool classes (~1,692 total registered through the singleton registry)
 ├── admin/                     ← Admin UI, settings, dashboards
 ├── rest/                      ← REST controllers (chat, MCP, webhooks)
 ├── assistants/                ← Assistant CPT & CCT management
@@ -66,7 +66,7 @@ includes/                     ← 1,060 PHP files
 ```
 addons/pro/
 ├── mcp-ai-wpoos-pro.php       ← Pro entry point (modular registry)
-├── includes/tools/            ← ~1,232 pro tool classes
+├── includes/tools/            ← ~1,339 pro tool classes
 ├── includes/admin/            ← Pro dashboards, settings
 ├── includes/blocks/           ← ~30 React-based Pro SPAs
 └── config/spa-manifests/      ← Per-toolkit JSON manifests
@@ -102,10 +102,10 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 
 | Addon | Version | License | Notes |
 |---|---|---|---|
-| **Pro** | (live) | Proprietary | 30 toolkits, ~1,232 tools, commercial license. E-commerce, CRM, document generation, media, healthcare, legal, scheduling, analytics. |
+| **Pro** | (live) | Proprietary | 32 toolkits, ~1,339 tools, commercial license. E-commerce, CRM, document generation, media, healthcare, legal, scheduling, analytics. |
 | **Graphify** | 0.6.0 | Proprietary | Knowledge graph builder. Entities, relationships, WooCommerce/Wikidata/RSS/SPARQL/CSV drivers. |
 | **Chat SPA** | 0.6.0 | GPLv3 | React chat surface (Vercel AI SDK). Shortcode + Gutenberg block. |
-| **Docs Hub** | 0.3.9 | GPLv3 | React SPA documentation browser (GitBook-style Markdown rendering). |
+| **Docs Hub** | 0.5.2 | GPLv3 | React SPA documentation browser (GitBook-style Markdown rendering). 0.5.2 adds the NV oOS Complete checkout upsell (admin-only vendor REST, Stripe purchase modal, External Services disclosure). |
 | **Algorave** | 1.0.7 | AGPL-3.0 | Live-coding music. Tone.js/Strudel, MIDI export, audio visualization. F-AI-01 accepted with rationale (raw-eval gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` + `edit_posts`; warning UI added). |
 | **Fantasy Football** | 0.1.0 | Proprietary | ESPN/Yahoo Fantasy Sports API. Team management, player research, trade analysis, AI logo generation. |
 | **Embedded** | 0.2.0 | Proprietary | Server-side llama.cpp GGUF inference + client-side WebLLM/WebGPU + P2P WebChat (WebRTC). Voice tool calling, OpenMed healthcare tools, MCP abilities. |

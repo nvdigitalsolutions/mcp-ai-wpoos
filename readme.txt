@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.99
+Stable tag: 1.2.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.1 - October 8, 2026 =
+
+First release on the 1.2 line: the Food & Beverage Management Pro Toolkit, Docs Hub content tools, MCP server identity discovery, and the Docs Hub checkout upsell release. Added: Proposal 062 — the Food & Beverage Management Pro Toolkit (#6962) with 21 fnb_* Pro tools (read/search/calculate/compare/variance/stock/waste/cover/weekend/price/budget/margin/duplicate-invoice/labour/utilities/report/drafts/audit) behind the enable_fnb_toolkit toggle, a deterministic metric engine (M-01 through M-21 + menu-engineering quadrants) verified against the demo workbook's Check totals (20/20 oracle PASS — food cost % 26.88%, beverage cost % 28.15%, total opex 9,988,745.79), 5 schedule presets + 2 workflow presets, and the SA Toolkit Manager registration; Phases 4/5b/6/8/9/10 are deferred per the implementation plan. Added: five docs_hub_* Pro tools in the Document Generation toolkit (#6964) — write/read/list/delete/rebuild the Docs Hub uploads content folder with traversal-safe path validation, the 2 MB cap, and graceful degradation when the plugin is inactive. Added: the mcp_server_info base tool (#6956) — server identity (name, version, mode, site, MCP endpoint, optional bridge name) with a deliberately non-sensitive payload, the list_mcp_tools _meta block, and the X-MCP-Bridge-Name header seam (informational only, never used for authorization). Added: the Docs Hub checkout upsell (#6963, addon 0.5.1 → 0.5.2) — the Content Graph commerce stack ported into the wp.org Docs Hub plugin (vendor session/verify/health client, admin-only REST, already-licensed short-circuit, on-demand Stripe.js purchase modal with ToS/refund consent + EU VAT, External Services disclosure + commerce review notes). Fixed: the skill-catalogue gaps (#6954 — subfolder sidecars install, GitHub token support with anonymous enrichment capped and stopped on 403/429, the empty VoltAgent default removed; notes under the 1.1.99 entry) and the Elementor partial-deploy warning flood (#6961 — class_exists( $widget_class, false ) keeps the registration loop off the Composer autoloader). Changed: nvoos-content-graph 1.0.8 → 1.0.9 (#6959 — the wp.org re-submission review pass: cron scheduling on init, packaging tri-sync, External-services disclosure, regenerated POT; PCP 0 errors) with the checkout-modal polish (#6958 — Stripe loading state, free base-version option, development-status note). Docs: three new coding-time skills ship in-window (#6955 spa-ui, #6962 toolkit-creation, #6963 checkout-integration — count 63 → 66) and the content-graph 1.0.9 lessons fold into the wporg-submission + test-suite skills (#6960). Tool count: ~353 base + ~1,339 Pro (~1,692 total; +1 base +26 Pro; live registry authoritative). Model catalog: v2026.10.03 (unchanged; 18 providers). Stale build ZIPs removed: the 1.1.98 oOS build set (30 files).
 
 = 1.1.99 - October 7, 2026 =
 
