@@ -20,6 +20,13 @@
  *                         address is not the canonical site host and the
  *                         web server canonical-redirects on Host.
  *   MCP_AI_HTTP_TIMEOUT — Request timeout in milliseconds (default 120000).
+ *   MCP_AI_BRIDGE_NAME  — Declares this bridge's identity to the site. It is
+ *                         stamped as the X-MCP-Bridge-Name header and
+ *                         surfaced by the site's mcp_server_info tool and
+ *                         the list_mcp_tools _meta block. Purely
+ *                         informational — never used for authorization.
+ *                         In Zed, set it to the context_servers key, e.g.
+ *                         "nvoos-ideabits-gateway-basic".
  *
  * Usage in Zed / Claude Desktop / Cursor:
  *   {
@@ -46,6 +53,7 @@ const readline = require( 'readline' );
 const BASE_URL = ( process.env.MCP_AI_BASE_URL || '' ).replace( /\/+$/, '' );
 const TOKEN = process.env.MCP_AI_TOKEN || '';
 const HOST_HEADER = process.env.MCP_AI_HOST_HEADER || '';
+const BRIDGE_NAME = process.env.MCP_AI_BRIDGE_NAME || '';
 
 const timeoutRaw = parseInt( process.env.MCP_AI_HTTP_TIMEOUT || '', 10 );
 const HTTP_TIMEOUT_MS = Number.isFinite( timeoutRaw ) && timeoutRaw >= 100
@@ -77,6 +85,10 @@ function postToMcp( payload ) {
 		};
 		if ( HOST_HEADER ) {
 			headers.Host = HOST_HEADER;
+		}
+
+		if ( BRIDGE_NAME ) {
+			headers[ 'X-MCP-Bridge-Name' ] = BRIDGE_NAME;
 		}
 
 		const options = {

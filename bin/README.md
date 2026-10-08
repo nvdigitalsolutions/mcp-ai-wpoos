@@ -55,6 +55,7 @@ channel (what Zed's context server client speaks) to the NV oOS MCP endpoint.
 | `MCP_AI_TOKEN` | — | Bearer credential (`cred_…` or `op_…`) |
 | `MCP_AI_HOST_HEADER` | unset | Override the HTTP `Host` header for tunnelled/proxied endpoints |
 | `MCP_AI_HTTP_TIMEOUT` | `120000` | Request timeout in ms |
+| `MCP_AI_BRIDGE_NAME` | unset | Declares this bridge's identity — stamped as the `X-MCP-Bridge-Name` header and surfaced by the site's `mcp_server_info` tool / `list_mcp_tools` `_meta` block (purely informational). Set it to the Zed `context_servers` key, e.g. `nvoos-ideabits-gateway-basic` |
 
 Notifications (JSON-RPC messages without an `id`) are forwarded but never
 answered on stdout, per the MCP spec.
@@ -97,7 +98,7 @@ Password prompts are not supported — a spawned process has no TTY.
 | `MCP_AI_SSH_BATCH_MODE` | `1` | Set `0` only with an SSH_ASKPASS helper configured |
 | `MCP_AI_SSH_READY_MS` | `15000` | Tunnel startup budget |
 | `MCP_AI_BASE_PATH` | `/wp-json/mcp-ai/v1/mcp` | MCP route path |
-| `MCP_AI_HOST_HEADER` / `MCP_AI_HTTP_TIMEOUT` | — | Forwarded to the relay |
+| `MCP_AI_HOST_HEADER` / `MCP_AI_HTTP_TIMEOUT` / `MCP_AI_BRIDGE_NAME` | — | Forwarded to the relay |
 | `MCP_AI_ENV_FILE` | `~/.nvoos-bridge.env` | Env file (KEY=value lines) — keep the token out of `settings.json` by putting it here instead |
 
 **Verify the web port before first use** — over SSH, run

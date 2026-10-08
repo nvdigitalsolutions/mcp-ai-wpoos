@@ -3083,6 +3083,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'count_tokens',
 					'list_available_models',
 					'list_mcp_tools',
+					'mcp_server_info',
 					'submit_document_prompt',
 				),
 			),
