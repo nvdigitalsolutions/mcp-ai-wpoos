@@ -5,7 +5,7 @@ description: Repair and triage guide for the NV oOS PHPUnit test suite — Docke
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-07"
+  last-updated: "2026-10-08"
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
 ---
@@ -239,6 +239,15 @@ test (hundreds — not failures). A summary of "OK, but there were issues"
 with only warnings/deprecations/skips is a pass.
 - phpcs for the addon: `--standard=plugins/nvoos-content-graph-pro/phpcs.xml.dist`
 (phpcbf exit 1 = fixed files, not an error; re-run phpcs to confirm exit 0).
+- **content-graph session notes (1.0.9 pass):** the plugin's `vendor/` may
+  be PRUNED of PHPUnit entirely (`vendor/phpunit` gone; `vendor/bin/phpunit`
+  points at nothing) — a plain `composer install` in the plugin dir restores
+  the locked set (PHPUnit 9.6.35 + wp-phpunit 7.0.2) and the recipe above
+  then works as written. Point the plugin's gitignored
+  `vendor/wp-phpunit/wp-phpunit/wp-tests-config.php` at an isolated DB
+  (`wordpress_test_nvooscg` pattern) before the run. Current sizes: Unit
+  154 tests / 725 assertions (~7 s) and Integration 18 / 57 (~8 s) on
+  `wordpress:6.9-php8.2-apache`.
 
 ## Cluster → PR workflow
 
@@ -254,6 +263,15 @@ with only warnings/deprecations/skips is a pass.
    `nul` file in the repo — delete stray artifacts before staging.
 5. Commit with imperative subject ≤ 50 chars; PR base is `alpha-working`.
 6. The user merges manually; move to the next candidate regardless.
+7. **Verify `git branch --show-current` before every commit.** If the
+   worktree gets switched under you (e.g. your PR merges and another agent
+   switches branches), a commit can land directly on `alpha-working`.
+   Recovery (done on the 1.0.9 pass): create the cluster branch from
+   `origin/alpha-working`, `git cherry-pick <sha>`, push, then
+   `git switch alpha-working && git reset --hard origin/alpha-working`.
+   Open PRs with `gh pr create` from the terminal — the GitHub-MCP
+   `create_pull_request` tool can fail with "Bad credentials" while the
+   `gh` CLI (keyring-authenticated) works.
 
 ### Watching CI checks
 
