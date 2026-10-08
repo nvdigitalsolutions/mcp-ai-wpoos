@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added — Payment-form loading indicator
+
+- **Purchase modal** — the pay area now shows a "Loading secure payment
+  form…" spinner the moment the modal opens, until Stripe's Payment
+  Element mounts, so slower sites no longer present an empty card slot
+  while Stripe.js loads and the session round-trip completes. The
+  placeholder is cleared on mount and on every error path.
+
 ### Fixed — Remote source drivers misconfigured or broken
 
 - **Generic REST API** — the config schema omitted every edge-mapping

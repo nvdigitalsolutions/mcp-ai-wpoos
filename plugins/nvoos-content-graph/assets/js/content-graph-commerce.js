@@ -24,6 +24,7 @@
 	var overlay = null;
 	var dialog = null;
 	var errorBox = null;
+	var payBoxEl = null;
 	var consentCheckbox = null;
 	var consentAt = 0;
 	var euWithdrawalNote = null;
@@ -124,6 +125,7 @@
 	function showError( message ) {
 		errorBox.textContent = message || i18n.generic_error || 'Something went wrong.';
 		errorBox.style.display = 'block';
+		clearPayLoading();
 		setBusy( false );
 	}
 
@@ -658,6 +660,7 @@
 		overlay = null;
 		dialog = null;
 		errorBox = null;
+		payBoxEl = null;
 	}
 
 	/**
@@ -692,7 +695,9 @@
 		modalBody.appendChild( errorBox );
 
 		var payBox = el( 'div', 'nvoos-cg-pay-element' );
+		payBoxEl = payBox;
 		modalBody.appendChild( payBox );
+		renderPayLoading();
 
 		var footer = el( 'div', 'nvoos-cg-modal-footer' );
 		var cancelBtn = el( 'button', 'button nvoos-cg-cancel-btn', i18n.cancel || 'Cancel' );
@@ -752,6 +757,39 @@
 			sessionStorage.removeItem( 'nvoosCgPendingIntent' );
 		} catch ( e ) {
 			// Ignore.
+		}
+	}
+
+	/**
+	 * Render the "secure payment form is loading" placeholder in the pay area.
+	 *
+	 * Stripe.js is injected on demand and the payment session needs a server
+	 * round-trip, so on slower sites the card form can take a moment to
+	 * appear. This placeholder keeps the modal from looking broken while the
+	 * Payment Element mounts.
+	 *
+	 * @return {void}
+	 */
+	function renderPayLoading() {
+		if ( ! payBoxEl ) {
+			return;
+		}
+		var loading = el( 'div', 'nvoos-cg-installing', i18n.payment_loading || 'Loading secure payment form…' );
+		loading.setAttribute( 'role', 'status' );
+		payBoxEl.appendChild( loading );
+	}
+
+	/**
+	 * Remove the loading placeholder from the pay area.
+	 *
+	 * No-op once the Payment Element is mounted, so late errors (e.g. a
+	 * declined payment) never destroy a form the buyer can retry.
+	 *
+	 * @return {void}
+	 */
+	function clearPayLoading() {
+		if ( payBoxEl && ! paymentElement ) {
+			payBoxEl.innerHTML = '';
 		}
 	}
 
@@ -851,6 +889,10 @@
 			}
 
 			stripe = window.Stripe( result.data.publishable_key );
+
+			// The Payment Element mounts into the pay area — remove the
+			// loading placeholder first.
+			clearPayLoading();
 
 			// Stripe element setup failures (invalid element name, blocked
 			// iframe, extension interference) must surface in the modal —
