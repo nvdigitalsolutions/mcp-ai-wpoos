@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-08
 **Status:** 🔮 PENDING (companion to `062-food-beverage-management-pro-toolkit-proposal.md`)
-**Estimated Effort:** 30–40 hours
+**Estimated Effort:** ~37 hours demo (Phases 0–8) + ~15 hours post-demo (Phases 9–10)
 
 > Companion doc: `062-food-beverage-management-pro-toolkit-proposal.md` (scope,
 > industry research, spec analysis, design). This plan covers the build order,
@@ -15,8 +15,9 @@
 The demo runs Thursday 8 October 2026. Phases are ordered so the demo-critical
 path (data access → metrics → reports → assistants) completes first; MCP
 exposure is **included** for the demo (decision 2026-10-08 — the CEO uses
-Claude and ChatGPT, open question 7); scheduling and polish remain
-demo-optional.
+Claude and ChatGPT, open question 7) and the CEO **audit viewer** is included
+(open question 8 — the control story); scheduling + broadcast delivery and
+polish remain demo-optional.
 
 | Phase | Content | Demo-critical | Est. |
 |---|---|---|---|
@@ -25,11 +26,13 @@ demo-optional.
 | 2 | Metric engine M-01…M-21 + `fnb_calculate_metric` (+ composite tools) | ✅ | 8h |
 | 3 | Report generators R-01…R-13 + draft writer (`fnb_save_draft`) | ✅ | 6h |
 | 4 | Assistant packs A1–A4 (instructions, allowlists, settings) | ✅ | 3h |
-| 5 | Scheduling (Pro Schedule Manager) + audit viewer | optional | 3h |
+| 5a | Audit viewer (`fnb_audit_log`) — CEO control story | ✅ | 1h |
+| 5b | Scheduling (Pro Schedule Manager) + `channel_broadcast` delivery | optional | 2h |
 | 6 | MCP exposure (bridge, read+draft subset) | ✅ | 2h |
 | 7 | Test hardening: oracle tests, phpcs, audit-skill checklist | ✅ | 4h |
 | 8 | Demo dry-run + A4 image-tool wiring (default Off) | ✅ | 3h |
-| 9 | **Native storage (CPTs/CCTs) + import bridge** — post-demo | ❌ | 10h |
+| 9 | **Native storage (CPTs/CCTs) + import bridge + `fnb_pr_*`** — post-demo | ❌ | 10h |
+| 10 | Channel / social / booking wiring (proposal §5.9 candidates) — post-demo | ❌ | ~5h |
 
 ---
 
@@ -96,6 +99,11 @@ Test data source: `Surf_Club_Midigama_-_Demo_Data.xlsx` imported in Phase 0 into
 a PHP fixture (CSV per sheet) committed under
 `addons/pro/includes/tools/food-beverage/tests/fixtures/`. No network in tests.
 
+**Menu-engineering cross-check:** M-21 per item reproduced against the Menu
+sheet's precomputed `Recipe cost` / `Gross margin` columns; quadrant labels
+(Stars/Plowhorses/Puzzles/Dogs) assigned for all items (decision 2026-10-08,
+proposal §10).
+
 ---
 
 ## 4. File Inventory
@@ -138,16 +146,20 @@ addons/pro/includes/tools/food-beverage/
 ├── class-wp-mcp-ai-tool-fnb-generate-report.php       # R-01…R-13
 ├── class-wp-mcp-ai-tool-fnb-save-draft.php            # Doc/Sheet into Drafts folder
 ├── class-wp-mcp-ai-tool-fnb-list-drafts.php
-├── class-wp-mcp-ai-tool-fnb-audit-log.php             # read-only CEO viewer
+├── class-wp-mcp-ai-tool-fnb-audit-log.php             # read-only CEO viewer (Phase 5a)
 ├── class-wp-mcp-ai-tool-fnb-import-table.php          # Phase 9: Sheet → CPT/CCT (ACT-tier)
+├── pr/                                                # Phase 9, Appendix A (QMS engine)
+│   └── class-wp-mcp-ai-tool-fnb-pr-*.php              # create/submit/return/approve/release/supersede/cancel/list/audit (9 tools)
 ├── assistant-packs/
 │   ├── a1-manager.json / a2-kitchen-bar-stock.json
 │   ├── a3-financial.json / a4-content.json
 └── tests/
     ├── fixtures/            # CSV imports of the demo workbook sheets
     ├── test-fnb-metrics-oracle.php   # Check-totals reproduction
+    ├── test-fnb-menu-engineering.php # quadrant classification (decision §10)
     ├── test-fnb-reports.php          # R-layout smoke tests
     ├── test-fnb-permissions.php      # allowlist + draft-scope tests
+    ├── test-fnb-pr-workflow.php      # Phase 9: Appendix A §A8 matrix + preconditions
     └── test-fnb-cpt-storage.php      # Phase 9: CPT round-trip + adapter parity
 ```
 
@@ -162,6 +174,8 @@ no unguarded shell calls, string/array-safe parsing of Sheets responses
 
 ### Phase 0 — Data contract + fixtures (4h)
 - Extract every workbook sheet to CSV fixtures (committed, not the xlsx).
+- Import the `Assumptions` sheet as a constants fixture exposed by
+  `WP_MCP_AI_Fnb_Settings` for G-11 disclosure in every output.
 - Build the table-ID → sheet mapping + key-column maps in
   `WP_MCP_AI_Fnb_Data_Source`.
 - Write the oracle-extraction script outputting the `Check totals` rows as a
@@ -184,7 +198,9 @@ no unguarded shell calls, string/array-safe parsing of Sheets responses
 - `fnb_calculate_metric(metric_id, args)` + the composite tools.
 - As-of-date price join helper (Supplier prices); month-incurred vs date-paid
   split helper (expense ledger).
-- **Acceptance:** oracle tests pass (§3) — every `Check totals` row reproduced.
+- **Acceptance:** oracle tests pass (§3) — every `Check totals` row reproduced;
+  dish margins match the Menu sheet's precomputed recipe-cost/gross-margin
+  columns and the menu-engineering quadrant labels every item (decision §10).
 
 ### Phase 3 — Reports + drafts (6h)
 - R-01…R-13 section builders in the Report builder; layouts per the Reports
@@ -207,13 +223,18 @@ no unguarded shell calls, string/array-safe parsing of Sheets responses
 - **Acceptance:** import each pack; verify tool visibility per allowlist and
   that ACT-tier tools (including image generation) are absent/disabled.
 
-### Phase 5 — Scheduling + audit (3h)
+### Phase 5a — Audit viewer (1h, demo)
+- `fnb_audit_log` read-only viewer (date range, tool, assistant) — the CEO's
+  control story for open question 8; reads the existing audit logger.
+- **Acceptance:** the CEO can see every tool call made during the demo, with
+  zero ACT-tier calls present.
+
+### Phase 5b — Scheduling + broadcast delivery (2h, optional)
 - Pro Schedule Manager entries: R-01 daily 08:00, R-02 Mon 08:00, R-03 Thu
   09:00, R-05 Mon, R-13 Mon (orchestration toolkit `create-pro-schedule`).
 - Delivery schedules: `channel_broadcast`-type entries for R-02/R-03 push to
   the approver's WhatsApp/email — registered but **disabled** for the demo
   (ACT tier off per spec); enableable via `update-pro-schedule`.
-- `fnb_audit_log` read-only viewer.
 - **Acceptance:** dry-run a scheduled R-03; audit log shows tool calls;
   disabled broadcast schedule refuses to fire (capability gate).
 
@@ -228,9 +249,9 @@ no unguarded shell calls, string/array-safe parsing of Sheets responses
   audit log.
 
 ### Phase 7 — Test hardening (4h)
-- Oracle tests (§3); permission tests; report smoke tests; phpcs both
-  standards; toolkit-audit four-failure-class checklist; coverage for the
-  canonical-envelope + sanitisation sniffs.
+- Oracle tests (§3); menu-engineering quadrant tests; permission tests;
+  report smoke tests; phpcs both standards; toolkit-audit four-failure-class
+  checklist; coverage for the canonical-envelope + sanitisation sniffs.
 - **Acceptance:** CI-equivalent run green (Docker PHPUnit per test-suite skill).
 
 ### Phase 8 — Demo dry-run + A4 image-tool wiring (3h)
@@ -243,10 +264,11 @@ no unguarded shell calls, string/array-safe parsing of Sheets responses
   caption + hashtags) and verify `generate_image_ai` refuses with a
   capability error while disabled.
 - **Acceptance:** demo script passes; open questions 1–10 resolutions hold;
-  flipping the A4 image toggle in settings is the only change needed to
-  enable generation post-demo.
+  the two remaining §9 open items (Drive scoping, demo model) are confirmed
+  and logged in the Decisions Log; flipping the A4 image toggle in settings is
+  the only change needed to enable generation post-demo.
 
-### Phase 9 — Native storage: CPTs/CCTs + import bridge (10h, post-demo)
+### Phase 9 — Native storage: CPTs/CCTs + import bridge + `fnb_pr_*` workflow (10h, post-demo)
 Mirrors the vitals/document-generation patterns (proposal §5.8).
 The purchase-request approval lifecycle (`fnb_pr_*` tools on the QMS engine)
 is specified in
@@ -268,6 +290,19 @@ and lands in the second half of this phase.
 - **Acceptance:** `test-fnb-cpt-storage.php` green; oracle suite passes on
   both storage backends; import round-trips the demo workbook losslessly.
 
+### Phase 10 — Channel / social / booking wiring (post-demo, ~5h)
+Per proposal §5.9, wire the three deferred candidates behind ACT-tier toggles
+(same default-Off pattern as the A4 image tools):
+- `chat-channels`: WhatsApp/Telegram/email + unified broadcast behind the
+  spec's "Send message" row; enables the Phase 5b `channel_broadcast` schedules.
+- `social-media`: `schedule_social_post` / `post_to_multiple_platforms` for A4 —
+  scheduling and drafts only; publishing remains CEO-gated (A4-05).
+- `calendar-booking`: booking lifecycle for table 16 (day beds, tables, groups)
+  against the Phase 9 `mcp_ai_fnb_booking` CPT.
+- **Acceptance:** each toolkit's tools appear in the relevant assistant
+  allowlist disabled by default; enabling the toggle is the only change
+  required; ACT-tier capability gates verified by test.
+
 ---
 
 ## 6. Validation Strategy
@@ -279,7 +314,8 @@ and lands in the second half of this phase.
 3. **Cross-assistant consistency** — A1/A2/A3 shared figures asserted identical
    (A1-04) via a single engine instance test.
 4. **Permission tests** — allowlist enforcement, Drafts-scope refusal, ACT-tier
-   capability errors (incl. `fnb_import_table` gating in Phase 9).
+   capability errors (incl. `fnb_import_table` gating and the `fnb_pr_*`
+   lifecycle gates in Phase 9).
 5. **Lint** — `composer run lint` + `lint:compat` (PHP 7.4+); PHPCS sniff
    `WPMCPAI.Tools.CanonicalReturnEnvelope` and `SanitizeAtEntry` at severity 5.
 6. **Hardening checklist** — no unguarded `exec`/`shell_exec`; no calls to
@@ -308,8 +344,8 @@ change, not a code change.
 ## 8. Rollout Workflow
 
 Per repo conventions: work on `alpha-working`, cluster the change into focused
-PRs (data source → metrics → reports → assistants → scheduling/MCP), each PR
-green on Docker PHPUnit + phpcs before merge. Register the toolkit in the
+PRs (data source → metrics → reports → assistants → audit/scheduling → MCP),
+each PR green on Docker PHPUnit + phpcs before merge. Register the toolkit in the
 existing `addons/pro` toolkit registry (`init.php` + any central registry
 constants); update `TOOLS_LIST.txt`, `TOOL_INDEX.md`, and the toolkit README
 (per-folder README convention incl. which `.context/*.md` files to load).
