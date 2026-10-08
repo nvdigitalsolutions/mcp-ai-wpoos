@@ -1,0 +1,311 @@
+Entry ID,Vendor,Vendor invoice,Expense line,Group,For month,Invoice date,Amount (LKR),Terms (days),Due date,Paid date,Status
+LED-0001,Galle Dairy and Bakery,GDB-0701,Food and beverage stock,Stock purchases,2026-07,2026-07-01 00:00:00,44710,14,2026-07-15 00:00:00,2026-07-10 00:00:00,Paid
+LED-0002,Hill Country Coffee,HCC-0701,Food and beverage stock,Stock purchases,2026-07,2026-07-01 00:00:00,11400,30,2026-07-31 00:00:00,2026-07-31 00:00:00,Paid
+LED-0003,Matara Fresh Produce,MFP-0701,Food and beverage stock,Stock purchases,2026-07,2026-07-01 00:00:00,32765,14,2026-07-15 00:00:00,2026-07-10 00:00:00,Paid
+LED-0004,Southern Hygiene Services,SHS-2607,Cleaning,Operating,2026-07,2026-07-01 00:00:00,118000,14,2026-07-15 00:00:00,2026-07-10 00:00:00,Paid
+LED-0005,TableLink POS,TLP-2607,Software subscriptions,Operating,2026-07,2026-07-01 00:00:00,48000,7,2026-07-08 00:00:00,2026-07-03 00:00:00,Paid
+LED-0006,Weligama Fish Traders,WFT-0701,Food and beverage stock,Stock purchases,2026-07,2026-07-01 00:00:00,96800,7,2026-07-08 00:00:00,2026-07-03 00:00:00,Paid
+LED-0007,Matara Fresh Produce,MFP-0702,Food and beverage stock,Stock purchases,2026-07,2026-07-02 00:00:00,6690,14,2026-07-16 00:00:00,2026-07-10 00:00:00,Paid
+LED-0008,Galle Dairy and Bakery,GDB-0703,Food and beverage stock,Stock purchases,2026-07,2026-07-03 00:00:00,25120,14,2026-07-17 00:00:00,2026-07-17 00:00:00,Paid
+LED-0009,Matara Fresh Produce,MFP-0703,Food and beverage stock,Stock purchases,2026-07,2026-07-03 00:00:00,15700,14,2026-07-17 00:00:00,2026-07-17 00:00:00,Paid
+LED-0010,Southern Meats and Poultry,SMP-0703,Food and beverage stock,Stock purchases,2026-07,2026-07-03 00:00:00,54300,14,2026-07-17 00:00:00,2026-07-17 00:00:00,Paid
+LED-0011,Weligama Fish Traders,WFT-0703,Food and beverage stock,Stock purchases,2026-07,2026-07-03 00:00:00,17200,7,2026-07-10 00:00:00,2026-07-10 00:00:00,Paid
+LED-0012,Matara Fresh Produce,MFP-0704,Food and beverage stock,Stock purchases,2026-07,2026-07-04 00:00:00,31980,14,2026-07-18 00:00:00,2026-07-17 00:00:00,Paid
+LED-0013,Weligama Fish Traders,WFT-0704,Food and beverage stock,Stock purchases,2026-07,2026-07-04 00:00:00,66000,7,2026-07-11 00:00:00,2026-07-10 00:00:00,Paid
+LED-0014,Galle Dairy and Bakery,GDB-0706,Food and beverage stock,Stock purchases,2026-07,2026-07-06 00:00:00,31940,14,2026-07-20 00:00:00,2026-07-17 00:00:00,Paid
+LED-0015,Matara Fresh Produce,MFP-0706,Food and beverage stock,Stock purchases,2026-07,2026-07-06 00:00:00,12900,14,2026-07-20 00:00:00,2026-07-17 00:00:00,Paid
+LED-0016,Ruhuna Dry Goods,RDG-0706,Food and beverage stock,Stock purchases,2026-07,2026-07-06 00:00:00,111700,30,2026-08-05 00:00:00,2026-07-31 00:00:00,Paid
+LED-0017,Southern Wine and Spirits,SWS-0706,Food and beverage stock,Stock purchases,2026-07,2026-07-06 00:00:00,422400,30,2026-08-05 00:00:00,2026-07-31 00:00:00,Paid
+LED-0018,Weligama Fish Traders,WFT-0706,Food and beverage stock,Stock purchases,2026-07,2026-07-06 00:00:00,112000,7,2026-07-13 00:00:00,2026-07-10 00:00:00,Paid
+LED-0019,Lanka Beverage Distributors,LBD-0707,Food and beverage stock,Stock purchases,2026-07,2026-07-07 00:00:00,130080,30,2026-08-06 00:00:00,2026-07-31 00:00:00,Paid
+LED-0020,Matara Fresh Produce,MFP-0707,Food and beverage stock,Stock purchases,2026-07,2026-07-07 00:00:00,13850,14,2026-07-21 00:00:00,2026-07-17 00:00:00,Paid
+LED-0021,Southern Meats and Poultry,SMP-0707,Food and beverage stock,Stock purchases,2026-07,2026-07-07 00:00:00,24250,14,2026-07-21 00:00:00,2026-07-17 00:00:00,Paid
+LED-0022,Galle Dairy and Bakery,GDB-0708,Food and beverage stock,Stock purchases,2026-07,2026-07-08 00:00:00,5900,14,2026-07-22 00:00:00,2026-07-17 00:00:00,Paid
+LED-0023,Hill Country Coffee,HCC-0708,Food and beverage stock,Stock purchases,2026-07,2026-07-08 00:00:00,11400,30,2026-08-07 00:00:00,2026-08-07 00:00:00,Paid
+LED-0024,Matara Fresh Produce,MFP-0708,Food and beverage stock,Stock purchases,2026-07,2026-07-08 00:00:00,4890,14,2026-07-22 00:00:00,2026-07-17 00:00:00,Paid
+LED-0025,Weligama Fish Traders,WFT-0708,Food and beverage stock,Stock purchases,2026-07,2026-07-08 00:00:00,26800,7,2026-07-15 00:00:00,2026-07-10 00:00:00,Paid
+LED-0026,Matara Fresh Produce,MFP-0709,Food and beverage stock,Stock purchases,2026-07,2026-07-09 00:00:00,11915,14,2026-07-23 00:00:00,2026-07-17 00:00:00,Paid
+LED-0027,Galle Dairy and Bakery,GDB-0710,Food and beverage stock,Stock purchases,2026-07,2026-07-10 00:00:00,24970,14,2026-07-24 00:00:00,2026-07-24 00:00:00,Paid
+LED-0028,Matara Fresh Produce,MFP-0710,Food and beverage stock,Stock purchases,2026-07,2026-07-10 00:00:00,13090,14,2026-07-24 00:00:00,2026-07-24 00:00:00,Paid
+LED-0029,Southern Meats and Poultry,SMP-0710,Food and beverage stock,Stock purchases,2026-07,2026-07-10 00:00:00,26900,14,2026-07-24 00:00:00,2026-07-24 00:00:00,Paid
+LED-0030,Weligama Fish Traders,WFT-0710,Food and beverage stock,Stock purchases,2026-07,2026-07-10 00:00:00,10800,7,2026-07-17 00:00:00,2026-07-17 00:00:00,Paid
+LED-0031,Matara Fresh Produce,MFP-0711,Food and beverage stock,Stock purchases,2026-07,2026-07-11 00:00:00,29940,14,2026-07-25 00:00:00,2026-07-24 00:00:00,Paid
+LED-0032,Weligama Fish Traders,WFT-0711,Food and beverage stock,Stock purchases,2026-07,2026-07-11 00:00:00,44600,7,2026-07-18 00:00:00,2026-07-17 00:00:00,Paid
+LED-0033,Galle Dairy and Bakery,GDB-0713,Food and beverage stock,Stock purchases,2026-07,2026-07-13 00:00:00,27940,14,2026-07-27 00:00:00,2026-07-24 00:00:00,Paid
+LED-0034,Matara Fresh Produce,MFP-0713,Food and beverage stock,Stock purchases,2026-07,2026-07-13 00:00:00,20390,14,2026-07-27 00:00:00,2026-07-24 00:00:00,Paid
+LED-0035,Ruhuna Dry Goods,RDG-0713,Food and beverage stock,Stock purchases,2026-07,2026-07-13 00:00:00,61750,30,2026-08-12 00:00:00,2026-08-07 00:00:00,Paid
+LED-0036,Southern Wine and Spirits,SWS-0713,Food and beverage stock,Stock purchases,2026-07,2026-07-13 00:00:00,278000,30,2026-08-12 00:00:00,2026-08-07 00:00:00,Paid
+LED-0037,Weligama Fish Traders,WFT-0713,Food and beverage stock,Stock purchases,2026-07,2026-07-13 00:00:00,78200,7,2026-07-20 00:00:00,2026-07-17 00:00:00,Paid
+LED-0038,Lanka Beverage Distributors,LBD-0714,Food and beverage stock,Stock purchases,2026-07,2026-07-14 00:00:00,88800,30,2026-08-13 00:00:00,2026-08-07 00:00:00,Paid
+LED-0039,Matara Fresh Produce,MFP-0714,Food and beverage stock,Stock purchases,2026-07,2026-07-14 00:00:00,10290,14,2026-07-28 00:00:00,2026-07-24 00:00:00,Paid
+LED-0040,Southern Meats and Poultry,SMP-0714,Food and beverage stock,Stock purchases,2026-07,2026-07-14 00:00:00,40600,14,2026-07-28 00:00:00,2026-07-24 00:00:00,Paid
+LED-0041,Galle Dairy and Bakery,GDB-0715,Food and beverage stock,Stock purchases,2026-07,2026-07-15 00:00:00,9570,14,2026-07-29 00:00:00,2026-07-24 00:00:00,Paid
+LED-0042,Hill Country Coffee,HCC-0715,Food and beverage stock,Stock purchases,2026-07,2026-07-15 00:00:00,4800,30,2026-08-14 00:00:00,2026-08-14 00:00:00,Paid
+LED-0043,Matara Fresh Produce,MFP-0715,Food and beverage stock,Stock purchases,2026-07,2026-07-15 00:00:00,9175,14,2026-07-29 00:00:00,2026-07-24 00:00:00,Paid
+LED-0044,Weligama Fish Traders,WFT-0715,Food and beverage stock,Stock purchases,2026-07,2026-07-15 00:00:00,39000,7,2026-07-22 00:00:00,2026-07-17 00:00:00,Paid
+LED-0045,Matara Fresh Produce,MFP-0716,Food and beverage stock,Stock purchases,2026-07,2026-07-16 00:00:00,13290,14,2026-07-30 00:00:00,2026-07-24 00:00:00,Paid
+LED-0046,Galle Dairy and Bakery,GDB-0717,Food and beverage stock,Stock purchases,2026-07,2026-07-17 00:00:00,35120,14,2026-07-31 00:00:00,2026-07-31 00:00:00,Paid
+LED-0047,Matara Fresh Produce,MFP-0717,Food and beverage stock,Stock purchases,2026-07,2026-07-17 00:00:00,7640,14,2026-07-31 00:00:00,2026-07-31 00:00:00,Paid
+LED-0048,Southern Meats and Poultry,SMP-0717,Food and beverage stock,Stock purchases,2026-07,2026-07-17 00:00:00,40600,14,2026-07-31 00:00:00,2026-07-31 00:00:00,Paid
+LED-0049,Weligama Fish Traders,WFT-0717,Food and beverage stock,Stock purchases,2026-07,2026-07-17 00:00:00,26000,7,2026-07-24 00:00:00,2026-07-24 00:00:00,Paid
+LED-0050,Matara Fresh Produce,MFP-0718,Food and beverage stock,Stock purchases,2026-07,2026-07-18 00:00:00,44090,14,2026-08-01 00:00:00,2026-07-31 00:00:00,Paid
+LED-0051,Weligama Fish Traders,WFT-0718,Food and beverage stock,Stock purchases,2026-07,2026-07-18 00:00:00,69200,7,2026-07-25 00:00:00,2026-07-24 00:00:00,Paid
+LED-0052,Galle Dairy and Bakery,GDB-0720,Food and beverage stock,Stock purchases,2026-07,2026-07-20 00:00:00,19220,14,2026-08-03 00:00:00,2026-07-31 00:00:00,Paid
+LED-0053,Matara Fresh Produce,MFP-0720,Food and beverage stock,Stock purchases,2026-07,2026-07-20 00:00:00,17340,14,2026-08-03 00:00:00,2026-07-31 00:00:00,Paid
+LED-0054,Ruhuna Dry Goods,RDG-0720,Food and beverage stock,Stock purchases,2026-07,2026-07-20 00:00:00,74800,30,2026-08-19 00:00:00,2026-08-14 00:00:00,Paid
+LED-0055,Southern Wine and Spirits,SWS-0720,Food and beverage stock,Stock purchases,2026-07,2026-07-20 00:00:00,310100,30,2026-08-19 00:00:00,2026-08-14 00:00:00,Paid
+LED-0056,Weligama Fish Traders,WFT-0720,Food and beverage stock,Stock purchases,2026-07,2026-07-20 00:00:00,84200,7,2026-07-27 00:00:00,2026-07-24 00:00:00,Paid
+LED-0057,Lanka Beverage Distributors,LBD-0721,Food and beverage stock,Stock purchases,2026-07,2026-07-21 00:00:00,79680,30,2026-08-20 00:00:00,2026-08-14 00:00:00,Paid
+LED-0058,Matara Fresh Produce,MFP-0721,Food and beverage stock,Stock purchases,2026-07,2026-07-21 00:00:00,22215,14,2026-08-04 00:00:00,2026-07-31 00:00:00,Paid
+LED-0059,Southern Meats and Poultry,SMP-0721,Food and beverage stock,Stock purchases,2026-07,2026-07-21 00:00:00,39700,14,2026-08-04 00:00:00,2026-07-31 00:00:00,Paid
+LED-0060,Galle Dairy and Bakery,GDB-0722,Food and beverage stock,Stock purchases,2026-07,2026-07-22 00:00:00,14390,14,2026-08-05 00:00:00,2026-07-31 00:00:00,Paid
+LED-0061,Hill Country Coffee,HCC-0722,Food and beverage stock,Stock purchases,2026-07,2026-07-22 00:00:00,11400,30,2026-08-21 00:00:00,2026-08-21 00:00:00,Paid
+LED-0062,Matara Fresh Produce,MFP-0722,Food and beverage stock,Stock purchases,2026-07,2026-07-22 00:00:00,4350,14,2026-08-05 00:00:00,2026-07-31 00:00:00,Paid
+LED-0063,Weligama Fish Traders,WFT-0722,Food and beverage stock,Stock purchases,2026-07,2026-07-22 00:00:00,53200,7,2026-07-29 00:00:00,2026-07-24 00:00:00,Paid
+LED-0064,Matara Fresh Produce,MFP-0723,Food and beverage stock,Stock purchases,2026-07,2026-07-23 00:00:00,14640,14,2026-08-06 00:00:00,2026-07-31 00:00:00,Paid
+LED-0065,Galle Dairy and Bakery,GDB-0724,Food and beverage stock,Stock purchases,2026-07,2026-07-24 00:00:00,30300,14,2026-08-07 00:00:00,2026-08-07 00:00:00,Paid
+LED-0066,Matara Fresh Produce,MFP-0724,Food and beverage stock,Stock purchases,2026-07,2026-07-24 00:00:00,6500,14,2026-08-07 00:00:00,2026-08-07 00:00:00,Paid
+LED-0067,Southern Meats and Poultry,SMP-0724,Food and beverage stock,Stock purchases,2026-07,2026-07-24 00:00:00,32350,14,2026-08-07 00:00:00,2026-08-07 00:00:00,Paid
+LED-0068,Weligama Fish Traders,WFT-0724,Food and beverage stock,Stock purchases,2026-07,2026-07-24 00:00:00,14400,7,2026-07-31 00:00:00,2026-07-31 00:00:00,Paid
+LED-0069,Matara Fresh Produce,MFP-0725,Food and beverage stock,Stock purchases,2026-07,2026-07-25 00:00:00,39830,14,2026-08-08 00:00:00,2026-08-07 00:00:00,Paid
+LED-0070,Weligama Fish Traders,WFT-0725,Food and beverage stock,Stock purchases,2026-07,2026-07-25 00:00:00,71600,7,2026-08-01 00:00:00,2026-07-31 00:00:00,Paid
+LED-0071,Galle Dairy and Bakery,GDB-0727,Food and beverage stock,Stock purchases,2026-07,2026-07-27 00:00:00,19270,14,2026-08-10 00:00:00,2026-08-07 00:00:00,Paid
+LED-0072,Matara Fresh Produce,MFP-0727,Food and beverage stock,Stock purchases,2026-07,2026-07-27 00:00:00,18725,14,2026-08-10 00:00:00,2026-08-07 00:00:00,Paid
+LED-0073,Ruhuna Dry Goods,RDG-0727,Food and beverage stock,Stock purchases,2026-07,2026-07-27 00:00:00,57450,30,2026-08-26 00:00:00,2026-08-21 00:00:00,Paid
+LED-0074,Southern Wine and Spirits,SWS-0727,Food and beverage stock,Stock purchases,2026-07,2026-07-27 00:00:00,303000,30,2026-08-26 00:00:00,2026-08-21 00:00:00,Paid
+LED-0075,Weligama Fish Traders,WFT-0727,Food and beverage stock,Stock purchases,2026-07,2026-07-27 00:00:00,77600,7,2026-08-03 00:00:00,2026-07-31 00:00:00,Paid
+LED-0076,Lanka Beverage Distributors,LBD-0728,Food and beverage stock,Stock purchases,2026-07,2026-07-28 00:00:00,103680,30,2026-08-27 00:00:00,2026-08-21 00:00:00,Paid
+LED-0077,Matara Fresh Produce,MFP-0728,Food and beverage stock,Stock purchases,2026-07,2026-07-28 00:00:00,5540,14,2026-08-11 00:00:00,2026-08-07 00:00:00,Paid
+LED-0078,Southern Meats and Poultry,SMP-0728,Food and beverage stock,Stock purchases,2026-07,2026-07-28 00:00:00,26750,14,2026-08-11 00:00:00,2026-08-07 00:00:00,Paid
+LED-0079,Galle Dairy and Bakery,GDB-0729,Food and beverage stock,Stock purchases,2026-07,2026-07-29 00:00:00,19820,14,2026-08-12 00:00:00,2026-08-07 00:00:00,Paid
+LED-0080,Hill Country Coffee,HCC-0729,Food and beverage stock,Stock purchases,2026-07,2026-07-29 00:00:00,11400,30,2026-08-28 00:00:00,2026-08-28 00:00:00,Paid
+LED-0081,Matara Fresh Produce,MFP-0729,Food and beverage stock,Stock purchases,2026-07,2026-07-29 00:00:00,12200,14,2026-08-12 00:00:00,2026-08-07 00:00:00,Paid
+LED-0082,Weligama Fish Traders,WFT-0729,Food and beverage stock,Stock purchases,2026-07,2026-07-29 00:00:00,44600,7,2026-08-05 00:00:00,2026-07-31 00:00:00,Paid
+LED-0083,Matara Fresh Produce,MFP-0730,Food and beverage stock,Stock purchases,2026-07,2026-07-30 00:00:00,13040,14,2026-08-13 00:00:00,2026-08-07 00:00:00,Paid
+LED-0084,Coastline Maintenance,CLM-2607,Maintenance,Operating,2026-07,2026-07-31 00:00:00,52000,30,2026-08-30 00:00:00,2026-08-28 00:00:00,Paid
+LED-0085,Galle Catering Supplies,GCS-2607,Consumables and packaging,Operating,2026-07,2026-07-31 00:00:00,88000,30,2026-08-30 00:00:00,2026-08-28 00:00:00,Paid
+LED-0086,Galle Dairy and Bakery,GDB-0731,Food and beverage stock,Stock purchases,2026-07,2026-07-31 00:00:00,39590,14,2026-08-14 00:00:00,2026-08-14 00:00:00,Paid
+LED-0087,Matara Fresh Produce,MFP-0731,Food and beverage stock,Stock purchases,2026-07,2026-07-31 00:00:00,15550,14,2026-08-14 00:00:00,2026-08-14 00:00:00,Paid
+LED-0088,Matara Waste Services,MWS-2607,Waste collection,Operating,2026-07,2026-07-31 00:00:00,30000,30,2026-08-30 00:00:00,2026-08-28 00:00:00,Paid
+LED-0089,PestAway Lanka,PAL-2607,Pest control,Operating,2026-07,2026-07-31 00:00:00,22000,30,2026-08-30 00:00:00,2026-08-28 00:00:00,Paid
+LED-0090,Southern Gas Distributors,SGD-202607,LPG,Utilities,2026-07,2026-07-31 00:00:00,347200,14,2026-08-14 00:00:00,2026-08-14 00:00:00,Paid
+LED-0091,Southern Meats and Poultry,SMP-0731,Food and beverage stock,Stock purchases,2026-07,2026-07-31 00:00:00,26750,14,2026-08-14 00:00:00,2026-08-14 00:00:00,Paid
+LED-0092,Sunset Sound Collective,SSC-2607,Music and events,Operating,2026-07,2026-07-31 00:00:00,90000,14,2026-08-14 00:00:00,2026-08-14 00:00:00,Paid
+LED-0093,Tidewater Social,TWS-2607,Marketing,Operating,2026-07,2026-07-31 00:00:00,150000,30,2026-08-30 00:00:00,2026-08-28 00:00:00,Paid
+LED-0094,Weligama Fish Traders,WFT-0731,Food and beverage stock,Stock purchases,2026-07,2026-07-31 00:00:00,40400,7,2026-08-07 00:00:00,2026-08-07 00:00:00,Paid
+LED-0095,Weligama Linen Care,WLC-2607,Laundry,Operating,2026-07,2026-07-31 00:00:00,78000,14,2026-08-14 00:00:00,2026-08-14 00:00:00,Paid
+LED-0096,Matara Fresh Produce,MFP-0801,Food and beverage stock,Stock purchases,2026-08,2026-08-01 00:00:00,37295,14,2026-08-15 00:00:00,2026-08-14 00:00:00,Paid
+LED-0097,Southern Hygiene Services,SHS-2608,Cleaning,Operating,2026-08,2026-08-01 00:00:00,118000,14,2026-08-15 00:00:00,2026-08-14 00:00:00,Paid
+LED-0098,TableLink POS,TLP-2608,Software subscriptions,Operating,2026-08,2026-08-01 00:00:00,48000,7,2026-08-08 00:00:00,2026-08-07 00:00:00,Paid
+LED-0099,Weligama Fish Traders,WFT-0801,Food and beverage stock,Stock purchases,2026-08,2026-08-01 00:00:00,64600,7,2026-08-08 00:00:00,2026-08-07 00:00:00,Paid
+LED-0100,Galle Dairy and Bakery,GDB-0803,Food and beverage stock,Stock purchases,2026-08,2026-08-03 00:00:00,19790,14,2026-08-17 00:00:00,2026-08-14 00:00:00,Paid
+LED-0101,Matara Fresh Produce,MFP-0803,Food and beverage stock,Stock purchases,2026-08,2026-08-03 00:00:00,12950,14,2026-08-17 00:00:00,2026-08-14 00:00:00,Paid
+LED-0102,Ruhuna Dry Goods,RDG-0803,Food and beverage stock,Stock purchases,2026-08,2026-08-03 00:00:00,66150,30,2026-09-02 00:00:00,2026-08-28 00:00:00,Paid
+LED-0103,Southern Wine and Spirits,SWS-0803,Food and beverage stock,Stock purchases,2026-08,2026-08-03 00:00:00,346100,30,2026-09-02 00:00:00,2026-08-28 00:00:00,Paid
+LED-0104,Weligama Fish Traders,WFT-0803,Food and beverage stock,Stock purchases,2026-08,2026-08-03 00:00:00,72600,7,2026-08-10 00:00:00,2026-08-07 00:00:00,Paid
+LED-0105,Lanka Beverage Distributors,LBD-0804,Food and beverage stock,Stock purchases,2026-08,2026-08-04 00:00:00,82800,30,2026-09-03 00:00:00,2026-08-28 00:00:00,Paid
+LED-0106,Matara Fresh Produce,MFP-0804,Food and beverage stock,Stock purchases,2026-08,2026-08-04 00:00:00,6000,14,2026-08-18 00:00:00,2026-08-14 00:00:00,Paid
+LED-0107,Southern Meats and Poultry,SMP-0804,Food and beverage stock,Stock purchases,2026-08,2026-08-04 00:00:00,30750,14,2026-08-18 00:00:00,2026-08-14 00:00:00,Paid
+LED-0108,Ceylon Electricity Board,CEB-202607,Electricity,Utilities,2026-07,2026-08-05 00:00:00,504438,14,2026-08-19 00:00:00,2026-08-14 00:00:00,Paid
+LED-0109,Galle Dairy and Bakery,GDB-0805,Food and beverage stock,Stock purchases,2026-08,2026-08-05 00:00:00,22870,14,2026-08-19 00:00:00,2026-08-14 00:00:00,Paid
+LED-0110,Hill Country Coffee,HCC-0805,Food and beverage stock,Stock purchases,2026-08,2026-08-05 00:00:00,6600,30,2026-09-04 00:00:00,2026-09-04 00:00:00,Paid
+LED-0111,Matara Fresh Produce,MFP-0805,Food and beverage stock,Stock purchases,2026-08,2026-08-05 00:00:00,14990,14,2026-08-19 00:00:00,2026-08-14 00:00:00,Paid
+LED-0112,National Water Supply and Drainage Board,NWS-202607,Water,Utilities,2026-07,2026-08-05 00:00:00,26236,14,2026-08-19 00:00:00,2026-08-14 00:00:00,Paid
+LED-0113,Weligama Fish Traders,WFT-0805,Food and beverage stock,Stock purchases,2026-08,2026-08-05 00:00:00,51400,7,2026-08-12 00:00:00,2026-08-07 00:00:00,Paid
+LED-0114,Matara Fresh Produce,MFP-0806,Food and beverage stock,Stock purchases,2026-08,2026-08-06 00:00:00,15940,14,2026-08-20 00:00:00,2026-08-14 00:00:00,Paid
+LED-0115,Galle Dairy and Bakery,GDB-0807,Food and beverage stock,Stock purchases,2026-08,2026-08-07 00:00:00,46690,14,2026-08-21 00:00:00,2026-08-21 00:00:00,Paid
+LED-0116,Matara Fresh Produce,MFP-0807,Food and beverage stock,Stock purchases,2026-08,2026-08-07 00:00:00,16900,14,2026-08-21 00:00:00,2026-08-21 00:00:00,Paid
+LED-0117,Southern Meats and Poultry,SMP-0807,Food and beverage stock,Stock purchases,2026-08,2026-08-07 00:00:00,46200,14,2026-08-21 00:00:00,2026-08-21 00:00:00,Paid
+LED-0118,Weligama Fish Traders,WFT-0807,Food and beverage stock,Stock purchases,2026-08,2026-08-07 00:00:00,33400,7,2026-08-14 00:00:00,2026-08-14 00:00:00,Paid
+LED-0119,Matara Fresh Produce,MFP-0808,Food and beverage stock,Stock purchases,2026-08,2026-08-08 00:00:00,35105,14,2026-08-22 00:00:00,2026-08-21 00:00:00,Paid
+LED-0120,Weligama Fish Traders,WFT-0808,Food and beverage stock,Stock purchases,2026-08,2026-08-08 00:00:00,77200,7,2026-08-15 00:00:00,2026-08-14 00:00:00,Paid
+LED-0121,Galle Dairy and Bakery,GDB-0810,Food and beverage stock,Stock purchases,2026-08,2026-08-10 00:00:00,24070,14,2026-08-24 00:00:00,2026-08-21 00:00:00,Paid
+LED-0122,Matara Fresh Produce,MFP-0810,Food and beverage stock,Stock purchases,2026-08,2026-08-10 00:00:00,16890,14,2026-08-24 00:00:00,2026-08-21 00:00:00,Paid
+LED-0123,Ruhuna Dry Goods,RDG-0810,Food and beverage stock,Stock purchases,2026-08,2026-08-10 00:00:00,83000,30,2026-09-09 00:00:00,2026-09-04 00:00:00,Paid
+LED-0124,Southern Wine and Spirits,SWS-0810,Food and beverage stock,Stock purchases,2026-08,2026-08-10 00:00:00,353100,30,2026-09-09 00:00:00,2026-09-04 00:00:00,Paid
+LED-0125,Weligama Fish Traders,WFT-0810,Food and beverage stock,Stock purchases,2026-08,2026-08-10 00:00:00,98000,7,2026-08-17 00:00:00,2026-08-14 00:00:00,Paid
+LED-0126,Lanka Beverage Distributors,LBD-0811,Food and beverage stock,Stock purchases,2026-08,2026-08-11 00:00:00,76320,30,2026-09-10 00:00:00,2026-09-04 00:00:00,Paid
+LED-0127,Matara Fresh Produce,MFP-0811,Food and beverage stock,Stock purchases,2026-08,2026-08-11 00:00:00,19800,14,2026-08-25 00:00:00,2026-08-21 00:00:00,Paid
+LED-0128,Southern Meats and Poultry,SMP-0811,Food and beverage stock,Stock purchases,2026-08,2026-08-11 00:00:00,39700,14,2026-08-25 00:00:00,2026-08-21 00:00:00,Paid
+LED-0129,Galle Dairy and Bakery,GDB-0812,Food and beverage stock,Stock purchases,2026-08,2026-08-12 00:00:00,25540,14,2026-08-26 00:00:00,2026-08-21 00:00:00,Paid
+LED-0130,Hill Country Coffee,HCC-0812,Food and beverage stock,Stock purchases,2026-08,2026-08-12 00:00:00,9600,30,2026-09-11 00:00:00,2026-09-11 00:00:00,Paid
+LED-0131,Matara Fresh Produce,MFP-0812,Food and beverage stock,Stock purchases,2026-08,2026-08-12 00:00:00,11940,14,2026-08-26 00:00:00,2026-08-21 00:00:00,Paid
+LED-0132,Weligama Fish Traders,WFT-0812,Food and beverage stock,Stock purchases,2026-08,2026-08-12 00:00:00,79200,7,2026-08-19 00:00:00,2026-08-14 00:00:00,Paid
+LED-0133,Matara Fresh Produce,MFP-0813,Food and beverage stock,Stock purchases,2026-08,2026-08-13 00:00:00,1250,14,2026-08-27 00:00:00,2026-08-21 00:00:00,Paid
+LED-0134,Galle Dairy and Bakery,GDB-0814,Food and beverage stock,Stock purchases,2026-08,2026-08-14 00:00:00,27110,14,2026-08-28 00:00:00,2026-08-28 00:00:00,Paid
+LED-0135,Matara Fresh Produce,MFP-0814,Food and beverage stock,Stock purchases,2026-08,2026-08-14 00:00:00,12950,14,2026-08-28 00:00:00,2026-08-28 00:00:00,Paid
+LED-0136,Southern Meats and Poultry,SMP-0814,Food and beverage stock,Stock purchases,2026-08,2026-08-14 00:00:00,25150,14,2026-08-28 00:00:00,2026-08-28 00:00:00,Paid
+LED-0137,Weligama Fish Traders,WFT-0814,Food and beverage stock,Stock purchases,2026-08,2026-08-14 00:00:00,7200,7,2026-08-21 00:00:00,2026-08-21 00:00:00,Paid
+LED-0138,Matara Fresh Produce,MFP-0815,Food and beverage stock,Stock purchases,2026-08,2026-08-15 00:00:00,34990,14,2026-08-29 00:00:00,2026-08-28 00:00:00,Paid
+LED-0139,Weligama Fish Traders,WFT-0815,Food and beverage stock,Stock purchases,2026-08,2026-08-15 00:00:00,75400,7,2026-08-22 00:00:00,2026-08-21 00:00:00,Paid
+LED-0140,Galle Dairy and Bakery,GDB-0817,Food and beverage stock,Stock purchases,2026-08,2026-08-17 00:00:00,47870,14,2026-08-31 00:00:00,2026-08-28 00:00:00,Paid
+LED-0141,Matara Fresh Produce,MFP-0817,Food and beverage stock,Stock purchases,2026-08,2026-08-17 00:00:00,26805,14,2026-08-31 00:00:00,2026-08-28 00:00:00,Paid
+LED-0142,Ruhuna Dry Goods,RDG-0817,Food and beverage stock,Stock purchases,2026-08,2026-08-17 00:00:00,89300,30,2026-09-16 00:00:00,2026-09-11 00:00:00,Paid
+LED-0143,Southern Wine and Spirits,SWS-0817,Food and beverage stock,Stock purchases,2026-08,2026-08-17 00:00:00,342400,30,2026-09-16 00:00:00,2026-09-11 00:00:00,Paid
+LED-0144,Weligama Fish Traders,WFT-0817,Food and beverage stock,Stock purchases,2026-08,2026-08-17 00:00:00,125250,7,2026-08-24 00:00:00,2026-08-21 00:00:00,Paid
+LED-0145,Lanka Beverage Distributors,LBD-0818,Food and beverage stock,Stock purchases,2026-08,2026-08-18 00:00:00,85440,30,2026-09-17 00:00:00,2026-09-11 00:00:00,Paid
+LED-0146,Matara Fresh Produce,MFP-0818,Food and beverage stock,Stock purchases,2026-08,2026-08-18 00:00:00,18090,14,2026-09-01 00:00:00,2026-08-28 00:00:00,Paid
+LED-0147,Southern Meats and Poultry,SMP-0818,Food and beverage stock,Stock purchases,2026-08,2026-08-18 00:00:00,39700,14,2026-09-01 00:00:00,2026-08-28 00:00:00,Paid
+LED-0148,Galle Dairy and Bakery,GDB-0819,Food and beverage stock,Stock purchases,2026-08,2026-08-19 00:00:00,9320,14,2026-09-02 00:00:00,2026-08-28 00:00:00,Paid
+LED-0149,Hill Country Coffee,HCC-0819,Food and beverage stock,Stock purchases,2026-08,2026-08-19 00:00:00,11400,30,2026-09-18 00:00:00,2026-09-18 00:00:00,Paid
+LED-0150,Matara Fresh Produce,MFP-0819,Food and beverage stock,Stock purchases,2026-08,2026-08-19 00:00:00,9750,14,2026-09-02 00:00:00,2026-08-28 00:00:00,Paid
+LED-0151,Weligama Fish Traders,WFT-0819,Food and beverage stock,Stock purchases,2026-08,2026-08-19 00:00:00,69900,7,2026-08-26 00:00:00,2026-08-21 00:00:00,Paid
+LED-0152,Matara Fresh Produce,MFP-0820,Food and beverage stock,Stock purchases,2026-08,2026-08-20 00:00:00,16440,14,2026-09-03 00:00:00,2026-08-28 00:00:00,Paid
+LED-0153,Galle Dairy and Bakery,GDB-0821,Food and beverage stock,Stock purchases,2026-08,2026-08-21 00:00:00,39260,14,2026-09-04 00:00:00,2026-09-04 00:00:00,Paid
+LED-0154,Matara Fresh Produce,MFP-0821,Food and beverage stock,Stock purchases,2026-08,2026-08-21 00:00:00,11515,14,2026-09-04 00:00:00,2026-09-04 00:00:00,Paid
+LED-0155,Southern Meats and Poultry,SMP-0821,Food and beverage stock,Stock purchases,2026-08,2026-08-21 00:00:00,26750,14,2026-09-04 00:00:00,2026-09-04 00:00:00,Paid
+LED-0156,Weligama Fish Traders,WFT-0821,Food and beverage stock,Stock purchases,2026-08,2026-08-21 00:00:00,28550,7,2026-08-28 00:00:00,2026-08-28 00:00:00,Paid
+LED-0157,Matara Fresh Produce,MFP-0822,Food and beverage stock,Stock purchases,2026-08,2026-08-22 00:00:00,39670,14,2026-09-05 00:00:00,2026-09-04 00:00:00,Paid
+LED-0158,Weligama Fish Traders,WFT-0822,Food and beverage stock,Stock purchases,2026-08,2026-08-22 00:00:00,80650,7,2026-08-29 00:00:00,2026-08-28 00:00:00,Paid
+LED-0159,Galle Dairy and Bakery,GDB-0824,Food and beverage stock,Stock purchases,2026-08,2026-08-24 00:00:00,14120,14,2026-09-07 00:00:00,2026-09-04 00:00:00,Paid
+LED-0160,Matara Fresh Produce,MFP-0824,Food and beverage stock,Stock purchases,2026-08,2026-08-24 00:00:00,19550,14,2026-09-07 00:00:00,2026-09-04 00:00:00,Paid
+LED-0161,Ruhuna Dry Goods,RDG-0824,Food and beverage stock,Stock purchases,2026-08,2026-08-24 00:00:00,70900,30,2026-09-23 00:00:00,2026-09-18 00:00:00,Paid
+LED-0162,Southern Wine and Spirits,SWS-0824,Food and beverage stock,Stock purchases,2026-08,2026-08-24 00:00:00,338100,30,2026-09-23 00:00:00,2026-09-18 00:00:00,Paid
+LED-0163,Weligama Fish Traders,WFT-0824,Food and beverage stock,Stock purchases,2026-08,2026-08-24 00:00:00,79900,7,2026-08-31 00:00:00,2026-08-28 00:00:00,Paid
+LED-0164,Lanka Beverage Distributors,LBD-0825,Food and beverage stock,Stock purchases,2026-08,2026-08-25 00:00:00,118800,30,2026-09-24 00:00:00,2026-09-18 00:00:00,Paid
+LED-0165,Matara Fresh Produce,MFP-0825,Food and beverage stock,Stock purchases,2026-08,2026-08-25 00:00:00,15150,14,2026-09-08 00:00:00,2026-09-04 00:00:00,Paid
+LED-0166,Southern Meats and Poultry,SMP-0825,Food and beverage stock,Stock purchases,2026-08,2026-08-25 00:00:00,45300,14,2026-09-08 00:00:00,2026-09-04 00:00:00,Paid
+LED-0167,Galle Dairy and Bakery,GDB-0826,Food and beverage stock,Stock purchases,2026-08,2026-08-26 00:00:00,25540,14,2026-09-09 00:00:00,2026-09-04 00:00:00,Paid
+LED-0168,Hill Country Coffee,HCC-0826,Food and beverage stock,Stock purchases,2026-08,2026-08-26 00:00:00,11400,30,2026-09-25 00:00:00,2026-09-25 00:00:00,Paid
+LED-0169,Matara Fresh Produce,MFP-0826,Food and beverage stock,Stock purchases,2026-08,2026-08-26 00:00:00,6640,14,2026-09-09 00:00:00,2026-09-04 00:00:00,Paid
+LED-0170,Weligama Fish Traders,WFT-0826,Food and beverage stock,Stock purchases,2026-08,2026-08-26 00:00:00,65500,7,2026-09-02 00:00:00,2026-08-28 00:00:00,Paid
+LED-0171,Matara Fresh Produce,MFP-0827,Food and beverage stock,Stock purchases,2026-08,2026-08-27 00:00:00,24365,14,2026-09-10 00:00:00,2026-09-04 00:00:00,Paid
+LED-0172,Galle Dairy and Bakery,GDB-0828,Food and beverage stock,Stock purchases,2026-08,2026-08-28 00:00:00,48110,14,2026-09-11 00:00:00,2026-09-11 00:00:00,Paid
+LED-0173,Matara Fresh Produce,MFP-0828,Food and beverage stock,Stock purchases,2026-08,2026-08-28 00:00:00,22190,14,2026-09-11 00:00:00,2026-09-11 00:00:00,Paid
+LED-0174,Southern Meats and Poultry,SMP-0828,Food and beverage stock,Stock purchases,2026-08,2026-08-28 00:00:00,46200,14,2026-09-11 00:00:00,2026-09-11 00:00:00,Paid
+LED-0175,Weligama Fish Traders,WFT-0828,Food and beverage stock,Stock purchases,2026-08,2026-08-28 00:00:00,22650,7,2026-09-04 00:00:00,2026-09-04 00:00:00,Paid
+LED-0176,Matara Fresh Produce,MFP-0829,Food and beverage stock,Stock purchases,2026-08,2026-08-29 00:00:00,39730,14,2026-09-12 00:00:00,2026-09-11 00:00:00,Paid
+LED-0177,Weligama Fish Traders,WFT-0829,Food and beverage stock,Stock purchases,2026-08,2026-08-29 00:00:00,120050,7,2026-09-05 00:00:00,2026-09-04 00:00:00,Paid
+LED-0178,Coastline Maintenance,CLM-2608,Maintenance,Operating,2026-08,2026-08-31 00:00:00,61000,30,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0179,Galle Catering Supplies,GCS-2608,Consumables and packaging,Operating,2026-08,2026-08-31 00:00:00,95000,30,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0180,Galle Dairy and Bakery,GDB-0831,Food and beverage stock,Stock purchases,2026-08,2026-08-31 00:00:00,37020,14,2026-09-14 00:00:00,2026-09-11 00:00:00,Paid
+LED-0181,Matara Fresh Produce,MFP-0831,Food and beverage stock,Stock purchases,2026-08,2026-08-31 00:00:00,18365,14,2026-09-14 00:00:00,2026-09-11 00:00:00,Paid
+LED-0182,Matara Waste Services,MWS-2608,Waste collection,Operating,2026-08,2026-08-31 00:00:00,30000,30,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0183,PestAway Lanka,PAL-2608,Pest control,Operating,2026-08,2026-08-31 00:00:00,22000,30,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0184,Ruhuna Dry Goods,RDG-0831,Food and beverage stock,Stock purchases,2026-08,2026-08-31 00:00:00,106850,30,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0185,Southern Gas Distributors,SGD-202608,LPG,Utilities,2026-08,2026-08-31 00:00:00,380800,14,2026-09-14 00:00:00,2026-09-11 00:00:00,Paid
+LED-0186,Southern Wine and Spirits,SWS-0831,Food and beverage stock,Stock purchases,2026-08,2026-08-31 00:00:00,383700,30,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0187,Sunset Sound Collective,SSC-2608,Music and events,Operating,2026-08,2026-08-31 00:00:00,120000,14,2026-09-14 00:00:00,2026-09-11 00:00:00,Paid
+LED-0188,Tidewater Social,TWS-2608,Marketing,Operating,2026-08,2026-08-31 00:00:00,150000,30,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0189,Weligama Fish Traders,WFT-0831,Food and beverage stock,Stock purchases,2026-08,2026-08-31 00:00:00,64700,7,2026-09-07 00:00:00,2026-09-04 00:00:00,Paid
+LED-0190,Weligama Linen Care,WLC-2608,Laundry,Operating,2026-08,2026-08-31 00:00:00,84000,14,2026-09-14 00:00:00,2026-09-11 00:00:00,Paid
+LED-0191,Lanka Beverage Distributors,LBD-0901,Food and beverage stock,Stock purchases,2026-09,2026-09-01 00:00:00,119280,30,2026-10-01 00:00:00,2026-09-25 00:00:00,Paid
+LED-0192,Matara Fresh Produce,MFP-0901,Food and beverage stock,Stock purchases,2026-09,2026-09-01 00:00:00,14890,14,2026-09-15 00:00:00,2026-09-11 00:00:00,Paid
+LED-0193,Southern Hygiene Services,SHS-2609,Cleaning,Operating,2026-09,2026-09-01 00:00:00,142000,14,2026-09-15 00:00:00,2026-09-11 00:00:00,Paid
+LED-0194,Southern Meats and Poultry,SMP-0901,Food and beverage stock,Stock purchases,2026-09,2026-09-01 00:00:00,45300,14,2026-09-15 00:00:00,2026-09-11 00:00:00,Paid
+LED-0195,TableLink POS,TLP-2609,Software subscriptions,Operating,2026-09,2026-09-01 00:00:00,60000,7,2026-09-08 00:00:00,2026-09-04 00:00:00,Paid
+LED-0196,Galle Dairy and Bakery,GDB-0902,Food and beverage stock,Stock purchases,2026-09,2026-09-02 00:00:00,11420,14,2026-09-16 00:00:00,2026-09-11 00:00:00,Paid
+LED-0197,Hill Country Coffee,HCC-0902,Food and beverage stock,Stock purchases,2026-09,2026-09-02 00:00:00,11400,30,2026-10-02 00:00:00,2026-10-02 00:00:00,Paid
+LED-0198,Matara Fresh Produce,MFP-0902,Food and beverage stock,Stock purchases,2026-09,2026-09-02 00:00:00,16040,14,2026-09-16 00:00:00,2026-09-11 00:00:00,Paid
+LED-0199,Weligama Fish Traders,WFT-0902,Food and beverage stock,Stock purchases,2026-09,2026-09-02 00:00:00,57450,7,2026-09-09 00:00:00,2026-09-04 00:00:00,Paid
+LED-0200,Matara Fresh Produce,MFP-0903,Food and beverage stock,Stock purchases,2026-09,2026-09-03 00:00:00,20500,14,2026-09-17 00:00:00,2026-09-11 00:00:00,Paid
+LED-0201,Galle Dairy and Bakery,GDB-0904,Food and beverage stock,Stock purchases,2026-09,2026-09-04 00:00:00,44090,14,2026-09-18 00:00:00,2026-09-18 00:00:00,Paid
+LED-0202,Matara Fresh Produce,MFP-0904,Food and beverage stock,Stock purchases,2026-09,2026-09-04 00:00:00,6590,14,2026-09-18 00:00:00,2026-09-18 00:00:00,Paid
+LED-0203,Southern Meats and Poultry,SMP-0904,Food and beverage stock,Stock purchases,2026-09,2026-09-04 00:00:00,48850,14,2026-09-18 00:00:00,2026-09-18 00:00:00,Paid
+LED-0204,Weligama Fish Traders,WFT-0904,Food and beverage stock,Stock purchases,2026-09,2026-09-04 00:00:00,31150,7,2026-09-11 00:00:00,2026-09-11 00:00:00,Paid
+LED-0205,Ceylon Electricity Board,CEB-202608,Electricity,Utilities,2026-08,2026-09-05 00:00:00,521238,14,2026-09-19 00:00:00,2026-09-18 00:00:00,Paid
+LED-0206,Matara Fresh Produce,MFP-0905,Food and beverage stock,Stock purchases,2026-09,2026-09-05 00:00:00,39505,14,2026-09-19 00:00:00,2026-09-18 00:00:00,Paid
+LED-0207,National Water Supply and Drainage Board,NWS-202608,Water,Utilities,2026-08,2026-09-05 00:00:00,27612,14,2026-09-19 00:00:00,2026-09-18 00:00:00,Paid
+LED-0208,Weligama Fish Traders,WFT-0905,Food and beverage stock,Stock purchases,2026-09,2026-09-05 00:00:00,93350,7,2026-09-12 00:00:00,2026-09-11 00:00:00,Paid
+LED-0209,Galle Dairy and Bakery,GDB-0907,Food and beverage stock,Stock purchases,2026-09,2026-09-07 00:00:00,29590,14,2026-09-21 00:00:00,2026-09-18 00:00:00,Paid
+LED-0210,Matara Fresh Produce,MFP-0907,Food and beverage stock,Stock purchases,2026-09,2026-09-07 00:00:00,20190,14,2026-09-21 00:00:00,2026-09-18 00:00:00,Paid
+LED-0211,Ruhuna Dry Goods,RDG-0907,Food and beverage stock,Stock purchases,2026-09,2026-09-07 00:00:00,77600,30,2026-10-07 00:00:00,2026-10-02 00:00:00,Paid
+LED-0212,Southern Wine and Spirits,SWS-0907,Food and beverage stock,Stock purchases,2026-09,2026-09-07 00:00:00,376500,30,2026-10-07 00:00:00,2026-10-02 00:00:00,Paid
+LED-0213,Weligama Fish Traders,WFT-0907,Food and beverage stock,Stock purchases,2026-09,2026-09-07 00:00:00,105800,7,2026-09-14 00:00:00,2026-09-11 00:00:00,Paid
+LED-0214,Lanka Beverage Distributors,LBD-0908,Food and beverage stock,Stock purchases,2026-09,2026-09-08 00:00:00,100320,30,2026-10-08 00:00:00,2026-10-02 00:00:00,Paid
+LED-0215,Matara Fresh Produce,MFP-0908,Food and beverage stock,Stock purchases,2026-09,2026-09-08 00:00:00,18240,14,2026-09-22 00:00:00,2026-09-18 00:00:00,Paid
+LED-0216,Southern Meats and Poultry,SMP-0908,Food and beverage stock,Stock purchases,2026-09,2026-09-08 00:00:00,33250,14,2026-09-22 00:00:00,2026-09-18 00:00:00,Paid
+LED-0217,Galle Dairy and Bakery,GDB-0909,Food and beverage stock,Stock purchases,2026-09,2026-09-09 00:00:00,22800,14,2026-09-23 00:00:00,2026-09-18 00:00:00,Paid
+LED-0218,Hill Country Coffee,HCC-0909,Food and beverage stock,Stock purchases,2026-09,2026-09-09 00:00:00,11400,30,2026-10-09 00:00:00,,Unpaid
+LED-0219,Matara Fresh Produce,MFP-0909,Food and beverage stock,Stock purchases,2026-09,2026-09-09 00:00:00,7690,14,2026-09-23 00:00:00,2026-09-18 00:00:00,Paid
+LED-0220,Weligama Fish Traders,WFT-0909,Food and beverage stock,Stock purchases,2026-09,2026-09-09 00:00:00,69950,7,2026-09-16 00:00:00,2026-09-11 00:00:00,Paid
+LED-0221,Matara Fresh Produce,MFP-0910,Food and beverage stock,Stock purchases,2026-09,2026-09-10 00:00:00,15025,14,2026-09-24 00:00:00,2026-09-18 00:00:00,Paid
+LED-0222,Galle Dairy and Bakery,GDB-0911,Food and beverage stock,Stock purchases,2026-09,2026-09-11 00:00:00,47460,14,2026-09-25 00:00:00,2026-09-25 00:00:00,Paid
+LED-0223,Matara Fresh Produce,MFP-0911,Food and beverage stock,Stock purchases,2026-09,2026-09-11 00:00:00,13740,14,2026-09-25 00:00:00,2026-09-25 00:00:00,Paid
+LED-0224,Southern Meats and Poultry,SMP-0911,Food and beverage stock,Stock purchases,2026-09,2026-09-11 00:00:00,25850,14,2026-09-25 00:00:00,2026-09-25 00:00:00,Paid
+LED-0225,Weligama Fish Traders,WFT-0911,Food and beverage stock,Stock purchases,2026-09,2026-09-11 00:00:00,29350,7,2026-09-18 00:00:00,2026-09-18 00:00:00,Paid
+LED-0226,Matara Fresh Produce,MFP-0912,Food and beverage stock,Stock purchases,2026-09,2026-09-12 00:00:00,43830,14,2026-09-26 00:00:00,2026-09-25 00:00:00,Paid
+LED-0227,Weligama Fish Traders,WFT-0912,Food and beverage stock,Stock purchases,2026-09,2026-09-12 00:00:00,125350,7,2026-09-19 00:00:00,2026-09-18 00:00:00,Paid
+LED-0228,Galle Dairy and Bakery,GDB-0914,Food and beverage stock,Stock purchases,2026-09,2026-09-14 00:00:00,32780,14,2026-09-28 00:00:00,2026-09-25 00:00:00,Paid
+LED-0229,Matara Fresh Produce,MFP-0914,Food and beverage stock,Stock purchases,2026-09,2026-09-14 00:00:00,22705,14,2026-09-28 00:00:00,2026-09-25 00:00:00,Paid
+LED-0230,Ruhuna Dry Goods,RDG-0914,Food and beverage stock,Stock purchases,2026-09,2026-09-14 00:00:00,87450,30,2026-10-14 00:00:00,,Unpaid
+LED-0231,Southern Wine and Spirits,SWS-0914,Food and beverage stock,Stock purchases,2026-09,2026-09-14 00:00:00,409400,30,2026-10-14 00:00:00,,Unpaid
+LED-0232,Weligama Fish Traders,WFT-0914,Food and beverage stock,Stock purchases,2026-09,2026-09-14 00:00:00,129300,7,2026-09-21 00:00:00,2026-09-18 00:00:00,Paid
+LED-0233,Lanka Beverage Distributors,LBD-0915,Food and beverage stock,Stock purchases,2026-09,2026-09-15 00:00:00,99600,30,2026-10-15 00:00:00,,Unpaid
+LED-0234,Matara Fresh Produce,MFP-0915,Food and beverage stock,Stock purchases,2026-09,2026-09-15 00:00:00,11840,14,2026-09-29 00:00:00,2026-09-25 00:00:00,Paid
+LED-0235,Southern Meats and Poultry,SMP-0915,Food and beverage stock,Stock purchases,2026-09,2026-09-15 00:00:00,37950,14,2026-09-29 00:00:00,2026-09-25 00:00:00,Paid
+LED-0236,Coolcare Refrigeration,MNT-2291,Maintenance,Operating,2026-09,2026-09-16 00:00:00,185000,14,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0237,Galle Dairy and Bakery,GDB-0916,Food and beverage stock,Stock purchases,2026-09,2026-09-16 00:00:00,25220,14,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0238,Hill Country Coffee,HCC-0916,Food and beverage stock,Stock purchases,2026-09,2026-09-16 00:00:00,11400,30,2026-10-16 00:00:00,,Unpaid
+LED-0239,Matara Fresh Produce,MFP-0916,Food and beverage stock,Stock purchases,2026-09,2026-09-16 00:00:00,21890,14,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0240,Weligama Fish Traders,WFT-0916,Food and beverage stock,Stock purchases,2026-09,2026-09-16 00:00:00,74100,7,2026-09-23 00:00:00,2026-09-18 00:00:00,Paid
+LED-0241,Matara Fresh Produce,MFP-0917,Food and beverage stock,Stock purchases,2026-09,2026-09-17 00:00:00,27255,14,2026-10-01 00:00:00,2026-09-25 00:00:00,Paid
+LED-0242,Coolcare Refrigeration,MNT-2291,Maintenance,Operating,2026-09,2026-09-18 00:00:00,185000,14,2026-10-02 00:00:00,,Overdue
+LED-0243,Galle Dairy and Bakery,GDB-0918,Food and beverage stock,Stock purchases,2026-09,2026-09-18 00:00:00,44940,14,2026-10-02 00:00:00,2026-10-02 00:00:00,Paid
+LED-0244,Matara Fresh Produce,MFP-0918,Food and beverage stock,Stock purchases,2026-09,2026-09-18 00:00:00,7100,14,2026-10-02 00:00:00,2026-10-02 00:00:00,Paid
+LED-0245,Southern Meats and Poultry,SMP-0918,Food and beverage stock,Stock purchases,2026-09,2026-09-18 00:00:00,54450,14,2026-10-02 00:00:00,2026-10-02 00:00:00,Paid
+LED-0246,Weligama Fish Traders,WFT-0918,Food and beverage stock,Stock purchases,2026-09,2026-09-18 00:00:00,42250,7,2026-09-25 00:00:00,2026-09-25 00:00:00,Paid
+LED-0247,Matara Fresh Produce,MFP-0919,Food and beverage stock,Stock purchases,2026-09,2026-09-19 00:00:00,44830,14,2026-10-03 00:00:00,2026-10-02 00:00:00,Paid
+LED-0248,Weligama Fish Traders,WFT-0919,Food and beverage stock,Stock purchases,2026-09,2026-09-19 00:00:00,108500,7,2026-09-26 00:00:00,2026-09-25 00:00:00,Paid
+LED-0249,Galle Dairy and Bakery,GDB-0921,Food and beverage stock,Stock purchases,2026-09,2026-09-21 00:00:00,48660,14,2026-10-05 00:00:00,2026-10-02 00:00:00,Paid
+LED-0250,Matara Fresh Produce,MFP-0921,Food and beverage stock,Stock purchases,2026-09,2026-09-21 00:00:00,42955,14,2026-10-05 00:00:00,2026-10-02 00:00:00,Paid
+LED-0251,Ruhuna Dry Goods,RDG-0921,Food and beverage stock,Stock purchases,2026-09,2026-09-21 00:00:00,123550,30,2026-10-21 00:00:00,,Unpaid
+LED-0252,Southern Wine and Spirits,SWS-0921,Food and beverage stock,Stock purchases,2026-09,2026-09-21 00:00:00,513900,30,2026-10-21 00:00:00,,Unpaid
+LED-0253,Weligama Fish Traders,WFT-0921,Food and beverage stock,Stock purchases,2026-09,2026-09-21 00:00:00,230000,7,2026-09-28 00:00:00,2026-09-25 00:00:00,Paid
+LED-0254,Lanka Beverage Distributors,LBD-0922,Food and beverage stock,Stock purchases,2026-09,2026-09-22 00:00:00,141840,30,2026-10-22 00:00:00,,Unpaid
+LED-0255,Matara Fresh Produce,MFP-0922,Food and beverage stock,Stock purchases,2026-09,2026-09-22 00:00:00,9250,14,2026-10-06 00:00:00,2026-10-02 00:00:00,Paid
+LED-0256,Southern Meats and Poultry,SMP-0922,Food and beverage stock,Stock purchases,2026-09,2026-09-22 00:00:00,69900,14,2026-10-06 00:00:00,2026-10-02 00:00:00,Paid
+LED-0257,Galle Dairy and Bakery,GDB-0923,Food and beverage stock,Stock purchases,2026-09,2026-09-23 00:00:00,25640,14,2026-10-07 00:00:00,2026-10-02 00:00:00,Paid
+LED-0258,Hill Country Coffee,HCC-0923,Food and beverage stock,Stock purchases,2026-09,2026-09-23 00:00:00,16200,30,2026-10-23 00:00:00,,Unpaid
+LED-0259,Matara Fresh Produce,MFP-0923,Food and beverage stock,Stock purchases,2026-09,2026-09-23 00:00:00,24290,14,2026-10-07 00:00:00,2026-10-02 00:00:00,Paid
+LED-0260,Weligama Fish Traders,WFT-0923,Food and beverage stock,Stock purchases,2026-09,2026-09-23 00:00:00,67050,7,2026-09-30 00:00:00,2026-09-25 00:00:00,Paid
+LED-0261,Matara Fresh Produce,MFP-0924,Food and beverage stock,Stock purchases,2026-09,2026-09-24 00:00:00,10690,14,2026-10-08 00:00:00,2026-10-02 00:00:00,Paid
+LED-0262,Galle Dairy and Bakery,GDB-0925,Food and beverage stock,Stock purchases,2026-09,2026-09-25 00:00:00,40290,14,2026-10-09 00:00:00,,Unpaid
+LED-0263,Matara Fresh Produce,MFP-0925,Food and beverage stock,Stock purchases,2026-09,2026-09-25 00:00:00,14100,14,2026-10-09 00:00:00,,Unpaid
+LED-0264,Southern Meats and Poultry,SMP-0925,Food and beverage stock,Stock purchases,2026-09,2026-09-25 00:00:00,54450,14,2026-10-09 00:00:00,,Unpaid
+LED-0265,Weligama Fish Traders,WFT-0925,Food and beverage stock,Stock purchases,2026-09,2026-09-25 00:00:00,31300,7,2026-10-02 00:00:00,2026-10-02 00:00:00,Paid
+LED-0266,Matara Fresh Produce,MFP-0926,Food and beverage stock,Stock purchases,2026-09,2026-09-26 00:00:00,46805,14,2026-10-10 00:00:00,,Unpaid
+LED-0267,Weligama Fish Traders,WFT-0926,Food and beverage stock,Stock purchases,2026-09,2026-09-26 00:00:00,107050,7,2026-10-03 00:00:00,2026-10-02 00:00:00,Paid
+LED-0268,Galle Dairy and Bakery,GDB-0928,Food and beverage stock,Stock purchases,2026-09,2026-09-28 00:00:00,42010,14,2026-10-12 00:00:00,,Unpaid
+LED-0269,Matara Fresh Produce,MFP-0928,Food and beverage stock,Stock purchases,2026-09,2026-09-28 00:00:00,18730,14,2026-10-12 00:00:00,,Unpaid
+LED-0270,Ruhuna Dry Goods,RDG-0928,Food and beverage stock,Stock purchases,2026-09,2026-09-28 00:00:00,99400,30,2026-10-28 00:00:00,,Unpaid
+LED-0271,Southern Wine and Spirits,SWS-0928,Food and beverage stock,Stock purchases,2026-09,2026-09-28 00:00:00,309900,30,2026-10-28 00:00:00,,Unpaid
+LED-0272,Weligama Fish Traders,WFT-0928,Food and beverage stock,Stock purchases,2026-09,2026-09-28 00:00:00,109750,7,2026-10-05 00:00:00,2026-10-02 00:00:00,Paid
+LED-0273,Lanka Beverage Distributors,LBD-0929,Food and beverage stock,Stock purchases,2026-09,2026-09-29 00:00:00,91920,30,2026-10-29 00:00:00,,Unpaid
+LED-0274,Matara Fresh Produce,MFP-0929,Food and beverage stock,Stock purchases,2026-09,2026-09-29 00:00:00,15400,14,2026-10-13 00:00:00,,Unpaid
+LED-0275,Southern Meats and Poultry,SMP-0929,Food and beverage stock,Stock purchases,2026-09,2026-09-29 00:00:00,41500,14,2026-10-13 00:00:00,,Unpaid
+LED-0276,Coastline Maintenance,CLM-2609,Maintenance,Operating,2026-09,2026-09-30 00:00:00,68000,30,2026-10-30 00:00:00,,Unpaid
+LED-0277,Galle Catering Supplies,GCS-2609,Consumables and packaging,Operating,2026-09,2026-09-30 00:00:00,104000,30,2026-10-30 00:00:00,,Unpaid
+LED-0278,Galle Dairy and Bakery,GDB-0930,Food and beverage stock,Stock purchases,2026-09,2026-09-30 00:00:00,10520,14,2026-10-14 00:00:00,,Unpaid
+LED-0279,Hill Country Coffee,HCC-0930,Food and beverage stock,Stock purchases,2026-09,2026-09-30 00:00:00,4800,30,2026-10-30 00:00:00,,Unpaid
+LED-0280,Matara Fresh Produce,MFP-0930,Food and beverage stock,Stock purchases,2026-09,2026-09-30 00:00:00,11950,14,2026-10-14 00:00:00,,Unpaid
+LED-0281,Matara Waste Services,MWS-2609,Waste collection,Operating,2026-09,2026-09-30 00:00:00,30000,30,2026-10-30 00:00:00,,Unpaid
+LED-0282,PestAway Lanka,PAL-2609,Pest control,Operating,2026-09,2026-09-30 00:00:00,22000,30,2026-10-30 00:00:00,,Unpaid
+LED-0283,Southern Gas Distributors,SGD-202609,LPG,Utilities,2026-09,2026-09-30 00:00:00,414400,14,2026-10-14 00:00:00,,Unpaid
+LED-0284,Sunset Sound Collective,SSC-2609,Music and events,Operating,2026-09,2026-09-30 00:00:00,120000,14,2026-10-14 00:00:00,,Unpaid
+LED-0285,Tidewater Social,TWS-2609,Marketing,Operating,2026-09,2026-09-30 00:00:00,165000,30,2026-10-30 00:00:00,,Unpaid
+LED-0286,Weligama Fish Traders,WFT-0930,Food and beverage stock,Stock purchases,2026-09,2026-09-30 00:00:00,79650,7,2026-10-07 00:00:00,2026-10-02 00:00:00,Paid
+LED-0287,Weligama Linen Care,WLC-2609,Laundry,Operating,2026-09,2026-09-30 00:00:00,91000,14,2026-10-14 00:00:00,,Unpaid
+LED-0288,Matara Fresh Produce,MFP-1001,Food and beverage stock,Stock purchases,2026-10,2026-10-01 00:00:00,15940,14,2026-10-15 00:00:00,,Unpaid
+LED-0289,Southern Hygiene Services,SHS-2610,Cleaning,Operating,2026-10,2026-10-01 00:00:00,142000,14,2026-10-15 00:00:00,,Unpaid
+LED-0290,TableLink POS,TLP-2610,Software subscriptions,Operating,2026-10,2026-10-01 00:00:00,60000,7,2026-10-08 00:00:00,2026-10-02 00:00:00,Paid
+LED-0291,Galle Dairy and Bakery,GDB-1002,Food and beverage stock,Stock purchases,2026-10,2026-10-02 00:00:00,45860,14,2026-10-16 00:00:00,,Unpaid
+LED-0292,Matara Fresh Produce,MFP-1002,Food and beverage stock,Stock purchases,2026-10,2026-10-02 00:00:00,19065,14,2026-10-16 00:00:00,,Unpaid
+LED-0293,Southern Meats and Poultry,SMP-1002,Food and beverage stock,Stock purchases,2026-10,2026-10-02 00:00:00,48850,14,2026-10-16 00:00:00,,Unpaid
+LED-0294,Weligama Fish Traders,WFT-1002,Food and beverage stock,Stock purchases,2026-10,2026-10-02 00:00:00,31200,7,2026-10-09 00:00:00,,Unpaid
+LED-0295,Matara Fresh Produce,MFP-1003,Food and beverage stock,Stock purchases,2026-10,2026-10-03 00:00:00,51280,14,2026-10-17 00:00:00,,Unpaid
+LED-0296,Weligama Fish Traders,WFT-1003,Food and beverage stock,Stock purchases,2026-10,2026-10-03 00:00:00,126400,7,2026-10-10 00:00:00,,Unpaid
+LED-0297,Ceylon Electricity Board,CEB-202609,Electricity,Utilities,2026-09,2026-10-05 00:00:00,643710,14,2026-10-19 00:00:00,,Unpaid
+LED-0298,Galle Dairy and Bakery,GDB-1005,Food and beverage stock,Stock purchases,2026-10,2026-10-05 00:00:00,24720,14,2026-10-19 00:00:00,,Unpaid
+LED-0299,Matara Fresh Produce,MFP-1005,Food and beverage stock,Stock purchases,2026-10,2026-10-05 00:00:00,10590,14,2026-10-19 00:00:00,,Unpaid
+LED-0300,National Water Supply and Drainage Board,NWS-202609,Water,Utilities,2026-09,2026-10-05 00:00:00,28156,14,2026-10-19 00:00:00,,Unpaid
+LED-0301,Ruhuna Dry Goods,RDG-1005,Food and beverage stock,Stock purchases,2026-10,2026-10-05 00:00:00,86750,30,2026-11-04 00:00:00,,Unpaid
+LED-0302,Southern Wine and Spirits,SWS-1005,Food and beverage stock,Stock purchases,2026-10,2026-10-05 00:00:00,271400,30,2026-11-04 00:00:00,,Unpaid
+LED-0303,Weligama Fish Traders,WFT-1005,Food and beverage stock,Stock purchases,2026-10,2026-10-05 00:00:00,76800,7,2026-10-12 00:00:00,,Unpaid
+LED-0304,Lanka Beverage Distributors,LBD-1006,Food and beverage stock,Stock purchases,2026-10,2026-10-06 00:00:00,100320,30,2026-11-05 00:00:00,,Unpaid
+LED-0305,Matara Fresh Produce,MFP-1006,Food and beverage stock,Stock purchases,2026-10,2026-10-06 00:00:00,22865,14,2026-10-20 00:00:00,,Unpaid
+LED-0306,Southern Meats and Poultry,SMP-1006,Food and beverage stock,Stock purchases,2026-10,2026-10-06 00:00:00,33400,14,2026-10-20 00:00:00,,Unpaid
+LED-0307,Galle Dairy and Bakery,GDB-1007,Food and beverage stock,Stock purchases,2026-10,2026-10-07 00:00:00,26470,14,2026-10-21 00:00:00,,Unpaid
+LED-0308,Hill Country Coffee,HCC-1007,Food and beverage stock,Stock purchases,2026-10,2026-10-07 00:00:00,16200,30,2026-11-06 00:00:00,,Unpaid
+LED-0309,Matara Fresh Produce,MFP-1007,Food and beverage stock,Stock purchases,2026-10,2026-10-07 00:00:00,16140,14,2026-10-21 00:00:00,,Unpaid
+LED-0310,Weligama Fish Traders,WFT-1007,Food and beverage stock,Stock purchases,2026-10,2026-10-07 00:00:00,66100,7,2026-10-14 00:00:00,,Unpaid

@@ -1,0 +1,15 @@
+Item,Value,Unit,Source
+As-of date,2026-10-07 00:00:00,Date,Demo assumption
+Electricity tariff,42,LKR per kWh,Demo assumption
+Electricity fixed charge,3000,LKR per month,Demo assumption
+Water rate,160,LKR per m³,Demo assumption
+Water fixed charge,1500,LKR per month,Demo assumption
+LPG cylinder price (37.5 kg),11200,LKR per cylinder,Demo assumption
+EPF employer contribution,0.12,Share of basic pay,Sri Lanka statutory rate
+ETF employer contribution,0.03,Share of basic pay,Sri Lanka statutory rate
+Casual day rate,4000,LKR per shift,Demo assumption
+"Overtime rate, Kitchen",525,LKR per hour,Demo assumption
+"Overtime rate, Bar",490,LKR per hour,Demo assumption
+"Overtime rate, Service",410,LKR per hour,Demo assumption
+Contracted hours per shift,8,Hours,Demo assumption
+Service charge,Excluded,10% on all bills,"Published menu, Sep 2026"

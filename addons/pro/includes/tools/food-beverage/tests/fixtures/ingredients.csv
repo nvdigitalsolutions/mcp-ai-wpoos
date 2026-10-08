@@ -1,0 +1,80 @@
+Ingredient ID,Ingredient,Unit,Category,Group,Storage,Shelf life (days),Minimum level,Supplier ID,Supplier
+ING-001,"Prawns, large",kg,Food,Seafood,Chilled,2,7,SUP-01,Weligama Fish Traders
+ING-002,Barramundi fillet,kg,Food,Seafood,Chilled,2,3,SUP-01,Weligama Fish Traders
+ING-003,Yellowfin tuna loin,kg,Food,Seafood,Chilled,2,4,SUP-01,Weligama Fish Traders
+ING-004,Baby squid,kg,Food,Seafood,Chilled,2,2,SUP-01,Weligama Fish Traders
+ING-005,Clams,kg,Food,Seafood,Chilled,2,1.5,SUP-01,Weligama Fish Traders
+ING-006,Sea bass fillet,kg,Food,Seafood,Chilled,2,1,SUP-01,Weligama Fish Traders
+ING-007,"Reef fish, whole",kg,Food,Seafood,Chilled,2,3,SUP-01,Weligama Fish Traders
+ING-008,Whitebait,kg,Food,Seafood,Chilled,2,0.9,SUP-01,Weligama Fish Traders
+ING-009,"Octopus, frozen",kg,Food,Seafood,Frozen,90,5,SUP-01,Weligama Fish Traders
+ING-010,"Chicken thigh, boneless",kg,Food,Meat,Chilled,4,5,SUP-02,Southern Meats and Poultry
+ING-011,Chicken skin,kg,Food,Meat,Chilled,4,0.9,SUP-02,Southern Meats and Poultry
+ING-012,Beef brisket mince,kg,Food,Meat,Chilled,4,1.5,SUP-02,Southern Meats and Poultry
+ING-013,Beef tenderloin,kg,Food,Meat,Chilled,6,0.2,SUP-02,Southern Meats and Poultry
+ING-014,"Mutton, boneless",kg,Food,Meat,Chilled,4,1,SUP-02,Southern Meats and Poultry
+ING-015,Butter,kg,Food,Dairy,Chilled,30,2,SUP-04,Galle Dairy and Bakery
+ING-016,Parmesan,kg,Food,Dairy,Chilled,60,1,SUP-04,Galle Dairy and Bakery
+ING-017,Feta,kg,Food,Dairy,Chilled,21,0.7,SUP-04,Galle Dairy and Bakery
+ING-018,Buffalo curd,kg,Food,Dairy,Chilled,7,2.5,SUP-04,Galle Dairy and Bakery
+ING-019,Cheddar,kg,Food,Dairy,Chilled,45,0.9,SUP-04,Galle Dairy and Bakery
+ING-020,Mozzarella,kg,Food,Dairy,Chilled,14,0.3,SUP-04,Galle Dairy and Bakery
+ING-021,Eggs,each,Food,Dairy,Chilled,21,34,SUP-04,Galle Dairy and Bakery
+ING-022,Quail eggs,each,Food,Dairy,Chilled,21,6,SUP-04,Galle Dairy and Bakery
+ING-023,Brioche buns,each,Food,Bakery,Ambient,3,17,SUP-04,Galle Dairy and Bakery
+ING-024,Flatbread wraps,each,Food,Bakery,Ambient,5,10,SUP-04,Galle Dairy and Bakery
+ING-025,Ciabatta and focaccia,each,Food,Bakery,Ambient,2,15,SUP-04,Galle Dairy and Bakery
+ING-026,Fresh milk,L,Beverage,Dairy,Chilled,5,4,SUP-04,Galle Dairy and Bakery
+ING-027,Coriander,kg,Food,Produce,Chilled,3,0.5,SUP-03,Matara Fresh Produce
+ING-028,Cherry tomatoes,kg,Food,Produce,Chilled,5,0.7,SUP-03,Matara Fresh Produce
+ING-029,Tomatoes,kg,Food,Produce,Ambient,6,1.5,SUP-03,Matara Fresh Produce
+ING-030,Red onions,kg,Food,Produce,Ambient,30,3,SUP-03,Matara Fresh Produce
+ING-031,Green chillies,kg,Food,Produce,Chilled,7,0.9,SUP-03,Matara Fresh Produce
+ING-032,Garlic,kg,Food,Produce,Ambient,30,1,SUP-03,Matara Fresh Produce
+ING-033,Limes,each,Food,Produce,Ambient,10,216,SUP-03,Matara Fresh Produce
+ING-034,Passionfruit,each,Food,Produce,Ambient,7,18,SUP-03,Matara Fresh Produce
+ING-035,Potatoes,kg,Food,Produce,Ambient,21,24,SUP-03,Matara Fresh Produce
+ING-036,Carrots,kg,Food,Produce,Chilled,14,2,SUP-03,Matara Fresh Produce
+ING-037,Eggplant,kg,Food,Produce,Ambient,7,2,SUP-03,Matara Fresh Produce
+ING-038,Mixed greens,kg,Food,Produce,Chilled,4,1.5,SUP-03,Matara Fresh Produce
+ING-039,Cucumber,kg,Food,Produce,Chilled,7,2,SUP-03,Matara Fresh Produce
+ING-040,Seasonal vegetables,kg,Food,Produce,Chilled,5,6,SUP-03,Matara Fresh Produce
+ING-041,Mushrooms,kg,Food,Produce,Chilled,5,0.3,SUP-03,Matara Fresh Produce
+ING-042,Pineapple,each,Food,Produce,Ambient,7,1,SUP-03,Matara Fresh Produce
+ING-043,Cabbage,kg,Food,Produce,Chilled,10,2,SUP-03,Matara Fresh Produce
+ING-044,Pomegranate,each,Food,Produce,Ambient,14,3,SUP-03,Matara Fresh Produce
+ING-045,Coconuts,each,Food,Produce,Ambient,14,13,SUP-03,Matara Fresh Produce
+ING-046,Strawberries,kg,Beverage,Produce,Chilled,4,0.9,SUP-03,Matara Fresh Produce
+ING-047,Mint,kg,Beverage,Produce,Chilled,4,0.1,SUP-03,Matara Fresh Produce
+ING-048,Seasonal fruit for juice,kg,Beverage,Produce,Ambient,6,14,SUP-03,Matara Fresh Produce
+ING-049,Green apples,each,Beverage,Produce,Chilled,14,38,SUP-03,Matara Fresh Produce
+ING-050,Jasmine rice,kg,Food,Dry goods,Ambient,365,4.5,SUP-05,Ruhuna Dry Goods
+ING-051,Samba rice,kg,Food,Dry goods,Ambient,365,5,SUP-05,Ruhuna Dry Goods
+ING-052,Basmati rice,kg,Food,Dry goods,Ambient,365,2,SUP-05,Ruhuna Dry Goods
+ING-053,Linguine,kg,Food,Dry goods,Ambient,365,2.5,SUP-05,Ruhuna Dry Goods
+ING-054,Cashews,kg,Food,Dry goods,Ambient,90,2.5,SUP-05,Ruhuna Dry Goods
+ING-055,Chickpeas,kg,Food,Dry goods,Ambient,365,0.4,SUP-05,Ruhuna Dry Goods
+ING-056,Rice flour,kg,Food,Dry goods,Ambient,180,2,SUP-05,Ruhuna Dry Goods
+ING-057,Cooking oil,L,Food,Dry goods,Ambient,180,8,SUP-05,Ruhuna Dry Goods
+ING-058,Olive oil,L,Food,Dry goods,Ambient,365,1.5,SUP-05,Ruhuna Dry Goods
+ING-059,Ghee,kg,Food,Dry goods,Ambient,180,0.3,SUP-05,Ruhuna Dry Goods
+ING-060,Coconut milk,L,Food,Dry goods,Ambient,180,2,SUP-05,Ruhuna Dry Goods
+ING-061,House spices and sauces,kg,Food,Dry goods,Ambient,180,3,SUP-05,Ruhuna Dry Goods
+ING-062,Tamarind,kg,Food,Dry goods,Ambient,180,0.2,SUP-05,Ruhuna Dry Goods
+ING-063,Kithul jaggery,kg,Beverage,Dry goods,Ambient,180,0.8,SUP-05,Ruhuna Dry Goods
+ING-064,Bee honey,kg,Beverage,Dry goods,Ambient,365,0.6,SUP-05,Ruhuna Dry Goods
+ING-065,Bar syrups and infusions,L,Beverage,Dry goods,Chilled,30,3.5,SUP-05,Ruhuna Dry Goods
+ING-066,Rum,L,Beverage,Spirits,Ambient,365,2.5,SUP-06,Southern Wine and Spirits
+ING-067,Gin,L,Beverage,Spirits,Ambient,365,2,SUP-06,Southern Wine and Spirits
+ING-068,Coconut arrack,L,Beverage,Spirits,Ambient,365,2.5,SUP-06,Southern Wine and Spirits
+ING-069,Tequila,L,Beverage,Spirits,Ambient,365,2.5,SUP-06,Southern Wine and Spirits
+ING-070,Vodka,L,Beverage,Spirits,Ambient,365,1.5,SUP-06,Southern Wine and Spirits
+ING-071,House white wine,L,Beverage,Wine,Ambient,365,5,SUP-06,Southern Wine and Spirits
+ING-072,House rosé wine,L,Beverage,Wine,Ambient,365,3.5,SUP-06,Southern Wine and Spirits
+ING-073,House red wine,L,Beverage,Wine,Ambient,365,3.5,SUP-06,Southern Wine and Spirits
+ING-074,Local lager 330ml,each,Beverage,Beer and soft drinks,Ambient,180,83,SUP-07,Lanka Beverage Distributors
+ING-075,Imported beer 330ml,each,Beverage,Beer and soft drinks,Ambient,180,31,SUP-07,Lanka Beverage Distributors
+ING-076,Soft drinks,each,Beverage,Beer and soft drinks,Ambient,180,28,SUP-07,Lanka Beverage Distributors
+ING-077,King coconuts,each,Beverage,Beer and soft drinks,Ambient,7,12,SUP-07,Lanka Beverage Distributors
+ING-078,Coffee beans,kg,Beverage,Coffee,Ambient,60,1,SUP-08,Hill Country Coffee
+ING-079,Matcha powder,kg,Beverage,Coffee,Ambient,180,0.1,SUP-08,Hill Country Coffee
