@@ -1,0 +1,47 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.nvdigitalsolutions/nvoos-mcp-bridge",
+  "title": "NV oOS MCP Bridge",
+  "description": "Stdio relay connecting Zed, Claude Desktop, Cursor and Codex to NV oOS WordPress MCP endpoints.",
+  "websiteUrl": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-mcp-bridge",
+  "repository": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
+    "source": "github",
+    "subfolder": "packages/nvoos-mcp-bridge"
+  },
+  "version": "0.1.0-alpha.4",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@nvdigitalsolutions/nvoos-mcp-bridge",
+      "version": "0.1.0-alpha.4",
+      "runtimeHint": "npx",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "MCP_AI_BASE_URL",
+          "description": "Full URL of the NV oOS MCP endpoint (https://<site>/wp-json/mcp-ai/v1/mcp)",
+          "isRequired": true
+        },
+        {
+          "name": "MCP_AI_TOKEN",
+          "description": "Credential (cred_*) or operator (op_*) token minted in Fleet Operator",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "MCP_AI_HTTP_TIMEOUT",
+          "description": "Request timeout in milliseconds",
+          "default": "120000"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "tool": "npm-publish-nvoos-mcp-bridge",
+      "version": "1.0.0"
+    }
+  }
+}

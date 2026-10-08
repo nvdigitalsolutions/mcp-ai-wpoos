@@ -157,6 +157,18 @@ MCP_AI_TOKEN=cred_xxxxx.SECRET \
 npm run test:e2e
 ```
 
+## Ecosystem discovery
+
+This package is listed in the **official MCP Registry**
+(`registry.modelcontextprotocol.io`) as
+`io.github.nvdigitalsolutions/nvoos-mcp-bridge` (stdio / npm). The registry
+name is declared via the `mcpName` field in `package.json` (ownership
+verification marker); the registry metadata itself lives in
+[`server.json`](./server.json) and is published with the `mcp-publisher` CLI.
+Community directories (mcpservers.org, Glama, PulseMCP, mcp.directory, the
+awesome-mcp-servers list) carry entries that point back to this package and
+its registry record.
+
 ## License
 
 GPL-3.0-or-later — see [LICENSE](./LICENSE).
