@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live; nvoos-content-graph live in the re-submission loop; nvoos-design-system next in the pipeline — issue #6811). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy from the real 0.4.3 review, related-issue sweep checklist, reply-email template), packaging exclusion tri-sync, readme.txt standards, and .wordpress-org listing assets. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, or triaging PCP findings."
+description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live; nvoos-content-graph live in the re-submission loop; nvoos-design-system next in the pipeline — issue #6811). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy from the real 0.4.3 review, related-issue sweep checklist, reply-email template), packaging exclusion tri-sync, readme.txt standards, .wordpress-org listing assets, and the NV oOS Complete checkout-flow disclosure discipline (docs-hub 0.5.2, content-graph). Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, triaging PCP findings, or capturing listing screenshots."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -12,14 +12,16 @@ metadata:
 
 # NV oOS WordPress.org Submission — Readiness Playbook
 
-Playbook distilled from four executed passes: the Docs Hub 0.4.3
+Playbook distilled from five executed passes: the Docs Hub 0.4.3
 submission-readiness pass (PR #6403), the base-plugin gate repair, the first
 real reviewer-reply pass (0.4.3 → 0.4.4, PR #6606 — all findings fixed plus
 a related-issue sweep), the second reviewer-reply pass (0.4.4 → 0.4.5 —
-remote-call service framing + the initial-dir symlink residual), and the
-third reviewer-reply pass (0.4.6 → 0.4.7 — readme-only "Tested up to" +
-cron-on-init fix). Covers everything between "this plugin should ship to
-wp.org" and "the reviewer approves it".
+remote-call service framing + the initial-dir symlink residual), the third
+reviewer-reply pass (0.4.6 → 0.4.7 — readme-only "Tested up to" +
+cron-on-init fix), and the docs-hub 0.5.2 checkout-integration
+pre-submission pass (PR #6963 — commerce disclosures, five-screenshot
+listing set, capture-environment pitfalls). Covers everything between "this
+plugin should ship to wp.org" and "the reviewer approves it".
 
 ## When to use this skill
 
@@ -242,13 +244,13 @@ ZIP-shaped tree, Linux volume): **~31k ERRORs, ~3.9k WARNINGs**, dominated by
 `WordPress.WP.I18n.TextDomainMismatch` (~30.9k — repo domain `mcp-ai-wpoos`
 vs expected `wp-mcp-ai`/wp.org slug). This is a known backlog for the
 submission track, NOT something to allowlist. The docs-hub ZIP is clean
-(0 blocking errors, 1 documented warning).
+(0.5.2 checkout pass, PR #6963: 0 blocking errors, 1 documented warning).
 
 ### Known PCP findings triage
 
 | Code | Verdict | Handling |
 |---|---|---|
-| `PluginCheck.CodeAnalysis.Offloading.OffloadedContent` | False positive | Allowlist — flags literal `raw.githubusercontent.com` hosts in the SSRF-hardened, host-allowlisted remote fetcher (disclosed in `readme.txt == External Services ==`) |
+| `PluginCheck.CodeAnalysis.Offloading.OffloadedContent` | False positive | Allowlist — flags literal `raw.githubusercontent.com` hosts in the SSRF-hardened, host-allowlisted remote fetcher (disclosed in `readme.txt == External Services ==`). On docs-hub 0.5.2 the rows come from `blueprints/seed-content.php` (the Playground demo seed) — the PCP staging includes `blueprints/`, the real ZIP excludes it, so those rows never ship |
 | `WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedTraitFound` | Intentional (docs-hub) | Warning only — the `WP_MCP_AI_Inline_Async_Tick_Trait` stub must carry the BASE plugin's trait name so the real trait replaces it when NV oOS is active |
 | `WordPress.WP.I18n.TextDomainMismatch` | Real blocker (base) | Text domain must equal the wp.org slug/dir name; the repo domain is `mcp-ai-wpoos`. Needs the slug migration track — do not allowlist |
 | `no_plugin_readme` | Real or mount artifact | readme.txt must sit at the ZIP root. If it does and PCP still fires, suspect the bind-mount truncation (pitfall 5) |
@@ -304,6 +306,40 @@ carries its own review-artifact convention next to the docs-hub one:
   "Project-Id-Version: Name 1.0.9 1.0.9". Verify with a msgid set-diff:
   `comm -23 <(git show HEAD:<pot> | grep '^msgid "' | sort) <(grep '^msgid "' <pot> | sort)`
   must be empty (1.0.9: +3 msgids, 0 lost).
+
+### Fourth pass: docs-hub 0.5.2 — NV oOS Complete checkout integration (PR #6963)
+
+Docs Hub added the ported commerce stack (upsell card after the settings
+Save button, `/payments/*` admin-only routes, purchase modal). Pre-submission
+sweep results that extend the earlier passes:
+
+- **Commerce surface discipline now applies to docs-hub too.** The new
+  checkout block in `readme.txt == External Services ==` lists the vendor
+  checkout server (`nvdigitalsolutions.com`, with the data sent: product,
+  site URL, intent id, buyer email/country, consent timestamp),
+  `js.stripe.com` (browser-side, on-demand), and the ZIP-download host.
+  `WPORG-REVIEW-COMMERCE-NOTES.md` at the addon root is excluded from the
+  ZIP by the existing `*.md` distignore rule — the notes pre-answer "why does
+  a free plugin install another plugin" (post-payment only, manual download
+  is primary, off-directory distribution).
+- **The port recipe + test conventions live in
+  `.agents/skills/mcp-ai-wpoos-checkout-integration/SKILL.md`** — use it for
+  the next plugin that wants the flow.
+- **PCP profile (0.5.2):** 0 blocking errors. The 5 `OffloadedContent` rows
+  are in `blueprints/seed-content.php`, which the PCP staging tree includes
+  but the real ZIP excludes — a superset scan, not a regression.
+- **phpcs on the whole addon** reports 22 pre-existing ERRORs in
+  `blueprints/seed-content.php` (heredoc style, dev-only, excluded from the
+  ZIP) and warnings in `link-fixer`/`remote-repo`/`scanner`/`rebuild-job`;
+  every SHIPPED file is clean — scope phpcs to the shipped surface before
+  concluding a submission blocker.
+- **readme changelog headings can be swallowed by edits** — the 0.5.2 edit
+  initially consumed the `= 0.5.1 =` heading and merged its bullets into
+  0.5.2; re-verify the whole `== Changelog ==` structure (and `== Upgrade
+  Notice ==`) after every readme edit.
+- **Listing screenshots grew to five** — screenshot-5 (Save button + upsell
+  card) required updating BOTH `readme.txt == Screenshots ==` and the
+  `.wordpress-org/README.md` asset table (see capture pitfalls below).
 
 ## The reviewer reply pass (0.4.3 → 0.4.4, PR #6606)
 
@@ -548,6 +584,44 @@ Capture pitfalls (all hit in practice):
   broken-link tables (they read negatively at thumbnail size).
 - **Icon/banner artwork is manual** — screenshots are scripted; icons and
   banners still need design work (documented in the `.wordpress-org/README.md`).
+- **The QA site's plugin dir can be a SYMLINK into the mounted worktree.**
+  On the QA stack, `wp-content/plugins/nvoos-docs-hub` symlinks to
+  `mcp-ai-wpoos/addons/docs-hub` of the bind-mounted worktree — `docker cp`
+  and `tar -C` **follow the symlink** and write into the OTHER worktree's
+  tracked files (and `rm -rf …/node_modules` there deletes it). To stage new
+  code on the QA site: `rm` the symlink, extract into a real dir, capture,
+  then restore the symlink (`ln -s …`). If you already polluted the other
+  worktree: `git restore <addon>` + delete only the files you introduced,
+  and note the lost `node_modules/` (regenerable via `npm ci`).
+- **Rebuilding the QA index via wp-cli without the base plugin mount breaks
+  it** — the manifest records `base_version: ""`; the settings-page version
+  guard then sees a mismatch on every admin visit and clear+re-enqueue
+  rebuilds forever (live cache keeps flashing to `built_at: 0`, the SPA
+  shows "No documents indexed yet."). Rebuild with the base-plugin path
+  bind-mounted into the one-off cli container (or through the web UI), and
+  verify the manifest's `base_version` equals `WP_MCP_AI_VERSION` before
+  capturing.
+- **Clear cron + pipeline ticks before a long capture.** The QA root cron
+  loop hits `/wp-cron.php` every 60 s; a due daily rebuild (or a leftover
+  chunked tick) clears the live cache mid-capture.
+  `wp eval "wp_clear_scheduled_hook( 'nvoos_docs_hub_rebuild_cron' );
+  NV_oOS_Docs_Hub_Rebuild_Job::unschedule();"` first (the daily event
+  re-schedules itself on the next page load — harmless, not due again).
+- **wp-cli against the QA volume** needs the env recipe: one-off
+  `wordpress:cli-php8.2` on the QA network with
+  `-e WORDPRESS_DB_HOST/NAME/USER/PASSWORD` (the wp-config reads env with
+  wrong defaults otherwise), `--user 33:33` (uploads owned by www-data),
+  `php -d memory_limit=512M /usr/local/bin/wp …` (the 128 M cap fatals on
+  the heavy plugin stack), and `--allow-root`. Root-owned uploads subdirs
+  (created by root-tooling) block www-data writes — `chown -R www-data`
+  before rebuilding.
+- **Verify clip geometry without vision.** When a new screenshot clips a
+  composed region (e.g. Save button + upsell card), prove the clip with a
+  Playwright probe that re-computes both `boundingBox()`es and asserts they
+  fall inside the captured rect (a vision-less model can verify geometry,
+  text, and textContent, just not pixels). Adding a screenshot requires
+  updating `readme.txt == Screenshots ==` AND the
+  `.wordpress-org/README.md` asset table in the same commit.
 
 ## readme.txt standards
 
@@ -591,6 +665,8 @@ folds the new skill into the next release notes.
   (cross-worktree runs, shared-DB etiquette)
 - Plugin operational guide: `.agents/skills/mcp-ai-wpoos-plugin/SKILL.md`
 - Maintenance tracks: `.agents/skills/mcp-ai-wpoos-updates/SKILL.md`
+- Checkout/commerce flow integration:
+  `.agents/skills/mcp-ai-wpoos-checkout-integration/SKILL.md`
 - Capture scripts: `bin/capture-nvoos-docs-hub-screenshots.js`,
   `bin/capture-nvoos-content-graph-screenshots.js`,
   `bin/README-SCREENSHOT-TOOLS.md`
