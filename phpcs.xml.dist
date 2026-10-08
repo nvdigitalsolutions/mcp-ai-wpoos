@@ -97,6 +97,12 @@
 <exclude-pattern>*/tests/*</exclude-pattern>
 </rule>
 
+<!-- Test stub file that intentionally defines several NV_oOS_Docs_Hub_*
+     stand-in classes for integration-path tests. -->
+<rule ref="Generic.Files.OneObjectStructurePerFile">
+<exclude-pattern>*/addons/pro/tests/class-docs-hub-stubs.php</exclude-pattern>
+</rule>
+
 <!--
 	Custom capabilities registered by the Healthcare Imaging module and by
 	WooCommerce. WP_MCP_AI_Imaging_Capabilities::add_caps() grants the

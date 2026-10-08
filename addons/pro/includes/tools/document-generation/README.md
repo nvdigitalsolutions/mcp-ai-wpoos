@@ -4,7 +4,7 @@ AI-powered PDF, Word, and Excel document generation for WordPress.
 
 ## Overview
 
-The Document Generation Toolkit provides 19 professional document generation and manipulation tools:
+The Document Generation Toolkit provides 24 professional document generation and manipulation tools:
 
 ### AI-Powered Document Generation (3)
 - **pro_pdf_document** - Advanced AI-powered PDF generation with templates and formatting
@@ -36,6 +36,28 @@ The Document Generation Toolkit provides 19 professional document generation and
 - **get_uninvoiced_orders** - Find WooCommerce orders without invoices (requires WooCommerce)
 - **archive_documents** - Batch archive documents with dry_run preview mode
 - **generate_invoice_batch** - Generate invoices for multiple orders in one operation
+
+### Docs Hub Content Management Tools (5)
+
+Tools that manage the Markdown/text files published by the standalone
+[NV oOS Docs Hub](https://wordpress.org/plugins/nvoos-docs-hub/) plugin.
+Docs Hub turns plain `.md`/`.txt` files dropped into
+`wp-content/uploads/nvoos-docs-hub/content/` into a GitBook-style
+documentation site; these tools let AI assistants author, inventory, and
+retire those files directly.
+
+- **docs_hub_write_doc** - Create or update a Markdown/text file in the Docs Hub uploads content folder, with optional YAML frontmatter (`title`, `slug`, `order`) and an automatic index rebuild
+- **docs_hub_read_doc** - Read the raw content of a Docs Hub document
+- **docs_hub_list_docs** - Inventory the Docs Hub content folder (size, modified time, frontmatter title)
+- **docs_hub_delete_doc** - Delete a Docs Hub document (dry-run by default, optional rebuild)
+- **docs_hub_rebuild** - Trigger a Docs Hub index rebuild, sync or async (requires the Docs Hub plugin to be active)
+
+The write/delete tools require `manage_options`; read/list require
+`edit_posts`. Paths are relative to the content folder and validated against
+path traversal — only `.md`/`.txt` files under the content root can ever be
+touched. When the Docs Hub plugin is not installed, the tools still manage
+the default folder (so content can be staged before activation) and the
+rebuild step degrades gracefully.
 
 ## Requirements
 

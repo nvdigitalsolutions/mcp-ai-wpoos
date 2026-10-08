@@ -39,6 +39,7 @@ wp-mcp-ai-crm-ticket-notifications
 wp-mcp-ai-crm-web-form-listener
 wp-mcp-ai-crm-whatsapp-webhook-listener
 wp-mcp-ai-dicomweb-client
+wp-mcp-ai-docs-hub-helper
 wp-mcp-ai-document-gen-optimization
 wp-mcp-ai-ecommerce-helpers
 wp-mcp-ai-ecommerce-optimization
@@ -611,6 +612,11 @@ wp-mcp-ai-tool-dietpi-system-info
 wp-mcp-ai-tool-dietpi-system-stats
 wp-mcp-ai-tool-dietpi-update-system
 wp-mcp-ai-tool-docgen-capture-style-memory
+wp-mcp-ai-tool-docs-hub-delete-doc
+wp-mcp-ai-tool-docs-hub-list-docs
+wp-mcp-ai-tool-docs-hub-read-doc
+wp-mcp-ai-tool-docs-hub-rebuild
+wp-mcp-ai-tool-docs-hub-write-doc
 wp-mcp-ai-tool-draft-lead-reply
 wp-mcp-ai-tool-draft-upwork-proposal
 wp-mcp-ai-tool-duplicate-reg-product
