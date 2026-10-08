@@ -108,9 +108,29 @@ Execution record:
       round-tripped, the site's structured 401
       (`wp_mcp_ai_mcp_auth_required`) relayed transparently — transport
       verified end-to-end.
-- [ ] Maintainer follow-up (one command, needs a credential):
-      `printf '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}\n' | MCP_AI_BASE_URL=https://<site>/wp-json/mcp-ai/v1/mcp MCP_AI_TOKEN=cred_xxxxx.SECRET npx -y @nvdigitalsolutions/nvoos-mcp-bridge@0.1.0-alpha.4`
-      → expect a `tools` array in the stdout response.
+- [x] **Authed smoke — EXECUTED 2026-10-08 against the live fleet gateway**
+      (`https://mcp.nvoos.pro/mcp`, bearer key). Direct-HTTP path: `/health`
+      green (`design-mcp-gateway 0.1.1`, sites console/ideabits/sascha/demo
+      ok), GET discovery (protocol 2026-07-28, bearer, streamable HTTP), POST
+      `initialize` OK (`serverInfo: NV oOS Gateway 0.1.1`). Bridge path
+      (`npx @nvdigitalsolutions/nvoos-mcp-bridge@0.1.0-alpha.4`): initialize
+      + tools/list relayed correctly. **Finding:** the test key binds to site
+      `ideabits`, whose upstream returns 401 —
+      `_meta.gateway.errors.ideabits: "upstream error (401)"` — the gateway's
+      stored operator token for `ideabits` must be re-minted in Fleet
+      Operator and the Velocity env updated (gateway ops, not bridge).
+- [ ] Gateway ops follow-up (owner): rotate the `ideabits` upstream `op_`
+      token in the gateway env; re-run tools/list until `tools` is non-empty.
+      Also rotate the public gateway key shared during testing
+      (`GATEWAY_PUBLIC_KEYS_PREVIOUS` overlap).
+- [ ] Registry opportunity (owner decision, gated on D1/D2):
+      `mcp.nvoos.pro/mcp` is a public bearer-auth streamable-HTTP endpoint
+      and is therefore eligible for a `remotes` entry with
+      `headers: [{ name: "Authorization", isRequired: true, isSecret: true }]`
+      — proposal §4.6 revisit. Candidate name:
+      `io.github.nvdigitalsolutions/nvoos-mcp-gateway` (a second server
+      entry, next to the bridge's stdio entry). Requires the gateway to be
+      open to key issuance and the `ideabits` 401 fixed first.
 
 ## Phase 3 — First registry publish (manual, device-flow) (2 h)
 
