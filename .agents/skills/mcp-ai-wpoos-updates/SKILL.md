@@ -92,6 +92,18 @@ weekly (or on demand), independent of any release.
 
 ### A2. Scope rules (non-negotiable)
 
+- **A version jump is user-directed and recorded, never inferred.** The 1.2.1
+  pass executed the jump from 1.1.99 (the ROADMAP's planned 1.2.0 scope was
+  delivered early across v1.1.1–v1.1.35, so the first 1.2-line release is
+  numbered 1.2.1) — when the user names a target version, run the whole pass
+  against it and resolve the open-items tracker's "Blocked on: version-jump
+  decision" line with the decision instead of re-raising it.
+- **A tag-pending addon ZIP is not stale yet.** The v1.2.1 window bumped the
+  docs-hub addon 0.5.1 → 0.5.2 but the `docs-hub-v0.5.2` tag (which triggers
+  the build) is a post-merge follow-up — the v0.5.1 ZIP stays in `build/`
+  until the new artifact exists; removal applies only once a newer ZIP lands
+  (the v1.1.93/v1.1.99 superseded-addon-ZIP precedents).
+
 - **Historical per-version entries stay untouched.** Old CHANGELOG/README blocks
   (`[1.1.XX]` and earlier) are history and are never rewritten.
 - **Tool counts use `~`** with the live-registry caveat; counts change only when
@@ -769,7 +781,40 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.95-docs-catch-up.md`,
   `docs/project/plans/v1.1.97-docs-catch-up.md`,
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
-  `docs/project/plans/v1.1.99-docs-catch-up.md` (latest executed — the v1.1.99
+  `docs/project/plans/v1.1.99-docs-catch-up.md`,
+  `docs/project/plans/1.2.1-docs-catch-up.md` (latest executed — the
+  1.2.1 pass over PRs #6954–#6964 + the five direct Proposal-061 doc
+  commits: the **version-jump decision executed** (1.1.99 → 1.2.1 — the
+  ROADMAP's planned 1.2.0 scope was delivered early across v1.1.1–v1.1.35,
+  so the first 1.2-line release is numbered 1.2.1; the OI-1 "Blocked on"
+  line records the decision), the Food & Beverage Management Pro Toolkit
+  (#6962, Proposal 062 — 21 gated `fnb_*` Pro tools, 20/20 Check-totals
+  oracle, phases 4/5b/6/8/9/10 deferred in the implementation plan), the
+  Docs Hub content tools (#6964 — 5 `docs_hub_*` Pro tools), the MCP
+  server identity tool (#6956 — `mcp_server_info` +1 base, `_meta`
+  block, bridge-name seam; CG-AI sync = tracker Pending row), the Docs
+  Hub checkout upsell (#6963 — addon 0.5.1 → 0.5.2; the v0.5.2 ZIP is
+  tag-pending so `nvoos-docs-hub-v0.5.1.zip` stays until the new build
+  lands), the skill-catalogue gap fixes (#6954 — notes pre-staged into
+  the 1.1.99 section in-window), the Elementor autoload fix (#6961),
+  content-graph 1.0.9 + checkout polish (#6959/#6958 — sub-project,
+  flag-not-edited), three new coding-time skills in-window (spa-ui,
+  toolkit-creation, checkout-integration — 63 → 66 with the count
+  bookkeeping landing with the introducing PRs), two in-window skill
+  updates (#6960 wporg-submission + test-suite 67 → 68 patterns),
+  two new OI-1 groups (49: `@since 1.2.0` ×1 in mcp-server-info.php;
+  50: `@since 1.6.0` ×63 across the new food-beverage folder) with
+  convention notes (docs-hub 0.5.2 ×39 addon-version correct; CG 1.0.9
+  sub-project correct; skill-catalogue 1.11.0 ×6 file family; doc-gen
+  2.10.0 ×29 folder's 2.x family), OI-2 figure moved to ~353/~1,339/~1,692,
+  OI-8 extended (+27 new slugs) and OI-10 extended (32nd toolkit), the
+  stale 1.1.98 build-set removal (30 files — 9 + 2 + 19, no
+  ollama-demo.json carry — already at 1.1.99), tool count +1 base
+  +26 Pro, and the #6955/#6962/#6963 skill-count surfaces verified
+  66 in-window)
+
+Preceding windows:
+  `docs/project/plans/v1.1.99-docs-catch-up.md` (the v1.1.99
   pass over PRs #6936 + #6938–#6952: the SPA UI stack enhancement (#6952,
   Proposal 060 — toolkit-shell 0.2.0 → 0.3.0 + schedule-anything-spa →
   0.2.0 with shipped vitest suites; the addon partial-bump rule fired on

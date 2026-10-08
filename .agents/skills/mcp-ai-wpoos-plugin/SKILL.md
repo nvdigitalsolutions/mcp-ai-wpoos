@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.99"
-  plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-07"
+  plugin-version: "1.2.1"
+  plugin-version-tested: "1.2.1"
+  last-updated: "2026-10-08"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -779,6 +779,20 @@ Import external AI conversation exports into the JetEngine
 Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.2.1 operational quick notes** (full detail in RELEASE-NOTES.md): the
+**Food & Beverage Management Pro Toolkit** (PR #6962, Proposal 062) — 21
+`fnb_*` tools behind `enable_fnb_toolkit` (default off), 20/20 Check-totals
+oracle vs the demo workbook, 5 schedule + 2 workflow presets. **Docs Hub
+content tools** (PR #6964) — five `docs_hub_*` tools with traversal-safe
+path validation. **MCP server identity** (PR #6956) — `mcp_server_info`
+base tool + `list_mcp_tools` `_meta` + the informational
+`X-MCP-Bridge-Name` seam. **Docs Hub checkout upsell** (PR #6963, addon
+0.5.1 → 0.5.2) — the Content Graph commerce stack in the wp.org plugin
+(follow-up: tag `docs-hub-v0.5.2` + SVN upload). **Fixes** — skill-catalogue
+sidecars + GitHub token (#6954) and the Elementor partial-deploy warning
+flood (#6961). Counts: ~353 base + ~1,339 Pro (~1,692 total; +1 base
++26 Pro).
 
 **v1.1.99 operational quick notes** (full detail in RELEASE-NOTES.md): the
 **SPA UI stack enhancement** (PR #6952, Proposal 060) — toolkit-shell
