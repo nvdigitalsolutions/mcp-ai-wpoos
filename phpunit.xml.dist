@@ -25,6 +25,11 @@
             <exclude>tests/basepro</exclude>
             <exclude>tests/wp-cli-smoke.php</exclude>
             <exclude>tests/wp-tests-config.php</exclude>
+            <!-- Standalone smoke harnesses (no WordPress, minimal stubs) —
+                 PHPUnit must never load these: they redeclare core WP
+                 functions and fatal at discovery. Run them directly:
+                 php tests/pro/tools/food-beverage/smoke-run.php -->
+            <exclude>tests/pro/tools/food-beverage/smoke-run.php</exclude>
             <exclude>tests/helpers</exclude>
             <exclude>tests/abilities/class-wp-mcp-ai-ability-bridge-mock-tool.php</exclude>
             <exclude>tests/abilities/trait-wp-mcp-ai-ability-test-bootstrap.php</exclude>

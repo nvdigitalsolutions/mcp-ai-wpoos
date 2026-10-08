@@ -1,0 +1,1309 @@
+/* jshint esversion: 6 */
+/**
+ * NV oOS Docs Hub — NV oOS Complete Purchase Modal
+ *
+ * Opens a modal with Stripe's Payment Element, processes the purchase of
+ * the NV oOS Complete plugin bundle, then verifies the payment
+ * server-side and installs the bundle — a single flow.
+ *
+ * Card details are entered inside Stripe's own iframe; this file never
+ * sees card data. Amounts are decided server-side.
+ *
+ * Ported from plugins/nvoos-content-graph/assets/js/content-graph-commerce.js
+ * (v1.0.9) with the nvoos-dh-* class prefix and the NVOOS_DH_CHECKOUT
+ * config object — keep the two files in sync when the checkout flow changes.
+ *
+ * @package NV_oOS_Docs_Hub
+ * @since   0.5.2
+ */
+( function () {
+	'use strict';
+
+	var config = window.nvoosDocsHubCheckout || {};
+	var i18n = config.i18n || {};
+
+	var stripe = null;
+	var elements = null;
+	var paymentElement = null;
+	var overlay = null;
+	var dialog = null;
+	var errorBox = null;
+	var payBoxEl = null;
+	var freeOptionRow = null;
+	var consentCheckbox = null;
+	var consentAt = 0;
+	var euWithdrawalNote = null;
+	var emailInput = null;
+	var countrySelect = null;
+	var addressLine1 = null;
+	var addressCity = null;
+	var addressPostal = null;
+	var addressRow = null;
+	var busy = false;
+	var verifying = false;
+	var priceLabelEl = null;
+
+	/**
+	 * Build an element with text content, safe from XSS by construction.
+	 *
+	 * @param  {string} tag   Tag name.
+	 * @param  {string} klass Optional CSS class.
+	 * @param  {string} text  Optional text content.
+	 * @return {HTMLElement}
+	 */
+	function el( tag, klass, text ) {
+		var node = document.createElement( tag );
+		if ( klass ) {
+			node.className = klass;
+		}
+		if ( text ) {
+			node.textContent = text;
+		}
+		return node;
+	}
+
+	/**
+	 * Build an anchor that opens in a new tab, safe by construction.
+	 *
+	 * @param  {string} klass CSS class.
+	 * @param  {string} text  Link text.
+	 * @param  {string} href  URL (comes pre-sanitized from the REST response).
+	 * @return {HTMLElement}
+	 */
+	function linkEl( klass, text, href ) {
+		var a = el( 'a', klass, text );
+		a.href = href;
+		a.target = '_blank';
+		a.rel = 'noopener noreferrer';
+		return a;
+	}
+
+	/**
+	 * POST to the plugin REST API with the wp_rest nonce.
+	 *
+	 * @param  {string} route REST route (relative to the namespace root).
+	 * @param  {Object} body  JSON body.
+	 * @return {Promise} Resolves with { ok, status, data }.
+	 */
+	function apiPost( route, body ) {
+		return fetch( config.rest_url + route, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-WP-Nonce': config.nonce
+			},
+			body: JSON.stringify( body || {} )
+		} ).then( function ( response ) {
+			return response.json().then( function ( json ) {
+				return { ok: response.ok, status: response.status, data: json };
+			} );
+		} );
+	}
+
+	/**
+	 * GET from the plugin REST API with the wp_rest nonce.
+	 *
+	 * @param  {string} route REST route (relative to the namespace root).
+	 * @return {Promise} Resolves with { ok, status, data }.
+	 */
+	function apiGet( route ) {
+		return fetch( config.rest_url + route, {
+			method: 'GET',
+			credentials: 'same-origin',
+			headers: {
+				'X-WP-Nonce': config.nonce
+			}
+		} ).then( function ( response ) {
+			return response.json().then( function ( json ) {
+				return { ok: response.ok, status: response.status, data: json };
+			} );
+		} );
+	}
+
+	/**
+	 * Show an error inside the modal.
+	 *
+	 * @param {string} message Error message.
+	 * @return {void}
+	 */
+	function showError( message ) {
+		errorBox.textContent = message || i18n.generic_error || 'Something went wrong.';
+		errorBox.style.display = 'block';
+		clearPayLoading();
+		setBusy( false );
+	}
+
+	/**
+	 * Checkout endpoint unavailable — fall back to the product page.
+	 *
+	 * When the `/payments/session` endpoint cannot be reached (network
+	 * failure, 404, or server error), replace the modal with a short
+	 * notice and redirect to the vendor product page so the purchase can
+	 * still complete. The URL is filterable server-side
+	 * (`nvoos_content_graph/payments/fallback_url`); an empty value keeps
+	 * the plain in-modal error instead.
+	 *
+	 * @return {void}
+	 */
+	function checkoutUnavailable() {
+		var fallback = String( config.fallback_url || '' ).trim();
+
+		if ( ! fallback || ! /^https?:\/\//i.test( fallback ) ) {
+			showError( i18n.generic_error );
+			return;
+		}
+
+		if ( dialog ) {
+			var modalBody = dialog.querySelector( '.nvoos-dh-modal-body' );
+			var footer = dialog.querySelector( '.nvoos-dh-modal-footer' );
+			if ( modalBody ) {
+				modalBody.innerHTML = '';
+				modalBody.appendChild( el( 'p', 'nvoos-dh-pending-message', i18n.fallback_note || 'The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…' ) );
+			}
+			if ( footer ) {
+				footer.innerHTML = '';
+			}
+		}
+
+		window.setTimeout( function () {
+			window.location.href = fallback;
+		}, 1200 );
+	}
+
+	/**
+	 * Hide the modal error box.
+	 *
+	 * @return {void}
+	 */
+	function hideError() {
+		errorBox.style.display = 'none';
+	}
+
+	/**
+	 * Append a "Test connection" action to the error box.
+	 *
+	 * Calls the server-side `GET /payments/health` probe, which checks
+	 * reachability of the vendor checkout API WITHOUT consuming a
+	 * session-throttle token — so the admin can tell a real connectivity
+	 * failure apart from the "Too many checkout attempts" lockout.
+	 *
+	 * @return {void}
+	 */
+	function renderDiagnoseLink() {
+		if ( ! errorBox ) {
+			return;
+		}
+
+		var btn = el( 'button', 'button-link nvoos-dh-diagnose-btn', i18n.diagnose || 'Test connection to the checkout service' );
+		btn.type = 'button';
+		btn.addEventListener( 'click', function () {
+			btn.disabled = true;
+			var original = btn.textContent;
+			btn.textContent = i18n.diagnosing || 'Testing connection…';
+
+			apiGet( '/payments/health' ).then( function ( result ) {
+				btn.disabled = false;
+				btn.textContent = original;
+
+				var line = el( 'p', 'nvoos-dh-diagnose-result' );
+				var data = result.data || {};
+				if ( result.ok && data.reachable ) {
+					var vendor = data.vendor || {};
+					var latency = 'number' === typeof data.latency_ms ? data.latency_ms : 0;
+					line.textContent = ( i18n.diagnose_ok || 'Checkout service is reachable' ) +
+						' — ' + ( vendor.service || 'nvoos-checkout' ) + ' v' + ( vendor.version || '?' ) +
+						' (' + latency + ' ms)';
+				} else {
+					line.textContent = data.message || i18n.generic_error || 'Connection test failed.';
+				}
+				errorBox.appendChild( line );
+			} ).catch( function () {
+				btn.disabled = false;
+				btn.textContent = original;
+				errorBox.appendChild( el( 'p', 'nvoos-dh-diagnose-result', i18n.generic_error || 'Connection test failed.' ) );
+			} );
+		} );
+		errorBox.appendChild( btn );
+	}
+
+	/**
+	 * Toggle the busy state of the pay button.
+	 *
+	 * @param {boolean} value Whether the modal is busy.
+	 * @return {void}
+	 */
+	function setBusy( value ) {
+		busy = value;
+		updatePayState();
+	}
+
+	/**
+	 * Enable the pay button only when a payment session exists, the buyer
+	 * has entered a valid email, AND the Terms of Service consent checkbox
+	 * is ticked.
+	 *
+	 * @return {void}
+	 */
+	function updatePayState() {
+		if ( ! dialog ) {
+			return;
+		}
+		var payBtn = dialog.querySelector( '.nvoos-dh-pay-btn' );
+		if ( ! payBtn ) {
+			return;
+		}
+		var hasSecret = Boolean( payBtn.dataset.clientSecret );
+		var email = emailInput ? emailInput.value.trim() : '';
+		payBtn.disabled = busy || ! hasSecret || ! consentCheckbox || ! consentCheckbox.checked || ! isValidEmail( email ) || ! isAddressValid();
+	}
+
+	/**
+	 * Loose client-side email check (server re-validates via is_email()).
+	 *
+	 * @param  {string} value Candidate address.
+	 * @return {boolean}
+	 */
+	function isValidEmail( value ) {
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( value );
+	}
+
+	/**
+	 * The EU country codes this install treats as requiring an address.
+	 *
+	 * @return {Array} ISO 3166-1 alpha-2 codes (server-provided).
+	 */
+	function euCountries() {
+		var list = config.eu_countries;
+		return Array.isArray( list ) ? list : [];
+	}
+
+	/**
+	 * Whether the buyer selected an EU country in the billing row.
+	 *
+	 * @return {boolean}
+	 */
+	function isEuSelected() {
+		if ( ! countrySelect ) {
+			return false;
+		}
+		return euCountries().indexOf( countrySelect.value ) !== -1;
+	}
+
+	/**
+	 * EU buyers must provide street + city (postal code optional);
+	 * non-EU buyers need no address at all.
+	 *
+	 * @return {boolean}
+	 */
+	function isAddressValid() {
+		if ( ! isEuSelected() ) {
+			return true;
+		}
+		if ( ! addressLine1 || ! addressCity ) {
+			return false;
+		}
+		return addressLine1.value.trim() !== '' && addressCity.value.trim() !== '';
+	}
+
+	/**
+	 * Build a labelled text input, re-validating the pay button on entry.
+	 *
+	 * @param  {HTMLElement} container Parent element.
+	 * @param  {string}      id        Input id.
+	 * @param  {string}      labelText Label text.
+	 * @return {HTMLElement} The input element.
+	 */
+	function buildField( container, id, labelText ) {
+		var wrapper = el( 'div', 'nvoos-dh-field' );
+
+		var label = el( 'label', 'nvoos-dh-field-label', labelText );
+		label.htmlFor = id;
+
+		var input = document.createElement( 'input' );
+		input.type = 'text';
+		input.id = id;
+		input.className = 'nvoos-dh-field-input';
+		input.addEventListener( 'input', updatePayState );
+
+		wrapper.appendChild( label );
+		wrapper.appendChild( input );
+		container.appendChild( wrapper );
+		return input;
+	}
+
+	/**
+	 * Build the billing row: a country selector (EU vs other) plus an
+	 * address block that is visible and required only for EU countries —
+	 * VAT records for digitally supplied services.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function renderBillingRow() {
+		var row = el( 'div', 'nvoos-dh-billing-row' );
+
+		var countryLabel = el( 'label', 'nvoos-dh-billing-label', i18n.country_label || 'Country (for VAT records)' );
+		countryLabel.htmlFor = 'nvoos-dh-country';
+		row.appendChild( countryLabel );
+
+		countrySelect = document.createElement( 'select' );
+		countrySelect.id = 'nvoos-dh-country';
+		countrySelect.className = 'nvoos-dh-country-select';
+
+		var otherOption = document.createElement( 'option' );
+		otherOption.value = '';
+		otherOption.textContent = i18n.country_other || 'Other / Non-EU';
+		countrySelect.appendChild( otherOption );
+
+		var codes = euCountries();
+		for ( var i = 0; i < codes.length; i++ ) {
+			var option = document.createElement( 'option' );
+			option.value = codes[ i ];
+			option.textContent = codes[ i ];
+			countrySelect.appendChild( option );
+		}
+
+		countrySelect.addEventListener( 'change', function () {
+			if ( addressRow ) {
+				// Restore the stylesheet's grid layout when shown ('block'
+				// would override the CSS grid definition).
+				addressRow.style.display = isEuSelected() ? '' : 'none';
+			}
+			if ( euWithdrawalNote ) {
+				euWithdrawalNote.style.display = isEuSelected() ? '' : 'none';
+			}
+			updatePayState();
+		} );
+		row.appendChild( countrySelect );
+
+		addressRow = el( 'div', 'nvoos-dh-address-row' );
+		addressRow.style.display = 'none';
+		addressLine1 = buildField( addressRow, 'nvoos-dh-address-line1', i18n.address_line1_label || 'Street address' );
+		addressCity = buildField( addressRow, 'nvoos-dh-address-city', i18n.address_city_label || 'City' );
+		addressPostal = buildField( addressRow, 'nvoos-dh-address-postal', i18n.address_postal_label || 'Postal code (optional)' );
+		row.appendChild( addressRow );
+
+		return row;
+	}
+
+	/**
+	 * Build the Stripe billing_details object (email + EU address).
+	 *
+	 * @param  {string} email Buyer email.
+	 * @return {Object} Stripe billing_details shape.
+	 */
+	function buildBillingDetails( email ) {
+		var details = { email: email };
+
+		if ( isEuSelected() ) {
+			details.address = {
+				line1: addressLine1.value.trim(),
+				city: addressCity.value.trim(),
+				country: countrySelect.value
+			};
+			if ( addressPostal && addressPostal.value.trim() !== '' ) {
+				details.address.postal_code = addressPostal.value.trim();
+			}
+		}
+
+		return details;
+	}
+
+	/**
+	 * Build the buyer-email row, prefilled with the current user's address.
+	 *
+	 * The email is attached to the Stripe PaymentIntent via
+	 * confirmParams.receipt_email (so Stripe emails the receipt) and sent to
+	 * the vendor on /payments/verify, which stores it on the license row so
+	 * refund requests can be matched to the right transaction.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function renderEmailRow() {
+		var row = el( 'div', 'nvoos-dh-email-row' );
+
+		var label = el( 'label', 'nvoos-dh-email-label', i18n.email_label || 'Email for receipt and refunds' );
+		label.htmlFor = 'nvoos-dh-buyer-email';
+		row.appendChild( label );
+
+		emailInput = document.createElement( 'input' );
+		emailInput.type = 'email';
+		emailInput.id = 'nvoos-dh-buyer-email';
+		emailInput.className = 'nvoos-dh-email-input';
+		emailInput.placeholder = i18n.email_placeholder || 'you@example.com';
+		emailInput.value = String( config.buyer_email || '' );
+		emailInput.addEventListener( 'input', updatePayState );
+		row.appendChild( emailInput );
+
+		return row;
+	}
+
+	/**
+	 * Build the Terms of Service consent row (checkbox + policy links).
+	 *
+	 * Ticking the checkbox records the consent timestamp and is the only
+	 * way to unlock the pay button. The timestamp is sent with the verify
+	 * request and stored on the license as proof of acceptance.
+	 *
+	 * @param  {Object} data Session response (may carry vendor URLs).
+	 * @return {HTMLElement}
+	 */
+	function renderConsent( data ) {
+		data = data || {};
+
+		var termsUrl = data.terms_url || config.terms_url || '';
+		var refundUrl = data.refund_policy_url || config.refund_policy_url || '';
+
+		consentCheckbox = document.createElement( 'input' );
+		consentCheckbox.type = 'checkbox';
+		consentCheckbox.id = 'nvoos-dh-terms-consent';
+		consentCheckbox.className = 'nvoos-dh-terms-checkbox';
+		consentCheckbox.addEventListener( 'change', function () {
+			consentAt = consentCheckbox.checked ? Math.floor( Date.now() / 1000 ) : 0;
+			updatePayState();
+		} );
+
+		var label = el( 'label', 'nvoos-dh-terms-label' );
+		label.htmlFor = 'nvoos-dh-terms-consent';
+		label.appendChild( consentCheckbox );
+		label.appendChild( document.createTextNode( ' ' + ( i18n.terms_consent || 'I have read and agree to the Terms of Service and the Refund Policy.' ) + ' ' ) );
+
+		if ( termsUrl ) {
+			label.appendChild( linkEl( 'nvoos-dh-terms-link', i18n.terms_link || 'Terms of Service', termsUrl ) );
+		}
+		if ( refundUrl ) {
+			if ( termsUrl ) {
+				label.appendChild( document.createTextNode( ' · ' ) );
+			}
+			label.appendChild( linkEl( 'nvoos-dh-terms-link', i18n.refund_link || 'Refund Policy', refundUrl ) );
+		}
+
+		var row = el( 'div', 'nvoos-dh-terms-row' );
+		row.appendChild( label );
+
+		// EU buyers must acknowledge that immediate delivery ends their
+		// statutory right of withdrawal for digital content — shown only
+		// when an EU country is selected in the billing row.
+		euWithdrawalNote = el( 'p', 'nvoos-dh-terms-sub', i18n.terms_eu_withdrawal || '' );
+		euWithdrawalNote.style.display = isEuSelected() ? '' : 'none';
+		row.appendChild( euWithdrawalNote );
+
+		return row;
+	}
+
+	/**
+	 * Build the price block: amount, one-time label, license scope, VAT note.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function renderPriceBlock() {
+		var block = el( 'div', 'nvoos-dh-price-block' );
+		priceLabelEl = el( 'p', 'nvoos-dh-price', config.price_label || '' );
+		block.appendChild( priceLabelEl );
+
+		var oneTime = i18n.price_one_time || '';
+		if ( oneTime ) {
+			block.appendChild( el( 'p', 'nvoos-dh-price-sub', oneTime ) );
+		}
+
+		var priceChange = i18n.price_subject_change || '';
+		if ( priceChange ) {
+			block.appendChild( el( 'p', 'nvoos-dh-price-change', priceChange ) );
+		}
+
+		var scope = i18n.price_license_scope || '';
+		if ( scope ) {
+			block.appendChild( el( 'p', 'nvoos-dh-price-scope', scope ) );
+		}
+
+		var vatNote = i18n.price_vat_note || '';
+		if ( vatNote ) {
+			block.appendChild( el( 'p', 'nvoos-dh-price-vat', vatNote ) );
+		}
+
+		return block;
+	}
+
+	/**
+	 * Format a vendor price (integer cents) for display.
+	 *
+	 * Display-only: the vendor re-verifies the authoritative amount
+	 * server-side, so this label never participates in the payment.
+	 *
+	 * @param  {number} amount   Price in the smallest currency unit.
+	 * @param  {string} currency Three-letter ISO currency code.
+	 * @return {string} Formatted price, e.g. "$79.00".
+	 */
+	function formatPrice( amount, currency ) {
+		var code = String( currency || 'usd' ).toUpperCase();
+		try {
+			return new Intl.NumberFormat( undefined, {
+				style: 'currency',
+				currency: code
+			} ).format( amount / 100 );
+		} catch ( e ) {
+			return '$' + ( amount / 100 ).toFixed( 2 );
+		}
+	}
+
+	/**
+	 * Replace the modal's price label with the vendor session's authoritative
+	 * amount. The locally configured default (shown while the session is
+	 * being created) is kept whenever the session omits a valid price.
+	 *
+	 * @param {Object} data Vendor `/session` response payload.
+	 * @return {void}
+	 */
+	function syncPriceFromSession( data ) {
+		if ( ! priceLabelEl || ! data ) {
+			return;
+		}
+		var amount = parseInt( data.amount, 10 );
+		if ( ! isFinite( amount ) || amount < 50 ) {
+			return;
+		}
+		priceLabelEl.textContent = formatPrice( amount, data.currency );
+	}
+
+	/**
+	 * Build the trust list: guarantee, instant delivery, Stripe security.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function renderTrustList() {
+		var list = el( 'ul', 'nvoos-dh-trust' );
+		var items = [
+			i18n.trust_guarantee || '',
+			i18n.trust_instant || '',
+			i18n.secure_note || ''
+		];
+		for ( var i = 0; i < items.length; i++ ) {
+			if ( ! items[ i ] ) {
+				continue;
+			}
+			list.appendChild( el( 'li', 'nvoos-dh-trust-item', items[ i ] ) );
+		}
+		return list;
+	}
+
+	/**
+	 * Build the "what's included" block plus the roadmap/feedback line.
+	 *
+	 * The roadmap line renders only when a roadmap URL is configured —
+	 * promising feedback only when the owner actually reads it.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function renderIncludesBlock() {
+		var block = el( 'div', 'nvoos-dh-includes' );
+
+		var title = i18n.includes_title || '';
+		if ( title ) {
+			block.appendChild( el( 'h3', 'nvoos-dh-includes-title', title ) );
+		}
+
+		var list = el( 'ul', 'nvoos-dh-includes-list' );
+		var items = [
+			i18n.includes_full || '',
+			i18n.includes_updates || '',
+			i18n.includes_support || '',
+			i18n.includes_roadmap || ''
+		];
+		for ( var i = 0; i < items.length; i++ ) {
+			if ( ! items[ i ] ) {
+				continue;
+			}
+			list.appendChild( el( 'li', 'nvoos-dh-includes-item', items[ i ] ) );
+		}
+		block.appendChild( list );
+
+		var roadmapUrl = String( config.roadmap_url || '' ).trim();
+		if ( roadmapUrl && /^https?:\/\//i.test( roadmapUrl ) ) {
+			var line = el( 'p', 'nvoos-dh-roadmap' );
+			var funded = i18n.roadmap_funded || '';
+			if ( funded ) {
+				line.appendChild( document.createTextNode( funded + ' ' ) );
+			}
+			line.appendChild( linkEl( 'nvoos-dh-roadmap-link', i18n.roadmap_link_label || 'Share your ideas', roadmapUrl ) );
+			block.appendChild( line );
+		}
+
+		return block;
+	}
+
+	/**
+	 * Close and remove the modal, tearing down the Stripe elements.
+	 *
+	 * @return {void}
+	 */
+	function closeModal() {
+		if ( paymentElement ) {
+			try {
+				paymentElement.unmount();
+			} catch ( e ) {
+				// Ignore — the modal is going away regardless.
+			}
+		}
+		paymentElement = null;
+		elements = null;
+		stripe = null;
+		busy = false;
+		verifying = false;
+		consentCheckbox = null;
+		consentAt = 0;
+		euWithdrawalNote = null;
+		priceLabelEl = null;
+		emailInput = null;
+		countrySelect = null;
+		addressLine1 = null;
+		addressCity = null;
+		addressPostal = null;
+		addressRow = null;
+		if ( overlay && overlay.parentNode ) {
+			overlay.parentNode.removeChild( overlay );
+		}
+		overlay = null;
+		dialog = null;
+		errorBox = null;
+		payBoxEl = null;
+		freeOptionRow = null;
+	}
+
+	/**
+	 * Render the modal skeleton and start the checkout flow.
+	 *
+	 * @return {void}
+	 */
+	function openModal() {
+		closeModal();
+
+		overlay = el( 'div', 'nvoos-dh-modal-overlay' );
+		dialog = el( 'div', 'nvoos-dh-modal' );
+
+		var header = el( 'div', 'nvoos-dh-modal-header' );
+		var title = el( 'h2', 'nvoos-dh-modal-title', i18n.title || 'Get NV oOS Complete' );
+		var closeBtn = el( 'button', 'nvoos-dh-modal-close', '×' );
+		closeBtn.type = 'button';
+		closeBtn.setAttribute( 'aria-label', i18n.close || 'Close' );
+		closeBtn.addEventListener( 'click', closeModal );
+		header.appendChild( title );
+		header.appendChild( closeBtn );
+
+		var modalBody = el( 'div', 'nvoos-dh-modal-body' );
+		modalBody.appendChild( renderPriceBlock() );
+		modalBody.appendChild( renderTrustList() );
+		modalBody.appendChild( renderIncludesBlock() );
+
+		// Honest product-status note: the ecosystem is still in active
+		// development/testing, and the purchase carries the money-back
+		// guarantee. Omitted when the vendor ships no copy.
+		var devNote = i18n.dev_status || '';
+		if ( devNote ) {
+			modalBody.appendChild( el( 'p', 'nvoos-dh-dev-status', devNote ) );
+		}
+
+		modalBody.appendChild( renderEmailRow() );
+		modalBody.appendChild( renderBillingRow() );
+
+		errorBox = el( 'div', 'nvoos-dh-error' );
+		errorBox.style.display = 'none';
+		modalBody.appendChild( errorBox );
+
+		var payBox = el( 'div', 'nvoos-dh-pay-element' );
+		payBoxEl = payBox;
+		modalBody.appendChild( payBox );
+		renderPayLoading();
+
+		var footer = el( 'div', 'nvoos-dh-modal-footer' );
+
+		// The free base-version download sits left in the footer, pushing
+		// Cancel/Pay to the right. Hidden once the buyer commits (verify)
+		// and cleared entirely with the footer on success/fallback.
+		var freeRow = renderFreeOption();
+		if ( freeRow ) {
+			freeOptionRow = freeRow;
+			footer.appendChild( freeRow );
+		}
+
+		var cancelBtn = el( 'button', 'button nvoos-dh-cancel-btn', i18n.cancel || 'Cancel' );
+		cancelBtn.type = 'button';
+		cancelBtn.addEventListener( 'click', closeModal );
+		var payBtn = el( 'button', 'button button-primary nvoos-dh-pay-btn', i18n.pay || 'Pay' );
+		payBtn.type = 'button';
+		payBtn.disabled = true;
+		payBtn.addEventListener( 'click', handlePayClick );
+		footer.appendChild( cancelBtn );
+		footer.appendChild( payBtn );
+
+		dialog.appendChild( header );
+		dialog.appendChild( modalBody );
+		dialog.appendChild( footer );
+		overlay.appendChild( dialog );
+		document.body.appendChild( overlay );
+
+		startCheckout( payBox, payBtn );
+	}
+
+	/**
+	 * Read a remembered, paid-but-unverified PaymentIntent ID.
+	 *
+	 * @return {string} Intent ID or empty string.
+	 */
+	function readPendingIntent() {
+		try {
+			return sessionStorage.getItem( 'nvoosDhPendingIntent' ) || '';
+		} catch ( e ) {
+			return '';
+		}
+	}
+
+	/**
+	 * Remember an intent whose verification did not complete, so a later
+	 * modal visit can resume instead of charging the buyer twice.
+	 *
+	 * @param {string} intentId PaymentIntent ID.
+	 * @return {void}
+	 */
+	function rememberPendingIntent( intentId ) {
+		try {
+			sessionStorage.setItem( 'nvoosDhPendingIntent', intentId );
+		} catch ( e ) {
+			// Storage unavailable — recovery simply won't survive a reload.
+		}
+	}
+
+	/**
+	 * Forget the remembered pending intent.
+	 *
+	 * @return {void}
+	 */
+	function forgetPendingIntent() {
+		try {
+			sessionStorage.removeItem( 'nvoosDhPendingIntent' );
+		} catch ( e ) {
+			// Ignore.
+		}
+	}
+
+	/**
+	 * Render the "secure payment form is loading" placeholder in the pay area.
+	 *
+	 * Stripe.js is injected on demand and the payment session needs a server
+	 * round-trip, so on slower sites the card form can take a moment to
+	 * appear. This placeholder keeps the modal from looking broken while the
+	 * Payment Element mounts.
+	 *
+	 * @return {void}
+	 */
+	function renderPayLoading() {
+		if ( ! payBoxEl ) {
+			return;
+		}
+		var loading = el( 'div', 'nvoos-dh-installing', i18n.payment_loading || 'Loading secure payment form…' );
+		loading.setAttribute( 'role', 'status' );
+		payBoxEl.appendChild( loading );
+	}
+
+	/**
+	 * Remove the loading placeholder from the pay area.
+	 *
+	 * No-op once the Payment Element is mounted, so late errors (e.g. a
+	 * declined payment) never destroy a form the buyer can retry.
+	 *
+	 * @return {void}
+	 */
+	function clearPayLoading() {
+		if ( payBoxEl && ! paymentElement ) {
+			payBoxEl.innerHTML = '';
+		}
+	}
+
+	/**
+	 * Build the "free option" link: the free base plugin release, offered
+	 * as an alternative to the paid Complete bundle.
+	 *
+	 * Returns null when the URL is unset (or not http(s)) so the caller can
+	 * omit the row entirely.
+	 *
+	 * @return {HTMLElement|null}
+	 */
+	function renderFreeOption() {
+		var url = String( config.base_version_url || '' ).trim();
+		if ( ! url || ! /^https?:\/\//i.test( url ) ) {
+			return null;
+		}
+		return linkEl( 'nvoos-dh-free-option', i18n.free_option || 'Get the free NV oOS base version', url );
+	}
+
+	/**
+	 * Load Stripe.js on demand — only when the purchase modal opens.
+	 *
+	 * Stripe.js is intentionally NOT enqueued with the settings page: this
+	 * keeps js.stripe.com from being contacted until the user actually
+	 * chooses to start a checkout (privacy-conscious script loading).
+	 *
+	 * @param {Function} callback Invoked once Stripe.js is available.
+	 * @return {void}
+	 */
+	function loadStripeJs( callback ) {
+		if ( window.Stripe ) {
+			callback();
+			return;
+		}
+
+		var script = document.createElement( 'script' );
+		script.src = 'https://js.stripe.com/v3/';
+		script.async = true;
+		script.onload = callback;
+		script.onerror = function () {
+			showError( i18n.stripe_load_error || 'Stripe failed to load. Check your network connection and try again.' );
+		};
+		document.head.appendChild( script );
+	}
+
+	/**
+	 * Create the Stripe PaymentIntent session and mount the Payment Element.
+	 *
+	 * When a previous payment never finished verifying, resume it first —
+	 * the vendor may have issued the license via webhook in the meantime.
+	 *
+	 * @param {HTMLElement} payBox Container for the payment element.
+	 * @param {HTMLButtonElement} payBtn The pay/verify button.
+	 * @return {void}
+	 */
+	function startCheckout( payBox, payBtn ) {
+		loadStripeJs( function () {
+			beginCheckout( payBox, payBtn );
+		} );
+	}
+
+	/**
+	 * Checkout flow once Stripe.js is guaranteed loaded.
+	 *
+	 * @param {HTMLElement} payBox Container for the payment element.
+	 * @param {HTMLButtonElement} payBtn The pay/verify button.
+	 * @return {void}
+	 */
+	function beginCheckout( payBox, payBtn ) {
+		if ( ! window.Stripe ) {
+			showError( i18n.stripe_load_error || 'Stripe failed to load. Check your network connection and try again.' );
+			return;
+		}
+
+		var pendingId = readPendingIntent();
+		if ( pendingId ) {
+			verifyAndInstall( pendingId, { fromPending: true } );
+			return;
+		}
+
+		apiPost( '/payments/session' ).then( function ( result ) {
+			if ( ! result.ok ) {
+				// Redirect to the product-page fallback only when the
+				// checkout is genuinely unreachable (route missing,
+				// network failure, or a 5xx gateway error). A 424 means
+				// the vendor's Stripe call REJECTED the session (bad key,
+				// invalid params, account restrictions) — show the real
+				// message in the modal instead, with the connection
+				// probe for good measure. Other client errors (e.g. 429
+				// throttling) stay in-modal too.
+				if ( result.status === 404 || result.status >= 500 ) {
+					checkoutUnavailable();
+				} else {
+					showError( ( result.data && result.data.message ) || i18n.generic_error );
+					renderDiagnoseLink();
+				}
+				return;
+			}
+
+			// Already-licensed site: render the recorded license instead
+			// of a fresh payment form — a second charge must never be
+			// possible from this screen.
+			if ( result.data && result.data.already_licensed ) {
+				renderSuccess( {
+					license_key: result.data.license_key,
+					message: result.data.message,
+					bundle_active: result.data.bundle_active,
+					installed: true,
+					activated: true,
+					skip_steps: true
+				} );
+				return;
+			}
+
+			stripe = window.Stripe( result.data.publishable_key );
+
+			// The Payment Element mounts into the pay area — remove the
+			// loading placeholder first.
+			clearPayLoading();
+
+			// Stripe element setup failures (invalid element name, blocked
+			// iframe, extension interference) must surface in the modal —
+			// letting them hit the catch-all below would mislabel them as
+			// "checkout unavailable" and redirect to the product page.
+			try {
+				elements = stripe.elements( {
+					clientSecret: result.data.client_secret,
+					appearance: {
+						theme: 'stripe',
+						variables: {
+							colorPrimary: '#2271b1',
+							colorText: '#2c3338',
+							colorTextSecondary: '#646970',
+							colorBackground: '#ffffff',
+							colorDanger: '#d63638',
+							fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+							borderRadius: '6px',
+							spacingUnit: '4px'
+						},
+						rules: {
+							'.Input': {
+								border: '1px solid #c3c4c7',
+								borderRadius: '6px',
+								padding: '10px 12px',
+								boxShadow: 'none',
+								fontSize: '14px'
+							},
+							'.Input:focus': {
+								border: '1px solid #2271b1',
+								boxShadow: '0 0 0 3px rgba( 34, 113, 177, 0.15 )'
+							},
+							'.Input--invalid': {
+								border: '1px solid #d63638',
+								boxShadow: '0 0 0 3px rgba( 214, 54, 56, 0.12 )'
+							},
+							'.Label': {
+								fontSize: '12px',
+								fontWeight: '600',
+								color: '#3c434a'
+							},
+							'.Tab': {
+								border: '1px solid #c3c4c7',
+								borderRadius: '6px'
+							},
+							'.Tab--selected': {
+								border: '1px solid #2271b1',
+								boxShadow: '0 0 0 3px rgba( 34, 113, 177, 0.15 )'
+							}
+						}
+					}
+				} );
+				// The plugin collects the buyer email, country, and EU billing
+				// address itself (receipt + VAT records); keep the Stripe iframe
+				// from asking for them again. The address uses 'auto' rather
+				// than 'never': Stripe demands a country in confirmPayment()
+				// whenever 'never' is used, but this plugin only knows the
+				// country for EU buyers. With 'auto' the element collects the
+				// address only when a payment method (or Stripe tax) needs it,
+				// and EU buyers still pass theirs via payment_method_data.
+				paymentElement = elements.create( 'payment', {
+					fields: { billingDetails: { email: 'never', address: 'auto' } }
+				} );
+				paymentElement.mount( payBox );
+			} catch ( e ) {
+				showError( i18n.stripe_setup_error || 'The payment form could not be started. Please reload the page and try again.' );
+				return;
+			}
+
+			if ( result.data.test_mode ) {
+				var modalBody = dialog.querySelector( '.nvoos-dh-modal-body' );
+				modalBody.appendChild( el( 'p', 'nvoos-dh-test-mode', i18n.test_mode || '' ) );
+			}
+
+			var body = dialog.querySelector( '.nvoos-dh-modal-body' );
+			body.appendChild( renderConsent( result.data ) );
+
+			payBtn.dataset.clientSecret = result.data.client_secret;
+			updatePayState();
+
+			// The vendor's amount is the price that will actually be charged —
+			// align the modal's price block with it (display only).
+			syncPriceFromSession( result.data );
+		} ).catch( function () {
+			// Network-level failure (fetch rejection): the endpoint is
+			// unavailable — fall back to the product page.
+			checkoutUnavailable();
+		} );
+	}
+
+	/**
+	 * Pay-button handler: confirm payment, then verify + install.
+	 *
+	 * @return {void}
+	 */
+	function handlePayClick() {
+		if ( busy ) {
+			return;
+		}
+		if ( ! consentCheckbox || ! consentCheckbox.checked ) {
+			showError( i18n.terms_required || 'Please agree to the Terms of Service and Refund Policy to continue.' );
+			return;
+		}
+		var buyerEmail = emailInput ? emailInput.value.trim() : '';
+		if ( ! isValidEmail( buyerEmail ) ) {
+			showError( i18n.email_invalid || 'Please enter a valid email address for your receipt.' );
+			return;
+		}
+		if ( ! isAddressValid() ) {
+			showError( i18n.address_required || 'EU purchases require a billing address.' );
+			return;
+		}
+		setBusy( true );
+		hideError();
+
+		var payBtn = dialog.querySelector( '.nvoos-dh-pay-btn' );
+		var clientSecret = payBtn.dataset.clientSecret || '';
+
+		// Retry path: the payment is processing (delayed notification
+		// methods). Retrieve the intent and check instead of re-confirming.
+		if ( verifying ) {
+			stripe.retrievePaymentIntent( clientSecret ).then( function ( result ) {
+				var intent = result && result.paymentIntent;
+				if ( ! intent ) {
+					showError( i18n.generic_error );
+					return;
+				}
+			if ( 'succeeded' === intent.status ) {
+					rememberPendingIntent( intent.id );
+					verifyAndInstall( intent.id );
+				} else {
+					showError( i18n.payment_processing || 'Payment is still processing. Click Verify once it completes.' );
+					setBusy( false );
+				}
+			} ).catch( function () {
+				showError( i18n.generic_error );
+			} );
+			return;
+		}
+
+		stripe.confirmPayment( {
+			elements: elements,
+			confirmParams: {
+				receipt_email: buyerEmail,
+				return_url: window.location.href,
+				payment_method_data: {
+					billing_details: buildBillingDetails( buyerEmail )
+				}
+			},
+			redirect: 'if_required'
+		} ).then( function ( result ) {
+			if ( result.error ) {
+				showError( result.error.message || i18n.generic_error );
+				return;
+			}
+
+			var intent = result.paymentIntent;
+			if ( ! intent ) {
+				showError( i18n.generic_error );
+				return;
+			}
+
+			if ( 'succeeded' === intent.status ) {
+				rememberPendingIntent( intent.id );
+				verifyAndInstall( intent.id );
+			} else if ( 'processing' === intent.status ) {
+				verifying = true;
+				rememberPendingIntent( intent.id );
+				payBtn.textContent = i18n.verify || 'Verify';
+				showError( i18n.payment_processing || 'Payment is still processing. Click Verify once it completes.' );
+				setBusy( false );
+			} else {
+				showError( ( i18n.payment_incomplete || 'Payment did not complete. Status: ' ) + intent.status );
+			}
+		} ).catch( function () {
+			showError( i18n.generic_error );
+		} );
+	}
+
+	/**
+	 * Verify the payment server-side, then install and activate the
+	 * NV oOS Complete bundle.
+	 *
+	 * @param {string} paymentIntentId Stripe PaymentIntent ID.
+	 * @param {Object} opts            Options: { fromPending: bool } marks a
+	 *                                 recovery attempt for a remembered intent.
+	 * @return {void}
+	 */
+	function verifyAndInstall( paymentIntentId, opts ) {
+		opts = opts || {};
+
+		var payBox = dialog.querySelector( '.nvoos-dh-pay-element' );
+		var spinner = el( 'div', 'nvoos-dh-installing', i18n.installing || 'Installing…' );
+		payBox.innerHTML = '';
+		payBox.appendChild( spinner );
+
+		// The buyer has committed — the free alternative is no longer
+		// relevant; drop it while the install runs.
+		if ( freeOptionRow ) {
+			freeOptionRow.style.display = 'none';
+		}
+
+		var verifyBody = { payment_intent: paymentIntentId };
+		if ( consentAt > 0 ) {
+			// Omit the field (rather than send 0) when no consent timestamp
+			// exists — e.g. the interrupted-payment recovery path — because
+			// the endpoint rejects out-of-range values.
+			verifyBody.terms_agreed_at = consentAt;
+		}
+		var buyerEmail = emailInput ? emailInput.value.trim() : '';
+		if ( isValidEmail( buyerEmail ) ) {
+			verifyBody.buyer_email = buyerEmail;
+		}
+		if ( isEuSelected() ) {
+			verifyBody.buyer_country = countrySelect.value;
+		}
+
+		apiPost( '/payments/verify', verifyBody ).then( function ( result ) {
+			var data = result.data || {};
+
+			if ( ! result.ok ) {
+				payBox.innerHTML = '';
+				var message = ( data.message || i18n.generic_error ) + '';
+				showError( message );
+
+				// Recovery attempt for a remembered purchase: offer retry
+				// (the vendor webhook may not have fired yet) or a fresh
+				// checkout. Never silently start a new chargeable intent.
+				if ( opts.fromPending ) {
+					errorBox.style.display = 'none';
+					payBox.appendChild( el( 'p', 'nvoos-dh-pending-message', message ) );
+					var retryBtn = el( 'button', 'button button-primary', i18n.pending_retry || 'Check again' );
+					retryBtn.type = 'button';
+					retryBtn.addEventListener( 'click', function () {
+						verifyAndInstall( paymentIntentId, { fromPending: true } );
+					} );
+					var newBtn = el( 'button', 'button', i18n.pending_new || 'Start a new purchase' );
+					newBtn.type = 'button';
+					newBtn.addEventListener( 'click', function () {
+						forgetPendingIntent();
+						closeModal();
+						openModal();
+					} );
+					payBox.appendChild( retryBtn );
+					payBox.appendChild( document.createTextNode( ' ' ) );
+					payBox.appendChild( newBtn );
+					return;
+				}
+
+				if ( data.zip_url ) {
+					errorBox.style.display = 'none';
+					var dl = el( 'a', 'button', i18n.download_zip || 'Download ZIP manually' );
+					dl.href = data.zip_url;
+					dl.target = '_blank';
+					dl.rel = 'noopener';
+					payBox.appendChild( el( 'p', '', message ) );
+					payBox.appendChild( dl );
+				}
+				return;
+			}
+
+			forgetPendingIntent();
+			renderSuccess( data );
+		} ).catch( function () {
+			showError( i18n.generic_error );
+		} );
+	}
+
+	/**
+	 * Render the success state (license + reload).
+	 *
+	 * @param {Object} data Verify response.
+	 * @return {void}
+	 */
+	function renderSuccess( data ) {
+		var payBox = dialog.querySelector( '.nvoos-dh-pay-element' );
+		payBox.innerHTML = '';
+
+		payBox.appendChild( el( 'h3', 'nvoos-dh-success-title', i18n.success_title || 'You are all set!' ) );
+		if ( data.message ) {
+			payBox.appendChild( el( 'p', 'nvoos-dh-success-message', data.message ) );
+		}
+		if ( data.license_key ) {
+			var keyRow = el( 'p', 'nvoos-dh-license' );
+			keyRow.appendChild( document.createTextNode( ( i18n.license_label || 'License key' ) + ': ' ) );
+			keyRow.appendChild( el( 'code', '', data.license_key ) );
+			payBox.appendChild( keyRow );
+		}
+
+		// Manual install is the primary documented path — always offer the
+		// signed ZIP download alongside the automatic install result.
+		if ( data.download_url ) {
+			var manual = el( 'div', 'nvoos-dh-manual-install' );
+			manual.appendChild( el( 'p', 'nvoos-dh-manual-note', i18n.manual_install_note || 'Prefer to install manually? Download the ZIP and upload it via Plugins → Add New Plugin → Upload Plugin.' ) );
+			manual.appendChild( linkEl( 'button', i18n.download_zip || 'Download ZIP manually', data.download_url ) );
+			payBox.appendChild( manual );
+		}
+
+		// "What happens next" checklist — post-purchase clarity sets
+		// expectations (receipt, install, license, roadmap) and reduces
+		// buyer's-remorse support contacts. Skipped for the
+		// already-licensed state, where nothing is happening next.
+		if ( data.skip_steps !== true ) {
+			var steps = el( 'div', 'nvoos-dh-success-steps' );
+			var stepsTitle = i18n.success_steps_title || '';
+			if ( stepsTitle ) {
+				steps.appendChild( el( 'h4', 'nvoos-dh-success-steps-title', stepsTitle ) );
+			}
+			var stepsList = el( 'ol', 'nvoos-dh-success-steps-list' );
+			// The "installed" step names the artifact that is actually
+			// active: the Complete bundle, or the legacy AI addon.
+			var installedStep = data.bundle_active === false
+				? ( i18n.success_step_installed_addon || '' )
+				: ( i18n.success_step_installed || '' );
+			var stepItems = [
+				i18n.success_step_receipt || '',
+				installedStep,
+				i18n.success_step_license || ''
+			];
+			for ( var i = 0; i < stepItems.length; i++ ) {
+				if ( ! stepItems[ i ] ) {
+					continue;
+				}
+				stepsList.appendChild( el( 'li', '', stepItems[ i ] ) );
+			}
+			var roadmapStep = i18n.success_step_roadmap || '';
+			var changelogUrl = String( config.changelog_url || '' ).trim();
+			if ( roadmapStep || ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) ) {
+				var last = el( 'li', '', roadmapStep );
+				if ( changelogUrl && /^https?:\/\//i.test( changelogUrl ) ) {
+					last.appendChild( document.createTextNode( ' ' ) );
+					last.appendChild( linkEl( 'nvoos-dh-changelog-link', i18n.changelog_link || 'View changelog', changelogUrl ) );
+				}
+				stepsList.appendChild( last );
+			}
+			steps.appendChild( stepsList );
+			payBox.appendChild( steps );
+		}
+
+		var support = i18n.support_line || '';
+		if ( support ) {
+			payBox.appendChild( el( 'p', 'nvoos-dh-support-line', support ) );
+		}
+
+		var footer = dialog.querySelector( '.nvoos-dh-modal-footer' );
+		footer.innerHTML = '';
+		var reloadBtn = el( 'button', 'button button-primary', i18n.refresh || 'Reload page' );
+		reloadBtn.type = 'button';
+		reloadBtn.addEventListener( 'click', function () {
+			window.location.reload();
+		} );
+		footer.appendChild( reloadBtn );
+	}
+
+	/**
+	 * Wire up the upsell buttons.
+	 *
+	 * @return {void}
+	 */
+	function bindButtons() {
+		var buttons = document.querySelectorAll( '.nvoos-docs-hub-buy-complete' );
+		for ( var i = 0; i < buttons.length; i++ ) {
+			buttons[ i ].addEventListener( 'click', openModal );
+		}
+	}
+
+	if ( document.readyState === 'loading' ) {
+		document.addEventListener( 'DOMContentLoaded', bindButtons );
+	} else {
+		bindButtons();
+	}
+} )();

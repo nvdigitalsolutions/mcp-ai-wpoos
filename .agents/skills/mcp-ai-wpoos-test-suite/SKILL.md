@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 67 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 68 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -980,6 +980,29 @@ the changed files is the substantive gate; plan CI waits accordingly.
       running). Every new `class-*.php` / `trait-*.php` helper added to a
       scanned dir needs the exclude in the same PR; the toolkit-audit loop
       generates these regularly.
+  68. **Standalone addon commerce/checkout suites (docs-hub 0.5.2, content-graph).**
+      Call the REST controller methods **directly**
+      (`NV_oOS_Docs_Hub_Checkout_REST::create_session( new WP_REST_Request() )`)
+      so `WP_Error`s come back raw — `$server->dispatch()` wraps errors in
+      `WP_REST_Response`, so through dispatch assert `get_status()` (403 for
+      permission) and `get_data()['code']` (`rest_invalid_param`) instead of
+      `instanceof WP_Error`. Mock the vendor with a `pre_http_request` filter
+      that routes by URL substring (`/session`, `/verify`, `/health`) and
+      counts calls for zero-HTTP assertions (already-licensed short-circuits
+      and throttle blocks must never hit the wire). Stripe intent fixtures
+      must be **alphanumeric-only** (`pi_1234567890abcdef`) — `pi_test_…`
+      contains `_`, which fails the `^pi_[A-Za-z0-9]{8,}$` REST validator and
+      silently 400s before the callback runs. Already-licensed state:
+      license option + `update_option( 'active_plugins', array(
+      BUNDLE_BASENAME ) )`. Install-conflict path: guarded
+      `define( 'WP_MCP_AI_VERSION', … )` trips the base-plugin guard so
+      verify records the license and returns the manual-download error
+      without any download attempt. Upsell render tests capture
+      `render_page()` via `ob_start()` (require
+      `wp-admin/includes/template.php` for `submit_button()` first). Throttle
+      tests: five direct session calls pass, the sixth returns 429 with zero
+      extra HTTP. Full conventions:
+      `.agents/skills/mcp-ai-wpoos-checkout-integration/SKILL.md`.
 
 ## Production fix vs test fix
 

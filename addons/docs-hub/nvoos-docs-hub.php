@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Docs Hub
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: React-based documentation browser for NV oOS. Discovers, indexes, and renders Markdown docs from the base plugin and every addon in a GitBook-style SPA. Shortcode [nvoos_docs] embeds it on any page.
- * Version:     0.5.1
+ * Version:     0.5.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: NV Digital Solutions
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_DOCS_HUB_VERSION', '0.5.1' );
+define( 'NVOOS_DOCS_HUB_VERSION', '0.5.2' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_DOCS_HUB_FILE', __FILE__ );
@@ -136,6 +136,11 @@ require_once NVOOS_DOCS_HUB_PATH . 'includes/shortcode/class-nvoos-docs-hub-shor
 require_once NVOOS_DOCS_HUB_PATH . 'includes/block/class-nvoos-docs-hub-block.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-sitemap-provider.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-link-fixer.php';
+require_once NVOOS_DOCS_HUB_PATH . 'includes/checkout/class-nvoos-docs-hub-checkout.php';
+require_once NVOOS_DOCS_HUB_PATH . 'includes/checkout/class-nvoos-docs-hub-checkout-client.php';
+require_once NVOOS_DOCS_HUB_PATH . 'includes/checkout/class-nvoos-docs-hub-checkout-license.php';
+require_once NVOOS_DOCS_HUB_PATH . 'includes/checkout/class-nvoos-docs-hub-checkout-installer.php';
+require_once NVOOS_DOCS_HUB_PATH . 'includes/checkout/class-nvoos-docs-hub-checkout-rest.php';
 
 // Register rebuild job-source for the cron-status Tasks Drawer.
 if ( interface_exists( 'Interface_WP_MCP_AI_Cron_Status_Job_Source' ) ) {

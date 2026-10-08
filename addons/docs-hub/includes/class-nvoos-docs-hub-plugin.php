@@ -374,11 +374,13 @@ class NV_oOS_Docs_Hub_Plugin {
 	 * Initialize REST API routes.
 	 *
 	 * @since 1.0.0
+	 * @since 0.5.2 Registers the checkout payment routes.
 	 *
 	 * @return void
 	 */
 	public static function init_rest() {
 		NV_oOS_Docs_Hub_REST::register_routes();
+		NV_oOS_Docs_Hub_Checkout_REST::register_routes();
 	}
 
 	/**
