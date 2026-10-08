@@ -26,7 +26,7 @@ MCP exposure and polish are demo-optional.
 | 5 | Scheduling (Pro Schedule Manager) + audit viewer | optional | 3h |
 | 6 | MCP exposure (bridge, read+draft subset) | optional | 2h |
 | 7 | Test hardening: oracle tests, phpcs, audit-skill checklist | ✅ | 4h |
-| 8 | Demo dry-run: all 20 questions + 13 reports against the data | ✅ | 3h |
+| 8 | Demo dry-run + A4 image-tool wiring (default Off) | ✅ | 3h |
 | 9 | **Native storage (CPTs/CCTs) + import bridge** — post-demo | ❌ | 10h |
 
 ---
@@ -196,10 +196,14 @@ no unguarded shell calls, string/array-safe parsing of Sheets responses
 - Four JSON packs: system prompt (G-rules + applicable A-rules + pointer to the
   Drive folder layout), tool allowlist (READ + DRAFT tier only), settings
   (Drafts folder ID, model).
-- A4 pack includes the character-bible contract (Rella, Sanda) and the
-  AI-content-label reminder (A4-04).
+- A4 pack includes the character-bible contract (Rella, Sanda), the
+  AI-content-label reminder (A4-04), and the `image-production` tools
+  (`generate_image_ai`, `generate_image_variations`, `image_inpainting`,
+  `text_to_image_prompt_optimizer`) pre-listed in its allowlist **disabled by
+  default** (ACT-tier gate per the spec) — enabling later is a settings
+  change, not a re-deploy.
 - **Acceptance:** import each pack; verify tool visibility per allowlist and
-  that ACT-tier tools are absent.
+  that ACT-tier tools (including image generation) are absent/disabled.
 
 ### Phase 5 — Scheduling + audit (3h)
 - Pro Schedule Manager entries: R-01 daily 08:00, R-02 Mon 08:00, R-03 Thu
@@ -218,11 +222,18 @@ no unguarded shell calls, string/array-safe parsing of Sheets responses
   canonical-envelope + sanitisation sniffs.
 - **Acceptance:** CI-equivalent run green (Docker PHPUnit per test-suite skill).
 
-### Phase 8 — Demo dry-run (3h)
+### Phase 8 — Demo dry-run + A4 image-tool wiring (3h)
 - Run all 20 Questions-sheet questions against the real Drive folder; verify
   figures match `Check totals`; verify zero ACT calls in the audit log; time
   each answer for the cost table (§7).
-- **Acceptance:** demo script passes; open questions 1–10 resolutions hold.
+- A4 image API wiring (open question 10): confirm the four `image-production`
+  tools are registered, capability-gated and default-Off in the A4 pack;
+  run one prompt-only A4 answer end-to-end (character bible → prompt +
+  caption + hashtags) and verify `generate_image_ai` refuses with a
+  capability error while disabled.
+- **Acceptance:** demo script passes; open questions 1–10 resolutions hold;
+  flipping the A4 image toggle in settings is the only change needed to
+  enable generation post-demo.
 
 ### Phase 9 — Native storage: CPTs/CCTs + import bridge (10h, post-demo)
 Mirrors the vitals/document-generation patterns (proposal §5.8).

@@ -252,7 +252,7 @@ sheet name (the spec warns "table and column names may change").
 | 7 | Expose the four assistants as MCP server to Claude/ChatGPT? | **Yes**: existing MCP bridge with per-assistant tool subset (read + draft only). |
 | 8 | Audit log of tool calls visible to CEO? | **Yes**: existing audit logger already records; add read-only `fnb_audit_log` viewer tool for the CEO assistant. |
 | 9 | Which model, what cost per question? | DeepSeek (low cost) for analysis; Jev for decisions; cost estimates in implementation plan §7. |
-| 10 | A4 image API later, or prompts only? | **Prompts only** for the demo (A4-05); `image-production` toolkit wiring deferred, flagged as Phase 8 optional. |
+| 10 | A4 image API later, or prompts only? | **Included in the plan.** A4 keeps the prompt-first workflow (A4-01…A4-05) for the demo, but the existing `image-production` toolkit is wired into A4's allowlist: `generate_image_ai`, `generate_image_variations`, `image_inpainting` and `text_to_image_prompt_optimizer` (prompt refinement from the character bible). Per the spec's Tools & permissions sheet ("Generate image — Off — None in demo. CEO uses ChatGPT"), the tools sit behind the ACT-tier gate, **default Off for the demo** and enableable per-assistant by flipping the tool switch — no code change. Posting remains the CEO's job (A4-05) regardless. |
 
 ### 4.10 Demo data workbook (`Surf_Club_Midigama_-_Demo_Data.xlsx`)
 
@@ -444,7 +444,10 @@ Applying that split to the 17 tables:
 
 - No POS/ERP integrations, no WhatsApp/email sending, no supplier ordering, no
   record editing (per spec: ACT tier off).
-- No image generation in the demo; A4 returns prompts only.
+- No image generation **enabled** in the demo — the spec keeps "Generate image"
+  default-off and A4 returns prompts only (A4-05). The `image-production` tool
+  wiring itself **is in scope** (ACT-tier, default Off, enableable per assistant);
+  see open-question resolution 10 and implementation-plan Phase 8.
 - No native WordPress data tables in Phase 1 — Google Sheets adapter only, with
   the CPT/CCT native storage layer (§5.8) and import bridge designed but built
   post-demo.
