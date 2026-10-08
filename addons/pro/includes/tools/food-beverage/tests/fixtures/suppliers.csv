@@ -1,0 +1,9 @@
+Supplier ID,Supplier,Supplies,Delivery days,Lead time,Order cut-off,Payment terms (days)
+SUP-01,Weligama Fish Traders,Seafood,"Mon, Wed, Fri, Sat",1 day,"12:00 the day before. Delivers Mon, Wed, Fri, Sat",7
+SUP-02,Southern Meats and Poultry,Meat and poultry,"Tue, Fri",2 days,12:00 two days before. Delivers Tue and Fri,14
+SUP-03,Matara Fresh Produce,"Fruit, vegetables and herbs","Mon, Tue, Wed, Thu, Fri, Sat",1 day,15:00 the day before. Delivers Mon to Sat,14
+SUP-04,Galle Dairy and Bakery,"Dairy, eggs, bread, milk","Mon, Wed, Fri",1 day,"14:00 the day before. Delivers Mon, Wed, Fri",14
+SUP-05,Ruhuna Dry Goods,"Rice, pasta, oils, spices, syrups",Mon,3 days,Friday 17:00 for Monday,30
+SUP-06,Southern Wine and Spirits,Spirits and wine,Mon,4 days,Thursday 17:00 for Monday,30
+SUP-07,Lanka Beverage Distributors,"Beer, soft drinks, king coconut",Tue,2 days,Sunday 17:00 for Tuesday,30
+SUP-08,Hill Country Coffee,Coffee and matcha,Wed,3 days,Sunday 17:00 for Wednesday,30
