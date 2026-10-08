@@ -157,18 +157,16 @@
 
 Real-time AI Orchestration Toolkit / Harness for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 18 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Azure, Ollama, LM Studio, Hugging Face, and TypeSafe Jev (decision-only), plus local WebLLM and embedded engines.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-### ✨ What's New at a Glance (v1.1.99)
+### ✨ What's New at a Glance (v1.2.1)
 
-- 🧩 **SPA UI stack enhancement (PR #6952, Proposal 060).** toolkit-shell **0.2.0 → 0.3.0** — Radix Dialog/ConfirmDialog/DropdownMenu/Select/Tabs/Checkbox + CVA Button primitives, a TanStack TableView (sortable, accessible ConfirmDialog deletes), a @dnd-kit KanbanView (persisted reorder + cross-column moves), a react-hook-form + zod FormView built at runtime from the manifest, sonner toasts, 14 `--nds-*` design tokens, and an ESLint dual-React guard; schedule-anything-spa → **0.2.0** — Tailwind v4, 16 shadcn-style primitives, @xyflow/react v12, route-level code splitting, `@wordpress/i18n`, axe + jsx-a11y gate. Shipped test suites: 31/31 + 23/23.
-- 🔐 **MCP Gateway OAuth 2.1 resource server (PR #6945, Phase 1).** RFC 9728 metadata (`/.well-known/oauth-protected-resource` + `/mcp` variant), `WWW-Authenticate` challenges with scopes, zero-dependency JWT validation (RS256/384/512 + ES256/384, JWKS cache, strict iss/aud/exp/nbf/scope, fail-closed), scope-based site binding (`site:<slug>`), and **no token passthrough** — OAuth tokens never travel upstream. Inert (404 / unchanged 401s) until `GATEWAY_OAUTH_ISSUER` is set. Phases 2–5 (Auth0 provisioning, PKCE e2e, registry submission, deployment guide) deferred.
-- 🎮 **Docs Hub Playground demo + wp.org Live Preview (PRs #6944, #6946–#6949).** Local-first demo blueprints (`seed-content.php` + standalone `demo.json` + the Live Preview `blueprint.json`), the self-activate loader fix (the preview installs without activating — both runPHP steps now activate with an `include_once` fallback), a 10-page plugin-wiki seed, the full-page `/docs/` SPA demo (zero-margin full-bleed), and the Playground badge.
-- 🔧 **Gateway listing prep, icon & Claude Code plugin (PRs #6941–#6943).** GPL-3.0 `LICENSE` + `license` field + the directory-submission doc, the `mcp-gateway.svg` landing icon (+ `/assets` static serving), and the `.claude-plugin` manifest + `/connect` command (marketplace via the mirror sync).
-- 🔍 **Figma Agent Skills in the default catalogues (PR #6938).** `figma/mcp-server-guide` joins the Pro Skill Catalogue default sources (14 Figma skills + 2 workflow skills) with name-dedupe in `normalise_manifest_skills()` (the figma repo mirrors the same skills in two trees); CG Pro mirror carries the documented per-mode deviations. **Fixed in the same release (follow-up):** subfolder sidecars install (`references/`/`scripts/` trees, non-executable extensions, 40-file cap), GitHub token support (constant → filter → `github_access_token` setting) with anonymous enrichment capped at 10 skills and stopped on the first 403/429, and the empty `VoltAgent/awesome-agent-skills` default removed.
-- 🐞 **Gmail body extraction fixed (PR #6939).** Empty-part skipping, `text/plain` ↔ `text/html` fallback, `message/rfc822` recovery for forwarded emails, base64 decoding, and actionable `body_source` / `body_empty_reason` fields.
-- 📦 **Complete-ZIP blueprint stripping fixed (PRs #6936, #6940).** The 1.1.98 Complete ZIP shipped 0 of 65 blueprint JSONs — `bin/build-plugin-zip.sh` and `release.yml` carried their own unanchored `--exclude 'examples'`; both root-anchored with a hard CI guard.
-- 🛡 **Security & fixes.** Fleet Operator tokens are no longer printed in plaintext (readonly password input + collapsed credential blocks, #6950); the media worker's synthetic external targets (`STATUS_EXTERNAL_TARGETS`) + the split-brain `checkedAt` fix and sweeper `downSince` clear (#6941); the docs-hub rsync line-continuation build abort (#6951).
-- 📝 **Docs (PR #6947).** `mcp-ai-wpoos-test-suite` gains pattern 67, `mcp-ai-wpoos-playground-demos` gains the docs-hub demo, `mcp-ai-wpoos-wporg-submission` gains the Live Preview blueprints section, and the `nvoos-operations` + `mcp-gateway` addon skills are updated.
-- 📦 **Versioning** — bumped to **1.1.99** across all version-bearing files. Pro addon: 1.1.99. **Toolkit Shell: 0.2.0 → 0.3.0**; **Schedule Anything SPA: 0.1.0 → 0.2.0**. **MCP Gateway: 0.1.1** (unchanged — the five gateway PRs ride the shipped line). Media Worker: **3.4.0** (unchanged — the bump is release-process-owned). Docs Hub addon: **0.5.1** (unchanged). Fleet Operator: **1.0.0** (unchanged). Model catalog: **v2026.10.03** (unchanged). Tool count: **~352 base + ~1,313 Pro (~1,665 total — unchanged)** — zero registry-map diff in-window. Provider count: **18** (unchanged). Addon count: **30** (unchanged). Bundled skills: **76** base + **41** Pro (unchanged). Coding-time agent skills: **63** (unchanged). Stale build ZIPs removed: the 1.1.97 oOS set (6 files) + the superseded `nvoos-toolkit-shell-v0.2.0.zip` (the v0.3.0 ZIP built by the `build-spa-addons` run and committed to alpha-working — the workflow adds without deleting the old one).
+- 🍽 **Food & Beverage Management Pro Toolkit (PR #6962, Proposal 062).** 21 `fnb_*` Pro tools behind `enable_fnb_toolkit` (default off) — deterministic metrics (M-01…M-21 + Kasavana & Smith menu-engineering quadrants) over a 17-table registry with Drive/CSV readers, reports R-01…R-13, drafts-only writer; **20/20 Check-totals oracle PASS** against the demo workbook (food cost % 26.88%, beverage % 28.15%, total opex 9,988,745.79); 5 schedule + 2 workflow presets. Phases 4/5b/6/8/9/10 deferred per the implementation plan.
+- 📄 **Docs Hub content management tools (PR #6964).** Five `docs_hub_*` Pro tools (write/read/list/delete/rebuild) over the Docs Hub uploads content folder with traversal-safe path validation (realpath containment, 2 MB cap) and graceful degradation when the plugin is inactive.
+- 🪪 **MCP server identity discovery (PR #6956).** The `mcp_server_info` base tool (non-sensitive payload by design) + the `list_mcp_tools` `_meta` identity block + the `X-MCP-Bridge-Name` seam — informational only, never used for authorization.
+- 💳 **Docs Hub checkout upsell (PR #6963 — addon 0.5.1 → 0.5.2).** The Content Graph commerce stack ports into the wp.org Docs Hub plugin (admin-only vendor REST with per-user throttling + the already-licensed short-circuit, on-demand Stripe modal with ToS/refund consent + EU VAT, `== External Services ==` disclosure). Follow-up: tag `docs-hub-v0.5.2` + SVN upload.
+- 🐞 **Fixes.** Skill-catalogue gaps closed (#6954 — sidecar installs, GitHub token support, VoltAgent default removed; notes under the 1.1.99 entry) and the Elementor partial-deploy warning flood (#6961 — `class_exists( $widget_class, false )`).
+- 📦 **Sub-projects.** nvoos-content-graph **1.0.8 → 1.0.9** (#6959, PCP 0 errors) + the checkout-modal polish (#6958); Proposal 061 (MCP registry publishing) Phase 2 executed.
+- 📝 **Skills.** Three new coding-time skills (spa-ui, toolkit-creation, checkout-integration — 63 → 66) + the content-graph 1.0.9 lessons in wporg-submission/test-suite (#6960).
+- 📦 **Versioning** — bumped to **1.2.1** across all version-bearing files (the version-jump decision — the ROADMAP's planned 1.2.0 scope was delivered early across v1.1.1–v1.1.35, so the first 1.2-line release is numbered 1.2.1). Pro addon: 1.2.1. **nvoos-content-graph: 1.0.8 → 1.0.9** (sub-project track). **Docs Hub addon: 0.5.1 → 0.5.2**. Toolkit Shell: **0.3.0** (unchanged). Schedule Anything SPA: **0.2.0** (unchanged). MCP Gateway: **0.1.1** (unchanged). Media Worker: **3.4.0** (unchanged). Fleet Operator: **1.0.0** (unchanged). Model catalog: **v2026.10.03** (unchanged). Tool count: **~353 base + ~1,339 Pro (~1,692 total — +1 base +26 Pro)**. Provider count: **18** (unchanged). Addon count: **30** (unchanged). Bundled skills: **76** base + **41** Pro (unchanged). Coding-time agent skills: **66** (63 → 66 in-window). Stale build ZIPs removed: the 1.1.98 oOS set (30 files).
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -233,7 +231,7 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
 - **18 language-model providers** — OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Azure, Ollama, LM Studio, Hugging Face, TypeSafe Jev (decision-only), plus local WebLLM + embedded engines
-- **~1,665 tool classes** (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
+- **~1,692 tool classes** (~353 base + ~1,339 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
 - **36 REST controllers** (16 base + 20 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
 - **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
@@ -1152,11 +1150,11 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all ~1,665 tools (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+2. You now have the **complete version** with all ~1,692 tools (~353 base + ~1,339 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **What you get from the repository clone:**
 
-- ✅ The full codebase — all ~1,665 built-in tools ready to use (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- ✅ The full codebase — all ~1,692 built-in tools ready to use (~353 base + ~1,339 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -1385,12 +1383,12 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (18 providers, ~1,665 tool classes, 36 REST controllers)
+- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (18 providers, ~1,692 tool classes, 36 REST controllers)
 - **[Request Flow Walkthrough](docs/developer/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,665 tools documented (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,692 tools documented (~353 base + ~1,339 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
