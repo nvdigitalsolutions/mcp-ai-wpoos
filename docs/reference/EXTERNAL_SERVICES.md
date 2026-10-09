@@ -748,7 +748,7 @@ These services are used by the Remote Sites system (NV oOS Pro addon) when remot
 - **Google Privacy Policy:** https://policies.google.com/privacy
 - **Google API Terms of Service:** https://developers.google.com/terms
 - **Drive API Docs:** https://developers.google.com/drive/api/v3/reference
-- **Data Usage:** Only read-only scopes (`drive.readonly`, `drive.metadata.readonly`) are requested
+- **Data Usage:** Only the non-sensitive per-file scope (`drive.file`) is requested by default; full-Drive read scopes are opt-in via the `wp_mcp_ai_google_drive_oauth_scope` filter
 
 **Related Files:**
 - `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-search-drive.php`

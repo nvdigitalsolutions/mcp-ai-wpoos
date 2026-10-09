@@ -3,8 +3,8 @@
  * Google Calendar OAuth scope registry (Wave E4, sub-cluster 3).
  *
  * Aligned port of the base plugin's `WP_MCP_AI_Google_Calendar_Scopes`:
- * byte-identical profile constants (minimal / standard / full with the
- * standard default), the eight scope URL constants, the profile registry
+	 * byte-identical profile constants (minimal / standard / full with the
+	 * minimal default), the eight scope URL constants, the profile registry
  * with its `wp_mcp_ai_google_calendar_scope_profiles` filter, profile
  * normalisation, scope-string builders, labels/descriptions, the
  * verification flag, the %20-normalising `parse_granted()`, the implied
@@ -57,7 +57,7 @@ class GoogleCalendarScopes {
 	 *
 	 * @var string
 	 */
-	const DEFAULT_PROFILE = self::PROFILE_STANDARD;
+	const DEFAULT_PROFILE = self::PROFILE_MINIMAL;
 
 	/**
 	 * Scope: create and manage app-created secondary calendars only.

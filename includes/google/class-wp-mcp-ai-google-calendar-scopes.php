@@ -60,7 +60,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Scopes' ) ) {
 		 *
 		 * @var string
 		 */
-		const DEFAULT_PROFILE = self::PROFILE_STANDARD;
+		const DEFAULT_PROFILE = self::PROFILE_MINIMAL;
 
 		/**
 		 * Scope: create and manage app-created secondary calendars only.
