@@ -208,14 +208,25 @@
 	color: var(--nvoos-danger, #d63638);
 }
 
+/* The toggle lives outside the sidebar (EmbeddedApp renders it as a sibling
+   of the <aside>), so it stays visible when the sidebar is collapsed and the
+   sidebar can always be reopened — mirroring the admin SPA's always-present
+   status-bar hamburger. */
 .nvoos-pro-spa-embedded__sidebar-toggle {
-	background: none;
+	flex: 0 0 40px;
+	width: 40px;
+	min-width: 40px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	background: var(--nvoos-bg, #f0f0f1);
 	border: none;
-	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	border-right: 1px solid var(--nvoos-border, #dcdcde);
 	color: var(--nvoos-text-secondary, #787c82);
 	cursor: pointer;
 	font-size: 16px;
-	padding: 8px;
+	padding: 10px 0;
 }
 
 .nvoos-pro-spa-embedded__sidebar-toggle:hover {
@@ -252,6 +263,17 @@
 		flex-direction: column;
 		height: auto;
 		min-height: 480px;
+	}
+
+	.nvoos-pro-spa-embedded__sidebar-toggle {
+		flex: none;
+		width: 100%;
+		min-width: 0;
+		flex-direction: row;
+		justify-content: flex-start;
+		border-right: none;
+		border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+		padding: 8px 12px;
 	}
 
 	.nvoos-pro-spa-embedded__sidebar {

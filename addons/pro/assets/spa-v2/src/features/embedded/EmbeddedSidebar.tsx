@@ -12,7 +12,6 @@
 import { useMemo, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 
-import { useUIStore } from '../../stores/uiStore';
 import { useAssistantStore } from '../../stores/assistantStore';
 import { useModelStore } from '../../stores/modelStore';
 import { readProSpaConfig } from '../../api/config';
@@ -51,9 +50,6 @@ function sessionLabel( session: TranscriptSession ): string {
 }
 
 export function EmbeddedSidebar( { transcripts }: EmbeddedSidebarProps ): JSX.Element {
-	const sidebarOpen = useUIStore( ( s ) => s.sidebarOpen );
-	const toggleSidebar = useUIStore( ( s ) => s.toggleSidebar );
-
 	// ---- assistant switcher (config.assistantSelector && logged-in) -------
 	const runtime = useMemo( () => readProSpaConfig(), [] );
 	const selectorEnabled = !!(
@@ -82,6 +78,7 @@ export function EmbeddedSidebar( { transcripts }: EmbeddedSidebarProps ): JSX.El
 	return (
 		<aside
 			className="nvoos-pro-spa-embedded__sidebar"
+			id="nvoos-pro-spa-embedded-sidebar"
 			aria-label={ __( 'Conversations', 'nvoos-pro-spa' ) }
 		>
 			<div className="nvoos-pro-spa-embedded__sidebar-header">
@@ -199,19 +196,6 @@ export function EmbeddedSidebar( { transcripts }: EmbeddedSidebarProps ): JSX.El
 				</ul>
 			) }
 
-			<button
-				type="button"
-				className="nvoos-pro-spa-embedded__sidebar-toggle"
-				onClick={ toggleSidebar }
-				aria-expanded={ sidebarOpen }
-				aria-label={
-					sidebarOpen
-						? __( 'Close conversations', 'nvoos-pro-spa' )
-						: __( 'Open conversations', 'nvoos-pro-spa' )
-				}
-			>
-				☰
-			</button>
 		</aside>
 	);
 }

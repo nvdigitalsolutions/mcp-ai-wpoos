@@ -13,6 +13,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import { useUIStore } from '../../stores/uiStore';
 import { useModelStore } from '../../stores/modelStore';
 import { useTranscripts } from '../../hooks/useTranscripts';
+import { useStorageUsage } from '../../hooks/useStorageUsage';
 
 export interface StatusBarProps {
 	/** Base URL for the transcripts REST endpoint. */
@@ -79,25 +80,10 @@ export function StatusBar( props: StatusBarProps ): JSX.Element {
 	);
 
 	// ── localStorage quota (v2.1.0) ────────────────────────────────────
-	const storageUsed = useMemo( () => {
-		if ( typeof window === 'undefined' ) return 0;
-		let total = 0;
-		try {
-			for ( let i = 0; i < localStorage.length; i++ ) {
-				const key = localStorage.key( i );
-				if (
-					key?.startsWith( 'wp_mcp_ai_' ) ||
-					key?.startsWith( 'nvoos-chat-spa' ) ||
-					key?.startsWith( 'nvoos-pro-spa' )
-				) {
-					total += ( localStorage.getItem( key ) ?? '' ).length;
-				}
-			}
-		} catch {
-			// Ignore storage access errors.
-		}
-		return total;
-	}, [ sessions ] );
+	// Re-read on the transcripts refresh *and* on a light interval so the
+	// figure tracks the growing chat history instead of freezing at the
+	// value captured on mount.
+	const storageUsed = useStorageUsage( sessions );
 
 	// ---- render ----
 	return (

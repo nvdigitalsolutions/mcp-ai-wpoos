@@ -8,13 +8,14 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, waitFor, fireEvent } from '@testing-library/react';
 
 import { readProSpaConfig, applyPerInstanceConfig } from '../api/config';
 import { createChatFetch } from '../sse-adapter';
 import { EmbeddedApp } from '../features/embedded/EmbeddedApp';
 import { useModelStore } from '../stores/modelStore';
 import { useAssistantStore } from '../stores/assistantStore';
+import { useUIStore } from '../stores/uiStore';
 
 const VALID_RUNTIME = {
 	apiUrl: 'https://example.com/wp-json/',
@@ -58,6 +59,7 @@ afterEach( () => {
 	useModelStore.getState().setModel( { provider: 'openai', model: 'gpt-4o' } );
 	useModelStore.getState().setAvailableModels( [] );
 	useAssistantStore.setState( { assistantId: 0, assistants: [] } );
+	useUIStore.setState( { sidebarOpen: true } );
 } );
 
 describe( 'applyPerInstanceConfig', () => {
@@ -186,6 +188,56 @@ describe( 'EmbeddedApp', () => {
 				container.querySelector( '.nvoos-pro-spa-embedded__layout' )
 			).not.toBeNull();
 		} );
+	}, 15000 );
+
+	it( 'keeps the sidebar toggle mounted after collapsing the sidebar', async () => {
+		setRuntime( VALID_RUNTIME );
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue( { ok: false, body: null } )
+		);
+
+		const { container } = render( <EmbeddedApp /> );
+
+		await waitFor( () => {
+			expect(
+				container.querySelector( '.nvoos-pro-spa-embedded__layout' )
+			).not.toBeNull();
+		} );
+
+		const layout = container.querySelector( '.nvoos-pro-spa-embedded__layout' );
+		expect( layout ).not.toBeNull();
+
+		const toggle = screen.getByLabelText( 'Close conversations' );
+		expect( toggle.getAttribute( 'aria-expanded' ) ).toBe( 'true' );
+		expect(
+			layout!.classList.contains(
+				'nvoos-pro-spa-embedded__layout--sidebar-hidden'
+			)
+		).toBe( false );
+
+		fireEvent.click( toggle );
+
+		// Collapsed: the layout hides the sidebar, but the same toggle stays
+		// mounted (outside the <aside>) so the sidebar can be reopened.
+		expect(
+			layout!.classList.contains(
+				'nvoos-pro-spa-embedded__layout--sidebar-hidden'
+			)
+		).toBe( true );
+		expect( toggle.getAttribute( 'aria-expanded' ) ).toBe( 'false' );
+		expect(
+			screen.getByLabelText( 'Open conversations' )
+		).toBe( toggle );
+
+		fireEvent.click( screen.getByLabelText( 'Open conversations' ) );
+
+		expect(
+			layout!.classList.contains(
+				'nvoos-pro-spa-embedded__layout--sidebar-hidden'
+			)
+		).toBe( false );
 	}, 15000 );
 
 	it( 'skips the cron-status stream when cronMonitor is false', async () => {
