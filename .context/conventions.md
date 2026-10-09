@@ -48,7 +48,7 @@ includes/
 │                                        → cron → hooks → loader → activation
 ├── class-wp-mcp-ai-plugin.php         ← Main singleton + DI container wiring
 ├── class-wp-mcp-ai-container.php      ← Service locator / DI
-│   ├── tools/                             ← ~347 base tools; ~347 enabled in base mode
+│   ├── tools/                             ← ~353 base tools; ~353 enabled in base mode
 │   ├── class-wp-mcp-ai-tool-{name}.php
 │   ├── okf/                            ← OKF knowledge tools (10 tools)
 │   └── orchestration/                 ← Multi-tool orchestration

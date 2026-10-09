@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live; nvoos-content-graph live in the re-submission loop; nvoos-design-system next in the pipeline — issue #6811). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy from the real 0.4.3 review, related-issue sweep checklist, reply-email template), packaging exclusion tri-sync, readme.txt standards, .wordpress-org listing assets, and the NV oOS Complete checkout-flow disclosure discipline (docs-hub 0.5.2, content-graph). Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, triaging PCP findings, or capturing listing screenshots."
+description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live at 0.5.3; nvoos-content-graph live at 1.0.10 in the re-submission loop; nvoos-design-system next in the pipeline — issue #6811). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy from the real 0.4.3 review, related-issue sweep checklist, reply-email template), packaging exclusion tri-sync, readme.txt standards, .wordpress-org listing assets, and the NV oOS Complete checkout-flow disclosure discipline (docs-hub 0.5.3, content-graph). Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, triaging PCP findings, or capturing listing screenshots."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -18,9 +18,11 @@ real reviewer-reply pass (0.4.3 → 0.4.4, PR #6606 — all findings fixed plus
 a related-issue sweep), the second reviewer-reply pass (0.4.4 → 0.4.5 —
 remote-call service framing + the initial-dir symlink residual), the third
 reviewer-reply pass (0.4.6 → 0.4.7 — readme-only "Tested up to" +
-cron-on-init fix), and the docs-hub 0.5.2 checkout-integration
+cron-on-init fix), the docs-hub 0.5.2 checkout-integration
 pre-submission pass (PR #6963 — commerce disclosures, five-screenshot
-listing set, capture-environment pitfalls). Covers everything between "this
+listing set, capture-environment pitfalls), and the docs-hub 0.5.3
+rebuild-reliability pre-submission pass (PRs #6967/#6968 — PCP 0 blocking
+errors, 0.5.3 live on the directory). Covers everything between "this
 plugin should ship to wp.org" and "the reviewer approves it".
 
 ## When to use this skill
@@ -244,13 +246,15 @@ ZIP-shaped tree, Linux volume): **~31k ERRORs, ~3.9k WARNINGs**, dominated by
 `WordPress.WP.I18n.TextDomainMismatch` (~30.9k — repo domain `mcp-ai-wpoos`
 vs expected `wp-mcp-ai`/wp.org slug). This is a known backlog for the
 submission track, NOT something to allowlist. The docs-hub ZIP is clean
-(0.5.2 checkout pass, PR #6963: 0 blocking errors, 1 documented warning).
+(0.5.2 checkout pass, PR #6963, and 0.5.3 rebuild-reliability pass, PR #6968:
+0 blocking errors, 1 documented warning — the `NonPrefixedTraitFound` trait;
+0.5.3 is live on the directory).
 
 ### Known PCP findings triage
 
 | Code | Verdict | Handling |
 |---|---|---|
-| `PluginCheck.CodeAnalysis.Offloading.OffloadedContent` | False positive | Allowlist — flags literal `raw.githubusercontent.com` hosts in the SSRF-hardened, host-allowlisted remote fetcher (disclosed in `readme.txt == External Services ==`). On docs-hub 0.5.2 the rows come from `blueprints/seed-content.php` (the Playground demo seed) — the PCP staging includes `blueprints/`, the real ZIP excludes it, so those rows never ship |
+| `PluginCheck.CodeAnalysis.Offloading.OffloadedContent` | False positive | Allowlist — flags literal `raw.githubusercontent.com` hosts in the SSRF-hardened, host-allowlisted remote fetcher (disclosed in `readme.txt == External Services ==`). On docs-hub 0.5.2/0.5.3 the rows come from `blueprints/seed-content.php` (the Playground demo seed) — the PCP staging includes `blueprints/`, the real ZIP excludes it, so those rows never ship |
 | `WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedTraitFound` | Intentional (docs-hub) | Warning only — the `WP_MCP_AI_Inline_Async_Tick_Trait` stub must carry the BASE plugin's trait name so the real trait replaces it when NV oOS is active |
 | `WordPress.WP.I18n.TextDomainMismatch` | Real blocker (base) | Text domain must equal the wp.org slug/dir name; the repo domain is `mcp-ai-wpoos`. Needs the slug migration track — do not allowlist |
 | `no_plugin_readme` | Real or mount artifact | readme.txt must sit at the ZIP root. If it does and PCP still fires, suspect the bind-mount truncation (pitfall 5) |
@@ -272,7 +276,11 @@ owner-side steps: standalone repo, subtree-sync workflow + deploy token
 ### Third standalone plugin: nvoos-content-graph (live + re-submission loop)
 
 Content Graph is LIVE on the directory (first approved as 1.0.3; 1.0.7
-signoff uploaded; 1.0.8 released; 1.0.9 pre-upload pass PR #6959). It
+signoff uploaded; 1.0.8 released; 1.0.9 pre-upload pass PR #6959; 1.0.10
+released — the excluded-sources prune fix, PR #6973: `pruneExcludedSources()`
++ chunked `pruneNodesByTypes()`, changelog + readme entries in-window;
+operational note — run Rebuild Graph once after deploying 1.0.10 so
+already-indexed excluded CCTs/CPTs get pruned). It
 carries its own review-artifact convention next to the docs-hub one:
 
 - `plugins/nvoos-content-graph/WPORG-REVIEW-{FINDINGS,REPLY,18POINT-SIGNOFF,DETAILED-REPORT,COMMERCE-NOTES}.md`
@@ -340,6 +348,41 @@ sweep results that extend the earlier passes:
 - **Listing screenshots grew to five** — screenshot-5 (Save button + upsell
   card) required updating BOTH `readme.txt == Screenshots ==` and the
   `.wordpress-org/README.md` asset table (see capture pitfalls below).
+
+### Fifth pass: docs-hub 0.5.3 — rebuild reliability (PRs #6967/#6968)
+
+0.5.3 fixed the index wipe bug (settings saves / plugin updates cleared the
+live cache and relied on the async chunked rebuild — standalone installs with
+`DISABLE_WP_CRON` stalled silently) and passed the full 18-guideline review:
+
+- **No-clear rebuild model** — the pipeline builds into a staging namespace
+  and promotes it atomically; `on_settings_changed()` /
+  `maybe_rebuild_after_version_change()` no longer clear the live cache (they
+  cancel in-flight rebuilds first); update/activation handlers call
+  `enqueue_async()` directly (`clear_and_enqueue()` is a deprecated no-clear
+  wrapper); `maybe_schedule_shutdown_tick()` keeps cron-less installs
+  progressing on each admin visit/save. Readers keep serving the previous
+  index during a rebuild.
+- **PCP profile (0.5.3):** `PCP_EXIT:0`, `BLOCKING_ERRORS:0` — only the 5
+  allowlisted `OffloadedContent` rows (dev-only blueprint seed, excluded from
+  the real ZIP) + the documented `NonPrefixedTraitFound` warning. The
+  `== External Services ==` automatic-rebuild-trigger list still matches the
+  code exactly; no new hosts, notices, remote JS/CSS, translatable strings,
+  or packaging-exclusion changes (tri-sync verified); `WPORG-REVIEW-
+  COMMERCE-NOTES.md` records that 0.5.3 carries no commerce-surface changes.
+- **Version sweep discipline (seven locations)** — plugin header,
+  `NVOOS_DOCS_HUB_VERSION`, readme.txt `Stable tag` + `== Changelog ==` +
+  `== Upgrade Notice ==` entries, POT `Project-Id-Version`, addon
+  `CHANGELOG.md`, `.wordpress-org/README.md` SVN runbook examples — all
+  0.5.3 (the 0.5.2 heading-swallow lesson applies again here).
+- **Release wiring lesson (#6970)** — the tag-push flow that should have
+  built + released 0.5.3 was broken two ways (the `on.push` `tags` + `paths`
+  AND combination never fired, and the dispatch `if` compared a string
+  `'true'` to boolean `true`); 0.5.3 shipped via the dispatch path and the
+  fixed `release-spa-addons.yml` now handles future `docs-hub-vX.Y.Z` tags
+  (build + PCP gate + GitHub release — no publish-back onto the tag).
+- **0.5.3 is LIVE on the wp.org directory** (2026-10-09) — the docs-hub SVN
+  loop now tracks 0.5.3; future passes diff against it.
 
 ## The reviewer reply pass (0.4.3 → 0.4.4, PR #6606)
 

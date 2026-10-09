@@ -19,7 +19,7 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.2.1 (October 2026)
+**Current version:** 1.2.2 (October 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
 **Total tools:** ~1,692 (~353 base + ~1,339 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
@@ -104,16 +104,16 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 |---|---|---|---|
 | **Pro** | (live) | Proprietary | 32 toolkits, ~1,339 tools, commercial license. E-commerce, CRM, document generation, media, healthcare, legal, scheduling, analytics. |
 | **Graphify** | 0.6.0 | Proprietary | Knowledge graph builder. Entities, relationships, WooCommerce/Wikidata/RSS/SPARQL/CSV drivers. |
-| **Chat SPA** | 0.6.0 | GPLv3 | React chat surface (Vercel AI SDK). Shortcode + Gutenberg block. |
-| **Docs Hub** | 0.5.2 | GPLv3 | React SPA documentation browser (GitBook-style Markdown rendering). 0.5.2 adds the NV oOS Complete checkout upsell (admin-only vendor REST, Stripe purchase modal, External Services disclosure). |
+| **Chat SPA** | 0.7.0 | GPLv3 | React chat surface (Vercel AI SDK). Shortcode + Gutenberg block. |
+| **Docs Hub** | 0.5.3 | GPLv3 | React SPA documentation browser (GitBook-style Markdown rendering). 0.5.2 added the NV oOS Complete checkout upsell (admin-only vendor REST, Stripe purchase modal, External Services disclosure); 0.5.3 fixed the checkout config-object name, made rebuilds reliable (live cache no longer cleared on settings saves/updates), and passed the wp.org pre-submission gate (PCP 0 blocking errors — **live on the directory**). |
 | **Algorave** | 1.0.7 | AGPL-3.0 | Live-coding music. Tone.js/Strudel, MIDI export, audio visualization. F-AI-01 accepted with rationale (raw-eval gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` + `edit_posts`; warning UI added). |
 | **Fantasy Football** | 0.1.0 | Proprietary | ESPN/Yahoo Fantasy Sports API. Team management, player research, trade analysis, AI logo generation. |
 | **Embedded** | 0.2.0 | Proprietary | Server-side llama.cpp GGUF inference + client-side WebLLM/WebGPU + P2P WebChat (WebRTC). Voice tool calling, OpenMed healthcare tools, MCP abilities. |
 | **Canvas** | 0.1.0 | Proprietary | Platform-specific Tesseract PDF OCR binaries. |
 | **Cornerstone3D** | 0.1.0 | Proprietary | Pre-built Cornerstone3D ESM bundles for DICOM medical imaging. |
-| **SaaS Controller** | 0.1.0 | Proprietary | Cloudflare Workers + D1 + KV + AI Gateway deployment toolkit. One-click wizard, Plan/Apply, drift detector. |
+| **SaaS Controller** | 0.3.0 | Proprietary | Cloudflare Workers + D1 + KV + AI Gateway deployment toolkit. One-click wizard, Plan/Apply, drift detector (0.3.0: Worker secrets + D1 schema folded into Plan/Apply). |
 | **Cloudways Dashboard** | 0.1.0 | GPLv3 | SaaS operator dashboard (Velzon-themed React SPA). Cloudways server + WP site management. |
-| **Comic Reader** | 0.2.0 | GPLv3 | CBR/CBZ/CB7/CBT comic reader & AI-powered creator. React reading interface. |
+| **Comic Reader** | 0.5.0 | GPLv3 | CBR/CBZ/CB7/CBT comic reader & AI-powered creator (Komga-parity upgrade: Range serving, archive validation, per-user progress, continue-reading). React reading interface. |
 | **Funiq Bridge** | 1.0.0 | GPLv3 | Payload CMS → WordPress bridge for Funiq React PWA. REST API, CPTs, taxonomies, React admin SPA. |
 | **LibreChat** | 0.1.0 | GPLv3 | Sandboxed Python/JavaScript code interpreter, TTS/STT speech services, web search reranker. |
 | **Fleet Operator** | 1.0.0 | GPLv3 | External-operator governance (Hermes or any MCP/A2A host). Scoped `op_` credentials with audience binding, expiry, rate limits, revocation; MCP `tools/list` scoping + `tools/call` enforcement; admin page, WP-CLI, Hermes YAML + Zed/VS Code/Claude Desktop config generators (`generate_zed_json()`/`generate_claude_json()` through the npx bridge), skills pack. |
@@ -124,10 +124,10 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 | Addon | Version | License | Notes |
 |---|---|---|---|
 | **Page Agent** | 0.1.0 | GPLv3 | Alibaba Page Agent (MIT) browser copilot. Natural-language page control — click, type, navigate. Client-side only. |
-| **MCP Gateway** | 0.1.0 | GPLv3 | Public fleet MCP endpoint (Express service, streamable HTTP MCP 2026-07-28). Public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, fail-closed env config. Subtree mirror to `nvoos-mcp-gateway`. |
+| **MCP Gateway** | 0.1.1 | GPLv3 | Public fleet MCP endpoint (Express service, streamable HTTP MCP 2026-07-28). Public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, fail-closed env config. Subtree mirror to `nvoos-mcp-gateway`. |
 | **Schedule Anything** | 0.1.0 | Proprietary | Full SaaS booking platform with Stripe, calendar management, multi-tenant architecture. |
-| **Schedule Anything SPA** | 0.1.0 | Proprietary | React SPA frontend (Vite + Tailwind) for Schedule Anything. |
-| **Crocoblock DS** | 0.1.0 | GPLv3 | Design token system. 55+ CSS tokens, admin editor, DTCG export, a11y tokens. |
+| **Schedule Anything SPA** | 0.2.0 | Proprietary | React SPA frontend (Vite + Tailwind v4) for Schedule Anything. |
+| **Design System** | 0.3.0 | GPLv3 | Design token system + token-driven email templates (formerly "Crocoblock DS" at `addons/crocoblock-ds/` — renamed 0.1.0 → 0.3.0). 55+ CSS tokens, admin editor, DTCG export, a11y tokens, 8 addon-provided email-template tools. |
 
 ### Blueprint-generated (minimal manual review)
 
@@ -135,8 +135,8 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 |---|---|---|---|
 | Canvas Toolkit | 0.2.0 | GPLv3 | SPA blueprint-generated canvas surface. |
 | Document Editor | 0.2.0 | GPLv3 | SPA blueprint-generated document editing surface. |
-| Media Studio | 0.1.0 | GPLv3 | SPA blueprint-generated media management (zoom/pan/drawing). |
-| Toolkit Shell | 0.2.0 | GPLv3 | Manifest-driven React SPA shell (CRM, calendar, financial, legal, ecommerce toolkits). |
+| Media Studio | 0.6.1 | GPLv3 | SPA blueprint-generated media management (zoom/pan/drawing) with the AI fashion-production suite (0.6.0). |
+| Toolkit Shell | 0.3.0 | GPLv3 | Manifest-driven React SPA shell (CRM, calendar, financial, legal, ecommerce toolkits). |
 
 ### Non-WordPress components (reference only)
 
