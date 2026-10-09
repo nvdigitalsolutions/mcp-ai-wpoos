@@ -363,6 +363,16 @@ final class Plugin {
 			return;
 		}
 
+		// Respect the Sources tab: posts of excluded / opt-out post types
+		// must not be indexed on save (they would immediately contradict
+		// the exclusion until the next full build prunes them).
+		if ( class_exists( 'NvoosContentGraph\Graph\Detector' ) ) {
+			$indexed = \NvoosContentGraph\Graph\Detector::getIndexedPostTypes();
+			if ( ! in_array( $post->post_type, $indexed, true ) ) {
+				return;
+			}
+		}
+
 		if ( class_exists( 'NvoosContentGraph\Graph\Builder' ) ) {
 			$builder = new \NvoosContentGraph\Graph\Builder();
 			$builder->buildPost( $post );

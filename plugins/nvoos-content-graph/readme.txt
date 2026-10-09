@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.9
+Stable tag: 1.0.10
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -168,6 +168,11 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
+
+= 1.0.10 — 2026-10-09 =
+* Excluded sources are now removed from the graph on rebuild: un-checking a post type or JetEngine Custom Content Type on the Sources tab prunes its existing nodes and edges on the next Rebuild Graph run
+* Opt-in post types are now captured: post types checked on the Sources tab (e.g. JetEngine CPTs) are merged into detection instead of being silently ignored, and exclusions are honored
+* Auto-rebuild on post save no longer indexes posts of excluded post types
 
 = 1.0.9 — 2026-10-08 =
 * Loading indicator in the purchase modal: the pay area shows a spinner until Stripe's Payment Element mounts, so slower sites never present an empty card slot

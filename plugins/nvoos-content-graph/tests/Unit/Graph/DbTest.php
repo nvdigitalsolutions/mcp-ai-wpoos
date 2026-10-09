@@ -245,4 +245,55 @@ class DbTest extends TestCase {
 
 		$this->assertSame( array(), Db::getEdgesForNode( 'post_1' ) );
 	}
+
+	/** @test */
+	public function pruneNodesByTypesReturnsZeroWhenEmptyTypes(): void {
+		$this->mockWpdb->expects( $this->never() )
+			->method( 'query' );
+
+		$this->assertSame(
+			array(
+				'nodes' => 0,
+				'edges' => 0,
+			),
+			Db::pruneNodesByTypes( array() )
+		);
+	}
+
+	/** @test */
+	public function pruneNodesByTypesDeletesEdgesThenNodes(): void {
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_col' )
+			->willReturn( array( 'cct_foo_1', 'cct_foo_2' ) );
+
+		$this->mockWpdb->expects( $this->exactly( 2 ) )
+			->method( 'query' )
+			->willReturn( 3, 2 );
+
+		$this->assertSame(
+			array(
+				'nodes' => 2,
+				'edges' => 3,
+			),
+			Db::pruneNodesByTypes( array( 'cct_foo' ) )
+		);
+	}
+
+	/** @test */
+	public function pruneNodesByTypesReturnsZeroWhenNoMatchingNodes(): void {
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_col' )
+			->willReturn( array() );
+
+		$this->mockWpdb->expects( $this->never() )
+			->method( 'query' );
+
+		$this->assertSame(
+			array(
+				'nodes' => 0,
+				'edges' => 0,
+			),
+			Db::pruneNodesByTypes( array( 'jet_book' ) )
+		);
+	}
 }

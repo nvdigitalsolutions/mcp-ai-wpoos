@@ -444,6 +444,72 @@ class Db {
 		$wpdb->delete( self::nodesTable(), array( 'node_id' => sanitize_text_field( $nodeId ) ), array( '%s' ) );
 	}
 
+	/**
+	 * Delete every node whose type is in the provided list, plus the
+	 * edges touching those nodes.
+	 *
+	 * Used by the Builder to remove content of sources excluded in
+	 * settings (unchecked CPTs and CCTs) so exclusion actually removes
+	 * previously indexed content instead of only stopping new rows.
+	 *
+	 * @since 1.0.10
+	 *
+	 * @param string[] $types     Node types to remove (e.g. 'cct_ai_chat_agent_memories', 'jet_book').
+	 * @param bool     $postsOnly When true, only delete rows with post_id > 0,
+	 *                            so a post-type slug can never collide with the
+	 *                            zero-ID node families (memory/agent/entity).
+	 * @return array{nodes: int, edges: int} Deleted row counts.
+	 */
+	public static function pruneNodesByTypes( array $types, bool $postsOnly = false ): array {
+		$types = array_values( array_unique( array_filter( array_map( 'sanitize_key', $types ) ) ) );
+		if ( empty( $types ) ) {
+			return array(
+				'nodes' => 0,
+				'edges' => 0,
+			);
+		}
+
+		global $wpdb;
+		$nodesTable  = self::nodesTable();
+		$edgesTable  = self::edgesTable();
+		$typePh      = implode( ',', array_fill( 0, count( $types ), '%s' ) );
+		$postIdGuard = $postsOnly ? ' AND post_id > 0' : '';
+
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+		$nodeIds = $wpdb->get_col(
+			$wpdb->prepare( "SELECT node_id FROM {$nodesTable} WHERE type IN ({$typePh}){$postIdGuard}", ...$types )
+		);
+        // phpcs:enable
+		if ( empty( $nodeIds ) || ! is_array( $nodeIds ) ) {
+			return array(
+				'nodes' => 0,
+				'edges' => 0,
+			);
+		}
+
+		$edgesDeleted = 0;
+		$nodesDeleted = 0;
+
+		foreach ( array_chunk( $nodeIds, 500 ) as $chunk ) {
+			$chunkPh  = implode( ',', array_fill( 0, count( $chunk ), '%s' ) );
+			$edgeArgs = array_merge( $chunk, $chunk );
+
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+			$edgesDeleted += (int) $wpdb->query(
+				$wpdb->prepare( "DELETE FROM {$edgesTable} WHERE source_node_id IN ({$chunkPh}) OR target_node_id IN ({$chunkPh})", ...$edgeArgs )
+			);
+			$nodesDeleted += (int) $wpdb->query(
+				$wpdb->prepare( "DELETE FROM {$nodesTable} WHERE node_id IN ({$chunkPh})", ...$chunk )
+			);
+        // phpcs:enable
+		}
+
+		return array(
+			'nodes' => $nodesDeleted,
+			'edges' => $edgesDeleted,
+		);
+	}
+
 	/** @return int */
 	public static function countNodes(): int {
 		global $wpdb;
