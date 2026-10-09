@@ -1,6 +1,6 @@
 # Demo Video Pipeline
 
-**Status:** Stable — v1.1.40
+**Status:** Stable — v1.1.40 (CI automation disabled 2026-10-09 — manual trigger only)
 **Source:** `bin/capture-demo-videos.sh`, `bin/_video-template.js`, `.github/workflows/demo-videos.yml`
 **Catalog:** `docs/videos/CATALOG.md`
 
@@ -90,6 +90,15 @@ The pipeline runs via `.github/workflows/demo-videos.yml`. Each demo video is:
 2. Annotated with cursor movements and info cards
 3. Combined with AI-generated narration
 4. Uploaded as a workflow artifact
+
+**Trigger:** `workflow_dispatch` (manual) only. The automatic
+`release: published` trigger was removed on 2026-10-09 because the
+pipeline is not reliably tested — the Docker Compose WordPress stack
+fails to start on GitHub runners (empty `/var/www/html`, HTTP 403),
+so the job fails. See
+[issue #6971](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/6971).
+Re-enable the release trigger only after the pipeline passes
+end-to-end in CI.
 
 ## Running Locally
 
