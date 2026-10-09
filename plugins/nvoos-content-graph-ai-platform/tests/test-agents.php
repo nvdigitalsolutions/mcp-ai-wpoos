@@ -368,6 +368,17 @@ class Test_Platform_Agents extends \WP_UnitTestCase {
 		$assistant_id = $this->create_assistant();
 		update_post_meta( $assistant_id, '_wp_mcp_ai_evolved_system_prompt', 'Evolved prompt payload' );
 
+		// Monolith matrix only: as a guest (user 0) the chat-profile system
+		// resolves the restrictive read-only profile and its prompt-hint
+		// subscriber (priority 20) appends the "Read-only mode" system cue,
+		// breaking the pass-through assertions below. Run as a user pinned
+		// to the write profile so unrelated subscribers stay no-ops.
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( class_exists( '\WP_MCP_AI_Chat_Profile_Manager' ) ) {
+			update_user_meta( $user_id, \WP_MCP_AI_Chat_Profile_Manager::META_KEY, \WP_MCP_AI_Chat_Profile::PROFILE_WRITE );
+		}
+		wp_set_current_user( $user_id );
+
 		// Reset the register-once flag: hook globals are wiped between
 		// tests, so the filter must be re-registered for this test.
 		$reflection = new \ReflectionProperty( EvolvedPromptResolver::class, 'registered' );
