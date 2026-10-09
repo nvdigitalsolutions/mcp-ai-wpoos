@@ -238,6 +238,12 @@
 
 ---
 
+### 062 Food & Beverage Management Pro Toolkit
+- **Status:** ✅ Build complete (Phases 0–8) + A1–A4 assistant packs delivered 2026-10-09; post-demo Phases 9–10 pending.
+- **Files:** `062-food-beverage-management-pro-toolkit-proposal.md`, `062-food-beverage-management-pro-toolkit-implementation-plan.md`, `062-fnb-purchase-request-approval-appendix.md`
+- **Code:** `addons/pro/includes/tools/food-beverage/` (21 tools + metric engine, 20/20 Check-totals oracle verified), packs in `addons/pro/presets/assistant-packs/fnb/`, seeder `wp mcp-ai pro fnb seed-assistants`.
+- **PRs:** #6962 (proposal, build, presets), #6978 (oracle test fix).
+
 ## 🔄 Maintenance Notes
 
 This status document should be updated:

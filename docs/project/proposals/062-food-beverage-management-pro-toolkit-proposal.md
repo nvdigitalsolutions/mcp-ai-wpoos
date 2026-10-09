@@ -1,7 +1,7 @@
 # Proposal: Food & Beverage Management Pro Toolkit
 
 **Date:** 2026-10-08
-**Status:** 🔮 PENDING
+**Status:** ✅ BUILD COMPLETE — pre-demo Phases 0–8 and the A1–A4 assistant packs merged (`addons/pro/presets/assistant-packs/fnb/`, seeder `wp mcp-ai pro fnb seed-assistants`); post-demo Phases 9–10 pending.
 **Estimated Effort:** 30–40 hours (Phases 0–8, incl. demo dry-run)
 **Priority:** HIGH (CEO demo date: Thursday 8 October 2026)
 
