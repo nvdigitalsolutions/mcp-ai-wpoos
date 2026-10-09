@@ -4,7 +4,7 @@ Tags: documentation, markdown, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.5.2
+Stable tag: 0.5.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -256,6 +256,10 @@ and https://nvdigitalsolutions.com/refund-policy.
 
 == Changelog ==
 
+= 0.5.3 =
+* Changed: settings saves and plugin updates no longer wipe the documentation index while the rebuild runs — the previous index keeps serving until the new build is promoted atomically, so a stalled background rebuild can never leave the docs empty.
+* Fixed: standalone installs (base plugin not active) with WP-Cron disabled could stall the background rebuild — each settings save or admin visit now advances it.
+
 = 0.5.2 =
 * Added: optional "Get NV oOS Complete" upsell on the settings page (shown only while the Complete bundle is not active) with an in-dashboard Stripe checkout — payment sessions are created and verified by the vendor checkout service at `nvdigitalsolutions.com`; no Stripe keys ship in the plugin, and the purchase modal opens only on click.
 * Added: after a purchase, the license key is stored locally and the bundle is offered for automatic install (manual ZIP download is always available); the installer refuses when another copy of NV oOS already exists.
@@ -364,6 +368,9 @@ and https://nvdigitalsolutions.com/refund-policy.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.5.3 =
+Reliability release — the docs index no longer goes blank while a rebuild runs after a settings save or plugin update. Recommended for all users.
 
 = 0.5.2 =
 Adds an optional "Get NV oOS Complete" upsell on the settings page. The plugin remains fully functional without a purchase — nothing is locked behind it.

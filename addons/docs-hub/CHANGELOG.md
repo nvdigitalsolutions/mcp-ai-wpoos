@@ -1,6 +1,6 @@
 # NV oOS Docs Hub — Changelog
 
-## 0.5.3 — Unreleased
+## 0.5.3 — 2026-10-09
 
 - **Settings saves and plugin updates no longer wipe the docs index.**
   The save/update/activation flows previously deleted the live cache and
