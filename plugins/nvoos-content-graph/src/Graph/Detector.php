@@ -113,17 +113,17 @@ class Detector {
 	 * @return WP_Post[]
 	 */
 	public static function detectPosts( string $since = '' ): array {
-		$allSettings = Settings::all();
-		$postTypes   = isset( $allSettings['post_types'] ) && is_array( $allSettings['post_types'] )
-			? $allSettings['post_types']
-			: self::getDefaultPostTypes();
+		$postTypes = self::getIndexedPostTypes();
+		if ( empty( $postTypes ) ) {
+			return array();
+		}
 
 		// @todo Batch this query for sites with 10 000+ posts.  The
 		// query is gated by no_found_rows and a date_query on incremental
 		// builds, but a full rebuild on a large site can still OOM.
 		// A 500-post chunk size with a looped offset would be safer.
 		$args = array(
-			'post_type'      => array_map( 'sanitize_key', $postTypes ),
+			'post_type'      => $postTypes,
 			'post_status'    => 'publish',
 			'posts_per_page' => -1,
 			'fields'         => 'all',
@@ -141,6 +141,39 @@ class Detector {
 
 		$results = get_posts( $args );
 		return is_array( $results ) ? $results : array();
+	}
+
+	/**
+	 * Return the effective post types to index.
+	 *
+	 * Starts from the configured `post_types` (or the public defaults
+	 * when the key is absent), merges the opt-in `extra_post_types`
+	 * checked on the Sources tab, drops the `excluded_post_types`
+	 * unchecked there, and finally applies the
+	 * `nvoos_content_graph_indexed_post_types` filter.
+	 *
+	 * @since 1.0.10
+	 *
+	 * @return string[]
+	 */
+	public static function getIndexedPostTypes(): array {
+		$allSettings = Settings::all();
+		$postTypes   = isset( $allSettings['post_types'] ) && is_array( $allSettings['post_types'] )
+			? $allSettings['post_types']
+			: self::getDefaultPostTypes();
+
+		$extra    = isset( $allSettings['extra_post_types'] ) && is_array( $allSettings['extra_post_types'] )
+			? $allSettings['extra_post_types'] : array();
+		$excluded = isset( $allSettings['excluded_post_types'] ) && is_array( $allSettings['excluded_post_types'] )
+			? $allSettings['excluded_post_types'] : array();
+
+		$postTypes = array_map( 'sanitize_key', array_merge( (array) $postTypes, (array) $extra ) );
+		$excluded  = array_map( 'sanitize_key', (array) $excluded );
+		$postTypes = array_values( array_diff( $postTypes, $excluded ) );
+
+		/** @var string[] */
+		$postTypes = apply_filters( 'nvoos_content_graph_indexed_post_types', $postTypes );
+		return array_values( array_unique( array_filter( array_map( 'sanitize_key', (array) $postTypes ) ) ) );
 	}
 
 	/**

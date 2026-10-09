@@ -1,5 +1,28 @@
 # NV oOS Content Graph — Changelog
 
+## 1.0.10 — 2026-10-09
+
+### Fixed — Excluded sources stayed in the graph; opt-in CPTs were never captured
+
+- **Excluded CCTs are now actually removed** — excluding a JetEngine Custom
+  Content Type on the Sources tab stopped *detecting* it but left every
+  previously indexed `cct_*` node (and its edges) in the graph, because
+  builds only ever upserted. Builds now prune nodes and edges of excluded
+  post types and CCTs (with a `post_id > 0` guard so term/user/memory/agent
+  nodes can never be touched), so un-checking a source removes it on the
+  next Rebuild Graph (or scheduled) run.
+- **Opt-in CPTs are now captured** — post detection queried only the fixed
+  `post_types` list (`post`, `page`) and silently ignored the Sources tab's
+  `extra_post_types` / `excluded_post_types` choices, so CPTs created by
+  JetEngine (or any other plugin) were never indexed even when checked.
+  Detection now merges `extra_post_types`, drops `excluded_post_types`, and
+  honors the `nvoos_content_graph_indexed_post_types` filter.
+- **Auto-rebuild respects exclusions** — saving a post of an excluded post
+  type no longer re-adds its node to the graph.
+- Tests: `PostTypeIndexingTest` (opt-in capture, exclusion, filter override,
+  detectPosts), `DbTest` prune cases, and `BuilderPruneTest` integration
+  coverage for CCT and CPT prune-on-rebuild.
+
 ## 1.0.9 — 2026-10-08
 
 ### Added — Purchase modal polish (loading state + free option)
