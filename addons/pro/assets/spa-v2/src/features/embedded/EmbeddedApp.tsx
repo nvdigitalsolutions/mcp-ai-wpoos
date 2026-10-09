@@ -96,6 +96,7 @@ function EmbeddedContent( { runtime }: EmbeddedContentProps ): JSX.Element {
 
 	const theme = useUIStore( ( s ) => s.theme );
 	const sidebarOpen = useUIStore( ( s ) => s.sidebarOpen );
+	const toggleSidebar = useUIStore( ( s ) => s.toggleSidebar );
 
 	// Guests have no transcripts endpoints — the hook is disabled and
 	// ChatPage simply runs conversation-first (session key only).
@@ -124,6 +125,22 @@ function EmbeddedContent( { runtime }: EmbeddedContentProps ): JSX.Element {
 			data-theme={ theme }
 			style={ style }
 		>
+			{ showSidebar && (
+				<button
+					type="button"
+					className="nvoos-pro-spa-embedded__sidebar-toggle"
+					onClick={ toggleSidebar }
+					aria-expanded={ sidebarOpen }
+					aria-controls="nvoos-pro-spa-embedded-sidebar"
+					aria-label={
+						sidebarOpen
+							? __( 'Close conversations', 'nvoos-pro-spa' )
+							: __( 'Open conversations', 'nvoos-pro-spa' )
+					}
+				>
+					<span aria-hidden="true">☰</span>
+				</button>
+			) }
 			{ showSidebar && <EmbeddedSidebar transcripts={ transcripts } /> }
 
 			<main
