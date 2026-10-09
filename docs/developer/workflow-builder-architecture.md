@@ -311,7 +311,7 @@ mcp-ai-wpoos/
 │   │   └── MergeNode.jsx
 │   │
 │   ├── utils/                     # Utilities
-│   │   └── workflowHelpers.js
+│   │   └── workflowHelpers.ts
 │   │
 │   ├── styles/                    # Styles
 │   │   └── workflow-builder.css
