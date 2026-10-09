@@ -87,7 +87,12 @@ src/workflow-builder/
 │   ├── AgentNode.jsx
 │   └── MergeNode.jsx
 ├── utils/
-│   └── workflowHelpers.js         # Validation & utilities
+│   ├── workflowHelpers.ts         # Validation, export/import & utilities
+│   ├── workflowExecutor.js        # Execution engine
+│   ├── workflowHistory.ts         # Undo/redo history manager
+│   ├── workflowVersioning.ts      # Version snapshotting
+│   ├── executionHistory.ts        # Execution metrics & history
+│   └── templateConverter.ts       # Pattern → workflow conversion
 └── styles/
     └── workflow-builder.css       # Modern UI styles
 ```
@@ -285,7 +290,7 @@ When adding new node types:
 3. Register in `nodes/index.js`
 4. Add to node palette in `WorkflowSidebar.jsx`
 5. Add configuration UI in `WorkflowPropertiesPanel.jsx`
-6. Add validation rules in `utils/workflowHelpers.js`
+6. Add validation rules in `utils/workflowHelpers.ts`
 
 ## Support
 
