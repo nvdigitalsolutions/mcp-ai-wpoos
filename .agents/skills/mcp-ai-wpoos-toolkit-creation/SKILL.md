@@ -149,6 +149,11 @@ class WP_MCP_AI_Tool_Foo extends WP_MCP_AI_Foo_Tool_Base // implements WP_MCP_AI
 - **WP_UnitTestCase** (`tests/pro/tools/<toolkit>/test-*.php`): require the
   class files in `setUp()`, `maybe_skip()` when unavailable, factory admin user
   for capability checks. Run in Docker per `mcp-ai-wpoos-test-suite`.
+  (F&B lessons: build dynamic oracle keys with
+  `str_replace( '-', '_', $month )` — the file's keys use underscores, month
+  strings use hyphens; and compare sum rows with
+  `assertEqualsWithDelta( ..., 1.0 )`, never exact `assertEquals` on floats —
+  the engine rounds to 2 dp while the oracle carries 3 dp.)
 
 ## 6. phpcs gotcha checklist (WordPress standard)
 
