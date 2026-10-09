@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (`v1.1.99-docs-catch-up.md`,
-   with `v1.1.98-docs-catch-up.md` as the previous pass) plus the
+3. **Read the template plans** — the latest executed plan (`1.2.2-docs-catch-up.md`,
+   with `1.2.1-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -100,9 +100,14 @@ weekly (or on demand), independent of any release.
   decision" line with the decision instead of re-raising it.
 - **A tag-pending addon ZIP is not stale yet.** The v1.2.1 window bumped the
   docs-hub addon 0.5.1 → 0.5.2 but the `docs-hub-v0.5.2` tag (which triggers
-  the build) is a post-merge follow-up — the v0.5.1 ZIP stays in `build/`
-  until the new artifact exists; removal applies only once a newer ZIP lands
-  (the v1.1.93/v1.1.99 superseded-addon-ZIP precedents).
+  the build) was a post-merge follow-up — the v0.5.1 ZIP stayed in `build/`
+  until the new artifact landed (the v1.1.93/v1.1.99 superseded-addon-ZIP
+  precedents). **The v1.2.2 pass executed the rule's completion:** once the
+  v0.5.2 **and** v0.5.3 ZIPs had built (the `docs-hub-v0.5.3` tag pushed +
+  0.5.3 live on the directory — verify with `git tag`), BOTH older docs-hub
+  ZIPs (v0.5.1 + v0.5.2) became removable together with the superseded
+  content-graph v1.0.8 ZIP (v1.0.10 built) — 4 addon ZIP files on top of
+  the 30-file previous-version oOS set.
 
 - **Historical per-version entries stay untouched.** Old CHANGELOG/README blocks
   (`[1.1.XX]` and earlier) are history and are never rewritten.
@@ -782,7 +787,40 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.97-docs-catch-up.md`,
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
   `docs/project/plans/v1.1.99-docs-catch-up.md`,
-  `docs/project/plans/1.2.1-docs-catch-up.md` (latest executed — the
+  `docs/project/plans/1.2.2-docs-catch-up.md` (latest executed — the
+  1.2.2 pass over PRs #6966–#6982 + the direct `c9d54bd273` CI commit: the
+  chat-profile system (#6977, Proposal 015 — server-enforced read-only mode,
+  the 11th security class, `GET/POST /mcp-ai/v1/chat-profile` deliberately
+  not a tool, zero tool-count change), the F&B assistant packs (#6982,
+  Proposal 062 Phase 4 — four importable bundles + the seeder, no new
+  slugs), the Google OAuth production readiness (#6981 — `drive.file`
+  unification, Calendar Minimal, upstream revocation), the Pro SPA v2 fixes
+  (#6974 dead-class default assistant + non-admin visibility; #6976 sidebar
+  toggle + live sessions; #6979 TS parity + full JS rebuild), the test drift
+  fixes (#6978/#6980 — both lessons skill-encoded), the CI/build fixes
+  (#6970 SPA tag-release + new release-spa-addons.yml; #6972 demo-videos
+  manual-only), the docs-hub 0.5.3 pre-submission pass (#6966/#6967/#6968 —
+  tag pushed + LIVE on the wp.org directory) and content-graph 1.0.10
+  (#6973 — excluded-source pruning; run Rebuild Graph once), Proposal 063
+  (#6969, docs only), three new OI-1 groups (51: `@since 2.2.0` ×84
+  chat-profile wave; 52: `@since 2.1.1` ×1 pro helper; 53: `@since 1.2.0`
+  ×1 oauth-manager) + the group-50 extension (#6982's 1.6.0 ×3), the
+  OI-4 extension (#6974's pagination-fields fixture accumulation),
+  five skill reconciliations (plugin ×3 + RELEASE-NOTES + the stale
+  Architecture count line; wporg-submission Fifth pass; checkout-integration
+  0.5.3/1.0.10 refs; test-suite 68 → 69 patterns; updates), the
+  FOR_REVIEWERS pre-existing drift corrections (Chat SPA 0.7.0, SaaS
+  Controller 0.3.0, Comic Reader 0.5.0, MCP Gateway 0.1.1, Schedule
+  Anything SPA 0.2.0, Design System rename, Media Studio 0.6.1, Toolkit
+  Shell 0.3.0), the security-class count 10 → 11 surfaces
+  (copilot-instructions ×2, CLAUDE.md ×2), the stale 1.1.99 build-set
+  removal (30 files — 9 + 2 + 19) + the superseded docs-hub
+  v0.5.1/v0.5.2 + content-graph v1.0.8 ZIPs (4 files — the tag-pending
+  rule's completion), zero tool-count change, zero catalog diff, and zero
+  skill-count change (66))
+
+Preceding windows:
+  `docs/project/plans/1.2.1-docs-catch-up.md` (executed — the
   1.2.1 pass over PRs #6954–#6964 + the five direct Proposal-061 doc
   commits: the **version-jump decision executed** (1.1.99 → 1.2.1 — the
   ROADMAP's planned 1.2.0 scope was delivered early across v1.1.1–v1.1.35,

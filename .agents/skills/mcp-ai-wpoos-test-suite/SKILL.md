@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 68 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 69 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -1003,6 +1003,23 @@ the changed files is the substantive gate; plan CI waits accordingly.
       tests: five direct session calls pass, the sixth returns 429 with zero
       extra HTTP. Full conventions:
       `.agents/skills/mcp-ai-wpoos-checkout-integration/SKILL.md`.
+
+  69. **A raw pass-through filter-chain assertion breaks when a global
+      prompt-filter subscriber appends (v1.2.2, PR #6980).** The chat-profile
+      system (#6977) registers `WP_MCP_AI_Chat_Profile_Prompt_Hint` at
+      priority 20 on `wp_mcp_ai_resolved_system_prompt` — any test that
+      asserts the resolver passes the prompt through **unmodified** fails
+      with an appended "Read-only mode" cue because the test runs as guest
+      (user 0) and guests resolve to the restrictive read-only profile.
+      Production behaviour is correct by design (Proposal 015) — the test is
+      simply not isolated from unrelated prompt-filter subscribers. Fix: pin
+      the test's user to the `write` chat profile before exercising the
+      chain (create an admin user, set the profile, then assert the
+      pass-through), and guard the profile calls with `class_exists()` so
+      standalone/addon test matrices without the chat-profile system remain
+      unaffected. Rule: a pass-through assertion on any
+      `wp_mcp_ai_resolved_system_prompt`-family filter is fragile by
+      definition — isolate the subscriber set first.
 
 ## Production fix vs test fix
 

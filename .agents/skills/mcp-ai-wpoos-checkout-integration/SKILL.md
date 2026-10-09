@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-checkout-integration
-description: "Operational guide for integrating the NV oOS Complete purchase flow (vendor checkout API client) into standalone WordPress plugins — docs-hub 0.5.2 (added in PR #6963) and nvoos-content-graph 1.0.9 (live). Covers the vendor API contract (session/verify/health, nvoos-oos-complete product, 424/502 error passthrough), the five-class client stack (config, vendor client, license store, installer, REST controller), the purchase-modal JS/CSS port recipe (class-prefix rename, keep-the-JS-identical trick), wp.org commerce compliance (External Services disclosure, WPORG-REVIEW-COMMERCE-NOTES.md, js.stripe.com service exception), and the checkout test conventions (direct controller calls, pi_ fixture rules, zero-HTTP assertions). Use when adding the Get NV oOS Complete upsell/checkout to a plugin, porting the commerce stack to a new standalone plugin, extending the purchase flow, or debugging a checkout integration."
+description: "Operational guide for integrating the NV oOS Complete purchase flow (vendor checkout API client) into standalone WordPress plugins — docs-hub 0.5.3 (stack added in PR #6963, shipped 0.5.2 → 0.5.3) and nvoos-content-graph 1.0.10 (live). Covers the vendor API contract (session/verify/health, nvoos-oos-complete product, 424/502 error passthrough), the five-class client stack (config, vendor client, license store, installer, REST controller), the purchase-modal JS/CSS port recipe (class-prefix rename, keep-the-JS-identical trick), wp.org commerce compliance (External Services disclosure, WPORG-REVIEW-COMMERCE-NOTES.md, js.stripe.com service exception), and the checkout test conventions (direct controller calls, pi_ fixture rules, zero-HTTP assertions). Use when adding the Get NV oOS Complete upsell/checkout to a plugin, porting the commerce stack to a new standalone plugin, extending the purchase flow, or debugging a checkout integration."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -14,7 +14,7 @@ metadata:
 
 Operational playbook for the **NV oOS Complete** purchase flow that standalone
 plugins embed on their settings pages. Distilled from the content-graph
-commerce stack (1.0.4 → 1.0.9, live on wp.org) and the docs-hub port (0.5.2,
+commerce stack (1.0.4 → 1.0.10, live on wp.org) and the docs-hub port (0.5.2,
 PR #6963). The vendor side is the proprietary `addons/checkout-api` addon —
 clients never touch Stripe keys; all payment work happens on the vendor
 server.
@@ -59,8 +59,8 @@ per-IP limits — when debugging "Too many checkout attempts", check both.
 
 | Plugin | Version | Notes |
 |---|---|---|
-| `plugins/nvoos-content-graph` | 1.0.9 (live on wp.org) | Origin of the stack; namespaced classes + slash filters (`nvoos_content_graph/payments/*`); legacy AI-addon paths kept for pre-1.0.6 purchases |
-| `addons/docs-hub` | 0.5.2 (PR #6963) | Faithful port with docs-hub naming: procedural `NV_oOS_Docs_Hub_Checkout*` classes + snake_case filters (`nvoos_docs_hub_checkout_*`); legacy-addon paths dropped |
+| `plugins/nvoos-content-graph` | 1.0.10 (live on wp.org) | Origin of the stack; namespaced classes + slash filters (`nvoos_content_graph/payments/*`); legacy AI-addon paths kept for pre-1.0.6 purchases |
+| `addons/docs-hub` | 0.5.3 (PR #6963, shipped 0.5.2 → 0.5.3) | Faithful port with docs-hub naming: procedural `NV_oOS_Docs_Hub_Checkout*` classes + snake_case filters (`nvoos_docs_hub_checkout_*`); legacy-addon paths dropped. 0.5.3 carries no commerce-surface changes (`WPORG-REVIEW-COMMERCE-NOTES.md` records it) |
 
 The next standalone plugin that wants the flow (design-system pipeline) should
 port from the docs-hub variant (it is the trimmed, wp.org-clean shape).

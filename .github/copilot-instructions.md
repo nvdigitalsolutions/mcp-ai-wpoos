@@ -26,7 +26,8 @@ mcp-ai-wpoos/
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
 │   ├── tools/            # ~1,692 total built-in tool implementations
-│   ├── security/         # Security infrastructure (10 classes: request guard, security posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard)
+│   ├── security/         # Security infrastructure (11 classes: request guard, security posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard, read-only profile gate)
+│   ├── chat/             # Chat-profile system (registry + manager, Proposal 015 — server-enforced read-only mode)
 │   ├── elementor/        # Elementor widget integrations
 │   ├── okf/              # OKF v0.2 engine (parser, reader, writer)
 │   ├── integrations/     # Third-party plugin integrations
@@ -53,7 +54,7 @@ mcp-ai-wpoos/
 - **Optional Integrations**: JetEngine, WooCommerce, Elementor, Rank Math, WPCode
 - **OKF (Open Knowledge Format)**: Google's v0.1 vendor-neutral knowledge format for curated, deterministic knowledge with 6 MCP tools
 - **nvoos/core**: Framework-agnostic AI orchestration engine with Hexagonal Architecture (Ports & Adapters), 32 domain contracts, 21 WordPress adapters
-- **Security Infrastructure**: 10 security classes (request guard, security posture scoring with 21 signals, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard) with Site Health integration
+- **Security Infrastructure**: 11 security classes (request guard, security posture scoring with 21 signals, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard, read-only profile gate) with Site Health integration
 - **Architecture**: Custom Post Types, REST API, Server-Sent Events, Hexagonal Architecture
 
 ## Development Workflow

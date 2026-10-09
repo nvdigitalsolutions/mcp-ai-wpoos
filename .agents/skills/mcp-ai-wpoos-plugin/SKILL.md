@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.1"
-  plugin-version-tested: "1.2.1"
-  last-updated: "2026-10-08"
+  plugin-version: "1.2.2"
+  plugin-version-tested: "1.2.2"
+  last-updated: "2026-10-10"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -47,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~347 base / ~1,648 full tools
+     │  Tool Registry     │  ~353 base / ~1,692 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -779,6 +779,24 @@ Import external AI conversation exports into the JetEngine
 Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.2.2 operational quick notes** (full detail in RELEASE-NOTES.md):
+**Chat profiles with server-enforced read-only mode** (PR #6977, Proposal
+015) — `write` + `read-only` built-ins resolved server-side per request
+(user meta → site default → write fail-safe; a client can never widen its
+own grant; guests default to read-only); the 11th security class
+`WP_MCP_AI_Read_Only_Profile_Gate` (priority 0, before the
+destructive-ops gate); `GET/POST /mcp-ai/v1/chat-profile` deliberately not
+a tool (no mid-run self-elevation); `wp mcp-ai chat-profile` WP-CLI;
+settings `chat_profile_enabled`/`default_chat_profile`/`guest_chat_profile`.
+**F&B assistant packs A1–A4** (PR #6982, Proposal 062 Phase 4) — `wp mcp
+ai pro fnb seed-assistants` imports the four bundles through the shared
+portability engine. **Google OAuth production readiness** (PR #6981) —
+`drive.file` scope unification behind `wp_mcp_ai_google_drive_oauth_scope`,
+Calendar Minimal default, upstream revocation on disconnect. **Pro SPA v2
+fixes** (PRs #6974/#6976/#6979). **Sub-projects** — docs-hub 0.5.3 (live
+on the wp.org directory) and content-graph 1.0.10. Counts unchanged:
+~353 base + ~1,339 Pro (~1,692 total).
 
 **v1.2.1 operational quick notes** (full detail in RELEASE-NOTES.md): the
 **Food & Beverage Management Pro Toolkit** (PR #6962, Proposal 062) — 21
