@@ -31,7 +31,7 @@ class Test_Fnb_Metrics_Oracle extends WP_UnitTestCase {
 			define( 'WP_MCP_AI_FNB_USE_FIXTURES', true );
 		}
 
-		$this->toolkit_dir = dirname( dirname( dirname( dirname( dirname( __DIR__ ) ) ) ) ) . '/addons/pro/includes/tools/food-beverage';
+		$this->toolkit_dir = dirname( __DIR__, 4 ) . '/addons/pro/includes/tools/food-beverage';
 
 		if ( ! class_exists( 'WP_MCP_AI_Fnb_Data_Source' ) ) {
 			require_once $this->toolkit_dir . '/class-wp-mcp-ai-fnb-settings.php';

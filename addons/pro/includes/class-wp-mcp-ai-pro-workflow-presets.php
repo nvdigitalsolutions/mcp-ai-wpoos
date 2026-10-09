@@ -144,8 +144,28 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							),
 						),
 					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
+						),
+					),
 				),
-				'fnb_monthly_review' => array(
+				'fnb_monthly_review'  => array(
 					'name'        => __( 'Monthly Cost Review', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Compare the month against budget and the previous month, split volume vs per-cover effects, then save the R-08 review as a draft.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'fnb',
@@ -206,6 +226,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 								'label'       => __( 'Draft Review', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Save the R-08 output as a draft for the CEO.', 'mcp-ai-wpoos-pro' ),
 							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
 						),
 					),
 				),

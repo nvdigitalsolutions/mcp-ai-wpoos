@@ -143,8 +143,8 @@ wp-mcp-ai-tool-get-jetformbuilder-submissions
 wp-mcp-ai-tool-get-media
 wp-mcp-ai-tool-get-model-information
 wp-mcp-ai-tool-get-nhc-active-storms
-wp-mcp-ai-tool-get-open-meteo-forecast
 wp-mcp-ai-tool-get-openai-file-details
+wp-mcp-ai-tool-get-open-meteo-forecast
 wp-mcp-ai-tool-get-post
 wp-mcp-ai-tool-get-post-revisions
 wp-mcp-ai-tool-get-post-type-schema
@@ -217,8 +217,8 @@ wp-mcp-ai-tool-monitor-batch
 wp-mcp-ai-tool-newsletter-add-subscriber
 wp-mcp-ai-tool-newsletter-create-email
 wp-mcp-ai-tool-newsletter-get-emails
-wp-mcp-ai-tool-newsletter-get-subscriber-stats
 wp-mcp-ai-tool-newsletter-get-subscribers
+wp-mcp-ai-tool-newsletter-get-subscriber-stats
 wp-mcp-ai-tool-newsletter-unsubscribe
 wp-mcp-ai-tool-nvoos-get-profile
 wp-mcp-ai-tool-okf-browse
@@ -231,9 +231,9 @@ wp-mcp-ai-tool-okf-traverse
 wp-mcp-ai-tool-okf-validate-attestation
 wp-mcp-ai-tool-okf-validate-bundle
 wp-mcp-ai-tool-okf-write-concept
+wp-mcp-ai-tool-openai-usage-analytics
 wp-mcp-ai-tool-open-openai-logs
 wp-mcp-ai-tool-open-openai-usage
-wp-mcp-ai-tool-openai-usage-analytics
 wp-mcp-ai-tool-paper-store-delete
 wp-mcp-ai-tool-paper-store-list
 wp-mcp-ai-tool-paper-store-read
@@ -244,9 +244,9 @@ wp-mcp-ai-tool-password-strength-analyzer
 wp-mcp-ai-tool-payhere-get-payment
 wp-mcp-ai-tool-performance-optimizer-assistant
 wp-mcp-ai-tool-prioritize-context
-wp-mcp-ai-tool-pro-excel
 wp-mcp-ai-tool-probe-chat
 wp-mcp-ai-tool-probe-remote-mcp
+wp-mcp-ai-tool-pro-excel
 wp-mcp-ai-tool-profession-stats
 wp-mcp-ai-tool-purge-cache
 wp-mcp-ai-tool-purge-cloudflare-cache

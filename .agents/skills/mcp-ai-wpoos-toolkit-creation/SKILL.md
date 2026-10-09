@@ -12,10 +12,12 @@ metadata:
 
 # NV oOS Pro Toolkit Creation Loop
 
-Operational playbook for creating a brand-new Pro toolkit end-to-end — from
+operational playbook for creating a brand-new Pro toolkit end-to-end — from
 folder scaffold to registered, tested, and preset-wired. The first full run was
 **food-beverage** (2026-10-08: 7 services, 21 tools, 13 reports, 20/20 oracle
-verification — see [Case study](#case-study-food-beverage)).
+verification — see [Case study](#case-study-food-beverage)). CI feedback from
+the same build added the workflow-preset `edges` contract and the tool-class
+coverage-manifest surface (§4.7 and §4.9).
 
 ## When to use this skill
 
@@ -107,9 +109,22 @@ class WP_MCP_AI_Tool_Foo extends WP_MCP_AI_Foo_Tool_Base // implements WP_MCP_AI
 7. **Workflow presets** — `addons/pro/includes/class-wp-mcp-ai-pro-workflow-presets.php`:
    merge + method with `nodes` (types: input/tool/condition/output; tool nodes
    carry `toolSlug` + `arguments` with `{{input.key}}` template vars).
+   **Every preset needs ALL of: `name, description, category, icon, tags,
+   nodes, edges`** — `edges` is an array of `{id, source, target, sourceHandle}`
+   entries whose source/target must reference existing node IDs (enforced by
+   `tests/test-pro-workflow-presets.php`; missing `edges` fails CI).
 8. (If schedule-anything is relevant) **SA Toolkit Manager** —
    `addons/schedule-anything-platform/includes/class-sa-toolkit-manager.php`:
    `TOOLKIT_FLAGS` (`'<slug>' => 'enable_<slug>_toolkit'`) + `TOOLKIT_ORDER`.
+9. **Tool-class coverage manifests** — run
+   `bin/generate-tool-coverage-manifest.sh` and commit the updated
+   `tests/tools/.coverage-manifest.txt` (base) and
+   `addons/pro/tests/tools/.coverage-manifest.txt` (Pro). CI
+   (`tests/test-tool-registry-coverage.php`) fails with "run
+   bin/generate-tool-coverage-manifest.sh" for every unlisted class — the
+   manifests list one FILE BASENAME per line (`class-*.php` basename minus the
+   `class-` prefix and `.php`), and only additions of your new classes should
+   appear in the diff (sort-order churn can look like deletions).
 
 ## 5. Testing: fixtures, oracle, smoke harness
 
@@ -178,7 +193,10 @@ class WP_MCP_AI_Tool_Foo extends WP_MCP_AI_Foo_Tool_Base // implements WP_MCP_AI
 1. `php -l` every new/changed file.
 2. `vendor/bin/phpcs --standard=WordPress <paths>` clean (phpcbf first).
 3. `php tests/pro/tools/<toolkit>/smoke-run.php` → all oracle rows PASS.
-4. Docker PHPUnit green (per `mcp-ai-wpoos-test-suite`).
+4. Docker PHPUnit green (per `mcp-ai-wpoos-test-suite`) — includes
+   `test-pro-workflow-presets.php` (required keys incl. `edges`),
+   `test-pro-schedule-presets.php` if it exists, and
+   `test-tool-registry-coverage.php` (manifest up to date).
 5. Preset sanity: load the preset classes with minimal stubs (define `ABSPATH`,
    stub `__`, `sanitize_key`, `get_option`) and assert
    `get_presets_by_toolkit('<slug>')` / workflow `get_presets_by_category('<slug>')`
