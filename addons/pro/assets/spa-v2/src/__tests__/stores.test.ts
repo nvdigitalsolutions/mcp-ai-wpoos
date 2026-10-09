@@ -336,7 +336,29 @@ describe( 'modelStore', () => {
 
 	describe( 'setAvailableProfiles', () => {
 		it( 'replaces the available profiles array', () => {
-			const profiles = [ 'write', 'chat', 'analyze' ];
+			const profiles = [
+				{
+					slug: 'write',
+					label: 'Full access',
+					description: 'No tool restrictions',
+					selectable: true,
+					is_default: true,
+				},
+				{
+					slug: 'read-only',
+					label: 'Read-only',
+					description: 'Blocks write and state-changing tools',
+					selectable: true,
+					is_default: false,
+				},
+				{
+					slug: 'audit',
+					label: 'Audit',
+					description: 'Not selectable by this user',
+					selectable: false,
+					is_default: false,
+				},
+			];
 
 			useModelStore.getState().setAvailableProfiles( profiles );
 			expect( useModelStore.getState().availableProfiles ).toEqual( profiles );

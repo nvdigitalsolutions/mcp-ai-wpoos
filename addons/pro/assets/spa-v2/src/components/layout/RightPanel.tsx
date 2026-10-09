@@ -12,6 +12,7 @@ import { __ } from '@wordpress/i18n';
 
 import { useUIStore } from '../../stores/uiStore';
 import { useModelStore, type ModelPreference } from '../../stores/modelStore';
+import { useChatProfile } from '../../hooks/useChatProfile';
 
 export function RightPanel(): JSX.Element {
 	const rightPanelOpen = useUIStore( ( s ) => s.rightPanelOpen );
@@ -22,7 +23,7 @@ export function RightPanel(): JSX.Element {
 	const availableModels = useModelStore( ( s ) => s.availableModels );
 	const availableProfiles = useModelStore( ( s ) => s.availableProfiles );
 	const setModel = useModelStore( ( s ) => s.setModel );
-	const setProfile = useModelStore( ( s ) => s.setProfile );
+	const { changeProfile } = useChatProfile();
 
 	// ---- derived ----
 	const hasAvailableModels = availableModels.length > 0;
@@ -53,9 +54,9 @@ export function RightPanel(): JSX.Element {
 
 	const handleProfileChange = useCallback(
 		( e: React.ChangeEvent< HTMLSelectElement > ) => {
-			setProfile( e.target.value );
+			void changeProfile( e.target.value );
 		},
-		[ setProfile ]
+		[ changeProfile ]
 	);
 
 	const handleClose = useCallback( () => {
@@ -154,8 +155,8 @@ export function RightPanel(): JSX.Element {
 							) }
 						>
 							{ availableProfiles.map( ( p ) => (
-								<option key={ p } value={ p }>
-									{ p }
+								<option key={ p.slug } value={ p.slug }>
+									{ p.label }
 								</option>
 							) ) }
 						</select>

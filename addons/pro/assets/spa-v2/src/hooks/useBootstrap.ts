@@ -50,6 +50,18 @@ export function useBootstrap(): BootstrapResult {
 			} );
 		}
 
+		// Seed the chat-profile catalogue + current profile (2.2.0). The
+		// server localizes `profiles` and `config.profile`; the store drives
+		// the selectors and the status-bar readout. Only selectable profiles
+		// are offered in the UI — the server still resolves enforcement.
+		const profiles = config.profiles ?? [];
+		if ( profiles.length > 0 ) {
+			setAvailableProfiles( profiles.filter( ( p ) => p.selectable ) );
+		}
+		if ( typeof config.config?.profile === 'string' && config.config.profile ) {
+			useModelStore.getState().setProfile( config.config.profile );
+		}
+
 		if ( typeof console !== 'undefined' && console.info ) {
 			console.info(
 				'[NV oOS Pro SPA] Initialized',

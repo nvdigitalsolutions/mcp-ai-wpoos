@@ -42,6 +42,27 @@ export interface ProSpaPerInstanceConfig {
 	cronMonitor?: boolean;
 	/** Route allowlist for the instance (embedded mode: chat only). */
 	routes?: string[];
+	/**
+	 * Resolved chat profile slug governing tool execution (2.2.0).
+	 * Read-only blocks writes, state changes and destructive tools.
+	 */
+	profile?: string;
+	/**
+	 * Whether the chat-profile selector should render for this instance.
+	 * True on the admin surface for logged-in users when the feature is
+	 * enabled server-side.
+	 */
+	profileSelector?: boolean;
+}
+
+/** A chat profile as localized by the server (2.2.0). */
+export interface ChatProfileSummary {
+	slug: string;
+	label: string;
+	description: string;
+	/** Whether the current user may select this profile. */
+	selectable: boolean;
+	is_default: boolean;
 }
 
 export interface ProSpaEndpoints {
@@ -81,6 +102,8 @@ export interface ProSpaRuntime {
 	mentionTypes: MentionType[];
 	/** Pre-loaded assistants from the server — avoids a separate REST round-trip. */
 	assistants?: RuntimeAssistantSummary[];
+	/** Chat profile catalogue (2.2.0). */
+	profiles?: ChatProfileSummary[];
 }
 
 export interface ProSpaUser {
@@ -185,5 +208,6 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 		user: ( g.user ?? { id: 0, login: '', displayName: '', capabilities: [] } ) as ProSpaUser,
 		mentionTypes: Array.isArray( g.mentionTypes ) ? g.mentionTypes : [],
 		assistants: Array.isArray( g.assistants ) ? g.assistants : undefined,
+		profiles: Array.isArray( g.profiles ) ? ( g.profiles as ChatProfileSummary[] ) : undefined,
 	};
 }

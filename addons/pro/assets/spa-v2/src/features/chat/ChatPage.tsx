@@ -20,6 +20,7 @@ import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useSpeechPlayback } from '../../hooks/useSpeechPlayback';
 import { useJobBus } from '../../hooks/useJobBus';
 import { useTabTitleBadge } from '../../hooks/useTabTitleBadge';
+import { useChatProfile } from '../../hooks/useChatProfile';
 import { useModelStore } from '../../stores/modelStore';
 import { useAssistantStore } from '../../stores/assistantStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -94,9 +95,14 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const model = useModelStore( ( s ) => s.model );
 	const profile = useModelStore( ( s ) => s.profile );
 	const setModel = useModelStore( ( s ) => s.setModel );
-	const setProfile = useModelStore( ( s ) => s.setProfile );
 	const availableModels = useModelStore( ( s ) => s.availableModels );
 	const availableProfiles = useModelStore( ( s ) => s.availableProfiles );
+	const { changeProfile } = useChatProfile();
+
+	// The profile selector renders when the server localized a catalogue and
+	// enabled the surface for this instance (logged-in, feature on). Only
+	// profiles the user may select are listed — the server re-validates.
+	const showProfileSelector = !!runtime?.config?.profileSelector;
 
 	// Deduplicate models by provider|model combo (backend may send duplicates).
 	const uniqueModels = useMemo(
@@ -644,29 +650,31 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					</div>
 				) }
 
-				{/* Profile selector — admin only */}
-				{ isAdmin && availableProfiles.length > 0 && (
-					<div className="nvoos-pro-spa-chat-page__profile-select">
-						<label
-							htmlFor="nvoos-pro-spa-profile-select"
-							className="nvoos-pro-spa-chat-page__select-label"
-						>
-							{ __( 'Profile', 'nvoos-pro-spa' ) }
-						</label>
-						<select
-							id="nvoos-pro-spa-profile-select"
-							className="nvoos-pro-spa-chat-page__select"
-							value={ profile }
-							onChange={ ( e ) => setProfile( e.target.value ) }
-						>
-							{ availableProfiles.map( ( p ) => (
-								<option key={ p } value={ p }>
-									{ p }
-								</option>
-							) ) }
-						</select>
-					</div>
-				) }
+					{/* Profile selector (2.2.0) — rendered for logged-in users on
+					    surfaces where the server enables it; only profiles the
+					    user may select are listed. */}
+					{ showProfileSelector && availableProfiles.length > 0 && (
+						<div className="nvoos-pro-spa-chat-page__profile-select">
+							<label
+								htmlFor="nvoos-pro-spa-profile-select"
+								className="nvoos-pro-spa-chat-page__select-label"
+							>
+								{ __( 'Profile', 'nvoos-pro-spa' ) }
+							</label>
+							<select
+								id="nvoos-pro-spa-profile-select"
+								className="nvoos-pro-spa-chat-page__select"
+								value={ profile }
+								onChange={ ( e ) => void changeProfile( e.target.value ) }
+							>
+								{ availableProfiles.map( ( p ) => (
+									<option key={ p.slug } value={ p.slug }>
+										{ p.label }
+									</option>
+								) ) }
+							</select>
+						</div>
+					) }
 
 				{/* Memory drawer toggle */}
 				{ hasMemory && (

@@ -225,6 +225,27 @@ class WP_MCP_AI_Pro_SPA_Config {
 			}
 		}
 
+		// ---- chat profiles (2.2.0) -------------------------------------------
+		// The catalogue is localized for the SPA selector; enforcement is
+		// server-side (see WP_MCP_AI_Chat_Profile_Manager). The selector only
+		// renders on the admin surface for logged-in users.
+		$chat_profiles    = array();
+		$current_profile  = WP_MCP_AI_Chat_Profile::PROFILE_WRITE;
+		$profile_selector = false;
+		if ( ! $guest && is_user_logged_in()
+			&& class_exists( 'WP_MCP_AI_Chat_Profile_Manager' )
+			&& WP_MCP_AI_Chat_Profile_Manager::is_enabled() ) {
+			$current_profile  = WP_MCP_AI_Chat_Profile_Manager::resolve_slug( $user_id, null );
+			$profile_selector = 'admin' === $requested_mode;
+			foreach ( WP_MCP_AI_Chat_Profile_Registry::get_profiles() as $profile ) {
+				$chat_profiles[] = $profile->to_array(
+					WP_MCP_AI_Chat_Profile_Registry::can_user_select( $user_id, $profile->get_slug() )
+				);
+			}
+		}
+		$config['profile']         = $current_profile;
+		$config['profileSelector'] = $profile_selector;
+
 		// ---- runtime --------------------------------------------------------
 		$runtime = array(
 			'apiUrl'       => esc_url_raw( rest_url( 'mcp-ai/v1' ) ),
@@ -270,6 +291,7 @@ class WP_MCP_AI_Pro_SPA_Config {
 			),
 			'mentionTypes' => array(),
 			'assistants'   => $assistants,
+			'profiles'     => $chat_profiles,
 		);
 
 		// Populate mention types if the resolver is available.

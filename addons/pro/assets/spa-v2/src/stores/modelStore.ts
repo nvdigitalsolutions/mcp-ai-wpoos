@@ -4,6 +4,8 @@
 
 import { create } from 'zustand';
 
+import type { ChatProfileSummary } from '../api/config';
+
 export interface ModelPreference {
 	provider: string;
 	model: string;
@@ -13,12 +15,12 @@ export interface ModelState {
 	model: ModelPreference;
 	profile: string;
 	availableModels: ModelPreference[];
-	availableProfiles: string[];
+	availableProfiles: ChatProfileSummary[];
 
 	setModel: ( model: ModelPreference ) => void;
 	setProfile: ( profile: string ) => void;
 	setAvailableModels: ( models: ModelPreference[] ) => void;
-	setAvailableProfiles: ( profiles: string[] ) => void;
+	setAvailableProfiles: ( profiles: ChatProfileSummary[] ) => void;
 }
 
 const DEFAULT_MODEL: ModelPreference = { provider: 'openai', model: 'gpt-4o' };

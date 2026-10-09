@@ -484,6 +484,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'wordpress_gravatar_userinfo_endpoint'  => '',
 				'enable_simple_jwt_login'               => false,
 				'require_confirm_destructive_ops'       => true,
+				// Chat Profile system (2.2.0, proposal 015) — read-only mode.
+				'chat_profile_enabled'                  => true,
+				'default_chat_profile'                  => 'write',
+				'guest_chat_profile'                    => 'read-only',
 				'delete_on_uninstall'                   => false,
 				'crawl4ai_base_url'                     => '',
 				'crawl4ai_api_key'                      => '',
