@@ -54,7 +54,7 @@ includes/
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (11 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard, read-only profile gate)
-├── tools/                              ← base tool implementations (~312 classes; live count is authoritative)
+├── tools/                              ← base tool implementations (~353 classes; live count is authoritative)
 │   ├── okf/                            ← OKF knowledge tools (10 tools)
 ├── services/                           ← 30+ service classes
 ├── admin/                              ← WordPress admin UI

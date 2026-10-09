@@ -112,7 +112,7 @@ mcp-ai-wpoos/
 │   │
 │   ├─ assistants/             ← Assistant CPT registration and metaboxes
 │   ├─ blueprints/             ← Unified blueprint installer + import tools
-│   ├─ security/               ← Security infrastructure (10 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard)
+│   ├─ security/               ← Security infrastructure (11 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard, read-only profile gate)
 │   ├─ bridge/                 ← WordPress adapters for nvoos/core domain contracts (21 adapters)
 │   ├─ services/               ← Business logic (30+ service classes)
 │   │   ├─ class-wp-mcp-ai-dspark-hooks.php ← DSpark efficiency data collectors
