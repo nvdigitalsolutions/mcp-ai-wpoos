@@ -382,6 +382,33 @@ if ( ! function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_pro_get_default_assistant_id' ) ) {
+	/**
+	 * Resolve the site-wide default assistant ID configured in the core settings.
+	 *
+	 * Prefers the core Assistant Service (the canonical resolver), falling back
+	 * to reading the `default_assistant` key from the core settings option when
+	 * the service layer is unavailable (e.g. very early bootstrap).
+	 *
+	 * @since 2.1.1
+	 *
+	 * @return int Default assistant post ID or 0 when none is configured.
+	 */
+	function wp_mcp_ai_pro_get_default_assistant_id() {
+		if ( class_exists( 'WP_MCP_AI_Assistant_Service' ) ) {
+			$service = new WP_MCP_AI_Assistant_Service();
+			$default = $service->get_default_assistant_id();
+			if ( $default ) {
+				return absint( $default );
+			}
+		}
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		return isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_pro_vendor_is_intact' ) ) {
 	/**
 	 * Check whether the Composer vendor autoloader shipped with the Pro addon

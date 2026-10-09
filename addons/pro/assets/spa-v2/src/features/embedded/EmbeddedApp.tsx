@@ -17,6 +17,7 @@ import { readProSpaConfig } from '../../api/config';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import { useTranscripts, type UseTranscriptsReturn } from '../../hooks/useTranscripts';
 import { useUIStore } from '../../stores/uiStore';
+import { useAssistantStore } from '../../stores/assistantStore';
 import { ChatPage } from '../chat/ChatPage';
 import { ToastContainer } from '../../components/shared/Toast';
 import { EmbeddedSidebar } from './EmbeddedSidebar';
@@ -76,9 +77,22 @@ interface EmbeddedContentProps {
 function EmbeddedContent( { runtime }: EmbeddedContentProps ): JSX.Element {
 	const endpoints = runtime.endpoints;
 	const nonce = runtime.nonce ?? '';
-	const assistantId = runtime.config?.assistantId ?? runtime.user?.assistant_id ?? 0;
+	const configAssistantId = runtime.config?.assistantId ?? runtime.user?.assistant_id ?? 0;
 	const isGuest = !!runtime.config?.guest;
 	const showSidebar = runtime.config?.showSidebar !== false && ! isGuest;
+
+	// When the assistant switcher is enabled the active assistant lives in the
+	// store (user-selectable); otherwise the instance is bound to the
+	// server-provided assistant and the store is ignored.
+	const selectorEnabled = !!(
+		runtime.config?.assistantSelector &&
+		! isGuest &&
+		runtime.user?.id > 0
+	);
+	const storedAssistantId = useAssistantStore( ( s ) => s.assistantId );
+	const assistantId = selectorEnabled && storedAssistantId > 0
+		? storedAssistantId
+		: configAssistantId;
 
 	const theme = useUIStore( ( s ) => s.theme );
 	const sidebarOpen = useUIStore( ( s ) => s.sidebarOpen );

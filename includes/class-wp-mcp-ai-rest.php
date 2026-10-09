@@ -1581,6 +1581,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
 			$default_assistant = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 			$auth_context      = $this->get_auth_context();
+			// Whether the directory must be narrowed to assistants the session
+			// user can actually use (non-admin, logged-in callers).
+			$filter_by_capability = is_user_logged_in() && ! current_user_can( 'manage_options' );
 
 			$scoped_assistant = $this->apply_token_assistant_scope( 0 );
 			if ( is_wp_error( $scoped_assistant ) ) {
@@ -1610,6 +1613,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$total_assistants = 1;
 				$total_pages      = 1;
 			} else {
+				// Non-admin, session-authenticated users only see assistants whose
+				// effective chat capability they hold ("same credentials or
+				// below"). Admins and external API clients keep the unfiltered
+				// directory — the latter are already scoped by their token or
+				// gated by the rest_enable_assistant_list setting.
+
 				// Build cache key from query parameters (not _fields — filtered after cache retrieval).
 				$cache_params = array_filter(
 					array(
@@ -1623,7 +1632,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 				);
 
-				$cached_data = WP_MCP_AI_REST_Cache::get_response( 'assistants', $cache_params );
+				// Capability-filtered lists are per-user — never serve them from
+				// (or write them to) the shared REST cache.
+				$cached_data = $filter_by_capability ? false : WP_MCP_AI_REST_Cache::get_response( 'assistants', $cache_params );
 
 				if ( false !== $cached_data && is_array( $cached_data ) ) {
 					// Serve from cache.
@@ -1705,6 +1716,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$accessible = $this->validate_assistant_access( $post->ID );
 
 						if ( $accessible instanceof WP_Post ) {
+							if ( $filter_by_capability && ! $this->assistant_visible_to_current_user( $accessible ) ) {
+								continue;
+							}
 							$filtered[] = $accessible;
 						}
 					}
@@ -1717,7 +1731,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$assistants = array_values( $assistants );
 
 					// Compute totals.
-					if ( $per_page > 0 ) {
+					if ( $per_page > 0 && ! $filter_by_capability ) {
 						$total_assistants = absint( $query->found_posts );
 						$total_pages      = (int) ceil( $total_assistants / $per_page );
 					} else {
@@ -1725,17 +1739,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$total_pages      = 1;
 					}
 
-					// Cache the unscoped list for future requests.
-					WP_MCP_AI_REST_Cache::set_response(
-						'assistants',
-						$cache_params,
-						array(
-							'assistants'  => $assistants,
-							'total'       => $total_assistants,
-							'total_pages' => $total_pages,
-						),
-						WP_MCP_AI_REST_Cache::ASSISTANT_LIST_EXPIRATION
-					);
+					// Cache the unscoped list for future requests (capability-filtered
+					// results are per-user and must never enter the shared cache).
+					if ( ! $filter_by_capability ) {
+						WP_MCP_AI_REST_Cache::set_response(
+							'assistants',
+							$cache_params,
+							array(
+								'assistants'  => $assistants,
+								'total'       => $total_assistants,
+								'total_pages' => $total_pages,
+							),
+							WP_MCP_AI_REST_Cache::ASSISTANT_LIST_EXPIRATION
+						);
+					}
 				}
 			}
 
@@ -1763,6 +1780,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$first_assistant = reset( $assistants );
 				if ( is_array( $first_assistant ) && isset( $first_assistant['id'] ) ) {
 					$directory_default = absint( $first_assistant['id'] );
+				}
+			}
+
+			// Capability-filtered directories must never advertise a default the
+			// caller cannot see — fall back to the first visible assistant.
+			if ( $filter_by_capability && $directory_default && ! empty( $assistants ) ) {
+				$visible_ids = wp_list_pluck( $assistants, 'id' );
+				if ( ! in_array( $directory_default, $visible_ids, true ) ) {
+					$directory_default = absint( $visible_ids[0] );
 				}
 			}
 
@@ -2210,19 +2236,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return bool|WP_Error
 		 */
 		public function permissions_check_assistant_list( WP_REST_Request $request ) {
-			// First check standard permissions.
+			// Authenticated WordPress users with at least 'read' capability always
+			// have access to the assistant directory via the Pro SPA admin interface,
+			// regardless of the global chat capability (which defaults to edit_posts).
+			// Per-assistant visibility is enforced against the required-capability
+			// meta inside handle_assistants_index(). The rest_enable_assistant_list
+			// setting only gates external API access.
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+			if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) && current_user_can( 'read' ) ) {
+				$this->reset_auth_context();
+				$this->set_authenticated_user_id( get_current_user_id() );
+
+				$rate_limit_check = $this->check_rate_limit( get_current_user_id(), $request->get_method() );
+				if ( is_wp_error( $rate_limit_check ) ) {
+					return $rate_limit_check;
+				}
+
+				return true;
+			}
+
+			// Fall through to the standard authentication gate for external
+			// clients (bearer tokens, mesh keys, guest tokens).
 			$base_check = $this->permissions_check( $request );
 
 			if ( is_wp_error( $base_check ) || ! $base_check ) {
 				return $base_check;
-			}
-
-			// Authenticated WordPress users with at least 'read' capability always
-			// have access to the assistant directory via the Pro SPA admin interface.
-			// The rest_enable_assistant_list setting only gates external API access.
-			$nonce = $request->get_header( 'X-WP-Nonce' );
-			if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) && current_user_can( 'read' ) ) {
-				return true;
 			}
 
 			// Then check if REST assistant listing is enabled.
@@ -7778,6 +7816,36 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Fall back to checking the current session user.
 			return current_user_can( 'read_post', $post_id );
+		}
+
+		/**
+		 * Whether the session user is allowed to see (and therefore use) an
+		 * assistant in the directory listing.
+		 *
+		 * Mirrors the effective-capability gate applied to chat requests so the
+		 * directory never advertises assistants the caller cannot chat with.
+		 * Admins see everything; everyone else sees assistants whose effective
+		 * chat capability they hold (empty / 'public' = everyone).
+		 *
+		 * @param WP_Post $post Assistant post object.
+		 * @return bool Whether the assistant is visible to the current user.
+		 */
+		protected function assistant_visible_to_current_user( WP_Post $post ) {
+			if ( current_user_can( 'manage_options' ) ) {
+				return true;
+			}
+
+			$required = function_exists( 'wp_mcp_ai_get_effective_chat_capability' )
+				? wp_mcp_ai_get_effective_chat_capability( $post->ID, 'rest' )
+				: ( function_exists( 'wp_mcp_ai_get_required_chat_capability' )
+					? wp_mcp_ai_get_required_chat_capability( $post->ID, 'rest' )
+					: '' );
+
+			if ( is_string( $required ) && '' !== $required && 'public' !== $required ) {
+				return current_user_can( $required );
+			}
+
+			return true;
 		}
 
 		/**

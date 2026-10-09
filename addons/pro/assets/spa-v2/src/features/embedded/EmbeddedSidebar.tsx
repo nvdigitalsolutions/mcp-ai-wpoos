@@ -3,14 +3,19 @@
  * shortcode (config.showSidebar = true, default).
  *
  * Intentionally slim compared to the admin ChatSidebar: conversations only,
- * no media tab, no threads browse, no assistant selector. Sessions are
- * owned by useTranscripts in EmbeddedApp.
+ * no media tab, no threads browse. When config.assistantSelector is enabled
+ * for a logged-in user, a compact assistant switcher is rendered so operators
+ * below admin can move between assistants they are allowed to use. Sessions
+ * are owned by useTranscripts in EmbeddedApp.
  */
 
-import { type JSX } from 'react';
+import { useMemo, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 
 import { useUIStore } from '../../stores/uiStore';
+import { useAssistantStore } from '../../stores/assistantStore';
+import { useModelStore } from '../../stores/modelStore';
+import { readProSpaConfig } from '../../api/config';
 import { useTranscripts } from '../../hooks/useTranscripts';
 import type { TranscriptSession } from '../../api/transcripts';
 
@@ -49,6 +54,31 @@ export function EmbeddedSidebar( { transcripts }: EmbeddedSidebarProps ): JSX.El
 	const sidebarOpen = useUIStore( ( s ) => s.sidebarOpen );
 	const toggleSidebar = useUIStore( ( s ) => s.toggleSidebar );
 
+	// ---- assistant switcher (config.assistantSelector && logged-in) -------
+	const runtime = useMemo( () => readProSpaConfig(), [] );
+	const selectorEnabled = !!(
+		runtime?.config?.assistantSelector &&
+		! runtime?.config?.guest &&
+		( runtime?.user?.id ?? 0 ) > 0
+	);
+	const assistants = useAssistantStore( ( s ) => s.assistants );
+	const assistantId = useAssistantStore( ( s ) => s.assistantId );
+	const setActiveAssistant = useAssistantStore( ( s ) => s.setActiveAssistant );
+	const setModel = useModelStore( ( s ) => s.setModel );
+
+	const handleAssistantChange = ( id: number ) => {
+		if ( id <= 0 ) {
+			return;
+		}
+		setActiveAssistant( id );
+		// Keep the chat override aligned with the selected assistant's own
+		// provider/model so switching assistants cannot be used to switch models.
+		const selected = assistants.find( ( a ) => a.id === id );
+		if ( selected?.provider && selected?.model ) {
+			setModel( { provider: selected.provider, model: selected.model } );
+		}
+	};
+
 	return (
 		<aside
 			className="nvoos-pro-spa-embedded__sidebar"
@@ -66,6 +96,38 @@ export function EmbeddedSidebar( { transcripts }: EmbeddedSidebarProps ): JSX.El
 					{ __( 'New', 'nvoos-pro-spa' ) }
 				</button>
 			</div>
+
+			{ selectorEnabled && (
+				<div className="nvoos-pro-spa-embedded__assistant-select">
+					<label
+						htmlFor="nvoos-pro-spa-embedded-assistant"
+						className="nvoos-pro-spa-screen-reader-only"
+					>
+						{ __( 'Select assistant', 'nvoos-pro-spa' ) }
+					</label>
+					{ assistants.length > 0 ? (
+						<select
+							id="nvoos-pro-spa-embedded-assistant"
+							value={ assistantId }
+							onChange={ ( e ) => handleAssistantChange( parseInt( e.target.value, 10 ) ) }
+							aria-label={ __( 'Select assistant', 'nvoos-pro-spa' ) }
+						>
+							<option value="0" disabled>
+								{ __( '— Select an assistant —', 'nvoos-pro-spa' ) }
+							</option>
+							{ assistants.map( ( a ) => (
+								<option key={ a.id } value={ a.id }>
+									{ a.title }
+								</option>
+							) ) }
+						</select>
+					) : (
+						<p className="nvoos-pro-spa-embedded__assistant-empty">
+							{ __( 'No assistants available.', 'nvoos-pro-spa' ) }
+						</p>
+					) }
+				</div>
+			) }
 
 			{ transcripts.error && (
 				<p className="nvoos-pro-spa-embedded__sidebar-error" role="alert">

@@ -106,12 +106,9 @@ class WP_MCP_AI_Pro_REST_Tool_Shortcuts {
 		$assistant_id = $request->get_param( 'assistant_id' );
 		$search       = $request->get_param( 'search' );
 
-		// If no assistant_id provided, use the current user's default.
-		if ( empty( $assistant_id ) ) {
-			$user_id = get_current_user_id();
-			if ( class_exists( 'WP_MCP_AI_Assistant_Manager' ) ) {
-				$assistant_id = \WP_MCP_AI_Assistant_Manager::get_default_assistant( $user_id );
-			}
+		// If no assistant_id provided, use the site-wide default.
+		if ( empty( $assistant_id ) && function_exists( 'wp_mcp_ai_pro_get_default_assistant_id' ) ) {
+			$assistant_id = wp_mcp_ai_pro_get_default_assistant_id();
 		}
 
 		$assistant_id = absint( $assistant_id );
