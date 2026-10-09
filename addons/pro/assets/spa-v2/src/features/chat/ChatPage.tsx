@@ -114,6 +114,16 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		[ availableModels ]
 	);
 
+	// Model / profile overrides are an admin concern — assistants carry their
+	// own provider+model configuration, so non-admin operators should pick an
+	// assistant (the sidebar selector) rather than a raw model.
+	const isAdmin = useMemo(
+		() =>
+			Array.isArray( runtime?.user?.capabilities ) &&
+			runtime.user.capabilities.includes( 'manage_options' ),
+		[ runtime ]
+	);
+
 	// Use assistant store for dynamic selection (with runtime config fallback).
 	const storedAssistantId = useAssistantStore( ( s ) => s.assistantId );
 	const assistantId = storedAssistantId > 0 ? storedAssistantId : ( runtime?.config?.assistantId ?? runtime?.user?.assistant_id ?? 0 );
@@ -602,8 +612,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 			aria-label={ __( 'Chat conversation', 'nvoos-pro-spa' ) }
 		>
 			<div className="nvoos-pro-spa-chat-page__toolbar">
-				{/* Model selector */}
-				{ uniqueModels.length > 0 && (
+				{/* Model selector — admin only */}
+				{ isAdmin && uniqueModels.length > 0 && (
 					<div className="nvoos-pro-spa-chat-page__model-select">
 						<label
 							htmlFor="nvoos-pro-spa-model-select"
@@ -634,8 +644,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					</div>
 				) }
 
-				{/* Profile selector */}
-				{ availableProfiles.length > 0 && (
+				{/* Profile selector — admin only */}
+				{ isAdmin && availableProfiles.length > 0 && (
 					<div className="nvoos-pro-spa-chat-page__profile-select">
 						<label
 							htmlFor="nvoos-pro-spa-profile-select"

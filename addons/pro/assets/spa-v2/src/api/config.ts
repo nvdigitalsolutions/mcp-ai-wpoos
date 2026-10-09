@@ -27,6 +27,12 @@ export interface ProSpaPerInstanceConfig {
 	/** Whether embedded mode renders the transcripts sidebar. */
 	showSidebar?: boolean;
 	/**
+	 * Whether embedded mode renders the assistant switcher for logged-in users
+	 * (admin surface for non-admin operators: default; shortcode instances:
+	 * opt-in via assistant_selector="1").
+	 */
+	assistantSelector?: boolean;
+	/**
 	 * Whether the SPA connects to the cron-status job stream on mount
 	 * (blocking SSE + REST poll fallback). Defaults to true. Set false for
 	 * embedded surfaces on constrained hosts (e.g. WordPress Playground),

@@ -78,6 +78,10 @@ class WP_MCP_AI_Pro_SPA_Config {
 	 *     @type bool   $guest                 Whether to enable guest access.
 	 *     @type bool   $allow_sensitive_tools Whether sensitive tools are permitted.
 	 *     @type bool   $show_sidebar          Whether embedded mode renders the transcripts sidebar.
+	 *     @type bool   $assistant_selector    Whether embedded mode renders the assistant
+	 *                                          switcher for logged-in users. Defaults to
+	 *                                          true for the admin surface and false for
+	 *                                          shortcode instances (opt-in per shortcode).
 	 *     @type bool   $cron_monitor          Whether the SPA connects to the cron-status job
 	 *                                         stream on mount. Defaults to true. Set to false
 	 *                                         for embedded surfaces on constrained hosts
@@ -95,12 +99,12 @@ class WP_MCP_AI_Pro_SPA_Config {
 
 		$assistant_id = isset( $per_instance['assistant_id'] ) ? absint( $per_instance['assistant_id'] ) : 0;
 
-		// Fall back to the server-side default assistant when none requested.
-		if ( 0 === $assistant_id && class_exists( 'WP_MCP_AI_Assistant_Manager' ) ) {
-			$default = WP_MCP_AI_Assistant_Manager::get_default_assistant( $user_id );
-			if ( $default ) {
-				$assistant_id = absint( $default );
-			}
+		// Fall back to the site-wide default assistant when none requested.
+		// Historically this delegated to a WP_MCP_AI_Assistant_Manager class
+		// that never shipped, so the fallback silently did nothing and the
+		// SPA mounted with no assistant selected.
+		if ( 0 === $assistant_id && function_exists( 'wp_mcp_ai_pro_get_default_assistant_id' ) ) {
+			$assistant_id = absint( wp_mcp_ai_pro_get_default_assistant_id() );
 		}
 
 		// ---- guest access -------------------------------------------------
@@ -122,6 +126,9 @@ class WP_MCP_AI_Pro_SPA_Config {
 		}
 
 		$mode = isset( $per_instance['mode'] ) ? sanitize_key( (string) $per_instance['mode'] ) : 'admin';
+		// Keep the requested mode for the assistant-selector default below; the
+		// effective mode is clamped afterwards.
+		$requested_mode = $mode;
 		if ( ! in_array( $mode, self::ALLOWED_MODES, true ) ) {
 			$mode = 'embedded';
 		}
@@ -136,6 +143,16 @@ class WP_MCP_AI_Pro_SPA_Config {
 			: array( 'chat' );
 		$routes = array_values( array_unique( $routes ) );
 
+		// ---- assistant switcher (embedded mode) -----------------------------
+		// Logged-in users may switch between assistants they are allowed to use.
+		// Enabled by default on the admin surface (even when the mode is clamped
+		// to embedded for non-admins); opt-in per shortcode instance.
+		$assistant_selector = ! $guest && is_user_logged_in() && (
+			array_key_exists( 'assistant_selector', $per_instance )
+				? ! empty( $per_instance['assistant_selector'] )
+				: 'admin' === $requested_mode
+		);
+
 		// ---- per-instance SPA config ----------------------------------------
 		$config = array(
 			'assistantId'         => $assistant_id,
@@ -144,6 +161,7 @@ class WP_MCP_AI_Pro_SPA_Config {
 			'mode'                => $mode,
 			'height'              => isset( $per_instance['height'] ) ? sanitize_text_field( $per_instance['height'] ) : '',
 			'showSidebar'         => ! isset( $per_instance['show_sidebar'] ) || ! empty( $per_instance['show_sidebar'] ),
+			'assistantSelector'   => $assistant_selector,
 			'cronMonitor'         => ! isset( $per_instance['cron_monitor'] ) || ! empty( $per_instance['cron_monitor'] ),
 			'routes'              => $routes,
 		);
@@ -169,8 +187,23 @@ class WP_MCP_AI_Pro_SPA_Config {
 
 			foreach ( $query->posts as $post ) {
 				$assistant_cfg = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post->ID );
-				$provider      = isset( $assistant_cfg['provider'] ) ? sanitize_key( $assistant_cfg['provider'] ) : '';
-				$model         = isset( $assistant_cfg['model'] ) ? (string) $assistant_cfg['model'] : '';
+
+				// Non-admin users only see assistants whose effective chat
+				// capability they hold (empty / 'public' = everyone) — mirrors
+				// the directory filter in the base REST controller.
+				if ( ! $is_admin ) {
+					$required = function_exists( 'wp_mcp_ai_get_effective_chat_capability' )
+						? wp_mcp_ai_get_effective_chat_capability( $post->ID, 'rest' )
+						: ( function_exists( 'wp_mcp_ai_get_required_chat_capability' )
+							? wp_mcp_ai_get_required_chat_capability( $post->ID, 'rest' )
+							: '' );
+					if ( is_string( $required ) && '' !== $required && 'public' !== $required && ! current_user_can( $required ) ) {
+						continue;
+					}
+				}
+
+				$provider = isset( $assistant_cfg['provider'] ) ? sanitize_key( $assistant_cfg['provider'] ) : '';
+				$model    = isset( $assistant_cfg['model'] ) ? (string) $assistant_cfg['model'] : '';
 
 				$assistants[] = array(
 					'id'       => $post->ID,
@@ -178,6 +211,17 @@ class WP_MCP_AI_Pro_SPA_Config {
 					'provider' => $provider,
 					'model'    => $model,
 				);
+			}
+		}
+
+		// When the resolved default assistant is not visible to this visitor
+		// (e.g. it requires a capability they lack, or is unpublished), fall
+		// back to the first accessible assistant so the UI never mounts on an
+		// assistant the visitor cannot actually use.
+		if ( ! $guest && $assistant_id && ! empty( $assistants ) ) {
+			$visible_ids = wp_list_pluck( $assistants, 'id' );
+			if ( ! in_array( $assistant_id, $visible_ids, true ) ) {
+				$assistant_id = absint( $visible_ids[0] );
 			}
 		}
 
