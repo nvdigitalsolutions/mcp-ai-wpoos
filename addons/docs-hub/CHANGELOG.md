@@ -1,5 +1,24 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.5.3 — Unreleased
+
+- **Settings saves and plugin updates no longer wipe the docs index.**
+  The save/update/activation flows previously deleted the live cache and
+  relied on the async chunked rebuild to repopulate it. On standalone
+  installs (base plugin not active) the rebuild advances only via WP-Cron
+  loopbacks, so with `DISABLE_WP_CRON` or low traffic it stalled and the
+  index stayed empty until a manual "Rebuild now". The live cache is now
+  left in place — the rebuild builds into staging and atomically promotes
+  over it on completion — so readers keep the previous index during the
+  rebuild, and a stalled rebuild can no longer empty the docs. Saving
+  settings now cancels any in-flight rebuild so the new settings take
+  effect immediately.
+- **Standalone + `DISABLE_WP_CRON` rebuilds now progress.** When the
+  inline-async-tick kick is unavailable (base plugin inactive) and
+  WP-Cron is disabled, `enqueue()` registers a bounded shutdown tick so
+  every settings save or admin visit advances the chunked rebuild instead
+  of stalling silently.
+
 ## 0.5.2 — 2026-10-08
 
 NV oOS Complete checkout upsell — the optional, opt-in purchase flow for
