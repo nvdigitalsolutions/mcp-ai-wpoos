@@ -578,7 +578,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'google_calendar_refresh_token'         => '',
 				'google_calendar_user_email'            => '',
 				'google_calendar_granted_scopes'        => '',
-				'google_calendar_scope_profile'         => 'standard',
+				'google_calendar_scope_profile'         => 'minimal',
 				'google_calendar_default_calendar_id'   => 'primary',
 				'google_calendar_timezone'              => '',
 				'github_client_id'                      => '',

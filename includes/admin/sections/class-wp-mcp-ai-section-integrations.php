@@ -823,8 +823,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<li><?php esc_html_e( 'OAuth 2.0 credentials are obtained from Google Cloud Console', 'mcp-ai-wpoos' ); ?></li>
 					<li><?php esc_html_e( 'Access tokens are automatically refreshed when expired', 'mcp-ai-wpoos' ); ?></li>
 					<li><?php esc_html_e( 'Supports searching and reading Gmail messages', 'mcp-ai-wpoos' ); ?></li>
-					<li><?php esc_html_e( 'Requires gmail.readonly scope for read access', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Requires the restricted gmail.readonly scope — see the Google publishing status note below', 'mcp-ai-wpoos' ); ?></li>
 				</ul>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px;">
+					<p style="margin: 0; color: #856404;">
+						<strong><?php esc_html_e( 'Google publishing status:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php esc_html_e( 'While your OAuth consent screen is "Testing", Google expires refresh tokens after 7 days and the connection breaks weekly. Publishing to "In production" stops the resets — but gmail.readonly is a restricted scope, so solo operators should claim the personal-use exception and Workspace teams should use an Internal consent screen. See the Google OAuth Production Verification Plan for the full checklist.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</div>
 			</td>
 		</tr>
 			<?php
@@ -937,8 +948,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<strong><?php esc_html_e( 'Required Permissions:', 'mcp-ai-wpoos' ); ?></strong>
 					</p>
 					<ul style="list-style: disc; margin-left: 20px;">
-						<li><code>drive.readonly</code>: <?php esc_html_e( 'Read access to Drive files', 'mcp-ai-wpoos' ); ?></li>
-						<li><code>drive.metadata.readonly</code>: <?php esc_html_e( 'Read access to Drive file metadata', 'mcp-ai-wpoos' ); ?></li>
+						<li><code>drive.file</code>: <?php esc_html_e( 'Per-file access (files created by or shared with NV oOS). Non-sensitive — no Google verification needed.', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
 				<?php else : ?>
 					<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
@@ -1003,7 +1013,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<li><?php esc_html_e( 'OAuth 2.0 credentials are obtained from Google Cloud Console', 'mcp-ai-wpoos' ); ?></li>
 					<li><?php esc_html_e( 'Access tokens are automatically refreshed when expired', 'mcp-ai-wpoos' ); ?></li>
 					<li><?php esc_html_e( 'Supports searching and reading Drive files', 'mcp-ai-wpoos' ); ?></li>
-					<li><?php esc_html_e( 'Requires drive.readonly and drive.metadata.readonly scopes for read access', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Uses the non-sensitive drive.file scope by default; full-Drive read scopes are opt-in via the wp_mcp_ai_google_drive_oauth_scope filter', 'mcp-ai-wpoos' ); ?></li>
 						<?php if ( $is_pro_active ) : ?>
 						<li><?php esc_html_e( 'Pro users can configure multiple Google Drive connections via Remote Sites', 'mcp-ai-wpoos' ); ?></li>
 				<?php else : ?>
@@ -1012,8 +1022,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			</ul>
 		</td>
 	</tr>
-			<?php
-		}
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px;">
+					<p style="margin: 0; color: #856404;">
+						<strong><?php esc_html_e( 'Google publishing status:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php esc_html_e( 'While your OAuth consent screen is "Testing", Google expires refresh tokens after 7 days. Publishing to "In production" stops the resets — the default drive.file scope is non-sensitive, so no Google review is required. If you opt back into full-Drive scopes via the wp_mcp_ai_google_drive_oauth_scope filter, restricted-scope verification (CASA) applies instead.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</div>
+			</td>
+		</tr>
+				<?php
+			}
 
 		/**
 		 * Render Google Calendar footer content.

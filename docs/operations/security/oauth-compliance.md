@@ -135,7 +135,7 @@ The plugin requests only the minimum necessary scopes for read-only access to us
 
 **Google Drive Scopes**:
 ```php
-'scope' => 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly'
+'scope' => apply_filters( 'wp_mcp_ai_google_drive_oauth_scope', 'https://www.googleapis.com/auth/drive.file' )
 ```
 
 **Benefit**: Limits potential security exposure and complies with the principle of least privilege. Users see limited, specific scope requests rather than broad "full account access" permissions.

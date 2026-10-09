@@ -113,6 +113,13 @@ If you see "Google did not return a refresh token":
 4. Go back to NV oOS and click "Connect Gmail Account" again
 5. Make sure to grant all requested permissions
 
+### Connection Expires Every 7 Days
+
+If the connection breaks weekly with an `invalid_grant` error, your Google Cloud project's OAuth consent screen is still in **Testing** publishing status — Google deliberately expires refresh tokens after 7 days in that mode.
+
+- For your own site, follow the [Google OAuth Production Verification Plan](google-oauth-production-verification-plan.md). Solo operators can claim Google's personal-use exception; Google Workspace teams can switch the consent screen to **Internal**; neither requires a CASA security assessment.
+- Reconnecting every week is a band-aid, not a fix — repeated re-authorization also counts toward Google's 100-token limit per account.
+
 ## Security Best Practices
 
 1. **Never share your Client Secret** - treat it like a password
@@ -128,5 +135,6 @@ For issues specific to NV oOS:
 - Contact support at https://nvdigitalsolutions.com
 
 For Google OAuth issues:
+- See the [Google OAuth Production Verification Plan](google-oauth-production-verification-plan.md) and the [customer guide for connecting your own site](google-oauth-customer-guide.md)
 - Visit [Google OAuth 2.0 documentation](https://developers.google.com/identity/protocols/oauth2)
 - Check [Gmail API documentation](https://developers.google.com/gmail/api)
