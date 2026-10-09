@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-ui
-description: UI stack and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller, and future toolkit SPAs) — the three sanctioned build patterns and when to pick each, the dual-React guard (bundled React 19 must never import @wordpress/element/components), headless-only component rules (Radix + CVA + clsx/tailwind-merge + sonner, shadcn methodology), NV oOS Design System (--nds-*) token consumption, Tailwind v4 setup, @xyflow/react v12 migration notes, the vitest + jsdom + Testing Library stack with its Radix polyfills and known jsdom gotchas (BubbleSelect form caveat, RHF resolver churn, zod numeric coercion), bundle-size budgets, and the add/* → alpha-working PR workflow. Use when building or modifying SPA addon UI, adding React components, writing SPA JS tests, upgrading a SPA dependency, or continuing proposal 060 (SPA UI Stack Enhancement).
+description: UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns, dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map, and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-07"
+  last-updated: "2026-10-09"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -31,6 +31,10 @@ The canonical addon pattern itself is
   `mcp-ai-wpoos-test-suite` skill instead
 - Upgrading a SPA dependency (React, Tailwind, @xyflow/react, Radix) and
   re-bundling
+- Rebuilding "all the JS" so packaged ZIPs carry up-to-date artifacts — see
+  "Full JS rebuild map"
+- Triaging webpack "export 'X' was not found … possible exports" warnings —
+  see "TS-shadows-JS resolution gotcha"
 - "Continue the 060 work" / P1 items (zod size pass, per-page i18n sweep,
   table virtualization)
 
@@ -151,6 +155,67 @@ bootstrap fixture and heavy-view mocks (see `api.test.tsx`).
   must pass; typecheck with `npm run typecheck`; tests with `npm test`.
 - PRs: branch `add/<slug>` from `alpha-working`, PR back to `alpha-working`,
   commit built artifacts and lockfiles.
+- Shared worktree caution: another agent or a sync process can revert a file
+  mid-session (seen with `workflowHelpers.ts`, 2026-10-09). After edits,
+  verify on-disk state with a marker grep before rebuilding/committing; if a
+  fuzzy edit double-applies, rewrite the file whole with `write_file`.
+
+## Full JS rebuild map — shipping fresh artifacts
+
+When the ask is "rebuild all JS so the plugin is packaged up to date", the
+scope is the whole tree, not one addon. Verified inventory (2026-10-09):
+
+| Area | Command | Notes |
+|---|---|---|
+| Core CSS/JS | `npm run build:css && npm run build:js` | root esbuild configs |
+| Pro JS | `npm run build:js:pro` | **needs `addons/pro/node_modules`** — worktrees often lack it; run `(cd addons/pro && npm install --legacy-peer-deps --omit=optional --no-optional)` first. Bundles `generate-{pdf,word,excel}` + remotion into `addons/pro/bin/` |
+| docs-hub | `npm run build:docs-hub` | prebuild runs `npm ci` if `node_modules` missing |
+| workflow + TMA | `npm run build:workflow && npm run build:tma` | wp-scripts webpack → `addons/pro/build/` |
+| Pattern A SPAs | `toolkit-shell`, `chat-spa`, `comic-reader`, `librechat`, `media-studio`, `funiq-bridge`, `canvas-toolkit`, `document-editor`, `pro/assets/spa-v2` — esbuild `npm run build`; `page-agent` uses `node esbuild.config.js` (dev output, no `--prod`) | `npm ci` per addon when `node_modules` missing (lockfile is committed) |
+| Pattern B SPA | `schedule-anything-spa` — `npm run build` (`tsc && vite build`) | |
+| Pattern C SPA | `saas-controller` — `npm run build` (worker esbuild + drift-manifest stamp + wp-scripts admin) | |
+| Legacy pro SPA | `addons/pro/assets/spa` — `npm run build` (wp-scripts webpack → `dist/`) | |
+| npm packages | `packages/nvoos-*` — each has `npm run build` (`adapt-for-npm.js`); `nvoos-mcp-bridge` has none by design | loop with a small node script; dist folders are git-tracked |
+| content-graph vendor | `plugins/nvoos-content-graph` — `npm install` then `node scripts/copy-vendor.js` | |
+
+Skips: `algorave` / `fantasy-football` (no-op echo builds), `mcp-gateway` /
+`mcp-wordpress-gateway` / `media-worker` (run from source, no build step),
+`tenant-router` (wrangler-only), `canvas` (native linux-x64 binary — Docker CI
+workflow only; use `--skip-canvas` on dev machines).
+
+Verification: deterministic bundles rebuild **byte-identical** — those files
+don't show in `git status`; only stale artifacts appear as modified. Check
+mtimes to confirm a build actually ran. Full run: ~15 min, mostly `npm ci`
+for saas-controller (2k+ deps). npm on dev machines blocks dependency install
+scripts (esbuild postinstall etc.) — harmless, platform binaries ship via
+optional deps.
+
+## TS-shadows-JS resolution gotcha (wp-scripts)
+
+`@wordpress/scripts` webpack resolves extensionless imports with TypeScript
+first, so a `foo.ts` sibling **shadows** `foo.js` — the `.ts` edition is what
+gets bundled, silently. The 2026-10 TS upgrade created `.ts` editions of the
+workflow-builder utils but left the `.js` originals in place; the incomplete
+`.ts` editions were bundled instead. Signature (a runtime bug, not just
+noise — missing exports resolve to `undefined`, e.g. dead Export/Import
+buttons):
+
+```
+WARNING in ./src/workflow-builder/components/WorkflowBuilder.jsx 276:4-18
+export 'exportWorkflow' (imported as 'exportWorkflow') was not found in '../utils/workflowHelpers' (possible exports: generateNodeId, validateWorkflow)
+```
+
+When you see this warning: grep the resolved module's directory. If both
+`foo.js` and `foo.ts` exist, webpack is bundling the `.ts` — port the missing
+logic into the `.ts` file (it is canonical), then delete the dead `.js`
+duplicate and update README/docs references. Reconciliation precedent
+(2026-10-09, PR #6979): ported `exportWorkflow`/`importWorkflow`, the
+`validateWorkflow` node-config checks + DFS cycle detection, and
+`animated: true` template edges (`WorkflowEdge.animated?: boolean` added to
+`src/shared/types.ts`); deleted five dead `.js` utils; `workflowExecutor.js`
+kept — it has no TS counterpart and is canonical as-is. The other pairs
+(`executionHistory`, `workflowHistory`, `workflowVersioning`) were already
+functionally equivalent.
 
 ## References
 
