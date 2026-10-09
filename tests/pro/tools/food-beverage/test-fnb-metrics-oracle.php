@@ -80,7 +80,8 @@ class Test_Fnb_Metrics_Oracle extends WP_UnitTestCase {
 		$this->maybe_skip();
 		foreach ( array( '2026-07', '2026-08', '2026-09' ) as $month ) {
 			$result = WP_MCP_AI_Fnb_Metrics::m02_covers( $month );
-			$this->assertEquals( $this->oracle_num( 'covers_' . $month ), $result['value'], 'Covers mismatch for ' . $month );
+			// Oracle keys use underscores, month strings use hyphens (Y-m).
+			$this->assertEquals( $this->oracle_num( 'covers_' . str_replace( '-', '_', $month ) ), $result['value'], 'Covers mismatch for ' . $month );
 		}
 	}
 
@@ -107,13 +108,15 @@ class Test_Fnb_Metrics_Oracle extends WP_UnitTestCase {
 
 	/**
 	 * Test: stock-used cost (M-04/M-05 numerators) — value-based COGS.
+	 * The engine rounds sums to 2 dp (LKR) while the oracle carries 3 dp,
+	 * so compare with the ±1 LKR sum tolerance used by the smoke harness.
 	 */
 	public function test_stock_used_cost_matches_check_totals() {
 		$this->maybe_skip();
 		$m04 = WP_MCP_AI_Fnb_Metrics::m04_food_cost_pct( '2026-09' );
 		$m05 = WP_MCP_AI_Fnb_Metrics::m05_beverage_cost_pct( '2026-09' );
-		$this->assertEquals( $this->oracle_num( 'food_cost_stock_used_2026_09' ), $m04['stock_used']['value'], 'Food cost (stock used) Sep' );
-		$this->assertEquals( $this->oracle_num( 'beverage_cost_stock_used_2026_09' ), $m05['stock_used']['value'], 'Beverage cost (stock used) Sep' );
+		$this->assertEqualsWithDelta( $this->oracle_num( 'food_cost_stock_used_2026_09' ), $m04['stock_used']['value'], 1.0, 'Food cost (stock used) Sep' );
+		$this->assertEqualsWithDelta( $this->oracle_num( 'beverage_cost_stock_used_2026_09' ), $m05['stock_used']['value'], 1.0, 'Beverage cost (stock used) Sep' );
 	}
 
 	/**
