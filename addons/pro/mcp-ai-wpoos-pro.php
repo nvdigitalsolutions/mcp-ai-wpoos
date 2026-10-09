@@ -3027,6 +3027,7 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 	$wp_mcp_ai_pro_cli_files = array(
 		'class-wp-mcp-ai-pro-cli-status-command.php',
 		'class-wp-mcp-ai-pro-cli-toolkit-command.php',
+		'class-wp-mcp-ai-pro-cli-fnb-seed-command.php',
 		'class-wp-mcp-ai-pro-cli-connection-command.php',
 		'class-wp-mcp-ai-pro-cli-project-command.php',
 		'class-wp-mcp-ai-pro-cli-task-command.php',

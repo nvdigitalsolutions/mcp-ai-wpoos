@@ -1,7 +1,7 @@
 # Implementation Plan: Food & Beverage Management Pro Toolkit
 
-**Date:** 2026-10-08
-**Status:** 🔮 PENDING (companion to `062-food-beverage-management-pro-toolkit-proposal.md`)
+**Date:** 2026-10-08 (assistant packs delivered 2026-10-09)
+**Status:** ✅ Phases 0–8 + Phase 4 assistant packs (A1–A4) built and merged; post-demo Phases 9–10 pending. (companion to `062-food-beverage-management-pro-toolkit-proposal.md`)
 **Estimated Effort:** ~37 hours demo (Phases 0–8) + ~15 hours post-demo (Phases 9–10)
 
 > Companion doc: `062-food-beverage-management-pro-toolkit-proposal.md` (scope,
@@ -210,17 +210,21 @@ no unguarded shell calls, string/array-safe parsing of Sheets responses
 - **Acceptance:** each report generates from fixtures with correct section order
   and figures; drafts written to a test folder only.
 
-### Phase 4 — Assistant packs (3h)
-- Four JSON packs: system prompt (G-rules + applicable A-rules + pointer to the
-  Drive folder layout), tool allowlist (READ + DRAFT tier only), settings
-  (Drafts folder ID, model).
-- A4 pack includes the character-bible contract (Rella, Sanda), the
-  AI-content-label reminder (A4-04), and the `image-production` tools
-  (`generate_image_ai`, `generate_image_variations`, `image_inpainting`,
-  `text_to_image_prompt_optimizer`) pre-listed in its allowlist **disabled by
-  default** (ACT-tier gate per the spec) — enabling later is a settings
-  change, not a re-deploy.
-- **Acceptance:** import each pack; verify tool visibility per allowlist and
+### Phase 4 — Assistant packs (3h) — ✅ DELIVERED
+- Four importable assistant packs (A1–A4) shipped as canonical v1
+  `nvoos-assistant` bundles in
+  `addons/pro/presets/assistant-packs/fnb/` with a README documenting the
+  allowlist matrix, rule coverage and post-import wiring.
+- System prompts embed the spec Instructions sheet verbatim (G-01…G-12 in
+  every pack; A-rules per assistant) with guardrails restated at the end.
+- Seeder: `wp mcp-ai pro fnb seed-assistants` (idempotent; `--dry-run`,
+  `--mode`, `--status`, `--include-image-tools`) imports via the shared
+  portability engine. A4's image-production tools remain off by default
+  (A4-05) and are added only with `--include-image-tools`.
+- Validation: `tests/pro/tools/food-beverage/validate-assistant-packs.php`
+  asserts structure, allowlists, guardrail text and ACT-tier absence
+  without WordPress.
+- Acceptance: import each pack; verify tool visibility per allowlist and
   that ACT-tier tools (including image generation) are absent/disabled.
 
 ### Phase 5a — Audit viewer (1h, demo)

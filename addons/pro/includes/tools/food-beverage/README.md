@@ -53,6 +53,20 @@ and the Surf Club Midigama assistant task spec.
   of this toolkit and off by default for the demo.
 - Table IDs follow the spec: 1.0…17.0 plus `assumptions`.
 
+## Assistant Packs (A1–A4)
+
+Shipped as canonical v1 `nvoos-assistant` bundles in
+`addons/pro/presets/assistant-packs/fnb/` (see that folder's README for the
+allowlist matrix and rule coverage). Seed with:
+
+```bash
+wp mcp-ai pro fnb seed-assistants            # idempotent
+wp mcp-ai pro fnb seed-assistants --dry-run  # preview
+```
+
+Validate bundles without WordPress:
+`php tests/pro/tools/food-beverage/validate-assistant-packs.php`.
+
 ## Tests
 
 ```bash
