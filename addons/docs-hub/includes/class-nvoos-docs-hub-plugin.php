@@ -399,7 +399,7 @@ class NV_oOS_Docs_Hub_Plugin {
 	}
 
 	/**
-	 * Clear doc cache when a plugin is activated.
+	 * Rebuild the doc index when a plugin is activated.
 	 *
 	 * @since 1.0.0
 	 *
@@ -435,7 +435,7 @@ class NV_oOS_Docs_Hub_Plugin {
 	}
 
 	/**
-	 * Clear doc cache when WordPress upgrades plugins.
+	 * Rebuild the doc index when WordPress upgrades plugins.
 	 *
 	 * @since 1.0.0
 	 *
@@ -463,12 +463,19 @@ class NV_oOS_Docs_Hub_Plugin {
 	 * Rebuild the index when the base plugin or this addon changed version.
 	 *
 	 * The manifest records the plugin versions it was built against. When
-	 * either differs from the installed version, the cache is cleared and
-	 * an async rebuild is enqueued. This guarantees the index refreshes
-	 * after an update even when no hook fired (in-place updater, manual
-	 * file replacement, plugin restore from backup).
+	 * either differs from the installed version, an async rebuild is
+	 * enqueued. This guarantees the index refreshes after an update even
+	 * when no hook fired (in-place updater, manual file replacement, plugin
+	 * restore from backup).
+	 *
+	 * The live cache is intentionally NOT cleared up front: the rebuild
+	 * pipeline builds into a staging namespace and atomically promotes it
+	 * over the live cache on completion, so readers keep serving the
+	 * previous index until the new one is ready. A stalled rebuild can
+	 * therefore never leave the site with an empty index.
 	 *
 	 * @since 0.4.1
+	 * @since 0.5.3 No longer clears the live cache before enqueueing.
 	 *
 	 * @return void
 	 */
@@ -493,7 +500,6 @@ class NV_oOS_Docs_Hub_Plugin {
 			return;
 		}
 
-		$cache->clear( true );
 		NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
 	}
 
@@ -529,14 +535,12 @@ class NV_oOS_Docs_Hub_Plugin {
 			return;
 		}
 
-		// Clear the live cache so the next manifest request triggers a rebuild
-		// (the GET /manifest endpoint already auto-enqueues when the cache is
-		// empty and an admin is logged in).
-		$cache = new NV_oOS_Docs_Hub_Cache();
-		$cache->clear();
-
-		// Also enqueue the async rebuild immediately so it starts building
-		// without waiting for the next visitor request.
+		// Cancel any in-flight rebuild so the saved settings take effect,
+		// then start a fresh async rebuild. The live cache is left intact:
+		// the pipeline promotes its staging build over the live cache when
+		// it finishes, so readers keep serving the previous index until the
+		// new one is ready. A stalled rebuild can no longer wipe the index.
+		NV_oOS_Docs_Hub_Rebuild_Job::cancel_async();
 		NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
 	}
 
