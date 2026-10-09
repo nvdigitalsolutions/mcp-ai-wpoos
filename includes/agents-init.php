@@ -46,6 +46,13 @@ WP_MCP_AI_Agent_Audit_Trail::init();
 // Register CoSAI gate hooks on the existing tool execution actions.
 WP_MCP_AI_Agent_Capability_Boundary_Hooks::register();
 
+// Register chat-profile read-only gate (2.2.0, proposal 015).
+// Priority 0 on wp_mcp_ai_before_tool_execution, registered BEFORE the
+// destructive-ops gate so the deny (profile block) always outranks the
+// ask (destructive confirmation) per the deny → ask → allow model.
+WP_MCP_AI_Read_Only_Profile_Gate::register();
+WP_MCP_AI_Chat_Profile_Prompt_Hint::register();
+
 // Register destructive operations confirmation gate (1.2.0).
 // Runs at priority 0 on wp_mcp_ai_before_tool_execution — before the
 // capability boundary so it applies even without an active boundary.

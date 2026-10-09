@@ -514,6 +514,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_textarea_field',
 			),
+			'profile'             => array(
+				'description'       => __( 'Optional chat profile slug (e.g. read-only). Advisory: the server resolves the effective profile from user meta and the site default; a value the requester is not allowed to assume is ignored and logged.', 'mcp-ai-wpoos' ),
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'sanitize_key',
+			),
 		);
 	}
 

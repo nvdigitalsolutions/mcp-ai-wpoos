@@ -194,6 +194,14 @@ class WP_MCP_AI_Tool_Async_Executor {
 			return new WP_Error( 'wp_mcp_ai_invalid_tool', __( 'Tool slug is required.', 'mcp-ai-wpoos' ) );
 		}
 
+		// Chat-profile gate at queue time (2.2.0). The async worker does not
+		// fire wp_mcp_ai_before_tool_execution, so a tool blocked by the
+		// resolved profile must be rejected before a job row is created.
+		$profile_blocked = self::get_chat_profile_block( $tool_slug, $context );
+		if ( is_wp_error( $profile_blocked ) ) {
+			return $profile_blocked;
+		}
+
 		// Generate unique job ID.
 		$job_id = $this->generate_job_id( $tool_slug, $arguments, $context );
 
@@ -376,6 +384,97 @@ class WP_MCP_AI_Tool_Async_Executor {
 		);
 
 		return $job_id;
+	}
+
+	/**
+	 * Enforce the resolved chat profile at queue time.
+	 *
+	 * The async worker never fires `wp_mcp_ai_before_tool_execution` (the
+	 * synchronous gates cannot cover it), so the read-only boundary is
+	 * checked here, before a job row exists. Returns the canonical 403
+	 * WP_Error envelope when the tool is blocked; null otherwise.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param string $tool_slug Tool slug being queued.
+	 * @param array  $context   Execution context.
+	 * @return WP_Error|null
+	 */
+	private static function get_chat_profile_block( $tool_slug, $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Chat_Profile_Manager' )
+			|| ! class_exists( 'WP_MCP_AI_Chat_Profile_Registry' )
+			|| ! class_exists( 'WP_MCP_AI_Read_Only_Profile_Gate' ) ) {
+			return null;
+		}
+
+		$profile_slug = isset( $context['chat_profile'] ) ? (string) $context['chat_profile'] : '';
+		if ( '' === $profile_slug ) {
+			$user_id      = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+			$profile_slug = WP_MCP_AI_Chat_Profile_Manager::resolve_slug( $user_id, null );
+		}
+
+		$profile = WP_MCP_AI_Chat_Profile_Registry::get_profile( $profile_slug );
+		if ( null === $profile || ! $profile->is_restrictive() ) {
+			return null;
+		}
+
+		$tool = null;
+		if ( function_exists( 'wp_mcp_ai_container' ) ) {
+			$container = wp_mcp_ai_container();
+			if ( $container && method_exists( $container, 'get' ) ) {
+				try {
+					$registry = $container->get( 'tool.registry' );
+					if ( $registry instanceof WP_MCP_AI_Tool_Registry ) {
+						$tool = $registry->get_tool( $tool_slug );
+					}
+				} catch ( Exception $e ) {
+					$tool = null;
+				}
+			}
+		}
+
+		// The tool cannot be resolved here (not yet registered on this boot) —
+		// the worker resolves it later; the synchronous paths are still gated,
+		// and the context carries the profile for a worker-side check.
+		if ( null === $tool ) {
+			return null;
+		}
+
+		if ( WP_MCP_AI_Read_Only_Profile_Gate::is_tool_allowed( $tool, $profile ) ) {
+			return null;
+		}
+
+		$flags = $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface
+			? (array) $tool->get_capability_flags()
+			: array();
+
+		if ( class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
+			WP_MCP_AI_Security_Audit_Logger::log_event(
+				WP_MCP_AI_Security_Audit_Logger::EVENT_CHAT_PROFILE_BLOCKED,
+				isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id(),
+				array(
+					'tool_slug' => $tool_slug,
+					'profile'   => $profile_slug,
+					'surface'   => 'async_queue',
+				)
+			);
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_chat_profile_blocked',
+			sprintf(
+				/* translators: 1: tool slug, 2: profile label */
+				__( 'Tool "%1$s" is blocked: the current chat profile is "%2$s".', 'mcp-ai-wpoos' ),
+				$tool_slug,
+				$profile->get_label()
+			),
+			array(
+				'status'    => 403,
+				'tool_slug' => $tool_slug,
+				'flags'     => $flags,
+				'profile'   => $profile_slug,
+			)
+		);
 	}
 
 	/**
@@ -1094,7 +1193,9 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// Allow tool_call_id to preserve original LLM tool call correlation.
 		// This enables proper async result correlation in the chat client.
 		// Allow blog_id to ensure multisite context is preserved when executing via cron.
-		$allowed_keys = array( 'user_id', 'assistant_id', 'session_id', 'tool_call_id', 'blog_id' );
+		// Allow chat_profile (2.2.0) so the resolved profile travels into the
+		// job metadata for observability and worker-side enforcement.
+		$allowed_keys = array( 'user_id', 'assistant_id', 'session_id', 'tool_call_id', 'blog_id', 'chat_profile' );
 
 		foreach ( $allowed_keys as $key ) {
 			if ( isset( $context[ $key ] ) ) {
