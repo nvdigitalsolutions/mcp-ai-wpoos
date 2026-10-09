@@ -6,6 +6,11 @@
 that introduces the commerce flow (ported from the Content Graph plugin's
 `WPORG-REVIEW-COMMERCE-NOTES.md`).
 
+> **0.5.3 (2026-10-09):** no commerce-surface changes — the 0.5.3 release
+> only changes rebuild/invalidation behaviour (the docs index stays live
+> while a rebuild runs). The checkout flow, its REST routes, and the
+> External Services disclosures are unchanged from 0.5.2.
+
 > This file is correspondence with the Plugin Review Team and is excluded
 > from the distribution ZIP via `.distignore` (`*.md` — docs-hub ships only
 > `readme.txt`).

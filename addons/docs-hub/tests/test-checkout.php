@@ -45,7 +45,7 @@ class Test_Docs_Hub_Checkout extends WP_UnitTestCase {
 		parent::setUp();
 
 		if ( ! defined( 'NVOOS_DOCS_HUB_VERSION' ) ) {
-			define( 'NVOOS_DOCS_HUB_VERSION', '0.5.2' );
+			define( 'NVOOS_DOCS_HUB_VERSION', '0.5.3' );
 		}
 		if ( ! defined( 'NVOOS_DOCS_HUB_PATH' ) ) {
 			define( 'NVOOS_DOCS_HUB_PATH', dirname( __DIR__ ) . '/' );
