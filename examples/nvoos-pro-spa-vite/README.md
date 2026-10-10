@@ -89,6 +89,12 @@ legend, minimap, layout presets, and PNG export from the standalone
   added bearer support to its read routes), and guest tokens. Write
   operations (rebuild, export, remote sources) stay `manage_options`-only on
   the plugin's own admin page; this surface is read-only by design.
+
+  Note: the explorer loads `/nodes` and `/edges` through jQuery `$.ajax`
+  rather than `fetch`, so the app's credential wrapper (`fetch-wrapper.ts`)
+  mirrors its header logic onto jQuery via an `ajaxPrefilter` — all four
+  auth modes therefore work for graph data, not just for the page's own
+  `visual-config` fetch.
 - **CORS** — in cross-origin modes (bearer/guest/wp login) the site must
   allow-list this app's origin AND widen the plugin's CORS route prefixes to
   include `/nvoos-content-graph/v1` (default scope is `/mcp-ai/v1` only):
