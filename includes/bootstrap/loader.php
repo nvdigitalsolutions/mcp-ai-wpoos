@@ -465,6 +465,10 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/security/
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-security-audit-logger.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-security-audit-logger.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-cors-guard.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-cors-guard.php';
+}
+WP_MCP_AI_CORS_Guard::init();
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/helpers/api-key-helpers.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/helpers/api-key-helpers.php';
 }
