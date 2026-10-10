@@ -35,12 +35,21 @@ export default defineConfig({
       // WordPress loads this from window.wp.i18n; the standalone app ships a
       // tiny drop-in instead (same trick as spa-v2's esbuild plugin).
       '@wordpress/i18n': fileURLToPath(new URL('./src/shims/wp-i18n.ts', import.meta.url)),
-      // The spa-v2 sources have their own node_modules. Force every importer
-      // (shell + SPA + its deps) onto this app's single React tree — a second
-      // react/jsx-runtime instance would break hooks and contexts. Directory
-      // aliases so subpaths (react-dom/client, react/jsx-runtime) still work.
+      // The spa-v2 sources have their own node_modules in the monorepo — and
+      // NONE in the standalone repo. Force every importer (shell + SPA + its
+      // deps) onto this app's single dependency tree: a second
+      // react/jsx-runtime instance would break hooks, and in the standalone
+      // mirror the spa-v2 sources have no node_modules of their own to
+      // resolve from. Directory aliases so subpaths (react-dom/client,
+      // react/jsx-runtime, react-router-dom/*) still work.
       react: fileURLToPath(new URL('./node_modules/react', import.meta.url)),
       'react-dom': fileURLToPath(new URL('./node_modules/react-dom', import.meta.url)),
+      'react-router-dom': fileURLToPath(new URL('./node_modules/react-router-dom', import.meta.url)),
+      zustand: fileURLToPath(new URL('./node_modules/zustand', import.meta.url)),
+      marked: fileURLToPath(new URL('./node_modules/marked', import.meta.url)),
+      dompurify: fileURLToPath(new URL('./node_modules/dompurify', import.meta.url)),
+      '@ai-sdk/react': fileURLToPath(new URL('./node_modules/@ai-sdk/react', import.meta.url)),
+      '@ai-sdk/ui-utils': fileURLToPath(new URL('./node_modules/@ai-sdk/ui-utils', import.meta.url)),
     },
   },
   server: {

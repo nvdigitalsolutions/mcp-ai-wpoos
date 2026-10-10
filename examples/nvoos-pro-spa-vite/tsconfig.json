@@ -22,12 +22,15 @@
       "@wordpress/i18n": ["src/shims/wp-i18n.ts"],
       "react": ["node_modules/@types/react"],
       "react-dom": ["node_modules/@types/react-dom"],
+      "react/jsx-runtime": ["node_modules/@types/react/jsx-runtime"],
+      "react/jsx-dev-runtime": ["node_modules/@types/react/jsx-dev-runtime"],
       "react-router-dom": ["node_modules/react-router-dom"],
       "react-router-dom/*": ["node_modules/react-router-dom/*"],
       "zustand": ["node_modules/zustand"],
       "zustand/*": ["node_modules/zustand/*"],
       "@ai-sdk/react": ["node_modules/@ai-sdk/react"],
       "@ai-sdk/react/*": ["node_modules/@ai-sdk/react/*"],
+      "@ai-sdk/ui-utils": ["node_modules/@ai-sdk/ui-utils"],
       "marked": ["node_modules/marked"],
       "dompurify": ["node_modules/dompurify"]
     }
