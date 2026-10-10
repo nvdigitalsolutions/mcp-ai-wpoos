@@ -93,10 +93,11 @@ Same deploy model as the media worker (`docs/operations/deployment/media-worker-
    `.github/workflows/sync-nvoos-pro-spa-standalone.yml` on every push to
    `main`/`alpha-working`. Never commit to the standalone repo directly.
 2. **Velocity app** — import the standalone repo (branch `main`): Node 22,
-   build command `npm ci && npm run build`, entry `scripts/serve.mjs`
-   (`PORT` is injected by the platform). Point the domain
-   (e.g. `chat.nvoos.cloud`) at the app, and optionally set the build-time
-   env `VITE_DEFAULT_SITE_URL=https://your-backend.example.com` to pre-fill
+   **root directory `examples/nvoos-pro-spa-vite`**, build command
+   `npm ci && npm run build`, entry `scripts/serve.mjs` (`PORT` is injected
+   by the platform). Point the domain (e.g. `chat.nvoos.cloud`) at the app,
+   and optionally set the build-time env
+   `VITE_DEFAULT_SITE_URL=https://your-backend.example.com` to pre-fill
    the connection screen.
 3. **Deploy** — `.github/workflows/deploy-nvoos-pro-spa-standalone.yml` pushes
    the subtree to the `VELOCITY_SPA_DEPLOY_URL` deploy remote (Velocity
