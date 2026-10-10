@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-ui
-description: UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns, dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map, and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging.
+description: UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns plus the standalone Pro SPA Vite app (examples/nvoos-pro-spa-vite), dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map, and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-09"
+  last-updated: "2026-10-10"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -37,6 +37,9 @@ The canonical addon pattern itself is
   see "TS-shadows-JS resolution gotcha"
 - "Continue the 060 work" / P1 items (zod size pass, per-page i18n sweep,
   table virtualization)
+- Building or deploying the standalone Pro SPA app
+  (`examples/nvoos-pro-spa-vite/`, Cloudways Velocity, `chat.nvoos.cloud`)
+  — see "Standalone SPA app (pattern D)"
 
 ## The three sanctioned build patterns — pick one, don't mix
 
@@ -59,6 +62,45 @@ Rules that follow from the matrix:
    `@wordpress/api-fetch` + `@wordpress/i18n` — both React-free.
 3. Never mix patterns in one addon (no `@wordpress/components` inside a
    Pattern-A bundle, no bundled React inside a Pattern-C admin page).
+
+## Standalone SPA app (pattern D — Vite shell over spa-v2)
+
+`examples/nvoos-pro-spa-vite/` is a standalone Vite + React app that mounts the
+**Pro SPA v2 sources directly via a Vite alias**
+(`../../addons/pro/assets/spa-v2/src`) and connects to **any WordPress backend**
+running the plugin — no WP host page, no fork (the app tracks the plugin SPA).
+Deploy playbook: `docs/operations/deployment/nvoos-pro-spa-velocity-setup.md`.
+
+Reusable mechanics (all learned the hard way — do not rediscover):
+
+- **Runtime global:** spa-v2 expects `window.NVOOS_PRO_SPA` (`apiUrl`,
+  `proApi`, `nonce`, `endpoints`, `user`, `assistants`, `config`) localized by
+  the plugin's PHP loader. The app builds the same object from a connection
+  screen: `{site}/wp-json/mcp-ai/v1/{chat,chat-client,chat-transcripts,…}` +
+  `{site}/wp-json/mcp-ai-pro/v1/{workflows,…}`, and mints the `wp_rest` nonce
+  from `mcp-ai/v1/session/nonce` (**cookie mode only**).
+- **Shims:** a tiny `@wordpress/i18n` drop-in (spa-v2 reads `window.wp.i18n`),
+  and a `window.fetch` wrapper that injects
+  `Authorization: Bearer cred_…` / `X-WP-MCP-AI-Guest` on **every** request —
+  including the SSE chat stream (the AI SDK adapter opens it through global
+  fetch) — and **strips the empty `X-WP-Nonce`** the SPA sends, which the
+  plugin's REST layer rejects for token auth.
+- **Full screen:** `shell.css` re-creates the WP-admin height chain
+  (`#wpwrap` → root) the three-column layout expects.
+- **Auth modes:** assistant credential (bearer) = the production cross-origin
+  path; guest = public chat; cookie = dev-proxy only. Transcripts/approvals
+  reject a pure bearer (token ≠ WP user, issue #6987).
+- **CORS:** the backend must echo the app origin — plugin ≥1.2.2
+  `cors_allowed_origins` (or the §5b mu-plugin) + widen
+  `wp_mcp_ai_cors_guard_route_prefixes` with `/mcp-ai-pro/v1` (the default
+  scope is `/mcp-ai/v1` only). Never flip the dropdown to "Allow All".
+- **Build/deploy:** `npm run build` → static `dist/`; `scripts/serve.mjs` is
+  the Velocity entry; build-time `VITE_DEFAULT_SITE_URL` pre-fills the
+  connection screen. Velocity **root directory must be
+  `examples/nvoos-pro-spa-vite`** — the repo root has no `package.json` and
+  the build dies with `npm error enoent` (exit 254).
+- **Media worker:** the app fronts the worker directly (URL + `X-Site-Token`
+  in the connection screen) — the two stay separate Velocity apps.
 
 ## Component rules — headless only
 

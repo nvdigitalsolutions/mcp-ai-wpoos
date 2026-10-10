@@ -2,7 +2,7 @@
 
 > **GSD Context File** — Load this when working on REST API endpoints.
 > Last reviewed: October 10, 2026 (v1.2.2).
-> **New in v1.2.2:** one new `mcp-ai/v1/` route pair — `GET/POST /mcp-ai/v1/chat-profile` (PR #6977, Proposal 015): the chat-profile read endpoint + the profile-switch endpoint, deliberately **not a tool** so an agent can't self-elevate mid-run; permission logic is server-side (client-sent profiles honoured only for `wp_mcp_ai_change_chat_profile` → `manage_options`; downgrades allowed for any logged-in user; guests resolve to read-only). No other `mcp-ai/v1/` routes added or re-shaped in-window (#6981's Google OAuth changes are service-level; the docs-hub/content-graph changes are sub-project-owned namespaces).
+> **New in v1.2.2:** one new `mcp-ai/v1/` route pair — `GET/POST /mcp-ai/v1/chat-profile` (PR #6977, Proposal 015): the chat-profile read endpoint + the profile-switch endpoint, deliberately **not a tool** so an agent can't self-elevate mid-run; permission logic is server-side (client-sent profiles honoured only for `wp_mcp_ai_change_chat_profile` → `manage_options`; downgrades allowed for any logged-in user; guests resolve to read-only). No other `mcp-ai/v1/` routes added or re-shaped in-window (#6981's Google OAuth changes are service-level; the docs-hub/content-graph changes are sub-project-owned namespaces). **CORS guard (PR #6986):** no new routes, but the **12th** `includes/security/` class `WP_MCP_AI_CORS_Guard` hooks `rest_pre_serve_request` at priority 20 to override WordPress core's origin reflection — the "Same Origin" setting was previously a silent no-op (see the CORS section below).
 > **New in v1.2.1 (no new routes):** no `mcp-ai/v1/` routes added or re-shaped in-window. PR #6956's `X-MCP-Bridge-Name` header seam is **request-context-level** — `WP_MCP_AI_REST::handle_tool_request()` sanitizes + 120-char caps the header into `$context['bridge_name']` (purely informational, never used for authorization). PR #6963's `POST /nvoos-docs/v1/payments/{session,verify}` + `GET …/health` are **docs-hub-addon-owned** (the standalone plugin's own REST namespace, admin-only with per-user throttling + the already-licensed short-circuit). PRs #6954 (skill-catalogue service), #6961 (Elementor autoload fix), #6962/#6964 (tool registrations) and #6957/#6958/#6959 (build scripts/content-graph sub-project) carry no `mcp-ai/v1/` surface.
 > **New in v1.1.99 (no new routes):** no `mcp-ai/v1/` routes added or re-shaped in-window. PR #6950 is **admin-page display-level** (the Fleet Operators page masks tokens — no REST surface). PR #6945's OAuth resource server (RFC 9728 metadata + `WWW-Authenticate` challenges) is **gateway-addon-owned** — the standalone Express service's `/.well-known/oauth-protected-resource`, not the WP REST namespace (documented in the gateway addon skill + `ADDON_INVENTORY` row #31). PRs #6936/#6940/#6951 are build scripts/workflows; #6952/#6944/#6946–#6949 are SPA/docs-hub addon surfaces; #6938/#6939 are service/client-level.
 > **New in v1.1.98 (no new routes):** no `mcp-ai/v1/` routes added or re-shaped in-window. PR #6933 is **admin-AJAX-internal** (the Unified Blueprints page's `install`/`get_details` handlers gain toolkit-enablement rejections — no REST namespace surface). PR #6934/#6929/#6932 are docs/skills, PR #6931 is lockfile-only, and PR #6927 is gateway-addon-owned (the mirror-sync workflow + addon changelog).
@@ -262,6 +262,61 @@ $response->header( 'X-WP-Total', $total );
 $response->header( 'X-WP-TotalPages', $total_pages );
 return $response;
 ```
+
+---
+
+## CORS / Access-Control-Allow-Origin (core reflection override)
+
+**WordPress core reflects ANY `Origin` header back** — `rest_send_cors_headers()`
+(hooked on `rest_pre_serve_request` at priority 10) sends
+`Access-Control-Allow-Origin: <whatever the caller sent>` +
+`Access-Control-Allow-Credentials: true` on **every** REST response, including
+core routes. It runs after the route handler, so it overwrites any header the
+plugin set on the `WP_REST_Response`. Consequence: the Security → Network
+"Same Origin" setting was historically a no-op, and a hardened site still
+reflected arbitrary origins.
+
+**`WP_MCP_AI_CORS_Guard`** (`includes/security/`, since PR #6986) hooks the same
+filter at **priority 20** and enforces the setting:
+
+- `cors_allow_origin = site` (default): exact-origin allowlist — the site's own
+  origin + `cors_allowed_origins` setting lines (one origin per line, validated
+  as `scheme://host[:port]`) + the `wp_mcp_ai_cors_allowed_origins` filter.
+  Allowlisted origins are **echoed back exactly** (with credentials) so
+  cross-origin SPAs work; **everything else gets the site's own origin +
+  `Access-Control-Allow-Credentials: false`** (browsers refuse to read the
+  response). The literal `null` origin (sandboxed iframes, file://) is always
+  blocked.
+- `cors_allow_origin = star`: core's allow-all reflection is left untouched.
+- Enforcement scope: plugin routes (`/mcp-ai/v1` default), extensible via the
+  `wp_mcp_ai_cors_guard_route_prefixes` filter. **Note the default does NOT
+  cover the Pro SPA namespace** — `/mcp-ai-pro/v1/…` needs its own prefix
+  (e.g. add `'/mcp-ai-pro/v1'`) for the standalone Pro SPA on another domain.
+- The legacy `wp_mcp_ai_cors_allow_origin` filter remains the **final override**
+  (`resolve_allow_origin()` applies it last) for backward compatibility.
+
+**Every CORS emitter must resolve through the guard** — the MCP methods trait
+(`add_cors_headers`), the MCP OPTIONS preflight handler (`handle_mcp_options`),
+the SSE handler (`WP_MCP_AI_SSE_Handler::send_sse_headers`), the SSE stream
+(`WP_MCP_AI_SSE_Stream::stream_job_status`), and the `WP_MCP_AI_REST_MCP_Controller`
+fallbacks all call `WP_MCP_AI_CORS_Guard::resolve_allow_origin()`. When adding a
+new REST/SSE surface that emits CORS headers, use the resolver — never hardcode
+`'*'` or `get_site_url()`.
+
+**Diagnosing a site that "echoes any origin":**
+
+```bash
+# Expect ACAO = site URL + credentials false in site mode:
+curl -s -D - -o /dev/null -H "Origin: https://bogus.example.com" \
+  "https://site.example/wp-json/mcp-ai/v1/assistants" | grep -i access-control
+# Allowlisted origin is echoed exactly:
+curl -s -D - -o /dev/null -H "Origin: https://chat.nvoos.cloud" \
+  "https://site.example/wp-json/mcp-ai/v1/assistants" | grep -i access-control
+```
+
+If a bogus origin is still echoed, either the setting is `star`, or the site
+runs a pre-#6986 build (apply the mu-plugin allowlist snippet from
+`docs/operations/deployment/nvoos-pro-spa-velocity-setup.md` §5).
 
 ---
 

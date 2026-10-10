@@ -1042,6 +1042,15 @@ update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'web_search', 'creat
 **Cause (v1.1.90+):** opt-in `mcp_require_assistant_scope` (Security → Access & Identity, default OFF) is on and the request resolves to no assistant (no explicit `assistant_id`, no token-bound assistant, no `default_assistant`).
 **Fix:** pass `assistant_id`, bind the credential to an assistant, set `default_assistant`, or turn the toggle off.
 
+### Site echoes any Origin back — CORS "Same Origin" not enforced
+
+**Cause:** WordPress core `rest_send_cors_headers()` (hooked on `rest_pre_serve_request` at priority 10) reflects whatever `Origin` the client sent — plus `Access-Control-Allow-Credentials: true` — on **every** REST response, replacing the plugin's own header. The Security → Network "Same Origin" setting was therefore a silent no-op before v1.2.2 (verified live: a bogus origin was mirrored back on both plugin and core routes).
+**Fix (v1.2.2+, PR #6986):** `WP_MCP_AI_CORS_Guard` overrides the reflection at priority 20 in `site` mode — exact-allowlisted origins (site origin + the `cors_allowed_origins` textarea, one origin per line + the `wp_mcp_ai_cors_allowed_origins` filter) are echoed with credentials; everything else gets the site's own origin + credentials off (browsers refuse to read the response). `star` mode is unchanged. Default enforcement scope is `/mcp-ai/v1` only — add `/mcp-ai-pro/v1` via the `wp_mcp_ai_cors_guard_route_prefixes` filter for Pro SPA surfaces. On pre-1.2.2 installs, an exact-allowlist mu-plugin replicating the override is in `docs/operations/deployment/nvoos-pro-spa-velocity-setup.md` §5. Diagnose with:
+```bash
+curl -s -D - -o /dev/null -H "Origin: https://bogus.example.com" \
+  "https://SITE/wp-json/mcp-ai/v1/assistants" | grep -i access-control
+```
+
 ### MCP App OAuth connect fails with "OAuth 2.0 discovery failed" (v1.1.91+)
 
 **Cause:** the older client only probed the bare `/.well-known/oauth-authorization-server` URL, so path-scoped or RFC 9728-style OAuth servers looked unsupported even when they fully implement OAuth.
