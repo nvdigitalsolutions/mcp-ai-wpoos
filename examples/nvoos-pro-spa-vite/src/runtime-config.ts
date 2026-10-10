@@ -16,7 +16,7 @@
 
 import type { ProSpaRuntime, ProSpaUser, ProSpaEndpoints } from '@nvoos/pro-spa-v2/api/config';
 
-export type AuthMode = 'cookie' | 'bearer' | 'guest';
+export type AuthMode = 'cookie' | 'bearer' | 'guest' | 'wp';
 
 export interface ConnectionSettings {
   /** Base URL of the WordPress site, e.g. https://example.com (no trailing slash). */
@@ -26,6 +26,10 @@ export interface ConnectionSettings {
   bearer?: string;
   /** Server-minted guest token for guest mode. */
   guestToken?: string;
+  /** WordPress login name for wp mode (Application Password, Basic auth). */
+  wpUsername?: string;
+  /** WordPress Application Password (xxxx xxxx xxxx xxxx xxxx xxxx) for wp mode. */
+  wpAppPassword?: string;
   /** Assistant to chat with (required for guest mode; optional otherwise). */
   assistantId?: number;
   /** Render the full three-column admin surface instead of the chat surface. */
@@ -117,6 +121,66 @@ export function buildRuntime(
     mentionTypes: [],
     assistants: undefined,
     profiles: undefined,
+  };
+}
+
+/**
+ * Build an `Authorization: Basic …` header value from a WordPress username and
+ * Application Password.
+ *
+ * Encodes UTF-8 via TextEncoder before base64 — `btoa()` alone throws
+ * `InvalidCharacterError` on non-Latin-1 code points (RFC 7617 §2.1 defines
+ * the user-pass as ISO-8859-1 by default, but WP stores UTF-8; the encoder
+ * path is correct for both). The password is never logged or echoed.
+ */
+export function buildBasicAuthHeader(username: string, appPassword: string): string {
+  const bytes = new TextEncoder().encode(`${username}:${appPassword}`);
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return `Basic ${btoa(binary)}`;
+}
+
+/**
+ * Validate WordPress Application Password credentials and fetch the real user.
+ *
+ * `GET /wp/v2/users/me?context=edit` returns the authenticated user (id,
+ * name, slug) and — in `edit` context only — the full capability map.
+ * Stateless: `credentials: 'omit'` (no cookie session) and no nonce
+ * (Application Password auth is CSRF-safe by design).
+ */
+export async function fetchCurrentUserBasic(
+  base: string,
+  username: string,
+  appPassword: string,
+): Promise<Partial<ProSpaUser>> {
+  const response = await fetch(`${base}/wp-json/wp/v2/users/me?context=edit`, {
+    credentials: 'omit',
+    headers: { Authorization: buildBasicAuthHeader(username, appPassword) },
+  });
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        `WordPress rejected the username or application password (HTTP ${response.status}). ` +
+          'Create an application password under Users → Profile → Application Passwords.',
+      );
+    }
+    throw new Error(`wp/v2/users/me returned ${response.status}`);
+  }
+  const data = (await response.json()) as {
+    id?: number;
+    name?: string;
+    slug?: string;
+    capabilities?: Record<string, boolean>;
+  };
+  return {
+    id: data.id ?? 0,
+    login: data.slug ?? '',
+    displayName: data.name ?? '',
+    capabilities: Object.entries(data.capabilities ?? {})
+      .filter(([, enabled]) => enabled)
+      .map(([cap]) => cap),
   };
 }
 
