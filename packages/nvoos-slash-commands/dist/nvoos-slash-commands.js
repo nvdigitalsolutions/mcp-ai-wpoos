@@ -7,9 +7,6 @@
  * @since 1.2.0
  */
 
-(function() {
-	'use strict';
-
 	/**
 	 * Command Autocomplete Class
 	 */
@@ -367,9 +364,6 @@ function _getConfig() {
  * @package WP_MCP_AI
  * @since 1.2.0
  */
-
-(function() {
-	'use strict';
 
 	/**
 	 * Slash Commands Handler

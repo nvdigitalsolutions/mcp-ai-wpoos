@@ -4,6 +4,7 @@
   "description": "Slash command system with fuzzy-search autocomplete and execution engine - Extracted from NV Open Operator System",
   "main": "dist/nvoos-slash-commands.js",
   "module": "dist/nvoos-slash-commands.js",
+  "type": "module",
   "types": "dist/nvoos-slash-commands.d.ts",
   "exports": {
     ".": {

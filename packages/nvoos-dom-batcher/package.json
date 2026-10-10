@@ -4,6 +4,7 @@
   "description": "requestAnimationFrame DOM update batcher, scroll batcher, and UI utilities for high-frequency streaming UIs - Extracted from NV Open Operator System",
   "main": "dist/nvoos-dom-batcher.js",
   "module": "dist/nvoos-dom-batcher.js",
+  "type": "module",
   "types": "dist/nvoos-dom-batcher.d.ts",
   "exports": {
     ".": {
