@@ -10,6 +10,9 @@ on:
     branches: [main, alpha-working]
     paths:
       - 'examples/nvoos-pro-spa-vite/**'
+  # Manual runs let you force a sync without waiting for a merge (first-run
+  # verification after adding the token, backfills, etc.).
+  workflow_dispatch:
 
 jobs:
   sync:
