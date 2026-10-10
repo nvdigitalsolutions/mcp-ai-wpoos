@@ -28,7 +28,8 @@ jobs:
           cp -r examples/nvoos-pro-spa-vite /tmp/nvoos-pro-spa-deploy/
           cp -r addons/pro/assets/spa-v2 /tmp/nvoos-pro-spa-deploy/addons/pro/assets/
           cd /tmp/nvoos-pro-spa-deploy
-          git init -q
+          # Pin the initial branch to main (same fix as the sync workflow).
+          git init -q -b main
           git add .
           git -c user.name="GitHub Actions" -c user.email="actions@github.com" commit -q -m "Deploy standalone Pro SPA ($GITHUB_SHA)"
 

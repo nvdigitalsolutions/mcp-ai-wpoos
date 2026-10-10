@@ -47,7 +47,10 @@ jobs:
           - SPA sources: `addons/pro/assets/spa-v2/` (vendored for the alias)
           EOF
           cd /tmp/nvoos-pro-spa-standalone
-          git init -q
+          # Pin the initial branch to main: git init alone honours the runner's
+          # init.defaultBranch (or falls back to master), which made the later
+          # `git push ... main --force` fail with "src refspec main does not match any".
+          git init -q -b main
           git add .
           git -c user.name="GitHub Actions" -c user.email="actions@github.com" commit -q -m "Sync standalone Pro SPA ($GITHUB_SHA)"
 
