@@ -108,17 +108,17 @@ class WP_MCP_AI_SSE_Handler {
 			/**
 			 * Filter the Access-Control-Allow-Origin value for SSE streaming responses.
 			 *
-			 * Use this filter to restrict SSE connections to specific origins in production.
-			 * Defaults to '*' (all origins) for maximum compatibility.
-			 *
-			 * Example — restrict to a single origin:
-			 *   add_filter( 'wp_mcp_ai_cors_allow_origin', fn() => 'https://app.example.com' );
+			 * Defaults to the resolved origin from the Security → Network CORS
+			 * settings (same-origin unless the request origin is allowlisted).
 			 *
 			 * @since 1.2.0
 			 *
-			 * @param string $origin Allowed origin. Default '*'.
+			 * @param string $origin Allowed origin.
 			 */
-			$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+			$default_origin = class_exists( 'WP_MCP_AI_CORS_Guard' )
+				? WP_MCP_AI_CORS_Guard::resolve_allow_origin()
+				: '*';
+			$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 			// Sanitize to prevent HTTP header injection: strip tags, newlines and
 			// carriage returns that could split the response into multiple headers.
 			$allow_origin = sanitize_text_field( str_replace( array( "\r", "\n" ), '', $allow_origin ) );

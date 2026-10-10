@@ -760,7 +760,8 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Self-contained fallback: Provide basic CORS headers.
-		$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+		$default_origin = class_exists( 'WP_MCP_AI_CORS_Guard' ) ? WP_MCP_AI_CORS_Guard::resolve_allow_origin() : '*';
+		$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 
 		$response = new WP_REST_Response( null, 204 );
 		$response->header( 'Access-Control-Allow-Origin', $allow_origin );
@@ -1117,7 +1118,8 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Otherwise add basic CORS headers.
-		$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+		$default_origin = class_exists( 'WP_MCP_AI_CORS_Guard' ) ? WP_MCP_AI_CORS_Guard::resolve_allow_origin() : '*';
+		$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 		$response->header( 'Access-Control-Allow-Origin', $allow_origin );
 		$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
 		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest, Accept, Mcp-Session-Id' );

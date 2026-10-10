@@ -23,6 +23,7 @@ basis.
 | Symbol | File | Used by |
 |---|---|---|
 | `WP_MCP_AI_Security_Posture` | `class-wp-mcp-ai-security-posture.php` | Security Center Overview sub-tab, `WP_MCP_AI_REST_Security_Center_Controller`, (future) dashboard widget + WP-CLI |
+| `WP_MCP_AI_CORS_Guard` | `class-wp-mcp-ai-cors-guard.php` | REST pre-serve layer — overrides WP core's reflected `Access-Control-Allow-Origin` with the Security → Network CORS allowlist |
 
 ### `WP_MCP_AI_Security_Posture`
 

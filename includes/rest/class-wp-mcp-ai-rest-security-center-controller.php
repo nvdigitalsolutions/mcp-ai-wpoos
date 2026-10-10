@@ -346,10 +346,23 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 		}
 
 		// CORS Allow-Origin (from Security → Network → Security Headers).
-		$cors_setting                           = $settings['cors_allow_origin'] ?? 'site';
-		$headers['Access-Control-Allow-Origin'] = ( 'star' === $cors_setting )
-			? '* (any domain — less secure)'
-			: get_site_url() . ' (same-origin — recommended)';
+		$cors_setting = $settings['cors_allow_origin'] ?? 'site';
+		if ( 'star' === $cors_setting ) {
+			$cors_preview = '* (any domain — less secure)';
+		} else {
+			$extra_count = 0;
+			if ( ! empty( $settings['cors_allowed_origins'] ) && is_string( $settings['cors_allowed_origins'] ) ) {
+				$extra_count = count( array_filter( array_map( 'trim', preg_split( '/[\r\n]+/', $settings['cors_allowed_origins'] ) ) ) );
+			}
+			$cors_preview = $extra_count > 0
+				? get_site_url() . sprintf(
+					/* translators: %d: number of extra allowlisted origins. */
+					_n( ' + %d allowlisted origin (same-origin default)', ' + %d allowlisted origins (same-origin default)', $extra_count, 'mcp-ai-wpoos' ),
+					$extra_count
+				)
+				: get_site_url() . ' (same-origin — recommended)';
+		}
+		$headers['Access-Control-Allow-Origin'] = $cors_preview;
 
 		// Escape all header values.
 		$safe_headers = array();
@@ -740,6 +753,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 			'hsts_max_age',
 			'csp_frame_ancestors',
 			'cors_allow_origin',
+			'cors_allowed_origins',
 			'enable_root_security_key',
 			'enable_2fa_requirement',
 			'enable_loopback_ssl_bypass',

@@ -33,6 +33,10 @@
 - **F&B oracle test drift (#6978)** — covers keys built with month hyphens vs the oracle's underscores, and exact `assertEquals` on 2 dp-vs-3 dp float sums; both lessons encoded in the toolkit-creation skill. No production code.
 - **CG-AI platform evolved-prompt test (#6980)** — the resolver pass-through assertion now pins an admin user to the `write` chat profile (guarded by `class_exists()`), so the guest read-only prompt-hint subscriber can't pollute it; 15 tests / 110+111 assertions on both matrices.
 
+### Fixed — CORS Same-Origin Enforcement
+
+- **WordPress core reflects any `Origin` header back on every REST response** (`rest_send_cors_headers` on `rest_pre_serve_request`, priority 10, with `Access-Control-Allow-Credentials: true`) — which silently overrode the Security → Network "Same Origin" setting, so a hardened site still echoed arbitrary origins. New **`WP_MCP_AI_CORS_Guard`** (12th `includes/security/` class) hooks the same filter at priority 20 and, in `site` mode, replaces the reflected header with the configured policy: exact allowlisted origins (site origin + new `cors_allowed_origins` setting + `wp_mcp_ai_cors_allowed_origins` filter) are echoed back, everything else gets the site's own origin with credentials disabled; `star` mode keeps core's allow-all reflection. Enforcement covers the plugin's REST routes (`/mcp-ai/v1` by default, extensible via `wp_mcp_ai_cors_guard_route_prefixes`), and the MCP/OPTIONS/SSE header emitters now share the same resolver. 20 new tests; 138 related REST/security tests pass.
+
 ### Build & CI
 
 - **SPA addon tag-release flow fixed (#6970)** — `build-spa-addons.yml` no longer ANDs `tags` with `paths` (no SPA addon ever got a release via the tag path) and the release job's `inputs.create_release == true` string-comparison bug is fixed; new `release-spa-addons.yml` (tag-push `*-v*.*.*` + workflow_dispatch, PCP gate, GitHub release — deliberately no publish-back onto the tag).
