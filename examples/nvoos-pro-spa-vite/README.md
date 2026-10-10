@@ -34,6 +34,21 @@ npm run dev          # plain Vite (no proxy target)
 npm run dev:proxy    # proxies /wp-json → http://localhost:8000 (override: NVOOS_TARGET_SITE)
 ```
 
+`NVOOS_TARGET_SITE` and `NVOOS_WORKER_URL` can be set in the shell or in a
+`.env` file (`.env`, `.env.local`, `.env.development`, `.env.development.local`
+— later files win; shell values take precedence over all of them).
+`VITE_DEFAULT_SITE_URL` works from `.env` too and pre-fills the connection
+screen. Example:
+
+```bash
+# .env (gitignored)
+VITE_DEFAULT_SITE_URL=https://nvoos.pro
+NVOOS_TARGET_SITE=https://nvoos.pro
+```
+
+`npm run dev:proxy` confirms the resolved target at startup
+(`[nvoos-pro-spa-vite] proxying /wp-json → …`).
+
 ![Standalone Pro SPA connected to WordPress](standalone-fullscreen.png)
 
 Validate:
