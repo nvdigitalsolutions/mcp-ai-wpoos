@@ -653,6 +653,57 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Check for assistant credential (bearer) authentication.  Credentials
+			// are CSRF-safe header tokens: once validated they map to the issuing
+			// user (created_by), so transcript access mirrors that user's own rows
+			// without requiring a cookie nonce.  Reads are additionally scoped to
+			// the assistant the credential was issued for so a credential can never
+			// enumerate other assistants' transcripts.
+			$credential = $this->validate_request_credential( $request );
+			if ( null !== $credential ) {
+				if ( is_wp_error( $credential ) ) {
+					return $credential;
+				}
+
+				$credential_assistant = absint( isset( $credential['assistant_id'] ) ? $credential['assistant_id'] : 0 );
+				$requested_assistant  = absint( $request->get_param( 'assistant_id' ) );
+
+				if ( $credential_assistant && $requested_assistant && $requested_assistant !== $credential_assistant ) {
+					return new WP_Error(
+						'wp_mcp_ai_forbidden',
+						__( 'This credential cannot access transcripts for that assistant.', 'mcp-ai-wpoos' ),
+						array( 'status' => 403 )
+					);
+				}
+
+				// Default the query scope to the credential's own assistant.
+				if ( $credential_assistant && ! $requested_assistant ) {
+					$request->set_param( 'assistant_id', $credential_assistant );
+				}
+
+				// The authenticator mapped the credential to its issuing user.
+				// Default the row scope to that user (0 when unmapped).
+				$mapped_user = get_current_user_id();
+				if ( ! $user_id ) {
+					$user_id = $mapped_user;
+					$request->set_param( 'user_id', $user_id );
+				}
+
+				if ( $user_id === $mapped_user ) {
+					return true;
+				}
+
+				if ( 0 === $user_id && $mapped_user > 0 && current_user_can( 'manage_options' ) ) {
+					return true;
+				}
+
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'This credential cannot access transcripts for that user.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
+				);
+			}
+
 			if ( ! $user_id && $current_user ) {
 				$user_id = $current_user;
 				$request->set_param( 'user_id', $user_id );
@@ -698,6 +749,60 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'wp_mcp_ai_forbidden',
 				__( 'You do not have permission to view chat transcripts.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
+			);
+		}
+
+		/**
+		 * Validate an assistant credential presented on a REST request.
+		 *
+		 * Accepts both the standard "Authorization: Bearer cred_xxxxx.SECRET"
+		 * header and the raw credential form ("Authorization: cred_xxxxx.SECRET")
+		 * accepted elsewhere in the REST layer.  Returns the validated credential
+		 * metadata (assistant_id, credential_id, created_by, ...) on success, a
+		 * WP_Error for a rejected credential, or null when the request does not
+		 * present a credential at all.
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return array|WP_Error|null Credential metadata, WP_Error, or null when absent.
+		 */
+		protected function validate_request_credential( WP_REST_Request $request ) {
+			$header = $request->get_header( 'Authorization' );
+
+			$token = '';
+			if ( ! empty( $header ) && preg_match( '/^Bearer\s+(.*)$/i', $header, $matches ) ) {
+				$token = trim( $matches[1] );
+			} elseif ( ! empty( $header ) ) {
+				// Raw credential header (no "Bearer" scheme), mirroring the
+				// compatibility handling in permissions_check().
+				$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
+				if ( $accept_raw_credential ) {
+					$token = trim( $header );
+				}
+			}
+
+			if ( '' === $token || ! WP_MCP_AI_Credentials::is_token_format( $token ) ) {
+				return null;
+			}
+
+			$this->reset_auth_context();
+
+			$validated = $this->validate_local_token( $token, $request );
+			if ( is_wp_error( $validated ) ) {
+				return $validated;
+			}
+			if ( true !== $validated ) {
+				return null;
+			}
+
+			$context = $this->authenticator->get_auth_context();
+
+			if ( isset( $context['token_context']['credential'] ) && is_array( $context['token_context']['credential'] ) ) {
+				return $context['token_context']['credential'];
+			}
+
+			return array(
+				'assistant_id' => isset( $context['token_context']['assistant_id'] ) ? absint( $context['token_context']['assistant_id'] ) : 0,
+				'created_by'   => isset( $context['token_context']['user_id'] ) ? absint( $context['token_context']['user_id'] ) : 0,
 			);
 		}
 

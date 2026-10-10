@@ -1824,6 +1824,24 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response Response containing the fresh nonce.
 	 */
 	public function handle_session_nonce() {
+		// This endpoint is called without a nonce by design, so WordPress
+		// core's rest_cookie_check_errors() has already set the current user
+		// to 0 before the callback runs.  Minting now would produce a nonce
+		// bound to user 0 that fails rest_cookie_check_errors() on the very
+		// retry request this endpoint exists to enable (403
+		// rest_cookie_invalid_nonce).  Re-establish the identity the request's
+		// auth cookie proves before minting so wp_create_nonce() binds the
+		// nonce to that session.  Requests without a valid cookie keep the
+		// guest nonce they receive today.
+		$cookie_user_id = wp_validate_auth_cookie( '', 'logged_in' );
+		if ( $cookie_user_id && absint( $cookie_user_id ) !== get_current_user_id() ) {
+			if ( class_exists( 'WP_MCP_AI_User_Context_Helper' ) ) {
+				WP_MCP_AI_User_Context_Helper::safe_set_current_user( absint( $cookie_user_id ) );
+			} else {
+				wp_set_current_user( absint( $cookie_user_id ) );
+			}
+		}
+
 		$response = rest_ensure_response(
 			array(
 				'nonce' => wp_create_nonce( 'wp_rest' ),
