@@ -34,7 +34,10 @@ jobs:
           mkdir -p /tmp/nvoos-pro-spa-standalone/examples /tmp/nvoos-pro-spa-standalone/addons/pro/assets
           # cp -r, not git archive: the repo .gitattributes export-ignores
           # package.json/package-lock.json, which would break the build.
-          cp -r examples/nvoos-pro-spa-vite /tmp/nvoos-pro-spa-standalone/
+          # The app must land under examples/ — Velocity's root directory is
+          # examples/nvoos-pro-spa-vite, so a tree with the app at the repo
+          # root makes the build die on a missing package.json.
+          cp -r examples/nvoos-pro-spa-vite /tmp/nvoos-pro-spa-standalone/examples/
           cp -r addons/pro/assets/spa-v2 /tmp/nvoos-pro-spa-standalone/addons/pro/assets/
           cat > /tmp/nvoos-pro-spa-standalone/README.md <<'EOF'
           # nvoos-pro-spa-standalone
