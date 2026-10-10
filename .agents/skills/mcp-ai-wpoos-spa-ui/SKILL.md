@@ -118,7 +118,11 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   — the repo root has no `package.json` and the build dies with `npm error
   enoent` (exit 254); the sync/deploy workflows pin `main` at git init
   (`git init -q -b main`) and assemble the deploy tree **under `examples/`**
-  (a bare `git init` + root-level copy broke both).
+  (a bare `git init` + root-level copy broke both). Both workflows now
+  **build-verify the assembled tree** (`npm ci && npm run build`) before
+  the push, and the mirror repo (`nvoos-pro-spa-standalone`) keeps an
+  intentionally flat history (one commit per sync, force-pushed) —
+  mirror-only build drift fails in the monorepo CI instead of at Velocity.
 - **Media worker:** the app fronts the worker directly (URL + `X-Site-Token`
   in the connection screen) — the two stay separate Velocity apps.
 
@@ -172,6 +176,17 @@ AND the standalone Vite app, without forking the widget.
   ambient `declare module` shim spa-v2 needs (e.g. untyped
   `cytoscape-fcose`) must ALSO live in the app's own `src/shims/` to enter
   the app's TS program. Keep both declarations identical.
+- **Every spa-v2 dependency must resolve in the app's TS program.** The
+  mirror ships `addons/` without `node_modules`, and tsc resolves spa-v2's
+  imports by walking UP from spa-v2's files — it never sees the app's
+  `node_modules`. Typed packages need an entry in the app's tsconfig
+  `paths` map (`examples/nvoos-pro-spa-vite/tsconfig.json`); untyped ones
+  need the ambient shim (above). Monorepo CI stays green either way
+  (spa-v2 resolves its own `node_modules` there), so a missing entry only
+  fails in the mirror/Velocity build — TS2307 on spa-v2's import lines.
+  Case study: the graph page's `jquery`/`cytoscape` imports broke the
+  Velocity deploy (2026-10-11) and were fixed by mapping them to
+  `@types/jquery`/`@types/cytoscape` (PR #7000).
 - Each vendored `.js` needs a sibling `.d.ts` — the page's imports resolve
   to it (no `allowJs` needed). Global Window augmentation goes in the
   side-effect module's d.ts.

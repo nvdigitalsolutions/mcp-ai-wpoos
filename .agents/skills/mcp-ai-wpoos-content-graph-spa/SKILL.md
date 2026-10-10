@@ -34,7 +34,7 @@ Docker recipe in `mcp-ai-wpoos-test-suite` (standalone plugin suites section).
 | Endpoints type | `addons/pro/assets/spa-v2/src/api/config.ts` (`ProSpaEndpoints.contentGraph`) |
 | Plugin-side endpoint | `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php` (admin+non-guest only, `class_exists( 'NvoosContentGraph\Plugin' )` gated) |
 | Standalone app endpoint | `examples/nvoos-pro-spa-vite/src/runtime-config.ts` (`buildEndpoints()`) |
-| Standalone aliases + shims | `examples/nvoos-pro-spa-vite/vite.config.ts` (jquery/cytoscape/fcose aliases), `src/shims/cytoscape-fcose.d.ts` |
+| Standalone aliases + shims | `examples/nvoos-pro-spa-vite/vite.config.ts` (jquery/cytoscape/fcose aliases), `src/shims/cytoscape-fcose.d.ts`, `tsconfig.json` paths (`jquery` → `@types/jquery`, `cytoscape` → `@types/cytoscape`) |
 | Plugin REST + auth | `plugins/nvoos-content-graph/src/Rest/Controller.php` |
 | CI | `.github/workflows/phpunit-content-graph.yml`, `.github/workflows/build-nvoos-content-graph.yml` (plugin-check job) |
 
@@ -81,6 +81,12 @@ theme/icons/CSS) changes upstream:
    `git --no-pager diff --no-index plugins/nvoos-content-graph/assets/js/content-graph-admin.js <spa-v2>/upstream/content-graph-admin.js`.
 3. Re-run the spa-v2 test suite (the page tests mock the factory — they
    assert the contract, not the internals) and the standalone build.
+   Careful: the monorepo standalone build can stay green while the MIRROR
+   build fails — spa-v2 resolves its own `node_modules` in the monorepo,
+   but the sync workflow ships `addons/` without it. Every spa-v2 dep needs
+   a tsconfig `paths` entry (typed) or a `src/shims/` ambient declaration
+   (untyped) in the standalone app; PR #7000 added the sync/deploy
+   build-verify gates that catch this in CI.
 4. Note the sync in the plugin's CHANGELOG if the change is user-visible.
 
 Adding a NEW id to the explorer markup requires the same id in the page's
@@ -105,3 +111,6 @@ silently never fire.
   split off from shared-checkout WIP. If both PRs touch
   `examples/nvoos-pro-spa-vite/README.md`/`vite.config.ts` on merge, keep
   #6999's README wording and #6998's alias block.
+- #7000 `add/standalone-spa-graph-typecheck` — mirror-only TS2307 fix
+  (jquery/cytoscape tsconfig paths) + build-verify gates in the
+  sync/deploy workflows.
