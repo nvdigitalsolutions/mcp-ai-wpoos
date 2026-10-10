@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
 /**
  * Standalone NV oOS Pro SPA — Vite shell.
@@ -25,12 +26,50 @@ const spaV2Src = fileURLToPath(
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 const envDir = fileURLToPath(new URL('.', import.meta.url));
 
-interface ProxyResLike {
-  headers: Record<string, string | string[] | undefined>;
+interface ProxyLike {
+  on(
+    event: 'proxyRes',
+    handler: (proxyRes: IncomingMessage, req: IncomingMessage, res: ServerResponse) => void,
+  ): void;
 }
 
-interface ProxyLike {
-  on(event: 'proxyRes', handler: (proxyRes: ProxyResLike, req: unknown, res: unknown) => void): void;
+/**
+ * Headers Node manages itself — passing them through a self-handled response
+ * would conflict with its own framing/connection handling.
+ */
+const HOP_BY_HOP = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailers',
+  'upgrade',
+  'transfer-encoding',
+  'content-length',
+]);
+
+/**
+ * Re-scope the wp-login.php page to the dev origin.
+ *
+ * WordPress renders the login form with an ABSOLUTE action (site_url) and an
+ * absolute redirect_to value. If the browser follows them, the login POST and
+ * the post-login redirect land on the WordPress origin — the auth cookies are
+ * then set for the WordPress host and the dev origin never sees the session.
+ * On localhost this is masked (cookies are scoped by host, not port), but it
+ * breaks cookie auth on production hosts. Mirrors rewriteLoginPage in
+ * scripts/serve.mjs — keep the two in sync.
+ */
+function rewriteLoginPage(html: string): string {
+  return html
+    .replace(
+      /(["'])https?:\/\/[^"']*?(\/[^"']*?wp-login\.php(?=[?"'\s]))/gi,
+      '$1$2',
+    )
+    .replace(
+      /(\bname=["']redirect_to["']\s+value=["'])https?:\/\/[^"']*?(\/.*?)?(["'])/gi,
+      '$1$2$3',
+    );
 }
 
 /**
@@ -58,7 +97,10 @@ function keepLoginOnDevOrigin(target: string, proxy: ProxyLike): void {
     cookie.replace(/;\s*domain=[^;]+/gi, '');
 
   proxy.on('proxyRes', (proxyRes) => {
-    const headers = proxyRes.headers;
+    // Cast: http-proxy mutates these headers in place, and set-cookie may
+    // arrive as a single string at runtime even though the Node types say
+    // string[] — handle both.
+    const headers = proxyRes.headers as Record<string, string | string[] | undefined>;
 
     const location = headers['location'];
     if (typeof location === 'string' && location.startsWith(targetOrigin)) {
@@ -76,7 +118,47 @@ function keepLoginOnDevOrigin(target: string, proxy: ProxyLike): void {
   });
 }
 
-/** Proxy route that keeps wp-login.php redirects inside the dev origin. */
+/**
+ * Proxy route for wp-login.php that also re-scopes the page body.
+ *
+ * selfHandleResponse makes http-proxy emit proxyRes without writing anything;
+ * the route writes the response itself after buffering + rewriting the HTML
+ * (see rewriteLoginPage), so the login POST and the post-login redirect stay
+ * on the dev origin and the session cookie lands on the dev origin.
+ */
+function loginPageProxy(target: string) {
+  return {
+    target,
+    changeOrigin: true,
+    secure: false,
+    selfHandleResponse: true,
+    configure(proxy: ProxyLike): void {
+      keepLoginOnDevOrigin(target, proxy);
+      proxy.on('proxyRes', (proxyRes, req, res) => {
+        const headers = { ...proxyRes.headers };
+        for (const name of Object.keys(headers)) {
+          if (HOP_BY_HOP.has(name.toLowerCase())) delete headers[name];
+        }
+        const status = typeof proxyRes.statusCode === 'number' ? proxyRes.statusCode : 502;
+        const contentType = String(headers['content-type'] ?? '').toLowerCase();
+        if (!contentType.includes('text/html') || headers['content-encoding']) {
+          res.writeHead(status, proxyRes.statusMessage, headers);
+          proxyRes.pipe(res);
+          return;
+        }
+        const chunks: Buffer[] = [];
+        proxyRes.on('data', (chunk) => chunks.push(chunk));
+        proxyRes.on('end', () => {
+          res.writeHead(status, proxyRes.statusMessage, headers);
+          res.end(rewriteLoginPage(Buffer.concat(chunks).toString('utf8')));
+        });
+        proxyRes.on('error', () => res.destroy());
+      });
+    },
+  };
+}
+
+/** Proxy route that keeps WordPress redirects inside the dev origin. */
 function wordpressProxy(target: string, extra: Record<string, unknown> = {}) {
   return {
     target,
@@ -139,9 +221,11 @@ export default defineConfig(({ mode }) => {
         ...(targetSite
           ? {
               // Cookie-auth mode: everything same-origin through the dev server,
-              // including wp-login.php so users can log in from the app.
+              // including wp-login.php so users can log in from the app. The
+              // login page route re-scopes the form to the dev origin so the
+              // session cookie lands here (see loginPageProxy).
               '/wp-json': wordpressProxy(targetSite),
-              '/wp-login.php': wordpressProxy(targetSite),
+              '/wp-login.php': loginPageProxy(targetSite),
               '/wp-admin': wordpressProxy(targetSite),
             }
           : {}),

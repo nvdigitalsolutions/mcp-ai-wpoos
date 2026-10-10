@@ -62,7 +62,7 @@ npm run build
 
 | Mode | Transport | Setup | Surface |
 |---|---|---|---|
-| **Cookie (proxy)** | Same-origin via the dev proxy or the built-in serve.mjs proxy | `NVOOS_TARGET_SITE=https://your-site.com npm run dev:proxy` (or the same env var on `scripts/serve.mjs`); use the **Log in to WordPress** link on the connection screen — it opens `/wp-login.php` in a new tab, and after login you land back on the app with the session cookie set | Full admin |
+| **Cookie (proxy)** | Same-origin via the dev proxy or the built-in serve.mjs proxy | `NVOOS_TARGET_SITE=https://your-site.com npm run dev:proxy` (or the same env var on `scripts/serve.mjs`); use the **Log in to WordPress** link on the connection screen — it opens `/wp-login.php` in a new tab with the form re-scoped to this origin, so the login POST and post-login redirect stay inside the proxy and the session cookie lands on this origin | Full admin |
 | **WordPress login (application password)** | Cross-origin, `Authorization: Basic` (username + application password) | Create an application password under Users → Profile → Application Passwords; paste username + password in the connection screen. Authenticates as a real WP user with their real permissions. | Full admin (capability-gated server-side) |
 | **Assistant credential** | Cross-origin, `Authorization: Bearer cred_xxxxx.SECRET` | Create a credential in the NV oOS plugin; paste it in the connection screen | Full admin layout (server enforces permissions) |
 | **Guest** | Cross-origin, `X-WP-MCP-AI-Guest` token | Assistant ID (+ optional guest token minted by the site's `[nvoos_pro_spa]` page) | Public chat surface |
@@ -106,7 +106,8 @@ header and sends no cookies.
 works whenever the server that hosts `dist/` also proxies the WordPress
 routes: `scripts/serve.mjs` has a built-in, zero-dependency reverse proxy —
 set `NVOOS_TARGET_SITE` (it proxies `/wp-json`, `/wp-admin`, `/wp-login.php`
-and `/wp-includes`, keeps login redirects on the app origin, and strips
+and `/wp-includes`, keeps login redirects on the app origin, re-scopes the
+wp-login.php form so the session cookie lands on the app origin, and strips
 cookie domains). Any other reverse proxy in front of both the app and
 WordPress works the same way. Assistant credentials and guest tokens work
 cross-origin as-is.
@@ -135,8 +136,10 @@ Same deploy model as the media worker (`docs/operations/deployment/media-worker-
    the backend site must allow that origin: Security → Network →
    `cors_allow_origin` (`star`), or the `wp_mcp_ai_cors_allow_origin`
    filter with the exact origin. Bearer/guest modes then work cross-origin.
-   For cookie mode, set `NVOOS_TARGET_SITE` on the Velocity app — the
-   built-in proxy makes the WordPress REST API same-origin, so no CORS
+   For cookie mode, set `NVOOS_TARGET_SITE` on the Velocity app's
+   **runtime** environment (the variables the `serve.mjs` process sees, not
+   the build-time block where `VITE_DEFAULT_SITE_URL` lives) — the built-in
+   proxy makes the WordPress REST API and login same-origin, so no CORS
    configuration is needed. Set it to a site you control: the proxy forwards
    cookies for the proxied routes.
 
