@@ -12,15 +12,16 @@ let slashCode        = fs.readFileSync(path.join(__dirname, 'slash-commands.js')
 
 // ─── 2. CommandAutocomplete: strip IIFE wrapper ───────────────────────────────
 console.log('   → Stripping CommandAutocomplete IIFE wrapper');
-// Remove opening: (function() { 'use strict';
-autocompleteCode = autocompleteCode.replace(/^\(function\(\) \{\s*\n\s*'use strict';\s*\n/, '');
+// Remove opening: (function() { 'use strict'; — not anchored: the source file
+// starts with a docblock comment, so a bare ^ never matches.
+autocompleteCode = autocompleteCode.replace(/\(function\(\) \{\s*[\r\n]+\s*'use strict';\s*[\r\n]+/, '');
 // Remove closing: window.CommandAutocomplete = …; and })();
 autocompleteCode = autocompleteCode.replace(/\s*\/\/ Export for external use\s*\n\s*window\.CommandAutocomplete = CommandAutocomplete;\s*\n\s*\}\)\(\);\s*$/, '');
 
 // ─── 3. SlashCommandsHandler: strip IIFE wrapper and auto-init ─────────────────
 console.log('   → Stripping SlashCommandsHandler IIFE wrapper and auto-init');
-// Remove opening
-slashCode = slashCode.replace(/^\(function\(\) \{\s*\n\s*'use strict';\s*\n/, '');
+// Remove opening — not anchored: the source file starts with a docblock comment.
+slashCode = slashCode.replace(/\(function\(\) \{\s*[\r\n]+\s*'use strict';\s*[\r\n]+/, '');
 // Remove auto-init block and global assignments at the end:
 //   // Initialize when DOM is ready
 //   if (document.readyState === ... { ... }
@@ -154,6 +155,7 @@ export interface SlashCommand {
 export declare class CommandAutocomplete {
   constructor(inputElement: HTMLInputElement | HTMLTextAreaElement);
   init(): void;
+  loadCommands(): Promise<void>;
   show(input: string): void;
   hide(): void;
   isVisible(): boolean;

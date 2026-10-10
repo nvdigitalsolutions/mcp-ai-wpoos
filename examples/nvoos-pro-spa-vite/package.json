@@ -1,0 +1,35 @@
+{
+  "name": "nvoos-pro-spa-vite",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Standalone Vite app that mounts the NV oOS Pro SPA v2 (from addons/pro/assets/spa-v2) and connects to any WordPress backend running the plugin",
+  "scripts": {
+    "dev": "vite",
+    "dev:proxy": "node scripts/dev.mjs",
+    "serve": "node scripts/serve.mjs",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/react": "1.2.12",
+    "dompurify": "^3.4.16",
+    "marked": "^9.1.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-router-dom": "^6.30.6",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.17",
+    "@types/react": "19.1.4",
+    "@types/react-dom": "19.1.4",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "5.8.3",
+    "vite": "^8.3.4"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

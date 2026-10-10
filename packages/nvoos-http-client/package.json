@@ -4,6 +4,7 @@
   "description": "Resilient HTTP client with automatic retry, exponential backoff, and request hooks - Extracted from NV Open Operator System",
   "main": "dist/nvoos-http-client.js",
   "module": "dist/nvoos-http-client.js",
+  "type": "module",
   "types": "dist/nvoos-http-client.d.ts",
   "exports": {
     ".": {
@@ -42,7 +43,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",
     "clean": "rm -rf dist"
   },

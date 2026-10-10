@@ -4,6 +4,7 @@
   "description": "Browser-native AI tool registry (summarize, sentiment, translate, embed, image, audio) using Transformers.js - Extracted from NV Open Operator System",
   "main": "dist/nvoos-client-tools.js",
   "module": "dist/nvoos-client-tools.js",
+  "type": "module",
   "types": "dist/nvoos-client-tools.d.ts",
   "exports": {
     ".": {
@@ -53,7 +54,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",
     "clean": "rm -rf dist"
   },

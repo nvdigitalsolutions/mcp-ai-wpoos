@@ -43,7 +43,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo \"Pure type definitions — no runtime tests\" && exit 0",
     "clean": "rm -rf dist"
   },

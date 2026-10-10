@@ -14,17 +14,18 @@ let transcriptionCode = fs.readFileSync(path.join(__dirname, 'chat-transcription
 console.log('   → Stripping IIFE wrappers');
 
 // Audio service: (function(window) { 'use strict'; … })(window);
-// Step 1 – Remove opening line.
-audioCode = audioCode.replace(/^\(function\(window\) \{\s*[\r\n]+\s*'use strict';\s*[\r\n]+/, '');
-// Step 2 – Remove the "// Export public API\n\twindow.wpMcpAiChatAudio = { … };" block.
-//           The block starts with the comment and ends before the outer IIFE close.
-audioCode = audioCode.replace(/[\r\n]+\s*\/\/ Export public API[\r\n]+\s*window\.wpMcpAiChatAudio\s*=\s*\{[\s\S]*?\n\s*\};/, '');
-// Step 3 – Remove the trailing IIFE close "}\n})(window);\n"
-audioCode = audioCode.replace(/[\r\n]+\}\)\(window\);\s*$/, '');
+// Step 1 – Remove opening line — not anchored: the source file starts with a
+// docblock comment, so a bare ^ never matches.
+audioCode = audioCode.replace(/\(function\(window\) \{\s*[\r\n]+\s*'use strict';\s*[\r\n]+/, '');
+// Step 2 – Remove the "// Export public API … };" block through the trailing
+// IIFE close. Greedy on purpose: the assignment object contains nested
+// "};" sequences, so a lazy [\s\S]*? stops at the wrong one.
+audioCode = audioCode.replace(/[\r\n]+\s*\/\/ Export public API[\r\n]+\s*window\.wpMcpAiChatAudio\s*=\s*\{[\s\S]*[\r\n]+\}\)\(window\);\s*$/, '');
 
 // Transcription service: (function() { 'use strict'; … })();
-// Step 1 – Remove opening line.
-transcriptionCode = transcriptionCode.replace(/^\(function\(\) \{\s*[\r\n]+\s*'use strict';\s*[\r\n]+/, '');
+// Step 1 – Remove opening line — not anchored: the source file starts with a
+// docblock comment.
+transcriptionCode = transcriptionCode.replace(/\(function\(\) \{\s*[\r\n]+\s*'use strict';\s*[\r\n]+/, '');
 // Step 2 – Remove the global assignment and IIFE close.
 transcriptionCode = transcriptionCode.replace(
 	/[\r\n]+\s*\/\/ Expose service globally[\s\S]*?window\.wpMcpAiChatTranscription\s*=\s*wpMcpAiChatTranscription;\s*[\r\n]+\}\)\(\);\s*$/,

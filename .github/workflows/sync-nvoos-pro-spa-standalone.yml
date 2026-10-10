@@ -1,0 +1,57 @@
+name: Sync nvoos-pro-spa-standalone
+
+# One-way mirror of the standalone Pro SPA to the repo
+# nvdigitalsolutions/nvoos-pro-spa-standalone.
+#
+# The app shells the spa-v2 React sources via a relative alias
+# (../../addons/pro/assets/spa-v2/src from examples/nvoos-pro-spa-vite), so
+# BOTH prefixes must land in the standalone repo — the layout mirrors the
+# monorepo exactly and the alias/tsconfig paths resolve unchanged.
+#
+# The standalone repo history is intentionally flat (one commit per sync,
+# force-pushed). Never commit to the standalone repo directly.
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/nvoos-pro-spa-vite/**'
+      - 'addons/pro/assets/spa-v2/**'
+  # Manual runs let you force a sync without waiting for a merge (first-run
+  # verification after adding the token, backfills, etc.).
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assemble standalone tree
+        run: |
+          rm -rf /tmp/nvoos-pro-spa-standalone
+          mkdir -p /tmp/nvoos-pro-spa-standalone/examples /tmp/nvoos-pro-spa-standalone/addons/pro/assets
+          # cp -r, not git archive: the repo .gitattributes export-ignores
+          # package.json/package-lock.json, which would break the build.
+          cp -r examples/nvoos-pro-spa-vite /tmp/nvoos-pro-spa-standalone/
+          cp -r addons/pro/assets/spa-v2 /tmp/nvoos-pro-spa-standalone/addons/pro/assets/
+          cat > /tmp/nvoos-pro-spa-standalone/README.md <<'EOF'
+          # nvoos-pro-spa-standalone
+
+          Standalone Vite app mounting the NV oOS Pro SPA v2 against any
+          WordPress backend. One-way mirror of the mcp-ai-wpoos monorepo -
+          never commit here directly.
+
+          - App: `examples/nvoos-pro-spa-vite/` (Velocity root directory)
+          - SPA sources: `addons/pro/assets/spa-v2/` (vendored for the alias)
+          EOF
+          cd /tmp/nvoos-pro-spa-standalone
+          git init -q
+          git add .
+          git -c user.name="GitHub Actions" -c user.email="actions@github.com" commit -q -m "Sync standalone Pro SPA ($GITHUB_SHA)"
+
+      - name: Push to nvoos-pro-spa-standalone
+        working-directory: /tmp/nvoos-pro-spa-standalone
+        run: |
+          git push https://x-access-token:${{ secrets.NVOOS_PRO_SPA_STANDALONE_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-pro-spa-standalone.git main --force

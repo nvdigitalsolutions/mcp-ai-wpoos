@@ -1,0 +1,44 @@
+name: Deploy nvoos-pro-spa-standalone to Velocity
+
+# Manual, opt-in deploy — same pattern as deploy-media-worker.yml.
+# Assembles the standalone tree (app shell + vendored spa-v2 sources, so the
+# relative alias resolves) and pushes it to Cloudways Velocity's deploy remote
+# (Velocity auto-deploys on push to main). Velocity build settings:
+#   Node 22, root directory: examples/nvoos-pro-spa-vite,
+#   build command: npm ci && npm run build,
+#   entry: scripts/serve.mjs (static server over dist/, PORT injected).
+# No-op when the VELOCITY_SPA_DEPLOY_URL secret is not configured.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assemble standalone tree
+        run: |
+          rm -rf /tmp/nvoos-pro-spa-deploy
+          mkdir -p /tmp/nvoos-pro-spa-deploy/examples /tmp/nvoos-pro-spa-deploy/addons/pro/assets
+          # cp -r, not git archive: the repo .gitattributes export-ignores
+          # package.json/package-lock.json, which would break the build.
+          cp -r examples/nvoos-pro-spa-vite /tmp/nvoos-pro-spa-deploy/
+          cp -r addons/pro/assets/spa-v2 /tmp/nvoos-pro-spa-deploy/addons/pro/assets/
+          cd /tmp/nvoos-pro-spa-deploy
+          git init -q
+          git add .
+          git -c user.name="GitHub Actions" -c user.email="actions@github.com" commit -q -m "Deploy standalone Pro SPA ($GITHUB_SHA)"
+
+      - name: Push to Velocity deploy remote
+        working-directory: /tmp/nvoos-pro-spa-deploy
+        env:
+          VELOCITY_SPA_DEPLOY_URL: ${{ secrets.VELOCITY_SPA_DEPLOY_URL }}
+        run: |
+          if [ -z "$VELOCITY_SPA_DEPLOY_URL" ]; then
+            echo "Skipped: VELOCITY_SPA_DEPLOY_URL secret is not set."
+            exit 0
+          fi
+          git push "$VELOCITY_SPA_DEPLOY_URL" main --force

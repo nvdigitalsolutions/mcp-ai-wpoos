@@ -8,9 +8,6 @@
  * @since 1.0.0
  */
 
-(function(window) {
-	'use strict';
-
 	// Speech synthesis constants
 	const SPEECH_TOOL_NAME = 'generate_openai_speech';
 	let SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
@@ -2137,9 +2134,6 @@ function configure(options) {
  * @package WP_MCP_AI
  * @since 1.1.0
  */
-
-(function() {
-	'use strict';
 
 	/**
 	 * Create the transcription service and expose it globally.

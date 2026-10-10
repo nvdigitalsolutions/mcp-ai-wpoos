@@ -11,12 +11,13 @@ let code = fs.readFileSync(path.join(__dirname, 'chat-ui-utilities-service.js'),
 
 // ─── 2. Strip IIFE wrapper ────────────────────────────────────────────────────
 console.log('   → Stripping IIFE wrapper');
-// Step 1 – Remove opening line.
-code = code.replace(/^\(function\(window\) \{\s*[\r\n]+\s*'use strict';\s*[\r\n]+/, '');
-// Step 2 – Remove the "// Export public API\n\twindow.wpMcpAiChatUIUtils = { … };" block.
-code = code.replace(/[\r\n]+\s*\/\/ Export public API[\r\n]+\s*window\.wpMcpAiChatUIUtils\s*=\s*\{[\s\S]*?\n\s*\};/, '');
-// Step 3 – Remove the trailing IIFE close "})(window);\n"
-code = code.replace(/[\r\n]+\}\)\(window\);\s*$/, '');
+// Step 1 – Remove opening line — not anchored: the source file starts with a
+// docblock comment, so a bare ^ never matches.
+code = code.replace(/\(function\(window\) \{\s*[\r\n]+\s*'use strict';\s*[\r\n]+/, '');
+// Step 2 – Remove the "// Export public API … };" block through the trailing
+// IIFE close. Greedy on purpose: the assignment object contains nested
+// "};" sequences, so a lazy [\s\S]*? stops at the wrong one.
+code = code.replace(/[\r\n]+\s*\/\/ Export public API[\r\n]+\s*window\.wpMcpAiChatUIUtils\s*=\s*\{[\s\S]*[\r\n]+\}\)\(window\);\s*$/, '');
 
 // ─── 3. Make DEBUG_MODE configurable ─────────────────────────────────────────
 console.log('   → Making DEBUG_MODE configurable');
