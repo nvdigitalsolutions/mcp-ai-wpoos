@@ -36,6 +36,12 @@ jobs:
           git add .
           git -c user.name="GitHub Actions" -c user.email="actions@github.com" commit -q -m "Deploy standalone Pro SPA ($GITHUB_SHA)"
 
+      - name: Verify the assembled tree builds
+        working-directory: /tmp/nvoos-pro-spa-deploy/examples/nvoos-pro-spa-vite
+        run: |
+          npm ci
+          npm run build
+
       - name: Push to Velocity deploy remote
         working-directory: /tmp/nvoos-pro-spa-deploy
         env:
