@@ -4706,3 +4706,382 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	color: var(--nvoos-text-secondary, #787c82);
 	font-style: italic;
 }
+
+/* ── Chart Recipes (nvoos-chart fences) ──────────────────────────────────── */
+
+.nvoos-pro-spa-chart-recipe {
+	/* Series palette + neutral chart tokens (dark theme overrides below). */
+	--chart-series-1: #4f8cff;
+	--chart-series-2: #2fb26b;
+	--chart-series-3: #f0a13b;
+	--chart-series-4: #c05ac9;
+	--chart-series-5: #2bc3c9;
+	--chart-series-6: #e05c5c;
+	--chart-series-7: #7c86f0;
+	--chart-series-8: #9aa0a6;
+	--chart-surface: var(--nvoos-bg, #fff);
+	--chart-border: var(--nvoos-border, #dcdcde);
+	--chart-text: var(--nvoos-text, #1e1e1e);
+	--chart-muted: var(--nvoos-text-secondary, #787c82);
+	--chart-accent: var(--nvoos-primary, #2271b1);
+	--chart-negative: #d63638;
+	margin: 12px 0;
+	padding: 12px 14px;
+	border: 1px solid var(--chart-border);
+	border-radius: 8px;
+	background: var(--chart-surface);
+	font-size: 12px;
+	line-height: 1.4;
+	overflow-x: auto;
+}
+
+.nvoos-pro-spa-chart-recipe-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--chart-text);
+	margin-bottom: 10px;
+}
+
+.nvoos-pro-spa-chart-recipe-caption {
+	margin-top: 8px;
+	font-size: 11px;
+	color: var(--chart-muted);
+}
+
+.nvoos-pro-spa-chart-recipe-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 14px;
+	margin-bottom: 10px;
+}
+
+.nvoos-pro-spa-chart-recipe-legend-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	color: var(--chart-muted);
+}
+
+.nvoos-pro-spa-chart-recipe-legend-swatch,
+.nvoos-pro-spa-chart-recipe-row-swatch {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 2px;
+	flex: 0 0 auto;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Bar (horizontal, center baseline) */
+.nvoos-pro-spa-chart-recipe-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 7px;
+}
+
+.nvoos-pro-spa-chart-recipe-row-label {
+	flex: 0 0 96px;
+	min-width: 60px;
+	max-width: 130px;
+	color: var(--chart-text);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.nvoos-pro-spa-chart-recipe-row-swatch {
+	width: 8px;
+	height: 8px;
+}
+
+.nvoos-pro-spa-chart-recipe-row-series {
+	color: var(--chart-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nvoos-pro-spa-chart-recipe-track {
+	position: relative;
+	flex: 1;
+	height: 14px;
+	min-width: 120px;
+}
+
+.nvoos-pro-spa-chart-recipe-track::before {
+	content: '';
+	position: absolute;
+	left: 50%;
+	top: 0;
+	bottom: 0;
+	width: 1px;
+	background: var(--chart-border);
+}
+
+.nvoos-pro-spa-chart-recipe-bar {
+	position: absolute;
+	top: 0;
+	height: 14px;
+	border-radius: 3px;
+	min-width: 2px;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-bar--negative {
+	background: var(--chart-negative);
+}
+
+.nvoos-pro-spa-chart-recipe-bar-value {
+	position: absolute;
+	top: 0;
+	height: 14px;
+	display: flex;
+	align-items: center;
+	font-size: 10px;
+	color: var(--chart-muted);
+	pointer-events: none;
+	white-space: nowrap;
+}
+
+/* Column (vertical, center baseline) */
+.nvoos-pro-spa-chart-recipe-col-plot {
+	position: relative;
+	height: 140px;
+	margin: 4px 0 0;
+}
+
+.nvoos-pro-spa-chart-recipe-col-plot::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 50%;
+	height: 1px;
+	background: var(--chart-border);
+}
+
+.nvoos-pro-spa-chart-recipe-col-bar {
+	position: absolute;
+	border-radius: 3px 3px 0 0;
+	min-height: 2px;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-col-bar--negative {
+	background: var(--chart-negative);
+	border-radius: 0 0 3px 3px;
+}
+
+.nvoos-pro-spa-chart-recipe-col-value {
+	position: absolute;
+	font-size: 10px;
+	text-align: center;
+	color: var(--chart-muted);
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+/* Plot (line / area / dot) */
+.nvoos-pro-spa-chart-recipe-plot {
+	position: relative;
+	aspect-ratio: 16 / 10;
+	max-width: 520px;
+	margin: 0 auto;
+	padding: 8px 4px;
+}
+
+@supports not (aspect-ratio: 16 / 10) {
+	.nvoos-pro-spa-chart-recipe-plot {
+		height: 160px;
+	}
+}
+
+.nvoos-pro-spa-chart-recipe-plot::before {
+	content: '';
+	position: absolute;
+	left: 4px;
+	right: 4px;
+	top: 50%;
+	height: 1px;
+	background: var(--chart-border);
+}
+
+.nvoos-pro-spa-chart-recipe-plot-series {
+	position: absolute;
+	inset: 0;
+}
+
+.nvoos-pro-spa-chart-recipe-plot-dot {
+	position: absolute;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-plot-seg {
+	position: absolute;
+	height: 2px;
+	border-radius: 1px;
+	transform-origin: 0 50%;
+	opacity: 0.8;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-plot-fill {
+	position: absolute;
+	width: 10px;
+	transform: translateX(-50%);
+	opacity: 0.15;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-axis {
+	display: flex;
+	justify-content: space-between;
+	gap: 2px;
+	max-width: 520px;
+	margin: 4px auto 0;
+}
+
+.nvoos-pro-spa-chart-recipe-axis-label {
+	flex: 1;
+	min-width: 0;
+	text-align: center;
+	font-size: 10px;
+	color: var(--chart-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Donut */
+.nvoos-pro-spa-chart-recipe-donut {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-chart-recipe-donut-ring {
+	width: 120px;
+	height: 120px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+}
+
+.nvoos-pro-spa-chart-recipe-donut-hole {
+	width: 72px;
+	height: 72px;
+	border-radius: 50%;
+	background: var(--chart-surface);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.nvoos-pro-spa-chart-recipe-donut-total {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--chart-text);
+}
+
+.nvoos-pro-spa-chart-recipe-donut-legend {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	min-width: 120px;
+	flex: 1;
+}
+
+.nvoos-pro-spa-chart-recipe-donut-legend-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.nvoos-pro-spa-chart-recipe-donut-legend-label {
+	color: var(--chart-text);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 140px;
+}
+
+.nvoos-pro-spa-chart-recipe-donut-legend-value {
+	margin-left: auto;
+	padding-left: 12px;
+	color: var(--chart-muted);
+}
+
+/* Heatmap */
+.nvoos-pro-spa-chart-recipe-heat {
+	display: grid;
+	gap: 2px;
+	font-size: 11px;
+}
+
+.nvoos-pro-spa-chart-recipe-heat-col-label {
+	font-weight: 600;
+	color: var(--chart-text);
+	text-align: center;
+	padding: 2px 6px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nvoos-pro-spa-chart-recipe-heat-row-label {
+	color: var(--chart-text);
+	padding: 2px 6px 2px 0;
+	align-self: center;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 120px;
+}
+
+.nvoos-pro-spa-chart-recipe-heat-cell {
+	position: relative;
+	padding: 4px 6px;
+	text-align: center;
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-chart-recipe-heat-cell-bg {
+	position: absolute;
+	inset: 0;
+	background: var(--chart-accent);
+	opacity: var(--v, 0);
+}
+
+.nvoos-pro-spa-chart-recipe-heat-cell--negative .nvoos-pro-spa-chart-recipe-heat-cell-bg {
+	background: var(--chart-negative);
+}
+
+.nvoos-pro-spa-chart-recipe-heat-cell-text {
+	position: relative;
+	color: var(--chart-text);
+}
+
+/* Dark theme: brighter palette for contrast on dark surfaces. */
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-chart-recipe {
+	--chart-series-1: #89b4fa;
+	--chart-series-2: #a6e3a1;
+	--chart-series-3: #f9e2af;
+	--chart-series-4: #f5c2e7;
+	--chart-series-5: #94e2d5;
+	--chart-series-6: #f38ba8;
+	--chart-series-7: #b4befe;
+	--chart-series-8: #a6adc8;
+	--chart-negative: #f38ba8;
+}
