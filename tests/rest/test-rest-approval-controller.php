@@ -270,4 +270,165 @@ class Test_REST_Approval_Controller extends WP_UnitTestCase {
 		$this->assertSame( 404, $response->get_status() );
 		$this->assertSame( 'approval_not_found', $response->as_error()->get_error_code() );
 	}
+
+	// -------------------------------------------------------------------------
+	// Permission gates: assistant credentials (bearer, query-only).
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Helper: create an assistant and issue a credential for it.
+	 *
+	 * @return array{assistant_id:int, token:string}
+	 */
+	private function create_assistant_with_credential() {
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_title'  => 'Approval Credential Assistant',
+				'post_status' => 'publish',
+			)
+		);
+		$this->assertIsInt( $assistant_id, 'Assistant post creation should return an integer ID.' );
+
+		wp_set_current_user( $this->admin_id );
+		$issued = WP_MCP_AI_Credentials::issue_credential( $assistant_id, $this->admin_id );
+		$this->assertArrayHasKey( 'token', $issued, 'Issued credential should contain a token.' );
+		wp_set_current_user( 0 );
+
+		return array(
+			'assistant_id' => $assistant_id,
+			'token'        => $issued['token'],
+		);
+	}
+
+	/**
+	 * Helper: enqueue a pending approval owned by the given requester and
+	 * assistant.
+	 *
+	 * @param int $requester_id Requester user ID.
+	 * @param int $assistant_id Assistant post ID.
+	 * @return int Approval post ID.
+	 */
+	private function enqueue_approval_for_assistant( $requester_id, $assistant_id ) {
+		$queue = WP_MCP_AI_Approval_Queue::get_instance();
+		$id    = $queue->enqueue(
+			array(
+				'tool'         => 'delete_post',
+				'arguments'    => array( 'post_id' => 123 ),
+				'assistant_id' => $assistant_id,
+				'requester_id' => $requester_id,
+				'session_id'   => 'session-test',
+				'reason'       => 'Test approval',
+			)
+		);
+		$this->assertIsInt( $id, 'Approval enqueue should return an integer post ID.' );
+		return $id;
+	}
+
+	/**
+	 * GET /approvals accepts an assistant credential and scopes the listing to
+	 * the credential's assistant (#6987).
+	 */
+	public function test_get_items_accepts_credential_scoped_to_assistant() {
+		$fixture  = $this->create_assistant_with_credential();
+		$other_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_title'  => 'Other Assistant',
+				'post_status' => 'publish',
+			)
+		);
+		$this->enqueue_approval_for_assistant( $this->subscriber_id, $fixture['assistant_id'] );
+		$this->enqueue_approval_for_assistant( $this->subscriber_id, $other_id );
+
+		wp_set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/approvals' );
+		$request->set_header( 'Authorization', 'Bearer ' . $fixture['token'] );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'approvals', $data );
+		$this->assertSame( 1, count( $data['approvals'] ) );
+		$this->assertSame( $fixture['assistant_id'], (int) $data['approvals'][0]['assistant_id'] );
+	}
+
+	/**
+	 * GET /approvals rejects a credential asking for another assistant's queue.
+	 */
+	public function test_get_items_rejects_credential_for_other_assistant() {
+		$fixture  = $this->create_assistant_with_credential();
+		$other_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_title'  => 'Other Assistant',
+				'post_status' => 'publish',
+			)
+		);
+
+		wp_set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/approvals' );
+		$request->set_header( 'Authorization', 'Bearer ' . $fixture['token'] );
+		$request->set_param( 'assistant_id', $other_id );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertSame( 'rest_forbidden', $response->as_error()->get_error_code() );
+	}
+
+	/**
+	 * GET /approvals rejects an invalid assistant credential.
+	 */
+	public function test_get_items_rejects_invalid_credential() {
+		wp_set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/approvals' );
+		$request->set_header( 'Authorization', 'Bearer cred_deadbeef.wrongsecret12' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertSame( 'wp_mcp_ai_invalid_token', $response->as_error()->get_error_code() );
+	}
+
+	/**
+	 * GET /approvals/{id} permits a credential for an approval raised by its
+	 * own assistant (#6987).
+	 */
+	public function test_get_item_permits_credential_for_own_assistant() {
+		$fixture = $this->create_assistant_with_credential();
+		$id      = $this->enqueue_approval_for_assistant( $this->subscriber_id, $fixture['assistant_id'] );
+
+		wp_set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/approvals/' . $id );
+		$request->set_header( 'Authorization', 'Bearer ' . $fixture['token'] );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$record = $response->get_data();
+		$this->assertSame( $id, (int) $record['id'] );
+	}
+
+	/**
+	 * GET /approvals/{id} rejects a credential for another assistant's approval.
+	 */
+	public function test_get_item_rejects_credential_for_other_assistant() {
+		$fixture  = $this->create_assistant_with_credential();
+		$other_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_title'  => 'Other Assistant',
+				'post_status' => 'publish',
+			)
+		);
+		$id       = $this->enqueue_approval_for_assistant( $this->subscriber_id, $other_id );
+
+		wp_set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/approvals/' . $id );
+		$request->set_header( 'Authorization', 'Bearer ' . $fixture['token'] );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertSame( 'rest_forbidden', $response->as_error()->get_error_code() );
+	}
 }
