@@ -10,6 +10,8 @@ name: Sync nvoos-pro-spa-standalone
 #
 # The standalone repo history is intentionally flat (one commit per sync,
 # force-pushed). Never commit to the standalone repo directly.
+# The assembled tree is build-verified (npm ci && npm run build) before the
+# push.
 
 on:
   push:
@@ -56,6 +58,17 @@ jobs:
           git init -q -b main
           git add .
           git -c user.name="GitHub Actions" -c user.email="actions@github.com" commit -q -m "Sync standalone Pro SPA ($GITHUB_SHA)"
+
+      - name: Verify the assembled tree builds
+        working-directory: /tmp/nvoos-pro-spa-standalone/examples/nvoos-pro-spa-vite
+        run: |
+          # Same gate Velocity runs (npm ci && npm run build). The mirror
+          # ships spa-v2 without node_modules, so alias/typecheck drift that
+          # the monorepo hides (spa-v2 resolves deps from its own node_modules)
+          # must fail HERE, before a broken tree reaches the standalone repo
+          # and its auto-deploy.
+          npm ci
+          npm run build
 
       - name: Push to nvoos-pro-spa-standalone
         working-directory: /tmp/nvoos-pro-spa-standalone

@@ -32,7 +32,12 @@
       "@ai-sdk/react/*": ["node_modules/@ai-sdk/react/*"],
       "@ai-sdk/ui-utils": ["node_modules/@ai-sdk/ui-utils"],
       "marked": ["node_modules/marked"],
-      "dompurify": ["node_modules/dompurify"]
+      "dompurify": ["node_modules/dompurify"],
+      // Knowledge-graph page imports in spa-v2: the standalone mirror ships
+      // addons/ without node_modules, so these resolve against the @types
+      // packages in the app's own node_modules.
+      "jquery": ["node_modules/@types/jquery"],
+      "cytoscape": ["node_modules/@types/cytoscape"]
     }
   },
   "include": ["src", "vite.config.ts"]
