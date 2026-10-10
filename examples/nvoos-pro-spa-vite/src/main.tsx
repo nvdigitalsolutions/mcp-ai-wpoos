@@ -110,7 +110,9 @@ async function connect(connection: ConnectionSettings): Promise<ConnectResult> {
           error:
             'Cookie mode needs a proxy in front of this origin. In dev run `npm run dev:proxy` ' +
             '(NVOOS_TARGET_SITE=https://your-site.com), or start the production server with ' +
-            'NVOOS_TARGET_SITE set (scripts/serve.mjs). Assistant credentials and guest tokens work without a proxy.',
+            'NVOOS_TARGET_SITE set (scripts/serve.mjs). On managed Node hosting that variable must be ' +
+            'in the app\u2019s RUNTIME environment (not the build-time one, where VITE_DEFAULT_SITE_URL lives). ' +
+            'Assistant credentials and guest tokens work without a proxy.',
         };
       }
       // Same-origin through the proxy: mint a nonce and read the user.

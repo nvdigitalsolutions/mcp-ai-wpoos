@@ -8,9 +8,13 @@
  * Optional built-in reverse proxy for cookie-auth mode: when
  * NVOOS_TARGET_SITE is set, /wp-json, /wp-admin, /wp-login.php and
  * /wp-includes are proxied to that WordPress site (same-origin for the
- * browser, cookies + nonce auth just work). Mirrors the Vite dev proxy in
- * vite.config.ts — keep the two in sync. Never set NVOOS_TARGET_SITE to a
- * URL you do not control; the proxy forwards cookies for those prefixes.
+ * browser, cookies + nonce auth just work). The wp-login.php page body is
+ * re-scoped to the app origin (relative form action + redirect_to) so the
+ * login POST and post-login redirect stay inside the proxy — otherwise the
+ * auth cookies would be set for the WordPress host and the app origin would
+ * never see the session. Mirrors the Vite dev proxy in vite.config.ts — keep
+ * the two in sync. Never set NVOOS_TARGET_SITE to a URL you do not control;
+ * the proxy forwards cookies for those prefixes.
  */
 
 import { createServer } from 'node:http';
@@ -57,6 +61,43 @@ function isProxyPath(pathname) {
   );
 }
 
+const LOGIN_PATH = '/wp-login.php';
+// Cap on body size for the login-page rewrite. wp-login.php pages are a few
+// tens of KB; anything larger is passed through unchanged instead of running
+// the regexes over a huge body.
+const MAX_REWRITE_BYTES = 4 * 1024 * 1024;
+
+/**
+ * Re-scope the wp-login.php page to the app origin.
+ *
+ * WordPress renders the login form with an ABSOLUTE action (site_url) and an
+ * absolute redirect_to value. If the browser follows them, the login POST and
+ * the post-login redirect land on the WordPress origin — the auth cookies are
+ * then set for the WordPress host and the app origin never sees the session.
+ * On localhost this is masked (cookies are scoped by host, not port), but with
+ * different hosts in production it breaks cookie auth entirely. Rewrite:
+ *
+ *   1. Every absolute URL ending in /wp-login.php (form actions, lost-password
+ *      and register links) becomes an app-origin relative path, so the login
+ *      POST goes through this proxy.
+ *   2. Absolute redirect_to values are re-scoped to the app origin, so the
+ *      post-login redirect comes back through the proxy (where the Location
+ *      rewrite in rewriteUpstreamHeaders keeps it on the app origin).
+ *
+ * Mirrors rewriteLoginPage in vite.config.ts — keep the two in sync.
+ */
+function rewriteLoginPage(html) {
+  return html
+    .replace(
+      /(["'])https?:\/\/[^"']*?(\/[^"']*?wp-login\.php(?=[?"'\s]))/gi,
+      '$1$2',
+    )
+    .replace(
+      /(\bname=["']redirect_to["']\s+value=["'])https?:\/\/[^"']*?(\/.*?)?(["'])/gi,
+      '$1$2$3',
+    );
+}
+
 /**
  * Keep the browser on the app origin when WordPress redirects (login flow):
  * absolute Location URLs pointing at the target become relative, the
@@ -90,11 +131,13 @@ function proxyRequest(req, res) {
   const incoming = new URL(req.url ?? '/', 'http://localhost');
   const upstreamUrl = new URL(incoming.pathname + incoming.search, PROXY_TARGET);
   const transport = upstreamUrl.protocol === 'https:' ? httpsRequest : httpRequest;
+  const isLoginPage = incoming.pathname === LOGIN_PATH;
 
   const headers = { ...req.headers };
   delete headers.host; // Replaced below.
   delete headers.origin; // Browser origin — meaningless to the upstream.
   delete headers.referer; // Would leak the app origin into WP logs.
+  if (isLoginPage) delete headers['accept-encoding']; // Identity body, so it can be rewritten.
   headers.host = upstreamUrl.host;
 
   const upstream = transport(
@@ -108,13 +151,38 @@ function proxyRequest(req, res) {
       rejectUnauthorized: false,
     },
     (upRes) => {
-      // SSE (chat stream) and chunked bodies pipe through unchanged.
-      res.writeHead(
-        upRes.statusCode ?? 502,
-        upRes.statusMessage,
-        rewriteUpstreamHeaders(upRes.headers, upstreamUrl.origin),
-      );
-      upRes.pipe(res);
+      const outHeaders = rewriteUpstreamHeaders(upRes.headers, upstreamUrl.origin);
+      const contentType = String(upRes.headers['content-type'] ?? '').toLowerCase();
+      const canRewrite =
+        isLoginPage &&
+        contentType.includes('text/html') &&
+        !upRes.headers['content-encoding'];
+
+      if (!canRewrite) {
+        // SSE (chat stream), chunked bodies and non-HTML responses pipe through unchanged.
+        res.writeHead(upRes.statusCode ?? 502, upRes.statusMessage, outHeaders);
+        upRes.pipe(res);
+        return;
+      }
+
+      // Buffer the login page so the form can be re-scoped to the app origin
+      // (see rewriteLoginPage). rewriteUpstreamHeaders has already dropped
+      // content-length, so the rewritten body goes out chunked.
+      const chunks = [];
+      let size = 0;
+      upRes.on('data', (chunk) => {
+        size += chunk.length;
+        chunks.push(chunk);
+      });
+      upRes.on('end', () => {
+        let body = Buffer.concat(chunks).toString('utf8');
+        if (size <= MAX_REWRITE_BYTES) {
+          body = rewriteLoginPage(body);
+        }
+        res.writeHead(upRes.statusCode ?? 502, upRes.statusMessage, outHeaders);
+        res.end(body);
+      });
+      upRes.on('error', () => res.destroy());
     },
   );
 
