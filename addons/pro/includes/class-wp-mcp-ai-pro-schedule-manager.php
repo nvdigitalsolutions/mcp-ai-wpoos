@@ -341,26 +341,35 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$description = isset( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
 
 			$notify       = isset( $data['notify_on_failure'] ) ? (bool) $data['notify_on_failure'] : false;
-			$notify_email = isset( $data['notify_email'] ) ? sanitize_email( $data['notify_email'] ) : get_option( 'admin_email' );
+			$notify_email = isset( $data['notify_email'] ) ? self::normalize_notify_email( $data['notify_email'] ) : get_option( 'admin_email' );
 
-			// Symfony Validator: enforce RFC-compliant email when a custom address is supplied.
+			// Symfony Validator: enforce RFC-compliant emails when a custom address is supplied.
+			// Each address in a comma/space/semicolon-separated list is validated
+			// individually so multi-recipient lists follow the Result Delivery channel.
 			if ( $notify && isset( $data['notify_email'] ) && '' !== $data['notify_email']
 				&& class_exists( 'Symfony\Component\Validator\Validation' )
 			) {
+				$raw_tokens = preg_split( '/[\s,;]+/', (string) $data['notify_email'] );
 				$validator  = \Symfony\Component\Validator\Validation::createValidator();
-				$violations = $validator->validate(
-					$notify_email,
-					array(
-						new \Symfony\Component\Validator\Constraints\Email(
-							array( 'message' => 'The notify_email "{{ value }}" is not a valid email address.' )
-						),
-					)
-				);
-				if ( count( $violations ) > 0 ) {
-					return new WP_Error(
-						'invalid_notify_email',
-						(string) $violations->get( 0 )->getMessage()
+				foreach ( (array) $raw_tokens as $raw_token ) {
+					$token = trim( $raw_token );
+					if ( '' === $token ) {
+						continue;
+					}
+					$violations = $validator->validate(
+						$token,
+						array(
+							new \Symfony\Component\Validator\Constraints\Email(
+								array( 'message' => 'The notify_email "{{ value }}" is not a valid email address.' )
+							),
+						)
 					);
+					if ( count( $violations ) > 0 ) {
+						return new WP_Error(
+							'invalid_notify_email',
+							(string) $violations->get( 0 )->getMessage()
+						);
+					}
 				}
 			}
 			// notify_channels: array of channel slugs (telegram, slack, etc.) to send failure alerts via unified_channel_broadcast.
@@ -481,6 +490,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		}
 
 		/**
+		 * Normalize the legacy notify_email field into a canonical recipient list.
+		 *
+		 * Reuses the Result Delivery service's multi-recipient normalizer when
+		 * the service class is loaded, falling back to the legacy single-address
+		 * sanitize_email() otherwise. Duplicate addresses are removed.
+		 *
+		 * @since 1.2.2
+		 *
+		 * @param string $value Raw notify_email value.
+		 * @return string Canonical comma-separated recipient list.
+		 */
+		private static function normalize_notify_email( $value ) {
+			if ( class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
+				return WP_MCP_AI_Result_Delivery_Service::sanitize_email_recipients( $value );
+			}
+
+			return sanitize_email( $value );
+		}
+
+		/**
 		 * Update an existing named schedule.
 		 *
 		 * @param string $schedule_id Schedule ID to update.
@@ -522,7 +551,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$updated['notify_on_failure'] = (bool) $data['notify_on_failure'];
 			}
 			if ( isset( $data['notify_email'] ) ) {
-				$updated['notify_email'] = sanitize_email( $data['notify_email'] );
+				$updated['notify_email'] = self::normalize_notify_email( $data['notify_email'] );
 			}
 			if ( isset( $data['notify_channels'] ) && is_array( $data['notify_channels'] ) ) {
 				$updated['notify_channels'] = array_map( 'sanitize_key', $data['notify_channels'] );

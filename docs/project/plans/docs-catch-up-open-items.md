@@ -103,7 +103,7 @@
 
 ### OI-5 · `tool-status.txt` missing the five new CRM slugs (recorded 2026-09-17 by the v1.1.81 pass)
 
-- **Status:** 🟡 Open. Recorded, not fixed (doc-file gap left by the introducing PR).
+- **Status:** ✅ Closed 2026-10-10 (issue [#6651](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/6651)). The five CRM slugs from #6636 were added to `docs/reference/tools/tool-status.txt` as `dev` in alphabetical position: `bulk_move_deal_stages`, `create_tracked_link`, `get_crm_handover`, `get_pipeline_digest`, `record_crm_reply`. The file's stale header totals remain owned by OI-8.
 - **What:** `docs/reference/tools/tool-status.txt` gained the 8 new financial slugs from #6639 (`crypto_market_data`, `earnings_calendar_fetcher`, `economic_calendar_fetcher`, `macro_data_fetcher`, `market_screener`, `options_chain_fetcher`, `portfolio_transaction_log`, `price_alerts`) but not the 5 new CRM slugs from #6636 (`bulk_move_deal_stages`, `create_tracked_link`, `record_crm_reply`, `get_crm_handover`, `get_pipeline_digest`) — the file already carries some CRM entries (`crm_email_search_*`), so the omission is an inconsistency, not a convention.
 - **Suggested owner:** docs workstream — either add the five slugs or document the file's coverage rule.
 - **First noted in:** v1.1.81 plan.

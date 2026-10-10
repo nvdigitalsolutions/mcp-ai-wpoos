@@ -160,7 +160,7 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 				),
 				'notify_email'               => array(
 					'type'        => 'string',
-					'description' => __( 'Email address for failure notifications. Defaults to admin email.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Email address(es) for failure notifications. Comma-separate multiple recipients. Defaults to admin email.', 'mcp-ai-wpoos-pro' ),
 				),
 				'notify_channels'            => array(
 					'type'        => 'array',
