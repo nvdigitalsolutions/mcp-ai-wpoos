@@ -1,0 +1,34 @@
+name: Deploy nvoos-pro-spa-standalone to Velocity
+
+# Manual, opt-in deploy — same pattern as deploy-media-worker.yml.
+# Pushes the app source to Cloudways Velocity's deploy remote (Velocity
+# auto-deploys on push to main). Velocity build settings for the app:
+#   Node 22, build command: npm ci && npm run build,
+#   entry: scripts/serve.mjs (static server over dist/, PORT injected).
+# No-op when the VELOCITY_SPA_DEPLOY_URL secret is not configured.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: git subtree split --prefix=examples/nvoos-pro-spa-vite --branch=nvoos-pro-spa-deploy
+
+      - name: Push to Velocity deploy remote
+        env:
+          VELOCITY_SPA_DEPLOY_URL: ${{ secrets.VELOCITY_SPA_DEPLOY_URL }}
+        run: |
+          if [ -z "$VELOCITY_SPA_DEPLOY_URL" ]; then
+            echo "Skipped: VELOCITY_SPA_DEPLOY_URL secret is not set."
+            exit 0
+          fi
+          git config --local --unset-all http.https://github.com/.extraheader || true
+          git push "$VELOCITY_SPA_DEPLOY_URL" nvoos-pro-spa-deploy:main --force

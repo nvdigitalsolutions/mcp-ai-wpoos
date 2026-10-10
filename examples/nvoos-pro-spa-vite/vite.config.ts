@@ -20,6 +20,7 @@ const spaV2Src = fileURLToPath(
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 
 const targetSite = process.env.NVOOS_TARGET_SITE || '';
+const workerTarget = process.env.NVOOS_WORKER_URL || '';
 
 export default defineConfig({
   plugins: [react()],
@@ -49,14 +50,28 @@ export default defineConfig({
       // The spa-v2 sources live outside this app's root directory.
       allow: [spaV2Src, repoRoot],
     },
-    proxy: targetSite
-      ? {
-          // Cookie-auth mode: everything same-origin through the dev server,
-          // including wp-login.php so users can log in from the app.
-          '/wp-json': { target: targetSite, changeOrigin: true, secure: false, cookieDomainRewrite: '' },
-          '/wp-login.php': { target: targetSite, changeOrigin: true, secure: false },
-          '/wp-admin': { target: targetSite, changeOrigin: true, secure: false },
-        }
-      : undefined,
+    proxy: {
+      ...(targetSite
+        ? {
+            // Cookie-auth mode: everything same-origin through the dev server,
+            // including wp-login.php so users can log in from the app.
+            '/wp-json': { target: targetSite, changeOrigin: true, secure: false, cookieDomainRewrite: '' },
+            '/wp-login.php': { target: targetSite, changeOrigin: true, secure: false },
+            '/wp-admin': { target: targetSite, changeOrigin: true, secure: false },
+          }
+        : {}),
+      ...(workerTarget
+        ? {
+            // Media worker: /worker/* → worker /* (dev only; the deployed app
+            // talks to the worker origin directly with X-Site-Token).
+            '/worker': {
+              target: workerTarget,
+              changeOrigin: true,
+              secure: false,
+              rewrite: (path) => path.replace(/^\/worker/, ''),
+            },
+          }
+        : {}),
+    },
   },
 });

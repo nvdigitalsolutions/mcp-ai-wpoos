@@ -2,7 +2,6 @@
    Everything else comes from the spa-v2 stylesheets. */
 
 :root {
-  color-scheme: dark;
   --shell-bg: #0f1117;
   --shell-card: #171a23;
   --shell-border: #2a3040;
@@ -17,6 +16,50 @@ body {
   margin: 0;
   padding: 0;
   background: var(--shell-bg);
+}
+
+/*
+ * Theme-consistent colour scheme.
+ *
+ * The spa-v2 styles declare light/dark token sets but never set `color-scheme`,
+ * so native controls (buttons, inputs) fall back to the page default. Forcing
+ * `color-scheme: dark` globally made the browser paint white button text over
+ * the SPA's light backgrounds. Instead:
+ *   - the shell's own connect screen opts into a dark scheme explicitly;
+ *   - the SPA subtree follows its `data-theme` attribute (light, dark, or the
+ *     system preference for "auto"), matching its background tokens exactly.
+ */
+.nvoos-connect {
+  color-scheme: dark;
+}
+
+.nvoos-pro-spa-layout {
+  color-scheme: light;
+}
+
+.nvoos-pro-spa-layout[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  .nvoos-pro-spa-layout[data-theme='auto'] {
+    color-scheme: dark;
+  }
+}
+
+/* Page chrome behind the SPA follows the active theme as well. */
+#root:has(.nvoos-pro-spa-layout) {
+  background: #f0f0f1;
+}
+
+#root:has(.nvoos-pro-spa-layout[data-theme='dark']) {
+  background: #1e1e1e;
+}
+
+@media (prefers-color-scheme: dark) {
+  #root:has(.nvoos-pro-spa-layout[data-theme='auto']) {
+    background: #1e1e1e;
+  }
 }
 
 /*
@@ -177,6 +220,11 @@ body,
   border: 1px solid var(--shell-border);
   border-radius: 4px;
   padding: 1px 5px;
+}
+
+.nvoos-connect-hint {
+  font-size: 0.78rem;
+  color: var(--shell-muted);
 }
 
 /* Floating disconnect button, kept out of the SPA's own layout. */

@@ -22,6 +22,7 @@ import './shell.css';
 
 import {
   buildRuntime,
+  checkMediaWorker,
   fetchCurrentUser,
   fetchSessionNonce,
   type AuthMode,
@@ -57,6 +58,12 @@ async function connect(connection: ConnectionSettings): Promise<ConnectResult> {
   try {
     let nonce = '';
     let user: Parameters<typeof buildRuntime>[1]['user'];
+
+    // Optional Design Stack media worker: verify it is reachable before
+    // mounting the SPA (fail fast with a clear error when misconfigured).
+    if (connection.mediaWorkerUrl?.trim()) {
+      await checkMediaWorker(connection);
+    }
 
     if (connection.auth === 'cookie') {
       // Same-origin through the Vite proxy: mint a nonce and read the user.
@@ -97,6 +104,8 @@ async function connect(connection: ConnectionSettings): Promise<ConnectResult> {
       bearer: connection.auth === 'bearer' ? connection.bearer?.trim() : undefined,
       guest: connection.auth === 'guest',
       guestToken: connection.auth === 'guest' ? connection.guestToken : undefined,
+      mediaWorkerUrl: connection.mediaWorkerUrl?.trim() || undefined,
+      mediaWorkerToken: connection.mediaWorkerToken?.trim() || undefined,
     });
 
     return { runtime };
@@ -118,6 +127,8 @@ function Shell(): JSX.Element {
   const [guestToken, setGuestToken] = useState(connection?.guestToken ?? '');
   const [assistantId, setAssistantId] = useState(String(connection?.assistantId ?? ''));
   const [adminLayout, setAdminLayout] = useState(connection?.adminLayout ?? true);
+  const [mediaWorkerUrl, setMediaWorkerUrl] = useState(connection?.mediaWorkerUrl ?? '');
+  const [mediaWorkerToken, setMediaWorkerToken] = useState(connection?.mediaWorkerToken ?? '');
 
   // Auto-reconnect when a saved connection exists (page reload / fresh tab).
   useEffect(() => {
@@ -146,6 +157,8 @@ function Shell(): JSX.Element {
       guestToken: auth === 'guest' ? guestToken.trim() : undefined,
       assistantId: assistantId ? Number(assistantId) : undefined,
       adminLayout,
+      mediaWorkerUrl: mediaWorkerUrl.trim().replace(/\/+$/, ''),
+      mediaWorkerToken: mediaWorkerToken.trim(),
     };
 
     const result = await connect(next);
@@ -261,6 +274,31 @@ function Shell(): JSX.Element {
             Show the full admin surface (assistants, tools, workflows, analytics)
           </label>
         )}
+
+        <fieldset className="nvoos-auth-modes">
+          <legend>Design Stack media worker (optional)</legend>
+          <label>
+            Worker URL (e.g. https://velocity-app-url)
+            <input
+              type="url"
+              placeholder="https://media-worker.example.com"
+              value={mediaWorkerUrl}
+              onChange={(e) => setMediaWorkerUrl(e.target.value)}
+            />
+          </label>
+          <label>
+            Site token (X-Site-Token)
+            <input
+              type="password"
+              value={mediaWorkerToken}
+              onChange={(e) => setMediaWorkerToken(e.target.value)}
+              placeholder="Worker WORKER_API_TOKEN"
+            />
+          </label>
+          <span className="nvoos-connect-hint">
+            Requests to the worker origin carry the token automatically; leave empty to skip.
+          </span>
+        </fieldset>
 
         {error && (
           <p className="nvoos-connect-error" role="alert">

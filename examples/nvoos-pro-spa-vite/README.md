@@ -84,6 +84,32 @@ auth outside the dev proxy you'd want a reverse proxy in front of both the app
 and WordPress (or serve `dist/` from a page on the WordPress host); assistant
 credentials and guest tokens work cross-origin as-is.
 
+### Cloudways Velocity (managed Node hosting)
+
+Same deploy model as the media worker (`docs/operations/deployment/media-worker-velocity-setup.md`):
+
+1. **Repo sync** — `examples/nvoos-pro-spa-vite/` is subtree-mirrored one-way to
+   `nvdigitalsolutions/nvoos-pro-spa-standalone` by
+   `.github/workflows/sync-nvoos-pro-spa-standalone.yml` on every push to
+   `main`/`alpha-working`. Never commit to the standalone repo directly.
+2. **Velocity app** — import the standalone repo (branch `main`): Node 22,
+   build command `npm ci && npm run build`, entry `scripts/serve.mjs`
+   (`PORT` is injected by the platform).
+3. **Deploy** — `.github/workflows/deploy-nvoos-pro-spa-standalone.yml` pushes
+   the subtree to the `VELOCITY_SPA_DEPLOY_URL` deploy remote (Velocity
+   auto-deploys on push to main).
+
+### Design Stack media worker (optional)
+
+Enter the worker URL + `X-Site-Token` in the connection screen and the app
+fronts the media worker directly: every request to the worker origin carries
+the token (strict-mode auth), and in dev the Vite proxy exposes it at
+`/worker/*` (`NVOOS_WORKER_URL=...`). The worker itself keeps its own sync +
+Velocity deploy (`.github/workflows/sync-media-worker.yml`,
+`deploy-media-worker.yml`) — the app and worker are separate Velocity apps
+that talk to each other, so image/video generation, document pipelines, OCR
+and crawling remain one app from the user's perspective.
+
 ## Security notes
 
 - The connection (site URL + credential/token) is stored in `localStorage` on

@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "dev:proxy": "node scripts/dev.mjs",
+    "serve": "node scripts/serve.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"

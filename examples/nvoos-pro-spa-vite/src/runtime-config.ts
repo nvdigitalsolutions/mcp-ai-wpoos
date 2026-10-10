@@ -30,6 +30,12 @@ export interface ConnectionSettings {
   assistantId?: number;
   /** Render the full three-column admin surface instead of the chat surface. */
   adminLayout?: boolean;
+  /**
+   * Optional Design Stack media worker (image/video generation, documents,
+   * OCR, crawling…). Requests to this origin get the X-Site-Token header.
+   */
+  mediaWorkerUrl?: string;
+  mediaWorkerToken?: string;
 }
 
 function normalizeSiteUrl(raw: string): string {
@@ -148,6 +154,27 @@ export async function fetchSessionNonce(base: string): Promise<string> {
     throw new Error('nonce endpoint did not return a nonce');
   }
   return data.nonce;
+}
+
+/**
+ * Ping the media worker's public health endpoint when configured.
+ * Returns the worker's reported version, or null when no worker is set.
+ */
+export async function checkMediaWorker(connection: ConnectionSettings): Promise<string | null> {
+  if (!connection.mediaWorkerUrl?.trim()) {
+    return null;
+  }
+  const url = `${connection.mediaWorkerUrl.trim().replace(/\/+$/, '')}/api/health`;
+  const headers: Record<string, string> = {};
+  if (connection.mediaWorkerToken?.trim()) {
+    headers['X-Site-Token'] = connection.mediaWorkerToken.trim();
+  }
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw new Error(`Media worker health check returned ${response.status}`);
+  }
+  const data = (await response.json()) as { version?: string; status?: string };
+  return typeof data?.version === 'string' ? data.version : (data?.status ?? 'ok');
 }
 
 /** Fetch the logged-in user via WordPress core (cookie auth + nonce). */

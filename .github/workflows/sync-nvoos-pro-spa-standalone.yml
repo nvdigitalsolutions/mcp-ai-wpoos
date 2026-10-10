@@ -1,0 +1,30 @@
+name: Sync nvoos-pro-spa-standalone
+
+# One-way subtree mirror of examples/nvoos-pro-spa-vite/ to the standalone
+# repo nvdigitalsolutions/nvoos-pro-spa-standalone — same pattern as
+# sync-media-worker.yml. Never commit to the standalone repo directly; the
+# next sync force-pushes over it.
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/nvoos-pro-spa-vite/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=examples/nvoos-pro-spa-vite --branch=nvoos-pro-spa-standalone-split
+
+      - name: Push to nvoos-pro-spa-standalone
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.NVOOS_PRO_SPA_STANDALONE_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-pro-spa-standalone.git nvoos-pro-spa-standalone-split:main --force

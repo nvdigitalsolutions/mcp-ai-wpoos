@@ -14,19 +14,32 @@ export interface FetchWrapperOptions {
   /** When true and no token exists yet, send the legacy guest flag. */
   guest?: boolean;
   guestToken?: string;
+  /**
+   * Design Stack media worker origin + site token. Requests to this origin
+   * get the X-Site-Token header (the worker's strict-mode auth).
+   */
+  mediaWorkerUrl?: string;
+  mediaWorkerToken?: string;
 }
 
 export function installFetchWrapper(options: FetchWrapperOptions): () => void {
   const original = window.fetch.bind(window);
+  const workerOrigin = options.mediaWorkerUrl?.trim()
+    ? new URL(options.mediaWorkerUrl.trim()).origin
+    : '';
 
   window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const headers = new Headers(init?.headers);
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
 
     if (options.bearer && !headers.has('Authorization')) {
       headers.set('Authorization', `Bearer ${options.bearer}`);
     }
     if (options.guest && !headers.has('X-WP-MCP-AI-Guest')) {
       headers.set('X-WP-MCP-AI-Guest', options.guestToken || '1');
+    }
+    if (workerOrigin && url.startsWith(workerOrigin) && !headers.has('X-Site-Token')) {
+      headers.set('X-Site-Token', options.mediaWorkerToken ?? '');
     }
 
     // The SPA sets `X-WP-Nonce` unconditionally — with an empty value when no
