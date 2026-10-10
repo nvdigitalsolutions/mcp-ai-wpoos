@@ -231,6 +231,18 @@ jobs:
           tools: composer:v2, wp-cli
           coverage: none
 
+      - name: Ensure WP-CLI is available
+        # setup-php's `tools: wp-cli` fails intermittently ("Could not setup
+        # wp-cli") WITHOUT failing the step — fall back to the official phar
+        # so the bootstrap never dies with `wp: command not found`.
+        run: |
+          if ! command -v wp >/dev/null 2>&1; then
+            curl -sSLo wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+            chmod +x wp-cli.phar
+            sudo mv wp-cli.phar /usr/local/bin/wp
+          fi
+          wp --version
+
       - name: Bootstrap a temporary WordPress install
         run: |
           set -euo pipefail

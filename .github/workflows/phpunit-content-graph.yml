@@ -67,6 +67,19 @@ jobs:
           extensions: mbstring, mysqli
           tools: composer:v2, wp-cli
 
+      - name: Ensure WP-CLI is available
+        # setup-php's `tools: wp-cli` fails intermittently ("Could not setup
+        # wp-cli") WITHOUT failing the step, so the next step dies with
+        # `wp: command not found` (exit 127). Fall back to the official phar
+        # whenever the tool install did not land.
+        run: |
+          if ! command -v wp >/dev/null 2>&1; then
+            curl -sSLo wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+            chmod +x wp-cli.phar
+            sudo mv wp-cli.phar /usr/local/bin/wp
+          fi
+          wp --version
+
       - name: Install plugin Composer dependencies
         working-directory: plugins/nvoos-content-graph
         run: composer install --no-interaction --prefer-dist
