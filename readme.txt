@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.3 - October 10, 2026 =
+
+CORS same-origin enforcement, WordPress login for the standalone SPA, and the SPA REST auth fixes release. Added: the fourth standalone-SPA auth mode — WordPress login via an Application Password (#6993, Proposal 064 — wp/v2/users/me?context=edit validation with a UTF-8-safe Basic header, the real user + capabilities mounted so the deployed app gets real server-side capability enforcement; the Basic header attaches only to the configured site origin). Fixed: the CORS same-origin setting was a silent no-op — WordPress core rest_send_cors_headers reflects any Origin back with credentials on every REST response; the new WP_MCP_AI_CORS_Guard (12th security class) replaces the reflection with the configured policy in site mode (exact-allowlisted origins echoed with credentials, everything else gets the site's own origin with credentials off) (#6986). Fixed: the OOS SSE chat stream emitted no CORS headers (every cross-origin browser chat stream was blocked — WP_MCP_AI_CORS_Guard::emit_stream_cors_headers() now fires from the WP adapter) (#6993). Fixed: transcripts/approvals now accept a pure assistant credential (reads scoped to the credential's issuing assistant; approve/deny stay manage_options-only) and the session nonce re-binds the auth cookie before minting (#6990 — closes #6987, #6985). Changed: Pro Schedule Manager notify_email accepts comma/space/semicolon-separated recipient lists with per-address validation (#6991 — closes #6642; the tool-status.txt CRM slugs and the pagination fixture fix fold in). Changed: the standalone SPA cookie mode gained proxy detection + JSON guards, a zero-dependency production proxy (scripts/serve.mjs), and React.lazy chunk splitting (entry 501 KB → 196 KB minified) (#6994); .env files now load NVOOS_TARGET_SITE with shell > .env > docker-default precedence (#6996). Fixed: three npm package dists (nvoos-slash-commands, nvoos-dom-batcher, nvoos-audio) were invalid ESM — all 23 packages rebuilt with valid dists and a new Vite demo example; the three fixed packages bump to 0.1.0-alpha.4 with the publish deferred pending npm auth (#6984). Build: the spa-standalone workflows pin main at git init (#6988) and assemble the deploy tree under examples/ so Velocity's root directory finds package.json (#6995). Docs: the CORS guard + Velocity deployment guide (#6989) and the open-issues triage snapshot (#6992). Tool count: ~353 base + ~1,339 Pro (~1,692 total; unchanged — no registry diffs in-window; live registry authoritative). Model catalog: v2026.10.03 (unchanged; 18 providers). Security classes: 11 → 12. Stale build ZIPs removed: the 1.2.1 oOS build set (30 files).
 
 = 1.2.2 - October 10, 2026 =
 
