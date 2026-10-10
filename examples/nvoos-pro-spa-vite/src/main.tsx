@@ -120,8 +120,11 @@ function Shell(): JSX.Element {
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState('');
 
-  // Connection form state.
-  const [siteUrl, setSiteUrl] = useState(connection?.siteUrl ?? '');
+  // Connection form state. The site URL defaults to the backend configured at
+  // build time (VITE_DEFAULT_SITE_URL), so a Velocity deployment can ship
+  // with its WordPress backend pre-filled (e.g. https://nvoos.pro).
+  const defaultSiteUrl = (import.meta.env.VITE_DEFAULT_SITE_URL as string | undefined)?.trim() ?? '';
+  const [siteUrl, setSiteUrl] = useState(connection?.siteUrl ?? defaultSiteUrl);
   const [auth, setAuth] = useState<AuthMode>(connection?.auth ?? 'cookie');
   const [bearer, setBearer] = useState(connection?.bearer ?? '');
   const [guestToken, setGuestToken] = useState(connection?.guestToken ?? '');

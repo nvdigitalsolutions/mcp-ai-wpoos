@@ -94,10 +94,20 @@ Same deploy model as the media worker (`docs/operations/deployment/media-worker-
    `main`/`alpha-working`. Never commit to the standalone repo directly.
 2. **Velocity app** — import the standalone repo (branch `main`): Node 22,
    build command `npm ci && npm run build`, entry `scripts/serve.mjs`
-   (`PORT` is injected by the platform).
+   (`PORT` is injected by the platform). Point the domain
+   (e.g. `chat.nvoos.cloud`) at the app, and optionally set the build-time
+   env `VITE_DEFAULT_SITE_URL=https://your-backend.example.com` to pre-fill
+   the connection screen.
 3. **Deploy** — `.github/workflows/deploy-nvoos-pro-spa-standalone.yml` pushes
    the subtree to the `VELOCITY_SPA_DEPLOY_URL` deploy remote (Velocity
-   auto-deploys on push to main).
+   auto-deploys on push to main). **Important:** that secret is the git
+   deploy remote URL from the Velocity app's deployment settings (it embeds
+   deploy credentials), not the public domain.
+4. **CORS on the WordPress backend** — with the app on `chat.nvoos.cloud`,
+   the backend site must allow that origin: Security → Network →
+   `cors_allow_origin` (`star`), or the `wp_mcp_ai_cors_allow_origin`
+   filter with the exact origin. Bearer/guest modes then work cross-origin;
+   cookie mode stays dev-proxy only.
 
 ### Design Stack media worker (optional)
 
