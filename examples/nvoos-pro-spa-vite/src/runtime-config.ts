@@ -102,27 +102,30 @@ export async function detectCookieProxy(base: string): Promise<boolean> {
   }
 }
 
-function buildEndpoints(origin: string): ProSpaEndpoints {
-  const api = `${origin}/wp-json`;
-  const core = `${api}/mcp-ai/v1`;
-  const pro = `${api}/mcp-ai-pro/v1`;
-  return {
-    chat: `${core}/chat`,
-    chatClient: `${core}/chat-client`,
-    transcripts: `${core}/chat-transcripts`,
-    memory: `${core}/chat-memory`,
-    threads: `${core}/threads`,
-    tools: `${core}/tools`,
-    assistants: `${core}/assistants`,
-    settings: `${core}/settings`,
-    upload: `${api}/wp/v2/media`,
-    workflows: `${pro}/workflows`,
-    analytics: `${pro}/analytics`,
-    approvals: `${core}/approvals`,
-    shortcuts: `${pro}/tool-shortcuts`,
-    slashCommands: `${pro}/slash-commands`,
-    okf: `${pro}/okf`,
-  };
+function buildEndpoints( origin: string ): ProSpaEndpoints {
+	const api = `${origin}/wp-json`;
+	const core = `${api}/mcp-ai/v1`;
+	const pro = `${api}/mcp-ai-pro/v1`;
+	return {
+		chat: `${core}/chat`,
+		chatClient: `${core}/chat-client`,
+		transcripts: `${core}/chat-transcripts`,
+		memory: `${core}/chat-memory`,
+		threads: `${core}/threads`,
+		tools: `${core}/tools`,
+		assistants: `${core}/assistants`,
+		settings: `${core}/settings`,
+		upload: `${api}/wp/v2/media`,
+		workflows: `${pro}/workflows`,
+		analytics: `${pro}/analytics`,
+		approvals: `${core}/approvals`,
+		shortcuts: `${pro}/tool-shortcuts`,
+		slashCommands: `${pro}/slash-commands`,
+		okf: `${pro}/okf`,
+		// NV oOS Content Graph (standalone plugin) — the knowledge-graph page
+		// renders an unavailable state when the site doesn't expose it.
+		contentGraph: `${api}/nvoos-content-graph/v1`,
+	};
 }
 
 export interface RuntimeBuildOptions {

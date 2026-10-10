@@ -9,6 +9,8 @@ use NvoosContentGraph\Graph\Exporter;
 use NvoosContentGraph\Plugin;
 use NvoosContentGraph\Remote\Crypto;
 use NvoosContentGraph\Schema;
+use NvoosContentGraph\Settings;
+use NvoosContentGraph\Visual\Tokens;
 use NvoosContentGraph\Tools\ListRemoteSources;
 use NvoosContentGraph\Tools\ResolveExternal;
 use NvoosContentGraph\Tools\RetrieveContext;
@@ -19,16 +21,19 @@ use WP_REST_Server;
 
 use function __;
 use function absint;
+use function apply_filters;
 use function class_exists;
 use function count;
 use function current_user_can;
 use function function_exists;
 use function is_user_logged_in;
 use function is_wp_error;
+use function preg_match;
 use function register_rest_route;
 use function rest_ensure_response;
 use function sanitize_key;
 use function sanitize_text_field;
+use function trim;
 
 /**
  * REST API controller for the NV oOS Content Graph plugin.
@@ -38,6 +43,9 @@ use function sanitize_text_field;
  *
  * Routes:
  *   GET    /graph              — metadata and stats
+ *   GET    /graph/visual-config — explorer display + theme config (headless
+ *                                surfaces such as the NV oOS Pro SPA build
+ *                                the localized admin config from this)
  *   GET    /nodes              — paginated, filterable node list
  *   GET    /nodes/{node_id}    — single node with neighbor edges
  *   POST   /build              — trigger a graph build (manage_options)
@@ -73,6 +81,21 @@ class Controller {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'getGraph' ),
+				'permission_callback' => array( $this, 'checkReadPermission' ),
+			)
+		);
+
+		// GET /graph/visual-config — explorer display + theme config.
+		// Read-only rendering data (visual tokens, presets, height, node
+		// budget) so headless surfaces can render the explorer without the
+		// PHP settings page. No settings values that could be considered
+		// sensitive are exposed.
+		register_rest_route(
+			Schema::REST_NAMESPACE,
+			'/graph/visual-config',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'getVisualConfig' ),
 				'permission_callback' => array( $this, 'checkReadPermission' ),
 			)
 		);
@@ -457,6 +480,31 @@ class Controller {
 				'stats'        => $stats,
 				'last_build'   => $lastBuild,
 				'build_status' => $status,
+			)
+		);
+	}
+
+	/**
+	 * GET /graph/visual-config — Explorer display + theme config.
+	 *
+	 * Mirrors the `nvoosContentGraphAdmin` localization the settings page
+	 * emits for its embedded explorer, minus the WordPress-only fields
+	 * (ajax URL/nonce). Headless clients assemble the explorer config from
+	 * this payload instead of scraping the admin page.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function getVisualConfig(): WP_REST_Response {
+		$settings = Settings::all();
+
+		return rest_ensure_response(
+			array(
+				'visual'    => Tokens::visual_config( $settings ),
+				'presets'   => Tokens::presets(),
+				'height'    => isset( $settings['cytoscape_height'] ) ? (string) $settings['cytoscape_height'] : '600px',
+				'max_nodes' => absint( isset( $settings['max_display_nodes'] ) ? $settings['max_display_nodes'] : 2000 ),
 			)
 		);
 	}
@@ -943,21 +991,83 @@ class Controller {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Check read permission: authenticated user with at least 'read' capability.
+	 * Check read permission: authenticated user with at least 'read' capability,
+	 * a valid NV oOS assistant credential (bearer token), or a valid base
+	 * plugin guest token.
+	 *
+	 * Assistant credentials are CSRF-safe header tokens issued by the NV oOS
+	 * base plugin (`cred_XXXXX.SECRET`, presented as
+	 * `Authorization: Bearer …`). This mirrors the base plugin's REST layer:
+	 * a token in credential format that fails validation is a definitive
+	 * rejection, while requests without a credential fall through to the
+	 * guest-token check.
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param WP_REST_Request|null $request REST request (supplied by WordPress).
 	 * @return bool|WP_Error
 	 */
-	public function checkReadPermission() {
+	public function checkReadPermission( $request = null ) {
 		if ( is_user_logged_in() && current_user_can( 'read' ) ) {
 			return true;
 		}
+
+		// Assistant credential (bearer) authentication — read-only scope.
+		// Write routes keep their separate manage_options check, so a
+		// credential can never rebuild, export, or mutate remote sources.
+		if ( $request instanceof WP_REST_Request ) {
+			$credential = $this->validate_request_credential( $request );
+			if ( null !== $credential ) {
+				return is_wp_error( $credential ) ? $credential : true;
+			}
+		}
+
 		// Allow public access if the base plugin guest token is valid.
 		if ( function_exists( '\wp_mcp_ai_validate_guest_token' ) && \wp_mcp_ai_validate_guest_token() ) {
 			return true;
 		}
 		return new WP_Error( 'nvoos_content_graph_forbidden', __( 'You must be logged in to access the knowledge graph.', 'nvoos-content-graph' ), array( 'status' => 401 ) );
+	}
+
+	/**
+	 * Validate an NV oOS assistant credential presented on a REST request.
+	 *
+	 * Accepts the standard `Authorization: Bearer cred_xxxxx.SECRET` header
+	 * and the raw credential form the base plugin tolerates
+	 * (`Authorization: cred_xxxxx.SECRET`, gated by the same
+	 * `wp_mcp_ai_accept_raw_credential_header` filter). Returns the validated
+	 * credential metadata on success, a WP_Error for a rejected credential,
+	 * or null when no credential was presented (or the base plugin is not
+	 * installed, in which case there is nothing to validate against).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return array|WP_Error|null Credential metadata, WP_Error, or null when absent.
+	 */
+	protected function validate_request_credential( WP_REST_Request $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
+			return null;
+		}
+
+		$header = $request->get_header( 'Authorization' );
+		$token  = '';
+		if ( ! empty( $header ) && preg_match( '/^Bearer\s+(.*)$/i', (string) $header, $matches ) ) {
+			$token = trim( $matches[1] );
+		} elseif ( ! empty( $header ) ) {
+			// Raw credential header (no "Bearer" scheme), mirroring the base
+			// plugin's compatibility handling.
+			$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
+			if ( $accept_raw_credential ) {
+				$token = trim( (string) $header );
+			}
+		}
+
+		if ( '' === $token || ! \WP_MCP_AI_Credentials::is_token_format( $token ) ) {
+			return null;
+		}
+
+		return \WP_MCP_AI_Credentials::validate_token( $token );
 	}
 
 	/**

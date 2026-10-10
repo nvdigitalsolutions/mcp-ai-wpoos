@@ -122,6 +122,84 @@ Reusable mechanics (all learned the hard way — do not rediscover):
 - **Media worker:** the app fronts the worker directly (URL + `X-Site-Token`
   in the connection screen) — the two stay separate Velocity apps.
 
+## Porting a plugin JS widget into spa-v2 (vendored-upstream pattern)
+
+Canonical case study: the NV oOS Content Graph explorer ported to the
+`#/knowledge-graph` page (PR #6998, 2026-10-10). Use when a plugin's
+standalone JS widget (jQuery/Cytoscape/etc.) should render inside spa-v2
+AND the standalone Vite app, without forking the widget.
+
+### Layout
+
+- Vendor the upstream files into `src/features/<feature>/upstream/` — never
+  a folder named `vendor/` (it matches the user's global
+  file_scan_exclusions and is invisible to file tools). Copy the CSS too,
+  and add one `.d.ts` per JS module.
+- Keep the upstream body **byte-identical**; apply only a documented
+  wrapper delta, with the delta list in the file header so re-copying
+  upstream is mechanical:
+  1. IIFE → exported factory (`export function initX( $ ) { ... }`).
+  2. Namespace every `$( document ).on( 'evt', ... )` binding
+     (`evt.nvoos-cg`) so teardown can `$( document ).off( '.nvoos-cg' )`.
+  3. Return `{ destroy }`: stop rAF loops, clear `setTimeout`s,
+     `cy.destroy()` + null the instance, unbind namespaced listeners,
+     remove body-appended elements.
+  4. Add a `destroyed` latch reset at factory entry and checked at the top
+     of the init choke point — an in-flight ajax completing after unmount
+     must not resurrect the widget on a detached container.
+- The React page is an **imperative island**: render the widget's exact
+  markup (toolbar/container ids) in JSX, write the widget's config onto
+  `window.*` in `useEffect` before calling the factory, and call
+  `destroy()` in the cleanup (the React docs "Integrating with Other
+  Libraries" contract). Config comes from the runtime
+  (`readProSpaConfig()`) plus a plugin REST route — the graph case added
+  `GET /graph/visual-config` server-side; never scrape the admin page.
+- Heavy deps (jquery, cytoscape, fcose) go in BOTH
+  `addons/pro/assets/spa-v2/package.json` and the standalone app's
+  `package.json`, forced onto one tree with Vite directory aliases (a
+  second cytoscape instance breaks extension registration). Register
+  extensions once at module scope (`cytoscape.use( fcose )`) and hand the
+  core to the widget via `window.cytoscape`.
+- Lazy-load: route in `router.tsx` (React.lazy) + command-palette entry in
+  `useBootstrap.ts`. The standalone Vite build splits the page into its own
+  chunk (graph page: 213 KB gzip, loaded on visit only).
+
+### Type/typecheck gotchas
+
+- The standalone app's `tsc` typechecks spa-v2 sources THROUGH the import
+  graph (its `runtime-config.ts` imports types from
+  `@nvoos/pro-spa-v2/api/config` and `main.tsx` mounts spa-v2's App), so an
+  ambient `declare module` shim spa-v2 needs (e.g. untyped
+  `cytoscape-fcose`) must ALSO live in the app's own `src/shims/` to enter
+  the app's TS program. Keep both declarations identical.
+- Each vendored `.js` needs a sibling `.d.ts` — the page's imports resolve
+  to it (no `allowJs` needed). Global Window augmentation goes in the
+  side-effect module's d.ts.
+
+### Testing gotchas (vitest)
+
+- `vi.mock` factories are hoisted — share state via
+  `vi.hoisted( () => ({ initMock: vi.fn( ... ) }) )`.
+- Mock paths are relative to the TEST file but must match the PAGE's import
+  specifiers: from `__tests__/` mock `'../upstream/content-graph-admin'`,
+  not `'./upstream/...'` — the wrong path silently leaves the REAL module
+  active (symptom: `$ is not a function` from the real jQuery IIFE).
+- jsdom cannot run Cytoscape's canvas — mock the vendored factory + deps;
+  test the config hand-off (`window.nvoosContentGraphAdmin` shape) and the
+  destroy-on-unmount contract, not the vendored internals.
+- `eslint-disable-line` for `tabIndex` must sit INSIDE the JSX attribute
+  expression
+  (`tabIndex={ /* eslint-disable-line jsx-a11y/no-noninteractive-tabindex */ 0 }`)
+  — a disable comment on the line before the tag targets the wrong line
+  (the rule reports on the attribute line, not the tag line).
+
+### Bundle-size trade-off
+
+- The plugin's esbuild build uses `splitting: false` (IIFE) — lazy pages are
+  INLINED into `pro-spa.js` (the graph page added ~630 KB minified:
+  cytoscape + fcose + jquery). Accept it or propose a separate entry point;
+  the standalone app gets real chunking. Call the growth out in the PR body.
+
 ## Component rules — headless only
 
 - **Adopt Radix primitives** (`@radix-ui/react-*`, MIT) wrapped per-addon in
@@ -221,6 +299,21 @@ bootstrap fixture and heavy-view mocks (see `api.test.tsx`).
   mid-session (seen with `workflowHelpers.ts`, 2026-10-09). After edits,
   verify on-disk state with a marker grep before rebuilding/committing; if a
   fuzzy edit double-applies, rewrite the file whole with `write_file`.
+- **Shared-checkout PR hygiene (foreign WIP):** a shared checkout can carry
+  another agent's UNCOMMITTED WIP (symptom: `git status` shows modified
+  files you never touched). Stage explicit paths only; run
+  `git diff <path>` before `git add` and check every hunk is yours — a
+  dirty file you edit for your own reasons will sweep their hunks into your
+  commit (happened with `vite.config.ts` + `README.md` on 2026-10-10). If
+  it already happened: back up the working file, restore the base version,
+  re-apply ONLY your hunks, commit, push; then move the foreign WIP to its
+  own branch + PR with `git stash push -- <paths>` →
+  `git switch -c <branch> origin/alpha-working` → `git stash pop`.
+  CAUTION: a stash is a diff against the branch where it was made — if the
+  target branch already contains part of the stashed state, the pop can
+  silently drop hunks (verify each file's diff after the pop; re-apply by
+  hand when missing). When two PRs touch the same file on adjacent hunks,
+  note the conflict resolution in the PR bodies.
 
 ## Full JS rebuild map — shipping fresh artifacts
 

@@ -14,6 +14,7 @@ export default [
 	{
 		...jsxA11y.flatConfigs.recommended,
 		files: [ 'src/**/*.{ts,tsx,js,jsx}' ],
+		ignores: [ 'src/features/knowledge-graph/upstream/**' ],
 		languageOptions: {
 			parser: tsParser,
 			parserOptions: {

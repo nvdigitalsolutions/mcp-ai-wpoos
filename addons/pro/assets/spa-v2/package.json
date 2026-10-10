@@ -1,6 +1,6 @@
 {
   "name": "@nvoos/pro-spa-v2",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "NV oOS Pro Admin SPA — modern TypeScript React admin panel replacing the legacy pro-spa",
   "private": true,
   "type": "module",
@@ -15,7 +15,10 @@
   },
   "dependencies": {
     "@ai-sdk/react": "1.2.12",
+    "cytoscape": "^3.33.1",
+    "cytoscape-fcose": "^2.2.0",
     "dompurify": "^3.4.16",
+    "jquery": "^3.7.1",
     "marked": "^9.1.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -28,6 +31,8 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/cytoscape": "^3.21.8",
+    "@types/jquery": "^3.5.32",
     "@types/node": "22.15.17",
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.4",

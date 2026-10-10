@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 69 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 70 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -161,6 +161,16 @@ its `phpunit.xml.dist`** (phpunit-ai.yml only covers the AI addon's
 # Host: install the plugin's dev deps (creates
 # plugins/nvoos-content-graph/vendor — gitignored):
 cd plugins/nvoos-content-graph && composer install --no-interaction --prefer-dist
+```
+
+**Mount-path caution:** `git rev-parse --show-toplevel` BEFORE mounting —
+the MAIN checkout is `F:/GITHUB/mcp-ai-wpoos` while
+`F:/GITHUB/worktrees/mcp-ai-wpoos` is the PARENT of the git worktrees
+(worktree repos live at `.../mcp-ai-wpoos/<worktree-name>/mcp-ai-wpoos`).
+Mounting the parent silently runs the WRONG code — verify with
+`git worktree list`. The Zed file tools may report the worktrees path as
+the allowed directory even when the terminal's repo root is the main
+checkout; trust `git rev-parse`, not the tool metadata.
 
 # Write the wp-phpunit config the plugin bootstrap expects. Default lookup is
 # vendor/wp-phpunit/wp-phpunit/wp-tests-config.php (dirname of includes/).
@@ -1018,10 +1028,46 @@ the changed files is the substantive gate; plan CI waits accordingly.
       pass-through), and guard the profile calls with `class_exists()` so
       standalone/addon test matrices without the chat-profile system remain
       unaffected. Rule: a pass-through assertion on any
-      `wp_mcp_ai_resolved_system_prompt`-family filter is fragile by
+      the `wp_mcp_ai_resolved_system_prompt`-family filter is fragile by
       definition — isolate the subscriber set first.
+   70. **`class_exists()`-guarded base-plugin calls must use the global
+      namespace (v1.1.0 content-graph bearer auth, PR #6998).** Inside a
+      namespaced class, an unqualified `WP_MCP_AI_Credentials::validate_token()`
+      resolves to `Current\Namespace\WP_MCP_AI_Credentials` — the string form
+      `class_exists( 'WP_MCP_AI_Credentials' )` passes (strings never resolve),
+      then the call fatals with `Class "NvoosContentGraph\Rest\WP_MCP_AI_Credentials"
+      not found` the moment a request presents a credential. Fix: leading
+      backslash on every class reference (`\WP_MCP_AI_Credentials::...`). Tests
+      that stub the base class via a no-namespace helper file
+      (`tests/helpers/base-plugin-credential-stubs.php` pattern: seed tokens,
+      `is_token_format()` + `validate_token()` static methods) catch this only
+      if they exercise the credential path with a real REST request.
 
-## Production fix vs test fix
+ ## CI workflow hardening — setup-php `tools: wp-cli` flakes
+
+ `shivammathur/setup-php` `tools: wp-cli` fails intermittently (`✗ wp-cli
+ Could not setup wp-cli`) WITHOUT failing the step, so the next `wp core
+ download` dies with `wp: command not found` (exit 127) — same code, same
+ workflow, alternating green/red runs. Fixed in PR #6998 for
+ `.github/workflows/phpunit-content-graph.yml` + the plugin-check job of
+ `.github/workflows/build-nvoos-content-graph.yml`:
+
+ ```yaml
+ - name: Ensure WP-CLI is available
+   run: |
+     if ! command -v wp >/dev/null 2>&1; then
+       curl -sSLo wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+       chmod +x wp-cli.phar
+       sudo mv wp-cli.phar /usr/local/bin/wp
+     fi
+     wp --version
+ ```
+
+ Diagnose via `gh run view <id> --log | grep -iE "wp-cli"` — look for the
+ red ✗ tool line in the Set up PHP step, not the step that died. Any new
+ workflow using setup-php `tools: wp-cli` should include this fallback step.
+
+ ## Production fix vs test fix
 
 - **Fix production** when the test exposes a genuine bug: unsafe coercion
   (pattern 11), a latent fatal on a real code path (Graphify admin classes

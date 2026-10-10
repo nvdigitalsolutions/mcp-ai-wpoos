@@ -274,6 +274,18 @@ Vendored under `addons/graphify/assets/vendor/`, each with its own
 | `cose-base` | MIT | <https://github.com/iVis-at-Bilkent/cose-base> |
 | `layout-base` | MIT | <https://github.com/iVis-at-Bilkent/layout-base> |
 
+### `addons/pro/assets/spa-v2/` — knowledge-graph page
+
+The `#/knowledge-graph` page bundles the NV oOS Content Graph explorer
+(vendored from `plugins/nvoos-content-graph/assets/js/`) with these
+runtime dependencies:
+
+| Package | License | Upstream |
+|---------|---------|----------|
+| `cytoscape` | MIT — © 2016–2023 The Cytoscape Consortium | <https://github.com/cytoscape/cytoscape.js> |
+| `cytoscape-fcose` | MIT | <https://github.com/iVis-at-Bilkent/cytoscape.js-fcose> |
+| `jquery` | MIT | <https://github.com/jquery/jquery> |
+
 ### `addons/docs-hub/` — React-based documentation browser
 
 | Package | Version | License | Upstream |

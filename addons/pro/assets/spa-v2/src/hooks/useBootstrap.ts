@@ -157,6 +157,15 @@ export function useBootstrap(): BootstrapResult {
 				},
 			},
 			{
+				id: 'nav-knowledge-graph',
+				label: 'Go to Knowledge Graph',
+				description: 'Explore the content graph',
+				category: 'navigation',
+				handler: () => {
+					window.location.hash = '#/knowledge-graph';
+				},
+			},
+			{
 				id: 'action-toggle-sidebar',
 				label: 'Toggle Sidebar',
 				category: 'action',

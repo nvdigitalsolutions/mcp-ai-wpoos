@@ -83,6 +83,12 @@ export interface ProSpaEndpoints {
 	slashCommands: string;
 	/** OKF Skills & Knowledge browse endpoint (v2.1.1). */
 	okf: string;
+	/**
+	 * NV oOS Content Graph REST base (nvoos-content-graph/v1) — the
+	 * knowledge-graph explorer page. Empty when the site does not expose
+	 * the plugin, and the page renders an unavailable state.
+	 */
+	contentGraph: string;
 }
 
 export interface RuntimeAssistantSummary {
@@ -204,6 +210,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 			okf: typeof e.okf === 'string' ? e.okf : '',
+			contentGraph: typeof e.contentGraph === 'string' ? e.contentGraph : '',
 		},
 		user: ( g.user ?? { id: 0, login: '', displayName: '', capabilities: [] } ) as ProSpaUser,
 		mentionTypes: Array.isArray( g.mentionTypes ) ? g.mentionTypes : [],

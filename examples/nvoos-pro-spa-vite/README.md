@@ -15,6 +15,8 @@ localized by the plugin's PHP loader. This app:
 2. Builds the same runtime object, following the plugin's REST conventions:
    - `{site}/wp-json/mcp-ai/v1/{chat,chat-client,chat-transcripts,chat-memory,threads,tools,assistants,settings,approvals}`
    - `{site}/wp-json/mcp-ai-pro/v1/{workflows,analytics,tool-shortcuts,slash-commands,okf}`
+   - `{site}/wp-json/nvoos-content-graph/v1` — the NV oOS Content Graph
+     plugin's REST namespace (Knowledge Graph page)
    - `{site}/wp-json/mcp-ai/v1/session/nonce` — fresh `wp_rest` nonce (cookie auth)
 3. Sets the global and renders the spa-v2 `<App/>` (admin surface) or
    `<EmbeddedApp/>` (chat surface) — **imported directly from the spa-v2 source
@@ -70,6 +72,36 @@ npm run build
 If cookie mode is selected without a proxy, the connection screen detects it
 (the app origin does not serve the WordPress REST API) and explains how to
 start one instead of failing with a JSON parse error.
+
+## Knowledge Graph page
+
+The `#/knowledge-graph` page (reachable from the command palette) embeds the
+**NV oOS Content Graph** explorer — the Cytoscape.js graph, theme engine,
+legend, minimap, layout presets, and PNG export from the standalone
+`nvoos-content-graph` WordPress plugin, vendored into the spa-v2 sources.
+
+- **Requirements** — the connected site must run NV oOS Content Graph
+  **1.1.0+** (the page reads its `GET /graph/visual-config` route; older
+  installs show a hint instead of a broken graph). Without the plugin the
+  page renders an unavailable state.
+- **Auth** — the graph read routes accept logged-in users (cookie / wp
+  login modes), **assistant credentials** (bearer mode — Content Graph 1.1.0
+  added bearer support to its read routes), and guest tokens. Write
+  operations (rebuild, export, remote sources) stay `manage_options`-only on
+  the plugin's own admin page; this surface is read-only by design.
+- **CORS** — in cross-origin modes (bearer/guest/wp login) the site must
+  allow-list this app's origin AND widen the plugin's CORS route prefixes to
+  include `/nvoos-content-graph/v1` (default scope is `/mcp-ai/v1` only):
+
+  ```php
+  add_filter( 'wp_mcp_ai_cors_guard_route_prefixes', function ( $prefixes ) {
+      $prefixes[] = '/nvoos-content-graph/v1';
+      return $prefixes;
+  } );
+  ```
+
+  Cookie mode needs none of this (everything goes through the proxy
+  same-origin).
 
 ## CORS
 
@@ -164,3 +196,14 @@ and crawling remain one app from the user's perspective.
   configured site origin — never to the media worker or third-party URLs.
   Prefer a dedicated, least-privilege WP user for this app rather than an
   administrator account.
+
+## Third-party libraries (Knowledge Graph page)
+
+The knowledge-graph page is a lazy-loaded chunk; its dependencies never load
+unless the page is opened. All MIT-licensed:
+
+| Package | Purpose |
+|---|---|
+| `cytoscape` | Graph visualization core (Cytoscape Consortium) |
+| `cytoscape-fcose` | fCoSE force-directed layout (iVis-at-Bilkent) |
+| `jquery` | Runtime for the vendored Content Graph explorer code |

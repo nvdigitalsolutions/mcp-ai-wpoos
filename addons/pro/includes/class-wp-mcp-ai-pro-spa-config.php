@@ -281,6 +281,12 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'okf'           => class_exists( 'WP_MCP_AI_OKF_Bundle_Manager' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/okf' ) )
 					: '',
+
+				// NV oOS Content Graph (standalone plugin) — the knowledge-graph
+				// page renders an unavailable state when it's not installed.
+				'contentGraph'  => ( $is_admin && ! $guest && class_exists( 'NvoosContentGraph\Plugin' ) )
+					? esc_url_raw( rest_url( 'nvoos-content-graph/v1' ) )
+					: '',
 			),
 			'user'         => array(
 				'id'           => $guest ? 0 : $user_id,

@@ -126,6 +126,13 @@ export default defineConfig(({ mode }) => {
         dompurify: fileURLToPath(new URL('./node_modules/dompurify', import.meta.url)),
         '@ai-sdk/react': fileURLToPath(new URL('./node_modules/@ai-sdk/react', import.meta.url)),
         '@ai-sdk/ui-utils': fileURLToPath(new URL('./node_modules/@ai-sdk/ui-utils', import.meta.url)),
+        // Knowledge-graph page deps: the vendored explorer (spa-v2 sources)
+        // imports jquery + cytoscape; force them onto this app's single
+        // dependency tree like react/zustand above (a second cytoscape
+        // instance would break extension registration).
+        jquery: fileURLToPath(new URL('./node_modules/jquery', import.meta.url)),
+        cytoscape: fileURLToPath(new URL('./node_modules/cytoscape', import.meta.url)),
+        'cytoscape-fcose': fileURLToPath(new URL('./node_modules/cytoscape-fcose', import.meta.url)),
       },
     },
     server: {
