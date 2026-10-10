@@ -19,6 +19,7 @@
 
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { splitChartSegments, renderChartRecipe } from './chat-chart-recipes.js';
 
 (function(window) {
 	'use strict';
@@ -173,10 +174,13 @@ import DOMPurify from 'dompurify';
 	}
 
 	/**
-	 * Render markdown to HTML using marked + DOMPurify.
-	 * 
-	 * This is the main function that replaces ~240 lines of custom markdown parsing.
-	 * 
+	 * Render markdown to HTML using marked + DOMPurify, with `nvoos-chart`
+	 * fenced blocks rendered as safe HTML/CSS chart recipes.
+	 *
+	 * Chart fences are extracted before marked and rendered separately via
+	 * chat-chart-recipes.js (sanitisation by construction), so the chart
+	 * markup never passes through DOMPurify and the allowlist stays narrow.
+	 *
 	 * @param {string} text - Markdown text
 	 * @return {string} Sanitized HTML output
 	 */
@@ -186,22 +190,33 @@ import DOMPurify from 'dompurify';
 		}
 
 		try {
-			// Parse markdown to HTML using marked
-			const rawHtml = marked.parse(text);
+			const segments = splitChartSegments(String(text));
+			let output = '';
+			segments.forEach(function (segment) {
+				if (segment.type === 'chart') {
+					output += renderChartRecipe(segment.code, {
+						classPrefix: 'wp-mcp-ai-chat__chart-recipe',
+						codeBlockClass: 'wp-mcp-ai-chat__code-block',
+					});
+					return;
+				}
+				// Parse markdown to HTML using marked.
+				const rawHtml = marked.parse(segment.text);
 
-			// Sanitize with DOMPurify to prevent XSS
-			const sanitized = DOMPurify.sanitize(rawHtml, {
-				ALLOWED_TAGS: [
-					'p', 'br', 'strong', 'em', 'code', 'pre', 'a', 
-					'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 
-					'h3', 'h4', 'h5', 'h6', 'del', 'img'
-				],
-				ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'src', 'alt', 'title', 'loading'],
-				// Allow external links to open in new tabs
-				ALLOW_DATA_ATTR: false,
+				// Sanitize with DOMPurify to prevent XSS.
+				output += DOMPurify.sanitize(rawHtml, {
+					ALLOWED_TAGS: [
+						'p', 'br', 'strong', 'em', 'code', 'pre', 'a', 
+						'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 
+						'h3', 'h4', 'h5', 'h6', 'del', 'img'
+					],
+					ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'src', 'alt', 'title', 'loading'],
+					// Allow external links to open in new tabs
+					ALLOW_DATA_ATTR: false,
+				});
 			});
 
-			return sanitized;
+			return output;
 		} catch (error) {
 			// Fallback to escaped text if parsing fails
 			console.error('Markdown parsing error:', error);

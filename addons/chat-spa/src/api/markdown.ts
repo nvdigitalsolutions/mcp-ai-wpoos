@@ -11,6 +11,7 @@
 
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { splitChartSegments, renderChartRecipe } from './chartRecipes';
 
 // ── One-time marked configuration ───────────────────────────────────────────
 
@@ -118,17 +119,40 @@ const ALLOWED_ATTR = [
  * Returns an empty string for falsy / empty input so callers don't need to
  * guard before passing the result to `dangerouslySetInnerHTML`.
  */
+/**
+ * Render markdown text to sanitised HTML, with `nvoos-chart` fenced blocks
+ * rendered as safe HTML/CSS chart recipes.
+ *
+ * Chart fences are extracted before marked and rendered separately via
+ * chartRecipes.ts (sanitisation by construction), so chart markup never
+ * passes through DOMPurify and the allowlist stays narrow.
+ *
+ * Returns an empty string for falsy / empty input so callers don't need to
+ * guard before passing the result to `dangerouslySetInnerHTML`.
+ */
 export function renderMarkdown( text: string ): string {
 	if ( ! text ) {
 		return '';
 	}
 	try {
-		const rawHtml = marked.parse( text ) as string;
-		return DOMPurify.sanitize( rawHtml, {
-			ALLOWED_TAGS: ALLOWED_TAGS as unknown as string[],
-			ALLOWED_ATTR: ALLOWED_ATTR as unknown as string[],
-			ALLOW_DATA_ATTR: false,
-		} ) as string;
+		const segments = splitChartSegments( String( text ) );
+		let output = '';
+		segments.forEach( ( segment ) => {
+			if ( segment.type === 'chart' ) {
+				output += renderChartRecipe( segment.code, {
+					classPrefix: 'nvoos-chat-spa-chart-recipe',
+					codeBlockClass: 'nvoos-chat-spa-code-block',
+				} );
+				return;
+			}
+			const rawHtml = marked.parse( segment.text ) as string;
+			output += DOMPurify.sanitize( rawHtml, {
+				ALLOWED_TAGS: ALLOWED_TAGS as unknown as string[],
+				ALLOWED_ATTR: ALLOWED_ATTR as unknown as string[],
+				ALLOW_DATA_ATTR: false,
+			} ) as string;
+		} );
+		return output;
 	} catch {
 		// If marked or DOMPurify throws for any reason, fall back to
 		// escaped plain text wrapped in a paragraph so the user still sees
