@@ -4,11 +4,11 @@ import { fileURLToPath, URL } from 'node:url';
 
 /**
  * The npm-published 0.1.0-alpha.3 dists of nvoos-slash-commands and
- * nvoos-dom-batcher are broken (their adapt-for-npm.js scripts left the
+ * nvoos-dom-batcher are broken (their adapt-for-npm scripts left the
  * IIFE wrapper unclosed, placing the ES export statements inside the IIFE —
  * syntactically invalid ESM that Rollup/esbuild reject).
  *
- * The generator scripts are fixed in this repo (see the adapt-for-npm.js
+ * The generator scripts are fixed in this repo (see the adapt-for-npm.cjs
  * files under packages/) and the rebuilt dists are vendored in ./vendor/.
  * Remove these aliases once fixed versions are republished to npm.
  */

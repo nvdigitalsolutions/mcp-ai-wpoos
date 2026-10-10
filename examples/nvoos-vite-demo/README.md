@@ -71,7 +71,7 @@ Some packages declare peer dependencies you must install alongside them:
 ## Vendored fixes for two broken published dists
 
 The npm-published `0.1.0-alpha.3` dists of `nvoos-slash-commands` and
-`nvoos-dom-batcher` are syntactically invalid ESM (their `adapt-for-npm.js`
+`nvoos-dom-batcher` are syntactically invalid ESM (their `adapt-for-npm.cjs`
 scripts failed to strip the IIFE wrapper, so the `export` statements ended up
 inside the IIFE). The generator scripts are fixed in this repo and the rebuilt
 dists are copied into `vendor/`; `vite.config.ts` aliases the two package names

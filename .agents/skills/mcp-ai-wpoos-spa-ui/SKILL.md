@@ -175,7 +175,7 @@ scope is the whole tree, not one addon. Verified inventory (2026-10-09):
 | Pattern B SPA | `schedule-anything-spa` — `npm run build` (`tsc && vite build`) | |
 | Pattern C SPA | `saas-controller` — `npm run build` (worker esbuild + drift-manifest stamp + wp-scripts admin) | |
 | Legacy pro SPA | `addons/pro/assets/spa` — `npm run build` (wp-scripts webpack → `dist/`) | |
-| npm packages | `packages/nvoos-*` — each has `npm run build` (`adapt-for-npm.js`); `nvoos-mcp-bridge` has none by design | loop with a small node script; dist folders are git-tracked |
+| npm packages | `packages/nvoos-*` — each has `npm run build` (`adapt-for-npm.cjs`); `nvoos-mcp-bridge` has none by design | loop with a small node script; dist folders are git-tracked |
 | content-graph vendor | `plugins/nvoos-content-graph` — `npm install` then `node scripts/copy-vendor.js` | |
 
 Skips: `algorave` / `fantasy-football` (no-op echo builds), `mcp-gateway` /

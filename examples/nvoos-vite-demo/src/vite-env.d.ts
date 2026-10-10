@@ -16,9 +16,10 @@ declare global {
 }
 
 /**
- * Runtime methods on CommandAutocomplete that the package's published .d.ts
- * does not declare (typing gap — they are public in the dist). Augment the
- * class type so the demo can drive the dropdown from an input listener.
+ * Runtime methods on CommandAutocomplete that the published 0.1.0-alpha.3
+ * .d.ts does not declare (they are public in the dist). The generator now
+ * emits them (see packages/nvoos-slash-commands/adapt-for-npm.cjs), so this
+ * augmentation can be dropped once the fixed package is republished.
  */
 declare module '@nvdigitalsolutions/nvoos-slash-commands' {
   interface CommandAutocomplete {
