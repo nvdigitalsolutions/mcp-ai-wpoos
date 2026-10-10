@@ -227,6 +227,26 @@ body,
   color: var(--shell-muted);
 }
 
+/* "Log in to WordPress" affordance, shown in cookie auth mode. */
+.nvoos-cookie-login {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.nvoos-cookie-login a {
+  color: var(--shell-accent-2);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.nvoos-cookie-login a:hover,
+.nvoos-cookie-login a:focus-visible {
+  text-decoration: underline;
+}
+
 /* Floating disconnect button, kept out of the SPA's own layout. */
 .nvoos-disconnect {
   position: fixed;
@@ -248,4 +268,16 @@ body,
   opacity: 1;
   color: var(--shell-text);
   border-color: var(--shell-accent);
+}
+
+/* Shown while the admin/chat surface chunk loads after a connect. */
+.nvoos-surface-loading {
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--shell-muted);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.95rem;
 }

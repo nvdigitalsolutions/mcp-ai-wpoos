@@ -47,10 +47,14 @@ npm run build
 
 | Mode | Transport | Setup | Surface |
 |---|---|---|---|
-| **Cookie (dev proxy)** | Same-origin via Vite proxy | `NVOOS_TARGET_SITE=https://your-site.com npm run dev`; log into WordPress through the proxy (the proxy forwards `/wp-login.php`) | Full admin |
+| **Cookie (proxy)** | Same-origin via the dev proxy or the built-in serve.mjs proxy | `NVOOS_TARGET_SITE=https://your-site.com npm run dev:proxy` (or the same env var on `scripts/serve.mjs`); use the **Log in to WordPress** link on the connection screen — it opens `/wp-login.php` in a new tab, and after login you land back on the app with the session cookie set | Full admin |
 | **WordPress login (application password)** | Cross-origin, `Authorization: Basic` (username + application password) | Create an application password under Users → Profile → Application Passwords; paste username + password in the connection screen. Authenticates as a real WP user with their real permissions. | Full admin (capability-gated server-side) |
 | **Assistant credential** | Cross-origin, `Authorization: Bearer cred_xxxxx.SECRET` | Create a credential in the NV oOS plugin; paste it in the connection screen | Full admin layout (server enforces permissions) |
 | **Guest** | Cross-origin, `X-WP-MCP-AI-Guest` token | Assistant ID (+ optional guest token minted by the site's `[nvoos_pro_spa]` page) | Public chat surface |
+
+If cookie mode is selected without a proxy, the connection screen detects it
+(the app origin does not serve the WordPress REST API) and explains how to
+start one instead of failing with a JSON parse error.
 
 ## CORS
 
@@ -83,10 +87,14 @@ header and sends no cookies.
 
 ## Deploying standalone
 
-`npm run build` produces a static `dist/` you can host anywhere. For cookie
-auth outside the dev proxy you'd want a reverse proxy in front of both the app
-and WordPress (or serve `dist/` from a page on the WordPress host); assistant
-credentials and guest tokens work cross-origin as-is.
+`npm run build` produces a static `dist/` you can host anywhere. Cookie auth
+works whenever the server that hosts `dist/` also proxies the WordPress
+routes: `scripts/serve.mjs` has a built-in, zero-dependency reverse proxy —
+set `NVOOS_TARGET_SITE` (it proxies `/wp-json`, `/wp-admin`, `/wp-login.php`
+and `/wp-includes`, keeps login redirects on the app origin, and strips
+cookie domains). Any other reverse proxy in front of both the app and
+WordPress works the same way. Assistant credentials and guest tokens work
+cross-origin as-is.
 
 ### Cloudways Velocity (managed Node hosting)
 
@@ -111,8 +119,11 @@ Same deploy model as the media worker (`docs/operations/deployment/media-worker-
 4. **CORS on the WordPress backend** — with the app on `chat.nvoos.cloud`,
    the backend site must allow that origin: Security → Network →
    `cors_allow_origin` (`star`), or the `wp_mcp_ai_cors_allow_origin`
-   filter with the exact origin. Bearer/guest modes then work cross-origin;
-   cookie mode stays dev-proxy only.
+   filter with the exact origin. Bearer/guest modes then work cross-origin.
+   For cookie mode, set `NVOOS_TARGET_SITE` on the Velocity app — the
+   built-in proxy makes the WordPress REST API same-origin, so no CORS
+   configuration is needed. Set it to a site you control: the proxy forwards
+   cookies for the proxied routes.
 
 ### Design Stack media worker (optional)
 

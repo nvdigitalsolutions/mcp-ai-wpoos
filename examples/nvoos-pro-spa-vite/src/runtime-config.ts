@@ -50,6 +50,58 @@ function normalizeSiteUrl(raw: string): string {
   return trimmed;
 }
 
+/**
+ * Parse a fetch response as JSON, refusing non-JSON payloads.
+ *
+ * Without this guard a 200 HTML response (SPA fallback page, login redirect,
+ * Varnish error page) surfaces as the unhelpful
+ * "Unexpected token '<', \"<!doctype \"... is not valid JSON" — which is what
+ * happens when cookie mode runs without a proxy in front of this origin.
+ */
+async function readJson<T>(response: Response, context: string): Promise<T> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!/application\/([a-z0-9.+-]*\+)?json/i.test(contentType)) {
+    let snippet = '';
+    try {
+      snippet = (await response.text()).slice(0, 140).replace(/\s+/g, ' ');
+    } catch {
+      // Ignore — the content-type already tells us enough.
+    }
+    const looksLikeHtml =
+      contentType.toLowerCase().includes('text/html') ||
+      snippet.toLowerCase().startsWith('<!doctype') ||
+      snippet.toLowerCase().startsWith('<html');
+    throw new Error(
+      `${context}: expected JSON but got ${contentType || 'no content-type'} (status ${response.status}).` +
+        (snippet ? ` Response starts with: "${snippet}"` : '') +
+        (looksLikeHtml
+          ? ' This origin is not serving the WordPress REST API — cookie mode needs a proxy in front of the app (dev: `npm run dev:proxy`, production: `scripts/serve.mjs` with NVOOS_TARGET_SITE set).'
+          : ''),
+    );
+  }
+  return (await response.json()) as T;
+}
+
+/**
+ * Probe whether `base` actually serves the WordPress REST API.
+ *
+ * WordPress REST endpoints always answer with a JSON content type (even for
+ * 401/403/404). Any other payload — the SPA's index.html fallback, a plain
+ * 404 — means there is no proxy between this origin and WordPress, and
+ * cookie mode cannot work. True on any status as long as the body is JSON.
+ */
+export async function detectCookieProxy(base: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${base}/wp-json/mcp-ai/v1/session/nonce`, {
+      credentials: 'include',
+    });
+    const contentType = response.headers.get('content-type') ?? '';
+    return /application\/([a-z0-9.+-]*\+)?json/i.test(contentType);
+  } catch {
+    return false;
+  }
+}
+
 function buildEndpoints(origin: string): ProSpaEndpoints {
   const api = `${origin}/wp-json`;
   const core = `${api}/mcp-ai/v1`;
@@ -213,7 +265,10 @@ export async function fetchSessionNonce(base: string): Promise<string> {
   if (!response.ok) {
     throw new Error(`nonce endpoint returned ${response.status}`);
   }
-  const data = (await response.json()) as { nonce?: string; success?: boolean };
+  const data = await readJson<{ nonce?: string; success?: boolean }>(
+    response,
+    'nonce endpoint',
+  );
   if (typeof data?.nonce !== 'string' || !data.nonce) {
     throw new Error('nonce endpoint did not return a nonce');
   }
@@ -237,7 +292,10 @@ export async function checkMediaWorker(connection: ConnectionSettings): Promise<
   if (!response.ok) {
     throw new Error(`Media worker health check returned ${response.status}`);
   }
-  const data = (await response.json()) as { version?: string; status?: string };
+  const data = await readJson<{ version?: string; status?: string }>(
+    response,
+    'media worker health check',
+  );
   return typeof data?.version === 'string' ? data.version : (data?.status ?? 'ok');
 }
 
@@ -254,12 +312,12 @@ export async function fetchCurrentUser(base: string, nonce = ''): Promise<Partia
   if (!response.ok) {
     throw new Error(`wp/v2/users/me returned ${response.status} — log into WordPress first`);
   }
-  const data = (await response.json()) as {
+  const data = await readJson<{
     id?: number;
     name?: string;
     slug?: string;
     capabilities?: Record<string, boolean>;
-  };
+  }>(response, 'wp/v2/users/me');
   return {
     id: data.id ?? 0,
     login: data.slug ?? '',

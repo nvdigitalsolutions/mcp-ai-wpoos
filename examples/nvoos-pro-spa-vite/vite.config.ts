@@ -22,6 +22,70 @@ const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 const targetSite = process.env.NVOOS_TARGET_SITE || '';
 const workerTarget = process.env.NVOOS_WORKER_URL || '';
 
+interface ProxyResLike {
+  headers: Record<string, string | string[] | undefined>;
+}
+
+interface ProxyLike {
+  on(event: 'proxyRes', handler: (proxyRes: ProxyResLike, req: unknown, res: unknown) => void): void;
+}
+
+/**
+ * Keep the browser on the dev origin when WordPress redirects.
+ *
+ * http-proxy forwards WordPress's 302 Location header as-is (an absolute URL
+ * pointing at the target site). Following it would land the browser on the
+ * target origin, where wp-login.php sets its auth cookies for the *target*
+ * domain — so the proxied requests from the dev origin would never carry
+ * them and cookie auth could not work. Rewrite:
+ *
+ *   1. Location: target-origin URLs become relative (resolve against the dev
+ *      origin, i.e. stay inside the proxy).
+ *   2. redirect_to=<encoded target origin> is stripped so the post-login
+ *      redirect also stays inside the app.
+ *   3. Set-Cookie: any Domain= attribute is removed so the cookie is
+ *      host-only for the dev origin (WordPress core cookies are host-only by
+ *      default; this only normalizes sites that set COOKIE_DOMAIN).
+ */
+function keepLoginOnDevOrigin(target: string, proxy: ProxyLike): void {
+  const targetOrigin = new URL(target).origin;
+  const encodedTarget = encodeURIComponent(targetOrigin);
+
+  const stripDomain = (cookie: string): string =>
+    cookie.replace(/;\s*domain=[^;]+/gi, '');
+
+  proxy.on('proxyRes', (proxyRes) => {
+    const headers = proxyRes.headers;
+
+    const location = headers['location'];
+    if (typeof location === 'string' && location.startsWith(targetOrigin)) {
+      headers['location'] = location
+        .slice(targetOrigin.length)
+        .replace(`redirect_to=${encodedTarget}`, 'redirect_to=');
+    }
+
+    const cookies = headers['set-cookie'];
+    if (Array.isArray(cookies)) {
+      headers['set-cookie'] = cookies.map(stripDomain);
+    } else if (typeof cookies === 'string') {
+      headers['set-cookie'] = stripDomain(cookies);
+    }
+  });
+}
+
+/** Proxy route that keeps wp-login.php redirects inside the dev origin. */
+function wordpressProxy(target: string, extra: Record<string, unknown> = {}) {
+  return {
+    target,
+    changeOrigin: true,
+    secure: false,
+    ...extra,
+    configure(proxy: ProxyLike): void {
+      keepLoginOnDevOrigin(target, proxy);
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [react()],
   define: {
@@ -64,9 +128,9 @@ export default defineConfig({
         ? {
             // Cookie-auth mode: everything same-origin through the dev server,
             // including wp-login.php so users can log in from the app.
-            '/wp-json': { target: targetSite, changeOrigin: true, secure: false, cookieDomainRewrite: '' },
-            '/wp-login.php': { target: targetSite, changeOrigin: true, secure: false },
-            '/wp-admin': { target: targetSite, changeOrigin: true, secure: false },
+            '/wp-json': wordpressProxy(targetSite),
+            '/wp-login.php': wordpressProxy(targetSite),
+            '/wp-admin': wordpressProxy(targetSite),
           }
         : {}),
       ...(workerTarget

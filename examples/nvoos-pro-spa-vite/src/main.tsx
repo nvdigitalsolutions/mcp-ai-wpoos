@@ -10,10 +10,8 @@
  */
 
 import { createRoot } from 'react-dom/client';
-import { useEffect, useState, type JSX, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useState, type JSX, type FormEvent } from 'react';
 
-import { App } from '@nvoos/pro-spa-v2/App';
-import { EmbeddedApp } from '@nvoos/pro-spa-v2/features/embedded/EmbeddedApp';
 import type { ProSpaRuntime } from '@nvoos/pro-spa-v2/api/config';
 import '@nvoos/pro-spa-v2/styles/main.css';
 import '@nvoos/pro-spa-v2/styles/drawers.css';
@@ -24,6 +22,7 @@ import {
   buildBasicAuthHeader,
   buildRuntime,
   checkMediaWorker,
+  detectCookieProxy,
   fetchCurrentUser,
   fetchCurrentUserBasic,
   fetchSessionNonce,
@@ -33,6 +32,30 @@ import {
 import { installFetchWrapper } from './fetch-wrapper';
 
 const STORAGE_KEY = 'nvoos-standalone-connection';
+
+/**
+ * The two SPA surfaces are the heavy part of the bundle (router + chat +
+ * AI SDK + editors). They only mount after a successful connect, so load
+ * them on demand: the connection screen — the first thing every visitor
+ * sees — paints with just react/react-dom and the entry chunk stays well
+ * under the build's chunk-size warning. The spa-v2 sources stay untouched;
+ * the plugin's own esbuild bundle is unaffected.
+ */
+const AdminApp = lazy(() =>
+  import('@nvoos/pro-spa-v2/App').then((m) => ({ default: m.App })),
+);
+const EmbeddedSurface = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/embedded/EmbeddedApp').then((m) => ({ default: m.EmbeddedApp })),
+);
+
+/** Shown while the admin/chat surface chunk loads after a connect. */
+function SurfaceLoader(): JSX.Element {
+  return (
+    <div className="nvoos-surface-loading" role="status" aria-label="Loading NV oOS Pro">
+      Loading NV oOS Pro…
+    </div>
+  );
+}
 
 declare global {
   interface Window {
@@ -77,7 +100,20 @@ async function connect(connection: ConnectionSettings): Promise<ConnectResult> {
     }
 
     if (connection.auth === 'cookie') {
-      // Same-origin through the Vite proxy: mint a nonce and read the user.
+      // Cookie mode rides a same-origin proxy (the Vite dev proxy or the
+      // built-in serve.mjs proxy). Without one, every request hits this
+      // app's own SPA fallback and dies with a JSON parse error — probe
+      // first so the user gets a clear message instead.
+      const proxied = await detectCookieProxy(window.location.origin);
+      if (!proxied) {
+        return {
+          error:
+            'Cookie mode needs a proxy in front of this origin. In dev run `npm run dev:proxy` ' +
+            '(NVOOS_TARGET_SITE=https://your-site.com), or start the production server with ' +
+            'NVOOS_TARGET_SITE set (scripts/serve.mjs). Assistant credentials and guest tokens work without a proxy.',
+        };
+      }
+      // Same-origin through the proxy: mint a nonce and read the user.
       nonce = await fetchSessionNonce(window.location.origin);
       user = await fetchCurrentUser(window.location.origin, nonce);
     } else if (connection.auth === 'wp') {
@@ -221,7 +257,9 @@ function Shell(): JSX.Element {
     const embedded = connection.auth === 'guest' || !connection.adminLayout;
     return (
       <>
-        {embedded ? <EmbeddedApp /> : <App />}
+        <Suspense fallback={<SurfaceLoader />}>
+          {embedded ? <EmbeddedSurface /> : <AdminApp />}
+        </Suspense>
         <button
           type="button"
           className="nvoos-disconnect"
@@ -275,6 +313,18 @@ function Shell(): JSX.Element {
             Guest — public chat surface
           </label>
         </fieldset>
+
+        {auth === 'cookie' && (
+          <p className="nvoos-cookie-login">
+            <a href="/wp-login.php?redirect_to=%2F" target="_blank" rel="noopener noreferrer">
+              Log in to WordPress
+            </a>
+            <span className="nvoos-connect-hint">
+              Opens the site login in a new tab. After logging in you return to this app — the
+              session cookie is set on this origin, so Connect works right away.
+            </span>
+          </p>
+        )}
 
         {auth === 'wp' && (
           <>
@@ -381,11 +431,12 @@ function Shell(): JSX.Element {
       </form>
 
       <aside className="nvoos-connect-notes">
-        <strong>Cookie mode</strong> needs the dev server started with{' '}
-        <code>NVOOS_TARGET_SITE=https://your-site.com npm run dev</code> — the Vite proxy makes the
-        WordPress REST API (and wp-login.php) same-origin. <strong>WordPress login</strong>{' '}
-        authenticates with an application password and works cross-origin like assistant
-        credentials (allow the app origin under Security → Network).{' '}
+        <strong>Cookie mode</strong> needs a same-origin proxy in front of this app: start the dev
+        server with <code>NVOOS_TARGET_SITE=https://your-site.com npm run dev:proxy</code>, or run the
+        production server (<code>scripts/serve.mjs</code>) with <code>NVOOS_TARGET_SITE</code> set — the
+        proxy makes the WordPress REST API (and wp-login.php) same-origin. <strong>WordPress
+        login</strong> authenticates with an application password and works cross-origin like
+        assistant credentials (allow the app origin under Security → Network).{' '}
         <strong>Assistant credentials</strong> are issued in the NV oOS plugin and work
         cross-origin (the plugin sends CORS headers; set the allowed origin under Security →
         Network).
