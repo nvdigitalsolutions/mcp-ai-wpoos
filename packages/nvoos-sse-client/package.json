@@ -4,6 +4,7 @@
   "description": "TypeScript-native SSE connection manager with lifecycle tracking, per-connection status, and automatic cleanup — companion to nvoos-events",
   "main": "dist/nvoos-sse-client.js",
   "module": "dist/nvoos-sse-client.js",
+  "type": "module",
   "types": "dist/nvoos-sse-client.d.ts",
   "exports": {
     ".": {
@@ -45,7 +46,7 @@
     "@microsoft/fetch-event-source": "^2.0.0"
   },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",
     "clean": "rm -rf dist"
   },

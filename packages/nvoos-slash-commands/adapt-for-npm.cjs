@@ -155,6 +155,7 @@ export interface SlashCommand {
 export declare class CommandAutocomplete {
   constructor(inputElement: HTMLInputElement | HTMLTextAreaElement);
   init(): void;
+  loadCommands(): Promise<void>;
   show(input: string): void;
   hide(): void;
   isVisible(): boolean;

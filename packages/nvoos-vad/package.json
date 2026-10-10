@@ -4,6 +4,7 @@
   "description": "Browser Voice Activity Detection (VAD) using the Web Audio API — extracted from NV Open Operator System",
   "main": "dist/nvoos-vad.js",
   "module": "dist/nvoos-vad.js",
+  "type": "module",
   "types": "dist/nvoos-vad.d.ts",
   "exports": {
     ".": { "import": "./dist/nvoos-vad.js", "default": "./dist/nvoos-vad.js" }
@@ -13,7 +14,7 @@
   "files": ["dist", "README.md", "LICENSE"],
   "publishConfig": { "access": "public" },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo ok && exit 0",
     "clean": "rm -rf dist"
   },

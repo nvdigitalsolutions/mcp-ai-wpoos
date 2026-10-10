@@ -1,6 +1,6 @@
 {
   "name": "@nvdigitalsolutions/nvoos-audio",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Browser audio I/O for AI chat: TTS, STT, voice chat with VAD - Extracted from NV Open Operator System",
   "main": "dist/nvoos-audio.js",
   "module": "dist/nvoos-audio.js",
@@ -53,7 +53,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",
     "clean": "rm -rf dist"
   },

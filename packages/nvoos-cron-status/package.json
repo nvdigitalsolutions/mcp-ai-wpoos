@@ -4,6 +4,7 @@
   "description": "SSE-first cron/job status monitor with REST polling fallback - Extracted from NV Open Operator System",
   "main": "dist/nvoos-cron-status.js",
   "module": "dist/nvoos-cron-status.js",
+  "type": "module",
   "types": "dist/nvoos-cron-status.d.ts",
   "exports": {
     ".": {
@@ -49,7 +50,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",
     "clean": "rm -rf dist"
   },
