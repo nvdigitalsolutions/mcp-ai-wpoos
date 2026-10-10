@@ -1,5 +1,5 @@
 /**
- * Global fetch wrapper for the standalone SPA.
+ * Global fetch + jQuery AJAX wrapper for the standalone SPA.
  *
  * The spa-v2 sources build their own fetch calls with `credentials:
  * 'same-origin'` and send `X-WP-Nonce` / `X-WP-MCP-AI-Guest` where needed,
@@ -7,7 +7,15 @@
  * the `Authorization: Bearer cred_…` header to every request — including the
  * SSE chat stream, which `@microsoft/fetch-event-source` opens through the
  * global fetch as well. Zero changes to the SPA sources.
+ *
+ * The vendored Content Graph explorer (Knowledge Graph page) loads its graph
+ * data through jQuery `$.ajax` instead of `fetch`, so the same header logic
+ * is mirrored onto jQuery via an `ajaxPrefilter` — otherwise bearer / guest /
+ * wp-login modes would 401 on /nodes and /edges while the page's own
+ * `visual-config` fetch succeeds.
  */
+
+import $ from 'jquery';
 
 export interface FetchWrapperOptions {
   bearer?: string;
@@ -32,7 +40,89 @@ export interface FetchWrapperOptions {
   mediaWorkerToken?: string;
 }
 
+// The prefilter reads the latest options so reconnect with different
+// credentials keeps working. jQuery has no prefilter-removal API, so it is
+// installed once per page load. The media-worker origin is computed once
+// here (like the fetch wrapper) and refreshed on each install.
+let activeOptions: FetchWrapperOptions = {};
+let jqueryPrefilterInstalled = false;
+let mediaWorkerOrigin = '';
+
+function refreshMediaWorkerOrigin(): void {
+  mediaWorkerOrigin = '';
+  const raw = activeOptions.mediaWorkerUrl?.trim() ?? '';
+  if (!raw) {
+    return;
+  }
+  try {
+    mediaWorkerOrigin = new URL(raw).origin;
+  } catch {
+    // Invalid worker URL — no X-Site-Token header will be attached.
+  }
+}
+
+function installJQueryCredentialPrefilter(): void {
+  if (jqueryPrefilterInstalled) {
+    return;
+  }
+  jqueryPrefilterInstalled = true;
+
+  $.ajaxPrefilter(function (options) {
+    // A throwing prefilter would break every jQuery request in the app, so
+    // guard the whole body against malformed URLs/options.
+    try {
+      const headers: { [key: string]: string } = {
+        ...((options.headers ?? {}) as { [key: string]: string }),
+      };
+      const url = typeof options.url === 'string' ? options.url : '';
+
+      // Scope credentials to the configured WordPress site — mirror the fetch
+      // wrapper's origin logic below.
+      let targetOrigin = '';
+      try {
+        targetOrigin = new URL(url, window.location.origin).origin;
+      } catch {
+        // Unparseable URLs get no credential header.
+      }
+      const isSiteRequest =
+        activeOptions.siteOrigin !== undefined && targetOrigin === activeOptions.siteOrigin;
+
+      if (activeOptions.basic && isSiteRequest && !headers.Authorization) {
+        headers.Authorization = activeOptions.basic;
+      }
+      if (activeOptions.bearer && !headers.Authorization) {
+        headers.Authorization = `Bearer ${activeOptions.bearer}`;
+      }
+      if (activeOptions.guest && !headers['X-WP-MCP-AI-Guest']) {
+        headers['X-WP-MCP-AI-Guest'] = activeOptions.guestToken || '1';
+      }
+      if (mediaWorkerOrigin && url.startsWith(mediaWorkerOrigin) && !headers['X-Site-Token']) {
+        headers['X-Site-Token'] = activeOptions.mediaWorkerToken ?? '';
+      }
+
+      // The explorer always sets X-WP-Nonce (empty in token modes). Sending
+      // an empty nonce header can only trip WP core's invalid-nonce path or
+      // widen the CORS preflight, so drop it for token auth — same as the
+      // fetch wrapper does.
+      if (
+        (activeOptions.bearer || activeOptions.guest || activeOptions.basic) &&
+        headers['X-WP-Nonce'] === ''
+      ) {
+        delete headers['X-WP-Nonce'];
+      }
+
+      options.headers = headers;
+    } catch {
+      // Never throw from a prefilter; let the request proceed unmodified.
+    }
+  });
+}
+
 export function installFetchWrapper(options: FetchWrapperOptions): () => void {
+  activeOptions = options;
+  refreshMediaWorkerOrigin();
+  installJQueryCredentialPrefilter();
+
   const original = window.fetch.bind(window);
   const workerOrigin = options.mediaWorkerUrl?.trim()
     ? new URL(options.mediaWorkerUrl.trim()).origin
