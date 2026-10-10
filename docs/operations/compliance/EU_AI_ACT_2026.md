@@ -43,7 +43,7 @@ This document maps NV oOS features to EU AI Act requirements for high-risk AI sy
 | Resilience to errors | Dead Letter Queue with retry/dismiss; Circuit Breaker (Pro) | ✅ |
 | Resilience to manipulation | Guardrails (Layer I) — prompt injection, jailbreak, off-topic detection | ⚠️ Input only |
 | Fallback plans | Exponential backoff in Rate Limit Manager; model fallback in ProviderRouter | ✅ |
-| Cybersecurity | 11 security classes, 21 posture signals A-F, CSP headers, API key encryption | ✅ |
+| Cybersecurity | 12 security classes, 21 posture signals A-F, CSP headers, API key encryption | ✅ |
 | Adversarial testing | Automated red teaming infrastructure (v1.1.51 — `composer run security:red-team`) | ✅ NEW |
 | Output validation | Output guardrail for sensitive info, unsafe content (v1.1.51) | ✅ NEW |
 
