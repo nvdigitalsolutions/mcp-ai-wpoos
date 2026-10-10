@@ -709,9 +709,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$request->set_param( 'user_id', $user_id );
 			}
 
-			// Verify nonce for logged-in users.
-			$nonce = $request->get_header( 'X-WP-Nonce' );
-			if ( $current_user ) {
+			// Verify nonce for logged-in users. Cookie-authenticated browser
+			// requests must present a valid nonce; requests carrying an
+			// Authorization header (WordPress Application Passwords / Basic auth,
+			// mesh keys, Auth0) are CSRF-safe by construction — browsers never
+			// send that header cross-origin — so the nonce requirement does not
+			// apply to them. This mirrors WP core's rest_cookie_check_errors
+			// (which skips the nonce check when a logged-in user authenticated
+			// without a cookie) and the threads controller's check_permission().
+			$auth_header = $request->get_header( 'Authorization' );
+			if ( $current_user && empty( $auth_header ) ) {
+				$nonce = $request->get_header( 'X-WP-Nonce' );
 				if ( empty( $nonce ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_missing_nonce',
@@ -2268,6 +2276,35 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Check for WordPress Basic auth (Application Passwords, WP 5.6+).
+			// Application-password requests are authenticated WordPress users and
+			// are CSRF-safe by construction, so they follow the same capability
+			// gates as nonce-authenticated requests without requiring a nonce.
+			$basic_result = $this->validate_wp_basic_auth( $request, 'read' );
+			if ( true === $basic_result ) {
+				$this->set_authenticated_user_id( get_current_user_id() );
+
+				if ( $requires_authenticated_user ) {
+					if ( $capability && ! current_user_can( $capability ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Effective capability resolved per request; dynamic by design.
+						return $this->insufficient_permissions_error( $capability );
+					}
+
+					// Enforce capability check for non-admin users; admins bypass.
+					if ( ! current_user_can( 'administrator' ) && ! current_user_can( $capability ) ) { // phpcs:ignore WordPress.WP.Capabilities.RoleFound, WordPress.WP.Capabilities.Undetermined -- Mirrors the nonce path's admin bypass below.
+						return $this->insufficient_permissions_error( $capability );
+					}
+				}
+
+				$rate_limit_check = $this->check_rate_limit( get_current_user_id(), $request->get_method() );
+				if ( is_wp_error( $rate_limit_check ) ) {
+					return $rate_limit_check;
+				}
+
+				return true;
+			} elseif ( is_wp_error( $basic_result ) ) {
+				return $basic_result;
+			}
+
 			$nonce = $request->get_header( 'X-WP-Nonce' );
 			if ( ! $requires_authenticated_user ) {
 				if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
@@ -2358,6 +2395,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				return true;
+			}
+
+			// WordPress Application Password (Basic auth) requests are real
+			// WordPress users — grant the same directory access as the nonce
+			// path. Basic auth is CSRF-safe by construction (the Authorization
+			// header is never sent cross-origin by browsers), so no nonce is
+			// required.
+			$basic_result = $this->validate_wp_basic_auth( $request, 'read' );
+			if ( true === $basic_result ) {
+				$this->set_authenticated_user_id( get_current_user_id() );
+
+				$rate_limit_check = $this->check_rate_limit( get_current_user_id(), $request->get_method() );
+				if ( is_wp_error( $rate_limit_check ) ) {
+					return $rate_limit_check;
+				}
+
+				return true;
+			} elseif ( is_wp_error( $basic_result ) ) {
+				return $basic_result;
 			}
 
 			// Fall through to the standard authentication gate for external
@@ -13693,6 +13749,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					|| $request->get_param( 'stream' );
 
 				if ( $want_stream && method_exists( $orchestrator, 'handleChatStreaming' ) ) {
+					// The OOS engine's SseHandler (lib/core) is framework-agnostic
+					// and emits no CORS headers, and this stream exits before
+					// rest_pre_serve_request runs — so the CORS guard never gets
+					// a chance to add them. Emit them here so cross-origin
+					// browser streams (standalone SPA, MCP apps) pass CORS.
+					if ( class_exists( 'WP_MCP_AI_CORS_Guard' ) ) {
+						WP_MCP_AI_CORS_Guard::emit_stream_cors_headers();
+					}
+
 					// handleChatStreaming() sends SSE headers, status events,
 					// tool-execution progress, text chunks, the final message
 					// event, and the [DONE] marker.  After it returns, the

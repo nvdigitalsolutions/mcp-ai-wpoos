@@ -157,6 +157,30 @@ class WP_MCP_AI_CORS_Guard {
 	}
 
 	/**
+	 * Emit CORS response headers for direct-output surfaces (SSE streams
+	 * that flush and exit before rest_pre_serve_request runs, so the
+	 * enforce_on_pre_serve filter never fires for them).
+	 *
+	 * Framework-agnostic emitters (e.g. lib/core's SseHandler) send no CORS
+	 * headers of their own; the WordPress adapter must call this before the
+	 * stream starts or cross-origin browser streams are blocked.
+	 *
+	 * @since 1.2.2
+	 *
+	 * @return void
+	 */
+	public static function emit_stream_cors_headers() {
+		if ( headers_sent() ) {
+			return;
+		}
+
+		$allow_origin = sanitize_text_field( str_replace( array( "\r", "\n" ), '', self::resolve_allow_origin() ) );
+		header( 'Access-Control-Allow-Origin: ' . $allow_origin );
+		header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
+		header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
+	}
+
+	/**
 	 * Replace core's reflected Origin header with the configured policy.
 	 *
 	 * Runs after core's rest_send_cors_headers (priority 10) so the header()

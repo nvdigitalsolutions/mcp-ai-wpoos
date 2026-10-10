@@ -11,6 +11,16 @@
 
 export interface FetchWrapperOptions {
   bearer?: string;
+  /** Pre-encoded `Basic …` header value for WordPress Application Password auth. */
+  basic?: string;
+  /**
+   * Origin of the WordPress site the credentials belong to. The Basic header
+   * is attached only to requests targeting this origin — never to the media
+   * worker or any third-party URL. (Bearer keeps its pre-existing
+   * every-request behavior; scoping it is tracked as deferred hardening in
+   * proposal 064.)
+   */
+  siteOrigin?: string;
   /** When true and no token exists yet, send the legacy guest flag. */
   guest?: boolean;
   guestToken?: string;
@@ -32,6 +42,21 @@ export function installFetchWrapper(options: FetchWrapperOptions): () => void {
     const headers = new Headers(init?.headers);
     const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
 
+    // Scope credentials to the configured WordPress site. Absolute request
+    // URLs are built from runtime.apiUrl, so they all share the site origin
+    // (including the SSE stream opened through this global fetch); anything
+    // else (worker, external URLs) must never see the WP credential.
+    let targetOrigin = '';
+    try {
+      targetOrigin = new URL(url, window.location.origin).origin;
+    } catch {
+      // Unparseable URLs (blob:, data:) get no credential header.
+    }
+    const isSiteRequest = options.siteOrigin !== undefined && targetOrigin === options.siteOrigin;
+
+    if (options.basic && isSiteRequest && !headers.has('Authorization')) {
+      headers.set('Authorization', options.basic);
+    }
     if (options.bearer && !headers.has('Authorization')) {
       headers.set('Authorization', `Bearer ${options.bearer}`);
     }
@@ -43,9 +68,9 @@ export function installFetchWrapper(options: FetchWrapperOptions): () => void {
     }
 
     // The SPA sets `X-WP-Nonce` unconditionally — with an empty value when no
-    // cookie nonce exists. The plugin's REST layer rejects bearer/guest
+    // cookie nonce exists. The plugin's REST layer rejects bearer/guest/wp
     // requests that carry an empty nonce header, so drop it for token auth.
-    if ((options.bearer || options.guest) && headers.get('X-WP-Nonce') === '') {
+    if ((options.bearer || options.guest || options.basic) && headers.get('X-WP-Nonce') === '') {
       headers.delete('X-WP-Nonce');
     }
 
