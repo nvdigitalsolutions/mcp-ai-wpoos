@@ -10,6 +10,8 @@ checklists, and SaaS configuration.
 - Production optimization
 - Production readiness checklist
 - SaaS setup guide and controller reference
+- Cloudways Velocity deployments: media worker, MCP gateway/WordPress gateway,
+  and the standalone Pro SPA Vite app (`nvoos-pro-spa-velocity-setup.md`)
 
 ## What doesn't belong here
 
