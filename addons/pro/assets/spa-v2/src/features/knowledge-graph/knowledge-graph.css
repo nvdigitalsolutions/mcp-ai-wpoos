@@ -1,0 +1,63 @@
+/**
+ * KnowledgeGraphPage — SPA shell styles.
+ *
+ * The vendored explorer CSS (upstream/content-graph-admin.css) was written
+ * for the wp-admin settings page and assumes wp-admin's `.button` styling,
+ * which does not exist in the standalone SPA. This file supplies the
+ * missing pieces, scoped to the knowledge-graph page so nothing leaks.
+ */
+
+.nvoos-pro-spa-knowledge-graph .nvoos-content-graph-explorer-wrap {
+	max-width: 100%;
+}
+
+.nvoos-pro-spa-knowledge-graph .nvoos-pro-spa-page__subtitle {
+	margin: 0 0 16px;
+	color: var( --nds-color-text-primary, #50575e );
+	font-size: 13px;
+}
+
+/* wp-admin `.button` stand-in for the explorer toolbar. */
+.nvoos-pro-spa-knowledge-graph .button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 30px;
+	padding: 0 10px;
+	border: 1px solid var( --nds-color-border, #2271b1 );
+	border-radius: 3px;
+	background: var( --nds-color-surface, #f6f7f7 );
+	color: var( --nds-color-accent, #2271b1 );
+	font-size: 13px;
+	line-height: 2;
+	cursor: pointer;
+}
+
+.nvoos-pro-spa-knowledge-graph .button:hover {
+	background: var( --nds-color-accent, #2271b1 );
+	color: #fff;
+}
+
+.nvoos-pro-spa-knowledge-graph .button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+/* The explorer manages its own canvas colors via --nvoos-cg-* tokens, but
+   the page shell (header, empty states) follows the SPA's NDS tokens. */
+.nvoos-pro-spa-knowledge-graph__unavailable {
+	margin: 24px 0;
+	padding: 16px;
+	border: 1px dashed var( --nds-color-border, #c3c4c7 );
+	border-radius: 4px;
+	background: var( --nds-color-surface, #fff );
+	color: var( --nds-color-text-primary, #1d2327 );
+}
+
+.nvoos-pro-spa-knowledge-graph__unavailable p {
+	margin: 0 0 8px;
+}
+
+.nvoos-pro-spa-knowledge-graph__unavailable p:last-child {
+	margin-bottom: 0;
+}

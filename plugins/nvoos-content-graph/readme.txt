@@ -43,7 +43,7 @@ Automatic structured data injection for SEO — taxonomy terms as `about` and in
 Appends graph-neighbor posts to your content based on knowledge graph proximity.
 
 = REST API =
-Full programmatic access with 18 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
+Full programmatic access with 19 endpoints. Read endpoints require the `read` capability (all logged-in users), a valid assistant credential (`Authorization: Bearer cred_XXXXX.SECRET`, issued by the NV oOS base plugin when installed), or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
 
 = Extensible Tool System =
 14 built-in tools for graph operations: query, search, traverse, analyze, export. Addon plugins can register their own tools.

@@ -1,5 +1,25 @@
 # NV oOS Content Graph — Changelog
 
+## Unreleased (headless explorer + bearer auth)
+
+### Added — Headless explorer support
+
+- **`GET /graph/visual-config`** — new read-only REST route returning the
+  explorer's display + theme config (`visual` tokens, presets, height,
+  node budget) so headless surfaces (the standalone NV oOS Pro SPA) can
+  render the explorer without the PHP settings page.
+- **Assistant credential (bearer) authentication** — read routes
+  (`/graph`, `/nodes`, `/nodes/{id}`, `/edges`, `/search`, `/retrieve`,
+  `/resolve`, `/graph/visual-config`) now accept NV oOS assistant
+  credentials (`Authorization: Bearer cred_XXXXX.SECRET`, or the raw
+  credential header form) in addition to logged-in users and guest
+  tokens. Write routes stay `manage_options`-only, so a credential can
+  never rebuild, export, or mutate remote sources. Standalone installs
+  (no base plugin) are unaffected — the check is guarded by
+  `class_exists()`.
+- Tests: bearer read/reject/raw-header cases, credential-vs-build
+  boundary, and visual-config route coverage in `RestApiTest`.
+
 ## 1.0.10 — 2026-10-09
 
 ### Fixed — Excluded sources stayed in the graph; opt-in CPTs were never captured
