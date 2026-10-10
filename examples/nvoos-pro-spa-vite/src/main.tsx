@@ -19,10 +19,12 @@ import '@nvoos/pro-spa-v2/styles/embedded.css';
 import './shell.css';
 
 import {
+  buildBasicAuthHeader,
   buildRuntime,
   checkMediaWorker,
   detectCookieProxy,
   fetchCurrentUser,
+  fetchCurrentUserBasic,
   fetchSessionNonce,
   type AuthMode,
   type ConnectionSettings,
@@ -70,6 +72,15 @@ function readSavedConnection(): ConnectionSettings | null {
   }
 }
 
+/** Resolve a site URL to its origin, tolerating malformed input. */
+function safeOrigin(siteUrl: string): string | undefined {
+  try {
+    return new URL(siteUrl).origin;
+  } catch {
+    return undefined;
+  }
+}
+
 interface ConnectResult {
   runtime?: ProSpaRuntime;
   error?: string;
@@ -105,6 +116,18 @@ async function connect(connection: ConnectionSettings): Promise<ConnectResult> {
       // Same-origin through the proxy: mint a nonce and read the user.
       nonce = await fetchSessionNonce(window.location.origin);
       user = await fetchCurrentUser(window.location.origin, nonce);
+    } else if (connection.auth === 'wp') {
+      if (!connection.wpUsername?.trim() || !connection.wpAppPassword?.trim()) {
+        return { error: 'Enter your WordPress username and an application password.' };
+      }
+      // Stateless Basic auth: users/me validates the credentials and returns
+      // the real WordPress user (including the real capability list, which
+      // gates the admin surface server-side and client-side).
+      user = await fetchCurrentUserBasic(
+        connection.siteUrl,
+        connection.wpUsername.trim(),
+        connection.wpAppPassword.trim(),
+      );
     } else if (connection.auth === 'bearer') {
       if (!connection.bearer?.trim()) {
         return { error: 'Enter an assistant credential (cred_xxxxx.SECRET).' };
@@ -138,6 +161,11 @@ async function connect(connection: ConnectionSettings): Promise<ConnectResult> {
 
     installFetchWrapper({
       bearer: connection.auth === 'bearer' ? connection.bearer?.trim() : undefined,
+      basic:
+        connection.auth === 'wp' && connection.wpUsername && connection.wpAppPassword
+          ? buildBasicAuthHeader(connection.wpUsername.trim(), connection.wpAppPassword.trim())
+          : undefined,
+      siteOrigin: connection.auth === 'wp' ? safeOrigin(connection.siteUrl) : undefined,
       guest: connection.auth === 'guest',
       guestToken: connection.auth === 'guest' ? connection.guestToken : undefined,
       mediaWorkerUrl: connection.mediaWorkerUrl?.trim() || undefined,
@@ -164,6 +192,8 @@ function Shell(): JSX.Element {
   const [auth, setAuth] = useState<AuthMode>(connection?.auth ?? 'cookie');
   const [bearer, setBearer] = useState(connection?.bearer ?? '');
   const [guestToken, setGuestToken] = useState(connection?.guestToken ?? '');
+  const [wpUsername, setWpUsername] = useState(connection?.wpUsername ?? '');
+  const [wpAppPassword, setWpAppPassword] = useState(connection?.wpAppPassword ?? '');
   const [assistantId, setAssistantId] = useState(String(connection?.assistantId ?? ''));
   const [adminLayout, setAdminLayout] = useState(connection?.adminLayout ?? true);
   const [mediaWorkerUrl, setMediaWorkerUrl] = useState(connection?.mediaWorkerUrl ?? '');
@@ -194,6 +224,8 @@ function Shell(): JSX.Element {
       auth,
       bearer: auth === 'bearer' ? bearer.trim() : undefined,
       guestToken: auth === 'guest' ? guestToken.trim() : undefined,
+      wpUsername: auth === 'wp' ? wpUsername.trim() : undefined,
+      wpAppPassword: auth === 'wp' ? wpAppPassword.trim() : undefined,
       assistantId: assistantId ? Number(assistantId) : undefined,
       adminLayout,
       mediaWorkerUrl: mediaWorkerUrl.trim().replace(/\/+$/, ''),
@@ -269,6 +301,10 @@ function Shell(): JSX.Element {
             Cookie (dev proxy) — full admin surface, log in through the app
           </label>
           <label>
+            <input type="radio" name="auth" checked={auth === 'wp'} onChange={() => setAuth('wp')} />
+            WordPress login — application password (cross-origin)
+          </label>
+          <label>
             <input type="radio" name="auth" checked={auth === 'bearer'} onChange={() => setAuth('bearer')} />
             Assistant credential — cross-origin, no cookies
           </label>
@@ -288,6 +324,36 @@ function Shell(): JSX.Element {
               session cookie is set on this origin, so Connect works right away.
             </span>
           </p>
+        )}
+
+        {auth === 'wp' && (
+          <>
+            <label>
+              WordPress username
+              <input
+                type="text"
+                autoComplete="username"
+                value={wpUsername}
+                onChange={(e) => setWpUsername(e.target.value)}
+                placeholder="Login name (not email)"
+              />
+            </label>
+            <label>
+              Application password (xxxx xxxx xxxx xxxx xxxx xxxx)
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={wpAppPassword}
+                onChange={(e) => setWpAppPassword(e.target.value)}
+                placeholder="Created in Users → Profile → Application Passwords"
+              />
+            </label>
+            <span className="nvoos-connect-hint">
+              Use an application password from your WordPress profile — never your regular account
+              password. It authenticates as your user with your real permissions and can be revoked
+              at any time. Prefer a dedicated, least-privilege user for this app.
+            </span>
+          </>
         )}
 
         {auth === 'bearer' && (
@@ -368,9 +434,12 @@ function Shell(): JSX.Element {
         <strong>Cookie mode</strong> needs a same-origin proxy in front of this app: start the dev
         server with <code>NVOOS_TARGET_SITE=https://your-site.com npm run dev:proxy</code>, or run the
         production server (<code>scripts/serve.mjs</code>) with <code>NVOOS_TARGET_SITE</code> set — the
-        proxy makes the WordPress REST API (and wp-login.php) same-origin. <strong>Assistant
-        credentials</strong> are issued in the NV oOS plugin and work cross-origin (the plugin sends
-        CORS headers; set the allowed origin under Security → Network).
+        proxy makes the WordPress REST API (and wp-login.php) same-origin. <strong>WordPress
+        login</strong> authenticates with an application password and works cross-origin like
+        assistant credentials (allow the app origin under Security → Network).{' '}
+        <strong>Assistant credentials</strong> are issued in the NV oOS plugin and work
+        cross-origin (the plugin sends CORS headers; set the allowed origin under Security →
+        Network).
       </aside>
     </main>
   );

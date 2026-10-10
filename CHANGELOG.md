@@ -1,5 +1,22 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — Standalone SPA WordPress Login (PR #6993, Proposal 064)
+
+- **A fourth auth mode in the standalone Pro SPA** (`examples/nvoos-pro-spa-vite`) — **WordPress login** via an **Application Password** (Basic auth over REST): connection-screen username + app-password fields, `wp/v2/users/me?context=edit` credential validation, and the **real user** (id, name, capabilities) mounted into the runtime. The deployed app (Velocity / `chat.nvoos.cloud`) now gets the full admin surface cross-origin with **real server-side capability enforcement** instead of the bearer mode's client-side `manage_options` — user-scoped transcripts/approvals work for WordPress users (the bearer-mode limitation tracked in issue #6987).
+- **Credential hygiene** — UTF-8-safe Basic header construction (`TextEncoder`, not `btoa()` alone); the Basic header is attached **only** to requests targeting the configured site origin (never the media worker or third-party URLs); `credentials: 'omit'` and no nonce (Application Password auth is CSRF-safe by construction); README documents the least-privilege dedicated-user guidance.
+
+### Fixed — Application Password Auth Gaps (PR #6993)
+
+- **Transcripts rejected Basic-auth users** — `chat_transcripts_permissions_check()` demanded an `X-WP-Nonce` from any logged-in user, but application-password users have no session token and cannot mint a session nonce (401 `wp_mcp_ai_missing_nonce`). Requests carrying an `Authorization` header now skip the nonce, mirroring WP core's `rest_cookie_check_errors` and the threads controller's `check_permission()`.
+- **Assistants/tools rejected Basic-auth users** — `permissions_check()` and `permissions_check_assistant_list()` had no Application Password branch, so `/assistants` (and other capability-gated routes) returned 401 for Basic-auth users. Both now accept Basic-auth users with the same capability gates as nonce-authenticated users (admin bypass preserved, rate limiting included, per-assistant visibility filtering intact).
+
+### Fixed — OOS Streaming CORS (PR #6993)
+
+- **Every cross-origin browser chat stream on OOS-routed sites was blocked** — a pre-existing bug affecting **all** cross-origin clients (bearer/guest modes too), surfaced by the wp-mode verification: the OOS engine's SSE emitter (`lib/core` `SseHandler`) sends no CORS headers and the stream exits before `rest_pre_serve_request` runs, so the CORS guard never fired — browsers saw “No 'Access-Control-Allow-Origin' header is present” on the streamed response while curl worked (curl does not enforce CORS). New `WP_MCP_AI_CORS_Guard::emit_stream_cors_headers()` emits the resolved allow-origin from the WordPress adapter (`handle_chat_request_oos()`) before `handleChatStreaming()`; `lib/core` stays framework-agnostic.
+- Verified against the docker WordPress: admin full surface + SSE chat end-to-end, least-privilege subscriber (visibility-filtered catalogue, 403 chat denial), wrong password (clear 401), media-worker header isolation (network-captured), and bearer/guest/cookie regressions. 39 PHPUnit tests (CORS guard, assistant directory, transcripts suites), phpcs 0 errors on the touched files, SPA typecheck/build pass.
+
 ## [1.2.2] - 2026-10-10
 
 ### Added — Chat Profiles with Server-Enforced Read-Only Mode (PR #6977, Proposal 015)

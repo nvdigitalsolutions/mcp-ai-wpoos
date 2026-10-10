@@ -21,8 +21,9 @@ localized by the plugin's PHP loader. This app:
    tree via a Vite alias**, so there is no fork and the app tracks the plugin SPA.
 4. Shims `@wordpress/i18n` (the plugin loads it from `window.wp.i18n`; here a
    tiny drop-in stands in) and wraps `window.fetch` to inject the
-   `Authorization: Bearer cred_…` / `X-WP-MCP-AI-Guest` headers — including the
-   SSE chat stream, which the AI SDK adapter opens through the global fetch.
+   `Authorization: Bearer cred_…` / `Authorization: Basic` (WordPress
+   application password) / `X-WP-MCP-AI-Guest` headers — including the SSE
+   chat stream, which the AI SDK adapter opens through the global fetch.
 
 ## Run it
 
@@ -47,6 +48,7 @@ npm run build
 | Mode | Transport | Setup | Surface |
 |---|---|---|---|
 | **Cookie (proxy)** | Same-origin via the dev proxy or the built-in serve.mjs proxy | `NVOOS_TARGET_SITE=https://your-site.com npm run dev:proxy` (or the same env var on `scripts/serve.mjs`); use the **Log in to WordPress** link on the connection screen — it opens `/wp-login.php` in a new tab, and after login you land back on the app with the session cookie set | Full admin |
+| **WordPress login (application password)** | Cross-origin, `Authorization: Basic` (username + application password) | Create an application password under Users → Profile → Application Passwords; paste username + password in the connection screen. Authenticates as a real WP user with their real permissions. | Full admin (capability-gated server-side) |
 | **Assistant credential** | Cross-origin, `Authorization: Bearer cred_xxxxx.SECRET` | Create a credential in the NV oOS plugin; paste it in the connection screen | Full admin layout (server enforces permissions) |
 | **Guest** | Cross-origin, `X-WP-MCP-AI-Guest` token | Assistant ID (+ optional guest token minted by the site's `[nvoos_pro_spa]` page) | Public chat surface |
 
@@ -61,7 +63,9 @@ allow-list `Authorization`, `X-WP-Nonce`, and `X-WP-MCP-AI-Guest` headers.
 Configure the allowed origin in the plugin under **Security → Network**
 (default: the site's own origin), or via the `wp_mcp_ai_cors_allow_origin`
 filter. In cookie mode the Vite proxy keeps everything same-origin, so no CORS
-configuration is needed at all.
+configuration is needed at all. WordPress login (application password) needs
+no extra CORS work either — it uses the already allow-listed `Authorization`
+header and sends no cookies.
 
 ## Verified against a live site (docker-compose WordPress)
 
@@ -139,3 +143,9 @@ and crawling remain one app from the user's perspective.
 - Credentials are assistant-scoped and the server re-checks every capability;
   the `manage_options` capability in bearer mode only unlocks the admin layout
   client-side.
+- In WordPress login mode the application password authenticates as your WP
+  user with that user's full permissions. It is revocable per-app in your
+  WordPress profile, and it is attached **only** to requests targeting the
+  configured site origin — never to the media worker or third-party URLs.
+  Prefer a dedicated, least-privilege WP user for this app rather than an
+  administrator account.
