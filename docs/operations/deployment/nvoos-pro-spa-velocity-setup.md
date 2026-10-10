@@ -56,16 +56,23 @@ a static React shell that mounts the Pro SPA v2 sources directly from
    > (exit 254). The `package.json` lives one level down — the root directory
    > must be `examples/nvoos-pro-spa-vite`.
 
-3. **Environment variables** (build-time):
+3. **Environment variables**:
 
-   | Variable | Required | Value |
-   |---|---|---|
-   | `VITE_DEFAULT_SITE_URL` | recommended | `https://nvoos.pro` — pre-fills the connection screen so users don't paste the backend URL |
+   | Variable | When | Required | Value |
+   |---|---|---|---|
+   | `VITE_DEFAULT_SITE_URL` | build-time | recommended | `https://nvoos.pro` — pre-fills the connection screen so users don't paste the backend URL |
+   | `NVOOS_TARGET_SITE` | **runtime** | cookie mode only | `https://nvoos.pro` — enables the built-in reverse proxy in `scripts/serve.mjs` (`/wp-json`, `/wp-admin`, `/wp-login.php`, `/wp-includes`), which re-scopes the login form and post-login redirect so the WordPress session cookie lands on the app origin. Must be in the **runtime** environment of the Node process (where `PORT` is injected), **not** the build-time block — set in the build-time block it does nothing. |
 
    The connection screen itself stores the site URL + auth credential in
-   `localStorage` (per-browser, cleared via the ⚙ button). `NVOOS_TARGET_SITE`
-   and `NVOOS_WORKER_URL` are **dev-proxy-only** variables — they do nothing
-   on Velocity.
+   `localStorage` (per-browser, cleared via the ⚙ button). `NVOOS_WORKER_URL`
+   is **dev-proxy-only** (the deployed app talks to the media worker origin
+   directly with `X-Site-Token`).
+
+   Without `NVOOS_TARGET_SITE` at runtime, `serve.mjs` logs
+   `no NVOOS_TARGET_SITE set — cookie mode unavailable` at startup and the
+   connection screen's cookie-mode probe rejects the origin with a clear
+   message — use bearer, guest, or WordPress login (application password)
+   instead.
 
 4. **Domain:** point `chat.nvoos.cloud` at the app in the Velocity console.
 
@@ -73,14 +80,16 @@ a static React shell that mounts the Pro SPA v2 sources directly from
 
 | Mode | Transport | Production-ready? | Notes |
 |---|---|---|---|
+| **WordPress login** | Cross-origin, Basic auth (Application Password) over REST | **Yes — the full-identity path** | `wp/v2/users/me?context=edit` validation; the **real user + capabilities** mounted (full admin surface, real server-side enforcement). Create the app password under Users → Profile → Application Passwords (least-privilege dedicated user recommended). |
 | **Assistant credential** | Cross-origin, `Authorization: Bearer cred_xxxxx.SECRET` | **Yes — the production path** | Create the credential in the NV oOS plugin (assistant-scoped; server re-checks every capability). `manage_options` on the credential only unlocks the admin layout client-side. |
 | **Guest** | Cross-origin, `X-WP-MCP-AI-Guest` | Yes (public chat only) | Assistant ID + optional guest token minted by the site's `[nvoos_pro_spa]` page. |
-| **Cookie (dev proxy)** | Same-origin via the Vite dev proxy | No — development only | Log into WordPress through the proxy; keep it out of the Velocity config. |
+| **Cookie** | Same-origin via the built-in serve.mjs proxy | Yes — with the **runtime** `NVOOS_TARGET_SITE` env var | Log into WordPress through the proxy; the login form is re-scoped to the app origin so the session cookie lands there (no CORS setup needed). The proxy forwards cookies for the proxied routes — only ever point it at a site you control. |
 
-**Transcripts/approvals caveat:** the user-scoped REST surfaces (chat
-transcripts, approvals) reject a **pure assistant credential** (token auth ≠
-WP user) — tracked in issue #6987. On the Velocity app, expect those surfaces
-in guest or cookie mode only until that lands.
+**Transcripts/approvals note:** the user-scoped REST surfaces (chat
+transcripts, approvals) work in **WordPress-login mode** (a real WP user) and
+now also accept a **pure assistant credential** (reads scoped to the
+credential's issuing assistant; `approve`/`deny` stay `manage_options`-only —
+issue #6987 closed by #6990).
 
 ## 4. Deploy Flow (One-way Sync)
 
@@ -104,7 +113,7 @@ The browser enforces CORS on every cross-origin call the app makes
 **Do not flip the dropdown to "Allow All"** — that silently allows every
 origin to call the API with credentials.
 
-### 5a. Plugin v1.2.2+ (recommended — the guard is built in)
+### 5a. Plugin v1.2.3+ (recommended — the guard is built in)
 
 `WP_MCP_AI_CORS_Guard` (PR #6986) enforces the "Same Origin" setting, which
 WordPress core's origin reflection previously made a no-op. On the backend
@@ -126,20 +135,20 @@ site:
    );
    ```
 
-### 5b. Pre-1.2.2 installs (mu-plugin fallback — also harmless on 1.2.2+)
+### 5b. Pre-1.2.3 installs (mu-plugin fallback — also harmless on 1.2.3+)
 
 Replicates the guard exactly (allowlist echo + credentials, everything else
 → site origin + credentials off) for both the REST responses core reflects
 and the SSE stream the plugin emits. Mu-plugins load before the plugin, and
 the guard's own priority-20 hook runs after and sets the same values, so
-keeping this file after upgrading to 1.2.2+ is safe — remove it once the
+keeping this file after upgrading to 1.2.3+ is safe — remove it once the
 setting/textarea path is verified.
 
 ```php
 <?php
 /**
  * Plugin Name: NV oOS SPA CORS Allowlist
- * Description: Allow the standalone Pro SPA origin (Cloudways Velocity) through the plugin REST/SSE CORS surface while blocking everything else. Redundant once the site runs plugin v1.2.2+ with the cors_allowed_origins setting.
+ * Description: Allow the standalone Pro SPA origin (Cloudways Velocity) through the plugin REST/SSE CORS surface while blocking everything else. Redundant once the site runs plugin v1.2.3+ with the cors_allowed_origins setting.
  * Version: 1.0.0
  */
 
@@ -150,7 +159,7 @@ $nvoos_spa_allowed_origins = array(
 
 /**
  * Override core's origin reflection (rest_send_cors_headers, priority 10)
- * for the plugin's REST routes, mirroring WP_MCP_AI_CORS_Guard (v1.2.2+).
+ * for the plugin's REST routes, mirroring WP_MCP_AI_CORS_Guard (v1.2.3+).
  */
 add_filter(
 	'rest_pre_serve_request',
@@ -245,12 +254,15 @@ credential, and confirm the chat stream (SSE) renders.
 - [ ] Standalone mirror synced (`examples/nvoos-pro-spa-vite/` + spa-v2 tree)
 - [ ] Velocity app: Node 22, **root directory `examples/nvoos-pro-spa-vite`**,
       `npm ci && npm run build`, entry `scripts/serve.mjs`
-- [ ] `VITE_DEFAULT_SITE_URL=https://nvoos.pro` set
+- [ ] `VITE_DEFAULT_SITE_URL=https://nvoos.pro` set (build-time)
+- [ ] If cookie mode is wanted: `NVOOS_TARGET_SITE=https://nvoos.pro` set in the
+      app's **runtime** environment; startup log shows
+      `proxying /wp-json, /wp-admin, /wp-login.php, /wp-includes → …`
 - [ ] `VELOCITY_SPA_DEPLOY_URL` secret set (deploy remote URL, not the domain);
       deploy workflow run once manually
 - [ ] `chat.nvoos.cloud` domain pointed at the app; HTTPS working
 - [ ] Backend: `cors_allow_origin` = site + `https://chat.nvoos.cloud`
-      allowlisted (setting/textarea on 1.2.2+, mu-plugin §5b otherwise) +
+      allowlisted (setting/textarea on 1.2.3+, mu-plugin §5b otherwise) +
       route-prefix filter for `/mcp-ai-pro/v1`
 - [ ] §7 curl checks pass (echoed for the SPA, site-origin/credentials-off
       for a bogus origin)

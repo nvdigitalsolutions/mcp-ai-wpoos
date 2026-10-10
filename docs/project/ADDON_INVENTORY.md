@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** October 10, 2026 (v1.2.2 — **Docs Hub 0.5.2 → 0.5.3** (#6966 checkout config object name fix, #6967 rebuild reliability — the live cache is no longer cleared on settings saves/plugin updates, atomic staging promotion serves the previous index during rebuilds, a bounded shutdown tick keeps cron-less installs progressing, #6968 the 0.5.3 pre-submission pass — PCP 0 blocking errors with the 5 allowlisted OffloadedContent rows + the documented NonPrefixedTraitFound warning; **tag `docs-hub-v0.5.3` pushed and 0.5.3 live on the wp.org directory** — the 1.2.1 pass's tag/SVN follow-up completed); everything else unchanged (Toolkit Shell 0.3.0, Schedule Anything SPA 0.2.0, MCP Gateway 0.1.1, Media Worker 3.4.0, Fleet Operator 1.0.0, Media Studio 0.6.1, SaaS Controller 0.3.0, Design System 0.3.0, ChatGPT Plugin 0.1.0, Checkout API 0.1.2, nvoos-content-graph 1.0.10 — the sub-project bumps on its own track, flag-not-edited here)
+> **Last Updated:** October 10, 2026 (v1.2.3 — **no addon version moves in-window**; everything unchanged (Docs Hub 0.5.3, Toolkit Shell 0.3.0, Schedule Anything SPA 0.2.0, MCP Gateway 0.1.1, Media Worker 3.4.0, Fleet Operator 1.0.0, Media Studio 0.6.1, SaaS Controller 0.3.0, Design System 0.3.0, ChatGPT Plugin 0.1.0, Checkout API 0.1.2, nvoos-content-graph 1.0.10 — the sub-projects keep their own tracks, flag-not-edited here; the window's `nvoos-content-graph-ai-platform-v2.0.0.zip` rebuild is build-only)
 
 ---
 

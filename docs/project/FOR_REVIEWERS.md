@@ -19,7 +19,7 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.2.2 (October 2026)
+**Current version:** 1.2.3 (October 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
 **Total tools:** ~1,692 (~353 base + ~1,339 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
@@ -56,7 +56,7 @@ includes/                     ← 1,060 PHP files
 ├── assistants/                ← Assistant CPT & CCT management
 ├── bootstrap/                 ← Constants, helpers, lifecycle
 ├── agents/                    ← Agent skills & registration
-├── security/                  ← 10 security classes (request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, security posture)
+├── security/                  ← 12 security classes (request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard, read-only profile gate, CORS guard)
 ├── okf/                       ← OKF v0.1 engine (parser, reader, writer, 6 MCP tools)
 ├── bridge/                    ← WordPress adapters for lib/core domain contracts
 └── ... (42 subdirectories total)
@@ -208,7 +208,7 @@ If you have limited budget for a review, focus on this order:
 
 ### Phase 1: High-priority (~4-6 hours)
 1. **Base plugin security surface** — REST endpoints (151 route registrations across 36 files), tool permission callbacks, nonce coverage, input sanitization in `includes/tools/`, output escaping in `includes/rest/`
-2. **Authentication** — Credential storage (encrypted API keys), token generation, guest token flow. Now with 10 security classes including audit logger, CSP headers, and request guard.
+2. **Authentication** — Credential storage (encrypted API keys), token generation, guest token flow. Now with 12 security classes including audit logger, CSP headers, request guard, read-only profile gate, and the CORS guard.
 3. **External service exposure** — 45 base + 3 Pro external services documented in `docs/reference/EXTERNAL_SERVICES.md`
 
 ### Phase 2: Architecture review (~3-4 hours)

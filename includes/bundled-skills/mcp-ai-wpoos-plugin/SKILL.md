@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.2"
-  plugin-version-tested: "1.2.2"
+  plugin-version: "1.2.3"
+  plugin-version-tested: "1.2.3"
   last-updated: "2026-10-10"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -780,6 +780,31 @@ Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
 
+**v1.2.3 operational quick notes** (full detail in RELEASE-NOTES.md):
+**CORS same-origin enforcement** (PR #6986) — WordPress core reflects any
+Origin back with credentials on every REST response, so the "Same Origin"
+setting was a silent no-op; the 12th security class `WP_MCP_AI_CORS_Guard`
+(priority 20) replaces the reflection in `site` mode (exact-allowlisted
+origins echoed — site origin + the `cors_allowed_origins` textarea +
+the `wp_mcp_ai_cors_allowed_origins` filter; everything else gets the
+site origin with credentials off; scope `/mcp-ai/v1` by default — widen
+via `wp_mcp_ai_cors_guard_route_prefixes`). **Standalone SPA WordPress
+login** (PR #6993, Proposal 064) — a fourth auth mode via an Application
+Password (Basic auth over REST; real user + capabilities mounted; the
+Basic header attaches only to the configured site origin). **SPA REST
+auth fixes** (PR #6990 — closes #6987, #6985) — transcripts/approvals
+accept a pure assistant credential (scoped to the issuing assistant;
+`approve`/`deny` stay `manage_options`); the session nonce re-binds the
+auth cookie before minting. **Quick wins** (PR #6991) — multi-recipient
+`notify_email` (comma/space/semicolon lists), the tool-status CRM slugs,
+the pagination fixture fix. **Standalone SPA** (PRs #6994/#6996) —
+cookie-mode proxy detection + JSON guards, the zero-dependency
+`scripts/serve.mjs` production proxy, `React.lazy` chunk splitting, and
+`.env` loading. **npm packages** (PR #6984) — three invalid-ESM dists
+rebuilt; the alpha.4 publishes deferred (needs npm auth). Counts
+unchanged: ~353 base + ~1,339 Pro (~1,692 total); security classes
+11 → 12.
+
 **v1.2.2 operational quick notes** (full detail in RELEASE-NOTES.md):
 **Chat profiles with server-enforced read-only mode** (PR #6977, Proposal
 015) — `write` + `read-only` built-ins resolved server-side per request
@@ -1041,6 +1066,15 @@ update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'web_search', 'creat
 
 **Cause (v1.1.90+):** opt-in `mcp_require_assistant_scope` (Security → Access & Identity, default OFF) is on and the request resolves to no assistant (no explicit `assistant_id`, no token-bound assistant, no `default_assistant`).
 **Fix:** pass `assistant_id`, bind the credential to an assistant, set `default_assistant`, or turn the toggle off.
+
+### Site echoes any Origin back — CORS "Same Origin" not enforced
+
+**Cause:** WordPress core `rest_send_cors_headers()` (hooked on `rest_pre_serve_request` at priority 10) reflects whatever `Origin` the client sent — plus `Access-Control-Allow-Credentials: true` — on **every** REST response, replacing the plugin's own header. The Security → Network "Same Origin" setting was therefore a silent no-op before v1.2.3 (verified live: a bogus origin was mirrored back on both plugin and core routes).
+**Fix (v1.2.3+, PR #6986):** `WP_MCP_AI_CORS_Guard` overrides the reflection at priority 20 in `site` mode — exact-allowlisted origins (site origin + the `cors_allowed_origins` textarea, one origin per line + the `wp_mcp_ai_cors_allowed_origins` filter) are echoed with credentials; everything else gets the site's own origin + credentials off (browsers refuse to read the response). `star` mode is unchanged. Default enforcement scope is `/mcp-ai/v1` only — add `/mcp-ai-pro/v1` via the `wp_mcp_ai_cors_guard_route_prefixes` filter for Pro SPA surfaces. On pre-1.2.3 installs, an exact-allowlist mu-plugin replicating the override is in `docs/operations/deployment/nvoos-pro-spa-velocity-setup.md` §5. Diagnose with:
+```bash
+curl -s -D - -o /dev/null -H "Origin: https://bogus.example.com" \
+  "https://SITE/wp-json/mcp-ai/v1/assistants" | grep -i access-control
+```
 
 ### MCP App OAuth connect fails with "OAuth 2.0 discovery failed" (v1.1.91+)
 

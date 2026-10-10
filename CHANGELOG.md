@@ -1,10 +1,10 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.2.3] - 2026-10-10
 
 ### Added — Standalone SPA WordPress Login (PR #6993, Proposal 064)
 
-- **A fourth auth mode in the standalone Pro SPA** (`examples/nvoos-pro-spa-vite`) — **WordPress login** via an **Application Password** (Basic auth over REST): connection-screen username + app-password fields, `wp/v2/users/me?context=edit` credential validation, and the **real user** (id, name, capabilities) mounted into the runtime. The deployed app (Velocity / `chat.nvoos.cloud`) now gets the full admin surface cross-origin with **real server-side capability enforcement** instead of the bearer mode's client-side `manage_options` — user-scoped transcripts/approvals work for WordPress users (the bearer-mode limitation tracked in issue #6987).
+- **A fourth auth mode in the standalone Pro SPA** (`examples/nvoos-pro-spa-vite`) — **WordPress login** via an **Application Password** (Basic auth over REST): connection-screen username + app-password fields, `wp/v2/users/me?context=edit` credential validation, and the **real user** (id, name, capabilities) mounted into the runtime. The deployed app (Velocity / `chat.nvoos.cloud`) now gets the full admin surface cross-origin with **real server-side capability enforcement** instead of the bearer mode's client-side `manage_options` — user-scoped transcripts/approvals work for WordPress users (the bearer-mode gap is also closed for assistant credentials — see PR #6990 below; issue #6987).
 - **Credential hygiene** — UTF-8-safe Basic header construction (`TextEncoder`, not `btoa()` alone); the Basic header is attached **only** to requests targeting the configured site origin (never the media worker or third-party URLs); `credentials: 'omit'` and no nonce (Application Password auth is CSRF-safe by construction); README documents the least-privilege dedicated-user guidance.
 
 ### Fixed — Application Password Auth Gaps (PR #6993)
@@ -16,6 +16,45 @@
 
 - **Every cross-origin browser chat stream on OOS-routed sites was blocked** — a pre-existing bug affecting **all** cross-origin clients (bearer/guest modes too), surfaced by the wp-mode verification: the OOS engine's SSE emitter (`lib/core` `SseHandler`) sends no CORS headers and the stream exits before `rest_pre_serve_request` runs, so the CORS guard never fired — browsers saw “No 'Access-Control-Allow-Origin' header is present” on the streamed response while curl worked (curl does not enforce CORS). New `WP_MCP_AI_CORS_Guard::emit_stream_cors_headers()` emits the resolved allow-origin from the WordPress adapter (`handle_chat_request_oos()`) before `handleChatStreaming()`; `lib/core` stays framework-agnostic.
 - Verified against the docker WordPress: admin full surface + SSE chat end-to-end, least-privilege subscriber (visibility-filtered catalogue, 403 chat denial), wrong password (clear 401), media-worker header isolation (network-captured), and bearer/guest/cookie regressions. 39 PHPUnit tests (CORS guard, assistant directory, transcripts suites), phpcs 0 errors on the touched files, SPA typecheck/build pass.
+
+### Fixed — CORS Same-Origin Enforcement (PR #6986)
+
+- **WordPress core reflects any `Origin` header back on every REST response** (`rest_send_cors_headers` on `rest_pre_serve_request`, priority 10, with `Access-Control-Allow-Credentials: true`) — which silently overrode the Security → Network "Same Origin" setting, so a hardened site still echoed arbitrary origins. New **`WP_MCP_AI_CORS_Guard`** (12th `includes/security/` class) hooks the same filter at priority 20 and, in `site` mode, replaces the reflected header with the configured policy: exact allowlisted origins (site origin + new `cors_allowed_origins` setting + `wp_mcp_ai_cors_allowed_origins` filter) are echoed back, everything else gets the site's own origin with credentials disabled; `star` mode keeps core's allow-all reflection. Enforcement covers the plugin's REST routes (`/mcp-ai/v1` by default, extensible via `wp_mcp_ai_cors_guard_route_prefixes`), and the MCP/OPTIONS/SSE header emitters now share the same resolver. 20 new tests; 138 related REST/security tests pass. Follow-ups: the guard port to the CG-AI mirror `src/Rest/McpController.php` is deferred to the port loop; the #6993 `emit_stream_cors_headers()` addition rides the same guard.
+
+### Changed — SPA REST Auth: Credentials & Session Nonce (PR #6990 — closes #6987, #6985)
+
+- **Transcripts/approvals now accept a pure assistant credential** — `chat_transcripts_permissions_check()` and the HITL approval controller validate `Authorization: Bearer cred_…` (or the raw header) via the new shared `WP_MCP_AI_REST::validate_request_credential()`. Validated credentials map to their issuing user (`created_by`); reads are scoped to the assistant the credential was issued for (mismatched `assistant_id` → 403; absent → the credential's assistant). `approve`/`deny` stay `manage_options`-only so a leaked credential cannot bypass the human-in-the-loop gate.
+- **Session nonce no longer mints a user-0 nonce** — `handle_session_nonce()` re-binds the identity from the request's auth cookie (`wp_validate_auth_cookie`) before `wp_create_nonce()`: the endpoint is called with no nonce by design, so WP core's `rest_cookie_check_errors()` zeroes the session user first and the minted nonce previously failed `rest_cookie_invalid_nonce` on retry. Cookie-less requests still get the guest nonce. 10 new tests; 38/38 on WP 7.1.3 + WP 7.2-alpha.
+
+### Changed — Pro Schedule Manager: Multi-Recipient notify_email (PR #6991 — closes #6642, #6651)
+
+- **`notify_email` accepts comma/space/semicolon-separated lists** — `create_schedule()`/`update_schedule()` normalize through a new `normalize_notify_email()` helper reusing `WP_MCP_AI_Result_Delivery_Service::sanitize_email_recipients()` (behind the existing `class_exists` guard); Symfony validation checks each address individually (an invalid address anywhere still returns `invalid_notify_email`). The `plan_schedules_from_workflow` tool uses the same normalizer; schema descriptions mention comma-separated recipients; the create-form + edit-modal inputs moved `type="email"` → `type="text"` with a comma-separated hint. 4 new tests (comma + semicolon, single-address unchanged, invalid-in-list rejected, multi-recipient update); 136/136 batch on WP 6.9 + 7.1.2.
+- **Quick wins folded in** — the five CRM slugs landed in `docs/reference/tools/tool-status.txt` as `dev` (closes #6651 — OI-5 closed); the pagination-fields fixture accumulation fixed by reordering `setUp()` so `bootstrap_rest_controller()` runs before fixtures (test-suite pattern #21 — #6975 item 3; items 1–2 remain open).
+
+### Changed — Standalone SPA Cookie Mode + Production Proxy (PR #6994)
+
+- **Cookie mode died with a JSON parse error** whenever the app origin had no proxy (the SPA fallback answers unknown paths with `index.html` + HTTP 200). A probe now verifies the app origin serves the WordPress REST API before connecting, and `readJson()` refuses non-JSON responses with actionable errors on every JSON call site (nonce, `users/me`, worker health).
+- **Zero-dependency production proxy `scripts/serve.mjs`** — reverse-proxies `/wp-json`, `/wp-admin`, `/wp-login.php`, `/wp-includes` when `NVOOS_TARGET_SITE` is set, so cookie mode works on Velocity/self-hosted deploys (SSE streaming, login `Location`/`redirect_to` rewriting to stay on the app origin, `Set-Cookie` Domain stripping, hop-by-hop filtering, clean 502 on upstream failure); the Vite dev proxy mirrors the same rewrites.
+- **Chunk splitting** — `App`/`EmbeddedApp` are `React.lazy` in the shell only (spa-v2 sources untouched): entry 501 KB → 196 KB minified (148 → 63 KB gzip); the "Log in to WordPress" link opens `/wp-login.php?redirect_to=%2F` (relative — `wp_validate_redirect()` rejects cross-host absolute URLs on stock installs).
+
+### Fixed — Invalid ESM Dists in the nvoos npm Packages (PR #6984)
+
+- **Three published dists (`nvoos-slash-commands`, `nvoos-dom-batcher`, `nvoos-audio`) were syntactically invalid ESM** — their `adapt-for-npm` scripts' strip regexes anchored at `^` missed docblock-led sources and the export-block regexes matched lazily at a nested `};`, leaving `export` statements inside unclosed IIFEs (breaking Rollup/esbuild consumers). Generators fixed (unanchored IIFE-opening strips, greedy export-block strips), all 22 manifests modernized to `"type": "module"` with the CJS scripts renamed `adapt-for-npm.cjs`, and all 23 packages rebuilt — every dist parses as valid ESM with zero drift in previously published dists. The three fixed packages bump to `0.1.0-alpha.4` (`npm publish --dry-run` verified). New `examples/nvoos-vite-demo/` (Vite + TypeScript sample over 8 packages with a dev-only mock SSE server). **Deferred (needs npm auth):** publish the three alpha.4 packages, then drop the demo's `vendor/` aliases + the `CommandAutocomplete` type augmentation.
+
+### Docs (PRs #6989, #6992)
+
+- **CORS guard + Velocity deployment docs (#6989)** — `.context/rest-api.md` + `.context/security-checklist.md` gain the CORS guard notes (12th security class, the route-prefix caveat, the resolver rule for new emitters), the plugin skill gains a Troubleshooting entry, and the new `docs/operations/deployment/nvoos-pro-spa-velocity-setup.md` documents the Velocity build/deploy guide (root-directory pitfall, build command/entry, `VITE_DEFAULT_SITE_URL`, `VELOCITY_SPA_DEPLOY_URL`, auth modes, §5 the backend CORS allowlist).
+- **Open-issues triage snapshot (#6992)** — `docs/project/open-issues-triage-2026-10-10.md` groups the 36 remaining open issues into completion tiers A–D (five closed in-session: #6814, #6860, #6901, #6651, #6642). Docs-only.
+
+### Build & CI (PRs #6988, #6995, #6996)
+
+- **spa-standalone sync/deploy pin `main` at git init (#6988)** — `git init -q -b main` (bare `git init` named the branch from `init.defaultBranch`, so no `main` ref existed and the push failed with `refspec main does not match`); fixed in both workflows.
+- **Deploy tree layout fixed for Velocity (#6995)** — the workflows now copy the app **under `examples/`** (`examples/nvoos-pro-spa-vite/` + `addons/pro/assets/spa-v2/`), so Velocity's root directory finds `package.json`; chat.nvoos.cloud was stuck serving the initial build (every later build died on the enoent `package.json`).
+- **`.env` loading for the standalone SPA (#6996)** — `defineConfig(({ mode }) => …)` + `loadEnv(mode, envDir, '')` (empty prefix → non-`VITE_` keys load) so `NVOOS_TARGET_SITE`/`NVOOS_WORKER_URL` come from `.env` files; `scripts/dev.mjs` resolves shell > `.env` > docker-default precedence; `scripts/serve.mjs` intentionally stays process-env-only (Velocity runtime env vars).
+
+### Versioning
+
+Bumped to **1.2.3** across all version-bearing files (plugin header, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, readme.txt Stable tag). Pro addon: 1.2.3. No addon version moves in-window (docs-hub 0.5.3, content-graph 1.0.10, CG-AI-platform 2.0.0 ZIP rebuilds are build-only — unchanged). Model catalog: **v2026.10.03** (unchanged — zero catalog diff in-window). Tool count: **~353 base + ~1,339 Pro (~1,692 total — unchanged)** — no registry diffs in-window (live registry authoritative). Provider count: **18** chat providers (unchanged). Addon count: **30** (unchanged). Bundled skills: **76** base + **41** Pro (unchanged). Coding-time agent skills: **66** (unchanged — three updated in place: plugin, spa-ui, updates). Security classes: **11 → 12** (`WP_MCP_AI_CORS_Guard`). Stale build ZIPs removed: the 1.2.1 oOS build set (30 files — 9 root + 2 optional-components + 19 toolkit-addons) with the `blueprints/ollama-demo.json` URL carried to the complete-1.2.2 ZIP.
 
 ## [1.2.2] - 2026-10-10
 
@@ -49,10 +88,6 @@
 
 - **F&B oracle test drift (#6978)** — covers keys built with month hyphens vs the oracle's underscores, and exact `assertEquals` on 2 dp-vs-3 dp float sums; both lessons encoded in the toolkit-creation skill. No production code.
 - **CG-AI platform evolved-prompt test (#6980)** — the resolver pass-through assertion now pins an admin user to the `write` chat profile (guarded by `class_exists()`), so the guest read-only prompt-hint subscriber can't pollute it; 15 tests / 110+111 assertions on both matrices.
-
-### Fixed — CORS Same-Origin Enforcement
-
-- **WordPress core reflects any `Origin` header back on every REST response** (`rest_send_cors_headers` on `rest_pre_serve_request`, priority 10, with `Access-Control-Allow-Credentials: true`) — which silently overrode the Security → Network "Same Origin" setting, so a hardened site still echoed arbitrary origins. New **`WP_MCP_AI_CORS_Guard`** (12th `includes/security/` class) hooks the same filter at priority 20 and, in `site` mode, replaces the reflected header with the configured policy: exact allowlisted origins (site origin + new `cors_allowed_origins` setting + `wp_mcp_ai_cors_allowed_origins` filter) are echoed back, everything else gets the site's own origin with credentials disabled; `star` mode keeps core's allow-all reflection. Enforcement covers the plugin's REST routes (`/mcp-ai/v1` by default, extensible via `wp_mcp_ai_cors_guard_route_prefixes`), and the MCP/OPTIONS/SSE header emitters now share the same resolver. 20 new tests; 138 related REST/security tests pass.
 
 ### Build & CI
 

@@ -87,18 +87,38 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   plugin's REST layer rejects for token auth.
 - **Full screen:** `shell.css` re-creates the WP-admin height chain
   (`#wpwrap` → root) the three-column layout expects.
-- **Auth modes:** assistant credential (bearer) = the production cross-origin
-  path; guest = public chat; cookie = dev-proxy only. Transcripts/approvals
-  reject a pure bearer (token ≠ WP user, issue #6987).
-- **CORS:** the backend must echo the app origin — plugin ≥1.2.2
+- **Auth modes (four):** assistant credential (bearer) = the production
+  cross-origin path; guest = public chat; cookie = dev proxy **or** the
+  production `serve.mjs` proxy (login via `/wp-login.php?redirect_to=%2F` —
+  keep `redirect_to` **relative**, `wp_validate_redirect()` rejects
+  cross-host absolute URLs); **WordPress login (`wp`)** = Application
+  Password (Basic auth over REST) — `wp/v2/users/me?context=edit`
+  validation, the **real user + capabilities** mounted (full admin surface,
+  real server-side enforcement), the Basic header built UTF-8-safe
+  (`TextEncoder`) and attached **only** to the configured site origin
+  (never the media worker/third-party URLs). Transcripts/approvals accept
+  bearer credentials too (reads scoped to the issuing assistant;
+  `approve`/`deny` stay `manage_options` — issue #6987 closed by #6990).
+- **CORS:** the backend must echo the app origin — plugin **≥1.2.3**
   `cors_allowed_origins` (or the §5b mu-plugin) + widen
   `wp_mcp_ai_cors_guard_route_prefixes` with `/mcp-ai-pro/v1` (the default
-  scope is `/mcp-ai/v1` only). Never flip the dropdown to "Allow All".
+  scope is `/mcp-ai/v1` only); the OOS SSE chat stream also emits the
+  resolved header (`emit_stream_cors_headers()`). Never flip the dropdown
+  to "Allow All".
 - **Build/deploy:** `npm run build` → static `dist/`; `scripts/serve.mjs` is
-  the Velocity entry; build-time `VITE_DEFAULT_SITE_URL` pre-fills the
-  connection screen. Velocity **root directory must be
-  `examples/nvoos-pro-spa-vite`** — the repo root has no `package.json` and
-  the build dies with `npm error enoent` (exit 254).
+  the Velocity entry and doubles as the **zero-dependency production
+  reverse proxy** when the **runtime** env var `NVOOS_TARGET_SITE` is set
+  (`/wp-json`, `/wp-admin`, `/wp-login.php`, `/wp-includes`; SSE streaming,
+  login redirect + `Set-Cookie` Domain rewriting, hop-by-hop filtering,
+  502 on upstream failure). Dev (`scripts/dev.mjs`) resolves
+  `NVOOS_TARGET_SITE` with shell > `.env` > `http://localhost:8000`
+  precedence (Vite `loadEnv` with an empty prefix makes non-`VITE_` keys
+  load); build-time `VITE_DEFAULT_SITE_URL` pre-fills the connection
+  screen. Velocity **root directory must be `examples/nvoos-pro-spa-vite`**
+  — the repo root has no `package.json` and the build dies with `npm error
+  enoent` (exit 254); the sync/deploy workflows pin `main` at git init
+  (`git init -q -b main`) and assemble the deploy tree **under `examples/`**
+  (a bare `git init` + root-level copy broke both).
 - **Media worker:** the app fronts the worker directly (URL + `X-Site-Token`
   in the connection screen) — the two stay separate Velocity apps.
 
