@@ -1,9 +1,23 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.2)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.3)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## CORS Enforcement, Standalone SPA WordPress Login & SPA REST Auth (v1.2.3)
+
+- **CORS same-origin enforcement (PR #6986)** — WordPress core `rest_send_cors_headers()` (priority 10) reflects **any** `Origin` back with `Access-Control-Allow-Credentials: true` on every REST response, silently no-op'ing the Security → Network "Same Origin" setting. The 12th `includes/security/` class `WP_MCP_AI_CORS_Guard` hooks `rest_pre_serve_request` at priority 20 and, in `site` mode, echoes only exact-allowlisted origins (site origin + the new `cors_allowed_origins` setting, one origin per line + the `wp_mcp_ai_cors_allowed_origins` filter) — everything else gets the site's own origin + credentials off; `star` mode keeps core's reflection. Scope `/mcp-ai/v1` by default (widen via `wp_mcp_ai_cors_guard_route_prefixes`); the MCP/OPTIONS/SSE/controller emitters share one `resolve_allow_origin()`. 20 new tests; 138 related pass.
+- **Standalone SPA WordPress login (PR #6993, Proposal 064)** — the fourth auth mode: an Application Password (Basic auth over REST) with `wp/v2/users/me?context=edit` validation and the **real user + capabilities** mounted (full admin surface, real server-side enforcement). UTF-8-safe Basic header (`TextEncoder`); attached **only** to the configured site origin (never the media worker/third parties). Plugin-side fixes: `chat_transcripts_permissions_check()` skips the nonce for Authorization-header requests (application-password users can't mint session nonces; CSRF-safe by construction); `permissions_check()`/`permissions_check_assistant_list()` gained Application Password branches.
+- **OOS streaming CORS (PR #6993)** — the OOS SSE emitter sent no CORS headers (pre-existing; every cross-origin browser chat stream was blocked): `WP_MCP_AI_CORS_Guard::emit_stream_cors_headers()` fires from the WP adapter; `lib/core` stays framework-agnostic.
+- **SPA REST auth (PR #6990 — closes #6987, #6985)** — transcripts/approvals accept a pure assistant credential via `WP_MCP_AI_REST::validate_request_credential()` (reads scoped to the issuing assistant — mismatched `assistant_id` → 403; `approve`/`deny` stay `manage_options`-only); `handle_session_nonce()` re-binds the auth cookie (`wp_validate_auth_cookie`) before `wp_create_nonce()` — core's `rest_cookie_check_errors` had zeroed the session, so the minted nonce failed `rest_cookie_invalid_nonce` on retry. 10 tests; 38/38 on WP 7.1.3 + 7.2-alpha.
+- **Pro Schedule Manager multi-recipient `notify_email` (PR #6991 — closes #6642, #6651)** — comma/space/semicolon lists through `normalize_notify_email()` (reusing `sanitize_email_recipients()`, per-address Symfony validation); `plan_schedules_from_workflow` uses the same normalizer; the form inputs moved to `type="text"` with a comma-separated hint. The five CRM slugs land in `tool-status.txt` as `dev` (OI-5 closed) and the pagination-fields fixture accumulation is fixed (setUp ordering — #6975 item 3).
+- **Standalone SPA cookie mode + production proxy (PR #6994)** — cookie-mode proxy detection + JSON guards; the zero-dependency `scripts/serve.mjs` production reverse proxy (`NVOOS_TARGET_SITE`: `/wp-json`, `/wp-admin`, `/wp-login.php`, `/wp-includes` — SSE streaming, login `Location`/`redirect_to` rewriting, `Set-Cookie` Domain stripping, 502 on upstream failure); `App`/`EmbeddedApp` are `React.lazy` in the shell (entry 501 KB → 196 KB minified).
+- **`.env` loading (PR #6996)** — `loadEnv(mode, envDir, '')` (empty prefix) so non-`VITE_` keys load; `scripts/dev.mjs` precedence shell > `.env` > `http://localhost:8000`; `serve.mjs` stays process-env-only (Velocity runtime vars).
+- **npm ESM dists fixed (PR #6984)** — `nvoos-slash-commands`/`nvoos-dom-batcher`/`nvoos-audio` published invalid ESM (exports inside unclosed IIFEs); all 22 manifests → `"type": "module"`, all 23 packages rebuilt + `examples/nvoos-vite-demo/`; the three alpha.4 publishes deferred (needs npm auth).
+- **Build (PRs #6988/#6995)** — spa-standalone workflows pin `main` at git init (`git init -q -b main`) and assemble the deploy tree under `examples/` so Velocity's root directory finds `package.json`.
+- **Docs (PRs #6989/#6992)** — the CORS/Velocity deployment guide (`docs/operations/deployment/nvoos-pro-spa-velocity-setup.md`) + the open-issues triage snapshot (`docs/project/open-issues-triage-2026-10-10.md`).
+- **Tool counts** — ~353 base + ~1,339 Pro (~1,692 total; unchanged — zero registry diff). Security classes: 11 → 12.
 
 ## Chat Profiles Read-Only Mode, F&B Assistant Packs & Google OAuth Production Readiness (v1.2.2)
 

@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (`1.2.2-docs-catch-up.md`,
-   with `1.2.1-docs-catch-up.md` as the previous pass) plus the
+3. **Read the template plans** — the latest executed plan (`1.2.3-docs-catch-up.md`,
+   with `1.2.2-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -161,6 +161,16 @@ weekly (or on demand), independent of any release.
   catch-up runs (the v1.1.87 window's #6780 did) — the catch-up converts it
   into the dated release entry and extends it with the rest of the window;
   never keep two entries for the same version.
+- **A PR merged after a catch-up may stage its changelog entry into the
+  just-shipped release section instead of the next one.** The v1.2.3
+  window's #6986 inserted its CORS-guard block into the already-shipped
+  `[1.2.2]` CHANGELOG section post-merge (verified: the #6983 catch-up
+  tree has no CORS text) — the next catch-up relocates the block into its
+  own release section and records the relocation in the plan (the same
+  falsification logic as the #6787 rule, applied to changelog sections
+  rather than window maps; `.context`/skill/deploy-doc stamps written
+  in-window with the wrong version get the same relocation/correction
+  treatment).
 - **Sub-project window PRs are flagged-not-edited even when they carry their
   own changelog surfaces.** PRs that update `plugins/nvoos-content-graph`'s
   own CHANGELOG.md/readme.txt/.pot (the v1.1.87 window's #6782/#6783) keep
@@ -787,7 +797,36 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.97-docs-catch-up.md`,
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
   `docs/project/plans/v1.1.99-docs-catch-up.md`,
-  `docs/project/plans/1.2.2-docs-catch-up.md` (latest executed — the
+  `docs/project/plans/1.2.3-docs-catch-up.md` (latest executed — the
+  1.2.3 pass over PRs #6984–#6996: the CORS same-origin enforcement
+  (#6986 — the 12th security class `WP_MCP_AI_CORS_Guard` overriding
+  core's origin reflection, the `cors_allowed_origins` setting, zero
+  tool-count change), the standalone-SPA WordPress login (#6993,
+  Proposal 064 — the fourth auth mode via an Application Password +
+  the OOS streaming-CORS fix), the SPA REST auth fixes (#6990 —
+  credential-scoped transcripts/approvals + session-nonce re-bind,
+  closes #6987/#6985), the schedule-manager multi-recipient
+  `notify_email` + quick wins (#6991 — closes #6642/#6651; OI-5 closed,
+  OI-4 item 5 fixed), the standalone-SPA cookie mode + `serve.mjs`
+  proxy + chunk splitting (#6994), the `.env` loading (#6996), the npm
+  ESM-dist fixes + Vite demo (#6984 — alpha.4 publish deferred), the
+  CORS/Velocity docs (#6989) + triage snapshot (#6992), the build fixes
+  (#6988 `git init -b main`; #6995 deploy-tree layout), **two changelog
+  pre-staging anomalies caught-up** (the #6986 CORS block post-hoc
+  inserted into the shipped [1.2.2] section — relocated into [1.2.3]
+  and recorded as a new scope rule; the #6993 [Unreleased] section —
+  converted), one new OI-1 group (54: `@since 1.2.2` ×14 — cors-guard
+  ×12 + schedule-manager/plan-tool ×2, one-behind), the security-class
+  count 11 → 12 surfaces (copilot-instructions ×2, CLAUDE.md ×2,
+  FOR_REVIEWERS ×2 stale-10 corrections, EU_AI_ACT), three skill
+  reconciliations (plugin ×3 + RELEASE-NOTES + the CORS entry version
+  fix; spa-ui — the fourth auth mode + proxy/env/deploy notes; updates),
+  the stale 1.2.1 build-set removal (30 files — 9 + 2 + 19) with the
+  ollama-demo.json URL carry, zero tool-count change, zero catalog
+  diff, and zero skill-count change (66))
+
+Preceding windows:
+  `docs/project/plans/1.2.2-docs-catch-up.md` (executed — the
   1.2.2 pass over PRs #6966–#6982 + the direct `c9d54bd273` CI commit: the
   chat-profile system (#6977, Proposal 015 — server-enforced read-only mode,
   the 11th security class, `GET/POST /mcp-ai/v1/chat-profile` deliberately
@@ -805,7 +844,8 @@ previous window — the user will usually want it back-dated.
   (#6969, docs only), three new OI-1 groups (51: `@since 2.2.0` ×84
   chat-profile wave; 52: `@since 2.1.1` ×1 pro helper; 53: `@since 1.2.0`
   ×1 oauth-manager) + the group-50 extension (#6982's 1.6.0 ×3), the
-  OI-4 extension (#6974's pagination-fields fixture accumulation),
+  OI-4 extension (#6974's pagination-fields fixture accumulation — **closed
+  by the 1.2.3 window's #6991**),
   five skill reconciliations (plugin ×3 + RELEASE-NOTES + the stale
   Architecture count line; wporg-submission Fifth pass; checkout-integration
   0.5.3/1.0.10 refs; test-suite 68 → 69 patterns; updates), the

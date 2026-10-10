@@ -1,7 +1,9 @@
 # NV oOS Settings Storage Context
 
 > **GSD Context File** — Load this when working on settings, credentials, import/export, or admin save flow.
-> Last reviewed: October 5, 2026 (v1.1.96).
+> Last reviewed: October 10, 2026 (v1.2.3).
+>
+> **New in v1.2.3 (PR #6986):** the new `cors_allowed_origins` setting (Security → Network textarea, one origin per line) validates each entry as `scheme://host[:port]` and feeds `WP_MCP_AI_CORS_Guard`'s exact-allowlist in `site` mode — the site's own origin is always allowed; the `wp_mcp_ai_cors_allowed_origins` filter appends programmatic entries and the legacy `wp_mcp_ai_cors_allow_origin` filter remains the final override. Enforcement defaults to `/mcp-ai/v1` only — widen via `wp_mcp_ai_cors_guard_route_prefixes` for `/mcp-ai-pro/v1` SPA surfaces.
 >
 > **New in v1.1.96 (PR #6896):** **autoload discipline for unbounded blobs** — the Pro blob options (`wp_mcp_ai_pro_remote_sites` incl. encrypted credentials, `wp_mcp_ai_pro_workflows`, per-workflow execution logs `wp_mcp_ai_workflow_executions_%`, `wp_mcp_ai_ezuite_alerted_skus`, `wp_mcp_ai_agent_approvals`, `wp_mcp_ai_media_worker_url`/`_token`, `wp_mcp_ai_price_changes`, `wp_mcp_ai_last_pricing_check`, `wp_mcp_ai_slash_command_history`, `wp_mcp_ai_pro_license_key`) now write with `autoload=false`, and `wp_mcp_ai_pro_repair_option_autoload()` retroactively flips existing rows once (tracked by the `wp_mcp_ai_pro_autoload_repair_v1` marker). **New blob-like options must declare `autoload=false`** — the alloptions payload is per-request memory. The same PR short-circuits the model-catalog migration: the ~250–400 KB `model-catalog.json` is read + `json_decode`d only when `filemtime` changes (one stat call per request otherwise).
 >
