@@ -253,6 +253,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'discover_new_models',
 					'research_model',
 					'export_fine_tune_curriculum',
+					'export_trajectory_corpus',
+					'export_preference_pairs',
+					'export_plugin_docs_corpus',
 					// Decision provider.
 					'typesafe_decide',
 					'typesafe_guardrail',
