@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 70 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 71 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-08"
+  last-updated: "2026-10-11"
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
 ---
@@ -112,6 +112,22 @@ at `/tmp/wp71` in the one-off run, and swap `WP_CORE_DIR=/tmp/wp71` +
 docker cp oos-wp:/tmp/wp71 ./docker-tmp-wp71
 # add: -v F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/mcp-ai-wpoos/docker-tmp-wp71:/tmp/wp71
 ```
+
+**When `/tmp/wp71` is gone** (container restarts wipe it — `docker cp` errors
+with `Could not find the file /tmp/wp71 in container oos-wp`), rebuild a
+reusable named volume instead of polluting the repo:
+
+```bash
+# wordpress:cli runs as www-data — run as root to create the volume,
+# and raise PHP memory or the extractor fatals at 128M:
+docker volume create mf-wp71-core
+docker run --rm --user 0:0 -v mf-wp71-core:/wp wordpress:cli-php8.3 sh -c \
+  'php -d memory_limit=512M /usr/local/bin/wp --allow-root --path=/wp core download --version=7.1.3 --quiet && chown -R 33:33 /wp'
+# then mount it: -v mf-wp71-core:/tmp/wp71 with WP_CORE_DIR=/tmp/wp71 + WP_DB_NAME=wordpress_test_wp71
+```
+
+(`WP_CLI_PHP_ARGS` env is not honoured by the phar shim — pass
+`php -d memory_limit=512M /usr/local/bin/wp` explicitly.)
 
 Clean up afterwards: `rm -rf docker-tmp-wp71` and `docker volume rm <worktree>-vendor`
 — never stage either artifact. The no-concurrent-phpunit rule applies to
@@ -1042,6 +1058,20 @@ the changed files is the substantive gate; plan CI waits accordingly.
       (`tests/helpers/base-plugin-credential-stubs.php` pattern: seed tokens,
       `is_token_format()` + `validate_token()` static methods) catch this only
       if they exercise the credential path with a real REST request.
+
+   71. **Filesystem fixture accumulation in a fixed uploads path (v1.2.4,
+      Model Foundry Phase 1, `test-model-foundry-exporters.php`).** A tool that
+      scans a fixed uploads directory (`wp_upload_dir()['basedir'] . '/nvoos-docs-hub/content'`)
+      picks up files left behind by other tests or earlier runs — the WP test
+      framework's uploads dir persists across suites in the same run and across
+      runs on a shared Docker core volume, so assertions on row counts or the
+      first row flake (`rows == 3` instead of 2; preview text from a stale
+      file). Fix: **wipe the fixed directory inside the test before writing
+      fixtures** (a recursive `wipe_dir()` helper, tracked in `$cleanup_dirs`
+      and re-wiped in `tearDown`), or pass a `uniqid()`-suffixed directory when
+      the production API accepts an explicit path. Same rule for any
+      corpus/exporter test asserting counts over a directory scan — never
+      assume the directory is empty.
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
