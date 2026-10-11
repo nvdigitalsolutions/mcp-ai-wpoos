@@ -55,6 +55,12 @@ examples/nvoos-dictate/
   nvoos-dictate.exe"` after ~10 s (process alive = boot OK); kill with
   `taskkill //IM nvoos-dictate.exe //F`. A running app locks the exe — kill
   it before `cargo build`/`test` or you get "failed to remove file" errors.
+- **Stale-checkout artifact illusion**: the sources merged in #7011 live on
+  `alpha-working`. On any branch older than that merge, `git status` shows the
+  folder as untracked build leftovers (`?? examples/nvoos-dictate/` with only
+  `target/`, `dist/`, `node_modules/` on disk) and the sources look deleted.
+  They aren't — sync to `origin/alpha-working` (fetch + rebase/checkout)
+  before assuming data loss or starting a rebuild.
 
 ## Critical config rule: `plugins.updater` block
 
