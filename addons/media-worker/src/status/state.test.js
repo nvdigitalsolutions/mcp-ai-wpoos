@@ -138,6 +138,19 @@ test( 'no heartbeat yet -> unknown (major_outage when synthetic confirms)', () =
 	);
 } );
 
+test( 'synthetic-only target: probe pass -> operational, fail -> major_outage, no probe -> unknown', () => {
+	const base = { lastHeartbeatAt: 0, components: {}, syntheticOnly: true };
+	assert.equal( computeState( base, NOW, cfg() ).status, 'unknown' );
+	assert.equal(
+		computeState( { ...base, synthetic: { ok: true, checkedAt: NOW - 1000 } }, NOW, cfg() ).status,
+		'operational'
+	);
+	assert.equal(
+		computeState( { ...base, synthetic: { ok: false, checkedAt: NOW - 1000 } }, NOW, cfg() ).status,
+		'major_outage'
+	);
+} );
+
 test( 'computeUptime counts only outage minutes', () => {
 	const dayMs = 24 * 60 * 60 * 1000;
 	const history = [

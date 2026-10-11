@@ -1,0 +1,395 @@
+/* NV oOS Dictation — dark, compact, NDS-adjacent tokens (local, no CDN). */
+
+:root {
+  --bg: #101018;
+  --panel: #181824;
+  --panel-2: #20202e;
+  --border: #2c2c3e;
+  --text: #e8e8f0;
+  --muted: #9a9ab0;
+  --accent: #f59e42;
+  --accent-2: #7c5cff;
+  --ok: #3ecf8e;
+  --warn: #f5c542;
+  --danger: #ff5c5c;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.brand-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.version {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tab:hover {
+  color: var(--text);
+  background: var(--panel-2);
+}
+
+.tab.active {
+  color: var(--text);
+  background: var(--panel-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.sub-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 880px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.card h3 {
+  margin: 16px 0 8px;
+  font-size: 14px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 12px;
+}
+
+.ok-text {
+  color: var(--ok);
+}
+
+.warn-text {
+  color: var(--warn);
+}
+
+.dictate-state {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  margin: 8px 0;
+}
+
+.dictate-state[data-state='recording'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.dictate-state[data-state='processing'] {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+
+.dictate-state[data-state='error'] {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.dictate-state .done {
+  color: var(--ok);
+}
+
+.preview {
+  white-space: pre-wrap;
+  background: var(--bg);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.kv {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.kv li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.badge.ok {
+  background: rgba(62, 207, 142, 0.15);
+  color: var(--ok);
+}
+
+.badge.warn {
+  background: rgba(245, 197, 66, 0.15);
+  color: var(--warn);
+}
+
+.btn {
+  background: var(--accent);
+  color: #14101c;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.btn.danger {
+  background: var(--danger);
+  color: #1c1010;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.row input[type='text'],
+.row input[type='search'],
+.row input[type='number'],
+.row input[type='password'],
+.row select,
+.row textarea,
+.toolbar input {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.row textarea {
+  font-family: inherit;
+  resize: vertical;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.models,
+.transcripts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.models li,
+.transcripts li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.transcripts li {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.clean {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.raw {
+  margin: 6px 0;
+  color: var(--muted);
+  white-space: pre-wrap;
+  background: var(--bg);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  align-self: flex-start;
+}
+
+.link.danger:hover {
+  color: var(--danger);
+}
+
+.credential {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+/* ---- overlay capsule --------------------------------------------------- */
+
+.overlay-capsule {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+  padding: 0 18px;
+  background: rgba(16, 16, 24, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.overlay-lamp {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+}
+
+.overlay-capsule[data-state='recording'] .overlay-lamp {
+  background: var(--accent);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.overlay-capsule[data-state='processing'] .overlay-lamp {
+  background: var(--accent-2);
+}
+
+.overlay-capsule[data-state='done'] .overlay-lamp {
+  background: var(--ok);
+}
+
+.overlay-capsule[data-state='error'] .overlay-lamp {
+  background: var(--danger);
+}
+
+.overlay-text {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}

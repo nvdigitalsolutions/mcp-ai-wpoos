@@ -58,7 +58,7 @@ class WP_MCP_AI_SSE_Stream {
 		// Prepare SSE headers.
 		$settings       = WP_MCP_AI_Admin_Settings::get_settings();
 		$cors_setting   = isset( $settings['cors_allow_origin'] ) ? $settings['cors_allow_origin'] : 'site';
-		$default_origin = ( 'star' === $cors_setting ) ? '*' : get_site_url();
+		$default_origin = ( 'star' === $cors_setting ) ? '*' : WP_MCP_AI_CORS_Guard::resolve_allow_origin();
 		$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 		$headers = array(
 			'Content-Type'                 => 'text/event-stream; charset=UTF-8',

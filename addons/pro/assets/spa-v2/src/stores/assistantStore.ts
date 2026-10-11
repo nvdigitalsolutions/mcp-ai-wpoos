@@ -19,13 +19,20 @@ const STORAGE_KEY_PREFIX = 'nvoos-pro-spa.active-assistant';
 /**
  * Read the initial assistant ID from localStorage (per-user key),
  * falling back to the server-provided runtime config.
+ *
+ * The stored selection is only honored on surfaces that expose the assistant
+ * switcher (config.assistantSelector). Pinned shortcode instances must always
+ * mount on the server-provided assistant — otherwise a stale localStorage
+ * value from the admin SPA would silently rebind the conversation to a
+ * different assistant than the one the shortcode pins.
  */
 function getInitialAssistantId(): number {
 	const config = readProSpaConfig();
 	const userId = config?.user?.id ?? 0;
+	const canSwitch = !!config?.config?.assistantSelector;
 
 	// 1. Try localStorage with the user-specific key.
-	if ( userId > 0 ) {
+	if ( canSwitch && userId > 0 ) {
 		try {
 			const stored = localStorage.getItem( `${ STORAGE_KEY_PREFIX }-${ userId }` );
 			if ( stored !== null ) {

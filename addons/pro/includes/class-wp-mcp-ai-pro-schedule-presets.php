@@ -73,10 +73,102 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				self::get_media_presets(),
 				self::get_calendar_booking_presets(),
 				self::get_health_wellness_presets(),
-				self::get_upwork_freelancer_presets()
+				self::get_upwork_freelancer_presets(),
+				self::get_fnb_presets()
 			);
 
 			return $presets;
+		}
+
+		/**
+		 * Food & Beverage Management toolkit report schedules (Phase 5b).
+		 *
+		 * Mirrors the Surf Club spec triggers: R-01 daily 08:00, R-02 Monday
+		 * 08:00, R-03 Thursday 09:00, R-05 Monday, R-13 Monday. Delivery stays
+		 * drafts-only; the ACT-tier broadcast is disabled by default.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @return array<string,array> F&B schedule presets.
+		 */
+		private static function get_fnb_presets() {
+			return array(
+				'fnb_daily_trading_snapshot' => array(
+					'name'          => __( 'Daily Trading Snapshot (R-01)', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Daily covers, revenue, top and bottom 5 items and logged waste, saved as a draft for the restaurant manager.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'fnb',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-chart-bar',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'daily',
+					'tags'          => array( 'fnb', 'daily', 'reporting' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run fnb_generate_report with report_id R-01 for yesterday, then fnb_save_draft with the draft title convention. Do not send anything.',
+						),
+					),
+				),
+				'fnb_weekly_needs_attention' => array(
+					'name'          => __( 'Weekly Needs Attention Brief (R-02)', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Up to five issues ranked by LKR impact with figures, next check and owner, saved as a draft for the CEO.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'fnb',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-warning',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'fnb', 'weekly', 'briefing' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run fnb_generate_report with report_id R-02 for last month, then fnb_save_draft. Limit the brief to five issues (A1-02). Do not send anything.',
+						),
+					),
+				),
+				'fnb_weekend_prep_plan'      => array(
+					'name'          => __( 'Weekend Prep Plan (R-03)', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Bookings, expected covers, expected portions, shortfalls and order deadlines for the coming weekend, saved as a draft.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'fnb',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-calendar',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'fnb', 'weekly', 'stock' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run fnb_weekend_demand for the coming Friday, then fnb_generate_report with report_id R-03 for that Friday, then fnb_save_draft. Do not place orders.',
+						),
+					),
+				),
+				'fnb_waste_variance_report'  => array(
+					'name'          => __( 'Waste and Variance Report (R-05)', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Waste by item and reason, waste % and unexplained variance, saved as a draft for the head chef.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'fnb',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-trash',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'fnb', 'weekly', 'waste' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run fnb_generate_report with report_id R-05 for last week, then fnb_save_draft. Report waste reasons as logged (A2-08). Do not send anything.',
+						),
+					),
+				),
+				'fnb_weekly_content_brief'   => array(
+					'name'          => __( 'Weekly Content Brief (R-13)', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Post ideas linked to stock and bookings with prompts and captions, saved as a draft for the CEO.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'fnb',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-format-image',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'fnb', 'weekly', 'content' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run fnb_generate_report with report_id R-13 for the coming week, then fnb_save_draft. Start every image prompt from the character bible (A4-01). Do not post.',
+						),
+					),
+				),
+			);
 		}
 
 		/**

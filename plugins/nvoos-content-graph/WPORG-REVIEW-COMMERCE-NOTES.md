@@ -79,6 +79,17 @@ feature-locked.**
 - v1.0.8: Stripe Payment Element billing-address fix (non-EU checkout no
   longer fails); already-licensed sites show their existing license instead
   of a chargeable payment form. No new data collected or sent.
+- v1.0.9: purchase-modal loading indicator while the Stripe element mounts;
+  a "Get the free NV oOS base version — no payment required" link in the
+  modal footer (a browser-side link to the project's GitHub releases — the
+  plugin sends no data and contacts no server to show it); and a
+  development-status note restating the 30-day money-back guarantee. No
+  new data collected or sent.
+- v1.0.10: excluded sources are now pruned from the graph on rebuild and
+  opt-in post types are captured. No commerce-surface changes.
+- v1.0.11: new read-only /graph/visual-config route and assistant
+  credential (bearer) authentication on read routes. No commerce-surface
+  changes, no new data collected or sent.
 
 ## Review-team questions, pre-answered
 

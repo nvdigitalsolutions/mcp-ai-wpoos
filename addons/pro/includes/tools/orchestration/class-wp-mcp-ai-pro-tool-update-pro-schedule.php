@@ -107,7 +107,7 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 				),
 				'notify_email'      => array(
 					'type'        => 'string',
-					'description' => __( 'New failure notification email.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'New failure notification email(s). Comma-separate multiple recipients.', 'mcp-ai-wpoos-pro' ),
 				),
 				'max_retries'       => array(
 					'type'        => 'integer',

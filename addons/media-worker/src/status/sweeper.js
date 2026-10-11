@@ -99,7 +99,7 @@ export function startSweeper( { store, alertBus = null, now = Date.now, siteConf
 				status: state.status,
 				missCount: state.missCount,
 				since: state.since,
-				downSince: 'major_outage' === state.status ? state.since : record.downSince || 0,
+				downSince: 'major_outage' === state.status ? state.since : 0,
 			};
 
 			try {

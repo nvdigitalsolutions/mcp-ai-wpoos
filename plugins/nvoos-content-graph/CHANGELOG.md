@@ -1,6 +1,67 @@
 # NV oOS Content Graph — Changelog
 
-## Unreleased
+## 1.0.11 — 2026-10-11
+
+### Added — Headless explorer support
+
+- **`GET /graph/visual-config`** — new read-only REST route returning the
+  explorer's display + theme config (`visual` tokens, presets, height,
+  node budget) so headless surfaces (the standalone NV oOS Pro SPA) can
+  render the explorer without the PHP settings page.
+- **Assistant credential (bearer) authentication** — read routes
+  (`/graph`, `/nodes`, `/nodes/{id}`, `/edges`, `/search`, `/retrieve`,
+  `/resolve`, `/graph/visual-config`) now accept NV oOS assistant
+  credentials (`Authorization: Bearer cred_XXXXX.SECRET`, or the raw
+  credential header form) in addition to logged-in users and guest
+  tokens. Write routes stay `manage_options`-only, so a credential can
+  never rebuild, export, or mutate remote sources. Standalone installs
+  (no base plugin) are unaffected — the check is guarded by
+  `class_exists()`.
+- Tests: bearer read/reject/raw-header cases, credential-vs-build
+  boundary, and visual-config route coverage in `RestApiTest`.
+
+## 1.0.10 — 2026-10-09
+
+### Fixed — Excluded sources stayed in the graph; opt-in CPTs were never captured
+
+- **Excluded CCTs are now actually removed** — excluding a JetEngine Custom
+  Content Type on the Sources tab stopped *detecting* it but left every
+  previously indexed `cct_*` node (and its edges) in the graph, because
+  builds only ever upserted. Builds now prune nodes and edges of excluded
+  post types and CCTs (with a `post_id > 0` guard so term/user/memory/agent
+  nodes can never be touched), so un-checking a source removes it on the
+  next Rebuild Graph (or scheduled) run.
+- **Opt-in CPTs are now captured** — post detection queried only the fixed
+  `post_types` list (`post`, `page`) and silently ignored the Sources tab's
+  `extra_post_types` / `excluded_post_types` choices, so CPTs created by
+  JetEngine (or any other plugin) were never indexed even when checked.
+  Detection now merges `extra_post_types`, drops `excluded_post_types`, and
+  honors the `nvoos_content_graph_indexed_post_types` filter.
+- **Auto-rebuild respects exclusions** — saving a post of an excluded post
+  type no longer re-adds its node to the graph.
+- Tests: `PostTypeIndexingTest` (opt-in capture, exclusion, filter override,
+  detectPosts), `DbTest` prune cases, and `BuilderPruneTest` integration
+  coverage for CCT and CPT prune-on-rebuild.
+
+## 1.0.9 — 2026-10-08
+
+### Added — Purchase modal polish (loading state + free option)
+
+- **Loading indicator** — the pay area now shows a "Loading secure
+  payment form…" spinner the moment the modal opens, until Stripe's
+  Payment Element mounts, so slower sites no longer present an empty card
+  slot while Stripe.js loads and the session round-trip completes. The
+  placeholder is cleared on mount and on every error path.
+- **Free base-version link** — the modal footer now offers "Get the free
+  NV oOS base version — no payment required", linking to the latest free
+  base release ZIP (override via
+  `nvoos_content_graph/payments/base_version_url`; an empty value hides
+  the link). The link disappears once the buyer commits and never shows
+  on the success screen.
+- **Development-status note** — a muted line under the "What you get"
+  block states that NV oOS is still in active development and testing,
+  and restates the 30-day money-back guarantee, so buyers see both facts
+  before paying.
 
 ### Fixed — Remote source drivers misconfigured or broken
 

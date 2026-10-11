@@ -245,25 +245,57 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Permission check: list approvals requires manage_options.
+	 * Permission check: list approvals requires manage_options or a valid
+	 * assistant credential (scoped to the credential's assistant).
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return new WP_Error(
-				'rest_forbidden',
-				__( 'You do not have permission to view the approval queue.', 'mcp-ai-wpoos' ),
-				array( 'status' => rest_authorization_required_code() )
-			);
+		if ( current_user_can( 'manage_options' ) ) {
+			return true;
 		}
-		return true;
+
+		// Assistant credentials (bearer) authenticate the queue reader without
+		// a WordPress user.  Scope the listing to the assistant the credential
+		// was issued for so a credential can never enumerate other assistants'
+		// approvals.
+		$credential = $this->get_request_credential( $request );
+		if ( null !== $credential ) {
+			if ( is_wp_error( $credential ) ) {
+				return $credential;
+			}
+
+			$credential_assistant = absint( isset( $credential['assistant_id'] ) ? $credential['assistant_id'] : 0 );
+			$requested_assistant  = absint( $request->get_param( 'assistant_id' ) );
+
+			if ( $credential_assistant && $requested_assistant && $requested_assistant !== $credential_assistant ) {
+				return new WP_Error(
+					'rest_forbidden',
+					__( 'This credential cannot view approvals for that assistant.', 'mcp-ai-wpoos' ),
+					array( 'status' => rest_authorization_required_code() )
+				);
+			}
+
+			// Default the listing scope to the credential's own assistant.
+			if ( $credential_assistant && ! $requested_assistant ) {
+				$request->set_param( 'assistant_id', $credential_assistant );
+			}
+
+			return true;
+		}
+
+		return new WP_Error(
+			'rest_forbidden',
+			__( 'You do not have permission to view the approval queue.', 'mcp-ai-wpoos' ),
+			array( 'status' => rest_authorization_required_code() )
+		);
 	}
 
 	/**
 	 * Permission check: reading a single approval.
-	 * Admin OR the original requester can read their own approval.
+	 * Admin, the original requester, or the assistant credential the approval
+	 * was raised for can read it.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return bool|WP_Error
@@ -271,6 +303,23 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	public function get_item_permissions_check( $request ) {
 		if ( current_user_can( 'manage_options' ) ) {
 			return true;
+		}
+
+		// Assistant credentials can read approvals raised for the assistant
+		// they were issued for.
+		$credential = $this->get_request_credential( $request );
+		if ( null !== $credential ) {
+			if ( is_wp_error( $credential ) ) {
+				return $credential;
+			}
+
+			$credential_assistant = absint( isset( $credential['assistant_id'] ) ? $credential['assistant_id'] : 0 );
+			$queue                = WP_MCP_AI_Approval_Queue::get_instance();
+			$record               = $queue->get( (int) $request['id'] );
+
+			if ( $credential_assistant && $record && $credential_assistant === (int) $record['assistant_id'] ) {
+				return true;
+			}
 		}
 
 		// Check if current user is the requester.
@@ -290,6 +339,10 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	/**
 	 * Permission check: resolve (approve/deny) requires manage_options.
 	 *
+	 * Assistant credentials are deliberately NOT granted resolve rights:
+	 * they are query-only for the approvals they raised, so the human-in-the
+	 * loop gate cannot be bypassed with a leaked credential.
+	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return bool|WP_Error
 	 */
@@ -302,5 +355,36 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 			);
 		}
 		return true;
+	}
+
+	/**
+	 * Resolve a valid assistant credential from the request, if present.
+	 *
+	 * Mirrors the main REST layer's credential handling: the token may arrive
+	 * as "Authorization: Bearer cred_xxxxx.SECRET" or as a raw credential
+	 * header.  Returns the credential metadata on success, a WP_Error for a
+	 * rejected credential, or null when no credential is presented.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return array|WP_Error|null
+	 */
+	private function get_request_credential( $request ) {
+		$header = $request->get_header( 'Authorization' );
+
+		$token = '';
+		if ( ! empty( $header ) && preg_match( '/^Bearer\s+(.*)$/i', $header, $matches ) ) {
+			$token = trim( $matches[1] );
+		} elseif ( ! empty( $header ) ) {
+			$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
+			if ( $accept_raw_credential ) {
+				$token = trim( $header );
+			}
+		}
+
+		if ( '' === $token || ! WP_MCP_AI_Credentials::is_token_format( $token ) ) {
+			return null;
+		}
+
+		return WP_MCP_AI_Credentials::validate_token( $token, absint( $request->get_param( 'assistant_id' ) ) );
 	}
 }

@@ -112,12 +112,13 @@ class Test_Docs_Hub_Rebuild_Job extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that updating an NV-oOS plugin clears the cache AND enqueues
-	 * an async rebuild.
+	 * Test that updating an NV-oOS plugin KEEPS the live cache and enqueues
+	 * an async rebuild (the rebuild promotes over the live cache when it
+	 * completes, so readers never see an empty index).
 	 *
 	 * @return void
 	 */
-	public function test_handle_upgrade_clears_and_rebuilds_for_nvoos_plugin() {
+	public function test_handle_upgrade_keeps_live_cache_and_enqueues_rebuild() {
 		$cache    = new NV_oOS_Docs_Hub_Cache();
 		$manifest = array(
 			'version'     => '0.0.1-stale',
@@ -133,8 +134,10 @@ class Test_Docs_Hub_Rebuild_Job extends WP_UnitTestCase {
 			)
 		);
 
-		// The stale manifest must be gone (cache cleared).
-		$this->assertFalse( ( new NV_oOS_Docs_Hub_Cache() )->get_manifest() );
+		// The stale manifest must still be served while the rebuild runs.
+		$reloaded = ( new NV_oOS_Docs_Hub_Cache() )->get_manifest();
+		$this->assertIsArray( $reloaded );
+		$this->assertEquals( 7, $reloaded['total_pages'] );
 
 		// And a chunked rebuild must have been enqueued (the enqueue call
 		// runs the cheap scan phase synchronously).
@@ -162,8 +165,8 @@ class Test_Docs_Hub_Rebuild_Job extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test the base plugin updater notice clears and rebuilds for the
-	 * base plugin, and ignores unrelated basenames.
+	 * Test the base plugin updater notice keeps the live cache and rebuilds
+	 * for the base plugin, and ignores unrelated basenames.
 	 *
 	 * @return void
 	 */
@@ -182,7 +185,9 @@ class Test_Docs_Hub_Rebuild_Job extends WP_UnitTestCase {
 		$this->assertIsArray( $cache->get_manifest() );
 
 		NV_oOS_Docs_Hub_Rebuild_Job::handle_plugin_update_notice( 'mcp-ai-wpoos/mcp-ai-wpoos.php' );
-		$this->assertFalse( ( new NV_oOS_Docs_Hub_Cache() )->get_manifest() );
+		$reloaded = ( new NV_oOS_Docs_Hub_Cache() )->get_manifest();
+		$this->assertIsArray( $reloaded );
+		$this->assertEquals( 5, $reloaded['total_pages'] );
 		$this->assertTrue( NV_oOS_Docs_Hub_Rebuild_State::is_running() );
 	}
 
@@ -208,8 +213,10 @@ class Test_Docs_Hub_Rebuild_Job extends WP_UnitTestCase {
 
 		NV_oOS_Docs_Hub_Plugin::maybe_rebuild_after_version_change();
 
-		// Stale manifest cleared, rebuild enqueued.
-		$this->assertFalse( ( new NV_oOS_Docs_Hub_Cache() )->get_manifest() );
+		// The stale manifest keeps serving while the rebuild is enqueued.
+		$reloaded = ( new NV_oOS_Docs_Hub_Cache() )->get_manifest();
+		$this->assertIsArray( $reloaded );
+		$this->assertEquals( '0.0.0-old', $reloaded['version'] );
 		$this->assertTrue( NV_oOS_Docs_Hub_Rebuild_State::is_running() );
 
 		// A manifest built against the current versions must be kept.
@@ -277,12 +284,12 @@ class Test_Docs_Hub_Rebuild_Job extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that deactivating another docs-related plugin clears the cache
-	 * and enqueues a rebuild, as before.
+	 * Test that deactivating another docs-related plugin keeps the live
+	 * cache and enqueues a rebuild, as before.
 	 *
 	 * @return void
 	 */
-	public function test_plugin_deactivated_related_plugin_clears_and_enqueues() {
+	public function test_plugin_deactivated_related_plugin_keeps_cache_and_enqueues() {
 		$cache = new NV_oOS_Docs_Hub_Cache();
 		$this->assertTrue(
 			$cache->set_manifest(
@@ -295,7 +302,44 @@ class Test_Docs_Hub_Rebuild_Job extends WP_UnitTestCase {
 
 		NV_oOS_Docs_Hub_Plugin::on_plugin_deactivated( 'mcp-ai-wpoos/mcp-ai-wpoos.php' );
 
-		$this->assertFalse( ( new NV_oOS_Docs_Hub_Cache() )->get_manifest() );
+		$reloaded = ( new NV_oOS_Docs_Hub_Cache() )->get_manifest();
+		$this->assertIsArray( $reloaded );
+		$this->assertEquals( 4, $reloaded['total_pages'] );
+		$this->assertTrue( NV_oOS_Docs_Hub_Rebuild_State::is_running() );
+	}
+
+	/**
+	 * Test that saving index-affecting settings keeps the live cache and
+	 * enqueues an async rebuild — a save must never wipe the index.
+	 *
+	 * @return void
+	 */
+	public function test_settings_change_keeps_live_cache_and_enqueues_rebuild() {
+		NV_oOS_Docs_Hub_Plugin::init();
+
+		$cache = new NV_oOS_Docs_Hub_Cache();
+		$this->assertTrue(
+			$cache->set_manifest(
+				array(
+					'version'     => NVOOS_DOCS_HUB_VERSION,
+					'total_pages' => 9,
+				)
+			)
+		);
+
+		// Seed the option so update_option() takes the update path — a
+		// brand-new option is stored via add_option(), which fires
+		// add_option_* instead of update_option_* (matching the real save
+		// flow, where the option already exists from a previous save).
+		add_option( NV_oOS_Docs_Hub_Plugin::OPTION_KEY, array() );
+		update_option(
+			NV_oOS_Docs_Hub_Plugin::OPTION_KEY,
+			array( 'sources' => array( 'base', 'addons' ) )
+		);
+
+		$reloaded = ( new NV_oOS_Docs_Hub_Cache() )->get_manifest();
+		$this->assertIsArray( $reloaded );
+		$this->assertEquals( 9, $reloaded['total_pages'] );
 		$this->assertTrue( NV_oOS_Docs_Hub_Rebuild_State::is_running() );
 	}
 }

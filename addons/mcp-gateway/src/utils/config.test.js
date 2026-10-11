@@ -1,95 +1,67 @@
 /**
- * Config parser tests.
+ * Tests for the OAuth configuration parsing (config.js).
  */
 
 import { test } from 'node:test';
-import assert from 'node:assert';
-import { loadConfig, assertConfig, parseKeyMap, envSuffix } from './config.js';
+import assert from 'node:assert/strict';
+import { loadConfig, parseOAuthConfig, normalizeIssuer, issuerUrl } from './config.js';
 
-const KEY = 'key-1234567890abcdef';
-const GOOD_ENV = {
-	GATEWAY_PUBLIC_KEYS: `${ KEY }=site-a`,
-	NVOOS_SITE_SITE_A_URL: 'https://example.com/wp-json/mcp-ai/v1/mcp',
-	NVOOS_SITE_SITE_A_TOKEN: 'op_test.SECRET',
-};
-
-test( 'parseKeyMap accepts the key=slugs form', () => {
-	const map = parseKeyMap( 'k1=a,b; k2=c ' );
-	assert.deepStrictEqual( [ ...map ], [
-		[ 'k1', [ 'a', 'b' ] ],
-		[ 'k2', [ 'c' ] ],
-	] );
+test( 'OAuth is inert when GATEWAY_OAUTH_ISSUER is unset', () => {
+	const cfg = loadConfig( { AUTH_MODE: 'open' } );
+	assert.equal( cfg.oauth.enabled, false );
+	assert.equal( cfg.oauth.resource, 'https://mcp.nvoos.pro' );
+	assert.deepEqual( cfg.errors, [] );
 } );
 
-test( 'parseKeyMap accepts the JSON object form', () => {
-	const map = parseKeyMap( '{"k1":["a","b"],"k2":"c"}' );
-	assert.deepStrictEqual( [ ...map ], [
-		[ 'k1', [ 'a', 'b' ] ],
-		[ 'k2', [ 'c' ] ],
-	] );
+test( 'normalizeIssuer strips whitespace and keeps one trailing slash', () => {
+	assert.equal( normalizeIssuer( '  https://auth.example.com/  ' ), 'https://auth.example.com/' );
+	assert.equal( normalizeIssuer( 'https://auth.example.com' ), 'https://auth.example.com/' );
+	assert.equal( normalizeIssuer( '' ), '/' );
 } );
 
-test( 'parseKeyMap returns null for empty or malformed input', () => {
-	assert.strictEqual( parseKeyMap( '' ), null );
-	assert.strictEqual( parseKeyMap( '   ' ), null );
-	assert.strictEqual( parseKeyMap( 'no-equals-here' ), null );
+test( 'issuerUrl joins without doubled slashes', () => {
+	assert.equal( issuerUrl( 'https://auth.example.com/', '.well-known/jwks.json' ), 'https://auth.example.com/.well-known/jwks.json' );
 } );
 
-test( 'envSuffix uppercases and swaps hyphens for underscores', () => {
-	assert.strictEqual( envSuffix( 'site-a' ), 'SITE_A' );
-	assert.strictEqual( envSuffix( 'my-site-2' ), 'MY_SITE_2' );
+test( 'a configured issuer derives the default JWKS URI and enables OAuth', () => {
+	const cfg = loadConfig( { GATEWAY_OAUTH_ISSUER: 'https://auth.example.com' } );
+	assert.equal( cfg.oauth.enabled, true );
+	assert.equal( cfg.oauth.issuer, 'https://auth.example.com/' );
+	assert.equal( cfg.oauth.jwksUri, 'https://auth.example.com/.well-known/jwks.json' );
+	assert.equal( cfg.oauth.resource, 'https://mcp.nvoos.pro' );
 } );
 
-test( 'loadConfig resolves a valid single-site configuration', () => {
-	const cfg = loadConfig( GOOD_ENV );
-	assert.deepStrictEqual( cfg.errors, [] );
-	assert.strictEqual( cfg.keys.size, 1 );
-	assert.deepStrictEqual( cfg.keys.get( KEY ), [ 'site-a' ] );
-	assert.strictEqual( cfg.sites.get( 'site-a' ).token, 'op_test.SECRET' );
-} );
-
-test( 'loadConfig separates previous keys into their own map', () => {
+test( 'GATEWAY_OAUTH_JWKS_URI and GATEWAY_OAUTH_RESOURCE override the defaults', () => {
 	const cfg = loadConfig( {
-		...GOOD_ENV,
-		GATEWAY_PUBLIC_KEYS_PREVIOUS: 'old-key-1234567890=site-a',
+		AUTH_MODE: 'open',
+		GATEWAY_OAUTH_ISSUER: 'https://auth.example.com/',
+		GATEWAY_OAUTH_JWKS_URI: 'https://keys.example.com/jwks',
+		GATEWAY_OAUTH_RESOURCE: 'https://mcp.example.org',
 	} );
-	assert.strictEqual( cfg.previousKeys.size, 1 );
-	assert.strictEqual( cfg.keys.size, 1 );
+	assert.equal( cfg.oauth.jwksUri, 'https://keys.example.com/jwks' );
+	assert.equal( cfg.oauth.resource, 'https://mcp.example.org' );
+	assert.deepEqual( cfg.errors, [] );
 } );
 
-test( 'loadConfig reports a missing site token', () => {
-	const cfg = loadConfig( {
-		GATEWAY_PUBLIC_KEYS: `${ KEY }=site-a`,
-		NVOOS_SITE_SITE_A_URL: 'https://example.com/wp-json/mcp-ai/v1/mcp',
-	} );
-	assert.ok( cfg.errors.some( ( e ) => e.includes( 'NVOOS_SITE_SITE_A_TOKEN' ) ) );
+test( 'invalid OAuth URLs are collected as config errors', () => {
+	const errors = [];
+	parseOAuthConfig( { GATEWAY_OAUTH_ISSUER: 'not a url' }, errors );
+	// The garbage issuer also invalidates the derived JWKS URI.
+	assert.equal( errors.length, 2 );
+	assert.match( errors[ 0 ], /GATEWAY_OAUTH_ISSUER must be an absolute https URL/ );
+	assert.match( errors[ 1 ], /GATEWAY_OAUTH_JWKS_URI must be an absolute https URL/ );
+
+	const errors2 = [];
+	parseOAuthConfig(
+		{ GATEWAY_OAUTH_ISSUER: 'https://auth.example.com/', GATEWAY_OAUTH_RESOURCE: 'http://insecure.example' },
+		errors2
+	);
+	assert.equal( errors2.length, 1 );
+	assert.match( errors2[ 0 ], /GATEWAY_OAUTH_RESOURCE must be an absolute https URL/ );
 } );
 
-test( 'loadConfig rejects invalid slugs and URLs', () => {
-	const cfg = loadConfig( {
-		GATEWAY_PUBLIC_KEYS: `${ KEY }=BAD SLUG!,site-b`,
-		NVOOS_SITE_BAD_SLUG__URL: 'https://example.com/x',
-		NVOOS_SITE_BAD_SLUG__TOKEN: 'op_test.SECRET',
-		NVOOS_SITE_SITE_B_URL: 'not-a-url',
-		NVOOS_SITE_SITE_B_TOKEN: 'op_test.SECRET',
-	} );
-	assert.ok( cfg.errors.some( ( e ) => e.includes( 'BAD SLUG!' ) ) );
-	assert.ok( cfg.errors.some( ( e ) => e.includes( 'invalid upstream URL' ) ) );
-} );
-
-test( 'loadConfig rejects keys referencing unknown sites', () => {
-	const cfg = loadConfig( {
-		GATEWAY_PUBLIC_KEYS: `${ KEY }=ghost-site`,
-	} );
-	assert.ok( cfg.errors.some( ( e ) => e.includes( 'ghost-site' ) ) );
-} );
-
-test( 'loadConfig fails closed with no keys in strict mode', () => {
-	const cfg = loadConfig( { NVOOS_SITE_SITE_A_URL: 'https://example.com' } );
-	assert.ok( cfg.errors.some( ( e ) => e.includes( 'GATEWAY_PUBLIC_KEYS' ) ) );
-} );
-
-test( 'assertConfig throws with all errors joined', () => {
-	const cfg = loadConfig( {} );
-	assert.throws( () => assertConfig( cfg ), /\[config\]/ );
+test( 'loadConfig carries OAuth errors through to assert-time', () => {
+	const cfg = loadConfig( { GATEWAY_OAUTH_ISSUER: 'garbage' } );
+	assert.equal( cfg.oauth.enabled, true, 'parsing continues but the error blocks boot' );
+	assert.ok( cfg.errors.some( ( error ) => error.includes( 'GATEWAY_OAUTH_ISSUER' ) ) );
 } );

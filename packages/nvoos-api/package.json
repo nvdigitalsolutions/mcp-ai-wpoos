@@ -4,6 +4,7 @@
   "description": "Typed REST API client for NV Open Operator System (oOS) — endpoint builders, request helpers, and payload constructors with full TypeScript definitions",
   "main": "dist/nvoos-api.js",
   "module": "dist/nvoos-api.js",
+  "type": "module",
   "types": "dist/nvoos-api.d.ts",
   "exports": {
     ".": {
@@ -45,7 +46,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",
     "clean": "rm -rf dist"
   },

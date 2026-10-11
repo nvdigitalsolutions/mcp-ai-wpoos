@@ -4,6 +4,7 @@
   "description": "Floating chat bubble widget with accessibility, sessionStorage persistence, badge notifications, and MutationObserver auto-discovery — extracted from NV Open Operator System",
   "main": "dist/nvoos-chat-bubble.js",
   "module": "dist/nvoos-chat-bubble.js",
+  "type": "module",
   "types": "dist/nvoos-chat-bubble.d.ts",
   "exports": {
     ".": { "import": "./dist/nvoos-chat-bubble.js", "default": "./dist/nvoos-chat-bubble.js" }
@@ -13,7 +14,7 @@
   "files": ["dist", "README.md", "LICENSE"],
   "publishConfig": { "access": "public" },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo ok && exit 0",
     "clean": "rm -rf dist"
   },

@@ -37,7 +37,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		const GMAIL_OAUTH_AUTHORIZE_ENDPOINT        = 'https://accounts.google.com/o/oauth2/v2/auth';
 		const GMAIL_OAUTH_TOKEN_ENDPOINT            = 'https://oauth2.googleapis.com/token';
 		const GMAIL_PROFILE_ENDPOINT                = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
-		const GOOGLE_DRIVE_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly';
+		const GOOGLE_DRIVE_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/drive.file'; // Non-sensitive default; filterable via wp_mcp_ai_google_drive_oauth_scope.
 		const GOOGLE_DRIVE_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 		const GOOGLE_DRIVE_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 

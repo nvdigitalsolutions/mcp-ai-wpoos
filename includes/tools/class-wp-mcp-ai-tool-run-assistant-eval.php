@@ -152,6 +152,7 @@ class WP_MCP_AI_Tool_Run_Assistant_Eval implements WP_MCP_AI_Tool_Interface, WP_
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // No local state changes.
+			'requires-capability',  // manage_options-gated evaluation.
 			'no-user-data-access',  // Scores supplied traces only.
 			'stateless',            // No persistence between calls.
 		);

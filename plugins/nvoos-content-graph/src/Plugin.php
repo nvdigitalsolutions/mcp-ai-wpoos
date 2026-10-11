@@ -93,7 +93,12 @@ final class Plugin {
 		add_action( 'nvoos_content_graph/initial_build', array( $this, 'runInitialBuild' ) );
 
 		// Keep the recurring rebuild event in sync with the saved schedule.
-		$this->syncRebuildSchedule();
+		// Deferred to `init`: scheduling on plugins_loaded would call
+		// wp_get_schedules(), which applies the `cron_schedules` filter
+		// before translations load on WP 6.7+ — with WooCommerce active
+		// that filter registers a translated interval and triggers the
+		// "translation loading triggered too early" notice.
+		add_action( 'init', array( $this, 'syncRebuildSchedule' ) );
 		add_action(
 			'update_option_' . Schema::OPTION_SETTINGS,
 			static function (): void {
@@ -356,6 +361,16 @@ final class Plugin {
 		}
 		if ( 'publish' !== $post->post_status ) {
 			return;
+		}
+
+		// Respect the Sources tab: posts of excluded / opt-out post types
+		// must not be indexed on save (they would immediately contradict
+		// the exclusion until the next full build prunes them).
+		if ( class_exists( 'NvoosContentGraph\Graph\Detector' ) ) {
+			$indexed = \NvoosContentGraph\Graph\Detector::getIndexedPostTypes();
+			if ( ! in_array( $post->post_type, $indexed, true ) ) {
+				return;
+			}
 		}
 
 		if ( class_exists( 'NvoosContentGraph\Graph\Builder' ) ) {

@@ -2,7 +2,7 @@
  * PropertyPanel — right sidebar for editing selected node properties.
  */
 
-import type { Node } from 'reactflow';
+import type { Node } from '@xyflow/react';
 
 interface PropertyPanelProps {
   node: Node | null;
@@ -38,8 +38,9 @@ export function PropertyPanel({ node, onUpdate, onDelete }: PropertyPanelProps) 
           <>
             {/* Tool slug (read-only) */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Tool</label>
+              <label htmlFor="sa-node-tool-slug" className="block text-xs font-medium text-gray-500 mb-1">Tool</label>
               <input
+                id="sa-node-tool-slug"
                 type="text"
                 value={(data.toolSlug as string) || ''}
                 readOnly
@@ -49,8 +50,9 @@ export function PropertyPanel({ node, onUpdate, onDelete }: PropertyPanelProps) 
 
             {/* Label */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Label</label>
+              <label htmlFor="sa-node-tool-label" className="block text-xs font-medium text-gray-500 mb-1">Label</label>
               <input
+                id="sa-node-tool-label"
                 type="text"
                 value={(data.label as string) || ''}
                 onChange={(e) => onUpdate({ label: e.target.value })}
@@ -61,10 +63,11 @@ export function PropertyPanel({ node, onUpdate, onDelete }: PropertyPanelProps) 
 
             {/* Arguments (JSON) */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
+              <label htmlFor="sa-node-tool-args" className="block text-xs font-medium text-gray-500 mb-1">
                 Arguments (JSON)
               </label>
               <textarea
+                id="sa-node-tool-args"
                 value={JSON.stringify(data.arguments || {}, null, 2)}
                 onChange={(e) => {
                   try {
@@ -83,8 +86,9 @@ export function PropertyPanel({ node, onUpdate, onDelete }: PropertyPanelProps) 
           <>
             {/* Trigger type */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Trigger Type</label>
+              <label htmlFor="sa-node-trigger-type" className="block text-xs font-medium text-gray-500 mb-1">Trigger Type</label>
               <input
+                id="sa-node-trigger-type"
                 type="text"
                 value={(data.triggerType as string) || 'cron'}
                 readOnly
@@ -94,8 +98,9 @@ export function PropertyPanel({ node, onUpdate, onDelete }: PropertyPanelProps) 
 
             {/* Schedule interval */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Interval</label>
+              <label htmlFor="sa-node-trigger-schedule" className="block text-xs font-medium text-gray-500 mb-1">Interval</label>
               <input
+                id="sa-node-trigger-schedule"
                 type="text"
                 value={(data.schedule as string) || ''}
                 onChange={(e) => onUpdate({ schedule: e.target.value })}
@@ -105,8 +110,9 @@ export function PropertyPanel({ node, onUpdate, onDelete }: PropertyPanelProps) 
 
             {/* Label */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Label</label>
+              <label htmlFor="sa-node-trigger-label" className="block text-xs font-medium text-gray-500 mb-1">Label</label>
               <input
+                id="sa-node-trigger-label"
                 type="text"
                 value={(data.label as string) || ''}
                 onChange={(e) => onUpdate({ label: e.target.value })}

@@ -1,6 +1,7 @@
 {
 	"name": "@nvdigitalsolutions/nvoos-mcp-bridge",
 	"version": "0.1.0-alpha.3",
+	"mcpName": "io.github.nvdigitalsolutions/nvoos-mcp-bridge",
 	"description": "Zero-dependency MCP stdio↔HTTP relay for NV oOS (Open Operator System) WordPress sites. Connect Zed, Claude Desktop, Cursor, and Codex to any NV oOS site over HTTPS or SSH.",
 	"keywords": [
 		"mcp",

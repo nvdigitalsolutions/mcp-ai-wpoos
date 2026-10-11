@@ -383,6 +383,10 @@
 		stopMonitoring: function (containerId) {
 			this.stopSSE(containerId);
 			this.stopFallbackPolling(containerId);
+			// Drop cached entries too, so repeated container re-inits don't
+			// grow the cache maps with dead container IDs.
+			delete this.cache[containerId];
+			delete this.cacheTimestamps[containerId];
 		},
 
 		/**

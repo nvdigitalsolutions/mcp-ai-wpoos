@@ -675,7 +675,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						</div>
 						<div class="wp-mcp-ai-sm-form-group" id="sm-notify-email-wrap" style="display:none;">
 							<label for="sm-notify-email"><?php esc_html_e( 'Notification Email', 'mcp-ai-wpoos-pro' ); ?></label>
-							<input type="email" id="sm-notify-email" class="regular-text" value="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>">
+							<input type="text" id="sm-notify-email" class="regular-text" value="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>">
+							<p class="description"><?php esc_html_e( 'Comma-separate multiple recipients.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</div>
 					</div>
 					<!-- Row: Channel notifications -->

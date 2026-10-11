@@ -439,6 +439,24 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		 * Implements OAuth flow for base version's single Google Drive connection.
 		 * Uses The PHP League OAuth2 Client library for standardized OAuth flow.
 		 */
+		/**
+		 * Get the Google Drive OAuth scopes for authorization requests.
+		 *
+		 * Defaults to the non-sensitive per-file scope (`drive.file`), which
+		 * lets the app see files it created or the user opened with it and
+		 * requires no Google OAuth app verification. Sites whose verified
+		 * Google Cloud project retains full-Drive access can restore the
+		 * broader restricted scopes via the
+		 * `wp_mcp_ai_google_drive_oauth_scope` filter.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return string Space-delimited OAuth scope list.
+		 */
+		public static function get_google_drive_scopes() {
+			return apply_filters( 'wp_mcp_ai_google_drive_oauth_scope', WP_MCP_AI_Admin_Settings::GOOGLE_DRIVE_OAUTH_SCOPE );
+		}
+
 		public function handle_google_drive_oauth_start() {
 			// Check nonce for security.
 			if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wp_mcp_ai_google_drive_oauth_start' ) ) {
@@ -494,8 +512,8 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				$base_url
 			);
 
-			// Google Drive scopes.
-			$scopes = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly';
+			// Google Drive scopes (defaults to the non-sensitive drive.file scope).
+			$scopes = self::get_google_drive_scopes();
 
 			// Use The PHP League OAuth2 Client if available for standardized OAuth URL generation.
 			if ( class_exists( '\League\OAuth2\Client\Provider\GenericProvider' ) ) {
@@ -623,7 +641,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 							'urlAuthorize'            => 'https://accounts.google.com/o/oauth2/v2/auth',
 							'urlAccessToken'          => 'https://oauth2.googleapis.com/token',
 							'urlResourceOwnerDetails' => 'https://www.googleapis.com/oauth2/v1/userinfo',
-							'scopes'                  => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly',
+							'scopes'                  => self::get_google_drive_scopes(),
 						)
 					);
 
@@ -924,7 +942,8 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		/**
 		 * Handle disconnecting from Gmail.
 		 *
-		 * Clears the OAuth refresh token and user email from settings.
+		 * Revokes the token upstream (best effort), then clears the OAuth
+		 * refresh token and user email from settings.
 		 * Credentials (Client ID, Client Secret) are preserved for future reconnection.
 		 *
 		 * @since 1.0.0
@@ -937,6 +956,15 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			check_admin_referer( 'wp_mcp_ai_gmail_disconnect' );
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$token    = isset( $settings['gmail_refresh_token'] ) ? (string) $settings['gmail_refresh_token'] : '';
+
+			// Best-effort upstream revocation (Google API Services User Data
+			// Policy deletion requirement). Failure is non-fatal: local
+			// credentials must be cleared regardless.
+			if ( '' !== $token ) {
+				$this->require_google_services();
+				WP_MCP_AI_Google_OAuth_Service::revoke( $token );
+			}
 
 			// Clear OAuth tokens (but keep Client ID and Client Secret for reconnection).
 			unset( $settings['gmail_refresh_token'] );
@@ -962,7 +990,8 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		/**
 		 * Handle disconnecting from Google Drive.
 		 *
-		 * Clears the OAuth refresh token and user email from settings.
+		 * Revokes the token upstream (best effort), then clears the OAuth
+		 * refresh token and user email from settings.
 		 * Credentials (Client ID, Client Secret) are preserved for future reconnection.
 		 *
 		 * @since 1.0.0
@@ -975,6 +1004,15 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			check_admin_referer( 'wp_mcp_ai_google_drive_disconnect' );
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$token    = isset( $settings['google_drive_refresh_token'] ) ? (string) $settings['google_drive_refresh_token'] : '';
+
+			// Best-effort upstream revocation (Google API Services User Data
+			// Policy deletion requirement). Failure is non-fatal: local
+			// credentials must be cleared regardless.
+			if ( '' !== $token ) {
+				$this->require_google_services();
+				WP_MCP_AI_Google_OAuth_Service::revoke( $token );
+			}
 
 			// Clear OAuth tokens (but keep Client ID and Client Secret for reconnection).
 			unset( $settings['google_drive_refresh_token'] );

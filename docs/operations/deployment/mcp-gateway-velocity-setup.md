@@ -87,6 +87,11 @@ Map keys to site slugs in `GATEWAY_PUBLIC_KEYS`
 ## 5. Monitoring & Alerts
 
 - Uptime check on `GET /health` (no auth, minimal data).
+- In-fleet option: the media worker's status module monitors the gateway as
+  a synthetic-only external target — `STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health`
+  plus `STATUS_GATEWAY_SYNTHETIC=1` (probes `/health` through the SSRF
+  guard; HMAC-signed webhook/email alerts on confirmed transitions; the
+  worker's public `/status` page needs `STATUS_PUBLIC_PAGE=1`).
 - Alert on 5xx spikes and on `429` counts (rate limiting misconfiguration
   shows up here first).
 - Watch logs for `[Auth]` warnings (previous-key use, short keys) and
@@ -99,14 +104,18 @@ Map keys to site slugs in `GATEWAY_PUBLIC_KEYS`
 Used when submitting to mcpservers.org, mcp.directory, pulsemcp, and the
 official MCP Registry:
 
-- [ ] Endpoint: `https://mcp.nvoos.pro/mcp` (streamable HTTP, GET + POST)
-- [ ] Auth: bearer API key in the `Authorization` header (state clearly)
-- [ ] Demo key: read-only operator allowlist; published in the listing
-- [ ] Example config (Claude Desktop + Zed via `nvoos-mcp-bridge`)
-- [ ] Landing page: `https://mcp.nvoos.pro/`
-- [ ] GitHub repo: `nvdigitalsolutions/nvoos-mcp-gateway` (public)
+- [x] Endpoint: `https://mcp.nvoos.pro/mcp` (streamable HTTP, GET + POST) — verified live 2026-10-07
+- [x] Auth: bearer API key in the `Authorization` header (state clearly)
+- [x] Demo key: read-only operator allowlist issued and bound to the `demo` site; publish the key value in each directory listing (never commit it to this repo)
+- [x] Example config (Claude Desktop + Zed via `nvoos-mcp-bridge`)
+- [x] Landing page: `https://mcp.nvoos.pro/`
+- [x] GitHub repo: `nvdigitalsolutions/nvoos-mcp-gateway` (public) — ships `LICENSE` (GPL-3.0-or-later) and a `license` field in `package.json`
 - [ ] Logo + one-line description (NV oOS branding)
 - [ ] Uptime monitor on `/health`
+- [ ] Demo tool that succeeds end-to-end: the `demo` key currently allowlists only `deep_research`, which needs a web-search provider key on the demo site — allowlist a self-contained read-only tool (e.g. `get_environment_status`) or configure a search provider before reviewers probe it
+
+See the ready-to-paste listing fields in
+[`mcp-gateway-directory-submission.md`](mcp-gateway-directory-submission.md).
 
 ## 7. Deployment Flow & Auto-Deploy
 
@@ -132,6 +141,25 @@ left Velocity's clone on stale commits and silently disabled auto-deploys.
 3. Verify the live build via the version marker: `/health` must report the
    version in `addons/mcp-gateway/package.json`, and
    `POST /mcp` → `initialize` must echo a negotiated `protocolVersion`.
+
+### If the sync workflow never ran after a merge
+
+1. Check the merge commit's **full message** — if the squash body absorbed a
+   CI-skip marker from any commit merged into the PR branch, GitHub skips
+   every workflow for that push (incident: the #6925 merge ran zero
+   workflows and the mirror never received `0.1.1`).
+2. Recover by merging a clean follow-up PR touching `addons/mcp-gateway/**`,
+   or dispatch manually (workflow_dispatch, added in 0.1.1):
+   `gh workflow run sync-mcp-gateway.yml --ref alpha-working`.
+
+### Sync safety rails (0.1.1)
+
+- The sync pushes **without `--force`** — the mirror main stays a linear
+  fast-forward line, which is what keeps auto-deploys firing.
+- The sync is **version-guarded**: a push whose incoming `package.json`
+  version is older than the mirror tip's is skipped with a notice, so stale
+  `main` promotions or out-of-order sync runs can never roll the public
+  endpoint backwards.
 
 ---
 

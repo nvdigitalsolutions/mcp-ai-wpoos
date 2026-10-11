@@ -1,0 +1,34 @@
+{
+  "name": "nvoos-vite-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Sample Vite app consuming the @nvdigitalsolutions/* NV oOS packages (extracted from the mcp-ai-wpoos plugin)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "@nvdigitalsolutions/nvoos-api": "^0.1.0-alpha.4",
+    "@nvdigitalsolutions/nvoos-attachments": "^0.1.0-alpha.3",
+    "@nvdigitalsolutions/nvoos-clipboard": "^0.1.0-alpha.3",
+    "@nvdigitalsolutions/nvoos-dom-batcher": "^0.1.0-alpha.3",
+    "@nvdigitalsolutions/nvoos-events": "^0.1.0-alpha.3",
+    "@nvdigitalsolutions/nvoos-markdown": "^0.1.0-alpha.3",
+    "@nvdigitalsolutions/nvoos-slash-commands": "^0.1.0-alpha.3",
+    "@nvdigitalsolutions/nvoos-storage": "^0.1.0-alpha.3",
+    "dompurify": "^3.1.6",
+    "marked": "^9.1.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.11"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

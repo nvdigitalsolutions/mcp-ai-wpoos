@@ -40,6 +40,12 @@ class WP_MCP_AI_REST_Assistants_Pagination_Fields_Test extends WP_UnitTestCase {
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
 
+		// Bootstrap before creating fixtures: the rest_api_init re-fire runs
+		// third-party DDL that commits the per-test transaction, leaking
+		// fixtures into later tests (same pattern as
+		// test-rest-assistant-directory.php; test-suite skill pattern #21).
+		$this->bootstrap_rest_controller();
+
 		// Create 5 published assistants so pagination tests have enough data.
 		for ( $i = 1; $i <= 5; $i++ ) {
 			$this->assistant_ids[] = wp_insert_post(
@@ -50,8 +56,6 @@ class WP_MCP_AI_REST_Assistants_Pagination_Fields_Test extends WP_UnitTestCase {
 				)
 			);
 		}
-
-		$this->bootstrap_rest_controller();
 	}
 
 	/**

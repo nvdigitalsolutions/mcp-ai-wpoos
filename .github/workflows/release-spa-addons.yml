@@ -1,0 +1,485 @@
+# Release SPA Addons
+#
+# Creates GitHub Releases for the seven SPA addons from pushed tags
+# (docs-hub-v0.5.3 → builds docs-hub, gates the docs-hub ZIP through the
+# WordPress.org Plugin Check job, and publishes the release at that tag).
+#
+# This workflow exists because build-spa-addons.yml cannot handle tag
+# pushes: its `on.push.paths` filter is ANDed with any `tags` filter, and
+# release tags normally point at build/-only commits whose diffs contain no
+# addon paths, so tag pushes never trigger it. This workflow has no paths
+# filter and therefore triggers on every matching tag push.
+#
+# Unlike the branch-push path there is deliberately NO publish-to-build/
+# job here: pushing the freshly built ZIPs back onto the tag ref would move
+# the tag to a build commit. build/ stays current via the branch-push
+# workflow; the release attaches the freshly built artifact directly.
+
+name: Release SPA Addons
+
+on:
+  push:
+    tags:
+      - 'chat-spa-v*.*.*'
+      - 'canvas-toolkit-v*.*.*'
+      - 'document-editor-v*.*.*'
+      - 'media-studio-v*.*.*'
+      - 'toolkit-shell-v*.*.*'
+      - 'docs-hub-v*.*.*'
+      - 'librechat-v*.*.*'
+  workflow_dispatch:
+    inputs:
+      addon:
+        description: 'Addon to build and release (omit to release all)'
+        required: false
+        type: choice
+        options:
+          - chat-spa
+          - canvas-toolkit
+          - document-editor
+          - media-studio
+          - toolkit-shell
+          - docs-hub
+          - librechat
+
+permissions:
+  contents: write
+
+jobs:
+  # ===========================================================================
+  # Determine which addon to build (tag push → the tagged addon;
+  # workflow_dispatch → the selected addon, or all).
+  # ===========================================================================
+  matrix-prep:
+    name: Prepare Build Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      addons: ${{ steps.set-matrix.outputs.addons }}
+    steps:
+      - name: Determine addon matrix
+        id: set-matrix
+        run: |
+          # If a specific addon was requested via workflow_dispatch
+          if [ -n "${{ inputs.addon }}" ]; then
+            echo 'addons=[{"slug":"${{ inputs.addon }}"}]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # If triggered by a tag, extract the addon slug
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            # Extract slug before "-v": "chat-spa-v0.6.0" → "chat-spa"
+            SLUG="${TAG%-v*}"
+            echo "addons=[{\"slug\":\"${SLUG}\"}]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Otherwise release all addons — use heredoc for multi-line JSON output.
+          {
+            echo 'addons<<ADDONS_EOF'
+            echo '[
+              {"slug":"chat-spa"},
+              {"slug":"canvas-toolkit"},
+              {"slug":"document-editor"},
+              {"slug":"media-studio"},
+              {"slug":"toolkit-shell"},
+              {"slug":"docs-hub"},
+              {"slug":"librechat"}
+            ]'
+            echo 'ADDONS_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+  # ===========================================================================
+  # Build the addon (parallel via matrix)
+  # ===========================================================================
+  build:
+    name: Build ${{ matrix.addon.slug }}
+    needs: matrix-prep
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false  # Don't cancel other addons if one fails
+      matrix:
+        addon: ${{ fromJSON(needs.matrix-prep.outputs.addons) }}
+
+    steps:
+      - name: Free disk space
+        run: |
+          echo "=== Before cleanup ==="
+          df -h
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/local/.ghcup /usr/local/share/powershell /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/node_modules /opt/pipx
+          sudo docker image prune -af || true
+          sudo docker system prune -af --volumes || true
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          echo "=== After cleanup ==="
+          df -h
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          ADDON="${{ matrix.addon.slug }}"
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            VERSION="${TAG#${ADDON}-v}"
+          else
+            # Read version from plugin header
+            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact=nvoos-${ADDON}-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: addons/${{ matrix.addon.slug }}
+        run: |
+          # Retry up to 3 times to handle transient network errors (ECONNRESET)
+          for i in 1 2 3; do
+            echo "📦 npm ci attempt $i/3..."
+            if npm ci --no-audit --no-fund --ignore-engines; then
+              echo "✅ npm ci succeeded on attempt $i"
+              exit 0
+            fi
+            echo "⚠️  npm ci attempt $i failed — retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ npm ci failed after 3 attempts"
+          exit 1
+
+      - name: Build assets (esbuild)
+        working-directory: addons/${{ matrix.addon.slug }}
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          ADDON="${{ matrix.addon.slug }}"
+          JS_BUNDLE="addons/${ADDON}/assets/dist/${ADDON}.js"
+          CSS_BUNDLE="addons/${ADDON}/assets/dist/${ADDON}.css"
+          if [ ! -f "$JS_BUNDLE" ]; then
+            echo "::error::JS bundle not found at $JS_BUNDLE"
+            exit 1
+          fi
+          JS_SIZE=$(du -h "$JS_BUNDLE" | cut -f1)
+          echo "✅ JS bundle present — $JS_SIZE"
+          if [ -f "$CSS_BUNDLE" ]; then
+            CSS_SIZE=$(du -h "$CSS_BUNDLE" | cut -f1)
+            echo "✅ CSS bundle present — $CSS_SIZE"
+          fi
+
+      - name: Assemble addon directory for ZIP
+        run: |
+          ADDON="${{ matrix.addon.slug }}"
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          mkdir -p "dist/${ARTIFACT}/nvoos-${ADDON}"
+
+          # Copy plugin source (exclude dev files)
+          EXCLUDES=(
+            --exclude='node_modules/'
+            --exclude='src/'
+            --exclude='tests/'
+            --exclude='package.json'
+            --exclude='package-lock.json'
+            --exclude='tsconfig.json'
+            --exclude='esbuild.config.cjs'
+            --exclude='esbuild.config.js'
+            --exclude='eslint.config.js'
+            --exclude='vitest.config.ts'
+            --exclude='.gitignore'
+            --exclude='.distignore'
+            --exclude='.DS_Store'
+            --exclude 'vendor/'
+            --exclude 'composer.json'
+            --exclude 'composer.lock'
+            --exclude 'docs/'
+            --exclude '.wordpress-org/'
+            --exclude 'blueprints/'
+          )
+
+          # WordPress.org zip: docs-hub ships only readme.txt — strip all
+          # Markdown (root README.md / CHANGELOG.md are dev-only docs).
+          if [ "${ADDON}" = "docs-hub" ]; then
+            EXCLUDES+=(--exclude='*.md')
+          fi
+
+          rsync -a "${EXCLUDES[@]}" \
+            "addons/${ADDON}/" "dist/${ARTIFACT}/nvoos-${ADDON}/"
+
+          echo "📁 Plugin directory contents:"
+          find "dist/${ARTIFACT}/nvoos-${ADDON}" -type f | sort
+
+      - name: Create ZIP
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          cd "dist/${ARTIFACT}"
+          zip -r "../../${ARTIFACT}.zip" "nvoos-${{ matrix.addon.slug }}/"
+          cd ../..
+          SIZE=$(du -sh "${ARTIFACT}.zip" | cut -f1)
+          echo "📦 ${ARTIFACT}.zip — ${SIZE}"
+
+      - name: Generate SHA-256 checksum
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          sha256sum "${ARTIFACT}.zip" > "${ARTIFACT}.zip.sha256"
+          cat "${ARTIFACT}.zip.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.artifact }}
+          path: |
+            ${{ steps.version.outputs.artifact }}.zip
+            ${{ steps.version.outputs.artifact }}.sha256
+          if-no-files-found: error
+
+  # ===========================================================================
+  # WordPress.org Plugin Check for the docs-hub ZIP.
+  #
+  # docs-hub is the only addon in this matrix that ships as a standalone
+  # wp.org plugin (own readme.txt/slug), so its ZIP gets the same
+  # `wp plugin check` gate the base plugin gets in release.yml. Any
+  # ERROR-severity finding fails this job; warnings are surfaced for
+  # triage. Runs whenever docs-hub is part of the build matrix.
+  # ===========================================================================
+  plugin-check:
+    name: Plugin Check (docs-hub)
+    needs: [matrix-prep, build]
+    runs-on: ubuntu-latest
+    if: contains(fromJSON(needs.matrix-prep.outputs.addons).*.slug, 'docs-hub')
+
+    # WordPress cannot boot without a database, and `wp plugin check` (and
+    # `wp plugin install`) load WordPress — so the PCP job needs a real
+    # MySQL. Same service recipe as the phpunit workflow.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_pluginchk
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      WP_DB_NAME: wordpress_pluginchk
+      WP_DB_USER: wordpress
+      WP_DB_PASSWORD: wordpress
+      WP_DB_HOST: 127.0.0.1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          ADDON="docs-hub"
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            VERSION="${TAG#${ADDON}-v}"
+          else
+            # Read version from plugin header.
+            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact=nvoos-${ADDON}-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Download built ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.artifact }}
+          path: artifacts/
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, mysqli, zip, dom, xml, curl
+          tools: composer:v2, wp-cli
+          coverage: none
+
+      # setup-php's wp-cli tool occasionally fails to install ("Could not
+      # setup wp-cli" — GitHub API hiccup), and the step does not fail the
+      # job, so later `wp` invocations die with exit 127. Install the phar
+      # directly as a deterministic fallback.
+      - name: Install WP-CLI (fallback)
+        run: |
+          if ! command -v wp >/dev/null 2>&1; then
+            curl -sSL https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp
+            chmod +x /usr/local/bin/wp
+          fi
+          wp --info --allow-root
+
+      - name: Bootstrap a temporary WordPress install
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/wp
+          cd /tmp/wp
+          wp core download --version=latest --skip-content --path=/tmp/wp
+          wp config create \
+            --dbname="${WP_DB_NAME}" \
+            --dbuser="${WP_DB_USER}" \
+            --dbpass="${WP_DB_PASSWORD}" \
+            --dbhost="${WP_DB_HOST}" \
+            --path=/tmp/wp
+          # Plugin Check runs runtime checks, so WordPress must actually boot.
+          # Install a minimal site against the mysql service container.
+          wp core install \
+            --url="http://127.0.0.1" \
+            --title="Plugin Check QA" \
+            --admin_user="admin" \
+            --admin_password="admin" \
+            --admin_email="admin@example.com" \
+            --skip-email \
+            --path=/tmp/wp
+
+      - name: Install Plugin Check (PCP) plugin
+        run: |
+          set -euo pipefail
+          # Must be ACTIVATED for the wp-cli command to register. (Passing
+          # --require=<plugin-check/plugin.php> loads PCP before WordPress
+          # boots and fatal-errors with undefined plugin_dir_path().)
+          wp plugin install plugin-check --activate --path=/tmp/wp
+
+      - name: Extract built ZIP into wp-content/plugins
+        run: |
+          set -euo pipefail
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          mkdir -p /tmp/wp/wp-content/plugins
+          unzip -q -o "artifacts/${ARTIFACT}.zip" -d /tmp/wp/wp-content/plugins/
+          ls /tmp/wp/wp-content/plugins/
+
+      - name: Run wp plugin-check (Errors gate the build)
+        id: pcp
+        run: |
+          set -euo pipefail
+          cd /tmp/wp
+          wp plugin check nvoos-docs-hub \
+            --path=/tmp/wp \
+            --format=json \
+            --severity=5 \
+            > /tmp/pcp-report.json 2>/tmp/pcp-stderr.log || PCP_EXIT=$?
+          PCP_EXIT="${PCP_EXIT:-0}"
+          echo "pcp_exit=${PCP_EXIT}" >> $GITHUB_OUTPUT
+
+          echo "::group::PCP raw stderr"
+          cat /tmp/pcp-stderr.log || true
+          echo "::endgroup::"
+
+          echo "::group::PCP raw report"
+          cat /tmp/pcp-report.json || true
+          echo "::endgroup::"
+
+          # Count Errors vs Warnings. The report is chunked per file, so
+          # slurp it into one array. OffloadedContent is a known false
+          # positive: it flags the literal raw.githubusercontent.com host
+          # strings used by the SSRF-hardened, host-allowlisted remote-docs
+          # fetcher (disclosed in readme.txt == External Services ==).
+          # Everything else gates.
+          #
+          # Known non-blocking WARNING: PrefixAllGlobals.NonPrefixedTraitFound
+          # on the WP_MCP_AI_Inline_Async_Tick_Trait stub in
+          # includes/jobs/class-nvoos-docs-hub-rebuild-pipeline.php. The stub
+          # deliberately carries the BASE plugin's trait name so the real
+          # trait can replace it when NV oOS is active (the pipeline class
+          # `use`s the trait unconditionally); the name cannot be prefixed
+          # without breaking that swap.
+          ERRORS=$(jq -s '[.[][] | select(.type=="ERROR" and .code!="PluginCheck.CodeAnalysis.Offloading.OffloadedContent")] | length' /tmp/pcp-report.json 2>/dev/null || echo 0)
+          WARNINGS=$(jq -s '[.[][] | select(.type=="WARNING")] | length' /tmp/pcp-report.json 2>/dev/null || echo 0)
+          echo "Plugin Check ERRORS=${ERRORS}, WARNINGS=${WARNINGS}"
+          {
+            echo "## WordPress.org Plugin Check (docs-hub)"
+            echo ""
+            echo "- **Errors:** ${ERRORS}"
+            echo "- **Warnings:** ${WARNINGS}"
+            echo ""
+            echo "Full report uploaded as artifact \`pcp-report-docs-hub\`."
+          } >> $GITHUB_STEP_SUMMARY
+
+          if [ "${ERRORS}" -gt 0 ]; then
+            echo "::error::Plugin Check reported ${ERRORS} error(s) — docs-hub release is blocked."
+            exit 1
+          fi
+
+      - name: Upload Plugin Check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pcp-report-docs-hub
+          path: |
+            /tmp/pcp-report.json
+            /tmp/pcp-stderr.log
+          if-no-files-found: warn
+          retention-days: 30
+
+  # ===========================================================================
+  # Create GitHub Releases (one per addon; tag pushes and dispatches alike).
+  # ===========================================================================
+  release:
+    name: Create GitHub Releases
+    needs: [matrix-prep, build, plugin-check]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        addon: ${{ fromJSON(needs.matrix-prep.outputs.addons) }}
+
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          ADDON="${{ matrix.addon.slug }}"
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+            VERSION="${TAG#${ADDON}-v}"
+          else
+            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nvoos-${{ matrix.addon.slug }}-v${{ steps.version.outputs.version }}
+          path: artifacts/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.addon.slug }}-v${{ steps.version.outputs.version }}
+          name: "NV oOS ${{ matrix.addon.slug }} Addon v${{ steps.version.outputs.version }}"
+          body: |
+            ## NV oOS ${{ matrix.addon.slug }} Addon v${{ steps.version.outputs.version }}
+
+            Pre-built SPA addon for the NV oOS platform. Ships with compiled assets — no build step required on your server.
+
+            ### Requirements
+
+            - NV oOS Base Plugin active
+            - WordPress 6.0+
+            - PHP 7.4+
+
+            ### Checksum
+
+            See the `.sha256` file attached to this release.
+          files: |
+            artifacts/*.zip
+            artifacts/*.sha256
+          draft: false
+          prerelease: false

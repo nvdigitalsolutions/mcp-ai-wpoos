@@ -10,6 +10,67 @@
 import { createHmac } from 'crypto';
 import axios from 'axios';
 
+// One SMTP transport per SMTP config for the process lifetime: creating a
+// transporter per alert leaks an SMTP pool + sockets (never closed).
+let cachedTransporter = null;
+let cachedTransporterKey = '';
+
+/**
+ * Fingerprint the current SMTP env config so a changed config rebuilds the
+ * transporter instead of reusing a stale one.
+ *
+ * @return {string} Config fingerprint.
+ */
+function smtpConfigKey() {
+	return [
+		process.env.SMTP_HOST || 'localhost',
+		process.env.SMTP_PORT || '587',
+		process.env.SMTP_USER || '',
+		process.env.SMTP_PASS || '',
+	].join( '|' );
+}
+
+/**
+ * Lazily build (and memoize) the nodemailer transporter for the current SMTP
+ * config.
+ *
+ * @return {Promise<import('nodemailer').Transporter>} Transporter.
+ */
+async function getTransporter() {
+	const key = smtpConfigKey();
+	if ( cachedTransporter && cachedTransporterKey === key ) {
+		return cachedTransporter;
+	}
+	const nodemailer = ( await import( 'nodemailer' ) ).default;
+	const port = parseInt( process.env.SMTP_PORT || '587', 10 );
+	cachedTransporter = nodemailer.createTransport( {
+		host: process.env.SMTP_HOST || 'localhost',
+		port,
+		secure: port === 465,
+		auth: process.env.SMTP_USER
+			? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || '' }
+			: undefined,
+	} );
+	cachedTransporterKey = key;
+	return cachedTransporter;
+}
+
+/**
+ * Close the memoized SMTP transport (graceful shutdown). Safe to call when
+ * no transport exists.
+ */
+export function closeEmailTransporter() {
+	if ( cachedTransporter ) {
+		try {
+			cachedTransporter.close();
+		} catch {
+			// Best effort — the pool is already gone.
+		}
+	}
+	cachedTransporter = null;
+	cachedTransporterKey = '';
+}
+
 /**
  * HMAC-SHA256 signature for a webhook body (hex digest).
  *
@@ -64,16 +125,7 @@ export async function sendEmail( to, subject, text ) {
 		return false;
 	}
 	try {
-		const nodemailer = ( await import( 'nodemailer' ) ).default;
-		const port = parseInt( process.env.SMTP_PORT || '587', 10 );
-		const transporter = nodemailer.createTransport( {
-			host: process.env.SMTP_HOST || 'localhost',
-			port,
-			secure: port === 465,
-			auth: process.env.SMTP_USER
-				? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || '' }
-				: undefined,
-		} );
+		const transporter = await getTransporter();
 		await transporter.sendMail( {
 			from: process.env.SMTP_FROM || 'noreply@designstudio.local',
 			to,

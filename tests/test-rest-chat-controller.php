@@ -213,6 +213,130 @@ class Test_REST_Chat_Controller extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the handler mints a session-bound nonce even when WordPress
+	 * core has neutralised the session user for the no-nonce request — the
+	 * hardened-install flow that previously produced a user-0 nonce and broke
+	 * the follow-up request with rest_cookie_invalid_nonce (#6985).
+	 */
+	public function test_session_nonce_rebinds_cookie_session_after_core_neutralisation() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		// Persist a real session so wp_validate_auth_cookie() succeeds.
+		$expiration    = time() + DAY_IN_SECONDS;
+		$session_token = WP_Session_Tokens::get_instance( $user_id )->create( $expiration );
+		$auth_cookie   = wp_generate_auth_cookie( $user_id, $expiration, 'logged_in', $session_token );
+
+		$_COOKIE[ LOGGED_IN_COOKIE ] = $auth_cookie;
+
+		// Simulate WP core's rest_cookie_check_errors(): a REST request that
+		// carries no nonce is executed as user 0.
+		wp_set_current_user( 0 );
+
+		$response = $this->controller->handle_session_nonce();
+		$data     = $response->get_data();
+
+		$this->assertArrayHasKey( 'nonce', $data );
+
+		// The handler must re-bind the session identity from the auth cookie so
+		// the minted nonce passes the same check WordPress performs on the retry.
+		$this->assertSame( $user_id, get_current_user_id() );
+		$this->assertNotFalse( wp_verify_nonce( $data['nonce'], 'wp_rest' ) );
+
+		// Clean up cookie state so subsequent tests see a guest request.
+		unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test that an assistant credential is accepted by the transcripts
+	 * permission check and scopes the request to the credential's assistant
+	 * and issuing user (#6987).
+	 */
+	public function test_chat_transcripts_permission_accepts_assistant_credential() {
+		$user_id      = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_title'  => 'Credential Assistant',
+				'post_status' => 'publish',
+			)
+		);
+		$this->assertIsInt( $assistant_id, 'Assistant post creation should return an integer ID.' );
+
+		wp_set_current_user( $user_id );
+		$issued = WP_MCP_AI_Credentials::issue_credential( $assistant_id, $user_id );
+		$this->assertArrayHasKey( 'token', $issued, 'Issued credential should contain a token.' );
+
+		// Simulate the cross-origin SPA request: no cookie, no nonce, bearer only.
+		wp_set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'Authorization', 'Bearer ' . $issued['token'] );
+
+		$result = $this->main_controller->chat_transcripts_permissions_check( $request );
+
+		$this->assertTrue( $result );
+		$this->assertSame( $user_id, absint( $request->get_param( 'user_id' ) ) );
+		$this->assertSame( $assistant_id, absint( $request->get_param( 'assistant_id' ) ) );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test that a credential cannot read transcripts recorded for a different
+	 * assistant (#6987).
+	 */
+	public function test_chat_transcripts_permission_rejects_other_assistant() {
+		$user_id      = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_title'  => 'Credential Assistant',
+				'post_status' => 'publish',
+			)
+		);
+		$other_id     = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_title'  => 'Other Assistant',
+				'post_status' => 'publish',
+			)
+		);
+
+		wp_set_current_user( $user_id );
+		$issued = WP_MCP_AI_Credentials::issue_credential( $assistant_id, $user_id );
+
+		wp_set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'Authorization', 'Bearer ' . $issued['token'] );
+		$request->set_param( 'assistant_id', $other_id );
+
+		$result = $this->main_controller->chat_transcripts_permissions_check( $request );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test that an invalid credential is rejected (and does not fall through
+	 * to a session-based grant).
+	 */
+	public function test_chat_transcripts_permission_rejects_invalid_credential() {
+		wp_set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'Authorization', 'Bearer cred_deadbeef.wrongsecret12' );
+
+		$result = $this->main_controller->chat_transcripts_permissions_check( $request );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_token', $result->get_error_code() );
+	}
+
+	/**
 	 * Test that /chat route has correct methods.
 	 */
 	public function test_chat_route_methods() {
@@ -234,7 +358,7 @@ class Test_REST_Chat_Controller extends WP_UnitTestCase {
 	 * Test that /chat-client route has correct methods.
 	 */
 	public function test_chat_client_route_methods() {
-		$routes           = $this->get_routes_via_init();
+		$routes            = $this->get_routes_via_init();
 		$chat_client_route = $routes['/mcp-ai/v1/chat-client'];
 
 		// Should have POST and GET methods.

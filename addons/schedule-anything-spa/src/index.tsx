@@ -10,6 +10,18 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './styles/global.css';
 
+// Live accessibility audit output in dev builds only — the dynamic import
+// is dead-code-eliminated in production bundles.
+if (import.meta.env.DEV) {
+  Promise.all([import('react'), import('react-dom'), import('@axe-core/react')])
+    .then(([React, ReactDOM, axe]) => {
+      axe.default(React, ReactDOM, 1000);
+    })
+    .catch(() => {
+      /* axe unavailable — non-fatal */
+    });
+}
+
 function mountApp() {
   // Try standalone mount first
   const rootElement = document.getElementById('sa-root');

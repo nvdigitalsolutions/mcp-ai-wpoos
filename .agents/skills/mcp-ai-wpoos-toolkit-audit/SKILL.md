@@ -874,6 +874,7 @@ green in the 9-suite cluster; phpcs 0 errors on both standards; UTF-8 clean.
 ## References
 
 - Test environment + cluster workflow: `mcp-ai-wpoos-test-suite` skill
+- Building a NEW toolkit from scratch (scaffold, registration surfaces, oracle testing): `mcp-ai-wpoos-toolkit-creation` skill — run its four-failure-class scan (§8) as the final gate on new toolkits before merge
 - CG Pro byte-identity mirroring: `mcp-ai-wpoos-ecosystem-port` skill
 - v1.1.70 hardening precedent: PR #6295, `addons/pro/includes/npm-integration-filters.php`
 - Array-content normalization precedent: test-suite skill pattern 56

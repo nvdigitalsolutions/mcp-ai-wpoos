@@ -36,6 +36,7 @@ Always:
 Subsystem-specific (load only those that apply to the chosen addon):
 
 - The chosen addon's own `README.md` and `THIRD_PARTY_NOTICES.md`
+- [`.agents/skills/mcp-ai-wpoos-spa-ui/SKILL.md`](../../.agents/skills/mcp-ai-wpoos-spa-ui/SKILL.md) — SPA UI stack rules (headless-only components, dual-React guard, NDS tokens, vitest/jsdom conventions) for any UI or test work
 - [`addons/docs-hub/`](../../addons/docs-hub/) — reference implementation
 - [`addons/toolkit-shell/`](../../addons/toolkit-shell/) — reference manifest-driven shell
 

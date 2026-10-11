@@ -2271,10 +2271,18 @@ class WP_MCP_AI_Media_Command_Center_Page {
 		global $wpdb;
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		// Simple heuristic: count references in post_content to wp-image-XXXX where XXXX is not a valid attachment.
+		// Cap the scan to the 2000 most recent matching posts so the full site
+		// content is never loaded on every Command Center render.
 		$posts = $wpdb->get_results(
-			"SELECT ID, post_content FROM {$wpdb->posts}
-			WHERE post_content LIKE '%wp-image-%'
-			AND post_status = 'publish'"
+			$wpdb->prepare(
+				"SELECT ID, post_content FROM {$wpdb->posts}
+				WHERE post_content LIKE %s
+				AND post_status = 'publish'
+				ORDER BY ID DESC
+				LIMIT %d",
+				'%wp-image-%',
+				2000
+			)
 		);
 
 		$broken = 0;
@@ -2382,10 +2390,15 @@ class WP_MCP_AI_Media_Command_Center_Page {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		// Dispatch compression sweep as an Action Scheduler task.
+		// Dispatch compression sweep as an Action Scheduler task (dedupe: one
+		// pending sweep at a time so repeated clicks don't stack full-library jobs).
 		if ( function_exists( 'as_enqueue_async_action' ) ) {
-			as_enqueue_async_action( 'wp_mcp_ai_media_compression_sweep' );
-			wp_send_json_success( array( 'message' => __( 'Compression sweep queued. Check the Processing tab for status.', 'mcp-ai-wpoos-pro' ) ) );
+			if ( ! function_exists( 'as_has_scheduled_action' ) || ! as_has_scheduled_action( 'wp_mcp_ai_media_compression_sweep' ) ) {
+				as_enqueue_async_action( 'wp_mcp_ai_media_compression_sweep' );
+				wp_send_json_success( array( 'message' => __( 'Compression sweep queued. Check the Processing tab for status.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			wp_send_json_success( array( 'message' => __( 'A compression sweep is already queued.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		wp_send_json_error( array( 'message' => __( 'Action Scheduler is not available.', 'mcp-ai-wpoos-pro' ) ) );

@@ -554,7 +554,7 @@ class Test_Section_Tools extends WP_UnitTestCase {
 
 		// Verify all toolkits have valid memory requirements.
 		// Using actual keys from memory requirements ensures test stays in sync.
-		$this->assertCount( 35, $memory_requirements, 'Should have exactly 35 pro toolkits' );
+		$this->assertCount( 36, $memory_requirements, 'Should have exactly 36 pro toolkits' );
 
 		foreach ( $memory_requirements as $toolkit => $memory_mb ) {
 			$this->assertStringStartsWith( 'enable_', $toolkit, "Toolkit key '{$toolkit}' should start with 'enable_'" );

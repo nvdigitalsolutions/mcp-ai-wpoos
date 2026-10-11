@@ -74,6 +74,7 @@
 	<exclude-pattern>*/addons/*</exclude-pattern>
 	<!-- Test files that intentionally contain multiple stub/test classes -->
 	<exclude-pattern>test-provider-client-adapters\.php$</exclude-pattern>
+	<exclude-pattern>test-chat-profile-gate\.php$</exclude-pattern>
 	<!-- Default service status sources groups multiple classes in one file -->
 	<exclude-pattern>class-wp-mcp-ai-service-status-default-sources\.php$</exclude-pattern>
 </rule>
@@ -97,6 +98,12 @@
 <exclude-pattern>*/tests/*</exclude-pattern>
 </rule>
 
+<!-- Test stub file that intentionally defines several NV_oOS_Docs_Hub_*
+     stand-in classes for integration-path tests. -->
+<rule ref="Generic.Files.OneObjectStructurePerFile">
+<exclude-pattern>*/addons/pro/tests/class-docs-hub-stubs.php</exclude-pattern>
+</rule>
+
 <!--
 	Custom capabilities registered by the Healthcare Imaging module and by
 	WooCommerce. WP_MCP_AI_Imaging_Capabilities::add_caps() grants the
@@ -114,6 +121,7 @@
 			<element value="manage_medical_imaging"/>
 			<element value="wpcode_edit_snippets"/>
 			<element value="manage_woocommerce"/>
+			<element value="wp_mcp_ai_change_chat_profile"/>
 		</property>
 	</properties>
 </rule>

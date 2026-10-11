@@ -3,14 +3,16 @@
  */
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from 'reactflow';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
-interface TriggerNodeData {
+type TriggerNodeData = {
   triggerType: 'cron' | 'webhook' | 'event';
   schedule?: string;
   hook?: string;
   label?: string;
-}
+};
+
+type TriggerNodeType = Node<TriggerNodeData, 'triggerNode'>;
 
 const TRIGGER_ICONS: Record<string, string> = {
   cron: '⏰',
@@ -24,7 +26,7 @@ const TRIGGER_LABELS: Record<string, string> = {
   event: 'Event',
 };
 
-function TriggerNodeComponent({ data, selected }: NodeProps<TriggerNodeData>) {
+function TriggerNodeComponent({ data, selected }: NodeProps<TriggerNodeType>) {
   return (
     <div
       className={`

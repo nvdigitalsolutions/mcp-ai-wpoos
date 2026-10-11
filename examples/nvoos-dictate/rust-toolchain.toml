@@ -1,0 +1,3 @@
+[toolchain]
+# tauri-plugin-global-shortcut requires Rust >= 1.90 (see Tauri plugin docs).
+channel = "stable"

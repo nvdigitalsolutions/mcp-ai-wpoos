@@ -4,6 +4,7 @@
   "description": "HuggingFace Transformers.js task wrapper (summarization, sentiment, NER, translation, QA, embeddings) - Extracted from NV Open Operator System",
   "main": "dist/nvoos-transformers-client.js",
   "module": "dist/nvoos-transformers-client.js",
+  "type": "module",
   "types": "dist/nvoos-transformers-client.d.ts",
   "exports": {
     ".": {
@@ -53,7 +54,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",
     "clean": "rm -rf dist"
   },

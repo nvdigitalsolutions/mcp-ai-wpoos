@@ -9,6 +9,7 @@
  * Env reference: see README.md and src/utils/config.js.
  */
 
+import path from 'node:path';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -19,6 +20,7 @@ import { authMiddleware } from './middleware/auth.js';
 import { healthRouter } from './routes/health.js';
 import { landingRouter } from './routes/landing.js';
 import { mcpRouter, discoveryHandler } from './routes/mcp.js';
+import { oauthRouter } from './routes/oauth.js';
 
 export const VERSION = '0.1.1';
 
@@ -60,6 +62,18 @@ export function createApp( overrides = {} ) {
 	// OWASP: keep the JSON body small — MCP payloads are tiny; 1 MB default.
 	app.use( express.json( { limit: process.env.MAX_JSON_BODY || '1mb' } ) );
 	app.use( express.urlencoded( { extended: true, limit: '1mb' } ) );
+
+	// ── OAuth 2.1 well-known (public, RFC 9728) ──────────────────
+	// Inert (404) until GATEWAY_OAUTH_ISSUER is configured.
+	app.use( oauthRouter() );
+
+	// Static assets (landing page icon). Same origin, cache-friendly.
+	app.use(
+		'/assets',
+		express.static( path.join( import.meta.dirname, '..', 'assets' ), {
+			maxAge: '1d',
+		} )
+	);
 
 	// ── Public surfaces (no auth) ─────────────────────────────────
 	app.use( '/', landingRouter() );

@@ -1943,9 +1943,11 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		$task_count   = 0;
 
 		// Count active sessions from transients.
+		// LIMIT 500 bounds the unserialize pass so the overview can never load the
+		// entire transient blob set under heavy session churn.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transient query for real-time dashboard; results change frequently.
 		$sessions = $wpdb->get_results(
-			"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE '_transient_mcp_ai_session_%' AND option_name NOT LIKE '_transient_timeout_%'"
+			"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE '_transient_mcp_ai_session_%' AND option_name NOT LIKE '_transient_timeout_%' LIMIT 500"
 		);
 
 		if ( $sessions ) {
@@ -2002,9 +2004,11 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		$sessions = array();
 
+		// LIMIT 500 bounds the unserialize pass so the fallback cannot load the
+		// entire session transient set into admin memory.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transient query for real-time data; fallback path when CCT unavailable.
 		$rows = $wpdb->get_results(
-			"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE '_transient_mcp_ai_session_%' AND option_name NOT LIKE '_transient_timeout_%'"
+			"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE '_transient_mcp_ai_session_%' AND option_name NOT LIKE '_transient_timeout_%' LIMIT 500"
 		);
 
 		if ( $rows ) {
@@ -2033,9 +2037,11 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		$workflows = array();
 
+		// LIMIT 500 bounds the unserialize pass so workflow blobs cannot balloon
+		// admin memory under load.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transient query for real-time data.
 		$rows = $wpdb->get_results(
-			"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE '_transient_wp_mcp_ai_workflow_%' AND option_name NOT LIKE '_transient_timeout_%'"
+			"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE '_transient_wp_mcp_ai_workflow_%' AND option_name NOT LIKE '_transient_timeout_%' LIMIT 500"
 		);
 
 		if ( $rows ) {

@@ -34,6 +34,7 @@ class WP_MCP_AI_Tool_Load_Monitor {
 	 */
 	const ACTIVE_EXECUTIONS_KEY   = 'wp_mcp_ai_tool_active_executions';
 	const PERFORMANCE_HISTORY_KEY = 'wp_mcp_ai_tool_performance_history_';
+	const PERFORMANCE_DATA_KEY    = 'wp_mcp_ai_tool_load_monitor_data';
 	const METRICS_CACHE_KEY       = 'wp_mcp_ai_tool_load_metrics_';
 	const ARRIVAL_RATE_KEY        = 'wp_mcp_ai_tool_arrival_rate_';
 
@@ -462,7 +463,9 @@ class WP_MCP_AI_Tool_Load_Monitor {
 	/**
 	 * Store performance data in history
 	 *
-	 * Implements a ring buffer to limit history size.
+	 * Implements a ring buffer to limit history size. All per-tool buffers live
+	 * in a single non-autoloaded option keyed by slug (rather than one option
+	 * row per slug), so the options table does not grow with the tool count.
 	 *
 	 * @param string $tool_slug Tool identifier.
 	 * @param float  $duration Execution duration.
@@ -471,12 +474,17 @@ class WP_MCP_AI_Tool_Load_Monitor {
 	 * @return void
 	 */
 	protected function store_performance_data( $tool_slug, $duration, $success, $context ) {
-		$key     = self::PERFORMANCE_HISTORY_KEY . $tool_slug;
-		$history = get_option( $key, array() );
+		$data = get_option( self::PERFORMANCE_DATA_KEY, null );
 
-		if ( ! is_array( $history ) ) {
-			$history = array();
+		if ( ! is_array( $data ) ) {
+			// No consolidated data yet — adopt the legacy per-slug buffer (if
+			// any) so recorded history is not lost during the transition.
+			$legacy = get_option( self::PERFORMANCE_HISTORY_KEY . $tool_slug, array() );
+			$data   = is_array( $legacy ) ? array( $tool_slug => $legacy ) : array();
+			delete_option( self::PERFORMANCE_HISTORY_KEY . $tool_slug );
 		}
+
+		$history = isset( $data[ $tool_slug ] ) && is_array( $data[ $tool_slug ] ) ? $data[ $tool_slug ] : array();
 
 		// Add new entry.
 		$history[] = array(
@@ -491,21 +499,52 @@ class WP_MCP_AI_Tool_Load_Monitor {
 			$history = array_slice( $history, -self::MAX_HISTORY_ENTRIES );
 		}
 
-		update_option( $key, $history, false ); // No autoload.
+		$data[ $tool_slug ] = $history;
+
+		update_option( self::PERFORMANCE_DATA_KEY, $data, false ); // No autoload.
 	}
 
 	/**
 	 * Get performance history for a tool
+	 *
+	 * Reads the consolidated buffer for the slug. Falls back to the legacy
+	 * per-slug option when the consolidated key is absent and migrates it
+	 * lazily (write consolidated + delete the legacy key).
 	 *
 	 * @param string $tool_slug Tool identifier.
 	 * @param int    $hours Number of hours to retrieve (default 24).
 	 * @return array Performance history entries.
 	 */
 	protected function get_performance_history( $tool_slug, $hours = 24 ) {
-		$key     = self::PERFORMANCE_HISTORY_KEY . $tool_slug;
-		$history = get_option( $key, array() );
+		$data    = get_option( self::PERFORMANCE_DATA_KEY, null );
+		$history = array();
 
-		if ( ! is_array( $history ) ) {
+		if ( is_array( $data ) ) {
+			if ( isset( $data[ $tool_slug ] ) && is_array( $data[ $tool_slug ] ) ) {
+				$history = $data[ $tool_slug ];
+			} else {
+				// Consolidated key exists but this slug has no buffer yet —
+				// adopt a legacy per-slug buffer if one predates the migration.
+				$legacy = get_option( self::PERFORMANCE_HISTORY_KEY . $tool_slug, array() );
+				if ( is_array( $legacy ) && ! empty( $legacy ) ) {
+					$data[ $tool_slug ] = $legacy;
+					update_option( self::PERFORMANCE_DATA_KEY, $data, false );
+					delete_option( self::PERFORMANCE_HISTORY_KEY . $tool_slug );
+					$history = $legacy;
+				}
+			}
+		} else {
+			// Consolidated key absent — read the legacy per-slug key and
+			// migrate it lazily into the consolidated option.
+			$legacy = get_option( self::PERFORMANCE_HISTORY_KEY . $tool_slug, array() );
+			if ( is_array( $legacy ) && ! empty( $legacy ) ) {
+				update_option( self::PERFORMANCE_DATA_KEY, array( $tool_slug => $legacy ), false );
+				delete_option( self::PERFORMANCE_HISTORY_KEY . $tool_slug );
+				$history = $legacy;
+			}
+		}
+
+		if ( empty( $history ) ) {
 			return array();
 		}
 

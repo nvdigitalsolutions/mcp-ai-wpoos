@@ -10,10 +10,18 @@
  * Rotation: GATEWAY_PUBLIC_KEYS_PREVIOUS is accepted during rotation
  * windows with a one-time warning (the media-worker *_PREVIOUS pattern).
  *
+ * When OAuth 2.1 is configured (GATEWAY_OAUTH_ISSUER), JWT bearer tokens
+ * issued by the authorization server are accepted alongside static keys:
+ * the middleware validates signature/issuer/audience/expiry, derives site
+ * bindings from `site:<slug>` scopes, and emits RFC 9728 WWW-Authenticate
+ * challenges so MCP clients can run the OAuth flow.
+ *
  * Upstream op_ tokens are NOT accepted here and NEVER appear in responses.
  */
 
 import { timingSafeEqual, createHash } from 'crypto';
+import { oauthEnabled, buildWwwAuthenticate, sitesFromScopes, supportedScopes } from '../oauth/resource-server.js';
+import { looksLikeJwt, validateAccessToken, tokenFingerprint } from '../oauth/jwt.js';
 
 const MIN_KEY_LENGTH = 16;
 
@@ -96,16 +104,30 @@ export function authMiddleware( req, res, next ) {
 	const provided = bearerToken( req.get( 'Authorization' ) );
 
 	if ( ! provided ) {
-		res.setHeader( 'WWW-Authenticate', 'Bearer realm="nvoos-mcp-gateway"' );
+		// OAuth-configured gateways challenge with RFC 9728 metadata so MCP
+		// clients can discover the authorization server and link accounts.
+		res.setHeader(
+			'WWW-Authenticate',
+			oauthEnabled( cfg ) ? buildWwwAuthenticate( cfg ) : 'Bearer realm="nvoos-mcp-gateway"'
+		);
 		return res.status( 401 ).json( {
 			error: 'unauthorized',
-			message: 'Missing bearer key. Send the public API key as "Authorization: Bearer <key>".',
+			message: oauthEnabled( cfg )
+				? 'Authentication required — send a gateway API key or an OAuth access token.'
+				: 'Missing bearer key. Send the public API key as "Authorization: Bearer <key>".',
 		} );
 	}
 
 	const resolved = resolveKey( provided, cfg.keys, cfg.previousKeys );
 	if ( ! resolved ) {
-		res.setHeader( 'WWW-Authenticate', 'Bearer realm="nvoos-mcp-gateway"' );
+		// Static key miss — try OAuth access tokens when configured.
+		if ( oauthEnabled( cfg ) && looksLikeJwt( provided ) ) {
+			return handleOAuthToken( req, res, next, provided );
+		}
+		res.setHeader(
+			'WWW-Authenticate',
+			oauthEnabled( cfg ) ? buildWwwAuthenticate( cfg ) : 'Bearer realm="nvoos-mcp-gateway"'
+		);
 		return res.status( 401 ).json( { error: 'unauthorized', message: 'Unknown API key.' } );
 	}
 
@@ -129,5 +151,45 @@ export function authMiddleware( req, res, next ) {
 		);
 	}
 
+	return next();
+}
+
+/**
+ * Validate an OAuth access token and attach its identity.
+ *
+ * @param {import('express').Request} req   Request.
+ * @param {import('express').Response} res   Response.
+ * @param {Function}                   next  Next middleware.
+ * @param {string}                     token Bearer token (JWT-shaped).
+ * @return {Promise<void>}
+ */
+async function handleOAuthToken( req, res, next, token ) {
+	const cfg = req.app.get( 'gatewayConfig' );
+	const result = await validateAccessToken( token, cfg.oauth );
+
+	if ( ! result.ok ) {
+		console.warn(
+			`[Auth] OAuth token rejected (${ result.error }) — ${ tokenFingerprint( token ) }`
+		);
+		res.setHeader( 'WWW-Authenticate', buildWwwAuthenticate( cfg ) );
+		return res.status( 401 ).json( { error: 'unauthorized', message: `Invalid OAuth access token (${ result.error }).` } );
+	}
+
+	const sites = sitesFromScopes( result.scopes, cfg );
+	if ( 0 === sites.length ) {
+		res.setHeader(
+			'WWW-Authenticate',
+			buildWwwAuthenticate( cfg, 'insufficient_scope', supportedScopes( cfg ).join( ' ' ) )
+		);
+		return res.status( 403 ).json( {
+			error: 'insufficient_scope',
+			message: 'The token grants no site access — request a site:<slug> scope during authorization.',
+		} );
+	}
+
+	const subject = result.claims.sub || result.claims.client_id || tokenFingerprint( token );
+	req.gatewayKeyId = `oauth:${ subject }`;
+	req.gatewaySites = sites;
+	req.gatewayAuth = 'oauth';
 	return next();
 }

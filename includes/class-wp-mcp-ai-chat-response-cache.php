@@ -52,6 +52,30 @@ class WP_MCP_AI_Chat_Response_Cache {
 	const MAX_CACHED_RESPONSES = 100;
 
 	/**
+	 * Option key for the non-autoloaded registry of active cache keys.
+	 *
+	 * @var string
+	 */
+	const REGISTRY_KEY = 'wp_mcp_ai_chat_response_cache_keys';
+
+	/**
+	 * Maximum number of cache keys tracked in the registry.
+	 *
+	 * When exceeded, the oldest keys are evicted FIFO and their transients
+	 * deleted so wp_options cannot grow without bound on busy sites.
+	 *
+	 * @var int
+	 */
+	const REGISTRY_CAP = 500;
+
+	/**
+	 * Daily registry cleanup cron hook.
+	 *
+	 * @var string
+	 */
+	const CLEANUP_HOOK = 'wp_mcp_ai_chat_response_cache_cleanup';
+
+	/**
 	 * Check if a cached response exists for the given messages and options.
 	 *
 	 * Only caches when:
@@ -114,7 +138,99 @@ class WP_MCP_AI_Chat_Response_Cache {
 
 		$ttl = $this->get_cache_ttl( $options );
 
-		return set_transient( $cache_key, $response, $ttl );
+		$result = set_transient( $cache_key, $response, $ttl );
+
+		if ( $result ) {
+			$this->register_cache_key( $cache_key );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Track an active cache key in the non-autoloaded registry.
+	 *
+	 * Caps the registry FIFO: when the cap is exceeded the oldest key is
+	 * evicted and its transient deleted, bounding wp_options churn.
+	 *
+	 * @param string $cache_key Transient key to register.
+	 * @return void
+	 */
+	private function register_cache_key( $cache_key ) {
+		$keys = get_option( self::REGISTRY_KEY, array() );
+
+		if ( ! is_array( $keys ) ) {
+			$keys = array();
+		}
+
+		if ( in_array( $cache_key, $keys, true ) ) {
+			return;
+		}
+
+		// FIFO cap: evict the oldest tracked keys beyond the cap so the
+		// registry cannot grow without bound.
+		if ( count( $keys ) >= self::REGISTRY_CAP ) {
+			$excess  = count( $keys ) - self::REGISTRY_CAP + 1;
+			$evicted = array_splice( $keys, 0, $excess );
+			foreach ( $evicted as $evicted_key ) {
+				delete_transient( $evicted_key );
+			}
+		}
+
+		$keys[] = $cache_key;
+
+		update_option( self::REGISTRY_KEY, $keys, false );
+	}
+
+	/**
+	 * Schedule the daily registry cleanup cron.
+	 *
+	 * Hooked to `init`; guarded with wp_next_scheduled() so only one event is
+	 * ever registered.
+	 *
+	 * @return void
+	 */
+	public static function register_cleanup_cron() {
+		if ( ! wp_next_scheduled( self::CLEANUP_HOOK ) ) {
+			wp_schedule_event( time(), 'daily', self::CLEANUP_HOOK );
+		}
+	}
+
+	/**
+	 * Daily cleanup: purge expired cache entries from the registry.
+	 *
+	 * Calling get_transient() deletes expired transients on read, so iterating
+	 * the registry both reclaims expired wp_options rows and drops them from
+	 * the registry.
+	 *
+	 * @return int Number of expired keys removed from the registry.
+	 */
+	public static function cleanup_registry() {
+		$keys = get_option( self::REGISTRY_KEY, array() );
+
+		if ( ! is_array( $keys ) ) {
+			delete_option( self::REGISTRY_KEY );
+			return 0;
+		}
+
+		$removed = 0;
+
+		foreach ( $keys as $index => $cache_key ) {
+			if ( false === get_transient( $cache_key ) ) {
+				unset( $keys[ $index ] );
+				++$removed;
+			}
+		}
+
+		if ( $removed > 0 ) {
+			if ( empty( $keys ) ) {
+				delete_option( self::REGISTRY_KEY );
+			} else {
+				update_option( self::REGISTRY_KEY, array_values( $keys ), false );
+			}
+		}
+
+		return $removed;
 	}
 
 	/**
@@ -224,3 +340,7 @@ class WP_MCP_AI_Chat_Response_Cache {
 		return apply_filters( 'wp_mcp_ai_chat_response_cache_ttl', self::DEFAULT_TTL, $options );
 	}
 }
+
+// Schedule the daily registry cleanup cron.
+add_action( 'init', array( 'WP_MCP_AI_Chat_Response_Cache', 'register_cleanup_cron' ) );
+add_action( WP_MCP_AI_Chat_Response_Cache::CLEANUP_HOOK, array( 'WP_MCP_AI_Chat_Response_Cache', 'cleanup_registry' ) );

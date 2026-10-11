@@ -48,6 +48,7 @@ wp-mcp-ai-tool-create-assistant
 wp-mcp-ai-tool-create-assistant-validated
 wp-mcp-ai-tool-create-batch
 wp-mcp-ai-tool-create-chart
+wp-mcp-ai-tool-create-chart-fence
 wp-mcp-ai-tool-create-chart-validated
 wp-mcp-ai-tool-create-comment
 wp-mcp-ai-tool-create-cron-job
@@ -208,6 +209,7 @@ wp-mcp-ai-tool-login-security-monitor
 wp-mcp-ai-tool-manage-autonomous-session
 wp-mcp-ai-tool-manage-context-lifecycle
 wp-mcp-ai-tool-manage-vector-store-files
+wp-mcp-ai-tool-mcp-server-info
 wp-mcp-ai-tool-media-library-optimizer
 wp-mcp-ai-tool-memory-audit-trail
 wp-mcp-ai-tool-mine-agent-memory

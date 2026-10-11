@@ -30,6 +30,10 @@ vendor
 # WordPress.org listing assets (SVN assets/ directory — not shipped in the ZIP)
 .wordpress-org
 
+# Playground demo blueprints (dev-only — the wp.org Live Preview reads
+# .wordpress-org/blueprints/blueprint.json, mirrored to SVN assets/)
+blueprints
+
 # Testing
 tests
 phpunit.xml.dist

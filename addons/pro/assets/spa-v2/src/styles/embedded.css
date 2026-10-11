@@ -103,6 +103,29 @@
 	color: var(--nvoos-primary, #2271b1);
 }
 
+.nvoos-pro-spa-embedded__assistant-select {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-embedded__assistant-select select {
+	width: 100%;
+	padding: 6px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	font-size: 13px;
+	font-family: inherit;
+	max-width: 100%;
+}
+
+.nvoos-pro-spa-embedded__assistant-empty {
+	margin: 0;
+	font-size: 12px;
+	color: var(--nvoos-text-muted, #646970);
+}
+
 .nvoos-pro-spa-embedded__sidebar-list {
 	list-style: none;
 	margin: 0;
@@ -185,14 +208,25 @@
 	color: var(--nvoos-danger, #d63638);
 }
 
+/* The toggle lives outside the sidebar (EmbeddedApp renders it as a sibling
+   of the <aside>), so it stays visible when the sidebar is collapsed and the
+   sidebar can always be reopened — mirroring the admin SPA's always-present
+   status-bar hamburger. */
 .nvoos-pro-spa-embedded__sidebar-toggle {
-	background: none;
+	flex: 0 0 40px;
+	width: 40px;
+	min-width: 40px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	background: var(--nvoos-bg, #f0f0f1);
 	border: none;
-	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	border-right: 1px solid var(--nvoos-border, #dcdcde);
 	color: var(--nvoos-text-secondary, #787c82);
 	cursor: pointer;
 	font-size: 16px;
-	padding: 8px;
+	padding: 10px 0;
 }
 
 .nvoos-pro-spa-embedded__sidebar-toggle:hover {
@@ -229,6 +263,17 @@
 		flex-direction: column;
 		height: auto;
 		min-height: 480px;
+	}
+
+	.nvoos-pro-spa-embedded__sidebar-toggle {
+		flex: none;
+		width: 100%;
+		min-width: 0;
+		flex-direction: row;
+		justify-content: flex-start;
+		border-right: none;
+		border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+		padding: 8px 12px;
 	}
 
 	.nvoos-pro-spa-embedded__sidebar {

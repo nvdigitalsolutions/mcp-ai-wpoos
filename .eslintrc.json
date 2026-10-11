@@ -47,9 +47,10 @@
 	},
 	"overrides": [
 		{
-			"files": [
-				"**/chat-markdown-service.js",
-				"**/chat-http-client-service.js",
+			   "files": [
+				    "**/chat-markdown-service.js",
+				    "**/chat-chart-recipes.js",
+				    "**/chat-http-client-service.js",
 				"**/chat-bundle.js",
 				"**/orchestration/autonomous-orchestrator.js",
 				"**/orchestration/browser-circuit-breaker.js",

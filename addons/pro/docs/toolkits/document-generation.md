@@ -1,13 +1,13 @@
 # Document Generation Toolkit
 
 > PDF, Word, and Excel generation directly from WordPress, plus PDF text extraction, OCR,
-> and watermarking.
+> watermarking, and Docs Hub Markdown content management.
 
 | | |
 |---|---|
 | **Activation setting** | `enable_document_generation_toolkit` |
 | **Admin location** | NV oOS → Settings → Pro Features → Document Generation |
-| **Tools** | 14 |
+| **Tools** | 24 |
 | **NPM** | `pdfkit`, `docx`, `exceljs`, plus Tesseract.js / canvas for OCR |
 | **Available since** | Pro v1.1.0 |
 
@@ -25,6 +25,12 @@ Generate and process documents from AI workflows:
 - **Text extraction & OCR** — `extract_pdf_text`, `ocr_pdf_text`, `pro_document_ocr`
   (image OCR works out of the box; PDF OCR requires `canvas` native binaries — see
   [`README-PRO-DOCUMENT-OCR.md`](../../includes/tools/document-generation/README-PRO-DOCUMENT-OCR.md)).
+- **Docs Hub content management** — `docs_hub_write_doc`, `docs_hub_read_doc`,
+  `docs_hub_list_docs`, `docs_hub_delete_doc`, `docs_hub_rebuild`. These manage the
+  Markdown/text files the standalone [NV oOS Docs Hub](https://wordpress.org/plugins/nvoos-docs-hub/)
+  plugin publishes from `wp-content/uploads/nvoos-docs-hub/content/`. File writes
+  require `manage_options`, trigger a Docs Hub index rebuild by default, and the
+  `docs_hub_rebuild` tool additionally requires the Docs Hub plugin to be active.
 
 Tool source: `addons/pro/includes/tools/document-generation/`.
 

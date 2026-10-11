@@ -1291,7 +1291,8 @@
 			html += this.editRow(
 				'Failure Email',
 				'<label><input type="checkbox" id="edit-notify" ' + ( schedule.notify_on_failure ? 'checked' : '' ) + '> Send email on failure</label>' +
-				'<br><input type="email" id="edit-notify-email" class="regular-text" value="' + this.esc( schedule.notify_email ) + '">'
+				'<br><input type="text" id="edit-notify-email" class="regular-text" value="' + this.esc( schedule.notify_email ) + '">' +
+				'<br><span class="description">Comma-separate multiple recipients</span>'
 			);
 
 			// Workflow steps (if workflow type).

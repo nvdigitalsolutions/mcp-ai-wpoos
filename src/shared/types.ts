@@ -83,6 +83,7 @@ export interface WorkflowEdge {
 	sourceHandle?: string;
 	targetHandle?: string;
 	type?: string;
+	animated?: boolean;
 }
 
 export interface WorkflowConfig {

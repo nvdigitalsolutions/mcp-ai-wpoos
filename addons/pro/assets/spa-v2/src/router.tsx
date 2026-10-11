@@ -9,6 +9,7 @@
  *   #/assistants  — Assistant management
  *   #/workflows   — Workflow builder
  *   #/analytics   — Usage dashboard
+ *   #/knowledge-graph — Content Graph explorer (NV oOS Content Graph plugin)
  */
 
 import { lazy, Suspense, type JSX } from 'react';
@@ -21,6 +22,7 @@ const ToolsPage = lazy( () => import( './features/tools/ToolsPage' ).then( ( m )
 const AssistantsPage = lazy( () => import( './features/assistants/AssistantsPage' ).then( ( m ) => ( { default: m.AssistantsPage } ) ) );
 const WorkflowsPage = lazy( () => import( './features/workflows/WorkflowsPage' ).then( ( m ) => ( { default: m.WorkflowsPage } ) ) );
 const AnalyticsPage = lazy( () => import( './features/analytics/AnalyticsPage' ).then( ( m ) => ( { default: m.AnalyticsPage } ) ) );
+const KnowledgeGraphPage = lazy( () => import( './features/knowledge-graph/KnowledgeGraphPage' ).then( ( m ) => ( { default: m.KnowledgeGraphPage } ) ) );
 
 export interface AppRouterProps {
 	/** Shared transcript hook result from Layout. */
@@ -49,6 +51,7 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/assistants" element={ <AssistantsPage /> } />
 				<Route path="/workflows" element={ <WorkflowsPage /> } />
 				<Route path="/analytics" element={ <AnalyticsPage /> } />
+				<Route path="/knowledge-graph" element={ <KnowledgeGraphPage /> } />
 				<Route path="*" element={ <Navigate to="/chat" replace /> } />
 			</Routes>
 		</Suspense>

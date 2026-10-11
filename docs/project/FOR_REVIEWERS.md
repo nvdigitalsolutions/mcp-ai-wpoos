@@ -19,10 +19,10 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.97 (October 2026)
+**Current version:** 1.2.4 (October 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
-**Total tools:** ~1,665 (~352 base + ~1,313 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,696 (~354 base + ~1,342 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 
@@ -35,7 +35,7 @@ The repo is a **monorepo** containing:
 | Is it safe to run on production? | The base plugin passes all WP.org guidelines. The April 2026 security audit found 0 Critical, 5 High (3 Fixed, 2 Partially Fixed — both in addons). May–June 2026 hardening resolved 1 Critical + 5 Warnings. July–August 2026 Phase 3 hardening added 10 security classes, CORS posture, error-verbosity control, auth brute-force detection, and asset-fingerprinting prevention. See [Security Posture](../operations/security/SECURITY_POSTURE.md). |
 | What PHP version is required? | **Base: 7.4+** · **Pro addon: 8.1+** (due to npm packages like sharp/fluent-ffmpeg) · **lib/core: 8.1+** |
 | What WP version? | 6.0+, tested up to 6.10 |
-| Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~1,301 advanced tools (commercial license). Base never gates features behind a license check. |
+| Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~1,342 advanced tools (commercial license). Base never gates features behind a license check. |
 | Was it rejected from WordPress.org? | Yes — the 90-day window expired before all fixes were completed. All rejection reasons are now resolved. See [Compliance Traceability](../operations/compliance/TRACEABILITY.md). |
 | Can it be resubmitted to .org? | Possibly, but the window has closed. The author is seeking professional review before deciding next steps. |
 
@@ -50,13 +50,13 @@ includes/                     ← 1,060 PHP files
 ├── class-wp-mcp-ai-plugin.php ← Kernel / DI container / singleton
 ├── class-wp-mcp-ai-rest.php   ← REST route registration (151 calls, 36 files)
 ├── class-wp-mcp-ai-tool-registry.php ← Central tool registry
-├── tools/                     ← ~352 base tool classes (~1,665 total registered through the singleton registry)
+├── tools/                     ← ~354 base tool classes (~1,696 total registered through the singleton registry)
 ├── admin/                     ← Admin UI, settings, dashboards
 ├── rest/                      ← REST controllers (chat, MCP, webhooks)
 ├── assistants/                ← Assistant CPT & CCT management
 ├── bootstrap/                 ← Constants, helpers, lifecycle
 ├── agents/                    ← Agent skills & registration
-├── security/                  ← 10 security classes (request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, security posture)
+├── security/                  ← 12 security classes (request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard, read-only profile gate, CORS guard)
 ├── okf/                       ← OKF v0.1 engine (parser, reader, writer, 6 MCP tools)
 ├── bridge/                    ← WordPress adapters for lib/core domain contracts
 └── ... (42 subdirectories total)
@@ -66,7 +66,7 @@ includes/                     ← 1,060 PHP files
 ```
 addons/pro/
 ├── mcp-ai-wpoos-pro.php       ← Pro entry point (modular registry)
-├── includes/tools/            ← ~1,232 pro tool classes
+├── includes/tools/            ← ~1,342 pro tool classes
 ├── includes/admin/            ← Pro dashboards, settings
 ├── includes/blocks/           ← ~30 React-based Pro SPAs
 └── config/spa-manifests/      ← Per-toolkit JSON manifests
@@ -102,18 +102,18 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 
 | Addon | Version | License | Notes |
 |---|---|---|---|
-| **Pro** | (live) | Proprietary | 30 toolkits, ~1,232 tools, commercial license. E-commerce, CRM, document generation, media, healthcare, legal, scheduling, analytics. |
+| **Pro** | (live) | Proprietary | 32 toolkits, ~1,342 tools, commercial license. E-commerce, CRM, document generation, media, healthcare, legal, scheduling, analytics. |
 | **Graphify** | 0.6.0 | Proprietary | Knowledge graph builder. Entities, relationships, WooCommerce/Wikidata/RSS/SPARQL/CSV drivers. |
-| **Chat SPA** | 0.6.0 | GPLv3 | React chat surface (Vercel AI SDK). Shortcode + Gutenberg block. |
-| **Docs Hub** | 0.3.9 | GPLv3 | React SPA documentation browser (GitBook-style Markdown rendering). |
+| **Chat SPA** | 0.7.0 | GPLv3 | React chat surface (Vercel AI SDK). Shortcode + Gutenberg block. |
+| **Docs Hub** | 0.5.3 | GPLv3 | React SPA documentation browser (GitBook-style Markdown rendering). 0.5.2 added the NV oOS Complete checkout upsell (admin-only vendor REST, Stripe purchase modal, External Services disclosure); 0.5.3 fixed the checkout config-object name, made rebuilds reliable (live cache no longer cleared on settings saves/updates), and passed the wp.org pre-submission gate (PCP 0 blocking errors — **live on the directory**). |
 | **Algorave** | 1.0.7 | AGPL-3.0 | Live-coding music. Tone.js/Strudel, MIDI export, audio visualization. F-AI-01 accepted with rationale (raw-eval gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` + `edit_posts`; warning UI added). |
 | **Fantasy Football** | 0.1.0 | Proprietary | ESPN/Yahoo Fantasy Sports API. Team management, player research, trade analysis, AI logo generation. |
 | **Embedded** | 0.2.0 | Proprietary | Server-side llama.cpp GGUF inference + client-side WebLLM/WebGPU + P2P WebChat (WebRTC). Voice tool calling, OpenMed healthcare tools, MCP abilities. |
 | **Canvas** | 0.1.0 | Proprietary | Platform-specific Tesseract PDF OCR binaries. |
 | **Cornerstone3D** | 0.1.0 | Proprietary | Pre-built Cornerstone3D ESM bundles for DICOM medical imaging. |
-| **SaaS Controller** | 0.1.0 | Proprietary | Cloudflare Workers + D1 + KV + AI Gateway deployment toolkit. One-click wizard, Plan/Apply, drift detector. |
+| **SaaS Controller** | 0.3.0 | Proprietary | Cloudflare Workers + D1 + KV + AI Gateway deployment toolkit. One-click wizard, Plan/Apply, drift detector (0.3.0: Worker secrets + D1 schema folded into Plan/Apply). |
 | **Cloudways Dashboard** | 0.1.0 | GPLv3 | SaaS operator dashboard (Velzon-themed React SPA). Cloudways server + WP site management. |
-| **Comic Reader** | 0.2.0 | GPLv3 | CBR/CBZ/CB7/CBT comic reader & AI-powered creator. React reading interface. |
+| **Comic Reader** | 0.5.0 | GPLv3 | CBR/CBZ/CB7/CBT comic reader & AI-powered creator (Komga-parity upgrade: Range serving, archive validation, per-user progress, continue-reading). React reading interface. |
 | **Funiq Bridge** | 1.0.0 | GPLv3 | Payload CMS → WordPress bridge for Funiq React PWA. REST API, CPTs, taxonomies, React admin SPA. |
 | **LibreChat** | 0.1.0 | GPLv3 | Sandboxed Python/JavaScript code interpreter, TTS/STT speech services, web search reranker. |
 | **Fleet Operator** | 1.0.0 | GPLv3 | External-operator governance (Hermes or any MCP/A2A host). Scoped `op_` credentials with audience binding, expiry, rate limits, revocation; MCP `tools/list` scoping + `tools/call` enforcement; admin page, WP-CLI, Hermes YAML + Zed/VS Code/Claude Desktop config generators (`generate_zed_json()`/`generate_claude_json()` through the npx bridge), skills pack. |
@@ -124,10 +124,10 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 | Addon | Version | License | Notes |
 |---|---|---|---|
 | **Page Agent** | 0.1.0 | GPLv3 | Alibaba Page Agent (MIT) browser copilot. Natural-language page control — click, type, navigate. Client-side only. |
-| **MCP Gateway** | 0.1.0 | GPLv3 | Public fleet MCP endpoint (Express service, streamable HTTP MCP 2026-07-28). Public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, fail-closed env config. Subtree mirror to `nvoos-mcp-gateway`. |
+| **MCP Gateway** | 0.1.1 | GPLv3 | Public fleet MCP endpoint (Express service, streamable HTTP MCP 2026-07-28). Public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, fail-closed env config. Subtree mirror to `nvoos-mcp-gateway`. |
 | **Schedule Anything** | 0.1.0 | Proprietary | Full SaaS booking platform with Stripe, calendar management, multi-tenant architecture. |
-| **Schedule Anything SPA** | 0.1.0 | Proprietary | React SPA frontend (Vite + Tailwind) for Schedule Anything. |
-| **Crocoblock DS** | 0.1.0 | GPLv3 | Design token system. 55+ CSS tokens, admin editor, DTCG export, a11y tokens. |
+| **Schedule Anything SPA** | 0.2.0 | Proprietary | React SPA frontend (Vite + Tailwind v4) for Schedule Anything. |
+| **Design System** | 0.3.0 | GPLv3 | Design token system + token-driven email templates (formerly "Crocoblock DS" at `addons/crocoblock-ds/` — renamed 0.1.0 → 0.3.0). 55+ CSS tokens, admin editor, DTCG export, a11y tokens, 8 addon-provided email-template tools. |
 
 ### Blueprint-generated (minimal manual review)
 
@@ -135,8 +135,8 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 |---|---|---|---|
 | Canvas Toolkit | 0.2.0 | GPLv3 | SPA blueprint-generated canvas surface. |
 | Document Editor | 0.2.0 | GPLv3 | SPA blueprint-generated document editing surface. |
-| Media Studio | 0.1.0 | GPLv3 | SPA blueprint-generated media management (zoom/pan/drawing). |
-| Toolkit Shell | 0.2.0 | GPLv3 | Manifest-driven React SPA shell (CRM, calendar, financial, legal, ecommerce toolkits). |
+| Media Studio | 0.6.1 | GPLv3 | SPA blueprint-generated media management (zoom/pan/drawing) with the AI fashion-production suite (0.6.0). |
+| Toolkit Shell | 0.3.0 | GPLv3 | Manifest-driven React SPA shell (CRM, calendar, financial, legal, ecommerce toolkits). |
 
 ### Non-WordPress components (reference only)
 
@@ -208,13 +208,13 @@ If you have limited budget for a review, focus on this order:
 
 ### Phase 1: High-priority (~4-6 hours)
 1. **Base plugin security surface** — REST endpoints (151 route registrations across 36 files), tool permission callbacks, nonce coverage, input sanitization in `includes/tools/`, output escaping in `includes/rest/`
-2. **Authentication** — Credential storage (encrypted API keys), token generation, guest token flow. Now with 10 security classes including audit logger, CSP headers, and request guard.
+2. **Authentication** — Credential storage (encrypted API keys), token generation, guest token flow. Now with 12 security classes including audit logger, CSP headers, request guard, read-only profile gate, and the CORS guard.
 3. **External service exposure** — 45 base + 3 Pro external services documented in `docs/reference/EXTERNAL_SERVICES.md`
 
 ### Phase 2: Architecture review (~3-4 hours)
 4. **Plugin architecture** — DI container usage, class loading, lifecycle hooks (60+), singleton patterns
 5. **Base/Pro separation** — Verify no pro feature gating in base plugin
-6. **Tool registry** — How ~1,665 tools are registered and discovered
+6. **Tool registry** — How ~1,696 tools are registered and discovered
 7. **lib/core extraction** — Hexagonal Architecture (32 domain contracts, 21 WordPress adapters), agentic loop, provider routing, 109+ migrated tools. `includes/bridge/` adapters.
 
 ### Phase 3: Deep dives (~4-6 hours, if budget allows)

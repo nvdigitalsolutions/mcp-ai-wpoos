@@ -1,0 +1,48 @@
+{
+	"$comment": "Shared nvoos-chart conformance fixtures — the drift gate for the three renderer surfaces. Canonical source: addons/pro/assets/spa-v2/src/__tests__/chart-fixtures.json. The copies in tests/js/ and addons/chat-spa/src/__tests__/ MUST stay byte-identical to the canonical file (they only exist because each suite's build sees a different source root).",
+	"cases": [
+		{
+			"name": "positive bars are left-anchored",
+			"code": "{\"type\":\"bar\",\"values\":[1,4]}",
+			"checks": [
+				{ "selector": ".f-bar", "property": "left", "expect": "0%" },
+				{ "selector": ".f-bar", "property": "width", "number": 25, "precision": 2 }
+			]
+		},
+		{
+			"name": "grouped columns keep an inter-series gap",
+			"code": "{\"type\":\"column\",\"series\":[{\"name\":\"A\",\"values\":[5,3]},{\"name\":\"B\",\"values\":[2,4]}]}",
+			"checks": [
+				{ "selector": ".f-col-bar", "property": "width", "number": 30, "precision": 2 }
+			]
+		},
+		{
+			"name": "data.items coerces to one series plus labels",
+			"code": "{\"type\":\"donut\",\"data\":{\"items\":[{\"label\":\"X\",\"value\":30},{\"label\":\"Y\",\"value\":70}]}}",
+			"checks": [
+				{ "selector": ".f-donut-legend-item", "count": 2 }
+			]
+		},
+		{
+			"name": "violin renders mirrored density halves",
+			"code": "{\"type\":\"violin\",\"series\":[{\"name\":\"G\",\"values\":[1,2,2,3,3,3,4,4,5,6]}]}",
+			"checks": [
+				{ "selector": ".f-violin-dot", "count": 1 }
+			]
+		},
+		{
+			"name": "animate flag adds the animate class to the root",
+			"code": "{\"type\":\"bar\",\"values\":[1,2],\"animate\":true}",
+			"checks": [
+				{ "selector": ".f-animate", "count": 1 }
+			]
+		},
+		{
+			"name": "unknown types fall back to escaped code",
+			"code": "{\"type\":\"bogus\",\"values\":[1]}<script>alert(1)</script>",
+			"checks": [
+				{ "selector": ".f-code-block", "count": 1 }
+			]
+		}
+	]
+}

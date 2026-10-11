@@ -484,6 +484,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'wordpress_gravatar_userinfo_endpoint'  => '',
 				'enable_simple_jwt_login'               => false,
 				'require_confirm_destructive_ops'       => true,
+				// Chat Profile system (2.2.0, proposal 015) — read-only mode.
+				'chat_profile_enabled'                  => true,
+				'default_chat_profile'                  => 'write',
+				'guest_chat_profile'                    => 'read-only',
 				'delete_on_uninstall'                   => false,
 				'crawl4ai_base_url'                     => '',
 				'crawl4ai_api_key'                      => '',
@@ -574,7 +578,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'google_calendar_refresh_token'         => '',
 				'google_calendar_user_email'            => '',
 				'google_calendar_granted_scopes'        => '',
-				'google_calendar_scope_profile'         => 'standard',
+				'google_calendar_scope_profile'         => 'minimal',
 				'google_calendar_default_calendar_id'   => 'primary',
 				'google_calendar_timezone'              => '',
 				'github_client_id'                      => '',
@@ -677,6 +681,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'require_https'                         => false,
 				'enable_security_audit_log'             => true,
 				'cors_allow_origin'                     => 'site',
+				'cors_allowed_origins'                  => '',
 				'mcp_app_allowed_hosts'                 => '',
 				// ── Provider failover (Proposal 017, Wave 3) ──
 				'enable_provider_failover'              => false,

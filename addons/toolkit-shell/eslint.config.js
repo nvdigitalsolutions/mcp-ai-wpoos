@@ -26,5 +26,28 @@ ecmaFeatures: { jsx: true },
 linterOptions: {
 reportUnusedDisableDirectives: 'off',
 },
+			rules: {
+				/**
+				 * Dual-React guard: this bundle ships its own React 19. Importing
+				 * @wordpress/element or @wordpress/components would pull WP core's
+				 * React 18 renderer into the same tree and corrupt hooks state.
+				 * Only @wordpress/i18n (React-free) may be imported.
+				 */
+				'no-restricted-imports': [
+					'error',
+					{
+						paths: [
+							{
+								name: '@wordpress/element',
+								message: 'WP core React 18 conflicts with the bundled React 19 — use the bundled react package instead.',
+							},
+							{
+								name: '@wordpress/components',
+								message: 'WP core components depend on React 18 — use src/components/ui primitives instead.',
+							},
+						],
+					},
+				],
+			},
 },
 ];

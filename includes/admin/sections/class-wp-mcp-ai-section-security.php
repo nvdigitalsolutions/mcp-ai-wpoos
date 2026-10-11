@@ -183,6 +183,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'hsts_max_age',
 						'csp_frame_ancestors',
 						'cors_allow_origin',
+						'cors_allowed_origins',
 						// MCP App upstream host allowlist (SSRF hardening).
 						'mcp_app_allowed_hosts',
 					),
@@ -644,12 +645,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				'cors_allow_origin'                        => array(
 					'type'        => 'select',
 					'label'       => __( 'CORS Allow-Origin (Cross-Origin API Access)', 'mcp-ai-wpoos' ),
-					'description' => __( 'Controls which external domains can call the plugin REST API from browser-based clients. &quot;Same Origin&quot; (recommended) blocks cross-origin access. Use &quot;Allow All&quot; only if MCP clients or AI services on other domains need access.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls which external domains can call the plugin REST API from browser-based clients. &quot;Same Origin&quot; (recommended) blocks cross-origin access except origins listed below. Use &quot;Allow All&quot; only if MCP clients or AI services on other domains need access.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'site' => __( 'Same Origin — only this site (recommended)', 'mcp-ai-wpoos' ),
 						'star' => __( 'Allow All — any domain can call the API', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'site',
+				),
+				'cors_allowed_origins'                     => array(
+					'type'        => 'textarea',
+					'label'       => __( 'CORS Allowed Origins', 'mcp-ai-wpoos' ),
+					'description' => __( 'Exact origins allowed to call the plugin REST API cross-origin when CORS is set to Same Origin. One origin per line (e.g. https://chat.nvoos.cloud). The site\'s own origin is always allowed. WordPress core reflects any Origin header on every REST response; this plugin overrides that reflection with this allowlist.', 'mcp-ai-wpoos' ),
+					'placeholder' => "https://chat.nvoos.cloud\nhttps://app.example.com",
+					'default'     => '',
 				),
 				'mcp_app_allowed_hosts'                    => array(
 					'type'        => 'textarea',
@@ -2353,6 +2361,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 			// Warn when the constant overrides this UI setting.
 			if ( defined( 'WP_MCP_AI_MCP_APP_ALLOWED_HOSTS' ) ) {
 				$errors[] = __( 'MCP App Allowed Hosts: this setting is overridden by the WP_MCP_AI_MCP_APP_ALLOWED_HOSTS constant.', 'mcp-ai-wpoos' );
+			}
+
+			// Validate CORS allowed origins entries look like http(s) origins.
+			if ( isset( $input['cors_allowed_origins'] ) && is_string( $input['cors_allowed_origins'] ) && ! empty( trim( $input['cors_allowed_origins'] ) ) ) {
+				foreach ( preg_split( '/[\r\n]+/', $input['cors_allowed_origins'] ) as $origin_entry ) {
+					$origin_entry = trim( $origin_entry );
+					if ( '' === $origin_entry ) {
+						continue;
+					}
+					$parsed = wp_parse_url( $origin_entry );
+					if ( ! is_array( $parsed ) || empty( $parsed['scheme'] ) || empty( $parsed['host'] ) || ! in_array( $parsed['scheme'], array( 'http', 'https' ), true ) || ! empty( $parsed['path'] ) || ! empty( $parsed['query'] ) || ! empty( $parsed['fragment'] ) ) {
+						$errors[] = sprintf(
+							/* translators: %s: origin entry. */
+							__( 'CORS Allowed Origins: "%s" does not look like an origin (expected scheme://host, optionally with a port).', 'mcp-ai-wpoos' ),
+							esc_html( $origin_entry )
+						);
+					}
+				}
 			}
 
 			// Validate IP addresses in whitelist.

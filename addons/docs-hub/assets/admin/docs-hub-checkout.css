@@ -1,0 +1,489 @@
+/* ----------------------------------------------------------------------------
+   NV oOS Complete purchase modal (Stripe Payment Element)
+
+   Ported from plugins/nvoos-content-graph/assets/css/content-graph-admin.css
+   (the "Addon purchase modal" sections) with the nvoos-dh-* class prefix —
+   keep the two files in sync when the checkout flow changes.
+   ---------------------------------------------------------------------------- */
+.nvoos-dh-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba( 0, 0, 0, 0.55 );
+	z-index: 100000;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	overflow-y: auto;
+	padding: 48px 20px;
+	box-sizing: border-box;
+}
+
+.nvoos-dh-modal {
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 16px 48px rgba( 0, 0, 0, 0.18 );
+	max-width: 480px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.nvoos-dh-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.nvoos-dh-modal-title {
+	margin: 0;
+	font-size: 17px;
+	line-height: 1.3;
+}
+
+.nvoos-dh-modal-close {
+	background: none;
+	border: none;
+	font-size: 24px;
+	line-height: 1;
+	cursor: pointer;
+	color: #787c82;
+	padding: 0 4px;
+}
+
+.nvoos-dh-modal-close:hover {
+	color: #d63638;
+}
+
+.nvoos-dh-modal-body {
+	padding: 20px;
+}
+
+.nvoos-dh-price {
+	font-size: 20px;
+	font-weight: 600;
+	margin: 0 0 4px;
+}
+
+.nvoos-dh-secure-note,
+.nvoos-dh-test-mode {
+	color: #646970;
+	font-size: 12px;
+	margin: 0 0 16px;
+}
+
+.nvoos-dh-test-mode {
+	color: #b32d2e;
+	margin: 12px 0 0;
+}
+
+.nvoos-dh-error {
+	background: #fcf0f1;
+	border-left: 4px solid #d63638;
+	color: #863232;
+	padding: 10px 12px;
+	margin: 0 0 16px;
+	font-size: 13px;
+}
+
+.nvoos-dh-diagnose-btn {
+	display: inline-block;
+	margin-top: 6px;
+	padding: 0;
+	cursor: pointer;
+}
+
+.nvoos-dh-diagnose-btn[disabled] {
+	cursor: default;
+	opacity: 0.7;
+}
+
+.nvoos-dh-diagnose-result {
+	margin: 6px 0 0;
+	word-break: break-word;
+}
+
+.nvoos-dh-installing {
+	padding: 32px 0;
+	text-align: center;
+	color: #646970;
+}
+
+.nvoos-dh-installing::before {
+	content: "";
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin-right: 8px;
+	vertical-align: -3px;
+	border: 2px solid #c3c4c7;
+	border-top-color: #2271b1;
+	border-radius: 50%;
+	animation: nvoos-dh-spin 0.8s linear infinite;
+}
+
+@keyframes nvoos-dh-spin {
+	to {
+		transform: rotate( 360deg );
+	}
+}
+
+.nvoos-dh-pending-message {
+	font-size: 13px;
+	margin: 0 0 12px;
+}
+
+.nvoos-dh-success-title {
+	margin-top: 0;
+}
+
+.nvoos-dh-success-message {
+	font-size: 13px;
+}
+
+.nvoos-dh-license {
+	font-size: 13px;
+	word-break: break-all;
+}
+
+.nvoos-dh-license code {
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+}
+
+.nvoos-dh-modal-footer {
+	padding: 16px 20px;
+	border-top: 1px solid #dcdcde;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+/* Purchase modal — pricing, trust, value & post-purchase blocks (1.0.7) */
+.nvoos-dh-price-block {
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.nvoos-dh-price-block .nvoos-dh-price {
+	margin-bottom: 4px;
+}
+
+.nvoos-dh-price-sub {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.nvoos-dh-price-scope,
+.nvoos-dh-price-vat,
+.nvoos-dh-price-change {
+	margin: 6px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+.nvoos-dh-price-vat {
+	margin-top: 2px;
+}
+
+.nvoos-dh-trust {
+	list-style: none;
+	margin: 0 0 16px;
+	padding: 0;
+}
+
+.nvoos-dh-trust-item {
+	font-size: 13px;
+	color: #2c3338;
+	padding: 3px 0 3px 24px;
+	position: relative;
+}
+
+.nvoos-dh-trust-item::before {
+	content: "✓";
+	position: absolute;
+	left: 0;
+	color: #00a32a;
+	font-weight: 700;
+}
+
+.nvoos-dh-includes {
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	background: #f0f6fc;
+	border: 1px solid #c5d9ed;
+	border-radius: 6px;
+}
+
+/* Product-status note — development/testing + guarantee, muted under the
+   "What you get" block. */
+.nvoos-dh-dev-status {
+	margin: -8px 0 16px;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #646970;
+}
+
+.nvoos-dh-includes-title {
+	margin: 0 0 8px;
+	font-size: 13px;
+}
+
+.nvoos-dh-includes-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-dh-includes-item {
+	font-size: 13px;
+	color: #2c3338;
+	padding: 3px 0 3px 20px;
+	position: relative;
+}
+
+.nvoos-dh-includes-item::before {
+	content: "•";
+	position: absolute;
+	left: 4px;
+	color: #2271b1;
+}
+
+.nvoos-dh-roadmap {
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+.nvoos-dh-terms-sub {
+	margin: 10px 0 0 26px;
+	font-size: 12px;
+	color: #646970;
+}
+
+.nvoos-dh-success-steps {
+	margin: 16px 0 0;
+}
+
+.nvoos-dh-success-steps-title {
+	margin: 0 0 6px;
+	font-size: 13px;
+}
+
+.nvoos-dh-success-steps-list {
+	margin: 0 0 0 18px;
+	padding: 0;
+	font-size: 13px;
+	color: #2c3338;
+}
+
+.nvoos-dh-success-steps-list li {
+	margin-bottom: 4px;
+}
+
+.nvoos-dh-support-line {
+	margin: 16px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* ----------------------------------------------------------------------------
+   Addon purchase modal — checkout form fields (1.0.7)
+   ---------------------------------------------------------------------------- */
+.nvoos-dh-email-row,
+.nvoos-dh-billing-row {
+	margin: 0 0 16px;
+}
+
+.nvoos-dh-email-label,
+.nvoos-dh-billing-label,
+.nvoos-dh-field-label {
+	display: block;
+	margin: 0 0 6px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	color: #3c434a;
+}
+
+.nvoos-dh-email-input,
+.nvoos-dh-country-select,
+.nvoos-dh-field-input {
+	width: 100%;
+	box-sizing: border-box;
+	height: 40px;
+	margin: 0;
+	padding: 0 12px;
+	border: 1px solid #c3c4c7;
+	border-radius: 6px;
+	background: #fff;
+	box-shadow: none;
+	color: #2c3338;
+	font-size: 14px;
+	line-height: 38px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Strip the select's native chrome and draw our own chevron so it reads
+   as the same minimalist field as the text inputs. */
+.nvoos-dh-country-select {
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	padding-right: 36px;
+	cursor: pointer;
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23646970' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	background-size: 12px 8px;
+}
+
+.nvoos-dh-email-input:hover,
+.nvoos-dh-country-select:hover,
+.nvoos-dh-field-input:hover {
+	border-color: #a7aaad;
+}
+
+.nvoos-dh-email-input:focus,
+.nvoos-dh-country-select:focus,
+.nvoos-dh-field-input:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 3px rgba( 34, 113, 177, 0.15 );
+	outline: none;
+}
+
+.nvoos-dh-email-input::placeholder,
+.nvoos-dh-field-input::placeholder {
+	color: #a7aaad;
+}
+
+/* EU billing address — each field is a wrapper (label + input). Street
+   spans both columns, city and postal sit side by side. The JS toggles
+   `display: none` only, so the grid stays the stylesheet's single source
+   of layout. */
+.nvoos-dh-address-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 12px;
+	row-gap: 12px;
+	margin-top: 12px;
+	padding: 14px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.nvoos-dh-address-row .nvoos-dh-field:first-child {
+	grid-column: 1 / -1;
+}
+
+@media ( max-width: 400px ) {
+	.nvoos-dh-address-row {
+		grid-template-columns: 1fr;
+	}
+
+	.nvoos-dh-address-row .nvoos-dh-field {
+		grid-column: 1 / -1;
+	}
+}
+
+/* Terms consent — a bordered card with an inline checkbox. */
+.nvoos-dh-terms-row {
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.nvoos-dh-terms-label {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	font-size: 13px;
+	line-height: 1.6;
+	color: #2c3338;
+	cursor: pointer;
+}
+
+/* Replace the stock WP-admin checkbox with a minimalist custom one that
+   matches the restyled fields. Scoped under the row so it beats the
+   `input[type="checkbox"]` rules in wp-admin/forms.css. */
+.nvoos-dh-terms-row .nvoos-dh-terms-checkbox {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	min-width: 16px;
+	margin: 2px 0 0;
+	appearance: none;
+	-webkit-appearance: none;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	background: #fff;
+	box-shadow: none;
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nvoos-dh-terms-row .nvoos-dh-terms-checkbox:checked {
+	background-color: #2271b1;
+	border-color: #2271b1;
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' d='M4 8.5l2.8 2.8L12 6'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 12px 12px;
+}
+
+/* WP admin draws its own dark checkmark via ::before on :checked — drop
+   it so only our white mark renders. */
+.nvoos-dh-terms-row .nvoos-dh-terms-checkbox:checked::before {
+	content: none;
+}
+
+.nvoos-dh-terms-row .nvoos-dh-terms-checkbox:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 3px rgba( 34, 113, 177, 0.15 );
+	outline: none;
+}
+
+.nvoos-dh-terms-link {
+	white-space: nowrap;
+}
+
+/* Stripe Payment Element mount point. The Stripe `appearance` rules in
+   docs-hub-checkout.js draw the field border inside the iframe, so
+   this container stays chrome-free and the card field lines up exactly
+   with the native inputs above it. */
+.nvoos-dh-pay-element {
+	margin: 0 0 16px;
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+}
+
+.nvoos-dh-modal-footer .nvoos-dh-pay-btn {
+	min-width: 160px;
+}
+
+/* Free base-version download — left-aligned in the footer; the auto
+   margin pushes Cancel/Pay to the right. The row is removed with the
+   footer on success and hidden once the buyer commits to paying. */
+.nvoos-dh-free-option {
+	margin-right: auto;
+	font-size: 12px;
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.nvoos-dh-free-option:hover,
+.nvoos-dh-free-option:focus {
+	text-decoration: underline;
+}
+

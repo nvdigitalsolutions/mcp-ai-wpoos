@@ -8,12 +8,14 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, waitFor, fireEvent } from '@testing-library/react';
 
 import { readProSpaConfig, applyPerInstanceConfig } from '../api/config';
 import { createChatFetch } from '../sse-adapter';
 import { EmbeddedApp } from '../features/embedded/EmbeddedApp';
 import { useModelStore } from '../stores/modelStore';
+import { useAssistantStore } from '../stores/assistantStore';
+import { useUIStore } from '../stores/uiStore';
 
 const VALID_RUNTIME = {
 	apiUrl: 'https://example.com/wp-json/',
@@ -55,6 +57,9 @@ afterEach( () => {
 	setRuntime( null );
 	localStorage.clear();
 	useModelStore.getState().setModel( { provider: 'openai', model: 'gpt-4o' } );
+	useModelStore.getState().setAvailableModels( [] );
+	useAssistantStore.setState( { assistantId: 0, assistants: [] } );
+	useUIStore.setState( { sidebarOpen: true } );
 } );
 
 describe( 'applyPerInstanceConfig', () => {
@@ -185,6 +190,56 @@ describe( 'EmbeddedApp', () => {
 		} );
 	}, 15000 );
 
+	it( 'keeps the sidebar toggle mounted after collapsing the sidebar', async () => {
+		setRuntime( VALID_RUNTIME );
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue( { ok: false, body: null } )
+		);
+
+		const { container } = render( <EmbeddedApp /> );
+
+		await waitFor( () => {
+			expect(
+				container.querySelector( '.nvoos-pro-spa-embedded__layout' )
+			).not.toBeNull();
+		} );
+
+		const layout = container.querySelector( '.nvoos-pro-spa-embedded__layout' );
+		expect( layout ).not.toBeNull();
+
+		const toggle = screen.getByLabelText( 'Close conversations' );
+		expect( toggle.getAttribute( 'aria-expanded' ) ).toBe( 'true' );
+		expect(
+			layout!.classList.contains(
+				'nvoos-pro-spa-embedded__layout--sidebar-hidden'
+			)
+		).toBe( false );
+
+		fireEvent.click( toggle );
+
+		// Collapsed: the layout hides the sidebar, but the same toggle stays
+		// mounted (outside the <aside>) so the sidebar can be reopened.
+		expect(
+			layout!.classList.contains(
+				'nvoos-pro-spa-embedded__layout--sidebar-hidden'
+			)
+		).toBe( true );
+		expect( toggle.getAttribute( 'aria-expanded' ) ).toBe( 'false' );
+		expect(
+			screen.getByLabelText( 'Open conversations' )
+		).toBe( toggle );
+
+		fireEvent.click( screen.getByLabelText( 'Open conversations' ) );
+
+		expect(
+			layout!.classList.contains(
+				'nvoos-pro-spa-embedded__layout--sidebar-hidden'
+			)
+		).toBe( false );
+	}, 15000 );
+
 	it( 'skips the cron-status stream when cronMonitor is false', async () => {
 		setRuntime( {
 			...VALID_RUNTIME,
@@ -234,5 +289,124 @@ describe( 'EmbeddedApp', () => {
 			provider: 'ollama',
 			model: 'llama3.1:8b',
 		} );
+	}, 15000 );
+
+	it( 'renders the assistant switcher when enabled for a logged-in user', async () => {
+		setRuntime( {
+			...VALID_RUNTIME,
+			config: {
+				...VALID_RUNTIME.config,
+				assistantId: 7,
+				assistantSelector: true,
+			},
+			user: { ...VALID_RUNTIME.user, id: 7, capabilities: [ 'read' ] },
+			assistants: [
+				{ id: 7, title: 'Writer', provider: 'openai', model: 'gpt-4o' },
+				{ id: 8, title: 'Support', provider: 'openai', model: 'gpt-4o-mini' },
+			],
+		} );
+
+		// The store snapshots the runtime at module import (before the test
+		// set the global) — seed it the way wp_localize_script would.
+		useAssistantStore.setState( {
+			assistantId: 7,
+			assistants: [
+				{ id: 7, title: 'Writer', provider: 'openai', model: 'gpt-4o' },
+				{ id: 8, title: 'Support', provider: 'openai', model: 'gpt-4o-mini' },
+			],
+		} );
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue( { ok: false, body: null } )
+		);
+
+		const { container } = render( <EmbeddedApp /> );
+
+		await waitFor( () => {
+			expect(
+				container.querySelector( '.nvoos-pro-spa-embedded__layout' )
+			).not.toBeNull();
+		} );
+
+		const switcher = screen.getByLabelText( 'Select assistant' );
+		expect( switcher ).toBeInTheDocument();
+		expect( screen.getByRole( 'option', { name: 'Writer' } ) ).toBeInTheDocument();
+		expect( screen.getByRole( 'option', { name: 'Support' } ) ).toBeInTheDocument();
+	}, 15000 );
+
+	it( 'does not render the assistant switcher when not enabled', async () => {
+		setRuntime( {
+			...VALID_RUNTIME,
+			user: { ...VALID_RUNTIME.user, id: 7, capabilities: [ 'read' ] },
+			assistants: [ { id: 7, title: 'Writer' } ],
+		} );
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue( { ok: false, body: null } )
+		);
+
+		const { container } = render( <EmbeddedApp /> );
+
+		await waitFor( () => {
+			expect(
+				container.querySelector( '.nvoos-pro-spa-embedded__layout' )
+			).not.toBeNull();
+		} );
+
+		expect( screen.queryByLabelText( 'Select assistant' ) ).not.toBeInTheDocument();
+	}, 15000 );
+
+	it( 'hides the model selector from non-admin users', async () => {
+		useModelStore.getState().setAvailableModels( [
+			{ provider: 'openai', model: 'gpt-4o' },
+		] );
+
+		setRuntime( {
+			...VALID_RUNTIME,
+			user: { ...VALID_RUNTIME.user, id: 7, capabilities: [ 'read' ] },
+		} );
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue( { ok: false, body: null } )
+		);
+
+		const { container } = render( <EmbeddedApp /> );
+
+		await waitFor( () => {
+			expect(
+				container.querySelector( '.nvoos-pro-spa-embedded__layout' )
+			).not.toBeNull();
+		} );
+
+		expect( screen.queryByLabelText( 'Model' ) ).not.toBeInTheDocument();
+	}, 15000 );
+
+	it( 'shows the model selector to admins', async () => {
+		useModelStore.getState().setAvailableModels( [
+			{ provider: 'openai', model: 'gpt-4o' },
+		] );
+
+		setRuntime( {
+			...VALID_RUNTIME,
+			user: { ...VALID_RUNTIME.user, id: 1, capabilities: [ 'manage_options' ] },
+		} );
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue( { ok: false, body: null } )
+		);
+
+		const { container } = render( <EmbeddedApp /> );
+
+		await waitFor( () => {
+			expect(
+				container.querySelector( '.nvoos-pro-spa-embedded__layout' )
+			).not.toBeNull();
+		} );
+
+		expect( screen.getByLabelText( 'Model' ) ).toBeInTheDocument();
 	}, 15000 );
 } );

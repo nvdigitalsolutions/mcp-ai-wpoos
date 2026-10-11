@@ -1,0 +1,34 @@
+{
+	"name": "nvoos-mcp-gateway",
+	"displayName": "NV oOS Gateway",
+	"version": "0.1.1",
+	"description": "Fleet-scoped MCP server for NV oOS WordPress sites — one API key, every bound site; tools appear namespaced as <site-slug>.<tool>.",
+	"author": {
+		"name": "NV Digital Solutions",
+		"url": "https://nvdigitalsolutions.com"
+	},
+	"homepage": "https://mcp.nvoos.pro/",
+	"repository": "https://github.com/nvdigitalsolutions/nvoos-mcp-gateway",
+	"license": "GPL-3.0-or-later",
+	"keywords": [ "wordpress", "mcp", "woocommerce", "content", "gateway" ],
+	"documentationUrl": "https://mcp.nvoos.pro/",
+	"supportUrl": "https://github.com/nvdigitalsolutions/nvoos-mcp-gateway/issues",
+	"mcpServers": {
+		"nvoos": {
+			"type": "http",
+			"url": "https://mcp.nvoos.pro/mcp",
+			"headers": {
+				"Authorization": "Bearer ${user_config.api_key}"
+			}
+		}
+	},
+	"userConfig": {
+		"api_key": {
+			"type": "string",
+			"title": "Gateway API key",
+			"description": "Public API key issued by the NV oOS gateway operator (keys are site-scoped with server-side tool allowlists).",
+			"required": true,
+			"sensitive": true
+		}
+	}
+}

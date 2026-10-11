@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.97"
-  plugin-version-tested: "1.1.97"
-  last-updated: "2026-10-05"
+  plugin-version: "1.1.99"
+  plugin-version-tested: "1.1.99"
+  last-updated: "2026-10-07"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (`v1.1.97-docs-catch-up.md`,
-   with `v1.1.96-docs-catch-up.md` as the previous pass) plus the
+3. **Read the template plans** — the latest executed plan (`1.2.4-docs-catch-up.md`,
+   with `1.2.3-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -91,6 +91,23 @@ weekly (or on demand), independent of any release.
 | Verify-only | Confirm no change; list in the plan | Skill counts, tool counts, addon/toolkit counts, proposals index, Docs Hub changelog |
 
 ### A2. Scope rules (non-negotiable)
+
+- **A version jump is user-directed and recorded, never inferred.** The 1.2.1
+  pass executed the jump from 1.1.99 (the ROADMAP's planned 1.2.0 scope was
+  delivered early across v1.1.1–v1.1.35, so the first 1.2-line release is
+  numbered 1.2.1) — when the user names a target version, run the whole pass
+  against it and resolve the open-items tracker's "Blocked on: version-jump
+  decision" line with the decision instead of re-raising it.
+- **A tag-pending addon ZIP is not stale yet.** The v1.2.1 window bumped the
+  docs-hub addon 0.5.1 → 0.5.2 but the `docs-hub-v0.5.2` tag (which triggers
+  the build) was a post-merge follow-up — the v0.5.1 ZIP stayed in `build/`
+  until the new artifact landed (the v1.1.93/v1.1.99 superseded-addon-ZIP
+  precedents). **The v1.2.2 pass executed the rule's completion:** once the
+  v0.5.2 **and** v0.5.3 ZIPs had built (the `docs-hub-v0.5.3` tag pushed +
+  0.5.3 live on the directory — verify with `git tag`), BOTH older docs-hub
+  ZIPs (v0.5.1 + v0.5.2) became removable together with the superseded
+  content-graph v1.0.8 ZIP (v1.0.10 built) — 4 addon ZIP files on top of
+  the 30-file previous-version oOS set.
 
 - **Historical per-version entries stay untouched.** Old CHANGELOG/README blocks
   (`[1.1.XX]` and earlier) are history and are never rewritten.
@@ -144,6 +161,16 @@ weekly (or on demand), independent of any release.
   catch-up runs (the v1.1.87 window's #6780 did) — the catch-up converts it
   into the dated release entry and extends it with the rest of the window;
   never keep two entries for the same version.
+- **A PR merged after a catch-up may stage its changelog entry into the
+  just-shipped release section instead of the next one.** The v1.2.3
+  window's #6986 inserted its CORS-guard block into the already-shipped
+  `[1.2.2]` CHANGELOG section post-merge (verified: the #6983 catch-up
+  tree has no CORS text) — the next catch-up relocates the block into its
+  own release section and records the relocation in the plan (the same
+  falsification logic as the #6787 rule, applied to changelog sections
+  rather than window maps; `.context`/skill/deploy-doc stamps written
+  in-window with the wrong version get the same relocation/correction
+  treatment).
 - **Sub-project window PRs are flagged-not-edited even when they carry their
   own changelog surfaces.** PRs that update `plugins/nvoos-content-graph`'s
   own CHANGELOG.md/readme.txt/.pot (the v1.1.87 window's #6782/#6783) keep
@@ -240,6 +267,40 @@ weekly (or on demand), independent of any release.
   addon tree for the old version and treat every non-historical hit (health
   payloads, status constants, headers) as a release-blocking miss — the
   ADDON_INVENTORY row update alone is not proof the addon is consistent.
+- **The partial-bump rule covers test-file version pins too.** The v1.1.99
+  window's #6952 bumped toolkit-shell to 0.3.0 everywhere (package.json,
+  plugin header, runtime constants) but left the three test files defining
+  `NVOOS_TOOLKIT_SHELL_VERSION` at 0.2.0 — the catch-up fixes such pins
+  in-pass (a separate `fix:` commit), since tests pinning the old version
+  are exactly the kind of silent drift the rule exists to catch.
+- **An in-window SPA addon version bump supersedes its committed
+  `build/nvoos-<slug>-v<old>.zip` before the workflow has built the new
+  one.** The `build-spa-addons.yml` run on the bump's merge commit produces
+  the `v<new>` ZIP asynchronously (a later `build: add SPA addon ZIPs`
+  commit on alpha-working) — the catch-up removes the superseded old ZIP
+  (the v1.1.93 superseded-addon-zip precedent) and notes the in-flight run
+  in the plan; a build that fails simply leaves no current ZIP, which is
+  still the correct state (the old artifact is stale by definition).
+- **A user-directed partial `@since` reconciliation supersedes the OI-1
+  parking for the tags it covers.** OI-1 parks *historical* tag
+  reconciliation (groups 1–54 + the repo-wide sweep in issue #5968) — but
+  when the user approves fixing a pass's own `@since` anomalies, the
+  catch-up owns a dedicated leading commit that: (a) fixes only
+  in-window-added tags and literal placeholders (`2.x.0`, `1.9.x`-style
+  strings that can never be a shipped version) in the touched base/Pro
+  files — never sub-project (`plugins/*`) or vendored (byte-identity)
+  files, and never recorded module-family tags (the mcp-apps 1.9.x family,
+  group 32); (b) tags every corrected line with the **true shipped
+  version**, blame-verified — in-window lines get the shipping version,
+  pre-existing placeholder lines get the release that shipped their
+  introducing PR (find it via `git blame` → introducing commit →
+  `git log --merges --ancestry-path <c>..HEAD --reverse` for the merge
+  chain, or the changelog section for the PR number); (c) runs `php -l` on
+  every touched file and the targeted suites, and (d) records the
+  reconciliation in the open-items tracker with what stayed parked
+  (executed 2026-10-11 by the 1.2.4 pass — 43 lines: the `2.x.0` family →
+  `1.1.43`/`1.1.51`/`1.1.54`/`1.2.4`, model-foundry `1.6.0` → `1.2.4`,
+  chart-fence + chart-recipes-JS `1.4.0` → `1.2.4`).
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -298,10 +359,25 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
 ### A7. Branch + PR (required)
 
 - **Do NOT commit directly to `alpha-working`.**
-- `git checkout -b chore/[VERSION]-docs-catch-up`, commit there, reset local
-  `alpha-working` to `origin/alpha-working`, push the branch.
-- Open a PR against `alpha-working` with Summary / What's in / Validation /
-  Notes structure, listing deferred open items explicitly.
+- Cut the branch from a **fresh** `origin/alpha-working`
+  (`git fetch origin alpha-working && git checkout -b chore/[VERSION]-docs-catch-up origin/alpha-working`),
+  commit there, push the branch.
+- Open the PR **against `alpha-working`** — never against `main`. A branch cut
+  from the alpha line but targeted at `main` (the default base) reports a huge
+  conflict list across every file where the two lines have diverged — the fix
+  is `gh pr edit <n> --base alpha-working`, not conflict resolution.
+  (Incident: PR #6926, 2026-10-06, ~5k-file "conflict" that vanished on re-base.)
+- **Keep every commit message free of CI-skip markers** (the bracketed
+  `skip ci` / `no ci` forms). GitHub skips **all** workflows for a merge push
+  when a marker appears anywhere in the squashed message — including bullets
+  inherited from commits merged into the PR branch. This repo's build commits
+  carry such markers routinely, so an absorbed commit can silently suppress
+  the post-merge syncs. (Incident: the #6925 merge push ran zero workflows and
+  the mcp-gateway mirror sync never fired.) Recovery: merge a clean follow-up
+  PR touching the same paths, or dispatch manually —
+  `gh workflow run sync-mcp-gateway.yml --ref alpha-working`.
+- PR structure: Summary / What's in / Validation / Notes, listing deferred
+  open items explicitly.
 
 ---
 
@@ -738,7 +814,180 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.93-docs-catch-up.md`,
   `docs/project/plans/v1.1.94-docs-catch-up.md`,
   `docs/project/plans/v1.1.95-docs-catch-up.md`,
-  `docs/project/plans/v1.1.97-docs-catch-up.md` (latest executed — the v1.1.97
+  `docs/project/plans/v1.1.97-docs-catch-up.md`,
+  `docs/project/plans/v1.1.98-docs-catch-up.md`,
+  `docs/project/plans/v1.1.99-docs-catch-up.md`,
+  `docs/project/plans/1.2.4-docs-catch-up.md` (latest executed — the
+  1.2.4 pass over PRs #6998–#7010: the MCP client-quirk hardening
+  (#7007, Proposal 066 — the `WP_MCP_AI_Tool_Schema_Auditor`, the
+  pre-staged `[Unreleased]` converted, zero tool-count change), the
+  nvoos-chart recipes + `create_chart_fence` (+1 base, #7003/#7005
+  with the `design-chart-recipes` skill), Model Foundry Phase 1 (+3
+  Pro exporters, Proposal 067, #7008 with the
+  `mcp-ai-wpoos-model-foundry` skill), the Content Graph explorer
+  page in the Pro SPA (#6998 — sub-project flag-not-edited for the
+  CG plugin's `visual-config` route + credential auth; the
+  `mcp-ai-wpoos-content-graph-spa` skill landed in-window), the
+  standalone SPA deploy/auth hardening (#6999/#7000/#7002/#7004/#7006
+  + the static-server headers #7009), the F&B toggle fix (#7010),
+  the **user-directed partial `@since` reconciliation** (the literal
+  `2.x.0` placeholder family — never recorded in OI-1 — corrected to
+  `1.1.43`/`1.1.51`/`1.1.54`/`1.2.4`, blame-verified; model-foundry
+  `1.6.0` + chart-fence `1.4.0` → `1.2.4`; the mcp-apps 1.9.x family
+  + OI-1 groups 1–54 stay parked — the new A2 scope rule),
+  skill-count 66 → 69 (three new skills in-window with the README
+  repo-map fold-in owed — A5 fired again; the AGENTS.md §1.5
+  design-* 34 → 35 correction), tool count +1 base +3 Pro →
+  ~354/~1,342/~1,696, zero catalog diff, zero sub-project edits,
+  and the stale 1.2.2 build-set removal (6 root files — the 1.2.3
+  ZIP set landed in-window))
+
+Preceding windows:
+`docs/project/plans/1.2.3-docs-catch-up.md` (executed — the
+  1.2.3 pass over PRs #6984–#6996: the CORS same-origin enforcement
+  (#6986 — the 12th security class `WP_MCP_AI_CORS_Guard` overriding
+  core's origin reflection, the `cors_allowed_origins` setting, zero
+  tool-count change), the standalone-SPA WordPress login (#6993,
+  Proposal 064 — the fourth auth mode via an Application Password +
+  the OOS streaming-CORS fix), the SPA REST auth fixes (#6990 —
+  credential-scoped transcripts/approvals + session-nonce re-bind,
+  closes #6987/#6985), the schedule-manager multi-recipient
+  `notify_email` + quick wins (#6991 — closes #6642/#6651; OI-5 closed,
+  OI-4 item 5 fixed), the standalone-SPA cookie mode + `serve.mjs`
+  proxy + chunk splitting (#6994), the `.env` loading (#6996), the npm
+  ESM-dist fixes + Vite demo (#6984 — alpha.4 publish deferred), the
+  CORS/Velocity docs (#6989) + triage snapshot (#6992), the build fixes
+  (#6988 `git init -b main`; #6995 deploy-tree layout), **two changelog
+  pre-staging anomalies caught-up** (the #6986 CORS block post-hoc
+  inserted into the shipped [1.2.2] section — relocated into [1.2.3]
+  and recorded as a new scope rule; the #6993 [Unreleased] section —
+  converted), one new OI-1 group (54: `@since 1.2.2` ×14 — cors-guard
+  ×12 + schedule-manager/plan-tool ×2, one-behind), the security-class
+  count 11 → 12 surfaces (copilot-instructions ×2, CLAUDE.md ×2,
+  FOR_REVIEWERS ×2 stale-10 corrections, EU_AI_ACT), three skill
+  reconciliations (plugin ×3 + RELEASE-NOTES + the CORS entry version
+  fix; spa-ui — the fourth auth mode + proxy/env/deploy notes; updates),
+  the stale 1.2.1 build-set removal (30 files — 9 + 2 + 19) with the
+  ollama-demo.json URL carry, zero tool-count change, zero catalog
+  diff, and zero skill-count change (66))
+
+Preceding windows:
+  `docs/project/plans/1.2.2-docs-catch-up.md` (executed — the
+  1.2.2 pass over PRs #6966–#6982 + the direct `c9d54bd273` CI commit: the
+  chat-profile system (#6977, Proposal 015 — server-enforced read-only mode,
+  the 11th security class, `GET/POST /mcp-ai/v1/chat-profile` deliberately
+  not a tool, zero tool-count change), the F&B assistant packs (#6982,
+  Proposal 062 Phase 4 — four importable bundles + the seeder, no new
+  slugs), the Google OAuth production readiness (#6981 — `drive.file`
+  unification, Calendar Minimal, upstream revocation), the Pro SPA v2 fixes
+  (#6974 dead-class default assistant + non-admin visibility; #6976 sidebar
+  toggle + live sessions; #6979 TS parity + full JS rebuild), the test drift
+  fixes (#6978/#6980 — both lessons skill-encoded), the CI/build fixes
+  (#6970 SPA tag-release + new release-spa-addons.yml; #6972 demo-videos
+  manual-only), the docs-hub 0.5.3 pre-submission pass (#6966/#6967/#6968 —
+  tag pushed + LIVE on the wp.org directory) and content-graph 1.0.10
+  (#6973 — excluded-source pruning; run Rebuild Graph once), Proposal 063
+  (#6969, docs only), three new OI-1 groups (51: `@since 2.2.0` ×84
+  chat-profile wave; 52: `@since 2.1.1` ×1 pro helper; 53: `@since 1.2.0`
+  ×1 oauth-manager) + the group-50 extension (#6982's 1.6.0 ×3), the
+  OI-4 extension (#6974's pagination-fields fixture accumulation — **closed
+  by the 1.2.3 window's #6991**),
+  five skill reconciliations (plugin ×3 + RELEASE-NOTES + the stale
+  Architecture count line; wporg-submission Fifth pass; checkout-integration
+  0.5.3/1.0.10 refs; test-suite 68 → 69 patterns; updates), the
+  FOR_REVIEWERS pre-existing drift corrections (Chat SPA 0.7.0, SaaS
+  Controller 0.3.0, Comic Reader 0.5.0, MCP Gateway 0.1.1, Schedule
+  Anything SPA 0.2.0, Design System rename, Media Studio 0.6.1, Toolkit
+  Shell 0.3.0), the security-class count 10 → 11 surfaces
+  (copilot-instructions ×2, CLAUDE.md ×2), the stale 1.1.99 build-set
+  removal (30 files — 9 + 2 + 19) + the superseded docs-hub
+  v0.5.1/v0.5.2 + content-graph v1.0.8 ZIPs (4 files — the tag-pending
+  rule's completion), zero tool-count change, zero catalog diff, and zero
+  skill-count change (66))
+
+Preceding windows:
+  `docs/project/plans/1.2.1-docs-catch-up.md` (executed — the
+  1.2.1 pass over PRs #6954–#6964 + the five direct Proposal-061 doc
+  commits: the **version-jump decision executed** (1.1.99 → 1.2.1 — the
+  ROADMAP's planned 1.2.0 scope was delivered early across v1.1.1–v1.1.35,
+  so the first 1.2-line release is numbered 1.2.1; the OI-1 "Blocked on"
+  line records the decision), the Food & Beverage Management Pro Toolkit
+  (#6962, Proposal 062 — 21 gated `fnb_*` Pro tools, 20/20 Check-totals
+  oracle, phases 4/5b/6/8/9/10 deferred in the implementation plan), the
+  Docs Hub content tools (#6964 — 5 `docs_hub_*` Pro tools), the MCP
+  server identity tool (#6956 — `mcp_server_info` +1 base, `_meta`
+  block, bridge-name seam; CG-AI sync = tracker Pending row), the Docs
+  Hub checkout upsell (#6963 — addon 0.5.1 → 0.5.2; the v0.5.2 ZIP is
+  tag-pending so `nvoos-docs-hub-v0.5.1.zip` stays until the new build
+  lands), the skill-catalogue gap fixes (#6954 — notes pre-staged into
+  the 1.1.99 section in-window), the Elementor autoload fix (#6961),
+  content-graph 1.0.9 + checkout polish (#6959/#6958 — sub-project,
+  flag-not-edited), three new coding-time skills in-window (spa-ui,
+  toolkit-creation, checkout-integration — 63 → 66 with the count
+  bookkeeping landing with the introducing PRs), two in-window skill
+  updates (#6960 wporg-submission + test-suite 67 → 68 patterns),
+  two new OI-1 groups (49: `@since 1.2.0` ×1 in mcp-server-info.php;
+  50: `@since 1.6.0` ×63 across the new food-beverage folder) with
+  convention notes (docs-hub 0.5.2 ×39 addon-version correct; CG 1.0.9
+  sub-project correct; skill-catalogue 1.11.0 ×6 file family; doc-gen
+  2.10.0 ×29 folder's 2.x family), OI-2 figure moved to ~353/~1,339/~1,692,
+  OI-8 extended (+27 new slugs) and OI-10 extended (32nd toolkit), the
+  stale 1.1.98 build-set removal (30 files — 9 + 2 + 19, no
+  ollama-demo.json carry — already at 1.1.99), tool count +1 base
+  +26 Pro, and the #6955/#6962/#6963 skill-count surfaces verified
+  66 in-window)
+
+Preceding windows:
+  `docs/project/plans/v1.1.99-docs-catch-up.md` (the v1.1.99
+  pass over PRs #6936 + #6938–#6952: the SPA UI stack enhancement (#6952,
+  Proposal 060 — toolkit-shell 0.2.0 → 0.3.0 + schedule-anything-spa →
+  0.2.0 with shipped vitest suites; the addon partial-bump rule fired on
+  the three toolkit-shell test files still pinning 0.2.0 — fixed in-pass),
+  the MCP Gateway OAuth 2.1 resource server (#6945, Phase 1 — RFC 9728
+  metadata + challenges, zero-dep JWT, scope site-binding, no passthrough;
+  Phases 2–5 deferred; gateway stays 0.1.1 with an Unreleased changelog
+  section), the Docs Hub Playground demo + wp.org Live Preview
+  (#6944/#6946–#6949), the gateway listing prep + icon + Claude Code
+  plugin (#6941–#6943), the Figma skills catalogue (#6938 — the
+  agent-skills.md catalogue-section fold-in owed), the Gmail body fixes
+  (#6939), the Complete-ZIP blueprint stripping (#6936/#6940 — #6936
+  merged 14 s before the #6935 catch-up and joined this window per the
+  #6787 rule), the Fleet Operator token masking (#6950), the #6941
+  deferral executed in-pass (.env.example `STATUS_EXTERNAL_TARGETS` +
+  `.context/media-worker.md` external-targets notes), four skill
+  reconciliations (test-suite description 66 → 67, playground-demos
+  description + docs-hub demo, plugin ×3 + RELEASE-NOTES v1.1.99 section
+  with the bundled-base sync, the gateway addon skill's OAuth section),
+  the proposals-README 060 entry, the stale 1.1.97 build-set removal
+  (6 root files) + the superseded nvoos-toolkit-shell-v0.2.0.zip (the
+  v0.3.0 ZIP lands via the in-flight build-spa-addons run), zero
+  tool-count change, and **no new OI-1 group** (the window's `@since
+  0.3.0` ×12 are the toolkit-shell addon convention; #6937's post-window
+  1.1.98/1.1.0 tags were already reconciled))
+
+Preceding windows:
+  `docs/project/plans/v1.1.98-docs-catch-up.md` (the v1.1.98
+  pass over PRs #6927–#6934: the Figma-to-Elementor design-to-build pipeline
+  (#6934, Proposals 057–059 — docs + the new `design-figma-to-elementor`
+  skill, coding-time 62 → 63, base bundled 75 → 76, the README repo-map
+  fold-in owed — A5's "the introducing PR may skip the count bookkeeping"
+  rule fired again: AGENTS.md/copilot-instructions/agent-skills.md were
+  updated in-window but the README row was missed; Phase 3 demo/verify
+  deferred on live endpoints), the Unified Blueprints release-build + gating
+  fixes (#6933 — root-anchored `examples` exclusions, toolkit-enablement
+  gating), the gateway sync dispatch + changelog (#6927), the dependabot
+  sweep (#6931 — 138/166 alerts via bounded in-major bumps, 28 deferred in
+  #6930, dashboard dismissed same-day), three skill reconciliations (plugin
+  ×3 + RELEASE-NOTES with the bundled-base sync of #6932's cross-reference,
+  ai-assistant-admin bundled ← Zed — the bundled copy was still the
+  pre-v1.1.79 rewrite, updates, dependabot-loop reference), the
+  proposals-README 057/058/059 entries, the stale 1.1.96 build-set removal
+  (30 files — 9 + 2 + 19) with the ollama-demo.json URL carry, zero
+  tool-count change, and **no new OI-1 group** (zero added `@since` tags
+  in-window))
+
+Preceding windows:
+  `docs/project/plans/v1.1.97-docs-catch-up.md` (the v1.1.97
   pass over PRs #6898–#6914: the ECC-inspired agent-harness enhancements
   (#6912, Proposal 056 — cascade routing on both engines via the lib/core
   `CascadeRouter` + the legacy `WP_MCP_AI_Cascade_Executor` gate with Pro Jev

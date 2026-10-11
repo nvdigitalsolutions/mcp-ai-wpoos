@@ -225,9 +225,17 @@ router.get('/models', (_req, res) => {
 
 // ── Video Processing (FFmpeg) ─────────────────────────────
 router.post('/process', upload.single('file'), async (req, res) => {
+  // Unlink the multer temp upload on every path that leaves the handler
+  // without processing (idempotent — safe to call repeatedly).
+  const cleanupUpload = () => {
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+    }
+  };
   try {
     const caps = await detectCapabilities();
     if (!caps.ffmpeg) {
+      cleanupUpload();
       return res.status(503).json({ error: 'capability_unavailable', capability: 'video', message: 'ffmpeg is not installed on this server.' });
     }
 
@@ -300,7 +308,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
 
     switch (operation) {
       case 'resize':
-        if (!width && !height) return res.status(400).json({ error: 'Width or height required for resize' });
+        if (!width && !height) { cleanupUpload(); return res.status(400).json({ error: 'Width or height required for resize' }); }
         if (width && height) {
           ffmpegCmd += ` -vf "scale=${width}:${height}"`;
         } else if (width) {
@@ -311,7 +319,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
         break;
 
       case 'crop':
-        if (!width || !height) return res.status(400).json({ error: 'Width and height required for crop' });
+        if (!width || !height) { cleanupUpload(); return res.status(400).json({ error: 'Width and height required for crop' }); }
         ffmpegCmd += ` -vf "crop=${width}:${height}"`;
         break;
 
@@ -349,6 +357,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
         break;
 
       default:
+        cleanupUpload();
         return res.status(400).json({ error: `Unknown operation: ${operation}` });
     }
 

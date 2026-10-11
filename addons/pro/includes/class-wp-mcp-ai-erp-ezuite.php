@@ -57,13 +57,15 @@ class WP_MCP_AI_ERP_EZuite implements WP_MCP_AI_ERP_Connector_Interface {
 	/**
 	 * Field mapping between WooCommerce and EZuite.
 	 *
-	 * Maps CCT / internal column names to canonical EZuite LX_ItemPull
-	 * API response field names.
+	 * Maps CCT / internal column names to canonical EZuite LX_ItemStockPull
+	 * API response field names. Legacy LX_ItemPull names (Item_Code,
+	 * top-level Location_Code) are resolved as aliases by the item
+	 * normalization step in map_fields_from_erp().
 	 *
 	 * @var array
 	 */
 	protected $field_mapping = array(
-		'sku'           => 'Item_Code',
+		'sku'           => 'ItemCode',
 		'name'          => 'Item_Name',
 		'quantity'      => 'Qty',
 		'warehouse'     => 'Location_Code',
@@ -426,10 +428,16 @@ class WP_MCP_AI_ERP_EZuite implements WP_MCP_AI_ERP_Connector_Interface {
 	/**
 	 * Map fields from EZuite ERP to WooCommerce format.
 	 *
+	 * Item codes are normalized first so both the LX_ItemStockPull shape
+	 * (ItemCode, Stock_By_Location) and the legacy LX_ItemPull shape
+	 * (Item_Code, top-level Location_Code) resolve.
+	 *
 	 * @param array $erp_data ERP data.
 	 * @return array Mapped data.
 	 */
 	protected function map_fields_from_erp( $erp_data ) {
+		$erp_data = $this->normalize_erp_item( $erp_data );
+
 		$mapped = array();
 
 		foreach ( $this->field_mapping as $woo_field => $erp_field ) {
@@ -439,6 +447,39 @@ class WP_MCP_AI_ERP_EZuite implements WP_MCP_AI_ERP_Connector_Interface {
 		}
 
 		return $mapped;
+	}
+
+	/**
+	 * Normalize a raw EZuite item to canonical keys (old + new shape aliases).
+	 *
+	 * @since 3.2.0
+	 *
+	 * @param array $item Raw EZuite item.
+	 * @return array Normalized item.
+	 */
+	protected function normalize_erp_item( $item ) {
+		if ( ! is_array( $item ) ) {
+			return $item;
+		}
+
+		// Item code aliases (LX_ItemStockPull renamed Item_Code to ItemCode).
+		if ( ! isset( $item['ItemCode'] ) && isset( $item['Item_Code'] ) ) {
+			$item['ItemCode'] = $item['Item_Code'];
+		} elseif ( ! isset( $item['Item_Code'] ) && isset( $item['ItemCode'] ) ) {
+			$item['Item_Code'] = $item['ItemCode'];
+		}
+
+		// Derive the flat location code from the primary per-location entry.
+		if ( ! isset( $item['Location_Code'] ) && ! empty( $item['Stock_By_Location'] ) && is_array( $item['Stock_By_Location'] ) ) {
+			foreach ( $item['Stock_By_Location'] as $entry ) {
+				if ( is_array( $entry ) && isset( $entry['Setup_Location_Code'] ) ) {
+					$item['Location_Code'] = $entry['Setup_Location_Code'];
+					break;
+				}
+			}
+		}
+
+		return $item;
 	}
 
 	/**

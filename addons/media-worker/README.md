@@ -210,9 +210,20 @@ Enable with `STATUS_ENABLED=1`. Heartbeats are expected every
 `STATUS_HEARTBEAT_INTERVAL_MS` (300 s default, matching the plugin's
 five-minute tick); a site flips to `at_risk` on its first miss and to
 `major_outage` after `STATUS_CONFIRM_MISSES` consecutive misses (2 default).
+
 Synthetic external checks (`STATUS_SYNTHETIC_ENABLED=1`) probe
-`<site>/wp-json/mcp-ai/v1/status` over the SSRF guard — a heartbeat-fresh site
-whose frontend is unreachable reports `partial_outage` (split-brain).
+`<site>/wp-json/mcp-ai/v1/status` over the SSRF guard every
+`STATUS_SYNTHETIC_INTERVAL_MS` (60 s default) — a heartbeat-fresh site whose
+frontend is unreachable reports `partial_outage` (split-brain). The probe
+URL is overridable per site with `STATUS_<SLUG>_SYNTHETIC_URL`.
+
+External targets without a heartbeat emitter (e.g. the MCP gateway)
+register via `STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health`
+(semicolon-separated `slug=url` pairs, seeded idempotently at boot). Seeded
+targets are **synthetic-only**: the probe is the single source of truth, so
+the site reports `operational` on a passing probe and `major_outage` on a
+failing one. Enable probing per target with `STATUS_<SLUG>_SYNTHETIC=1`.
+
 Alerts (HMAC-signed webhooks and/or email) fire on confirmed transitions;
 see `.env.example` for the full `STATUS_*` table. Full design:
 `docs/project/plans/media-worker-status-monitoring-plan.md`.

@@ -356,6 +356,132 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Subscribers with a valid nonce may browse the directory (read gate),
+	 * even though the global chat capability defaults to edit_posts.
+	 */
+	public function test_subscriber_can_list_directory_with_nonce() {
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		// Bootstrap before creating fixtures: see the metadata test.
+		$this->bootstrap_rest_controller( $mock_client );
+
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Readable Assistant',
+			)
+		);
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_REQUIRED_CAPABILITY, 'read' );
+
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		wp_set_current_user( 0 );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertCount( 1, $data['assistants'] );
+		$this->assertSame( $assistant_id, $data['assistants'][0]['id'] );
+	}
+
+	/**
+	 * The directory only lists assistants the caller can actually use —
+	 * "same credentials or below" — for session-authenticated non-admins.
+	 */
+	public function test_directory_filters_assistants_by_capability_for_non_admin() {
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		// Bootstrap before creating fixtures: see the metadata test.
+		$this->bootstrap_rest_controller( $mock_client );
+
+		$public_assistant = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Public Capability Assistant',
+			)
+		);
+		update_post_meta( $public_assistant, WP_MCP_AI_Assistant_CPT::META_REQUIRED_CAPABILITY, 'public' );
+
+		$read_assistant = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Read Capability Assistant',
+			)
+		);
+		update_post_meta( $read_assistant, WP_MCP_AI_Assistant_CPT::META_REQUIRED_CAPABILITY, 'read' );
+
+		$edit_assistant = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Edit Capability Assistant',
+			)
+		);
+		update_post_meta( $edit_assistant, WP_MCP_AI_Assistant_CPT::META_REQUIRED_CAPABILITY, 'edit_posts' );
+
+		$admin_assistant = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Admin Capability Assistant',
+			)
+		);
+		update_post_meta( $admin_assistant, WP_MCP_AI_Assistant_CPT::META_REQUIRED_CAPABILITY, 'manage_options' );
+
+		// Subscribers see only public / read assistants.
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 200, $response->get_status() );
+
+		$ids = wp_list_pluck( $response->get_data()['assistants'], 'id' );
+		$this->assertContains( $public_assistant, $ids );
+		$this->assertContains( $read_assistant, $ids );
+		$this->assertNotContains( $edit_assistant, $ids );
+		$this->assertNotContains( $admin_assistant, $ids );
+
+		// Authors additionally see assistants up to edit_posts.
+		$author_id = self::factory()->user->create( array( 'role' => 'author' ) );
+		wp_set_current_user( $author_id );
+
+		$author_request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
+		$author_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+		$author_response = rest_get_server()->dispatch( $author_request );
+
+		wp_set_current_user( 0 );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $author_response );
+		$this->assertSame( 200, $author_response->get_status() );
+
+		$author_ids = wp_list_pluck( $author_response->get_data()['assistants'], 'id' );
+		$this->assertContains( $public_assistant, $author_ids );
+		$this->assertContains( $read_assistant, $author_ids );
+		$this->assertContains( $edit_assistant, $author_ids );
+		$this->assertNotContains( $admin_assistant, $author_ids );
+	}
+
+	/**
 	 * Dispatch a directory request and capture the echoed SSE frames.
 	 *
 	 * The streaming path echoes frames directly and cleans output buffers

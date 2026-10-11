@@ -72,6 +72,7 @@ class SA_Toolkit_Manager {
 		'extended-cognition'      => 'enable_extended_cognition_toolkit',
 		'skills-manager'          => 'enable_skills_manager',
 		'vector-storage'          => 'enable_vector_storage_pro',
+		'fnb'                     => 'enable_fnb_toolkit',
 	);
 
 	/**
@@ -113,6 +114,7 @@ class SA_Toolkit_Manager {
 		'eca-management',
 		'extended-cognition',
 		'vector-storage',
+		'fnb',
 	);
 
 	/**

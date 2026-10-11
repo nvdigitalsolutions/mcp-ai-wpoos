@@ -32,14 +32,11 @@ name: Build SPA Addons
 
 on:
   push:
-    tags:
-      - 'chat-spa-v*.*.*'
-      - 'canvas-toolkit-v*.*.*'
-      - 'document-editor-v*.*.*'
-      - 'media-studio-v*.*.*'
-      - 'toolkit-shell-v*.*.*'
-      - 'docs-hub-v*.*.*'
-      - 'librechat-v*.*.*'
+    # NOTE: tag pushes are intentionally NOT listed here. The `paths` filter
+    # below is ANDed with any `tags` filter, and release tags normally point
+    # at build/-only commits whose diffs contain no addon paths — so tag
+    # pushes would never trigger this workflow. Tag releases are handled by
+    # release-spa-addons.yml instead.
     branches:
       - main
       - alpha-working
@@ -103,15 +100,6 @@ jobs:
             exit 0
           fi
 
-          # If triggered by a tag, extract the addon slug
-          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            TAG="$GITHUB_REF_NAME"
-            # Extract slug before "-v": "chat-spa-v0.6.0" → "chat-spa"
-            SLUG="${TAG%-v*}"
-            echo "addons=[{\"slug\":\"${SLUG}\"}]" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
           # Otherwise build all addons — use heredoc for multi-line JSON output.
           {
             echo 'addons<<ADDONS_EOF'
@@ -161,14 +149,10 @@ jobs:
         id: version
         run: |
           ADDON="${{ matrix.addon.slug }}"
-          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            TAG="$GITHUB_REF_NAME"
-            VERSION="${TAG#${ADDON}-v}"
-          else
-            # Read version from plugin header
-            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
-            VERSION="${VERSION:-dev}"
-          fi
+          # Read version from the plugin header (tag releases live in
+          # release-spa-addons.yml).
+          VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+          VERSION="${VERSION:-dev}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "artifact=nvoos-${ADDON}-v${VERSION}" >> "$GITHUB_OUTPUT"
 
@@ -234,11 +218,12 @@ jobs:
             --exclude='.gitignore'
             --exclude='.distignore'
             --exclude='.DS_Store'
-            --exclude='vendor/'
-            --exclude='composer.json'
-            --exclude='composer.lock'
-            --exclude='docs/'
-            --exclude='.wordpress-org/'
+            --exclude 'vendor/'
+            --exclude 'composer.json'
+            --exclude 'composer.lock'
+            --exclude 'docs/'
+            --exclude '.wordpress-org/'
+            --exclude 'blueprints/'
           )
 
           # WordPress.org zip: docs-hub ships only readme.txt — strip all
@@ -326,14 +311,10 @@ jobs:
         id: version
         run: |
           ADDON="docs-hub"
-          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            TAG="$GITHUB_REF_NAME"
-            VERSION="${TAG#${ADDON}-v}"
-          else
-            # Read version from plugin header.
-            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
-            VERSION="${VERSION:-dev}"
-          fi
+          # Read version from the plugin header (tag releases live in
+          # release-spa-addons.yml).
+          VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+          VERSION="${VERSION:-dev}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "artifact=nvoos-${ADDON}-v${VERSION}" >> "$GITHUB_OUTPUT"
 
@@ -467,7 +448,8 @@ jobs:
 
   # ===========================================================================
   # Publish ZIPs to repository build/ directory
-  # Only on push to main/alpha-working or tag pushes — not on PRs.
+  # Only on push to main/alpha-working — not on PRs (tag releases live in
+  # release-spa-addons.yml and must not move the tag ref).
   # ===========================================================================
   publish:
     name: Publish ZIPs to Repository
@@ -475,7 +457,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/alpha-working' || startsWith(github.ref, 'refs/tags/'))
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/alpha-working')
 
     steps:
       - name: Checkout target branch
@@ -560,8 +542,11 @@ jobs:
     name: Create GitHub Releases
     needs: [matrix-prep, build, publish]
     runs-on: ubuntu-latest
+    # workflow_dispatch inputs arrive as strings, so the boolean input must
+    # be compared as a string ('true'), not as a boolean (true) — the
+    # boolean form silently evaluates false and skips the job.
     if: |
-      inputs.create_release == true || startsWith(github.ref, 'refs/tags/')
+      inputs.create_release == 'true'
 
     strategy:
       fail-fast: false
@@ -573,13 +558,8 @@ jobs:
         id: version
         run: |
           ADDON="${{ matrix.addon.slug }}"
-          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            TAG="$GITHUB_REF_NAME"
-            VERSION="${TAG#${ADDON}-v}"
-          else
-            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
-            VERSION="${VERSION:-dev}"
-          fi
+          VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+          VERSION="${VERSION:-dev}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Download artifact
