@@ -22,6 +22,7 @@ path = "src/main.rs"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+
 tauri = { version = "2", features = [] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-single-instance = "2"
@@ -94,3 +95,6 @@ whisper = ["dep:whisper-rs"]
 moonshine = ["dep:ort", "dep:ort-sys"]
 mcp = ["dep:rmcp", "dep:schemars"]
 silero-vad = ["dep:silero-vad-rs", "dep:ort-sys", "dep:ndarray"]
+
+[patch.crates-io]
+whisper-rs-sys = { path = "../vendor/whisper-rs-sys" }

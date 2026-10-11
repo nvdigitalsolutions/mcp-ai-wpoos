@@ -171,17 +171,53 @@ pub async fn download(
     std::fs::create_dir_all(&target_dir)?;
 
     let tmp = target_dir.join(format!("{}.download", spec.id));
-    let mut resp = client.get(spec.url).send().await?;
-    if !resp.status().is_success() {
+    // Resume a partial download when possible; HTTP Range keeps a flaky
+    // connection from restarting a 600 MB pull from zero.
+    let mut existing = tokio::fs::metadata(&tmp)
+        .await
+        .map(|m| m.len())
+        .unwrap_or(0);
+    let mut request = client.get(spec.url);
+    if existing > 0 {
+        request = request.header(reqwest::header::RANGE, format!("bytes={existing}-"));
+    }
+    let mut resp = request.send().await?;
+    if resp.status() == reqwest::StatusCode::RANGE_NOT_SATISFIABLE {
+        // Server said the partial file is complete/out of range: restart.
+        resp = client.get(spec.url).send().await?;
+        existing = 0;
+    }
+    if !resp.status().is_success() && resp.status() != reqwest::StatusCode::PARTIAL_CONTENT {
         return Err(AppError::Model(format!(
             "download failed for {}: HTTP {}",
             spec.id,
             resp.status()
         )));
     }
-    let total = resp.content_length().unwrap_or(0);
-    let mut received: u64 = 0;
-    let mut file = tokio::fs::File::create(&tmp).await?;
+    let resuming = resp.status() == reqwest::StatusCode::PARTIAL_CONTENT;
+    let total = resp
+        .headers()
+        .get(reqwest::header::CONTENT_RANGE)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.rsplit('/').next())
+        .and_then(|v| v.parse::<u64>().ok())
+        .or_else(|| {
+            resp.content_length().map(|len| {
+                if resuming {
+                    existing.saturating_add(len)
+                } else {
+                    len
+                }
+            })
+        })
+        .unwrap_or(0);
+    let mut received: u64 = if resuming { existing } else { 0 };
+    let mut file = tokio::fs::OpenOptions::new()
+        .create(true)
+        .append(resuming)
+        .truncate(!resuming)
+        .open(&tmp)
+        .await?;
     use tokio::io::AsyncWriteExt;
     while let Some(chunk) = resp.chunk().await? {
         file.write_all(&chunk).await?;

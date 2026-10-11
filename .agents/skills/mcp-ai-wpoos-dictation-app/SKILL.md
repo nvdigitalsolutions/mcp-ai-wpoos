@@ -135,6 +135,15 @@ parent)**, not `models_dir/{id}`. Files: `encoder.int8.onnx`,
 
 ### whisper (whisper-rs 0.16, feature `whisper`) — API VERIFIED
 
+- **Vendored `whisper-rs-sys`** (vendor/whisper-rs-sys, wired via
+  `[patch.crates-io]`): one-line build.rs patch forces
+  `CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded` + `CMAKE_POLICY_DEFAULT_CMP0091=NEW`
+  so whisper.cpp compiles with the static CRT. Without it, whisper (`/MD`)
+  cannot link alongside sherpa-onnx's `/MT` prebuilt libs (LNK2038).
+  All native engines can now share ONE binary:
+  `cargo build --features parakeet,silero-vad,whisper`.
+
+
 - `full_n_segments() -> c_int` (NOT a Result); segments via
   `state.get_segment(i) -> Option<WhisperSegment>` +
   `seg.to_str() -> Result<&str>` (the old `full_get_segment_text` is gone).
@@ -213,6 +222,21 @@ cargo run --features parakeet --example transcribe_file -- ../speech.wav --engin
   BEFORE the `RECORDING` swallow — swallowing first eats the `Released`
   event and dictation hangs in `Recording` forever. Regression-tested by
   `ptt_release_fires_despite_recording_swallow`.
+- **PTT arms only when pressed alone**: `ptt_pressed_alone` (256-byte
+  `GetKeyboardState` snapshot) keeps RAlt combos working — Alt+F4, Alt+Tab,
+  AltGr input and ASUS/OEM shortcuts pass through; only a bare RAlt/RCtrl
+  press starts dictation.
+- **Hook callbacks must not block**: `hook_proc` runs on the input thread
+  context — atomics (`PTT_DOWN`, `LAST_PRESS_MS`) and `try_lock`-only access
+  to the event sender; never `mutex.lock()` or allocation in the callback.
+- **Dictation windowing**: the controller records the ring-buffer positions
+  at press/release; `finalize` snapshots `[press - pre_roll, release +
+  300 ms]`, runs `trim_to_speech` (VAD segmentation, 100 ms pads), and
+  refuses to paste when no speech is detected (silence decodes as
+  hallucinated text). Never transcribe the whole ring buffer.
+- **Updater posture**: `createUpdaterArtifacts` is `false` and the pubkey is
+  empty until a signing keypair exists — unsigned updater manifests are a
+  supply-chain risk. Local builds therefore do not attempt to sign.
 - **Close = exit**: the hidden overlay window keeps the process alive after
   the main window closes; `lib.rs` handles `CloseRequested` on `main` with
   `app.exit(0)`. Do not remove that handler without adding a tray instead.

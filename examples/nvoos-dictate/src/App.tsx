@@ -23,12 +23,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    // The overlay only renders the live dictation capsule — no status polling.
+    if (kind !== 'overlay') {
+      void refresh();
+    }
     const unlisten = onDictateEvent((event) => setDictate(event));
     return () => {
       void unlisten.then((fn) => fn());
     };
-  }, [refresh]);
+  }, [refresh, kind]);
 
   if (kind === 'overlay') {
     return <OverlayView event={dictate} />;
@@ -69,7 +72,9 @@ export default function App() {
       <main className="content">
         {tab === 'home' && <Home status={status} dictate={dictate} onRefresh={refresh} />}
         {tab === 'history' && <HistoryView />}
-        {tab === 'meetings' && <MeetingsView onChanged={refresh} />}
+        {tab === 'meetings' && (
+          <MeetingsView onChanged={refresh} meetingRecording={!!status?.meeting_recording} />
+        )}
         {tab === 'settings' && <SettingsView onChanged={refresh} />}
       </main>
     </div>
