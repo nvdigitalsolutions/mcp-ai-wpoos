@@ -141,10 +141,39 @@ class WP_MCP_AI_JetEngine_MCP_Client {
 			return $result;
 		}
 
-		$ttl = $this->get_cache_ttl();
+		$ttl = self::resolve_cache_ttl(
+			isset( $result['ttlMs'] ) ? absint( $result['ttlMs'] ) : 0,
+			$this->get_cache_ttl()
+		);
+
 		set_transient( $cache_key, $result, $ttl );
 
 		return $result;
+	}
+
+	/**
+	 * Resolve a cache TTL from a server-declared ttlMs (SEP-2549).
+	 *
+	 * A positive server TTL caps the default at the server's freshness
+	 * bound; an absent or zero TTL keeps the default so every chat turn
+	 * does not re-run the initialize + tools/list handshake. Pure helper —
+	 * unit-tested directly.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param int $server_ttl_ms Server-declared cache TTL in milliseconds.
+	 * @param int $default_ttl   Fallback TTL in seconds.
+	 * @return int Cache TTL in seconds.
+	 */
+	public static function resolve_cache_ttl( $server_ttl_ms, $default_ttl ) {
+		$server_ttl_ms = absint( $server_ttl_ms );
+		$default_ttl   = absint( $default_ttl );
+
+		if ( $server_ttl_ms > 0 ) {
+			return min( $default_ttl, max( 1, (int) ceil( $server_ttl_ms / 1000 ) ) );
+		}
+
+		return $default_ttl;
 	}
 
 	/**

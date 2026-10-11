@@ -180,6 +180,25 @@ class ToolsController {
 						continue;
 					}
 
+					// Quirk hardening (proposal 066): normalize what is safe and
+					// skip+log what is not so a single non-conforming schema
+					// cannot make an agent client drop the whole catalog.
+					if ( class_exists( 'NvoosContentGraphAi\Rest\ToolSchemaAuditor' ) ) {
+						$schema = ToolSchemaAuditor::normalize_for_mcp( $tool->get_slug(), $schema );
+
+						if ( is_wp_error( $schema ) ) {
+							$this->log_event(
+								'warning',
+								'Tool skipped in tools/list: ' . $schema->get_error_code(),
+								array(
+									'tool_slug' => $tool->get_slug(),
+									'reason'    => $schema->get_error_message(),
+								)
+							);
+							continue;
+						}
+					}
+
 					$tools_list[] = array(
 						'name'        => $tool->get_slug(),
 						'description' => $tool->get_description(),

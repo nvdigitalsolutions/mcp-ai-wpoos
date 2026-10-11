@@ -153,6 +153,17 @@ class WP_MCP_AI_MCP_App_Client {
 	protected $request_id = 0;
 
 	/**
+	 * Server-declared cache TTL from the most recent tools/list response.
+	 *
+	 * Captured so discovery caches can cap their transient TTL at the
+	 * server's freshness bound (MCP 2026-07-28 SEP-2549 ttlMs contract).
+	 *
+	 * @since 2.x.0
+	 * @var int
+	 */
+	protected $last_tools_ttl_ms = 0;
+
+	/**
 	 * Session ID issued by sessionful (pre-2026-07-28) Streamable HTTP servers.
 	 *
 	 * Captured from the Mcp-Session-Id response header during the initialize
@@ -502,7 +513,23 @@ class WP_MCP_AI_MCP_App_Client {
 			return array();
 		}
 
+		// Remember the server-declared freshness bound for the discovery
+		// cache (SEP-2549): the registry caps its transient TTL at this
+		// value so a server that changes its catalog is re-polled on time.
+		$this->last_tools_ttl_ms = isset( $result['ttlMs'] ) ? absint( $result['ttlMs'] ) : 0;
+
 		return $result['tools'];
+	}
+
+	/**
+	 * Get the server-declared tools/list cache TTL of the last response.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @return int TTL in milliseconds (0 = no TTL declared).
+	 */
+	public function get_last_tools_ttl_ms() {
+		return $this->last_tools_ttl_ms;
 	}
 
 	/**
@@ -741,6 +768,12 @@ class WP_MCP_AI_MCP_App_Client {
 			}
 
 			$body = $sse_payload;
+
+			// Server-pushed notifications may ride the same stream as the
+			// response (Streamable HTTP allows interleaved events). Surface
+			// them via a hook so discovery caches can react — e.g. a
+			// `notifications/tools/list_changed` invalidates the catalog.
+			$this->dispatch_sse_notifications( $body );
 		}
 
 		$decoded = json_decode( $body, true );
@@ -1162,6 +1195,84 @@ class WP_MCP_AI_MCP_App_Client {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Parse server-pushed JSON-RPC notifications from an SSE stream body.
+	 *
+	 * Streamable HTTP servers may interleave notification events with the
+	 * response message. Every SSE event whose payload decodes to a JSON-RPC
+	 * notification (a `method` without an `id`) fires
+	 * {@see 'wp_mcp_ai_remote_mcp_notification'} so subscribers — e.g. the
+	 * MCP App registry invalidating its discovery cache on
+	 * `notifications/tools/list_changed` — can react without a long-lived
+	 * listener.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param string $body Raw SSE stream body.
+	 * @return void
+	 */
+	protected function dispatch_sse_notifications( $body ) {
+		$lines = preg_split( '/\r\n|\r|\n/', $body );
+		$data  = array();
+
+		foreach ( $lines as $line ) {
+			if ( '' === $line ) {
+				if ( ! empty( $data ) ) {
+					$this->dispatch_single_notification( implode( "\n", $data ) );
+					$data = array();
+				}
+				continue;
+			}
+
+			if ( 0 === strpos( $line, ':' ) ) {
+				continue; // Comment line.
+			}
+
+			if ( 0 === strpos( $line, 'data:' ) ) {
+				$payload = substr( $line, 5 );
+				if ( 0 === strpos( $payload, ' ' ) ) {
+					$payload = substr( $payload, 1 );
+				}
+				$data[] = $payload;
+			}
+		}
+
+		// Streams may end without a trailing blank line.
+		if ( ! empty( $data ) ) {
+			$this->dispatch_single_notification( implode( "\n", $data ) );
+		}
+	}
+
+	/**
+	 * Decode one SSE event payload and fire the remote-notification hook.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param string $payload Raw JSON payload of a single SSE event.
+	 * @return void
+	 */
+	private function dispatch_single_notification( $payload ) {
+		$decoded = json_decode( $payload, true );
+
+		if ( ! is_array( $decoded ) || isset( $decoded['id'] ) || empty( $decoded['method'] ) ) {
+			return; // Not a JSON-RPC notification.
+		}
+
+		$method = sanitize_text_field( $decoded['method'] );
+		$params = isset( $decoded['params'] ) && is_array( $decoded['params'] ) ? $decoded['params'] : array();
+
+		/**
+		 * Fires when a remote MCP server pushes a JSON-RPC notification.
+		 *
+		 * @since 2.x.0
+		 *
+		 * @param string $method     Notification method (e.g. notifications/tools/list_changed).
+		 * @param array  $params     Notification params.
+		 * @param string $server_url Remote server URL.
+		 */
+		do_action( 'wp_mcp_ai_remote_mcp_notification', $method, $params, $this->server_url );
 	}
 
 	/**

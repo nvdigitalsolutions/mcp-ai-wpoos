@@ -95,6 +95,29 @@ function wp_mcp_ai_mcp_apps_register_tools( $registry ) {
 add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_mcp_apps_register_tools', 50 );
 
 /**
+ * Invalidate MCP App discovery caches when a remote server pushes a
+ * tools/list_changed notification (proposal 066).
+ *
+ * The registry handler no-ops on any other notification method and on
+ * empty server URLs.
+ *
+ * @since 2.x.0
+ *
+ * @param string $method     Notification method.
+ * @param array  $params     Notification params.
+ * @param string $server_url Remote server URL.
+ * @return void
+ */
+function wp_mcp_ai_mcp_apps_handle_remote_notification( $method, $params, $server_url ) {
+	if ( ! class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
+		return;
+	}
+
+	WP_MCP_AI_MCP_App_Registry::get_instance()->handle_remote_notification( $method, $params, $server_url );
+}
+add_action( 'wp_mcp_ai_remote_mcp_notification', 'wp_mcp_ai_mcp_apps_handle_remote_notification', 10, 3 );
+
+/**
  * Expose bridged MCP App tools in the chat tools payload.
  *
  * Bridged tools are registered dynamically during the chat request and

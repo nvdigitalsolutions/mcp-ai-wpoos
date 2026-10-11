@@ -18,7 +18,10 @@ Houses the Pro-only "MCP Apps" subsystem that lets each assistant connect to up 
 | Symbol | File | Used by |
 |---|---|---|
 | `WP_MCP_AI_MCP_App_Client` | `class-wp-mcp-ai-mcp-app-client.php` | `MCP_App_Registry`, `MCP_App_Tool_Bridge`, the REST controller, CLI/slash-command surfaces |
+| `WP_MCP_AI_MCP_App_Client::get_last_tools_ttl_ms()` | same | `MCP_App_Registry::discover_tools()` — the server-declared freshness bound from the last `tools/list` (SEP-2549) |
 | `WP_MCP_AI_MCP_App_Registry` (singleton) | `class-wp-mcp-ai-mcp-app-registry.php` | `mcp-apps-init.php` (tool registration), assistant metaboxes, REST controller |
+| `WP_MCP_AI_MCP_App_Registry::resolve_cache_ttl()` | same | pure ttlMs→TTL helper used by `discover_tools()` |
+| `WP_MCP_AI_MCP_App_Registry::invalidate_discovery_for_url()` / `handle_remote_notification()` | same | invalidate discovery caches when a remote server pushes `notifications/tools/list_changed` |
 | `WP_MCP_AI_MCP_App_Tool_Bridge` | `class-wp-mcp-ai-mcp-app-tool-bridge.php` | `MCP_App_Registry::register_remote_tools()` — wraps each discovered remote tool as a local `WP_MCP_AI_Tool_Interface` |
 | `WP_MCP_AI_MCP_App_OAuth_Client` | `class-wp-mcp-ai-mcp-app-oauth-client.php` | OAuth 2.0 client for MCP Apps — handles metadata discovery, DCR, PKCE flow, token exchange/refresh/revocation |
 | `WP_MCP_AI_REST_MCP_Apps_Controller` | `class-wp-mcp-ai-rest-mcp-apps-controller.php` | self-registers under namespace `mcp-ai/v1` on `rest_api_init`; includes OAuth endpoints (`/oauth/probe`, `/oauth/init`, `/oauth/callback`, `/oauth/refresh`, `/oauth/revoke`) |
@@ -36,8 +39,8 @@ OAuth metadata discovery (`WP_MCP_AI_MCP_App_OAuth_Client::discover_metadata()`)
 - **Writes to:** the same assistant post meta on save, transient tool-discovery cache and the legacy-dialect hint, telemetry via the standard tool-execution hooks when bridged tools run.
 - **Upstream callers:** REST clients (CRUD via `mcp-ai/v1/mcp-apps`), chat service via the tool registry, the Pro slash-command `/mcp-app` (see `addons/pro/includes/slash-commands/`).
 - **Downstream collaborators:** [`includes/tools/`](../../../../includes/tools/) tool registry (`wp_mcp_ai_register_tools`), [`includes/services/`](../../../../includes/services/) chat service (executes bridged tools transparently), `wp_remote_post`/`wp_remote_get` for transport.
-- **Events fired:** `wp_mcp_ai_mcp_apps_assistant_id` (filter — let callers supply an assistant ID when the request doesn't carry one).
-- **Events listened to:** `rest_api_init`, `wp_mcp_ai_register_tools` (priority 50, so the bridge registers after base + Pro tools).
+- **Events fired:** `wp_mcp_ai_mcp_apps_assistant_id` (filter — let callers supply an assistant ID when the request doesn't carry one); `wp_mcp_ai_remote_mcp_notification` (fired by the client for every JSON-RPC notification parsed from an SSE response — method, params, server URL).
+- **Events listened to:** `rest_api_init`, `wp_mcp_ai_register_tools` (priority 50, so the bridge registers after base + Pro tools), `wp_mcp_ai_remote_mcp_notification` (via `wp_mcp_ai_mcp_apps_handle_remote_notification()` in `mcp-apps-init.php` — `notifications/tools/list_changed` invalidates the matching discovery cache).
 
 ## Conventions
 
@@ -48,7 +51,7 @@ OAuth metadata discovery (`WP_MCP_AI_MCP_App_OAuth_Client::discover_metadata()`)
 - **Transport is JSON-RPC 2.0 over Streamable HTTP per the MCP spec.** When the spec bumps (e.g. SEP-1865 MCP Apps extension finalises), update `WP_MCP_AI_MCP_App_Client::PROTOCOL_VERSION` and the `server/discover` handshake — don't shim older transports inside this folder.
 - **Connection failures are never silent.** `register_remote_tools()` records a per-app status snapshot (`last_status` / `last_error` / `tool_count`) via `record_app_status()` and logs a warning; the metabox renders the snapshots as status badges and the `/mcp-apps/test` + `/mcp-apps/discover` REST endpoints refresh them on demand.
 - **Cap remote responses at 2 MB** (`MAX_RESPONSE_SIZE`). Truncate and surface an error rather than allocating an arbitrary payload — a remote MCP server is untrusted input.
-- **Cache `tools/list` results in transients keyed by `md5( app_config )`** so a configuration change naturally invalidates the cache; do not hand-build cache keys elsewhere.
+- **Cache `tools/list` results in transients keyed by `md5( app_config )`** so a configuration change naturally invalidates the cache; do not hand-build cache keys elsewhere. **A positive server `ttlMs` (SEP-2549) caps the discovery TTL** at the server's freshness bound via `resolve_cache_ttl()`; an absent/zero `ttlMs` keeps the settings TTL (per-chat re-discovery would double the handshake round trips).
 - **Bridged tools are exposed to the LLM automatically.** The `wp_mcp_ai_mcp_apps_expose_tools` callback (registered on the base plugin's `wp_mcp_ai_chat_effective_tools` seam) appends the bridge slugs for the current assistant to the chat payload, because bridge tools are registered at chat time and can never be ticked in the Tools metabox. Capability gating (`edit_posts`) still applies per tool. Use `WP_MCP_AI_MCP_App_Registry::get_remote_tool_slugs( $assistant_id )` to resolve the slugs without registering anything.
 - **Same-site servers are bridged in-process.** When the MCP App URL points at this WordPress site and the derived REST route is registered, `WP_MCP_AI_MCP_App_Client::dispatch_request()` executes the JSON-RPC call through `rest_do_request()` instead of an outbound HTTP call — a self-request over the public hostname can deadlock a small PHP-FPM pool or stall on missing hairpin NAT. The `wp_mcp_ai_mcp_app_disable_inprocess_bridge` filter opts out per deployment.
 
@@ -60,6 +63,7 @@ vendor/bin/phpunit tests/mcp-apps/test-mcp-app-client-connection-enhancements.ph
 vendor/bin/phpunit tests/mcp-apps/test-mcp-app-oauth-loopback-fallback.php
 vendor/bin/phpunit tests/mcp-apps/test-mcp-app-oauth-discovery-chain.php
 vendor/bin/phpunit tests/mcp-apps/test-mcp-app-registry-connection-enhancements.php
+vendor/bin/phpunit tests/mcp-apps/test-mcp-app-cache-freshness.php
 vendor/bin/phpunit tests/mcp-apps/test-rest-mcp-apps-connection-enhancements.php
 vendor/bin/phpunit addons/pro/tests/test-pro-slash-command-mcp-app.php
 ```

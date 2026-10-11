@@ -347,6 +347,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			}
 
 			$this->tools[ $slug ] = $tool;
+			$this->notify_tools_list_changed();
 
 			/**
 			 * Fires after a tool is successfully registered.
@@ -372,7 +373,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 */
 		public function unregister_tool( $slug ) {
 			$slug = sanitize_key( $slug );
+
+			if ( ! isset( $this->tools[ $slug ] ) ) {
+				return;
+			}
+
 			unset( $this->tools[ $slug ] );
+			$this->notify_tools_list_changed();
 		}
 
 		/**
@@ -386,10 +393,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return void
 		 */
 		public function clear_tools() {
+			$had_tools = ! empty( $this->tools );
+
 			$this->tools                     = array();
 			$this->bootstrapped              = false;
 			$this->unavailable_tool_messages = array();
 			$this->unavailable_tool_slugs    = array();
+
+			if ( $had_tools ) {
+				$this->notify_tools_list_changed();
+			}
 		}
 
 		/**
@@ -567,6 +580,40 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 */
 		public function list_tools() {
 			return $this->get_tools();
+		}
+
+		/**
+		 * Signal MCP clients that the advertised tool list changed.
+		 *
+		 * Fires {@see 'wp_mcp_ai_mcp_tools_list_changed'} at most once per request
+		 * when the registry's tool surface mutates (register/unregister/clear), so
+		 * bulk bootstrap registrations collapse into a single signal. This action
+		 * is the integration point that backs the `listChanged` capability
+		 * advertised by the MCP initialize/discover surface: a future SSE
+		 * broadcaster can subscribe here to push
+		 * `notifications/tools/list_changed` to connected clients; stateless REST
+		 * clients instead re-poll tools/list on its own ttlMs schedule.
+		 *
+		 * @since 2.x.0
+		 *
+		 * Intended for internal use (and direct unit testing of the throttle).
+		 *
+		 * @return void
+		 */
+		public function notify_tools_list_changed() {
+			// did_action() doubles as the per-request throttle: bulk bootstrap
+			// registrations collapse into one signal per request, and the counter
+			// resets naturally between requests (and between PHPUnit tests).
+			if ( did_action( 'wp_mcp_ai_mcp_tools_list_changed' ) > 0 ) {
+				return;
+			}
+
+			/**
+			 * Fires when the registry's MCP tool list changed.
+			 *
+			 * @since 2.x.0
+			 */
+			do_action( 'wp_mcp_ai_mcp_tools_list_changed' );
 		}
 
 		/**
@@ -1566,7 +1613,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 				// Data Visualization.
 				'create_chart'                       => 'wordpress-core',
-				'create_chart_fence'                => 'wordpress-core',
+				'create_chart_fence'                 => 'wordpress-core',
 				'visualize_workflow_metrics'         => 'wordpress-core',
 				'validate_workflow'                  => 'wordpress-core',
 
@@ -2227,7 +2274,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Video_Caption'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-video-caption.php',
 				'WP_MCP_AI_Tool_Analyze_Comment_Content'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-comment-content.php',
 				'WP_MCP_AI_Tool_Create_Chart'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-chart.php',
-				'WP_MCP_AI_Tool_Create_Chart_Fence'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-chart-fence.php',
+				'WP_MCP_AI_Tool_Create_Chart_Fence'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-chart-fence.php',
 				// Profession management tools.
 				'WP_MCP_AI_Tool_List_Professions'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-professions.php',
 				'WP_MCP_AI_Tool_Get_Profession'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-profession.php',
