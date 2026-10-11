@@ -2223,12 +2223,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
-		// Prepare a simple test request - use LX_ItemPull with a limit to minimize data.
-		$url = untrailingslashit( $connection['url'] );
+		// Prepare a simple test request - use LX_ItemStockPull with a limit to
+		// minimize data (filterable so hosts still serving the legacy
+		// LX_ItemPull action can pin it back).
+		$url        = untrailingslashit( $connection['url'] );
+		$api_action = apply_filters( 'wp_mcp_ai_ezuite_api_action', 'LX_ItemStockPull', $connection['id'] ?? '' );
 
 		$request_body = array(
 			'API_Key'    => $api_key,
-			'API_Action' => 'LX_ItemPull',
+			'API_Action' => $api_action,
 			'API_Body'   => array(
 				array(
 					'Location_Code' => 'ALL',

@@ -61,6 +61,13 @@ class WP_MCP_AI_OCR_Service {
 	const DEFAULT_TIMEOUT = 300;
 
 	/**
+	 * Default maximum PDF pages to render when no explicit cap is supplied.
+	 *
+	 * @var int
+	 */
+	const DEFAULT_MAX_PAGES = 50;
+
+	/**
 	 * Maximum retry attempts for transient failures.
 	 *
 	 * @var int
@@ -543,6 +550,12 @@ class WP_MCP_AI_OCR_Service {
 	protected function convert_pdf_with_imagick( $pdf_path, $dpi = 300, $max_pages = 0 ) {
 		$images = array();
 		$pdf    = null;
+
+		// Bound the render pass: an uncapped PDF could produce thousands of
+		// temp PNGs held in memory until the whole document is converted.
+		if ( $max_pages <= 0 ) {
+			$max_pages = self::DEFAULT_MAX_PAGES;
+		}
 
 		try {
 			$pdf = new Imagick();

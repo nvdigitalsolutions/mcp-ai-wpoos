@@ -370,61 +370,79 @@ class WP_MCP_AI_Generation_Provenance {
 		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table name, safe.
-		$rows = $wpdb->get_results( "SELECT * FROM {$table_name} ORDER BY id ASC", ARRAY_A );
-
-		if ( empty( $rows ) ) {
-			set_transient( self::VERIFY_CACHE_KEY, '1', self::VERIFY_CACHE_TTL );
-			return true;
-		}
-
+		$page_size     = 500;
+		$last_id       = 0;
 		$previous_hash = '';
 
-		foreach ( $rows as $row ) {
-			// Verify previous_hash links correctly.
-			if ( '' !== $previous_hash && $previous_hash !== $row['previous_hash'] ) {
-				return new WP_Error(
-					'chain_broken',
-					sprintf(
-						/* translators: %d: row ID where the chain break was detected */
-						__( 'Hash chain integrity broken at row %d: previous_hash mismatch.', 'mcp-ai-wpoos' ),
-						(int) $row['id']
-					),
-					array(
-						'status'   => 500,
-						'row_id'   => (int) $row['id'],
-						'expected' => $previous_hash,
-						'actual'   => $row['previous_hash'],
-					)
-				);
+		// Verify the chain in bounded chunks so the full table is never
+		// materialized in memory; only the running hash state is kept across
+		// chunks. Any mismatch returns immediately, preserving the original
+		// error semantics.
+		while ( true ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table name, safe.
+			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id > %d ORDER BY id ASC LIMIT %d", $last_id, $page_size ), ARRAY_A );
+
+			if ( empty( $rows ) ) {
+				if ( 0 === $last_id ) {
+					// No rows exist at all.
+					set_transient( self::VERIFY_CACHE_KEY, '1', self::VERIFY_CACHE_TTL );
+					return true;
+				}
+				break;
 			}
 
-			// Recompute and verify row_hash.
-			$computed_hash = self::compute_row_hash(
-				$row['prompt_hash'],
-				$row['response_hash'],
-				$row['previous_hash'],
-				$row['created_at'],
-				(int) $row['id']
-			);
+			foreach ( $rows as $row ) {
+				// Verify previous_hash links correctly.
+				if ( '' !== $previous_hash && $previous_hash !== $row['previous_hash'] ) {
+					return new WP_Error(
+						'chain_broken',
+						sprintf(
+							/* translators: %d: row ID where the chain break was detected */
+							__( 'Hash chain integrity broken at row %d: previous_hash mismatch.', 'mcp-ai-wpoos' ),
+							(int) $row['id']
+						),
+						array(
+							'status'   => 500,
+							'row_id'   => (int) $row['id'],
+							'expected' => $previous_hash,
+							'actual'   => $row['previous_hash'],
+						)
+					);
+				}
 
-			if ( ! hash_equals( $computed_hash, $row['row_hash'] ) ) {
-				return new WP_Error(
-					'chain_broken',
-					sprintf(
-						/* translators: %d: row ID where the hash mismatch was detected */
-						__( 'Hash chain integrity broken at row %d: row_hash mismatch (possible data tampering).', 'mcp-ai-wpoos' ),
-						(int) $row['id']
-					),
-					array(
-						'status'   => 500,
-						'row_id'   => (int) $row['id'],
-						'expected' => $computed_hash,
-						'actual'   => $row['row_hash'],
-					)
+				// Recompute and verify row_hash.
+				$computed_hash = self::compute_row_hash(
+					$row['prompt_hash'],
+					$row['response_hash'],
+					$row['previous_hash'],
+					$row['created_at'],
+					(int) $row['id']
 				);
+
+				if ( ! hash_equals( $computed_hash, $row['row_hash'] ) ) {
+					return new WP_Error(
+						'chain_broken',
+						sprintf(
+							/* translators: %d: row ID where the hash mismatch was detected */
+							__( 'Hash chain integrity broken at row %d: row_hash mismatch (possible data tampering).', 'mcp-ai-wpoos' ),
+							(int) $row['id']
+						),
+						array(
+							'status'   => 500,
+							'row_id'   => (int) $row['id'],
+							'expected' => $computed_hash,
+							'actual'   => $row['row_hash'],
+						)
+					);
+				}
+
+				$previous_hash = $row['row_hash'];
+				$last_id       = (int) $row['id'];
 			}
 
-			$previous_hash = $row['row_hash'];
+			if ( count( $rows ) < $page_size ) {
+				break;
+			}
 		}
 
 		set_transient( self::VERIFY_CACHE_KEY, '1', self::VERIFY_CACHE_TTL );

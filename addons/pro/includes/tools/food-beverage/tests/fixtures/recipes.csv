@@ -1,0 +1,251 @@
+Item ID,Item,Ingredient ID,Ingredient,Qty per portion,Unit,Cost per portion at as-of date (LKR),Source
+F-01,Chicken skins,ING-011,Chicken skin,0.15,kg,67.5,Demo assumption
+F-01,Chicken skins,ING-057,Cooking oil,0.03,L,27,Demo assumption
+F-01,Chicken skins,ING-061,House spices and sauces,0.005,kg,7.5,Demo assumption
+F-02,Rolled cucumber,ING-039,Cucumber,0.2,kg,60,Demo assumption
+F-02,Rolled cucumber,ING-031,Green chillies,0.01,kg,9,Demo assumption
+F-02,Rolled cucumber,ING-061,House spices and sauces,0.01,kg,15,Demo assumption
+F-02,Rolled cucumber,ING-032,Garlic,0.005,kg,5.5,Demo assumption
+F-03,Mutton croquettes,ING-014,"Mutton, boneless",0.09,kg,324,Demo assumption
+F-03,Mutton croquettes,ING-019,Cheddar,0.02,kg,96,Demo assumption
+F-03,Mutton croquettes,ING-056,Rice flour,0.03,kg,9,Demo assumption
+F-03,Mutton croquettes,ING-021,Eggs,1,each,55,Demo assumption
+F-03,Mutton croquettes,ING-057,Cooking oil,0.04,L,36,Demo assumption
+F-03,Mutton croquettes,ING-030,Red onions,0.02,kg,7.6,Demo assumption
+F-04,Roasted cashews,ING-054,Cashews,0.12,kg,456,Demo assumption
+F-04,Roasted cashews,ING-061,House spices and sauces,0.005,kg,7.5,Demo assumption
+F-04,Roasted cashews,ING-057,Cooking oil,0.01,L,9,Demo assumption
+F-05,Crispy whitebait,ING-008,Whitebait,0.15,kg,180,Demo assumption
+F-05,Crispy whitebait,ING-056,Rice flour,0.04,kg,12,Demo assumption
+F-05,Crispy whitebait,ING-057,Cooking oil,0.04,L,36,Demo assumption
+F-05,Crispy whitebait,ING-030,Red onions,0.03,kg,11.4,Demo assumption
+F-06,Double cooked fries,ING-035,Potatoes,0.3,kg,96,Demo assumption
+F-06,Double cooked fries,ING-057,Cooking oil,0.05,L,45,Demo assumption
+F-06,Double cooked fries,ING-018,Buffalo curd,0.03,kg,27,Demo assumption
+F-06,Double cooked fries,ING-016,Parmesan,0.012,kg,126,Demo assumption
+F-07,Upcountry green salad,ING-038,Mixed greens,0.08,kg,128,Demo assumption
+F-07,Upcountry green salad,ING-055,Chickpeas,0.05,kg,30,Demo assumption
+F-07,Upcountry green salad,ING-043,Cabbage,0.05,kg,12.5,Demo assumption
+F-07,Upcountry green salad,ING-017,Feta,0.04,kg,260,Demo assumption
+F-07,Upcountry green salad,ING-039,Cucumber,0.06,kg,18,Demo assumption
+F-07,Upcountry green salad,ING-061,House spices and sauces,0.01,kg,15,Demo assumption
+F-08,Chicken Caesar salad,ING-010,"Chicken thigh, boneless",0.15,kg,247.5,Demo assumption
+F-08,Chicken Caesar salad,ING-038,Mixed greens,0.1,kg,160,Demo assumption
+F-08,Chicken Caesar salad,ING-016,Parmesan,0.02,kg,210,Demo assumption
+F-08,Chicken Caesar salad,ING-021,Eggs,1,each,55,Demo assumption
+F-08,Chicken Caesar salad,ING-025,Ciabatta and focaccia,0.25,each,37.5,Demo assumption
+F-08,Chicken Caesar salad,ING-058,Olive oil,0.02,L,70,Demo assumption
+F-09,Tomato salad,ING-029,Tomatoes,0.2,kg,90,Demo assumption
+F-09,Tomato salad,ING-039,Cucumber,0.06,kg,18,Demo assumption
+F-09,Tomato salad,ING-030,Red onions,0.03,kg,11.4,Demo assumption
+F-09,Tomato salad,ING-017,Feta,0.04,kg,260,Demo assumption
+F-09,Tomato salad,ING-054,Cashews,0.015,kg,57,Demo assumption
+F-09,Tomato salad,ING-027,Coriander,0.01,kg,12,Demo assumption
+F-09,Tomato salad,ING-033,Limes,1,each,25,Demo assumption
+F-09,Tomato salad,ING-058,Olive oil,0.02,L,70,Demo assumption
+F-10,Prawn burger,ING-023,Brioche buns,1,each,160,Demo assumption
+F-10,Prawn burger,ING-001,"Prawns, large",0.13,kg,663,Demo assumption
+F-10,Prawn burger,ING-043,Cabbage,0.05,kg,12.5,Demo assumption
+F-10,Prawn burger,ING-061,House spices and sauces,0.01,kg,15,Demo assumption
+F-10,Prawn burger,ING-057,Cooking oil,0.02,L,18,Demo assumption
+F-11,Beef burger,ING-023,Brioche buns,1,each,160,Demo assumption
+F-11,Beef burger,ING-012,Beef brisket mince,0.18,kg,504,Demo assumption
+F-11,Beef burger,ING-019,Cheddar,0.03,kg,144,Demo assumption
+F-11,Beef burger,ING-061,House spices and sauces,0.01,kg,15,Demo assumption
+F-11,Beef burger,ING-039,Cucumber,0.03,kg,9,Demo assumption
+F-12,Tuna wrap,ING-024,Flatbread wraps,1,each,90,Demo assumption
+F-12,Tuna wrap,ING-003,Yellowfin tuna loin,0.12,kg,414,Demo assumption
+F-12,Tuna wrap,ING-043,Cabbage,0.05,kg,12.5,Demo assumption
+F-12,Tuna wrap,ING-031,Green chillies,0.01,kg,9,Demo assumption
+F-12,Tuna wrap,ING-018,Buffalo curd,0.03,kg,27,Demo assumption
+F-12,Tuna wrap,ING-032,Garlic,0.005,kg,5.5,Demo assumption
+F-12,Tuna wrap,ING-061,House spices and sauces,0.005,kg,7.5,Demo assumption
+F-13,Vegetable wrap,ING-024,Flatbread wraps,1,each,90,Demo assumption
+F-13,Vegetable wrap,ING-040,Seasonal vegetables,0.18,kg,81,Demo assumption
+F-13,Vegetable wrap,ING-018,Buffalo curd,0.04,kg,36,Demo assumption
+F-13,Vegetable wrap,ING-032,Garlic,0.005,kg,5.5,Demo assumption
+F-13,Vegetable wrap,ING-031,Green chillies,0.01,kg,9,Demo assumption
+F-14,Southern spiced chicken wrap,ING-024,Flatbread wraps,1,each,90,Demo assumption
+F-14,Southern spiced chicken wrap,ING-010,"Chicken thigh, boneless",0.14,kg,231,Demo assumption
+F-14,Southern spiced chicken wrap,ING-043,Cabbage,0.05,kg,12.5,Demo assumption
+F-14,Southern spiced chicken wrap,ING-018,Buffalo curd,0.03,kg,27,Demo assumption
+F-14,Southern spiced chicken wrap,ING-061,House spices and sauces,0.01,kg,15,Demo assumption
+F-15,Wild mushroom ciabatta,ING-025,Ciabatta and focaccia,1,each,150,Demo assumption
+F-15,Wild mushroom ciabatta,ING-041,Mushrooms,0.12,kg,216,Demo assumption
+F-15,Wild mushroom ciabatta,ING-019,Cheddar,0.03,kg,144,Demo assumption
+F-15,Wild mushroom ciabatta,ING-029,Tomatoes,0.05,kg,22.5,Demo assumption
+F-15,Wild mushroom ciabatta,ING-061,House spices and sauces,0.01,kg,15,Demo assumption
+F-16,Grilled tuna focaccia,ING-025,Ciabatta and focaccia,1,each,150,Demo assumption
+F-16,Grilled tuna focaccia,ING-003,Yellowfin tuna loin,0.11,kg,379.5,Demo assumption
+F-16,Grilled tuna focaccia,ING-020,Mozzarella,0.04,kg,208,Demo assumption
+F-16,Grilled tuna focaccia,ING-039,Cucumber,0.03,kg,9,Demo assumption
+F-16,Grilled tuna focaccia,ING-042,Pineapple,0.1,each,35,Demo assumption
+F-16,Grilled tuna focaccia,ING-038,Mixed greens,0.02,kg,32,Demo assumption
+F-17,Fish and chips,ING-002,Barramundi fillet,0.2,kg,640,Demo assumption
+F-17,Fish and chips,ING-056,Rice flour,0.06,kg,18,Demo assumption
+F-17,Fish and chips,ING-035,Potatoes,0.25,kg,80,Demo assumption
+F-17,Fish and chips,ING-057,Cooking oil,0.08,L,72,Demo assumption
+F-17,Fish and chips,ING-018,Buffalo curd,0.03,kg,27,Demo assumption
+F-17,Fish and chips,ING-033,Limes,1,each,25,Demo assumption
+F-18,Clam and prawn linguine,ING-053,Linguine,0.12,kg,192,Demo assumption
+F-18,Clam and prawn linguine,ING-005,Clams,0.15,kg,210,Demo assumption
+F-18,Clam and prawn linguine,ING-001,"Prawns, large",0.08,kg,408,Demo assumption
+F-18,Clam and prawn linguine,ING-032,Garlic,0.01,kg,11,Demo assumption
+F-18,Clam and prawn linguine,ING-016,Parmesan,0.015,kg,157.5,Demo assumption
+F-18,Clam and prawn linguine,ING-058,Olive oil,0.03,L,105,Demo assumption
+F-18,Clam and prawn linguine,ING-061,House spices and sauces,0.005,kg,7.5,Demo assumption
+F-19,Surf Club seafood rice,ING-001,"Prawns, large",0.06,kg,306,Demo assumption
+F-19,Surf Club seafood rice,ING-004,Baby squid,0.06,kg,132,Demo assumption
+F-19,Surf Club seafood rice,ING-006,Sea bass fillet,0.06,kg,168,Demo assumption
+F-19,Surf Club seafood rice,ING-050,Jasmine rice,0.12,kg,78,Demo assumption
+F-19,Surf Club seafood rice,ING-061,House spices and sauces,0.015,kg,22.5,Demo assumption
+F-19,Surf Club seafood rice,ING-031,Green chillies,0.01,kg,9,Demo assumption
+F-20,"Rice and curry, chicken",ING-051,Samba rice,0.18,kg,54,Demo assumption
+F-20,"Rice and curry, chicken",ING-010,"Chicken thigh, boneless",0.15,kg,247.5,Demo assumption
+F-20,"Rice and curry, chicken",ING-040,Seasonal vegetables,0.2,kg,90,Demo assumption
+F-20,"Rice and curry, chicken",ING-045,Coconuts,0.5,each,80,Demo assumption
+F-20,"Rice and curry, chicken",ING-060,Coconut milk,0.08,L,48,Demo assumption
+F-20,"Rice and curry, chicken",ING-061,House spices and sauces,0.02,kg,30,Demo assumption
+F-21,"Rice and curry, fish",ING-051,Samba rice,0.18,kg,54,Demo assumption
+F-21,"Rice and curry, fish",ING-006,Sea bass fillet,0.15,kg,420,Demo assumption
+F-21,"Rice and curry, fish",ING-040,Seasonal vegetables,0.2,kg,90,Demo assumption
+F-21,"Rice and curry, fish",ING-045,Coconuts,0.5,each,80,Demo assumption
+F-21,"Rice and curry, fish",ING-060,Coconut milk,0.08,L,48,Demo assumption
+F-21,"Rice and curry, fish",ING-061,House spices and sauces,0.02,kg,30,Demo assumption
+F-22,"Rice and curry, mutton",ING-051,Samba rice,0.18,kg,54,Demo assumption
+F-22,"Rice and curry, mutton",ING-014,"Mutton, boneless",0.15,kg,540,Demo assumption
+F-22,"Rice and curry, mutton",ING-040,Seasonal vegetables,0.2,kg,90,Demo assumption
+F-22,"Rice and curry, mutton",ING-045,Coconuts,0.5,each,80,Demo assumption
+F-22,"Rice and curry, mutton",ING-060,Coconut milk,0.08,L,48,Demo assumption
+F-22,"Rice and curry, mutton",ING-061,House spices and sauces,0.02,kg,30,Demo assumption
+F-23,"Rice and curry, prawn",ING-051,Samba rice,0.18,kg,54,Demo assumption
+F-23,"Rice and curry, prawn",ING-001,"Prawns, large",0.13,kg,663,Demo assumption
+F-23,"Rice and curry, prawn",ING-040,Seasonal vegetables,0.2,kg,90,Demo assumption
+F-23,"Rice and curry, prawn",ING-045,Coconuts,0.5,each,80,Demo assumption
+F-23,"Rice and curry, prawn",ING-060,Coconut milk,0.08,L,48,Demo assumption
+F-23,"Rice and curry, prawn",ING-061,House spices and sauces,0.02,kg,30,Demo assumption
+F-24,Mixed ceviche,ING-002,Barramundi fillet,0.07,kg,224,Demo assumption
+F-24,Mixed ceviche,ING-001,"Prawns, large",0.05,kg,255,Demo assumption
+F-24,Mixed ceviche,ING-033,Limes,3,each,75,Demo assumption
+F-24,Mixed ceviche,ING-030,Red onions,0.02,kg,7.6,Demo assumption
+F-24,Mixed ceviche,ING-034,Passionfruit,1,each,60,Demo assumption
+F-24,Mixed ceviche,ING-027,Coriander,0.01,kg,12,Demo assumption
+F-24,Mixed ceviche,ING-031,Green chillies,0.005,kg,4.5,Demo assumption
+F-25,Southern tuna sashimi,ING-003,Yellowfin tuna loin,0.11,kg,379.5,Demo assumption
+F-25,Southern tuna sashimi,ING-030,Red onions,0.02,kg,7.6,Demo assumption
+F-25,Southern tuna sashimi,ING-031,Green chillies,0.01,kg,9,Demo assumption
+F-25,Southern tuna sashimi,ING-033,Limes,1,each,25,Demo assumption
+F-25,Southern tuna sashimi,ING-061,House spices and sauces,0.005,kg,7.5,Demo assumption
+F-26,Scorched baby squid,ING-004,Baby squid,0.15,kg,330,Demo assumption
+F-26,Scorched baby squid,ING-062,Tamarind,0.01,kg,6,Demo assumption
+F-26,Scorched baby squid,ING-032,Garlic,0.01,kg,11,Demo assumption
+F-26,Scorched baby squid,ING-033,Limes,1,each,25,Demo assumption
+F-26,Scorched baby squid,ING-057,Cooking oil,0.02,L,18,Demo assumption
+F-26,Scorched baby squid,ING-061,House spices and sauces,0.01,kg,15,Demo assumption
+F-27,Braised octopus,ING-009,"Octopus, frozen",0.15,kg,435,Demo assumption
+F-27,Braised octopus,ING-028,Cherry tomatoes,0.06,kg,84,Demo assumption
+F-27,Braised octopus,ING-030,Red onions,0.03,kg,11.4,Demo assumption
+F-27,Braised octopus,ING-061,House spices and sauces,0.01,kg,15,Demo assumption
+F-27,Braised octopus,ING-031,Green chillies,0.01,kg,9,Demo assumption
+F-28,Beef tartare,ING-013,Beef tenderloin,0.09,kg,468,Demo assumption
+F-28,Beef tartare,ING-021,Eggs,1,each,55,Demo assumption
+F-28,Beef tartare,ING-022,Quail eggs,1,each,30,Demo assumption
+F-28,Beef tartare,ING-030,Red onions,0.015,kg,5.7,Demo assumption
+F-28,Beef tartare,ING-031,Green chillies,0.005,kg,4.5,Demo assumption
+F-28,Beef tartare,ING-056,Rice flour,0.02,kg,6,Demo assumption
+F-28,Beef tartare,ING-057,Cooking oil,0.02,L,18,Demo assumption
+F-29,Smoked carrot,ING-036,Carrots,0.2,kg,70,Demo assumption
+F-29,Smoked carrot,ING-018,Buffalo curd,0.05,kg,45,Demo assumption
+F-29,Smoked carrot,ING-032,Garlic,0.01,kg,11,Demo assumption
+F-29,Smoked carrot,ING-051,Samba rice,0.02,kg,6,Demo assumption
+F-29,Smoked carrot,ING-061,House spices and sauces,0.005,kg,7.5,Demo assumption
+F-30,Dressed hung curd,ING-018,Buffalo curd,0.15,kg,135,Demo assumption
+F-30,Dressed hung curd,ING-029,Tomatoes,0.05,kg,22.5,Demo assumption
+F-30,Dressed hung curd,ING-030,Red onions,0.02,kg,7.6,Demo assumption
+F-30,Dressed hung curd,ING-031,Green chillies,0.01,kg,9,Demo assumption
+F-30,Dressed hung curd,ING-027,Coriander,0.01,kg,12,Demo assumption
+F-30,Dressed hung curd,ING-051,Samba rice,0.02,kg,6,Demo assumption
+F-30,Dressed hung curd,ING-058,Olive oil,0.01,L,35,Demo assumption
+F-31,Yellowfin tuna steak,ING-003,Yellowfin tuna loin,0.2,kg,690,Demo assumption
+F-31,Yellowfin tuna steak,ING-040,Seasonal vegetables,0.12,kg,54,Demo assumption
+F-31,Yellowfin tuna steak,ING-027,Coriander,0.015,kg,18,Demo assumption
+F-31,Yellowfin tuna steak,ING-061,House spices and sauces,0.01,kg,15,Demo assumption
+F-31,Yellowfin tuna steak,ING-057,Cooking oil,0.02,L,18,Demo assumption
+F-32,Charred chicken,ING-010,"Chicken thigh, boneless",0.28,kg,462,Demo assumption
+F-32,Charred chicken,ING-054,Cashews,0.04,kg,152,Demo assumption
+F-32,Charred chicken,ING-061,House spices and sauces,0.015,kg,22.5,Demo assumption
+F-32,Charred chicken,ING-057,Cooking oil,0.02,L,18,Demo assumption
+F-33,Green chilli prawn,ING-001,"Prawns, large",0.22,kg,1122,Demo assumption
+F-33,Green chilli prawn,ING-031,Green chillies,0.02,kg,18,Demo assumption
+F-33,Green chilli prawn,ING-032,Garlic,0.01,kg,11,Demo assumption
+F-33,Green chilli prawn,ING-015,Butter,0.025,kg,80,Demo assumption
+F-33,Green chilli prawn,ING-033,Limes,1,each,25,Demo assumption
+F-33,Green chilli prawn,ING-057,Cooking oil,0.01,L,9,Demo assumption
+F-34,Grilled eggplant,ING-037,Eggplant,0.35,kg,140,Demo assumption
+F-34,Grilled eggplant,ING-018,Buffalo curd,0.06,kg,54,Demo assumption
+F-34,Grilled eggplant,ING-044,Pomegranate,0.25,each,112.5,Demo assumption
+F-34,Grilled eggplant,ING-057,Cooking oil,0.03,L,27,Demo assumption
+F-34,Grilled eggplant,ING-061,House spices and sauces,0.005,kg,7.5,Demo assumption
+F-35,Seasonal whole fish (700g),ING-007,"Reef fish, whole",0.75,kg,1650,Demo assumption
+F-35,Seasonal whole fish (700g),ING-031,Green chillies,0.01,kg,9,Demo assumption
+F-35,Seasonal whole fish (700g),ING-032,Garlic,0.01,kg,11,Demo assumption
+F-35,Seasonal whole fish (700g),ING-033,Limes,2,each,50,Demo assumption
+F-35,Seasonal whole fish (700g),ING-057,Cooking oil,0.03,L,27,Demo assumption
+F-35,Seasonal whole fish (700g),ING-061,House spices and sauces,0.01,kg,15,Demo assumption
+F-36,Grilled octopus,ING-009,"Octopus, frozen",0.25,kg,725,Demo assumption
+F-36,Grilled octopus,ING-035,Potatoes,0.15,kg,48,Demo assumption
+F-36,Grilled octopus,ING-015,Butter,0.02,kg,64,Demo assumption
+F-36,Grilled octopus,ING-028,Cherry tomatoes,0.05,kg,70,Demo assumption
+F-36,Grilled octopus,ING-027,Coriander,0.01,kg,12,Demo assumption
+F-36,Grilled octopus,ING-057,Cooking oil,0.03,L,27,Demo assumption
+F-37,Mashed potato,ING-035,Potatoes,0.25,kg,80,Demo assumption
+F-37,Mashed potato,ING-015,Butter,0.04,kg,128,Demo assumption
+F-38,Grilled seasonal vegetables,ING-040,Seasonal vegetables,0.3,kg,135,Demo assumption
+F-38,Grilled seasonal vegetables,ING-058,Olive oil,0.02,L,70,Demo assumption
+F-38,Grilled seasonal vegetables,ING-061,House spices and sauces,0.005,kg,7.5,Demo assumption
+F-39,Ghee rice,ING-052,Basmati rice,0.12,kg,108,Demo assumption
+F-39,Ghee rice,ING-059,Ghee,0.02,kg,60,Demo assumption
+F-39,Ghee rice,ING-061,House spices and sauces,0.005,kg,7.5,Demo assumption
+F-40,Jasmine rice,ING-050,Jasmine rice,0.12,kg,78,Demo assumption
+F-41,Mixed market salad,ING-038,Mixed greens,0.06,kg,96,Demo assumption
+F-41,Mixed market salad,ING-029,Tomatoes,0.05,kg,22.5,Demo assumption
+F-41,Mixed market salad,ING-039,Cucumber,0.05,kg,15,Demo assumption
+F-41,Mixed market salad,ING-058,Olive oil,0.01,L,35,Demo assumption
+F-42,House bread,ING-025,Ciabatta and focaccia,0.5,each,75,Demo assumption
+F-42,House bread,ING-015,Butter,0.03,kg,96,Demo assumption
+F-42,House bread,ING-027,Coriander,0.003,kg,3.6,Demo assumption
+B-01,Gold standard,ING-066,Rum,0.06,L,557.1428571,Demo assumption
+B-01,Gold standard,ING-048,Seasonal fruit for juice,0.12,kg,60,Demo assumption
+B-01,Gold standard,ING-065,Bar syrups and infusions,0.02,L,24,Demo assumption
+B-02,Green apple,ING-067,Gin,0.06,L,840,Demo assumption
+B-02,Green apple,ING-049,Green apples,1,each,120,Demo assumption
+B-02,Green apple,ING-047,Mint,0.005,kg,7.5,Demo assumption
+B-02,Green apple,ING-065,Bar syrups and infusions,0.02,L,24,Demo assumption
+B-03,Tamarind,ING-068,Coconut arrack,0.06,L,272,Demo assumption
+B-03,Tamarind,ING-063,Kithul jaggery,0.02,kg,18,Demo assumption
+B-03,Tamarind,ING-048,Seasonal fruit for juice,0.08,kg,40,Demo assumption
+B-03,Tamarind,ING-065,Bar syrups and infusions,0.01,L,12,Demo assumption
+B-04,Strawberry,ING-070,Vodka,0.05,L,607.1428571,Demo assumption
+B-04,Strawberry,ING-046,Strawberries,0.06,kg,144,Demo assumption
+B-04,Strawberry,ING-064,Bee honey,0.02,kg,56,Demo assumption
+B-04,Strawberry,ING-065,Bar syrups and infusions,0.01,L,12,Demo assumption
+B-05,Grilled pineapple marg,ING-069,Tequila,0.05,L,1157.142857,Demo assumption
+B-05,Grilled pineapple marg,ING-048,Seasonal fruit for juice,0.1,kg,50,Demo assumption
+B-05,Grilled pineapple marg,ING-065,Bar syrups and infusions,0.02,L,24,Demo assumption
+B-06,Coconut coffee,ING-078,Coffee beans,0.018,kg,86.4,Demo assumption
+B-06,Coconut coffee,ING-026,Fresh milk,0.12,L,54,Demo assumption
+B-06,Coconut coffee,ING-065,Bar syrups and infusions,0.01,L,12,Demo assumption
+B-07,Flat white,ING-078,Coffee beans,0.018,kg,86.4,Demo assumption
+B-07,Flat white,ING-026,Fresh milk,0.15,L,67.5,Demo assumption
+B-08,Long black,ING-078,Coffee beans,0.018,kg,86.4,Demo assumption
+B-09,Iced matcha,ING-079,Matcha powder,0.004,kg,72,Demo assumption
+B-09,Iced matcha,ING-026,Fresh milk,0.2,L,90,Demo assumption
+B-09,Iced matcha,ING-065,Bar syrups and infusions,0.01,L,12,Demo assumption
+B-10,Fresh juice,ING-048,Seasonal fruit for juice,0.4,kg,200,Demo assumption
+B-11,King coconut,ING-077,King coconuts,1,each,120,Demo assumption
+B-12,Soft drink,ING-076,Soft drinks,1,each,110,Demo assumption
+B-13,Local lager 330ml,ING-074,Local lager 330ml,1,each,380,Demo assumption
+B-14,Imported beer 330ml,ING-075,Imported beer 330ml,1,each,620,Demo assumption
+B-15,"House white, glass",ING-071,House white wine,0.15,L,720,Demo assumption
+B-16,"House rosé, glass",ING-072,House rosé wine,0.15,L,720,Demo assumption
+B-17,"House red, glass",ING-073,House red wine,0.15,L,780,Demo assumption

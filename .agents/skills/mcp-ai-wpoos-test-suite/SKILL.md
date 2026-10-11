@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 66 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 71 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-05"
-  plugin-version: "1.1.97"
-  plugin-version-tested: "1.1.97"
+  last-updated: "2026-10-11"
+  plugin-version: "1.1.99"
+  plugin-version-tested: "1.1.99"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -30,6 +30,11 @@ For **proactive per-toolkit hardening audits** (shell-call guards, nonexistent
 client methods, provider array-content parsing, enum/service mismatches) use
 the `mcp-ai-wpoos-toolkit-audit` skill — it drives the audit loop and reuses
 this skill's cluster/PR/validation mechanics.
+
+For **SPA/JS tests** (vitest + jsdom + Testing Library in the toolkit-shell,
+chat-spa, and schedule-anything-spa addons — Radix polyfills, jsdom gotchas,
+bundle gates) use the `mcp-ai-wpoos-spa-ui` skill. This skill covers the
+PHPUnit suite only; the two stacks are disjoint.
 
 ## Test environment (Docker)
 
@@ -108,6 +113,22 @@ docker cp oos-wp:/tmp/wp71 ./docker-tmp-wp71
 # add: -v F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/mcp-ai-wpoos/docker-tmp-wp71:/tmp/wp71
 ```
 
+**When `/tmp/wp71` is gone** (container restarts wipe it — `docker cp` errors
+with `Could not find the file /tmp/wp71 in container oos-wp`), rebuild a
+reusable named volume instead of polluting the repo:
+
+```bash
+# wordpress:cli runs as www-data — run as root to create the volume,
+# and raise PHP memory or the extractor fatals at 128M:
+docker volume create mf-wp71-core
+docker run --rm --user 0:0 -v mf-wp71-core:/wp wordpress:cli-php8.3 sh -c \
+  'php -d memory_limit=512M /usr/local/bin/wp --allow-root --path=/wp core download --version=7.1.3 --quiet && chown -R 33:33 /wp'
+# then mount it: -v mf-wp71-core:/tmp/wp71 with WP_CORE_DIR=/tmp/wp71 + WP_DB_NAME=wordpress_test_wp71
+```
+
+(`WP_CLI_PHP_ARGS` env is not honoured by the phar shim — pass
+`php -d memory_limit=512M /usr/local/bin/wp` explicitly.)
+
 Clean up afterwards: `rm -rf docker-tmp-wp71` and `docker volume rm <worktree>-vendor`
 — never stage either artifact. The no-concurrent-phpunit rule applies to
 one-off runners too (same shared DB).
@@ -156,6 +177,16 @@ its `phpunit.xml.dist`** (phpunit-ai.yml only covers the AI addon's
 # Host: install the plugin's dev deps (creates
 # plugins/nvoos-content-graph/vendor — gitignored):
 cd plugins/nvoos-content-graph && composer install --no-interaction --prefer-dist
+```
+
+**Mount-path caution:** `git rev-parse --show-toplevel` BEFORE mounting —
+the MAIN checkout is `F:/GITHUB/mcp-ai-wpoos` while
+`F:/GITHUB/worktrees/mcp-ai-wpoos` is the PARENT of the git worktrees
+(worktree repos live at `.../mcp-ai-wpoos/<worktree-name>/mcp-ai-wpoos`).
+Mounting the parent silently runs the WRONG code — verify with
+`git worktree list`. The Zed file tools may report the worktrees path as
+the allowed directory even when the terminal's repo root is the main
+checkout; trust `git rev-parse`, not the tool metadata.
 
 # Write the wp-phpunit config the plugin bootstrap expects. Default lookup is
 # vendor/wp-phpunit/wp-phpunit/wp-tests-config.php (dirname of includes/).
@@ -234,6 +265,15 @@ test (hundreds — not failures). A summary of "OK, but there were issues"
 with only warnings/deprecations/skips is a pass.
 - phpcs for the addon: `--standard=plugins/nvoos-content-graph-pro/phpcs.xml.dist`
 (phpcbf exit 1 = fixed files, not an error; re-run phpcs to confirm exit 0).
+- **content-graph session notes (1.0.9 pass):** the plugin's `vendor/` may
+  be PRUNED of PHPUnit entirely (`vendor/phpunit` gone; `vendor/bin/phpunit`
+  points at nothing) — a plain `composer install` in the plugin dir restores
+  the locked set (PHPUnit 9.6.35 + wp-phpunit 7.0.2) and the recipe above
+  then works as written. Point the plugin's gitignored
+  `vendor/wp-phpunit/wp-phpunit/wp-tests-config.php` at an isolated DB
+  (`wordpress_test_nvooscg` pattern) before the run. Current sizes: Unit
+  154 tests / 725 assertions (~7 s) and Integration 18 / 57 (~8 s) on
+  `wordpress:6.9-php8.2-apache`.
 
 ## Cluster → PR workflow
 
@@ -249,6 +289,15 @@ with only warnings/deprecations/skips is a pass.
    `nul` file in the repo — delete stray artifacts before staging.
 5. Commit with imperative subject ≤ 50 chars; PR base is `alpha-working`.
 6. The user merges manually; move to the next candidate regardless.
+7. **Verify `git branch --show-current` before every commit.** If the
+   worktree gets switched under you (e.g. your PR merges and another agent
+   switches branches), a commit can land directly on `alpha-working`.
+   Recovery (done on the 1.0.9 pass): create the cluster branch from
+   `origin/alpha-working`, `git cherry-pick <sha>`, push, then
+   `git switch alpha-working && git reset --hard origin/alpha-working`.
+   Open PRs with `gh pr create` from the terminal — the GitHub-MCP
+   `create_pull_request` tool can fail with "Bad credentials" while the
+   `gh` CLI (keyring-authenticated) works.
 
 ### Watching CI checks
 
@@ -943,8 +992,112 @@ the changed files is the substantive gate; plan CI waits accordingly.
       the same PR (the script is the regression net for guardrail symmetry
       between the legacy and OOS paths; its 100% parity is asserted by
       `tests/test-oos-parity-gaps.php`).
+  67. **Helper/stub files in a `suffix=".php"`-scanned test dir must be
+      excluded in `phpunit.xml.dist` (v1.1.95+, PR #6886 follow-up).** The
+      root config scans `addons/pro/tests` (and the other addon test dirs)
+      with `suffix=".php"`, so every PHP file there is loaded as a test
+      file. A helper whose declared class does not match the
+      filename-derived name emits a PHPUnit runner warning: `Class
+      class-wp-mcp-ai-media-toolkit-stub cannot be found in
+      .../addons/pro/tests/class-wp-mcp-ai-media-toolkit-stub.php`. Fix:
+      add an `<exclude>` entry next to the
+      `class-wp-mcp-ai-workflow-log-context-recorder-tool.php` precedent
+      (the stub stays `require_once`'d by its test, so the tests keep
+      running). Every new `class-*.php` / `trait-*.php` helper added to a
+      scanned dir needs the exclude in the same PR; the toolkit-audit loop
+      generates these regularly.
+  68. **Standalone addon commerce/checkout suites (docs-hub 0.5.2, content-graph).**
+      Call the REST controller methods **directly**
+      (`NV_oOS_Docs_Hub_Checkout_REST::create_session( new WP_REST_Request() )`)
+      so `WP_Error`s come back raw — `$server->dispatch()` wraps errors in
+      `WP_REST_Response`, so through dispatch assert `get_status()` (403 for
+      permission) and `get_data()['code']` (`rest_invalid_param`) instead of
+      `instanceof WP_Error`. Mock the vendor with a `pre_http_request` filter
+      that routes by URL substring (`/session`, `/verify`, `/health`) and
+      counts calls for zero-HTTP assertions (already-licensed short-circuits
+      and throttle blocks must never hit the wire). Stripe intent fixtures
+      must be **alphanumeric-only** (`pi_1234567890abcdef`) — `pi_test_…`
+      contains `_`, which fails the `^pi_[A-Za-z0-9]{8,}$` REST validator and
+      silently 400s before the callback runs. Already-licensed state:
+      license option + `update_option( 'active_plugins', array(
+      BUNDLE_BASENAME ) )`. Install-conflict path: guarded
+      `define( 'WP_MCP_AI_VERSION', … )` trips the base-plugin guard so
+      verify records the license and returns the manual-download error
+      without any download attempt. Upsell render tests capture
+      `render_page()` via `ob_start()` (require
+      `wp-admin/includes/template.php` for `submit_button()` first). Throttle
+      tests: five direct session calls pass, the sixth returns 429 with zero
+      extra HTTP. Full conventions:
+      `.agents/skills/mcp-ai-wpoos-checkout-integration/SKILL.md`.
 
-## Production fix vs test fix
+  69. **A raw pass-through filter-chain assertion breaks when a global
+      prompt-filter subscriber appends (v1.2.2, PR #6980).** The chat-profile
+      system (#6977) registers `WP_MCP_AI_Chat_Profile_Prompt_Hint` at
+      priority 20 on `wp_mcp_ai_resolved_system_prompt` — any test that
+      asserts the resolver passes the prompt through **unmodified** fails
+      with an appended "Read-only mode" cue because the test runs as guest
+      (user 0) and guests resolve to the restrictive read-only profile.
+      Production behaviour is correct by design (Proposal 015) — the test is
+      simply not isolated from unrelated prompt-filter subscribers. Fix: pin
+      the test's user to the `write` chat profile before exercising the
+      chain (create an admin user, set the profile, then assert the
+      pass-through), and guard the profile calls with `class_exists()` so
+      standalone/addon test matrices without the chat-profile system remain
+      unaffected. Rule: a pass-through assertion on any
+      the `wp_mcp_ai_resolved_system_prompt`-family filter is fragile by
+      definition — isolate the subscriber set first.
+   70. **`class_exists()`-guarded base-plugin calls must use the global
+      namespace (v1.1.0 content-graph bearer auth, PR #6998).** Inside a
+      namespaced class, an unqualified `WP_MCP_AI_Credentials::validate_token()`
+      resolves to `Current\Namespace\WP_MCP_AI_Credentials` — the string form
+      `class_exists( 'WP_MCP_AI_Credentials' )` passes (strings never resolve),
+      then the call fatals with `Class "NvoosContentGraph\Rest\WP_MCP_AI_Credentials"
+      not found` the moment a request presents a credential. Fix: leading
+      backslash on every class reference (`\WP_MCP_AI_Credentials::...`). Tests
+      that stub the base class via a no-namespace helper file
+      (`tests/helpers/base-plugin-credential-stubs.php` pattern: seed tokens,
+      `is_token_format()` + `validate_token()` static methods) catch this only
+      if they exercise the credential path with a real REST request.
+
+   71. **Filesystem fixture accumulation in a fixed uploads path (v1.2.4,
+      Model Foundry Phase 1, `test-model-foundry-exporters.php`).** A tool that
+      scans a fixed uploads directory (`wp_upload_dir()['basedir'] . '/nvoos-docs-hub/content'`)
+      picks up files left behind by other tests or earlier runs — the WP test
+      framework's uploads dir persists across suites in the same run and across
+      runs on a shared Docker core volume, so assertions on row counts or the
+      first row flake (`rows == 3` instead of 2; preview text from a stale
+      file). Fix: **wipe the fixed directory inside the test before writing
+      fixtures** (a recursive `wipe_dir()` helper, tracked in `$cleanup_dirs`
+      and re-wiped in `tearDown`), or pass a `uniqid()`-suffixed directory when
+      the production API accepts an explicit path. Same rule for any
+      corpus/exporter test asserting counts over a directory scan — never
+      assume the directory is empty.
+
+ ## CI workflow hardening — setup-php `tools: wp-cli` flakes
+
+ `shivammathur/setup-php` `tools: wp-cli` fails intermittently (`✗ wp-cli
+ Could not setup wp-cli`) WITHOUT failing the step, so the next `wp core
+ download` dies with `wp: command not found` (exit 127) — same code, same
+ workflow, alternating green/red runs. Fixed in PR #6998 for
+ `.github/workflows/phpunit-content-graph.yml` + the plugin-check job of
+ `.github/workflows/build-nvoos-content-graph.yml`:
+
+ ```yaml
+ - name: Ensure WP-CLI is available
+   run: |
+     if ! command -v wp >/dev/null 2>&1; then
+       curl -sSLo wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+       chmod +x wp-cli.phar
+       sudo mv wp-cli.phar /usr/local/bin/wp
+     fi
+     wp --version
+ ```
+
+ Diagnose via `gh run view <id> --log | grep -iE "wp-cli"` — look for the
+ red ✗ tool line in the Set up PHP step, not the step that died. Any new
+ workflow using setup-php `tools: wp-cli` should include this fallback step.
+
+ ## Production fix vs test fix
 
 - **Fix production** when the test exposes a genuine bug: unsafe coercion
   (pattern 11), a latent fatal on a real code path (Graphify admin classes
@@ -988,6 +1141,12 @@ fwrite( STDERR, 'STATE: ' . wp_json_encode( $data ) . PHP_EOL );
   test). Always `--log-events-text /tmp/events.txt` with a host-mounted
   `/tmp` so the per-suite order survives even if the run is killed by
   `timeout`.
+- **Config/exclude changes: verify via `--list-tests`.** Loader warnings
+  ("Class X cannot be found in Y") fire at suite construction, so
+  `php -d memory_limit=1G vendor/bin/phpunit --list-tests --no-coverage`
+  (no tests executed) reproduces them in minutes instead of a full run.
+  Grep the output for `warning` and the suspect filename to confirm the
+  fix before running any suite.
 - **CI-log archaeology.** Progress lines (`NNNN / 17245 (NN%)`) plus
   `[NV oOS]` debug lines locate suites; a suite whose logging gate is off
   emits no `[NV oOS]` lines while its neighbours do. Consecutive failing
@@ -1002,8 +1161,9 @@ Canonical scan dirs: `tests`, `addons/pro/tests`,
 `tests/regression`, `tests/helpers`, all `bootstrap.php` /
 `wp-tests-config.php` / `wp-cli-smoke.php` files, the abilities mock tool and
 bootstrap trait, the paper-store helpers trait, the graphify and
-saas-controller bootstraps, and
-`addons/pro/tests/class-wp-mcp-ai-workflow-log-context-recorder-tool.php`.
+saas-controller bootstraps,
+`addons/pro/tests/class-wp-mcp-ai-workflow-log-context-recorder-tool.php`,
+and `addons/pro/tests/class-wp-mcp-ai-media-toolkit-stub.php`.
 Batched runs sort the remaining files alphabetically and resume from a
 suffix index (chunk manifests list files, they are not inputs).
 

@@ -1,0 +1,913 @@
+/**
+ * NV oOS Content Graph — Admin Styles
+ *
+ * @package NvoosContentGraph
+ * @since   0.5.0
+ */
+
+/* ---- Stats card ---- */
+.nvoos-content-graph-admin .nvoos-content-graph-stats-card {
+	background: #1a1a2e;
+	color: #e0e0ff;
+	border-radius: 8px;
+	padding: 20px 24px;
+	margin: 16px 0 24px;
+	max-width: 820px;
+}
+
+.nvoos-content-graph-admin .nvoos-content-graph-stats-card h2 {
+	color: #fff;
+	margin-top: 0;
+}
+
+.nvoos-content-graph-stats-grid {
+	display: flex;
+	gap: 32px;
+	flex-wrap: wrap;
+	margin-bottom: 12px;
+}
+
+.nvoos-content-graph-stat {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.nvoos-content-graph-stat-value {
+	font-size: 32px;
+	font-weight: 700;
+	color: #7c9ff2;
+	line-height: 1;
+}
+
+.nvoos-content-graph-stat-label {
+	font-size: 12px;
+	opacity: 0.7;
+	margin-top: 4px;
+}
+
+.nvoos-content-graph-last-build {
+	font-size: 12px;
+	opacity: 0.7;
+	margin: 8px 0;
+}
+
+/* ---- Explorer ---- */
+.nvoos-content-graph-explorer-wrap {
+	margin-bottom: 28px;
+	max-width: 100%;
+}
+
+.nvoos-content-graph-explorer-toolbar {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	flex-wrap: wrap;
+	margin-bottom: 8px;
+}
+
+.nvoos-content-graph-explorer-toolbar input[type="text"],
+.nvoos-content-graph-explorer-toolbar select {
+	height: 30px;
+	padding: 0 8px;
+	border: 1px solid #ccd;
+	border-radius: 4px;
+}
+
+#nvoos-content-graph-explorer {
+	/* Theme engine overrides these custom properties per active theme. */
+	--nvoos-cg-canvas: #0f0f1a;
+	--nvoos-cg-surface: #1a1a2e;
+	--nvoos-cg-border: #2a2a4a;
+	--nvoos-cg-label: #e0e0ff;
+	--nvoos-cg-muted: #8b8fa3;
+	--nvoos-cg-accent: #7c9ff2;
+	--nvoos-cg-edge: #5b6478;
+
+	background: var( --nvoos-cg-canvas );
+	border-radius: 8px;
+	border: 1px solid var( --nvoos-cg-border );
+	overflow: hidden;
+	position: relative;
+	outline: none;
+}
+
+#nvoos-content-graph-explorer:focus-visible {
+	box-shadow: 0 0 0 2px var( --nvoos-cg-accent );
+}
+
+.nvoos-cg-explorer-body {
+	position: relative;
+}
+
+/* ---- Legend ---- */
+.nvoos-cg-legend {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	z-index: 10;
+	max-width: 210px;
+	max-height: 60%;
+	overflow-y: auto;
+	background: var( --nvoos-cg-surface );
+	border: 1px solid var( --nvoos-cg-border );
+	border-radius: 6px;
+	padding: 8px 10px;
+	font-size: 11px;
+	color: var( --nvoos-cg-label );
+	box-shadow: 0 2px 10px rgba( 0, 0, 0, 0.35 );
+}
+
+.nvoos-cg-legend-title {
+	margin: 0 0 6px;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var( --nvoos-cg-muted );
+}
+
+.nvoos-cg-legend-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-cg-legend-row {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	padding: 3px 4px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.nvoos-cg-legend-row:hover,
+.nvoos-cg-legend-row:focus-visible {
+	background: rgba( 128, 128, 200, 0.15 );
+	outline: none;
+}
+
+.nvoos-cg-legend-swatch {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	border-radius: 4px;
+	border: 1px solid var( --nvoos-cg-border );
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.nvoos-cg-legend-swatch img {
+	width: 11px;
+	height: 11px;
+}
+
+.nvoos-cg-legend-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nvoos-cg-legend-ramp {
+	display: flex;
+	gap: 0;
+	margin-bottom: 4px;
+}
+
+.nvoos-cg-legend-ramp-stop {
+	flex: 1;
+	height: 8px;
+}
+
+.nvoos-cg-legend-note {
+	margin: 0;
+	color: var( --nvoos-cg-muted );
+	font-size: 10px;
+}
+
+/* ---- Minimap ---- */
+.nvoos-cg-minimap {
+	position: absolute;
+	right: 10px;
+	top: 10px;
+	z-index: 10;
+	background: var( --nvoos-cg-surface );
+	border: 1px solid var( --nvoos-cg-border );
+	border-radius: 6px;
+	padding: 4px;
+	cursor: crosshair;
+	opacity: 0.85;
+}
+
+.nvoos-cg-minimap:hover {
+	opacity: 1;
+}
+
+.nvoos-cg-minimap canvas {
+	display: block;
+	max-width: 160px;
+	max-height: 100px;
+}
+
+/* ---- Zoom cluster / toolbar extras ---- */
+.nvoos-cg-zoom-cluster {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.nvoos-cg-zoom-badge {
+	min-width: 44px;
+	text-align: center;
+	font-size: 11px;
+	color: #50575e;
+}
+
+/* ---- Appearance tab ---- */
+.nvoos-cg-type-grid,
+.nvoos-cg-contrast-report {
+	margin-bottom: 12px;
+}
+
+.nvoos-cg-type-grid td,
+.nvoos-cg-contrast-report td {
+	vertical-align: middle;
+}
+
+.nvoos-cg-swatch {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border-radius: 3px;
+	border: 1px solid #c3c4c7;
+	vertical-align: -3px;
+	margin-right: 4px;
+}
+
+.nvoos-cg-ok {
+	color: #007017;
+	font-weight: 600;
+}
+
+.nvoos-cg-bad {
+	color: #b32d2e;
+	font-weight: 600;
+}
+
+/* ---- Sidebar ---- */
+.nvoos-content-graph-sidebar {
+	background: #fff;
+	border: 1px solid #dde;
+	border-radius: 6px;
+	padding: 14px 16px;
+	max-width: 320px;
+	margin-top: 12px;
+	font-size: 13px;
+}
+
+.nvoos-content-graph-sidebar h3 {
+	margin-top: 0;
+	font-size: 15px;
+}
+
+.nvoos-content-graph-sidebar h4 {
+	font-size: 13px;
+	margin: 10px 0 4px;
+}
+
+.nvoos-content-graph-sidebar ul {
+	margin: 0;
+	padding-left: 18px;
+}
+
+/* ---- Loading skeleton ---- */
+.nvoos-cg-loading {
+	padding: 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	align-items: center;
+	justify-content: center;
+	min-height: 140px;
+}
+
+.nvoos-cg-loading-bar {
+	width: min( 420px, 70% );
+	height: 12px;
+	border-radius: 6px;
+	background: linear-gradient( 90deg, var( --nvoos-cg-surface ) 25%, var( --nvoos-cg-border ) 50%, var( --nvoos-cg-surface ) 75% );
+	background-size: 200% 100%;
+	animation: nvoos-cg-shimmer 1.4s ease-in-out infinite;
+}
+
+.nvoos-cg-loading-bar:nth-child( 2 ) {
+	width: min( 340px, 56% );
+	animation-delay: 0.15s;
+}
+
+.nvoos-cg-loading-bar:nth-child( 3 ) {
+	width: min( 260px, 42% );
+	animation-delay: 0.3s;
+}
+
+.nvoos-cg-loading-text {
+	margin: 6px 0 0;
+	font-size: 12px;
+	color: var( --nvoos-cg-muted );
+}
+
+@keyframes nvoos-cg-shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
+}
+
+/* ---- Search match badge ---- */
+.nvoos-cg-search-count {
+	font-size: 11px;
+	color: var( --nvoos-cg-muted, #50575e );
+	background: var( --nvoos-cg-surface, #fff );
+	border: 1px solid var( --nvoos-cg-border, #ccd );
+	border-radius: 10px;
+	padding: 1px 8px;
+	white-space: nowrap;
+}
+
+/* ---- Hover tooltip (follows the cursor, single shared element) ---- */
+.nvoos-cg-tooltip {
+	position: absolute;
+	z-index: 20;
+	pointer-events: none;
+	max-width: 240px;
+	background: var( --nvoos-cg-surface );
+	color: var( --nvoos-cg-label );
+	border: 1px solid var( --nvoos-cg-border );
+	border-radius: 6px;
+	padding: 6px 10px;
+	font-size: 11px;
+	line-height: 1.45;
+	box-shadow: 0 4px 16px rgba( 0, 0, 0, 0.35 );
+	transform: translate( -50%, calc( -100% - 16px ) );
+	transition: opacity 0.12s ease;
+}
+
+.nvoos-cg-tooltip[hidden] {
+	display: none;
+}
+
+.nvoos-cg-tooltip strong {
+	display: block;
+	font-size: 12px;
+	margin-bottom: 1px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.nvoos-cg-tooltip-meta {
+	display: block;
+	color: var( --nvoos-cg-muted );
+}
+
+/* ---- Hover cursor + entrance reveal ---- */
+#nvoos-content-graph-explorer.nvoos-cg-node-hover {
+	cursor: pointer;
+}
+
+#nvoos-content-graph-explorer.nvoos-cg-pending {
+	opacity: 0;
+}
+
+#nvoos-content-graph-explorer.nvoos-cg-revealed {
+	opacity: 1;
+	transition: opacity 0.26s ease;
+}
+
+/* ---- Reduced motion ---- */
+@media ( prefers-reduced-motion: reduce ) {
+	.nvoos-cg-loading-bar {
+		animation: none;
+	}
+
+	.nvoos-cg-tooltip {
+		transition: none;
+	}
+
+	#nvoos-content-graph-explorer.nvoos-cg-revealed {
+		transition: none;
+	}
+}
+
+/* ----------------------------------------------------------------------------
+   Addon purchase modal (Stripe Payment Element)
+   ---------------------------------------------------------------------------- */
+.nvoos-cg-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba( 0, 0, 0, 0.55 );
+	z-index: 100000;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	overflow-y: auto;
+	padding: 48px 20px;
+	box-sizing: border-box;
+}
+
+.nvoos-cg-modal {
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 16px 48px rgba( 0, 0, 0, 0.18 );
+	max-width: 480px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.nvoos-cg-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.nvoos-cg-modal-title {
+	margin: 0;
+	font-size: 17px;
+	line-height: 1.3;
+}
+
+.nvoos-cg-modal-close {
+	background: none;
+	border: none;
+	font-size: 24px;
+	line-height: 1;
+	cursor: pointer;
+	color: #787c82;
+	padding: 0 4px;
+}
+
+.nvoos-cg-modal-close:hover {
+	color: #d63638;
+}
+
+.nvoos-cg-modal-body {
+	padding: 20px;
+}
+
+.nvoos-cg-price {
+	font-size: 20px;
+	font-weight: 600;
+	margin: 0 0 4px;
+}
+
+.nvoos-cg-secure-note,
+.nvoos-cg-test-mode {
+	color: #646970;
+	font-size: 12px;
+	margin: 0 0 16px;
+}
+
+.nvoos-cg-test-mode {
+	color: #b32d2e;
+	margin: 12px 0 0;
+}
+
+.nvoos-cg-error {
+	background: #fcf0f1;
+	border-left: 4px solid #d63638;
+	color: #863232;
+	padding: 10px 12px;
+	margin: 0 0 16px;
+	font-size: 13px;
+}
+
+.nvoos-cg-diagnose-btn {
+	display: inline-block;
+	margin-top: 6px;
+	padding: 0;
+	cursor: pointer;
+}
+
+.nvoos-cg-diagnose-btn[disabled] {
+	cursor: default;
+	opacity: 0.7;
+}
+
+.nvoos-cg-diagnose-result {
+	margin: 6px 0 0;
+	word-break: break-word;
+}
+
+.nvoos-cg-installing {
+	padding: 32px 0;
+	text-align: center;
+	color: #646970;
+}
+
+.nvoos-cg-installing::before {
+	content: "";
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin-right: 8px;
+	vertical-align: -3px;
+	border: 2px solid #c3c4c7;
+	border-top-color: #2271b1;
+	border-radius: 50%;
+	animation: nvoos-cg-spin 0.8s linear infinite;
+}
+
+@keyframes nvoos-cg-spin {
+	to {
+		transform: rotate( 360deg );
+	}
+}
+
+.nvoos-cg-pending-message {
+	font-size: 13px;
+	margin: 0 0 12px;
+}
+
+.nvoos-cg-success-title {
+	margin-top: 0;
+}
+
+.nvoos-cg-success-message {
+	font-size: 13px;
+}
+
+.nvoos-cg-license {
+	font-size: 13px;
+	word-break: break-all;
+}
+
+.nvoos-cg-license code {
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+}
+
+.nvoos-cg-modal-footer {
+	padding: 16px 20px;
+	border-top: 1px solid #dcdcde;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+/* Purchase modal — pricing, trust, value & post-purchase blocks (1.0.7) */
+.nvoos-cg-price-block {
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.nvoos-cg-price-block .nvoos-cg-price {
+	margin-bottom: 4px;
+}
+
+.nvoos-cg-price-sub {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.nvoos-cg-price-scope,
+.nvoos-cg-price-vat,
+.nvoos-cg-price-change {
+	margin: 6px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+.nvoos-cg-price-vat {
+	margin-top: 2px;
+}
+
+.nvoos-cg-trust {
+	list-style: none;
+	margin: 0 0 16px;
+	padding: 0;
+}
+
+.nvoos-cg-trust-item {
+	font-size: 13px;
+	color: #2c3338;
+	padding: 3px 0 3px 24px;
+	position: relative;
+}
+
+.nvoos-cg-trust-item::before {
+	content: "✓";
+	position: absolute;
+	left: 0;
+	color: #00a32a;
+	font-weight: 700;
+}
+
+.nvoos-cg-includes {
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	background: #f0f6fc;
+	border: 1px solid #c5d9ed;
+	border-radius: 6px;
+}
+
+/* Product-status note — development/testing + guarantee, muted under the
+   "What you get" block. */
+.nvoos-cg-dev-status {
+	margin: -8px 0 16px;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #646970;
+}
+
+.nvoos-cg-includes-title {
+	margin: 0 0 8px;
+	font-size: 13px;
+}
+
+.nvoos-cg-includes-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-cg-includes-item {
+	font-size: 13px;
+	color: #2c3338;
+	padding: 3px 0 3px 20px;
+	position: relative;
+}
+
+.nvoos-cg-includes-item::before {
+	content: "•";
+	position: absolute;
+	left: 4px;
+	color: #2271b1;
+}
+
+.nvoos-cg-roadmap {
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+.nvoos-cg-terms-sub {
+	margin: 10px 0 0 26px;
+	font-size: 12px;
+	color: #646970;
+}
+
+.nvoos-cg-success-steps {
+	margin: 16px 0 0;
+}
+
+.nvoos-cg-success-steps-title {
+	margin: 0 0 6px;
+	font-size: 13px;
+}
+
+.nvoos-cg-success-steps-list {
+	margin: 0 0 0 18px;
+	padding: 0;
+	font-size: 13px;
+	color: #2c3338;
+}
+
+.nvoos-cg-success-steps-list li {
+	margin-bottom: 4px;
+}
+
+.nvoos-cg-support-line {
+	margin: 16px 0 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* ----------------------------------------------------------------------------
+   Addon purchase modal — checkout form fields (1.0.7)
+   ---------------------------------------------------------------------------- */
+.nvoos-cg-email-row,
+.nvoos-cg-billing-row {
+	margin: 0 0 16px;
+}
+
+.nvoos-cg-email-label,
+.nvoos-cg-billing-label,
+.nvoos-cg-field-label {
+	display: block;
+	margin: 0 0 6px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	color: #3c434a;
+}
+
+.nvoos-cg-email-input,
+.nvoos-cg-country-select,
+.nvoos-cg-field-input {
+	width: 100%;
+	box-sizing: border-box;
+	height: 40px;
+	margin: 0;
+	padding: 0 12px;
+	border: 1px solid #c3c4c7;
+	border-radius: 6px;
+	background: #fff;
+	box-shadow: none;
+	color: #2c3338;
+	font-size: 14px;
+	line-height: 38px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Strip the select's native chrome and draw our own chevron so it reads
+   as the same minimalist field as the text inputs. */
+.nvoos-cg-country-select {
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	padding-right: 36px;
+	cursor: pointer;
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23646970' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	background-size: 12px 8px;
+}
+
+.nvoos-cg-email-input:hover,
+.nvoos-cg-country-select:hover,
+.nvoos-cg-field-input:hover {
+	border-color: #a7aaad;
+}
+
+.nvoos-cg-email-input:focus,
+.nvoos-cg-country-select:focus,
+.nvoos-cg-field-input:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 3px rgba( 34, 113, 177, 0.15 );
+	outline: none;
+}
+
+.nvoos-cg-email-input::placeholder,
+.nvoos-cg-field-input::placeholder {
+	color: #a7aaad;
+}
+
+/* EU billing address — each field is a wrapper (label + input). Street
+   spans both columns, city and postal sit side by side. The JS toggles
+   `display: none` only, so the grid stays the stylesheet's single source
+   of layout. */
+.nvoos-cg-address-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 12px;
+	row-gap: 12px;
+	margin-top: 12px;
+	padding: 14px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.nvoos-cg-address-row .nvoos-cg-field:first-child {
+	grid-column: 1 / -1;
+}
+
+@media ( max-width: 400px ) {
+	.nvoos-cg-address-row {
+		grid-template-columns: 1fr;
+	}
+
+	.nvoos-cg-address-row .nvoos-cg-field {
+		grid-column: 1 / -1;
+	}
+}
+
+/* Terms consent — a bordered card with an inline checkbox. */
+.nvoos-cg-terms-row {
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.nvoos-cg-terms-label {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	font-size: 13px;
+	line-height: 1.6;
+	color: #2c3338;
+	cursor: pointer;
+}
+
+/* Replace the stock WP-admin checkbox with a minimalist custom one that
+   matches the restyled fields. Scoped under the row so it beats the
+   `input[type="checkbox"]` rules in wp-admin/forms.css. */
+.nvoos-cg-terms-row .nvoos-cg-terms-checkbox {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	min-width: 16px;
+	margin: 2px 0 0;
+	appearance: none;
+	-webkit-appearance: none;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	background: #fff;
+	box-shadow: none;
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nvoos-cg-terms-row .nvoos-cg-terms-checkbox:checked {
+	background-color: #2271b1;
+	border-color: #2271b1;
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' d='M4 8.5l2.8 2.8L12 6'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 12px 12px;
+}
+
+/* WP admin draws its own dark checkmark via ::before on :checked — drop
+   it so only our white mark renders. */
+.nvoos-cg-terms-row .nvoos-cg-terms-checkbox:checked::before {
+	content: none;
+}
+
+.nvoos-cg-terms-row .nvoos-cg-terms-checkbox:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 3px rgba( 34, 113, 177, 0.15 );
+	outline: none;
+}
+
+.nvoos-cg-terms-link {
+	white-space: nowrap;
+}
+
+/* Stripe Payment Element mount point. The Stripe `appearance` rules in
+   content-graph-commerce.js draw the field border inside the iframe, so
+   this container stays chrome-free and the card field lines up exactly
+   with the native inputs above it. */
+.nvoos-cg-pay-element {
+	margin: 0 0 16px;
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+}
+
+.nvoos-cg-modal-footer .nvoos-cg-pay-btn {
+	min-width: 160px;
+}
+
+/* Free base-version download — left-aligned in the footer; the auto
+   margin pushes Cancel/Pay to the right. The row is removed with the
+   footer on success and hidden once the buyer commits to paying. */
+.nvoos-cg-free-option {
+	margin-right: auto;
+	font-size: 12px;
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.nvoos-cg-free-option:hover,
+.nvoos-cg-free-option:focus {
+	text-decoration: underline;
+}
+
+/* ---- Remote Sources tab: row status + modal message ---- */
+.nvoos-source-row-status {
+	display: inline-block;
+	margin-left: 8px;
+	font-size: 12px;
+	color: #646970;
+}
+
+.nvoos-source-row-status.ok,
+#nvoos-modal-message.ok {
+	color: #007017;
+}
+
+.nvoos-source-row-status.error,
+#nvoos-modal-message.error {
+	color: #b32d2e;
+}
+
+#nvoos-modal-message {
+	margin-top: 8px;
+	font-size: 12px;
+	word-break: break-word;
+}

@@ -82,6 +82,26 @@ class WP_MCP_AI_Elementor_Widget_Registration_Error_Handling_Test extends WP_Uni
 	}
 
 	/**
+	 * Test that widget class checks disable Composer autoloading.
+	 *
+	 * A partial deploy can leave the Composer classmap newer than the files on
+	 * disk. Widget files are require_once'd explicitly above, so the
+	 * class_exists() checks must disable autoloading — otherwise Composer
+	 * includes the missing classmap path and emits PHP warnings on every
+	 * elementor/widgets/register run.
+	 */
+	public function test_widget_class_checks_disable_autoloading() {
+		$integration_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
+		$content          = file_get_contents( $integration_file );
+
+		$this->assertStringContainsString(
+			'class_exists( $widget_class, false )',
+			$content,
+			'Widget class checks must disable autoloading to avoid include warnings for missing widget files'
+		);
+	}
+
+	/**
 	 * Test that integration class has the register_widget method.
 	 *
 	 * Verifies the method exists and is callable.

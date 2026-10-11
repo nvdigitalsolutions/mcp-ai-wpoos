@@ -211,8 +211,9 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	/**
 	 * Handle the upgrader_process_complete hook.
 	 *
-	 * Clears the cache and enqueues an async rebuild when an
-	 * NV-oOS-related plugin was updated.
+	 * Enqueues an async rebuild when an NV-oOS-related plugin was updated.
+	 * The live cache is not cleared up front — the rebuild promotes over it
+	 * on completion, so readers keep the previous index in the meantime.
 	 *
 	 * @since 1.0.0
 	 *
@@ -233,7 +234,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 			return;
 		}
 
-		self::clear_and_enqueue();
+		self::enqueue_async();
 	}
 
 	/**
@@ -249,7 +250,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 			return;
 		}
 
-		self::clear_and_enqueue();
+		self::enqueue_async();
 	}
 
 	/**
@@ -258,7 +259,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	 * The base plugin replaces its own files without going through the
 	 * WordPress Plugin_Upgrader flow, so upgrader_process_complete never
 	 * fires for those updates. The updater emits wp_mcp_ai_plugin_updated
-	 * instead, and this method applies the same clear + rebuild treatment.
+	 * instead, and this method applies the same rebuild treatment.
 	 *
 	 * @since 0.4.1
 	 *
@@ -270,7 +271,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 			return;
 		}
 
-		self::clear_and_enqueue();
+		self::enqueue_async();
 	}
 
 	/**
@@ -299,21 +300,24 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	/**
 	 * Invalidate the cache and start an async rebuild.
 	 *
-	 * Clearing alone was insufficient: the next visitor request would only
-	 * auto-enqueue a rebuild when an admin logged in, so updates could
-	 * leave the index stale indefinitely. Enqueueing here starts the
-	 * chunked pipeline immediately. The remote file cache is preserved —
-	 * a plugin update only changes local docs, so the rebuild should not
-	 * re-fetch every remote Markdown file from GitHub.
+	 * Enqueueing alone was historically insufficient: the next visitor
+	 * request would only auto-enqueue a rebuild when an admin logged in, so
+	 * updates could leave the index stale indefinitely. Enqueueing here
+	 * starts the chunked pipeline immediately.
+	 *
+	 * The live cache is intentionally NOT cleared up front: the pipeline
+	 * builds into a staging namespace and atomically promotes it over the
+	 * live cache on completion, so readers keep serving the previous index
+	 * until the new one is ready — a stalled rebuild can no longer wipe the
+	 * index. The remote file cache is therefore also always preserved.
 	 *
 	 * @since 0.4.1
+	 * @deprecated 0.5.3 Use {@see enqueue_async()} directly; the pipeline's
+	 *             promote step replaces the live cache without a pre-clear.
 	 *
 	 * @return void
 	 */
 	public static function clear_and_enqueue() {
-		$cache = new NV_oOS_Docs_Hub_Cache();
-		$cache->clear( true );
-
 		self::enqueue_async();
 	}
 

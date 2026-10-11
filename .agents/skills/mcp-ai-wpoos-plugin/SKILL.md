@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.97"
-  plugin-version-tested: "1.1.97"
-  last-updated: "2026-10-05"
+  plugin-version: "1.2.4"
+  plugin-version-tested: "1.2.4"
+  last-updated: "2026-10-11"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -47,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~347 base / ~1,648 full tools
+     │  Tool Registry     │  ~353 base / ~1,692 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -587,6 +587,14 @@ console — its WebUI API over public HTTPS — see `bin/hermes-mcp-server.js`
 (`HERMES_SYNC_SKILLS_ON_START=1`, default); the standalone CLI
 `bin/sync-skills-to-hermes.js` does the same from cron or a git post-merge hook.
 
+**Verifying a bridge from inside a Zed session:** once any of these bridges
+is connected, the remote tools appear as plain functions in the session tool
+list (never under the server name), and `list_agents_and_models` will NOT
+list the NV oOS assistant — detect enablement by tool-surface signature plus
+a live probe, and re-probe rather than trusting earlier checks. See
+`design-ai-assistant-admin` → "Detecting NV oOS agent enablement from a
+coding-agent session (Zed)".
+
 ---
 
 ## Rate Limiting & Agent Traffic
@@ -772,6 +780,95 @@ Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
 
+**v1.2.3 operational quick notes** (full detail in RELEASE-NOTES.md):
+**CORS same-origin enforcement** (PR #6986) — WordPress core reflects any
+Origin back with credentials on every REST response, so the "Same Origin"
+setting was a silent no-op; the 12th security class `WP_MCP_AI_CORS_Guard`
+(priority 20) replaces the reflection in `site` mode (exact-allowlisted
+origins echoed — site origin + the `cors_allowed_origins` textarea +
+the `wp_mcp_ai_cors_allowed_origins` filter; everything else gets the
+site origin with credentials off; scope `/mcp-ai/v1` by default — widen
+via `wp_mcp_ai_cors_guard_route_prefixes`). **Standalone SPA WordPress
+login** (PR #6993, Proposal 064) — a fourth auth mode via an Application
+Password (Basic auth over REST; real user + capabilities mounted; the
+Basic header attaches only to the configured site origin). **SPA REST
+auth fixes** (PR #6990 — closes #6987, #6985) — transcripts/approvals
+accept a pure assistant credential (scoped to the issuing assistant;
+`approve`/`deny` stay `manage_options`); the session nonce re-binds the
+auth cookie before minting. **Quick wins** (PR #6991) — multi-recipient
+`notify_email` (comma/space/semicolon lists), the tool-status CRM slugs,
+the pagination fixture fix. **Standalone SPA** (PRs #6994/#6996) —
+cookie-mode proxy detection + JSON guards, the zero-dependency
+`scripts/serve.mjs` production proxy, `React.lazy` chunk splitting, and
+`.env` loading. **npm packages** (PR #6984) — three invalid-ESM dists
+rebuilt; the alpha.4 publishes deferred (needs npm auth). Counts
+unchanged: ~353 base + ~1,339 Pro (~1,692 total); security classes
+11 → 12.
+
+**v1.2.2 operational quick notes** (full detail in RELEASE-NOTES.md):
+**Chat profiles with server-enforced read-only mode** (PR #6977, Proposal
+015) — `write` + `read-only` built-ins resolved server-side per request
+(user meta → site default → write fail-safe; a client can never widen its
+own grant; guests default to read-only); the 11th security class
+`WP_MCP_AI_Read_Only_Profile_Gate` (priority 0, before the
+destructive-ops gate); `GET/POST /mcp-ai/v1/chat-profile` deliberately not
+a tool (no mid-run self-elevation); `wp mcp-ai chat-profile` WP-CLI;
+settings `chat_profile_enabled`/`default_chat_profile`/`guest_chat_profile`.
+**F&B assistant packs A1–A4** (PR #6982, Proposal 062 Phase 4) — `wp mcp
+ai pro fnb seed-assistants` imports the four bundles through the shared
+portability engine. **Google OAuth production readiness** (PR #6981) —
+`drive.file` scope unification behind `wp_mcp_ai_google_drive_oauth_scope`,
+Calendar Minimal default, upstream revocation on disconnect. **Pro SPA v2
+fixes** (PRs #6974/#6976/#6979). **Sub-projects** — docs-hub 0.5.3 (live
+on the wp.org directory) and content-graph 1.0.10. Counts unchanged:
+~353 base + ~1,339 Pro (~1,692 total).
+
+**v1.2.1 operational quick notes** (full detail in RELEASE-NOTES.md): the
+**Food & Beverage Management Pro Toolkit** (PR #6962, Proposal 062) — 21
+`fnb_*` tools behind `enable_fnb_toolkit` (default off), 20/20 Check-totals
+oracle vs the demo workbook, 5 schedule + 2 workflow presets. **Docs Hub
+content tools** (PR #6964) — five `docs_hub_*` tools with traversal-safe
+path validation. **MCP server identity** (PR #6956) — `mcp_server_info`
+base tool + `list_mcp_tools` `_meta` + the informational
+`X-MCP-Bridge-Name` seam. **Docs Hub checkout upsell** (PR #6963, addon
+0.5.1 → 0.5.2) — the Content Graph commerce stack in the wp.org plugin
+(follow-up: tag `docs-hub-v0.5.2` + SVN upload). **Fixes** — skill-catalogue
+sidecars + GitHub token (#6954) and the Elementor partial-deploy warning
+flood (#6961). Counts: ~353 base + ~1,339 Pro (~1,692 total; +1 base
++26 Pro).
+
+**v1.1.99 operational quick notes** (full detail in RELEASE-NOTES.md): the
+**SPA UI stack enhancement** (PR #6952, Proposal 060) — toolkit-shell
+0.2.0 → 0.3.0 (Radix primitives, TanStack TableView, @dnd-kit Kanban,
+RHF+zod FormView, sonner, `--nds-*` tokens) and schedule-anything-spa →
+0.2.0 (Tailwind v4, shadcn-style kit, @xyflow/react v12); shipped suites
+31/31 + 23/23. The **MCP Gateway gains an OAuth 2.1 resource server** (PR
+#6945, Phase 1) — RFC 9728 metadata + `WWW-Authenticate` challenges,
+zero-dependency JWT validation, scope site-binding, no token passthrough;
+inert until `GATEWAY_OAUTH_ISSUER`; Phases 2–5 deferred (gateway stays
+0.1.1). The **Docs Hub Playground demo + wp.org Live Preview** ships (PRs
+#6944/#6946–#6949 — the self-activate loader fix, the 10-page wiki seed,
+the full-page `/docs/` SPA demo). **Gmail body extraction** is fixed (PR
+#6939 — fallback chain + `body_source`/`body_empty_reason`). **Fleet
+Operator tokens are masked** (PR #6950). **Figma skills join the default
+catalogues** (PR #6938). **Complete-ZIP blueprint stripping fixed** (PRs
+#6936/#6940). Counts unchanged: ~352 base + ~1,313 Pro (~1,665 total).
+
+**v1.1.98 operational quick notes** (full detail in RELEASE-NOTES.md): the
+**Figma-to-Elementor design-to-build pipeline** (PR #6934, Proposals
+057–059 — docs + the new `design-figma-to-elementor` skill, no PHP) — the
+7-stage pipeline (Scope → Read → Plan → Tokenize → Build → Verify →
+Handoff) rides the shipped MCP Apps / OAuth / A2A / per-toolkit MCP server
+machinery (Figma MCP read, Elementor MCP write; drafts only, never
+publish); Phase 3 (demo + Verify seed) deferred on live endpoints. The
+**Unified Blueprints page is fixed** (PR #6933) — root-anchored `examples`
+exclusions stop release builds from stripping all 65 blueprint JSONs, and
+the page now gates blueprints on toolkit enablement. The **gateway mirror
+sync** gains `workflow_dispatch` + a version guard against stale
+promotions (PR #6927). The **dependabot sweep** (PR #6931) resolves 138 of
+166 open npm alerts across 17 trees (28 deferred in issue #6930; dashboard
+dismissed). Counts unchanged: ~352 base + ~1,313 Pro (~1,665 total).
+
 **v1.1.97 operational quick notes** (full detail in RELEASE-NOTES.md): the
 **Proposal 056 harness** (PR #6912, all inert by default) — cascade model
 routing now governs both engines from one `wp_mcp_ai_cascade_enabled` switch
@@ -941,6 +1038,24 @@ PR conventions — see the dedicated skill
 
 ## Troubleshooting
 
+### Client sees fewer tools in `tools/list` after upgrading
+
+**Symptom (v1.2.4+, PR #7007):** an agent client shows a shorter tool
+catalog than before — or a single broken tool no longer hides the whole
+catalog.
+
+**Cause:** `WP_MCP_AI_Tool_Schema_Auditor` now normalizes every advertised
+schema (root `type: object` injected when missing) and **skips-with-reason**
+hazardous schemas — bracketed property names (`ids[]`), schemas over the
+byte budget (`wp_mcp_ai_tools_list_schema_max_bytes`, default 20 KB), slugs
+over 64 chars (`wp_mcp_ai_tools_list_max_slug_length`), root
+`oneOf`/`anyOf` without a type. Skipped tools are logged with the reason.
+Diagnose with the Site Health direct test (`wp_mcp_ai_tool_schema_auditor`)
+or the debug-info field (15-min transient cache). `nvoos_get_profile` now
+attaches `structuredContent` whenever its `outputSchema` is advertised, and
+the registry fires `wp_mcp_ai_mcp_tools_list_changed` (once per request) so
+clients with `listChanged` support can refresh instead of re-polling blindly.
+
 ### "invalid volume specification" on Docker start
 
 **Cause:** Windows drive-letter path in a custom compose override
@@ -969,6 +1084,15 @@ update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'web_search', 'creat
 
 **Cause (v1.1.90+):** opt-in `mcp_require_assistant_scope` (Security → Access & Identity, default OFF) is on and the request resolves to no assistant (no explicit `assistant_id`, no token-bound assistant, no `default_assistant`).
 **Fix:** pass `assistant_id`, bind the credential to an assistant, set `default_assistant`, or turn the toggle off.
+
+### Site echoes any Origin back — CORS "Same Origin" not enforced
+
+**Cause:** WordPress core `rest_send_cors_headers()` (hooked on `rest_pre_serve_request` at priority 10) reflects whatever `Origin` the client sent — plus `Access-Control-Allow-Credentials: true` — on **every** REST response, replacing the plugin's own header. The Security → Network "Same Origin" setting was therefore a silent no-op before v1.2.3 (verified live: a bogus origin was mirrored back on both plugin and core routes).
+**Fix (v1.2.3+, PR #6986):** `WP_MCP_AI_CORS_Guard` overrides the reflection at priority 20 in `site` mode — exact-allowlisted origins (site origin + the `cors_allowed_origins` textarea, one origin per line + the `wp_mcp_ai_cors_allowed_origins` filter) are echoed with credentials; everything else gets the site's own origin + credentials off (browsers refuse to read the response). `star` mode is unchanged. Default enforcement scope is `/mcp-ai/v1` only — add `/mcp-ai-pro/v1` via the `wp_mcp_ai_cors_guard_route_prefixes` filter for Pro SPA surfaces. On pre-1.2.3 installs, an exact-allowlist mu-plugin replicating the override is in `docs/operations/deployment/nvoos-pro-spa-velocity-setup.md` §5. Diagnose with:
+```bash
+curl -s -D - -o /dev/null -H "Origin: https://bogus.example.com" \
+  "https://SITE/wp-json/mcp-ai/v1/assistants" | grep -i access-control
+```
 
 ### MCP App OAuth connect fails with "OAuth 2.0 discovery failed" (v1.1.91+)
 

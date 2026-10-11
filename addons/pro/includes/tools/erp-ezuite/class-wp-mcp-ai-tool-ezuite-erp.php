@@ -52,10 +52,10 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_usage_guidance() {
 		return array(
-			'when_to_use'     => __( 'Discovering EZuite connections, testing them, or invoking raw ERP API actions such as LX_ItemPull via a connection ID.', 'mcp-ai-wpoos-pro' ),
+			'when_to_use'     => __( 'Discovering EZuite connections, testing them, or invoking raw ERP API actions such as LX_ItemStockPull via a connection ID.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Simple catalog reads (use ezuite_erp_get_products) or cached inventory queries (use ezuite_inventory).', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'ezuite_erp_get_products', 'ezuite_inventory', 'ezuite_settings' ),
-			'notes'           => __( 'Always call list_connections first; pass Item_Code in api_body to avoid pulling large responses.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Always call list_connections first; pass ItemCode in api_body to avoid pulling large responses.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -112,8 +112,9 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				),
 				'api_action'    => array(
 					'type'        => 'string',
-					'description' => __( 'EZuite API action to invoke (e.g., "LX_ItemPull" for pulling items). Case-insensitive. Required for invoke_api action.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'EZuite API action to invoke (e.g., "LX_ItemStockPull" for pulling items with per-location stock, or the legacy "LX_ItemPull"). Case-insensitive. Required for invoke_api action.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
+						'LX_ItemStockPull',
 						'LX_ItemPull',
 						'LX_ItemUpdate',
 						'LX_ItemCreate',
@@ -125,7 +126,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				),
 				'api_body'      => array(
 					'type'        => 'array',
-					'description' => __( 'Request body array for the EZuite API action. LX_ItemPull examples: [{"Location_Code": "ALL"}] to pull all items, or [{"Location_Code": "ALL", "Item_Code": "C316/L16/ITM-10"}] to pull a specific item by code. Use Item_Code to avoid large responses.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Request body array for the EZuite API action. LX_ItemStockPull examples: [{"Location_Code": "ALL"}] to pull all items, or [{"Location_Code": "ALL", "ItemCode": "170639"}] to pull a specific item by code. Use ItemCode to avoid large responses.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'object',
 					),
@@ -349,14 +350,17 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return array|WP_Error Test results or error.
 	 */
 	protected function test_connection( $connection ) {
-		// Test with a simple API action.
+		// Test with a simple API action (filterable so hosts still serving
+		// the legacy LX_ItemPull action can pin it back).
+		$api_action = apply_filters( 'wp_mcp_ai_ezuite_api_action', 'LX_ItemStockPull', $connection['id'] ?? '' );
+
 		$test_body = array(
 			array(
 				'Location_Code' => 'ALL',
 			),
 		);
 
-		$result = $this->make_erp_request( $connection, 'LX_ItemPull', $test_body );
+		$result = $this->make_erp_request( $connection, $api_action, $test_body );
 
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error(
@@ -397,6 +401,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		// Validate and normalize API action (case-insensitive).
 		$allowed_actions = array(
+			'LX_ItemStockPull',
 			'LX_ItemPull',
 			'LX_ItemUpdate',
 			'LX_ItemCreate',
@@ -438,7 +443,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		} else {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_api_body',
-				__( 'API body parameter is required. For LX_ItemPull, provide Location_Code. Note: Using "ALL" may return large datasets.', 'mcp-ai-wpoos-pro' )
+				__( 'API body parameter is required. For LX_ItemStockPull, provide Location_Code. Note: Using "ALL" may return large datasets.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -463,7 +468,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$result['_total_items']  = $total_items;
 			$result['_warning']      = sprintf(
 				/* translators: 1: number of items returned, 2: total items available */
-				__( 'Response truncated: showing %1$d of %2$d total items. To get a specific item, include "Item_Code" in api_body, or use the ezuite_erp_get_products tool.', 'mcp-ai-wpoos-pro' ),
+				__( 'Response truncated: showing %1$d of %2$d total items. To get a specific item, include "ItemCode" in api_body, or use the ezuite_erp_get_products tool.', 'mcp-ai-wpoos-pro' ),
 				$max_items,
 				$total_items
 			);

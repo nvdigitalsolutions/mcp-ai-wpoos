@@ -100,6 +100,7 @@ class WP_MCP_AI_Tool_Scan_Assistant_Security implements WP_MCP_AI_Tool_Interface
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Reads configuration, changes nothing.
+			'requires-capability',  // manage_options-gated security scan.
 			'no-user-data-access',  // Assistant configuration only.
 			'stateless',            // No persistence between calls.
 		);

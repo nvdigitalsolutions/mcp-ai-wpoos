@@ -261,4 +261,27 @@ class WP_MCP_AI_REST_Cache_Test extends WP_UnitTestCase {
 		$this->assertFalse( WP_MCP_AI_REST_Cache::get_response( 'assistants', array() ) );
 		$this->assertFalse( WP_MCP_AI_REST_Cache::get_response( 'assistant_' . $assistant_id, array() ) );
 	}
+
+	/**
+	 * The per-endpoint key registry is FIFO-capped: once REGISTRY_MAX_KEYS
+	 * is reached the oldest key is evicted and its transient deleted.
+	 */
+	public function test_registry_cap_evicts_oldest_keys() {
+		$endpoint = 'cap_regression';
+
+		for ( $i = 0; $i < WP_MCP_AI_REST_Cache::REGISTRY_MAX_KEYS + 1; $i++ ) {
+			WP_MCP_AI_REST_Cache::set_response( $endpoint, array( 'i' => $i ), array( 'data' => $i ) );
+		}
+
+		$registry = get_option( WP_MCP_AI_REST_Cache::REGISTRY_PREFIX . sanitize_key( $endpoint ), array() );
+		$this->assertCount( WP_MCP_AI_REST_Cache::REGISTRY_MAX_KEYS, $registry );
+
+		// The first key was evicted FIFO (its transient deleted), the newest
+		// entry is still cached.
+		$this->assertFalse( WP_MCP_AI_REST_Cache::get_response( $endpoint, array( 'i' => 0 ) ) );
+		$this->assertSame(
+			array( 'data' => WP_MCP_AI_REST_Cache::REGISTRY_MAX_KEYS ),
+			WP_MCP_AI_REST_Cache::get_response( $endpoint, array( 'i' => WP_MCP_AI_REST_Cache::REGISTRY_MAX_KEYS ) )
+		);
+	}
 }

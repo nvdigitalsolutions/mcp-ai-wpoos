@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-ai-assistant-admin
-description: Manage AI assistant configurations and peer-to-peer mesh network connections in the NV oOS Pro Toolkit. Covers assistant creation, model configuration, provider setup, peer discovery, mesh networking, and cross-assistant communication. Use when creating or editing AI assistants, configuring model providers, setting up peer connections, managing mesh network topology, or debugging assistant behavior.
+description: Manage AI assistant configurations and peer-to-peer mesh network connections in the NV oOS Pro Toolkit. Covers assistant creation, model configuration, provider setup, peer discovery, mesh networking, cross-assistant communication, and detecting from a coding-agent session (Zed) which NV oOS assistants / MCP servers are enabled. Use when creating or editing AI assistants, configuring model providers, setting up peer connections, managing mesh network topology, debugging assistant behavior, or answering "is agent X available" / "what tools does this MCP have".
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
@@ -27,6 +27,8 @@ Trigger when ANY of the following is true:
 - Listing all assistants with their current model, provider, and status.
 - Querying which tools are enabled for a specific assistant.
 - Debugging assistant behavior — checking configuration, tool access, or peer routing.
+- Checking whether a specific NV oOS assistant / MCP server ("kate agent", "ECA agent", …) is enabled in the current editor session.
+- Answering "is agent X available?" / "what tools does this MCP expose?" from inside a coding-agent session.
 - Managing assistant-specific vector store or memory settings.
 - Cloning an assistant configuration for testing or staging environments.
 
@@ -207,6 +209,64 @@ wp mcp-ai credential issue <id> --porcelain
 
 3. **Inspect persisted config** — `wp post meta get <id> _wp_mcp_ai_provider`
    etc. Do not trust `wp mcp-ai assistant get` for meta (legacy-key caveat).
+
+## Detecting NV oOS agent enablement from a coding-agent session (Zed)
+
+> Added after a live Zed-session probe (2026-10). When a user asks "is agent
+> X available?" or "what tools does this MCP have?", NV oOS assistants never
+> appear under their server/assistant name — detect them by tool surface.
+
+### The two registries (do not conflate them)
+
+1. **Zed agent registry** — `list_agents_and_models`. Lists only native Zed
+   sub-agents (e.g. `Zed Agent`) and their models. NV oOS assistants / MCP
+   servers are **never** listed here, even when fully connected. Absence here
+   proves nothing about the bridge.
+2. **MCP tool servers** — appear only as *functions in your tool list*, under
+   their tool names (e.g. `web_search_validated`, `list_ecas`), never under
+   the server name (`nv-oos-kate-agent`, "ECA agent"). Map a name to its
+   tools via the group signatures below.
+
+"Agent" in user speech almost always means "MCP server / assistant bridge",
+not a registry agent. Translate the question to "which tool group is live?"
+before answering.
+
+### Known tool-group signatures to look for
+
+| Group | Signature tools | Notes |
+|---|---|---|
+| Research / web bridge | `web_search_validated`, `brave_web_search`, `brave_local_search`, `deep_research`, `semantic_content_search`, `verify_information`, `aggregate_research_data`, `extract_structured_data`, `generate_research_report`, `create_post_from_research` | 16 tools observed in one session; `web_search_validated` is the cheapest probe |
+| Image bridge | `generate_gemini_image_validated`, `generate_openai_image_validated`, `edit_gemini_image_validated`, `edit_openai_image`, `create_image_variation`, `product_actualization` | Usually exposed alongside the research bridge |
+| ECA (school extra-curriculars) | `list_ecas`, `get_eca`, `create_eca`, `update_eca`, `enroll_student_eca`, `withdraw_student_eca`, `mark_eca_attendance`, `manage_eca_waitlist`, `get_eca_timetable`, `send_eca_notification`, `generate_eca_analytics`, `list_students`, `get_student` | 26 tools observed; `list_ecas` is the cheapest probe |
+| Design stack (may be absent) | `schedule_social_post`, `paper_store_*`, `remote_wp_connection`, `resize_image`, `remove_background` | Absence of one group does NOT mean the bridge is down — groups are exposed per assistant/session |
+
+### Detection procedure (in order)
+
+1. **Inventory your tool list** (the session function list) against the
+   signatures above. Presence of any signature tool ⇒ that assistant's MCP
+   is wired in.
+2. **Probe with the cheapest read-only tool** of the suspected group — e.g.
+   `web_search_validated` (`max_results: 2`) or `list_ecas` (defaults). A
+   live bridge returns real structured data: records, `task_id`, `provider`,
+   timestamps. An error or empty envelope means exposed-but-not-live.
+3. **Re-probe, don't trust earlier checks.** MCP connections refresh
+   mid-session. Observed: `list_available_toolsets` worked on one call and
+   returned "No tool named … exists" minutes later while the underlying
+   tools stayed live. `get_write_tools` (where present) enumerates a
+   connected MCP's full mutating surface and doubles as a capability
+   snapshot (Cloudways: 188 write tools).
+4. **Report precisely.** Say "MCP server connected, verified live via
+   `<tool>` (`<evidence>`)" — never claim an assistant is absent just
+   because it is missing from `list_agents_and_models`.
+
+### Verified example (2026-10, single session)
+
+- `list_agents_and_models` ⇒ only `Zed Agent` (no `nv-oos-*` agents).
+- `web_search_validated("…", 2)` ⇒ real Brave results + `task_id` ⇒ NV oOS
+  research bridge (`nv-oos-kate-agent`) live.
+- `list_ecas` ⇒ 75 live ECA records from `eca.directory` ⇒ ECA MCP live.
+- Cloudways: `get_write_tools` ⇒ 188 write tools even after toolset-discovery
+  tools disappeared ⇒ connection still live.
 
 ## Known issues (observed on Design Stack, 2026-09)
 

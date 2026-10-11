@@ -28,15 +28,15 @@ export const convertTemplateToWorkflow = ( template: Template | null ): { nodes:
 			for ( let ri = 0; ri < step.roles.length; ri++ ) {
 				const pid = generateNodeId( 'action' ); paraIds.push( pid );
 				nodes.push( { id: pid, type: 'action', position: { x: 100 + ri * xSpacing, y: yPosition }, data: { label: step.roles[ ri ].replace( /_/g, ' ' ).replace( /\b\w/g, ( l ) => l.toUpperCase() ), config: { command: `/${ step.roles[ ri ] }`, params: '{}' } } } );
-				edges.push( { id: `e-${ prev }-${ pid }`, source: prev, target: pid } );
+				edges.push( { id: `e-${ prev }-${ pid }`, source: prev, target: pid, animated: true } );
 			}
 			yPosition += ySpacing;
 			const mid = generateNodeId( 'merge' ); nodes.push( { id: mid, type: 'merge', position: { x: 250, y: yPosition }, data: { label: __( 'Merge Results' ), config: { strategy: 'all' } } } );
-			for ( const pid of paraIds ) { edges.push( { id: `e-${ pid }-${ mid }`, source: pid, target: mid } ); }
+			for ( const pid of paraIds ) { edges.push( { id: `e-${ pid }-${ mid }`, source: pid, target: mid, animated: true } ); }
 			prev = mid; yPosition += ySpacing;
 		} else {
 			const nid = generateNodeId( nodeType ); nodes.push( { id: nid, type: nodeType, position: { x: 250, y: yPosition }, data: { label: step.name || step.description || nodeType, config: mapStepConfig( step, nodeType ) } } );
-			edges.push( { id: `e-${ prev }-${ nid }`, source: prev, target: nid } );
+			edges.push( { id: `e-${ prev }-${ nid }`, source: prev, target: nid, animated: true } );
 			prev = nid; yPosition += ySpacing;
 		}
 	}

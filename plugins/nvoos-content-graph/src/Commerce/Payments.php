@@ -44,6 +44,18 @@ final class Payments {
 	public const DEFAULT_ADDON_VERSION = '1.1.74';
 
 	/**
+	 * Base plugin version pinned for the free-version download link.
+	 *
+	 * Mirrors the free base release
+	 * (`nvdigital-open-operator-system-oos-{version}.zip`) published on the
+	 * monorepo GitHub releases under the `nvdigital-oos-v*` tag. Bump in
+	 * lockstep with new base releases.
+	 *
+	 * @var string
+	 */
+	public const DEFAULT_BASE_VERSION = '1.1.99';
+
+	/**
 	 * Base URL of the vendor checkout API.
 	 *
 	 * Defaults to the NV Digital Solutions checkout endpoint; override via
@@ -136,6 +148,29 @@ final class Payments {
 			rawurlencode( $version )
 		);
 		return (string) apply_filters( Schema::FILTER_ADDON_ZIP_URL, $default );
+	}
+
+	/**
+	 * Download URL of the free NV oOS base plugin (latest base release).
+	 *
+	 * Shown at the bottom of the purchase modal as the free alternative to
+	 * the paid Complete bundle. Defaults to the monorepo GitHub release
+	 * asset pinned by {@see DEFAULT_BASE_VERSION}; filterable via
+	 * `nvoos_content_graph/payments/base_version_url`. An empty value hides
+	 * the link in the modal.
+	 *
+	 * @since 1.0.9
+	 *
+	 * @return string
+	 */
+	public static function baseVersionUrl(): string {
+		$version = self::DEFAULT_BASE_VERSION;
+		$default = sprintf(
+			'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvdigital-oos-v%s/nvdigital-open-operator-system-oos-%s.zip',
+			rawurlencode( $version ),
+			rawurlencode( $version )
+		);
+		return (string) apply_filters( Schema::FILTER_BASE_VERSION_URL, $default );
 	}
 
 	/**

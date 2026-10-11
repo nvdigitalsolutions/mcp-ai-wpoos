@@ -45,6 +45,7 @@ final class Schema {
 	public const FILTER_PRICE_CENTS        = 'nvoos_content_graph/payments/price_cents';
 	public const FILTER_ADDON_VERSION      = 'nvoos_content_graph/payments/addon_version';
 	public const FILTER_ADDON_ZIP_URL      = 'nvoos_content_graph/payments/addon_zip_url';
+	public const FILTER_BASE_VERSION_URL   = 'nvoos_content_graph/payments/base_version_url';
 	public const FILTER_VENDOR_API_URL     = 'nvoos_content_graph/payments/vendor_api_url';
 	public const FILTER_FALLBACK_URL       = 'nvoos_content_graph/payments/fallback_url';
 	public const FILTER_TERMS_URL          = 'nvoos_content_graph/payments/terms_url';

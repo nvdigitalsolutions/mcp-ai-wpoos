@@ -211,6 +211,9 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 		// If a job is currently running, return its summary instead of
 		// stomping on it. The caller can cancel + re-enqueue if needed.
 		if ( NV_oOS_Docs_Hub_Rebuild_State::is_running( $current ) ) {
+			// A stalled rebuild still gets a bounded shutdown tick when
+			// neither the inline kick nor WP-Cron can advance it.
+			self::maybe_schedule_shutdown_tick( (string) $current['job_id'] );
 			return NV_oOS_Docs_Hub_Rebuild_State::to_summary( $current );
 		}
 
@@ -244,6 +247,7 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 		$pipeline->run_scan_phase();
 
 		self::schedule_next_tick();
+		self::maybe_schedule_shutdown_tick( $job_id );
 
 		// Inline-async-tick: fire the first processing chunk on the shutdown of
 		// the current request so the rebuild begins work immediately instead of
@@ -835,6 +839,43 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 			NV_oOS_Docs_Hub_Rebuild_State::DEFAULT_CHUNK_SIZE
 		);
 		return max( 1, $size );
+	}
+
+	/**
+	 * Register a bounded shutdown tick for the standalone fallback case.
+	 *
+	 * When the base plugin is not active, this addon ships a no-op stub of
+	 * the inline-async-tick trait, so {@see inline_async_kick_enabled()}
+	 * returns false and the chunked rebuild advances only via WP-Cron
+	 * loopbacks. On hosts with DISABLE_WP_CRON those loopbacks never run
+	 * and the rebuild stalls silently. Registering {@see tick()} on
+	 * shutdown runs one bounded chunk (the tick's own wall-clock budget)
+	 * in the triggering request, so every settings save or admin visit
+	 * advances the rebuild even when cron never fires.
+	 *
+	 * No-op when the inline kick is available (the base plugin's shutdown
+	 * kick covers that path), when an explicit
+	 * `wp_mcp_ai_inline_kick_enabled` filter opt-out is registered, or
+	 * when WP-Cron is enabled.
+	 *
+	 * @since 0.5.3
+	 *
+	 * @param string $job_id Job identifier.
+	 * @return void
+	 */
+	private static function maybe_schedule_shutdown_tick( $job_id ) {
+		if ( self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			return;
+		}
+		// Respect an explicit kick opt-out (real trait + filter returning
+		// false): the operator asked for cron-only progression.
+		if ( has_filter( 'wp_mcp_ai_inline_kick_enabled' ) ) {
+			return;
+		}
+		if ( ! defined( 'DISABLE_WP_CRON' ) || ! DISABLE_WP_CRON ) {
+			return;
+		}
+		add_action( 'shutdown', array( __CLASS__, 'tick' ), 22 );
 	}
 
 	/**

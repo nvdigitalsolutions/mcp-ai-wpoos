@@ -34,9 +34,12 @@ import { crawlRouter } from './routes/crawl.js';
 import { crawl4aiRouter } from './routes/crawl4ai.js';
 import { statusRouter, counters, alertBus, buildSummary } from './routes/status.js';
 import { startSweeper } from './status/sweeper.js';
+import { startSyntheticLoop, seedExternalTargets } from './status/synthetic.js';
 import { publicSummary, renderStatusPage } from './status/page.js';
 import { siteConfig } from './status/config.js';
-import { store } from './status/store.js';
+import { store, disconnectStoreRedis } from './status/store.js';
+import { getAllQueues, stopAllQueues, disconnectRedis } from './queue.js';
+import { closeEmailTransporter } from './status/alerts.js';
 
 dotenv.config();
 
@@ -72,11 +75,18 @@ app.use( express.urlencoded( { extended: true, limit: '10mb' } ) );
 
 // ── Health (public, minimal) ───────────────────────────────
 app.get( '/api/health', (_req, res) => {
+	const mem = process.memoryUsage();
 	res.json( {
 		status: 'ok',
 		service: 'design-media-worker',
 		version: '3.4.0',
 		uptime: process.uptime(),
+		memory: {
+			rss: mem.rss,
+			heap_used: mem.heapUsed,
+			heap_total: mem.heapTotal,
+			external: mem.external,
+		},
 	} );
 } );
 
@@ -94,6 +104,16 @@ if ( siteConfig( 'default' ).enabled ) {
 	const bus = alertBus();
 	counters.alertBus = bus;
 	startSweeper( { store, alertBus: bus } );
+
+	// External targets (no heartbeats — e.g. the MCP gateway) + the
+	// synthetic probe loop. Seeding is best-effort and never blocks boot;
+	// the loop writes probe results only — the sweeper owns status
+	// transitions.
+	const externalTargets = siteConfig( 'default' ).externalTargets;
+	seedExternalTargets( store, externalTargets ).catch( ( err ) => {
+		console.warn( '[Status] External target seeding failed:', err.message );
+	} );
+	startSyntheticLoop( { store, counters } );
 
 	// Public, allowlisted fleet status (Statuspage-style).
 	if ( siteConfig( 'default' ).publicPage ) {
@@ -224,6 +244,15 @@ app.get( '/api/health/full', async (_req, res) => {
 				crawl: [ '/api/crawl/markdown', '/api/crawl/markdown-batch', '/api/crawl/links' ],
 				crawl4ai: [ '/api/crawl4ai/crawl', '/api/crawl4ai/task/:id' ],
 			},
+			queues: await Promise.all(
+				getAllQueues().map( async ( queue ) => {
+					try {
+						return { name: queue.name, ...( await queue.getStats() ) };
+					} catch {
+						return { name: queue.name, error: 'unavailable' };
+					}
+				} )
+			),
 		} );
 	} catch {
 		res.status( 500 ).json( { error: 'Internal server error' } );
@@ -365,8 +394,30 @@ server.keepAliveTimeout = 5000;
 cleanupSiteTemp();
 setInterval( () => cleanupSiteTemp(), 15 * 60 * 1000 ).unref();
 
-function shutdown( signal ) {
+async function shutdown( signal ) {
 	console.log( `[Design Worker] ${ signal } received — shutting down.` );
+	// Release sockets and stop processing loops first so keep-alive
+	// connections don't hold server.close() until the force-exit timer.
+	try {
+		stopAllQueues();
+	} catch ( err ) {
+		console.warn( '[Design Worker] Queue stop failed:', err.message );
+	}
+	try {
+		await disconnectRedis();
+	} catch ( err ) {
+		console.warn( '[Design Worker] Queue Redis disconnect failed:', err.message );
+	}
+	try {
+		await disconnectStoreRedis();
+	} catch ( err ) {
+		console.warn( '[Design Worker] Status-store Redis disconnect failed:', err.message );
+	}
+	try {
+		closeEmailTransporter();
+	} catch ( err ) {
+		console.warn( '[Design Worker] SMTP transport close failed:', err.message );
+	}
 	server.close( () => process.exit( 0 ) );
 	setTimeout( () => process.exit( 1 ), 10000 ).unref();
 }

@@ -373,11 +373,16 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		$where_clause = implode( ' AND ', $where );
 
+		// Bound the result set: unbounded scans over a busy token_usage table
+		// can exhaust memory. Unfiltered reads get a conservative cap; dated
+		// reads get a larger worst-case ceiling.
+		$params[] = ( $start_date || $end_date ) ? 10000 : 1000;
+
 		// Escape table name for defense-in-depth.
 		$table_name = esc_sql( $table_name );
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql(), $where_clause contains only hardcoded placeholders.
-		$query = "SELECT * FROM {$table_name} WHERE {$where_clause} ORDER BY timestamp DESC";
+		$query = "SELECT * FROM {$table_name} WHERE {$where_clause} ORDER BY timestamp DESC LIMIT %d";
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql(), WHERE clause contains only hardcoded placeholders.

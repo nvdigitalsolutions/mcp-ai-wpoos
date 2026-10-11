@@ -28,7 +28,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * parties support. Falls back to 2024-11-05 when the client provides
 	 * no version information, for maximum backward compatibility.
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.51
 	 *
 	 * @return array Supported versions, newest first.
 	 */
@@ -142,7 +142,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * Notifications (messages without an id) are processed but produce no response element.
 	 *
 	 * @since 2.3.0
-	 * @since 2.x.0 Updated for stateless MCP 2026-07-28 (removed session parameter).
+	 * @since 1.1.43 Updated for stateless MCP 2026-07-28 (removed session parameter).
 	 *
 	 * @param array           $messages   Array of JSON-RPC message arrays.
 	 * @param WP_REST_Request $request    REST request instance.
@@ -286,11 +286,11 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			if ( class_exists( 'WP_MCP_AI_OAuth_Resource_Server' )
 				&& WP_MCP_AI_OAuth_Resource_Server::is_configured()
 				&& WP_MCP_AI_OAuth_Resource_Server::is_auth_error_code( $error_code ) ) {
-				$error_data                                 = is_array( $error_data ) ? $error_data : array();
+				$error_data                                  = is_array( $error_data ) ? $error_data : array();
 				$error_data['_meta']['mcp/www_authenticate'] = WP_MCP_AI_OAuth_Resource_Server::build_tool_auth_challenge( 'insufficient_scope' );
 			}
 
-			$response   = $this->mcp_error_response(
+			$response = $this->mcp_error_response(
 				$id,
 				'wp_mcp_ai_method_not_found' === $error_code ? -32601 : -32603,
 				$result->get_error_message(),
@@ -495,7 +495,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * This replaces the initialize/initialized handshake from earlier MCP
 	 * protocol versions (SEP-2575).
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.43
 	 *
 	 * @param array           $params  Discovery parameters. Accepts optional 'assistant_id'.
 	 * @param WP_REST_Request $request REST request instance.
@@ -577,7 +577,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		 * Allows plugins and integrators to enrich or override the system
 		 * prompt delivered to MCP clients at discovery time.
 		 *
-		 * @since 2.x.0
+		 * @since 1.1.43
 		 *
 		 * @param string $instructions     The assembled instructions string.
 		 * @param int    $assistant_id     Resolved assistant post ID (0 when generic).
@@ -596,7 +596,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		 * Some MCP clients expect to see tool information immediately after
 		 * discovery without making a separate tools/list call.
 		 *
-		 * @since 2.x.0
+		 * @since 1.1.43
 		 *
 		 * @param bool            $include_tools Whether to include tools in discover response.
 		 * @param array           $params        Discover method parameters.
@@ -631,7 +631,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * Defaults to 2024-11-05 for maximum backward compatibility when the
 	 * client provides no version information (e.g. older Zed, Claude Desktop).
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.51
 	 *
 	 * @param array $params Client's initialize/discover params.
 	 * @return string Negotiated protocol version.
@@ -679,7 +679,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 *
 	 * @since 1.0.0
 	 * @since 2.4.0 Added assistant_id resolution for scoped instructions and modelPreferences.
-	 * @deprecated 2.x.0 Use mcp_server_discover() instead.
+	 * @deprecated 1.1.43 Use mcp_server_discover() instead.
 	 *
 	 * @param array           $params  Method parameters. Accepts optional 'assistant_id'.
 	 * @param WP_REST_Request $request REST request instance.
@@ -978,6 +978,23 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					continue;
 				}
 
+				// Quirk hardening (MCP agent-client compatibility): a single
+				// non-conforming schema can make an agent client drop the
+				// whole catalog, so normalize what is safe to normalize and
+				// skip+log what is not. See proposal 066.
+				$schema = $this->normalize_tool_schema_for_mcp( $tool, $schema );
+				if ( is_wp_error( $schema ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'warning',
+						'Tool skipped in MCP tools/list: ' . $schema->get_error_code(),
+						array(
+							'tool_slug' => $tool->get_slug(),
+							'reason'    => $schema->get_error_message(),
+						)
+					);
+					continue;
+				}
+
 				$tool_entry = array(
 					'name'        => $tool->get_slug(),
 					'description' => $tool->get_description(),
@@ -993,7 +1010,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				// ChatGPT plugin contract: per-tool OAuth security schemes and
 				// profile-tool metadata — only advertised when an
 				// authorization server (Auth0) is configured.
-				if ( class_exists( 'WP_MCP_AI_OAuth_Resource_Server' ) && WP_MCP_AI_OAuth_Resource_Server::is_configured() ) {
+				if ( $this->is_profile_output_schema_advertised() ) {
 					$tool_entry['securitySchemes'] = $this->build_tool_security_schemes( $tool );
 
 					if ( 'nvoos_get_profile' === $tool->get_slug() ) {
@@ -1053,7 +1070,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		 * Default 0 means no caching. Set to a positive value (e.g. 300000 for 5 minutes)
 		 * to allow clients to cache the tool list.
 		 *
-		 * @since 2.x.0
+		 * @since 1.1.43
 		 *
 		 * @param int $ttl_ms Cache TTL in milliseconds. Default 0.
 		 */
@@ -1063,6 +1080,112 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			'tools'      => $mcp_tools,
 			'ttlMs'      => $ttl_ms,
 			'cacheScope' => 'private',
+		);
+	}
+
+	/**
+	 * Normalize a tool's input schema for the MCP tools/list surface.
+	 *
+	 * Encodes the agent-client quirk hardening (proposal 066): injects a
+	 * missing root `type: object`, enforces the per-schema byte budget and
+	 * the slug length limit, and rejects bracketed property names and root
+	 * combinators without a type. Both limits are filterable so operators
+	 * can tune them per deployment.
+	 *
+	 * @since 1.2.4
+	 *
+	 * @param object $tool   Tool instance.
+	 * @param array  $schema Tool input schema (already validated as an array).
+	 * @return array|WP_Error Normalized schema, or WP_Error with a skip reason.
+	 */
+	protected function normalize_tool_schema_for_mcp( $tool, $schema ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Schema_Auditor' ) ) {
+			return $schema;
+		}
+
+		/**
+		 * Filters the per-tool schema byte budget for tools/list.
+		 *
+		 * Schemas over this size are skipped and logged because budgeted
+		 * agent clients (e.g. Codex at ~20 KB per server) compact them and
+		 * drop required nested fields.
+		 *
+		 * @since 1.2.4
+		 *
+		 * @param int $max_bytes Maximum schema size in bytes. Default 20480.
+		 */
+		$max_bytes = (int) apply_filters(
+			'wp_mcp_ai_tools_list_schema_max_bytes',
+			WP_MCP_AI_Tool_Schema_Auditor::DEFAULT_MAX_SCHEMA_BYTES
+		);
+
+		/**
+		 * Filters the maximum tool slug length advertised on tools/list.
+		 *
+		 * MCP design guidelines cap fully-qualified tool names at 64
+		 * characters so client SDK prefixes fit.
+		 *
+		 * @since 1.2.4
+		 *
+		 * @param int $max_length Maximum slug length. Default 64.
+		 */
+		$max_length = (int) apply_filters(
+			'wp_mcp_ai_tools_list_max_slug_length',
+			WP_MCP_AI_Tool_Schema_Auditor::DEFAULT_MAX_SLUG_LENGTH
+		);
+
+		return WP_MCP_AI_Tool_Schema_Auditor::normalize_for_mcp(
+			$tool->get_slug(),
+			$schema,
+			$max_bytes,
+			$max_length
+		);
+	}
+
+	/**
+	 * Whether the ChatGPT profile-tool outputSchema contract is advertised.
+	 *
+	 * `outputSchema` is only declared on tools/list when an OAuth
+	 * authorization server (Auth0) is configured; tools/call must then attach
+	 * the matching `structuredContent` so clients that reject
+	 * outputSchema-declared text-only results keep working.
+	 *
+	 * @since 1.2.4
+	 *
+	 * @return bool True when the profile-tool contract is advertised.
+	 */
+	protected function is_profile_output_schema_advertised() {
+		return class_exists( 'WP_MCP_AI_OAuth_Resource_Server' ) && WP_MCP_AI_OAuth_Resource_Server::is_configured();
+	}
+
+	/**
+	 * Extract the structured profile payload for tools that advertise one.
+	 *
+	 * @since 1.2.4
+	 *
+	 * @param string $tool_name   Tool slug.
+	 * @param mixed  $tool_result Canonical tool result array.
+	 * @return array|null Structured content, or null when not applicable.
+	 */
+	protected function maybe_get_profile_structured_content( $tool_name, $tool_result ) {
+		if ( 'nvoos_get_profile' !== $tool_name || ! $this->is_profile_output_schema_advertised() ) {
+			return null;
+		}
+
+		if ( ! is_array( $tool_result ) || empty( $tool_result['message'] ) || ! is_string( $tool_result['message'] ) ) {
+			return null;
+		}
+
+		$decoded = json_decode( $tool_result['message'], true );
+
+		if ( ! is_array( $decoded ) || empty( $decoded['id'] ) ) {
+			return null;
+		}
+
+		// Mirror the advertised outputSchema: id, name, email, nickname only.
+		return array_intersect_key(
+			$decoded,
+			array_flip( array( 'id', 'name', 'email', 'nickname' ) )
 		);
 	}
 
@@ -1192,14 +1315,25 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			return $text_content;
 		}
 
-		return array(
-			'content' => array(
-				array(
-					'type' => 'text',
-					'text' => $text_content,
-				),
+		$content = array(
+			array(
+				'type' => 'text',
+				'text' => $text_content,
 			),
 		);
+
+		// Tools that advertise an outputSchema must attach the matching
+		// structured payload: clients that see outputSchema declared but a
+		// text-only result can turn the success into an error (proposal 066).
+		$structured = $this->maybe_get_profile_structured_content( $tool_name, $tool_result );
+		if ( null !== $structured ) {
+			return array(
+				'content'           => $content,
+				'structuredContent' => $structured,
+			);
+		}
+
+		return array( 'content' => $content );
 	}
 
 	/**
@@ -1210,7 +1344,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * instead of the normal {result: …} envelope. This detects that case so
 	 * mcp_tools_call can poll for completion.
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.54
 	 *
 	 * @param array $data Response data from handle_tool_request.
 	 * @return bool True if the response is an async pending result.
@@ -1234,7 +1368,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * instead of a connection reset. Stuck jobs are kicked inline so hosts
 	 * with a dead WP-Cron loopback still make progress.
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.54
 	 * @since 1.1.55 Bounded default poll budget; inline kick for stuck jobs.
 	 *
 	 * @param string $job_id   Async job identifier.
@@ -2287,7 +2421,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * Per spec this is a notification (no response expected).
 	 *
 	 * @since     2.6.0
-	 * @deprecated 2.x.0 Notifications/initialized retired in MCP 2026-07-28.
+	 * @deprecated 1.1.43 Notifications/initialized retired in MCP 2026-07-28.
 	 *
 	 * @param array $params Notification parameters (unused).
 	 * @return stdClass Empty result.
@@ -2405,7 +2539,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * Session state is stored as a WordPress transient for reconnection support.
 	 *
 	 * @since     2.3.0
-	 * @deprecated 2.x.0 MCP 2026-07-28 removes protocol-level sessions (SEP-2567).
+	 * @deprecated 1.1.43 MCP 2026-07-28 removes protocol-level sessions (SEP-2567).
 	 *             No longer called internally; preserved for backward compatibility
 	 *             with any third-party code that may invoke it directly.
 	 *
@@ -2531,7 +2665,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		 */
 		$settings       = WP_MCP_AI_Admin_Settings::get_settings();
 		$cors_setting   = isset( $settings['cors_allow_origin'] ) ? $settings['cors_allow_origin'] : 'site';
-		$default_origin = ( 'star' === $cors_setting ) ? '*' : get_site_url();
+		$default_origin = ( 'star' === $cors_setting ) ? '*' : WP_MCP_AI_CORS_Guard::resolve_allow_origin();
 		$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 
 		$response->header( 'Access-Control-Allow-Origin', $allow_origin );

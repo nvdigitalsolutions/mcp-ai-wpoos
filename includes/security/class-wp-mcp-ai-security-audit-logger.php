@@ -111,6 +111,22 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
 		const EVENT_CHAT_TURN = 'chat_turn';
 
 		/**
+		 * Event type: a tool was blocked by a restrictive chat profile.
+		 *
+		 * @since 2.2.0
+		 * @var string
+		 */
+		const EVENT_CHAT_PROFILE_BLOCKED = 'chat_profile_blocked';
+
+		/**
+		 * Event type: a client sent a profile it is not allowed to assume.
+		 *
+		 * @since 2.2.0
+		 * @var string
+		 */
+		const EVENT_CHAT_PROFILE_ESCALATION_ATTEMPT = 'chat_profile_escalation_attempt';
+
+		/**
 		 * Register hooks and schedule the purge cron.
 		 *
 		 * Hooks into `rest_api_init` to register the REST endpoint and

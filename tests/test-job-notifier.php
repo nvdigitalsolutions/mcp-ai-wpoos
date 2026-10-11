@@ -248,4 +248,111 @@ class Test_Job_Notifier extends WP_UnitTestCase {
 		$this->assertSame( 'step-3', $cached['steps'][0]['label'] );
 		$this->assertSame( 'step-' . ( $cap + 2 ), $cached['steps'][ $cap - 1 ]['label'] );
 	}
+
+	/**
+	 * Fresh job-status transients survive the hourly cleanup (regression:
+	 * the cleanup once wiped every fresh status and orphaned its timeout
+	 * row by comparing the serialized value against an int).
+	 */
+	public function test_cleanup_preserves_fresh_status_transients() {
+		$job_id = 'cleanup_fresh_' . wp_generate_uuid4();
+
+		WP_MCP_AI_Job_Notifier::update_status( $job_id, 'running' );
+		WP_MCP_AI_Job_Notifier::cleanup_expired_jobs();
+
+		$this->assertNotFalse( get_transient( WP_MCP_AI_Job_Notifier::CACHE_PREFIX . $job_id ) );
+	}
+
+	/**
+	 * Expired job-status transient pairs are removed together (no orphaned
+	 * _transient_timeout_* rows left behind).
+	 */
+	public function test_cleanup_removes_expired_status_pairs() {
+		global $wpdb;
+
+		$job_id     = 'cleanup_expired_' . wp_generate_uuid4();
+		$name       = '_transient_' . WP_MCP_AI_Job_Notifier::CACHE_PREFIX . $job_id;
+		$timeout    = '_transient_timeout_' . WP_MCP_AI_Job_Notifier::CACHE_PREFIX . $job_id;
+		$past_value = (string) ( time() - 100 );
+
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Test-only fixture.
+			$wpdb->options,
+			array(
+				'option_name'  => $name,
+				'option_value' => maybe_serialize( array( 'status' => 'running' ) ),
+				'autoload'     => 'no',
+			)
+		);
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Test-only fixture.
+			$wpdb->options,
+			array(
+				'option_name'  => $timeout,
+				'option_value' => $past_value,
+				'autoload'     => 'no',
+			)
+		);
+
+		WP_MCP_AI_Job_Notifier::cleanup_expired_jobs();
+
+		$this->assertFalse( get_option( $name ), 'Expired transient value row should be deleted.' );
+		$this->assertFalse( get_option( $timeout ), 'Expired transient timeout row should be deleted with it.' );
+	}
+
+	/**
+	 * Stale job-scoped webhook registrations are pruned after the retention
+	 * window while the long-lived wildcard registration is always preserved.
+	 */
+	public function test_cleanup_prunes_stale_webhook_registrations() {
+		$stale_time = gmdate( 'Y-m-d H:i:s', time() - 40 * DAY_IN_SECONDS );
+
+		update_option(
+			WP_MCP_AI_Job_Notifier::WEBHOOK_OPTION_KEY,
+			array(
+				'old_job' => array(
+					array(
+						'url'        => 'https://example.com/hook',
+						'events'     => array( 'completed' ),
+						'created_at' => $stale_time,
+					),
+				),
+				'*'       => array(
+					array(
+						'url'        => 'https://example.com/wildcard',
+						'events'     => array( 'completed' ),
+						'created_at' => $stale_time,
+					),
+				),
+			)
+		);
+
+		WP_MCP_AI_Job_Notifier::cleanup_expired_jobs();
+
+		$webhooks = get_option( WP_MCP_AI_Job_Notifier::WEBHOOK_OPTION_KEY, array() );
+		$this->assertArrayNotHasKey( 'old_job', $webhooks );
+		$this->assertArrayHasKey( '*', $webhooks );
+	}
+
+	/**
+	 * Bursts of identical webhook events coalesce into a single scheduled
+	 * delivery instead of stacking one full-payload cron event per tick.
+	 */
+	public function test_webhook_dispatch_coalesces_bursts() {
+		$job_id = 'dedupe_' . wp_generate_uuid4();
+
+		WP_MCP_AI_Job_Notifier::register_webhook( $job_id, 'https://example.com/webhook', array( 'progress' ) );
+
+		WP_MCP_AI_Job_Notifier::handle_job_progress( $job_id, 10, array() );
+		WP_MCP_AI_Job_Notifier::handle_job_progress( $job_id, 20, array() );
+
+		$scheduled = 0;
+		foreach ( _get_cron_array() as $events ) {
+			foreach ( $events as $hook => $args_list ) {
+				if ( 'wp_mcp_ai_send_webhook' === $hook ) {
+					$scheduled += count( $args_list );
+				}
+			}
+		}
+
+		$this->assertSame( 1, $scheduled, 'Identical webhook events within the dedupe window must coalesce.' );
+	}
 }

@@ -29,6 +29,50 @@ export function siteEnvKey( suffix, slug ) {
 	return `STATUS_${ String( slug ).toUpperCase().replace( /-/g, '_' ) }_${ suffix }`;
 }
 
+/**
+ * Parse STATUS_EXTERNAL_TARGETS — semicolon-separated `slug=url` pairs for
+ * monitoring targets that never send heartbeats (e.g. the MCP gateway).
+ *
+ * Malformed entries are dropped, never fatal. Slugs are normalized to
+ * [a-z0-9-], capped at 64 chars; URLs must be absolute http(s).
+ *
+ * @param {string} raw Raw env value.
+ * @return {Array<{slug: string, url: string}>} Valid targets.
+ */
+export function parseExternalTargets( raw ) {
+	if ( ! raw || 'string' !== typeof raw ) {
+		return [];
+	}
+	const targets = [];
+	for ( const chunk of raw.split( ';' ) ) {
+		const eq = chunk.indexOf( '=' );
+		if ( eq <= 0 ) {
+			continue;
+		}
+		const slug = chunk
+			.slice( 0, eq )
+			.trim()
+			.toLowerCase()
+			.replace( /[^a-z0-9-]+/g, '-' )
+			.replace( /^-+|-+$/g, '' )
+			.slice( 0, 64 );
+		const url = chunk.slice( eq + 1 ).trim();
+		if ( ! slug || ! url ) {
+			continue;
+		}
+		try {
+			const parsed = new URL( url );
+			if ( 'http:' !== parsed.protocol && 'https:' !== parsed.protocol ) {
+				continue;
+			}
+		} catch {
+			continue;
+		}
+		targets.push( { slug, url } );
+	}
+	return targets;
+}
+
 /** Base (shared) configuration. */
 export function baseConfig() {
 	return {
@@ -42,6 +86,7 @@ export function baseConfig() {
 		syntheticEnabled: '1' === process.env.STATUS_SYNTHETIC_ENABLED,
 		syntheticIntervalMs: envInt( 'STATUS_SYNTHETIC_INTERVAL_MS', 60000, 10000 ),
 		syntheticTimeoutMs: envInt( 'STATUS_SYNTHETIC_TIMEOUT_MS', 10000, 1000 ),
+		externalTargets: parseExternalTargets( process.env.STATUS_EXTERNAL_TARGETS ),
 		sslExpiryWarnDays: envInt( 'STATUS_SSL_EXPIRY_WARN_DAYS', 14, 1 ),
 		alertCooldownMs: envInt( 'STATUS_ALERT_COOLDOWN_MS', 900000, 1000 ),
 		alertWebhooks: parseJsonArray( process.env.STATUS_ALERT_WEBHOOKS ),

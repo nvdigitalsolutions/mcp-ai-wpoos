@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace NvoosContentGraph\Graph;
 
 use NvoosContentGraph\Schema;
+use NvoosContentGraph\Settings;
 use WP_Post;
 use function apply_filters;
 use function current_time;
@@ -11,6 +12,7 @@ use function delete_transient;
 use function do_action;
 use function gmdate;
 use function method_exists;
+use function sanitize_key;
 
 /**
  * Graph builder — orchestrates the extraction pipeline.
@@ -55,6 +57,13 @@ class Builder {
 		// 1. Detect content.
 		$detected = Detector::detect( $incremental );
 
+		// 1b. Prune nodes of sources excluded in settings (unchecked CPTs
+		// and CCTs) so exclusion removes previously indexed content, not
+		// just stops indexing new rows.
+		$pruned      = self::pruneExcludedSources();
+		$nodesPruned = $pruned['nodes'];
+		$edgesPruned = $pruned['edges'];
+
 		$postCount     = count( $detected['posts'] );
 		$cctsDetected  = isset( $detected['ccts'] ) ? count( (array) $detected['ccts'] ) : 0;
 		$termsDetected = isset( $detected['terms'] ) ? count( (array) $detected['terms'] ) : 0;
@@ -93,6 +102,8 @@ class Builder {
 			'media_detected'  => $mediaDetected,
 			'nodes_upserted'  => $nodeCount,
 			'edges_upserted'  => $edgeCount,
+			'nodes_pruned'    => $nodesPruned,
+			'edges_pruned'    => $edgesPruned,
 			'build_completed' => $completed,
 		);
 
@@ -131,6 +142,62 @@ class Builder {
 	}
 
 	// ─── Degree recalculation ──────────────────────────────────
+
+	/**
+	 * Delete nodes (and their edges) belonging to sources excluded in settings.
+	 *
+	 * @since 1.0.10
+	 *
+	 * @return array{nodes: int, edges: int} Deleted row counts.
+	 */
+	private static function pruneExcludedSources(): array {
+		$settings = Settings::all();
+
+		$postTypes = array();
+		$cctTypes  = array();
+
+		// Excluded post types → node type is the post type slug. Only rows
+		// with post_id > 0 are post nodes, so this can never touch the
+		// zero-ID node families (term/user/media/memory/agent/entity).
+		$excludedPosts = isset( $settings['excluded_post_types'] ) && is_array( $settings['excluded_post_types'] )
+			? $settings['excluded_post_types'] : array();
+		foreach ( $excludedPosts as $slug ) {
+			$slug = sanitize_key( $slug );
+			if ( '' !== $slug ) {
+				$postTypes[] = $slug;
+			}
+		}
+
+		// Excluded JetEngine CCTs → node type is cct_{slug}.
+		$excludedCcts = isset( $settings['excluded_cct_slugs'] ) && is_array( $settings['excluded_cct_slugs'] )
+			? $settings['excluded_cct_slugs'] : array();
+		foreach ( $excludedCcts as $slug ) {
+			$slug = sanitize_key( $slug );
+			if ( '' !== $slug ) {
+				$cctTypes[] = 'cct_' . $slug;
+			}
+		}
+
+		$nodes = 0;
+		$edges = 0;
+
+		if ( ! empty( $postTypes ) ) {
+			$pruned = Db::pruneNodesByTypes( $postTypes, true );
+			$nodes += $pruned['nodes'];
+			$edges += $pruned['edges'];
+		}
+
+		if ( ! empty( $cctTypes ) ) {
+			$pruned = Db::pruneNodesByTypes( $cctTypes, false );
+			$nodes += $pruned['nodes'];
+			$edges += $pruned['edges'];
+		}
+
+		return array(
+			'nodes' => $nodes,
+			'edges' => $edges,
+		);
+	}
 
 	/**
 	 * Recalculate degree counts for every node.

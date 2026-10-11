@@ -89,19 +89,57 @@ class WP_MCP_AI_Operator_Admin {
 			<?php if ( is_array( $result ) ) : ?>
 				<div class="notice notice-success">
 					<p><strong><?php esc_html_e( 'Operator created. Copy the token now — it is shown only once.', 'mcp-ai-wpoos' ); ?></strong></p>
-					<p><?php esc_html_e( 'Token:', 'mcp-ai-wpoos' ); ?> <code><?php echo esc_html( $result['token'] ); ?></code></p>
-					<p><?php esc_html_e( 'Add to ~/.hermes/.env:', 'mcp-ai-wpoos' ); ?></p>
-					<pre><?php echo esc_html( $result['env'] ); ?></pre>
-					<p><?php esc_html_e( 'Add to ~/.hermes/config.yaml:', 'mcp-ai-wpoos' ); ?></p>
-					<pre><?php echo esc_html( $result['yaml'] ); ?></pre>
-					<?php if ( ! empty( $result['zed'] ) ) : ?>
-						<p><?php esc_html_e( 'Add to Zed (settings.json → context_servers):', 'mcp-ai-wpoos' ); ?></p>
-						<pre><?php echo esc_html( $result['zed'] ); ?></pre>
-					<?php endif; ?>
-					<?php if ( ! empty( $result['claude'] ) ) : ?>
-						<p><?php esc_html_e( 'Add to Claude Desktop / Cursor / VS Code (mcpServers):', 'mcp-ai-wpoos' ); ?></p>
-						<pre><?php echo esc_html( $result['claude'] ); ?></pre>
-					<?php endif; ?>
+					<details>
+						<summary><?php esc_html_e( 'Show credentials (masked by default)', 'mcp-ai-wpoos' ); ?></summary>
+						<p><?php esc_html_e( 'Token:', 'mcp-ai-wpoos' ); ?></p>
+						<p>
+							<input type="password" id="wp-mcp-ai-op-token" class="regular-text code" value="<?php echo esc_attr( $result['token'] ); ?>" readonly autocomplete="new-password" spellcheck="false">
+							<button type="button" class="button" id="wp-mcp-ai-op-reveal" data-show="<?php esc_attr_e( 'Show', 'mcp-ai-wpoos' ); ?>" data-hide="<?php esc_attr_e( 'Hide', 'mcp-ai-wpoos' ); ?>"><?php esc_html_e( 'Show', 'mcp-ai-wpoos' ); ?></button>
+							<button type="button" class="button" id="wp-mcp-ai-op-copy" data-copied="<?php esc_attr_e( 'Copied', 'mcp-ai-wpoos' ); ?>"><?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?></button>
+						</p>
+						<p><?php esc_html_e( 'Add to ~/.hermes/.env:', 'mcp-ai-wpoos' ); ?></p>
+						<pre><?php echo esc_html( $result['env'] ); ?></pre>
+						<p><?php esc_html_e( 'Add to ~/.hermes/config.yaml:', 'mcp-ai-wpoos' ); ?></p>
+						<pre><?php echo esc_html( $result['yaml'] ); ?></pre>
+						<?php if ( ! empty( $result['zed'] ) ) : ?>
+							<p><?php esc_html_e( 'Add to Zed (settings.json → context_servers):', 'mcp-ai-wpoos' ); ?></p>
+							<pre><?php echo esc_html( $result['zed'] ); ?></pre>
+						<?php endif; ?>
+						<?php if ( ! empty( $result['claude'] ) ) : ?>
+							<p><?php esc_html_e( 'Add to Claude Desktop / Cursor / VS Code (mcpServers):', 'mcp-ai-wpoos' ); ?></p>
+							<pre><?php echo esc_html( $result['claude'] ); ?></pre>
+						<?php endif; ?>
+					</details>
+					<script>
+					( function () {
+						var input  = document.getElementById( 'wp-mcp-ai-op-token' );
+						var reveal = document.getElementById( 'wp-mcp-ai-op-reveal' );
+						var copy   = document.getElementById( 'wp-mcp-ai-op-copy' );
+						if ( ! input ) {
+							return;
+						}
+						if ( reveal ) {
+							reveal.addEventListener( 'click', function () {
+								var showing = 'password' !== input.type;
+								input.type   = showing ? 'password' : 'text';
+								reveal.textContent = showing ? reveal.getAttribute( 'data-show' ) : reveal.getAttribute( 'data-hide' );
+							} );
+						}
+						if ( copy ) {
+							copy.addEventListener( 'click', function () {
+								input.select();
+								if ( navigator.clipboard && navigator.clipboard.writeText ) {
+									navigator.clipboard.writeText( input.value ).then( function () {
+										copy.textContent = copy.getAttribute( 'data-copied' );
+									} );
+								} else if ( document.execCommand ) {
+									document.execCommand( 'copy' );
+									copy.textContent = copy.getAttribute( 'data-copied' );
+								}
+							} );
+						}
+					} )();
+					</script>
 				</div>
 				<?php
 				delete_transient( $transient );

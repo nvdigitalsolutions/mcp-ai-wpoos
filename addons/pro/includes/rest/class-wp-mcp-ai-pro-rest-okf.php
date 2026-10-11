@@ -456,11 +456,8 @@ class WP_MCP_AI_Pro_REST_Okf {
 	public static function handle_skills( $request ) {
 		$assistant_id = (int) $request->get_param( 'assistant_id' );
 
-		if ( ! $assistant_id ) {
-			$user_id = get_current_user_id();
-			if ( class_exists( 'WP_MCP_AI_Assistant_Manager' ) ) {
-				$assistant_id = (int) \WP_MCP_AI_Assistant_Manager::get_default_assistant( $user_id );
-			}
+		if ( ! $assistant_id && function_exists( 'wp_mcp_ai_pro_get_default_assistant_id' ) ) {
+			$assistant_id = (int) wp_mcp_ai_pro_get_default_assistant_id();
 		}
 
 		if ( ! $assistant_id ) {

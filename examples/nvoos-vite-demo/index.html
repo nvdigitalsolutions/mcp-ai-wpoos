@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%237c5cff'/%3E%3Ctext x='16' y='21' font-size='14' text-anchor='middle' fill='white' font-family='sans-serif'%3EN%3C/text%3E%3C/svg%3E"
+    />
+    <title>NV oOS Packages — Vite Demo</title>
+  </head>
+  <body>
+    <header class="hero">
+      <h1>NV oOS <span class="accent">Packages</span></h1>
+      <p>
+        Sample Vite app consuming the <code>@nvdigitalsolutions/*</code> packages
+        extracted from the mcp-ai-wpoos plugin. Everything below runs against a
+        dev-only mock SSE server — no WordPress backend required.
+      </p>
+    </header>
+
+    <main>
+      <section class="card" id="section-stream">
+        <h2>
+          Streaming chat
+          <span class="tag">nvoos-events · nvoos-dom-batcher · nvoos-markdown · nvoos-storage · nvoos-clipboard</span>
+        </h2>
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <form id="chat-form" class="chat-form">
+          <input id="chat-input" type="text" placeholder="Ask the demo AI something…" autocomplete="off" />
+          <button id="chat-send" type="submit">Send</button>
+        </form>
+        <p class="hint">
+          Streams a canned answer from the Vite dev-server mock endpoint
+          <code>/api/chat</code>. Point <code>sseEndpoint()</code> at a real
+          NV oOS site to go live.
+        </p>
+      </section>
+
+      <section class="card" id="section-markdown">
+        <h2>Markdown renderer <span class="tag">nvoos-markdown</span></h2>
+        <div class="split">
+          <textarea id="md-input" spellcheck="false"># Hello NV oOS
+
+Render **AI output** safely — `marked` for parsing,
+[DOMPurify](https://github.com/cure53/DOMPurify) for XSS hardening.
+
+- list item one
+- list item two
+
+```js
+const safe = renderer.render(untrusted);
+```</textarea>
+          <div id="md-preview" class="md-preview"></div>
+        </div>
+      </section>
+
+      <section class="card" id="section-slash">
+        <h2>Slash commands <span class="tag">nvoos-slash-commands</span></h2>
+        <p class="hint">Type <code>/</code> in the box below — the command list comes from the mock <code>/api/slash-commands</code> endpoint.</p>
+        <input id="slash-input" type="text" placeholder="Try /help or /summarise…" autocomplete="off" />
+        <pre id="slash-log" class="log"></pre>
+      </section>
+
+      <section class="card" id="section-attachments">
+        <h2>Attachment helpers <span class="tag">nvoos-attachments</span></h2>
+        <div id="attachments-out" class="attachments"></div>
+      </section>
+
+      <section class="card" id="section-api">
+        <h2>Typed API client <span class="tag">nvoos-api</span></h2>
+        <pre id="api-out" class="log"></pre>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Packages: <code>packages/</code> in the
+        <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos" target="_blank" rel="noopener">mcp-ai-wpoos</a> repo ·
+        Docs: <code>packages/README.md</code>
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -57,6 +57,26 @@ class WP_MCP_AI_Dead_Letter_Queue {
 	const DEFAULT_RETENTION_DAYS = 30;
 
 	/**
+	 * Maximum failed-retry entries kept in an item's retry_history
+	 * (ring buffer — the oldest entries are dropped).
+	 *
+	 * @since 1.1.98
+	 *
+	 * @var int
+	 */
+	const MAX_RETRY_HISTORY = 10;
+
+	/**
+	 * Default cap on failed retry attempts per item before manual retry is
+	 * refused (filterable via wp_mcp_ai_dlq_max_retries).
+	 *
+	 * @since 1.1.98
+	 *
+	 * @var int
+	 */
+	const DEFAULT_MAX_RETRIES = 10;
+
+	/**
 	 * Item types.
 	 */
 	const TYPE_CRON_JOB   = 'cron_job';
@@ -509,6 +529,18 @@ class WP_MCP_AI_Dead_Letter_Queue {
 			);
 		}
 
+		// Refuse to retry items that have already failed too many times.
+		// Success removes the item from the DLQ, so retry_history only ever
+		// contains failed attempts.
+		$retry_history = isset( $item['retry_history'] ) && is_array( $item['retry_history'] ) ? $item['retry_history'] : array();
+		$max_retries   = (int) apply_filters( 'wp_mcp_ai_dlq_max_retries', self::DEFAULT_MAX_RETRIES );
+		if ( count( $retry_history ) >= $max_retries ) {
+			return new WP_Error(
+				'max_retries_exceeded',
+				__( 'This item has exceeded the maximum number of retry attempts.', 'mcp-ai-wpoos' )
+			);
+		}
+
 		// Dispatch based on type.
 		$result = false;
 
@@ -583,6 +615,10 @@ class WP_MCP_AI_Dead_Letter_Queue {
 				'error_message' => $error_message,
 			);
 
+			// Ring-buffer the history so a repeatedly-retried item cannot grow
+			// its stored history (and row size) without bound.
+			$retry_history = array_slice( $retry_history, -self::MAX_RETRY_HISTORY );
+
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->update(
 				self::get_table_name(),
@@ -600,6 +636,10 @@ class WP_MCP_AI_Dead_Letter_Queue {
 					'result'        => $result,
 					'error_message' => $error_message,
 				);
+
+				// Ring-buffer the history (mirror of the table path).
+				$items[ $item_id ]['retry_history'] = array_slice( $items[ $item_id ]['retry_history'], -self::MAX_RETRY_HISTORY );
+
 				$items[ $item_id ]['retry_count']     = count( $items[ $item_id ]['retry_history'] );
 				self::save_items_to_option( $items );
 			}

@@ -42,7 +42,7 @@ Before setting up a Google Drive connection, you need:
    - User Type: **External** (for testing) or **Internal** (for G Suite organizations)
    - App name: Your app name
    - Support email: Your email
-   - Scopes: Add `drive.readonly` and `drive.metadata.readonly`
+   - Scopes: Add `drive.file` (non-sensitive — publishing to production needs no Google review)
    - Test users: Add your Gmail address for testing
 4. Select **Application type**: **Web application**
 5. Enter a name (e.g., "WordPress AI Google Drive")
@@ -102,8 +102,8 @@ When a folder ID is provided, API requests will be scoped to that folder and its
 
 The Google Drive connection requests the following OAuth scopes:
 
-- `https://www.googleapis.com/auth/drive.readonly` - Read-only access to files
-- `https://www.googleapis.com/auth/drive.metadata.readonly` - Read-only access to file metadata
+- `https://www.googleapis.com/auth/drive.file` (default) - Per-file access: files the app created or the user opened with it. Non-sensitive — publishing to production requires no Google review.
+- `https://www.googleapis.com/auth/drive.readonly` - Full read access to all files (restricted). Opt back in with the `wp_mcp_ai_google_drive_oauth_scope` filter — requires Google app verification plus a CASA security assessment.
 
 These scopes ensure that the AI assistant can read files but cannot modify or delete them.
 

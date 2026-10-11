@@ -12,6 +12,8 @@
  * - Retry counting on failure dispatch
  * - Deleting schedules clears WP cron and history
  * - notify_channels field stored and retrieved
+ * - notify_email multi-recipient lists (comma/semicolon separated) on create
+ *   and update, with per-address Symfony validation
  *
  * @package WP_MCP_AI_Pro
  * @author    NV Digital Solutions
@@ -25,6 +27,7 @@ if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 }
 
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-result-delivery-service.php';
 
 /**
  * Test suite for Pro Schedule Manager.
@@ -1307,6 +1310,92 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 
 		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
 		$this->assertContains( 'discord', $schedule['notify_channels'] );
+	}
+
+	/**
+	 * Test that notify_email accepts a comma-separated recipient list on create.
+	 */
+	public function test_create_schedule_accepts_multiple_notify_emails() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'     => 'task',
+				'hook'              => 'multi_email_hook',
+				'timestamp'         => time() + 120,
+				'notify_on_failure' => true,
+				'notify_email'      => 'a@x.com, b@y.com',
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'a@x.com, b@y.com', $schedule['notify_email'] );
+	}
+
+	/**
+	 * Test that a single notify_email address keeps the legacy behavior.
+	 */
+	public function test_create_schedule_keeps_single_notify_email_behavior() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'     => 'task',
+				'hook'              => 'single_email_hook',
+				'timestamp'         => time() + 120,
+				'notify_on_failure' => true,
+				'notify_email'      => 'single@x.com',
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'single@x.com', $schedule['notify_email'] );
+	}
+
+	/**
+	 * Test that an invalid address anywhere in a notify_email list is rejected.
+	 */
+	public function test_create_schedule_rejects_invalid_notify_email_in_list() {
+		$result = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'     => 'task',
+				'hook'              => 'bad_email_hook',
+				'timestamp'         => time() + 120,
+				'notify_on_failure' => true,
+				'notify_email'      => 'a@x.com, not-an-email',
+			),
+			$this->admin_id
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'invalid_notify_email', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that notify_email accepts a comma-separated recipient list on update.
+	 */
+	public function test_update_schedule_accepts_multiple_notify_emails() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'multi_email_update_hook',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array(
+				'notify_email' => 'c@x.com; d@y.com',
+			),
+			$this->admin_id
+		);
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'c@x.com, d@y.com', $schedule['notify_email'] );
 	}
 
 	/**

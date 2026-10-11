@@ -186,4 +186,113 @@ class RestApiTest extends WP_UnitTestCase {
 		// Should NOT be 401 — webhooks use HMAC auth, not WP auth.
 		$this->assertNotEquals( 401, $response->get_status() );
 	}
+
+	/**
+	 * A valid assistant credential (bearer) can read the graph anonymously.
+	 *
+	 * @return void
+	 */
+	public function testBearerCredentialCanReadGraph(): void {
+		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
+		$token    = \WP_MCP_AI_Credentials::seed_token();
+		$request  = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
+	 * A credential-format bearer token that fails validation is rejected.
+	 *
+	 * @return void
+	 */
+	public function testBearerCredentialWithBadTokenReturns401(): void {
+		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
+		$request  = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph' );
+		$request->set_header( 'Authorization', 'Bearer cred_forged.wrongsecret' );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 401, $response->get_status() );
+	}
+
+	/**
+	 * The raw credential header form (no "Bearer" scheme) is accepted too.
+	 *
+	 * @return void
+	 */
+	public function testRawCredentialHeaderCanReadGraph(): void {
+		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
+		$token    = \WP_MCP_AI_Credentials::seed_token();
+		$request  = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph' );
+		$request->set_header( 'Authorization', $token );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
+	 * Assistant credentials only grant read access — build stays admin-only.
+	 *
+	 * @return void
+	 */
+	public function testBearerCredentialCannotBuild(): void {
+		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
+		$token    = \WP_MCP_AI_Credentials::seed_token();
+		$request  = new \WP_REST_Request( 'POST', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/build' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 403, $response->get_status() );
+	}
+
+	/**
+	 * GET /graph/visual-config returns the explorer config for editors.
+	 *
+	 * @return void
+	 */
+	public function testVisualConfigReturnsExplorerConfig(): void {
+		$userId = $this->factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $userId );
+
+		$request  = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph/visual-config' );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'visual', $data );
+		$this->assertArrayHasKey( 'presets', $data );
+		$this->assertArrayHasKey( 'height', $data );
+		$this->assertArrayHasKey( 'max_nodes', $data );
+		$this->assertIsArray( $data['visual'] );
+		$this->assertArrayHasKey( 'theme', $data['visual'] );
+	}
+
+	/**
+	 * GET /graph/visual-config is available to a valid bearer credential.
+	 *
+	 * @return void
+	 */
+	public function testVisualConfigAcceptsBearerCredential(): void {
+		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
+		$token    = \WP_MCP_AI_Credentials::seed_token();
+		$request  = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph/visual-config' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
+	 * GET /graph/visual-config rejects anonymous requests.
+	 *
+	 * @return void
+	 */
+	public function testVisualConfigAnonymousReturns401(): void {
+		$request  = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph/visual-config' );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 401, $response->get_status() );
+	}
 }

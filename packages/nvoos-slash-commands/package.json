@@ -1,9 +1,10 @@
 {
   "name": "@nvdigitalsolutions/nvoos-slash-commands",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Slash command system with fuzzy-search autocomplete and execution engine - Extracted from NV Open Operator System",
   "main": "dist/nvoos-slash-commands.js",
   "module": "dist/nvoos-slash-commands.js",
+  "type": "module",
   "types": "dist/nvoos-slash-commands.d.ts",
   "exports": {
     ".": {
@@ -41,7 +42,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",
     "clean": "rm -rf dist"
   },

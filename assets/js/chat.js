@@ -12335,8 +12335,14 @@
             // Update quota monitor periodically
             if (quotaMonitor) {
                 updateQuotaMonitor(quotaMonitor);
-                // Update quota monitor every 30 seconds
-                setInterval(function() {
+                // Update quota monitor every 30 seconds. Stop once the element
+                // leaves the DOM so container re-inits don't accumulate orphan
+                // intervals.
+                const quotaMonitorInterval = setInterval(function() {
+                    if (!quotaMonitor.isConnected) {
+                        clearInterval(quotaMonitorInterval);
+                        return;
+                    }
                     updateQuotaMonitor(quotaMonitor);
                 }, 30000);
             }
@@ -19752,6 +19758,8 @@
         setTimeout(dismiss, TOAST_DURATION_MS);
     }
 
+    let tasksDrawerEscapeHandler = null;
+
     /**
      * Initialize the Tasks drawer for a single chat container instance.
      * Called from initializeCronStatus() when config.chatTasksDrawer is true.
@@ -19854,12 +19862,17 @@
             closeBtn.addEventListener('click', closeDrawer);
         }
 
-        // Close on Escape.
-        document.addEventListener('keydown', function (e) {
+        // Close on Escape. Remove any handler from a previous init first so
+        // repeated initializations don't stack document-level listeners.
+        if (tasksDrawerEscapeHandler) {
+            document.removeEventListener('keydown', tasksDrawerEscapeHandler);
+        }
+        tasksDrawerEscapeHandler = function (e) {
             if ((e.key === 'Escape' || e.keyCode === 27) && !drawer.hasAttribute('hidden')) {
                 closeDrawer();
             }
-        });
+        };
+        document.addEventListener('keydown', tasksDrawerEscapeHandler);
 
         // ---- Filter tabs ----
         filterBtns.forEach(function (btn) {
@@ -20697,6 +20710,7 @@
 	                if (ev.data === '[DONE]') {
 	                    stopped = true;
 	                    closeConnection();
+	                    teardownStream();
 	                }
 	            });
 
@@ -20715,7 +20729,7 @@
         open();
 
 	        // Re-open on tab visibility restore so the stream survives tab switches.
-	        document.addEventListener('visibilitychange', function() {
+	        const handleVisibilityChange = function() {
 	            if (stopped) { return; }
 	            if (document.visibilityState === 'visible') {
 	                if (!es || es.readyState === 2 /* CLOSED */) {
@@ -20724,7 +20738,8 @@
 	                    open();
 	                }
 	            }
-	        });
+	        };
+	        document.addEventListener('visibilitychange', handleVisibilityChange);
 
 	        // Clean up when container is hidden/removed.
 	        const streamObserver = new MutationObserver(function(mutations) {
@@ -20733,11 +20748,20 @@
 	                    if (container.hasAttribute('hidden')) {
 	                        stopped = true;
 	                        closeConnection();
+	                        teardownStream();
 	                    }
 	                }
 	            });
 	        });
 	        streamObserver.observe(container, { attributes: true });
+
+	        // Remove global listeners and stop observing once the stream has
+	        // ended, so re-inits (AJAX chat insertion / wpMcpAiChatInit.init)
+	        // don't stack handlers and pin detached DOM.
+	        function teardownStream() {
+	            document.removeEventListener('visibilitychange', handleVisibilityChange);
+	            streamObserver.disconnect();
+	        }
 	    }
 
     // Expose public API for dynamic initialization (e.g., when chat is inserted via AJAX)

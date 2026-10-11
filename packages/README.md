@@ -291,12 +291,12 @@ npm install @nvdigitalsolutions/nvoos-transcription
 
 ## Building All Packages
 
-Each package has an `adapt-for-npm.js` build script that transforms the WordPress
+Each package has an `adapt-for-npm.cjs` build script that transforms the WordPress
 plugin source into a clean ES module:
 
 ```bash
 for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher nvoos-llm-worker nvoos-model-loader nvoos-transformers-client nvoos-client-tools nvoos-chat-memory nvoos-attachments nvoos-cron-status nvoos-transcription; do
-  (cd $pkg && node adapt-for-npm.js)
+  (cd $pkg && node adapt-for-npm.cjs)
 done
 ```
 
@@ -329,7 +329,7 @@ Each package follows this layout:
 ```
 packages/nvoos-{name}/
 ├── {source}.js          ← copy of the original WordPress plugin source
-├── adapt-for-npm.js     ← build script (node adapt-for-npm.js to rebuild)
+├── adapt-for-npm.cjs    ← build script (node adapt-for-npm.cjs to rebuild)
 ├── dist/
 │   ├── nvoos-{name}.js  ← generated ES module
 │   └── nvoos-{name}.d.ts ← TypeScript definitions
@@ -339,7 +339,7 @@ packages/nvoos-{name}/
 
 ## 🔧 Build Process
 
-Each package includes a custom `adapt-for-npm.js` script that:
+Each package includes a custom `adapt-for-npm.cjs` script that:
 
 1. **Removes WordPress Dependencies**: Strips out `window.wpMcpAi*` globals
 2. **Converts to ES Modules**: Removes IIFE wrappers, adds ES exports

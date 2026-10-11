@@ -25,6 +25,7 @@ Exposes AI capabilities via the WordPress REST API across two surfaces:
 | `NvoosContentGraphAi\Rest\ToolsController` | `ToolsController.php` | `Plugin::register()` (standalone-only `mcp-ai/v1/tools` route) |
 | `NvoosContentGraphAi\Rest\McpController` | `McpController.php` | `Plugin::register()` (standalone-only `mcp-ai/v1/mcp`, `/no-sse`, `/sse` routes) |
 | `NvoosContentGraphAi\Rest\ChatCompatController` | `ChatCompatController.php` | `Plugin::register()` (standalone-only `mcp-ai/v1/chat` route) |
+| `NvoosContentGraphAi\Rest\ToolSchemaAuditor` | `ToolSchemaAuditor.php` | `ToolsController::handle_tools_list()` — static audit/normalize for agent-client schema hazards (port of the base `WP_MCP_AI_Tool_Schema_Auditor`, proposal 066) |
 
 ## Inputs / Outputs / Neighbors
 
@@ -61,6 +62,7 @@ Base paths: `/wp-json/nvoos-content-graph/v1` (chat) and `/wp-json/mcp-ai/v1` (M
 - `mcp-ai/v1` route registration is standalone-only; the base plugin owns the same routes in monolith installs.
 - Auth is CG-AI's own capability model (`edit_posts` / `manage_options`); token scoping stays with the base hub until CG-AI guest tokens land.
 - Response contracts, error codes, cache key structures, and filters are byte-identical to the base (documented per-class seams for settings/config/registry/cache reads).
+- **`tools/list` schema hardening (proposal 066, port of the base):** `ToolsController::handle_tools_list()` normalizes every schema through `ToolSchemaAuditor::normalize_for_mcp()` — root `type: object` injected when missing, hazardous schemas (bracket property names, over-budget schemas, over-length slugs, root combinators without a type) skipped with a logged warning so one bad tool cannot poison the catalog for agent clients.
 - **MCP controller deviations (documented in the class docblock):** SSE sessions deferred (`GET /mcp` always returns discovery; `/sse` returns discovery); `tools/call` answers the `wp_mcp_ai_mcp_unavailable` stub until tool execution ports (D8 — `docs/project/plans/d8-tool-execution-port-plan.md`); no OAuth scope enforcement; no default-assistant resolution.
 - **Chat compat deviations (documented in the class docblock):** `options` envelope translated to CG-AI chat params; `assistant_id` / `professional_prompt` / `options.response_format` accepted but not applied until the assistant/profession runtimes port; message content-part arrays JSON-encoded; `GET /chat` SSE handshake deferred.
 - SSE streaming endpoint sets appropriate headers (`text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`) and flushes output buffering.

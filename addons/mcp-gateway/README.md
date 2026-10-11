@@ -1,8 +1,7 @@
 # NV oOS MCP Gateway
 # ==================
 
-<img width="1211" height="518" alt="Screenshot 2026-10-06 155037" src="https://github.com/user-attachments/assets/c5bd50d6-6fb3-4c20-b568-dfaffaf9060b" />
-
+<p align="center"><img src="assets/mcp-gateway.svg" alt="NV oOS MCP Gateway" width="128"></p>
 
 A public, fleet-scoped **Model Context Protocol** endpoint for the
 [NV oOS (Open Operator System)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos)
@@ -48,7 +47,11 @@ Deployment target: **Cloudways Velocity** (managed Node hosting) at
 | `NVOOS_SITE_<SLUG>_URL` | per site | Upstream MCP endpoint, full URL incl. `/wp-json/mcp-ai/v1/mcp` |
 | `NVOOS_SITE_<SLUG>_TOKEN` | per site | Fleet Operator token (`op_xxxx.SECRET`); never logged or returned |
 | `AUTH_MODE` | no | `strict` (default) fails closed at boot when no keys are set |
-| `UPSTREAM_TIMEOUT_MS` | no | Per-site timeout (default 20000) |
+| `UPSTREAM_TIMEOUT_MS` | no | Per-site timeout for tools/list + notifications (default 20000) |
+| `UPSTREAM_TOOL_TIMEOUT_MS` | no | tools/call budget only — long-running tools get more room without slowing tools/list (default: `UPSTREAM_TIMEOUT_MS`) |
+| `GATEWAY_OAUTH_ISSUER` | no | OAuth 2.1 authorization server issuer (e.g. Auth0 tenant). Setting it turns the gateway into an RFC 9728 protected resource — see the OAuth section below |
+| `GATEWAY_OAUTH_JWKS_URI` | no | JWKS override (default: issuer's `/.well-known/jwks.json`) |
+| `GATEWAY_OAUTH_RESOURCE` | no | RFC 8707 resource identifier / token audience (default `https://mcp.nvoos.pro`) |
 | `TRUST_PROXY` | yes on Velocity | `1` — NGINX sets X-Forwarded-For |
 | `ALLOWED_ORIGINS` | no | Comma-separated CORS origins for browser-based clients |
 | `MAX_JSON_BODY` | no | Body limit (default `1mb`) |
@@ -95,6 +98,46 @@ TRUST_PROXY=1
 - Auth: static API keys in v1; OAuth 2.1 (RFC 8414 + dynamic client
   registration) is the documented upgrade path.
 
+## Claude Code plugin
+
+The addon ships a Claude Code plugin (`.claude-plugin/plugin.json`,
+`commands/connect.md`, `skills/gateway/`) that syncs to the mirror repo and
+doubles as the marketplace source:
+
+```
+/plugin marketplace add nvdigitalsolutions/nvoos-mcp-gateway
+```
+
+Enabling the plugin prompts for the gateway API key (stored securely as a
+sensitive `userConfig` option) and substitutes it into the MCP server's
+`Authorization` header.
+
+## OAuth 2.1 resource server (opt-in)
+
+With `GATEWAY_OAUTH_ISSUER` set, the gateway acts as an RFC 9728 protected
+resource **alongside** static keys:
+
+- `GET /.well-known/oauth-protected-resource` (+ the `/mcp` path-insertion
+  variant) serves the protected-resource metadata document (inert 404 when
+  OAuth is unconfigured).
+- 401 responses carry `WWW-Authenticate: Bearer resource_metadata="…",
+  scope="…"` so MCP clients can run the OAuth 2.1 authorization-code + PKCE
+  flow against the configured authorization server.
+- JWT bearer tokens validate against the AS JWKS (cached, fail-closed):
+  signature, `iss`, `aud` (RFC 8707 resource binding), `exp`/`nbf`, and
+  scope.
+- Site binding is scope-based: each `site:<slug>` scope grants access to
+  that bound site (the read-only `site:read` scope is advertised for future
+  fine-grained enforcement). Tokens granting no configured site get 403
+  `insufficient_scope`.
+- Upstream proxying is unchanged: the gateway always exchanges for the
+  site's own Fleet Operator token — OAuth tokens are never forwarded
+  upstream (no confused-deputy passthrough).
+
+Authorization server: any OAuth 2.1 AS with RFC 8414 metadata + JWKS
+(Auth0 is the platform convention). Dynamic client registration (RFC 7591)
+belongs to the AS, not the gateway.
+
 ## Development
 
 ```bash
@@ -112,6 +155,17 @@ NVOOS_SITE_DOCKER_TOKEN="<assistant/operator token>" \
 PORT=8899 npm start
 # → curl http://127.0.0.1:8899/mcp
 ```
+
+## Ecosystem discovery
+
+The public endpoint `https://mcp.nvoos.pro/mcp` is listed in the **official
+MCP Registry** (`registry.modelcontextprotocol.io`) as
+`io.github.nvdigitalsolutions/nvoos-mcp-gateway` — a streamable-HTTP remote
+with a required `Authorization` header. The registry metadata lives in
+[`server.json`](./server.json) and is published with the `mcp-publisher`
+CLI. Community directories (mcpservers.org, mcp.directory, PulseMCP, Glama)
+carry entries that point back here; the `GET /` landing page is the
+directory-reviewer surface.
 
 ## License
 

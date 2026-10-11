@@ -10,8 +10,89 @@ import { useUIStore } from '../stores/uiStore';
 import { useModelStore } from '../stores/modelStore';
 import { useCommandStore } from '../stores/commandStore';
 
+function setRuntime( runtime: Record< string, unknown > | null ): void {
+	( window as unknown as Record< string, unknown > ).NVOOS_PRO_SPA = runtime;
+}
+
+const BASE_RUNTIME = {
+	apiUrl: 'https://example.com/wp-json/',
+	proApi: '',
+	nonce: 'n',
+	config: { assistantId: 7 },
+	endpoints: {
+		chat: 'https://example.com/chat',
+		chatClient: 'https://example.com/chat-client',
+		transcripts: 'https://example.com/transcripts',
+		threads: 'https://example.com/threads',
+		tools: 'https://example.com/tools',
+		assistants: 'https://example.com/assistants',
+		settings: 'https://example.com/settings',
+	},
+	user: { id: 3, login: '', displayName: '', capabilities: [] },
+	mentionTypes: [],
+};
+
 afterEach( () => {
 	vi.restoreAllMocks();
+} );
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// assistantStore
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe( 'assistantStore', () => {
+	afterEach( () => {
+		localStorage.clear();
+		setRuntime( null );
+	} );
+
+	describe( 'getInitialAssistantId', () => {
+		it( 'falls back to the server assistant when the switcher is disabled', async () => {
+			localStorage.setItem( 'nvoos-pro-spa.active-assistant-3', '99' );
+			setRuntime( {
+				...BASE_RUNTIME,
+				config: { ...BASE_RUNTIME.config, assistantSelector: false },
+			} );
+
+			vi.resetModules();
+			const { useAssistantStore: freshStore } = await import(
+				'../stores/assistantStore'
+			);
+
+			// A pinned/defaulted instance must ignore stale selections from the
+			// admin SPA and bind to the server-provided assistant.
+			expect( freshStore.getState().assistantId ).toBe( 7 );
+		} );
+
+		it( 'honors a stored selection when the switcher is enabled', async () => {
+			localStorage.setItem( 'nvoos-pro-spa.active-assistant-3', '99' );
+			setRuntime( {
+				...BASE_RUNTIME,
+				config: { ...BASE_RUNTIME.config, assistantSelector: true },
+			} );
+
+			vi.resetModules();
+			const { useAssistantStore: freshStore } = await import(
+				'../stores/assistantStore'
+			);
+
+			expect( freshStore.getState().assistantId ).toBe( 99 );
+		} );
+
+		it( 'falls back to the runtime assistant when nothing is stored', async () => {
+			setRuntime( {
+				...BASE_RUNTIME,
+				config: { ...BASE_RUNTIME.config, assistantSelector: true },
+			} );
+
+			vi.resetModules();
+			const { useAssistantStore: freshStore } = await import(
+				'../stores/assistantStore'
+			);
+
+			expect( freshStore.getState().assistantId ).toBe( 7 );
+		} );
+	} );
 } );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -255,7 +336,29 @@ describe( 'modelStore', () => {
 
 	describe( 'setAvailableProfiles', () => {
 		it( 'replaces the available profiles array', () => {
-			const profiles = [ 'write', 'chat', 'analyze' ];
+			const profiles = [
+				{
+					slug: 'write',
+					label: 'Full access',
+					description: 'No tool restrictions',
+					selectable: true,
+					is_default: true,
+				},
+				{
+					slug: 'read-only',
+					label: 'Read-only',
+					description: 'Blocks write and state-changing tools',
+					selectable: true,
+					is_default: false,
+				},
+				{
+					slug: 'audit',
+					label: 'Audit',
+					description: 'Not selectable by this user',
+					selectable: false,
+					is_default: false,
+				},
+			];
 
 			useModelStore.getState().setAvailableProfiles( profiles );
 			expect( useModelStore.getState().availableProfiles ).toEqual( profiles );

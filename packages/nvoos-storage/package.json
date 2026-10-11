@@ -4,6 +4,7 @@
   "description": "Async storage utilities with Web Worker optimization - Extracted from NV Open Operator System",
   "main": "dist/nvoos-storage.js",
   "module": "dist/nvoos-storage.js",
+  "type": "module",
   "types": "dist/nvoos-storage.d.ts",
   "exports": {
     ".": {
@@ -42,7 +43,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node adapt-for-npm.js",
+    "build": "node adapt-for-npm.cjs",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",
     "clean": "rm -rf dist"
   },

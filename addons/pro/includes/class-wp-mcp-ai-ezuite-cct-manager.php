@@ -83,18 +83,20 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		 * @var array
 		 */
 		protected $columns = array(
-			'sku'            => 'text',
-			'name'           => 'text',
-			'quantity'       => 'number',
-			'warehouse'      => 'text',
-			'reorder_point'  => 'number',
-			'supplier'       => 'text',
-			'cost_price'     => 'number',
-			'last_updated'   => 'datetime',
-			'woo_product_id' => 'number',
-			'connection_id'  => 'text',
-			'tenant_type'    => 'text',
-			'tenant_id'      => 'number',
+			'sku'               => 'text',
+			'name'              => 'text',
+			'quantity'          => 'number',
+			'warehouse'         => 'text',
+			'location_name'     => 'text',
+			'stock_by_location' => 'textarea',
+			'reorder_point'     => 'number',
+			'supplier'          => 'text',
+			'cost_price'        => 'number',
+			'last_updated'      => 'datetime',
+			'woo_product_id'    => 'number',
+			'connection_id'     => 'text',
+			'tenant_type'       => 'text',
+			'tenant_id'         => 'number',
 		);
 
 		/**
@@ -893,16 +895,18 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		 */
 		protected function get_column_label( $column_name ) {
 			$labels = array(
-				'sku'            => __( 'SKU', 'mcp-ai-wpoos-pro' ),
-				'name'           => __( 'Product Name', 'mcp-ai-wpoos-pro' ),
-				'quantity'       => __( 'Quantity', 'mcp-ai-wpoos-pro' ),
-				'warehouse'      => __( 'Warehouse', 'mcp-ai-wpoos-pro' ),
-				'reorder_point'  => __( 'Reorder Point', 'mcp-ai-wpoos-pro' ),
-				'supplier'       => __( 'Supplier', 'mcp-ai-wpoos-pro' ),
-				'cost_price'     => __( 'Cost Price', 'mcp-ai-wpoos-pro' ),
-				'last_updated'   => __( 'Last Updated', 'mcp-ai-wpoos-pro' ),
-				'woo_product_id' => __( 'WooCommerce Product ID', 'mcp-ai-wpoos-pro' ),
-				'connection_id'  => __( 'Connection ID', 'mcp-ai-wpoos-pro' ),
+				'sku'               => __( 'SKU', 'mcp-ai-wpoos-pro' ),
+				'name'              => __( 'Product Name', 'mcp-ai-wpoos-pro' ),
+				'quantity'          => __( 'Quantity', 'mcp-ai-wpoos-pro' ),
+				'warehouse'         => __( 'Warehouse', 'mcp-ai-wpoos-pro' ),
+				'location_name'     => __( 'Location Name', 'mcp-ai-wpoos-pro' ),
+				'stock_by_location' => __( 'Stock by Location', 'mcp-ai-wpoos-pro' ),
+				'reorder_point'     => __( 'Reorder Point', 'mcp-ai-wpoos-pro' ),
+				'supplier'          => __( 'Supplier', 'mcp-ai-wpoos-pro' ),
+				'cost_price'        => __( 'Cost Price', 'mcp-ai-wpoos-pro' ),
+				'last_updated'      => __( 'Last Updated', 'mcp-ai-wpoos-pro' ),
+				'woo_product_id'    => __( 'WooCommerce Product ID', 'mcp-ai-wpoos-pro' ),
+				'connection_id'     => __( 'Connection ID', 'mcp-ai-wpoos-pro' ),
 			);
 
 			return isset( $labels[ $column_name ] ) ? $labels[ $column_name ] : ucwords( str_replace( '_', ' ', $column_name ) );
@@ -1216,9 +1220,11 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		/**
 		 * Sync inventory from the EZuite ERP API into the local CCT cache.
 		 *
-		 * Calls the EZuite LX_ItemPull API action (POST with API_Key /
+		 * Calls the EZuite LX_ItemStockPull API action (POST with API_Key /
 		 * API_Action / API_Body envelope) and maps every returned item to a
-		 * CCT row via map_ezuite_item_to_cct_row().
+		 * CCT row via map_ezuite_item_to_cct_row(). The legacy LX_ItemPull
+		 * action and field names remain supported via the
+		 * wp_mcp_ai_ezuite_api_action filter and item-shape normalization.
 		 *
 		 * When $dry_run is true the method validates the API query and counts
 		 * how many items would be written without touching the CCT.
@@ -1311,10 +1317,18 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			$settings = get_option( 'wp_mcp_ai_ezuite_toolkit_settings', array() );
 			$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : $this->get_default_field_mapping();
 
-			// Call EZuite LX_ItemPull API directly (canonical POST envelope).
+			// Call EZuite LX_ItemStockPull API directly (canonical POST envelope).
+			// Hosts still serving the legacy LX_ItemPull action can pin it back
+			// via the wp_mcp_ai_ezuite_api_action filter.
+			$api_action = apply_filters(
+				'wp_mcp_ai_ezuite_api_action',
+				'LX_ItemStockPull',
+				$effective_connection_id
+			);
+
 			$request_body = array(
 				'API_Key'    => $api_key,
-				'API_Action' => 'LX_ItemPull',
+				'API_Action' => $api_action,
 				'API_Body'   => array(
 					array(
 						'Location_Code' => 'ALL',
@@ -1527,8 +1541,10 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		/**
 		 * Get the default field mapping from EZuite API fields to CCT columns.
 		 *
-		 * Maps the canonical EZuite LX_ItemPull API response field names
-		 * (as returned in the Response_Body array) to CCT columns.
+		 * Maps the canonical EZuite LX_ItemStockPull API response field names
+		 * (as returned in the Response_Body array) to CCT columns. Legacy
+		 * LX_ItemPull names (Item_Code, top-level Location_Code) are resolved
+		 * as aliases by normalize_ezuite_item() before mapping runs.
 		 *
 		 * @since 1.9.0
 		 *
@@ -1550,20 +1566,27 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		 */
 		public static function get_default_field_mapping_static() {
 			return array(
-				'sku'           => 'Item_Code',
+				'sku'           => 'ItemCode',
 				'name'          => 'Item_Name',
 				'quantity'      => 'Qty',
 				'warehouse'     => 'Location_Code',
 				'supplier'      => 'Supplier_Name',
 				'cost_price'    => 'Selling_Price',
-				'reorder_point' => '', // Not present in LX_ItemPull; set per-deployment.
+				'reorder_point' => '', // Not present in LX_ItemStockPull; set per-deployment.
 			);
 		}
 
 		/**
 		 * Map an EZuite API item to a CCT row using field mapping.
 		 *
+		 * The raw item is normalized first so both the current
+		 * LX_ItemStockPull shape (ItemCode, Stock_By_Location) and the legacy
+		 * LX_ItemPull shape (Item_Code, top-level Location_Code) resolve to the
+		 * same canonical keys before the configured field mapping runs.
+		 *
 		 * @since 1.9.0
+		 * @since 3.2.0 Handles the LX_ItemStockPull response shape via
+		 *              normalize_ezuite_item().
 		 *
 		 * @param array  $ezuite_item   Raw EZuite API item.
 		 * @param array  $mapping       Field mapping overrides.
@@ -1575,12 +1598,44 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				? array_merge( $this->get_default_field_mapping(), $mapping )
 				: $this->get_default_field_mapping();
 
+			// Normalize old/new API shapes to canonical keys first.
+			$item = $this->normalize_ezuite_item( $ezuite_item );
+
 			$row = array();
 
 			foreach ( $effective_mapping as $cct_column => $erp_field ) {
-				$row[ $cct_column ] = isset( $ezuite_item[ $erp_field ] )
-					? $ezuite_item[ $erp_field ]
+				if ( '' === $erp_field ) {
+					$row[ $cct_column ] = '';
+					continue;
+				}
+				$row[ $cct_column ] = isset( $item[ $erp_field ] )
+					? $item[ $erp_field ]
 					: '';
+			}
+
+			// Primary location name (human-readable) from the new shape. Only
+			// applied when the column is not already driven by a custom mapping.
+			if ( ! array_key_exists( 'location_name', $effective_mapping ) ) {
+				$row['location_name'] = isset( $item['Location_Name'] ) ? $item['Location_Name'] : '';
+			}
+
+			// Preserve the full per-location breakdown as JSON for tool output.
+			if ( ! array_key_exists( 'stock_by_location', $effective_mapping ) ) {
+				$row['stock_by_location'] = '';
+				if ( ! empty( $item['Stock_By_Location'] ) && is_array( $item['Stock_By_Location'] ) ) {
+					$row['stock_by_location'] = wp_json_encode( $item['Stock_By_Location'] );
+				} elseif ( ! empty( $item['Location_Code'] ) ) {
+					// Legacy shape: synthesize a single-location breakdown.
+					$row['stock_by_location'] = wp_json_encode(
+						array(
+							array(
+								'Setup_Location_Code' => $item['Location_Code'],
+								'Location_Name'       => isset( $item['Location_Name'] ) ? $item['Location_Name'] : '',
+								'Qty'                 => isset( $item['Qty'] ) ? $item['Qty'] : 0,
+							),
+						)
+					);
+				}
 			}
 
 			// Always stamp connection_id for per-connection isolation.
@@ -1599,6 +1654,71 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			}
 
 			return $row;
+		}
+
+		/**
+		 * Normalize a raw EZuite API item to canonical internal keys.
+		 *
+		 * The LX_ItemStockPull response renamed Item_Code to ItemCode and
+		 * replaced the flat Location_Code field with a nested
+		 * Stock_By_Location array. This method makes both shapes addressable
+		 * under the same keys so the configured field mapping (and any legacy
+		 * stored mapping pointing at Item_Code / Location_Code) keeps working:
+		 *
+		 * - ItemCode and Item_Code are aliased in both directions.
+		 * - Location_Code is derived from the primary Stock_By_Location
+		 *   entry's Setup_Location_Code when the top-level key is absent.
+		 * - Location_Name is derived from the primary entry's Location_Name.
+		 * - Qty falls back to the sum of per-location quantities when the
+		 *   top-level Qty key is absent.
+		 *
+		 * @since 3.2.0
+		 *
+		 * @param array $item Raw EZuite API item.
+		 * @return array Normalized item.
+		 */
+		protected function normalize_ezuite_item( $item ) {
+			if ( ! is_array( $item ) ) {
+				return $item;
+			}
+
+			// Item code aliases (LX_ItemStockPull renamed Item_Code to ItemCode).
+			if ( ! isset( $item['ItemCode'] ) && isset( $item['Item_Code'] ) ) {
+				$item['ItemCode'] = $item['Item_Code'];
+			} elseif ( ! isset( $item['Item_Code'] ) && isset( $item['ItemCode'] ) ) {
+				$item['Item_Code'] = $item['ItemCode'];
+			}
+
+			// Primary location entry from the nested per-location stock array.
+			$primary = null;
+			if ( ! empty( $item['Stock_By_Location'] ) && is_array( $item['Stock_By_Location'] ) ) {
+				foreach ( $item['Stock_By_Location'] as $entry ) {
+					if ( is_array( $entry ) ) {
+						$primary = $entry;
+						break;
+					}
+				}
+			}
+
+			if ( null !== $primary ) {
+				if ( ! isset( $item['Location_Code'] ) && isset( $primary['Setup_Location_Code'] ) ) {
+					$item['Location_Code'] = $primary['Setup_Location_Code'];
+				}
+				if ( ! isset( $item['Location_Name'] ) && isset( $primary['Location_Name'] ) ) {
+					$item['Location_Name'] = $primary['Location_Name'];
+				}
+				if ( ! isset( $item['Qty'] ) ) {
+					$total = 0.0;
+					foreach ( $item['Stock_By_Location'] as $entry ) {
+						if ( is_array( $entry ) && isset( $entry['Qty'] ) && is_numeric( $entry['Qty'] ) ) {
+							$total += floatval( $entry['Qty'] );
+						}
+					}
+					$item['Qty'] = $total;
+				}
+			}
+
+			return $item;
 		}
 
 		// ------------------------------------------------------------------ //

@@ -76,6 +76,34 @@ describe('JobQueue', () => {
     queue.stop();
   });
 
+  it('should fail permanently after maxAttempts instead of retrying forever', { timeout: 15000 }, async () => {
+    const queue = new JobQueue('permanent-fail-test');
+    let attempts = 0;
+    let failedJob = null;
+
+    queue.process('broken', async () => {
+      attempts++;
+      throw new Error('Always fails');
+    });
+    queue.on('failed', (job) => {
+      failedJob = job;
+    });
+
+    await new Promise((r) => setTimeout(r, 100));
+
+    await queue.add('broken', { id: 2 }, { attempts: 2 });
+
+    // Attempt 1 fails immediately; the retry must carry the attempt count
+    // (2s backoff), and attempt 2 must then emit 'failed' instead of being
+    // re-added with a reset counter.
+    await new Promise((r) => setTimeout(r, 5000));
+
+    assert.ok(failedJob, 'expected the job to emit failed');
+    assert.equal(attempts, 2);
+
+    queue.stop();
+  });
+
   it('should report queue stats', async () => {
     const queue = new JobQueue('stats-test');
     await queue.add('type-a', { x: 1 });

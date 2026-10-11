@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-schema-auditor.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-db-output-guard.php';
@@ -653,14 +654,73 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Check for assistant credential (bearer) authentication.  Credentials
+			// are CSRF-safe header tokens: once validated they map to the issuing
+			// user (created_by), so transcript access mirrors that user's own rows
+			// without requiring a cookie nonce.  Reads are additionally scoped to
+			// the assistant the credential was issued for so a credential can never
+			// enumerate other assistants' transcripts.
+			$credential = $this->validate_request_credential( $request );
+			if ( null !== $credential ) {
+				if ( is_wp_error( $credential ) ) {
+					return $credential;
+				}
+
+				$credential_assistant = absint( isset( $credential['assistant_id'] ) ? $credential['assistant_id'] : 0 );
+				$requested_assistant  = absint( $request->get_param( 'assistant_id' ) );
+
+				if ( $credential_assistant && $requested_assistant && $requested_assistant !== $credential_assistant ) {
+					return new WP_Error(
+						'wp_mcp_ai_forbidden',
+						__( 'This credential cannot access transcripts for that assistant.', 'mcp-ai-wpoos' ),
+						array( 'status' => 403 )
+					);
+				}
+
+				// Default the query scope to the credential's own assistant.
+				if ( $credential_assistant && ! $requested_assistant ) {
+					$request->set_param( 'assistant_id', $credential_assistant );
+				}
+
+				// The authenticator mapped the credential to its issuing user.
+				// Default the row scope to that user (0 when unmapped).
+				$mapped_user = get_current_user_id();
+				if ( ! $user_id ) {
+					$user_id = $mapped_user;
+					$request->set_param( 'user_id', $user_id );
+				}
+
+				if ( $user_id === $mapped_user ) {
+					return true;
+				}
+
+				if ( 0 === $user_id && $mapped_user > 0 && current_user_can( 'manage_options' ) ) {
+					return true;
+				}
+
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'This credential cannot access transcripts for that user.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
+				);
+			}
+
 			if ( ! $user_id && $current_user ) {
 				$user_id = $current_user;
 				$request->set_param( 'user_id', $user_id );
 			}
 
-			// Verify nonce for logged-in users.
-			$nonce = $request->get_header( 'X-WP-Nonce' );
-			if ( $current_user ) {
+			// Verify nonce for logged-in users. Cookie-authenticated browser
+			// requests must present a valid nonce; requests carrying an
+			// Authorization header (WordPress Application Passwords / Basic auth,
+			// mesh keys, Auth0) are CSRF-safe by construction — browsers never
+			// send that header cross-origin — so the nonce requirement does not
+			// apply to them. This mirrors WP core's rest_cookie_check_errors
+			// (which skips the nonce check when a logged-in user authenticated
+			// without a cookie) and the threads controller's check_permission().
+			$auth_header = $request->get_header( 'Authorization' );
+			if ( $current_user && empty( $auth_header ) ) {
+				$nonce = $request->get_header( 'X-WP-Nonce' );
 				if ( empty( $nonce ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_missing_nonce',
@@ -698,6 +758,60 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'wp_mcp_ai_forbidden',
 				__( 'You do not have permission to view chat transcripts.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
+			);
+		}
+
+		/**
+		 * Validate an assistant credential presented on a REST request.
+		 *
+		 * Accepts both the standard "Authorization: Bearer cred_xxxxx.SECRET"
+		 * header and the raw credential form ("Authorization: cred_xxxxx.SECRET")
+		 * accepted elsewhere in the REST layer.  Returns the validated credential
+		 * metadata (assistant_id, credential_id, created_by, ...) on success, a
+		 * WP_Error for a rejected credential, or null when the request does not
+		 * present a credential at all.
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return array|WP_Error|null Credential metadata, WP_Error, or null when absent.
+		 */
+		protected function validate_request_credential( WP_REST_Request $request ) {
+			$header = $request->get_header( 'Authorization' );
+
+			$token = '';
+			if ( ! empty( $header ) && preg_match( '/^Bearer\s+(.*)$/i', $header, $matches ) ) {
+				$token = trim( $matches[1] );
+			} elseif ( ! empty( $header ) ) {
+				// Raw credential header (no "Bearer" scheme), mirroring the
+				// compatibility handling in permissions_check().
+				$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
+				if ( $accept_raw_credential ) {
+					$token = trim( $header );
+				}
+			}
+
+			if ( '' === $token || ! WP_MCP_AI_Credentials::is_token_format( $token ) ) {
+				return null;
+			}
+
+			$this->reset_auth_context();
+
+			$validated = $this->validate_local_token( $token, $request );
+			if ( is_wp_error( $validated ) ) {
+				return $validated;
+			}
+			if ( true !== $validated ) {
+				return null;
+			}
+
+			$context = $this->authenticator->get_auth_context();
+
+			if ( isset( $context['token_context']['credential'] ) && is_array( $context['token_context']['credential'] ) ) {
+				return $context['token_context']['credential'];
+			}
+
+			return array(
+				'assistant_id' => isset( $context['token_context']['assistant_id'] ) ? absint( $context['token_context']['assistant_id'] ) : 0,
+				'created_by'   => isset( $context['token_context']['user_id'] ) ? absint( $context['token_context']['user_id'] ) : 0,
 			);
 		}
 
@@ -1581,6 +1695,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
 			$default_assistant = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 			$auth_context      = $this->get_auth_context();
+			// Whether the directory must be narrowed to assistants the session
+			// user can actually use (non-admin, logged-in callers).
+			$filter_by_capability = is_user_logged_in() && ! current_user_can( 'manage_options' );
 
 			$scoped_assistant = $this->apply_token_assistant_scope( 0 );
 			if ( is_wp_error( $scoped_assistant ) ) {
@@ -1610,6 +1727,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$total_assistants = 1;
 				$total_pages      = 1;
 			} else {
+				// Non-admin, session-authenticated users only see assistants whose
+				// effective chat capability they hold ("same credentials or
+				// below"). Admins and external API clients keep the unfiltered
+				// directory — the latter are already scoped by their token or
+				// gated by the rest_enable_assistant_list setting.
+
 				// Build cache key from query parameters (not _fields — filtered after cache retrieval).
 				$cache_params = array_filter(
 					array(
@@ -1623,7 +1746,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 				);
 
-				$cached_data = WP_MCP_AI_REST_Cache::get_response( 'assistants', $cache_params );
+				// Capability-filtered lists are per-user — never serve them from
+				// (or write them to) the shared REST cache.
+				$cached_data = $filter_by_capability ? false : WP_MCP_AI_REST_Cache::get_response( 'assistants', $cache_params );
 
 				if ( false !== $cached_data && is_array( $cached_data ) ) {
 					// Serve from cache.
@@ -1705,6 +1830,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$accessible = $this->validate_assistant_access( $post->ID );
 
 						if ( $accessible instanceof WP_Post ) {
+							if ( $filter_by_capability && ! $this->assistant_visible_to_current_user( $accessible ) ) {
+								continue;
+							}
 							$filtered[] = $accessible;
 						}
 					}
@@ -1717,7 +1845,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$assistants = array_values( $assistants );
 
 					// Compute totals.
-					if ( $per_page > 0 ) {
+					if ( $per_page > 0 && ! $filter_by_capability ) {
 						$total_assistants = absint( $query->found_posts );
 						$total_pages      = (int) ceil( $total_assistants / $per_page );
 					} else {
@@ -1725,17 +1853,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$total_pages      = 1;
 					}
 
-					// Cache the unscoped list for future requests.
-					WP_MCP_AI_REST_Cache::set_response(
-						'assistants',
-						$cache_params,
-						array(
-							'assistants'  => $assistants,
-							'total'       => $total_assistants,
-							'total_pages' => $total_pages,
-						),
-						WP_MCP_AI_REST_Cache::ASSISTANT_LIST_EXPIRATION
-					);
+					// Cache the unscoped list for future requests (capability-filtered
+					// results are per-user and must never enter the shared cache).
+					if ( ! $filter_by_capability ) {
+						WP_MCP_AI_REST_Cache::set_response(
+							'assistants',
+							$cache_params,
+							array(
+								'assistants'  => $assistants,
+								'total'       => $total_assistants,
+								'total_pages' => $total_pages,
+							),
+							WP_MCP_AI_REST_Cache::ASSISTANT_LIST_EXPIRATION
+						);
+					}
 				}
 			}
 
@@ -1763,6 +1894,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$first_assistant = reset( $assistants );
 				if ( is_array( $first_assistant ) && isset( $first_assistant['id'] ) ) {
 					$directory_default = absint( $first_assistant['id'] );
+				}
+			}
+
+			// Capability-filtered directories must never advertise a default the
+			// caller cannot see — fall back to the first visible assistant.
+			if ( $filter_by_capability && $directory_default && ! empty( $assistants ) ) {
+				$visible_ids = wp_list_pluck( $assistants, 'id' );
+				if ( ! in_array( $directory_default, $visible_ids, true ) ) {
+					$directory_default = absint( $visible_ids[0] );
 				}
 			}
 
@@ -2137,6 +2277,35 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Check for WordPress Basic auth (Application Passwords, WP 5.6+).
+			// Application-password requests are authenticated WordPress users and
+			// are CSRF-safe by construction, so they follow the same capability
+			// gates as nonce-authenticated requests without requiring a nonce.
+			$basic_result = $this->validate_wp_basic_auth( $request, 'read' );
+			if ( true === $basic_result ) {
+				$this->set_authenticated_user_id( get_current_user_id() );
+
+				if ( $requires_authenticated_user ) {
+					if ( $capability && ! current_user_can( $capability ) ) { // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Effective capability resolved per request; dynamic by design.
+						return $this->insufficient_permissions_error( $capability );
+					}
+
+					// Enforce capability check for non-admin users; admins bypass.
+					if ( ! current_user_can( 'administrator' ) && ! current_user_can( $capability ) ) { // phpcs:ignore WordPress.WP.Capabilities.RoleFound, WordPress.WP.Capabilities.Undetermined -- Mirrors the nonce path's admin bypass below.
+						return $this->insufficient_permissions_error( $capability );
+					}
+				}
+
+				$rate_limit_check = $this->check_rate_limit( get_current_user_id(), $request->get_method() );
+				if ( is_wp_error( $rate_limit_check ) ) {
+					return $rate_limit_check;
+				}
+
+				return true;
+			} elseif ( is_wp_error( $basic_result ) ) {
+				return $basic_result;
+			}
+
 			$nonce = $request->get_header( 'X-WP-Nonce' );
 			if ( ! $requires_authenticated_user ) {
 				if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
@@ -2210,19 +2379,50 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return bool|WP_Error
 		 */
 		public function permissions_check_assistant_list( WP_REST_Request $request ) {
-			// First check standard permissions.
+			// Authenticated WordPress users with at least 'read' capability always
+			// have access to the assistant directory via the Pro SPA admin interface,
+			// regardless of the global chat capability (which defaults to edit_posts).
+			// Per-assistant visibility is enforced against the required-capability
+			// meta inside handle_assistants_index(). The rest_enable_assistant_list
+			// setting only gates external API access.
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+			if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) && current_user_can( 'read' ) ) {
+				$this->reset_auth_context();
+				$this->set_authenticated_user_id( get_current_user_id() );
+
+				$rate_limit_check = $this->check_rate_limit( get_current_user_id(), $request->get_method() );
+				if ( is_wp_error( $rate_limit_check ) ) {
+					return $rate_limit_check;
+				}
+
+				return true;
+			}
+
+			// WordPress Application Password (Basic auth) requests are real
+			// WordPress users — grant the same directory access as the nonce
+			// path. Basic auth is CSRF-safe by construction (the Authorization
+			// header is never sent cross-origin by browsers), so no nonce is
+			// required.
+			$basic_result = $this->validate_wp_basic_auth( $request, 'read' );
+			if ( true === $basic_result ) {
+				$this->set_authenticated_user_id( get_current_user_id() );
+
+				$rate_limit_check = $this->check_rate_limit( get_current_user_id(), $request->get_method() );
+				if ( is_wp_error( $rate_limit_check ) ) {
+					return $rate_limit_check;
+				}
+
+				return true;
+			} elseif ( is_wp_error( $basic_result ) ) {
+				return $basic_result;
+			}
+
+			// Fall through to the standard authentication gate for external
+			// clients (bearer tokens, mesh keys, guest tokens).
 			$base_check = $this->permissions_check( $request );
 
 			if ( is_wp_error( $base_check ) || ! $base_check ) {
 				return $base_check;
-			}
-
-			// Authenticated WordPress users with at least 'read' capability always
-			// have access to the assistant directory via the Pro SPA admin interface.
-			// The rest_enable_assistant_list setting only gates external API access.
-			$nonce = $request->get_header( 'X-WP-Nonce' );
-			if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) && current_user_can( 'read' ) ) {
-				return true;
 			}
 
 			// Then check if REST assistant listing is enabled.
@@ -6294,12 +6494,39 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'guest_request'    => $is_guest,
 			);
 
+			// Chat profile (2.2.0) — resolved server-side; the gate and the
+			// async executor read it from the context. The client-sent value
+			// is advisory only (see WP_MCP_AI_Chat_Profile_Manager).
+			$context['chat_profile'] = $this->resolve_chat_profile_slug( $user_id, $request );
+
 			if ( ! empty( $auth_context['token_authenticated'] ) ) {
 				$context['token_authenticated'] = true;
 				$context['token_type']          = $auth_context['token_type'];
 
 				if ( ! empty( $auth_context['token_context'] ) ) {
 					$context['token_context'] = $auth_context['token_context'];
+				}
+			}
+
+			// Bridge identity — a bridge or gateway in front of this request
+			// (Zed MCP servers, the fleet gateway, bin/mcp-bridge*.js) may
+			// declare itself via the X-MCP-Bridge-Name header. Purely
+			// informational metadata surfaced by the mcp_server_info tool and
+			// the list_mcp_tools _meta block; it is NEVER used for
+			// authorization or any other security decision.
+			$bridge_name = $request->get_header( 'X-MCP-Bridge-Name' );
+			if ( null !== $bridge_name ) {
+				$bridge_name = sanitize_text_field( wp_unslash( $bridge_name ) );
+				$max_length  = class_exists( 'WP_MCP_AI_Tool_MCP_Server_Info' )
+					? WP_MCP_AI_Tool_MCP_Server_Info::BRIDGE_NAME_MAX_LENGTH
+					: 120;
+				if ( function_exists( 'mb_substr' ) ) {
+					$bridge_name = mb_substr( $bridge_name, 0, $max_length );
+				} else {
+					$bridge_name = substr( $bridge_name, 0, $max_length );
+				}
+				if ( '' !== $bridge_name ) {
+					$context['bridge_name'] = $bridge_name;
 				}
 			}
 
@@ -6376,6 +6603,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			try {
 				try {
 					do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+				} catch ( WP_MCP_AI_Chat_Profile_Blocked $e ) {
+					// Chat-profile gate (2.2.0): the tool is blocked by the
+					// resolved profile — return the 403 envelope so the model
+					// can react without retry-looping.
+					return $e->to_wp_error();
 				} catch ( WP_MCP_AI_Destructive_Confirmation_Required $wp_mcp_ai_gate_exception ) {
 					// Destructive-ops gate: return the confirmation request as a
 					// WP_Error envelope (HTTP 428) through the normal pipeline.
@@ -7756,6 +7988,36 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Fall back to checking the current session user.
 			return current_user_can( 'read_post', $post_id );
+		}
+
+		/**
+		 * Whether the session user is allowed to see (and therefore use) an
+		 * assistant in the directory listing.
+		 *
+		 * Mirrors the effective-capability gate applied to chat requests so the
+		 * directory never advertises assistants the caller cannot chat with.
+		 * Admins see everything; everyone else sees assistants whose effective
+		 * chat capability they hold (empty / 'public' = everyone).
+		 *
+		 * @param WP_Post $post Assistant post object.
+		 * @return bool Whether the assistant is visible to the current user.
+		 */
+		protected function assistant_visible_to_current_user( WP_Post $post ) {
+			if ( current_user_can( 'manage_options' ) ) {
+				return true;
+			}
+
+			$required = function_exists( 'wp_mcp_ai_get_effective_chat_capability' )
+				? wp_mcp_ai_get_effective_chat_capability( $post->ID, 'rest' )
+				: ( function_exists( 'wp_mcp_ai_get_required_chat_capability' )
+					? wp_mcp_ai_get_required_chat_capability( $post->ID, 'rest' )
+					: '' );
+
+			if ( is_string( $required ) && '' !== $required && 'public' !== $required ) {
+				return current_user_can( $required );
+			}
+
+			return true;
 		}
 
 		/**
@@ -12054,6 +12316,36 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Resolve the governing chat profile slug for a tool execution.
+		 *
+		 * The server resolves the profile (user meta → site default → write)
+		 * and treats the client-sent `profile` request param as advisory only:
+		 * a value the requester is not allowed to assume is dropped and logged
+		 * (see WP_MCP_AI_Chat_Profile_Manager::resolve_slug).
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param int                  $user_id User ID (0 = guest).
+		 * @param WP_REST_Request|null $request REST request, when available.
+		 * @return string Empty string when the profile system is unavailable.
+		 */
+		private function resolve_chat_profile_slug( $user_id, $request ) {
+			if ( ! class_exists( 'WP_MCP_AI_Chat_Profile_Manager' ) ) {
+				return '';
+			}
+
+			$requested = null;
+			if ( $request instanceof WP_REST_Request ) {
+				$raw = $request->get_param( 'profile' );
+				if ( is_string( $raw ) && '' !== $raw ) {
+					$requested = $raw;
+				}
+			}
+
+			return WP_MCP_AI_Chat_Profile_Manager::resolve_slug( (int) $user_id, $requested );
+		}
+
+		/**
 		 * Execute a single tool call internally during the agentic loop.
 		 *
 		 * @param array           $tool_call        Tool call object from LLM.
@@ -12204,6 +12496,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'max_iterations'        => $max_iterations,
 				'endpoint'              => $endpoint,
 				'allow_sensitive_tools' => $request && $request->get_param( 'allow_sensitive_tools' ) === true,
+				// Chat profile (2.2.0) — resolved server-side, enforced by the
+				// read-only gate and the async executor.
+				'chat_profile'          => $this->resolve_chat_profile_slug( $user_id, $request ),
 			);
 
 			// Add tool_call_id to context if available.
@@ -12403,6 +12698,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				try {
 					do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
+				} catch ( WP_MCP_AI_Chat_Profile_Blocked $e ) {
+					// Chat-profile gate (2.2.0): blocked by the resolved profile.
+					return $e->to_wp_error();
 				} catch ( WP_MCP_AI_Destructive_Confirmation_Required $wp_mcp_ai_gate_exception ) {
 					// Destructive-ops gate: return the confirmation request as a
 					// WP_Error envelope (HTTP 428) through the normal pipeline.
@@ -12658,7 +12956,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 */
 			$settings       = WP_MCP_AI_Admin_Settings::get_settings();
 			$cors_setting   = isset( $settings['cors_allow_origin'] ) ? $settings['cors_allow_origin'] : 'site';
-			$default_origin = ( 'star' === $cors_setting ) ? '*' : get_site_url();
+			$default_origin = ( 'star' === $cors_setting ) ? '*' : WP_MCP_AI_CORS_Guard::resolve_allow_origin();
 			$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 
 			$response = new WP_REST_Response( null, 204 );
@@ -13452,6 +13750,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					|| $request->get_param( 'stream' );
 
 				if ( $want_stream && method_exists( $orchestrator, 'handleChatStreaming' ) ) {
+					// The OOS engine's SseHandler (lib/core) is framework-agnostic
+					// and emits no CORS headers, and this stream exits before
+					// rest_pre_serve_request runs — so the CORS guard never gets
+					// a chance to add them. Emit them here so cross-origin
+					// browser streams (standalone SPA, MCP apps) pass CORS.
+					if ( class_exists( 'WP_MCP_AI_CORS_Guard' ) ) {
+						WP_MCP_AI_CORS_Guard::emit_stream_cors_headers();
+					}
+
 					// handleChatStreaming() sends SSE headers, status events,
 					// tool-execution progress, text chunks, the final message
 					// event, and the [DONE] marker.  After it returns, the

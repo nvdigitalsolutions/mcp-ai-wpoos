@@ -1,0 +1,96 @@
+[package]
+name = "nvoos-dictate"
+version = "0.1.0"
+description = "NV oOS Dictation — local-first push-to-talk dictation and meeting transcription companion for the NV oOS WordPress plugin."
+authors = ["NV Digital Solutions"]
+edition = "2021"
+license = "MIT"
+rust-version = "1.90"
+repository = "https://github.com/nvdigitalsolutions/mcp-ai-wpoos"
+default-run = "nvoos-dictate"
+
+# Tauri requires a specific crate-type layout for the mobile-ready lib/main split.
+[lib]
+name = "nvoos_dictate_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "nvoos-dictate"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "fs", "io-util"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream", "blocking"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite_migration = "1"
+keyring = "3"
+cpal = "0.15"
+arboard = "3"
+enigo = "0.6"
+dirs = "5"
+chrono = { version = "0.4", features = ["serde"] }
+sha2 = "0.10"
+hex = "0.4"
+base64 = "0.22"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4"] }
+async-trait = "0.1"
+# Audio file decoding (Transcribe file…): pure Rust, no FFmpeg sidecar.
+symphonia = { version = "0.5", default-features = false, features = ["mp3", "aac", "flac", "vorbis", "ogg", "pcm", "wav", "isomp4"] }
+
+# Feature-gated native engines + integrations. The default build ships the
+# deterministic MockEngine so the full pipeline (hotkey -> audio -> cleanup ->
+# paste -> history) is testable without C++ toolchains or model downloads.
+#
+#   cargo build --features parakeet,whisper,mcp
+#
+# NOTE: `sherpa-onnx` is the OFFICIAL k2-fsa Rust API (sherpa-rs is
+# deprecated). Its exact surface must be re-verified against
+# https://docs.rs/sherpa-onnx at first compile of the `parakeet` feature —
+# the calls are isolated in stt/parakeet.rs.
+sherpa-onnx = { version = "1.10", optional = true }
+bzip2 = { version = "0.4", optional = true }
+tar = { version = "0.4", optional = true }
+whisper-rs = { version = "0.16", optional = true }
+ort = { version = "=2.0.0-rc.9", optional = true }
+# Pinned to match ort rc.9 — the caret range on ort-sys otherwise drifts to
+# rc.13, whose bindings are incompatible with the rc.9 high-level API.
+ort-sys = { version = "=2.0.0-rc.9", optional = true }
+rmcp = { version = "3.5", default-features = false, features = ["macros", "server", "transport-io"], optional = true }
+# Direct dependency required by the schemars derive macro (it emits
+# `schemars::…` paths); must match the series rmcp re-exports (schemars 1.x).
+schemars = { version = "1", optional = true }
+silero-vad-rs = { version = "0.1", optional = true }
+ndarray = { version = "0.15", optional = true }
+
+[target.'cfg(windows)'.dependencies]
+# Low-level keyboard hook (WH_KEYBOARD_LL), GetAsyncKeyState fallback, and
+# foreground-window detection for per-app cleanup profiles. See hotkey/.
+windows = { version = "0.58", features = [
+  "Win32_Foundation",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Threading",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[features]
+default = []
+mock = []
+parakeet = ["dep:sherpa-onnx", "dep:tar", "dep:bzip2"]
+whisper = ["dep:whisper-rs"]
+moonshine = ["dep:ort", "dep:ort-sys"]
+mcp = ["dep:rmcp", "dep:schemars"]
+silero-vad = ["dep:silero-vad-rs", "dep:ort-sys", "dep:ndarray"]

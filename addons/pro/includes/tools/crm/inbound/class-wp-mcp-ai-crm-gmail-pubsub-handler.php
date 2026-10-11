@@ -152,13 +152,18 @@ class WP_MCP_AI_CRM_Gmail_PubSub_Handler {
 		// If no connection found, try all Gmail connections.
 		if ( empty( $connection_id ) ) {
 			if ( class_exists( 'WP_MCP_AI_CRM_Gmail_Listener' ) ) {
-				// Trigger immediate poll via Action Scheduler.
-				if ( function_exists( 'as_enqueue_async_action' ) ) {
-					as_enqueue_async_action(
-						WP_MCP_AI_CRM_Gmail_Listener::JOB_HOOK,
-						array(),
-						'crm-gmail'
-					);
+				// Trigger immediate poll via Action Scheduler. Pub/Sub delivers
+				// at-least-once, so skip when an identical poll is already queued.
+				if ( function_exists( 'as_enqueue_async_action' ) && function_exists( 'as_has_scheduled_action' ) ) {
+					$poll_hook = WP_MCP_AI_CRM_Gmail_Listener::JOB_HOOK;
+					$poll_args = array();
+					if ( ! as_has_scheduled_action( $poll_hook, $poll_args ) ) {
+						as_enqueue_async_action(
+							$poll_hook,
+							$poll_args,
+							'crm-gmail'
+						);
+					}
 				}
 			}
 			return new WP_REST_Response(
@@ -175,15 +180,20 @@ class WP_MCP_AI_CRM_Gmail_PubSub_Handler {
 		update_option( $history_option_key, $history_id, false );
 
 		// Trigger immediate import via Action Scheduler for this specific connection.
-		if ( function_exists( 'as_enqueue_async_action' ) ) {
-			as_enqueue_async_action(
-				'wp_mcp_ai_crm_gmail_pubsub_import',
-				array(
-					'connection_id' => $connection_id,
-					'history_id'    => $history_id,
-				),
-				'crm-gmail'
-			);
+		// Pub/Sub delivers at-least-once (redelivering until ack), so dedupe against
+		// an already-queued import for the same connection + historyId.
+		$import_args = array(
+			'connection_id' => $connection_id,
+			'history_id'    => $history_id,
+		);
+		if ( function_exists( 'as_enqueue_async_action' ) && function_exists( 'as_has_scheduled_action' ) ) {
+			if ( ! as_has_scheduled_action( 'wp_mcp_ai_crm_gmail_pubsub_import', $import_args ) ) {
+				as_enqueue_async_action(
+					'wp_mcp_ai_crm_gmail_pubsub_import',
+					$import_args,
+					'crm-gmail'
+				);
+			}
 		}
 
 		// Log the push event.

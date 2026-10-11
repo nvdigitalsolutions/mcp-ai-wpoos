@@ -7,9 +7,6 @@
  * @since 1.0.0
  */
 
-(function(window) {
-	'use strict';
-
 	// Performance optimization settings
 	// These are module-level variables that can be overridden via configure().
 	let DEBUG_MODE = false;

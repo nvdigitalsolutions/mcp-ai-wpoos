@@ -520,7 +520,7 @@ Same process as Gmail (see above). Enable the **Google Drive API** instead of (o
 #### API Reference
 
 - **API Base URL:** `https://www.googleapis.com/drive/v3`
-- **OAuth Scopes:** `https://www.googleapis.com/auth/drive.readonly`, `https://www.googleapis.com/auth/drive.metadata.readonly`
+- **OAuth Scopes:** `https://www.googleapis.com/auth/drive.file` (default, non-sensitive); full-Drive read via the `wp_mcp_ai_google_drive_oauth_scope` filter
 - **API Documentation:** https://developers.google.com/drive/api/v3/reference
 
 #### Available AI Tools

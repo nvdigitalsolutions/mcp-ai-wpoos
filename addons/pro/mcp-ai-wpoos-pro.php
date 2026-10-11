@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.1.97' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.2.4' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -379,6 +379,33 @@ if ( ! function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
 		}
 
 		return isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_get_default_assistant_id' ) ) {
+	/**
+	 * Resolve the site-wide default assistant ID configured in the core settings.
+	 *
+	 * Prefers the core Assistant Service (the canonical resolver), falling back
+	 * to reading the `default_assistant` key from the core settings option when
+	 * the service layer is unavailable (e.g. very early bootstrap).
+	 *
+	 * @since 2.1.1
+	 *
+	 * @return int Default assistant post ID or 0 when none is configured.
+	 */
+	function wp_mcp_ai_pro_get_default_assistant_id() {
+		if ( class_exists( 'WP_MCP_AI_Assistant_Service' ) ) {
+			$service = new WP_MCP_AI_Assistant_Service();
+			$default = $service->get_default_assistant_id();
+			if ( $default ) {
+				return absint( $default );
+			}
+		}
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		return isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 	}
 }
 
@@ -1512,6 +1539,34 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools            = array_merge( $pro_tools, $ezuite_toolkit_tools );
 		}
 
+		// Add Food & Beverage Management Toolkit tools if enabled (Pro feature — F&B ops: metrics, reports, drafts).
+		if ( ! empty( $settings['enable_fnb_toolkit'] ) ) {
+			$fnb_toolkit_tools = array(
+				'WP_MCP_AI_Tool_Fnb_Read_Table'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-read-table.php',
+				'WP_MCP_AI_Tool_Fnb_Search_Table'        => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-search-table.php',
+				'WP_MCP_AI_Tool_Fnb_Calculate_Metric'    => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-calculate-metric.php',
+				'WP_MCP_AI_Tool_Fnb_Compare_Periods'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-compare-periods.php',
+				'WP_MCP_AI_Tool_Fnb_Variance_Split'      => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-variance-split.php',
+				'WP_MCP_AI_Tool_Fnb_Stock_Used'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-stock-used.php',
+				'WP_MCP_AI_Tool_Fnb_Expected_Use'        => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-expected-use.php',
+				'WP_MCP_AI_Tool_Fnb_Stock_Variance'      => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-stock-variance.php',
+				'WP_MCP_AI_Tool_Fnb_Waste_Analysis'      => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-waste-analysis.php',
+				'WP_MCP_AI_Tool_Fnb_Days_Of_Cover'       => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-days-of-cover.php',
+				'WP_MCP_AI_Tool_Fnb_Weekend_Demand'      => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-weekend-demand.php',
+				'WP_MCP_AI_Tool_Fnb_Price_Change_Impact' => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-price-change-impact.php',
+				'WP_MCP_AI_Tool_Fnb_Budget_Variance'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-budget-variance.php',
+				'WP_MCP_AI_Tool_Fnb_Dish_Margin'         => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-dish-margin.php',
+				'WP_MCP_AI_Tool_Fnb_Duplicate_Invoice_Scan' => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-duplicate-invoice-scan.php',
+				'WP_MCP_AI_Tool_Fnb_Labour_Analysis'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-labour-analysis.php',
+				'WP_MCP_AI_Tool_Fnb_Utilities_Per_Cover' => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-utilities-per-cover.php',
+				'WP_MCP_AI_Tool_Fnb_Generate_Report'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-generate-report.php',
+				'WP_MCP_AI_Tool_Fnb_Save_Draft'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-save-draft.php',
+				'WP_MCP_AI_Tool_Fnb_List_Drafts'         => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-list-drafts.php',
+				'WP_MCP_AI_Tool_Fnb_Audit_Log'           => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-audit-log.php',
+			);
+			$pro_tools         = array_merge( $pro_tools, $fnb_toolkit_tools );
+		}
+
 		// Add Shopify Sync Toolkit tools if enabled (Pro feature — Shopify↔WooCommerce sync with CCT cache).
 		if ( ! empty( $settings['enable_shopify_sync_toolkit'] ) && class_exists( 'WooCommerce' ) && class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 			$shopify_sync_toolkit_tools = array(
@@ -1872,6 +1927,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Uninvoiced_Orders'  => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-get-uninvoiced-orders.php',
 				'WP_MCP_AI_Tool_Archive_Documents'      => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-archive-documents.php',
 				'WP_MCP_AI_Tool_Generate_Invoice_Batch' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-invoice-batch.php',
+				// Docs Hub content management tools (v2.10.0) — Markdown/text files
+				// in the standalone Docs Hub plugin's uploads content folder.
+				'WP_MCP_AI_Tool_Docs_Hub_Write_Doc'     => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docs-hub-write-doc.php',
+				'WP_MCP_AI_Tool_Docs_Hub_Read_Doc'      => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docs-hub-read-doc.php',
+				'WP_MCP_AI_Tool_Docs_Hub_List_Docs'     => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docs-hub-list-docs.php',
+				'WP_MCP_AI_Tool_Docs_Hub_Delete_Doc'    => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docs-hub-delete-doc.php',
+				'WP_MCP_AI_Tool_Docs_Hub_Rebuild'       => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docs-hub-rebuild.php',
 			);
 				$pro_tools             = array_merge( $pro_tools, $document_generation_tools );
 		}
@@ -2723,6 +2785,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_uninvoiced_orders']  = 'wordpress-core';
 			$pro_tools['archive_documents']      = 'wordpress-core';
 			$pro_tools['generate_invoice_batch'] = 'wordpress-core';
+			// Docs Hub content management tools (v2.10.0) — require the
+			// standalone Docs Hub plugin for indexing.
+			$pro_tools['docs_hub_write_doc']  = 'wordpress-plugins';
+			$pro_tools['docs_hub_read_doc']   = 'wordpress-plugins';
+			$pro_tools['docs_hub_list_docs']  = 'wordpress-plugins';
+			$pro_tools['docs_hub_delete_doc'] = 'wordpress-plugins';
+			$pro_tools['docs_hub_rebuild']    = 'wordpress-plugins';
 		}
 
 		// Add Architectural Design Toolkit tool mappings if enabled.
@@ -2958,6 +3027,7 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 	$wp_mcp_ai_pro_cli_files = array(
 		'class-wp-mcp-ai-pro-cli-status-command.php',
 		'class-wp-mcp-ai-pro-cli-toolkit-command.php',
+		'class-wp-mcp-ai-pro-cli-fnb-seed-command.php',
 		'class-wp-mcp-ai-pro-cli-connection-command.php',
 		'class-wp-mcp-ai-pro-cli-project-command.php',
 		'class-wp-mcp-ai-pro-cli-task-command.php',

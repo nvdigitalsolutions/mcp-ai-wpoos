@@ -1,0 +1,436 @@
+Date,Month,Ingredient ID,Ingredient,Qty,Unit,Reason,Logged by,Value (LKR)
+2026-07-03 00:00:00,2026-07,ING-013,Beef tenderloin,1.52,kg,Past use-by,Kitchen,7904
+2026-07-05 00:00:00,2026-07,ING-034,Passionfruit,1,each,Wilted,Kitchen,60
+2026-07-07 00:00:00,2026-07,ING-013,Beef tenderloin,1.54,kg,Past use-by,Kitchen,8008
+2026-07-08 00:00:00,2026-07,ING-023,Brioche buns,2,each,Stale,Kitchen,320
+2026-07-08 00:00:00,2026-07,ING-025,Ciabatta and focaccia,2,each,Stale,Kitchen,300
+2026-07-08 00:00:00,2026-07,ING-049,Green apples,2,each,Spoiled,Bar,240
+2026-07-08 00:00:00,2026-07,ING-048,Seasonal fruit for juice,1.35,kg,Spoiled,Bar,675
+2026-07-08 00:00:00,2026-07,ING-033,Limes,10,each,Wilted,Kitchen,250
+2026-07-08 00:00:00,2026-07,ING-035,Potatoes,1.1,kg,Spoiled,Kitchen,352
+2026-07-08 00:00:00,2026-07,ING-001,"Prawns, large",0.27,kg,Over-prepared,Kitchen,1134
+2026-07-08 00:00:00,2026-07,ING-040,Seasonal vegetables,0.54,kg,Wilted,Kitchen,243
+2026-07-08 00:00:00,2026-07,ING-007,"Reef fish, whole",0.21,kg,Over-prepared,Kitchen,462
+2026-07-08 00:00:00,2026-07,ING-024,Flatbread wraps,1,each,Stale,Kitchen,90
+2026-07-09 00:00:00,2026-07,ING-003,Yellowfin tuna loin,0.21,kg,Over-prepared,Kitchen,630
+2026-07-10 00:00:00,2026-07,ING-013,Beef tenderloin,1.91,kg,Past use-by,Kitchen,9932
+2026-07-10 00:00:00,2026-07,ING-010,"Chicken thigh, boneless",0.21,kg,Over-prepared,Kitchen,346.5
+2026-07-10 00:00:00,2026-07,ING-037,Eggplant,0.22,kg,Spoiled,Kitchen,88
+2026-07-11 00:00:00,2026-07,ING-039,Cucumber,0.23,kg,Spoiled,Kitchen,69
+2026-07-11 00:00:00,2026-07,ING-034,Passionfruit,1,each,Spoiled,Kitchen,60
+2026-07-11 00:00:00,2026-07,ING-029,Tomatoes,0.2,kg,Spoiled,Kitchen,90
+2026-07-12 00:00:00,2026-07,ING-002,Barramundi fillet,0.21,kg,Over-prepared,Kitchen,672
+2026-07-13 00:00:00,2026-07,ING-045,Coconuts,1,each,Spoiled,Kitchen,160
+2026-07-13 00:00:00,2026-07,ING-030,Red onions,0.21,kg,Wilted,Kitchen,79.8
+2026-07-14 00:00:00,2026-07,ING-013,Beef tenderloin,1.28,kg,Past use-by,Kitchen,6656
+2026-07-14 00:00:00,2026-07,ING-026,Fresh milk,0.21,L,Past use-by,Bar,94.5
+2026-07-15 00:00:00,2026-07,ING-023,Brioche buns,1,each,Stale,Kitchen,160
+2026-07-15 00:00:00,2026-07,ING-025,Ciabatta and focaccia,1,each,Stale,Kitchen,150
+2026-07-15 00:00:00,2026-07,ING-049,Green apples,1,each,Spoiled,Bar,120
+2026-07-15 00:00:00,2026-07,ING-038,Mixed greens,0.2,kg,Spoiled,Kitchen,320
+2026-07-15 00:00:00,2026-07,ING-048,Seasonal fruit for juice,1.2,kg,Wilted,Bar,600
+2026-07-15 00:00:00,2026-07,ING-033,Limes,8,each,Spoiled,Kitchen,200
+2026-07-15 00:00:00,2026-07,ING-035,Potatoes,0.98,kg,Spoiled,Kitchen,313.6
+2026-07-15 00:00:00,2026-07,ING-001,"Prawns, large",0.27,kg,Past use-by,Kitchen,1134
+2026-07-15 00:00:00,2026-07,ING-040,Seasonal vegetables,0.59,kg,Wilted,Kitchen,265.5
+2026-07-15 00:00:00,2026-07,ING-024,Flatbread wraps,1,each,Stale,Kitchen,90
+2026-07-16 00:00:00,2026-07,ING-034,Passionfruit,1,each,Spoiled,Kitchen,60
+2026-07-17 00:00:00,2026-07,ING-013,Beef tenderloin,1.63,kg,Past use-by,Kitchen,8476
+2026-07-17 00:00:00,2026-07,ING-036,Carrots,0.21,kg,Wilted,Kitchen,73.5
+2026-07-17 00:00:00,2026-07,ING-021,Eggs,1,each,Past use-by,Kitchen,55
+2026-07-17 00:00:00,2026-07,ING-037,Eggplant,0.24,kg,Spoiled,Kitchen,96
+2026-07-18 00:00:00,2026-07,ING-018,Buffalo curd,0.21,kg,Past use-by,Kitchen,189
+2026-07-18 00:00:00,2026-07,ING-004,Baby squid,0.21,kg,Over-prepared,Kitchen,462
+2026-07-18 00:00:00,2026-07,ING-046,Strawberries,0.21,kg,Spoiled,Bar,504
+2026-07-18 00:00:00,2026-07,ING-003,Yellowfin tuna loin,0.22,kg,Past use-by,Kitchen,660
+2026-07-18 00:00:00,2026-07,ING-007,"Reef fish, whole",0.21,kg,Past use-by,Kitchen,462
+2026-07-18 00:00:00,2026-07,ING-071,House white wine,0.2,L,Spillage,Bar,960
+2026-07-19 00:00:00,2026-07,ING-010,"Chicken thigh, boneless",0.21,kg,Past use-by,Kitchen,346.5
+2026-07-19 00:00:00,2026-07,ING-074,Local lager 330ml,1,each,Breakage,Bar,380
+2026-07-19 00:00:00,2026-07,ING-034,Passionfruit,1,each,Spoiled,Kitchen,60
+2026-07-20 00:00:00,2026-07,ING-031,Green chillies,0.2,kg,Wilted,Kitchen,180
+2026-07-21 00:00:00,2026-07,ING-013,Beef tenderloin,1.55,kg,Past use-by,Kitchen,8060
+2026-07-21 00:00:00,2026-07,ING-043,Cabbage,0.21,kg,Wilted,Kitchen,52.5
+2026-07-21 00:00:00,2026-07,ING-039,Cucumber,0.22,kg,Spoiled,Kitchen,66
+2026-07-22 00:00:00,2026-07,ING-002,Barramundi fillet,0.21,kg,Past use-by,Kitchen,672
+2026-07-22 00:00:00,2026-07,ING-023,Brioche buns,2,each,Stale,Kitchen,320
+2026-07-22 00:00:00,2026-07,ING-025,Ciabatta and focaccia,2,each,Stale,Kitchen,300
+2026-07-22 00:00:00,2026-07,ING-049,Green apples,2,each,Spoiled,Bar,240
+2026-07-22 00:00:00,2026-07,ING-048,Seasonal fruit for juice,1.34,kg,Spoiled,Bar,670
+2026-07-22 00:00:00,2026-07,ING-033,Limes,11,each,Wilted,Kitchen,275
+2026-07-22 00:00:00,2026-07,ING-035,Potatoes,1.11,kg,Wilted,Kitchen,355.2
+2026-07-22 00:00:00,2026-07,ING-001,"Prawns, large",0.28,kg,Over-prepared,Kitchen,1176
+2026-07-22 00:00:00,2026-07,ING-040,Seasonal vegetables,0.55,kg,Wilted,Kitchen,247.5
+2026-07-22 00:00:00,2026-07,ING-024,Flatbread wraps,1,each,Stale,Kitchen,90
+2026-07-24 00:00:00,2026-07,ING-013,Beef tenderloin,1.63,kg,Past use-by,Kitchen,8476
+2026-07-24 00:00:00,2026-07,ING-005,Clams,0.2,kg,Past use-by,Kitchen,280
+2026-07-24 00:00:00,2026-07,ING-034,Passionfruit,1,each,Wilted,Kitchen,60
+2026-07-24 00:00:00,2026-07,ING-029,Tomatoes,0.21,kg,Spoiled,Kitchen,94.5
+2026-07-25 00:00:00,2026-07,ING-045,Coconuts,1,each,Wilted,Kitchen,160
+2026-07-25 00:00:00,2026-07,ING-026,Fresh milk,0.2,L,Past use-by,Bar,90
+2026-07-25 00:00:00,2026-07,ING-030,Red onions,0.2,kg,Wilted,Kitchen,76
+2026-07-26 00:00:00,2026-07,ING-038,Mixed greens,0.21,kg,Spoiled,Kitchen,336
+2026-07-27 00:00:00,2026-07,ING-037,Eggplant,0.2,kg,Wilted,Kitchen,80
+2026-07-28 00:00:00,2026-07,ING-013,Beef tenderloin,1.46,kg,Past use-by,Kitchen,7592
+2026-07-28 00:00:00,2026-07,ING-003,Yellowfin tuna loin,0.22,kg,Past use-by,Kitchen,660
+2026-07-28 00:00:00,2026-07,ING-007,"Reef fish, whole",0.21,kg,Over-prepared,Kitchen,462
+2026-07-28 00:00:00,2026-07,ING-073,House red wine,0.21,L,Spillage,Bar,1092
+2026-07-29 00:00:00,2026-07,ING-023,Brioche buns,1,each,Stale,Kitchen,160
+2026-07-29 00:00:00,2026-07,ING-025,Ciabatta and focaccia,1,each,Stale,Kitchen,150
+2026-07-29 00:00:00,2026-07,ING-049,Green apples,1,each,Spoiled,Bar,120
+2026-07-29 00:00:00,2026-07,ING-048,Seasonal fruit for juice,1.29,kg,Wilted,Bar,645
+2026-07-29 00:00:00,2026-07,ING-033,Limes,8,each,Wilted,Kitchen,200
+2026-07-29 00:00:00,2026-07,ING-034,Passionfruit,1,each,Spoiled,Kitchen,60
+2026-07-29 00:00:00,2026-07,ING-035,Potatoes,1.14,kg,Wilted,Kitchen,364.8
+2026-07-29 00:00:00,2026-07,ING-001,"Prawns, large",0.26,kg,Past use-by,Kitchen,1092
+2026-07-29 00:00:00,2026-07,ING-040,Seasonal vegetables,0.55,kg,Spoiled,Kitchen,247.5
+2026-07-29 00:00:00,2026-07,ING-024,Flatbread wraps,1,each,Stale,Kitchen,90
+2026-07-30 00:00:00,2026-07,ING-028,Cherry tomatoes,0.2,kg,Wilted,Kitchen,280
+2026-07-30 00:00:00,2026-07,ING-039,Cucumber,0.21,kg,Spoiled,Kitchen,63
+2026-07-30 00:00:00,2026-07,ING-057,Cooking oil,0.21,L,Spilled,Kitchen,189
+2026-07-30 00:00:00,2026-07,ING-006,Sea bass fillet,0.21,kg,Over-prepared,Kitchen,588
+2026-07-31 00:00:00,2026-07,ING-013,Beef tenderloin,1.45,kg,Past use-by,Kitchen,7540
+2026-07-31 00:00:00,2026-07,ING-010,"Chicken thigh, boneless",0.23,kg,Past use-by,Kitchen,379.5
+2026-07-31 00:00:00,2026-07,ING-021,Eggs,1,each,Past use-by,Kitchen,55
+2026-07-31 00:00:00,2026-07,ING-008,Whitebait,0.2,kg,Over-prepared,Kitchen,240
+2026-08-01 00:00:00,2026-08,ING-072,House rosé wine,0.21,L,Corked,Bar,1008
+2026-08-02 00:00:00,2026-08,ING-027,Coriander,0.2,kg,Spoiled,Kitchen,240
+2026-08-02 00:00:00,2026-08,ING-034,Passionfruit,1,each,Wilted,Kitchen,60
+2026-08-02 00:00:00,2026-08,ING-004,Baby squid,0.2,kg,Over-prepared,Kitchen,440
+2026-08-02 00:00:00,2026-08,ING-029,Tomatoes,0.21,kg,Spoiled,Kitchen,94.5
+2026-08-03 00:00:00,2026-08,ING-002,Barramundi fillet,0.2,kg,Over-prepared,Kitchen,640
+2026-08-03 00:00:00,2026-08,ING-036,Carrots,0.2,kg,Wilted,Kitchen,70
+2026-08-03 00:00:00,2026-08,ING-071,House white wine,0.2,L,Corked,Bar,960
+2026-08-04 00:00:00,2026-08,ING-013,Beef tenderloin,1.91,kg,Past use-by,Kitchen,9932
+2026-08-05 00:00:00,2026-08,ING-023,Brioche buns,2,each,Stale,Kitchen,320
+2026-08-05 00:00:00,2026-08,ING-025,Ciabatta and focaccia,2,each,Stale,Kitchen,300
+2026-08-05 00:00:00,2026-08,ING-037,Eggplant,0.21,kg,Spoiled,Kitchen,84
+2026-08-05 00:00:00,2026-08,ING-049,Green apples,2,each,Spoiled,Bar,240
+2026-08-05 00:00:00,2026-08,ING-048,Seasonal fruit for juice,1.26,kg,Spoiled,Bar,630
+2026-08-05 00:00:00,2026-08,ING-033,Limes,10,each,Spoiled,Kitchen,250
+2026-08-05 00:00:00,2026-08,ING-035,Potatoes,1.04,kg,Wilted,Kitchen,332.8
+2026-08-05 00:00:00,2026-08,ING-001,"Prawns, large",0.29,kg,Over-prepared,Kitchen,1218
+2026-08-05 00:00:00,2026-08,ING-046,Strawberries,0.21,kg,Wilted,Bar,504
+2026-08-05 00:00:00,2026-08,ING-040,Seasonal vegetables,0.6,kg,Wilted,Kitchen,270
+2026-08-05 00:00:00,2026-08,ING-024,Flatbread wraps,1,each,Stale,Kitchen,90
+2026-08-06 00:00:00,2026-08,ING-045,Coconuts,1,each,Wilted,Kitchen,160
+2026-08-06 00:00:00,2026-08,ING-018,Buffalo curd,0.21,kg,Past use-by,Kitchen,189
+2026-08-06 00:00:00,2026-08,ING-032,Garlic,0.2,kg,Spoiled,Kitchen,220
+2026-08-06 00:00:00,2026-08,ING-038,Mixed greens,0.2,kg,Wilted,Kitchen,320
+2026-08-06 00:00:00,2026-08,ING-026,Fresh milk,0.21,L,Past use-by,Bar,94.5
+2026-08-06 00:00:00,2026-08,ING-030,Red onions,0.21,kg,Spoiled,Kitchen,79.8
+2026-08-06 00:00:00,2026-08,ING-003,Yellowfin tuna loin,0.22,kg,Past use-by,Kitchen,660
+2026-08-07 00:00:00,2026-08,ING-013,Beef tenderloin,1.91,kg,Past use-by,Kitchen,9932
+2026-08-07 00:00:00,2026-08,ING-043,Cabbage,0.2,kg,Spoiled,Kitchen,50
+2026-08-07 00:00:00,2026-08,ING-039,Cucumber,0.22,kg,Wilted,Kitchen,66
+2026-08-07 00:00:00,2026-08,ING-074,Local lager 330ml,1,each,Breakage,Bar,380
+2026-08-07 00:00:00,2026-08,ING-034,Passionfruit,1,each,Spoiled,Kitchen,60
+2026-08-07 00:00:00,2026-08,ING-007,"Reef fish, whole",0.21,kg,Past use-by,Kitchen,462
+2026-08-08 00:00:00,2026-08,ING-031,Green chillies,0.2,kg,Spoiled,Kitchen,180
+2026-08-09 00:00:00,2026-08,ING-012,Beef brisket mince,0.2,kg,Over-prepared,Kitchen,560
+2026-08-09 00:00:00,2026-08,ING-010,"Chicken thigh, boneless",0.21,kg,Past use-by,Kitchen,346.5
+2026-08-10 00:00:00,2026-08,ING-034,Passionfruit,1,each,Wilted,Kitchen,60
+2026-08-11 00:00:00,2026-08,ING-013,Beef tenderloin,1.45,kg,Past use-by,Kitchen,7540
+2026-08-12 00:00:00,2026-08,ING-023,Brioche buns,2,each,Stale,Kitchen,320
+2026-08-12 00:00:00,2026-08,ING-025,Ciabatta and focaccia,2,each,Stale,Kitchen,300
+2026-08-12 00:00:00,2026-08,ING-049,Green apples,2,each,Spoiled,Bar,240
+2026-08-12 00:00:00,2026-08,ING-048,Seasonal fruit for juice,1.29,kg,Wilted,Bar,645
+2026-08-12 00:00:00,2026-08,ING-033,Limes,10,each,Wilted,Kitchen,250
+2026-08-12 00:00:00,2026-08,ING-035,Potatoes,1.21,kg,Spoiled,Kitchen,387.2
+2026-08-12 00:00:00,2026-08,ING-001,"Prawns, large",0.33,kg,Past use-by,Kitchen,1386
+2026-08-12 00:00:00,2026-08,ING-040,Seasonal vegetables,0.54,kg,Spoiled,Kitchen,243
+2026-08-12 00:00:00,2026-08,ING-024,Flatbread wraps,2,each,Stale,Kitchen,180
+2026-08-13 00:00:00,2026-08,ING-003,Yellowfin tuna loin,0.21,kg,Over-prepared,Kitchen,630
+2026-08-14 00:00:00,2026-08,ING-013,Beef tenderloin,1.64,kg,Past use-by,Kitchen,8528
+2026-08-14 00:00:00,2026-08,ING-005,Clams,0.21,kg,Past use-by,Kitchen,294
+2026-08-14 00:00:00,2026-08,ING-037,Eggplant,0.21,kg,Spoiled,Kitchen,84
+2026-08-14 00:00:00,2026-08,ING-029,Tomatoes,0.2,kg,Spoiled,Kitchen,90
+2026-08-15 00:00:00,2026-08,ING-002,Barramundi fillet,0.22,kg,Over-prepared,Kitchen,704
+2026-08-15 00:00:00,2026-08,ING-036,Carrots,0.21,kg,Spoiled,Kitchen,73.5
+2026-08-15 00:00:00,2026-08,ING-039,Cucumber,0.24,kg,Wilted,Kitchen,72
+2026-08-15 00:00:00,2026-08,ING-021,Eggs,1,each,Past use-by,Kitchen,55
+2026-08-15 00:00:00,2026-08,ING-038,Mixed greens,0.21,kg,Wilted,Kitchen,336
+2026-08-15 00:00:00,2026-08,ING-034,Passionfruit,1,each,Wilted,Kitchen,60
+2026-08-16 00:00:00,2026-08,ING-026,Fresh milk,0.21,L,Past use-by,Bar,94.5
+2026-08-16 00:00:00,2026-08,ING-014,"Mutton, boneless",0.2,kg,Over-prepared,Kitchen,720
+2026-08-16 00:00:00,2026-08,ING-004,Baby squid,0.2,kg,Past use-by,Kitchen,440
+2026-08-16 00:00:00,2026-08,ING-007,"Reef fish, whole",0.22,kg,Over-prepared,Kitchen,484
+2026-08-17 00:00:00,2026-08,ING-015,Butter,0.2,kg,Past use-by,Kitchen,640
+2026-08-17 00:00:00,2026-08,ING-030,Red onions,0.22,kg,Spoiled,Kitchen,83.6
+2026-08-18 00:00:00,2026-08,ING-013,Beef tenderloin,1.27,kg,Past use-by,Kitchen,6604
+2026-08-19 00:00:00,2026-08,ING-023,Brioche buns,2,each,Stale,Kitchen,320
+2026-08-19 00:00:00,2026-08,ING-025,Ciabatta and focaccia,1,each,Stale,Kitchen,150
+2026-08-19 00:00:00,2026-08,ING-049,Green apples,1,each,Spoiled,Bar,120
+2026-08-19 00:00:00,2026-08,ING-075,Imported beer 330ml,1,each,Breakage,Bar,620
+2026-08-19 00:00:00,2026-08,ING-048,Seasonal fruit for juice,1.43,kg,Wilted,Bar,715
+2026-08-19 00:00:00,2026-08,ING-033,Limes,11,each,Spoiled,Kitchen,275
+2026-08-19 00:00:00,2026-08,ING-034,Passionfruit,1,each,Spoiled,Kitchen,60
+2026-08-19 00:00:00,2026-08,ING-035,Potatoes,1.22,kg,Spoiled,Kitchen,390.4
+2026-08-19 00:00:00,2026-08,ING-001,"Prawns, large",0.37,kg,Over-prepared,Kitchen,1720.5
+2026-08-19 00:00:00,2026-08,ING-051,Samba rice,0.2,kg,Spilled,Kitchen,60
+2026-08-19 00:00:00,2026-08,ING-040,Seasonal vegetables,0.62,kg,Spoiled,Kitchen,279
+2026-08-20 00:00:00,2026-08,ING-043,Cabbage,0.21,kg,Wilted,Kitchen,52.5
+2026-08-20 00:00:00,2026-08,ING-028,Cherry tomatoes,0.2,kg,Spoiled,Kitchen,280
+2026-08-20 00:00:00,2026-08,ING-050,Jasmine rice,0.2,kg,Spilled,Kitchen,130
+2026-08-20 00:00:00,2026-08,ING-003,Yellowfin tuna loin,0.21,kg,Past use-by,Kitchen,630
+2026-08-20 00:00:00,2026-08,ING-071,House white wine,0.2,L,Corked,Bar,960
+2026-08-20 00:00:00,2026-08,ING-024,Flatbread wraps,1,each,Stale,Kitchen,90
+2026-08-21 00:00:00,2026-08,ING-013,Beef tenderloin,1.64,kg,Past use-by,Kitchen,8528
+2026-08-21 00:00:00,2026-08,ING-010,"Chicken thigh, boneless",0.21,kg,Past use-by,Kitchen,346.5
+2026-08-21 00:00:00,2026-08,ING-045,Coconuts,1,each,Spoiled,Kitchen,160
+2026-08-22 00:00:00,2026-08,ING-011,Chicken skin,0.2,kg,Over-prepared,Kitchen,90
+2026-08-22 00:00:00,2026-08,ING-039,Cucumber,0.21,kg,Wilted,Kitchen,63
+2026-08-22 00:00:00,2026-08,ING-018,Buffalo curd,0.21,kg,Past use-by,Kitchen,189
+2026-08-22 00:00:00,2026-08,ING-037,Eggplant,0.26,kg,Spoiled,Kitchen,104
+2026-08-23 00:00:00,2026-08,ING-006,Sea bass fillet,0.2,kg,Past use-by,Kitchen,560
+2026-08-23 00:00:00,2026-08,ING-046,Strawberries,0.21,kg,Spoiled,Bar,504
+2026-08-24 00:00:00,2026-08,ING-002,Barramundi fillet,0.32,kg,Over-prepared,Kitchen,1024
+2026-08-24 00:00:00,2026-08,ING-031,Green chillies,0.2,kg,Spoiled,Kitchen,180
+2026-08-24 00:00:00,2026-08,ING-038,Mixed greens,0.21,kg,Wilted,Kitchen,336
+2026-08-24 00:00:00,2026-08,ING-034,Passionfruit,1,each,Spoiled,Kitchen,60
+2026-08-24 00:00:00,2026-08,ING-029,Tomatoes,0.22,kg,Spoiled,Kitchen,99
+2026-08-25 00:00:00,2026-08,ING-013,Beef tenderloin,1.55,kg,Past use-by,Kitchen,8060
+2026-08-25 00:00:00,2026-08,ING-074,Local lager 330ml,1,each,Breakage,Bar,380
+2026-08-26 00:00:00,2026-08,ING-023,Brioche buns,2,each,Stale,Kitchen,320
+2026-08-26 00:00:00,2026-08,ING-025,Ciabatta and focaccia,2,each,Stale,Kitchen,300
+2026-08-26 00:00:00,2026-08,ING-027,Coriander,0.22,kg,Wilted,Kitchen,264
+2026-08-26 00:00:00,2026-08,ING-021,Eggs,1,each,Past use-by,Kitchen,55
+2026-08-26 00:00:00,2026-08,ING-049,Green apples,2,each,Wilted,Bar,240
+2026-08-26 00:00:00,2026-08,ING-048,Seasonal fruit for juice,1.39,kg,Wilted,Bar,695
+2026-08-26 00:00:00,2026-08,ING-033,Limes,10,each,Spoiled,Kitchen,250
+2026-08-26 00:00:00,2026-08,ING-035,Potatoes,1.21,kg,Spoiled,Kitchen,387.2
+2026-08-26 00:00:00,2026-08,ING-001,"Prawns, large",0.33,kg,Over-prepared,Kitchen,1534.5
+2026-08-26 00:00:00,2026-08,ING-076,Soft drinks,1,each,Breakage,Bar,110
+2026-08-26 00:00:00,2026-08,ING-040,Seasonal vegetables,0.64,kg,Spoiled,Kitchen,288
+2026-08-26 00:00:00,2026-08,ING-007,"Reef fish, whole",0.22,kg,Over-prepared,Kitchen,484
+2026-08-26 00:00:00,2026-08,ING-073,House red wine,0.2,L,Corked,Bar,1040
+2026-08-27 00:00:00,2026-08,ING-002,Barramundi fillet,0.5,kg,Over-prepared,Kitchen,1600
+2026-08-27 00:00:00,2026-08,ING-026,Fresh milk,0.2,L,Past use-by,Bar,90
+2026-08-27 00:00:00,2026-08,ING-041,Mushrooms,0.2,kg,Spoiled,Kitchen,360
+2026-08-27 00:00:00,2026-08,ING-057,Cooking oil,0.21,L,Spilled,Kitchen,189
+2026-08-27 00:00:00,2026-08,ING-034,Passionfruit,2,each,Wilted,Kitchen,120
+2026-08-27 00:00:00,2026-08,ING-044,Pomegranate,1,each,Wilted,Kitchen,450
+2026-08-27 00:00:00,2026-08,ING-003,Yellowfin tuna loin,0.21,kg,Over-prepared,Kitchen,630
+2026-08-27 00:00:00,2026-08,ING-024,Flatbread wraps,1,each,Stale,Kitchen,90
+2026-08-28 00:00:00,2026-08,ING-013,Beef tenderloin,1.63,kg,Past use-by,Kitchen,8476
+2026-08-28 00:00:00,2026-08,ING-036,Carrots,0.24,kg,Wilted,Kitchen,84
+2026-08-28 00:00:00,2026-08,ING-004,Baby squid,0.2,kg,Over-prepared,Kitchen,440
+2026-08-29 00:00:00,2026-08,ING-028,Cherry tomatoes,0.21,kg,Spoiled,Kitchen,294
+2026-08-29 00:00:00,2026-08,ING-010,"Chicken thigh, boneless",0.21,kg,Over-prepared,Kitchen,346.5
+2026-08-29 00:00:00,2026-08,ING-030,Red onions,0.23,kg,Wilted,Kitchen,87.4
+2026-08-29 00:00:00,2026-08,ING-072,House rosé wine,0.2,L,Spillage,Bar,960
+2026-08-30 00:00:00,2026-08,ING-002,Barramundi fillet,0.54,kg,Over-prepared,Kitchen,1728
+2026-08-30 00:00:00,2026-08,ING-005,Clams,0.22,kg,Past use-by,Kitchen,308
+2026-08-30 00:00:00,2026-08,ING-045,Coconuts,1,each,Wilted,Kitchen,160
+2026-08-30 00:00:00,2026-08,ING-039,Cucumber,0.22,kg,Wilted,Kitchen,66
+2026-08-30 00:00:00,2026-08,ING-034,Passionfruit,4,each,Wilted,Kitchen,240
+2026-08-31 00:00:00,2026-08,ING-037,Eggplant,0.2,kg,Spoiled,Kitchen,80
+2026-09-01 00:00:00,2026-09,ING-013,Beef tenderloin,1.46,kg,Past use-by,Kitchen,7592
+2026-09-01 00:00:00,2026-09,ING-027,Coriander,0.2,kg,Spoiled,Kitchen,240
+2026-09-01 00:00:00,2026-09,ING-029,Tomatoes,0.21,kg,Wilted,Kitchen,94.5
+2026-09-01 00:00:00,2026-09,ING-008,Whitebait,0.2,kg,Over-prepared,Kitchen,240
+2026-09-02 00:00:00,2026-09,ING-002,Barramundi fillet,0.61,kg,Over-prepared,Kitchen,1952
+2026-09-02 00:00:00,2026-09,ING-065,Bar syrups and infusions,0.2,L,Spilled,Bar,240
+2026-09-02 00:00:00,2026-09,ING-023,Brioche buns,2,each,Stale,Kitchen,320
+2026-09-02 00:00:00,2026-09,ING-025,Ciabatta and focaccia,2,each,Stale,Kitchen,300
+2026-09-02 00:00:00,2026-09,ING-049,Green apples,2,each,Spoiled,Bar,240
+2026-09-02 00:00:00,2026-09,ING-048,Seasonal fruit for juice,1.62,kg,Wilted,Bar,810
+2026-09-02 00:00:00,2026-09,ING-033,Limes,13,each,Spoiled,Kitchen,325
+2026-09-02 00:00:00,2026-09,ING-034,Passionfruit,4,each,Wilted,Kitchen,240
+2026-09-02 00:00:00,2026-09,ING-035,Potatoes,1.32,kg,Spoiled,Kitchen,422.4
+2026-09-02 00:00:00,2026-09,ING-001,"Prawns, large",0.33,kg,Past use-by,Kitchen,1534.5
+2026-09-02 00:00:00,2026-09,ING-040,Seasonal vegetables,0.63,kg,Wilted,Kitchen,283.5
+2026-09-03 00:00:00,2026-09,ING-028,Cherry tomatoes,0.2,kg,Wilted,Kitchen,280
+2026-09-03 00:00:00,2026-09,ING-038,Mixed greens,0.21,kg,Wilted,Kitchen,336
+2026-09-03 00:00:00,2026-09,ING-024,Flatbread wraps,1,each,Stale,Kitchen,90
+2026-09-04 00:00:00,2026-09,ING-013,Beef tenderloin,1.91,kg,Past use-by,Kitchen,9932
+2026-09-04 00:00:00,2026-09,ING-043,Cabbage,0.2,kg,Spoiled,Kitchen,50
+2026-09-04 00:00:00,2026-09,ING-032,Garlic,0.21,kg,Spoiled,Kitchen,231
+2026-09-04 00:00:00,2026-09,ING-003,Yellowfin tuna loin,0.23,kg,Past use-by,Kitchen,793.5
+2026-09-05 00:00:00,2026-09,ING-002,Barramundi fillet,0.76,kg,Past use-by,Kitchen,2432
+2026-09-05 00:00:00,2026-09,ING-034,Passionfruit,4,each,Spoiled,Kitchen,240
+2026-09-05 00:00:00,2026-09,ING-007,"Reef fish, whole",0.2,kg,Past use-by,Kitchen,440
+2026-09-05 00:00:00,2026-09,ING-071,House white wine,0.2,L,Spillage,Bar,960
+2026-09-06 00:00:00,2026-09,ING-010,"Chicken thigh, boneless",0.21,kg,Past use-by,Kitchen,346.5
+2026-09-06 00:00:00,2026-09,ING-027,Coriander,0.24,kg,Spoiled,Kitchen,288
+2026-09-06 00:00:00,2026-09,ING-039,Cucumber,0.21,kg,Wilted,Kitchen,63
+2026-09-06 00:00:00,2026-09,ING-077,King coconuts,1,each,Breakage,Bar,120
+2026-09-06 00:00:00,2026-09,ING-026,Fresh milk,0.22,L,Past use-by,Bar,99
+2026-09-07 00:00:00,2026-09,ING-028,Cherry tomatoes,0.21,kg,Spoiled,Kitchen,294
+2026-09-07 00:00:00,2026-09,ING-018,Buffalo curd,0.2,kg,Past use-by,Kitchen,180
+2026-09-07 00:00:00,2026-09,ING-021,Eggs,1,each,Past use-by,Kitchen,55
+2026-09-08 00:00:00,2026-09,ING-002,Barramundi fillet,0.75,kg,Past use-by,Kitchen,2400
+2026-09-08 00:00:00,2026-09,ING-013,Beef tenderloin,1.27,kg,Past use-by,Kitchen,6604
+2026-09-08 00:00:00,2026-09,ING-045,Coconuts,1,each,Spoiled,Kitchen,160
+2026-09-08 00:00:00,2026-09,ING-037,Eggplant,0.21,kg,Spoiled,Kitchen,84
+2026-09-08 00:00:00,2026-09,ING-034,Passionfruit,4,each,Spoiled,Kitchen,240
+2026-09-08 00:00:00,2026-09,ING-046,Strawberries,0.21,kg,Wilted,Bar,504
+2026-09-09 00:00:00,2026-09,ING-023,Brioche buns,2,each,Stale,Kitchen,320
+2026-09-09 00:00:00,2026-09,ING-036,Carrots,0.21,kg,Spoiled,Kitchen,73.5
+2026-09-09 00:00:00,2026-09,ING-025,Ciabatta and focaccia,2,each,Stale,Kitchen,300
+2026-09-09 00:00:00,2026-09,ING-049,Green apples,2,each,Spoiled,Bar,240
+2026-09-09 00:00:00,2026-09,ING-048,Seasonal fruit for juice,1.37,kg,Spoiled,Bar,685
+2026-09-09 00:00:00,2026-09,ING-074,Local lager 330ml,1,each,Breakage,Bar,380
+2026-09-09 00:00:00,2026-09,ING-033,Limes,10,each,Wilted,Kitchen,250
+2026-09-09 00:00:00,2026-09,ING-035,Potatoes,1.2,kg,Wilted,Kitchen,384
+2026-09-09 00:00:00,2026-09,ING-001,"Prawns, large",0.33,kg,Past use-by,Kitchen,1683
+2026-09-09 00:00:00,2026-09,ING-030,Red onions,0.21,kg,Spoiled,Kitchen,79.8
+2026-09-09 00:00:00,2026-09,ING-040,Seasonal vegetables,0.59,kg,Wilted,Kitchen,265.5
+2026-09-10 00:00:00,2026-09,ING-031,Green chillies,0.21,kg,Wilted,Kitchen,189
+2026-09-10 00:00:00,2026-09,ING-004,Baby squid,0.2,kg,Over-prepared,Kitchen,440
+2026-09-10 00:00:00,2026-09,ING-024,Flatbread wraps,2,each,Stale,Kitchen,180
+2026-09-11 00:00:00,2026-09,ING-002,Barramundi fillet,0.79,kg,Over-prepared,Kitchen,2528
+2026-09-11 00:00:00,2026-09,ING-012,Beef brisket mince,0.21,kg,Over-prepared,Kitchen,588
+2026-09-11 00:00:00,2026-09,ING-013,Beef tenderloin,1.45,kg,Past use-by,Kitchen,7540
+2026-09-11 00:00:00,2026-09,ING-028,Cherry tomatoes,0.23,kg,Wilted,Kitchen,322
+2026-09-11 00:00:00,2026-09,ING-027,Coriander,0.24,kg,Spoiled,Kitchen,288
+2026-09-11 00:00:00,2026-09,ING-034,Passionfruit,4,each,Wilted,Kitchen,240
+2026-09-11 00:00:00,2026-09,ING-003,Yellowfin tuna loin,0.23,kg,Over-prepared,Kitchen,793.5
+2026-09-12 00:00:00,2026-09,ING-007,"Reef fish, whole",0.23,kg,Over-prepared,Kitchen,506
+2026-09-13 00:00:00,2026-09,ING-038,Mixed greens,0.22,kg,Spoiled,Kitchen,352
+2026-09-13 00:00:00,2026-09,ING-016,Parmesan,0.2,kg,Past use-by,Kitchen,2100
+2026-09-13 00:00:00,2026-09,ING-061,House spices and sauces,0.2,kg,Spilled,Kitchen,300
+2026-09-13 00:00:00,2026-09,ING-029,Tomatoes,0.24,kg,Wilted,Kitchen,108
+2026-09-14 00:00:00,2026-09,ING-002,Barramundi fillet,0.85,kg,Over-prepared,Kitchen,2720
+2026-09-14 00:00:00,2026-09,ING-039,Cucumber,0.21,kg,Spoiled,Kitchen,63
+2026-09-14 00:00:00,2026-09,ING-034,Passionfruit,5,each,Spoiled,Kitchen,300
+2026-09-14 00:00:00,2026-09,ING-006,Sea bass fillet,0.21,kg,Past use-by,Kitchen,588
+2026-09-15 00:00:00,2026-09,ING-013,Beef tenderloin,1.73,kg,Past use-by,Kitchen,8996
+2026-09-15 00:00:00,2026-09,ING-027,Coriander,0.22,kg,Wilted,Kitchen,264
+2026-09-15 00:00:00,2026-09,ING-026,Fresh milk,0.21,L,Past use-by,Bar,94.5
+2026-09-16 00:00:00,2026-09,ING-023,Brioche buns,3,each,Stale,Kitchen,480
+2026-09-16 00:00:00,2026-09,ING-043,Cabbage,0.2,kg,Spoiled,Kitchen,50
+2026-09-16 00:00:00,2026-09,ING-028,Cherry tomatoes,0.3,kg,Wilted,Kitchen,420
+2026-09-16 00:00:00,2026-09,ING-010,"Chicken thigh, boneless",0.23,kg,Over-prepared,Kitchen,379.5
+2026-09-16 00:00:00,2026-09,ING-025,Ciabatta and focaccia,3,each,Stale,Kitchen,450
+2026-09-16 00:00:00,2026-09,ING-005,Clams,0.21,kg,Over-prepared,Kitchen,294
+2026-09-16 00:00:00,2026-09,ING-049,Green apples,3,each,Wilted,Bar,360
+2026-09-16 00:00:00,2026-09,ING-048,Seasonal fruit for juice,1.55,kg,Spoiled,Bar,775
+2026-09-16 00:00:00,2026-09,ING-033,Limes,13,each,Spoiled,Kitchen,325
+2026-09-16 00:00:00,2026-09,ING-035,Potatoes,1.41,kg,Wilted,Kitchen,451.2
+2026-09-16 00:00:00,2026-09,ING-001,"Prawns, large",0.42,kg,Past use-by,Kitchen,2142
+2026-09-16 00:00:00,2026-09,ING-022,Quail eggs,1,each,Past use-by,Kitchen,30
+2026-09-16 00:00:00,2026-09,ING-040,Seasonal vegetables,0.74,kg,Wilted,Kitchen,333
+2026-09-16 00:00:00,2026-09,ING-073,House red wine,0.2,L,Corked,Bar,1040
+2026-09-17 00:00:00,2026-09,ING-002,Barramundi fillet,0.74,kg,Past use-by,Kitchen,2368
+2026-09-17 00:00:00,2026-09,ING-045,Coconuts,1,each,Spoiled,Kitchen,160
+2026-09-17 00:00:00,2026-09,ING-037,Eggplant,0.21,kg,Spoiled,Kitchen,84
+2026-09-17 00:00:00,2026-09,ING-034,Passionfruit,4,each,Wilted,Kitchen,240
+2026-09-17 00:00:00,2026-09,ING-024,Flatbread wraps,2,each,Stale,Kitchen,180
+2026-09-18 00:00:00,2026-09,ING-013,Beef tenderloin,1.82,kg,Past use-by,Kitchen,9464
+2026-09-18 00:00:00,2026-09,ING-030,Red onions,0.21,kg,Spoiled,Kitchen,79.8
+2026-09-18 00:00:00,2026-09,ING-003,Yellowfin tuna loin,0.24,kg,Over-prepared,Kitchen,828
+2026-09-19 00:00:00,2026-09,ING-028,Cherry tomatoes,0.4,kg,Wilted,Kitchen,560
+2026-09-19 00:00:00,2026-09,ING-027,Coriander,0.29,kg,Spoiled,Kitchen,348
+2026-09-19 00:00:00,2026-09,ING-007,"Reef fish, whole",0.21,kg,Over-prepared,Kitchen,462
+2026-09-19 00:00:00,2026-09,ING-071,House white wine,0.22,L,Spillage,Bar,1056
+2026-09-20 00:00:00,2026-09,ING-002,Barramundi fillet,1.23,kg,Over-prepared,Kitchen,3936
+2026-09-20 00:00:00,2026-09,ING-078,Coffee beans,0.2,kg,Spilled,Bar,960
+2026-09-20 00:00:00,2026-09,ING-021,Eggs,1,each,Past use-by,Kitchen,55
+2026-09-20 00:00:00,2026-09,ING-057,Cooking oil,0.21,L,Spilled,Kitchen,189
+2026-09-20 00:00:00,2026-09,ING-034,Passionfruit,7,each,Wilted,Kitchen,420
+2026-09-20 00:00:00,2026-09,ING-004,Baby squid,0.2,kg,Over-prepared,Kitchen,440
+2026-09-20 00:00:00,2026-09,ING-029,Tomatoes,0.21,kg,Spoiled,Kitchen,94.5
+2026-09-20 00:00:00,2026-09,ING-072,House rosé wine,0.21,L,Corked,Bar,1008
+2026-09-21 00:00:00,2026-09,ING-036,Carrots,0.2,kg,Spoiled,Kitchen,70
+2026-09-21 00:00:00,2026-09,ING-039,Cucumber,0.21,kg,Wilted,Kitchen,63
+2026-09-21 00:00:00,2026-09,ING-018,Buffalo curd,0.21,kg,Past use-by,Kitchen,189
+2026-09-22 00:00:00,2026-09,ING-013,Beef tenderloin,1.27,kg,Past use-by,Kitchen,6604
+2026-09-22 00:00:00,2026-09,ING-038,Mixed greens,0.21,kg,Spoiled,Kitchen,336
+2026-09-22 00:00:00,2026-09,ING-014,"Mutton, boneless",0.2,kg,Over-prepared,Kitchen,720
+2026-09-22 00:00:00,2026-09,ING-046,Strawberries,0.2,kg,Spoiled,Bar,480
+2026-09-23 00:00:00,2026-09,ING-002,Barramundi fillet,0.84,kg,Past use-by,Kitchen,2688
+2026-09-23 00:00:00,2026-09,ING-023,Brioche buns,3,each,Stale,Kitchen,480
+2026-09-23 00:00:00,2026-09,ING-015,Butter,0.2,kg,Past use-by,Kitchen,640
+2026-09-23 00:00:00,2026-09,ING-028,Cherry tomatoes,0.23,kg,Spoiled,Kitchen,322
+2026-09-23 00:00:00,2026-09,ING-010,"Chicken thigh, boneless",0.26,kg,Over-prepared,Kitchen,429
+2026-09-23 00:00:00,2026-09,ING-025,Ciabatta and focaccia,2,each,Stale,Kitchen,300
+2026-09-23 00:00:00,2026-09,ING-049,Green apples,2,each,Wilted,Bar,240
+2026-09-23 00:00:00,2026-09,ING-048,Seasonal fruit for juice,1.65,kg,Wilted,Bar,825
+2026-09-23 00:00:00,2026-09,ING-033,Limes,14,each,Spoiled,Kitchen,350
+2026-09-23 00:00:00,2026-09,ING-034,Passionfruit,4,each,Wilted,Kitchen,240
+2026-09-23 00:00:00,2026-09,ING-035,Potatoes,1.56,kg,Wilted,Kitchen,499.2
+2026-09-23 00:00:00,2026-09,ING-001,"Prawns, large",0.4,kg,Past use-by,Kitchen,2040
+2026-09-23 00:00:00,2026-09,ING-051,Samba rice,0.2,kg,Spilled,Kitchen,60
+2026-09-23 00:00:00,2026-09,ING-040,Seasonal vegetables,0.73,kg,Spoiled,Kitchen,328.5
+2026-09-24 00:00:00,2026-09,ING-027,Coriander,0.24,kg,Spoiled,Kitchen,288
+2026-09-24 00:00:00,2026-09,ING-037,Eggplant,0.28,kg,Wilted,Kitchen,112
+2026-09-24 00:00:00,2026-09,ING-031,Green chillies,0.21,kg,Spoiled,Kitchen,189
+2026-09-24 00:00:00,2026-09,ING-074,Local lager 330ml,1,each,Breakage,Bar,380
+2026-09-24 00:00:00,2026-09,ING-026,Fresh milk,0.2,L,Past use-by,Bar,90
+2026-09-24 00:00:00,2026-09,ING-024,Flatbread wraps,1,each,Stale,Kitchen,90
+2026-09-25 00:00:00,2026-09,ING-013,Beef tenderloin,1.73,kg,Past use-by,Kitchen,8996
+2026-09-25 00:00:00,2026-09,ING-053,Linguine,0.2,kg,Spilled,Kitchen,320
+2026-09-25 00:00:00,2026-09,ING-069,Tequila,0.2,L,Spillage,Bar,4628.571429
+2026-09-25 00:00:00,2026-09,ING-003,Yellowfin tuna loin,0.26,kg,Over-prepared,Kitchen,897
+2026-09-26 00:00:00,2026-09,ING-002,Barramundi fillet,0.74,kg,Over-prepared,Kitchen,2368
+2026-09-26 00:00:00,2026-09,ING-054,Cashews,0.2,kg,Spilled,Kitchen,760
+2026-09-26 00:00:00,2026-09,ING-028,Cherry tomatoes,0.24,kg,Spoiled,Kitchen,336
+2026-09-26 00:00:00,2026-09,ING-034,Passionfruit,4,each,Wilted,Kitchen,240
+2026-09-26 00:00:00,2026-09,ING-030,Red onions,0.22,kg,Spoiled,Kitchen,83.6
+2026-09-27 00:00:00,2026-09,ING-045,Coconuts,1,each,Wilted,Kitchen,160
+2026-09-27 00:00:00,2026-09,ING-066,Rum,0.2,L,Spillage,Bar,1857.142857
+2026-09-27 00:00:00,2026-09,ING-008,Whitebait,0.2,kg,Past use-by,Kitchen,240
+2026-09-28 00:00:00,2026-09,ING-027,Coriander,0.21,kg,Spoiled,Kitchen,252
+2026-09-28 00:00:00,2026-09,ING-029,Tomatoes,0.21,kg,Wilted,Kitchen,94.5
+2026-09-28 00:00:00,2026-09,ING-007,"Reef fish, whole",0.21,kg,Over-prepared,Kitchen,462
+2026-09-29 00:00:00,2026-09,ING-068,Coconut arrack,0.2,L,Spillage,Bar,906.6666667
+2026-09-29 00:00:00,2026-09,ING-002,Barramundi fillet,0.55,kg,Past use-by,Kitchen,1760
+2026-09-29 00:00:00,2026-09,ING-013,Beef tenderloin,1.36,kg,Past use-by,Kitchen,7072
+2026-09-29 00:00:00,2026-09,ING-043,Cabbage,0.21,kg,Spoiled,Kitchen,52.5
+2026-09-29 00:00:00,2026-09,ING-039,Cucumber,0.21,kg,Spoiled,Kitchen,63
+2026-09-29 00:00:00,2026-09,ING-021,Eggs,1,each,Past use-by,Kitchen,55
+2026-09-29 00:00:00,2026-09,ING-034,Passionfruit,4,each,Wilted,Kitchen,240
+2026-09-30 00:00:00,2026-09,ING-023,Brioche buns,2,each,Stale,Kitchen,320
+2026-09-30 00:00:00,2026-09,ING-028,Cherry tomatoes,0.2,kg,Spoiled,Kitchen,280
+2026-09-30 00:00:00,2026-09,ING-010,"Chicken thigh, boneless",0.21,kg,Over-prepared,Kitchen,346.5
+2026-09-30 00:00:00,2026-09,ING-025,Ciabatta and focaccia,2,each,Stale,Kitchen,300
+2026-09-30 00:00:00,2026-09,ING-049,Green apples,2,each,Spoiled,Bar,240
+2026-09-30 00:00:00,2026-09,ING-075,Imported beer 330ml,1,each,Breakage,Bar,620
+2026-09-30 00:00:00,2026-09,ING-048,Seasonal fruit for juice,1.66,kg,Wilted,Bar,830
+2026-09-30 00:00:00,2026-09,ING-033,Limes,11,each,Wilted,Kitchen,275
+2026-09-30 00:00:00,2026-09,ING-035,Potatoes,1.26,kg,Spoiled,Kitchen,403.2
+2026-09-30 00:00:00,2026-09,ING-001,"Prawns, large",0.4,kg,Over-prepared,Kitchen,2040
+2026-09-30 00:00:00,2026-09,ING-040,Seasonal vegetables,0.7,kg,Spoiled,Kitchen,315
+2026-10-01 00:00:00,2026-10,ING-032,Garlic,0.2,kg,Spoiled,Kitchen,220
+2026-10-01 00:00:00,2026-10,ING-038,Mixed greens,0.21,kg,Wilted,Kitchen,336
+2026-10-01 00:00:00,2026-10,ING-050,Jasmine rice,0.2,kg,Spilled,Kitchen,130
+2026-10-01 00:00:00,2026-10,ING-024,Flatbread wraps,2,each,Stale,Kitchen,180
+2026-10-02 00:00:00,2026-10,ING-002,Barramundi fillet,0.99,kg,Over-prepared,Kitchen,3168
+2026-10-02 00:00:00,2026-10,ING-013,Beef tenderloin,1.55,kg,Past use-by,Kitchen,8060
+2026-10-02 00:00:00,2026-10,ING-011,Chicken skin,0.2,kg,Past use-by,Kitchen,90
+2026-10-02 00:00:00,2026-10,ING-005,Clams,0.21,kg,Past use-by,Kitchen,294
+2026-10-02 00:00:00,2026-10,ING-027,Coriander,0.23,kg,Spoiled,Kitchen,276
+2026-10-02 00:00:00,2026-10,ING-034,Passionfruit,7,each,Spoiled,Kitchen,420
+2026-10-02 00:00:00,2026-10,ING-003,Yellowfin tuna loin,0.22,kg,Past use-by,Kitchen,759
+2026-10-03 00:00:00,2026-10,ING-037,Eggplant,0.23,kg,Spoiled,Kitchen,92
+2026-10-03 00:00:00,2026-10,ING-067,Gin,0.2,L,Spillage,Bar,2800
+2026-10-03 00:00:00,2026-10,ING-026,Fresh milk,0.22,L,Past use-by,Bar,99
+2026-10-04 00:00:00,2026-10,ING-028,Cherry tomatoes,0.23,kg,Wilted,Kitchen,322
+2026-10-04 00:00:00,2026-10,ING-004,Baby squid,0.21,kg,Past use-by,Kitchen,462
+2026-10-05 00:00:00,2026-10,ING-002,Barramundi fillet,1.12,kg,Past use-by,Kitchen,3584
+2026-10-05 00:00:00,2026-10,ING-019,Cheddar,0.2,kg,Past use-by,Kitchen,960
+2026-10-05 00:00:00,2026-10,ING-041,Mushrooms,0.21,kg,Spoiled,Kitchen,378
+2026-10-05 00:00:00,2026-10,ING-034,Passionfruit,3,each,Wilted,Kitchen,180
+2026-10-05 00:00:00,2026-10,ING-046,Strawberries,0.21,kg,Spoiled,Bar,504
+2026-10-05 00:00:00,2026-10,ING-029,Tomatoes,0.22,kg,Wilted,Kitchen,99
+2026-10-06 00:00:00,2026-10,ING-012,Beef brisket mince,0.21,kg,Past use-by,Kitchen,588
+2026-10-06 00:00:00,2026-10,ING-013,Beef tenderloin,1.54,kg,Past use-by,Kitchen,8008
+2026-10-06 00:00:00,2026-10,ING-027,Coriander,0.24,kg,Wilted,Kitchen,288
+2026-10-06 00:00:00,2026-10,ING-039,Cucumber,0.22,kg,Wilted,Kitchen,66
+2026-10-06 00:00:00,2026-10,ING-018,Buffalo curd,0.2,kg,Past use-by,Kitchen,180
+2026-10-06 00:00:00,2026-10,ING-030,Red onions,0.21,kg,Spoiled,Kitchen,79.8
+2026-10-06 00:00:00,2026-10,ING-006,Sea bass fillet,0.2,kg,Past use-by,Kitchen,560
+2026-10-06 00:00:00,2026-10,ING-007,"Reef fish, whole",0.22,kg,Past use-by,Kitchen,484
+2026-10-07 00:00:00,2026-10,ING-023,Brioche buns,3,each,Stale,Kitchen,480
+2026-10-07 00:00:00,2026-10,ING-036,Carrots,0.21,kg,Spoiled,Kitchen,73.5
+2026-10-07 00:00:00,2026-10,ING-028,Cherry tomatoes,0.25,kg,Spoiled,Kitchen,350
+2026-10-07 00:00:00,2026-10,ING-010,"Chicken thigh, boneless",0.23,kg,Over-prepared,Kitchen,379.5
+2026-10-07 00:00:00,2026-10,ING-025,Ciabatta and focaccia,2,each,Stale,Kitchen,300
+2026-10-07 00:00:00,2026-10,ING-049,Green apples,2,each,Wilted,Bar,240
+2026-10-07 00:00:00,2026-10,ING-048,Seasonal fruit for juice,1.59,kg,Spoiled,Bar,795
+2026-10-07 00:00:00,2026-10,ING-033,Limes,13,each,Spoiled,Kitchen,325
+2026-10-07 00:00:00,2026-10,ING-035,Potatoes,1.58,kg,Spoiled,Kitchen,505.6
+2026-10-07 00:00:00,2026-10,ING-001,"Prawns, large",0.37,kg,Past use-by,Kitchen,1887
+2026-10-07 00:00:00,2026-10,ING-040,Seasonal vegetables,0.63,kg,Wilted,Kitchen,283.5
+2026-10-07 00:00:00,2026-10,ING-071,House white wine,0.2,L,Spillage,Bar,960

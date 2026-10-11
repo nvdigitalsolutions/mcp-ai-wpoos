@@ -646,6 +646,16 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			'guest_request'    => $is_guest,
 		);
 
+		// Chat profile (2.2.0) — resolved server-side; the read-only gate and
+		// the async executor enforce from this context value.
+		if ( class_exists( 'WP_MCP_AI_Chat_Profile_Manager' ) ) {
+			$requested               = $request->get_param( 'profile' );
+			$context['chat_profile'] = WP_MCP_AI_Chat_Profile_Manager::resolve_slug(
+				$user_id,
+				is_string( $requested ) && '' !== $requested ? $requested : null
+			);
+		}
+
 		// Validate user is authenticated.
 		if ( empty( $user_id ) && ! $this->is_guest_request() ) {
 			return $this->error(
@@ -668,6 +678,9 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 				 * @param array  $context            Execution context.
 				 */
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+			} catch ( WP_MCP_AI_Chat_Profile_Blocked $profile_exception ) {
+				// Chat-profile gate (2.2.0): blocked by the resolved profile.
+				return $profile_exception->to_wp_error();
 			} catch ( WP_MCP_AI_Destructive_Confirmation_Required $gate_exception ) {
 				// Destructive-ops gate: return the confirmation request as a
 				// WP_Error envelope (HTTP 428) through the normal pipeline.

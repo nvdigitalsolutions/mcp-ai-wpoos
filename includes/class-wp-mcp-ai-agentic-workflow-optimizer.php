@@ -388,7 +388,20 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 
 		++self::$low_necessity_count[ $session_id ];
 
-		return self::$low_necessity_count[ $session_id ] >= self::MAX_LOW_NECESSITY_ITERATIONS;
+		// Defensive cap: bound the static array in long-lived processes.
+		if ( count( self::$low_necessity_count ) > 200 ) {
+			self::$low_necessity_count = array_slice( self::$low_necessity_count, -200, null, true );
+		}
+
+		$should_nudge = self::$low_necessity_count[ $session_id ] >= self::MAX_LOW_NECESSITY_ITERATIONS;
+
+		if ( $should_nudge ) {
+			// The nudge has fired for this session — drop its counter so the
+			// array cannot grow without bound in long-lived processes.
+			unset( self::$low_necessity_count[ $session_id ] );
+		}
+
+		return $should_nudge;
 	}
 
 	/**

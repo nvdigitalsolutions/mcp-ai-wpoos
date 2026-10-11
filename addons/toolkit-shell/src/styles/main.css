@@ -9,12 +9,26 @@
 .nvoos-toolkit-shell-app *::after {
 	box-sizing: inherit;
 }
+
+/*
+ * Design-system aliases — consume NV oOS Design System tokens when that
+ * addon is active, fall back to wp-admin-friendly values otherwise.
+ */
+.nvoos-toolkit-shell-app {
+	--ts-accent: var( --nds-color-accent, #2271b1 );
+	--ts-accent-hover: var( --nds-color-accent-hover, #135e96 );
+	--ts-border: var( --nds-color-border, #dcdcde );
+	--ts-radius: var( --nds-space-xs, 4px );
+	--ts-font: var( --nds-font-family, inherit );
+	--ts-speed: var( --nds-transition-normal, 150ms );
+	--ts-overlay: rgba( 0, 0, 0, 0.5 );
+}
 .nvoos-toolkit-shell-app[data-theme="dark"] {
-	background: #111;
-	color: #eee;
+	background: var( --nds-color-surface, #111 );
+	color: var( --nds-color-text-primary, #eee );
 }
 .nvoos-toolkit-shell-header {
-	border-bottom: 1px solid #ddd;
+	border-bottom: 1px solid var( --ts-border, #ddd );
 	padding: 0.5em 0;
 	margin-bottom: 1em;
 }
@@ -35,20 +49,20 @@
 .nvoos-toolkit-shell-tab {
 	background: transparent;
 	border: 1px solid transparent;
-	border-bottom-color: #ccc;
+	border-bottom-color: var( --ts-border, #ccc );
 	padding: 0.4em 0.9em;
 	cursor: pointer;
 	font: inherit;
 	color: inherit;
 	border-radius: 4px 4px 0 0;
 }
-.nvoos-toolkit-shell-tab.is-active {
+.nvoos-toolkit-shell-tab[data-state="active"] {
 	background: rgba( 0, 0, 0, 0.04 );
-	border-color: #ccc;
+	border-color: var( --ts-border, #ccc );
 	border-bottom-color: transparent;
 	font-weight: 600;
 }
-.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-tab.is-active {
+.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-tab[data-state="active"] {
 	background: rgba( 255, 255, 255, 0.06 );
 }
 
@@ -73,7 +87,7 @@
 .nvoos-toolkit-shell-table th,
 .nvoos-toolkit-shell-table td {
 	padding: 0.4em 0.75em;
-	border-bottom: 1px solid #eee;
+	border-bottom: 1px solid var( --ts-border, #eee );
 	text-align: left;
 	vertical-align: top;
 }
@@ -86,9 +100,24 @@
 }
 .nvoos-toolkit-shell-table-actions {
 	white-space: nowrap;
+	display: flex;
+	gap: 0.3em;
 }
 .nvoos-toolkit-shell-table-actions button {
 	margin-right: 0.25em;
+}
+.nvoos-toolkit-shell-table-sort {
+	background: none;
+	border: none;
+	padding: 0;
+	font: inherit;
+	font-weight: inherit;
+	color: inherit;
+	cursor: pointer;
+}
+.nvoos-toolkit-shell-table-sort:focus-visible {
+	outline: 2px solid var( --ts-accent, #2271b1 );
+	outline-offset: 2px;
 }
 
 /* Pagination */
@@ -109,8 +138,8 @@
 .nvoos-toolkit-shell-kanban-column {
 	flex: 0 0 220px;
 	background: rgba( 0, 0, 0, 0.03 );
-	border: 1px solid #e5e5e5;
-	border-radius: 6px;
+	border: 1px solid var( --ts-border, #e5e5e5 );
+	border-radius: var( --nds-radius-md, 6px );
 	padding: 0.5em;
 }
 .nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-kanban-column {
@@ -140,26 +169,53 @@
 	flex-direction: column;
 	gap: 0.4em;
 }
-.nvoos-toolkit-shell-kanban-card button {
+.nvoos-toolkit-shell-kanban-card-body {
+	display: flex;
+	align-items: stretch;
+	gap: 0.35em;
+}
+.nvoos-toolkit-shell-kanban-card-handle {
+	flex: 0 0 auto;
+	background: transparent;
+	border: 1px dashed var( --ts-border, #ddd );
+	border-radius: var( --ts-radius, 4px );
+	padding: 0.5em 0.45em;
+	cursor: grab;
+	font: inherit;
+	color: inherit;
+	touch-action: none;
+}
+.nvoos-toolkit-shell-kanban-card-title {
+	flex: 1;
 	background: #fff;
-	border: 1px solid #ddd;
-	border-radius: 4px;
+	border: 1px solid var( --ts-border, #ddd );
+	border-radius: var( --ts-radius, 4px );
 	padding: 0.5em 0.6em;
 	cursor: pointer;
 	font: inherit;
 	color: inherit;
 	text-align: left;
-	width: 100%;
 }
-.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-kanban-card button {
+.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-kanban-card-title {
 	background: #1a1a1a;
 	border-color: #333;
 	color: #eee;
 }
+.nvoos-toolkit-shell-kanban-column.is-over {
+	outline: 2px dashed var( --ts-accent, #2271b1 );
+	outline-offset: -2px;
+}
+.nvoos-toolkit-shell-kanban-card {
+	touch-action: none;
+}
+.nvoos-toolkit-shell-kanban-card.is-dragging {
+	opacity: 0.55;
+	z-index: 1;
+}
 
 /* Detail */
 .nvoos-toolkit-shell-detail {
-	border: 1px solid #e5e5e5;
+	border: 1px solid var( --ts-border, #e5e5e5 );
 	border-radius: 6px;
 	padding: 1em;
 }
@@ -192,7 +248,7 @@
 
 /* Form */
 .nvoos-toolkit-shell-form {
-	border: 1px solid #e5e5e5;
+	border: 1px solid var( --ts-border, #e5e5e5 );
 	border-radius: 6px;
 	padding: 1em;
 	max-width: 600px;
@@ -224,4 +280,253 @@
 }
 .nvoos-toolkit-shell-required {
 	color: #b00;
+}
+
+/* -----------------------------------------------------------------------
+ * Component primitives (ui/*) — 0.3.0
+ * --------------------------------------------------------------------- */
+
+/* Button (ui/button.tsx) */
+.nvoos-toolkit-shell-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4em;
+	padding: 0.4em 0.9em;
+	border: 1px solid var( --ts-accent, #2271b1 );
+	border-radius: var( --ts-radius, 4px );
+	background: var( --ts-accent, #2271b1 );
+	color: #fff;
+	font: inherit;
+	font-family: var( --ts-font, inherit );
+	font-size: 0.95em;
+	cursor: pointer;
+	transition: background var( --ts-speed, 150ms ) ease-out;
+}
+.nvoos-toolkit-shell-btn:hover:not( :disabled ) {
+	background: var( --ts-accent-hover, #135e96 );
+	border-color: var( --ts-accent-hover, #135e96 );
+}
+.nvoos-toolkit-shell-btn:focus-visible {
+	outline: 2px solid var( --ts-accent, #2271b1 );
+	outline-offset: 2px;
+}
+.nvoos-toolkit-shell-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+.nvoos-toolkit-shell-btn.is-secondary {
+	background: transparent;
+	color: var( --ts-accent, #2271b1 );
+}
+.nvoos-toolkit-shell-btn.is-secondary:hover:not( :disabled ) {
+	background: rgba( 34, 113, 177, 0.08 );
+}
+.nvoos-toolkit-shell-btn.is-destructive {
+	background: #b32d2e;
+	border-color: #b32d2e;
+}
+.nvoos-toolkit-shell-btn.is-destructive:hover:not( :disabled ) {
+	background: #a02828;
+	border-color: #a02828;
+}
+.nvoos-toolkit-shell-btn.is-ghost {
+	background: transparent;
+	border-color: transparent;
+	color: inherit;
+}
+.nvoos-toolkit-shell-btn.is-ghost:hover:not( :disabled ) {
+	background: rgba( 0, 0, 0, 0.06 );
+}
+.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-btn.is-ghost:hover:not( :disabled ) {
+	background: rgba( 255, 255, 255, 0.08 );
+}
+.nvoos-toolkit-shell-btn.is-sm {
+	padding: 0.2em 0.6em;
+	font-size: 0.85em;
+}
+.nvoos-toolkit-shell-btn.is-icon {
+	padding: 0.35em;
+}
+
+/* Dialog (ui/dialog.tsx, ui/confirm-dialog.tsx) */
+.nvoos-toolkit-shell-dialog-overlay {
+	position: fixed;
+	inset: 0;
+	background: var( --ts-overlay, rgba( 0, 0, 0, 0.5 ) );
+	z-index: 100000;
+	animation: ts-fade-in var( --ts-speed, 150ms ) ease-out;
+}
+.nvoos-toolkit-shell-dialog-content {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate( -50%, -50% );
+	background: #fff;
+	color: #1d2327;
+	border: 1px solid var( --ts-border, #dcdcde );
+	border-radius: 6px;
+	padding: 1.25em;
+	min-width: min( 420px, calc( 100vw - 2em ) );
+	max-width: calc( 100vw - 2em );
+	max-height: calc( 100vh - 2em );
+	overflow: auto;
+	z-index: 100001;
+	box-shadow: 0 8px 24px rgba( 0, 0, 0, 0.2 );
+}
+.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-dialog-content {
+	background: var( --nds-color-surface, #1d2327 );
+	color: var( --nds-color-text-primary, #eee );
+}
+.nvoos-toolkit-shell-dialog-title {
+	margin: 0 0 0.4em;
+	font-size: 1.1em;
+}
+.nvoos-toolkit-shell-dialog-description {
+	margin: 0 0 1em;
+	opacity: 0.85;
+}
+.nvoos-toolkit-shell-dialog-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5em;
+	margin-top: 1em;
+}
+
+/* DropdownMenu (ui/dropdown-menu.tsx) */
+.nvoos-toolkit-shell-menu-content {
+	min-width: 160px;
+	background: #fff;
+	border: 1px solid var( --ts-border, #dcdcde );
+	border-radius: 6px;
+	padding: 0.3em;
+	box-shadow: 0 4px 16px rgba( 0, 0, 0, 0.15 );
+	z-index: 100002;
+}
+.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-menu-content {
+	background: var( --nds-color-surface, #1d2327 );
+	border-color: #333;
+}
+.nvoos-toolkit-shell-menu-item {
+	display: block;
+	width: 100%;
+	text-align: left;
+	padding: 0.4em 0.7em;
+	border-radius: 4px;
+	font: inherit;
+	font-size: 0.92em;
+	background: transparent;
+	border: none;
+	color: inherit;
+	cursor: pointer;
+}
+.nvoos-toolkit-shell-menu-item:hover,
+.nvoos-toolkit-shell-menu-item[data-highlighted] {
+	background: rgba( 0, 0, 0, 0.06 );
+}
+.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-menu-item:hover,
+.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-menu-item[data-highlighted] {
+	background: rgba( 255, 255, 255, 0.08 );
+}
+.nvoos-toolkit-shell-menu-item[data-danger] {
+	color: #b32d2e;
+}
+.nvoos-toolkit-shell-menu-separator {
+	height: 1px;
+	margin: 0.3em 0;
+	background: var( --ts-border, #eee );
+}
+
+/* Select (ui/select.tsx) */
+.nvoos-toolkit-shell-select-trigger {
+	display: inline-flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.4em;
+	min-width: 140px;
+	padding: 0.4em 0.6em;
+	border: 1px solid var( --ts-border, #8c8f94 );
+	border-radius: 4px;
+	background: #fff;
+	font: inherit;
+	cursor: pointer;
+}
+.nvoos-toolkit-shell-select-trigger[data-placeholder] {
+	opacity: 0.7;
+}
+.nvoos-toolkit-shell-select-content {
+	z-index: 100003;
+	min-width: var( --radix-select-trigger-width );
+	background: #fff;
+	border: 1px solid var( --ts-border, #dcdcde );
+	border-radius: 6px;
+	padding: 0.3em;
+	box-shadow: 0 4px 16px rgba( 0, 0, 0, 0.15 );
+}
+.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-select-trigger,
+.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-select-content {
+	background: var( --nds-color-surface, #1d2327 );
+	color: var( --nds-color-text-primary, #eee );
+	border-color: #333;
+}
+.nvoos-toolkit-shell-select-item {
+	padding: 0.4em 0.7em;
+	border-radius: 4px;
+	font-size: 0.95em;
+	cursor: pointer;
+	outline: none;
+}
+.nvoos-toolkit-shell-select-item[data-highlighted] {
+	background: var( --ts-accent, #2271b1 );
+	color: #fff;
+}
+
+/* Checkbox (ui/checkbox.tsx) */
+.nvoos-toolkit-shell-checkbox {
+	width: 1.1em;
+	height: 1.1em;
+	border: 1px solid var( --ts-border, #8c8f94 );
+	border-radius: 3px;
+	background: #fff;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+.nvoos-toolkit-shell-checkbox:focus-visible {
+	outline: 2px solid var( --ts-accent, #2271b1 );
+	outline-offset: 2px;
+}
+.nvoos-toolkit-shell-checkbox[data-state="checked"] {
+	background: var( --ts-accent, #2271b1 );
+	border-color: var( --ts-accent, #2271b1 );
+}
+.nvoos-toolkit-shell-checkbox-indicator {
+	color: #fff;
+	font-size: 0.8em;
+	line-height: 1;
+}
+
+/* Form error text */
+.nvoos-toolkit-shell-form-error {
+	color: #b32d2e;
+	font-size: 0.9em;
+	margin: 0.15em 0 0;
+}
+
+@keyframes ts-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.nvoos-toolkit-shell-dialog-overlay {
+		animation: none;
+	}
+	.nvoos-toolkit-shell-btn {
+		transition: none;
+	}
 }

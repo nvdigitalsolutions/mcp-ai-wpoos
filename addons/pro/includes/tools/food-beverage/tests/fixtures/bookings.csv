@@ -1,0 +1,17 @@
+Booking ID,Date,Day,Time,Session,Type,Guests,Notes,Status
+BK-1038,2026-10-09 00:00:00,Fri,19:00,Dinner,Table,4,,Confirmed
+BK-1039,2026-10-09 00:00:00,Fri,19:30,Dinner,Table,6,,Confirmed
+BK-1041,2026-10-09 00:00:00,Fri,20:00,Dinner,Table,2,,Confirmed
+BK-1043,2026-10-09 00:00:00,Fri,20:30,Dinner,Table,5,,Confirmed
+BK-1044,2026-10-10 00:00:00,Sat,11:00,Lunch,Day beds,6,"Pool day beds, lunch included",Confirmed
+BK-1045,2026-10-10 00:00:00,Sat,11:00,Lunch,Day beds,4,,Confirmed
+BK-1047,2026-10-10 00:00:00,Sat,12:30,Lunch,Group,28,"Birthday. Set menu per guest: mixed ceviche, green chilli prawn, Surf Club seafood rice",Confirmed
+BK-1048,2026-10-10 00:00:00,Sat,13:00,Lunch,Table,4,,Confirmed
+BK-1050,2026-10-10 00:00:00,Sat,19:00,Dinner,Group,16,Welcome drink on arrival: grilled pineapple marg,Confirmed
+BK-1051,2026-10-10 00:00:00,Sat,19:30,Dinner,Table,6,,Confirmed
+BK-1052,2026-10-10 00:00:00,Sat,20:00,Dinner,Table,2,,Confirmed
+BK-1053,2026-10-10 00:00:00,Sat,20:30,Dinner,Table,4,,Confirmed
+BK-1055,2026-10-11 00:00:00,Sun,12:00,Lunch,Table,6,,Confirmed
+BK-1056,2026-10-11 00:00:00,Sun,12:30,Lunch,Table,8,,Confirmed
+BK-1057,2026-10-11 00:00:00,Sun,11:00,Lunch,Day beds,8,,Confirmed
+BK-1058,2026-10-11 00:00:00,Sun,19:00,Dinner,Table,4,,Tentative

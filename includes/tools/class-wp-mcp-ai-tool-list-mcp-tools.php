@@ -53,7 +53,7 @@ class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'when_to_use'     => __( 'The model needs to discover available tools, or fetch a single tool schema on demand instead of carrying it in context.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Performing an operation — call the discovered tool itself. Avoid in long-running sessions where the catalogue is already known.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'load_skill', 'get_tool_definition' ),
-			'notes'           => __( 'Use include_schemas=false for a lean name+description catalogue, then tool_slug=<slug> to lazy-load one full schema. Related tools may not exist on every site.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'Use include_schemas=false for a lean name+description catalogue, then tool_slug=<slug> to lazy-load one full schema. Set include_meta=false to omit the server-identity _meta block. Related tools may not exist on every site.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -94,6 +94,11 @@ class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Whether to include full parameter schemas in the list. Default true. Set false for a lean name/description catalogue (fetch schemas later with tool_slug).', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
+				'include_meta'    => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to include the _meta block with MCP server identity (server name/version/mode, site, optional bridge name). Default true.', 'mcp-ai-wpoos' ),
+					'default'     => true,
+				),
 			),
 		);
 	}
@@ -120,6 +125,7 @@ class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$offset          = isset( $arguments['offset'] ) ? absint( $arguments['offset'] ) : 0;
 		$tool_slug       = isset( $arguments['tool_slug'] ) ? sanitize_key( $arguments['tool_slug'] ) : '';
 		$include_schemas = isset( $arguments['include_schemas'] ) ? rest_sanitize_boolean( $arguments['include_schemas'] ) : true;
+		$include_meta    = isset( $arguments['include_meta'] ) ? rest_sanitize_boolean( $arguments['include_meta'] ) : true;
 
 		if ( ! current_user_can( 'read' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos' ) );
@@ -145,13 +151,22 @@ class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 			$schema = $tool->get_parameters_schema();
 
+			$payload = array(
+				'name'        => $tool->get_slug(),
+				'description' => $registry->get_model_facing_description( $tool ),
+				'inputSchema' => is_array( $schema ) ? $schema : array(),
+			);
+
+			if ( $include_meta ) {
+				$meta = $this->build_discovery_meta( $context );
+				if ( ! empty( $meta ) ) {
+					$payload['_meta'] = $meta;
+				}
+			}
+
 			return $this->format_success_response(
 				__( 'Tool schema retrieved.', 'mcp-ai-wpoos' ),
-				array(
-					'name'        => $tool->get_slug(),
-					'description' => $registry->get_model_facing_description( $tool ),
-					'inputSchema' => is_array( $schema ) ? $schema : array(),
-				)
+				$payload
 			);
 		}
 
@@ -261,16 +276,40 @@ class WP_MCP_AI_Tool_List_MCP_Tools implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			$total_matching
 		);
 
-		return $this->format_success_response(
-			$summary,
-			array(
-				'total'  => $total_matching,
-				'count'  => count( $result ),
-				'limit'  => $limit,
-				'offset' => $offset,
-				'tools'  => $result,
-			)
+		$payload = array(
+			'total'  => $total_matching,
+			'count'  => count( $result ),
+			'limit'  => $limit,
+			'offset' => $offset,
+			'tools'  => $result,
 		);
+
+		if ( $include_meta ) {
+			$meta = $this->build_discovery_meta( $context );
+			if ( ! empty( $meta ) ) {
+				$payload['_meta'] = $meta;
+			}
+		}
+
+		return $this->format_success_response( $summary, $payload );
+	}
+
+	/**
+	 * Build the discovery-metadata block appended when include_meta is true.
+	 *
+	 * Reuses the mcp_server_info identity payload (single source of truth) so
+	 * the listing and the dedicated identity tool can never drift. The bridge
+	 * name surfaces only when the fronting bridge declared itself.
+	 *
+	 * @param array $context Execution context.
+	 * @return array Metadata block (empty when the identity tool is unavailable).
+	 */
+	private function build_discovery_meta( array $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_MCP_Server_Info' ) ) {
+			return array();
+		}
+
+		return WP_MCP_AI_Tool_MCP_Server_Info::build_server_identity( $context );
 	}
 
 	/**

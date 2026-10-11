@@ -116,6 +116,16 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 */
 		const CLEANUP_AGE_DAYS = 30;
 
+			/**
+			 * Jobs stuck in running/queued beyond this many days are reaped as
+			 * failed by the daily cleanup (a crashed runner never writes
+			 * completed_at, so the terminal-status DELETE alone would keep them
+			 * forever).
+			 *
+			 * @since 1.1.98
+			 */
+			const STALE_AGE_DAYS = 7;
+
 		/**
 		 * Initialize the job queue system.
 		 *
@@ -551,10 +561,14 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 					);
 
 					if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
-						WP_MCP_AI_Dead_Letter_Queue::add_to_queue(
-							'async_job',
-							$job['job_data'],
-							$error
+						WP_MCP_AI_Dead_Letter_Queue::add(
+							WP_MCP_AI_Dead_Letter_Queue::TYPE_JOB_QUEUE,
+							(string) $job['id'],
+							array(
+								'job_id'   => (int) $job['id'],
+								'job_data' => $job['job_data'],
+							),
+							isset( $error['message'] ) ? $error['message'] : wp_json_encode( $error )
 						);
 					}
 				}
@@ -771,10 +785,14 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 					// Add to dead letter queue.
 					if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
-						WP_MCP_AI_Dead_Letter_Queue::add_to_queue(
-							'async_job',
-							$job['job_data'],
-							$error
+						WP_MCP_AI_Dead_Letter_Queue::add(
+							WP_MCP_AI_Dead_Letter_Queue::TYPE_JOB_QUEUE,
+							(string) $job['id'],
+							array(
+								'job_id'   => (int) $job['id'],
+								'job_data' => $job['job_data'],
+							),
+							isset( $error['message'] ) ? $error['message'] : wp_json_encode( $error )
 						);
 					}
 				}
@@ -939,18 +957,15 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				return;
 			}
 
-			WP_MCP_AI_Job_Notifier::notify(
-				'async_job_completed',
-				array(
-					'job_id'   => $job['id'],
-					'job_type' => $job['job_type'],
-					'result'   => $result,
-				)
+			WP_MCP_AI_Job_Notifier::handle_job_completed(
+				(string) $job['id'],
+				$result,
+				array( 'job_type' => $job['job_type'] )
 			);
 		}
 
 		/**
-		 * Cleanup old completed/failed jobs.
+		 * Cleanup old completed/failed jobs and reap stale running/queued jobs.
 		 *
 		 * @return void
 		 */
@@ -965,18 +980,41 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			$deleted = $wpdb->query(
 				$wpdb->prepare(
 					"DELETE FROM $table_name
-					WHERE status IN ('completed', 'failed', 'cancelled') 
+					WHERE status IN ('completed', 'failed', 'cancelled')
 					AND completed_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
 					$age_days
 				)
 			);
+
+			// Reap stale jobs that never reached a terminal status: rows stuck
+			// in running/queued beyond the stale window (e.g. a crashed runner)
+			// would otherwise accumulate forever because the DELETE above only
+			// covers terminal statuses with a completed_at timestamp.
+			$stale_age_days = apply_filters( 'wp_mcp_ai_job_queue_stale_age_days', self::STALE_AGE_DAYS );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
+			$reaped = $wpdb->query(
+				$wpdb->prepare(
+					"UPDATE $table_name
+					SET status = %s, error = %s, completed_at = NOW()
+					WHERE status IN (%s, %s)
+					AND created_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
+					self::STATUS_FAILED,
+					'Stale job: no completion within the stale-job window.',
+					self::STATUS_RUNNING,
+					self::STATUS_QUEUED,
+					$stale_age_days
+				)
+			);
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-			if ( $deleted && class_exists( 'WP_MCP_AI_Logger' ) ) {
+			if ( ( $deleted || $reaped ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'info',
 					'Cleaned up old jobs',
-					array( 'count' => $deleted )
+					array(
+						'count'        => $deleted,
+						'stale_reaped' => $reaped,
+					)
 				);
 			}
 		}

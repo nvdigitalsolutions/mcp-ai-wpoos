@@ -2,9 +2,15 @@
 # NV oOS — Demo Video Generation CI Pipeline
 # ───────────────────────────────────────────────────────────
 #
-# Generates narrated demo videos on every release and on
-# manual trigger. Videos are uploaded as GitHub artifacts
-# and attached to the release.
+# Generates narrated demo videos on manual trigger only.
+# Videos are uploaded as GitHub artifacts.
+#
+# NOTE: The automatic `release: published` trigger was removed
+# (2026-10-09) because the pipeline is not reliably tested — the
+# Docker Compose WordPress stack fails to come up on GitHub
+# runners (empty /var/www/html, HTTP 403) and the job fails.
+# Re-enable the release trigger only after the pipeline passes
+# end-to-end in CI. See https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/6971
 #
 # Prerequisites:
 #   - OPENAI_API_KEY secret configured in repository settings
@@ -13,7 +19,7 @@
 # Architecture:
 #   [checkout] → [npm ci] → [playwright install] → [docker up]
 #   → [capture videos] → [generate narration] → [merge video+audio]
-#   → [upload artifacts] → [attach to release]
+#   → [upload artifacts]
 
 name: Generate Demo Videos
 
@@ -32,8 +38,6 @@ on:
         description: 'Force regenerate narration audio'
         type: boolean
         default: false
-  release:
-    types: [published]
 
 env:
   BASE_URL: http://localhost:8000
@@ -122,14 +126,18 @@ jobs:
           retention-days: 30
           compression-level: 0
 
-      - name: Attach videos to release
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            docs/videos/base/*.mp4
-            docs/videos/pro/*.mp4
-          fail_on_unmatched_files: false
+      # Release attachment was removed with the `release` trigger.
+      # Restore this step (and the trigger) once the pipeline is
+      # verified end-to-end in CI.
+      #
+      # - name: Attach videos to release
+      #   if: github.event_name == 'release'
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     files: |
+      #       docs/videos/base/*.mp4
+      #       docs/videos/pro/*.mp4
+      #     fail_on_unmatched_files: false
 
       - name: Upload video catalog
         uses: actions/upload-artifact@v4

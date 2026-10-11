@@ -373,17 +373,17 @@ class WP_MCP_AI_EZuite_CLI {
 			if ( $qty <= 0 ) {
 				$out_items[] = array(
 					'SKU'         => isset( $item['sku'] ) ? $item['sku'] : '',
-					'Name'        => isset( $item['product_name'] ) ? $item['product_name'] : '',
+					'Name'        => isset( $item['name'] ) ? $item['name'] : ( isset( $item['product_name'] ) ? $item['product_name'] : '' ),
 					'Qty'         => '0 (OUT)',
-					'Warehouse'   => isset( $item['location_name'] ) ? $item['location_name'] : '',
+					'Warehouse'   => isset( $item['location_name'] ) ? $item['location_name'] : ( isset( $item['warehouse'] ) ? $item['warehouse'] : '' ),
 					'Reorder Pt.' => isset( $item['reorder_point'] ) ? (string) $item['reorder_point'] : '',
 				);
 			} elseif ( $qty < $low_threshold ) {
 				$low_items[] = array(
 					'SKU'         => isset( $item['sku'] ) ? $item['sku'] : '',
-					'Name'        => isset( $item['product_name'] ) ? $item['product_name'] : '',
+					'Name'        => isset( $item['name'] ) ? $item['name'] : ( isset( $item['product_name'] ) ? $item['product_name'] : '' ),
 					'Qty'         => (string) $qty,
-					'Warehouse'   => isset( $item['location_name'] ) ? $item['location_name'] : '',
+					'Warehouse'   => isset( $item['location_name'] ) ? $item['location_name'] : ( isset( $item['warehouse'] ) ? $item['warehouse'] : '' ),
 					'Reorder Pt.' => isset( $item['reorder_point'] ) ? (string) $item['reorder_point'] : '',
 				);
 			}
@@ -497,12 +497,12 @@ class WP_MCP_AI_EZuite_CLI {
 // top-level `ezuite` names as aliases (Proposal 050 namespace unification).
 if ( class_exists( 'WP_CLI' ) ) {
 	$ezuite_verbs = array(
-		'status'             => 'status',
-		'trigger'            => 'trigger',
-		'clear-cache'        => 'clear_cache',
-		'test-connection'    => 'test_connection',
-		'low-stock-report'   => 'low_stock_report',
-		'sync-log'           => 'sync_log',
+		'status'           => 'status',
+		'trigger'          => 'trigger',
+		'clear-cache'      => 'clear_cache',
+		'test-connection'  => 'test_connection',
+		'low-stock-report' => 'low_stock_report',
+		'sync-log'         => 'sync_log',
 	);
 
 	foreach ( $ezuite_verbs as $ezuite_verb => $ezuite_method ) {

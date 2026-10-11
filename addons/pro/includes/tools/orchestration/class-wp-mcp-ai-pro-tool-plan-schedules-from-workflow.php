@@ -134,7 +134,7 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 				),
 				'notify_email'         => array(
 					'type'        => 'string',
-					'description' => __( 'Email address for failure notifications. Defaults to admin email.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Email address(es) for failure notifications. Comma-separate multiple recipients. Defaults to admin email.', 'mcp-ai-wpoos-pro' ),
 				),
 				'dry_run'              => array(
 					'type'        => 'boolean',
@@ -245,7 +245,7 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 
 		$notify_on_failure = isset( $arguments['notify_on_failure'] ) ? (bool) $arguments['notify_on_failure'] : true;
 		$notify_email      = isset( $arguments['notify_email'] ) && '' !== $arguments['notify_email']
-			? sanitize_email( $arguments['notify_email'] )
+			? self::normalize_notify_email( $arguments['notify_email'] )
 			: get_option( 'admin_email' );
 
 		$dry_run  = ! empty( $arguments['dry_run'] );
@@ -335,6 +335,26 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 					count( $plan )
 				),
 		);
+	}
+
+	/**
+	 * Normalize the notify_email argument into a canonical recipient list.
+	 *
+	 * Reuses the Result Delivery service's multi-recipient normalizer when
+	 * the service class is loaded, falling back to the legacy single-address
+	 * sanitize_email() otherwise.
+	 *
+	 * @since 1.2.2
+	 *
+	 * @param string $value Raw notify_email value.
+	 * @return string Canonical comma-separated recipient list.
+	 */
+	protected static function normalize_notify_email( $value ) {
+		if ( class_exists( 'WP_MCP_AI_Result_Delivery_Service' ) ) {
+			return WP_MCP_AI_Result_Delivery_Service::sanitize_email_recipients( $value );
+		}
+
+		return sanitize_email( $value );
 	}
 
 	/**

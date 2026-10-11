@@ -253,6 +253,7 @@ class WP_MCP_AI_Pro_Tool_EZuite_Inventory implements WP_MCP_AI_Tool_Interface, W
 			'sku',
 			'name',
 			'warehouse',
+			'location_name',
 			'supplier',
 			'connection_id',
 		);
@@ -266,6 +267,25 @@ class WP_MCP_AI_Pro_Tool_EZuite_Inventory implements WP_MCP_AI_Tool_Interface, W
 		$escaped['cost_price']     = isset( $item['cost_price'] ) ? floatval( $item['cost_price'] ) : 0.0;
 		$escaped['woo_product_id'] = isset( $item['woo_product_id'] ) ? absint( $item['woo_product_id'] ) : 0;
 		$escaped['last_updated']   = isset( $item['last_updated'] ) ? esc_html( $item['last_updated'] ) : '';
+
+		// Decode the per-location stock breakdown (stored as JSON in the CCT)
+		// and escape the text fields inside each entry (Gate 2).
+		$escaped['stock_by_location'] = array();
+		if ( isset( $item['stock_by_location'] ) && is_string( $item['stock_by_location'] ) && '' !== $item['stock_by_location'] ) {
+			$decoded = json_decode( $item['stock_by_location'], true );
+			if ( is_array( $decoded ) ) {
+				foreach ( $decoded as $entry ) {
+					if ( ! is_array( $entry ) ) {
+						continue;
+					}
+					$escaped['stock_by_location'][] = array(
+						'location_code' => isset( $entry['Setup_Location_Code'] ) ? esc_html( $entry['Setup_Location_Code'] ) : '',
+						'location_name' => isset( $entry['Location_Name'] ) ? esc_html( $entry['Location_Name'] ) : '',
+						'quantity'      => isset( $entry['Qty'] ) ? floatval( $entry['Qty'] ) : 0,
+					);
+				}
+			}
+		}
 
 		// Compute stock status label.
 		$settings      = get_option( 'wp_mcp_ai_ezuite_toolkit_settings', array() );

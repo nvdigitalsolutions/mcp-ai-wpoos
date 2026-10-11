@@ -1,7 +1,7 @@
 # NV oOS Media Worker Sidecar
 
 > **GSD Context File** — Load this when working on the media worker (`addons/media-worker/`), the plugin sidecar client, or any Pro service that routes through the worker.
-> Last reviewed: October 5, 2026 (v1.1.95, worker v3.4.0 — the version-sync note added after the #6881 partial-bump fix, #6895).
+> Last reviewed: October 7, 2026 (v1.1.99, worker v3.4.0 — #6941's synthetic external-targets notes; the worker version bump stays release-process-owned per #6895).
 
 ---
 
@@ -126,6 +126,19 @@ image-production tools (issue #6877, plan
 - Synthetic checks (`STATUS_SYNTHETIC_ENABLED=1`) probe public sites over
   the shared SSRF guard (`status/checks.js`); heartbeat-fresh + synthetic-
   down = `partial_outage` (split-brain).
+- **External targets (v3.4.0 line, #6941):** heartbeat-less targets join via
+  `STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health`
+  (comma-separated `slug=url`); `seedExternalTargets()` seeds them
+  idempotently, `startSyntheticLoop()` probes the enabled ones and writes
+  only `record.synthetic` — the sweeper remains the **single owner of
+  status transitions**. Per-target enables: `STATUS_<SLUG>_SYNTHETIC=1` +
+  `STATUS_<SLUG>_SYNTHETIC_URL` override. Synthetic-only mode reports
+  `operational` on a passing probe, `major_outage` on a failing one,
+  `unknown` before the first probe. Two #6941 fixes: the split-brain
+  fallback reads `record.synthetic.checkedAt` (the old `.checked` key was
+  set by no code), and the sweeper clears `downSince` on recovery (matches
+  the heartbeat handler). Probe URL fallback honors `site.syntheticUrl`
+  (`checks.js`).
 - Status taxonomy is the plugin's five-value service-status taxonomy plus
   the internal `at_risk` band (`status/state.js` severity table) — keep
   them in sync with `Interface_WP_MCP_AI_Service_Status_Source`.
