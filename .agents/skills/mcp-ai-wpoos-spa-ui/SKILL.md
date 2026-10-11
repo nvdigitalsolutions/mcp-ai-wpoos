@@ -5,9 +5,9 @@ description: UI stack, build, and test conventions for NV oOS React SPA addons (
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.99"
-  plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-10"
+  plugin-version: "1.2.4"
+  plugin-version-tested: "1.2.4"
+  last-updated: "2026-10-11"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -99,6 +99,15 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   (never the media worker/third-party URLs). Transcripts/approvals accept
   bearer credentials too (reads scoped to the issuing assistant;
   `approve`/`deny` stay `manage_options` — issue #6987 closed by #6990).
+  **Cookie-mode login is re-scoped through the proxy (PR #6999):** WordPress
+  renders `wp-login.php` with an **absolute** form action + absolute
+  `redirect_to`, so cross-host deploys set the auth cookies on the
+  WordPress origin and the app origin never sees the session (localhost
+  masks it — cookies scope by host, not port). `serve.mjs` buffers **only**
+  the login page (text/html, identity encoding, 4 MB cap) and rewrites both
+  to the app origin; the Vite dev proxy mirrors the same rewrite; the
+  cookie-mode error message must point at the **runtime** `NVOOS_TARGET_SITE`
+  (managed Node hosting sets runtime env, not build-time `VITE_*`).
 - **CORS:** the backend must echo the app origin — plugin **≥1.2.3**
   `cors_allowed_origins` (or the §5b mu-plugin) + widen
   `wp_mcp_ai_cors_guard_route_prefixes` with `/mcp-ai-pro/v1` (the default
@@ -123,6 +132,17 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   the push, and the mirror repo (`nvoos-pro-spa-standalone`) keeps an
   intentionally flat history (one commit per sync, force-pushed) —
   mirror-only build drift fails in the monorepo CI instead of at Velocity.
+  **Velocity executes the Entry File through the shell (PRs #7004/#7006/#7009):**
+  `serve.mjs` must carry a `#!/usr/bin/env node` shebang (without it, `sh`
+  parses the ESM and PM2 restarts it ~15 times — `FAILED (rc=-1)`); a
+  `server.on('error')` handler makes PM2's generic "process crashed (at
+  least 15 restart(s) detected)" self-diagnosing (print code + message,
+  hint `EADDRINUSE` → check `pm2 list`); the static branch serves
+  `X-Content-Type-Options: nosniff` + `Strict-Transport-Security:
+  max-age=86400` (ramp to 31536000 after a clean week — proxied WordPress
+  responses pass upstream headers through untouched; a strict CSP stays
+  Report-Only because the HTML shell's inline Cloudflare challenge script
+  would break `script-src 'self'`).
 - **Media worker:** the app fronts the worker directly (URL + `X-Site-Token`
   in the connection screen) — the two stay separate Velocity apps.
 
@@ -214,6 +234,21 @@ AND the standalone Vite app, without forking the widget.
   INLINED into `pro-spa.js` (the graph page added ~630 KB minified:
   cytoscape + fcose + jquery). Accept it or propose a separate entry point;
   the standalone app gets real chunking. Call the growth out in the PR body.
+
+### jQuery-pathed requests bypass the fetch wrapper (PR #7002)
+
+- The vendored explorer loads `/nodes`, `/edges`, and node details via
+  **jQuery `$.ajax`**, which never sees the app's global `window.fetch`
+  wrapper — in bearer/guest/wp-login modes those XHRs went out with no
+  credential header (and an empty `X-WP-Nonce`) and 401'd behind the
+  explorer's misleading "Failed to load graph data". The standalone app's
+  `fetch-wrapper.ts` now mirrors its header logic onto jQuery via an
+  `ajaxPrefilter`: bearer/basic/guest headers attached, the empty nonce
+  dropped in token modes, the media-worker `X-Site-Token` forwarded, live
+  option reads (reconnect-safe), installed once (jQuery has no
+  prefilter-removal API), never throwing. Any widget using `$.ajax` against
+  the backend needs the same prefilter — the fetch wrapper alone is not
+  enough.
 
 ## Component rules — headless only
 

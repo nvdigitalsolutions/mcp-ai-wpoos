@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.3"
-  plugin-version-tested: "1.2.3"
-  last-updated: "2026-10-10"
+  plugin-version: "1.2.4"
+  plugin-version-tested: "1.2.4"
+  last-updated: "2026-10-11"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -1037,6 +1037,24 @@ PR conventions — see the dedicated skill
 ---
 
 ## Troubleshooting
+
+### Client sees fewer tools in `tools/list` after upgrading
+
+**Symptom (v1.2.4+, PR #7007):** an agent client shows a shorter tool
+catalog than before — or a single broken tool no longer hides the whole
+catalog.
+
+**Cause:** `WP_MCP_AI_Tool_Schema_Auditor` now normalizes every advertised
+schema (root `type: object` injected when missing) and **skips-with-reason**
+hazardous schemas — bracketed property names (`ids[]`), schemas over the
+byte budget (`wp_mcp_ai_tools_list_schema_max_bytes`, default 20 KB), slugs
+over 64 chars (`wp_mcp_ai_tools_list_max_slug_length`), root
+`oneOf`/`anyOf` without a type. Skipped tools are logged with the reason.
+Diagnose with the Site Health direct test (`wp_mcp_ai_tool_schema_auditor`)
+or the debug-info field (15-min transient cache). `nvoos_get_profile` now
+attaches `structuredContent` whenever its `outputSchema` is advertised, and
+the registry fires `wp_mcp_ai_mcp_tools_list_changed` (once per request) so
+clients with `listChanged` support can refresh instead of re-polling blindly.
 
 ### "invalid volume specification" on Docker start
 
