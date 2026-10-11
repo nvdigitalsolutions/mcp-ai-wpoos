@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** October 10, 2026 (v1.2.3 — **no addon version moves in-window**; everything unchanged (Docs Hub 0.5.3, Toolkit Shell 0.3.0, Schedule Anything SPA 0.2.0, MCP Gateway 0.1.1, Media Worker 3.4.0, Fleet Operator 1.0.0, Media Studio 0.6.1, SaaS Controller 0.3.0, Design System 0.3.0, ChatGPT Plugin 0.1.0, Checkout API 0.1.2, nvoos-content-graph 1.0.10 — the sub-projects keep their own tracks, flag-not-edited here; the window's `nvoos-content-graph-ai-platform-v2.0.0.zip` rebuild is build-only)
+> **Last Updated:** October 11, 2026 (v1.2.4 — **no addon version moves in-window**; everything unchanged (Docs Hub 0.5.3, Toolkit Shell 0.3.0, Schedule Anything SPA 0.2.0, MCP Gateway 0.1.1, Media Worker 3.4.0, Fleet Operator 1.0.0, Media Studio 0.6.1, SaaS Controller 0.3.0, Design System 0.3.0, ChatGPT Plugin 0.1.0, Checkout API 0.1.2, nvoos-content-graph 1.0.10 — the sub-projects keep their own tracks, flag-not-edited here; the window's `nvoos-content-graph-ai-v1.0.4` + `nvoos-content-graph-ai-platform-v2.0.0` + `nvoos-content-graph-v1.0.10` ZIP builds are build-only)
 
 ---
 
