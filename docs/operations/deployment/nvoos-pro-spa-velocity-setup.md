@@ -56,6 +56,15 @@ a static React shell that mounts the Pro SPA v2 sources directly from
    > (exit 254). The `package.json` lives one level down — the root directory
    > must be `examples/nvoos-pro-spa-vite`.
 
+   > **Entry-path pitfall (ships a red build too):** Velocity prepends the
+   > **Root directory** to the **Entry file / start** value, so the entry
+   > must be the path *inside* the root directory — `scripts/serve.mjs` —
+   > never the repo-relative full path. With the entry mistakenly set to
+   > `examples/nvoos-pro-spa-vite/scripts/serve.mjs`, PM2 fails after a
+   > successful build with
+   > `Script not found: …/private_html/examples/nvoos-pro-spa-vite/examples/nvoos-pro-spa-vite/scripts/serve.mjs`
+   > (exit 1 — the doubled path gives the misconfiguration away).
+
 3. **Environment variables**:
 
    | Variable | When | Required | Value |
