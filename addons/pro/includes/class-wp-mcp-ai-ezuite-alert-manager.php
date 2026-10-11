@@ -176,9 +176,9 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_Alert_Manager' ) ) {
 
 			foreach ( $items as $item ) {
 				$sku        = isset( $item['sku'] ) ? esc_html( $item['sku'] ) : '';
-				$name       = isset( $item['product_name'] ) ? esc_html( $item['product_name'] ) : '';
+				$name       = isset( $item['name'] ) ? esc_html( $item['name'] ) : ( isset( $item['product_name'] ) ? esc_html( $item['product_name'] ) : '' );
 				$quantity   = isset( $item['quantity'] ) ? absint( $item['quantity'] ) : 0;
-				$warehouse  = isset( $item['location_name'] ) ? esc_html( $item['location_name'] ) : '';
+				$warehouse  = isset( $item['location_name'] ) ? esc_html( $item['location_name'] ) : ( isset( $item['warehouse'] ) ? esc_html( $item['warehouse'] ) : '' );
 				$reorder_pt = isset( $item['reorder_point'] ) ? esc_html( (string) $item['reorder_point'] ) : '-';
 
 				$row_style = ( 0 === $quantity ) ? ' style="background:#fdd;"' : '';

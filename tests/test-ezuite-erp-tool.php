@@ -124,6 +124,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Test extends WP_UnitTestCase {
 		// Test API action enum values.
 		$this->assertArrayHasKey( 'enum', $schema['properties']['api_action'] );
 		$this->assertContains( 'LX_ItemPull', $schema['properties']['api_action']['enum'] );
+		$this->assertContains( 'LX_ItemStockPull', $schema['properties']['api_action']['enum'] );
 	}
 
 	/**
