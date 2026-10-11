@@ -1,0 +1,34 @@
+# Rust
+src-tauri/target/
+target/
+**/*.rs.bk
+
+# Node
+node_modules/
+dist/
+*.local
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+*.log
+logs/
+
+# Models — downloaded at runtime, never committed (~600 MB)
+models/
+
+# Local env (secrets stay in the OS keychain; this file only holds dev paths)
+.env.local
+
+# Playwright
+e2e/test-results/
+e2e/playwright-report/
