@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_usage_guidance() {
 		return array(
-			'when_to_use'     => __( 'Fetching EZuite product listings with inventory and pricing through the simplified LX_ItemPull wrapper.', 'mcp-ai-wpoos-pro' ),
+			'when_to_use'     => __( 'Fetching EZuite product listings with inventory and pricing through the simplified LX_ItemStockPull wrapper.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Connection discovery or other API actions (use ezuite_erp); cached inventory reads (use ezuite_inventory).', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'ezuite_erp', 'ezuite_inventory', 'ezuite_sync' ),
 			'notes'           => __( 'Requires a connection_id from ezuite_erp list_connections; each call hits the ERP API, 30 per minute max.', 'mcp-ai-wpoos-pro' ),
@@ -254,11 +254,11 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 
 		// Add specific item code if provided.
 		if ( ! empty( $item_code ) ) {
-			$api_body[0]['Item_Code'] = $item_code;
+			$api_body[0]['ItemCode'] = $item_code;
 		}
 
 		// Make the ERP request.
-		$result = $this->make_erp_request( $connection, 'LX_ItemPull', $api_body );
+		$result = $this->make_erp_request( $connection, 'LX_ItemStockPull', $api_body );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -311,8 +311,8 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 	/**
 	 * Filter formatted products to an exact item code match.
 	 *
-	 * The EZuite LX_ItemPull endpoint is documented as accepting an
-	 * Item_Code pull filter, but some deployments ignore it and return the
+	 * The EZuite LX_ItemStockPull endpoint is documented as accepting an
+	 * ItemCode pull filter, but some deployments ignore it and return the
 	 * full item list. This backstop enforces the requested code on the
 	 * formatted rows (case-insensitive) so callers never receive unrelated
 	 * items when they asked for a specific SKU.
@@ -471,11 +471,11 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 				break;
 			}
 
-			// Format product data using canonical EZuite LX_ItemPull field names.
-			// Fields present in the API response are mapped directly; optional
-			// fields that may not be returned are checked individually.
+			// Format product data using canonical EZuite LX_ItemStockPull field
+			// names, with legacy LX_ItemPull fallbacks (Item_Code, top-level
+			// Location_Code, Quantity_On_Hand, Unit_Price) for older deployments.
 			$product = array(
-				'item_code'     => isset( $item['Item_Code'] ) ? $item['Item_Code'] : '',
+				'item_code'     => isset( $item['ItemCode'] ) ? $item['ItemCode'] : ( isset( $item['Item_Code'] ) ? $item['Item_Code'] : '' ),
 				'item_name'     => isset( $item['Item_Name'] ) ? $item['Item_Name'] : '',
 				'description'   => isset( $item['Item_Name'] ) ? $item['Item_Name'] : ( isset( $item['Description'] ) ? $item['Description'] : '' ),
 				'quantity'      => isset( $item['Qty'] ) ? floatval( $item['Qty'] ) : ( isset( $item['Quantity_On_Hand'] ) ? floatval( $item['Quantity_On_Hand'] ) : 0 ),
@@ -495,6 +495,20 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 
 			if ( isset( $item['Remark'] ) ) {
 				$product['remark'] = $item['Remark'];
+			}
+
+			// Per-location stock breakdown (LX_ItemStockPull Stock_By_Location
+			// with a legacy Location_Code fallback).
+			if ( ! empty( $item['Stock_By_Location'] ) && is_array( $item['Stock_By_Location'] ) ) {
+				$product['stock_by_location'] = $this->format_stock_by_location( $item['Stock_By_Location'] );
+			} elseif ( isset( $item['Location_Code'] ) ) {
+				$product['stock_by_location'] = array(
+					array(
+						'location_code' => $item['Location_Code'],
+						'location_name' => isset( $item['Location_Name'] ) ? $item['Location_Name'] : '',
+						'quantity'      => isset( $item['Qty'] ) ? floatval( $item['Qty'] ) : 0,
+					),
+				);
 			}
 
 			// Legacy/alternate API shapes.
@@ -527,6 +541,37 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		}
 
 		return $products;
+	}
+
+	/**
+	 * Normalize a Stock_By_Location entry list to friendly output keys.
+	 *
+	 * The LX_ItemStockPull response nests per-location stock under
+	 * Stock_By_Location with Setup_Location_Code / Location_Name / Qty keys.
+	 * This helper maps each entry to stable tool-output keys and tolerates
+	 * non-array entries.
+	 *
+	 * @since 3.2.0
+	 *
+	 * @param array $entries Raw Stock_By_Location entries.
+	 * @return array Normalized per-location stock rows.
+	 */
+	protected function format_stock_by_location( $entries ) {
+		$formatted = array();
+
+		foreach ( $entries as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$formatted[] = array(
+				'location_code' => isset( $entry['Setup_Location_Code'] ) ? $entry['Setup_Location_Code'] : '',
+				'location_name' => isset( $entry['Location_Name'] ) ? $entry['Location_Name'] : '',
+				'quantity'      => isset( $entry['Qty'] ) ? floatval( $entry['Qty'] ) : 0,
+			);
+		}
+
+		return $formatted;
 	}
 
 	/**

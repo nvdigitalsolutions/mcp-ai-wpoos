@@ -137,13 +137,18 @@ The toolkit uses a flexible field mapping system to translate between EZuite ERP
 3. **Read-only sync** — Pull EZuite data into WordPress without pushing changes back
 
 ### Default mappings include:
-- SKU → WooCommerce SKU
-- Item_Code → Product reference
-- Item_Name → Product title
-- Description → Product description
-- Location_Code → Warehouse/location meta
-- Quantity → Stock quantity
-- Price → Regular price
+- SKU ← `ItemCode` (legacy `Item_Code` accepted)
+- Product title ← `Item_Name`
+- Quantity ← `Qty` (falls back to the sum of per-location quantities)
+- Warehouse/location ← `Location_Code` (primary `Setup_Location_Code` from `Stock_By_Location` in the current `LX_ItemStockPull` shape)
+- Location Name ← `Location_Name` (primary `Stock_By_Location` entry)
+- Stock by Location ← `Stock_By_Location` (full per-location breakdown, stored as JSON)
+- Supplier ← `Supplier_Name`
+- Cost Price ← `Selling_Price`
+
+> The sync engine calls the `LX_ItemStockPull` API action. Hosts still
+> serving the legacy `LX_ItemPull` action can pin it back with the
+> `wp_mcp_ai_ezuite_api_action` filter.
 
 ## Sync Log Manager
 

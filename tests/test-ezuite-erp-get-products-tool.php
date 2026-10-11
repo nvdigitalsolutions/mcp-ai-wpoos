@@ -280,9 +280,9 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Some ERP deployments ignore the LX_ItemPull Item_Code filter and return
-	 * the full item list. The tool must enforce the requested code on the
-	 * formatted rows so it never reports stock or pricing for an unrelated
+	 * Some ERP deployments ignore the LX_ItemStockPull ItemCode filter and
+	 * return the full item list. The tool must enforce the requested code on
+	 * the formatted rows so it never reports stock or pricing for an unrelated
 	 * product.
 	 */
 	public function test_item_code_filter_enforced_client_side() {
@@ -298,13 +298,13 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products_Test extends WP_UnitTestCase {
 						'Message'       => 'OK',
 						'Response_Body' => array(
 							array(
-								'Item_Code'     => 'C316/L17/ITM-1',
+								'ItemCode'      => 'C316/L17/ITM-1',
 								'Item_Name'     => 'Millenia: Case for Apple Watch',
 								'Qty'           => 12,
 								'Selling_Price' => 129.00,
 							),
 							array(
-								'Item_Code'     => 'JCB21',
+								'ItemCode'      => 'JCB21',
 								'Item_Name'     => 'Jacket Black 21',
 								'Qty'           => 4,
 								'Selling_Price' => 89.50,
@@ -356,7 +356,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products_Test extends WP_UnitTestCase {
 						'Message'       => 'OK',
 						'Response_Body' => array(
 							array(
-								'Item_Code'     => 'C316/L17/ITM-1',
+								'ItemCode'      => 'C316/L17/ITM-1',
 								'Item_Name'     => 'Millenia: Case for Apple Watch',
 								'Qty'           => 12,
 								'Selling_Price' => 129.00,
@@ -387,6 +387,134 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products_Test extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$this->assertSame( 0, $result['count'] );
 		$this->assertStringContainsString( 'No exact match', $result['summary'] );
+	}
+
+	/**
+	 * The LX_ItemStockPull response shape (ItemCode + Stock_By_Location) must
+	 * format into stable tool output with a per-location breakdown.
+	 */
+	public function test_formats_itemstockpull_shape_with_stock_by_location() {
+		wp_set_current_user( $this->admin_id );
+
+		$connection_id = $this->create_test_connection();
+
+		$http_stub = function () {
+			return array(
+				'body'     => wp_json_encode(
+					array(
+						'Status_Code'   => 200,
+						'Message'       => 'LX_ItemStockPull API Executed Successfully.',
+						'Response_Body' => array(
+							array(
+								'ItemCode'          => '170639',
+								'Item_Name'         => 'Earrings with Stickpin 1500 MC',
+								'Supplier_Name'     => 'Coeur de Lion',
+								'Printing_Name'     => '4239/21-1500',
+								'Group_Name'        => 'Earrings',
+								'Remark'            => '4239/21-1500',
+								'Selling_Price'     => 8200.0,
+								'Qty'               => 1.0,
+								'Stock_By_Location' => array(
+									array(
+										'Setup_Location_Code' => 'EZCMP316/EZLOC-3',
+										'Location_Name' => 'A Little Sparkle – One Galle Face',
+										'Qty'           => 1.0,
+									),
+								),
+							),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'headers'  => array(),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $this->tool->execute(
+			array( 'connection_id' => $connection_id ),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 1, $result['count'] );
+
+		$product = $result['products'][0];
+		$this->assertSame( '170639', $product['item_code'] );
+		$this->assertSame( 'Earrings with Stickpin 1500 MC', $product['item_name'] );
+		$this->assertSame( 1.0, $product['quantity'] );
+		$this->assertSame( 8200.0, $product['selling_price'] );
+		$this->assertSame( 'Earrings', $product['group_name'] );
+		$this->assertSame( 'Coeur de Lion', $product['supplier_name'] );
+		$this->assertSame( '4239/21-1500', $product['printing_name'] );
+		$this->assertSame( '4239/21-1500', $product['remark'] );
+
+		$this->assertArrayHasKey( 'stock_by_location', $product );
+		$this->assertCount( 1, $product['stock_by_location'] );
+		$this->assertSame( 'EZCMP316/EZLOC-3', $product['stock_by_location'][0]['location_code'] );
+		$this->assertSame( 'A Little Sparkle – One Galle Face', $product['stock_by_location'][0]['location_name'] );
+		$this->assertSame( 1.0, $product['stock_by_location'][0]['quantity'] );
+	}
+
+	/**
+	 * Legacy LX_ItemPull responses (Item_Code + top-level Location_Code) must
+	 * still format correctly after the shape update.
+	 */
+	public function test_formats_legacy_itempull_shape() {
+		wp_set_current_user( $this->admin_id );
+
+		$connection_id = $this->create_test_connection();
+
+		$http_stub = function () {
+			return array(
+				'body'     => wp_json_encode(
+					array(
+						'Status_Code'   => 200,
+						'Message'       => 'LX_ItemPull API Executed Successfully.',
+						'Response_Body' => array(
+							array(
+								'Item_Code'     => 'C316/L16/ITM-10',
+								'Item_Name'     => 'Bangle 1816 Crystal Gold',
+								'Barcode'       => '170620',
+								'Location_Code' => 'MAIN',
+								'Qty'           => 37.0,
+							),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'headers'  => array(),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $this->tool->execute(
+			array( 'connection_id' => $connection_id ),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 1, $result['count'] );
+
+		$product = $result['products'][0];
+		$this->assertSame( 'C316/L16/ITM-10', $product['item_code'] );
+		$this->assertSame( 37.0, $product['quantity'] );
+		$this->assertSame( 'MAIN', $product['location_code'] );
+		$this->assertSame( '170620', $product['barcode'] );
+		$this->assertCount( 1, $product['stock_by_location'] );
+		$this->assertSame( 'MAIN', $product['stock_by_location'][0]['location_code'] );
 	}
 
 	/**

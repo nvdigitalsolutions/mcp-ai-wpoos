@@ -112,11 +112,14 @@ Executes an EZuite ERP API action to query or modify data.
 
 ## Supported API Actions
 
-**Note**: API action names are **case-insensitive**. You can use `lx_itempull`, `LX_ItemPull`, or any other casing variation. The tool will automatically normalize the action name to the correct format for the EZuite API.
+**Note**: API action names are **case-insensitive**. You can use `lx_itemstockpull`, `LX_ItemStockPull`, or any other casing variation. The tool will automatically normalize the action name to the correct format for the EZuite API.
 
-### LX_ItemPull
+### LX_ItemStockPull
 
-Retrieves items from the ERP system inventory.
+Retrieves items from the ERP system inventory with per-location stock.
+This is the current EZuite action for pulling items. The legacy
+`LX_ItemPull` action (flat `Item_Code` / `Location_Code` response shape)
+remains supported for older deployments.
 
 **Example Usage**:
 ```
@@ -128,7 +131,7 @@ Pull all items from the ERP system using connection conn_abc123
 {
   "action": "invoke_api",
   "connection_id": "conn_abc123",
-  "api_action": "LX_ItemPull",
+  "api_action": "LX_ItemStockPull",
   "api_body": [
     {
       "Location_Code": "ALL"
@@ -139,29 +142,36 @@ Pull all items from the ERP system using connection conn_abc123
 
 **Important Notes**:
 - `api_body` is required for all API actions
-- API action names are case-insensitive (e.g., `lx_itempull` works the same as `LX_ItemPull`)
+- API action names are case-insensitive (e.g., `lx_itemstockpull` works the same as `LX_ItemStockPull`)
 - Using `Location_Code: "ALL"` may return large datasets - use specific location codes when possible
+- To pull a specific item, pass `"ItemCode": "170639"` alongside `Location_Code`
 - For production use, consider filtering by specific locations to improve performance
 
 **Response Structure**:
 ```json
 {
   "success": true,
-  "api_action": "LX_ItemPull",
+  "api_action": "LX_ItemStockPull",
   "data": {
     "Status_Code": 200,
-    "Message": "LX_ItemPull API Executed Successfully.",
+    "Message": "LX_ItemStockPull API Executed Successfully.",
     "Response_Body": [
       {
-        "Item_Code": "C316/L16/ITM-10",
-        "Item_Name": "Bangle 1816 Crystal Gold",
-        "Barcode": "170620"
-      },
-      {
-        "Item_Code": "EZCMP316/EZLOC7/ITM-9",
-        "Item_Name": "Pure Xs Edt 100ml",
-        "Barcode": "3349668576173",
-        "Qty": 37.0
+        "ItemCode": "170639",
+        "Item_Name": "Earrings with Stickpin 1500 MC",
+        "Supplier_Name": "Coeur de Lion",
+        "Printing_Name": "4239/21-1500",
+        "Group_Name": "Earrings",
+        "Remark": "4239/21-1500",
+        "Selling_Price": 8200.0,
+        "Qty": 1.0,
+        "Stock_By_Location": [
+          {
+            "Setup_Location_Code": "EZCMP316/EZLOC-3",
+            "Location_Name": "A Little Sparkle – One Galle Face",
+            "Qty": 1.0
+          }
+        ]
       }
     ]
   }
@@ -382,7 +392,7 @@ You have access to our ERP system through the ezuite_erp tool.
 
 When asked about inventory:
 1. First call list_connections to get available connections
-2. Use invoke_api with LX_ItemPull to retrieve items
+2. Use invoke_api with LX_ItemStockPull to retrieve items
 3. Present the information clearly to the user
 
 Always check the Status_Code in responses. If it's not 200, 
@@ -472,7 +482,7 @@ Step 4: Present low stock items to user
 ```
 Assistant: I'll update the item price in the ERP system.
 
-Step 1: Verify item exists with LX_ItemPull
+Step 1: Verify item exists with LX_ItemStockPull
 Step 2: Confirm price change with user
 Step 3: Execute LX_ItemUpdate
 Step 4: Verify update was successful
@@ -493,6 +503,9 @@ Step 5: Return order confirmation
 
 ## Version History
 
+- **3.2.0** - LX_ItemStockPull response shape support
+  - `ItemCode` / `Stock_By_Location` fields (legacy `Item_Code` / `Location_Code` still accepted)
+  - `LX_ItemStockPull` added to the supported action enum
 - **1.0.0** - Initial release
   - Support for LX_ItemPull action
   - Support for 7 core API actions
