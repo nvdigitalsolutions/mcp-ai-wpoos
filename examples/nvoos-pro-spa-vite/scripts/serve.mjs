@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Minimal static server for Cloudways Velocity (and `npm run serve`).
  *
