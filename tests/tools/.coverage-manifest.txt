@@ -48,6 +48,7 @@ wp-mcp-ai-tool-create-assistant
 wp-mcp-ai-tool-create-assistant-validated
 wp-mcp-ai-tool-create-batch
 wp-mcp-ai-tool-create-chart
+wp-mcp-ai-tool-create-chart-fence
 wp-mcp-ai-tool-create-chart-validated
 wp-mcp-ai-tool-create-comment
 wp-mcp-ai-tool-create-cron-job
