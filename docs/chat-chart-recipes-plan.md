@@ -54,46 +54,63 @@ A fenced code block with language `nvoos-chart` (backtick or tilde fences):
 
 ```json
 {
-  "type": "bar | column | line | area | dot | donut | heatmap",
+  "type": "bar | column | line | area | dot | donut | heatmap | histogram | box | strip | stem | violin | pie | waffle | unit | diverging | lollipop | dumbbell | slope | bullet | pyramid | waterfall | candlestick | gantt | sparkline | radial | dial | race | grid",
   "title": "optional, ≤120 chars",
   "caption": "optional, ≤120 chars",
   "labels": ["row / x labels"],
   "values": [12, 24, 18],
-  "series": [ { "name": "A", "values": [1, 2, 3], "color": "#hex | rgb() | hsl()" } ]
+  "series": [ { "name": "A", "values": [1, 2, 3], "color": "#hex | rgb() | hsl()" } ],
+  "data": { "items": [ { "label", "value" | "values" } ] },
+  "mode": "grouped | stacked | 100",
+  "direction": "horizontal | vertical",
+  "sort": "asc | desc",
+  "unit": "optional suffix",
+  "animate": true | "race",
+  "table": true | false,
+  "target": "number (bullet charts)",
+  "charts": [ "…specs…" ]
 }
 ```
 
 Rules (enforced in code, identical across surfaces):
 
-- `type` is required and must be one of the six values above; anything else
-  renders as a normal code block (graceful fallback).
-- `labels`: strings (non-strings are coerced), max 40 entries, each ≤60 chars.
+- `type` is required and must be in the whitelist above (v1's six values still
+  work unchanged); anything else renders as a normal code block (graceful
+  fallback).
+- `labels`: strings (non-strings are coerced), max 40 entries (20 for
+  heatmaps), each ≤60 chars.
 - `values` / each series' `values`: finite numbers only, max 120 entries,
   non-finite entries dropped. `series` max 12 entries.
-- `values` is shorthand for a single unnamed series.
+- `values` is shorthand for a single unnamed series; `data.items` rows with a
+  scalar `value` are coerced into one unnamed series + `labels`.
 - `color` must match a strict `#hex` / `rgb()` / `hsl()` pattern, else the
   internal palette is used.
 - No user string is ever placed inside an inline `style`; only computed numbers
   and our own `var(--…)` references are.
-- Donut uses `labels` + first series; negatives clamp to 0.
+- Donut/pie use `labels` + first series; negatives clamp to 0.
+- The full v2 schema (families, caps, per-type shapes) is specified in
+  `docs/chat-chart-recipes-enhancement-plan.md` §3.
 
 ## 4. Rendering strategy (per type, all pure HTML/CSS)
 
-| type    | construction |
-|---------|--------------|
-| bar     | rows of proportional slats on a **center baseline** (signed values extend left/right, rhp `<Tick>`-style); value labels outside the slats |
-| column  | per-label groups; bars absolutely positioned above/below a center zero-line |
-| line    | dots at computed `(x%, y%)`; connectors as thin rotated segments (angle corrected for the plot's fixed 16:10 aspect ratio) |
-| area    | line + per-point fill slats at low opacity |
-| dot     | line without connectors (scatter) |
-| donut   | `conic-gradient` ring + center hole (total) + legend rows |
-| heatmap | CSS grid (template columns computed from series count); per-cell background layer with `opacity: var(--v)`, sign class for negatives |
+| family | types | construction |
+|--------|-------|--------------|
+| basics (v1) | bar, column, line, area, dot, donut, heatmap | bar = rows of proportional slats (left-anchored for non-negative data, per-sign scaling around a center baseline for mixed signs); column = per-label groups with inter-series gaps, above/below a zero-line; line/area/dot = computed `(x%, y%)` dots with rotated connectors (angle corrected for the 16:10 aspect ratio); donut = `conic-gradient` ring + total; heatmap = CSS grid with `opacity: var(--v)` cells |
+| distribution | histogram, box, strip, stem, violin | histogram = full-width column bars; box = whisker/min/median/max wireframe per group; strip/stem = points/stems per value; violin = mirrored Gaussian-KDE half-slices with a median dot |
+| part-to-whole | pie, waffle, unit | pie = donut without the hole; waffle/unit = CSS-grid unit cells (≤400 / ≤60 cells) |
+| ranking | diverging, lollipop, race | diverging = signed slats from a center axis; lollipop = stem + head dots; race = static final sorted frame (`animate: "race"` for replay surfaces) |
+| change | dumbbell, slope, bullet, pyramid, waterfall, candlestick, gantt, sparkline | dumbbell = two series joined per row; slope = rotated before/after connectors; bullet = value bar vs `target` marker; pyramid = centered descending bars; waterfall = cumulative up/down bars with connectors; candlestick = OHLC wick/body per row; gantt = `[start, end]` spans; sparkline = word-space trend |
+| special | radial, dial | single-value gauges (conic ring / clip + needle) |
+| grid | grid | small multiples — ≤12 nested specs |
 
 - Series colours come from an 8-step CSS-variable palette (`--…-chart-series-1…8`)
   so they adapt to theme; user colours are strictly validated.
 - Max-absolute scaling per chart; zero lines via CSS pseudo-elements.
 - All text via `textContent`; output serialized with `outerHTML` and spliced
   in **after** DOMPurify — the allowlist is never widened.
+- Every chart auto-includes a collapsed `<details>` data table unless
+  `table: false`; animations honour `prefers-reduced-motion`.
+- Per-type construction details live in `docs/chat-chart-recipes-enhancement-plan.md` §3.
 
 ## 5. Surface map
 
@@ -160,5 +177,35 @@ mention the `nvoos-chart` fence so models know to emit it, e.g.:
 > containing JSON: `{ "type": "bar|column|line|area|dot|donut|heatmap",
 > "title"?, "labels"?, "values"? | "series": [{ "name"?, "values", "color"? }] }`.
 
+The v2 enhancement plan (`docs/chat-chart-recipes-enhancement-plan.md` §3)
+adds 22 more types plus optional keys (`mode`, `sort`, `direction`, `unit`,
+`animate`, `table`, `target`, `caption`, `data.items`). The `design-chart-recipes`
+skill (`.agents/skills/design-chart-recipes/SKILL.md`) carries the full
+copy-paste prompt snippet for prompt authors.
+
 There is no central default-prompt template to update — prompts are authored
 per assistant in the admin UI.
+
+## 10. v2 enhancement — implementation status
+
+Implemented per `docs/chat-chart-recipes-enhancement-plan.md` (see that file
+for the schema, roadmap and verification gates):
+
+- [x] All 22 new types (distribution, part-to-whole, ranking, change, special,
+      grid/race) + v2 schema keys in all three renderer surfaces (base JS,
+      chat-spa TS, spa-v2 TS canonical)
+- [x] Bar/column gap fix (grouped bars no longer touch) + left-anchored
+      positive bars + per-sign scaling for mixed-sign baselines
+- [x] `data.items` row coercion (single series + labels) in all three renderers
+- [x] Accessible `<details>` data table (unless `table: false`)
+- [x] CSS entry animations with `prefers-reduced-motion` guards; race final
+      frame is static
+- [x] Full CSS for every type on all three surfaces (tokens, dark-theme aware)
+- [x] `create_chart_fence` tool (base plugin, `includes/tools/`)
+      — server-side validator returning a normalised fence + fallback table
+- [x] `design-chart-recipes` skill (`.agents/skills/`)
+- [x] Shared conformance fixtures: `addons/pro/assets/spa-v2/src/__tests__/chart-fixtures.json`
+      (canonical) mirrored in `addons/chat-spa/src/__tests__/` and `tests/js/`,
+      wired into all three suites
+- [x] Tests: base jest 29, spa-v2 vitest 181, chat-spa vitest 51;
+      PHP tool tests 9 (validation matrix); typechecks + eslint clean

@@ -1381,7 +1381,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 	- Content tools: search_content, semantic_content_search, get_recent_posts, get_site_summary, suggest_internal_links, content_freshness_checker.
 	- Curated knowledge: okf_browse, okf_search, okf_read_concept, okf_traverse, okf_list_bundles.
 	- Memory: wake_up_context, retrieve_agent_memory, store_agent_context.
-	- Research and presentation: web_search, deep_research, client_summarize_text, client_extract_entities, create_chart, generate_mermaid.
+	- Research and presentation: web_search, deep_research, client_summarize_text, client_extract_entities, create_chart, create_chart_fence, generate_mermaid.
 
 	REASONING PROTOCOL (GraphRAG style)
 	1. Understand the intent first — restate what the user wants to know or achieve.
@@ -1478,6 +1478,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 						'client_summarize_text',
 						'client_extract_entities',
 						'create_chart',
+						'create_chart_fence',
 					),
 					'system_prompt' => "You are an SEO analyst and research specialist for a WordPress site.\n\nYour expertise:\n- Keyword research and competitive analysis via web search\n- On-page SEO audits using Rank Math integration\n- Content gap analysis and optimization recommendations\n- Internal linking strategy to boost site authority\n- Content freshness checks to identify outdated material\n- Data visualization with charts for reporting\n\nWhen conducting SEO analysis:\n1. Audit existing content for SEO issues\n2. Research competitors and identify keyword opportunities\n3. Recommend specific optimizations for each page\n4. Suggest internal links between related content\n5. Identify stale content that needs refreshing\n6. Create visual reports with charts when presenting data\n\nBase all recommendations on current SEO best practices. Provide actionable, specific suggestions rather than vague advice.",
 					'temperature'   => 0.3,
@@ -1519,6 +1520,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 						'search_attachments',
 						'generate_openai_speech',
 						'create_chart',
+						'create_chart_fence',
 						'generate_mermaid',
 						'media_library_optimizer',
 					),
@@ -1698,6 +1700,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				'suggest_internal_links',
 				'content_freshness_checker',
 				'create_chart',
+				'create_chart_fence',
 				'generate_mermaid',
 				'wake_up_context',
 				'retrieve_agent_memory',

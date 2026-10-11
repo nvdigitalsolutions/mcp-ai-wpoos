@@ -184,6 +184,7 @@ class WP_MCP_AI_Default_Assistants {
 						'huggingface_dataset_get_parquet',
 						// Visualization & Charting.
 						'create_chart',
+						'create_chart_fence',
 						'generate_chart',
 						'generate_mermaid',
 						// Validation.

@@ -202,6 +202,7 @@ Perfect for construction workflows where accurate dimensions, code compliance, a
 ## Data visualization
 
 - **Create Chart** (`create_chart`) creates interactive charts using Chart.js. Supports bar, line, pie, doughnut, radar, and polar area charts. Returns HTML/JavaScript or saves as attachment.【F:includes/tools/class-wp-mcp-ai-tool-create-chart.php†L17-L300】
+- **Create Chart Fence** (`create_chart_fence`) validates chart data and returns a normalised `nvoos-chart` fenced code block (29 chart types) that renders as a built-in HTML/CSS chart on every chat surface, plus a plain-text table fallback.【F:includes/tools/class-wp-mcp-ai-tool-create-chart-fence.php†L17-L620】
 
 ## Spreadsheet & Data Analysis
 
