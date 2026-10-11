@@ -1041,6 +1041,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'model_foundry',
+				'Model Foundry — Corpus Foundry',
+				array(),
+				array(),
+				function () use ( $p ) {
+					require_once $p . 'model-foundry/model-foundry-init.php';
+				}
+			);
+
+			$this->add_module(
 				'pro_services_phase6',
 				'Services Phase 6',
 				array(),
