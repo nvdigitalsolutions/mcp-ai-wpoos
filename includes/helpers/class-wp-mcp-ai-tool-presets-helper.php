@@ -110,6 +110,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'send_group_email',
 					// Visualization.
 					'create_chart',
+					'create_chart_fence',
 					// Agent memory & context (WP-stored).
 					'store_agent_context',
 					'wake_up_context',
@@ -3026,6 +3027,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 					// ── Charts ──.
 					'create_chart',
+					'create_chart_fence',
 					'create_chart_validated',
 
 					// ── Document Generation ──.

@@ -13,6 +13,8 @@ import {
 	renderChartRecipe,
 } from '../components/shared/chartRecipes';
 
+import chartFixtures from './chart-fixtures.json';
+
 describe( 'splitChartSegments', () => {
 	it( 'returns a single markdown segment for plain text', () => {
 		const segments = splitChartSegments( 'hello **world**' );
@@ -92,7 +94,7 @@ describe( 'parseChartSpec', () => {
 	} );
 
 	it( 'rejects an unknown chart type', () => {
-		expect( parseChartSpec( '{"type":"pie","values":[1]}' ).ok ).toBe( false );
+		expect( parseChartSpec( '{"type":"bogus","values":[1]}' ).ok ).toBe( false );
 	} );
 
 	it( 'rejects specs with no usable data', () => {
@@ -136,7 +138,7 @@ describe( 'renderChartRecipe', () => {
 
 	it( 'falls back to an escaped code block for invalid fences', () => {
 		const html = renderChartRecipe(
-			'{"type":"pie","values":[1]}<script>alert(1)</script>',
+			'{"type":"funnel","values":[1]}<script>alert(1)</script>',
 			{ classPrefix: 'x', codeBlockClass: 'cb' }
 		);
 		expect( html ).toContain( 'class="cb"' );
@@ -163,7 +165,18 @@ describe( 'renderChartRecipe', () => {
 		expect( html ).toContain( 'conic-gradient(' );
 		expect( html ).toContain( 'p-donut-total' );
 		expect( html ).toContain( '>100</div>' );
-	} );
+} );
+
+it( 'coerces data.items rows into a single series with labels', () => {
+	const html = renderChartRecipe(
+		'{"type":"donut","data":{"items":[{"label":"X","value":30},{"label":"Y","value":70}]}}',
+		{ classPrefix: 'p', codeBlockClass: 'cb' }
+	);
+	expect( html ).toContain( 'conic-gradient(' );
+	expect( html ).toContain( 'p-donut-legend-label' );
+	expect( html ).toContain( '>X</span>' );
+	expect( html ).toContain( '>Y</span>' );
+} );
 
 	it( 'renders a heatmap with a computed grid template', () => {
 		const html = renderChartRecipe(
@@ -189,11 +202,87 @@ describe( 'renderChartRecipe', () => {
 		expect( dot ).toContain( 'p-plot-dot' );
 	} );
 
+	it( 'left-anchors positive-only bars with no center axis', () => {
+		const html = renderChartRecipe(
+			'{"type":"bar","values":[1,4]}',
+			{ classPrefix: 'p', codeBlockClass: 'cb' }
+		);
+		expect( html ).toContain( 'p-body p-body--bar' );
+		expect( html ).not.toContain( 'p-body--bar-center' );
+		const doc = new DOMParser().parseFromString( html, 'text/html' );
+		const bar = doc.querySelector( '.p-bar' );
+		expect( bar ).not.toBeNull();
+		expect( ( bar as HTMLElement ).style.left ).toBe( '0%' );
+		expect( parseFloat( ( bar as HTMLElement ).style.width ) ).toBeCloseTo( 25 );
+	} );
+
 	it( 'renders negative bars with the negative modifier', () => {
 		const html = renderChartRecipe(
 			'{"type":"bar","values":[-2,3]}',
 			{ classPrefix: 'p', codeBlockClass: 'cb' }
 		);
+		expect( html ).toContain( 'p-body p-body--bar-center' );
 		expect( html ).toContain( 'p-bar p-bar--negative' );
+		const doc = new DOMParser().parseFromString( html, 'text/html' );
+		const negative = doc.querySelector( '.p-bar--negative' );
+		expect( negative ).not.toBeNull();
+		expect( parseFloat( ( negative as HTMLElement ).style.left ) ).toBeCloseTo( 0 );
+		expect( parseFloat( ( negative as HTMLElement ).style.width ) ).toBeCloseTo( 50 );
+	} );
+
+	it( 'renders a violin plot with mirrored KDE halves and a median dot', () => {
+		const values = [ 1, 2, 2, 3, 3, 3, 4, 4, 5, 6 ];
+		const html = renderChartRecipe(
+			JSON.stringify( {
+				type: 'violin',
+				series: [
+					{ name: 'Group A', values },
+					{ name: 'Group B', values: values.map( ( v ) => v + 1 ) },
+				],
+			} ),
+			{ classPrefix: 'p', codeBlockClass: 'cb' }
+		);
+		const doc = new DOMParser().parseFromString( html, 'text/html' );
+		expect( doc.querySelectorAll( '.p-violin-item' ) ).toHaveLength( 2 );
+		expect( doc.querySelectorAll( '.p-violin-half' ).length ).toBeGreaterThan( 20 );
+		expect( doc.querySelectorAll( '.p-violin-dot' ) ).toHaveLength( 2 );
+		expect( html ).toContain( 'p-track p-track--center' );
+		const half = doc.querySelector( '.p-violin-half' ) as HTMLElement;
+		expect( parseFloat( half.style.width ) ).toBeGreaterThan( 0 );
+		// The left half extends left of the centerline; both halves must
+		// stay within the track (-50%..100% of the centerline).
+		expect( parseFloat( half.style.left ) ).toBeGreaterThan( -60 );
+		expect( parseFloat( half.style.left ) ).toBeLessThan( 100 );
+	} );
+} );
+
+describe( 'shared conformance fixtures', () => {
+	interface FixtureCase {
+		name: string;
+		code: string;
+		checks: Array< { selector: string; property?: string; expect?: string; number?: number; precision?: number; count?: number } >;
+	}
+
+	( chartFixtures.cases as FixtureCase[] ).forEach( ( fixture ) => {
+		it( 'fixture: ' + fixture.name, () => {
+			const html = renderChartRecipe( fixture.code, { classPrefix: 'f', codeBlockClass: 'f-code-block' } );
+			const doc = new DOMParser().parseFromString( html, 'text/html' );
+			fixture.checks.forEach( ( check ) => {
+				if ( typeof check.count === 'number' ) {
+					expect( doc.querySelectorAll( check.selector ) ).toHaveLength( check.count );
+					return;
+				}
+				const node = doc.querySelector( check.selector ) as HTMLElement;
+				expect( node ).not.toBeNull();
+				if ( check.property ) {
+					const raw = node.style.getPropertyValue( check.property );
+					if ( typeof check.number === 'number' ) {
+						expect( parseFloat( raw ) ).toBeCloseTo( check.number, check.precision || 2 );
+					} else {
+						expect( raw ).toBe( check.expect );
+					}
+				}
+			} );
+		} );
 	} );
 } );

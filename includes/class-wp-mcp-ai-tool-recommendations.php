@@ -477,6 +477,7 @@ class WP_MCP_AI_Tool_Recommendations {
 			'description'     => 'Data visualization and chart generation',
 			'tools'           => array(
 				'create_chart',
+				'create_chart_fence',
 				'create_chart_validated',
 			),
 		),

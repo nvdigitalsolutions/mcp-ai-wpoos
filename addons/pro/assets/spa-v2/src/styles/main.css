@@ -4725,6 +4725,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	--chart-muted: var(--nvoos-text-secondary, #787c82);
 	--chart-accent: var(--nvoos-primary, #2271b1);
 	--chart-negative: #d63638;
+	--chart-positive: #16a34a;
 	margin: 12px 0;
 	padding: 12px 14px;
 	border: 1px solid var(--chart-border);
@@ -4812,7 +4813,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	min-width: 120px;
 }
 
-.nvoos-pro-spa-chart-recipe-track::before {
+.nvoos-pro-spa-chart-recipe-body--bar-center .nvoos-pro-spa-chart-recipe-track::before {
 	content: '';
 	position: absolute;
 	left: 50%;
@@ -5073,6 +5074,655 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	color: var(--chart-text);
 }
 
+/* Bar v2: stacked segments + grouped row spacing */
+.nvoos-pro-spa-chart-recipe-stack-seg {
+	position: absolute;
+	top: 0;
+	height: 100%;
+	min-width: 2px;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-stack-seg:first-child {
+	border-radius: 3px 0 0 3px;
+}
+
+.nvoos-pro-spa-chart-recipe-row--first {
+	margin-top: 8px;
+}
+
+.nvoos-pro-spa-chart-recipe-body .nvoos-pro-spa-chart-recipe-row--first:first-child {
+	margin-top: 0;
+}
+
+.nvoos-pro-spa-chart-recipe-row--continuation {
+	margin-bottom: 3px;
+}
+
+/* Center-baseline tracks (diverging / bullet / pyramid) */
+.nvoos-pro-spa-chart-recipe-track--center::before {
+	content: '';
+	position: absolute;
+	left: 50%;
+	top: 0;
+	bottom: 0;
+	width: 1px;
+	background: var(--chart-border);
+}
+
+/* Zero axis for range tracks (box / strip / dumbbell) */
+.nvoos-pro-spa-chart-recipe-body--box .nvoos-pro-spa-chart-recipe-track::before,
+.nvoos-pro-spa-chart-recipe-body--strip .nvoos-pro-spa-chart-recipe-track::before,
+.nvoos-pro-spa-chart-recipe-body--dumbbell .nvoos-pro-spa-chart-recipe-track::before {
+	content: '';
+	position: absolute;
+	left: 50%;
+	top: 0;
+	bottom: 0;
+	width: 1px;
+	background: var(--chart-border);
+}
+
+/* Plot dot value tooltip */
+.nvoos-pro-spa-chart-recipe-plot-dot-value {
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	margin-bottom: 4px;
+	padding: 1px 5px;
+	border: 1px solid var(--chart-border);
+	border-radius: 3px;
+	background: var(--chart-surface);
+	font-size: 10px;
+	color: var(--chart-text);
+	white-space: nowrap;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.15s ease;
+	z-index: 2;
+}
+
+.nvoos-pro-spa-chart-recipe-plot-dot:hover .nvoos-pro-spa-chart-recipe-plot-dot-value,
+.nvoos-pro-spa-chart-recipe-strip-dot:hover .nvoos-pro-spa-chart-recipe-plot-dot-value,
+.nvoos-pro-spa-chart-recipe-stem-dot:hover .nvoos-pro-spa-chart-recipe-plot-dot-value,
+.nvoos-pro-spa-chart-recipe-violin-dot:hover .nvoos-pro-spa-chart-recipe-plot-dot-value {
+	opacity: 1;
+}
+
+/* Sparkline */
+.nvoos-pro-spa-chart-recipe-plot.nvoos-pro-spa-chart-recipe-spark {
+	aspect-ratio: 3 / 1;
+	max-width: 320px;
+	padding: 4px;
+}
+
+.nvoos-pro-spa-chart-recipe-spark .nvoos-pro-spa-chart-recipe-plot-dot {
+	width: 4px;
+	height: 4px;
+}
+
+/* Pie + radial arcs (share the donut layout) */
+.nvoos-pro-spa-chart-recipe-pie,
+.nvoos-pro-spa-chart-recipe-radial {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-chart-recipe-pie-ring,
+.nvoos-pro-spa-chart-recipe-radial-ring {
+	width: 120px;
+	height: 120px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+}
+
+/* Row-style item wrappers shared by the v2 track charts */
+.nvoos-pro-spa-chart-recipe-box-item,
+.nvoos-pro-spa-chart-recipe-strip-item,
+.nvoos-pro-spa-chart-recipe-violin-item,
+.nvoos-pro-spa-chart-recipe-unit-item,
+.nvoos-pro-spa-chart-recipe-dumb-item,
+.nvoos-pro-spa-chart-recipe-bullet-item,
+.nvoos-pro-spa-chart-recipe-gantt-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 7px;
+}
+
+/* Box plot */
+.nvoos-pro-spa-chart-recipe-box-wick {
+	position: absolute;
+	left: 50%;
+	width: 2px;
+	margin-left: -1px;
+	border-radius: 1px;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-box-body {
+	position: absolute;
+	left: 50%;
+	width: 14px;
+	margin-left: -7px;
+	border-radius: 2px;
+	background: var(--bar-color, var(--chart-series-1));
+	opacity: 0.3;
+}
+
+.nvoos-pro-spa-chart-recipe-box-median {
+	position: absolute;
+	left: 50%;
+	width: 14px;
+	margin-left: -7px;
+	height: 2px;
+	background: var(--chart-text);
+}
+
+.nvoos-pro-spa-chart-recipe-box-min,
+.nvoos-pro-spa-chart-recipe-box-max {
+	position: absolute;
+	top: 0;
+	font-size: 10px;
+	color: var(--chart-muted);
+}
+
+.nvoos-pro-spa-chart-recipe-box-min {
+	left: 0;
+}
+
+.nvoos-pro-spa-chart-recipe-box-max {
+	right: 0;
+}
+
+/* Strip plot */
+.nvoos-pro-spa-chart-recipe-strip-dot {
+	position: absolute;
+	top: 50%;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Stem plot */
+.nvoos-pro-spa-chart-recipe-stem-bar {
+	position: absolute;
+	width: 2px;
+	margin-left: -1px;
+	border-radius: 1px;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-stem-dot {
+	position: absolute;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Violin plot */
+.nvoos-pro-spa-chart-recipe-violin-shape {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.nvoos-pro-spa-chart-recipe-violin-half {
+	position: absolute;
+	border-radius: 50%;
+	background: var(--bar-color, var(--chart-series-1));
+	opacity: 0.25;
+}
+
+.nvoos-pro-spa-chart-recipe-violin-half:nth-child( odd ) {
+	border-radius: 50% 0 0 50%;
+	border-left: 1px solid var(--bar-color, var(--chart-series-1));
+	border-top: 1px solid var(--bar-color, var(--chart-series-1));
+	border-bottom: 1px solid var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-violin-half:nth-child( even ) {
+	border-radius: 0 50% 50% 0;
+	border-right: 1px solid var(--bar-color, var(--chart-series-1));
+	border-top: 1px solid var(--bar-color, var(--chart-series-1));
+	border-bottom: 1px solid var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-violin-dot {
+	position: absolute;
+	top: 50%;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+	background: var(--chart-text);
+}
+
+/* Waffle chart */
+.nvoos-pro-spa-chart-recipe-waffle {
+	display: grid;
+	grid-template-columns: repeat(10, 12px);
+	justify-content: start;
+	gap: 2px;
+	min-height: 12px;
+}
+
+.nvoos-pro-spa-chart-recipe-waffle-cell {
+	height: 12px;
+	aspect-ratio: 1;
+	border-radius: 2px;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Unit chart */
+.nvoos-pro-spa-chart-recipe-body--unit .nvoos-pro-spa-chart-recipe-track {
+	white-space: nowrap;
+}
+
+.nvoos-pro-spa-chart-recipe-unit-cell {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	margin-right: 2px;
+	border-radius: 2px;
+	vertical-align: middle;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Lollipop chart */
+.nvoos-pro-spa-chart-recipe-lolli-stem {
+	position: absolute;
+	width: 2px;
+	border-radius: 1px;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-lolli-dot {
+	position: absolute;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+	border: 2px solid var(--chart-surface);
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Dumbbell chart */
+.nvoos-pro-spa-chart-recipe-dumb-line {
+	position: absolute;
+	top: 50%;
+	height: 2px;
+	margin-top: -1px;
+	border-radius: 1px;
+	background: var(--chart-muted);
+	opacity: 0.5;
+}
+
+.nvoos-pro-spa-chart-recipe-dumb-dot {
+	position: absolute;
+	top: 50%;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+	border: 2px solid var(--chart-surface);
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Slope + waterfall connector math assumes a 16:10 plot box */
+.nvoos-pro-spa-chart-recipe-body--slope .nvoos-pro-spa-chart-recipe-col-plot,
+.nvoos-pro-spa-chart-recipe-body--waterfall .nvoos-pro-spa-chart-recipe-col-plot {
+	aspect-ratio: 16 / 10;
+	height: auto;
+	max-width: 520px;
+	margin: 0 auto;
+}
+
+@supports not (aspect-ratio: 16 / 10) {
+	.nvoos-pro-spa-chart-recipe-body--slope .nvoos-pro-spa-chart-recipe-col-plot,
+	.nvoos-pro-spa-chart-recipe-body--waterfall .nvoos-pro-spa-chart-recipe-col-plot {
+		height: 160px;
+	}
+}
+
+.nvoos-pro-spa-chart-recipe-slope-line {
+	position: absolute;
+	height: 2px;
+	border-radius: 1px;
+	transform-origin: 0 50%;
+	opacity: 0.6;
+	background: var(--chart-muted);
+}
+
+/* Bullet chart */
+.nvoos-pro-spa-chart-recipe-bullet-bar {
+	position: absolute;
+	top: 2px;
+	height: 10px;
+	border-radius: 2px;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-bullet-target {
+	position: absolute;
+	top: 0;
+	height: 14px;
+	width: 2px;
+	margin-left: -1px;
+	background: var(--chart-text);
+}
+
+/* Population pyramid */
+.nvoos-pro-spa-chart-recipe-pyr-label {
+	position: absolute;
+	left: 50%;
+	top: 0;
+	height: 14px;
+	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	padding: 0 4px;
+	background: var(--chart-surface);
+	font-size: 11px;
+	color: var(--chart-text);
+	z-index: 1;
+	max-width: 45%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nvoos-pro-spa-chart-recipe-pyr-left {
+	border-radius: 3px 0 0 3px;
+}
+
+.nvoos-pro-spa-chart-recipe-pyr-right {
+	border-radius: 0 3px 3px 0;
+}
+
+/* Waterfall chart */
+.nvoos-pro-spa-chart-recipe-wf-bar {
+	position: absolute;
+	border-radius: 2px;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-wf-bar--up {
+	background: var(--chart-positive);
+}
+
+.nvoos-pro-spa-chart-recipe-wf-bar--down {
+	background: var(--chart-negative);
+}
+
+.nvoos-pro-spa-chart-recipe-wf-connector {
+	position: absolute;
+	height: 0;
+	border-top: 1px dashed var(--chart-muted);
+	transform-origin: 0 50%;
+	opacity: 0.7;
+}
+
+/* Candlestick chart */
+.nvoos-pro-spa-chart-recipe-candle-wick {
+	position: absolute;
+	width: 2px;
+	margin-left: -1px;
+	background: var(--chart-muted);
+}
+
+.nvoos-pro-spa-chart-recipe-candle-body {
+	position: absolute;
+	width: 12px;
+	margin-left: -6px;
+	border-radius: 2px;
+	border: 1px solid;
+}
+
+.nvoos-pro-spa-chart-recipe-candle-up {
+	background: var(--chart-positive);
+	border-color: var(--chart-positive);
+}
+
+.nvoos-pro-spa-chart-recipe-candle-down {
+	background: var(--chart-negative);
+	border-color: var(--chart-negative);
+}
+
+/* Gantt chart */
+.nvoos-pro-spa-chart-recipe-gantt-bar {
+	position: absolute;
+	top: 2px;
+	height: 10px;
+	border-radius: 2px;
+	background: var(--bar-color, var(--chart-series-1));
+}
+
+.nvoos-pro-spa-chart-recipe-gantt-axis {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 4px;
+	padding-left: 104px;
+}
+
+.nvoos-pro-spa-chart-recipe-gantt-axis-label {
+	font-size: 10px;
+	color: var(--chart-muted);
+}
+
+/* Dial gauge */
+.nvoos-pro-spa-chart-recipe-dial {
+	position: relative;
+	width: 140px;
+	height: 100px;
+	margin: 0 auto;
+}
+
+.nvoos-pro-spa-chart-recipe-dial-clip {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 140px;
+	height: 70px;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-chart-recipe-dial-ring {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 140px;
+	height: 140px;
+	border-radius: 50%;
+}
+
+.nvoos-pro-spa-chart-recipe-dial-value {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 56px;
+	text-align: center;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--chart-text);
+}
+
+.nvoos-pro-spa-chart-recipe-dial-max {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 80px;
+	text-align: center;
+	font-size: 10px;
+	color: var(--chart-muted);
+}
+
+/* Bar race (static frame; width transition for host-driven replays) */
+.nvoos-pro-spa-chart-recipe-body--race .nvoos-pro-spa-chart-recipe-bar {
+	transition: width 0.6s ease-out;
+}
+
+.nvoos-pro-spa-chart-recipe-race-rank {
+	flex: 0 0 auto;
+	min-width: 18px;
+	font-weight: 600;
+	color: var(--chart-muted);
+}
+
+.nvoos-pro-spa-chart-recipe-race-label {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Chart grid (small multiples) */
+.nvoos-pro-spa-chart-recipe-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 10px;
+}
+
+.nvoos-pro-spa-chart-recipe-grid-item {
+	min-width: 0;
+	padding: 10px;
+	border: 1px solid var(--chart-border);
+	border-radius: 6px;
+	background: var(--chart-surface);
+}
+
+.nvoos-pro-spa-chart-recipe-grid-item-title {
+	margin-bottom: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--chart-text);
+}
+
+/* Accessible data table */
+.nvoos-pro-spa-chart-recipe-table {
+	margin-top: 8px;
+}
+
+.nvoos-pro-spa-chart-recipe-table-summary {
+	cursor: pointer;
+	font-size: 11px;
+	color: var(--chart-muted);
+	user-select: none;
+}
+
+.nvoos-pro-spa-chart-recipe-table-scroll {
+	margin-top: 6px;
+	overflow-x: auto;
+}
+
+.nvoos-pro-spa-chart-recipe-table-grid {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 11px;
+}
+
+.nvoos-pro-spa-chart-recipe-table-grid th,
+.nvoos-pro-spa-chart-recipe-table-grid td {
+	padding: 3px 8px;
+	border-bottom: 1px solid var(--chart-border);
+	text-align: left;
+	white-space: nowrap;
+}
+
+.nvoos-pro-spa-chart-recipe-table-grid th {
+	font-weight: 600;
+	color: var(--chart-muted);
+}
+
+.nvoos-pro-spa-chart-recipe-table-grid td {
+	color: var(--chart-text);
+}
+
+/* Hover affordances (CSS-only) */
+.nvoos-pro-spa-chart-recipe-bar-value,
+.nvoos-pro-spa-chart-recipe-col-value {
+	opacity: 0.75;
+	transition: opacity 0.15s ease;
+}
+
+.nvoos-pro-spa-chart-recipe-row:hover .nvoos-pro-spa-chart-recipe-bar-value,
+.nvoos-pro-spa-chart-recipe-track:hover .nvoos-pro-spa-chart-recipe-bar-value,
+.nvoos-pro-spa-chart-recipe-col-plot:hover .nvoos-pro-spa-chart-recipe-col-value {
+	opacity: 1;
+}
+
+.nvoos-pro-spa-chart-recipe-row:hover .nvoos-pro-spa-chart-recipe-bar,
+.nvoos-pro-spa-chart-recipe-row:hover .nvoos-pro-spa-chart-recipe-stack-seg,
+.nvoos-pro-spa-chart-recipe-track:hover .nvoos-pro-spa-chart-recipe-bar,
+.nvoos-pro-spa-chart-recipe-track:hover .nvoos-pro-spa-chart-recipe-stack-seg,
+.nvoos-pro-spa-chart-recipe-col-plot:hover .nvoos-pro-spa-chart-recipe-col-bar {
+	filter: brightness(1.08);
+}
+
+/* Entry animation (staggered via inline animation-delay) */
+@keyframes nvoos-pro-spa-chart-fade-up {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes nvoos-pro-spa-chart-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-stack-seg,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-bar,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-col-bar,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-stem-bar,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-lolli-stem,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-bullet-bar,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-gantt-bar,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-wf-bar,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-candle-body,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-waffle-cell,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-unit-cell,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-grid-item {
+	animation: nvoos-pro-spa-chart-fade-up 400ms ease-out both;
+}
+
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-plot-dot,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-plot-seg,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-strip-dot,
+.nvoos-pro-spa-chart-recipe-animate .nvoos-pro-spa-chart-recipe-dumb-dot {
+	animation: nvoos-pro-spa-chart-fade 400ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.nvoos-pro-spa-chart-recipe,
+	.nvoos-pro-spa-chart-recipe * {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
 /* Dark theme: brighter palette for contrast on dark surfaces. */
 .nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-chart-recipe {
 	--chart-series-1: #89b4fa;
@@ -5084,4 +5734,5 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	--chart-series-7: #b4befe;
 	--chart-series-8: #a6adc8;
 	--chart-negative: #f38ba8;
+	--chart-positive: #a6e3a1;
 }

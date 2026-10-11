@@ -1566,6 +1566,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 				// Data Visualization.
 				'create_chart'                       => 'wordpress-core',
+				'create_chart_fence'                => 'wordpress-core',
 				'visualize_workflow_metrics'         => 'wordpress-core',
 				'validate_workflow'                  => 'wordpress-core',
 
@@ -2226,6 +2227,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Video_Caption'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-video-caption.php',
 				'WP_MCP_AI_Tool_Analyze_Comment_Content'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-comment-content.php',
 				'WP_MCP_AI_Tool_Create_Chart'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-chart.php',
+				'WP_MCP_AI_Tool_Create_Chart_Fence'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-chart-fence.php',
 				// Profession management tools.
 				'WP_MCP_AI_Tool_List_Professions'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-professions.php',
 				'WP_MCP_AI_Tool_Get_Profession'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-profession.php',
