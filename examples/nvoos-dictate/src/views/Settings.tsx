@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, onModelProgress, type ConnectionTest, type ModelSpec, type Settings } from '../lib/ipc';
 
 interface Props {
@@ -12,33 +12,79 @@ export default function SettingsView({ onChanged }: Props) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  useEffect(() => {
-    void api.getSettings().then(setSettings);
+  // Latest settings + a debounce timer: typing must not fire an
+  // `update_settings` (which swaps the speech engine) on every keystroke.
+  const latestRef = useRef<Settings | null>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const load = useCallback(async () => {
+    setLoadFailed(false);
+    try {
+      const loaded = await api.getSettings();
+      latestRef.current = loaded;
+      setSettings(loaded);
+    } catch (e) {
+      setLoadFailed(true);
+      setMessage(`Failed to load settings: ${e}`);
+    }
   }, []);
 
-  const save = useCallback(
-    async (next: Settings) => {
-      setBusy(true);
-      setMessage('');
-      try {
-        setSettings(await api.updateSettings(next));
-        setMessage('Saved.');
-        onChanged();
-      } catch (e) {
-        setMessage(`Save failed: ${e}`);
-      } finally {
-        setBusy(false);
-      }
-    },
-    [onChanged],
-  );
+  useEffect(() => {
+    void load();
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [load]);
+
+  const flush = useCallback(async () => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    const next = latestRef.current;
+    if (!next || busy) return;
+    setBusy(true);
+    setMessage('');
+    try {
+      const saved = await api.updateSettings(next);
+      latestRef.current = saved;
+      setSettings(saved);
+      setMessage('Saved.');
+      onChanged();
+    } catch (e) {
+      setMessage(`Save failed: ${e}`);
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, onChanged]);
 
   if (!settings) {
+    if (loadFailed) {
+      return (
+        <section className="card">
+          <p className="muted">Could not load settings from the backend.</p>
+          <button className="btn" onClick={() => void load()}>
+            Retry
+          </button>
+        </section>
+      );
+    }
     return <p className="muted">Loading settings…</p>;
   }
 
-  const patch = (partial: Partial<Settings>) => save({ ...settings, ...partial });
+  // Debounced, serialized save: latest settings win, one request at a time.
+  // Returns a resolved promise to match the `onPatch` contract of the tabs.
+  const patch = (partial: Partial<Settings>): Promise<void> => {
+    const current = latestRef.current ?? settings;
+    const next = { ...current, ...partial };
+    latestRef.current = next;
+    setSettings(next);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => void flush(), 400);
+    return Promise.resolve();
+  };
 
   return (
     <div className="stack">
@@ -203,8 +249,14 @@ function EngineTab({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    void api.getModels().then(setModels);
-    void api.getCompiledEngines().then(setEngines);
+    api
+      .getModels()
+      .then(setModels)
+      .catch((e) => setError(`Failed to list models: ${e}`));
+    api
+      .getCompiledEngines()
+      .then(setEngines)
+      .catch((e) => setError(`Failed to list engines: ${e}`));
     const unlisten = onModelProgress(({ engine, model, fraction }) => {
       setProgress((p) => ({ ...p, [`${engine}/${model}`]: fraction }));
     });
@@ -300,7 +352,12 @@ function EngineTab({
             {m.installed ? (
               <span className="muted">Installed ✓</span>
             ) : (
-              <button className="btn" onClick={() => void download(m.engine, m.id)}>
+              <button
+                className="btn"
+                disabled={progress[`${m.engine}/${m.id}`] !== undefined &&
+                  progress[`${m.engine}/${m.id}`] < 1}
+                onClick={() => void download(m.engine, m.id)}
+              >
                 {progress[`${m.engine}/${m.id}`] === undefined
                   ? 'Download'
                   : progress[`${m.engine}/${m.id}`] < 1

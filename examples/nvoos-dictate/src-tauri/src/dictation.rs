@@ -34,8 +34,11 @@ use crate::state::AppState;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Phase {
     Idle,
-    Recording { toggle: bool },
+    Recording { toggle: bool, press_pos: usize },
 }
+
+/// Trailing audio kept after key-up so the final phoneme is not clipped.
+const RELEASE_TAIL_MS: usize = 300;
 
 /// Pending MCP `dictate` request (hint + completion channel).
 type PendingDictate = (Option<String>, oneshot::Sender<Result<String, String>>);
@@ -60,6 +63,8 @@ enum UiEvent {
     Error { message: String },
     #[serde(rename = "cancelled")]
     Cancelled,
+    #[serde(rename = "idle")]
+    Idle,
 }
 
 /// Owns the hotkey listeners for the app's lifetime.
@@ -145,38 +150,53 @@ impl DictationController {
             match (phase, event) {
                 (Phase::Idle, HotkeyEvent::Pressed) => {
                     let hint = pending_hint();
+                    let press_pos = mic_position(&app);
                     set_recording(true);
                     emit(&app, UiEvent::Recording { hint });
-                    phase = Phase::Recording { toggle: false };
+                    phase = Phase::Recording {
+                        toggle: false,
+                        press_pos,
+                    };
                 }
                 (Phase::Idle, HotkeyEvent::DoubleTap) => {
                     let hint = pending_hint();
+                    let press_pos = mic_position(&app);
                     set_recording(true);
                     emit(&app, UiEvent::Recording { hint });
-                    phase = Phase::Recording { toggle: true };
+                    phase = Phase::Recording {
+                        toggle: true,
+                        press_pos,
+                    };
                 }
-                (Phase::Recording { .. }, HotkeyEvent::Released { shift }) => {
+                (Phase::Recording { press_pos, .. }, HotkeyEvent::Released { shift }) => {
                     phase = Phase::Idle;
                     set_recording(false);
-                    finalize(&app, shift);
+                    finalize(&app, shift, press_pos, mic_position(&app));
                 }
-                (Phase::Recording { toggle: true }, HotkeyEvent::Pressed) => {
+                (
+                    Phase::Recording {
+                        toggle: true,
+                        press_pos,
+                    },
+                    HotkeyEvent::Pressed,
+                ) => {
                     phase = Phase::Idle;
                     set_recording(false);
-                    finalize(&app, false);
+                    finalize(&app, false, press_pos, mic_position(&app));
                 }
                 (Phase::Recording { .. }, HotkeyEvent::Esc) => {
                     phase = Phase::Idle;
                     set_recording(false);
                     resolve_pending(Err("dictation cancelled".into()));
                     emit(&app, UiEvent::Cancelled);
+                    emit_idle_after_delay(&app);
                 }
                 (Phase::Idle, HotkeyEvent::Esc) | (Phase::Idle, HotkeyEvent::Released { .. }) => {
                     // Ignore stray release/cancel.
                 }
                 // Key auto-repeat / double-tap while already recording:
                 // ignore (PTT_DOWN already dedupes repeated downs).
-                (Phase::Recording { toggle: false }, HotkeyEvent::Pressed)
+                (Phase::Recording { toggle: false, .. }, HotkeyEvent::Pressed)
                 | (Phase::Recording { .. }, HotkeyEvent::DoubleTap) => {}
             }
         }
@@ -240,14 +260,34 @@ fn emit(app: &AppHandle, event: UiEvent) {
     let _ = app.emit("dictate://state", event);
 }
 
+/// The resident mic's absolute sample position, or 0 when absent.
+fn mic_position(app: &AppHandle) -> usize {
+    app.state::<AppState>()
+        .mic
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|m| m.position())
+        .unwrap_or(0)
+}
+
+/// Return the UI to the idle state shortly after a terminal event.
+fn emit_idle_after_delay(app: &AppHandle) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(1600));
+        emit(&app, UiEvent::Idle);
+    });
+}
+
 /// Finalize a dictation: snapshot, transcribe, clean, paste, persist.
-fn finalize(app: &AppHandle, shift_raw: bool) {
-    tracing::debug!(shift_raw, "finalize started");
+fn finalize(app: &AppHandle, shift_raw: bool, press_pos: usize, release_pos: usize) {
+    tracing::debug!(shift_raw, press_pos, release_pos, "finalize started");
     emit(app, UiEvent::Processing);
     let app = app.clone();
     std::thread::spawn(move || {
         let started = Instant::now();
-        let result = finalize_inner(&app, shift_raw, started);
+        let result = finalize_inner(&app, shift_raw, started, press_pos, release_pos);
         match result {
             Ok((text, raw, provider, e2e_ms)) => {
                 emit(
@@ -260,6 +300,7 @@ fn finalize(app: &AppHandle, shift_raw: bool) {
                     },
                 );
                 resolve_pending(Ok(text));
+                emit_idle_after_delay(&app);
             }
             Err(e) => {
                 resolve_pending(Err(e.to_string()));
@@ -269,28 +310,94 @@ fn finalize(app: &AppHandle, shift_raw: bool) {
                         message: e.to_string(),
                     },
                 );
+                emit_idle_after_delay(&app);
             }
         }
     });
+}
+
+/// Keep only VAD-detected speech segments (with a small pad) so the engine
+/// never decodes long silences — faster and hallucination-free. Returns an
+/// empty vector when the window contains no speech.
+fn trim_to_speech(window: &[f32], rate: usize) -> Vec<f32> {
+    let mut vad = crate::audio::vad::create(0.02, 400, rate as u32);
+    trim_to_speech_with(window, rate, vad.as_mut())
+}
+
+/// Testable core: VAD-injected variant of [`trim_to_speech`].
+fn trim_to_speech_with(
+    window: &[f32],
+    rate: usize,
+    vad: &mut dyn crate::audio::vad::Vad,
+) -> Vec<f32> {
+    if window.is_empty() {
+        return Vec::new();
+    }
+    let chunk = (rate / 10).max(512);
+    let mut segments: Vec<(usize, usize)> = Vec::new();
+    let mut seg_start: Option<usize> = None;
+    let mut idx = 0;
+    for c in window.chunks(chunk) {
+        let speech = vad.process(c, rate as u32);
+        if speech && seg_start.is_none() {
+            seg_start = Some(idx);
+        } else if !speech && seg_start.is_some() {
+            segments.push((seg_start.take().unwrap(), idx));
+        }
+        idx += c.len();
+    }
+    if let Some(s) = seg_start {
+        segments.push((s, idx));
+    }
+    if segments.is_empty() {
+        return Vec::new();
+    }
+    let pad = (rate / 10).max(512);
+    let mut out = Vec::new();
+    for (s, e) in segments {
+        let s = s.saturating_sub(pad);
+        let e = (e + pad).min(window.len());
+        out.extend_from_slice(&window[s..e]);
+    }
+    out
 }
 
 fn finalize_inner(
     app: &AppHandle,
     shift_raw: bool,
     started: Instant,
+    press_pos: usize,
+    release_pos: usize,
 ) -> AppResult<(String, String, &'static str, i64)> {
     let state = app.state::<AppState>();
     let settings = state.settings_snapshot();
 
-    // 1. Audio snapshot: pre-roll + everything recorded while the key was held.
+    // 1. Audio snapshot: pre-roll + the held utterance (bounded window).
     let mic_guard = state.mic.lock().unwrap();
     let mic = mic_guard
         .as_ref()
         .ok_or_else(|| crate::error::AppError::Audio("microphone unavailable".into()))?;
-    let pre_roll = (settings.audio.pre_roll_ms as usize * mic.sample_rate() as usize) / 1000;
-    let capacity = settings.audio.ring_capacity_secs * mic.sample_rate() as usize;
-    let total = (pre_roll + capacity).min(mic.buffered_samples().max(pre_roll));
-    let samples = mic.snapshot(total);
+    let rate = mic.sample_rate() as usize;
+    let pre_roll = (settings.audio.pre_roll_ms as usize * rate) / 1000;
+    let tail = (RELEASE_TAIL_MS * rate) / 1000;
+    let window = mic.snapshot_range(
+        press_pos.saturating_sub(pre_roll),
+        release_pos.saturating_add(tail),
+    );
+    // Positions raced (no mic at press time, etc.): fall back to a short
+    // window of the most recent audio instead of transcribing everything.
+    let window = if window.is_empty() {
+        let fallback = (pre_roll + 5 * rate).min(mic.buffered_samples().max(pre_roll));
+        mic.snapshot(fallback)
+    } else {
+        window
+    };
+    let samples = trim_to_speech(&window, rate);
+    if samples.is_empty() {
+        return Err(crate::error::AppError::Audio(
+            "no speech detected — check the microphone and try again".into(),
+        ));
+    }
 
     // 2. STT.
     let engine = state.ensure_engine()?;
@@ -419,4 +526,30 @@ fn register_plugin_shortcut(app: &AppHandle, tx: Sender<HotkeyEvent>) {
                     let _ = tx.send(HotkeyEvent::Pressed);
                 }
             });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::trim_to_speech_with;
+    use crate::audio::vad::EnergyVad;
+
+    #[test]
+    fn trims_silence_and_keeps_speech() {
+        let rate = 16_000;
+        // 2 s silence, 1 s of a 440 Hz tone, 2 s silence.
+        let mut audio = vec![0.0f32; 2 * rate];
+        for i in 0..rate {
+            audio.push((i as f32 * 440.0 * std::f32::consts::TAU / rate as f32).sin() * 0.5);
+        }
+        audio.extend_from_slice(&vec![0.0f32; 2 * rate]);
+
+        let mut vad = EnergyVad::new(0.02, 400, rate as u32);
+        let trimmed = trim_to_speech_with(&audio, rate, &mut vad);
+        assert!(!trimmed.is_empty(), "speech must survive trimming");
+        assert!(trimmed.len() < audio.len(), "silence must be trimmed");
+
+        // Pure silence -> empty (never feed the engine hallucination fodder).
+        let mut vad2 = EnergyVad::new(0.02, 400, rate as u32);
+        assert!(trim_to_speech_with(&vec![0.0f32; 4 * rate], rate, &mut vad2).is_empty());
+    }
 }

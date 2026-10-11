@@ -16,11 +16,11 @@ export default function Home({ status, dictate, onRefresh }: Props) {
       <section className="card">
         <h2>Dictation</h2>
         <p className="muted">
-          Hold <strong>Right Alt</strong>, speak, release — cleaned text pastes into the focused
-          app. Hold <strong>Shift</strong> on release for raw passthrough. Double-tap for
-          hands-free mode, <strong>Esc</strong> cancels.
+          Hold <strong>{status?.ptt_key ?? 'RAlt'}</strong>, speak, release — cleaned text pastes
+          into the focused app. Hold <strong>Shift</strong> on release for raw passthrough.
+          Double-tap for hands-free mode, <strong>Esc</strong> cancels.
         </p>
-        <div className="dictate-state" data-state={dictate.state}>
+        <div className="dictate-state" data-state={dictate.state} role="status" aria-live="polite">
           {dictate.state === 'idle' && 'Idle — hold the PTT key to dictate'}
           {dictate.state === 'recording' &&
             `Listening${dictate.hint ? ` — ${dictate.hint}` : ''}… release to transcribe`}
