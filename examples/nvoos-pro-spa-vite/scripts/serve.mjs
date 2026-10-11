@@ -56,6 +56,37 @@ const MIME = {
   '.woff2': 'font/woff2',
 };
 
+/**
+ * Security headers for static SPA responses only — the proxied WordPress
+ * branch (proxyRequest) passes upstream headers through untouched.
+ *
+ * HSTS rollout: start at 1 day, verify no mixed-content reports, then
+ * raise to 31536000 (1 year). Do NOT add includeSubDomains yet —
+ * nvoos.cloud hosts several subdomains and it commits all of them to
+ * HTTPS permanently. Skip preload until the team opts in.
+ */
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  // Ramp: max-age=86400 → 31536000 after a clean week.
+  'Strict-Transport-Security': 'max-age=86400',
+};
+
+/*
+ * CSP is intentionally NOT enforced yet — roll it out in Report-Only mode
+ * first, because the HTML shell contains an inline Cloudflare challenge
+ * script that a strict `script-src 'self'` policy can break. Apply it ONLY
+ * to the static branch below (never to proxied WordPress responses —
+ * wp-admin breaks under a global policy). Template:
+ *
+ * const CSP_REPORT_ONLY = {
+ *   'Content-Security-Policy-Report-Only':
+ *     "default-src 'self'; " +
+ *     "connect-src 'self' https://nvoos.pro <media-worker-origin>; " +
+ *     "script-src 'self' 'unsafe-inline'; " +
+ *     'report-to csp-endpoint',
+ * };
+ */
+
 function isProxyPath(pathname) {
   return PROXY_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
@@ -230,6 +261,7 @@ const server = createServer(async (req, res) => {
     res.writeHead(200, {
       'Content-Type': MIME[extname(file)] ?? 'application/octet-stream',
       'Cache-Control': file.endsWith('index.html') ? 'no-cache' : 'public, max-age=31536000, immutable',
+      ...SECURITY_HEADERS,
     });
     res.end(body);
   } catch {
