@@ -28,7 +28,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * parties support. Falls back to 2024-11-05 when the client provides
 	 * no version information, for maximum backward compatibility.
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.51
 	 *
 	 * @return array Supported versions, newest first.
 	 */
@@ -142,7 +142,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * Notifications (messages without an id) are processed but produce no response element.
 	 *
 	 * @since 2.3.0
-	 * @since 2.x.0 Updated for stateless MCP 2026-07-28 (removed session parameter).
+	 * @since 1.1.43 Updated for stateless MCP 2026-07-28 (removed session parameter).
 	 *
 	 * @param array           $messages   Array of JSON-RPC message arrays.
 	 * @param WP_REST_Request $request    REST request instance.
@@ -495,7 +495,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * This replaces the initialize/initialized handshake from earlier MCP
 	 * protocol versions (SEP-2575).
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.43
 	 *
 	 * @param array           $params  Discovery parameters. Accepts optional 'assistant_id'.
 	 * @param WP_REST_Request $request REST request instance.
@@ -577,7 +577,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		 * Allows plugins and integrators to enrich or override the system
 		 * prompt delivered to MCP clients at discovery time.
 		 *
-		 * @since 2.x.0
+		 * @since 1.1.43
 		 *
 		 * @param string $instructions     The assembled instructions string.
 		 * @param int    $assistant_id     Resolved assistant post ID (0 when generic).
@@ -596,7 +596,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		 * Some MCP clients expect to see tool information immediately after
 		 * discovery without making a separate tools/list call.
 		 *
-		 * @since 2.x.0
+		 * @since 1.1.43
 		 *
 		 * @param bool            $include_tools Whether to include tools in discover response.
 		 * @param array           $params        Discover method parameters.
@@ -631,7 +631,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * Defaults to 2024-11-05 for maximum backward compatibility when the
 	 * client provides no version information (e.g. older Zed, Claude Desktop).
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.51
 	 *
 	 * @param array $params Client's initialize/discover params.
 	 * @return string Negotiated protocol version.
@@ -679,7 +679,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 *
 	 * @since 1.0.0
 	 * @since 2.4.0 Added assistant_id resolution for scoped instructions and modelPreferences.
-	 * @deprecated 2.x.0 Use mcp_server_discover() instead.
+	 * @deprecated 1.1.43 Use mcp_server_discover() instead.
 	 *
 	 * @param array           $params  Method parameters. Accepts optional 'assistant_id'.
 	 * @param WP_REST_Request $request REST request instance.
@@ -1070,7 +1070,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		 * Default 0 means no caching. Set to a positive value (e.g. 300000 for 5 minutes)
 		 * to allow clients to cache the tool list.
 		 *
-		 * @since 2.x.0
+		 * @since 1.1.43
 		 *
 		 * @param int $ttl_ms Cache TTL in milliseconds. Default 0.
 		 */
@@ -1092,7 +1092,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * combinators without a type. Both limits are filterable so operators
 	 * can tune them per deployment.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param object $tool   Tool instance.
 	 * @param array  $schema Tool input schema (already validated as an array).
@@ -1110,7 +1110,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		 * agent clients (e.g. Codex at ~20 KB per server) compact them and
 		 * drop required nested fields.
 		 *
-		 * @since 2.x.0
+		 * @since 1.2.4
 		 *
 		 * @param int $max_bytes Maximum schema size in bytes. Default 20480.
 		 */
@@ -1125,7 +1125,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		 * MCP design guidelines cap fully-qualified tool names at 64
 		 * characters so client SDK prefixes fit.
 		 *
-		 * @since 2.x.0
+		 * @since 1.2.4
 		 *
 		 * @param int $max_length Maximum slug length. Default 64.
 		 */
@@ -1150,7 +1150,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * the matching `structuredContent` so clients that reject
 	 * outputSchema-declared text-only results keep working.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @return bool True when the profile-tool contract is advertised.
 	 */
@@ -1161,7 +1161,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	/**
 	 * Extract the structured profile payload for tools that advertise one.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param string $tool_name   Tool slug.
 	 * @param mixed  $tool_result Canonical tool result array.
@@ -1344,7 +1344,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * instead of the normal {result: …} envelope. This detects that case so
 	 * mcp_tools_call can poll for completion.
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.54
 	 *
 	 * @param array $data Response data from handle_tool_request.
 	 * @return bool True if the response is an async pending result.
@@ -1368,7 +1368,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * instead of a connection reset. Stuck jobs are kicked inline so hosts
 	 * with a dead WP-Cron loopback still make progress.
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.54
 	 * @since 1.1.55 Bounded default poll budget; inline kick for stuck jobs.
 	 *
 	 * @param string $job_id   Async job identifier.
@@ -2421,7 +2421,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * Per spec this is a notification (no response expected).
 	 *
 	 * @since     2.6.0
-	 * @deprecated 2.x.0 Notifications/initialized retired in MCP 2026-07-28.
+	 * @deprecated 1.1.43 Notifications/initialized retired in MCP 2026-07-28.
 	 *
 	 * @param array $params Notification parameters (unused).
 	 * @return stdClass Empty result.
@@ -2539,7 +2539,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * Session state is stored as a WordPress transient for reconnection support.
 	 *
 	 * @since     2.3.0
-	 * @deprecated 2.x.0 MCP 2026-07-28 removes protocol-level sessions (SEP-2567).
+	 * @deprecated 1.1.43 MCP 2026-07-28 removes protocol-level sessions (SEP-2567).
 	 *             No longer called internally; preserved for backward compatibility
 	 *             with any third-party code that may invoke it directly.
 	 *

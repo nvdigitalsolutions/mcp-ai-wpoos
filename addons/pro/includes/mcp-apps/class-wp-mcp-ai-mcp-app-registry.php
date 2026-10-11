@@ -1140,7 +1140,7 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * bound; an absent or zero TTL keeps the default. Pure helper —
 	 * unit-tested directly.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param int $server_ttl_ms Server-declared cache TTL in milliseconds.
 	 * @return int Cache TTL in seconds.
@@ -1197,7 +1197,7 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * the next request re-discovers instead of serving a stale catalog — the
 	 * same failure mode measured by the M3 quirks matrix.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param string $server_url Remote MCP server URL.
 	 * @return void
@@ -1242,7 +1242,7 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * Subscribed to {@see 'wp_mcp_ai_remote_mcp_notification'} in
 	 * mcp-apps-init.php.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param string $method     Notification method.
 	 * @param array  $params     Notification params.

@@ -26,7 +26,7 @@
  * Health).
  *
  * @package WP_MCP_AI
- * @since   2.x.0
+ * @since   1.2.4
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
@@ -143,7 +143,7 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	 * no longer than the maximum length (fully-qualified MCP tool names must
 	 * stay under the 64-character guideline so client SDK prefixes fit).
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param string   $slug       Tool slug.
 	 * @param int|null $max_length Optional maximum length; defaults to 64.
@@ -167,7 +167,7 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	/**
 	 * Measure a schema's serialized byte size.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param array $schema Tool input schema.
 	 * @return int Byte size of the JSON-encoded schema (0 on encode failure).
@@ -198,7 +198,7 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	 *   known client hazard, so such tools are skipped and left to the
 	 *   auditor for human review).
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param string   $slug       Tool slug.
 	 * @param array    $schema     Tool input schema.
@@ -262,7 +262,7 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	/**
 	 * Audit a single tool schema and return its findings.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param string $slug   Tool slug.
 	 * @param array  $schema Tool input schema.
@@ -339,7 +339,7 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	/**
 	 * Audit every registered tool and map slugs to their findings.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param WP_MCP_AI_Tool_Registry|null $registry Optional registry; defaults to the singleton.
 	 * @return array<string,array<int,array{code:string,path:string,detail:string}>> Slug => findings (only non-empty entries).
@@ -374,7 +374,7 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	/**
 	 * Summarize audit findings into counts plus a small sample per code.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param array<string,array<int,array{code:string,path:string,detail:string}>> $findings Slug => findings.
 	 * @return array{slugs_affected:int,counts:array<string,int>,samples:array<string,array<int,string>>}
@@ -411,7 +411,7 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	/**
 	 * Recursively walk a schema node collecting hazard findings.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param mixed  $node          Schema node.
 	 * @param string $path          JSON-path of the node.
@@ -482,7 +482,7 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	/**
 	 * Check property names for bracket characters.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param array $properties Properties map.
 	 * @param int   $depth      Current depth (unused; reserved for future policy).
@@ -503,7 +503,7 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	/**
 	 * Check whether a JSON-path terminal key looks like a large integer field.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param string $path JSON-path of the property.
 	 * @return bool True when the key is id/total/amount-like.

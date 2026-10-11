@@ -594,7 +594,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * `notifications/tools/list_changed` to connected clients; stateless REST
 		 * clients instead re-poll tools/list on its own ttlMs schedule.
 		 *
-		 * @since 2.x.0
+		 * @since 1.2.4
 		 *
 		 * Intended for internal use (and direct unit testing of the throttle).
 		 *
@@ -611,7 +611,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			/**
 			 * Fires when the registry's MCP tool list changed.
 			 *
-			 * @since 2.x.0
+			 * @since 1.2.4
 			 */
 			do_action( 'wp_mcp_ai_mcp_tools_list_changed' );
 		}
