@@ -72,10 +72,12 @@ impl HotkeyListener for WinFallbackListener {
                     let down = key_down(ptt);
                     if down && !was_down {
                         was_down = true;
+                        tracing::debug!("fallback poller: PTT pressed");
                         let _ = tx.send(HotkeyEvent::Pressed);
                     } else if !down && was_down {
                         was_down = false;
                         let shift = key_down(VK_LSHIFT.0) || key_down(VK_RSHIFT.0);
+                        tracing::debug!("fallback poller: PTT released");
                         let _ = tx.send(HotkeyEvent::Released { shift });
                     }
                     if key_down(VK_ESCAPE.0) {

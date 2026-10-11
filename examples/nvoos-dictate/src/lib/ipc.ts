@@ -105,11 +105,8 @@ export interface ModelSpec {
   description: string;
   size_mb: number;
   license: string;
-  url: string;
-  sha256: string | null;
-  archive: boolean;
-  file_name: string | null;
   languages: string;
+  installed: boolean;
 }
 
 export interface ConnectionTest {
@@ -158,6 +155,7 @@ export const api = {
   deleteMeeting: (id: number) => invoke<void>('delete_meeting', { id }),
 
   getModels: () => invoke<ModelSpec[]>('get_models'),
+  getCompiledEngines: () => invoke<string[]>('get_compiled_engines'),
   downloadModel: (engine: string, model: string) =>
     invoke<string>('download_model', { engine, model }),
   transcribeFile: (path: string) => invoke<string>('transcribe_file', { path }),

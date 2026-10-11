@@ -38,6 +38,7 @@ static RECORDING: AtomicBool = AtomicBool::new(false);
 static HEARTBEAT_MS: AtomicU64 = AtomicU64::new(0);
 static PTT_DOWN: AtomicBool = AtomicBool::new(false);
 static LAST_PRESS: Mutex<Option<Instant>> = Mutex::new(None);
+static HOOK_CALLS: AtomicU64 = AtomicU64::new(0);
 
 /// Double-tap window (ms) for hands-free toggle detection.
 const DOUBLE_TAP_MS: u64 = 300;
@@ -84,6 +85,7 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
         return CallNextHookEx(None, code, wparam, lparam);
     }
     let kb = unsafe { &*(lparam.0 as *const KBDLLHOOKSTRUCT) };
+    HOOK_CALLS.fetch_add(1, Ordering::Relaxed);
     let vk = kb.vkCode as u16;
     let ptt = PTT_VK.load(Ordering::Relaxed);
     let message = wparam.0 as u32;
@@ -91,31 +93,36 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
     let is_down = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
     let is_up = message == WM_KEYUP || message == WM_SYSKEYUP;
 
-    // Swallow the PTT key's own events while recording so the focused app
-    // never sees the held modifier (prevents menu-bar activation and Ctrl/Win
-    // shortcut leakage — the 2KSpeak technique).
-    if vk == ptt && RECORDING.load(Ordering::SeqCst) {
-        return LRESULT(1);
-    }
-
-    if vk == ptt && is_down && !PTT_DOWN.swap(true, Ordering::SeqCst) {
-        let mut last = LAST_PRESS.lock().unwrap();
-        let now = Instant::now();
-        let double_tap = last
-            .map(|t| now.duration_since(t) < Duration::from_millis(DOUBLE_TAP_MS))
-            .unwrap_or(false);
-        *last = Some(now);
-        let event = if double_tap {
-            HotkeyEvent::DoubleTap
-        } else {
-            HotkeyEvent::Pressed
-        };
-        send(event);
-    } else if vk == ptt && is_up && PTT_DOWN.swap(false, Ordering::SeqCst) {
-        let shift = unsafe {
-            GetAsyncKeyState(VK_LSHIFT.0 as i32) < 0 || GetAsyncKeyState(VK_RSHIFT.0 as i32) < 0
-        };
-        send(HotkeyEvent::Released { shift });
+    if vk == ptt {
+        if is_down {
+            if !PTT_DOWN.swap(true, Ordering::SeqCst) {
+                let mut last = LAST_PRESS.lock().unwrap();
+                let now = Instant::now();
+                let double_tap = last
+                    .map(|t| now.duration_since(t) < Duration::from_millis(DOUBLE_TAP_MS))
+                    .unwrap_or(false);
+                *last = Some(now);
+                let event = if double_tap {
+                    HotkeyEvent::DoubleTap
+                } else {
+                    HotkeyEvent::Pressed
+                };
+                send(event);
+            }
+        } else if is_up && PTT_DOWN.swap(false, Ordering::SeqCst) {
+            let shift = unsafe {
+                GetAsyncKeyState(VK_LSHIFT.0 as i32) < 0 || GetAsyncKeyState(VK_RSHIFT.0 as i32) < 0
+            };
+            send(HotkeyEvent::Released { shift });
+        }
+        // Swallow the PTT key's own events while recording so the focused app
+        // never sees the held modifier (prevents menu-bar activation and
+        // Ctrl/Win shortcut leakage — the 2KSpeak technique). This MUST come
+        // AFTER the event emission above: swallowing the key-up first would
+        // eat the Released event and dictation would hang in Recording.
+        if RECORDING.load(Ordering::SeqCst) {
+            return LRESULT(1);
+        }
     } else if vk == VK_ESCAPE.0 && is_down {
         send(HotkeyEvent::Esc);
     }
@@ -165,9 +172,15 @@ impl HotkeyListener for WinHookListener {
                 let Ok(hook) = hook else {
                     // Can't install the hook: leave heartbeat at 0 so the
                     // fallback poller takes over immediately.
+                    tracing::warn!("WH_KEYBOARD_LL install failed; fallback poller will take over");
                     return;
                 };
+                tracing::info!(
+                    ptt_vk = PTT_VK.load(Ordering::Relaxed),
+                    "WH_KEYBOARD_LL hook installed"
+                );
                 let mut msg: MSG = MSG::default();
+                let mut last_calls: u64 = 0;
 
                 loop {
                     if stop_rx.try_recv().is_ok() {
@@ -190,6 +203,11 @@ impl HotkeyListener for WinHookListener {
                         break;
                     }
                     HEARTBEAT_MS.store(now_ms(), Ordering::Relaxed);
+                    let calls = HOOK_CALLS.load(Ordering::Relaxed);
+                    if calls != last_calls {
+                        tracing::debug!(calls, "hook callback invocations");
+                        last_calls = calls;
+                    }
                     std::thread::sleep(Duration::from_millis(50));
                 }
 
@@ -222,5 +240,76 @@ impl HotkeyListener for WinHookListener {
 fn _post_quit(thread_id: u32) {
     unsafe {
         let _ = PostThreadMessageW(thread_id, WM_QUIT, None, None);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use windows::Win32::UI::WindowsAndMessaging::{WM_KEYDOWN, WM_KEYUP};
+
+    /// Regression test for the stuck-recording bug: while dictation is
+    /// recording the hook swallows the PTT key's events from the focused
+    /// app, but the key-up must still emit `Released` — otherwise the
+    /// controller hangs in `Recording` forever.
+    #[test]
+    fn ptt_release_fires_despite_recording_swallow() {
+        let (tx, rx) = std::sync::mpsc::channel();
+        EVENT_TX.get_or_init(|| Mutex::new(None));
+        *EVENT_TX.get().unwrap().lock().unwrap() = Some(tx);
+        PTT_VK.store(VK_RMENU.0, Ordering::Relaxed);
+        RECORDING.store(false, Ordering::SeqCst);
+        PTT_DOWN.store(false, Ordering::SeqCst);
+
+        let mut kb: KBDLLHOOKSTRUCT = unsafe { std::mem::zeroed() };
+        kb.vkCode = VK_RMENU.0 as u32;
+
+        // Key down while idle -> Pressed.
+        unsafe {
+            hook_proc(
+                0,
+                WPARAM(WM_KEYDOWN as usize),
+                LPARAM(&kb as *const _ as isize),
+            );
+        }
+        assert_eq!(
+            rx.recv_timeout(Duration::from_secs(1)).unwrap(),
+            HotkeyEvent::Pressed
+        );
+
+        // Controller marks recording; the hook now swallows the key so the
+        // focused app never sees the held modifier.
+        RECORDING.store(true, Ordering::SeqCst);
+
+        // Key up while recording -> Released MUST still fire.
+        unsafe {
+            hook_proc(
+                0,
+                WPARAM(WM_KEYUP as usize),
+                LPARAM(&kb as *const _ as isize),
+            );
+        }
+        assert_eq!(
+            rx.recv_timeout(Duration::from_secs(1)).unwrap(),
+            HotkeyEvent::Released { shift: false }
+        );
+
+        // A second press (toggle mode) also fires while recording. Wait past
+        // the double-tap window so it registers as a plain press.
+        std::thread::sleep(Duration::from_millis(350));
+        unsafe {
+            hook_proc(
+                0,
+                WPARAM(WM_KEYDOWN as usize),
+                LPARAM(&kb as *const _ as isize),
+            );
+        }
+        assert_eq!(
+            rx.recv_timeout(Duration::from_secs(1)).unwrap(),
+            HotkeyEvent::Pressed
+        );
+
+        RECORDING.store(false, Ordering::SeqCst);
+        *EVENT_TX.get().unwrap().lock().unwrap() = None;
     }
 }
