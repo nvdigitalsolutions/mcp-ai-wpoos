@@ -63,7 +63,7 @@ pub fn platform_listener() -> Box<dyn HotkeyListener> {
     }
     #[cfg(not(windows))]
     {
-        Box::new(plugin::PluginToggleListener::default())
+        Box::new(plugin::PluginToggleListener)
     }
 }
 

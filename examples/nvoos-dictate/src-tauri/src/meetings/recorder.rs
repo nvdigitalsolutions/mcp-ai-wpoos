@@ -209,7 +209,9 @@ fn start_streams() -> AppResult<Active> {
     };
 
     #[cfg(not(windows))]
-    let (loopback, system_audio) = (None, false);
+    let (loopback, system_audio): (Option<cpal::Stream>, bool) = (None, false);
+    #[cfg(not(windows))]
+    let _ = loopback; // meetings have no system-audio capture off Windows (P4/P5)
 
     Ok(Active {
         started: Instant::now(),
