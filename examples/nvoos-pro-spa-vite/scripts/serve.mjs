@@ -237,6 +237,21 @@ const server = createServer(async (req, res) => {
   }
 });
 
+server.on('error', (error) => {
+	// Surface startup failures (EADDRINUSE, EACCES, bad PORT) with an
+	// actionable line — PM2/Velocity only reports "process crashed" and
+	// masks the real reason.
+	console.error(
+		`[nvoos-pro-spa-standalone] failed to start on :${PORT}: ${error.code || 'ERR'} ${error.message}`,
+	);
+	if (error.code === 'EADDRINUSE') {
+		console.error(
+			'[nvoos-pro-spa-standalone] port already in use — a stale app instance may still hold it; run `pm2 list` and stop duplicates.',
+		);
+	}
+	process.exit(1);
+});
+
 server.listen(PORT, () => {
   console.log(`[nvoos-pro-spa-standalone] serving dist/ on :${PORT}`);
   if (PROXY_TARGET) {
