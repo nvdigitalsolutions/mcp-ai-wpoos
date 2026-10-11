@@ -50,10 +50,12 @@ cd /tmp/nvoos-content-graph-svn
 rm -rf assets
 cp -r /path/to/mcp-ai-wpoos/plugins/nvoos-content-graph/.wordpress-org/assets assets
 svn add --force assets
-svn ci -m "Add plugin listing assets (icons, banners, screenshots) for v1.0.4"
+svn ci -m "Update plugin listing assets (icons, banners, screenshots) for v1.0.11"
 
 # The plugin code itself goes into trunk/ (built from the distribution ZIP):
-# cp nvoos-content-graph-v1.0.4.zip ... unzip into trunk/
+# unzip nvoos-content-graph-v1.0.11.zip into trunk/ (rm -rf trunk first),
+# svn add --force trunk, then tag the release:
+# svn cp trunk tags/1.0.11 && svn ci -m "Tag 1.0.11"
 ```
 
 Note: `svn` and wp.org SVN credentials are required — these are never

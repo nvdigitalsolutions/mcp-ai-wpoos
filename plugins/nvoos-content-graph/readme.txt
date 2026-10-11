@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.10
+Stable tag: 1.0.11
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -168,6 +168,10 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
+
+= 1.0.11 — 2026-10-11 =
+* New read-only GET /graph/visual-config REST route returning the explorer's display and theme config (visual tokens, presets, height, node budget) for headless surfaces such as the NV oOS Pro SPA
+* Read routes (/graph, /nodes, /nodes/{id}, /edges, /search, /retrieve, /resolve, /graph/visual-config) now also accept NV oOS assistant credentials (Authorization: Bearer cred_XXXXX.SECRET) alongside logged-in users and guest tokens; write routes remain manage_options-only
 
 = 1.0.10 — 2026-10-09 =
 * Excluded sources are now removed from the graph on rebuild: un-checking a post type or JetEngine Custom Content Type on the Sources tab prunes its existing nodes and edges on the next Rebuild Graph run

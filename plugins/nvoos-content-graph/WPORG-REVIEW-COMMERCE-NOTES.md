@@ -85,6 +85,11 @@ feature-locked.**
   plugin sends no data and contacts no server to show it); and a
   development-status note restating the 30-day money-back guarantee. No
   new data collected or sent.
+- v1.0.10: excluded sources are now pruned from the graph on rebuild and
+  opt-in post types are captured. No commerce-surface changes.
+- v1.0.11: new read-only /graph/visual-config route and assistant
+  credential (bearer) authentication on read routes. No commerce-surface
+  changes, no new data collected or sent.
 
 ## Review-team questions, pre-answered
 

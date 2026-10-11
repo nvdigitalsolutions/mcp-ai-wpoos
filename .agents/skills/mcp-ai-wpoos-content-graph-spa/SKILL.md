@@ -103,14 +103,19 @@ silently never fire.
   (isolated DB `wordpress_test_nvooscg` pattern); expected sizes ~163 Unit +
   ~27 Integration tests.
 
-## PR state (2026-10-10)
+## PR state (2026-10-11)
 
 - #6998 `add/content-graph-spa-page` — the page + plugin auth/route + CI
-  hardening (this surface's origin PR).
-- #6999 `add/standalone-spa-login-rescope` — wp-login proxy re-scoping,
-  split off from shared-checkout WIP. If both PRs touch
-  `examples/nvoos-pro-spa-vite/README.md`/`vite.config.ts` on merge, keep
-  #6999's README wording and #6998's alias block.
+  hardening (this surface's origin PR). **Merged** — the plugin half ships
+  in `nvoos-content-graph` 1.0.11 (visual-config route + bearer auth).
+- #6999 `add/standalone-spa-login-rescope` — wp-login proxy re-scoping.
+  **Merged** (README wording + alias block conflicts resolved in-window).
 - #7000 `add/standalone-spa-graph-typecheck` — mirror-only TS2307 fix
   (jquery/cytoscape tsconfig paths) + build-verify gates in the
-  sync/deploy workflows.
+  sync/deploy workflows. **Merged**.
+- #7002 — knowledge-graph auth fix in the standalone SPA (fetch-wrapper
+  ajaxPrefilter mirrors auth headers across all four modes). **Merged**.
+- Release note: the plugin-side surface (read-only `GET /graph/visual-config`
+  + assistant-credential bearer auth on read routes) shipped in
+  `nvoos-content-graph` 1.0.11 (wp.org upload prepared 2026-10-11;
+  see `plugins/nvoos-content-graph/WPORG-REVIEW-18POINT-SIGNOFF.md`).

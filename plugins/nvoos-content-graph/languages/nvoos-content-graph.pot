@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-3.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Content Graph 1.0.9\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/plugin\n"
+"Project-Id-Version: NV oOS Content Graph 1.0.11\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-content-graph\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-08T09:53:43+00:00\n"
+"POT-Creation-Date: 2026-10-11T17:49:55+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nvoos-content-graph\n"
@@ -1402,7 +1402,7 @@ msgstr ""
 msgid "Consider linking \"%1$s\" to \"%2$s\" — they share a knowledge community."
 msgstr ""
 
-#: src/Graph/Db.php:731
+#: src/Graph/Db.php:797
 msgid "slug and driver are required."
 msgstr ""
 
@@ -1446,15 +1446,15 @@ msgstr ""
 msgid "%1$s #%2$d"
 msgstr ""
 
-#: src/Plugin.php:389
+#: src/Plugin.php:399
 msgid "NV oOS Content Graph: Knowledge graph built successfully! View it in the Graph Explorer."
 msgstr ""
 
-#: src/Plugin.php:402
+#: src/Plugin.php:412
 msgid "NV oOS Content Graph: The OpenSSL PHP extension is not available. Remote-source credentials (API keys, tokens) will be stored with weak encryption. Please enable the OpenSSL extension for secure credential storage."
 msgstr ""
 
-#: src/Plugin.php:410
+#: src/Plugin.php:420
 msgid "NV oOS Content Graph is installed but the graph is not enabled. Go to Settings → NV oOS Content Graph to enable it."
 msgstr ""
 
@@ -1902,7 +1902,7 @@ msgid "WooCommerce is active. Ready to ingest products."
 msgstr ""
 
 #: src/Remote/Enricher.php:168
-#: src/Rest/Controller.php:848
+#: src/Rest/Controller.php:896
 msgid "Invalid source slug."
 msgstr ""
 
@@ -2011,7 +2011,7 @@ msgid "Circuit breaker open for host: %s"
 msgstr ""
 
 #: src/Rest/CommerceController.php:150
-#: src/Rest/Controller.php:974
+#: src/Rest/Controller.php:1084
 msgid "Administrator access required."
 msgstr ""
 
@@ -2055,46 +2055,46 @@ msgstr ""
 msgid "Your license is recorded — you can also download the NV oOS Complete ZIP manually and upload it on the Plugins screen."
 msgstr ""
 
-#: src/Rest/Controller.php:510
+#: src/Rest/Controller.php:558
 #: src/Tools/GetNeighbors.php:99
 msgid "Node not found."
 msgstr ""
 
-#: src/Rest/Controller.php:671
+#: src/Rest/Controller.php:719
 #: src/Tools/ResolveExternal.php:99
 msgid "Auto-ingesting external entities requires administrator access. Use auto_ingest=false for read-only resolution."
 msgstr ""
 
-#: src/Rest/Controller.php:716
+#: src/Rest/Controller.php:764
 msgid "Unknown remote source driver."
 msgstr ""
 
-#: src/Rest/Controller.php:799
+#: src/Rest/Controller.php:847
 msgid "Source not found or not enabled."
 msgstr ""
 
-#: src/Rest/Controller.php:805
-#: src/Rest/Controller.php:816
+#: src/Rest/Controller.php:853
+#: src/Rest/Controller.php:864
 msgid "Driver not found."
 msgstr ""
 
-#: src/Rest/Controller.php:853
+#: src/Rest/Controller.php:901
 msgid "Unknown or disabled source."
 msgstr ""
 
-#: src/Rest/Controller.php:856
+#: src/Rest/Controller.php:904
 msgid "Source is not configured as a webhook receiver."
 msgstr ""
 
-#: src/Rest/Controller.php:864
+#: src/Rest/Controller.php:912
 msgid "The webhook driver is not available in this build."
 msgstr ""
 
-#: src/Rest/Controller.php:873
+#: src/Rest/Controller.php:921
 msgid "Invalid or missing signature."
 msgstr ""
 
-#: src/Rest/Controller.php:960
+#: src/Rest/Controller.php:1029
 msgid "You must be logged in to access the knowledge graph."
 msgstr ""
 

@@ -492,7 +492,7 @@ class Controller {
 	 * (ajax URL/nonce). Headless clients assemble the explorer config from
 	 * this payload instead of scraping the admin page.
 	 *
-	 * @since 1.1.0
+	 * @since 1.0.11
 	 *
 	 * @return WP_REST_Response
 	 */
@@ -1040,7 +1040,7 @@ class Controller {
 	 * or null when no credential was presented (or the base plugin is not
 	 * installed, in which case there is nothing to validate against).
 	 *
-	 * @since 1.1.0
+	 * @since 1.0.11
 	 *
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array|WP_Error|null Credential metadata, WP_Error, or null when absent.
