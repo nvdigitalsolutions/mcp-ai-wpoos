@@ -141,6 +141,7 @@ impl DictationController {
     fn run(app: AppHandle, rx: Receiver<HotkeyEvent>) {
         let mut phase = Phase::Idle;
         while let Ok(event) = rx.recv() {
+            tracing::debug!(?event, ?phase, "dictation hotkey event");
             match (phase, event) {
                 (Phase::Idle, HotkeyEvent::Pressed) => {
                     let hint = pending_hint();
@@ -241,6 +242,7 @@ fn emit(app: &AppHandle, event: UiEvent) {
 
 /// Finalize a dictation: snapshot, transcribe, clean, paste, persist.
 fn finalize(app: &AppHandle, shift_raw: bool) {
+    tracing::debug!(shift_raw, "finalize started");
     emit(app, UiEvent::Processing);
     let app = app.clone();
     std::thread::spawn(move || {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type ConnectionTest, type ModelSpec, type Settings } from '../lib/ipc';
+import { api, onModelProgress, type ConnectionTest, type ModelSpec, type Settings } from '../lib/ipc';
 
 interface Props {
   onChanged: () => void;
@@ -198,19 +198,30 @@ function EngineTab({
   onPatch: (p: Partial<Settings>) => Promise<void>;
 }) {
   const [models, setModels] = useState<ModelSpec[]>([]);
+  const [engines, setEngines] = useState<string[]>([]);
   const [progress, setProgress] = useState<Record<string, number>>({});
+  const [error, setError] = useState('');
 
   useEffect(() => {
     void api.getModels().then(setModels);
+    void api.getCompiledEngines().then(setEngines);
+    const unlisten = onModelProgress(({ engine, model, fraction }) => {
+      setProgress((p) => ({ ...p, [`${engine}/${model}`]: fraction }));
+    });
+    return () => {
+      void unlisten.then((u) => u());
+    };
   }, []);
 
   const download = async (engine: string, model: string) => {
+    setError('');
     setProgress((p) => ({ ...p, [`${engine}/${model}`]: 0 }));
     try {
       await api.downloadModel(engine, model);
       setProgress((p) => ({ ...p, [`${engine}/${model}`]: 1 }));
+      setModels(await api.getModels());
     } catch (e) {
-      console.error(e);
+      setError(`Download failed: ${e}`);
     }
   };
 
@@ -227,11 +238,24 @@ function EngineTab({
           value={settings.engine.engine}
           onChange={(e) => patchEngine(onPatch, settings, { engine: e.target.value })}
         >
-          <option value="mock">Mock (no model — pipeline testing only)</option>
-          <option value="parakeet">Parakeet TDT (fastest English, ~600 MB, local)</option>
-          <option value="whisper">Whisper (multilingual, local)</option>
-          <option value="moonshine">Moonshine v2 (streaming — experimental, local)</option>
+          {engines.includes('mock') && (
+            <option value="mock">Mock (no model — pipeline testing only)</option>
+          )}
+          {engines.includes('parakeet') && (
+            <option value="parakeet">Parakeet TDT (fastest English, ~600 MB, local)</option>
+          )}
+          {engines.includes('whisper') && (
+            <option value="whisper">Whisper (multilingual, local)</option>
+          )}
+          {engines.includes('moonshine') && (
+            <option value="moonshine">Moonshine v2 (streaming — experimental, local)</option>
+          )}
           <option value="embedded">Embedded (plugin) — remote STT via your NV oOS site</option>
+          {!engines.includes(settings.engine.engine) && (
+            <option value={settings.engine.engine} disabled>
+              {settings.engine.engine} (not compiled into this build)
+            </option>
+          )}
         </select>
       </label>
       {settings.engine.engine === 'embedded' && (
@@ -262,6 +286,7 @@ function EngineTab({
       </label>
 
       <h3>Available models for this engine</h3>
+      {error && <p className="danger">{error}</p>}
       {entries.length === 0 && <p className="muted">No catalogue entries.</p>}
       <ul className="models">
         {entries.map((m) => (
@@ -272,13 +297,17 @@ function EngineTab({
                 ~{m.size_mb} MB · {m.license} · {m.languages}
               </div>
             </div>
-            <button className="btn" onClick={() => void download(m.engine, m.id)}>
-              {progress[`${m.engine}/${m.id}`] === undefined
-                ? 'Download'
-                : progress[`${m.engine}/${m.id}`] < 1
-                  ? `Downloading ${Math.round(progress[`${m.engine}/${m.id}`] * 100)}%`
-                  : 'Downloaded'}
-            </button>
+            {m.installed ? (
+              <span className="muted">Installed ✓</span>
+            ) : (
+              <button className="btn" onClick={() => void download(m.engine, m.id)}>
+                {progress[`${m.engine}/${m.id}`] === undefined
+                  ? 'Download'
+                  : progress[`${m.engine}/${m.id}`] < 1
+                    ? `Downloading ${Math.round(progress[`${m.engine}/${m.id}`] * 100)}%`
+                    : 'Downloaded'}
+              </button>
+            )}
           </li>
         ))}
       </ul>

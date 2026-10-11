@@ -217,8 +217,21 @@ pub fn delete_meeting(state: State<'_, AppState>, id: i64) -> AppResult<()> {
 // ---- Models & file transcription ----------------------------------------
 
 #[tauri::command]
-pub fn get_models() -> Vec<crate::stt::model_registry::ModelSpec> {
-    crate::stt::model_registry::CATALOG.to_vec()
+pub fn get_models(state: State<'_, AppState>) -> Vec<crate::stt::model_registry::ModelStatus> {
+    crate::stt::model_registry::status_list(&state.models_dir())
+}
+
+/// Engine ids compiled into this build (feature-gated backends).
+#[tauri::command]
+pub fn get_compiled_engines() -> Vec<String> {
+    let mut engines = vec!["mock".to_string(), "embedded".to_string()];
+    #[cfg(feature = "parakeet")]
+    engines.push("parakeet".to_string());
+    #[cfg(feature = "whisper")]
+    engines.push("whisper".to_string());
+    #[cfg(feature = "moonshine")]
+    engines.push("moonshine".to_string());
+    engines
 }
 
 #[tauri::command]

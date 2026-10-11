@@ -105,6 +105,53 @@ pub fn find(engine: &str, id: &str) -> Option<&'static ModelSpec> {
     CATALOG.iter().find(|m| m.engine == engine && m.id == id)
 }
 
+/// Whether a catalogue entry is present on disk, mirroring how each engine
+/// resolves its files (parakeet dir with encoder/decoder/joiner/tokens;
+/// whisper `{id}.bin`; vad `silero_vad.onnx`).
+pub fn is_installed(spec: &ModelSpec, models_dir: &Path) -> bool {
+    if spec.archive {
+        let dir = models_dir.join(spec.id);
+        dir.join("tokens.txt").is_file()
+            && dir.join("encoder.int8.onnx").is_file()
+            && dir.join("decoder.int8.onnx").is_file()
+            && dir.join("joiner.int8.onnx").is_file()
+    } else {
+        let file = match spec.file_name {
+            Some(name) => models_dir.join(name),
+            None => models_dir.join(format!("{}.bin", spec.id)),
+        };
+        file.is_file()
+    }
+}
+
+/// Catalogue entry + install state for the settings UI.
+#[derive(Debug, Clone, Serialize)]
+pub struct ModelStatus {
+    pub engine: &'static str,
+    pub id: &'static str,
+    pub description: &'static str,
+    pub size_mb: u32,
+    pub license: &'static str,
+    pub languages: &'static str,
+    pub installed: bool,
+}
+
+/// The catalogue with each entry's on-disk state resolved.
+pub fn status_list(models_dir: &Path) -> Vec<ModelStatus> {
+    CATALOG
+        .iter()
+        .map(|s| ModelStatus {
+            engine: s.engine,
+            id: s.id,
+            description: s.description,
+            size_mb: s.size_mb,
+            license: s.license,
+            languages: s.languages,
+            installed: is_installed(s, models_dir),
+        })
+        .collect()
+}
+
 /// Streaming download with progress callback (0.0..=1.0), SHA-256 check
 /// (when the spec carries a hash), and atomic rename into place.
 pub async fn download(

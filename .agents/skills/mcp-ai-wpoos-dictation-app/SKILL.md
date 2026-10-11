@@ -209,6 +209,13 @@ cargo run --features parakeet --example transcribe_file -- ../speech.wav --engin
   parent module** (proven with a minimal repro): inside
   `stt/engine.rs`, `parakeet::X` fails while `crate::stt::parakeet::X`
   works — always use crate-qualified paths for cfg-gated siblings.
+- **LL hook ordering**: in `hotkey/win_hook.rs`, key-up detection must run
+  BEFORE the `RECORDING` swallow — swallowing first eats the `Released`
+  event and dictation hangs in `Recording` forever. Regression-tested by
+  `ptt_release_fires_despite_recording_swallow`.
+- **Close = exit**: the hidden overlay window keeps the process alive after
+  the main window closes; `lib.rs` handles `CloseRequested` on `main` with
+  `app.exit(0)`. Do not remove that handler without adding a tray instead.
 
 ## Cleanup pipeline (golden backstop)
 

@@ -63,6 +63,15 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .on_window_event(|window, event| {
+            // Exit when the main window closes: the hidden overlay window
+            // would otherwise keep the process alive with no visible UI.
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                if window.label() == "main" {
+                    window.app_handle().exit(0);
+                }
+            }
+        })
         .setup(|app| {
             let handle = app.handle().clone();
             state::setup(&handle)?;
@@ -96,6 +105,7 @@ pub fn run() {
             ipc::list_meetings,
             ipc::delete_meeting,
             ipc::get_models,
+            ipc::get_compiled_engines,
             ipc::download_model,
             ipc::transcribe_file,
             ipc::cancel_dictation,
