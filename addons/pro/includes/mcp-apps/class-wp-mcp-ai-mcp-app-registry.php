@@ -1120,11 +1120,40 @@ class WP_MCP_AI_MCP_App_Registry {
 			return $tools;
 		}
 
-		// Cache the results.
-		set_transient( $cache_key, $tools, self::CACHE_TTL );
+		// Cache the results, capped at the server-declared freshness bound
+		// (SEP-2549 ttlMs) so servers that change their catalog are
+		// re-polled on their own schedule. An absent or zero ttlMs keeps
+		// the default TTL: re-discovering on every chat turn would add
+		// two handshake round trips per app.
+		$ttl = self::resolve_cache_ttl( $client->get_last_tools_ttl_ms() );
+
+		set_transient( $cache_key, $tools, $ttl );
 		delete_transient( $cache_key . '_err' );
 
 		return $tools;
+	}
+
+	/**
+	 * Resolve a discovery cache TTL from a server-declared ttlMs.
+	 *
+	 * A positive server TTL caps the default at the server's freshness
+	 * bound; an absent or zero TTL keeps the default. Pure helper —
+	 * unit-tested directly.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param int $server_ttl_ms Server-declared cache TTL in milliseconds.
+	 * @return int Cache TTL in seconds.
+	 */
+	public static function resolve_cache_ttl( $server_ttl_ms ) {
+		$ttl = self::CACHE_TTL;
+
+		$server_ttl_ms = absint( $server_ttl_ms );
+		if ( $server_ttl_ms > 0 ) {
+			$ttl = min( $ttl, max( 1, (int) ceil( $server_ttl_ms / 1000 ) ) );
+		}
+
+		return $ttl;
 	}
 
 	/**
@@ -1158,6 +1187,76 @@ class WP_MCP_AI_MCP_App_Registry {
 			delete_transient( $cache_key );
 			delete_transient( $cache_key . '_err' );
 		}
+	}
+
+	/**
+	 * Invalidate the discovery cache for every app pointing at a server URL.
+	 *
+	 * Called when the remote server pushes `notifications/tools/list_changed`
+	 * (via {@see WP_MCP_AI_MCP_App_Client::dispatch_sse_notifications()}) so
+	 * the next request re-discovers instead of serving a stale catalog — the
+	 * same failure mode measured by the M3 quirks matrix.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param string $server_url Remote MCP server URL.
+	 * @return void
+	 */
+	public function invalidate_discovery_for_url( $server_url ) {
+		$server_url = esc_url_raw( (string) $server_url );
+
+		if ( '' === $server_url ) {
+			return;
+		}
+
+		$assistant_ids = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'any',
+				'posts_per_page' => 250, // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- Scoped, low-cardinality invalidation sweep.
+				'meta_key'       => self::META_KEY, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- scoped, low-cardinality invalidation sweep.
+				'fields'         => 'ids',
+			)
+		);
+
+		foreach ( $assistant_ids as $assistant_id ) {
+			$apps = $this->get_apps( $assistant_id );
+
+			foreach ( $apps as $app_config ) {
+				$app_url = isset( $app_config['server_url'] ) ? esc_url_raw( (string) $app_config['server_url'] ) : '';
+
+				if ( '' === $app_url || $app_url !== $server_url ) {
+					continue;
+				}
+
+				$cache_key = self::CACHE_PREFIX . md5( wp_json_encode( $app_config ) );
+				delete_transient( $cache_key );
+				delete_transient( $cache_key . '_err' );
+			}
+		}
+	}
+
+	/**
+	 * Handle a JSON-RPC notification pushed by a remote MCP server.
+	 *
+	 * Subscribed to {@see 'wp_mcp_ai_remote_mcp_notification'} in
+	 * mcp-apps-init.php.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param string $method     Notification method.
+	 * @param array  $params     Notification params.
+	 * @param string $server_url Remote server URL.
+	 * @return void
+	 */
+	public function handle_remote_notification( $method, $params, $server_url ) {
+		unset( $params );
+
+		if ( 'notifications/tools/list_changed' !== $method ) {
+			return;
+		}
+
+		$this->invalidate_discovery_for_url( $server_url );
 	}
 
 	/**

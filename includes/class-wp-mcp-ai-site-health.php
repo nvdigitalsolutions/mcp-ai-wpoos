@@ -69,6 +69,11 @@ class WP_MCP_AI_Site_Health {
 			'test'  => array( $this, 'test_tool_functionality' ),
 		);
 
+		$tests['direct']['wp_mcp_ai_mcp_schema_compliance'] = array(
+			'label' => __( 'NV oOS MCP Tool Schema Compliance', 'mcp-ai-wpoos' ),
+			'test'  => array( $this, 'test_mcp_schema_compliance' ),
+		);
+
 		$tests['direct']['wp_mcp_ai_database_schema'] = array(
 			'label' => __( 'NV oOS Database Schema', 'mcp-ai-wpoos' ),
 			'test'  => array( $this, 'test_database_schema' ),
@@ -492,6 +497,124 @@ class WP_MCP_AI_Site_Health {
 	}
 
 	/**
+	 * Test MCP tool schema compliance (proposal 066).
+	 *
+	 * Runs the schema auditor over the registry and flags agent-client
+	 * hazards (untyped roots, root combinators, bracket property names,
+	 * prefixItems tuples, over-budget schemas, unbounded integer IDs).
+	 * The audit is transient-cached for 15 minutes because walking the full
+	 * registry JSON-encodes every schema.
+	 *
+	 * @return array Test result
+	 */
+	public function test_mcp_schema_compliance() {
+		$result = array(
+			'label'       => __( 'MCP Tool Schema Compliance', 'mcp-ai-wpoos' ),
+			'status'      => 'good',
+			'badge'       => array(
+				'label' => __( 'MCP', 'mcp-ai-wpoos' ),
+				'color' => 'blue',
+			),
+			'description' => '',
+			'actions'     => '',
+			'test'        => 'wp_mcp_ai_mcp_schema_compliance',
+		);
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Schema_Auditor' ) ) {
+			$result['status']      = 'recommended';
+			$result['label']       = __( 'Schema auditor unavailable', 'mcp-ai-wpoos' );
+			$result['description'] = sprintf(
+				'<p>%s</p>',
+				__( 'The MCP schema auditor class is not loaded. This is normal during plugin activation.', 'mcp-ai-wpoos' )
+			);
+			return $result;
+		}
+
+		$summary = $this->get_schema_compliance_summary();
+
+		if ( 0 === $summary['slugs_affected'] ) {
+			$result['description'] = sprintf(
+				'<p>%s</p>',
+				__( 'All tool schemas conform to the MCP agent-client hazard baseline.', 'mcp-ai-wpoos' )
+			);
+			return $result;
+		}
+
+		$result['status'] = 'recommended';
+		/* translators: %d: number of affected tools */
+		$result['label']       = sprintf( __( '%d tools with MCP schema hazards', 'mcp-ai-wpoos' ), $summary['slugs_affected'] );
+		$result['description'] = sprintf(
+			'<p>%s</p><ul>%s</ul>',
+			__(
+				'Some tool input schemas use shapes that specific agent clients (Claude Code, Codex) mishandle. The tools/list surface normalizes or skips them at runtime, but the tool authors should fix the schemas:',
+				'mcp-ai-wpoos'
+			),
+			$this->render_schema_findings_list( $summary )
+		);
+
+		return $result;
+	}
+
+	/**
+	 * Render the schema findings summary as an HTML list.
+	 *
+	 * @param array $summary Auditor summary from WP_MCP_AI_Tool_Schema_Auditor::summarize().
+	 * @return string HTML list items.
+	 */
+	private function render_schema_findings_list( $summary ) {
+		$labels = array(
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_ROOT_TYPE_MISSING   => __( 'Missing root type', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_ROOT_COMBINATOR     => __( 'Root oneOf/anyOf next to properties', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_BRACKET_PROPERTY    => __( 'Bracketed property names', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_PREFIX_ITEMS        => __( 'prefixItems tuples', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_ENUM_IN_ANYOF_LARGE => __( 'Enum in combinator on large schema', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_OVER_BUDGET         => __( 'Schema over emit budget', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_UNSAFE_INTEGER      => __( 'Unbounded integer id/amount field', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_SLUG_TOO_LONG       => __( 'Tool slug over length limit', 'mcp-ai-wpoos' ),
+		);
+
+		$items = array();
+
+		foreach ( $summary['counts'] as $code => $count ) {
+			$label  = isset( $labels[ $code ] ) ? $labels[ $code ] : $code;
+			$sample = isset( $summary['samples'][ $code ] ) ? $summary['samples'][ $code ] : array();
+
+			$line = sprintf(
+				/* translators: 1: finding label, 2: affected tool count, 3: sample slugs */
+				__( '%1$s: %2$d tool(s)%3$s', 'mcp-ai-wpoos' ),
+				esc_html( $label ),
+				$count,
+				! empty( $sample ) ? ' — ' . esc_html( implode( ', ', array_slice( $sample, 0, 5 ) ) ) : ''
+			);
+
+			$items[] = '<li>' . $line . '</li>';
+		}
+
+		return implode( '', $items );
+	}
+
+	/**
+	 * Fetch (or compute, transient-cached) the schema compliance summary.
+	 *
+	 * @return array Auditor summary.
+	 */
+	private function get_schema_compliance_summary() {
+		$cached = get_transient( 'wp_mcp_ai_schema_compliance_summary' );
+
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$summary = WP_MCP_AI_Tool_Schema_Auditor::summarize(
+			WP_MCP_AI_Tool_Schema_Auditor::audit_registry()
+		);
+
+		set_transient( 'wp_mcp_ai_schema_compliance_summary', $summary, 15 * MINUTE_IN_SECONDS );
+
+		return $summary;
+	}
+
+	/**
 	 * Test database schema
 	 *
 	 * @return array Test result
@@ -618,6 +741,20 @@ class WP_MCP_AI_Site_Health {
 		$fields['tool_count'] = array(
 			'label' => __( 'Tools Available', 'mcp-ai-wpoos' ),
 			'value' => $tool_count,
+		);
+
+		// MCP schema compliance summary (proposal 066).
+		$schema_summary                  = $this->get_schema_compliance_summary();
+		$fields['mcp_schema_compliance'] = array(
+			'label' => __( 'MCP Tool Schema Compliance', 'mcp-ai-wpoos' ),
+			'value' => 0 === $schema_summary['slugs_affected']
+				? __( 'No hazards', 'mcp-ai-wpoos' )
+				: sprintf(
+					/* translators: 1: affected tool count, 2: finding code counts */
+					__( '%1$d tool(s) affected: %2$s', 'mcp-ai-wpoos' ),
+					$schema_summary['slugs_affected'],
+					wp_json_encode( $schema_summary['counts'] )
+				),
 		);
 
 		// JetEngine integration.
@@ -850,8 +987,8 @@ class WP_MCP_AI_Site_Health {
 		if ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) {
 			$result['description'] = '<p>' . esc_html__( 'DISABLE_WP_CRON is enabled. Background tasks will run reliably via system cron.', 'mcp-ai-wpoos' ) . '</p>';
 		} else {
-			$result['status'] = 'recommended';
-			$result['label']  = __( 'DISABLE_WP_CRON is not set', 'mcp-ai-wpoos' );
+			$result['status']      = 'recommended';
+			$result['label']       = __( 'DISABLE_WP_CRON is not set', 'mcp-ai-wpoos' );
 			$result['description'] = '<p>' . esc_html__( 'NV oOS uses WordPress cron for background AI tasks. Without a system cron, tasks rely on site traffic to trigger. Add define( DISABLE_WP_CRON, true ) to wp-config.php and set up a system cron job.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
@@ -893,8 +1030,8 @@ class WP_MCP_AI_Site_Health {
 		}
 
 		if ( ! empty( $issues ) ) {
-			$result['status'] = 'recommended';
-			$result['label']  = __( 'Security improvements recommended', 'mcp-ai-wpoos' );
+			$result['status']      = 'recommended';
+			$result['label']       = __( 'Security improvements recommended', 'mcp-ai-wpoos' );
 			$result['description'] = '<ul><li>' . implode( '</li><li>', array_map( 'esc_html', $issues ) ) . '</li></ul>';
 		} else {
 			$result['description'] = '<p>' . esc_html__( 'Core security measures are configured.', 'mcp-ai-wpoos' ) . '</p>';

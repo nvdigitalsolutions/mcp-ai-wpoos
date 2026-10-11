@@ -1,5 +1,17 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — MCP Client-Quirk Hardening (Proposal 066)
+
+- **Server-side `tools/list` hardening** — every advertised tool schema now carries a root `type: object` (injected when missing), and hazardous schemas are skipped with a logged reason instead of poisoning the catalog for agent clients: bracketed property names (`ids[]`), schemas over a byte budget (default 20 KB, matching Codex's compaction budget — filter `wp_mcp_ai_tools_list_schema_max_bytes`), root `oneOf`/`anyOf` without a type, and slugs over 64 characters (`wp_mcp_ai_tools_list_max_slug_length`).
+- **`outputSchema` ⇄ `structuredContent` consistency** — `tools/call` for `nvoos_get_profile` attaches `structuredContent` whenever the profile `outputSchema` is advertised, so clients that turn outputSchema-declared text-only results into errors keep working.
+- **Registry change signal** — `WP_MCP_AI_Tool_Registry` fires `wp_mcp_ai_mcp_tools_list_changed` (once per request) on register/unregister/clear, backing the advertised `listChanged` capability.
+- **`WP_MCP_AI_Tool_Schema_Auditor`** — static auditor (root combinator+properties, `prefixItems`, enum-in-combinator on >5 KB schemas, unbounded 2^53-risk integers, over-budget schemas, long slugs) surfaced as a Site Health direct test + debug-info field.
+- **Pro client cache freshness** — JetEngine MCP client and MCP App registry cap their discovery caches at the server-declared `ttlMs`; the MCP App client dispatches server-pushed JSON-RPC notifications from SSE responses, and `notifications/tools/list_changed` invalidates the matching discovery cache.
+- **Content Graph AI mirror** — the standalone `ToolsController` applies the same `tools/list` hardening via its `ToolSchemaAuditor` port.
+- 44 new/updated PHPUnit tests (schema hardening quirk suite, auditor units, cache-freshness suites) passing on WP 6.9 and WP 7.1; phpcs 0 errors on touched files.
+
 ## [1.2.3] - 2026-10-10
 
 ### Added — Standalone SPA WordPress Login (PR #6993, Proposal 064)

@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-schema-auditor.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-db-output-guard.php';
