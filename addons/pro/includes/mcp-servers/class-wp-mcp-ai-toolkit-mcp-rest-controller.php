@@ -85,7 +85,7 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 	 * supports. Defaults to 2024-11-05 for maximum backward compatibility
 	 * when the client provides no version information.
 	 *
-	 * @since 2.x.0
+	 * @since 1.1.51
 	 *
 	 * @param array $params Client's initialize params.
 	 * @return string Negotiated protocol version.

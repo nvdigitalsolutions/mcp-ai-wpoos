@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **October 10, 2026** · Version: **2.56**
+> Last reviewed: **October 11, 2026** · Version: **2.57**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,692 tools (~353 base + ~1,339 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare, Z.AI), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,696 tools (~354 base + ~1,342 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare, Z.AI), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,11 +50,11 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,692 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,696 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (12 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard, read-only profile gate, CORS guard)
-├── tools/                              ← base tool implementations (~353 classes; live count is authoritative)
+├── tools/                              ← base tool implementations (~354 classes; live count is authoritative)
 │   ├── okf/                            ← OKF knowledge tools (10 tools)
 ├── services/                           ← 30+ service classes
 ├── admin/                              ← WordPress admin UI
@@ -188,7 +188,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~353 base tool classes) or `false` (~1,692 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~354 base tool classes) or `false` (~1,696 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -528,6 +528,13 @@ Twelve security infrastructure classes in `includes/security/` that operate acro
 - **Standalone SPA cookie mode + proxy** (v1.2.3, PRs #6994/#6996) — cookie-mode proxy detection + JSON guards, the zero-dependency `scripts/serve.mjs` production proxy (`NVOOS_TARGET_SITE`; SSE streaming, login redirect/cookie rewriting), `React.lazy` chunk splitting (entry 501 KB → 196 KB minified), and `.env` loading with shell > `.env` > docker-default precedence.
 - **npm ESM dists fixed** (v1.2.3, PR #6984) — `nvoos-slash-commands`/`nvoos-dom-batcher`/`nvoos-audio` published syntactically invalid ESM; all 22 manifests modernized to `"type": "module"` and all 23 packages rebuilt + the new `examples/nvoos-vite-demo/`; the three alpha.4 publishes deferred (needs npm auth).
 - **Build** (v1.2.3, PRs #6988/#6995) — spa-standalone workflows pin `main` at git init and assemble the deploy tree under `examples/` so Velocity's root directory finds `package.json`. **Docs** — the CORS/Velocity deployment guide (#6989) + the open-issues triage snapshot (#6992). **No tool-count change: ~353 base + ~1,339 Pro, ~1,692 total.**
+- **MCP client-quirk hardening** (v1.2.4, PR #7007, Proposal 066) — the new `WP_MCP_AI_Tool_Schema_Auditor` normalizes every advertised `tools/list` schema (root `type: object` injected when missing) and skips-with-reason hazardous ones (bracketed property names, >20 KB schemas via `wp_mcp_ai_tools_list_schema_max_bytes`, >64-char slugs via `wp_mcp_ai_tools_list_max_slug_length`, root combinators); `nvoos_get_profile` attaches `structuredContent` whenever its `outputSchema` is advertised; the registry fires `wp_mcp_ai_mcp_tools_list_changed` (once per request) backing `listChanged`; JetEngine MCP + MCP App discovery caches cap at the server `ttlMs` and invalidate on `notifications/tools/list_changed`; Site Health direct test + debug field; the CG-AI standalone mirror ports the hardening (sub-project).
+- **nvoos-chart recipes + create_chart_fence** (v1.2.4, PRs #7003/#7005) — fenced `nvoos-chart` JSON renders as HTML/CSS charts on all three chat surfaces (29 types total; sanitisation by construction — extracted before `marked`/DOMPurify, `createElement` + `textContent`; resource caps 40 labels / 12 series / 120 points / 240 cells); **+1 base tool `create_chart_fence`** (server-side validator mirror, all registration surfaces); the `design-chart-recipes` skill + byte-identical conformance fixtures across the three suites.
+- **Model Foundry Phase 1 — Corpus Foundry** (v1.2.4, PR #7008, Proposal 067) — **+3 Pro tools** (`export_trajectory_corpus`, `export_preference_pairs`, `export_plugin_docs_corpus`) behind the consent fail-closed `WP_MCP_AI_Corpus_Governance` engine (`_wp_mcp_ai_training_consent`; caps → exact → fuzzy → opt-in semantic dedup → PII scrub → deterministic holdout split → R12 provenance → guarded sharded write; holdout rows never enter `train.jsonl`); deactivatable `model_foundry` Pro module; `ai_ml` preset +3; the `mcp-ai-wpoos-model-foundry` skill. Phases 0/2–6 deferred in the implementation plan.
+- **Content Graph explorer page in the Pro SPA** (v1.2.4, PR #6998) — `#/knowledge-graph` in the admin surface + standalone app (vendored Cytoscape explorer, documented wrapper-only delta, lazy 213 KB-gzip chunk); the CG plugin gains a read-only `GET /graph/visual-config` route + assistant-credential read auth — write routes stay `manage_options`-only (sub-project track, flag-not-edited).
+- **Standalone SPA deploy & auth hardening** (v1.2.4, PRs #6999/#7000/#7002/#7004/#7006/#7009) — cookie-mode login re-scoped through the proxy (login-page buffering + absolute form-action rewrite; cross-host deploys were broken); a new `ajaxPrefilter` mirrors the fetch wrapper's auth headers onto jQuery (the explorer's `$.ajax` bypassed it); tsconfig `paths` + CI build-verify unblock Velocity; `serve.mjs` gains a shebang (Velocity executes the entry through `sh`) + `server.on('error')` logging; nosniff + ramped HSTS on the static branch.
+- **F&B toolkit toggle restored** (v1.2.4, PR #7010) — `enable_fnb_toolkit` was defined but never listed in the `features` subtab group, so the checkbox never rendered and the toolkit couldn't be enabled from the UI; added to the subtab fields + memory map + footer counter with a regression test.
+- **Docs & skills** (v1.2.4) — user-directed partial `@since` reconciliation (the literal `@since 2.x.0` placeholder family + the model-foundry `1.6.0` + chart-fence `1.4.0` tags corrected to their true shipped versions, blame-verified; the historical OI-1 groups stay parked per issue #5968); coding-time skills **66 → 69** (`design-chart-recipes`, `mcp-ai-wpoos-content-graph-spa`, `mcp-ai-wpoos-model-foundry`). **Tool counts +1 base +3 Pro → ~354 base + ~1,342 Pro, ~1,696 total.**
 - **Chat profiles with server-enforced read-only mode** (v1.2.2, PR #6977, Proposal 015) — `write` (non-restrictive default) + `read-only` built-ins with profiles resolved **server-side per request** (user meta → site default → write fail-safe; client-sent profiles honoured only for `wp_mcp_ai_change_chat_profile` → `manage_options`; downgrades allowed for any logged-in user; guests default to read-only); the 11th security class `WP_MCP_AI_Read_Only_Profile_Gate` enforces at priority 0 before the destructive-ops gate (403 `WP_MCP_AI_Chat_Profile_Blocked` envelope + `chat_profile_blocked`/`chat_profile_escalation_attempt` audit events); REST `GET/POST /mcp-ai/v1/chat-profile` deliberately not a tool (no mid-run self-elevation); `wp mcp-ai chat-profile` WP-CLI + Pro SPA v2 selectors; Phase D gaps documented (queue-time async enforcement; `confirm_write` deferred).
 - **F&B assistant packs A1–A4** (v1.2.2, PR #6982, Proposal 062 Phase 4) — four canonical v1 `nvoos-assistant` bundles under `addons/pro/presets/assistant-packs/fnb/` (Manager, Kitchen & Bar Stock, Financial, Content) with spec-verbatim G-01…G-12 instructions + the `wp mcp-ai pro fnb seed-assistants` seeder (`--dry-run`/`--mode`/`--status`/`--porcelain`/`--include-image-tools`) through the shared `WP_MCP_AI_Assistant_Portability` engine — READ + DRAFT tiers, ACT off; standalone 4/4 validator.
 - **Google OAuth production readiness** (v1.2.2, PR #6981) — Drive scopes unified on the non-sensitive `drive.file` scope across all four flows behind the `wp_mcp_ai_google_drive_oauth_scope` filter (off the CASA verification surface); Calendar defaults to Minimal for new installs; upstream token revocation on Gmail/Drive disconnect (Limited Use deletion); publishing-status warnings on the Gmail/Drive footers.

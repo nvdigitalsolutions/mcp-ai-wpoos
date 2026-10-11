@@ -1,9 +1,21 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.3)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.4)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## MCP Quirk Hardening, Chart Recipes, Model Foundry Phase 1 & the Content Graph SPA Page (v1.2.4)
+
+- **MCP client-quirk hardening (PR #7007, Proposal 066)** — `WP_MCP_AI_Tool_Schema_Auditor` normalizes every advertised `tools/list` schema (root `type: object` injected when missing) and skips-with-reason hazardous ones (bracketed property names, >20 KB schemas via `wp_mcp_ai_tools_list_schema_max_bytes`, >64-char slugs via `wp_mcp_ai_tools_list_max_slug_length`, root combinators) — one bad tool can no longer drop the whole catalog; findings surface as a Site Health direct test + debug-info field (15-min transient cache). `nvoos_get_profile` attaches `structuredContent` whenever its `outputSchema` is advertised (Codex turns declared-outputSchema text-only results into errors). The registry fires `wp_mcp_ai_mcp_tools_list_changed` (once per request) backing `listChanged`; JetEngine MCP + MCP App discovery caches cap at the server `ttlMs` and invalidate on `notifications/tools/list_changed`. The CG-AI standalone mirror ports the hardening (sub-project). 44 new tests on WP 6.9 + 7.1.
+- **nvoos-chart recipes + create_chart_fence (PRs #7003, #7005)** — fenced `nvoos-chart` JSON renders as HTML/CSS charts on all three chat surfaces (29 types; sanitisation by construction — extracted before `marked`/DOMPurify; resource caps; grouped-bar fix); **+1 base tool `create_chart_fence`** (server-side validator mirror) + the `design-chart-recipes` skill + byte-identical conformance fixtures across the three suites.
+- **Model Foundry Phase 1 — Corpus Foundry (PR #7008, Proposal 067)** — **+3 Pro tools** (`export_trajectory_corpus`/`export_preference_pairs`/`export_plugin_docs_corpus`) behind the consent fail-closed `WP_MCP_AI_Corpus_Governance` engine (`_wp_mcp_ai_training_consent`; caps → exact → fuzzy → opt-in semantic dedup → PII scrub → deterministic holdout split → R12 provenance → guarded sharded write; holdout rows never enter `train.jsonl`; consent UI ships in Phase 3 — `wp_mcp_ai_model_foundry_assistant_consented` is the operational override); deactivatable `model_foundry` Pro module; `ai_ml` preset +3.
+- **Content Graph explorer page in the Pro SPA (PR #6998)** — `#/knowledge-graph` in the admin surface + standalone app (vendored Cytoscape explorer, documented wrapper-only delta, lazy 213 KB-gzip chunk); the CG plugin gains a read-only `GET /graph/visual-config` route + assistant-credential read auth — write routes stay `manage_options`-only (sub-project track).
+- **Standalone SPA deploy & auth hardening (PRs #6999, #7000, #7002, #7004, #7006)** — cookie-mode login re-scoped through the proxy (absolute `wp-login.php` form actions broke cross-host deploys — login-page buffering + rewrite); a new `ajaxPrefilter` mirrors the fetch wrapper's auth headers onto jQuery (the explorer's `$.ajax` bypassed it); tsconfig paths + CI build-verify unblock the Velocity deploy; `serve.mjs` gains a shebang (Velocity executes the entry through `sh`) + `server.on('error')` logging with an `EADDRINUSE` hint; the Velocity doc gains the entry-path callout.
+- **SPA static-server headers (PR #7009)** — `X-Content-Type-Options: nosniff` + `Strict-Transport-Security: max-age=86400` on the static branch only (ramp to `31536000` after a clean week); CSP Report-Only template commented.
+- **F&B toolkit toggle restored (PR #7010)** — `enable_fnb_toolkit` was defined but never listed in the `features` subtab group, so the checkbox never rendered; added to the subtab fields + memory map + footer counter with a regression test.
+- **Docs & skills (this pass)** — user-directed partial `@since` reconciliation (the literal `@since 2.x.0` placeholder family + the model-foundry `1.6.0` + chart-fence `1.4.0` tags corrected to their true shipped versions, blame-verified; the historical OI-1 groups stay parked per issue #5968); coding-time skills 66 → 69.
+- **Tool counts** — ~354 base + ~1,342 Pro (~1,696 total; +1 base +3 Pro). Security classes: 12 (unchanged). Stale 1.2.2 build ZIPs removed (6 files).
 
 ## CORS Enforcement, Standalone SPA WordPress Login & SPA REST Auth (v1.2.3)
 

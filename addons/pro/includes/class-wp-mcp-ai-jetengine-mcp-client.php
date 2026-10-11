@@ -159,7 +159,7 @@ class WP_MCP_AI_JetEngine_MCP_Client {
 	 * does not re-run the initialize + tools/list handshake. Pure helper —
 	 * unit-tested directly.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param int $server_ttl_ms Server-declared cache TTL in milliseconds.
 	 * @param int $default_ttl   Fallback TTL in seconds.

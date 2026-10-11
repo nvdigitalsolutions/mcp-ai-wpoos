@@ -101,7 +101,7 @@ add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_mcp_apps_register_tools', 50 
  * The registry handler no-ops on any other notification method and on
  * empty server URLs.
  *
- * @since 2.x.0
+ * @since 1.2.4
  *
  * @param string $method     Notification method.
  * @param array  $params     Notification params.

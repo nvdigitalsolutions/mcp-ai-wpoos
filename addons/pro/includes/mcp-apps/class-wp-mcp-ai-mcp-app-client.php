@@ -158,7 +158,7 @@ class WP_MCP_AI_MCP_App_Client {
 	 * Captured so discovery caches can cap their transient TTL at the
 	 * server's freshness bound (MCP 2026-07-28 SEP-2549 ttlMs contract).
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 * @var int
 	 */
 	protected $last_tools_ttl_ms = 0;
@@ -524,7 +524,7 @@ class WP_MCP_AI_MCP_App_Client {
 	/**
 	 * Get the server-declared tools/list cache TTL of the last response.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @return int TTL in milliseconds (0 = no TTL declared).
 	 */
@@ -1208,7 +1208,7 @@ class WP_MCP_AI_MCP_App_Client {
 	 * `notifications/tools/list_changed` — can react without a long-lived
 	 * listener.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param string $body Raw SSE stream body.
 	 * @return void
@@ -1248,7 +1248,7 @@ class WP_MCP_AI_MCP_App_Client {
 	/**
 	 * Decode one SSE event payload and fire the remote-notification hook.
 	 *
-	 * @since 2.x.0
+	 * @since 1.2.4
 	 *
 	 * @param string $payload Raw JSON payload of a single SSE event.
 	 * @return void
@@ -1266,7 +1266,7 @@ class WP_MCP_AI_MCP_App_Client {
 		/**
 		 * Fires when a remote MCP server pushes a JSON-RPC notification.
 		 *
-		 * @since 2.x.0
+		 * @since 1.2.4
 		 *
 		 * @param string $method     Notification method (e.g. notifications/tools/list_changed).
 		 * @param array  $params     Notification params.

@@ -54,8 +54,8 @@ weekly (or on demand), independent of any release.
    every standing open item (OI-1 `@since` reconciliation, OI-2 Docker count
    re-derivation, OI-3 test-suite cross-ref, OI-4 wave residuals). Parked items
    stay parked; new finds get *recorded* there, never fixed in-pass.
-3. **Read the template plans** — the latest executed plan (`1.2.3-docs-catch-up.md`,
-   with `1.2.2-docs-catch-up.md` as the previous pass) plus the
+3. **Read the template plans** — the latest executed plan (`1.2.4-docs-catch-up.md`,
+   with `1.2.3-docs-catch-up.md` as the previous pass) plus the
    `v1.1.83-post-docs-catch-up.md` post-window precedent (executed when PRs
    merged after the catch-up but before the next version bump) and
    `v1.1.58`/`v1.1.59` for the original structure.
@@ -281,6 +281,26 @@ weekly (or on demand), independent of any release.
   (the v1.1.93 superseded-addon-zip precedent) and notes the in-flight run
   in the plan; a build that fails simply leaves no current ZIP, which is
   still the correct state (the old artifact is stale by definition).
+- **A user-directed partial `@since` reconciliation supersedes the OI-1
+  parking for the tags it covers.** OI-1 parks *historical* tag
+  reconciliation (groups 1–54 + the repo-wide sweep in issue #5968) — but
+  when the user approves fixing a pass's own `@since` anomalies, the
+  catch-up owns a dedicated leading commit that: (a) fixes only
+  in-window-added tags and literal placeholders (`2.x.0`, `1.9.x`-style
+  strings that can never be a shipped version) in the touched base/Pro
+  files — never sub-project (`plugins/*`) or vendored (byte-identity)
+  files, and never recorded module-family tags (the mcp-apps 1.9.x family,
+  group 32); (b) tags every corrected line with the **true shipped
+  version**, blame-verified — in-window lines get the shipping version,
+  pre-existing placeholder lines get the release that shipped their
+  introducing PR (find it via `git blame` → introducing commit →
+  `git log --merges --ancestry-path <c>..HEAD --reverse` for the merge
+  chain, or the changelog section for the PR number); (c) runs `php -l` on
+  every touched file and the targeted suites, and (d) records the
+  reconciliation in the open-items tracker with what stayed parked
+  (executed 2026-10-11 by the 1.2.4 pass — 43 lines: the `2.x.0` family →
+  `1.1.43`/`1.1.51`/`1.1.54`/`1.2.4`, model-foundry `1.6.0` → `1.2.4`,
+  chart-fence + chart-recipes-JS `1.4.0` → `1.2.4`).
 
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
@@ -797,7 +817,33 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.97-docs-catch-up.md`,
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
   `docs/project/plans/v1.1.99-docs-catch-up.md`,
-  `docs/project/plans/1.2.3-docs-catch-up.md` (latest executed — the
+  `docs/project/plans/1.2.4-docs-catch-up.md` (latest executed — the
+  1.2.4 pass over PRs #6998–#7010: the MCP client-quirk hardening
+  (#7007, Proposal 066 — the `WP_MCP_AI_Tool_Schema_Auditor`, the
+  pre-staged `[Unreleased]` converted, zero tool-count change), the
+  nvoos-chart recipes + `create_chart_fence` (+1 base, #7003/#7005
+  with the `design-chart-recipes` skill), Model Foundry Phase 1 (+3
+  Pro exporters, Proposal 067, #7008 with the
+  `mcp-ai-wpoos-model-foundry` skill), the Content Graph explorer
+  page in the Pro SPA (#6998 — sub-project flag-not-edited for the
+  CG plugin's `visual-config` route + credential auth; the
+  `mcp-ai-wpoos-content-graph-spa` skill landed in-window), the
+  standalone SPA deploy/auth hardening (#6999/#7000/#7002/#7004/#7006
+  + the static-server headers #7009), the F&B toggle fix (#7010),
+  the **user-directed partial `@since` reconciliation** (the literal
+  `2.x.0` placeholder family — never recorded in OI-1 — corrected to
+  `1.1.43`/`1.1.51`/`1.1.54`/`1.2.4`, blame-verified; model-foundry
+  `1.6.0` + chart-fence `1.4.0` → `1.2.4`; the mcp-apps 1.9.x family
+  + OI-1 groups 1–54 stay parked — the new A2 scope rule),
+  skill-count 66 → 69 (three new skills in-window with the README
+  repo-map fold-in owed — A5 fired again; the AGENTS.md §1.5
+  design-* 34 → 35 correction), tool count +1 base +3 Pro →
+  ~354/~1,342/~1,696, zero catalog diff, zero sub-project edits,
+  and the stale 1.2.2 build-set removal (6 root files — the 1.2.3
+  ZIP set landed in-window))
+
+Preceding windows:
+`docs/project/plans/1.2.3-docs-catch-up.md` (executed — the
   1.2.3 pass over PRs #6984–#6996: the CORS same-origin enforcement
   (#6986 — the 12th security class `WP_MCP_AI_CORS_Guard` overriding
   core's origin reflection, the `cors_allowed_origins` setting, zero

@@ -14,7 +14,7 @@
  * Keep the type whitelist, caps and colour rules in sync across all four.
  *
  * @package WP_MCP_AI
- * @since 1.4.0
+ * @since 1.2.4
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
@@ -594,7 +594,7 @@ class WP_MCP_AI_Tool_Create_Chart_Fence implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Get extended tool definition including toolkit metadata.
 	 *
-	 * @since 1.4.0
+	 * @since 1.2.4
 	 *
 	 * @return array Tool definition with metadata.
 	 */
