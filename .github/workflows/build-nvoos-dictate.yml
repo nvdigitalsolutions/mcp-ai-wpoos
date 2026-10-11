@@ -1,0 +1,95 @@
+# CI: build + test the NV oOS Dictation companion app
+#
+# Mirrors the repo's standalone-plugin workflow shape. The default cargo
+# feature set (mock engine) needs no C++ toolchain, so this job runs
+# everywhere; native engine features are exercised locally.
+
+name: Build NV oOS Dictation
+
+on:
+  push:
+    paths:
+      - 'examples/nvoos-dictate/**'
+      - '.github/workflows/build-nvoos-dictate.yml'
+  pull_request:
+    paths:
+      - 'examples/nvoos-dictate/**'
+      - '.github/workflows/build-nvoos-dictate.yml'
+
+concurrency:
+  group: nvoos-dictate-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: examples/nvoos-dictate
+
+jobs:
+  rust:
+    name: Rust (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      # `generate_context!` embeds the frontend dist at compile time, so the
+      # webview build must run before any cargo step (test/clippy included).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Build webview (required for generate_context)
+        run: npm run build
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            examples/nvoos-dictate/src-tauri/target
+          key: nvoos-dictate-cargo-${{ runner.os }}-${{ hashFiles('examples/nvoos-dictate/src-tauri/Cargo.lock') }}
+
+      - name: Format check
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+
+      - name: Clippy (deny warnings)
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+
+      - name: Unit + integration tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: MCP feature tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml --features mcp
+
+  frontend:
+    name: Webview (typecheck + build + smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        working-directory: examples/nvoos-dictate
+        run: npm ci
+
+      - name: Typecheck + build
+        working-directory: examples/nvoos-dictate
+        run: npm run build
+
+      - name: Regenerate icons (validates the generator)
+        working-directory: examples/nvoos-dictate
+        run: node scripts/gen-icons.mjs

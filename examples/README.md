@@ -6,6 +6,9 @@ This directory contains practical examples demonstrating how to use the WP MCP A
 
 - **[`agents/`](./agents/)** — copy-ready examples of slim, layered `.github/agents/*.agent.md` files. See [`agents/README.md`](./agents/README.md) and the canonical template at [`.context/templates/agent-file-template.md`](../.context/templates/agent-file-template.md).
 - **`workflows/`** — example workflow YAML definitions for the workflow runner.
+- **[`nvoos-dictate/`](./nvoos-dictate/)** — the NV oOS Dictation desktop companion (Tauri v2 + Rust): local-first push-to-talk dictation and meeting transcription with the NV oOS plugin as optional AI enrichment backend. Design: [Proposal 067](../docs/project/proposals/067-tauri-dictation-companion-app-proposal.md) + [implementation plan](../docs/project/proposals/067-tauri-dictation-companion-app-implementation-plan.md).
+- **`nvoos-pro-spa-vite/`** — the standalone Pro SPA Vite app (pattern D in the `mcp-ai-wpoos-spa-ui` skill).
+- **`nvoos-vite-demo/`** — the npm-package sample app.
 
 ## Embedded Function Calling Examples
 
