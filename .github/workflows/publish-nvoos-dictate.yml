@@ -1,0 +1,60 @@
+# Release: build + publish the NV oOS Dictation desktop app via tauri-action.
+#
+# Tag `nvoos-dictate-v*` to cut a release. tauri-action builds NSIS/MSI (and
+# later AppImage/.app), attaches the artifacts to a GitHub release, and
+# generates the updater's static JSON feed. Signing requires the
+# TAURI_SIGNING_PRIVATE_KEY repository secret (minisign); without it the
+# release is unsigned and SmartScreen will warn (documented in README).
+
+name: Publish NV oOS Dictation
+
+on:
+  push:
+    tags:
+      - 'nvoos-dictate-v*'
+
+jobs:
+  publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ''
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: examples/nvoos-dictate/src-tauri
+
+      - name: Install frontend dependencies
+        working-directory: examples/nvoos-dictate
+        run: npm ci
+
+      - name: Generate icons
+        working-directory: examples/nvoos-dictate
+        run: node scripts/gen-icons.mjs
+
+      - name: Build and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional: minisign private key for updater artifacts.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        with:
+          tagName: nvoos-dictate-v__VERSION__
+          releaseName: 'NV oOS Dictation v__VERSION__'
+          releaseBody: 'See the app README and CHANGELOG for details. Unsigned builds may trigger SmartScreen.'
+          releaseDraft: true
+          prerelease: false
+          projectPath: examples/nvoos-dictate
+          args: ${{ matrix.args }}
