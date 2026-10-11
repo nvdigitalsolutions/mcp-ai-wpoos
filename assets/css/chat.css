@@ -4781,6 +4781,7 @@
     --chart-muted: var(--wp-mcp-ai-color-text-muted, #6b7280);
     --chart-accent: var(--wp-mcp-ai-color-primary, #4f8cff);
     --chart-negative: #dc2626;
+    --chart-positive: #16a34a;
     margin: 12px 0;
     padding: 12px 14px;
     border: 1px solid var(--chart-border);
@@ -4868,7 +4869,7 @@
     min-width: 120px;
 }
 
-.wp-mcp-ai-chat__chart-recipe-track::before {
+.wp-mcp-ai-chat__chart-recipe-body--bar-center .wp-mcp-ai-chat__chart-recipe-track::before {
     content: '';
     position: absolute;
     left: 50%;
@@ -5129,6 +5130,655 @@
     color: var(--chart-text);
 }
 
+/* Bar v2: stacked segments + grouped row spacing */
+.wp-mcp-ai-chat__chart-recipe-stack-seg {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    min-width: 2px;
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+.wp-mcp-ai-chat__chart-recipe-stack-seg:first-child {
+    border-radius: 3px 0 0 3px;
+}
+
+.wp-mcp-ai-chat__chart-recipe-row--first {
+    margin-top: 8px;
+}
+
+.wp-mcp-ai-chat__chart-recipe-body .wp-mcp-ai-chat__chart-recipe-row--first:first-child {
+    margin-top: 0;
+}
+
+.wp-mcp-ai-chat__chart-recipe-row--continuation {
+    margin-bottom: 3px;
+}
+
+/* Center-baseline tracks (diverging / bullet / pyramid) */
+.wp-mcp-ai-chat__chart-recipe-track--center::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--chart-border);
+}
+
+/* Zero axis for range tracks (box / strip / dumbbell) */
+.wp-mcp-ai-chat__chart-recipe-body--box .wp-mcp-ai-chat__chart-recipe-track::before,
+.wp-mcp-ai-chat__chart-recipe-body--strip .wp-mcp-ai-chat__chart-recipe-track::before,
+.wp-mcp-ai-chat__chart-recipe-body--dumbbell .wp-mcp-ai-chat__chart-recipe-track::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--chart-border);
+}
+
+/* Plot dot value tooltip */
+.wp-mcp-ai-chat__chart-recipe-plot-dot-value {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 4px;
+    padding: 1px 5px;
+    border: 1px solid var(--chart-border);
+    border-radius: 3px;
+    background: var(--chart-surface);
+    font-size: 10px;
+    color: var(--chart-text);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 2;
+}
+
+.wp-mcp-ai-chat__chart-recipe-plot-dot:hover .wp-mcp-ai-chat__chart-recipe-plot-dot-value,
+.wp-mcp-ai-chat__chart-recipe-strip-dot:hover .wp-mcp-ai-chat__chart-recipe-plot-dot-value,
+.wp-mcp-ai-chat__chart-recipe-stem-dot:hover .wp-mcp-ai-chat__chart-recipe-plot-dot-value,
+.wp-mcp-ai-chat__chart-recipe-violin-dot:hover .wp-mcp-ai-chat__chart-recipe-plot-dot-value {
+    opacity: 1;
+}
+
+/* Sparkline */
+.wp-mcp-ai-chat__chart-recipe-plot.wp-mcp-ai-chat__chart-recipe-spark {
+    aspect-ratio: 3 / 1;
+    max-width: 320px;
+    padding: 4px;
+}
+
+.wp-mcp-ai-chat__chart-recipe-spark .wp-mcp-ai-chat__chart-recipe-plot-dot {
+    width: 4px;
+    height: 4px;
+}
+
+/* Pie + radial arcs (share the donut layout) */
+.wp-mcp-ai-chat__chart-recipe-pie,
+.wp-mcp-ai-chat__chart-recipe-radial {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.wp-mcp-ai-chat__chart-recipe-pie-ring,
+.wp-mcp-ai-chat__chart-recipe-radial-ring {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+/* Row-style item wrappers shared by the v2 track charts */
+.wp-mcp-ai-chat__chart-recipe-box-item,
+.wp-mcp-ai-chat__chart-recipe-strip-item,
+.wp-mcp-ai-chat__chart-recipe-violin-item,
+.wp-mcp-ai-chat__chart-recipe-unit-item,
+.wp-mcp-ai-chat__chart-recipe-dumb-item,
+.wp-mcp-ai-chat__chart-recipe-bullet-item,
+.wp-mcp-ai-chat__chart-recipe-gantt-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+}
+
+/* Box plot */
+.wp-mcp-ai-chat__chart-recipe-box-wick {
+    position: absolute;
+    left: 50%;
+    width: 2px;
+    margin-left: -1px;
+    border-radius: 1px;
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+.wp-mcp-ai-chat__chart-recipe-box-body {
+    position: absolute;
+    left: 50%;
+    width: 14px;
+    margin-left: -7px;
+    border-radius: 2px;
+    background: var(--bar-color, var(--chart-series-1));
+    opacity: 0.3;
+}
+
+.wp-mcp-ai-chat__chart-recipe-box-median {
+    position: absolute;
+    left: 50%;
+    width: 14px;
+    margin-left: -7px;
+    height: 2px;
+    background: var(--chart-text);
+}
+
+.wp-mcp-ai-chat__chart-recipe-box-min,
+.wp-mcp-ai-chat__chart-recipe-box-max {
+    position: absolute;
+    top: 0;
+    font-size: 10px;
+    color: var(--chart-muted);
+}
+
+.wp-mcp-ai-chat__chart-recipe-box-min {
+    left: 0;
+}
+
+.wp-mcp-ai-chat__chart-recipe-box-max {
+    right: 0;
+}
+
+/* Strip plot */
+.wp-mcp-ai-chat__chart-recipe-strip-dot {
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Stem plot */
+.wp-mcp-ai-chat__chart-recipe-stem-bar {
+    position: absolute;
+    width: 2px;
+    margin-left: -1px;
+    border-radius: 1px;
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+.wp-mcp-ai-chat__chart-recipe-stem-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Violin plot */
+.wp-mcp-ai-chat__chart-recipe-violin-shape {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.wp-mcp-ai-chat__chart-recipe-violin-half {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--bar-color, var(--chart-series-1));
+    opacity: 0.25;
+}
+
+.wp-mcp-ai-chat__chart-recipe-violin-half:nth-child( odd ) {
+    border-radius: 50% 0 0 50%;
+    border-left: 1px solid var(--bar-color, var(--chart-series-1));
+    border-top: 1px solid var(--bar-color, var(--chart-series-1));
+    border-bottom: 1px solid var(--bar-color, var(--chart-series-1));
+}
+
+.wp-mcp-ai-chat__chart-recipe-violin-half:nth-child( even ) {
+    border-radius: 0 50% 50% 0;
+    border-right: 1px solid var(--bar-color, var(--chart-series-1));
+    border-top: 1px solid var(--bar-color, var(--chart-series-1));
+    border-bottom: 1px solid var(--bar-color, var(--chart-series-1));
+}
+
+.wp-mcp-ai-chat__chart-recipe-violin-dot {
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--chart-text);
+}
+
+/* Waffle chart */
+.wp-mcp-ai-chat__chart-recipe-waffle {
+    display: grid;
+    grid-template-columns: repeat(10, 12px);
+    justify-content: start;
+    gap: 2px;
+    min-height: 12px;
+}
+
+.wp-mcp-ai-chat__chart-recipe-waffle-cell {
+    height: 12px;
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Unit chart */
+.wp-mcp-ai-chat__chart-recipe-body--unit .wp-mcp-ai-chat__chart-recipe-track {
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__chart-recipe-unit-cell {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 2px;
+    border-radius: 2px;
+    vertical-align: middle;
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Lollipop chart */
+.wp-mcp-ai-chat__chart-recipe-lolli-stem {
+    position: absolute;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+.wp-mcp-ai-chat__chart-recipe-lolli-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid var(--chart-surface);
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Dumbbell chart */
+.wp-mcp-ai-chat__chart-recipe-dumb-line {
+    position: absolute;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 1px;
+    background: var(--chart-muted);
+    opacity: 0.5;
+}
+
+.wp-mcp-ai-chat__chart-recipe-dumb-dot {
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid var(--chart-surface);
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+/* Slope + waterfall connector math assumes a 16:10 plot box */
+.wp-mcp-ai-chat__chart-recipe-body--slope .wp-mcp-ai-chat__chart-recipe-col-plot,
+.wp-mcp-ai-chat__chart-recipe-body--waterfall .wp-mcp-ai-chat__chart-recipe-col-plot {
+    aspect-ratio: 16 / 10;
+    height: auto;
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+@supports not (aspect-ratio: 16 / 10) {
+    .wp-mcp-ai-chat__chart-recipe-body--slope .wp-mcp-ai-chat__chart-recipe-col-plot,
+    .wp-mcp-ai-chat__chart-recipe-body--waterfall .wp-mcp-ai-chat__chart-recipe-col-plot {
+        height: 160px;
+    }
+}
+
+.wp-mcp-ai-chat__chart-recipe-slope-line {
+    position: absolute;
+    height: 2px;
+    border-radius: 1px;
+    transform-origin: 0 50%;
+    opacity: 0.6;
+    background: var(--chart-muted);
+}
+
+/* Bullet chart */
+.wp-mcp-ai-chat__chart-recipe-bullet-bar {
+    position: absolute;
+    top: 2px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+.wp-mcp-ai-chat__chart-recipe-bullet-target {
+    position: absolute;
+    top: 0;
+    height: 14px;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--chart-text);
+}
+
+/* Population pyramid */
+.wp-mcp-ai-chat__chart-recipe-pyr-label {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    height: 14px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    background: var(--chart-surface);
+    font-size: 11px;
+    color: var(--chart-text);
+    z-index: 1;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__chart-recipe-pyr-left {
+    border-radius: 3px 0 0 3px;
+}
+
+.wp-mcp-ai-chat__chart-recipe-pyr-right {
+    border-radius: 0 3px 3px 0;
+}
+
+/* Waterfall chart */
+.wp-mcp-ai-chat__chart-recipe-wf-bar {
+    position: absolute;
+    border-radius: 2px;
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+.wp-mcp-ai-chat__chart-recipe-wf-bar--up {
+    background: var(--chart-positive);
+}
+
+.wp-mcp-ai-chat__chart-recipe-wf-bar--down {
+    background: var(--chart-negative);
+}
+
+.wp-mcp-ai-chat__chart-recipe-wf-connector {
+    position: absolute;
+    height: 0;
+    border-top: 1px dashed var(--chart-muted);
+    transform-origin: 0 50%;
+    opacity: 0.7;
+}
+
+/* Candlestick chart */
+.wp-mcp-ai-chat__chart-recipe-candle-wick {
+    position: absolute;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--chart-muted);
+}
+
+.wp-mcp-ai-chat__chart-recipe-candle-body {
+    position: absolute;
+    width: 12px;
+    margin-left: -6px;
+    border-radius: 2px;
+    border: 1px solid;
+}
+
+.wp-mcp-ai-chat__chart-recipe-candle-up {
+    background: var(--chart-positive);
+    border-color: var(--chart-positive);
+}
+
+.wp-mcp-ai-chat__chart-recipe-candle-down {
+    background: var(--chart-negative);
+    border-color: var(--chart-negative);
+}
+
+/* Gantt chart */
+.wp-mcp-ai-chat__chart-recipe-gantt-bar {
+    position: absolute;
+    top: 2px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--bar-color, var(--chart-series-1));
+}
+
+.wp-mcp-ai-chat__chart-recipe-gantt-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    padding-left: 104px;
+}
+
+.wp-mcp-ai-chat__chart-recipe-gantt-axis-label {
+    font-size: 10px;
+    color: var(--chart-muted);
+}
+
+/* Dial gauge */
+.wp-mcp-ai-chat__chart-recipe-dial {
+    position: relative;
+    width: 140px;
+    height: 100px;
+    margin: 0 auto;
+}
+
+.wp-mcp-ai-chat__chart-recipe-dial-clip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 140px;
+    height: 70px;
+    overflow: hidden;
+}
+
+.wp-mcp-ai-chat__chart-recipe-dial-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+}
+
+.wp-mcp-ai-chat__chart-recipe-dial-value {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 56px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--chart-text);
+}
+
+.wp-mcp-ai-chat__chart-recipe-dial-max {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 80px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--chart-muted);
+}
+
+/* Bar race (static frame; width transition for host-driven replays) */
+.wp-mcp-ai-chat__chart-recipe-body--race .wp-mcp-ai-chat__chart-recipe-bar {
+    transition: width 0.6s ease-out;
+}
+
+.wp-mcp-ai-chat__chart-recipe-race-rank {
+    flex: 0 0 auto;
+    min-width: 18px;
+    font-weight: 600;
+    color: var(--chart-muted);
+}
+
+.wp-mcp-ai-chat__chart-recipe-race-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Chart grid (small multiples) */
+.wp-mcp-ai-chat__chart-recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 10px;
+}
+
+.wp-mcp-ai-chat__chart-recipe-grid-item {
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--chart-border);
+    border-radius: 6px;
+    background: var(--chart-surface);
+}
+
+.wp-mcp-ai-chat__chart-recipe-grid-item-title {
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--chart-text);
+}
+
+/* Accessible data table */
+.wp-mcp-ai-chat__chart-recipe-table {
+    margin-top: 8px;
+}
+
+.wp-mcp-ai-chat__chart-recipe-table-summary {
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--chart-muted);
+    user-select: none;
+}
+
+.wp-mcp-ai-chat__chart-recipe-table-scroll {
+    margin-top: 6px;
+    overflow-x: auto;
+}
+
+.wp-mcp-ai-chat__chart-recipe-table-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.wp-mcp-ai-chat__chart-recipe-table-grid th,
+.wp-mcp-ai-chat__chart-recipe-table-grid td {
+    padding: 3px 8px;
+    border-bottom: 1px solid var(--chart-border);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__chart-recipe-table-grid th {
+    font-weight: 600;
+    color: var(--chart-muted);
+}
+
+.wp-mcp-ai-chat__chart-recipe-table-grid td {
+    color: var(--chart-text);
+}
+
+/* Hover affordances (CSS-only) */
+.wp-mcp-ai-chat__chart-recipe-bar-value,
+.wp-mcp-ai-chat__chart-recipe-col-value {
+    opacity: 0.75;
+    transition: opacity 0.15s ease;
+}
+
+.wp-mcp-ai-chat__chart-recipe-row:hover .wp-mcp-ai-chat__chart-recipe-bar-value,
+.wp-mcp-ai-chat__chart-recipe-track:hover .wp-mcp-ai-chat__chart-recipe-bar-value,
+.wp-mcp-ai-chat__chart-recipe-col-plot:hover .wp-mcp-ai-chat__chart-recipe-col-value {
+    opacity: 1;
+}
+
+.wp-mcp-ai-chat__chart-recipe-row:hover .wp-mcp-ai-chat__chart-recipe-bar,
+.wp-mcp-ai-chat__chart-recipe-row:hover .wp-mcp-ai-chat__chart-recipe-stack-seg,
+.wp-mcp-ai-chat__chart-recipe-track:hover .wp-mcp-ai-chat__chart-recipe-bar,
+.wp-mcp-ai-chat__chart-recipe-track:hover .wp-mcp-ai-chat__chart-recipe-stack-seg,
+.wp-mcp-ai-chat__chart-recipe-col-plot:hover .wp-mcp-ai-chat__chart-recipe-col-bar {
+    filter: brightness(1.08);
+}
+
+/* Entry animation (staggered via inline animation-delay) */
+@keyframes wp-mcp-ai-chart-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes wp-mcp-ai-chart-fade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-stack-seg,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-bar,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-col-bar,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-stem-bar,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-lolli-stem,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-bullet-bar,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-gantt-bar,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-wf-bar,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-candle-body,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-waffle-cell,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-unit-cell,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-grid-item {
+    animation: wp-mcp-ai-chart-fade-up 400ms ease-out both;
+}
+
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-plot-dot,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-plot-seg,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-strip-dot,
+.wp-mcp-ai-chat__chart-recipe-animate .wp-mcp-ai-chat__chart-recipe-dumb-dot {
+    animation: wp-mcp-ai-chart-fade 400ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wp-mcp-ai-chat__chart-recipe,
+    .wp-mcp-ai-chat__chart-recipe * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
 /* Dark theme: brighter palette for contrast on dark surfaces. */
 .wp-mcp-ai-chat--dark-mode .wp-mcp-ai-chat__chart-recipe {
     --chart-series-1: #89b4fa;
@@ -5140,4 +5790,5 @@
     --chart-series-7: #b4befe;
     --chart-series-8: #a6adc8;
     --chart-negative: #f38ba8;
+    --chart-positive: #a6e3a1;
 }
