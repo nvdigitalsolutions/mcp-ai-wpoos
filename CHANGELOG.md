@@ -1,6 +1,6 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.2.4] - 2026-10-11
 
 ### Added — MCP Client-Quirk Hardening (Proposal 066)
 
@@ -11,6 +11,51 @@
 - **Pro client cache freshness** — JetEngine MCP client and MCP App registry cap their discovery caches at the server-declared `ttlMs`; the MCP App client dispatches server-pushed JSON-RPC notifications from SSE responses, and `notifications/tools/list_changed` invalidates the matching discovery cache.
 - **Content Graph AI mirror** — the standalone `ToolsController` applies the same `tools/list` hardening via its `ToolSchemaAuditor` port.
 - 44 new/updated PHPUnit tests (schema hardening quirk suite, auditor units, cache-freshness suites) passing on WP 6.9 and WP 7.1; phpcs 0 errors on touched files.
+
+### Added — Content Graph Explorer Page in the Pro SPA (PR #6998)
+
+- **`#/knowledge-graph` page** in the Pro SPA (plugin admin surface + the standalone Vite app) — the plugin's Cytoscape explorer vendored with a documented wrapper-only delta (IIFE → exported factory, jQuery-namespaced listeners, `destroy()` teardown, body byte-identical to upstream); jQuery bundled into the lazy page chunk (213 KB gzip); unavailable/error states for sites lacking the plugin or the visual-config route.
+- **Sub-project (flag-not-edited):** `plugins/nvoos-content-graph` gains a read-only **`GET /graph/visual-config`** route and assistant-credential read auth (`Bearer cred_…` + raw-header form behind the same filter as the base plugin); write routes stay `manage_options`-only — a credential can never rebuild/export/mutate sources. The plugin's own CHANGELOG.md/readme.txt updated in-window. Proposal 065 (Content Graph npm packages) + CREDITS.md land with it.
+- Trade-off recorded: the admin IIFE bundle grows 563 KB → 1.2 MB (esbuild `splitting: false` can't split an IIFE) — separate entry point or esm-format build deferred.
+
+### Added — nvoos-chart Recipe Rendering (PRs #7003, #7005)
+
+- **Schema-driven `nvoos-chart` fences** render as real HTML/CSS charts (no SVG/canvas/CDN) on all three chat surfaces (base plugin chat, Pro SPA v2, chat-spa; the standalone SPA inherits via the source alias) — v1 ships bar/column/line/area/dot/donut/heatmap; v2 adds 22 more types (histogram, box, strip, stem, violin, pie, waffle, unit, diverging, lollipop, dumbbell, slope, bullet, pyramid, waterfall, candlestick, gantt, sparkline, radial, dial, race, grid) with v2 schema keys and grouped-bar rendering fixes. Invalid fences degrade to escaped code blocks; sanitisation by construction (extracted before `marked`/DOMPurify, `createElement` + `textContent`); resource caps (40 labels / 12 series / 120 points / 240 cells); theme-adaptive CSS, dark-mode aware, `prefers-reduced-motion` respected.
+- **+1 base tool `create_chart_fence`** — server-side validator mirroring the client schema (normalised fence + plain-text fallback table), registered across the registry, group map, coverage manifest, default-assistant/onboarding/preset/recommendation lists. Cross-surface drift gate: shared `chart-fixtures.json` (canonical in spa-v2) byte-identical across the three test suites.
+- **New `design-chart-recipes` skill** (type selection, data shapes, a11y checklist, copy-paste templates) + the `docs/chat-chart-recipes-plan.md` / `docs/chat-chart-recipes-enhancement-plan.md` docs. Deferred (plan §12): race-chart animated replay, Pro-SPA CSV copy, `render_chart_preview` REST route, mermaid fence spike, headless a11y scan.
+
+### Added — Model Foundry Phase 1: Corpus Foundry (PR #7008, Proposal 067)
+
+- **+3 Pro tools** — `export_trajectory_corpus` (harness traces → OpenAI tool-calling rows), `export_preference_pairs` (DPO rows via the new `WP_MCP_AI_Preference_Pair_Store`, R4, `min_margin` skip), `export_plugin_docs_corpus` (docs-hub uploads or a symlink-safe validated dir → `docs_v1` rows with per-document provenance) — behind the new `model_foundry` Pro module (deactivatable independently) and added to the `ai_ml` preset.
+- **Governance engine (`WP_MCP_AI_Corpus_Governance`)** — fail-closed consent (`_wp_mcp_ai_training_consent`), fixed pipeline order (caps → exact → fuzzy → opt-in semantic dedup → PII scrub → deterministic content-hash holdout split → R12 provenance manifest → guarded sharded write). Holdout rows never enter `train.jsonl` (decontamination by construction); skip-never-truncate with named reasons. Consent has no admin UI until Phase 3 (`wp_mcp_ai_model_foundry_assistant_consented` is the operational override). Phases 0/2–6 (train-worker sidecar, registry/serving, eval gate, automation) deferred in the implementation plan.
+- **New `mcp-ai-wpoos-model-foundry` skill** + `docs/features/model-foundry.md` + proposal 067 docs; test-suite skill gains pattern 71 + a WP 7.1 core-rebuild recipe in-window.
+
+### Fixed — Standalone SPA Deploy & Auth Hardening (PRs #6999, #7000, #7002, #7004, #7006)
+
+- **Cookie-mode login re-scoped through the proxy (#6999)** — WordPress renders `wp-login.php` with absolute form actions/`redirect_to`, so cross-host deploys set auth cookies on the WordPress origin and the app origin never sees the session (localhost masked it — cookies scope by host, not port). `serve.mjs` now buffers only the login page (text/html, identity encoding, 4 MB cap) and rewrites form actions + `redirect_to` to the app origin; the Vite dev proxy mirrors the same rewrite; the cookie-mode error message points at the runtime `NVOOS_TARGET_SITE` environment.
+- **Knowledge-graph auth through jQuery (#7002)** — the vendored explorer loads `/nodes`/`/edges` via `$.ajax`, bypassing the app's fetch wrapper, so token-mode XHRs went out unauthenticated (401 → misleading "Failed to load graph data"). A new `ajaxPrefilter` mirrors the wrapper's header logic (bearer/basic/guest/worker token, empty-nonce drops, live option reads) — no vendored explorer changes (byte-identity discipline preserved).
+- **Typecheck + deploy fixes (#7000, #7004, #7006)** — the tsconfig `paths` map resolves `jquery`/`cytoscape` onto the app's `@types` (the mirror ships spa-v2 without `node_modules`); the sync/deploy workflows now build-verify (`npm ci && npm run build`) before pushing; `serve.mjs` gains a `#!/usr/bin/env node` shebang (Velocity executes the Entry File through the shell — the ESM script was parsed by `sh` and crash-looped ~15 times) and a `server.on('error')` handler so PM2's generic restart message no longer masks the real reason (explicit `EADDRINUSE` hint); the Velocity doc gains the entry-path callout (the root directory is prepended — the entry must be `scripts/serve.mjs`, never the repo-relative path).
+
+### Security — SPA Static-Server Headers (PR #7009)
+
+- **`X-Content-Type-Options: nosniff`** + **`Strict-Transport-Security: max-age=86400`** on the standalone SPA's production static server (the Velocity entry) — HSTS ramped deliberately (raise to `31536000` after a clean week; no `includeSubDomains`/`preload`). Headers apply only to the static-file branch (proxied WordPress responses pass upstream headers through); a CSP Report-Only template ships commented (the inline Cloudflare challenge script would break a strict `script-src 'self'`, and proxied wp-admin responses must never get a global policy).
+
+### Fixed — F&B Toolkit Toggle Missing from Pro Features (PR #7010)
+
+- **The Food & Beverage toggle was invisible** — `enable_fnb_toolkit` is defined in `WP_MCP_AI_Section_Tools::get_fields()` but was never listed in the `features` subtab group, and `render()` only outputs fields present in the active group — the checkbox never appeared and the toolkit could not be enabled from the UI (all other registration surfaces were already wired). Added to the subtab fields, the memory-requirements map (64 MB), and the features-footer counter selector; new regression test; toolkit-count expectation 35 → 36 in the section tests.
+
+### Docs & Skills (this pass)
+
+- **User-directed partial `@since` reconciliation** — the window shipped a literal `@since 2.x.0` placeholder family (never recorded in OI-1) across the MCP surfaces, plus wrong-tag new files. Corrected to the true shipped versions, blame-verified: `2.x.0` → `1.1.43` (PR #5759), `1.1.51` (PR #5829), `1.1.54` (PR #5845), and `1.2.4` (#7007) across `rest-mcp-methods.php` (15 lines incl. 3 `@deprecated`), `tool-schema-auditor.php`, `tool-registry.php`, three mcp-apps files, the jetengine client, and the toolkit MCP REST controller; `1.6.0` → `1.2.4` across the new model-foundry folder + tests; `1.4.0` → `1.2.4` in the new `create_chart_fence` tool + the chart-recipes JS JSDoc (dist regenerates on the next JS build). The mcp-apps `1.9.x` module family and all historical OI-1 groups 1–54 stay parked per issue #5968 — recorded in the open-items tracker.
+- **Two new coding-time skills ship in-window** (`design-chart-recipes` #7005, `mcp-ai-wpoos-model-foundry` #7008) and one more landed with #6998 (`mcp-ai-wpoos-content-graph-spa`) — **66 → 69**; AGENTS.md + copilot-instructions updated in-window (the README repo-map fold-in and the §1.5 design-* 34 → 35 correction land with this pass). In-window skill edits reconciled: spa-ui + content-graph-spa (#6998/#7000) and test-suite (#7008).
+
+### Build & CI
+
+- The 1.2.3 wp.org ZIP set (6 files), the CG 1.0.10 / CG-AI 1.0.4 / CG-AI-platform 2.0.0 ZIPs, and the SPA addon ZIP refresh landed via the build workflows in-window (build-only — no version moves). This pass removes the now-superseded 1.2.2 oOS root set (6 files); the 1.2.3 set stays until the 1.2.4 ZIPs build (tag-pending rule).
+
+### Versioning
+
+Bumped to **1.2.4** across all version-bearing files (plugin header, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, readme.txt Stable tag). Pro addon: 1.2.4. No addon version moves in-window (content-graph 1.0.10, CG-AI 1.0.4, CG-AI-platform 2.0.0 ZIP rebuilds are build-only — unchanged). Model catalog: **v2026.10.03** (unchanged — zero catalog diff in-window). Tool count: **~354 base + ~1,342 Pro (~1,696 total — +1 base `create_chart_fence`, +3 Pro `export_trajectory_corpus`/`export_preference_pairs`/`export_plugin_docs_corpus`)** (live registry authoritative; the `lib/core` and sub-project tools are never counted). Provider count: **18** chat providers (unchanged). Addon count: **30** (unchanged). Bundled skills: **76** base + **41** Pro (unchanged). Coding-time agent skills: **66 → 69** (+`design-chart-recipes`, +`mcp-ai-wpoos-content-graph-spa`, +`mcp-ai-wpoos-model-foundry`). Security classes: **12** (unchanged — no new `includes/security/` class in-window). Stale build ZIPs removed: the 1.2.2 oOS root set (6 files — 3 ZIPs + 3 `.sha256`).
 
 ## [1.2.3] - 2026-10-10
 
