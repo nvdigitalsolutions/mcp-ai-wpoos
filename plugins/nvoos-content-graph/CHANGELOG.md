@@ -1,6 +1,6 @@
 # NV oOS Content Graph — Changelog
 
-## Unreleased (headless explorer + bearer auth)
+## 1.0.11 — 2026-10-11
 
 ### Added — Headless explorer support
 
