@@ -1,6 +1,6 @@
 # oOS – Changelog
 
-## [1.2.4] - 2026-10-11
+## [1.2.4] - 2026-10-12
 
 ### Added — MCP Client-Quirk Hardening (Proposal 066)
 
