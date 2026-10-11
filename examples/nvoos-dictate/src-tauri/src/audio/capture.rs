@@ -64,6 +64,16 @@ impl MicCapture {
     pub fn buffered_samples(&self) -> usize {
         self.ring.lock().unwrap().len()
     }
+
+    /// Absolute position (total samples captured since start).
+    pub fn position(&self) -> usize {
+        self.ring.lock().unwrap().position()
+    }
+
+    /// Copy samples between two absolute positions.
+    pub fn snapshot_range(&self, from: usize, to: usize) -> Vec<f32> {
+        self.ring.lock().unwrap().snapshot_range(from, to)
+    }
 }
 
 /// Build + play the stream, returning the shared ring buffer + rate.

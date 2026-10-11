@@ -58,6 +58,7 @@ export interface Settings {
 }
 
 export interface StatusInfo {
+  ptt_key: string;
   engine: string | null;
   model: string | null;
   engine_features: string;

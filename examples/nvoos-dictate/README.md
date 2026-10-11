@@ -53,6 +53,13 @@ npm run tauri build
 
 ### Engine features
 
+All three native engines can be compiled into ONE binary:
+`cargo build --features parakeet,silero-vad,whisper` (whisper needs CMake +
+libclang on PATH; see the skill). The repo vendors a one-line-patched
+`whisper-rs-sys` (vendor/whisper-rs-sys) that compiles whisper.cpp with the
+static CRT (/MT) so it links alongside sherpa-onnx's /MT prebuilt libs.
+
+
 Engines are **local-first** (ADR 0003): mock → parakeet → whisper →
 moonshine, with the Embedded remote STT as the fallback.
 

@@ -3,16 +3,21 @@ import { api, type MeetingRow } from '../lib/ipc';
 
 interface Props {
   onChanged: () => void;
+  meetingRecording: boolean;
 }
 
-export default function MeetingsView({ onChanged }: Props) {
+export default function MeetingsView({ onChanged, meetingRecording }: Props) {
   const [rows, setRows] = useState<MeetingRow[]>([]);
-  const [recording, setRecording] = useState(false);
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
+  const recording = meetingRecording;
 
   const load = useCallback(async () => {
-    setRows(await api.listMeetings());
+    try {
+      setRows(await api.listMeetings());
+    } catch (e) {
+      setMessage(String(e));
+    }
   }, []);
 
   useEffect(() => {
@@ -22,8 +27,8 @@ export default function MeetingsView({ onChanged }: Props) {
   const start = async () => {
     try {
       await api.startMeeting();
-      setRecording(true);
       setMessage('');
+      onChanged();
     } catch (e) {
       setMessage(String(e));
     }
@@ -32,7 +37,6 @@ export default function MeetingsView({ onChanged }: Props) {
   const stop = async () => {
     try {
       const summary = await api.stopMeeting(title.trim() || 'Meeting');
-      setRecording(false);
       setMessage(`Transcript saved (#${summary.id}, ${Math.round(summary.duration_ms / 1000)} s).`);
       await load();
       onChanged();
@@ -42,8 +46,12 @@ export default function MeetingsView({ onChanged }: Props) {
   };
 
   const remove = async (id: number) => {
-    await api.deleteMeeting(id);
-    await load();
+    try {
+      await api.deleteMeeting(id);
+      await load();
+    } catch (e) {
+      setMessage(String(e));
+    }
   };
 
   return (

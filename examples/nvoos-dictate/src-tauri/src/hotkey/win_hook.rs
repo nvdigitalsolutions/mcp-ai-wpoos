@@ -12,12 +12,13 @@
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU64, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::{Mutex, OnceLock};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use windows::Win32::Foundation::{HINSTANCE, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    GetAsyncKeyState, VK_ESCAPE, VK_LSHIFT, VK_RCONTROL, VK_RMENU, VK_RSHIFT,
+    GetAsyncKeyState, GetKeyboardState, VK_ESCAPE, VK_LCONTROL, VK_LSHIFT, VK_RCONTROL, VK_RMENU,
+    VK_RSHIFT,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, DispatchMessageW, PeekMessageW, PostThreadMessageW, SetWindowsHookExW,
@@ -37,7 +38,7 @@ static PTT_VK: AtomicU16 = AtomicU16::new(VK_RMENU.0);
 static RECORDING: AtomicBool = AtomicBool::new(false);
 static HEARTBEAT_MS: AtomicU64 = AtomicU64::new(0);
 static PTT_DOWN: AtomicBool = AtomicBool::new(false);
-static LAST_PRESS: Mutex<Option<Instant>> = Mutex::new(None);
+static LAST_PRESS_MS: AtomicU64 = AtomicU64::new(0);
 static HOOK_CALLS: AtomicU64 = AtomicU64::new(0);
 
 /// Double-tap window (ms) for hands-free toggle detection.
@@ -95,13 +96,16 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
 
     if vk == ptt {
         if is_down {
-            if !PTT_DOWN.swap(true, Ordering::SeqCst) {
-                let mut last = LAST_PRESS.lock().unwrap();
-                let now = Instant::now();
-                let double_tap = last
-                    .map(|t| now.duration_since(t) < Duration::from_millis(DOUBLE_TAP_MS))
-                    .unwrap_or(false);
-                *last = Some(now);
+            // Arm only when the PTT key is pressed ALONE (modifiers such as
+            // Shift and Ctrl tolerated): RAlt combos like Alt+F4, Alt+Tab and
+            // AltGr input must keep working while the app watches the key.
+            if ptt_pressed_alone(ptt) && !PTT_DOWN.swap(true, Ordering::SeqCst) {
+                // Atomically timestamp the press; the hook callback must not
+                // block, so no mutexes here.
+                let now_ms = now_ms();
+                let double_tap =
+                    now_ms.saturating_sub(LAST_PRESS_MS.load(Ordering::Relaxed)) < DOUBLE_TAP_MS;
+                LAST_PRESS_MS.store(now_ms, Ordering::Relaxed);
                 let event = if double_tap {
                     HotkeyEvent::DoubleTap
                 } else {
@@ -130,8 +134,40 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
     CallNextHookEx(None, code, wparam, lparam)
 }
 
+/// True when the PTT key is the only non-modifier key held. Reading the
+/// 256-byte key-state table is cheap and safe inside the hook callback.
+fn ptt_pressed_alone(ptt: u16) -> bool {
+    unsafe {
+        let mut keys = [0u8; 256];
+        if GetKeyboardState(&mut keys).is_err() {
+            // Cannot inspect the state table: stay permissive.
+            return true;
+        }
+        for (vk, &state) in keys.iter().enumerate() {
+            let down = state & 0x80 != 0;
+            if !down || vk as u16 == ptt {
+                continue;
+            }
+            let key = vk as u16;
+            if key != VK_LSHIFT.0
+                && key != VK_RSHIFT.0
+                && key != VK_LCONTROL.0
+                && key != VK_RCONTROL.0
+            {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 fn send(event: HotkeyEvent) {
-    if let Some(tx) = EVENT_TX.get().and_then(|m| m.lock().unwrap().clone()) {
+    // try_lock: the hook callback must never block (the sender slot is only
+    // held during listener teardown at app exit).
+    if let Some(tx) = EVENT_TX
+        .get()
+        .and_then(|m| m.try_lock().ok().and_then(|g| g.clone()))
+    {
         let _ = tx.send(event);
     }
 }

@@ -16,6 +16,7 @@ use crate::storage::db::{MeetingRow, TranscriptRow};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct StatusInfo {
+    pub ptt_key: String,
     pub engine: Option<String>,
     pub model: Option<String>,
     pub engine_features: String,
@@ -27,6 +28,18 @@ pub struct StatusInfo {
     pub meeting_recording: bool,
     pub system_audio_available: bool,
     pub version: String,
+}
+
+/// Reject commands invoked from any window other than the main one.
+/// The overlay webview ships the same JS bundle, so this is defense in
+/// depth: capabilities alone cannot gate custom commands.
+fn main_window_only(window: &tauri::Window) -> AppResult<()> {
+    if window.label() != "main" {
+        return Err(AppError::Auth(
+            "this command is only available from the main window".into(),
+        ));
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -47,6 +60,7 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
     let settings = state.settings_snapshot();
     let engine = state.engine.read().unwrap().clone();
     Ok(StatusInfo {
+        ptt_key: settings.hotkey.ptt_key.clone(),
         engine: engine.as_ref().map(|e| e.id().to_string()),
         model: engine.as_ref().map(|e| e.model_id().to_string()),
         engine_features: crate::stt::available_features().to_string(),
@@ -65,10 +79,12 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
 
 #[tauri::command]
 pub fn set_nvoos_credential(
+    window: tauri::Window,
     state: State<'_, AppState>,
     site_url: String,
     credential: String,
 ) -> AppResult<()> {
+    main_window_only(&window)?;
     let site_url = site_url.trim().trim_end_matches('/').to_string();
     if site_url.is_empty() || credential.is_empty() {
         return Err(AppError::Auth(
@@ -83,7 +99,8 @@ pub fn set_nvoos_credential(
 }
 
 #[tauri::command]
-pub fn clear_nvoos_credential(state: State<'_, AppState>) -> AppResult<()> {
+pub fn clear_nvoos_credential(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
     state.secrets.delete(KEY_NVOOS_CREDENTIAL)
 }
 
@@ -96,7 +113,12 @@ pub async fn test_nvoos_connection(
 }
 
 #[tauri::command]
-pub fn set_openai_api_key(state: State<'_, AppState>, api_key: String) -> AppResult<()> {
+pub fn set_openai_api_key(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    api_key: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
     if api_key.trim().is_empty() {
         return Err(AppError::Auth("API key must not be empty".into()));
     }
@@ -104,7 +126,8 @@ pub fn set_openai_api_key(state: State<'_, AppState>, api_key: String) -> AppRes
 }
 
 #[tauri::command]
-pub fn clear_openai_api_key(state: State<'_, AppState>) -> AppResult<()> {
+pub fn clear_openai_api_key(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
     state.secrets.delete(KEY_OPENAI_API_KEY)
 }
 
@@ -112,10 +135,12 @@ pub fn clear_openai_api_key(state: State<'_, AppState>) -> AppResult<()> {
 
 #[tauri::command]
 pub fn set_wp_app_password(
+    window: tauri::Window,
     state: State<'_, AppState>,
     username: String,
     app_password: String,
 ) -> AppResult<()> {
+    main_window_only(&window)?;
     if username.trim().is_empty() || app_password.trim().is_empty() {
         return Err(AppError::Auth(
             "WP username and application password are required".into(),
@@ -131,7 +156,8 @@ pub fn set_wp_app_password(
 }
 
 #[tauri::command]
-pub fn clear_wp_app_password(state: State<'_, AppState>) -> AppResult<()> {
+pub fn clear_wp_app_password(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
     state.secrets.delete(KEY_WP_USERNAME)?;
     state.secrets.delete(KEY_WP_APP_PASSWORD)
 }
@@ -151,17 +177,20 @@ pub fn list_history(
 }
 
 #[tauri::command]
-pub fn delete_history(state: State<'_, AppState>, id: i64) -> AppResult<()> {
+pub fn delete_history(window: tauri::Window, state: State<'_, AppState>, id: i64) -> AppResult<()> {
+    main_window_only(&window)?;
     state.db.delete_transcript(id)
 }
 
 #[tauri::command]
-pub fn clear_history(state: State<'_, AppState>) -> AppResult<()> {
+pub fn clear_history(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
     state.db.clear_transcripts()
 }
 
 #[tauri::command]
-pub fn export_history(state: State<'_, AppState>) -> AppResult<String> {
+pub fn export_history(window: tauri::Window, state: State<'_, AppState>) -> AppResult<String> {
+    main_window_only(&window)?;
     let rows = state.db.list_transcripts("", 100_000, 0)?;
     serde_json::to_string_pretty(&rows).map_err(Into::into)
 }
@@ -174,7 +203,12 @@ pub fn get_dictionary(state: State<'_, AppState>) -> AppResult<Vec<(String, Stri
 }
 
 #[tauri::command]
-pub fn set_dictionary(state: State<'_, AppState>, entries: Vec<(String, String)>) -> AppResult<()> {
+pub fn set_dictionary(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    entries: Vec<(String, String)>,
+) -> AppResult<()> {
+    main_window_only(&window)?;
     if entries.len() > 2000 {
         return Err(AppError::Other(
             "dictionary is limited to 2000 entries".into(),
@@ -210,7 +244,8 @@ pub fn list_meetings(state: State<'_, AppState>) -> AppResult<Vec<MeetingRow>> {
 }
 
 #[tauri::command]
-pub fn delete_meeting(state: State<'_, AppState>, id: i64) -> AppResult<()> {
+pub fn delete_meeting(window: tauri::Window, state: State<'_, AppState>, id: i64) -> AppResult<()> {
+    main_window_only(&window)?;
     state.db.delete_meeting(id)
 }
 
@@ -224,6 +259,9 @@ pub fn get_models(state: State<'_, AppState>) -> Vec<crate::stt::model_registry:
 /// Engine ids compiled into this build (feature-gated backends).
 #[tauri::command]
 pub fn get_compiled_engines() -> Vec<String> {
+    // `mut` is only used when a native engine feature is enabled; default
+    // builds (mock + embedded) never push.
+    #[allow(unused_mut)]
     let mut engines = vec!["mock".to_string(), "embedded".to_string()];
     #[cfg(feature = "parakeet")]
     engines.push("parakeet".to_string());
@@ -236,10 +274,12 @@ pub fn get_compiled_engines() -> Vec<String> {
 
 #[tauri::command]
 pub async fn download_model(
+    window: tauri::Window,
     state: State<'_, AppState>,
     engine: String,
     model: String,
 ) -> AppResult<String> {
+    main_window_only(&window)?;
     let spec = crate::stt::model_registry::find(&engine, &model)
         .ok_or_else(|| AppError::Model(format!("unknown model '{engine}/{model}'")))?;
     let dir = state.models_dir();
@@ -259,7 +299,12 @@ pub async fn download_model(
 }
 
 #[tauri::command]
-pub async fn transcribe_file(state: State<'_, AppState>, path: String) -> AppResult<String> {
+pub async fn transcribe_file(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    path: String,
+) -> AppResult<String> {
+    main_window_only(&window)?;
     let path = std::path::PathBuf::from(path);
     if !path.is_file() {
         return Err(AppError::Other("file not found".into()));
