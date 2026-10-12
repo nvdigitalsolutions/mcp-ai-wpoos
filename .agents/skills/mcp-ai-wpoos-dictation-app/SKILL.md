@@ -75,6 +75,12 @@ examples/nvoos-dictate/
   nvoos-dictate.exe"` after ~10 s (process alive = boot OK); kill with
   `taskkill //IM nvoos-dictate.exe //F`. A running app locks the exe — kill
   it before `cargo build`/`test` or you get "failed to remove file" errors.
+- **MSYS quoting traps:** `%APPDATA%`/`$_`/`$VAR` inside `cmd`/`powershell
+  -Command` get mangled by the MSYS shell — write PowerShell to a `.ps1`
+  file and run `powershell -NoProfile -ExecutionPolicy Bypass -File x.ps1`
+  instead; paths like `C:\Users\…` stay literal. `cmdkey //list | findstr
+  nvoos` (double slashes) shows what actually landed in Windows Credential
+  Manager — the ground truth for "did the credential stick".
 
 ## Critical config rule: `plugins.updater` block
 
@@ -152,6 +158,18 @@ parent)**, not `models_dir/{id}`. Files: `encoder.int8.onnx`,
 - `full_n_segments() -> c_int` (NOT a Result); segments via
   `state.get_segment(i) -> Option<WhisperSegment>` +
   `seg.to_str() -> Result<&str>` (the old `full_get_segment_text` is gone).
+- **MSVC Release-config trap (the "portable exe takes forever" bug):** with
+  the VS generator, whisper.cpp's `Release` CMake configuration maps to an
+  unoptimized vcxproj (empty `<Optimization>` → /Od) — base.en decodes at
+  RTF ~5 instead of ~0.3, so dictation "hangs" for tens of seconds while
+  parakeet stays fast. The app therefore wires
+  `whisper = ["dep:whisper-rs", "whisper-rs-sys/force-debug"]` — a direct
+  optional `whisper-rs-sys` dep (unified with the `[patch.crates-io]`
+  entry) forwards the vendor's `force-debug` feature, which compiles
+  whisper.cpp with the RelWithDebInfo profile (verified fast on MSVC) even
+  in release builds. Do not remove that wiring; verify speed with
+  `cargo run --release --features whisper --example transcribe_file --
+  <wav> --engine whisper --model base.en` (expect RTF < 1).
 - Windows build prerequisites: **CMake on PATH** (VS-bundled CMake at
   `C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin`
   works) + **libclang** (`winget install LLVM.LLVM` → set
@@ -186,6 +204,31 @@ parent)**, not `models_dir/{id}`. Files: `encoder.int8.onnx`,
   as engine `vad` (UI shows `vad` entries alongside the selected engine).
 
 ### embedded (remote fallback, always compiled — no feature flag)
+
+**Settings → NV oOS "Test connection" contract:** `GET
+{site}/wp-json/mcp-ai/v1/assistants` with `Authorization: Bearer
+<credential>` — 200/201 = "connected; credential accepted", 401/403 =
+"site reached, credential rejected", anything else = transport/status
+error surfaced verbatim. The credential must be issued on the site first
+(`wp mcp-ai assistant create …` + `wp mcp-ai credential issue <id>
+--porcelain`, or the admin UI) — a stored-but-invalid credential shows
+401, a missing one errors before any network call (`nvoos_client()`
+requires both site URL and keychain credential).
+
+**Windows credential storage (the "I stored it but it did not stick" bug):**
+the app does NOT use the `keyring` crate on Windows — keyring 3.6.3 hard-
+codes `CRED_PERSIST_ENTERPRISE`, which from an unelevated app writes
+"successfully" into a namespace the app cannot read back (nothing appears
+in `cmdkey /list` either). `storage/win_cred.rs`
+(`WindowsCredentialStore`) calls `CredReadW`/`CredWriteW`/`CredDeleteW`
+directly with `CRED_PERSIST_LOCAL_MACHINE` (machine-local, survives
+reboots, visible in Credential Manager — the persistence git credential
+manager uses), keeping keyring's `{user}.{service}` target convention and
+UTF-16LE blob format for compatibility. keyring remains the backend on
+macOS/Linux. Every IPC secret write (`persist_secret_verified`) verifies
+the read-back before reporting success. Diagnostics: `cargo run --example
+keychain_probe` (set/read-back/delete); visibility check while held:
+`cmdkey /list | findstr nvoos`.
 
 Contract: `POST {site}/wp-json/mcp-ai/v1/embedded/transcribe` with
 `{"audio": "<base64 16-bit PCM WAV>", "language": "en"}`; server limit
@@ -350,25 +393,53 @@ after `play()` so the pre-roll ring never filled (zero callbacks on
 healthy mics) — the worker now holds the stream, capture health
 (callbacks/stall/errors) shows on Diagnostics with a Restart-capture
 button, `restart_microphone` IPC, and the `mic_probe` example +
-`live_capture_delivers_samples` ignored test verify real hardware.
+`live_capture_delivers_samples` ignored test verify real hardware;
+the **Stage-2 polish/archive contract fix** (verified live against
+console.nvoos.cloud v1.2.3): `extract_reply_text` now parses the v1.2.x
+shapes (`data.content`, `data.choices[0].message.content`) and the
+`nvoos_polish_probe` example exercises the real path — the archive route
+`POST /chat-transcripts` REQUIRES both `assistant_id` and `session_key`
+(both returned by the chat response: `assistant_id` + camelCase
+`sessionKey`; the app now threads them via `PolishMeta`), and the **per-
+request polish model override**: `nvoos.polish_model` (Settings > NV oOS)
+is sent as `options.model` on the polish chat request — verified live:
+the site answers with the requested model (`deepseek-v4-pro` honored;
+~10.5 s vs ~9 s for `deepseek-flash` at ~4× cost, so flash stays the
+sensible default for transcript cleanup). `nvoos.polish_provider` is
+sent as `options.provider` the same way — the site's `sanitize_options`
+allowlist accepts openai/gemini/anthropic/deepseek/etc., and a provider
+without an API key configured on the site errors, so the overrides only
+work for providers the site has keys for (the public `/status` endpoint
+reports "N providers operational" but never names them). The
+`nvoos_polish_probe` example takes `--provider`/`--model`/`--archive`/
+`--raw` flags for live A/B runs. Also: the app's Windows credential
+(CRED target `nvoos/assistant-credential.com.nvdigitalsolutions.
+nvoos-dictate`) can vanish when the user exercises the Clear-credential
+UI — probe runs should check `credential: stored` and ask the user to
+re-store it (the site only ever shows `cred_XXXXX.SECRET` at creation;
+a lost one needs regeneration in the console).
 Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
-addon permission tweak for `cred_x.SECRET`, P4 port, macOS on-hardware
-verification + release signing/updater feed. See the implementation plan
+addon permission tweak for `cred_x.SECRET`, P4 (Linux) port, the macOS
+port, and release signing/updater feed. See the implementation plan
 (`docs/project/proposals/067-…-plan.md`) for the full item list. The macOS
-port (P5) has its own comprehensive plan:
+port (067-P5) is implemented on `feat/nvoos-dictate-macos-port`
+(2026-10-12, unverified on macOS hardware): `hotkey/macos_event_tap.rs` +
+portable `tap_state.rs` state machine, `paste/macos_cgevent.rs`,
+`permissions.rs` TCC layer + Settings Permissions tab,
+`meetings/macos_system_audio.rs` + `sidecar_protocol.rs` + `mac-helper/`
+Swift package (externalBin stubs in `src-tauri/binaries/`),
+`util/macos_foreground.rs`, Info.plist + entitlements, macOS CI/publish
+matrix. macOS-side compile gates run in CI (`macos-latest` job) — not
+verifiable from the Windows reference PC. See the comprehensive plan
 `examples/nvoos-dictate/docs/macos-port-plan.md` (phases M0–M8: TCC
 permission model + first-run wizard, permission-free combo PTT default +
 opt-in Right-Option CGEventTap hold mode, ScreenCaptureKit Swift sidecar
 for meeting system audio, NSWorkspace per-app cleanup, signed/notarized
-DMG). Implementation landed on `feat/nvoos-dictate-macos-port` (2026-10-12,
-unverified on macOS hardware): `hotkey/macos_event_tap.rs` + portable
-`tap_state.rs` state machine, `paste/macos_cgevent.rs`, `permissions.rs`
-TCC layer + Settings Permissions tab, `meetings/macos_system_audio.rs` +
-`sidecar_protocol.rs` + `mac-helper/` Swift package (externalBin stubs in
-`src-tauri/binaries/`), `util/macos_foreground.rs`, Info.plist +
-entitlements, macOS CI/publish matrix. macOS-side compile gates run in CI
-(`macos-latest` job) — not verifiable from the Windows reference PC.
+DMG). An alternative macOS design is scoped in proposal 068
+(`docs/project/proposals/068-macos-dictation-port-proposal.md`: listen-only
+CGEventTap PTT, Metal/CoreML STT, Sparkle distribution) — reconcile the
+two before merging the port.
 
 ## Related skills
 

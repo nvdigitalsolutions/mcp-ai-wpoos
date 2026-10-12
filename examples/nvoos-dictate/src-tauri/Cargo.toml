@@ -1,6 +1,6 @@
 [package]
 name = "nvoos-dictate"
-version = "0.1.0"
+version = "0.2.0"
 description = "NV oOS Dictation — local-first push-to-talk dictation and meeting transcription companion for the NV oOS WordPress plugin."
 authors = ["NV Digital Solutions"]
 edition = "2021"
@@ -65,6 +65,10 @@ sherpa-onnx = { version = "1.10", optional = true }
 bzip2 = { version = "0.4", optional = true }
 tar = { version = "0.4", optional = true }
 whisper-rs = { version = "0.16", optional = true }
+# Direct optional dep purely to forward the `force-debug` feature to the
+# vendored whisper-rs-sys (whisper-rs 0.16 does not forward it itself);
+# unifies with the [patch.crates-io] entry below.
+whisper-rs-sys = { path = "../vendor/whisper-rs-sys", optional = true }
 ort = { version = "=2.0.0-rc.9", optional = true }
 # Pinned to match ort rc.9 — the caret range on ort-sys otherwise drifts to
 # rc.13, whose bindings are incompatible with the rc.9 high-level API.
@@ -81,6 +85,7 @@ ndarray = { version = "0.15", optional = true }
 # foreground-window detection for per-app cleanup profiles. See hotkey/.
 windows = { version = "0.58", features = [
   "Win32_Foundation",
+  "Win32_Security_Credentials",
   "Win32_System_LibraryLoader",
   "Win32_System_Threading",
   "Win32_UI_Input_KeyboardAndMouse",
@@ -112,7 +117,11 @@ objc2-app-kit = { version = "0.3", features = ["NSWorkspace", "NSRunningApplicat
 default = []
 mock = []
 parakeet = ["dep:sherpa-onnx", "dep:tar", "dep:bzip2"]
-whisper = ["dep:whisper-rs"]
+# The `force-debug` pass-through compiles whisper.cpp with the
+# RelWithDebInfo CMake profile even in release builds: the MSVC
+# "Release" configuration maps to an unoptimized vcxproj (RTF ~5 for
+# base.en instead of ~0.3) — see the dictation-app skill.
+whisper = ["dep:whisper-rs", "whisper-rs-sys/force-debug"]
 moonshine = ["dep:ort", "dep:ort-sys"]
 mcp = ["dep:rmcp", "dep:schemars"]
 silero-vad = ["dep:silero-vad-rs", "dep:ort-sys", "dep:ndarray"]

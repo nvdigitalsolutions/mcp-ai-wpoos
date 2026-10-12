@@ -8,8 +8,8 @@
 
 mod archive;
 mod client;
-mod types;
+pub mod types;
 
 pub use archive::archive_transcript;
 pub use client::{ConnectionTest, NvoosClient};
-pub use types::TranscriptRecord;
+pub use types::{extract_polish_meta, extract_reply_text, TranscriptRecord};

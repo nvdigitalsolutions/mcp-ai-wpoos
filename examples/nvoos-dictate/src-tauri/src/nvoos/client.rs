@@ -12,7 +12,7 @@ use serde_json::json;
 
 use crate::config::AppCategory;
 use crate::error::{AppError, AppResult};
-use crate::nvoos::types::{extract_reply_text, ChatMessage, ChatRequest, ContentSegment};
+use crate::nvoos::types::{ChatMessage, ChatOptions, ChatRequest, ContentSegment};
 
 /// Result of the settings-wizard connection test.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -103,13 +103,17 @@ impl NvoosClient {
     }
 
     /// Stage-2 polish: send the transcript to the assistant for cleanup.
+    /// Returns the polished text plus the metadata the site reported
+    /// (resolved assistant id, chat session key, answering model/provider).
     pub async fn polish(
         &self,
         text: &str,
         category: AppCategory,
         cleanup_prompt: &str,
         assistant_id: Option<&str>,
-    ) -> AppResult<String> {
+        polish_provider: Option<&str>,
+        polish_model: Option<&str>,
+    ) -> AppResult<(String, crate::cleanup::providers::PolishMeta)> {
         let system = match category {
             AppCategory::Code | AppCategory::Terminal => format!(
                 "{cleanup_prompt} The user was dictating into a code editor or terminal: \
@@ -120,6 +124,21 @@ impl NvoosClient {
                  no trailing period."
             ),
             _ => cleanup_prompt.to_string(),
+        };
+
+        let provider = polish_provider
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+            .map(|p| p.to_string());
+        let model = polish_model
+            .map(str::trim)
+            .filter(|m| !m.is_empty())
+            .map(|m| m.to_string());
+        // Omit the options object entirely when neither override is set.
+        let options = if provider.is_none() && model.is_none() {
+            None
+        } else {
+            Some(ChatOptions { provider, model })
         };
 
         let body = ChatRequest {
@@ -134,6 +153,7 @@ impl NvoosClient {
                     content: vec![ContentSegment::text(text)],
                 },
             ],
+            options,
             stream: Some(false),
         };
 
@@ -155,8 +175,11 @@ impl NvoosClient {
             )));
         }
         let payload: serde_json::Value = resp.json().await?;
-        extract_reply_text(&payload)
-            .ok_or_else(|| AppError::Other("chat endpoint returned an unparseable response".into()))
+        let text = crate::nvoos::types::extract_reply_text(&payload).ok_or_else(|| {
+            AppError::Other("chat endpoint returned an unparseable response".into())
+        })?;
+        let meta = crate::nvoos::types::extract_polish_meta(&payload);
+        Ok((text, meta))
     }
 
     /// One-way archive of a transcript into the plugin's transcript store.
@@ -166,6 +189,7 @@ impl NvoosClient {
     ) -> AppResult<()> {
         let body = json!({
             "assistant_id": record.assistant_id,
+            "session_key": record.session_key,
             "title": record.title,
             "messages": [
                 {

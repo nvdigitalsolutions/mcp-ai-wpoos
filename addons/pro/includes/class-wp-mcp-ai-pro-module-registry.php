@@ -907,6 +907,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				'extended_cognition'      => 'Extended Cognition',
 				'vision_analysis'         => 'Vision Analysis',
 				'outbound_booking'        => 'Outbound Booking',
+				'fnb'                     => 'Food & Beverage',
 			);
 
 			foreach ( $conditional_toolkits as $slug => $label ) {
@@ -941,6 +942,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					'extended_cognition'      => 'extended-cognition',
 					'vision_analysis'         => 'vision-analysis',
 					'outbound_booking'        => 'outbound-booking',
+					'fnb'                     => 'food-beverage',
 				);
 
 				$toolkit_dir = isset( $dir_map[ $slug ] ) ? $dir_map[ $slug ] : $slug;

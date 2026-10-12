@@ -272,6 +272,13 @@ impl AppState {
 /// Build and manage the global AppState in Tauri's setup phase.
 pub fn setup(app: &AppHandle) -> AppResult<()> {
     let db = Db::open_default()?;
+    // Windows: the native Credential Manager store (keyring 3.6.3 writes
+    // CRED_PERSIST_ENTERPRISE, which silently fails to persist from an
+    // unelevated app — see storage/win_cred.rs). Other platforms keep the
+    // keyring crate (macOS Keychain / Linux Secret Service).
+    #[cfg(windows)]
+    let secrets: Arc<dyn SecretStore> = Arc::new(crate::storage::win_cred::WindowsCredentialStore);
+    #[cfg(not(windows))]
     let secrets: Arc<dyn SecretStore> = Arc::new(OsKeyringStore);
     let state = AppState::new(app.clone(), db, secrets);
     app.manage(state);

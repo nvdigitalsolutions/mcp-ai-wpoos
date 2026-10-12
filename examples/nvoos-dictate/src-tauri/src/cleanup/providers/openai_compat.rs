@@ -4,7 +4,7 @@
 use async_trait::async_trait;
 use serde_json::json;
 
-use crate::cleanup::providers::CleanupProvider;
+use crate::cleanup::providers::{CleanupProvider, PolishMeta};
 use crate::config::{AppCategory, OpenAiCompatConfig};
 use crate::error::{AppError, AppResult};
 use crate::state::{SecretStore, KEY_OPENAI_API_KEY};
@@ -48,7 +48,7 @@ impl CleanupProvider for OpenAiCompatProvider {
         "openai_compat"
     }
 
-    async fn polish(&self, text: &str, category: AppCategory) -> AppResult<String> {
+    async fn polish(&self, text: &str, category: AppCategory) -> AppResult<(String, PolishMeta)> {
         let system = system_prompt_for(category);
         let body = json!({
             "model": self.model,
@@ -70,7 +70,7 @@ impl CleanupProvider for OpenAiCompatProvider {
         let content = &payload["choices"][0]["message"]["content"];
         // content may be a string or an array of blocks — flatten defensively.
         match content {
-            serde_json::Value::String(s) => Ok(s.trim().to_string()),
+            serde_json::Value::String(s) => Ok((s.trim().to_string(), PolishMeta::default())),
             serde_json::Value::Array(items) => {
                 let mut out = String::new();
                 for item in items {
@@ -84,7 +84,7 @@ impl CleanupProvider for OpenAiCompatProvider {
                         _ => {}
                     }
                 }
-                Ok(out.trim().to_string())
+                Ok((out.trim().to_string(), PolishMeta::default()))
             }
             _ => Err(AppError::Other(
                 "provider returned an empty response".into(),
