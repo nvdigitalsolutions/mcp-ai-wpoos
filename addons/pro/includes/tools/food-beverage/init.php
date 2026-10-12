@@ -79,6 +79,10 @@ if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 	require_once __DIR__ . '/pr/class-wp-mcp-ai-fnb-pr-gates.php';
 	WP_MCP_AI_Fnb_Pr_Gates::init();
 
+	// Shared assistant-pack seeder service (used by the WP-CLI command and
+	// the admin settings-page button).
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-assistant-seeder.php';
+
 	// Load the admin settings page (registers the "Food & Beverage" submenu
 	// under NV oOS Pro) and the F&B Management top-level admin menu.
 	if ( is_admin() ) {
