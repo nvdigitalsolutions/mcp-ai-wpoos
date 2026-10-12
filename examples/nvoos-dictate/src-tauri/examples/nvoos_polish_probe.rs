@@ -5,9 +5,11 @@
 //! the polished reply.
 //!
 //! With `--archive` it also writes one archive record, leaving server-side
-//! proof of reception in the NV oOS console.
+//! proof of reception in the NV oOS console. `--raw` dumps the verbatim chat
+//! and archive responses; `--model <id>` overrides the polish model for both
+//! the provider call and the raw chat request.
 //!
-//! Usage: cargo run --example nvoos_polish_probe [--archive]
+//! Usage: cargo run --example nvoos_polish_probe [--archive] [--raw] [--model <id>]
 
 use std::time::Instant;
 
@@ -24,10 +26,19 @@ use nvoos_dictate_lib::storage::win_cred::WindowsCredentialStore;
 #[tokio::main]
 async fn main() -> nvoos_dictate_lib::error::AppResult<()> {
     let do_archive = std::env::args().any(|a| a == "--archive");
+    let raw_dump = std::env::args().any(|a| a == "--raw");
+    let model_override = std::env::args()
+        .position(|a| a == "--model")
+        .and_then(|i| std::env::args().nth(i + 1))
+        .filter(|m| !m.is_empty());
 
     let mut settings = Settings::load()?;
     println!("site:         {}", settings.nvoos.site_url);
     println!("assistant_id: {:?}", settings.nvoos.assistant_id);
+    if let Some(model) = &model_override {
+        println!("model override: {model}");
+        settings.nvoos.polish_model = Some(model.clone());
+    }
 
     // Force the nvoos provider for the probe regardless of the saved setting.
     settings.cleanup.provider = "nvoos".to_string();
@@ -88,7 +99,7 @@ async fn main() -> nvoos_dictate_lib::error::AppResult<()> {
         ),
     }
 
-    if do_archive || std::env::args().any(|a| a == "--raw") {
+    if do_archive || raw_dump {
         println!("\n--- raw diagnostic dump ---");
         let client = NvoosClient::new(settings.nvoos.site_url.clone(), credential.clone())?;
 
@@ -105,6 +116,11 @@ async fn main() -> nvoos_dictate_lib::error::AppResult<()> {
                     "content": [ { "type": "text", "text": raw } ]
                 }
             ],
+            "options": if let Some(model) = &model_override {
+                serde_json::json!({ "model": model })
+            } else {
+                serde_json::Value::Null
+            },
             "stream": false
         });
         let resp = reqwest::Client::new()

@@ -35,6 +35,7 @@ export interface Settings {
     site_url: string;
     assistant_id: string | null;
     cleanup_prompt: string;
+    polish_model: string | null;
     archive_enabled: boolean;
   };
   openai_compat: {

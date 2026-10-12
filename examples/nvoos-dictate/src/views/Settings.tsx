@@ -508,6 +508,23 @@ function NvoosTab({
         />
       </label>
       <label className="row">
+        <span>Polish model override (optional)</span>
+        <input
+          type="text"
+          value={settings.nvoos.polish_model ?? ''}
+          placeholder="deepseek-flash"
+          onChange={(e) =>
+            patchNvoos(onPatch, settings, { polish_model: e.target.value || null })
+          }
+        />
+      </label>
+      <p className="muted">
+        Sent as <code>options.model</code> on the polish chat request; blank uses the
+        assistant&#39;s configured model. Examples: <code>deepseek-flash</code> (fast, cheap —
+        recommended for transcript cleanup) or <code>deepseek-v4-pro</code> (higher quality,
+        roughly 4× the cost).
+      </p>
+      <label className="row">
         <span>Cleanup system prompt</span>
         <textarea
           value={settings.nvoos.cleanup_prompt}

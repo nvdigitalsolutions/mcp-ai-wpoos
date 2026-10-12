@@ -12,7 +12,7 @@ use serde_json::json;
 
 use crate::config::AppCategory;
 use crate::error::{AppError, AppResult};
-use crate::nvoos::types::{ChatMessage, ChatRequest, ContentSegment};
+use crate::nvoos::types::{ChatMessage, ChatOptions, ChatRequest, ContentSegment};
 
 /// Result of the settings-wizard connection test.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -111,6 +111,7 @@ impl NvoosClient {
         category: AppCategory,
         cleanup_prompt: &str,
         assistant_id: Option<&str>,
+        polish_model: Option<&str>,
     ) -> AppResult<(String, crate::cleanup::providers::PolishMeta)> {
         let system = match category {
             AppCategory::Code | AppCategory::Terminal => format!(
@@ -124,6 +125,13 @@ impl NvoosClient {
             _ => cleanup_prompt.to_string(),
         };
 
+        let options = polish_model
+            .map(str::trim)
+            .filter(|m| !m.is_empty())
+            .map(|model| ChatOptions {
+                model: Some(model.to_string()),
+            });
+
         let body = ChatRequest {
             assistant_id: assistant_id.map(|s| s.to_string()),
             messages: vec![
@@ -136,6 +144,7 @@ impl NvoosClient {
                     content: vec![ContentSegment::text(text)],
                 },
             ],
+            options,
             stream: Some(false),
         };
 
