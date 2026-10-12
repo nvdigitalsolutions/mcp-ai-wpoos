@@ -199,6 +199,21 @@ parent)**, not `models_dir/{id}`. Files: `encoder.int8.onnx`,
 
 ### embedded (remote fallback, always compiled — no feature flag)
 
+**Windows credential storage (the "I stored it but it did not stick" bug):**
+the app does NOT use the `keyring` crate on Windows — keyring 3.6.3 hard-
+codes `CRED_PERSIST_ENTERPRISE`, which from an unelevated app writes
+"successfully" into a namespace the app cannot read back (nothing appears
+in `cmdkey /list` either). `storage/win_cred.rs`
+(`WindowsCredentialStore`) calls `CredReadW`/`CredWriteW`/`CredDeleteW`
+directly with `CRED_PERSIST_LOCAL_MACHINE` (machine-local, survives
+reboots, visible in Credential Manager — the persistence git credential
+manager uses), keeping keyring's `{user}.{service}` target convention and
+UTF-16LE blob format for compatibility. keyring remains the backend on
+macOS/Linux. Every IPC secret write (`persist_secret_verified`) verifies
+the read-back before reporting success. Diagnostics: `cargo run --example
+keychain_probe` (set/read-back/delete); visibility check while held:
+`cmdkey /list | findstr nvoos`.
+
 Contract: `POST {site}/wp-json/mcp-ai/v1/embedded/transcribe` with
 `{"audio": "<base64 16-bit PCM WAV>", "language": "en"}`; server limit
 10 MB, 30 req/min, 60 s timeout (Embedded addon → Gemma 4 audio endpoint).

@@ -83,7 +83,7 @@ export default function App() {
           <MeetingsView onChanged={refresh} meetingRecording={!!status?.meeting_recording} />
         )}
         {tab === 'diagnostics' && <DiagnosticsView />}
-        {tab === 'settings' && <SettingsView onChanged={refresh} />}
+        {tab === 'settings' && <SettingsView onChanged={refresh} status={status} />}
       </main>
     </div>
   );

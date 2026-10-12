@@ -1,13 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, onModelProgress, type ConnectionTest, type ModelSpec, type Settings } from '../lib/ipc';
+import {
+  api,
+  onModelProgress,
+  type ConnectionTest,
+  type ModelSpec,
+  type Settings,
+  type StatusInfo,
+} from '../lib/ipc';
 
 interface Props {
   onChanged: () => void;
+  status: StatusInfo | null;
 }
 
 type SettingsTab = 'general' | 'engine' | 'nvoos' | 'openai' | 'privacy';
 
-export default function SettingsView({ onChanged }: Props) {
+export default function SettingsView({ onChanged, status }: Props) {
   const [tab, setTab] = useState<SettingsTab>('general');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [busy, setBusy] = useState(false);
@@ -208,7 +216,7 @@ export default function SettingsView({ onChanged }: Props) {
         <EngineTab settings={settings} onPatch={patch} />
       )}
 
-      {tab === 'nvoos' && <NvoosTab settings={settings} onPatch={patch} />}
+      {tab === 'nvoos' && <NvoosTab settings={settings} onPatch={patch} status={status} />}
 
       {tab === 'openai' && (
         <section className="card">
@@ -236,6 +244,7 @@ export default function SettingsView({ onChanged }: Props) {
           <ApiKeyPanel
             onSet={(key) => api.setOpenaiApiKey(key)}
             onClear={api.clearOpenaiApiKey}
+            stored={!!status?.openai_key_stored}
             label="API key (stored in the OS keychain, never in config files)"
           />
         </section>
@@ -455,13 +464,19 @@ function patchEngine(
 function NvoosTab({
   settings,
   onPatch,
+  status,
 }: {
   settings: Settings;
   onPatch: (p: Partial<Settings>) => Promise<void>;
+  status: StatusInfo | null;
 }) {
   const [test, setTest] = useState<ConnectionTest | null>(null);
+  const [credValue, setCredValue] = useState('');
+  const [credError, setCredError] = useState('');
   const [wpUser, setWpUser] = useState('');
   const [wpPass, setWpPass] = useState('');
+  const [wpError, setWpError] = useState('');
+  const stored = !!status?.nvoos_credential_stored;
 
   return (
     <section className="card">
@@ -510,18 +525,39 @@ function NvoosTab({
       </label>
 
       <CredentialPanel
+        value={credValue}
+        onValueChange={setCredValue}
+        stored={stored}
+        error={credError}
         onSet={async (cred) => {
-          await api.setNvoosCredential(settings.nvoos.site_url, cred);
-          setTest(null);
+          setCredError('');
+          try {
+            await api.setNvoosCredential(settings.nvoos.site_url, cred);
+            setTest(null);
+          } catch (e) {
+            setCredError(String(e));
+            throw e;
+          }
         }}
         onClear={async () => {
-          await api.clearNvoosCredential();
-          setTest(null);
+          setCredError('');
+          try {
+            await api.clearNvoosCredential();
+            setTest(null);
+          } catch (e) {
+            setCredError(String(e));
+          }
         }}
         label="Assistant credential (cred_XXXXX.SECRET — stored in the OS keychain)"
       />
       <button
         className="btn"
+        disabled={credValue.trim() !== '' && !stored}
+        title={
+          credValue.trim() !== '' && !stored
+            ? 'Store the credential first (or type it and press Store)'
+            : undefined
+        }
         onClick={() => void api.testNvoosConnection().then(setTest)}
       >
         Test connection
@@ -531,6 +567,11 @@ function NvoosTab({
           {test.ok ? '✓ ' : '✗ '}
           {test.message}
           {test.authenticated ? ' (credential accepted)' : ''}
+        </p>
+      )}
+      {!stored && (
+        <p className="muted">
+          No credential stored yet — paste one above, press <strong>Store</strong>, then test.
         </p>
       )}
 
@@ -563,10 +604,14 @@ function NvoosTab({
             className="btn"
             disabled={!wpUser.trim() || !wpPass.trim()}
             onClick={() =>
-              void api.setWpAppPassword(wpUser.trim(), wpPass.trim()).then(() => {
-                setWpUser('');
-                setWpPass('');
-              })
+              void api
+                .setWpAppPassword(wpUser.trim(), wpPass.trim())
+                .then(() => {
+                  setWpUser('');
+                  setWpPass('');
+                  setWpError('');
+                })
+                .catch((e) => setWpError(String(e)))
             }
           >
             Store
@@ -575,6 +620,7 @@ function NvoosTab({
             Remove
           </button>
         </div>
+        {wpError && <p className="warn-text">{wpError}</p>}
       </div>
     </section>
   );
@@ -589,15 +635,23 @@ function patchNvoos(
 }
 
 function CredentialPanel({
+  value,
+  onValueChange,
+  stored,
+  error,
   onSet,
   onClear,
   label,
 }: {
+  value: string;
+  onValueChange: (v: string) => void;
+  stored: boolean;
+  error: string;
   onSet: (value: string) => Promise<void>;
   onClear: () => Promise<void>;
   label: string;
 }) {
-  const [value, setValue] = useState('');
+  const [localError, setLocalError] = useState('');
   return (
     <div className="credential">
       <label className="row">
@@ -605,7 +659,7 @@ function CredentialPanel({
         <input
           type="password"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => onValueChange(e.target.value)}
           autoComplete="off"
         />
       </label>
@@ -613,14 +667,25 @@ function CredentialPanel({
         <button
           className="btn"
           disabled={!value.trim()}
-          onClick={() => void onSet(value.trim()).then(() => setValue(''))}
+          onClick={() =>
+            void onSet(value.trim())
+              .then(() => {
+                onValueChange('');
+                setLocalError('');
+              })
+              .catch((e) => setLocalError(String(e)))
+          }
         >
           Store
         </button>
         <button className="btn ghost" onClick={() => void onClear()}>
           Remove
         </button>
+        <span className={stored ? 'badge ok' : 'badge warn'}>
+          {stored ? 'stored' : 'not set'}
+        </span>
       </div>
+      {(error || localError) && <p className="warn-text">{error || localError}</p>}
     </div>
   );
 }
@@ -628,11 +693,24 @@ function CredentialPanel({
 function ApiKeyPanel({
   onSet,
   onClear,
+  stored,
   label,
 }: {
   onSet: (value: string) => Promise<void>;
   onClear: () => Promise<void>;
+  stored: boolean;
   label: string;
 }) {
-  return <CredentialPanel onSet={onSet} onClear={onClear} label={label} />;
+  const [value, setValue] = useState('');
+  return (
+    <CredentialPanel
+      value={value}
+      onValueChange={setValue}
+      stored={stored}
+      error=""
+      onSet={onSet}
+      onClear={onClear}
+      label={label}
+    />
+  );
 }
