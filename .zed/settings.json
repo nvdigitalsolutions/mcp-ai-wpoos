@@ -11,9 +11,12 @@
   // ---------------------------------------------------------------------------
   // Language servers — Phpactor is the default PHP LSP. It auto-discovers
   // the PHP runtime and project root, so no binary path is needed.
+  // rust-analyzer serves examples/nvoos-dictate (Tauri v2 + Rust); it ships
+  // with the `rust` extension below and auto-discovers src-tauri/Cargo.toml.
   // ---------------------------------------------------------------------------
   "lsp": {
-    "phpactor": {}
+    "phpactor": {},
+    "rust-analyzer": {}
   },
 
   // ---------------------------------------------------------------------------
@@ -29,7 +32,10 @@
     "PHP": { "tab_size": 4, "hard_tabs": true },
     "JavaScript": { "tab_size": 2, "hard_tabs": true },
     "JSON": { "tab_size": 2, "hard_tabs": true },
-    "Markdown": { "remove_trailing_whitespace_on_save": false }
+    "Markdown": { "remove_trailing_whitespace_on_save": false },
+    // Rustfmt is spaces-only, so Rust opts out of the repo-wide hard-tabs
+    // default — otherwise every save would fight the formatter.
+    "Rust": { "tab_size": 4, "hard_tabs": false }
   },
   "file_scan_exclusions": [
     "**/.git",
@@ -39,6 +45,7 @@
     "**/.DS_Store",
     "**/node_modules",
     "**/vendor",
+    "**/target",
     "**/coverage",
     "**/.phpunit.result.cache"
   ],
@@ -407,12 +414,15 @@
   // Recommended Zed extensions for NV oOS contributors.
   //
   // PHP / WordPress: phpactor language server, ESLint for the chat UI,
-  // Prettier for JSON/Markdown. Mirrors .vscode/extensions.json intent.
+  // Prettier for JSON/Markdown. The `rust` extension covers the
+  // examples/nvoos-dictate Tauri app (rust-analyzer + Cargo tooling).
+  // Mirrors .vscode/extensions.json intent.
   // ---------------------------------------------------------------------------
   "auto_install_extensions": {
     "php": true,
     "phpactor": true,
     "html": true,
-    "scss": true
+    "scss": true,
+    "rust": true
   }
 }
