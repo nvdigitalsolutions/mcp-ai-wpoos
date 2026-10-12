@@ -1,8 +1,13 @@
-# Proposal 069 — Lil Buddy as the Dictation App's Assigned MCP Assistant
+# Proposal 069 — NV oOS Assistant Wrapper: Local Assistant Assignment for the Dictation App
 
 **Status:** Draft for discussion
 **Date:** 2026-10-12
-**Related:** `examples/nvoos-dictate` (the dictation app), `docs/project/proposals/067-tauri-dictation-companion-app-proposal.md` (goal 6 anticipated a local MCP client), `docs/project/proposals/068-macos-dictation-port-proposal.md`, `.agents/skills/mcp-ai-wpoos-dictation-app/SKILL.md`, upstream <https://github.com/OnPoint-Dev-Tools/lil-buddy> (MIT)
+**Related:** `examples/nvoos-dictate` (the dictation app), `docs/project/proposals/067-tauri-dictation-companion-app-proposal.md` (goal 6 anticipated a local MCP client), `docs/project/proposals/068-macos-dictation-port-proposal.md`, `.agents/skills/mcp-ai-wpoos-dictation-app/SKILL.md`, upstream <https://github.com/OnPoint-Dev-Tools/lil-buddy> (MIT, origin of the idea; interop path only)
+
+**Naming:** the wrapper and its registry use the plugin's terminology —
+**Assistant** (assistant CPT, `assistant_id`, assistant credentials) — not
+"buddy". "Buddy" appears below only where the third-party lil-buddy app is
+meant.
 
 ## Context
 
@@ -52,31 +57,32 @@ providers (NV oOS site, OpenAI-compatible) as fallbacks.
 
 ## Goals
 
-1. **Buddy as assigned assistant** — a new `buddy` Stage-2 provider so the
-   polish call goes to a named buddy. Primary implementation (Option D): the
-   buddy is an NV oOS Complete assistant (site REST, the app's existing
-   protocol). Interop implementation (Option A): a Lil Buddy MCP server.
-2. **Multiple buddies** — a named buddy registry (assistant_id + provider +
-   model + persona label, or lil-buddy server entries), with a default
+1. **Assistant as assigned assistant** — a new `assistant` Stage-2 provider so
+   the polish call goes to a named Assistant. Primary implementation
+   (Option D): the Assistant is an NV oOS Complete assistant (site REST, the
+   app's existing protocol). Interop implementation (Option A): a Lil Buddy
+   MCP server.
+2. **Multiple assistants** — a named assistant registry (assistant_id +
+   provider + model + label, or lil-buddy server entries), with a default
    assignment and per-target-app routing.
 3. **Standards-based transport** — MCP stdio (local) and optionally streamable
-   HTTP (remote buddy), using rmcp on both sides; no bespoke protocol.
-4. **Zero-regression fallback** — buddy unreachable/slow → NV oOS →
+   HTTP (remote assistant), using rmcp on both sides; no bespoke protocol.
+4. **Zero-regression fallback** — assistant unreachable/slow → NV oOS →
    openai_compat → deterministic Stage-1 text, preserving the existing
    never-block-a-paste invariant.
 5. **Reverse direction for free** — the dictation app's existing MCP server
    becomes usable *inside* the buddy via its opencode provider's native MCP
    support, so the buddy can trigger dictation from chat.
-6. **Archive continuity** — buddy-polished transcripts can still archive to
-   the NV oOS site when configured.
+6. **Archive continuity** — assistant-polished transcripts can still archive
+   to the NV oOS site when configured.
 
 ## Non-goals
 
 - Changing Lil Buddy's UI/companion character system.
-- A hosted/cloud buddy service; buddies run on the user's machines.
+- A hosted/cloud companion service; assistants run on the user's machines.
 - Replacing the NV oOS plugin as the server-side assistant platform; this is
   an *additional* local assignment option.
-- Speech recognition moving to the buddy; STT stays in the dictate app.
+- Speech recognition moving to the companion app; STT stays in the dictate app.
 - Google A2A (agent2agent) protocol — heavier than needed for two local
   desktop apps; MCP stdio is the industry-standard fit (see research below).
 
@@ -94,7 +100,7 @@ providers (NV oOS site, OpenAI-compatible) as fallbacks.
   [OpenAI Agents SDK MCP notes](https://openai.github.io/openai-agents-python/mcp/)).
 - Multi-server clients instantiate **one MCP client per connected server**,
   discover capabilities via `initialize` + `tools/list`, and call tools over
-  JSON-RPC 2.0 (UTF-8) — this is exactly the shape of a "buddy registry"
+  JSON-RPC 2.0 (UTF-8) — this is exactly the shape of an assistant registry
   ([MCP cheat sheet](https://www.webfuse.com/mcp-cheat-sheet)).
 - The **official Rust SDK is rmcp 3.x** (`client`, `server`, `macros`
   features; transports `transport-child-process` for spawning stdio servers
@@ -140,7 +146,7 @@ providers (NV oOS site, OpenAI-compatible) as fallbacks.
 
 ## Proposed design
 
-### Option A (primary) — Lil Buddy exposes an MCP server; the dictate app becomes an MCP client
+### Option A (interop, optional) — Lil Buddy exposes an MCP server; the dictate app becomes an MCP client
 
 Add a **headless serve mode** to Lil Buddy (`lil-buddy mcp serve`, or a thin
 `buddy-serve` binary in the same repo) that reuses its existing provider
@@ -198,13 +204,13 @@ immediately but couples the dictate app to Lil Buddy's settings schema and
 bypasses the buddy's session/safety layer — treated as an interim milestone,
 not the target architecture.
 
-### Option D (recommended pivot) — our own thin "NV oOS Buddy" wrapper backed by the Complete plugin
+### Option D (recommended pivot) — the in-repo NV oOS Assistant wrapper backed by the Complete plugin
 
 Instead of integrating a third-party companion whose intelligence is anyway
-borrowed (opencode/claude CLIs), build a thin in-repo buddy layer whose
+borrowed (opencode/claude CLIs), build a thin in-repo Assistant layer whose
 intelligence is the user's own NV oOS Complete site. The site is already the
 dictation app's assigned assistant backend; the wrapper makes the *same*
-assistants the buddies. Key reasoning:
+assistants available as a desktop companion. Key reasoning:
 
 - **Assistants are personas.** The plugin's assistant CPT already carries a
   system prompt, provider, model, tools, and per-assistant transcripts —
@@ -212,7 +218,7 @@ assistants the buddies. Key reasoning:
   backend, no duplication.
 - **The dictate app already speaks this protocol.** The `nvoos` provider +
   the `polish_provider` / `polish_model` overrides shipped this cycle are
-  already per-assistant routing; "multiple buddies" reduces to a named
+  already per-assistant routing; "multiple assistants" reduces to a named
   assistant registry with per-target-app routing — a settings/UI delta, not
   a new protocol.
 - **No upstream risk.** lil-buddy is a 26-commit developer preview with no
@@ -230,27 +236,27 @@ assistants the buddies. Key reasoning:
 
 The thin-wrapper ladder (each rung is independently shippable):
 
-1. **Profile-based buddies (smallest — mostly done).** "Buddies" are named
-   assistant profiles inside the dictate app's settings (assistant_id +
-   provider + model + persona label), with per-category routing and a
-   fallback chain. No new app, no new protocol.
-2. **NV oOS Buddy desktop wrapper.** A small Tauri app (tray + quick chat +
+1. **Profile-based assistants (smallest — mostly done).** "Assistants" are
+   named assistant profiles inside the dictate app's settings (assistant_id
+   + provider + model + label), with per-category routing and a fallback
+   chain. No new app, no new protocol.
+2. **NV oOS Assistant wrapper app.** A small Tauri app (tray + quick chat +
    optional Telegram gateway) whose only backend is the Complete site. Chat
-   = the existing REST contract; buddies = assistants; history = the
-   plugin's transcripts.
+   = the existing REST contract; each companion persona = a site assistant;
+   history = the plugin's transcripts.
 3. **MCP surface on the wrapper.** Expose the wrapper's chat as an MCP stdio
    server (rmcp, same as the dictate app) so *any* MCP client — including
    the dictate app's Stage-2 layer and lil-buddy via opencode config — can
-   use the same buddies. This preserves Option A/C interop without
+   use the same assistants. This preserves Option A/C interop without
    depending on lil-buddy.
 
 Comparison with Option A:
 
-| Dimension | A: lil-buddy + MCP serve mode | D: NV oOS Buddy wrapper |
+| Dimension | A: lil-buddy + MCP serve mode | D: NV oOS Assistant wrapper |
 |---|---|---|
 | Backend brain | opencode/claude CLIs (user-managed) | NV oOS Complete assistants (user-owned) |
 | Personas | lil-buddy experts (`settings.json`) | Plugin assistants (system prompts) — already exist |
-| Multiple buddies | registry of buddy server processes | assistant_id per buddy + per-category routing |
+| Multiple assistants | registry of buddy server processes | assistant_id per profile + per-category routing |
 | Upstream risk | 26-commit preview, no MCP roadmap | none (in-repo) |
 | Foreign work | ~300–500-line serve-mode PR upstream | none (plugin unchanged) |
 | Dictate integration | new MCP client path | existing REST path (extract shared crate) |
@@ -285,7 +291,7 @@ flowchart TD
         NV[NV oOS provider - REST - primary]
         OA[OpenAI-compat provider]
         MCPC[rmcp client - optional interop]
-        REG[Buddy registry - named assistant profiles]
+        REG[Assistant registry - named assistant profiles]
         ST1 --> DIC
         DIC --> PROV
         PROV --> NV
@@ -293,7 +299,7 @@ flowchart TD
         PROV --> MCPC
         REG --> NV
     end
-    subgraph WRAP[NV oOS Buddy wrapper - thin Tauri app]
+    subgraph WRAP[NV oOS Assistant wrapper - thin Tauri app]
         CHAT[Quick chat + tray]
         CLIENT[Shared nvoos-client crate]
         SRV[MCP stdio server - optional]
@@ -315,10 +321,12 @@ flowchart TD
     OA -->|REST| OAAPI[Any OpenAI-compatible API]
 ```
 
-**Lifecycle:** lazy-spawn on first use per buddy id; process kept alive for
-the session (connection pool); health check = `tools/list` (fast) with a
-1-second budget; per-call timeout matches `wait_for_llm_ms`; spawn failures
-and timeouts demote to the fallback chain and surface on the Diagnostics tab.
+**Lifecycle:** lazy-spawn on first use per assistant profile; the REST path
+keeps no local process (the shared client, like the dictate app today); MCP
+interop entries spawn on first use and stay alive for the session
+(connection pool); health check = `tools/list` (fast) with a 1-second
+budget; per-call timeout matches `wait_for_llm_ms`; spawn failures and
+timeouts demote to the fallback chain and surface on the Diagnostics tab.
 
 **Buddy tool contract (draft):**
 
@@ -352,21 +360,21 @@ explicit opt-in + bearer token on the buddy side.
 - Extract the `nvoos` REST client out of `nvoos-dictate` into a shared crate
   (`nvoos-client`, reused by the wrapper below); keep credentials in the OS
   keychain, same bearer contract.
-- Buddy registry settings (`BuddyEntry`: id/label + assistant_id + provider
-  + model + per-category routing) with add/remove/test per buddy.
+- Assistant registry settings (`AssistantEntry`: id/label + assistant_id +
+  provider + model + per-category routing) with add/remove/test per entry.
 - Per-category assistant routing in `finalize_inner` + the existing fallback
-  chain (buddy → nvoos default → openai_compat → Stage-1).
-- Diagnostics: per-buddy last-call latency, answering model/provider,
+  chain (assistant → nvoos default → openai_compat → Stage-1).
+- Diagnostics: per-assistant last-call latency, answering model/provider,
   archive status (mirrors `LastDictationStats`).
 
-**Option D — NV oOS Buddy wrapper app (primary, new):**
+**Option D — NV oOS Assistant wrapper app (primary, new):**
 - Thin Tauri app: tray + quick chat + optional Telegram gateway; backend is
   exclusively the Complete site's REST chat (shared client crate).
-- Buddies = site assistants (no new server-side surface); history = plugin
-  transcripts.
+- Each companion persona = a site assistant (no new server-side surface);
+  history = plugin transcripts.
 - Optional MCP stdio server (rmcp `server`) exposing `complete` /
-  `list_buddies` so any MCP client — including the dictate app's Stage-2
-  layer and lil-buddy via opencode config — can use the same buddies.
+  `list_assistants` so any MCP client — including the dictate app's Stage-2
+  layer and lil-buddy via opencode config — can use the same assistants.
 - Companion shell: minimal at first; optionally fork lil-buddy's MIT shell
   for the animated pet later.
 
@@ -383,40 +391,42 @@ explicit opt-in + bearer token on the buddy side.
 | Phase | Deliverable | Gate |
 |---|---|---|
 | D1 | Shared `nvoos-client` crate extracted from `nvoos-dictate`; clippy/test green on both consumers | dictation app rebuild + live polish regression |
-| D2 | Buddy registry UI (named assistant profiles) + per-category routing + fallback chain | golden tests + live polish per profile |
-| D3 | Buddy wrapper app: tray + quick chat against the Complete site | end-to-end chat + transcripts on the site |
-| D4 | Wrapper MCP stdio server; dictate app can target a wrapper buddy | tools/list + complete verified; skill updated |
+| D2 | Assistant registry UI (named assistant profiles) + per-category routing + fallback chain | golden tests + live polish per profile |
+| D3 | NV oOS Assistant wrapper app: tray + quick chat against the Complete site | end-to-end chat + transcripts on the site |
+| D4 | Wrapper MCP stdio server; dictate app can target a wrapper assistant | tools/list + complete verified; skill updated |
 | A1 (optional) | Lil Buddy serve mode PR + dictate MCP-client provider | interop matrix with opencode/claude providers |
 | A2 (optional) | Reverse-direction `opencode.json` template + remote buddy (streamable HTTP + auth) | documented; end-to-end demo |
 
 ## Risks & mitigations
 
 - **Scope creep toward a full chat app** (wrapper): ship the ladder rung by
-  rung; D1–D2 alone deliver "multiple assigned buddies" in the dictate app
-  with no new app at all.
+  rung; D1–D2 alone deliver "multiple assigned assistants" in the dictate
+  app with no new app at all.
 - **Upstream velocity** (Lil Buddy is a 26-commit developer preview):
   Option A is demoted to optional interop; nothing in D1–D4 depends on it.
 - **Cold-start latency** (wrapper/CLI spawns): the plugin REST path has no
   local spawn cost — measured ~9 s live round trip; fallback chain absorbs
-  slow buddies.
+  slow assistants.
 - **Prompt injection via transcript**: data-quotation contract + the app's
   existing sanitization; plugin-side guards (request guard, destructive-ops
   gate) already apply to every chat call.
-- **Credential hygiene**: each buddy profile reuses the single stored
-  assistant credential (OS keychain); no per-buddy secrets in settings.json.
+- **Credential hygiene**: each assistant profile reuses the single stored
+  assistant credential (OS keychain); no per-assistant secrets in
+  settings.json.
 
 ## Open questions
 
-1. Should the primary path be Option D (in-repo NV oOS Buddy wrapper) with
-   Option A/C kept as interop paths, or is upstream lil-buddy integration
-   still the priority? (Proposal: D is primary; A becomes optional interop.)
-2. Should buddy sessions be continued across dictations (`session_id`) for
-   tone consistency, or stateless per utterance? (Stateless is the default;
-   continuation is a per-buddy opt-in.)
-3. Should the buddy provider also archive to NV oOS by default, or only when
-   `archive_enabled` is set (proposal: only when set, unchanged)?
-4. Is remote-buddy (streamable HTTP) needed at all for v1, or is local-only
-   acceptable? (Proposal: local-only for v1.)
+1. Should the primary path be Option D (in-repo NV oOS Assistant wrapper)
+   with Option A/C kept as interop paths, or is upstream lil-buddy
+   integration still the priority? (Proposal: D is primary; A becomes
+   optional interop.)
+2. Should assistant sessions be continued across dictations (`session_id`)
+   for tone consistency, or stateless per utterance? (Stateless is the
+   default; continuation is a per-assistant opt-in.)
+3. Should the assistant provider also archive to NV oOS by default, or only
+   when `archive_enabled` is set (proposal: only when set, unchanged)?
+4. Is remote-assistant (streamable HTTP) needed at all for v1, or is
+   local-only acceptable? (Proposal: local-only for v1.)
 
 ## Alternatives considered
 
