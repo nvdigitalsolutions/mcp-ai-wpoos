@@ -265,11 +265,11 @@ function EngineTab({
     };
   }, []);
 
-  const download = async (engine: string, model: string) => {
+  const download = async (engine: string, model: string, force = false) => {
     setError('');
     setProgress((p) => ({ ...p, [`${engine}/${model}`]: 0 }));
     try {
-      await api.downloadModel(engine, model);
+      await api.downloadModel(engine, model, force);
       setProgress((p) => ({ ...p, [`${engine}/${model}`]: 1 }));
       setModels(await api.getModels());
     } catch (e) {
@@ -280,6 +280,7 @@ function EngineTab({
   const entries = models.filter(
     (m) => m.engine === settings.engine.engine || m.engine === 'vad',
   );
+  const modelsForEngine = models.filter((m) => m.engine === settings.engine.engine);
 
   return (
     <section className="card">
@@ -288,7 +289,16 @@ function EngineTab({
         <span>Engine</span>
         <select
           value={settings.engine.engine}
-          onChange={(e) => patchEngine(onPatch, settings, { engine: e.target.value })}
+          onChange={(e) => {
+            const engine = e.target.value;
+            // Reset the model to a catalogue entry of the new engine so the
+            // dropdown can never land on a cross-engine mismatch.
+            const first = models.find((m) => m.engine === engine);
+            patchEngine(onPatch, settings, {
+              engine,
+              model: first ? first.id : '',
+            });
+          }}
         >
           {engines.includes('mock') && (
             <option value="mock">Mock (no model — pipeline testing only)</option>
@@ -319,12 +329,33 @@ function EngineTab({
       )}
       <label className="row">
         <span>Model</span>
-        <input
-          type="text"
-          value={settings.engine.model}
-          onChange={(e) => patchEngine(onPatch, settings, { model: e.target.value })}
-        />
+        {modelsForEngine.length > 0 ? (
+          <select
+            value={settings.engine.model}
+            onChange={(e) => patchEngine(onPatch, settings, { model: e.target.value })}
+          >
+            {!modelsForEngine.some((m) => m.id === settings.engine.model) && (
+              <option value={settings.engine.model} disabled>
+                {settings.engine.model} (not in catalogue)
+              </option>
+            )}
+            {modelsForEngine.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.id}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <select disabled value={settings.engine.model}>
+            <option>{settings.engine.model || 'no model'}</option>
+          </select>
+        )}
       </label>
+      <p className="muted">
+        Only models belonging to the selected engine are offered, so a mismatch like
+        &ldquo;parakeet + base.en&rdquo; cannot be saved. Custom model ids can still be
+        edited directly in config.json.
+      </p>
       <label className="row">
         <span>Language (optional BCP-47, e.g. en)</span>
         <input
@@ -350,7 +381,18 @@ function EngineTab({
               </div>
             </div>
             {m.installed ? (
-              <span className="muted">Installed ✓</span>
+              <span className="row">
+                <span className="muted">Installed ✓</span>
+                <button
+                  className="btn"
+                  disabled={progress[`${m.engine}/${m.id}`] !== undefined &&
+                    progress[`${m.engine}/${m.id}`] < 1}
+                  onClick={() => void download(m.engine, m.id, true)}
+                  title="Discard and re-download this model from scratch (useful when a file is suspected corrupt)"
+                >
+                  Re-download
+                </button>
+              </span>
             ) : (
               <button
                 className="btn"

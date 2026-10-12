@@ -89,6 +89,11 @@ pub fn create_engine(
     settings: &EngineConfig,
     resources: &EngineResources<'_>,
 ) -> AppResult<Box<dyn SttEngine>> {
+    // Reject catalogue-known mismatches up front (e.g. a whisper model id
+    // under the parakeet engine) so every call site — boot, headless MCP,
+    // settings save — gets the same clear error instead of a confusing
+    // "model not found" for a model that exists under another engine.
+    crate::stt::model_registry::validate_pairing(&settings.engine, &settings.model)?;
     match settings.engine.as_str() {
         "mock" => Ok(Box::new(MockEngine::new())),
         #[cfg(feature = "parakeet")]

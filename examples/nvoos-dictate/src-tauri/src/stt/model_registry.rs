@@ -105,6 +105,26 @@ pub fn find(engine: &str, id: &str) -> Option<&'static ModelSpec> {
     CATALOG.iter().find(|m| m.engine == engine && m.id == id)
 }
 
+/// Reject engine/model pairings the catalogue knows are wrong — e.g. a
+/// whisper model id saved under the parakeet engine, the class of misconfig
+/// that produces "parakeet model 'base.en' not found". Engines the catalogue
+/// does not cover (mock, embedded — and their stored model value is ignored
+/// at load) and unknown model ids are allowed: users may wire custom models
+/// the catalogue does not list. Only ids that exist in the catalogue under a
+/// DIFFERENT engine are rejected.
+pub fn validate_pairing(engine: &str, model: &str) -> AppResult<()> {
+    if !CATALOG.iter().any(|s| s.engine == engine) {
+        return Ok(());
+    }
+    if let Some(spec) = CATALOG.iter().find(|s| s.id == model && s.engine != engine) {
+        return Err(AppError::Model(format!(
+            "model '{model}' belongs to the {} engine, not '{engine}' — pick it under {} in Settings",
+            spec.engine, spec.engine
+        )));
+    }
+    Ok(())
+}
+
 /// Whether a catalogue entry is present on disk, mirroring how each engine
 /// resolves its files (parakeet dir with encoder/decoder/joiner/tokens;
 /// whisper `{id}.bin`; vad `silero_vad.onnx`).
@@ -154,9 +174,14 @@ pub fn status_list(models_dir: &Path) -> Vec<ModelStatus> {
 
 /// Streaming download with progress callback (0.0..=1.0), SHA-256 check
 /// (when the spec carries a hash), and atomic rename into place.
+///
+/// `force` restarts from zero instead of resuming a `.download` partial:
+/// resume can stitch new bytes onto a corrupt file and can never repair it,
+/// so the Settings UI offers a force re-download for installed models.
 pub async fn download(
     spec: &'static ModelSpec,
     models_dir: &Path,
+    force: bool,
     progress: impl Fn(f64) + Send + Sync + 'static,
 ) -> AppResult<PathBuf> {
     let client = reqwest::Client::builder()
@@ -172,11 +197,17 @@ pub async fn download(
 
     let tmp = target_dir.join(format!("{}.download", spec.id));
     // Resume a partial download when possible; HTTP Range keeps a flaky
-    // connection from restarting a 600 MB pull from zero.
-    let mut existing = tokio::fs::metadata(&tmp)
-        .await
-        .map(|m| m.len())
-        .unwrap_or(0);
+    // connection from restarting a 600 MB pull from zero. A forced download
+    // discards the partial — resuming from a corrupt prefix can never fix it.
+    let mut existing = if force {
+        let _ = std::fs::remove_file(&tmp);
+        0
+    } else {
+        tokio::fs::metadata(&tmp)
+            .await
+            .map(|m| m.len())
+            .unwrap_or(0)
+    };
     let mut request = client.get(spec.url);
     if existing > 0 {
         request = request.header(reqwest::header::RANGE, format!("bytes={existing}-"));
@@ -316,6 +347,25 @@ mod tests {
             assert_eq!(find(spec.engine, spec.id).map(|m| m.id), Some(spec.id));
         }
         assert!(find("parakeet", "no-such-model").is_none());
+    }
+
+    #[test]
+    fn pairing_validation_rejects_cross_engine_model_ids() {
+        // The exact failure that wedged the app: whisper model under parakeet.
+        assert!(validate_pairing("parakeet", "base.en").is_err());
+        assert!(validate_pairing("whisper", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8").is_err());
+        // Valid pairings and custom (unknown) ids pass.
+        assert!(validate_pairing("whisper", "base.en").is_ok());
+        assert!(validate_pairing("parakeet", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8").is_ok());
+        assert!(
+            validate_pairing("whisper", "small.en").is_ok(),
+            "custom model ids are allowed"
+        );
+        // Engines without catalogue entries ignore the model value entirely;
+        // the shipped default (mock + parakeet id) must keep saving.
+        assert!(validate_pairing("mock", "").is_ok());
+        assert!(validate_pairing("mock", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8").is_ok());
+        assert!(validate_pairing("embedded", "base.en").is_ok());
     }
 
     #[test]

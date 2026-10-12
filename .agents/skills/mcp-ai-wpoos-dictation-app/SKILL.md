@@ -55,12 +55,6 @@ examples/nvoos-dictate/
   nvoos-dictate.exe"` after ~10 s (process alive = boot OK); kill with
   `taskkill //IM nvoos-dictate.exe //F`. A running app locks the exe — kill
   it before `cargo build`/`test` or you get "failed to remove file" errors.
-- **Stale-checkout artifact illusion**: the sources merged in #7011 live on
-  `alpha-working`. On any branch older than that merge, `git status` shows the
-  folder as untracked build leftovers (`?? examples/nvoos-dictate/` with only
-  `target/`, `dist/`, `node_modules/` on disk) and the sources look deleted.
-  They aren't — sync to `origin/alpha-working` (fetch + rebase/checkout)
-  before assuming data loss or starting a rebuild.
 
 ## Critical config rule: `plugins.updater` block
 
@@ -83,9 +77,9 @@ cd src-tauri
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings                          # default
 cargo clippy --all-targets --features mcp -- -D warnings
-cargo test            # 69 tests (41 lib + 17 golden + 6 history + 5 validation)
+cargo test            # 73 tests (45 lib + 17 golden + 6 history + 5 validation)
 cargo test --features mcp       # +4 toolbox tests
-cargo test --features parakeet  # +1 tar.bz2 extraction test (42 lib)
+cargo test --features parakeet  # 46 lib (+1 tar.bz2 extraction test)
 ```
 
 Native feature compile checks: `parakeet`, `whisper`, `moonshine`,
@@ -135,15 +129,6 @@ parent)**, not `models_dir/{id}`. Files: `encoder.int8.onnx`,
 
 ### whisper (whisper-rs 0.16, feature `whisper`) — API VERIFIED
 
-- **Vendored `whisper-rs-sys`** (vendor/whisper-rs-sys, wired via
-  `[patch.crates-io]`): one-line build.rs patch forces
-  `CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded` + `CMAKE_POLICY_DEFAULT_CMP0091=NEW`
-  so whisper.cpp compiles with the static CRT. Without it, whisper (`/MD`)
-  cannot link alongside sherpa-onnx's `/MT` prebuilt libs (LNK2038).
-  All native engines can now share ONE binary:
-  `cargo build --features parakeet,silero-vad,whisper`.
-
-
 - `full_n_segments() -> c_int` (NOT a Result); segments via
   `state.get_segment(i) -> Option<WhisperSegment>` +
   `seg.to_str() -> Result<&str>` (the old `full_get_segment_text` is gone).
@@ -154,6 +139,15 @@ parent)**, not `models_dir/{id}`. Files: `encoder.int8.onnx`,
 - `WHISPER_DONT_GENERATE_BINDINGS=1` is **Linux-only** — the checked-in
   bindings are glibc-specific and fail to compile on MSVC (`_IO_FILE` size
   errors). Always use real bindgen on Windows.
+- The vendored `vendor/whisper-rs-sys/whisper.cpp/` tree is **trimmed** (no
+  `bindings/`); its `CMakeLists.txt` has the upstream
+  `configure_file(bindings/javascript/package-tmpl.json …)` line REMOVED.
+  Never restore that line without restoring `bindings/javascript/` too — a
+  fresh build dir (new feature-set hash, CI clean checkout, or after
+  `cargo clean`) re-copies the trimmed tree into OUT_DIR and CMake configure
+  fails. A stale pre-trim OUT_DIR masks the bug locally, which is why this
+  only surfaces on fresh builds. If whisper-rs-sys CMake errors appear,
+  `rm -rf target/{debug,release}/build/whisper-rs-sys-*` and rebuild.
 
 ### ort / moonshine / silero-vad (features `moonshine`, `silero-vad`)
 
@@ -191,6 +185,22 @@ measured-hash logging when unpinned, tar.bz2 extraction behind the
 `parakeet` feature. Downloads live in
 `%APPDATA%/nvoos-dictate/models/` (GUI: Settings → Engine & Models).
 
+Two guardrails added after the "parakeet model 'base.en' not found" wedge:
+
+- **`validate_pairing(engine, model)`** rejects catalogue-known cross-engine
+  pairings (a whisper id under parakeet) BEFORE settings are persisted —
+  called from `state::update_settings` and `create_engine`. Engines without
+  catalogue entries (mock/embedded) and unknown ids always pass: the shipped
+  default settings store the parakeet id under the `mock` engine and MUST
+  keep saving. The Settings UI model field is a dropdown filtered by engine,
+  so a mismatch cannot be typed anymore; custom ids still work via
+  config.json.
+- **`download(spec, dir, force, progress)`** — `force` restarts from zero
+  instead of resuming the `.download` partial (resume can never repair a
+  corrupt file). The Settings UI shows a **Re-download** button on installed
+  models. `download_model` IPC re-runs `ensure_engine` after install so the
+  fresh model is usable without an app restart.
+
 ## Verification harnesses
 
 ```bash
@@ -218,28 +228,19 @@ cargo run --features parakeet --example transcribe_file -- ../speech.wav --engin
   parent module** (proven with a minimal repro): inside
   `stt/engine.rs`, `parakeet::X` fails while `crate::stt::parakeet::X`
   works — always use crate-qualified paths for cfg-gated siblings.
-- **LL hook ordering**: in `hotkey/win_hook.rs`, key-up detection must run
-  BEFORE the `RECORDING` swallow — swallowing first eats the `Released`
-  event and dictation hangs in `Recording` forever. Regression-tested by
-  `ptt_release_fires_despite_recording_swallow`.
-- **PTT arms only when pressed alone**: `ptt_pressed_alone` (256-byte
-  `GetKeyboardState` snapshot) keeps RAlt combos working — Alt+F4, Alt+Tab,
-  AltGr input and ASUS/OEM shortcuts pass through; only a bare RAlt/RCtrl
-  press starts dictation.
-- **Hook callbacks must not block**: `hook_proc` runs on the input thread
-  context — atomics (`PTT_DOWN`, `LAST_PRESS_MS`) and `try_lock`-only access
-  to the event sender; never `mutex.lock()` or allocation in the callback.
-- **Dictation windowing**: the controller records the ring-buffer positions
-  at press/release; `finalize` snapshots `[press - pre_roll, release +
-  300 ms]`, runs `trim_to_speech` (VAD segmentation, 100 ms pads), and
-  refuses to paste when no speech is detected (silence decodes as
-  hallucinated text). Never transcribe the whole ring buffer.
-- **Updater posture**: `createUpdaterArtifacts` is `false` and the pubkey is
-  empty until a signing keypair exists — unsigned updater manifests are a
-  supply-chain risk. Local builds therefore do not attempt to sign.
-- **Close = exit**: the hidden overlay window keeps the process alive after
-  the main window closes; `lib.rs` handles `CloseRequested` on `main` with
-  `app.exit(0)`. Do not remove that handler without adding a tray instead.
+- **Hotkey swallow discipline (Windows hook)**: an armed PTT press must
+  consume BOTH the key-down and the matching key-up (`SWALLOWED_DOWN`
+  tracks the pair; auto-repeat downs stay swallowed). Swallowing only the
+  key-up while the down passes through leaves Windows believing RAlt is
+  permanently held — the "keyboard breaks, Ctrl+Alt+Del fixes it" stuck-Alt
+  failure. Non-armed events (AltGr combos) always pass through via
+  `ptt_pressed_alone`. The hook tests serialize on a shared `TEST_LOCK`
+  because the hook state lives in process-global statics.
+- **Settings saves that fail validation must not persist**: `update_settings`
+  runs `validate_pairing` BEFORE `settings.save()` so a broken combo can
+  never wedge the next boot. If the engine still fails to load after a valid
+  save (missing model files), the IPC error says exactly that — settings
+  ARE saved in that case; only the engine swap failed.
 
 ## Cleanup pipeline (golden backstop)
 
@@ -249,15 +250,20 @@ punctuate → per_app. Any rule change must keep `src-tauri/tests/cleanup_golden
 The fixture previously said "So we need…" but the leading-marker rule strips
 `so` after filler removal — "We need…" is the correct expectation.
 
-## Status & follow-ups (2026-10-11)
+## Status & follow-ups (2026-10-12)
 
 Done: P0 core, P1 (nvoos client/archive), P3 (MCP stdio), engine track live-
-verified, embedded fallback implemented, PR #7011 → `alpha-working`.
-Remaining: PTT manual matrix + loopback meeting verification (P2 real-call),
-embedded live test (needs a Gemma 4 audio endpoint), Embedded addon
-permission tweak for `cred_x.SECRET`, P4/P5 ports, release signing/updater
-feed. See the implementation plan (`docs/project/proposals/067-…-plan.md`)
-for the full item list.
+verified, embedded fallback implemented, PR #7011 → `alpha-working`;
+post-merge hardening: exit-on-close + stuck-PTT release + model download UX
+(#7017), VAD windowing/whisper CRT fix/hotkey guard (#7020), and this round:
+symmetric hook swallow (stuck-Alt fix), hands-free toggle release fix
+(double-tap recording no longer ends on its own key release), engine/model
+pairing validation + model dropdown, force re-download, vendored
+whisper.cpp CMakeLists bindings fix. Remaining: PTT manual matrix + loopback meeting verification (P2
+real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
+addon permission tweak for `cred_x.SECRET`, P4/P5 ports, release
+signing/updater feed. See the implementation plan
+(`docs/project/proposals/067-…-plan.md`) for the full item list.
 
 ## Related skills
 

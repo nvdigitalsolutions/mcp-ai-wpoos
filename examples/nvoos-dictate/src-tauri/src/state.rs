@@ -126,6 +126,13 @@ impl AppState {
 
     /// Persist and swap the active settings.
     pub fn update_settings(&self, settings: Settings) -> AppResult<Settings> {
+        // Reject catalogue-known engine/model mismatches BEFORE persisting:
+        // a broken combo on disk re-fails every boot ("parakeet model
+        // 'base.en' not found") and is hard to recover from the UI.
+        crate::stt::model_registry::validate_pairing(
+            &settings.engine.engine,
+            &settings.engine.model,
+        )?;
         settings.save()?;
         *self.settings.write().unwrap() = settings.clone();
         Ok(settings)

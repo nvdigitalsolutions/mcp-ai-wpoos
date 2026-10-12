@@ -5,11 +5,11 @@
 //! - **Windows:** a `WH_KEYBOARD_LL` low-level keyboard hook running on its
 //!   own OS thread with a `GetMessageW` message loop (a hook without a
 //!   message loop silently never fires), emitting Pressed/Released/Esc with
-//!   hold semantics. While a dictation is recording, the PTT key's own
-//!   down/up events are swallowed so the focused app never sees the modifier
-//!   (prevents Windows menu-bar activation and Ctrl/Win shortcut leakage).
-//!   Outside dictation the key passes through untouched, so AltGr layouts
-//!   keep working.
+//!   hold semantics. An armed press consumes BOTH the PTT key-down and the
+//!   matching key-up so the focused app never sees the modifier (prevents
+//!   Windows menu-bar activation); an asymmetric swallow would leave the
+//!   system believing the modifier is held (stuck keyboard). Non-armed
+//!   events — AltGr combos — pass through untouched.
 //! - **Fallback (Windows):** Windows can silently stop delivering
 //!   `WH_KEYBOARD_LL` events while a Chromium window (Chrome, VSCode,
 //!   WebView2) has focus. A `GetAsyncKeyState` poller runs alongside the hook

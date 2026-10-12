@@ -25,8 +25,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 
     include(git-vars)
 
-    # configure project version
-    configure_file(${CMAKE_SOURCE_DIR}/bindings/javascript/package-tmpl.json ${CMAKE_SOURCE_DIR}/bindings/javascript/package.json @ONLY)
+    # vendored copy: bindings/ trimmed, upstream JS package.json configure_file removed
 else()
     set(WHISPER_STANDALONE OFF)
 endif()
