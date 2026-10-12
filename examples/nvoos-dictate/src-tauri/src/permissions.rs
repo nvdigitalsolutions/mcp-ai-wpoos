@@ -36,12 +36,21 @@ mod imp {
     /// CoreGraphics access functions not exposed by the `core-graphics`
     /// crate (public C API since macOS 10.15). Declared directly against
     /// the CoreGraphics framework link the crate already establishes.
+    /// Note: C `Boolean` is `u8`, not Rust `bool` — keep the ABI honest.
     #[link(name = "CoreGraphics", kind = "framework")]
     extern "C" {
-        fn CGPreflightListenEventAccess() -> bool;
+        fn CGPreflightListenEventAccess() -> u8;
         fn CGRequestListenEventAccess();
-        fn CGPreflightScreenCaptureAccess() -> bool;
+        fn CGPreflightScreenCaptureAccess() -> u8;
         fn CGRequestScreenCaptureAccess();
+    }
+
+    fn preflight_listen_event_access() -> bool {
+        unsafe { CGPreflightListenEventAccess() != 0 }
+    }
+
+    fn preflight_screen_capture_access() -> bool {
+        unsafe { CGPreflightScreenCaptureAccess() != 0 }
     }
 
     pub fn permissions(mic_available: bool) -> Vec<PermissionInfo> {
@@ -67,7 +76,7 @@ mod imp {
                 label: "Input Monitoring",
                 explanation:
                     "Needed to listen for the push-to-talk key globally. macOS has no one-click prompt for this: enable it manually in the pane that opens.",
-                granted: unsafe { CGPreflightListenEventAccess() },
+                granted: preflight_listen_event_access(),
                 promptable: false,
             },
             PermissionInfo {
@@ -75,7 +84,7 @@ mod imp {
                 label: "Screen Recording",
                 explanation:
                     "Needed only for meeting system-audio capture. Denying it keeps meetings microphone-only.",
-                granted: unsafe { CGPreflightScreenCaptureAccess() },
+                granted: preflight_screen_capture_access(),
                 promptable: true,
             },
         ]
