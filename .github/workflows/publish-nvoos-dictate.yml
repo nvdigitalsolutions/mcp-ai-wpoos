@@ -33,6 +33,11 @@ jobs:
             args: '--target x86_64-apple-darwin'
             helperArch: x86_64
     runs-on: ${{ matrix.platform }}
+    env:
+      # Pinned by the matrix; beforeBundleCommand (build:helper) reads it so
+      # the right-arch Swift sidecar is staged over the externalBin stub
+      # even when it re-runs inside tauri-action.
+      NVOOS_HELPER_ARCH: ${{ matrix.helperArch }}
     steps:
       - uses: actions/checkout@v4
 
@@ -57,14 +62,10 @@ jobs:
         working-directory: examples/nvoos-dictate
         run: node scripts/gen-icons.mjs
 
-      # macOS: build the ScreenCaptureKit sidecar for the matrix arch and
-      # stage it over the externalBin stub BEFORE tauri-action bundles (the
-      # beforeBundleCommand would also do this, but per-arch here keeps the
-      # right slice inside the .app).
-      - name: Build sidecar helper (Swift)
-        if: runner.os == 'macOS'
-        working-directory: examples/nvoos-dictate
-        run: node scripts/build-helper.mjs ${{ matrix.helperArch }}
+      # macOS: tauri-action runs the configured beforeBundleCommand
+      # (npm run build:helper), which builds the ScreenCaptureKit sidecar
+      # for NVOOS_HELPER_ARCH and stages it over the externalBin stub — the
+      # real binary is therefore signed and embedded inside the .app.
 
       - name: Build and publish
         uses: tauri-apps/tauri-action@v0

@@ -24,7 +24,15 @@ if (process.platform !== 'darwin') {
 }
 
 const archArg = process.argv[2];
-const arch = archArg ?? (process.arch === 'arm64' ? 'arm64' : 'x86_64');
+// Prefer the env pin (publish matrix sets NVOOS_HELPER_ARCH so the
+// beforeBundleCommand stages the right slice even when re-run inside
+// tauri-action); fall back to the CLI arg, then the native arch.
+const arch =
+  process.env.NVOOS_HELPER_ARCH ?? archArg ?? (process.arch === 'arm64' ? 'arm64' : 'x86_64');
+if (arch !== 'arm64' && arch !== 'x86_64') {
+  console.error(`build:helper — unknown arch '${arch}' (expected arm64 | x86_64)`);
+  process.exit(2);
+}
 const triple = arch === 'arm64' ? 'aarch64-apple-darwin' : 'x86_64-apple-darwin';
 
 const helperDir = join(root, 'mac-helper');
