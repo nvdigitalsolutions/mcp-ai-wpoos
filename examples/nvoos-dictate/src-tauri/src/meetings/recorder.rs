@@ -219,14 +219,17 @@ fn start_streams() -> AppResult<Active> {
     let (sidecar, system_audio) = match crate::meetings::macos_system_audio::open_sidecar(
         samples.clone(),
     ) {
-        Ok(Some(handle)) if handle.is_alive() => (Some(handle), true),
-        Ok(handle) => {
-            tracing::warn!(
-                    "system-audio helper exited immediately — meeting continues mic-only (Screen Recording permission?)"
-                );
-            drop(handle);
-            (None, false)
+        Ok(Some(mut handle)) => {
+            if handle.is_alive() {
+                (Some(handle), true)
+            } else {
+                tracing::warn!(
+                        "system-audio helper exited immediately — meeting continues mic-only (Screen Recording permission?)"
+                    );
+                (None, false)
+            }
         }
+        Ok(None) => (None, false),
         Err(e) => {
             tracing::warn!("system audio unavailable: {e}");
             (None, false)

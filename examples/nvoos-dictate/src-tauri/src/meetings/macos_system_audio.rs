@@ -132,7 +132,6 @@ impl SidecarHandle {
                         None => break, // EOF: helper exited
                     }
                 }
-                let _ = lines.into_inner();
             })
             .ok();
 
@@ -143,14 +142,11 @@ impl SidecarHandle {
         }))
     }
 
-    /// Best-effort wait for a `ready` handshake so the caller can decide
-    /// whether capture is actually live (permission denials surface as an
-    /// immediate `error` frame and child exit instead).
-    pub fn is_alive(&self) -> bool {
-        match self.child.try_wait() {
-            Ok(None) => true,
-            _ => false,
-        }
+    /// Best-effort wait for the child to have exited (permission denials
+    /// surface as an immediate `error` frame and exit). `&mut` because
+    /// `Child::try_wait` reaps the exit status.
+    pub fn is_alive(&mut self) -> bool {
+        matches!(self.child.try_wait(), Ok(None))
     }
 }
 
