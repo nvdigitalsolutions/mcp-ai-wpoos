@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{SITE}} — Performance Optimization Report</title>
+<!--
+  TEMPLATE INSTRUCTIONS (design-performance-audit skill):
+  1. Replace every {{PLACEHOLDER}} with real values from the audit.
+  2. Fill the "Work Completed" lists with what is already in place + changes
+     made in the repo during the review (mark "still needs deployment").
+  3. Fill the "Still To Do" table rows from the prioritized action list.
+  4. Keep the file self-contained (no external assets) and validate the HTML
+     with the parser snippet in the skill's Step 7.
+-->
+<style>
+	:root {
+		--ink: #1f2937;
+		--muted: #6b7280;
+		--line: #e5e7eb;
+		--bg: #f8fafc;
+		--card: #ffffff;
+		--green: #16a34a;
+		--green-bg: #f0fdf4;
+		--amber: #d97706;
+		--amber-bg: #fffbeb;
+		--red: #dc2626;
+		--red-bg: #fef2f2;
+		--blue: #2563eb;
+		--blue-bg: #eff6ff;
+	}
+	* { box-sizing: border-box; margin: 0; padding: 0; }
+	body {
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+		background: var(--bg);
+		color: var(--ink);
+		line-height: 1.55;
+		padding: 32px 16px;
+	}
+	.container { max-width: 960px; margin: 0 auto; }
+	header.report-header {
+		background: var(--card);
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		padding: 28px 32px;
+		margin-bottom: 24px;
+	}
+	header.report-header h1 { font-size: 26px; margin-bottom: 6px; }
+	header.report-header .subtitle { color: var(--muted); font-size: 15px; }
+	.meta-row {
+		display: flex; flex-wrap: wrap; gap: 24px;
+		margin-top: 16px; padding-top: 16px;
+		border-top: 1px solid var(--line);
+		font-size: 13.5px; color: var(--muted);
+	}
+	.meta-row b { color: var(--ink); font-weight: 600; }
+	section {
+		background: var(--card);
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		padding: 24px 32px;
+		margin-bottom: 24px;
+	}
+	h2 {
+		font-size: 19px;
+		margin-bottom: 14px;
+		padding-bottom: 10px;
+		border-bottom: 1px solid var(--line);
+		display: flex; align-items: center; gap: 8px;
+	}
+	h3 { font-size: 15.5px; margin: 18px 0 8px; }
+	p { margin-bottom: 10px; }
+	ul { padding-left: 22px; margin-bottom: 10px; }
+	li { margin-bottom: 4px; }
+	code {
+		background: #f1f5f9;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		padding: 1px 5px;
+		font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+		font-size: 12.5px;
+	}
+	.metrics {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+		gap: 12px;
+		margin: 14px 0;
+	}
+	.metric {
+		background: var(--bg);
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		padding: 12px;
+		text-align: center;
+	}
+	.metric .value { font-size: 20px; font-weight: 700; }
+	.metric .label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+	.metric.good .value { color: var(--green); }
+	.metric.warn .value { color: var(--amber); }
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 13.5px;
+		margin: 10px 0 6px;
+	}
+	th, td {
+		text-align: left;
+		padding: 9px 10px;
+		border-bottom: 1px solid var(--line);
+		vertical-align: top;
+	}
+	th {
+		background: var(--bg);
+		font-size: 12px;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--muted);
+	}
+	tr:last-child td { border-bottom: none; }
+	.badge {
+		display: inline-block;
+		font-size: 11.5px;
+		font-weight: 700;
+		border-radius: 999px;
+		padding: 2px 9px;
+		white-space: nowrap;
+	}
+	.badge.high   { background: var(--red-bg);   color: var(--red); }
+	.badge.med    { background: var(--amber-bg); color: var(--amber); }
+	.badge.low    { background: var(--blue-bg);  color: var(--blue); }
+	.badge.done   { background: var(--green-bg); color: var(--green); }
+	.callout {
+		border-radius: 8px;
+		padding: 12px 16px;
+		margin: 12px 0;
+		font-size: 13.5px;
+	}
+	.callout.note  { background: var(--blue-bg);  border: 1px solid #bfdbfe; }
+	.callout.warn  { background: var(--amber-bg); border: 1px solid #fde68a; }
+	.callout.good  { background: var(--green-bg); border: 1px solid #bbf7d0; }
+	.check { color: var(--green); font-weight: 700; }
+	.pending { color: var(--amber); font-weight: 700; }
+	footer {
+		text-align: center;
+		color: var(--muted);
+		font-size: 12.5px;
+		margin-top: 8px;
+	}
+	@media print {
+		body { background: #fff; padding: 0; }
+		section, header.report-header { border-radius: 0; page-break-inside: avoid; }
+	}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="report-header">
+	<h1>{{SITE}} — Performance Optimization Report</h1>
+	<div class="subtitle">GTmetrix audit review &amp; optimization roadmap</div>
+	<div class="meta-row">
+		<span><b>Site:</b> {{URL}}</span>
+		<span><b>Report reviewed:</b> GTmetrix run {{RUN_DATE}} ({{LOCATION}}, {{BROWSER}})</span>
+		<span><b>Reviewed:</b> {{REVIEW_DATE}}</span>
+	</div>
+</header>
+
+<!-- ============================================================ -->
+<section>
+	<h2>1. Current Performance Snapshot</h2>
+	<div class="metrics">
+		<div class="metric good"><div class="value">{{PERF_SCORE}}</div><div class="label">Performance</div></div>
+		<div class="metric warn"><div class="value">{{STRUCT_SCORE}}</div><div class="label">Structure</div></div>
+		<div class="metric good"><div class="value">{{LCP}}</div><div class="label">LCP</div></div>
+		<div class="metric good"><div class="value">{{TBT}}</div><div class="label">TBT</div></div>
+		<div class="metric warn"><div class="value">{{CLS}}</div><div class="label">CLS (target &lt;0.1)</div></div>
+		<div class="metric"><div class="value">{{PAGE_SIZE}}</div><div class="label">Page size</div></div>
+		<div class="metric"><div class="value">{{REQUESTS}}</div><div class="label">Requests</div></div>
+		<div class="metric good"><div class="value">{{TTFB}}</div><div class="label">TTFB</div></div>
+	</div>
+	<div class="callout good">
+		✅ <b>Already healthy:</b> {{ALREADY_HEALTHY}}
+	</div>
+	<div class="callout note">
+		📄 <b>Note:</b> {{REPORT_COUNT_NOTE}}
+	</div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+	<h2>2. Work Completed (In Place)</h2>
+
+	<h3>2.1 Already live on the site</h3>
+	<ul>
+		{{DONE_LIVE_LIST}}
+	</ul>
+
+	<h3>2.2 Changes made during this review (in the repo — still need deployment)</h3>
+	<ul>
+		{{DONE_REPO_LIST}}
+	</ul>
+	<div class="callout note">
+		📌 <b>Deployment steps:</b> {{DEPLOY_STEPS}}
+	</div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+	<h2>3. Main Issue Identified: {{MAIN_ISSUE_TITLE}}</h2>
+	<p>{{MAIN_ISSUE_DESCRIPTION}}</p>
+	<table>
+		<tr><th>Resource</th><th>Size</th><th>Impact</th></tr>
+		{{MAIN_ISSUE_ROWS}}
+	</table>
+	<div class="callout good">
+		✅ <b>Recommended fix:</b> {{MAIN_ISSUE_FIX}}
+	</div>
+	<div class="callout note">
+		🔧 <b>Alternative:</b> {{MAIN_ISSUE_ALTERNATIVE}}
+	</div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+	<h2>4. Still To Do — Prioritized Action List</h2>
+	<p>Ordered by impact. Items marked <span class="badge low">low</span> are optional polish.</p>
+	<table>
+		<tr>
+			<th style="width:64px">Priority</th>
+			<th>Action</th>
+			<th style="width:170px">Est. benefit</th>
+			<th style="width:130px">Where</th>
+		</tr>
+		{{TODO_ROWS}}
+	</table>
+</section>
+
+<!-- ============================================================ -->
+<section>
+	<h2>5. Expected Outcome</h2>
+	<p>If all High and Medium items are completed:</p>
+	<ul>
+		{{OUTCOME_LIST}}
+	</ul>
+	<div class="callout warn">
+		⚠️ <b>Testing rule:</b> {{TESTING_RULE}}
+	</div>
+</section>
+
+<footer>
+	Generated from the GTmetrix review conversation · project: <code>{{PROJECT_PATH}}</code>
+</footer>
+
+</div>
+</body>
+</html>
