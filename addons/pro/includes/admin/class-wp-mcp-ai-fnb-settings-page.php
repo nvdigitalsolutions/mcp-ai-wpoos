@@ -57,6 +57,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ), 28 );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
+		add_action( 'admin_post_wp_mcp_ai_fnb_seed_assistants', array( __CLASS__, 'handle_seed_submission' ) );
 	}
 
 	/**
@@ -155,7 +156,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			'wp_mcp_ai_fnb_data',
 			array(
 				'setting_key' => 'csv_data_dir',
-				'description' => __( 'Absolute server path to a directory of CSV table exports (CSV adapter). Also used as the local drafts directory.', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Absolute server path to a directory of CSV table exports (CSV adapter). Also used as the local drafts directory. The folder must already exist and be readable by PHP; for drafts it must also be writable. Name files by sheet slug (menu.csv, recipes.csv, daily_sales.csv, …), not by table ID.', 'mcp-ai-wpoos-pro' ),
 			)
 		);
 
@@ -302,6 +303,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			<p class="description">
 				<?php esc_html_e( 'Restaurant operating metrics (M-01…M-21) and reports (R-01…R-13) computed deterministically from Drive/CSV data, with drafts-only output.', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
+			<?php self::render_seed_notice(); ?>
 			<?php self::render_status_card(); ?>
 			<form method="post" action="options.php">
 				<?php
@@ -342,6 +344,10 @@ class WP_MCP_AI_Fnb_Settings_Page {
 					<td><?php echo esc_html( 'drive' === $adapter ? __( 'Google Drive', 'mcp-ai-wpoos-pro' ) : __( 'CSV (local files)', 'mcp-ai-wpoos-pro' ) ); ?></td>
 				</tr>
 				<tr>
+					<th scope="row"><?php esc_html_e( 'CSV data directory', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td><?php self::render_csv_dir_status(); ?></td>
+				</tr>
+				<tr>
 					<th scope="row"><?php esc_html_e( 'Drive client', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td><?php $drive_ready ? esc_html_e( 'Available', 'mcp-ai-wpoos-pro' ) : esc_html_e( 'Not available — install/enable the Google Workspace toolkit for Drive mode.', 'mcp-ai-wpoos-pro' ); ?></td>
 				</tr>
@@ -356,6 +362,13 @@ class WP_MCP_AI_Fnb_Settings_Page {
 						/* translators: %s: WP-CLI command. */
 						printf( esc_html__( 'Seed the four A1–A4 assistant packs with: %s', 'mcp-ai-wpoos-pro' ), '<code>wp mcp-ai pro fnb seed-assistants</code>' );
 						?>
+						<?php if ( self::seeder_available() ) : ?>
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5em;">
+								<?php wp_nonce_field( 'wp_mcp_ai_fnb_seed_assistants', 'wp_mcp_ai_fnb_seed_nonce' ); ?>
+								<input type="hidden" name="action" value="wp_mcp_ai_fnb_seed_assistants" />
+								<?php submit_button( __( 'Seed assistant packs', 'mcp-ai-wpoos-pro' ), 'secondary', 'submit', false ); ?>
+							</form>
+						<?php endif; ?>
 					</td>
 				</tr>
 				<tr>
@@ -392,6 +405,138 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			</tbody>
 		</table>
 		<?php
+	}
+
+	/**
+	 * Render the CSV data directory status (read/write check).
+	 *
+	 * @return void
+	 */
+	private static function render_csv_dir_status() {
+		$dir = '';
+		if ( class_exists( 'WP_MCP_AI_Fnb_Settings' ) ) {
+			$dir = WP_MCP_AI_Fnb_Settings::get( 'csv_data_dir', '' );
+		}
+		$dir = is_string( $dir ) ? untrailingslashit( trim( $dir ) ) : '';
+
+		if ( '' === $dir ) {
+			echo '<span style="color: #b32d2e;">&#9679;</span> ' . esc_html__( 'Not configured — set the CSV Data Directory field (below) to an absolute server path.', 'mcp-ai-wpoos-pro' );
+			return;
+		}
+
+		if ( ! file_exists( $dir ) ) {
+			echo '<span style="color: #b32d2e;">&#9679;</span> ';
+			/* translators: %s: directory path */
+			printf( esc_html__( 'Missing — the directory %s does not exist. Create it and ensure it is readable by PHP.', 'mcp-ai-wpoos-pro' ), '<code>' . esc_html( $dir ) . '</code>' );
+			return;
+		}
+
+		if ( ! is_dir( $dir ) ) {
+			echo '<span style="color: #b32d2e;">&#9679;</span> ';
+			/* translators: %s: path */
+			printf( esc_html__( 'Not a directory — %s is not a folder.', 'mcp-ai-wpoos-pro' ), '<code>' . esc_html( $dir ) . '</code>' );
+			return;
+		}
+
+		$readable = is_readable( $dir );
+		$writable = is_writable( $dir );
+
+		if ( $readable && $writable ) {
+			echo '<span style="color: #2271b1;">&#9679;</span> ';
+			/* translators: %s: directory path */
+			printf( esc_html__( 'Readable and writable — %s', 'mcp-ai-wpoos-pro' ), '<code>' . esc_html( $dir ) . '</code>' );
+			return;
+		}
+
+		if ( $readable && ! $writable ) {
+			echo '<span style="color: #dba617;">&#9679;</span> ';
+			/* translators: %s: directory path */
+			printf( esc_html__( 'Readable, not writable — drafts cannot be saved without write access to %s.', 'mcp-ai-wpoos-pro' ), '<code>' . esc_html( $dir ) . '</code>' );
+			return;
+		}
+
+		echo '<span style="color: #b32d2e;">&#9679;</span> ';
+		/* translators: %s: directory path */
+		printf( esc_html__( 'Not readable — PHP cannot read %s.', 'mcp-ai-wpoos-pro' ), '<code>' . esc_html( $dir ) . '</code>' );
+	}
+
+	/**
+	 * Whether the shared assistant seeder service is available.
+	 *
+	 * @return bool
+	 */
+	private static function seeder_available() {
+		return class_exists( 'WP_MCP_AI_Fnb_Assistant_Seeder' );
+	}
+
+	/**
+	 * Handle the "Seed assistant packs" button submission.
+	 *
+	 * Runs the shared seeder service (identical to the WP-CLI command) and
+	 * redirects back to the settings page with a transient result notice.
+	 *
+	 * @return void
+	 */
+	public static function handle_seed_submission() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You are not allowed to seed assistant packs.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		check_admin_referer( 'wp_mcp_ai_fnb_seed_assistants', 'wp_mcp_ai_fnb_seed_nonce' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Assistant_Seeder' ) ) {
+			$result = new WP_Error(
+				'wp_mcp_ai_fnb_seeder_missing',
+				__( 'The assistant seeder service is not available. Enable the Food & Beverage toolkit first.', 'mcp-ai-wpoos-pro' )
+			);
+		} else {
+			$result = WP_MCP_AI_Fnb_Assistant_Seeder::seed();
+		}
+
+		if ( is_wp_error( $result ) ) {
+			$notice = array(
+				'type'    => 'error',
+				'message' => $result->get_error_message(),
+			);
+		} else {
+			$notice = array(
+				'type'    => 'success',
+				/* translators: 1: created, 2: updated, 3: skipped, 4: errors */
+				'message' => sprintf(
+					__( 'F&B assistant packs seeded: %1$d created, %2$d updated, %3$d skipped, %4$d errors.', 'mcp-ai-wpoos-pro' ),
+					isset( $result['created'] ) ? (int) $result['created'] : 0,
+					isset( $result['updated'] ) ? (int) $result['updated'] : 0,
+					isset( $result['skipped'] ) ? (int) $result['skipped'] : 0,
+					isset( $result['errors'] ) ? (int) $result['errors'] : 0
+				),
+			);
+		}
+
+		set_transient( 'wp_mcp_ai_fnb_seed_notice', $notice, 60 );
+
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
+		exit;
+	}
+
+	/**
+	 * Render the one-time seed-result admin notice, if present.
+	 *
+	 * @return void
+	 */
+	private static function render_seed_notice() {
+		$notice = get_transient( 'wp_mcp_ai_fnb_seed_notice' );
+		if ( ! is_array( $notice ) || empty( $notice['message'] ) ) {
+			return;
+		}
+
+		delete_transient( 'wp_mcp_ai_fnb_seed_notice' );
+
+		$type = 'success' === $notice['type'] ? 'success' : 'error';
+		printf(
+			'<div class="notice notice-%1$s is-dismissible"><p>%2$s</p></div>',
+			esc_attr( $type ),
+			esc_html( $notice['message'] )
+		);
 	}
 
 	/**
