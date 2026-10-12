@@ -163,11 +163,12 @@ final class Capturer: NSObject, SCStreamOutput {
         }
         guard status != AVAudioConverterOutputStatus.error, conversionError == nil,
             outputPCM.frameLength > 0,
-            let channelData = outputPCM.int16ChannelData,
-            let samples = channelData[0]
+            let channelData = outputPCM.int16ChannelData
         else {
             return nil
         }
+        // The element type is non-optional in current SDKs.
+        let samples = channelData[0]
         return Data(
             bytes: samples, count: Int(outputPCM.frameLength) * MemoryLayout<Int16>.size)
     }
