@@ -41,14 +41,53 @@ $is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 // Only load the toolkit when enabled (and not in base version or the Pro addon is active).
 if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-settings.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-table-reader.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-data-source.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-metrics.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-report-builder.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-draft-writer.php';
 
-	// Load the admin settings page (registers the "Food & Beverage" submenu under NV oOS).
+	// Phase 9 native storage: CPTs register only when enable_fnb_native_storage
+	// is on (checked inside register(), hooked on `init` at priority 12).
+	require_once __DIR__ . '/trait-wp-mcp-ai-fnb-native-cpt-storage.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-cpt-reader.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-sale-cpt.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-purchase-cpt.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-stock-count-cpt.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-waste-cpt.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-booking-cpt.php';
+	WP_MCP_AI_Fnb_Sale_CPT::init();
+	WP_MCP_AI_Fnb_Purchase_CPT::init();
+	WP_MCP_AI_Fnb_Stock_Count_CPT::init();
+	WP_MCP_AI_Fnb_Waste_CPT::init();
+	WP_MCP_AI_Fnb_Booking_CPT::init();
+
+	// JetEngine field schemas for the native CPTs (no-op without JetEngine;
+	// mirrors the CRM company-CPT registration).
+	if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( WP_MCP_AI_Fnb_Sale_CPT::POST_TYPE );
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( WP_MCP_AI_Fnb_Purchase_CPT::POST_TYPE );
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( WP_MCP_AI_Fnb_Stock_Count_CPT::POST_TYPE );
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( WP_MCP_AI_Fnb_Waste_CPT::POST_TYPE );
+		WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields( WP_MCP_AI_Fnb_Booking_CPT::POST_TYPE );
+	}
+
+	// Phase 9b purchase-request lifecycle (Appendix A): QMS-backed PR
+	// service + the precondition gates that layer onto the QMS state machine
+	// when QMS compliance is enabled.
+	require_once __DIR__ . '/pr/class-wp-mcp-ai-fnb-pr-service.php';
+	require_once __DIR__ . '/pr/class-wp-mcp-ai-fnb-pr-gates.php';
+	WP_MCP_AI_Fnb_Pr_Gates::init();
+
+	// Load the admin settings page (registers the "Food & Beverage" submenu
+	// under NV oOS Pro) and the F&B Management top-level admin menu.
 	if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-fnb-settings-page.php';
 		WP_MCP_AI_Fnb_Settings_Page::init();
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-fnb-admin-menu.php';
+		WP_MCP_AI_Fnb_Admin_Menu::init();
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-fnb-dashboard-page.php';
 	}
 }

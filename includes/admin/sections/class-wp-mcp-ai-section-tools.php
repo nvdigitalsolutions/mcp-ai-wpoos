@@ -740,7 +740,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// GTmetrix Performance Toolkit.
-				'enable_gtmetrix_toolkit'               => array(
+				'enable_gtmetrix_toolkit'                => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable GTmetrix Performance Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable GTmetrix performance testing, analysis and WPCode fix delivery (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -1193,8 +1193,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_ecommerce_toolkit'               => 80,   // 20 tools, WooCommerce integration.
 				'enable_flowhub_toolkit'                 => 64,   // 5 tools, FlowHub POS API sync, CCT cache.
 				'enable_ezuite_toolkit'                  => 64,   // 3 tools, EZuite ERP API sync, CCT cache.
-				'enable_fnb_toolkit'                     => 64,   // 21 tools, Drive/CSV data reads, deterministic metric engine.
-				'enable_gtmetrix_toolkit'               => 65,   // 23 tools, GTmetrix API testing + WPCode fix delivery.
+				'enable_fnb_toolkit'                     => 64,   // 31 tools, Drive/CSV data reads, deterministic metric engine + native storage + PR workflow.
+				'enable_gtmetrix_toolkit'                => 65,   // 23 tools, GTmetrix API testing + WPCode fix delivery.
 				'enable_shopify_sync_toolkit'            => 72,   // 5+ tools, Shopify GraphQL sync, CCT cache.
 				'enable_social_media_toolkit'            => 64,   // 15 tools, multi-platform APIs.
 				'enable_analytics_toolkit'               => 96,   // 12 tools, data warehouse integrations.

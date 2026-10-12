@@ -214,7 +214,21 @@ class WP_MCP_AI_QMS_Workflow {
 				}
 				break;
 		}
-		return true;
+
+		/**
+		 * Filter additional, toolkit-specific state preconditions.
+	 *
+		 * Consumers (e.g. the F&B purchase-request lifecycle) return
+		 * `true` to pass or a `WP_Error` to block the transition. The
+		 * generic QMS gates above still apply first.
+		 *
+		 * @since 1.6.0
+		 *
+		 * @param true|WP_Error $gate     Current gate result (true).
+		 * @param int           $post_id  Record ID.
+		 * @param string        $to_state Target state.
+		 */
+		return apply_filters( 'wp_mcp_ai_qms_state_preconditions', true, $post_id, $to_state );
 	}
 
 	/**

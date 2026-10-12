@@ -31,15 +31,17 @@ class WP_MCP_AI_Fnb_Settings {
 	 * @var array
 	 */
 	private static $defaults = array(
-		'enabled'          => false,
-		'demo_mode'        => true,
-		'adapter'          => 'drive', // drive | csv.
-		'data_folder_id'   => '',
-		'setup_folder_id'  => '',
-		'drafts_folder_id' => '',
-		'csv_data_dir'     => '',
-		'connection_id'    => '',
-		'as_of_date'       => '',
+		'enabled'                    => false,
+		'demo_mode'                  => true,
+		'adapter'                    => 'drive', // drive | csv.
+		'data_folder_id'             => '',
+		'setup_folder_id'            => '',
+		'drafts_folder_id'           => '',
+		'csv_data_dir'               => '',
+		'connection_id'              => '',
+		'as_of_date'                 => '',
+		'enable_fnb_native_storage'  => false, // Phase 9: CPT-backed native storage for the five transactional tables.
+		'pr_auto_approval_threshold' => 0,     // Phase 9b: LKR; PR totals above this need a finance co-sign at release (0 = never).
 	);
 
 	/**
@@ -86,5 +88,19 @@ class WP_MCP_AI_Fnb_Settings {
 	 */
 	public static function is_demo_mode() {
 		return (bool) self::get( 'demo_mode', true );
+	}
+
+	/**
+	 * Whether the Phase 9 native storage layer (CPTs + import bridge) is on.
+	 *
+	 * When enabled, the five transactional tables (6.0 daily sales, 8.0
+	 * purchases, 9.0 stock counts, 10.0 waste log, 16.0 bookings) resolve
+	 * from their CPTs instead of the Drive/CSV adapter; the reference tables
+	 * keep their existing backend.
+	 *
+	 * @return bool
+	 */
+	public static function is_native_storage_enabled() {
+		return (bool) self::get( 'enable_fnb_native_storage', false );
 	}
 }

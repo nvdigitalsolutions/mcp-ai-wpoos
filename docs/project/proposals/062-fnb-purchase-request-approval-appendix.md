@@ -1,8 +1,8 @@
 # Appendix A — Purchase-Request Approval Lifecycle (QMS-style)
 
 **Date:** 2026-10-08
-**Status:** 🔮 PENDING — design appendix to `062-food-beverage-management-pro-toolkit-proposal.md`
-**Phase:** Post-demo (ACT tier). The demo itself stops at R-04 with `Status: Draft`.
+**Status:** ✅ DELIVERED — the `fnb_pr_*` lifecycle shipped as Phase 9b (see the
+implementation plan). Open questions (§A10) remain parked for Vijay.
 
 > This appendix defines the **submit → approve → release** lifecycle for
 > purchase requests, reusing the existing QMS engine shipped by the

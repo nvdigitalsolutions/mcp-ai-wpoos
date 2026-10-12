@@ -63,9 +63,13 @@ class Test_Fnb_Settings_Page_Registration extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The settings page is registered as a submenu of the NV oOS menu.
+	 * The settings page is registered as a submenu of the NV oOS Pro menu.
+	 *
+	 * The first build attached it to the base "NV oOS" menu
+	 * (`wp-mcp-ai-dashboard`); the toolkit belongs in the Pro section, so the
+	 * parent is `nvoos-pro-dashboard`.
 	 */
-	public function test_submenu_registered_under_nvoos_menu() {
+	public function test_submenu_registered_under_nvoos_pro_menu() {
 		global $submenu;
 
 		$class = $this->load_page_class();
@@ -75,14 +79,17 @@ class Test_Fnb_Settings_Page_Registration extends WP_UnitTestCase {
 
 		// Register a stub parent menu so the submenu has somewhere to attach.
 		$submenu = array();
-		add_menu_page( 'NV oOS', 'NV oOS', 'manage_options', 'wp-mcp-ai-dashboard', '__return_null' );
+		add_menu_page( 'NV oOS Pro', 'NV oOS Pro', 'manage_options', 'nvoos-pro-dashboard', '__return_null' );
 
 		call_user_func( array( $class, 'add_menu' ) );
 
-		$this->assertArrayHasKey( 'wp-mcp-ai-dashboard', $submenu, 'NV oOS submenu group exists' );
+		$this->assertArrayHasKey( 'nvoos-pro-dashboard', $submenu, 'NV oOS Pro submenu group exists' );
 
-		$slugs = wp_list_pluck( $submenu['wp-mcp-ai-dashboard'], 2 );
-		$this->assertContains( 'wp-mcp-ai-fnb', $slugs, 'F&B settings page registered under NV oOS' );
+		$slugs = wp_list_pluck( $submenu['nvoos-pro-dashboard'], 2 );
+		$this->assertContains( 'wp-mcp-ai-fnb', $slugs, 'F&B settings page registered under NV oOS Pro' );
+
+		// Regression: the base NV oOS menu must NOT carry the F&B page.
+		$this->assertArrayNotHasKey( 'wp-mcp-ai-dashboard', $submenu, 'F&B settings page must not attach to the base NV oOS menu' );
 	}
 
 	/**
@@ -115,14 +122,15 @@ class Test_Fnb_Settings_Page_Registration extends WP_UnitTestCase {
 		$out = $ref->invoke(
 			null,
 			array(
-				'adapter'          => 'csv',
-				'connection_id'    => 'conn-1',
-				'data_folder_id'   => 'folder-data',
-				'setup_folder_id'  => 'folder-setup',
-				'drafts_folder_id' => 'folder-drafts',
-				'csv_data_dir'     => '/srv/fnb',
-				'as_of_date'       => '2026-10-08',
-				'demo_mode'        => '1',
+				'adapter'                   => 'csv',
+				'connection_id'             => 'conn-1',
+				'data_folder_id'            => 'folder-data',
+				'setup_folder_id'           => 'folder-setup',
+				'drafts_folder_id'          => 'folder-drafts',
+				'csv_data_dir'              => '/srv/fnb',
+				'as_of_date'                => '2026-10-08',
+				'demo_mode'                 => '1',
+				'enable_fnb_native_storage' => '1',
 			)
 		);
 
@@ -134,6 +142,7 @@ class Test_Fnb_Settings_Page_Registration extends WP_UnitTestCase {
 		$this->assertSame( '/srv/fnb', $out['csv_data_dir'] );
 		$this->assertSame( '2026-10-08', $out['as_of_date'] );
 		$this->assertTrue( $out['demo_mode'] );
+		$this->assertTrue( $out['enable_fnb_native_storage'] );
 
 		// Invalid adapter falls back to drive; invalid date is dropped.
 		$out_invalid = $ref->invoke(
@@ -145,6 +154,7 @@ class Test_Fnb_Settings_Page_Registration extends WP_UnitTestCase {
 		);
 		$this->assertSame( 'drive', $out_invalid['adapter'] );
 		$this->assertSame( '', $out_invalid['as_of_date'] );
+		$this->assertFalse( $out_invalid['enable_fnb_native_storage'], 'Native storage must reset when the checkbox is omitted.' );
 	}
 
 	/**
@@ -164,6 +174,14 @@ class Test_Fnb_Settings_Page_Registration extends WP_UnitTestCase {
 		$this->assertNotFalse(
 			has_action( 'admin_menu', array( 'WP_MCP_AI_Fnb_Settings_Page', 'add_menu' ) ),
 			'F&B admin menu hook must be registered.'
+		);
+
+		// Phase 9: the F&B Management top-level menu must load too.
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Fnb_Admin_Menu' ), 'F&B admin menu class must load in admin context.' );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Fnb_Dashboard_Page' ), 'F&B dashboard page class must load in admin context.' );
+		$this->assertNotFalse(
+			has_action( 'admin_menu', array( 'WP_MCP_AI_Fnb_Admin_Menu', 'register_parent_menu' ) ),
+			'F&B top-level menu hook must be registered.'
 		);
 	}
 }
