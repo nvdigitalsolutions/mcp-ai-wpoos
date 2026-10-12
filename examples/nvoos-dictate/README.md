@@ -33,6 +33,10 @@ repo root for the full design).
   unless you opt into retention.
 - **Local history** — searchable SQLite archive with per-utterance `e2e_ms`
   latency, JSON export.
+- **Diagnostics page** — live microphone level meter (which device the app
+  actually hears, at what level), low-level hook health, engine/model
+  install state, credential presence, and the measured RMS/peak/gate of the
+  most recent dictation attempt — plus a one-click JSON report for support.
 - **Local MCP server** (feature `mcp`) — stdio for desktop AI clients;
   streamable HTTP planned for the plugin's Remote Sites (see
   `docs/remote-sites-recipe.md`).

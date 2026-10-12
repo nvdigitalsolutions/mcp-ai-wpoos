@@ -15,6 +15,11 @@
 //! still held — the classic stuck-Alt failure where the keyboard "breaks"
 //! until Ctrl+Alt+Del resets it. Non-armed events (AltGr combos) always pass
 //! through untouched.
+//!
+//! Exit discipline: if the app shuts down while a swallowed key-down is
+//! pending (Alt+F4 close with RAlt as PTT), the teardown path injects a
+//! synthetic key-up after unhooking so the modifier is never left stuck for
+//! the rest of the session.
 
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU64, Ordering};
 use std::sync::mpsc::Sender;
@@ -24,7 +29,8 @@ use std::time::Duration;
 use windows::Win32::Foundation::{HINSTANCE, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    GetAsyncKeyState, GetKeyboardState, VK_ESCAPE, VK_LCONTROL, VK_LSHIFT, VK_RCONTROL, VK_RMENU,
+    GetAsyncKeyState, GetKeyboardState, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT,
+    KEYEVENTF_KEYUP, VIRTUAL_KEY, VK_ESCAPE, VK_LCONTROL, VK_LSHIFT, VK_RCONTROL, VK_RMENU,
     VK_RSHIFT,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -83,6 +89,17 @@ pub fn heartbeat_age_ms() -> u64 {
 /// Whether the hook thread is alive, from the fallback's perspective.
 pub fn hook_healthy(max_age_ms: u64) -> bool {
     heartbeat_age_ms() < max_age_ms
+}
+
+/// Total hook callback invocations (diagnostics).
+pub fn hook_calls() -> u64 {
+    HOOK_CALLS.load(Ordering::Relaxed)
+}
+
+/// Whether a swallowed PTT key-down is still awaiting its key-up
+/// (diagnostics).
+pub fn swallow_pending() -> bool {
+    SWALLOWED_DOWN.load(Ordering::SeqCst)
 }
 
 unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
@@ -187,6 +204,56 @@ fn send(event: HotkeyEvent) {
     }
 }
 
+/// Take the pending-swallow state: returns the PTT virtual-key when a
+/// swallowed key-down is still waiting for its release. Pure bookkeeping —
+/// used at teardown so the system keyboard state is never left holding a
+/// swallowed modifier.
+fn take_pending_swallow() -> Option<u16> {
+    PTT_DOWN.store(false, Ordering::SeqCst);
+    if SWALLOWED_DOWN.swap(false, Ordering::SeqCst) {
+        Some(PTT_VK.load(Ordering::Relaxed))
+    } else {
+        None
+    }
+}
+
+/// Synthetic key-up for the PTT key. Injected after the hook is uninstalled
+/// so the release travels the normal system path.
+fn key_up_input(vk: u16) -> INPUT {
+    INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: INPUT_0 {
+            ki: KEYBDINPUT {
+                wVk: VIRTUAL_KEY(vk),
+                wScan: 0,
+                dwFlags: KEYEVENTF_KEYUP,
+                time: 0,
+                dwExtraInfo: 0,
+            },
+        },
+    }
+}
+
+/// Exit-safety release (the AutoHotkey `Send {Alt up}` OnExit pattern).
+///
+/// If the app shuts down between a swallowed PTT key-down and its key-up —
+/// e.g. Alt+F4 closes the window while RAlt is the PTT key — Windows never
+/// sees a release for the consumed down and the modifier stays "held" until
+/// Ctrl+Alt+Del resets the keyboard. Injecting a synthetic key-up after
+/// unhooking guarantees the state is released; the later physical release is
+/// then harmless.
+fn release_pending_swallow() {
+    if let Some(vk) = take_pending_swallow() {
+        let inputs = [key_up_input(vk)];
+        let injected = unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) };
+        tracing::warn!(
+            ptt_vk = vk,
+            injected,
+            "released pending PTT swallow at hook teardown"
+        );
+    }
+}
+
 /// Windows hook listener.
 #[derive(Default)]
 pub struct WinHookListener {
@@ -265,6 +332,11 @@ impl HotkeyListener for WinHookListener {
                 unsafe {
                     let _ = UnhookWindowsHookEx(hook);
                 }
+                // The hook is gone: if a swallowed key-down never saw its
+                // key-up (app closed while the PTT key was held), inject a
+                // synthetic release so the modifier is not left stuck down
+                // for the whole system.
+                release_pending_swallow();
             })
             .map_err(|e| AppError::Hotkey(e.to_string()))?;
 
@@ -395,5 +467,32 @@ mod tests {
         assert!(rx.recv_timeout(Duration::from_millis(100)).is_err());
 
         *EVENT_TX.get().unwrap().lock().unwrap() = None;
+    }
+
+    /// Teardown must never leave a swallowed key-down pending: the exit path
+    /// has to know which key needs a synthetic release. When the down/up pair
+    /// is balanced there is nothing to inject.
+    #[test]
+    fn teardown_release_accounting() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        PTT_VK.store(VK_RMENU.0, Ordering::Relaxed);
+
+        // Swallowed down with no release yet: the teardown release must
+        // target RMenu and clear both flags.
+        PTT_DOWN.store(true, Ordering::SeqCst);
+        SWALLOWED_DOWN.store(true, Ordering::SeqCst);
+        assert_eq!(take_pending_swallow(), Some(VK_RMENU.0));
+        assert!(!SWALLOWED_DOWN.load(Ordering::SeqCst));
+        assert!(!PTT_DOWN.load(Ordering::SeqCst));
+
+        // Balanced pair: nothing pending, no synthetic release.
+        assert_eq!(take_pending_swallow(), None);
+
+        // Held key whose down passed through (combo): no swallow state, but
+        // the down flag still clears so the next press arms cleanly.
+        PTT_DOWN.store(true, Ordering::SeqCst);
+        SWALLOWED_DOWN.store(false, Ordering::SeqCst);
+        assert_eq!(take_pending_swallow(), None);
+        assert!(!PTT_DOWN.load(Ordering::SeqCst));
     }
 }

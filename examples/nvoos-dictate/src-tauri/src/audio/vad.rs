@@ -86,6 +86,21 @@ pub fn create(threshold: f32, hangover_ms: u64, sample_rate: u32) -> Box<dyn Vad
     Box::new(EnergyVad::new(threshold, hangover_ms, sample_rate))
 }
 
+/// Which implementation the factory selects on this build (diagnostics).
+/// With the `silero-vad` feature the neural model is used when present at
+/// runtime; otherwise the energy VAD. Threshold semantics differ between the
+/// two — RMS amplitude vs speech probability — so callers adapt per kind.
+pub fn implementation() -> &'static str {
+    #[cfg(feature = "silero-vad")]
+    {
+        "silero"
+    }
+    #[cfg(not(feature = "silero-vad"))]
+    {
+        "energy"
+    }
+}
+
 /// Neural VAD over `silero-vad-rs` (feature `silero-vad`). Same hangover
 /// semantics as [`EnergyVad`] but gated on the Silero model's speech
 /// probability instead of RMS energy. The ONNX model (`silero_vad.onnx`)

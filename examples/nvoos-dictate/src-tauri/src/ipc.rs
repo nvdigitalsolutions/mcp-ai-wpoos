@@ -7,6 +7,8 @@
 use serde::Serialize;
 use tauri::{Emitter, State};
 
+use cpal::traits::{DeviceTrait, HostTrait};
+
 use crate::config::Settings;
 use crate::error::{AppError, AppResult};
 use crate::state::{
@@ -59,6 +61,13 @@ pub fn update_settings(state: State<'_, AppState>, settings: Settings) -> AppRes
             "settings saved, but the speech engine could not be started: {e}"
         ))
     })?;
+    state.reapply_audio(&previous).map_err(|e| {
+        // Settings are persisted; only the microphone swap failed — the
+        // previous device keeps capturing.
+        AppError::Other(format!(
+            "settings saved, but the microphone could not be switched: {e}"
+        ))
+    })?;
     Ok(updated)
 }
 
@@ -80,6 +89,193 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         system_audio_available: crate::meetings::system_audio_available(),
         version: env!("CARGO_PKG_VERSION").to_string(),
     })
+}
+
+// ---- Diagnostics ---------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DiagnosticsInfo {
+    pub version: String,
+    pub os: String,
+    pub config_path: String,
+    pub models_dir: String,
+    pub hotkey: HotkeyDiagnostics,
+    pub mic: MicDiagnostics,
+    pub engine: EngineDiagnostics,
+    pub credentials: CredentialDiagnostics,
+    pub last_dictation: Option<crate::dictation::LastDictationStats>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HotkeyDiagnostics {
+    pub ptt_key: String,
+    /// Whether the WH_KEYBOARD_LL hook thread is alive and ticking.
+    pub hook_installed: bool,
+    /// Milliseconds since the hook thread's last heartbeat tick.
+    pub hook_heartbeat_age_ms: u64,
+    /// Total hook callback invocations since start.
+    pub hook_calls: u64,
+    /// Whether a swallowed PTT key-down is still awaiting its key-up.
+    pub swallow_pending: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MicDiagnostics {
+    pub available: bool,
+    /// The OS default capture device's display name.
+    pub device_name: Option<String>,
+    pub sample_rate: u32,
+    pub channels: u16,
+    /// Samples retained in the pre-roll ring buffer right now.
+    pub buffered_samples: usize,
+    /// Live input level over the most recent ~250 ms (level meter).
+    pub live_rms: f32,
+    pub live_peak: f32,
+    /// VAD implementation in use: `energy` or `silero`.
+    pub vad_kind: &'static str,
+    /// Capture stream health: callbacks delivered, stall age, errors.
+    pub capture_callbacks: u64,
+    pub capture_stall_ms: u64,
+    pub capture_errors: u64,
+    pub capture_last_error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct EngineDiagnostics {
+    pub configured: String,
+    pub model: String,
+    pub loaded: bool,
+    pub features: String,
+    pub models: Vec<crate::stt::model_registry::ModelStatus>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CredentialDiagnostics {
+    pub nvoos_configured: bool,
+    pub nvoos_credential_stored: bool,
+    pub openai_key_stored: bool,
+    pub wp_credentials_stored: bool,
+}
+
+/// Full troubleshooting snapshot: hook health, capture device + live level,
+/// engine/model install state, credential presence, and the most recent
+/// dictation attempt's measured levels. No secrets ever leave the core.
+#[tauri::command]
+pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo> {
+    let settings = state.settings_snapshot();
+    let engine = state.engine.read().unwrap().clone();
+    let mic_guard = state.mic.lock().unwrap();
+    let mic = mic_guard
+        .as_ref()
+        .map(|m| {
+            let (live_rms, live_peak) = m.live_level();
+            MicDiagnostics {
+                available: true,
+                device_name: Some(m.device_name().to_string()),
+                sample_rate: m.sample_rate(),
+                channels: m.channels(),
+                buffered_samples: m.buffered_samples(),
+                live_rms,
+                live_peak,
+                vad_kind: crate::audio::vad::implementation(),
+                capture_callbacks: m.callback_count(),
+                capture_stall_ms: m.stall_ms(),
+                capture_errors: m.stream_error_count(),
+                capture_last_error: m.last_stream_error(),
+            }
+        })
+        .unwrap_or(MicDiagnostics {
+            available: false,
+            device_name: None,
+            sample_rate: 0,
+            channels: 0,
+            buffered_samples: 0,
+            live_rms: 0.0,
+            live_peak: 0.0,
+            vad_kind: crate::audio::vad::implementation(),
+            capture_callbacks: 0,
+            capture_stall_ms: 0,
+            capture_errors: 0,
+            capture_last_error: None,
+        });
+
+    Ok(DiagnosticsInfo {
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        os: format!("{} {}", std::env::consts::OS, std::env::consts::ARCH),
+        config_path: crate::config::Settings::config_path()
+            .to_string_lossy()
+            .into_owned(),
+        models_dir: state.models_dir().to_string_lossy().into_owned(),
+        hotkey: hotkey_diagnostics(&settings),
+        mic,
+        engine: EngineDiagnostics {
+            configured: settings.engine.engine.clone(),
+            model: settings.engine.model.clone(),
+            loaded: engine.is_some(),
+            features: crate::stt::available_features().to_string(),
+            models: crate::stt::model_registry::status_list(&state.models_dir()),
+        },
+        credentials: CredentialDiagnostics {
+            nvoos_configured: !settings.nvoos.site_url.is_empty(),
+            nvoos_credential_stored: state.has_nvoos_credential(),
+            openai_key_stored: state.has_openai_key(),
+            wp_credentials_stored: state.has_wp_app_password(),
+        },
+        last_dictation: crate::dictation::last_dictation_stats(),
+    })
+}
+
+/// Rebuild the resident capture stream on the configured device (recovery
+/// for a dead/unplugged device without restarting the app or changing
+/// settings).
+#[tauri::command]
+pub fn restart_microphone(state: State<'_, AppState>) -> AppResult<MicDiagnostics> {
+    state.restart_mic()?;
+    let mic_guard = state.mic.lock().unwrap();
+    let m = mic_guard
+        .as_ref()
+        .ok_or_else(|| AppError::Audio("microphone unavailable".into()))?;
+    let (live_rms, live_peak) = m.live_level();
+    Ok(MicDiagnostics {
+        available: true,
+        device_name: Some(m.device_name().to_string()),
+        sample_rate: m.sample_rate(),
+        channels: m.channels(),
+        buffered_samples: m.buffered_samples(),
+        live_rms,
+        live_peak,
+        vad_kind: crate::audio::vad::implementation(),
+        capture_callbacks: m.callback_count(),
+        capture_stall_ms: m.stall_ms(),
+        capture_errors: m.stream_error_count(),
+        capture_last_error: m.last_stream_error(),
+    })
+}
+
+#[cfg(windows)]
+fn hotkey_diagnostics(settings: &Settings) -> HotkeyDiagnostics {
+    use crate::hotkey::win_hook;
+    HotkeyDiagnostics {
+        ptt_key: settings.hotkey.ptt_key.clone(),
+        // The heartbeat ticks every 50 ms while the hook thread runs; a
+        // stale heartbeat means the hook install failed or the thread died
+        // and the GetAsyncKeyState fallback is covering PTT.
+        hook_installed: win_hook::hook_healthy(5000),
+        hook_heartbeat_age_ms: win_hook::heartbeat_age_ms(),
+        hook_calls: win_hook::hook_calls(),
+        swallow_pending: win_hook::swallow_pending(),
+    }
+}
+
+#[cfg(not(windows))]
+fn hotkey_diagnostics(settings: &Settings) -> HotkeyDiagnostics {
+    HotkeyDiagnostics {
+        ptt_key: settings.hotkey.ptt_key.clone(),
+        hook_installed: false,
+        hook_heartbeat_age_ms: 0,
+        hook_calls: 0,
+        swallow_pending: false,
+    }
 }
 
 // ---- NV oOS credential (keychain) ---------------------------------------
@@ -256,6 +452,23 @@ pub fn delete_meeting(window: tauri::Window, state: State<'_, AppState>, id: i64
     state.db.delete_meeting(id)
 }
 
+// ---- Microphone -----------------------------------------------------------
+
+/// Display names of the host's input devices, for the Settings picker.
+/// Sorted and deduplicated; "system default" is represented by the empty
+/// selection, not by a name here.
+#[tauri::command]
+pub fn list_input_devices() -> AppResult<Vec<String>> {
+    let host = cpal::default_host();
+    let devices = host
+        .input_devices()
+        .map_err(|e| AppError::Audio(e.to_string()))?;
+    let mut names: Vec<String> = devices.filter_map(|d| d.name().ok()).collect();
+    names.sort();
+    names.dedup();
+    Ok(names)
+}
+
 // ---- Models & file transcription ----------------------------------------
 
 #[tauri::command]
@@ -298,11 +511,14 @@ pub async fn download_model(
             serde_json::json!({ "engine": engine, "model": model, "fraction": fraction }),
         );
     };
+    // Release the resident engine BEFORE replacing files: a loaded engine can
+    // keep model files open/mapped on Windows, and the overwrite then fails
+    // with "creating or truncating a file requires write or append access".
+    *state.engine.write().unwrap() = None;
     let path = crate::stt::model_registry::download(spec, &dir, force, progress).await?;
     // Reload the resident engine immediately: the download usually completes
     // the configured engine/model, so it becomes usable without an app
     // restart. A failed load here is non-fatal (surfaced via status).
-    *state.engine.write().unwrap() = None;
     let _ = state.ensure_engine();
     Ok(path.to_string_lossy().into_owned())
 }

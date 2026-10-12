@@ -13,6 +13,7 @@ export default function SettingsView({ onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [loadFailed, setLoadFailed] = useState(false);
+  const [devices, setDevices] = useState<string[]>([]);
 
   // Latest settings + a debounce timer: typing must not fire an
   // `update_settings` (which swaps the speech engine) on every keystroke.
@@ -33,6 +34,12 @@ export default function SettingsView({ onChanged }: Props) {
 
   useEffect(() => {
     void load();
+    // Input devices for the microphone picker; failures leave the dropdown
+    // at "System default" only.
+    api
+      .listInputDevices()
+      .then(setDevices)
+      .catch(() => setDevices([]));
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
@@ -133,6 +140,29 @@ export default function SettingsView({ onChanged }: Props) {
               }
             />
           </label>
+          <h2>Microphone</h2>
+          <label className="row">
+            <span>Input device</span>
+            <select
+              value={settings.audio.input_device ?? ''}
+              onChange={(e) =>
+                patch({
+                  audio: { ...settings.audio, input_device: e.target.value || null },
+                })
+              }
+            >
+              <option value="">System default</option>
+              {devices.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="muted">
+            Capture restarts on the selected device when you save. The Diagnostics tab shows
+            which device the app is actually hearing, with a live level meter.
+          </p>
           <h2>Cleanup</h2>
           <label className="row">
             <span>Stage-2 AI polish</span>
