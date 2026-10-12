@@ -152,6 +152,18 @@ parent)**, not `models_dir/{id}`. Files: `encoder.int8.onnx`,
 - `full_n_segments() -> c_int` (NOT a Result); segments via
   `state.get_segment(i) -> Option<WhisperSegment>` +
   `seg.to_str() -> Result<&str>` (the old `full_get_segment_text` is gone).
+- **MSVC Release-config trap (the "portable exe takes forever" bug):** with
+  the VS generator, whisper.cpp's `Release` CMake configuration maps to an
+  unoptimized vcxproj (empty `<Optimization>` → /Od) — base.en decodes at
+  RTF ~5 instead of ~0.3, so dictation "hangs" for tens of seconds while
+  parakeet stays fast. The app therefore wires
+  `whisper = ["dep:whisper-rs", "whisper-rs-sys/force-debug"]` — a direct
+  optional `whisper-rs-sys` dep (unified with the `[patch.crates-io]`
+  entry) forwards the vendor's `force-debug` feature, which compiles
+  whisper.cpp with the RelWithDebInfo profile (verified fast on MSVC) even
+  in release builds. Do not remove that wiring; verify speed with
+  `cargo run --release --features whisper --example transcribe_file --
+  <wav> --engine whisper --model base.en` (expect RTF < 1).
 - Windows build prerequisites: **CMake on PATH** (VS-bundled CMake at
   `C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin`
   works) + **libclang** (`winget install LLVM.LLVM` → set

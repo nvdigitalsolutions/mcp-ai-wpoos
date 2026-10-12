@@ -65,6 +65,10 @@ sherpa-onnx = { version = "1.10", optional = true }
 bzip2 = { version = "0.4", optional = true }
 tar = { version = "0.4", optional = true }
 whisper-rs = { version = "0.16", optional = true }
+# Direct optional dep purely to forward the `force-debug` feature to the
+# vendored whisper-rs-sys (whisper-rs 0.16 does not forward it itself);
+# unifies with the [patch.crates-io] entry below.
+whisper-rs-sys = { path = "../vendor/whisper-rs-sys", optional = true }
 ort = { version = "=2.0.0-rc.9", optional = true }
 # Pinned to match ort rc.9 — the caret range on ort-sys otherwise drifts to
 # rc.13, whose bindings are incompatible with the rc.9 high-level API.
@@ -91,7 +95,11 @@ windows = { version = "0.58", features = [
 default = []
 mock = []
 parakeet = ["dep:sherpa-onnx", "dep:tar", "dep:bzip2"]
-whisper = ["dep:whisper-rs"]
+# The `force-debug` pass-through compiles whisper.cpp with the
+# RelWithDebInfo CMake profile even in release builds: the MSVC
+# "Release" configuration maps to an unoptimized vcxproj (RTF ~5 for
+# base.en instead of ~0.3) — see the dictation-app skill.
+whisper = ["dep:whisper-rs", "whisper-rs-sys/force-debug"]
 moonshine = ["dep:ort", "dep:ort-sys"]
 mcp = ["dep:rmcp", "dep:schemars"]
 silero-vad = ["dep:silero-vad-rs", "dep:ort-sys", "dep:ndarray"]
