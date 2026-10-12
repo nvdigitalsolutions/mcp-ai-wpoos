@@ -393,7 +393,19 @@ after `play()` so the pre-roll ring never filled (zero callbacks on
 healthy mics) — the worker now holds the stream, capture health
 (callbacks/stall/errors) shows on Diagnostics with a Restart-capture
 button, `restart_microphone` IPC, and the `mic_probe` example +
-`live_capture_delivers_samples` ignored test verify real hardware.
+`live_capture_delivers_samples` ignored test verify real hardware;
+the **Stage-2 polish/archive contract fix** (verified live against
+console.nvoos.cloud v1.2.3): `extract_reply_text` now parses the v1.2.x
+shapes (`data.content`, `data.choices[0].message.content`) and the
+`nvoos_polish_probe` example exercises the real path — the archive route
+`POST /chat-transcripts` REQUIRES both `assistant_id` and `session_key`
+(both returned by the chat response: `assistant_id` + camelCase
+`sessionKey`; the app now threads them via `PolishMeta`), and the **per-
+request polish model override**: `nvoos.polish_model` (Settings > NV oOS)
+is sent as `options.model` on the polish chat request — verified live:
+the site answers with the requested model (`deepseek-v4-pro` honored;
+~10.5 s vs ~9 s for `deepseek-flash` at ~4× cost, so flash stays the
+sensible default for transcript cleanup).
 Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
 addon permission tweak for `cred_x.SECRET`, P4 (Linux) port, the macOS
