@@ -405,7 +405,19 @@ request polish model override**: `nvoos.polish_model` (Settings > NV oOS)
 is sent as `options.model` on the polish chat request — verified live:
 the site answers with the requested model (`deepseek-v4-pro` honored;
 ~10.5 s vs ~9 s for `deepseek-flash` at ~4× cost, so flash stays the
-sensible default for transcript cleanup).
+sensible default for transcript cleanup). `nvoos.polish_provider` is
+sent as `options.provider` the same way — the site's `sanitize_options`
+allowlist accepts openai/gemini/anthropic/deepseek/etc., and a provider
+without an API key configured on the site errors, so the overrides only
+work for providers the site has keys for (the public `/status` endpoint
+reports "N providers operational" but never names them). The
+`nvoos_polish_probe` example takes `--provider`/`--model`/`--archive`/
+`--raw` flags for live A/B runs. Also: the app's Windows credential
+(CRED target `nvoos/assistant-credential.com.nvdigitalsolutions.
+nvoos-dictate`) can vanish when the user exercises the Clear-credential
+UI — probe runs should check `credential: stored` and ask the user to
+re-store it (the site only ever shows `cred_XXXXX.SECRET` at creation;
+a lost one needs regeneration in the console).
 Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
 addon permission tweak for `cred_x.SECRET`, P4 (Linux) port, the macOS
