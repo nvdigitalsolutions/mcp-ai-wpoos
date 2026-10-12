@@ -739,6 +739,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => false,
 				),
 
+				// GTmetrix Performance Toolkit.
+				'enable_gtmetrix_toolkit'               => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable GTmetrix Performance Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable GTmetrix performance testing, analysis and WPCode fix delivery (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the GTmetrix × WPCode Performance Optimization toolkit: run GTmetrix tests over the GTmetrix REST API v2.0, assess Core Web Vitals and page-weight budgets deterministically, map failing audits to WordPress fixes, and deliver them as WPCode-ready snippets or inactive WPCode drafts. Requires a GTmetrix API key. Test runs consume GTmetrix API credits within a site daily budget. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// Shopify Sync Toolkit.
 				'enable_shopify_sync_toolkit'            => array(
 					'type'           => 'checkbox',
@@ -995,7 +1004,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Pro Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_eca_classroom_integration', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_dietpi_toolkit', 'enable_ecommerce_toolkit', 'enable_flowhub_toolkit', 'enable_ezuite_toolkit', 'enable_fnb_toolkit', 'enable_shopify_sync_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_outbound_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_comic_creation_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_law_firm_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration', 'enable_tenant_isolation' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_eca_classroom_integration', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_dietpi_toolkit', 'enable_ecommerce_toolkit', 'enable_flowhub_toolkit', 'enable_ezuite_toolkit', 'enable_fnb_toolkit', 'enable_gtmetrix_toolkit', 'enable_shopify_sync_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_outbound_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_comic_creation_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_law_firm_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration', 'enable_tenant_isolation' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -1185,6 +1194,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_flowhub_toolkit'                 => 64,   // 5 tools, FlowHub POS API sync, CCT cache.
 				'enable_ezuite_toolkit'                  => 64,   // 3 tools, EZuite ERP API sync, CCT cache.
 				'enable_fnb_toolkit'                     => 64,   // 21 tools, Drive/CSV data reads, deterministic metric engine.
+				'enable_gtmetrix_toolkit'               => 65,   // 23 tools, GTmetrix API testing + WPCode fix delivery.
 				'enable_shopify_sync_toolkit'            => 72,   // 5+ tools, Shopify GraphQL sync, CCT cache.
 				'enable_social_media_toolkit'            => 64,   // 15 tools, multi-platform APIs.
 				'enable_analytics_toolkit'               => 96,   // 12 tools, data warehouse integrations.

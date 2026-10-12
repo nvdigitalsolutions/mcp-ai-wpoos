@@ -74,7 +74,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				self::get_calendar_booking_presets(),
 				self::get_health_wellness_presets(),
 				self::get_upwork_freelancer_presets(),
-				self::get_fnb_presets()
+				self::get_fnb_presets(),
+				self::get_gtmetrix_presets()
 			);
 
 			return $presets;
@@ -165,6 +166,88 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'schedule_data' => array(
 						'assistant_config' => array(
 							'message' => 'Run fnb_generate_report with report_id R-13 for the coming week, then fnb_save_draft. Start every image prompt from the character bible (A4-01). Do not post.',
+						),
+					),
+				),
+			);
+		}
+
+		/**
+		 * Get GTmetrix Performance Toolkit presets.
+		 *
+		 * @since  1.2.5
+		 * @return array<string,array> GTmetrix schedule presets.
+		 */
+		private static function get_gtmetrix_presets() {
+			return array(
+				'gtmetrix_weekly_sweep'    => array(
+					'name'          => __( 'Weekly Performance Sweep', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Runs metrics-only GTmetrix tests over the registered core pages and snapshots the results for regression tracking.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'gtmetrix',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-performance',
+					'schedule_type' => 'task',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'gtmetrix', 'performance', 'monitoring' ),
+					'schedule_data' => array(
+						'hook' => 'wp_mcp_ai_gtmetrix_scheduled_sweep',
+					),
+				),
+				'gtmetrix_monthly_review' => array(
+					'name'          => __( 'Monthly Optimization Review', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Runs full Lighthouse GTmetrix tests over the core pages for the monthly before/after optimization review.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'gtmetrix',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-chart-line',
+					'schedule_type' => 'task',
+					'schedule'      => 'monthly',
+					'tags'          => array( 'gtmetrix', 'monthly', 'review' ),
+					'schedule_data' => array(
+						'hook' => 'wp_mcp_ai_gtmetrix_monthly_review',
+					),
+				),
+				'gtmetrix_daily_credit_healthcheck' => array(
+					'name'          => __( 'Daily Credit & Alert Healthcheck', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Checks the GTmetrix credit balance and recent alert events for the monitored pages, and summarises any budget or regression concerns. Starts no tests.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'gtmetrix',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-chart-bar',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'daily',
+					'tags'          => array( 'gtmetrix', 'daily', 'credits', 'alerts' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run gtmetrix_account_status, then gtmetrix_get_alert_events for each monitored page in gtmetrix_list_pages. Summarise the credit balance, any alert triggers and which pages need attention. Do not start any tests.',
+						),
+					),
+				),
+				'gtmetrix_weekly_alert_review'     => array(
+					'name'          => __( 'Weekly Alert Review', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Reviews the week\'s performance-alert events and drafts the list of pages whose alert thresholds were crossed.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'gtmetrix',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-warning',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'gtmetrix', 'weekly', 'alerts' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run gtmetrix_get_alert_events for each monitored page in gtmetrix_list_pages and summarise which conditions fired and the values that triggered them. Draft the list of pages that need an optimization pass. Do not start any tests.',
+						),
+					),
+				),
+				'gtmetrix_post_deploy_verify'     => array(
+					'name'          => __( 'Weekly Regression Verify', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Retests the core pages and compares each against its previous snapshot, reporting regressed metrics.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'gtmetrix',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-update-alt',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'gtmetrix', 'weekly', 'regression' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'For each core page, run gtmetrix_retest_page, then gtmetrix_compare_reports against the previous snapshot. Summarise regressed metrics only; note anything unverifiable. Respect the site credit budget.',
 						),
 					),
 				),

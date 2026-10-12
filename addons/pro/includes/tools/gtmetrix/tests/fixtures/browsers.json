@@ -1,0 +1,44 @@
+{
+  "data": [
+    {
+      "type": "browser",
+      "id": "3",
+      "attributes": {
+        "name": "Chrome (Desktop)",
+        "default": true,
+        "platform": "desktop",
+        "adblock": true,
+        "cookies": true,
+        "dns": true,
+        "filtering": true,
+        "http_auth": true,
+        "resolution": true,
+        "throttle": true,
+        "user_agent": true,
+        "video": true,
+        "lighthouse": true,
+        "device": ""
+      }
+    },
+    {
+      "type": "browser",
+      "id": "5",
+      "attributes": {
+        "name": "Firefox (Desktop)",
+        "default": false,
+        "platform": "desktop",
+        "adblock": true,
+        "cookies": true,
+        "dns": false,
+        "filtering": true,
+        "http_auth": true,
+        "resolution": true,
+        "throttle": true,
+        "user_agent": true,
+        "video": false,
+        "lighthouse": true,
+        "device": ""
+      }
+    }
+  ]
+}

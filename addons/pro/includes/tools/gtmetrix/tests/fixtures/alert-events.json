@@ -1,0 +1,37 @@
+{
+  "data": [
+    {
+      "type": "performance_alert_event",
+      "id": "AE1",
+      "attributes": {
+        "timestamp": 1718700200,
+        "report_id": "RPOOR",
+        "alerts": [
+          {
+            "metric": "onload",
+            "operator": ">",
+            "threshold": 3000,
+            "value": 6900
+          }
+        ]
+      }
+    },
+    {
+      "type": "performance_alert_event",
+      "id": "AE2",
+      "attributes": {
+        "timestamp": 1718700150,
+        "alerts": [
+          {
+            "error": "Error generating Lighthouse report",
+            "error_slug": "eBoOTx6c"
+          }
+        ]
+      }
+    }
+  ],
+  "links": {},
+  "meta": {
+    "curr_page": 1
+  }
+}

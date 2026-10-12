@@ -1,0 +1,19 @@
+{
+  "data": {
+    "type": "test",
+    "id": "T1Q",
+    "attributes": {
+      "report": null,
+      "url": "https://example.test/",
+      "page": "P1",
+      "source": "api",
+      "location": "24",
+      "browser": "3",
+      "state": "queued",
+      "created": 1718700000,
+      "started": null,
+      "finished": null
+    },
+    "links": {}
+  }
+}

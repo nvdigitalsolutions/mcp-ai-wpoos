@@ -1,0 +1,48 @@
+{
+  "data": {
+    "type": "report",
+    "id": "RPOOR",
+    "attributes": {
+      "url": "https://example.test/",
+      "page": "P1",
+      "test": "T2Q",
+      "source": "api",
+      "page_tags": [],
+      "created": 1718700500,
+      "expires": 1721382500,
+      "browser": "3",
+      "location": "24",
+      "gtmetrix_grade": "E",
+      "gtmetrix_score": 52,
+      "performance_score": 44,
+      "structure_score": 61,
+      "html_bytes": 28421,
+      "page_bytes": 6501171,
+      "page_requests": 210,
+      "redirect_duration": 350,
+      "connect_duration": 90,
+      "backend_duration": 1200,
+      "time_to_first_byte": 1640,
+      "first_paint_time": 2100,
+      "first_contentful_paint": 2400,
+      "dom_interactive_time": 5100,
+      "dom_content_loaded_time": 5200,
+      "dom_content_loaded_duration": 900,
+      "onload_time": 6900,
+      "onload_duration": 600,
+      "fully_loaded_time": 9400,
+      "rum_speed_index": 6100,
+      "speed_index": 6200,
+      "largest_contentful_paint": 4600,
+      "time_to_interactive": 8200,
+      "total_blocking_time": 720,
+      "cumulative_layout_shift": 0.31
+    },
+    "links": {
+      "screenshot": "/api/2.0/reports/RPOOR/resources/screenshot.jpg",
+      "har": "/api/2.0/reports/RPOOR/resources/net.har",
+      "lighthouse": "/api/2.0/reports/RPOOR/resources/lighthouse.json",
+      "resource_summary": "/api/2.0/reports/RPOOR/resources/resource-summary"
+    }
+  }
+}

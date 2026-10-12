@@ -1,0 +1,15 @@
+{
+  "data": {
+    "type": "user",
+    "id": "redacted-key",
+    "attributes": {
+      "api_credits": 1497,
+      "api_refill": 1718784000,
+      "api_refill_amount": 100,
+      "account_type": "PRO",
+      "account_pro_analysis_options_access": true,
+      "account_pro_locations_access": true,
+      "account_whitelabel_pdf_access": true
+    }
+  }
+}
