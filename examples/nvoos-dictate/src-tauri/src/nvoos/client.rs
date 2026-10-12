@@ -12,7 +12,7 @@ use serde_json::json;
 
 use crate::config::AppCategory;
 use crate::error::{AppError, AppResult};
-use crate::nvoos::types::{extract_reply_text, ChatMessage, ChatRequest, ContentSegment};
+use crate::nvoos::types::{ChatMessage, ChatRequest, ContentSegment};
 
 /// Result of the settings-wizard connection test.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -103,13 +103,15 @@ impl NvoosClient {
     }
 
     /// Stage-2 polish: send the transcript to the assistant for cleanup.
+    /// Returns the polished text plus the metadata the site reported
+    /// (resolved assistant id, chat session key, answering model/provider).
     pub async fn polish(
         &self,
         text: &str,
         category: AppCategory,
         cleanup_prompt: &str,
         assistant_id: Option<&str>,
-    ) -> AppResult<String> {
+    ) -> AppResult<(String, crate::cleanup::providers::PolishMeta)> {
         let system = match category {
             AppCategory::Code | AppCategory::Terminal => format!(
                 "{cleanup_prompt} The user was dictating into a code editor or terminal: \
@@ -155,8 +157,11 @@ impl NvoosClient {
             )));
         }
         let payload: serde_json::Value = resp.json().await?;
-        extract_reply_text(&payload)
-            .ok_or_else(|| AppError::Other("chat endpoint returned an unparseable response".into()))
+        let text = crate::nvoos::types::extract_reply_text(&payload).ok_or_else(|| {
+            AppError::Other("chat endpoint returned an unparseable response".into())
+        })?;
+        let meta = crate::nvoos::types::extract_polish_meta(&payload);
+        Ok((text, meta))
     }
 
     /// One-way archive of a transcript into the plugin's transcript store.
@@ -166,6 +171,7 @@ impl NvoosClient {
     ) -> AppResult<()> {
         let body = json!({
             "assistant_id": record.assistant_id,
+            "session_key": record.session_key,
             "title": record.title,
             "messages": [
                 {

@@ -14,6 +14,18 @@ use crate::config::{AppCategory, Settings};
 use crate::error::AppResult;
 use crate::state::SecretStore;
 
+/// Metadata the polish round-trip returned (site v1.2.x): the resolved
+/// assistant id + chat session key (needed by the transcript archive
+/// route) and the model/provider that answered (observability for model
+/// tuning). Empty for providers that don't report it.
+#[derive(Debug, Clone, Default, serde::Serialize)]
+pub struct PolishMeta {
+    pub assistant_id: Option<String>,
+    pub session_key: Option<String>,
+    pub model: Option<String>,
+    pub provider: Option<String>,
+}
+
 /// A Stage-2 polish provider.
 #[async_trait]
 pub trait CleanupProvider: Send + Sync {
@@ -21,7 +33,7 @@ pub trait CleanupProvider: Send + Sync {
     fn id(&self) -> &'static str;
 
     /// Polish already-deterministically-cleaned text.
-    async fn polish(&self, text: &str, category: AppCategory) -> AppResult<String>;
+    async fn polish(&self, text: &str, category: AppCategory) -> AppResult<(String, PolishMeta)>;
 }
 
 /// Build the configured provider. `Ok(None)` = disabled.

@@ -8,7 +8,7 @@
 
 use async_trait::async_trait;
 
-use crate::cleanup::providers::CleanupProvider;
+use crate::cleanup::providers::{CleanupProvider, PolishMeta};
 use crate::config::{AppCategory, NvoosConfig};
 use crate::error::AppResult;
 use crate::nvoos::NvoosClient;
@@ -42,7 +42,7 @@ impl CleanupProvider for NvoosProvider {
         "nvoos"
     }
 
-    async fn polish(&self, text: &str, category: AppCategory) -> AppResult<String> {
+    async fn polish(&self, text: &str, category: AppCategory) -> AppResult<(String, PolishMeta)> {
         self.client
             .polish(
                 text,
