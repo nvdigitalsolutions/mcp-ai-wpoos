@@ -48,6 +48,8 @@ VITE_DEFAULT_SITE_URL=https://nvoos.pro
 NVOOS_TARGET_SITE=https://nvoos.pro
 ```
 
+See `.env.example` for the full list of supported variables.
+
 `npm run dev:proxy` confirms the resolved target at startup
 (`[nvoos-pro-spa-vite] proxying /wp-json → …`).
 
@@ -72,6 +74,59 @@ npm run build
 If cookie mode is selected without a proxy, the connection screen detects it
 (the app origin does not serve the WordPress REST API) and explains how to
 start one instead of failing with a JSON parse error.
+
+## Login presets (HOME)
+
+A deployment can pin the connection screen to a **single login option** by
+setting `HOME` in the app's `.env` file — each preset page shows only the
+selected option:
+
+| `HOME` | Page shown |
+|---|---|
+| unset | The full connection screen (all four auth modes + media worker fields) — the default |
+| `1` | **Cookie (dev proxy)** only — full admin surface; the login affordance is just a button that opens `/wp-login.php` through the proxy |
+| `2` | **WordPress application password** only — site URL + username + application password |
+| `3` | **Assistant credential** only — site URL + credential |
+| `4` | **Preconfigured** — no inputs at all, just Connect: the whole connection comes from env vars |
+
+On every preset page (1–4) the **Design Stack media worker** fields are
+hidden — the worker is attached automatically from `NVOOS_WORKER_URL` /
+`NVOOS_WORKER_TOKEN`.
+
+Env vars the preset pages read (all build-time, from `.env`):
+
+| Variable | Used by |
+|---|---|
+| `HOME` | Selects the preset (`1`–`4`); unset = full screen. Read from the `.env` files only — the shell's own `HOME` (a filesystem path) is ignored unless it is exactly `0`–`4` |
+| `NVOOS_SITE_URL` | Pre-fills the site URL on presets 1–3; required for preset 4 (falls back to `VITE_DEFAULT_SITE_URL`) |
+| `NVOOS_ASSISTANT_CREDENTIAL` | Pre-fills preset 3; primary auth for preset 4 |
+| `NVOOS_WP_USERNAME`, `NVOOS_WP_APP_PASSWORD` | Pre-fill preset 2; fallback auth for preset 4 |
+| `NVOOS_WORKER_URL`, `NVOOS_WORKER_TOKEN` | Media worker on all preset pages |
+| `NVOOS_AUTO_CONNECT` | `1` = on the preconfigured page (`HOME=4`), connect automatically on load instead of waiting for the Connect click |
+
+Example:
+
+```bash
+# .env (gitignored)
+HOME=3
+NVOOS_SITE_URL=https://nvoos.pro
+NVOOS_ASSISTANT_CREDENTIAL=cred_xxxxx.SECRET
+```
+
+**Runtime overrides (production / Velocity):** under `scripts/serve.mjs` the
+same `NVOOS_*` values can be set in the **runtime** environment (the
+variables the `serve.mjs` process sees — Velocity's runtime env block, not the
+build-time one). The server injects them into the served HTML as
+`window.__NVOOS_RUNTIME__`, which the app prefers over the baked build-time
+values — so you can switch login pages or rotate credentials with an env
+change + PM2 restart, no redeploy. Only non-empty runtime values override;
+the build-time `.env` values stay the fallback (and keep the dev server and
+plain static hosting working). `index.html` is served with `Cache-Control:
+no-cache`, so the new values reach returning visitors on their next load.
+
+These build-time values are **baked into the client bundle** (unlike
+`NVOOS_TARGET_SITE`, which the production server reads at runtime) — rebuild
+after changing the `.env` file.
 
 ## Knowledge Graph page
 
@@ -180,6 +235,13 @@ Same deploy model as the media worker (`docs/operations/deployment/media-worker-
    proxy makes the WordPress REST API and login same-origin, so no CORS
    configuration is needed. Set it to a site you control: the proxy forwards
    cookies for the proxied routes.
+5. **Login presets at runtime** — the `HOME` preset and the other `NVOOS_*`
+   login vars (site URL, credentials, worker, `NVOOS_AUTO_CONNECT`) also
+   accept the same runtime-env treatment: set them in the Velocity app's
+   runtime environment and `serve.mjs` injects them into the served HTML
+   (`window.__NVOOS_RUNTIME__`), overriding the build-time values without a
+   redeploy — see "Login presets (HOME)" above. Credentials live in the
+   platform's runtime env block instead of the public JS bundle.
 
 ### Design Stack media worker (optional)
 
@@ -205,6 +267,11 @@ and crawling remain one app from the user's perspective.
   configured site origin — never to the media worker or third-party URLs.
   Prefer a dedicated, least-privilege WP user for this app rather than an
   administrator account.
+- **Auto-connect (`NVOOS_AUTO_CONNECT=1` + `HOME=4`) removes the only gate in
+  front of the session**: anyone who can open the URL is in as the credential
+  holder, with the full admin layout. Only enable it on deployments that sit
+  behind access control (Cloudflare Access, IP allowlist, or edge basic
+  auth), and prefer a least-privilege credential for it.
 
 ## Third-party libraries (Knowledge Graph page)
 
