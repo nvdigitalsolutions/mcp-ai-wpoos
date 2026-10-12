@@ -256,9 +256,10 @@ Done: P0 core, P1 (nvoos client/archive), P3 (MCP stdio), engine track live-
 verified, embedded fallback implemented, PR #7011 → `alpha-working`;
 post-merge hardening: exit-on-close + stuck-PTT release + model download UX
 (#7017), VAD windowing/whisper CRT fix/hotkey guard (#7020), and this round:
-symmetric hook swallow (stuck-Alt fix), engine/model pairing validation +
-model dropdown, force re-download, vendored whisper.cpp CMakeLists bindings
-fix. Remaining: PTT manual matrix + loopback meeting verification (P2
+symmetric hook swallow (stuck-Alt fix), hands-free toggle release fix
+(double-tap recording no longer ends on its own key release), engine/model
+pairing validation + model dropdown, force re-download, vendored
+whisper.cpp CMakeLists bindings fix. Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
 addon permission tweak for `cred_x.SECRET`, P4/P5 ports, release
 signing/updater feed. See the implementation plan
