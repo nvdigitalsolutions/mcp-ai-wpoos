@@ -48,18 +48,23 @@ struct Active {
     mic: cpal::Stream,
     #[cfg(windows)]
     loopback: Option<cpal::Stream>,
+    #[cfg(target_os = "macos")]
+    sidecar: Option<crate::meetings::macos_system_audio::SidecarHandle>,
     samples: Arc<Mutex<Vec<f32>>>,
     system_audio: bool,
 }
 
 impl Drop for Active {
     fn drop(&mut self) {
-        // Explicit stop: dropping pauses both capture streams.
+        // Explicit stop: dropping pauses both capture streams (and kills
+        // the macOS sidecar child via SidecarHandle::drop).
         let _ = self.mic.pause();
         #[cfg(windows)]
         if let Some(loopback) = &self.loopback {
             let _ = loopback.pause();
         }
+        #[cfg(target_os = "macos")]
+        drop(self.sidecar.take());
     }
 }
 
@@ -208,16 +213,41 @@ fn start_streams() -> AppResult<Active> {
         }
     };
 
-    #[cfg(not(windows))]
+    // macOS: ScreenCaptureKit sidecar (P5). Ok(None) = helper missing or
+    // failed to start — meetings continue mic-only.
+    #[cfg(target_os = "macos")]
+    let (sidecar, system_audio) = match crate::meetings::macos_system_audio::open_sidecar(
+        samples.clone(),
+    ) {
+        Ok(Some(mut handle)) => {
+            if handle.is_alive() {
+                (Some(handle), true)
+            } else {
+                tracing::warn!(
+                        "system-audio helper exited immediately — meeting continues mic-only (Screen Recording permission?)"
+                    );
+                (None, false)
+            }
+        }
+        Ok(None) => (None, false),
+        Err(e) => {
+            tracing::warn!("system audio unavailable: {e}");
+            (None, false)
+        }
+    };
+
+    #[cfg(all(not(windows), not(target_os = "macos")))]
     let (loopback, system_audio): (Option<cpal::Stream>, bool) = (None, false);
-    #[cfg(not(windows))]
-    let _ = loopback; // meetings have no system-audio capture off Windows (P4/P5)
+    #[cfg(all(not(windows), not(target_os = "macos")))]
+    let _ = loopback; // meetings have no system-audio capture on Linux (P4)
 
     Ok(Active {
         started: Instant::now(),
         mic,
         #[cfg(windows)]
         loopback,
+        #[cfg(target_os = "macos")]
+        sidecar,
         samples,
         system_audio,
     })

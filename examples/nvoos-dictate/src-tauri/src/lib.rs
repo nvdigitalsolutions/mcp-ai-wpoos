@@ -12,6 +12,7 @@ pub mod mcp;
 pub mod meetings;
 pub mod nvoos;
 pub mod paste;
+pub mod permissions;
 pub mod state;
 pub mod storage;
 pub mod stt;
@@ -112,6 +113,9 @@ pub fn run() {
             ipc::download_model,
             ipc::transcribe_file,
             ipc::cancel_dictation,
+            ipc::get_permissions,
+            ipc::request_permission,
+            ipc::open_system_settings,
         ]);
 
     builder

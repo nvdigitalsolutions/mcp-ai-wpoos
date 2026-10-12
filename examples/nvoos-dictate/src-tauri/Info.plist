@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Tauri merges this file into the generated app bundle's Info.plist.
+	     Microphone access triggers the TCC prompt; without this key the app
+	     crashes on first capture (macOS 10.14+). -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>NV oOS Dictation uses the microphone for push-to-talk dictation and meeting recording. Audio is processed on-device and never stored without your consent.</string>
+</dict>
+</plist>

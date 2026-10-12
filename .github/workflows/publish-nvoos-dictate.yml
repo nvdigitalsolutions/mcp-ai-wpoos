@@ -1,10 +1,14 @@
 # Release: build + publish the NV oOS Dictation desktop app via tauri-action.
 #
-# Tag `nvoos-dictate-v*` to cut a release. tauri-action builds NSIS/MSI (and
-# later AppImage/.app), attaches the artifacts to a GitHub release, and
-# generates the updater's static JSON feed. Signing requires the
+# Tag `nvoos-dictate-v*` to cut a release. tauri-action builds NSIS/MSI on
+# Windows and .app/.dmg per-arch on macOS (the Swift sidecar is built and
+# staged first), attaches the artifacts to a GitHub release, and generates
+# the updater's static JSON feed. Signing requires the
 # TAURI_SIGNING_PRIVATE_KEY repository secret (minisign); without it the
-# release is unsigned and SmartScreen will warn (documented in README).
+# release is unsigned and SmartScreen/Gatekeeper will warn (documented in
+# README). macOS notarization additionally requires the Apple Developer
+# secrets below (see docs/macos-port-plan.md §12) — without them the macOS
+# artifacts are ad-hoc signed only.
 
 name: Publish NV oOS Dictation
 
@@ -21,7 +25,19 @@ jobs:
         include:
           - platform: windows-latest
             args: ''
+            helperArch: ''
+          - platform: macos-latest
+            args: '--target aarch64-apple-darwin'
+            helperArch: arm64
+          - platform: macos-latest
+            args: '--target x86_64-apple-darwin'
+            helperArch: x86_64
     runs-on: ${{ matrix.platform }}
+    env:
+      # Pinned by the matrix; beforeBundleCommand (build:helper) reads it so
+      # the right-arch Swift sidecar is staged over the externalBin stub
+      # even when it re-runs inside tauri-action.
+      NVOOS_HELPER_ARCH: ${{ matrix.helperArch }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +46,8 @@ jobs:
           node-version: 20
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -44,16 +62,29 @@ jobs:
         working-directory: examples/nvoos-dictate
         run: node scripts/gen-icons.mjs
 
+      # macOS: tauri-action runs the configured beforeBundleCommand
+      # (npm run build:helper), which builds the ScreenCaptureKit sidecar
+      # for NVOOS_HELPER_ARCH and stages it over the externalBin stub — the
+      # real binary is therefore signed and embedded inside the .app.
+
       - name: Build and publish
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Optional: minisign private key for updater artifacts.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # macOS signing + notarization (Apple Developer Program required).
+          # Missing secrets = ad-hoc signed, unnotarized artifacts.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: nvoos-dictate-v__VERSION__
           releaseName: 'NV oOS Dictation v__VERSION__'
-          releaseBody: 'See the app README and CHANGELOG for details. Unsigned builds may trigger SmartScreen.'
+          releaseBody: 'See the app README and CHANGELOG for details. Unsigned builds may trigger SmartScreen / Gatekeeper.'
           releaseDraft: true
           prerelease: false
           projectPath: examples/nvoos-dictate

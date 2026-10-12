@@ -15,7 +15,7 @@ use crate::audio::capture::MicCapture;
 use crate::config::Settings;
 use crate::error::{AppError, AppResult};
 use crate::meetings::recorder::MeetingRecorder;
-use crate::paste::ClipboardKeystrokeBackend;
+use crate::paste::platform_backend;
 use crate::paste::PasteBackend;
 use crate::storage::Db;
 use crate::stt::{create_engine, EngineResources, SttEngine};
@@ -112,7 +112,7 @@ impl AppState {
             app,
             mic: Mutex::new(None),
             engine: RwLock::new(None),
-            paste: Arc::new(ClipboardKeystrokeBackend::default()),
+            paste: platform_backend(),
             recorder: Arc::new(MeetingRecorder::new(16000)),
         }
     }

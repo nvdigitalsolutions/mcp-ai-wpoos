@@ -3,6 +3,10 @@ src-tauri/target/
 target/
 **/*.rs.bk
 
+# Swift sidecar build artifacts (built locally / in CI, never committed)
+mac-helper/.build/
+.Package.resolved
+
 # Node
 node_modules/
 dist/

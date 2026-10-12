@@ -16,6 +16,8 @@ export type AppCategory =
 export interface Settings {
   hotkey: {
     ptt_key: string; // RAlt | RCtrl
+    ptt_mode: string; // hold | toggle (macOS PTT delivery mode)
+    ptt_combo: string; // global shortcut used in toggle mode
     esc_cancels: boolean;
     double_tap_ms: number;
   };
@@ -62,6 +64,8 @@ export interface Settings {
 
 export interface StatusInfo {
   ptt_key: string;
+  ptt_mode: string;
+  ptt_combo: string;
   engine: string | null;
   model: string | null;
   engine_features: string;
@@ -126,6 +130,7 @@ export interface DiagnosticsInfo {
   models_dir: string;
   hotkey: {
     ptt_key: string;
+    ptt_mode: string;
     hook_installed: boolean;
     hook_heartbeat_age_ms: number;
     hook_calls: number;
@@ -181,6 +186,19 @@ export type DictateEvent =
   | { state: 'error'; message: string }
   | { state: 'cancelled' };
 
+export interface PermissionInfo {
+  kind: 'microphone' | 'accessibility' | 'input_monitoring' | 'screen_recording';
+  label: string;
+  explanation: string;
+  granted: boolean;
+  promptable: boolean;
+}
+
+/** Whether the webview runs inside the macOS app (permission rows are mac-only). */
+export function isMac(): boolean {
+  return /Mac/i.test(navigator.platform) || /Macintosh/i.test(navigator.userAgent);
+}
+
 // ---- commands ------------------------------------------------------------
 
 export const api = {
@@ -221,6 +239,11 @@ export const api = {
     invoke<string>('download_model', { engine, model, force }),
   transcribeFile: (path: string) => invoke<string>('transcribe_file', { path }),
   cancelDictation: () => invoke<void>('cancel_dictation'),
+
+  getPermissions: () => invoke<PermissionInfo[]>('get_permissions'),
+  requestPermission: (kind: string) =>
+    invoke<PermissionInfo>('request_permission', { kind }),
+  openSystemSettings: (kind: string) => invoke<void>('open_system_settings', { kind }),
 };
 
 // ---- events --------------------------------------------------------------

@@ -2,7 +2,8 @@
 #
 # Mirrors the repo's standalone-plugin workflow shape. The default cargo
 # feature set (mock engine) needs no C++ toolchain, so this job runs
-# everywhere; native engine features are exercised locally.
+# everywhere; native engine features are exercised locally. The macOS job
+# also builds + smoke-tests the ScreenCaptureKit sidecar (mac-helper).
 
 name: Build NV oOS Dictation
 
@@ -30,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -55,6 +56,17 @@ jobs:
             libasound2-dev \
             libdbus-1-dev \
             pkg-config
+
+      # macOS: Xcode's Swift toolchain is preinstalled on the runner.
+      # Compile the ScreenCaptureKit sidecar and smoke-test its NDJSON
+      # framing (--check prints hello/ready/stopped and exits).
+      - name: Build sidecar helper (Swift)
+        if: runner.os == 'macOS'
+        run: swift build --package-path mac-helper
+
+      - name: Smoke-test sidecar helper
+        if: runner.os == 'macOS'
+        run: swift run --package-path mac-helper nvoos-audio-helper --check
 
       - uses: dtolnay/rust-toolchain@stable
         with:

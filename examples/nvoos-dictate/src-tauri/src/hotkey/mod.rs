@@ -32,6 +32,14 @@ pub mod fallback;
 #[cfg(windows)]
 pub mod win_hook;
 
+/// Platform-free PTT tap state machine (swallow pairing, combo
+/// passthrough, double-tap, Esc). Unit-tested on every OS; the macOS
+/// event-tap shell (`macos_event_tap`) is its only consumer today.
+pub mod tap_state;
+
+#[cfg(target_os = "macos")]
+pub mod macos_event_tap;
+
 /// Unified hotkey events consumed by the dictation controller.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HotkeyEvent {
@@ -55,14 +63,27 @@ pub trait HotkeyListener: Send + Sync {
     fn stop(&mut self);
 }
 
-/// Platform-specific listener factory.
-pub fn platform_listener() -> Box<dyn HotkeyListener> {
+/// Platform-specific listener factory. `use_event_tap` selects the macOS
+/// CGEventTap hold listener (settings `ptt_mode = "hold"`); all other
+/// non-Windows configurations use the plugin toggle listener. Ignored on
+/// Windows (the hook always provides hold semantics).
+pub fn platform_listener(use_event_tap: bool) -> Box<dyn HotkeyListener> {
     #[cfg(windows)]
     {
+        let _ = use_event_tap;
         Box::new(win_hook::WinHookListener::default())
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
     {
+        if use_event_tap {
+            Box::new(macos_event_tap::MacEventTapListener::default())
+        } else {
+            Box::new(plugin::PluginToggleListener)
+        }
+    }
+    #[cfg(all(not(windows), not(target_os = "macos")))]
+    {
+        let _ = use_event_tap;
         Box::new(plugin::PluginToggleListener)
     }
 }

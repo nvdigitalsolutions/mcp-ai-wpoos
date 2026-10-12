@@ -157,7 +157,31 @@ npm run test:ui                     # Playwright smoke (dev server on :1420)
 - **Linux:** toggle semantics via global-shortcut plugin (X11); Wayland
   global-shortcut restrictions documented; meeting system audio not yet
   supported.
-- **macOS:** planned (Swift system-audio sidecar, Keychain, signing).
+- **macOS:** implemented (P5 port — see `docs/macos-port-plan.md` and
+  ADR 0004). Default PTT is the permission-free toggle combo
+  `Command+Option+Space`; Right-Option hold is opt-in (CGEventTap, needs
+  Accessibility + Input Monitoring). Meetings capture system audio through
+  the bundled ScreenCaptureKit sidecar on macOS 14.2+ (mic-only fallback).
+
+### macOS build & run
+
+Prerequisites: Xcode Command Line Tools (`xcode-select --install`), Rust ≥
+1.90, Node 20+. The app needs **no special permissions for dictation** in
+toggle mode; hold-PTT and pasting need the grants in Settings → Permissions.
+
+```bash
+npm install
+npm run build:helper            # builds the Swift sidecar (mac-helper)
+npm run tauri dev               # dev app
+npm run tauri build             # signed .app + .dmg (notarization needs
+                                # Apple Developer credentials — see
+                                # docs/macos-port-plan.md §12)
+```
+
+For unsigned local builds, clear Gatekeeper quarantine before first launch:
+`xattr -dr com.apple.quarantine "NV oOS Dictation.app"`. Keychain entries
+created by unsigned dev builds can re-prompt (the ACL binds to the code
+signature).
 
 ## NV oOS plugin integration
 

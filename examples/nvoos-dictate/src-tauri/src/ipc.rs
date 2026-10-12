@@ -7,6 +7,7 @@
 use serde::Serialize;
 use std::sync::Arc;
 use tauri::{Emitter, State};
+use tauri_plugin_opener::OpenerExt;
 
 use cpal::traits::{DeviceTrait, HostTrait};
 
@@ -21,6 +22,8 @@ use crate::storage::db::{MeetingRow, TranscriptRow};
 #[derive(Debug, Clone, Serialize)]
 pub struct StatusInfo {
     pub ptt_key: String,
+    pub ptt_mode: String,
+    pub ptt_combo: String,
     pub engine: Option<String>,
     pub model: Option<String>,
     pub engine_features: String,
@@ -79,6 +82,8 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
     let engine = state.engine.read().unwrap().clone();
     Ok(StatusInfo {
         ptt_key: settings.hotkey.ptt_key.clone(),
+        ptt_mode: settings.hotkey.ptt_mode.clone(),
+        ptt_combo: settings.hotkey.ptt_combo.clone(),
         engine: engine.as_ref().map(|e| e.id().to_string()),
         model: engine.as_ref().map(|e| e.model_id().to_string()),
         engine_features: crate::stt::available_features().to_string(),
@@ -111,11 +116,14 @@ pub struct DiagnosticsInfo {
 #[derive(Debug, Clone, Serialize)]
 pub struct HotkeyDiagnostics {
     pub ptt_key: String,
-    /// Whether the WH_KEYBOARD_LL hook thread is alive and ticking.
+    /// The configured PTT mode (`hold` | `toggle`).
+    pub ptt_mode: String,
+    /// Whether the low-level listener is alive and ticking (Windows
+    /// WH_KEYBOARD_LL hook / macOS CGEventTap).
     pub hook_installed: bool,
-    /// Milliseconds since the hook thread's last heartbeat tick.
+    /// Milliseconds since the listener thread's last heartbeat tick.
     pub hook_heartbeat_age_ms: u64,
-    /// Total hook callback invocations since start.
+    /// Total listener callback invocations since start.
     pub hook_calls: u64,
     /// Whether a swallowed PTT key-down is still awaiting its key-up.
     pub swallow_pending: bool,
@@ -259,6 +267,7 @@ fn hotkey_diagnostics(settings: &Settings) -> HotkeyDiagnostics {
     use crate::hotkey::win_hook;
     HotkeyDiagnostics {
         ptt_key: settings.hotkey.ptt_key.clone(),
+        ptt_mode: settings.hotkey.ptt_mode.clone(),
         // The heartbeat ticks every 50 ms while the hook thread runs; a
         // stale heartbeat means the hook install failed or the thread died
         // and the GetAsyncKeyState fallback is covering PTT.
@@ -269,15 +278,74 @@ fn hotkey_diagnostics(settings: &Settings) -> HotkeyDiagnostics {
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+fn hotkey_diagnostics(settings: &Settings) -> HotkeyDiagnostics {
+    use crate::hotkey::macos_event_tap;
+    HotkeyDiagnostics {
+        ptt_key: settings.hotkey.ptt_key.clone(),
+        ptt_mode: settings.hotkey.ptt_mode.clone(),
+        // A silent tap (installed but zero callbacks) is the Input
+        // Monitoring signature: the tap exists but macOS delivers nothing.
+        hook_installed: macos_event_tap::tap_healthy(5000),
+        hook_heartbeat_age_ms: macos_event_tap::heartbeat_age_ms(),
+        hook_calls: macos_event_tap::tap_calls(),
+        swallow_pending: macos_event_tap::swallow_pending(),
+    }
+}
+
+#[cfg(all(not(windows), not(target_os = "macos")))]
 fn hotkey_diagnostics(settings: &Settings) -> HotkeyDiagnostics {
     HotkeyDiagnostics {
         ptt_key: settings.hotkey.ptt_key.clone(),
+        ptt_mode: settings.hotkey.ptt_mode.clone(),
         hook_installed: false,
         hook_heartbeat_age_ms: 0,
         hook_calls: 0,
         swallow_pending: false,
     }
+}
+
+// ---- macOS TCC permissions (P5, phase M1) -------------------------------
+
+/// Permission rows for the Settings wizard. The Microphone row derives its
+/// state from the resident capture (a working stream = granted).
+#[tauri::command]
+pub fn get_permissions(state: State<'_, AppState>) -> Vec<crate::permissions::PermissionInfo> {
+    let mic_available = state.mic.lock().unwrap().is_some();
+    crate::permissions::permissions(mic_available)
+}
+
+/// Ask macOS for a permission (or open the pane for the manual toggles).
+/// Returns the refreshed row.
+#[tauri::command]
+pub fn request_permission(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    kind: String,
+) -> AppResult<crate::permissions::PermissionInfo> {
+    main_window_only(&window)?;
+    let mic_available = state.mic.lock().unwrap().is_some();
+    let row = crate::permissions::request(&kind, mic_available)?;
+    // Requesting Microphone means rebuilding the capture stream — that is
+    // the action that triggers the OS prompt.
+    if kind == "microphone" {
+        state.restart_mic()?;
+    }
+    Ok(row)
+}
+
+/// Open the matching System Settings privacy pane.
+#[tauri::command]
+pub fn open_system_settings(
+    window: tauri::Window,
+    app: tauri::AppHandle,
+    kind: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    let url = crate::permissions::system_settings_url(&kind)?;
+    app.opener()
+        .open_url(url, None::<String>)
+        .map_err(|e| AppError::Other(format!("failed to open System Settings: {e}")))
 }
 
 // ---- NV oOS credential (keychain) ---------------------------------------
