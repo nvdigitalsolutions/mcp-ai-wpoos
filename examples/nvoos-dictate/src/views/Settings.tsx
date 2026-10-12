@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, onModelProgress, type ConnectionTest, type ModelSpec, type Settings } from '../lib/ipc';
+import {
+  api,
+  isMac,
+  onModelProgress,
+  type ConnectionTest,
+  type ModelSpec,
+  type PermissionInfo,
+  type Settings,
+} from '../lib/ipc';
 
 interface Props {
   onChanged: () => void;
 }
 
-type SettingsTab = 'general' | 'engine' | 'nvoos' | 'openai' | 'privacy';
+type SettingsTab = 'general' | 'engine' | 'nvoos' | 'openai' | 'privacy' | 'permissions';
 
 export default function SettingsView({ onChanged }: Props) {
   const [tab, setTab] = useState<SettingsTab>('general');
@@ -111,6 +119,14 @@ export default function SettingsView({ onChanged }: Props) {
         <button className={tab === 'privacy' ? 'tab active' : 'tab'} onClick={() => setTab('privacy')}>
           Privacy
         </button>
+        {isMac() && (
+          <button
+            className={tab === 'permissions' ? 'tab active' : 'tab'}
+            onClick={() => setTab('permissions')}
+          >
+            Permissions
+          </button>
+        )}
       </nav>
 
       {message && <p className="muted">{message}</p>}
@@ -130,6 +146,38 @@ export default function SettingsView({ onChanged }: Props) {
               <option value="RCtrl">Right Control</option>
             </select>
           </label>
+          {isMac() && (
+            <>
+              <label className="row">
+                <span>PTT mode</span>
+                <select
+                  value={settings.hotkey.ptt_mode}
+                  onChange={(e) =>
+                    patch({ hotkey: { ...settings.hotkey, ptt_mode: e.target.value } })
+                  }
+                >
+                  <option value="toggle">
+                    Toggle via shortcut (no permissions needed — recommended)
+                  </option>
+                  <option value="hold">
+                    Hold Right Option (needs Accessibility + Input Monitoring)
+                  </option>
+                </select>
+              </label>
+              {settings.hotkey.ptt_mode === 'toggle' && (
+                <label className="row">
+                  <span>Shortcut combo</span>
+                  <input
+                    type="text"
+                    value={settings.hotkey.ptt_combo}
+                    onChange={(e) =>
+                      patch({ hotkey: { ...settings.hotkey, ptt_combo: e.target.value } })
+                    }
+                  />
+                </label>
+              )}
+            </>
+          )}
           <label className="row">
             <span>Esc cancels</span>
             <input
@@ -261,8 +309,83 @@ export default function SettingsView({ onChanged }: Props) {
         </section>
       )}
 
+      {tab === 'permissions' && isMac() && <PermissionsTab />}
+
       {busy && <p className="muted">Saving…</p>}
     </div>
+  );
+}
+
+/** macOS TCC permission rows (phase M1): detect, request, deep-link. */
+function PermissionsTab() {
+  const [permissions, setPermissions] = useState<PermissionInfo[]>([]);
+  const [error, setError] = useState('');
+
+  const load = useCallback(() => {
+    api
+      .getPermissions()
+      .then(setPermissions)
+      .catch((e) => setError(`Failed to read permissions: ${e}`));
+  }, []);
+
+  useEffect(() => {
+    load();
+    // Permissions can change while the app runs (user toggles the pane,
+    // grants from the prompt) — re-check when the window regains focus.
+    const onFocus = () => void load();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [load]);
+
+  if (permissions.length === 0 && !error) {
+    return (
+      <section className="card">
+        <p className="muted">Reading macOS permissions…</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="card">
+      <h2>macOS permissions</h2>
+      <p className="muted">
+        Each capability is a separate macOS grant. Denied permissions degrade gracefully —
+        dictation always works with the shortcut toggle, and meetings can run microphone-only.
+      </p>
+      {error && <p className="danger">{error}</p>}
+      <ul className="permissions">
+        {permissions.map((p) => (
+          <li key={p.kind} className="permission-row">
+            <div>
+              <strong>{p.label}</strong>
+              <span className="muted">{p.granted ? 'Granted ✓' : 'Not granted'}</span>
+              <div className="muted">{p.explanation}</div>
+            </div>
+            <span className="row">
+              <button
+                className="btn"
+                disabled={p.granted}
+                onClick={() =>
+                  void api
+                    .requestPermission(p.kind)
+                    .then(() => load())
+                    .catch((e) => setError(String(e)))
+                }
+              >
+                {p.kind === 'microphone'
+                  ? 'Start microphone (triggers the prompt)'
+                  : p.promptable
+                    ? 'Request'
+                    : 'Open settings pane'}
+              </button>
+              <button className="btn" onClick={() => void api.openSystemSettings(p.kind)}>
+                System Settings
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

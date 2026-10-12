@@ -51,6 +51,61 @@ impl AppCategory {
         }
     }
 
+    /// Map a macOS bundle identifier to a category (P5 port; the analogue of
+    /// [`Self::from_process_name`]). Bundle IDs are case-sensitive and
+    /// conventionally lowercase; compare as-is.
+    pub fn from_bundle_id(bundle_id: &str) -> Self {
+        match bundle_id {
+            // Code editors / IDEs.
+            "com.microsoft.VSCode"
+            | "com.microsoft.VSCodeInsiders"
+            | "com.jetbrains.intellij"
+            | "com.jetbrains.pycharm"
+            | "com.jetbrains.webstorm"
+            | "com.sublimetext.4"
+            | "com.todesktop.230313mzl4w4u92"
+            | "dev.zed.Zed" => AppCategory::Code,
+            // Terminals.
+            "com.apple.Terminal"
+            | "com.googlecode.iterm2"
+            | "org.alacritty"
+            | "com.github.wez.wezterm"
+            | "net.kovidgoyal.kitty"
+            | "io.warp" => AppCategory::Terminal,
+            // Chat / messaging.
+            "com.tinyspeck.slackmacgap"
+            | "com.hnc.Discord"
+            | "ru.keepcoder.Telegram"
+            | "com.microsoft.teams2"
+            | "us.zoom.xos"
+            | "org.whispersystems.signal-desktop"
+            | "com.viber.osx"
+            | "chat.rocket.mac" => AppCategory::Chat,
+            // Mail.
+            "com.apple.mail"
+            | "com.microsoft.Outlook"
+            | "com.readdle.smartemail-Mac"
+            | "org.mozilla.thunderbird"
+            | "com.sparkmailapp.Spark" => AppCategory::Mail,
+            // Documents.
+            "com.microsoft.Word"
+            | "com.microsoft.Excel"
+            | "com.microsoft.Powerpoint"
+            | "com.apple.TextEdit"
+            | "com.apple.iWork.Pages"
+            | "com.apple.iWork.Numbers"
+            | "com.literatureandlatte.scrivener3" => AppCategory::Docs,
+            // Browsers.
+            "com.apple.Safari"
+            | "com.google.Chrome"
+            | "com.brave.Browser"
+            | "org.mozilla.firefox"
+            | "com.operasoftware.Opera"
+            | "company.thebrowser.Browser" => AppCategory::Browser,
+            _ => AppCategory::Default,
+        }
+    }
+
     pub fn id(&self) -> &'static str {
         match self {
             AppCategory::Default => "default",
@@ -69,6 +124,14 @@ impl AppCategory {
 pub struct HotkeyConfig {
     /// Virtual-key name for push-to-talk: `RAlt` or `RCtrl`.
     pub ptt_key: String,
+    /// PTT delivery mode: `hold` (press-and-hold, Windows hook or the macOS
+    /// CGEventTap) or `toggle` (first activation arms, second finalizes —
+    /// the permission-free combo path on macOS/Linux). Windows ignores this
+    /// field (the hook always delivers hold semantics).
+    pub ptt_mode: String,
+    /// Global shortcut combo used in `toggle` mode (tauri global-shortcut
+    /// syntax, e.g. `Command+Option+Space`). Unused on Windows.
+    pub ptt_combo: String,
     /// Cancel the current dictation with Escape.
     pub esc_cancels: bool,
     /// Window (ms) in which press-release-press counts as a double-tap toggle.
@@ -79,6 +142,17 @@ impl Default for HotkeyConfig {
     fn default() -> Self {
         Self {
             ptt_key: "RAlt".to_string(),
+            // macOS: the permission-free default (macos-port-plan D2). The
+            // event-tap hold mode is opt-in from Settings. Linux keeps the
+            // existing plugin toggle; Windows ignores the field.
+            #[cfg(target_os = "macos")]
+            ptt_mode: "toggle".to_string(),
+            #[cfg(not(target_os = "macos"))]
+            ptt_mode: "hold".to_string(),
+            #[cfg(target_os = "macos")]
+            ptt_combo: "Command+Option+Space".to_string(),
+            #[cfg(not(target_os = "macos"))]
+            ptt_combo: "Control+Shift+Space".to_string(),
             esc_cancels: true,
             double_tap_ms: 400,
         }

@@ -131,17 +131,21 @@ export default function DiagnosticsView() {
             <span>{info.hotkey.ptt_key}</span>
           </li>
           <li>
-            <span>Low-level hook</span>
+            <span>PTT mode</span>
+            <span>{info.hotkey.ptt_mode}</span>
+          </li>
+          <li>
+            <span>Low-level listener</span>
             <span className={badge(info.hotkey.hook_installed)}>
-              {info.hotkey.hook_installed ? 'running' : 'not running (fallback poller active)'}
+              {info.hotkey.hook_installed ? 'running' : 'not running (plugin shortcut active)'}
             </span>
           </li>
           <li>
-            <span>Hook heartbeat age</span>
+            <span>Listener heartbeat age</span>
             <span>{info.hotkey.hook_heartbeat_age_ms} ms</span>
           </li>
           <li>
-            <span>Hook callback invocations</span>
+            <span>Listener callback invocations</span>
             <span>{info.hotkey.hook_calls}</span>
           </li>
           <li>

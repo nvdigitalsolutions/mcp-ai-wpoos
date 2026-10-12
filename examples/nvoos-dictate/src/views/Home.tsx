@@ -16,9 +16,19 @@ export default function Home({ status, dictate, onRefresh }: Props) {
       <section className="card">
         <h2>Dictation</h2>
         <p className="muted">
-          Hold <strong>{status?.ptt_key ?? 'RAlt'}</strong>, speak, release — cleaned text pastes
-          into the focused app. Hold <strong>Shift</strong> on release for raw passthrough.
-          Double-tap for hands-free mode, <strong>Esc</strong> cancels.
+          {status?.ptt_mode === 'toggle' ? (
+            <>
+              Press <strong>{status?.ptt_combo ?? 'the PTT shortcut'}</strong> to start, speak,
+              press again to stop — cleaned text pastes into the focused app. Hold{' '}
+              <strong>Shift</strong> on stop for raw passthrough.
+            </>
+          ) : (
+            <>
+              Hold <strong>{status?.ptt_key ?? 'RAlt'}</strong>, speak, release — cleaned text
+              pastes into the focused app. Hold <strong>Shift</strong> on release for raw
+              passthrough. Double-tap for hands-free mode, <strong>Esc</strong> cancels.
+            </>
+          )}
         </p>
         <div className="dictate-state" data-state={dictate.state} role="status" aria-live="polite">
           {dictate.state === 'idle' && 'Idle — hold the PTT key to dictate'}

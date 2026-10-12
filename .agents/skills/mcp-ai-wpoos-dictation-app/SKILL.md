@@ -353,9 +353,22 @@ button, `restart_microphone` IPC, and the `mic_probe` example +
 `live_capture_delivers_samples` ignored test verify real hardware.
 Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
-addon permission tweak for `cred_x.SECRET`, P4/P5 ports, release
-signing/updater feed. See the implementation plan
-(`docs/project/proposals/067-…-plan.md`) for the full item list.
+addon permission tweak for `cred_x.SECRET`, P4 port, macOS on-hardware
+verification + release signing/updater feed. See the implementation plan
+(`docs/project/proposals/067-…-plan.md`) for the full item list. The macOS
+port (P5) has its own comprehensive plan:
+`examples/nvoos-dictate/docs/macos-port-plan.md` (phases M0–M8: TCC
+permission model + first-run wizard, permission-free combo PTT default +
+opt-in Right-Option CGEventTap hold mode, ScreenCaptureKit Swift sidecar
+for meeting system audio, NSWorkspace per-app cleanup, signed/notarized
+DMG). Implementation landed on `feat/nvoos-dictate-macos-port` (2026-10-12,
+unverified on macOS hardware): `hotkey/macos_event_tap.rs` + portable
+`tap_state.rs` state machine, `paste/macos_cgevent.rs`, `permissions.rs`
+TCC layer + Settings Permissions tab, `meetings/macos_system_audio.rs` +
+`sidecar_protocol.rs` + `mac-helper/` Swift package (externalBin stubs in
+`src-tauri/binaries/`), `util/macos_foreground.rs`, Info.plist +
+entitlements, macOS CI/publish matrix. macOS-side compile gates run in CI
+(`macos-latest` job) — not verifiable from the Windows reference PC.
 
 ## Related skills
 

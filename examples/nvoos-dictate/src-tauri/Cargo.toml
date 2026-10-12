@@ -87,6 +87,27 @@ windows = { version = "0.58", features = [
   "Win32_UI_WindowsAndMessaging",
 ] }
 
+[target.'cfg(target_os = "macos")'.dependencies]
+# macOS platform layer (P5 port): event taps for modifier hold-PTT,
+# CGEventPost paste injection, Accessibility trust checks, and the
+# NSWorkspace frontmost-app reader for per-app cleanup profiles.
+#
+# core-graphics is pinned to 0.23: the 0.24 series changed the
+# CGEventTap::new callback signature (user-info generic), and 0.23's
+# three-argument FnMut shape is the one this port was written against.
+core-graphics = "=0.23.2"
+# CFRunLoop drives the event-tap thread (core-graphics re-exports it, but
+# a direct dependency keeps the run-loop types in the crate's scope).
+core-foundation = "=0.9.4"
+# AXIsProcessTrusted checks (the crate enigo uses for its own macOS
+# accessibility gate).
+macos-accessibility-client = "0.0.1"
+# Foreground-app detection (NSWorkspace). objc2 0.6 pairs with
+# objc2-foundation/objc2-app-kit 0.3 (the version series diverged).
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSString"] }
+objc2-app-kit = { version = "0.3", features = ["NSWorkspace", "NSRunningApplication"] }
+
 [features]
 default = []
 mock = []

@@ -168,25 +168,48 @@ impl DictationController {
             }
         });
 
-        // Hotkey listeners (primary + Windows fallback).
+        // Hotkey listeners (primary + Windows fallback). On macOS,
+        // `ptt_mode = "hold"` selects the CGEventTap listener (needs
+        // Accessibility + Input Monitoring); the default `toggle` mode
+        // stays permission-free via the global-shortcut plugin.
         let (tx, rx): (Sender<HotkeyEvent>, Receiver<HotkeyEvent>) = channel();
-        let mut primary = platform_listener();
-        primary.start(&settings.hotkey, tx.clone())?;
+        let use_event_tap = cfg!(target_os = "macos") && settings.hotkey.ptt_mode == "hold";
+        let mut primary = platform_listener(use_event_tap);
+        let primary_result = primary.start(&settings.hotkey, tx.clone());
 
         #[cfg(windows)]
         let mut fallback = crate::hotkey::fallback::WinFallbackListener::new();
         #[cfg(windows)]
         fallback.start(&settings.hotkey, tx.clone())?;
 
+        // Non-Windows toggle registration via the global-shortcut plugin.
+        // Registered when in toggle mode, or as a fallback when the macOS
+        // event tap could not start (permissions) so the user always has a
+        // working PTT.
+        #[cfg(not(windows))]
+        if !use_event_tap || primary_result.is_err() {
+            register_plugin_shortcut(&app, tx.clone(), &settings.hotkey.ptt_combo);
+        }
+
+        // On macOS hold mode, a failed tap is a warning (combo fallback is
+        // already registered), not a fatal controller error. Everywhere
+        // else a failed primary listener is fatal.
+        #[cfg(target_os = "macos")]
+        if use_event_tap {
+            if let Err(e) = primary_result {
+                tracing::warn!("event tap unavailable — combo PTT fallback active: {e}");
+            }
+        } else {
+            primary_result?;
+        }
+        #[cfg(not(target_os = "macos"))]
+        primary_result?;
+
         app.manage(HotkeyGuard {
             primary,
             #[cfg(windows)]
             fallback,
         });
-
-        // Non-Windows toggle registration via the global-shortcut plugin.
-        #[cfg(not(windows))]
-        register_plugin_shortcut(&app, tx.clone());
 
         std::thread::Builder::new()
             .name("nvoos-dictate-ctl".into())
@@ -621,7 +644,11 @@ fn foreground_category() -> AppCategory {
     {
         crate::util::win_foreground::current_category()
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    {
+        crate::util::macos_foreground::current_category()
+    }
+    #[cfg(all(not(windows), not(target_os = "macos")))]
     {
         AppCategory::Default
     }
@@ -632,7 +659,11 @@ fn foreground_process_name() -> Option<String> {
     {
         crate::util::win_foreground::foreground_process_name()
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    {
+        crate::util::macos_foreground::foreground_process_name()
+    }
+    #[cfg(all(not(windows), not(target_os = "macos")))]
     {
         None
     }
@@ -640,29 +671,29 @@ fn foreground_process_name() -> Option<String> {
 
 /// Non-Windows: toggle semantics via tauri-plugin-global-shortcut.
 #[cfg(not(windows))]
-fn register_plugin_shortcut(app: &AppHandle, tx: Sender<HotkeyEvent>) {
+fn register_plugin_shortcut(app: &AppHandle, tx: Sender<HotkeyEvent>, combo: &str) {
     use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
     let tx = Arc::new(Mutex::new(tx));
     let recording = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let r1 = recording.clone();
     let t1 = tx.clone();
-    let _ =
-        app.global_shortcut()
-            .on_shortcut("Control+Shift+Space", move |_app, _shortcut, event| {
-                if event.state() != ShortcutState::Pressed {
-                    return;
-                }
-                let tx = t1.lock().unwrap().clone();
-                // Toggle: first activation = press, second = release.
-                let was_recording = r1.swap(true, std::sync::atomic::Ordering::SeqCst);
-                if was_recording {
-                    r1.store(false, std::sync::atomic::Ordering::SeqCst);
-                    let _ = tx.send(HotkeyEvent::Released { shift: false });
-                } else {
-                    let _ = tx.send(HotkeyEvent::Pressed);
-                }
-            });
+    let _ = app
+        .global_shortcut()
+        .on_shortcut(combo, move |_app, _shortcut, event| {
+            if event.state() != ShortcutState::Pressed {
+                return;
+            }
+            let tx = t1.lock().unwrap().clone();
+            // Toggle: first activation = press, second = release.
+            let was_recording = r1.swap(true, std::sync::atomic::Ordering::SeqCst);
+            if was_recording {
+                r1.store(false, std::sync::atomic::Ordering::SeqCst);
+                let _ = tx.send(HotkeyEvent::Released { shift: false });
+            } else {
+                let _ = tx.send(HotkeyEvent::Pressed);
+            }
+        });
 }
 
 #[cfg(test)]

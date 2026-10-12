@@ -411,3 +411,28 @@ body {
     opacity: 0.35;
   }
 }
+
+/* macOS permission rows (Settings -> Permissions). */
+.permissions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.permission-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.permission-row:last-child {
+  border-bottom: none;
+}
+
+.permission-row .row {
+  flex-shrink: 0;
+  margin: 0;
+}
