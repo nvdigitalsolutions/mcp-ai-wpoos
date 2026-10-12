@@ -216,7 +216,7 @@ export default function SettingsView({ onChanged, status }: Props) {
         <EngineTab settings={settings} onPatch={patch} />
       )}
 
-      {tab === 'nvoos' && <NvoosTab settings={settings} onPatch={patch} status={status} />}
+      {tab === 'nvoos' && <NvoosTab settings={settings} onPatch={patch} status={status} onChanged={onChanged} />}
 
       {tab === 'openai' && (
         <section className="card">
@@ -242,8 +242,8 @@ export default function SettingsView({ onChanged, status }: Props) {
             />
           </label>
           <ApiKeyPanel
-            onSet={(key) => api.setOpenaiApiKey(key)}
-            onClear={api.clearOpenaiApiKey}
+            onSet={(key) => api.setOpenaiApiKey(key).then(() => onChanged())}
+            onClear={() => api.clearOpenaiApiKey().then(() => onChanged())}
             stored={!!status?.openai_key_stored}
             label="API key (stored in the OS keychain, never in config files)"
           />
@@ -465,10 +465,12 @@ function NvoosTab({
   settings,
   onPatch,
   status,
+  onChanged,
 }: {
   settings: Settings;
   onPatch: (p: Partial<Settings>) => Promise<void>;
   status: StatusInfo | null;
+  onChanged: () => void;
 }) {
   const [test, setTest] = useState<ConnectionTest | null>(null);
   const [credValue, setCredValue] = useState('');
@@ -533,6 +535,9 @@ function NvoosTab({
           setCredError('');
           try {
             await api.setNvoosCredential(settings.nvoos.site_url, cred);
+            // Refresh the app status so the stored badge + Test button
+            // reflect the new state immediately.
+            onChanged();
             setTest(null);
           } catch (e) {
             setCredError(String(e));
@@ -543,6 +548,7 @@ function NvoosTab({
           setCredError('');
           try {
             await api.clearNvoosCredential();
+            onChanged();
             setTest(null);
           } catch (e) {
             setCredError(String(e));
@@ -610,6 +616,7 @@ function NvoosTab({
                   setWpUser('');
                   setWpPass('');
                   setWpError('');
+                  onChanged();
                 })
                 .catch((e) => setWpError(String(e)))
             }
