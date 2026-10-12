@@ -51,7 +51,7 @@ the proposal's foundation; each item is verified on the named branch.
 
 | Component | Where | What it gives the wrapper |
 |---|---|---|
-| Typed NV oOS REST client (`NvoosClient`) | `examples/nvoos-dictate/src-tauri/src/nvoos/` (v0.1.0) | https-or-localhost-only origins, bearer credential, `test_connection` (`GET /wp-json/mcp-ai/v1/assistants`), `polish` (`POST /wp-json/mcp-ai/v1/chat` with `assistant_id` + `options.provider/model`), `archive_transcript` (`POST /wp-json/mcp-ai/v1/chat-transcripts` with `assistant_id` + `session_key`) |
+| Typed NV oOS REST client (`NvoosClient`) | `examples/nvoos-dictate/src-tauri/src/nvoos/` (v0.1.0) | https-or-localhost-only origins, bearer credential, `test_connection` (`GET /wp-json/mcp-ai/v1/assistants`), `polish` (`POST /wp-json/mcp-ai/v1/chat` with `assistant_id`), `archive_transcript` (`POST /wp-json/mcp-ai/v1/chat-transcripts` with `assistant_id` + `session_key`) |
 | MCP server on rmcp 3.5 | `src-tauri/src/mcp/` | The exact server wiring (`#[tool_router]` + `#[tool]` + `Parameters<T>`, stdio + streamable HTTP transports) the wrapper's `complete`/`list_assistants` server will reuse |
 | Legacy SSE bridge | `src-tauri/src/mcp/bridge_legacy_sse.rs` | Prior art for consuming the plugin's SSE chat stream from Rust |
 | OS-keychain credential storage | `src-tauri/src/storage/` | keyring-backed secrets; `persist_secret_verified` read-back discipline; no secrets in settings files |
