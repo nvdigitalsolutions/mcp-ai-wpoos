@@ -10,7 +10,8 @@
 		"**/.DS_Store": true,
 		"**/node_modules": true,
 		"**/vendor": false,
-		"**/.phpunit.result.cache": true
+		"**/.phpunit.result.cache": true,
+		"**/target": true
 	},
 	"[php]": {
 		"editor.defaultFormatter": "bmewburn.vscode-intelephense-client",
@@ -29,6 +30,13 @@
 	"[markdown]": {
 		"files.trimTrailingWhitespace": false
 	},
+	"[rust]": {
+		"editor.defaultFormatter": "rust-lang.rust-analyzer",
+		"editor.tabSize": 4,
+		// rustfmt is spaces-only, so Rust opts out of the repo-wide tabs
+		// default — otherwise formatting would fight rustfmt.
+		"editor.insertSpaces": true
+	},
 	"phpcs.enable": true,
 	"phpcs.standard": "WordPress",
 	"intelephense.files.exclude": [
@@ -45,6 +53,7 @@
 		"**/node_modules": true,
 		"**/vendor": true,
 		"**/.phpunit.result.cache": true,
-		"**/coverage": true
+		"**/coverage": true,
+		"**/target": true
 	}
 }
