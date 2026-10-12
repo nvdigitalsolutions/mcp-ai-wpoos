@@ -5,6 +5,7 @@
 //! all state changes go through `AppState` (single writer per resource).
 
 use serde::Serialize;
+use std::sync::Arc;
 use tauri::{Emitter, State};
 
 use cpal::traits::{DeviceTrait, HostTrait};
@@ -12,7 +13,8 @@ use cpal::traits::{DeviceTrait, HostTrait};
 use crate::config::Settings;
 use crate::error::{AppError, AppResult};
 use crate::state::{
-    AppState, KEY_NVOOS_CREDENTIAL, KEY_OPENAI_API_KEY, KEY_WP_APP_PASSWORD, KEY_WP_USERNAME,
+    AppState, SecretStore, KEY_NVOOS_CREDENTIAL, KEY_OPENAI_API_KEY, KEY_WP_APP_PASSWORD,
+    KEY_WP_USERNAME,
 };
 use crate::storage::db::{MeetingRow, TranscriptRow};
 
@@ -280,6 +282,25 @@ fn hotkey_diagnostics(settings: &Settings) -> HotkeyDiagnostics {
 
 // ---- NV oOS credential (keychain) ---------------------------------------
 
+/// Persist a secret and verify the read-back. keyring's Windows backend
+/// could report success while writing into a namespace the app cannot read
+/// (CRED_PERSIST_ENTERPRISE) — "I stored it but it did not stick". Every
+/// write must round-trip before it is reported as stored.
+fn persist_secret_verified(
+    secrets: &Arc<dyn SecretStore>,
+    key: &str,
+    value: &str,
+) -> AppResult<()> {
+    secrets.set(key, value)?;
+    match secrets.get(key) {
+        Ok(Some(stored)) if stored == value => Ok(()),
+        Ok(_) => Err(AppError::Keyring(format!(
+            "the {key} value could not be verified after writing — the OS credential store did not persist it"
+        ))),
+        Err(e) => Err(e),
+    }
+}
+
 #[tauri::command]
 pub fn set_nvoos_credential(
     window: tauri::Window,
@@ -297,8 +318,7 @@ pub fn set_nvoos_credential(
     // Sanity-check the endpoint contract before storing anything.
     let client = crate::nvoos::NvoosClient::new(site_url, credential.clone())?;
     let _ = client;
-    state.secrets.set(KEY_NVOOS_CREDENTIAL, &credential)?;
-    Ok(())
+    persist_secret_verified(&state.secrets, KEY_NVOOS_CREDENTIAL, &credential)
 }
 
 #[tauri::command]
@@ -325,7 +345,7 @@ pub fn set_openai_api_key(
     if api_key.trim().is_empty() {
         return Err(AppError::Auth("API key must not be empty".into()));
     }
-    state.secrets.set(KEY_OPENAI_API_KEY, api_key.trim())
+    persist_secret_verified(&state.secrets, KEY_OPENAI_API_KEY, api_key.trim())
 }
 
 #[tauri::command]
@@ -350,9 +370,7 @@ pub fn set_wp_app_password(
         ));
     }
     state.secrets.set(KEY_WP_USERNAME, username.trim())?;
-    state
-        .secrets
-        .set(KEY_WP_APP_PASSWORD, app_password.trim())?;
+    persist_secret_verified(&state.secrets, KEY_WP_APP_PASSWORD, app_password.trim())?;
     // The auth change may affect the resident `embedded` engine.
     *state.engine.write().unwrap() = None;
     Ok(())

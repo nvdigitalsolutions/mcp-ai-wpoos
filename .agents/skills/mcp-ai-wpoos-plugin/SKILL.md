@@ -91,6 +91,12 @@ credentials than this repo's dev compose (verified on the live stack,
   `bin/create-skill-junctions.ps1`), so skill edits ship in the same PR as
   plugin code.
 - `wp` inside the Design Stack WP container requires `--allow-root`.
+- **Production console:** `https://console.nvoos.cloud/` is the live NV oOS
+  site (verified 2026-10: `/wp-json/mcp-ai/v1/status` = operational,
+  `/wp-json/mcp-ai/v1/assistants` returns 401 without a Bearer credential).
+  The dictation desktop app points here for its Stage-2 polish / archive
+  backend; credentials must be issued on that site (see the provisioning
+  recipe above) and stored via the app's Settings → NV oOS tab.
 
 ### 2. API Key Auto-Detection (v1.1.47+)
 

@@ -3096,7 +3096,7 @@ dependencies = [
 
 [[package]]
 name = "nvoos-dictate"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "arboard",
  "async-trait",
@@ -3135,6 +3135,7 @@ dependencies = [
  "tracing-subscriber",
  "uuid",
  "whisper-rs",
+ "whisper-rs-sys",
  "windows 0.58.0",
 ]
 

@@ -465,7 +465,7 @@ fn finalize_inner(
     started: Instant,
     press_pos: usize,
     release_pos: usize,
-) -> AppResult<(String, String, &'static str, i64)> {
+) -> AppResult<(String, String, String, i64)> {
     let state = app.state::<AppState>();
     let settings = state.settings_snapshot();
 
@@ -526,7 +526,7 @@ fn finalize_inner(
 
     // 2. STT, 3. cleanup, 4. polish, 5. paste, 6. history/archive. Every
     // terminal outcome is recorded into the diagnostics snapshot.
-    let outcome: AppResult<(String, String, &'static str, i64)> = (|| {
+    let outcome: AppResult<(String, String, String, i64)> = (|| {
         let engine = state.ensure_engine()?;
         let raw = engine.transcribe(
             &samples,
@@ -545,18 +545,29 @@ fn finalize_inner(
 
         let provider = cleanup::create_provider(&settings, state.secrets.as_ref())?;
         let mut final_text = stage1.clone();
-        let mut provider_id: &'static str = "disabled";
+        let mut provider_id: String = "disabled".to_string();
+        // Metadata from the last polish round-trip: the site resolves the
+        // assistant and hands back a chat session key — the transcript
+        // archive route rejects requests without one.
+        let mut polish_meta = crate::cleanup::providers::PolishMeta::default();
         if let Some(provider) = provider {
-            provider_id = provider.id();
+            let base_id = provider.id();
+            provider_id = base_id.to_string();
             let wait_ms = settings.cleanup.wait_for_llm_ms;
             if wait_ms > 0 {
                 let fut = provider.polish(&stage1, category);
                 let outcome = tauri::async_runtime::block_on(async {
                     tokio::time::timeout(std::time::Duration::from_millis(wait_ms), fut).await
                 });
-                if let Ok(Ok(polished)) = outcome {
+                if let Ok(Ok((polished, meta))) = outcome {
+                    polish_meta = meta;
                     if !polished.trim().is_empty() {
                         final_text = polished.trim().to_string();
+                        // Record which model answered, for tuning (e.g.
+                        // "nvoos:deepseek-flash").
+                        if let Some(model) = polish_meta.model.as_deref() {
+                            provider_id = format!("{base_id}:{model}");
+                        }
                     }
                 }
             }
@@ -574,14 +585,25 @@ fn finalize_inner(
             engine.id(),
             engine.model_id(),
             &target_app,
-            provider_id,
+            &provider_id,
             e2e_ms,
         )?;
 
         if settings.nvoos.archive_enabled && state.has_nvoos_credential() {
-            if let Ok(client) = state.nvoos_client() {
+            // The archive route requires the chat session key from the polish
+            // round-trip; with polish disabled there is no session, so skip
+            // with a warning instead of a guaranteed 400.
+            if polish_meta.session_key.is_none() {
+                tracing::warn!(
+                    "archive skipped: no chat session key (enable Stage-2 polish to archive)"
+                );
+            } else if let Ok(client) = state.nvoos_client() {
                 let row = crate::nvoos::TranscriptRecord {
-                    assistant_id: settings.nvoos.assistant_id.clone(),
+                    assistant_id: polish_meta
+                        .assistant_id
+                        .clone()
+                        .or_else(|| settings.nvoos.assistant_id.clone()),
+                    session_key: polish_meta.session_key.clone(),
                     title: format!("nvoos-dictate — {target_app}"),
                     raw: raw.clone(),
                     clean: final_text.clone(),
