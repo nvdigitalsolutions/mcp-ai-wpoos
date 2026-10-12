@@ -90,13 +90,13 @@ final class Capturer: NSObject, SCStreamOutput {
     /// CMSampleBuffer -> mono 16 kHz interleaved Int16 PCM bytes.
     private static func convert(_ buffer: CMSampleBuffer, to targetRate: Int) -> Data? {
         guard let format = CMSampleBufferGetFormatDescription(buffer),
-            let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee
+            let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee,
+            let inputFormat = AVAudioFormat(
+                standardFormatWithSampleRate: asbd.mSampleRate,
+                channels: asbd.mChannelsPerFrame)
         else {
             return nil
         }
-        let inputFormat = AVAudioFormat(
-            standardFormatWithSampleRate: asbd.mSampleRate,
-            channels: asbd.mChannelsPerFrame)
         guard
             let outputFormat = AVAudioFormat(
                 commonFormat: .pcmFormatInt16, sampleRate: Double(targetRate),
@@ -133,8 +133,11 @@ final class Capturer: NSObject, SCStreamOutput {
             return nil
         }
 
-        let inputPCM = AVAudioPCMBuffer(
-            pcmFormat: inputFormat, bufferListNoCopy: bufferList)!
+        guard let inputPCM = AVAudioPCMBuffer(
+            pcmFormat: inputFormat, bufferListNoCopy: bufferList)
+        else {
+            return nil
+        }
         let frameCapacity = AVAudioFrameCount(
             outputFormat.sampleRate * Double(inputPCM.frameLength) / inputFormat.sampleRate)
         guard let outputPCM = AVAudioPCMBuffer(
@@ -145,17 +148,21 @@ final class Capturer: NSObject, SCStreamOutput {
 
         var conversionError: NSError?
         var fed = false
+        // Explicit parameter + case types: the trailing-closure shorthand
+        // cannot infer the pointer/status bases on newer SDKs.
         let status = converter.convert(to: outputPCM, error: &conversionError) {
-            _, outStatus in
+            (_: AVAudioPacketCount,
+             outStatus: UnsafeMutablePointer<AVAudioConverterInputStatus>) -> AVAudioBuffer? in
             if fed {
-                outStatus.pointee = .noDataNow
+                outStatus.pointee = AVAudioConverterInputStatus.noDataNow
                 return nil
             }
             fed = true
-            outStatus.pointee = .haveData
+            outStatus.pointee = AVAudioConverterInputStatus.haveData
             return inputPCM
         }
-        guard status != .error, conversionError == nil, outputPCM.frameLength > 0,
+        guard status != AVAudioConverterOutputStatus.error, conversionError == nil,
+            outputPCM.frameLength > 0,
             let channelData = outputPCM.int16ChannelData,
             let samples = channelData[0]
         else {

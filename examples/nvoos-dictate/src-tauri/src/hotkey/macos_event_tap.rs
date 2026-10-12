@@ -121,12 +121,14 @@ impl HotkeyListener for MacEventTapListener {
                     move |_proxy: CGEventTapProxy, etype: CGEventType, event: &CGEvent| {
                         TAP_CALLS.fetch_add(1, Ordering::SeqCst);
                         *LAST_EVENT.lock().unwrap() = Some(Instant::now());
-                        if etype != CGEventType::KeyDown && etype != CGEventType::KeyUp {
+                        // NOTE: CGEventType has no PartialEq in core-graphics
+                        // 0.23 — use structural matching instead of ==/!=.
+                        if !matches!(etype, CGEventType::KeyDown | CGEventType::KeyUp) {
                             return Some(event.clone());
                         }
                         let keycode =
                             event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE);
-                        let down = etype == CGEventType::KeyDown;
+                        let down = matches!(etype, CGEventType::KeyDown);
                         let flags = event.get_flags();
                         let shift = flags.contains(CGEventFlags::CGEventFlagShift);
 

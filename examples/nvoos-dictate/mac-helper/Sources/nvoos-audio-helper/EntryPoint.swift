@@ -6,10 +6,14 @@
 //   nvoos-audio-helper capture     capture until SIGINT/SIGTERM
 //   nvoos-audio-helper --check     print hello/ready/stopped and exit
 //                                  (binary-presence + framing smoke test)
+//
+// NOTE: this file must NOT be named `main.swift` — SwiftPM treats a
+// `main.swift` file as a top-level-code entry point, which conflicts with
+// the `@main` attribute.
 import Foundation
 
 @main
-struct Main {
+struct EntryPoint {
     static func main() async {
         Output.hello()
 
@@ -20,10 +24,11 @@ struct Main {
         }
 
         // Graceful shutdown: emit `stopped` before exiting so the Rust core
-        // can distinguish "user stopped" from a crash mid-stream.
-        for signal in [SIGINT, SIGTERM] {
-            signal(signal, SIG_IGN)
-            let source = DispatchSource.makeSignalSource(signal: signal, queue: .main)
+        // can distinguish "user stopped" from a crash mid-stream. (The loop
+        // variable is `sig` — `signal` is the Darwin C function.)
+        for sig in [SIGINT, SIGTERM] {
+            _ = signal(sig, SIG_IGN)
+            let source = DispatchSource.makeSignalSource(signal: sig, queue: .main)
             source.setEventHandler {
                 Output.stopped()
                 exit(0)
