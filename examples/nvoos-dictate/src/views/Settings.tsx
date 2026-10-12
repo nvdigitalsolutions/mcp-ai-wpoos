@@ -508,6 +508,17 @@ function NvoosTab({
         />
       </label>
       <label className="row">
+        <span>Polish provider override (optional)</span>
+        <input
+          type="text"
+          value={settings.nvoos.polish_provider ?? ''}
+          placeholder="deepseek"
+          onChange={(e) =>
+            patchNvoos(onPatch, settings, { polish_provider: e.target.value || null })
+          }
+        />
+      </label>
+      <label className="row">
         <span>Polish model override (optional)</span>
         <input
           type="text"
@@ -519,10 +530,12 @@ function NvoosTab({
         />
       </label>
       <p className="muted">
-        Sent as <code>options.model</code> on the polish chat request; blank uses the
-        assistant&#39;s configured model. Examples: <code>deepseek-flash</code> (fast, cheap —
-        recommended for transcript cleanup) or <code>deepseek-v4-pro</code> (higher quality,
-        roughly 4× the cost).
+        Sent as <code>options.provider</code> / <code>options.model</code> on the polish chat
+        request; blank uses the assistant&#39;s configured provider and model. The site answers
+        only with providers that have an API key configured on it — e.g.{' '}
+        <code>deepseek</code> + <code>deepseek-flash</code> (fast, cheap — recommended for
+        transcript cleanup), <code>gemini</code> + <code>gemini-3.8-flash</code>, or{' '}
+        <code>openai</code> + <code>gpt-5.6-luna</code>.
       </p>
       <label className="row">
         <span>Cleanup system prompt</span>

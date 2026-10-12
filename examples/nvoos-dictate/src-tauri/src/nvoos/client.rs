@@ -111,6 +111,7 @@ impl NvoosClient {
         category: AppCategory,
         cleanup_prompt: &str,
         assistant_id: Option<&str>,
+        polish_provider: Option<&str>,
         polish_model: Option<&str>,
     ) -> AppResult<(String, crate::cleanup::providers::PolishMeta)> {
         let system = match category {
@@ -125,12 +126,20 @@ impl NvoosClient {
             _ => cleanup_prompt.to_string(),
         };
 
-        let options = polish_model
+        let provider = polish_provider
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+            .map(|p| p.to_string());
+        let model = polish_model
             .map(str::trim)
             .filter(|m| !m.is_empty())
-            .map(|model| ChatOptions {
-                model: Some(model.to_string()),
-            });
+            .map(|m| m.to_string());
+        // Omit the options object entirely when neither override is set.
+        let options = if provider.is_none() && model.is_none() {
+            None
+        } else {
+            Some(ChatOptions { provider, model })
+        };
 
         let body = ChatRequest {
             assistant_id: assistant_id.map(|s| s.to_string()),

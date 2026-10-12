@@ -148,6 +148,9 @@ pub struct NvoosConfig {
     pub assistant_id: Option<String>,
     /// System prompt sent with every cleanup request.
     pub cleanup_prompt: String,
+    /// Optional per-request provider override for the polish chat call
+    /// (blank = the assistant's configured provider).
+    pub polish_provider: Option<String>,
     /// Optional per-request model override for the polish chat call
     /// (blank = the assistant's configured model, e.g. `deepseek-flash`).
     pub polish_model: Option<String>,
@@ -160,6 +163,7 @@ impl Default for NvoosConfig {
             site_url: String::new(),
             assistant_id: None,
             cleanup_prompt: "You are a dictation editor. Return only the cleaned text: remove filler words, fix grammar and punctuation, keep names, numbers and code identifiers exactly as written, and preserve the meaning.".to_string(),
+            polish_provider: None,
             polish_model: None,
             archive_enabled: false,
         }

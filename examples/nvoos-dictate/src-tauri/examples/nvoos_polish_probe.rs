@@ -6,10 +6,10 @@
 //!
 //! With `--archive` it also writes one archive record, leaving server-side
 //! proof of reception in the NV oOS console. `--raw` dumps the verbatim chat
-//! and archive responses; `--model <id>` overrides the polish model for both
-//! the provider call and the raw chat request.
+//! and archive responses; `--provider <id>` / `--model <id>` override the
+//! polish provider/model for both the provider call and the raw chat request.
 //!
-//! Usage: cargo run --example nvoos_polish_probe [--archive] [--raw] [--model <id>]
+//! Usage: cargo run --example nvoos_polish_probe [--archive] [--raw] [--provider <id>] [--model <id>]
 
 use std::time::Instant;
 
@@ -27,14 +27,24 @@ use nvoos_dictate_lib::storage::win_cred::WindowsCredentialStore;
 async fn main() -> nvoos_dictate_lib::error::AppResult<()> {
     let do_archive = std::env::args().any(|a| a == "--archive");
     let raw_dump = std::env::args().any(|a| a == "--raw");
-    let model_override = std::env::args()
-        .position(|a| a == "--model")
-        .and_then(|i| std::env::args().nth(i + 1))
-        .filter(|m| !m.is_empty());
+    let args: Vec<String> = std::env::args().collect();
+    let flag_value = |flag: &str| -> Option<String> {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .filter(|v| !v.is_empty())
+            .cloned()
+    };
+    let provider_override = flag_value("--provider");
+    let model_override = flag_value("--model");
 
     let mut settings = Settings::load()?;
     println!("site:         {}", settings.nvoos.site_url);
     println!("assistant_id: {:?}", settings.nvoos.assistant_id);
+    if let Some(provider) = &provider_override {
+        println!("provider override: {provider}");
+        settings.nvoos.polish_provider = Some(provider.clone());
+    }
     if let Some(model) = &model_override {
         println!("model override: {model}");
         settings.nvoos.polish_model = Some(model.clone());
@@ -116,8 +126,8 @@ async fn main() -> nvoos_dictate_lib::error::AppResult<()> {
                     "content": [ { "type": "text", "text": raw } ]
                 }
             ],
-            "options": if let Some(model) = &model_override {
-                serde_json::json!({ "model": model })
+            "options": if provider_override.is_some() || model_override.is_some() {
+                serde_json::json!({ "provider": provider_override, "model": model_override })
             } else {
                 serde_json::Value::Null
             },

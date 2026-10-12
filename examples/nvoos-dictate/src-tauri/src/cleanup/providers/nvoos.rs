@@ -18,6 +18,7 @@ pub struct NvoosProvider {
     client: NvoosClient,
     cleanup_prompt: String,
     assistant_id: Option<String>,
+    polish_provider: Option<String>,
     polish_model: Option<String>,
 }
 
@@ -33,6 +34,7 @@ impl NvoosProvider {
             client,
             cleanup_prompt: config.cleanup_prompt.clone(),
             assistant_id: config.assistant_id.clone(),
+            polish_provider: config.polish_provider.clone(),
             polish_model: config.polish_model.clone(),
         })
     }
@@ -51,6 +53,7 @@ impl CleanupProvider for NvoosProvider {
                 category,
                 &self.cleanup_prompt,
                 self.assistant_id.as_deref(),
+                self.polish_provider.as_deref(),
                 self.polish_model.as_deref(),
             )
             .await

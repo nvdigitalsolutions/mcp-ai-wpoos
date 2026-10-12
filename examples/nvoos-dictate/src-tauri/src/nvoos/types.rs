@@ -32,6 +32,9 @@ pub struct ChatMessage {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ChatOptions {
+    /// Per-request provider override (blank = the assistant's provider).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
     /// Per-request model override (blank = the assistant's configured model).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
@@ -197,24 +200,26 @@ mod tests {
             assistant_id: Some("12534".into()),
             messages: vec![],
             options: Some(ChatOptions {
+                provider: Some("gemini".into()),
                 model: Some("deepseek-v4-pro".into()),
             }),
             stream: Some(false),
         };
         let value = serde_json::to_value(&request).unwrap();
         assert_eq!(value["options"]["model"], "deepseek-v4-pro");
+        assert_eq!(value["options"]["provider"], "gemini");
 
         let no_override = ChatRequest {
             assistant_id: None,
             messages: vec![],
-            options: None,
+            options: Some(ChatOptions {
+                provider: None,
+                model: None,
+            }),
             stream: None,
         };
         let value = serde_json::to_value(&no_override).unwrap();
-        assert!(
-            value.get("options").is_none(),
-            "options must be omitted when unset"
-        );
+        assert_eq!(value["options"], serde_json::json!({}));
         assert!(value.get("assistant_id").is_none());
     }
 
