@@ -243,12 +243,24 @@ pub async fn download(
         })
         .unwrap_or(0);
     let mut received: u64 = if resuming { existing } else { 0 };
+    // NOTE: every truncating create must carry a write access mode —
+    // `OpenOptions` with create/truncate but no write/append access fails
+    // client-side with InvalidInput "creating or truncating a file requires
+    // write or append access" (a validation error, not an OS error). The
+    // resumed path gets its write access from `append`.
     let mut file = tokio::fs::OpenOptions::new()
         .create(true)
+        .write(!resuming)
         .append(resuming)
         .truncate(!resuming)
         .open(&tmp)
-        .await?;
+        .await
+        .map_err(|e| {
+            AppError::Io(std::io::Error::new(
+                e.kind(),
+                format!("failed to open download target {}: {e}", tmp.display()),
+            ))
+        })?;
     use tokio::io::AsyncWriteExt;
     while let Some(chunk) = resp.chunk().await? {
         file.write_all(&chunk).await?;
@@ -284,9 +296,7 @@ pub async fn download(
             // The sherpa-onnx archive extracts a top-level folder named after
             // the model id (e.g. `sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/`),
             // so unpack into the models dir itself.
-            extract_tar_bz2(&tmp, models_dir)?;
-            let _ = std::fs::remove_file(&tmp);
-            models_dir.join(spec.id)
+            install_archive(&tmp, models_dir, spec.id)?
         }
         #[cfg(not(feature = "parakeet"))]
         {
@@ -300,11 +310,100 @@ pub async fn download(
             Some(name) => target_dir.join(name),
             None => target_dir.join(format!("{}.bin", spec.id)),
         };
+        // A re-download must be able to replace an existing target that is
+        // read-only (or was left open by the resident engine — the IPC layer
+        // drops the engine before calling download).
+        make_writable(&dest);
         std::fs::rename(&tmp, &dest)?;
         dest
     };
     progress(1.0);
     Ok(final_path)
+}
+
+/// Extract a model archive into a fresh staging dir and atomically swap it
+/// into place. Two failure classes this protects against:
+///
+/// - A previous install's files can be **read-only** (archive metadata is
+///   preserved on extraction) — re-extracting over them then fails with
+///   "creating or truncating a file requires write or append access".
+/// - A failed in-place extraction leaves a mixed old/new file set that can
+///   never load; the staging swap is all-or-nothing.
+#[cfg(feature = "parakeet")]
+fn install_archive(tmp: &Path, models_dir: &Path, id: &str) -> AppResult<PathBuf> {
+    let final_dir = models_dir.join(id);
+    // The archive's top-level folder is named after the model id; extract
+    // into a staging root first, then move that folder into place (never
+    // extract over a live install).
+    let staging_root = models_dir.join(format!(".{id}.staging"));
+    let _ = std::fs::remove_dir_all(&staging_root);
+    extract_tar_bz2(tmp, &staging_root)?;
+    let staging = staging_root.join(id);
+    // The fresh tree must be re-downloadable later: strip any read-only bits
+    // the archive carried.
+    make_writable_recursive(&staging)?;
+    let _ = std::fs::remove_file(tmp);
+    // The previous install may be read-only too (and could be held open by
+    // the resident engine — the IPC layer drops it first); clear attributes
+    // before attempting the replacement.
+    make_writable_recursive(&final_dir).ok();
+    std::fs::remove_dir_all(&final_dir)?;
+    std::fs::rename(&staging, &final_dir)?;
+    let _ = std::fs::remove_dir_all(&staging_root);
+    Ok(final_dir)
+}
+
+/// Clear read-only attributes across a tree. Windows archive metadata can
+/// leave model files read-only, and every truncating re-download (or
+/// re-extraction) then fails with "creating or truncating a file requires
+/// write or append access". Attribute changes can be denied on some
+/// volumes/filesystems — callers decide whether that is fatal.
+#[cfg(feature = "parakeet")]
+fn make_writable_recursive(path: &Path) -> AppResult<()> {
+    let meta = match std::fs::symlink_metadata(path) {
+        Ok(meta) => meta,
+        Err(_) => return Ok(()), // not present yet
+    };
+    if meta.is_dir() {
+        for entry in std::fs::read_dir(path)? {
+            make_writable_recursive(&entry?.path())?;
+        }
+    }
+    make_writable(path);
+    Ok(())
+}
+
+/// Clear the read-only flag on a single path, if set. Cross-platform:
+/// Windows maps this to `FILE_ATTRIBUTE_READONLY`; Unix adds owner-write
+/// only (never world-writable).
+fn make_writable(path: &Path) {
+    let meta = match std::fs::metadata(path) {
+        Ok(meta) => meta,
+        Err(_) => return, // not present yet
+    };
+    #[cfg(windows)]
+    {
+        let mut perms = meta.permissions();
+        if perms.readonly() {
+            // `readonly` is exactly FILE_ATTRIBUTE_READONLY here — the
+            // Unix-mode side effect the clippy lint warns about does not
+            // apply on Windows.
+            #[allow(clippy::permissions_set_readonly_false)]
+            perms.set_readonly(false);
+            let _ = std::fs::set_permissions(path, perms);
+        }
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = meta.permissions();
+        let mode = perms.mode();
+        if mode & 0o200 == 0 {
+            // Add owner-write only.
+            perms.set_mode(mode | 0o200);
+            let _ = std::fs::set_permissions(path, perms);
+        }
+    }
 }
 
 /// Stream-hash a file (models can be hundreds of MB; never read into memory).
@@ -368,6 +467,50 @@ mod tests {
         assert!(validate_pairing("embedded", "base.en").is_ok());
     }
 
+    /// The downloader's tmp-file open contract: create+truncate REQUIRES an
+    /// explicit write access mode — without it `OpenOptions` fails
+    /// client-side with InvalidInput ("creating or truncating a file
+    /// requires write or append access"), which is exactly the error a
+    /// force re-download used to surface. The resumed path (append) gets
+    /// write access from `append` itself.
+    #[test]
+    fn truncating_open_requires_write_access() {
+        let dir =
+            std::env::temp_dir().join(format!("nvoos-dictate-openopts-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let tmp = dir.join("m.download");
+
+        // create+truncate with no access mode: client-side validation error.
+        let err = std::fs::OpenOptions::new()
+            .create(true)
+            .append(false)
+            .truncate(true)
+            .open(&tmp)
+            .unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+
+        // The fixed shape: write(true) for the fresh path...
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .append(false)
+            .truncate(true)
+            .open(&tmp)
+            .unwrap();
+        drop(file);
+
+        // ...and append(true) for the resumed path (append implies write).
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .truncate(false)
+            .open(&tmp)
+            .unwrap();
+        drop(file);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     #[test]
     fn sha256_matches_known_vector() {
         let dir = std::env::temp_dir().join(format!("nvoos-dictate-hash-{}", std::process::id()));
@@ -419,6 +562,68 @@ mod tests {
         )
         .unwrap();
         assert_eq!(tokens, "# 42");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Regression: re-downloading over a previous install whose files are
+    /// read-only (archive metadata) used to fail with "creating or
+    /// truncating a file requires write or append access". The staging swap
+    /// + attribute cleanup must replace the tree regardless.
+    #[cfg(feature = "parakeet")]
+    #[test]
+    fn reinstall_over_readonly_previous_install_succeeds() {
+        use std::io::Write;
+
+        const ID: &str = "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8";
+        let dir =
+            std::env::temp_dir().join(format!("nvoos-dictate-reinstall-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join(ID)).unwrap();
+
+        // A previous install whose files are read-only (as archive metadata
+        // extraction leaves them): confirm the failure mode exists, then
+        // that the install path overcomes it.
+        let old = dir.join(ID).join("tokens.txt");
+        std::fs::write(&old, b"old").unwrap();
+        let mut perms = std::fs::metadata(&old).unwrap().permissions();
+        perms.set_readonly(true);
+        std::fs::set_permissions(&old, perms).unwrap();
+        assert!(
+            std::fs::OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .open(&old)
+                .is_err(),
+            "a read-only file must reject truncating opens (the reported failure mode)"
+        );
+
+        // Build a fresh archive for the same model id.
+        let mut header = tar::Header::new_gnu();
+        header.set_path(format!("{ID}/tokens.txt")).unwrap();
+        header.set_size(3);
+        header.set_mode(0o644);
+        header.set_cksum();
+        let mut builder = tar::Builder::new(Vec::new());
+        builder.append(&header, &b"new"[..]).unwrap();
+        let tar_bytes = builder.into_inner().unwrap();
+        let archive_path = dir.join("m.tar.bz2");
+        let mut encoder = bzip2::write::BzEncoder::new(
+            std::fs::File::create(&archive_path).unwrap(),
+            bzip2::Compression::default(),
+        );
+        encoder.write_all(&tar_bytes).unwrap();
+        encoder.finish().unwrap();
+
+        install_archive(&archive_path, &dir, ID).unwrap();
+
+        let fresh = dir.join(ID).join("tokens.txt");
+        assert_eq!(std::fs::read_to_string(&fresh).unwrap(), "new");
+        // The fresh install is writable, so the NEXT re-download also works.
+        std::fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(&fresh)
+            .unwrap();
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

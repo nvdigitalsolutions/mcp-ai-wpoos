@@ -46,6 +46,7 @@ export interface Settings {
     pre_roll_ms: number;
     ring_capacity_secs: number;
     min_utterance_ms: number;
+    input_device: string | null;
   };
   privacy: {
     retain_meeting_audio: boolean;
@@ -116,6 +117,60 @@ export interface ConnectionTest {
   authenticated: boolean;
 }
 
+export interface DiagnosticsInfo {
+  version: string;
+  os: string;
+  config_path: string;
+  models_dir: string;
+  hotkey: {
+    ptt_key: string;
+    hook_installed: boolean;
+    hook_heartbeat_age_ms: number;
+    hook_calls: number;
+    swallow_pending: boolean;
+  };
+  mic: {
+    available: boolean;
+    device_name: string | null;
+    sample_rate: number;
+    channels: number;
+    buffered_samples: number;
+    live_rms: number;
+    live_peak: number;
+    vad_kind: string;
+    capture_callbacks: number;
+    capture_stall_ms: number;
+    capture_errors: number;
+    capture_last_error: string | null;
+  };
+  engine: {
+    configured: string;
+    model: string;
+    loaded: boolean;
+    features: string;
+    models: ModelSpec[];
+  };
+  credentials: {
+    nvoos_configured: boolean;
+    nvoos_credential_stored: boolean;
+    openai_key_stored: boolean;
+    wp_credentials_stored: boolean;
+  };
+  last_dictation: {
+    window_ms: number;
+    utterance_ms: number;
+    sample_rate: number;
+    rms: number;
+    peak: number;
+    vad_threshold: number;
+    engine: string;
+    model: string;
+    ok: boolean;
+    error: string | null;
+    e2e_ms: number | null;
+  } | null;
+}
+
 export type DictateEvent =
   | { state: 'idle' }
   | { state: 'recording'; hint: string | null }
@@ -130,6 +185,9 @@ export const api = {
   getSettings: () => invoke<Settings>('get_settings'),
   updateSettings: (settings: Settings) => invoke<Settings>('update_settings', { settings }),
   getStatus: () => invoke<StatusInfo>('get_status'),
+  getDiagnostics: () => invoke<DiagnosticsInfo>('get_diagnostics'),
+  listInputDevices: () => invoke<string[]>('list_input_devices'),
+  restartMicrophone: () => invoke<DiagnosticsInfo['mic']>('restart_microphone'),
 
   setNvoosCredential: (siteUrl: string, credential: string) =>
     invoke<void>('set_nvoos_credential', { siteUrl, credential }),

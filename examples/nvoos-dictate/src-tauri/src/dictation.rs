@@ -40,9 +40,59 @@ enum Phase {
 /// Trailing audio kept after key-up so the final phoneme is not clipped.
 const RELEASE_TAIL_MS: usize = 300;
 
+/// Floor for the energy-VAD gate: quiet speech must still count. The VAD
+/// only trims silence edges for PTT — it is never the final gate on whether
+/// the user spoke.
+const VAD_MIN_THRESHOLD: f32 = 0.02;
+/// Ceiling for the noise-adapted gate.
+const VAD_MAX_THRESHOLD: f32 = 0.15;
+/// The gate sits this many times above the window's quietest 10th-percentile
+/// frame (WebRTC-style noise gating): a raised floor (fans, hum) gets trimmed
+/// instead of transcribed, while speech above it always passes.
+const VAD_NOISE_RATIO: f32 = 6.0;
+/// A window peaking louder than this carries real input even when the VAD
+/// found no segments — transcribe it anyway. False negatives must never drop
+/// user audio; muted/unplugged mics stay errors because they peak at ~0.
+const VAD_FALLBACK_PEAK: f32 = 0.004;
+
 /// Pending MCP `dictate` request (hint + completion channel).
 type PendingDictate = (Option<String>, oneshot::Sender<Result<String, String>>);
 static PENDING: OnceLock<Mutex<Option<PendingDictate>>> = OnceLock::new();
+
+/// Diagnostics snapshot of the most recent dictation attempt — the
+/// "why did it say no speech" numbers, kept in memory only.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct LastDictationStats {
+    /// Captured window length (pre-roll + utterance + tail), ms.
+    pub window_ms: i64,
+    /// Key-down to key-up duration, ms.
+    pub utterance_ms: i64,
+    pub sample_rate: u32,
+    /// Window RMS and peak (0.0 when nothing was captured).
+    pub rms: f32,
+    pub peak: f32,
+    /// The VAD gate in force for this window.
+    pub vad_threshold: f32,
+    pub engine: String,
+    pub model: String,
+    pub ok: bool,
+    pub error: Option<String>,
+    pub e2e_ms: Option<i64>,
+}
+
+static LAST_DICTATION: OnceLock<Mutex<Option<LastDictationStats>>> = OnceLock::new();
+
+/// The most recent dictation attempt's stats (diagnostics page).
+pub fn last_dictation_stats() -> Option<LastDictationStats> {
+    LAST_DICTATION.get().and_then(|m| m.lock().unwrap().clone())
+}
+
+fn record_last_dictation(stats: LastDictationStats) {
+    *LAST_DICTATION
+        .get_or_init(|| Mutex::new(None))
+        .lock()
+        .unwrap() = Some(stats);
+}
 
 /// Dictation state events emitted to the webview.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -92,7 +142,10 @@ impl DictationController {
 
         // Resident microphone.
         let settings = state.settings_snapshot();
-        match MicCapture::start(settings.audio.ring_capacity_secs) {
+        match MicCapture::start(
+            settings.audio.ring_capacity_secs,
+            settings.audio.input_device.as_deref(),
+        ) {
             Ok(mic) => {
                 *state.mic.lock().unwrap() = Some(Arc::new(mic));
             }
@@ -319,12 +372,56 @@ fn finalize(app: &AppHandle, shift_raw: bool, press_pos: usize, release_pos: usi
 /// Keep only VAD-detected speech segments (with a small pad) so the engine
 /// never decodes long silences — faster and hallucination-free. Returns an
 /// empty vector when the window contains no speech.
-fn trim_to_speech(window: &[f32], rate: usize) -> Vec<f32> {
-    let mut vad = crate::audio::vad::create(0.02, 400, rate as u32);
-    trim_to_speech_with(window, rate, vad.as_mut())
+fn trim_to_speech_threshold(window: &[f32], rate: usize) -> (Vec<f32>, f32) {
+    let chunk = (rate / 10).max(512);
+    let threshold = adaptive_threshold(window, chunk);
+    let mut vad = crate::audio::vad::create(threshold, 400, rate as u32);
+    let samples = trim_to_speech_with(window, rate, vad.as_mut());
+    (samples, threshold)
 }
 
-/// Testable core: VAD-injected variant of [`trim_to_speech`].
+/// Per-window gate for the energy VAD: the fixed floor, raised toward the
+/// observed quiet-frame level so steady background noise gets gated without
+/// ever pushing the floor above quiet speech. The silero (probability) VAD
+/// keeps its own permissive default — the scales are not comparable.
+fn adaptive_threshold(window: &[f32], chunk: usize) -> f32 {
+    if crate::audio::vad::implementation() == "silero" {
+        return VAD_MIN_THRESHOLD;
+    }
+    let mut frames: Vec<f32> = window
+        .chunks(chunk.max(1))
+        .map(rms)
+        .filter(|r| r.is_finite())
+        .collect();
+    if frames.is_empty() {
+        return VAD_MIN_THRESHOLD;
+    }
+    frames.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let quiet = frames[frames.len() / 10]; // 10th-percentile frame = noise floor
+    VAD_MIN_THRESHOLD.max((quiet * VAD_NOISE_RATIO).min(VAD_MAX_THRESHOLD))
+}
+
+/// RMS of a mono buffer.
+fn rms(samples: &[f32]) -> f32 {
+    crate::audio::capture::rms_peak(samples).0
+}
+
+/// If the VAD found no segments but the window clearly carries signal,
+/// transcribe the whole window instead of dropping the utterance (a VAD
+/// false negative must never lose speech). Digital silence stays empty so
+/// muted/unplugged mics still produce the actionable error.
+fn vad_empty_fallback(window: &[f32], samples: Vec<f32>) -> Vec<f32> {
+    if !samples.is_empty() {
+        return samples;
+    }
+    if crate::audio::capture::rms_peak(window).1 > VAD_FALLBACK_PEAK {
+        window.to_vec()
+    } else {
+        Vec::new()
+    }
+}
+
+/// Testable core: VAD-injected variant of [`trim_to_speech_threshold`].
 fn trim_to_speech_with(
     window: &[f32],
     rate: usize,
@@ -392,91 +489,131 @@ fn finalize_inner(
     } else {
         window
     };
-    let samples = trim_to_speech(&window, rate);
+    // Speech gating: trim the silence edges, but never drop audible audio
+    // (a VAD false negative must not nuke the utterance).
+    let (trimmed, vad_threshold) = trim_to_speech_threshold(&window, rate);
+    let samples = vad_empty_fallback(&window, trimmed);
+    let (window_rms, window_peak) = crate::audio::capture::rms_peak(&window);
+    let mut stats = LastDictationStats {
+        window_ms: (window.len() as i64 * 1000) / rate as i64,
+        utterance_ms: release_pos.saturating_sub(press_pos) as i64 * 1000 / rate as i64,
+        sample_rate: mic.sample_rate(),
+        rms: window_rms,
+        peak: window_peak,
+        vad_threshold,
+        engine: settings.engine.engine.clone(),
+        model: settings.engine.model.clone(),
+        ok: false,
+        error: None,
+        e2e_ms: None,
+    };
     if samples.is_empty() {
+        stats.error = Some(format!(
+            "no speech detected — {} ms captured at RMS {:.4} / peak {:.4} on '{}' ({} Hz)",
+            stats.window_ms,
+            window_rms,
+            window_peak,
+            mic.device_name(),
+            rate
+        ));
+        record_last_dictation(stats);
         return Err(crate::error::AppError::Audio(
-            "no speech detected — check the microphone and try again".into(),
+            "no speech detected — the microphone signal was flat. Check the input \
+             device and mute state; the Diagnostics page shows the live input level."
+                .into(),
         ));
     }
 
-    // 2. STT.
-    let engine = state.ensure_engine()?;
-    let raw = engine.transcribe(
-        &samples,
-        mic.sample_rate(),
-        settings.engine.language.as_deref(),
-    )?;
+    // 2. STT, 3. cleanup, 4. polish, 5. paste, 6. history/archive. Every
+    // terminal outcome is recorded into the diagnostics snapshot.
+    let outcome: AppResult<(String, String, &'static str, i64)> = (|| {
+        let engine = state.ensure_engine()?;
+        let raw = engine.transcribe(
+            &samples,
+            mic.sample_rate(),
+            settings.engine.language.as_deref(),
+        )?;
 
-    // 3. Stage-1 deterministic cleanup (always paste-ready).
-    let category = foreground_category();
-    let dictionary = state.db.dictionary()?;
-    let stage1 = if settings.cleanup.deterministic_cleanup {
-        cleanup::run_deterministic(&raw, category, &dictionary, shift_raw)
-    } else {
-        // Whitespace-only passthrough when the user disabled the rules.
-        cleanup::run_deterministic(&raw, category, &dictionary, true)
-    };
+        let category = foreground_category();
+        let dictionary = state.db.dictionary()?;
+        let stage1 = if settings.cleanup.deterministic_cleanup {
+            cleanup::run_deterministic(&raw, category, &dictionary, shift_raw)
+        } else {
+            // Whitespace-only passthrough when the user disabled the rules.
+            cleanup::run_deterministic(&raw, category, &dictionary, true)
+        };
 
-    // 4. Optional Stage-2 provider.
-    let provider = cleanup::create_provider(&settings, state.secrets.as_ref())?;
-    let mut final_text = stage1.clone();
-    let mut provider_id: &'static str = "disabled";
-    if let Some(provider) = provider {
-        provider_id = provider.id();
-        let wait_ms = settings.cleanup.wait_for_llm_ms;
-        if wait_ms > 0 {
-            let fut = provider.polish(&stage1, category);
-            let outcome = tauri::async_runtime::block_on(async {
-                tokio::time::timeout(std::time::Duration::from_millis(wait_ms), fut).await
-            });
-            if let Ok(Ok(polished)) = outcome {
-                if !polished.trim().is_empty() {
-                    final_text = polished.trim().to_string();
+        let provider = cleanup::create_provider(&settings, state.secrets.as_ref())?;
+        let mut final_text = stage1.clone();
+        let mut provider_id: &'static str = "disabled";
+        if let Some(provider) = provider {
+            provider_id = provider.id();
+            let wait_ms = settings.cleanup.wait_for_llm_ms;
+            if wait_ms > 0 {
+                let fut = provider.polish(&stage1, category);
+                let outcome = tauri::async_runtime::block_on(async {
+                    tokio::time::timeout(std::time::Duration::from_millis(wait_ms), fut).await
+                });
+                if let Ok(Ok(polished)) = outcome {
+                    if !polished.trim().is_empty() {
+                        final_text = polished.trim().to_string();
+                    }
                 }
             }
         }
-    }
 
-    // 5. Paste (Stage-1 or polished text — never blocked by provider failure).
-    state.paste.paste(&final_text)?;
+        // Paste (Stage-1 or polished text — never blocked by provider failure).
+        state.paste.paste(&final_text)?;
 
-    let e2e_ms = started.elapsed().as_millis() as i64;
+        let e2e_ms = started.elapsed().as_millis() as i64;
 
-    // 6. History + optional archive.
-    let target_app = foreground_process_name().unwrap_or_default();
-    let _ = state.db.insert_transcript(
-        &raw,
-        &final_text,
-        engine.id(),
-        engine.model_id(),
-        &target_app,
-        provider_id,
-        e2e_ms,
-    )?;
+        let target_app = foreground_process_name().unwrap_or_default();
+        let _ = state.db.insert_transcript(
+            &raw,
+            &final_text,
+            engine.id(),
+            engine.model_id(),
+            &target_app,
+            provider_id,
+            e2e_ms,
+        )?;
 
-    if settings.nvoos.archive_enabled && state.has_nvoos_credential() {
-        if let Ok(client) = state.nvoos_client() {
-            let row = crate::nvoos::TranscriptRecord {
-                assistant_id: settings.nvoos.assistant_id.clone(),
-                title: format!("nvoos-dictate — {target_app}"),
-                raw: raw.clone(),
-                clean: final_text.clone(),
-                target_app,
-                engine: engine.id().to_string(),
-                e2e_ms,
-                created_at: chrono::Utc::now().to_rfc3339(),
-            };
-            let app_handle = app.clone();
-            tauri::async_runtime::spawn(async move {
-                if let Err(e) = client.archive_transcript(&row).await {
-                    tracing::warn!("archive failed: {e}");
-                }
-                let _ = app_handle;
-            });
+        if settings.nvoos.archive_enabled && state.has_nvoos_credential() {
+            if let Ok(client) = state.nvoos_client() {
+                let row = crate::nvoos::TranscriptRecord {
+                    assistant_id: settings.nvoos.assistant_id.clone(),
+                    title: format!("nvoos-dictate — {target_app}"),
+                    raw: raw.clone(),
+                    clean: final_text.clone(),
+                    target_app,
+                    engine: engine.id().to_string(),
+                    e2e_ms,
+                    created_at: chrono::Utc::now().to_rfc3339(),
+                };
+                let app_handle = app.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Err(e) = client.archive_transcript(&row).await {
+                        tracing::warn!("archive failed: {e}");
+                    }
+                    let _ = app_handle;
+                });
+            }
+        }
+
+        Ok((final_text, raw, provider_id, e2e_ms))
+    })();
+
+    match &outcome {
+        Ok((_, _, _, e2e_ms)) => {
+            stats.ok = true;
+            stats.e2e_ms = Some(*e2e_ms);
+        }
+        Err(e) => {
+            stats.error = Some(e.to_string());
         }
     }
-
-    Ok((final_text, raw, provider_id, e2e_ms))
+    record_last_dictation(stats);
+    outcome
 }
 
 fn foreground_category() -> AppCategory {
@@ -530,8 +667,17 @@ fn register_plugin_shortcut(app: &AppHandle, tx: Sender<HotkeyEvent>) {
 
 #[cfg(test)]
 mod tests {
-    use super::trim_to_speech_with;
+    use super::{
+        adaptive_threshold, trim_to_speech_with, vad_empty_fallback, VAD_MAX_THRESHOLD,
+        VAD_MIN_THRESHOLD,
+    };
     use crate::audio::vad::EnergyVad;
+
+    fn tone(hz: f32, seconds: f32, rate: usize, amplitude: f32) -> Vec<f32> {
+        (0..(rate as f32 * seconds) as usize)
+            .map(|i| (2.0 * std::f32::consts::PI * hz * i as f32 / rate as f32).sin() * amplitude)
+            .collect()
+    }
 
     #[test]
     fn trims_silence_and_keeps_speech() {
@@ -551,5 +697,38 @@ mod tests {
         // Pure silence -> empty (never feed the engine hallucination fodder).
         let mut vad2 = EnergyVad::new(0.02, 400, rate as u32);
         assert!(trim_to_speech_with(&vec![0.0f32; 4 * rate], rate, &mut vad2).is_empty());
+    }
+
+    #[test]
+    fn threshold_adapts_to_noise_floor() {
+        let rate = 16_000;
+        // Digital silence keeps the floor threshold.
+        let silent = adaptive_threshold(&vec![0.0f32; rate], rate / 10);
+        assert!(
+            (silent - VAD_MIN_THRESHOLD).abs() < 1e-6,
+            "silence threshold was {silent}"
+        );
+        // A raised noise floor (hum at RMS ~0.035) raises the gate so the
+        // noise gets trimmed instead of transcribed.
+        let noise = tone(120.0, 1.0, rate, 0.05);
+        let adapted = adaptive_threshold(&noise, rate / 10);
+        assert!(
+            adapted > VAD_MIN_THRESHOLD && adapted <= VAD_MAX_THRESHOLD,
+            "noise-adapted threshold was {adapted}"
+        );
+    }
+
+    #[test]
+    fn vad_miss_falls_back_to_full_window() {
+        let rate = 16_000;
+        // Quiet but real signal (peak above the fallback floor): a VAD false
+        // negative must never drop the utterance.
+        let quiet = tone(220.0, 0.5, rate, 0.012);
+        assert!(!vad_empty_fallback(&quiet, Vec::new()).is_empty());
+        // Detected segments pass through untouched.
+        let segments = vec![0.1f32; 512];
+        assert_eq!(vad_empty_fallback(&quiet, segments.clone()), segments);
+        // Digital silence (muted/unplugged mic): still an error path.
+        assert!(vad_empty_fallback(&vec![0.0f32; rate], Vec::new()).is_empty());
     }
 }

@@ -189,6 +189,11 @@ pub struct AudioConfig {
     pub ring_capacity_secs: usize,
     /// Recording must be at least this long to count.
     pub min_utterance_ms: u64,
+    /// Capture device by display name, or `None` for the OS default.
+    /// A stored name that no longer resolves (unplugged) falls back to the
+    /// default device at start; the actual device is always visible on the
+    /// Diagnostics page.
+    pub input_device: Option<String>,
 }
 
 impl Default for AudioConfig {
@@ -198,6 +203,7 @@ impl Default for AudioConfig {
             pre_roll_ms: 300,
             ring_capacity_secs: 60,
             min_utterance_ms: 120,
+            input_device: None,
         }
     }
 }

@@ -49,6 +49,26 @@ examples/nvoos-dictate/
   otherwise).
 - Dev: `npm run tauri dev` (vite :1420). Debug exe:
   `npm run tauri -- build --debug --no-bundle` → `src-tauri/target/debug/nvoos-dictate.exe`.
+  **The debug exe must include the feature for the engine the settings
+  configure** — the default build is mock+embedded only, and a whisper
+  config on a default build boots to "engine 'whisper' is not compiled
+  into this build". Build with the features you need:
+  `npm run tauri -- build --debug --no-bundle --features whisper,parakeet,silero-vad`
+  (whisper needs CMake + libclang on PATH — see below; whisper+parakeet
+  co-link because the vendored whisper-rs-sys compiles whisper.cpp with
+  the static CRT /MT, matching sherpa-onnx's prebuilt libs).
+  Quick engine-load check without the GUI: build with `mcp` too and run
+  `target/debug/nvoos-dictate.exe --mcp < /dev/null` — headless mode loads
+  the configured engine and prints whisper.cpp's model-load log on
+  success, or "engine unavailable in headless mode: …" on failure.
+  **Trap:** a plain `cargo build`/`cargo run` (debug profile) compiles with
+  `devUrl` (`http://localhost:1420`) baked in, so the webview loads the
+  Vite dev server at runtime and shows `ERR_CONNECTION_REFUSED` in the app
+  body when nothing is serving there — and it silently OVERWRITES
+  `target/debug/nvoos-dictate.exe`. Only `tauri build --debug --no-bundle`
+  (or `npm run tauri dev` with vite running) produces a usable GUI exe;
+  after any plain-cargo headless check, rebuild via tauri before handing
+  the exe back.
 - `generate_context!` embeds the frontend `dist` at compile time — run
   `npm run build` before any cargo step in CI.
 - Boot smoke test: `cmd //c start "" <exe>` → `tasklist //FI "IMAGENAME eq
@@ -201,12 +221,41 @@ Two guardrails added after the "parakeet model 'base.en' not found" wedge:
   models. `download_model` IPC re-runs `ensure_engine` after install so the
   fresh model is usable without an app restart.
 
+Re-download hardening: archive installs extract into a `.staging` dir and
+atomically swap into place via `install_archive` — never extract over a live
+install. Both the fresh tree and the previous install get a
+`make_writable_recursive` pass (Windows `FILE_ATTRIBUTE_READONLY` clear,
+Unix owner-write) because tar extraction preserves archive metadata and can
+leave read-only model files that break later truncating overwrites.
+Non-archive renames get `make_writable(dest)` first. The `download_model`
+IPC **drops the resident engine before** replacing files (a loaded engine
+can hold model files open/mapped on Windows) and re-creates it after.
+**The actual root cause of the persistent "Download failed: I/O error:
+creating or truncating a file requires write or append access" was NOT an
+OS error — it is `OpenOptions` client-side validation** (`ErrorKind::
+InvalidInput`): the tmp-file open had `.create(true).truncate(!resuming)`
+with `.append(resuming)` but NO write access mode, so every fresh/forced
+(non-resuming) download failed before touching disk, while resumed
+downloads worked (append implies write). Fix: `.write(!resuming)` added;
+the error now also carries the failing path. Regression tests:
+`reinstall_over_readonly_previous_install_succeeds` and
+`truncating_open_requires_write_access` (both feature `parakeet` for the
+first; the second runs everywhere).
+
 ## Verification harnesses
 
 ```bash
 # Registry-driven download (same path the GUI uses)
 cargo run --features parakeet --example download_model -- parakeet sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8
 cargo run --example download_model -- whisper tiny.en
+
+# Live-capture probe: does a fresh stream on a device actually deliver?
+# (distinguishes OS/device problems from app-side capture bugs)
+cargo run --example mic_probe              # default device
+cargo run --example mic_probe -- "ROG EYE S"  # device whose name contains ...
+
+# Live-capture integration test on real hardware (ignored in CI)
+cargo test -- --ignored live_capture_delivers_samples
 
 # WER + e2e_ms + RTF against a speech file (sidecar .txt = reference)
 cargo run --features parakeet --example transcribe_file -- ../speech.wav --engine parakeet --model sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8
@@ -224,6 +273,17 @@ cargo run --features parakeet --example transcribe_file -- ../speech.wav --engin
 - `cpal::Stream` is `!Send + !Sync` on WASAPI — streams must live on
   detached worker threads; only Send handles (ring buffer Arcs, channels,
   atomics) may enter `AppState`. Do not regress this.
+  **And the stream must be HELD by the worker** — `build_stream` returns the
+  live `cpal::Stream` alongside the ring, and the worker binds it for its
+  lifetime. The original code dropped the stream at the end of
+  `build_stream` (the "hold it forever" comment was aspirational): dropping
+  a playing stream stops capture, so the ring NEVER filled — every dictation
+  reported "no speech detected" on perfectly healthy mics. The
+  `MicCapture` health counters (`callback_count()`, `stall_ms()`, stream
+  errors) surface this on the Diagnostics page, `restart_microphone` IPC
+  rebuilds capture without an app restart, and the ignored integration test
+  `live_capture_delivers_samples` (`cargo test -- --ignored`) reproduces
+  the failure on real hardware (ignored in CI — no audio device).
 - **Bare expression paths do not resolve sibling modules declared in a
   parent module** (proven with a minimal repro): inside
   `stt/engine.rs`, `parakeet::X` fails while `crate::stt::parakeet::X`
@@ -234,8 +294,21 @@ cargo run --features parakeet --example transcribe_file -- ../speech.wav --engin
   key-up while the down passes through leaves Windows believing RAlt is
   permanently held — the "keyboard breaks, Ctrl+Alt+Del fixes it" stuck-Alt
   failure. Non-armed events (AltGr combos) always pass through via
-  `ptt_pressed_alone`. The hook tests serialize on a shared `TEST_LOCK`
-  because the hook state lives in process-global statics.
+  `ptt_pressed_alone`. **Exit discipline**: if the app shuts down with a
+  swallow pending (Alt+F4 close while RAlt is held is the classic repro),
+  the hook thread injects a synthetic key-up via `SendInput` AFTER
+  `UnhookWindowsHookEx` (`release_pending_swallow` / `take_pending_swallow`
+  bookkeeping) so the modifier is never left stuck for the session. The
+  hook tests serialize on a shared `TEST_LOCK` because the hook state lives
+  in process-global statics.
+- **VAD gating (dictation)**: the energy gate is adaptive per window —
+  `max(0.02, min(10th-percentile frame RMS × 6, 0.15))` (WebRTC-style noise
+  gating); silero keeps its probability default. The VAD only trims silence
+  edges — it is never the final gate: `vad_empty_fallback` transcribes the
+  whole window whenever the peak exceeds 0.004 (false negatives must never
+  drop user audio; muted/unplugged mics peak at ~0 and still error). Every
+  attempt records `LastDictationStats` (window/utterance ms, RMS/peak, gate,
+  outcome) surfaced by `get_diagnostics`.
 - **Settings saves that fail validation must not persist**: `update_settings`
   runs `validate_pairing` BEFORE `settings.save()` so a broken combo can
   never wedge the next boot. If the engine still fails to load after a valid
@@ -259,7 +332,26 @@ post-merge hardening: exit-on-close + stuck-PTT release + model download UX
 symmetric hook swallow (stuck-Alt fix), hands-free toggle release fix
 (double-tap recording no longer ends on its own key release), engine/model
 pairing validation + model dropdown, force re-download, vendored
-whisper.cpp CMakeLists bindings fix. Remaining: PTT manual matrix + loopback meeting verification (P2
+whisper.cpp CMakeLists bindings fix; hook exit-safety (synthetic key-up via
+SendInput after unhook — fixes the keyboard stuck until Ctrl+Alt+Del when
+closing with Alt+F4/while the PTT key is held), adaptive VAD gate +
+no-speech fallback (audible audio is never dropped), `LastDictationStats`
++ Diagnostics tab (`get_diagnostics` IPC: mic device name + live level
+meter, hook health, model install state, credentials, copy-report JSON),
+mic input-device picker in Settings (`audio.input_device` +
+`list_input_devices` IPC + `state::reapply_audio` — the resident capture
+restarts on save; MicCapture's worker thread now stops via a Drop stop
+channel), the model re-download hardening (staging-swap install,
+read-only attribute clearing, engine released before file replacement,
+and the real re-download root cause: the tmp-file `OpenOptions` missing
+`.write(!resuming)` — a client-side InvalidInput, not an OS error), and
+the **live-capture fix**: the resident stream was being dropped right
+after `play()` so the pre-roll ring never filled (zero callbacks on
+healthy mics) — the worker now holds the stream, capture health
+(callbacks/stall/errors) shows on Diagnostics with a Restart-capture
+button, `restart_microphone` IPC, and the `mic_probe` example +
+`live_capture_delivers_samples` ignored test verify real hardware.
+Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
 addon permission tweak for `cred_x.SECRET`, P4/P5 ports, release
 signing/updater feed. See the implementation plan

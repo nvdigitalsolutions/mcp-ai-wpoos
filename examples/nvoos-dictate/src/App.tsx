@@ -5,8 +5,9 @@ import SettingsView from './views/Settings';
 import HistoryView from './views/History';
 import MeetingsView from './views/Meetings';
 import OverlayView from './views/Overlay';
+import DiagnosticsView from './views/Diagnostics';
 
-type Tab = 'home' | 'history' | 'meetings' | 'settings';
+type Tab = 'home' | 'history' | 'meetings' | 'diagnostics' | 'settings';
 
 export default function App() {
   const kind = windowKind();
@@ -62,6 +63,12 @@ export default function App() {
             Meetings
           </button>
           <button
+            className={tab === 'diagnostics' ? 'tab active' : 'tab'}
+            onClick={() => setTab('diagnostics')}
+          >
+            Diagnostics
+          </button>
+          <button
             className={tab === 'settings' ? 'tab active' : 'tab'}
             onClick={() => setTab('settings')}
           >
@@ -75,6 +82,7 @@ export default function App() {
         {tab === 'meetings' && (
           <MeetingsView onChanged={refresh} meetingRecording={!!status?.meeting_recording} />
         )}
+        {tab === 'diagnostics' && <DiagnosticsView />}
         {tab === 'settings' && <SettingsView onChanged={refresh} />}
       </main>
     </div>

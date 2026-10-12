@@ -218,6 +218,46 @@ impl AppState {
         Ok(())
     }
 
+    /// Swap the resident microphone when the capture device or ring capacity
+    /// changes. Mirrors [`Self::reapply_engine`]: the new capture is built
+    /// before the old one is dropped (its Drop stops the worker thread and
+    /// releases the cpal stream), and a failure keeps the previous device
+    /// active — settings are already persisted, so the swap must not wedge
+    /// the next boot.
+    pub fn reapply_audio(&self, previous: &Settings) -> AppResult<()> {
+        let current = self.settings_snapshot();
+        let changed = previous.audio.input_device != current.audio.input_device
+            || previous.audio.ring_capacity_secs != current.audio.ring_capacity_secs;
+        if !changed {
+            return Ok(());
+        }
+        self.restart_mic()
+    }
+
+    /// Rebuild the resident microphone capture on the configured device
+    /// (diagnostics recovery: dead/unplugged device, changed OS default).
+    /// The previous capture keeps running if the rebuild fails.
+    pub fn restart_mic(&self) -> AppResult<()> {
+        let settings = self.settings_snapshot();
+        match MicCapture::start(
+            settings.audio.ring_capacity_secs,
+            settings.audio.input_device.as_deref(),
+        ) {
+            Ok(mic) => {
+                tracing::info!(
+                    device = mic.device_name(),
+                    rate = mic.sample_rate(),
+                    "restarted microphone capture"
+                );
+                *self.mic.lock().unwrap() = Some(Arc::new(mic));
+                Ok(())
+            }
+            Err(e) => Err(AppError::Audio(format!(
+                "microphone restart failed; the previous device is still active: {e}"
+            ))),
+        }
+    }
+
     /// Build an NV oOS client from stored settings + keychain credential.
     pub fn nvoos_client(&self) -> AppResult<crate::nvoos::NvoosClient> {
         let settings = self.settings_snapshot();
