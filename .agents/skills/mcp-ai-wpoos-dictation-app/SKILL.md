@@ -353,8 +353,12 @@ button, `restart_microphone` IPC, and the `mic_probe` example +
 `live_capture_delivers_samples` ignored test verify real hardware.
 Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
-addon permission tweak for `cred_x.SECRET`, P4/P5 ports, release
-signing/updater feed. See the implementation plan
+addon permission tweak for `cred_x.SECRET`, P4 (Linux) port, the macOS
+port — scoped in proposal 068
+(`docs/project/proposals/068-macos-dictation-port-proposal.md`: listen-only
+CGEventTap PTT, Input Monitoring/Accessibility/mic permission model,
+ScreenCaptureKit meetings, Metal/CoreML STT, signing/notarization/Sparkle)
+— release signing/updater feed. See the implementation plan
 (`docs/project/proposals/067-…-plan.md`) for the full item list.
 
 ## Related skills
