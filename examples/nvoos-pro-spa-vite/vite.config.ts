@@ -1,6 +1,8 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 /**
@@ -158,6 +160,36 @@ function loginPageProxy(target: string) {
   };
 }
 
+/**
+ * Read the HOME login-preset flag from the .env files.
+ *
+ * Deliberately does NOT go through loadEnv: every POSIX shell (and git-bash on
+ * Windows) exports HOME as the user's home-directory path, and loadEnv's
+ * process.env merge would let that clobber the .env value. Only the .env
+ * files are consulted here; an inline `HOME=1 npm run dev` is honored first
+ * when it is exactly a preset digit.
+ */
+function readHomePreset(mode: string): string {
+  const inline = process.env.HOME ?? '';
+  if (/^[0-4]$/.test(inline)) {
+    return inline;
+  }
+
+  const files = ['.env', '.env.local', `.env.${mode}`, `.env.${mode}.local`];
+  let value = '';
+  for (const file of files) {
+    const path = join(envDir, file);
+    if (!existsSync(path)) {
+      continue;
+    }
+    const match = readFileSync(path, 'utf8').match(/^HOME\s*=\s*['"]?([^'"\r\n]+)['"]?\s*$/m);
+    if (match?.[1]) {
+      value = match[1].trim();
+    }
+  }
+  return value;
+}
+
 /** Proxy route that keeps WordPress redirects inside the dev origin. */
 function wordpressProxy(target: string, extra: Record<string, unknown> = {}) {
   return {
@@ -185,6 +217,18 @@ export default defineConfig(({ mode }) => {
     define: {
       // The spa-v2 sources reference process.env.NODE_ENV (axe dev audit gate).
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+      // Login-preset env baked into the client bundle at build time. Keep this
+      // list in sync with src/env.d.ts and the README's "Login presets (HOME)"
+      // section. NVOOS_WORKER_TOKEN is a browser-visible token by design (the
+      // connection screen stores it in localStorage today) — see README.
+      'import.meta.env.NVOOS_HOME': JSON.stringify(readHomePreset(mode)),
+      'import.meta.env.NVOOS_SITE_URL': JSON.stringify(env.NVOOS_SITE_URL ?? ''),
+      'import.meta.env.NVOOS_ASSISTANT_CREDENTIAL': JSON.stringify(env.NVOOS_ASSISTANT_CREDENTIAL ?? ''),
+      'import.meta.env.NVOOS_WP_USERNAME': JSON.stringify(env.NVOOS_WP_USERNAME ?? ''),
+      'import.meta.env.NVOOS_WP_APP_PASSWORD': JSON.stringify(env.NVOOS_WP_APP_PASSWORD ?? ''),
+      'import.meta.env.NVOOS_WORKER_URL': JSON.stringify(env.NVOOS_WORKER_URL ?? ''),
+      'import.meta.env.NVOOS_WORKER_TOKEN': JSON.stringify(env.NVOOS_WORKER_TOKEN ?? ''),
+      'import.meta.env.NVOOS_AUTO_CONNECT': JSON.stringify(env.NVOOS_AUTO_CONNECT ?? ''),
     },
     resolve: {
       alias: {

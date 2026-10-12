@@ -138,6 +138,7 @@ body,
 }
 
 .nvoos-connect-form input[type='url'],
+.nvoos-connect-form input[type='text'],
 .nvoos-connect-form input[type='password'],
 .nvoos-connect-form input[type='number'] {
   background: #0b0d13;
@@ -245,6 +246,66 @@ body,
 .nvoos-cookie-login a:hover,
 .nvoos-cookie-login a:focus-visible {
   text-decoration: underline;
+}
+
+/* Login preset pages (HOME=1..4). */
+.nvoos-preset-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid var(--shell-accent);
+  border-radius: 999px;
+  background: rgba(124, 92, 255, 0.08);
+  color: var(--shell-accent-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* The cookie preset's login affordance is just a button. */
+.nvoos-login-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 10px 16px;
+  border: 1px solid var(--shell-accent-2);
+  border-radius: 8px;
+  background: rgba(53, 208, 165, 0.1);
+  color: var(--shell-accent-2);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nvoos-login-button:hover,
+.nvoos-login-button:focus-visible {
+  background: rgba(53, 208, 165, 0.18);
+  text-decoration: none;
+}
+
+/* Mode-4 env summary (dt/dd rows). */
+.nvoos-env-summary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--shell-border);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.nvoos-env-summary dt {
+  color: var(--shell-muted);
+}
+
+.nvoos-env-summary dd {
+  margin: 0;
+  color: var(--shell-text);
+  overflow-wrap: anywhere;
 }
 
 /* Floating disconnect button, kept out of the SPA's own layout. */
