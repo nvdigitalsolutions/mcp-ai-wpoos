@@ -1567,6 +1567,36 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools         = array_merge( $pro_tools, $fnb_toolkit_tools );
 		}
 
+		// Add GTmetrix Performance Toolkit tools if enabled (Pro feature — GTmetrix API testing, deterministic analysis, WPCode fix delivery).
+		if ( ! empty( $settings['enable_gtmetrix_toolkit'] ) ) {
+			$gtmetrix_toolkit_tools = array(
+				'WP_MCP_AI_Tool_GTmetrix_Account_Status'          => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-account-status.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Locations'          => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-locations.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Browsers'           => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-browsers.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Simulated_Devices'  => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-simulated-devices.php',
+				'WP_MCP_AI_Tool_GTmetrix_Start_Test'              => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-start-test.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Test_Status'         => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-test-status.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Tests'              => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-tests.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Report'              => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-report.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Lighthouse_Audits'   => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-lighthouse-audits.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Resource_Summary'    => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-resource-summary.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Report_Resources'   => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-report-resources.php',
+				'WP_MCP_AI_Tool_GTmetrix_Compare_Reports'         => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-compare-reports.php',
+				'WP_MCP_AI_Tool_GTmetrix_Analyze_Report'          => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-analyze-report.php',
+				'WP_MCP_AI_Tool_GTmetrix_Generate_WPCode_Snippet' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-generate-wpcode-snippet.php',
+				'WP_MCP_AI_Tool_GTmetrix_Install_WPCode_Fix'      => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-install-wpcode-fix.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Pages'              => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-pages.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Page'                => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-page.php',
+				'WP_MCP_AI_Tool_GTmetrix_Retest_Page'             => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-retest-page.php',
+				'WP_MCP_AI_Tool_GTmetrix_Set_Monitoring'          => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-set-monitoring.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Alert_Conditions'    => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-alert-conditions.php',
+				'WP_MCP_AI_Tool_GTmetrix_Set_Alert_Conditions'    => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-set-alert-conditions.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Alert_Events'        => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-alert-events.php',
+				'WP_MCP_AI_Tool_GTmetrix_Manage_Page_Tags'        => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-manage-page-tags.php',
+			);
+			$pro_tools             = array_merge( $pro_tools, $gtmetrix_toolkit_tools );
+		}
+
 		// Add Shopify Sync Toolkit tools if enabled (Pro feature — Shopify↔WooCommerce sync with CCT cache).
 		if ( ! empty( $settings['enable_shopify_sync_toolkit'] ) && class_exists( 'WooCommerce' ) && class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 			$shopify_sync_toolkit_tools = array(
@@ -3028,6 +3058,7 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 		'class-wp-mcp-ai-pro-cli-status-command.php',
 		'class-wp-mcp-ai-pro-cli-toolkit-command.php',
 		'class-wp-mcp-ai-pro-cli-fnb-seed-command.php',
+		'class-wp-mcp-ai-pro-cli-gtmetrix-seed-command.php',
 		'class-wp-mcp-ai-pro-cli-connection-command.php',
 		'class-wp-mcp-ai-pro-cli-project-command.php',
 		'class-wp-mcp-ai-pro-cli-task-command.php',

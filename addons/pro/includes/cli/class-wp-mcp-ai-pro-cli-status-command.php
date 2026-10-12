@@ -58,6 +58,7 @@ class WP_MCP_AI_Pro_CLI_Status_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		'enable_regulatory_registration_toolkit' => 'Regulatory Registration Toolkit',
 		'enable_chat_channels_toolkit'           => 'Chat Channels Toolkit',
 		'enable_fnb_toolkit'                     => 'Food & Beverage Toolkit',
+		'enable_gtmetrix_toolkit'               => 'GTmetrix Performance Toolkit',
 		'enable_project_management'              => 'Project Management',
 		'enable_eca_management'                  => 'ECA Management',
 		'enable_quiz_system'                     => 'Quiz System',

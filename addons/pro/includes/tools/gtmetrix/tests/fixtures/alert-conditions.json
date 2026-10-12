@@ -1,0 +1,21 @@
+{
+  "data": {
+    "type": "performance_alert_conditions",
+    "id": "P1",
+    "attributes": {
+      "create_video": false,
+      "conditions": [
+        {
+          "metric": "onload",
+          "operator": ">",
+          "value": 3000
+        },
+        {
+          "metric": "total_size",
+          "operator": ">",
+          "value": 2000000
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "data": {
+    "type": "report",
+    "id": "RGOOD",
+    "attributes": {
+      "url": "https://example.test/",
+      "page": "P1",
+      "test": "T1Q",
+      "source": "api",
+      "page_tags": [],
+      "created": 1718700100,
+      "expires": 1721382100,
+      "browser": "3",
+      "location": "24",
+      "gtmetrix_grade": "A",
+      "gtmetrix_score": 94,
+      "performance_score": 94,
+      "structure_score": 99,
+      "html_bytes": 8421,
+      "page_bytes": 911360,
+      "page_requests": 46,
+      "redirect_duration": 0,
+      "connect_duration": 42,
+      "backend_duration": 180,
+      "time_to_first_byte": 222,
+      "first_paint_time": 480,
+      "first_contentful_paint": 620,
+      "dom_interactive_time": 1150,
+      "dom_content_loaded_time": 1180,
+      "dom_content_loaded_duration": 40,
+      "onload_time": 1680,
+      "onload_duration": 30,
+      "fully_loaded_time": 2250,
+      "rum_speed_index": 980,
+      "speed_index": 990,
+      "largest_contentful_paint": 1800,
+      "time_to_interactive": 1450,
+      "total_blocking_time": 120,
+      "cumulative_layout_shift": 0.03
+    },
+    "links": {
+      "screenshot": "/api/2.0/reports/RGOOD/resources/screenshot.jpg",
+      "har": "/api/2.0/reports/RGOOD/resources/net.har",
+      "filmstrip": "/api/2.0/reports/RGOOD/resources/filmstrip.json",
+      "lighthouse": "/api/2.0/reports/RGOOD/resources/lighthouse.json",
+      "resource_summary": "/api/2.0/reports/RGOOD/resources/resource-summary"
+    }
+  }
+}

@@ -730,6 +730,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'toolkit_gtmetrix',
+				'GTmetrix Performance Toolkit',
+				array(),
+				array(),
+				function () use ( $p ) {
+					require_once $p . 'tools/gtmetrix/init.php';
+				}
+			);
+
+			$this->add_module(
 				'fashion_studio',
 				'Fashion Studio Bridge',
 				array( 'toolkit_media' ),

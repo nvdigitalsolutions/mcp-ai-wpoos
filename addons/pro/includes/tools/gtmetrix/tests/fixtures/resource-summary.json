@@ -1,0 +1,44 @@
+{
+  "document": {
+    "label": "HTML",
+    "count": 2,
+    "size_transferred": 139443,
+    "size_uncompressed": 896765
+  },
+  "font": {
+    "label": "Fonts",
+    "count": 2,
+    "size_transferred": 379252,
+    "size_uncompressed": 379252
+  },
+  "image": {
+    "label": "Images",
+    "count": 5,
+    "size_transferred": 323228,
+    "size_uncompressed": 337122
+  },
+  "media": {
+    "label": "Videos",
+    "count": 0,
+    "size_transferred": 0,
+    "size_uncompressed": 0
+  },
+  "other": {
+    "label": "Other",
+    "count": 14,
+    "size_transferred": 7621,
+    "size_uncompressed": 16127
+  },
+  "script": {
+    "label": "JavaScript",
+    "count": 6,
+    "size_transferred": 161484,
+    "size_uncompressed": 441990
+  },
+  "stylesheet": {
+    "label": "CSS Stylesheets",
+    "count": 3,
+    "size_transferred": 57786,
+    "size_uncompressed": 384445
+  }
+}

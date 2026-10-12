@@ -1,0 +1,16 @@
+{
+  "data": [
+    {
+      "type": "tag",
+      "id": "TAG1",
+      "attributes": {
+        "name": "Production",
+        "description": "Customer facing pages",
+        "color": "FFFFFF"
+      },
+      "links": {
+        "self": "https://gtmetrix.com/api/2.0/page_tags/TAG1"
+      }
+    }
+  ]
+}
