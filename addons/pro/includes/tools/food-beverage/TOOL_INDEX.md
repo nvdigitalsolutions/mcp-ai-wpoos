@@ -23,3 +23,14 @@
 | `fnb_save_draft` | Save output to Drafts folder | G-12 | DRAFT |
 | `fnb_list_drafts` | List drafts | G-12 | READ |
 | `fnb_audit_log` | Read-only audit viewer for CEO | open Q8 | READ |
+| `fnb_import_table` | Sheet → native CPT upsert (idempotent) | Phase 9, Change records row | ACT (`manage_options`) |
+| `fnb_pr_create` | Purchase request → QMS draft (R-04 layout) | Appendix A, A2-07 | DRAFT (`manage_qms`) |
+| `fnb_pr_submit` | draft → in_review + A2-05/A2-06 gates | Appendix A §A5 | ACT — off |
+| `fnb_pr_return` | in_review/approved → draft (+comments) | Appendix A §A3 | ACT — off |
+| `fnb_pr_approve` | in_review → approved (budget + duties gates) | Appendix A §A5, M-20 | ACT — off |
+| `fnb_pr_release` | approved → released (+PO number, hash freeze) | Appendix A §A4/A5 | ACT — off |
+| `fnb_pr_supersede` | released → superseded (+new draft revision) | Appendix A §A3 | ACT — off |
+| `fnb_pr_cancel` | any → obsolete (reason audited) | Appendix A §A5 | ACT — off |
+| `fnb_pr_list` | Purchase-request register | Appendix A §A6 | READ |
+| `fnb_pr_audit` | Immutable PR audit trail | open Q8 | READ |
+| `import_fnb_blueprint` | Install A1–A4 assistant blueprints | Blueprints page parity | DRAFT (`edit_posts`) |

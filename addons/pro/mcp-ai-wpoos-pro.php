@@ -1563,6 +1563,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Fnb_Save_Draft'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-save-draft.php',
 				'WP_MCP_AI_Tool_Fnb_List_Drafts'         => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-list-drafts.php',
 				'WP_MCP_AI_Tool_Fnb_Audit_Log'           => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-audit-log.php',
+				'WP_MCP_AI_Tool_Fnb_Import_Table'        => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-import-table.php',
+				'WP_MCP_AI_Tool_Fnb_Pr_Create'           => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-create.php',
+				'WP_MCP_AI_Tool_Fnb_Pr_Submit'           => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-submit.php',
+				'WP_MCP_AI_Tool_Fnb_Pr_Return'           => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-return.php',
+				'WP_MCP_AI_Tool_Fnb_Pr_Approve'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-approve.php',
+				'WP_MCP_AI_Tool_Fnb_Pr_Release'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-release.php',
+				'WP_MCP_AI_Tool_Fnb_Pr_Supersede'        => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-supersede.php',
+				'WP_MCP_AI_Tool_Fnb_Pr_Cancel'           => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-cancel.php',
+				'WP_MCP_AI_Tool_Fnb_Pr_List'             => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-list.php',
+				'WP_MCP_AI_Tool_Fnb_Pr_Audit'            => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-audit.php',
+				'WP_MCP_AI_Tool_Import_Fnb_Blueprint'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/examples/class-wp-mcp-ai-tool-import-fnb-blueprint.php',
 			);
 			$pro_tools         = array_merge( $pro_tools, $fnb_toolkit_tools );
 		}

@@ -2,9 +2,10 @@
 /**
  * Food & Beverage Toolkit — Admin Settings Page.
  *
- * Registers the "Food & Beverage" submenu under the NV oOS admin menu and
- * renders the toolkit configuration form (data adapter, Drive folder IDs,
- * CSV directory, drafts folder, as-of date, demo mode).
+ * Registers the "Food & Beverage" submenu under the NV oOS Pro admin menu
+ * (`nvoos-pro-dashboard`) and renders the toolkit configuration form (data
+ * adapter, Drive folder IDs, CSV directory, drafts folder, as-of date, demo
+ * mode, native storage).
  *
  * All values are stored in the dedicated `wp_mcp_ai_fnb_settings` option
  * managed by WP_MCP_AI_Fnb_Settings.
@@ -59,13 +60,13 @@ class WP_MCP_AI_Fnb_Settings_Page {
 	}
 
 	/**
-	 * Add the settings page under the NV oOS admin menu.
+	 * Add the settings page under the NV oOS Pro admin menu.
 	 *
 	 * @return void
 	 */
 	public static function add_menu() {
 		add_submenu_page(
-			'wp-mcp-ai-dashboard',
+			'nvoos-pro-dashboard',
 			__( 'Food & Beverage Toolkit', 'mcp-ai-wpoos-pro' ),
 			__( 'Food & Beverage', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
@@ -203,6 +204,50 @@ class WP_MCP_AI_Fnb_Settings_Page {
 				'description' => __( 'When enabled, the toolkit prefers the bundled demo fixtures and the drafts-only output discipline of the Surf Club demo.', 'mcp-ai-wpoos-pro' ),
 			)
 		);
+
+		// Native storage section (Phase 9).
+		add_settings_section(
+			'wp_mcp_ai_fnb_native',
+			__( 'Native Storage', 'mcp-ai-wpoos-pro' ),
+			function () {
+				echo '<p>' . esc_html__( 'Store the five transactional tables (Daily sales, Purchases, Stock counts, Waste log, Bookings) as WordPress posts so they can be edited in wp-admin and read without Drive access. Reference tables keep the Drive/CSV adapter either way. Import rows with the fnb_import_table tool or the F&B Management menu.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'enable_fnb_native_storage',
+			__( 'Enable Native Storage', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_checkbox_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_fnb_native',
+			array(
+				'setting_key' => 'enable_fnb_native_storage',
+				'description' => __( 'When enabled, metrics and reports read the transactional tables from the native CPTs. Turn this off to read them straight from Drive/CSV again (rows are kept).', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+
+		// Purchase requests section (Phase 9b, Appendix A).
+		add_settings_section(
+			'wp_mcp_ai_fnb_pr',
+			__( 'Purchase Requests', 'mcp-ai-wpoos-pro' ),
+			function () {
+				echo '<p>' . esc_html__( 'Purchase requests use the QMS approval lifecycle (draft → in review → approved → released) with segregation of duties, content-hash freeze, and an immutable audit trail. Enable the Document Generation toolkit with QMS compliance to use the fnb_pr_* tools.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'pr_auto_approval_threshold',
+			__( 'Auto-Approval Threshold (LKR)', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_fnb_pr',
+			array(
+				'setting_key' => 'pr_auto_approval_threshold',
+				'description' => __( 'Release requires a finance co-sign when the request total exceeds this amount. 0 = co-sign never required.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
 	}
 
 	/**
@@ -233,6 +278,11 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		$current['as_of_date'] = ( '' === $submitted_date || (bool) preg_match( '/^\d{4}-\d{2}-\d{2}$/', $submitted_date ) ) ? $submitted_date : '';
 
 		$current['demo_mode'] = ! empty( $input['demo_mode'] );
+
+		$current['enable_fnb_native_storage'] = ! empty( $input['enable_fnb_native_storage'] );
+
+		$submitted_threshold                   = isset( $input['pr_auto_approval_threshold'] ) ? sanitize_text_field( (string) $input['pr_auto_approval_threshold'] ) : '';
+		$current['pr_auto_approval_threshold'] = is_numeric( $submitted_threshold ) ? max( 0.0, (float) $submitted_threshold ) : 0.0;
 
 		return $current;
 	}
@@ -305,6 +355,37 @@ class WP_MCP_AI_Fnb_Settings_Page {
 						<?php
 						/* translators: %s: WP-CLI command. */
 						printf( esc_html__( 'Seed the four A1–A4 assistant packs with: %s', 'mcp-ai-wpoos-pro' ), '<code>wp mcp-ai pro fnb seed-assistants</code>' );
+						?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Native storage', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$native_on = class_exists( 'WP_MCP_AI_Fnb_Settings' ) && WP_MCP_AI_Fnb_Settings::is_native_storage_enabled();
+						if ( $native_on ) :
+							echo '<span style="color: #2271b1;">&#9679;</span> ' . esc_html__( 'Enabled — transactional tables resolve from WordPress native storage.', 'mcp-ai-wpoos-pro' );
+						else :
+							echo '<span style="color: #b32d2e;">&#9679;</span> ' . esc_html__( 'Disabled — transactional tables resolve from the Drive/CSV adapter.', 'mcp-ai-wpoos-pro' );
+						endif;
+						?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Native tables', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						if ( class_exists( 'WP_MCP_AI_Fnb_Cpt_Reader' ) ) {
+							$native_rows = array();
+							foreach ( WP_MCP_AI_Fnb_Cpt_Reader::native_tables() as $native_table ) {
+								$counts        = post_type_exists( $native_table['post_type'] ) ? wp_count_posts( $native_table['post_type'] ) : null;
+								$count         = null !== $counts ? (int) $counts->publish : 0;
+								$native_rows[] = esc_html( $native_table['id'] . ' → ' . $native_table['post_type'] . ' (' . $count . ')' );
+							}
+							echo wp_kses_post( implode( '<br>', $native_rows ) );
+						} else {
+							esc_html_e( 'Not loaded.', 'mcp-ai-wpoos-pro' );
+						}
 						?>
 					</td>
 				</tr>

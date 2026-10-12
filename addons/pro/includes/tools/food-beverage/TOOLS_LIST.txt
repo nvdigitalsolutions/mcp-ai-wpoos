@@ -19,3 +19,14 @@ fnb_generate_report
 fnb_save_draft
 fnb_list_drafts
 fnb_audit_log
+fnb_import_table
+fnb_pr_create
+fnb_pr_submit
+fnb_pr_return
+fnb_pr_approve
+fnb_pr_release
+fnb_pr_supersede
+fnb_pr_cancel
+fnb_pr_list
+fnb_pr_audit
+import_fnb_blueprint

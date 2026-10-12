@@ -73,6 +73,7 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 		'ecommerce'               => array( 'enable_ecommerce_toolkit' ),
 		'extended-cognition'      => array( 'enable_extended_cognition_toolkit' ),
 		'financial-planning'      => array( 'enable_financial_planner_toolkit' ),
+		'food-beverage'           => array( 'enable_fnb_toolkit' ),
 		'healthcare'              => array( 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_medical_vitals' ),
 		'image-production'        => array( 'enable_image_production_toolkit' ),
 		'law-firm'                => array( 'enable_law_firm_toolkit' ),

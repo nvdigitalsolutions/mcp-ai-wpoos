@@ -1,7 +1,7 @@
 # Implementation Plan: Food & Beverage Management Pro Toolkit
 
-**Date:** 2026-10-08 (assistant packs delivered 2026-10-09)
-**Status:** ✅ Phases 0–8 + Phase 4 assistant packs (A1–A4) built and merged; post-demo Phases 9–10 pending. (companion to `062-food-beverage-management-pro-toolkit-proposal.md`)
+**Date:** 2026-10-08 (assistant packs delivered 2026-10-09; Phase 9 delivered 2026-10-12)
+**Status:** ✅ Phases 0–9 delivered (native storage CPTs + import bridge, `fnb_pr_*` QMS lifecycle, JetEngine field schemas, adapter-parity suite, assistant blueprints); Phase 10 pending. (companion to `062-food-beverage-management-pro-toolkit-proposal.md`)
 **Estimated Effort:** ~37 hours demo (Phases 0–8) + ~15 hours post-demo (Phases 9–10)
 
 > Companion doc: `062-food-beverage-management-pro-toolkit-proposal.md` (scope,
@@ -31,8 +31,10 @@ polish remain demo-optional.
 | 6 | MCP exposure (bridge, read+draft subset) | ✅ | 2h |
 | 7 | Test hardening: oracle tests, phpcs, audit-skill checklist | ✅ | 4h |
 | 8 | Demo dry-run + A4 image-tool wiring (default Off) | ✅ | 3h |
-| 9 | **Native storage (CPTs/CCTs) + import bridge + `fnb_pr_*`** — post-demo | ❌ | 10h |
+| 9 | **Native storage (CPTs/CCTs) + import bridge + `fnb_pr_*`** — post-demo | ✅¹ | 10h |
 | 10 | Channel / social / booking wiring (proposal §5.9 candidates) — post-demo | ❌ | ~5h |
+
+¹ Delivered except the reference-table JetEngine CCT fields + recipe→ingredient relation — those need user-created JetEngine CCTs for the reference tables (out of the current Drive/CSV storage design); see the Phase 9 status block.
 
 ---
 
@@ -278,21 +280,56 @@ The purchase-request approval lifecycle (`fnb_pr_*` tools on the QMS engine)
 is specified in
 [`062-fnb-purchase-request-approval-appendix.md`](./062-fnb-purchase-request-approval-appendix.md)
 and lands in the second half of this phase.
-- Register 5 CPTs with the `mcp_ai_hc_vital_log` pattern: hidden, no UI/REST,
+
+**Status — Phase 9 DELIVERED** — 9a (CPTs + import bridge + admin surface),
+9b (fnb_pr_* QMS lifecycle), JetEngine field schemas, the adapter-parity
+suite, and the assistant blueprints. The only deferral is the ⏳
+reference-table JetEngine CCT bullet below:
+
+- ✅ Register 5 CPTs with the `mcp_ai_hc_vital_log` pattern: hidden, no UI/REST,
   `map_meta_cap`, `init` priority 12, gated behind an `enable_fnb_native_storage`
   toggle; before/after hooks per CPT (`wp_mcp_ai_fnb_before_<type>_log`, …after).
-- Register JetEngine CCT fields for the reference tables via
-  `WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields()` (per the
-  document-generation init pattern); recipe → ingredient relationship fields.
-- Implement `CPT_Reader` / `CCT_Reader` adapters; wire the table-ID → storage
-  map in `WP_MCP_AI_Fnb_Data_Source` so metrics/reports run unchanged.
-- `fnb_import_table` (ACT-tier, capability-gated): Sheet → CPT/CCT,
-  modelled on `import_vitals` / `excel-data-import`; idempotent by
-  (table key columns).
-- Adapter-parity tests: run the §3 oracle suite against CPT/CCT-backed
-  fixtures and require identical results to the Sheets path.
-- **Acceptance:** `test-fnb-cpt-storage.php` green; oracle suite passes on
-  both storage backends; import round-trips the demo workbook losslessly.
+  *(Delivered with a visible-in-admin variant: `show_ui` true, `show_in_menu`
+  false — the CPT screens attach to the new top-level F&B Management menu, per
+  the CRM/PM pattern, and `show_in_rest` stays false.)*
+- ✅ Implement `CPT_Reader` (and wire the table-ID → storage map in
+  `WP_MCP_AI_Fnb_Data_Source`) so metrics/reports run unchanged against
+  WordPress-backed rows.
+- ✅ `fnb_import_table` (ACT-tier, capability-gated `manage_options`):
+  Sheet/CSV → CPT, modelled on `import_vitals` / `excel-data-import`;
+  idempotent by (table key columns); dry-run supported.
+- ✅ The `fnb_pr_*` purchase-request lifecycle (Appendix A) on the QMS engine:
+  9 tools (`create/submit/return/approve/release/supersede/cancel/list/audit`)
+  in `pr/` — doc records of kind `purchase-request`, transitions via
+  `WP_MCP_AI_QMS_Workflow::transition()`, §A5 preconditions layered through the
+  new `wp_mcp_ai_qms_state_preconditions` filter (engine extension: a
+  non-persisting `compute_hash()` + the filter at the end of
+  `check_state_preconditions()`), release e-signatures relaxed via
+  `wp_mcp_ai_qms_require_release_signature`, PO numbering `PR-YYYYMM-###`,
+  auto-approval threshold + finance co-sign, segregation of duties, and
+  content-hash freeze. A8 test plan delivered by `test-fnb-pr-workflow.php`.
+- ✅ Assistant blueprints: the four A1–A4 assistants ship as blueprint-format
+  mirrors in `tools/food-beverage/examples/` (unified Blueprints page + the
+  `import_fnb_blueprint` tool; `food-beverage` registered in the page's
+  enable-key map). A2's blueprint grants `fnb_pr_create` + `fnb_pr_list` +
+  `fnb_pr_audit` (DRAFT/READ tier); the six ACT lifecycle tools stay off in
+  every blueprint. Pinned by `test-fnb-blueprints.php`.
+- ✅ JetEngine field schemas for the five native CPTs registered in
+  `WP_MCP_AI_Pro_CPT_Meta_Schema` and queued from the toolkit init via
+  `WP_MCP_AI_JetEngine_Meta_Helper::register_cpt_fields()` (CRM company-CPT
+  pattern; no-op without JetEngine). Pinned by
+  `test-fnb-native-storage.php::test_jetengine_meta_schemas_registered`.
+- ⏳ Reference-table JetEngine CCT fields + the recipe → ingredient relation:
+  deferred — the reference tables keep the Drive/CSV backend (no CPT/CCT
+  exists to attach fields to). Requires user-created JetEngine CCTs; revisit
+  if a client adopts CCT-backed reference storage.
+- ✅ Adapter-parity: `test-fnb-cpt-parity.php` imports the demo workbook's five
+  transactional tables losslessly (>9,000 rows) into the native CPTs and
+  asserts the 21 metric calls + menu engineering + unit-price joins return
+  byte-identical results on both storage backends.
+- **Acceptance:** `test-fnb-native-storage.php`, `test-fnb-pr-workflow.php`,
+  `test-fnb-blueprints.php` and `test-fnb-cpt-parity.php` green; the §3 oracle
+  suite passes; the import round-trips the demo workbook losslessly.
 
 ### Phase 10 — Channel / social / booking wiring (post-demo, ~5h)
 Per proposal §5.9, wire the three deferred candidates behind ACT-tier toggles

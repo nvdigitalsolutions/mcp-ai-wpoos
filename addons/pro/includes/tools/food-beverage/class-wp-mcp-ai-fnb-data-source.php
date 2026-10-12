@@ -252,6 +252,26 @@ class WP_MCP_AI_Fnb_Data_Source {
 	private static $reader;
 
 	/**
+	 * Single native (CPT-backed) reader instance.
+	 *
+	 * @var WP_MCP_AI_Fnb_Table_Reader|null
+	 */
+	private static $native_reader;
+
+	/**
+	 * Public accessor for a table registry entry.
+	 *
+	 * Used by the CPT reader and the import bridge so rows, columns and
+	 * canonical keys stay aligned with the spec table definitions.
+	 *
+	 * @param string $table_id Spec table ID.
+	 * @return array|null Table definition or null when unknown.
+	 */
+	public static function table_definition( $table_id ) {
+		return isset( self::$tables[ $table_id ] ) ? self::$tables[ $table_id ] : null;
+	}
+
+	/**
 	 * Normalise a raw header cell to a snake_case key.
 	 *
 	 * @param string $header Raw header.
@@ -319,6 +339,41 @@ class WP_MCP_AI_Fnb_Data_Source {
 	}
 
 	/**
+	 * Get the native (CPT-backed) reader adapter.
+	 *
+	 * @return WP_MCP_AI_Fnb_Table_Reader|WP_Error
+	 */
+	public static function native_reader() {
+		if ( null !== self::$native_reader ) {
+			return self::$native_reader;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Cpt_Reader' ) ) {
+			require_once __DIR__ . '/class-wp-mcp-ai-fnb-cpt-reader.php';
+		}
+		self::$native_reader = new WP_MCP_AI_Fnb_Cpt_Reader();
+
+		return self::$native_reader;
+	}
+
+	/**
+	 * Whether a table resolves through native storage on this request.
+	 *
+	 * @param string $table_id Spec table ID.
+	 * @return bool
+	 */
+	public static function is_native_table( $table_id ) {
+		if ( ! WP_MCP_AI_Fnb_Settings::is_native_storage_enabled() ) {
+			return false;
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Cpt_Reader' ) ) {
+			require_once __DIR__ . '/class-wp-mcp-ai-fnb-cpt-reader.php';
+		}
+
+		return WP_MCP_AI_Fnb_Cpt_Reader::is_native_table( $table_id );
+	}
+
+	/**
 	 * List all registered table IDs and labels.
 	 *
 	 * @return array<int,array{id:string,label:string}>
@@ -338,10 +393,16 @@ class WP_MCP_AI_Fnb_Data_Source {
 	/**
 	 * Read a table (cached) and return columns + normalised rows.
 	 *
-	 * @param string $table_id Spec table ID.
+	 * When native storage is enabled, the five transactional tables resolve
+	 * through the CPT reader; every other table keeps the Drive/CSV adapter.
+	 * The import bridge passes `$native = false` to always read the source
+	 * backend, and metrics/reports pass nothing to follow the toggle.
+	 *
+	 * @param string    $table_id Spec table ID.
+	 * @param bool|null $native   Optional backend override: true = CPT, false = Drive/CSV, null = follow the toggle.
 	 * @return array|WP_Error array{table_id,label,columns,rows,count,source}
 	 */
-	public static function get_table( $table_id ) {
+	public static function get_table( $table_id, $native = null ) {
 		if ( ! isset( self::$tables[ $table_id ] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_fnb_unknown_table',
@@ -350,13 +411,14 @@ class WP_MCP_AI_Fnb_Data_Source {
 			);
 		}
 
-		$cache_key = 'fnb_table_' . md5( $table_id );
-		$cached    = get_transient( $cache_key );
+		$use_native = null === $native ? self::is_native_table( $table_id ) : (bool) $native;
+		$cache_key  = 'fnb_table_' . md5( $table_id . ( $use_native ? ':cpt' : '' ) );
+		$cached     = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
 			return $cached;
 		}
 
-		$reader = self::reader();
+		$reader = $use_native ? self::native_reader() : self::reader();
 		if ( is_wp_error( $reader ) ) {
 			return $reader;
 		}
@@ -378,7 +440,7 @@ class WP_MCP_AI_Fnb_Data_Source {
 			'columns'      => $columns,
 			'rows'         => $rows,
 			'count'        => count( $rows ),
-			'source'       => 'fnb_data_source',
+			'source'       => $use_native ? 'fnb_native_cpt' : 'fnb_data_source',
 			'header_index' => $normalised_headers,
 		);
 
