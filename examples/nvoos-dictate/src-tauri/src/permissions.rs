@@ -33,10 +33,10 @@ mod imp {
     use super::PermissionInfo;
     use crate::error::{AppError, AppResult};
 
-    /// CoreGraphics access functions not exposed by the `core-graphics`
-    /// crate (public C API since macOS 10.15). Declared directly against
-    /// the CoreGraphics framework link the crate already establishes.
-    /// Note: C `Boolean` is `u8`, not Rust `bool` — keep the ABI honest.
+    // CoreGraphics access functions not exposed by the `core-graphics`
+    // crate (public C API since macOS 10.15). Declared directly against
+    // the CoreGraphics framework link the crate already establishes.
+    // Note: C `Boolean` is `u8`, not Rust `bool` — keep the ABI honest.
     #[link(name = "CoreGraphics", kind = "framework")]
     extern "C" {
         fn CGPreflightListenEventAccess() -> u8;

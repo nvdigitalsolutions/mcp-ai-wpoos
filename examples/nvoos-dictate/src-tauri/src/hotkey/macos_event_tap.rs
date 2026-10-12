@@ -27,7 +27,7 @@
 //! bookkeeping stays symmetric for parity.
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{channel, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -90,8 +90,7 @@ impl HotkeyListener for MacEventTapListener {
         let esc_cancels = config.esc_cancels;
         let double_tap_ms = config.double_tap_ms;
         let run_loop = self.run_loop.clone();
-        let (ready_tx, ready_rx): (Sender<Result<(), String>>, Receiver<Result<(), String>>) =
-            channel();
+        let (ready_tx, ready_rx) = channel::<Result<(), String>>();
 
         let handle = std::thread::Builder::new()
             .name("nvoos-dictate-tap".into())
