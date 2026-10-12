@@ -75,6 +75,12 @@ examples/nvoos-dictate/
   nvoos-dictate.exe"` after ~10 s (process alive = boot OK); kill with
   `taskkill //IM nvoos-dictate.exe //F`. A running app locks the exe — kill
   it before `cargo build`/`test` or you get "failed to remove file" errors.
+- **MSYS quoting traps:** `%APPDATA%`/`$_`/`$VAR` inside `cmd`/`powershell
+  -Command` get mangled by the MSYS shell — write PowerShell to a `.ps1`
+  file and run `powershell -NoProfile -ExecutionPolicy Bypass -File x.ps1`
+  instead; paths like `C:\Users\…` stay literal. `cmdkey //list | findstr
+  nvoos` (double slashes) shows what actually landed in Windows Credential
+  Manager — the ground truth for "did the credential stick".
 
 ## Critical config rule: `plugins.updater` block
 
@@ -198,6 +204,16 @@ parent)**, not `models_dir/{id}`. Files: `encoder.int8.onnx`,
   as engine `vad` (UI shows `vad` entries alongside the selected engine).
 
 ### embedded (remote fallback, always compiled — no feature flag)
+
+**Settings → NV oOS "Test connection" contract:** `GET
+{site}/wp-json/mcp-ai/v1/assistants` with `Authorization: Bearer
+<credential>` — 200/201 = "connected; credential accepted", 401/403 =
+"site reached, credential rejected", anything else = transport/status
+error surfaced verbatim. The credential must be issued on the site first
+(`wp mcp-ai assistant create …` + `wp mcp-ai credential issue <id>
+--porcelain`, or the admin UI) — a stored-but-invalid credential shows
+401, a missing one errors before any network call (`nvoos_client()`
+requires both site URL and keychain credential).
 
 **Windows credential storage (the "I stored it but it did not stick" bug):**
 the app does NOT use the `keyring` crate on Windows — keyring 3.6.3 hard-

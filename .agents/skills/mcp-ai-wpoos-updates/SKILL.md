@@ -739,6 +739,17 @@ closed-as-complete #6389.
 
 ### C2. Triage each candidate
 
+- **Merged-early branches strand commits.** A squash/rebase merge can land
+  while later commits still sit on the head branch — `gh pr view` then shows
+  fewer commits than the branch actually holds, and the rest are
+  silently deferred (this happened to #7025: merged with 1 of its 6
+  commits; the follow-up went out as #7027). For every merged PR in the
+  window, compare the merge commit with the branch tip:
+  `git log --oneline origin/alpha-working --grep '#' -- <pr-number> | head`
+  vs `git log --oneline <head-branch> -20`. Any commits after the merge
+  commit are stranded: cherry-pick them in order onto a fresh branch from
+  the default and open a follow-up PR (or file an issue when they are
+  covered elsewhere).
 - **Resolved by a later PR?** Verify with `gh pr view` / `git log --all --grep`
   (#6587's Stripe-424 follow-up → done by #6589; #6555's lib/core mirrors →
   done by #6608).
