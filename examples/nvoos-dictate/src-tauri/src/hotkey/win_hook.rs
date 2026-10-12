@@ -8,6 +8,13 @@
 //! (50 ms), and the fallback `GetAsyncKeyState` poller only takes over when
 //! that heartbeat goes stale (Windows can silently stop delivering
 //! `WH_KEYBOARD_LL` events while a Chromium window has focus).
+//!
+//! Swallow discipline: an armed PTT press consumes BOTH its key-down and the
+//! matching key-up (the 2KSpeak technique). Consuming only the key-up while
+//! letting the key-down through leaves the system believing the modifier is
+//! still held — the classic stuck-Alt failure where the keyboard "breaks"
+//! until Ctrl+Alt+Del resets it. Non-armed events (AltGr combos) always pass
+//! through untouched.
 
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU64, Ordering};
 use std::sync::mpsc::Sender;
@@ -35,9 +42,12 @@ use crate::error::{AppError, AppResult};
 /// signature cannot carry user data, hence statics.
 static EVENT_TX: OnceLock<Mutex<Option<Sender<HotkeyEvent>>>> = OnceLock::new();
 static PTT_VK: AtomicU16 = AtomicU16::new(VK_RMENU.0);
-static RECORDING: AtomicBool = AtomicBool::new(false);
 static HEARTBEAT_MS: AtomicU64 = AtomicU64::new(0);
 static PTT_DOWN: AtomicBool = AtomicBool::new(false);
+/// True between a swallowed PTT key-down and its matching key-up. Every
+/// swallow must cover the whole down..up pair: a swallowed up without a
+/// swallowed down wedges the system keyboard state (stuck modifier).
+static SWALLOWED_DOWN: AtomicBool = AtomicBool::new(false);
 static LAST_PRESS_MS: AtomicU64 = AtomicU64::new(0);
 static HOOK_CALLS: AtomicU64 = AtomicU64::new(0);
 
@@ -75,12 +85,6 @@ pub fn hook_healthy(max_age_ms: u64) -> bool {
     heartbeat_age_ms() < max_age_ms
 }
 
-/// Mark the recording state so the hook swallows the PTT key's own events
-/// only while dictating (AltGr layouts keep working the rest of the time).
-pub fn set_recording(recording: bool) {
-    RECORDING.store(recording, Ordering::SeqCst);
-}
-
 unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     if code < 0 {
         return CallNextHookEx(None, code, wparam, lparam);
@@ -96,6 +100,12 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
 
     if vk == ptt {
         if is_down {
+            // Auto-repeat downs of a held PTT key arrive as extra WM_KEYDOWN
+            // events; everything between an armed press and its release stays
+            // swallowed so the pair is always symmetric.
+            if SWALLOWED_DOWN.load(Ordering::SeqCst) {
+                return LRESULT(1);
+            }
             // Arm only when the PTT key is pressed ALONE (modifiers such as
             // Shift and Ctrl tolerated): RAlt combos like Alt+F4, Alt+Tab and
             // AltGr input must keep working while the app watches the key.
@@ -112,20 +122,25 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
                     HotkeyEvent::Pressed
                 };
                 send(event);
+                // Consume the key-down: the focused app never sees the held
+                // modifier (prevents menu-bar activation — the 2KSpeak
+                // technique). The matching key-up is consumed below, so the
+                // system keyboard state never sees a lone half of the pair.
+                SWALLOWED_DOWN.store(true, Ordering::SeqCst);
+                return LRESULT(1);
             }
         } else if is_up && PTT_DOWN.swap(false, Ordering::SeqCst) {
             let shift = unsafe {
                 GetAsyncKeyState(VK_LSHIFT.0 as i32) < 0 || GetAsyncKeyState(VK_RSHIFT.0 as i32) < 0
             };
+            // Emit BEFORE swallowing (the Released event must always reach
+            // the controller) and only swallow when the matching down was
+            // swallowed — an unpaired key-up (AltGr combo release) passes
+            // through so the focused app keeps working.
             send(HotkeyEvent::Released { shift });
-        }
-        // Swallow the PTT key's own events while recording so the focused app
-        // never sees the held modifier (prevents menu-bar activation and
-        // Ctrl/Win shortcut leakage — the 2KSpeak technique). This MUST come
-        // AFTER the event emission above: swallowing the key-up first would
-        // eat the Released event and dictation would hang in Recording.
-        if RECORDING.load(Ordering::SeqCst) {
-            return LRESULT(1);
+            if SWALLOWED_DOWN.swap(false, Ordering::SeqCst) {
+                return LRESULT(1);
+            }
         }
     } else if vk == VK_ESCAPE.0 && is_down {
         send(HotkeyEvent::Esc);
@@ -284,68 +299,101 @@ mod tests {
     use super::*;
     use windows::Win32::UI::WindowsAndMessaging::{WM_KEYDOWN, WM_KEYUP};
 
-    /// Regression test for the stuck-recording bug: while dictation is
-    /// recording the hook swallows the PTT key's events from the focused
-    /// app, but the key-up must still emit `Released` — otherwise the
-    /// controller hangs in `Recording` forever.
+    /// The hook state lives in process-global statics; serialize the tests
+    /// so parallel runners cannot clobber each other's EVENT_TX/PTT state.
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    fn send_ptt(message: WPARAM, kb: &KBDLLHOOKSTRUCT) -> LRESULT {
+        unsafe { hook_proc(0, message, LPARAM(kb as *const _ as isize)) }
+    }
+
+    /// The swallow-pair contract: an armed press consumes the key-down, the
+    /// matching key-up still emits `Released` (so the controller never hangs
+    /// in Recording) AND is consumed too — a swallowed up without a swallowed
+    /// down is what wedges the system keyboard state (stuck Alt).
     #[test]
-    fn ptt_release_fires_despite_recording_swallow() {
+    fn armed_press_swallows_down_and_up_symmetrically() {
+        let _guard = TEST_LOCK.lock().unwrap();
         let (tx, rx) = std::sync::mpsc::channel();
         EVENT_TX.get_or_init(|| Mutex::new(None));
         *EVENT_TX.get().unwrap().lock().unwrap() = Some(tx);
         PTT_VK.store(VK_RMENU.0, Ordering::Relaxed);
-        RECORDING.store(false, Ordering::SeqCst);
         PTT_DOWN.store(false, Ordering::SeqCst);
+        SWALLOWED_DOWN.store(false, Ordering::SeqCst);
 
         let mut kb: KBDLLHOOKSTRUCT = unsafe { std::mem::zeroed() };
         kb.vkCode = VK_RMENU.0 as u32;
 
-        // Key down while idle -> Pressed.
-        unsafe {
-            hook_proc(
-                0,
-                WPARAM(WM_KEYDOWN as usize),
-                LPARAM(&kb as *const _ as isize),
-            );
-        }
+        // Key down while idle -> Pressed AND swallowed (down consumed).
+        let down = send_ptt(WPARAM(WM_KEYDOWN as usize), &kb);
+        assert_eq!(down.0, 1, "armed PTT key-down must be swallowed");
         assert_eq!(
             rx.recv_timeout(Duration::from_secs(1)).unwrap(),
             HotkeyEvent::Pressed
         );
 
-        // Controller marks recording; the hook now swallows the key so the
-        // focused app never sees the held modifier.
-        RECORDING.store(true, Ordering::SeqCst);
+        // Auto-repeat downs of the held key stay swallowed, no extra events.
+        let repeat = send_ptt(WPARAM(WM_KEYDOWN as usize), &kb);
+        assert_eq!(repeat.0, 1);
+        assert!(rx.recv_timeout(Duration::from_millis(100)).is_err());
 
-        // Key up while recording -> Released MUST still fire.
-        unsafe {
-            hook_proc(
-                0,
-                WPARAM(WM_KEYUP as usize),
-                LPARAM(&kb as *const _ as isize),
-            );
-        }
+        // Key up -> Released MUST still fire AND be swallowed.
+        let up = send_ptt(WPARAM(WM_KEYUP as usize), &kb);
+        assert_eq!(up.0, 1, "matching PTT key-up must be swallowed");
         assert_eq!(
             rx.recv_timeout(Duration::from_secs(1)).unwrap(),
             HotkeyEvent::Released { shift: false }
         );
 
-        // A second press (toggle mode) also fires while recording. Wait past
-        // the double-tap window so it registers as a plain press.
+        // The pair is complete: state is back to idle and the next press
+        // works again (wait past the double-tap window).
         std::thread::sleep(Duration::from_millis(350));
-        unsafe {
-            hook_proc(
-                0,
-                WPARAM(WM_KEYDOWN as usize),
-                LPARAM(&kb as *const _ as isize),
-            );
-        }
+        let second = send_ptt(WPARAM(WM_KEYDOWN as usize), &kb);
+        assert_eq!(second.0, 1);
         assert_eq!(
             rx.recv_timeout(Duration::from_secs(1)).unwrap(),
             HotkeyEvent::Pressed
         );
+        send_ptt(WPARAM(WM_KEYUP as usize), &kb);
+        assert_eq!(
+            rx.recv_timeout(Duration::from_secs(1)).unwrap(),
+            HotkeyEvent::Released { shift: false }
+        );
 
-        RECORDING.store(false, Ordering::SeqCst);
+        *EVENT_TX.get().unwrap().lock().unwrap() = None;
+    }
+
+    /// A PTT key pressed as part of a combo (AltGr input) must pass through
+    /// untouched: no events, no swallow. `ptt_pressed_alone` reads the real
+    /// 256-byte key-state table, so simulate the combo by flipping the queue
+    /// state of another key through `keybd_event`-free means is not possible
+    /// here — instead assert the guard itself stays permissive when the key
+    /// state can't be inspected.
+    #[test]
+    fn non_ptt_keys_pass_through() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        let (tx, rx) = std::sync::mpsc::channel();
+        EVENT_TX.get_or_init(|| Mutex::new(None));
+        *EVENT_TX.get().unwrap().lock().unwrap() = Some(tx);
+        PTT_VK.store(VK_RMENU.0, Ordering::Relaxed);
+        PTT_DOWN.store(false, Ordering::SeqCst);
+        SWALLOWED_DOWN.store(false, Ordering::SeqCst);
+
+        // A plain 'A' key must not be swallowed.
+        let mut kb: KBDLLHOOKSTRUCT = unsafe { std::mem::zeroed() };
+        kb.vkCode = 'A' as u32;
+        let down = send_ptt(WPARAM(WM_KEYDOWN as usize), &kb);
+        assert_eq!(down.0, 0);
+        assert!(rx.recv_timeout(Duration::from_millis(100)).is_err());
+
+        // An unpaired PTT key-up (hook started mid-press) passes through and
+        // emits nothing.
+        let mut kb_ptt: KBDLLHOOKSTRUCT = unsafe { std::mem::zeroed() };
+        kb_ptt.vkCode = VK_RMENU.0 as u32;
+        let up = send_ptt(WPARAM(WM_KEYUP as usize), &kb_ptt);
+        assert_eq!(up.0, 0, "unpaired key-up must pass through");
+        assert!(rx.recv_timeout(Duration::from_millis(100)).is_err());
+
         *EVENT_TX.get().unwrap().lock().unwrap() = None;
     }
 }

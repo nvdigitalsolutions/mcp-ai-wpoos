@@ -151,7 +151,6 @@ impl DictationController {
                 (Phase::Idle, HotkeyEvent::Pressed) => {
                     let hint = pending_hint();
                     let press_pos = mic_position(&app);
-                    set_recording(true);
                     emit(&app, UiEvent::Recording { hint });
                     phase = Phase::Recording {
                         toggle: false,
@@ -161,18 +160,27 @@ impl DictationController {
                 (Phase::Idle, HotkeyEvent::DoubleTap) => {
                     let hint = pending_hint();
                     let press_pos = mic_position(&app);
-                    set_recording(true);
                     emit(&app, UiEvent::Recording { hint });
                     phase = Phase::Recording {
                         toggle: true,
                         press_pos,
                     };
                 }
-                (Phase::Recording { press_pos, .. }, HotkeyEvent::Released { shift }) => {
+                (
+                    Phase::Recording {
+                        toggle: false,
+                        press_pos,
+                    },
+                    HotkeyEvent::Released { shift },
+                ) => {
                     phase = Phase::Idle;
-                    set_recording(false);
                     finalize(&app, shift, press_pos, mic_position(&app));
                 }
+                // Hands-free toggle: the double-tap's own key release must
+                // NOT end the recording — only the next PTT press (or Esc)
+                // does. Without this arm the toggle recording ends the
+                // instant the double-tap key is released.
+                (Phase::Recording { toggle: true, .. }, HotkeyEvent::Released { .. }) => {}
                 (
                     Phase::Recording {
                         toggle: true,
@@ -181,12 +189,10 @@ impl DictationController {
                     HotkeyEvent::Pressed,
                 ) => {
                     phase = Phase::Idle;
-                    set_recording(false);
                     finalize(&app, false, press_pos, mic_position(&app));
                 }
                 (Phase::Recording { .. }, HotkeyEvent::Esc) => {
                     phase = Phase::Idle;
-                    set_recording(false);
                     resolve_pending(Err("dictation cancelled".into()));
                     emit(&app, UiEvent::Cancelled);
                     emit_idle_after_delay(&app);
@@ -248,12 +254,6 @@ pub fn request_dictation(
         }
     });
     rx
-}
-
-fn set_recording(recording: bool) {
-    #[cfg(windows)]
-    crate::hotkey::win_hook::set_recording(recording);
-    let _ = recording;
 }
 
 fn emit(app: &AppHandle, event: UiEvent) {

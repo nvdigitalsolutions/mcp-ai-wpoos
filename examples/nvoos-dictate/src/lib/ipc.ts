@@ -157,8 +157,8 @@ export const api = {
 
   getModels: () => invoke<ModelSpec[]>('get_models'),
   getCompiledEngines: () => invoke<string[]>('get_compiled_engines'),
-  downloadModel: (engine: string, model: string) =>
-    invoke<string>('download_model', { engine, model }),
+  downloadModel: (engine: string, model: string, force = false) =>
+    invoke<string>('download_model', { engine, model, force }),
   transcribeFile: (path: string) => invoke<string>('transcribe_file', { path }),
   cancelDictation: () => invoke<void>('cancel_dictation'),
 };

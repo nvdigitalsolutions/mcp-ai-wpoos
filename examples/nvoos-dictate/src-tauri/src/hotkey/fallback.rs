@@ -14,7 +14,7 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, VK_ESCAPE, VK_LSHIFT, VK_RSHIFT,
 };
 
-use super::win_hook::{heartbeat_age_ms, set_recording, vk_for_name};
+use super::win_hook::{heartbeat_age_ms, vk_for_name};
 use super::{HotkeyEvent, HotkeyListener};
 use crate::config::HotkeyConfig;
 use crate::error::AppResult;
@@ -98,10 +98,6 @@ impl HotkeyListener for WinFallbackListener {
     }
 }
 
-// The fallback never swallows keys (it only polls), so the shared recording
-// flag is unused here but kept in the hook module. Reference it to document
-// the asymmetry.
-#[allow(dead_code)]
-fn _fallback_does_not_swallow() {
-    set_recording(false);
-}
+// The fallback only polls `GetAsyncKeyState` — it never swallows keys. The
+// symmetric down+up swallow lives entirely in the hook module, so there is
+// nothing for this listener to mirror.

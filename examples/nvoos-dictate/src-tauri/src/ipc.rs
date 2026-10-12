@@ -51,7 +51,14 @@ pub fn get_settings(state: State<'_, AppState>) -> AppResult<Settings> {
 pub fn update_settings(state: State<'_, AppState>, settings: Settings) -> AppResult<Settings> {
     let previous = state.settings_snapshot();
     let updated = state.update_settings(settings)?;
-    state.reapply_engine(&previous)?;
+    state.reapply_engine(&previous).map_err(|e| {
+        // Settings are persisted; only the engine swap failed (typically a
+        // valid combo whose model files are not downloaded yet). Make the
+        // message say exactly that so the user is not misled.
+        AppError::Other(format!(
+            "settings saved, but the speech engine could not be started: {e}"
+        ))
+    })?;
     Ok(updated)
 }
 
@@ -278,6 +285,7 @@ pub async fn download_model(
     state: State<'_, AppState>,
     engine: String,
     model: String,
+    force: bool,
 ) -> AppResult<String> {
     main_window_only(&window)?;
     let spec = crate::stt::model_registry::find(&engine, &model)
@@ -290,11 +298,12 @@ pub async fn download_model(
             serde_json::json!({ "engine": engine, "model": model, "fraction": fraction }),
         );
     };
-    let path = crate::stt::model_registry::download(spec, &dir, progress).await?;
-    // Engine swap picks the new model up.
-    let previous = state.settings_snapshot();
+    let path = crate::stt::model_registry::download(spec, &dir, force, progress).await?;
+    // Reload the resident engine immediately: the download usually completes
+    // the configured engine/model, so it becomes usable without an app
+    // restart. A failed load here is non-fatal (surfaced via status).
     *state.engine.write().unwrap() = None;
-    let _ = state.reapply_engine(&previous);
+    let _ = state.ensure_engine();
     Ok(path.to_string_lossy().into_owned())
 }
 
