@@ -470,13 +470,31 @@ impl AppState {
     /// boxed `CleanupProvider` (its `complete()` seam is what the agent loop
     /// calls). `lm_studio`/`ollama` are the local brains; `nvoos` routes to the
     /// site's hosted model (§5a).
+    ///
+    /// NOTE: the local providers are built from the shared `lm_studio`/`ollama`
+    /// config for base_url + load_timeout, but the **agent's own `agent.model`
+    /// overrides the model id** — the shared config's `model` is the Stage-2
+    /// cleanup model (e.g. a TTS or VLM model) and must never be silently reused
+    /// as the agent brain.
     pub fn agent_brain(&self) -> AppResult<Box<dyn crate::cleanup::providers::CleanupProvider>> {
         let settings = self.settings_snapshot();
         let provider = match settings.agent.provider.as_str() {
-            "lm_studio" => Box::new(self.lm_studio_provider()?)
-                as Box<dyn crate::cleanup::providers::CleanupProvider>,
-            "ollama" | "" => Box::new(self.ollama_provider()?)
-                as Box<dyn crate::cleanup::providers::CleanupProvider>,
+            "lm_studio" => {
+                let mut cfg = settings.lm_studio.clone();
+                cfg.model = settings.agent.model.clone();
+                Box::new(crate::cleanup::providers::lm_studio::LmStudioProvider::new(
+                    &cfg,
+                    self.secrets.as_ref(),
+                )?) as Box<dyn crate::cleanup::providers::CleanupProvider>
+            }
+            "ollama" | "" => {
+                let mut cfg = settings.ollama.clone();
+                cfg.model = settings.agent.model.clone();
+                Box::new(crate::cleanup::providers::ollama::OllamaProvider::new(
+                    &cfg,
+                    self.secrets.as_ref(),
+                )?) as Box<dyn crate::cleanup::providers::CleanupProvider>
+            }
             "nvoos" => Box::new(self.nvoos_provider()?)
                 as Box<dyn crate::cleanup::providers::CleanupProvider>,
             other => {
