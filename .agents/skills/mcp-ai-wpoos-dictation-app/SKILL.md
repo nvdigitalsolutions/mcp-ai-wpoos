@@ -361,6 +361,46 @@ cargo run --features parakeet --example transcribe_file -- ../speech.wav --engin
   save (missing model files), the IPC error says exactly that — settings
   ARE saved in that case; only the engine swap failed.
 
+## PTT / hotkey stopped working — runbook
+
+When "Right Alt doesn't trigger dictation anymore" is reported, **do not
+blame the most recent code first**: the hook path (`hotkey/win_hook.rs`,
+`dictation.rs`) is deliberately isolated (vision/polish/engine changes never
+reference it), so a git diff that only touches `vision/`, `cleanup/`,
+`state.rs`, `ipc.rs`, `lib.rs`, or frontend files *cannot* have broken PTT.
+Verify with `git diff <base>...HEAD -- src/hotkey/` — empty = hook code
+untouched. Then work this checklist in order:
+
+1. **Instance check.** `tasklist //FI "IMAGENAME eq nvoos-dictate.exe"` —
+   multiple rows mean a stale instance is holding the global keyboard hook or
+   the single-instance guard redirected focus. Kill all
+   (`taskkill //IM nvoos-dictate.exe //F`) and relaunch ONE fresh instance;
+   the hook reinstalls clean. This session's "broken RAlt" was exactly this —
+   many build/kill/relaunch cycles, not a code regression.
+2. **Config check.** `cat "$APPDATA/nvoos-dictate/config.json"` (or
+   Settings → Hotkey) — confirm `hotkey.ptt_key` is `RAlt` (Windows default;
+   macOS uses `toggle` mode + `ptt_combo`). A leftover `toggle`/combo-only
+   config on Windows means RAlt *hold* was never armed.
+3. **Hook health (Diagnostics → Push-to-talk hotkey), the decisive signal:**
+   - **Low-level listener** `running` (green) vs `not running` —
+     `not running` = the WH_KEYBOARD_LL hook failed to install or the thread
+     died; the `GetAsyncKeyState` fallback may still cover basic hold-PTT.
+   - **Listener heartbeat age** — small (~0–500 ms) = alive; large/growing =
+     the thread stalled or died.
+   - **Listener callback invocations** — must increment while you tap RAlt;
+     flat means the hook isn't receiving key events (another app grabbed the
+     keyboard, or the hook wasn't installed).
+4. **Engine, not hook.** If the listener is `running` AND callbacks fire but
+   nothing pastes, the trigger is fine — the failure is downstream. Check
+   Settings → Engine: the configured engine/model (e.g. `whisper/base.en`)
+   must be **downloaded** (Diagnostics → Speech engine flags `not installed`).
+   A valid-but-missing model errors on transcription, not on trigger.
+5. **Stuck-Alt recovery.** If the keyboard itself "broke" (RAlt held,
+   Ctrl+Alt+Del fixes), that's the swallowed key-up path (see the swallow
+   discipline pitfall above) — close the app cleanly so `release_pending_swallow`
+   injects the synthetic key-up, or press RAlt once more to clear it.
+
+
 ## Cleanup pipeline (golden backstop)
 
 Order matters: whitespace → vocabulary → numbers → fillers → capitalize →
