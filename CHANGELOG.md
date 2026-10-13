@@ -1,5 +1,41 @@
 # oOS – Changelog
 
+## [1.2.5] - 2026-10-13
+
+### Added — GTmetrix × WPCode Performance Optimization Pro Toolkit (PR #7026, Proposal 068)
+
+- **+24 Pro tools** — a 23-tool `gtmetrix_*` set running GTmetrix API v2.0 tests from WordPress (start/monitor/retest, account/alert/browser/location listing, report + Lighthouse-audit + resource-summary reads, page-tag + simulated-device management, and a WPCode-ready `generate_wpcode_snippet`) plus the new read-only **`list_wpcode_snippets`** tool backed by a shared `WP_MCP_AI_Pro_WPCode_Snippet_Repository` (extracted from `create_wpcode_snippet`, zero behavior change, `conditional_logic` support). Deterministic CWV/grade/weight score engine with a 41-check oracle, a credit-aware Action Scheduler poller + CPT snapshot store, Basic-auth client with 429 backoff and sensitive-resource hard-blocks, `gtmetrix_install_wpcode_fix` drafts-only/chat-restricted. Five schedule + two workflow presets, an assistant pack + `wp mcp-ai pro gtmetrix seed-assistant`, full 7-surface registration. Deferred (plan §8): WP 7.1 validation, live-key smoke test, proposals-README status.
+
+### Added — Food & Beverage Phase 9: Native Storage, Purchase Requests & Blueprints (PR #7032)
+
+- **+10 Pro tools** — five transactional-table CPT backend (`mcp_ai_fnb_sale|purchase|stock|waste|booking` behind `enable_fnb_native_storage`) exposed to metrics/reports through a `WP_MCP_AI_Fnb_Cpt_Reader`, the ACT-tier `fnb_import_table` bridge (Sheet/CSV → CPT, dry-run, idempotent), and nine `fnb_pr_*` purchase-request tools running the approval lifecycle on the QMS engine (precondition layering via `wp_mcp_ai_qms_state_preconditions`, PO numbering `PR-YYYYMM-###`, release-signature relaxation). The four A1–A4 assistants ship as unified Blueprints; a new top-level F&B Management admin menu (CRM/PM pattern) with the five CPT screens. Deferred: Phase 10 chat-channel/social/booking wiring, reference-table CCT fields, Appendix A10.
+
+### Added — F&B Admin Menu, Seeder & CSV Guidance (PRs #7029, #7033)
+
+- **F&B admin surfacing (#7029)** — a Food & Beverage settings page (NV oOS Pro submenu + top-level menu) with the adapter/Drive/CSV-dir settings and a status card; `tools/food-beverage/init.php` now loads via the Pro Module Registry (the prior dead-code registration gap that hid the menu while keeping the 21 tools working).
+- **Assistant-pack seeding (#7033)** — the truncated `WP_MCP_AI_Fnb_Assistant_Seeder` completed (`seed()`, portability-engine load, image-tool add) so the one-click admin button and the `wp mcp-ai pro fnb seed-assistants` CLI share identical semantics, plus CSV data-directory creation/read/write status reporting.
+
+### Added — Dictation Companion App Hardening, Windows Credentials & macOS Port (PRs #7017, #7020, #7021, #7025, #7027, #7030, #7037, #7039, #7040)
+
+- **Windows dictation app (`examples/nvoos-dictate`)** — the resident cpal stream-hold regression fixed (live capture now delivers audio), the stuck-Alt hotkey swallow (synthetic key-up on unhook), adaptive energy-VAD with a real-signal fallback, model re-downloads repaired (`write(!resuming)`), whisper+parakeet in one binary (vendored `whisper-rs-sys` static CRT), whisper release-speed fix (RTF 5.2 → 0.36), version 0.1.0 → 0.2.0, and a **Windows Credential Manager backend** (`win_cred.rs`, `CRED_PERSIST_LOCAL_MACHINE`) replacing keyring's broken `CRED_PERSIST_ENTERPRISE` path with verified read-back. New Diagnostics page + mic input-device picker.
+- **Local Stage-2 polish + video input + licensing (#7037, Proposals 071/072)** — `lm_studio`/`ollama` cleanup providers on a shared `local_openai` transport, `DecodedMedia` + `chunker` medium demux without FFmpeg, `transcribe_media`/`summarize_media` IPC, and proprietary NV Digital licensing markup across the dictate app and both SPA demos.
+- **macOS port (P5, #7030)** — cfg-gated PTT (CGEventTap hold + permission-free toggle), TCC permissions layer, CoreGraphics paste, ScreenCaptureKit meeting audio via a Swift sidecar, per-app cleanup profiles, Info.plist/entitlements, and a `macos-latest` CI job.
+- **Vision object detection + VLM label polish (#7039, #7040, Proposals 075/076)** — opt-in ONNX-YOLO local detection (yolov11n/yolov8n) with SORT/ByteTrack tracking and a click-to-select pin, plus an opt-in Qwen2.5-VL label-polish layer that re-labels low-confidence boxes (crop → base64 PNG to LM Studio/Ollama). Deferred: MediaPipe-hand, ByteTrack recovery, biometric identity.
+
+### Added — Standalone SPA Env-Driven Login Presets (PR #7031)
+
+- **`HOME`-selected login pages** in `examples/nvoos-pro-spa-vite` (cookie-dev-proxy / application-password / assistant-credential / preconfigured) with runtime `NVOOS_*` env injection through `serve.mjs` (secret-free startup logging, `<` escaping) and an opt-in `NVOOS_AUTO_CONNECT` kiosk mode.
+
+### Fixed — Coverage & Contract Drift (PRs #7035, #7036)
+
+- The three model-foundry exporters' `produces` handoff side corrected to `null` (corpus schema identifiers aren't ID-handoff keys), the `enable_webchat_integration` toolkit count fixed (36 → 37), and the Pro coverage manifest regenerated (+ `wp-mcp-ai-fnb-assistant-seeder`).
+
+### Docs & Skills (PRs #7015, #7016, #7019, #7023, #7024, #7027, #7028, #7038)
+
+- Two new coding-time skills — **`mcp-ai-artcraft-ops`** (ArtCraft MCP reverse-engineering/rebuild guide) and **`design-performance-audit`** (GTmetrix → WPCode optimization pipeline) — plus the Rust editor config (#7023), proposal docs 068/070/071/072/074/075/076, and the 1.2.4 readme.txt/README gap closure (#7019) that also encoded the check against recurrence. Sub-project: `nvoos-content-graph` 1.0.11 prep for wp.org (#7014 — own changelog/readme/POT track).
+
+Tool count: **~354 base + ~1,376 Pro (~1,730 total**; +34 Pro — the 24-tool GTmetrix toolkit + the 10-tool F&B Phase 9 wave; live registry authoritative). Coding-time skills: **71 → 72**. Security classes: 12 (unchanged). Provider count: 18 (unchanged). Addon count: 30 (unchanged).
+
 ## [1.2.4] - 2026-10-12
 
 ### Added — MCP Client-Quirk Hardening (Proposal 066)

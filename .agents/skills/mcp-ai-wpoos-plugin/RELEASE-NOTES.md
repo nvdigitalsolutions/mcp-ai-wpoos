@@ -1,9 +1,20 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.4)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.5)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## GTmetrix × WPCode Toolkit, Food & Beverage Phase 9 & the Hardened Dictation App (v1.2.5)
+
+- **GTmetrix × WPCode performance toolkit (PR #7026, Proposal 068)** — **+24 Pro tools**: a 23-tool `gtmetrix_*` set (`addons/pro/includes/tools/gtmetrix/` behind `enable_gtmetrix_toolkit`) + the read-only `list_wpcode_snippets` (`addons/pro/includes/tools/developer/`). A shared `WP_MCP_AI_Pro_WPCode_Snippet_Repository` (extracted zero-behavior-change from `create_wpcode_snippet`) backs the WPCode bridge; `gtmetrix_install_wpcode_fix` is drafts-only + chat-restricted. Deterministic CWV/grade/weight scoring (41-check oracle), a credit-aware Action Scheduler poller + CPT snapshot store, Basic-auth client (429 backoff, sensitive-resource hard-blocks). Five schedule + two workflow presets; `wp mcp-ai pro gtmetrix seed-assistant`.
+- **Food & Beverage Phase 9 (PR #7032)** — **+10 Pro tools**: five transactional-table CPTs (`mcp_ai_fnb_sale|purchase|stock|waste|booking` behind `enable_fnb_native_storage`, idempotent upserts, read by metrics/reports unchanged), the `fnb_import_table` Sheet/CSV→CPT bridge (dry-run, idempotent), and nine `fnb_pr_*` purchase-request tools on the QMS engine (`wp_mcp_ai_qms_state_preconditions`, PO numbering `PR-YYYYMM-###`, release-signature relaxation). The four A1–A4 assistants ship as unified Blueprints; a new top-level F&B admin menu (CRM/PM pattern).
+- **F&B admin menu + seeder (PRs #7029/#7033)** — `tools/food-beverage/init.php` wired into the Pro Module Registry (`conditional_toolkits`/`dir_map`) so the admin menu surfaces (tools worked before via the central map); the completed `WP_MCP_AI_Fnb_Assistant_Seeder` makes the one-click admin button + `wp mcp-ai pro fnb seed-assistants` CLI share semantics; CSV-directory status row.
+- **Dictation companion app hardened (PRs #7017, #7020, #7021, #7025, #7027, #7030, #7037, #7039, #7040)** — `examples/nvoos-dictate`: cpal stream-hold regression, stuck-Alt hook, adaptive VAD, re-download write-access; whisper+parakeet one binary (vendored `whisper-rs-sys`); whisper RTF 5.2 → 0.36; 0.1.0 → 0.2.0; Windows Credential Manager (`win_cred.rs`, `CRED_PERSIST_LOCAL_MACHINE`); macOS port (P5); local `lm_studio`/`ollama` + video input + proprietary licensing; ONNX-YOLO detection + Qwen2.5-VL label polish. **No plugin registry surface.**
+- **Standalone SPA login presets (PR #7031)** — `examples/nvoos-pro-spa-vite` `HOME`-selected login pages + runtime `NVOOS_*` env injection + `NVOOS_AUTO_CONNECT` kiosk mode.
+- **Coverage & contract drift (PRs #7035/#7036)** — model-foundry `produces` → null; `enable_webchat_integration` toolkit count 36 → 37; regenerated Pro coverage manifest.
+- **Docs & skills** — coding-time skills **71 → 72** (`mcp-ai-artcraft-ops`, `design-performance-audit`); Rust editor config; proposal docs 068/070/071/072/074/075/076; sub-project content-graph 1.0.11 wp.org prep (#7014, flag-not-edited).
+- **Tool counts** — ~354 base + ~1,376 Pro (~1,730 total; +34 Pro). Security classes 12, providers 18, addons 30 — all unchanged. Stale 1.2.3 build ZIPs removed.
 
 ## MCP Quirk Hardening, Chart Recipes, Model Foundry Phase 1 & the Content Graph SPA Page (v1.2.4)
 

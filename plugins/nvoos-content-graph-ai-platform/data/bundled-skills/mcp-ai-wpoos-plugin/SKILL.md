@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.4"
-  plugin-version-tested: "1.2.4"
-  last-updated: "2026-10-11"
+  plugin-version: "1.2.5"
+  plugin-version-tested: "1.2.5"
+  last-updated: "2026-10-13"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 

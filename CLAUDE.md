@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **October 11, 2026** · Version: **2.57**
+> Last reviewed: **October 13, 2026** · Version: **2.58**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,696 tools (~354 base + ~1,342 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare, Z.AI), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,730 tools (~354 base + ~1,376 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare, Z.AI), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,7 +50,7 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,696 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,730 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (12 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard, read-only profile gate, CORS guard)
@@ -188,7 +188,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~354 base tool classes) or `false` (~1,696 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~354 base tool classes) or `false` (~1,730 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -528,6 +528,13 @@ Twelve security infrastructure classes in `includes/security/` that operate acro
 - **Standalone SPA cookie mode + proxy** (v1.2.3, PRs #6994/#6996) — cookie-mode proxy detection + JSON guards, the zero-dependency `scripts/serve.mjs` production proxy (`NVOOS_TARGET_SITE`; SSE streaming, login redirect/cookie rewriting), `React.lazy` chunk splitting (entry 501 KB → 196 KB minified), and `.env` loading with shell > `.env` > docker-default precedence.
 - **npm ESM dists fixed** (v1.2.3, PR #6984) — `nvoos-slash-commands`/`nvoos-dom-batcher`/`nvoos-audio` published syntactically invalid ESM; all 22 manifests modernized to `"type": "module"` and all 23 packages rebuilt + the new `examples/nvoos-vite-demo/`; the three alpha.4 publishes deferred (needs npm auth).
 - **Build** (v1.2.3, PRs #6988/#6995) — spa-standalone workflows pin `main` at git init and assemble the deploy tree under `examples/` so Velocity's root directory finds `package.json`. **Docs** — the CORS/Velocity deployment guide (#6989) + the open-issues triage snapshot (#6992). **No tool-count change: ~353 base + ~1,339 Pro, ~1,692 total.**
+- **GTmetrix × WPCode performance toolkit** (v1.2.5, PR #7026, Proposal 068) — **+24 Pro tools** (23 `gtmetrix_*` in `addons/pro/includes/tools/gtmetrix/` behind `enable_gtmetrix_toolkit` + the read-only `list_wpcode_snippets` on a shared `WP_MCP_AI_Pro_WPCode_Snippet_Repository` extracted zero-behavior-change from `create_wpcode_snippet`); deterministic CWV/grade/weight scoring (41-check oracle), a credit-aware Action Scheduler poller + CPT snapshot store, Basic-auth client (429 backoff, sensitive-resource hard-blocks), `gtmetrix_install_wpcode_fix` drafts-only. Five schedule + two workflow presets; `wp mcp-ai pro gtmetrix seed-assistant`; 7-surface registration.
+- **Food & Beverage Phase 9** (v1.2.5, PR #7032) — **+10 Pro tools** — five transactional-table CPTs behind `enable_fnb_native_storage` (idempotent upserts, read by metrics/reports unchanged), the `fnb_import_table` Sheet/CSV→CPT bridge, and nine `fnb_pr_*` purchase-request tools on the QMS engine (`wp_mcp_ai_qms_state_preconditions`, PO numbering `PR-YYYYMM-###`, signature relaxation); a new top-level F&B admin menu + the four A1–A4 assistants as unified Blueprints.
+- **F&B admin menu + seeder** (v1.2.5, PRs #7029/#7033) — `tools/food-beverage/init.php` wired into the Pro Module Registry (`conditional_toolkits`/`dir_map`); the truncated `WP_MCP_AI_Fnb_Assistant_Seeder` completed so the admin button + CLI share semantics; CSV-directory status row.
+- **Dictation companion app hardened** (v1.2.5, PRs #7017/#7020/#7021/#7025/#7027/#7030/#7037/#7039/#7040) — the cpal stream-hold regression, stuck-Alt hook, adaptive VAD, and re-download write-access bugs fixed; whisper+parakeet in one binary (vendored `whisper-rs-sys` static CRT); whisper RTF 5.2 → 0.36; version 0.1.0 → 0.2.0; a Windows Credential Manager backend (`win_cred.rs`, `CRED_PERSIST_LOCAL_MACHINE`); a macOS port (P5); local `lm_studio`/`ollama` polish + video input + proprietary licensing; and opt-in ONNX-YOLO detection + Qwen2.5-VL label polish. All `examples/nvoos-dictate` + `examples/nvoos-pro-spa-vite` + proposal docs — **no plugin registry surface**.
+- **Standalone SPA login presets** (v1.2.5, PR #7031) — `HOME`-selected deploy-specific login pages + runtime `NVOOS_*` env injection through `serve.mjs` + opt-in kiosk auto-connect.
+- **Coverage & contract drift** (v1.2.5, PRs #7035/#7036) — model-foundry `produces` → null; `enable_webchat_integration` toolkit count 36 → 37; Pro coverage manifest regenerated.
+- **Docs & skills** (v1.2.5) — coding-time skills **71 → 72** (`mcp-ai-artcraft-ops`, `design-performance-audit`); Rust editor config; proposal docs 068/070/071/072/074/075/076; the 1.2.4 readme.txt/README gap closure (#7019; the updates skill A2/A6 guardrails encoded). Sub-project: `nvoos-content-graph` 1.0.11 wp.org prep (#7014 — flag-not-edited). **Tool counts +34 Pro → ~354 base + ~1,376 Pro, ~1,730 total.**
 - **MCP client-quirk hardening** (v1.2.4, PR #7007, Proposal 066) — the new `WP_MCP_AI_Tool_Schema_Auditor` normalizes every advertised `tools/list` schema (root `type: object` injected when missing) and skips-with-reason hazardous ones (bracketed property names, >20 KB schemas via `wp_mcp_ai_tools_list_schema_max_bytes`, >64-char slugs via `wp_mcp_ai_tools_list_max_slug_length`, root combinators); `nvoos_get_profile` attaches `structuredContent` whenever its `outputSchema` is advertised; the registry fires `wp_mcp_ai_mcp_tools_list_changed` (once per request) backing `listChanged`; JetEngine MCP + MCP App discovery caches cap at the server `ttlMs` and invalidate on `notifications/tools/list_changed`; Site Health direct test + debug field; the CG-AI standalone mirror ports the hardening (sub-project).
 - **nvoos-chart recipes + create_chart_fence** (v1.2.4, PRs #7003/#7005) — fenced `nvoos-chart` JSON renders as HTML/CSS charts on all three chat surfaces (29 types total; sanitisation by construction — extracted before `marked`/DOMPurify, `createElement` + `textContent`; resource caps 40 labels / 12 series / 120 points / 240 cells); **+1 base tool `create_chart_fence`** (server-side validator mirror, all registration surfaces); the `design-chart-recipes` skill + byte-identical conformance fixtures across the three suites.
 - **Model Foundry Phase 1 — Corpus Foundry** (v1.2.4, PR #7008, Proposal 067) — **+3 Pro tools** (`export_trajectory_corpus`, `export_preference_pairs`, `export_plugin_docs_corpus`) behind the consent fail-closed `WP_MCP_AI_Corpus_Governance` engine (`_wp_mcp_ai_training_consent`; caps → exact → fuzzy → opt-in semantic dedup → PII scrub → deterministic holdout split → R12 provenance → guarded sharded write; holdout rows never enter `train.jsonl`); deactivatable `model_foundry` Pro module; `ai_ml` preset +3; the `mcp-ai-wpoos-model-foundry` skill. Phases 0/2–6 deferred in the implementation plan.
