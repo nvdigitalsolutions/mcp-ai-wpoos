@@ -142,9 +142,9 @@ silero-vad = ["dep:silero-vad-rs", "dep:ort-sys", "dep:ndarray"]
 # Live webcam/camera capture (Proposal 073) — video preview via nokhwa.
 camera = ["dep:nokhwa", "dep:image"]
 # Local object detection (Proposal 075) — ONNX YOLO via the direct ort runtime
-# + ndarray 0.16. Requires the camera feature (the frame source) and the
-# ort/ort-sys pair already used by moonshine/silero-vad.
-vision = ["dep:ort", "dep:ort-sys", "dep:ndarray16", "dep:image"]
+# + ndarray 0.16. Requires the camera feature (the frame source, which pulls
+# nokhwa + image) and the ort/ort-sys pair already used by moonshine/silero-vad.
+vision = ["camera", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
 
 [patch.crates-io]
 whisper-rs-sys = { path = "../vendor/whisper-rs-sys" }

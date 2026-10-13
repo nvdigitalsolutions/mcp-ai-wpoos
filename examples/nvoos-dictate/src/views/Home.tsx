@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   api,
   onMediaProgress,
+  type Detection,
   type DictateEvent,
   type MediaTranscription,
   type PreviewFrame,
@@ -105,18 +106,25 @@ function MediaPanel() {
   );
 }
 
-/** Live webcam preview panel (Proposal 073): start/stop the camera and show
- *  a low-rate RGB thumbnail. No vision in v1 — preview only. */
+/** Live webcam preview panel (Proposal 073) with an opt-in local object
+ *  detection + tracking overlay (Proposal 075): detects objects on-device,
+ *  draws labelled boxes on a canvas, and pins a track on click. */
 function CameraPanel() {
   const [available, setAvailable] = useState<boolean | null>(null);
+  const [visionAvailable, setVisionAvailable] = useState<boolean>(false);
   const [running, setRunning] = useState(false);
   const [frame, setFrame] = useState<PreviewFrame | null>(null);
+  const [visionOn, setVisionOn] = useState(false);
+  const [detections, setDetections] = useState<Detection[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     void api.cameraAvailable().then((v) => {
       if (!cancelled) setAvailable(v);
+    });
+    void api.visionAvailable().then((v) => {
+      if (!cancelled) setVisionAvailable(v);
     });
     return () => {
       cancelled = true;
@@ -132,6 +140,15 @@ function CameraPanel() {
     return () => clearInterval(id);
   }, [running]);
 
+  // Poll detections while vision is on (~10 Hz is plenty for the overlay).
+  useEffect(() => {
+    if (!visionOn) return;
+    const id = setInterval(() => {
+      void api.getDetections().then(setDetections).catch(() => {});
+    }, 100);
+    return () => clearInterval(id);
+  }, [visionOn]);
+
   const start = async () => {
     setError('');
     try {
@@ -143,6 +160,14 @@ function CameraPanel() {
   };
 
   const stop = async () => {
+    if (visionOn) {
+      try {
+        await api.stopVision();
+      } catch {
+        /* already stopped */
+      }
+      setVisionOn(false);
+    }
     try {
       await api.stopCamera();
     } catch (e) {
@@ -150,6 +175,32 @@ function CameraPanel() {
     }
     setRunning(false);
     setFrame(null);
+    setDetections([]);
+  };
+
+  const toggleVision = async () => {
+    setError('');
+    if (visionOn) {
+      try {
+        await api.stopVision();
+      } catch (e) {
+        setError(String(e));
+      }
+      setVisionOn(false);
+      setDetections([]);
+      return;
+    }
+    try {
+      await api.startVision();
+      setVisionOn(true);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  const selectTrack = (id: number | null) => {
+    if (id == null) return;
+    void api.visionSelectTrack(id).catch(() => {});
   };
 
   const dataUri = (() => {
@@ -170,6 +221,36 @@ function CameraPanel() {
     ctx.putImageData(imgData, 0, 0);
     return canvas.toDataURL('image/png');
   })();
+
+  const drawOverlay = (canvas: HTMLCanvasElement | null) => {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    // The overlay is sized to the displayed preview; boxes are in frame pixel
+    // space, so scale by the ratio between frame size and canvas size.
+    const cw = canvas.clientWidth || canvas.width;
+    const ch = canvas.clientHeight || canvas.height;
+    ctx.clearRect(0, 0, cw, ch);
+    if (!frame || frame.width === 0) return;
+    const sx = cw / frame.width;
+    const sy = ch / frame.height;
+    for (const d of detections) {
+      const x = d.x * sx;
+      const y = d.y * sy;
+      const w = d.w * sx;
+      const h = d.h * sy;
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, w, h);
+      const label = `${d.id != null ? `#${d.id} ` : ''}${d.label} ${(d.confidence * 100).toFixed(0)}%`;
+      ctx.fillStyle = '#22d3ee';
+      ctx.font = '12px system-ui, sans-serif';
+      const th = 16;
+      ctx.fillRect(x, Math.max(0, y - th), ctx.measureText(label).width + 8, th);
+      ctx.fillStyle = '#0b1120';
+      ctx.fillText(label, x + 4, Math.max(th - 3, y - 3));
+    }
+  };
 
   if (available === false) {
     return null; // camera feature not compiled in — hide the panel
@@ -192,12 +273,64 @@ function CameraPanel() {
             Stop camera
           </button>
         )}
+        {running && visionAvailable && (
+          <button
+            className={visionOn ? 'btn' : 'btn ghost'}
+            onClick={toggleVision}
+            title="Run local object detection on the preview (opt-in)"
+          >
+            {visionOn ? 'Stop detection' : 'Detect objects'}
+          </button>
+        )}
       </div>
       {error && <p className="warn-text">{error}</p>}
+      {visionOn && (
+        <p className="muted small">
+          Tracking {detections.length} object{detections.length === 1 ? '' : 's'} — click a box to
+          pin it (keeps its id through brief misses).
+        </p>
+      )}
       {running && (
         <p className="muted small">Previewing{frame ? ` · ${frame.width}×${frame.height}` : ''}</p>
       )}
-      {running && dataUri && <img src={dataUri} alt="camera preview" className="camera-preview" />}
+      {running && dataUri && (
+        <div className="camera-frame" style={{ position: 'relative', display: 'inline-block' }}>
+          <img src={dataUri} alt="camera preview" className="camera-preview" />
+          {visionOn && (
+            <canvas
+              className="vision-overlay"
+              ref={drawOverlay}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: detections.length ? 'auto' : 'none',
+              }}
+              onClick={(e) => {
+                if (!frame) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const px = ((e.clientX - rect.left) / rect.width) * frame.width;
+                const py = ((e.clientY - rect.top) / rect.height) * frame.height;
+                // Pick the smallest box containing the click point.
+                let best: Detection | null = null;
+                for (const d of detections) {
+                  if (
+                    px >= d.x &&
+                    px <= d.x + d.w &&
+                    py >= d.y &&
+                    py <= d.y + d.h &&
+                    (!best || d.w * d.h < best.w * best.h)
+                  ) {
+                    best = d;
+                  }
+                }
+                selectTrack(best?.id ?? null);
+              }}
+            />
+          )}
+        </div>
+      )}
     </section>
   );
 }

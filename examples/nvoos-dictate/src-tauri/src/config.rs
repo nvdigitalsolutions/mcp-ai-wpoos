@@ -364,6 +364,37 @@ impl Default for CameraConfig {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct VisionConfig {
+    /// Whether local object detection is enabled (opt-in; drives a detector+
+    /// tracker loop on the live camera preview).
+    pub enabled: bool,
+    /// Detector model id (`yolov11n` default, `yolov8n` fallback).
+    pub detector: String,
+    /// Confidence threshold (0..1).
+    pub confidence: f32,
+    /// NMS IoU threshold (0..1).
+    pub iou_threshold: f32,
+    /// Assign stable SORT track ids + enable click-to-select pin.
+    pub track_objects: bool,
+    /// Hand model id (MediaPipe-hand ONNX), or empty to disable.
+    pub hand_model: String,
+}
+
+impl Default for VisionConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            detector: "yolov11n".to_string(),
+            confidence: 0.25,
+            iou_threshold: 0.45,
+            track_objects: true,
+            hand_model: String::new(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(default)]
 pub struct PrivacyConfig {
@@ -403,6 +434,7 @@ pub struct Settings {
     pub ollama: OllamaConfig,
     pub audio: AudioConfig,
     pub camera: CameraConfig,
+    pub vision: VisionConfig,
     pub privacy: PrivacyConfig,
     pub ui: UiConfig,
 }

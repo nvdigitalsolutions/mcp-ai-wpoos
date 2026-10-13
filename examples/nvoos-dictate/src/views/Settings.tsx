@@ -27,6 +27,9 @@ export default function SettingsView({ onChanged, status }: Props) {
   const [loadFailed, setLoadFailed] = useState(false);
   const [devices, setDevices] = useState<string[]>([]);
   const [cameras, setCameras] = useState<string[]>([]);
+  const [visionModels, setVisionModels] = useState<
+    { id: string; description: string; size_mb: number; license: string; installed: boolean }[]
+  >([]);
 
   // Latest settings + a debounce timer: typing must not fire an
   // `update_settings` (which swaps the speech engine) on every keystroke.
@@ -58,6 +61,11 @@ export default function SettingsView({ onChanged, status }: Props) {
       .listCameraDevices()
       .then(setCameras)
       .catch(() => setCameras([]));
+    // Vision detector catalogue (empty without the `vision` feature).
+    api
+      .getVisionModels()
+      .then(setVisionModels)
+      .catch(() => setVisionModels([]));
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
@@ -251,6 +259,74 @@ export default function SettingsView({ onChanged, status }: Props) {
               <p className="muted">
                 Live preview only in this version — audio transcription uses your selected
                 microphone (a webcam mic appears under Microphone above).
+              </p>
+            </>
+          )}
+          {visionModels.length > 0 && (
+            <>
+              <h2>Vision</h2>
+              <label className="row">
+                <span>Object detection</span>
+                <input
+                  type="checkbox"
+                  checked={settings.vision.enabled}
+                  onChange={(e) =>
+                    patch({ vision: { ...settings.vision, enabled: e.target.checked } })
+                  }
+                />
+              </label>
+              {settings.vision.enabled && (
+                <>
+                  <label className="row">
+                    <span>Detector model</span>
+                    <select
+                      value={settings.vision.detector}
+                      onChange={(e) =>
+                        patch({ vision: { ...settings.vision, detector: e.target.value } })
+                      }
+                    >
+                      {visionModels.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.id}
+                          {m.installed ? '' : ' (not downloaded)'}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="row">
+                    <span>Confidence threshold</span>
+                    <input
+                      type="number"
+                      step={0.05}
+                      min={0.05}
+                      max={0.95}
+                      value={settings.vision.confidence}
+                      onChange={(e) =>
+                        patch({
+                          vision: {
+                            ...settings.vision,
+                            confidence: parseFloat(e.target.value) || 0.25,
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                  <label className="row">
+                    <span>Stable track ids (click-to-pin)</span>
+                    <input
+                      type="checkbox"
+                      checked={settings.vision.track_objects}
+                      onChange={(e) =>
+                        patch({ vision: { ...settings.vision, track_objects: e.target.checked } })
+                      }
+                    />
+                  </label>
+                </>
+              )}
+              <p className="muted">
+                Fully on-device (YOLO via ONNX Runtime) — pixels never leave your computer. Detects
+                objects in the live preview; no facial recognition or person identity. Download the
+                detector model from Diagnostics → Engine.
               </p>
             </>
           )}

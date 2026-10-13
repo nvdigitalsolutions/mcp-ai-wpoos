@@ -36,6 +36,10 @@ pub struct StatusInfo {
     pub wp_app_password_stored: bool,
     pub meeting_recording: bool,
     pub system_audio_available: bool,
+    pub vision_available: bool,
+    pub vision_running: bool,
+    pub vision_detector: Option<String>,
+    pub vision_hand_model: Option<String>,
     pub version: String,
 }
 
@@ -75,6 +79,11 @@ pub fn update_settings(state: State<'_, AppState>, settings: Settings) -> AppRes
             "settings saved, but the microphone could not be switched: {e}"
         ))
     })?;
+    state.reapply_vision(&previous).map_err(|e| {
+        AppError::Other(format!(
+            "settings saved, but the vision loop could not be applied: {e}"
+        ))
+    })?;
     Ok(updated)
 }
 
@@ -98,8 +107,31 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         wp_app_password_stored: state.has_wp_app_password(),
         meeting_recording: state.recorder.is_recording(),
         system_audio_available: crate::meetings::system_audio_available(),
+        vision_available: crate::vision::available(),
+        vision_running: vision_running(&state),
+        vision_detector: if settings.vision.enabled {
+            Some(settings.vision.detector.clone())
+        } else {
+            None
+        },
+        vision_hand_model: if settings.vision.enabled && !settings.vision.hand_model.is_empty() {
+            Some(settings.vision.hand_model.clone())
+        } else {
+            None
+        },
         version: env!("CARGO_PKG_VERSION").to_string(),
     })
+}
+
+/// Whether the resident vision loop is currently running.
+fn vision_running(state: &AppState) -> bool {
+    state
+        .vision
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|v| v.running())
+        .unwrap_or(false)
 }
 
 // ---- Diagnostics ---------------------------------------------------------
@@ -114,6 +146,7 @@ pub struct DiagnosticsInfo {
     pub mic: MicDiagnostics,
     pub engine: EngineDiagnostics,
     pub credentials: CredentialDiagnostics,
+    pub vision: VisionDiagnostics,
     pub last_dictation: Option<crate::dictation::LastDictationStats>,
 }
 
@@ -171,6 +204,28 @@ pub struct CredentialDiagnostics {
     pub lm_studio_token_stored: bool,
     pub ollama_token_stored: bool,
     pub wp_credentials_stored: bool,
+}
+
+/// Object-detection + tracking health, mirroring `MicDiagnostics`/camera.
+#[derive(Debug, Clone, Serialize)]
+pub struct VisionDiagnostics {
+    pub available: bool,
+    pub enabled: bool,
+    pub running: bool,
+    pub detector: String,
+    pub hand_model: String,
+    pub detector_installed: bool,
+    pub confidence_threshold: f32,
+    pub iou_threshold: f32,
+    /// Detector loop health: frames processed, last inference latency, errors.
+    pub frames: u64,
+    pub total_detections: u64,
+    pub track_events: u64,
+    pub active_tracks: usize,
+    pub last_infer_ms: u64,
+    pub errors: u64,
+    pub last_error: Option<String>,
+    pub models: Vec<crate::vision::models::VisionModelStatus>,
 }
 
 /// Full troubleshooting snapshot: hook health, capture device + live level,
@@ -239,8 +294,52 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
             ollama_token_stored: state.has_ollama_token(),
             wp_credentials_stored: state.has_wp_app_password(),
         },
+        vision: vision_diagnostics(&state, &settings),
         last_dictation: crate::dictation::last_dictation_stats(),
     })
+}
+
+/// Build the object-detection diagnostics snapshot.
+fn vision_diagnostics(state: &AppState, settings: &Settings) -> VisionDiagnostics {
+    let available = crate::vision::available();
+    let models_dir = state.models_dir();
+    let detector_spec = crate::vision::models::find(&settings.vision.detector);
+    let detector_installed = detector_spec
+        .map(|s| crate::vision::models::is_installed(s, &models_dir))
+        .unwrap_or(false);
+    let vision = state.vision.lock().unwrap();
+    let running = vision.as_ref().map(|v| v.running()).unwrap_or(false);
+    let (frames, total_detections, track_events, active_tracks, last_infer_ms, errors, last_error) =
+        match vision.as_ref() {
+            Some(v) => (
+                v.frames(),
+                v.total_detections(),
+                v.track_events(),
+                v.active_tracks(),
+                v.last_infer_ms(),
+                v.error_count(),
+                v.last_error(),
+            ),
+            None => (0, 0, 0, 0, 0, 0, None),
+        };
+    VisionDiagnostics {
+        available,
+        enabled: settings.vision.enabled,
+        running,
+        detector: settings.vision.detector.clone(),
+        hand_model: settings.vision.hand_model.clone(),
+        detector_installed,
+        confidence_threshold: settings.vision.confidence,
+        iou_threshold: settings.vision.iou_threshold,
+        frames,
+        total_detections,
+        track_events,
+        active_tracks,
+        last_infer_ms,
+        errors,
+        last_error,
+        models: crate::vision::models::status_list(&models_dir),
+    }
 }
 
 /// Rebuild the resident capture stream on the configured device (recovery
@@ -658,6 +757,89 @@ pub fn get_preview_frame(
 ) -> AppResult<Option<crate::camera::PreviewFrame>> {
     let cam = state.camera.lock().unwrap().clone();
     Ok(cam.and_then(|c| c.frame.lock().unwrap().clone()))
+}
+
+// ---- Vision (object detection + tracking) --------------------------------
+
+/// Whether local vision detection is compiled into this build.
+#[tauri::command]
+pub fn vision_available() -> bool {
+    crate::vision::available()
+}
+
+/// Start (or restart) the resident vision loop on the configured detector.
+#[tauri::command]
+pub fn start_vision(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.restart_vision()
+}
+
+/// Stop the resident vision loop and release the detector.
+#[tauri::command]
+pub fn stop_vision(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.stop_vision();
+    Ok(())
+}
+
+/// Return the latest tracked detections (source-pixel boxes + stable ids), or
+/// an empty list when the vision loop is not running.
+#[tauri::command]
+pub fn get_detections(state: State<'_, AppState>) -> Vec<crate::vision::Detection> {
+    state
+        .vision
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|v| v.snapshot.lock().unwrap().detections.clone())
+        .unwrap_or_default()
+}
+
+/// Pin a tracked object by id (click-to-select). Returns false if the loop is
+/// not running or the id is unknown.
+#[tauri::command]
+pub fn vision_select_track(window: tauri::Window, state: State<'_, AppState>, id: u64) -> bool {
+    if window.label() != "main" {
+        return false;
+    }
+    state
+        .vision
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|v| v.select_track(id))
+        .unwrap_or(false)
+}
+
+/// The vision model catalogue with install state.
+#[tauri::command]
+pub fn get_vision_models(
+    state: State<'_, AppState>,
+) -> Vec<crate::vision::models::VisionModelStatus> {
+    crate::vision::models::status_list(&state.models_dir())
+}
+
+/// Download a vision model (streaming + SHA-256 verified) into the models dir.
+#[tauri::command]
+pub async fn download_vision_model(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    model: String,
+    force: bool,
+) -> AppResult<String> {
+    main_window_only(&window)?;
+    let spec = crate::vision::models::find(&model)
+        .ok_or_else(|| AppError::Model(format!("unknown vision model '{model}'")))?;
+    let dir = state.models_dir();
+    let app = state.app.clone();
+    let progress = move |fraction: f64| {
+        let _ = app.emit(
+            "model://progress",
+            serde_json::json!({ "engine": "vision", "model": model, "fraction": fraction }),
+        );
+    };
+    let path = crate::vision::models::download(spec, &dir, force, progress).await?;
+    Ok(path.to_string_lossy().into_owned())
 }
 
 // ---- Models & file transcription ----------------------------------------

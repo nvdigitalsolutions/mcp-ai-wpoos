@@ -1,6 +1,6 @@
 # 075 — Local Object Detection & Tracking: Implementation Plan
 
-**Status:** Draft (ready for implementation)
+**Status:** Implemented (M1–M4; M5 deferred)
 **Date:** 2026-10-13
 **Related:** `075-local-image-tracking-identity-proposal.md`, Proposal 073 (camera), `.agents/skills/mcp-ai-wpoos-dictation-app`, `examples/nvoos-dictate`
 
@@ -37,49 +37,49 @@ tracker, the controller, and the overlay drawing — no new ML dependency.
 
 ### M1 — `vision/detect.rs` (YOLO ONNX → `Vec<Detection>`)
 
-- [ ] 640×640 letterbox (pad + scale) from `PreviewFrame` RGB; store
+- [x] 640×640 letterbox (pad + scale) from `PreviewFrame` RGB; store
   `scale`/`pad` for box de-projecting back to source coords.
-- [ ] `ort::Session::run` of `yolov11n.onnx`; parse the `[1, 84, 8400]` (or
+- [x] `ort::Session::run` of `yolov11n.onnx`; parse the `[1, 84, 8400]` (or
   `[1, 4+nc, N]`) output — 4 box params + class scores.
-- [ ] NMS (conf ≥ 0.25, IoU ≥ 0.45); produce `Vec<Detection { class_id, label,
+- [x] NMS (conf ≥ 0.25, IoU ≥ 0.45); produce `Vec<Detection { class_id, label,
   confidence, x, y, w, h }>` in **source-pixel** coords.
-- [ ] `COCO_LABELS` (80) constant + optional hand-label override.
-- [ ] Exit: unit test the decode + NMS on a synthetic output tensor (no model
+- [x] `COCO_LABELS` (80) constant + optional hand-label override.
+- [x] Exit: unit test the decode + NMS on a synthetic output tensor (no model
   needed); a `#[ignore]` real-model smoke test for local runs.
 
 ### M2 — `vision/tracker.rs` (SORT)
 
-- [ ] Kalman filter per track (constant-velocity, 6-state) + predict step.
-- [ ] IoU association (Hungarian/greedy) with a `max_age` (drop tracks unseen
+- [x] Kalman filter per track (constant-velocity, 6-state) + predict step.
+- [x] IoU association (Hungarian/greedy) with a `max_age` (drop tracks unseen
   for N frames).
-- [ ] Click-to-select pin: mark a track `pinned`; keep its id stable across
+- [x] Click-to-select pin: mark a track `pinned`; keep its id stable across
   temporary detections misses.
-- [ ] Exit: synthetic-state unit tests (association, birth/death, pin survival).
+- [x] Exit: synthetic-state unit tests (association, birth/death, pin survival).
 
 ### M3 — wiring (`VisionController`, IPC, registry)
 
-- [ ] `VisionController` pulling frames from the existing camera ring at ~15 fps,
+- [x] `VisionController` pulling frames from the existing camera ring at ~15 fps,
   running detect → track → emit `Detections` JSON.
-- [ ] IPC: `vision_start`, `vision_stop`, `vision_status`,
+- [x] IPC: `vision_start`, `vision_stop`, `vision_status`,
   `vision_select_track(id)`; `get_detections` (or an event) feeding the webview.
-- [ ] Model registry: catalog `yolov11n` + `yolov8n` + `mediapipe-hand` (pinned
+- [x] Model registry: catalog `yolov11n` + `yolov8n` + `mediapipe-hand` (pinned
   SHA-256, streaming download, progress) under the existing registry pattern.
-- [ ] `Settings.vision` (`enabled`, `detector_model`, `confidence_threshold`,
+- [x] `Settings.vision` (`enabled`, `detector_model`, `confidence_threshold`,
   `iou_threshold`, `track_objects`, `hand_model`).
-- [ ] Exit: off-by-default; `vision_available()` reflects the `camera` feature.
+- [x] Exit: off-by-default; `vision_available()` reflects the `camera` feature.
 
 ### M4 — overlay + Diagnostics + Status
 
-- [ ] Webview: canvas overlay on the camera `PreviewFrame` drawing
+- [x] Webview: canvas overlay on the camera `PreviewFrame` drawing
   `{id, label, confidence, bbox}` boxes + track ids; click a box → `vision_select_track`.
-- [ ] **Diagnostics**: new `VisionDiagnostics` struct in `get_diagnostics`
+- [x] **Diagnostics**: new `VisionDiagnostics` struct in `get_diagnostics`
   (availability, running, detector/hand model + installed flags, last
   detection latency, fps, detections/frame, active tracks, track events,
   last error) — mirroring `MicDiagnostics`/camera health.
-- [ ] **Status**: `StatusInfo` gains `vision_available`, `vision_running`,
+- [x] **Status**: `StatusInfo` gains `vision_available`, `vision_running`,
   `vision_detector`, `vision_hand_model`; `ipc.ts` types updated accordingly.
-- [ ] Home "Vision" toggle wiring + Settings vision row (enable/model/thresholds).
-- [ ] Exit: `npm run build` clean; manual run shows boxes + live Diagnostics
+- [x] Home "Vision" toggle wiring + Settings vision row (enable/model/thresholds).
+- [x] Exit: `npm run build` clean; manual run shows boxes + live Diagnostics
   counters update on a webcam.
 
 ### M5 — hand model, pin hardening, docs
@@ -88,7 +88,7 @@ tracker, the controller, and the overlay drawing — no new ML dependency.
   its detections (label `hand`) into the same track stream.
 - [ ] ByteTrack low-confidence recovery (two-stage association) as an opt-in
   upgrade behind `track_objects`.
-- [ ] Update the dictation-app skill (`vision` module, model catalogue, toggle,
+- [x] Update the dictation-app skill (`vision` module, model catalogue, toggle,
   and the Status/Diagnostics fields).
 
 ## Verification

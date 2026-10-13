@@ -19,6 +19,7 @@ pub mod state;
 pub mod storage;
 pub mod stt;
 pub mod util;
+pub mod vision;
 
 use tauri::Manager;
 
@@ -99,6 +100,13 @@ pub fn run() {
             ipc::start_camera,
             ipc::stop_camera,
             ipc::get_preview_frame,
+            ipc::vision_available,
+            ipc::start_vision,
+            ipc::stop_vision,
+            ipc::get_detections,
+            ipc::vision_select_track,
+            ipc::get_vision_models,
+            ipc::download_vision_model,
             ipc::set_nvoos_credential,
             ipc::clear_nvoos_credential,
             ipc::test_nvoos_connection,
