@@ -28,7 +28,7 @@ export interface Settings {
     num_threads: number;
   };
   cleanup: {
-    provider: string; // disabled | openai_compat | nvoos
+    provider: string; // disabled | openai_compat | lm_studio | ollama | nvoos
     wait_for_llm_ms: number;
     replace_on_completion: boolean;
     deterministic_cleanup: boolean;
@@ -44,6 +44,16 @@ export interface Settings {
   openai_compat: {
     base_url: string;
     model: string;
+  };
+  lm_studio: {
+    base_url: string;
+    model: string;
+    load_timeout_ms: number;
+  };
+  ollama: {
+    base_url: string;
+    model: string;
+    load_timeout_ms: number;
   };
   audio: {
     sample_rate: number;
@@ -73,6 +83,8 @@ export interface StatusInfo {
   nvoos_configured: boolean;
   nvoos_credential_stored: boolean;
   openai_key_stored: boolean;
+  lm_studio_token_stored: boolean;
+  ollama_token_stored: boolean;
   wp_app_password_stored: boolean;
   meeting_recording: boolean;
   system_audio_available: boolean;
@@ -123,6 +135,31 @@ export interface ConnectionTest {
   authenticated: boolean;
 }
 
+export interface LmStudioConnectionTest {
+  ok: boolean;
+  message: string;
+  models: string[];
+  recommended_model: string | null;
+}
+
+export interface OllamaConnectionTest {
+  ok: boolean;
+  message: string;
+  models: string[];
+  recommended_model: string | null;
+}
+
+export interface MediaTranscription {
+  text: string;
+  duration_ms: number;
+  container: string; // 'audio' | 'video'
+}
+
+export interface MediaProgress {
+  phase: string; // 'decode' | 'transcribe' | 'done'
+  fraction: number;
+}
+
 export interface DiagnosticsInfo {
   version: string;
   os: string;
@@ -161,6 +198,8 @@ export interface DiagnosticsInfo {
     nvoos_configured: boolean;
     nvoos_credential_stored: boolean;
     openai_key_stored: boolean;
+    lm_studio_token_stored: boolean;
+    ollama_token_stored: boolean;
     wp_credentials_stored: boolean;
   };
   last_dictation: {
@@ -175,6 +214,8 @@ export interface DiagnosticsInfo {
     ok: boolean;
     error: string | null;
     e2e_ms: number | null;
+    polish_ttft_ms: number | null;
+    polish_total_ms: number | null;
   } | null;
 }
 
@@ -215,6 +256,12 @@ export const api = {
   testNvoosConnection: () => invoke<ConnectionTest>('test_nvoos_connection'),
   setOpenaiApiKey: (apiKey: string) => invoke<void>('set_openai_api_key', { apiKey }),
   clearOpenaiApiKey: () => invoke<void>('clear_openai_api_key'),
+  setLmStudioToken: (token: string) => invoke<void>('set_lm_studio_token', { token }),
+  clearLmStudioToken: () => invoke<void>('clear_lm_studio_token'),
+  testLmStudioConnection: () => invoke<LmStudioConnectionTest>('test_lm_studio_connection'),
+  setOllamaToken: (token: string) => invoke<void>('set_ollama_token', { token }),
+  clearOllamaToken: () => invoke<void>('clear_ollama_token'),
+  testOllamaConnection: () => invoke<OllamaConnectionTest>('test_ollama_connection'),
   setWpAppPassword: (username: string, appPassword: string) =>
     invoke<void>('set_wp_app_password', { username, appPassword }),
   clearWpAppPassword: () => invoke<void>('clear_wp_app_password'),
@@ -238,6 +285,8 @@ export const api = {
   downloadModel: (engine: string, model: string, force = false) =>
     invoke<string>('download_model', { engine, model, force }),
   transcribeFile: (path: string) => invoke<string>('transcribe_file', { path }),
+  transcribeMedia: (path: string) => invoke<MediaTranscription>('transcribe_media', { path }),
+  summarizeMedia: (text: string) => invoke<string>('summarize_media', { text }),
   cancelDictation: () => invoke<void>('cancel_dictation'),
 
   getPermissions: () => invoke<PermissionInfo[]>('get_permissions'),
@@ -259,6 +308,10 @@ export function onModelProgress(
     'model://progress',
     (e) => handler(e.payload),
   );
+}
+
+export function onMediaProgress(handler: (progress: MediaProgress) => void): Promise<UnlistenFn> {
+  return listen<MediaProgress>('media://progress', (e) => handler(e.payload));
 }
 
 /** Which webview window is this? (overlay = focusless PTT capsule) */

@@ -58,4 +58,19 @@ impl CleanupProvider for NvoosProvider {
             )
             .await
     }
+
+    async fn summarize(&self, text: &str) -> AppResult<String> {
+        let (summary, _meta) = self
+            .client
+            .polish(
+                text,
+                AppCategory::Default,
+                crate::cleanup::providers::openai_shape::summarize_prompt(),
+                self.assistant_id.as_deref(),
+                self.polish_provider.as_deref(),
+                self.polish_model.as_deref(),
+            )
+            .await?;
+        Ok(summary)
+    }
 }

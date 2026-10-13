@@ -263,6 +263,58 @@ impl Default for OpenAiCompatConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
+pub struct LmStudioConfig {
+    /// OpenAI-compatible base URL, e.g. `http://localhost:1234/v1`. Local
+    /// servers are plain http; a remote/headless server must be https://
+    /// (the provider enforces the same egress invariant as the NV oOS client).
+    pub base_url: String,
+    /// LM Studio model identifier (from `GET /v1/models`), or empty to omit
+    /// the `model` field entirely and let the server serve its single loaded
+    /// model (LM Studio's documented single-model behaviour).
+    pub model: String,
+    /// Idle-TTL / cold-load awareness: wait up to this many ms for a model
+    /// that LM Studio must Just-In-Time load before the polish call gives up
+    /// (0 = rely on `cleanup.wait_for_llm_ms` only).
+    pub load_timeout_ms: u64,
+}
+
+impl Default for LmStudioConfig {
+    fn default() -> Self {
+        Self {
+            base_url: "http://localhost:1234/v1".to_string(),
+            model: String::new(),
+            load_timeout_ms: 0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct OllamaConfig {
+    /// OpenAI-compatible base URL, e.g. `http://localhost:11434/v1`. Local
+    /// servers are plain http; a remote/headless server must be https://.
+    pub base_url: String,
+    /// Ollama model name (from `GET /v1/models`), or empty to omit the
+    /// `model` field and let the server use its single loaded model.
+    pub model: String,
+    /// Cold-load awareness: wait up to this many ms for a model that Ollama
+    /// must load on demand before the polish call gives up (0 = rely on
+    /// `cleanup.wait_for_llm_ms` only).
+    pub load_timeout_ms: u64,
+}
+
+impl Default for OllamaConfig {
+    fn default() -> Self {
+        Self {
+            base_url: "http://localhost:11434/v1".to_string(),
+            model: String::new(),
+            load_timeout_ms: 0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
 pub struct AudioConfig {
     pub sample_rate: u32,
     /// Pre-roll captured before the hotkey press, so the first syllable is kept.
@@ -325,6 +377,8 @@ pub struct Settings {
     pub cleanup: CleanupConfig,
     pub nvoos: NvoosConfig,
     pub openai_compat: OpenAiCompatConfig,
+    pub lm_studio: LmStudioConfig,
+    pub ollama: OllamaConfig,
     pub audio: AudioConfig,
     pub privacy: PrivacyConfig,
     pub ui: UiConfig,

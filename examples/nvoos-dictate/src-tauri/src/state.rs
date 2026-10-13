@@ -24,6 +24,8 @@ use crate::stt::{create_engine, EngineResources, SttEngine};
 pub const KEYRING_SERVICE: &str = "com.nvdigitalsolutions.nvoos-dictate";
 pub const KEY_NVOOS_CREDENTIAL: &str = "nvoos/assistant-credential";
 pub const KEY_OPENAI_API_KEY: &str = "openai-compat/api-key";
+pub const KEY_LM_STUDIO_TOKEN: &str = "lm-studio/bearer-token";
+pub const KEY_OLLAMA_TOKEN: &str = "ollama/bearer-token";
 pub const KEY_WP_USERNAME: &str = "nvoos/wp-username";
 pub const KEY_WP_APP_PASSWORD: &str = "nvoos/wp-app-password";
 
@@ -159,6 +161,18 @@ impl AppState {
             .is_some()
     }
 
+    pub fn has_lm_studio_token(&self) -> bool {
+        self.secrets
+            .get(KEY_LM_STUDIO_TOKEN)
+            .ok()
+            .flatten()
+            .is_some()
+    }
+
+    pub fn has_ollama_token(&self) -> bool {
+        self.secrets.get(KEY_OLLAMA_TOKEN).ok().flatten().is_some()
+    }
+
     /// Whether a WP application password (for embedded STT) is stored.
     pub fn has_wp_app_password(&self) -> bool {
         self.secrets
@@ -266,6 +280,29 @@ impl AppState {
             .get(KEY_NVOOS_CREDENTIAL)?
             .ok_or_else(|| AppError::NotConfigured("NV oOS credential not stored".into()))?;
         crate::nvoos::NvoosClient::new(settings.nvoos.site_url, credential)
+    }
+
+    /// Build an LM Studio provider from stored settings + keychain token. The
+    /// token is optional (local servers need none), so this only errors on an
+    /// invalid base URL, not on a missing secret.
+    pub fn lm_studio_provider(
+        &self,
+    ) -> AppResult<crate::cleanup::providers::lm_studio::LmStudioProvider> {
+        let settings = self.settings_snapshot();
+        crate::cleanup::providers::lm_studio::LmStudioProvider::new(
+            &settings.lm_studio,
+            self.secrets.as_ref(),
+        )
+    }
+
+    /// Build an Ollama provider from stored settings + keychain token (token
+    /// optional for the local default).
+    pub fn ollama_provider(&self) -> AppResult<crate::cleanup::providers::ollama::OllamaProvider> {
+        let settings = self.settings_snapshot();
+        crate::cleanup::providers::ollama::OllamaProvider::new(
+            &settings.ollama,
+            self.secrets.as_ref(),
+        )
     }
 }
 

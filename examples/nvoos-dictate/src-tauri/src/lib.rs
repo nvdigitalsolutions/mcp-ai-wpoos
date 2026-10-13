@@ -9,6 +9,7 @@ pub mod hotkey;
 pub mod ipc;
 #[cfg(feature = "mcp")]
 pub mod mcp;
+pub mod media;
 pub mod meetings;
 pub mod nvoos;
 pub mod paste;
@@ -96,6 +97,12 @@ pub fn run() {
             ipc::test_nvoos_connection,
             ipc::set_openai_api_key,
             ipc::clear_openai_api_key,
+            ipc::set_lm_studio_token,
+            ipc::clear_lm_studio_token,
+            ipc::test_lm_studio_connection,
+            ipc::set_ollama_token,
+            ipc::clear_ollama_token,
+            ipc::test_ollama_connection,
             ipc::set_wp_app_password,
             ipc::clear_wp_app_password,
             ipc::list_history,
@@ -112,6 +119,8 @@ pub fn run() {
             ipc::get_compiled_engines,
             ipc::download_model,
             ipc::transcribe_file,
+            ipc::transcribe_media,
+            ipc::summarize_media,
             ipc::cancel_dictation,
             ipc::get_permissions,
             ipc::request_permission,

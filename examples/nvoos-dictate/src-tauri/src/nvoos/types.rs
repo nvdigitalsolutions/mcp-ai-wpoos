@@ -140,6 +140,8 @@ pub fn extract_polish_meta(payload: &serde_json::Value) -> crate::cleanup::provi
         session_key: str_or_num("sessionKey"),
         model: data_str("model"),
         provider: data_str("provider"),
+        // The nvoos provider does not report client-side polish latency.
+        ..PolishMeta::default()
     }
 }
 

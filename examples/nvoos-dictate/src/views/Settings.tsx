@@ -4,7 +4,9 @@ import {
   isMac,
   onModelProgress,
   type ConnectionTest,
+  type LmStudioConnectionTest,
   type ModelSpec,
+  type OllamaConnectionTest,
   type PermissionInfo,
   type Settings,
   type StatusInfo,
@@ -15,7 +17,7 @@ interface Props {
   status: StatusInfo | null;
 }
 
-type SettingsTab = 'general' | 'engine' | 'nvoos' | 'openai' | 'privacy' | 'permissions';
+type SettingsTab = 'general' | 'engine' | 'nvoos' | 'openai' | 'lmstudio' | 'ollama' | 'privacy' | 'permissions';
 
 export default function SettingsView({ onChanged, status }: Props) {
   const [tab, setTab] = useState<SettingsTab>('general');
@@ -117,6 +119,12 @@ export default function SettingsView({ onChanged, status }: Props) {
         </button>
         <button className={tab === 'openai' ? 'tab active' : 'tab'} onClick={() => setTab('openai')}>
           OpenAI-compatible
+        </button>
+        <button className={tab === 'lmstudio' ? 'tab active' : 'tab'} onClick={() => setTab('lmstudio')}>
+          LM Studio
+        </button>
+        <button className={tab === 'ollama' ? 'tab active' : 'tab'} onClick={() => setTab('ollama')}>
+          Ollama
         </button>
         <button className={tab === 'privacy' ? 'tab active' : 'tab'} onClick={() => setTab('privacy')}>
           Privacy
@@ -223,6 +231,8 @@ export default function SettingsView({ onChanged, status }: Props) {
               <option value="disabled">Disabled (deterministic only — recommended default)</option>
               <option value="nvoos">NV oOS assistant (your WordPress site)</option>
               <option value="openai_compat">OpenAI-compatible API</option>
+              <option value="lm_studio">LM Studio (local model)</option>
+              <option value="ollama">Ollama (local model)</option>
             </select>
           </label>
           <label className="row">
@@ -259,6 +269,10 @@ export default function SettingsView({ onChanged, status }: Props) {
       )}
 
       {tab === 'nvoos' && <NvoosTab settings={settings} onPatch={patch} status={status} onChanged={onChanged} />}
+
+      {tab === 'lmstudio' && <LmStudioTab settings={settings} onPatch={patch} status={status} onChanged={onChanged} />}
+
+      {tab === 'ollama' && <OllamaTab settings={settings} onPatch={patch} status={status} onChanged={onChanged} />}
 
       {tab === 'openai' && (
         <section className="card">
@@ -786,6 +800,239 @@ function patchNvoos(
   partial: Partial<Settings['nvoos']>,
 ) {
   return void onPatch({ nvoos: { ...settings.nvoos, ...partial } });
+}
+
+function LmStudioTab({
+  settings,
+  onPatch,
+  status,
+  onChanged,
+}: {
+  settings: Settings;
+  onPatch: (p: Partial<Settings>) => Promise<void>;
+  status: StatusInfo | null;
+  onChanged: () => void;
+}) {
+  const [test, setTest] = useState<LmStudioConnectionTest | null>(null);
+  const [testing, setTesting] = useState(false);
+
+  const runTest = async () => {
+    setTesting(true);
+    setTest(null);
+    try {
+      const result = await api.testLmStudioConnection();
+      setTest(result);
+      // Auto-select a discovered model that isn't already pinned.
+      if (result.ok && result.recommended_model && !settings.lm_studio.model) {
+        onPatch({ lm_studio: { ...settings.lm_studio, model: result.recommended_model } });
+      }
+    } catch (e) {
+      setTest({ ok: false, message: String(e), models: [], recommended_model: null });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <section className="card">
+      <h2>LM Studio (local model)</h2>
+      <p className="muted">
+        Run Stage-2 polish against a model served locally by LM Studio — text never leaves
+        your machine. Start the server in LM Studio (Developer → Local Server), then test the
+        connection here to discover the loaded model.
+      </p>
+      <label className="row">
+        <span>Base URL (include /v1)</span>
+        <input
+          type="text"
+          value={settings.lm_studio.base_url}
+          placeholder="http://localhost:1234/v1"
+          onChange={(e) => patchLmStudio(onPatch, settings, { base_url: e.target.value })}
+        />
+      </label>
+      <label className="row">
+        <span>Model (empty = server's loaded model)</span>
+        <input
+          type="text"
+          value={settings.lm_studio.model}
+          placeholder="e.g. qwen2.5-7b-instruct"
+          onChange={(e) => patchLmStudio(onPatch, settings, { model: e.target.value })}
+        />
+      </label>
+      {test && test.models.length > 0 && (
+        <label className="row">
+          <span>Discovered models</span>
+          <select
+            value={settings.lm_studio.model}
+            onChange={(e) => patchLmStudio(onPatch, settings, { model: e.target.value })}
+          >
+            <option value="">Use the server's loaded model</option>
+            {test.models.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <ApiKeyPanel
+        onSet={(token) => api.setLmStudioToken(token).then(() => onChanged())}
+        onClear={() => api.clearLmStudioToken().then(() => onChanged())}
+        stored={!!status?.lm_studio_token_stored}
+        label="Bearer token (optional — only for a remote/headless server, stored in the OS keychain)"
+      />
+      <label className="row">
+        <span>Cold-load wait (ms, 0 = default)</span>
+        <input
+          type="number"
+          min={0}
+          max={30000}
+          value={settings.lm_studio.load_timeout_ms}
+          onChange={(e) =>
+            patchLmStudio(onPatch, settings, { load_timeout_ms: Number(e.target.value) })
+          }
+        />
+      </label>
+      <p className="muted">
+        LM Studio can idle-unload a model; the next dictation then pays a one-time cold-load
+        cost. Increase the wait in the General tab's <em>Wait for polish</em> field if the
+        first dictation after a pause falls back to deterministic text.
+      </p>
+      <button className="btn" disabled={testing} onClick={() => void runTest()}>
+        {testing ? 'Testing…' : 'Test connection'}
+      </button>
+      {test && (
+        <p className={test.ok ? 'ok-text' : 'warn-text'}>
+          {test.ok ? '✓ ' : '✗ '}
+          {test.message}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function patchLmStudio(
+  onPatch: (p: Partial<Settings>) => Promise<void>,
+  settings: Settings,
+  partial: Partial<Settings['lm_studio']>,
+) {
+  return void onPatch({ lm_studio: { ...settings.lm_studio, ...partial } });
+}
+
+function OllamaTab({
+  settings,
+  onPatch,
+  status,
+  onChanged,
+}: {
+  settings: Settings;
+  onPatch: (p: Partial<Settings>) => Promise<void>;
+  status: StatusInfo | null;
+  onChanged: () => void;
+}) {
+  const [test, setTest] = useState<OllamaConnectionTest | null>(null);
+  const [testing, setTesting] = useState(false);
+
+  const runTest = async () => {
+    setTesting(true);
+    setTest(null);
+    try {
+      const result = await api.testOllamaConnection();
+      setTest(result);
+      if (result.ok && result.recommended_model && !settings.ollama.model) {
+        onPatch({ ollama: { ...settings.ollama, model: result.recommended_model } });
+      }
+    } catch (e) {
+      setTest({ ok: false, message: String(e), models: [], recommended_model: null });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <section className="card">
+      <h2>Ollama (local model)</h2>
+      <p className="muted">
+        Run Stage-2 polish against a model served locally by Ollama — text never leaves your
+        machine. Start Ollama (<code>ollama serve</code> or the desktop app), pull a model
+        (<code>ollama pull llama3.2</code>), then test the connection here.
+      </p>
+      <label className="row">
+        <span>Base URL (include /v1)</span>
+        <input
+          type="text"
+          value={settings.ollama.base_url}
+          placeholder="http://localhost:11434/v1"
+          onChange={(e) => patchOllama(onPatch, settings, { base_url: e.target.value })}
+        />
+      </label>
+      <label className="row">
+        <span>Model (empty = server's loaded model)</span>
+        <input
+          type="text"
+          value={settings.ollama.model}
+          placeholder="e.g. llama3.2"
+          onChange={(e) => patchOllama(onPatch, settings, { model: e.target.value })}
+        />
+      </label>
+      {test && test.models.length > 0 && (
+        <label className="row">
+          <span>Discovered models</span>
+          <select
+            value={settings.ollama.model}
+            onChange={(e) => patchOllama(onPatch, settings, { model: e.target.value })}
+          >
+            <option value="">Use the server's loaded model</option>
+            {test.models.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <ApiKeyPanel
+        onSet={(token) => api.setOllamaToken(token).then(() => onChanged())}
+        onClear={() => api.clearOllamaToken().then(() => onChanged())}
+        stored={!!status?.ollama_token_stored}
+        label="Bearer token (optional — only for a remote/headless server, stored in the OS keychain)"
+      />
+      <label className="row">
+        <span>Cold-load wait (ms, 0 = default)</span>
+        <input
+          type="number"
+          min={0}
+          max={30000}
+          value={settings.ollama.load_timeout_ms}
+          onChange={(e) =>
+            patchOllama(onPatch, settings, { load_timeout_ms: Number(e.target.value) })
+          }
+        />
+      </label>
+      <p className="muted">
+        Ollama loads a model on demand; the next dictation can pay a one-time cold-load cost.
+        Increase the wait in the General tab's <em>Wait for polish</em> field if the first
+        dictation after a pause falls back to deterministic text.
+      </p>
+      <button className="btn" disabled={testing} onClick={() => void runTest()}>
+        {testing ? 'Testing…' : 'Test connection'}
+      </button>
+      {test && (
+        <p className={test.ok ? 'ok-text' : 'warn-text'}>
+          {test.ok ? '✓ ' : '✗ '}
+          {test.message}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function patchOllama(
+  onPatch: (p: Partial<Settings>) => Promise<void>,
+  settings: Settings,
+  partial: Partial<Settings['ollama']>,
+) {
+  return void onPatch({ ollama: { ...settings.ollama, ...partial } });
 }
 
 function CredentialPanel({

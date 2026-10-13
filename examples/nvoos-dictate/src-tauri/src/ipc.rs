@@ -14,8 +14,8 @@ use cpal::traits::{DeviceTrait, HostTrait};
 use crate::config::Settings;
 use crate::error::{AppError, AppResult};
 use crate::state::{
-    AppState, SecretStore, KEY_NVOOS_CREDENTIAL, KEY_OPENAI_API_KEY, KEY_WP_APP_PASSWORD,
-    KEY_WP_USERNAME,
+    AppState, SecretStore, KEY_LM_STUDIO_TOKEN, KEY_NVOOS_CREDENTIAL, KEY_OLLAMA_TOKEN,
+    KEY_OPENAI_API_KEY, KEY_WP_APP_PASSWORD, KEY_WP_USERNAME,
 };
 use crate::storage::db::{MeetingRow, TranscriptRow};
 
@@ -31,6 +31,8 @@ pub struct StatusInfo {
     pub nvoos_configured: bool,
     pub nvoos_credential_stored: bool,
     pub openai_key_stored: bool,
+    pub lm_studio_token_stored: bool,
+    pub ollama_token_stored: bool,
     pub wp_app_password_stored: bool,
     pub meeting_recording: bool,
     pub system_audio_available: bool,
@@ -91,6 +93,8 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         nvoos_configured: !settings.nvoos.site_url.is_empty(),
         nvoos_credential_stored: state.has_nvoos_credential(),
         openai_key_stored: state.has_openai_key(),
+        lm_studio_token_stored: state.has_lm_studio_token(),
+        ollama_token_stored: state.has_ollama_token(),
         wp_app_password_stored: state.has_wp_app_password(),
         meeting_recording: state.recorder.is_recording(),
         system_audio_available: crate::meetings::system_audio_available(),
@@ -164,6 +168,8 @@ pub struct CredentialDiagnostics {
     pub nvoos_configured: bool,
     pub nvoos_credential_stored: bool,
     pub openai_key_stored: bool,
+    pub lm_studio_token_stored: bool,
+    pub ollama_token_stored: bool,
     pub wp_credentials_stored: bool,
 }
 
@@ -229,6 +235,8 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
             nvoos_configured: !settings.nvoos.site_url.is_empty(),
             nvoos_credential_stored: state.has_nvoos_credential(),
             openai_key_stored: state.has_openai_key(),
+            lm_studio_token_stored: state.has_lm_studio_token(),
+            ollama_token_stored: state.has_ollama_token(),
             wp_credentials_stored: state.has_wp_app_password(),
         },
         last_dictation: crate::dictation::last_dictation_stats(),
@@ -420,6 +428,60 @@ pub fn set_openai_api_key(
 pub fn clear_openai_api_key(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
     main_window_only(&window)?;
     state.secrets.delete(KEY_OPENAI_API_KEY)
+}
+
+#[tauri::command]
+pub fn set_lm_studio_token(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    token: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    if token.trim().is_empty() {
+        return Err(AppError::Auth("token must not be empty".into()));
+    }
+    persist_secret_verified(&state.secrets, KEY_LM_STUDIO_TOKEN, token.trim())
+}
+
+#[tauri::command]
+pub fn clear_lm_studio_token(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.secrets.delete(KEY_LM_STUDIO_TOKEN)
+}
+
+#[tauri::command]
+pub async fn test_lm_studio_connection(
+    state: State<'_, AppState>,
+) -> AppResult<crate::cleanup::providers::lm_studio::LmStudioConnectionTest> {
+    let provider = state.lm_studio_provider()?;
+    Ok(provider.test_connection().await)
+}
+
+#[tauri::command]
+pub fn set_ollama_token(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    token: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    if token.trim().is_empty() {
+        return Err(AppError::Auth("token must not be empty".into()));
+    }
+    persist_secret_verified(&state.secrets, KEY_OLLAMA_TOKEN, token.trim())
+}
+
+#[tauri::command]
+pub fn clear_ollama_token(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.secrets.delete(KEY_OLLAMA_TOKEN)
+}
+
+#[tauri::command]
+pub async fn test_ollama_connection(
+    state: State<'_, AppState>,
+) -> AppResult<crate::cleanup::providers::ollama::OllamaConnectionTest> {
+    let provider = state.ollama_provider()?;
+    Ok(provider.test_connection().await)
 }
 
 // ---- WP application password (embedded STT auth) --------------------------
@@ -623,11 +685,84 @@ pub async fn transcribe_file(
     let decoded = crate::util::decode::decode_file(&path)?;
     let engine = state.ensure_engine()?;
     let settings = state.settings_snapshot();
-    engine.transcribe(
+    // Long audio (and any video) is chunked with cross-window context rather
+    // than handed to the engine in one call.
+    crate::media::transcribe_media(
+        engine.as_ref(),
         &decoded.samples,
         decoded.sample_rate,
         settings.engine.language.as_deref(),
     )
+}
+
+/// Structured result of a media (audio or video) transcription.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct MediaTranscription {
+    pub text: String,
+    pub duration_ms: i64,
+    pub container: String,
+}
+
+/// Transcribe an audio or video file, chunking long media with context
+/// carry-over and emitting `media://progress` events (fraction + container).
+/// Returns the transcript plus container/duration metadata.
+#[tauri::command]
+pub async fn transcribe_media(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    path: String,
+) -> AppResult<MediaTranscription> {
+    main_window_only(&window)?;
+    let path = std::path::PathBuf::from(path);
+    if !path.is_file() {
+        return Err(AppError::Other("file not found".into()));
+    }
+    let app = state.app.clone();
+    let _ = app.emit(
+        "media://progress",
+        serde_json::json!({ "phase": "decode", "fraction": 0.0 }),
+    );
+    let decoded = crate::util::decode::decode_file(&path)?;
+    let engine = state.ensure_engine()?;
+    let settings = state.settings_snapshot();
+    let _ = app.emit(
+        "media://progress",
+        serde_json::json!({ "phase": "transcribe", "fraction": 0.5 }),
+    );
+    let text = crate::media::transcribe_media(
+        engine.as_ref(),
+        &decoded.samples,
+        decoded.sample_rate,
+        settings.engine.language.as_deref(),
+    )?;
+    let _ = app.emit(
+        "media://progress",
+        serde_json::json!({ "phase": "done", "fraction": 1.0 }),
+    );
+    let container = match decoded.container {
+        crate::util::decode::MediaContainer::Video => "video",
+        crate::util::decode::MediaContainer::Audio => "audio",
+    };
+    Ok(MediaTranscription {
+        text,
+        duration_ms: decoded.duration_ms,
+        container: container.to_string(),
+    })
+}
+
+/// Summarize a transcript via the configured Stage-2 provider (NV oOS or a
+/// local LM Studio/Ollama model). Returns the summarization artifact (JSON).
+#[tauri::command]
+pub async fn summarize_media(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    text: String,
+) -> AppResult<String> {
+    main_window_only(&window)?;
+    let settings = state.settings_snapshot();
+    let provider = crate::cleanup::create_provider(&settings, state.secrets.as_ref())?
+        .ok_or_else(|| AppError::NotConfigured("no Stage-2 provider configured".into()))?;
+    provider.summarize(&text).await
 }
 
 // ---- Dictation -----------------------------------------------------------

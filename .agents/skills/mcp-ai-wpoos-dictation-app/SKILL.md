@@ -1,14 +1,14 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — build/run on Windows/MSVC, the local-first engine track (parakeet/whisper/moonshine/silero-vad, all API-verified against pinned crate versions), the embedded remote-STT fallback against the Embedded addon's transcribe route, model registry + verification harnesses, the plugins.updater boot-crash config rule, and the full test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine or model, touching the cleanup pipeline golden tests, or continuing the P2/P4/P5/distribution follow-up work.
-license: Proprietary. See LICENSE.txt
+description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — build/run on Windows/MSVC, the local-first engine track (parakeet/whisper/moonshine/silero-vad, all API-verified against pinned crate versions), the embedded remote-STT fallback against the Embedded addon's transcribe route, the Stage-2 polish provider track (disabled/openai_compat/nvoos plus local LM Studio and Ollama via the shared local_openai transport), the file/media decode seam (Symphonia 0.5 — audio-only today, with video MKV/MP4/WebM demux scoped in Proposal 071), model registry + verification harnesses, the plugins.updater boot-crash config rule, and the full test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, or file/video transcription, touching the cleanup pipeline golden tests, or continuing the P2/P4/P5/distribution follow-up work.
+license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
   app-version: "0.1.0"
   proposal: "067"
   pr: "7011"
-  last-updated: "2026-10-11"
+  last-updated: "2026-10-13"
 ---
 # NV oOS Dictation App — Build, Engines, and Verification Guide
 
@@ -366,7 +366,124 @@ punctuate → per_app. Any rule change must keep `src-tauri/tests/cleanup_golden
 The fixture previously said "So we need…" but the leading-marker rule strips
 `so` after filler removal — "We need…" is the correct expectation.
 
-## Status & follow-ups (2026-10-12)
+## Stage-2 polish providers (local LLM cleanup)
+
+Stage-2 is the optional LLM polish that runs **after** Stage-1 deterministic
+rules, gated by `cleanup.wait_for_llm_ms` (ADR 0001). Provider dispatch lives
+in `cleanup/providers/mod.rs::create()` — `disabled` | `openai_compat` |
+`lm_studio` | `ollama` | `nvoos`. Each provider receives text + target-app
+category only (never audio); failure always falls back to Stage-1 text and
+can never block a paste.
+
+**Provider architecture (refactor from this session):**
+
+- `openai_shape.rs` owns the provider-agnostic OpenAI `/v1/chat/completions`
+  shape: `system_prompt_for(category)`, `build_chat_body(model: Option<&str>,
+  text, category, temperature)` (omits the `model` field entirely when `None`),
+  and `parse_chat_response` (defensive string-or-segment-array content).
+- `local_openai.rs` owns the shared **local**-server behaviour
+  (`LocalOpenAiProvider` parameterized by a `LocalKind { name, id }`): the
+  local-http-vs-remote-https invariant, optional bearer auth, `GET /v1/models`
+  discovery, `ttft_ms`/`total_ms` timing, `load_timeout_ms` cold-load budget
+  enforcement, and actionable error mapping. LM Studio and Ollama are thin
+  `LocalKind` wrappers over it — they share ~95% of their logic.
+- `lm_studio.rs` (`LmStudioProvider`) and `ollama.rs` (`OllamaProvider`) supply
+  only their identity (`name`/`id`) and read their own keychain token
+  (`KEY_LM_STUDIO_TOKEN`, `KEY_OLLAMA_TOKEN`). `id()` returns `lm_studio` /
+  `ollama` so transcript/history labelling stays correct.
+
+**Key facts that shaped the design:**
+
+- **Model identifiers are discovered, not typed.** Both local servers expose
+  `GET /v1/models` → `{ data: [{ id, … }] }`; the `id` is what goes back on
+  `chat/completions.model` (an LM Studio "model identifier", an Ollama model
+  name like `llama3.2` — NOT a GGUF filename). The Settings tabs surface a
+  discovered-model dropdown + auto-select the single loaded model.
+- **Auth defaults to none.** The local server needs no token (any non-empty
+  `Authorization: Bearer …` is accepted as a placeholder). The optional token
+  is really for a remote/headless server and lives in the OS keychain — never
+  in `config.json` (the `Settings` struct holds no secrets).
+- **Single-loaded-model behaviour:** if exactly one model is loaded, the server
+  serves it regardless of the `model` field; omitting `model` when the config
+  is empty is the correct default.
+- **Two distinct timeouts:** `cleanup.wait_for_llm_ms` bounds the *whole*
+  polish (dictation.rs); `load_timeout_ms` (per local provider) is a separate
+  `tokio::time::timeout` budget for a Just-In-Time cold model load, plus a 60 s
+  soft reqwest-client default so a hung server can't block forever.
+- **`temperature` is provider-specific:** `0.2` for `openai_compat` (cloud),
+  `0.1` for local models (they drift more; cleanup is deterministic editing).
+- **Polish latency:** `PolishMeta` carries `ttft_ms`/`total_ms` (local providers
+  report them; `nvoos`/`openai_compat` leave `None`); `LastDictationStats`
+  surfaces them as `polish_ttft_ms`/`polish_total_ms`, shown on the Diagnostics
+  page under "Polish latency (TTFT / total)".
+
+**Settings plumbing per local provider:** config block (`LmStudioConfig` /
+`OllamaConfig` with `base_url`, `model`, `load_timeout_ms`) wired into
+`Settings`; keychain key + `has_*_token()` + `*_provider()` on `AppState`;
+three IPC commands each (`test_*_connection`, `set_*_token`, `clear_*_token`)
+registered in `lib.rs::run`; a Settings tab + provider `<option>` in
+`Settings.tsx`; a credential row in `Diagnostics.tsx`. Default base URLs:
+LM Studio `http://localhost:1234/v1`, Ollama `http://localhost:11434/v1`.
+
+**Pitfall (this session):** adding a field to `PolishMeta` (a struct with other
+literal constructions) breaks `nvoos/types.rs::extract_polish_meta`, which
+builds it field-by-field — use `..PolishMeta::default()` there. Also, a
+`reqwest::Client` in a struct means it can't trivially `#[derive(Debug)]`, so
+`unwrap_err()` on a `Result<Provider, _>` won't compile — match on it instead.
+
+The design rationale is captured in
+`examples/nvoos-dictate/docs/lm-studio-integration-plan.md`.
+
+## File / media decode seam (Symphonia 0.5)
+
+File transcription (`Transcribe file…`, `util/decode.rs::decode_file`) decodes
+mp3/m4a/wav/flac/ogg to mono f32 PCM via Symphonia and feeds the resident STT
+engine through `ipc::transcribe_file`. Key facts:
+
+- **Symphonia 0.5 already demuxes MKV / MP4(MOV) / WebM** containers (not just
+audio formats), so extending to video is a decode-seam change — an extension
+`Hint` (`Hint::with_extension`) + explicit audio-track selection (iterate
+`format.tracks()` for `codec_params.media_type == Audio`) — **not** a new
+crate. There is deliberately **no FFmpeg sidecar** (the app is pure-Rust audio;
+Symphonia only needs the *audio* track, whose codecs — AAC/Opus/Vorbis — it
+already decodes).
+- The current `decode_file` sets `Hint::new()` (no extension), assumes the
+default track is audio, discards **duration**, and slurps the whole file into
+memory with no cap. Those are the precise gaps video/long-media work must
+close (`DecodedMedia { samples, sample_rate, duration_ms, container,
+has_video_track }`, a memory cap, stream-and-chunk).
+- **Long-media chunking:** `meetings/chunker.rs::Chunker` splits on VAD-detected
+silence at a `MAX_SEGMENT_SECS = 240` hard limit (parakeet's ~4–5 min TDT
+decode limit) and is **skipped for whisper** via `SttEngine::supports_long_files()`.
+Consequence: a whisper engine currently receives the *entire* long file in one
+`transcribe()` call, violating whisper's ~30 s sliding-window + context
+carry-over semantics. Long media therefore needs (1) a fixed ~30 s whisper
+window with overlap, (2) prior-window text/token context passed into the next
+window, and (3) 0-or-N-segment tolerance per window (whisper may return empty
+for a silent window).
+- **`embedded` remote STT is disqualified for media** (10 MB / 30 req/min
+limits) — video/long-media must use a local engine.
+
+Full scope in Proposal 071
+(`docs/project/proposals/071-video-input-extended-cognition-proposal.md` +
+`…-implementation-plan.md`). **Implemented (M1–M5 core, 2026-10-13):**
+`util/decode.rs` now returns `DecodedMedia { samples, sample_rate, duration_ms,
+container }` — audio-track selection is by `get_codecs().make()` per track
+(the first decodable track is audio; any non-decodable track marks the
+container `Video`), with extension `Hint`, `n_frames`×`time_base` duration,
+and a `MAX_MEDIA_SAMPLES` cap. New `media/chunker.rs` (`chunk_transcribe`)
+windows `supports_long_files()` engines in fixed 30 s windows with a 1 s
+overlap + context carry-over (default `transcribe_with_context`), and routes
+parakeet through the 240 s VAD split. `SttEngine` gained
+`transcribe_with_context(.., prior)` (default ignores `prior`). New IPC
+commands `transcribe_media` (structured result + `media://progress` events) and
+`summarize_media` (via a new `CleanupProvider::summarize`, implemented for
+nvoos + local lm_studio/ollama). `transcribe_file` now routes through the
+chunked path. **Deferred:** GUI file-picker (needs `tauri-plugin-dialog`), a
+`transcripts.media` DB column (no consumer), and media fixtures for
+decode e2e tests.
+
+## Status & follow-ups (2026-10-13)
 
 Done: P0 core, P1 (nvoos client/archive), P3 (MCP stdio), engine track live-
 verified, embedded fallback implemented, PR #7011 → `alpha-working`;
@@ -418,6 +535,28 @@ nvoos-dictate`) can vanish when the user exercises the Clear-credential
 UI — probe runs should check `credential: stored` and ask the user to
 re-store it (the site only ever shows `cred_XXXXX.SECRET` at creation;
 a lost one needs regeneration in the console).
+New this session (2026-10-13): **first-class local Stage-2 polish providers**
+— `lm_studio` and `ollama` — plus the shared `local_openai`/`openai_shape`
+transport refactor, `load_timeout_ms` cold-load enforcement, and polish
+`ttft`/`total` latency on the Diagnostics page (see "Stage-2 polish
+providers" section above). All gates green on the reference PC:
+`cargo fmt --check`, `clippy --all-targets --offline -- -D warnings`
+(default + `--features mcp`), `cargo test --offline` (78 lib + 17 golden +
+6 history + 5 validation), and `npm run build` (tsc + vite). A fresh debug
+exe was built with `npm run tauri -- build --debug --no-bundle --features
+whisper,parakeet,silero-vad` → `src-tauri/target/debug/nvoos-dictate.exe`
+(the cleanup providers need no feature flag — they're always compiled;
+the local-engine features are what require a flagged build).
+New this session (2026-10-13, implemented): **video + long-media input**
+(Proposal 071). `util/decode.rs` → `DecodedMedia` (extension `Hint`,
+audio-track-by-`get_codecs().make()`, duration via `n_frames`×`time_base`,
+`MAX_MEDIA_SAMPLES` cap); `media/chunker.rs` (`chunk_transcribe`) windows
+whisper-class engines at 30 s + context carry-over and parakeet at the 240 s
+VAD split; `SttEngine::transcribe_with_context`; `transcribe_media` +
+`summarize_media` IPC (+ `media://progress`); `CleanupProvider::summarize`
+(nvoos + local). Gates green: 81 lib + 17 golden + 6 history + 5 validation,
+clippy default + `mcp`, frontend build. Deferred: GUI file-picker, DB column,
+media fixtures.
 Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
 addon permission tweak for `cred_x.SECRET`, P4 (Linux) port, the macOS

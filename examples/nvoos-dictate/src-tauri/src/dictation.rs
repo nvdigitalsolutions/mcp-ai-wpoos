@@ -78,6 +78,11 @@ pub struct LastDictationStats {
     pub ok: bool,
     pub error: Option<String>,
     pub e2e_ms: Option<i64>,
+    /// Stage-2 polish latency (local `lm_studio` reports these; cloud
+    /// providers leave them `None`). `polish_ttft_ms` = time to first
+    /// response byte, `polish_total_ms` = full request to parsed reply.
+    pub polish_ttft_ms: Option<i64>,
+    pub polish_total_ms: Option<i64>,
 }
 
 static LAST_DICTATION: OnceLock<Mutex<Option<LastDictationStats>>> = OnceLock::new();
@@ -529,6 +534,8 @@ fn finalize_inner(
         ok: false,
         error: None,
         e2e_ms: None,
+        polish_ttft_ms: None,
+        polish_total_ms: None,
     };
     if samples.is_empty() {
         stats.error = Some(format!(
@@ -583,6 +590,11 @@ fn finalize_inner(
                     tokio::time::timeout(std::time::Duration::from_millis(wait_ms), fut).await
                 });
                 if let Ok(Ok((polished, meta))) = outcome {
+                    // Surface local-model polish latency (ttft/total) so the
+                    // Diagnostics page can show it; cloud providers report
+                    // `None` and the fields stay `None`.
+                    stats.polish_ttft_ms = meta.ttft_ms;
+                    stats.polish_total_ms = meta.total_ms;
                     polish_meta = meta;
                     if !polished.trim().is_empty() {
                         final_text = polished.trim().to_string();

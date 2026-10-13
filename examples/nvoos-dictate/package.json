@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "type": "module",
   "description": "NV oOS Dictation — local-first push-to-talk dictation and meeting transcription companion for the NV oOS WordPress plugin.",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

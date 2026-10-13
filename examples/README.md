@@ -2,6 +2,20 @@
 
 This directory contains practical examples demonstrating how to use the WP MCP AI plugin features.
 
+## Licensing note
+
+The standalone example **applications** in this directory are **proprietary
+NV Digital Solutions** products and are **NOT** covered by the repository's
+GPL-3.0 `LICENSE`:
+
+- [`nvoos-dictate/`](./nvoos-dictate/) — see [`nvoos-dictate/LICENSE.txt`](./nvoos-dictate/LICENSE.txt)
+- [`nvoos-pro-spa-vite/`](./nvoos-pro-spa-vite/) — see [`nvoos-pro-spa-vite/LICENSE.txt`](./nvoos-pro-spa-vite/LICENSE.txt)
+- [`nvoos-vite-demo/`](./nvoos-vite-demo/) — see [`nvoos-vite-demo/LICENSE.txt`](./nvoos-vite-demo/LICENSE.txt)
+
+SPDX identifier for these files: `LicenseRef-Proprietary`. Other example
+files (PHP snippets, agent templates) remain part of the plugin and follow the
+repo's GPL-3.0 license.
+
 ## Subdirectories
 
 - **[`agents/`](./agents/)** — copy-ready examples of slim, layered `.github/agents/*.agent.md` files. See [`agents/README.md`](./agents/README.md) and the canonical template at [`.context/templates/agent-file-template.md`](../.context/templates/agent-file-template.md).
