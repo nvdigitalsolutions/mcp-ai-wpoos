@@ -323,8 +323,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['user_email'] = $existing_connection['user_email'];
 			}
 
-			// Preserve existing folder_id (Google Drive) if not provided.
-			if ( empty( $connection_data['folder_id'] ) && ! empty( $existing_connection['folder_id'] ) ) {
+			// Preserve existing folder_id (Google Drive) only when the key is
+			// entirely absent from the submitted payload. The admin edit form
+			// always posts the field (empty string when cleared), so the user
+			// can delete the folder scope; the OAuth callback passes the stored
+			// value through explicitly. Using empty() here would make clearing
+			// the field impossible — the empty submission would be mistaken for
+			// an omitted field and the old ID restored on every save.
+			if ( ! array_key_exists( 'folder_id', $connection_data ) && ! empty( $existing_connection['folder_id'] ) ) {
 				$connection_data['folder_id'] = $existing_connection['folder_id'];
 			}
 
