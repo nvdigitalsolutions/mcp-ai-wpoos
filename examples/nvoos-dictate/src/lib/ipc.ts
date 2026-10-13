@@ -29,6 +29,7 @@ export interface Settings {
   };
   cleanup: {
     provider: string; // disabled | openai_compat | lm_studio | ollama | nvoos
+    polish_enabled: boolean;
     wait_for_llm_ms: number;
     replace_on_completion: boolean;
     deterministic_cleanup: boolean;

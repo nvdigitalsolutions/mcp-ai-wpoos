@@ -494,6 +494,20 @@ export default function SettingsView({ onChanged, status }: Props) {
             </select>
           </label>
           <label className="row">
+            <span>Enable Stage-2 polish</span>
+            <input
+              type="checkbox"
+              checked={settings.cleanup.polish_enabled}
+              onChange={(e) =>
+                patch({ cleanup: { ...settings.cleanup, polish_enabled: e.target.checked } })
+              }
+            />
+          </label>
+          <p className="muted">
+            Runs after deterministic cleanup. Picking a provider above no longer enables it on its
+            own — flip this switch on too, or only the deterministic pass runs.
+          </p>
+          <label className="row">
             <span>Wait for polish (ms, 0 = paste immediately)</span>
             <input
               type="number"

@@ -195,8 +195,15 @@ mod num_cpus {
 pub struct CleanupConfig {
     /// Stage-2 provider: `disabled` | `openai_compat` | `nvoos`.
     pub provider: String,
-    /// If > 0, paste waits up to this many ms for the Stage-2 polish before
-    /// falling back to Stage-1 text (decision record 0001).
+    /// Master switch for Stage-2 polish. Off by default — the provider must
+    /// be explicitly enabled before any polish request is dispatched. This is
+    /// intentionally separate from `wait_for_llm_ms` so that a `0` latency knob
+    /// can no longer silently disable a feature the user already turned on.
+    pub polish_enabled: bool,
+    /// Paste waits up to this many ms for the Stage-2 polish before falling
+    /// back to Stage-1 text (decision record 0001). Only meaningful when
+    /// `polish_enabled`; `0` = paste Stage-1 text immediately (see
+    /// `replace_on_completion`).
     pub wait_for_llm_ms: u64,
     /// When true, a fast Stage-2 result replaces the clipboard before paste.
     pub replace_on_completion: bool,
@@ -208,7 +215,8 @@ impl Default for CleanupConfig {
     fn default() -> Self {
         Self {
             provider: "disabled".to_string(),
-            wait_for_llm_ms: 0,
+            polish_enabled: false,
+            wait_for_llm_ms: 1500,
             replace_on_completion: true,
             deterministic_cleanup: true,
         }
@@ -524,5 +532,33 @@ impl Settings {
         fs::write(&tmp, raw)?;
         fs::rename(&tmp, &path)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cleanup_defaults_polish_off_with_nonzero_wait() {
+        let c = CleanupConfig::default();
+        // The master switch is off by default — polish must be explicitly
+        // enabled, never implied by a provider choice or a wait value.
+        assert!(!c.polish_enabled);
+        // `wait_for_llm_ms` is a latency knob with a sane non-zero default so
+        // a `0` no longer silently disables an otherwise-enabled feature.
+        assert_eq!(c.wait_for_llm_ms, 1500);
+        assert_eq!(c.provider, "disabled");
+    }
+
+    #[test]
+    fn cleanup_missing_polish_enabled_deserializes_off_and_preserves_provider() {
+        // An existing config.json (pre-`polish_enabled`) must not reset the
+        // user's provider selection; the new field fills from default (false).
+        let raw = r#"{"provider":"lm_studio","wait_for_llm_ms":0,"replace_on_completion":true,"deterministic_cleanup":true}"#;
+        let c: CleanupConfig = serde_json::from_str(raw).unwrap();
+        assert_eq!(c.provider, "lm_studio");
+        assert!(!c.polish_enabled);
+        assert_eq!(c.wait_for_llm_ms, 0);
     }
 }
