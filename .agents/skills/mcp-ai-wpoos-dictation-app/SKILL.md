@@ -103,7 +103,10 @@ cd src-tauri
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings                          # default
 cargo clippy --all-targets --features mcp -- -D warnings
-cargo test            # 73 tests (45 lib + 17 golden + 6 history + 5 validation)
+cargo clippy --all-targets --features camera -- -D warnings
+cargo clippy --all-targets --features vision -- -D warnings
+cargo test            # default (mock/embedded)
+cargo test --features vision   # 85 lib (+4 tracker tests)
 cargo test --features mcp       # +4 toolbox tests
 cargo test --features parakeet  # 46 lib (+1 tar.bz2 extraction test)
 ```
@@ -366,6 +369,61 @@ punctuate → per_app. Any rule change must keep `src-tauri/tests/cleanup_golden
 The fixture previously said "So we need…" but the leading-marker rule strips
 `so` after filler removal — "We need…" is the correct expectation.
 
+## Camera & live vision (Proposal 073 + 075)
+
+Two opt-in local sources on the webcam, both feature-gated and off by default:
+
+- **Camera preview (073)** — `camera/` module, `nokhwa` frames only, gated
+  behind the `camera` feature. `nokhwa::Camera` is `!Sync` so it lives on a
+  dedicated `nvoos-camera` worker thread; only `Send` handles (the
+  `PreviewFrame` ring `Arc<Mutex<_>>`, atomics) cross into `AppState`.
+  Camera *audio* is **not** nokhwa — a webcam mic is an ordinary `cpal` input
+  device and transcribes through the existing mic path. `PreviewFrame` is
+  downsampled to ≤320 px wide for the preview. IPC: `list_camera_devices`,
+  `camera_available`, `start_camera`, `stop_camera`, `get_preview_frame`.
+- **Object detection + tracking (075)** — `vision/` module, behind the
+  `vision` feature (which implies `camera`: `vision = ["camera", "dep:ort",
+  "dep:ort-sys", "dep:ndarray16"]`). Runs a YOLO ONNX detector (`yolov11n`
+  default, `yolov8n` fallback) via the pinned `ort` rc.9, decodes + NMS-filters
+  `[1, 84, 8400]` → source-pixel `Detection`s, then a dependency-free SORT
+  tracker assigns stable ids + a click-to-select pin. **No facial
+  recognition / identity** — bright-line non-goal, enforced in tool/UI copy.
+
+`vision/` layout mirrors `camera` for feature stability:
+`mod.rs` (always compiled: `Detection`, `available()`) + `detect.rs`
+(letterbox + `ort` + NMS; **both** a `#[cfg(feature = "vision")]` real body
+and a stub), `tracker.rs` (pure SORT, always compiled + unit-tested),
+`models.rs` (vision ONNX catalogue: `yolov11n`/`yolov8n`, SHA-256 + streaming
++ atomic install, mirroring `stt::model_registry`), and `controller.rs`
+(`VisionController` — detector+tracker on a worker, snapshot + pin channel
+handoff). `ort` rc.9 has **no** crate-root `Session`/`Value` re-export — use
+`ort::session::Session`, `ort::value::Value`, and positional `ort::inputs!`
+(`inputs![Value::from_array(tensor)?]`, NOT the named form). `ort` rc.9 maps
+`ndarray` **0.16** while the app pins `ndarray` 0.15 for `silero-vad` — use the
+`ndarray16` alias (already in `Cargo.toml`).
+
+`Settings.vision` gains `enabled`, `detector`, `confidence`, `iou_threshold`,
+`track_objects`, `hand_model` (hand model + ByteTrack are deferred M5
+follow-ups). `StatusInfo` adds `vision_available/running/detector/hand_model`;
+`get_diagnostics` adds a `vision` block (availability, running, model install
+state, fps-equivalent `frames`, `last_infer_ms`, `active_tracks`,
+`track_events`, `errors`). IPC commands: `vision_available`, `start_vision`,
+`stop_vision`, `get_detections`, `vision_select_track(id)`, `get_vision_models`,
+`download_vision_model`. The Home "Camera preview" panel draws detections on a
+`<canvas>` overlay with click-to-pin; the detector is started from the Home
+panel and the model is downloaded from Diagnostics → Object detection (or
+Settings → Vision).
+
+The de-risk spike `examples/vision_probe.rs` (feature `vision`) proved
+`yolov11n.onnx` (exported `opset=12`, `onnx` Python module required to
+regenerate) runs on `ort` rc.9 with the confirmed `[1, 84, 8400]` output and
+~49 ms CPU inference. Weights export: install `onnx` (`pip install onnx`),
+download `yolo11n.pt` from
+`https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt`
+(note: the id is `yolo11n`, not `yolov11n`), then
+`python -c "from ultralytics import YOLO; YOLO('yolo11n.pt').export(format='onnx', opset=12, imgsz=640)"`.
+No `onnxslim` = the simplifier step logs a non-fatal warning.
+
 ## Stage-2 polish providers (local LLM cleanup)
 
 Stage-2 is the optional LLM polish that runs **after** Stage-1 deterministic
@@ -513,7 +571,7 @@ button, `restart_microphone` IPC, and the `mic_probe` example +
 `live_capture_delivers_samples` ignored test verify real hardware;
 the **Stage-2 polish/archive contract fix** (verified live against
 console.nvoos.cloud v1.2.3): `extract_reply_text` now parses the v1.2.x
-shapes (`data.content`, `data.choices[0].message.content`) and the
+versions (`data.content`, `data.choices[0].message.content`) and the
 `nvoos_polish_probe` example exercises the real path — the archive route
 `POST /chat-transcripts` REQUIRES both `assistant_id` and `session_key`
 (both returned by the chat response: `assistant_id` + camelCase
@@ -557,6 +615,19 @@ VAD split; `SttEngine::transcribe_with_context`; `transcribe_media` +
 (nvoos + local). Gates green: 81 lib + 17 golden + 6 history + 5 validation,
 clippy default + `mcp`, frontend build. Deferred: GUI file-picker, DB column,
 media fixtures.
+New this session (2026-10-13, implemented): **local object detection +
+  tracking** (Proposal 075) — the `vision/` module (see "Camera & live vision"
+  above): `detect.rs` (letterbox + `ort` YOLO + NMS), `tracker.rs` (SORT +
+  click-to-select pin, dependency-free + unit-tested), `models.rs` (vision ONNX
+  catalogue), `controller.rs` (`VisionController` worker loop). `Settings.vision`,
+  `vision_available/start_vision/stop_vision/get_detections/
+  vision_select_track/get_vision_models/download_vision_model` IPC, a `vision`
+  block in `get_diagnostics`, `StatusInfo` vision fields, and a Home preview
+  `<canvas>` overlay + Diagnostics/Settings rows. The `vision_probe` spike
+  proved `yolov11n.onnx` runs on `ort` rc.9 (confirmed `[1, 84, 8400]`, ~49 ms
+  CPU). Gates green: 85 lib + 17 golden + 6 history + 5 validation, clippy
+  default + `mcp` + `camera` + `vision`, `cargo fmt --check`, `npm run build`.
+  Deferred M5: MediaPipe-hand model + ByteTrack low-confidence recovery.
 Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
 addon permission tweak for `cred_x.SECRET`, P4 (Linux) port, the macOS

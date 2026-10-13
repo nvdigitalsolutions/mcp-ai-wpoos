@@ -67,6 +67,14 @@ export interface Settings {
     device: string | null;
     preview: boolean;
   };
+  vision: {
+    enabled: boolean;
+    detector: string;
+    confidence: number;
+    iou_threshold: number;
+    track_objects: boolean;
+    hand_model: string;
+  };
   privacy: {
     retain_meeting_audio: boolean;
     telemetry: boolean;
@@ -93,6 +101,10 @@ export interface StatusInfo {
   wp_app_password_stored: boolean;
   meeting_recording: boolean;
   system_audio_available: boolean;
+  vision_available: boolean;
+  vision_running: boolean;
+  vision_detector: string | null;
+  vision_hand_model: string | null;
   version: string;
 }
 
@@ -172,6 +184,24 @@ export interface PreviewFrame {
   rgb: number[]; // width * height * 3 bytes
 }
 
+export interface Detection {
+  id: number | null;
+  label: string;
+  confidence: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface VisionModelStatus {
+  id: string;
+  description: string;
+  size_mb: number;
+  license: string;
+  installed: boolean;
+}
+
 export interface DiagnosticsInfo {
   version: string;
   os: string;
@@ -213,6 +243,24 @@ export interface DiagnosticsInfo {
     lm_studio_token_stored: boolean;
     ollama_token_stored: boolean;
     wp_credentials_stored: boolean;
+  };
+  vision: {
+    available: boolean;
+    enabled: boolean;
+    running: boolean;
+    detector: string;
+    hand_model: string;
+    detector_installed: boolean;
+    confidence_threshold: number;
+    iou_threshold: number;
+    frames: number;
+    total_detections: number;
+    track_events: number;
+    active_tracks: number;
+    last_infer_ms: number;
+    errors: number;
+    last_error: string | null;
+    models: VisionModelStatus[];
   };
   last_dictation: {
     window_ms: number;
@@ -266,6 +314,15 @@ export const api = {
   startCamera: () => invoke<void>('start_camera'),
   stopCamera: () => invoke<void>('stop_camera'),
   getPreviewFrame: () => invoke<PreviewFrame | null>('get_preview_frame'),
+
+  visionAvailable: () => invoke<boolean>('vision_available'),
+  startVision: () => invoke<void>('start_vision'),
+  stopVision: () => invoke<void>('stop_vision'),
+  getDetections: () => invoke<Detection[]>('get_detections'),
+  visionSelectTrack: (id: number) => invoke<boolean>('vision_select_track', { id }),
+  getVisionModels: () => invoke<VisionModelStatus[]>('get_vision_models'),
+  downloadVisionModel: (model: string, force = false) =>
+    invoke<string>('download_vision_model', { model, force }),
 
   setNvoosCredential: (siteUrl: string, credential: string) =>
     invoke<void>('set_nvoos_credential', { siteUrl, credential }),

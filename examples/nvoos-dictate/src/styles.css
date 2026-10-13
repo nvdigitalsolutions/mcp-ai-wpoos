@@ -192,6 +192,14 @@ body {
   background: #000;
 }
 
+.camera-frame {
+  /* The canvas overlay is absolutely positioned inside this box. */
+}
+
+.vision-overlay {
+  cursor: crosshair;
+}
+
 .kv {
   list-style: none;
   margin: 0 0 12px;

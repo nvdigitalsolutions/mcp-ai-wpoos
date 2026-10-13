@@ -102,6 +102,9 @@ pub struct AppState {
     /// Resident camera (video preview ring). Feature-gated; `None` without the
     /// `camera` feature or when no camera is running.
     pub camera: Mutex<Option<Arc<crate::camera::CameraCapture>>>,
+    /// Resident vision controller (object detection + tracking). `None` when
+    /// disabled or not compiled.
+    pub vision: Mutex<Option<Arc<crate::vision::controller::VisionController>>>,
     /// Resident STT engine (swapped on settings change).
     pub engine: RwLock<Option<Arc<dyn SttEngine>>>,
     pub paste: Arc<dyn PasteBackend>,
@@ -117,6 +120,7 @@ impl AppState {
             app,
             mic: Mutex::new(None),
             camera: Mutex::new(None),
+            vision: Mutex::new(None),
             engine: RwLock::new(None),
             paste: platform_backend(),
             recorder: Arc::new(MeetingRecorder::new(16000)),
@@ -299,6 +303,76 @@ impl AppState {
     /// Stop the resident camera and release the device.
     pub fn stop_camera(&self) {
         *self.camera.lock().unwrap() = None;
+    }
+
+    /// Resolve the on-disk path of the configured vision detector model.
+    pub fn vision_model_path(&self) -> AppResult<std::path::PathBuf> {
+        let settings = self.settings_snapshot();
+        let spec = crate::vision::models::find(&settings.vision.detector).ok_or_else(|| {
+            AppError::Model(format!(
+                "unknown vision model '{}'",
+                settings.vision.detector
+            ))
+        })?;
+        Ok(crate::vision::models::model_path(spec, &self.models_dir()))
+    }
+
+    /// Start (or restart) the resident vision controller on the configured
+    /// detector model, pulling frames from the resident camera ring. Requires
+    /// a running camera; a no-op error when the `vision` feature is absent.
+    pub fn restart_vision(&self) -> AppResult<()> {
+        let settings = self.settings_snapshot();
+        if !settings.vision.enabled {
+            return Ok(());
+        }
+        let model_path = self.vision_model_path()?;
+        if !model_path.is_file() {
+            return Err(AppError::Model(format!(
+                "vision model '{}' is not downloaded — get it from Settings",
+                settings.vision.detector
+            )));
+        }
+        // The frame ring must exist (camera running) before the loop can pull.
+        let camera = self
+            .camera
+            .lock()
+            .unwrap()
+            .clone()
+            .ok_or_else(|| AppError::NotConfigured("start the camera preview first".into()))?;
+        let frame = camera.frame.clone();
+        let detector_cfg = crate::vision::detect::DetectorConfig {
+            confidence: settings.vision.confidence,
+            iou: settings.vision.iou_threshold,
+        };
+        let tracker_cfg = crate::vision::tracker::TrackerConfig::default();
+        let controller = crate::vision::controller::VisionController::start(
+            model_path,
+            detector_cfg,
+            tracker_cfg,
+            frame,
+        )?;
+        tracing::info!("started vision detection loop");
+        *self.vision.lock().unwrap() = Some(Arc::new(controller));
+        Ok(())
+    }
+
+    /// Stop the resident vision controller and release the detector.
+    pub fn stop_vision(&self) {
+        *self.vision.lock().unwrap() = None;
+    }
+
+    /// Re-apply vision settings (enable/disable, model/threshold swap).
+    pub fn reapply_vision(&self, previous: &Settings) -> AppResult<()> {
+        let current = self.settings_snapshot();
+        let changed = previous.vision != current.vision;
+        if !changed {
+            return Ok(());
+        }
+        self.stop_vision();
+        if current.vision.enabled {
+            self.restart_vision()?;
+        }
+        Ok(())
     }
 
     /// Build an NV oOS client from stored settings + keychain credential.

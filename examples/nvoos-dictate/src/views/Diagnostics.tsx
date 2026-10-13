@@ -194,6 +194,107 @@ export default function DiagnosticsView() {
       </section>
 
       <section className="card">
+        <h2>Object detection (vision)</h2>
+        {info.vision.available ? (
+          <ul className="kv">
+            <li>
+              <span>Compiled / enabled</span>
+              <span className={badge(info.vision.enabled)}>
+                {info.vision.available
+                  ? info.vision.enabled
+                    ? 'enabled (opt-in)'
+                    : 'compiled, disabled'
+                  : 'not compiled'}
+              </span>
+            </li>
+            <li>
+              <span>Detector model</span>
+              <span className={badge(info.vision.detector_installed)}>
+                {info.vision.detector}
+                {info.vision.detector_installed ? '' : ' (not downloaded)'}
+              </span>
+            </li>
+            <li>
+              <span>Loop</span>
+              <span className={badge(info.vision.running)}>
+                {info.vision.running ? 'running' : 'stopped'}
+              </span>
+            </li>
+            {info.vision.running && (
+              <>
+                <li>
+                  <span>Frames processed</span>
+                  <span>{info.vision.frames}</span>
+                </li>
+                <li>
+                  <span>Last inference</span>
+                  <span>{info.vision.last_infer_ms} ms</span>
+                </li>
+                <li>
+                  <span>Active tracks</span>
+                  <span>{info.vision.active_tracks}</span>
+                </li>
+                <li>
+                  <span>Total detections / track events</span>
+                  <span>
+                    {info.vision.total_detections} / {info.vision.track_events}
+                  </span>
+                </li>
+              </>
+            )}
+            {info.vision.errors > 0 && (
+              <li>
+                <span>Errors</span>
+                <span className="badge warn">
+                  {info.vision.errors} — {info.vision.last_error ?? 'unknown'}
+                </span>
+              </li>
+            )}
+            <li>
+              <span>Thresholds</span>
+              <span>
+                conf ≥ {info.vision.confidence_threshold} · IoU {info.vision.iou_threshold}
+              </span>
+            </li>
+          </ul>
+        ) : (
+          <p className="muted">Vision detection is not compiled into this build.</p>
+        )}
+        {info.vision.available && (
+          <>
+            <h3>Detector models</h3>
+            <ul className="kv">
+              {info.vision.models.map((m) => (
+                <li key={m.id}>
+                  <span>{m.id}</span>
+                  <span className={badge(m.installed)}>
+                    {m.installed ? 'installed' : `not installed (${m.size_mb} MB)`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="btn-row">
+              {info.vision.models
+                .filter((m) => !m.installed)
+                .map((m) => (
+                  <button
+                    key={m.id}
+                    className="btn ghost"
+                    onClick={() => void api.downloadVisionModel(m.id).then(() => void refresh())}
+                  >
+                    Download {m.id}
+                  </button>
+                ))}
+            </div>
+            <p className="muted">
+              Detection runs entirely on-device via ONNX Runtime — camera pixels never leave your
+              computer, and no faces or personal identities are stored.
+            </p>
+          </>
+        )}
+      </section>
+
+      <section className="card">
         <h2>Last dictation</h2>
         {last ? (
           <>
