@@ -7,7 +7,7 @@
 mod disabled;
 pub mod lm_studio;
 pub(crate) mod local_openai;
-mod nvoos;
+pub mod nvoos;
 pub mod ollama;
 mod openai_compat;
 pub(crate) mod openai_shape;
@@ -56,6 +56,19 @@ pub trait CleanupProvider: Send + Sync {
     async fn summarize(&self, text: &str) -> AppResult<String> {
         Err(crate::error::AppError::NotConfigured(format!(
             "provider '{}' does not support summarization",
+            self.id()
+        )))
+    }
+
+    /// Generic single-turn completion (arbitrary system + user text → reply).
+    /// The building block the browser agent uses to ask the model for a tool
+    /// call. Only the local providers implement it today; `nvoos`/`openai_compat`
+    /// fall back to the default and report unsupported until the hosted-brain
+    /// seam (§5a) is wired.
+    #[allow(unused_variables)]
+    async fn complete(&self, system: &str, user: &str, temperature: f64) -> AppResult<String> {
+        Err(crate::error::AppError::NotConfigured(format!(
+            "provider '{}' does not support agent completions",
             self.id()
         )))
     }

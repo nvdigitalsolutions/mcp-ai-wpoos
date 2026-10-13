@@ -59,4 +59,8 @@ impl CleanupProvider for OllamaProvider {
     async fn summarize(&self, text: &str) -> AppResult<String> {
         self.inner.summarize(text).await
     }
+
+    async fn complete(&self, system: &str, user: &str, temperature: f64) -> AppResult<String> {
+        self.inner.complete(system, user, temperature).await
+    }
 }

@@ -105,6 +105,9 @@ pub struct AppState {
     /// Resident vision controller (object detection + tracking). `None` when
     /// disabled or not compiled.
     pub vision: Mutex<Option<Arc<crate::vision::controller::VisionController>>>,
+    /// Resident browser-agent controller. The `AgentController` is always
+    /// present (type-stable); its driver only runs behind the `agent` feature.
+    pub agent: crate::agent::controller::AgentController,
     /// Resident STT engine (swapped on settings change).
     pub engine: RwLock<Option<Arc<dyn SttEngine>>>,
     pub paste: Arc<dyn PasteBackend>,
@@ -121,6 +124,7 @@ impl AppState {
             mic: Mutex::new(None),
             camera: Mutex::new(None),
             vision: Mutex::new(None),
+            agent: crate::agent::controller::AgentController::new(),
             engine: RwLock::new(None),
             paste: platform_backend(),
             recorder: Arc::new(MeetingRecorder::new(16000)),
@@ -432,6 +436,13 @@ impl AppState {
         crate::nvoos::NvoosClient::new(settings.nvoos.site_url, credential)
     }
 
+    /// Build an NV oOS `CleanupProvider` from stored settings + keychain
+    /// credential (the hosted brain for §5a).
+    pub fn nvoos_provider(&self) -> AppResult<crate::cleanup::providers::nvoos::NvoosProvider> {
+        let settings = self.settings_snapshot();
+        crate::cleanup::providers::nvoos::NvoosProvider::new(&settings.nvoos, self.secrets.as_ref())
+    }
+
     /// Build an LM Studio provider from stored settings + keychain token. The
     /// token is optional (local servers need none), so this only errors on an
     /// invalid base URL, not on a missing secret.
@@ -453,6 +464,56 @@ impl AppState {
             &settings.ollama,
             self.secrets.as_ref(),
         )
+    }
+
+    /// Build the browser-agent brain from `settings.agent.provider`. Returns a
+    /// boxed `CleanupProvider` (its `complete()` seam is what the agent loop
+    /// calls). `lm_studio`/`ollama` are the local brains; `nvoos` routes to the
+    /// site's hosted model (§5a).
+    pub fn agent_brain(&self) -> AppResult<Box<dyn crate::cleanup::providers::CleanupProvider>> {
+        let settings = self.settings_snapshot();
+        let provider = match settings.agent.provider.as_str() {
+            "lm_studio" => Box::new(self.lm_studio_provider()?)
+                as Box<dyn crate::cleanup::providers::CleanupProvider>,
+            "ollama" | "" => Box::new(self.ollama_provider()?)
+                as Box<dyn crate::cleanup::providers::CleanupProvider>,
+            "nvoos" => Box::new(self.nvoos_provider()?)
+                as Box<dyn crate::cleanup::providers::CleanupProvider>,
+            other => {
+                return Err(crate::error::AppError::NotConfigured(format!(
+                    "unknown agent provider '{other}'"
+                )))
+            }
+        };
+        Ok(provider)
+    }
+
+    /// Start a browser-agent run for `instruction`. Builds the brain from
+    /// settings and delegates to the resident `AgentController`. The task's
+    /// starting origin is derived from the first `navigate` action by the loop
+    /// (so it is not needed here — safety gating an unknown start origin lets
+    /// the loop's own nav guard govern the first hop).
+    pub fn start_agent_run(&self, instruction: String) -> AppResult<()> {
+        let settings = self.settings_snapshot();
+        if !settings.agent.enabled {
+            return Err(crate::error::AppError::NotConfigured(
+                "browser agent is disabled — enable it in Settings".into(),
+            ));
+        }
+        let brain: Arc<dyn crate::cleanup::providers::CleanupProvider> =
+            Arc::from(self.agent_brain()?);
+        let opts = crate::agent::agent_loop::RunOptions {
+            task: instruction,
+            max_steps: settings.agent.max_steps.max(1),
+            confirmation_required: settings.agent.confirmation_required,
+            ..crate::agent::agent_loop::RunOptions::default()
+        };
+        self.agent.start(brain, opts)
+    }
+
+    /// Set the browser-agent stop flag. The running loop halts between steps.
+    pub fn stop_agent_run(&self) {
+        self.agent.stop();
     }
 }
 

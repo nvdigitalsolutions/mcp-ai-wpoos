@@ -17,7 +17,7 @@ interface Props {
   status: StatusInfo | null;
 }
 
-type SettingsTab = 'general' | 'engine' | 'nvoos' | 'openai' | 'lmstudio' | 'ollama' | 'privacy' | 'permissions';
+type SettingsTab = 'general' | 'engine' | 'nvoos' | 'openai' | 'lmstudio' | 'ollama' | 'agent' | 'privacy' | 'permissions';
 
 export default function SettingsView({ onChanged, status }: Props) {
   const [tab, setTab] = useState<SettingsTab>('general');
@@ -170,6 +170,9 @@ export default function SettingsView({ onChanged, status }: Props) {
         </button>
         <button className={tab === 'ollama' ? 'tab active' : 'tab'} onClick={() => setTab('ollama')}>
           Ollama
+        </button>
+        <button className={tab === 'agent' ? 'tab active' : 'tab'} onClick={() => setTab('agent')}>
+          Browser Agent
         </button>
         <button className={tab === 'privacy' ? 'tab active' : 'tab'} onClick={() => setTab('privacy')}>
           Privacy
@@ -528,6 +531,74 @@ export default function SettingsView({ onChanged, status }: Props) {
       {tab === 'lmstudio' && <LmStudioTab settings={settings} onPatch={patch} status={status} onChanged={onChanged} />}
 
       {tab === 'ollama' && <OllamaTab settings={settings} onPatch={patch} status={status} onChanged={onChanged} />}
+
+      {tab === 'agent' && (
+        <section className="card">
+          <h2>Browser agent</h2>
+          <p className="muted">
+            Dictate an instruction and a local model will drive a real browser to carry it
+            out. Destructive actions (clicks, submits, PDFs) pause for confirmation by
+            default. Requires the `agent` build feature and a local model server.
+          </p>
+          <label className="row">
+            <span>Enable browser agent</span>
+            <input
+              type="checkbox"
+              checked={settings.agent.enabled}
+              onChange={(e) =>
+                patch({ agent: { ...settings.agent, enabled: e.target.checked } })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Brain provider</span>
+            <select
+              value={settings.agent.provider}
+              onChange={(e) =>
+                patch({ agent: { ...settings.agent, provider: e.target.value } })
+              }
+            >
+              <option value="ollama">Ollama (local)</option>
+              <option value="lm_studio">LM Studio (local)</option>
+              <option value="nvoos">NV oOS (hosted, your site)</option>
+            </select>
+          </label>
+          <label className="row">
+            <span>Model (empty = serve the single loaded model)</span>
+            <input
+              type="text"
+              value={settings.agent.model}
+              onChange={(e) => patch({ agent: { ...settings.agent, model: e.target.value } })}
+            />
+          </label>
+          <label className="row">
+            <span>Max steps per run</span>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={settings.agent.max_steps}
+              onChange={(e) =>
+                patch({
+                  agent: { ...settings.agent, max_steps: Number(e.target.value) || 10 },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Require confirmation for destructive actions</span>
+            <input
+              type="checkbox"
+              checked={settings.agent.confirmation_required}
+              onChange={(e) =>
+                patch({
+                  agent: { ...settings.agent, confirmation_required: e.target.checked },
+                })
+              }
+            />
+          </label>
+        </section>
+      )}
 
       {tab === 'openai' && (
         <section className="card">
