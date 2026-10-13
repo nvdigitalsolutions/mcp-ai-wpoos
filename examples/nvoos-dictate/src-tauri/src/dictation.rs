@@ -581,27 +581,34 @@ fn finalize_inner(
         // archive route rejects requests without one.
         let mut polish_meta = crate::cleanup::providers::PolishMeta::default();
         if let Some(provider) = provider {
-            let base_id = provider.id();
-            provider_id = base_id.to_string();
-            let wait_ms = settings.cleanup.wait_for_llm_ms;
-            if wait_ms > 0 {
-                let fut = provider.polish(&stage1, category);
-                let outcome = tauri::async_runtime::block_on(async {
-                    tokio::time::timeout(std::time::Duration::from_millis(wait_ms), fut).await
-                });
-                if let Ok(Ok((polished, meta))) = outcome {
-                    // Surface local-model polish latency (ttft/total) so the
-                    // Diagnostics page can show it; cloud providers report
-                    // `None` and the fields stay `None`.
-                    stats.polish_ttft_ms = meta.ttft_ms;
-                    stats.polish_total_ms = meta.total_ms;
-                    polish_meta = meta;
-                    if !polished.trim().is_empty() {
-                        final_text = polished.trim().to_string();
-                        // Record which model answered, for tuning (e.g.
-                        // "nvoos:deepseek-flash").
-                        if let Some(model) = polish_meta.model.as_deref() {
-                            provider_id = format!("{base_id}:{model}");
+            if !settings.cleanup.polish_enabled {
+                tracing::debug!(
+                    "Stage-2 polish skipped: provider '{}' configured but polish_enabled is false",
+                    provider.id()
+                );
+            } else {
+                let base_id = provider.id();
+                provider_id = base_id.to_string();
+                let wait_ms = settings.cleanup.wait_for_llm_ms;
+                if wait_ms > 0 {
+                    let fut = provider.polish(&stage1, category);
+                    let outcome = tauri::async_runtime::block_on(async {
+                        tokio::time::timeout(std::time::Duration::from_millis(wait_ms), fut).await
+                    });
+                    if let Ok(Ok((polished, meta))) = outcome {
+                        // Surface local-model polish latency (ttft/total) so the
+                        // Diagnostics page can show it; cloud providers report
+                        // `None` and the fields stay `None`.
+                        stats.polish_ttft_ms = meta.ttft_ms;
+                        stats.polish_total_ms = meta.total_ms;
+                        polish_meta = meta;
+                        if !polished.trim().is_empty() {
+                            final_text = polished.trim().to_string();
+                            // Record which model answered, for tuning (e.g.
+                            // "nvoos:deepseek-flash").
+                            if let Some(model) = polish_meta.model.as_deref() {
+                                provider_id = format!("{base_id}:{model}");
+                            }
                         }
                     }
                 }
