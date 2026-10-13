@@ -99,6 +99,9 @@ pub struct AppState {
     pub app: AppHandle,
     /// Resident microphone (ring buffer). None when no mic exists.
     pub mic: Mutex<Option<Arc<MicCapture>>>,
+    /// Resident camera (video preview ring). Feature-gated; `None` without the
+    /// `camera` feature or when no camera is running.
+    pub camera: Mutex<Option<Arc<crate::camera::CameraCapture>>>,
     /// Resident STT engine (swapped on settings change).
     pub engine: RwLock<Option<Arc<dyn SttEngine>>>,
     pub paste: Arc<dyn PasteBackend>,
@@ -113,6 +116,7 @@ impl AppState {
             secrets,
             app,
             mic: Mutex::new(None),
+            camera: Mutex::new(None),
             engine: RwLock::new(None),
             paste: platform_backend(),
             recorder: Arc::new(MeetingRecorder::new(16000)),
@@ -270,6 +274,31 @@ impl AppState {
                 "microphone restart failed; the previous device is still active: {e}"
             ))),
         }
+    }
+
+    /// Start (or restart) the resident camera on the configured device. The
+    /// previous camera keeps running if the rebuild fails. A no-op error when
+    /// the `camera` feature is not compiled in.
+    pub fn restart_camera(&self) -> AppResult<()> {
+        let settings = self.settings_snapshot();
+        match crate::camera::CameraCapture::start(settings.camera.device.as_deref()) {
+            Ok(cam) => {
+                tracing::info!(device = cam.device_name(), "started camera capture");
+                *self.camera.lock().unwrap() = Some(Arc::new(cam));
+                Ok(())
+            }
+            Err(e) => {
+                if !crate::camera::available() {
+                    *self.camera.lock().unwrap() = None;
+                }
+                Err(e)
+            }
+        }
+    }
+
+    /// Stop the resident camera and release the device.
+    pub fn stop_camera(&self) {
+        *self.camera.lock().unwrap() = None;
     }
 
     /// Build an NV oOS client from stored settings + keychain credential.

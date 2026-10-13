@@ -342,6 +342,28 @@ impl Default for AudioConfig {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct CameraConfig {
+    /// Whether the webcam/camera is enabled as a live source.
+    pub enabled: bool,
+    /// Camera device by display name, or `None` for the first/default camera.
+    pub device: Option<String>,
+    /// Show the live preview thumbnail (depends on no vision model — v1 is a
+    /// passive preview only).
+    pub preview: bool,
+}
+
+impl Default for CameraConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            device: None,
+            preview: true,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(default)]
 pub struct PrivacyConfig {
@@ -380,6 +402,7 @@ pub struct Settings {
     pub lm_studio: LmStudioConfig,
     pub ollama: OllamaConfig,
     pub audio: AudioConfig,
+    pub camera: CameraConfig,
     pub privacy: PrivacyConfig,
     pub ui: UiConfig,
 }

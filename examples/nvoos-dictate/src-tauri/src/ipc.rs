@@ -617,6 +617,49 @@ pub fn list_input_devices() -> AppResult<Vec<String>> {
     Ok(names)
 }
 
+// ---- Camera --------------------------------------------------------------
+
+/// Display names of the host's cameras, for the Settings picker (empty when
+/// the `camera` feature is not compiled in, or no camera exists).
+#[tauri::command]
+pub fn list_camera_devices() -> Vec<String> {
+    let mut names = crate::camera::list_devices();
+    names.sort();
+    names.dedup();
+    names
+}
+
+/// Whether camera capture is compiled into this build.
+#[tauri::command]
+pub fn camera_available() -> bool {
+    crate::camera::available()
+}
+
+/// Start (or restart) the resident camera on the configured device.
+#[tauri::command]
+pub fn start_camera(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.restart_camera()
+}
+
+/// Stop the resident camera and release the device.
+#[tauri::command]
+pub fn stop_camera(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.stop_camera();
+    Ok(())
+}
+
+/// Return the latest camera preview frame as a data URI (RGB PNG), or `None`
+/// when no frame/stream is available.
+#[tauri::command]
+pub fn get_preview_frame(
+    state: State<'_, AppState>,
+) -> AppResult<Option<crate::camera::PreviewFrame>> {
+    let cam = state.camera.lock().unwrap().clone();
+    Ok(cam.and_then(|c| c.frame.lock().unwrap().clone()))
+}
+
 // ---- Models & file transcription ----------------------------------------
 
 #[tauri::command]

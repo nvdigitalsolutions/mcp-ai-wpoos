@@ -26,6 +26,7 @@ export default function SettingsView({ onChanged, status }: Props) {
   const [message, setMessage] = useState('');
   const [loadFailed, setLoadFailed] = useState(false);
   const [devices, setDevices] = useState<string[]>([]);
+  const [cameras, setCameras] = useState<string[]>([]);
 
   // Latest settings + a debounce timer: typing must not fire an
   // `update_settings` (which swaps the speech engine) on every keystroke.
@@ -52,6 +53,11 @@ export default function SettingsView({ onChanged, status }: Props) {
       .listInputDevices()
       .then(setDevices)
       .catch(() => setDevices([]));
+    // Camera devices for the preview picker (empty without the `camera` feature).
+    api
+      .listCameraDevices()
+      .then(setCameras)
+      .catch(() => setCameras([]));
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
@@ -221,6 +227,33 @@ export default function SettingsView({ onChanged, status }: Props) {
             Capture restarts on the selected device when you save. The Diagnostics tab shows
             which device the app is actually hearing, with a live level meter.
           </p>
+          {cameras.length > 0 && (
+            <>
+              <h2>Camera</h2>
+              <label className="row">
+                <span>Preview device</span>
+                <select
+                  value={settings.camera.device ?? ''}
+                  onChange={(e) =>
+                    patch({
+                      camera: { ...settings.camera, device: e.target.value || null },
+                    })
+                  }
+                >
+                  <option value="">First camera</option>
+                  {cameras.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="muted">
+                Live preview only in this version — audio transcription uses your selected
+                microphone (a webcam mic appears under Microphone above).
+              </p>
+            </>
+          )}
           <h2>Cleanup</h2>
           <label className="row">
             <span>Stage-2 AI polish</span>

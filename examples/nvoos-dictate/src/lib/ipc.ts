@@ -62,6 +62,11 @@ export interface Settings {
     min_utterance_ms: number;
     input_device: string | null;
   };
+  camera: {
+    enabled: boolean;
+    device: string | null;
+    preview: boolean;
+  };
   privacy: {
     retain_meeting_audio: boolean;
     telemetry: boolean;
@@ -161,6 +166,12 @@ export interface MediaProgress {
   fraction: number;
 }
 
+export interface PreviewFrame {
+  width: number;
+  height: number;
+  rgb: number[]; // width * height * 3 bytes
+}
+
 export interface DiagnosticsInfo {
   version: string;
   os: string;
@@ -250,6 +261,11 @@ export const api = {
   getDiagnostics: () => invoke<DiagnosticsInfo>('get_diagnostics'),
   listInputDevices: () => invoke<string[]>('list_input_devices'),
   restartMicrophone: () => invoke<DiagnosticsInfo['mic']>('restart_microphone'),
+  listCameraDevices: () => invoke<string[]>('list_camera_devices'),
+  cameraAvailable: () => invoke<boolean>('camera_available'),
+  startCamera: () => invoke<void>('start_camera'),
+  stopCamera: () => invoke<void>('stop_camera'),
+  getPreviewFrame: () => invoke<PreviewFrame | null>('get_preview_frame'),
 
   setNvoosCredential: (siteUrl: string, credential: string) =>
     invoke<void>('set_nvoos_credential', { siteUrl, credential }),

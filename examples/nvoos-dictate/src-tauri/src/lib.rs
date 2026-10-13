@@ -1,6 +1,7 @@
 //! NV oOS Dictation — library entry point (Tauri mobile-ready split).
 
 pub mod audio;
+pub mod camera;
 pub mod cleanup;
 pub mod config;
 pub mod dictation;
@@ -93,6 +94,11 @@ pub fn run() {
             ipc::get_diagnostics,
             ipc::list_input_devices,
             ipc::restart_microphone,
+            ipc::list_camera_devices,
+            ipc::camera_available,
+            ipc::start_camera,
+            ipc::stop_camera,
+            ipc::get_preview_frame,
             ipc::set_nvoos_credential,
             ipc::clear_nvoos_credential,
             ipc::test_nvoos_connection,

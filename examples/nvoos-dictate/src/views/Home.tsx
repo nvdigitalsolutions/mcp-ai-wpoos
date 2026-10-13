@@ -4,6 +4,7 @@ import {
   onMediaProgress,
   type DictateEvent,
   type MediaTranscription,
+  type PreviewFrame,
   type StatusInfo,
 } from '../lib/ipc';
 
@@ -104,10 +105,108 @@ function MediaPanel() {
   );
 }
 
+/** Live webcam preview panel (Proposal 073): start/stop the camera and show
+ *  a low-rate RGB thumbnail. No vision in v1 — preview only. */
+function CameraPanel() {
+  const [available, setAvailable] = useState<boolean | null>(null);
+  const [running, setRunning] = useState(false);
+  const [frame, setFrame] = useState<PreviewFrame | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    void api.cameraAvailable().then((v) => {
+      if (!cancelled) setAvailable(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Poll the preview while running (low rate; the Rust core holds a ring).
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => {
+      void api.getPreviewFrame().then((f) => f && setFrame(f)).catch(() => {});
+    }, 200);
+    return () => clearInterval(id);
+  }, [running]);
+
+  const start = async () => {
+    setError('');
+    try {
+      await api.startCamera();
+      setRunning(true);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  const stop = async () => {
+    try {
+      await api.stopCamera();
+    } catch (e) {
+      setError(String(e));
+    }
+    setRunning(false);
+    setFrame(null);
+  };
+
+  const dataUri = (() => {
+    if (!frame || frame.width === 0 || frame.height === 0) return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = frame.width;
+    canvas.height = frame.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const imgData = ctx.createImageData(frame.width, frame.height);
+    const px = frame.width * frame.height;
+    for (let p = 0; p < px; p++) {
+      imgData.data[p * 4] = frame.rgb[p * 3] ?? 0;
+      imgData.data[p * 4 + 1] = frame.rgb[p * 3 + 1] ?? 0;
+      imgData.data[p * 4 + 2] = frame.rgb[p * 3 + 2] ?? 0;
+      imgData.data[p * 4 + 3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return canvas.toDataURL('image/png');
+  })();
+
+  if (available === false) {
+    return null; // camera feature not compiled in — hide the panel
+  }
+
+  return (
+    <section className="card">
+      <h2>Camera preview</h2>
+      <p className="muted">
+        Live webcam preview (no recording). Camera audio transcription uses your webcam's microphone,
+        selectable under Settings → Audio.
+      </p>
+      <div className="btn-row">
+        {!running ? (
+          <button className="btn" onClick={start}>
+            Start camera
+          </button>
+        ) : (
+          <button className="btn ghost danger" onClick={stop}>
+            Stop camera
+          </button>
+        )}
+      </div>
+      {error && <p className="warn-text">{error}</p>}
+      {running && (
+        <p className="muted small">Previewing{frame ? ` · ${frame.width}×${frame.height}` : ''}</p>
+      )}
+      {running && dataUri && <img src={dataUri} alt="camera preview" className="camera-preview" />}
+    </section>
+  );
+}
+
 export default function Home({ status, dictate, onRefresh }: Props) {
   return (
     <div className="stack">
       <MediaPanel />
+      <CameraPanel />
 
       <section className="card">
         <h2>Dictation</h2>
