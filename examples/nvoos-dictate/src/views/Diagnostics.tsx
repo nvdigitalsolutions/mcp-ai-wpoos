@@ -226,6 +226,14 @@ export default function DiagnosticsView() {
                   {last.engine} · {last.model}
                 </span>
               </li>
+              {last.polish_total_ms != null && (
+                <li>
+                  <span>Polish latency (TTFT / total)</span>
+                  <span>
+                    {last.polish_ttft_ms ?? '?'} ms / {last.polish_total_ms} ms
+                  </span>
+                </li>
+              )}
             </ul>
             {last.error && <p className="muted">Error: {last.error}</p>}
             {!last.ok && last.peak < 0.004 && (
@@ -259,6 +267,18 @@ export default function DiagnosticsView() {
             <span>OpenAI-compatible key</span>
             <span className={badge(info.credentials.openai_key_stored)}>
               {info.credentials.openai_key_stored ? 'stored (OS keychain)' : 'not set'}
+            </span>
+          </li>
+          <li>
+            <span>LM Studio token</span>
+            <span className={badge(info.credentials.lm_studio_token_stored)}>
+              {info.credentials.lm_studio_token_stored ? 'stored (OS keychain)' : 'not set'}
+            </span>
+          </li>
+          <li>
+            <span>Ollama token</span>
+            <span className={badge(info.credentials.ollama_token_stored)}>
+              {info.credentials.ollama_token_stored ? 'stored (OS keychain)' : 'not set'}
             </span>
           </li>
           <li>

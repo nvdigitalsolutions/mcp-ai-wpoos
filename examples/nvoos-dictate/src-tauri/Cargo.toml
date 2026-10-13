@@ -4,7 +4,7 @@ version = "0.2.0"
 description = "NV oOS Dictation — local-first push-to-talk dictation and meeting transcription companion for the NV oOS WordPress plugin."
 authors = ["NV Digital Solutions"]
 edition = "2021"
-license = "MIT"
+license = "proprietary"
 rust-version = "1.90"
 repository = "https://github.com/nvdigitalsolutions/mcp-ai-wpoos"
 default-run = "nvoos-dictate"
@@ -28,6 +28,7 @@ tauri-plugin-global-shortcut = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
@@ -79,6 +80,9 @@ rmcp = { version = "3.5", default-features = false, features = ["macros", "serve
 schemars = { version = "1", optional = true }
 silero-vad-rs = { version = "0.1", optional = true }
 ndarray = { version = "0.15", optional = true }
+nokhwa = { version = "0.10", features = ["input-native", "camera-sync-impl"], optional = true }
+# Direct dep so camera preview can name image::Rgb/ImageBuffer (nokhwa re-uses image 0.25).
+image = { version = "0.25", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 # Low-level keyboard hook (WH_KEYBOARD_LL), GetAsyncKeyState fallback, and
@@ -125,6 +129,8 @@ whisper = ["dep:whisper-rs", "whisper-rs-sys/force-debug"]
 moonshine = ["dep:ort", "dep:ort-sys"]
 mcp = ["dep:rmcp", "dep:schemars"]
 silero-vad = ["dep:silero-vad-rs", "dep:ort-sys", "dep:ndarray"]
+# Live webcam/camera capture (Proposal 073) — video preview via nokhwa.
+camera = ["dep:nokhwa", "dep:image"]
 
 [patch.crates-io]
 whisper-rs-sys = { path = "../vendor/whisper-rs-sys" }

@@ -78,6 +78,7 @@ export default function HistoryView() {
             <p className="muted small">
               {row.target_app || 'unknown app'} · {row.engine}/{row.model} · {row.provider} ·{' '}
               {row.e2e_ms} ms · {row.created_at}
+              {row.media && <span className="badge ok"> media</span>}
             </p>
             <details>
               <summary>Raw</summary>

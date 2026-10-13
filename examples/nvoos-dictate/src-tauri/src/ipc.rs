@@ -14,8 +14,8 @@ use cpal::traits::{DeviceTrait, HostTrait};
 use crate::config::Settings;
 use crate::error::{AppError, AppResult};
 use crate::state::{
-    AppState, SecretStore, KEY_NVOOS_CREDENTIAL, KEY_OPENAI_API_KEY, KEY_WP_APP_PASSWORD,
-    KEY_WP_USERNAME,
+    AppState, SecretStore, KEY_LM_STUDIO_TOKEN, KEY_NVOOS_CREDENTIAL, KEY_OLLAMA_TOKEN,
+    KEY_OPENAI_API_KEY, KEY_WP_APP_PASSWORD, KEY_WP_USERNAME,
 };
 use crate::storage::db::{MeetingRow, TranscriptRow};
 
@@ -31,6 +31,8 @@ pub struct StatusInfo {
     pub nvoos_configured: bool,
     pub nvoos_credential_stored: bool,
     pub openai_key_stored: bool,
+    pub lm_studio_token_stored: bool,
+    pub ollama_token_stored: bool,
     pub wp_app_password_stored: bool,
     pub meeting_recording: bool,
     pub system_audio_available: bool,
@@ -91,6 +93,8 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         nvoos_configured: !settings.nvoos.site_url.is_empty(),
         nvoos_credential_stored: state.has_nvoos_credential(),
         openai_key_stored: state.has_openai_key(),
+        lm_studio_token_stored: state.has_lm_studio_token(),
+        ollama_token_stored: state.has_ollama_token(),
         wp_app_password_stored: state.has_wp_app_password(),
         meeting_recording: state.recorder.is_recording(),
         system_audio_available: crate::meetings::system_audio_available(),
@@ -164,6 +168,8 @@ pub struct CredentialDiagnostics {
     pub nvoos_configured: bool,
     pub nvoos_credential_stored: bool,
     pub openai_key_stored: bool,
+    pub lm_studio_token_stored: bool,
+    pub ollama_token_stored: bool,
     pub wp_credentials_stored: bool,
 }
 
@@ -229,6 +235,8 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
             nvoos_configured: !settings.nvoos.site_url.is_empty(),
             nvoos_credential_stored: state.has_nvoos_credential(),
             openai_key_stored: state.has_openai_key(),
+            lm_studio_token_stored: state.has_lm_studio_token(),
+            ollama_token_stored: state.has_ollama_token(),
             wp_credentials_stored: state.has_wp_app_password(),
         },
         last_dictation: crate::dictation::last_dictation_stats(),
@@ -422,6 +430,60 @@ pub fn clear_openai_api_key(window: tauri::Window, state: State<'_, AppState>) -
     state.secrets.delete(KEY_OPENAI_API_KEY)
 }
 
+#[tauri::command]
+pub fn set_lm_studio_token(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    token: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    if token.trim().is_empty() {
+        return Err(AppError::Auth("token must not be empty".into()));
+    }
+    persist_secret_verified(&state.secrets, KEY_LM_STUDIO_TOKEN, token.trim())
+}
+
+#[tauri::command]
+pub fn clear_lm_studio_token(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.secrets.delete(KEY_LM_STUDIO_TOKEN)
+}
+
+#[tauri::command]
+pub async fn test_lm_studio_connection(
+    state: State<'_, AppState>,
+) -> AppResult<crate::cleanup::providers::lm_studio::LmStudioConnectionTest> {
+    let provider = state.lm_studio_provider()?;
+    Ok(provider.test_connection().await)
+}
+
+#[tauri::command]
+pub fn set_ollama_token(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    token: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    if token.trim().is_empty() {
+        return Err(AppError::Auth("token must not be empty".into()));
+    }
+    persist_secret_verified(&state.secrets, KEY_OLLAMA_TOKEN, token.trim())
+}
+
+#[tauri::command]
+pub fn clear_ollama_token(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.secrets.delete(KEY_OLLAMA_TOKEN)
+}
+
+#[tauri::command]
+pub async fn test_ollama_connection(
+    state: State<'_, AppState>,
+) -> AppResult<crate::cleanup::providers::ollama::OllamaConnectionTest> {
+    let provider = state.ollama_provider()?;
+    Ok(provider.test_connection().await)
+}
+
 // ---- WP application password (embedded STT auth) --------------------------
 
 #[tauri::command]
@@ -555,6 +617,49 @@ pub fn list_input_devices() -> AppResult<Vec<String>> {
     Ok(names)
 }
 
+// ---- Camera --------------------------------------------------------------
+
+/// Display names of the host's cameras, for the Settings picker (empty when
+/// the `camera` feature is not compiled in, or no camera exists).
+#[tauri::command]
+pub fn list_camera_devices() -> Vec<String> {
+    let mut names = crate::camera::list_devices();
+    names.sort();
+    names.dedup();
+    names
+}
+
+/// Whether camera capture is compiled into this build.
+#[tauri::command]
+pub fn camera_available() -> bool {
+    crate::camera::available()
+}
+
+/// Start (or restart) the resident camera on the configured device.
+#[tauri::command]
+pub fn start_camera(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.restart_camera()
+}
+
+/// Stop the resident camera and release the device.
+#[tauri::command]
+pub fn stop_camera(window: tauri::Window, state: State<'_, AppState>) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.stop_camera();
+    Ok(())
+}
+
+/// Return the latest camera preview frame as a data URI (RGB PNG), or `None`
+/// when no frame/stream is available.
+#[tauri::command]
+pub fn get_preview_frame(
+    state: State<'_, AppState>,
+) -> AppResult<Option<crate::camera::PreviewFrame>> {
+    let cam = state.camera.lock().unwrap().clone();
+    Ok(cam.and_then(|c| c.frame.lock().unwrap().clone()))
+}
+
 // ---- Models & file transcription ----------------------------------------
 
 #[tauri::command]
@@ -623,11 +728,125 @@ pub async fn transcribe_file(
     let decoded = crate::util::decode::decode_file(&path)?;
     let engine = state.ensure_engine()?;
     let settings = state.settings_snapshot();
-    engine.transcribe(
+    // Long audio (and any video) is chunked with cross-window context rather
+    // than handed to the engine in one call.
+    crate::media::transcribe_media(
+        engine.as_ref(),
         &decoded.samples,
         decoded.sample_rate,
         settings.engine.language.as_deref(),
     )
+}
+
+/// Structured result of a media (audio or video) transcription.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct MediaTranscription {
+    pub text: String,
+    pub duration_ms: i64,
+    pub container: String,
+}
+
+/// Transcribe an audio or video file, chunking long media with context
+/// carry-over and emitting `media://progress` events (fraction + container).
+/// Returns the transcript plus container/duration metadata.
+#[tauri::command]
+pub async fn transcribe_media(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    path: String,
+) -> AppResult<MediaTranscription> {
+    main_window_only(&window)?;
+    let path = std::path::PathBuf::from(path);
+    if !path.is_file() {
+        return Err(AppError::Other("file not found".into()));
+    }
+    let app = state.app.clone();
+    let _ = app.emit(
+        "media://progress",
+        serde_json::json!({ "phase": "decode", "fraction": 0.0 }),
+    );
+    let decoded = crate::util::decode::decode_file(&path)?;
+    let engine = state.ensure_engine()?;
+    let settings = state.settings_snapshot();
+    let _ = app.emit(
+        "media://progress",
+        serde_json::json!({ "phase": "transcribe", "fraction": 0.5 }),
+    );
+    let text = crate::media::transcribe_media(
+        engine.as_ref(),
+        &decoded.samples,
+        decoded.sample_rate,
+        settings.engine.language.as_deref(),
+    )?;
+    let container = match decoded.container {
+        crate::util::decode::MediaContainer::Video => "video",
+        crate::util::decode::MediaContainer::Audio => "audio",
+    };
+    // Persist the result to local history, tagging media provenance so the
+    // history view can distinguish media transcriptions from dictation.
+    let media_json = serde_json::json!({
+        "container": container,
+        "duration_ms": decoded.duration_ms,
+        "source": path.to_string_lossy()
+    });
+    let _ = state.db.insert_transcript_with_media(
+        &text,
+        &text,
+        engine.id(),
+        engine.model_id(),
+        "media",
+        engine.id(),
+        decoded.duration_ms,
+        &media_json.to_string(),
+    );
+    let _ = app.emit(
+        "media://progress",
+        serde_json::json!({ "phase": "done", "fraction": 1.0 }),
+    );
+    Ok(MediaTranscription {
+        text,
+        duration_ms: decoded.duration_ms,
+        container: container.to_string(),
+    })
+}
+
+/// Summarize a transcript via the configured Stage-2 provider (NV oOS or a
+/// local LM Studio/Ollama model). Returns the summarization artifact (JSON).
+#[tauri::command]
+pub async fn summarize_media(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    text: String,
+) -> AppResult<String> {
+    main_window_only(&window)?;
+    let settings = state.settings_snapshot();
+    let provider = crate::cleanup::create_provider(&settings, state.secrets.as_ref())?
+        .ok_or_else(|| AppError::NotConfigured("no Stage-2 provider configured".into()))?;
+    provider.summarize(&text).await
+}
+
+/// Open a native file picker filtered to supported audio/video media and
+/// return the chosen path (or `None` if the user cancels). The actual file
+/// access stays in the Rust core — the webview never touches the filesystem.
+#[tauri::command]
+pub async fn pick_media_file(window: tauri::Window) -> AppResult<Option<String>> {
+    main_window_only(&window)?;
+    use tauri_plugin_dialog::DialogExt;
+    let picked = window
+        .dialog()
+        .file()
+        .add_filter(
+            "All media (audio + video)",
+            &[
+                "mp4", "mov", "mkv", "webm", "m4a", "mp3", "wav", "flac", "ogg",
+            ],
+        )
+        .add_filter("Video", &["mp4", "mov", "mkv", "webm"])
+        .add_filter("Audio", &["m4a", "mp3", "wav", "flac", "ogg"])
+        .blocking_pick_file();
+    Ok(picked
+        .and_then(|p| p.into_path().ok())
+        .map(|path| path.to_string_lossy().into_owned()))
 }
 
 // ---- Dictation -----------------------------------------------------------

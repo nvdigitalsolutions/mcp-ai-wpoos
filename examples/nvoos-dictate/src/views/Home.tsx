@@ -1,4 +1,12 @@
-import type { DictateEvent, StatusInfo } from '../lib/ipc';
+import { useEffect, useState } from 'react';
+import {
+  api,
+  onMediaProgress,
+  type DictateEvent,
+  type MediaTranscription,
+  type PreviewFrame,
+  type StatusInfo,
+} from '../lib/ipc';
 
 interface Props {
   status: StatusInfo | null;
@@ -10,9 +18,196 @@ function badge(ok: boolean) {
   return ok ? 'badge ok' : 'badge warn';
 }
 
+/** Media transcription panel: pick an audio/video file, transcribe, summarize. */
+function MediaPanel() {
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [result, setResult] = useState<MediaTranscription | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const unlisten = onMediaProgress((p) => {
+      const pct = Math.round(p.fraction * 100);
+      if (p.phase === 'done') setProgress(null);
+      else setProgress(p.phase === 'decode' ? `Decoding…` : `Transcribing… ${pct}%`);
+    });
+    return () => void unlisten.then((fn) => fn());
+  }, []);
+
+  const pick = async () => {
+    setError('');
+    setSummary(null);
+    const path = await api.pickMediaFile();
+    if (!path) return;
+    setBusy(true);
+    setResult(null);
+    try {
+      const res = await api.transcribeMedia(path);
+      setResult(res);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const summarize = async () => {
+    if (!result) return;
+    setError('');
+    setSummary(null);
+    setBusy(true);
+    try {
+      setSummary(await api.summarizeMedia(result.text));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="card">
+      <h2>Transcribe media</h2>
+      <p className="muted">
+        Transcribe an audio (MP3, M4A, WAV, FLAC, OGG) or video (MP4, MOV, MKV, WebM) file locally,
+        then optionally summarize it with your configured AI provider. Video files are handled by
+        demuxing their audio track on-device (no FFmpeg).
+      </p>
+      <div className="btn-row">
+        <button className="btn" disabled={busy} onClick={pick}>
+          {busy ? 'Working…' : 'Choose file…'}
+        </button>
+        {result && !busy && (
+          <button className="btn ghost" onClick={summarize} disabled={!!summary}>
+            {summary ? 'Summarized' : 'Summarize'}
+          </button>
+        )}
+      </div>
+      {progress && <p className="muted">{progress}</p>}
+      {error && <p className="warn-text">{error}</p>}
+      {result && (
+        <>
+          <p className="muted small">
+            {result.container === 'video' ? '🎬 Video' : '🎵 Audio'} ·{' '}
+            {(result.duration_ms / 1000).toFixed(1)} s
+          </p>
+          <pre className="preview">{result.text}</pre>
+        </>
+      )}
+      {summary && (
+        <>
+          <h3>Summary</h3>
+          <pre className="preview">{summary}</pre>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Live webcam preview panel (Proposal 073): start/stop the camera and show
+ *  a low-rate RGB thumbnail. No vision in v1 — preview only. */
+function CameraPanel() {
+  const [available, setAvailable] = useState<boolean | null>(null);
+  const [running, setRunning] = useState(false);
+  const [frame, setFrame] = useState<PreviewFrame | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    void api.cameraAvailable().then((v) => {
+      if (!cancelled) setAvailable(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Poll the preview while running (low rate; the Rust core holds a ring).
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => {
+      void api.getPreviewFrame().then((f) => f && setFrame(f)).catch(() => {});
+    }, 200);
+    return () => clearInterval(id);
+  }, [running]);
+
+  const start = async () => {
+    setError('');
+    try {
+      await api.startCamera();
+      setRunning(true);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  const stop = async () => {
+    try {
+      await api.stopCamera();
+    } catch (e) {
+      setError(String(e));
+    }
+    setRunning(false);
+    setFrame(null);
+  };
+
+  const dataUri = (() => {
+    if (!frame || frame.width === 0 || frame.height === 0) return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = frame.width;
+    canvas.height = frame.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const imgData = ctx.createImageData(frame.width, frame.height);
+    const px = frame.width * frame.height;
+    for (let p = 0; p < px; p++) {
+      imgData.data[p * 4] = frame.rgb[p * 3] ?? 0;
+      imgData.data[p * 4 + 1] = frame.rgb[p * 3 + 1] ?? 0;
+      imgData.data[p * 4 + 2] = frame.rgb[p * 3 + 2] ?? 0;
+      imgData.data[p * 4 + 3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return canvas.toDataURL('image/png');
+  })();
+
+  if (available === false) {
+    return null; // camera feature not compiled in — hide the panel
+  }
+
+  return (
+    <section className="card">
+      <h2>Camera preview</h2>
+      <p className="muted">
+        Live webcam preview (no recording). Camera audio transcription uses your webcam's microphone,
+        selectable under Settings → Audio.
+      </p>
+      <div className="btn-row">
+        {!running ? (
+          <button className="btn" onClick={start}>
+            Start camera
+          </button>
+        ) : (
+          <button className="btn ghost danger" onClick={stop}>
+            Stop camera
+          </button>
+        )}
+      </div>
+      {error && <p className="warn-text">{error}</p>}
+      {running && (
+        <p className="muted small">Previewing{frame ? ` · ${frame.width}×${frame.height}` : ''}</p>
+      )}
+      {running && dataUri && <img src={dataUri} alt="camera preview" className="camera-preview" />}
+    </section>
+  );
+}
+
 export default function Home({ status, dictate, onRefresh }: Props) {
   return (
     <div className="stack">
+      <MediaPanel />
+      <CameraPanel />
+
       <section className="card">
         <h2>Dictation</h2>
         <p className="muted">

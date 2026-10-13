@@ -40,6 +40,20 @@ pub trait SttEngine: Send + Sync {
         language: Option<&str>,
     ) -> AppResult<String>;
 
+    /// Transcribe with prior-window text as context (whisper sliding-window
+    /// semantics). The default ignores `prior` and delegates to
+    /// [`Self::transcribe`]; engines that carry context across windows
+    /// (whisper) override it.
+    fn transcribe_with_context(
+        &self,
+        audio: &[f32],
+        sample_rate: u32,
+        language: Option<&str>,
+        _prior: Option<&str>,
+    ) -> AppResult<String> {
+        self.transcribe(audio, sample_rate, language)
+    }
+
     /// Whether the engine is suitable for long file/meeting transcription
     /// (Parakeet TDT/CTC models top out around 4-5 minutes per decode).
     fn supports_long_files(&self) -> bool {

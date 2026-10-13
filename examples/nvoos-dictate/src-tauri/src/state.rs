@@ -24,6 +24,8 @@ use crate::stt::{create_engine, EngineResources, SttEngine};
 pub const KEYRING_SERVICE: &str = "com.nvdigitalsolutions.nvoos-dictate";
 pub const KEY_NVOOS_CREDENTIAL: &str = "nvoos/assistant-credential";
 pub const KEY_OPENAI_API_KEY: &str = "openai-compat/api-key";
+pub const KEY_LM_STUDIO_TOKEN: &str = "lm-studio/bearer-token";
+pub const KEY_OLLAMA_TOKEN: &str = "ollama/bearer-token";
 pub const KEY_WP_USERNAME: &str = "nvoos/wp-username";
 pub const KEY_WP_APP_PASSWORD: &str = "nvoos/wp-app-password";
 
@@ -97,6 +99,9 @@ pub struct AppState {
     pub app: AppHandle,
     /// Resident microphone (ring buffer). None when no mic exists.
     pub mic: Mutex<Option<Arc<MicCapture>>>,
+    /// Resident camera (video preview ring). Feature-gated; `None` without the
+    /// `camera` feature or when no camera is running.
+    pub camera: Mutex<Option<Arc<crate::camera::CameraCapture>>>,
     /// Resident STT engine (swapped on settings change).
     pub engine: RwLock<Option<Arc<dyn SttEngine>>>,
     pub paste: Arc<dyn PasteBackend>,
@@ -111,6 +116,7 @@ impl AppState {
             secrets,
             app,
             mic: Mutex::new(None),
+            camera: Mutex::new(None),
             engine: RwLock::new(None),
             paste: platform_backend(),
             recorder: Arc::new(MeetingRecorder::new(16000)),
@@ -157,6 +163,18 @@ impl AppState {
             .ok()
             .flatten()
             .is_some()
+    }
+
+    pub fn has_lm_studio_token(&self) -> bool {
+        self.secrets
+            .get(KEY_LM_STUDIO_TOKEN)
+            .ok()
+            .flatten()
+            .is_some()
+    }
+
+    pub fn has_ollama_token(&self) -> bool {
+        self.secrets.get(KEY_OLLAMA_TOKEN).ok().flatten().is_some()
     }
 
     /// Whether a WP application password (for embedded STT) is stored.
@@ -258,6 +276,31 @@ impl AppState {
         }
     }
 
+    /// Start (or restart) the resident camera on the configured device. The
+    /// previous camera keeps running if the rebuild fails. A no-op error when
+    /// the `camera` feature is not compiled in.
+    pub fn restart_camera(&self) -> AppResult<()> {
+        let settings = self.settings_snapshot();
+        match crate::camera::CameraCapture::start(settings.camera.device.as_deref()) {
+            Ok(cam) => {
+                tracing::info!(device = cam.device_name(), "started camera capture");
+                *self.camera.lock().unwrap() = Some(Arc::new(cam));
+                Ok(())
+            }
+            Err(e) => {
+                if !crate::camera::available() {
+                    *self.camera.lock().unwrap() = None;
+                }
+                Err(e)
+            }
+        }
+    }
+
+    /// Stop the resident camera and release the device.
+    pub fn stop_camera(&self) {
+        *self.camera.lock().unwrap() = None;
+    }
+
     /// Build an NV oOS client from stored settings + keychain credential.
     pub fn nvoos_client(&self) -> AppResult<crate::nvoos::NvoosClient> {
         let settings = self.settings_snapshot();
@@ -266,6 +309,29 @@ impl AppState {
             .get(KEY_NVOOS_CREDENTIAL)?
             .ok_or_else(|| AppError::NotConfigured("NV oOS credential not stored".into()))?;
         crate::nvoos::NvoosClient::new(settings.nvoos.site_url, credential)
+    }
+
+    /// Build an LM Studio provider from stored settings + keychain token. The
+    /// token is optional (local servers need none), so this only errors on an
+    /// invalid base URL, not on a missing secret.
+    pub fn lm_studio_provider(
+        &self,
+    ) -> AppResult<crate::cleanup::providers::lm_studio::LmStudioProvider> {
+        let settings = self.settings_snapshot();
+        crate::cleanup::providers::lm_studio::LmStudioProvider::new(
+            &settings.lm_studio,
+            self.secrets.as_ref(),
+        )
+    }
+
+    /// Build an Ollama provider from stored settings + keychain token (token
+    /// optional for the local default).
+    pub fn ollama_provider(&self) -> AppResult<crate::cleanup::providers::ollama::OllamaProvider> {
+        let settings = self.settings_snapshot();
+        crate::cleanup::providers::ollama::OllamaProvider::new(
+            &settings.ollama,
+            self.secrets.as_ref(),
+        )
     }
 }
 

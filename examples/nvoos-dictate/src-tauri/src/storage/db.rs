@@ -31,6 +31,9 @@ pub struct TranscriptRow {
     pub provider: String,
     pub e2e_ms: i64,
     pub created_at: String,
+    /// JSON metadata for media transcriptions (container + duration + source),
+    /// or '' for ordinary dictation rows.
+    pub media: String,
 }
 
 /// A meeting transcript row.
@@ -97,11 +100,29 @@ impl Db {
         provider: &str,
         e2e_ms: i64,
     ) -> AppResult<i64> {
+        self.insert_transcript_with_media(
+            text_raw, text_clean, engine, model, target_app, provider, e2e_ms, "",
+        )
+    }
+
+    /// Insert a transcript row, optionally tagging media provenance (JSON).
+    #[allow(clippy::too_many_arguments)]
+    pub fn insert_transcript_with_media(
+        &self,
+        text_raw: &str,
+        text_clean: &str,
+        engine: &str,
+        model: &str,
+        target_app: &str,
+        provider: &str,
+        e2e_ms: i64,
+        media: &str,
+    ) -> AppResult<i64> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            "INSERT INTO transcripts (text_raw, text_clean, engine, model, target_app, provider, e2e_ms)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            params![text_raw, text_clean, engine, model, target_app, provider, e2e_ms],
+            "INSERT INTO transcripts (text_raw, text_clean, engine, model, target_app, provider, e2e_ms, media)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![text_raw, text_clean, engine, model, target_app, provider, e2e_ms, media],
         )?;
         Ok(conn.last_insert_rowid())
     }
@@ -123,7 +144,7 @@ impl Db {
                 .replace('_', "\\_")
         );
         let mut stmt = conn.prepare(
-            "SELECT id, text_raw, text_clean, engine, model, target_app, provider, e2e_ms, created_at
+            "SELECT id, text_raw, text_clean, engine, model, target_app, provider, e2e_ms, created_at, media
              FROM transcripts
              WHERE (?1 = '' OR text_clean LIKE ?2 ESCAPE '\\')
              ORDER BY id DESC
@@ -141,6 +162,7 @@ impl Db {
                     provider: r.get(6)?,
                     e2e_ms: r.get(7)?,
                     created_at: r.get(8)?,
+                    media: r.get(9)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
