@@ -17,7 +17,7 @@ function badge(ok: boolean) {
   return ok ? 'badge ok' : 'badge warn';
 }
 
-/** Media transcription panel: pick a video/audio file, transcribe, summarize. */
+/** Media transcription panel: pick an audio/video file, transcribe, summarize. */
 function MediaPanel() {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
@@ -69,8 +69,9 @@ function MediaPanel() {
     <section className="card">
       <h2>Transcribe media</h2>
       <p className="muted">
-        Transcribe a video (MP4/MOV/MKV/WebM) or audio file locally, then optionally summarize it
-        with your configured AI provider. Video audio is demuxed on-device (no FFmpeg).
+        Transcribe an audio (MP3, M4A, WAV, FLAC, OGG) or video (MP4, MOV, MKV, WebM) file locally,
+        then optionally summarize it with your configured AI provider. Video files are handled by
+        demuxing their audio track on-device (no FFmpeg).
       </p>
       <div className="btn-row">
         <button className="btn" disabled={busy} onClick={pick}>

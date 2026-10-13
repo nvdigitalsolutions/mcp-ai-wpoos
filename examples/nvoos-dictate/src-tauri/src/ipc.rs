@@ -793,7 +793,7 @@ pub async fn pick_media_file(window: tauri::Window) -> AppResult<Option<String>>
         .dialog()
         .file()
         .add_filter(
-            "Media",
+            "All media (audio + video)",
             &[
                 "mp4", "mov", "mkv", "webm", "m4a", "mp3", "wav", "flac", "ogg",
             ],
