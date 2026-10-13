@@ -126,6 +126,14 @@ pub fn create_engine(
             resources.models_dir,
             &settings.model,
         )?)),
+        #[cfg(feature = "fastconformer")]
+        "fastconformer" => Ok(Box::new(
+            crate::stt::fastconformer::FastConformerEngine::new(
+                resources.models_dir,
+                &settings.model,
+                settings.num_threads,
+            )?,
+        )),
         "embedded" => {
             let site_url = resources
                 .nvoos_site_url
@@ -161,6 +169,8 @@ pub fn available_features() -> &'static str {
     let features = features + ", whisper";
     #[cfg(feature = "moonshine")]
     let features = features + ", moonshine";
+    #[cfg(feature = "fastconformer")]
+    let features = features + ", fastconformer";
     // Leak is fine: static strings, process lifetime.
     Box::leak(features.into_boxed_str())
 }

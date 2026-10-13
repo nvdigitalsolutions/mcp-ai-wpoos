@@ -43,6 +43,13 @@ pub struct StatusInfo {
     pub agent_available: bool,
     pub agent_running: bool,
     pub version: String,
+    /// Human-readable description of the active Stage-2 polish setup
+    /// (provider + model), or `off (deterministic only)` when disabled.
+    pub polish: String,
+    /// Whether the Assistant tab has a hosted Pro SPA URL configured.
+    pub spa_configured: bool,
+    /// The configured Pro SPA URL (empty when unset).
+    pub spa_url: String,
 }
 
 /// Reject commands invoked from any window other than the main one.
@@ -124,7 +131,95 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         agent_available: crate::agent::available(),
         agent_running: state.agent.snapshot().running,
         version: env!("CARGO_PKG_VERSION").to_string(),
+        polish: polish_summary(&settings),
+        spa_configured: !settings.spa.url.trim().is_empty(),
+        spa_url: settings.spa.url.clone(),
     })
+}
+
+/// A compact description of the active Stage-2 polish provider + model for the
+/// System status card. `off (deterministic only)` when polish is disabled; the
+/// provider id + its configured model otherwise (empty model = the provider
+/// serves its single loaded/default model).
+fn polish_summary(settings: &Settings) -> String {
+    if !settings.cleanup.polish_enabled {
+        return "off (deterministic only)".to_string();
+    }
+    let (label, model): (&str, Option<&str>) = match settings.cleanup.provider.as_str() {
+        "openai_compat" => ("OpenAI-compatible", Some(&settings.openai_compat.model)),
+        "lm_studio" => ("LM Studio", Some(&settings.lm_studio.model)),
+        "ollama" => ("Ollama", Some(&settings.ollama.model)),
+        "nvoos" => ("NV oOS", settings.nvoos.polish_model.as_deref()),
+        _ => return "off (deterministic only)".to_string(),
+    };
+    match model.filter(|m| !m.is_empty()) {
+        Some(m) => format!("{label} · {m}"),
+        None => label.to_string(),
+    }
+}
+
+/// Result of the Assistant-tab reachability probe.
+#[derive(Debug, Clone, Serialize)]
+pub struct SpaCheck {
+    pub ok: bool,
+    /// HTTP status when the SPA origin answered; `None` when the request
+    /// failed before a response (DNS, TLS, timeout, refused connection).
+    pub status: Option<u16>,
+    /// Human-readable result, e.g. `reachable (HTTP 200)` or the transport error.
+    pub message: String,
+}
+
+/// Validate + normalize a hosted Pro SPA URL. Accepts only `https://` (plus
+/// `http://localhost`/`127.0.0.1` for local development — never a plaintext
+/// remote host). Returns the normalized origin (no trailing slash) on success.
+fn validate_spa_url(raw: &str) -> AppResult<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::NotConfigured(
+            "No Pro SPA URL is configured (Settings > NV oOS > Assistant tab URL)".into(),
+        ));
+    }
+    let https_ok = trimmed.starts_with("https://");
+    let localhost_ok =
+        trimmed.starts_with("http://localhost") || trimmed.starts_with("http://127.0.0.1");
+    if !https_ok && !localhost_ok {
+        return Err(AppError::Other(
+            "Pro SPA URL must use https:// (http://localhost allowed for development)".into(),
+        ));
+    }
+    Ok(trimmed.trim_end_matches('/').to_string())
+}
+
+/// Probe whether the Assistant-tab URL is reachable. Bounded (8 s), no
+/// redirects, no credentials: only the reachability of the configured origin
+/// is tested, matching the dictate app's "no secrets to third parties" stance.
+#[tauri::command]
+pub async fn check_spa(url: String) -> AppResult<SpaCheck> {
+    let url = validate_spa_url(&url)?;
+    let client = reqwest::Client::builder()
+        .user_agent(concat!("nvoos-dictate/", env!("CARGO_PKG_VERSION")))
+        .redirect(reqwest::redirect::Policy::none())
+        .timeout(std::time::Duration::from_secs(8))
+        .build()?;
+    match client.get(&url).send().await {
+        Ok(resp) => {
+            let status = resp.status().as_u16();
+            // The SPA is a browser app behind whichever host serves it; any
+            // 2xx–5xx means the origin answered (a 404/403 from a hardened
+            // host still proves reachability).
+            let ok = (200..500).contains(&status);
+            Ok(SpaCheck {
+                ok,
+                status: Some(status),
+                message: format!("reachable (HTTP {status})"),
+            })
+        }
+        Err(e) => Ok(SpaCheck {
+            ok: false,
+            status: None,
+            message: format!("unreachable: {e}"),
+        }),
+    }
 }
 
 /// Whether the resident vision loop is currently running.
@@ -988,6 +1083,8 @@ pub fn get_compiled_engines() -> Vec<String> {
     engines.push("whisper".to_string());
     #[cfg(feature = "moonshine")]
     engines.push("moonshine".to_string());
+    #[cfg(feature = "fastconformer")]
+    engines.push("fastconformer".to_string());
     engines
 }
 
@@ -1164,4 +1261,46 @@ pub async fn pick_media_file(window: tauri::Window) -> AppResult<Option<String>>
 pub fn cancel_dictation() {
     // No-op placeholder: cancellation is driven by the Esc hotkey. Kept as a
     // command so the overlay UI has a stable button surface.
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_spa_url;
+
+    #[test]
+    fn accepts_https_and_trims_trailing_slash() {
+        assert_eq!(
+            validate_spa_url("https://chat.nvoos.cloud/").unwrap(),
+            "https://chat.nvoos.cloud"
+        );
+        assert_eq!(
+            validate_spa_url("  https://example.com  ").unwrap(),
+            "https://example.com"
+        );
+    }
+
+    #[test]
+    fn accepts_localhost_development() {
+        assert_eq!(
+            validate_spa_url("http://localhost:5199").unwrap(),
+            "http://localhost:5199"
+        );
+        assert_eq!(
+            validate_spa_url("http://127.0.0.1:5199").unwrap(),
+            "http://127.0.0.1:5199"
+        );
+    }
+
+    #[test]
+    fn rejects_plaintext_remote_host() {
+        assert!(validate_spa_url("http://example.com").is_err());
+        assert!(validate_spa_url("ftp://example.com").is_err());
+        assert!(validate_spa_url("example.com").is_err());
+    }
+
+    #[test]
+    fn rejects_empty() {
+        assert!(validate_spa_url("").is_err());
+        assert!(validate_spa_url("   ").is_err());
+    }
 }

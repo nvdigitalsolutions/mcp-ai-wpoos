@@ -98,6 +98,9 @@ export interface Settings {
     overlay_positions: Record<string, string>;
     overlay_opacity: number;
   };
+  spa: {
+    url: string;
+  };
 }
 
 export interface StatusInfo {
@@ -123,6 +126,15 @@ export interface StatusInfo {
   agent_available: boolean;
   agent_running: boolean;
   version: string;
+  polish: string;
+  spa_configured: boolean;
+  spa_url: string;
+}
+
+export interface SpaCheck {
+  ok: boolean;
+  status: number | null;
+  message: string;
 }
 
 export interface TranscriptRow {
@@ -360,6 +372,7 @@ export const api = {
   getSettings: () => invoke<Settings>('get_settings'),
   updateSettings: (settings: Settings) => invoke<Settings>('update_settings', { settings }),
   getStatus: () => invoke<StatusInfo>('get_status'),
+  checkSpa: (url: string) => invoke<SpaCheck>('check_spa', { url }),
   getDiagnostics: () => invoke<DiagnosticsInfo>('get_diagnostics'),
   listInputDevices: () => invoke<string[]>('list_input_devices'),
   restartMicrophone: () => invoke<DiagnosticsInfo['mic']>('restart_microphone'),
