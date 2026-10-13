@@ -80,6 +80,15 @@ export interface Settings {
     polish_min_confidence: number;
     polish_max_per_second: number;
   };
+  agent: {
+    enabled: boolean;
+    provider: string; // lm_studio | ollama | nvoos
+    model: string;
+    max_steps: number;
+    headless: boolean;
+    persistent_profile_path: string;
+    confirmation_required: boolean;
+  };
   privacy: {
     retain_meeting_audio: boolean;
     telemetry: boolean;
@@ -110,6 +119,8 @@ export interface StatusInfo {
   vision_running: boolean;
   vision_detector: string | null;
   vision_hand_model: string | null;
+  agent_available: boolean;
+  agent_running: boolean;
   version: string;
 }
 
@@ -208,6 +219,27 @@ export interface VisionModelStatus {
   installed: boolean;
 }
 
+export interface AgentSnapshot {
+  running: boolean;
+  last: {
+    completed: boolean;
+    summary: string;
+    steps: {
+      turn: number;
+      action: unknown;
+      verdict: string;
+      detail: string;
+    }[];
+    final_url: string | null;
+  } | null;
+  last_error: string | null;
+}
+
+export interface PendingApproval {
+  action: unknown;
+  description: string;
+}
+
 export interface DiagnosticsInfo {
   version: string;
   os: string;
@@ -273,6 +305,16 @@ export interface DiagnosticsInfo {
     polish_calls: number;
     polish_results: number;
   };
+  agent: {
+    available: boolean;
+    enabled: boolean;
+    running: boolean;
+    provider: string;
+    model: string;
+    max_steps: number;
+    confirmation_required: boolean;
+    last_error: string | null;
+  };
   last_dictation: {
     window_ms: number;
     utterance_ms: number;
@@ -335,6 +377,13 @@ export const api = {
   downloadVisionModel: (model: string, force = false) =>
     invoke<string>('download_vision_model', { model, force }),
   testVisionPolish: () => invoke<LmStudioConnectionTest>('test_vision_polish'),
+
+  agentAvailable: () => invoke<boolean>('agent_available'),
+  agentRun: (instruction: string) => invoke<void>('agent_run', { instruction }),
+  agentStatus: () => invoke<AgentSnapshot>('agent_status'),
+  agentPending: () => invoke<PendingApproval | null>('agent_pending'),
+  agentRespond: (approve: boolean) => invoke<boolean>('agent_respond', { approve }),
+  agentStop: () => invoke<void>('agent_stop'),
 
   setNvoosCredential: (siteUrl: string, credential: string) =>
     invoke<void>('set_nvoos_credential', { siteUrl, credential }),

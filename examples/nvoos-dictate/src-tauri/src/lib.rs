@@ -1,5 +1,6 @@
 //! NV oOS Dictation — library entry point (Tauri mobile-ready split).
 
+pub mod agent;
 pub mod audio;
 pub mod camera;
 pub mod cleanup;
@@ -108,6 +109,12 @@ pub fn run() {
             ipc::get_vision_models,
             ipc::download_vision_model,
             ipc::test_vision_polish,
+            ipc::agent_available,
+            ipc::agent_run,
+            ipc::agent_status,
+            ipc::agent_pending,
+            ipc::agent_respond,
+            ipc::agent_stop,
             ipc::set_nvoos_credential,
             ipc::clear_nvoos_credential,
             ipc::test_nvoos_connection,

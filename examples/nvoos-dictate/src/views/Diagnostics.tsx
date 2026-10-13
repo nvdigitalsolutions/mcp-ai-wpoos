@@ -311,6 +311,50 @@ export default function DiagnosticsView() {
       </section>
 
       <section className="card">
+        <h2>Browser agent</h2>
+        {info.agent.available ? (
+          <ul className="kv">
+            <li>
+              <span>Compiled / enabled</span>
+              <span className={badge(info.agent.enabled)}>
+                {info.agent.enabled ? 'enabled (opt-in)' : 'compiled, disabled'}
+              </span>
+            </li>
+            <li>
+              <span>Brain provider</span>
+              <span>
+                {info.agent.provider || 'ollama'}
+                {info.agent.model ? ` · ${info.agent.model}` : ''}
+              </span>
+            </li>
+            <li>
+              <span>Max steps / confirmation</span>
+              <span>
+                {info.agent.max_steps} steps · destructive actions{' '}
+                {info.agent.confirmation_required ? 'confirmed' : 'auto-approved'}
+              </span>
+            </li>
+            <li>
+              <span>Run</span>
+              <span className={badge(!info.agent.running)}>
+                {info.agent.running ? 'running…' : 'idle'}
+              </span>
+            </li>
+            {info.agent.last_error && (
+              <li>
+                <span>Last error</span>
+                <span className="badge warn">{info.agent.last_error}</span>
+              </li>
+            )}
+          </ul>
+        ) : (
+          <p className="muted">
+            Browser agent is not compiled into this build (needs the `agent` feature).
+          </p>
+        )}
+      </section>
+
+      <section className="card">
         <h2>Last dictation</h2>
         {last ? (
           <>

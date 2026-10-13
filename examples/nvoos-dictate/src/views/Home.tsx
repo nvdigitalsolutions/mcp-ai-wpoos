@@ -335,11 +335,140 @@ function CameraPanel() {
   );
 }
 
+/** Browser-agent panel: dictate/type an instruction, a local model drives a
+ *  real browser to carry it out. Gated on the `agent` build feature. */
+function BrowserAgentPanel() {
+  const [available, setAvailable] = useState<boolean | null>(null);
+  const [instruction, setInstruction] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [snap, setSnap] = useState<{
+    running: boolean;
+    summary: string | null;
+    completed: boolean | null;
+    last_error: string | null;
+  }>({ running: false, summary: null, completed: null, last_error: null });
+  const [pending, setPending] = useState<{ description: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void api.agentAvailable().then((v) => {
+      if (!cancelled) setAvailable(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Poll the agent snapshot + any pending approval while a run is in flight.
+  useEffect(() => {
+    if (!snap.running) return;
+    const id = setInterval(() => {
+      void api
+        .agentStatus()
+        .then((s) =>
+          setSnap({
+            running: s.running,
+            summary: s.last?.summary ?? null,
+            completed: s.last?.completed ?? null,
+            last_error: s.last_error,
+          }),
+        )
+        .catch(() => {});
+      void api
+        .agentPending()
+        .then((p) => setPending(p ? { description: p.description } : null))
+        .catch(() => {});
+    }, 300);
+    return () => clearInterval(id);
+  }, [snap.running]);
+
+  const run = async () => {
+    const text = instruction.trim();
+    if (!text) return;
+    setBusy(true);
+    setSnap({ running: true, summary: null, completed: null, last_error: null });
+    setPending(null);
+    try {
+      await api.agentRun(text);
+    } catch (e) {
+      setSnap({ running: false, summary: null, completed: null, last_error: String(e) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const respond = async (approve: boolean) => {
+    setPending(null);
+    await api.agentRespond(approve).catch(() => {});
+  };
+
+  if (available === false) {
+    return null; // agent feature not compiled in — hide the panel
+  }
+
+  return (
+    <section className="card">
+      <h2>Browser agent</h2>
+      <p className="muted">
+        Type an instruction (e.g. &ldquo;open example.com and click the login button&rdquo;) and a
+        local model will drive a browser to carry it out. Destructive actions pause for
+        confirmation when enabled in Settings.
+      </p>
+      <div className="btn-row">
+        <input
+          className="grow"
+          type="text"
+          placeholder="What should the browser do?"
+          value={instruction}
+          onChange={(e) => setInstruction(e.target.value)}
+        />
+        <button className="btn" disabled={busy || snap.running} onClick={run}>
+          {snap.running ? 'Running…' : 'Run agent'}
+        </button>
+      </div>
+      {snap.running && <p className="muted">Agent is working…</p>}
+      {snap.running && (
+        <button
+          className="btn ghost danger"
+          onClick={() => void api.agentStop().catch(() => {})}
+        >
+          Stop
+        </button>
+      )}
+      {pending && (
+        <div className="card warn">
+          <p>
+            <strong>Confirm action:</strong> {pending.description}
+          </p>
+          <div className="btn-row">
+            <button className="btn" onClick={() => void respond(true)}>
+              Approve
+            </button>
+            <button className="btn ghost danger" onClick={() => void respond(false)}>
+              Deny
+            </button>
+          </div>
+        </div>
+      )}
+      {snap.last_error && <p className="warn-text">{snap.last_error}</p>}
+      {snap.summary && (
+        <>
+          <p className="muted small">
+            {snap.completed ? 'Completed:' : 'Stopped:'}
+          </p>
+          <pre className="preview">{snap.summary}</pre>
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function Home({ status, dictate, onRefresh }: Props) {
   return (
     <div className="stack">
       <MediaPanel />
       <CameraPanel />
+      {status?.agent_available && <BrowserAgentPanel />}
 
       <section className="card">
         <h2>Dictation</h2>

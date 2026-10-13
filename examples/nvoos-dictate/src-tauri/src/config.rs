@@ -413,6 +413,43 @@ impl Default for VisionConfig {
     }
 }
 
+/// Browser-agent configuration (dictated web control, §6).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct AgentConfig {
+    /// Master switch. Off by default — the agent must be explicitly enabled
+    /// and a provider picked in Settings before any run (decision #6).
+    pub enabled: bool,
+    /// Brain provider: `lm_studio` | `ollama` (the agent reuses the Stage-2
+    /// local providers via `CleanupProvider::complete`; `nvoos` is a §5a
+    /// follow-up).
+    pub provider: String,
+    /// Model id to ask for (empty = serve the server's single loaded model).
+    pub model: String,
+    /// Maximum brain turns before the loop halts.
+    pub max_steps: usize,
+    /// Launch the browser headed (debug) vs headless (default).
+    pub headless: bool,
+    /// Persistent profile directory, or empty = a throwaway session.
+    pub persistent_profile_path: String,
+    /// Require human confirmation for destructive actions (§4.2).
+    pub confirmation_required: bool,
+}
+
+impl Default for AgentConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            provider: "ollama".to_string(),
+            model: String::new(),
+            max_steps: 10,
+            headless: true,
+            persistent_profile_path: String::new(),
+            confirmation_required: true,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(default)]
 pub struct PrivacyConfig {
@@ -453,6 +490,7 @@ pub struct Settings {
     pub audio: AudioConfig,
     pub camera: CameraConfig,
     pub vision: VisionConfig,
+    pub agent: AgentConfig,
     pub privacy: PrivacyConfig,
     pub ui: UiConfig,
 }

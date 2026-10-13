@@ -263,17 +263,22 @@ impl LocalOpenAiProvider {
     /// Produce a structured summary of a (long) transcript. Mirrors `polish`
     /// but uses the summarization prompt and does not carry timing metadata.
     pub async fn summarize(&self, text: &str) -> AppResult<String> {
+        self.complete(openai_shape::summarize_prompt(), text, 0.0)
+            .await
+    }
+
+    /// Generic single-turn completion: an arbitrary system prompt plus user
+    /// text, returning the assistant reply. This is the raw building block the
+    /// browser agent (§5a) uses to ask the model for a *tool call* — distinct
+    /// from `polish` (fixed editor prompt, timing metadata) and `summarize`
+    /// (fixed summarizer prompt). Does not carry `PolishMeta`.
+    pub async fn complete(&self, system: &str, user: &str, temperature: f64) -> AppResult<String> {
         let model = if self.model.is_empty() {
             None
         } else {
             Some(self.model.as_str())
         };
-        let body = openai_shape::build_chat_body_with_system(
-            model,
-            text,
-            openai_shape::summarize_prompt(),
-            0.0,
-        );
+        let body = openai_shape::build_chat_body_with_system(model, user, system, temperature);
         let url = format!("{}/chat/completions", self.base_url);
         let resp = match self.http.post(&url).json(&body).send().await {
             Ok(r) => r,
@@ -282,7 +287,7 @@ impl LocalOpenAiProvider {
         let status = resp.status().as_u16();
         if status == 400 {
             return Err(AppError::Other(format!(
-                "{} rejected the summary request (HTTP 400)",
+                "{} rejected the completion request (HTTP 400)",
                 self.kind.name
             )));
         }

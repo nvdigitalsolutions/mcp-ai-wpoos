@@ -73,4 +73,22 @@ impl CleanupProvider for NvoosProvider {
             .await?;
         Ok(summary)
     }
+
+    /// Generic single-turn completion (the browser agent's brain seam, §5a).
+    /// `NvoosClient::polish` already maps `cleanup_prompt` → system and
+    /// `text` → user, so the agent's system prompt + observation map directly.
+    async fn complete(&self, system: &str, user: &str, _temperature: f64) -> AppResult<String> {
+        let (reply, _meta) = self
+            .client
+            .polish(
+                user,
+                AppCategory::Default,
+                system,
+                self.assistant_id.as_deref(),
+                self.polish_provider.as_deref(),
+                self.polish_model.as_deref(),
+            )
+            .await?;
+        Ok(reply)
+    }
 }

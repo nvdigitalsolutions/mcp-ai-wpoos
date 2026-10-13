@@ -40,6 +40,8 @@ pub struct StatusInfo {
     pub vision_running: bool,
     pub vision_detector: Option<String>,
     pub vision_hand_model: Option<String>,
+    pub agent_available: bool,
+    pub agent_running: bool,
     pub version: String,
 }
 
@@ -119,6 +121,8 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         } else {
             None
         },
+        agent_available: crate::agent::available(),
+        agent_running: state.agent.snapshot().running,
         version: env!("CARGO_PKG_VERSION").to_string(),
     })
 }
@@ -147,6 +151,7 @@ pub struct DiagnosticsInfo {
     pub engine: EngineDiagnostics,
     pub credentials: CredentialDiagnostics,
     pub vision: VisionDiagnostics,
+    pub agent: AgentDiagnostics,
     pub last_dictation: Option<crate::dictation::LastDictationStats>,
 }
 
@@ -234,6 +239,19 @@ pub struct VisionDiagnostics {
     pub polish_results: u64,
 }
 
+/// Browser-agent health (dictated web control, §6).
+#[derive(Debug, Clone, Serialize)]
+pub struct AgentDiagnostics {
+    pub available: bool,
+    pub enabled: bool,
+    pub running: bool,
+    pub provider: String,
+    pub model: String,
+    pub max_steps: usize,
+    pub confirmation_required: bool,
+    pub last_error: Option<String>,
+}
+
 /// Full troubleshooting snapshot: hook health, capture device + live level,
 /// engine/model install state, credential presence, and the most recent
 /// dictation attempt's measured levels. No secrets ever leave the core.
@@ -301,6 +319,7 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
             wp_credentials_stored: state.has_wp_app_password(),
         },
         vision: vision_diagnostics(&state, &settings),
+        agent: agent_diagnostics(&state, &settings),
         last_dictation: crate::dictation::last_dictation_stats(),
     })
 }
@@ -354,6 +373,21 @@ fn vision_diagnostics(state: &AppState, settings: &Settings) -> VisionDiagnostic
         polish_model: settings.vision.polish_model.clone(),
         polish_calls,
         polish_results,
+    }
+}
+
+/// Build the browser-agent diagnostics snapshot.
+fn agent_diagnostics(state: &AppState, settings: &Settings) -> AgentDiagnostics {
+    let snap = state.agent.snapshot();
+    AgentDiagnostics {
+        available: crate::agent::available(),
+        enabled: settings.agent.enabled,
+        running: snap.running,
+        provider: settings.agent.provider.clone(),
+        model: settings.agent.model.clone(),
+        max_steps: settings.agent.max_steps,
+        confirmation_required: settings.agent.confirmation_required,
+        last_error: snap.last_error,
     }
 }
 
@@ -879,6 +913,59 @@ pub async fn test_vision_polish(
         state.secrets.get(crate::state::KEY_LM_STUDIO_TOKEN)?,
     )?;
     Ok(provider.test_connection().await)
+}
+
+// ---- Browser agent (dictated web control) --------------------------------
+
+/// Whether the browser-agent driver is compiled into this build.
+#[tauri::command]
+pub fn agent_available() -> bool {
+    crate::agent::available()
+}
+
+/// Start a browser-agent run for a dictated instruction (main window only).
+#[tauri::command]
+pub fn agent_run(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    instruction: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.start_agent_run(instruction)
+}
+
+/// Return the current agent snapshot (running flag, last result, last error).
+#[tauri::command]
+pub fn agent_status(state: State<'_, AppState>) -> crate::agent::controller::AgentSnapshot {
+    state.agent.snapshot()
+}
+
+/// The destructive action currently awaiting a human Approve/Deny, if any.
+#[tauri::command]
+pub fn agent_pending(
+    state: State<'_, AppState>,
+) -> Option<crate::agent::controller::PendingApproval> {
+    state.agent.pending_approval()
+}
+
+/// Answer the pending approval (`approve` = true, deny = false). Returns false
+/// if there was nothing to answer. Acceptable from the main window and the
+/// overlay (the overlay hosts the Approve/Deny buttons).
+#[tauri::command]
+pub fn agent_respond(window: tauri::Window, state: State<'_, AppState>, approve: bool) -> bool {
+    if window.label() != "main" && window.label() != "overlay" {
+        return false;
+    }
+    state.agent.respond_approval(approve)
+}
+
+/// Set the stop flag: the running loop halts between steps.
+#[tauri::command]
+pub fn agent_stop(window: tauri::Window, state: State<'_, AppState>) {
+    if window.label() != "main" {
+        return;
+    }
+    state.stop_agent_run();
 }
 
 // ---- Models & file transcription ----------------------------------------
