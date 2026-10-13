@@ -18,6 +18,12 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "nvoos-dictate"
 path = "src/main.rs"
 
+# Vision detector spike (Proposal 075) — needs the `vision` feature (ort + ndarray16).
+[[example]]
+name = "vision_probe"
+path = "examples/vision_probe.rs"
+required-features = ["vision"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -80,6 +86,10 @@ rmcp = { version = "3.5", default-features = false, features = ["macros", "serve
 schemars = { version = "1", optional = true }
 silero-vad-rs = { version = "0.1", optional = true }
 ndarray = { version = "0.15", optional = true }
+# ort rc.9's `ndarray` feature wants ndarray 0.16, while silero-vad holds 0.15.
+# Alias the 0.16 series for the direct vision `ort` consumer (the lock already
+# dual-versions ndarray via silero-vad's own ort dep).
+ndarray16 = { package = "ndarray", version = "0.16", optional = true }
 nokhwa = { version = "0.10", features = ["input-native", "camera-sync-impl"], optional = true }
 # Direct dep so camera preview can name image::Rgb/ImageBuffer (nokhwa re-uses image 0.25).
 image = { version = "0.25", optional = true }
@@ -131,6 +141,10 @@ mcp = ["dep:rmcp", "dep:schemars"]
 silero-vad = ["dep:silero-vad-rs", "dep:ort-sys", "dep:ndarray"]
 # Live webcam/camera capture (Proposal 073) — video preview via nokhwa.
 camera = ["dep:nokhwa", "dep:image"]
+# Local object detection (Proposal 075) — ONNX YOLO via the direct ort runtime
+# + ndarray 0.16. Requires the camera feature (the frame source) and the
+# ort/ort-sys pair already used by moonshine/silero-vad.
+vision = ["dep:ort", "dep:ort-sys", "dep:ndarray16", "dep:image"]
 
 [patch.crates-io]
 whisper-rs-sys = { path = "../vendor/whisper-rs-sys" }

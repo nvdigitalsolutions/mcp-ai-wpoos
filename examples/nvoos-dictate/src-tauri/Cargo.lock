@@ -3725,6 +3725,7 @@ dependencies = [
  "keyring",
  "macos-accessibility-client",
  "ndarray 0.15.6",
+ "ndarray 0.16.1",
  "nokhwa",
  "objc2",
  "objc2-app-kit",
