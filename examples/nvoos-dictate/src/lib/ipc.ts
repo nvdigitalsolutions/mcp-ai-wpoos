@@ -101,6 +101,7 @@ export interface TranscriptRow {
   provider: string;
   e2e_ms: number;
   created_at: string;
+  media: string;
 }
 
 export interface MeetingRow {
@@ -287,6 +288,7 @@ export const api = {
   transcribeFile: (path: string) => invoke<string>('transcribe_file', { path }),
   transcribeMedia: (path: string) => invoke<MediaTranscription>('transcribe_media', { path }),
   summarizeMedia: (text: string) => invoke<string>('summarize_media', { text }),
+  pickMediaFile: () => invoke<string | null>('pick_media_file'),
   cancelDictation: () => invoke<void>('cancel_dictation'),
 
   getPermissions: () => invoke<PermissionInfo[]>('get_permissions'),

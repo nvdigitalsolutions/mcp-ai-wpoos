@@ -735,14 +735,31 @@ pub async fn transcribe_media(
         decoded.sample_rate,
         settings.engine.language.as_deref(),
     )?;
-    let _ = app.emit(
-        "media://progress",
-        serde_json::json!({ "phase": "done", "fraction": 1.0 }),
-    );
     let container = match decoded.container {
         crate::util::decode::MediaContainer::Video => "video",
         crate::util::decode::MediaContainer::Audio => "audio",
     };
+    // Persist the result to local history, tagging media provenance so the
+    // history view can distinguish media transcriptions from dictation.
+    let media_json = serde_json::json!({
+        "container": container,
+        "duration_ms": decoded.duration_ms,
+        "source": path.to_string_lossy()
+    });
+    let _ = state.db.insert_transcript_with_media(
+        &text,
+        &text,
+        engine.id(),
+        engine.model_id(),
+        "media",
+        engine.id(),
+        decoded.duration_ms,
+        &media_json.to_string(),
+    );
+    let _ = app.emit(
+        "media://progress",
+        serde_json::json!({ "phase": "done", "fraction": 1.0 }),
+    );
     Ok(MediaTranscription {
         text,
         duration_ms: decoded.duration_ms,
@@ -763,6 +780,30 @@ pub async fn summarize_media(
     let provider = crate::cleanup::create_provider(&settings, state.secrets.as_ref())?
         .ok_or_else(|| AppError::NotConfigured("no Stage-2 provider configured".into()))?;
     provider.summarize(&text).await
+}
+
+/// Open a native file picker filtered to supported audio/video media and
+/// return the chosen path (or `None` if the user cancels). The actual file
+/// access stays in the Rust core — the webview never touches the filesystem.
+#[tauri::command]
+pub async fn pick_media_file(window: tauri::Window) -> AppResult<Option<String>> {
+    main_window_only(&window)?;
+    use tauri_plugin_dialog::DialogExt;
+    let picked = window
+        .dialog()
+        .file()
+        .add_filter(
+            "Media",
+            &[
+                "mp4", "mov", "mkv", "webm", "m4a", "mp3", "wav", "flac", "ogg",
+            ],
+        )
+        .add_filter("Video", &["mp4", "mov", "mkv", "webm"])
+        .add_filter("Audio", &["m4a", "mp3", "wav", "flac", "ogg"])
+        .blocking_pick_file();
+    Ok(picked
+        .and_then(|p| p.into_path().ok())
+        .map(|path| path.to_string_lossy().into_owned()))
 }
 
 // ---- Dictation -----------------------------------------------------------

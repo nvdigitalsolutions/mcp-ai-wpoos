@@ -1,4 +1,11 @@
-import type { DictateEvent, StatusInfo } from '../lib/ipc';
+import { useEffect, useState } from 'react';
+import {
+  api,
+  onMediaProgress,
+  type DictateEvent,
+  type MediaTranscription,
+  type StatusInfo,
+} from '../lib/ipc';
 
 interface Props {
   status: StatusInfo | null;
@@ -10,9 +17,97 @@ function badge(ok: boolean) {
   return ok ? 'badge ok' : 'badge warn';
 }
 
+/** Media transcription panel: pick a video/audio file, transcribe, summarize. */
+function MediaPanel() {
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [result, setResult] = useState<MediaTranscription | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const unlisten = onMediaProgress((p) => {
+      const pct = Math.round(p.fraction * 100);
+      if (p.phase === 'done') setProgress(null);
+      else setProgress(p.phase === 'decode' ? `Decoding…` : `Transcribing… ${pct}%`);
+    });
+    return () => void unlisten.then((fn) => fn());
+  }, []);
+
+  const pick = async () => {
+    setError('');
+    setSummary(null);
+    const path = await api.pickMediaFile();
+    if (!path) return;
+    setBusy(true);
+    setResult(null);
+    try {
+      const res = await api.transcribeMedia(path);
+      setResult(res);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const summarize = async () => {
+    if (!result) return;
+    setError('');
+    setSummary(null);
+    setBusy(true);
+    try {
+      setSummary(await api.summarizeMedia(result.text));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="card">
+      <h2>Transcribe media</h2>
+      <p className="muted">
+        Transcribe a video (MP4/MOV/MKV/WebM) or audio file locally, then optionally summarize it
+        with your configured AI provider. Video audio is demuxed on-device (no FFmpeg).
+      </p>
+      <div className="btn-row">
+        <button className="btn" disabled={busy} onClick={pick}>
+          {busy ? 'Working…' : 'Choose file…'}
+        </button>
+        {result && !busy && (
+          <button className="btn ghost" onClick={summarize} disabled={!!summary}>
+            {summary ? 'Summarized' : 'Summarize'}
+          </button>
+        )}
+      </div>
+      {progress && <p className="muted">{progress}</p>}
+      {error && <p className="warn-text">{error}</p>}
+      {result && (
+        <>
+          <p className="muted small">
+            {result.container === 'video' ? '🎬 Video' : '🎵 Audio'} ·{' '}
+            {(result.duration_ms / 1000).toFixed(1)} s
+          </p>
+          <pre className="preview">{result.text}</pre>
+        </>
+      )}
+      {summary && (
+        <>
+          <h3>Summary</h3>
+          <pre className="preview">{summary}</pre>
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function Home({ status, dictate, onRefresh }: Props) {
   return (
     <div className="stack">
+      <MediaPanel />
+
       <section className="card">
         <h2>Dictation</h2>
         <p className="muted">

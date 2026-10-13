@@ -65,6 +65,7 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .on_window_event(|window, event| {
             // Exit when the main window closes: the hidden overlay window
             // would otherwise keep the process alive with no visible UI.
@@ -121,6 +122,7 @@ pub fn run() {
             ipc::transcribe_file,
             ipc::transcribe_media,
             ipc::summarize_media,
+            ipc::pick_media_file,
             ipc::cancel_dictation,
             ipc::get_permissions,
             ipc::request_permission,

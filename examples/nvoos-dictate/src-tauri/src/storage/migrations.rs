@@ -18,6 +18,7 @@ pub fn migrations() -> Migrations<'static> {
             );
             CREATE INDEX idx_transcripts_created ON transcripts(created_at);",
         ),
+        M::up("ALTER TABLE transcripts ADD COLUMN media TEXT NOT NULL DEFAULT '';"),
         M::up(
             "CREATE TABLE dictionary (
                 term        TEXT PRIMARY KEY,
