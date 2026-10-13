@@ -5,7 +5,7 @@ description: Operational guide for the NV oOS Dictation desktop companion app (T
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
-  app-version: "0.1.0"
+  app-version: "0.2.0"
   proposal: "067"
   pr: "7011"
   last-updated: "2026-10-13"

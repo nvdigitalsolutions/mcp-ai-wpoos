@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.4"
-  plugin-version-tested: "1.2.4"
-  last-updated: "2026-10-11"
+  plugin-version: "1.2.5"
+  plugin-version-tested: "1.2.5"
+  last-updated: "2026-10-13"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -91,6 +91,12 @@ credentials than this repo's dev compose (verified on the live stack,
   `bin/create-skill-junctions.ps1`), so skill edits ship in the same PR as
   plugin code.
 - `wp` inside the Design Stack WP container requires `--allow-root`.
+- **Production console:** `https://console.nvoos.cloud/` is the live NV oOS
+  site (verified 2026-10: `/wp-json/mcp-ai/v1/status` = operational,
+  `/wp-json/mcp-ai/v1/assistants` returns 401 without a Bearer credential).
+  The dictation desktop app points here for its Stage-2 polish / archive
+  backend; credentials must be issued on that site (see the provisioning
+  recipe above) and stored via the app's Settings → NV oOS tab.
 
 ### 2. API Key Auto-Detection (v1.1.47+)
 
@@ -779,6 +785,27 @@ Import external AI conversation exports into the JetEngine
 Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.2.5 operational quick notes** (full detail in RELEASE-NOTES.md):
+**GTmetrix × WPCode performance toolkit** (PR #7026, Proposal 068) — the
+`enable_gtmetrix_toolkit` Pro module registers 23 `gtmetrix_*` tools plus
+the read-only `list_wpcode_snippets` (a shared
+`WP_MCP_AI_Pro_WPCode_Snippet_Repository` extracted from
+`create_wpcode_snippet`); `gtmetrix_install_wpcode_fix` is drafts-only +
+chat-restricted; `wp mcp-ai pro gtmetrix seed-assistant`. **Food & Beverage
+Phase 9** (PR #7032) — five transactional-table CPTs behind
+`enable_fnb_native_storage`, the `fnb_import_table` bridge, and nine
+`fnb_pr_*` purchase-request tools on the QMS engine; the F&B admin menu
+surfaces via the module registry (#7029) and one-click assistant-pack
+seeding (#7033). **Dictation companion + SPA** (PRs #7017–#7040) — hardens
+`examples/nvoos-dictate` (capture/hotkey/VAD/credential fixes, whisper
+speed, macOS port, local LM Studio/Ollama + video, VLM label polish) and
+adds env-driven login presets to `examples/nvoos-pro-spa-vite` (#7031) —
+**no plugin registry surface**. **Docs & skills** — coding-time skills
+71 → 72 (`mcp-ai-artcraft-ops`, `design-performance-audit`); sub-project
+content-graph 1.0.11 wp.org prep (#7014). Tool counts +34 Pro → ~354 base
++ ~1,376 Pro (~1,730 total); 12 security classes; 18 providers; 30 addons
+(all unchanged).
 
 **v1.2.3 operational quick notes** (full detail in RELEASE-NOTES.md):
 **CORS same-origin enforcement** (PR #6986) — WordPress core reflects any
