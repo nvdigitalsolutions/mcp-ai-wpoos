@@ -7,6 +7,7 @@
 //! it can be pinned after review.
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -301,52 +302,68 @@ pub async fn download(
     file.sync_all().await?;
     drop(file);
 
-    if let Some(expected) = spec.sha256 {
-        let actual = sha256_file(&tmp)?;
-        if !actual.eq_ignore_ascii_case(expected) {
-            let _ = std::fs::remove_file(&tmp);
-            return Err(AppError::Model(format!(
-                "checksum mismatch for {}: expected {expected}, got {actual}",
-                spec.id
-            )));
-        }
-    } else {
-        // Record the measured hash so the catalogue can pin it after review.
-        tracing::warn!(
-            "model {} downloaded without a pinned checksum (actual {}); pin it in model_registry.rs after review",
-            spec.id,
-            sha256_file(&tmp)?
-        );
-    }
+    // The remaining work — checksum + extraction + attribute cleanup + the
+    // staging swap — is CPU/disk bound and synchronous (tar/bzip2 use std::fs,
+    // no async). Running it on the async runtime thread would freeze the UI
+    // for minutes with no progress on large (500+ MB) archives. Offload it to
+    // the blocking pool and report phase transitions.
+    let progress = Arc::new(progress);
+    let tmp2 = tmp.clone();
+    let models_dir_owned = models_dir.to_path_buf();
+    let id = spec.id;
+    let sha256 = spec.sha256;
+    let archive = spec.archive;
+    let file_name = spec.file_name;
+    let progress_task = progress.clone();
 
-    let final_path = if spec.archive {
-        #[cfg(any(feature = "parakeet", feature = "fastconformer"))]
-        {
-            // The sherpa-onnx archive extracts a top-level folder named after
-            // the model id (e.g. `sherpa-onnx-nemo-ctc-en-conformer-large/`),
-            // so unpack into the models dir itself.
-            install_archive(&tmp, models_dir, spec.id)?
+    let final_path = tokio::task::spawn_blocking(move || -> AppResult<PathBuf> {
+        if let Some(expected) = sha256 {
+            progress_task(0.98);
+            let actual = sha256_file(&tmp2)?;
+            if !actual.eq_ignore_ascii_case(expected) {
+                let _ = std::fs::remove_file(&tmp2);
+                return Err(AppError::Model(format!(
+                    "checksum mismatch for {id}: expected {expected}, got {actual}"
+                )));
+            }
+        } else {
+            // Record the measured hash so the catalogue can pin it after review.
+            progress_task(0.98);
+            tracing::warn!(
+                "model {id} downloaded without a pinned checksum (actual {}); pin it in model_registry.rs after review",
+                sha256_file(&tmp2)?
+            );
         }
-        #[cfg(not(any(feature = "parakeet", feature = "fastconformer")))]
-        {
-            let _ = std::fs::remove_file(&tmp);
-            return Err(AppError::Model(
-                "archive models require the parakeet or fastconformer feature (tar/bzip2 support)"
-                    .into(),
-            ));
+
+        if archive {
+            #[cfg(any(feature = "parakeet", feature = "fastconformer"))]
+            {
+                progress_task(0.99);
+                Ok(install_archive(&tmp2, &models_dir_owned, id)?)
+            }
+            #[cfg(not(any(feature = "parakeet", feature = "fastconformer")))]
+            {
+                let _ = std::fs::remove_file(&tmp2);
+                return Err(AppError::Model(
+                    "archive models require the parakeet or fastconformer feature (tar/bzip2 support)".into(),
+                ));
+            }
+        } else {
+            let dest = match file_name {
+                Some(name) => models_dir_owned.join(name),
+                None => models_dir_owned.join(format!("{id}.bin")),
+            };
+            // A re-download must be able to replace an existing target that is
+            // read-only (or was left open by the resident engine — the IPC layer
+            // drops the engine before calling download).
+            make_writable(&dest);
+            std::fs::rename(&tmp2, &dest)?;
+            Ok(dest)
         }
-    } else {
-        let dest = match spec.file_name {
-            Some(name) => target_dir.join(name),
-            None => target_dir.join(format!("{}.bin", spec.id)),
-        };
-        // A re-download must be able to replace an existing target that is
-        // read-only (or was left open by the resident engine — the IPC layer
-        // drops the engine before calling download).
-        make_writable(&dest);
-        std::fs::rename(&tmp, &dest)?;
-        dest
-    };
+    })
+    .await
+    .map_err(|e| AppError::Other(format!("model install task failed: {e}")))??;
+
     progress(1.0);
     Ok(final_path)
 }
