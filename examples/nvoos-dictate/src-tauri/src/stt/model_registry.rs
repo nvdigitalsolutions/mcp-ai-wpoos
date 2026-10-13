@@ -99,6 +99,18 @@ pub const CATALOG: &[ModelSpec] = &[
         file_name: Some("silero_vad.onnx"),
         languages: "All",
     },
+    ModelSpec {
+        engine: "fastconformer",
+        id: "sherpa-onnx-nemo-ctc-en-conformer-large",
+        description: "NVIDIA NeMo FastConformer-CTC Large (int8) — high-accuracy English CTC transcription (~162 MB)",
+        size_mb: 162,
+        license: "CC-BY-4.0 (base NVIDIA NeMo Conformer-CTC Large model)",
+        url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-ctc-en-conformer-large.tar.bz2",
+        sha256: None, // upstream does not publish per-release hashes; measured + pinned after review
+        archive: true,
+        file_name: None,
+        languages: "English",
+    },
 ];
 
 pub fn find(engine: &str, id: &str) -> Option<&'static ModelSpec> {
@@ -131,10 +143,19 @@ pub fn validate_pairing(engine: &str, model: &str) -> AppResult<()> {
 pub fn is_installed(spec: &ModelSpec, models_dir: &Path) -> bool {
     if spec.archive {
         let dir = models_dir.join(spec.id);
-        dir.join("tokens.txt").is_file()
-            && dir.join("encoder.int8.onnx").is_file()
-            && dir.join("decoder.int8.onnx").is_file()
-            && dir.join("joiner.int8.onnx").is_file()
+        match spec.engine {
+            // NeMo CTC (FastConformer) archives ship model.int8.onnx + tokens.txt.
+            "fastconformer" => {
+                dir.join("tokens.txt").is_file() && dir.join("model.int8.onnx").is_file()
+            }
+            // Transducer (parakeet) archives ship encoder/decoder/joiner + tokens.
+            _ => {
+                dir.join("tokens.txt").is_file()
+                    && dir.join("encoder.int8.onnx").is_file()
+                    && dir.join("decoder.int8.onnx").is_file()
+                    && dir.join("joiner.int8.onnx").is_file()
+            }
+        }
     } else {
         let file = match spec.file_name {
             Some(name) => models_dir.join(name),
@@ -291,18 +312,19 @@ pub async fn download(
     }
 
     let final_path = if spec.archive {
-        #[cfg(feature = "parakeet")]
+        #[cfg(any(feature = "parakeet", feature = "fastconformer"))]
         {
             // The sherpa-onnx archive extracts a top-level folder named after
-            // the model id (e.g. `sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/`),
+            // the model id (e.g. `sherpa-onnx-nemo-ctc-en-conformer-large/`),
             // so unpack into the models dir itself.
             install_archive(&tmp, models_dir, spec.id)?
         }
-        #[cfg(not(feature = "parakeet"))]
+        #[cfg(not(any(feature = "parakeet", feature = "fastconformer")))]
         {
             let _ = std::fs::remove_file(&tmp);
             return Err(AppError::Model(
-                "archive models require the parakeet feature (tar/bzip2 support)".into(),
+                "archive models require the parakeet or fastconformer feature (tar/bzip2 support)"
+                    .into(),
             ));
         }
     } else {
@@ -329,7 +351,7 @@ pub async fn download(
 ///   "creating or truncating a file requires write or append access".
 /// - A failed in-place extraction leaves a mixed old/new file set that can
 ///   never load; the staging swap is all-or-nothing.
-#[cfg(feature = "parakeet")]
+#[cfg(any(feature = "parakeet", feature = "fastconformer"))]
 fn install_archive(tmp: &Path, models_dir: &Path, id: &str) -> AppResult<PathBuf> {
     let final_dir = models_dir.join(id);
     // The archive's top-level folder is named after the model id; extract
@@ -358,7 +380,7 @@ fn install_archive(tmp: &Path, models_dir: &Path, id: &str) -> AppResult<PathBuf
 /// re-extraction) then fails with "creating or truncating a file requires
 /// write or append access". Attribute changes can be denied on some
 /// volumes/filesystems — callers decide whether that is fatal.
-#[cfg(feature = "parakeet")]
+#[cfg(any(feature = "parakeet", feature = "fastconformer"))]
 fn make_writable_recursive(path: &Path) -> AppResult<()> {
     let meta = match std::fs::symlink_metadata(path) {
         Ok(meta) => meta,
@@ -424,7 +446,7 @@ fn sha256_file(path: &Path) -> AppResult<String> {
 }
 
 /// Minimal tar.bz2 extraction for the sherpa-onnx model archive format.
-#[cfg(feature = "parakeet")]
+#[cfg(any(feature = "parakeet", feature = "fastconformer"))]
 fn extract_tar_bz2(archive: &Path, dest: &Path) -> AppResult<()> {
     let file = std::fs::File::open(archive)?;
     let decoder = bzip2::read::BzDecoder::new(std::io::BufReader::new(file));

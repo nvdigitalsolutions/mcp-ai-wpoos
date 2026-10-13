@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, onDictateEvent, windowKind, type DictateEvent, type StatusInfo } from './lib/ipc';
 import Home from './views/Home';
+import AssistantView from './views/Assistant';
 import SettingsView from './views/Settings';
 import HistoryView from './views/History';
 import MeetingsView from './views/Meetings';
 import OverlayView from './views/Overlay';
 import DiagnosticsView from './views/Diagnostics';
 
-type Tab = 'home' | 'history' | 'meetings' | 'diagnostics' | 'settings';
+type Tab = 'home' | 'assistant' | 'history' | 'meetings' | 'diagnostics' | 'settings';
 
 export default function App() {
   const kind = windowKind();
@@ -51,6 +52,12 @@ export default function App() {
             Status
           </button>
           <button
+            className={tab === 'assistant' ? 'tab active' : 'tab'}
+            onClick={() => setTab('assistant')}
+          >
+            Assistant
+          </button>
+          <button
             className={tab === 'history' ? 'tab active' : 'tab'}
             onClick={() => setTab('history')}
           >
@@ -78,6 +85,7 @@ export default function App() {
       </header>
       <main className="content">
         {tab === 'home' && <Home status={status} dictate={dictate} onRefresh={refresh} />}
+        {tab === 'assistant' && <AssistantView />}
         {tab === 'history' && <HistoryView />}
         {tab === 'meetings' && (
           <MeetingsView onChanged={refresh} meetingRecording={!!status?.meeting_recording} />

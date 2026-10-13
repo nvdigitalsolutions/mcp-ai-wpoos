@@ -484,6 +484,16 @@ impl Default for UiConfig {
     }
 }
 
+/// The hosted NV oOS Pro SPA (chat surface) embedded in the Assistant tab.
+/// Empty `url` = the tab shows a "not configured" hint pointing at Settings.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(default)]
+pub struct SpaConfig {
+    /// Full URL of a hosted Pro SPA (e.g. `https://chat.nvoos.cloud`) or a
+    /// WordPress page that renders the `[nvoos_pro_spa]` shortcode.
+    pub url: String,
+}
+
 /// The complete persisted settings blob.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(default)]
@@ -501,6 +511,7 @@ pub struct Settings {
     pub agent: AgentConfig,
     pub privacy: PrivacyConfig,
     pub ui: UiConfig,
+    pub spa: SpaConfig,
 }
 
 impl Settings {

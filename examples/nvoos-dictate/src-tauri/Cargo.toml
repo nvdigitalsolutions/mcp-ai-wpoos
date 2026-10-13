@@ -152,6 +152,9 @@ parakeet = ["dep:sherpa-onnx", "dep:tar", "dep:bzip2"]
 # base.en instead of ~0.3) — see the dictation-app skill.
 whisper = ["dep:whisper-rs", "whisper-rs-sys/force-debug"]
 moonshine = ["dep:ort", "dep:ort-sys"]
+# NeMo FastConformer-CTC STT (sherpa-onnx `nemo_ctc` slot), same dep set
+# as parakeet: sherpa-onnx for the recognizer + tar/bzip2 for the archive.
+fastconformer = ["dep:sherpa-onnx", "dep:tar", "dep:bzip2"]
 mcp = ["dep:rmcp", "dep:schemars"]
 silero-vad = ["dep:silero-vad-rs", "dep:ort-sys", "dep:ndarray"]
 # Live webcam/camera capture (Proposal 073) — video preview via nokhwa.

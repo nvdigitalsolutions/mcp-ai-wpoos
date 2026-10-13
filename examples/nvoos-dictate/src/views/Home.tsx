@@ -6,6 +6,7 @@ import {
   type DictateEvent,
   type MediaTranscription,
   type PreviewFrame,
+  type SpaCheck,
   type StatusInfo,
 } from '../lib/ipc';
 
@@ -464,6 +465,25 @@ function BrowserAgentPanel() {
 }
 
 export default function Home({ status, dictate, onRefresh }: Props) {
+  const [spaChecking, setSpaChecking] = useState(false);
+  const [spaCheck, setSpaCheck] = useState<SpaCheck | null>(null);
+
+  const checkSpa = async () => {
+    const url = status?.spa_url ?? '';
+    if (!url.trim() || spaChecking) {
+      return;
+    }
+    setSpaChecking(true);
+    setSpaCheck(null);
+    try {
+      setSpaCheck(await api.checkSpa(url));
+    } catch (e) {
+      setSpaCheck({ ok: false, status: null, message: String(e) });
+    } finally {
+      setSpaChecking(false);
+    }
+  };
+
   return (
     <div className="stack">
       <section className="card">
@@ -512,6 +532,36 @@ export default function Home({ status, dictate, onRefresh }: Props) {
               {status?.engine ?? 'none'} {status?.model ? `· ${status.model}` : ''}
             </span>
           </li>
+          <li>
+            <span>Polish model</span>
+            <span className={badge(!!(status?.polish && !status.polish.startsWith('off')))}>
+              {status?.polish || 'off (deterministic only)'}
+            </span>
+          </li>
+          <li>
+            <span>Assistant (Pro SPA)</span>
+            <span className="row">
+              <span className={badge(!!status?.spa_configured)}>
+                {status?.spa_configured ? status?.spa_url || 'configured' : 'not configured'}
+              </span>
+              {status?.spa_configured && (
+                <button
+                  className="btn ghost"
+                  disabled={spaChecking}
+                  onClick={() => void checkSpa()}
+                  title="Probe whether the configured SPA origin answers"
+                >
+                  {spaChecking ? 'Checking…' : 'Check'}
+                </button>
+              )}
+            </span>
+          </li>
+          {spaCheck && (
+            <li>
+              <span>SPA reachability</span>
+              <span className={badge(spaCheck.ok)}>{spaCheck.message}</span>
+            </li>
+          )}
           <li>
             <span>Microphone</span>
             <span className={badge(!!status?.mic_available)}>

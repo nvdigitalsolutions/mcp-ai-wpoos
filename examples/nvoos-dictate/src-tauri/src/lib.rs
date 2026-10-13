@@ -93,6 +93,7 @@ pub fn run() {
             ipc::get_settings,
             ipc::update_settings,
             ipc::get_status,
+            ipc::check_spa,
             ipc::get_diagnostics,
             ipc::list_input_devices,
             ipc::restart_microphone,

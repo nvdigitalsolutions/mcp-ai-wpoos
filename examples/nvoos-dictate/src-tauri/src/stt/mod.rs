@@ -5,6 +5,8 @@ mod engine;
 pub mod mock;
 pub mod model_registry;
 
+#[cfg(feature = "fastconformer")]
+mod fastconformer;
 #[cfg(feature = "moonshine")]
 mod moonshine;
 #[cfg(feature = "parakeet")]

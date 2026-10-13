@@ -822,6 +822,9 @@ function EngineTab({
           {engines.includes('moonshine') && (
             <option value="moonshine">Moonshine v2 (streaming — experimental, local)</option>
           )}
+          {engines.includes('fastconformer') && (
+            <option value="fastconformer">FastConformer-CTC (high accuracy English, ~162 MB, local)</option>
+          )}
           <option value="embedded">Embedded (plugin) — remote STT via your NV oOS site</option>
           {!engines.includes(settings.engine.engine) && (
             <option value={settings.engine.engine} disabled>
@@ -968,6 +971,19 @@ function NvoosTab({
           onChange={(e) => patchNvoos(onPatch, settings, { site_url: e.target.value })}
         />
       </label>
+      <label className="row">
+        <span>Assistant tab URL (hosted Pro SPA)</span>
+        <input
+          type="text"
+          value={settings.spa.url}
+          placeholder="https://chat.nvoos.cloud — or your site's [nvoos_pro_spa] page"
+          onChange={(e) => onPatch({ spa: { ...settings.spa, url: e.target.value } })}
+        />
+      </label>
+      <p className="muted">
+        The Assistant tab embeds this URL in a frame. Point it at a hosted NV oOS Pro SPA
+        (standalone app or a page rendering <code>[nvoos_pro_spa]</code>).
+      </p>
       <label className="row">
         <span>Assistant ID (optional — uses site default)</span>
         <input
