@@ -319,12 +319,10 @@ impl AppState {
 
     /// Start (or restart) the resident vision controller on the configured
     /// detector model, pulling frames from the resident camera ring. Requires
-    /// a running camera; a no-op error when the `vision` feature is absent.
+    /// a running camera; errors when the `vision` feature is absent, the model
+    /// is not downloaded, or no camera is running.
     pub fn restart_vision(&self) -> AppResult<()> {
         let settings = self.settings_snapshot();
-        if !settings.vision.enabled {
-            return Ok(());
-        }
         let model_path = self.vision_model_path()?;
         if !model_path.is_file() {
             return Err(AppError::Model(format!(

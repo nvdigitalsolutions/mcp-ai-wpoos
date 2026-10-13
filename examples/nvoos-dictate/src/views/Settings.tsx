@@ -30,6 +30,7 @@ export default function SettingsView({ onChanged, status }: Props) {
   const [visionModels, setVisionModels] = useState<
     { id: string; description: string; size_mb: number; license: string; installed: boolean }[]
   >([]);
+  const [modelDownloading, setModelDownloading] = useState<string | null>(null);
 
   // Latest settings + a debounce timer: typing must not fire an
   // `update_settings` (which swaps the speech engine) on every keystroke.
@@ -117,6 +118,20 @@ export default function SettingsView({ onChanged, status }: Props) {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => void flush(), 400);
     return Promise.resolve();
+  };
+
+  const downloadModel = async (model: string) => {
+    setModelDownloading(model);
+    setMessage('');
+    try {
+      await api.downloadVisionModel(model);
+      // Refresh the catalogue so the installed flag updates.
+      setVisionModels(await api.getVisionModels());
+    } catch (e) {
+      setMessage(`Download failed: ${e}`);
+    } finally {
+      setModelDownloading(null);
+    }
   };
 
   return (
@@ -266,7 +281,7 @@ export default function SettingsView({ onChanged, status }: Props) {
             <>
               <h2>Vision</h2>
               <label className="row">
-                <span>Object detection</span>
+                <span>Object detection (auto-start with camera)</span>
                 <input
                   type="checkbox"
                   checked={settings.vision.enabled}
@@ -275,58 +290,69 @@ export default function SettingsView({ onChanged, status }: Props) {
                   }
                 />
               </label>
-              {settings.vision.enabled && (
-                <>
-                  <label className="row">
-                    <span>Detector model</span>
-                    <select
-                      value={settings.vision.detector}
-                      onChange={(e) =>
-                        patch({ vision: { ...settings.vision, detector: e.target.value } })
-                      }
+              <label className="row">
+                <span>Detector model</span>
+                <select
+                  value={settings.vision.detector}
+                  onChange={(e) =>
+                    patch({ vision: { ...settings.vision, detector: e.target.value } })
+                  }
+                >
+                  {visionModels.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.id}
+                      {m.installed ? '' : ' (not downloaded)'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="btn-row">
+                {visionModels
+                  .filter((m) => !m.installed)
+                  .map((m) => (
+                    <button
+                      key={m.id}
+                      className="btn ghost"
+                      disabled={modelDownloading !== null}
+                      onClick={() => downloadModel(m.id)}
                     >
-                      {visionModels.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.id}
-                          {m.installed ? '' : ' (not downloaded)'}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="row">
-                    <span>Confidence threshold</span>
-                    <input
-                      type="number"
-                      step={0.05}
-                      min={0.05}
-                      max={0.95}
-                      value={settings.vision.confidence}
-                      onChange={(e) =>
-                        patch({
-                          vision: {
-                            ...settings.vision,
-                            confidence: parseFloat(e.target.value) || 0.25,
-                          },
-                        })
-                      }
-                    />
-                  </label>
-                  <label className="row">
-                    <span>Stable track ids (click-to-pin)</span>
-                    <input
-                      type="checkbox"
-                      checked={settings.vision.track_objects}
-                      onChange={(e) =>
-                        patch({ vision: { ...settings.vision, track_objects: e.target.checked } })
-                      }
-                    />
-                  </label>
-                </>
-              )}
+                      {modelDownloading === m.id ? 'Downloading…' : `Download ${m.id}`}
+                    </button>
+                  ))}
+              </div>
+              <label className="row">
+                <span>Confidence threshold</span>
+                <input
+                  type="number"
+                  step={0.05}
+                  min={0.05}
+                  max={0.95}
+                  value={settings.vision.confidence}
+                  onChange={(e) =>
+                    patch({
+                      vision: {
+                        ...settings.vision,
+                        confidence: parseFloat(e.target.value) || 0.25,
+                      },
+                    })
+                  }
+                />
+              </label>
+              <label className="row">
+                <span>Stable track ids (click-to-pin)</span>
+                <input
+                  type="checkbox"
+                  checked={settings.vision.track_objects}
+                  onChange={(e) =>
+                    patch({ vision: { ...settings.vision, track_objects: e.target.checked } })
+                  }
+                />
+              </label>
               <p className="muted">
                 Fully on-device (YOLO via ONNX Runtime) — pixels never leave your computer. Detects
-                objects in the live preview; no facial recognition or person identity. Download the
-                detector model from Diagnostics → Engine.
+                objects in the live preview; no facial recognition or person identity. Toggle
+                detection on the Home camera preview (or auto-start with the camera via the toggle
+                above).
               </p>
             </>
           )}
