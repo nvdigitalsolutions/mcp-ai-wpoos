@@ -466,10 +466,6 @@ function BrowserAgentPanel() {
 export default function Home({ status, dictate, onRefresh }: Props) {
   return (
     <div className="stack">
-      <MediaPanel />
-      <CameraPanel />
-      {status?.agent_available && <BrowserAgentPanel />}
-
       <section className="card">
         <h2>Dictation</h2>
         <p className="muted">
@@ -502,6 +498,10 @@ export default function Home({ status, dictate, onRefresh }: Props) {
         </div>
         {dictate.state === 'done' && <pre className="preview">{dictate.text}</pre>}
       </section>
+
+      <MediaPanel />
+      <CameraPanel />
+      {status?.agent_available && <BrowserAgentPanel />}
 
       <section className="card">
         <h2>System</h2>
