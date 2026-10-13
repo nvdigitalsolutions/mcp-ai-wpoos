@@ -126,6 +126,8 @@ class Test_Fnb_Settings_Page_Registration extends WP_UnitTestCase {
 				'connection_id'             => 'conn-1',
 				'data_folder_id'            => 'folder-data',
 				'setup_folder_id'           => 'folder-setup',
+				'data_workbook_id'          => 'workbook-1',
+				'data_workbook_name'        => 'Surf Club',
 				'drafts_folder_id'          => 'folder-drafts',
 				'csv_data_dir'              => '/srv/fnb',
 				'as_of_date'                => '2026-10-08',
@@ -138,6 +140,8 @@ class Test_Fnb_Settings_Page_Registration extends WP_UnitTestCase {
 		$this->assertSame( 'conn-1', $out['connection_id'] );
 		$this->assertSame( 'folder-data', $out['data_folder_id'] );
 		$this->assertSame( 'folder-setup', $out['setup_folder_id'] );
+		$this->assertSame( 'workbook-1', $out['data_workbook_id'] );
+		$this->assertSame( 'Surf Club', $out['data_workbook_name'] );
 		$this->assertSame( 'folder-drafts', $out['drafts_folder_id'] );
 		$this->assertSame( '/srv/fnb', $out['csv_data_dir'] );
 		$this->assertSame( '2026-10-08', $out['as_of_date'] );

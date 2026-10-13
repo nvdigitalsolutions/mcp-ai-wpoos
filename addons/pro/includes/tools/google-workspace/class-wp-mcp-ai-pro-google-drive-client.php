@@ -26,6 +26,7 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
+	const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4';
 
 	/**
 	 * MIME types of Google Docs files that can be exported to plain text.
@@ -355,6 +356,118 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 	}
 
 	/**
+	 * Read a range of cell values from a Google Sheets spreadsheet.
+	 *
+	 * Uses the Google Sheets API (v4) rather than the Drive export endpoint so
+	 * a specific worksheet/tab can be read from a multi-sheet workbook. The
+	 * `spreadsheets.values.get` endpoint returns values as a JSON matrix, which
+	 * sidesteps the CSV export limitations (single-sheet default, 400 on
+	 * native Google Sheets without a gid).
+	 *
+	 * @param string $spreadsheet_id Spreadsheet (Drive file) ID.
+	 * @param string $range          A1 range or sheet name (e.g. "Menu", "Menu!A1:Z1000").
+	 * @param string $access_token   OAuth access token.
+	 * @param int    $timeout        Request timeout in seconds.
+	 * @return array<string,mixed>|WP_Error array{values: string[][]} or WP_Error.
+	 * @since 1.6.0
+	 */
+	public static function get_sheet_values( $spreadsheet_id, $range, $access_token, $timeout ) {
+		$path = 'spreadsheets/' . rawurlencode( (string) $spreadsheet_id ) . '/values/' . rawurlencode( (string) $range );
+		$url  = sprintf( '%s/%s', self::SHEETS_API_BASE, $path );
+		$url  = self::append_query_string( $url, array( 'valueRenderOption' => 'UNFORMATTED_VALUE' ) );
+
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => $timeout,
+				'headers' => array(
+					'Accept'        => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error( 'wp_mcp_ai_drive_http_error', __( 'The Google Sheets API request failed.', 'mcp-ai-wpoos-pro' ), $response );
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_drive_http_status',
+				sprintf(
+					/* translators: %d: HTTP status code. */
+					__( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ),
+					$status_code
+				),
+				array(
+					'status' => $status_code,
+					'body'   => wp_remote_retrieve_body( $response ),
+				)
+			);
+		}
+
+		$body_raw = wp_remote_retrieve_body( $response );
+		$payload  = json_decode( $body_raw, true );
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $payload ) ) {
+			return new WP_Error( 'wp_mcp_ai_drive_invalid_json', __( 'Google Sheets returned an invalid response.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		return $payload;
+	}
+
+	/**
+	 * List the worksheet (tab) names and their IDs for a spreadsheet.
+	 *
+	 * @param string $spreadsheet_id Spreadsheet (Drive file) ID.
+	 * @param string $access_token   OAuth access token.
+	 * @param int    $timeout        Request timeout in seconds.
+	 * @return array|WP_Error Sheet metadata (sheets[].properties) or WP_Error.
+	 * @since 1.6.0
+	 */
+	public static function get_sheets_metadata( $spreadsheet_id, $access_token, $timeout ) {
+		$path = 'spreadsheets/' . rawurlencode( (string) $spreadsheet_id );
+		$url  = sprintf( '%s/%s', self::SHEETS_API_BASE, $path );
+		$url  = self::append_query_string( $url, array( 'fields' => 'sheets.properties' ) );
+
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => $timeout,
+				'headers' => array(
+					'Accept'        => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error( 'wp_mcp_ai_drive_http_error', __( 'The Google Sheets API request failed.', 'mcp-ai-wpoos-pro' ), $response );
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_drive_http_status',
+				/* translators: %d: HTTP status code. */
+				sprintf( __( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ), $status_code ),
+				array(
+					'status' => $status_code,
+					'body'   => wp_remote_retrieve_body( $response ),
+				)
+			);
+		}
+
+		$body_raw = wp_remote_retrieve_body( $response );
+		$payload  = json_decode( $body_raw, true );
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $payload ) ) {
+			return new WP_Error( 'wp_mcp_ai_drive_invalid_json', __( 'Google Sheets returned an invalid response.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		return $payload;
+	}
+
+	/**
 	 * Fetch trimmed metadata for a single Drive file.
 	 *
 	 * @param string $file_id      Drive file ID.
@@ -410,7 +523,7 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 				'q'        => sprintf( "'%s' in parents and trashed = false", $folder_id ),
 				'pageSize' => $max_children,
 				'orderBy'  => 'name',
-				'fields'   => 'nextPageToken, files(id, name, mimeType, size)',
+				'fields'   => 'nextPageToken, files(id, name, mimeType, size, modifiedTime)',
 			)
 		);
 	}
