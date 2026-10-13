@@ -45,6 +45,7 @@ wp-mcp-ai-ecommerce-helpers
 wp-mcp-ai-ecommerce-optimization
 wp-mcp-ai-fashion-transform-tool
 wp-mcp-ai-flowhub-alert-manager
+wp-mcp-ai-fnb-assistant-seeder
 wp-mcp-ai-fnb-booking-cpt
 wp-mcp-ai-fnb-cpt-reader
 wp-mcp-ai-fnb-data-source
