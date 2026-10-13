@@ -105,6 +105,10 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+  /* Establish a containing block for the Assistant tab's full-height iframe
+     so its `.assistant-frame-wrap { position: absolute; inset: 0 }` fills
+     only the content area below the top nav — not the whole viewport. */
+  position: relative;
 }
 
 .stack {
@@ -454,9 +458,12 @@ body {
 }
 
 .assistant-frame-wrap {
+  /* Fill the `.content` element edge-to-edge (cancelling its 16px padding),
+     then give the framed SPA a 5px inset via wrap padding. */
   position: absolute;
-  inset: 0;
-  padding: 0;
+  inset: -16px;
+  padding: 5px;
+  box-sizing: border-box;
 }
 
 .assistant-frame {
