@@ -2,9 +2,18 @@
 /**
  * Food & Beverage Management Toolkit — Google Sheets Reader.
  *
- * Drive-backed table reader: locates the demo workbook sheets in the
- * configured Data folder and exports them as CSV, reusing the google-workspace
- * toolkit's Drive client and connection machinery.
+ * Drive-backed table reader that supports two workbook layouts:
+ *
+ *  1. Single workbook — a single Google Sheets (or uploaded .xlsx) file whose
+ *     worksheets/tabs are named per table ("menu", "daily sales", …). This is
+ *     the common real-world layout where one client's entire operating data
+ *     lives in one spreadsheet. The reader resolves the requested table ID to
+ *     the matching tab name and reads just that sheet via the Google Sheets
+ *     API (spreadsheets.values.get).
+ *
+ *  2. Split files — one Drive file per table (the original demo layout), where
+ *     each file is named exactly after its sheet ("menu.csv", "menu.xlsx", or
+ *     just "menu"). This remains as a fallback but is no longer required.
  *
  * @package WP_MCP_AI_Pro
  * @since 1.6.0
@@ -26,6 +35,12 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 
 	/**
 	 * Sheet-name → table-ID map (same contract as the fixture reader).
+	 *
+	 * Keys are the human worksheet/file names, in decreasing specificity order
+	 * so "supplier prices" is checked before a hypothetical "supplier" prefix.
+	 * Values are the spec table IDs. The reader matches case-insensitively and
+	 * also tolerates underscores/dashes in tab names, since the same underlying
+	 * data is frequently labelled differently across clients.
 	 *
 	 * @var array<string,string>
 	 */
@@ -51,7 +66,21 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	);
 
 	/**
-	 * Sheet names for a table ID, in lookup order.
+	 * Per-instance cache of an already-resolved sheet name for a table ID.
+	 *
+	 * @var array<string,string>
+	 */
+	private $resolved_sheets = array();
+
+	/**
+	 * Per-instance cache of the located workbook's Drive file metadata.
+	 *
+	 * @var array|null
+	 */
+	private $workbook_cache = null;
+
+	/**
+	 * Candidate sheet names for a table ID, in lookup order.
 	 *
 	 * @param string $table_id Spec table ID.
 	 * @return array<int,string>
@@ -65,6 +94,20 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 		}
 
 		return $names;
+	}
+
+	/**
+	 * Normalise a worksheet/file name for fuzzy comparison.
+	 *
+	 * @param string $value Raw name.
+	 * @return string
+	 */
+	private function normalise_name( $value ) {
+		$value = strtolower( trim( (string) $value ) );
+		// Treat "_" and "-" the same as a space so "daily_sales" matches "daily sales".
+		$value = str_replace( array( '_', '-' ), ' ', $value );
+		// Collapse runs of whitespace.
+		return preg_replace( '/\s+/', ' ', $value );
 	}
 
 	/**
@@ -104,51 +147,164 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	}
 
 	/**
-	 * Find the Drive file for a table in the configured folder(s).
+	 * The configured Drive folder IDs to search, in order.
+	 *
+	 * @return array<int,string>
+	 */
+	private function folders() {
+		return array_values(
+			array_filter(
+				array(
+					WP_MCP_AI_Fnb_Settings::get( 'data_folder_id', '' ),
+					WP_MCP_AI_Fnb_Settings::get( 'setup_folder_id', '' ),
+				)
+			)
+		);
+	}
+
+	/**
+	 * List the immediate children of a folder, tolerating API failures.
+	 *
+	 * @param string $folder_id Folder ID.
+	 * @param array  $auth      Auth array from token().
+	 * @return array<int,array> File metadata list (possibly empty).
+	 */
+	private function list_folder( $folder_id, $auth ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Drive_Client' ) ) {
+			return array();
+		}
+
+		$children = WP_MCP_AI_Pro_Google_Drive_Client::list_children(
+			(string) $folder_id,
+			$auth['access_token'],
+			$auth['timeout'],
+			1000
+		);
+		if ( is_wp_error( $children ) ) {
+			return array();
+		}
+
+		return isset( $children['files'] ) && is_array( $children['files'] ) ? $children['files'] : array();
+	}
+
+	/**
+	 * Locate the single shared workbook (Google Sheets or uploaded .xlsx) in
+	 * the configured folders, preferring an explicitly configured workbook ID.
+	 *
+	 * A file counts as a workbook when it is a native Google Sheets file or an
+	 * uploaded spreadsheet (.xlsx/.xls/.ods). When several candidate files
+	 * exist, the most recently modified one wins.
+	 *
+	 * @param array $auth Auth array from token().
+	 * @return array{id:string,name:string,mime_type:string}|null Workbook metadata or null.
+	 */
+	private function locate_workbook( $auth ) {
+		if ( null !== $this->workbook_cache ) {
+			return $this->workbook_cache;
+		}
+
+		$explicit = WP_MCP_AI_Fnb_Settings::get( 'data_workbook_id', '' );
+		if ( is_string( $explicit ) && '' !== trim( $explicit ) ) {
+			$meta = WP_MCP_AI_Pro_Google_Drive_Client::get_metadata( trim( $explicit ), $auth['access_token'], $auth['timeout'] );
+			if ( ! is_wp_error( $meta ) ) {
+				$this->workbook_cache = array(
+					'id'        => isset( $meta['id'] ) ? (string) $meta['id'] : (string) trim( $explicit ),
+					'name'      => isset( $meta['name'] ) ? (string) $meta['name'] : '',
+					'mime_type' => isset( $meta['mimeType'] ) ? (string) $meta['mimeType'] : '',
+				);
+
+				return $this->workbook_cache;
+			}
+		}
+
+		// Also allow a workbook name to be configured (the file may sit in a
+		// folder the user hasn't pointed at, but name matching is convenient).
+		$workbook_name = WP_MCP_AI_Fnb_Settings::get( 'data_workbook_name', '' );
+		$workbook_name = is_string( $workbook_name ) ? $this->normalise_name( $workbook_name ) : '';
+
+		$best = null;
+		$best_modified = 0;
+
+		foreach ( $this->folders() as $folder_id ) {
+			foreach ( $this->list_folder( $folder_id, $auth ) as $file ) {
+				$mime = isset( $file['mimeType'] ) ? strtolower( (string) $file['mimeType'] ) : '';
+				if ( ! $this->is_spreadsheet_mime( $mime ) ) {
+					continue;
+				}
+
+				$name = isset( $file['name'] ) ? (string) $file['name'] : '';
+
+				// If a workbook name filter is set, require a (fuzzy) match.
+				if ( '' !== $workbook_name ) {
+					$normalised = $this->normalise_name( $name );
+					if ( $normalised !== $workbook_name && false === strpos( $normalised, $workbook_name ) ) {
+						continue;
+					}
+				}
+
+				$modified = isset( $file['modifiedTime'] ) ? strtotime( (string) $file['modifiedTime'] ) : 0;
+				$modified = false === $modified ? 0 : $modified;
+				if ( null === $best || $modified > $best_modified ) {
+					$best          = array(
+						'id'        => (string) $file['id'],
+						'name'      => $name,
+						'mime_type' => $mime,
+					);
+					$best_modified = $modified;
+				}
+			}
+		}
+
+		$this->workbook_cache = $best;
+
+		return $best;
+	}
+
+	/**
+	 * Whether a MIME type represents an exportable/readable spreadsheet.
+	 *
+	 * @param string $mime MIME type.
+	 * @return bool
+	 */
+	private function is_spreadsheet_mime( $mime ) {
+		$mime = strtolower( (string) $mime );
+
+		return in_array(
+			$mime,
+			array(
+				'application/vnd.google-apps.spreadsheet',
+				'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+				'application/vnd.ms-excel',
+				'application/vnd.oasis.opendocument.spreadsheet',
+			),
+			true
+		);
+	}
+
+	/**
+	 * Locate a per-table Drive file (split-file layout).
+	 *
+	 * Kept for backward compatibility with the original "one file per table"
+	 * demo layout. Matching is case-insensitive and matches the bare sheet
+	 * name, or the sheet name with a .csv / .xlsx / .xls extension.
 	 *
 	 * @param string $table_id Spec table ID.
 	 * @param array  $auth     Auth array from token().
-	 * @return array{id:string,name:string}|WP_Error
+	 * @return array{id:string,name:string,mime_type:string}|WP_Error
 	 */
-	private function locate_file( $table_id, $auth ) {
-		$folders = array_filter(
-			array(
-				WP_MCP_AI_Fnb_Settings::get( 'data_folder_id', '' ),
-				WP_MCP_AI_Fnb_Settings::get( 'setup_folder_id', '' ),
-			)
-		);
-
-		if ( empty( $folders ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_fnb_no_folder',
-				__( 'No F&B Drive folder configured. Set the data/setup folder IDs in the F&B toolkit settings.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
+	private function locate_split_file( $table_id, $auth ) {
 		$names = $this->sheet_names( $table_id );
-		foreach ( $folders as $folder_id ) {
-			$children = WP_MCP_AI_Pro_Google_Drive_Client::list_children(
-				(string) $folder_id,
-				$auth['access_token'],
-				$auth['timeout'],
-				200
-			);
-			if ( is_wp_error( $children ) ) {
-				continue;
-			}
-
-			$files = isset( $children['files'] ) && is_array( $children['files'] ) ? $children['files'] : array();
-			foreach ( $names as $name ) {
-				foreach ( $files as $file ) {
-					$file_name = isset( $file['name'] ) ? strtolower( trim( (string) $file['name'] ) ) : '';
-					$needle    = strtolower( $name );
-					// Match "Daily sales" exactly or as a "Daily sales.csv" /
-					// workbook-name suffix ("… - Demo Data" contains sheet names
-					// only when split per-sheet, so exact match is primary).
-					if ( $file_name === $needle || $file_name === $needle . '.csv' || $file_name === $needle . '.xlsx' ) {
+		foreach ( $this->folders() as $folder_id ) {
+			foreach ( $this->list_folder( $folder_id, $auth ) as $file ) {
+				$file_name = isset( $file['name'] ) ? (string) $file['name'] : '';
+				$stem      = $this->normalise_name( pathinfo( $file_name, PATHINFO_FILENAME ) );
+				foreach ( $names as $name ) {
+					$needle = $this->normalise_name( $name );
+					if ( $stem === $needle ) {
 						return array(
-							'id'   => $file['id'],
-							'name' => $file['name'],
+							'id'        => (string) $file['id'],
+							'name'      => $file_name,
+							'mime_type' => isset( $file['mimeType'] ) ? (string) $file['mimeType'] : '',
 						);
 					}
 				}
@@ -163,7 +319,129 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	}
 
 	/**
-	 * Export a Drive file as CSV text.
+	 * Read the rows of a specific worksheet by tab name from a workbook.
+	 *
+	 * Uses two passes: first list the workbook's tabs (so we can match the
+	 * actual tab name, which may differ in casing/spacing), then read that
+	 * tab's values. Falls back to reading the guessed tab name directly when
+	 * metadata listing fails.
+	 *
+	 * @param array  $workbook Workbook metadata from locate_workbook().
+	 * @param string $table_id Spec table ID.
+	 * @param array  $auth     Auth array from token().
+	 * @return array{columns:array<int,string>,rows:array<int,array>}|WP_Error
+	 */
+	private function read_worksheet( $workbook, $table_id, $auth ) {
+		$names = $this->sheet_names( $table_id );
+
+		$tab = null;
+
+		// Try to discover the exact tab name from the spreadsheet metadata.
+		$metadata = WP_MCP_AI_Pro_Google_Drive_Client::get_sheets_metadata(
+			$workbook['id'],
+			$auth['access_token'],
+			$auth['timeout']
+		);
+		if ( ! is_wp_error( $metadata ) && isset( $metadata['sheets'] ) && is_array( $metadata['sheets'] ) ) {
+			$tabs = array();
+			foreach ( $metadata['sheets'] as $sheet ) {
+				if ( isset( $sheet['properties']['title'] ) ) {
+					$title           = (string) $sheet['properties']['title'];
+					$tabs[ $title ]  = $this->normalise_name( $title );
+				}
+			}
+
+			foreach ( $names as $name ) {
+				$needle = $this->normalise_name( $name );
+				foreach ( $tabs as $title => $normalised ) {
+					if ( $normalised === $needle ) {
+						$tab = $title;
+						break 2;
+					}
+				}
+			}
+
+			// Simpler fallback: substring match (e.g. tab "Daily Sales Report"
+			// still contains "daily sales").
+			if ( null === $tab ) {
+				foreach ( $names as $name ) {
+					$needle = $this->normalise_name( $name );
+					if ( '' === $needle ) {
+						continue;
+					}
+					foreach ( $tabs as $title => $normalised ) {
+						if ( false !== strpos( $normalised, $needle ) ) {
+							$tab = $title;
+							break 2;
+						}
+					}
+				}
+			}
+		}
+
+		// No exact tab discovered — use the canonical sheet name directly and
+		// let the API 400/404 out with a clear error if it doesn't exist.
+		if ( null === $tab ) {
+			$tab = isset( $names[0] ) ? $names[0] : '';
+			if ( '' === $tab ) {
+				return new WP_Error(
+					'wp_mcp_ai_fnb_sheet_not_found',
+					/* translators: %s: table id */
+					sprintf( __( 'No worksheet mapped for F&B table "%s".', 'mcp-ai-wpoos-pro' ), $table_id )
+				);
+			}
+		}
+
+		$values = WP_MCP_AI_Pro_Google_Drive_Client::get_sheet_values(
+			$workbook['id'],
+			$tab,
+			$auth['access_token'],
+			$auth['timeout']
+		);
+		if ( is_wp_error( $values ) ) {
+			return $values;
+		}
+
+		return $this->matrix_to_rows( isset( $values['values'] ) && is_array( $values['values'] ) ? $values['values'] : array() );
+	}
+
+	/**
+	 * Convert a Sheets values matrix to the columns/rows contract.
+	 *
+	 * @param array<int,array<int,mixed>> $values Raw value matrix.
+	 * @return array{columns:array<int,string>,rows:array<int,array>}
+	 */
+	private function matrix_to_rows( $values ) {
+		$columns = array();
+		$rows    = array();
+
+		if ( empty( $values ) ) {
+			return array( 'columns' => $columns, 'rows' => $rows );
+		}
+
+		$columns = array_map( 'strval', array_shift( $values ) );
+
+		foreach ( $values as $row ) {
+			$has_value = false;
+			foreach ( $row as $cell ) {
+				if ( null !== $cell && '' !== trim( (string) $cell ) ) {
+					$has_value = true;
+					break;
+				}
+			}
+			if ( $has_value ) {
+				$rows[] = array_map( 'strval', $row );
+			}
+		}
+
+		return array(
+			'columns' => $columns,
+			'rows'    => $rows,
+		);
+	}
+
+	/**
+	 * Export a Drive file as CSV text (split-file layout only).
 	 *
 	 * @param string $file_id Drive file ID.
 	 * @param array  $auth    Auth array from token().
@@ -236,7 +514,32 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			return $auth;
 		}
 
-		$file = $this->locate_file( $table_id, $auth );
+		// Preferred path: a single workbook whose tabs hold the tables. This
+		// matches the common real-world layout (one spreadsheet per client).
+		$workbook = $this->locate_workbook( $auth );
+		if ( is_array( $workbook ) ) {
+			$result = $this->read_worksheet( $workbook, $table_id, $auth );
+			if ( ! is_wp_error( $result ) ) {
+				$result['source'] = 'fnb_google_sheets_reader';
+
+				return $result;
+			}
+
+			// A worksheet-level error (e.g. the tab doesn't exist in this workbook)
+			// should fall through to the split-file layout only when it indicates
+			// the workbook isn't the right source — i.e. an HTTP 4xx (unknown tab
+			// / no values) or an explicit "nothing here" error. Anything else
+			// (auth, network, 5xx) is a real failure worth surfacing immediately.
+			$error_data = $result->get_error_data();
+			$status     = is_array( $error_data ) && isset( $error_data['status'] ) ? (int) $error_data['status'] : 0;
+			$not_found  = ( 'wp_mcp_ai_drive_http_status' === $result->get_error_code() && $status >= 400 && $status < 500 );
+			if ( ! $not_found ) {
+				return $result;
+			}
+		}
+
+		// Fallback: one file per table (original demo layout).
+		$file = $this->locate_split_file( $table_id, $auth );
 		if ( is_wp_error( $file ) ) {
 			return $file;
 		}

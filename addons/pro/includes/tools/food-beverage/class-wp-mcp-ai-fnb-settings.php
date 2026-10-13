@@ -36,6 +36,8 @@ class WP_MCP_AI_Fnb_Settings {
 		'adapter'                    => 'drive', // drive | csv.
 		'data_folder_id'             => '',
 		'setup_folder_id'            => '',
+		'data_workbook_id'           => '', // Optional: single shared workbook (multi-worksheet) Drive file ID.
+		'data_workbook_name'         => '', // Optional: filter workbook candidates by (fuzzy) file name.
 		'drafts_folder_id'           => '',
 		'csv_data_dir'               => '',
 		'connection_id'              => '',

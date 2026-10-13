@@ -149,6 +149,30 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		);
 
 		add_settings_field(
+			'data_workbook_id',
+			__( 'Workbook ID', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_fnb_data',
+			array(
+				'setting_key' => 'data_workbook_id',
+				'description' => __( 'Google Drive file ID of a single shared workbook whose worksheets/tabs hold each data table (e.g. “Menu”, “Daily Sales”). When set, this workbook is read directly and the per-table file lookup is skipped. Leave empty to auto-detect a spreadsheet in the data/setup folders.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+
+		add_settings_field(
+			'data_workbook_name',
+			__( 'Workbook Name', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_text_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_fnb_data',
+			array(
+				'setting_key' => 'data_workbook_name',
+				'description' => __( 'Optional: disambiguate which spreadsheet to use by (partial, case-insensitive) file name. Only used when Workbook ID is empty — e.g. “Surf Club” selects “Surf Club Midigama - Demo Data”.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+
+		add_settings_field(
 			'csv_data_dir',
 			__( 'CSV Data Directory', 'mcp-ai-wpoos-pro' ),
 			array( __CLASS__, 'render_text_field' ),
@@ -272,6 +296,8 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		$current['connection_id']    = isset( $input['connection_id'] ) ? sanitize_text_field( $input['connection_id'] ) : '';
 		$current['data_folder_id']   = isset( $input['data_folder_id'] ) ? sanitize_text_field( $input['data_folder_id'] ) : '';
 		$current['setup_folder_id']  = isset( $input['setup_folder_id'] ) ? sanitize_text_field( $input['setup_folder_id'] ) : '';
+		$current['data_workbook_id']   = isset( $input['data_workbook_id'] ) ? sanitize_text_field( $input['data_workbook_id'] ) : '';
+		$current['data_workbook_name'] = isset( $input['data_workbook_name'] ) ? sanitize_text_field( $input['data_workbook_name'] ) : '';
 		$current['drafts_folder_id'] = isset( $input['drafts_folder_id'] ) ? sanitize_text_field( $input['drafts_folder_id'] ) : '';
 		$current['csv_data_dir']     = isset( $input['csv_data_dir'] ) ? sanitize_text_field( $input['csv_data_dir'] ) : '';
 
