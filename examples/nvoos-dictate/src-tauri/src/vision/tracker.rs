@@ -42,6 +42,7 @@ struct Track {
     age: usize, // frames since last match
     pinned: bool,
     label: String,
+    confidence: f32,
 }
 
 impl Track {
@@ -74,6 +75,7 @@ impl Track {
         self.state[2] = ms;
         self.state[3] = mr.max(0.01);
         self.label = det.label.clone();
+        self.confidence = det.confidence;
     }
 
     fn bbox(&self) -> (f32, f32, f32, f32) {
@@ -207,6 +209,7 @@ impl SORTTracker {
                     age: 0,
                     pinned: false,
                     label: d.label.clone(),
+                    confidence: d.confidence,
                 });
             }
         }
@@ -231,11 +234,12 @@ impl SORTTracker {
                 Detection {
                     id: Some(t.id),
                     label: t.label.clone(),
-                    confidence: 0.0, // tracker carries no confidence; controller re-labels
+                    confidence: t.confidence,
                     x: x.max(0.0) as u32,
                     y: y.max(0.0) as u32,
                     w: w as u32,
                     h: h as u32,
+                    source: "coco".to_string(),
                 }
             })
             .collect()
@@ -255,6 +259,7 @@ mod tests {
             y,
             w,
             h,
+            source: "coco".into(),
         }
     }
 

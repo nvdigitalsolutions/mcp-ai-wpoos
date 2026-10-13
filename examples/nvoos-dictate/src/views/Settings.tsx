@@ -31,6 +31,8 @@ export default function SettingsView({ onChanged, status }: Props) {
     { id: string; description: string; size_mb: number; license: string; installed: boolean }[]
   >([]);
   const [modelDownloading, setModelDownloading] = useState<string | null>(null);
+  const [polishTesting, setPolishTesting] = useState(false);
+  const [visionPolishModels, setVisionPolishModels] = useState<string[]>([]);
 
   // Latest settings + a debounce timer: typing must not fire an
   // `update_settings` (which swaps the speech engine) on every keystroke.
@@ -131,6 +133,20 @@ export default function SettingsView({ onChanged, status }: Props) {
       setMessage(`Download failed: ${e}`);
     } finally {
       setModelDownloading(null);
+    }
+  };
+
+  const testVisionPolish = async () => {
+    setPolishTesting(true);
+    setMessage('');
+    try {
+      const result = await api.testVisionPolish();
+      setVisionPolishModels(result.models);
+      setMessage(result.message);
+    } catch (e) {
+      setMessage(`Vision test failed: ${e}`);
+    } finally {
+      setPolishTesting(false);
     }
   };
 
@@ -348,11 +364,115 @@ export default function SettingsView({ onChanged, status }: Props) {
                   }
                 />
               </label>
+
+              <h3>Label polish (local VLM)</h3>
+              <label className="row">
+                <span>Relabel detections with a vision model</span>
+                <input
+                  type="checkbox"
+                  checked={settings.vision.polish_enabled}
+                  onChange={(e) =>
+                    patch({ vision: { ...settings.vision, polish_enabled: e.target.checked } })
+                  }
+                />
+              </label>
+              {settings.vision.polish_enabled && (
+                <>
+                  <label className="row">
+                    <span>Provider</span>
+                    <select
+                      value={settings.vision.polish_provider}
+                      onChange={(e) =>
+                        patch({
+                          vision: { ...settings.vision, polish_provider: e.target.value },
+                        })
+                      }
+                    >
+                      <option value="lm_studio">LM Studio</option>
+                      <option value="ollama">Ollama</option>
+                    </select>
+                  </label>
+                  <label className="row">
+                    <span>Vision model</span>
+                    <input
+                      type="text"
+                      value={settings.vision.polish_model}
+                      placeholder="qwen/qwen2.5-vl-7b"
+                      onChange={(e) =>
+                        patch({ vision: { ...settings.vision, polish_model: e.target.value } })
+                      }
+                    />
+                  </label>
+                  <div className="btn-row">
+                    <button className="btn ghost" onClick={testVisionPolish}>
+                      {polishTesting ? 'Testing…' : 'Test / list models'}
+                    </button>
+                    {visionPolishModels.length > 0 && (
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            patch({
+                              vision: { ...settings.vision, polish_model: e.target.value },
+                            });
+                          }
+                        }}
+                      >
+                        <option value="">use a discovered model…</option>
+                        {visionPolishModels.map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  <label className="row">
+                    <span>Relabel only below COCO confidence</span>
+                    <input
+                      type="number"
+                      step={0.05}
+                      min={0}
+                      max={0.95}
+                      value={settings.vision.polish_min_confidence}
+                      onChange={(e) =>
+                        patch({
+                          vision: {
+                            ...settings.vision,
+                            polish_min_confidence: parseFloat(e.target.value) || 0.5,
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                  <label className="row">
+                    <span>VLM calls per second</span>
+                    <input
+                      type="number"
+                      step={1}
+                      min={1}
+                      max={10}
+                      value={settings.vision.polish_max_per_second}
+                      onChange={(e) =>
+                        patch({
+                          vision: {
+                            ...settings.vision,
+                            polish_max_per_second: parseInt(e.target.value, 10) || 2,
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                  <p className="muted">
+                    A local vision model (e.g. Qwen2.5-VL) names each detected object accurately,
+                    replacing the generic COCO label. Runs entirely on-device via LM Studio/Ollama.
+                  </p>
+                </>
+              )}
               <p className="muted">
-                Fully on-device (YOLO via ONNX Runtime) — pixels never leave your computer. Detects
-                objects in the live preview; no facial recognition or person identity. Toggle
-                detection on the Home camera preview (or auto-start with the camera via the toggle
-                above).
+                Fully on-device (YOLO via ONNX Runtime + optional local VLM) — pixels never leave
+                your computer. Detects objects in the live preview; no facial recognition or person
+                identity. Toggle detection on the Home camera preview (or auto-start with the camera).
               </p>
             </>
           )}

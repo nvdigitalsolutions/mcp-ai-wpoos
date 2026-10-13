@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — build/run on Windows/MSVC, the local-first engine track (parakeet/whisper/moonshine/silero-vad, all API-verified against pinned crate versions), the embedded remote-STT fallback against the Embedded addon's transcribe route, the Stage-2 polish provider track (disabled/openai_compat/nvoos plus local LM Studio and Ollama via the shared local_openai transport), the file/media decode seam (Symphonia 0.5 — audio-only today, with video MKV/MP4/WebM demux scoped in Proposal 071), model registry + verification harnesses, the plugins.updater boot-crash config rule, and the full test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, or file/video transcription, touching the cleanup pipeline golden tests, or continuing the P2/P4/P5/distribution follow-up work.
+description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — build/run on Windows/MSVC, the local-first engine track (parakeet/whisper/moonshine/silero-vad), the embedded remote-STT fallback, the Stage-2 polish provider track (disabled/openai_compat/nvoos plus local LM Studio and Ollama), the file/media decode seam (Symphonia 0.5), the live camera + local object-detection/tracking track (Proposals 073 + 075) with an opt-in VLM label-polish layer (Proposal 076), model registry + verification harnesses, the plugins.updater boot-crash config rule, and the full test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, file/video transcription, camera/vision detection, or VLM relabeling.
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
@@ -423,6 +423,24 @@ download `yolo11n.pt` from
 (note: the id is `yolo11n`, not `yolov11n`), then
 `python -c "from ultralytics import YOLO; YOLO('yolo11n.pt').export(format='onnx', opset=12, imgsz=640)"`.
 No `onnxslim` = the simplifier step logs a non-fatal warning.
+
+**Vision label polish (Proposal 076):** the stock `yolov11n` is a
+closed-vocabulary 80-class COCO model, so it mislabels arbitrary objects
+(a pen → "knife"). The opt-in VLM polish layer fixes this: when
+`Settings.vision.polish_enabled` is on, the detect loop crops each
+low-confidence box, PNG-encodes it as a base64 data-URI, and sends a
+**multimodal** OpenAI-compatible request (image + text) through the *same*
+`LocalOpenAiProvider` transport used by text polish (`local_openai.rs`). The
+returned `{label, confidence}` replaces the COCO label (badged `VLM` in the
+overlay). Implementation: `vision/polish.rs` (`VisionPolisher` + `prepare_request`
+/`resolve`, crop→base64 PNG), `openai_shape::{build_vision_body, parse_label_response,
+vision_polish_prompt}`, `LocalOpenAiProvider::describe_crop`, and a dedicated
+`nvoos-vision-polish` thread (owns a tokio runtime) so the ~500 ms VLM
+round-trip never stalls the 15 fps detect loop. Default model
+`qwen/qwen2.5-vl-7b` (the reference VLM for structured-JSON grounding; verified
+live on the reference PC — it returns **fenced** JSON, which
+`parse_label_response` tolerates). The no-facial-recognition bright line is in
+the system prompt. `VisionDiagnostics` gained `polish_enabled/provder/model/calls/results`.
 
 ## Stage-2 polish providers (local LLM cleanup)
 

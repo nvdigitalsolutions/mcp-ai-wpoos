@@ -256,6 +256,22 @@ export default function DiagnosticsView() {
                 conf ≥ {info.vision.confidence_threshold} · IoU {info.vision.iou_threshold}
               </span>
             </li>
+            <li>
+              <span>Label polish (VLM)</span>
+              <span className={badge(info.vision.polish_enabled)}>
+                {info.vision.polish_enabled
+                  ? `${info.vision.polish_provider} · ${info.vision.polish_model}`
+                  : 'off (COCO labels only)'}
+              </span>
+            </li>
+            {info.vision.polish_enabled && (
+              <li>
+                <span>Polish calls / results</span>
+                <span>
+                  {info.vision.polish_calls} / {info.vision.polish_results}
+                </span>
+              </li>
+            )}
           </ul>
         ) : (
           <p className="muted">Vision detection is not compiled into this build.</p>

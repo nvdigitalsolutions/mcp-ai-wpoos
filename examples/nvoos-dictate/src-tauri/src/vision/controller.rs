@@ -1,12 +1,12 @@
-//! `VisionController`: the resident detect→track loop that feeds the webview.
+//! `VisionController`: the resident detect→track loop that feeds the webview,
+//! with an optional local-VLM label-polish layer (Proposal 076).
 //!
 //! Pulls downsampled RGB frames from the existing camera ring (`camera`), runs
 //! the YOLO detector, updates the SORT tracker, and publishes the tracked
-//! detections as both a pollable latest-snapshot and a `vision://detections`
-//! event. All `!Sync` ML state (the `ort` session, the tracker) lives on the
-//! worker thread; only `Send` handles (the snapshot `Arc<Mutex<_>>`, atomics,
-//! and the pin channel) cross the thread boundary — matching the camera
-//! `PreviewFrame` ring pattern.
+//! detections as a pollable snapshot. When vision-polish is enabled, the loop
+//! hands low-confidence boxes to a dedicated `nvoos-vision-polish` thread
+//! (owning a tokio runtime) that relabels each crop via a local VLM; the
+//! polished labels are merged back without stalling the 15 fps detect loop.
 
 use std::sync::atomic::{AtomicU64, Ordering};
 #[cfg(feature = "vision")]
@@ -20,6 +20,8 @@ use crate::error::{AppError, AppResult};
 #[cfg(feature = "vision")]
 use crate::vision::detect::{Detector, DetectorConfig};
 #[cfg(feature = "vision")]
+use crate::vision::polish::{PolishRequest, PolishResult, VisionPolisher};
+#[cfg(feature = "vision")]
 use crate::vision::tracker::{SORTTracker, TrackerConfig};
 use crate::vision::Detection;
 
@@ -32,6 +34,8 @@ pub(crate) struct VisionStats {
     pub errors: AtomicU64,
     pub last_error: Mutex<Option<String>>,
     pub last_infer_ms: AtomicU64,
+    pub polish_calls: AtomicU64,
+    pub polish_results: AtomicU64,
 }
 
 /// The shared, pollable result of the vision loop.
@@ -55,11 +59,13 @@ pub struct VisionController {
 impl VisionController {
     /// Start the loop: load the detector ONNX model at `model_path`, pull
     /// frames from the camera `frame` ring, and begin emitting detections.
+    /// `polisher` optionally enables VLM relabeling of low-confidence boxes.
     pub fn start(
         model_path: std::path::PathBuf,
         detector_cfg: DetectorConfig,
         tracker_cfg: TrackerConfig,
         frame: Arc<Mutex<Option<crate::camera::PreviewFrame>>>,
+        polish: Option<PolishConfig>,
     ) -> AppResult<Self> {
         let (ready_tx, ready_rx) = channel::<AppResult<Arc<Mutex<VisionSnapshot>>>>();
         let (stop_tx, stop_rx) = channel::<()>();
@@ -92,6 +98,7 @@ impl VisionController {
                     worker_stats,
                     stop_rx,
                     pin_rx,
+                    polish,
                 );
             })
             .map_err(|e| AppError::Other(e.to_string()))?;
@@ -117,11 +124,32 @@ impl VisionController {
         _detector_cfg: crate::vision::detect::DetectorConfig,
         _tracker_cfg: crate::vision::tracker::TrackerConfig,
         _frame: Arc<Mutex<Option<crate::camera::PreviewFrame>>>,
+        _polish: Option<PolishConfig>,
     ) -> AppResult<Self> {
         Err(AppError::Unsupported(
             "vision detection is not compiled into this build".into(),
         ))
     }
+}
+
+/// Settings that enable and shape the VLM label-polish layer.
+#[cfg(feature = "vision")]
+#[derive(Clone)]
+pub struct PolishConfig {
+    /// The polisher transport (built by the caller from `Settings.vision`).
+    pub polisher: Arc<VisionPolisher>,
+    /// Only relabel boxes whose YOLO confidence is below this (0 = all).
+    pub min_confidence: f32,
+    /// Cap on VLM calls per second.
+    pub max_per_second: usize,
+}
+
+/// Placeholder config when the `vision` feature is not compiled in (keeps the
+/// `start` signature stable across feature sets).
+#[cfg(not(feature = "vision"))]
+#[derive(Clone)]
+pub struct PolishConfig {
+    _private: (),
 }
 
 impl VisionController {
@@ -159,6 +187,14 @@ impl VisionController {
         self.stats.last_error.lock().unwrap().clone()
     }
 
+    pub fn polish_calls(&self) -> u64 {
+        self.stats.polish_calls.load(Ordering::Relaxed)
+    }
+
+    pub fn polish_results(&self) -> u64 {
+        self.stats.polish_results.load(Ordering::Relaxed)
+    }
+
     /// Number of live tracks in the latest snapshot.
     pub fn active_tracks(&self) -> usize {
         self.snapshot.lock().unwrap().detections.len()
@@ -183,7 +219,46 @@ fn run_loop(
     stats: Arc<VisionStats>,
     stop_rx: std::sync::mpsc::Receiver<()>,
     pin_rx: std::sync::mpsc::Receiver<u64>,
+    polish: Option<PolishConfig>,
 ) {
+    let polish_min_conf = polish.as_ref().map(|p| p.min_confidence).unwrap_or(0.0);
+    let polish_max_per_sec = polish.as_ref().map(|p| p.max_per_second).unwrap_or(2);
+    let (polish_tx, polish_rx): (
+        Option<Sender<PolishRequest>>,
+        Option<std::sync::mpsc::Receiver<PolishResult>>,
+    ) = match polish {
+        Some(cfg) => {
+            let (req_tx, req_rx) = channel::<PolishRequest>();
+            let (res_tx, res_rx) = channel::<PolishResult>();
+            let polisher = cfg.polisher;
+            let pstats = stats.clone();
+            std::thread::Builder::new()
+                .name("nvoos-vision-polish".into())
+                .spawn(move || {
+                    while let Ok(req) = req_rx.recv() {
+                        pstats.polish_calls.fetch_add(1, Ordering::Relaxed);
+                        match polisher.resolve(&req) {
+                            Ok(result) => {
+                                pstats.polish_results.fetch_add(1, Ordering::Relaxed);
+                                if res_tx.send(result).is_err() {
+                                    break; // controller dropped; stop
+                                }
+                            }
+                            Err(e) => {
+                                *pstats.last_error.lock().unwrap() = Some(e.to_string());
+                            }
+                        }
+                    }
+                })
+                .ok();
+            (Some(req_tx), Some(res_rx))
+        }
+        None => (None, None),
+    };
+
+    // Throttle: at most `max_per_second` polish requests, paced by a timer.
+    let mut last_polish = Instant::now();
+
     loop {
         if stop_rx.try_recv().is_ok() {
             let mut sn = snapshot.lock().unwrap();
@@ -192,8 +267,7 @@ fn run_loop(
             return;
         }
 
-        // Drain pending click-to-select pins. Re-pin within the same frame is
-        // idempotent; an id the tracker no longer knows is silently ignored.
+        // Drain pending click-to-select pins.
         while let Ok(id) = pin_rx.try_recv() {
             if tracker.pin(id) {
                 stats.track_events.fetch_add(1, Ordering::Relaxed);
@@ -209,13 +283,34 @@ fn run_loop(
                     stats
                         .last_infer_ms
                         .store(started.elapsed().as_millis() as u64, Ordering::Relaxed);
-                    // Merge fresh confidence back onto tracked boxes: the
-                    // tracker carries geometric state only, so re-attach the
-                    // per-detection confidence + label of the best IoU match.
                     let tracked = tracker.update(&dets);
                     stats
                         .detections
                         .fetch_add(tracked.len() as u64, Ordering::Relaxed);
+
+                    // Enqueue low-confidence boxes for VLM polish (throttled).
+                    if let Some(tx) = &polish_tx {
+                        let elapsed = last_polish.elapsed();
+                        let interval =
+                            Duration::from_millis(1000 / polish_max_per_sec.max(1) as u64);
+                        if elapsed >= interval {
+                            for det in &tracked {
+                                if det.confidence >= polish_min_conf {
+                                    continue;
+                                }
+                                if let Ok(req) = crate::vision::polish::prepare_request(
+                                    &pf.rgb, pf.width, pf.height, det.x, det.y, det.w, det.h,
+                                    det.id,
+                                ) {
+                                    if tx.send(req).is_ok() {
+                                        last_polish = Instant::now();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     let mut sn = snapshot.lock().unwrap();
                     sn.detections = tracked;
                 }
@@ -226,7 +321,22 @@ fn run_loop(
             }
         }
 
-        // ~15 fps, matching the camera preview cadence.
+        // Apply any completed polish results to the snapshot (non-blocking).
+        if let Some(rx) = &polish_rx {
+            while let Ok(result) = rx.try_recv() {
+                let mut sn = snapshot.lock().unwrap();
+                if let Some(det) = sn
+                    .detections
+                    .iter_mut()
+                    .find(|d| d.id == result.id && result.id.is_some())
+                {
+                    det.label = result.label;
+                    det.confidence = result.confidence;
+                    det.source = "vlm".to_string();
+                }
+            }
+        }
+
         std::thread::sleep(Duration::from_millis(66));
     }
 }

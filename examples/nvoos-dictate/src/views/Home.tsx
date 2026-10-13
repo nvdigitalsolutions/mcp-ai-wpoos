@@ -242,7 +242,7 @@ function CameraPanel() {
       ctx.strokeStyle = '#22d3ee';
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, w, h);
-      const label = `${d.id != null ? `#${d.id} ` : ''}${d.label} ${(d.confidence * 100).toFixed(0)}%`;
+      const label = `${d.id != null ? `#${d.id} ` : ''}${d.label} ${(d.confidence * 100).toFixed(0)}%${d.source === 'vlm' ? ' · VLM' : ''}`;
       ctx.fillStyle = '#22d3ee';
       ctx.font = '12px system-ui, sans-serif';
       const th = 16;
