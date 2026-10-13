@@ -68,13 +68,19 @@ tracker, the controller, and the overlay drawing — no new ML dependency.
   `iou_threshold`, `track_objects`, `hand_model`).
 - [ ] Exit: off-by-default; `vision_available()` reflects the `camera` feature.
 
-### M4 — overlay + Diagnostics
+### M4 — overlay + Diagnostics + Status
 
 - [ ] Webview: canvas overlay on the camera `PreviewFrame` drawing
   `{id, label, confidence, bbox}` boxes + track ids; click a box → `vision_select_track`.
-- [ ] Diagnostics: detection latency (ms), FPS, detections/frame, active-track
-  count (mirror camera/mic health counters).
-- [ ] Exit: `npm run build` clean; manual run shows boxes on a webcam.
+- [ ] **Diagnostics**: new `VisionDiagnostics` struct in `get_diagnostics`
+  (availability, running, detector/hand model + installed flags, last
+  detection latency, fps, detections/frame, active tracks, track events,
+  last error) — mirroring `MicDiagnostics`/camera health.
+- [ ] **Status**: `StatusInfo` gains `vision_available`, `vision_running`,
+  `vision_detector`, `vision_hand_model`; `ipc.ts` types updated accordingly.
+- [ ] Home "Vision" toggle wiring + Settings vision row (enable/model/thresholds).
+- [ ] Exit: `npm run build` clean; manual run shows boxes + live Diagnostics
+  counters update on a webcam.
 
 ### M5 — hand model, pin hardening, docs
 
@@ -82,7 +88,8 @@ tracker, the controller, and the overlay drawing — no new ML dependency.
   its detections (label `hand`) into the same track stream.
 - [ ] ByteTrack low-confidence recovery (two-stage association) as an opt-in
   upgrade behind `track_objects`.
-- [ ] Update the dictation-app skill (`vision` module, model catalogue, toggle).
+- [ ] Update the dictation-app skill (`vision` module, model catalogue, toggle,
+  and the Status/Diagnostics fields).
 
 ## Verification
 

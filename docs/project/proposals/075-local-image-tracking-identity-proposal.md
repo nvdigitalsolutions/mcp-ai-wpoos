@@ -132,8 +132,26 @@ camera frame (PreviewFrame, ~15 fps)
 
 - Home **"Vision"** toggle (Start/Stop detection) + a live canvas overlay on the
   camera preview showing boxes, labels, and track ids.
-- Diagnostics: detection latency (ms), FPS, detections/frame, active track
-  count — matching the camera/mic health-counter pattern.
+
+### 5.3b Status & Diagnostics surfaces (new)
+
+The vision feature is surfaced in the app's two existing observability views,
+mirroring the camera/mic health-counter pattern:
+
+- **StatusInfo** (`get_status`) gains: `vision_available` (whether the `camera`
+  feature is compiled), `vision_running` (toggle on), and
+  `vision_detector`/`vision_hand_model` (the configured models).
+- **`VisionDiagnostics`** (new struct, surfaced in `get_diagnostics` alongside
+  `MicDiagnostics` / camera health):
+  - `available`, `running`,
+  - `detector_model`, `hand_model` (+ loaded/installed flags from the registry),
+  - `detection_latency_ms` (last inference), `fps` (detections/sec),
+  - `detections_per_frame` (last), `active_tracks`,
+  - `track_events` (births/deaths/lost) and `last_error` (model-load or
+    inference failure) — for "is vision actually seeing anything?" the way the
+    mic stall/live-level meter answers "is capture delivering?".
+- **Settings tab** row for vision (enable + model picker + thresholds) with the
+  same debounced-save contract as the rest of Settings.
 
 ### 5.4 Config & models
 
