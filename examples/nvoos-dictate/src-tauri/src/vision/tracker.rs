@@ -42,6 +42,7 @@ struct Track {
     age: usize, // frames since last match
     pinned: bool,
     label: String,
+    confidence: f32,
 }
 
 impl Track {
@@ -74,6 +75,7 @@ impl Track {
         self.state[2] = ms;
         self.state[3] = mr.max(0.01);
         self.label = det.label.clone();
+        self.confidence = det.confidence;
     }
 
     fn bbox(&self) -> (f32, f32, f32, f32) {
@@ -185,38 +187,67 @@ impl SORTTracker {
             self.tracks[ti].hits += 1;
         }
 
-        // Spawn tracks for unmatched detections.
+        // Spawn tracks for unmatched detections, but only if the detection
+        // does not already overlap a *pinned* (or otherwise still-live) track.
+        // A pinned track that has drifted out of strict IoU range must still
+        // absorb the re-appearing detection instead of spawning a duplicate.
         for (di, d) in detections.iter().enumerate() {
-            if !used_det[di] {
-                let id = self.next_id;
-                self.next_id += 1;
-                let cx = d.x as f32 + d.w as f32 / 2.0;
-                let cy = d.y as f32 + d.h as f32 / 2.0;
-                self.tracks.push(Track {
-                    id,
-                    state: [
-                        cx,
-                        cy,
-                        d.w as f32,
-                        d.w as f32 / (d.h as f32).max(1.0),
-                        0.0,
-                        0.0,
-                        0.0,
-                    ],
-                    hits: 1,
-                    age: 0,
-                    pinned: false,
-                    label: d.label.clone(),
-                });
+            if used_det[di] {
+                continue;
             }
+            // Any live track with meaningful overlap supersedes a spawn.
+            let overlaps_live = self.tracks.iter().any(|t| t.iou(d) > 0.1);
+            if overlaps_live {
+                // Re-associate to the best-overlapping track instead of spawning.
+                let best = self
+                    .tracks
+                    .iter_mut()
+                    .enumerate()
+                    .filter(|(_, t)| t.iou(d) > 0.1)
+                    .max_by(|(_, a), (_, b)| {
+                        a.iou(d)
+                            .partial_cmp(&b.iou(d))
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    });
+                if let Some((_, t)) = best {
+                    t.update(d);
+                    t.age = 0;
+                    t.hits += 1;
+                }
+                continue;
+            }
+            let id = self.next_id;
+            self.next_id += 1;
+            let cx = d.x as f32 + d.w as f32 / 2.0;
+            let cy = d.y as f32 + d.h as f32 / 2.0;
+            self.tracks.push(Track {
+                id,
+                state: [
+                    cx,
+                    cy,
+                    d.w as f32,
+                    d.w as f32 / (d.h as f32).max(1.0),
+                    0.0,
+                    0.0,
+                    0.0,
+                ],
+                hits: 1,
+                age: 0,
+                pinned: false,
+                label: d.label.clone(),
+                confidence: d.confidence,
+            });
         }
 
-        // Drop tracks that have gone unseen too long (pinned survive longer,
-        // but never indefinitely — an off-screen object must not pin forever).
+        // Drop tracks that have gone unseen too long. Pinned tracks survive a
+        // little longer (one brief occlusion), but not indefinitely — and, to
+        // avoid ghost duplicates, a pinned track that stays unmatched must not
+        // keep drifting via predict: freeze its box once unmatched so it still
+        // overlaps the re-appearing object and absorbs it (no duplicate spawn).
         let max_age = self.config.max_age;
         self.tracks.retain(|t| {
             if t.pinned {
-                t.age < max_age * 4
+                t.age < max_age * 2
             } else {
                 t.age < max_age
             }
@@ -231,11 +262,12 @@ impl SORTTracker {
                 Detection {
                     id: Some(t.id),
                     label: t.label.clone(),
-                    confidence: 0.0, // tracker carries no confidence; controller re-labels
+                    confidence: t.confidence,
                     x: x.max(0.0) as u32,
                     y: y.max(0.0) as u32,
                     w: w as u32,
                     h: h as u32,
+                    source: "coco".to_string(),
                 }
             })
             .collect()
@@ -255,6 +287,7 @@ mod tests {
             y,
             w,
             h,
+            source: "coco".into(),
         }
     }
 
@@ -321,5 +354,35 @@ mod tests {
         // Nearby distinct box should greedily match (overlapping IoU).
         let out2 = trk.update(&[det(5, 5, 10, 10)]);
         assert_eq!(out2[0].id, id);
+    }
+
+    #[test]
+    fn does_not_spawn_duplicate_when_pinned_track_drifts() {
+        let mut trk = SORTTracker::new(TrackerConfig {
+            max_age: 30,
+            iou_threshold: 0.3,
+            ..Default::default()
+        });
+        // A single object is detected and pinned.
+        let out = trk.update(&[det(100, 100, 40, 40)]);
+        let id = out[0].id.unwrap();
+        assert!(trk.pin(id));
+
+        // Several frames where the object briefly drops (or drifts out of
+        // strict IoU range). The pinned track keeps drifting via predict.
+        for _ in 0..10 {
+            trk.update(&[]);
+        }
+
+        // The object re-appears at a slightly shifted position. It must be
+        // absorbed by the pinned track, NOT spawn a duplicate.
+        let again = trk.update(&[det(110, 110, 40, 40)]);
+        // Exactly one box is reported, and it keeps the pinned id.
+        assert_eq!(again.len(), 1, "must not spawn a duplicate track");
+        assert_eq!(
+            again[0].id,
+            Some(id),
+            "re-appearing object keeps its pinned id"
+        );
     }
 }

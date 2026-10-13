@@ -22,6 +22,9 @@ pub mod tracker;
 
 pub mod controller;
 
+#[cfg(feature = "vision")]
+pub mod polish;
+
 use serde::Serialize;
 
 /// A single detected object, in **source-pixel** coordinates (relative to the
@@ -31,7 +34,8 @@ pub struct Detection {
     /// SORT track id (stable across frames while tracked). `None` before
     /// tracking is applied.
     pub id: Option<u64>,
-    /// COCO-80 class label (e.g. `person`, `cell phone`).
+    /// Object label (COCO-80 name, or a VLM-polished name when `source` is
+    /// "vlm").
     pub label: String,
     /// Detection confidence 0..1.
     pub confidence: f32,
@@ -40,6 +44,23 @@ pub struct Detection {
     pub y: u32,
     pub w: u32,
     pub h: u32,
+    /// Label provenance: `coco` (raw detector) or `vlm` (vision label-polish).
+    pub source: String,
+}
+
+impl Default for Detection {
+    fn default() -> Self {
+        Self {
+            id: None,
+            label: String::new(),
+            confidence: 0.0,
+            x: 0,
+            y: 0,
+            w: 0,
+            h: 0,
+            source: "coco".to_string(),
+        }
+    }
 }
 
 /// Whether local detection is compiled into this build.

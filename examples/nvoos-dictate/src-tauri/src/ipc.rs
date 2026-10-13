@@ -226,6 +226,12 @@ pub struct VisionDiagnostics {
     pub errors: u64,
     pub last_error: Option<String>,
     pub models: Vec<crate::vision::models::VisionModelStatus>,
+    /// VLM label-polish (Proposal 076) state.
+    pub polish_enabled: bool,
+    pub polish_provider: String,
+    pub polish_model: String,
+    pub polish_calls: u64,
+    pub polish_results: u64,
 }
 
 /// Full troubleshooting snapshot: hook health, capture device + live level,
@@ -322,6 +328,10 @@ fn vision_diagnostics(state: &AppState, settings: &Settings) -> VisionDiagnostic
             ),
             None => (0, 0, 0, 0, 0, 0, None),
         };
+    let (polish_calls, polish_results) = match vision.as_ref() {
+        Some(v) => (v.polish_calls(), v.polish_results()),
+        None => (0, 0),
+    };
     VisionDiagnostics {
         available,
         enabled: settings.vision.enabled,
@@ -339,6 +349,11 @@ fn vision_diagnostics(state: &AppState, settings: &Settings) -> VisionDiagnostic
         errors,
         last_error,
         models: crate::vision::models::status_list(&models_dir),
+        polish_enabled: settings.vision.polish_enabled,
+        polish_provider: settings.vision.polish_provider.clone(),
+        polish_model: settings.vision.polish_model.clone(),
+        polish_calls,
+        polish_results,
     }
 }
 
@@ -840,6 +855,30 @@ pub async fn download_vision_model(
     };
     let path = crate::vision::models::download(spec, &dir, force, progress).await?;
     Ok(path.to_string_lossy().into_owned())
+}
+
+/// Test the configured vision-polish VLM: build the provider from settings
+/// and discover models via `GET /v1/models`. Returns the model list so the
+/// Settings dropdown can populate (and the user can pick a vision-capable one).
+#[tauri::command]
+pub async fn test_vision_polish(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+) -> AppResult<crate::cleanup::providers::lm_studio::LmStudioConnectionTest> {
+    main_window_only(&window)?;
+    let settings = state.settings_snapshot();
+    // Build the local provider the same way the polish layer will.
+    let provider = crate::cleanup::providers::local_openai::LocalOpenAiProvider::new(
+        crate::cleanup::providers::local_openai::LocalKind {
+            name: "LM Studio",
+            id: "lm_studio",
+        },
+        &settings.lm_studio.base_url,
+        &settings.vision.polish_model,
+        settings.lm_studio.load_timeout_ms,
+        state.secrets.get(crate::state::KEY_LM_STUDIO_TOKEN)?,
+    )?;
+    Ok(provider.test_connection().await)
 }
 
 // ---- Models & file transcription ----------------------------------------

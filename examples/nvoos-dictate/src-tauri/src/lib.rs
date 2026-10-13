@@ -107,6 +107,7 @@ pub fn run() {
             ipc::vision_select_track,
             ipc::get_vision_models,
             ipc::download_vision_model,
+            ipc::test_vision_polish,
             ipc::set_nvoos_credential,
             ipc::clear_nvoos_credential,
             ipc::test_nvoos_connection,

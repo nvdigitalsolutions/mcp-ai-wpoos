@@ -300,6 +300,50 @@ impl LocalOpenAiProvider {
         let payload: serde_json::Value = resp.json().await?;
         openai_shape::parse_chat_response(&payload)
     }
+
+    /// Identify the object in a single image crop (Proposal 076 vision polish).
+    /// `image_data_uri` is a base64 data-URI PNG. Returns the raw assistant
+    /// text; the caller parses `{label, confidence}` via
+    /// `openai_shape::parse_label_response`.
+    #[cfg(feature = "vision")]
+    pub async fn describe_crop(&self, image_data_uri: &str) -> AppResult<String> {
+        let model = if self.model.is_empty() {
+            None
+        } else {
+            Some(self.model.as_str())
+        };
+        let body = openai_shape::build_vision_body(
+            model,
+            openai_shape::vision_polish_prompt(),
+            image_data_uri,
+            0.0,
+        );
+        let url = format!("{}/chat/completions", self.base_url);
+        let resp = match self.http.post(&url).json(&body).send().await {
+            Ok(r) => r,
+            Err(e) => return Err(self.map_send_error(e)),
+        };
+        let status = resp.status().as_u16();
+        if status == 400 {
+            return Err(AppError::Other(format!(
+                "{} rejected the vision request (HTTP 400) — the model may not be vision-capable; use a multimodal model such as Qwen2.5-VL",
+                self.kind.name
+            )));
+        }
+        if status == 404 {
+            return Err(AppError::Other(
+                "got HTTP 404 — the base URL should include the /v1 path".into(),
+            ));
+        }
+        if !resp.status().is_success() {
+            return Err(AppError::Other(format!(
+                "{} returned HTTP {status}",
+                self.kind.name
+            )));
+        }
+        let payload: serde_json::Value = resp.json().await?;
+        openai_shape::parse_chat_response(&payload)
+    }
 }
 
 /// Extract model identifiers from an OpenAI-compatible `{ data: [{ id, … }] }`.

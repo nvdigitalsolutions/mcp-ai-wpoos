@@ -242,7 +242,7 @@ function CameraPanel() {
       ctx.strokeStyle = '#22d3ee';
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, w, h);
-      const label = `${d.id != null ? `#${d.id} ` : ''}${d.label} ${(d.confidence * 100).toFixed(0)}%`;
+      const label = `${d.id != null ? `#${d.id} ` : ''}${d.label} ${(d.confidence * 100).toFixed(0)}%${d.source === 'vlm' ? ' · VLM' : ''}`;
       ctx.fillStyle = '#22d3ee';
       ctx.font = '12px system-ui, sans-serif';
       const th = 16;
@@ -395,6 +395,16 @@ export default function Home({ status, dictate, onRefresh }: Props) {
               {status?.system_audio_available ? 'available' : 'unsupported here'}
             </span>
           </li>
+          {status?.vision_available && (
+            <li>
+              <span>Vision detection</span>
+              <span className={badge(!!status?.vision_running)}>
+                {status?.vision_running
+                  ? `running · ${status?.vision_detector ?? 'detector'}`
+                  : 'available (start from Camera preview)'}
+              </span>
+            </li>
+          )}
           <li>
             <span>NV oOS credential</span>
             <span className={badge(!!status?.nvoos_credential_stored)}>

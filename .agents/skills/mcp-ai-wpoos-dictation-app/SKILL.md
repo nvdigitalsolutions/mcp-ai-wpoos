@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — build/run on Windows/MSVC, the local-first engine track (parakeet/whisper/moonshine/silero-vad, all API-verified against pinned crate versions), the embedded remote-STT fallback against the Embedded addon's transcribe route, the Stage-2 polish provider track (disabled/openai_compat/nvoos plus local LM Studio and Ollama via the shared local_openai transport), the file/media decode seam (Symphonia 0.5 — audio-only today, with video MKV/MP4/WebM demux scoped in Proposal 071), model registry + verification harnesses, the plugins.updater boot-crash config rule, and the full test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, or file/video transcription, touching the cleanup pipeline golden tests, or continuing the P2/P4/P5/distribution follow-up work.
+description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — build/run on Windows/MSVC, the local-first engine track (parakeet/whisper/moonshine/silero-vad), the embedded remote-STT fallback, the Stage-2 polish provider track (disabled/openai_compat/nvoos plus local LM Studio and Ollama), the file/media decode seam (Symphonia 0.5), the live camera + local object-detection/tracking track (Proposals 073 + 075) with an opt-in VLM label-polish layer (Proposal 076), model registry + verification harnesses, the plugins.updater boot-crash config rule, and the full test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, file/video transcription, camera/vision detection, or VLM relabeling.
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
@@ -106,7 +106,7 @@ cargo clippy --all-targets --features mcp -- -D warnings
 cargo clippy --all-targets --features camera -- -D warnings
 cargo clippy --all-targets --features vision -- -D warnings
 cargo test            # default (mock/embedded)
-cargo test --features vision   # 85 lib (+4 tracker tests)
+cargo test --features vision   # 94 lib (+9 vision/tracker/polish tests)
 cargo test --features mcp       # +4 toolbox tests
 cargo test --features parakeet  # 46 lib (+1 tar.bz2 extraction test)
 ```
@@ -424,6 +424,24 @@ download `yolo11n.pt` from
 `python -c "from ultralytics import YOLO; YOLO('yolo11n.pt').export(format='onnx', opset=12, imgsz=640)"`.
 No `onnxslim` = the simplifier step logs a non-fatal warning.
 
+**Vision label polish (Proposal 076):** the stock `yolov11n` is a
+closed-vocabulary 80-class COCO model, so it mislabels arbitrary objects
+(a pen → "knife"). The opt-in VLM polish layer fixes this: when
+`Settings.vision.polish_enabled` is on, the detect loop crops each
+low-confidence box, PNG-encodes it as a base64 data-URI, and sends a
+**multimodal** OpenAI-compatible request (image + text) through the *same*
+`LocalOpenAiProvider` transport used by text polish (`local_openai.rs`). The
+returned `{label, confidence}` replaces the COCO label (badged `VLM` in the
+overlay). Implementation: `vision/polish.rs` (`VisionPolisher` + `prepare_request`
+/`resolve`, crop→base64 PNG), `openai_shape::{build_vision_body, parse_label_response,
+vision_polish_prompt}`, `LocalOpenAiProvider::describe_crop`, and a dedicated
+`nvoos-vision-polish` thread (owns a tokio runtime) so the ~500 ms VLM
+round-trip never stalls the 15 fps detect loop. Default model
+`qwen/qwen2.5-vl-7b` (the reference VLM for structured-JSON grounding; verified
+live on the reference PC — it returns **fenced** JSON, which
+`parse_label_response` tolerates). The no-facial-recognition bright line is in
+the system prompt. `VisionDiagnostics` gained `polish_enabled/provder/model/calls/results`.
+
 ## Stage-2 polish providers (local LLM cleanup)
 
 Stage-2 is the optional LLM polish that runs **after** Stage-1 deterministic
@@ -628,6 +646,20 @@ New this session (2026-10-13, implemented): **local object detection +
   CPU). Gates green: 85 lib + 17 golden + 6 history + 5 validation, clippy
   default + `mcp` + `camera` + `vision`, `cargo fmt --check`, `npm run build`.
   Deferred M5: MediaPipe-hand model + ByteTrack low-confidence recovery.
+
+Follow-up (2026-10-13): **VLM label polish (Proposal 076)** for the COCO-mislabel
+  problem — see "Vision label polish" above. Default model is `qwen/qwen2.5-vl-7b`
+  (note the `qwen/` prefix), verified live on the reference PC: LM Studio returns
+  the label as **fenced** JSON (``` ```json {…} ``` ```), which
+  `parse_label_response` tolerates. Also fixed the **duplicate-track bug**: a
+  pinned track kept drifting via `predict()` while unmatched, so a re-appearing
+  object spawned a second track; the spawn step now re-associates any detection
+  still overlapping a live/pinned track (IoU > 0.1) instead of spawning, and the
+  pinned grace period is `max_age*2`. The Home "System" card, `README.md`
+  (camera/vision features + feature flags), and `NOTICE.md` (model-weight
+  licenses: YOLO AGPL-3.0, et al.) were surfaced. Gates green this session:
+  94 lib + 17 golden + 6 history + 5 validation, clippy default + `mcp` +
+  `camera` + `vision`.
 Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
 addon permission tweak for `cred_x.SECRET`, P4 (Linux) port, the macOS

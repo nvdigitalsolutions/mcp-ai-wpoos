@@ -118,6 +118,97 @@ pub fn parse_chat_response(payload: &Value) -> AppResult<String> {
     }
 }
 
+/// System prompt for the vision label-polish step (Proposal 076): name the
+/// object in the supplied crop, returning a compact JSON object. The bright
+/// line is explicit and non-negotiable: objects/assets only, never people.
+#[cfg(feature = "vision")]
+pub fn vision_polish_prompt() -> &'static str {
+    "You are a precise object recognizer. The supplied image is a cropped region \
+     of a live webcam frame. Identify the single most prominent object visible. \
+     Return ONLY a JSON object with exactly two keys: \"label\" (a short, \
+     common-name noun phrase, lowercase, e.g. \"coffee mug\", \"ballpoint pen\", \
+     \"notebook\") and \"confidence\" (a number 0 to 1). Name objects and \
+     physical assets only — never identify, describe, or classify people's faces, \
+     bodies, or identity. If the crop is empty or unrecognizable, return \
+     {\"label\":\"unknown\",\"confidence\":0}."
+}
+
+/// Build a multimodal chat-completions body: a text instruction plus a single
+/// base64 data-URI image. `model` is omitted when `None` (LM Studio serves its
+/// single loaded model in that case).
+#[cfg(feature = "vision")]
+pub fn build_vision_body(
+    model: Option<&str>,
+    prompt: &str,
+    image_data_uri: &str,
+    temperature: f64,
+) -> Value {
+    let mut body = json!({
+        "messages": [
+            { "role": "user", "content": [
+                { "type": "text", "text": prompt },
+                { "type": "image_url", "image_url": { "url": image_data_uri } }
+            ]}
+        ],
+        "temperature": temperature
+    });
+    if let Some(model) = model {
+        body["model"] = json!(model);
+    }
+    body
+}
+
+/// Parse a vision-polish reply into `(label, confidence)`. Tolerates a
+/// model that wraps the JSON in fences or prose: the first `{…}` block is
+/// extracted and its `label`/`confidence` keys read defensively.
+#[cfg(feature = "vision")]
+pub fn parse_label_response(raw: &str) -> (String, f32) {
+    let trimmed = raw.trim();
+    // Try the whole reply first, then the first balanced {…} span (fenced
+    // code blocks are the common verbose-model failure mode).
+    if let Some(v) = try_parse_label(trimmed) {
+        return v;
+    }
+    if let (Some(start), Some(end)) = (trimmed.find('{'), trimmed.rfind('}')) {
+        if end > start {
+            if let Some(v) = try_parse_label(&trimmed[start..=end]) {
+                return v;
+            }
+        }
+    }
+    // No JSON at all: fall back to the raw text as the label.
+    let label = trimmed
+        .split_whitespace()
+        .take(4)
+        .collect::<Vec<_>>()
+        .join(" ");
+    (
+        if label.is_empty() {
+            "unknown".into()
+        } else {
+            label
+        },
+        0.5,
+    )
+}
+
+#[cfg(feature = "vision")]
+fn try_parse_label(json_fragment: &str) -> Option<(String, f32)> {
+    let v: Value = serde_json::from_str(json_fragment).ok()?;
+    let label = v
+        .get("label")
+        .and_then(|x| x.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())?
+        .to_string();
+    let confidence = v
+        .get("confidence")
+        .and_then(|x| x.as_f64())
+        .unwrap_or(0.5)
+        .clamp(0.0, 1.0) as f32;
+    Some((label, confidence))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -156,5 +247,56 @@ mod tests {
     fn empty_content_is_error() {
         let payload = json!({ "choices": [{ "message": { "content": null } }] });
         assert!(parse_chat_response(&payload).is_err());
+    }
+
+    #[cfg(feature = "vision")]
+    mod vision {
+        use super::*;
+
+        #[test]
+        fn vision_body_is_multimodal_image_url() {
+            let body = build_vision_body(
+                Some("qwen2.5-vl-7b-instruct"),
+                "name it",
+                "data:image/png;base64,AAA",
+                0.0,
+            );
+            assert_eq!(body["model"], "qwen2.5-vl-7b-instruct");
+            let content = &body["messages"][0]["content"];
+            assert!(content.is_array());
+            let items = content.as_array().unwrap();
+            assert_eq!(items.len(), 2);
+            assert_eq!(items[0]["type"], "text");
+            assert_eq!(items[1]["type"], "image_url");
+            assert_eq!(items[1]["image_url"]["url"], "data:image/png;base64,AAA");
+        }
+
+        #[test]
+        fn vision_body_omits_model_when_none() {
+            let body = build_vision_body(None, "name it", "data:image/png;base64,AAA", 0.0);
+            assert!(body.get("model").is_none());
+        }
+
+        #[test]
+        fn label_parser_reads_plain_json() {
+            let (label, conf) = parse_label_response(r#"{"label":"coffee mug","confidence":0.91}"#);
+            assert_eq!(label, "coffee mug");
+            assert!((conf - 0.91).abs() < 1e-4);
+        }
+
+        #[test]
+        fn label_parser_tolerates_fenced_json() {
+            let raw = "Here is my answer:\n```json\n{\"label\":\"ballpoint pen\",\"confidence\":0.77}\n```";
+            let (label, conf) = parse_label_response(raw);
+            assert_eq!(label, "ballpoint pen");
+            assert!((conf - 0.77).abs() < 1e-4);
+        }
+
+        #[test]
+        fn label_parser_falls_back_to_raw_text() {
+            let (label, conf) = parse_label_response("it is a stapler");
+            assert!(label.contains("stapler"));
+            assert!(conf > 0.0);
+        }
     }
 }

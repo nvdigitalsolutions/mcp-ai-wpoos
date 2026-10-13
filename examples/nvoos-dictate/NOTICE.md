@@ -15,6 +15,14 @@ This application integrates with the NV oOS plugin over the network (REST)
 only. It does not link or embed GPL-3.0 plugin code, so the proprietary
 boundary is maintained.
 
+The application may download and load third-party model weights at runtime
+(never bundled in the installer); each carries its own license and is
+downloaded at first use: Parakeet (CC-BY-4.0), Whisper (MIT), Moonshine
+(MIT), Silero VAD (MIT), and the YOLO object-detector weights (AGPL-3.0,
+Ultralytics). The optional vision label-polish layer talks to your local
+LM Studio / Ollama server as a separate process — no model code is embedded
+or redistributed by this application.
+
 For licensing enquiries: licensing@nvdigitalsolutions.com
 
 SPDX identifier for these files: `LicenseRef-Proprietary`

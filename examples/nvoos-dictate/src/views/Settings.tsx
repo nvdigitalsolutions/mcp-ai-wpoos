@@ -30,6 +30,9 @@ export default function SettingsView({ onChanged, status }: Props) {
   const [visionModels, setVisionModels] = useState<
     { id: string; description: string; size_mb: number; license: string; installed: boolean }[]
   >([]);
+  const [modelDownloading, setModelDownloading] = useState<string | null>(null);
+  const [polishTesting, setPolishTesting] = useState(false);
+  const [visionPolishModels, setVisionPolishModels] = useState<string[]>([]);
 
   // Latest settings + a debounce timer: typing must not fire an
   // `update_settings` (which swaps the speech engine) on every keystroke.
@@ -117,6 +120,34 @@ export default function SettingsView({ onChanged, status }: Props) {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => void flush(), 400);
     return Promise.resolve();
+  };
+
+  const downloadModel = async (model: string) => {
+    setModelDownloading(model);
+    setMessage('');
+    try {
+      await api.downloadVisionModel(model);
+      // Refresh the catalogue so the installed flag updates.
+      setVisionModels(await api.getVisionModels());
+    } catch (e) {
+      setMessage(`Download failed: ${e}`);
+    } finally {
+      setModelDownloading(null);
+    }
+  };
+
+  const testVisionPolish = async () => {
+    setPolishTesting(true);
+    setMessage('');
+    try {
+      const result = await api.testVisionPolish();
+      setVisionPolishModels(result.models);
+      setMessage(result.message);
+    } catch (e) {
+      setMessage(`Vision test failed: ${e}`);
+    } finally {
+      setPolishTesting(false);
+    }
   };
 
   return (
@@ -266,7 +297,7 @@ export default function SettingsView({ onChanged, status }: Props) {
             <>
               <h2>Vision</h2>
               <label className="row">
-                <span>Object detection</span>
+                <span>Object detection (auto-start with camera)</span>
                 <input
                   type="checkbox"
                   checked={settings.vision.enabled}
@@ -275,58 +306,173 @@ export default function SettingsView({ onChanged, status }: Props) {
                   }
                 />
               </label>
-              {settings.vision.enabled && (
+              <label className="row">
+                <span>Detector model</span>
+                <select
+                  value={settings.vision.detector}
+                  onChange={(e) =>
+                    patch({ vision: { ...settings.vision, detector: e.target.value } })
+                  }
+                >
+                  {visionModels.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.id}
+                      {m.installed ? '' : ' (not downloaded)'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="btn-row">
+                {visionModels
+                  .filter((m) => !m.installed)
+                  .map((m) => (
+                    <button
+                      key={m.id}
+                      className="btn ghost"
+                      disabled={modelDownloading !== null}
+                      onClick={() => downloadModel(m.id)}
+                    >
+                      {modelDownloading === m.id ? 'Downloading…' : `Download ${m.id}`}
+                    </button>
+                  ))}
+              </div>
+              <label className="row">
+                <span>Confidence threshold</span>
+                <input
+                  type="number"
+                  step={0.05}
+                  min={0.05}
+                  max={0.95}
+                  value={settings.vision.confidence}
+                  onChange={(e) =>
+                    patch({
+                      vision: {
+                        ...settings.vision,
+                        confidence: parseFloat(e.target.value) || 0.25,
+                      },
+                    })
+                  }
+                />
+              </label>
+              <label className="row">
+                <span>Stable track ids (click-to-pin)</span>
+                <input
+                  type="checkbox"
+                  checked={settings.vision.track_objects}
+                  onChange={(e) =>
+                    patch({ vision: { ...settings.vision, track_objects: e.target.checked } })
+                  }
+                />
+              </label>
+
+              <h3>Label polish (local VLM)</h3>
+              <label className="row">
+                <span>Relabel detections with a vision model</span>
+                <input
+                  type="checkbox"
+                  checked={settings.vision.polish_enabled}
+                  onChange={(e) =>
+                    patch({ vision: { ...settings.vision, polish_enabled: e.target.checked } })
+                  }
+                />
+              </label>
+              {settings.vision.polish_enabled && (
                 <>
                   <label className="row">
-                    <span>Detector model</span>
+                    <span>Provider</span>
                     <select
-                      value={settings.vision.detector}
+                      value={settings.vision.polish_provider}
                       onChange={(e) =>
-                        patch({ vision: { ...settings.vision, detector: e.target.value } })
+                        patch({
+                          vision: { ...settings.vision, polish_provider: e.target.value },
+                        })
                       }
                     >
-                      {visionModels.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.id}
-                          {m.installed ? '' : ' (not downloaded)'}
-                        </option>
-                      ))}
+                      <option value="lm_studio">LM Studio</option>
+                      <option value="ollama">Ollama</option>
                     </select>
                   </label>
                   <label className="row">
-                    <span>Confidence threshold</span>
+                    <span>Vision model</span>
+                    <input
+                      type="text"
+                      value={settings.vision.polish_model}
+                      placeholder="qwen/qwen2.5-vl-7b"
+                      onChange={(e) =>
+                        patch({ vision: { ...settings.vision, polish_model: e.target.value } })
+                      }
+                    />
+                  </label>
+                  <div className="btn-row">
+                    <button className="btn ghost" onClick={testVisionPolish}>
+                      {polishTesting ? 'Testing…' : 'Test / list models'}
+                    </button>
+                    {visionPolishModels.length > 0 && (
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            patch({
+                              vision: { ...settings.vision, polish_model: e.target.value },
+                            });
+                          }
+                        }}
+                      >
+                        <option value="">use a discovered model…</option>
+                        {visionPolishModels.map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  <label className="row">
+                    <span>Relabel only below COCO confidence</span>
                     <input
                       type="number"
                       step={0.05}
-                      min={0.05}
+                      min={0}
                       max={0.95}
-                      value={settings.vision.confidence}
+                      value={settings.vision.polish_min_confidence}
                       onChange={(e) =>
                         patch({
                           vision: {
                             ...settings.vision,
-                            confidence: parseFloat(e.target.value) || 0.25,
+                            polish_min_confidence: parseFloat(e.target.value) || 0.5,
                           },
                         })
                       }
                     />
                   </label>
                   <label className="row">
-                    <span>Stable track ids (click-to-pin)</span>
+                    <span>VLM calls per second</span>
                     <input
-                      type="checkbox"
-                      checked={settings.vision.track_objects}
+                      type="number"
+                      step={1}
+                      min={1}
+                      max={10}
+                      value={settings.vision.polish_max_per_second}
                       onChange={(e) =>
-                        patch({ vision: { ...settings.vision, track_objects: e.target.checked } })
+                        patch({
+                          vision: {
+                            ...settings.vision,
+                            polish_max_per_second: parseInt(e.target.value, 10) || 2,
+                          },
+                        })
                       }
                     />
                   </label>
+                  <p className="muted">
+                    A local vision model (e.g. Qwen2.5-VL) names each detected object accurately,
+                    replacing the generic COCO label. Runs entirely on-device via LM Studio/Ollama.
+                  </p>
                 </>
               )}
               <p className="muted">
-                Fully on-device (YOLO via ONNX Runtime) — pixels never leave your computer. Detects
-                objects in the live preview; no facial recognition or person identity. Download the
-                detector model from Diagnostics → Engine.
+                Fully on-device (YOLO via ONNX Runtime + optional local VLM) — pixels never leave
+                your computer. Detects objects in the live preview; no facial recognition or person
+                identity. Toggle detection on the Home camera preview (or auto-start with the camera).
               </p>
             </>
           )}

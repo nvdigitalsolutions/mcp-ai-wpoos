@@ -74,6 +74,11 @@ export interface Settings {
     iou_threshold: number;
     track_objects: boolean;
     hand_model: string;
+    polish_enabled: boolean;
+    polish_provider: string; // lm_studio | ollama
+    polish_model: string;
+    polish_min_confidence: number;
+    polish_max_per_second: number;
   };
   privacy: {
     retain_meeting_audio: boolean;
@@ -192,6 +197,7 @@ export interface Detection {
   y: number;
   w: number;
   h: number;
+  source: string; // 'coco' | 'vlm'
 }
 
 export interface VisionModelStatus {
@@ -261,6 +267,11 @@ export interface DiagnosticsInfo {
     errors: number;
     last_error: string | null;
     models: VisionModelStatus[];
+    polish_enabled: boolean;
+    polish_provider: string;
+    polish_model: string;
+    polish_calls: number;
+    polish_results: number;
   };
   last_dictation: {
     window_ms: number;
@@ -323,6 +334,7 @@ export const api = {
   getVisionModels: () => invoke<VisionModelStatus[]>('get_vision_models'),
   downloadVisionModel: (model: string, force = false) =>
     invoke<string>('download_vision_model', { model, force }),
+  testVisionPolish: () => invoke<LmStudioConnectionTest>('test_vision_polish'),
 
   setNvoosCredential: (siteUrl: string, credential: string) =>
     invoke<void>('set_nvoos_credential', { siteUrl, credential }),

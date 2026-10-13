@@ -253,6 +253,7 @@ pub(crate) fn decode(
             y,
             w,
             h,
+            source: "coco".to_string(),
         });
     }
 

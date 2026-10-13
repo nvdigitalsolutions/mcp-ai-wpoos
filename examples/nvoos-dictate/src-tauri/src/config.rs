@@ -380,6 +380,19 @@ pub struct VisionConfig {
     pub track_objects: bool,
     /// Hand model id (MediaPipe-hand ONNX), or empty to disable.
     pub hand_model: String,
+    /// Vision label polish (Proposal 076): relabel detection boxes with a
+    /// local VLM. `polish_enabled` is opt-in and off by default (the always-on
+    /// YOLO path is zero-egress).
+    pub polish_enabled: bool,
+    /// Polish provider: `lm_studio` | `ollama`.
+    pub polish_provider: String,
+    /// VLM model id (e.g. `qwen2.5-vl-7b-instruct`); blank = serve the server's
+    /// single loaded model.
+    pub polish_model: String,
+    /// Only relabel boxes whose YOLO confidence is below this (0 = relabel all).
+    pub polish_min_confidence: f32,
+    /// Cap on VLM calls per second (the VLM is far slower than the detect loop).
+    pub polish_max_per_second: usize,
 }
 
 impl Default for VisionConfig {
@@ -391,6 +404,11 @@ impl Default for VisionConfig {
             iou_threshold: 0.45,
             track_objects: true,
             hand_model: String::new(),
+            polish_enabled: false,
+            polish_provider: "lm_studio".to_string(),
+            polish_model: "qwen/qwen2.5-vl-7b".to_string(),
+            polish_min_confidence: 0.5,
+            polish_max_per_second: 2,
         }
     }
 }

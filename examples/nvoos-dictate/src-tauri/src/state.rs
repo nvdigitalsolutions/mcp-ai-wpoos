@@ -319,12 +319,10 @@ impl AppState {
 
     /// Start (or restart) the resident vision controller on the configured
     /// detector model, pulling frames from the resident camera ring. Requires
-    /// a running camera; a no-op error when the `vision` feature is absent.
+    /// a running camera; errors when the `vision` feature is absent, the model
+    /// is not downloaded, or no camera is running.
     pub fn restart_vision(&self) -> AppResult<()> {
         let settings = self.settings_snapshot();
-        if !settings.vision.enabled {
-            return Ok(());
-        }
         let model_path = self.vision_model_path()?;
         if !model_path.is_file() {
             return Err(AppError::Model(format!(
@@ -345,15 +343,64 @@ impl AppState {
             iou: settings.vision.iou_threshold,
         };
         let tracker_cfg = crate::vision::tracker::TrackerConfig::default();
+        // VLM label-polish (Proposal 076): opt-in, built from the polish
+        // settings; an unconfigured/disabled provider yields `None`.
+        #[cfg(feature = "vision")]
+        let polish = self.vision_polisher(&settings)?;
+        #[cfg(not(feature = "vision"))]
+        let polish: Option<crate::vision::controller::PolishConfig> = None;
         let controller = crate::vision::controller::VisionController::start(
             model_path,
             detector_cfg,
             tracker_cfg,
             frame,
+            polish,
         )?;
         tracing::info!("started vision detection loop");
         *self.vision.lock().unwrap() = Some(Arc::new(controller));
         Ok(())
+    }
+
+    /// Build the VLM label-polish config (Proposal 076) from `Settings.vision`,
+    /// or `None` when polish is disabled. The local provider is built with the
+    /// same secret discipline as the Stage-2 text polish providers.
+    #[cfg(feature = "vision")]
+    fn vision_polisher(
+        &self,
+        settings: &Settings,
+    ) -> AppResult<Option<crate::vision::controller::PolishConfig>> {
+        if !settings.vision.polish_enabled {
+            return Ok(None);
+        }
+        let provider = match settings.vision.polish_provider.as_str() {
+            "ollama" => crate::cleanup::providers::local_openai::LocalOpenAiProvider::new(
+                crate::cleanup::providers::local_openai::LocalKind {
+                    name: "Ollama",
+                    id: "ollama",
+                },
+                &settings.ollama.base_url,
+                &settings.vision.polish_model,
+                settings.ollama.load_timeout_ms,
+                self.secrets.get(KEY_OLLAMA_TOKEN)?,
+            )?,
+            // `lm_studio` and anything else defaults to LM Studio.
+            _ => crate::cleanup::providers::local_openai::LocalOpenAiProvider::new(
+                crate::cleanup::providers::local_openai::LocalKind {
+                    name: "LM Studio",
+                    id: "lm_studio",
+                },
+                &settings.lm_studio.base_url,
+                &settings.vision.polish_model,
+                settings.lm_studio.load_timeout_ms,
+                self.secrets.get(KEY_LM_STUDIO_TOKEN)?,
+            )?,
+        };
+        let polisher = crate::vision::polish::VisionPolisher::new(provider)?;
+        Ok(Some(crate::vision::controller::PolishConfig {
+            polisher: std::sync::Arc::new(polisher),
+            min_confidence: settings.vision.polish_min_confidence,
+            max_per_second: settings.vision.polish_max_per_second,
+        }))
     }
 
     /// Stop the resident vision controller and release the detector.
