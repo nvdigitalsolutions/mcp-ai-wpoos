@@ -163,7 +163,14 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $status_code ) {
-			WP_MCP_AI_Admin_Settings::log( 'Google Drive token request returned unexpected status.', array( 'status' => $status_code ) );
+			$response_body = wp_remote_retrieve_body( $response );
+			WP_MCP_AI_Admin_Settings::log(
+				'Google Drive token request returned unexpected status.',
+				array(
+					'status' => $status_code,
+					'body'   => $response_body,
+				)
+			);
 
 			return new WP_Error(
 				'wp_mcp_ai_drive_token_status',
@@ -174,7 +181,7 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 				),
 				array(
 					'status' => $status_code,
-					'body'   => wp_remote_retrieve_body( $response ),
+					'body'   => $response_body,
 				)
 			);
 		}

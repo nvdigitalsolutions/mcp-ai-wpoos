@@ -32,6 +32,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load the shared inline-async-tick trait before the class composes it. Unlike
+// the other trait consumers this file cannot assume the trait has already been
+// loaded by a sibling service (the harness bootstrap may run before any of
+// them), and relying on the Composer classmap autoloader here double-loads the
+// trait file via a non-once include and fatals with "Cannot declare trait
+// WP_MCP_AI_Inline_Async_Tick_Trait, because the name is already in use".
+if ( ! trait_exists( 'WP_MCP_AI_Inline_Async_Tick_Trait' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
+}
+
 /**
  * Harness eval scheduler.
  *
