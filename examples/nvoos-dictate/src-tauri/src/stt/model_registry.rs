@@ -216,7 +216,15 @@ pub async fn download(
     };
     std::fs::create_dir_all(&target_dir)?;
 
-    let tmp = target_dir.join(format!("{}.download", spec.id));
+    // The in-progress partial lives in `models_dir/` ROOT — a sibling of the
+    // final install dir — NOT inside `models_dir/{id}/`. Putting it inside
+    // the final dir means a re-download writes the `.download` file into the
+    // very directory `install_archive` must `remove_dir_all` during the swap,
+    // and a lingering Windows file-lock on the freshly written handle then
+    // makes that removal (and the rename) fail, leaving an orphaned
+    // `.download` + `.staging` with the model reported "not installed" even
+    // though the bytes fully arrived.
+    let tmp = models_dir.join(format!("{}.download", spec.id));
     // Resume a partial download when possible; HTTP Range keeps a flaky
     // connection from restarting a 600 MB pull from zero. A forced download
     // discards the partial — resuming from a corrupt prefix can never fix it.
@@ -361,6 +369,11 @@ fn install_archive(tmp: &Path, models_dir: &Path, id: &str) -> AppResult<PathBuf
     let _ = std::fs::remove_dir_all(&staging_root);
     extract_tar_bz2(tmp, &staging_root)?;
     let staging = staging_root.join(id);
+    if !staging.is_dir() {
+        return Err(AppError::Model(format!(
+            "archive for '{id}' did not extract a top-level '{id}/' directory"
+        )));
+    }
     // The fresh tree must be re-downloadable later: strip any read-only bits
     // the archive carried.
     make_writable_recursive(&staging)?;
@@ -369,10 +382,46 @@ fn install_archive(tmp: &Path, models_dir: &Path, id: &str) -> AppResult<PathBuf
     // the resident engine — the IPC layer drops it first); clear attributes
     // before attempting the replacement.
     make_writable_recursive(&final_dir).ok();
-    std::fs::remove_dir_all(&final_dir)?;
-    std::fs::rename(&staging, &final_dir)?;
+    // Windows: a deleted directory's files can take a moment to release, so
+    // the remove+rename pair can transiently fail with a sharing violation
+    // even after the handle is dropped. Retry a few times with a short
+    // backoff instead of abandoning an otherwise-complete 600 MB install.
+    replace_dir(&staging, &final_dir)?;
     let _ = std::fs::remove_dir_all(&staging_root);
     Ok(final_dir)
+}
+
+/// Remove `dest` (if present) and rename `staging` into place, retrying on
+/// transient Windows sharing violations (the classic orphaned-`.download`
+/// root cause). Bounded retries; the last I/O error is surfaced.
+#[cfg(feature = "parakeet")]
+fn replace_dir(staging: &Path, dest: &Path) -> AppResult<()> {
+    let mut last: std::io::Error = std::io::Error::other("swap did not run");
+    for attempt in 0..5 {
+        match std::fs::remove_dir_all(dest).and_then(|_| std::fs::rename(staging, dest)) {
+            Ok(()) => return Ok(()),
+            Err(e) => {
+                last = e;
+                if attempt < 4 {
+                    std::thread::sleep(replace_dir_backoff(attempt));
+                }
+            }
+        }
+    }
+    Err(AppError::Io(std::io::Error::new(
+        last.kind(),
+        format!(
+            "could not swap model into place at {}: {}",
+            dest.display(),
+            last
+        ),
+    )))
+}
+
+/// 50ms * 2^attempt backoff for the dir-swap retry.
+#[cfg(feature = "parakeet")]
+fn replace_dir_backoff(attempt: usize) -> std::time::Duration {
+    std::time::Duration::from_millis(50 * (1u64 << attempt.min(4)))
 }
 
 /// Clear read-only attributes across a tree. Windows archive metadata can
@@ -646,6 +695,34 @@ mod tests {
             .truncate(true)
             .open(&fresh)
             .unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The orphaned-`.download` regression: `replace_dir` must swap a staging
+    /// tree over an already-present destination dir (the state a completed
+    /// download leaves when the resident engine or a stale handle held the
+    /// old install), and must leave the destination fully replaced.
+    #[cfg(feature = "parakeet")]
+    #[test]
+    fn replace_dir_overwrites_existing_destination() {
+        let dir = std::env::temp_dir().join(format!("nvoos-dictate-swap-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let dest = dir.join("model");
+        let staging = dir.join("model.stage");
+        std::fs::create_dir_all(&dest).unwrap();
+        std::fs::write(dest.join("tokens.txt"), b"old").unwrap();
+        std::fs::create_dir_all(&staging).unwrap();
+        std::fs::write(staging.join("tokens.txt"), b"new").unwrap();
+
+        replace_dir(&staging, &dest).unwrap();
+
+        assert_eq!(
+            std::fs::read_to_string(dest.join("tokens.txt")).unwrap(),
+            "new"
+        );
+        assert!(!staging.exists(), "staging tree is consumed by the swap");
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
