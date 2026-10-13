@@ -106,7 +106,7 @@ cargo clippy --all-targets --features mcp -- -D warnings
 cargo clippy --all-targets --features camera -- -D warnings
 cargo clippy --all-targets --features vision -- -D warnings
 cargo test            # default (mock/embedded)
-cargo test --features vision   # 85 lib (+4 tracker tests)
+cargo test --features vision   # 94 lib (+9 vision/tracker/polish tests)
 cargo test --features mcp       # +4 toolbox tests
 cargo test --features parakeet  # 46 lib (+1 tar.bz2 extraction test)
 ```
@@ -646,6 +646,20 @@ New this session (2026-10-13, implemented): **local object detection +
   CPU). Gates green: 85 lib + 17 golden + 6 history + 5 validation, clippy
   default + `mcp` + `camera` + `vision`, `cargo fmt --check`, `npm run build`.
   Deferred M5: MediaPipe-hand model + ByteTrack low-confidence recovery.
+
+Follow-up (2026-10-13): **VLM label polish (Proposal 076)** for the COCO-mislabel
+  problem — see "Vision label polish" above. Default model is `qwen/qwen2.5-vl-7b`
+  (note the `qwen/` prefix), verified live on the reference PC: LM Studio returns
+  the label as **fenced** JSON (``` ```json {…} ``` ```), which
+  `parse_label_response` tolerates. Also fixed the **duplicate-track bug**: a
+  pinned track kept drifting via `predict()` while unmatched, so a re-appearing
+  object spawned a second track; the spawn step now re-associates any detection
+  still overlapping a live/pinned track (IoU > 0.1) instead of spawning, and the
+  pinned grace period is `max_age*2`. The Home "System" card, `README.md`
+  (camera/vision features + feature flags), and `NOTICE.md` (model-weight
+  licenses: YOLO AGPL-3.0, et al.) were surfaced. Gates green this session:
+  94 lib + 17 golden + 6 history + 5 validation, clippy default + `mcp` +
+  `camera` + `vision`.
 Remaining: PTT manual matrix + loopback meeting verification (P2
 real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
 addon permission tweak for `cred_x.SECRET`, P4 (Linux) port, the macOS
