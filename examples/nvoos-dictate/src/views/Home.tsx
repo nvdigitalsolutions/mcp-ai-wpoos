@@ -395,6 +395,16 @@ export default function Home({ status, dictate, onRefresh }: Props) {
               {status?.system_audio_available ? 'available' : 'unsupported here'}
             </span>
           </li>
+          {status?.vision_available && (
+            <li>
+              <span>Vision detection</span>
+              <span className={badge(!!status?.vision_running)}>
+                {status?.vision_running
+                  ? `running · ${status?.vision_detector ?? 'detector'}`
+                  : 'available (start from Camera preview)'}
+              </span>
+            </li>
+          )}
           <li>
             <span>NV oOS credential</span>
             <span className={badge(!!status?.nvoos_credential_stored)}>

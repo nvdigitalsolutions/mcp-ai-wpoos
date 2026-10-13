@@ -28,6 +28,12 @@ repo root for the full design).
 - **Optional AI polish** — Stage-2 pass via your NV oOS WordPress assistant
   (transcript text only, assistant credential in the OS keychain) or any
   OpenAI-compatible endpoint. A provider failure never blocks the paste.
+- **Live camera preview + object detection** (feature `camera`/`vision`) — a
+  local webcam preview with on-device YOLO object detection and stable
+  per-object tracking (SORT + click-to-pin). An opt-in **label-polish layer**
+  relabels detection boxes with a local vision-language model (LM Studio /
+  Ollama serving Qwen2.5-VL) for accurate names instead of generic COCO labels.
+  Pixels never leave the machine; no facial recognition or identity.
 - **Meeting transcription** — explicit record (mic + system audio on
   Windows via WASAPI loopback), local transcription, audio deleted after
   unless you opt into retention.
@@ -78,6 +84,8 @@ cargo build --release --features whisper           # whisper.cpp via whisper-rs 
 cargo build --release --features moonshine          # ort runtime (documented spike)
 cargo build --release --features silero-vad         # neural Silero VAD (model: catalogue entry "silero_vad")
 cargo build --release --features mcp                # local MCP stdio server (nvoos-dictate --mcp)
+cargo build --release --features camera             # live webcam preview (nokhwa)
+cargo build --release --features vision             # object detection + tracking (implies camera)
 ```
 
 - **parakeet** — API verified against sherpa-onnx 1.13.8 (the crate's own
