@@ -442,11 +442,10 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		/**
 		 * Get the Google Drive OAuth scopes for authorization requests.
 		 *
-		 * Defaults to the non-sensitive per-file scope (`drive.file`), which
-		 * lets the app see files it created or the user opened with it and
-		 * requires no Google OAuth app verification. Sites whose verified
-		 * Google Cloud project retains full-Drive access can restore the
-		 * broader restricted scopes via the
+		 * Defaults to per-file access plus full-Drive read (`drive.file` +
+		 * `drive.readonly`) so search/read tools can see the user's existing
+		 * Drive contents. Sites that want the non-sensitive-only surface
+		 * (no Google OAuth verification) can narrow it via the
 		 * `wp_mcp_ai_google_drive_oauth_scope` filter.
 		 *
 		 * @since 1.2.0
@@ -512,7 +511,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				$base_url
 			);
 
-			// Google Drive scopes (defaults to the non-sensitive drive.file scope).
+			// Google Drive scopes (full-Drive read + per-file access by default).
 			$scopes = self::get_google_drive_scopes();
 
 			// Use The PHP League OAuth2 Client if available for standardized OAuth URL generation.

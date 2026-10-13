@@ -89,7 +89,7 @@ class Test_League_OAuth2_No_Approval_Prompt extends WP_UnitTestCase {
 				'urlAuthorize'            => 'https://accounts.google.com/o/oauth2/v2/auth',
 				'urlAccessToken'          => 'https://oauth2.googleapis.com/token',
 				'urlResourceOwnerDetails' => 'https://www.googleapis.com/oauth2/v1/userinfo',
-				'scopes'                  => 'https://www.googleapis.com/auth/drive.file',
+				'scopes'                  => 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
 			)
 		);
 
