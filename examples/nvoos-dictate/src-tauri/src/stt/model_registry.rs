@@ -102,8 +102,8 @@ pub const CATALOG: &[ModelSpec] = &[
     ModelSpec {
         engine: "fastconformer",
         id: "sherpa-onnx-nemo-ctc-en-conformer-large",
-        description: "NVIDIA NeMo FastConformer-CTC Large (int8) — high-accuracy English CTC transcription (~162 MB)",
-        size_mb: 162,
+        description: "NVIDIA NeMo FastConformer-CTC Large (int8) — high-accuracy English CTC transcription (downloads the full archive incl. the 508 MB fp32 model)",
+        size_mb: 582,
         license: "CC-BY-4.0 (base NVIDIA NeMo Conformer-CTC Large model)",
         url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-ctc-en-conformer-large.tar.bz2",
         sha256: None, // upstream does not publish per-release hashes; measured + pinned after review
