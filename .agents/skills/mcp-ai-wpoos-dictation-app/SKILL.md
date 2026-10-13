@@ -23,6 +23,8 @@ with the NV oOS plugin as the optional AI-enrichment backend.
 - Changing the deterministic cleanup pipeline (golden fixtures are the backstop)
 - Wiring the Embedded addon remote-STT fallback or its auth
 - Running the benchmark harness (`transcribe_file`) or the model downloader
+- Embedding the hosted Pro SPA in the Assistant tab, or changing its reachability probe / CSP
+- Producing a "complete" hand-off exe (the full feature union, not just STT flags)
 - Continuing P2 (loopback + PTT matrix), P4/P5 ports, or distribution
 
 ## Layout
@@ -57,10 +59,33 @@ examples/nvoos-dictate/
   (whisper needs CMake + libclang on PATH — see below; whisper+parakeet
   co-link because the vendored whisper-rs-sys compiles whisper.cpp with
   the static CRT /MT, matching sherpa-onnx's prebuilt libs).
+  **"Complete" build** (every opt-in surface) is the union of all
+  feature-gated modules — engines + vision + agent + mcp:
+  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp`.
+  **Trap — a build that omits a feature silently boots with that surface
+  "not compiled", not an error.** `vision` (YOLO detection/tracking + camera
+  preview + VLM label-polish) and `agent` (browser control) are each
+  `cfg!`-gated and report `available() == false` when absent, so a
+  "working" exe can still be missing them — always specify the FULL union
+  for a hand-off exe, and verify with the string probe below.
+  `moonshine` is intentionally **excluded** from the complete list (it is a
+  documented spike — the streaming loop is unimplemented and returns
+  `Unsupported`; including it only adds an unusable engine to the dropdown).
   Quick engine-load check without the GUI: build with `mcp` too and run
   `target/debug/nvoos-dictate.exe --mcp < /dev/null` — headless mode loads
   the configured engine and prints whisper.cpp's model-load log on
   success, or "engine unavailable in headless mode: …" on failure.
+  **Debug-exe size is roughly 56 MB — that is correct, not a partial build.**
+  `--debug --no-bundle` skips the installer/MSI + WebView2 bootstrap (the app
+  runs on the system WebView2 Win11 ships), and the engine *weights* (whisper
+  ~142 MB, parakeet ~600 MB, fastconformer ~162 MB) are downloaded at runtime
+  into `%APPDATA%/nvoos-dictate/models/`, never compiled in. To **prove** a
+  build has everything, scan the PE for feature strings (MSYS `strings` is
+  usually missing; write a `.ps1` file and use
+  `[System.IO.File]::ReadAllBytes` + a regex count — plain `powershell
+  -Command` with `$var` gets mangled by MSYS, so always `-File x.ps1`):
+  the presence of `fastconformer`/`parakeet`/`whisper`/`sherpa-onnx` means
+  the engines are linked; `Assistant` means the SPA tab shipped.
   **Trap:** a plain `cargo build`/`cargo run` (debug profile) compiles with
   `devUrl` (`http://localhost:1420`) baked in, so the webview loads the
   Vite dev server at runtime and shows `ERR_CONNECTION_REFUSED` in the app
@@ -118,9 +143,9 @@ fmt/clippy/test default + `mcp` only; the native engines are local gates.
 
 ## Engine track (ADR 0003: local-first, embedded as fallback)
 
-Ordering: mock → parakeet → whisper → moonshine → embedded. The factory is
-`stt::create_engine(&EngineConfig, &EngineResources)` — `EngineResources`
-carries `models_dir` plus nvoos secrets (`nvoos_site_url`,
+Ordering: mock → parakeet → fastconformer → whisper → moonshine → embedded.
+The factory is `stt::create_engine(&EngineConfig, &EngineResources)` —
+`EngineResources` carries `models_dir` plus nvoos secrets (`nvoos_site_url`,
 `nvoos_credential`, `wp_username`, `wp_app_password`) so the `embedded`
 engine can build auth without touching the keychain itself. Call sites:
 `state.rs ensure_engine` (fetches secrets), `main.rs` headless +
@@ -155,6 +180,52 @@ parent)**, not `models_dir/{id}`. Files: `encoder.int8.onnx`,
 `decoder.int8.onnx`, `joiner.int8.onnx`, `tokens.txt` (v2 int8 = feature_dim
 80 default; v3 uses 128). TDT limit ≈ 4–5 min → meetings must be chunked
 (`meetings/chunker.rs`).
+
+### fastconformer (sherpa-onnx, feature `fastconformer`) — API VERIFIED 1.13.8
+
+NeMo FastConformer-CTC runs through the SAME `OfflineRecognizer` as parakeet,
+but via the `nemo_ctc` config slot instead of `transducer`. The key API shapes:
+
+```rust
+let mut config = OfflineRecognizerConfig::default();
+config.model_config.nemo_ctc = OfflineNemoEncDecCtcModelConfig {
+    model: Some(".../model.int8.onnx".into()),   // the ONLY nemo_ctc field
+};
+config.model_config.tokens     = Some(".../tokens.txt".into());
+config.model_config.model_type = Some("nemo_ctc".into());      // NOT nemo_transducer
+config.model_config.num_threads = n as i32;
+config.model_config.provider   = Some("cpu".into());
+config.decoding_method         = Some("greedy_search".into());
+// then the identical create_stream -> accept_waveform -> decode -> get_result flow.
+```
+
+Important API facts (verified against docs.rs sherpa-onnx 1.13.8):
+- `OfflineModelConfig` has a `nemo_ctc: OfflineNemoEncDecCtcModelConfig` field
+  whose only member is `model: Option<String>` — there is **no** separate
+  encoder/decoder/joiner for CTC, just one ONNX file.
+- `model_type = "nemo_ctc"`; `tokens`/`num_threads`/`provider` live on the
+  PARENT `OfflineModelConfig`, not on the `nemo_ctc` sub-struct.
+
+The official sherpa-onnx download for this family is **
+`sherpa-onnx-nemo-ctc-en-conformer-large.tar.bz2`** (NGC's
+`stt_en_conformer_ctc_large` — *not* the hyphenated
+`stt-en-fastconformer-ctc-large` name; the NGC model IS a fastconformer
+architecture). Archive contains `model.int8.onnx` (162 MB) + `tokens.txt` +
+`test_wavs/`; unpack into `models_dir` (the parent) like parakeet. Registry
+id is `sherpa-onnx-nemo-ctc-en-conformer-large`.
+
+**Registry `is_installed()` is engine-aware:** the CTC archive uses
+`model.int8.onnx` + `tokens.txt`, NOT the transducer
+`encoder/decoder/joiner` trio — `model_registry.rs::is_installed` branches on
+`spec.engine == "fastconformer"` for the CTC layout. When adding any archive
+engine with a differing file layout, extend that match arm.
+
+**Archive extraction is NOT parakeet-only anymore.** `extract_tar_bz2` /
+`install_archive` / `make_writable_recursive` were gated `#[cfg(feature =
+"parakeet")]` but are now `#[cfg(any(feature = "parakeet", feature =
+"fastconformer"))]` (and the `download` inline block mirrors it). Any new
+archive-based engine must be added to that `any(...)` list or its download
+will hit the "archive models require the … feature" error.
 
 ### whisper (whisper-rs 0.16, feature `whisper`) — API VERIFIED
 
@@ -599,6 +670,63 @@ chunked path. **Deferred:** GUI file-picker (needs `tauri-plugin-dialog`), a
 `transcripts.media` DB column (no consumer), and media fixtures for
 decode e2e tests.
 
+## Assistant SPA tab (embedded hosted Pro SPA) + reachability probe
+
+A third frontend surface (in addition to the chat SPA and the dictation
+main window): a new **Assistant** tab in the dictate app that embeds the
+hosted NV oOS Pro SPA — the same connect-to-any-backend surface as
+`examples/nvoos-pro-spa-vite` — in an `<iframe>`. This is the "Option 1"
+(hosted iframe) alternative to vendoring spa-v2 into the dictate app, which
+collides with React-version/dependency/CSP/network-model conflicts and is
+nearly always the wrong choice.
+
+### Why a frame, not a native mount
+
+`nvoos-pro-spa-vite` mounts spa-v2 sources directly via a Vite alias and
+does its own `window.NVOOS_PRO_SPA` bootstrap + fetch/auth wrapper. Reproducing
+that inside the dictate app means porting a second full React app (spa-v2's
+`@ai-sdk/react`, `zustand`, `react-router-dom`, `cytoscape`, `jquery`, …) and
+breaking the dictate app's "no remote content, no network" webview model. The
+iframe sidesteps all of it: the SPA's connect screen, auth modes, and SSE chat
+run inside the frame's own origin; the dictate webview never talks to
+WordPress.
+
+### Wiring (all shipped)
+
+- **Setting** — `Settings.spa.url` (`config.rs` `SpaConfig`; serde-default,
+  backward-compatible). The Settings → NV oOS tab exposes "Assistant tab URL".
+- **View** — `views/Assistant.tsx` renders a sandboxed iframe
+  (`allow-scripts allow-same-origin allow-forms`, `referrerPolicy no-referrer`)
+  and a "not configured" hint when the URL is empty. Reads the URL via the
+  existing `get_settings` IPC.
+- **Status card** — `StatusInfo.spa_configured` + `spa_url` (from `get_status`)
+  drive an "Assistant (Pro SPA)" row on the Home System card (configured badge
+  + URL).
+- **CSP** — `tauri.conf.json` `security.csp` gained `frame-src https:`. It is
+  HTTPS-any (NOT a pinned host) because the URL is user-configurable and
+  unknown at bundle time; a single-host lock needs a dynamic-CSP/navigation-
+  handler change. Cookie-mode login inside the iframe can be flaky (third-party
+  cookie / SameSite rules) — bearer/guest/wp-application-password modes are
+  more iframe-friendly.
+
+### Reachability probe (`check_spa` IPC) — the two hard rules
+
+1. **The probe runs in Rust, never in the webview.** The dictate webview's
+   CSP is `connect-src ipc:…` — it cannot fetch the SPA origin itself. So
+   reachability is a `reqwest` call in `ipc.rs`, matching the existing
+   `test_nvoos_connection`/`test_lm_studio_connection` pattern.
+2. **On-demand only, not on the auto-refresh path.** `get_status`/`refresh()`
+   stays network-free; the Home card has a "Check" button that fires
+   `check_spa(url)` once. A hung SPA can never stall status polling.
+
+Probe properties: 8 s timeout, `redirect: Policy::none()` (the configured
+origin is what's tested, not a redirect target), no auth headers, HTTPS-only
+plus `http://localhost`/`127.0.0.1` for dev (see `validate_spa_url`), and any
+2xx–4xx counts as "reachable" (a hardened host's 401/403 still proves the
+origin answers). `validate_spa_url` is a pure fn with unit tests locking the
+security contract (`rejects_plaintext_remote_host` etc.) — extend them when
+the URL rules change.
+
 ## Status & follow-ups (2026-10-13)
 
 Done: P0 core, P1 (nvoos client/archive), P3 (MCP stdio), engine track live-
@@ -722,6 +850,19 @@ DMG). An alternative macOS design is scoped in proposal 068
 (`docs/project/proposals/068-macos-dictation-port-proposal.md`: listen-only
 CGEventTap PTT, Metal/CoreML STT, Sparkle distribution) — reconcile the
 two before merging the port.
+
+New this session (2026-10-13): **FastConformer STT engine** (the `nemo_ctc`
+slot, `fastconformer` feature, registry id
+`sherpa-onnx-nemo-ctc-en-conformer-large`) and the **Assistant SPA tab**
+(hosted-Pro-SPA iframe + `Settings.spa.url` + the Rust-side `check_spa`
+reachability probe + `frame-src https:` CSP). See the two sections above for
+full detail. Gates green on the reference PC: `cargo check`/`clippy
+--all-targets -- -D warnings`/`fmt --check` (default + `fastconformer`),
+`cargo test --lib` 107 passed (incl. 4 `validate_spa_url` tests), `npm run
+build`. The complete debug exe is the full feature union
+`fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp` — NOT just
+the STT flags; see the "complete build" note in Build & run. PR #7047 tracks
+the code change (branch `add/fastconformer-engine-and-assistant-spa-tab`).
 
 ## Related skills
 
