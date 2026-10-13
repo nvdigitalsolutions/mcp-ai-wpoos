@@ -70,6 +70,7 @@ class WP_MCP_AI_Self_Hosted_OCR_Client {
 			'has_det_markers'   => true,
 			'setting_key'       => 'unlimited_ocr_endpoint_url',
 			'model_name'        => 'Unlimited-OCR',
+			'model_id'          => 'baidu/Unlimited-OCR',
 		),
 		'deepseek_ocr'  => array(
 			'ngram_size'          => 30,
@@ -81,6 +82,7 @@ class WP_MCP_AI_Self_Hosted_OCR_Client {
 			'has_det_markers'     => false,
 			'setting_key'         => 'deepseek_ocr_endpoint_url',
 			'model_name'          => 'DeepSeek-OCR',
+			'model_id'            => 'deepseek-ai/DeepSeek-OCR',
 			'whitelist_token_ids' => array( 128821, 128822 ), // <td>, </td>
 		),
 	);
@@ -353,31 +355,37 @@ class WP_MCP_AI_Self_Hosted_OCR_Client {
 			);
 		}
 
-		// Assemble request payload.
+		// Assemble the request payload against the vLLM OpenAI-compatible
+		// contract. vLLM wraps its non-standard fields under `extra_body`, and
+		// the per-request no-repeat-ngram processor args travel in `vllm_xargs`.
+		// The `image_mode` gundam/base selection is handled server-side by vLLM
+		// (single image -> gundam crop, multi-image -> base) so it is NOT sent.
+		// See https://recipes.vllm.ai/baidu/Unlimited-OCR and
+		// https://recipes.vllm.ai/deepseek-ai/DeepSeek-OCR.
+		$vllm_xargs = array(
+			'ngram_size'  => $defaults['ngram_size'],
+			'window_size' => $is_multi ? $defaults['window_size_multi'] : $defaults['window_size'],
+		);
+
+		// Add whitelist token IDs for DeepSeek-OCR (<td>, </td>).
+		if ( ! empty( $defaults['whitelist_token_ids'] ) ) {
+			$vllm_xargs['whitelist_token_ids'] = $defaults['whitelist_token_ids'];
+		}
+
 		$payload = array(
-			'model'                  => $defaults['model_name'],
-			'messages'               => array(
+			'model'       => $defaults['model_id'],
+			'messages'    => array(
 				array(
 					'role'    => 'user',
 					'content' => $content,
 				),
 			),
-			'temperature'            => $temperature,
-			'skip_special_tokens'    => false,
-			'images_config'          => array(
-				'image_mode' => $image_mode,
-			),
-			'custom_logit_processor' => 'DeepseekOCRNoRepeatNGramLogitProcessor',
-			'custom_params'          => array(
-				'ngram_size'  => $defaults['ngram_size'],
-				'window_size' => $is_multi ? $defaults['window_size_multi'] : $defaults['window_size'],
+			'temperature' => $temperature,
+			'extra_body'  => array(
+				'skip_special_tokens' => false,
+				'vllm_xargs'          => $vllm_xargs,
 			),
 		);
-
-		// Add whitelist token IDs for DeepSeek-OCR.
-		if ( ! empty( $defaults['whitelist_token_ids'] ) ) {
-			$payload['custom_params']['whitelist_token_ids'] = $defaults['whitelist_token_ids'];
-		}
 
 		/**
 		 * Filter the OCR request payload before sending.
