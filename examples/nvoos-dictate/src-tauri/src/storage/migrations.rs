@@ -18,7 +18,6 @@ pub fn migrations() -> Migrations<'static> {
             );
             CREATE INDEX idx_transcripts_created ON transcripts(created_at);",
         ),
-        M::up("ALTER TABLE transcripts ADD COLUMN media TEXT NOT NULL DEFAULT '';"),
         M::up(
             "CREATE TABLE dictionary (
                 term        TEXT PRIMARY KEY,
@@ -40,5 +39,8 @@ pub fn migrations() -> Migrations<'static> {
                 value TEXT NOT NULL
             );",
         ),
+        // Appended (never insert mid-list): `rusqlite_migration` keys applied
+        // migrations by position, so reordering breaks existing databases.
+        M::up("ALTER TABLE transcripts ADD COLUMN media TEXT NOT NULL DEFAULT '';"),
     ])
 }
