@@ -393,16 +393,24 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $status_code ) {
+			$body = wp_remote_retrieve_body( $response );
+
+			// A 400 (as opposed to 401/403/404) is almost always a scope or
+			// request-shape problem — the Sheets API (sheets.googleapis.com/v4)
+			// needs the spreadsheets.readonly scope, which the Drive token may
+			// not carry. Surface that hint distinctly so it isn't mistaken for
+			// a file-lookup failure.
+			$message = 400 === $status_code
+				? __( 'Google Sheets rejected the request (HTTP 400). The API token needs the "spreadsheets.readonly" scope and a valid sheet name; check the workspace connection scopes.', 'mcp-ai-wpoos-pro' )
+				/* translators: %d: HTTP status code. */
+				: sprintf( __( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ), $status_code );
+
 			return new WP_Error(
 				'wp_mcp_ai_drive_http_status',
-				sprintf(
-					/* translators: %d: HTTP status code. */
-					__( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ),
-					$status_code
-				),
+				$message,
 				array(
 					'status' => $status_code,
-					'body'   => wp_remote_retrieve_body( $response ),
+					'body'   => $body,
 				)
 			);
 		}
@@ -447,13 +455,19 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $status_code ) {
+			$body = wp_remote_retrieve_body( $response );
+
+			$message = 400 === $status_code
+				? __( 'Google Sheets rejected the request (HTTP 400). The API token needs the "spreadsheets.readonly" scope and a valid sheet name; check the workspace connection scopes.', 'mcp-ai-wpoos-pro' )
+				/* translators: %d: HTTP status code. */
+				: sprintf( __( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ), $status_code );
+
 			return new WP_Error(
 				'wp_mcp_ai_drive_http_status',
-				/* translators: %d: HTTP status code. */
-				sprintf( __( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ), $status_code ),
+				$message,
 				array(
 					'status' => $status_code,
-					'body'   => wp_remote_retrieve_body( $response ),
+					'body'   => $body,
 				)
 			);
 		}

@@ -26,6 +26,18 @@ class WP_MCP_AI_Fnb_Settings {
 	const OPTION_KEY = 'wp_mcp_ai_fnb_settings';
 
 	/**
+	 * Google Drive file ID of the canonical Surf Club Midigama demo workbook.
+	 *
+	 * This is the single shared spreadsheet whose worksheets/tabs hold all 17
+	 * spec data tables plus the "assumptions" sheet. It is used as the
+	 * fallback source whenever `data_workbook_id` is empty so a fresh install
+	 * can resolve the demo data without the admin hand-editing settings.
+	 *
+	 * @var string
+	 */
+	const DEMO_WORKBOOK_ID = '1HNq3xBZtbzOboxbkrVcB7lTc-JUOI5On';
+
+	/**
 	 * Default settings.
 	 *
 	 * @var array
@@ -90,6 +102,35 @@ class WP_MCP_AI_Fnb_Settings {
 	 */
 	public static function is_demo_mode() {
 		return (bool) self::get( 'demo_mode', true );
+	}
+
+	/**
+	 * Resolve the Google Drive file ID of the source workbook.
+	 *
+	 * Returns the explicitly configured `data_workbook_id` when set; otherwise
+	 * returns the canonical demo-workbook ID (filterable via
+	 * `wp_mcp_ai_fnb_demo_workbook_id`) so the read path always has a concrete
+	 * spreadsheet to resolve to instead of falling through to split-file
+	 * lookup and a dead-end "file not found" error.
+	 *
+	 * @return string Drive file ID (may be empty when the filter suppresses it).
+	 */
+	public static function workbook_id() {
+		$explicit = (string) self::get( 'data_workbook_id', '' );
+		$explicit = trim( $explicit );
+		if ( '' !== $explicit ) {
+			return $explicit;
+		}
+
+		/**
+		 * Filter the F&B demo workbook Drive file ID used as the fallback source.
+		 *
+		 * Return an empty string to disable the demo-workbook fallback entirely
+		 * (forcing split-file lookup against the configured folders).
+		 *
+		 * @param string $demo_workbook_id Drive file ID.
+		 */
+		return (string) apply_filters( 'wp_mcp_ai_fnb_demo_workbook_id', self::DEMO_WORKBOOK_ID );
 	}
 
 	/**
