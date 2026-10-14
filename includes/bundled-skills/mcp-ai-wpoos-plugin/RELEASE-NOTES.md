@@ -14,7 +14,7 @@ Operational content stays in SKILL.md; append new per-version sections here.
 - **Dictation browser agent + FastConformer (PRs #7041, #7043–#7050)** — `examples/nvoos-dictate`: the `agent` feature (CDP browser control via chromiumoxide, ReAct loop, origin-guarded safety gate, HITL Approve/Deny, `settings.agent.model` brain), a `fastconformer` nemo_ctc STT engine, an explicit `polish_enabled` gate, and model-download hardening (`.download` moved out of the install dir, 5× swap retry, `spawn_blocking`).
 - **NV oOS SPA hub + Pro SPA v2 fixes (PRs #7063, #7066, #7064, #7072)** — `GET /mcp-ai-pro/v1/spa-surfaces` (`WP_MCP_AI_Pro_SPA_Surfaces_Controller`); the dictate "NV oOS" multi-surface hub; last-message-save + assistant-memory fixes; the `trait-wp-mcp-ai-spa-credential-auth.php` guest/bearer/credential drawer fix (401 in the dictate iframe).
 - **Dependency (PR #7059)** — `shell-quote` → `>=1.11.0` (1.12.0) across root/saas-controller/Pro SPA manifests (GHSA-pqg4-j6r4-53mv).
-- **Tool counts** — ~354 base + ~1,376 Pro (~1,730 total; **unchanged** — zero registry diff). Security classes 12, providers 18, addons 30 — all unchanged. Stale 1.2.4 build ZIPs removed (33 files).
+- **Tool counts** — ~354 base + ~1,376 Pro (~1,730 total; **unchanged** — zero registry diff). Security classes 12, providers 18, addons 30 — all unchanged. Stale 1.2.4 build ZIPs removed (30 files).
 
 ## GTmetrix × WPCode Toolkit, Food & Beverage Phase 9 & the Hardened Dictation App (v1.2.5)
 
