@@ -47,11 +47,15 @@ describe( 'assistantStore', () => {
 	} );
 
 	describe( 'getInitialAssistantId', () => {
-		it( 'falls back to the server assistant when the switcher is disabled', async () => {
+		it( 'falls back to the server assistant when the instance is pinned', async () => {
 			localStorage.setItem( 'nvoos-pro-spa.active-assistant-3', '99' );
 			setRuntime( {
 				...BASE_RUNTIME,
-				config: { ...BASE_RUNTIME.config, assistantSelector: false },
+				config: {
+					...BASE_RUNTIME.config,
+					assistantSelector: false,
+					pinnedAssistant: true,
+				},
 			} );
 
 			vi.resetModules();
@@ -59,9 +63,26 @@ describe( 'assistantStore', () => {
 				'../stores/assistantStore'
 			);
 
-			// A pinned/defaulted instance must ignore stale selections from the
+			// A pinned instance must ignore stale selections from the
 			// admin SPA and bind to the server-provided assistant.
 			expect( freshStore.getState().assistantId ).toBe( 7 );
+		} );
+
+		it( 'honors a stored selection for a logged-in, non-pinned surface even without the switcher', async () => {
+			localStorage.setItem( 'nvoos-pro-spa.active-assistant-3', '99' );
+			setRuntime( {
+				...BASE_RUNTIME,
+				config: { ...BASE_RUNTIME.config, assistantSelector: false, pinnedAssistant: false },
+			} );
+
+			vi.resetModules();
+			const { useAssistantStore: freshStore } = await import(
+				'../stores/assistantStore'
+			);
+
+			// Non-pinned surfaces (e.g. the dictation app's shortcode) still
+			// remember the user's last assistant.
+			expect( freshStore.getState().assistantId ).toBe( 99 );
 		} );
 
 		it( 'honors a stored selection when the switcher is enabled', async () => {
