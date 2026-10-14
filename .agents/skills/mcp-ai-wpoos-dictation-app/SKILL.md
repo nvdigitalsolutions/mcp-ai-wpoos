@@ -1,14 +1,14 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — build/run on Windows/MSVC, the local-first engine track (parakeet/whisper/moonshine/silero-vad), the embedded remote-STT fallback, the Stage-2 polish provider track (disabled/openai_compat/nvoos plus local LM Studio and Ollama), the file/media decode seam (Symphonia 0.5), the live camera + local object-detection/tracking track (Proposals 073 + 075) with an opt-in VLM label-polish layer (Proposal 076), model registry + verification harnesses, the plugins.updater boot-crash config rule, and the full test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, file/video transcription, camera/vision detection, or VLM relabeling.
+description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — build/run on Windows/MSVC, the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the embedded remote-STT fallback, the Stage-2 polish provider track (disabled/openai_compat/nvoos plus local LM Studio and Ollama), the file/media decode seam (Symphonia 0.5), the live camera + local object-detection/tracking track (Proposals 073 + 075) with an opt-in VLM label-polish layer (Proposal 076), the CDP browser-control agent (feature agent) + FastConformer engine + NV oOS multi-SPA hub, model registry + verification harnesses, the plugins.updater boot-crash config rule, and the full test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, or VLM relabeling.
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
   app-version: "0.2.0"
   proposal: "067"
-  pr: "7011"
-  last-updated: "2026-10-13"
+  pr: "7043"
+  last-updated: "2026-10-14"
 ---
 # NV oOS Dictation App — Build, Engines, and Verification Guide
 

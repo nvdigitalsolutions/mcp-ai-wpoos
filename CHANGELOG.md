@@ -1,5 +1,33 @@
 # oOS – Changelog
 
+## [1.2.6] - 2026-10-14
+
+### Fixed — Google Drive OAuth & F&B Reader Reliability (PRs #7051, #7053, #7057, #7060, #7061, #7062)
+
+- **Restore full-Drive read access (#7053)** — the #6981 scope narrowing to `drive.file` silently broke `search_drive`, `get_drive_file`, and the F&B tools for pre-existing content (a per-file scope that can't see folders the app didn't create). `drive.readonly` restored alongside `drive.file` behind the unchanged `wp_mcp_ai_google_drive_oauth_scope` filter; the CG-AI-platform OAuth manager mirrors it (sub-project).
+- **F&B multi-worksheet read (#7057)** — the Sheets reader assumed one Drive file per table; real clients use a single workbook with one worksheet per table. The `WP_MCP_AI_Pro_Google_Drive_Client` gains Sheets-API-v4 helpers (`get_sheet_values`/`get_sheets_metadata`), and the reader resolves table IDs to worksheet tabs with fuzzy matching (case/underscore/hyphen/substring) plus a preserved split-file fallback.
+- **F&B demo-workbook + scope surfacing (#7060/#7061)** — `DEMO_WORKBOOK_ID` fallback + `workbook_id()` accessor; the Sheets `spreadsheets.readonly` OAuth scope added; empty-body 400/403 Sheets failures now surface an actionable `wp_mcp_ai_fnb_sheets_scope` error instead of a misleading split-file "not found".
+- **F&B CSV export + shipped demo data (#7062)** — a new `WP_MCP_AI_Fnb_Csv_Exporter` (workbook → CSV-per-table, `adapter` flip, admin "Export workbook to CSV" button) and the 18-table demo dataset (~10,700 rows) now ships in `addons/pro/includes/tools/food-beverage/data/` (the `tests/` path was stripped from release builds); `DEMO_WORKBOOK_ID` corrected to the shared-workbook file ID.
+- **Drive connection fixes (#7051)** — the `WP_MCP_AI_Inline_Async_Tick_Trait` double-declaration fatal in the harness eval scheduler (non-once Composer classmap load), Drive 400 responses now log the full body (so `invalid_grant` vs `invalid_client` is visible), and `folder_id` can finally be cleared (preserve only when the key is absent).
+
+### Fixed — Self-Hosted OCR vLLM Contract (PR #7055)
+
+- `WP_MCP_AI_Self_Hosted_OCR_Client::ocr_images()` emitted the SGLang dialect while every operator surface directs users to deploy vLLM — the no-repeat-ngram processor was never engaged. Rewritten to the vLLM OpenAI-compatible shape (`model` = HF id; `skip_special_tokens`/`ngram_size`/`window_size` + DeepSeek's `whitelist_token_ids` nested under `extra_body.vllm_xargs`); the base client + CG Pro mirror kept byte-identical.
+
+### Added — Dictation App Browser Agent, FastConformer & the NV oOS SPA Hub (PRs #7041, #7043–#7050, #7052, #7054, #7056, #7062, #7063, #7064)
+
+- **Browser-control agent (#7043/#7044)** — the `agent` feature drives a real browser over CDP (chromiumoxide) from dictated/typed instructions with a ReAct loop, a six-variant verdict model with real read-back, an origin-guarded safety gate + sensitive-field masking + async HITL Approve/Deny; the brain model now correctly uses `settings.agent.model` (never the shared cleanup/TTS model).
+- **FastConformer STT + Stage-2 polish gate (#7046/#7047)** — a second local STT engine (`fastconformer` nemo_ctc) plus an explicit `polish_enabled` master switch (the previous `wait_for_llm_ms > 0` gate silently disabled polish at the `0` default).
+- **Model download/install hardening (#7049/#7050)** — the `.download` temp file moved out of the install dir (no more orphaned-partial lock on the final swap), a 5× staging-swap retry, and install moved off the async runtime via `spawn_blocking`.
+- **NV oOS multi-SPA hub (#7063)** — a new `GET /mcp-ai-pro/v1/spa-surfaces` discovery endpoint (`WP_MCP_AI_Pro_SPA_Surfaces_Controller`) reports active SPA addons (gated on `shortcode_exists()`/`class_exists()`), and the dictate app's "Assistant" tab becomes a sandboxed multi-surface hub. **No new MCP tool.**
+- **iframe pass (#7066/#7072)** — the Pro SPA v2 last-message save + assistant-memory regressions fixed, and the tool-shortcuts/slash-commands/OKF drawers now accept guest/bearer/assistant credentials via the new `trait-wp-mcp-ai-spa-credential-auth.php` (was cookie-only — 401 inside the dictate iframe).
+
+### Dependency — shell-quote patched (PR #7059)
+
+- `shell-quote` bumped to `>=1.11.0` (resolving to 1.12.0) across the root + saas-controller + Pro SPA manifests, closing the GHSA-pqg4-j6r4-53mv command-injection alert in three lockfiles.
+
+**Tool count: ~354 base + ~1,376 Pro (~1,730 total — unchanged**; zero registry diff in-window). Coding-time skills: 72 (unchanged). Security classes: 12 (unchanged). Provider count: 18 (unchanged). Addon count: 30 (unchanged).
+
 ## [1.2.5] - 2026-10-13
 
 ### Added — GTmetrix × WPCode Performance Optimization Pro Toolkit (PR #7026, Proposal 068)
