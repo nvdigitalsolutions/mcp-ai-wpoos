@@ -46,6 +46,7 @@ if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-metrics.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-report-builder.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-draft-writer.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-csv-exporter.php';
 
 	// Phase 9 native storage: CPTs register only when enable_fnb_native_storage
 	// is on (checked inside register(), hooked on `init` at priority 12).

@@ -33,9 +33,12 @@ class WP_MCP_AI_Fnb_Settings {
 	 * fallback source whenever `data_workbook_id` is empty so a fresh install
 	 * can resolve the demo data without the admin hand-editing settings.
 	 *
+	 * NOTE: This is the Sheets file ID, not the Drive folder ID
+	 * (1HNq3xBZtbzOboxbkrVcB7lTc-JUOI5On).
+	 *
 	 * @var string
 	 */
-	const DEMO_WORKBOOK_ID = '1HNq3xBZtbzOboxbkrVcB7lTc-JUOI5On';
+	const DEMO_WORKBOOK_ID = '1L6YzAq08EnR-Hvu9Wne_dULNDBuBhBwplrv8KdIlWlE';
 
 	/**
 	 * Default settings.
