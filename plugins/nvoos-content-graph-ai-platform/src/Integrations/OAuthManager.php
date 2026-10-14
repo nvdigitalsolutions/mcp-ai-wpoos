@@ -602,7 +602,7 @@ class OAuthManager {
 		);
 
 		// Google Drive scopes (full-Drive read restored alongside per-file access).
-		$scopes = apply_filters( 'wp_mcp_ai_google_drive_oauth_scope', 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly' );
+		$scopes = apply_filters( 'wp_mcp_ai_google_drive_oauth_scope', 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets.readonly' );
 
 		// Use The PHP League OAuth2 Client if available for standardized OAuth URL generation.
 		if ( class_exists( '\League\OAuth2\Client\Provider\GenericProvider' ) ) {
@@ -730,7 +730,7 @@ class OAuthManager {
 						'urlAuthorize'            => 'https://accounts.google.com/o/oauth2/v2/auth',
 						'urlAccessToken'          => 'https://oauth2.googleapis.com/token',
 						'urlResourceOwnerDetails' => 'https://www.googleapis.com/oauth2/v1/userinfo',
-						'scopes'                  => apply_filters( 'wp_mcp_ai_google_drive_oauth_scope', 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly' ),
+						'scopes'                  => apply_filters( 'wp_mcp_ai_google_drive_oauth_scope', 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets.readonly' ),
 					)
 				);
 

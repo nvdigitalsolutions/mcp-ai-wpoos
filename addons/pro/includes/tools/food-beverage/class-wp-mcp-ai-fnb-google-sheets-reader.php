@@ -118,6 +118,46 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	}
 
 	/**
+	 * Annotate a Google Sheets API failure so the root cause is actionable.
+	 *
+	 * The Sheets reader calls sheets.googleapis.com/v4, which requires a
+	 * `spreadsheets.readonly` (or broader) OAuth scope on the access token.
+	 * A Drive connection authorised with only drive.file/drive.readonly gets a
+	 * 400/403 with an empty body — indistinguishable from a missing tab unless
+	 * we flag it explicitly. This keeps the failure from being masked as
+	 * "file not found" further up the call chain.
+	 *
+	 * @param WP_Error $error Original Sheets API error.
+	 * @return WP_Error Annotated (or passthrough) error.
+	 */
+	private function maybe_annotate_sheets_error( $error ) {
+		if ( 'wp_mcp_ai_drive_http_status' !== $error->get_error_code() ) {
+			return $error;
+		}
+
+		$data  = $error->get_error_data();
+		$status = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
+		$body  = is_array( $data ) && isset( $data['body'] ) ? trim( (string) $data['body'] ) : '';
+
+		// Only an empty-body 400/403 is characteristic of an insufficient-scope
+		// token. A 400/403 that carries a body is a genuine Sheets error (e.g. a
+		// bad range) and should pass through unchanged so callers keep the
+		// existing "tab not found → split-file fallback" behaviour.
+		if ( 400 !== $status && 403 !== $status ) {
+			return $error;
+		}
+		if ( '' !== $body ) {
+			return $error;
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_fnb_sheets_scope',
+			__( 'The Google Drive connection is missing the Sheets read scope. Re-authorise the Google Drive connection and ensure it includes the `https://www.googleapis.com/auth/spreadsheets.readonly` scope, then retry.', 'mcp-ai-wpoos-pro' ),
+			array( 'status' => $status, 'body' => $body )
+		);
+	}
+
+	/**
 	 * Resolve the Drive client credentials/token or a WP_Error.
 	 *
 	 * @return array|WP_Error array{access_token:string,timeout:int}
@@ -361,7 +401,10 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			$auth['access_token'],
 			$auth['timeout']
 		);
-		if ( ! is_wp_error( $metadata ) && isset( $metadata['sheets'] ) && is_array( $metadata['sheets'] ) ) {
+		if ( is_wp_error( $metadata ) ) {
+			return self::maybe_annotate_sheets_error( $metadata );
+		}
+		if ( isset( $metadata['sheets'] ) && is_array( $metadata['sheets'] ) ) {
 			$tabs = array();
 			foreach ( $metadata['sheets'] as $sheet ) {
 				if ( isset( $sheet['properties']['title'] ) ) {
@@ -418,7 +461,7 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			$auth['timeout']
 		);
 		if ( is_wp_error( $values ) ) {
-			return $values;
+			return self::maybe_annotate_sheets_error( $values );
 		}
 
 		return $this->matrix_to_rows( isset( $values['values'] ) && is_array( $values['values'] ) ? $values['values'] : array() );
@@ -552,6 +595,12 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			// the workbook isn't the right source — i.e. an HTTP 4xx (unknown tab
 			// / no values) or an explicit "nothing here" error. Anything else
 			// (auth, network, 5xx) is a real failure worth surfacing immediately.
+			// A Sheets-scope denial is NOT a "wrong source" signal: it will block
+			// the fallback too, so surface it straight away.
+			if ( 'wp_mcp_ai_fnb_sheets_scope' === $result->get_error_code() ) {
+				return $result;
+			}
+
 			$error_data = $result->get_error_data();
 			$status     = is_array( $error_data ) && isset( $error_data['status'] ) ? (int) $error_data['status'] : 0;
 			$not_found  = ( 'wp_mcp_ai_drive_http_status' === $result->get_error_code() && $status >= 400 && $status < 500 );
