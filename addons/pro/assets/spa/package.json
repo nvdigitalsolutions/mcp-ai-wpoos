@@ -17,6 +17,7 @@
     },
     "overrides": {
 		      "fast-uri": ">=4.1.5",
+		      "shell-quote": ">=1.11.0",
 		      "cross-spawn": ">=6.0.6",
 		      "postcss": ">=8.5.18",
 		      "serialize-javascript": ">=7.0.5",
