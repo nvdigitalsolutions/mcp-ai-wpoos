@@ -49,17 +49,49 @@ class Test_WP_MCP_AI_Pro_SPA_Surfaces_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A catalogued addon is reported only when its shortcode is registered.
+	 * A registered shortcode surface with NO embed page must be omitted, never
+	 * resolved to the bare site home URL (which would mount a broken iframe).
+	 */
+	public function test_shortcode_surface_without_embed_page_is_omitted() {
+		add_shortcode( 'nvoos_media_studio_app', '__return_empty_string' );
+
+		$surfaces = WP_MCP_AI_Pro_SPA_Surfaces_Controller::detect_surfaces();
+		$ids      = wp_list_pluck( $surfaces, 'id' );
+
+		$this->assertNotContains( 'media-studio', $ids );
+
+		remove_shortcode( 'nvoos_media_studio_app' );
+	}
+
+	/**
+	 * A catalogued addon is reported only when its shortcode is registered AND
+	 * an embed page renders that shortcode (a page surface without a mountable
+	 * page is omitted, never pointed at the bare home page).
 	 */
 	public function test_catalog_addon_reported_when_shortcode_registered() {
 		$this->assertNotContains( 'docs-hub', wp_list_pluck( WP_MCP_AI_Pro_SPA_Surfaces_Controller::detect_surfaces(), 'id' ) );
 
 		add_shortcode( 'nvoos_docs', '__return_empty_string' );
 
+		// No embed page yet — the surface must be omitted, not home-URL-fallback.
+		$this->assertNotContains( 'docs-hub', wp_list_pluck( WP_MCP_AI_Pro_SPA_Surfaces_Controller::detect_surfaces(), 'id' ) );
+
+		// Create the embed page, then the surface appears and resolves to it.
+		$page_id = self::factory()->post->create(
+			array(
+				'post_type'    => 'page',
+				'post_status'  => 'publish',
+				'post_content' => '[nvoos_docs]',
+			)
+		);
+		delete_transient( 'wp_mcp_ai_pro_spa_page_nvoos_docs' );
+
 		$surfaces = WP_MCP_AI_Pro_SPA_Surfaces_Controller::detect_surfaces();
 		$this->assertContains( 'docs-hub', wp_list_pluck( $surfaces, 'id' ) );
 
 		remove_shortcode( 'nvoos_docs' );
+		delete_transient( 'wp_mcp_ai_pro_spa_page_nvoos_docs' );
+		wp_delete_post( $page_id, true );
 	}
 
 	/**
