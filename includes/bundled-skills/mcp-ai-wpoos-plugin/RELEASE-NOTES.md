@@ -1,9 +1,20 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.5)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.6)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## Google Drive OAuth Restored, F&B Reliability, OCR vLLM & the Dictation Browser Agent (v1.2.6)
+
+- **Google Drive OAuth restored (PR #7053)** — the #6981 `drive.file`-only narrowing broke `search_drive`, `get_drive_file`, and the F&B tools for pre-existing content; `drive.readonly` restored alongside `drive.file` behind `wp_mcp_ai_google_drive_oauth_scope` (CG-AI platform mirror — sub-project).
+- **F&B reader reliability (PRs #7057, #7060, #7061, #7062)** — Sheets-API-v4 multi-worksheet reads (`get_sheet_values()`/`get_sheets_metadata()`, fuzzy tab matching, split-file fallback); `DEMO_WORKBOOK_ID` fallback + `workbook_id()`; the `spreadsheets.readonly` OAuth scope + `maybe_annotate_sheets_error()`; a `WP_MCP_AI_Fnb_Csv_Exporter` + 18 shipped demo tables (`data/*.csv`). No new tool.
+- **Self-hosted OCR vLLM contract (PR #7055)** — `ocr_images()` was SGLang-shaped; rewritten to the vLLM OpenAI-compatible payload (`extra_body.vllm_xargs`; `skip_special_tokens` + n-gram args nested), base + CG Pro mirror byte-identical; `model_id` added to `MODEL_DEFAULTS`.
+- **Drive fixes (PR #7051)** — the `WP_MCP_AI_Inline_Async_Tick_Trait` double-declare fatal (harness eval scheduler — require through the `trait_exists()`-guarded `require_once`); Drive 400 body logging (`invalid_grant` vs `invalid_client`); `folder_id` clearing (`! array_key_exists()`).
+- **Dictation browser agent + FastConformer (PRs #7041, #7043–#7050)** — `examples/nvoos-dictate`: the `agent` feature (CDP browser control via chromiumoxide, ReAct loop, origin-guarded safety gate, HITL Approve/Deny, `settings.agent.model` brain), a `fastconformer` nemo_ctc STT engine, an explicit `polish_enabled` gate, and model-download hardening (`.download` moved out of the install dir, 5× swap retry, `spawn_blocking`).
+- **NV oOS SPA hub + Pro SPA v2 fixes (PRs #7063, #7066, #7064, #7072)** — `GET /mcp-ai-pro/v1/spa-surfaces` (`WP_MCP_AI_Pro_SPA_Surfaces_Controller`); the dictate "NV oOS" multi-surface hub; last-message-save + assistant-memory fixes; the `trait-wp-mcp-ai-spa-credential-auth.php` guest/bearer/credential drawer fix (401 in the dictate iframe).
+- **Dependency (PR #7059)** — `shell-quote` → `>=1.11.0` (1.12.0) across root/saas-controller/Pro SPA manifests (GHSA-pqg4-j6r4-53mv).
+- **Tool counts** — ~354 base + ~1,376 Pro (~1,730 total; **unchanged** — zero registry diff). Security classes 12, providers 18, addons 30 — all unchanged. Stale 1.2.4 build ZIPs removed (33 files).
 
 ## GTmetrix × WPCode Toolkit, Food & Beverage Phase 9 & the Hardened Dictation App (v1.2.5)
 

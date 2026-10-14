@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.5"
-  plugin-version-tested: "1.2.5"
-  last-updated: "2026-10-13"
+  plugin-version: "1.2.6"
+  plugin-version-tested: "1.2.6"
+  last-updated: "2026-10-14"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -785,6 +785,24 @@ Import external AI conversation exports into the JetEngine
 Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.2.6 operational quick notes** (full detail in RELEASE-NOTES.md):
+**Google Drive OAuth restored** (PR #7053) — `drive.readonly` restored
+alongside `drive.file` behind `wp_mcp_ai_google_drive_oauth_scope` (the
+#6981 per-file narrowing broke `search_drive`/`get_drive_file` + the F&B
+tools for pre-existing content). **F&B reader reliability** (PRs #7057/#7060/
+#7061/#7062) — Sheets-API-v4 multi-worksheet reads, a `DEMO_WORKBOOK_ID`
+fallback, the `spreadsheets.readonly` OAuth scope + actionable Sheets-scope
+errors, a CSV exporter, and 18 shipped demo tables. **OCR vLLM** (PR #7055)
+— the self-hosted client now speaks the vLLM contract (`extra_body.vllm_xargs`),
+base + CG Pro mirror byte-identical. **Drive fixes** (PR #7051) — the
+inline-async-tick trait double-declare fatal, response-body logging, and
+`folder_id` clearing. **Dictation + SPA** (PRs #7041/#7043–#7050/#7063/#7066/
+#7072) — a CDP browser agent, FastConformer, the polish gate, the
+`spa-surfaces` endpoint + the drawer-401 credential fix — **no plugin registry
+surface**. **Dependency** (PR #7059) — `shell-quote` → 1.12.0. Tool count
+unchanged: ~354 base + ~1,376 Pro (~1,730 total); 12 security classes; 18
+providers; 30 addons (all unchanged).
 
 **v1.2.5 operational quick notes** (full detail in RELEASE-NOTES.md):
 **GTmetrix × WPCode performance toolkit** (PR #7026, Proposal 068) — the
