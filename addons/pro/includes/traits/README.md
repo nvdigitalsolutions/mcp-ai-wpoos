@@ -20,6 +20,7 @@ Shared PHP traits for Pro addon toolkits — reusable behaviour that crosses too
 | `WP_MCP_AI_CRM_Relevance_Search` | `trait-wp-mcp-ai-relevance-search.php` | CRM + Healthcare search tools |
 | `WP_MCP_AI_Sharp_Image_Processing` | `trait-wp-mcp-ai-sharp-image-processing.php` | Image-production `enhance_image_quality` + `upscale_image_ai` (also hosts the sidecar/upload plumbing for the Wave 2 tools) |
 | `WP_MCP_AI_Provider_Image_Edit` | `trait-wp-mcp-ai-provider-image-edit.php` | Image-production `colorize_image` + `apply_artistic_style` |
+| `WP_MCP_AI_SPA_Credential_Auth` | `trait-wp-mcp-ai-spa-credential-auth.php` | Pro SPA drawer REST controllers (tool-shortcuts, slash-commands, okf) — multi-mode auth for the headless dictate app |
 
 ## Inputs / Outputs / Neighbors
 

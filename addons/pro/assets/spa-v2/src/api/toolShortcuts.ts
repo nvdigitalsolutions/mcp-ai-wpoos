@@ -25,15 +25,22 @@ export interface ToolShortcutsResponse {
 export interface ToolShortcutsClientOptions {
 	endpoint: string;
 	nonce: string;
+	/** Guest mode — send the X-WP-MCP-AI-Guest header instead of a nonce. */
+	guest?: boolean;
+	guestToken?: string;
 }
 
 export class ToolShortcutsClient {
 	private readonly base: string;
 	private readonly nonce: string;
+	private readonly guest: boolean;
+	private readonly guestToken: string;
 
 	constructor( opts: ToolShortcutsClientOptions ) {
 		this.base = opts.endpoint.replace( /\/+$/, '' );
 		this.nonce = opts.nonce;
+		this.guest = opts.guest ?? false;
+		this.guestToken = opts.guestToken ?? '';
 	}
 
 	/**
@@ -68,7 +75,9 @@ export class ToolShortcutsClient {
 			Accept: 'application/json',
 		};
 
-		if ( this.nonce ) {
+		if ( this.guest ) {
+			headers[ 'X-WP-MCP-AI-Guest' ] = this.guestToken || '1';
+		} else if ( this.nonce ) {
 			headers[ 'X-WP-Nonce' ] = this.nonce;
 		}
 

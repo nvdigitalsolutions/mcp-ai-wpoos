@@ -135,6 +135,9 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const assistantId = storedAssistantId > 0 ? storedAssistantId : ( runtime?.config?.assistantId ?? runtime?.user?.assistant_id ?? 0 );
 	const endpoints = runtime?.endpoints;
 	const nonce = runtime?.nonce ?? '';
+	const isGuest = !!runtime?.config?.guest;
+	const guestToken =
+		typeof runtime?.config?.guestToken === 'string' ? runtime.config.guestToken : '';
 
 	// Map transcript messages to AI SDK Message shape (needs `id`).
 		// Preserve the original role so tool messages are properly surfaced;
@@ -227,13 +230,19 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 			setMessages( ( prev ) => [ ...prev, userMessage as Message ] );
 
 			try {
+				const executeHeaders: Record< string, string > = {
+					'Content-Type': 'application/json',
+				};
+				if ( isGuest ) {
+					executeHeaders[ 'X-WP-MCP-AI-Guest' ] = guestToken || '1';
+				} else if ( nonce ) {
+					executeHeaders[ 'X-WP-Nonce' ] = nonce;
+				}
+
 				const resp = await fetch( executeUrl, {
 					method: 'POST',
 					credentials: 'same-origin',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-WP-Nonce': nonce,
-					},
+					headers: executeHeaders,
 					body: JSON.stringify( { command: rawInput } ),
 				} );
 
@@ -280,7 +289,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				throw err;
 			}
 		},
-		[ endpoints?.slashCommands, nonce, setMessages ],
+		[ endpoints?.slashCommands, nonce, isGuest, guestToken, setMessages ],
 	);
 
 	// ── Composer slash-command submit (v2.2.x) ─────────────────────────
@@ -847,6 +856,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					assistantId={ assistantId }
 					isOpen={ toolsOpen }
 					onClose={ () => setToolsOpen( false ) }
+					guest={ isGuest }
+					guestToken={ guestToken }
 					onInsertPayload={ sendMessage }
 					toggleRef={ toolsToggleRef }
 				/>
@@ -859,6 +870,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					nonce={ nonce }
 					isOpen={ commandsOpen }
 					onClose={ () => setCommandsOpen( false ) }
+					guest={ isGuest }
+					guestToken={ guestToken }
 					onInsertPayload={ ( payload: string ) => {
 						// Insert into the composer (not send) so the user can
 						// fill required arguments before executing.
@@ -891,6 +904,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					assistantId={ assistantId }
 					isOpen={ okfOpen }
 					onClose={ () => setOkfOpen( false ) }
+					guest={ isGuest }
+					guestToken={ guestToken }
 					onInsertPrompt={ ( prompt, autoSubmit ) => {
 						if ( autoSubmit ) {
 							sendMessage( prompt );
