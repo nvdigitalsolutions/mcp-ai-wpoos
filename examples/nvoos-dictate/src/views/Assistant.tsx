@@ -14,11 +14,21 @@ import { api, type Settings, type SpaSurface } from '../lib/ipc';
  *  1. Discovered surfaces (site reachable + credentialed) → sub-tabs.
  *  2. A single configured "Assistant tab URL" (legacy `spa.url`) → one tab.
  *  3. Nothing → a "not configured" hint pointing at Settings → NV oOS.
+ *
+ * Keep-alive iframes (reload-free tab switching):
+ *  Every surface gets its own <iframe>, mounted lazily on first visit and kept
+ *  mounted thereafter. The active frame is shown and the others are hidden via
+ *  CSS (`display:none`, not a `src` swap or unmount) so switching tabs never
+ *  forces a full reload and preserves each surface's in-flight state. Route
+ *  surfaces (e.g. `#/knowledge-graph`, `#/chat`) resolve to a hash-only target
+ *  inside the hosted Pro SPA, so they load once and never re-navigate.
  */
 export default function AssistantView() {
   const [surfaces, setSurfaces] = useState<SpaSurface[] | null>(null);
   const [legacyUrl, setLegacyUrl] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Surfaces that have been mounted at least once — once mounted, never unmounted.
+  const [mounted, setMounted] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     // Legacy single-SPA URL (backward-compatible fallback).
@@ -49,8 +59,9 @@ export default function AssistantView() {
 
   // Determine the tabs to render and their resolved iframe URLs.
   // A surface with a `route` fragment (an SPA-internal route like
-  // `#/knowledge-graph`) is resolved against the configured hosted-SPA URL;
-  // otherwise its server-provided shortcode page URL is used verbatim.
+  // `#/knowledge-graph` or `#/chat`) is resolved against the configured
+  // hosted-SPA URL; otherwise its server-provided shortcode page URL is used
+  // verbatim.
   const spaBase = legacyUrl.trim().replace(/\/+$/, '');
   const resolveUrl = (s: SpaSurface): string => {
     if (s.route && s.route.trim()) {
@@ -89,6 +100,12 @@ export default function AssistantView() {
 
   const active = tabs.find((t) => t.surface.id === activeId) ?? tabs[0];
 
+  const activate = (id: string) => {
+    setActiveId(id);
+    // Lazily mount on first visit; keep alive forever after.
+    setMounted((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+  };
+
   return (
     <div className="nvoos-hub">
       <nav className="tabs nvoos-hub-tabs" aria-label="NV oOS surfaces">
@@ -96,7 +113,7 @@ export default function AssistantView() {
           <button
             key={t.surface.id}
             className={t.surface.id === active.surface.id ? 'tab active' : 'tab'}
-            onClick={() => setActiveId(t.surface.id)}
+            onClick={() => activate(t.surface.id)}
             title={t.surface.description || t.surface.title}
           >
             {t.surface.title}
@@ -104,13 +121,27 @@ export default function AssistantView() {
         ))}
       </nav>
       <div className="assistant-frame-wrap">
-        <iframe
-          className="assistant-frame"
-          title={`NV oOS — ${active.surface.title}`}
-          src={active.url}
-          sandbox="allow-scripts allow-same-origin allow-forms"
-          referrerPolicy="no-referrer"
-        />
+        {tabs.map((t) => {
+          const isActive = t.surface.id === active.surface.id;
+          const isMounted = mounted.has(t.surface.id);
+          if (!isActive && !isMounted) {
+            return null;
+          }
+          return (
+            <iframe
+              key={t.surface.id}
+              className="assistant-frame"
+              title={`NV oOS — ${t.surface.title}`}
+              src={t.url}
+              sandbox="allow-scripts allow-same-origin allow-forms"
+              referrerPolicy="no-referrer"
+              // Keep-alive: hide inactive frames with CSS instead of unmounting.
+              // display:none preserves each frame's document + JS state so tab
+              // switches never reload.
+              style={isActive ? undefined : { display: 'none' }}
+            />
+          );
+        })}
       </div>
     </div>
   );
