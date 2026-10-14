@@ -55,7 +55,10 @@ class WP_MCP_AI_Fnb_Fixture_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	 * @return array<int,string>
 	 */
 	private function directories() {
-		$dirs   = array( __DIR__ . '/tests/fixtures' );
+		$dirs   = array(
+			__DIR__ . '/tests/fixtures',
+			__DIR__ . '/data',
+		);
 		$custom = WP_MCP_AI_Fnb_Settings::get( 'csv_data_dir', '' );
 		if ( is_string( $custom ) && '' !== $custom ) {
 			$dirs[] = untrailingslashit( $custom );

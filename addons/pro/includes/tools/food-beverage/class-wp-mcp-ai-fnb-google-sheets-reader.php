@@ -135,9 +135,9 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			return $error;
 		}
 
-		$data  = $error->get_error_data();
+		$data   = $error->get_error_data();
 		$status = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
-		$body  = is_array( $data ) && isset( $data['body'] ) ? trim( (string) $data['body'] ) : '';
+		$body   = is_array( $data ) && isset( $data['body'] ) ? trim( (string) $data['body'] ) : '';
 
 		// Only an empty-body 400/403 is characteristic of an insufficient-scope
 		// token. A 400/403 that carries a body is a genuine Sheets error (e.g. a
@@ -153,7 +153,10 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 		return new WP_Error(
 			'wp_mcp_ai_fnb_sheets_scope',
 			__( 'The Google Drive connection is missing the Sheets read scope. Re-authorise the Google Drive connection and ensure it includes the `https://www.googleapis.com/auth/spreadsheets.readonly` scope, then retry.', 'mcp-ai-wpoos-pro' ),
-			array( 'status' => $status, 'body' => $body )
+			array(
+				'status' => $status,
+				'body'   => $body,
+			)
 		);
 	}
 
@@ -565,6 +568,141 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			'columns' => $columns,
 			'rows'    => $rows,
 		);
+	}
+
+	/**
+	 * Export every worksheet of the located workbook to local CSV files.
+	 *
+	 * @param string $directory Absolute output directory (already created).
+	 * @return array|WP_Error array{exported:int,skipped:int,files:string[]} or WP_Error.
+	 */
+	public function export_workbook_to_csv( $directory ) {
+		$auth = $this->token();
+		if ( is_wp_error( $auth ) ) {
+			return $auth;
+		}
+
+		$workbook = $this->locate_workbook( $auth );
+		if ( ! is_array( $workbook ) ) {
+			if ( $this->workbook_error instanceof WP_Error ) {
+				return $this->workbook_error;
+			}
+			return new WP_Error(
+				'wp_mcp_ai_fnb_export_no_workbook',
+				__( 'No workbook could be located to export. Configure a Workbook ID or Data/Setup folder on the F&B settings page.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$metadata = WP_MCP_AI_Pro_Google_Drive_Client::get_sheets_metadata(
+			$workbook['id'],
+			$auth['access_token'],
+			$auth['timeout']
+		);
+		if ( is_wp_error( $metadata ) ) {
+			return self::maybe_annotate_sheets_error( $metadata );
+		}
+
+		$tabs = array();
+		if ( isset( $metadata['sheets'] ) && is_array( $metadata['sheets'] ) ) {
+			foreach ( $metadata['sheets'] as $sheet ) {
+				if ( isset( $sheet['properties']['title'] ) ) {
+					$tabs[] = (string) $sheet['properties']['title'];
+				}
+			}
+		}
+
+		$exported = 0;
+		$skipped  = 0;
+		$files    = array();
+
+		foreach ( self::$sheet_map as $sheet_slug => $table_id ) {
+			$tab = $this->resolve_tab_name( $tabs, $table_id );
+			if ( '' === $tab ) {
+				++$skipped;
+				continue;
+			}
+
+			$values = WP_MCP_AI_Pro_Google_Drive_Client::get_sheet_values(
+				$workbook['id'],
+				$tab,
+				$auth['access_token'],
+				$auth['timeout']
+			);
+			if ( is_wp_error( $values ) ) {
+				++$skipped;
+				continue;
+			}
+
+			$matrix = isset( $values['values'] ) && is_array( $values['values'] ) ? $values['values'] : array();
+			$path   = trailingslashit( $directory ) . $sheet_slug . '.csv';
+
+			if ( $this->write_csv( $path, $matrix ) ) {
+				++$exported;
+				$files[] = basename( $path );
+			} else {
+				++$skipped;
+			}
+		}
+
+		return array(
+			'exported' => $exported,
+			'skipped'  => $skipped,
+			'files'    => $files,
+		);
+	}
+
+	/**
+	 * Resolve the actual worksheet title for a spec table from a tab list.
+	 *
+	 * @param array<int,string> $tabs     Raw worksheet titles.
+	 * @param string            $table_id Spec table ID.
+	 * @return string Matched tab title, or empty string when absent.
+	 */
+	private function resolve_tab_name( $tabs, $table_id ) {
+		$names = $this->sheet_names( $table_id );
+		foreach ( $names as $name ) {
+			$needle = $this->normalise_name( $name );
+			foreach ( $tabs as $title ) {
+				if ( $this->normalise_name( $title ) === $needle ) {
+					return $title;
+				}
+			}
+		}
+		foreach ( $names as $name ) {
+			$needle = $this->normalise_name( $name );
+			if ( '' === $needle ) {
+				continue;
+			}
+			foreach ( $tabs as $title ) {
+				if ( false !== strpos( $this->normalise_name( $title ), $needle ) ) {
+					return $title;
+				}
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Write a Sheets value matrix to a CSV file.
+	 *
+	 * @param string                      $path   Absolute output path.
+	 * @param array<int,array<int,mixed>> $matrix Value matrix.
+	 * @return bool True on success.
+	 */
+	private function write_csv( $path, $matrix ) {
+		$handle = fopen( $path, 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		if ( false === $handle ) {
+			return false;
+		}
+
+		foreach ( $matrix as $row ) {
+			$cells = array_map( 'strval', is_array( $row ) ? $row : array() );
+			fputcsv( $handle, $cells );
+		}
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+
+		return true;
 	}
 
 	/**

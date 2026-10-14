@@ -58,6 +58,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ), 28 );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 		add_action( 'admin_post_wp_mcp_ai_fnb_seed_assistants', array( __CLASS__, 'handle_seed_submission' ) );
+		add_action( 'admin_post_wp_mcp_ai_fnb_export_csv', array( __CLASS__, 'handle_export_submission' ) );
 	}
 
 	/**
@@ -127,12 +128,12 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		add_settings_field(
 			'data_folder_id',
 			__( 'Data Folder ID', 'mcp-ai-wpoos-pro' ),
-			array( __CLASS__, 'render_text_field' ),
+			array( __CLASS__, 'render_data_folder_select' ),
 			self::PAGE_SLUG,
 			'wp_mcp_ai_fnb_data',
 			array(
 				'setting_key' => 'data_folder_id',
-				'description' => __( 'Google Drive folder ID containing the exported data-table sheets.', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Google Drive folder containing the exported data-table sheets or the workbook to export. Choose from the detected folders, or leave “Auto-detect” to search all configured sources.', 'mcp-ai-wpoos-pro' ),
 			)
 		);
 
@@ -293,13 +294,13 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			? sanitize_text_field( $submitted_adapter )
 			: 'drive';
 
-		$current['connection_id']    = isset( $input['connection_id'] ) ? sanitize_text_field( $input['connection_id'] ) : '';
-		$current['data_folder_id']   = isset( $input['data_folder_id'] ) ? sanitize_text_field( $input['data_folder_id'] ) : '';
-		$current['setup_folder_id']  = isset( $input['setup_folder_id'] ) ? sanitize_text_field( $input['setup_folder_id'] ) : '';
+		$current['connection_id']      = isset( $input['connection_id'] ) ? sanitize_text_field( $input['connection_id'] ) : '';
+		$current['data_folder_id']     = isset( $input['data_folder_id'] ) ? sanitize_text_field( $input['data_folder_id'] ) : '';
+		$current['setup_folder_id']    = isset( $input['setup_folder_id'] ) ? sanitize_text_field( $input['setup_folder_id'] ) : '';
 		$current['data_workbook_id']   = isset( $input['data_workbook_id'] ) ? sanitize_text_field( $input['data_workbook_id'] ) : '';
 		$current['data_workbook_name'] = isset( $input['data_workbook_name'] ) ? sanitize_text_field( $input['data_workbook_name'] ) : '';
-		$current['drafts_folder_id'] = isset( $input['drafts_folder_id'] ) ? sanitize_text_field( $input['drafts_folder_id'] ) : '';
-		$current['csv_data_dir']     = isset( $input['csv_data_dir'] ) ? sanitize_text_field( $input['csv_data_dir'] ) : '';
+		$current['drafts_folder_id']   = isset( $input['drafts_folder_id'] ) ? sanitize_text_field( $input['drafts_folder_id'] ) : '';
+		$current['csv_data_dir']       = isset( $input['csv_data_dir'] ) ? sanitize_text_field( $input['csv_data_dir'] ) : '';
 
 		$submitted_date        = isset( $input['as_of_date'] ) ? sanitize_text_field( $input['as_of_date'] ) : '';
 		$current['as_of_date'] = ( '' === $submitted_date || (bool) preg_match( '/^\d{4}-\d{2}-\d{2}$/', $submitted_date ) ) ? $submitted_date : '';
@@ -395,6 +396,17 @@ class WP_MCP_AI_Fnb_Settings_Page {
 								<?php submit_button( __( 'Seed assistant packs', 'mcp-ai-wpoos-pro' ), 'secondary', 'submit', false ); ?>
 							</form>
 						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Export workbook', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5em;">
+							<?php wp_nonce_field( 'wp_mcp_ai_fnb_export_csv', 'wp_mcp_ai_fnb_export_nonce' ); ?>
+							<input type="hidden" name="action" value="wp_mcp_ai_fnb_export_csv" />
+							<?php submit_button( __( 'Export workbook to CSV', 'mcp-ai-wpoos-pro' ), 'secondary', 'submit', false ); ?>
+						</form>
+						<p class="description"><?php esc_html_e( 'Reads the configured Drive workbook and writes one CSV per table into the CSV data directory, then switches the adapter to CSV so reads work offline.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 				<tr>
@@ -545,6 +557,51 @@ class WP_MCP_AI_Fnb_Settings_Page {
 	}
 
 	/**
+	 * Handle the "Export workbook to CSV" button submission.
+	 *
+	 * Runs the shared CSV exporter service, then redirects back to the settings
+	 * page with a transient result notice.
+	 *
+	 * @return void
+	 */
+	public static function handle_export_submission() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You are not allowed to export the F&B workbook.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		check_admin_referer( 'wp_mcp_ai_fnb_export_csv', 'wp_mcp_ai_fnb_export_nonce' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Csv_Exporter' ) ) {
+			require_once dirname( __DIR__, 2 ) . '/tools/food-beverage/class-wp-mcp-ai-fnb-csv-exporter.php';
+		}
+
+		$result = WP_MCP_AI_Fnb_Csv_Exporter::export_workbook();
+
+		if ( is_wp_error( $result ) ) {
+			$notice = array(
+				'type'    => 'error',
+				'message' => $result->get_error_message(),
+			);
+		} else {
+			$notice = array(
+				'type'    => 'success',
+				/* translators: 1: exported count, 2: skipped count, 3: directory path */
+				'message' => sprintf(
+					__( 'Workbook exported: %1$d CSV file(s) written to %3$s (%2$d skipped). The adapter is now set to CSV.', 'mcp-ai-wpoos-pro' ),
+					isset( $result['exported'] ) ? (int) $result['exported'] : 0,
+					isset( $result['skipped'] ) ? (int) $result['skipped'] : 0,
+					isset( $result['dir'] ) ? (string) $result['dir'] : ''
+				),
+			);
+		}
+
+		set_transient( 'wp_mcp_ai_fnb_seed_notice', $notice, 60 );
+
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
+		exit;
+	}
+
+	/**
 	 * Render the one-time seed-result admin notice, if present.
 	 *
 	 * @return void
@@ -577,6 +634,37 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		<select name="<?php echo esc_attr( self::OPTION_NAME . '[' . $args['setting_key'] . ']' ); ?>">
 			<option value="drive" <?php selected( $current, 'drive' ); ?>><?php esc_html_e( 'Google Drive', 'mcp-ai-wpoos-pro' ); ?></option>
 			<option value="csv" <?php selected( $current, 'csv' ); ?>><?php esc_html_e( 'CSV (local files)', 'mcp-ai-wpoos-pro' ); ?></option>
+		</select>
+		<?php self::render_field_description( $args ); ?>
+		<?php
+	}
+
+	/**
+	 * Render the Data Folder (export source) dropdown.
+	 *
+	 * Offers the configured data/setup folder IDs plus any per-connection scoped
+	 * folder IDs. The value maps onto the existing `data_folder_id` setting so the
+	 * choice persists through the normal settings save.
+	 *
+	 * @param array $args Field arguments including 'setting_key' and 'description'.
+	 * @return void
+	 */
+	public static function render_data_folder_select( $args ) {
+		$current = WP_MCP_AI_Fnb_Settings::get( $args['setting_key'], '' );
+
+		$folders = array();
+		if ( class_exists( 'WP_MCP_AI_Fnb_Csv_Exporter' ) ) {
+			$folders = WP_MCP_AI_Fnb_Csv_Exporter::list_drive_folders();
+		}
+		?>
+		<select name="<?php echo esc_attr( self::OPTION_NAME . '[' . $args['setting_key'] . ']' ); ?>">
+			<option value=""><?php esc_html_e( '— Auto-detect —', 'mcp-ai-wpoos-pro' ); ?></option>
+			<?php if ( '' !== $current && ! wp_list_filter( $folders, array( 'id' => $current ) ) ) : ?>
+				<option value="<?php echo esc_attr( $current ); ?>" selected><?php echo esc_html( $current ); ?></option>
+			<?php endif; ?>
+			<?php foreach ( $folders as $folder ) : ?>
+				<option value="<?php echo esc_attr( $folder['id'] ); ?>" <?php selected( $current, $folder['id'] ); ?>><?php echo esc_html( $folder['label'] ); ?></option>
+			<?php endforeach; ?>
 		</select>
 		<?php self::render_field_description( $args ); ?>
 		<?php

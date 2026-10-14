@@ -71,7 +71,7 @@ class Test_Fnb_Workbook_Source extends WP_UnitTestCase {
 		$id = WP_MCP_AI_Fnb_Settings::DEMO_WORKBOOK_ID;
 		$this->assertIsString( $id );
 		$this->assertNotSame( '', $id, 'Demo workbook ID must not be empty.' );
-		$this->assertSame( '1HNq3xBZtbzOboxbkrVcB7lTc-JUOI5On', $id );
+		$this->assertSame( '1L6YzAq08EnR-Hvu9Wne_dULNDBuBhBwplrv8KdIlWlE', $id );
 	}
 
 	/**
