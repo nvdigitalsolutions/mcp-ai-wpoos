@@ -48,16 +48,21 @@ export default function AssistantView() {
   }, [load]);
 
   // Determine the tabs to render and their resolved iframe URLs.
+  //
   // A surface with a `route` fragment (an SPA-internal route like
-  // `#/knowledge-graph`) is resolved against the configured hosted-SPA URL;
-  // otherwise its server-provided shortcode page URL is used verbatim.
-  const spaBase = legacyUrl.trim().replace(/\/+$/, '');
+  // `#/knowledge-graph`) is resolved against the surface's OWN `url` (the
+  // site's home_url() — the authoritative hosted-SPA host the server reports),
+  // NOT against the legacy `spa.url` fallback. The fallback is only a
+  // last-resort single-SPA target when discovery returns nothing; mixing it
+  // into per-surface route resolution is what previously pointed the
+  // Assistant frame at the wrong host (e.g. chat.nvoos.cloud instead of the
+  // site's real pro.nvoos.cloud).
   const resolveUrl = (s: SpaSurface): string => {
     if (s.route && s.route.trim()) {
-      if (spaBase) {
-        return spaBase + s.route.trim();
+      const base = s.url.trim().replace(/\/+$/, '');
+      if (base) {
+        return base + s.route.trim();
       }
-      return s.url; // No SPA base configured — fall back to the placeholder.
     }
     return s.url;
   };

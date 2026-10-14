@@ -133,6 +133,21 @@ class Test_WP_MCP_AI_Pro_SPA_Surfaces_Controller extends WP_UnitTestCase {
 
 		$ids = wp_list_pluck( $surfaces, 'id' );
 		$this->assertContains( 'assistant', $ids );
+
+		$assistant = null;
+		foreach ( $surfaces as $surface ) {
+			if ( 'assistant' === $surface['id'] ) {
+				$assistant = $surface;
+				break;
+			}
+		}
+
+		// The Assistant (Pro SPA v2) surface is an SPA-internal route, so it
+		// carries a `route` fragment for the client to resolve against its own
+		// hosted-SPA URL (never a bare console/site URL).
+		$this->assertNotNull( $assistant );
+		$this->assertArrayHasKey( 'route', $assistant );
+		$this->assertSame( '#/chat', $assistant['route'] );
 	}
 
 	/**

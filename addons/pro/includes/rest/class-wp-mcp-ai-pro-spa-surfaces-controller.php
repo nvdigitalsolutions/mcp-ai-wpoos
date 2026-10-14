@@ -152,11 +152,16 @@ class WP_MCP_AI_Pro_SPA_Surfaces_Controller {
 		$surfaces = array();
 
 		// 1. Assistant (Pro SPA v2) — always available in Pro (this addon).
+		// It lives inside the hosted Pro SPA routes, so it carries a `route`
+		// fragment (like content-graph) rather than a bare site URL. The
+		// headless client prepends its own configured hosted-SPA URL to that
+		// fragment — the SPA URL lives client-side, not on the site.
 		$surfaces[] = self::surface(
 			'assistant',
 			__( 'Assistant', 'mcp-ai-wpoos' ),
 			$site_url,
-			__( 'Hosted NV oOS Pro SPA chat surface.', 'mcp-ai-wpoos' )
+			__( 'Hosted NV oOS Pro SPA chat surface.', 'mcp-ai-wpoos' ),
+			'#/chat'
 		);
 
 		/**
