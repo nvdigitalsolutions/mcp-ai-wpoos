@@ -14,12 +14,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once dirname( __DIR__ ) . '/traits/trait-wp-mcp-ai-spa-credential-auth.php';
+
 /**
  * Class WP_MCP_AI_Pro_REST_Slash_Commands
  *
  * @since 2.1.0
  */
 class WP_MCP_AI_Pro_REST_Slash_Commands {
+
+	use WP_MCP_AI_SPA_Credential_Auth;
 
 	/**
 	 * REST namespace.
@@ -82,30 +86,15 @@ class WP_MCP_AI_Pro_REST_Slash_Commands {
 	}
 
 	/**
-	 * Permission check — user must be logged in with edit_posts capability.
+	 * Permission check — authenticated user with edit_posts, or a valid
+	 * assistant credential (headless dictate-app bearer auth).
 	 *
 	 * @since 2.1.0
 	 * @param \WP_REST_Request $request Request object.
 	 * @return bool|\WP_Error
 	 */
 	public static function permission_check( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
-		if ( ! is_user_logged_in() ) {
-			return new \WP_Error(
-				'rest_not_logged_in',
-				__( 'You must be logged in.', 'mcp-ai-wpoos' ),
-				array( 'status' => 401 )
-			);
-		}
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			return new \WP_Error(
-				'rest_forbidden',
-				__( 'You do not have sufficient permissions.', 'mcp-ai-wpoos' ),
-				array( 'status' => 403 )
-			);
-		}
-
-		return true;
+		return self::permission_check_spa_drawer( $request, 'edit_posts' );
 	}
 
 	/**

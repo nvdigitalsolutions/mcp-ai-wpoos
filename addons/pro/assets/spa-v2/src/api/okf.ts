@@ -92,15 +92,22 @@ export interface OkfConceptQuery {
 export interface OkfClientOptions {
 	endpoint: string;
 	nonce: string;
+	/** Guest mode — send the X-WP-MCP-AI-Guest header instead of a nonce. */
+	guest?: boolean;
+	guestToken?: string;
 }
 
 export class OkfClient {
 	private readonly base: string;
 	private readonly nonce: string;
+	private readonly guest: boolean;
+	private readonly guestToken: string;
 
 	constructor( opts: OkfClientOptions ) {
 		this.base = opts.endpoint.replace( /\/+$/, '' );
 		this.nonce = opts.nonce;
+		this.guest = opts.guest ?? false;
+		this.guestToken = opts.guestToken ?? '';
 	}
 
 	async listBundles( signal?: AbortSignal ): Promise< OkfBundle[] > {
@@ -198,7 +205,9 @@ export class OkfClient {
 		const headers: Record< string, string > = {
 			Accept: 'application/json',
 		};
-		if ( this.nonce ) {
+		if ( this.guest ) {
+			headers[ 'X-WP-MCP-AI-Guest' ] = this.guestToken || '1';
+		} else if ( this.nonce ) {
 			headers[ 'X-WP-Nonce' ] = this.nonce;
 		}
 

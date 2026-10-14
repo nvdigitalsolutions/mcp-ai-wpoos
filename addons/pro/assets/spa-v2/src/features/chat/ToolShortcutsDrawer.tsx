@@ -69,6 +69,9 @@ export interface ToolShortcutsDrawerProps {
 	assistantId: number | string;
 	isOpen: boolean;
 	onClose: () => void;
+	/** Guest mode — forward the guest token header (iframe/embedded surface). */
+	guest?: boolean;
+	guestToken?: string;
 	/** Called when the user clicks a shortcut. */
 	onInsertPayload: ( payload: string, autoSubmit?: boolean ) => void;
 	/** The toggle button ref — focus returns here on close. */
@@ -83,12 +86,14 @@ export function ToolShortcutsDrawer( {
 	assistantId,
 	isOpen,
 	onClose,
+	guest = false,
+	guestToken = '',
 	onInsertPayload,
 	toggleRef,
 }: ToolShortcutsDrawerProps ): JSX.Element | null {
 	const client = useMemo(
-		() => new ToolShortcutsClient( { endpoint, nonce } ),
-		[ endpoint, nonce ]
+		() => new ToolShortcutsClient( { endpoint, nonce, guest, guestToken } ),
+		[ endpoint, nonce, guest, guestToken ]
 	);
 
 	const [ shortcuts, setShortcuts ] = useState< ToolShortcut[] | null >( null );
