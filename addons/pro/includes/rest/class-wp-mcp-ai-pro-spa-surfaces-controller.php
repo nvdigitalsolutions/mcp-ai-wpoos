@@ -310,9 +310,16 @@ class WP_MCP_AI_Pro_SPA_Surfaces_Controller {
 	 * Resolve the mountable URL for a single active surface.
 	 *
 	 * Resolution order, per catalog entry:
-	 *   1. First published page/post whose content renders the surface's
-	 *      shortcode (the "embed page" convention).
-	 *   2. Site root as a last-resort fallback.
+	 *   1. Route surfaces carry a `route` fragment — their `url` is the site-root
+	 *      placeholder; the headless client prepends its own hosted-SPA URL to
+	 *      the fragment (the SPA URL lives client-side, not on the site).
+	 *   2. Page/shortcode surfaces resolve to the first published page/post whose
+	 *      content renders the surface's shortcode (the "embed page" convention).
+	 *   3. Class-only surfaces (no shortcode, no route) fall back to the site root.
+	 *
+	 * A shortcode surface with no matching embed page returns an empty string so
+	 * detect_surfaces() omits it — emitting an iframe that silently loads the
+	 * bare home page is worse than not surfacing the addon at all.
 	 *
 	 * Route surfaces (e.g. content-graph) carry a `route` fragment in their
 	 * descriptor instead; the headless client prepends its own configured
@@ -326,16 +333,22 @@ class WP_MCP_AI_Pro_SPA_Surfaces_Controller {
 	 * @return string Resolved URL.
 	 */
 	private static function resolve_surface_url( array $addon, $site_url ) {
-		// First page rendering the shortcode.
-		if ( ! empty( $addon['shortcode'] ) ) {
-			$page_url = self::find_page_with_shortcode( $addon['shortcode'] );
-			if ( '' !== $page_url ) {
-				return $page_url;
-			}
+		// Route surfaces (e.g. content-graph) carry a `route` fragment; their
+		// `url` is a placeholder the client replaces with its own hosted-SPA
+		// base. They have no shortcode/class page to scan for.
+		if ( ! empty( $addon['route'] ) ) {
+			return $site_url;
 		}
 
-		// Fall back to the site root (also the placeholder for route surfaces,
-		// whose real URL the client derives from its own SPA URL + route).
+		// Page surfaces: mount the first page rendering their shortcode, or the
+		// site root when their addon registers no shortcode (class-only
+		// detection). A shortcode surface with NO embed page has no mountable
+		// target — return empty so detect_surfaces() omits it rather than
+		// emitting an iframe that silently loads the bare home page.
+		if ( ! empty( $addon['shortcode'] ) ) {
+			return self::find_page_with_shortcode( $addon['shortcode'] );
+		}
+
 		return $site_url;
 	}
 
