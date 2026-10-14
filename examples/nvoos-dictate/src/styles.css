@@ -458,23 +458,18 @@ body {
 }
 
 .assistant-frame-wrap {
-  /* Fill the `.content` element edge-to-edge (cancelling its 16px padding),
-     then center the framed SPA at 90% size so it sits nicely in the space. */
+  /* Fill the `.content` element edge-to-edge (cancelling its 16px padding). */
   position: absolute;
   inset: -16px;
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .assistant-frame {
-  width: 90%;
-  height: 90%;
+  width: 100%;
+  height: 100%;
   border: 0;
   display: block;
   background: #111;
-  border-radius: 6px;
 }
 
 /* NV oOS hub — multi-surface view (sub-tab bar above the framed SPA). */
