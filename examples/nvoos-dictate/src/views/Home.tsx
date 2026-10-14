@@ -539,7 +539,7 @@ export default function Home({ status, dictate, onRefresh }: Props) {
             </span>
           </li>
           <li>
-            <span>Assistant (Pro SPA)</span>
+            						<span>NV oOS</span>
             <span className="row">
               <span className={badge(!!status?.spa_configured)}>
                 {status?.spa_configured ? status?.spa_url || 'configured' : 'not configured'}

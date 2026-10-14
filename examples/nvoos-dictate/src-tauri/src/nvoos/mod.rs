@@ -11,5 +11,5 @@ mod client;
 pub mod types;
 
 pub use archive::archive_transcript;
-pub use client::{ConnectionTest, NvoosClient};
+pub use client::{ConnectionTest, NvoosClient, SpaSurface};
 pub use types::{extract_polish_meta, extract_reply_text, TranscriptRecord};
