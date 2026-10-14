@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.5
+Stable tag: 1.2.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.6 - October 14, 2026 =
+
+Bumped to 1.2.6 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Google Drive OAuth restored to full read access (drive.readonly alongside drive.file) after the drive.file-only narrowing broke search_drive/get_drive_file and the F&B tools for pre-existing content. Food & Beverage reliability: multi-worksheet workbook reads via the Sheets API, a demo-workbook fallback, the spreadsheets.readonly OAuth scope, actionable Sheets-scope error surfacing, a CSV exporter, and 18 shipped demo tables. The self-hosted OCR client now speaks the vLLM request contract (was SGLang, so the no-repeat-ngram processor never ran). Drive fixes: the inline-async-tick trait double-declare fatal, response-body logging, and folder_id clearing. The dictation companion app gains a CDP browser-control agent, a FastConformer STT engine, a Stage-2 polish master switch, model-download hardening, and an NV oOS multi-SPA hub (spa-surfaces discovery endpoint). Pro SPA v2 fixes for last-message save, assistant memory, and the drawer 401 in the dictate iframe. shell-quote patched to 1.12.0. Tool count unchanged: ~354 base + ~1,376 Pro (~1,730 total; live registry authoritative).
 
 = 1.2.5 - October 13, 2026 =
 
