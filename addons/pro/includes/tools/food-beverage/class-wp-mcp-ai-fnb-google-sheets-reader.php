@@ -80,6 +80,13 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	private $workbook_cache = null;
 
 	/**
+	 * Per-instance WP_Error from the last explicit-workbook metadata lookup.
+	 *
+	 * @var WP_Error|null
+	 */
+	private $workbook_error = null;
+
+	/**
 	 * Candidate sheet names for a table ID, in lookup order.
 	 *
 	 * @param string $table_id Spec table ID.
@@ -203,18 +210,24 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			return $this->workbook_cache;
 		}
 
-		$explicit = WP_MCP_AI_Fnb_Settings::get( 'data_workbook_id', '' );
-		if ( is_string( $explicit ) && '' !== trim( $explicit ) ) {
-			$meta = WP_MCP_AI_Pro_Google_Drive_Client::get_metadata( trim( $explicit ), $auth['access_token'], $auth['timeout'] );
+		// Prefer an explicitly configured workbook ID, then fall back to the
+		// canonical demo workbook (see WP_MCP_AI_Fnb_Settings::workbook_id()).
+		$explicit = trim( WP_MCP_AI_Fnb_Settings::workbook_id() );
+		if ( '' !== $explicit ) {
+			$meta = WP_MCP_AI_Pro_Google_Drive_Client::get_metadata( $explicit, $auth['access_token'], $auth['timeout'] );
 			if ( ! is_wp_error( $meta ) ) {
 				$this->workbook_cache = array(
-					'id'        => isset( $meta['id'] ) ? (string) $meta['id'] : (string) trim( $explicit ),
+					'id'        => isset( $meta['id'] ) ? (string) $meta['id'] : $explicit,
 					'name'      => isset( $meta['name'] ) ? (string) $meta['name'] : '',
 					'mime_type' => isset( $meta['mimeType'] ) ? (string) $meta['mimeType'] : '',
 				);
 
 				return $this->workbook_cache;
 			}
+			// get_metadata failed — remember the error so read_table() can
+			// surface it with an actionable message instead of falling through
+			// to a misleading split-file "not found".
+			$this->workbook_error = $meta;
 		}
 
 		// Also allow a workbook name to be configured (the file may sit in a
@@ -222,7 +235,7 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 		$workbook_name = WP_MCP_AI_Fnb_Settings::get( 'data_workbook_name', '' );
 		$workbook_name = is_string( $workbook_name ) ? $this->normalise_name( $workbook_name ) : '';
 
-		$best = null;
+		$best          = null;
 		$best_modified = 0;
 
 		foreach ( $this->folders() as $folder_id ) {
@@ -313,8 +326,14 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 
 		return new WP_Error(
 			'wp_mcp_ai_fnb_sheet_not_found',
-			/* translators: %s: table id */
-			sprintf( __( 'No Drive file found for F&B table "%s" in the configured folders.', 'mcp-ai-wpoos-pro' ), $table_id )
+			sprintf(
+				/* translators: 1: table id, 2: settings option name, 3: settings option name, 4: settings option name */
+				__( 'No Drive file found for F&B table "%1$s" in the configured folders, and no workbook is configured. Set one of the following on the F&B settings page (option "wp_mcp_ai_fnb_settings"): "%2$s" to the Demo Data workbook ID, or "%3$s"/"%4$s" to folders containing the exported sheets.', 'mcp-ai-wpoos-pro' ),
+				$table_id,
+				'data_workbook_id',
+				'data_folder_id',
+				'setup_folder_id'
+			)
 		);
 	}
 
@@ -346,8 +365,8 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			$tabs = array();
 			foreach ( $metadata['sheets'] as $sheet ) {
 				if ( isset( $sheet['properties']['title'] ) ) {
-					$title           = (string) $sheet['properties']['title'];
-					$tabs[ $title ]  = $this->normalise_name( $title );
+					$title          = (string) $sheet['properties']['title'];
+					$tabs[ $title ] = $this->normalise_name( $title );
 				}
 			}
 
@@ -416,7 +435,10 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 		$rows    = array();
 
 		if ( empty( $values ) ) {
-			return array( 'columns' => $columns, 'rows' => $rows );
+			return array(
+				'columns' => $columns,
+				'rows'    => $rows,
+			);
 		}
 
 		$columns = array_map( 'strval', array_shift( $values ) );
@@ -536,6 +558,12 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			if ( ! $not_found ) {
 				return $result;
 			}
+		} elseif ( $this->workbook_error instanceof WP_Error ) {
+			// The explicit (or demo) workbook ID could not be read — surface the
+			// real failure (auth/scope/400/404) rather than masking it as a
+			// split-file "file not found". This is the distinct, upstream
+			// Sheets-API break the read path should not conflate with lookup.
+			return $this->workbook_error;
 		}
 
 		// Fallback: one file per table (original demo layout).
