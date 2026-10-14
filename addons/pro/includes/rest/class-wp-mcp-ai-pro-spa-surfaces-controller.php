@@ -151,12 +151,16 @@ class WP_MCP_AI_Pro_SPA_Surfaces_Controller {
 
 		$surfaces = array();
 
-		// 1. Assistant (Pro SPA v2) — always available in Pro (this addon).
+		// 1. Home (Pro SPA v2) — the stable chat/assistant entry, always available
+		//    in Pro (this addon). It is a route surface: the client prepends its
+		//    own hosted-SPA base to `#/chat`, so it never triggers a full page
+		//    load and can be pinned as the hub's Home tab.
 		$surfaces[] = self::surface(
 			'assistant',
-			__( 'Assistant', 'mcp-ai-wpoos' ),
+			__( 'Home', 'mcp-ai-wpoos' ),
 			$site_url,
-			__( 'Hosted NV oOS Pro SPA chat surface.', 'mcp-ai-wpoos' )
+			__( 'Hosted NV oOS Pro SPA chat surface.', 'mcp-ai-wpoos' ),
+			'#/chat'
 		);
 
 		/**

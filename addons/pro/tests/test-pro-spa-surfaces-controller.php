@@ -11,6 +11,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * User-defined stand-in for the standalone nvoos-content-graph plugin's
+ * namespaced `Plugin` class.
+ *
+ * `class_alias()` rejects aliasing internal classes (e.g. `stdClass`) on
+ * PHP 8.3+, so tests alias this concrete class instead.
+ *
+ * @since 2.2.0
+ */
+class NvoosContentGraph_Plugin_Stub {}
+
+/**
  * Test class for WP_MCP_AI_Pro_SPA_Surfaces_Controller.
  *
  * @since 2.2.0
@@ -62,7 +73,7 @@ class Test_WP_MCP_AI_Pro_SPA_Surfaces_Controller extends WP_UnitTestCase {
 
 		// Simulate the standalone nvoos-content-graph plugin's namespaced class.
 		if ( ! class_exists( 'NvoosContentGraph\Plugin' ) ) {
-			class_alias( 'stdClass', 'NvoosContentGraph\Plugin' );
+			class_alias( 'NvoosContentGraph_Plugin_Stub', 'NvoosContentGraph\Plugin' );
 		}
 
 		$surfaces = WP_MCP_AI_Pro_SPA_Surfaces_Controller::detect_surfaces();
@@ -106,7 +117,7 @@ class Test_WP_MCP_AI_Pro_SPA_Surfaces_Controller extends WP_UnitTestCase {
 	 */
 	public function test_route_surface_carries_route_fragment() {
 		if ( ! class_exists( 'NvoosContentGraph\Plugin' ) ) {
-			class_alias( 'stdClass', 'NvoosContentGraph\Plugin' );
+			class_alias( 'NvoosContentGraph_Plugin_Stub', 'NvoosContentGraph\Plugin' );
 		}
 
 		$surfaces = WP_MCP_AI_Pro_SPA_Surfaces_Controller::detect_surfaces();
@@ -126,13 +137,27 @@ class Test_WP_MCP_AI_Pro_SPA_Surfaces_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The Assistant surface is always present (Pro itself).
+	 * The Assistant surface is always present (Pro itself) and is the stable
+	 * Home route (`#/chat`) so the client can pin it without a full page load.
 	 */
 	public function test_assistant_surface_always_present() {
 		$surfaces = WP_MCP_AI_Pro_SPA_Surfaces_Controller::detect_surfaces();
 
 		$ids = wp_list_pluck( $surfaces, 'id' );
 		$this->assertContains( 'assistant', $ids );
+
+		$assistant = null;
+		foreach ( $surfaces as $surface ) {
+			if ( 'assistant' === $surface['id'] ) {
+				$assistant = $surface;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $assistant );
+		$this->assertArrayHasKey( 'route', $assistant );
+		$this->assertSame( '#/chat', $assistant['route'] );
+		$this->assertSame( 'Home', $assistant['title'] );
 	}
 
 	/**
