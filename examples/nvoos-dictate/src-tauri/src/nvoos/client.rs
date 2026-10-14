@@ -23,6 +23,21 @@ pub struct ConnectionTest {
     pub authenticated: bool,
 }
 
+/// A single hosted SPA surface reported by the site's discovery endpoint.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SpaSurface {
+    pub id: String,
+    pub title: String,
+    pub url: String,
+    #[serde(default)]
+    pub description: String,
+    /// Optional hash-route fragment for surfaces that live inside the hosted
+    /// Pro SPA routes (e.g. `#/knowledge-graph`). The client prepends its own
+    /// SPA base URL to resolve the real iframe target.
+    #[serde(default)]
+    pub route: String,
+}
+
 pub struct NvoosClient {
     http: reqwest::Client,
     base: String,
@@ -182,6 +197,43 @@ impl NvoosClient {
         Ok((text, meta))
     }
 
+    /// Discover the SPA surfaces (hosted NV oOS addons) active on the site.
+    ///
+    /// Authenticated against `GET /wp-json/mcp-ai-pro/v1/spa-surfaces` with the
+    /// assistant credential. The site is the source of truth for whether an
+    /// addon is installed-and-activated; a surface is only returned when its
+    /// addon is genuinely active server-side. A 4xx/5xx (including a site
+    /// without the Pro endpoint) yields an empty list rather than an error so
+    /// the NV oOS tab degrades gracefully to the legacy single-SPA view.
+    pub async fn list_spa_surfaces(&self) -> Vec<SpaSurface> {
+        let url = format!("{}/wp-json/mcp-ai-pro/v1/spa-surfaces", self.base);
+        let resp = match self
+            .http
+            .get(&url)
+            .bearer_auth(&self.credential)
+            .send()
+            .await
+        {
+            Ok(r) => r,
+            Err(_) => return Vec::new(),
+        };
+        if !resp.status().is_success() {
+            return Vec::new();
+        }
+        match resp.json::<serde_json::Value>().await {
+            Ok(payload) => payload
+                .get("surfaces")
+                .and_then(serde_json::Value::as_array)
+                .map(|rows| {
+                    rows.iter()
+                        .filter_map(|row| serde_json::from_value::<SpaSurface>(row.clone()).ok())
+                        .collect()
+                })
+                .unwrap_or_default(),
+            Err(_) => Vec::new(),
+        }
+    }
+
     /// One-way archive of a transcript into the plugin's transcript store.
     pub async fn archive_transcript(
         &self,
@@ -225,5 +277,48 @@ impl NvoosClient {
             )));
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SpaSurface;
+
+    #[test]
+    fn spa_surface_deserializes_with_defaulted_description() {
+        let v: SpaSurface = serde_json::from_value(serde_json::json!({
+            "id": "assistant",
+            "title": "Assistant",
+            "url": "https://example.com/"
+        }))
+        .unwrap();
+        assert_eq!(v.id, "assistant");
+        assert_eq!(v.title, "Assistant");
+        assert_eq!(v.description, "");
+        assert_eq!(v.route, "");
+    }
+
+    #[test]
+    fn spa_surface_reads_description_when_present() {
+        let v: SpaSurface = serde_json::from_value(serde_json::json!({
+            "id": "chat-spa",
+            "title": "Chat",
+            "url": "https://example.com/",
+            "description": "a chat surface"
+        }))
+        .unwrap();
+        assert_eq!(v.description, "a chat surface");
+    }
+
+    #[test]
+    fn spa_surface_reads_route_fragment_when_present() {
+        let v: SpaSurface = serde_json::from_value(serde_json::json!({
+            "id": "content-graph",
+            "title": "Content Graph",
+            "url": "https://example.com/",
+            "route": "#/knowledge-graph"
+        }))
+        .unwrap();
+        assert_eq!(v.route, "#/knowledge-graph");
     }
 }

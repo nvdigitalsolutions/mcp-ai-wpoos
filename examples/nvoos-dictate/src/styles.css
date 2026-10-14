@@ -476,3 +476,25 @@ body {
   background: #111;
   border-radius: 6px;
 }
+
+/* NV oOS hub — multi-surface view (sub-tab bar above the framed SPA). */
+.nvoos-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  margin: -8px -8px 0 -8px;
+}
+
+.nvoos-hub-tabs {
+  flex-shrink: 0;
+  padding: 0 8px;
+}
+
+/* The framed SPA fills the remaining space below the sub-tab bar. */
+.nvoos-hub .assistant-frame-wrap {
+  position: relative;
+  inset: auto;
+  flex: 1;
+  margin: 0;
+}

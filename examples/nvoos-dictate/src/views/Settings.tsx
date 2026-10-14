@@ -971,19 +971,20 @@ function NvoosTab({
           onChange={(e) => patchNvoos(onPatch, settings, { site_url: e.target.value })}
         />
       </label>
-      <label className="row">
-        <span>Assistant tab URL (hosted Pro SPA)</span>
-        <input
-          type="text"
-          value={settings.spa.url}
-          placeholder="https://chat.nvoos.cloud — or your site's [nvoos_pro_spa] page"
-          onChange={(e) => onPatch({ spa: { ...settings.spa, url: e.target.value } })}
-        />
-      </label>
-      <p className="muted">
-        The Assistant tab embeds this URL in a frame. Point it at a hosted NV oOS Pro SPA
-        (standalone app or a page rendering <code>[nvoos_pro_spa]</code>).
-      </p>
+      					<label className="row">
+      						<span>Default SPA URL (legacy fallback)</span>
+      						<input
+      							type="text"
+      							value={settings.spa.url}
+      							placeholder="https://chat.nvoos.cloud — or your site's [nvoos_pro_spa] page"
+      							onChange={(e) => onPatch({ spa: { ...settings.spa, url: e.target.value } })}
+      						/>
+      					</label>
+      					<p className="muted">
+      						The NV oOS tab discovers its surfaces from this site (assistant, chat, toolkit…)
+      						and shows one sub-tab per installed addon. This URL is only used as a fallback when
+      						the site cannot be reached or has no Pro SPA endpoint.
+      					</p>
       <label className="row">
         <span>Assistant ID (optional — uses site default)</span>
         <input

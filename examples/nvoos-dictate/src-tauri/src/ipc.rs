@@ -654,6 +654,17 @@ pub async fn test_nvoos_connection(
     client.test_connection().await
 }
 
+/// Discover the active NV oOS SPA surfaces from the configured site.
+/// Feeds the multi-tab NV oOS view; an empty list (site unreachable, no Pro
+/// endpoint, or no credential) degrades to the legacy single configured SPA.
+#[tauri::command]
+pub async fn list_spa_surfaces(
+    state: State<'_, AppState>,
+) -> AppResult<Vec<crate::nvoos::SpaSurface>> {
+    let client = state.nvoos_client()?;
+    Ok(client.list_spa_surfaces().await)
+}
+
 #[tauri::command]
 pub fn set_openai_api_key(
     window: tauri::Window,

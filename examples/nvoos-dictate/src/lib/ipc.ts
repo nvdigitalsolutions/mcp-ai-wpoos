@@ -137,6 +137,14 @@ export interface SpaCheck {
   message: string;
 }
 
+export interface SpaSurface {
+  id: string;
+  title: string;
+  url: string;
+  description: string;
+  route?: string;
+}
+
 export interface TranscriptRow {
   id: number;
   text_raw: string;
@@ -372,7 +380,8 @@ export const api = {
   getSettings: () => invoke<Settings>('get_settings'),
   updateSettings: (settings: Settings) => invoke<Settings>('update_settings', { settings }),
   getStatus: () => invoke<StatusInfo>('get_status'),
-  checkSpa: (url: string) => invoke<SpaCheck>('check_spa', { url }),
+  	checkSpa: (url: string) => invoke<SpaCheck>('check_spa', { url }),
+  	listSpaSurfaces: () => invoke<SpaSurface[]>('list_spa_surfaces'),
   getDiagnostics: () => invoke<DiagnosticsInfo>('get_diagnostics'),
   listInputDevices: () => invoke<string[]>('list_input_devices'),
   restartMicrophone: () => invoke<DiagnosticsInfo['mic']>('restart_microphone'),

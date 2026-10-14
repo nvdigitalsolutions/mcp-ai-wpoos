@@ -119,6 +119,7 @@ pub fn run() {
             ipc::set_nvoos_credential,
             ipc::clear_nvoos_credential,
             ipc::test_nvoos_connection,
+            ipc::list_spa_surfaces,
             ipc::set_openai_api_key,
             ipc::clear_openai_api_key,
             ipc::set_lm_studio_token,

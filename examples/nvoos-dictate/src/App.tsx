@@ -51,12 +51,12 @@ export default function App() {
           <button className={tab === 'home' ? 'tab active' : 'tab'} onClick={() => setTab('home')}>
             Status
           </button>
-          <button
-            className={tab === 'assistant' ? 'tab active' : 'tab'}
-            onClick={() => setTab('assistant')}
-          >
-            Assistant
-          </button>
+          				<button
+          					className={tab === 'assistant' ? 'tab active' : 'tab'}
+          					onClick={() => setTab('assistant')}
+          				>
+          					NV oOS
+          				</button>
           <button
             className={tab === 'history' ? 'tab active' : 'tab'}
             onClick={() => setTab('history')}
