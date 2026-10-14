@@ -162,6 +162,10 @@ class WP_MCP_AI_Pro_SPA_Config {
 			'height'              => isset( $per_instance['height'] ) ? sanitize_text_field( $per_instance['height'] ) : '',
 			'showSidebar'         => ! isset( $per_instance['show_sidebar'] ) || ! empty( $per_instance['show_sidebar'] ),
 			'assistantSelector'   => $assistant_selector,
+			// True when the shortcode explicitly pins a single assistant. Pinned
+			// surfaces must always mount on that assistant and never honour a
+			// remembered selection (which might belong to another surface).
+			'pinnedAssistant'     => ! empty( $per_instance['assistant_id'] ),
 			'cronMonitor'         => ! isset( $per_instance['cron_monitor'] ) || ! empty( $per_instance['cron_monitor'] ),
 			'routes'              => $routes,
 		);

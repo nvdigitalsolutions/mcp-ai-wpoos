@@ -53,6 +53,13 @@ export interface ProSpaPerInstanceConfig {
 	 * enabled server-side.
 	 */
 	profileSelector?: boolean;
+	/**
+	 * True when the shortcode explicitly pins a single assistant (an
+	 * `assistant_id` attribute was provided). Pinned surfaces ignore the
+	 * remembered assistant selection so a stale localStorage value cannot
+	 * silently rebind the conversation to another assistant.
+	 */
+	pinnedAssistant?: boolean;
 }
 
 /** A chat profile as localized by the server (2.2.0). */
