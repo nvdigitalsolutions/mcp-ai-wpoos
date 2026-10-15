@@ -96,6 +96,12 @@ export interface ProSpaEndpoints {
 	 * the plugin, and the page renders an unavailable state.
 	 */
 	contentGraph: string;
+	/**
+	 * NV oOS Docs Hub front-end URL — the #/docs page renders this in a
+	 * sandboxed iframe. Empty when not configured (admin-only), and the
+	 * page renders an unavailable state.
+	 */
+	docsHub: string;
 }
 
 export interface RuntimeAssistantSummary {
@@ -218,6 +224,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 			okf: typeof e.okf === 'string' ? e.okf : '',
 			contentGraph: typeof e.contentGraph === 'string' ? e.contentGraph : '',
+			docsHub: typeof e.docsHub === 'string' ? e.docsHub : '',
 		},
 		user: ( g.user ?? { id: 0, login: '', displayName: '', capabilities: [] } ) as ProSpaUser,
 		mentionTypes: Array.isArray( g.mentionTypes ) ? g.mentionTypes : [],

@@ -166,6 +166,15 @@ export function useBootstrap(): BootstrapResult {
 				},
 			},
 			{
+				id: 'nav-docs',
+				label: 'Go to Docs',
+				description: 'Browse the documentation',
+				category: 'navigation',
+				handler: () => {
+					window.location.hash = '#/docs';
+				},
+			},
+			{
 				id: 'action-toggle-sidebar',
 				label: 'Toggle Sidebar',
 				category: 'action',

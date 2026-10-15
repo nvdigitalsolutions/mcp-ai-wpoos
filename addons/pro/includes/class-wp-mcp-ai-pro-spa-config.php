@@ -291,6 +291,16 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'contentGraph'  => ( $is_admin && ! $guest && class_exists( 'NvoosContentGraph\Plugin' ) )
 					? esc_url_raw( rest_url( 'nvoos-content-graph/v1' ) )
 					: '',
+
+				// NV oOS Docs Hub — the #/docs page renders this front-end URL
+				// in a sandboxed iframe (defaults to the hosted console URL;
+				// admins can override via the filter).
+				'docsHub'       => ( $is_admin && ! $guest )
+					? (string) apply_filters(
+						'wp_mcp_ai_pro_spa_docs_url',
+						'https://console.nvoos.cloud/docs-hub/'
+					)
+					: '',
 			),
 			'user'         => array(
 				'id'           => $guest ? 0 : $user_id,
