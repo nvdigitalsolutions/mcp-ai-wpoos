@@ -1265,6 +1265,39 @@ Python `urllib`); long synchronous tool calls exceed the ~100s proxy cutoff.
 **Fix:** use curl/browser-like user agents for probes, and prefer v1.1.55+
 where long tools are bounded or delivered out-of-band (SSE message queue).
 
+### Chat returns a full Cloudflare **520** error page (origin dropped, not 524)
+
+**Distinct from 524.** 520 means Cloudflare could not parse a complete HTTP
+response — the origin dropped the connection mid-stream (empty/malformed
+body), not a timeout. The chat UI then renders Cloudflare's 520 HTML as the
+"response". Symptoms verified on a Cloudways app (2026-10-15):
+`/index.php?stream=true&limit=10` appears in `app_php` → `slow_pages` analytics
+at 322–372 s, while the app-level PHP-FPM pool had a hidden hard cap.
+
+**Root causes to check (in order):**
+
+1. **App-level `php_admin_value[max_execution_time]` overrides the panel.**
+   The Cloudways server `execution_limit` (e.g. 300) is *not* the effective
+   value when the app's PHP-FPM pool file sets a lower
+   `php_admin_value[max_execution_time]=120`. `php_admin_value` beats both the
+   panel and any `ini_set()` from PHP/plugins, and is invisible from the
+   Cloudways panel — read the pool file directly. Raise it to comfortably
+   exceed the longest observed stream (600+).
+2. **Varnish buffers the SSE stream.** On Cloudways Varnish is on by default
+   for all apps. `pass` still frames the response and can break a long-lived
+   SSE stream; the correct handling is **`pipe`** (raw TCP tunnel) in `vcl_recv`
+   for any URL matching `stream=true`. Custom per-app VCL is not self-service
+   in the Cloudways panel (typically a support ticket), so the pragmatic
+   self-service fix is to disable Varnish on that one app — safe for dynamic
+   WP/WooCommerce + chat, which Redis/Breeze serve better anyway.
+3. **Proxy timeouts** (nginx `proxy_read_timeout`, often 60 s on Cloudways)
+   can also cut the stream — covered by the `send_sse_keepalive()` fix (see
+   the test-suite skill, pattern 64).
+
+**Diagnostic shortcut:** Cloudways `analytics_app_php` (`slow_pages` +
+`processes`) surfaces the streaming endpoint and a stuck PHP-FPM worker
+(e.g. `pool <sys_user>-82`) holding CPU for 300+ s — that's the smoking gun.
+
 ### `wp mcp-ai provider list` / `wp mcp-ai chat` fatal (PHP 8, fixed in #6625)
 
 Both commands fataled with a PHP 8 error on builds before the CLI fix:
