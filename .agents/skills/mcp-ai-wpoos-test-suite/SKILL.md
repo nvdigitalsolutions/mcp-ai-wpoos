@@ -961,6 +961,11 @@ the changed files is the substantive gate; plan CI waits accordingly.
       call longer than the proxy timeout still kills the stream — the durable
       fix is deadline-triggered offload to the job stream (proposal:
       `docs/project/proposals/sse-stream-hardening-long-run-offload-proposal.md`).
+      Related but distinct: a full Cloudflare **520** page (origin dropped the
+      connection, not a timeout) is usually the app-level PHP-FPM pool
+      `php_admin_value[max_execution_time]` (lower than the panel value,
+      overrides `ini_set()`) or Varnish buffering the `stream=true` endpoint —
+      see the plugin skill's "Cloudflare 520" troubleshooting entry.
   65. **A test context mysteriously lacks tools after v1.1.96 — the lazy
       registry, not a missing registration.** #6896 defers the ~350 default
       tool loads on plain front-end requests; `wp_mcp_ai_is_plugin_runtime_context()`
