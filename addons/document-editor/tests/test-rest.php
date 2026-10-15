@@ -26,6 +26,52 @@ class Test_Document_Editor_REST extends WP_UnitTestCase {
 				)
 			);
 		}
+		// The credential stub (if the base plugin is absent) is declared at file
+		// load time below; reset its mutable state for a clean run each test.
+		if ( class_exists( 'WP_MCP_AI_Credentials' ) && property_exists( 'WP_MCP_AI_Credentials', 'tokens' ) ) {
+			WP_MCP_AI_Credentials::$tokens     = array();
+			WP_MCP_AI_Credentials::$valid      = true;
+			WP_MCP_AI_Credentials::$created_by = 1;
+		}
+	}
+
+	/**
+	 * Test that a validated credential maps to its issuing user's edit_posts cap.
+	 */
+	public function test_edit_permission_granted_for_credential_owner_with_edit_posts() {
+		if ( ! property_exists( 'WP_MCP_AI_Credentials', 'created_by' ) ) {
+			$this->markTestSkipped( 'Base plugin credential class present; stub not in use.' );
+		}
+
+		$editor_id = self::factory()->user->create( array( 'role' => 'editor' ) );
+		WP_MCP_AI_Credentials::$created_by = $editor_id;
+		WP_MCP_AI_Credentials::$valid      = true;
+		wp_set_current_user( 0 ); // No logged-in cookie user.
+
+		$request = new WP_REST_Request( 'GET', '/nvoos-document-editor/v1/documents' );
+		$request->set_header( 'Authorization', 'Bearer ' . WP_MCP_AI_Credentials::seed_token() );
+
+		$this->assertTrue( NV_oOS_Document_Editor_REST::edit_permission( $request ) );
+	}
+
+	/**
+	 * Test that a credential owner lacking edit_posts is denied.
+	 */
+	public function test_edit_permission_denied_for_credential_owner_without_edit_posts() {
+		if ( ! property_exists( 'WP_MCP_AI_Credentials', 'created_by' ) ) {
+			$this->markTestSkipped( 'Base plugin credential class present; stub not in use.' );
+		}
+
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		WP_MCP_AI_Credentials::$created_by = $subscriber_id;
+		WP_MCP_AI_Credentials::$valid      = true;
+		wp_set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'GET', '/nvoos-document-editor/v1/documents' );
+		$request->set_header( 'Authorization', 'Bearer ' . WP_MCP_AI_Credentials::seed_token() );
+
+		$result = NV_oOS_Document_Editor_REST::edit_permission( $request );
+		$this->assertInstanceOf( 'WP_Error', $result );
 	}
 
 	/**
@@ -109,5 +155,80 @@ class Test_Document_Editor_REST extends WP_UnitTestCase {
 		$result = NV_oOS_Document_Editor_REST::get_document( $get );
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertSame( 'not_found', $result->get_error_code() );
+	}
+}
+
+if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
+	/**
+	 * Test-only stub of the base plugin's credential API.
+	 *
+	 * The document-editor addon accepts assistant credentials issued by the
+	 * base plugin (`WP_MCP_AI_Credentials`), guarded by `class_exists()` so the
+	 * integration stays optional. The addon's own test environment may not load
+	 * the base plugin; this stub supplies the two static methods the controller
+	 * calls, with a configurable issuing user so tests can exercise the
+	 * capability-mapping behaviour.
+	 */
+	class WP_MCP_AI_Credentials {
+
+		/**
+		 * In-test token table (identifier => secret).
+		 *
+		 * @var array<string,string>
+		 */
+		public static $tokens = array();
+
+		/**
+		 * Whether validate_token() should succeed.
+		 *
+		 * @var bool
+		 */
+		public static $valid = true;
+
+		/**
+		 * User ID reported as the credential issuer.
+		 *
+		 * @var int
+		 */
+		public static $created_by = 1;
+
+		/**
+		 * Seed a valid token.
+		 *
+		 * @return string Full token (cred_identifier.SECRET).
+		 */
+		public static function seed_token() {
+			$identifier                  = 'cred_' . strtolower( wp_generate_password( 8, false, false ) );
+			$secret                      = wp_generate_password( 32, false, false );
+			self::$tokens[ $identifier ] = $secret;
+			return $identifier . '.' . $secret;
+		}
+
+		/**
+		 * Check the base plugin's credential format.
+		 *
+		 * @param string $token Token candidate.
+		 * @return bool
+		 */
+		public static function is_token_format( $token ) {
+			return is_string( $token ) && 1 === preg_match( '/^cred_[a-z0-9]+\..+$/', $token );
+		}
+
+		/**
+		 * Validate a token against the seed config.
+		 *
+		 * @param string $token Raw token.
+		 * @return array|WP_Error Credential metadata when valid.
+		 */
+		public static function validate_token( $token ) {
+			if ( ! self::$valid ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_token', 'The provided credential token is invalid.', array( 'status' => 401 ) );
+			}
+			return array(
+				'assistant_id'  => 1,
+				'credential_id' => 'cred_test',
+				'created_by'    => self::$created_by,
+			);
+		}
 	}
 }

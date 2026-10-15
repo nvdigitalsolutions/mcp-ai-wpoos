@@ -128,10 +128,12 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		// NV oOS Docs Hub — the #/docs page renders this front-end URL in a
 		// sandboxed iframe. Defaults to the hosted console docs URL.
 		docsHub: 'https://console.nvoos.cloud/docs-hub/',
-		// NV oOS Media Studio / Document Editor — standalone app leaves these
-		// empty (same-site shortcode pages; the pages show an unavailable state).
-		mediaStudio: '',
-		documentEditor: '',
+		// NV oOS Media Studio / Document Editor — point at the site's shortcode
+		// pages so the #/media and #/documents pages frame the real apps. The
+		// headless credential is forwarded to those frames via postMessage (see
+		// src/utils/auth-bridge.ts on the spa-v2 side).
+		mediaStudio: `${origin}/media-studio/`,
+		documentEditor: `${origin}/document-editor/`,
 	};
 }
 
@@ -202,6 +204,51 @@ export function buildBasicAuthHeader(username: string, appPassword: string): str
     binary += String.fromCharCode(byte);
   }
   return `Basic ${btoa(binary)}`;
+}
+
+/**
+ * Name of the in-memory (non-persisted) auth slot the framed child apps read
+ * via the spa-v2 auth-bridge (`utils/auth-bridge.ts`). Keep in sync.
+ */
+export const NVOOS_AUTH_SLOT = '__NVOOS_AUTH__';
+
+/**
+ * Expose the headless credential for the framed child apps (Media Studio,
+ * Document Editor). The value lives only in memory — never in `localStorage`,
+ * a URL, or the localized `NVOOS_PRO_SPA` global.
+ *
+ * @param connection The resolved connection (bearer or wp credentials).
+ */
+export function setAuthSlot(connection: ConnectionSettings): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  let authorization = '';
+  let siteOrigin = safeOrigin(connection.siteUrl);
+  if (connection.auth === 'bearer' && connection.bearer?.trim()) {
+    authorization = `Bearer ${connection.bearer.trim()}`;
+  } else if (connection.auth === 'wp' && connection.wpUsername && connection.wpAppPassword) {
+    authorization = buildBasicAuthHeader(
+      connection.wpUsername.trim(),
+      connection.wpAppPassword.trim(),
+    );
+  }
+  if (!authorization) {
+    delete (window as unknown as Record<string, unknown>)[NVOOS_AUTH_SLOT];
+    return;
+  }
+  (window as unknown as Record<string, unknown>)[NVOOS_AUTH_SLOT] = {
+    authorization,
+    siteOrigin,
+  };
+}
+
+function safeOrigin(siteUrl: string): string | undefined {
+  try {
+    return new URL(siteUrl).origin;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
