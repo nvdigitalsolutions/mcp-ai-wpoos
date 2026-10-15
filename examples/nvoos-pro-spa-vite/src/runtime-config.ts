@@ -125,6 +125,10 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		// NV oOS Content Graph (standalone plugin) — the knowledge-graph page
 		// renders an unavailable state when the site doesn't expose it.
 		contentGraph: `${api}/nvoos-content-graph/v1`,
+		// NV oOS Docs Hub — the #/docs page renders this front-end URL in a
+		// sandboxed iframe. The standalone app has no site-local docs page,
+		// so this is left empty (the page shows an unavailable state).
+		docsHub: '',
 	};
 }
 

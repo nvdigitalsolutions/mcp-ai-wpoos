@@ -10,6 +10,7 @@
  *   #/workflows   — Workflow builder
  *   #/analytics   — Usage dashboard
  *   #/knowledge-graph — Content Graph explorer (NV oOS Content Graph plugin)
+ *   #/docs        — Docs Hub (embedded hosted documentation browser)
  */
 
 import { lazy, Suspense, type JSX } from 'react';
@@ -23,6 +24,7 @@ const AssistantsPage = lazy( () => import( './features/assistants/AssistantsPage
 const WorkflowsPage = lazy( () => import( './features/workflows/WorkflowsPage' ).then( ( m ) => ( { default: m.WorkflowsPage } ) ) );
 const AnalyticsPage = lazy( () => import( './features/analytics/AnalyticsPage' ).then( ( m ) => ( { default: m.AnalyticsPage } ) ) );
 const KnowledgeGraphPage = lazy( () => import( './features/knowledge-graph/KnowledgeGraphPage' ).then( ( m ) => ( { default: m.KnowledgeGraphPage } ) ) );
+const DocsPage = lazy( () => import( './features/docs-hub/DocsPage' ).then( ( m ) => ( { default: m.DocsPage } ) ) );
 
 export interface AppRouterProps {
 	/** Shared transcript hook result from Layout. */
@@ -52,6 +54,7 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/workflows" element={ <WorkflowsPage /> } />
 				<Route path="/analytics" element={ <AnalyticsPage /> } />
 				<Route path="/knowledge-graph" element={ <KnowledgeGraphPage /> } />
+				<Route path="/docs" element={ <DocsPage /> } />
 				<Route path="*" element={ <Navigate to="/chat" replace /> } />
 			</Routes>
 		</Suspense>
