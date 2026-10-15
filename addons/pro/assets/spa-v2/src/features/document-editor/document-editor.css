@@ -1,0 +1,22 @@
+/**
+ * DocumentEditorPage — SPA shell styles for the embedded Document Editor iframe.
+ */
+
+.nvoos-pro-spa-document-editor__frame {
+	display: block;
+	width: 100%;
+	height: calc( 100vh - 160px );
+	min-height: 480px;
+	border: 1px solid var( --nvoos-border, #dcdcde );
+	border-radius: 8px;
+	background: var( --nvoos-bg-secondary, #fff );
+}
+
+.nvoos-pro-spa-document-editor__unavailable {
+	margin: 24px 0;
+	padding: 16px;
+	border: 1px dashed var( --nvoos-border, #c3c4c7 );
+	border-radius: 4px;
+	background: var( --nvoos-bg-secondary, #fff );
+	color: var( --nvoos-text-secondary, #50575e );
+}

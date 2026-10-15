@@ -301,6 +301,18 @@ class WP_MCP_AI_Pro_SPA_Config {
 						'https://console.nvoos.cloud/docs-hub/'
 					)
 					: '',
+
+				// NV oOS Media Studio — the #/media page frames its same-site
+				// shortcode page (hosted at /media-studio/ by default; overridable).
+				'mediaStudio'    => ( $is_admin && ! $guest && class_exists( 'NV_oOS_Media_Studio_Shortcode' ) )
+					? (string) apply_filters( 'wp_mcp_ai_pro_spa_media_studio_url', home_url( '/media-studio/' ) )
+					: '',
+
+				// NV oOS Document Editor — the #/documents page frames its
+				// same-site shortcode page (hosted at /document-editor/ by default).
+				'documentEditor' => ( $is_admin && ! $guest && class_exists( 'NV_oOS_Document_Editor_Shortcode' ) )
+					? (string) apply_filters( 'wp_mcp_ai_pro_spa_document_editor_url', home_url( '/document-editor/' ) )
+					: '',
 			),
 			'user'         => array(
 				'id'           => $guest ? 0 : $user_id,

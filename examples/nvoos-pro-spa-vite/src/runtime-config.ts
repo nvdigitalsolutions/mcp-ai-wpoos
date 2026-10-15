@@ -129,6 +129,10 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		// sandboxed iframe. The standalone app has no site-local docs page,
 		// so this is left empty (the page shows an unavailable state).
 		docsHub: '',
+		// NV oOS Media Studio / Document Editor — standalone app leaves these
+		// empty (same-site shortcode pages; the pages show an unavailable state).
+		mediaStudio: '',
+		documentEditor: '',
 	};
 }
 
