@@ -102,6 +102,18 @@ export interface ProSpaEndpoints {
 	 * page renders an unavailable state.
 	 */
 	docsHub: string;
+	/**
+	 * NV oOS Media Studio front-end URL — the #/media page frames this in a
+	 * sandboxed iframe. Empty when not configured (admin-only), and the
+	 * page renders an unavailable state.
+	 */
+	mediaStudio: string;
+	/**
+	 * NV oOS Document Editor front-end URL — the #/documents page frames this
+	 * in a sandboxed iframe. Empty when not configured (admin-only), and the
+	 * page renders an unavailable state.
+	 */
+	documentEditor: string;
 }
 
 export interface RuntimeAssistantSummary {
@@ -225,6 +237,8 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			okf: typeof e.okf === 'string' ? e.okf : '',
 			contentGraph: typeof e.contentGraph === 'string' ? e.contentGraph : '',
 			docsHub: typeof e.docsHub === 'string' ? e.docsHub : '',
+			mediaStudio: typeof e.mediaStudio === 'string' ? e.mediaStudio : '',
+			documentEditor: typeof e.documentEditor === 'string' ? e.documentEditor : '',
 		},
 		user: ( g.user ?? { id: 0, login: '', displayName: '', capabilities: [] } ) as ProSpaUser,
 		mentionTypes: Array.isArray( g.mentionTypes ) ? g.mentionTypes : [],
