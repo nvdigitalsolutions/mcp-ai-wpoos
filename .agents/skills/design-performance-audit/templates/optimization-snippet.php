@@ -50,12 +50,22 @@ add_action('wp_head', function() {
 
 // ============================================================================
 // 2. FONT-DISPLAY: SWAP (safe)
-// Fixes "Ensure text remains visible during webfont load". Elementor Pro
-// renders Custom Fonts @font-face with display:auto; switch to swap.
-// Fallback if the filter is ignored: redeclare the @font-face rules in the
-// child theme style.css with font-display: swap.
+// Fixes "Ensure text remains visible during webfont load".
+// VERIFIED: elementor_pro_custom_fonts_font_display is IGNORED by Elementor
+// Pro 4.x — the reliable fix is redeclaring the same @font-face rules (same
+// family/weight/src) with font-display:swap; the browser uses the last
+// matching declaration. Copy the family/weight/src from the live page's
+// inline "Start Custom Fonts CSS" block and fill the rules below.
+// ALSO check the child theme style.css @font-face blocks — they often omit
+// font-display entirely; add `font-display: swap;` there too.
 // ============================================================================
-add_filter('elementor_pro_custom_fonts_font_display', fn() => 'swap');
+add_filter('elementor_pro_custom_fonts_font_display', fn() => 'swap'); // No-op on EP 4.x — kept for older versions.
+
+add_action('wp_head', function() { ?>
+<style>
+	/* @font-face { font-family: 'FamilyName'; font-style: normal; font-weight: 700; font-display: swap; src: url('https://SITE/wp-content/uploads/...') format('woff'); } */
+</style>
+<?php }, 30);
 
 // ============================================================================
 // 3. EAGER LCP IMAGE (safe)
