@@ -234,7 +234,7 @@ Trigger: Brand assets updated on Hub
     │
     ├─ 1. Detect updated logo/colors → WordPress post meta change
     ├─ 2. List connected sites → remote_wp_connection { action: "list_connections" }
-    ├─ 3. For each spoke with WooCommerce (e.g., Parfumerie, Myyco):
+    ├─ 3. For each spoke with WooCommerce (e.g., a distinct brand/site slug):
     │   ├─ Push logo → remote_wp_connection { action: "create_post", ... }
     │   ├─ Push brand colors → remote_wp_connection (via post meta)
     │   └─ Log result per site

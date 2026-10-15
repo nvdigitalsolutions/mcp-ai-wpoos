@@ -239,6 +239,7 @@ before answering.
 | Image bridge | `generate_gemini_image_validated`, `generate_openai_image_validated`, `edit_gemini_image_validated`, `edit_openai_image`, `create_image_variation`, `product_actualization` | Usually exposed alongside the research bridge |
 | ECA (school extra-curriculars) | `list_ecas`, `get_eca`, `create_eca`, `update_eca`, `enroll_student_eca`, `withdraw_student_eca`, `mark_eca_attendance`, `manage_eca_waitlist`, `get_eca_timetable`, `send_eca_notification`, `generate_eca_analytics`, `list_students`, `get_student` | 26 tools observed; `list_ecas` is the cheapest probe |
 | Design stack (may be absent) | `schedule_social_post`, `paper_store_*`, `remote_wp_connection`, `resize_image`, `remove_background` | Absence of one group does NOT mean the bridge is down — groups are exposed per assistant/session |
+| Cloudways (per-account bridge) | `cloudways_<account>_*` (e.g. `cloudways_<account>_server_list`, `cloudways_<account>_app_list`), `server_list`, `app_list`, `operation_status` | Cloudways MCP is exposed once per Cloudways account, namespaced by account slug. The canonical `server_list`/`app_list` names and the discovery tools (`list_available_toolsets`, `list_mcp_tools`) can gap out independently, while the namespaced `cloudways_<account>_<tool>` handles stay live |
 
 ### Detection procedure (in order)
 
@@ -254,7 +255,13 @@ before answering.
    returned "No tool named … exists" minutes later while the underlying
    tools stayed live. `get_write_tools` (where present) enumerates a
    connected MCP's full mutating surface and doubles as a capability
-   snapshot (Cloudways: 188 write tools).
+   snapshot (Cloudways: 188 write tools). **For Cloudways specifically:** the
+   discovery surface gaps the hardest — `list_available_toolsets`,
+   `list_mcp_tools`, *and* the bare `server_list`/`app_list` can each return
+   "No tool named … exists" in the same turn, while the **namespaced** names
+   (`cloudways_<account>_server_list`, `cloudways_<account>_app_list`) and
+   `cloudways_<account>_get_toolset_tools` keep working. Retry via the
+   namespaced name before concluding the bridge dropped.
 4. **Report precisely.** Say "MCP server connected, verified live via
    `<tool>` (`<evidence>`)" — never claim an assistant is absent just
    because it is missing from `list_agents_and_models`.
@@ -267,6 +274,15 @@ before answering.
 - `list_ecas` ⇒ 75 live ECA records from `eca.directory` ⇒ ECA MCP live.
 - Cloudways: `get_write_tools` ⇒ 188 write tools even after toolset-discovery
   tools disappeared ⇒ connection still live.
+- Cloudways multi-account routing: `cloudways_<accountA>_server_list` returned
+  one set of servers, `cloudways_<accountB>_server_list` a different set, while
+  the bare `server_list`/`app_list` and `list_available_toolsets` intermittently
+  returned "No tool named … exists" and the `cloudways_<account>_*` names kept
+  working. **Log-path heuristic:** a PHP error path like
+  `/home/<server-id>.cloudwaysapps.com/…` maps 1:1 to a Cloudways **server ID**;
+  if `server_list` on the current account has no such server, you are on the
+  wrong account — look the ID up under another account's `server_list` label
+  rather than assuming the tool is broken.
 
 ## Known issues (observed on Design Stack, 2026-09)
 
