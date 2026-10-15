@@ -1444,72 +1444,72 @@ class WP_MCP_AI_Fnb_Metrics {
 		return $result;
 	}
 
-/**
- * Build a recoverable "unknown metric" error that tells the model which
- * metric IDs are valid and suggests the closest match, so it can re-issue
- * the call in-context instead of dead-ending (G-08, A1-04).
- *
- * @param string $metric_id The metric ID the caller supplied.
- * @return WP_Error
- */
-private static function unknown_metric_error( $metric_id ) {
-	$valid = array_keys( self::METRICS );
+	/**
+	 * Build a recoverable "unknown metric" error that tells the model which
+	 * metric IDs are valid and suggests the closest match, so it can re-issue
+	 * the call in-context instead of dead-ending (G-08, A1-04).
+	 *
+	 * @param string $metric_id The metric ID the caller supplied.
+	 * @return WP_Error
+	 */
+	private static function unknown_metric_error( $metric_id ) {
+		$valid = array_keys( self::METRICS );
 
-	$message = /* translators: %1$s: supplied metric id; %2$s: closest valid metric id; %3$s: valid ids. */ sprintf(
-		__( 'Unknown metric "%1$s". Did you mean "%2$s"? Valid metric IDs are: %3$s.', 'mcp-ai-wpoos-pro' ),
-		$metric_id,
-		self::closest_metric_id( $metric_id ),
-		implode( ', ', $valid )
-	);
+		$message = /* translators: %1$s: supplied metric id; %2$s: closest valid metric id; %3$s: valid ids. */ sprintf(
+			__( 'Unknown metric "%1$s". Did you mean "%2$s"? Valid metric IDs are: %3$s.', 'mcp-ai-wpoos-pro' ),
+			$metric_id,
+			self::closest_metric_id( $metric_id ),
+			implode( ', ', $valid )
+		);
 
-	return new WP_Error(
-		'wp_mcp_ai_fnb_unknown_metric',
-		$message,
-		array(
-			'supplied'        => $metric_id,
-			'valid_metrics'   => $valid,
-			'closest_metric'  => self::closest_metric_id( $metric_id ),
-		)
-	);
-}
-
-/**
- * Return the valid metric ID closest to the supplied value, or the first
- * valid ID when none is a plausible match.
- *
- * @param string $metric_id The metric ID the caller supplied.
- * @return string
- */
-private static function closest_metric_id( $metric_id ) {
-	$valid = array_keys( self::METRICS );
-
-	$normalized = strtoupper( trim( (string) $metric_id ) );
-	if ( '' === $normalized ) {
-		return reset( $valid );
+		return new WP_Error(
+			'wp_mcp_ai_fnb_unknown_metric',
+			$message,
+			array(
+				'supplied'       => $metric_id,
+				'valid_metrics'  => $valid,
+				'closest_metric' => self::closest_metric_id( $metric_id ),
+			)
+		);
 	}
 
-	// Exact case-insensitive match after stripping a trailing dash/number
-	// variations is already handled by the switch above; here we find the
-	// nearest ID by smallest Levenshtein distance.
-	$best      = reset( $valid );
-	$best_dist = PHP_INT_MAX;
+	/**
+	 * Return the valid metric ID closest to the supplied value, or the first
+	 * valid ID when none is a plausible match.
+	 *
+	 * @param string $metric_id The metric ID the caller supplied.
+	 * @return string
+	 */
+	private static function closest_metric_id( $metric_id ) {
+		$valid = array_keys( self::METRICS );
 
-	foreach ( $valid as $candidate ) {
-		$dist = levenshtein( $normalized, $candidate );
-
-		// Prefer a candidate that shares the numeric suffix.
-		$candidate_num = substr( $candidate, 2 );
-		$supplied_num  = substr( $normalized, strlen( $normalized ) - strlen( $candidate_num ) );
-		if ( $supplied_num === $candidate_num ) {
-			$dist -= 1;
+		$normalized = strtoupper( trim( (string) $metric_id ) );
+		if ( '' === $normalized ) {
+			return reset( $valid );
 		}
 
-		if ( $dist < $best_dist ) {
-			$best_dist = $dist;
-			$best      = $candidate;
+		// Exact case-insensitive match after stripping a trailing dash/number
+		// variations is already handled by the switch above; here we find the
+		// nearest ID by smallest Levenshtein distance.
+		$best      = reset( $valid );
+		$best_dist = PHP_INT_MAX;
+
+		foreach ( $valid as $candidate ) {
+			$dist = levenshtein( $normalized, $candidate );
+
+			// Prefer a candidate that shares the numeric suffix.
+			$candidate_num = substr( $candidate, 2 );
+			$supplied_num  = substr( $normalized, strlen( $normalized ) - strlen( $candidate_num ) );
+			if ( $supplied_num === $candidate_num ) {
+				--$dist;
+			}
+
+			if ( $dist < $best_dist ) {
+				$best_dist = $dist;
+				$best      = $candidate;
+			}
 		}
+
+		return $best;
 	}
-
-	return $best;
-}
 }
