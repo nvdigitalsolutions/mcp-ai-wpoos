@@ -9872,6 +9872,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$schema['properties'] = new stdClass();
 					}
 
+					// Per-property `required` is not valid JSON Schema. Legacy tools
+					// declare it as a boolean inside each property (`'required' => true`)
+					// instead of as a top-level array, and strict providers (DeepSeek)
+					// reject that with "true is not of type 'array'". Hoist any scalar
+					// `required` flag out of the property into the top-level array.
+					if ( is_array( $schema['properties'] ) ) {
+						$hoisted_required = isset( $schema['required'] ) && is_array( $schema['required'] ) ? $schema['required'] : array();
+						foreach ( $schema['properties'] as $prop_name => $prop_schema ) {
+							if ( ! is_array( $prop_schema ) || ! array_key_exists( 'required', $prop_schema ) || is_array( $prop_schema['required'] ) ) {
+								continue;
+							}
+							$flag = $prop_schema['required'];
+							unset( $schema['properties'][ $prop_name ]['required'] );
+							if ( $flag && ! in_array( $prop_name, $hoisted_required, true ) ) {
+								$hoisted_required[] = $prop_name;
+							}
+						}
+						if ( ! empty( $hoisted_required ) ) {
+							$schema['required'] = array_values( $hoisted_required );
+						}
+					}
+
 					// Use the model-facing description (short description + usage
 					// guidance suffix) so the LLM sees selection hints alongside
 					// the data-contract hints assembled by the registry.
