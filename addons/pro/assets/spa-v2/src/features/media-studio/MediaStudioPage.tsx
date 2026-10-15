@@ -5,16 +5,31 @@
  * (React 19.2.x, konva/react-konva, wavesurfer, react-image-crop) that must
  * not be vendored into the Pro SPA tree. This frames it behind a sandboxed
  * <iframe> so each app keeps its own React/router/DOM.
+ *
+ * Headless auth: when the host SPA holds a headless credential (application
+ * password or assistant credential), it is forwarded to the child on load via
+ * `postMessage` (see utils/auth-bridge.ts) because the credential cannot cross
+ * the iframe boundary as a normal auth header.
  */
 
-import { type JSX, useMemo } from 'react';
+import { type JSX, useMemo, useCallback } from 'react';
 import { __ } from '@wordpress/i18n';
 import { readProSpaConfig } from '../../api/config';
+import { postAuthToChild } from '../../utils/auth-bridge';
 import './media-studio.css';
 
 export function MediaStudioPage(): JSX.Element {
 	const runtime = useMemo( () => readProSpaConfig(), [] );
 	const url = ( runtime?.endpoints?.mediaStudio ?? '' ).trim();
+
+	// Forward the headless credential to the framed app once it has loaded.
+	// Runs on every `load` so a reconnect with a rotated credential works.
+	const handleLoad = useCallback(
+		( event: React.SyntheticEvent< HTMLIFrameElement > ) => {
+			postAuthToChild( event.currentTarget );
+		},
+		[],
+	);
 
 	if ( ! url ) {
 		return (
@@ -50,6 +65,7 @@ export function MediaStudioPage(): JSX.Element {
 				sandbox="allow-scripts allow-same-origin allow-forms"
 				referrerPolicy="no-referrer"
 				loading="eager"
+				onLoad={ handleLoad }
 			/>
 		</div>
 	);

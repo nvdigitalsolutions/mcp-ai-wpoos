@@ -26,6 +26,7 @@ import {
   fetchCurrentUser,
   fetchCurrentUserBasic,
   fetchSessionNonce,
+  setAuthSlot,
   type AuthMode,
   type ConnectionSettings,
 } from './runtime-config';
@@ -191,6 +192,10 @@ async function connect(connection: ConnectionSettings): Promise<ConnectResult> {
       mediaWorkerToken: connection.mediaWorkerToken?.trim() || undefined,
     });
 
+    // Expose the headless credential (in-memory only) so the framed Media
+    // Studio / Document Editor pages can receive it via postMessage.
+    setAuthSlot(connection);
+
     return { runtime };
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) };
@@ -316,6 +321,7 @@ function Shell(): JSX.Element {
   const handleDisconnect = (): void => {
     localStorage.removeItem(STORAGE_KEY);
     window.NVOOS_PRO_SPA = undefined;
+    setAuthSlot({ siteUrl: '', auth: 'guest' }); // clears the in-memory credential slot
     setConnection(null);
     setRuntime(null);
     setError('');

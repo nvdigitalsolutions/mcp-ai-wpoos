@@ -284,6 +284,9 @@ docker/craft/app/*
 lib/core/.phpstan-cache/
 lib/core/.phpunit.cache/
 
+# Playwright MCP browser-tool capture artifacts (console/page logs — never commit)
+.playwright-mcp/
+
 # Demo video output (build artifacts — regenerated on each release)
 docs/videos/base/*.webm
 docs/videos/base/*.mp4

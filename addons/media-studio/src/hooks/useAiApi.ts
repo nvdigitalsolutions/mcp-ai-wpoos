@@ -202,13 +202,83 @@ function getGlobals(): BootstrapGlobal {
 	return globalScope.NVOOS_MEDIA_STUDIO ?? { apiUrl: '', nonce: '' };
 }
 
+/**
+ * Headless auth bridge (child side).
+ *
+ * The hosted Pro SPA forwards its application-password / assistant credential
+ * to this framed app via `postMessage` (see the parent's auth-bridge util in
+ * spa-v2/src/utils/auth-bridge.ts). The message type and origin-scoping must
+ * match; keep the two sides in sync. A credential never travels over a URL or
+ * cookie — only in-memory between `window.postMessage` and `Authorization`.
+ */
+const NVOOS_AUTH_MESSAGE_TYPE = 'nvoos-auth';
+let authAuthorization = '';
+let authListenerInstalled = false;
+
+function acceptAuthMessage( event: MessageEvent ): void {
+	const payload = event.data as { type?: string; authorization?: string } | null;
+	if ( ! payload || payload.type !== NVOOS_AUTH_MESSAGE_TYPE ) {
+		return;
+	}
+	// The parent only sends same-origin (or the explicitly configured site
+	// origin); still verify the message origin matches the API origin we talk
+	// to so a hostile frame cannot inject a credential for another host.
+	const targetOrigin = ( () => {
+		try {
+			return new URL( getGlobals().apiUrl ).origin;
+		} catch {
+			return '';
+		}
+	} )();
+	if ( targetOrigin && event.origin !== targetOrigin ) {
+		return;
+	}
+	if ( typeof payload.authorization === 'string' && payload.authorization ) {
+		authAuthorization = payload.authorization;
+	}
+}
+
+function installAuthListener(): void {
+	if ( authListenerInstalled ) {
+		return;
+	}
+	authListenerInstalled = true;
+	window.addEventListener( 'message', acceptAuthMessage );
+}
+
+/**
+ * Resolve the current `Authorization` header value, if any. The child also
+ * honors a directly-localized `authorization` key so the same code path works
+ * when the host renders it same-origin and can inject the value server-side.
+ */
+function currentAuthorization(): string {
+	installAuthListener();
+	if ( authAuthorization ) {
+		return authAuthorization;
+	}
+	const local = getGlobals() as BootstrapGlobal & { authorization?: string };
+	return typeof local.authorization === 'string' ? local.authorization : '';
+}
+
 async function request< T >( path: string, options: RequestInit = {} ): Promise< T > {
 	const globals = getGlobals();
+	const authorization = currentAuthorization();
+	const headers: Record< string, string > = {
+		'Content-Type': 'application/json',
+		'X-WP-Nonce': globals.nonce,
+	};
+	// In token mode, drop the empty cookie nonce (the plugin's REST layer can
+	// reject an empty nonce header) and attach the headless credential instead.
+	if ( authorization ) {
+		headers.Authorization = authorization;
+		if ( globals.nonce === '' ) {
+			delete headers[ 'X-WP-Nonce' ];
+		}
+	}
 	const response = await fetch( `${ globals.apiUrl }${ path }`, {
 		...options,
 		headers: {
-			'Content-Type': 'application/json',
-			'X-WP-Nonce': globals.nonce,
+			...headers,
 			...( options.headers ?? {} ),
 		},
 	} );
