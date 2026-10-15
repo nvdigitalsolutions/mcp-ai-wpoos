@@ -289,6 +289,84 @@ class Test_Unified_Team_Chat_Fix extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that profession tool slugs are resolved to OpenAI-format definitions.
+	 *
+	 * `invoke_team_member()` previously passed the raw profession tool-slug
+	 * list into `create_chat_completion()` as if it were already a tool-definition
+	 * array. The client would then forward those slugs to the provider as
+	 * malformed tool definitions. This asserts the slugs are resolved through
+	 * build_tools_payload() into `{ type, function }` objects.
+	 */
+	public function test_invoke_team_member_resolves_tool_slugs_to_definitions() {
+		$profession_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Tool-using Developer',
+				'post_status' => 'publish',
+			)
+		);
+
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_role_description', 'You are a helpful developer.' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_provider', 'openai' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_model', 'gpt-4' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_tools', array( 'get_environment_status', 'list_mcp_tools' ) );
+
+		// Capture the options passed to create_chat_completion.
+		$captured_options = null;
+		$mock_client      = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
+		$mock_client->method( 'create_chat_completion' )
+			->willReturnCallback(
+				function ( $messages, $options ) use ( &$captured_options ) {
+					$captured_options = $options;
+					return array(
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'Test response',
+								),
+							),
+						),
+					);
+				}
+			);
+
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$property   = $reflection->getProperty( 'client' );
+		$property->setAccessible( true );
+		$property->setValue( $this->rest_controller, $mock_client );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$method = $reflection->getMethod( 'invoke_team_member' );
+		$method->setAccessible( true );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-client' );
+		$method->invoke( $this->rest_controller, $profession_id, $messages, $request );
+
+		$this->assertNotNull( $captured_options, 'create_chat_completion should have been called.' );
+		$this->assertArrayHasKey( 'tools', $captured_options, 'Resolved tools should be attached to options.' );
+
+		$tools = $captured_options['tools'];
+		$this->assertIsArray( $tools );
+		$this->assertNotEmpty( $tools );
+
+		foreach ( $tools as $tool ) {
+			// Each entry must be a resolved OpenAI-format definition, never a raw slug string.
+			$this->assertIsArray( $tool, 'Each tool must be an array definition, not a slug string.' );
+			$this->assertSame( 'function', $tool['type'], 'Tool definition must carry type=function.' );
+			$this->assertArrayHasKey( 'function', $tool );
+			$this->assertArrayHasKey( 'name', $tool['function'], 'Resolved tool must have a function name.' );
+			$this->assertIsString( $tool['function']['name'] );
+		}
+	}
+
+	/**
 	 * Test unified team requests return the standard chat-client payload shape.
 	 */
 	public function test_unified_team_request_returns_chat_client_payload_shape() {

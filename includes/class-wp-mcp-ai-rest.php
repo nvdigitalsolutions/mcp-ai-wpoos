@@ -7659,8 +7659,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Add tools if available.
+			// `profession_config['tools']` is a list of tool SLUGS (from
+			// `_wp_mcp_ai_profession_default_tools`), not resolved tool
+			// definitions. The router/client expect OpenAI-format tool
+			// definitions, so resolve the slugs through build_tools_payload()
+			// (which also applies attention filtering, capability checks, and
+			// schema normalization) before attaching them.
 			if ( ! empty( $profession_config['tools'] ) && is_array( $profession_config['tools'] ) ) {
-				$options['tools'] = $profession_config['tools'];
+				$resolved_tools = $this->build_tools_payload( $profession_config );
+				if ( is_wp_error( $resolved_tools ) ) {
+					return $resolved_tools;
+				}
+				if ( ! empty( $resolved_tools ) ) {
+					$options['tools'] = $resolved_tools;
+				}
 			}
 
 			// Make the AI request using the router.
