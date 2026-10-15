@@ -48,6 +48,7 @@ wp-mcp-ai-flowhub-alert-manager
 wp-mcp-ai-fnb-assistant-seeder
 wp-mcp-ai-fnb-booking-cpt
 wp-mcp-ai-fnb-cpt-reader
+wp-mcp-ai-fnb-csv-exporter
 wp-mcp-ai-fnb-data-source
 wp-mcp-ai-fnb-draft-writer
 wp-mcp-ai-fnb-fixture-reader
