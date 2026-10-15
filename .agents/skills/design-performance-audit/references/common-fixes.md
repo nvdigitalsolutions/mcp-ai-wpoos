@@ -38,16 +38,79 @@ The report's LCP phase breakdown tells the story: high **Load Delay** +
 
 Fixes, in order of preference:
 
-1. Elementor Image widget → Content → **Lazy Load: No** (no code).
-2. `add_filter( 'wp_omit_loading_attr_threshold', fn() => 1 );` — stops WP
-   core adding `loading="lazy"` to the first content image (only affects
-   native WP image output, not Elementor's own attribute).
+1. `add_filter( 'wp_omit_loading_attr_threshold', fn() => 1 );` — stops WP
+   core adding `loading="lazy"` to the first CONTENT image. NOTE: only
+   affects images in post content, NOT widget-rendered images.
+2. **For Elementor/widget images** (VERIFIED 2026-10-13 on Elementor 4.3.x
+   + WP 7.x): the `loading="lazy"` may be added by WordPress core's
+   `wp_get_attachment_image()` — but on Elementor 4.x the image may render
+   WITHOUT going through that function, in which case neither
+   `wp_omit_loading_attr_threshold` nor `wp_get_loading_optimization_attributes`
+   fires for it. Try the WP filter first:
+   ```php
+   add_filter( 'wp_get_loading_optimization_attributes', function( $loading_attrs, $tag_name, $attr, $context ) {
+       if ( 'img' === $tag_name && ! empty( $attr['src'] ) && false !== strpos( $attr['src'], 'hero-image-fragment' ) ) {
+           return array(); // Drop the loading attribute → eager.
+       }
+       return $loading_attrs;
+   }, 10, 4 );
+   ```
+   **Guaranteed fallback** if the attribute still shows after deploy: rewrite
+   the finished HTML with an output buffer on `template_redirect` (priority
+   9999 so it sits inside any cache plugin's buffer — the transformed HTML is
+   what gets cached):
+   ```php
+   add_action( 'template_redirect', function() {
+       if ( is_admin() || wp_doing_ajax() || is_feed() ) return;
+       ob_start( function( $html ) {
+           return preg_replace_callback(
+               '#<img\b[^>]*hero-image-fragment[^>]*>#i',
+               function( $m ) { return preg_replace( '#\s+loading=["\']lazy["\']#i', '', $m[0] ); },
+               $html
+           );
+       });
+   }, 9999 );
+   ```
+   Match on a distinctive src fragment (e.g. the hero file name). Verify in
+   view-source after deploy.
 3. If Breeze lazy-load is on, exclude the hero via its exclusion options.
+4. **Flatsome (non-Elementor)**: the LCP hero is lazy-loaded by Flatsome's
+   OWN `flatsome-lazy-load` extension, NOT by WP core `loading="lazy"`. The
+   `wp_omit_loading_attr_threshold` filter does NOT touch it. The hero renders
+   with class `lazy-load-active` and a `data-src` that Flatsome's JS swaps in
+   on scroll — so the fix is to opt the hero OUT of Flatsome lazy-load, not to
+   change the WP filter. See "Flatsome (non-Elementor) notes" below.
 
 ### Reduce initial server response time
 
 TTFB/backend < 150ms is fine; don't chase it. If slow: check Breeze cache
 warmth, PHP-FPM health, and object cache.
+
+## Flatsome (non-Elementor) notes
+
+The fix mapping above assumes Elementor, but many WooCommerce stores (e.g.
+The Parfumerie) run the Flatsome theme. Flatsome has DIFFERENT mechanics for
+the same audits — apply these instead:
+
+- **Lazy-load**: Flatsome ships its own `flatsome-lazy-load` extension
+  (`flatsome/inc/extensions/flatsome-lazy-load/flatsome-lazy-load.js`). It
+  swaps in `data-src` on scroll and adds class `lazy-load-active` to already-
+  loaded images. WP core's `loading="lazy"` / `wp_omit_loading_attr_threshold`
+  do NOT control it. To make the LCP hero eager:
+  1. Add class `skip-lazy` to the hero image, OR disable lazy-load on that
+     banner/slider block in the UX Builder (Flatsome respects `skip-lazy` /
+     `ux-lazyload` opt-outs), OR
+  2. Turn lazy-load off site-wide via **Theme Options → Performance → Lazy
+     Load Images** (then rely on WP core lazy-load for below-fold images).
+  3. The output-buffer fallback (strip `loading="lazy"` from the hero `<img>`)
+     still works as a belt-and-braces guarantee regardless of what adds it.
+- **Render-blocking JS**: Flatsome loads a monolithic `flatsome.js` plus
+  `chunk.slider.js`, `chunk.tooltips.js`, `chunk.popups.js`, `woocommerce.js`
+  up front. These show up in the render-blocking/chaining audits and in
+  unused-JS. They are largely required by the theme — focus instead on the
+  third-party/analytics/pixel scripts and non-commerce plugin CSS that the
+  theme is NOT needed for. Deferring Flatsome's own chunks risks breaking the
+  header/nav/slider — do not blanket-defer them.
 
 ## CLS
 
@@ -65,10 +128,30 @@ Common WordPress culprits:
 ### Ensure text remains visible during webfont load (font-display)
 
 - Elementor Pro Custom Fonts: `add_filter( 'elementor_pro_custom_fonts_font_display', fn() => 'swap' );`
-  (if the filter doesn't take effect on the installed version, redeclare the
-  `@font-face` rules in the child theme CSS with `font-display: swap`).
-- Theme fonts: edit the child theme's `@font-face` blocks.
-- Preload the 2–3 critical font files: `<link rel="preload" as="font" type="font/woff2" crossorigin href="...">`.
+  — **VERIFIED 2026-10-13: this filter is IGNORED by Elementor Pro 4.3.x**
+  (all @font-face rules still print `font-display:auto`). The reliable,
+  version-proof fix is to redeclare the same @font-face rules (same
+  family/weight/style/src) with `font-display: swap` in a `wp_head` style
+  block or the child theme CSS — the browser uses the last matching
+  declaration. See `templates/optimization-snippet.php` block 2.
+- Theme fonts: check the child theme's `style.css` @font-face blocks — they
+  often omit `font-display` entirely (defaults to `auto`). Add `font-display:
+  swap;` to each rule (curl the live stylesheet to verify; you can't see it
+  from the page HTML).
+- Preload only the 2–3 critical (above-the-fold) font files with
+  `<link rel="preload" as="font" type="font/woff2" crossorigin href="...">`.
+  Preloading EVERY font wastes priority bandwidth — if the site already
+  preloads 7+ fonts, trim the list to the hero/body fonts actually used
+  above the fold.
+- **VERIFIED 2026-10-13 — two preload gotchas:**
+  1. `type` must match the file format — `type="font/woff2"` on a `.woff`
+     file makes the browser ignore the preload (wasted bytes).
+  2. Elementor's inline "Custom Fonts CSS" prints AFTER the enqueued
+     stylesheet, so for the same family/weight it WINS over the theme's
+     @font-face. If both the theme and Elementor declare the same family,
+     the theme's font files are shadowed — preload (and fix) the files that
+     actually render. Check document order with `grep -n` on the HTML
+     capture, or `document.fonts.check()` in the browser.
 
 ## Render-blocking / script bloat
 
@@ -120,14 +203,26 @@ the scripts enqueue everywhere.
 
 Fixes:
 
-1. **Switch to Cloudflare Turnstile or hCaptcha** — native options in the
-   Elementor Pro Form widget's reCAPTCHA section (Turnstile since 3.18,
-   hCaptcha since 3.12). ~30KB instead of 348KB, no Google dependency, no
-   code. **Preferred.**
-2. Keep reCAPTCHA and lazy-load on interaction: dequeue
-   `elementor-recaptcha_v3-api` and inject `api.js?render=explicit` on first
-   `mouseover/touchstart/keydown/scroll` or on `jQuery(document).on('elementor/popup/show', ...)`.
-   **Experimental — test form submits on staging.**
+1. **VERIFIED 2026-10-13: Elementor Pro natively supports ONLY reCAPTCHA
+   v2/v3.** hCaptcha and Cloudflare Turnstile are still feature requests
+   (GitHub discussions #31259 / #25671) — do NOT recommend them as native
+   options. To use Turnstile/hCaptcha with Elementor Pro forms you need a
+   free plugin: "Simple Cloudflare Turnstile" (supports Elementor Pro forms
+   incl. template/popup forms), "CWeb Form Protection with Turnstile for
+   Elementor Forms", or Cool FormKit. ~30KB instead of 348KB, no Google
+   dependency.
+2. **No-plugin fixes that keep Google reCAPTCHA:**
+   - Restrict the popup's display conditions (popup → Advanced →
+     Conditions) so the form only renders on pages that need it — on other
+     pages the scripts never enqueue.
+   - Lazy-load on interaction: dequeue `elementor-recaptcha_v3-api` and
+     inject `api.js?render=explicit` on first
+     `mouseover/touchstart/keydown/scroll` or on
+     `jQuery(document).on('elementor/popup/show', ...)`.
+     **Experimental — test form submits on staging.**
+   - Move the form off the site-wide popup onto a dedicated contact page.
+3. Last resort: drop captcha entirely and use Elementor's honeypot field +
+   Cloudflare bot protection (lightest, weakest).
 
 ### Duplicate Google analytics
 
@@ -144,6 +239,24 @@ Fix: keep ONE path. Usually GTM alone (fires GA4 + Ads). Remove the local-GA
 plugin and find the direct enqueue (grep plugins/snippets for the measurement
 ID; ask the user for wp-admin access if needed). Don't guess the source —
 give diagnostic steps.
+
+**Concrete likely sources for a DIRECT GA4 enqueue** (`js?id=G-XXXX&l=dataLayer`
+with NO `cx=` param, alongside a GTM `gtm.js` that ALREADY fires the same ID):
+
+- **Site Kit by Google** — Site Kit → Settings → Analytics (toggle the
+  Analytics module off; keep GTM if that's where the tag already lives).
+- **WooCommerce → Settings → Integrations → Google Analytics** (the legacy
+  built-in integration prints `gtag/js?id=G-XXXX`).
+- **A WPCode / header snippet** (a manually added `<script>` in header.php or
+  a WPCode "HTML/Script" snippet) — grep snippets for the measurement ID.
+- **Flatsome theme header options** (Theme Options → Advanced → custom
+  header/body scripts).
+
+**Verify before removing**: confirm GTM is actually firing the same `G-XXXX`
+ID first (look for `collect?v=2&tid=G-XXXX&gtm=...` in the page's network
+activity). If it is, the direct enqueue is a pure duplicate and can be removed
+with no data loss. If GTM is NOT firing it, keep the direct enqueue instead.
+Flipping the wrong one silently kills analytics — check the network trace.
 
 ### Other marketing scripts
 

@@ -134,6 +134,8 @@ class P(HTMLParser):
         super().__init__(); self.stack=[]; self.errors=[]
     def handle_starttag(self, tag, attrs):
         if tag not in VOID: self.stack.append(tag)
+    def handle_startendtag(self, tag, attrs):
+        if tag not in VOID: self.errors.append(f'self-closing non-void <{tag}>')
     def handle_endtag(self, tag):
         if not self.stack: self.errors.append(f'unmatched </{tag}>'); return
         if self.stack[-1]==tag: self.stack.pop()
@@ -142,6 +144,41 @@ p=P(); p.feed(open('<file>.html', encoding='utf-8').read())
 print('errors:', p.errors or 'none'); print('unclosed:', p.stack or 'none')
 "
 ```
+
+(Note: self-closing void tags like `<meta … />` fire `handle_startendtag` —
+override it or the parser reports false mismatches on them.)
+
+## Step 8 — Verify after deployment (the "check again" pass)
+
+After the user enables the snippet, re-inspect the LIVE page to confirm the
+changes actually landed and measure the delta. `fetch` is NOT suitable here —
+it returns Markdown and strips the `<link>`/`<img>` attributes you need. Use
+the browser instead:
+
+1. `browser_navigate` to the URL, then `browser_evaluate` to read the DOM:
+   - Confirm preconnect hints: `[...document.querySelectorAll('link[rel=preconnect],link[rel=dns-prefetch]')].map(l => l.href)`
+   - Confirm the LCP hero lost its lazy attribute: find the hero `img` and
+     read `img.getAttribute('loading')` (should be `null`/absent; also check
+     the `class` for a theme lazy-load marker like Flatsome's
+     `lazy-load-active`).
+   - Count `img[data-src]` / `img[loading=lazy]` vs `img[loading=eager]` to
+     see the lazy-load surface.
+2. Read **navigation + resource timings** for a head-to-head against the
+   report: `performance.getEntriesByType('navigation')[0]` (TTFB,
+   domContentLoaded, loadEvent) and `performance.getEntriesByType('resource')`
+   to find the hero's `responseEnd` and `transferSize`.
+3. **Warm-cache caveat (important):** a browser session that already loaded
+   the page will report the hero's `transferSize: 0` (served from cache) and
+   a deceptively low LCP. State this plainly — the structural fix (e.g.
+   `loading` removed) is still verifiable, but for a real number you must
+   re-run GTmetrix cold and archive the new PDF to diff before/after.
+4. Check the console for NEW errors introduced by the snippet (e.g. a
+   dequeue that broke a script): `browser_console_messages` with
+   `level="error"`.
+
+Also confirm whether the changes are truly live vs. cached (a page-cache/CDN
+may serve a stale copy; hard-reload or purge cache before concluding "not
+working").
 
 ## Rules & discipline
 
