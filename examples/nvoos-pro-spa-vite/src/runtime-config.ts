@@ -126,9 +126,8 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		// renders an unavailable state when the site doesn't expose it.
 		contentGraph: `${api}/nvoos-content-graph/v1`,
 		// NV oOS Docs Hub — the #/docs page renders this front-end URL in a
-		// sandboxed iframe. The standalone app has no site-local docs page,
-		// so this is left empty (the page shows an unavailable state).
-		docsHub: '',
+		// sandboxed iframe. Defaults to the hosted console docs URL.
+		docsHub: 'https://console.nvoos.cloud/docs-hub/',
 		// NV oOS Media Studio / Document Editor — standalone app leaves these
 		// empty (same-site shortcode pages; the pages show an unavailable state).
 		mediaStudio: '',
