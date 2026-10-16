@@ -440,6 +440,204 @@ class WP_MCP_AI_Drive_Read_Tools_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Native Google Sheets must be read via the Sheets API (tab names + tabular
+	 * body), not the Drive export endpoint, which 400s on text/plain.
+	 */
+	public function test_get_drive_file_reads_spreadsheet_via_sheets_api() {
+		$this->configure_settings_credentials();
+		$admin_id = $this->login_as_admin();
+
+		add_filter(
+			'pre_http_request',
+			static function ( $preempt, $args, $url ) {
+				if ( false !== strpos( $url, 'oauth2.googleapis.com/token' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode( array( 'access_token' => 'mock-token' ) ),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				// Sheets API metadata endpoint (tabs).
+				if ( false !== strpos( $url, 'sheets.googleapis.com/v4/spreadsheets/file-sheet' ) && false === strpos( $url, '/values/' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'sheets' => array(
+									array( 'properties' => array( 'title' => 'Menu' ) ),
+									array( 'properties' => array( 'title' => 'Waste' ) ),
+								),
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				// Sheets API values endpoint.
+				if ( false !== strpos( $url, '/values/Menu' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'values' => array(
+									array( 'Item', 'Price' ),
+									array( 'Coffee', 3.5 ),
+								),
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				// Drive metadata endpoint (must come after values/match checks).
+				if ( false !== strpos( $url, '/files/file-sheet' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'id'       => 'file-sheet',
+								'name'     => 'Demo Data',
+								'mimeType' => 'application/vnd.google-apps.spreadsheet',
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				return false;
+			},
+			10,
+			3
+		);
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Get_Drive_File();
+		$result = $tool->execute(
+			array( 'file_id' => 'file-sheet' ),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertNotWPError( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'spreadsheet', $result['data']['type_label'] );
+		$this->assertSame( array( 'Menu', 'Waste' ), $result['data']['tabs'] );
+		$this->assertSame( 2, $result['data']['tabs_count'] );
+		$this->assertSame( 'Menu', $result['data']['sheet_name'] );
+		$this->assertSame( "Item\tPrice\nCoffee\t3.5", $result['data']['body'] );
+		$this->assertSame( 2, $result['data']['row_count'] );
+		$this->assertFalse( $result['data']['truncated'] );
+	}
+
+	/**
+	 * Sheet name should target a specific worksheet via the Sheets API.
+	 */
+	public function test_get_drive_file_reads_specific_sheet_tab() {
+		$this->configure_settings_credentials();
+		$admin_id = $this->login_as_admin();
+
+		add_filter(
+			'pre_http_request',
+			static function ( $preempt, $args, $url ) {
+				if ( false !== strpos( $url, 'oauth2.googleapis.com/token' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode( array( 'access_token' => 'mock-token' ) ),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				if ( false !== strpos( $url, 'sheets.googleapis.com/v4/spreadsheets/file-sheet' ) && false === strpos( $url, '/values/' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'sheets' => array(
+									array( 'properties' => array( 'title' => 'Menu' ) ),
+									array( 'properties' => array( 'title' => ' Waste & Variance ' ) ),
+								),
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				// Ensure the second tab is the one read, and casing/spacing is normalised.
+				if ( false !== strpos( $url, '/values/' ) && false !== strpos( $url, 'Waste%20%26%20Variance' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'values' => array(
+									array( 'Item', 'Variance' ),
+									array( 'Rice', -2 ),
+								),
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				if ( false !== strpos( $url, '/files/file-sheet' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode(
+							array(
+								'id'       => 'file-sheet',
+								'name'     => 'Demo Data',
+								'mimeType' => 'application/vnd.google-apps.spreadsheet',
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+
+				return false;
+			},
+			10,
+			3
+		);
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Get_Drive_File();
+		$result = $tool->execute(
+			array(
+				'file_id'    => 'file-sheet',
+				'sheet_name' => ' waste & variance ', // whitespace-only alias; normalise matches the exact tab.
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertNotWPError( $result );
+		$this->assertTrue( $result['success'] );
+		// Normalised match resolves to the exactly-titled tab.
+		$this->assertSame( ' Waste & Variance ', $result['data']['sheet_name'] );
+		$this->assertSame( "Item\tVariance\nRice\t-2", $result['data']['body'] );
+	}
+
+	/**
 	 * search_drive should report has_more and include formatted sizes and type labels.
 	 */
 	public function test_search_drive_has_more_and_size_formatting() {
