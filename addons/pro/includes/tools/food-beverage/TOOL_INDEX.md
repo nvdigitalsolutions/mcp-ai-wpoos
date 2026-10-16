@@ -19,7 +19,8 @@
 | `fnb_duplicate_invoice_scan` | Flag possible duplicates | A3-04 | READ |
 | `fnb_labour_analysis` | Overtime per 100 covers, labour % | M-09, M-10 | READ |
 | `fnb_utilities_per_cover` | kWh/water/LPG per cover + costs | M-11 | READ |
-| `fnb_generate_report` | R-01…R-13 in library layouts | G-09 | READ |
+| `fnb_generate_report` | R-01…R-14 in library layouts | G-09 | READ |
+| `fnb_export_report` | Export a report (incl. client R-01/02/03 templates) as CSV or PDF | G-09, G-12 | READ |
 | `fnb_save_draft` | Save output to Drafts folder | G-12 | DRAFT |
 | `fnb_list_drafts` | List drafts | G-12 | READ |
 | `fnb_audit_log` | Read-only audit viewer for CEO | open Q8 | READ |

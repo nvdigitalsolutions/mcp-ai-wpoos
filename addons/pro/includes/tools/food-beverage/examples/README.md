@@ -3,7 +3,10 @@
 Curated **blueprint-format** mirrors of the four F&B assistant packs
 (A1–A4) so the toolkit surfaces on the unified **Blueprints** admin page
 (one-click install) and through the `import_fnb_blueprint` tool — the same
-surface every other Pro toolkit exposes.
+surface every other Pro toolkit exposes. Blueprints are venue-neutral: they
+carry `{{venue_name}}`, `{{currency}}`, `{{venue_type}}` and `{{owner_role}}`
+tokens rendered from the Tenant Profile at install time (see the F&B settings
+page → Tenant Profile).
 
 The **canonical** deliverables remain the `nvoos-assistant` v1 bundles in
 `addons/pro/presets/assistant-packs/fnb/` (richer: tier metadata, guardrail
@@ -15,9 +18,9 @@ authoritative.
 
 | File | Assistant | Allowlist |
 |---|---|---|
-| `fnb-a1-manager.json` | F&B Manager's Assistant (A1) | 21 read + draft tools (full read set + audit viewer) |
+| `fnb-a1-manager.json` | F&B Manager's Assistant (A1) | 21 read + draft tools + `fnb_export_report` (full read set + audit viewer + export) |
 | `fnb-a2-kitchen-bar-stock.json` | F&B Kitchen & Bar Stock Assistant (A2) | 15 pack tools + `fnb_pr_create`, `fnb_pr_list`, `fnb_pr_audit` |
-| `fnb-a3-financial.json` | F&B Financial Assistant (A3) | 20 read + draft tools |
+| `fnb-a3-financial.json` | F&B Financial Assistant (A3) | 20 read + draft tools + `fnb_export_report` |
 | `fnb-a4-content.json` | F&B Content Assistant (A4) | 7 read + draft tools (image-production tools stay off — pack seeder opt-in) |
 
 ## Tier discipline

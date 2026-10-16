@@ -1560,6 +1560,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Fnb_Labour_Analysis'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-labour-analysis.php',
 				'WP_MCP_AI_Tool_Fnb_Utilities_Per_Cover' => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-utilities-per-cover.php',
 				'WP_MCP_AI_Tool_Fnb_Generate_Report'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-generate-report.php',
+				'WP_MCP_AI_Tool_Fnb_Export_Report'      => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-export-report.php',
 				'WP_MCP_AI_Tool_Fnb_Save_Draft'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-save-draft.php',
 				'WP_MCP_AI_Tool_Fnb_List_Drafts'         => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-list-drafts.php',
 				'WP_MCP_AI_Tool_Fnb_Audit_Log'           => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-audit-log.php',

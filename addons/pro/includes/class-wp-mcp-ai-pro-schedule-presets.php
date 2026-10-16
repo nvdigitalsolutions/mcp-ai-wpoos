@@ -111,7 +111,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				),
 				'fnb_weekly_needs_attention' => array(
 					'name'          => __( 'Weekly Needs Attention Brief (R-02)', 'mcp-ai-wpoos-pro' ),
-					'description'   => __( 'Up to five issues ranked by LKR impact with figures, next check and owner, saved as a draft for the CEO.', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Up to five issues ranked by impact with figures, next check and owner, saved as a draft for the owner.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'fnb',
 					'category'      => 'reporting',
 					'icon'          => 'dashicons-warning',
@@ -156,7 +156,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				),
 				'fnb_weekly_content_brief'   => array(
 					'name'          => __( 'Weekly Content Brief (R-13)', 'mcp-ai-wpoos-pro' ),
-					'description'   => __( 'Post ideas linked to stock and bookings with prompts and captions, saved as a draft for the CEO.', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Post ideas linked to stock and bookings with prompts and captions, saved as a draft for the owner.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'fnb',
 					'category'      => 'reporting',
 					'icon'          => 'dashicons-format-image',
@@ -165,7 +165,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					'tags'          => array( 'fnb', 'weekly', 'content' ),
 					'schedule_data' => array(
 						'assistant_config' => array(
-							'message' => 'Run fnb_generate_report with report_id R-13 for the coming week, then fnb_save_draft. Start every image prompt from the character bible (A4-01). Do not post.',
+							'message' => 'Run fnb_generate_report with report_id R-13 for the coming week, then fnb_save_draft. Start every image prompt from the brand/tone-of-voice guide (A4-01). Do not post.',
+						),
+					),
+				),
+				'fnb_monthly_cost_review_export' => array(
+					'name'          => __( 'Monthly Cost Review Export (R-08 CSV/PDF)', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Monthly cost review exported as CSV or PDF via fnb_export_report for the owner and finance.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'fnb',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-media-spreadsheet',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'monthly',
+					'tags'          => array( 'fnb', 'monthly', 'export' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run fnb_export_report with report_id R-08 for last month, format csv. Do not send anything.',
 						),
 					),
 				),

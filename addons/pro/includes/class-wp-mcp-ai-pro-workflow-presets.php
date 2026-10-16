@@ -225,7 +225,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							),
 							'data'     => array(
 								'label'       => __( 'Draft Review', 'mcp-ai-wpoos-pro' ),
-								'description' => __( 'Save the R-08 output as a draft for the CEO.', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Save the R-08 output as a draft for the owner.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
 					),
@@ -246,6 +246,71 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'id'           => 'edge_3_4',
 							'source'       => 'node_3',
 							'target'       => 'node_4',
+							'sourceHandle' => 'output',
+						),
+					),
+				),
+				'fnb_monthly_export' => array(
+					'name'        => __( 'Monthly Report Export (CSV/PDF)', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Export the monthly cost review (and other client reports) as CSV or PDF via fnb_export_report.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'fnb',
+					'icon'        => 'dashicons-media-spreadsheet',
+					'tags'        => array( 'fnb', 'monthly', 'export' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Month', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'The month to export (Y-m).', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 75,
+							),
+							'data'     => array(
+								'label'       => __( 'Export R-08', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'fnb_export_report',
+								'arguments'   => array(
+									'report_id' => 'R-08',
+									'month'     => '{{input.month}}',
+									'format'    => 'csv',
+								),
+								'description' => __( 'Export the monthly cost review to CSV.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Exported file', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Downloadable CSV/PDF of the report.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
 							'sourceHandle' => 'output',
 						),
 					),

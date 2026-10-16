@@ -44,6 +44,7 @@ $expected_tools = array(
 		'fnb_labour_analysis',
 		'fnb_utilities_per_cover',
 		'fnb_generate_report',
+		'fnb_export_report',
 		'fnb_save_draft',
 		'fnb_list_drafts',
 		'fnb_audit_log',
@@ -84,6 +85,7 @@ $expected_tools = array(
 		'fnb_labour_analysis',
 		'fnb_utilities_per_cover',
 		'fnb_generate_report',
+		'fnb_export_report',
 		'fnb_save_draft',
 		'fnb_list_drafts',
 	),
@@ -120,6 +122,12 @@ $expected_rule_ids = array(
 );
 
 $global_rule_ids = array( 'G-01', 'G-02', 'G-03', 'G-04', 'G-05', 'G-06', 'G-07', 'G-08', 'G-09', 'G-10', 'G-11', 'G-12' );
+
+// Venue/currency/demo strings that must NOT appear in any shipped prompt.
+$venue_strings = array( 'Surf Club', 'Midigama', 'Sri Lanka', 'Rella', 'Sanda', 'LKR', 'PE firm', 'deity' );
+
+// Tenant-profile tokens every prompt must carry (rendered by the seeder).
+$required_tokens = array( '{{venue_name}}', '{{currency}}' );
 
 $failures = array();
 $checks   = 0;
@@ -204,6 +212,20 @@ foreach ( $pack_files as $file => $label ) {
 				fail( $failures, "$label: system prompt missing rule $rid" );
 			}
 		}
+
+		// Venue-neutrality: no demo venue/currency/character strings remain.
+		foreach ( $venue_strings as $needle ) {
+			if ( false !== stripos( $prompt, $needle ) ) {
+				fail( $failures, "$label: system prompt still contains venue/currency string '$needle'" );
+			}
+		}
+
+		// Tenant-profile tokens present (rendered at seed time).
+		foreach ( $required_tokens as $token ) {
+			if ( false === strpos( $prompt, $token ) ) {
+				fail( $failures, "$label: system prompt missing tenant token $token" );
+			}
+		}
 	}
 
 	// Tool allowlist must match the documented matrix exactly (order-insensitive).
@@ -247,5 +269,5 @@ if ( $failures ) {
 	exit( 1 );
 }
 
-echo "OK: all packs structurally valid, allowlists match the documented matrix, ACT tier off, no denylisted keys.\n";
+echo "OK: all packs structurally valid, allowlists match the documented matrix, ACT tier off, no denylisted keys, venue-neutral, tenant tokens present.\n";
 exit( 0 );

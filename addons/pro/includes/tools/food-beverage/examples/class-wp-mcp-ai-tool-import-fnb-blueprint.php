@@ -82,7 +82,7 @@ class WP_MCP_AI_Tool_Import_Fnb_Blueprint implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Install one of the four curated F&B assistant blueprints (A1 Manager, A2 Kitchen & Bar Stock, A3 Financial, A4 Content) as an assistant. A2 may draft purchase requests (fnb_pr_create) and read the register and audit trail; the ACT-tier approval tools are never granted.', 'mcp-ai-wpoos-pro' );
+		return __( 'Install one of the four F&B assistant blueprints (A1 Manager, A2 Kitchen & Bar Stock, A3 Financial, A4 Content) as an assistant. A2 may draft purchase requests (fnb_pr_create) and read the register and audit trail; the ACT-tier approval tools are never granted.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -92,7 +92,7 @@ class WP_MCP_AI_Tool_Import_Fnb_Blueprint implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_usage_guidance() {
 		return array(
-			'when_to_use'     => __( 'Installing one of the four Surf Club Midigama assistant blueprints by slug — the admin Blueprints page one-click alternative to the WP-CLI seeder.', 'mcp-ai-wpoos-pro' ),
+			'when_to_use'     => __( 'Installing one of the four F&B assistant blueprints by slug — the admin Blueprints page one-click alternative to the WP-CLI seeder.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Importing the richer nvoos-assistant v1 bundles (A4 image-tool opt-in, full guardrail structure); use wp mcp-ai pro fnb seed-assistants for those.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'fnb_read_table', 'fnb_pr_create', 'fnb_audit_log' ),
 			'notes'           => __( 'Blueprint slugs are fixed in BLUEPRINT_SLUGS; set overwrite=true to replace an existing assistant of the same name. ACT-tier tools stay off by default.', 'mcp-ai-wpoos-pro' ),
@@ -166,6 +166,20 @@ class WP_MCP_AI_Tool_Import_Fnb_Blueprint implements WP_MCP_AI_Tool_Interface, W
 		$data = WP_MCP_AI_Blueprint_Installer::load_blueprint( self::BLUEPRINTS_DIR, $bp );
 		if ( is_wp_error( $data ) ) {
 			return $data;
+		}
+
+		// Render venue/currency tokens ({{venue_name}}, {{currency}}, …) in the
+		// blueprint's name, description and instructions before install, so the
+		// operator's tenant profile is applied identically to the WP-CLI seeder.
+		if ( class_exists( 'WP_MCP_AI_Fnb_Tenant_Profile' ) ) {
+			foreach ( array( 'name', 'description' ) as $field ) {
+				if ( isset( $data[ $field ] ) && is_string( $data[ $field ] ) ) {
+					$data[ $field ] = WP_MCP_AI_Fnb_Tenant_Profile::render( $data[ $field ] );
+				}
+			}
+			if ( isset( $data['meta']['instructions'] ) && is_string( $data['meta']['instructions'] ) ) {
+				$data['meta']['instructions'] = WP_MCP_AI_Fnb_Tenant_Profile::render( $data['meta']['instructions'] );
+			}
 		}
 
 		// Install as an mcp_ai_assistant post.

@@ -109,7 +109,19 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			'wp_mcp_ai_fnb_data',
 			array(
 				'setting_key' => 'adapter',
-				'description' => __( 'Drive: read sheets exported from the demo workbook via the Google Workspace toolkit. CSV: read local fixture/export files (also used when WP_MCP_AI_FNB_USE_FIXTURES is defined).', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Drive: read sheets via the Google Workspace toolkit. CSV: read local CSV/export files (also used when WP_MCP_AI_FNB_USE_FIXTURES is defined).', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+
+		add_settings_field(
+			'ingest_mode',
+			__( 'Ingest Mode', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_ingest_mode_select' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_fnb_data',
+			array(
+				'setting_key' => 'ingest_mode',
+				'description' => __( 'Folder: scan a single Google Drive folder of unorganised files and auto-map them to the data tables. Workbook: read one shared spreadsheet whose tabs hold the tables. Split: one file per table matched by name.', 'mcp-ai-wpoos-pro' ),
 			)
 		);
 
@@ -169,7 +181,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			'wp_mcp_ai_fnb_data',
 			array(
 				'setting_key' => 'data_workbook_name',
-				'description' => __( 'Optional: disambiguate which spreadsheet to use by (partial, case-insensitive) file name. Only used when Workbook ID is empty — e.g. “Surf Club” selects “Surf Club Midigama - Demo Data”.', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Optional: disambiguate which spreadsheet to use by (partial, case-insensitive) file name. Only used when Workbook ID is empty.', 'mcp-ai-wpoos-pro' ),
 			)
 		);
 
@@ -227,7 +239,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			'wp_mcp_ai_fnb_output',
 			array(
 				'setting_key' => 'demo_mode',
-				'description' => __( 'When enabled, the toolkit prefers the bundled demo fixtures and the drafts-only output discipline of the Surf Club demo.', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'When enabled, the toolkit prefers the bundled demo fixtures as the data source. Leave off for your own data.', 'mcp-ai-wpoos-pro' ),
 			)
 		);
 
@@ -265,15 +277,50 @@ class WP_MCP_AI_Fnb_Settings_Page {
 
 		add_settings_field(
 			'pr_auto_approval_threshold',
-			__( 'Auto-Approval Threshold (LKR)', 'mcp-ai-wpoos-pro' ),
+			__( 'Auto-Approval Threshold', 'mcp-ai-wpoos-pro' ),
 			array( __CLASS__, 'render_text_field' ),
 			self::PAGE_SLUG,
 			'wp_mcp_ai_fnb_pr',
 			array(
 				'setting_key' => 'pr_auto_approval_threshold',
-				'description' => __( 'Release requires a finance co-sign when the request total exceeds this amount. 0 = co-sign never required.', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Release requires a finance co-sign when the request total exceeds this amount (in the tenant currency). 0 = co-sign never required.', 'mcp-ai-wpoos-pro' ),
 			)
 		);
+
+		self::register_tenant_profile_section();
+	}
+
+	/**
+	 * Register the Tenant Profile settings section.
+	 *
+	 * @return void
+	 */
+	private static function register_tenant_profile_section() {
+		add_settings_section(
+			'wp_mcp_ai_fnb_tenant',
+			__( 'Tenant Profile', 'mcp-ai-wpoos-pro' ),
+			function () {
+				echo '<p>' . esc_html__( 'These values are rendered into the seeded assistant prompts and every money label, so the toolkit describes your business and currency rather than a fixed demo venue.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		foreach ( array(
+			'venue_name'  => __( 'Venue Name', 'mcp-ai-wpoos-pro' ),
+			'venue_type'  => __( 'Venue Type', 'mcp-ai-wpoos-pro' ),
+			'currency'    => __( 'Currency (ISO code)', 'mcp-ai-wpoos-pro' ),
+			'locale'      => __( 'Locale', 'mcp-ai-wpoos-pro' ),
+			'owner_role'  => __( 'Owner Role', 'mcp-ai-wpoos-pro' ),
+		) as $key => $label ) {
+			add_settings_field(
+				$key,
+				$label,
+				array( __CLASS__, 'render_text_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_fnb_tenant',
+				array( 'setting_key' => $key )
+			);
+		}
 	}
 
 	/**
@@ -294,6 +341,11 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			? sanitize_text_field( $submitted_adapter )
 			: 'drive';
 
+		$submitted_mode       = isset( $input['ingest_mode'] ) ? $input['ingest_mode'] : 'folder';
+		$current['ingest_mode'] = in_array( $submitted_mode, array( 'folder', 'workbook', 'split' ), true )
+			? sanitize_text_field( $submitted_mode )
+			: 'folder';
+
 		$current['connection_id']      = isset( $input['connection_id'] ) ? sanitize_text_field( $input['connection_id'] ) : '';
 		$current['data_folder_id']     = isset( $input['data_folder_id'] ) ? sanitize_text_field( $input['data_folder_id'] ) : '';
 		$current['setup_folder_id']    = isset( $input['setup_folder_id'] ) ? sanitize_text_field( $input['setup_folder_id'] ) : '';
@@ -308,6 +360,12 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		$current['demo_mode'] = ! empty( $input['demo_mode'] );
 
 		$current['enable_fnb_native_storage'] = ! empty( $input['enable_fnb_native_storage'] );
+
+		foreach ( array( 'venue_name', 'venue_type', 'currency', 'locale', 'owner_role' ) as $profile_key ) {
+			if ( isset( $input[ $profile_key ] ) ) {
+				$current[ $profile_key ] = sanitize_text_field( (string) $input[ $profile_key ] );
+			}
+		}
 
 		$submitted_threshold                   = isset( $input['pr_auto_approval_threshold'] ) ? sanitize_text_field( (string) $input['pr_auto_approval_threshold'] ) : '';
 		$current['pr_auto_approval_threshold'] = is_numeric( $submitted_threshold ) ? max( 0.0, (float) $submitted_threshold ) : 0.0;
@@ -393,7 +451,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5em;">
 								<?php wp_nonce_field( 'wp_mcp_ai_fnb_seed_assistants', 'wp_mcp_ai_fnb_seed_nonce' ); ?>
 								<input type="hidden" name="action" value="wp_mcp_ai_fnb_seed_assistants" />
-								<?php submit_button( __( 'Seed assistant packs', 'mcp-ai-wpoos-pro' ), 'secondary', 'submit', false ); ?>
+								<button type="button" class="button button-secondary" onclick="if ( confirm( '<?php echo esc_js( __( 'Seed the four F&B assistant packs? Existing assistants with matching slugs or titles will be skipped (idempotent).', 'mcp-ai-wpoos-pro' ) ); ?>' ) ) { this.closest('form').submit(); }"><?php esc_html_e( 'Seed assistant packs', 'mcp-ai-wpoos-pro' ); ?></button>
 							</form>
 						<?php endif; ?>
 					</td>
@@ -404,7 +462,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 0.5em;">
 							<?php wp_nonce_field( 'wp_mcp_ai_fnb_export_csv', 'wp_mcp_ai_fnb_export_nonce' ); ?>
 							<input type="hidden" name="action" value="wp_mcp_ai_fnb_export_csv" />
-							<?php submit_button( __( 'Export workbook to CSV', 'mcp-ai-wpoos-pro' ), 'secondary', 'submit', false ); ?>
+							<button type="button" class="button button-secondary" onclick="this.closest('form').submit();"><?php esc_html_e( 'Export workbook to CSV', 'mcp-ai-wpoos-pro' ); ?></button>
 						</form>
 						<p class="description"><?php esc_html_e( 'Reads the configured Drive workbook and writes one CSV per table into the CSV data directory, then switches the adapter to CSV so reads work offline.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
@@ -634,6 +692,24 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		<select name="<?php echo esc_attr( self::OPTION_NAME . '[' . $args['setting_key'] . ']' ); ?>">
 			<option value="drive" <?php selected( $current, 'drive' ); ?>><?php esc_html_e( 'Google Drive', 'mcp-ai-wpoos-pro' ); ?></option>
 			<option value="csv" <?php selected( $current, 'csv' ); ?>><?php esc_html_e( 'CSV (local files)', 'mcp-ai-wpoos-pro' ); ?></option>
+		</select>
+		<?php self::render_field_description( $args ); ?>
+		<?php
+	}
+
+	/**
+	 * Render the Ingest Mode dropdown.
+	 *
+	 * @param array $args Field arguments including 'setting_key' and 'description'.
+	 * @return void
+	 */
+	public static function render_ingest_mode_select( $args ) {
+		$current = WP_MCP_AI_Fnb_Settings::get( $args['setting_key'], 'folder' );
+		?>
+		<select name="<?php echo esc_attr( self::OPTION_NAME . '[' . $args['setting_key'] . ']' ); ?>">
+			<option value="folder" <?php selected( $current, 'folder' ); ?>><?php esc_html_e( 'Folder (universal ingest)', 'mcp-ai-wpoos-pro' ); ?></option>
+			<option value="workbook" <?php selected( $current, 'workbook' ); ?>><?php esc_html_e( 'Workbook (single spreadsheet)', 'mcp-ai-wpoos-pro' ); ?></option>
+			<option value="split" <?php selected( $current, 'split' ); ?>><?php esc_html_e( 'Split (one file per table)', 'mcp-ai-wpoos-pro' ); ?></option>
 		</select>
 		<?php self::render_field_description( $args ); ?>
 		<?php

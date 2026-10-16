@@ -16,6 +16,7 @@ fnb_duplicate_invoice_scan
 fnb_labour_analysis
 fnb_utilities_per_cover
 fnb_generate_report
+fnb_export_report
 fnb_save_draft
 fnb_list_drafts
 fnb_audit_log

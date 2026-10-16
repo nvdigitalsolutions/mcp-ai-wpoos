@@ -82,7 +82,7 @@ class WP_MCP_AI_Fnb_Sale_CPT {
 	/**
 	 * Upsert a canonical sale row.
 	 *
-	 * @param array $row Canonical-keyed row values (date, month, item_id, item, type, qty_sold, price_lkr, revenue_lkr).
+	 * @param array $row Canonical-keyed row values (date, month, item_id, item, type, qty_sold, price, revenue).
 	 * @return array|WP_Error array{action: 'insert'|'update', post_id: int}
 	 */
 	public static function upsert( array $row ) {

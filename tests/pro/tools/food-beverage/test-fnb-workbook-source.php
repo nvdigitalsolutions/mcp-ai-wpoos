@@ -1,15 +1,11 @@
 <?php
 /**
- * F&B Workbook Source Test — pins the data-source resolution fallback.
+ * F&B Workbook Source Test — pins the data-source resolution contract.
  *
  * Verifies that `WP_MCP_AI_Fnb_Settings::workbook_id()` returns the explicit
- * `data_workbook_id` when configured, and otherwise falls back to the
- * canonical demo workbook (filterable via `wp_mcp_ai_fnb_demo_workbook_id`).
- *
- * Regression for the "F&B read path stops at 'file not found'" break: a fresh
- * install had no configured workbook or folder, so `fnb_read_table` could
- * never resolve the single shared demo workbook and fell through to the
- * split-file lookup dead-end.
+ * `data_workbook_id` when configured and otherwise returns empty (the demo
+ * workbook is no longer a silent fallback — universalisation P5), and that
+ * demo mode is off by default.
  *
  * @package WP_MCP_AI_Pro
  * @author    NV Digital Solutions
@@ -75,20 +71,21 @@ class Test_Fnb_Workbook_Source extends WP_UnitTestCase {
 	}
 
 	/**
-	 * With no explicit workbook configured, workbook_id() falls back to the demo.
+	 * With no explicit workbook configured, workbook_id() returns empty — the
+	 * demo workbook is no longer a silent fallback (universalisation P5).
 	 */
-	public function test_workbook_id_falls_back_to_demo() {
+	public function test_workbook_id_empty_when_unset() {
 		$this->maybe_skip();
 
 		$this->assertSame(
-			WP_MCP_AI_Fnb_Settings::DEMO_WORKBOOK_ID,
+			'',
 			WP_MCP_AI_Fnb_Settings::workbook_id(),
-			'workbook_id() should resolve to the demo workbook when data_workbook_id is empty.'
+			'workbook_id() must return empty when data_workbook_id is unset (no demo fallback).'
 		);
 	}
 
 	/**
-	 * An explicit data_workbook_id wins over the demo fallback.
+	 * An explicit data_workbook_id wins.
 	 */
 	public function test_workbook_id_prefers_explicit_setting() {
 		$this->maybe_skip();
@@ -103,7 +100,7 @@ class Test_Fnb_Workbook_Source extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A whitespace-only explicit ID is treated as unset (trimmed).
+	 * A whitespace-only explicit ID is treated as unset (trimmed) and returns empty.
 	 */
 	public function test_workbook_id_trims_whitespace_only_value() {
 		$this->maybe_skip();
@@ -111,44 +108,18 @@ class Test_Fnb_Workbook_Source extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_fnb_settings', array( 'data_workbook_id' => '   ' ) );
 
 		$this->assertSame(
-			WP_MCP_AI_Fnb_Settings::DEMO_WORKBOOK_ID,
-			WP_MCP_AI_Fnb_Settings::workbook_id(),
-			'A blank/whitespace workbook ID should fall back to the demo ID.'
-		);
-	}
-
-	/**
-	 * The demo-workbook fallback is filterable and can be disabled.
-	 */
-	public function test_workbook_id_filter_can_disable_demo_fallback() {
-		$this->maybe_skip();
-
-		add_filter( 'wp_mcp_ai_fnb_demo_workbook_id', '__return_empty_string' );
-
-		$this->assertSame(
 			'',
 			WP_MCP_AI_Fnb_Settings::workbook_id(),
-			'Filtering the demo workbook ID to an empty string must disable the fallback.'
+			'A blank/whitespace workbook ID must resolve to empty (no demo fallback).'
 		);
 	}
 
 	/**
-	 * The demo-workbook fallback filter can point at a custom workbook.
+	 * Demo mode is off by default and demo is never a silent fallback.
 	 */
-	public function test_workbook_id_filter_can_override_demo() {
+	public function test_demo_mode_off_by_default() {
 		$this->maybe_skip();
 
-		add_filter(
-			'wp_mcp_ai_fnb_demo_workbook_id',
-			function () {
-				return 'custom-demo-workbook';
-			}
-		);
-
-		$this->assertSame(
-			'custom-demo-workbook',
-			WP_MCP_AI_Fnb_Settings::workbook_id(),
-			'Filtering the demo workbook ID must allow a custom default.'
-		);
+		$this->assertFalse( WP_MCP_AI_Fnb_Settings::is_demo_mode(), 'Demo mode must be off by default.' );
 	}
 }

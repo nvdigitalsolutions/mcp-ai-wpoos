@@ -147,14 +147,14 @@ class Test_Fnb_Native_Storage extends WP_UnitTestCase {
 		);
 
 		$row = array(
-			'date'        => '2026-10-01 00:00:00',
-			'month'       => '2026-10',
-			'item_id'     => 'B-01',
-			'item'        => 'Gold standard',
-			'type'        => 'Beverage',
-			'qty_sold'    => '2',
-			'price_lkr'   => '2700',
-			'revenue_lkr' => '5400',
+			'date'     => '2026-10-01 00:00:00',
+			'month'    => '2026-10',
+			'item_id'  => 'B-01',
+			'item'     => 'Gold standard',
+			'type'     => 'Beverage',
+			'qty_sold' => '2',
+			'price'    => '2700',
+			'revenue'  => '5400',
 		);
 
 		$first = WP_MCP_AI_Fnb_Sale_CPT::upsert( $row );
@@ -162,8 +162,8 @@ class Test_Fnb_Native_Storage extends WP_UnitTestCase {
 		$this->assertSame( 'B-01', get_post_meta( $first['post_id'], '_fnb_item_id', true ) );
 
 		// Same key with a changed value updates in place — no duplicate row.
-		$row['revenue_lkr'] = '5500';
-		$second             = WP_MCP_AI_Fnb_Sale_CPT::upsert( $row );
+		$row['revenue'] = '5500';
+		$second         = WP_MCP_AI_Fnb_Sale_CPT::upsert( $row );
 		$this->assertSame( 'update', $second['action'] );
 		$this->assertSame( $first['post_id'], $second['post_id'] );
 
@@ -218,7 +218,7 @@ class Test_Fnb_Native_Storage extends WP_UnitTestCase {
 
 		$this->assertNotInstanceOf( 'WP_Error', $table );
 		$this->assertSame( 'count_date', $table['columns'][0] );
-		$this->assertContains( 'closing_value_lkr', $table['columns'], 'Reader exposes the full canonical column list.' );
+		$this->assertContains( 'closing_value', $table['columns'], 'Reader exposes the full canonical column list.' );
 		$this->assertCount( 2, $table['rows'] );
 
 		$index_ingredient = array_search( 'ingredient_id', $table['columns'], true );
@@ -239,10 +239,10 @@ class Test_Fnb_Native_Storage extends WP_UnitTestCase {
 		WP_MCP_AI_Fnb_Sale_CPT::register();
 		WP_MCP_AI_Fnb_Sale_CPT::upsert(
 			array(
-				'date'        => '2026-10-01 00:00:00',
-				'item_id'     => 'B-01',
-				'type'        => 'Beverage',
-				'revenue_lkr' => '5400',
+				'date'     => '2026-10-01 00:00:00',
+				'item_id'  => 'B-01',
+				'type'     => 'Beverage',
+				'revenue'  => '5400',
 			)
 		);
 
@@ -377,10 +377,10 @@ class Test_Fnb_Native_Storage extends WP_UnitTestCase {
 		}
 
 		$probes = array(
-			'mcp_ai_fnb_sale'     => '_fnb_revenue_lkr',
-			'mcp_ai_fnb_purchase' => '_fnb_line_total_lkr',
-			'mcp_ai_fnb_stock'    => '_fnb_closing_value_lkr',
-			'mcp_ai_fnb_waste'    => '_fnb_value_lkr',
+			'mcp_ai_fnb_sale'     => '_fnb_revenue',
+			'mcp_ai_fnb_purchase' => '_fnb_line_total',
+			'mcp_ai_fnb_stock'    => '_fnb_closing_value',
+			'mcp_ai_fnb_waste'    => '_fnb_value',
 			'mcp_ai_fnb_booking'  => '_fnb_booking_id',
 		);
 

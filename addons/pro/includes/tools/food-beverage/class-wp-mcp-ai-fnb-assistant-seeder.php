@@ -20,11 +20,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * Seeds the Surf Club Midigama F&B assistant packs (A1–A4).
- *
- * @since 1.6.0
- */
+	/**
+	 * Seeds the F&B assistant packs (A1–A4).
+	 *
+	 * @since 1.6.0
+	 */
 class WP_MCP_AI_Fnb_Assistant_Seeder {
 
 	/**
@@ -147,6 +147,8 @@ class WP_MCP_AI_Fnb_Assistant_Seeder {
 				$bundle = self::add_image_tools_to_a4( $bundle );
 			}
 
+			$bundle = self::render_tenant_tokens( $bundle );
+
 			$report = WP_MCP_AI_Assistant_Portability::import_bundle(
 				$bundle,
 				array(
@@ -200,6 +202,37 @@ class WP_MCP_AI_Fnb_Assistant_Seeder {
 				: array();
 
 			$bundle['assistants'][ $index ]['meta']['_wp_mcp_ai_tools'] = array_values( array_unique( array_merge( $tools, self::IMAGE_TOOLS ) ) );
+		}
+
+		return $bundle;
+	}
+
+	/**
+	 * Render tenant-profile tokens in a parsed canonical bundle.
+	 *
+	 * Substitutes {{venue_name}}, {{currency}}, {{currency_symbol}},
+	 * {{venue_type}} and {{owner_role}} in every assistant's title,
+	 * content, excerpt and system prompt so the operator's configured
+	 * identity is applied at seed time (the bundles ship venue-neutral).
+	 *
+	 * @param array $bundle Parsed canonical bundle.
+	 * @return array Bundle with tokens rendered.
+	 */
+	private static function render_tenant_tokens( $bundle ) {
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Tenant_Profile' ) ) {
+			return $bundle;
+		}
+
+		foreach ( $bundle['assistants'] as $index => $assistant ) {
+			foreach ( array( 'title', 'content', 'excerpt' ) as $field ) {
+				if ( isset( $assistant[ $field ] ) && is_string( $assistant[ $field ] ) ) {
+					$bundle['assistants'][ $index ][ $field ] = WP_MCP_AI_Fnb_Tenant_Profile::render( $assistant[ $field ] );
+				}
+			}
+
+			if ( isset( $assistant['meta']['_wp_mcp_ai_system_prompt'] ) && is_string( $assistant['meta']['_wp_mcp_ai_system_prompt'] ) ) {
+				$bundle['assistants'][ $index ]['meta']['_wp_mcp_ai_system_prompt'] = WP_MCP_AI_Fnb_Tenant_Profile::render( $assistant['meta']['_wp_mcp_ai_system_prompt'] );
+			}
 		}
 
 		return $bundle;
