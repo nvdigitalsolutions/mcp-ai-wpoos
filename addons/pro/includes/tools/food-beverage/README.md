@@ -110,12 +110,13 @@ New service classes (read-only, testable in isolation):
 - `WP_MCP_AI_Fnb_Structure_Matcher` — `match_table()` / `best_table()` header
   inference with confidence = matched / required canonical columns.
 - `WP_MCP_AI_Fnb_Loader` — CSV/TSV/JSON/JSONL/PDF/XLSX/ODS → shared
-  `{columns, rows}` matrix with delimiter/encoding/BOM auto-detection. PDFs read
-  via the pure-PHP `smalot/pdfparser` (the `extract_pdf_text` fallback
-  dependency); XLSX/XLS/ODS read via `phpoffice/phpspreadsheet` (a Pro-addon
-  dependency); scanned/image-only PDFs and photo invoices return a clear
-  pointer to the OCR tools (`extract_pdf_text` with enable_ocr, `ocr_pdf_text`,
-  `analyze_image`).
+  `{columns, rows}` matrix with delimiter/encoding/BOM auto-detection, plus
+  `scan_sources()` for **universal ingest** (walk the source folder and
+  auto-detect each file's table by header structure). PDFs read via the
+  pure-PHP `smalot/pdfparser` (the `extract_pdf_text` fallback dependency);
+  XLSX/XLS/ODS read via `phpoffice/phpspreadsheet` (a Pro-addon dependency);
+  scanned/image-only PDFs and photo invoices return a clear pointer to the OCR
+  tools (`extract_pdf_text` with enable_ocr, `ocr_pdf_text`, `analyze_image`).
 - `WP_MCP_AI_Fnb_Observation` — binds loose `{type, item, qty, unit, recorded_at,
   source, raw_value}` observations onto the five transactional tables via a
   terminology map (F&B analogue of the Health Records vitals/FHIR pattern);
@@ -124,8 +125,9 @@ New service classes (read-only, testable in isolation):
   numeric tolerance) and out-of-band flags (negative qty, zero price with qty).
 - `WP_MCP_AI_Fnb_Ingest_Dashboard_Page` — admin read-only "Ingest & Preview"
   surface (maps the Medical Vitals dashboard anatomy: Chart.js + AJAX over the
-  same `fnb_import_table` dry-run path) showing mapping confidence, missing
-  columns, flags and preview rows.
+  same `fnb_import_table` dry-run path) with a source-folder scan (universal
+  ingest) and a per-table preview showing mapping confidence, missing columns,
+  flags and preview rows.
 
 `fnb_import_table` surfaces a `mapping` confidence report, ingest-quality `flags`,
 and a three-way source error (no source / wrong shape / unrecognised columns)

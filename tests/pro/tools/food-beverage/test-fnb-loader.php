@@ -183,5 +183,37 @@ class Test_Fnb_Loader extends WP_UnitTestCase {
 		}
 
 		unlink( $tmp ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+}
+
+/**
+ * Scan the shipped data fixtures and auto-detect each table (universal ingest).
+ */
+public function test_scan_sources_detects_tables() {
+	// scan_sources depends on settings + the structure matcher.
+	foreach (
+		array(
+			'class-wp-mcp-ai-fnb-settings.php',
+			'class-wp-mcp-ai-fnb-table-reader.php',
+			'class-wp-mcp-ai-fnb-data-source.php',
+			'class-wp-mcp-ai-fnb-structure-matcher.php',
+		) as $file
+	) {
+		$path = $this->toolkit_dir . '/' . $file;
+		if ( file_exists( $path ) ) {
+			require_once $path;
+		}
 	}
+
+	$data_dir = $this->toolkit_dir . '/data';
+	$files    = WP_MCP_AI_Fnb_Loader::scan_sources( array( $data_dir ) );
+
+	$by_name = array();
+	foreach ( $files as $f ) {
+		$by_name[ $f['file'] ] = $f;
+	}
+
+	$this->assertArrayHasKey( 'daily_sales.csv', $by_name );
+	$this->assertSame( '6.0', $by_name['daily_sales.csv']['table_id'] );
+	$this->assertGreaterThanOrEqual( 0.60, $by_name['daily_sales.csv']['confidence'] );
+}
 }
