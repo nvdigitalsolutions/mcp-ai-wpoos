@@ -1418,17 +1418,17 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'number',
 					'description' => __( 'Units sold.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_price_lkr'   => array(
-					'meta_key'    => '_fnb_price_lkr',
-					'label'       => __( 'Price (LKR)', 'mcp-ai-wpoos-pro' ),
+				'_fnb_price'   => array(
+					'meta_key'    => '_fnb_price',
+					'label'       => __( 'Price', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
-					'description' => __( 'Unit price in LKR.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Unit price.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_revenue_lkr' => array(
-					'meta_key'    => '_fnb_revenue_lkr',
-					'label'       => __( 'Revenue (LKR)', 'mcp-ai-wpoos-pro' ),
+				'_fnb_revenue' => array(
+					'meta_key'    => '_fnb_revenue',
+					'label'       => __( 'Revenue', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
-					'description' => __( 'Line revenue in LKR.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Line revenue.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 
@@ -1487,17 +1487,17 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'number',
 					'description' => __( 'Quantity delivered.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_pack_price_lkr' => array(
-					'meta_key'    => '_fnb_pack_price_lkr',
-					'label'       => __( 'Pack Price (LKR)', 'mcp-ai-wpoos-pro' ),
+				'_fnb_pack_price' => array(
+					'meta_key'    => '_fnb_pack_price',
+					'label'       => __( 'Pack Price', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
-					'description' => __( 'Price per pack in LKR.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Price per pack.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_line_total_lkr' => array(
-					'meta_key'    => '_fnb_line_total_lkr',
-					'label'       => __( 'Line Total (LKR)', 'mcp-ai-wpoos-pro' ),
+				'_fnb_line_total' => array(
+					'meta_key'    => '_fnb_line_total',
+					'label'       => __( 'Line Total', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
-					'description' => __( 'Line total in LKR.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Line total.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 
@@ -1562,17 +1562,17 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'number',
 					'description' => __( 'Quantity used during the period.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_unit_cost_lkr'     => array(
-					'meta_key'    => '_fnb_unit_cost_lkr',
-					'label'       => __( 'Unit Cost (LKR)', 'mcp-ai-wpoos-pro' ),
+				'_fnb_unit_cost'     => array(
+					'meta_key'    => '_fnb_unit_cost',
+					'label'       => __( 'Unit Cost', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
-					'description' => __( 'Unit cost in LKR.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Unit cost.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_closing_value_lkr' => array(
-					'meta_key'    => '_fnb_closing_value_lkr',
-					'label'       => __( 'Closing Value (LKR)', 'mcp-ai-wpoos-pro' ),
+				'_fnb_closing_value' => array(
+					'meta_key'    => '_fnb_closing_value',
+					'label'       => __( 'Closing Value', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
-					'description' => __( 'Closing value in LKR.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Closing value.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 
@@ -1625,11 +1625,11 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'string',
 					'description' => __( 'Staff member who logged the waste.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_value_lkr'     => array(
-					'meta_key'    => '_fnb_value_lkr',
-					'label'       => __( 'Value (LKR)', 'mcp-ai-wpoos-pro' ),
+				'_fnb_value'     => array(
+					'meta_key'    => '_fnb_value',
+					'label'       => __( 'Value', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
-					'description' => __( 'Waste value in LKR.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Waste value.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 

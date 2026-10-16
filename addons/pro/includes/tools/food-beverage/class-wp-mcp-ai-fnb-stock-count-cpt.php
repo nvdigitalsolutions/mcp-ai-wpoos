@@ -83,7 +83,7 @@ class WP_MCP_AI_Fnb_Stock_Count_CPT {
 	/**
 	 * Upsert a canonical stock-count row.
 	 *
-	 * @param array $row Canonical-keyed row values (count_date, count_type, period_start, ingredient_id, unit, category, opening, bought, closing, used, unit_cost_lkr, closing_value_lkr).
+	 * @param array $row Canonical-keyed row values (count_date, count_type, period_start, ingredient_id, unit, category, opening, bought, closing, used, unit_cost, closing_value).
 	 * @return array|WP_Error array{action: 'insert'|'update', post_id: int}
 	 */
 	public static function upsert( array $row ) {

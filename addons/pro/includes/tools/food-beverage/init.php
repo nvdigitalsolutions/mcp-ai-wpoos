@@ -41,10 +41,14 @@ $is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 // Only load the toolkit when enabled (and not in base version or the Pro addon is active).
 if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-settings.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-tenant-profile.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-table-reader.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-data-source.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-universal-reader.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-benchmarks.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-metrics.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-report-builder.php';
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-report-exporter.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-draft-writer.php';
 	require_once __DIR__ . '/class-wp-mcp-ai-fnb-csv-exporter.php';
 

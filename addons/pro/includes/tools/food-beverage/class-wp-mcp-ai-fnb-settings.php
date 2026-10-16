@@ -16,11 +16,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * F&B toolkit settings wrapper.
- *
- * @since 1.6.0
- */
+	/**
+	 * Seeds the F&B assistant packs (A1–A4).
+	 *
+	 * @since 1.6.0
+	 */
 class WP_MCP_AI_Fnb_Settings {
 
 	const OPTION_KEY = 'wp_mcp_ai_fnb_settings';
@@ -29,9 +29,9 @@ class WP_MCP_AI_Fnb_Settings {
 	 * Google Drive file ID of the canonical Surf Club Midigama demo workbook.
 	 *
 	 * This is the single shared spreadsheet whose worksheets/tabs hold all 17
-	 * spec data tables plus the "assumptions" sheet. It is used as the
-	 * fallback source whenever `data_workbook_id` is empty so a fresh install
-	 * can resolve the demo data without the admin hand-editing settings.
+	 * spec data tables plus the "assumptions" sheet. Kept only for the explicit
+	 * "Load demo data" action — it is never a silent fallback (demo_mode is off
+	 * by default, and workbook_id() returns empty when data_workbook_id is unset).
 	 *
 	 * NOTE: This is the Sheets file ID, not the Drive folder ID
 	 * (1HNq3xBZtbzOboxbkrVcB7lTc-JUOI5On).
@@ -47,8 +47,9 @@ class WP_MCP_AI_Fnb_Settings {
 	 */
 	private static $defaults = array(
 		'enabled'                    => false,
-		'demo_mode'                  => true,
+		'demo_mode'                  => false,
 		'adapter'                    => 'drive', // drive | csv.
+		'ingest_mode'                => 'folder', // folder | workbook | split. folder = single-folder universal ingest.
 		'data_folder_id'             => '',
 		'setup_folder_id'            => '',
 		'data_workbook_id'           => '', // Optional: single shared workbook (multi-worksheet) Drive file ID.
@@ -57,8 +58,13 @@ class WP_MCP_AI_Fnb_Settings {
 		'csv_data_dir'               => '',
 		'connection_id'              => '',
 		'as_of_date'                 => '',
+		'venue_name'                 => '', // Tenant Profile: venue display name.
+		'venue_type'                 => '', // Tenant Profile: restaurant|bar|cafe|club|hotel|ghost-kitchen.
+		'currency'                   => '', // Tenant Profile: ISO-4217 code (empty = unset).
+		'locale'                     => '', // Tenant Profile: BCP-47 locale.
+		'owner_role'                 => '', // Tenant Profile: owner/decision-maker role.
 		'enable_fnb_native_storage'  => false, // Phase 9: CPT-backed native storage for the five transactional tables.
-		'pr_auto_approval_threshold' => 0,     // Phase 9b: LKR; PR totals above this need a finance co-sign at release (0 = never).
+		'pr_auto_approval_threshold' => 0,     // Phase 9b: PR totals above this need a finance co-sign at release (0 = never).
 	);
 
 	/**
@@ -104,36 +110,22 @@ class WP_MCP_AI_Fnb_Settings {
 	 * @return bool
 	 */
 	public static function is_demo_mode() {
-		return (bool) self::get( 'demo_mode', true );
+		return (bool) self::get( 'demo_mode', false );
 	}
 
 	/**
 	 * Resolve the Google Drive file ID of the source workbook.
 	 *
 	 * Returns the explicitly configured `data_workbook_id` when set; otherwise
-	 * returns the canonical demo-workbook ID (filterable via
-	 * `wp_mcp_ai_fnb_demo_workbook_id`) so the read path always has a concrete
-	 * spreadsheet to resolve to instead of falling through to split-file
-	 * lookup and a dead-end "file not found" error.
+	 * returns an empty string so the read path falls through to folder lookup.
+	 * The canonical demo workbook is available only through the explicit
+	 * "Load demo data" action — it is never a silent fallback.
 	 *
-	 * @return string Drive file ID (may be empty when the filter suppresses it).
+	 * @return string Drive file ID (empty when none is configured).
 	 */
 	public static function workbook_id() {
 		$explicit = (string) self::get( 'data_workbook_id', '' );
-		$explicit = trim( $explicit );
-		if ( '' !== $explicit ) {
-			return $explicit;
-		}
-
-		/**
-		 * Filter the F&B demo workbook Drive file ID used as the fallback source.
-		 *
-		 * Return an empty string to disable the demo-workbook fallback entirely
-		 * (forcing split-file lookup against the configured folders).
-		 *
-		 * @param string $demo_workbook_id Drive file ID.
-		 */
-		return (string) apply_filters( 'wp_mcp_ai_fnb_demo_workbook_id', self::DEMO_WORKBOOK_ID );
+		return trim( $explicit );
 	}
 
 	/**

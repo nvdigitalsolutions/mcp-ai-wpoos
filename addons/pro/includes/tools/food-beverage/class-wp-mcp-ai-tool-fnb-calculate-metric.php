@@ -37,7 +37,7 @@ class WP_MCP_AI_Tool_Fnb_Calculate_Metric extends WP_MCP_AI_Fnb_Tool_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Calculate a Surf Club metric (M-01…M-21) using the Metric definitions sheet formulas. Use this for every total, average, percentage and comparison — never compute figures yourself.', 'mcp-ai-wpoos-pro' );
+		return __( 'Calculate an F&B metric (M-01…M-21) using the Metric definitions. Use this for every total, average, percentage and comparison — never compute figures yourself.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**

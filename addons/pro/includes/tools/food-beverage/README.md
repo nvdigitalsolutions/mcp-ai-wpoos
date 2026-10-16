@@ -3,11 +3,12 @@
 ## Purpose
 
 Deterministic Food & Beverage operations toolkit: reads the spec's 17 data
-tables (Google Drive Sheets or CSV fixtures), computes the 21 spec metrics
-(M-01…M-21) in PHP, and generates the 13 report layouts (R-01…R-13) with
-Drafts-folder output only. Built from proposal
+tables (Google Drive Sheets or CSV fixtures, or the single-folder ingest),
+computes the 21 spec metrics (M-01…M-21) in PHP, and generates the 13 report
+layouts (R-01…R-13) with Drafts-folder output only. Built from proposal
 `docs/project/proposals/062-food-beverage-management-pro-toolkit-proposal.md`
-and the Surf Club Midigama assistant task spec.
+and universalised in
+`docs/project/proposals/078-fnb-toolkit-universalisation-proposal.md`.
 
 ## Tier
 

@@ -26,14 +26,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Fnb_Metrics {
 
 	const METRICS = array(
-		'M-01' => 'Revenue (LKR)',
+		'M-01' => 'Revenue',
 		'M-02' => 'Covers',
-		'M-03' => 'Average spend per cover (LKR)',
+		'M-03' => 'Average spend per cover',
 		'M-04' => 'Food cost %',
 		'M-05' => 'Beverage cost %',
-		'M-06' => 'Cost per cover (LKR)',
-		'M-07' => 'Volume effect (LKR)',
-		'M-08' => 'Per-cover effect (LKR)',
+		'M-06' => 'Cost per cover',
+		'M-07' => 'Volume effect',
+		'M-08' => 'Per-cover effect',
 		'M-09' => 'Overtime per 100 covers (hours)',
 		'M-10' => 'Labour cost %',
 		'M-11' => 'Electricity per cover (kWh)',
@@ -44,19 +44,25 @@ class WP_MCP_AI_Fnb_Metrics {
 		'M-16' => 'Expected use',
 		'M-17' => 'Unexplained variance',
 		'M-18' => 'Waste %',
-		'M-19' => 'Price change impact (LKR)',
-		'M-20' => 'Budget variance (LKR)',
-		'M-21' => 'Dish margin (LKR)',
+		'M-19' => 'Price change impact',
+		'M-20' => 'Budget variance',
+		'M-21' => 'Dish margin',
 	);
 
 	/**
-	 * Round helper: 4 dp by default, values to 2 dp for LKR sums.
+	 * Round helper: 4 dp by default; money uses the tenant currency precision.
 	 *
 	 * @param float $value Raw value.
 	 * @param int   $dp    Decimal places.
 	 * @return float
 	 */
-	private static function r( $value, $dp = 2 ) {
+	private static function r( $value, $dp = null ) {
+		if ( null === $dp ) {
+			$dp = class_exists( 'WP_MCP_AI_Fnb_Tenant_Profile' )
+				? WP_MCP_AI_Fnb_Tenant_Profile::currency_decimals()
+				: 2;
+		}
+
 		return round( (float) $value, $dp );
 	}
 
@@ -90,7 +96,7 @@ class WP_MCP_AI_Fnb_Metrics {
 				continue;
 			}
 			$qty    = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $headers, $row, 'qty_sold' ) );
-			$price  = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $headers, $row, 'price_lkr' ) );
+			$price  = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $headers, $row, 'price' ) );
 			$total += $qty * $price;
 			++$rows;
 		}
@@ -157,7 +163,7 @@ class WP_MCP_AI_Fnb_Metrics {
 	}
 
 	/**
-	 * Stock used (LKR) for a month by category — used by M-04/M-05.
+	 * Stock used (value units) for a month by category — used by M-04/M-05.
 	 *
 	 * Implemented as the value-based COGS the demo workbook verifies in its
 	 * Check totals sheet: opening stock value (last count of the previous
@@ -213,7 +219,7 @@ class WP_MCP_AI_Fnb_Metrics {
 			if ( strtolower( (string) WP_MCP_AI_Fnb_Data_Source::cell( '9.0', $headers, $row, 'category' ) ) !== strtolower( $category ) ) {
 				continue;
 			}
-			$value = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '9.0', $headers, $row, 'closing_value_lkr' ) );
+			$value = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '9.0', $headers, $row, 'closing_value' ) );
 			if ( '' !== $open_date && $row_date === $open_date ) {
 				$opening += $value;
 			}
@@ -234,7 +240,7 @@ class WP_MCP_AI_Fnb_Metrics {
 				if ( strtolower( (string) WP_MCP_AI_Fnb_Data_Source::cell( '8.0', $p_headers, $row, 'category' ) ) !== strtolower( $category ) ) {
 					continue;
 				}
-				$purchases_value += WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '8.0', $p_headers, $row, 'line_total_lkr' ) );
+				$purchases_value += WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '8.0', $p_headers, $row, 'line_total' ) );
 			}
 		}
 
@@ -412,7 +418,7 @@ class WP_MCP_AI_Fnb_Metrics {
 				continue;
 			}
 			$dept                 = (string) WP_MCP_AI_Fnb_Data_Source::cell( '11.0', $headers, $row, 'department' );
-			$cost                 = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '11.0', $headers, $row, 'total_payroll_cost_lkr' ) );
+			$cost                 = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '11.0', $headers, $row, 'total_payroll_cost' ) );
 			$total               += $cost;
 			$overtime            += WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '11.0', $headers, $row, 'overtime_hours' ) );
 			$casual              += WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '11.0', $headers, $row, 'casual_shifts' ) );
@@ -578,7 +584,7 @@ class WP_MCP_AI_Fnb_Metrics {
 				continue;
 			}
 			$line   = (string) WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'expense_line' );
-			$amount = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'amount_lkr' ) );
+			$amount = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'amount' ) );
 			if ( ! isset( $lines[ $line ] ) ) {
 				$lines[ $line ] = 0.0;
 			}
@@ -926,7 +932,7 @@ class WP_MCP_AI_Fnb_Metrics {
 				if ( WP_MCP_AI_Fnb_Data_Source::month_of( WP_MCP_AI_Fnb_Data_Source::cell( '10.0', $headers, $row, 'date' ) ) !== $month ) {
 					continue;
 				}
-				$value        = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '10.0', $headers, $row, 'value_lkr' ) );
+				$value        = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '10.0', $headers, $row, 'value' ) );
 				$reason       = (string) WP_MCP_AI_Fnb_Data_Source::cell( '10.0', $headers, $row, 'reason' );
 				$waste_value += $value;
 				if ( ! isset( $by_reason[ $reason ] ) ) {
@@ -979,7 +985,7 @@ class WP_MCP_AI_Fnb_Metrics {
 			}
 			if ( '' === $best_date || $effective > $best_date ) {
 				$best_date  = $effective;
-				$pack_price = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '5.0', $headers, $row, 'pack_price_lkr' ) );
+				$pack_price = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '5.0', $headers, $row, 'pack_price' ) );
 				$pack_size  = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '5.0', $headers, $row, 'pack_size' ) );
 				$best_price = $pack_size > 0 ? $pack_price / $pack_size : 0.0;
 			}
@@ -1018,7 +1024,7 @@ class WP_MCP_AI_Fnb_Metrics {
 			if ( '' === $effective ) {
 				continue;
 			}
-			$pack_price              = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '5.0', $headers, $row, 'pack_price_lkr' ) );
+			$pack_price              = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '5.0', $headers, $row, 'pack_price' ) );
 			$pack_size               = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '5.0', $headers, $row, 'pack_size' ) );
 			$unit                    = $pack_size > 0 ? $pack_price / $pack_size : 0.0;
 			$series[ $ingredient ][] = array(
@@ -1078,7 +1084,7 @@ class WP_MCP_AI_Fnb_Metrics {
 						'old_unit_price' => self::r( $points[ $i - 1 ]['unit'], 2 ),
 						'new_unit_price' => self::r( $points[ $i ]['unit'], 2 ),
 						'qty_bought'     => self::r( $qty ),
-						'impact_lkr'     => self::r( $line_impact ),
+						'impact'         => self::r( $line_impact ),
 					);
 				}
 			}
@@ -1115,7 +1121,7 @@ class WP_MCP_AI_Fnb_Metrics {
 				continue;
 			}
 			$line   = (string) WP_MCP_AI_Fnb_Data_Source::cell( '15.0', $headers, $row, 'line' );
-			$budget = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '15.0', $headers, $row, 'budget_lkr' ) );
+			$budget = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '15.0', $headers, $row, 'budget' ) );
 			$actual = isset( $actual_map[ $line ] ) ? $actual_map[ $line ] : null;
 			$rows[] = array(
 				'line'     => $line,
@@ -1185,7 +1191,7 @@ class WP_MCP_AI_Fnb_Metrics {
 		$type    = '';
 		foreach ( $menu['rows'] as $row ) {
 			if ( (string) WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'item_id' ) === $item_id ) {
-				$price = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'price_lkr' ) );
+				$price = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'price' ) );
 				$type  = (string) WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'type' );
 				break;
 			}
@@ -1279,7 +1285,7 @@ class WP_MCP_AI_Fnb_Metrics {
 				'item'             => (string) WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'item' ),
 				'section'          => (string) WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'section' ),
 				'type'             => (string) WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'type' ),
-				'margin_lkr'       => $margin['value'],
+				'margin'           => $margin['value'],
 				'cost_pct'         => $margin['cost_pct'],
 				'popularity_share' => $margin['popularity_share'],
 			);
@@ -1293,12 +1299,12 @@ class WP_MCP_AI_Fnb_Metrics {
 		}
 
 		$avg_share  = array_sum( array_column( $items, 'popularity_share' ) ) / count( $items );
-		$avg_margin = array_sum( array_column( $items, 'margin_lkr' ) ) / count( $items );
+		$avg_margin = array_sum( array_column( $items, 'margin' ) ) / count( $items );
 
 		$rows = array();
 		foreach ( $items as $item ) {
 			$popular    = $item['popularity_share'] >= $avg_share;
-			$profitable = $item['margin_lkr'] >= $avg_margin;
+			$profitable = $item['margin'] >= $avg_margin;
 			if ( $popular && $profitable ) {
 				$quadrant = 'Star';
 				$action   = 'Protect and promote';

@@ -631,7 +631,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'category'      => 'specialized',
 					'php_functions' => array(),
 					'npm_packages'  => array(),
-					'tools_count'   => 31,
+					'tools_count'   => 32,
 					'tools'         => array(
 						__( 'fnb_read_table tool', 'mcp-ai-wpoos' ),
 						__( 'fnb_search_table tool', 'mcp-ai-wpoos' ),
@@ -651,6 +651,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'fnb_labour_analysis tool', 'mcp-ai-wpoos' ),
 						__( 'fnb_utilities_per_cover tool', 'mcp-ai-wpoos' ),
 						__( 'fnb_generate_report tool', 'mcp-ai-wpoos' ),
+						__( 'fnb_export_report tool', 'mcp-ai-wpoos' ),
 						__( 'fnb_save_draft tool', 'mcp-ai-wpoos' ),
 						__( 'fnb_list_drafts tool', 'mcp-ai-wpoos' ),
 						__( 'fnb_audit_log tool', 'mcp-ai-wpoos' ),

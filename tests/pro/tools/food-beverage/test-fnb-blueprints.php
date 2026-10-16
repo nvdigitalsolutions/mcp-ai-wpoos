@@ -117,6 +117,32 @@ class Test_Fnb_Blueprints extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test: blueprints are venue-neutral and carry tenant-profile tokens.
+	 */
+	public function test_blueprints_are_venue_neutral_with_tokens() {
+		if ( ! is_dir( $this->toolkit_dir . '/examples' ) ) {
+			$this->markTestSkipped( 'F&B examples directory not available' );
+		}
+
+		$venue_strings   = array( 'Surf Club', 'Midigama', 'Sri Lanka', 'Rella', 'Sanda', 'LKR', 'PE firm', 'deity' );
+		$required_tokens = array( '{{venue_name}}', '{{currency}}' );
+
+		foreach ( $this->slugs as $slug ) {
+			$data        = $this->load_blueprint( $slug );
+			$instructions = $data['meta']['instructions'] ?? '';
+			$description  = $data['description'] ?? '';
+
+			foreach ( $venue_strings as $needle ) {
+				$this->assertStringNotContainsStringIgnoringCase( $needle, $instructions, $slug . ' instructions must not contain venue/currency string ' . $needle );
+				$this->assertStringNotContainsStringIgnoringCase( $needle, $description, $slug . ' description must not contain venue/currency string ' . $needle );
+			}
+			foreach ( $required_tokens as $token ) {
+				$this->assertStringContainsString( $token, $instructions, $slug . ' instructions must contain tenant token ' . $token );
+			}
+		}
+	}
+
+	/**
 	 * Test: only A2 gets the purchase-request tools, and its prompt restates
 	 * the ACT-tier guardrail.
 	 */
@@ -218,6 +244,28 @@ class Test_Fnb_Blueprints extends WP_UnitTestCase {
 		$this->assertContains( 'fnb_pr_create', $tools, 'A2 blueprint assistant grants fnb_pr_create' );
 		$this->assertContains( 'fnb_read_table', $tools );
 		$this->assertNotContains( 'fnb_pr_release', $tools );
+
+		// Tenant-profile tokens are rendered at install time into the assistant's
+		// system prompt (post_content), matching the WP-CLI seeder's behaviour.
+		update_option(
+			'wp_mcp_ai_fnb_settings',
+			array(
+				'venue_name' => 'Example Kitchen',
+				'currency'   => 'USD',
+			)
+		);
+		$rendered = $tool->execute(
+			array(
+				'blueprint' => 'fnb-a2-kitchen-bar-stock',
+				'overwrite' => true,
+			),
+			array( 'user_id' => $admin )
+		);
+		$this->assertTrue( $rendered['success'] );
+		$again_content = get_post_field( 'post_content', $rendered['assistant_id'] );
+		$this->assertStringContainsString( 'Example Kitchen', $again_content, 'Rendered tenant venue name must appear in the assistant content' );
+		$this->assertStringContainsString( 'USD', $again_content, 'Rendered currency code must appear in the assistant content' );
+		$this->assertStringNotContainsString( '{{venue_name}}', $again_content, 'Unrendered token must not remain in the assistant content' );
 
 		// Duplicate detection without overwrite.
 		$dupe = $tool->execute( array( 'blueprint' => 'fnb-a2-kitchen-bar-stock' ), array( 'user_id' => $admin ) );

@@ -31,6 +31,92 @@ class WP_MCP_AI_Fnb_Data_Source {
 	const CACHE_TTL   = 300; // 5 minutes.
 
 	/**
+	 * Curated real-world header → canonical-key alias dictionary.
+	 *
+	 * Mirrors the Healthcare Vitals `CSV_COLUMN_MAP` pattern: every variant,
+	 * abbreviation and unit-suffixed spelling an operator is likely to see in an
+	 * exported POS / supplier / payroll / inventory spread is mapped onto one
+	 * canonical key, so the universal ingestor and `resolve_column()` both
+	 * resolve messy headers without relying on narrow per-table aliases or
+	 * fragile numeric scoring alone.
+	 *
+	 * Keys are already normalised (lowercase, underscores/spaces collapsed);
+	 * lookups normalise the incoming header before comparing.
+	 *
+	 * @var array<string,string>
+	 */
+	const HEADER_ALIASES = array(
+		// Identity + keys.
+		'item id'           => 'item_id',
+		'item_id'           => 'item_id',
+		'sku'               => 'item_id',
+		'product id'        => 'item_id',
+		'ingredient id'     => 'ingredient_id',
+		'ingredient_id'     => 'ingredient_id',
+		'supplier id'       => 'supplier_id',
+		'supplier_id'       => 'supplier_id',
+		'booking id'        => 'booking_id',
+		'entry id'          => 'entry_id',
+		'vendor invoice'    => 'vendor_invoice',
+		'invoice'           => 'invoice',
+		'invoice no'        => 'invoice',
+		'invoice number'    => 'invoice',
+		'inv no'            => 'invoice',
+		'inv'               => 'invoice',
+		// Money (currency-neutral).
+		'price'             => 'price',
+		'unit price'        => 'price',
+		'sale price'        => 'price',
+		'price lkr'         => 'price',
+		'revenue'           => 'revenue',
+		'sales'             => 'revenue',
+		'total'             => 'revenue',
+		'gross'             => 'revenue',
+		'net'               => 'revenue',
+		'pack price'        => 'pack_price',
+		'unit cost'         => 'unit_cost',
+		'cost'              => 'unit_cost',
+		'closing value'     => 'closing_value',
+		'line total'        => 'line_total',
+		'amount'            => 'amount',
+		'expense amount'    => 'amount',
+		'budget'            => 'budget',
+		'budget lkr'        => 'budget',
+		// Quantities.
+		'qty sold'          => 'qty_sold',
+		'quantity sold'     => 'qty_sold',
+		'units sold'        => 'qty_sold',
+		'qty delivered'     => 'qty_delivered',
+		'quantity delivered' => 'qty_delivered',
+		'qty'               => 'qty',
+		'quantity'          => 'qty',
+		'units'             => 'qty',
+		'qty per portion'   => 'qty_per_portion',
+		// Dates.
+		'date'              => 'date',
+		'day'               => 'day',
+		'delivery date'     => 'delivery_date',
+		'count date'        => 'count_date',
+		'effective from'    => 'effective_from',
+		'invoice date'      => 'invoice_date',
+		'due date'          => 'due_date',
+		'paid date'         => 'paid_date',
+		'for month'         => 'for_month',
+		'month'             => 'month',
+		// Common operators' synonyms.
+		'covers'            => 'total_covers',
+		'lunch covers'      => 'lunch_covers',
+		'dinner covers'     => 'dinner_covers',
+		'bar only guests'   => 'bar_only_guests',
+		'reason'            => 'reason',
+		'logged by'         => 'logged_by',
+		'notes'             => 'notes',
+		'note'              => 'notes',
+		'comments'          => 'notes',
+		'status'            => 'status',
+	);
+
+	/**
 	 * Spec table registry.
 	 *
 	 * Canonical columns list the keys used by the metric engine; `aliases`
@@ -41,10 +127,10 @@ class WP_MCP_AI_Fnb_Data_Source {
 	private static $tables = array(
 		'1.0'         => array(
 			'label'     => 'Menu items',
-			'canonical' => array( 'item_id', 'menu', 'section', 'item', 'price_lkr', 'type', 'source' ),
+			'canonical' => array( 'item_id', 'menu', 'section', 'item', 'price', 'type', 'source' ),
 			'aliases'   => array(
-				'item_id'   => array( 'item_id' ),
-				'price_lkr' => array( 'price_lkr' ),
+				'item_id' => array( 'item_id' ),
+				'price'   => array( 'price', 'price_lkr' ),
 			),
 		),
 		'2.0'         => array(
@@ -78,25 +164,26 @@ class WP_MCP_AI_Fnb_Data_Source {
 		),
 		'5.0'         => array(
 			'label'     => 'Supplier prices',
-			'canonical' => array( 'supplier_id', 'ingredient_id', 'pack', 'pack_size', 'unit', 'pack_price_lkr', 'effective_from' ),
+			'canonical' => array( 'supplier_id', 'ingredient_id', 'pack', 'pack_size', 'unit', 'pack_price', 'effective_from' ),
 			'aliases'   => array(
 				'supplier_id'    => array( 'supplier_id' ),
 				'ingredient_id'  => array( 'ingredient_id' ),
 				'pack_size'      => array( 'pack_size' ),
-				'pack_price_lkr' => array( 'pack_price_lkr' ),
+				'pack_price'     => array( 'pack_price', 'pack_price_lkr' ),
 				'effective_from' => array( 'effective_from' ),
 			),
 		),
 		'6.0'         => array(
 			'label'     => 'Daily sales',
-			'canonical' => array( 'date', 'month', 'item_id', 'item', 'type', 'qty_sold', 'price_lkr', 'revenue_lkr' ),
+			'canonical' => array( 'date', 'month', 'item_id', 'item', 'type', 'qty_sold', 'price', 'revenue' ),
 			'aliases'   => array(
-				'date'      => array( 'date' ),
-				'month'     => array( 'month' ),
-				'item_id'   => array( 'item_id' ),
-				'type'      => array( 'type' ),
-				'qty_sold'  => array( 'qty_sold' ),
-				'price_lkr' => array( 'price_lkr' ),
+				'date'     => array( 'date' ),
+				'month'    => array( 'month' ),
+				'item_id'  => array( 'item_id' ),
+				'type'     => array( 'type' ),
+				'qty_sold' => array( 'qty_sold' ),
+				'price'    => array( 'price', 'price_lkr' ),
+				'revenue'  => array( 'revenue', 'revenue_lkr' ),
 			),
 		),
 		'7.0'         => array(
@@ -113,37 +200,38 @@ class WP_MCP_AI_Fnb_Data_Source {
 		),
 		'8.0'         => array(
 			'label'     => 'Purchases',
-			'canonical' => array( 'delivery_date', 'month', 'supplier_id', 'invoice', 'ingredient_id', 'category', 'packs', 'pack_size', 'qty_delivered', 'pack_price_lkr', 'line_total_lkr' ),
+			'canonical' => array( 'delivery_date', 'month', 'supplier_id', 'invoice', 'ingredient_id', 'category', 'packs', 'pack_size', 'qty_delivered', 'pack_price', 'line_total' ),
 			'aliases'   => array(
-				'delivery_date'  => array( 'delivery_date' ),
-				'month'          => array( 'month' ),
-				'supplier_id'    => array( 'supplier_id' ),
-				'invoice'        => array( 'invoice' ),
-				'ingredient_id'  => array( 'ingredient_id' ),
-				'category'       => array( 'category' ),
-				'qty_delivered'  => array( 'qty_delivered' ),
-				'pack_price_lkr' => array( 'pack_price_lkr' ),
+				'delivery_date' => array( 'delivery_date' ),
+				'month'         => array( 'month' ),
+				'supplier_id'   => array( 'supplier_id' ),
+				'invoice'       => array( 'invoice' ),
+				'ingredient_id' => array( 'ingredient_id' ),
+				'category'      => array( 'category' ),
+				'qty_delivered' => array( 'qty_delivered' ),
+				'pack_price'    => array( 'pack_price', 'pack_price_lkr' ),
+				'line_total'    => array( 'line_total', 'line_total_lkr' ),
 			),
 		),
 		'9.0'         => array(
 			'label'     => 'Stock counts',
-			'canonical' => array( 'count_date', 'count_type', 'period_start', 'ingredient_id', 'unit', 'category', 'opening', 'bought', 'closing', 'used', 'unit_cost_lkr', 'closing_value_lkr' ),
+			'canonical' => array( 'count_date', 'count_type', 'period_start', 'ingredient_id', 'unit', 'category', 'opening', 'bought', 'closing', 'used', 'unit_cost', 'closing_value' ),
 			'aliases'   => array(
-				'count_date'        => array( 'count_date' ),
-				'count_type'        => array( 'count_type' ),
-				'period_start'      => array( 'period_start' ),
-				'ingredient_id'     => array( 'ingredient_id' ),
-				'category'          => array( 'category' ),
-				'opening'           => array( 'opening' ),
-				'bought'            => array( 'bought' ),
-				'closing'           => array( 'closing' ),
-				'unit_cost_lkr'     => array( 'unit_cost_lkr' ),
-				'closing_value_lkr' => array( 'closing_value_lkr' ),
+				'count_date'    => array( 'count_date' ),
+				'count_type'    => array( 'count_type' ),
+				'period_start'  => array( 'period_start' ),
+				'ingredient_id' => array( 'ingredient_id' ),
+				'category'      => array( 'category' ),
+				'opening'       => array( 'opening' ),
+				'bought'        => array( 'bought' ),
+				'closing'       => array( 'closing' ),
+				'unit_cost'     => array( 'unit_cost', 'unit_cost_lkr' ),
+				'closing_value' => array( 'closing_value', 'closing_value_lkr' ),
 			),
 		),
 		'10.0'        => array(
 			'label'     => 'Waste log',
-			'canonical' => array( 'date', 'month', 'ingredient_id', 'ingredient', 'qty', 'unit', 'reason', 'logged_by', 'value_lkr' ),
+			'canonical' => array( 'date', 'month', 'ingredient_id', 'ingredient', 'qty', 'unit', 'reason', 'logged_by', 'value' ),
 			'aliases'   => array(
 				'date'          => array( 'date' ),
 				'month'         => array( 'month' ),
@@ -151,18 +239,23 @@ class WP_MCP_AI_Fnb_Data_Source {
 				'qty'           => array( 'qty' ),
 				'reason'        => array( 'reason' ),
 				'logged_by'     => array( 'logged_by' ),
-				'value_lkr'     => array( 'value_lkr' ),
+				'value'         => array( 'value', 'value_lkr' ),
 			),
 		),
 		'11.0'        => array(
 			'label'     => 'Payroll',
-			'canonical' => array( 'month', 'department', 'basic_pay_lkr', 'epf_lkr', 'etf_lkr', 'overtime_hours', 'overtime_pay_lkr', 'casual_shifts', 'casual_pay_lkr', 'total_payroll_cost_lkr' ),
+			'canonical' => array( 'month', 'department', 'basic_pay', 'epf', 'etf', 'overtime_hours', 'overtime_pay', 'casual_shifts', 'casual_pay', 'total_payroll_cost' ),
 			'aliases'   => array(
-				'month'                  => array( 'month' ),
-				'department'             => array( 'department' ),
-				'overtime_hours'         => array( 'overtime_hours' ),
-				'casual_shifts'          => array( 'casual_shifts' ),
-				'total_payroll_cost_lkr' => array( 'total_payroll_cost_lkr' ),
+				'month'                => array( 'month' ),
+				'department'           => array( 'department' ),
+				'basic_pay'            => array( 'basic_pay', 'basic_pay_lkr' ),
+				'epf'                  => array( 'epf', 'epf_lkr' ),
+				'etf'                  => array( 'etf', 'etf_lkr' ),
+				'overtime_hours'       => array( 'overtime_hours' ),
+				'overtime_pay'         => array( 'overtime_pay', 'overtime_pay_lkr' ),
+				'casual_shifts'        => array( 'casual_shifts' ),
+				'casual_pay'           => array( 'casual_pay', 'casual_pay_lkr' ),
+				'total_payroll_cost'   => array( 'total_payroll_cost', 'total_payroll_cost_lkr' ),
 			),
 		),
 		'12.0'        => array(
@@ -190,7 +283,7 @@ class WP_MCP_AI_Fnb_Data_Source {
 		),
 		'14.0'        => array(
 			'label'     => 'Expense ledger',
-			'canonical' => array( 'entry_id', 'vendor', 'vendor_invoice', 'expense_line', 'group', 'for_month', 'invoice_date', 'amount_lkr', 'due_date', 'paid_date', 'status' ),
+			'canonical' => array( 'entry_id', 'vendor', 'vendor_invoice', 'expense_line', 'group', 'for_month', 'invoice_date', 'amount', 'due_date', 'paid_date', 'status' ),
 			'aliases'   => array(
 				'entry_id'       => array( 'entry_id' ),
 				'vendor'         => array( 'vendor' ),
@@ -199,7 +292,7 @@ class WP_MCP_AI_Fnb_Data_Source {
 				'group'          => array( 'group' ),
 				'for_month'      => array( 'for_month' ),
 				'invoice_date'   => array( 'invoice_date' ),
-				'amount_lkr'     => array( 'amount_lkr' ),
+				'amount'         => array( 'amount', 'amount_lkr' ),
 				'due_date'       => array( 'due_date' ),
 				'paid_date'      => array( 'paid_date' ),
 				'status'         => array( 'status' ),
@@ -207,11 +300,11 @@ class WP_MCP_AI_Fnb_Data_Source {
 		),
 		'15.0'        => array(
 			'label'     => 'Budgets',
-			'canonical' => array( 'month', 'line', 'budget_lkr' ),
+			'canonical' => array( 'month', 'line', 'budget' ),
 			'aliases'   => array(
-				'month'      => array( 'month' ),
-				'line'       => array( 'line' ),
-				'budget_lkr' => array( 'budget_lkr' ),
+				'month'  => array( 'month' ),
+				'line'   => array( 'line' ),
+				'budget' => array( 'budget', 'budget_lkr' ),
 			),
 		),
 		'16.0'        => array(
@@ -272,7 +365,7 @@ class WP_MCP_AI_Fnb_Data_Source {
 	}
 
 	/**
-	 * Normalise a raw header cell to a snake_case key.
+	 * Normalise a header cell to a snake_case key.
 	 *
 	 * @param string $header Raw header.
 	 * @return string
@@ -287,9 +380,44 @@ class WP_MCP_AI_Fnb_Data_Source {
 	}
 
 	/**
+	 * Resolve a raw (un-normalised) header to a canonical key via the curated
+	 * HEADER_ALIASES dictionary.
+	 *
+	 * Provides the messy-real-world-import mapping (vendor abbreviations,
+	 * unit-suffixed spellings, common synonyms) that the per-table `aliases`
+	 * map doesn't cover. Returns the incoming header unchanged when no
+	 * dictionary entry matches (so the normal per-table alias + normalisation
+	 * path still applies).
+	 *
+	 * @param string $header Raw header value.
+	 * @return string Canonical key, or the input when unknown.
+	 */
+	public static function resolve_header_alias( $header ) {
+		// Normalise the same way the dictionary keys are stored (spaces resolved,
+		// not underscores) for matching.
+		$key = strtolower( trim( (string) $header ) );
+		$key = str_replace( array( '_', '-' ), ' ', $key );
+		$key = preg_replace( '/\s+/', ' ', $key );
+
+		if ( isset( self::HEADER_ALIASES[ $key ] ) ) {
+			return self::HEADER_ALIASES[ $key ];
+		}
+
+		// Fall back to the snake_case normalisation so the dictionary still
+		// works with underscore-style headers.
+		$snake = self::normalise_header( $header );
+		if ( isset( self::HEADER_ALIASES[ $snake ] ) ) {
+			return self::HEADER_ALIASES[ $snake ];
+		}
+
+		return (string) $header;
+	}
+
+	/**
 	 * Resolve the column index for a canonical key in a row set.
 	 *
-	 * Tolerates header drift via per-table aliases and normalisation.
+	 * Tolerates header drift via per-table aliases, the curated
+	 * HEADER_ALIASES dictionary and normalisation.
 	 *
 	 * @param string $table_id Spec table ID.
 	 * @param array  $headers  Normalised header list.
@@ -321,7 +449,18 @@ class WP_MCP_AI_Fnb_Data_Source {
 			return self::$reader;
 		}
 
-		$adapter = WP_MCP_AI_Fnb_Settings::get( 'adapter', 'drive' );
+		$adapter     = WP_MCP_AI_Fnb_Settings::get( 'adapter', 'drive' );
+		$ingest_mode = WP_MCP_AI_Fnb_Settings::get( 'ingest_mode', 'folder' );
+		$folder_id   = trim( (string) WP_MCP_AI_Fnb_Settings::get( 'data_folder_id', '' ) );
+
+		if ( 'folder' === $ingest_mode && 'drive' === $adapter && '' !== $folder_id ) {
+			if ( ! class_exists( 'WP_MCP_AI_Fnb_Universal_Reader' ) ) {
+				require_once __DIR__ . '/class-wp-mcp-ai-fnb-universal-reader.php';
+			}
+			self::$reader = new WP_MCP_AI_Fnb_Universal_Reader();
+
+			return self::$reader;
+		}
 
 		if ( 'csv' === $adapter || defined( 'WP_MCP_AI_FNB_USE_FIXTURES' ) ) {
 			if ( ! class_exists( 'WP_MCP_AI_Fnb_Fixture_Reader' ) ) {

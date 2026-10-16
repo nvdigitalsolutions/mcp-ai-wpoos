@@ -46,6 +46,7 @@ wp-mcp-ai-ecommerce-optimization
 wp-mcp-ai-fashion-transform-tool
 wp-mcp-ai-flowhub-alert-manager
 wp-mcp-ai-fnb-assistant-seeder
+wp-mcp-ai-fnb-benchmarks
 wp-mcp-ai-fnb-booking-cpt
 wp-mcp-ai-fnb-cpt-reader
 wp-mcp-ai-fnb-csv-exporter
@@ -58,11 +59,14 @@ wp-mcp-ai-fnb-pr-gates
 wp-mcp-ai-fnb-pr-service
 wp-mcp-ai-fnb-purchase-cpt
 wp-mcp-ai-fnb-report-builder
+wp-mcp-ai-fnb-report-exporter
 wp-mcp-ai-fnb-sale-cpt
 wp-mcp-ai-fnb-settings
 wp-mcp-ai-fnb-stock-count-cpt
 wp-mcp-ai-fnb-table-reader
+wp-mcp-ai-fnb-tenant-profile
 wp-mcp-ai-fnb-tool-base
+wp-mcp-ai-fnb-universal-reader
 wp-mcp-ai-fnb-waste-cpt
 wp-mcp-ai-gtmetrix-client
 wp-mcp-ai-gtmetrix-fix-engine
@@ -730,6 +734,7 @@ wp-mcp-ai-tool-fnb-days-of-cover
 wp-mcp-ai-tool-fnb-dish-margin
 wp-mcp-ai-tool-fnb-duplicate-invoice-scan
 wp-mcp-ai-tool-fnb-expected-use
+wp-mcp-ai-tool-fnb-export-report
 wp-mcp-ai-tool-fnb-generate-report
 wp-mcp-ai-tool-fnb-import-table
 wp-mcp-ai-tool-fnb-labour-analysis

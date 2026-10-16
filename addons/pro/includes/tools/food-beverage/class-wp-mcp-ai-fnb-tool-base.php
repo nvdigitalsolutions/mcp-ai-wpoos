@@ -64,7 +64,7 @@ abstract class WP_MCP_AI_Fnb_Tool_Base implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_usage_guidance() {
 		return array(
-			'when_to_use'     => __( 'Working with Surf Club / food-and-beverage operating data, metrics or reports.', 'mcp-ai-wpoos-pro' ),
+			'when_to_use'     => __( 'Working with food-and-beverage operating data, metrics or reports.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Data outside the F&B data folder, or when the figure can be read from an existing report.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'fnb_read_table', 'fnb_calculate_metric', 'fnb_generate_report' ),
 			'notes'           => __( 'All figures are computed from the data tables; cite source tables and rows in answers.', 'mcp-ai-wpoos-pro' ),

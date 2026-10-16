@@ -90,7 +90,31 @@ class WP_MCP_AI_Fnb_Report_Builder {
 			'assistant' => 'A4',
 			'approver'  => 'CEO',
 		),
+		'R-14' => array(
+			'title'     => 'Monthly sales report',
+			'assistant' => 'A1',
+			'approver'  => 'Owner',
+		),
 	);
+
+	/**
+	 * Format a money amount using the configured tenant currency.
+	 *
+	 * Round to whole units (the toolkit's report convention for headline
+	 * figures), grouping thousands, and suffix with the tenant currency symbol.
+	 * Falls back to a bare number when no currency is configured so a fresh
+	 * install never asserts a wrong currency.
+	 *
+	 * @param float $amount Raw amount.
+	 * @return string
+	 */
+	private static function money( $amount ) {
+		if ( class_exists( 'WP_MCP_AI_Fnb_Tenant_Profile' ) ) {
+			return WP_MCP_AI_Fnb_Tenant_Profile::format_money( (float) $amount );
+		}
+
+		return number_format( round( (float) $amount ), 0 );
+	}
 
 	/**
 	 * Build a report by ID.
@@ -157,7 +181,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		if ( ! is_wp_error( $sales ) ) {
 			foreach ( $sales['rows'] as $row ) {
 				$qty              = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $sales['header_index'], $row, 'qty_sold' ) );
-				$price            = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $sales['header_index'], $row, 'price_lkr' ) );
+				$price            = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $sales['header_index'], $row, 'price' ) );
 				$item             = (string) WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $sales['header_index'], $row, 'item_id' );
 				$revenue         += $qty * $price;
 				$by_item[ $item ] = isset( $by_item[ $item ] ) ? $by_item[ $item ] + $qty * $price : $qty * $price;
@@ -171,7 +195,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		$waste_value = 0.0;
 		if ( ! is_wp_error( $waste ) ) {
 			foreach ( $waste['rows'] as $row ) {
-				$waste_value += WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '10.0', $waste['header_index'], $row, 'value_lkr' ) );
+				$waste_value += WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '10.0', $waste['header_index'], $row, 'value' ) );
 			}
 		}
 
@@ -182,7 +206,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 			),
 			array(
 				'heading' => 'Revenue',
-				'lines'   => array( 'Revenue: ' . number_format( round( $revenue ), 0 ) . ' LKR (excl. service charge)' ),
+				'lines'   => array( 'Revenue: ' . self::money( $revenue ) . ' (excl. service charge)' ),
 			),
 			array(
 				'heading' => 'Top 5 items (by revenue)',
@@ -194,13 +218,13 @@ class WP_MCP_AI_Fnb_Report_Builder {
 			),
 			array(
 				'heading' => 'Waste logged',
-				'lines'   => array( 'Waste value: ' . number_format( round( $waste_value ), 0 ) . ' LKR' ),
+				'lines'   => array( 'Waste value: ' . self::money( $waste_value ) ),
 			),
 		);
 	}
 
 	/**
-	 * R-02 — weekly needs-attention brief (top 5 issues by LKR impact).
+	 * R-02 — weekly needs-attention brief (top 5 issues by impact).
 	 *
 	 * @return array
 	 */
@@ -214,7 +238,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 				if ( null !== $row['variance'] && $row['variance'] > 0 ) {
 					$issues[] = array(
 						'what'         => $row['line'] . ' over budget',
-						'figure'       => '+ ' . number_format( round( $row['variance'] ), 0 ) . ' LKR vs budget',
+						'figure'       => '+ ' . self::money( $row['variance'] ) . ' vs budget',
 						'likely_cause' => 'See R-08 volume vs per-cover split.',
 						'next_check'   => 'Review expense ledger invoices for this line.',
 						'owner'        => 'Finance',
@@ -228,7 +252,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		if ( isset( $waste['waste_value'] ) && $waste['waste_value'] > 0 ) {
 			$issues[] = array(
 				'what'         => 'Waste logged this month',
-				'figure'       => number_format( round( $waste['waste_value'] ), 0 ) . ' LKR',
+				'figure'       => self::money( $waste['waste_value'] ),
 				'likely_cause' => 'See logged reasons: ' . implode( ', ', array_keys( $waste['by_reason'] ) ),
 				'next_check'   => 'R-05 waste by item and reason.',
 				'owner'        => 'Head chef',
@@ -262,7 +286,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 
 		return array(
 			array(
-				'heading' => 'Needs attention (max 5, ranked by LKR impact)',
+				'heading' => 'Needs attention (max 5, ranked by impact)',
 				'lines'   => $lines,
 			),
 		);
@@ -404,8 +428,8 @@ class WP_MCP_AI_Fnb_Report_Builder {
 					'Item: ' . $ingredient,
 					'Quantity: ' . round( $quantity, 2 ),
 					'Supplier: ' . $supplier_line . ' (' . $supplier_id . ')',
-					'Unit price: ' . number_format( round( $unit_price, 2 ), 2 ) . ' LKR',
-					'Total: ' . number_format( round( $total ), 0 ) . ' LKR',
+					'Unit price: ' . self::money( round( $unit_price, 2 ) ) . '',
+					'Total: ' . self::money( $total ),
 					'Order by: ' . $cutoff,
 					'Needed by: ' . ( '' !== $date ? $date : 'not specified' ),
 					'Status: Draft',
@@ -424,7 +448,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		$waste                       = WP_MCP_AI_Fnb_Metrics::m18_waste_pct( $month );
 		$lines                       = array( 'Waste % (logged waste ÷ stock used): ' . round( $waste['value'] * 100, 2 ) . '%' );
 		foreach ( $waste['by_reason'] as $reason => $amount ) {
-			$lines[] = sprintf( '%s: %s LKR', $reason, number_format( round( $amount ), 0 ) );
+			$lines[] = sprintf( '%s: %s', $reason, self::money( $amount ) );
 		}
 
 		return array(
@@ -443,16 +467,16 @@ class WP_MCP_AI_Fnb_Report_Builder {
 	private static function build_r_06() {
 		list( $month, $date, $args ) = array_pad( func_get_args(), 3, array() );
 		$impact                      = WP_MCP_AI_Fnb_Metrics::m19_price_change_impact( $month );
-		$lines                       = array( 'Price-change impact this month: ' . number_format( round( $impact['value'] ), 0 ) . ' LKR' );
+		$lines                       = array( 'Price-change impact this month: ' . self::money( $impact['value'] ) );
 		foreach ( $impact['changes'] as $change ) {
 			$lines[] = sprintf(
-				'%s: %s → %s LKR/unit effective %s; qty bought %s; impact %s LKR',
+				'%s: %s → %s/unit effective %s; qty bought %s; impact %s',
 				$change['ingredient_id'],
 				number_format( $change['old_unit_price'], 2 ),
 				number_format( $change['new_unit_price'], 2 ),
 				$change['effective_from'],
 				$change['qty_bought'],
-				number_format( round( $change['impact_lkr'] ), 0 )
+				self::money( $change['impact'] )
 			);
 		}
 
@@ -475,10 +499,10 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		$lines                       = array();
 		foreach ( $engineering['rows'] as $item ) {
 			$lines[] = sprintf(
-				'%s %s — margin %s LKR (cost %s%%), share %s%% — %s: %s',
+				'%s %s — margin %s (cost %s%%), share %s%% — %s: %s',
 				$item['item_id'],
 				$item['item'],
-				number_format( $item['margin_lkr'], 0 ),
+				self::money( round( $item['margin'], 0 ) ),
 				round( $item['cost_pct'] * 100, 1 ),
 				round( $item['popularity_share'] * 100, 2 ),
 				$item['quadrant'],
@@ -512,12 +536,12 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		$per_cover = WP_MCP_AI_Fnb_Metrics::m08_per_cover_effect( $opex['total'], $prev['total'], $volume );
 
 		$lines = array(
-			sprintf( 'Total operating expenses: %s LKR (prev month %s LKR, change %s LKR)', number_format( round( $opex['total'] ), 0 ), number_format( round( $prev['total'] ), 0 ), number_format( round( $opex['total'] - $prev['total'] ), 0 ) ),
-			sprintf( 'Volume effect: %s LKR (covers %s → %s)', number_format( round( $volume ), 0 ), round( $prev_covers['value'] ), round( $covers['value'] ) ),
-			sprintf( 'Per-cover effect: %s LKR', number_format( round( $per_cover ), 0 ) ),
+			sprintf( 'Total operating expenses: %s (prev month %s, change %s)', self::money( $opex['total'] ), self::money( $prev['total'] ), self::money( $opex['total'] - $prev['total'] ) ),
+			sprintf( 'Volume effect: %s (covers %s → %s)', self::money( $volume ), round( $prev_covers['value'] ), round( $covers['value'] ) ),
+			sprintf( 'Per-cover effect: %s', self::money( $per_cover ) ),
 		);
 		foreach ( $opex['lines'] as $line => $amount ) {
-			$lines[] = sprintf( '%s: %s LKR', $line, number_format( round( $amount ), 0 ) );
+			$lines[] = sprintf( '%s: %s', $line, self::money( $amount ) );
 		}
 
 		$budget       = WP_MCP_AI_Fnb_Metrics::m20_budget_variance( $month );
@@ -527,7 +551,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 				if ( null === $row['variance'] ) {
 					continue;
 				}
-				$budget_lines[] = sprintf( '%s: actual %s vs budget %s (%s LKR)', $row['line'], null === $row['actual'] ? 'n/a' : number_format( round( $row['actual'] ), 0 ), number_format( round( $row['budget'] ), 0 ), number_format( round( $row['variance'] ), 0 ) );
+				$budget_lines[] = sprintf( '%s: actual %s vs budget %s (%s)', $row['line'], null === $row['actual'] ? 'n/a' : self::money( $row['actual'] ), self::money( $row['budget'] ), self::money( $row['variance'] ) );
 			}
 		}
 
@@ -555,13 +579,13 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		$m10                         = WP_MCP_AI_Fnb_Metrics::m10_labour_pct( $month );
 
 		$lines = array(
-			sprintf( 'Total payroll: %s LKR', number_format( round( $payroll['value'] ), 0 ) ),
+			sprintf( 'Total payroll: %s', self::money( $payroll['value'] ) ),
 			sprintf( 'Overtime hours: %s (per 100 covers: %s)', $payroll['overtime_hours'], $m09['value'] ),
 			sprintf( 'Casual shifts: %s', $payroll['casual_shifts'] ),
 			sprintf( 'Labour cost %%: %s%%', round( $m10['value'] * 100, 2 ) ),
 		);
 		foreach ( $payroll['departments'] as $dept => $cost ) {
-			$lines[] = sprintf( '%s: %s LKR', $dept, number_format( round( $cost ), 0 ) );
+			$lines[] = sprintf( '%s: %s', $dept, self::money( $cost ) );
 		}
 
 		return array(
@@ -583,9 +607,9 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		$m11                         = WP_MCP_AI_Fnb_Metrics::m11_electricity_per_cover( $month );
 
 		$lines = array(
-			sprintf( 'Electricity: %s kWh (%s per cover) — %s LKR', $utils['kwh'], $m11['value'], number_format( round( $utils['Electricity'] ), 0 ) ),
-			sprintf( 'Water: %s m³ — %s LKR', $utils['water_m3'], number_format( round( $utils['Water'] ), 0 ) ),
-			sprintf( 'LPG: %s cylinders — %s LKR', $utils['lpg_units'], number_format( round( $utils['LPG'] ), 0 ) ),
+			sprintf( 'Electricity: %s kWh (%s per cover) — %s', $utils['kwh'], $m11['value'], self::money( $utils['Electricity'] ) ),
+			sprintf( 'Water: %s m³ — %s', $utils['water_m3'], self::money( $utils['Water'] ) ),
+			sprintf( 'LPG: %s cylinders — %s', $utils['lpg_units'], self::money( $utils['LPG'] ) ),
 		);
 
 		return array(
@@ -620,17 +644,17 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		foreach ( $ledger['rows'] as $row ) {
 			$vendor  = (string) WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'vendor' );
 			$invoice = (string) WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'vendor_invoice' );
-			$amount  = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'amount_lkr' ) );
+			$amount  = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'amount' ) );
 			$status  = (string) WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'status' );
 
 			$dup_key = strtolower( $vendor . '|' . $invoice . '|' . round( $amount ) );
 			if ( isset( $seen[ $dup_key ] ) ) {
-				$duplicates[] = sprintf( 'Possible duplicate: %s invoice %s (%s LKR) — flag for checking', $vendor, $invoice, number_format( round( $amount ), 0 ) );
+				$duplicates[] = sprintf( 'Possible duplicate: %s invoice %s (%s) — flag for checking', $vendor, $invoice, self::money( $amount ) );
 			}
 			$seen[ $dup_key ] = true;
 
 			if ( 'Paid' !== $status ) {
-				$unpaid[] = sprintf( '%s — %s — %s LKR — due %s — %s', $vendor, $invoice, number_format( round( $amount ), 0 ), WP_MCP_AI_Fnb_Data_Source::date_only( WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'due_date' ) ), $status );
+				$unpaid[] = sprintf( '%s — %s — %s — due %s — %s', $vendor, $invoice, self::money( $amount ), WP_MCP_AI_Fnb_Data_Source::date_only( WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'due_date' ) ), $status );
 			}
 		}
 
@@ -663,10 +687,10 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		$revenue                     = $food_rev['value'] + $bev_rev['value'];
 
 		$lines = array(
-			sprintf( 'Revenue for %s was %s LKR across %s covers (average spend %s LKR per cover).', $month, number_format( round( $revenue ), 0 ), round( $covers['value'] ), number_format( $m03['value'], 0 ) ),
-			sprintf( 'Food revenue %s LKR; beverage revenue %s LKR.', number_format( round( $food_rev['value'] ), 0 ), number_format( round( $bev_rev['value'] ), 0 ) ),
+			sprintf( 'Revenue for %s was %s across %s covers (average spend %s per cover).', $month, self::money( $revenue ), round( $covers['value'] ), self::money( $m03['value'] ) ),
+			sprintf( 'Food revenue %s; beverage revenue %s.', self::money( $food_rev['value'] ), self::money( $bev_rev['value'] ) ),
 			sprintf( 'Food cost was %s%% of food revenue and beverage cost %s%% of beverage revenue, valued on stock used.', round( $m04['value'] * 100, 2 ), round( $m05['value'] * 100, 2 ) ),
-			sprintf( 'Total operating expenses were %s LKR (%s%% of revenue).', number_format( round( $opex['total'] ), 0 ), $revenue > 0 ? round( $opex['total'] / $revenue * 100, 2 ) : 0 ),
+			sprintf( 'Total operating expenses were %s (%s%% of revenue).', self::money( $opex['total'] ), $revenue > 0 ? round( $opex['total'] / $revenue * 100, 2 ) : 0 ),
 		);
 
 		$budget       = WP_MCP_AI_Fnb_Metrics::m20_budget_variance( $month );
@@ -674,7 +698,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		if ( isset( $budget['rows'] ) && is_array( $budget['rows'] ) ) {
 			foreach ( $budget['rows'] as $row ) {
 				if ( null !== $row['variance'] && $row['variance'] > 0 ) {
-					$budget_lines[] = sprintf( '%s exceeded budget by %s LKR.', $row['line'], number_format( round( $row['variance'] ), 0 ) );
+					$budget_lines[] = sprintf( '%s exceeded budget by %s.', $row['line'], self::money( $row['variance'] ) );
 				}
 			}
 		}
@@ -740,7 +764,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 			) : 'none' );
 		}
 
-		// Deity counts from the asset log.
+		// Asset-log counts for content (character/theme usage).
 		$assets  = WP_MCP_AI_Fnb_Data_Source::get_table( '17.0' );
 		$deities = array();
 		if ( ! is_wp_error( $assets ) ) {
@@ -756,12 +780,74 @@ class WP_MCP_AI_Fnb_Report_Builder {
 		foreach ( $deities as $deity => $count ) {
 			$deity_lines[] = $deity . ': ' . $count . ' posts';
 		}
-		$lines[] = 'Deity usage: ' . ( $deity_lines ? implode( '; ', $deity_lines ) : 'none logged' );
+		$lines[] = 'Content-subject usage: ' . ( $deity_lines ? implode( '; ', $deity_lines ) : 'none logged' );
 
 		return array(
 			array(
 				'heading' => 'Content ideas linked to bookings and stock',
 				'lines'   => $lines,
+			),
+		);
+	}
+
+	/**
+	 * R-14 — monthly sales report (client "R-01 Monthly sales report").
+	 *
+	 * @return array
+	 */
+	private static function build_r_14() {
+		list( $month, $date, $args ) = array_pad( func_get_args(), 3, array() );
+		if ( '' === $month ) {
+			$month = gmdate( 'Y-m' );
+		}
+
+		$revenue   = WP_MCP_AI_Fnb_Metrics::m01_revenue( $month );
+		$food_rev  = WP_MCP_AI_Fnb_Metrics::m01_revenue( $month, 'Food' );
+		$bev_rev   = WP_MCP_AI_Fnb_Metrics::m01_revenue( $month, 'Beverage' );
+		$covers    = WP_MCP_AI_Fnb_Metrics::m02_covers( $month );
+		$avg_spend = WP_MCP_AI_Fnb_Metrics::m03_avg_spend( $month );
+
+		// Top and bottom items by revenue for the month (from the sales table).
+		$sales   = WP_MCP_AI_Fnb_Data_Source::get_table( '6.0' );
+		$by_item = array();
+		if ( ! is_wp_error( $sales ) ) {
+			foreach ( $sales['rows'] as $row ) {
+				if ( WP_MCP_AI_Fnb_Data_Source::month_of( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $sales['header_index'], $row, 'date' ) ) !== $month ) {
+					continue;
+				}
+				$qty   = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $sales['header_index'], $row, 'qty_sold' ) );
+				$price = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $sales['header_index'], $row, 'price' ) );
+				$item  = (string) WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $sales['header_index'], $row, 'item_id' );
+				$by_item[ $item ] = isset( $by_item[ $item ] ) ? $by_item[ $item ] + $qty * $price : $qty * $price;
+			}
+		}
+		arsort( $by_item );
+		$top    = array_slice( $by_item, 0, 5, true );
+		$bottom = array_slice( $by_item, -5, 5, true );
+
+		return array(
+			array(
+				'heading' => 'Headline',
+				'lines'   => array(
+					'Revenue: ' . self::money( $revenue['value'] ),
+					'Covers: ' . round( $covers['value'] ),
+					'Average spend: ' . self::money( $avg_spend['value'] ) . ' per cover',
+				),
+			),
+			array(
+				'heading' => 'Revenue by type',
+				'lines'   => array(
+					'Food: ' . self::money( $food_rev['value'] ),
+					'Beverage: ' . self::money( $bev_rev['value'] ),
+				),
+			),
+			array(
+				'heading' => 'Top 5 items (by revenue)',
+				'lines'   => self::format_ranking( $top ),
+			),
+			array(
+				'heading' => 'Bottom 5 items (by revenue)',
+				'lines'   => self::format_ranking( $bottom ),
 			),
 		);
 	}
@@ -775,7 +861,7 @@ class WP_MCP_AI_Fnb_Report_Builder {
 	private static function format_ranking( $ranking ) {
 		$lines = array();
 		foreach ( $ranking as $item_id => $revenue ) {
-			$lines[] = sprintf( '%s: %s LKR', $item_id, number_format( round( $revenue ), 0 ) );
+			$lines[] = sprintf( '%s: %s', $item_id, self::money( $revenue ) );
 		}
 
 		return $lines ? $lines : array( 'No sales lines.' );

@@ -82,7 +82,7 @@ class WP_MCP_AI_Fnb_Waste_CPT {
 	/**
 	 * Upsert a canonical waste row.
 	 *
-	 * @param array $row Canonical-keyed row values (date, month, ingredient_id, ingredient, qty, unit, reason, logged_by, value_lkr).
+	 * @param array $row Canonical-keyed row values (date, month, ingredient_id, ingredient, qty, unit, reason, logged_by, value).
 	 * @return array|WP_Error array{action: 'insert'|'update', post_id: int}
 	 */
 	public static function upsert( array $row ) {

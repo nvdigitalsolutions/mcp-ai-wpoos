@@ -83,7 +83,7 @@ class WP_MCP_AI_Fnb_Purchase_CPT {
 	/**
 	 * Upsert a canonical purchase row.
 	 *
-	 * @param array $row Canonical-keyed row values (delivery_date, month, supplier_id, invoice, ingredient_id, category, packs, pack_size, qty_delivered, pack_price_lkr, line_total_lkr).
+	 * @param array $row Canonical-keyed row values (delivery_date, month, supplier_id, invoice, ingredient_id, category, packs, pack_size, qty_delivered, pack_price, line_total).
 	 * @return array|WP_Error array{action: 'insert'|'update', post_id: int}
 	 */
 	public static function upsert( array $row ) {
