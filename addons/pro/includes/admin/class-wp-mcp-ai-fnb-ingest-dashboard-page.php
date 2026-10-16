@@ -41,6 +41,8 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 28 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fnb_ingest_preview', array( __CLASS__, 'ajax_preview' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_fnb_ingest_scan', array( __CLASS__, 'ajax_scan' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_fnb_ingest_import', array( __CLASS__, 'ajax_import' ) );
 	}
 
 	/**
@@ -66,7 +68,11 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 	 * @return void
 	 */
 	public static function enqueue_assets( $hook ) {
-		if ( 'f-and-b-management_page_' . self::PAGE_SLUG !== $hook ) {
+		// Top-level-menu submenu hooks are sanitization-dependent, so match by
+		// slug substring rather than an exact "{parent}_page_{slug}" guess — the
+		// same pattern NV_oOS_Graphify_Settings / WebLLM use. An exact-=== check
+		// here silently fails and the page's JS never enqueues.
+		if ( false === strpos( $hook, self::PAGE_SLUG ) ) {
 			return;
 		}
 
@@ -94,6 +100,8 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 					'noMissing'   => __( 'No missing required columns.', 'mcp-ai-wpoos-pro' ),
 					'noFlags'     => __( 'No out-of-band flags.', 'mcp-ai-wpoos-pro' ),
 					'noPreview'   => __( 'No source rows resolved.', 'mcp-ai-wpoos-pro' ),
+					'noFiles'     => __( 'No recognised source files found.', 'mcp-ai-wpoos-pro' ),
+					'importing'   => __( 'Importing into native storage…', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -126,6 +134,74 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 			array(
 				'table_id' => $table_id,
 				'dry_run'  => true,
+			),
+			array( 'user_id' => get_current_user_id() )
+		);
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+			return;
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: scan the configured source directories and auto-detect each table.
+	 *
+	 * @return void
+	 */
+	public static function ajax_scan() {
+		check_ajax_referer( 'wp_mcp_ai_fnb_ingest_preview', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ), 403 );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Loader' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-fnb-loader.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Settings' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-fnb-settings.php';
+		}
+
+		$files = WP_MCP_AI_Fnb_Loader::scan_sources();
+
+		wp_send_json_success(
+			array(
+				'files' => $files,
+				'count' => count( $files ),
+			)
+		);
+	}
+
+	/**
+	 * AJAX: import a transactional table into native storage (ACT-tier write).
+	 *
+	 * @return void
+	 */
+	public static function ajax_import() {
+		check_ajax_referer( 'wp_mcp_ai_fnb_ingest_preview', 'nonce' );
+
+		// The write is ACT-tier and must stay a higher privilege than review.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to import data.', 'mcp-ai-wpoos-pro' ) ), 403 );
+		}
+
+		$table_id = isset( $_POST['table_id'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['table_id'] ) ) : '';
+		if ( '' === $table_id ) {
+			wp_send_json_error( array( 'message' => __( 'Table ID is required.', 'mcp-ai-wpoos-pro' ) ), 400 );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Fnb_Import_Table' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-import-table.php';
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Fnb_Import_Table();
+		$result = $tool->execute(
+			array(
+				'table_id' => $table_id,
+				'dry_run'  => false,
 			),
 			array( 'user_id' => get_current_user_id() )
 		);
@@ -176,6 +252,19 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 				<button type="button" id="fnb-ingest-preview-btn" class="button button-primary">
 					<?php esc_html_e( 'Preview Import', 'mcp-ai-wpoos-pro' ); ?>
 				</button>
+				<button type="button" id="fnb-ingest-scan-btn" class="button">
+					<?php esc_html_e( 'Scan source folder', 'mcp-ai-wpoos-pro' ); ?>
+				</button>
+				<?php if ( current_user_can( 'manage_options' ) ) : ?>
+					<button type="button" id="fnb-ingest-import-btn" class="button button-danger">
+						<?php esc_html_e( 'Import to native storage (write)', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+				<?php endif; ?>
+			</div>
+
+			<div class="fnb-ingest-card" id="fnb-ingest-scan-card" style="display:none">
+				<h2><?php esc_html_e( 'Detected source files', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<ul id="fnb-ingest-scan-list"></ul>
 			</div>
 
 			<div id="fnb-ingest-message" class="notice inline" style="display:none"></div>
@@ -232,7 +321,11 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 	private static function get_dashboard_js() {
 		$lines = array(
 			'(function () {',
-			'	var summaryChart = null;',
+			'	function boot() {',
+			'		if (typeof Chart === "undefined") { return; }',
+			'		var btn = document.getElementById("fnb-ingest-preview-btn");',
+			'		if (!btn) { return; }',
+			'		var summaryChart = null;',
 			'	function errorMessage(msg) {',
 			'		var el = document.getElementById("fnb-ingest-message");',
 			'		el.style.display = "block";',
@@ -292,11 +385,11 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 			'		var previewEl = document.getElementById("fnb-ingest-preview-rows");',
 			'		if (data.preview && data.preview.length) {',
 			'			previewEl.textContent = JSON.stringify(data.preview, null, 2);',
-			'		} else {',
+			'	} else {',
 			'			previewEl.textContent = wpMcpAiFnbIngest.strings.noPreview;',
 			'		}',
 			'	}',
-			'	document.getElementById("fnb-ingest-preview-btn").addEventListener("click", function () {',
+			'	btn.addEventListener("click", function () {',
 			'		var tableId = document.getElementById("fnb-ingest-table-select").value;',
 			'		if (!tableId) { errorMessage(wpMcpAiFnbIngest.strings.selectTable); return; }',
 			'		var msgEl = document.getElementById("fnb-ingest-message");',
@@ -314,6 +407,65 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 			'			})',
 			'			.catch(function () { errorMessage(wpMcpAiFnbIngest.strings.error); });',
 			'	});',
+			'	var scanBtn = document.getElementById("fnb-ingest-scan-btn");',
+			'	if (scanBtn) {',
+			'		scanBtn.addEventListener("click", function () {',
+			'			var form = new FormData();',
+			'			form.append("action", "wp_mcp_ai_fnb_ingest_scan");',
+			'			form.append("nonce", wpMcpAiFnbIngest.nonce);',
+			'			fetch(wpMcpAiFnbIngest.ajaxUrl, { method: "POST", credentials: "same-origin", body: form })',
+			'				.then(function (r) { return r.json(); })',
+			'				.then(function (res) {',
+			'					var listEl = document.getElementById("fnb-ingest-scan-list");',
+			'					var cardEl = document.getElementById("fnb-ingest-scan-card");',
+			'					listEl.innerHTML = "";',
+			'					var files = (res && res.data && res.data.files) || [];',
+			'					if (!files.length) {',
+			'						var li = document.createElement("li");',
+			'						li.textContent = wpMcpAiFnbIngest.strings.noFiles;',
+			'						listEl.appendChild(li);',
+			'					} else {',
+			'						files.forEach(function (f) {',
+			'							var li = document.createElement("li");',
+			'							li.textContent = f.file + " → " + f.table_id + " (" + Math.round(f.confidence * 100) + "%)";',
+			'							listEl.appendChild(li);',
+			'						});',
+			'					}',
+			'					cardEl.style.display = "block";',
+			'				})',
+			'		.catch(function () {});',
+			'	});',
+			'	}',
+			'	var importBtn = document.getElementById("fnb-ingest-import-btn");',
+			'	if (importBtn) {',
+			'		importBtn.addEventListener("click", function () {',
+			'			var tableId = document.getElementById("fnb-ingest-table-select").value;',
+			'			if (!tableId) { errorMessage(wpMcpAiFnbIngest.strings.selectTable); return; }',
+			'			if (!window.confirm("Import " + tableId + " into native storage? This writes to the WordPress posts.")) { return; }',
+			'			var msgEl = document.getElementById("fnb-ingest-message");',
+			'			msgEl.style.display = "block";',
+			'			msgEl.className = "notice notice-info inline";',
+			'			msgEl.textContent = wpMcpAiFnbIngest.strings.importing;',
+			'			var form = new FormData();',
+			'			form.append("action", "wp_mcp_ai_fnb_ingest_import");',
+			'			form.append("nonce", wpMcpAiFnbIngest.nonce);',
+			'			form.append("table_id", tableId);',
+			'			fetch(wpMcpAiFnbIngest.ajaxUrl, { method: "POST", credentials: "same-origin", body: form })',
+			'				.then(function (r) { return r.json(); })',
+			'				.then(function (res) {',
+			'					if (res && res.success) {',
+			'						var s = res.data && res.data.summary;',
+			'						msgEl.className = "notice notice-success inline";',
+			'						msgEl.textContent = (s ? ("Imported " + (s.total || 0) + " rows: " + (s.inserted || 0) + " inserted, " + (s.updated || 0) + " updated, " + (s.errors || 0) + " errors.") : "Import complete.");',
+			'					} else {',
+			'						errorMessage((res && res.data && res.data.message) || wpMcpAiFnbIngest.strings.error);',
+			' 				}',
+			' 			})',
+			' 			.catch(function () { errorMessage(wpMcpAiFnbIngest.strings.error); });',
+			' 	});',
+			' 	}',
+			' 	}',
+			'if (typeof jQuery !== "undefined") { jQuery(document).ready(boot); } else if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", boot); } else { boot(); }',
 			'})();',
 		);
 

@@ -482,4 +482,91 @@ class WP_MCP_AI_Fnb_Loader {
 
 		return self::load( $raw, $format );
 	}
+
+	/**
+	 * Scan a set of source directories and auto-detect the table for each file.
+	 *
+	 * This is the "universal ingest" primitive: without any operator mapping or
+	 * explicit table choice, every recognisable file is resolved to its most
+	 * likely table by header structure (schema-on-read, with `table_map` and the
+	 * deterministic slug match still winning when present). Returns an empty
+	 * list per directory when it does not exist or has no recognised files.
+	 *
+	 * @param array $directories Absolute source directories to scan (defaults to
+	 *                           the F&B fixture + data dir and the csv_data_dir).
+	 * @return array<int,array{path:string,file:string,table_id:string,confidence:float,format:string}>
+	 */
+	public static function scan_sources( array $directories = array() ) {
+		if ( empty( $directories ) ) {
+			$directories = array( __DIR__ . '/data', __DIR__ . '/tests/fixtures' );
+			$custom      = WP_MCP_AI_Fnb_Settings::get( 'csv_data_dir', '' );
+			if ( is_string( $custom ) && '' !== $custom ) {
+				$directories[] = untrailingslashit( $custom );
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Structure_Matcher' ) && file_exists( __DIR__ . '/class-wp-mcp-ai-fnb-structure-matcher.php' ) ) {
+			require_once __DIR__ . '/class-wp-mcp-ai-fnb-structure-matcher.php';
+		}
+
+		$exts    = array( 'csv', 'tsv', 'json', 'jsonl', 'ndjson', 'xlsx', 'xls', 'ods' );
+		$results = array();
+
+		foreach ( $directories as $dir ) {
+			$dir = untrailingslashit( (string) $dir );
+			if ( ! is_dir( $dir ) ) {
+				continue;
+			}
+
+			$files = glob( trailingslashit( $dir ) . '*' );
+			if ( false === $files ) {
+				$files = array();
+			}
+			foreach ( $files as $path ) {
+				if ( ! is_file( $path ) ) {
+					continue;
+				}
+				$ext = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
+				if ( ! in_array( $ext, $exts, true ) ) {
+					continue;
+				}
+
+				$matrix = self::load_file( $path );
+				if ( is_wp_error( $matrix ) ) {
+					continue; // Unparseable/needs-OCR — skip in the scan; surfaced on direct load.
+				}
+
+				$headers = isset( $matrix['columns'] ) && is_array( $matrix['columns'] ) ? $matrix['columns'] : array();
+				if ( empty( $headers ) ) {
+					continue;
+				}
+
+				$best = class_exists( 'WP_MCP_AI_Fnb_Structure_Matcher' ) ? WP_MCP_AI_Fnb_Structure_Matcher::best_table( $headers ) : false;
+				if ( false === $best ) {
+					continue; // Non-tabular or unrecognised — omit rather than guess.
+				}
+
+				$results[] = array(
+					'path'       => $path,
+					'file'       => basename( $path ),
+					'table_id'   => $best['table_id'],
+					'confidence' => $best['score']['confidence'],
+					'format'     => isset( $matrix['format'] ) ? $matrix['format'] : $ext,
+				);
+			}
+		}
+
+		usort(
+			$results,
+			static function ( $a, $b ) {
+				if ( $a['confidence'] === $b['confidence'] ) {
+					return strcmp( $a['file'], $b['file'] );
+				}
+
+				return $a['confidence'] > $b['confidence'] ? -1 : 1;
+			}
+		);
+
+		return $results;
+	}
 }

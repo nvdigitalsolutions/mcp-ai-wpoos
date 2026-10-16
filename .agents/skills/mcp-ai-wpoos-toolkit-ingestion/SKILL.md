@@ -80,6 +80,12 @@ toolkit already consumes.
 **Guard every dependency with `class_exists(...)` + a clean `WP_Error`
 fallback** so a missing autoload degrades gracefully instead of fatals.
 
+**Universal ingest**: expose a `scan_sources()` that walks the source folder(s)
+and auto-detects each file's table by header structure (calling `best_table`),
+returning `{file, table_id, confidence, format}` sorted by confidence. This is
+schema-on-read: no operator mapping or explicit table choice needed; files that
+don't parse or don't resolve above threshold are omitted, never guessed.
+
 ## 3. Observation + terminology map (the vitals/FHIR analogue)
 
 For semi-structured, measurement-shaped owner data, accept a loose observation
@@ -140,7 +146,20 @@ Mirror the Medical Vitals dashboard anatomy for the review surface:
   cross-assistant figure rule).
 - Research-grounded mapping-preview UX: auto-map high-confidence, highlight
   low/unmatched columns, show sample values, one-click remap, imported-vs-
-  skipped-vs-errored counts, and never label a file "corrupt" without a fix path.
+  skipped-vs-errored counts, and never label a file "corrupt" without a fix
+  path.
+- Add a **source-folder scan** control ("Scan source folder") wired to
+  `scan_sources()` so universal ingest works without a pre-selected table. It
+  lists detected files + table + confidence for one-click review.
+- **Enqueue hook gotcha (silent "button does nothing" bug):** a submenu under a
+  *top-level* menu page gets a sanitization-dependent hook whose exact string
+  (`"{parent}_page_{slug}"` with the parent title slugified) is fragile. Match
+  the page by **substring** — `if ( false === strpos( $hook, self::PAGE_SLUG ) )
+  { return; }` — the same pattern `NV_oOS_Graphify_Settings` / WebLLM use. An
+  exact `===` here silently skips enqueueing and the page's JS never runs.
+- Wrap inline JS in `jQuery(document).ready` (or a `DOMContentLoaded`/readyState
+  fallback) and guard `typeof Chart !== "undefined"` + the button's existence so
+  a missing Chart.js or an early execution never leaves the UI inert.
 
 ## Also load
 
