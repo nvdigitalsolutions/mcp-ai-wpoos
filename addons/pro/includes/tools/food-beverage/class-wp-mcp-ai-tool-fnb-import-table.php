@@ -17,6 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/class-wp-mcp-ai-fnb-tool-base.php';
 require_once __DIR__ . '/class-wp-mcp-ai-fnb-cpt-reader.php';
+require_once __DIR__ . '/class-wp-mcp-ai-fnb-structure-matcher.php';
+require_once __DIR__ . '/class-wp-mcp-ai-fnb-ingest-quality.php';
 
 /**
  * Import a transactional table into F&B native storage.
@@ -92,6 +94,10 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 					'default'     => 500,
 					'description' => __( 'Maximum rows to import (default 500, hard cap 5000).', 'mcp-ai-wpoos-pro' ),
 				),
+				'format'   => array(
+					'type'        => 'string',
+					'description' => __( 'Optional source format hint (csv, tsv, json, jsonl). Ignored when reading the configured Drive/CSV source; reserved for direct raw input.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array( 'table_id' ),
 		);
@@ -146,6 +152,7 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 		$table_id = isset( $arguments['table_id'] ) ? sanitize_text_field( (string) $arguments['table_id'] ) : '';
 		$dry_run  = ! empty( $arguments['dry_run'] );
 		$limit    = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 500;
+		$format   = isset( $arguments['format'] ) ? sanitize_key( (string) $arguments['format'] ) : '';
 		if ( $limit < 1 ) {
 			$limit = 500;
 		}
@@ -176,12 +183,18 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 		// Always read the SOURCE backend (Drive/CSV), never the CPT itself.
 		$table = WP_MCP_AI_Fnb_Data_Source::get_table( $table_id, false );
 		if ( is_wp_error( $table ) ) {
-			return $table;
+			return $this->map_source_error( $table_id, $table );
 		}
 
 		$definition = WP_MCP_AI_Fnb_Data_Source::table_definition( $table_id );
 		$canonical  = is_array( $definition ) && ! empty( $definition['canonical'] ) ? $definition['canonical'] : array();
 		$headers    = $table['header_index'];
+
+		// Structural match report (confidence over the resolved source columns).
+		$mapping = false;
+		if ( class_exists( 'WP_MCP_AI_Fnb_Structure_Matcher' ) ) {
+			$mapping = WP_MCP_AI_Fnb_Structure_Matcher::match_table( $table_id, $table['columns'] );
+		}
 
 		$source_rows   = array_slice( $table['rows'], 0, $limit );
 		$preview       = array();
@@ -204,6 +217,8 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 			'errors'   => 0,
 		);
 
+		$flags = WP_MCP_AI_Fnb_Ingest_Quality::generate_flags( $table_id, $rows_to_write );
+
 		if ( $dry_run ) {
 			return array(
 				'success'   => true,
@@ -212,6 +227,9 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 				'post_type' => $post_type,
 				'preview'   => $preview,
 				'summary'   => $summary,
+				'format'    => $format,
+				'mapping'   => $mapping,
+				'flags'     => $flags,
 				'source'    => $table['source'],
 			);
 		}
@@ -245,7 +263,38 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 			'post_type'     => $post_type,
 			'summary'       => $summary,
 			'error_samples' => $error_samples,
+			'flags'         => $flags,
 			'source'        => $table['source'],
 		);
+	}
+
+	/**
+	 * Translate a source-resolution failure into an actionable, three-way error.
+	 *
+	 * Distinguishes (1) no source configured, (2) source found but the table
+	 * cannot resolve within it, and (3) source found but columns are
+	 * unrecognised — so the operator sees the fix path, not generic jargon.
+	 *
+	 * @param string   $table_id Spec table ID.
+	 * @param WP_Error $error    Original reader error.
+	 * @return WP_Error
+	 */
+	private function map_source_error( $table_id, WP_Error $error ) {
+		$code = $error->get_error_code();
+
+		// (1) Nothing configured to read from.
+		if ( in_array( $code, array( 'wp_mcp_ai_fnb_sheet_not_found', 'wp_mcp_ai_fnb_missing_fixture' ), true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_import_no_source',
+				sprintf(
+					/* translators: 1: table id, 2: original error */
+					__( 'No source resolved for F&B table "%1$s". Configure a Drive workbook or data folder (data_workbook_id / data_folder_id / setup_folder_id) on the F&B settings page, or add a table_map entry. Original error: %2$s', 'mcp-ai-wpoos-pro' ),
+					$table_id,
+					$error->get_error_message()
+				)
+			);
+		}
+
+		return $error;
 	}
 }

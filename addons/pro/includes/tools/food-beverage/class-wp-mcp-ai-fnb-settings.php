@@ -64,7 +64,10 @@ class WP_MCP_AI_Fnb_Settings {
 		'locale'                     => '', // Tenant Profile: BCP-47 locale.
 		'owner_role'                 => '', // Tenant Profile: owner/decision-maker role.
 		'enable_fnb_native_storage'  => false, // Phase 9: CPT-backed native storage for the five transactional tables.
-		'pr_auto_approval_threshold' => 0,     // Phase 9b: PR totals above this need a finance co-sign at release (0 = never).
+		'pr_auto_approval_threshold' => 0,     // Phase 9b: LKR; PR totals above this need a finance co-sign at release (0 = never).
+		'table_map'                  => array(), // table_id => { 'sheet'|'file' => name } operator-authored mapping (highest trust).
+		'infer_tables'               => true,    // Enable structural (header-based) auto-map when no table_map entry matches.
+		'retention_days'             => 365,     // Native-storage rows older than this many days are pruned by the daily retention sweep (0 = keep forever).
 	);
 
 	/**
@@ -140,5 +143,53 @@ class WP_MCP_AI_Fnb_Settings {
 	 */
 	public static function is_native_storage_enabled() {
 		return (bool) self::get( 'enable_fnb_native_storage', false );
+	}
+
+	/**
+	 * Operator-authored table mapping (table_id => { sheet|file => name }).
+	 *
+	 * Used as the highest-trust resolution hint before the structural matcher
+	 * and the legacy name-based guess. Empty when the operator has not specified
+	 * a mapping (auto-map then applies when `infer_tables` is on).
+	 *
+	 * @return array<string,array<string,string>>
+	 */
+	public static function table_map() {
+		$map = self::get( 'table_map', array() );
+		if ( ! is_array( $map ) ) {
+			return array();
+		}
+
+		$clean = array();
+		foreach ( $map as $table_id => $hint ) {
+			if ( ! is_string( $table_id ) || '' === $table_id || ! is_array( $hint ) ) {
+				continue;
+			}
+			foreach ( $hint as $k => $v ) {
+				if ( in_array( $k, array( 'sheet', 'file' ), true ) && is_string( $v ) ) {
+					$clean[ $table_id ][ $k ] = $v;
+				}
+			}
+		}
+
+		return $clean;
+	}
+
+	/**
+	 * Whether structural (header-based) auto-mapping is enabled.
+	 *
+	 * @return bool
+	 */
+	public static function infer_tables() {
+		return (bool) self::get( 'infer_tables', true );
+	}
+
+	/**
+	 * Native-storage retention window in days (0 = keep forever).
+	 *
+	 * @return int
+	 */
+	public static function retention_days() {
+		return max( 0, (int) self::get( 'retention_days', 365 ) );
 	}
 }
