@@ -30,6 +30,10 @@ and universalised in
 | `WP_MCP_AI_Fnb_Metrics` | `class-wp-mcp-ai-fnb-metrics.php` | metric tools |
 | `WP_MCP_AI_Fnb_Report_Builder` | `class-wp-mcp-ai-fnb-report-builder.php` | `fnb_generate_report` |
 | `WP_MCP_AI_Fnb_Draft_Writer` | `class-wp-mcp-ai-fnb-draft-writer.php` | `fnb_save_draft`, `fnb_list_drafts` |
+| `WP_MCP_AI_Fnb_Structure_Matcher` | `class-wp-mcp-ai-fnb-structure-matcher.php` | header-based table inference (`table_map` fallback) |
+| `WP_MCP_AI_Fnb_Loader` | `class-wp-mcp-ai-fnb-loader.php` | CSV/TSV/JSON/JSONL → matrix |
+| `WP_MCP_AI_Fnb_Observation` | `class-wp-mcp-ai-fnb-observation.php` | loose observation → canonical binding |
+| `WP_MCP_AI_Fnb_Ingest_Quality` | `class-wp-mcp-ai-fnb-ingest-quality.php` | dedupe + out-of-band flags for import |
 | `WP_MCP_AI_Fnb_Tool_Base` | `class-wp-mcp-ai-fnb-tool-base.php` | all `fnb_*` tools |
 | `WP_MCP_AI_Fnb_Native_Cpt_Storage` (trait) | `trait-wp-mcp-ai-fnb-native-cpt-storage.php` | the five native CPT classes |
 | `WP_MCP_AI_Fnb_Cpt_Reader` | `class-wp-mcp-ai-fnb-cpt-reader.php` | data source (native adapter) |
@@ -40,6 +44,7 @@ and universalised in
 | `WP_MCP_AI_Fnb_Booking_CPT` | `class-wp-mcp-ai-fnb-booking-cpt.php` | table 16.0 native storage |
 | `WP_MCP_AI_Fnb_Admin_Menu` | `addons/pro/includes/admin/class-wp-mcp-ai-fnb-admin-menu.php` | top-level F&B Management menu |
 | `WP_MCP_AI_Fnb_Dashboard_Page` | `addons/pro/includes/admin/class-wp-mcp-ai-fnb-dashboard-page.php` | F&B dashboard landing page |
+| `WP_MCP_AI_Fnb_Ingest_Dashboard_Page` | `addons/pro/includes/admin/class-wp-mcp-ai-fnb-ingest-dashboard-page.php` | read-only ingest & preview review surface (Phase 10) |
 | `WP_MCP_AI_Fnb_Settings_Page` | `addons/pro/includes/admin/class-wp-mcp-ai-fnb-settings-page.php` | settings page under NV oOS Pro |
 | `WP_MCP_AI_Fnb_Pr_Service` | `pr/class-wp-mcp-ai-fnb-pr-service.php` | purchase-request engine (QMS-backed) |
 | `WP_MCP_AI_Fnb_Pr_Gates` | `pr/class-wp-mcp-ai-fnb-pr-gates.php` | §A5 preconditions on the QMS state machine |
@@ -49,11 +54,12 @@ and universalised in
 
 - **Reads from:** `wp_mcp_ai_settings` (`enable_fnb_toolkit`),
   `wp_mcp_ai_fnb_settings` (folder IDs, adapter, demo mode,
-  `enable_fnb_native_storage`), the 17 data tables via the configured
-  adapter, and the native CPTs when native storage is on.
+  `enable_fnb_native_storage`, `table_map`, `infer_tables`), the 17 data
+  tables via the configured adapter, and the native CPTs when native storage
+  is on.
 - **Writes to:** Drafts folder only (Drive or local), transients for table
   caching (`wp_mcp_ai_fnb_tables`), and — via `fnb_import_table` — the five
-  five native CPTs (`mcp_ai_fnb_sale|purchase|stock|waste|booking`).
+  native CPTs (`mcp_ai_fnb_sale|purchase|stock|waste|booking`).
 - **Upstream callers:** Pro tool registry, assistants A1–A4, Pro Schedule
   Manager.
 - **Downstream collaborators:** `WP_MCP_AI_Pro_Google_Drive_Client`
@@ -85,6 +91,45 @@ Rows are upserted by `fnb_import_table` (ACT-tier: `manage_options`, default
  off in the assistant packs) and editable under the top-level
  **F&B Management** admin menu. Before/after hooks fire per write:
  `wp_mcp_ai_fnb_before_<type>_log` / `wp_mcp_ai_fnb_after_<type>_log`.
+
+## Data Ingestion (Open Format + Flexible Mapping)
+
+Ingestion resolves *what a file is* from its **structure** (headers), not just
+its filename. A configurable `table_map` (table ID → `sheet`/`file` name) is
+used first; a **structural matcher** then scores each table ID by canonical-header
+overlap; the legacy name guess is the last resort. See proposal
+`078-fnb-data-ingestion-open-format-proposal.md`.
+
+| Setting | Meaning |
+|---|---|
+| `table_map` | `table_id => { sheet|file => name }` operator-authored hint (highest trust) |
+| `infer_tables` | enable structural (header-based) auto-map fallback (default on) |
+
+New service classes (read-only, testable in isolation):
+
+- `WP_MCP_AI_Fnb_Structure_Matcher` — `match_table()` / `best_table()` header
+  inference with confidence = matched / required canonical columns.
+- `WP_MCP_AI_Fnb_Loader` — CSV/TSV/JSON/JSONL/PDF/XLSX/ODS → shared
+  `{columns, rows}` matrix with delimiter/encoding/BOM auto-detection. PDFs read
+  via the pure-PHP `smalot/pdfparser` (the `extract_pdf_text` fallback
+  dependency); XLSX/XLS/ODS read via `phpoffice/phpspreadsheet` (a Pro-addon
+  dependency); scanned/image-only PDFs and photo invoices return a clear
+  pointer to the OCR tools (`extract_pdf_text` with enable_ocr, `ocr_pdf_text`,
+  `analyze_image`).
+- `WP_MCP_AI_Fnb_Observation` — binds loose `{type, item, qty, unit, recorded_at,
+  source, raw_value}` observations onto the five transactional tables via a
+  terminology map (F&B analogue of the Health Records vitals/FHIR pattern);
+  preserves `_raw_observation`.
+- `WP_MCP_AI_Fnb_Ingest_Quality` — near-duplicate detection (idempotency keys +
+  numeric tolerance) and out-of-band flags (negative qty, zero price with qty).
+- `WP_MCP_AI_Fnb_Ingest_Dashboard_Page` — admin read-only "Ingest & Preview"
+  surface (maps the Medical Vitals dashboard anatomy: Chart.js + AJAX over the
+  same `fnb_import_table` dry-run path) showing mapping confidence, missing
+  columns, flags and preview rows.
+
+`fnb_import_table` surfaces a `mapping` confidence report, ingest-quality `flags`,
+and a three-way source error (no source / wrong shape / unrecognised columns)
+in its dry-run preview.
 
 ## Purchase Requests (Phase 9b)
 
@@ -144,10 +189,14 @@ vendor/bin/phpunit tests/pro/tools/food-beverage/
 
 The oracle test reproduces the demo workbook's "Check totals" sheet values;
 `test-fnb-native-storage.php` covers the Phase 9a CPT layer (registration
- gate, idempotent upserts, hooks, reader parity, import bridge) and
+ gate, idempotent upserts, hooks, reader parity, import bridge),
 `test-fnb-pr-workflow.php` covers the Phase 9b purchase-request lifecycle
  (transition matrix, preconditions, segregation of duties, freeze semantics,
- co-sign threshold, audit completeness — Appendix A §A8).
+ co-sign threshold, audit completeness — Appendix A §A8),
+`test-fnb-structure-matcher.php` covers header-based inference,
+`test-fnb-loader.php` covers multi-format loaders,
+`test-fnb-observation.php` covers observation binding, and
+`test-fnb-ingest-quality.php` covers dedupe + out-of-band flags.
 
 ## Also Load
 

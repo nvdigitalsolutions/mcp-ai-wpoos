@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-12"
+  last-updated: "2026-10-17"
 ---
 
 # NV oOS Pro Toolkit Creation Loop
@@ -248,6 +248,42 @@ register and work fine). Wire both in the same PR as the tool map.
   (spec rule G-02/G-08: all figures via the engine, never model maths).
 - Cache per-table reads in 5-minute transients so repeated metric calls agree.
 
+### 7a. Open-format data ingestion (F&B Proposal 078 — the on-ramp pattern)
+
+When a toolkit ingests heterogeneous owner files (POS exports, supplier
+invoices, CSV/JSON dumps, photographed slips), prefer **structure over
+filename**, and reuse the existing format stack rather than adding deps:
+
+- **Resolution order (highest trust first):** operator `table_map` (table ID →
+  `sheet`/`file` name) → **structural header matcher** (confidence =
+  matched / required canonical columns, where `required` is the idempotency +
+  natural keys, not every optional column) → legacy name-based guess.
+- **Deterministic filename/slug resolution MUST win ahead of structural
+  inference.** This is the hard-won F&B regression: putting the header matcher
+  *before* the slug match let `ingredients.csv` (which also carries
+  `Supplier ID, Supplier`) shadow `suppliers.csv`, silently corrupting
+t-dependent reads (the PR cutoff gate). Always slug-first, structural last
+  resort only.
+- **Reuse the existing format stack — do not add dependencies.** XLSX/ODS via
+  `phpoffice/phpspreadsheet` and PDF text via `smalot/pdfparser` are already
+  Pro-addon deps (autoloaded on PHP 8.1+); call them through `class_exists`
+  guards with an actionable fallback. Scanned PDFs / photos return a clear
+  "use the OCR tools" pointer (`extract_pdf_text` enable_ocr / `ocr_pdf_text` /
+  `analyze_image`), never silent failure or faxing.
+- **Observation + terminology map** for semi-structured records: accept a loose
+  `{type, item, qty, unit, recorded_at, source, raw_value}` row, bind it to a
+  canonical table via a `type`→table terminology map (the F&B analogue of the
+  vitals/FHIR `LOINC_MAP`), and **preserve `raw_value`/`_raw_observation`**
+  beside the normalised columns so a bad unit/price transform is reversible.
+- **Dedupe / retention / banding** mirror the vitals CCT: `is_near_duplicate`
+  (tolerance over idempotency keys), a daily bounded-batch retention cron gated
+  on storage being on with `retention_days` (= 0 keeps forever), and
+  out-of-band flags surfaced in the import dry-run preview.
+
+See `docs/project/proposals/078-fnb-data-ingestion-open-format-proposal.md` + the
+implementation plan for the full worked example, and the sibling skill
+`mcp-ai-wpoos-toolkit-ingestion` for the reusable reference.
+
 ## 8. Validation gate
 
 1. `php -l` every new/changed file.
@@ -301,6 +337,15 @@ stock-used, Assumptions-rates for utilities. See the PR branch
    + the `fnb` entries in `$conditional_toolkits` / `$dir_map`, with
    `addons/pro/tests/test-fnb-settings-page-registration.php` and
    `tests/basepro/test-basepro-fnb-init.php` as regression pins.
+
+**Open-format ingestion follow-on (Proposal 078, Phases 1–10):** the toolkit
+   later gained a configurable `table_map` + structural (header) matcher + a
+   multi-format loader (CSV/TSV/JSON/JSONL/XLSX/ODS/PDF/photo), an
+   Observation→canonical terminology-map layer, dedupe/retention/banding, a
+   read-only ingest-review dashboard, and the `fnb_import_table` diagnostics +
+   three-way source error. The key lessons are in §7a (structural-vs-filename
+   resolution order and the slug-first regression). See
+   `docs/project/proposals/078-*` and `mcp-ai-wpoos-toolkit-ingestion`.
 
 ## Also load
 

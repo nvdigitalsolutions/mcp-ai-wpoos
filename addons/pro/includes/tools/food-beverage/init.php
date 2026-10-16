@@ -67,6 +67,11 @@ if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 	WP_MCP_AI_Fnb_Waste_CPT::init();
 	WP_MCP_AI_Fnb_Booking_CPT::init();
 
+	// Phase 8b retention: daily native-storage prune (scheduled only when native
+	// storage is on; retention_days = 0 keeps rows forever).
+	require_once __DIR__ . '/class-wp-mcp-ai-fnb-ingest-retention.php';
+	WP_MCP_AI_Fnb_Ingest_Retention::init();
+
 	// JetEngine field schemas for the native CPTs (no-op without JetEngine;
 	// mirrors the CRM company-CPT registration).
 	if ( function_exists( 'jet_engine' ) && class_exists( 'WP_MCP_AI_JetEngine_Meta_Helper' ) ) {
@@ -98,5 +103,9 @@ if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 		WP_MCP_AI_Fnb_Admin_Menu::init();
 
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-fnb-dashboard-page.php';
+
+		// Phase 10 ingest-review dashboard (read-only; dry-run backed).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-fnb-ingest-dashboard-page.php';
+		WP_MCP_AI_Fnb_Ingest_Dashboard_Page::init();
 	}
 }

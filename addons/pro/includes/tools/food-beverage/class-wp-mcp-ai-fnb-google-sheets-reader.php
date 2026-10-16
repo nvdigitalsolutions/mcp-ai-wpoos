@@ -94,6 +94,14 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	 */
 	private function sheet_names( $table_id ) {
 		$names = array();
+
+		// Operator-authored tab hint (highest trust) comes first.
+		$map = WP_MCP_AI_Fnb_Settings::table_map();
+		$tab = isset( $map[ $table_id ]['sheet'] ) ? (string) $map[ $table_id ]['sheet'] : '';
+		if ( '' !== $tab ) {
+			$names[] = $tab;
+		}
+
 		foreach ( self::$sheet_map as $name => $id ) {
 			if ( $id === $table_id ) {
 				$names[] = $name;
@@ -350,6 +358,25 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	 */
 	private function locate_split_file( $table_id, $auth ) {
 		$names = $this->sheet_names( $table_id );
+
+		// Operator-authored file hint (highest trust): match the raw name directly.
+		$map  = WP_MCP_AI_Fnb_Settings::table_map();
+		$hint = isset( $map[ $table_id ]['file'] ) ? (string) $map[ $table_id ]['file'] : '';
+		if ( '' !== $hint ) {
+			$hint_norm = $this->normalise_name( $hint );
+			foreach ( $this->folders() as $folder_id ) {
+				foreach ( $this->list_folder( $folder_id, $auth ) as $file ) {
+					if ( $this->normalise_name( (string) $file['name'] ) === $hint_norm ) {
+						return array(
+							'id'        => (string) $file['id'],
+							'name'      => (string) $file['name'],
+							'mime_type' => isset( $file['mimeType'] ) ? (string) $file['mimeType'] : '',
+						);
+					}
+				}
+			}
+		}
+
 		foreach ( $this->folders() as $folder_id ) {
 			foreach ( $this->list_folder( $folder_id, $auth ) as $file ) {
 				$file_name = isset( $file['name'] ) ? (string) $file['name'] : '';
