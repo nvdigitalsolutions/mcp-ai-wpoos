@@ -207,6 +207,190 @@ class WP_MCP_AI_Fnb_Dashboard_Page {
 		</div>
 
 		<?php self::render_recent_rows(); ?>
+		<?php self::render_trends(); ?>
+		<?php self::render_panels( $latest_month ); ?>
+		<?php
+	}
+
+	/**
+	 * Return the known months present in the covers table (table 7.0),
+	 * oldest-first, capped to a trailing window for trend charts.
+	 *
+	 * @param int $limit Max months to return (default 6).
+	 * @return array<int,string> Y-m strings, ascending.
+	 */
+	private static function known_months( $limit = 6 ) {
+		$table = WP_MCP_AI_Fnb_Data_Source::get_table( '7.0' );
+		if ( is_wp_error( $table ) ) {
+			return array();
+		}
+		$months = array();
+		foreach ( $table['rows'] as $row ) {
+			$month = WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $table['header_index'], $row, 'month' );
+			if ( '' !== (string) $month && preg_match( '/^\d{4}-\d{2}$/', (string) $month ) ) {
+				$months[ (string) $month ] = true;
+			}
+		}
+		$months = array_keys( $months );
+		sort( $months );
+
+		return array_slice( $months, max( 0, count( $months ) - max( 1, $limit ) ) );
+	}
+
+	/**
+	 * Build the month-series payload for the four trend charts, computed once
+	 * from the metric engine so the values match every other F&B surface.
+	 *
+	 * @return array|null Trend payload or null when fewer than two months exist.
+	 */
+	public static function trend_payload() {
+		$months = self::known_months( 6 );
+		if ( count( $months ) < 2 ) {
+			return null;
+		}
+
+		$revenue     = array();
+		$covers      = array();
+		$food_cost   = array();
+		$waste_value = array();
+		foreach ( $months as $month ) {
+			$r         = WP_MCP_AI_Fnb_Metrics::m01_revenue( $month );
+			$revenue[] = is_wp_error( $r ) ? 0.0 : round( (float) $r['value'], 2 );
+
+			$c        = WP_MCP_AI_Fnb_Metrics::m02_covers( $month );
+			$covers[] = is_wp_error( $c ) ? 0 : (int) round( (float) $c['value'] );
+
+			$f           = WP_MCP_AI_Fnb_Metrics::m04_food_cost_pct( $month );
+			$food_cost[] = is_wp_error( $f ) ? 0.0 : round( (float) $f['value'], 4 );
+
+			$w             = WP_MCP_AI_Fnb_Metrics::m18_waste_pct( $month );
+			$waste_value[] = is_wp_error( $w ) ? 0.0 : round( (float) $w['waste_value'], 2 );
+		}
+
+		return array(
+			'labels'     => $months,
+			'revenue'    => $revenue,
+			'covers'     => $covers,
+			'foodCost'   => $food_cost,
+			'wasteValue' => $waste_value,
+		);
+	}
+
+	/**
+	 * Build the footer Chart.js initialiser for the trend cards. Emitted via
+	 * wp_add_inline_script for the `wp-mcp-ai-chartjs` handle so it always runs
+	 * after Chart.js has loaded (never as an inline body script). Reads its data
+	 * from the `wpMcpAiFnbTrends` global injected as an inline-before block.
+	 *
+	 * @return string JavaScript source.
+	 */
+	public static function trend_init_script() {
+		return '(function(){'
+			. 'if(typeof Chart==="undefined"||typeof wpMcpAiFnbTrends==="undefined"){return;}'
+			. 'var d=wpMcpAiFnbTrends;'
+			. 'function line(id,data,color){var el=document.getElementById(id);if(!el){return;}'
+			. 'new Chart(el,{type:"line",data:{labels:d.labels,datasets:[{label:"",data:data,fill:false,borderColor:color,tension:0.2}]},'
+			. 'options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});}'
+			. 'line("fnb-chart-revenue",d.revenue,"#2271b1");'
+			. 'line("fnb-chart-covers",d.covers,"#00a32a");'
+			. 'line("fnb-chart-food-cost",d.foodCost,"#d63638");'
+			. 'line("fnb-chart-waste",d.wasteValue,"#996800");'
+			. '})();';
+	}
+
+	/**
+	 * Render trend chart cards (revenue, covers, food cost %, waste). Chart.js
+	 * and the initialiser are enqueued by WP_MCP_AI_Fnb_Admin_Menu so the data
+	 * series resolve once and are available in the footer.
+	 *
+	 * @return void
+	 */
+	private static function render_trends() {
+		if ( null === self::trend_payload() ) {
+			return;
+		}
+		?>
+		<h3><?php esc_html_e( 'Trends', 'mcp-ai-wpoos-pro' ); ?></h3>
+		<div class="fnb-chart-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+			<div class="fnb-chart-card" style="border:1px solid #c3c4c7; border-radius:4px; padding:12px; background:#fff;">
+				<h4 style="margin-top:0;"><?php esc_html_e( 'Revenue', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<canvas id="fnb-chart-revenue" height="120"></canvas>
+			</div>
+			<div class="fnb-chart-card" style="border:1px solid #c3c4c7; border-radius:4px; padding:12px; background:#fff;">
+				<h4 style="margin-top:0;"><?php esc_html_e( 'Covers', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<canvas id="fnb-chart-covers" height="120"></canvas>
+			</div>
+			<div class="fnb-chart-card" style="border:1px solid #c3c4c7; border-radius:4px; padding:12px; background:#fff;">
+				<h4 style="margin-top:0;"><?php esc_html_e( 'Food cost %', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<canvas id="fnb-chart-food-cost" height="120"></canvas>
+			</div>
+			<div class="fnb-chart-card" style="border:1px solid #c3c4c7; border-radius:4px; padding:12px; background:#fff;">
+				<h4 style="margin-top:0;"><?php esc_html_e( 'Waste value', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<canvas id="fnb-chart-waste" height="120"></canvas>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render panel tables: menu-engineering quadrants and waste-by-reason.
+	 *
+	 * @param string $latest_month Latest Y-m.
+	 * @return void
+	 */
+	private static function render_panels( $latest_month ) {
+		$engineering = WP_MCP_AI_Fnb_Metrics::menu_engineering( $latest_month );
+		$rows        = ( is_array( $engineering ) && ! empty( $engineering['rows'] ) ) ? $engineering['rows'] : array();
+
+		$waste     = WP_MCP_AI_Fnb_Metrics::m18_waste_pct( $latest_month );
+		$by_reason = ( is_array( $waste ) && isset( $waste['by_reason'] ) && is_array( $waste['by_reason'] ) ) ? $waste['by_reason'] : array();
+		?>
+		<h3><?php esc_html_e( 'Menu engineering', 'mcp-ai-wpoos-pro' ); ?></h3>
+		<table class="widefat striped" style="max-width: 960px;">
+			<thead>
+				<tr>
+					<th scope="col"><?php esc_html_e( 'Item', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Margin', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Popularity', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Quadrant', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Action', 'mcp-ai-wpoos-pro' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+			<?php if ( empty( $rows ) ) : ?>
+				<tr><td colspan="5"><?php esc_html_e( 'No menu items.', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+			<?php else : ?>
+				<?php foreach ( $rows as $row ) : ?>
+				<tr>
+					<td><?php echo esc_html( isset( $row['item'] ) ? $row['item'] : '' ); ?></td>
+					<td><?php echo esc_html( number_format_i18n( isset( $row['margin'] ) ? (float) $row['margin'] : 0.0, 2 ) ); ?></td>
+					<td><?php echo esc_html( number_format_i18n( isset( $row['popularity_share'] ) ? (float) $row['popularity_share'] : 0.0, 2 ) ); ?></td>
+					<td><?php echo esc_html( isset( $row['quadrant'] ) ? $row['quadrant'] : '' ); ?></td>
+					<td><?php echo esc_html( isset( $row['action'] ) ? $row['action'] : '' ); ?></td>
+				</tr>
+				<?php endforeach; ?>
+			<?php endif; ?>
+			</tbody>
+		</table>
+		<?php if ( ! empty( $by_reason ) ) : ?>
+		<h3><?php esc_html_e( 'Waste by reason', 'mcp-ai-wpoos-pro' ); ?></h3>
+		<table class="widefat striped" style="max-width: 960px;">
+			<thead>
+				<tr>
+					<th scope="col"><?php esc_html_e( 'Reason', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Value', 'mcp-ai-wpoos-pro' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+			<?php foreach ( $by_reason as $reason => $value ) : ?>
+				<tr>
+					<td><?php echo esc_html( (string) $reason ); ?></td>
+					<td><?php echo esc_html( number_format_i18n( (float) $value, 2 ) ); ?></td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php endif; ?>
 		<?php
 	}
 
