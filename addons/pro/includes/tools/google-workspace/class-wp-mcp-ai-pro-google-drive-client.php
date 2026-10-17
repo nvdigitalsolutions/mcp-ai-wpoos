@@ -393,17 +393,29 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $status_code ) {
-			$body = wp_remote_retrieve_body( $response );
+			$body       = wp_remote_retrieve_body( $response );
+			$google_msg = self::extract_google_error_message( $body );
 
 			// A 400 (as opposed to 401/403/404) is almost always a scope or
 			// request-shape problem — the Sheets API (sheets.googleapis.com/v4)
 			// needs the spreadsheets.readonly scope, which the Drive token may
 			// not carry. Surface that hint distinctly so it isn't mistaken for
-			// a file-lookup failure.
-			$message = 400 === $status_code
-				? __( 'Google Sheets rejected the request (HTTP 400). The API token needs the "spreadsheets.readonly" scope and a valid sheet name; check the workspace connection scopes.', 'mcp-ai-wpoos-pro' )
-				/* translators: %d: HTTP status code. */
-				: sprintf( __( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ), $status_code );
+			// a file-lookup failure. When Google returns a structured error body
+			// (e.g. "Request had insufficient authentication scopes"), surface
+			// its actual message rather than a bare status code.
+			if ( '' !== $google_msg ) {
+				$message = sprintf(
+					/* translators: 1: HTTP status code, 2: Google's error message */
+					__( 'Google Sheets returned HTTP %1$d: %2$s. If this is a scope problem, re-authorise the Drive connection to include the "spreadsheets.readonly" scope.', 'mcp-ai-wpoos-pro' ),
+					$status_code,
+					$google_msg
+				);
+			} else {
+				$message = 400 === $status_code
+					? __( 'Google Sheets rejected the request (HTTP 400). The API token needs the "spreadsheets.readonly" scope and a valid sheet name; check the workspace connection scopes.', 'mcp-ai-wpoos-pro' )
+					/* translators: %d: HTTP status code. */
+					: sprintf( __( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ), $status_code );
+			}
 
 			return new WP_Error(
 				'wp_mcp_ai_drive_http_status',
@@ -422,6 +434,39 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 		}
 
 		return $payload;
+	}
+
+	/**
+	 * Extract Google's human-readable error message from a non-2xx response body.
+	 *
+	 * The Sheets/Drive APIs return a JSON envelope like
+	 * `{"error":{"code":403,"message":"…","status":"PERMISSION_DENIED"}}`.
+	 * Return that message (with the status tag when present) so callers can
+	 * distinguish a scope denial from a file-not-shared failure instead of
+	 * surfacing a bare HTTP status code.
+	 *
+	 * @param string $body Raw response body.
+	 * @return string Google's message (or empty string when the body is not a
+	 *                recognised Google error envelope).
+	 */
+	private static function extract_google_error_message( $body ) {
+		$body    = trim( (string) $body );
+		$decoded = json_decode( $body, true );
+		if ( ! is_array( $decoded ) || empty( $decoded['error'] ) || ! is_array( $decoded['error'] ) ) {
+			return '';
+		}
+
+		$message = isset( $decoded['error']['message'] ) ? trim( (string) $decoded['error']['message'] ) : '';
+		$status  = isset( $decoded['error']['status'] ) ? trim( (string) $decoded['error']['status'] ) : '';
+
+		if ( '' === $message ) {
+			return $status;
+		}
+		if ( '' === $status ) {
+			return $message;
+		}
+
+		return $message . ' (' . $status . ')';
 	}
 
 	/**
@@ -455,12 +500,22 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $status_code ) {
-			$body = wp_remote_retrieve_body( $response );
+			$body       = wp_remote_retrieve_body( $response );
+			$google_msg = self::extract_google_error_message( $body );
 
-			$message = 400 === $status_code
-				? __( 'Google Sheets rejected the request (HTTP 400). The API token needs the "spreadsheets.readonly" scope and a valid sheet name; check the workspace connection scopes.', 'mcp-ai-wpoos-pro' )
-				/* translators: %d: HTTP status code. */
-				: sprintf( __( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ), $status_code );
+			if ( '' !== $google_msg ) {
+				$message = sprintf(
+					/* translators: 1: HTTP status code, 2: Google's error message */
+					__( 'Google Sheets returned HTTP %1$d: %2$s. If this is a scope problem, re-authorise the Drive connection to include the "spreadsheets.readonly" scope.', 'mcp-ai-wpoos-pro' ),
+					$status_code,
+					$google_msg
+				);
+			} else {
+				$message = 400 === $status_code
+					? __( 'Google Sheets rejected the request (HTTP 400). The API token needs the "spreadsheets.readonly" scope and a valid sheet name; check the workspace connection scopes.', 'mcp-ai-wpoos-pro' )
+					/* translators: %d: HTTP status code. */
+					: sprintf( __( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ), $status_code );
+			}
 
 			return new WP_Error(
 				'wp_mcp_ai_drive_http_status',
