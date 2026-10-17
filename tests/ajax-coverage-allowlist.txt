@@ -111,9 +111,3 @@ wp_mcp_ai_status_toggle_public
 # Unified blueprint browser — Pro blueprint library, coverage pending.
 wp_mcp_ai_unified_get_blueprint_details
 wp_mcp_ai_unified_install_blueprint
-
-# F&B open-format ingest review dashboard — read-only dry-run preview + scan
-# and the ACT-tier import write; dedicated AJAX tests pending.
-wp_mcp_ai_fnb_ingest_import
-wp_mcp_ai_fnb_ingest_preview
-wp_mcp_ai_fnb_ingest_scan
