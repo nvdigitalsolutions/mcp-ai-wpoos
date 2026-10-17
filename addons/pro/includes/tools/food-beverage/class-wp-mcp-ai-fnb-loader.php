@@ -441,15 +441,299 @@ class WP_MCP_AI_Fnb_Loader {
 	}
 
 	/**
+	 * Try to parse the file through the Media Worker sidecar (Proposal 079).
+	 *
+	 * Returns null when offloading is not applicable (no sidecar, disabled,
+	 * text format, or a worker error) so the caller falls through to the
+	 * local parsers unchanged. Returns a matrix or WP_Error only when the
+	 * sidecar answered - in which case that answer is final for this call.
+	 *
+	 * @param string $path    Absolute file path.
+	 * @param array  $options Optional parse options (format, sheet, language,
+	 *                        offset, limit).
+	 * @return array|WP_Error|null
+	 */
+	private static function maybe_offload_parse( $path, array $options = array() ) {
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Worker_Client' ) ) {
+			$client_file = __DIR__ . '/class-wp-mcp-ai-fnb-worker-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Worker_Client' ) ) {
+			return null;
+		}
+
+		/**
+		 * Filter: replace the F&B worker client (tests, custom deployments).
+		 * The replacement must expose should_offload( $path ) and
+		 * parse_file( $path, $options ). Default null = the shipped client.
+		 *
+		 * @param object|null $client Client instance.
+		 */
+		$client = apply_filters( 'wp_mcp_ai_fnb_worker_client', null );
+		if ( null === $client ) {
+			$client = WP_MCP_AI_Fnb_Worker_Client::get_instance();
+		}
+		if ( ! is_object( $client ) || ! method_exists( $client, 'should_offload' ) || ! method_exists( $client, 'parse_file' ) ) {
+			return null;
+		}
+
+		if ( ! $client->should_offload( $path ) ) {
+			return null;
+		}
+
+		$result = $client->parse_file( $path, $options );
+		if ( is_wp_error( $result ) ) {
+			return null; // Fall through to the local parser.
+		}
+
+		return self::normalise_worker_result( $path, $result );
+	}
+
+	/**
+	 * Provider-vision OCR fallback for photo imports (Proposal 079,
+	 * Appendix B).
+	 *
+	 * Opt-in via the ocr_vision_fallback setting (default off): when no
+	 * sidecar is configured - or the worker's tesseract read lands below the
+	 * confidence floor - a photo can be OCR'd by the plugin's vision provider
+	 * through the extract_image_text tool. The image is staged as a temporary
+	 * attachment (deleted afterwards) because the tool resolves images by
+	 * attachment URL, not by local path.
+	 *
+	 * @param string $path Absolute image path.
+	 * @return array|WP_Error|null Photo matrix, error, or null when the rung
+	 *                             is disabled or unavailable.
+	 */
+	private static function maybe_vision_ocr( $path ) {
+		$enabled = class_exists( 'WP_MCP_AI_Fnb_Settings' ) ? WP_MCP_AI_Fnb_Settings::get( 'ocr_vision_fallback', false ) : false;
+		if ( ! apply_filters( 'wp_mcp_ai_fnb_ocr_vision_fallback', $enabled ) ) {
+			return null;
+		}
+
+		/**
+		 * Filter: short-circuit the vision OCR extraction (tests, custom OCR).
+		 * Return a photo matrix or WP_Error to skip the staging + tool path.
+		 *
+		 * @param array|WP_Error|null $result Pre-set result.
+		 * @param string              $path   Absolute image path.
+		 */
+		$preset = apply_filters( 'wp_mcp_ai_fnb_vision_ocr_result', null, $path );
+		if ( null !== $preset ) {
+			return $preset;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Extract_Image_Text' ) ) {
+			$tool_file = dirname( __DIR__, 5 ) . '/includes/tools/class-wp-mcp-ai-tool-extract-image-text.php';
+			if ( file_exists( $tool_file ) ) {
+				require_once $tool_file;
+			}
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Extract_Image_Text' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_vision_unavailable',
+				__( 'The vision OCR tool is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+		if ( ! function_exists( 'wp_upload_dir' ) || ! function_exists( 'wp_insert_attachment' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$uploads = wp_upload_dir();
+		if ( empty( $uploads['path'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_vision_upload_dir',
+				__( 'The uploads directory is unavailable.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$filename = wp_unique_filename( $uploads['path'], 'fnb-ocr-' . basename( $path ) );
+		$target   = trailingslashit( $uploads['path'] ) . $filename;
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_copy -- Staging the owner's photo in the uploads dir so the vision tool can resolve its URL.
+		if ( ! copy( $path, $target ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_vision_copy_failed',
+				__( 'Could not stage the image for vision OCR.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$mime          = wp_check_filetype( $target );
+		$attachment_id = wp_insert_attachment(
+			array(
+				'post_title'     => sanitize_file_name( basename( $path ) ),
+				'post_mime_type' => isset( $mime['type'] ) ? $mime['type'] : 'application/octet-stream',
+				'post_status'    => 'inherit',
+			),
+			$target,
+			0
+		);
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_delete_file( $target );
+
+			return new WP_Error(
+				'wp_mcp_ai_fnb_vision_attachment_failed',
+				$attachment_id->get_error_message()
+			);
+		}
+
+		try {
+			$tool   = new WP_MCP_AI_Tool_Extract_Image_Text();
+			$result = $tool->execute(
+				array(
+					'attachment_id'   => $attachment_id,
+					'preserve_layout' => true,
+				)
+			);
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			$text = isset( $result['text'] ) ? trim( (string) $result['text'] ) : '';
+			if ( '' === $text ) {
+				return new WP_Error(
+					'wp_mcp_ai_fnb_vision_empty',
+					__( 'Vision OCR returned no text.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$matrix           = self::parse_delimited( $text, self::detect_delimiter( $text ) );
+			$matrix['format'] = self::FORMAT_PHOTO;
+			$matrix['meta']   = array(
+				'engine'   => 'vision-ocr',
+				'provider' => isset( $result['metadata']['provider'] ) ? $result['metadata']['provider'] : '',
+			);
+
+			return $matrix;
+		} finally {
+			wp_delete_attachment( $attachment_id, true );
+		}
+	}
+
+	/**
+	 * Convert a worker ingest envelope into the loader's matrix contract.
+	 *
+	 * Tabular formats arrive as a ready matrix; PDF and photo results carry
+	 * extracted text that runs through the same delimited conversion the
+	 * local parsers use, so the structure matcher sees identical shapes.
+	 *
+	 * @param string $path   Absolute file path (for extension detection).
+	 * @param array  $result Worker response envelope.
+	 * @return array|WP_Error|null Matrix, error, or null when unrecognised.
+	 */
+	private static function normalise_worker_result( $path, $result ) {
+		$ext    = strtolower( (string) pathinfo( (string) $path, PATHINFO_EXTENSION ) );
+		$format = isset( $result['format'] ) ? (string) $result['format'] : $ext;
+
+		// Tabular (xlsx/xls/ods): the worker produced the matrix directly.
+		if ( in_array( $format, array( self::FORMAT_XLSX, 'xls', 'ods' ), true ) ) {
+			if ( ! isset( $result['columns'] ) || ! is_array( $result['columns'] ) || ! isset( $result['rows'] ) || ! is_array( $result['rows'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_fnb_xlsx_extract_failed',
+					__( 'Media Worker returned an invalid spreadsheet matrix.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			return array(
+				'columns' => array_map( 'strval', $result['columns'] ),
+				'rows'    => array_map(
+					static function ( $row ) {
+						return is_array( $row ) ? array_map( 'strval', $row ) : array();
+					},
+					$result['rows']
+				),
+				'format'  => self::FORMAT_XLSX,
+				'meta'    => isset( $result['meta'] ) && is_array( $result['meta'] ) ? $result['meta'] : array(),
+			);
+		}
+
+		// PDF (text layer or scanned): convert the extracted text through the
+		// same delimited path the local extractor uses.
+		if ( self::FORMAT_PDF === $format ) {
+			$text = isset( $result['text'] ) ? trim( (string) $result['text'] ) : '';
+			if ( '' === $text ) {
+				return new WP_Error(
+					'wp_mcp_ai_fnb_pdf_scanned',
+					__( 'The PDF appears to be scanned (no extractable text layer). Use the extract_pdf_text tool with enable_ocr=true, or ocr_pdf_text, then import the resulting text.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$matrix           = self::parse_delimited( $text, self::detect_delimiter( $text ) );
+			$matrix['format'] = self::FORMAT_PDF;
+
+			return $matrix;
+		}
+
+		// Photo: OCR text. Low confidence keeps the actionable OCR pointer so
+		// a bad read is never silently imported.
+		if ( self::FORMAT_PHOTO === $format ) {
+			$text       = isset( $result['text'] ) ? trim( (string) $result['text'] ) : '';
+			$confidence = isset( $result['confidence'] ) ? (float) $result['confidence'] : 0;
+
+			/**
+			 * Filter: minimum OCR confidence (0-100) for a photo import.
+			 *
+			 * @param float $floor Confidence floor.
+			 */
+			$floor = (float) apply_filters( 'wp_mcp_ai_fnb_ocr_confidence_floor', 60 );
+
+			if ( '' === $text || $confidence < $floor ) {
+				// Provider-vision rung (Proposal 079, Appendix B): opt-in
+				// vision OCR when the worker's tesseract read is weak.
+				$vision = self::maybe_vision_ocr( $path );
+				if ( null !== $vision && ! is_wp_error( $vision ) ) {
+					return $vision;
+				}
+
+				$error_data = array(
+					'ocr_text'   => $text,
+					'confidence' => $confidence,
+				);
+				if ( is_wp_error( $vision ) ) {
+					$error_data['vision_error'] = $vision->get_error_message();
+				}
+
+				return new WP_Error(
+					'wp_mcp_ai_fnb_photo_needs_ocr',
+					__( 'The image could not be OCR\'d with enough confidence. Use analyze_image or extract_image_text to produce the text, then import the result as CSV/JSON.', 'mcp-ai-wpoos-pro' ),
+					$error_data
+				);
+			}
+
+			$matrix           = self::parse_delimited( $text, self::detect_delimiter( $text ) );
+			$matrix['format'] = self::FORMAT_PHOTO;
+			$matrix['meta']   = array(
+				'engine'     => 'sidecar-ocr',
+				'confidence' => $confidence,
+			);
+
+			return $matrix;
+		}
+
+		return null;
+	}
+
+	/**
 	 * Load a file's raw contents into a matrix, auto-detecting format by content
 	 * (and extension as a hint).
 	 *
-	 * @param string $path Absolute file path.
+	 * @param string $path    Absolute file path.
+	 * @param array  $options Optional parse options forwarded to the worker
+	 *                        (format, sheet, language, offset, limit).
 	 * @return array|WP_Error
 	 */
-	public static function load_file( $path ) {
+	public static function load_file( $path, array $options = array() ) {
 		if ( ! file_exists( $path ) || ! is_readable( $path ) ) {
 			return new WP_Error( 'wp_mcp_ai_fnb_file_unreadable', __( 'File could not be read.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Sidecar offload (Proposal 079): try the Media Worker for the heavy
+		// formats first; any failure falls through to the local parsers below.
+		$offloaded = self::maybe_offload_parse( $path, $options );
+		if ( null !== $offloaded ) {
+			return $offloaded;
 		}
 
 		$ext = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
@@ -466,9 +750,17 @@ class WP_MCP_AI_Fnb_Loader {
 
 		// Photo/image invoice: deferred to the vision OCR tools.
 		if ( in_array( $ext, array( 'png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tiff' ), true ) ) {
+			// Provider-vision rung (Proposal 079, Appendix B): opt-in vision
+			// OCR for photo imports, enabled per site.
+			$vision = self::maybe_vision_ocr( $path );
+			if ( null !== $vision && ! is_wp_error( $vision ) ) {
+				return $vision;
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_fnb_photo_needs_ocr',
-				__( 'Image files require vision OCR. Use analyze_image or extract_image_text to produce the text, then import the result as CSV/JSON.', 'mcp-ai-wpoos-pro' )
+				__( 'Image files require vision OCR. Use analyze_image or extract_image_text to produce the text, then import the result as CSV/JSON.', 'mcp-ai-wpoos-pro' ),
+				is_wp_error( $vision ) ? array( 'vision_error' => $vision->get_error_message() ) : null
 			);
 		}
 

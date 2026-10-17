@@ -86,6 +86,25 @@ returning `{file, table_id, confidence, format}` sorted by confidence. This is
 schema-on-read: no operator mapping or explicit table choice needed; files that
 don't parse or don't resolve above threshold are omitted, never guessed.
 
+**Media Worker offload (Proposal 079)**: when a Media Worker sidecar is
+configured, `load_file()` parses the heavy formats in the worker first
+(`POST /api/ingest/parse` - ExcelJS for XLSX, pdf-parse for PDFs with a
+render→OCR chain for scans, tesseract for photos), returning the same
+`{columns, rows}` matrix contract; PDF/photo results arrive as extracted
+text and convert through the same delimited path. Every worker failure falls
+back to the local PHP parsers unchanged, so the cascade is invisible when the
+sidecar is absent. Text formats (CSV/TSV/JSON/JSONL) are never offloaded.
+Gates: the `use_media_worker` setting (`auto` default), the
+`wp_mcp_ai_fnb_worker_enabled` filter, and the `wp_mcp_ai_fnb_worker_client`
+filter (client-replacement test seam). An opt-in `ocr_vision_fallback`
+setting adds a provider-vision rung for photos (temporary attachment +
+`extract_image_text`, then deleted; failures keep the actionable pointer
+with the vision error in `data`; tests inject via the
+`wp_mcp_ai_fnb_vision_ocr_result` filter). Related Appendix B wiring:
+`WP_MCP_AI_OCR_Service::extract_text_from_pdf()` routes auto/tesseract scans
+through the worker ingest chain, and `optimise_images_batch` routes its
+non-dry-run batch through `/api/image/batch`.
+
 ## 3. Observation + terminology map (the vitals/FHIR analogue)
 
 For semi-structured, measurement-shaped owner data, accept a loose observation

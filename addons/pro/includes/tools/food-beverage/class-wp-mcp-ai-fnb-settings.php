@@ -68,6 +68,8 @@ class WP_MCP_AI_Fnb_Settings {
 		'table_map'                  => array(), // table_id => { 'sheet'|'file' => name } operator-authored mapping (highest trust).
 		'infer_tables'               => true,    // Enable structural (header-based) auto-map when no table_map entry matches.
 		'retention_days'             => 365,     // Native-storage rows older than this many days are pruned by the daily retention sweep (0 = keep forever).
+		'use_media_worker'           => 'auto',  // auto | off - route heavy-file parsing (XLSX/PDF/photo) through the Media Worker sidecar when configured (Proposal 079).
+		'ocr_vision_fallback'        => false,   // Opt-in: when photo OCR confidence is low (or no worker), OCR photos through the plugin's vision provider (Proposal 079, Appendix B).
 	);
 
 	/**
