@@ -73,6 +73,7 @@ wp-mcp-ai-fnb-tenant-profile
 wp-mcp-ai-fnb-tool-base
 wp-mcp-ai-fnb-universal-reader
 wp-mcp-ai-fnb-waste-cpt
+wp-mcp-ai-fnb-worker-client
 wp-mcp-ai-gtmetrix-client
 wp-mcp-ai-gtmetrix-fix-engine
 wp-mcp-ai-gtmetrix-fixture-reader
