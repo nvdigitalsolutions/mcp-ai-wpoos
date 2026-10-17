@@ -74,9 +74,15 @@ function setScrollHeight( el: HTMLElement, px: number ): void {
 	} );
 }
 
-function Harness( { value }: { value: string } ): JSX.Element {
+function Harness( {
+	value,
+	enabled = true,
+}: {
+	value: string;
+	enabled?: boolean;
+} ): JSX.Element {
 	const ref = useRef< HTMLTextAreaElement | null >( null );
-	useAutoGrowTextarea( ref, value );
+	useAutoGrowTextarea( ref, value, enabled );
 	return <textarea ref={ ref } value={ value } readOnly aria-label="test-input" />;
 }
 
@@ -147,6 +153,20 @@ describe( 'useAutoGrowTextarea', () => {
 
 		setScrollHeight( el, 84 );
 		fireEvent.input( el );
+		expect( el.style.height ).toBe( '' );
+	} );
+
+	it( 'clears the inline height when growth is disabled', () => {
+		const { container, rerender } = render( <Harness value="a" /> );
+		const el = container.querySelector( 'textarea' )!;
+
+		setScrollHeight( el, 84 );
+		fireEvent.input( el );
+		expect( el.style.height ).toBe( '84px' );
+
+		// Manual composer sizing takes over — the stylesheet height must
+		// win over the inline height the fallback path set.
+		rerender( <Harness value="a" enabled={ false } /> );
 		expect( el.style.height ).toBe( '' );
 	} );
 } );
@@ -273,6 +293,14 @@ describe( 'AgentPanel — vertical expansion surfaces', () => {
 		expect(
 			screen.getByRole( 'button', { name: 'Expand message composer' } )
 		).toBeInTheDocument();
+	} );
+
+	it( 'marks the panel as resized when a manual composer height is persisted', () => {
+		localStorage.setItem( 'nvoos-pro-spa.composerHeight', '300' );
+		render( <AgentPanel { ...defaultPanelProps() } /> );
+		expect(
+			screen.getByRole( 'region', { name: 'Chat agent panel' } )
+		).toHaveClass( 'nvoos-pro-spa-agent-panel--composer-resized' );
 	} );
 
 	it( 'opens the expanded composer, focuses it, and closes on Escape', () => {

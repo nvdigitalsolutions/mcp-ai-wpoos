@@ -295,9 +295,35 @@ All four phases shipped:
 **Deviations from the proposal** (all forced by the repo's own gates):
 
 1. The divider is a native `<button>` without `role="separator"` — `eslint-plugin-jsx-a11y` rejects `separator` on a button and rejects non-interactive roles + `tabIndex` on a div; the pixel height is folded into a dynamic `aria-label` instead of `aria-valuenow`. ARIA `separator` semantics can be revisited if the lint config is relaxed.
-2. `useAutoGrowTextarea` takes no `maxLines` — the CSS `max-height` owns the cap so the native and JS paths share one source of truth.
+2. `useAutoGrowTextarea` takes no `maxLines` — the CSS owns the ceiling so the native and JS paths share one source of truth (originally the 3-line `max-height`; the follow-up below replaced it with a viewport-based ceiling + fill-the-composer manual mode).
 3. The front-end shortcode surface does not inject the viewport meta (themes own the front-end `<head>`); the admin page and the standalone app do.
 
 **Validation:** `npm run typecheck` ✓ · `npm test` ✓ 200/200 (11 new tests in `composer-autogrow.test.tsx`) · `npm run lint:a11y` ✓ for all touched files (3 pre-existing failures remain in foreign files: `MediaList.tsx:80`, `MessageView.tsx:589`, `useMediaLibrary.ts:173`) · `php -l` ✓ on the loader · `npm run build` ✓ (dist rebuilt).
 
 **Left to the release track:** CHANGELOG entry, plugin/addon version bump, POT regeneration (new translatable strings), and the manual mobile device matrix (Chrome Android, iOS Safari, Firefox) from §6.
+
+### 2026-10-18 follow-up — the composer fills the available space
+
+With the drag-resize divider in place, the fixed 3-line cap was redundant
+and made a manually resized composer feel broken: a tall composer kept a
+3-line field with dead space above it. The cap was removed and the field
+now takes up the space the divider allocates:
+
+- **Auto mode** (no manual height): the field sizes to its content — native
+  `field-sizing: content`, `useAutoGrowTextarea` fallback on older engines —
+  up to a viewport-based ceiling (`max-height: min( 60dvh, 600px )`, the same
+  bound `useComposerHeight` clamps to), then scrolls internally. No fixed
+  line count.
+- **Manual mode** (divider dragged / keyboard-resized): the panel root gets a
+  `nvoos-pro-spa-agent-panel--composer-resized` modifier; the composer
+  stretches the form (`align-items: stretch`) and the field fills it
+  (`field-sizing: fixed; height: 100%; max-height: none`), scrolling
+  internally past the resized area.
+- **Hook wiring:** `useAutoGrowTextarea` growth is enabled only while the
+  composer is auto-sized (`enabled = composerHeight === null`), and when it
+  goes dormant it clears any inline height it set earlier so the
+  stylesheet's `height: 100%` always wins.
+
+**Validation:** `npm run typecheck` ✓ · `npm test` ✓ (2 new tests in
+`composer-autogrow.test.tsx`) · `npm run lint:a11y` ✓ · `npm run build` ✓
+(dist rebuilt).

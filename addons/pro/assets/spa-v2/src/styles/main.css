@@ -767,7 +767,10 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	display: flex;
 	gap: 8px;
 	padding: 12px 20px;
-	align-items: flex-end;
+	/* Stretch the form so a manually resized composer height is filled
+	   edge to edge; in auto mode the composer height is content-driven
+	   and stretching the form is a no-op. */
+	align-items: stretch;
 	/* Resizable height (Proposal 080, Phase 2): auto = content height;
 	   a manual drag sets --nvoos-composer-height in px on the panel root. */
 	height: var( --nvoos-composer-height, auto );
@@ -802,13 +805,26 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	line-height: 1.5;
 	box-sizing: border-box;
 	min-height: 44px;
-	/* Auto-grow (Proposal 080, Phase 1): native content sizing where
-	   available; useAutoGrowTextarea covers older engines. The max-height
-	   caps growth at 3 lines (1.5em each) + padding + border, and
-	   overflow-y scrolls internally past that. */
+	/* Auto-grow (Proposal 080 follow-up): no fixed line cap. In auto
+	   mode the field sizes to its content (native field-sizing where
+	   available; useAutoGrowTextarea covers older engines) up to a
+	   viewport-based ceiling — the same bound the resize divider
+	   clamps to — then scrolls internally. The divider can always hand
+	   it more room (see the --composer-resized modifier below). */
 	field-sizing: content;
-	max-height: calc( 1.5em * 3 + 20px + 2px );
+	height: auto;
+	max-height: min( 60vh, 600px );
+	max-height: min( 60dvh, 600px );
 	overflow-y: auto;
+}
+
+/* Manual composer height (resize divider): the field stops sizing to
+   its content and fills the composer, scrolling internally past the
+   resized area. */
+.nvoos-pro-spa-agent-panel--composer-resized .nvoos-pro-spa-agent-panel__composer-input {
+	field-sizing: fixed;
+	height: 100%;
+	max-height: none;
 }
 
 .nvoos-pro-spa-agent-panel__composer-input:focus {
