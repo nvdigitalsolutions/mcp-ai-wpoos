@@ -183,7 +183,36 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 		// Always read the SOURCE backend (Drive/CSV), never the CPT itself.
 		$table = WP_MCP_AI_Fnb_Data_Source::get_table( $table_id, false );
 		if ( is_wp_error( $table ) ) {
-			return $this->map_source_error( $table_id, $table );
+			$native_count = 0;
+			$native       = WP_MCP_AI_Fnb_Data_Source::get_table( $table_id, true );
+			if ( ! is_wp_error( $native ) ) {
+				$native_count = (int) $native['count'];
+			}
+
+			// A native-backed table that is already populated and has no configured
+			// source has nothing to import. Returning this as a no-op keeps an
+			// assistant from treating a missing Drive tab as a hard failure (and
+			// stops it retrying a migration that isn't needed).
+			if ( $native_count > 0 && in_array( $table->get_error_code(), array( 'wp_mcp_ai_fnb_sheet_not_found', 'wp_mcp_ai_fnb_sheet_tab_missing', 'wp_mcp_ai_fnb_missing_fixture' ), true ) ) {
+				return array(
+					'success'      => true,
+					'dry_run'      => $dry_run,
+					'table_id'     => $table_id,
+					'post_type'    => $post_type,
+					'skipped'      => true,
+					'reason'       => 'native_storage_already_populated',
+					'native_count' => $native_count,
+					'message'      => sprintf(
+						/* translators: 1: table id, 2: row count */
+						__( 'No Drive/CSV source resolved for F&B table "%1$s", but native storage already holds %2$d row(s). Nothing to import; read it with fnb_read_table.', 'mcp-ai-wpoos-pro' ),
+						$table_id,
+						$native_count
+					),
+					'source'       => 'fnb_native_cpt',
+				);
+			}
+
+			return $this->map_source_error( $table_id, $table, $native_count );
 		}
 
 		$definition = WP_MCP_AI_Fnb_Data_Source::table_definition( $table_id );
@@ -275,22 +304,34 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 	 * cannot resolve within it, and (3) source found but columns are
 	 * unrecognised — so the operator sees the fix path, not generic jargon.
 	 *
-	 * @param string   $table_id Spec table ID.
-	 * @param WP_Error $error    Original reader error.
+	 * @param string   $table_id     Spec table ID.
+	 * @param WP_Error $error        Original reader error.
+	 * @param int      $native_count Rows already in native storage.
 	 * @return WP_Error
 	 */
-	private function map_source_error( $table_id, WP_Error $error ) {
+	private function map_source_error( $table_id, WP_Error $error, $native_count = 0 ) {
 		$code = $error->get_error_code();
 
-		// (1) Nothing configured to read from.
-		if ( in_array( $code, array( 'wp_mcp_ai_fnb_sheet_not_found', 'wp_mcp_ai_fnb_missing_fixture' ), true ) ) {
+		// (1) Nothing configured/available to read from. Distinguish an
+		// unconfigured source from a configured workbook that lacks this table.
+		if ( in_array( $code, array( 'wp_mcp_ai_fnb_sheet_not_found', 'wp_mcp_ai_fnb_sheet_tab_missing', 'wp_mcp_ai_fnb_missing_fixture' ), true ) ) {
+			$native_hint = '';
+			if ( WP_MCP_AI_Fnb_Cpt_Reader::is_native_table( $table_id ) ) {
+				$native_hint = ' ' . sprintf(
+					/* translators: %d: native row count */
+					__( 'This table is native-backed (currently %d row(s) in WordPress): enable "Native storage" on the F&B settings page to read it from WordPress, or configure a Drive/CSV source to import rows.', 'mcp-ai-wpoos-pro' ),
+					$native_count
+				);
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_fnb_import_no_source',
 				sprintf(
-					/* translators: 1: table id, 2: original error */
-					__( 'No source resolved for F&B table "%1$s". Configure a Drive workbook or data folder (data_workbook_id / data_folder_id / setup_folder_id) on the F&B settings page, or add a table_map entry. Original error: %2$s', 'mcp-ai-wpoos-pro' ),
+					/* translators: 1: table id, 2: original error, 3: native-storage hint */
+					__( 'No source resolved for F&B table "%1$s". Configure a Drive workbook or data folder (data_workbook_id / data_folder_id / setup_folder_id) on the F&B settings page, or add a table_map entry. Original error: %2$s%3$s', 'mcp-ai-wpoos-pro' ),
 					$table_id,
-					$error->get_error_message()
+					$error->get_error_message(),
+					$native_hint
 				)
 			);
 		}

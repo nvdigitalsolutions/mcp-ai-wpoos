@@ -82,6 +82,18 @@ class WP_MCP_AI_Fnb_Data_Source {
 		'expense amount'    => 'amount',
 		'budget'            => 'budget',
 		'budget lkr'        => 'budget',
+		// Menu costing (the Menu sheet carries precomputed recipe cost/margin).
+		'recipe cost'       => 'recipe_cost',
+		'recipe cost lkr'   => 'recipe_cost',
+		'gross margin'      => 'gross_margin',
+		'gross margin lkr'  => 'gross_margin',
+		'food or drink cost' => 'cost_pct',
+		'food or drink cost pct' => 'cost_pct',
+		'food cost pct'     => 'cost_pct',
+		'cost per portion'  => 'cost_per_portion',
+		'cost per portion lkr' => 'cost_per_portion',
+		'cost per portion at as of date' => 'cost_per_portion',
+		'cost per portion at as of date lkr' => 'cost_per_portion',
 		// Quantities.
 		'qty sold'          => 'qty_sold',
 		'quantity sold'     => 'qty_sold',
@@ -108,6 +120,9 @@ class WP_MCP_AI_Fnb_Data_Source {
 		'lunch covers'      => 'lunch_covers',
 		'dinner covers'     => 'dinner_covers',
 		'bar only guests'   => 'bar_only_guests',
+		'total covers'      => 'total_covers',
+		'cover count'       => 'total_covers',
+		'kwh per cover'     => 'kwh_per_cover',
 		'reason'            => 'reason',
 		'logged by'         => 'logged_by',
 		'notes'             => 'notes',
@@ -127,10 +142,13 @@ class WP_MCP_AI_Fnb_Data_Source {
 	private static $tables = array(
 		'1.0'         => array(
 			'label'     => 'Menu items',
-			'canonical' => array( 'item_id', 'menu', 'section', 'item', 'price', 'type', 'source' ),
+			'canonical' => array( 'item_id', 'menu', 'section', 'item', 'price', 'type', 'source', 'recipe_cost', 'gross_margin', 'cost_pct' ),
 			'aliases'   => array(
-				'item_id' => array( 'item_id' ),
-				'price'   => array( 'price', 'price_lkr' ),
+				'item_id'      => array( 'item_id' ),
+				'price'        => array( 'price', 'price_lkr' ),
+				'recipe_cost'  => array( 'recipe_cost', 'recipe_cost_lkr' ),
+				'gross_margin' => array( 'gross_margin', 'gross_margin_lkr' ),
+				'cost_pct'     => array( 'cost_pct', 'food_or_drink_cost' ),
 			),
 		),
 		'2.0'         => array(
@@ -140,7 +158,14 @@ class WP_MCP_AI_Fnb_Data_Source {
 				'item_id'          => array( 'item_id' ),
 				'ingredient_id'    => array( 'ingredient_id' ),
 				'qty_per_portion'  => array( 'qty_per_portion' ),
-				'cost_per_portion' => array( 'cost_per_portion' ),
+				'cost_per_portion' => array(
+					'cost_per_portion',
+					'cost_per_portion_lkr',
+					'cost_per_portion_at_as_of_date',
+					'cost_per_portion_at_as_of_date_lkr',
+					'recipe_cost',
+					'recipe_cost_lkr',
+				),
 			),
 		),
 		'3.0'         => array(
@@ -272,13 +297,14 @@ class WP_MCP_AI_Fnb_Data_Source {
 		),
 		'13.0'        => array(
 			'label'     => 'Utilities',
-			'canonical' => array( 'date', 'month', 'electricity_kwh', 'water_m3', 'lpg_cylinders' ),
+			'canonical' => array( 'date', 'month', 'electricity_kwh', 'water_m3', 'lpg_cylinders', 'total_covers' ),
 			'aliases'   => array(
 				'date'            => array( 'date' ),
 				'month'           => array( 'month' ),
 				'electricity_kwh' => array( 'electricity_kwh' ),
 				'water_m3'        => array( 'water_m3', 'water_m_' ),
 				'lpg_cylinders'   => array( 'lpg_cylinders', 'lpg_cylinders_changed' ),
+				'total_covers'    => array( 'total_covers' ),
 			),
 		),
 		'14.0'        => array(
@@ -436,6 +462,18 @@ class WP_MCP_AI_Fnb_Data_Source {
 			}
 		}
 
+		// Header-dictionary pass: operators' exports use vendor spellings and
+		// unit suffixes ("Cost per portion at as-of date (LKR)", "Recipe cost
+		// (LKR)"). Map each normalised header through HEADER_ALIASES and accept
+		// the first one whose canonical key is one of the candidates.
+		$wanted = array_flip( $candidates );
+		foreach ( $headers as $index => $header ) {
+			$alias = self::resolve_header_alias( $header );
+			if ( isset( $wanted[ $alias ] ) ) {
+				return $index;
+			}
+		}
+
 		return false;
 	}
 
@@ -564,7 +602,7 @@ class WP_MCP_AI_Fnb_Data_Source {
 
 		$raw = $reader->read_table( $table_id );
 		if ( is_wp_error( $raw ) ) {
-			return $raw;
+			return self::maybe_add_native_hint( $table_id, $raw, $use_native );
 		}
 
 		$columns = isset( $raw['columns'] ) && is_array( $raw['columns'] ) ? $raw['columns'] : array();
@@ -586,6 +624,39 @@ class WP_MCP_AI_Fnb_Data_Source {
 		set_transient( $cache_key, $out, self::CACHE_TTL );
 
 		return $out;
+	}
+
+	/**
+	 * Add an actionable native-storage hint to a source-read failure for one
+	 * of the five native-backed transactional tables.
+	 *
+	 * @param string   $table_id Spec table ID.
+	 * @param WP_Error $error    Original reader error.
+	 * @param bool     $use_native Whether the failed read used the native reader.
+	 * @return WP_Error
+	 */
+	private static function maybe_add_native_hint( $table_id, $error, $use_native ) {
+		if ( $use_native || ! ( $error instanceof WP_Error ) ) {
+			return $error;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Cpt_Reader' ) ) {
+			require_once __DIR__ . '/class-wp-mcp-ai-fnb-cpt-reader.php';
+		}
+
+		if ( ! WP_MCP_AI_Fnb_Cpt_Reader::is_native_table( $table_id ) || WP_MCP_AI_Fnb_Settings::is_native_storage_enabled() ) {
+			return $error;
+		}
+
+		return new WP_Error(
+			$error->get_error_code(),
+			$error->get_error_message() . ' ' . sprintf(
+				/* translators: %s: table id */
+				__( 'F&B table "%s" is backed by WordPress native storage; enable "Native storage" on the F&B settings page to read it from WordPress instead of Drive/CSV.', 'mcp-ai-wpoos-pro' ),
+				$table_id
+			),
+			$error->get_error_data()
+		);
 	}
 
 	/**

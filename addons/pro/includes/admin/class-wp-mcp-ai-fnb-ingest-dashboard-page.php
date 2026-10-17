@@ -273,7 +273,7 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 				<div class="fnb-ingest-grid">
 					<div class="fnb-ingest-card">
 						<h2><?php esc_html_e( 'Summary', 'mcp-ai-wpoos-pro' ); ?></h2>
-						<canvas id="fnb-ingest-summary-chart" height="120"></canvas>
+						<div class="fnb-ingest-chart-wrap"><canvas id="fnb-ingest-summary-chart"></canvas></div>
 					</div>
 					<div class="fnb-ingest-card">
 						<h2><?php esc_html_e( 'Mapping confidence', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -310,6 +310,9 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 			.fnb-ingest-card h2 { margin-top:0; }
 			.fnb-ingest-card ul { margin:0 0 0 18px; }
 			.fnb-ingest-card ul li { margin:2px 0; }
+			/* Chart.js with maintainAspectRatio:false needs a fixed-height parent. */
+			.fnb-ingest-chart-wrap { position:relative; height:180px; }
+			.fnb-ingest-chart-wrap canvas { display:block; width:100% !important; height:100% !important; }
 		';
 	}
 
@@ -347,7 +350,7 @@ class WP_MCP_AI_Fnb_Ingest_Dashboard_Page {
 			'					{ label: "Errors", data: [errors], backgroundColor: "#d63638" }',
 			'				]',
 			'			},',
-			'			options: { responsive: true, scales: { y: { beginAtZero: true } } }',
+			'			options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }',
 			'		});',
 			'		var mapping = data.mapping;',
 			'		var confEl = document.getElementById("fnb-ingest-confidence");',

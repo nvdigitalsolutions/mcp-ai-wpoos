@@ -74,6 +74,21 @@ and universalised in
   of this toolkit and off by default for the demo.
 - Table IDs follow the spec: 1.0…17.0 plus `assumptions`.
 
+## Metric Data Resolution
+
+- **M-21 recipe cost** resolves in order: (1) the Menu sheet's precomputed
+  `Recipe cost`, (2) the Recipes sheet's `Cost per portion at as-of date`
+  (tolerating currency/unit suffixes and header drift), then (3)
+  qty-per-portion × the latest supplier unit price. The returned
+  `recipe_cost_source` reports which path was used (`menu`, `recipes`,
+  `supplier_prices`, or `none`).
+- **Covers (M-02, and therefore M-03/M-06/M-09/M-11)** fall back to the
+  Utilities sheet's `Total covers` column, deduplicated by date, when the
+  daily-covers sheet is absent or carries no split cover columns.
+- **Native-backed tables (6.0, 8.0, 9.0, 10.0, 16.0)** distinguish a missing
+  worksheet from an unconfigured source, and point at the native-storage
+  toggle when the table can be read from WordPress instead of Drive/CSV.
+
 ## Native Storage (Phase 9)
 
 When `enable_fnb_native_storage` is on (F&B settings page), the five

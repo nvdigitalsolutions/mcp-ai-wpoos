@@ -396,14 +396,50 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 
 		return new WP_Error(
 			'wp_mcp_ai_fnb_sheet_not_found',
-			sprintf(
-				/* translators: 1: table id, 2: settings option name, 3: settings option name, 4: settings option name */
-				__( 'No Drive file found for F&B table "%1$s" in the configured folders, and no workbook is configured. Set one of the following on the F&B settings page (option "wp_mcp_ai_fnb_settings"): "%2$s" to the Demo Data workbook ID, or "%3$s"/"%4$s" to folders containing the exported sheets.', 'mcp-ai-wpoos-pro' ),
+			$this->missing_source_message( $table_id, $names )
+		);
+	}
+
+	/**
+	 * Build a source-aware "not found" message.
+	 *
+	 * Distinguishes a truly unconfigured source (no workbook/folders) from a
+	 * configured source that simply lacks this table's file — the previous
+	 * single message claimed "no workbook is configured" even when one was in
+	 * use, which sent operators down the wrong path.
+	 *
+	 * @param string            $table_id Spec table ID.
+	 * @param array<int,string> $names    Candidate sheet/file names.
+	 * @return string
+	 */
+	private function missing_source_message( $table_id, $names ) {
+		$folders     = $this->folders();
+		$workbook_id = trim( (string) WP_MCP_AI_Fnb_Settings::workbook_id() );
+		$looked_for  = implode( ', ', array_filter( array_map( 'strval', $names ) ) );
+
+		if ( empty( $folders ) && '' === $workbook_id ) {
+			return sprintf(
+				/* translators: 1: table id, 2: looked-for sheet names */
+				__( 'No Drive/CSV source is configured for F&B table "%1$s" (looked for: %2$s). Set "data_workbook_id", "data_folder_id" or "setup_folder_id" on the F&B settings page (option "wp_mcp_ai_fnb_settings"), or add a table_map entry.', 'mcp-ai-wpoos-pro' ),
 				$table_id,
-				'data_workbook_id',
-				'data_folder_id',
-				'setup_folder_id'
-			)
+				$looked_for
+			);
+		}
+
+		$where = array();
+		if ( '' !== $workbook_id ) {
+			$where[] = 'workbook ' . $workbook_id;
+		}
+		if ( ! empty( $folders ) ) {
+			$where[] = 'folder(s) ' . implode( ', ', $folders );
+		}
+
+		return sprintf(
+			/* translators: 1: table id, 2: looked-for sheet names, 3: configured source description */
+			__( 'No file or worksheet matching F&B table "%1$s" (looked for: %2$s) was found in the configured source: %3$s. If the tab/file has a different name, add a table_map entry for "%1$s"; otherwise export that table into the data folder.', 'mcp-ai-wpoos-pro' ),
+			$table_id,
+			$looked_for,
+			implode( '; ', $where )
 		);
 	}
 
@@ -423,7 +459,8 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	private function read_worksheet( $workbook, $table_id, $auth ) {
 		$names = $this->sheet_names( $table_id );
 
-		$tab = null;
+		$tab  = null;
+		$tabs = array();
 
 		// Try to discover the exact tab name from the spreadsheet metadata.
 		$metadata = WP_MCP_AI_Pro_Google_Drive_Client::get_sheets_metadata(
@@ -435,7 +472,6 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			return self::maybe_annotate_sheets_error( $metadata );
 		}
 		if ( isset( $metadata['sheets'] ) && is_array( $metadata['sheets'] ) ) {
-			$tabs = array();
 			foreach ( $metadata['sheets'] as $sheet ) {
 				if ( isset( $sheet['properties']['title'] ) ) {
 					$title          = (string) $sheet['properties']['title'];
@@ -471,8 +507,34 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			}
 		}
 
-		// No exact tab discovered — use the canonical sheet name directly and
-		// let the API 400/404 out with a clear error if it doesn't exist.
+		// The workbook was read but has no matching tab. Return a precise error
+		// (including the available tabs); read_table() still tries the split-file
+		// layout and surfaces this error if that also fails.
+		if ( null === $tab && ! empty( $tabs ) ) {
+			$workbook_label = isset( $workbook['name'] ) && '' !== (string) $workbook['name']
+				? (string) $workbook['name']
+				: (string) $workbook['id'];
+
+			return new WP_Error(
+				'wp_mcp_ai_fnb_sheet_tab_missing',
+				sprintf(
+					/* translators: 1: workbook name/ID, 2: table id, 3: looked-for sheet names, 4: available worksheet names */
+					__( 'The configured workbook "%1$s" has no worksheet for F&B table "%2$s" (looked for: %3$s). Available worksheets: %4$s. If the data uses a different tab name, add a table_map entry for "%2$s" with a "sheet" hint, or export that table as its own file in the data folder.', 'mcp-ai-wpoos-pro' ),
+					$workbook_label,
+					$table_id,
+					implode( ', ', $names ),
+					implode( ', ', array_keys( $tabs ) )
+				),
+				array(
+					'status'         => 404,
+					'workbook'       => $workbook_label,
+					'available_tabs' => array_keys( $tabs ),
+				)
+			);
+		}
+
+		// No metadata/tab list available — use the canonical sheet name directly
+		// and let the API 400/404 out with a clear error if it doesn't exist.
 		if ( null === $tab ) {
 			$tab = isset( $names[0] ) ? $names[0] : '';
 			if ( '' === $tab ) {
@@ -744,6 +806,8 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			return $auth;
 		}
 
+		$worksheet_error = null;
+
 		// Preferred path: a single workbook whose tabs hold the tables. This
 		// matches the common real-world layout (one spreadsheet per client).
 		$workbook = $this->locate_workbook( $auth );
@@ -757,21 +821,24 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 
 			// A worksheet-level error (e.g. the tab doesn't exist in this workbook)
 			// should fall through to the split-file layout only when it indicates
-			// the workbook isn't the right source — i.e. an HTTP 4xx (unknown tab
-			// / no values) or an explicit "nothing here" error. Anything else
-			// (auth, network, 5xx) is a real failure worth surfacing immediately.
-			// A Sheets-scope denial is NOT a "wrong source" signal: it will block
-			// the fallback too, so surface it straight away.
+			// the workbook isn't the right source — i.e. an explicit missing tab or
+			// an HTTP 4xx (unknown tab / no values). Anything else (auth, network,
+			// 5xx) is a real failure worth surfacing immediately. A Sheets-scope
+			// denial is NOT a "wrong source" signal: it will block the fallback
+			// too, so surface it straight away.
 			if ( 'wp_mcp_ai_fnb_sheets_scope' === $result->get_error_code() ) {
 				return $result;
 			}
 
 			$error_data = $result->get_error_data();
 			$status     = is_array( $error_data ) && isset( $error_data['status'] ) ? (int) $error_data['status'] : 0;
-			$not_found  = ( 'wp_mcp_ai_drive_http_status' === $result->get_error_code() && $status >= 400 && $status < 500 );
+			$not_found  = ( 'wp_mcp_ai_fnb_sheet_tab_missing' === $result->get_error_code() )
+				|| ( 'wp_mcp_ai_drive_http_status' === $result->get_error_code() && $status >= 400 && $status < 500 );
 			if ( ! $not_found ) {
 				return $result;
 			}
+
+			$worksheet_error = $result;
 		} elseif ( $this->workbook_error instanceof WP_Error ) {
 			// The explicit (or demo) workbook ID could not be read — surface the
 			// real failure (auth/scope/400/404) rather than masking it as a
@@ -783,7 +850,9 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 		// Fallback: one file per table (original demo layout).
 		$file = $this->locate_split_file( $table_id, $auth );
 		if ( is_wp_error( $file ) ) {
-			return $file;
+			// Prefer the precise "worksheet missing from the workbook" error when
+			// the workbook itself was read successfully.
+			return $worksheet_error instanceof WP_Error ? $worksheet_error : $file;
 		}
 
 		$csv = $this->export_csv( $file['id'], $auth );

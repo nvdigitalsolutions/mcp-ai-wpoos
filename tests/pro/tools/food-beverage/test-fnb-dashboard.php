@@ -64,5 +64,10 @@ class Test_Fnb_Dashboard extends WP_UnitTestCase {
 		$this->assertIsString( $html );
 		// The analytics section renders when the fixture month resolves.
 		$this->assertStringContainsString( 'Latest analytics', $html );
+
+		// Chart.js canvases must sit inside fixed-height wrappers (the
+		// maintainAspectRatio:false resize loop otherwise grows them forever).
+		$this->assertStringContainsString( 'fnb-chart-wrap', $html );
+		$this->assertStringNotContainsString( 'height="120"', $html );
 	}
 }
