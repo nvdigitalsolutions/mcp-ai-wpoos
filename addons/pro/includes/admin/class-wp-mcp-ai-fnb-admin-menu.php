@@ -61,6 +61,7 @@ class WP_MCP_AI_Fnb_Admin_Menu {
 		}
 		add_action( 'admin_menu', array( __CLASS__, 'register_parent_menu' ), 25 );
 		add_action( 'admin_menu', array( __CLASS__, 'register_submenus' ), 28 );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_dashboard_assets' ) );
 		self::$registered = true;
 	}
 
@@ -151,5 +152,49 @@ class WP_MCP_AI_Fnb_Admin_Menu {
 	 */
 	public static function get_dashboard_hook() {
 		return self::$dashboard_hook;
+	}
+
+	/**
+	 * Enqueue Chart.js and the F&B trend-chart payload + initialiser on the
+	 * dashboard page only. Mirrors the Chat Channels dashboard enqueue pattern:
+	 * register the shared `wp-mcp-ai-chartjs` handle, emit the data as an inline
+	 * "before" block, then the chart initialiser as a default (after) block so
+	 * it always runs once Chart.js has loaded in the footer.
+	 *
+	 * @param string $hook Current admin page hook.
+	 * @return void
+	 */
+	public static function enqueue_dashboard_assets( $hook ) {
+		if ( null === self::$dashboard_hook || self::$dashboard_hook !== $hook ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Dashboard_Page' ) || ! class_exists( 'WP_MCP_AI_Fnb_Metrics' ) ) {
+			return;
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+			WP_MCP_AI_Chart_JS_Helper::register_chart_js();
+		} else {
+			// Fallback: register from the base-plugin vendor path directly.
+			$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
+			$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
+			if ( file_exists( $chart_js_path ) ) {
+				wp_register_script( 'wp-mcp-ai-chartjs', $chart_js_url, array(), (string) filemtime( $chart_js_path ), true );
+			}
+		}
+		wp_enqueue_script( 'wp-mcp-ai-chartjs' );
+
+		$payload = WP_MCP_AI_Fnb_Dashboard_Page::trend_payload();
+		if ( null === $payload ) {
+			return;
+		}
+
+		wp_add_inline_script(
+			'wp-mcp-ai-chartjs',
+			'var wpMcpAiFnbTrends = ' . wp_json_encode( $payload ) . ';',
+			'before'
+		);
+		wp_add_inline_script( 'wp-mcp-ai-chartjs', WP_MCP_AI_Fnb_Dashboard_Page::trend_init_script() );
 	}
 }

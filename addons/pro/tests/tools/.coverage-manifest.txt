@@ -54,7 +54,11 @@ wp-mcp-ai-fnb-data-source
 wp-mcp-ai-fnb-draft-writer
 wp-mcp-ai-fnb-fixture-reader
 wp-mcp-ai-fnb-google-sheets-reader
+wp-mcp-ai-fnb-ingest-quality
+wp-mcp-ai-fnb-ingest-retention
+wp-mcp-ai-fnb-loader
 wp-mcp-ai-fnb-metrics
+wp-mcp-ai-fnb-observation
 wp-mcp-ai-fnb-pr-gates
 wp-mcp-ai-fnb-pr-service
 wp-mcp-ai-fnb-purchase-cpt
@@ -63,6 +67,7 @@ wp-mcp-ai-fnb-report-exporter
 wp-mcp-ai-fnb-sale-cpt
 wp-mcp-ai-fnb-settings
 wp-mcp-ai-fnb-stock-count-cpt
+wp-mcp-ai-fnb-structure-matcher
 wp-mcp-ai-fnb-table-reader
 wp-mcp-ai-fnb-tenant-profile
 wp-mcp-ai-fnb-tool-base
