@@ -5,7 +5,7 @@ description: Repair and triage guide for the NV oOS PHPUnit test suite — Docke
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-11"
+  last-updated: "2026-10-17"
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
 ---
@@ -66,6 +66,15 @@ Rules:
   them. A suite skipped locally can still fail in CI — and vice versa.
 - `phpcbf` can auto-fix (e.g. array alignment): run it inside the container,
   it edits the bind-mounted file directly.
+- **PHPUnit 11 directory args can execute zero tests.** Passing a directory
+  whose files are named `test-*.php` to the root `phpunit.xml.dist` uses
+  PHPUnit's default suffix, not the suite's configured suffix, and prints
+  `No tests executed!`. Pass the shell-expanded files
+  (`tests/<area>/test-*.php`) or add `--test-suffix .php`.
+- **Fresh `oos-wp` with an empty core volume.** If the container is healthy but
+  `/var/www/html/wp-load.php` is missing (the bind-mounted plugin creates
+  `wp-content/` before core is copied), seed the shared volume:
+  `docker run --rm -v oos-wp_wp_core:/var/www/html wordpress:6.9-php8.3-apache sh -c 'cp -a /usr/src/wordpress/. /var/www/html/ && chown -R www-data:www-data /var/www/html'`.
 
 ### Cross-worktree runs (when `oos-wp` mounts a different worktree)
 
@@ -84,7 +93,15 @@ sharing the WP-core volume, with your worktree mounted over the plugin path:
 #    breaks inside Linux — classmap paths with backslashes →
 #    'Class "PHPUnit\\TextUI\\Application" not found').
 #    REUSE an existing complete volume when present (docker volume ls):
-#    mcp-ai-wpoos-vendor ships with PHPUnit + wp-phpunit and needs no build.
+#    mcp-ai-wpoos-vendor / mcp-ai-wpoos-alpha-vendor ship with PHPUnit +
+#    wp-phpunit and need no build.
+#
+#    Session note (2026-10-17): the main checkout may have no vendor/ at all;
+#    `docker exec oos-wp ... vendor/bin/phpunit` then fails with
+#    "Could not open input file: vendor/bin/phpunit". Use the one-off runner
+#    and mount the existing `mcp-ai-wpoos-alpha-vendor` volume over the
+#    plugin's vendor/. Pass explicit test files, not a directory (see the
+#    PHPUnit 11 suffix trap above).
 docker volume create <worktree>-vendor
 MSYS_NO_PATHCONV=1 docker run --rm \
   -v F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/mcp-ai-wpoos:/app:ro \
@@ -298,6 +315,23 @@ with only warnings/deprecations/skips is a pass.
    Open PRs with `gh pr create` from the terminal — the GitHub-MCP
    `create_pull_request` tool can fail with "Bad credentials" while the
    `gh` CLI (keyring-authenticated) works.
+
+### Creating a PR without `gh`
+
+`gh` is not installed on every Windows host. When it is absent:
+
+1. If `git commit` reports "Author identity unknown", set a repo-local
+   identity. The credential helper reveals the login without printing the
+   secret: `printf "protocol=https\nhost=github.com\n\n" | git credential fill | grep "^username="`.
+   Then `git config user.name <login>` and
+   `git config user.email <login>@users.noreply.github.com`.
+2. POST to the GitHub API from a small script (not an inline command) that
+   reads the token via `git credential fill` and sends
+   `POST /repos/nvdigitalsolutions/mcp-ai-wpoos/pulls` with `head`,
+   `base: "alpha-working"`, `title`, and `body`. Never echo the token; write
+   the JSON body to a temporary file and pass `--data @file`.
+3. Delete the temporary script/body after the 201 response, then verify with
+   `GET /repos/.../pulls/<number>` (`base.ref`, `head.ref`, `mergeable`).
 
 ### Watching CI checks
 

@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-audit
-description: "Per-toolkit hardening audit loop for NV oOS Pro tools. Systematically scans each addons/pro/includes/tools/<toolkit> (and its plugins/nvoos-content-graph-pro mirror) for the four recurring production failure classes — unguarded shell calls that fatal on exec-disabled hosts, calls to nonexistent client methods, string-assuming parsing of provider responses that may be arrays, and provider enum/service mismatches — then fixes, tests (Docker PHPUnit), and validates (phpcs both standards) before moving to the next toolkit. Use when asked to audit a toolkit, review the X tools for similar issues, do the same for the other toolkits, or continue the toolkit audit loop. The first case study (document-generation) found 3 fatal bugs + 1 broken regex."
+description: "Per-toolkit hardening audit loop for NV oOS Pro tools. Systematically scans each addons/pro/includes/tools/<toolkit> (and its plugins/nvoos-content-graph-pro mirror) for the recurring production failure classes — unguarded shell calls that fatal on exec-disabled hosts, calls to nonexistent client methods, string-assuming parsing of provider responses that may be arrays, provider enum/service mismatches, metric/source column drift that silently returns 0, secondary-table denominator gaps, the Chart.js fixed-height loop, misleading native-source errors, and silent import truncation that reports partial writes as success — then fixes, tests (Docker PHPUnit), and validates (phpcs both standards) before moving to the next toolkit. Use when asked to audit a toolkit, review the X tools for similar issues, do the same for the other toolkits, or continue the toolkit audit loop. The first case study (document-generation) found 3 fatal bugs + 1 broken regex; the food-beverage pass added classes 5–9."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.94"
   plugin-version-tested: "1.1.94"
-  last-updated: "2026-10-04"
+  last-updated: "2026-10-17"
 ---
 
 # NV oOS Toolkit Hardening Audit Loop
@@ -26,7 +26,7 @@ own reviewable cluster. First completed cluster: **document-generation**
   the whole toolkit (and its CG Pro mirror) for the same class of bug
 - Before opening a fix cluster PR touching a whole toolkit folder
 
-## The four failure classes (scan for all four, every toolkit)
+## The failure classes (scan for all, every toolkit)
 
 1. **Unguarded shell calls — fatal on exec-disabled hosts.** On PHP 8+,
    calling a function listed in `disable_functions` throws a fatal `Error`
@@ -72,6 +72,55 @@ own reviewable cluster. First completed cluster: **document-generation**
    calls. For every `'enum'` list in a toolkit's schemas, diff it against the
    service/client switch or registry it feeds.
 
+5. **Metric/source column drift — silent zero values.** A metric engine that
+   reads a derived table (e.g. Recipes `cost_per_portion`) can return 0 while
+   the source sheet already carries the answer (Menu `Recipe cost (LKR)`).
+   Header normalisation strips units/currency (`Cost per portion at as-of date
+   (LKR)` → `cost_per_portion_at_as_of_date_lkr`), and `resolve_column()` may
+   only do exact canonical/alias matching — verify that it actually feeds
+   `HEADER_ALIASES` through `resolve_header_alias()`. Resolution order should
+   prefer the precomputed source column, then the derived table, then recompute
+   from supplier prices, and report which path was used. Cross-check one known
+   row against the sheet's precomputed values (F&B: F-35 cost 1,762 / margin
+   3,938); a generic oracle that only checks aggregate totals can miss this.
+
+6. **Secondary-table denominators — per-cover metrics read 0.** The denominator
+   may live in a different sheet from the numerator (F&B: covers on Utilities
+   `Total covers`, not only Daily covers). Add a fallback that deduplicates by
+   date (multiple meter rows per day), falls back to the `month` column when
+   the date cell doesn't parse, and records the source used. In F&B, M-02
+   returned 0 and M-03/M-06/M-09/M-11 inherited it.
+
+7. **Chart.js height loop on admin pages.** `responsive:true` +
+   `maintainAspectRatio:false` on a canvas inside an auto-height card causes
+   the resize feedback loop (the chart grows without bound). Every canvas must
+   sit in a fixed-height wrapper (`position:relative; height:220px`) with
+   `canvas { display:block; width:100%; height:100% }`. Add a render test that
+   asserts the wrapper exists and no bare `height="120"` canvas remains.
+
+8. **Native-backed source errors.** A single-workbook reader that lacks the
+   table's tab falls through to the split-file path; the generic "no workbook
+   is configured" message is wrong when a workbook *was* used. Return a
+   distinct `sheet_tab_missing` error listing the available tabs, add a
+   native-storage hint for the transactional tables
+   (6.0/8.0/9.0/10.0/16.0), and make the import tool a `skipped` no-op when the
+   CPT is already populated.
+
+9. **Silent import truncation — partial writes reported as `success`.** An
+   ACT-tier import bridge with a `limit` **default** (F&B: 500, hard cap 5,000)
+   writes only the head of a larger source and still returns `success: true`.
+   The reader then serves only those rows (F&B: January), so every later-month
+   metric returns 0 even though the source workbook is intact. Audit all four
+   layers: the schema default, the `array_slice()` offset, every admin/AJAX
+   caller that omits the limit, and the read-cache invalidation after a write.
+   The contract is **complete-by-default**: `limit=0` imports every remaining
+   row (capped by the reader's `MAX_ROWS`), responses expose `source_total`,
+   `offset`, `next_offset`, `has_more`, `complete`, and `native_count`, the
+   admin UI auto-loops 500-row batches, and a successful write deletes both
+   the native and source table transients. Verify with a dry-run that
+   `summary.total === source_total`, then with a real import that
+   `native_count === source_total` and a row from the newest month is readable.
+
 ## Scan procedure
 
 Use the grep tool with the **full project-rooted glob** — a bare
@@ -98,6 +147,15 @@ wp_mcp_ai_[a-z_]+\(   (then verify each global helper has a function definition 
 Note: the class-3 grep must include BOTH `choices[0]` and `choices'][0]`
 spellings — the crm toolkit wrote `$result['choices'][0]['message']['content']`
 and a `choices\[0\]`-only scan produced a false negative.
+
+Extra scans for data/UI-heavy toolkits (classes 5–9):
+
+```text
+recipe_cost|gross_margin|cost_per_portion|total_covers|resolve_column
+<canvas|maintainAspectRatio|responsive:true
+sheet_tab_missing|sheet_not_found|native storage|native_storage
+array_slice|numberposts|posts_per_page|limit.*default|has_more|next_offset
+```
 
 Then read every hit. Do not trust "No matches found" until the glob is the
 rooted `**/*.php` form. Tools in a toolkit delegate to services under

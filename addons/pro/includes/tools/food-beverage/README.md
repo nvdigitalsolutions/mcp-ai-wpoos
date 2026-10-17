@@ -107,6 +107,12 @@ Rows are upserted by `fnb_import_table` (ACT-tier: `manage_options`, default
  **F&B Management** admin menu. Before/after hooks fire per write:
  `wp_mcp_ai_fnb_before_<type>_log` / `wp_mcp_ai_fnb_after_<type>_log`.
 
+`fnb_import_table` imports the **whole source table by default** — it no
+longer stops at 500 rows. Large tables can be paged with `offset` + `limit`;
+the response returns `source_total`, `has_more`, `complete` and `next_offset`
+so a partial import is always visible and resumable. The Ingest & Preview
+dashboard loops those batches automatically (500 rows per request).
+
 ## Data Ingestion (Open Format + Flexible Mapping)
 
 Ingestion resolves *what a file is* from its **structure** (headers), not just

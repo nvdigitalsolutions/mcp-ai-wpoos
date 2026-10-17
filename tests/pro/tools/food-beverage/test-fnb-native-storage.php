@@ -323,6 +323,10 @@ class Test_Fnb_Native_Storage extends WP_UnitTestCase {
 		$this->assertTrue( $first['success'] );
 		$this->assertSame( 3, $first['summary']['inserted'] );
 		$this->assertSame( 0, $first['summary']['updated'] );
+		$this->assertSame( 0, $first['offset'] );
+		$this->assertSame( 3, $first['next_offset'] );
+		$this->assertTrue( $first['has_more'], 'A limited import must report that the source has more rows.' );
+		$this->assertSame( 3, $first['native_count'] );
 
 		$second = $tool->execute(
 			array(
@@ -336,6 +340,58 @@ class Test_Fnb_Native_Storage extends WP_UnitTestCase {
 		$this->assertSame( 3, $second['summary']['updated'] );
 
 		$this->assertSame( 3, (int) wp_count_posts( 'mcp_ai_fnb_sale' )->publish, 'Re-import must not duplicate rows.' );
+	}
+
+	/**
+	 * Test: the import defaults to the whole source and reports resumable offset
+	 * metadata instead of silently truncating at 500 rows.
+	 */
+	public function test_import_defaults_to_full_source_and_reports_offset() {
+		$tool_file = $this->toolkit_dir . '/class-wp-mcp-ai-tool-fnb-import-table.php';
+		if ( ! file_exists( $tool_file ) ) {
+			$this->markTestSkipped( 'F&B import tool not available' );
+		}
+		require_once $tool_file;
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Fnb_Import_Table' ) ) {
+			$this->markTestSkipped( 'F&B import tool not available' );
+		}
+
+		$this->enable_native_storage();
+		WP_MCP_AI_Fnb_Booking_CPT::register();
+
+		$tool = new WP_MCP_AI_Tool_Fnb_Import_Table();
+
+		// Omitting limit imports every row of the (small) bookings fixture.
+		$all = $tool->execute(
+			array(
+				'table_id' => '16.0',
+				'dry_run'  => true,
+			),
+			array()
+		);
+		$this->assertTrue( $all['success'] );
+		$this->assertSame( $all['source_total'], $all['summary']['total'], 'The default must not silently truncate at 500 rows.' );
+		$this->assertFalse( $all['has_more'] );
+		$this->assertTrue( $all['complete'] );
+		$this->assertNull( $all['next_offset'] );
+
+		// A limited call exposes where the next batch should resume.
+		$batch = $tool->execute(
+			array(
+				'table_id' => '16.0',
+				'dry_run'  => true,
+				'limit'    => 2,
+				'offset'   => 2,
+			),
+			array()
+		);
+		$this->assertTrue( $batch['success'] );
+		$this->assertSame( 2, $batch['summary']['total'] );
+		$this->assertSame( 2, $batch['offset'] );
+		$this->assertSame( 4, $batch['next_offset'] );
+		$this->assertTrue( $batch['has_more'] );
+		$this->assertFalse( $batch['complete'] );
+		$this->assertGreaterThan( 4, $batch['source_total'] );
 	}
 
 	/**
