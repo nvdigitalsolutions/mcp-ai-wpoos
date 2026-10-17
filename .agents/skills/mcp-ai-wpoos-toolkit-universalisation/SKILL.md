@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-16"
+  last-updated: "2026-10-17"
 ---
 
 # NV oOS Pro Toolkit Universalisation Loop
@@ -138,10 +138,22 @@ patterns worth porting to any data-heavy toolkit:
   string → canonical key) covering vendor variants, abbreviations, and
   unit-suffixed spellings (`'inv no' => 'invoice'`, `'quantity sold' =>
   'qty_sold'`, `'sales' => 'revenue'`). Expose it via `resolve_header_alias()`
-  and feed both `resolve_column()` and the ingestor's scoring. (Model on vitals
-  `CSV_COLUMN_MAP` / `LOINC_MAP`.)
+  and feed both `resolve_column()` and the ingestor's scoring — then **verify
+  the metric engine actually calls it**. The F&B run shipped the dictionary
+  but `resolve_column()` only did exact canonical/alias matching, so
+  `Cost per portion at as-of date (LKR)` still resolved to nothing and M-21
+  returned recipe cost 0. Add a unit test that asserts one drifted header
+  resolves. (Model on vitals `CSV_COLUMN_MAP` / `LOINC_MAP`.)
 - **`dry_run` + `sample_rows` + JSON import** — preview before commit; accept
   `format = csv|json` and parse JSON arrays-of-records.
+- **Complete-by-default import with offset batching** — never ship a fixed
+  default row cap. The F&B bridge defaulted to `limit = 500` (hard cap 5,000)
+  against a 15,405-row workbook, so only January was written while the import
+  returned `success: true`; every later-month metric then read 0. Omit `limit`
+  → all rows (capped by the reader's `MAX_ROWS`), accept `offset`, return
+  `source_total` / `next_offset` / `has_more` / `complete` / `native_count`,
+  have the admin AJAX loop 500-row batches, and delete the table-read
+  transients after a successful write.
 - **Benchmark/threshold registry** — a `WP_MCP_AI_<Slug>_Benchmarks` class with
   a filterable `ranges()` table + `flag_threshold()` → `low|high|in_range|
   unknown`, modeled on `WP_MCP_AI_Healthcare_Engine::reference_ranges()` /
@@ -214,6 +226,15 @@ assistants. Root causes to eliminate:
   present, allowlists match.
 - **Oracle** (`smoke-run.php` / metrics-oracle test) — numbers byte-identical
   after the currency rename (the critical regression gate).
+- **Known-row data-resolution checks** — assert one hard-coded item total from
+  the source sheet (F&B: F-35 recipe cost 1,762 / margin 3,938) and one
+  aggregate from a secondary table (F&B: 2026-09 covers 2,441 from Utilities
+  `Total covers`). This catches precomputed-vs-derived column drift and
+  missing secondary-table fallbacks that an aggregate-only oracle misses.
+- **Full-period import check** — after importing the largest transactional
+  sheet, assert `native_count === source_total` and query a row from the newest
+  month (F&B: September). A partial import passes any January/aggregate-only
+  check and silently zeros every later period.
 - Full `<toolkit>` PHPUnit cluster in Docker (see `mcp-ai-wpoos-test-suite` →
   cross-worktree runner; the `oos-wp` container often mounts a *different*
   worktree than the one you are editing).
@@ -231,5 +252,18 @@ assistants. Root causes to eliminate:
   aliases, and a `WP_MCP_AI_Fnb_Benchmarks` threshold registry.
 - **Result**: 56 tests / 607 assertions green; 20/20 oracle; pack validator
   green; full cluster validated on the Docker cross-worktree runner.
+- **Post-universalisation data-resolution fixes** (2026-10-17): M-21 returned
+  recipe cost 0 because the Recipes header drift never resolved and the Menu
+  precomputed `Recipe cost` was ignored; per-cover metrics returned 0 because
+  covers lived on Utilities `Total covers`, not only Daily covers. Fixed with
+  Menu → Recipes → supplier-price resolution, the header-dictionary pass, and
+  a date-deduplicated 13.0 fallback; added `test-fnb-data-resolution.php`
+  (8 tests). Cluster is now 99 tests / 725 assertions.
+- **Full-import truncation fix** (2026-10-17): `fnb_import_table` defaulted to
+  500 rows (hard cap 5,000) against a 15,405-row Daily sales source, so the
+  native CPT held only January and every September metric read 0. Import is
+  now complete-by-default with `offset` batching; the Ingest & Preview
+  dashboard loops 500-row batches with progress; writes invalidate the table
+  transients. Regression tests in `test-fnb-native-storage.php`.
 - Docs: `docs/project/proposals/078-fnb-toolkit-universalisation-proposal.md`
   + `-implementation-plan.md`.

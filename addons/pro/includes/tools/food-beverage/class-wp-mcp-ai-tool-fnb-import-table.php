@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 			'when_to_use'     => __( 'Migrating transactional F&B data into native storage so it can be edited in wp-admin and read without Drive access.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Reading or analysing data — use fnb_read_table / fnb_calculate_metric. Importing reference tables (1.0–5.0, 7.0, 11.0–15.0, 17.0) which are not native-backed.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'fnb_read_table', 'fnb_search_table', 'fnb_audit_log' ),
-			'notes'           => __( 'Rows are keyed on the spec idempotency columns per table, so re-imports update in place. Dry-run returns a preview without writing.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Rows are keyed on the spec idempotency columns per table, so re-imports update in place. Dry-run returns a preview without writing. Omit limit to import the whole table; when the response returns has_more=true, call again with offset=next_offset until complete=true.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -91,8 +91,15 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 				),
 				'limit'    => array(
 					'type'        => 'integer',
-					'default'     => 500,
-					'description' => __( 'Maximum rows to import (default 500, hard cap 5000).', 'mcp-ai-wpoos-pro' ),
+					'default'     => 0,
+					'minimum'     => 0,
+					'description' => __( 'Maximum rows to import in this call. 0 (default) imports every remaining row, up to the 25,000-row native-reader safety cap. Use offset to page through a large table in batches.', 'mcp-ai-wpoos-pro' ),
+				),
+				'offset'   => array(
+					'type'        => 'integer',
+					'default'     => 0,
+					'minimum'     => 0,
+					'description' => __( 'Zero-based source row to start from. The response returns next_offset when the call ends before the table is exhausted.', 'mcp-ai-wpoos-pro' ),
 				),
 				'format'   => array(
 					'type'        => 'string',
@@ -151,12 +158,14 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 
 		$table_id = isset( $arguments['table_id'] ) ? sanitize_text_field( (string) $arguments['table_id'] ) : '';
 		$dry_run  = ! empty( $arguments['dry_run'] );
-		$limit    = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 500;
+		$limit    = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 0;
+		$offset   = isset( $arguments['offset'] ) ? absint( $arguments['offset'] ) : 0;
 		$format   = isset( $arguments['format'] ) ? sanitize_key( (string) $arguments['format'] ) : '';
-		if ( $limit < 1 ) {
-			$limit = 500;
-		}
-		$limit = min( $limit, 5000 );
+
+		// Never silently truncate: 0 means "all remaining rows". The cap matches
+		// the native reader's MAX_ROWS so an import can never write more rows
+		// than a subsequent read can see.
+		$limit = min( $limit, WP_MCP_AI_Fnb_Cpt_Reader::MAX_ROWS );
 
 		if ( ! WP_MCP_AI_Fnb_Cpt_Reader::is_native_table( $table_id ) ) {
 			return new WP_Error(
@@ -225,7 +234,12 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 			$mapping = WP_MCP_AI_Fnb_Structure_Matcher::match_table( $table_id, $table['columns'] );
 		}
 
-		$source_rows   = array_slice( $table['rows'], 0, $limit );
+		$source_total  = count( $table['rows'] );
+		$source_rows   = 0 === $limit
+			? array_slice( $table['rows'], $offset )
+			: array_slice( $table['rows'], $offset, $limit );
+		$next_offset   = $offset + count( $source_rows );
+		$has_more      = $next_offset < $source_total;
 		$preview       = array();
 		$rows_to_write = array();
 		foreach ( $source_rows as $index => $source_row ) {
@@ -248,18 +262,42 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 
 		$flags = WP_MCP_AI_Fnb_Ingest_Quality::generate_flags( $table_id, $rows_to_write );
 
+		$batch = array(
+			'offset'       => $offset,
+			'next_offset'  => $has_more ? $next_offset : null,
+			'has_more'     => $has_more,
+			'complete'     => ! $has_more,
+			'source_total' => $source_total,
+			'message'      => $has_more
+				? sprintf(
+					/* translators: 1: rows processed in this call, 2: total source rows, 3: next offset */
+					__( 'Processed %1$d of %2$d source rows. Call again with offset=%3$d to continue.', 'mcp-ai-wpoos-pro' ),
+					count( $source_rows ),
+					$source_total,
+					$next_offset
+				)
+				: sprintf(
+					/* translators: %d: total source rows */
+					__( 'Processed all %d source rows.', 'mcp-ai-wpoos-pro' ),
+					$source_total
+				),
+		);
+
 		if ( $dry_run ) {
-			return array(
-				'success'   => true,
-				'dry_run'   => true,
-				'table_id'  => $table_id,
-				'post_type' => $post_type,
-				'preview'   => $preview,
-				'summary'   => $summary,
-				'format'    => $format,
-				'mapping'   => $mapping,
-				'flags'     => $flags,
-				'source'    => $table['source'],
+			return array_merge(
+				array(
+					'success'   => true,
+					'dry_run'   => true,
+					'table_id'  => $table_id,
+					'post_type' => $post_type,
+					'preview'   => $preview,
+					'summary'   => $summary,
+					'format'    => $format,
+					'mapping'   => $mapping,
+					'flags'     => $flags,
+					'source'    => $table['source'],
+				),
+				$batch
 			);
 		}
 
@@ -285,15 +323,27 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 			}
 		}
 
-		return array(
-			'success'       => true,
-			'dry_run'       => false,
-			'table_id'      => $table_id,
-			'post_type'     => $post_type,
-			'summary'       => $summary,
-			'error_samples' => $error_samples,
-			'flags'         => $flags,
-			'source'        => $table['source'],
+		// The native reader caches for 5 minutes; invalidate it now so a
+		// follow-up read/metric sees the rows that were just imported instead
+		// of a stale partial table.
+		delete_transient( 'fnb_table_' . md5( $table_id . ':cpt' ) );
+		delete_transient( 'fnb_table_' . md5( $table_id ) );
+
+		$native_count = (int) wp_count_posts( $post_type )->publish;
+
+		return array_merge(
+			array(
+				'success'       => true,
+				'dry_run'       => false,
+				'table_id'      => $table_id,
+				'post_type'     => $post_type,
+				'summary'       => $summary,
+				'error_samples' => $error_samples,
+				'flags'         => $flags,
+				'source'        => $table['source'],
+				'native_count'  => $native_count,
+			),
+			$batch
 		);
 	}
 

@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-ingestion
-description: "Open-format data ingestion for NV oOS Pro toolkits — the reusable pattern behind the F&B data-ingestion track (Proposal 078). Covers structural (header) matching over filename mapping, the configurable table_map + header-matcher + name-guess resolution order and the slug-first regression, the multi-format loader (CSV/TSV/JSON/JSONL/XLSX/ODS/PDF/photo), the Observation + terminology-map layer (vitals/FHIR analogue) with raw preservation, dedupe/retention/out-of-band banding, and the read-only ingest-review dashboard anatomy (edit_posts review vs manage_options write, dry-run-first). Use when adding or extending data ingestion to a toolkit, ingesting heterogeneous owner files, wiring XLSX/PDF/photo imports, or building an ingest/review dashboard."
+description: "Open-format data ingestion for NV oOS Pro toolkits — the reusable pattern behind the F&B data-ingestion track (Proposal 078). Covers structural (header) matching over filename mapping, the configurable table_map + header-matcher + name-guess resolution order and the slug-first regression, the multi-format loader (CSV/TSV/JSON/JSONL/XLSX/ODS/PDF/photo), the Observation + terminology-map layer (vitals/FHIR analogue) with raw preservation, dedupe/retention/out-of-band banding, complete-by-default/resumable (offset) imports, and the read-only ingest-review dashboard anatomy (edit_posts review vs manage_options write, dry-run-first). Use when adding or extending data ingestion to a toolkit, ingesting heterogeneous owner files, wiring XLSX/PDF/photo imports, building an ingest/review dashboard, or debugging partial/truncated imports."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -132,6 +132,33 @@ Port from the Health Records vitals CCT (`is_near_duplicate`,
 - Return a `mapping` confidence report + `flags` in the dry-run result, and a
   **three-way source error**: no source configured / source found but table not
   in it / source found but columns unrecognised — never a bare "file not found".
+
+### Complete-by-default, resumable imports
+
+A row cap in the import bridge silently turns into missing data downstream. In
+the F&B build `fnb_import_table` defaulted to `limit = 500` (hard cap 5,000)
+while the Drive workbook held 15,405 daily-sales rows: the import returned
+`success: true`, the native CPT held only January, and every September metric
+returned 0. The source was intact; the copy was truncated.
+
+- **Never make a row cap the default.** `limit = 0` (or omitted) must mean
+  "every remaining row". Apply the same ceiling the reader uses (F&B:
+  `WP_MCP_AI_Fnb_Cpt_Reader::MAX_ROWS = 25000`) so an import can never write
+  more rows than a subsequent read can see.
+- **Expose resumability.** Accept `offset`; return `source_total`, `offset`,
+  `next_offset`, `has_more`, `complete`, and (after a write) `native_count`.
+  A partial import must be visible in the response, never implicit.
+- **Loop batches in the admin surface.** The F&B Ingest & Preview dashboard
+  sends 500 rows per AJAX request and recurses on `next_offset` until
+  `complete`, showing `x of y source rows processed`. A single all-rows request
+  can exceed PHP/AJAX time limits on a 15k-row workbook.
+- **Invalidate the read cache after a write.** The table reader caches for
+  minutes (F&B: `fnb_table_<md5(table_id[:cpt])>` transients). Delete both the
+  native (`:cpt`) and source cache keys after a successful import, otherwise a
+  verification read sees the stale partial table.
+- **Verify the tail, not just the head.** After import assert
+  `native_count === source_total` and query a row/period from the newest month;
+  an aggregate-only check can pass on a truncated table.
 
 ## 6. Read-only ingest-review dashboard
 
