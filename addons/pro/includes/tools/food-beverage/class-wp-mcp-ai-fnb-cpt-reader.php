@@ -90,6 +90,26 @@ class WP_MCP_AI_Fnb_Cpt_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	}
 
 	/**
+	 * Raw source row preserved at import time for a native-storage post.
+	 *
+	 * The import bridge stores the full header => value map of each source
+	 * row under `_fnb_raw`, so columns the spec does not model (receipt no,
+	 * shift, etc.) are not lost. Returns the decoded map or null when absent.
+	 *
+	 * @param int $post_id Native-storage post ID.
+	 * @return array<string,string>|null
+	 */
+	public static function raw_row( $post_id ) {
+		$raw = get_post_meta( (int) $post_id, '_fnb_raw', true );
+		if ( ! is_string( $raw ) || '' === $raw ) {
+			return null;
+		}
+		$decoded = json_decode( $raw, true );
+
+		return is_array( $decoded ) ? $decoded : null;
+	}
+
+	/**
 	 * {@inheritdoc}
 	 *
 	 * @param string $table_id Spec table ID.

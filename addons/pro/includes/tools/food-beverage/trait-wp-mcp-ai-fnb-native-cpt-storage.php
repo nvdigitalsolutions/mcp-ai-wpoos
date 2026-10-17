@@ -87,7 +87,7 @@ trait WP_MCP_AI_Fnb_Native_Cpt_Storage {
 	 *
 	 * @param string $post_type   Post type slug.
 	 * @param string $table_id    Spec table ID (drives the canonical column list).
-	 * @param array  $row         Canonical-keyed row values.
+	 * @param array  $row         Canonical-keyed row values. Optional `raw` key: JSON header => value map of the full source row, preserved under `_fnb_raw` meta.
 	 * @param string $title       Post title for new rows.
 	 * @param string $date        Date value for post_date (Y-m-d or empty).
 	 * @param array  $key_columns Canonical keys that make a row unique.
@@ -129,6 +129,13 @@ trait WP_MCP_AI_Fnb_Native_Cpt_Storage {
 		$canonical  = is_array( $definition ) && ! empty( $definition['canonical'] ) ? $definition['canonical'] : array();
 		foreach ( $canonical as $canonical_key ) {
 			update_post_meta( $post_id, '_fnb_' . $canonical_key, isset( $row[ $canonical_key ] ) ? (string) $row[ $canonical_key ] : '' );
+		}
+
+		// Preserve the full raw source row (header => value JSON) supplied by
+		// the import bridge, so non-canonical source columns survive the
+		// import. Never overwritten with an empty value.
+		if ( isset( $row['raw'] ) && is_string( $row['raw'] ) && '' !== $row['raw'] ) {
+			update_post_meta( $post_id, '_fnb_raw', $row['raw'] );
 		}
 
 		/**

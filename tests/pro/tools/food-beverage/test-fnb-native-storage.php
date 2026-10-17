@@ -264,6 +264,53 @@ class Test_Fnb_Native_Storage extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test: raw source rows with non-canonical columns survive the upsert.
+	 */
+	public function test_upsert_preserves_raw_row_with_extra_columns() {
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Sale_CPT' ) || ! class_exists( 'WP_MCP_AI_Fnb_Cpt_Reader' ) ) {
+			$this->markTestSkipped( 'F&B toolkit not available' );
+		}
+
+		$this->enable_native_storage();
+		WP_MCP_AI_Fnb_Sale_CPT::register();
+
+		$raw = wp_json_encode(
+			array(
+				'Date'        => '2026-10-01 00:00:00',
+				'Month'       => '2026-10',
+				'Item ID'     => 'B-01',
+				'Item'        => 'Gold standard',
+				'Type'        => 'Beverage',
+				'Qty sold'    => '2',
+				'Price (LKR)' => '2700',
+				'Receipt no'  => 'R-12345',
+				'Shift'       => 'Dinner',
+			)
+		);
+
+		$result = WP_MCP_AI_Fnb_Sale_CPT::upsert(
+			array(
+				'date'     => '2026-10-01 00:00:00',
+				'month'    => '2026-10',
+				'item_id'  => 'B-01',
+				'item'     => 'Gold standard',
+				'type'     => 'Beverage',
+				'qty_sold' => '2',
+				'price'    => '2700',
+				'revenue'  => '5400',
+				'raw'      => $raw,
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+
+		$decoded = WP_MCP_AI_Fnb_Cpt_Reader::raw_row( $result['post_id'] );
+		$this->assertIsArray( $decoded );
+		$this->assertSame( 'R-12345', $decoded['Receipt no'] );
+		$this->assertSame( 'Dinner', $decoded['Shift'] );
+	}
+
+	/**
 	 * Test: import bridge is ACT-tier (manage_options) and idempotent.
 	 */
 	public function test_import_tool_gate_and_idempotency() {

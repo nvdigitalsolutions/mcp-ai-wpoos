@@ -784,6 +784,11 @@ class WP_MCP_AI_Fnb_Data_Source {
 	/**
 	 * Reduce a date/time value to Y-m-d.
 	 *
+	 * Numeric cells are either Unix epoch timestamps (~1.7e9 for modern
+	 * dates) or Google Sheets / Excel serial dates (days since 1899-12-30,
+	 * e.g. 46023 = 2026-01-01). The serial range sits far below any
+	 * plausible epoch timestamp, so magnitude disambiguates the two.
+	 *
 	 * @param mixed $value Raw value.
 	 * @return string
 	 */
@@ -792,9 +797,18 @@ class WP_MCP_AI_Fnb_Data_Source {
 		if ( '' === $value ) {
 			return '';
 		}
-		// Timestamps serialised by Sheets ("2026-07-01 00:00:00" or epoch).
+		// Timestamps serialised by Sheets ("2026-07-01 00:00:00", epoch, or a
+		// raw serial date like 46023 = 2026-01-01).
 		if ( is_numeric( $value ) ) {
-			return gmdate( 'Y-m-d', (int) $value );
+			$numeric = (float) $value;
+			if ( $numeric <= 0 ) {
+				return '';
+			}
+			if ( $numeric < 100000 ) {
+				// Sheets serial date: days since 1899-12-30 (25569 = 1970-01-01).
+				return gmdate( 'Y-m-d', (int) round( ( $numeric - 25569 ) * 86400 ) );
+			}
+			return gmdate( 'Y-m-d', (int) $numeric );
 		}
 		$date = substr( trim( $value ), 0, 10 );
 
