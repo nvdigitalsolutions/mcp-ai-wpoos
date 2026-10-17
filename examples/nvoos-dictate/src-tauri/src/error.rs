@@ -94,6 +94,13 @@ impl From<keyring::Error> for AppError {
     }
 }
 
+#[cfg(feature = "vision")]
+impl From<ort::Error> for AppError {
+    fn from(e: ort::Error) -> Self {
+        AppError::Model(e.to_string())
+    }
+}
+
 /// Serialize an error for the webview without leaking internals.
 impl serde::Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

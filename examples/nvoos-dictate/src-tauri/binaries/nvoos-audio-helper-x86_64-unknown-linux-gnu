@@ -1,0 +1,10 @@
+#!/bin/sh
+# Placeholder for the ScreenCaptureKit sidecar (mac-helper, P5 port).
+#
+# These triple-suffixed stubs satisfy Tauri externalBin resource validation
+# on every build target. On macOS bundles the real Swift binary replaces
+# the matching darwin stub during beforeBundleCommand (npm run build:helper)
+# so it is signed and embedded inside the .app. Other-platform stubs are
+# bundled but never invoked.
+echo "nvoos-audio-helper: this placeholder is not the real sidecar (macOS only)"
+exit 1

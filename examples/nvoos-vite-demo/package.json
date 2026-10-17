@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "license": "UNLICENSED",
   "description": "Sample Vite app consuming the @nvdigitalsolutions/* NV oOS packages (extracted from the mcp-ai-wpoos plugin)",
   "scripts": {
     "dev": "vite",

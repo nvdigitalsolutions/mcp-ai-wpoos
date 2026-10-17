@@ -55,7 +55,10 @@ class WP_MCP_AI_Fnb_Fixture_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	 * @return array<int,string>
 	 */
 	private function directories() {
-		$dirs   = array( __DIR__ . '/tests/fixtures' );
+		$dirs   = array(
+			__DIR__ . '/tests/fixtures',
+			__DIR__ . '/data',
+		);
 		$custom = WP_MCP_AI_Fnb_Settings::get( 'csv_data_dir', '' );
 		if ( is_string( $custom ) && '' !== $custom ) {
 			$dirs[] = untrailingslashit( $custom );
@@ -67,10 +70,53 @@ class WP_MCP_AI_Fnb_Fixture_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	/**
 	 * Locate the CSV file for a table ID.
 	 *
+	 * Resolution order: (1) operator `table_map` file hint, (2) the legacy slug
+	 * match (deterministic, correct), (3) structural header match across the
+	 * directory as a *last resort* (when infer_tables is on and the slug is
+	 * absent). Structural matching never runs ahead of a known-good slug match
+	 * — otherwise a file like ingredients.csv (which also carries supplier
+	 * columns) could shadow suppliers.csv and corrupt dependent reads.
+	 *
 	 * @param string $table_id Spec table ID.
 	 * @return string|false
 	 */
 	private function locate( $table_id ) {
+		// 1) Operator-authored file hint (highest trust).
+		$map  = WP_MCP_AI_Fnb_Settings::table_map();
+		$file = isset( $map[ $table_id ]['file'] ) ? (string) $map[ $table_id ]['file'] : '';
+		if ( '' !== $file ) {
+			foreach ( $this->directories() as $dir ) {
+				$candidate = trailingslashit( $dir ) . basename( $file );
+				if ( file_exists( $candidate ) ) {
+					return $candidate;
+				}
+			}
+		}
+
+		// 2) Legacy slug match (deterministic).
+		$slug_path = $this->locate_by_slug( $table_id );
+		if ( false !== $slug_path ) {
+			return $slug_path;
+		}
+
+		// 3) Structural header match — last resort only.
+		if ( WP_MCP_AI_Fnb_Settings::infer_tables() ) {
+			$inferred = $this->locate_by_structure( $table_id );
+			if ( false !== $inferred ) {
+				return $inferred;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Resolve a table ID by the legacy sheet-map slug → `slug.csv`.
+	 *
+	 * @param string $table_id Spec table ID.
+	 * @return string|false
+	 */
+	private function locate_by_slug( $table_id ) {
 		$slugs = array();
 		foreach ( self::$sheet_map as $slug => $id ) {
 			if ( $id === $table_id ) {
@@ -89,6 +135,77 @@ class WP_MCP_AI_Fnb_Fixture_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Infer the best-matching CSV file for a table ID by header structure.
+	 *
+	 * @param string $table_id Spec table ID.
+	 * @return string|false
+	 */
+	private function locate_by_structure( $table_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Structure_Matcher' ) && file_exists( __DIR__ . '/class-wp-mcp-ai-fnb-structure-matcher.php' ) ) {
+			require_once __DIR__ . '/class-wp-mcp-ai-fnb-structure-matcher.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Structure_Matcher' ) ) {
+			return false;
+		}
+
+		foreach ( $this->directories() as $dir ) {
+			if ( ! is_dir( $dir ) ) {
+				continue;
+			}
+			$files = glob( trailingslashit( $dir ) . '*.csv' );
+			if ( false === $files ) {
+				$files = array();
+			}
+			foreach ( $files as $candidate ) {
+				$headers = $this->read_header_row( $candidate );
+				if ( empty( $headers ) ) {
+					continue;
+				}
+				$score = WP_MCP_AI_Fnb_Structure_Matcher::match_table( $table_id, $headers );
+				if ( is_array( $score ) && $score['confidence'] >= WP_MCP_AI_Fnb_Structure_Matcher::DEFAULT_THRESHOLD ) {
+					return $candidate;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Read only the first non-empty row of a CSV as its header list.
+	 *
+	 * @param string $path Absolute CSV path.
+	 * @return array<int,string>
+	 */
+	private function read_header_row( $path ) {
+		if ( ! file_exists( $path ) || ! is_readable( $path ) ) {
+			return array();
+		}
+		$handle = fopen( $path, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		if ( false === $handle ) {
+			return array();
+		}
+		$headers = array();
+		// phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition -- Read until a non-empty row.
+		while ( false !== ( $row = fgetcsv( $handle ) ) ) {
+			$has_value = false;
+			foreach ( $row as $cell ) {
+				if ( '' !== trim( (string) $cell ) ) {
+					$has_value = true;
+					break;
+				}
+			}
+			if ( $has_value ) {
+				$headers = $row;
+				break;
+			}
+		}
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+
+		return array_map( 'strval', $headers );
 	}
 
 	/**

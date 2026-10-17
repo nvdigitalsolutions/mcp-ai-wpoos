@@ -32,6 +32,7 @@ import { dataRouter } from './routes/data.js';
 import { browserRouter } from './routes/browser.js';
 import { crawlRouter } from './routes/crawl.js';
 import { crawl4aiRouter } from './routes/crawl4ai.js';
+import { ingestRouter } from './routes/ingest.js';
 import { statusRouter, counters, alertBus, buildSummary } from './routes/status.js';
 import { startSweeper } from './status/sweeper.js';
 import { startSyntheticLoop, seedExternalTargets } from './status/synthetic.js';
@@ -218,6 +219,7 @@ app.get( '/api/health/full', async (_req, res) => {
 				chart_rendering: true,
 				geospatial: true,
 				csv_processing: true,
+				ingest_parsing: true,
 				markdown: true,
 				regression: true,
 				currency: true,
@@ -230,7 +232,7 @@ app.get( '/api/health/full', async (_req, res) => {
 				job_queue: caps.redis,
 			},
 			endpoints: {
-				image: [ '/api/image/generate', '/api/image/optimize', '/api/image/optimize-batch', '/api/image/enhance', '/api/image/upscale', '/api/image/edit', '/api/image/vectorize', '/api/image/providers' ],
+				image: [ '/api/image/generate', '/api/image/optimize', '/api/image/batch', '/api/image/enhance', '/api/image/upscale', '/api/image/edit', '/api/image/vectorize', '/api/image/providers' ],
 				video: [ '/api/video/generate', '/api/video/process', '/api/video/info', '/api/video/models', '/api/video/prediction/:id' ],
 				social: [ '/api/social/post', '/api/social/generate-content', '/api/social/accounts' ],
 				workflow: [ '/api/workflow/social-package', '/api/workflow/brand-assets', '/api/workflow/video-pipeline', '/api/workflow/status' ],
@@ -243,6 +245,7 @@ app.get( '/api/health/full', async (_req, res) => {
 				browser: [ '/api/browser/screenshot', '/api/browser/pdf' ],
 				crawl: [ '/api/crawl/markdown', '/api/crawl/markdown-batch', '/api/crawl/links' ],
 				crawl4ai: [ '/api/crawl4ai/crawl', '/api/crawl4ai/task/:id' ],
+				ingest: [ '/api/ingest/parse' ],
 			},
 			queues: await Promise.all(
 				getAllQueues().map( async ( queue ) => {
@@ -273,6 +276,7 @@ app.use( '/api/data', dataRouter );
 app.use( '/api/browser', browserLimiter, browserRouter );
 app.use( '/api/crawl', crawlLimiter, crawlRouter );
 app.use( '/api/crawl4ai', crawlLimiter, crawl4aiRouter );
+app.use( '/api/ingest', ingestRouter );
 
 // ── 404 ────────────────────────────────────────────────────
 app.use( (_req, res) => {

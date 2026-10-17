@@ -1351,6 +1351,63 @@ class ChatOrchestrator {
 			$schema['properties'] = new \stdClass();
 		}
 
+		// Per-property `required` is not valid JSON Schema. Many base WordPress
+		// tools declare it as a boolean inside each property (e.g.
+		// `'required' => true`) instead of as a top-level array. DeepSeek
+		// rejects this outright: "true is not of type 'array'". Hoist any such
+		// illegal `required` flag out of the property and into the top-level
+		// `required` array so the payload always serializes as valid schema.
+		$schema = self::hoistPropertyRequiredFlags( $schema );
+
+		return $schema;
+	}
+
+	/**
+	 * Hoist illegal per-property `required` flags into the top-level array.
+	 *
+	 * JSON Schema defines `required` only at the object level (as a list of
+	 * property names). A boolean `required` inside a property definition is
+	 * invalid and is rejected by strict providers (DeepSeek). This converts
+	 * those flags to the canonical form, preserving the author's intent.
+	 *
+	 * @param array $schema A normalized tool parameter schema.
+	 * @return array The schema with per-property `required` flags relocated.
+	 */
+	private static function hoistPropertyRequiredFlags( array $schema ): array {
+		if ( ! isset( $schema['properties'] ) || ! \is_array( $schema['properties'] ) ) {
+			return $schema;
+		}
+
+		$required = isset( $schema['required'] ) && \is_array( $schema['required'] )
+			? $schema['required']
+			: array();
+
+		foreach ( $schema['properties'] as $property_name => $property ) {
+			if ( ! \is_array( $property ) || ! \array_key_exists( 'required', $property ) ) {
+				continue;
+			}
+
+			// A nested array `required` belongs to an inner object schema and is
+			// valid JSON Schema there — leave it untouched. Only hoist a scalar
+			// (boolean) flag, which is the legacy, invalid authoring pattern.
+			if ( \is_array( $property['required'] ) ) {
+				continue;
+			}
+
+			$flag = $property['required'];
+			unset( $schema['properties'][ $property_name ]['required'] );
+
+			// Only a truthy `required` flag (e.g. `true`) marks the field as
+			// mandatory. A `false` flag carries no constraint once removed.
+			if ( $flag && ! \in_array( $property_name, $required, true ) ) {
+				$required[] = $property_name;
+			}
+		}
+
+		if ( array() !== $required ) {
+			$schema['required'] = \array_values( $required );
+		}
+
 		return $schema;
 	}
 

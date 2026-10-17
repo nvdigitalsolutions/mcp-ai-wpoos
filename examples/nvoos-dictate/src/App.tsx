@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, onDictateEvent, windowKind, type DictateEvent, type StatusInfo } from './lib/ipc';
 import Home from './views/Home';
+import AssistantView from './views/Assistant';
 import SettingsView from './views/Settings';
 import HistoryView from './views/History';
 import MeetingsView from './views/Meetings';
 import OverlayView from './views/Overlay';
+import DiagnosticsView from './views/Diagnostics';
 
-type Tab = 'home' | 'history' | 'meetings' | 'settings';
+type Tab = 'home' | 'assistant' | 'history' | 'meetings' | 'diagnostics' | 'settings';
 
 export default function App() {
   const kind = windowKind();
@@ -23,12 +25,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    // The overlay only renders the live dictation capsule — no status polling.
+    if (kind !== 'overlay') {
+      void refresh();
+    }
     const unlisten = onDictateEvent((event) => setDictate(event));
     return () => {
       void unlisten.then((fn) => fn());
     };
-  }, [refresh]);
+  }, [refresh, kind]);
 
   if (kind === 'overlay') {
     return <OverlayView event={dictate} />;
@@ -46,6 +51,12 @@ export default function App() {
           <button className={tab === 'home' ? 'tab active' : 'tab'} onClick={() => setTab('home')}>
             Status
           </button>
+          				<button
+          					className={tab === 'assistant' ? 'tab active' : 'tab'}
+          					onClick={() => setTab('assistant')}
+          				>
+          					NV oOS
+          				</button>
           <button
             className={tab === 'history' ? 'tab active' : 'tab'}
             onClick={() => setTab('history')}
@@ -59,6 +70,12 @@ export default function App() {
             Meetings
           </button>
           <button
+            className={tab === 'diagnostics' ? 'tab active' : 'tab'}
+            onClick={() => setTab('diagnostics')}
+          >
+            Diagnostics
+          </button>
+          <button
             className={tab === 'settings' ? 'tab active' : 'tab'}
             onClick={() => setTab('settings')}
           >
@@ -68,9 +85,13 @@ export default function App() {
       </header>
       <main className="content">
         {tab === 'home' && <Home status={status} dictate={dictate} onRefresh={refresh} />}
+        {tab === 'assistant' && <AssistantView />}
         {tab === 'history' && <HistoryView />}
-        {tab === 'meetings' && <MeetingsView onChanged={refresh} />}
-        {tab === 'settings' && <SettingsView onChanged={refresh} />}
+        {tab === 'meetings' && (
+          <MeetingsView onChanged={refresh} meetingRecording={!!status?.meeting_recording} />
+        )}
+        {tab === 'diagnostics' && <DiagnosticsView />}
+        {tab === 'settings' && <SettingsView onChanged={refresh} status={status} />}
       </main>
     </div>
   );

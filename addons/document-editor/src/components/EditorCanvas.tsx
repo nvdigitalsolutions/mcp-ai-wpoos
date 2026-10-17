@@ -39,6 +39,80 @@ function getGlobal() {
 }
 
 /**
+ * Headless auth bridge (child side).
+ *
+ * The hosted Pro SPA forwards its application-password / assistant credential
+ * to this framed app via `postMessage` (see the parent's auth-bridge util in
+ * spa-v2/src/utils/auth-bridge.ts). Keep the message type and origin-scoping
+ * in sync with the parent; a credential never travels over a URL or cookie.
+ */
+const NVOOS_AUTH_MESSAGE_TYPE = 'nvoos-auth';
+let authAuthorization = '';
+let authListenerInstalled = false;
+
+function acceptAuthMessage( event: MessageEvent ): void {
+	const payload = event.data as { type?: string; authorization?: string } | null;
+	if ( ! payload || payload.type !== NVOOS_AUTH_MESSAGE_TYPE ) {
+		return;
+	}
+	const g = getGlobal();
+	const targetOrigin = ( () => {
+		try {
+			return new URL( g?.apiUrl ?? '' ).origin;
+		} catch {
+			return '';
+		}
+	} )();
+	if ( targetOrigin && event.origin !== targetOrigin ) {
+		return;
+	}
+	if ( typeof payload.authorization === 'string' && payload.authorization ) {
+		authAuthorization = payload.authorization;
+	}
+}
+
+function installAuthListener(): void {
+	if ( authListenerInstalled ) {
+		return;
+	}
+	authListenerInstalled = true;
+	window.addEventListener( 'message', acceptAuthMessage );
+}
+
+/**
+ * Resolve the current `Authorization` header value (postMessage or a
+ * directly-localized `authorization` key on the bootstrap global).
+ */
+function currentAuthorization(): string {
+	installAuthListener();
+	if ( authAuthorization ) {
+		return authAuthorization;
+	}
+	const g = getGlobal() as ( ReturnType< typeof getGlobal > & { authorization?: string } ) | undefined;
+	return typeof g?.authorization === 'string' ? g.authorization : '';
+}
+
+/**
+ * Build REST headers: cookie `X-WP-Nonce` by default, swapped for the
+ * headless `Authorization` credential (and a dropped empty nonce) when present.
+ */
+function authHeaders( nonce: string, extra: Record< string, string > = {} ): Record< string, string > {
+	const authorization = currentAuthorization();
+	const headers: Record< string, string > = { ...extra };
+	if ( authorization ) {
+		headers.Authorization = authorization;
+		if ( ! nonce ) {
+			delete headers[ 'X-WP-Nonce' ];
+		} else {
+			headers[ 'X-WP-Nonce' ] = nonce;
+		}
+	} else {
+		headers[ 'X-WP-Nonce' ] = nonce;
+	}
+	return headers;
+}
+
+/**
  * Fetch one document by ID from the REST API.
  */
 async function fetchDocument( id: number ): Promise<DocumentRecord | null> {
@@ -47,7 +121,7 @@ async function fetchDocument( id: number ): Promise<DocumentRecord | null> {
 		return null;
 	}
 	const res = await fetch( `${ g.apiUrl }/documents/${ id }`, {
-		headers: { 'X-WP-Nonce': g.nonce },
+		headers: authHeaders( g.nonce ),
 	} );
 	if ( ! res.ok ) {
 		return null;
@@ -69,10 +143,7 @@ async function saveDocument(
 	}
 	await fetch( `${ g.apiUrl }/documents/${ id }`, {
 		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json',
-			'X-WP-Nonce': g.nonce,
-		},
+		headers: authHeaders( g.nonce, { 'Content-Type': 'application/json' } ),
 		body: JSON.stringify( { title, content } ),
 	} );
 }

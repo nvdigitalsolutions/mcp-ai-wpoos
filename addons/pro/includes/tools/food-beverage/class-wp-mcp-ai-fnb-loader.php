@@ -1,0 +1,864 @@
+<?php
+/**
+ * Food & Beverage Management Toolkit — Multi-format Loader.
+ *
+ * Turns heterogeneous owner input (CSV with any common delimiter, TSV, JSON
+ * array-of-objects, or JSONL/NDJSON) into the shared `{columns, rows}` matrix
+ * that every reader and the structure matcher already consume. Delimiter,
+ * encoding, BOM and header-row detection are all conservative: when a format
+ * cannot be resolved confidently the loader returns the unparsed input plus a
+ * "could not detect" error rather than guessing a schema (mirrors the
+ * toolkit's "never invent figures/records" rule).
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 1.6.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Multi-format F&B ingestion loader.
+ *
+ * @since 1.6.0
+ */
+class WP_MCP_AI_Fnb_Loader {
+
+	/**
+	 * Supported explicit formats.
+	 */
+	const FORMAT_CSV   = 'csv';
+	const FORMAT_TSV   = 'tsv';
+	const FORMAT_JSON  = 'json';
+	const FORMAT_JSONL = 'jsonl';
+	const FORMAT_PDF   = 'pdf';
+	const FORMAT_PHOTO = 'photo';
+	const FORMAT_XLSX  = 'xlsx';
+
+	/**
+	 * Split a string into lines, normalising CRLF/CR → LF and trimming a trailing
+	 * blank final line.
+	 *
+	 * @param string $text Raw text.
+	 * @return array<int,string>
+	 */
+	private static function lines( $text ) {
+		$text = str_replace( array( "\r\n", "\r" ), "\n", (string) $text );
+		$text = trim( $text, "\n" );
+
+		return '' === $text ? array() : explode( "\n", $text );
+	}
+
+	/**
+	 * Strip a UTF-8/UTF-16 BOM and convert to UTF-8 when the input is UTF-16.
+	 *
+	 * @param string $text Raw text.
+	 * @return string
+	 */
+	public static function to_utf8( $text ) {
+		$text = (string) $text;
+
+		if ( "\xEF\xBB\xBF" === substr( $text, 0, 3 ) ) {
+			$text = substr( $text, 3 ); // UTF-8 BOM.
+		} elseif ( "\xFF\xFE" === substr( $text, 0, 2 ) ) {
+			$text = mb_convert_encoding( substr( $text, 2 ), 'UTF-8', 'UTF-16LE' ); // UTF-16LE BOM.
+		} elseif ( "\xFE\xFF" === substr( $text, 0, 2 ) ) {
+			$text = mb_convert_encoding( substr( $text, 2 ), 'UTF-8', 'UTF-16BE' ); // UTF-16BE BOM.
+		}
+
+		return $text;
+	}
+
+	/**
+	 * Detect the most likely delimiter from a header-looking line by counting
+	 * unquoted occurrences of each candidate.
+	 *
+	 * @param string $line First non-empty line.
+	 * @return string Detected delimiter (default comma).
+	 */
+	public static function detect_delimiter( $line ) {
+		$candidates = array(
+			','  => 0,
+			"\t" => 0,
+			';'  => 0,
+			'|'  => 0,
+		);
+		$in_quotes  = false;
+
+		$prev = '';
+		$len  = strlen( $line );
+		for ( $i = 0; $i < $len; $i++ ) {
+			$ch = $line[ $i ];
+			if ( '"' === $ch && '\\' !== $prev ) {
+				$in_quotes = ! $in_quotes;
+				continue;
+			}
+			if ( ! $in_quotes && isset( $candidates[ $ch ] ) ) {
+				++$candidates[ $ch ];
+			}
+			$prev = $ch;
+		}
+
+		$best = ',';
+		$max  = 0;
+		foreach ( $candidates as $delim => $count ) {
+			if ( $count > $max ) {
+				$max  = $count;
+				$best = $delim;
+			}
+		}
+
+		return $best;
+	}
+
+	/**
+	 * Parse a delimited text (CSV/TSV) into a matrix, skipping fully-empty rows.
+	 *
+	 * @param string $text      Raw text.
+	 * @param string $delimiter Delimiter (single char).
+	 * @return array{columns:array<int,string>,rows:array<int,array<int,string>>}
+	 */
+	public static function parse_delimited( $text, $delimiter = ',' ) {
+		$text    = self::to_utf8( $text );
+		$lines   = self::lines( $text );
+		$columns = array();
+		$rows    = array();
+		$first   = true;
+
+		foreach ( $lines as $line ) {
+			$trimmed = trim( $line );
+			if ( '' === $trimmed && $first ) {
+				continue; // Skip leading blank lines before the header.
+			}
+			$data = str_getcsv( $line, $delimiter );
+			$data = array_map( 'trim', $data );
+
+			$has_value = false;
+			foreach ( $data as $cell ) {
+				if ( '' !== (string) $cell ) {
+					$has_value = true;
+					break;
+				}
+			}
+			if ( ! $has_value ) {
+				continue;
+			}
+
+			if ( $first ) {
+				$columns = $data;
+				$first   = false;
+				continue;
+			}
+
+			$rows[] = $data;
+		}
+
+		return array(
+			'columns' => $columns,
+			'rows'    => $rows,
+		);
+	}
+
+	/**
+	 * Normalise an array-of-objects (or array-of-arrays) into a matrix.
+	 *
+	 * Headers are the union of keys in first-seen order; missing keys become ''.
+	 *
+	 * @param array<int,array> $objects Records.
+	 * @return array{columns:array<int,string>,rows:array<int,array<int,string>>}
+	 */
+	public static function records_to_matrix( array $objects ) {
+		$columns = array();
+		foreach ( $objects as $record ) {
+			if ( ! is_array( $record ) ) {
+				continue;
+			}
+			foreach ( array_keys( $record ) as $key ) {
+				$key = (string) $key;
+				if ( ! in_array( $key, $columns, true ) ) {
+					$columns[] = $key;
+				}
+			}
+		}
+
+		$rows = array();
+		foreach ( $objects as $record ) {
+			if ( ! is_array( $record ) ) {
+				continue;
+			}
+			$row = array();
+			foreach ( $columns as $col ) {
+				$value = array_key_exists( $col, $record ) ? $record[ $col ] : '';
+				$row[] = is_scalar( $value ) || null === $value ? (string) $value : wp_json_encode( $value );
+			}
+			$rows[] = $row;
+		}
+
+		return array(
+			'columns' => $columns,
+			'rows'    => $rows,
+		);
+	}
+
+	/**
+	 * Load a raw string into a matrix, auto-detecting the format.
+	 *
+	 * @param string $raw    Raw input.
+	 * @param string $format Optional explicit format (csv|tsv|json|jsonl).
+	 * @return array{columns:array<int,string>,rows:array<int,array<int,string>>,format:string}
+	 */
+	public static function load( $raw, $format = '' ) {
+		$raw = (string) $raw;
+
+		if ( in_array( $format, array( self::FORMAT_JSON, self::FORMAT_JSONL ), true ) ) {
+			$objects = self::decode_json( $raw, self::FORMAT_JSONL === $format );
+			if ( is_wp_error( $objects ) ) {
+				return $objects;
+			}
+			$matrix           = self::records_to_matrix( $objects );
+			$matrix['format'] = $format;
+
+			return $matrix;
+		}
+
+		// Delimited: CSV/TSV (or auto). Determine delimiter, then parse.
+		$delimiter = self::FORMAT_TSV === $format ? "\t" : null;
+		if ( null === $delimiter ) {
+				$first_line = '';
+			foreach ( self::lines( self::to_utf8( $raw ) ) as $line ) {
+				if ( '' !== trim( $line ) ) {
+					$first_line = $line;
+					break;
+				}
+			}
+			$delimiter = self::detect_delimiter( $first_line );
+		}
+
+		$matrix           = self::parse_delimited( $raw, $delimiter );
+		$matrix['format'] = "\t" === $delimiter ? self::FORMAT_TSV : self::FORMAT_CSV;
+
+		return $matrix;
+	}
+
+	/**
+	 * Decode JSON (array-of-objects or a single object) or JSONL into records.
+	 *
+	 * @param string $raw    Raw JSON/JSONL.
+	 * @param bool   $ndjson When true, parse newline-delimited JSON line-by-line.
+	 * @return array<int,array>|WP_Error
+	 */
+	private static function decode_json( $raw, $ndjson = true ) {
+		// JSONL: parse one object per line (fall back to single-doc on one line).
+		if ( $ndjson ) {
+			$records = array();
+			foreach ( self::lines( $raw ) as $line ) {
+				if ( '' === trim( $line ) ) {
+					continue;
+				}
+				$row = json_decode( $line, true );
+				if ( is_array( $row ) ) {
+					$records[] = $row;
+				}
+			}
+
+			if ( empty( $records ) ) {
+				// Single JSON document on one line.
+				$single = json_decode( trim( $raw ), true );
+				if ( is_array( $single ) ) {
+					$records = array_values( $single ) === $single ? array_filter( $single, 'is_array' ) : array( $single );
+				}
+			}
+
+			if ( empty( $records ) ) {
+				return new WP_Error( 'wp_mcp_ai_fnb_invalid_json', __( 'Could not parse JSON or JSONL input.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			return $records;
+		}
+
+		// Single JSON document.
+		$decoded = json_decode( $raw, true );
+		if ( ! is_array( $decoded ) ) {
+			return new WP_Error( 'wp_mcp_ai_fnb_invalid_json', __( 'JSON input must be an object or an array of objects.', 'mcp-ai-wpoos-pro' ) );
+		}
+		if ( array_values( $decoded ) === $decoded ) {
+			return array_filter( $decoded, 'is_array' );
+		}
+
+		return array( $decoded );
+	}
+
+	/**
+	 * Extract text from a text-layer PDF and parse it into a matrix.
+	 *
+	 * Uses the pure-PHP `smalot/pdfparser` when available (the same dependency
+	 * the `extract_pdf_text` tool falls back to). Scanned/image-only PDFs have
+	 * no text layer, so this returns a clear, actionable error pointing at the
+	 * OCR tools (`extract_pdf_text` with enable_ocr, or `ocr_pdf_text`) rather
+	 * than failing silently.
+	 *
+	 * @param string $path Absolute PDF path.
+	 * @return array|WP_Error
+	 */
+	public static function extract_pdf_text( $path ) {
+		if ( ! class_exists( '\Smalot\PdfParser\Parser' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_pdf_parser_missing',
+				__( 'PDF text extraction is unavailable — the smalot/pdfparser library is not installed in the Pro addon. Extract the text with the extract_pdf_text tool first, then import the result.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		try {
+			$parser = new \Smalot\PdfParser\Parser();
+			$pdf    = $parser->parseFile( $path );
+			$text   = $pdf->getText();
+		} catch ( \Exception $e ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_pdf_extract_failed',
+				/* translators: %s: error message */
+				sprintf( __( 'PDF text extraction failed: %s', 'mcp-ai-wpoos-pro' ), $e->getMessage() )
+			);
+		}
+
+		$text = trim( (string) $text );
+		if ( '' === $text ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_pdf_scanned',
+				__( 'The PDF appears to be scanned (no extractable text layer). Use the extract_pdf_text tool with enable_ocr=true, or ocr_pdf_text, then import the resulting text.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Parse the extracted text through the delimited path so a line-item
+		// table (comma/whitespace separated) becomes a normal matrix.
+		$matrix           = self::parse_delimited( $text, self::detect_delimiter( $text ) );
+		$matrix['format'] = self::FORMAT_PDF;
+
+		return $matrix;
+	}
+
+	/**
+	 * Load a spreadsheet (XLSX/XLS/ODS) into a matrix via PhpSpreadsheet.
+	 *
+	 * Uses the first worksheet by default (the `sheet` table_map hint is applied
+	 * by the caller when present). PhpSpreadsheet is a Pro-addon dependency
+	 * (autoloaded on PHP 8.1+), so this degrades to an actionable error when the
+	 * class is unavailable rather than fatalling.
+	 *
+	 * @param string $path  Absolute spreadsheet path.
+	 * @param string $sheet Optional worksheet name/index (default first sheet).
+	 * @return array|WP_Error
+	 */
+	public static function load_spreadsheet( $path, $sheet = '' ) {
+		if ( ! class_exists( '\PhpOffice\PhpSpreadsheet\IOFactory' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_phpspreadsheet_missing',
+				__( 'XLSX/ODS parsing is unavailable — PhpSpreadsheet is not loaded (Pro addon requires PHP 8.1+). Convert the sheet to CSV with the excel_data_export tool, then import the CSV.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		try {
+			$reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile( $path );
+			$reader->setReadDataOnly( true );
+
+			if ( '' !== $sheet && method_exists( $reader, 'setLoadSheetsOnly' ) ) {
+				$reader->setLoadSheetsOnly( $sheet );
+			}
+
+			$spreadsheet = $reader->load( $path );
+			$worksheet   = $spreadsheet->getActiveSheet();
+			$data        = $worksheet->toArray( null, true, true, true );
+			$spreadsheet->disconnectWorksheets();
+		} catch ( \Exception $e ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_xlsx_extract_failed',
+				/* translators: %s: error message */
+				sprintf( __( 'Spreadsheet parsing failed: %s', 'mcp-ai-wpoos-pro' ), $e->getMessage() )
+			);
+		}
+
+		$matrix           = self::rows_to_matrix( $data );
+		$matrix['format'] = self::FORMAT_XLSX;
+
+		return $matrix;
+	}
+
+	/**
+	 * Convert an indexed row grid (from PhpSpreadsheet's toArray) into a matrix,
+	 * treating the first non-empty row as the header.
+	 *
+	 * @param array<int,array> $grid Indexed rows (may contain empty rows/columns).
+	 * @return array{columns:array<int,string>,rows:array<int,array<int,string>>}
+	 */
+	private static function rows_to_matrix( array $grid ) {
+		$columns = array();
+		$rows    = array();
+		$first   = true;
+
+		foreach ( $grid as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			// Drop trailing null/empty cells.
+			$row = array_values( $row );
+			while ( ! empty( $row ) && ( null === end( $row ) || '' === (string) end( $row ) ) ) {
+				array_pop( $row );
+			}
+			$has_value = false;
+			foreach ( $row as $cell ) {
+				if ( null !== $cell && '' !== (string) $cell ) {
+					$has_value = true;
+					break;
+				}
+			}
+			if ( ! $has_value ) {
+				continue;
+			}
+
+			$row = array_map(
+				static function ( $cell ) {
+					return null === $cell ? '' : (string) $cell;
+				},
+				$row
+			);
+
+			if ( $first ) {
+				$columns = $row;
+				$first   = false;
+				continue;
+			}
+
+			$rows[] = $row;
+		}
+
+		return array(
+			'columns' => $columns,
+			'rows'    => $rows,
+		);
+	}
+
+	/**
+	 * Try to parse the file through the Media Worker sidecar (Proposal 079).
+	 *
+	 * Returns null when offloading is not applicable (no sidecar, disabled,
+	 * text format, or a worker error) so the caller falls through to the
+	 * local parsers unchanged. Returns a matrix or WP_Error only when the
+	 * sidecar answered - in which case that answer is final for this call.
+	 *
+	 * @param string $path    Absolute file path.
+	 * @param array  $options Optional parse options (format, sheet, language,
+	 *                        offset, limit).
+	 * @return array|WP_Error|null
+	 */
+	private static function maybe_offload_parse( $path, array $options = array() ) {
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Worker_Client' ) ) {
+			$client_file = __DIR__ . '/class-wp-mcp-ai-fnb-worker-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Worker_Client' ) ) {
+			return null;
+		}
+
+		/**
+		 * Filter: replace the F&B worker client (tests, custom deployments).
+		 * The replacement must expose should_offload( $path ) and
+		 * parse_file( $path, $options ). Default null = the shipped client.
+		 *
+		 * @param object|null $client Client instance.
+		 */
+		$client = apply_filters( 'wp_mcp_ai_fnb_worker_client', null );
+		if ( null === $client ) {
+			$client = WP_MCP_AI_Fnb_Worker_Client::get_instance();
+		}
+		if ( ! is_object( $client ) || ! method_exists( $client, 'should_offload' ) || ! method_exists( $client, 'parse_file' ) ) {
+			return null;
+		}
+
+		if ( ! $client->should_offload( $path ) ) {
+			return null;
+		}
+
+		$result = $client->parse_file( $path, $options );
+		if ( is_wp_error( $result ) ) {
+			return null; // Fall through to the local parser.
+		}
+
+		return self::normalise_worker_result( $path, $result );
+	}
+
+	/**
+	 * Provider-vision OCR fallback for photo imports (Proposal 079,
+	 * Appendix B).
+	 *
+	 * Opt-in via the ocr_vision_fallback setting (default off): when no
+	 * sidecar is configured - or the worker's tesseract read lands below the
+	 * confidence floor - a photo can be OCR'd by the plugin's vision provider
+	 * through the extract_image_text tool. The image is staged as a temporary
+	 * attachment (deleted afterwards) because the tool resolves images by
+	 * attachment URL, not by local path.
+	 *
+	 * @param string $path Absolute image path.
+	 * @return array|WP_Error|null Photo matrix, error, or null when the rung
+	 *                             is disabled or unavailable.
+	 */
+	private static function maybe_vision_ocr( $path ) {
+		$enabled = class_exists( 'WP_MCP_AI_Fnb_Settings' ) ? WP_MCP_AI_Fnb_Settings::get( 'ocr_vision_fallback', false ) : false;
+		if ( ! apply_filters( 'wp_mcp_ai_fnb_ocr_vision_fallback', $enabled ) ) {
+			return null;
+		}
+
+		/**
+		 * Filter: short-circuit the vision OCR extraction (tests, custom OCR).
+		 * Return a photo matrix or WP_Error to skip the staging + tool path.
+		 *
+		 * @param array|WP_Error|null $result Pre-set result.
+		 * @param string              $path   Absolute image path.
+		 */
+		$preset = apply_filters( 'wp_mcp_ai_fnb_vision_ocr_result', null, $path );
+		if ( null !== $preset ) {
+			return $preset;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Extract_Image_Text' ) ) {
+			$tool_file = dirname( __DIR__, 5 ) . '/includes/tools/class-wp-mcp-ai-tool-extract-image-text.php';
+			if ( file_exists( $tool_file ) ) {
+				require_once $tool_file;
+			}
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Extract_Image_Text' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_vision_unavailable',
+				__( 'The vision OCR tool is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+		if ( ! function_exists( 'wp_upload_dir' ) || ! function_exists( 'wp_insert_attachment' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$uploads = wp_upload_dir();
+		if ( empty( $uploads['path'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_vision_upload_dir',
+				__( 'The uploads directory is unavailable.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$filename = wp_unique_filename( $uploads['path'], 'fnb-ocr-' . basename( $path ) );
+		$target   = trailingslashit( $uploads['path'] ) . $filename;
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_copy -- Staging the owner's photo in the uploads dir so the vision tool can resolve its URL.
+		if ( ! copy( $path, $target ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fnb_vision_copy_failed',
+				__( 'Could not stage the image for vision OCR.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$mime          = wp_check_filetype( $target );
+		$attachment_id = wp_insert_attachment(
+			array(
+				'post_title'     => sanitize_file_name( basename( $path ) ),
+				'post_mime_type' => isset( $mime['type'] ) ? $mime['type'] : 'application/octet-stream',
+				'post_status'    => 'inherit',
+			),
+			$target,
+			0
+		);
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_delete_file( $target );
+
+			return new WP_Error(
+				'wp_mcp_ai_fnb_vision_attachment_failed',
+				$attachment_id->get_error_message()
+			);
+		}
+
+		try {
+			$tool   = new WP_MCP_AI_Tool_Extract_Image_Text();
+			$result = $tool->execute(
+				array(
+					'attachment_id'   => $attachment_id,
+					'preserve_layout' => true,
+				)
+			);
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			$text = isset( $result['text'] ) ? trim( (string) $result['text'] ) : '';
+			if ( '' === $text ) {
+				return new WP_Error(
+					'wp_mcp_ai_fnb_vision_empty',
+					__( 'Vision OCR returned no text.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$matrix           = self::parse_delimited( $text, self::detect_delimiter( $text ) );
+			$matrix['format'] = self::FORMAT_PHOTO;
+			$matrix['meta']   = array(
+				'engine'   => 'vision-ocr',
+				'provider' => isset( $result['metadata']['provider'] ) ? $result['metadata']['provider'] : '',
+			);
+
+			return $matrix;
+		} finally {
+			wp_delete_attachment( $attachment_id, true );
+		}
+	}
+
+	/**
+	 * Convert a worker ingest envelope into the loader's matrix contract.
+	 *
+	 * Tabular formats arrive as a ready matrix; PDF and photo results carry
+	 * extracted text that runs through the same delimited conversion the
+	 * local parsers use, so the structure matcher sees identical shapes.
+	 *
+	 * @param string $path   Absolute file path (for extension detection).
+	 * @param array  $result Worker response envelope.
+	 * @return array|WP_Error|null Matrix, error, or null when unrecognised.
+	 */
+	private static function normalise_worker_result( $path, $result ) {
+		$ext    = strtolower( (string) pathinfo( (string) $path, PATHINFO_EXTENSION ) );
+		$format = isset( $result['format'] ) ? (string) $result['format'] : $ext;
+
+		// Tabular (xlsx/xls/ods): the worker produced the matrix directly.
+		if ( in_array( $format, array( self::FORMAT_XLSX, 'xls', 'ods' ), true ) ) {
+			if ( ! isset( $result['columns'] ) || ! is_array( $result['columns'] ) || ! isset( $result['rows'] ) || ! is_array( $result['rows'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_fnb_xlsx_extract_failed',
+					__( 'Media Worker returned an invalid spreadsheet matrix.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			return array(
+				'columns' => array_map( 'strval', $result['columns'] ),
+				'rows'    => array_map(
+					static function ( $row ) {
+						return is_array( $row ) ? array_map( 'strval', $row ) : array();
+					},
+					$result['rows']
+				),
+				'format'  => self::FORMAT_XLSX,
+				'meta'    => isset( $result['meta'] ) && is_array( $result['meta'] ) ? $result['meta'] : array(),
+			);
+		}
+
+		// PDF (text layer or scanned): convert the extracted text through the
+		// same delimited path the local extractor uses.
+		if ( self::FORMAT_PDF === $format ) {
+			$text = isset( $result['text'] ) ? trim( (string) $result['text'] ) : '';
+			if ( '' === $text ) {
+				return new WP_Error(
+					'wp_mcp_ai_fnb_pdf_scanned',
+					__( 'The PDF appears to be scanned (no extractable text layer). Use the extract_pdf_text tool with enable_ocr=true, or ocr_pdf_text, then import the resulting text.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$matrix           = self::parse_delimited( $text, self::detect_delimiter( $text ) );
+			$matrix['format'] = self::FORMAT_PDF;
+
+			return $matrix;
+		}
+
+		// Photo: OCR text. Low confidence keeps the actionable OCR pointer so
+		// a bad read is never silently imported.
+		if ( self::FORMAT_PHOTO === $format ) {
+			$text       = isset( $result['text'] ) ? trim( (string) $result['text'] ) : '';
+			$confidence = isset( $result['confidence'] ) ? (float) $result['confidence'] : 0;
+
+			/**
+			 * Filter: minimum OCR confidence (0-100) for a photo import.
+			 *
+			 * @param float $floor Confidence floor.
+			 */
+			$floor = (float) apply_filters( 'wp_mcp_ai_fnb_ocr_confidence_floor', 60 );
+
+			if ( '' === $text || $confidence < $floor ) {
+				// Provider-vision rung (Proposal 079, Appendix B): opt-in
+				// vision OCR when the worker's tesseract read is weak.
+				$vision = self::maybe_vision_ocr( $path );
+				if ( null !== $vision && ! is_wp_error( $vision ) ) {
+					return $vision;
+				}
+
+				$error_data = array(
+					'ocr_text'   => $text,
+					'confidence' => $confidence,
+				);
+				if ( is_wp_error( $vision ) ) {
+					$error_data['vision_error'] = $vision->get_error_message();
+				}
+
+				return new WP_Error(
+					'wp_mcp_ai_fnb_photo_needs_ocr',
+					__( 'The image could not be OCR\'d with enough confidence. Use analyze_image or extract_image_text to produce the text, then import the result as CSV/JSON.', 'mcp-ai-wpoos-pro' ),
+					$error_data
+				);
+			}
+
+			$matrix           = self::parse_delimited( $text, self::detect_delimiter( $text ) );
+			$matrix['format'] = self::FORMAT_PHOTO;
+			$matrix['meta']   = array(
+				'engine'     => 'sidecar-ocr',
+				'confidence' => $confidence,
+			);
+
+			return $matrix;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Load a file's raw contents into a matrix, auto-detecting format by content
+	 * (and extension as a hint).
+	 *
+	 * @param string $path    Absolute file path.
+	 * @param array  $options Optional parse options forwarded to the worker
+	 *                        (format, sheet, language, offset, limit).
+	 * @return array|WP_Error
+	 */
+	public static function load_file( $path, array $options = array() ) {
+		if ( ! file_exists( $path ) || ! is_readable( $path ) ) {
+			return new WP_Error( 'wp_mcp_ai_fnb_file_unreadable', __( 'File could not be read.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Sidecar offload (Proposal 079): try the Media Worker for the heavy
+		// formats first; any failure falls through to the local parsers below.
+		$offloaded = self::maybe_offload_parse( $path, $options );
+		if ( null !== $offloaded ) {
+			return $offloaded;
+		}
+
+		$ext = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
+
+		// PDF: extract text layer (scanned PDFs get a clear OCR pointer).
+		if ( 'pdf' === $ext ) {
+			return self::extract_pdf_text( $path );
+		}
+
+		// Spreadsheet: XLSX/XLS/ODS via PhpSpreadsheet.
+		if ( in_array( $ext, array( 'xlsx', 'xls', 'ods' ), true ) ) {
+			return self::load_spreadsheet( $path );
+		}
+
+		// Photo/image invoice: deferred to the vision OCR tools.
+		if ( in_array( $ext, array( 'png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tiff' ), true ) ) {
+			// Provider-vision rung (Proposal 079, Appendix B): opt-in vision
+			// OCR for photo imports, enabled per site.
+			$vision = self::maybe_vision_ocr( $path );
+			if ( null !== $vision && ! is_wp_error( $vision ) ) {
+				return $vision;
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_fnb_photo_needs_ocr',
+				__( 'Image files require vision OCR. Use analyze_image or extract_image_text to produce the text, then import the result as CSV/JSON.', 'mcp-ai-wpoos-pro' ),
+				is_wp_error( $vision ) ? array( 'vision_error' => $vision->get_error_message() ) : null
+			);
+		}
+
+		$raw    = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$format = '';
+		if ( in_array( $ext, array( 'json', 'jsonl', 'ndjson' ), true ) ) {
+			$format = 'jsonl' === $ext || 'ndjson' === $ext ? self::FORMAT_JSONL : self::FORMAT_JSON;
+		} elseif ( 'tsv' === $ext ) {
+			$format = self::FORMAT_TSV;
+		}
+
+		return self::load( $raw, $format );
+	}
+
+	/**
+	 * Scan a set of source directories and auto-detect the table for each file.
+	 *
+	 * This is the "universal ingest" primitive: without any operator mapping or
+	 * explicit table choice, every recognisable file is resolved to its most
+	 * likely table by header structure (schema-on-read, with `table_map` and the
+	 * deterministic slug match still winning when present). Returns an empty
+	 * list per directory when it does not exist or has no recognised files.
+	 *
+	 * @param array $directories Absolute source directories to scan (defaults to
+	 *                           the F&B fixture + data dir and the csv_data_dir).
+	 * @return array<int,array{path:string,file:string,table_id:string,confidence:float,format:string}>
+	 */
+	public static function scan_sources( array $directories = array() ) {
+		if ( empty( $directories ) ) {
+			$directories = array( __DIR__ . '/data', __DIR__ . '/tests/fixtures' );
+			$custom      = WP_MCP_AI_Fnb_Settings::get( 'csv_data_dir', '' );
+			if ( is_string( $custom ) && '' !== $custom ) {
+				$directories[] = untrailingslashit( $custom );
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Structure_Matcher' ) && file_exists( __DIR__ . '/class-wp-mcp-ai-fnb-structure-matcher.php' ) ) {
+			require_once __DIR__ . '/class-wp-mcp-ai-fnb-structure-matcher.php';
+		}
+
+		$exts    = array( 'csv', 'tsv', 'json', 'jsonl', 'ndjson', 'xlsx', 'xls', 'ods' );
+		$results = array();
+
+		foreach ( $directories as $dir ) {
+			$dir = untrailingslashit( (string) $dir );
+			if ( ! is_dir( $dir ) ) {
+				continue;
+			}
+
+			$files = glob( trailingslashit( $dir ) . '*' );
+			if ( false === $files ) {
+				$files = array();
+			}
+			foreach ( $files as $path ) {
+				if ( ! is_file( $path ) ) {
+					continue;
+				}
+				$ext = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
+				if ( ! in_array( $ext, $exts, true ) ) {
+					continue;
+				}
+
+				$matrix = self::load_file( $path );
+				if ( is_wp_error( $matrix ) ) {
+					continue; // Unparseable/needs-OCR — skip in the scan; surfaced on direct load.
+				}
+
+				$headers = isset( $matrix['columns'] ) && is_array( $matrix['columns'] ) ? $matrix['columns'] : array();
+				if ( empty( $headers ) ) {
+					continue;
+				}
+
+				$best = class_exists( 'WP_MCP_AI_Fnb_Structure_Matcher' ) ? WP_MCP_AI_Fnb_Structure_Matcher::best_table( $headers ) : false;
+				if ( false === $best ) {
+					continue; // Non-tabular or unrecognised — omit rather than guess.
+				}
+
+				$results[] = array(
+					'path'       => $path,
+					'file'       => basename( $path ),
+					'table_id'   => $best['table_id'],
+					'confidence' => $best['score']['confidence'],
+					'format'     => isset( $matrix['format'] ) ? $matrix['format'] : $ext,
+				);
+			}
+		}
+
+		usort(
+			$results,
+			static function ( $a, $b ) {
+				if ( $a['confidence'] === $b['confidence'] ) {
+					return strcmp( $a['file'], $b['file'] );
+				}
+
+				return $a['confidence'] > $b['confidence'] ? -1 : 1;
+			}
+		);
+
+		return $results;
+	}
+}

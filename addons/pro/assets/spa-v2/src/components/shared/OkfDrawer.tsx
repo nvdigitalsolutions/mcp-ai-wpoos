@@ -46,6 +46,9 @@ export interface OkfDrawerProps {
 	/** Controlled by the parent — true = drawer is visible. */
 	isOpen: boolean;
 	onClose: () => void;
+	/** Guest mode — forward the guest token header (iframe/embedded surface). */
+	guest?: boolean;
+	guestToken?: string;
 	/** Insert a prompt into the composer (autoSubmit = send immediately). */
 	onInsertPrompt: ( prompt: string, autoSubmit: boolean ) => void;
 	/** The toggle button ref — focus returns here on close. */
@@ -97,12 +100,14 @@ export function OkfDrawer( {
 	assistantId,
 	isOpen,
 	onClose,
+	guest = false,
+	guestToken = '',
 	onInsertPrompt,
 	toggleRef,
 }: OkfDrawerProps ): JSX.Element | null {
 	const client = useMemo(
-		() => new OkfClient( { endpoint, nonce } ),
-		[ endpoint, nonce ]
+		() => new OkfClient( { endpoint, nonce, guest, guestToken } ),
+		[ endpoint, nonce, guest, guestToken ]
 	);
 
 	const [ activeTab, setActiveTab ] = useState< OkfTab >( 'knowledge' );

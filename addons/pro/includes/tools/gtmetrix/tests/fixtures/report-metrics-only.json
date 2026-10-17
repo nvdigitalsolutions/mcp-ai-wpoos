@@ -1,0 +1,24 @@
+{
+  "data": {
+    "type": "report",
+    "id": "RMETRICS",
+    "attributes": {
+      "url": "https://example.test/",
+      "page": "P1",
+      "test": "T3Q",
+      "source": "api",
+      "created": 1718700900,
+      "expires": 1721382900,
+      "browser": "3",
+      "location": "24",
+      "html_bytes": 8421,
+      "page_bytes": 911360,
+      "page_requests": 46,
+      "time_to_first_byte": 222,
+      "first_contentful_paint": 620,
+      "onload_time": 1680,
+      "fully_loaded_time": 2250
+    },
+    "links": {}
+  }
+}

@@ -5,11 +5,11 @@
 //! - **Windows:** a `WH_KEYBOARD_LL` low-level keyboard hook running on its
 //!   own OS thread with a `GetMessageW` message loop (a hook without a
 //!   message loop silently never fires), emitting Pressed/Released/Esc with
-//!   hold semantics. While a dictation is recording, the PTT key's own
-//!   down/up events are swallowed so the focused app never sees the modifier
-//!   (prevents Windows menu-bar activation and Ctrl/Win shortcut leakage).
-//!   Outside dictation the key passes through untouched, so AltGr layouts
-//!   keep working.
+//!   hold semantics. An armed press consumes BOTH the PTT key-down and the
+//!   matching key-up so the focused app never sees the modifier (prevents
+//!   Windows menu-bar activation); an asymmetric swallow would leave the
+//!   system believing the modifier is held (stuck keyboard). Non-armed
+//!   events — AltGr combos — pass through untouched.
 //! - **Fallback (Windows):** Windows can silently stop delivering
 //!   `WH_KEYBOARD_LL` events while a Chromium window (Chrome, VSCode,
 //!   WebView2) has focus. A `GetAsyncKeyState` poller runs alongside the hook
@@ -31,6 +31,14 @@ use crate::error::AppResult;
 pub mod fallback;
 #[cfg(windows)]
 pub mod win_hook;
+
+/// Platform-free PTT tap state machine (swallow pairing, combo
+/// passthrough, double-tap, Esc). Unit-tested on every OS; the macOS
+/// event-tap shell (`macos_event_tap`) is its only consumer today.
+pub mod tap_state;
+
+#[cfg(target_os = "macos")]
+pub mod macos_event_tap;
 
 /// Unified hotkey events consumed by the dictation controller.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -55,14 +63,27 @@ pub trait HotkeyListener: Send + Sync {
     fn stop(&mut self);
 }
 
-/// Platform-specific listener factory.
-pub fn platform_listener() -> Box<dyn HotkeyListener> {
+/// Platform-specific listener factory. `use_event_tap` selects the macOS
+/// CGEventTap hold listener (settings `ptt_mode = "hold"`); all other
+/// non-Windows configurations use the plugin toggle listener. Ignored on
+/// Windows (the hook always provides hold semantics).
+pub fn platform_listener(use_event_tap: bool) -> Box<dyn HotkeyListener> {
     #[cfg(windows)]
     {
+        let _ = use_event_tap;
         Box::new(win_hook::WinHookListener::default())
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
     {
+        if use_event_tap {
+            Box::new(macos_event_tap::MacEventTapListener::default())
+        } else {
+            Box::new(plugin::PluginToggleListener)
+        }
+    }
+    #[cfg(all(not(windows), not(target_os = "macos")))]
+    {
+        let _ = use_event_tap;
         Box::new(plugin::PluginToggleListener)
     }
 }

@@ -579,6 +579,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'rest_spa_surfaces',
+				'SPA Surfaces REST',
+				array(),
+				array(),
+				function () use ( $p ) {
+					$f = $p . 'rest/class-wp-mcp-ai-pro-spa-surfaces-controller.php';
+					if ( file_exists( $f ) ) {
+						require_once $f;
+						add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_SPA_Surfaces_Controller', 'register_routes' ) );
+					}
+				}
+			);
+
+			$this->add_module(
 				'rest_tool_shortcuts',
 				'Tool Shortcuts REST',
 				array(),
@@ -726,6 +740,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				),
 				function () use ( $p ) {
 					require_once $p . 'tools/media/init.php';
+				}
+			);
+
+			$this->add_module(
+				'toolkit_gtmetrix',
+				'GTmetrix Performance Toolkit',
+				array(),
+				array(),
+				function () use ( $p ) {
+					require_once $p . 'tools/gtmetrix/init.php';
 				}
 			);
 
@@ -897,6 +921,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				'extended_cognition'      => 'Extended Cognition',
 				'vision_analysis'         => 'Vision Analysis',
 				'outbound_booking'        => 'Outbound Booking',
+				'fnb'                     => 'Food & Beverage',
 			);
 
 			foreach ( $conditional_toolkits as $slug => $label ) {
@@ -931,6 +956,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					'extended_cognition'      => 'extended-cognition',
 					'vision_analysis'         => 'vision-analysis',
 					'outbound_booking'        => 'outbound-booking',
+					'fnb'                     => 'food-beverage',
 				);
 
 				$toolkit_dir = isset( $dir_map[ $slug ] ) ? $dir_map[ $slug ] : $slug;

@@ -154,7 +154,7 @@ available:
 
 ```
 1. List sites: remote_wp_connection { action: "list_connections" }
-2. For each spoke (e.g., Parfumerie, Myyco):
+2. For each spoke (e.g., a distinct brand/site slug):
    - Plan site-specific content pillars based on its niche
    - Pull existing products/posts for repurposing:
      remote_wp_connection { connection_id: "conn_xxx", action: "get_posts" }

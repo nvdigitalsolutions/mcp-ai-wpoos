@@ -37,6 +37,7 @@ if ( ! file_exists( $target_dir ) && ! mkdir( $target_dir, 0755, true ) ) {
 // in this repo). Add new project-specific skills here as they are created.
 $project_skills = array(
 	'mcp-ai-wpoos-plugin',
+	'mcp-ai-wpoos-dictation-app',
 	'design-ai-assistant-admin',
 	'design-analytics-reporting',
 	'design-brand-kit',

@@ -10,7 +10,7 @@
  * and sse-adapter.ts now forwards session_key so both pathways use the same key.
  */
 
-import { useMemo, useCallback, useRef, useState, type RefObject } from 'react';
+import { useMemo, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { useChat, type Message } from '@ai-sdk/react';
 import { createChatFetch } from '../sse-adapter';
 import { TranscriptsClient } from '../api/transcripts';
@@ -88,6 +88,13 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 				[ chatClientEndpoint, nonce, assistantId, guest, guestToken, model, provider, sessionKey, allowSensitiveTools ]
 	);
 
+	// Keep a ref to the current message list so `onFinish` (which is captured
+	// at construction time) can read the latest array. Reading `messages`
+	// directly from the closure would yield a stale snapshot at the moment
+	// `onFinish` fires — dropping the user's just-submitted message from the
+	// auto-saved transcript. Mirrors chat-spa's persistFinishedTurn guard.
+	const messagesRef = useRef< Message[] >( [] );
+
 	const {
 		messages,
 		input,
@@ -133,11 +140,12 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 				// the just-completed assistant message, use messages as-is;
 				// otherwise append it (onFinish may fire before React
 				// re-renders with the new message in state).
-				const last = messages[ messages.length - 1 ];
+				const current = messagesRef.current;
+				const last = current[ current.length - 1 ];
 				const alreadyPresent =
 					last && _message.id && last.id === _message.id;
 				const wireMessages = (
-					alreadyPresent ? messages : [ ...messages, _message ]
+					alreadyPresent ? current : [ ...current, _message ]
 				).map( ( m ) => ( {
 					role: m.role as string,
 					content: typeof m.content === 'string' ? m.content : '',
@@ -177,6 +185,11 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 			addToast( err.message || 'Chat error', 'error' );
 		},
 	} );
+
+	// Keep messagesRef in sync with the latest rendered message list.
+	useEffect( () => {
+		messagesRef.current = messages;
+	}, [ messages ] );
 
 	// Usage tracking (v0.9.0).
 	const [ usageMap, setUsageMap ] = useState< Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; costUsd?: number; model?: string; provider?: string } > >( {} );

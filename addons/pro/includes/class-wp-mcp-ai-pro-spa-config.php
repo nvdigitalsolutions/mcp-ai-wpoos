@@ -162,6 +162,10 @@ class WP_MCP_AI_Pro_SPA_Config {
 			'height'              => isset( $per_instance['height'] ) ? sanitize_text_field( $per_instance['height'] ) : '',
 			'showSidebar'         => ! isset( $per_instance['show_sidebar'] ) || ! empty( $per_instance['show_sidebar'] ),
 			'assistantSelector'   => $assistant_selector,
+			// True when the shortcode explicitly pins a single assistant. Pinned
+			// surfaces must always mount on that assistant and never honour a
+			// remembered selection (which might belong to another surface).
+			'pinnedAssistant'     => ! empty( $per_instance['assistant_id'] ),
 			'cronMonitor'         => ! isset( $per_instance['cron_monitor'] ) || ! empty( $per_instance['cron_monitor'] ),
 			'routes'              => $routes,
 		);
@@ -286,6 +290,28 @@ class WP_MCP_AI_Pro_SPA_Config {
 				// page renders an unavailable state when it's not installed.
 				'contentGraph'  => ( $is_admin && ! $guest && class_exists( 'NvoosContentGraph\Plugin' ) )
 					? esc_url_raw( rest_url( 'nvoos-content-graph/v1' ) )
+					: '',
+
+				// NV oOS Docs Hub — the #/docs page renders this front-end URL
+				// in a sandboxed iframe (defaults to the hosted console URL;
+				// admins can override via the filter).
+				'docsHub'       => ( $is_admin && ! $guest )
+					? (string) apply_filters(
+						'wp_mcp_ai_pro_spa_docs_url',
+						'https://console.nvoos.cloud/docs-hub/'
+					)
+					: '',
+
+				// NV oOS Media Studio — the #/media page frames its same-site
+				// shortcode page (hosted at /media-studio/ by default; overridable).
+				'mediaStudio'    => ( $is_admin && ! $guest && class_exists( 'NV_oOS_Media_Studio_Shortcode' ) )
+					? (string) apply_filters( 'wp_mcp_ai_pro_spa_media_studio_url', home_url( '/media-studio/' ) )
+					: '',
+
+				// NV oOS Document Editor — the #/documents page frames its
+				// same-site shortcode page (hosted at /document-editor/ by default).
+				'documentEditor' => ( $is_admin && ! $guest && class_exists( 'NV_oOS_Document_Editor_Shortcode' ) )
+					? (string) apply_filters( 'wp_mcp_ai_pro_spa_document_editor_url', home_url( '/document-editor/' ) )
 					: '',
 			),
 			'user'         => array(

@@ -1,6 +1,8 @@
 //! NV oOS Dictation — library entry point (Tauri mobile-ready split).
 
+pub mod agent;
 pub mod audio;
+pub mod camera;
 pub mod cleanup;
 pub mod config;
 pub mod dictation;
@@ -9,13 +11,16 @@ pub mod hotkey;
 pub mod ipc;
 #[cfg(feature = "mcp")]
 pub mod mcp;
+pub mod media;
 pub mod meetings;
 pub mod nvoos;
 pub mod paste;
+pub mod permissions;
 pub mod state;
 pub mod storage;
 pub mod stt;
 pub mod util;
+pub mod vision;
 
 use tauri::Manager;
 
@@ -63,6 +68,16 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
+        .on_window_event(|window, event| {
+            // Exit when the main window closes: the hidden overlay window
+            // would otherwise keep the process alive with no visible UI.
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                if window.label() == "main" {
+                    window.app_handle().exit(0);
+                }
+            }
+        })
         .setup(|app| {
             let handle = app.handle().clone();
             state::setup(&handle)?;
@@ -78,11 +93,41 @@ pub fn run() {
             ipc::get_settings,
             ipc::update_settings,
             ipc::get_status,
+            ipc::check_spa,
+            ipc::get_diagnostics,
+            ipc::list_input_devices,
+            ipc::restart_microphone,
+            ipc::list_camera_devices,
+            ipc::camera_available,
+            ipc::start_camera,
+            ipc::stop_camera,
+            ipc::get_preview_frame,
+            ipc::vision_available,
+            ipc::start_vision,
+            ipc::stop_vision,
+            ipc::get_detections,
+            ipc::vision_select_track,
+            ipc::get_vision_models,
+            ipc::download_vision_model,
+            ipc::test_vision_polish,
+            ipc::agent_available,
+            ipc::agent_run,
+            ipc::agent_status,
+            ipc::agent_pending,
+            ipc::agent_respond,
+            ipc::agent_stop,
             ipc::set_nvoos_credential,
             ipc::clear_nvoos_credential,
             ipc::test_nvoos_connection,
+            ipc::list_spa_surfaces,
             ipc::set_openai_api_key,
             ipc::clear_openai_api_key,
+            ipc::set_lm_studio_token,
+            ipc::clear_lm_studio_token,
+            ipc::test_lm_studio_connection,
+            ipc::set_ollama_token,
+            ipc::clear_ollama_token,
+            ipc::test_ollama_connection,
             ipc::set_wp_app_password,
             ipc::clear_wp_app_password,
             ipc::list_history,
@@ -96,9 +141,16 @@ pub fn run() {
             ipc::list_meetings,
             ipc::delete_meeting,
             ipc::get_models,
+            ipc::get_compiled_engines,
             ipc::download_model,
             ipc::transcribe_file,
+            ipc::transcribe_media,
+            ipc::summarize_media,
+            ipc::pick_media_file,
             ipc::cancel_dictation,
+            ipc::get_permissions,
+            ipc::request_permission,
+            ipc::open_system_settings,
         ]);
 
     builder

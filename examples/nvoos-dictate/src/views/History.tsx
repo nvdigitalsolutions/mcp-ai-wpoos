@@ -21,19 +21,32 @@ export default function HistoryView() {
   const search = () => void load(query);
 
   const remove = async (id: number) => {
-    await api.deleteHistory(id);
-    await load(query);
+    try {
+      await api.deleteHistory(id);
+      await load(query);
+    } catch (e) {
+      setMessage(String(e));
+    }
   };
 
   const clear = async () => {
-    await api.clearHistory();
-    await load(query);
+    try {
+      await api.clearHistory();
+      await load(query);
+      setMessage('History cleared.');
+    } catch (e) {
+      setMessage(String(e));
+    }
   };
 
   const exportJson = async () => {
-    const text = await api.exportHistory();
-    await navigator.clipboard.writeText(text);
-    setMessage('JSON copied to clipboard.');
+    try {
+      const text = await api.exportHistory();
+      await navigator.clipboard.writeText(text);
+      setMessage('JSON copied to clipboard.');
+    } catch (e) {
+      setMessage(`Export failed: ${e}`);
+    }
   };
 
   return (
@@ -65,6 +78,7 @@ export default function HistoryView() {
             <p className="muted small">
               {row.target_app || 'unknown app'} · {row.engine}/{row.model} · {row.provider} ·{' '}
               {row.e2e_ms} ms · {row.created_at}
+              {row.media && <span className="badge ok"> media</span>}
             </p>
             <details>
               <summary>Raw</summary>

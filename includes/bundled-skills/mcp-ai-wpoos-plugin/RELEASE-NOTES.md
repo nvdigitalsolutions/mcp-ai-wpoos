@@ -1,9 +1,44 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.4)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.7)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## F&B Universalisation, Sinhala TTS & the Pro SPA Multi-Page Expansion (v1.2.7)
+
+- **Food & Beverage universalisation + open-format ingestion (PRs #7094–#7096, Proposal 078)** — the F&B toolkit moves from a single-tenant demo to a universal product: `WP_MCP_AI_Fnb_Tenant_Profile` de-couples currency (canonical neutral metric keys + legacy `*_lkr` aliases for the 20/20 oracle), `render()` de-venues both assistant delivery surfaces (4 Portability packs + 4 unified Blueprints), `demo_mode => false`, and a DomPDF-first `fnb_export_report` (+1 Pro) with CSV fallback; the universal single-folder reader scores Drive files to table roles (multi-format CSV/TSV/JSON/JSONL/XLSX/ODS/PDF/photo + header-alias dictionary + dry-run); a read-only Ingest & Review dashboard + an analytics dashboard (KPI tiles + trend charts + panel tables).
+- **Sinhala-native TTS (PR #7099)** — `generate_sinhala_speech` (+1 base) closes the `generate_openai_speech` gap via SpeechGen `si-LK` (default), Hugging Face `facebook/mms-tts-sin`, or a custom webhook; wired into the `media_generation` preset; `teacher-assistant-sri-lanka.md` pack.
+- **Pro SPA multi-page expansion (PRs #7078–#7080)** — `#/docs` / `#/media` / `#/documents` frame the Docs Hub / Media Studio / Document Editor SPAs in sandboxed iframes with filterable endpoints + `nav-*` commands; standalone app defaults `docsHub` to console.nvoos.cloud.
+- **Dictation-app skill bundling (PR #7077)** — `mcp-ai-wpoos-dictation-app` ships in `includes/bundled-skills/` + the `bin/sync-agent-skills.php` allowlist (base bundled 76 → 77).
+- **Tool-schema hardening (PRs #7087/#7100/#7104)** — per-property boolean `required` hoisted to the top-level array (both `ChatOrchestrator::hoistPropertyRequiredFlags()` + REST `build_tools_payload()`); empty `properties` emitted as `{}` (seven no-arg tools + the central `Tool_Schema_Auditor::normalize_for_mcp()` + the CG-AI `ToolSchemaAuditor` mirror), fixing DeepSeek 400s.
+- **Google Workspace unification + native Sheets (PRs #7097/#7101/#7105)** — `search_gmail`/`search_drive` delegate to the shared credential-resolving clients; `get_drive_file` branches native Google Sheets to the Sheets API v4 (`sheet_name`, `tabs`, `row_count`); `extract_google_error_message()` surfaces the real 403 cause.
+- **F&B reliability (PRs #7091/#7092/#7102/#7103)** — recoverable unknown-metric errors (Levenshtein closest-ID), complete-by-default + resumable imports (25,000-row cap), header-dictionary metric resolution + covers fallbacks + fixed-height KPI charts, and a WPCS indentation pass.
+- **Team-member tool invocation (PR #7088)** — `invoke_team_member()` resolves profession slugs via `build_tools_payload()`. **Framed SPA credential auth + surface fix (PRs #7075/#7076/#7085)** — headless `Bearer cred_…` auth, home-URL iframe fallback removed, keep-alive hub tabs.
+- **Dependency (PR #7074)** — `@modelcontextprotocol/sdk` 1.30.1 → 1.31.0 in the mcp-wordpress-gateway (GHSA-6qxp-vccf-f47h).
+- **Tool counts** — ~355 base + ~1,377 Pro (~1,731 total; **+1 base +1 Pro**). Coding-time skills 73 → 74; bundled 76 → 77 base + 41 Pro. Security classes 12, providers 18, addons 30 — all unchanged. Stale 1.2.5 build ZIPs removed (30 files).
+
+## Google Drive OAuth Restored, F&B Reliability, OCR vLLM & the Dictation Browser Agent (v1.2.6)
+
+- **Google Drive OAuth restored (PR #7053)** — the #6981 `drive.file`-only narrowing broke `search_drive`, `get_drive_file`, and the F&B tools for pre-existing content; `drive.readonly` restored alongside `drive.file` behind `wp_mcp_ai_google_drive_oauth_scope` (CG-AI platform mirror — sub-project).
+- **F&B reader reliability (PRs #7057, #7060, #7061, #7062)** — Sheets-API-v4 multi-worksheet reads (`get_sheet_values()`/`get_sheets_metadata()`, fuzzy tab matching, split-file fallback); `DEMO_WORKBOOK_ID` fallback + `workbook_id()`; the `spreadsheets.readonly` OAuth scope + `maybe_annotate_sheets_error()`; a `WP_MCP_AI_Fnb_Csv_Exporter` + 18 shipped demo tables (`data/*.csv`). No new tool.
+- **Self-hosted OCR vLLM contract (PR #7055)** — `ocr_images()` was SGLang-shaped; rewritten to the vLLM OpenAI-compatible payload (`extra_body.vllm_xargs`; `skip_special_tokens` + n-gram args nested), base + CG Pro mirror byte-identical; `model_id` added to `MODEL_DEFAULTS`.
+- **Drive fixes (PR #7051)** — the `WP_MCP_AI_Inline_Async_Tick_Trait` double-declare fatal (harness eval scheduler — require through the `trait_exists()`-guarded `require_once`); Drive 400 body logging (`invalid_grant` vs `invalid_client`); `folder_id` clearing (`! array_key_exists()`).
+- **Dictation browser agent + FastConformer (PRs #7041, #7043–#7050)** — `examples/nvoos-dictate`: the `agent` feature (CDP browser control via chromiumoxide, ReAct loop, origin-guarded safety gate, HITL Approve/Deny, `settings.agent.model` brain), a `fastconformer` nemo_ctc STT engine, an explicit `polish_enabled` gate, and model-download hardening (`.download` moved out of the install dir, 5× swap retry, `spawn_blocking`).
+- **NV oOS SPA hub + Pro SPA v2 fixes (PRs #7063, #7066, #7064, #7072)** — `GET /mcp-ai-pro/v1/spa-surfaces` (`WP_MCP_AI_Pro_SPA_Surfaces_Controller`); the dictate "NV oOS" multi-surface hub; last-message-save + assistant-memory fixes; the `trait-wp-mcp-ai-spa-credential-auth.php` guest/bearer/credential drawer fix (401 in the dictate iframe).
+- **Dependency (PR #7059)** — `shell-quote` → `>=1.11.0` (1.12.0) across root/saas-controller/Pro SPA manifests (GHSA-pqg4-j6r4-53mv).
+- **Tool counts** — ~354 base + ~1,376 Pro (~1,730 total; **unchanged** — zero registry diff). Security classes 12, providers 18, addons 30 — all unchanged. Stale 1.2.4 build ZIPs removed (30 files).
+
+## GTmetrix × WPCode Toolkit, Food & Beverage Phase 9 & the Hardened Dictation App (v1.2.5)
+
+- **GTmetrix × WPCode performance toolkit (PR #7026, Proposal 068)** — **+24 Pro tools**: a 23-tool `gtmetrix_*` set (`addons/pro/includes/tools/gtmetrix/` behind `enable_gtmetrix_toolkit`) + the read-only `list_wpcode_snippets` (`addons/pro/includes/tools/developer/`). A shared `WP_MCP_AI_Pro_WPCode_Snippet_Repository` (extracted zero-behavior-change from `create_wpcode_snippet`) backs the WPCode bridge; `gtmetrix_install_wpcode_fix` is drafts-only + chat-restricted. Deterministic CWV/grade/weight scoring (41-check oracle), a credit-aware Action Scheduler poller + CPT snapshot store, Basic-auth client (429 backoff, sensitive-resource hard-blocks). Five schedule + two workflow presets; `wp mcp-ai pro gtmetrix seed-assistant`.
+- **Food & Beverage Phase 9 (PR #7032)** — **+10 Pro tools**: five transactional-table CPTs (`mcp_ai_fnb_sale|purchase|stock|waste|booking` behind `enable_fnb_native_storage`, idempotent upserts, read by metrics/reports unchanged), the `fnb_import_table` Sheet/CSV→CPT bridge (dry-run, idempotent), and nine `fnb_pr_*` purchase-request tools on the QMS engine (`wp_mcp_ai_qms_state_preconditions`, PO numbering `PR-YYYYMM-###`, release-signature relaxation). The four A1–A4 assistants ship as unified Blueprints; a new top-level F&B admin menu (CRM/PM pattern).
+- **F&B admin menu + seeder (PRs #7029/#7033)** — `tools/food-beverage/init.php` wired into the Pro Module Registry (`conditional_toolkits`/`dir_map`) so the admin menu surfaces (tools worked before via the central map); the completed `WP_MCP_AI_Fnb_Assistant_Seeder` makes the one-click admin button + `wp mcp-ai pro fnb seed-assistants` CLI share semantics; CSV-directory status row.
+- **Dictation companion app hardened (PRs #7017, #7020, #7021, #7025, #7027, #7030, #7037, #7039, #7040)** — `examples/nvoos-dictate`: cpal stream-hold regression, stuck-Alt hook, adaptive VAD, re-download write-access; whisper+parakeet one binary (vendored `whisper-rs-sys`); whisper RTF 5.2 → 0.36; 0.1.0 → 0.2.0; Windows Credential Manager (`win_cred.rs`, `CRED_PERSIST_LOCAL_MACHINE`); macOS port (P5); local `lm_studio`/`ollama` + video input + proprietary licensing; ONNX-YOLO detection + Qwen2.5-VL label polish. **No plugin registry surface.**
+- **Standalone SPA login presets (PR #7031)** — `examples/nvoos-pro-spa-vite` `HOME`-selected login pages + runtime `NVOOS_*` env injection + `NVOOS_AUTO_CONNECT` kiosk mode.
+- **Coverage & contract drift (PRs #7035/#7036)** — model-foundry `produces` → null; `enable_webchat_integration` toolkit count 36 → 37; regenerated Pro coverage manifest.
+- **Docs & skills** — coding-time skills **71 → 72** (`mcp-ai-artcraft-ops`, `design-performance-audit`); Rust editor config; proposal docs 068/070/071/072/074/075/076; sub-project content-graph 1.0.11 wp.org prep (#7014, flag-not-edited).
+- **Tool counts** — ~354 base + ~1,376 Pro (~1,730 total; +34 Pro). Security classes 12, providers 18, addons 30 — all unchanged. Stale 1.2.3 build ZIPs removed.
 
 ## MCP Quirk Hardening, Chart Recipes, Model Foundry Phase 1 & the Content Graph SPA Page (v1.2.4)
 

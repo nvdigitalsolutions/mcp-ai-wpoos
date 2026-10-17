@@ -37,7 +37,7 @@ class WP_MCP_AI_Tool_Fnb_Generate_Report extends WP_MCP_AI_Fnb_Tool_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generate a Surf Club report (R-01…R-13) in its Report-library layout. All figures come from the metric engine. Returns structured sections plus a Draft header for fnb_save_draft.', 'mcp-ai-wpoos-pro' );
+		return __( 'Generate an F&B report (R-01…R-13) in its Report-library layout. All figures come from the metric engine. Returns structured sections plus a Draft header for fnb_save_draft.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**

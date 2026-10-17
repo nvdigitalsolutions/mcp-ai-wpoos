@@ -246,14 +246,15 @@ Ordered by risk, not by module:
 
 **P4 exit:** P0 feature parity on X11; Wayland gaps documented.
 
-## Phase 6 — P5: macOS (3–5 days)
+## Phase 6 — P5: macOS (see `examples/nvoos-dictate/docs/macos-port-plan.md`)
 
-| # | File(s) | Change |
-|---|---|---|
-| 6.1 | System audio sidecar | Thin Swift helper process feeding PCM to the Rust core (dev.to pattern); signed/notarized later |
-| 6.2 | Hotkey | global-shortcut plugin (Accessibility permission flow); overlay permissions checklist in README |
-| 6.3 | Secrets | `keyring` → Keychain |
-| 6.4 | Packaging | .app + updater; notarization requires the Apple Developer Program — document as distribution prerequisite |
+Superseded by the dedicated macOS port plan (2026-10-12): phases M0–M8 covering
+the TCC permission model (Microphone / Accessibility / Input Monitoring / Screen
+Recording), the permission-free default PTT (plugin combo) + opt-in
+Right-Option hold via CGEventTap, the ScreenCaptureKit Swift sidecar for
+meeting system audio, per-app cleanup via NSWorkspace, and signed/notarized
+DMG distribution with the Apple Developer Program documented as a
+prerequisite. This section is kept only as the historical sketch.
 
 ## Test plan summary
 

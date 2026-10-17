@@ -12,10 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Load the trait for restricting from chat-client.
-if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
-	require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-restrict-from-chat-client.php';
-}
+require_once __DIR__ . '/class-wp-mcp-ai-pro-wpcode-snippet-repository.php';
 
 /**
  * Creates or updates WPCode snippets using the WPCode plugin APIs.
@@ -31,21 +28,17 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 	 *
 	 * @var string[]
 	 */
-	protected $allowed_code_types = array( 'html', 'text', 'css', 'scss', 'js', 'php', 'universal', 'blocks' );
+	private $allowed_code_types = array( 'php', 'html', 'css', 'js', 'universal', 'text' );
 
 	/**
-	 * Determine whether the tool can be registered.
-	 *
-	 * @return bool
+	 * {@inheritdoc}
 	 */
 	public static function is_available() {
-		return function_exists( 'wpcode' ) && class_exists( 'WPCode_Snippet' );
+		return WP_MCP_AI_Pro_WPCode_Snippet_Repository::is_available();
 	}
 
 	/**
-	 * Describe why the tool is unavailable.
-	 *
-	 * @return string
+	 * {@inheritdoc}
 	 */
 	public static function get_unavailable_reason() {
 		if ( ! function_exists( 'wpcode' ) || ! class_exists( 'WPCode_Snippet' ) ) {
@@ -77,15 +70,13 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * Get usage guidance for the tool.
-	 *
-	 * @return array
+	 * {@inheritdoc}
 	 */
 	public function get_usage_guidance() {
 		return array(
 			'when_to_use'     => __( 'Creating or updating WPCode snippets for PHP, JS, CSS, HTML, and other supported code types.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Formatting code without saving a snippet; use format_code_prettier.', 'mcp-ai-wpoos-pro' ),
-			'related_tools'   => array( 'format_code_prettier' ),
+			'related_tools'   => array( 'format_code_prettier', 'list_wpcode_snippets' ),
 			'notes'           => __( 'Requires the WPCode plugin; auto_insert=true needs a location valid for the chosen code_type.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
@@ -97,67 +88,82 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'snippet_id'       => array(
+				'snippet_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Existing WPCode snippet ID to update. Leave empty to create a new snippet.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'title'            => array(
+				'title'             => array(
 					'type'        => 'string',
 					'description' => __( 'Snippet title displayed in the WPCode list.', 'mcp-ai-wpoos-pro' ),
 				),
-				'code'             => array(
+				'code'              => array(
 					'type'        => 'string',
 					'description' => __( 'The snippet code to store. Accepts PHP, HTML, CSS, JS and other formats supported by WPCode.', 'mcp-ai-wpoos-pro' ),
 				),
-				'code_type'        => array(
+				'code_type'         => array(
 					'type'        => 'string',
 					'enum'        => $this->allowed_code_types,
 					'description' => __( 'WPCode code type slug that controls execution (php, html, css, js, universal, etc).', 'mcp-ai-wpoos-pro' ),
 				),
-				'auto_insert'      => array(
+				'auto_insert'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether the snippet should auto-insert in a location (true) or only be available via shortcode (false).', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'location'         => array(
+				'location'          => array(
 					'type'        => 'string',
 					'description' => __( 'Auto-insert location slug, such as site_wide_header, before_post_content or everywhere.', 'mcp-ai-wpoos-pro' ),
 				),
-				'activate'         => array(
+				'activate'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Set to true to activate (publish) the snippet after saving.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'tags'             => array(
+				'tags'              => array(
 					'type'        => 'array',
 					'description' => __( 'Optional array of tag slugs to assign to the snippet.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'note'             => array(
+				'note'              => array(
 					'type'        => 'string',
 					'description' => __( 'Internal note stored with the snippet.', 'mcp-ai-wpoos-pro' ),
 				),
-				'priority'         => array(
+				'priority'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Execution priority for the snippet. Lower numbers run earlier.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'insert_number'    => array(
+				'insert_number'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Paragraph, word or loop index for locations that support numbered insertion.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'custom_shortcode' => array(
+				'custom_shortcode'  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional custom shortcode tag to register when auto insert is disabled.', 'mcp-ai-wpoos-pro' ),
 				),
-				'device_type'      => array(
+				'device_type'       => array(
 					'type'        => 'string',
 					'enum'        => array( 'any', 'desktop', 'mobile' ),
 					'description' => __( 'Restrict snippet execution to a specific device type.', 'mcp-ai-wpoos-pro' ),
+				),
+				'conditional_logic' => array(
+					'type'        => 'array',
+					'description' => __( 'Optional WPCode Smart Conditional Logic groups. Each group is a list of rules with rule_type, operator and value keys; groups are OR-ed, rules within a group are AND-ed.', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'rule_type' => array( 'type' => 'string' ),
+								'operator'  => array( 'type' => 'string' ),
+								'value'     => array( 'type' => array( 'string', 'integer' ) ),
+							),
+						),
+					),
 				),
 			),
 			'required'             => array( 'code', 'code_type' ),
@@ -202,7 +208,8 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		if ( ! function_exists( 'wpcode' ) || ! class_exists( 'WPCode_Snippet' ) ) {
+		$repository = new WP_MCP_AI_Pro_WPCode_Snippet_Repository();
+		if ( ! $repository->is_available() ) {
 			return new WP_Error( 'wp_mcp_ai_wpcode_missing', __( 'WPCode must be installed and active to manage snippets.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -219,13 +226,10 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 		}
 
 		$snippet_id = isset( $arguments['snippet_id'] ) ? absint( $arguments['snippet_id'] ) : 0;
-		$existing   = null;
-
 		if ( 0 < $snippet_id ) {
-				$existing = new WPCode_Snippet( $snippet_id );
-
-			if ( empty( $existing->post_data ) || 'wpcode' !== $existing->post_type ) {
-						return new WP_Error( 'wp_mcp_ai_invalid_snippet', __( 'The requested WPCode snippet could not be found.', 'mcp-ai-wpoos-pro' ) );
+			$existing = $repository->get( $snippet_id );
+			if ( is_wp_error( $existing ) ) {
+				return $existing;
 			}
 		}
 
@@ -237,7 +241,7 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 		}
 
 		if ( $auto_insert_enabled && '' !== $location ) {
-			$location_validation = $this->validate_location( $location, $code_type );
+			$location_validation = $repository->validate_location( $location, $code_type );
 			if ( is_wp_error( $location_validation ) ) {
 				return $location_validation;
 			}
@@ -250,7 +254,7 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 		);
 
 		if ( 0 < $snippet_id ) {
-				$snippet_data['id'] = $snippet_id;
+			$snippet_data['id'] = $snippet_id;
 		}
 
 		if ( isset( $arguments['title'] ) ) {
@@ -301,20 +305,41 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 			}
 		}
 
-		$snippet = new WPCode_Snippet( $snippet_data );
-		$result  = $snippet->save();
-
-		if ( false === $result ) {
-			$message = '';
-			if ( function_exists( 'wpcode' ) && method_exists( wpcode()->error, 'get_last_error_message' ) ) {
-				$message = wpcode()->error->get_last_error_message();
+		if ( isset( $arguments['conditional_logic'] ) && is_array( $arguments['conditional_logic'] ) ) {
+			$groups = array();
+			foreach ( $arguments['conditional_logic'] as $group ) {
+				if ( ! is_array( $group ) ) {
+					continue;
+				}
+				$rules = array();
+				foreach ( $group as $rule ) {
+					if ( ! is_array( $rule ) ) {
+						continue;
+					}
+					$rule_type = isset( $rule['rule_type'] ) ? sanitize_key( $rule['rule_type'] ) : '';
+					$operator  = isset( $rule['operator'] ) ? sanitize_text_field( $rule['operator'] ) : '';
+					if ( '' === $rule_type ) {
+						continue;
+					}
+					$rules[] = array(
+						'rule_type' => $rule_type,
+						'operator'  => $operator,
+						'value'     => isset( $rule['value'] ) ? $rule['value'] : '',
+					);
+				}
+				if ( ! empty( $rules ) ) {
+					$groups[] = $rules;
+				}
 			}
-
-			if ( ! $message ) {
-				$message = __( 'The WPCode snippet could not be saved.', 'mcp-ai-wpoos-pro' );
+			if ( ! empty( $groups ) ) {
+				$snippet_data['conditional_logic'] = $groups;
 			}
+		}
 
-			return new WP_Error( 'wp_mcp_ai_wpcode_save_failed', $message );
+		$result = $repository->save( $snippet_data );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 
 		$saved_snippet = new WPCode_Snippet( $result );
@@ -330,7 +355,7 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 			'location'      => $saved_snippet->get_location(),
 			'location_name' => $this->get_location_label( $saved_snippet->get_location() ),
 			'activated'     => ( $post && 'publish' === $post->post_status ),
-			'shortcode'     => $this->build_shortcode( $saved_snippet ),
+			'shortcode'     => $repository->build_shortcode( $saved_snippet ),
 		);
 
 		if ( ! empty( $snippet_data['tags'] ) ) {
@@ -339,57 +364,11 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 			$response['tags'] = $saved_snippet->get_tags();
 		}
 
+		if ( isset( $snippet_data['conditional_logic'] ) ) {
+			$response['conditional_logic'] = $repository->get_conditional_logic( $result );
+		}
+
 		return $response;
-	}
-
-	/**
-	 * Validate a requested auto-insert location against the active WPCode configuration.
-	 *
-	 * @param string $location  Location slug.
-	 * @param string $code_type Code type slug requested for the snippet.
-	 *
-	 * @return true|WP_Error
-	 */
-	protected function validate_location( $location, $code_type ) {
-		if ( ! function_exists( 'wpcode' ) || ! isset( wpcode()->auto_insert ) ) {
-			return new WP_Error( 'wp_mcp_ai_wpcode_unavailable', __( 'WPCode auto-insert locations are unavailable.', 'mcp-ai-wpoos-pro' ) );
-		}
-
-		$types = wpcode()->auto_insert->get_types();
-		foreach ( $types as $type ) {
-			$locations = $type->get_locations();
-			if ( isset( $locations[ $location ] ) ) {
-				if ( isset( $type->code_type ) && 'all' !== $type->code_type ) {
-					$allowed_type = $type->code_type;
-					if ( 'php' === $allowed_type && 'universal' === $code_type ) {
-						return true;
-					}
-					if ( $allowed_type !== $code_type ) {
-						return new WP_Error( 'wp_mcp_ai_location_not_supported', __( 'The requested location is not available for this code type.', 'mcp-ai-wpoos-pro' ) );
-					}
-				}
-
-				return true;
-			}
-		}
-
-		return new WP_Error( 'wp_mcp_ai_unknown_location', __( 'The provided auto-insert location is not recognised by WPCode.', 'mcp-ai-wpoos-pro' ) );
-	}
-
-	/**
-	 * Build the shortcode string for a snippet.
-	 *
-	 * @param WPCode_Snippet $snippet Snippet instance.
-	 *
-	 * @return string
-	 */
-	protected function build_shortcode( WPCode_Snippet $snippet ) {
-		$custom = $snippet->get_custom_shortcode();
-		if ( ! empty( $custom ) ) {
-			return '[' . sanitize_key( $custom ) . ']';
-		}
-
-		return sprintf( '[wpcode id="%d"]', $snippet->get_id() );
 	}
 
 	/**

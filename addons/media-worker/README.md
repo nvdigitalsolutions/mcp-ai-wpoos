@@ -62,7 +62,7 @@ wordpress:
 
 | Group | Routes |
 |---|---|
-| Image | `/api/image/generate`, `/api/image/optimize`, `/api/image/enhance`, `/api/image/upscale`, `/api/image/edit`, `/api/image/vectorize`, `/api/image/providers` |
+| Image | `/api/image/generate`, `/api/image/optimize`, `/api/image/batch`, `/api/image/enhance`, `/api/image/upscale`, `/api/image/edit`, `/api/image/vectorize`, `/api/image/providers` |
 | Video | `/api/video/generate`, `/api/video/process`, `/api/video/info`, `/api/video/download/:name` |
 | Social | `/api/social/post`, `/api/social/generate-content` |
 | PDF | `/api/pdf/extract`, `/api/pdf/render`, `/api/pdf/generate`, `/api/pdf/merge`, `/api/pdf/watermark` |
@@ -74,7 +74,32 @@ wordpress:
 | Browser | `/api/browser/screenshot`, `/api/browser/pdf` |
 | Crawl | `/api/crawl/markdown`, `/api/crawl/markdown-batch`, `/api/crawl/links` |
 | Crawl4AI facade | `/api/crawl4ai/crawl`, `/api/crawl4ai/task/:task_id` |
+| Ingest | `/api/ingest/parse` |
 | Health | `GET /api/health` |
+
+### Ingest parsing (v3.5.0+, Proposal 079)
+
+`POST /api/ingest/parse` parses owner-format files into the shared
+`{ columns, rows }` matrix contract (tabular formats) or extracted `{ text }`
+(PDF / photo OCR), for the F&B toolkit's open-format ingestion pipeline.
+Multipart `file` upload (managed hosts) or a guarded `source` path
+(shared-volume deployments), same as the PDF route.
+
+| Input | Engine | Behaviour |
+|---|---|---|
+| `.xlsx` | ExcelJS (existing dependency) | First worksheet unless `sheet` given; returns `columns`/`rows`/`meta` |
+| `.xls` | - | `503 capability_unavailable` (legacy binary format - the caller falls back to local PhpSpreadsheet) |
+| `.ods` | - | `503 capability_unavailable` unless `INGEST_ODS=1` and the optional `xlsx` (SheetJS) package is installed |
+| `.csv` / `.tsv` | csv-parse | Delimiter sniffing (`,` `\t` `;` `|`) |
+| `.json` / `.jsonl` | built-in | Union-header matrix in first-seen order |
+| `.pdf` | pdf-parse | Text layer; when empty, rasterises (pdfjs-dist + canvas) and OCRs each page (tesseract.js), `meta.ocr = true` |
+| images | tesseract.js | Returns `{ text, confidence, words, lines }` with `format: "photo"` |
+
+Fields: `sheet` (worksheet name or 1-based index), `language` (OCR lang,
+default `eng`), `format` (extension override), `offset`/`limit` (row paging - the
+route returns the full matrix by default; no hidden row cap). The scanned-PDF
+chain returns `503 capability_unavailable` for `pdf-rasterization` when the
+optional `canvas` module is not installed.
 
 ## Plugin Integration
 

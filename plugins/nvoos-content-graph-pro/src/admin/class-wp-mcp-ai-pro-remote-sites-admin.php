@@ -11210,7 +11210,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				admin_url( 'admin.php' )
 			),
 			'response_type'          => 'code',
-			'scope'                  => 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
+			'scope'                  => 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets.readonly',
 			'access_type'            => 'offline',
 			'include_granted_scopes' => 'true',
 			'prompt'                 => 'consent',

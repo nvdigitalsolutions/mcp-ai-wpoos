@@ -206,7 +206,7 @@ class WP_MCP_AI_Tool_Schema_Auditor_Test extends WP_UnitTestCase {
 		$normalized = WP_MCP_AI_Tool_Schema_Auditor::normalize_for_mcp( 'untyped_tool', $schema );
 
 		$this->assertSame( 'object', $normalized['type'] );
-		$this->assertSame( array(), $normalized['properties'] );
+		$this->assertInstanceOf( stdClass::class, $normalized['properties'] );
 	}
 
 	/**

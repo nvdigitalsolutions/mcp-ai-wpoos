@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "license": "UNLICENSED",
   "description": "Standalone Vite app that mounts the NV oOS Pro SPA v2 (from addons/pro/assets/spa-v2) and connects to any WordPress backend running the plugin",
   "scripts": {
     "dev": "vite",

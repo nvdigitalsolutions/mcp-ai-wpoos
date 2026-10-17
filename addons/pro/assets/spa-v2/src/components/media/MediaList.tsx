@@ -77,7 +77,6 @@ export function MediaList( props: MediaListProps ): JSX.Element {
 						<button
 							type="button"
 							className="nvoos-pro-spa-media-list__cell nvoos-pro-spa-media-list__cell--name"
-							role="cell"
 							onClick={ () => onSelect( item ) }
 							aria-label={ sprintf(
 								/* translators: %1$s: media title, %2$s: MIME type */

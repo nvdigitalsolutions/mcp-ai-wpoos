@@ -210,6 +210,23 @@ class WP_MCP_AI_QMS_Doc_Record_CPT {
 	 * @return string
 	 */
 	public static function recompute_hash( $post_id ) {
+		$hash = self::compute_hash( $post_id );
+		if ( '' !== $hash ) {
+			update_post_meta( $post_id, '_qms_content_hash', $hash );
+		}
+		return $hash;
+	}
+
+	/**
+	 * Compute (without persisting) the content hash for a record.
+	 *
+	 * Used by lifecycle gates that must verify the stored hash still matches
+	 * the current content without mutating anything.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string
+	 */
+	public static function compute_hash( $post_id ) {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return '';
@@ -222,8 +239,6 @@ class WP_MCP_AI_QMS_Doc_Record_CPT {
 				'revision'    => get_post_meta( $post_id, '_qms_revision', true ),
 			)
 		);
-		$hash    = hash( 'sha256', (string) $payload );
-		update_post_meta( $post_id, '_qms_content_hash', $hash );
-		return $hash;
+		return hash( 'sha256', (string) $payload );
 	}
 }

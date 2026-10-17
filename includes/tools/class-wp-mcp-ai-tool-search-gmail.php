@@ -163,7 +163,7 @@ class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				);
 			}
 
-			if ( ! empty( $connection['connection_type'] ) && 'gmail' !== $connection['connection_type'] ) {
+			if ( ! empty( $connection['connection_type'] ) && ! in_array( sanitize_key( $connection['connection_type'] ), array( 'gmail', 'google_workspace', 'email_imap' ), true ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_gmail_wrong_connection_type',
 					sprintf(

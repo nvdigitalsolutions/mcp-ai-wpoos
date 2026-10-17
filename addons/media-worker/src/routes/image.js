@@ -1247,57 +1247,95 @@ router.post('/edit', upload.single('file'), async (req, res) => {
 });
 
 // ── Batch Image Processing ────────────────────────────────
-router.post('/batch', upload.array('files', 20), async (req, res) => {
+// ── POST /batch — bulk optimize (Sharp) ────────────────────
+// Accepts multipart files under any field name starting with 'files'
+// ('files', 'files[0]', …) so the plugin's sidecar_upload_multi and plain
+// multi-file clients both work (the pdf/merge convention). Returns per-file
+// base64 so callers can write the bytes back; the added fields (b64, format,
+// width/height, errors) are additive on the original v3.4.0 contract.
+router.post('/batch', upload.any(), async (req, res) => {
   try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No files uploaded' });
+    const uploaded = ( req.files || [] )
+      .filter( ( f ) => 'files' === f.fieldname || 0 === f.fieldname.indexOf( 'files[' ) )
+      .sort( ( a, b ) => {
+        const ai = parseInt( ( a.fieldname.match( /\[(\d+)\]/ ) || [ 0, 0 ] )[ 1 ], 10 );
+        const bi = parseInt( ( b.fieldname.match( /\[(\d+)\]/ ) || [ 0, 0 ] )[ 1 ], 10 );
+        return ai - bi;
+      } );
+
+    if ( uploaded.length === 0 ) {
+      return res.status( 400 ).json( { error: 'No files uploaded' } );
     }
 
     const { format = 'webp', quality = 80, width } = req.body;
+    const qualityN = Math.max( 1, Math.min( 100, parseInt( quality, 10 ) || 80 ) );
     const results = [];
+    const errors = [];
 
-    for (const file of req.files) {
-      let pipeline = sharp(file.buffer);
-      if (width) {
-        pipeline = pipeline.resize(parseInt(width, 10), undefined, {
-          fit: 'inside',
-          withoutEnlargement: true,
-        });
+    for ( const file of uploaded ) {
+      try {
+        let pipeline = sharp( file.buffer ).rotate(); // Auto-orient + EXIF strip.
+        if ( width ) {
+          pipeline = pipeline.resize( parseInt( width, 10 ), undefined, {
+            fit: 'inside',
+            withoutEnlargement: true,
+          } );
+        }
+
+        let outputBuffer;
+        switch ( format ) {
+          case 'webp':
+            outputBuffer = await pipeline.webp( { quality: qualityN } ).toBuffer();
+            break;
+          case 'avif':
+            outputBuffer = await pipeline.avif( { quality: qualityN } ).toBuffer();
+            break;
+          case 'jpeg':
+          case 'jpg':
+            outputBuffer = await pipeline.jpeg( { quality: qualityN } ).toBuffer();
+            break;
+          case 'png':
+            outputBuffer = await pipeline.png().toBuffer();
+            break;
+          case '':
+          case 'original':
+            // Re-encode in the source format (metadata already stripped).
+            outputBuffer = await pipeline.toBuffer();
+            break;
+          default:
+            outputBuffer = await pipeline.webp( { quality: qualityN } ).toBuffer();
+        }
+
+        const meta = await sharp( outputBuffer ).metadata();
+        results.push( {
+          filename: file.originalname,
+          format: meta.format,
+          width: meta.width,
+          height: meta.height,
+          original_size: file.size,
+          optimized_size: outputBuffer.length,
+          savings_percent: ( ( file.size - outputBuffer.length ) / file.size * 100 ).toFixed( 1 ) + '%',
+          b64: outputBuffer.toString( 'base64' ),
+        } );
+      } catch ( err ) {
+        errors.push( { filename: file.originalname, error: err.message } );
       }
-
-      let outputBuffer;
-      switch (format) {
-        case 'webp':
-          outputBuffer = await pipeline.webp({ quality: parseInt(quality, 10) }).toBuffer();
-          break;
-        case 'avif':
-          outputBuffer = await pipeline.avif({ quality: parseInt(quality, 10) }).toBuffer();
-          break;
-        default:
-          outputBuffer = await pipeline.webp({ quality: 80 }).toBuffer();
-      }
-
-      results.push({
-        filename: file.originalname,
-        original_size: file.size,
-        optimized_size: outputBuffer.length,
-        savings_percent: ((file.size - outputBuffer.length) / file.size * 100).toFixed(1) + '%',
-      });
     }
 
-    const totalSaved = results.reduce((sum, r) => sum + (r.original_size - r.optimized_size), 0);
+    const totalSaved = results.reduce( ( sum, r ) => sum + ( r.original_size - r.optimized_size ), 0 );
 
-    res.json({
-      success: true,
+    res.json( {
+      success: results.length > 0,
       processed: results.length,
       total_bytes_saved: totalSaved,
       results,
-    });
-  } catch (err) {
-    console.error('[Batch Optimize]', err.message);
-    res.status(500).json({ error: err.message });
+      errors,
+    } );
+  } catch ( err ) {
+    console.error( '[Batch Optimize]', err.message );
+    res.status( 500 ).json( { error: err.message } );
   }
-});
+} );
 
 // ── POST /vectorize — raster to SVG (VTracer via @neplex/vectorizer) ──
 // String values mirror the plugin's local bin/vectorize-image.js contract

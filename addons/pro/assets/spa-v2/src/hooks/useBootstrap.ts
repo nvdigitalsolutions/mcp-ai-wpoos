@@ -166,6 +166,33 @@ export function useBootstrap(): BootstrapResult {
 				},
 			},
 			{
+				id: 'nav-docs',
+				label: 'Go to Docs',
+				description: 'Browse the documentation',
+				category: 'navigation',
+				handler: () => {
+					window.location.hash = '#/docs';
+				},
+			},
+			{
+				id: 'nav-media',
+				label: 'Go to Media Studio',
+				description: 'Open the media editor',
+				category: 'navigation',
+				handler: () => {
+					window.location.hash = '#/media';
+				},
+			},
+			{
+				id: 'nav-documents',
+				label: 'Go to Document Editor',
+				description: 'Open the document editor',
+				category: 'navigation',
+				handler: () => {
+					window.location.hash = '#/documents';
+				},
+			},
+			{
 				id: 'action-toggle-sidebar',
 				label: 'Toggle Sidebar',
 				category: 'action',

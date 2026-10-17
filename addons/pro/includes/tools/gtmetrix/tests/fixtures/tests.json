@@ -1,0 +1,42 @@
+{
+  "data": [
+    {
+      "type": "test",
+      "id": "T1Q",
+      "attributes": {
+        "report": "RGOOD",
+        "url": "https://example.test/",
+        "page": "P1",
+        "source": "api",
+        "location": "24",
+        "browser": "3",
+        "state": "completed",
+        "created": 1718700000,
+        "started": 1718700005,
+        "finished": 1718700040
+      },
+      "links": {}
+    },
+    {
+      "type": "test",
+      "id": "T2Q",
+      "attributes": {
+        "report": "RPOOR",
+        "url": "https://example.test/",
+        "page": "P1",
+        "source": "api",
+        "location": "24",
+        "browser": "3",
+        "state": "completed",
+        "created": 1718700500,
+        "started": 1718700505,
+        "finished": 1718700550
+      },
+      "links": {}
+    }
+  ],
+  "links": {},
+  "meta": {
+    "curr_page": 1
+  }
+}

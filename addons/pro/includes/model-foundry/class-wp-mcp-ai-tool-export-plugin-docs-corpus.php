@@ -135,7 +135,10 @@ class WP_MCP_AI_Tool_Export_Plugin_Docs_Corpus implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_data_contract() {
 		return array(
-			'produces' => 'docs_v1',
+			// 'docs_v1' is a corpus schema identifier, not an ID handed off to
+			// another tool (D2: only ID-bearing CRUD families are annotated),
+			// so it is deliberately not a `produces` contract.
+			'produces' => null,
 			'consumes' => array( 'assistant_id' ),
 		);
 	}

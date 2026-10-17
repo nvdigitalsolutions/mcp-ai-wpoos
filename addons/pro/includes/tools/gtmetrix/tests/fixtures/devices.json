@@ -1,0 +1,30 @@
+{
+  "data": [
+    {
+      "id": "iphone_13",
+      "type": "simulated_device",
+      "attributes": {
+        "category": "phone",
+        "name": "Apple iPhone 13/13 Pro/14/16e",
+        "manufacturer": "Apple",
+        "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
+        "width": 390,
+        "height": 844,
+        "dppx": 3
+      }
+    },
+    {
+      "id": "pixel_6",
+      "type": "simulated_device",
+      "attributes": {
+        "category": "phone",
+        "name": "Google Pixel 6",
+        "manufacturer": "Google",
+        "user_agent": "Mozilla/5.0 (Linux; Android 12; Pixel 6)",
+        "width": 360,
+        "height": 800,
+        "dppx": 3
+      }
+    }
+  ]
+}

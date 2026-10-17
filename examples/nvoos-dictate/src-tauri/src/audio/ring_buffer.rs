@@ -10,6 +10,8 @@ use std::collections::VecDeque;
 pub struct RingBuffer {
     buf: VecDeque<f32>,
     capacity: usize,
+    /// Samples pushed since creation — absolute positions for snapshots.
+    total: usize,
 }
 
 impl RingBuffer {
@@ -17,6 +19,7 @@ impl RingBuffer {
         Self {
             buf: VecDeque::with_capacity(capacity.min(1 << 20)),
             capacity: capacity.min(1 << 20),
+            total: 0,
         }
     }
 
@@ -27,6 +30,12 @@ impl RingBuffer {
             }
             self.buf.push_back(s);
         }
+        self.total += samples.len();
+    }
+
+    /// Absolute position: total samples pushed so far.
+    pub fn position(&self) -> usize {
+        self.total
     }
 
     pub fn len(&self) -> usize {
@@ -43,12 +52,16 @@ impl RingBuffer {
         self.buf.iter().skip(start).copied().collect()
     }
 
-    /// Copy samples between the given absolute positions, where positions
-    /// advance monotonically with `push` calls (callers track an index).
+    /// Copy samples between two absolute positions (monotonic with `push`).
+    /// Samples older than the retained window are silently dropped.
     pub fn snapshot_range(&self, from: usize, to: usize) -> Vec<f32> {
+        if from >= to {
+            return Vec::new();
+        }
+        let base = self.total.saturating_sub(self.buf.len());
         let len = self.buf.len();
-        let start = from.min(len);
-        let end = to.min(len);
+        let start = from.saturating_sub(base).min(len);
+        let end = to.saturating_sub(base).min(len);
         if start >= end {
             return Vec::new();
         }

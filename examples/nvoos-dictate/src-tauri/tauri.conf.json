@@ -1,12 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "NV oOS Dictation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.nvdigitalsolutions.nvoos-dictate",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
+    "beforeBundleCommand": "npm run build:helper",
     "frontendDist": "../dist"
   },
   "app": {
@@ -22,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; font-src 'self' data:; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; font-src 'self' data:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-src https:"
     }
   },
   "plugins": {
@@ -35,7 +36,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": "all",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -43,11 +44,19 @@
       "icons/icon.ico",
       "icons/icon.icns"
     ],
-    "createUpdaterArtifacts": true,
+    "createUpdaterArtifacts": false,
+    "externalBin": [
+      "binaries/nvoos-audio-helper"
+    ],
     "windows": {
       "nsis": {
         "installMode": "currentUser"
       }
+    },
+    "macOS": {
+      "minimumSystemVersion": "13.0",
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.plist"
     }
   }
 }

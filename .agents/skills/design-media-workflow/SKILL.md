@@ -31,13 +31,14 @@ Examples (agent name varies per installation):
 | Web search (research) | `nv_oos_*_agent_web_search_validated` | — |
 | Content search | `nv_oos_*_agent_search_content_validated` | — |
 | Image editing | `create_image_variation`, `edit_openai_image` | — |
-| Image resize | `resize_image` | `/api/image/optimize` (batch, format conversion) |
+| Image resize | `resize_image` | `/api/image/optimize` (batch, format conversion), `/api/image/batch` (bulk multi-file, per-file b64) |
 | Background removal | `remove_background` | — |
 | Alt text / captions | `generate_image_alt_text_validated`, `generate_image_caption_validated` | — |
 | Video frame extraction | `extract_video_frames` | — |
 | Video processing | — | `/api/video/process` (FFmpeg) |
 | Page crawling | `run_crawl4ai_job` (remote mode) | `/api/crawl/markdown`, `/api/crawl/markdown-batch`, `/api/crawl/links` (worker v3.2.0+) |
 | Crawl4AI extraction | `run_crawl4ai_job` | `/api/crawl4ai/*` (Crawl4AI-compatible facade, worker v3.2.0+) |
+| File parsing (F&B ingest) | `fnb_import_table` (local parse) | `/api/ingest/parse` (worker v3.5.0+: ExcelJS XLSX, pdf-parse, render→OCR scanned PDFs, tesseract photos) |
 | Social publishing | `schedule_social_post` | `/api/social/post` |
 | WordPress post CRUD | `create_post`, `save_post` | — |
 | JetEngine CCT operations | `jetengine` (direct CRUD) | `remote_wp_connection` (CCT via REST) |
@@ -234,7 +235,7 @@ Trigger: Brand assets updated on Hub
     │
     ├─ 1. Detect updated logo/colors → WordPress post meta change
     ├─ 2. List connected sites → remote_wp_connection { action: "list_connections" }
-    ├─ 3. For each spoke with WooCommerce (e.g., Parfumerie, Myyco):
+    ├─ 3. For each spoke with WooCommerce (e.g., a distinct brand/site slug):
     │   ├─ Push logo → remote_wp_connection { action: "create_post", ... }
     │   ├─ Push brand colors → remote_wp_connection (via post meta)
     │   └─ Log result per site

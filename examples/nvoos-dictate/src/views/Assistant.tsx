@@ -1,0 +1,148 @@
+import { useCallback, useEffect, useState } from 'react';
+import { api, type Settings, type SpaSurface } from '../lib/ipc';
+
+/**
+ * NV oOS — the multi-surface hub.
+ *
+ * Each installed-and-activated NV oOS SPA addon on the configured WordPress
+ * site becomes a sub-tab here; the active sub-tab's hosted SPA is rendered in
+ * a sandboxed iframe. The list of surfaces is discovered from the site's
+ * `GET /wp-json/mcp-ai-pro/v1/spa-surfaces` endpoint (authoritative — a
+ * surface only appears when its addon is genuinely active server-side).
+ *
+ * Fallbacks, in order:
+ *  1. Discovered surfaces (site reachable + credentialed) → sub-tabs.
+ *  2. A single configured "Assistant tab URL" (legacy `spa.url`) → one tab.
+ *  3. Nothing → a "not configured" hint pointing at Settings → NV oOS.
+ *
+ * Keep-alive iframes (reload-free tab switching):
+ *  Every surface gets its own <iframe>, mounted lazily on first visit and kept
+ *  mounted thereafter. The active frame is shown and the others are hidden via
+ *  CSS (`display:none`, not a `src` swap or unmount) so switching tabs never
+ *  forces a full reload and preserves each surface's in-flight state. Route
+ *  surfaces (e.g. `#/knowledge-graph`, `#/chat`) resolve to a hash-only target
+ *  inside the hosted Pro SPA, so they load once and never re-navigate.
+ */
+export default function AssistantView() {
+  const [surfaces, setSurfaces] = useState<SpaSurface[] | null>(null);
+  const [legacyUrl, setLegacyUrl] = useState('');
+  const [activeId, setActiveId] = useState<string | null>(null);
+  // Surfaces that have been mounted at least once — once mounted, never unmounted.
+  const [mounted, setMounted] = useState<Set<string>>(new Set());
+
+  const load = useCallback(async () => {
+    // Legacy single-SPA URL (backward-compatible fallback).
+    try {
+      const s: Settings = await api.getSettings();
+      setLegacyUrl(s.spa?.url ?? '');
+    } catch {
+      setLegacyUrl('');
+    }
+
+    // Authoritative discovery from the configured site. An empty list (site
+    // unreachable, no credential, or no Pro endpoint) is not an error — it
+    // means we fall back to the legacy single-SPA behaviour.
+    try {
+      const found = await api.listSpaSurfaces();
+      setSurfaces(found);
+      if (found.length > 0) {
+        setActiveId((prev) => (prev && found.some((f) => f.id === prev) ? prev : found[0].id));
+      }
+    } catch {
+      setSurfaces(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  // Determine the tabs to render and their resolved iframe URLs.
+  // A surface with a `route` fragment (an SPA-internal route like
+  // `#/knowledge-graph` or `#/chat`) is resolved against the configured
+  // hosted-SPA URL; otherwise its server-provided shortcode page URL is used
+  // verbatim.
+  const spaBase = legacyUrl.trim().replace(/\/+$/, '');
+  const resolveUrl = (s: SpaSurface): string => {
+    if (s.route && s.route.trim()) {
+      if (spaBase) {
+        return spaBase + s.route.trim();
+      }
+      return s.url; // No SPA base configured — fall back to the placeholder.
+    }
+    return s.url;
+  };
+
+  const tabs: { surface: SpaSurface; url: string }[] =
+    surfaces && surfaces.length > 0
+      ? surfaces.map((s) => ({ surface: s, url: resolveUrl(s) }))
+      : legacyUrl.trim()
+        ? [
+            {
+              surface: { id: 'assistant', title: 'Assistant', url: legacyUrl.trim(), description: '' },
+              url: legacyUrl.trim(),
+            },
+          ]
+        : [];
+
+  if (tabs.length === 0) {
+    return (
+      <section className="card">
+        <h2>NV oOS</h2>
+        <p className="muted">
+          No NV oOS surfaces are configured. Connect this app to an NV oOS WordPress site with the
+          Pro addon active under <strong>Settings → NV oOS</strong>, then the site&apos;s installed
+          assistant surfaces will appear here as tabs.
+        </p>
+      </section>
+    );
+  }
+
+  const active = tabs.find((t) => t.surface.id === activeId) ?? tabs[0];
+
+  const activate = (id: string) => {
+    setActiveId(id);
+    // Lazily mount on first visit; keep alive forever after.
+    setMounted((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+  };
+
+  return (
+    <div className="nvoos-hub">
+      <nav className="tabs nvoos-hub-tabs" aria-label="NV oOS surfaces">
+        {tabs.map((t) => (
+          <button
+            key={t.surface.id}
+            className={t.surface.id === active.surface.id ? 'tab active' : 'tab'}
+            onClick={() => activate(t.surface.id)}
+            title={t.surface.description || t.surface.title}
+          >
+            {t.surface.title}
+          </button>
+        ))}
+      </nav>
+      <div className="assistant-frame-wrap">
+        {tabs.map((t) => {
+          const isActive = t.surface.id === active.surface.id;
+          const isMounted = mounted.has(t.surface.id);
+          if (!isActive && !isMounted) {
+            return null;
+          }
+          return (
+            <iframe
+              key={t.surface.id}
+              className="assistant-frame"
+              title={`NV oOS — ${t.surface.title}`}
+              src={t.url}
+              sandbox="allow-scripts allow-same-origin allow-forms"
+              referrerPolicy="no-referrer"
+              // Keep-alive: hide inactive frames with CSS instead of unmounting.
+              // display:none preserves each frame's document + JS state so tab
+              // switches never reload.
+              style={isActive ? undefined : { display: 'none' }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}

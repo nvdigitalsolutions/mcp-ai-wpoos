@@ -1,0 +1,40 @@
+{
+  "data": [
+    {
+      "type": "page",
+      "id": "P1",
+      "attributes": {
+        "url": "https://example.test/",
+        "created": 1718700000,
+        "browser": "3",
+        "location": "24",
+        "latest_report_time": 1718700100,
+        "latest_report": "RGOOD",
+        "report_count": 5,
+        "monitored": "no",
+        "page_tags": []
+      },
+      "links": {}
+    },
+    {
+      "type": "page",
+      "id": "P2",
+      "attributes": {
+        "url": "https://example.test/shop/",
+        "created": 1718700001,
+        "browser": "3",
+        "location": "24",
+        "latest_report_time": 1718700110,
+        "latest_report": "RGOOD2",
+        "report_count": 2,
+        "monitored": "daily",
+        "page_tags": ["TAG1"]
+      },
+      "links": {}
+    }
+  ],
+  "links": {},
+  "meta": {
+    "curr_page": 1
+  }
+}

@@ -84,7 +84,7 @@ weekly (or on demand), independent of any release.
 
 | Priority | Scope | Files |
 |---|---|---|
-| **P0** Release-note surfaces (user-facing) | Changelog, wp.org readme, repo readme, quick reference, doc index, reviewer notes | `CHANGELOG.md`, `readme.txt`, `README.md`, `docs/QUICK_REFERENCE.md`, `docs/DOCUMENTATION_INDEX.md`, `docs/project/FOR_REVIEWERS.md` |
+| **P0** Release-note surfaces (user-facing) | Changelog, wp.org readme (Stable tag + dated changelog entry), repo readme (header block + Overview glance + lower count surfaces), quick reference, doc index, reviewer notes | `CHANGELOG.md`, `readme.txt`, `README.md`, `docs/QUICK_REFERENCE.md`, `docs/DOCUMENTATION_INDEX.md`, `docs/project/FOR_REVIEWERS.md` |
 | **P1** Agent context files | Subsystem context stamps + notes, agent configs, skill copies | `.context/tool-registry.md`, `.context/security-checklist.md`, `.context/testing.md`, `.context/rest-api.md`, `CLAUDE.md`, `MAINTAINER_MAP.md`, `.bmad/README.md`, all three `mcp-ai-wpoos-plugin` SKILL.md copies, `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` |
 | **P2** Operational & feature docs | Inventory stamps, open-items tracker, this plan | `docs/project/ADDON_INVENTORY.md`, `docs/reference/tools/tool-reference.md`, `docs/project/plans/docs-catch-up-open-items.md`, `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`, the plan doc itself |
 | **P3** Version bump (mechanical) | Version headers + constants only | `mcp-ai-wpoos.php`, `includes/bootstrap/constants.php`, `addons/pro/mcp-ai-wpoos-pro.php`, `package.json` — **never** `package-lock.json` |
@@ -124,9 +124,36 @@ weekly (or on demand), independent of any release.
   new `### vX.Y.Z — Date` + `#### Title` entry at the top of that section; the
   oldest entry is demoted to a one-line row in the `### 📋 Previous Releases`
   table (newest first). Full per-release detail lives in `CHANGELOG.md` only —
-  the README never grows past 12 detailed entries, and the Overview keeps a
-  single current-release "What's New at a Glance" block. (Adopted 2026-09-22
-  to stop the README's duplicated changelog blocks from growing unboundedly.)
+  the README never grows past 12 detailed entries. (Adopted 2026-09-22 to stop
+  the README's duplicated changelog blocks from growing unboundedly.)
+- **The README carries TWO current-release glance surfaces, and both move in
+  every pass.** The top header block (`**Version:**` + `**Release Date:**` +
+  the `**🆕 vX.Y.Z Highlights:**` paragraph under the badges) is a separate
+  edit from the `### ✨ What's New at a Glance (vX.Y.Z)` entry under 🧩
+  Overview. Updating the Overview glance while leaving the header block on
+  the previous version is the 1.2.4 incident — the #7013 pass logged "README
+  glance" as done while the header still read **Version: 1.2.3** (fixed by
+  the #7019 follow-up PR). The header's three parts (version, date,
+  highlights) move as one unit together with the Release History entry, and
+  the header date matches the `CHANGELOG.md` `[X.Y.Z]` heading.
+- **Lower README sections are release-bearing count surfaces, not décor.**
+  Beyond the Release History and the glance blocks, the README carries live
+  figures that must match the new release's Versioning line: the System
+  Architecture `~N tool classes (~B base + ~P Pro; …)` bullet, the repo-map
+  `includes/` row (`security (N infrastructure classes)`, `providers (N chat
+  providers)`), and the repo-map `addons/` row (count + name list, kept in
+  lockstep with `ADDON_INVENTORY.md`). When a count changes in-window, these
+  move in the same pass; when a count is "unchanged", still diff the lower
+  sections against the Versioning line — drift can pre-date the current
+  window (the #7019 follow-up found 10 security classes / 28 addons / ~15
+  providers / ~1,692 tools while the 1.2.4 version lines said 12 / 30 / 18 /
+  ~1,696 — the tool-count delta was the window's own +1/+3 miss).
+- **readme.txt needs two separate edits: the Stable tag AND the dated
+  `= X.Y.Z - Date =` changelog entry.** Bumping `Stable tag:` without adding
+  the entry leaves the wp.org changelog head on the previous release (the
+  1.2.4 incident: the #7013 plan listed both, only the tag landed — the
+  #7019 follow-up added the entry). The entry carries the same date as the
+  `CHANGELOG.md` heading.
 - **Anchor hygiene:** headings must not carry VS16 (U+FE0F) emoji — GitHub's
   slugger strips the base emoji but keeps the invisible VS16, producing broken
   `#...` anchors (e.g. `### ⚠️ Warranty` resolves to `#️-warranty--safe-use`).
@@ -352,6 +379,15 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
   plans, archive).
 - Verify every claim in the plan (file paths, counts, versions) against the
   actual PRs before marking executed.
+- **Spot-check the three known silent-skip surfaces in the committed tree.**
+  After the P0 commit, confirm the README header block shows the new version
+  (`git grep -n '\*\*Version:\*\*' README.md`), the readme.txt changelog head
+  is the new `= X.Y.Z - Date =` entry (not just the Stable tag), and the
+  lower README count surfaces (System Architecture tool-classes bullet,
+  repo-map `includes/` + `addons/` rows) match the new release's Versioning
+  line. A green execution log is a plan, not proof — the #7013 log claimed
+  the README glance + readme.txt entry while both were missing (the #7019
+  follow-up recovered them).
 - Re-run the README anchor check: every `](#...)` target must resolve under
   github-slugger rules (emoji stripped, spaces → hyphens, `&` → `--`), and the
   Release History section must hold exactly the last 12 releases.
@@ -703,6 +739,17 @@ closed-as-complete #6389.
 
 ### C2. Triage each candidate
 
+- **Merged-early branches strand commits.** A squash/rebase merge can land
+  while later commits still sit on the head branch — `gh pr view` then shows
+  fewer commits than the branch actually holds, and the rest are
+  silently deferred (this happened to #7025: merged with 1 of its 6
+  commits; the follow-up went out as #7027). For every merged PR in the
+  window, compare the merge commit with the branch tip:
+  `git log --oneline origin/alpha-working --grep '#' -- <pr-number> | head`
+  vs `git log --oneline <head-branch> -20`. Any commits after the merge
+  commit are stranded: cherry-pick them in order onto a fresh branch from
+  the default and open a follow-up PR (or file an issue when they are
+  covered elsewhere).
 - **Resolved by a later PR?** Verify with `gh pr view` / `git log --all --grep`
   (#6587's Stripe-424 follow-up → done by #6589; #6555's lib/core mirrors →
   done by #6608).

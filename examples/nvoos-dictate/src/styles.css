@@ -105,13 +105,17 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+  /* Establish a containing block for the Assistant tab's full-height iframe
+     so its `.assistant-frame-wrap { position: absolute; inset: 0 }` fills
+     only the content area below the top nav — not the whole viewport. */
+  position: relative;
 }
 
 .stack {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 880px;
+  width: 100%;
 }
 
 .card {
@@ -184,6 +188,22 @@ body {
   overflow-y: auto;
 }
 
+.camera-preview {
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #000;
+}
+
+.camera-frame {
+  /* The canvas overlay is absolutely positioned inside this box. */
+}
+
+.vision-overlay {
+  cursor: crosshair;
+}
+
 .kv {
   list-style: none;
   margin: 0 0 12px;
@@ -236,6 +256,8 @@ body {
   box-shadow: inset 0 0 0 1px var(--border);
 }
 
+.danger { color: var(--danger); }
+
 .btn.danger {
   background: var(--danger);
   color: #1c1010;
@@ -245,6 +267,22 @@ body {
   display: flex;
   gap: 8px;
   margin-top: 8px;
+}
+
+/* Diagnostics live input level meter. */
+.meter {
+  height: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 6px 0;
+}
+
+.meter-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 120ms linear;
 }
 
 .row {
@@ -392,4 +430,66 @@ body {
   50% {
     opacity: 0.35;
   }
+}
+
+/* macOS permission rows (Settings -> Permissions). */
+.permissions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.permission-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.permission-row:last-child {
+  border-bottom: none;
+}
+
+.permission-row .row {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.assistant-frame-wrap {
+  /* Fill the `.content` element edge-to-edge (cancelling its 16px padding). */
+  position: absolute;
+  inset: -16px;
+  box-sizing: border-box;
+}
+
+.assistant-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #111;
+}
+
+/* NV oOS hub — multi-surface view (sub-tab bar above the framed SPA). */
+.nvoos-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  margin: -8px -8px 0 -8px;
+}
+
+.nvoos-hub-tabs {
+  flex-shrink: 0;
+  padding: 0 8px;
+}
+
+/* The framed SPA fills the remaining space below the sub-tab bar. */
+.nvoos-hub .assistant-frame-wrap {
+  position: relative;
+  inset: auto;
+  flex: 1;
+  margin: 0;
 }

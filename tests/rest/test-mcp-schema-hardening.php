@@ -298,6 +298,39 @@ class WP_MCP_AI_MCP_Schema_Hardening_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * An empty-argument tool schema must encode its `properties` map as an
+	 * empty JSON object ({}), never an empty JSON array ([]). An empty PHP
+	 * array() encodes to [], which strict providers (DeepSeek) reject with
+	 * "[] is not of type 'object'".
+	 */
+	public function test_empty_properties_encode_as_object_not_array() {
+		$this->register_fixture(
+			'fixture_no_args',
+			array(
+				'type'       => 'object',
+				'properties' => array(),
+			)
+		);
+
+		$response = $this->send_mcp( 'tools/list' );
+		$data     = $response->get_data();
+
+		$by_name = array();
+		foreach ( $data['result']['tools'] as $tool ) {
+			$by_name[ $tool['name'] ] = $tool;
+		}
+
+		$this->assertArrayHasKey( 'fixture_no_args', $by_name );
+
+		// Re-encode the schema the way a provider request would: an empty
+		// array() serializes to `[]`, but the catalog must emit `{}`.
+		$encoded = wp_json_encode( $by_name['fixture_no_args']['inputSchema'] );
+		$this->assertNotFalse( $encoded );
+		$this->assertStringContainsString( '"properties":{}', $encoded );
+		$this->assertStringNotContainsString( '"properties":[]', $encoded );
+	}
+
+	/**
 	 * A tool with a bracketed property name is skipped from the catalog.
 	 */
 	public function test_bracket_property_tool_is_skipped() {
