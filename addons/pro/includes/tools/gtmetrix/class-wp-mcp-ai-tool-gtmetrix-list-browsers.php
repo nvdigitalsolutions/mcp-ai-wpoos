@@ -49,7 +49,9 @@ class WP_MCP_AI_Tool_GTmetrix_List_Browsers extends WP_MCP_AI_GTmetrix_Tool_Base
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
-			'properties' => array(),
+			// Empty stdClass encodes as `{}`; an empty PHP array would encode
+			// as `[]`, which strict providers (DeepSeek) reject.
+			'properties' => new stdClass(),
 		);
 	}
 
