@@ -231,6 +231,11 @@ class WP_MCP_AI_Fnb_Dashboard_Page {
 	 * analytics cards. 13.0 is the fallback when a client exports covers on
 	 * the utilities sheet instead of a dedicated daily-covers sheet.
 	 *
+	 * Months are derived from each row's *date* (a real record), never from a
+	 * bare `month` label. A preprinted "current" month label on the latest
+	 * export would otherwise surface a phantom last data point (usually zero)
+	 * before the plant manager has actually entered that period's records.
+	 *
 	 * @return array<int,string> Y-m strings, ascending.
 	 */
 	private static function available_months() {
@@ -242,9 +247,12 @@ class WP_MCP_AI_Fnb_Dashboard_Page {
 			}
 			$headers = $table['header_index'];
 			foreach ( $table['rows'] as $row ) {
-				$month = (string) WP_MCP_AI_Fnb_Data_Source::cell( $table_id, $headers, $row, 'month' );
-				if ( '' === $month ) {
-					$month = WP_MCP_AI_Fnb_Data_Source::month_of( WP_MCP_AI_Fnb_Data_Source::cell( $table_id, $headers, $row, 'date' ) );
+				$month = WP_MCP_AI_Fnb_Data_Source::month_of( WP_MCP_AI_Fnb_Data_Source::cell( $table_id, $headers, $row, 'date' ) );
+				if ( '' === $month && ( '7.0' === $table_id || '13.0' === $table_id ) ) {
+					// Some exports carry only a month label (no dated record) on
+					// the covers/utilities sheets. Accept it only as a last resort
+					// so those backward-compatible exports don't lose their month.
+					$month = (string) WP_MCP_AI_Fnb_Data_Source::cell( $table_id, $headers, $row, 'month' );
 				}
 				if ( preg_match( '/^\d{4}-\d{2}$/', $month ) ) {
 					$months[ $month ] = true;
