@@ -92,6 +92,7 @@ body.toplevel_page_wp-mcp-ai-spa #wpcontent {
    scroll the document when a child input receives focus. */
 body.toplevel_page_wp-mcp-ai-spa #wpwrap {
 	height: calc(100vh - 32px);
+	height: calc(100dvh - 32px); /* Proposal 080 — track the keyboard-resized viewport */
 	overflow: hidden;
 }
 
@@ -135,6 +136,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 @media screen and ( max-width: 782px ) {
 	body.toplevel_page_wp-mcp-ai-spa #wpwrap {
 		height: calc(100vh - 46px);
+		height: calc(100dvh - 46px);
 	}
 }
 
@@ -765,8 +767,14 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	display: flex;
 	gap: 8px;
 	padding: 12px 20px;
-	border-top: 1px solid var(--nvoos-border, #dcdcde);
-	align-items: flex-end;
+	/* Stretch the form so a manually resized composer height is filled
+	   edge to edge; in auto mode the composer height is content-driven
+	   and stretching the form is a no-op. */
+	align-items: stretch;
+	/* Resizable height (Proposal 080, Phase 2): auto = content height;
+	   a manual drag sets --nvoos-composer-height in px on the panel root. */
+	height: var( --nvoos-composer-height, auto );
+	overflow-y: auto;
 }
 
 /* On mobile, add extra bottom padding so the wrapped toolbar
@@ -795,8 +803,28 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	resize: none;
 	font-family: inherit;
 	line-height: 1.5;
+	box-sizing: border-box;
 	min-height: 44px;
-	max-height: 160px;
+	/* Auto-grow (Proposal 080 follow-up): no fixed line cap. In auto
+	   mode the field sizes to its content (native field-sizing where
+	   available; useAutoGrowTextarea covers older engines) up to a
+	   viewport-based ceiling — the same bound the resize divider
+	   clamps to — then scrolls internally. The divider can always hand
+	   it more room (see the --composer-resized modifier below). */
+	field-sizing: content;
+	height: auto;
+	max-height: min( 60vh, 600px );
+	max-height: min( 60dvh, 600px );
+	overflow-y: auto;
+}
+
+/* Manual composer height (resize divider): the field stops sizing to
+   its content and fills the composer, scrolling internally past the
+   resized area. */
+.nvoos-pro-spa-agent-panel--composer-resized .nvoos-pro-spa-agent-panel__composer-input {
+	field-sizing: fixed;
+	height: 100%;
+	max-height: none;
 }
 
 .nvoos-pro-spa-agent-panel__composer-input:focus {
@@ -817,6 +845,112 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-agent-panel__stop-btn {
 	padding: 10px 20px;
+}
+
+/* ── Composer resize divider (Proposal 080, Phase 2) ──────────────────── */
+
+.nvoos-pro-spa-composer-resizer {
+	flex: 0 0 auto;
+	position: relative;
+	height: 12px;
+	touch-action: none;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	cursor: ns-resize;
+}
+
+.nvoos-pro-spa-composer-resizer__handle {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate( -50%, -50% );
+	width: 56px;
+	height: 16px;
+	padding: 0;
+	border: none;
+	border-radius: 8px;
+	background: var(--nvoos-border, #dcdcde);
+	cursor: ns-resize;
+	touch-action: none;
+}
+
+/* Expand the hit area to a 44px touch target without visual change. */
+.nvoos-pro-spa-composer-resizer__handle::before {
+	content: '';
+	position: absolute;
+	inset: -14px 0;
+}
+
+.nvoos-pro-spa-composer-resizer__handle:hover {
+	background: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-composer-resizer__handle:focus-visible {
+	outline: none;
+	background: var(--nvoos-primary, #2271b1);
+	box-shadow: 0 0 0 2px var(--nvoos-primary, #2271b1);
+}
+
+/* ── Focus (expanded) composer (Proposal 080, Phase 3) ─────────────────── */
+
+.nvoos-pro-spa-composer-focus {
+	position: fixed;
+	inset: 0;
+	z-index: 1100;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-composer-focus__backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba( 0, 0, 0, 0.45 );
+}
+
+.nvoos-pro-spa-composer-focus__form {
+	position: relative;
+	width: 100%;
+	max-width: 720px;
+	display: flex;
+	gap: 8px;
+	align-items: flex-end;
+	background: var(--nvoos-bg-secondary, #fff);
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 12px;
+	padding: 12px;
+	box-shadow: 0 8px 32px rgba( 0, 0, 0, 0.18 );
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-composer-focus__textarea {
+	flex: 1;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	padding: 12px 14px;
+	font-size: 15px;
+	line-height: 1.5;
+	font-family: inherit;
+	resize: none;
+	box-sizing: border-box;
+	min-height: 48px;
+	field-sizing: content;
+	max-height: 40vh;
+	max-height: 40dvh;
+	overflow-y: auto;
+}
+
+.nvoos-pro-spa-composer-focus__textarea:focus {
+	outline: none;
+	border-color: var(--nvoos-primary, #2271b1);
+	box-shadow: 0 0 0 1px var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-composer-focus__actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }
 
 .nvoos-pro-spa-agent-panel__error {
@@ -1196,6 +1330,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-assistants-modal__content {
 	width: 520px;
 	max-height: 80vh;
+	max-height: 80dvh;
 	overflow-y: auto;
 	background: var(--nvoos-bg-secondary, #fff);
 	border-radius: 12px;
@@ -1407,6 +1542,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	width: 380px;
 	max-width: 90vw;
 	height: calc(100vh - 32px);
+	height: calc(100dvh - 32px);
 	background: var(--nvoos-bg-secondary, #fff);
 	border-left: 1px solid var(--nvoos-border, #dcdcde);
 	box-shadow: -4px 0 16px rgba( 0, 0, 0, 0.10 );
@@ -1420,6 +1556,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	.nvoos-pro-spa-memory-drawer {
 		top: 46px;
 		height: calc(100vh - 46px);
+		height: calc(100dvh - 46px);
 	}
 }
 
@@ -3101,6 +3238,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 		transition: transform 0.25s ease;
 		overflow-y: auto;
 		height: calc( 100vh - 32px );
+		height: calc( 100dvh - 32px );
 	}
 
 	.nvoos-pro-spa-layout--sidebar-open .nvoos-pro-spa-sidebar {
@@ -3137,6 +3275,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	.nvoos-pro-spa-sidebar {
 		top: 46px;
 		height: calc( 100vh - 46px );
+		height: calc( 100dvh - 46px );
 	}
 
 	.nvoos-pro-spa-sidebar-overlay {
@@ -3553,6 +3692,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	width: 340px;
 	max-width: 90vw;
 	height: calc(100vh - 32px);
+	height: calc(100dvh - 32px);
 	z-index: 950;
 	background: var(--nvoos-bg-secondary, #fff);
 	box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
@@ -3566,6 +3706,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	.nvoos-pro-spa-tasks-drawer {
 		top: 46px;
 		height: calc(100vh - 46px);
+		height: calc(100dvh - 46px);
 	}
 }
 
@@ -3892,6 +4033,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	width: 400px;
 	max-width: 90vw;
 	max-height: 80vh;
+	max-height: 80dvh;
 	overflow-y: auto;
 	background: var(--nvoos-bg-secondary, #fff);
 	border-radius: 12px;
@@ -4259,6 +4401,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	width: 520px;
 	max-width: 90vw;
 	max-height: 80vh;
+	max-height: 80dvh;
 	overflow-y: auto;
 	background: var(--nvoos-bg-secondary, #fff);
 	border-radius: 12px;

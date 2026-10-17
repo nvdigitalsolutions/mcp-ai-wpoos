@@ -40,6 +40,20 @@ pub trait SttEngine: Send + Sync {
         language: Option<&str>,
     ) -> AppResult<String>;
 
+    /// Transcribe with prior-window text as context (whisper sliding-window
+    /// semantics). The default ignores `prior` and delegates to
+    /// [`Self::transcribe`]; engines that carry context across windows
+    /// (whisper) override it.
+    fn transcribe_with_context(
+        &self,
+        audio: &[f32],
+        sample_rate: u32,
+        language: Option<&str>,
+        _prior: Option<&str>,
+    ) -> AppResult<String> {
+        self.transcribe(audio, sample_rate, language)
+    }
+
     /// Whether the engine is suitable for long file/meeting transcription
     /// (Parakeet TDT/CTC models top out around 4-5 minutes per decode).
     fn supports_long_files(&self) -> bool {
@@ -89,6 +103,11 @@ pub fn create_engine(
     settings: &EngineConfig,
     resources: &EngineResources<'_>,
 ) -> AppResult<Box<dyn SttEngine>> {
+    // Reject catalogue-known mismatches up front (e.g. a whisper model id
+    // under the parakeet engine) so every call site — boot, headless MCP,
+    // settings save — gets the same clear error instead of a confusing
+    // "model not found" for a model that exists under another engine.
+    crate::stt::model_registry::validate_pairing(&settings.engine, &settings.model)?;
     match settings.engine.as_str() {
         "mock" => Ok(Box::new(MockEngine::new())),
         #[cfg(feature = "parakeet")]
@@ -107,6 +126,14 @@ pub fn create_engine(
             resources.models_dir,
             &settings.model,
         )?)),
+        #[cfg(feature = "fastconformer")]
+        "fastconformer" => Ok(Box::new(
+            crate::stt::fastconformer::FastConformerEngine::new(
+                resources.models_dir,
+                &settings.model,
+                settings.num_threads,
+            )?,
+        )),
         "embedded" => {
             let site_url = resources
                 .nvoos_site_url
@@ -142,6 +169,8 @@ pub fn available_features() -> &'static str {
     let features = features + ", whisper";
     #[cfg(feature = "moonshine")]
     let features = features + ", moonshine";
+    #[cfg(feature = "fastconformer")]
+    let features = features + ", fastconformer";
     // Leak is fine: static strings, process lifetime.
     Box::leak(features.into_boxed_str())
 }

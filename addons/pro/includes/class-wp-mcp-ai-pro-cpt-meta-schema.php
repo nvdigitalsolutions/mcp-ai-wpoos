@@ -849,13 +849,13 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'string',
 					'description' => __( 'Unique identifier from the iSAMS MIS system.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_student_google_id'      => array(
+				'_student_google_id'       => array(
 					'meta_key'    => '_student_google_id',
 					'label'       => __( 'Google Classroom ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Google Classroom user ID, used to match roster members during Classroom sync.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_student_google_email'   => array(
+				'_student_google_email'    => array(
 					'meta_key'    => '_student_google_email',
 					'label'       => __( 'Google Email', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
@@ -1374,6 +1374,319 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'label'       => __( 'Archived', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'boolean',
 					'description' => __( 'Whether the chat room has been archived.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
+			// ----------------------------------------------------------------
+			// Food & Beverage Toolkit (Phase 9 native storage)
+			// ----------------------------------------------------------------
+
+			'mcp_ai_fnb_sale'     => array(
+				'_fnb_date'        => array(
+					'meta_key'    => '_fnb_date',
+					'label'       => __( 'Date', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Sale date (spec table 6.0).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_month'       => array(
+					'meta_key'    => '_fnb_month',
+					'label'       => __( 'Month', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Sale month (Y-m).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_item_id'     => array(
+					'meta_key'    => '_fnb_item_id',
+					'label'       => __( 'Item ID', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Menu item ID from spec table 1.0.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_item'        => array(
+					'meta_key'    => '_fnb_item',
+					'label'       => __( 'Item', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Menu item name.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_type'        => array(
+					'meta_key'    => '_fnb_type',
+					'label'       => __( 'Type', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Sale type (Food, Beverage, Other).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_qty_sold'    => array(
+					'meta_key'    => '_fnb_qty_sold',
+					'label'       => __( 'Qty Sold', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Units sold.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_price'   => array(
+					'meta_key'    => '_fnb_price',
+					'label'       => __( 'Price', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Unit price.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_revenue' => array(
+					'meta_key'    => '_fnb_revenue',
+					'label'       => __( 'Revenue', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Line revenue.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
+			'mcp_ai_fnb_purchase' => array(
+				'_fnb_delivery_date'  => array(
+					'meta_key'    => '_fnb_delivery_date',
+					'label'       => __( 'Delivery Date', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Delivery date (spec table 8.0).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_month'          => array(
+					'meta_key'    => '_fnb_month',
+					'label'       => __( 'Month', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Delivery month (Y-m).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_supplier_id'    => array(
+					'meta_key'    => '_fnb_supplier_id',
+					'label'       => __( 'Supplier ID', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Supplier ID from spec table 4.0.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_invoice'        => array(
+					'meta_key'    => '_fnb_invoice',
+					'label'       => __( 'Invoice', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Supplier invoice number.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_ingredient_id'  => array(
+					'meta_key'    => '_fnb_ingredient_id',
+					'label'       => __( 'Ingredient ID', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Ingredient ID from spec table 3.0.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_category'       => array(
+					'meta_key'    => '_fnb_category',
+					'label'       => __( 'Category', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Ingredient category.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_packs'          => array(
+					'meta_key'    => '_fnb_packs',
+					'label'       => __( 'Packs', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Number of packs ordered.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_pack_size'      => array(
+					'meta_key'    => '_fnb_pack_size',
+					'label'       => __( 'Pack Size', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Pack size description.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_qty_delivered'  => array(
+					'meta_key'    => '_fnb_qty_delivered',
+					'label'       => __( 'Qty Delivered', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Quantity delivered.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_pack_price' => array(
+					'meta_key'    => '_fnb_pack_price',
+					'label'       => __( 'Pack Price', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Price per pack.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_line_total' => array(
+					'meta_key'    => '_fnb_line_total',
+					'label'       => __( 'Line Total', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Line total.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
+			'mcp_ai_fnb_stock'    => array(
+				'_fnb_count_date'        => array(
+					'meta_key'    => '_fnb_count_date',
+					'label'       => __( 'Count Date', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Stock-count date (spec table 9.0).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_count_type'        => array(
+					'meta_key'    => '_fnb_count_type',
+					'label'       => __( 'Count Type', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Count type (Opening, Full, Closing, …).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_period_start'      => array(
+					'meta_key'    => '_fnb_period_start',
+					'label'       => __( 'Period Start', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Start of the counted period.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_ingredient_id'     => array(
+					'meta_key'    => '_fnb_ingredient_id',
+					'label'       => __( 'Ingredient ID', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Ingredient ID from spec table 3.0.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_unit'              => array(
+					'meta_key'    => '_fnb_unit',
+					'label'       => __( 'Unit', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Unit of measure.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_category'          => array(
+					'meta_key'    => '_fnb_category',
+					'label'       => __( 'Category', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Ingredient category.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_opening'           => array(
+					'meta_key'    => '_fnb_opening',
+					'label'       => __( 'Opening', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Opening quantity.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_bought'            => array(
+					'meta_key'    => '_fnb_bought',
+					'label'       => __( 'Bought', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Quantity bought during the period.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_closing'           => array(
+					'meta_key'    => '_fnb_closing',
+					'label'       => __( 'Closing', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Closing quantity.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_used'              => array(
+					'meta_key'    => '_fnb_used',
+					'label'       => __( 'Used', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Quantity used during the period.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_unit_cost'     => array(
+					'meta_key'    => '_fnb_unit_cost',
+					'label'       => __( 'Unit Cost', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Unit cost.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_closing_value' => array(
+					'meta_key'    => '_fnb_closing_value',
+					'label'       => __( 'Closing Value', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Closing value.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
+			'mcp_ai_fnb_waste'    => array(
+				'_fnb_date'          => array(
+					'meta_key'    => '_fnb_date',
+					'label'       => __( 'Date', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Waste-log date (spec table 10.0).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_month'         => array(
+					'meta_key'    => '_fnb_month',
+					'label'       => __( 'Month', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Waste month (Y-m).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_ingredient_id' => array(
+					'meta_key'    => '_fnb_ingredient_id',
+					'label'       => __( 'Ingredient ID', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Ingredient ID from spec table 3.0.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_ingredient'    => array(
+					'meta_key'    => '_fnb_ingredient',
+					'label'       => __( 'Ingredient', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Ingredient name.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_qty'           => array(
+					'meta_key'    => '_fnb_qty',
+					'label'       => __( 'Qty', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Wasted quantity.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_unit'          => array(
+					'meta_key'    => '_fnb_unit',
+					'label'       => __( 'Unit', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Unit of measure.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_reason'        => array(
+					'meta_key'    => '_fnb_reason',
+					'label'       => __( 'Reason', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Logged waste reason.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_logged_by'     => array(
+					'meta_key'    => '_fnb_logged_by',
+					'label'       => __( 'Logged By', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Staff member who logged the waste.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_value'     => array(
+					'meta_key'    => '_fnb_value',
+					'label'       => __( 'Value', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Waste value.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
+			'mcp_ai_fnb_booking'  => array(
+				'_fnb_booking_id' => array(
+					'meta_key'    => '_fnb_booking_id',
+					'label'       => __( 'Booking ID', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Booking ID (spec table 16.0).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_date'       => array(
+					'meta_key'    => '_fnb_date',
+					'label'       => __( 'Date', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Booking date.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_day'        => array(
+					'meta_key'    => '_fnb_day',
+					'label'       => __( 'Day', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Day of week.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_time'       => array(
+					'meta_key'    => '_fnb_time',
+					'label'       => __( 'Time', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Booking time.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_session'    => array(
+					'meta_key'    => '_fnb_session',
+					'label'       => __( 'Session', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Service session (lunch, dinner, bar, …).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_type'       => array(
+					'meta_key'    => '_fnb_type',
+					'label'       => __( 'Type', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Booking type (day bed, table, group, …).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_guests'     => array(
+					'meta_key'    => '_fnb_guests',
+					'label'       => __( 'Guests', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Guest count.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_notes'      => array(
+					'meta_key'    => '_fnb_notes',
+					'label'       => __( 'Notes', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Booking notes.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_fnb_status'     => array(
+					'meta_key'    => '_fnb_status',
+					'label'       => __( 'Status', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Booking status.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 		);

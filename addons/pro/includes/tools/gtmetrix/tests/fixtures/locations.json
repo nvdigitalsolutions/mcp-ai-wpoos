@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "type": "location",
+      "id": "24",
+      "attributes": {
+        "name": "Vancouver, Canada",
+        "region": "North America",
+        "default": true,
+        "account_has_access": true,
+        "browsers": ["3"],
+        "ips": ["1.2.3.4"],
+        "servers": 3,
+        "active_location": true
+      }
+    },
+    {
+      "type": "location",
+      "id": "10",
+      "attributes": {
+        "name": "Sydney, Australia",
+        "region": "Asia Pacific",
+        "default": false,
+        "account_has_access": false,
+        "browsers": ["3"],
+        "ips": ["5.6.7.8"],
+        "servers": 0,
+        "active_location": false
+      }
+    }
+  ]
+}

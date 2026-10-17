@@ -26,6 +26,7 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
+	const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4';
 
 	/**
 	 * MIME types of Google Docs files that can be exported to plain text.
@@ -163,7 +164,14 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $status_code ) {
-			WP_MCP_AI_Admin_Settings::log( 'Google Drive token request returned unexpected status.', array( 'status' => $status_code ) );
+			$response_body = wp_remote_retrieve_body( $response );
+			WP_MCP_AI_Admin_Settings::log(
+				'Google Drive token request returned unexpected status.',
+				array(
+					'status' => $status_code,
+					'body'   => $response_body,
+				)
+			);
 
 			return new WP_Error(
 				'wp_mcp_ai_drive_token_status',
@@ -174,7 +182,7 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 				),
 				array(
 					'status' => $status_code,
-					'body'   => wp_remote_retrieve_body( $response ),
+					'body'   => $response_body,
 				)
 			);
 		}
@@ -348,6 +356,187 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 	}
 
 	/**
+	 * Read a range of cell values from a Google Sheets spreadsheet.
+	 *
+	 * Uses the Google Sheets API (v4) rather than the Drive export endpoint so
+	 * a specific worksheet/tab can be read from a multi-sheet workbook. The
+	 * `spreadsheets.values.get` endpoint returns values as a JSON matrix, which
+	 * sidesteps the CSV export limitations (single-sheet default, 400 on
+	 * native Google Sheets without a gid).
+	 *
+	 * @param string $spreadsheet_id Spreadsheet (Drive file) ID.
+	 * @param string $range          A1 range or sheet name (e.g. "Menu", "Menu!A1:Z1000").
+	 * @param string $access_token   OAuth access token.
+	 * @param int    $timeout        Request timeout in seconds.
+	 * @return array<string,mixed>|WP_Error array{values: string[][]} or WP_Error.
+	 * @since 1.6.0
+	 */
+	public static function get_sheet_values( $spreadsheet_id, $range, $access_token, $timeout ) {
+		$path = 'spreadsheets/' . rawurlencode( (string) $spreadsheet_id ) . '/values/' . rawurlencode( (string) $range );
+		$url  = sprintf( '%s/%s', self::SHEETS_API_BASE, $path );
+		$url  = self::append_query_string( $url, array( 'valueRenderOption' => 'UNFORMATTED_VALUE' ) );
+
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => $timeout,
+				'headers' => array(
+					'Accept'        => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error( 'wp_mcp_ai_drive_http_error', __( 'The Google Sheets API request failed.', 'mcp-ai-wpoos-pro' ), $response );
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $status_code ) {
+			$body       = wp_remote_retrieve_body( $response );
+			$google_msg = self::extract_google_error_message( $body );
+
+			// A 400 (as opposed to 401/403/404) is almost always a scope or
+			// request-shape problem — the Sheets API (sheets.googleapis.com/v4)
+			// needs the spreadsheets.readonly scope, which the Drive token may
+			// not carry. Surface that hint distinctly so it isn't mistaken for
+			// a file-lookup failure. When Google returns a structured error body
+			// (e.g. "Request had insufficient authentication scopes"), surface
+			// its actual message rather than a bare status code.
+			if ( '' !== $google_msg ) {
+				$message = sprintf(
+					/* translators: 1: HTTP status code, 2: Google's error message */
+					__( 'Google Sheets returned HTTP %1$d: %2$s. If this is a scope problem, re-authorise the Drive connection to include the "spreadsheets.readonly" scope.', 'mcp-ai-wpoos-pro' ),
+					$status_code,
+					$google_msg
+				);
+			} else {
+				$message = 400 === $status_code
+					? __( 'Google Sheets rejected the request (HTTP 400). The API token needs the "spreadsheets.readonly" scope and a valid sheet name; check the workspace connection scopes.', 'mcp-ai-wpoos-pro' )
+					/* translators: %d: HTTP status code. */
+					: sprintf( __( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ), $status_code );
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_drive_http_status',
+				$message,
+				array(
+					'status' => $status_code,
+					'body'   => $body,
+				)
+			);
+		}
+
+		$body_raw = wp_remote_retrieve_body( $response );
+		$payload  = json_decode( $body_raw, true );
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $payload ) ) {
+			return new WP_Error( 'wp_mcp_ai_drive_invalid_json', __( 'Google Sheets returned an invalid response.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		return $payload;
+	}
+
+	/**
+	 * Extract Google's human-readable error message from a non-2xx response body.
+	 *
+	 * The Sheets/Drive APIs return a JSON envelope like
+	 * `{"error":{"code":403,"message":"…","status":"PERMISSION_DENIED"}}`.
+	 * Return that message (with the status tag when present) so callers can
+	 * distinguish a scope denial from a file-not-shared failure instead of
+	 * surfacing a bare HTTP status code.
+	 *
+	 * @param string $body Raw response body.
+	 * @return string Google's message (or empty string when the body is not a
+	 *                recognised Google error envelope).
+	 */
+	private static function extract_google_error_message( $body ) {
+		$body    = trim( (string) $body );
+		$decoded = json_decode( $body, true );
+		if ( ! is_array( $decoded ) || empty( $decoded['error'] ) || ! is_array( $decoded['error'] ) ) {
+			return '';
+		}
+
+		$message = isset( $decoded['error']['message'] ) ? trim( (string) $decoded['error']['message'] ) : '';
+		$status  = isset( $decoded['error']['status'] ) ? trim( (string) $decoded['error']['status'] ) : '';
+
+		if ( '' === $message ) {
+			return $status;
+		}
+		if ( '' === $status ) {
+			return $message;
+		}
+
+		return $message . ' (' . $status . ')';
+	}
+
+	/**
+	 * List the worksheet (tab) names and their IDs for a spreadsheet.
+	 *
+	 * @param string $spreadsheet_id Spreadsheet (Drive file) ID.
+	 * @param string $access_token   OAuth access token.
+	 * @param int    $timeout        Request timeout in seconds.
+	 * @return array|WP_Error Sheet metadata (sheets[].properties) or WP_Error.
+	 * @since 1.6.0
+	 */
+	public static function get_sheets_metadata( $spreadsheet_id, $access_token, $timeout ) {
+		$path = 'spreadsheets/' . rawurlencode( (string) $spreadsheet_id );
+		$url  = sprintf( '%s/%s', self::SHEETS_API_BASE, $path );
+		$url  = self::append_query_string( $url, array( 'fields' => 'sheets.properties' ) );
+
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => $timeout,
+				'headers' => array(
+					'Accept'        => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error( 'wp_mcp_ai_drive_http_error', __( 'The Google Sheets API request failed.', 'mcp-ai-wpoos-pro' ), $response );
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $status_code ) {
+			$body       = wp_remote_retrieve_body( $response );
+			$google_msg = self::extract_google_error_message( $body );
+
+			if ( '' !== $google_msg ) {
+				$message = sprintf(
+					/* translators: 1: HTTP status code, 2: Google's error message */
+					__( 'Google Sheets returned HTTP %1$d: %2$s. If this is a scope problem, re-authorise the Drive connection to include the "spreadsheets.readonly" scope.', 'mcp-ai-wpoos-pro' ),
+					$status_code,
+					$google_msg
+				);
+			} else {
+				$message = 400 === $status_code
+					? __( 'Google Sheets rejected the request (HTTP 400). The API token needs the "spreadsheets.readonly" scope and a valid sheet name; check the workspace connection scopes.', 'mcp-ai-wpoos-pro' )
+					/* translators: %d: HTTP status code. */
+					: sprintf( __( 'Google Sheets returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ), $status_code );
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_drive_http_status',
+				$message,
+				array(
+					'status' => $status_code,
+					'body'   => $body,
+				)
+			);
+		}
+
+		$body_raw = wp_remote_retrieve_body( $response );
+		$payload  = json_decode( $body_raw, true );
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $payload ) ) {
+			return new WP_Error( 'wp_mcp_ai_drive_invalid_json', __( 'Google Sheets returned an invalid response.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		return $payload;
+	}
+
+	/**
 	 * Fetch trimmed metadata for a single Drive file.
 	 *
 	 * @param string $file_id      Drive file ID.
@@ -403,7 +592,7 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 				'q'        => sprintf( "'%s' in parents and trashed = false", $folder_id ),
 				'pageSize' => $max_children,
 				'orderBy'  => 'name',
-				'fields'   => 'nextPageToken, files(id, name, mimeType, size)',
+				'fields'   => 'nextPageToken, files(id, name, mimeType, size, modifiedTime)',
 			)
 		);
 	}

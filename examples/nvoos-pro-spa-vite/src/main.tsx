@@ -10,7 +10,7 @@
  */
 
 import { createRoot } from 'react-dom/client';
-import { lazy, Suspense, useEffect, useState, type JSX, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type JSX, type FormEvent } from 'react';
 
 import type { ProSpaRuntime } from '@nvoos/pro-spa-v2/api/config';
 import '@nvoos/pro-spa-v2/styles/main.css';
@@ -26,12 +26,30 @@ import {
   fetchCurrentUser,
   fetchCurrentUserBasic,
   fetchSessionNonce,
+  setAuthSlot,
   type AuthMode,
   type ConnectionSettings,
 } from './runtime-config';
 import { installFetchWrapper } from './fetch-wrapper';
+import {
+  PresetLogin,
+  presetMeta,
+  readAutoConnect,
+  readEnvSettings,
+  readLoginPreset,
+  resolveEnvConnection,
+} from './presets';
 
 const STORAGE_KEY = 'nvoos-standalone-connection';
+
+// Login presets: `HOME` in the app's .env file (baked into the bundle as
+// import.meta.env.NVOOS_HOME) pins the connection screen to a single auth
+// option — see src/presets.tsx. serve.mjs may override these at runtime via
+// window.__NVOOS_RUNTIME__ (runtime-first, build-time fallback).
+const LOGIN_PRESET = readLoginPreset();
+const ENV_SETTINGS = readEnvSettings();
+const ENV_CONNECTION = resolveEnvConnection(ENV_SETTINGS);
+const AUTO_CONNECT = readAutoConnect();
 
 /**
  * The two SPA surfaces are the heavy part of the bundle (router + chat +
@@ -174,6 +192,10 @@ async function connect(connection: ConnectionSettings): Promise<ConnectResult> {
       mediaWorkerToken: connection.mediaWorkerToken?.trim() || undefined,
     });
 
+    // Expose the headless credential (in-memory only) so the framed Media
+    // Studio / Document Editor pages can receive it via postMessage.
+    setAuthSlot(connection);
+
     return { runtime };
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) };
@@ -188,68 +210,118 @@ function Shell(): JSX.Element {
 
   // Connection form state. The site URL defaults to the backend configured at
   // build time (VITE_DEFAULT_SITE_URL), so a Velocity deployment can ship
-  // with its WordPress backend pre-filled (e.g. https://nvoos.pro).
+  // with its WordPress backend pre-filled (e.g. https://nvoos.pro). Preset
+  // pages (HOME=1..4) prefer NVOOS_SITE_URL when set.
   const defaultSiteUrl = (import.meta.env.VITE_DEFAULT_SITE_URL as string | undefined)?.trim() ?? '';
-  const [siteUrl, setSiteUrl] = useState(connection?.siteUrl ?? defaultSiteUrl);
-  const [auth, setAuth] = useState<AuthMode>(connection?.auth ?? 'cookie');
-  const [bearer, setBearer] = useState(connection?.bearer ?? '');
+  const envSiteUrl = ENV_SETTINGS.siteUrl || defaultSiteUrl;
+  const activePreset = presetMeta(LOGIN_PRESET);
+  const [siteUrl, setSiteUrl] = useState(connection?.siteUrl ?? envSiteUrl);
+  const [auth, setAuth] = useState<AuthMode>(connection?.auth ?? (activePreset?.auth ?? 'cookie'));
+  const [bearer, setBearer] = useState(connection?.bearer ?? ENV_SETTINGS.assistantCredential);
   const [guestToken, setGuestToken] = useState(connection?.guestToken ?? '');
-  const [wpUsername, setWpUsername] = useState(connection?.wpUsername ?? '');
-  const [wpAppPassword, setWpAppPassword] = useState(connection?.wpAppPassword ?? '');
+  const [wpUsername, setWpUsername] = useState(connection?.wpUsername ?? ENV_SETTINGS.wpUsername);
+  const [wpAppPassword, setWpAppPassword] = useState(connection?.wpAppPassword ?? ENV_SETTINGS.wpAppPassword);
   const [assistantId, setAssistantId] = useState(String(connection?.assistantId ?? ''));
   const [adminLayout, setAdminLayout] = useState(connection?.adminLayout ?? true);
   const [mediaWorkerUrl, setMediaWorkerUrl] = useState(connection?.mediaWorkerUrl ?? '');
   const [mediaWorkerToken, setMediaWorkerToken] = useState(connection?.mediaWorkerToken ?? '');
 
-  // Auto-reconnect when a saved connection exists (page reload / fresh tab).
-  useEffect(() => {
-    if (connection && !runtime && !connecting && !error) {
-      setConnecting(true);
-      void connect(connection).then((result) => {
-        if (result.runtime) {
-          setRuntime(result.runtime);
-        } else {
-          setError(result.error ?? 'Reconnect failed.');
-        }
-        setConnecting(false);
-      });
-    }
-  }, [connection, runtime, connecting, error]);
-
-  const handleConnect = async (event: FormEvent): Promise<void> => {
-    event.preventDefault();
+  // Shared tail of every connect path: run the connection flow, persist on
+  // success, and surface failures through the form's error state.
+  const completeConnect = async (
+    next: ConnectionSettings,
+    fallbackError = 'Connection failed.',
+  ): Promise<void> => {
     setConnecting(true);
     setError('');
-
-    const next: ConnectionSettings = {
-      siteUrl: siteUrl.trim().replace(/\/+$/, ''),
-      auth,
-      bearer: auth === 'bearer' ? bearer.trim() : undefined,
-      guestToken: auth === 'guest' ? guestToken.trim() : undefined,
-      wpUsername: auth === 'wp' ? wpUsername.trim() : undefined,
-      wpAppPassword: auth === 'wp' ? wpAppPassword.trim() : undefined,
-      assistantId: assistantId ? Number(assistantId) : undefined,
-      adminLayout,
-      mediaWorkerUrl: mediaWorkerUrl.trim().replace(/\/+$/, ''),
-      mediaWorkerToken: mediaWorkerToken.trim(),
-    };
-
     const result = await connect(next);
     if (!result.runtime) {
-      setError(result.error ?? 'Connection failed.');
+      setError(result.error ?? fallbackError);
       setConnecting(false);
       return;
     }
-
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setConnection(next);
     setRuntime(result.runtime);
     setConnecting(false);
   };
 
+  // Auto-reconnect when a saved connection exists (page reload / fresh tab).
+  useEffect(() => {
+    if (connection && !runtime && !connecting && !error) {
+      void completeConnect(connection, 'Reconnect failed.');
+    }
+  }, [connection, runtime, connecting, error]);
+
+  // HOME=4 + NVOOS_AUTO_CONNECT=1: connect immediately on load (kiosk-style
+  // deployment). Fires once per page load — disconnecting shows the preset
+  // page with Connect as a manual retry instead of instantly reconnecting.
+  // On failure the `!error` guard also prevents a retry loop.
+  const autoConnectAttempted = useRef(false);
+  useEffect(() => {
+    if (autoConnectAttempted.current) {
+      return;
+    }
+    if (
+      AUTO_CONNECT &&
+      LOGIN_PRESET === 4 &&
+      ENV_CONNECTION.connection &&
+      !connection &&
+      !runtime &&
+      !connecting &&
+      !error
+    ) {
+      autoConnectAttempted.current = true;
+      void completeConnect(ENV_CONNECTION.connection);
+    }
+  }, [connection, runtime, connecting, error]);
+
+  const handleConnect = async (event: FormEvent): Promise<void> => {
+    event.preventDefault();
+
+    let next: ConnectionSettings;
+    if (LOGIN_PRESET === 4) {
+      // Preconfigured page: the whole connection comes from env vars.
+      if (!ENV_CONNECTION.connection) {
+        setError(ENV_CONNECTION.error || 'The environment connection is incomplete.');
+        return;
+      }
+      next = ENV_CONNECTION.connection;
+    } else if (LOGIN_PRESET !== 0 && activePreset) {
+      // Pinned preset page: single auth option, full admin surface, and the
+      // media worker comes from env (its fields are hidden on these pages).
+      next = {
+        siteUrl: siteUrl.trim().replace(/\/+$/, ''),
+        auth: activePreset.auth,
+        bearer: LOGIN_PRESET === 3 ? bearer.trim() : undefined,
+        wpUsername: LOGIN_PRESET === 2 ? wpUsername.trim() : undefined,
+        wpAppPassword: LOGIN_PRESET === 2 ? wpAppPassword.trim() : undefined,
+        adminLayout: true,
+        mediaWorkerUrl: ENV_SETTINGS.workerUrl || undefined,
+        mediaWorkerToken: ENV_SETTINGS.workerToken || undefined,
+      };
+    } else {
+      next = {
+        siteUrl: siteUrl.trim().replace(/\/+$/, ''),
+        auth,
+        bearer: auth === 'bearer' ? bearer.trim() : undefined,
+        guestToken: auth === 'guest' ? guestToken.trim() : undefined,
+        wpUsername: auth === 'wp' ? wpUsername.trim() : undefined,
+        wpAppPassword: auth === 'wp' ? wpAppPassword.trim() : undefined,
+        assistantId: assistantId ? Number(assistantId) : undefined,
+        adminLayout,
+        mediaWorkerUrl: mediaWorkerUrl.trim().replace(/\/+$/, ''),
+        mediaWorkerToken: mediaWorkerToken.trim(),
+      };
+    }
+
+    await completeConnect(next);
+  };
+
   const handleDisconnect = (): void => {
     localStorage.removeItem(STORAGE_KEY);
     window.NVOOS_PRO_SPA = undefined;
+    setAuthSlot({ siteUrl: '', auth: 'guest' }); // clears the in-memory credential slot
     setConnection(null);
     setRuntime(null);
     setError('');
@@ -271,6 +343,31 @@ function Shell(): JSX.Element {
           ⚙
         </button>
       </>
+    );
+  }
+
+  // Pinned login page (HOME=1..4): render only the selected option. The media
+  // worker fields are hidden on these pages — the worker comes from env.
+  if (LOGIN_PRESET !== 0) {
+    return (
+      <PresetLogin
+        preset={LOGIN_PRESET}
+        siteUrl={siteUrl}
+        onSiteUrl={setSiteUrl}
+        bearer={bearer}
+        onBearer={setBearer}
+        wpUsername={wpUsername}
+        onWpUsername={setWpUsername}
+        wpAppPassword={wpAppPassword}
+        onWpAppPassword={setWpAppPassword}
+        envConnection={ENV_CONNECTION.connection}
+        envError={ENV_CONNECTION.error}
+        workerNote={ENV_SETTINGS.workerUrl}
+        autoConnect={AUTO_CONNECT}
+        connecting={connecting}
+        error={error}
+        onSubmit={handleConnect}
+      />
     );
   }
 

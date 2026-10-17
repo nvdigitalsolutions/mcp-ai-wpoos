@@ -2,7 +2,7 @@
 
 This directory configures the [Zed editor](https://zed.dev) for contributors working on **Open Operator System (NV oOS)**. Its main purpose is to expose the GitHub Custom Agent roster from [`examples/agents/`](../examples/agents/) as native Zed **agent profiles**, so each example becomes a one-click selection in Zed's Agent Panel.
 
-> **Last reviewed:** May 2026 · **Mirrors:** `examples/agents/` (13 agents)
+> **Last reviewed:** October 2026 · **Mirrors:** `examples/agents/` (13 agents)
 
 ---
 
@@ -10,7 +10,7 @@ This directory configures the [Zed editor](https://zed.dev) for contributors wor
 
 | File | Purpose |
 |------|---------|
-| `settings.json` | Project-level Zed settings — editor defaults, MCP context-server templates, and the 12 agent profiles. |
+| `settings.json` | Project-level Zed settings — editor defaults (incl. Rust for the `examples/nvoos-dictate` Tauri app), MCP context-server templates, and the agent profiles. |
 | `README.md` | This file. |
 
 ---
@@ -85,6 +85,15 @@ The `context_servers` block in `settings.json` ships with three commented templa
 - **`nv-oos-local`** — point Zed at the `mcp-ai/v1` REST endpoint of a local NV oOS site (e.g. `docker compose up -d` per [`MAINTAINER_MAP.md`](../MAINTAINER_MAP.md)). Gives the agent access to all ~1,000+ in-product NV oOS tools while developing.
 
 Each is **off by default**. Uncomment the block, supply the matching secret (Zed has a built-in secret store: `cmd-shift-p` → "agent: edit settings" → secrets), then reload the Agent Panel.
+
+## Rust support
+
+The dictation companion app under [`examples/nvoos-dictate/`](../examples/nvoos-dictate/) is a Tauri v2 + Rust project (`src-tauri/Cargo.toml`, pinned by `rust-toolchain.toml`). `settings.json` wires it up for Zed contributors:
+
+- **`rust` in `auto_install_extensions`** — installs Zed's Rust extension (rust-analyzer integration).
+- **`"rust-analyzer": {}` in `lsp`** — leaves per-user overrides open (e.g. a custom toolchain binary path) without pinning anything.
+- **`Rust` language overrides** — 4-space soft tabs, because rustfmt is spaces-only and the repo-wide `hard_tabs: true` default would fight it.
+- **`**/target` file-scan exclusion** — keeps Cargo's (potentially multi-GB) build output out of Zed's project index.
 
 ---
 

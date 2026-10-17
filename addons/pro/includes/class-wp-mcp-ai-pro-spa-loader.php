@@ -65,6 +65,7 @@ class WP_MCP_AI_Pro_SPA_Loader {
 		);
 
 		add_action( 'load-' . $this->hook_suffix, array( $this, 'enqueue' ) );
+		add_action( 'admin_head-' . $this->hook_suffix, array( $this, 'print_viewport_meta' ) );
 	}
 
 	/**
@@ -78,6 +79,21 @@ class WP_MCP_AI_Pro_SPA_Loader {
 	 */
 	public function render() {
 		echo '<div id="wp-mcp-ai-pro-spa-root"></div>';
+	}
+
+	/**
+	 * Output a viewport meta for the SPA admin page.
+	 *
+	 * `interactive-widget=resizes-content` (Proposal 080) makes supporting
+	 * browsers shrink the layout viewport when the on-screen keyboard opens
+	 * so the chat composer reflows above the keyboard instead of being
+	 * covered by it. Browsers without support ignore the directive.
+	 *
+	 * @since 2.3.0
+	 * @return void
+	 */
+	public function print_viewport_meta() {
+		echo '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />' . "\n";
 	}
 
 	/**

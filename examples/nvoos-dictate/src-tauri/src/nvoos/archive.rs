@@ -15,6 +15,11 @@ pub async fn archive_transcript(
 ) -> AppResult<()> {
     let record = TranscriptRecord {
         assistant_id: assistant_id.map(|s| s.to_string()),
+        // Built from a history row: no live chat session key. The plugin
+        // route rejects session-less archives — the live path (dictation)
+        // passes the key from the polish call; this offline path is kept
+        // for future plugin versions that relax the contract.
+        session_key: None,
         title: format!("nvoos-dictate #{} — {}", row.id, row.target_app),
         raw: row.text_raw.clone(),
         clean: row.text_clean.clone(),

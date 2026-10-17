@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.4"
-  plugin-version-tested: "1.2.4"
-  last-updated: "2026-10-11"
+  plugin-version: "1.2.7"
+  plugin-version-tested: "1.2.7"
+  last-updated: "2026-10-17"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -91,6 +91,12 @@ credentials than this repo's dev compose (verified on the live stack,
   `bin/create-skill-junctions.ps1`), so skill edits ship in the same PR as
   plugin code.
 - `wp` inside the Design Stack WP container requires `--allow-root`.
+- **Production console:** `https://console.nvoos.cloud/` is the live NV oOS
+  site (verified 2026-10: `/wp-json/mcp-ai/v1/status` = operational,
+  `/wp-json/mcp-ai/v1/assistants` returns 401 without a Bearer credential).
+  The dictation desktop app points here for its Stage-2 polish / archive
+  backend; credentials must be issued on that site (see the provisioning
+  recipe above) and stored via the app's Settings → NV oOS tab.
 
 ### 2. API Key Auto-Detection (v1.1.47+)
 
@@ -780,6 +786,64 @@ Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
 
+**v1.2.7 operational quick notes** (full detail in RELEASE-NOTES.md):
+**F&B universalisation + open-format ingestion** (PRs #7094–#7096, Proposal
+078) — the F&B toolkit goes multi-tenant: `WP_MCP_AI_Fnb_Tenant_Profile`
+de-couples currency (neutral keys + legacy `*_lkr` aliases), `render()`
+de-venues both assistant surfaces, a universal single-folder ingestor scores
+Drive files to table roles, and `fnb_export_report` (+1 Pro) exports CSV/PDF.
+**Sinhala TTS** (PR #7099) — `generate_sinhala_speech` (+1 base) routes via
+SpeechGen `si-LK` / Hugging Face MMS / custom webhook. **Pro SPA expansion**
+(PRs #7078–#7080) — `#/docs` / `#/media` / `#/documents` iframes; headless
+credential auth (#7085) + keep-alive tabs (#7075) + surface fix (#7076).
+**Schema hardening** (PRs #7087/#7100/#7104) — boolean `required` hoisting +
+empty `properties` as `{}`. **Google Workspace** (PRs #7097/#7101/#7105) —
+unified credential resolution + native Sheets reads. **F&B reliability** (PRs
+#7091/#7092/#7102/#7103); **team-member slug resolution** (#7088).
+**Dependency** (PR #7074) — gateway SDK → 1.31.0. **Skills** — coding-time
+73 → 74 (`-universalisation`, `-ingestion`); bundled 76 → 77 (+dictation-app).
+Tool count +1 base +1 Pro → ~355 base + ~1,377 Pro (~1,731 total); 12
+security classes; 18 providers; 30 addons (all unchanged).
+
+**v1.2.6 operational quick notes** (full detail in RELEASE-NOTES.md):
+**Google Drive OAuth restored** (PR #7053) — `drive.readonly` restored
+alongside `drive.file` behind `wp_mcp_ai_google_drive_oauth_scope` (the
+#6981 per-file narrowing broke `search_drive`/`get_drive_file` + the F&B
+tools for pre-existing content). **F&B reader reliability** (PRs #7057/#7060/
+#7061/#7062) — Sheets-API-v4 multi-worksheet reads, a `DEMO_WORKBOOK_ID`
+fallback, the `spreadsheets.readonly` OAuth scope + actionable Sheets-scope
+errors, a CSV exporter, and 18 shipped demo tables. **OCR vLLM** (PR #7055)
+— the self-hosted client now speaks the vLLM contract (`extra_body.vllm_xargs`),
+base + CG Pro mirror byte-identical. **Drive fixes** (PR #7051) — the
+inline-async-tick trait double-declare fatal, response-body logging, and
+`folder_id` clearing. **Dictation + SPA** (PRs #7041/#7043–#7050/#7063/#7066/
+#7072) — a CDP browser agent, FastConformer, the polish gate, the
+`spa-surfaces` endpoint + the drawer-401 credential fix — **no plugin registry
+surface**. **Dependency** (PR #7059) — `shell-quote` → 1.12.0. Tool count
+unchanged: ~354 base + ~1,376 Pro (~1,730 total); 12 security classes; 18
+providers; 30 addons (all unchanged).
+
+**v1.2.5 operational quick notes** (full detail in RELEASE-NOTES.md):
+**GTmetrix × WPCode performance toolkit** (PR #7026, Proposal 068) — the
+`enable_gtmetrix_toolkit` Pro module registers 23 `gtmetrix_*` tools plus
+the read-only `list_wpcode_snippets` (a shared
+`WP_MCP_AI_Pro_WPCode_Snippet_Repository` extracted from
+`create_wpcode_snippet`); `gtmetrix_install_wpcode_fix` is drafts-only +
+chat-restricted; `wp mcp-ai pro gtmetrix seed-assistant`. **Food & Beverage
+Phase 9** (PR #7032) — five transactional-table CPTs behind
+`enable_fnb_native_storage`, the `fnb_import_table` bridge, and nine
+`fnb_pr_*` purchase-request tools on the QMS engine; the F&B admin menu
+surfaces via the module registry (#7029) and one-click assistant-pack
+seeding (#7033). **Dictation companion + SPA** (PRs #7017–#7040) — hardens
+`examples/nvoos-dictate` (capture/hotkey/VAD/credential fixes, whisper
+speed, macOS port, local LM Studio/Ollama + video, VLM label polish) and
+adds env-driven login presets to `examples/nvoos-pro-spa-vite` (#7031) —
+**no plugin registry surface**. **Docs & skills** — coding-time skills
+71 → 72 (`mcp-ai-artcraft-ops`, `design-performance-audit`); sub-project
+content-graph 1.0.11 wp.org prep (#7014). Tool counts +34 Pro → ~354 base
++ ~1,376 Pro (~1,730 total); 12 security classes; 18 providers; 30 addons
+(all unchanged).
+
 **v1.2.3 operational quick notes** (full detail in RELEASE-NOTES.md):
 **CORS same-origin enforcement** (PR #6986) — WordPress core reflects any
 Origin back with credentials on every REST response, so the "Same Origin"
@@ -1219,6 +1283,39 @@ errors instead of resets.
 Python `urllib`); long synchronous tool calls exceed the ~100s proxy cutoff.
 **Fix:** use curl/browser-like user agents for probes, and prefer v1.1.55+
 where long tools are bounded or delivered out-of-band (SSE message queue).
+
+### Chat returns a full Cloudflare **520** error page (origin dropped, not 524)
+
+**Distinct from 524.** 520 means Cloudflare could not parse a complete HTTP
+response — the origin dropped the connection mid-stream (empty/malformed
+body), not a timeout. The chat UI then renders Cloudflare's 520 HTML as the
+"response". Symptoms verified on a Cloudways app (2026-10-15):
+`/index.php?stream=true&limit=10` appears in `app_php` → `slow_pages` analytics
+at 322–372 s, while the app-level PHP-FPM pool had a hidden hard cap.
+
+**Root causes to check (in order):**
+
+1. **App-level `php_admin_value[max_execution_time]` overrides the panel.**
+   The Cloudways server `execution_limit` (e.g. 300) is *not* the effective
+   value when the app's PHP-FPM pool file sets a lower
+   `php_admin_value[max_execution_time]=120`. `php_admin_value` beats both the
+   panel and any `ini_set()` from PHP/plugins, and is invisible from the
+   Cloudways panel — read the pool file directly. Raise it to comfortably
+   exceed the longest observed stream (600+).
+2. **Varnish buffers the SSE stream.** On Cloudways Varnish is on by default
+   for all apps. `pass` still frames the response and can break a long-lived
+   SSE stream; the correct handling is **`pipe`** (raw TCP tunnel) in `vcl_recv`
+   for any URL matching `stream=true`. Custom per-app VCL is not self-service
+   in the Cloudways panel (typically a support ticket), so the pragmatic
+   self-service fix is to disable Varnish on that one app — safe for dynamic
+   WP/WooCommerce + chat, which Redis/Breeze serve better anyway.
+3. **Proxy timeouts** (nginx `proxy_read_timeout`, often 60 s on Cloudways)
+   can also cut the stream — covered by the `send_sse_keepalive()` fix (see
+   the test-suite skill, pattern 64).
+
+**Diagnostic shortcut:** Cloudways `analytics_app_php` (`slow_pages` +
+`processes`) surfaces the streaming endpoint and a stuck PHP-FPM worker
+(e.g. `pool <sys_user>-82`) holding CPU for 300+ s — that's the smoking gun.
 
 ### `wp mcp-ai provider list` / `wp mcp-ai chat` fatal (PHP 8, fixed in #6625)
 

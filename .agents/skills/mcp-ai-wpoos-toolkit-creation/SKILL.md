@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-creation
-description: "End-to-end playbook for creating a new NV oOS Pro toolkit under addons/pro/includes/tools/<toolkit> — folder layout, service layer, tool class conventions (canonical envelope, two-gate sanitisation, capability flags), ALL seven registration surfaces (central registry, admin Tools section, settings status map, both WP-CLI commands, schedule presets, workflow presets, SA Toolkit Manager), fixture/oracle testing with a standalone smoke harness, and the phpcs gotcha checklist. Use when asked to build a new Pro toolkit, add a toolkit to the plugin, scaffold toolkit tools, register toolkit presets/toggles, or debug why a new toolkit's tools or presets don't appear. First case study: food-beverage (F&B Management, 21 tools, 2026-10-08, 20/20 Check-totals oracle verified). Complements mcp-ai-wpoos-toolkit-audit (hardening existing toolkits) and mcp-ai-wpoos-test-suite (repair)."
+description: "End-to-end playbook for creating a new NV oOS Pro toolkit under addons/pro/includes/tools/<toolkit> — folder layout, service layer, tool class conventions (canonical envelope, two-gate sanitisation, capability flags), ALL eleven registration surfaces (Pro module registry loader, central registry, admin Tools section + Features subtab, admin settings page/side menu, settings status map, both WP-CLI commands, schedule presets, workflow presets, SA Toolkit Manager, coverage manifests), fixture/oracle testing with a standalone smoke harness, and the phpcs gotcha checklist. Use when asked to build a new Pro toolkit, add a toolkit to the plugin, scaffold toolkit tools, register toolkit presets/toggles, or debug why a new toolkit's tools, toggle, or admin menu don't appear. First case study: food-beverage (F&B Management, 21 tools, 2026-10-08, 20/20 Check-totals oracle verified). Complements mcp-ai-wpoos-toolkit-audit (hardening existing toolkits) and mcp-ai-wpoos-test-suite (repair)."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-08"
+  last-updated: "2026-10-17"
 ---
 
 # NV oOS Pro Toolkit Creation Loop
@@ -17,7 +17,10 @@ folder scaffold to registered, tested, and preset-wired. The first full run was
 **food-beverage** (2026-10-08: 7 services, 21 tools, 13 reports, 20/20 oracle
 verification — see [Case study](#case-study-food-beverage)). CI feedback from
 the same build added the workflow-preset `edges` contract and the tool-class
-coverage-manifest surface (§4.7 and §4.9).
+coverage-manifest surface (§4.9 and §4.11), and two post-merge follow-ups
+caught the surfaces that first pass missed — the Features-subtab toggle wiring
+(#7010) and the module-registry + admin-menu registration (F&B's settings
+page) — both now called out in §4.
 
 ## When to use this skill
 
@@ -57,6 +60,10 @@ addons/pro/includes/tools/<toolkit>/
 └── tests/fixtures/*.csv                      # exported from the source data
 ```
 
+The admin settings page does NOT live in this folder — it goes in
+`addons/pro/includes/admin/class-wp-mcp-ai-<slug>-settings-page.php`
+(registers the side admin menu; see §4.4).
+
 Conventions: every file has the ABSPATH guard + PHPDoc header
 (`@package WP_MCP_AI_Pro`, text domain `mcp-ai-wpoos-pro` for Pro-toolkit
 strings, `mcp-ai-wpoos` for base-plugin admin strings).
@@ -82,49 +89,97 @@ class WP_MCP_AI_Tool_Foo extends WP_MCP_AI_Foo_Tool_Base // implements WP_MCP_AI
   `absint`), escape at exit.
 - Make the abstract base require the toolkit services via `require_once
   dirname( __FILE__ )` so tools work when the registry loads them directly
-  (init.php is NOT auto-loaded for toolkit folders — the central registry
-  requires the tool files itself).
+  (the central registry requires the tool files itself; it does NOT require
+  your init.php — init.php only loads via the Pro Module Registry, §4.1).
 - Keep tools thin: sanitize args → delegate to a service → merge `success`.
 
-## 4. The SEVEN registration surfaces (missing any one = "tools don't show up")
+## 4. The ELEVEN registration surfaces (missing any one = "tools don't show up" / "no admin menu")
 
-1. **Central registry** — `addons/pro/mcp-ai-wpoos-pro.php`,
+Two surfaces are the most commonly missed — both bit the F&B build AFTER
+merge (see [Case study](#case-study-food-beverage)): the **Pro Module Registry
+loader** (nothing loads your init.php without it) and the **admin settings
+page / side menu** (the user sees no admin surface even though the tools
+register and work fine). Wire both in the same PR as the tool map.
+
+1. **Pro Module Registry loader** — `addons/pro/includes/class-wp-mcp-ai-pro-module-registry.php`:
+   add your slug to BOTH `$conditional_toolkits` (`'<slug>' => 'Label'` — the
+   registry derives the `enable_<slug>_toolkit` key from it) AND `$dir_map`
+   (`'<slug>' => '<toolkit-dir>'`). This is what requires
+   `tools/<dir>/init.php` when the toggle is on. Skip it and the init's
+   settings-defaults filter and admin-page load never run — the F&B build
+   shipped with tools + presets but no registry entry, so init.php was dead
+   code and the side admin menu never appeared even when enabled.
+2. **Central registry** — `addons/pro/mcp-ai-wpoos-pro.php`,
    `wp_mcp_ai_pro_register_tools()`: add a gated block
    `if ( ! empty( $settings['enable_<slug>_toolkit'] ) ) { $pro_tools = array_merge( $pro_tools, $map ); }`
    with class → file pairs.
-2. **Admin Tools section** — `includes/admin/sections/class-wp-mcp-ai-section-tools.php`:
-   `'enable_<slug>_toolkit' => array( 'type' => 'checkbox', 'label', 'checkbox_label', 'description', 'default' => false )`.
-3. **Settings status map** — `includes/admin/class-wp-mcp-ai-pro-settings.php`:
+3. **Admin Tools section** — `includes/admin/sections/class-wp-mcp-ai-section-tools.php`:
+   `'enable_<slug>_toolkit' => array( 'type' => 'checkbox', 'label', 'checkbox_label', 'description', 'default' => false )`
+   AND add the key to the **"Pro Features" subtab group** in `get_subtab_groups()`
+   (`'features' => array( ..., 'fields' => array( ..., 'enable_<slug>_toolkit', ... ) )`)
+   — the checkbox renders only when BOTH are wired (F&B miss #1, fixed in
+   #7010; regression-pinned by `tests/test-fnb-toolkit-toggle.php`). Also add
+   the memory estimate to `get_toolkit_memory_requirements()`.
+4. **Admin settings page / side menu** — new file
+   `addons/pro/includes/admin/class-wp-mcp-ai-<slug>-settings-page.php`
+   (minimal worked example: `class-wp-mcp-ai-fnb-settings-page.php`).
+   Register the toolkit's Settings API form (its own option or the shared
+   one) and add the menu in `init()` via `add_action( 'admin_menu', ... )` —
+   a submenu under `wp-mcp-ai-dashboard` (Vision Analysis / Ext. Cognition
+   pattern) for settings-only toolkits, or a top-level menu
+   (`class-wp-mcp-ai-crm-admin-menu.php` pattern) for CPT-heavy toolkits.
+   Load it from the toolkit init.php inside the CRM-style enable gate:
+
+   ```php
+   $settings      = get_option( 'wp_mcp_ai_settings', array() );
+   $is_enabled    = ! empty( $settings['enable_<slug>_toolkit'] );
+   $is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+   $is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+   if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
+       // ...require services...
+       if ( is_admin() ) {
+           require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-<slug>-settings-page.php';
+           WP_MCP_AI_<Slug>_Settings_Page::init();
+       }
+   }
+   ```
+
+   Regression-test the surface: `addons/pro/tests/test-<slug>-settings-page-registration.php`
+   (submenu under the NV oOS menu + settings registered + sanitizer
+   round-trip + init-gate load; mirror
+   `test-fnb-settings-page-registration.php`) and a base+pro init-gate pin
+   under `tests/basepro/` (mirror `test-basepro-fnb-init.php`).
+5. **Settings status map** — `includes/admin/class-wp-mcp-ai-pro-settings.php`:
    the toolkit label map (~line 224, `enable_<slug>_toolkit => __( 'Label', 'mcp-ai-wpoos' )`)
    AND the status block (`'<slug>_toolkit' => array( name, description, enabled, category, tools_count, tools[] )`).
-4. **WP-CLI toolkit command** — `addons/pro/includes/cli/class-wp-mcp-ai-pro-cli-toolkit-command.php`:
+6. **WP-CLI toolkit command** — `addons/pro/includes/cli/class-wp-mcp-ai-pro-cli-toolkit-command.php`:
    `TOOLKITS` const entry.
-5. **WP-CLI status command** — `addons/pro/includes/cli/class-wp-mcp-ai-pro-cli-status-command.php`:
+7. **WP-CLI status command** — `addons/pro/includes/cli/class-wp-mcp-ai-pro-cli-status-command.php`:
    `$toolkit_keys` entry.
-6. **Schedule presets** — `addons/pro/includes/class-wp-mcp-ai-pro-schedule-presets.php`:
+8. **Schedule presets** — `addons/pro/includes/class-wp-mcp-ai-pro-schedule-presets.php`:
    add `self::get_<slug>_presets()` to the `get_presets()` merge AND implement it
    (`toolkit => '<slug>', schedule_type => 'assistant_run'|'task',
    schedule => 'daily'|'weekly'|'hourly', schedule_data => assistant_config.message
    or hook).
-7. **Workflow presets** — `addons/pro/includes/class-wp-mcp-ai-pro-workflow-presets.php`:
+9. **Workflow presets** — `addons/pro/includes/class-wp-mcp-ai-pro-workflow-presets.php`:
    merge + method with `nodes` (types: input/tool/condition/output; tool nodes
    carry `toolSlug` + `arguments` with `{{input.key}}` template vars).
    **Every preset needs ALL of: `name, description, category, icon, tags,
    nodes, edges`** — `edges` is an array of `{id, source, target, sourceHandle}`
    entries whose source/target must reference existing node IDs (enforced by
    `tests/test-pro-workflow-presets.php`; missing `edges` fails CI).
-8. (If schedule-anything is relevant) **SA Toolkit Manager** —
-   `addons/schedule-anything-platform/includes/class-sa-toolkit-manager.php`:
-   `TOOLKIT_FLAGS` (`'<slug>' => 'enable_<slug>_toolkit'`) + `TOOLKIT_ORDER`.
-9. **Tool-class coverage manifests** — run
-   `bin/generate-tool-coverage-manifest.sh` and commit the updated
-   `tests/tools/.coverage-manifest.txt` (base) and
-   `addons/pro/tests/tools/.coverage-manifest.txt` (Pro). CI
-   (`tests/test-tool-registry-coverage.php`) fails with "run
-   bin/generate-tool-coverage-manifest.sh" for every unlisted class — the
-   manifests list one FILE BASENAME per line (`class-*.php` basename minus the
-   `class-` prefix and `.php`), and only additions of your new classes should
-   appear in the diff (sort-order churn can look like deletions).
+10. (If schedule-anything is relevant) **SA Toolkit Manager** —
+    `addons/schedule-anything-platform/includes/class-sa-toolkit-manager.php`:
+    `TOOLKIT_FLAGS` (`'<slug>' => 'enable_<slug>_toolkit'`) + `TOOLKIT_ORDER`.
+11. **Tool-class coverage manifests** — run
+    `bin/generate-tool-coverage-manifest.sh` and commit the updated
+    `tests/tools/.coverage-manifest.txt` (base) and
+    `addons/pro/tests/tools/.coverage-manifest.txt` (Pro). CI
+    (`tests/test-tool-registry-coverage.php`) fails with "run
+    bin/generate-tool-coverage-manifest.sh" for every unlisted class — the
+    manifests list one FILE BASENAME per line (`class-*.php` basename minus the
+    `class-` prefix and `.php`), and only additions of your new classes should
+    appear in the diff (sort-order churn can look like deletions).
 
 ## 5. Testing: fixtures, oracle, smoke harness
 
@@ -193,6 +248,42 @@ class WP_MCP_AI_Tool_Foo extends WP_MCP_AI_Foo_Tool_Base // implements WP_MCP_AI
   (spec rule G-02/G-08: all figures via the engine, never model maths).
 - Cache per-table reads in 5-minute transients so repeated metric calls agree.
 
+### 7a. Open-format data ingestion (F&B Proposal 078 — the on-ramp pattern)
+
+When a toolkit ingests heterogeneous owner files (POS exports, supplier
+invoices, CSV/JSON dumps, photographed slips), prefer **structure over
+filename**, and reuse the existing format stack rather than adding deps:
+
+- **Resolution order (highest trust first):** operator `table_map` (table ID →
+  `sheet`/`file` name) → **structural header matcher** (confidence =
+  matched / required canonical columns, where `required` is the idempotency +
+  natural keys, not every optional column) → legacy name-based guess.
+- **Deterministic filename/slug resolution MUST win ahead of structural
+  inference.** This is the hard-won F&B regression: putting the header matcher
+  *before* the slug match let `ingredients.csv` (which also carries
+  `Supplier ID, Supplier`) shadow `suppliers.csv`, silently corrupting
+t-dependent reads (the PR cutoff gate). Always slug-first, structural last
+  resort only.
+- **Reuse the existing format stack — do not add dependencies.** XLSX/ODS via
+  `phpoffice/phpspreadsheet` and PDF text via `smalot/pdfparser` are already
+  Pro-addon deps (autoloaded on PHP 8.1+); call them through `class_exists`
+  guards with an actionable fallback. Scanned PDFs / photos return a clear
+  "use the OCR tools" pointer (`extract_pdf_text` enable_ocr / `ocr_pdf_text` /
+  `analyze_image`), never silent failure or faxing.
+- **Observation + terminology map** for semi-structured records: accept a loose
+  `{type, item, qty, unit, recorded_at, source, raw_value}` row, bind it to a
+  canonical table via a `type`→table terminology map (the F&B analogue of the
+  vitals/FHIR `LOINC_MAP`), and **preserve `raw_value`/`_raw_observation`**
+  beside the normalised columns so a bad unit/price transform is reversible.
+- **Dedupe / retention / banding** mirror the vitals CCT: `is_near_duplicate`
+  (tolerance over idempotency keys), a daily bounded-batch retention cron gated
+  on storage being on with `retention_days` (= 0 keeps forever), and
+  out-of-band flags surfaced in the import dry-run preview.
+
+See `docs/project/proposals/078-fnb-data-ingestion-open-format-proposal.md` + the
+implementation plan for the full worked example, and the sibling skill
+`mcp-ai-wpoos-toolkit-ingestion` for the reusable reference.
+
 ## 8. Validation gate
 
 1. `php -l` every new/changed file.
@@ -200,13 +291,21 @@ class WP_MCP_AI_Tool_Foo extends WP_MCP_AI_Foo_Tool_Base // implements WP_MCP_AI
 3. `php tests/pro/tools/<toolkit>/smoke-run.php` → all oracle rows PASS.
 4. Docker PHPUnit green (per `mcp-ai-wpoos-test-suite`) — includes
    `test-pro-workflow-presets.php` (required keys incl. `edges`),
-   `test-pro-schedule-presets.php` if it exists, and
-   `test-tool-registry-coverage.php` (manifest up to date).
-5. Preset sanity: load the preset classes with minimal stubs (define `ABSPATH`,
+   `test-pro-schedule-presets.php` if it exists,
+   `test-tool-registry-coverage.php` (manifest up to date), and your new
+   settings-page registration test (§4.4; also run the `tests/basepro/`
+   init-gate pin under `phpunit-basepro.xml.dist`).
+5. Admin-surface smoke (the F&B regression): enable the toggle in
+   `wp_mcp_ai_settings`, require the toolkit `init.php`, and assert the
+   settings page class loads + `has_action( 'admin_menu', ... )` is set;
+   separately assert the module registry defines the toolkit module
+   (§4.1) and that the Tools-section checkbox renders (field present in
+   `get_fields()` AND in the `features` subtab group, §4.3).
+6. Preset sanity: load the preset classes with minimal stubs (define `ABSPATH`,
    stub `__`, `sanitize_key`, `get_option`) and assert
    `get_presets_by_toolkit('<slug>')` / workflow `get_presets_by_category('<slug>')`
    return your presets — preset files silently exit without `ABSPATH`.
-6. Run the `mcp-ai-wpoos-toolkit-audit` four-failure-class scan on the new
+7. Run the `mcp-ai-wpoos-toolkit-audit` four-failure-class scan on the new
    toolkit before the PR (no unguarded shell calls, no calls to nonexistent
    client methods, array-safe parsing of provider responses, provider enums).
 
@@ -222,6 +321,31 @@ variances). Two formula findings encoded + tested: value-based COGS for
 stock-used, Assumptions-rates for utilities. See the PR branch
 `062-fnb-pro-toolkit-proposal` and the proposal docs under
 `docs/project/proposals/062-*`.
+
+**Post-merge misses (the reason §4 lists eleven surfaces):**
+
+1. The `enable_fnb_toolkit` field existed in `get_fields()` but was missing
+   from the `features` subtab group in `get_subtab_groups()`, so the checkbox
+   never rendered in the Tools section — fixed in #7010, pinned by
+   `tests/test-fnb-toolkit-toggle.php` (the test comment documents the
+   original bug).
+2. The build shipped no Pro Module Registry entry and no admin settings
+   page, so `food-beverage/init.php` never loaded and the side admin menu
+   never appeared even with the toggle enabled. Fixed by adding
+   `class-wp-mcp-ai-fnb-settings-page.php` (submenu under
+   `wp-mcp-ai-dashboard`, Settings API form for `wp_mcp_ai_fnb_settings`)
+   + the `fnb` entries in `$conditional_toolkits` / `$dir_map`, with
+   `addons/pro/tests/test-fnb-settings-page-registration.php` and
+   `tests/basepro/test-basepro-fnb-init.php` as regression pins.
+
+**Open-format ingestion follow-on (Proposal 078, Phases 1–10):** the toolkit
+   later gained a configurable `table_map` + structural (header) matcher + a
+   multi-format loader (CSV/TSV/JSON/JSONL/XLSX/ODS/PDF/photo), an
+   Observation→canonical terminology-map layer, dedupe/retention/banding, a
+   read-only ingest-review dashboard, and the `fnb_import_table` diagnostics +
+   three-way source error. The key lessons are in §7a (structural-vs-filename
+   resolution order and the slug-first regression). See
+   `docs/project/proposals/078-*` and `mcp-ai-wpoos-toolkit-ingestion`.
 
 ## Also load
 

@@ -35,6 +35,9 @@ export interface SlashCommandsDrawerProps {
 	nonce: string;
 	isOpen: boolean;
 	onClose: () => void;
+	/** Guest mode — forward the guest token header (iframe/embedded surface). */
+	guest?: boolean;
+	guestToken?: string;
 	/** Called when the user clicks a command to insert its text into the composer. */
 	onInsertPayload: ( payload: string, autoSubmit?: boolean ) => void;
 	/** Called when a slash command should be executed server-side (v2.1.0). */
@@ -60,13 +63,15 @@ export function SlashCommandsDrawer( {
 	nonce,
 	isOpen,
 	onClose,
+	guest = false,
+	guestToken = '',
 	onInsertPayload,
 	onExecuteCommand,
 	toggleRef,
 }: SlashCommandsDrawerProps ): JSX.Element | null {
 	const client = useMemo(
-		() => new SlashCommandsClient( { endpoint, nonce } ),
-		[ endpoint, nonce ]
+		() => new SlashCommandsClient( { endpoint, nonce, guest, guestToken } ),
+		[ endpoint, nonce, guest, guestToken ]
 	);
 
 	const [ commands, setCommands ] = useState< SlashCommand[] | null >( null );

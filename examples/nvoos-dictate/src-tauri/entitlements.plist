@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Hardened runtime + microphone capture (see macos-port-plan.md §3.4).
+	     The app is deliberately NOT sandboxed: global hotkeys, event taps,
+	     the ScreenCaptureKit sidecar child process, and keychain ACLs are
+	     incompatible with App Sandbox. Distribution therefore goes through
+	     notarization instead of the Mac App Store. -->
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+</dict>
+</plist>

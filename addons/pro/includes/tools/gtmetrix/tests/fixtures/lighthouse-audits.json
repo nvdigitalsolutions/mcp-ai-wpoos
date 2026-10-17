@@ -1,0 +1,73 @@
+{
+  "audits": {
+    "largest-contentful-paint": {
+      "id": "largest-contentful-paint",
+      "title": "Largest Contentful Paint element",
+      "score": 0.98,
+      "displayValue": "1.8 s",
+      "_structureScore": 0.9,
+      "_impactScore": 0.55,
+      "details": {
+        "items": [
+          {
+            "node": {
+              "nodeLabel": "img.hero"
+            },
+            "phaseBreakdown": {
+              "ttfb": 222,
+              "loadDelay": 100,
+              "loadTime": 900,
+              "renderDelay": 578
+            }
+          }
+        ]
+      }
+    },
+    "uses-optimized-images": {
+      "id": "uses-optimized-images",
+      "title": "Efficiently encode images",
+      "score": 0.4,
+      "displayValue": "Potential savings of 1,240 KiB",
+      "_structureScore": 0.4,
+      "_impactScore": 0.5
+    },
+    "render-blocking-resources": {
+      "id": "render-blocking-resources",
+      "title": "Eliminate render-blocking resources",
+      "score": 0.6,
+      "displayValue": "Potential savings of 320 ms",
+      "_structureScore": 0.6,
+      "_impactScore": 0.35
+    },
+    "font-display": {
+      "id": "font-display",
+      "title": "All text remains visible during webfont loads",
+      "score": 1,
+      "displayValue": "0 ms",
+      "_structureScore": 1,
+      "_impactScore": 0
+    },
+    "total-byte-weight": {
+      "id": "total-byte-weight",
+      "title": "Avoids enormous network payloads",
+      "score": 1,
+      "displayValue": "Total size was 890 KiB",
+      "_structureScore": 1,
+      "_impactScore": 0.1
+    },
+    "dom-size": {
+      "id": "dom-size",
+      "title": "Avoids an excessive DOM size",
+      "score": null,
+      "displayValue": "1,482 elements",
+      "_impactScore": null
+    }
+  },
+  "categories": {
+    "performance": {
+      "id": "performance",
+      "title": "Performance",
+      "score": 0.94
+    }
+  }
+}

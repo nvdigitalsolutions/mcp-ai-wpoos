@@ -37,7 +37,7 @@ class WP_MCP_AI_Tool_Fnb_Utilities_Per_Cover extends WP_MCP_AI_Fnb_Tool_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Utilities analysis: electricity kWh per cover (M-11), water and LPG usage, and the costed totals from the Assumptions rates (demo assumptions, G-11).', 'mcp-ai-wpoos-pro' );
+		return __( 'Utilities analysis: electricity kWh per cover (M-11), water and LPG usage, and the costed totals from the Assumptions rates.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -94,14 +94,14 @@ class WP_MCP_AI_Tool_Fnb_Utilities_Per_Cover extends WP_MCP_AI_Fnb_Tool_Base {
 				'water_m3'        => $utils['water_m3'],
 				'lpg_cylinders'   => $utils['lpg_units'],
 			),
-			'costed_lkr'         => array(
+			'costed'             => array(
 				'Electricity' => $utils['Electricity'],
 				'Water'       => $utils['Water'],
 				'LPG'         => $utils['LPG'],
 			),
 			'per_cover'          => $per_cover,
 			'covers'             => round( $covers['value'] ),
-			'assumptions_source' => 'Demo assumptions sheet (G-11)',
+			'assumptions_source' => 'Assumptions table',
 			'source'             => 'fnb_utilities_per_cover',
 		);
 	}

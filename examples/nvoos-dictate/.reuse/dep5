@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: NV oOS Dictation
+Upstream-Contact: NV Digital Solutions
+Source: https://github.com/nvdigitalsolutions/mcp-ai-wpoos
+
+Files: *
+Copyright: 2026 NV Digital Solutions
+License: LicenseRef-Proprietary

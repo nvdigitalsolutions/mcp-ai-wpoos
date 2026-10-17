@@ -98,16 +98,16 @@ class WP_MCP_AI_Tool_Fnb_Duplicate_Invoice_Scan extends WP_MCP_AI_Fnb_Tool_Base 
 
 			$vendor  = (string) WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'vendor' );
 			$invoice = (string) WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'vendor_invoice' );
-			$amount  = round( WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'amount_lkr' ) ) );
+			$amount  = round( WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'amount' ) ) );
 			$line    = (string) WP_MCP_AI_Fnb_Data_Source::cell( '14.0', $headers, $row, 'expense_line' );
 
 			$key = strtolower( $vendor . '|' . $invoice . '|' . $amount );
 			if ( isset( $seen[ $key ] ) ) {
 				$duplicates[] = array(
-					'vendor'     => $vendor,
-					'invoice'    => $invoice,
-					'amount_lkr' => $amount,
-					'flag'       => 'Possible duplicate invoice — flag for checking (A3-04).',
+					'vendor'  => $vendor,
+					'invoice' => $invoice,
+					'amount'  => $amount,
+					'flag'    => 'Possible duplicate invoice — flag for checking (A3-04).',
 				);
 			}
 			$seen[ $key ] = true;

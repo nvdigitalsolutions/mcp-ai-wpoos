@@ -38,7 +38,7 @@ fn main() -> AppResult<()> {
             eprintln!("\rdownload complete, verifying + installing");
         }
     };
-    let installed = rt.block_on(model_registry::download(spec, &models_dir, progress))?;
+    let installed = rt.block_on(model_registry::download(spec, &models_dir, false, progress))?;
     println!("installed: {}", installed.display());
     Ok(())
 }

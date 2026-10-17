@@ -246,7 +246,12 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 		}
 
 		if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
-			$schema['properties'] = array();
+			// An empty PHP array() serializes to `[]`, which strict providers
+			// (DeepSeek) reject with "[] is not of type 'object'". Emit an empty
+			// stdClass instead so an empty `properties` map encodes as `{}`.
+			$schema['properties'] = new stdClass();
+		} elseif ( array() === $schema['properties'] ) {
+			$schema['properties'] = new stdClass();
 		}
 
 		if ( ! self::property_names_are_safe( $schema['properties'], 0 ) ) {
@@ -491,7 +496,10 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	private static function property_names_are_safe( $properties, $depth = 0 ) {
 		unset( $depth );
 
-		foreach ( array_keys( $properties ) as $key ) {
+		// An empty stdClass (emitted for an empty properties map) has no keys;
+		// array_keys() on an object is a TypeError on PHP 8+, so normalise both
+		// arrays and stdClass to an array and iterate its keys.
+		foreach ( (array) $properties as $key => $ignored ) {
 			if ( is_string( $key ) && ( false !== strpos( $key, '[' ) || false !== strpos( $key, ']' ) ) ) {
 				return false;
 			}

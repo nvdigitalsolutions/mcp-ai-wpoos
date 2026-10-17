@@ -155,33 +155,111 @@ class NV_oOS_Document_Editor_REST {
 	/**
 	 * Require manage_options (admin/health routes).
 	 *
+	 * @param WP_REST_Request $request REST request.
 	 * @return bool|WP_Error
 	 */
-	public static function admin_permission() {
+	public static function admin_permission( WP_REST_Request $request = null ) {
 		if ( current_user_can( 'manage_options' ) ) {
 			return true;
 		}
-		return new WP_Error(
-			'forbidden',
-			__( 'You do not have permission to access this endpoint.', 'nvoos-document-editor' ),
-			array( 'status' => 403 )
-		);
+		return self::check_credential_permission( array( 'manage_options' ), $request );
 	}
 
 	/**
 	 * Require edit_posts (document CRUD).
 	 *
+	 * @param WP_REST_Request $request REST request.
 	 * @return bool|WP_Error
 	 */
-	public static function edit_permission() {
+	public static function edit_permission( WP_REST_Request $request = null ) {
 		if ( current_user_can( 'edit_posts' ) ) {
 			return true;
 		}
-		return new WP_Error(
-			'forbidden',
-			__( 'You do not have permission to manage documents.', 'nvoos-document-editor' ),
-			array( 'status' => 403 )
-		);
+		return self::check_credential_permission( array( 'edit_posts' ), $request );
+	}
+
+	/**
+	 * Allow a validated assistant credential to satisfy a capability gate.
+	 *
+	 * An assistant credential (`cred_xxxxx.SECRET`), like a WordPress
+	 * application password, authenticates the user who issued it. A valid
+	 * credential is treated as that issuing user and passes ONLY when the
+	 * issuing user genuinely holds every requested capability — so a credential
+	 * can never exceed its owner's permissions.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string[]          $capabilities Capabilities the issuing user must hold.
+	 * @param WP_REST_Request|null $request   REST request.
+	 * @return bool|WP_Error
+	 */
+	private static function check_credential_permission( array $capabilities, WP_REST_Request $request = null ) {
+		if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
+			return new WP_Error(
+				'forbidden',
+				__( 'You do not have permission to manage documents.', 'nvoos-document-editor' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$token = self::extract_credential_token( $request );
+		if ( '' === $token || ! WP_MCP_AI_Credentials::is_token_format( $token ) ) {
+			return new WP_Error(
+				'forbidden',
+				__( 'You do not have permission to manage documents.', 'nvoos-document-editor' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$validated = WP_MCP_AI_Credentials::validate_token( $token );
+		if ( is_wp_error( $validated ) ) {
+			return $validated;
+		}
+
+		$user_id = isset( $validated['created_by'] ) ? absint( $validated['created_by'] ) : 0;
+		if ( ! $user_id ) {
+			return new WP_Error(
+				'forbidden',
+				__( 'You do not have permission to manage documents.', 'nvoos-document-editor' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		foreach ( $capabilities as $capability ) {
+			if ( ! user_can( $user_id, $capability ) ) {
+				return new WP_Error(
+					'forbidden',
+					__( 'You do not have permission to manage documents.', 'nvoos-document-editor' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Read an assistant credential from the current REST request headers.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request|null $request REST request.
+	 * @return string Credential token, or empty string when absent.
+	 */
+	private static function extract_credential_token( WP_REST_Request $request = null ) {
+		$header = $request instanceof WP_REST_Request ? (string) $request->get_header( 'Authorization' ) : '';
+		if ( '' === $header && isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+			$header = (string) sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
+		}
+
+		$token = trim( $header );
+		if ( preg_match( '/^Bearer\s+(.*)$/i', $token, $matches ) ) {
+			return trim( $matches[1] );
+		}
+		if ( apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true ) ) {
+			return $token;
+		}
+		return '';
 	}
 
 	// -------------------------------------------------------------------------

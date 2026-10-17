@@ -327,4 +327,24 @@ class Test_WP_MCP_AI_Pro_SPA_Shortcode extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( '&quot;assistantSelector&quot;:true', $out );
 	}
+
+	/**
+	 * Pinned shortcode instances (explicit assistant_id) flag pinnedAssistant
+	 * so the SPA can ignore a remembered per-user assistant selection.
+	 */
+	public function test_build_pinned_assistant_flagged_when_assistant_id_provided() {
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$pinned = WP_MCP_AI_Pro_SPA_Config::build(
+			array(
+				'mode'         => 'embedded',
+				'assistant_id' => 42,
+			)
+		);
+		$this->assertTrue( $pinned['config']['pinnedAssistant'] );
+
+		$default = WP_MCP_AI_Pro_SPA_Config::build( array( 'mode' => 'embedded' ) );
+		$this->assertFalse( $default['config']['pinnedAssistant'] );
+	}
 }

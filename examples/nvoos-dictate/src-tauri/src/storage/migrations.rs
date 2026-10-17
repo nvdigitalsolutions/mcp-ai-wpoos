@@ -39,5 +39,8 @@ pub fn migrations() -> Migrations<'static> {
                 value TEXT NOT NULL
             );",
         ),
+        // Appended (never insert mid-list): `rusqlite_migration` keys applied
+        // migrations by position, so reordering breaks existing databases.
+        M::up("ALTER TABLE transcripts ADD COLUMN media TEXT NOT NULL DEFAULT '';"),
     ])
 }

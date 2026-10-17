@@ -446,9 +446,17 @@ class WP_MCP_AI_Pro_Gmail_Client {
 			return '';
 		}
 
-		// Gmail body.data is base64url without padding.
+		// Gmail body.data is base64url without padding — re-pad before strict
+		// decoding or parts whose encoded length is not a multiple of 4 fail
+		// with false (contributing to misleading empty_parts reports).
+		$data = strtr( $part['body']['data'], '-_', '+/' );
+		$pad  = strlen( $data ) % 4;
+		if ( 0 !== $pad ) {
+			$data .= str_repeat( '=', 4 - $pad );
+		}
+
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding Gmail message-part bodies is the documented API behaviour.
-		$decoded = base64_decode( strtr( $part['body']['data'], '-_', '+/' ), true );
+		$decoded = base64_decode( $data, true );
 		if ( false === $decoded ) {
 			return '';
 		}
@@ -602,6 +610,27 @@ class WP_MCP_AI_Pro_Gmail_Client {
 	}
 
 	/**
+	 * Collect fetchable attachment descriptors from a message payload.
+	 *
+	 * Unlike get_attachment_names(), this also captures the attachmentId and
+	 * partId needed to download attachment bytes via the Gmail attachments
+	 * endpoint — so a tool can read the content of an attached PDF, image, or
+	 * oversized inline part rather than only its filename.
+	 *
+	 * @param array $payload Raw Gmail message payload.
+	 * @return array List of arrays with keys filename, attachment_id, part_id,
+	 *               mime_type and size (when available).
+	 */
+	public static function get_attachment_descriptors( $payload ) {
+		$descriptors = array();
+		$root        = isset( $payload['payload'] ) && is_array( $payload['payload'] ) ? $payload['payload'] : array();
+
+		self::collect_attachment_descriptors( $root, $descriptors );
+
+		return $descriptors;
+	}
+
+	/**
 	 * Recursively walk a MIME part tree collecting attachment filenames.
 	 *
 	 * @param array $part  MIME part.
@@ -622,6 +651,313 @@ class WP_MCP_AI_Pro_Gmail_Client {
 				self::collect_attachment_names( $child, $names );
 			}
 		}
+	}
+
+	/**
+	 * Recursively walk a MIME part tree collecting attachment descriptors.
+	 *
+	 * A part is treated as a fetchable attachment when it carries both an
+	 * attachmentId and a filename (or a partId) — this covers both genuine
+	 * attachments and oversized inline parts Gmail stores as attachmentId.
+	 *
+	 * @param array $part        MIME part.
+	 * @param array $descriptors Accumulator for attachment descriptors.
+	 * @return void
+	 */
+	private static function collect_attachment_descriptors( $part, &$descriptors ) {
+		if ( ! is_array( $part ) ) {
+			return;
+		}
+
+		$attachment_id = isset( $part['body']['attachmentId'] ) ? (string) $part['body']['attachmentId'] : '';
+		if ( '' !== $attachment_id ) {
+			$size = isset( $part['body']['size'] ) ? absint( $part['body']['size'] ) : 0;
+			if ( $size < 1 && isset( $part['body']['data'] ) && is_string( $part['body']['data'] ) ) {
+				$size = (int) ceil( strlen( $part['body']['data'] ) * 3 / 4 );
+			}
+
+			$descriptors[] = array(
+				'filename'      => isset( $part['filename'] ) ? (string) $part['filename'] : '',
+				'attachment_id' => $attachment_id,
+				'part_id'       => isset( $part['partId'] ) ? (string) $part['partId'] : '',
+				'mime_type'     => isset( $part['mimeType'] ) ? (string) $part['mimeType'] : '',
+				'size'          => $size,
+			);
+		}
+
+		if ( ! empty( $part['parts'] ) && is_array( $part['parts'] ) ) {
+			foreach ( $part['parts'] as $child ) {
+				self::collect_attachment_descriptors( $child, $descriptors );
+			}
+		}
+	}
+
+	/**
+	 * Download attachment bytes via the Gmail attachments endpoint.
+	 *
+	 * @param string $gmail_user       Gmail user identifier (email address or "me").
+	 * @param string $message_id       Gmail message ID.
+	 * @param string $attachment_id    Attachment ID from the message payload.
+	 * @param string $access_token     OAuth access token.
+	 * @param int    $timeout          Request timeout in seconds.
+	 * @return string|WP_Error Raw decoded attachment bytes or WP_Error.
+	 */
+	public static function fetch_attachment( $gmail_user, $message_id, $attachment_id, $access_token, $timeout ) {
+		$path = sprintf( 'messages/%s/attachments/%s', rawurlencode( $message_id ), rawurlencode( $attachment_id ) );
+
+		$payload = self::request( 'GET', $gmail_user, $path, $access_token, $timeout );
+		if ( is_wp_error( $payload ) ) {
+			return $payload;
+		}
+
+		if ( empty( $payload['data'] ) || ! is_string( $payload['data'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_gmail_attachment_empty', __( 'The Gmail attachment returned no data.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Attachment data is base64url without padding — re-pad before strict
+		// decoding or payloads whose encoded length is not a multiple of 4
+		// (most binary attachments) fail with false.
+		$data = strtr( $payload['data'], '-_', '+/' );
+		$pad  = strlen( $data ) % 4;
+		if ( 0 !== $pad ) {
+			$data .= str_repeat( '=', 4 - $pad );
+		}
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding Gmail attachment bodies is the documented API behaviour.
+		$bytes = base64_decode( $data, true );
+		if ( false === $bytes ) {
+			return new WP_Error( 'wp_mcp_ai_gmail_attachment_invalid', __( 'The Gmail attachment data was not valid base64.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		return $bytes;
+	}
+
+	/**
+	 * Fetch and inline any text-bearing part Gmail stored behind an attachmentId.
+	 *
+	 * Gmail serves oversized (or odd-encoded) text/plain and text/html parts as
+	 * `body.attachmentId` with no `body.data`, which previously left an
+	 * otherwise-readable message reporting `empty_parts`. This walks the MIME
+	 * tree and, for each text/plain or text/html part that has an attachmentId
+	 * but no usable `data`, downloads the bytes and stores them back as
+	 * `body.data` so extract_body() can decode them normally.
+	 *
+	 * Failures are collected and returned rather than thrown, so a single
+	 * un-fetchable part does not break the whole message.
+	 *
+	 * @param array  $payload      Raw Gmail message payload (mutated in place).
+	 * @param string $gmail_user   Gmail user identifier (email address or "me").
+	 * @param string $message_id   Gmail message ID.
+	 * @param string $access_token OAuth access token.
+	 * @param int    $timeout      Request timeout in seconds.
+	 * @return array List of non-fatal WP_Error entries; empty when all parts hydrated.
+	 */
+	public static function hydrate_inline_attachments( &$payload, $gmail_user, $message_id, $access_token, $timeout ) {
+		$errors = array();
+
+		if ( ! is_array( $payload ) || empty( $payload['payload'] ) || ! is_array( $payload['payload'] ) ) {
+			return $errors;
+		}
+
+		self::hydrate_inline_parts( $payload['payload'], $gmail_user, $message_id, $access_token, $timeout, $errors );
+
+		return $errors;
+	}
+
+	/**
+	 * Recursive helper for hydrate_inline_attachments().
+	 *
+	 * @param array  $part         MIME part (mutated in place).
+	 * @param string $gmail_user   Gmail user identifier.
+	 * @param string $message_id   Gmail message ID.
+	 * @param string $access_token OAuth access token.
+	 * @param int    $timeout      Request timeout in seconds.
+	 * @param array  $errors       Accumulator for non-fatal WP_Error entries.
+	 * @return void
+	 */
+	private static function hydrate_inline_parts( &$part, $gmail_user, $message_id, $access_token, $timeout, &$errors ) {
+		if ( ! is_array( $part ) ) {
+			return;
+		}
+
+		if ( isset( $part['parts'] ) && is_array( $part['parts'] ) ) {
+			foreach ( $part['parts'] as &$child ) {
+				self::hydrate_inline_parts( $child, $gmail_user, $message_id, $access_token, $timeout, $errors );
+			}
+			unset( $child );
+		}
+
+		$mime = isset( $part['mimeType'] ) ? strtolower( (string) $part['mimeType'] ) : '';
+		if ( ! in_array( $mime, array( 'text/plain', 'text/html' ), true ) ) {
+			return;
+		}
+
+		// A filename marks a genuine attachment (e.g. a .txt or .html file the
+		// sender attached), not an inline body part — leave it for the
+		// attachment pipeline instead of folding it into the message body.
+		if ( ! empty( $part['filename'] ) ) {
+			return;
+		}
+
+		// Only hydrate parts that lack usable inline data but carry an attachmentId.
+		$has_data = isset( $part['body']['data'] ) && is_string( $part['body']['data'] ) && '' !== trim( $part['body']['data'] );
+		if ( $has_data || empty( $part['body']['attachmentId'] ) ) {
+			return;
+		}
+
+		$attachment_id = (string) $part['body']['attachmentId'];
+		$bytes         = self::fetch_attachment( $gmail_user, $message_id, $attachment_id, $access_token, $timeout );
+		if ( is_wp_error( $bytes ) ) {
+			$errors[] = $bytes;
+
+			return;
+		}
+
+		// Store the decoded bytes as base64url so decode_part_body() recovers
+		// them; clear the transfer-encoding header so it does not double-decode.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Re-encoding fetched inline part bytes for decode_part_body() exactly mirrors the Gmail API body.data contract.
+		$part['body']['data'] = rtrim( strtr( base64_encode( $bytes ), '+/', '-_' ), '=' );
+		unset( $part['body']['attachmentId'] );
+
+		if ( isset( $part['headers'] ) && is_array( $part['headers'] ) ) {
+			foreach ( $part['headers'] as $key => $header ) {
+				if ( isset( $header['name'] ) && 0 === strcasecmp( (string) $header['name'], 'Content-Transfer-Encoding' ) ) {
+					$part['headers'][ $key ]['value'] = '';
+				}
+			}
+		}
+	}
+
+	/**
+	 * Extract human-readable text from an attachment's bytes, by MIME type.
+	 *
+	 * PDFs use the bundled smalot/pdfparser (pure PHP) when available, with a
+	 * clear fallback when it is missing or the PDF has no text layer. Other
+	 * text-bearing types are decoded directly; binary/non-text types return a
+	 * pointer to open the attachment in Gmail instead of failing silently.
+	 *
+	 * @param string $bytes     Raw attachment bytes.
+	 * @param string $mime_type Attachment MIME type.
+	 * @param string $filename  Optional filename for context.
+	 * @return string|WP_Error Extracted text or a WP_Error with an actionable reason.
+	 */
+	public static function extract_attachment_text( $bytes, $mime_type, $filename = '' ) {
+		$mime_type = strtolower( (string) $mime_type );
+
+		if ( '' === $bytes ) {
+			return new WP_Error( 'wp_mcp_ai_gmail_attachment_no_bytes', __( 'The attachment is empty.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Text-ish types can be returned directly without an extra dependency.
+		if ( in_array( $mime_type, array( 'text/plain', 'text/csv', 'application/json', 'text/markdown' ), true ) || 0 === strpos( $mime_type, 'text/' ) ) {
+			if ( function_exists( 'wp_check_invalid_utf8' ) ) {
+				return wp_check_invalid_utf8( str_replace( "\x00", '', $bytes ) );
+			}
+
+			return str_replace( "\x00", '', $bytes );
+		}
+
+		if ( 'application/pdf' !== $mime_type ) {
+			return new WP_Error(
+				'wp_mcp_ai_gmail_attachment_unsupported_type',
+				sprintf(
+					/* translators: %s: attachment filename or MIME type. */
+					__( 'Attachment "%s" is not a text or PDF file; open the permalink to view it in Gmail.', 'mcp-ai-wpoos-pro' ),
+					'' !== (string) $filename ? (string) $filename : $mime_type
+				)
+			);
+		}
+
+		if ( ! class_exists( '\Smalot\PdfParser\Parser' ) ) {
+			return new WP_Error( 'wp_mcp_ai_gmail_pdf_parser_missing', __( 'PDF text extraction is unavailable because the PDF parser library is not installed.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		try {
+			$parser = new \Smalot\PdfParser\Parser();
+			$pdf    = $parser->parseContent( $bytes );
+			$text   = $pdf->getText();
+
+			if ( function_exists( 'wp_check_invalid_utf8' ) ) {
+				$text = wp_check_invalid_utf8( $text );
+			}
+
+			if ( '' === trim( str_replace( "\x00", '', (string) $text ) ) ) {
+				return new WP_Error( 'wp_mcp_ai_gmail_pdf_no_text_layer', __( 'The PDF has no extractable text layer (it may be a scanned image). Use the OCR tools to read it.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			return (string) $text;
+		} catch ( \Exception $e ) {
+			return new WP_Error(
+				'wp_mcp_ai_gmail_pdf_extraction_failed',
+				sprintf(
+					/* translators: %s: error message. */
+					__( 'PDF text extraction failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
+	}
+
+	/**
+	 * Download every fetchable attachment and extract its text where possible.
+	 *
+	 * Returns one entry per attachment descriptor with filename, MIME type,
+	 * attachment/part IDs, size, extracted text (truncated to $max_chars), and
+	 * an error string when extraction failed or the type is unsupported. This
+	 * lets a read tool surface the content of an attached PDF (e.g. settlement
+	 * figures) rather than only its filename.
+	 *
+	 * @param array  $payload      Raw Gmail message payload.
+	 * @param string $gmail_user   Gmail user identifier (email address or "me").
+	 * @param string $message_id   Gmail message ID.
+	 * @param string $access_token OAuth access token.
+	 * @param int    $timeout      Request timeout in seconds.
+	 * @param int    $max_chars    Maximum extracted text characters per attachment.
+	 * @return array List of attachment arrays with text extraction results.
+	 */
+	public static function get_attachments_with_text( $payload, $gmail_user, $message_id, $access_token, $timeout, $max_chars ) {
+		$max_chars = absint( $max_chars );
+		if ( $max_chars < 1 ) {
+			$max_chars = 4000;
+		}
+
+		$descriptors = self::get_attachment_descriptors( $payload );
+		$attachments = array();
+
+		foreach ( $descriptors as $descriptor ) {
+			$bytes = self::fetch_attachment( $gmail_user, $message_id, $descriptor['attachment_id'], $access_token, $timeout );
+
+			$entry = array(
+				'filename'      => $descriptor['filename'],
+				'mime_type'     => $descriptor['mime_type'],
+				'attachment_id' => $descriptor['attachment_id'],
+				'part_id'       => $descriptor['part_id'],
+				'size'          => $descriptor['size'],
+				'text'          => '',
+				'truncated'     => false,
+				'error'         => '',
+			);
+
+			if ( is_wp_error( $bytes ) ) {
+				$entry['error'] = $bytes->get_error_message();
+				$attachments[]  = $entry;
+				continue;
+			}
+
+			$text = self::extract_attachment_text( $bytes, $descriptor['mime_type'], $descriptor['filename'] );
+			if ( is_wp_error( $text ) ) {
+				$entry['error'] = $text->get_error_message();
+				$attachments[]  = $entry;
+				continue;
+			}
+
+			$cut                = self::truncate_text( (string) $text, $max_chars );
+			$entry['text']      = $cut['text'];
+			$entry['truncated'] = $cut['truncated'];
+			$attachments[]      = $entry;
+		}
+
+		return $attachments;
 	}
 
 	/**

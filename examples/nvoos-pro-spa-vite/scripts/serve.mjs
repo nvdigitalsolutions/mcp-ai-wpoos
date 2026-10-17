@@ -93,6 +93,67 @@ function isProxyPath(pathname) {
   );
 }
 
+/**
+ * Runtime login-preset injection (production / Velocity).
+ *
+ * The bundle bakes its login-preset env at BUILD time (vite.config.ts
+ * `define` → `import.meta.env.NVOOS_*`); this server layer adds a RUNTIME
+ * override: any of the keys below set in the app's runtime environment are
+ * injected into the served HTML shell as `window.__NVOOS_RUNTIME__`, which
+ * src/presets.tsx prefers over the baked values. Operators can switch login
+ * pages or rotate credentials by changing runtime env + restarting PM2 — no
+ * redeploy.
+ *
+ * Keep RUNTIME_ENV_KEYS in sync with src/env.d.ts and the
+ * RuntimeEnvOverrides interface in src/presets.tsx. Only non-empty values
+ * are injected, so an unset runtime key never clobbers a baked build-time
+ * value. NVOOS_ASSISTANT_CREDENTIAL / NVOOS_WP_APP_PASSWORD /
+ * NVOOS_WORKER_TOKEN are browser-visible by design (the connection screen
+ * already stores them in localStorage) but are never logged.
+ */
+const RUNTIME_ENV_KEYS = [
+  'NVOOS_HOME',
+  'NVOOS_SITE_URL',
+  'NVOOS_ASSISTANT_CREDENTIAL',
+  'NVOOS_WP_USERNAME',
+  'NVOOS_WP_APP_PASSWORD',
+  'NVOOS_WORKER_URL',
+  'NVOOS_WORKER_TOKEN',
+  'NVOOS_AUTO_CONNECT',
+];
+
+/** Build the <script> that exposes the runtime env — '' when nothing is set. */
+function buildRuntimeScript() {
+  const runtime = {};
+  for (const key of RUNTIME_ENV_KEYS) {
+    const value = (process.env[key] ?? '').trim();
+    if (value) runtime[key] = value;
+  }
+  if (Object.keys(runtime).length === 0) return '';
+  // Escape '<' so an env value can never break out of the script tag.
+  // (A future strict CSP must allow this inline script — the existing
+  // Report-Only template already lists 'unsafe-inline'.)
+  const json = JSON.stringify(runtime).replace(/</g, '\\u003c');
+  return `<script>window.__NVOOS_RUNTIME__=${json};</script>`;
+}
+
+/** Inject the runtime script into the HTML shell, when there is one. */
+function injectRuntimeEnv(html) {
+  const script = buildRuntimeScript();
+  if (!script) return html;
+  return html.replace(/<head[^>]*>/i, (match) => `${match}${script}`);
+}
+
+/** Secret-free one-line summary of the active runtime preset for startup logs. */
+function runtimeEnvSummary() {
+  const parts = [];
+  if (process.env.NVOOS_HOME) parts.push(`HOME=${process.env.NVOOS_HOME}`);
+  if (process.env.NVOOS_SITE_URL) parts.push(`site=${process.env.NVOOS_SITE_URL}`);
+  if (process.env.NVOOS_AUTO_CONNECT) parts.push('autoConnect=1');
+  if (process.env.NVOOS_WORKER_URL) parts.push(`worker=${process.env.NVOOS_WORKER_URL}`);
+  return parts.join(', ');
+}
+
 const LOGIN_PATH = '/wp-login.php';
 // Cap on body size for the login-page rewrite. wp-login.php pages are a few
 // tens of KB; anything larger is passed through unchanged instead of running
@@ -257,7 +318,12 @@ const server = createServer(async (req, res) => {
       file = join(ROOT, 'index.html');
     }
 
-    const body = await readFile(file);
+    let body = await readFile(file);
+    // Login-preset runtime env: inject window.__NVOOS_RUNTIME__ into the HTML
+    // shell (build-time baked values stay the fallback — see buildRuntimeScript).
+    if (file.endsWith('index.html')) {
+      body = Buffer.from(injectRuntimeEnv(body.toString('utf8')));
+    }
     res.writeHead(200, {
       'Content-Type': MIME[extname(file)] ?? 'application/octet-stream',
       'Cache-Control': file.endsWith('index.html') ? 'no-cache' : 'public, max-age=31536000, immutable',
@@ -287,6 +353,12 @@ server.on('error', (error) => {
 
 server.listen(PORT, () => {
   console.log(`[nvoos-pro-spa-standalone] serving dist/ on :${PORT}`);
+  const runtimeSummary = runtimeEnvSummary();
+  if (runtimeSummary) {
+    console.log(
+      `[nvoos-pro-spa-standalone] runtime login env: ${runtimeSummary} (credentials omitted)`,
+    );
+  }
   if (PROXY_TARGET) {
     console.log(
       `[nvoos-pro-spa-standalone] proxying ${PROXY_PREFIXES.join(', ')} → ${PROXY_TARGET} (cookie auth enabled)`,

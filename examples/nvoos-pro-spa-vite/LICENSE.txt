@@ -1,0 +1,78 @@
+Valid-License-Identifier: LicenseRef-Proprietary
+License-Text:
+
+NV oOS Pro SPA (Vite) — Proprietary License
+===========================================
+
+Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com).
+All rights reserved.
+
+This application (the "Software"), including all files contained in the
+`examples/nvoos-pro-spa-vite/` directory of the
+`nvdigitalsolutions/mcp-ai-wpoos` repository — namely the Vite application
+source under `src/`, the build/scripts under `scripts/`, the `package.json`,
+the `README`/`NOTICE` files, and this `LICENSE.txt` — is the
+**proprietary and confidential** intellectual property of NV Digital Solutions.
+
+Notwithstanding any license terms ("GNU General Public License v3 or
+later" or otherwise) that apply to the rest of the
+`nvdigitalsolutions/mcp-ai-wpoos` repository, the Software in this
+directory is **NOT** licensed under the GPL and is **NOT** distributed
+under the terms of the repository-root `LICENSE` file. Where this file and
+the repository-root `LICENSE` conflict for files inside
+`examples/nvoos-pro-spa-vite/`, this file controls.
+
+1. RESERVATION OF RIGHTS
+
+   All rights, title, and interest in and to the Software — including all
+   copyrights, trademarks, trade secrets, patents, and other intellectual
+   property rights — are and shall remain the exclusive property of
+   NV Digital Solutions. No license or right is granted by implication,
+   estoppel, or otherwise except as expressly stated below.
+
+2. PERMITTED USE
+
+   No use, reproduction, modification, public performance, public display,
+   distribution, sublicensing, or creation of derivative works is permitted
+   without a prior, written, signed licensing agreement with NV Digital
+   Solutions. Internal evaluation by parties to whom NV Digital Solutions
+   has supplied a copy of the Software is permitted solely for the purpose
+   of mounting the NV oOS Pro SPA on infrastructure owned or controlled by
+   that party, and only for as long as that party holds a current, paid-up
+   commercial agreement with NV Digital Solutions covering the Software.
+
+3. REDISTRIBUTION PROHIBITED
+
+   The Software MAY NOT be redistributed, mirrored, forked, repackaged,
+   uploaded to a public plugin or application repository, or otherwise made
+   available to third parties — in source or compiled form — without prior
+   written authorisation from NV Digital Solutions.
+
+4. THIRD-PARTY COMPONENTS
+
+   The Software mounts and references the NV oOS Pro SPA v2 content under
+   `addons/pro/assets/spa-v2` of the parent repository. That content is
+   governed separately by the parent plugin's license (GPL-3.0), and is
+   **not** re-licensed by this file. Third-party open-source libraries
+   declared in `package.json` remain governed by their own upstream licenses.
+   Nothing in this LICENSE relicenses those components, and nothing in those
+   components' licenses relicenses the proprietary code of NV Digital
+   Solutions.
+
+5. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+6. LIMITATION OF LIABILITY
+
+   IN NO EVENT SHALL NV DIGITAL SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES,
+   OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+   ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+   OTHER DEALINGS IN THE SOFTWARE.
+
+7. CONTACT
+
+   For licensing enquiries: licensing@nvdigitalsolutions.com
+   https://nvdigitalsolutions.com/wpoos/license

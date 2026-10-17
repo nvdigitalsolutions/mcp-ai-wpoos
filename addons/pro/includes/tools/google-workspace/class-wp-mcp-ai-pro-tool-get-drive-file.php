@@ -47,7 +47,7 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Reads a single Google Drive file or folder by ID. Google Docs, Sheets, and Slides are exported to plain text (capped at max_chars with a truncated flag). Folders return their direct children. Binary files return metadata and links only. Use file IDs from search_drive results.', 'mcp-ai-wpoos-pro' );
+		return __( 'Reads a single Google Drive file or folder by ID. Google Docs are exported to plain text (capped at max_chars with a truncated flag). Google Sheets return tabular text via the Sheets API (tab names in data.tabs, a specific tab via sheet_name). Folders return their direct children. Binary files return metadata and links only. Use file IDs from search_drive results.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -57,10 +57,10 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_usage_guidance() {
 		return array(
-			'when_to_use'     => __( 'Reading a known Drive file or folder by ID: Docs, Sheets, and Slides export to text; folders list children; binary files return metadata.', 'mcp-ai-wpoos-pro' ),
+			'when_to_use'     => __( 'Reading a known Drive file or folder by ID: Docs and Slides export to text, Sheets read as tabular text with tab names, folders list children, binary files return metadata.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Discovering files by name or query; use search_drive. Discovering connection IDs; use list_drive_connections.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'search_drive', 'list_drive_connections' ),
-			'notes'           => __( 'Docs text is capped at max_chars (100-50000, default 4000). Binary files return metadata and links only, never content.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Docs text is capped at max_chars (100-50000, default 4000). Sheets are read via the Sheets API as tabular text with a data.tabs list; use sheet_name to target a specific tab. Binary files return metadata and links only, never content.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -92,6 +92,10 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 50,
+				),
+				'sheet_name'    => array(
+					'type'        => 'string',
+					'description' => __( 'Optional worksheet (tab) name for spreadsheets. When omitted, the first worksheet is read and all tab names are returned in the data.tabs field. Obtain exact tab names from a prior call that returns data.tabs.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'file_id' ),
@@ -131,6 +135,7 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
 		$max_chars     = isset( $arguments['max_chars'] ) ? absint( $arguments['max_chars'] ) : 4000;
 		$max_children  = isset( $arguments['max_children'] ) ? absint( $arguments['max_children'] ) : 50;
+		$sheet_name    = isset( $arguments['sheet_name'] ) ? sanitize_text_field( $arguments['sheet_name'] ) : '';
 
 		if ( '' === $file_id ) {
 			return new WP_Error( 'wp_mcp_ai_drive_missing_file_id', __( 'A Google Drive file ID is required. Obtain IDs from search_drive results.', 'mcp-ai-wpoos-pro' ) );
@@ -229,6 +234,30 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 			$data['children']           = $rows;
 			$data['children_count']     = count( $rows );
 			$data['children_truncated'] = ! empty( $children['nextPageToken'] );
+		} elseif ( 'application/vnd.google-apps.spreadsheet' === $mime_type ) {
+			// Native Google Sheets cannot be exported via files/export to
+			// text/plain (Drive returns HTTP 400). Read them through the Sheets
+			// API instead, which also lets us enumerate tabs and target a
+			// specific worksheet by name.
+			$sheet_result = $this->read_sheet( $file_id, $access_token, $timeout, $sheet_name, $max_chars, $data );
+			$data         = $sheet_result['data'];
+
+			if ( is_wp_error( $sheet_result['status'] ) ) {
+				$data['note'] = $sheet_result['status']->get_error_message();
+
+				return $this->format_success_response(
+					__( 'Google Drive spreadsheet retrieved, but the worksheet read failed.', 'mcp-ai-wpoos-pro' ),
+					array( 'data' => $data )
+				);
+			}
+			if ( false === $sheet_result['status'] ) {
+				$data['note'] = $sheet_result['note'];
+
+				return $this->format_success_response(
+					__( 'Google Drive spreadsheet retrieved, but the worksheet read failed.', 'mcp-ai-wpoos-pro' ),
+					array( 'data' => $data )
+				);
+			}
 		} elseif ( $data['exportable'] ) {
 			$export = WP_MCP_AI_Pro_Google_Drive_Client::export_text( $file_id, $access_token, $timeout );
 			if ( is_wp_error( $export ) ) {
@@ -253,6 +282,150 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 			__( 'Google Drive file retrieved.', 'mcp-ai-wpoos-pro' ),
 			array( 'data' => $data )
 		);
+	}
+
+	/**
+	 * Read a Google Sheets spreadsheet via the Sheets API (v4).
+	 *
+	 * Native Google Sheets cannot be exported through Drive's files/export to
+	 * text/plain (HTTP 400), so this path uses the Sheets API's
+	 * spreadsheets.get and spreadsheets.values.get endpoints instead. It
+	 * enumerates the worksheet tabs, selects the requested tab (or the first),
+	 * and renders the values matrix as tab-separated text.
+	 *
+	 * @param string $file_id      Spreadsheet (Drive file) ID.
+	 * @param string $access_token OAuth access token.
+	 * @param int    $timeout      Request timeout in seconds.
+	 * @param string $sheet_name   Optional worksheet name (empty reads the first).
+	 * @param int    $max_chars    Character cap for the rendered body.
+	 * @param array  $data         The partially-built response data array.
+	 * @return array{status:true|false|WP_Error, data:array, note:string}
+	 */
+	private function read_sheet( $file_id, $access_token, $timeout, $sheet_name, $max_chars, $data ) {
+		$tabs     = array();
+		$fallback = '';
+
+		$metadata = WP_MCP_AI_Pro_Google_Drive_Client::get_sheets_metadata( $file_id, $access_token, $timeout );
+		if ( is_wp_error( $metadata ) ) {
+			return array(
+				'status' => $metadata,
+				'data'   => $data,
+				'note'   => '',
+			);
+		}
+
+		if ( isset( $metadata['sheets'] ) && is_array( $metadata['sheets'] ) ) {
+			foreach ( $metadata['sheets'] as $sheet ) {
+				if ( isset( $sheet['properties']['title'] ) ) {
+					$title  = (string) $sheet['properties']['title'];
+					$tabs[] = $title;
+					if ( '' === $fallback ) {
+						$fallback = $title;
+					}
+				}
+			}
+		}
+
+		$data['tabs']       = $tabs;
+		$data['tabs_count'] = count( $tabs );
+		$data['sheet_name'] = '';
+
+		// Select the target tab: the requested name (normalised match) when it
+		// resolves, otherwise the first worksheet.
+		$target = $fallback;
+		if ( '' !== $sheet_name ) {
+			$target = $sheet_name;
+			$needle = self::normalise_sheet_name( $sheet_name );
+			foreach ( $tabs as $title ) {
+				if ( self::normalise_sheet_name( $title ) === $needle ) {
+					$target = $title;
+					break;
+				}
+			}
+		}
+
+		if ( '' === $target ) {
+			return array(
+				'status' => false,
+				'data'   => $data,
+				'note'   => __( 'The spreadsheet has no readable worksheet tabs.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		$data['sheet_name'] = $target;
+
+		$values = WP_MCP_AI_Pro_Google_Drive_Client::get_sheet_values( $file_id, $target, $access_token, $timeout );
+		if ( is_wp_error( $values ) ) {
+			return array(
+				'status' => $values,
+				'data'   => $data,
+				'note'   => '',
+			);
+		}
+
+		$matrix = isset( $values['values'] ) && is_array( $values['values'] ) ? $values['values'] : array();
+		$text   = self::matrix_to_tsv( $matrix );
+		$cut    = WP_MCP_AI_Pro_Google_Drive_Client::truncate_text( $text, $max_chars );
+
+		$data['body']       = $cut['text'];
+		$data['truncated']  = $cut['truncated'];
+		$data['body_chars'] = WP_MCP_AI_Pro_Google_Drive_Client::mb_strlen_safe( $cut['text'] );
+		$data['row_count']  = count( $matrix );
+
+		return array(
+			'status' => true,
+			'data'   => $data,
+			'note'   => '',
+		);
+	}
+
+	/**
+	 * Normalise a worksheet name for case/whitespace-insensitive matching.
+	 *
+	 * @param string $name Worksheet name.
+	 * @return string Normalised name (lowercased, whitespace collapsed).
+	 */
+	private static function normalise_sheet_name( $name ) {
+		$name = (string) $name;
+		if ( function_exists( 'mb_strtolower' ) ) {
+			$name = mb_strtolower( $name );
+		} else {
+			$name = strtolower( $name );
+		}
+
+		return trim( (string) preg_replace( '/\s+/', ' ', $name ) );
+	}
+
+	/**
+	 * Convert a Sheets values matrix to tab-separated text.
+	 *
+	 * @param array<int,array<int,mixed>> $matrix Raw values matrix.
+	 * @return string Tab-separated lines, one per row.
+	 */
+	private static function matrix_to_tsv( $matrix ) {
+		if ( empty( $matrix ) ) {
+			return '';
+		}
+
+		$lines = array();
+		foreach ( $matrix as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$cells = array();
+			foreach ( $row as $cell ) {
+				if ( is_bool( $cell ) ) {
+					$cells[] = $cell ? 'TRUE' : 'FALSE';
+				} elseif ( is_scalar( $cell ) || null === $cell ) {
+					$cells[] = (string) $cell;
+				} else {
+					$cells[] = (string) wp_json_encode( $cell );
+				}
+			}
+			$lines[] = implode( "\t", $cells );
+		}
+
+		return implode( "\n", $lines );
 	}
 
 	/**

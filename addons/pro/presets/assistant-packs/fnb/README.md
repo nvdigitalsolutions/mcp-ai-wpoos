@@ -1,9 +1,11 @@
-# F&B Assistant Packs (A1–A4) — Surf Club Midigama
+# F&B Assistant Packs (A1–A4)
 
 Four importable assistant bundles for the Food & Beverage Management Pro
-toolkit (`addons/pro/includes/tools/food-beverage/`), spec-compliant with the
-Surf Club Midigama assistant task spec (proposal 062:
-`docs/project/proposals/062-food-beverage-management-pro-toolkit-proposal.md`).
+toolkit (`addons/pro/includes/tools/food-beverage/`), venue-neutral and
+spec-compliant with proposal 062:
+`docs/project/proposals/062-food-beverage-management-pro-toolkit-proposal.md`.
+Prompts carry `{{venue_name}}`, `{{currency}}`, `{{venue_type}}` and
+`{{owner_role}}` tokens rendered from the Tenant Profile at seed time.
 
 Every pack is a **canonical v1 `nvoos-assistant` bundle** importable through
 any of the five portability surfaces — WP-CLI
@@ -14,10 +16,10 @@ any of the five portability surfaces — WP-CLI
 
 | File | Assistant | Spec ID | Main users | Purpose |
 |---|---|---|---|---|
-| `a1-manager.json` | F&B Manager's Assistant | A1 | CEO, restaurant manager | Summarise sales, costs and operational issues; rank by LKR impact; weekly brief (R-02); audit viewer (CEO control story, open Q8) |
+| `a1-manager.json` | F&B Manager's Assistant | A1 | Owner, operations manager | Summarise sales, costs and operational issues; rank by impact; weekly brief (R-02); audit viewer |
 | `a2-kitchen-bar-stock.json` | F&B Kitchen & Bar Stock Assistant | A2 | Head chef, bar manager | Stock, use, waste and supplier prices; shortage and over-ordering flags; weekend plan (R-03); purchase-request drafts (R-04) |
-| `a3-financial.json` | F&B Financial Assistant | A3 | CEO, finance | Actuals vs budget and prior month; volume vs per-cover split; duplicate-invoice flags; investor-pack drafts |
-| `a4-content.json` | F&B Content Assistant | A4 | CEO | Character-bible-consistent image prompts, captions, hashtags; content brief (R-13); posts linked to stock and bookings |
+| `a3-financial.json` | F&B Financial Assistant | A3 | Owner, finance | Actuals vs budget and prior month; volume vs per-cover split; duplicate-invoice flags; owner/investor-pack drafts |
+| `a4-content.json` | F&B Content Assistant | A4 | Owner | Brand-guide-consistent image prompts, captions, hashtags; content brief (R-13); posts linked to stock and bookings |
 
 ## Allowlist matrix (tools actually granted)
 
@@ -45,6 +47,7 @@ in the tool registry and remain off by default).
 | `fnb_labour_analysis` | ✅ | — | ✅ | — |
 | `fnb_utilities_per_cover` | ✅ | — | ✅ | — |
 | `fnb_generate_report` | ✅ | ✅ | ✅ | ✅ |
+| `fnb_export_report` | ✅ | — | ✅ | — |
 | `fnb_save_draft` | ✅ | ✅ | ✅ | ✅ |
 | `fnb_list_drafts` | ✅ | ✅ | ✅ | ✅ |
 | `fnb_audit_log` | ✅ | — | — | — |
@@ -76,8 +79,8 @@ granted by the packs.
 Every pack's system prompt embeds the spec Instructions sheet verbatim:
 
 - **Global rules G-01…G-12** — in all four prompts (no invented figures,
-  tool-based calculation, cite sources, answer-first, LKR ex-service,
-  demo-assumption disclosure, drafts only).
+  tool-based calculation, cite sources, answer-first, tenant-currency
+  ex-service, source-table disclosure, drafts only).
 - **Per-assistant rules** — A1-01…A1-04 in A1; A2-01…A2-08 in A2;
   A3-01…A3-06 in A3; A4-01…A4-05 in A4.
 - Guardrails are restated at the end of each prompt (repetition reduces

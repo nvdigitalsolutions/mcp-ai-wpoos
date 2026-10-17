@@ -1,10 +1,10 @@
 [package]
 name = "nvoos-dictate"
-version = "0.1.0"
+version = "0.2.0"
 description = "NV oOS Dictation — local-first push-to-talk dictation and meeting transcription companion for the NV oOS WordPress plugin."
 authors = ["NV Digital Solutions"]
 edition = "2021"
-license = "MIT"
+license = "proprietary"
 rust-version = "1.90"
 repository = "https://github.com/nvdigitalsolutions/mcp-ai-wpoos"
 default-run = "nvoos-dictate"
@@ -18,15 +18,30 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "nvoos-dictate"
 path = "src/main.rs"
 
+# Vision detector spike (Proposal 075) — needs the `vision` feature (ort + ndarray16).
+[[example]]
+name = "vision_probe"
+path = "examples/vision_probe.rs"
+required-features = ["vision"]
+
+# Browser-agent de-risk spike (Phase 0) — proves a local model can emit a
+# parseable tool call through the existing LocalOpenAiProvider transport.
+[[example]]
+name = "agent_probe"
+path = "examples/agent_probe.rs"
+required-features = ["agent"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+
 tauri = { version = "2", features = [] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
@@ -64,6 +79,10 @@ sherpa-onnx = { version = "1.10", optional = true }
 bzip2 = { version = "0.4", optional = true }
 tar = { version = "0.4", optional = true }
 whisper-rs = { version = "0.16", optional = true }
+# Direct optional dep purely to forward the `force-debug` feature to the
+# vendored whisper-rs-sys (whisper-rs 0.16 does not forward it itself);
+# unifies with the [patch.crates-io] entry below.
+whisper-rs-sys = { path = "../vendor/whisper-rs-sys", optional = true }
 ort = { version = "=2.0.0-rc.9", optional = true }
 # Pinned to match ort rc.9 — the caret range on ort-sys otherwise drifts to
 # rc.13, whose bindings are incompatible with the rc.9 high-level API.
@@ -74,23 +93,78 @@ rmcp = { version = "3.5", default-features = false, features = ["macros", "serve
 schemars = { version = "1", optional = true }
 silero-vad-rs = { version = "0.1", optional = true }
 ndarray = { version = "0.15", optional = true }
+# ort rc.9's `ndarray` feature wants ndarray 0.16, while silero-vad holds 0.15.
+# Alias the 0.16 series for the direct vision `ort` consumer (the lock already
+# dual-versions ndarray via silero-vad's own ort dep).
+ndarray16 = { package = "ndarray", version = "0.16", optional = true }
+nokhwa = { version = "0.10", features = ["input-native", "camera-sync-impl"], optional = true }
+# Direct dep so camera preview can name image::Rgb/ImageBuffer (nokhwa re-uses image 0.25).
+image = { version = "0.25", optional = true }
+# Browser-agent CDP client (Phase 1). Pure Rust, no Node subprocess; drives an
+# attached system Chrome/Chromium over the DevTools Protocol. Default features
+# only (no `fetcher` — v1 attaches to a discoverable system Chrome, per the
+# browser-agent plan §7; Chrome-for-Testing download is a later acquisition tier).
+chromiumoxide = { version = "0.9", optional = true, default-features = false }
+# The StreamExt trait used to poll chromiumoxide's Handler (its own `futures`
+# dependency is not re-exported; a direct dep keeps the stream poll in scope).
+futures = { version = "0.3", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 # Low-level keyboard hook (WH_KEYBOARD_LL), GetAsyncKeyState fallback, and
 # foreground-window detection for per-app cleanup profiles. See hotkey/.
 windows = { version = "0.58", features = [
   "Win32_Foundation",
+  "Win32_Security_Credentials",
   "Win32_System_LibraryLoader",
   "Win32_System_Threading",
   "Win32_UI_Input_KeyboardAndMouse",
   "Win32_UI_WindowsAndMessaging",
 ] }
 
+[target.'cfg(target_os = "macos")'.dependencies]
+# macOS platform layer (P5 port): event taps for modifier hold-PTT,
+# CGEventPost paste injection, Accessibility trust checks, and the
+# NSWorkspace frontmost-app reader for per-app cleanup profiles.
+#
+# core-graphics is pinned to 0.23: the 0.24 series changed the
+# CGEventTap::new callback signature (user-info generic), and 0.23's
+# three-argument FnMut shape is the one this port was written against.
+core-graphics = "=0.23.2"
+# CFRunLoop drives the event-tap thread (core-graphics re-exports it, but
+# a direct dependency keeps the run-loop types in the crate's scope).
+core-foundation = "=0.9.4"
+# AXIsProcessTrusted checks (the crate enigo uses for its own macOS
+# accessibility gate).
+macos-accessibility-client = "0.0.1"
+# Foreground-app detection (NSWorkspace). objc2 0.6 pairs with
+# objc2-foundation/objc2-app-kit 0.3 (the version series diverged).
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSString"] }
+objc2-app-kit = { version = "0.3", features = ["NSWorkspace", "NSRunningApplication"] }
+
 [features]
 default = []
 mock = []
 parakeet = ["dep:sherpa-onnx", "dep:tar", "dep:bzip2"]
-whisper = ["dep:whisper-rs"]
+# The `force-debug` pass-through compiles whisper.cpp with the
+# RelWithDebInfo CMake profile even in release builds: the MSVC
+# "Release" configuration maps to an unoptimized vcxproj (RTF ~5 for
+# base.en instead of ~0.3) — see the dictation-app skill.
+whisper = ["dep:whisper-rs", "whisper-rs-sys/force-debug"]
 moonshine = ["dep:ort", "dep:ort-sys"]
+# NeMo FastConformer-CTC STT (sherpa-onnx `nemo_ctc` slot), same dep set
+# as parakeet: sherpa-onnx for the recognizer + tar/bzip2 for the archive.
+fastconformer = ["dep:sherpa-onnx", "dep:tar", "dep:bzip2"]
 mcp = ["dep:rmcp", "dep:schemars"]
 silero-vad = ["dep:silero-vad-rs", "dep:ort-sys", "dep:ndarray"]
+# Live webcam/camera capture (Proposal 073) — video preview via nokhwa.
+camera = ["dep:nokhwa", "dep:image"]
+# Local object detection (Proposal 075) — ONNX YOLO via the direct ort runtime
+# + ndarray 0.16. Requires the camera feature (the frame source, which pulls
+# nokhwa + image) and the ort/ort-sys pair already used by moonshine/silero-vad.
+vision = ["camera", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
+# Browser agent (dictated web control) — Phase 1 adds the CDP client.
+agent = ["dep:chromiumoxide", "dep:futures"]
+
+[patch.crates-io]
+whisper-rs-sys = { path = "../vendor/whisper-rs-sys" }

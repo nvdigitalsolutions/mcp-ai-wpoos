@@ -387,6 +387,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Audio generation.
 					'generate_music',
 					'generate_openai_speech',
+					'generate_sinhala_speech',
 					'transcribe_openai_audio',
 					'analyze_image',
 					'extract_image_text',

@@ -28,11 +28,21 @@ repo root for the full design).
 - **Optional AI polish** — Stage-2 pass via your NV oOS WordPress assistant
   (transcript text only, assistant credential in the OS keychain) or any
   OpenAI-compatible endpoint. A provider failure never blocks the paste.
+- **Live camera preview + object detection** (feature `camera`/`vision`) — a
+  local webcam preview with on-device YOLO object detection and stable
+  per-object tracking (SORT + click-to-pin). An opt-in **label-polish layer**
+  relabels detection boxes with a local vision-language model (LM Studio /
+  Ollama serving Qwen2.5-VL) for accurate names instead of generic COCO labels.
+  Pixels never leave the machine; no facial recognition or identity.
 - **Meeting transcription** — explicit record (mic + system audio on
   Windows via WASAPI loopback), local transcription, audio deleted after
   unless you opt into retention.
 - **Local history** — searchable SQLite archive with per-utterance `e2e_ms`
   latency, JSON export.
+- **Diagnostics page** — live microphone level meter (which device the app
+  actually hears, at what level), low-level hook health, engine/model
+  install state, credential presence, and the measured RMS/peak/gate of the
+  most recent dictation attempt — plus a one-click JSON report for support.
 - **Local MCP server** (feature `mcp`) — stdio for desktop AI clients;
   streamable HTTP planned for the plugin's Remote Sites (see
   `docs/remote-sites-recipe.md`).
@@ -53,6 +63,13 @@ npm run tauri build
 
 ### Engine features
 
+All three native engines can be compiled into ONE binary:
+`cargo build --features parakeet,silero-vad,whisper` (whisper needs CMake +
+libclang on PATH; see the skill). The repo vendors a one-line-patched
+`whisper-rs-sys` (vendor/whisper-rs-sys) that compiles whisper.cpp with the
+static CRT (/MT) so it links alongside sherpa-onnx's /MT prebuilt libs.
+
+
 Engines are **local-first** (ADR 0003): mock → parakeet → whisper →
 moonshine, with the Embedded remote STT as the fallback.
 
@@ -67,6 +84,8 @@ cargo build --release --features whisper           # whisper.cpp via whisper-rs 
 cargo build --release --features moonshine          # ort runtime (documented spike)
 cargo build --release --features silero-vad         # neural Silero VAD (model: catalogue entry "silero_vad")
 cargo build --release --features mcp                # local MCP stdio server (nvoos-dictate --mcp)
+cargo build --release --features camera             # live webcam preview (nokhwa)
+cargo build --release --features vision             # object detection + tracking (implies camera)
 ```
 
 - **parakeet** — API verified against sherpa-onnx 1.13.8 (the crate's own
@@ -146,7 +165,31 @@ npm run test:ui                     # Playwright smoke (dev server on :1420)
 - **Linux:** toggle semantics via global-shortcut plugin (X11); Wayland
   global-shortcut restrictions documented; meeting system audio not yet
   supported.
-- **macOS:** planned (Swift system-audio sidecar, Keychain, signing).
+- **macOS:** implemented (P5 port — see `docs/macos-port-plan.md` and
+  ADR 0004). Default PTT is the permission-free toggle combo
+  `Command+Option+Space`; Right-Option hold is opt-in (CGEventTap, needs
+  Accessibility + Input Monitoring). Meetings capture system audio through
+  the bundled ScreenCaptureKit sidecar on macOS 14.2+ (mic-only fallback).
+
+### macOS build & run
+
+Prerequisites: Xcode Command Line Tools (`xcode-select --install`), Rust ≥
+1.90, Node 20+. The app needs **no special permissions for dictation** in
+toggle mode; hold-PTT and pasting need the grants in Settings → Permissions.
+
+```bash
+npm install
+npm run build:helper            # builds the Swift sidecar (mac-helper)
+npm run tauri dev               # dev app
+npm run tauri build             # signed .app + .dmg (notarization needs
+                                # Apple Developer credentials — see
+                                # docs/macos-port-plan.md §12)
+```
+
+For unsigned local builds, clear Gatekeeper quarantine before first launch:
+`xattr -dr com.apple.quarantine "NV oOS Dictation.app"`. Keychain entries
+created by unsigned dev builds can re-prompt (the ACL binds to the code
+signature).
 
 ## NV oOS plugin integration
 

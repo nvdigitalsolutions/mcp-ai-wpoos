@@ -7659,8 +7659,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Add tools if available.
+			// `profession_config['tools']` is a list of tool SLUGS (from
+			// `_wp_mcp_ai_profession_default_tools`), not resolved tool
+			// definitions. The router/client expect OpenAI-format tool
+			// definitions, so resolve the slugs through build_tools_payload()
+			// (which also applies attention filtering, capability checks, and
+			// schema normalization) before attaching them.
 			if ( ! empty( $profession_config['tools'] ) && is_array( $profession_config['tools'] ) ) {
-				$options['tools'] = $profession_config['tools'];
+				$resolved_tools = $this->build_tools_payload( $profession_config );
+				if ( is_wp_error( $resolved_tools ) ) {
+					return $resolved_tools;
+				}
+				if ( ! empty( $resolved_tools ) ) {
+					$options['tools'] = $resolved_tools;
+				}
 			}
 
 			// Make the AI request using the router.
@@ -9870,6 +9882,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$schema['properties'] = new stdClass();
 					} elseif ( is_array( $schema['properties'] ) && empty( $schema['properties'] ) ) {
 						$schema['properties'] = new stdClass();
+					}
+
+					// Per-property `required` is not valid JSON Schema. Legacy tools
+					// declare it as a boolean inside each property (`'required' => true`)
+					// instead of as a top-level array, and strict providers (DeepSeek)
+					// reject that with "true is not of type 'array'". Hoist any scalar
+					// `required` flag out of the property into the top-level array.
+					if ( is_array( $schema['properties'] ) ) {
+						$hoisted_required = isset( $schema['required'] ) && is_array( $schema['required'] ) ? $schema['required'] : array();
+						foreach ( $schema['properties'] as $prop_name => $prop_schema ) {
+							if ( ! is_array( $prop_schema ) || ! array_key_exists( 'required', $prop_schema ) || is_array( $prop_schema['required'] ) ) {
+								continue;
+							}
+							$flag = $prop_schema['required'];
+							unset( $schema['properties'][ $prop_name ]['required'] );
+							if ( $flag && ! in_array( $prop_name, $hoisted_required, true ) ) {
+								$hoisted_required[] = $prop_name;
+							}
+						}
+						if ( ! empty( $hoisted_required ) ) {
+							$schema['required'] = array_values( $hoisted_required );
+						}
 					}
 
 					// Use the model-facing description (short description + usage

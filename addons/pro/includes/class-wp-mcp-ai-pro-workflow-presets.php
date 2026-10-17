@@ -66,7 +66,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				self::get_onboarding_presets(),
 				self::get_crm_support_presets(),
 				self::get_fashion_presets(),
-				self::get_fnb_presets()
+				self::get_fnb_presets(),
+				self::get_gtmetrix_presets()
 			);
 
 			return $presets;
@@ -224,7 +225,306 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							),
 							'data'     => array(
 								'label'       => __( 'Draft Review', 'mcp-ai-wpoos-pro' ),
-								'description' => __( 'Save the R-08 output as a draft for the CEO.', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Save the R-08 output as a draft for the owner.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
+						),
+					),
+				),
+				'fnb_monthly_export' => array(
+					'name'        => __( 'Monthly Report Export (CSV/PDF)', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Export the monthly cost review (and other client reports) as CSV or PDF via fnb_export_report.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'fnb',
+					'icon'        => 'dashicons-media-spreadsheet',
+					'tags'        => array( 'fnb', 'monthly', 'export' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Month', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'The month to export (Y-m).', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 75,
+							),
+							'data'     => array(
+								'label'       => __( 'Export R-08', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'fnb_export_report',
+								'arguments'   => array(
+									'report_id' => 'R-08',
+									'month'     => '{{input.month}}',
+									'format'    => 'csv',
+								),
+								'description' => __( 'Export the monthly cost review to CSV.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Exported file', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Downloadable CSV/PDF of the report.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
+						),
+					),
+				),
+			);
+		}
+
+		/**
+		 * GTmetrix Performance toolkit workflows.
+		 *
+		 * @since 1.2.5
+		 *
+		 * @return array<string,array> GTmetrix workflow presets.
+		 */
+		private static function get_gtmetrix_presets() {
+			return array(
+				'gtmetrix_audit_fix_pipeline'     => array(
+					'name'        => __( 'GTmetrix Audit & Fix Pipeline', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Test a URL, analyze the report, generate the WPCode-ready fix snippet and install it as an inactive draft.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'gtmetrix',
+					'icon'        => 'dashicons-performance',
+					'tags'        => array( 'gtmetrix', 'performance', 'wpcode' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Page URL', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'The page to audit (must be on an allowed host).', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 75,
+							),
+							'data'     => array(
+								'label'       => __( 'Start Test', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'gtmetrix_start_test',
+								'arguments'   => array( 'url' => '{{input.url}}' ),
+								'description' => __( 'Run a Lighthouse test (credit-gated).', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Poll Status', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'gtmetrix_get_test_status',
+								'arguments'   => array( 'test_id' => '{{node_2.test_id}}' ),
+								'description' => __( 'Wait for the test to complete.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 225,
+							),
+							'data'     => array(
+								'label'       => __( 'Analyze', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'gtmetrix_analyze_report',
+								'arguments'   => array( 'report_id' => '{{node_3.report_id}}' ),
+								'description' => __( 'CWV assessment, budgets and the mapped fix list.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_5',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Generate Snippet', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'gtmetrix_generate_wpcode_snippet',
+								'arguments'   => array( 'report_id' => '{{node_3.report_id}}' ),
+								'description' => __( 'WPCode-ready snippet from the matched fixes.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_6',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 375,
+							),
+							'data'     => array(
+								'label'       => __( 'Install Draft', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'gtmetrix_install_wpcode_fix',
+								'arguments'   => array( 'report_id' => '{{node_3.report_id}}' ),
+								'description' => __( 'Save the fixes as an inactive WPCode draft.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_7',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Fix Summary', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Draft snippet ID, blocks and staging notes.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_4_5',
+							'source'       => 'node_4',
+							'target'       => 'node_5',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_5_6',
+							'source'       => 'node_5',
+							'target'       => 'node_6',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_6_7',
+							'source'       => 'node_6',
+							'target'       => 'node_7',
+							'sourceHandle' => 'output',
+						),
+					),
+				),
+				'gtmetrix_deploy_regression_gate' => array(
+					'name'        => __( 'GTmetrix Deploy Regression Gate', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Retest a page after a deploy and compare against its previous report for a pass/fail regression verdict.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'gtmetrix',
+					'icon'        => 'dashicons-update-alt',
+					'tags'        => array( 'gtmetrix', 'deploy', 'regression' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Page URL', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'The page to retest.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 75,
+							),
+							'data'     => array(
+								'label'       => __( 'Retest Page', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'gtmetrix_retest_page',
+								'arguments'   => array( 'url' => '{{input.url}}' ),
+								'description' => __( 'New run with the page saved options.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Compare', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'gtmetrix_compare_reports',
+								'arguments'   => array( 'url' => '{{input.url}}' ),
+								'description' => __( 'Before/after delta against the previous snapshot.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 225,
+							),
+							'data'     => array(
+								'label'       => __( 'Pass/Fail', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Regression verdict with per-metric deltas.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
 					),

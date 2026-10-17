@@ -15,7 +15,7 @@ use crate::audio::capture::MicCapture;
 use crate::config::Settings;
 use crate::error::{AppError, AppResult};
 use crate::meetings::recorder::MeetingRecorder;
-use crate::paste::ClipboardKeystrokeBackend;
+use crate::paste::platform_backend;
 use crate::paste::PasteBackend;
 use crate::storage::Db;
 use crate::stt::{create_engine, EngineResources, SttEngine};
@@ -24,6 +24,8 @@ use crate::stt::{create_engine, EngineResources, SttEngine};
 pub const KEYRING_SERVICE: &str = "com.nvdigitalsolutions.nvoos-dictate";
 pub const KEY_NVOOS_CREDENTIAL: &str = "nvoos/assistant-credential";
 pub const KEY_OPENAI_API_KEY: &str = "openai-compat/api-key";
+pub const KEY_LM_STUDIO_TOKEN: &str = "lm-studio/bearer-token";
+pub const KEY_OLLAMA_TOKEN: &str = "ollama/bearer-token";
 pub const KEY_WP_USERNAME: &str = "nvoos/wp-username";
 pub const KEY_WP_APP_PASSWORD: &str = "nvoos/wp-app-password";
 
@@ -97,6 +99,15 @@ pub struct AppState {
     pub app: AppHandle,
     /// Resident microphone (ring buffer). None when no mic exists.
     pub mic: Mutex<Option<Arc<MicCapture>>>,
+    /// Resident camera (video preview ring). Feature-gated; `None` without the
+    /// `camera` feature or when no camera is running.
+    pub camera: Mutex<Option<Arc<crate::camera::CameraCapture>>>,
+    /// Resident vision controller (object detection + tracking). `None` when
+    /// disabled or not compiled.
+    pub vision: Mutex<Option<Arc<crate::vision::controller::VisionController>>>,
+    /// Resident browser-agent controller. The `AgentController` is always
+    /// present (type-stable); its driver only runs behind the `agent` feature.
+    pub agent: crate::agent::controller::AgentController,
     /// Resident STT engine (swapped on settings change).
     pub engine: RwLock<Option<Arc<dyn SttEngine>>>,
     pub paste: Arc<dyn PasteBackend>,
@@ -111,8 +122,11 @@ impl AppState {
             secrets,
             app,
             mic: Mutex::new(None),
+            camera: Mutex::new(None),
+            vision: Mutex::new(None),
+            agent: crate::agent::controller::AgentController::new(),
             engine: RwLock::new(None),
-            paste: Arc::new(ClipboardKeystrokeBackend::default()),
+            paste: platform_backend(),
             recorder: Arc::new(MeetingRecorder::new(16000)),
         }
     }
@@ -126,6 +140,13 @@ impl AppState {
 
     /// Persist and swap the active settings.
     pub fn update_settings(&self, settings: Settings) -> AppResult<Settings> {
+        // Reject catalogue-known engine/model mismatches BEFORE persisting:
+        // a broken combo on disk re-fails every boot ("parakeet model
+        // 'base.en' not found") and is hard to recover from the UI.
+        crate::stt::model_registry::validate_pairing(
+            &settings.engine.engine,
+            &settings.engine.model,
+        )?;
         settings.save()?;
         *self.settings.write().unwrap() = settings.clone();
         Ok(settings)
@@ -150,6 +171,18 @@ impl AppState {
             .ok()
             .flatten()
             .is_some()
+    }
+
+    pub fn has_lm_studio_token(&self) -> bool {
+        self.secrets
+            .get(KEY_LM_STUDIO_TOKEN)
+            .ok()
+            .flatten()
+            .is_some()
+    }
+
+    pub fn has_ollama_token(&self) -> bool {
+        self.secrets.get(KEY_OLLAMA_TOKEN).ok().flatten().is_some()
     }
 
     /// Whether a WP application password (for embedded STT) is stored.
@@ -211,6 +244,188 @@ impl AppState {
         Ok(())
     }
 
+    /// Swap the resident microphone when the capture device or ring capacity
+    /// changes. Mirrors [`Self::reapply_engine`]: the new capture is built
+    /// before the old one is dropped (its Drop stops the worker thread and
+    /// releases the cpal stream), and a failure keeps the previous device
+    /// active — settings are already persisted, so the swap must not wedge
+    /// the next boot.
+    pub fn reapply_audio(&self, previous: &Settings) -> AppResult<()> {
+        let current = self.settings_snapshot();
+        let changed = previous.audio.input_device != current.audio.input_device
+            || previous.audio.ring_capacity_secs != current.audio.ring_capacity_secs;
+        if !changed {
+            return Ok(());
+        }
+        self.restart_mic()
+    }
+
+    /// Rebuild the resident microphone capture on the configured device
+    /// (diagnostics recovery: dead/unplugged device, changed OS default).
+    /// The previous capture keeps running if the rebuild fails.
+    pub fn restart_mic(&self) -> AppResult<()> {
+        let settings = self.settings_snapshot();
+        match MicCapture::start(
+            settings.audio.ring_capacity_secs,
+            settings.audio.input_device.as_deref(),
+        ) {
+            Ok(mic) => {
+                tracing::info!(
+                    device = mic.device_name(),
+                    rate = mic.sample_rate(),
+                    "restarted microphone capture"
+                );
+                *self.mic.lock().unwrap() = Some(Arc::new(mic));
+                Ok(())
+            }
+            Err(e) => Err(AppError::Audio(format!(
+                "microphone restart failed; the previous device is still active: {e}"
+            ))),
+        }
+    }
+
+    /// Start (or restart) the resident camera on the configured device. The
+    /// previous camera keeps running if the rebuild fails. A no-op error when
+    /// the `camera` feature is not compiled in.
+    pub fn restart_camera(&self) -> AppResult<()> {
+        let settings = self.settings_snapshot();
+        match crate::camera::CameraCapture::start(settings.camera.device.as_deref()) {
+            Ok(cam) => {
+                tracing::info!(device = cam.device_name(), "started camera capture");
+                *self.camera.lock().unwrap() = Some(Arc::new(cam));
+                Ok(())
+            }
+            Err(e) => {
+                if !crate::camera::available() {
+                    *self.camera.lock().unwrap() = None;
+                }
+                Err(e)
+            }
+        }
+    }
+
+    /// Stop the resident camera and release the device.
+    pub fn stop_camera(&self) {
+        *self.camera.lock().unwrap() = None;
+    }
+
+    /// Resolve the on-disk path of the configured vision detector model.
+    pub fn vision_model_path(&self) -> AppResult<std::path::PathBuf> {
+        let settings = self.settings_snapshot();
+        let spec = crate::vision::models::find(&settings.vision.detector).ok_or_else(|| {
+            AppError::Model(format!(
+                "unknown vision model '{}'",
+                settings.vision.detector
+            ))
+        })?;
+        Ok(crate::vision::models::model_path(spec, &self.models_dir()))
+    }
+
+    /// Start (or restart) the resident vision controller on the configured
+    /// detector model, pulling frames from the resident camera ring. Requires
+    /// a running camera; errors when the `vision` feature is absent, the model
+    /// is not downloaded, or no camera is running.
+    pub fn restart_vision(&self) -> AppResult<()> {
+        let settings = self.settings_snapshot();
+        let model_path = self.vision_model_path()?;
+        if !model_path.is_file() {
+            return Err(AppError::Model(format!(
+                "vision model '{}' is not downloaded — get it from Settings",
+                settings.vision.detector
+            )));
+        }
+        // The frame ring must exist (camera running) before the loop can pull.
+        let camera = self
+            .camera
+            .lock()
+            .unwrap()
+            .clone()
+            .ok_or_else(|| AppError::NotConfigured("start the camera preview first".into()))?;
+        let frame = camera.frame.clone();
+        let detector_cfg = crate::vision::detect::DetectorConfig {
+            confidence: settings.vision.confidence,
+            iou: settings.vision.iou_threshold,
+        };
+        let tracker_cfg = crate::vision::tracker::TrackerConfig::default();
+        // VLM label-polish (Proposal 076): opt-in, built from the polish
+        // settings; an unconfigured/disabled provider yields `None`.
+        #[cfg(feature = "vision")]
+        let polish = self.vision_polisher(&settings)?;
+        #[cfg(not(feature = "vision"))]
+        let polish: Option<crate::vision::controller::PolishConfig> = None;
+        let controller = crate::vision::controller::VisionController::start(
+            model_path,
+            detector_cfg,
+            tracker_cfg,
+            frame,
+            polish,
+        )?;
+        tracing::info!("started vision detection loop");
+        *self.vision.lock().unwrap() = Some(Arc::new(controller));
+        Ok(())
+    }
+
+    /// Build the VLM label-polish config (Proposal 076) from `Settings.vision`,
+    /// or `None` when polish is disabled. The local provider is built with the
+    /// same secret discipline as the Stage-2 text polish providers.
+    #[cfg(feature = "vision")]
+    fn vision_polisher(
+        &self,
+        settings: &Settings,
+    ) -> AppResult<Option<crate::vision::controller::PolishConfig>> {
+        if !settings.vision.polish_enabled {
+            return Ok(None);
+        }
+        let provider = match settings.vision.polish_provider.as_str() {
+            "ollama" => crate::cleanup::providers::local_openai::LocalOpenAiProvider::new(
+                crate::cleanup::providers::local_openai::LocalKind {
+                    name: "Ollama",
+                    id: "ollama",
+                },
+                &settings.ollama.base_url,
+                &settings.vision.polish_model,
+                settings.ollama.load_timeout_ms,
+                self.secrets.get(KEY_OLLAMA_TOKEN)?,
+            )?,
+            // `lm_studio` and anything else defaults to LM Studio.
+            _ => crate::cleanup::providers::local_openai::LocalOpenAiProvider::new(
+                crate::cleanup::providers::local_openai::LocalKind {
+                    name: "LM Studio",
+                    id: "lm_studio",
+                },
+                &settings.lm_studio.base_url,
+                &settings.vision.polish_model,
+                settings.lm_studio.load_timeout_ms,
+                self.secrets.get(KEY_LM_STUDIO_TOKEN)?,
+            )?,
+        };
+        let polisher = crate::vision::polish::VisionPolisher::new(provider)?;
+        Ok(Some(crate::vision::controller::PolishConfig {
+            polisher: std::sync::Arc::new(polisher),
+            min_confidence: settings.vision.polish_min_confidence,
+            max_per_second: settings.vision.polish_max_per_second,
+        }))
+    }
+
+    /// Stop the resident vision controller and release the detector.
+    pub fn stop_vision(&self) {
+        *self.vision.lock().unwrap() = None;
+    }
+
+    /// Re-apply vision settings (enable/disable, model/threshold swap).
+    pub fn reapply_vision(&self, previous: &Settings) -> AppResult<()> {
+        let current = self.settings_snapshot();
+        let changed = previous.vision != current.vision;
+        if !changed {
+            return Ok(());
+        }
+        self.stop_vision();
+        if current.vision.enabled {
+            self.restart_vision()?;
+        }
+        Ok(())
+    }
+
     /// Build an NV oOS client from stored settings + keychain credential.
     pub fn nvoos_client(&self) -> AppResult<crate::nvoos::NvoosClient> {
         let settings = self.settings_snapshot();
@@ -220,11 +435,116 @@ impl AppState {
             .ok_or_else(|| AppError::NotConfigured("NV oOS credential not stored".into()))?;
         crate::nvoos::NvoosClient::new(settings.nvoos.site_url, credential)
     }
+
+    /// Build an NV oOS `CleanupProvider` from stored settings + keychain
+    /// credential (the hosted brain for §5a).
+    pub fn nvoos_provider(&self) -> AppResult<crate::cleanup::providers::nvoos::NvoosProvider> {
+        let settings = self.settings_snapshot();
+        crate::cleanup::providers::nvoos::NvoosProvider::new(&settings.nvoos, self.secrets.as_ref())
+    }
+
+    /// Build an LM Studio provider from stored settings + keychain token. The
+    /// token is optional (local servers need none), so this only errors on an
+    /// invalid base URL, not on a missing secret.
+    pub fn lm_studio_provider(
+        &self,
+    ) -> AppResult<crate::cleanup::providers::lm_studio::LmStudioProvider> {
+        let settings = self.settings_snapshot();
+        crate::cleanup::providers::lm_studio::LmStudioProvider::new(
+            &settings.lm_studio,
+            self.secrets.as_ref(),
+        )
+    }
+
+    /// Build an Ollama provider from stored settings + keychain token (token
+    /// optional for the local default).
+    pub fn ollama_provider(&self) -> AppResult<crate::cleanup::providers::ollama::OllamaProvider> {
+        let settings = self.settings_snapshot();
+        crate::cleanup::providers::ollama::OllamaProvider::new(
+            &settings.ollama,
+            self.secrets.as_ref(),
+        )
+    }
+
+    /// Build the browser-agent brain from `settings.agent.provider`. Returns a
+    /// boxed `CleanupProvider` (its `complete()` seam is what the agent loop
+    /// calls). `lm_studio`/`ollama` are the local brains; `nvoos` routes to the
+    /// site's hosted model (§5a).
+    ///
+    /// NOTE: the local providers are built from the shared `lm_studio`/`ollama`
+    /// config for base_url + load_timeout, but the **agent's own `agent.model`
+    /// overrides the model id** — the shared config's `model` is the Stage-2
+    /// cleanup model (e.g. a TTS or VLM model) and must never be silently reused
+    /// as the agent brain.
+    pub fn agent_brain(&self) -> AppResult<Box<dyn crate::cleanup::providers::CleanupProvider>> {
+        let settings = self.settings_snapshot();
+        let provider = match settings.agent.provider.as_str() {
+            "lm_studio" => {
+                let mut cfg = settings.lm_studio.clone();
+                cfg.model = settings.agent.model.clone();
+                Box::new(crate::cleanup::providers::lm_studio::LmStudioProvider::new(
+                    &cfg,
+                    self.secrets.as_ref(),
+                )?) as Box<dyn crate::cleanup::providers::CleanupProvider>
+            }
+            "ollama" | "" => {
+                let mut cfg = settings.ollama.clone();
+                cfg.model = settings.agent.model.clone();
+                Box::new(crate::cleanup::providers::ollama::OllamaProvider::new(
+                    &cfg,
+                    self.secrets.as_ref(),
+                )?) as Box<dyn crate::cleanup::providers::CleanupProvider>
+            }
+            "nvoos" => Box::new(self.nvoos_provider()?)
+                as Box<dyn crate::cleanup::providers::CleanupProvider>,
+            other => {
+                return Err(crate::error::AppError::NotConfigured(format!(
+                    "unknown agent provider '{other}'"
+                )))
+            }
+        };
+        Ok(provider)
+    }
+
+    /// Start a browser-agent run for `instruction`. Builds the brain from
+    /// settings and delegates to the resident `AgentController`. The task's
+    /// starting origin is derived from the first `navigate` action by the loop
+    /// (so it is not needed here — safety gating an unknown start origin lets
+    /// the loop's own nav guard govern the first hop).
+    pub fn start_agent_run(&self, instruction: String) -> AppResult<()> {
+        let settings = self.settings_snapshot();
+        if !settings.agent.enabled {
+            return Err(crate::error::AppError::NotConfigured(
+                "browser agent is disabled — enable it in Settings".into(),
+            ));
+        }
+        let brain: Arc<dyn crate::cleanup::providers::CleanupProvider> =
+            Arc::from(self.agent_brain()?);
+        let opts = crate::agent::agent_loop::RunOptions {
+            task: instruction,
+            max_steps: settings.agent.max_steps.max(1),
+            confirmation_required: settings.agent.confirmation_required,
+            ..crate::agent::agent_loop::RunOptions::default()
+        };
+        self.agent.start(brain, opts)
+    }
+
+    /// Set the browser-agent stop flag. The running loop halts between steps.
+    pub fn stop_agent_run(&self) {
+        self.agent.stop();
+    }
 }
 
 /// Build and manage the global AppState in Tauri's setup phase.
 pub fn setup(app: &AppHandle) -> AppResult<()> {
     let db = Db::open_default()?;
+    // Windows: the native Credential Manager store (keyring 3.6.3 writes
+    // CRED_PERSIST_ENTERPRISE, which silently fails to persist from an
+    // unelevated app — see storage/win_cred.rs). Other platforms keep the
+    // keyring crate (macOS Keychain / Linux Secret Service).
+    #[cfg(windows)]
+    let secrets: Arc<dyn SecretStore> = Arc::new(crate::storage::win_cred::WindowsCredentialStore);
+    #[cfg(not(windows))]
     let secrets: Arc<dyn SecretStore> = Arc::new(OsKeyringStore);
     let state = AppState::new(app.clone(), db, secrets);
     app.manage(state);

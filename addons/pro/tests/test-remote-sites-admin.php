@@ -580,6 +580,93 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that clearing the Google Drive folder ID deletes the scope instead of
+	 * restoring the previous value.
+	 */
+	public function test_google_drive_folder_id_can_be_cleared() {
+		// Create with a folder scope set.
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Clear Folder Drive',
+				'url'             => 'https://www.googleapis.com/drive/v3',
+				'connection_type' => 'google_drive',
+				'auth_type'       => 'none',
+				'client_id'       => 'gdrive_clear_client_id',
+				'client_secret'   => 'gdrive_clear_client_secret',
+				'refresh_token'   => 'gdrive_clear_refresh_token',
+				'folder_id'       => 'folder_in_scope',
+				'user_email'      => 'clear@example.com',
+				'enabled'         => true,
+			)
+		);
+		$this->assertNotWPError( $connection_id );
+		$this->assertSame( 'folder_in_scope', WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id )['folder_id'] );
+
+		// Update with the field explicitly emptied (what the admin form posts).
+		$update_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'id'              => $connection_id,
+				'name'            => 'Clear Folder Drive',
+				'url'             => 'https://www.googleapis.com/drive/v3',
+				'connection_type' => 'google_drive',
+				'auth_type'       => 'none',
+				'client_id'       => 'gdrive_clear_client_id',
+				'client_secret'   => 'gdrive_clear_client_secret',
+				'refresh_token'   => 'gdrive_clear_refresh_token',
+				'folder_id'       => '',
+				'user_email'      => 'clear@example.com',
+				'enabled'         => true,
+			)
+		);
+		$this->assertNotWPError( $update_id );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertSame( '', $updated['folder_id'], 'Cleared folder ID must persist as empty, not restore the old value.' );
+	}
+
+	/**
+	 * Test that omitting folder_id on an update (OAuth callback partial save)
+	 * preserves the existing scope rather than blanking it.
+	 */
+	public function test_google_drive_folder_id_is_preserved_when_key_omitted() {
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Omit Folder Drive',
+				'url'             => 'https://www.googleapis.com/drive/v3',
+				'connection_type' => 'google_drive',
+				'auth_type'       => 'none',
+				'client_id'       => 'gdrive_omit_client_id',
+				'client_secret'   => 'gdrive_omit_client_secret',
+				'refresh_token'   => 'gdrive_omit_refresh_token',
+				'folder_id'       => 'folder_kept_in_scope',
+				'user_email'      => 'omit@example.com',
+				'enabled'         => true,
+			)
+		);
+		$this->assertNotWPError( $connection_id );
+
+		// Partial update with no folder_id key at all (OAuth callback path).
+		$update_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'id'              => $connection_id,
+				'name'            => 'Omit Folder Drive',
+				'url'             => 'https://www.googleapis.com/drive/v3',
+				'connection_type' => 'google_drive',
+				'auth_type'       => 'none',
+				'client_id'       => 'gdrive_omit_client_id',
+				'client_secret'   => 'gdrive_omit_client_secret',
+				'refresh_token'   => 'gdrive_omit_refresh_token',
+				'user_email'      => 'omit@example.com',
+				'enabled'         => true,
+			)
+		);
+		$this->assertNotWPError( $update_id );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertSame( 'folder_kept_in_scope', $updated['folder_id'], 'Omitted folder_id key must preserve the existing scope.' );
+	}
+
+	/**
 	 * Test validation for Google Drive connection type.
 	 */
 	public function test_google_drive_connection_validation() {

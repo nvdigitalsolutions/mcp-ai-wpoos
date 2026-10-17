@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.4
+Stable tag: 1.2.7
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,22 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.7 - October 17, 2026 =
+
+Bumped to 1.2.7 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Food & Beverage universalisation (Proposal 078): a multi-tenant Tenant Profile with legacy LKR aliases, a universal single-folder ingestor, and CSV/PDF report export via the new fnb_export_report tool. New Sinhala TTS tool (generate_sinhala_speech) for the Sri Lankan teacher assistant. Pro SPA gains Docs Hub, Media Studio, and Document Editor pages, plus framed-credential auth and keep-alive hub tabs. Tool-schema hardening for strict providers (boolean required hoisting + empty properties as objects). Google Workspace credential unification plus native Google Sheets reads in get_drive_file. F&B reliability fixes (recoverable unknown-metric errors, complete-by-default imports, metric/KPI resolution). MCP gateway SDK patched to 1.31.0. Tool count: ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative).
+
+= 1.2.6 - October 14, 2026 =
+
+Bumped to 1.2.6 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Google Drive OAuth restored to full read access (drive.readonly alongside drive.file) after the drive.file-only narrowing broke search_drive/get_drive_file and the F&B tools for pre-existing content. Food & Beverage reliability: multi-worksheet workbook reads via the Sheets API, a demo-workbook fallback, the spreadsheets.readonly OAuth scope, actionable Sheets-scope error surfacing, a CSV exporter, and 18 shipped demo tables. The self-hosted OCR client now speaks the vLLM request contract (was SGLang, so the no-repeat-ngram processor never ran). Drive fixes: the inline-async-tick trait double-declare fatal, response-body logging, and folder_id clearing. The dictation companion app gains a CDP browser-control agent, a FastConformer STT engine, a Stage-2 polish master switch, model-download hardening, and an NV oOS multi-SPA hub (spa-surfaces discovery endpoint). Pro SPA v2 fixes for last-message save, assistant memory, and the drawer 401 in the dictate iframe. shell-quote patched to 1.12.0. Tool count unchanged: ~354 base + ~1,376 Pro (~1,730 total; live registry authoritative).
+
+= 1.2.5 - October 13, 2026 =
+
+Bumped to 1.2.5 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. New GTmetrix × WPCode performance-optimization Pro toolkit (Proposal 068): 23 gtmetrix_* tools plus the read-only list_wpcode_snippets tool on a shared WPCode repository. Food & Beverage Phase 9: five transactional CPTs, the fnb_import_table bridge, and nine fnb_pr_* purchase-request tools on the QMS engine. F&B admin menu + module-registry fix, assistant-pack seeding, and CSV directory guidance. The dictation companion app is hardened (live capture, hotkey, VAD, credential persistence) with local LM Studio/Ollama polish providers, video input, a macOS port, and VLM label polish. Standalone SPA gains env-driven login presets. Two new coding-time skills (71 → 72). Tool count: ~354 base + ~1,376 Pro (~1,730 total; live registry authoritative).
+
+= 1.2.4 - October 12, 2026 =
+
+Bumped to 1.2.4 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. MCP client-quirk hardening (Proposal 066): every advertised tools/list schema carries a root type: object and hazardous schemas are skipped-with-reason instead of dropping the whole catalog (the new WP_MCP_AI_Tool_Schema_Auditor); nvoos_get_profile advertises structuredContent; discovery caches respect server TTLs. nvoos-chart recipe rendering: fenced nvoos-chart JSON renders as real HTML/CSS charts (29 types) on all three chat surfaces, plus the new create_chart_fence base tool. Model Foundry Phase 1 (Proposal 067): three corpus exporters behind the consent fail-closed governance engine. The Pro SPA gains the Content Graph explorer page (#/knowledge-graph) with a read-only visual-config route on the CG plugin. Fixed: standalone SPA cross-host login redirects + explorer AJAX auth, static-server nosniff/HSTS headers, and the F&B toolkit toggle that never rendered. User-directed partial @since reconciliation plus three new coding-time skills (66 → 69). Tool count: ~354 base + ~1,342 Pro (~1,696 total; live registry authoritative).
 
 = 1.2.3 - October 10, 2026 =
 

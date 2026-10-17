@@ -21,6 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 
+	use WP_MCP_AI_Media_Worker_Client;
+
 	/**
 	 * Whether the tool is available.
 	 *
@@ -247,11 +249,19 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Check GD availability if not dry run and WebP conversion requested.
-		if ( ! $dry_run && $convert_to_webp && ! $this->has_gd_library() ) {
+		// The Media Worker batch route (Sharp) needs no GD at all, so the gate
+		// only applies when the sidecar path is unavailable.
+		if ( ! $dry_run && ! $this->is_sidecar_upload_supported() && $convert_to_webp && ! $this->has_gd_library() ) {
 			return array(
 				'success' => false,
 				'error'   => __( 'PHP GD extension is required for WebP conversion. Please enable the GD extension on your server.', 'mcp-ai-wpoos-pro' ),
 			);
+		}
+
+		// Sidecar batch path (Proposal 079, Appendix B): one worker call
+		// processes the whole set with Sharp instead of per-image GD loops.
+		if ( ! $dry_run && $this->is_sidecar_upload_supported() ) {
+			return $this->execute_sidecar_batch( $attachment_ids, $quality, $convert_to_webp, $strip_metadata );
 		}
 
 		$results       = array();
@@ -380,6 +390,233 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 				'quality'         => $quality,
 				'convert_to_webp' => $convert_to_webp,
 				'strip_metadata'  => $strip_metadata,
+			),
+			'results'       => $results,
+		);
+	}
+
+	/**
+	 * Optimize a batch of images via the Media Worker (/api/image/batch).
+	 *
+	 * One multipart call carries every source file; the worker's Sharp
+	 * pipeline re-encodes each image and returns per-file base64, which is
+	 * written back with the same side effects as the GD path: original-file
+	 * overwrite + metadata regen, or a sibling .webp registered as a linked
+	 * attachment when conversion is requested.
+	 *
+	 * @param array $attachment_ids  Attachment IDs.
+	 * @param int   $quality         Output quality (1-100).
+	 * @param bool  $convert_to_webp Whether to convert to WebP.
+	 * @param bool  $strip_metadata  Unused (Sharp's rotate() strips EXIF by
+	 *                               default); kept for shape parity.
+	 * @return array Same response shape as execute().
+	 */
+	private function execute_sidecar_batch( $attachment_ids, $quality, $convert_to_webp, $strip_metadata ) {
+		unset( $strip_metadata ); // See docblock.
+
+		// Resolve valid attachments first, mirroring the loop's validation.
+		$pairs  = array();
+		$errors = array();
+		foreach ( $attachment_ids as $attachment_id ) {
+			$post = get_post( $attachment_id );
+			if ( ! $post || 'attachment' !== $post->post_type ) {
+				$errors[] = array(
+					'id'    => $attachment_id,
+					'error' => __( 'Attachment not found or invalid post type.', 'mcp-ai-wpoos-pro' ),
+				);
+				continue;
+			}
+			$file_path = get_attached_file( $attachment_id );
+			if ( ! $file_path || ! file_exists( $file_path ) ) {
+				$errors[] = array(
+					'id'    => $attachment_id,
+					'error' => __( 'File does not exist on disk.', 'mcp-ai-wpoos-pro' ),
+				);
+				continue;
+			}
+			$pairs[ $attachment_id ] = array(
+				'post' => $post,
+				'file' => $file_path,
+			);
+		}
+
+		if ( empty( $pairs ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_valid_attachments',
+				__( 'No valid attachments to optimize.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$paths = array();
+		foreach ( $pairs as $pair ) {
+			$paths[] = $pair['file'];
+		}
+
+		$sidecar = $this->sidecar_upload_multi(
+			'/api/image/batch',
+			$paths,
+			array(
+				'quality' => $quality,
+				'format'  => $convert_to_webp ? 'webp' : 'original',
+			),
+			330
+		);
+		if ( is_wp_error( $sidecar ) ) {
+			return $sidecar;
+		}
+
+		// Key worker results by upload basename (curl_file_create basename).
+		$by_filename = array();
+		foreach ( ( isset( $sidecar['results'] ) && is_array( $sidecar['results'] ) ) ? $sidecar['results'] : array() as $worker_result ) {
+			if ( is_array( $worker_result ) && ! empty( $worker_result['filename'] ) ) {
+				$by_filename[ $worker_result['filename'] ] = $worker_result;
+			}
+		}
+
+		$results       = array();
+		$processed     = 0;
+		$skipped       = 0;
+		$total_savings = 0;
+
+		foreach ( $pairs as $attachment_id => $pair ) {
+			$entry = array(
+				'id'        => $attachment_id,
+				'title'     => esc_html( $pair['post']->post_title ),
+				'file'      => esc_html( basename( $pair['file'] ) ),
+				'mime_type' => esc_html( $pair['post']->post_mime_type ),
+				'dry_run'   => false,
+				'actions'   => array(),
+			);
+
+			$worker_result = isset( $by_filename[ basename( $pair['file'] ) ] ) ? $by_filename[ basename( $pair['file'] ) ] : null;
+			if ( empty( $worker_result['b64'] ) ) {
+				$entry['status'] = 'error';
+				$entry['error']  = __( 'Worker returned no result for this image.', 'mcp-ai-wpoos-pro' );
+				$errors[]        = $entry;
+				++$skipped;
+				$results[] = $entry;
+				continue;
+			}
+
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding worker-returned image bytes is the transport contract, not obfuscation.
+			$bytes = base64_decode( $worker_result['b64'], true );
+			if ( false === $bytes || '' === $bytes ) {
+				$entry['status'] = 'error';
+				$entry['error']  = __( 'Worker returned invalid image data.', 'mcp-ai-wpoos-pro' );
+				$errors[]        = $entry;
+				++$skipped;
+				$results[] = $entry;
+				continue;
+			}
+
+			$before_size = filesize( $pair['file'] );
+
+			if ( $convert_to_webp ) {
+				// Sibling .webp + linked attachment (matches the GD path).
+				$webp_path = pathinfo( $pair['file'], PATHINFO_DIRNAME ) . '/' . pathinfo( $pair['file'], PATHINFO_FILENAME ) . '.webp';
+				if ( false === file_put_contents( $webp_path, $bytes ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing worker-returned bytes to the uploads dir is the tool's write contract.
+					$entry['status'] = 'error';
+					$entry['error']  = __( 'Failed to write the optimized WebP file.', 'mcp-ai-wpoos-pro' );
+					$errors[]        = $entry;
+					++$skipped;
+					$results[] = $entry;
+					continue;
+				}
+
+				$webp_attachment_id = wp_insert_attachment(
+					array(
+						'post_title'     => pathinfo( $webp_path, PATHINFO_FILENAME ),
+						'post_mime_type' => 'image/webp',
+						'post_status'    => 'inherit',
+					),
+					$webp_path,
+					0
+				);
+
+				if ( ! is_wp_error( $webp_attachment_id ) ) {
+					require_once ABSPATH . 'wp-admin/includes/image.php';
+					$attach_data = wp_generate_attachment_metadata( $webp_attachment_id, $webp_path );
+					wp_update_attachment_metadata( $webp_attachment_id, $attach_data );
+					update_post_meta( $attachment_id, '_wp_mcp_ai_webp_version', $webp_attachment_id );
+					update_post_meta( $webp_attachment_id, '_wp_mcp_ai_original_id', $attachment_id );
+				}
+
+				$after_size = filesize( $webp_path );
+			} else {
+				// Overwrite the original with the re-encoded bytes + regen metadata.
+				if ( false === file_put_contents( $pair['file'], $bytes ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- See above.
+					$entry['status'] = 'error';
+					$entry['error']  = __( 'Failed to write the optimized image file.', 'mcp-ai-wpoos-pro' );
+					$errors[]        = $entry;
+					++$skipped;
+					$results[] = $entry;
+					continue;
+				}
+
+				clearstatcache( true, $pair['file'] );
+				$after_size = filesize( $pair['file'] );
+
+				require_once ABSPATH . 'wp-admin/includes/image.php';
+				$attach_data = wp_generate_attachment_metadata( $attachment_id, $pair['file'] );
+				wp_update_attachment_metadata( $attachment_id, $attach_data );
+			}
+
+			$saved   = max( 0, $before_size - $after_size );
+			$savings = array(
+				'current_bytes'       => $before_size,
+				'current_formatted'   => size_format( $before_size ),
+				'estimated_bytes'     => $after_size,
+				'estimated_formatted' => size_format( $after_size ),
+				'savings_bytes'       => $saved,
+				'savings_formatted'   => size_format( $saved ),
+				'savings_percent'     => $before_size > 0 ? round( ( $saved / $before_size ) * 100, 1 ) : 0,
+			);
+			$result  = array(
+				'original_size'  => size_format( $before_size ),
+				'optimized_size' => size_format( $after_size ),
+				'savings'        => $savings,
+			);
+
+			$entry['status']         = 'optimized';
+			$entry['result']         = $result;
+			$entry['actual_savings'] = $result['savings'];
+			++$processed;
+			$total_savings += $saved;
+
+			update_post_meta( $attachment_id, '_wp_mcp_ai_optimized', current_time( 'mysql' ) );
+			update_post_meta( $attachment_id, '_wp_mcp_ai_optimization_quality', $quality );
+
+			/**
+			 * Fires after an image is optimized.
+			 *
+			 * @since 2.9.0
+			 *
+			 * @param int   $attachment_id The attachment post ID.
+			 * @param array $result        Optimization result data.
+			 */
+			do_action( 'wp_mcp_ai_image_after_optimization', $attachment_id, $result );
+
+			$results[] = $entry;
+		}
+
+		return array(
+			'success'       => true,
+			'message'       => sprintf(
+				/* translators: 1: number of images optimized, 2: actual savings */
+				__( 'Optimized %1$d image(s) via the Media Worker. Total savings: %2$s.', 'mcp-ai-wpoos-pro' ),
+				$processed,
+				size_format( $total_savings )
+			),
+			'dry_run'       => false,
+			'total'         => count( $attachment_ids ),
+			'processed'     => $processed,
+			'skipped'       => $skipped,
+			'errors_count'  => count( $errors ),
+			'total_savings' => size_format( $total_savings ),
+			'configuration' => array(
+				'quality'         => $quality,
+				'convert_to_webp' => $convert_to_webp,
+				'strip_metadata'  => true,
 			),
 			'results'       => $results,
 		);
