@@ -1284,6 +1284,77 @@ class WP_MCP_AI_Gmail_Read_Tools_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Extract_attachment_text() must parse a real text-bearing PDF fixture.
+	 */
+	public function test_client_extract_attachment_text_pdf() {
+		$fixture = WP_MCP_AI_PATH . 'tests/fixtures/gmail-settlement-sample.pdf';
+		$this->assertFileExists( $fixture, 'Committed PDF fixture must exist.' );
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading the committed local PDF fixture, not a remote URL.
+		$bytes = file_get_contents( $fixture );
+
+		$text = WP_MCP_AI_Pro_Gmail_Client::extract_attachment_text( $bytes, 'application/pdf', 'gmail-settlement-sample.pdf' );
+
+		$this->assertNotWPError( $text );
+		$this->assertStringContainsString( 'Settlement Total: $1,234.56', $text );
+		$this->assertStringContainsString( 'Invoice #1000000008555', $text );
+	}
+
+	/**
+	 * Get_gmail_message must return extracted text for an attached PDF.
+	 */
+	public function test_get_gmail_message_extracts_pdf_attachment_text() {
+		$this->configure_settings_credentials();
+		$admin_id = $this->login_as_admin();
+
+		$fixture = WP_MCP_AI_PATH . 'tests/fixtures/gmail-settlement-sample.pdf';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading the committed local PDF fixture, not a remote URL.
+		$pdf = file_get_contents( $fixture );
+
+		$payload = $this->message_payload(
+			'msg-pdf',
+			'thread-1',
+			1700000000000,
+			array(
+				$this->plain_part( 'See the attached statement.' ),
+				array(
+					'partId'   => '1',
+					'mimeType' => 'application/pdf',
+					'filename' => '1000000008555.pdf',
+					'body'     => array(
+						'attachmentId' => 'att-pdf',
+						'size'         => strlen( $pdf ),
+					),
+				),
+			)
+		);
+
+		$this->stub_http(
+			array(
+				'oauth2.googleapis.com/token'         => array( 'access_token' => 'mock-token' ),
+				'gmail/v1/users/me/messages/msg-pdf?' => $payload,
+				'attachments/att-pdf'                 => array(
+					'data' => $this->b64url( $pdf ),
+				),
+			)
+		);
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Get_Gmail_Message();
+		$result = $tool->execute(
+			array( 'message_id' => 'msg-pdf' ),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertNotWPError( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertCount( 1, $result['data']['attachments'] );
+		$this->assertSame( '1000000008555.pdf', $result['data']['attachments'][0]['filename'] );
+		$this->assertSame( 'application/pdf', $result['data']['attachments'][0]['mime_type'] );
+		$this->assertStringContainsString( 'Settlement Total: $1,234.56', $result['data']['attachments'][0]['text'] );
+		$this->assertSame( '', $result['data']['attachments'][0]['error'] );
+	}
+
+	/**
 	 * Argument-less Gmail tools must encode empty properties as `{}`.
 	 *
 	 * Strict providers (DeepSeek) reject schemas whose `properties` key is a

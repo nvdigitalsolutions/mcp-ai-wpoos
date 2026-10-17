@@ -446,9 +446,17 @@ class WP_MCP_AI_Pro_Gmail_Client {
 			return '';
 		}
 
-		// Gmail body.data is base64url without padding.
+		// Gmail body.data is base64url without padding — re-pad before strict
+		// decoding or parts whose encoded length is not a multiple of 4 fail
+		// with false (contributing to misleading empty_parts reports).
+		$data = strtr( $part['body']['data'], '-_', '+/' );
+		$pad  = strlen( $data ) % 4;
+		if ( 0 !== $pad ) {
+			$data .= str_repeat( '=', 4 - $pad );
+		}
+
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding Gmail message-part bodies is the documented API behaviour.
-		$decoded = base64_decode( strtr( $part['body']['data'], '-_', '+/' ), true );
+		$decoded = base64_decode( $data, true );
 		if ( false === $decoded ) {
 			return '';
 		}
@@ -706,9 +714,17 @@ class WP_MCP_AI_Pro_Gmail_Client {
 			return new WP_Error( 'wp_mcp_ai_gmail_attachment_empty', __( 'The Gmail attachment returned no data.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Attachment data is base64url without padding.
+		// Attachment data is base64url without padding — re-pad before strict
+		// decoding or payloads whose encoded length is not a multiple of 4
+		// (most binary attachments) fail with false.
+		$data = strtr( $payload['data'], '-_', '+/' );
+		$pad  = strlen( $data ) % 4;
+		if ( 0 !== $pad ) {
+			$data .= str_repeat( '=', 4 - $pad );
+		}
+
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding Gmail attachment bodies is the documented API behaviour.
-		$bytes = base64_decode( strtr( $payload['data'], '-_', '+/' ), true );
+		$bytes = base64_decode( $data, true );
 		if ( false === $bytes ) {
 			return new WP_Error( 'wp_mcp_ai_gmail_attachment_invalid', __( 'The Gmail attachment data was not valid base64.', 'mcp-ai-wpoos-pro' ) );
 		}
