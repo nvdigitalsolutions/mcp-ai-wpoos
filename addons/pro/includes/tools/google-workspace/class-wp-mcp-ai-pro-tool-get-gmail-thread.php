@@ -46,7 +46,7 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Reads a full Gmail thread by thread ID and returns all messages newest-first with plain text (default) or sanitised HTML bodies, up to max_messages. Use thread IDs from search_gmail results. Bodies longer than max_chars are truncated at a word boundary with the truncated flag set.', 'mcp-ai-wpoos-pro' );
+		return __( 'Reads a full Gmail thread by thread ID and returns all messages newest-first with plain text (default) or sanitised HTML bodies, up to max_messages. Each message also carries extracted attachment text (PDF, CSV, text) when attachments exist. Use thread IDs from search_gmail results. Bodies longer than max_chars are truncated at a word boundary with the truncated flag set.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -59,7 +59,7 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, W
 			'when_to_use'     => __( 'Reading an entire Gmail conversation by thread ID, newest first, to absorb invoice, support, or notification chains in one call.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Reading a single message; use get_gmail_message. Finding threads; use search_gmail. Label or read-state changes; use modify_gmail_message.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'search_gmail', 'get_gmail_message', 'modify_gmail_message' ),
-			'notes'           => __( 'Returns up to max_messages (1-50, default 10) with each body capped at max_chars; message_count vs returned_count shows truncation. Per message, body_source shows which part supplied the text and an empty body carries body_empty_reason (e.g. no_text_parts for attachment-only emails).', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Returns up to max_messages (1-50, default 10) with each body capped at max_chars; message_count vs returned_count shows truncation. Per message, body_source shows which part supplied the text and an empty body carries body_empty_reason (e.g. no_text_parts for attachment-only emails). Each message also carries attachments with extracted text where possible (PDFs, CSVs, text files).', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -209,9 +209,26 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, W
 			}
 		);
 
-		$messages = array();
+		$messages           = array();
+		$hydration_warnings = array();
 		foreach ( array_slice( $raw_messages, 0, $max_messages ) as $message_payload ) {
-			$messages[] = WP_MCP_AI_Pro_Gmail_Client::normalize_message(
+			$current_message_id = ! empty( $message_payload['id'] ) ? (string) $message_payload['id'] : '';
+
+			// Recover oversized inline text parts stored as attachmentId.
+			if ( '' !== $current_message_id ) {
+				$warnings = WP_MCP_AI_Pro_Gmail_Client::hydrate_inline_attachments(
+					$message_payload,
+					$gmail_user,
+					$current_message_id,
+					$access_token,
+					$timeout
+				);
+				foreach ( $warnings as $warning ) {
+					$hydration_warnings[] = $current_message_id . ': ' . $warning->get_error_message();
+				}
+			}
+
+			$message = WP_MCP_AI_Pro_Gmail_Client::normalize_message(
 				$message_payload,
 				$format,
 				$max_chars,
@@ -219,6 +236,20 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, W
 				$include_attachments,
 				''
 			);
+
+			// Surface extracted text for attached PDFs and other text-bearing files.
+			if ( '' !== $current_message_id ) {
+				$message['attachments'] = WP_MCP_AI_Pro_Gmail_Client::get_attachments_with_text(
+					$message_payload,
+					$gmail_user,
+					$current_message_id,
+					$access_token,
+					$timeout,
+					$max_chars
+				);
+			}
+
+			$messages[] = $message;
 		}
 
 		$data = array(
@@ -228,6 +259,10 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, W
 			'returned_count' => count( $messages ),
 			'messages'       => $messages,
 		);
+
+		if ( ! empty( $hydration_warnings ) ) {
+			$data['body_hydration_warnings'] = $hydration_warnings;
+		}
 
 		return $this->format_success_response(
 			__( 'Gmail thread retrieved.', 'mcp-ai-wpoos-pro' ),
