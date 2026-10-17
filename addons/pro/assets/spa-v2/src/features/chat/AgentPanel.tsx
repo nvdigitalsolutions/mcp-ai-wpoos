@@ -18,6 +18,10 @@ import type { JobRecord } from '../../components/shared/JobCard';
 import { useAttachments, ACCEPT_ATTR } from '../../hooks/useAttachments';
 import { useCommandAutocomplete } from '../../hooks/useCommandAutocomplete';
 import { CommandAutocomplete } from '../../components/shared/CommandAutocomplete';
+import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
+import { useVisualViewport } from '../../hooks/useVisualViewport';
+import { useComposerHeight } from '../../hooks/useComposerHeight';
+import { ResizableComposerHandle } from '../../components/shared/ResizableComposerHandle';
 
 export interface AgentPanelProps {
 	/** Ordered list of chat messages from useChat. */
@@ -128,6 +132,8 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 
 	const messagesContainerRef = useRef< HTMLDivElement | null >( null );
 	const composerRef = useRef< HTMLTextAreaElement | null >( null );
+	const composerWrapperRef = useRef< HTMLDivElement | null >( null );
+	const focusTextareaRef = useRef< HTMLTextAreaElement | null >( null );
 
 	// ── Attachments (v0.9.0) ───────────────────────────────────────────
 	const attachments = useAttachments( { uploadEndpoint: uploadEndpoint ?? '', nonce: nonce ?? '' } );
@@ -206,6 +212,32 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 	// Composer disabled while streaming OR a slash command is executing.
 	const composerDisabled = isStreaming || isBusy;
 
+	// ── Composer auto-grow, drag-resize, viewport inset (Proposal 080) ─
+	// The composer grows with its content (3-line cap owned by CSS); the
+	// divider below the message list lets the user give it more room.
+	const [ focusOpen, setFocusOpen ] = useState( false );
+	useAutoGrowTextarea( composerRef, input );
+	useAutoGrowTextarea( focusTextareaRef, input, focusOpen );
+	const keyboardInset = useVisualViewport();
+	const { height: composerHeight, setHeight: setComposerHeight } = useComposerHeight();
+
+	// Focus the expanded composer when it opens (no autoFocus attribute —
+	// eslint-plugin-jsx-a11y disallows it).
+	useEffect( () => {
+		if ( focusOpen ) {
+			focusTextareaRef.current?.focus();
+		}
+	}, [ focusOpen ] );
+
+	// When the keyboard inset changes (iOS Safari pans the visual viewport
+	// instead of resizing the layout), keep a bottom-pinned chat scrolled
+	// down so the latest message stays above the keyboard.
+	useEffect( () => {
+		if ( keyboardInset > 0 && userAtBottomRef.current ) {
+			scrollToBottom();
+		}
+	}, [ keyboardInset, scrollToBottom ] );
+
 	// ── Submit routing (v2.2.x) ───────────────────────────────────────
 	// Inputs starting with "/" are executed server-side as slash commands
 	// instead of being sent to the LLM — mirrors legacy slash-commands.js.
@@ -250,11 +282,55 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 		[ submitComposer, autocomplete ]
 	);
 
+	// ── Focus (expanded) composer handlers (Proposal 080, Phase 3) ────
+	const closeFocus = useCallback( () => {
+		setFocusOpen( false );
+		composerRef.current?.focus();
+	}, [] );
+
+	const submitFocus = useCallback(
+		( e: React.FormEvent< HTMLFormElement > ) => {
+			e.preventDefault();
+			if ( ! input.trim() ) {
+				return;
+			}
+			setFocusOpen( false );
+			composerRef.current?.focus();
+			submitComposer();
+		},
+		[ input, submitComposer ]
+	);
+
+	const handleFocusKeyDown = useCallback(
+		( e: React.KeyboardEvent< HTMLTextAreaElement > ) => {
+			if ( e.key === 'Escape' ) {
+				e.preventDefault();
+				closeFocus();
+				return;
+			}
+			if ( e.key === 'Enter' && ! e.shiftKey ) {
+				e.preventDefault();
+				setFocusOpen( false );
+				composerRef.current?.focus();
+				submitComposer();
+			}
+		},
+		[ closeFocus, submitComposer ]
+	);
+
 	return (
+		<>
 		<div
 			className="nvoos-pro-spa-agent-panel"
 			role="region"
 			aria-label={ __( 'Chat agent panel', 'nvoos-pro-spa' ) }
+			style={
+				{
+					'--nvoos-composer-height': composerHeight
+						? `${ composerHeight }px`
+						: 'auto',
+				} as React.CSSProperties
+			}
 		>
 			{/* Thread header */}
 			{ threadTitle && (
@@ -271,6 +347,7 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 				aria-live="polite"
 				aria-label={ __( 'Chat messages', 'nvoos-pro-spa' ) }
 				onScroll={ handleMessagesScroll }
+				style={ keyboardInset > 0 ? { paddingBottom: `${ 16 + keyboardInset }px` } : undefined }
 			>
 				{ messages.length === 0 && (
 					<div className="nvoos-pro-spa-agent-panel__empty">
@@ -325,8 +402,15 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 
 			</div>
 
+			{/* Composer resize divider (Proposal 080, Phase 2) */}
+			<ResizableComposerHandle
+				height={ composerHeight }
+				onChange={ setComposerHeight }
+				targetRef={ composerWrapperRef }
+			/>
+
 			{/* Composer */}
-			<div className="nvoos-pro-spa-agent-panel__composer">
+			<div ref={ composerWrapperRef } className="nvoos-pro-spa-agent-panel__composer">
 				<form
 					className="nvoos-pro-spa-agent-panel__composer-form"
 						onSubmit={ ( e ) => {
@@ -424,6 +508,15 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 						<p className="nvoos-pro-spa-attachment-error" role="alert">{ attachments.attachError }</p>
 					) }
 				<div className="nvoos-pro-spa-agent-panel__composer-actions">
+						{/* Expand composer (Proposal 080, Phase 3) */}
+						<button type="button" className="nvoos-pro-spa-btn nvoos-pro-spa-composer-focus-toggle"
+							aria-label={ __( 'Expand message composer', 'nvoos-pro-spa' ) }
+							title={ __( 'Expand message composer', 'nvoos-pro-spa' ) }
+							disabled={ composerDisabled }
+							aria-expanded={ focusOpen }
+							onClick={ () => setFocusOpen( true ) }>
+							⤢
+						</button>
 						{ isStreaming ? (
 							<button type="button" className="nvoos-pro-spa-agent-panel__stop-btn nvoos-pro-spa-btn nvoos-pro-spa-btn--danger"
 								onClick={ stop } aria-label={ __( 'Stop generating', 'nvoos-pro-spa' ) }>{ __( 'Stop', 'nvoos-pro-spa' ) }</button>
@@ -436,5 +529,58 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 				</form>
 			</div>
 		</div>
+
+		{/* Focus (expanded) composer overlay (Proposal 080, Phase 3) */}
+		{ focusOpen && (
+			<div
+				className="nvoos-pro-spa-composer-focus"
+				role="dialog"
+				aria-modal="true"
+				aria-label={ __( 'Expanded message composer', 'nvoos-pro-spa' ) }
+				style={ keyboardInset > 0 ? { paddingBottom: `${ 16 + keyboardInset }px` } : undefined }
+			>
+				<div
+					className="nvoos-pro-spa-composer-focus__backdrop"
+					role="button"
+					aria-label={ __( 'Close expanded composer', 'nvoos-pro-spa' ) }
+					tabIndex={ -1 }
+					onClick={ closeFocus }
+					onKeyDown={ ( e ) => {
+						if ( e.key === 'Enter' || e.key === ' ' ) {
+							e.preventDefault();
+							closeFocus();
+						}
+					} }
+				/>
+				<form
+					className="nvoos-pro-spa-composer-focus__form"
+					onSubmit={ submitFocus }
+				>
+					<label htmlFor="nvoos-pro-spa-composer-focus-input" className="nvoos-pro-spa-screen-reader-only">
+						{ __( 'Type your message', 'nvoos-pro-spa' ) }
+					</label>
+					<textarea
+						id="nvoos-pro-spa-composer-focus-input"
+						ref={ focusTextareaRef }
+						className="nvoos-pro-spa-composer-focus__textarea"
+						value={ input }
+						onChange={ handleInputChange }
+						onKeyDown={ handleFocusKeyDown }
+						placeholder={ __( 'Type your message…', 'nvoos-pro-spa' ) }
+						rows={ 3 }
+						aria-label={ __( 'Message input', 'nvoos-pro-spa' ) }
+					/>
+					<div className="nvoos-pro-spa-composer-focus__actions">
+						<button type="submit" className="nvoos-pro-spa-btn nvoos-pro-spa-btn--primary" disabled={ ! input.trim() }>
+							{ __( 'Send', 'nvoos-pro-spa' ) }
+						</button>
+						<button type="button" className="nvoos-pro-spa-btn" onClick={ closeFocus }>
+							{ __( 'Close', 'nvoos-pro-spa' ) }
+						</button>
+					</div>
+				</form>
+			</div>
+		) }
+		</>
 	);
 }

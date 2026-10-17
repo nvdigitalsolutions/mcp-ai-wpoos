@@ -170,7 +170,6 @@ export function useMediaLibrary(
 	// Initial fetch + refetch when page / search / filter changes.
 	useEffect( () => {
 		void fetchPage( page, page > 1 );
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ page, fetchPage ] );
 
 	const loadMore = useCallback( () => {
