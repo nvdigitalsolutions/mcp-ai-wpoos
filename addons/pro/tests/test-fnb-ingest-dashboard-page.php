@@ -302,5 +302,11 @@ class Test_Fnb_Ingest_Dashboard_Page extends WP_Ajax_UnitTestCase {
 		$this->assertStringContainsString( 'importRetrying', $js, 'JS must surface a retry message.' );
 		$this->assertStringContainsString( 'attempt < 3', $js, 'JS must bound retries.' );
 		$this->assertStringContainsString( 'runImportBatch(tableId, offset, totals, msgEl, attempt + 1)', $js, 'Retry must reuse the same offset.' );
+
+		// formatString must parse the placeholder index from a capture group —
+		// the original regex had no group, so the replace callback received the
+		// match OFFSET as its second argument and every %N$d rendered empty.
+		$this->assertStringContainsString( 'replace(/%(\d+)\$d/g', $js, 'formatString must capture the placeholder index via a regex capture group.' );
+		$this->assertStringNotContainsString( 'args[index - 1]', $js, 'formatString must not index args by the match offset.' );
 	}
 }
