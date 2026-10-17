@@ -274,6 +274,33 @@ class WP_MCP_AI_OCR_Service {
 		);
 		$options  = wp_parse_args( $options, $defaults );
 
+		// Sidecar-first scanned-PDF chain (Proposal 079, Appendix B): the
+		// worker's ingest route extracts the text layer and, when empty,
+		// rasterises + OCRs the pages in one call - no local Ghostscript or
+		// per-page round trips. Only when the caller has not pinned a vision
+		// provider (the worker chain is tesseract) and the sidecar is
+		// reachable; every failure falls through to the local pipeline.
+		$provider_opt = isset( $options['provider'] ) ? $options['provider'] : 'auto';
+		if ( in_array( $provider_opt, array( 'auto', 'tesseract' ), true ) && $this->is_sidecar_upload_supported() ) {
+			$fields = array();
+			if ( $options['max_pages'] > 0 ) {
+				$fields['maxPages'] = (int) $options['max_pages'];
+			}
+			$sidecar = $this->sidecar_upload( '/api/ingest/parse', $pdf_path, $fields, 300 );
+			if ( ! is_wp_error( $sidecar ) && isset( $sidecar['format'] ) && 'pdf' === $sidecar['format'] && ! empty( $sidecar['text'] ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'ocr_pdf_sidecar',
+					'Scanned-PDF OCR handled by the Media Worker',
+					array(
+						'pages' => isset( $sidecar['meta']['pages'] ) ? $sidecar['meta']['pages'] : 0,
+						'ocr'   => isset( $sidecar['meta']['ocr'] ) ? (bool) $sidecar['meta']['ocr'] : false,
+					)
+				);
+
+				return (string) $sidecar['text'];
+			}
+		}
+
 		// Convert PDF pages to images.
 		$images = $this->convert_pdf_to_images( $pdf_path, $options );
 		if ( is_wp_error( $images ) ) {

@@ -1,5 +1,22 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — F&B Ingest × Media Worker Offload (Proposal 079)
+
+- **Worker `POST /api/ingest/parse` (media-worker v3.5.0+)** — a toolkit-neutral parse endpoint returning the F&B `{columns, rows}` matrix contract: XLSX via the existing ExcelJS dependency (first worksheet unless `sheet` given), CSV/TSV with delimiter sniffing, JSON/JSONL with union headers, PDF via pdf-parse with a render→OCR chain for scanned PDFs (pdfjs-dist + canvas + tesseract.js), and photo OCR via tesseract.js. Legacy `.xls` and gated `.ods` return `503 capability_unavailable` so callers fall back to local PhpSpreadsheet. Full matrix by default (no hidden row cap); optional `offset`/`limit` paging. Registered in the health endpoints/capabilities map (`ingest_parsing`).
+- **Plugin cascade seam (Pro)** — `WP_MCP_AI_Fnb_Worker_Client` (reuses the shared `WP_MCP_AI_Media_Worker_Client` trait) and a sidecar-first path in `WP_MCP_AI_Fnb_Loader::load_file()`: heavy formats (XLSX/XLS/ODS/PDF/photo) parse in the worker when configured, with every failure falling back to the local PhpSpreadsheet/PdfParser/OCR-pointer paths unchanged. PDF/photo envelopes convert through the same delimited path so the structure matcher sees identical shapes; low-confidence OCR keeps the actionable `wp_mcp_ai_fnb_photo_needs_ocr` pointer. CSV/TSV/JSON/JSONL are never offloaded.
+- **Settings** — F&B `use_media_worker` (`auto` default, `off` to force local parsing) surfaced under a new "Media Worker Offload" section; filters `wp_mcp_ai_fnb_worker_enabled`, `wp_mcp_ai_fnb_worker_client` (test seam), and `wp_mcp_ai_fnb_ocr_confidence_floor`.
+- **Tests** — worker jest suite `src/routes/ingest.test.js` (10 cases: matrix shapes, sheet selection, 503 gates, 415/400, shared-volume `source` path, PDF text layer); PHPUnit `test-fnb-worker-offload.php` (seam normalisation, fallback, PDF/photo conversion, real-client gates) with a zero-HTTP fake client helper.
+
+### Added — Appendix B: Toolkit Offload Sweep (Proposal 079)
+
+- **Worker `/api/image/batch` hardened** — the route now accepts the plugin's `files[N]` multipart naming (pdf/merge convention), returns per-file `b64`/`format`/`width`/`height`, supports `jpeg`/`png`/`original` formats (quality respected), auto-orients + strips EXIF via `sharp().rotate()`, tolerates per-file failures in an `errors` list, and the advertised health endpoints list now names the real route.
+- **Document-generation PDF path** — `WP_MCP_AI_OCR_Service::extract_text_from_pdf()` now routes `auto`/`tesseract` scans through the worker's ingest chain (one call replaces local Ghostscript/Imagick rasterisation + per-page round trips); pinned vision providers skip the sidecar; failures fall back to the local pipeline unchanged.
+- **Image-production batch offload** — `optimise_images_batch` gains a sidecar batch path (`execute_sidecar_batch`, one `/api/image/batch` call via `sidecar_upload_multi`): original-format re-encodes overwrite the source file with metadata regen, WebP conversions register the linked sibling attachment exactly like the GD path; GD remains the fallback and dry-run previews never touch the sidecar.
+- **Provider-vision OCR rung (opt-in)** — F&B `ocr_vision_fallback` setting (default off): when a photo cannot be OCR'd confidently (or no sidecar exists), the image is staged as a temporary attachment and OCR'd through `extract_image_text` (plugin vision provider), then deleted; failures keep the actionable pointer with the vision error in `data`.
+- **Tests** — worker `image-batch.test.js` (5 cases); PHPUnit `test-ocr-service-sidecar-pdf.php` (3), `test-optimise-images-batch-sidecar.php` (3), plus 3 vision-rung cases in `test-fnb-worker-offload.php`.
+
 ## [1.2.7] - 2026-10-17
 
 ### Added — Food & Beverage Universalisation & Open-Format Ingestion (PRs #7094, #7095, #7096, Proposal 078)

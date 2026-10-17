@@ -287,6 +287,44 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			)
 		);
 
+		// Media Worker offload section (Proposal 079).
+		add_settings_section(
+			'wp_mcp_ai_fnb_worker',
+			__( 'Media Worker Offload', 'mcp-ai-wpoos-pro' ),
+			function () {
+				echo '<p>' . esc_html__( 'When a Media Worker sidecar is configured (Settings > Media Worker), spreadsheet, PDF and photo parsing can run in the sidecar instead of the WordPress PHP process. Every parse falls back to the local PHP parsers automatically whenever the sidecar is unreachable or fails.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			},
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'use_media_worker',
+			__( 'Use Media Worker for parsing', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_select_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_fnb_worker',
+			array(
+				'setting_key' => 'use_media_worker',
+				'choices'     => array(
+					'auto' => __( 'Auto (use when configured and reachable)', 'mcp-ai-wpoos-pro' ),
+					'off'  => __( 'Off (always parse in WordPress)', 'mcp-ai-wpoos-pro' ),
+				),
+				'description' => __( 'Auto offloads XLSX/XLS/ODS, PDF and photo files to the sidecar for parsing (photos are OCR\'d there). Note: enabling this sends the owner file contents to the Media Worker container.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+
+		add_settings_field(
+			'ocr_vision_fallback',
+			__( 'Vision OCR fallback for photos', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_checkbox_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_fnb_worker',
+			array(
+				'setting_key' => 'ocr_vision_fallback',
+				'description' => __( 'When a photo cannot be OCR\'d confidently (or no Media Worker is configured), send it to the plugin\'s configured vision provider (extract_image_text) instead. Uses vision API credits; the image is staged as a temporary attachment and deleted afterwards.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+
 		self::register_tenant_profile_section();
 	}
 
@@ -306,11 +344,11 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		);
 
 		foreach ( array(
-			'venue_name'  => __( 'Venue Name', 'mcp-ai-wpoos-pro' ),
-			'venue_type'  => __( 'Venue Type', 'mcp-ai-wpoos-pro' ),
-			'currency'    => __( 'Currency (ISO code)', 'mcp-ai-wpoos-pro' ),
-			'locale'      => __( 'Locale', 'mcp-ai-wpoos-pro' ),
-			'owner_role'  => __( 'Owner Role', 'mcp-ai-wpoos-pro' ),
+			'venue_name' => __( 'Venue Name', 'mcp-ai-wpoos-pro' ),
+			'venue_type' => __( 'Venue Type', 'mcp-ai-wpoos-pro' ),
+			'currency'   => __( 'Currency (ISO code)', 'mcp-ai-wpoos-pro' ),
+			'locale'     => __( 'Locale', 'mcp-ai-wpoos-pro' ),
+			'owner_role' => __( 'Owner Role', 'mcp-ai-wpoos-pro' ),
 		) as $key => $label ) {
 			add_settings_field(
 				$key,
@@ -341,7 +379,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			? sanitize_text_field( $submitted_adapter )
 			: 'drive';
 
-		$submitted_mode       = isset( $input['ingest_mode'] ) ? $input['ingest_mode'] : 'folder';
+		$submitted_mode         = isset( $input['ingest_mode'] ) ? $input['ingest_mode'] : 'folder';
 		$current['ingest_mode'] = in_array( $submitted_mode, array( 'folder', 'workbook', 'split' ), true )
 			? sanitize_text_field( $submitted_mode )
 			: 'folder';
@@ -369,6 +407,11 @@ class WP_MCP_AI_Fnb_Settings_Page {
 
 		$submitted_threshold                   = isset( $input['pr_auto_approval_threshold'] ) ? sanitize_text_field( (string) $input['pr_auto_approval_threshold'] ) : '';
 		$current['pr_auto_approval_threshold'] = is_numeric( $submitted_threshold ) ? max( 0.0, (float) $submitted_threshold ) : 0.0;
+
+		$submitted_worker            = isset( $input['use_media_worker'] ) ? sanitize_text_field( (string) $input['use_media_worker'] ) : 'auto';
+		$current['use_media_worker'] = in_array( $submitted_worker, array( 'auto', 'off' ), true ) ? $submitted_worker : 'auto';
+
+		$current['ocr_vision_fallback'] = ! empty( $input['ocr_vision_fallback'] );
 
 		return $current;
 	}
@@ -535,6 +578,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		}
 
 		$readable = is_readable( $dir );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Read-only capability probe for the admin status row; the WP_Filesystem direct transport is not guaranteed on Docker hosts.
 		$writable = is_writable( $dir );
 
 		if ( $readable && $writable ) {
@@ -781,8 +825,27 @@ class WP_MCP_AI_Fnb_Settings_Page {
 				value="1"
 				<?php checked( $current ); ?>
 			/>
-			<?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?>
+			<?php self::render_field_description( $args ); ?>
 		</label>
+		<?php
+	}
+
+	/**
+	 * Render a select field for fixed-choice settings.
+	 *
+	 * @param array $args Field arguments including 'setting_key', 'choices'
+	 *                    and 'description'.
+	 * @return void
+	 */
+	public static function render_select_field( $args ) {
+		$current = WP_MCP_AI_Fnb_Settings::get( $args['setting_key'], 'auto' );
+		$choices = isset( $args['choices'] ) && is_array( $args['choices'] ) ? $args['choices'] : array();
+		?>
+		<select name="<?php echo esc_attr( self::OPTION_NAME . '[' . $args['setting_key'] . ']' ); ?>">
+			<?php foreach ( $choices as $value => $label ) : ?>
+				<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
+			<?php endforeach; ?>
+		</select>
 		<?php self::render_field_description( $args ); ?>
 		<?php
 	}

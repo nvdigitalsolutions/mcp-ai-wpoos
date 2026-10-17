@@ -160,6 +160,32 @@ New service classes (read-only, testable in isolation):
 and a three-way source error (no source / wrong shape / unrecognised columns)
 in its dry-run preview.
 
+### Media Worker offload (Proposal 079)
+
+When a Media Worker sidecar is configured (Settings → Media Worker) and the
+F&B setting `use_media_worker` is `auto` (default), `load_file()` parses the
+heavy formats in the sidecar first: XLSX via the worker's ExcelJS route
+(`POST /api/ingest/parse`), PDFs via its pdf-parse text layer (scanned PDFs
+chain render → OCR per page), and photo invoices via its tesseract OCR route.
+The worker returns the same `{columns, rows}` matrix contract (or extracted
+text for PDF/photo, converted through the same delimited path), so the
+structure matcher, dry-run and import bridge see identical shapes. Every
+worker failure - unreachable, unconfigured, wrong shape, low OCR confidence -
+falls back to the local PHP parsers unchanged. CSV/TSV/JSON/JSONL are
+deliberately never offloaded (trivial PHP work). Set `use_media_worker` to
+`off` to force local parsing; the `wp_mcp_ai_fnb_worker_enabled` filter and
+`wp_mcp_ai_fnb_worker_client` filter (client replacement, tests) are the
+programmatic seams. See proposal
+`079-fnb-ingest-media-worker-offload-proposal.md`.
+
+The opt-in `ocr_vision_fallback` setting (default off) adds a provider-vision
+rung for photos: when tesseract confidence is low - or no worker is
+configured - the photo is staged as a temporary attachment and OCR'd through
+the plugin's vision provider (`extract_image_text`), then deleted. Failures
+keep the actionable `wp_mcp_ai_fnb_photo_needs_ocr` pointer with the vision
+error attached in `data`; tests inject results via the
+`wp_mcp_ai_fnb_vision_ocr_result` filter.
+
 ## Purchase Requests (Phase 9b)
 
 The purchase-request approval lifecycle (Appendix A) runs on the QMS
