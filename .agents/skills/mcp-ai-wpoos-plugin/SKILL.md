@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.6"
-  plugin-version-tested: "1.2.6"
-  last-updated: "2026-10-14"
+  plugin-version: "1.2.7"
+  plugin-version-tested: "1.2.7"
+  last-updated: "2026-10-17"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -785,6 +785,25 @@ Import external AI conversation exports into the JetEngine
 Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
+
+**v1.2.7 operational quick notes** (full detail in RELEASE-NOTES.md):
+**F&B universalisation + open-format ingestion** (PRs #7094–#7096, Proposal
+078) — the F&B toolkit goes multi-tenant: `WP_MCP_AI_Fnb_Tenant_Profile`
+de-couples currency (neutral keys + legacy `*_lkr` aliases), `render()`
+de-venues both assistant surfaces, a universal single-folder ingestor scores
+Drive files to table roles, and `fnb_export_report` (+1 Pro) exports CSV/PDF.
+**Sinhala TTS** (PR #7099) — `generate_sinhala_speech` (+1 base) routes via
+SpeechGen `si-LK` / Hugging Face MMS / custom webhook. **Pro SPA expansion**
+(PRs #7078–#7080) — `#/docs` / `#/media` / `#/documents` iframes; headless
+credential auth (#7085) + keep-alive tabs (#7075) + surface fix (#7076).
+**Schema hardening** (PRs #7087/#7100/#7104) — boolean `required` hoisting +
+empty `properties` as `{}`. **Google Workspace** (PRs #7097/#7101/#7105) —
+unified credential resolution + native Sheets reads. **F&B reliability** (PRs
+#7091/#7092/#7102/#7103); **team-member slug resolution** (#7088).
+**Dependency** (PR #7074) — gateway SDK → 1.31.0. **Skills** — coding-time
+73 → 74 (`-universalisation`, `-ingestion`); bundled 76 → 77 (+dictation-app).
+Tool count +1 base +1 Pro → ~355 base + ~1,377 Pro (~1,731 total); 12
+security classes; 18 providers; 30 addons (all unchanged).
 
 **v1.2.6 operational quick notes** (full detail in RELEASE-NOTES.md):
 **Google Drive OAuth restored** (PR #7053) — `drive.readonly` restored
