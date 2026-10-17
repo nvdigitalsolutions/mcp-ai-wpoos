@@ -213,13 +213,14 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 	const composerDisabled = isStreaming || isBusy;
 
 	// ── Composer auto-grow, drag-resize, viewport inset (Proposal 080) ─
-	// The composer grows with its content (3-line cap owned by CSS); the
-	// divider below the message list lets the user give it more room.
+	// Auto mode: the composer grows with its content. Once the divider
+	// below the message list sets a manual height, the field fills the
+	// composer instead and JS auto-grow stands down.
 	const [ focusOpen, setFocusOpen ] = useState( false );
-	useAutoGrowTextarea( composerRef, input );
-	useAutoGrowTextarea( focusTextareaRef, input, focusOpen );
 	const keyboardInset = useVisualViewport();
 	const { height: composerHeight, setHeight: setComposerHeight } = useComposerHeight();
+	useAutoGrowTextarea( composerRef, input, composerHeight === null );
+	useAutoGrowTextarea( focusTextareaRef, input, focusOpen );
 
 	// Focus the expanded composer when it opens (no autoFocus attribute —
 	// eslint-plugin-jsx-a11y disallows it).
@@ -321,7 +322,12 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 	return (
 		<>
 		<div
-			className="nvoos-pro-spa-agent-panel"
+			className={
+				'nvoos-pro-spa-agent-panel' +
+				( composerHeight !== null
+					? ' nvoos-pro-spa-agent-panel--composer-resized'
+					: '' )
+			}
 			role="region"
 			aria-label={ __( 'Chat agent panel', 'nvoos-pro-spa' ) }
 			style={

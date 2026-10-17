@@ -24,8 +24,10 @@ import { useEffect } from 'react';
  *
  * @param ref     Ref to the textarea.
  * @param value   Controlled value of the textarea.
- * @param enabled When false (e.g. a lazily-mounted overlay is closed),
- *                the hook stays dormant until the flag flips true.
+ * @param enabled When false (e.g. the resize divider holds a manual
+ *                composer height), the hook stays dormant and clears
+ *                any inline height it set earlier so the stylesheet's
+ *                height takes over again.
  */
 export function useAutoGrowTextarea(
 	ref: React.RefObject< HTMLTextAreaElement | null >,
@@ -33,11 +35,15 @@ export function useAutoGrowTextarea(
 	enabled = true
 ): void {
 	useEffect( () => {
-		if ( ! enabled ) {
-			return;
-		}
 		const el = ref.current;
 		if ( ! el ) {
+			return;
+		}
+
+		// Manual sizing owns the height — drop any inline height a
+		// previous fallback run left so the stylesheet's height wins.
+		if ( ! enabled ) {
+			el.style.height = '';
 			return;
 		}
 
