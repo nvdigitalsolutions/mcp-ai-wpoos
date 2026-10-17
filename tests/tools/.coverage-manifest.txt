@@ -121,6 +121,7 @@ wp-mcp-ai-tool-generate-openai-speech
 wp-mcp-ai-tool-generate-openai-speech-validated
 wp-mcp-ai-tool-generate-post-excerpt
 wp-mcp-ai-tool-generate-simple-jwt-token
+wp-mcp-ai-tool-generate-sinhala-speech
 wp-mcp-ai-tool-generate-sora-video
 wp-mcp-ai-tool-generate-sora-video-validated
 wp-mcp-ai-tool-generate-veo-video

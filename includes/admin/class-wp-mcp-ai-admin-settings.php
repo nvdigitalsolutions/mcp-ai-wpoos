@@ -2922,6 +2922,26 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$clean['openai_speech_model'] = sanitize_text_field( $settings['openai_speech_model'] );
 			}
 
+			if ( isset( $settings['sinhala_speech_provider'] ) ) {
+				$clean['sinhala_speech_provider'] = sanitize_key( $settings['sinhala_speech_provider'] );
+			}
+
+			if ( isset( $settings['sinhala_speechgen_token'] ) ) {
+				$clean['sinhala_speechgen_token'] = sanitize_text_field( $settings['sinhala_speechgen_token'] );
+			}
+
+			if ( isset( $settings['sinhala_speechgen_endpoint'] ) ) {
+				$clean['sinhala_speechgen_endpoint'] = esc_url_raw( $settings['sinhala_speechgen_endpoint'] );
+			}
+
+			if ( isset( $settings['sinhala_huggingface_model'] ) ) {
+				$clean['sinhala_huggingface_model'] = sanitize_text_field( $settings['sinhala_huggingface_model'] );
+			}
+
+			if ( isset( $settings['sinhala_custom_endpoint'] ) ) {
+				$clean['sinhala_custom_endpoint'] = esc_url_raw( $settings['sinhala_custom_endpoint'] );
+			}
+
 			if ( isset( $settings['openai_speech_voice'] ) ) {
 				$clean['openai_speech_voice'] = sanitize_key( $settings['openai_speech_voice'] );
 			}
