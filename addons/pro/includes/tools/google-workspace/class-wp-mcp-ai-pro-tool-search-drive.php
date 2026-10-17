@@ -146,69 +146,35 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Check if connection_id is provided.
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
 
-		$client_id       = '';
-		$client_secret   = '';
-		$refresh_token   = '';
-		$configured_user = '';
-		$folder_id       = '';
-
-		if ( ! empty( $connection_id ) ) {
-			// Load credentials from Remote Sites connection.
-			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
-			}
-
-			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-			if ( empty( $connection ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_drive_connection_not_found',
-					sprintf(
-						/* translators: %s: connection ID. */
-						__( 'Google Drive connection "%s" not found. Please check your connection settings.', 'mcp-ai-wpoos-pro' ),
-						$connection_id
-					)
-				);
-			}
-
-			if ( ! empty( $connection['connection_type'] ) && 'google_drive' !== $connection['connection_type'] ) {
-				return new WP_Error(
-					'wp_mcp_ai_drive_wrong_connection_type',
-					sprintf(
-						/* translators: %s: connection type. */
-						__( 'Connection "%s" is not a Google Drive connection. Please use a Google Drive connection type.', 'mcp-ai-wpoos-pro' ),
-						$connection['connection_type']
-					)
-				);
-			}
-
-			$client_id       = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
-			$client_secret   = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
-			$refresh_token   = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
-			$configured_user = isset( $connection['user_email'] ) ? trim( (string) $connection['user_email'] ) : '';
-			$folder_id       = isset( $connection['folder_id'] ) ? trim( (string) $connection['folder_id'] ) : '';
-
-			// Decrypt encrypted fields.
-			if ( ! empty( $client_secret ) ) {
-				$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $client_secret );
-			}
-			if ( ! empty( $refresh_token ) ) {
-				$refresh_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $refresh_token );
-			}
-		} else {
-			// Fall back to settings-based credentials for backward compatibility.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-
-			$client_id       = isset( $settings['google_drive_client_id'] ) ? trim( (string) $settings['google_drive_client_id'] ) : '';
-			$client_secret   = isset( $settings['google_drive_client_secret'] ) ? trim( (string) $settings['google_drive_client_secret'] ) : '';
-			$refresh_token   = isset( $settings['google_drive_refresh_token'] ) ? trim( (string) $settings['google_drive_refresh_token'] ) : '';
-			$configured_user = isset( $settings['google_drive_user_email'] ) ? trim( (string) $settings['google_drive_user_email'] ) : '';
+		// Resolve credentials via the shared Google Drive client so this tool
+		// stays consistent with get_drive_file, list_drive_connections and the
+		// F&B readers (all of which accept the single `google_drive` connection
+		// type). Credential resolution is a single responsibility owned by the
+		// client, not re-implemented per tool.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Drive_Client' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-google-drive-client.php';
 		}
 
-		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
-			return new WP_Error(
-				'wp_mcp_ai_drive_missing_credentials',
-				__( 'Google Drive API credentials are not configured. Add the client ID, client secret, and refresh token either in a Google Drive connection (Remote Sites) or in the NV oOS settings.', 'mcp-ai-wpoos-pro' )
-			);
+		$credentials = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials( $connection_id );
+		if ( is_wp_error( $credentials ) ) {
+			return $credentials;
+		}
+
+		$client_id         = $credentials['client_id'];
+		$client_secret     = $credentials['client_secret'];
+		$refresh_token     = $credentials['refresh_token'];
+		$configured_user   = $credentials['configured_user'];
+		$credential_source = $credentials['source'];
+		$folder_id         = '';
+
+		// A scoped folder may also be supplied by the connection. Resolving it
+		// here keeps folder scoping on the connection while still allowing an
+		// explicit folder_id argument to override it below.
+		if ( '' !== $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( is_array( $connection ) && isset( $connection['folder_id'] ) ) {
+				$folder_id = trim( (string) $connection['folder_id'] );
+			}
 		}
 
 		$query = isset( $arguments['query'] ) ? trim( (string) $arguments['query'] ) : '';
@@ -366,10 +332,13 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return array(
-			'files'           => $files,
-			'next_page_token' => isset( $list_payload['nextPageToken'] ) ? (string) $list_payload['nextPageToken'] : '',
-			'has_more'        => ! empty( $list_payload['nextPageToken'] ),
-			'connection'      => $configured_user ? $configured_user : __( 'Connected', 'mcp-ai-wpoos-pro' ),
+			'files'             => $files,
+			'next_page_token'   => isset( $list_payload['nextPageToken'] ) ? (string) $list_payload['nextPageToken'] : '',
+			'has_more'          => ! empty( $list_payload['nextPageToken'] ),
+			'connection'        => $configured_user ? $configured_user : __( 'Connected', 'mcp-ai-wpoos-pro' ),
+			'connection_id'     => $connection_id,
+			'user_email'        => $configured_user,
+			'credential_source' => $credential_source,
 		);
 	}
 
