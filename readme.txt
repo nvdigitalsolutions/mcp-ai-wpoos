@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.6
+Stable tag: 1.2.7
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.7 - October 17, 2026 =
+
+Bumped to 1.2.7 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Food & Beverage universalisation (Proposal 078): a multi-tenant Tenant Profile with legacy LKR aliases, a universal single-folder ingestor, and CSV/PDF report export via the new fnb_export_report tool. New Sinhala TTS tool (generate_sinhala_speech) for the Sri Lankan teacher assistant. Pro SPA gains Docs Hub, Media Studio, and Document Editor pages, plus framed-credential auth and keep-alive hub tabs. Tool-schema hardening for strict providers (boolean required hoisting + empty properties as objects). Google Workspace credential unification plus native Google Sheets reads in get_drive_file. F&B reliability fixes (recoverable unknown-metric errors, complete-by-default imports, metric/KPI resolution). MCP gateway SDK patched to 1.31.0. Tool count: ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative).
 
 = 1.2.6 - October 14, 2026 =
 

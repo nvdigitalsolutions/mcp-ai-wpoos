@@ -1,9 +1,22 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.6)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.7)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## F&B Universalisation, Sinhala TTS & the Pro SPA Multi-Page Expansion (v1.2.7)
+
+- **Food & Beverage universalisation + open-format ingestion (PRs #7094–#7096, Proposal 078)** — the F&B toolkit moves from a single-tenant demo to a universal product: `WP_MCP_AI_Fnb_Tenant_Profile` de-couples currency (canonical neutral metric keys + legacy `*_lkr` aliases for the 20/20 oracle), `render()` de-venues both assistant delivery surfaces (4 Portability packs + 4 unified Blueprints), `demo_mode => false`, and a DomPDF-first `fnb_export_report` (+1 Pro) with CSV fallback; the universal single-folder reader scores Drive files to table roles (multi-format CSV/TSV/JSON/JSONL/XLSX/ODS/PDF/photo + header-alias dictionary + dry-run); a read-only Ingest & Review dashboard + an analytics dashboard (KPI tiles + trend charts + panel tables).
+- **Sinhala-native TTS (PR #7099)** — `generate_sinhala_speech` (+1 base) closes the `generate_openai_speech` gap via SpeechGen `si-LK` (default), Hugging Face `facebook/mms-tts-sin`, or a custom webhook; wired into the `media_generation` preset; `teacher-assistant-sri-lanka.md` pack.
+- **Pro SPA multi-page expansion (PRs #7078–#7080)** — `#/docs` / `#/media` / `#/documents` frame the Docs Hub / Media Studio / Document Editor SPAs in sandboxed iframes with filterable endpoints + `nav-*` commands; standalone app defaults `docsHub` to console.nvoos.cloud.
+- **Dictation-app skill bundling (PR #7077)** — `mcp-ai-wpoos-dictation-app` ships in `includes/bundled-skills/` + the `bin/sync-agent-skills.php` allowlist (base bundled 76 → 77).
+- **Tool-schema hardening (PRs #7087/#7100/#7104)** — per-property boolean `required` hoisted to the top-level array (both `ChatOrchestrator::hoistPropertyRequiredFlags()` + REST `build_tools_payload()`); empty `properties` emitted as `{}` (seven no-arg tools + the central `Tool_Schema_Auditor::normalize_for_mcp()` + the CG-AI `ToolSchemaAuditor` mirror), fixing DeepSeek 400s.
+- **Google Workspace unification + native Sheets (PRs #7097/#7101/#7105)** — `search_gmail`/`search_drive` delegate to the shared credential-resolving clients; `get_drive_file` branches native Google Sheets to the Sheets API v4 (`sheet_name`, `tabs`, `row_count`); `extract_google_error_message()` surfaces the real 403 cause.
+- **F&B reliability (PRs #7091/#7092/#7102/#7103)** — recoverable unknown-metric errors (Levenshtein closest-ID), complete-by-default + resumable imports (25,000-row cap), header-dictionary metric resolution + covers fallbacks + fixed-height KPI charts, and a WPCS indentation pass.
+- **Team-member tool invocation (PR #7088)** — `invoke_team_member()` resolves profession slugs via `build_tools_payload()`. **Framed SPA credential auth + surface fix (PRs #7075/#7076/#7085)** — headless `Bearer cred_…` auth, home-URL iframe fallback removed, keep-alive hub tabs.
+- **Dependency (PR #7074)** — `@modelcontextprotocol/sdk` 1.30.1 → 1.31.0 in the mcp-wordpress-gateway (GHSA-6qxp-vccf-f47h).
+- **Tool counts** — ~355 base + ~1,377 Pro (~1,731 total; **+1 base +1 Pro**). Coding-time skills 73 → 74; bundled 76 → 77 base + 41 Pro. Security classes 12, providers 18, addons 30 — all unchanged. Stale 1.2.5 build ZIPs removed (30 files).
 
 ## Google Drive OAuth Restored, F&B Reliability, OCR vLLM & the Dictation Browser Agent (v1.2.6)
 

@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.6"
-  plugin-version-tested: "1.2.6"
-  last-updated: "2026-10-14"
+  plugin-version: "1.2.7"
+  plugin-version-tested: "1.2.7"
+  last-updated: "2026-10-17"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -786,6 +786,25 @@ Historical per-version release notes (v1.1.66 through v1.1.96) moved to
 [RELEASE-NOTES.md](RELEASE-NOTES.md) to keep SKILL.md under the Zed 100KB
 skill-size limit. Append new version sections there, not here.
 
+**v1.2.7 operational quick notes** (full detail in RELEASE-NOTES.md):
+**F&B universalisation + open-format ingestion** (PRs #7094–#7096, Proposal
+078) — the F&B toolkit goes multi-tenant: `WP_MCP_AI_Fnb_Tenant_Profile`
+de-couples currency (neutral keys + legacy `*_lkr` aliases), `render()`
+de-venues both assistant surfaces, a universal single-folder ingestor scores
+Drive files to table roles, and `fnb_export_report` (+1 Pro) exports CSV/PDF.
+**Sinhala TTS** (PR #7099) — `generate_sinhala_speech` (+1 base) routes via
+SpeechGen `si-LK` / Hugging Face MMS / custom webhook. **Pro SPA expansion**
+(PRs #7078–#7080) — `#/docs` / `#/media` / `#/documents` iframes; headless
+credential auth (#7085) + keep-alive tabs (#7075) + surface fix (#7076).
+**Schema hardening** (PRs #7087/#7100/#7104) — boolean `required` hoisting +
+empty `properties` as `{}`. **Google Workspace** (PRs #7097/#7101/#7105) —
+unified credential resolution + native Sheets reads. **F&B reliability** (PRs
+#7091/#7092/#7102/#7103); **team-member slug resolution** (#7088).
+**Dependency** (PR #7074) — gateway SDK → 1.31.0. **Skills** — coding-time
+73 → 74 (`-universalisation`, `-ingestion`); bundled 76 → 77 (+dictation-app).
+Tool count +1 base +1 Pro → ~355 base + ~1,377 Pro (~1,731 total); 12
+security classes; 18 providers; 30 addons (all unchanged).
+
 **v1.2.6 operational quick notes** (full detail in RELEASE-NOTES.md):
 **Google Drive OAuth restored** (PR #7053) — `drive.readonly` restored
 alongside `drive.file` behind `wp_mcp_ai_google_drive_oauth_scope` (the
@@ -1264,6 +1283,39 @@ errors instead of resets.
 Python `urllib`); long synchronous tool calls exceed the ~100s proxy cutoff.
 **Fix:** use curl/browser-like user agents for probes, and prefer v1.1.55+
 where long tools are bounded or delivered out-of-band (SSE message queue).
+
+### Chat returns a full Cloudflare **520** error page (origin dropped, not 524)
+
+**Distinct from 524.** 520 means Cloudflare could not parse a complete HTTP
+response — the origin dropped the connection mid-stream (empty/malformed
+body), not a timeout. The chat UI then renders Cloudflare's 520 HTML as the
+"response". Symptoms verified on a Cloudways app (2026-10-15):
+`/index.php?stream=true&limit=10` appears in `app_php` → `slow_pages` analytics
+at 322–372 s, while the app-level PHP-FPM pool had a hidden hard cap.
+
+**Root causes to check (in order):**
+
+1. **App-level `php_admin_value[max_execution_time]` overrides the panel.**
+   The Cloudways server `execution_limit` (e.g. 300) is *not* the effective
+   value when the app's PHP-FPM pool file sets a lower
+   `php_admin_value[max_execution_time]=120`. `php_admin_value` beats both the
+   panel and any `ini_set()` from PHP/plugins, and is invisible from the
+   Cloudways panel — read the pool file directly. Raise it to comfortably
+   exceed the longest observed stream (600+).
+2. **Varnish buffers the SSE stream.** On Cloudways Varnish is on by default
+   for all apps. `pass` still frames the response and can break a long-lived
+   SSE stream; the correct handling is **`pipe`** (raw TCP tunnel) in `vcl_recv`
+   for any URL matching `stream=true`. Custom per-app VCL is not self-service
+   in the Cloudways panel (typically a support ticket), so the pragmatic
+   self-service fix is to disable Varnish on that one app — safe for dynamic
+   WP/WooCommerce + chat, which Redis/Breeze serve better anyway.
+3. **Proxy timeouts** (nginx `proxy_read_timeout`, often 60 s on Cloudways)
+   can also cut the stream — covered by the `send_sse_keepalive()` fix (see
+   the test-suite skill, pattern 64).
+
+**Diagnostic shortcut:** Cloudways `analytics_app_php` (`slow_pages` +
+`processes`) surfaces the streaming endpoint and a stuck PHP-FPM worker
+(e.g. `pool <sys_user>-82`) holding CPU for 300+ s — that's the smoking gun.
 
 ### `wp mcp-ai provider list` / `wp mcp-ai chat` fatal (PHP 8, fixed in #6625)
 

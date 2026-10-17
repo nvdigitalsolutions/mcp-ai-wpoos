@@ -1,5 +1,63 @@
 # oOS – Changelog
 
+## [1.2.7] - 2026-10-17
+
+### Added — Food & Beverage Universalisation & Open-Format Ingestion (PRs #7094, #7095, #7096, Proposal 078)
+
+- **Multi-tenant universal rework (#7094)** — the F&B toolkit moves from a single-tenant demo (Surf Club Midigama / LKR) to a universal product: a new `WP_MCP_AI_Fnb_Tenant_Profile` decouples currency (canonical `*_lkr` keys promoted to neutral keys with legacy aliases retained for the oracle); `render()` de-venues both assistant surfaces (4 Portability packs + 4 unified Blueprints) via token substitution; `demo_mode => false` with the silent `DEMO_WORKBOOK_ID` fallback removed; and a new `WP_MCP_AI_Fnb_Report_Exporter` (DomPDF-first PDF + `html_to_pdf` fallback + CSV) powers the new **`fnb_export_report`** tool (R-14) with `CLIENT_ALIASES` mapping the client templates.
+- **Open-format data ingestion (#7095/#7096)** — a universal single-folder ingestor (`WP_MCP_AI_Fnb_Universal_Reader`) scores each Drive file to a table role, concatenates same-role files, and emits a manifest (header-alias dictionary + `dry_run` + JSON); the multi-format loader (CSV/TSV/JSON/JSONL/XLSX/ODS/PDF/photo) with the live-stock Observation + terminology-map layer; a read-only Ingest & Review dashboard; and an analytics dashboard with KPI tiles, trend charts, and panel tables backed by the metric engine.
+- **Two new coding-time skills** — `mcp-ai-wpoos-toolkit-universalisation` (#7094) and `mcp-ai-wpoos-toolkit-ingestion` (#7095/#7096), completing the toolkit `-creation` / `-audit` / `-universalisation` / `-ingestion` family.
+
+### Added — Sinhala TTS Tool (PR #7099)
+
+- **`generate_sinhala_speech` (+1 base)** — a Sinhala-native text-to-speech tool closing the `generate_openai_speech` gap (OpenAI voices are English-optimized, Google Cloud TTS has no `si-LK` voice). Routes via `speechgen` (default, commercial), `huggingface` (Meta MMS `facebook/mms-tts-sin`), or `custom` (generic JSON webhook); reuses `WP_MCP_AI_Tool_Audio_Response` + the media-library pattern; wired into the `media_generation` preset. New `teacher-assistant-sri-lanka.md` system-prompt + tool pack.
+
+### Added — Pro SPA Multi-Page Expansion (PRs #7078, #7079, #7080)
+
+- **Docs Hub / Media Studio / Document Editor pages** — the Pro SPA gains `#/docs`, `#/media`, and `#/documents`, each framing the corresponding addon SPA in a sandboxed `<iframe>` (mirroring `#/knowledge-graph`), with filterable `docsHub`/`mediaStudio`/`documentEditor` endpoints (`wp_mcp_ai_pro_spa_docs_url` et al.) and `nav-docs`/`nav-media`/`nav-documents` commands. Standalone SPA `docsHub` defaults to the console docs hub.
+
+### Added — Dictation-App Skill Bundling (PR #7077)
+
+- `mcp-ai-wpoos-dictation-app` is now bundled at runtime (`includes/bundled-skills/`) and registered in the `bin/sync-agent-skills.php` allowlist, so NV oOS assistants load it on demand (base bundled skills 76 → 77).
+
+### Fixed — Tool Schema Hardening for Strict Providers (PRs #7087, #7100, #7104)
+
+- **Boolean `required` hoisting (#7087)** — per-property boolean `required` flags (invalid JSON Schema) are hoisted to the top-level `required` array in both the OOS engine (`ChatOrchestrator::hoistPropertyRequiredFlags()`) and the legacy REST path (`build_tools_payload()`), fixing a DeepSeek 400 (`true is not of type "array"`) without editing ~200 tool files.
+- **Empty `properties` as object (#7100/#7104)** — seven no-arg tools returned `array()` (serializing to `[]`); now `new stdClass()` (→ `{}`), and the central `WP_MCP_AI_Tool_Schema_Auditor::normalize_for_mcp()` emits `stdClass` for empty/missing properties, plus the standalone CG-AI `ToolSchemaAuditor` mirror.
+
+### Fixed — Google Workspace Credential Resolution & Drive Reads (PRs #7097, #7101, #7105)
+
+- **Native Sheets reads (#7097)** — `get_drive_file` now branches native Google Sheets to the Sheets API v4 (tab enumeration + tab-separated values + `sheet_name` arg + `tabs`/`row_count` metadata) instead of the unsupported `files/export` path.
+- **Actionable Sheets errors (#7101)** — `extract_google_error_message()` decodes Google's `{"error":{...}}` envelope so 403s distinguish the missing `spreadsheets.readonly` scope from an unshared spreadsheet.
+- **Credential unification (#7105)** — `search_gmail`/`search_drive` delegate credential resolution to the shared `WP_MCP_AI_Pro_Gmail_Client`/`WP_MCP_AI_Pro_Google_Drive_Client` (was drifted inline logic that rejected `google_workspace`/`email_imap` connections); base `search_gmail` relaxes the type check.
+
+### Fixed — F&B Reliability (PRs #7091, #7092, #7102, #7103)
+
+- **Recoverable unknown-metric errors (#7091)** — `fnb_calculate_metric` now returns the closest valid ID via Levenshtein (with numeric-suffix bonus) plus the full valid-ID list, so the assistant can re-issue in-turn.
+- **Import truncation + resume (#7103)** — complete-by-default imports (capped at 25,000 rows) with a resumable `offset`, `source_total`/`next_offset`/`has_more` metadata, a dashboard auto-loop, and write-side cache invalidation.
+- **Metric resolution + KPI charts (#7102)** — header-dictionary resolution (recipe-cost hierarchy F-35), covers/per-cover fallbacks (M-02/M-03/M-06/M-09/M-11), fixed-height Chart.js wrappers, and native-storage hints.
+- **WPCS indentation fix (#7092)** — 36 errors + 3 warnings cleared in `class-wp-mcp-ai-fnb-metrics.php`.
+
+### Fixed — Team-Member Tool Invocation (PR #7088)
+
+- `invoke_team_member()` now resolves raw profession tool slugs through `build_tools_payload()` before dispatch, so team-member requests carry proper `{type,function}` definitions (and inherit attention filtering + capability checks) instead of bare slug strings.
+
+### Fixed — Framed SPA Credential Auth, Surface Resolution & Hub Tabs (PRs #7075, #7076, #7085)
+
+- **Headless credential auth (#7085)** — `document-editor`/`media-studio` REST controllers verify a validated assistant credential and map it to its issuing user's capability (never exceeding the owner); a new `auth-bridge.ts` forwards the in-memory credential to framed children via a source-origin-scoped `postMessage`.
+- **Surface resolution (#7076)** — `resolve_surface_url()` omits (instead of emitting a broken home-URL iframe) for embed-page-less shortcode surfaces, with idempotent self-provisioning embed pages for three addons.
+- **Keep-alive hub tabs (#7075)** — switching SPA surfaces no longer forces a full reload; Home pinned to a stable hash route.
+
+### Dependency — MCP Gateway SDK Patched (PR #7074)
+
+- `@modelcontextprotocol/sdk` bumped 1.30.1 → 1.31.0 in `addons/mcp-wordpress-gateway`, closing GHSA-6qxp-vccf-f47h (OAuth client credential exfiltration) — a clean in-major patch (`mcp-wordpress` declares `^1.29.0`).
+
+### Docs & Skills (PRs #7081, #7082, #7084, #7086, #7093)
+
+- Two doc-only skill refreshes (`design-performance-audit` Flatsome + post-deploy checks, `design-ai-assistant-admin`/`design-deep-research`/`design-video-creation`/`design-web-research` + Proposal 075), a Cloudflare 520 chat troubleshooting entry, the nvoos-dictate lockfile version/license sync, and the Pro coverage-manifest regeneration.
+
+**Tool count: ~355 base + ~1,377 Pro (~1,731 total — +1 base `generate_sinhala_speech`, +1 Pro `fnb_export_report`; live registry authoritative). Coding-time skills: 73 → 74 (+`mcp-ai-wpoos-toolkit-ingestion`; `-universalisation` self-bookkept at #7094). Bundled skills: 76 → 77 base (+dictation-app). Security classes: 12 (unchanged). Provider count: 18 (unchanged). Addon count: 30 (unchanged).**
+
 ## [1.2.6] - 2026-10-14
 
 ### Fixed — Google Drive OAuth & F&B Reader Reliability (PRs #7051, #7053, #7057, #7060, #7061, #7062)
