@@ -586,7 +586,9 @@ function AttachmentItem( { att }: { att: AttachmentEntry } ): JSX.Element {
 					<img src={ att.url } alt={ att.label } loading="lazy" />
 				</a>
 			) : isVid ? (
-				<video controls className="nvoos-pro-spa-tool-attachment-video" preload="metadata" src={ att.url } />
+				<video controls className="nvoos-pro-spa-tool-attachment-video" preload="metadata" src={ att.url }>
+					<track kind="captions" />
+				</video>
 			) : (
 				<span className="nvoos-pro-spa-tool-attachment-icon" aria-hidden="true">📄</span>
 			) }
