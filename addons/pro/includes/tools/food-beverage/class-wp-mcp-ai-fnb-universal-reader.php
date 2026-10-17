@@ -390,13 +390,29 @@ class WP_MCP_AI_Fnb_Universal_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	}
 
 	/**
-	 * Assign a file to its best table role by header scoring.
+	 * Assign a file to its best table role.
 	 *
-	 * @param array                $file File metadata.
-	 * @param array<int,string>    $columns Raw header row.
+	 * Resolution order: (1) operator-authored `table_map` hints (highest
+	 * trust, confidence 1.0), (2) structural header scoring with a weak
+	 * file-name boost, (3) the canonical sheet-map name fallback at low
+	 * confidence.
+	 *
+	 * @param array             $file    File metadata.
+	 * @param array<int,string> $columns Raw header row.
 	 * @return array{table_id:string,confidence:float}
 	 */
 	private function assign_role( $file, $columns ) {
+		// 1) Operator-authored table_map (highest trust) — an explicit hint
+		// always wins over structural scoring, mirroring the fixture and
+		// Google Sheets readers.
+		$mapped = $this->table_map_role( $file );
+		if ( '' !== $mapped ) {
+			return array(
+				'table_id'  => $mapped,
+				'confidence' => 1.0,
+			);
+		}
+
 		// File-name hint first (fuzzy match against the canonical sheet map).
 		$name      = isset( $file['name'] ) ? (string) $file['name'] : '';
 		$name_hint = $this->normalise( pathinfo( $name, PATHINFO_FILENAME ) );
@@ -443,6 +459,51 @@ class WP_MCP_AI_Fnb_Universal_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			'table_id'  => $best,
 			'confidence' => $best_score,
 		);
+	}
+
+	/**
+	 * Operator-authored `table_map` role for a file, when one matches.
+	 *
+	 * Folder mode has no worksheet-level granularity, so both the `file` and
+	 * `sheet` hint kinds match the file name (fuzzy: normalised equality of
+	 * the full name or its base, or the hint base appearing inside the file
+	 * base — `Surf Club October.xlsx` matches a `surf club october` hint).
+	 *
+	 * @param array $file File metadata.
+	 * @return string Table ID or empty when no hint matches.
+	 */
+	private function table_map_role( $file ) {
+		$map = WP_MCP_AI_Fnb_Settings::table_map();
+		if ( empty( $map ) ) {
+			return '';
+		}
+
+		$name      = isset( $file['name'] ) ? (string) $file['name'] : '';
+		$name_norm = $this->normalise( $name );
+		$base_norm = $this->normalise( pathinfo( $name, PATHINFO_FILENAME ) );
+		if ( '' === $name_norm ) {
+			return '';
+		}
+
+		foreach ( $map as $table_id => $hint ) {
+			foreach ( array( 'file', 'sheet' ) as $kind ) {
+				if ( empty( $hint[ $kind ] ) ) {
+					continue;
+				}
+				$hint_norm = $this->normalise( (string) $hint[ $kind ] );
+				$hint_base = $this->normalise( pathinfo( $hint_norm, PATHINFO_FILENAME ) );
+				if ( '' === $hint_norm || '' === $hint_base ) {
+					continue;
+				}
+				if ( $hint_norm === $name_norm
+					|| $hint_base === $base_norm
+					|| false !== strpos( $base_norm, $hint_base ) ) {
+					return (string) $table_id;
+				}
+			}
+		}
+
+		return '';
 	}
 
 	/**

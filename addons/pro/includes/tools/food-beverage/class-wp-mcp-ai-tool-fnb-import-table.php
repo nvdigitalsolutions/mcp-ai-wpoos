@@ -242,11 +242,40 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 		$has_more      = $next_offset < $source_total;
 		$preview       = array();
 		$rows_to_write = array();
+
+		// Identify raw source columns that no canonical key claims. These are
+		// preserved verbatim on the native rows (never silently dropped) and
+		// reported back so the operator can see them.
+		$covered = array();
+		foreach ( $canonical as $canonical_key ) {
+			$idx = WP_MCP_AI_Fnb_Data_Source::resolve_column( $table_id, $headers, $canonical_key );
+			if ( false !== $idx ) {
+				$covered[ $idx ] = true;
+			}
+		}
+		$extra_columns = array();
+		foreach ( $table['columns'] as $raw_index => $raw_header ) {
+			if ( ! isset( $covered[ $raw_index ] ) ) {
+				$extra_columns[] = (string) $raw_header;
+			}
+		}
+
 		foreach ( $source_rows as $index => $source_row ) {
 			$assoc = array();
 			foreach ( $canonical as $canonical_key ) {
 				$assoc[ $canonical_key ] = WP_MCP_AI_Fnb_Data_Source::cell( $table_id, $headers, $source_row, $canonical_key );
 			}
+			// When the source carries columns the spec does not model, preserve
+			// the full raw row (header => value) so those columns survive the
+			// import and stay readable via the native reader's raw_row().
+			if ( ! empty( $extra_columns ) ) {
+				$raw_map = array();
+				foreach ( $table['columns'] as $raw_index => $raw_header ) {
+					$raw_map[ (string) $raw_header ] = isset( $source_row[ $raw_index ] ) ? (string) $source_row[ $raw_index ] : '';
+				}
+				$assoc['raw'] = wp_json_encode( $raw_map );
+			}
+
 			$rows_to_write[] = $assoc;
 			if ( count( $preview ) < 5 ) {
 				$preview[] = $assoc;
@@ -286,16 +315,17 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 		if ( $dry_run ) {
 			return array_merge(
 				array(
-					'success'   => true,
-					'dry_run'   => true,
-					'table_id'  => $table_id,
-					'post_type' => $post_type,
-					'preview'   => $preview,
-					'summary'   => $summary,
-					'format'    => $format,
-					'mapping'   => $mapping,
-					'flags'     => $flags,
-					'source'    => $table['source'],
+					'success'        => true,
+					'dry_run'        => true,
+					'table_id'       => $table_id,
+					'post_type'      => $post_type,
+					'preview'        => $preview,
+					'summary'        => $summary,
+					'format'         => $format,
+					'mapping'        => $mapping,
+					'flags'          => $flags,
+					'extra_columns'  => $extra_columns,
+					'source'         => $table['source'],
 				),
 				$batch
 			);
@@ -333,15 +363,16 @@ class WP_MCP_AI_Tool_Fnb_Import_Table extends WP_MCP_AI_Fnb_Tool_Base {
 
 		return array_merge(
 			array(
-				'success'       => true,
-				'dry_run'       => false,
-				'table_id'      => $table_id,
-				'post_type'     => $post_type,
-				'summary'       => $summary,
-				'error_samples' => $error_samples,
-				'flags'         => $flags,
-				'source'        => $table['source'],
-				'native_count'  => $native_count,
+				'success'        => true,
+				'dry_run'        => false,
+				'table_id'       => $table_id,
+				'post_type'      => $post_type,
+				'summary'        => $summary,
+				'error_samples'  => $error_samples,
+				'flags'          => $flags,
+				'extra_columns'  => $extra_columns,
+				'source'         => $table['source'],
+				'native_count'   => $native_count,
 			),
 			$batch
 		);

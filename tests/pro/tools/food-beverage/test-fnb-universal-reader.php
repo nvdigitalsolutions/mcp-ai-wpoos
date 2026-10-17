@@ -166,4 +166,66 @@ class Test_Fnb_Universal_Reader extends WP_UnitTestCase {
 
 		$this->assertSame( '14.0', $assigned['table_id'] );
 	}
+
+	/**
+	 * Test: an operator-authored table_map hint outranks header scoring.
+	 */
+	public function test_assign_role_honors_operator_table_map() {
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Universal_Reader' ) ) {
+			$this->markTestSkipped( 'F&B universal reader not available' );
+		}
+
+		update_option(
+			'wp_mcp_ai_fnb_settings',
+			array(
+				'table_map' => array(
+					'1.0' => array( 'file' => 'Our Menu October' ),
+				),
+			)
+		);
+
+		$reader = new WP_MCP_AI_Fnb_Universal_Reader();
+
+		// Sales-shaped headers, but the operator pinned this file to 1.0 — the
+		// explicit hint must win with full confidence.
+		$file     = array(
+			'id'       => 'x',
+			'name'     => 'Our_Menu_October.csv',
+			'mimeType' => 'text/csv',
+		);
+		$columns  = array( 'date', 'month', 'item_id', 'item', 'type', 'qty_sold', 'price', 'revenue' );
+		$assigned = $this->invoke_private( $reader, 'assign_role', array( $file, $columns ) );
+
+		$this->assertSame( '1.0', $assigned['table_id'] );
+		$this->assertSame( 1.0, $assigned['confidence'] );
+	}
+
+	/**
+	 * Test: a table_map hint for a different file leaves auto-mapping intact.
+	 */
+	public function test_assign_role_ignores_unrelated_table_map_entries() {
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Universal_Reader' ) ) {
+			$this->markTestSkipped( 'F&B universal reader not available' );
+		}
+
+		update_option(
+			'wp_mcp_ai_fnb_settings',
+			array(
+				'table_map' => array(
+					'1.0' => array( 'file' => 'Menu_October' ),
+				),
+			)
+		);
+
+		$reader   = new WP_MCP_AI_Fnb_Universal_Reader();
+		$file     = array(
+			'id'       => 'x',
+			'name'     => 'final_sales.csv',
+			'mimeType' => 'text/csv',
+		);
+		$columns  = array( 'date', 'month', 'item_id', 'item', 'type', 'qty_sold', 'price', 'revenue' );
+		$assigned = $this->invoke_private( $reader, 'assign_role', array( $file, $columns ) );
+
+		$this->assertSame( '6.0', $assigned['table_id'] );
+	}
 }

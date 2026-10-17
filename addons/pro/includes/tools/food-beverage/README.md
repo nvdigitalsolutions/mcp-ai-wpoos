@@ -117,9 +117,15 @@ dashboard loops those batches automatically (500 rows per request).
 
 Ingestion resolves *what a file is* from its **structure** (headers), not just
 its filename. A configurable `table_map` (table ID → `sheet`/`file` name) is
-used first; a **structural matcher** then scores each table ID by canonical-header
-overlap; the legacy name guess is the last resort. See proposal
-`078-fnb-data-ingestion-open-format-proposal.md`.
+used first — including by the universal (single-folder) reader, where `file`
+and `sheet` hints both match the file name fuzzily; a **structural matcher**
+then scores each table ID by canonical-header overlap; the legacy name guess
+is the last resort. See proposal `078-fnb-data-ingestion-open-format-proposal.md`.
+
+When a source file carries columns the spec does not model (receipt numbers,
+shifts, …), `fnb_import_table` reports them as `extra_columns` and preserves
+the full raw row under `_fnb_raw` post meta — readable via
+`WP_MCP_AI_Fnb_Cpt_Reader::raw_row( $post_id )` — instead of dropping them.
 
 | Setting | Meaning |
 |---|---|
