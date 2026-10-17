@@ -213,28 +213,49 @@ class WP_MCP_AI_Fnb_Dashboard_Page {
 	}
 
 	/**
-	 * Return the known months present in the covers table (table 7.0),
-	 * oldest-first, capped to a trailing window for trend charts.
+	 * Return the known months present in the operating tables (7.0 daily
+	 * covers, 13.0 utilities, 6.0 daily sales), oldest-first, capped to a
+	 * trailing window for trend charts.
 	 *
 	 * @param int $limit Max months to return (default 6).
 	 * @return array<int,string> Y-m strings, ascending.
 	 */
 	private static function known_months( $limit = 6 ) {
-		$table = WP_MCP_AI_Fnb_Data_Source::get_table( '7.0' );
-		if ( is_wp_error( $table ) ) {
-			return array();
-		}
+		$months = self::available_months();
+
+		return array_slice( $months, max( 0, count( $months ) - max( 1, $limit ) ) );
+	}
+
+	/**
+	 * Merge the months present in the three month-hourly tables used by the
+	 * analytics cards. 13.0 is the fallback when a client exports covers on
+	 * the utilities sheet instead of a dedicated daily-covers sheet.
+	 *
+	 * @return array<int,string> Y-m strings, ascending.
+	 */
+	private static function available_months() {
 		$months = array();
-		foreach ( $table['rows'] as $row ) {
-			$month = WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $table['header_index'], $row, 'month' );
-			if ( '' !== (string) $month && preg_match( '/^\d{4}-\d{2}$/', (string) $month ) ) {
-				$months[ (string) $month ] = true;
+		foreach ( array( '6.0', '7.0', '13.0' ) as $table_id ) {
+			$table = WP_MCP_AI_Fnb_Data_Source::get_table( $table_id );
+			if ( is_wp_error( $table ) ) {
+				continue;
+			}
+			$headers = $table['header_index'];
+			foreach ( $table['rows'] as $row ) {
+				$month = (string) WP_MCP_AI_Fnb_Data_Source::cell( $table_id, $headers, $row, 'month' );
+				if ( '' === $month ) {
+					$month = WP_MCP_AI_Fnb_Data_Source::month_of( WP_MCP_AI_Fnb_Data_Source::cell( $table_id, $headers, $row, 'date' ) );
+				}
+				if ( preg_match( '/^\d{4}-\d{2}$/', $month ) ) {
+					$months[ $month ] = true;
+				}
 			}
 		}
+
 		$months = array_keys( $months );
 		sort( $months );
 
-		return array_slice( $months, max( 0, count( $months ) - max( 1, $limit ) ) );
+		return $months;
 	}
 
 	/**
@@ -311,22 +332,30 @@ class WP_MCP_AI_Fnb_Dashboard_Page {
 		}
 		?>
 		<h3><?php esc_html_e( 'Trends', 'mcp-ai-wpoos-pro' ); ?></h3>
-		<div class="fnb-chart-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+		<style>
+			.fnb-chart-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+			@media (max-width: 782px) { .fnb-chart-grid { grid-template-columns:1fr; } }
+			/* Chart.js with maintainAspectRatio:false needs a fixed-height parent,
+			   otherwise the responsive resize loop grows the canvas indefinitely. */
+			.fnb-chart-wrap { position:relative; height:220px; }
+			.fnb-chart-wrap canvas { display:block; width:100% !important; height:100% !important; }
+		</style>
+		<div class="fnb-chart-grid">
 			<div class="fnb-chart-card" style="border:1px solid #c3c4c7; border-radius:4px; padding:12px; background:#fff;">
 				<h4 style="margin-top:0;"><?php esc_html_e( 'Revenue', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<canvas id="fnb-chart-revenue" height="120"></canvas>
+				<div class="fnb-chart-wrap"><canvas id="fnb-chart-revenue"></canvas></div>
 			</div>
 			<div class="fnb-chart-card" style="border:1px solid #c3c4c7; border-radius:4px; padding:12px; background:#fff;">
 				<h4 style="margin-top:0;"><?php esc_html_e( 'Covers', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<canvas id="fnb-chart-covers" height="120"></canvas>
+				<div class="fnb-chart-wrap"><canvas id="fnb-chart-covers"></canvas></div>
 			</div>
 			<div class="fnb-chart-card" style="border:1px solid #c3c4c7; border-radius:4px; padding:12px; background:#fff;">
 				<h4 style="margin-top:0;"><?php esc_html_e( 'Food cost %', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<canvas id="fnb-chart-food-cost" height="120"></canvas>
+				<div class="fnb-chart-wrap"><canvas id="fnb-chart-food-cost"></canvas></div>
 			</div>
 			<div class="fnb-chart-card" style="border:1px solid #c3c4c7; border-radius:4px; padding:12px; background:#fff;">
 				<h4 style="margin-top:0;"><?php esc_html_e( 'Waste value', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<canvas id="fnb-chart-waste" height="120"></canvas>
+				<div class="fnb-chart-wrap"><canvas id="fnb-chart-waste"></canvas></div>
 			</div>
 		</div>
 		<?php
@@ -395,28 +424,14 @@ class WP_MCP_AI_Fnb_Dashboard_Page {
 	}
 
 	/**
-	 * Determine the most recent month present in table 7.0 (daily covers).
+	 * Determine the most recent month present in the operating tables.
 	 *
 	 * @return string Y-m or empty.
 	 */
 	private static function latest_month() {
-		$table = WP_MCP_AI_Fnb_Data_Source::get_table( '7.0' );
-		if ( is_wp_error( $table ) ) {
-			return '';
-		}
-		$months = array();
-		foreach ( $table['rows'] as $row ) {
-			$month = WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $table['header_index'], $row, 'month' );
-			if ( '' !== (string) $month && preg_match( '/^\d{4}-\d{2}$/', (string) $month ) ) {
-				$months[] = (string) $month;
-			}
-		}
-		if ( empty( $months ) ) {
-			return '';
-		}
-		rsort( $months );
+		$months = self::available_months();
 
-		return $months[0];
+		return empty( $months ) ? '' : (string) end( $months );
 	}
 
 	/**

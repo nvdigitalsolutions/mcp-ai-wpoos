@@ -115,33 +115,91 @@ class WP_MCP_AI_Fnb_Metrics {
 	 * @return array{value:float,days:int,source:string}
 	 */
 	public static function m02_covers( $month ) {
+		$total = 0.0;
+		$days  = 0;
+		$error = '';
+
 		$table = WP_MCP_AI_Fnb_Data_Source::get_table( '7.0' );
 		if ( is_wp_error( $table ) ) {
-			return array(
-				'value' => 0.0,
-				'days'  => 0,
-				'error' => $table->get_error_message(),
-			);
-		}
+			$error = $table->get_error_message();
+		} else {
+			$headers = $table['header_index'];
+			foreach ( $table['rows'] as $row ) {
+				$row_month = WP_MCP_AI_Fnb_Data_Source::month_of( WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $headers, $row, 'date' ) );
+				if ( '' === $row_month ) {
+					$row_month = (string) WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $headers, $row, 'month' );
+				}
+				if ( $row_month !== $month ) {
+					continue;
+				}
+				$row_total = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $headers, $row, 'lunch_covers' ) )
+					+ WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $headers, $row, 'dinner_covers' ) )
+					+ WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $headers, $row, 'bar_only_guests' ) );
 
-		$headers = $table['header_index'];
-		$total   = 0.0;
-		$days    = 0;
-		foreach ( $table['rows'] as $row ) {
-			if ( WP_MCP_AI_Fnb_Data_Source::month_of( WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $headers, $row, 'date' ) ) !== $month ) {
-				continue;
+				// Some exports carry only the precomputed Total covers column.
+				if ( $row_total <= 0 ) {
+					$row_total = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $headers, $row, 'total_covers' ) );
+				}
+
+				$total += $row_total;
+				++$days;
 			}
-			$total += WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $headers, $row, 'lunch_covers' ) );
-			$total += WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $headers, $row, 'dinner_covers' ) );
-			$total += WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '7.0', $headers, $row, 'bar_only_guests' ) );
-			++$days;
 		}
 
-		return array(
+		$source = 'fnb_metrics:M-02';
+
+		// The daily-covers table is not always present (some client exports only
+		// carry "Total covers" on the utilities sheet). Fall back to that daily
+		// snapshot, deduplicating by date so multiple meter readings for the
+		// same day don't multiply the covers.
+		if ( $total <= 0 ) {
+			$utilities = WP_MCP_AI_Fnb_Data_Source::get_table( '13.0' );
+			if ( ! is_wp_error( $utilities ) ) {
+				$u_headers = $utilities['header_index'];
+				$by_date   = array();
+				$undated   = 0.0;
+				foreach ( $utilities['rows'] as $row ) {
+					$date      = WP_MCP_AI_Fnb_Data_Source::date_only( WP_MCP_AI_Fnb_Data_Source::cell( '13.0', $u_headers, $row, 'date' ) );
+					$row_month = WP_MCP_AI_Fnb_Data_Source::month_of( $date );
+					if ( '' === $row_month ) {
+						$row_month = (string) WP_MCP_AI_Fnb_Data_Source::cell( '13.0', $u_headers, $row, 'month' );
+					}
+					if ( $row_month !== $month ) {
+						continue;
+					}
+					$covers = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '13.0', $u_headers, $row, 'total_covers' ) );
+					if ( $covers <= 0 ) {
+						continue;
+					}
+					if ( '' !== $date ) {
+						$by_date[ $date ] = $covers;
+					} else {
+						$undated += $covers;
+					}
+				}
+
+				$utility_total = array_sum( $by_date ) + $undated;
+				if ( $utility_total > 0 ) {
+					$total  = $utility_total;
+					$days   = count( $by_date ) + ( $undated > 0 ? 1 : 0 );
+					$source = 'fnb_metrics:M-02:utilities';
+					$error  = '';
+				}
+			} elseif ( '' === $error ) {
+				$error = $utilities->get_error_message();
+			}
+		}
+
+		$result = array(
 			'value'  => self::r( $total ),
 			'days'   => $days,
-			'source' => 'fnb_metrics:M-02',
+			'source' => $source,
 		);
+		if ( '' !== $error ) {
+			$result['error'] = $error;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -1186,31 +1244,61 @@ class WP_MCP_AI_Fnb_Metrics {
 			);
 		}
 
-		$headers = $menu['header_index'];
-		$price   = 0.0;
-		$type    = '';
+		$headers          = $menu['header_index'];
+		$price            = 0.0;
+		$type             = '';
+		$menu_recipe_cost = 0.0;
 		foreach ( $menu['rows'] as $row ) {
 			if ( (string) WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'item_id' ) === $item_id ) {
-				$price = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'price' ) );
-				$type  = (string) WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'type' );
+				$price            = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'price' ) );
+				$type             = (string) WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'type' );
+				$menu_recipe_cost = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '1.0', $headers, $row, 'recipe_cost' ) );
 				break;
 			}
 		}
 
 		$as_of = WP_MCP_AI_Fnb_Settings::get( 'as_of_date', gmdate( 'Y-m-d' ) );
 
-		// Recipe cost: sum of the Recipes sheet's cost-per-portion column
-		// (verified 1:1 against the Menu sheet's precomputed Recipe cost);
-		// falls back to supplier-price recomputation when absent.
-		$recipe_cost = 0.0;
+		// Recipe cost resolution order:
+		// 1. The Menu sheet's precomputed Recipe cost (1:1 with the spec's
+		// Check totals) — the most reliable signal when present.
+		// 2. The Recipes sheet's cost-per-portion column (tolerating header
+		// drift such as "Cost per portion at as-of date (LKR)").
+		// 3. Recompute from qty-per-portion × the supplier's latest unit price.
+		$recipe_cost = $menu_recipe_cost;
+		$cost_source = $recipe_cost > 0 ? 'menu' : 'none';
 		$recipes     = WP_MCP_AI_Fnb_Data_Source::get_table( '2.0' );
+		$r_headers   = null;
 		if ( ! is_wp_error( $recipes ) ) {
 			$r_headers = $recipes['header_index'];
+		}
+
+		if ( $recipe_cost <= 0 && null !== $r_headers ) {
 			foreach ( $recipes['rows'] as $row ) {
 				if ( (string) WP_MCP_AI_Fnb_Data_Source::cell( '2.0', $r_headers, $row, 'item_id' ) !== $item_id ) {
 					continue;
 				}
 				$recipe_cost += WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '2.0', $r_headers, $row, 'cost_per_portion' ) );
+			}
+			if ( $recipe_cost > 0 ) {
+				$cost_source = 'recipes';
+			}
+		}
+
+		if ( $recipe_cost <= 0 && null !== $r_headers ) {
+			foreach ( $recipes['rows'] as $row ) {
+				if ( (string) WP_MCP_AI_Fnb_Data_Source::cell( '2.0', $r_headers, $row, 'item_id' ) !== $item_id ) {
+					continue;
+				}
+				$ingredient_id = (string) WP_MCP_AI_Fnb_Data_Source::cell( '2.0', $r_headers, $row, 'ingredient_id' );
+				$qty           = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '2.0', $r_headers, $row, 'qty_per_portion' ) );
+				if ( '' === $ingredient_id || $qty <= 0 ) {
+					continue;
+				}
+				$recipe_cost += $qty * self::unit_price_as_of( $ingredient_id, $as_of );
+			}
+			if ( $recipe_cost > 0 ) {
+				$cost_source = 'supplier_prices';
 			}
 		}
 
@@ -1218,25 +1306,38 @@ class WP_MCP_AI_Fnb_Metrics {
 		if ( '' !== $month ) {
 			$sales = WP_MCP_AI_Fnb_Data_Source::get_table( '6.0' );
 			if ( ! is_wp_error( $sales ) ) {
-				$s_headers = $sales['header_index'];
-				$units     = 0.0;
-				$all_units = 0.0;
+				$s_headers    = $sales['header_index'];
+				$type_norm    = strtolower( trim( $type ) );
+				$units        = 0.0;
+				$all_units    = 0.0;
+				$fallback_qty = 0.0;
+				$fallback_all = 0.0;
 				foreach ( $sales['rows'] as $row ) {
 					if ( WP_MCP_AI_Fnb_Data_Source::month_of( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $s_headers, $row, 'date' ) ) !== $month ) {
 						continue;
 					}
-					$row_type = (string) WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $s_headers, $row, 'type' );
-					if ( $row_type !== $type ) {
-						continue;
+					$qty      = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $s_headers, $row, 'qty_sold' ) );
+					$is_item  = (string) WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $s_headers, $row, 'item_id' ) === $item_id;
+					$row_type = strtolower( trim( (string) WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $s_headers, $row, 'type' ) ) );
+
+					$fallback_all += $qty;
+					if ( $is_item ) {
+						$fallback_qty += $qty;
 					}
-					$qty        = WP_MCP_AI_Fnb_Data_Source::float_cell( WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $s_headers, $row, 'qty_sold' ) );
-					$all_units += $qty;
-					if ( (string) WP_MCP_AI_Fnb_Data_Source::cell( '6.0', $s_headers, $row, 'item_id' ) === $item_id ) {
-						$units += $qty;
+
+					if ( '' === $type_norm || $row_type === $type_norm ) {
+						$all_units += $qty;
+						if ( $is_item ) {
+							$units += $qty;
+						}
 					}
 				}
+
 				if ( $all_units > 0 ) {
 					$share = $units / $all_units;
+				} elseif ( $fallback_all > 0 ) {
+					// Type metadata missing/mismatched: fall back to share of all units.
+					$share = $fallback_qty / $fallback_all;
 				}
 			}
 		}
@@ -1244,13 +1345,14 @@ class WP_MCP_AI_Fnb_Metrics {
 		$margin = $price - $recipe_cost;
 
 		return array(
-			'value'            => self::r( $margin ),
-			'menu_price'       => self::r( $price ),
-			'recipe_cost'      => self::r( $recipe_cost ),
-			'cost_pct'         => $price > 0 ? self::r( $recipe_cost / $price, 4 ) : 0.0,
-			'type'             => $type,
-			'popularity_share' => self::r( $share, 6 ),
-			'source'           => 'fnb_metrics:M-21',
+			'value'              => self::r( $margin ),
+			'menu_price'         => self::r( $price ),
+			'recipe_cost'        => self::r( $recipe_cost ),
+			'recipe_cost_source' => $cost_source,
+			'cost_pct'           => $price > 0 ? self::r( $recipe_cost / $price, 4 ) : 0.0,
+			'type'               => $type,
+			'popularity_share'   => self::r( $share, 6 ),
+			'source'             => 'fnb_metrics:M-21',
 		);
 	}
 
