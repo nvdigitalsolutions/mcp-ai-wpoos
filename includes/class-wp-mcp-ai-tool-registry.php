@@ -1685,6 +1685,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'check_video_status'                 => 'external-tools',
 				'generate_music'                     => 'external-tools',
 				'generate_openai_speech'             => 'external-tools',
+				'generate_sinhala_speech'            => 'external-tools',
 				'transcribe_openai_audio'            => 'external-tools',
 				'moderate_content'                   => 'external-tools',
 				'open_openai_usage'                  => 'external-tools',
@@ -2180,6 +2181,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Probe_Chat'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-probe-chat.php',
 				'WP_MCP_AI_Tool_Probe_Remote_MCP'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-probe-remote-mcp.php',
 				'WP_MCP_AI_Tool_Generate_OpenAI_Speech'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php',
+				'WP_MCP_AI_Tool_Generate_Sinhala_Speech'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sinhala-speech.php',
 				'WP_MCP_AI_Tool_Transcribe_OpenAI_Audio'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php',
 				'WP_MCP_AI_Tool_Moderate_Content'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-moderate-content.php',
 				// Browser-Native AI Tools (Phase 2: Transformers.js Integration).
