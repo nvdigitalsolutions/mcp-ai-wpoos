@@ -443,9 +443,10 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const okfToggleRef = useRef< HTMLButtonElement | null >( null );
 
 	// ---- Chat toolbar collapse (v2.2.0) ----
-	// Desktop: the toolbar is hidden behind a floating action button;
-	// mobile: the toolbar collapses to a single model row. The extra
-	// controls only render when `toolbarOpen` is true (CSS-driven).
+	// The top toolbar collapses to a single row (model selector + toggle);
+	// expanding reveals the extra controls in the same top area. The
+	// toggle stays last in the row so it lands at the bottom-right of the
+	// expanded bar. The embedded widget keeps the full bar via CSS.
 	const [ toolbarOpen, setToolbarOpen ] = useState< boolean >( false );
 	const toggleToolbar = useCallback( () => {
 		setToolbarOpen( ( open ) => ! open );
@@ -796,8 +797,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 											aria-label={ __( 'Keyboard shortcuts', 'nvoos-pro-spa' ) }>
 											⌨
 										</button>
-										{/* Collapse/expand toggle — visible on mobile (desktop uses
-										    the floating action button instead). */}
+										{/* Collapse/expand toggle — the single extra control on
+										    every surface (hidden for the embedded widget). */}
 										<button
 											type="button"
 											className="nvoos-pro-spa-chat-toolbar-toggle"
@@ -811,26 +812,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 											aria-controls="nvoos-pro-spa-chat-toolbar"
 										>
 											{ toolbarOpen ? '✕' : '⚙' }
-										</button>
-									</div>
-
-			{/* Floating action button (desktop) — re-opens the collapsed
-			    toolbar as a bottom-right panel. Hidden on mobile and in
-			    embedded mode via CSS. */}
-			<button
-				type="button"
-				className="nvoos-pro-spa-chat-toolbar-fab"
-				onClick={ toggleToolbar }
-				aria-label={
-					toolbarOpen
-						? __( 'Hide chat controls', 'nvoos-pro-spa' )
-						: __( 'Show chat controls', 'nvoos-pro-spa' )
-				}
-				aria-expanded={ toolbarOpen }
-				aria-controls="nvoos-pro-spa-chat-toolbar"
-			>
-				{ toolbarOpen ? '✕' : '⚙' }
-			</button>
+											</button>
+										</div>
 
 			{/* HITL approval bar */}
 			{ hasApprovals && (
