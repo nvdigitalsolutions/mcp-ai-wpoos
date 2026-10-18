@@ -1,0 +1,16 @@
+{
+  "name": "schedule-anything-velocity",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "license": "UNLICENSED",
+  "description": "Cloudways Velocity app serving the Schedule Anything tenant SPA (prebuilt bundle) and proxying its WordPress backend (base + Pro + schedule-anything-platform). No dependencies — no build step on Velocity.",
+  "scripts": {
+    "serve": "node scripts/serve.mjs",
+    "sync:dist": "node scripts/sync-dist.mjs",
+    "sync:dist:build": "node scripts/sync-dist.mjs --build"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
