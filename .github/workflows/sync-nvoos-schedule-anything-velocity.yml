@@ -19,7 +19,7 @@ name: Sync nvoos-schedule-anything-velocity
 # Activation (owner steps, one-time):
 #   1. Create the repo nvdigitalsolutions/nvoos-schedule-anything-velocity.
 #   2. Add a repo-scoped deploy token as the repository secret
-#      NVOOS_SCHEDULE_ANYTHING_VELOCITY_REPO_TOKEN.
+#      NVOOS_SA_VELOCITY_REPO_TOKEN.
 #   3. Run this workflow once via workflow_dispatch (backfills the mirror).
 #   4. In Velocity: connect the mirror repo, root directory = repo root,
 #      entry scripts/serve.mjs, no build command,
@@ -77,4 +77,4 @@ jobs:
       - name: Push to nvoos-schedule-anything-velocity
         working-directory: /tmp/nvoos-schedule-anything-velocity
         run: |
-          git push https://x-access-token:${{ secrets.NVOOS_SCHEDULE_ANYTHING_VELOCITY_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-schedule-anything-velocity.git main --force
+          git push https://x-access-token:${{ secrets.NVOOS_SA_VELOCITY_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-schedule-anything-velocity.git main --force
