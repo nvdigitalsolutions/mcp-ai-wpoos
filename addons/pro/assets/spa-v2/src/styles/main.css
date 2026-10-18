@@ -671,19 +671,21 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	flex-wrap: wrap;
 	gap: 12px 16px;
 	padding: 12px 20px;
+	padding-right: 64px; /* room for the pinned top-right toggle */
+	position: relative;
 	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
 }
 
 /* Collapse/expand toggle inside the toolbar — the gear/close control.
-   It stays last in the row ( margin-left: auto ), so on the collapsed bar
-   it sits top-right beside the model selector, and on the expanded bar it
-   lands at the bottom-right of the same top area. */
+   Pinned to the top-right corner of the top bar so the close icon stays
+   put whether the bar is collapsed or expanded. */
 .nvoos-pro-spa-chat-toolbar-toggle {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	margin-left: auto;
-	flex-shrink: 0;
+	position: absolute;
+	top: 12px;
+	right: 20px;
 	padding: 3px 8px;
 	border: 1px solid var(--nvoos-border, #dcdcde);
 	border-radius: 4px;
@@ -716,6 +718,10 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 		display: none;
 	}
 
+	.nvoos-pro-spa-embedded__main .nvoos-pro-spa-chat-page__toolbar {
+		padding-right: 20px; /* no toggle — reclaim the reserved space */
+	}
+
 	.nvoos-pro-spa-embedded__main .nvoos-pro-spa-chat-toolbar-extra {
 		display: revert;
 	}
@@ -728,6 +734,12 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	.nvoos-pro-spa-chat-page__toolbar {
 		gap: 6px 10px;
 		padding: 8px 12px;
+		padding-right: 52px; /* room for the pinned top-right toggle */
+	}
+
+	.nvoos-pro-spa-chat-toolbar-toggle {
+		top: 8px;
+		right: 12px;
 	}
 
 	.nvoos-pro-spa-chat-page__toolbar .nvoos-pro-spa-btn {

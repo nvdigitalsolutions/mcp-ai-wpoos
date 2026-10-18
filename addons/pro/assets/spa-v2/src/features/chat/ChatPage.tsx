@@ -444,9 +444,9 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 
 	// ---- Chat toolbar collapse (v2.2.0) ----
 	// The top toolbar collapses to a single row (model selector + toggle);
-	// expanding reveals the extra controls in the same top area. The
-	// toggle stays last in the row so it lands at the bottom-right of the
-	// expanded bar. The embedded widget keeps the full bar via CSS.
+	// expanding reveals the extra controls in the same top area. The toggle
+	// is pinned to the top-right of the bar via CSS so the close icon stays
+	// put. The embedded widget keeps the full bar via CSS.
 	const [ toolbarOpen, setToolbarOpen ] = useState< boolean >( false );
 	const toggleToolbar = useCallback( () => {
 		setToolbarOpen( ( open ) => ! open );
