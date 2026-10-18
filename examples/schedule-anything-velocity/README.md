@@ -1,116 +1,132 @@
-# Schedule Anything — Cloudways Velocity App
+# Schedule Anything — Velocity App
 
-Prebuilt-bundle deploy of the Schedule Anything tenant SPA for **Cloudways
-Velocity** (managed Node.js: NGINX + PM2). The app is a zero-dependency static
-server that also reverse-proxies the WordPress backend, so the SPA, the
-`wp_rest` nonce handshake, and WordPress login all live on one origin — cookie
-auth works cross-host without any CORS configuration.
+> **One-way mirror notice.** This repository is a one-way mirror of
+> `examples/schedule-anything-velocity/` in the
+> [`nvdigitalsolutions/mcp-ai-wpoos`](https://github.com/nvdigitalsolutions/mcp-ai-wpoos)
+> monorepo. History is intentionally flat (one commit per sync,
+> force-pushed). **Never commit here directly** — changes made in this repo
+> are overwritten by the next sync. Open PRs against the monorepo instead.
+
+Cloudways **Velocity** (managed Node.js: NGINX + PM2) deploy of the
+**Schedule Anything** tenant SPA. The app is a zero-dependency static server
+that also reverse-proxies the WordPress backend, so the SPA, the `wp_rest`
+nonce handshake, and WordPress login all live on one origin — cookie auth
+works cross-host with **no CORS configuration**.
 
 ```
-Browser ──> Velocity app (serve.mjs)
-              ├── dist/                      # built SPA (from addons/schedule-anything-spa)
+Browser ──> Velocity app (scripts/serve.mjs, PM2)
+              ├── dist/                      # prebuilt SPA (no build step)
               ├── /wp-json, /wp-admin,       # proxied → NVOOS_TARGET_SITE
               │   /wp-login.php, /wp-includes
               └── (login page re-scoped to the app origin)
 ```
 
+## Repository layout
+
+```
+.
+├── package.json        # zero dependencies; no-op build + start shims
+├── scripts/
+│   └── serve.mjs       # Velocity entry — static serving + reverse proxy
+├── dist/               # prebuilt SPA bundle (git-tracked)
+│   ├── index.html      # entry (served with Cache-Control: no-cache)
+│   └── assets/         # hashed chunks (immutable, 1-year cache)
+└── README.md           # this file
+```
+
+> `scripts/sync-dist.mjs` exists in the **monorepo** copy of this app
+> (it copies the addon's build output into `dist/`); it is not needed at
+> runtime and does not ship in this mirror.
+
 ## Backend requirements (the 3 plugins)
 
 The `NVOOS_TARGET_SITE` WordPress site must run:
 
-1. **NV oOS base** (`mcp-ai-wpoos`)
-2. **NV oOS Pro** (`mcp-ai-wpoos-pro`) — install the **built distribution
-   zip** (`build/mcp-ai-wpoos-pro-*.zip`); the repo-form addon folder has no
-   plugin header by design
-3. **Schedule Anything Platform** (`schedule-anything-platform`) — WordPress
-   Multisite for full tenancy, plus `SA_SAAS_API_KEY` in `wp-config.php`
+| Plugin | Notes |
+|---|---|
+| **NV oOS base** (`mcp-ai-wpoos`) | provides the core REST surface + auth plumbing |
+| **NV oOS Pro** (`mcp-ai-wpoos-pro`) | schedules/presets/toolkits REST (`/mcp-ai-pro/v1`); install the **built distribution zip** — the repo-form addon has no plugin header by design |
+| **Schedule Anything Platform** (`schedule-anything-platform`) | per-tenant toolkit entitlements + provisioning; WordPress **Multisite** for full tenancy, plus `SA_SAAS_API_KEY` in `wp-config.php` |
+
+## Quick start (local)
+
+```bash
+git clone https://github.com/nvdigitalsolutions/nvoos-schedule-anything-velocity.git
+cd nvoos-schedule-anything-velocity
+
+# Point at any WordPress backend running the 3 plugins:
+NVOOS_TARGET_SITE=http://localhost:8000 npm run serve
+# → http://localhost:4180  (PORT env overrides)
+```
+
+Smoke checks:
+
+```bash
+curl -I localhost:4180/                          # 200, Cache-Control: no-cache
+curl -I localhost:4180/assets/index-*.js         # 200, public, max-age=31536000, immutable
+curl localhost:4180/wp-json/nvoos-saas/v1/auth/nonce   # proxied nonce handshake
+```
 
 ## Velocity setup
 
-1. Create a Node.js app; connect it to the mirror repo
-   `nvdigitalsolutions/nvoos-schedule-anything-velocity` (see "Deployment
-   plumbing" below).
-2. **Root directory:** the repo root (default) — this repo contains only the
-   app, so no root-directory override is needed. Keep it in mind only if
-   Velocity ever asks: the `package.json` must sit at the root.
+1. Create a Node.js app and connect **this repository**.
+2. **Root directory:** the repo root (default) — `package.json` sits at the
+   top of this repo.
 3. **Entry file:** `scripts/serve.mjs` (carries the `#!/usr/bin/env node`
-   shebang — without it the sh shell parses the ESM and PM2 restart-loops).
+   shebang — without it the shell parses the ESM and PM2 restart-loops).
 4. **Build command:** none (a no-op `npm run build` shim is defined for
    Velocity auto-detection).
-5. **Runtime env:** `NVOOS_TARGET_SITE=https://<your-wp-site>` (trailing
-   slash tolerated). Without it the SPA loads but REST/auth calls have no
-   backend.
+5. **Environment variables:** `NVOOS_TARGET_SITE=https://<your-wp-site>`
+   (trailing slash tolerated). Without it the SPA loads but REST/auth calls
+   have no backend.
 6. Custom domain + SSL come from Velocity; `PORT` is injected automatically.
 
-## Deployment plumbing (mirror sync)
+## Environment variables
 
-Velocity deploys from a **git repo**, and the monorepo cannot serve that
-role directly (no root `package.json` → Velocity build dies on `npm enoent`,
-plus it would clone the entire monorepo). So this app is mirrored to a
-dedicated repo by CI — the same pattern the standalone Pro SPA uses
-(`sync-nvoos-pro-spa-standalone.yml` → `nvoos-pro-spa-standalone`):
-
-- `.github/workflows/sync-nvoos-schedule-anything-velocity.yml` assembles the
-  app tree **at the mirror repo root** (this mirror ships only the app, so
-  Velocity's root directory is simply the repo root — unlike the Pro SPA
-  mirror, which also ships vendored sources under `addons/` and must nest
-  its app under `examples/`), smoke-tests it (boots `serve.mjs`, curls the
-  static branch), and force-pushes one flat commit per sync to
-  `nvdigitalsolutions/nvoos-schedule-anything-velocity`.
-- It runs on every push touching `examples/schedule-anything-velocity/**` on
-  main/alpha-working, plus `workflow_dispatch`.
-
-**One-time activation (owner steps):** create the private mirror repo, add a
-repo-scoped deploy token as the repository secret
-`NVOOS_SCHEDULE_ANYTHING_VELOCITY_REPO_TOKEN`, run the workflow once via
-workflow_dispatch to backfill, then connect the mirror repo in Velocity
-(root directory = repo root, entry `scripts/serve.mjs`).
-
-## Keeping dist/ fresh
-
-The SPA lives and is built in `addons/schedule-anything-spa`. After any SPA
-change:
-
-```bash
-npm run sync:dist        # in examples/schedule-anything-velocity
-# or: npm run sync:dist:build  (rebuilds the addon first)
-git add dist && git commit
-```
-
-`dist/` is intentionally git-tracked (cleared + copied on each sync so
-rotated chunk hashes never linger).
+| Variable | Required | Purpose |
+|---|---|---|
+| `NVOOS_TARGET_SITE` | yes (for cookie auth) | WordPress backend origin to proxy `/wp-json`, `/wp-admin`, `/wp-login.php`, `/wp-includes` |
+| `PORT` | no | Listen port (Velocity injects it; local default 4180) |
 
 ## Caching & security
 
-- `index.html` → `Cache-Control: no-cache`; hashed `/assets/*` →
-  `public, max-age=31536000, immutable` (industry SPA contract — the entry
-  is never cached, bundles are).
-- `X-Content-Type-Options: nosniff` + a ramping HSTS header on static
-  responses only; proxied WordPress responses pass their own headers
-  through untouched. CSP is deliberately Report-Only-templated in
-  `serve.mjs` (not enforced yet).
-- The proxy strips hop-by-hop headers, drops Set-Cookie `Domain` attributes
-  (host-only cookies for the app origin), and re-scopes `wp-login.php`
-  form actions + `redirect_to` so the login POST stays inside the proxy.
+- **SPA caching contract:** `index.html` → `Cache-Control: no-cache`;
+  hashed `/assets/*` → `public, max-age=31536000, immutable`.
+- **Headers on static responses:** `X-Content-Type-Options: nosniff` +
+  ramping HSTS (`max-age=86400` → 31536000 after a clean week). Proxied
+  WordPress responses pass their own headers through untouched.
+- **Proxy hardening:** hop-by-hop headers stripped; Set-Cookie `Domain`
+  attributes dropped (host-only cookies for the app origin); `wp-login.php`
+  form actions + `redirect_to` re-scoped so the login POST stays inside the
+  proxy; upstream failure → `502` with `nvoos_bad_gateway` JSON.
+- CSP is intentionally **not enforced** yet — the template in `serve.mjs` is
+  Report-Only-ready.
 - Never point `NVOOS_TARGET_SITE` at a host you don't control — the proxy
   forwards cookies for those prefixes.
 
-## Multi-tenancy note
+## Multi-tenancy
 
 Tenant identity comes from the subdomain (`TenantContext`). Production
-multi-tenant routing (subdomain → tenant site) is the plan's Cloudflare
-Worker/edge job (D2); this Velocity app serves one WordPress network per
-deployment. On the main domain the tier falls back to `unknown` and the
-booking portal works from `/book/:tenant` regardless. CORS configuration on
-the WordPress side is **not needed** in this proxy mode (all requests are
-same-origin); it only matters if the SPA later calls the REST API directly
-(see Proposal 081 §9 for the origin + route-prefix settings).
+multi-tenant routing (subdomain → tenant site) is the platform's
+Cloudflare Worker edge job; **this Velocity app serves one WordPress network
+per deployment**. On the main domain the tier falls back to `unknown` and
+the public booking portal works from `/book/:tenant` regardless. WordPress
+CORS configuration is **not needed** in this proxy mode (all requests are
+same-origin).
 
-## Local verification
+## Sync & deployment plumbing
 
-```bash
-NVOOS_TARGET_SITE=http://localhost:8099 npm run serve   # any WP sandbox works
-curl -I localhost:4180/                                  # 200, no-cache
-curl -I localhost:4180/assets/index-BKB4-r7J.js          # 200, immutable
-curl localhost:4180/wp-json/nvoos-saas/v1/auth/nonce     # proxied nonce handshake
-```
+- CI workflow `sync-nvoos-schedule-anything-velocity.yml` (in the monorepo)
+  assembles this tree at the repo root, smoke-tests it (boots `serve.mjs`,
+  curls the static branch), and force-pushes one flat commit per sync.
+- It runs on every push touching `examples/schedule-anything-velocity/**`
+  on `main`/`alpha-working`, plus `workflow_dispatch`.
+- After the monorepo's SPA changes merge, the monorepo-side
+  `npm run sync:dist` refreshes `dist/` and the next sync deploys it.
+
+## License
+
+The Schedule Anything SPA bundle and this app are proprietary
+(`UNLICENSED` — see `package.json`). The WordPress backend stack is
+separately licensed per plugin: GPLv3-or-later (base) and proprietary
+(Pro, Schedule Anything Platform).

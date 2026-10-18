@@ -48,16 +48,9 @@ jobs:
           # cp -r, not git archive: the repo .gitattributes export-ignores
           # package.json, which Velocity requires at the repo root.
           cp -r examples/schedule-anything-velocity/. /tmp/nvoos-schedule-anything-velocity/
-          cat > /tmp/nvoos-schedule-anything-velocity/README.md <<'EOF'
-          # nvoos-schedule-anything-velocity
-
-          Cloudways Velocity app serving the Schedule Anything tenant SPA and
-          proxying its WordPress backend (base + Pro + schedule-anything-platform).
-          One-way mirror of the mcp-ai-wpoos monorepo — never commit here directly.
-
-          - Root directory: the repo root (package.json lives here)
-          - Entry: `scripts/serve.mjs` — no build step, no dependencies
-          EOF
+          # Dev-only tool: sync-dist.mjs copies the build out of the monorepo
+          # addon and cannot work in the mirror (no addon sources there).
+          rm -f /tmp/nvoos-schedule-anything-velocity/scripts/sync-dist.mjs
           cd /tmp/nvoos-schedule-anything-velocity
           # Pin the initial branch to main: git init alone honours the runner's
           # init.defaultBranch (or falls back to master), which makes the later
@@ -72,7 +65,6 @@ jobs:
           # Syntax + shape gates, then boot serve.mjs and exercise the
           # static branch (same file the Velocity entry executes).
           node --check scripts/serve.mjs
-          node --check scripts/sync-dist.mjs
           test -f dist/index.html
           test -n "$(find dist/assets -maxdepth 1 -name 'index-*.js' | head -n1)"
           node scripts/serve.mjs > /tmp/sa-velocity-smoke.log 2>&1 &
