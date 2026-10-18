@@ -144,7 +144,7 @@ echo "=========================================="
 echo ""
 
 # Build remaining SPA addon ZIPs (canvas-toolkit, document-editor, media-studio,
-# toolkit-shell) that are NOT covered by build-addon-zips.sh.
+# toolkit-shell, schedule-anything-spa) that are NOT covered by build-addon-zips.sh.
 if command -v node >/dev/null 2>&1; then
     echo "Running build-spa-zips.js..."
     node "$SCRIPT_DIR/build-spa-zips.js"
@@ -185,12 +185,14 @@ fi
 if ls "$ROOT_DIR/build"/nvoos-*-toolkit-v*.zip >/dev/null 2>&1 || \
    ls "$ROOT_DIR/build"/nvoos-document-editor-v*.zip >/dev/null 2>&1 || \
    ls "$ROOT_DIR/build"/nvoos-media-studio-v*.zip >/dev/null 2>&1 || \
-   ls "$ROOT_DIR/build"/nvoos-toolkit-shell-v*.zip >/dev/null 2>&1; then
-    echo "📦 SPA add-ons (canvas-toolkit, document-editor, media-studio, toolkit-shell):"
+   ls "$ROOT_DIR/build"/nvoos-toolkit-shell-v*.zip >/dev/null 2>&1 || \
+   ls "$ROOT_DIR/build"/nvoos-schedule-anything-spa-v*.zip >/dev/null 2>&1; then
+    echo "📦 SPA add-ons (canvas-toolkit, document-editor, media-studio, toolkit-shell, schedule-anything-spa):"
     ls -lh "$ROOT_DIR/build"/nvoos-*-toolkit-v*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
     ls -lh "$ROOT_DIR/build"/nvoos-document-editor-v*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
     ls -lh "$ROOT_DIR/build"/nvoos-media-studio-v*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
     ls -lh "$ROOT_DIR/build"/nvoos-toolkit-shell-v*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
+    ls -lh "$ROOT_DIR/build"/nvoos-schedule-anything-spa-v*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
     echo ""
 fi
 echo "📄 WordPress.org submission package:"
