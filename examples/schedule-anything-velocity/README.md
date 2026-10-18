@@ -39,6 +39,28 @@ The `NVOOS_TARGET_SITE` WordPress site must run:
    backend.
 5. Custom domain + SSL come from Velocity; `PORT` is injected automatically.
 
+## Deployment plumbing (mirror sync)
+
+Velocity deploys from a **git repo**, and the monorepo cannot serve that
+role directly (no root `package.json` → Velocity build dies on `npm enoent`,
+plus it would clone the entire monorepo). So this app is mirrored to a
+dedicated repo by CI — the same pattern the standalone Pro SPA uses
+(`sync-nvoos-pro-spa-standalone.yml` → `nvoos-pro-spa-standalone`):
+
+- `.github/workflows/sync-nvoos-schedule-anything-velocity.yml` assembles the
+  app tree (**under `examples/`**, matching the Velocity root directory),
+  smoke-tests it (boots `serve.mjs`, curls the static branch), and
+  force-pushes one flat commit per sync to
+  `nvdigitalsolutions/nvoos-schedule-anything-velocity`.
+- It runs on every push touching `examples/schedule-anything-velocity/**` on
+  main/alpha-working, plus `workflow_dispatch`.
+
+**One-time activation (owner steps):** create the private mirror repo, add a
+repo-scoped deploy token as the repository secret
+`NVOOS_SCHEDULE_ANYTHING_VELOCITY_REPO_TOKEN`, run the workflow once via
+workflow_dispatch to backfill, then connect the mirror repo in Velocity
+(root directory `examples/schedule-anything-velocity`).
+
 ## Keeping dist/ fresh
 
 The SPA lives and is built in `addons/schedule-anything-spa`. After any SPA
