@@ -27,17 +27,20 @@ The `NVOOS_TARGET_SITE` WordPress site must run:
 
 ## Velocity setup
 
-1. Create a Node.js app; **root directory must be
-   `examples/schedule-anything-velocity`** (the monorepo root has no
-   `package.json` and the build dies with `npm error enoent` otherwise).
-2. **Entry file:** `scripts/serve.mjs` (carries the `#!/usr/bin/env node`
+1. Create a Node.js app; connect it to the mirror repo
+   `nvdigitalsolutions/nvoos-schedule-anything-velocity` (see "Deployment
+   plumbing" below).
+2. **Root directory:** the repo root (default) — this repo contains only the
+   app, so no root-directory override is needed. Keep it in mind only if
+   Velocity ever asks: the `package.json` must sit at the root.
+3. **Entry file:** `scripts/serve.mjs` (carries the `#!/usr/bin/env node`
    shebang — without it the sh shell parses the ESM and PM2 restart-loops).
-3. **Build command:** none — `dist/` ships prebuilt in the repo (no
-   dependencies to install).
-4. **Runtime env:** `NVOOS_TARGET_SITE=https://<your-wp-site>` (trailing
+4. **Build command:** none (a no-op `npm run build` shim is defined for
+   Velocity auto-detection).
+5. **Runtime env:** `NVOOS_TARGET_SITE=https://<your-wp-site>` (trailing
    slash tolerated). Without it the SPA loads but REST/auth calls have no
    backend.
-5. Custom domain + SSL come from Velocity; `PORT` is injected automatically.
+6. Custom domain + SSL come from Velocity; `PORT` is injected automatically.
 
 ## Deployment plumbing (mirror sync)
 
@@ -48,9 +51,11 @@ dedicated repo by CI — the same pattern the standalone Pro SPA uses
 (`sync-nvoos-pro-spa-standalone.yml` → `nvoos-pro-spa-standalone`):
 
 - `.github/workflows/sync-nvoos-schedule-anything-velocity.yml` assembles the
-  app tree (**under `examples/`**, matching the Velocity root directory),
-  smoke-tests it (boots `serve.mjs`, curls the static branch), and
-  force-pushes one flat commit per sync to
+  app tree **at the mirror repo root** (this mirror ships only the app, so
+  Velocity's root directory is simply the repo root — unlike the Pro SPA
+  mirror, which also ships vendored sources under `addons/` and must nest
+  its app under `examples/`), smoke-tests it (boots `serve.mjs`, curls the
+  static branch), and force-pushes one flat commit per sync to
   `nvdigitalsolutions/nvoos-schedule-anything-velocity`.
 - It runs on every push touching `examples/schedule-anything-velocity/**` on
   main/alpha-working, plus `workflow_dispatch`.
@@ -59,7 +64,7 @@ dedicated repo by CI — the same pattern the standalone Pro SPA uses
 repo-scoped deploy token as the repository secret
 `NVOOS_SCHEDULE_ANYTHING_VELOCITY_REPO_TOKEN`, run the workflow once via
 workflow_dispatch to backfill, then connect the mirror repo in Velocity
-(root directory `examples/schedule-anything-velocity`).
+(root directory = repo root, entry `scripts/serve.mjs`).
 
 ## Keeping dist/ fresh
 

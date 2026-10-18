@@ -11,18 +11,19 @@ name: Sync nvoos-schedule-anything-velocity
 # The mirror repo history is intentionally flat (one commit per sync,
 # force-pushed). Never commit to the mirror directly.
 #
-# The app must land under examples/ — Velocity's root directory is
-# examples/schedule-anything-velocity, so a tree with the app at the repo
-# root makes the deploy die on a missing package.json (npm enoent).
+# Unlike the Pro SPA mirror (which also ships vendored spa-v2 sources under
+# addons/ and must nest its app under examples/), this mirror contains ONLY
+# the app — so the tree is assembled at the repo ROOT and Velocity's root
+# directory is simply the repo root (package.json sits at the top).
 #
 # Activation (owner steps, one-time):
-#   1. Create the private repo nvdigitalsolutions/nvoos-schedule-anything-velocity.
+#   1. Create the repo nvdigitalsolutions/nvoos-schedule-anything-velocity.
 #   2. Add a repo-scoped deploy token as the repository secret
 #      NVOOS_SCHEDULE_ANYTHING_VELOCITY_REPO_TOKEN.
 #   3. Run this workflow once via workflow_dispatch (backfills the mirror).
-#   4. In Velocity: connect the mirror repo, root directory
-#      examples/schedule-anything-velocity, entry scripts/serve.mjs,
-#      no build command, env NVOOS_TARGET_SITE=<wordpress-site>.
+#   4. In Velocity: connect the mirror repo, root directory = repo root,
+#      entry scripts/serve.mjs, no build command,
+#      env NVOOS_TARGET_SITE=<wordpress-site>.
 
 on:
   push:
@@ -43,10 +44,10 @@ jobs:
       - name: Assemble mirror tree
         run: |
           rm -rf /tmp/nvoos-schedule-anything-velocity
-          mkdir -p /tmp/nvoos-schedule-anything-velocity/examples
+          mkdir -p /tmp/nvoos-schedule-anything-velocity
           # cp -r, not git archive: the repo .gitattributes export-ignores
-          # package.json, which Velocity requires at the app root.
-          cp -r examples/schedule-anything-velocity /tmp/nvoos-schedule-anything-velocity/examples/
+          # package.json, which Velocity requires at the repo root.
+          cp -r examples/schedule-anything-velocity/. /tmp/nvoos-schedule-anything-velocity/
           cat > /tmp/nvoos-schedule-anything-velocity/README.md <<'EOF'
           # nvoos-schedule-anything-velocity
 
@@ -54,7 +55,7 @@ jobs:
           proxying its WordPress backend (base + Pro + schedule-anything-platform).
           One-way mirror of the mcp-ai-wpoos monorepo — never commit here directly.
 
-          - App: `examples/schedule-anything-velocity/` (Velocity root directory)
+          - Root directory: the repo root (package.json lives here)
           - Entry: `scripts/serve.mjs` — no build step, no dependencies
           EOF
           cd /tmp/nvoos-schedule-anything-velocity
@@ -66,7 +67,7 @@ jobs:
           git -c user.name="GitHub Actions" -c user.email="actions@github.com" commit -q -m "Sync Schedule Anything Velocity app ($GITHUB_SHA)"
 
       - name: Smoke-test the assembled app
-        working-directory: /tmp/nvoos-schedule-anything-velocity/examples/schedule-anything-velocity
+        working-directory: /tmp/nvoos-schedule-anything-velocity
         run: |
           # Syntax + shape gates, then boot serve.mjs and exercise the
           # static branch (same file the Velocity entry executes).
