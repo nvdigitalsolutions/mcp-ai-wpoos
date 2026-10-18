@@ -844,6 +844,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'rest_schedule_anything',
+				'Schedule Anything REST (presets + toolkits)',
+				array(),
+				array(),
+				function () use ( $p ) {
+					require_once $p . 'schedule-anything/class-wp-mcp-ai-pro-sa-toolkit-adapter.php';
+					require_once $p . 'schedule-anything/class-wp-mcp-ai-pro-schedule-presets.php';
+					require_once $p . 'rest/class-wp-mcp-ai-pro-sa-rest-controller.php';
+					WP_MCP_AI_SA_REST_Controller::init();
+				}
+			);
+
+			$this->add_module(
 				'toolkit_quiz',
 				'Quiz Toolkit',
 				array( 'jetengine_meta_helper' ),

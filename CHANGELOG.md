@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Added — Schedule Anything: Presets + Toolkits API (Proposal 081)
+
+- **Pro REST surface** — four new `mcp-ai-pro/v1` routes for the Schedule Anything SPA: `GET /toolkits`, `POST /toolkits/{slug}/toggle` (server-side tier entitlements via the platform plugin's `SA_Toolkit_Manager`, `403 sa_toolkit_not_entitled` outside the tenant's tier), `GET /presets` + `GET /presets/{id}` backed by a new static `WP_MCP_AI_Pro_Schedule_Presets` registry (12 presets across 6 toolkits), and an idempotent `POST /presets/{id}/install` (deterministic key; replay returns the original schedule instead of duplicating). Registered as the `rest_schedule_anything` Pro module.
+- **Schedule record redaction** — new `WP_MCP_AI_Pro_Schedule_Manager::redact_schedule_for_public()` strips credential-bearing fields (`broadcast_config`, `assistant_config`, `result_delivery`, `notify_email`, `callback_secret`, `notify_channel_credentials`) before records leave REST; also fixes the schedule CRUD controller's latent one-arg `redact_envelope_for_public()` calls, which fatalled on any non-empty schedule list.
+- **SPA builder contract alignment** — `buildSchedulePayload()` helper: task schedules dispatch through the central `wp_mcp_ai_pro_schedule_exec` hook, workflow saves serialize canvas nodes into `workflow_steps`, the monthly option uses the registered `wp_mcp_ai_monthly` interval, and save failures surface the server's `WP_Error` message via sonner toasts instead of `alert`.
+- **Tests** — PHPUnit `test-sa-toolkit-rest.php` (permissions, slug validation, tier 403s, persistence, cross-tenant isolation) + `test-schedule-presets-rest.php` (catalogue integrity, search/filter/pagination, override whitelisting, install idempotency); SPA vitest `schedulePayload.test.ts` (4 cases, suite 23 → 27). E2E-verified against the sa-e2e Docker stack (Settings toggles persist, Presets render + install, builder task save redirects to Schedules).
+
 ### Added — F&B Ingest × Media Worker Offload (Proposal 079)
 
 - **Worker `POST /api/ingest/parse` (media-worker v3.5.0+)** — a toolkit-neutral parse endpoint returning the F&B `{columns, rows}` matrix contract: XLSX via the existing ExcelJS dependency (first worksheet unless `sheet` given), CSV/TSV with delimiter sniffing, JSON/JSONL with union headers, PDF via pdf-parse with a render→OCR chain for scanned PDFs (pdfjs-dist + canvas + tesseract.js), and photo OCR via tesseract.js. Legacy `.xls` and gated `.ods` return `503 capability_unavailable` so callers fall back to local PhpSpreadsheet. Full matrix by default (no hidden row cap); optional `offset`/`limit` paging. Registered in the health endpoints/capabilities map (`ingest_parsing`).

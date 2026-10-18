@@ -10,7 +10,7 @@
  */
 
 import { useCallback, useRef, useState, type DragEvent } from 'react';
-import { __, sprintf } from '@/lib/i18n';
+import { __ } from '@/lib/i18n';
 import {
   ReactFlow,
   Background,
@@ -33,6 +33,8 @@ import { TriggerNode } from './TriggerNode';
 import { PropertyPanel } from './PropertyPanel';
 import { useCreateSchedule } from '@/hooks/useSchedules';
 import type { Schedule } from '@/hooks/useSchedules';
+import { buildSchedulePayload } from '@/lib/schedulePayload';
+import { toast } from 'sonner';
 
 const nodeTypes: NodeTypes = {
   toolNode: ToolNode,
@@ -146,36 +148,37 @@ export function FlowCanvas() {
   // Serialize and save
   const handleSave = useCallback(async () => {
     if (!scheduleName.trim()) {
-      alert(__('Please enter a schedule name.', 'schedule-anything-spa'));
+      toast.error(__('Please enter a schedule name.', 'schedule-anything-spa'));
       return;
     }
 
     const toolNodes = nodes.filter((n) => n.type === 'toolNode');
-    const workflowSteps = toolNodes.map((n) => ({
-      tool_slug: (n.data as any).toolSlug,
-      arguments: (n.data as any).arguments || {},
-      label: (n.data as any).label || (n.data as any).toolName || '',
-    }));
 
-    const scheduleData: Partial<Schedule> = {
+    if (scheduleType === 'workflow' && toolNodes.length === 0) {
+      toast.error(
+        __('Add at least one tool to the canvas before saving a workflow schedule.', 'schedule-anything-spa')
+      );
+      return;
+    }
+
+    const scheduleData = buildSchedulePayload({
       name: scheduleName,
-      schedule_type: scheduleType,
-      schedule: cronInterval,
-      tags: [],
-      workflow_steps: scheduleType === 'workflow' ? workflowSteps : undefined,
-    };
+      scheduleType,
+      cron: cronInterval,
+      toolNodes,
+    });
 
     try {
       await createSchedule.mutateAsync(scheduleData);
+      toast.success(__('Schedule created.', 'schedule-anything-spa'));
       // Redirect to schedules page on success
       window.location.href = '/schedules';
     } catch (err) {
-      alert(
-        sprintf(
-          /* translators: %s: error message */
-          __('Failed to create schedule: %s', 'schedule-anything-spa'),
-          err instanceof Error ? err.message : __('Unknown error', 'schedule-anything-spa')
-        )
+      // Surface the server's validation message (WP_Error.message) verbatim.
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : __('Failed to create schedule.', 'schedule-anything-spa')
       );
     }
   }, [scheduleName, scheduleType, cronInterval, nodes, createSchedule]);
@@ -226,7 +229,7 @@ export function FlowCanvas() {
             <option value="wp_mcp_ai_every_6_hours">{ __('Every 6 hours', 'schedule-anything-spa') }</option>
             <option value="wp_mcp_ai_every_30_minutes">{ __('Every 30 minutes', 'schedule-anything-spa') }</option>
             <option value="weekly">{ __('Weekly', 'schedule-anything-spa') }</option>
-            <option value="monthly">{ __('Monthly', 'schedule-anything-spa') }</option>
+            <option value="wp_mcp_ai_monthly">{ __('Monthly', 'schedule-anything-spa') }</option>
           </select>
           <button
             onClick={addTriggerNode}
