@@ -191,6 +191,24 @@ For unsigned local builds, clear Gatekeeper quarantine before first launch:
 created by unsigned dev builds can re-prompt (the ACL binds to the code
 signature).
 
+### Testing the macOS build without a Mac
+
+The GitHub Actions runner is the remote Mac:
+
+- **Every push** (`.github/workflows/build-nvoos-dictate.yml`) runs a
+  `boot-smoke` job that builds the debug `.app`, enforces 30 s boot
+  residency, screenshots the desktop, and uploads the app zipped as a run
+  artifact (`nvoos-dictate-macos-app`) plus boot evidence.
+- **Interactive sessions:** run the `NV oOS Dictation — macOS interactive
+  session` workflow (manual `workflow_dispatch`) to build the app, run
+  `scripts/macos-matrix-remote.sh` (the automatable subset of
+  `docs/ptt-matrix-macos.md`), and hold the runner open for SSH (tmate).
+- **TCC grants** (mic / Screen Recording / Accessibility) need a human at
+  the GUI: use a Namespace macOS runner (VNC) or any physical/rented Mac.
+
+Signed + notarized DMGs come from tagging `nvoos-dictate-v*` (publish
+workflow + Apple Developer secrets — see `docs/macos-port-plan.md` §12).
+
 ## NV oOS plugin integration
 
 `Settings → NV oOS`: enter your site URL and an assistant credential

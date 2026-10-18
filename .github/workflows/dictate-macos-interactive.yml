@@ -1,0 +1,85 @@
+# Manual (workflow_dispatch) interactive macOS session for the dictation app:
+# builds the debug .app on macos-latest, runs the automatable subset of
+# docs/ptt-matrix-macos.md via scripts/macos-matrix-remote.sh, uploads the
+# evidence (Aqua screenshots + boot log), then holds the runner open for SSH
+# (tmate) so a human on Windows/Linux can inspect and debug the macOS port.
+#
+# Cirrus CI is NOT used here: Cirrus CI shut down on 2026-06-01 (Cirrus Labs
+# joined OpenAI — see cirruslabs.org). GitHub-hosted macOS runners expose no
+# VNC, so TCC *grants* (mic / Screen Recording / Accessibility clicks) cannot
+# be done in this session. For a GUI view of the macOS desktop, install the
+# Namespace GitHub App (namespace.so) and change `runs-on` to a Namespace
+# macOS profile — Namespace supports VNC into macOS runners. Alternatively
+# rent a Mac (MacStadium / MacInCloud / AWS EC2 Mac) and run
+# scripts/macos-matrix-remote.sh there via SSH.
+
+name: NV oOS Dictation — macOS interactive session
+
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: examples/nvoos-dictate
+
+jobs:
+  interactive:
+    name: macOS interactive (build + checks + SSH)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Same cache key as build-nvoos-dictate.yml, so manual runs reuse the
+      # warmed compile cache instead of rebuilding the world.
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            examples/nvoos-dictate/src-tauri/target
+          key: nvoos-dictate-cargo-${{ runner.os }}-${{ hashFiles('examples/nvoos-dictate/src-tauri/Cargo.lock') }}
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Generate icons
+        run: node scripts/gen-icons.mjs
+
+      - name: Build debug .app bundle
+        run: npm run tauri -- build --debug --bundles app
+
+      # Automatable subset of the PTT/paste/meetings matrix: bundle surface,
+      # sidecar NDJSON framing, 30 s boot residency, Aqua screenshots. The
+      # TCC-granted paths stay out — they need a human at the GUI.
+      - name: Run remote matrix checks
+        run: bash scripts/macos-matrix-remote.sh
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvoos-dictate-macos-interactive-evidence
+          path: |
+            /tmp/nvoos-matrix/*.png
+            /tmp/nvoos-matrix/*.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      # Hold the runner open for SSH (even if a check failed — that is the
+      # point). The connection string prints in this step's log
+      # ("SSH: ssh <id>@nyc1.tmate.io"). Only the user who triggered the
+      # run can connect. 360 min is the GitHub step maximum; the run dies
+      # with the job, so detach is off.
+      - name: Hold for SSH (tmate)
+        if: always()
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 360
+        with:
+          limit-access-to-actor: true
