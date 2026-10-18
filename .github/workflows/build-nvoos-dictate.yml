@@ -3,7 +3,11 @@
 # Mirrors the repo's standalone-plugin workflow shape. The default cargo
 # feature set (mock engine) needs no C++ toolchain, so this job runs
 # everywhere; native engine features are exercised locally. The macOS job
-# also builds + smoke-tests the ScreenCaptureKit sidecar (mac-helper).
+# also builds + smoke-tests the ScreenCaptureKit sidecar (mac-helper), runs
+# a headless engine-load probe, and the boot-smoke job below boots the real
+# .app bundle on the runner's Aqua session — the runtime verification of the
+# macOS port that is possible without macOS hardware (TCC-gated paths still
+# need a human on real hardware; see docs/ptt-matrix-macos.md).
 
 name: Build NV oOS Dictation
 
@@ -16,6 +20,7 @@ on:
     paths:
       - 'examples/nvoos-dictate/**'
       - '.github/workflows/build-nvoos-dictate.yml'
+  workflow_dispatch:
 
 concurrency:
   group: nvoos-dictate-${{ github.ref }}
@@ -104,6 +109,123 @@ jobs:
 
       - name: MCP feature tests
         run: cargo test --manifest-path src-tauri/Cargo.toml --features mcp
+
+      # Headless engine-load probe (macOS leg): the debug bin built by
+      # `cargo test --features mcp` above supports `--mcp`; feeding it EOF
+      # on stdin loads the configured (mock) engine and exits cleanly.
+      # "engine unavailable" in the output = the engine factory failed on
+      # this platform. (The Windows equivalent runs locally — MSYS stdin
+      # juggling makes it flaky in CI.)
+      - name: Headless engine-load probe (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          set +e
+          ./src-tauri/target/debug/nvoos-dictate --mcp < /dev/null > /tmp/nvoos-headless.log 2>&1
+          CODE=$?
+          set -e
+          cat /tmp/nvoos-headless.log
+          if [ "$CODE" -ne 0 ]; then echo "headless probe exited with $CODE"; exit "$CODE"; fi
+          if grep -q "engine unavailable" /tmp/nvoos-headless.log; then echo "engine failed to load headless"; exit 1; fi
+          echo "headless probe OK (engine loaded, clean exit)"
+
+  # Runtime verification of the macOS port without macOS hardware: build the
+  # real .app (production frontend embed + Swift sidecar staged over the
+  # externalBin stub), boot it on the runner's Aqua session, and screenshot
+  # it. This catches crash-at-boot regressions in the port surface
+  # (Info.plist, entitlements, event-tap/permission wiring at startup) that
+  # compile gates cannot. The debug bundle is ad-hoc signed; signing and
+  # notarization verification belongs to publish-nvoos-dictate.yml.
+  boot-smoke:
+    name: macOS boot smoke (bundle + launch)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Same cache key as the rust job's macOS leg, so the boot job reuses
+      # the compile cache on every push.
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            examples/nvoos-dictate/src-tauri/target
+          key: nvoos-dictate-cargo-${{ runner.os }}-${{ hashFiles('examples/nvoos-dictate/src-tauri/Cargo.lock') }}
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Generate icons
+        run: node scripts/gen-icons.mjs
+
+      # `tauri build` runs beforeBuildCommand (npm run build = webview dist,
+      # required by generate_context!) and beforeBundleCommand
+      # (build:helper = Swift sidecar built for the native arch and staged
+      # over the externalBin stub) automatically, so the .app embeds both.
+      - name: Build debug .app bundle
+        run: npm run tauri -- build --debug --bundles app
+
+      - name: Inspect bundle (Info.plist + entitlements)
+        run: |
+          APP="src-tauri/target/debug/bundle/macos/NV oOS Dictation.app"
+          test -d "$APP" || { echo "bundle missing: $APP"; ls -R src-tauri/target/debug/bundle 2>/dev/null || true; exit 1; }
+          plutil -p "$APP/Contents/Info.plist"
+          echo "--- entitlements (debug build = ad-hoc signed) ---"
+          codesign -dv --entitlements - "$APP" 2>&1 || echo "codesign inspect failed (expected for ad-hoc debug builds)"
+
+      - name: Boot the app (30 s residency)
+        run: |
+          APP="src-tauri/target/debug/bundle/macos/NV oOS Dictation.app"
+          BIN="$APP/Contents/MacOS/NV oOS Dictation"
+          "$BIN" > /tmp/nvoos-boot.log 2>&1 &
+          BOOT_PID=$!
+          for i in $(seq 1 30); do
+            sleep 1
+            if ! kill -0 "$BOOT_PID" 2>/dev/null; then
+              echo "app exited before the 30 s mark — boot log:"
+              cat /tmp/nvoos-boot.log
+              echo "--- unified log (last 2 min, best effort) ---"
+              log show --last 2m --predicate 'processImagePath CONTAINS "NV oOS Dictation"' 2>/dev/null | tail -40 || true
+              exit 1
+            fi
+          done
+          echo "boot OK — process alive after 30 s (pid $BOOT_PID)"
+          cat /tmp/nvoos-boot.log
+
+      # Best effort: GitHub macOS runners expose an Aqua session and
+      # screencapture normally works, but a session quirk must not red the
+      # job — boot residency (previous step) is the hard gate, the image is
+      # evidence for humans.
+      - name: Screenshot the Aqua session
+        run: |
+          if screencapture -x /tmp/nvoos-boot.png && test -s /tmp/nvoos-boot.png; then
+            ls -l /tmp/nvoos-boot.png
+          else
+            echo "WARNING: screencapture produced no image (runner session quirk)"
+          fi
+
+      - name: Stop the app
+        if: always()
+        run: |
+          APP="src-tauri/target/debug/bundle/macos/NV oOS Dictation.app"
+          pkill -f "$APP/Contents/MacOS" 2>/dev/null || true
+
+      - name: Upload boot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvoos-dictate-macos-boot
+          path: |
+            /tmp/nvoos-boot.png
+            /tmp/nvoos-boot.log
+          if-no-files-found: warn
+          retention-days: 7
 
   frontend:
     name: Webview (typecheck + build + smoke)
