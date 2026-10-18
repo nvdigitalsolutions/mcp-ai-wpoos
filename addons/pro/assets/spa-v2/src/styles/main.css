@@ -849,11 +849,13 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	overflow-y: auto;
 }
 
-/* On mobile, add extra bottom padding so the wrapped toolbar
-   buttons (mic, voice, attach) aren't clipped by the viewport edge. */
+/* On mobile, add extra bottom padding and an outer margin so the wrapped
+   composer rows (mic, voice, attach, send) aren't clipped by the
+   viewport edge. */
 @media screen and ( max-width: 782px ) {
 	.nvoos-pro-spa-agent-panel__composer {
 		padding: 8px 12px 36px;
+		margin-bottom: 25px;
 	}
 }
 
