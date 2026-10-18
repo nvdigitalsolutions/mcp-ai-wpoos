@@ -11,6 +11,7 @@
 #   Docs    docs-hub              ≤ 250 KB gzip  (React + FlexSearch + rehype-highlight)
 #   Docs    cloudways-dashboard   ≤ 200 KB gzip  (Velzon-themed React SPA)
 #   Docs    comic-reader          ≤ 200 KB gzip  (React-based comic reader)
+#   SPA     schedule-anything-spa ≤ 150 KB gzip  (main chunk — Vite/Tailwind build; Builder lazy chunk ~64 KB)
 #
 # Failures are blocking. The job prints the actual size alongside the limit so
 # contributors know how much headroom remains.
@@ -45,6 +46,9 @@ on:
       - 'addons/comic-reader/src/**'
       - 'addons/comic-reader/esbuild.config.cjs'
       - 'addons/comic-reader/package.json'
+      - 'addons/schedule-anything-spa/src/**'
+      - 'addons/schedule-anything-spa/vite.config.ts'
+      - 'addons/schedule-anything-spa/package.json'
   pull_request:
     paths:
       - 'addons/toolkit-shell/src/**'
@@ -71,6 +75,9 @@ on:
       - 'addons/comic-reader/src/**'
       - 'addons/comic-reader/esbuild.config.cjs'
       - 'addons/comic-reader/package.json'
+      - 'addons/schedule-anything-spa/src/**'
+      - 'addons/schedule-anything-spa/vite.config.ts'
+      - 'addons/schedule-anything-spa/package.json'
 
 jobs:
   bundle-size:
@@ -97,6 +104,8 @@ jobs:
             limit_kb: 200
           - addon: comic-reader
             limit_kb: 200
+          - addon: schedule-anything-spa
+            limit_kb: 150  # main chunk (index-*.js) — Vite build; lazy Builder chunk ~64 KB
 
     steps:
       - name: Checkout repository
@@ -123,10 +132,18 @@ jobs:
           ADDON="${{ matrix.addon }}"
           LIMIT_KB="${{ matrix.limit_kb }}"
           LIMIT_BYTES=$(( LIMIT_KB * 1024 ))
-          BUNDLE="addons/${ADDON}/assets/dist/${ADDON}.js"
 
-          if [ ! -f "${BUNDLE}" ]; then
-            echo "::error::Bundle not found: ${BUNDLE}"
+          # Pattern-B Vite builds (schedule-anything-spa) emit hashed chunks
+          # under assets/dist/assets/ — guard the main entry chunk, which
+          # every route loads (lazy chunks load on demand).
+          if [ "${ADDON}" = "schedule-anything-spa" ]; then
+            BUNDLE=$(ls "addons/${ADDON}/assets/dist/assets"/index-*.js 2>/dev/null | head -n1)
+          else
+            BUNDLE="addons/${ADDON}/assets/dist/${ADDON}.js"
+          fi
+
+          if [ -z "${BUNDLE}" ] || [ ! -f "${BUNDLE}" ]; then
+            echo "::error::Bundle not found for ${ADDON} (expected assets/dist/<slug>.js or assets/dist/assets/index-*.js)"
             exit 1
           fi
 

@@ -4,6 +4,11 @@
 # Each addon is a React 18 SPA that bundles via esbuild (IIFE bundle).
 # The ZIP ships pre-built assets — no server-side Node.js required to use it.
 #
+# schedule-anything-spa is the Pattern-B exception: a Vite + Tailwind v4
+# product SPA (tsc && vite build) with no PHP entry file — its version is
+# read from package.json and its build output is assets/dist/index.html
+# plus hashed chunks under assets/dist/assets/.
+#
 # Outputs (one per addon):
 #   nvoos-chat-spa-v{version}.zip
 #   nvoos-canvas-toolkit-v{version}.zip
@@ -12,6 +17,7 @@
 #   nvoos-toolkit-shell-v{version}.zip
 #   nvoos-docs-hub-v{version}.zip
 #   nvoos-librechat-v{version}.zip
+#   nvoos-schedule-anything-spa-v{version}.zip
 #
 # Triggered by:
 #   - Manual workflow_dispatch (all addons) or with a specific addon input
@@ -27,6 +33,7 @@
 #   toolkit-shell    ≤ 200 KB  gzip
 #   docs-hub         ≤ 250 KB  gzip
 #   librechat        ≤ 350 KB  gzip
+#   schedule-anything-spa ≤ 150 KB gzip (main chunk; Builder lazy chunk ~64 KB)
 
 name: Build SPA Addons
 
@@ -48,6 +55,7 @@ on:
       - 'addons/toolkit-shell/**'
       - 'addons/docs-hub/**'
       - 'addons/librechat/**'
+      - 'addons/schedule-anything-spa/**'
   pull_request:
     paths:
       - 'addons/chat-spa/**'
@@ -57,6 +65,7 @@ on:
       - 'addons/toolkit-shell/**'
       - 'addons/docs-hub/**'
       - 'addons/librechat/**'
+      - 'addons/schedule-anything-spa/**'
   workflow_dispatch:
     inputs:
       addon:
@@ -72,6 +81,7 @@ on:
           - toolkit-shell
           - docs-hub
           - librechat
+          - schedule-anything-spa
       create_release:
         description: 'Create GitHub Releases for built addons'
         required: false
@@ -110,7 +120,8 @@ jobs:
               {"slug":"media-studio"},
               {"slug":"toolkit-shell"},
               {"slug":"docs-hub"},
-              {"slug":"librechat"}
+              {"slug":"librechat"},
+              {"slug":"schedule-anything-spa"}
             ]'
             echo 'ADDONS_EOF'
           } >> "$GITHUB_OUTPUT"
@@ -149,9 +160,16 @@ jobs:
         id: version
         run: |
           ADDON="${{ matrix.addon.slug }}"
-          # Read version from the plugin header (tag releases live in
-          # release-spa-addons.yml).
-          VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+          # schedule-anything-spa has no PHP header — its version lives in
+          # package.json (Pattern-B Vite SPA). Node is not set up yet in this
+          # step, so extract it with grep/sed instead of `node -p`.
+          if [ "$ADDON" = "schedule-anything-spa" ]; then
+            VERSION=$(grep -m1 '"version"' "addons/${ADDON}/package.json" | sed 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+          else
+            # Read version from the plugin header (tag releases live in
+            # release-spa-addons.yml).
+            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+          fi
           VERSION="${VERSION:-dev}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "artifact=nvoos-${ADDON}-v${VERSION}" >> "$GITHUB_OUTPUT"
@@ -184,17 +202,38 @@ jobs:
       - name: Verify build output
         run: |
           ADDON="${{ matrix.addon.slug }}"
-          JS_BUNDLE="addons/${ADDON}/assets/dist/${ADDON}.js"
-          CSS_BUNDLE="addons/${ADDON}/assets/dist/${ADDON}.css"
-          if [ ! -f "$JS_BUNDLE" ]; then
-            echo "::error::JS bundle not found at $JS_BUNDLE"
-            exit 1
-          fi
-          JS_SIZE=$(du -h "$JS_BUNDLE" | cut -f1)
-          echo "✅ JS bundle present — $JS_SIZE"
-          if [ -f "$CSS_BUNDLE" ]; then
-            CSS_SIZE=$(du -h "$CSS_BUNDLE" | cut -f1)
-            echo "✅ CSS bundle present — $CSS_SIZE"
+          if [ "$ADDON" = "schedule-anything-spa" ]; then
+            # Pattern-B Vite output: assets/dist/index.html + hashed chunks
+            # under assets/dist/assets/ (no <slug>.js bundle).
+            INDEX_HTML="addons/${ADDON}/assets/dist/index.html"
+            if [ ! -f "$INDEX_HTML" ]; then
+              echo "::error::SPA entry not found at $INDEX_HTML"
+              exit 1
+            fi
+            JS_COUNT=$(find "addons/${ADDON}/assets/dist/assets" -maxdepth 1 -name '*.js' 2>/dev/null | wc -l)
+            if [ "$JS_COUNT" -eq 0 ]; then
+              echo "::error::No JS chunks found under addons/${ADDON}/assets/dist/assets/"
+              exit 1
+            fi
+            JS_SIZE=$(du -sh "addons/${ADDON}/assets/dist/assets" | cut -f1)
+            echo "✅ SPA build present — index.html + $JS_COUNT JS chunk(s), $JS_SIZE"
+            CSS_COUNT=$(find "addons/${ADDON}/assets/dist/assets" -maxdepth 1 -name '*.css' 2>/dev/null | wc -l)
+            if [ "$CSS_COUNT" -gt 0 ]; then
+              echo "✅ CSS present — $CSS_COUNT file(s)"
+            fi
+          else
+            JS_BUNDLE="addons/${ADDON}/assets/dist/${ADDON}.js"
+            CSS_BUNDLE="addons/${ADDON}/assets/dist/${ADDON}.css"
+            if [ ! -f "$JS_BUNDLE" ]; then
+              echo "::error::JS bundle not found at $JS_BUNDLE"
+              exit 1
+            fi
+            JS_SIZE=$(du -h "$JS_BUNDLE" | cut -f1)
+            echo "✅ JS bundle present — $JS_SIZE"
+            if [ -f "$CSS_BUNDLE" ]; then
+              CSS_SIZE=$(du -h "$CSS_BUNDLE" | cut -f1)
+              echo "✅ CSS bundle present — $CSS_SIZE"
+            fi
           fi
 
       - name: Assemble addon directory for ZIP
@@ -230,6 +269,17 @@ jobs:
           # Markdown (root README.md / CHANGELOG.md are dev-only docs).
           if [ "${ADDON}" = "docs-hub" ]; then
             EXCLUDES+=(--exclude='*.md')
+          fi
+
+          # Pattern-B Vite SPA: drop the dev entry + Vite configs. The '/'
+          # anchors the index.html pattern to the transfer root so the built
+          # assets/dist/index.html (under assets/) is kept.
+          if [ "${ADDON}" = "schedule-anything-spa" ]; then
+            EXCLUDES+=(
+              --exclude='/index.html'
+              --exclude='vite.config.ts'
+              --exclude='postcss.config.js'
+            )
           fi
 
           rsync -a "${EXCLUDES[@]}" \
@@ -558,7 +608,11 @@ jobs:
         id: version
         run: |
           ADDON="${{ matrix.addon.slug }}"
-          VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+          if [ "$ADDON" = "schedule-anything-spa" ]; then
+            VERSION=$(grep -m1 '"version"' "addons/${ADDON}/package.json" | sed 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+          else
+            VERSION=$(grep -E "^\s*\*\s*Version:" "addons/${ADDON}/nvoos-${ADDON}.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+          fi
           VERSION="${VERSION:-dev}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
@@ -569,6 +623,7 @@ jobs:
           path: artifacts/
 
       - name: Create release
+        if: matrix.addon.slug != 'schedule-anything-spa'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ matrix.addon.slug }}-v${{ steps.version.outputs.version }}
@@ -582,6 +637,33 @@ jobs:
 
             - NV oOS Base Plugin active
             - WordPress 6.0+
+            - PHP 7.4+
+
+            ### Checksum
+
+            See the `.sha256` file attached to this release.
+          files: |
+            artifacts/*.zip
+            artifacts/*.sha256
+          draft: false
+          prerelease: false
+
+      - name: Create release (schedule-anything-spa)
+        if: matrix.addon.slug == 'schedule-anything-spa'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.addon.slug }}-v${{ steps.version.outputs.version }}
+          name: "NV oOS ${{ matrix.addon.slug }} Addon v${{ steps.version.outputs.version }}"
+          body: |
+            ## NV oOS ${{ matrix.addon.slug }} Addon v${{ steps.version.outputs.version }}
+
+            Pre-built static bundle for the Schedule Anything tenant SPA (Vite + React 18 + Tailwind v4). Unzip and serve `assets/dist/` from any static host — no build step required.
+
+            ### Requirements (WordPress backend)
+
+            - WordPress 6.0+ Multisite
+            - NV oOS Base plugin + Pro addon
+            - Schedule Anything Platform plugin (`nvoos-schedule-anything-platform`)
             - PHP 7.4+
 
             ### Checksum
