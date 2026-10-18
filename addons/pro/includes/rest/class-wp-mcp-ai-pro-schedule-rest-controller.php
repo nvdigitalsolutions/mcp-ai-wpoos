@@ -205,7 +205,7 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 		}
 
 		// Redact sensitive fields for public display.
-		$schedules = array_map( array( 'WP_MCP_AI_Pro_Schedule_Manager', 'redact_envelope_for_public' ), $schedules );
+		$schedules = array_map( array( 'WP_MCP_AI_Pro_Schedule_Manager', 'redact_schedule_for_public' ), $schedules );
 
 		return rest_ensure_response(
 			array(
@@ -239,7 +239,7 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 		return rest_ensure_response(
 			array(
 				'ok'       => true,
-				'schedule' => WP_MCP_AI_Pro_Schedule_Manager::redact_envelope_for_public( $schedule ),
+				'schedule' => WP_MCP_AI_Pro_Schedule_Manager::redact_schedule_for_public( $schedule ),
 			)
 		);
 	}
@@ -295,7 +295,7 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 		return rest_ensure_response(
 			array(
 				'ok'       => true,
-				'schedule' => WP_MCP_AI_Pro_Schedule_Manager::redact_envelope_for_public( $schedule ),
+				'schedule' => WP_MCP_AI_Pro_Schedule_Manager::redact_schedule_for_public( $schedule ),
 			)
 		);
 	}
@@ -335,7 +335,7 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 		return rest_ensure_response(
 			array(
 				'ok'       => true,
-				'schedule' => WP_MCP_AI_Pro_Schedule_Manager::redact_envelope_for_public( $schedule ),
+				'schedule' => WP_MCP_AI_Pro_Schedule_Manager::redact_schedule_for_public( $schedule ),
 			)
 		);
 	}
@@ -414,7 +414,7 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 			array(
 				'ok'       => true,
 				'enabled'  => (bool) $schedule['enabled'],
-				'schedule' => WP_MCP_AI_Pro_Schedule_Manager::redact_envelope_for_public( $schedule ),
+				'schedule' => WP_MCP_AI_Pro_Schedule_Manager::redact_schedule_for_public( $schedule ),
 			)
 		);
 	}

@@ -207,15 +207,37 @@ class SA_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public static function get_nonce( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		// This endpoint is called without a nonce by design, so WordPress
+		// core's rest_cookie_check_errors() has already set the current user
+		// to 0 before the callback runs. Minting now would produce a nonce
+		// bound to user 0 that fails rest_cookie_check_errors() on the very
+		// first authenticated request the SPA makes (403
+		// rest_cookie_invalid_nonce). Re-establish the identity the request's
+		// auth cookie proves before minting so wp_create_nonce() binds the
+		// nonce to that session. Requests without a valid cookie keep the
+		// guest nonce they receive today (mirrors handle_session_nonce() in
+		// the base plugin's REST chat controller).
+		$cookie_user_id = wp_validate_auth_cookie( '', 'logged_in' );
+		if ( $cookie_user_id && absint( $cookie_user_id ) !== get_current_user_id() ) {
+			wp_set_current_user( absint( $cookie_user_id ) );
+		}
+
 		$user_id = get_current_user_id();
 
-		return rest_ensure_response(
+		$response = rest_ensure_response(
 			array(
 				'nonce'     => wp_create_nonce( 'wp_rest' ),
 				'user_id'   => $user_id,
 				'logged_in' => 0 !== $user_id,
 			)
 		);
+
+		// Never cache the payload: it is session-bound and invalidates on
+		// session-token rotation.
+		$response->header( 'Cache-Control', 'no-cache, no-store, must-revalidate' );
+		$response->header( 'Pragma', 'no-cache' );
+
+		return $response;
 	}
 
 	/**
