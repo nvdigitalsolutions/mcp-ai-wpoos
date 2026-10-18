@@ -39,7 +39,16 @@ else
 fi
 
 step "Boot residency (30 s)"
-BIN="$APP/Contents/MacOS/NV oOS Dictation"
+# Tauri v2 keeps the Cargo binary name (nvoos-dictate) as the bundle
+# executable — do not assume productName. Exclude the sidecar helper and
+# pick the remaining executable.
+BIN="$(find "$APP/Contents/MacOS" -maxdepth 1 -type f -perm -u+x ! -name '*helper*' -print -quit)"
+if [[ -z "$BIN" ]]; then
+  echo "no executable in $APP/Contents/MacOS" >&2
+  ls -la "$APP/Contents/MacOS"
+  exit 1
+fi
+echo "launching $BIN"
 "$BIN" > "$OUT/boot.log" 2>&1 &
 BOOT_PID=$!
 for i in $(seq 1 30); do
