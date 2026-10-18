@@ -674,12 +674,109 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
 }
 
-/* On mobile, tighten up the toolbar so Memory / Tools / Commands
-   buttons wrap naturally instead of overflowing off-screen. */
+/* Collapse/expand toggle inside the toolbar — the single extra control on
+   mobile; on desktop the floating action button replaces it. */
+.nvoos-pro-spa-chat-toolbar-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin-left: auto;
+	flex-shrink: 0;
+	padding: 3px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	font-size: 14px;
+	line-height: 1.4;
+	cursor: pointer;
+}
+
+.nvoos-pro-spa-chat-toolbar-toggle:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+/* Floating action button (desktop only) — replaces the collapsed toolbar.
+   Sits above the composer row so it never covers the Send button. */
+.nvoos-pro-spa-chat-toolbar-fab {
+	display: none;
+	position: fixed;
+	right: 16px;
+	bottom: 132px;
+	z-index: 95;
+	width: 44px;
+	height: 44px;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 50%;
+	background: var(--nvoos-primary, #2271b1);
+	color: #fff;
+	font-size: 20px;
+	line-height: 1;
+	cursor: pointer;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.nvoos-pro-spa-chat-toolbar-fab:hover {
+	background: var(--nvoos-primary-hover, #135e96);
+}
+
+/* Desktop: the top bar is gone; everything lives behind the FAB, which
+   re-opens it as a floating panel above the button. */
+@media screen and ( min-width: 783px ) {
+	.nvoos-pro-spa-chat-page__toolbar {
+		display: none;
+	}
+
+	.nvoos-pro-spa-chat-page__toolbar--open {
+		display: flex;
+		position: fixed;
+		right: 16px;
+		bottom: 190px;
+		z-index: 95;
+		max-width: 380px;
+		max-height: min(60vh, 480px);
+		overflow-y: auto;
+		border: 1px solid var(--nvoos-border, #dcdcde);
+		border-radius: 10px;
+		background: var(--nvoos-bg-secondary, #fff);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+	}
+
+	.nvoos-pro-spa-chat-toolbar-fab {
+		display: inline-flex;
+	}
+
+	.nvoos-pro-spa-chat-toolbar-toggle {
+		display: none;
+	}
+
+	/* Embedded widget: keep the top bar in-flow (no FAB, no fixed panel). */
+	.nvoos-pro-spa-embedded__main .nvoos-pro-spa-chat-page__toolbar,
+	.nvoos-pro-spa-embedded__main .nvoos-pro-spa-chat-page__toolbar--open {
+		display: flex;
+		position: static;
+		max-width: none;
+		max-height: none;
+		border: 0;
+		border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	.nvoos-pro-spa-embedded__main .nvoos-pro-spa-chat-toolbar-fab {
+		display: none;
+	}
+}
+
+/* Mobile: collapse to a single row — model label + selector on the left,
+   the toggle on the top-right. The remaining controls stay hidden until
+   the toolbar is expanded. */
 @media screen and ( max-width: 782px ) {
 	.nvoos-pro-spa-chat-page__toolbar {
 		gap: 6px 10px;
-		padding: 10px 12px;
+		padding: 8px 12px;
 	}
 
 	.nvoos-pro-spa-chat-page__toolbar .nvoos-pro-spa-btn {
@@ -687,25 +784,45 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 		font-size: 12px;
 	}
 
+	.nvoos-pro-spa-chat-page__model-select {
+		display: flex;
+		align-items: center;
+		min-width: 0;
+	}
+
 	.nvoos-pro-spa-chat-page__select {
-		max-width: 160px;
+		max-width: 150px;
+	}
+
+	.nvoos-pro-spa-chat-toolbar-extra {
+		display: none;
+	}
+
+	.nvoos-pro-spa-chat-page__toolbar--open .nvoos-pro-spa-chat-toolbar-extra {
+		display: block;
 	}
 }
 
+/* Model and profile selectors — keep the label and control at the same
+   compact size so "Model" and "Full access" read consistently. */
 .nvoos-pro-spa-chat-page__select-label {
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 500;
 	color: var(--nvoos-text-secondary, #787c82);
 	margin-right: 6px;
+	white-space: nowrap;
 }
 
 .nvoos-pro-spa-chat-page__select {
-	padding: 4px 8px;
+	padding: 3px 6px;
 	border: 1px solid var(--nvoos-border, #dcdcde);
 	border-radius: 4px;
 	font-size: 12px;
+	line-height: 1.4;
 	font-family: inherit;
 	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	max-width: 220px;
 }
 
 /* ── Agent Panel ──────────────────────────────────────────────────────────── */
