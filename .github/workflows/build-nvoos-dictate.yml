@@ -171,6 +171,16 @@ jobs:
       - name: Build debug .app bundle
         run: npm run tauri -- build --debug --bundles app
 
+      # Zip the debug .app so a human can download it from the run's
+      # artifacts and test on any Mac — the "GitHub worker creates the
+      # app" path. Ad-hoc signed: first launch needs right-click > Open.
+      # The publish workflow produces the signed + notarized DMG instead.
+      - name: Package .app for download
+        run: |
+          APP="src-tauri/target/debug/bundle/macos/NV oOS Dictation.app"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" /tmp/nvoos-dictate-macos-arm64.zip
+          ls -lh /tmp/nvoos-dictate-macos-arm64.zip
+
       - name: Inspect bundle (Info.plist + entitlements)
         run: |
           APP="src-tauri/target/debug/bundle/macos/NV oOS Dictation.app"
@@ -226,6 +236,15 @@ jobs:
             /tmp/nvoos-boot.log
           if-no-files-found: warn
           retention-days: 7
+      - name: Upload testable .app
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvoos-dictate-macos-app
+          path: /tmp/nvoos-dictate-macos-arm64.zip
+          if-no-files-found: warn
+          retention-days: 7
+
 
   frontend:
     name: Webview (typecheck + build + smoke)
