@@ -442,6 +442,15 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const [ okfOpen, setOkfOpen ] = useState< boolean >( false );
 	const okfToggleRef = useRef< HTMLButtonElement | null >( null );
 
+	// ---- Chat toolbar collapse (v2.2.0) ----
+	// Desktop: the toolbar is hidden behind a floating action button;
+	// mobile: the toolbar collapses to a single model row. The extra
+	// controls only render when `toolbarOpen` is true (CSS-driven).
+	const [ toolbarOpen, setToolbarOpen ] = useState< boolean >( false );
+	const toggleToolbar = useCallback( () => {
+		setToolbarOpen( ( open ) => ! open );
+	}, [] );
+
 	// Shared callback: close one drawer when another opens.
 	const openDrawer = useCallback(
 		( which: 'memory' | 'tools' | 'commands' | 'tasks' | 'okf' ) => {
@@ -626,7 +635,17 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 			role="main"
 			aria-label={ __( 'Chat conversation', 'nvoos-pro-spa' ) }
 		>
-			<div className="nvoos-pro-spa-chat-page__toolbar">
+			<div
+				id="nvoos-pro-spa-chat-toolbar"
+				className={ [
+					'nvoos-pro-spa-chat-page__toolbar',
+					toolbarOpen
+						? 'nvoos-pro-spa-chat-page__toolbar--open'
+						: '',
+				]
+					.filter( Boolean )
+					.join( ' ' ) }
+			>
 				{/* Model selector — admin only */}
 				{ isAdmin && uniqueModels.length > 0 && (
 					<div className="nvoos-pro-spa-chat-page__model-select">
@@ -663,7 +682,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					    surfaces where the server enables it; only profiles the
 					    user may select are listed. */}
 					{ showProfileSelector && availableProfiles.length > 0 && (
-						<div className="nvoos-pro-spa-chat-page__profile-select">
+						<div className="nvoos-pro-spa-chat-page__profile-select nvoos-pro-spa-chat-toolbar-extra">
 							<label
 								htmlFor="nvoos-pro-spa-profile-select"
 								className="nvoos-pro-spa-chat-page__select-label"
@@ -690,7 +709,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					<button
 						type="button"
 						ref={ memoryToggleRef }
-						className="nvoos-pro-spa-chat-page__memory-btn nvoos-pro-spa-btn"
+						className="nvoos-pro-spa-chat-page__memory-btn nvoos-pro-spa-btn nvoos-pro-spa-chat-toolbar-extra"
 						onClick={ () => openDrawer( 'memory' ) }
 						aria-label={ __( 'Toggle memory drawer', 'nvoos-pro-spa' ) }
 						aria-expanded={ memoryOpen }
@@ -704,7 +723,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 											<button
 												type="button"
 												ref={ toolsToggleRef }
-												className="nvoos-pro-spa-chat-page__tools-btn nvoos-pro-spa-btn"
+												className="nvoos-pro-spa-chat-page__tools-btn nvoos-pro-spa-btn nvoos-pro-spa-chat-toolbar-extra"
 												onClick={ () => openDrawer( 'tools' ) }
 												aria-label={ __( 'Toggle tool shortcuts drawer', 'nvoos-pro-spa' ) }
 												aria-expanded={ toolsOpen }
@@ -718,7 +737,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 											<button
 												type="button"
 												ref={ commandsToggleRef }
-												className="nvoos-pro-spa-chat-page__commands-btn nvoos-pro-spa-btn"
+												className="nvoos-pro-spa-chat-page__commands-btn nvoos-pro-spa-btn nvoos-pro-spa-chat-toolbar-extra"
 												onClick={ () => openDrawer( 'commands' ) }
 												aria-label={ __( 'Toggle slash commands drawer', 'nvoos-pro-spa' ) }
 												aria-expanded={ commandsOpen }
@@ -730,7 +749,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 										<button
 											type="button"
 											ref={ tasksToggleRef }
-											className="nvoos-pro-spa-chat-page__tasks-btn nvoos-pro-spa-btn"
+											className="nvoos-pro-spa-chat-page__tasks-btn nvoos-pro-spa-btn nvoos-pro-spa-chat-toolbar-extra"
 											onClick={ () => openDrawer( 'tasks' ) }
 											aria-label={ __( 'Toggle tasks drawer', 'nvoos-pro-spa' ) }
 											aria-expanded={ tasksOpen }
@@ -750,7 +769,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 											<button
 												type="button"
 												ref={ okfToggleRef }
-												className="nvoos-pro-spa-chat-page__okf-btn nvoos-pro-spa-btn"
+												className="nvoos-pro-spa-chat-page__okf-btn nvoos-pro-spa-btn nvoos-pro-spa-chat-toolbar-extra"
 												onClick={ () => openDrawer( 'okf' ) }
 												aria-label={ __( 'Toggle skills & knowledge drawer', 'nvoos-pro-spa' ) }
 												aria-expanded={ okfOpen }
@@ -759,25 +778,59 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 											</button>
 										) }
 										{/* Theme toggle (v0.9.0) */}
-										<button type="button" className="nvoos-pro-spa-btn"
+										<button type="button" className="nvoos-pro-spa-btn nvoos-pro-spa-chat-toolbar-extra"
 											onClick={ () => setTheme( theme === 'dark' ? 'light' : 'dark' ) }
 											aria-label={ theme === 'dark' ? __( 'Light mode', 'nvoos-pro-spa' ) : __( 'Dark mode', 'nvoos-pro-spa' ) }>
 											{ theme === 'dark' ? '☀️' : '🌙' }
 										</button>
 										{/* Export (v0.9.0) */}
-										<button type="button" className="nvoos-pro-spa-btn"
+										<button type="button" className="nvoos-pro-spa-btn nvoos-pro-spa-chat-toolbar-extra"
 											disabled={ messages.length === 0 }
 											onClick={ () => exportConversation( messages, 'json', assistantId, transcripts.sessionKey ) }
 											aria-label={ __( 'Export conversation', 'nvoos-pro-spa' ) }>
 											📥
 										</button>
 										{/* Keyboard shortcuts (v0.9.0) */}
-										<button type="button" className="nvoos-pro-spa-btn"
+										<button type="button" className="nvoos-pro-spa-btn nvoos-pro-spa-chat-toolbar-extra"
 											onClick={ ks.toggleHelp }
 											aria-label={ __( 'Keyboard shortcuts', 'nvoos-pro-spa' ) }>
 											⌨
 										</button>
+										{/* Collapse/expand toggle — visible on mobile (desktop uses
+										    the floating action button instead). */}
+										<button
+											type="button"
+											className="nvoos-pro-spa-chat-toolbar-toggle"
+											onClick={ toggleToolbar }
+											aria-label={
+												toolbarOpen
+													? __( 'Hide chat controls', 'nvoos-pro-spa' )
+													: __( 'Show chat controls', 'nvoos-pro-spa' )
+											}
+											aria-expanded={ toolbarOpen }
+											aria-controls="nvoos-pro-spa-chat-toolbar"
+										>
+											{ toolbarOpen ? '✕' : '⚙' }
+										</button>
 									</div>
+
+			{/* Floating action button (desktop) — re-opens the collapsed
+			    toolbar as a bottom-right panel. Hidden on mobile and in
+			    embedded mode via CSS. */}
+			<button
+				type="button"
+				className="nvoos-pro-spa-chat-toolbar-fab"
+				onClick={ toggleToolbar }
+				aria-label={
+					toolbarOpen
+						? __( 'Hide chat controls', 'nvoos-pro-spa' )
+						: __( 'Show chat controls', 'nvoos-pro-spa' )
+				}
+				aria-expanded={ toolbarOpen }
+				aria-controls="nvoos-pro-spa-chat-toolbar"
+			>
+				{ toolbarOpen ? '✕' : '⚙' }
+			</button>
 
 			{/* HITL approval bar */}
 			{ hasApprovals && (
