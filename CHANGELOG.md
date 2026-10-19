@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added — NV oOS Complete Console (Proposal 083)
+
+- **`examples/nvoos-complete-velocity/`** — new Cloudways Velocity app serving the full NV oOS Pro SPA (spa-v2) admin surface (chat, settings, tools, assistants, workflows, analytics, knowledge-graph, docs, media, documents) for NV oOS Complete customers. Vite host over the spa-v2 sources (alias, no fork), fixed cookie-auth through the proven same-origin BFF proxy (`serve.mjs` ported byte-identical from the Schedule Anything app), no connection screen, entry chunk 91.47 KB gzip (150 KB budget).
+- **Sync pipeline** — `sync-nvoos-complete-velocity.yml` mirrors the app (root-level tree, flat history) to `nvdigitalsolutions/nvoos-complete-velocity`; triggers on the app folder **and** `addons/pro/assets/spa-v2/**` (the console embeds spa-v2 sources). Requires the repo secret `NVOOS_COMPLETE_VELOCITY_REPO_TOKEN` (owner step).
+- **Docs** — Proposal 083 + implementation plan + Velocity setup runbook (`docs/operations/deployment/nvoos-complete-velocity-setup.md`).
+- **Decisions recorded** — console naming, assistant provisioning (default + selector both supported), standalone Pro SPA persists alongside, cross-app SSO deferred as shared-domain cookie follow-up.
+
 ### Fixed — Schedule Anything: full tool/schedule/preset visibility
 
 - **Live tool catalogue for the SPA builder** — new `GET /mcp-ai-pro/v1/sa-tools` route serves light, paginated rows (slug/name/description/group/group_label) from the live NV oOS tool registry with server-side search + group filtering + `has_more`, mirroring the MCP `tools/list` progressive-discovery pattern; the builder palette previously rendered a hardcoded 19-tool fixture and could never show the real registry. The palette now loads page-by-page with search and a load-more control, and the full `inputSchema` never leaves the server.
