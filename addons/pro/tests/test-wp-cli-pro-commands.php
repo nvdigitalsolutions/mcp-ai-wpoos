@@ -132,23 +132,29 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The TOOLKITS constant on the toolkit command class contains known entries.
+	 * The toolkit command consumes the canonical settings map, which contains
+	 * the known toolkit entries (keys moved out of the command class when the
+	 * hardcoded copies were centralised).
 	 */
 	public function test_toolkit_command_has_expected_keys() {
-		// Only load the file in isolation — no WP_CLI bootstrap needed.
+		// Only load the files in isolation — no WP_CLI bootstrap needed.
 		$file = WP_MCP_AI_PRO_PATH . 'includes/cli/class-wp-mcp-ai-pro-cli-toolkit-command.php';
+		$map  = WP_MCP_AI_PRO_PATH . 'includes/cli/class-wp-mcp-ai-pro-toolkit-settings-map.php';
 
-		if ( ! file_exists( $file ) ) {
-			$this->markTestSkipped( 'Toolkit command file not found.' );
+		if ( ! file_exists( $file ) || ! file_exists( $map ) ) {
+			$this->markTestSkipped( 'Toolkit command or settings-map file not found.' );
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading file to inspect constants without executing WP-CLI bootstrap.
-		$source = file_get_contents( $file );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading files to inspect contents without executing WP-CLI bootstrap.
+		$command_source = file_get_contents( $file );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading files to inspect contents without executing WP-CLI bootstrap.
+		$map_source = file_get_contents( $map );
 
-		$this->assertStringContainsString( 'enable_crm_toolkit', $source );
-		$this->assertStringContainsString( 'enable_architect_agent_toolkit', $source );
-		$this->assertStringContainsString( 'enable_site_creator_toolkit', $source );
-		$this->assertStringContainsString( 'enable_project_management', $source );
+		$this->assertStringContainsString( 'WP_MCP_AI_Pro_Toolkit_Settings_Map', $command_source, 'Toolkit command should read the shared settings map' );
+		$this->assertStringContainsString( 'enable_crm_toolkit', $map_source );
+		$this->assertStringContainsString( 'enable_architect_agent_toolkit', $map_source );
+		$this->assertStringContainsString( 'enable_site_creator_toolkit', $map_source );
+		$this->assertStringContainsString( 'enable_project_management', $map_source );
 	}
 
 	// -----------------------------------------------------------------------

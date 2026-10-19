@@ -19,6 +19,7 @@ Complete operator reference for the `wp mcp-ai …` command tree (Base + Pro + a
 | `wp mcp-ai bulk` | `audit`, `cleanup-artifacts`, `dispatch`, `retry-failed`, `status` | `--dry-run`, `--batch-size` |
 | `wp mcp-ai cache clear` | — | gated |
 | `wp mcp-ai chat` | one-shot message | `--assistant-id`, `--model`, `--provider`, `--stream` |
+| `wp mcp-ai chat-profile` | `list`, `get`, `set`, `audit-flags` | |
 | `wp mcp-ai content` | `auto-categorize` | |
 | `wp mcp-ai conversation-import` | `detect`, `import`, `status`, `delete` | JetEngine-gated |
 | `wp mcp-ai credential` | `list`, `issue`, `revoke` | gated; `--porcelain` prints token once |
@@ -52,7 +53,14 @@ Complete operator reference for the `wp mcp-ai …` command tree (Base + Pro + a
 | Command | Subcommands | Notes |
 |---|---|---|
 | `wp mcp-ai pro status` | — | Pro/core versions, active toolkits |
-| `wp mcp-ai toolkit` | `list`, `enable`, `disable` | 24 toolkits |
+| `wp mcp-ai pro fnb seed-assistants` | — | F&B assistant packs A1–A4 (`--dry-run`, `--mode`, `--porcelain`) |
+| `wp mcp-ai pro gtmetrix seed-assistant` | — | GTmetrix Performance Optimizer pack |
+| `wp mcp-ai toolkit` | `list`, `enable`, `disable` | All Pro toolkits from the canonical map; mutations gated + `--yes` |
+| `wp mcp-ai foundry` | `status`, `export <assistant-id>` | Model Foundry corpus exports (`--corpus`, `--dry-run`); export gated |
+| `wp mcp-ai para` | `list`, `get` | PARA areas (read-only) |
+| `wp mcp-ai qms` | `status`, `list` | Quality Management System (read-only) |
+| `wp mcp-ai mcp-app` | `list --assistant-id=<id>` | MCP Apps metadata only — never renders secrets |
+| `wp mcp-ai fnb` | `status` | F&B toolkit gate + tenant profile |
 | `wp mcp-ai connection` | `list`, `create`, `get`, `delete`, `test` | `--remote-url` on create |
 | `wp mcp-ai project` / `wp mcp-ai task` | `list`, `create`, `get`, `update`, `delete` (+ `complete`, `dependencies` for task) | PM toolkit |
 | `wp mcp-ai mcp-server` | `list`, `get`, `enable`, `disable`, `tools`, `token-generate`, `token-list`, `token-revoke` | |
@@ -67,7 +75,7 @@ Complete operator reference for the `wp mcp-ai …` command tree (Base + Pro + a
 | `wp mcp-ai remote-site` | `list`, `get`, `test`, `peer-list` | read-only |
 | `wp mcp-ai communication` | `contacts`, `messages` | chat-channels toolkit |
 | `wp mcp-ai media-studio` | `status`, `list-jobs` | |
-| `wp mcp-ai ezuite` / `wp mcp-ai flowhub` / `wp mcp-ai shopify-sync` | `status`, `trigger`, `clear-cache`, `test-connection`, `sync-log`, … | legacy top-level names aliased |
+| `wp mcp-ai ezuite` / `wp mcp-ai flowhub` / `wp mcp-ai shopify-sync` | `status`, `trigger`, `clear-cache`, `test-connection`, `sync-log`, … | canonical class commands; mutating verbs gated; legacy top-level `ezuite`/`flowhub`/`shopify-sync` names kept |
 | `wp mcp-ai profession` | `seed-orchestration`, `orchestration-stats` | legacy `profession` aliased |
 
 ## Addon commands

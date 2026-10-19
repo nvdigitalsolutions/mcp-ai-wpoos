@@ -109,6 +109,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	if ( ! class_exists( 'WP_MCP_AI_CLI_Restriction_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-restriction-command.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-restriction-command.php';
 	}
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Content_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-content-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-content-command.php';
+	}
 
 	if ( ! class_exists( 'WP_MCP_AI_CLI_Harness_Search_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-harness-search-command.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-harness-search-command.php';
