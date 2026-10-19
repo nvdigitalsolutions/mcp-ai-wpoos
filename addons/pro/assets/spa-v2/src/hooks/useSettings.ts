@@ -15,6 +15,7 @@ export interface UseSettingsReturn {
 	settings: PluginSettings | null;
 	loading: boolean;
 	error: string | null;
+	unavailable: boolean;
 	fetchSettings: () => Promise< void >;
 	updateSettings: ( changes: Partial< PluginSettings > ) => Promise< PluginSettings | null >;
 }
@@ -30,7 +31,18 @@ export function useSettings( options: UseSettingsOptions ): UseSettingsReturn {
 	const [ error, setError ] = useState< string | null >( null );
 	const addToast = useUIStore( ( s ) => s.addToast );
 
+	// The base plugin does not expose a REST settings route yet — when the
+	// endpoint is absent the page degrades to an unavailable state instead of
+	// firing a guaranteed-404 request.
+	const unavailable = useMemo(
+		() => typeof options.endpoint !== 'string' || options.endpoint.trim() === '',
+		[ options.endpoint ]
+	);
+
 	const fetchSettings = useCallback( async () => {
+		if ( unavailable ) {
+			return;
+		}
 		setLoading( true );
 		setError( null );
 		try {
@@ -41,7 +53,7 @@ export function useSettings( options: UseSettingsOptions ): UseSettingsReturn {
 		} finally {
 			setLoading( false );
 		}
-	}, [ client ] );
+	}, [ client, unavailable ] );
 
 	useEffect( () => {
 		void fetchSettings();
@@ -49,6 +61,9 @@ export function useSettings( options: UseSettingsOptions ): UseSettingsReturn {
 
 	const updateSettings = useCallback(
 		async ( changes: Partial< PluginSettings > ): Promise< PluginSettings | null > => {
+			if ( unavailable ) {
+				return null;
+			}
 			try {
 				const updated = await client.update( changes );
 				setSettings( updated );
@@ -60,8 +75,8 @@ export function useSettings( options: UseSettingsOptions ): UseSettingsReturn {
 				return null;
 			}
 		},
-		[ client, addToast ]
+		[ client, addToast, unavailable ]
 	);
 
-	return { settings, loading, error, fetchSettings, updateSettings };
+	return { settings, loading, error, unavailable, fetchSettings, updateSettings };
 }

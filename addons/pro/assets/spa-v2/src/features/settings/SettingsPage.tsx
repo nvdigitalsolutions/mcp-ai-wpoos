@@ -78,7 +78,7 @@ function mapFormToSettings(
 
 export function SettingsPage(): JSX.Element {
 	const { runtime } = useBootstrap();
-	const { settings, loading, error, fetchSettings, updateSettings } =
+	const { settings, loading, error, unavailable, fetchSettings, updateSettings } =
 		useSettings(
 			runtime
 				? {
@@ -155,6 +155,32 @@ export function SettingsPage(): JSX.Element {
 				<div className="nvoos-pro-spa-page__loader" role="status">
 					<span className="nvoos-pro-spa-page__spinner" />
 					{ __( 'Loading settings…', 'nvoos-pro-spa' ) }
+				</div>
+			</div>
+		);
+	}
+
+	if ( unavailable ) {
+		return (
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-settings-page">
+				<header className="nvoos-pro-spa-settings-page__header">
+					<h2 className="nvoos-pro-spa-page__title">
+						{ __( 'Settings', 'nvoos-pro-spa' ) }
+					</h2>
+				</header>
+				<div className="nvoos-pro-spa-settings-page__unavailable" role="status">
+					<p>
+						{ __(
+							'The connected WordPress site does not expose the plugin settings REST API.',
+							'nvoos-pro-spa'
+						) }
+					</p>
+					<p>
+						{ __(
+							'Manage API keys and model defaults under Settings → NV oOS in the WordPress admin.',
+							'nvoos-pro-spa'
+						) }
+					</p>
 				</div>
 			</div>
 		);
