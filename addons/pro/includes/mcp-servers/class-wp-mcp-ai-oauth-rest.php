@@ -121,7 +121,56 @@ class WP_MCP_AI_OAuth_REST {
 			true
 		);
 
-		// Authorization endpoint — requires user to be logged in.
+		// Authorization endpoint — requires user to be logged in. GET renders
+		// the consent page for browser requests; POST carries the Allow/Deny
+		// consent decision, nonce-bound to the authorization request.
+		$authorize_args = array(
+			'response_type'         => array(
+				'type'     => 'string',
+				'required' => true,
+				'enum'     => array( 'code' ),
+			),
+			'client_id'             => array(
+				'type'              => 'string',
+				'required'          => true,
+				'sanitize_callback' => 'sanitize_key',
+			),
+			'redirect_uri'          => array(
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'esc_url_raw',
+			),
+			'code_challenge'        => array(
+				'type'     => 'string',
+				'required' => true,
+			),
+			'code_challenge_method' => array(
+				'type'     => 'string',
+				'required' => true,
+				'enum'     => array( 'S256' ),
+			),
+			'scope'                 => array(
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'resource'              => array(
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'esc_url_raw',
+			),
+			'state'                 => array(
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'consent'               => array(
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'sanitize_key',
+			),
+		);
+
 		register_rest_route(
 			$namespace,
 			'/oauth/authorize',
@@ -130,47 +179,13 @@ class WP_MCP_AI_OAuth_REST {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'handle_authorize' ),
 					'permission_callback' => array( $this, 'check_authorize_permission' ),
-					'args'                => array(
-						'response_type'         => array(
-							'type'     => 'string',
-							'required' => true,
-							'enum'     => array( 'code' ),
-						),
-						'client_id'             => array(
-							'type'              => 'string',
-							'required'          => true,
-							'sanitize_callback' => 'sanitize_key',
-						),
-						'redirect_uri'          => array(
-							'type'              => 'string',
-							'required'          => false,
-							'sanitize_callback' => 'esc_url_raw',
-						),
-						'code_challenge'        => array(
-							'type'     => 'string',
-							'required' => true,
-						),
-						'code_challenge_method' => array(
-							'type'     => 'string',
-							'required' => true,
-							'enum'     => array( 'S256' ),
-						),
-						'scope'                 => array(
-							'type'              => 'string',
-							'required'          => false,
-							'sanitize_callback' => 'sanitize_text_field',
-						),
-						'resource'              => array(
-							'type'              => 'string',
-							'required'          => false,
-							'sanitize_callback' => 'esc_url_raw',
-						),
-						'state'                 => array(
-							'type'              => 'string',
-							'required'          => false,
-							'sanitize_callback' => 'sanitize_text_field',
-						),
-					),
+					'args'                => $authorize_args,
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'handle_authorize' ),
+					'permission_callback' => array( $this, 'check_authorize_permission' ),
+					'args'                => $authorize_args,
 				),
 			),
 			true
@@ -445,9 +460,21 @@ class WP_MCP_AI_OAuth_REST {
 		$resource       = esc_url_raw( (string) $request->get_param( 'resource' ) );
 		$state          = sanitize_text_field( (string) $request->get_param( 'state' ) );
 
-		// Validate client.
-		if ( ! $oauth->is_client_registered( $client_id ) ) {
-			// If open registration is disabled, reject unknown clients (1.2.0).
+		// redirect_uri is required (RFC 6749 §3.1.2).
+		if ( '' === $redirect_uri ) {
+			return new WP_Error(
+				'invalid_request',
+				__( 'redirect_uri is required.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Resolve the registered redirect URI list. Unknown clients may only
+		// proceed as ephemeral loopback clients (RFC 8252 native apps) and
+		// only while open registration is enabled.
+		if ( $oauth->is_client_registered( $client_id ) ) {
+			$allowed_uris = $oauth->get_client_redirect_uris( $client_id );
+		} else {
 			if ( self::is_open_registration_disabled() ) {
 				return new WP_Error(
 					'invalid_client',
@@ -456,18 +483,20 @@ class WP_MCP_AI_OAuth_REST {
 				);
 			}
 
-			// Auto-register single-use client for the redirect URI.
-			$oauth->register_client(
-				array(
-					'client_name'   => 'MCP Client',
-					'redirect_uris' => array( $redirect_uri ),
-				)
-			);
+			if ( ! WP_MCP_AI_OAuth_Server::is_loopback_redirect_uri( $redirect_uri ) ) {
+				return new WP_Error(
+					'invalid_client',
+					__( 'Unknown client. The redirect URI must be registered for this client.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 401 )
+				);
+			}
+
+			$allowed_uris = array( $redirect_uri );
 		}
 
-		// Validate redirect URI belongs to the client.
-		$allowed_uris = $oauth->get_client_redirect_uris( $client_id );
-		if ( ! in_array( $redirect_uri, $allowed_uris, true ) && ! empty( $allowed_uris ) ) {
+		// Exact string match only (RFC 9700 §4.1.3). An empty registered
+		// list rejects every request — it is never a wildcard.
+		if ( ! in_array( $redirect_uri, $allowed_uris, true ) ) {
 			return new WP_Error(
 				'invalid_request',
 				__( 'Redirect URI is not registered for this client.', 'mcp-ai-wpoos-pro' ),
@@ -475,7 +504,7 @@ class WP_MCP_AI_OAuth_REST {
 			);
 		}
 
-		// Validate code challenge.
+		// Validate PKCE challenge.
 		if ( empty( $code_challenge ) || 43 > strlen( $code_challenge ) || 128 < strlen( $code_challenge ) ) {
 			return new WP_Error(
 				'invalid_request',
@@ -484,11 +513,33 @@ class WP_MCP_AI_OAuth_REST {
 			);
 		}
 
-		$user_id = get_current_user_id();
+		// Reject unknown scopes (RFC 9700 §2.2.1).
+		$scope_check = WP_MCP_AI_OAuth_Server::validate_scope_string( $scope );
+		if ( is_wp_error( $scope_check ) ) {
+			return $scope_check;
+		}
+
+		// Resource indicators must be HTTPS (loopback HTTP allowed).
+		if ( '' !== $resource ) {
+			$resource_check = WP_MCP_AI_OAuth_Server::validate_redirect_uri( $resource );
+			if ( is_wp_error( $resource_check ) ) {
+				return new WP_Error(
+					'invalid_target',
+					$resource_check->get_error_message(),
+					array( 'status' => 400 )
+				);
+			}
+		}
+
+		// Browser requests go through an explicit consent step before a code
+		// is issued; authenticated non-browser requests proceed directly.
+		if ( $this->is_browser_request() ) {
+			return $this->handle_consent_step( $request, $oauth, $client_id, $redirect_uri, $code_challenge, $state );
+		}
 
 		// Generate authorization code.
 		$code = $oauth->generate_auth_code(
-			$user_id,
+			get_current_user_id(),
 			$client_id,
 			$redirect_uri,
 			$code_challenge,
@@ -496,17 +547,235 @@ class WP_MCP_AI_OAuth_REST {
 			$scope
 		);
 
-		// Build redirect URL.
+		return $this->build_authorize_redirect( $redirect_uri, $code, $state );
+	}
+
+	/**
+	 * Whether the current request advertises an HTML-capable (browser) client.
+	 *
+	 * @since 1.2.8
+	 *
+	 * @return bool
+	 */
+	protected function is_browser_request() {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized on the next line.
+		$accept = isset( $_SERVER['HTTP_ACCEPT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ACCEPT'] ) ) : '';
+
+		return false !== strpos( $accept, 'text/html' );
+	}
+
+	/**
+	 * Consent step for browser authorization requests: GET renders the
+	 * consent page, POST processes the Allow/Deny decision.
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param WP_REST_Request        $request        REST request.
+	 * @param WP_MCP_AI_OAuth_Server $oauth         OAuth server instance.
+	 * @param string                 $client_id      Client ID.
+	 * @param string                 $redirect_uri   Validated redirect URI.
+	 * @param string                 $code_challenge PKCE challenge.
+	 * @param string                 $state          Client state parameter (may be empty).
+	 * @return WP_REST_Response|WP_Error
+	 */
+	protected function handle_consent_step( $request, $oauth, $client_id, $redirect_uri, $code_challenge, $state ) {
+		$client       = $oauth->get_client( $client_id );
+		$client_name  = ( $client && ! empty( $client['client_name'] ) ) ? $client['client_name'] : __( 'MCP Client', 'mcp-ai-wpoos-pro' );
+		$nonce_action = $this->get_consent_nonce_action( $client_id, $redirect_uri, $code_challenge );
+
+		if ( 'POST' === strtoupper( $request->get_method() ) ) {
+			$consent = sanitize_key( (string) $request->get_param( 'consent' ) );
+			$nonce   = (string) $request->get_param( '_wpnonce' );
+
+			if ( ! wp_verify_nonce( $nonce, $nonce_action ) ) {
+				return new WP_Error(
+					'invalid_request',
+					__( 'Consent verification failed. Please return to the application and try again.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
+
+			if ( 'deny' === $consent ) {
+				// RFC 6749 §4.1.2.1 — redirect back with access_denied.
+				return $this->build_authorize_error_redirect( $redirect_uri, 'access_denied', $state );
+			}
+
+			if ( 'allow' !== $consent ) {
+				return new WP_Error(
+					'invalid_request',
+					__( 'Invalid consent decision.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 400 )
+				);
+			}
+		} else {
+			$nonce    = wp_create_nonce( $nonce_action );
+			$response = new WP_REST_Response( $this->render_consent_page( $request, $client_name, $nonce ), 200 );
+			$response->header( 'Content-Type', 'text/html; charset=UTF-8' );
+			$response->header( 'Cache-Control', 'no-store' );
+			return $response;
+		}
+
+		// POST + allow: issue the authorization code and redirect.
+		$user_id  = get_current_user_id();
+		$scope    = sanitize_text_field( (string) $request->get_param( 'scope' ) );
+		$resource = esc_url_raw( (string) $request->get_param( 'resource' ) );
+		$code     = $oauth->generate_auth_code( $user_id, $client_id, $redirect_uri, $code_challenge, $resource, $scope );
+
+		return $this->build_authorize_redirect( $redirect_uri, $code, $state );
+	}
+
+	/**
+	 * Nonce action binding a consent decision to one authorization request.
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param string $client_id      Client ID.
+	 * @param string $redirect_uri   Validated redirect URI.
+	 * @param string $code_challenge PKCE challenge.
+	 * @return string
+	 */
+	public function get_consent_nonce_action( $client_id, $redirect_uri, $code_challenge ) {
+		return 'wp_mcp_ai_oauth_consent_' . md5( $client_id . '|' . $redirect_uri . '|' . $code_challenge );
+	}
+
+	/**
+	 * Render the authorization consent page.
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param WP_REST_Request $request     REST request.
+	 * @param string          $client_name Display name of the requesting client.
+	 * @param string          $nonce       Consent nonce for the Allow/Deny POST.
+	 * @return string HTML document.
+	 */
+	protected function render_consent_page( $request, $client_name, $nonce ) {
+		$redirect_uri = esc_url_raw( (string) $request->get_param( 'redirect_uri' ) );
+		$scope        = sanitize_text_field( (string) $request->get_param( 'scope' ) );
+		$requested    = ( '' === $scope )
+			? array( WP_MCP_AI_OAuth_Server::SCOPE_MCP )
+			: array_filter( array_map( 'trim', explode( ' ', $scope ) ) );
+		$supported    = WP_MCP_AI_OAuth_Server::get_supported_scopes();
+
+		$scope_rows = '';
+		foreach ( $requested as $requested_scope ) {
+			$description = isset( $supported[ $requested_scope ] ) ? $supported[ $requested_scope ]['description'] : $requested_scope;
+			$scope_rows .= '<li><code>' . esc_html( $requested_scope ) . '</code> &mdash; ' . esc_html( $description ) . "</li>\n";
+		}
+
+		$hidden_fields = '';
+		foreach ( array( 'response_type', 'client_id', 'redirect_uri', 'code_challenge', 'code_challenge_method', 'scope', 'resource', 'state' ) as $field ) {
+			$value = (string) $request->get_param( $field );
+			if ( '' !== $value ) {
+				$hidden_fields .= '<input type="hidden" name="' . esc_attr( $field ) . '" value="' . esc_attr( $value ) . '" />' . "\n";
+			}
+		}
+		$hidden_fields .= '<input type="hidden" name="_wpnonce" value="' . esc_attr( $nonce ) . '" />' . "\n";
+
+		$form_action = esc_url( rest_url( 'mcp-ai/v1/oauth/authorize' ) );
+
+		return sprintf(
+			'<!DOCTYPE html>
+<html lang="%1$s">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>%2$s</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f0f1;color:#1d2327;margin:0;padding:48px 16px;}
+.card{max-width:520px;margin:0 auto;background:#fff;border:1px solid #c3c4c7;border-radius:4px;padding:32px;}
+h1{font-size:22px;margin:0 0 8px;}
+p{font-size:14px;line-height:1.6;margin:8px 0;}
+code{background:#f6f7f7;padding:2px 6px;border-radius:3px;font-size:13px;}
+ul{font-size:14px;line-height:1.6;padding-left:20px;}
+.actions{margin-top:24px;}
+button{font-size:14px;padding:8px 16px;border-radius:3px;cursor:pointer;}
+.allow{background:#2271b1;border:1px solid #2271b1;color:#fff;}
+.deny{background:#fff;border:1px solid #c3c4c7;color:#1d2327;margin-left:8px;}
+.uri{word-break:break-all;}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>%2$s</h1>
+<p>%3$s</p>
+<p><strong>%4$s</strong></p>
+<ul>%5$s</ul>
+<p>%6$s <span class="uri"><code>%7$s</code></span></p>
+<form method="post" action="%8$s">
+%9$s
+<div class="actions">
+<button type="submit" name="consent" value="allow" class="allow">%10$s</button>
+<button type="submit" name="consent" value="deny" class="deny">%11$s</button>
+</div>
+</form>
+</div>
+</body>
+</html>',
+			esc_attr( get_bloginfo( 'language' ) ),
+			esc_html( __( 'Authorize application', 'mcp-ai-wpoos-pro' ) ),
+			esc_html(
+				sprintf(
+					/* translators: 1: Client name, 2: Site name. */
+					__( '%1$s wants to connect to your account on %2$s.', 'mcp-ai-wpoos-pro' ),
+					$client_name,
+					get_bloginfo( 'name' )
+				)
+			),
+			esc_html( __( 'This application is requesting access to:', 'mcp-ai-wpoos-pro' ) ),
+			$scope_rows,
+			esc_html( __( 'After you authorize, you will be redirected to:', 'mcp-ai-wpoos-pro' ) ),
+			esc_html( $redirect_uri ),
+			$form_action,
+			$hidden_fields,
+			esc_html( __( 'Allow', 'mcp-ai-wpoos-pro' ) ),
+			esc_html( __( 'Deny', 'mcp-ai-wpoos-pro' ) )
+		);
+	}
+
+	/**
+	 * Build the 302 response redirecting to the client's validated redirect
+	 * URI with a fresh authorization code.
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param string $redirect_uri Exact-matched client redirect URI.
+	 * @param string $code         Authorization code.
+	 * @param string $state        Client state parameter (may be empty).
+	 * @return WP_REST_Response
+	 */
+	protected function build_authorize_redirect( $redirect_uri, $code, $state ) {
 		$redirect_params = array( 'code' => $code );
 		if ( ! empty( $state ) ) {
 			$redirect_params['state'] = $state;
 		}
 
-		$redirect_url = add_query_arg( $redirect_params, $redirect_uri );
-
-		// Return a 302 redirect response.
 		$response = new WP_REST_Response( null, 302 );
-		$response->header( 'Location', $redirect_url );
+		$response->header( 'Location', add_query_arg( $redirect_params, $redirect_uri ) );
+		$response->header( 'Cache-Control', 'no-store' );
+		return $response;
+	}
+
+	/**
+	 * Build the 302 error response redirecting to the client's validated
+	 * redirect URI (RFC 6749 §4.1.2.1).
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param string $redirect_uri Exact-matched client redirect URI.
+	 * @param string $error        OAuth error code.
+	 * @param string $state        Client state parameter (may be empty).
+	 * @return WP_REST_Response
+	 */
+	protected function build_authorize_error_redirect( $redirect_uri, $error, $state ) {
+		$redirect_params = array( 'error' => $error );
+		if ( ! empty( $state ) ) {
+			$redirect_params['state'] = $state;
+		}
+
+		$response = new WP_REST_Response( null, 302 );
+		$response->header( 'Location', add_query_arg( $redirect_params, $redirect_uri ) );
+		$response->header( 'Cache-Control', 'no-store' );
 		return $response;
 	}
 
@@ -561,6 +830,16 @@ class WP_MCP_AI_OAuth_REST {
 					);
 				}
 				return $entry;
+			}
+
+			// The token request's redirect_uri (when supplied) must match the
+			// one stored with the authorization code (RFC 6749 §4.1.3).
+			if ( '' !== $redirect_uri && ! empty( $entry['redirect_uri'] ) && ! hash_equals( (string) $entry['redirect_uri'], $redirect_uri ) ) {
+				return new WP_Error(
+					'invalid_grant',
+					__( 'redirect_uri does not match the authorization request.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 400 )
+				);
 			}
 
 			$audience = '';
@@ -699,11 +978,9 @@ class WP_MCP_AI_OAuth_REST {
 			return true;
 		}
 
-			// If this is a browser request, redirect to login.
-			// For non-browser clients, return an error.
-			$accept = isset( $_SERVER['HTTP_ACCEPT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ACCEPT'] ) ) : '';
-
-		if ( false !== strpos( $accept, 'text/html' ) ) {
+		// If this is a browser request, redirect to login.
+		// For non-browser clients, return an error.
+		if ( $this->is_browser_request() ) {
 			// This is a browser request. Redirect to WordPress login.
 			$current_url  = rest_url( 'mcp-ai/v1/oauth/authorize' );
 			$query_params = $request->get_params();
@@ -838,7 +1115,7 @@ class WP_MCP_AI_OAuth_REST {
 
 		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
 			// Take the first IP in the chain.
-			$ips = explode( ',', wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
+			$ips = explode( ',', sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) );
 			return sanitize_text_field( trim( $ips[0] ) );
 		}
 
