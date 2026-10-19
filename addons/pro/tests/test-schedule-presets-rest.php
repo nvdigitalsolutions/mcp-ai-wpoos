@@ -31,7 +31,8 @@ class Test_SA_Presets_REST extends WP_UnitTestCase {
 			self::markTestSkipped( 'Pro Schedule Manager not available.' );
 		}
 
-		$base = dirname( __DIR__, 2 );
+		// __DIR__ = <plugin>/addons/pro/tests → dirname ×3 = <plugin> root.
+		$base = dirname( __DIR__, 3 );
 
 		require_once $base . '/addons/pro/includes/schedule-anything/class-wp-mcp-ai-pro-sa-toolkit-adapter.php';
 		require_once $base . '/addons/pro/includes/schedule-anything/class-wp-mcp-ai-pro-schedule-presets.php';
@@ -47,7 +48,7 @@ class Test_SA_Presets_REST extends WP_UnitTestCase {
 		parent::setUp();
 
 		delete_option( WP_MCP_AI_Pro_Schedule_Manager::SCHEDULES_OPTION );
-		delete_option( WP_MCP_AI_Pro_Schedule_Presets::INSTALLS_OPTION );
+		delete_option( WP_MCP_AI_SA_Schedule_Presets::INSTALLS_OPTION );
 
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 
@@ -76,7 +77,7 @@ class Test_SA_Presets_REST extends WP_UnitTestCase {
 	 * Catalogue integrity: unique ids + required fields + valid types.
 	 */
 	public function test_catalogue_integrity() {
-		$presets     = WP_MCP_AI_Pro_Schedule_Presets::get_catalogue();
+		$presets     = WP_MCP_AI_SA_Schedule_Presets::get_catalogue();
 		$valid_types = array( 'task', 'workflow', 'assistant_run', 'channel_broadcast', 'workflow_builder' );
 
 		$this->assertNotEmpty( $presets );
@@ -97,7 +98,7 @@ class Test_SA_Presets_REST extends WP_UnitTestCase {
 	 * Search narrows the catalogue.
 	 */
 	public function test_get_presets_search() {
-		$result = WP_MCP_AI_Pro_Schedule_Presets::get_presets( array( 'search' => 'inventory' ) );
+		$result = WP_MCP_AI_SA_Schedule_Presets::get_presets( array( 'search' => 'inventory' ) );
 
 		$this->assertEquals( 1, $result['total'] );
 		$this->assertEquals( 'ecom-inventory-alert', $result['presets'][0]['id'] );
@@ -107,7 +108,7 @@ class Test_SA_Presets_REST extends WP_UnitTestCase {
 	 * Toolkit filter narrows the catalogue.
 	 */
 	public function test_get_presets_toolkit_filter() {
-		$result = WP_MCP_AI_Pro_Schedule_Presets::get_presets( array( 'toolkit' => 'analytics' ) );
+		$result = WP_MCP_AI_SA_Schedule_Presets::get_presets( array( 'toolkit' => 'analytics' ) );
 
 		$this->assertEquals( 2, $result['total'] );
 	}
@@ -116,7 +117,7 @@ class Test_SA_Presets_REST extends WP_UnitTestCase {
 	 * Pagination slices correctly.
 	 */
 	public function test_get_presets_pagination() {
-		$result = WP_MCP_AI_Pro_Schedule_Presets::get_presets(
+		$result = WP_MCP_AI_SA_Schedule_Presets::get_presets(
 			array(
 				'page'     => 1,
 				'per_page' => 5,
@@ -131,9 +132,9 @@ class Test_SA_Presets_REST extends WP_UnitTestCase {
 	 * Install keys are deterministic and fingerprint the overrides.
 	 */
 	public function test_install_key_deterministic() {
-		$a = WP_MCP_AI_Pro_Schedule_Presets::install_key( 'crm-lead-nurture', array( 'name' => 'X' ) );
-		$b = WP_MCP_AI_Pro_Schedule_Presets::install_key( 'crm-lead-nurture', array( 'name' => 'X' ) );
-		$c = WP_MCP_AI_Pro_Schedule_Presets::install_key( 'crm-lead-nurture', array( 'name' => 'Y' ) );
+		$a = WP_MCP_AI_SA_Schedule_Presets::install_key( 'crm-lead-nurture', array( 'name' => 'X' ) );
+		$b = WP_MCP_AI_SA_Schedule_Presets::install_key( 'crm-lead-nurture', array( 'name' => 'X' ) );
+		$c = WP_MCP_AI_SA_Schedule_Presets::install_key( 'crm-lead-nurture', array( 'name' => 'Y' ) );
 
 		$this->assertEquals( $a, $b );
 		$this->assertNotEquals( $a, $c );
@@ -143,7 +144,7 @@ class Test_SA_Presets_REST extends WP_UnitTestCase {
 	 * Overrides are whitelisted — unknown keys are dropped.
 	 */
 	public function test_sanitize_overrides_whitelist() {
-		$clean = WP_MCP_AI_Pro_Schedule_Presets::sanitize_overrides(
+		$clean = WP_MCP_AI_SA_Schedule_Presets::sanitize_overrides(
 			array(
 				'name'      => ' Custom ',
 				'evil'      => '<script>',
@@ -176,7 +177,7 @@ class Test_SA_Presets_REST extends WP_UnitTestCase {
 
 		$this->assertEquals( 200, $response->get_status() );
 		$this->assertTrue( $data['ok'] );
-		$this->assertEquals( count( WP_MCP_AI_Pro_Schedule_Presets::get_catalogue() ), $data['total'] );
+		$this->assertEquals( count( WP_MCP_AI_SA_Schedule_Presets::get_catalogue() ), $data['total'] );
 	}
 
 	/**

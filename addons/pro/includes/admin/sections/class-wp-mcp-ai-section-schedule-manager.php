@@ -823,6 +823,9 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 				'last_error'        => $schedule['last_error'],
 				'run_count'         => (int) $schedule['run_count'],
 				'next_run'          => $next_run ? wp_date( 'Y-m-d H:i:s', $next_run ) : null,
+				// Stored first-run timestamp — lets the edit modal prefill the
+				// delivery date & time field.
+				'timestamp'         => isset( $schedule['timestamp'] ) ? (int) $schedule['timestamp'] : 0,
 				'created_at'        => wp_date( 'Y-m-d H:i:s', $schedule['created_at'] ),
 				'workflow_steps'    => isset( $schedule['workflow_steps'] ) ? $schedule['workflow_steps'] : array(),
 				'assistant_config'  => isset( $schedule['assistant_config'] ) ? $schedule['assistant_config'] : array(),
