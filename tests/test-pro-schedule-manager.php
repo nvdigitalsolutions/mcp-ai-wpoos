@@ -505,6 +505,59 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 		$this->assertSame( 'not_found', $result->get_error_code() );
 	}
 
+	/**
+	 * Updating with an explicit future timestamp (the edit-modal delivery
+	 * date & time) re-schedules the cron event at the new time.
+	 */
+	public function test_update_schedule_explicit_timestamp_rearms_cron() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_test_rearm_ts',
+				'name'          => 'Delivery',
+				'schedule'      => 'daily',
+				'timestamp'     => time() + DAY_IN_SECONDS,
+			),
+			$this->admin_id
+		);
+
+		$new_ts = time() + 2 * DAY_IN_SECONDS;
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array( 'timestamp' => $new_ts ),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( $new_ts, WP_MCP_AI_Pro_Schedule_Manager::get_next_run_time( $id ) );
+	}
+
+	/**
+	 * Updating with a past timestamp is rejected.
+	 */
+	public function test_update_schedule_past_timestamp_returns_error() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_test_past_ts',
+				'name'          => 'Delivery',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 3600,
+			),
+			$this->admin_id
+		);
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array( 'timestamp' => time() - 60 ),
+			$this->admin_id
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'past_timestamp', $result->get_error_code() );
+	}
+
 	// -------------------------------------------------------------------------
 	// Cron re-scheduling regressions (create/save must not trigger a run)
 	// -------------------------------------------------------------------------
