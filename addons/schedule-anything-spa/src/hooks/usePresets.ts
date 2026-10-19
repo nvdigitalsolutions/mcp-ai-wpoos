@@ -31,6 +31,13 @@ export interface ToolkitInfo {
   slug: string;
   flag_key: string;
   enabled: boolean;
+  /** Server-side tier entitlement — the UI only reflects this, never decides it. */
+  entitled: boolean;
+}
+
+export interface PresetFacets {
+  toolkits: string[];
+  categories: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -48,16 +55,33 @@ export const presetKeys = {
 // Hooks
 // ---------------------------------------------------------------------------
 
+export interface PresetListParams {
+  toolkit?: string;
+  category?: string;
+  search?: string;
+  page?: number;
+  perPage?: number;
+}
+
 /**
- * Fetch all available presets.
- * Optionally filtered by toolkit or category.
+ * Fetch one page of available presets.
+ * Optionally filtered by toolkit, category, or search text.
  */
-export function usePresets(toolkit?: string, category?: string) {
+export function usePresets({
+  toolkit,
+  category,
+  search,
+  page = 1,
+  perPage = 20,
+}: PresetListParams = {}) {
   const params = new URLSearchParams();
   if (toolkit) params.set('toolkit', toolkit);
   if (category) params.set('category', category);
+  if (search) params.set('search', search);
+  params.set('page', String(page));
+  params.set('per_page', String(perPage));
 
-  return useQuery<{ ok: boolean; presets: Preset[]; total: number }>({
+  return useQuery<{ ok: boolean; presets: Preset[]; total: number; filters: PresetFacets }>({
     queryKey: presetKeys.list(Object.fromEntries(params)),
     queryFn: () =>
       apiFetch({ path: `/mcp-ai-pro/v1/presets?${params.toString()}` }),
@@ -102,10 +126,16 @@ export function useInstallPreset() {
 }
 
 /**
- * Fetch all toolkits with their enabled/disabled status.
+ * Fetch all toolkits with their enabled/disabled status, tier, and
+ * server-side entitlement flags.
  */
 export function useToolkits() {
-  return useQuery<{ ok: boolean; toolkits: ToolkitInfo[] }>({
+  return useQuery<{
+    ok: boolean;
+    tier: string;
+    platform_active: boolean;
+    toolkits: ToolkitInfo[];
+  }>({
     queryKey: presetKeys.toolkits,
     queryFn: () => apiFetch({ path: '/mcp-ai-pro/v1/toolkits' }),
   });

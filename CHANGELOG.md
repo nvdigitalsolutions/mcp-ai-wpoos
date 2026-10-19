@@ -1,5 +1,17 @@
 # oOS – Changelog
 
+## Unreleased
+
+### Fixed — Schedule Anything: full tool/schedule/preset visibility
+
+- **Live tool catalogue for the SPA builder** — new `GET /mcp-ai-pro/v1/sa-tools` route serves light, paginated rows (slug/name/description/group/group_label) from the live NV oOS tool registry with server-side search + group filtering + `has_more`, mirroring the MCP `tools/list` progressive-discovery pattern; the builder palette previously rendered a hardcoded 19-tool fixture and could never show the real registry. The palette now loads page-by-page with search and a load-more control, and the full `inputSchema` never leaves the server.
+- **Toolkit list drift fixed** — `SA_Toolkit_Manager::TOOLKIT_ORDER` was missing `flowhub` and `shopify-sync`, so they never appeared in the SPA settings list; `get_all_statuses()` now derives from the canonical `TOOLKIT_FLAGS` map (order list first, stragglers appended) so future drift is impossible.
+- **Entitlement visibility** — `GET /toolkits` now returns `tier`, `platform_active`, and a per-toolkit `entitled` flag computed server-side; the SPA settings page greys out out-of-tier toggles with an explanation instead of silently allowing a doomed 403 toggle.
+- **Idempotent toolkit toggle** — `SA_Toolkit_Manager::toggle_toolkit()` returned false (REST 500 `sa_toolkit_toggle_failed`) when toggling a toolkit to the state it already had, because `update_option()` returns false for unchanged values; same-state toggles are now a successful no-op (E2E-caught regression, regression-tested at both the manager and REST layers).
+- **Multisite administrator access** — the platform grants the scoped `sa_manage_workspace` capability to the tenant blog's `administrator` role idempotently (capability grants as version-gated migrations). Previously only the custom `sa_tenant_admin` role could use the SPA on multisite, so site admins saw empty schedules/toolkits/presets lists.
+- **Presets pagination + facet filters** — `GET /presets` returns facet metadata (`filters.toolkits`/`filters.categories`) and the SPA loads pages progressively (`per_page=20` + load-more) instead of depending on the server default with no way to page (anything past `per_page` would be unreachable); the hardcoded filter dropdowns used underscore slugs that matched nothing in the hyphenated catalogue, so filtering by toolkit/category now uses the server facet values.
+- **Tests** — PHPUnit `test-sa-tools-rest.php` (permission gate, light rows, search, pagination, groups facet) + `test-toolkit-manager.php` (catalogue drift guard, ordering, idempotent admin capability grant, non-admin roles untouched) + toolkit REST entitlement assertions; SPA vitest `toolCatalogue.test.ts` (group accumulation, humanization, name fallback — suite 35).
+
 ## [1.2.8] - 2026-10-19
 
 ### Added — Schedule Anything Platform: Single-Site (Sole Tenant) Mode (Proposal 082)

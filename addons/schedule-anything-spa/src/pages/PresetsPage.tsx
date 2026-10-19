@@ -1,9 +1,12 @@
 /**
  * Presets page — browse and install schedule presets.
- * Uses usePresets and useInstallPreset hooks.
+ *
+ * The filter dropdowns are driven by the server's facet metadata (always in
+ * sync with the catalogue keys) and the grid loads progressively via
+ * "Load more" pagination so every catalogue entry is reachable.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePresets, useInstallPreset, type Preset } from '@/hooks/usePresets';
 import clsx from 'clsx';
 
@@ -17,32 +20,45 @@ const CATEGORY_COLORS: Record<string, string> = {
   business: 'bg-indigo-100 text-indigo-700',
   lead_intake: 'bg-orange-100 text-orange-700',
   support: 'bg-teal-100 text-teal-700',
+  bookings: 'bg-cyan-100 text-cyan-700',
+  sales: 'bg-orange-100 text-orange-700',
+  'store-ops': 'bg-emerald-100 text-emerald-700',
+  social: 'bg-fuchsia-100 text-fuchsia-700',
+  documents: 'bg-slate-100 text-slate-700',
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  content: 'Content',
-  monitoring: 'Monitoring',
-  reporting: 'Reporting',
-  communication: 'Communication',
-  maintenance: 'Maintenance',
-  marketing: 'Marketing',
-  business: 'Business',
-  lead_intake: 'Lead Intake',
-  support: 'Support',
-};
+const PER_PAGE = 20;
+
+/** Humanize a facet slug for display ('store-ops' → 'Store Ops'). */
+function facetLabel(slug: string): string {
+  return slug
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export function PresetsPage() {
   const [toolkitFilter, setToolkitFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [page, setPage] = useState(1);
   const [installing, setInstalling] = useState<string | null>(null);
 
-  const { data, isLoading, error } = usePresets(
-    toolkitFilter || undefined,
-    categoryFilter || undefined
-  );
+  // Reset pagination whenever a filter changes.
+  useEffect(() => {
+    setPage(1);
+  }, [toolkitFilter, categoryFilter]);
+
+  const { data, isLoading, error } = usePresets({
+    toolkit: toolkitFilter || undefined,
+    category: categoryFilter || undefined,
+    page,
+    perPage: PER_PAGE,
+  });
   const installPreset = useInstallPreset();
 
   const presets = data?.presets || [];
+  const total = data?.total || 0;
+  const facets = data?.filters || { toolkits: [], categories: [] };
+  const hasMore = page * PER_PAGE < total;
 
   const handleInstall = async (presetId: string) => {
     setInstalling(presetId);
@@ -82,11 +98,11 @@ export function PresetsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Schedule Presets</h1>
         <p className="text-sm text-gray-500">
-          {data?.total || 0} preset{(data?.total || 0) !== 1 ? 's' : ''} available
+          {total} preset{total !== 1 ? 's' : ''} available
         </p>
       </div>
 
-      {/* Filters */}
+      {/* Filters — values come from the server facet metadata. */}
       <div className="flex gap-3 mb-6">
         <select
           value={toolkitFilter}
@@ -94,11 +110,11 @@ export function PresetsPage() {
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
         >
           <option value="">All toolkits</option>
-          <option value="ecommerce">E-commerce</option>
-          <option value="social_media">Social Media</option>
-          <option value="analytics">Analytics</option>
-          <option value="crm">CRM</option>
-          <option value="calendar_booking">Calendar Booking</option>
+          {facets.toolkits.map((slug) => (
+            <option key={slug} value={slug}>
+              {facetLabel(slug)}
+            </option>
+          ))}
         </select>
 
         <select
@@ -107,8 +123,10 @@ export function PresetsPage() {
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
         >
           <option value="">All categories</option>
-          {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
+          {facets.categories.map((slug) => (
+            <option key={slug} value={slug}>
+              {facetLabel(slug)}
+            </option>
           ))}
         </select>
       </div>
@@ -130,6 +148,18 @@ export function PresetsPage() {
               isInstalling={installing === preset.id}
             />
           ))}
+        </div>
+      )}
+
+      {/* Progressive loading */}
+      {hasMore && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            className="px-4 py-2 text-sm font-medium bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Load more ({presets.length} of {total})
+          </button>
         </div>
       )}
     </div>
@@ -166,7 +196,7 @@ function PresetCard({ preset, onInstall, isInstalling }: PresetCardProps) {
               CATEGORY_COLORS[preset.category] || 'bg-gray-100 text-gray-600'
             )}
           >
-            {CATEGORY_LABELS[preset.category] || preset.category}
+            {facetLabel(preset.category)}
           </span>
         )}
         <span className="px-1.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">

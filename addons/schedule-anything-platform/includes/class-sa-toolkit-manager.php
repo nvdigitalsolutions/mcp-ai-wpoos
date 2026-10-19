@@ -96,6 +96,8 @@ class SA_Toolkit_Manager {
 		'video-production',
 		'financial-planner',
 		'ecommerce',
+		'shopify-sync',
+		'flowhub',
 		'chat-channels',
 		'password-vault',
 		'skills-manager',
@@ -312,15 +314,34 @@ class SA_Toolkit_Manager {
 			return false;
 		}
 
-		$settings              = get_option( self::SETTINGS_OPTION, array() );
-		$flag_key              = self::TOOLKIT_FLAGS[ $slug ];
-		$settings[ $flag_key ] = (bool) $enabled;
+		$settings = get_option( self::SETTINGS_OPTION, array() );
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
 
-		return update_option( self::SETTINGS_OPTION, $settings );
+		$flag_key = self::TOOLKIT_FLAGS[ $slug ];
+		$enabled  = (bool) $enabled;
+
+		// Idempotent: toggling to the current state is a successful no-op.
+		// (update_option() returns false when the value is unchanged, which
+		// would otherwise surface as a bogus 500 on the REST toggle.)
+		if ( isset( $settings[ $flag_key ] ) && (bool) $settings[ $flag_key ] === $enabled ) {
+			return true;
+		}
+
+		$settings[ $flag_key ] = $enabled;
+
+		$updated = update_option( self::SETTINGS_OPTION, $settings );
+
+		return false !== $updated;
 	}
 
 	/**
 	 * Get all toolkits with their current status for the current tenant.
+	 *
+	 * Ordering follows TOOLKIT_ORDER; any slug present in TOOLKIT_FLAGS but
+	 * missing from TOOLKIT_ORDER is appended at the end so the catalogue
+	 * cannot silently drift (the single source of truth is TOOLKIT_FLAGS).
 	 *
 	 * @since 0.1.0
 	 *
@@ -328,9 +349,17 @@ class SA_Toolkit_Manager {
 	 */
 	public static function get_all_statuses() {
 		$settings = get_option( self::SETTINGS_OPTION, array() );
-		$result   = array();
 
-		foreach ( self::TOOLKIT_ORDER as $slug ) {
+		// Derive the slug list from TOOLKIT_FLAGS so every registered toolkit
+		// appears even when TOOLKIT_ORDER lags behind (drift-proof).
+		$known_slugs = array_keys( self::TOOLKIT_FLAGS );
+		$ordered     = array_values( array_intersect( self::TOOLKIT_ORDER, $known_slugs ) );
+		$missing     = array_values( array_diff( $known_slugs, $ordered ) );
+		$slugs       = array_merge( $ordered, $missing );
+
+		$result = array();
+
+		foreach ( $slugs as $slug ) {
 			if ( ! isset( self::TOOLKIT_FLAGS[ $slug ] ) ) {
 				continue;
 			}

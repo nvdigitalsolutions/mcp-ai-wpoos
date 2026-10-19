@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Keep in sync with schedule-anything-platform.php.
 if ( ! defined( 'SA_PLATFORM_VERSION' ) ) {
-	define( 'SA_PLATFORM_VERSION', '0.1.1' );
+	define( 'SA_PLATFORM_VERSION', '0.1.2' );
 }
 
 if ( ! defined( 'SA_PLATFORM_FILE' ) ) {
@@ -50,3 +50,35 @@ require_once SA_PLATFORM_PATH . 'includes/rest/class-sa-rest-controller.php';
 // production behaviour (Proposal 082, D5); wp-phpunit restores hook
 // tables between tests, so this does not leak into other suites.
 add_filter( 'wp_mcp_ai_pro_schedule_rest_capability', array( 'SA_Plugin', 'filter_schedule_rest_capability' ) );
+
+// TEMP DEBUG: trace every write/delete of the shared settings option.
+add_action(
+	'update_option_wp_mcp_ai_settings',
+	static function ( $old, $value ) {
+		$bt = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 6 ); // phpcs:ignore
+		$who = '';
+		foreach ( $bt as $f ) {
+			if ( isset( $f['class'] ) && false !== strpos( $f['class'], 'Test' ) ) {
+				$who = $f['class'] . '::' . ( isset( $f['function'] ) ? $f['function'] : '?' );
+				break;
+			}
+		}
+		fwrite( STDERR, 'SA_DEBUG_UPDATE keys=' . wp_json_encode( array_keys( (array) $value ) ) . ' who=' . $who . PHP_EOL ); // phpcs:ignore
+	},
+	10,
+	2
+);
+add_action(
+	'delete_option_wp_mcp_ai_settings',
+	static function () {
+		$bt = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 6 ); // phpcs:ignore
+		$who = '';
+		foreach ( $bt as $f ) {
+			if ( isset( $f['class'] ) && false !== strpos( $f['class'], 'Test' ) ) {
+				$who = $f['class'] . '::' . ( isset( $f['function'] ) ? $f['function'] : '?' );
+				break;
+			}
+		}
+		fwrite( STDERR, 'SA_DEBUG_DELETE who=' . $who . PHP_EOL ); // phpcs:ignore
+	}
+);
