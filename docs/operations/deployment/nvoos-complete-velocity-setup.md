@@ -43,10 +43,14 @@ Deploy runbook for the Complete Console on Cloudways Velocity. Companion to
 ## Post-deploy smoke
 
 1. Visit the app → redirected to `/wp-login.php` (re-scoped form).
-2. Log in → back to the console → `/chat` streams (SSE through the proxy).
-3. Spot-check `#/assistants`, `#/tools`, `#/workflows` render and REST calls
+2. Log in → back to the console → the **dashboard** (`#/`) is the home page
+   with the chat dock on the right (global dock toggle in the nav rail;
+   preference persists in `localStorage`).
+3. Open `#/chat` → full-page breakout streams (SSE through the proxy);
+   docked and full-page chat share one conversation.
+4. Spot-check `#/assistants`, `#/tools`, `#/workflows` render and REST calls
    carry the session nonce.
-4. Capability check: a lower-cap user gets server-enforced gating.
+5. Capability check: a lower-cap user gets server-enforced gating.
 
 ## Rollback
 
