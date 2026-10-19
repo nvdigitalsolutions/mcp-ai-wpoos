@@ -3,8 +3,9 @@
  *
  * Fixed cookie-auth console: builds the `window.NVOOS_PRO_SPA` runtime from
  * the logged-in WordPress session (through the same-origin proxy), installs
- * the fetch wrapper, then lazy-mounts the spa-v2 admin surface. No
- * connection screen — unauthenticated visitors get the login flow.
+ * the fetch wrapper, then lazy-mounts the SA-format console shell
+ * (src/console/ConsoleShell.tsx). No connection screen — unauthenticated
+ * visitors get the login flow.
  *
  * The spa-v2 sources are imported through the `@nvoos/pro-spa-vite`-style
  * Vite alias — no fork, tracks the plugin SPA.
@@ -32,12 +33,12 @@ declare global {
 }
 
 /**
- * The spa-v2 surface is the heavy part of the bundle (router + chat + AI SDK
- * + editors) — lazy-mount it so the entry chunk stays lean. The surface
+ * The console shell is the heavy part of the bundle (spa-v2 pages + chat + AI
+ * SDK + editors) — lazy-mount it so the entry chunk stays lean. The shell
  * needs the runtime global + session (nonce + user) before it can render.
  */
-const AdminApp = lazy(() =>
-  import('@nvoos/pro-spa-v2/App').then((m) => ({ default: m.App })),
+const ConsoleShell = lazy(() =>
+  import('./console/ConsoleShell').then((m) => ({ default: m.ConsoleShell })),
 );
 
 type BootState =
@@ -104,7 +105,7 @@ function Console(): JSX.Element {
 
   return (
     <Suspense fallback={<SurfaceLoader />}>
-      <AdminApp />
+      <ConsoleShell />
     </Suspense>
   );
 }

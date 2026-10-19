@@ -1,5 +1,7 @@
-/* Shell-only styles: the connection screen and the floating disconnect button.
-   Everything else comes from the spa-v2 stylesheets. */
+/* Shell-only styles: boot screens + the SA-format console shell
+   (nav sidebar, content area, chat dock, dashboard).
+   Everything else comes from the spa-v2 stylesheets; the shell reuses the
+   spa-v2 theme tokens (--nvoos-*) defined under .nvoos-pro-spa-layout. */
 
 :root {
   --shell-bg: #0f1117;
@@ -22,17 +24,10 @@ body {
  * Theme-consistent colour scheme.
  *
  * The spa-v2 styles declare light/dark token sets but never set `color-scheme`,
- * so native controls (buttons, inputs) fall back to the page default. Forcing
- * `color-scheme: dark` globally made the browser paint white button text over
- * the SPA's light backgrounds. Instead:
- *   - the shell's own connect screen opts into a dark scheme explicitly;
- *   - the SPA subtree follows its `data-theme` attribute (light, dark, or the
- *     system preference for "auto"), matching its background tokens exactly.
+ * so native controls (buttons, inputs) fall back to the page default. The
+ * shell subtree follows spa-v2's `data-theme` attribute (light, dark, or the
+ * system preference for "auto"), matching its background tokens exactly.
  */
-.nvoos-connect {
-  color-scheme: dark;
-}
-
 .nvoos-pro-spa-layout {
   color-scheme: light;
 }
@@ -63,13 +58,12 @@ body {
 }
 
 /*
- * Full-screen chain for the SPA layout.
+ * Full-screen height chain.
  *
  * The spa-v2 styles assume the WordPress admin height chain
- * (#wpwrap → #wpbody-content → root, anchored by calc(100vh - 32px) for the
- * admin bar). The standalone app has none of those ancestors, so provide the
- * equivalent chain here: html/body/#root fill the viewport and the layout's
- * flex:1 (from main.css) stretches to fill it.
+ * (#wpwrap → #wpbody-content → root). The standalone app has none of those
+ * ancestors, so provide the equivalent chain here: html/body/#root fill the
+ * viewport and .nvoos-pro-spa-layout (the shell root) stretches to fill it.
  */
 html,
 body,
@@ -82,265 +76,486 @@ body,
   flex-direction: column;
 }
 
-.nvoos-pro-spa-layout {
+.nvoos-console-shell {
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
-.nvoos-connect {
-  min-height: 100vh;
-  min-height: 100dvh; /* Proposal 080 — track the keyboard-resized viewport */
+/* ── Left navigation (SA-format, spa-v2 tokens) ──────────────────────────── */
+
+.nvoos-console-nav {
+  width: 240px;
+  min-width: 240px;
+  background: var(--nvoos-bg-secondary, #fff);
+  border-right: 1px solid var(--nvoos-border, #dcdcde);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  transition: width 0.2s, min-width 0.2s;
+}
+
+.nvoos-console-nav--collapsed {
+  width: 60px;
+  min-width: 60px;
+}
+
+.nvoos-console-nav__header {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 32px 20px;
-  box-sizing: border-box;
-  color: var(--shell-text);
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  gap: 8px;
+  height: 56px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--nvoos-border, #dcdcde);
 }
 
-.nvoos-connect h1 {
-  margin: 0;
-  font-size: 2rem;
+.nvoos-console-nav__collapse {
+  background: none;
+  border: none;
+  color: var(--nvoos-text-secondary, #787c82);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px;
 }
 
-.nvoos-connect h1 span {
+.nvoos-console-nav__collapse:hover {
+  color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-console-nav__logo {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
   background: linear-gradient(90deg, var(--shell-accent), var(--shell-accent-2));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.nvoos-connect-sub {
-  margin: 0 0 8px;
-  color: var(--shell-muted);
-  max-width: 560px;
-  text-align: center;
+.nvoos-console-nav__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.nvoos-connect-form {
-  display: grid;
-  gap: 14px;
-  width: min(560px, 100%);
-  background: var(--shell-card);
-  border: 1px solid var(--shell-border);
-  border-radius: 14px;
-  padding: 22px;
-  box-sizing: border-box;
-}
-
-.nvoos-connect-form label {
-  display: grid;
-  gap: 6px;
-  font-size: 0.88rem;
-  color: var(--shell-muted);
-}
-
-.nvoos-connect-form input[type='url'],
-.nvoos-connect-form input[type='text'],
-.nvoos-connect-form input[type='password'],
-.nvoos-connect-form input[type='number'] {
-  background: #0b0d13;
-  border: 1px solid var(--shell-border);
-  color: var(--shell-text);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 0.95rem;
-}
-
-.nvoos-connect-form input:focus {
-  outline: none;
-  border-color: var(--shell-accent);
-}
-
-.nvoos-auth-modes {
-  display: grid;
-  gap: 8px;
-  border: 1px solid var(--shell-border);
-  border-radius: 10px;
-  padding: 12px;
-  margin: 0;
-}
-
-.nvoos-auth-modes legend {
-  padding: 0 6px;
-  font-size: 0.88rem;
-  color: var(--shell-muted);
-}
-
-.nvoos-auth-modes label {
+.nvoos-console-nav__link {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: var(--shell-text);
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--nvoos-text-secondary, #787c82);
+  text-decoration: none;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
-.nvoos-check {
-  display: flex !important;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
+.nvoos-console-nav__link:hover {
+  background: var(--nvoos-bg, #f0f0f1);
+  color: var(--nvoos-text, #1e1e1e);
 }
 
-.nvoos-connect-form button[type='submit'] {
-  background: var(--shell-accent);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 11px;
-  font-size: 0.95rem;
+.nvoos-console-nav__link--active {
+  background: var(--nvoos-selected-bg, #e5e5ff);
+  color: var(--nvoos-primary, #2271b1);
   font-weight: 600;
-  cursor: pointer;
 }
 
-.nvoos-connect-form button[type='submit']:disabled {
+.nvoos-console-nav__icon {
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nvoos-console-nav--collapsed .nvoos-console-nav__label {
+  display: none;
+}
+
+.nvoos-console-nav--collapsed .nvoos-console-nav__link,
+.nvoos-console-nav--collapsed .nvoos-console-nav__btn {
+  justify-content: center;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.nvoos-console-nav__footer {
+  border-top: 1px solid var(--nvoos-border, #dcdcde);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nvoos-console-nav__btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--nvoos-text-secondary, #787c82);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.nvoos-console-nav__btn:hover {
+  background: var(--nvoos-bg, #f0f0f1);
+  color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-console-nav__btn--active {
+  background: var(--nvoos-selected-bg, #e5e5ff);
+  color: var(--nvoos-primary, #2271b1);
+  font-weight: 600;
+}
+
+.nvoos-console-nav__btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.nvoos-connect-error {
+.nvoos-console-nav__user {
+  margin: 4px 10px 0;
+  font-size: 11px;
+  color: var(--nvoos-text-secondary, #787c82);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Content area (SA p-6 format) ────────────────────────────────────────── */
+
+.nvoos-console-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-console-page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+  padding-bottom: 48px; /* reserve space for the fixed status bar */
+}
+
+/* ── Chat dock / full-page breakout ──────────────────────────────────────── */
+
+.nvoos-console-dock {
+  width: 660px;
+  min-width: 660px;
+  background: var(--nvoos-bg, #f0f0f1);
+  border-left: 1px solid var(--nvoos-border, #dcdcde);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nvoos-console-dock--hidden {
+  display: none; /* mounted — the chat transport keeps streaming */
+}
+
+/* /chat: the dock becomes the page itself (builder-page breakout). */
+.nvoos-console-dock--fullpage {
+  position: static;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  border-left: none;
+}
+
+.nvoos-console-shell--chat-fullpage .nvoos-console-content {
+  display: none;
+}
+
+.nvoos-console-dock__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 10px 0 14px;
+  border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+  background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-console-dock__title {
   margin: 0;
-  padding: 10px 12px;
-  border: 1px solid #b3455a;
-  border-radius: 8px;
-  color: #ffb3bf;
-  background: rgba(179, 69, 90, 0.12);
-  font-size: 0.88rem;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.nvoos-connect-notes {
-  width: min(560px, 100%);
-  color: var(--shell-muted);
-  font-size: 0.82rem;
-  line-height: 1.6;
+.nvoos-console-dock__session {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--nvoos-text-secondary, #787c82);
 }
 
-.nvoos-connect-notes code {
-  background: var(--shell-card);
-  border: 1px solid var(--shell-border);
-  border-radius: 4px;
-  padding: 1px 5px;
-}
-
-.nvoos-connect-hint {
-  font-size: 0.78rem;
-  color: var(--shell-muted);
-}
-
-/* "Log in to WordPress" affordance, shown in cookie auth mode. */
-.nvoos-cookie-login {
-  display: grid;
+.nvoos-console-dock__actions {
+  display: flex;
+  align-items: center;
   gap: 4px;
-  margin: 0;
+  margin-left: auto;
 }
 
-.nvoos-cookie-login a {
-  color: var(--shell-accent-2);
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-decoration: none;
-  width: fit-content;
-}
-
-.nvoos-cookie-login a:hover,
-.nvoos-cookie-login a:focus-visible {
-  text-decoration: underline;
-}
-
-/* Login preset pages (HOME=1..4). */
-.nvoos-preset-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border: 1px solid var(--shell-accent);
-  border-radius: 999px;
-  background: rgba(124, 92, 255, 0.08);
-  color: var(--shell-accent-2);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-/* The cookie preset's login affordance is just a button. */
-.nvoos-login-button {
+.nvoos-console-dock__action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: fit-content;
-  margin-top: 6px;
-  padding: 10px 16px;
-  border: 1px solid var(--shell-accent-2);
-  border-radius: 8px;
-  background: rgba(53, 208, 165, 0.1);
-  color: var(--shell-accent-2);
-  font-size: 0.9rem;
-  font-weight: 600;
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--nvoos-text-secondary, #787c82);
+  font-size: 16px;
+  line-height: 1;
   text-decoration: none;
   cursor: pointer;
 }
 
-.nvoos-login-button:hover,
-.nvoos-login-button:focus-visible {
-  background: rgba(53, 208, 165, 0.18);
-  text-decoration: none;
+.nvoos-console-dock__action:hover {
+  background: var(--nvoos-bg, #f0f0f1);
+  color: var(--nvoos-text, #1e1e1e);
+  border-color: var(--nvoos-border, #dcdcde);
 }
 
-/* Mode-4 env summary (dt/dd rows). */
-.nvoos-env-summary {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 6px 14px;
+.nvoos-console-dock__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  padding-bottom: 24px; /* reserve space for the fixed status bar */
+}
+
+/* Pin the spa-v2 conversation sidebar to its natural width inside the dock —
+   spa-v2's collapse rule (layout without --sidebar-open) must not shrink it. */
+.nvoos-console-dock .nvoos-pro-spa-sidebar {
+  width: 260px !important;
+  min-width: 260px !important;
+}
+
+.nvoos-console-dock__chat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The status bar's sidebar toggle controlled spa-v2's old conversation
+   sidebar, which no longer exists in this shell — the nav rail + dock
+   toggle replace it. */
+.nvoos-console-shell .nvoos-pro-spa-status-bar__toggle-sidebar {
+  display: none;
+}
+
+/* Narrow screens: the dock overlays instead of squeezing the content. */
+@media screen and (max-width: 1440px) {
+  .nvoos-console-dock {
+    width: 600px;
+    min-width: 600px;
+  }
+}
+
+@media screen and (max-width: 1280px) {
+  .nvoos-console-dock:not(.nvoos-console-dock--fullpage):not(.nvoos-console-dock--hidden) {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+    width: min(660px, calc(100vw - 60px));
+    min-width: min(660px, calc(100vw - 60px));
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* ── Dashboard (SA DashboardPage format) ─────────────────────────────────── */
+
+.nvoos-console-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 960px;
+}
+
+.nvoos-console-dashboard h1 {
   margin: 0;
-  padding: 12px;
-  border: 1px solid var(--shell-border);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.nvoos-console-card {
+  background: var(--nvoos-bg-secondary, #fff);
+  border: 1px solid var(--nvoos-border, #dcdcde);
   border-radius: 10px;
-  font-size: 0.88rem;
+  padding: 20px;
 }
 
-.nvoos-env-summary dt {
-  color: var(--shell-muted);
+.nvoos-console-card h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.nvoos-env-summary dd {
+.nvoos-console-card h3 {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nvoos-console-card p {
   margin: 0;
-  color: var(--shell-text);
-  overflow-wrap: anywhere;
+  color: var(--nvoos-text-secondary, #787c82);
+  line-height: 1.6;
 }
 
-/* Floating disconnect button, kept out of the SPA's own layout. */
-.nvoos-disconnect {
-  position: fixed;
-  right: 12px;
-  bottom: 12px;
-  z-index: 2147483000;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1px solid var(--shell-border);
-  background: var(--shell-card);
-  color: var(--shell-muted);
-  font-size: 1rem;
+.nvoos-console-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.nvoos-console-stat__label {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-console-stat__value {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.nvoos-console-stat__value--accent {
+  color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-console-stat__value--green {
+  color: var(--nvoos-success, #00a32a);
+}
+
+.nvoos-console-stat__value--purple {
+  color: var(--shell-accent);
+}
+
+.nvoos-console-quick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.nvoos-console-quick-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--nvoos-border, #dcdcde);
+  border-radius: 8px;
+  background: var(--nvoos-bg-secondary, #fff);
+  color: var(--nvoos-text, #1e1e1e);
+  text-decoration: none;
+  text-align: left;
+  font-size: 13px;
   cursor: pointer;
-  opacity: 0.75;
+  font-family: inherit;
 }
 
-.nvoos-disconnect:hover {
-  opacity: 1;
-  color: var(--shell-text);
-  border-color: var(--shell-accent);
+.nvoos-console-quick-card:hover {
+  border-color: var(--nvoos-primary, #2271b1);
+  background: var(--nvoos-selected-bg, #e5e5ff);
 }
 
-/* Shown while the admin/chat surface chunk loads after a connect. */
+.nvoos-console-quick-card__icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.nvoos-console-quick-card__title {
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.nvoos-console-quick-card__desc {
+  color: var(--nvoos-text-secondary, #787c82);
+  font-size: 12px;
+}
+
+.nvoos-console-quick-card--button {
+  width: 100%;
+}
+
+/* ── Boot screens (main.tsx + ConsoleShell gate) ─────────────────────────── */
+
 .nvoos-surface-loading {
   flex: 1;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   color: var(--shell-muted);
   font-family: 'Segoe UI', system-ui, sans-serif;
   font-size: 0.95rem;
+}
+
+.nvoos-surface-loading p {
+  margin: 0;
+}
+
+.nvoos-console-loading__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--shell-border);
+  border-top-color: var(--shell-accent);
+  border-radius: 50%;
+  animation: nvoos-console-spin 0.8s linear infinite;
+}
+
+@keyframes nvoos-console-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.nvoos-console-error {
+  flex: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 20px;
+  box-sizing: border-box;
+  color: var(--shell-text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  text-align: center;
+}
+
+.nvoos-console-error h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.nvoos-console-error p {
+  margin: 0;
+  max-width: 560px;
+  color: var(--shell-muted);
 }

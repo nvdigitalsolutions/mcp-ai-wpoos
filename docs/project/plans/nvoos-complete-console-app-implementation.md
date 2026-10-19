@@ -7,6 +7,15 @@
 >
 > **Based on:** Proposal 083 (industry research: Fowler micro-frontends decomposition triggers, NashTech 2025 composition trade-offs, Auth0/Duende BFF same-origin session pattern, Veld Systems multi-product SaaS shell), Prop 077 recorded decision, PR #7148 (React 19.1 alignment), and the two proven example apps (`examples/schedule-anything-velocity`, `examples/nvoos-pro-spa-vite`).
 
+> **Layout update (shipped after this plan):** the console no longer mounts
+> spa-v2's three-column `Layout` — it ships its own Schedule Anything-format
+> shell (`src/console/ConsoleShell.tsx`): a **Dashboard home page**, one page
+> per addon (`#/assistants`, `#/tools`, …), and a **persistent chat dock**
+> behind a global toggle, with `/chat` as a full-page breakout. This plan
+> covers the Phase-1 mount-spa-v2 bootstrap/auth/sync groundwork only; the
+> SA-format shell supersedes its layout scope and is documented in the app
+> `README.md`.
+
 ---
 
 ## Table of Contents
@@ -57,13 +66,19 @@ examples/nvoos-complete-velocity/
 ├── vite.config.ts          # spa-v2 alias + resolve.dedupe (react, react-dom, react-router-dom, zustand, @ai-sdk/react, marked, dompurify)
 ├── tsconfig.json           # paths map copied from the standalone app (paths point ../../addons/pro/assets/spa-v2/src)
 ├── src/
-│   ├── main.tsx            # cookie bootstrap → lazy-mount spa-v2 <App/> (NO connection screen)
+│   ├── main.tsx            # cookie bootstrap → lazy-mount the console shell (NO connection screen)
 │   ├── runtime-config.ts   # ported: buildRuntime(viaProxy:true), fetchSessionNonce, fetchCurrentUser, buildEndpoints
 │   ├── fetch-wrapper.ts    # ported: cookie mode + empty-X-WP-Nonce strip
+│   ├── console/            # SA-format host shell (supersedes the mount-spa-v2 layout)
+│   │   ├── ConsoleShell.tsx    # bootstrap gate, HashRouter, single useTranscripts, dock toggle
+│   │   ├── ConsoleSidebar.tsx  # SA-format nav rail + global chat-dock toggle
+│   │   ├── DashboardPage.tsx   # home page (welcome, stats, quick actions)
+│   │   ├── ChatDock.tsx        # one chat surface: docked / full-page / hidden via CSS
+│   │   └── session-utils.ts    # pure session-title helper
 │   ├── shims/
 │   │   ├── wp-i18n.ts      # window.wp.i18n drop-in (copy)
 │   │   └── cytoscape-fcose.d.ts  # ambient module (copy)
-│   └── shell.css           # WP-admin height chain + app branding (port of standalone shell.css)
+│   └── shell.css           # height chain + SA-format shell styles (nav, dock, dashboard)
 ├── scripts/
 │   ├── serve.mjs           # BYTE-IDENTICAL proxy core from examples/schedule-anything-velocity/scripts/serve.mjs
 │   └── sync-dist.mjs       # build (tsc && vite build) → wipe → copy dist/ → asset-closure gate
