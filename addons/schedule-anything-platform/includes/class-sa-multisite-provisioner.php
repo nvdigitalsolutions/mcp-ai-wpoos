@@ -51,13 +51,17 @@ class SA_Multisite_Provisioner {
 		// Truncate to 30 characters (subdomain length limits).
 		$base = substr( $base, 0, 30 );
 
-		// Check uniqueness against existing WordPress blogs.
+		// Check uniqueness against existing WordPress blogs. Multisite only:
+		// get_blog_id_from_url() is unavailable on single-site installs,
+		// where the sole tenant has no subdomain siblings (Proposal 082).
 		$candidate = $base;
 		$suffix    = 1;
 
-		while ( get_blog_id_from_url( $candidate ) ) {
-			$candidate = $base . '-' . $suffix;
-			++$suffix;
+		if ( is_multisite() ) {
+			while ( get_blog_id_from_url( $candidate ) ) {
+				$candidate = $base . '-' . $suffix;
+				++$suffix;
+			}
 		}
 
 		/**
@@ -101,10 +105,7 @@ class SA_Multisite_Provisioner {
 	 */
 	public static function provision( array $tenant_data ) {
 		if ( ! is_multisite() ) {
-			return new WP_Error(
-				'sa_not_multisite',
-				__( 'Schedule Anything Platform requires WordPress Multisite.', 'schedule-anything' )
-			);
+			return self::provision_sole_tenant( $tenant_data );
 		}
 
 		// Validate required fields.
@@ -272,6 +273,176 @@ class SA_Multisite_Provisioner {
 	}
 
 	/**
+	 * Provision the sole tenant on a single-site install.
+	 *
+	 * Single-site mode (Proposal 082, D2): the single blog is the tenant,
+	 * so provisioning degrades to an idempotent self-registration instead of
+	 * creating a subsite. The returned contract matches the multisite path
+	 * plus a `single_site` flag.
+	 *
+	 * @since 0.1.1
+	 *
+	 * @param array $tenant_data Same shape as provision().
+	 * @return array|WP_Error
+	 */
+	private static function provision_sole_tenant( array $tenant_data ) {
+		// Validate required fields (same contract as the multisite path).
+		$required = array( 'slug', 'tier', 'stripe_customer_id', 'admin_email', 'admin_name' );
+		foreach ( $required as $field ) {
+			if ( empty( $tenant_data[ $field ] ) ) {
+				return new WP_Error(
+					'sa_missing_field',
+					/* translators: %s: field name */
+					sprintf( __( 'Required field "%s" is missing.', 'schedule-anything' ), $field )
+				);
+			}
+		}
+
+		// Validate tier.
+		$valid_tiers = array( 'starter', 'professional', 'enterprise' );
+		$tier        = sanitize_key( $tenant_data['tier'] );
+		if ( ! in_array( $tier, $valid_tiers, true ) ) {
+			return new WP_Error(
+				'sa_invalid_tier',
+				/* translators: %s: tier name */
+				sprintf( __( 'Invalid tier "%s". Must be starter, professional, or enterprise.', 'schedule-anything' ), $tier )
+			);
+		}
+
+		$subdomain = self::generate_subdomain( $tenant_data['slug'] );
+
+		// Ensure the tenant admin user exists. Single-site primitives only:
+		// wpmu_create_user()/add_user_to_blog() are multisite functions.
+		$admin_email = sanitize_email( $tenant_data['admin_email'] );
+		$user        = get_user_by( 'email', $admin_email );
+		$created     = false;
+
+		if ( ! $user ) {
+			$random_password = wp_generate_password( 18, true, true );
+			$user_id         = wp_create_user(
+				self::email_to_username( $admin_email ),
+				$random_password,
+				$admin_email
+			);
+
+			if ( is_wp_error( $user_id ) ) {
+				return new WP_Error(
+					'sa_user_create_failed',
+					$user_id->get_error_message()
+				);
+			}
+
+			$user    = get_user_by( 'id', $user_id );
+			$created = true;
+		}
+
+		if ( ! $user ) {
+			return new WP_Error(
+				'sa_user_create_failed',
+				__( 'The tenant admin user could not be created or located.', 'schedule-anything' )
+			);
+		}
+
+		if ( $created ) {
+			// Only newly created users are elevated; existing users keep their
+			// current role (an API-key caller must not escalate them).
+			$user->set_role( 'administrator' );
+
+			wp_update_user(
+				array(
+					'ID'           => $user->ID,
+					'display_name' => sanitize_text_field( $tenant_data['admin_name'] ),
+				)
+			);
+		}
+
+		// Seed toolkit flags for this tier.
+		if ( class_exists( 'SA_Toolkit_Manager' ) ) {
+			$flags    = SA_Toolkit_Manager::get_defaults_for_tier( $tier );
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			update_option( 'wp_mcp_ai_settings', array_merge( $settings, $flags ) );
+		}
+
+		// Install tier-appropriate schedule presets.
+		$installed_presets = array();
+		if ( class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
+			$preset_ids = SA_Toolkit_Manager::get_presets_for_tier( $tier );
+			foreach ( $preset_ids as $preset_id ) {
+				$result = WP_MCP_AI_Pro_Schedule_Presets::install_preset( $preset_id, $user->ID );
+				if ( ! is_wp_error( $result ) ) {
+					$installed_presets[] = $preset_id;
+				}
+			}
+		}
+
+		// Generate one-time login token for cross-domain SSO.
+		$login_token = wp_generate_password( 32, false );
+		set_transient(
+			'sa_otl_' . $login_token,
+			array(
+				'blog_id'    => get_current_blog_id(),
+				'user_id'    => $user->ID,
+				'created_at' => time(),
+				'consumed'   => false,
+			),
+			5 * MINUTE_IN_SECONDS
+		);
+
+		// Idempotent tenant metadata: replay updates tier/subdomain but
+		// preserves the original created_at.
+		$existing_meta = get_option( 'sa_tenant_meta', array() );
+		update_option(
+			'sa_tenant_meta',
+			array_merge(
+				$existing_meta,
+				array(
+					'tier'                => $tier,
+					'stripe_customer_id'  => sanitize_text_field( $tenant_data['stripe_customer_id'] ),
+					'subdomain'           => $subdomain,
+					'single_site'         => true,
+					'created_at'          => isset( $existing_meta['created_at'] ) ? $existing_meta['created_at'] : time(),
+					'provisioned_version' => SA_PLATFORM_VERSION,
+				)
+			)
+		);
+
+		// Build the login URL.
+		$login_url = add_query_arg(
+			array(
+				'sa_otl_token' => $login_token,
+				'sa_otl_nonce' => wp_create_nonce( 'sa_otl_' . $login_token ),
+			),
+			wp_login_url()
+		);
+
+		/**
+		 * Action fired after the sole tenant is (re)provisioned.
+		 *
+		 * Same signature as the multisite sa_tenant_provisioned action.
+		 *
+		 * @since 0.1.1
+		 *
+		 * @param int    $blog_id           The current blog ID.
+		 * @param string $subdomain         The normalized tenant slug.
+		 * @param string $tier              Subscription tier.
+		 * @param int    $user_id           Tenant admin user ID.
+		 * @param array  $installed_presets Installed preset IDs.
+		 */
+		do_action( 'sa_tenant_provisioned', get_current_blog_id(), $subdomain, $tier, $user->ID, $installed_presets );
+
+		return array(
+			'blog_id'           => get_current_blog_id(),
+			'site_url'          => home_url(),
+			'subdomain'         => $subdomain,
+			'login_token'       => $login_token,
+			'login_url'         => $login_url,
+			'admin_user_id'     => $user->ID,
+			'installed_presets' => $installed_presets,
+			'single_site'       => true,
+		);
+	}
+
+	/**
 	 * Offboard a tenant workspace.
 	 *
 	 * Exports tenant data, schedules deletion after a grace period,
@@ -284,6 +455,23 @@ class SA_Multisite_Provisioner {
 	 */
 	public static function offboard( $blog_id ) {
 		$blog_id = absint( $blog_id );
+
+		if ( ! is_multisite() ) {
+			// Sole-tenant mode: the only workspace is this site and offboarding
+			// it would delete the entire install (Proposal 082, D3).
+			if ( absint( get_current_blog_id() ) !== $blog_id ) {
+				return new WP_Error(
+					'sa_blog_not_found',
+					__( 'The specified tenant workspace was not found.', 'schedule-anything' )
+				);
+			}
+
+			return new WP_Error(
+				'sa_cannot_offboard_sole_tenant',
+				__( 'The sole tenant cannot be offboarded in single-site mode.', 'schedule-anything' ),
+				array( 'status' => 409 )
+			);
+		}
 
 		if ( ! get_blog_details( $blog_id ) ) {
 			return new WP_Error(

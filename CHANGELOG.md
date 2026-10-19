@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added — Schedule Anything Platform: Single-Site (Sole Tenant) Mode (Proposal 082)
+
+- **Single-site mode** — the platform plugin no longer refuses single-site installs (activation `wp_die` + `sa_not_multisite` removed). On a non-multisite install it runs in sole-tenant mode: the single blog is the tenant. Activation seeds `sa_tenant_meta` (default tier `enterprise`, filter `sa_single_site_tier`) and toolkit defaults, plus a dismissible `notice-info` replaces the old multisite-required error.
+- **Provisioner degradation** — `provision()` on single-site is an idempotent self-registration returning the same tenant contract with `single_site: true` (admin user created via `wp_create_user`, elevated to `administrator` only when newly created); `offboard()` refuses the sole tenant with `409 sa_cannot_offboard_sole_tenant`; `lookup` matches the provisioned subdomain or host label only; `status` resolves the sole tenant. `generate_subdomain()` uniqueness loop guarded so the multisite-only `get_blog_id_from_url()` can't fatal on single-site.
+- **Capability seam** — the platform filters `wp_mcp_ai_pro_schedule_rest_capability` to `manage_options` on single-site, so site admins can use the SPA presets/toolkits surface (Pro defaults to `sa_manage_workspace` when the platform is active).
+- **Heartbeat gate** — `SA_Usage_Tracker::send_heartbeat()` early-returns without `SA_SAAS_API_KEY`, removing the latent empty-key POST on unconfigured installs (both modes).
+- **Tests** — new `addons/schedule-anything-platform/tests/test-single-site-mode.php` (17 cases: provisioning contract + idempotency, no-escalation, offboard 409, seeding + tier filter, capability seam, heartbeat zero-HTTP, lookup/status, notice dismissal) wired into the root suite via a self-guarding addon tests bootstrap; platform version 0.1.1.
+
 ### Added — Schedule Anything: Presets + Toolkits API (Proposal 081)
 
 - **Pro REST surface** — four new `mcp-ai-pro/v1` routes for the Schedule Anything SPA: `GET /toolkits`, `POST /toolkits/{slug}/toggle` (server-side tier entitlements via the platform plugin's `SA_Toolkit_Manager`, `403 sa_toolkit_not_entitled` outside the tenant's tier), `GET /presets` + `GET /presets/{id}` backed by a new static `WP_MCP_AI_Pro_Schedule_Presets` registry (12 presets across 6 toolkits), and an idempotent `POST /presets/{id}/install` (deterministic key; replay returns the original schedule instead of duplicating). Registered as the `rest_schedule_anything` Pro module.

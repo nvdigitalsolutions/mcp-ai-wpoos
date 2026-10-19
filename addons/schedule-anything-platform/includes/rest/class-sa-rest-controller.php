@@ -308,6 +308,44 @@ class SA_REST_Controller {
 	 */
 	public static function get_tenant_status( $request ) {
 		$blog_id = $request->get_param( 'id' );
+
+		if ( ! is_multisite() ) {
+			// Sole-tenant mode (Proposal 082): only the current blog exists.
+			if ( absint( $blog_id ) !== absint( get_current_blog_id() ) ) {
+				return new WP_Error(
+					'sa_blog_not_found',
+					__( 'Tenant workspace not found.', 'schedule-anything' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			$meta          = get_option( 'sa_tenant_meta', array() );
+			$pending       = get_option( 'sa_pending_deletion', array() );
+			$toolkit_count = 0;
+
+			if ( class_exists( 'SA_Toolkit_Manager' ) ) {
+				$statuses = SA_Toolkit_Manager::get_all_statuses();
+				foreach ( $statuses as $status ) {
+					if ( $status['enabled'] ) {
+						++$toolkit_count;
+					}
+				}
+			}
+
+			return rest_ensure_response(
+				array(
+					'blog_id'          => absint( $blog_id ),
+					'site_url'         => home_url(),
+					'registered'       => isset( $meta['created_at'] ) ? gmdate( 'c', $meta['created_at'] ) : '',
+					'tier'             => $meta['tier'] ?? 'starter',
+					'toolkits_enabled' => $toolkit_count,
+					'pending_deletion' => ! empty( $pending ),
+					'deletion_date'    => $pending['scheduled_at'] ?? null,
+					'single_site'      => true,
+				)
+			);
+		}
+
 		$details = get_blog_details( $blog_id );
 
 		if ( ! $details ) {
@@ -359,7 +397,41 @@ class SA_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function lookup_tenant( $request ) {
-		$slug    = sanitize_key( $request->get_param( 'slug' ) );
+		$slug = sanitize_key( $request->get_param( 'slug' ) );
+
+		if ( ! is_multisite() ) {
+			// Sole-tenant mode (Proposal 082): match the slug against the
+			// subdomain stored at provisioning time, falling back to the
+			// site's own host label. Unknown slugs never fabricate tenants.
+			$meta   = get_option( 'sa_tenant_meta', array() );
+			$stored = isset( $meta['subdomain'] ) ? sanitize_key( $meta['subdomain'] ) : '';
+
+			$host  = wp_parse_url( home_url(), PHP_URL_HOST );
+			$label = '';
+			if ( $host ) {
+				$label = sanitize_key( strtok( $host, '.' ) );
+			}
+
+			if ( $slug !== $stored && ( '' === $label || $slug !== $label ) ) {
+				return new WP_Error(
+					'sa_tenant_not_found',
+					__( 'No tenant workspace found for this slug.', 'schedule-anything' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'slug'        => $slug,
+					'blog_id'     => get_current_blog_id(),
+					'site_url'    => home_url(),
+					'tier'        => $meta['tier'] ?? 'starter',
+					'status'      => 'active',
+					'single_site' => true,
+				)
+			);
+		}
+
 		$blog_id = get_blog_id_from_url( $slug );
 
 		if ( ! $blog_id ) {

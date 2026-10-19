@@ -3,7 +3,7 @@
  * Plugin Name: Schedule Anything Platform
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Multi-tenant SaaS platform for scheduling and automating work across all NV oOS toolkits. Handles tenant provisioning, cross-tenant security, usage tracking, and platform REST endpoints. Requires NV oOS Base + Pro.
- * Version:     0.1.0
+ * Version:     0.1.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -44,7 +44,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'SA_PLATFORM_VERSION', '0.1.0' );
+define( 'SA_PLATFORM_VERSION', '0.1.1' );
 
 /** Absolute path to this plugin file. */
 define( 'SA_PLATFORM_FILE', __FILE__ );

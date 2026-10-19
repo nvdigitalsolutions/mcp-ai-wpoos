@@ -55,6 +55,13 @@ class SA_Usage_Tracker {
 	 * @return bool True if heartbeat sent successfully, false on failure.
 	 */
 	public static function send_heartbeat() {
+		// No Cloud Worker configured: nothing to report. This also prevents
+		// empty-key POSTs from single-site demos without SA_SAAS_API_KEY
+		// (Proposal 082, D6).
+		if ( ! defined( 'SA_SAAS_API_KEY' ) || ! SA_SAAS_API_KEY ) {
+			return false;
+		}
+
 		$metrics = self::collect_metrics();
 
 		$response = wp_remote_post(
