@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-17"
+  last-updated: "2026-10-19"
 ---
 
 # NV oOS Toolkit Data Ingestion
@@ -57,6 +57,26 @@ supplier `lead_time`/`order_cutoff` (the PR cutoff gate). Always:
 2. deterministic slug/filename match,
 3. structural header match — **last resort only**,
 4. actionable error (no source / wrong shape / unrecognised columns).
+
+**Every reader must implement the order — including the universal
+single-folder reader.** The F&B universal reader shipped without step 1:
+it scored headers only, so explicit operator hints could never override a
+wrong header match (#7112). Pin it with a test that feeds a `table_map`
+hint contradicting the structural score and asserts the hint wins.
+
+### Serial-date handling (hard-won)
+
+Exported Google Sheets carry **Excel serial dates** (`46023` = 2026-01-01).
+A date normalizer that reads any numeric cell as a Unix epoch timestamp
+collapses every row into month `1970-01` — silently ("Latest analytics
+(1970-01)", empty trend charts, zero-value KPIs). Always:
+
+1. detect serials **before** epoch interpretation (serial base 1899-12-30;
+   values below ~60,000 are serials, not epoch seconds/millis),
+2. derive reporting months from the **date column first**, with the month
+   label as a fallback only for tables with no dated rows,
+3. add a regression row with a serial date (e.g. `46023`) asserting the
+   parsed month is the real one.
 
 ## 2. Multi-format loader → one matrix contract
 

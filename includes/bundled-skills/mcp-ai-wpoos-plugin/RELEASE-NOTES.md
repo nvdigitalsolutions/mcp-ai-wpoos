@@ -1,9 +1,25 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.7)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.8)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## Schedule Anything API + Single-Site Mode, F&B Worker Offload & OAuth Hardening (v1.2.8)
+
+- **Schedule Anything presets + toolkits API (PR #7124, Proposal 081)** — four `mcp-ai-pro/v1` routes (`rest_schedule_anything`): `GET /toolkits` + `POST /toolkits/{slug}/toggle` (server-side tier entitlements via `SA_Toolkit_Manager`, `403 sa_toolkit_not_entitled`), `GET /presets` + `/presets/{id}` (12 presets across 6 toolkits), idempotent `POST /presets/{id}/install`; schedule records leave REST redacted (`redact_schedule_for_public()`).
+- **Schedule Anything Platform single-site mode (PR #7134, Proposal 082 — addon 0.1.0 → 0.1.1)** — sole-tenant self-provisioning, `manage_options` capability seam, offboard-sole-tenant 409, `SA_SAAS_API_KEY`-gated heartbeat; 17-case suite via a self-guarding addon tests bootstrap.
+- **F&B ingest × media-worker offload (PR #7114, Proposal 079 + Appendix B)** — worker `POST /api/ingest/parse` (matrix contract) + hardened `/api/image/batch`; F&B sidecar-first cascade seam (`WP_MCP_AI_Fnb_Worker_Client`) with local fallbacks; `optimise_images_batch` + OCR-service PDF paths offload; opt-in `ocr_vision_fallback` rung. **Worker stays 3.4.0** (no bump in-window).
+- **MCP OAuth authorize hardening (PR #7133)** — RFC 9700 exact-string redirect matching (wildcard bypass gone), registration-time URI validation, nonce-bound consent page, unknown-scope rejection, token-endpoint `redirect_uri` matching — Pro + CG Pro mirror byte-identical.
+- **WP-CLI integration gaps (PR #7135)** — dead `mcp-ai content` fixed; canonical `WP_MCP_AI_Pro_Toolkit_Settings_Map` (40 toolkits); gated `toolkit enable|disable`; new `foundry`/`para`/`qms`/`mcp-app`/`fnb` commands.
+- **Chat composer + toolbar (Proposal 080, PRs #7113/#7116/#7118–#7120)** — auto-grow 1→3 lines, iOS keyboard reflow, drag-resize divider, focus composer, in-place collapsing toolbar (202 vitest green).
+- **Gmail tools (PR #7110)** — `empty_parts` HTML-only email hydration via `body.attachmentId`; attachment text extraction (smalot/pdfparser); base64url re-padding.
+- **F&B fixes (PRs #7108–#7112)** — serial dates (`46023` = 2026-01-01) no longer collapse trends to 1970-01; the universal reader honors `table_map`; resume/retry imports; progress placeholders render.
+- **Schedule Anything delivery + distribution (PRs #7130–#7132)** — delivery date/time editing in the Pro Schedule Manager modal; the SA preset registry renamed `WP_MCP_AI_SA_Schedule_Presets` (class-collision fix); the platform's `Requires Plugins` header dropped (folder-slug matching broke the oos-complete bundle).
+- **Velocity app (PRs #7125/#7126/#7131)** — `examples/schedule-anything-velocity/` with a root `server.js` ESM shim (PM2 default entry); `NVOOS_SA_VELOCITY_REPO_TOKEN` (40-char secret-name cap).
+- **Dictation macOS CI + universal builds (PRs #7122/#7123/#7137)** — `macos-latest` boot-smoke (30 s residency) + headless engine probe, interactive tmate workflow, one universal arm64+x86_64 artifact.
+- **Skills + dependency (PRs #7106, #7128, #7129)** — new `mcp-ai-schedule-anything-ops` skill (74 → 75); dictation skill macOS remote loop; `handlebars` → 4.7.10 (GHSA-8r5x-fm3f-whwj).
+- **Tool counts** — ~355 base + ~1,377 Pro (~1,731 total; **unchanged**). Coding-time skills 74 → 75; bundled 77 base + 41 Pro (unchanged — the dictation-app bundled copy re-synced). Security classes 12, providers 18, addons 30 — all unchanged. Stale 1.2.6 build ZIPs removed (30 files) + the superseded SA platform v0.1.0 ZIP.
 
 ## F&B Universalisation, Sinhala TTS & the Pro SPA Multi-Page Expansion (v1.2.7)
 

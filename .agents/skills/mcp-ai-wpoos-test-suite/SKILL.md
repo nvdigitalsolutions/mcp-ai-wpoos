@@ -5,7 +5,7 @@ description: Repair and triage guide for the NV oOS PHPUnit test suite — Docke
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-17"
+  last-updated: "2026-10-19"
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
 ---
@@ -250,6 +250,13 @@ MSYS_NO_PATHCONV=1 docker run --rm --entrypoint php \
 - When only the client plugin is in scope this is faster than the root suite
   (which boots the full base+Pro plugin); the root suite covers
   `addons/checkout-api/tests` via the root phpunit.xml.dist.
+- **Self-guarding addon tests bootstrap (#7134, SA platform):**
+  `addons/schedule-anything-platform/tests/bootstrap.php` guards each test
+  class with `class_exists()` on the addon's plugin class and marks the suite
+  skipped when the addon isn't loaded, then the three platform test files run
+  inside the standard single-site root suite (wired via the root
+  `phpunit.xml.dist`). Use this pattern for any addon whose tests must run
+  in the root run without hard-requiring the addon.
 
 **Shared-DB isolation (cross-worktree clobbering):** every worktree's one-off
 runner hits the SAME `wordpress_test` DB by default — a concurrent worktree's

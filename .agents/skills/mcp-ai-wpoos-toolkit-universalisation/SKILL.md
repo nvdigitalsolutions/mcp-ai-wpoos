@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-17"
+  last-updated: "2026-10-19"
 ---
 
 # NV oOS Pro Toolkit Universalisation Loop
@@ -128,6 +128,20 @@ to the existing workbook/split path so existing installs don't regress):
    last-writer-wins), adding a provenance column.
 5. Emit a review manifest (file → role → confidence) with `dry_run` preview +
    `sample_rows`; persist it only when not dry-running.
+
+**The universal reader must honor the operator's `table_map` FIRST** — the
+F&B build shipped without it: the reader scored headers only, so explicit
+`table_id → { sheet|file => name }` hints (documented highest trust) could
+never override a wrong structural match (#7112). Consult the configured
+`table_map` before scoring, and pin it with a test where the hint
+contradicts the header score.
+
+**Serial dates:** exported Sheets carry Excel serials (`46023` =
+2026-01-01); a date parser that treats numeric cells as Unix epoch collapses
+every row into `1970-01` (phantom "Latest analytics (1970-01)", no trend
+charts). Detect serials before epoch interpretation (base 1899-12-30) and
+derive reporting months from the date column first, month label only as a
+fallback for the covers/utilities tables.
 
 ## 6. Lessons from Healthcare Vitals (generalised)
 
