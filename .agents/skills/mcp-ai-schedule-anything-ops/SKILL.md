@@ -160,9 +160,14 @@ MSYS_NO_PATHCONV=1 docker run --rm --network sa-e2e-net -v sa-e2e-core:/var/www/
   (public, flat history, force-push only, never commit directly).
 - **The app ships at the mirror repo ROOT** (unlike the Pro SPA mirror, which
   nests under `examples/` because it also vendors spa-v2 sources). Velocity
-  root directory = repo root; entry `scripts/serve.mjs` (shebang mandatory —
-  without it PM2 restart-loops); no build command (no-op `build`/`start`
-  shims exist for auto-detection); env `NVOOS_TARGET_SITE=<wp-site>`.
+  root directory = repo root. **Velocity defaults its PM2 entry to
+  `server.js` at the app root** — the app ships a one-line ESM shim
+  (`server.js` → `import('./scripts/serve.mjs')`) so it deploys with zero
+  entry-file configuration; without it the deploy fails with
+  `[PM2][ERROR] Script not found: .../private_html/server.js` (rc=1). The
+  real server keeps its `#!/usr/bin/env node` shebang (Velocity executes the
+  entry through the shell). No build command (no-op `build`/`start` shims
+  exist for auto-detection); env `NVOOS_TARGET_SITE=<wp-site>`.
 - Cookie-auth proxy: `/wp-json` etc. proxied, login page re-scoped (relative
   form action + redirect_to), Set-Cookie Domain stripped → **no CORS config
   needed** in proxy mode.
