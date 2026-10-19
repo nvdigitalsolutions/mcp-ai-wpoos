@@ -68,11 +68,40 @@ jobs:
           node --check server.js
           test -f dist/index.html
           test -n "$(find dist/assets -maxdepth 1 -name 'index-*.js' | head -n1)"
+          # Asset-closure gate: every asset referenced by index.html and every
+          # CSS chunk in Vite's __vite__mapDeps dep maps must exist in dist/.
+          # The #7125 snapshot shipped index.html without its hashed CSS, so
+          # serve.mjs answered the stylesheet path with text/html and browsers
+          # refused it under strict MIME checking. Never ship that again.
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const dist = "dist";
+            const refs = [];
+            const html = fs.readFileSync(path.join(dist, "index.html"), "utf8");
+            for (const m of html.matchAll(/(?:src|href)="\/assets\/([^"]+)"/g)) refs.push(m[1]);
+            for (const name of fs.readdirSync(path.join(dist, "assets"))) {
+              if (!name.endsWith(".js")) continue;
+              const source = fs.readFileSync(path.join(dist, "assets", name), "utf8");
+              for (const m of source.matchAll(/"assets\/([A-Za-z0-9_.-]+\.css)"/g)) refs.push(m[1]);
+            }
+            const missing = [...new Set(refs)].filter((name) => !fs.existsSync(path.join(dist, "assets", name)));
+            if (missing.length) {
+              console.error("Missing bundle assets: " + missing.join(", "));
+              process.exit(1);
+            }
+            console.log("Asset closure OK: " + new Set(refs).size + " referenced assets present");
+          '
           node server.js > /tmp/sa-velocity-smoke.log 2>&1 &
           SERVER_PID=$!
           sleep 1
           curl -sf -o /dev/null http://localhost:4180/ || { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; }
           curl -sf -o /dev/null http://localhost:4180/schedules || { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          # The entry stylesheet must be served as text/css (not the SPA
+          # fallback's text/html) — end-to-end guard for the MIME fix.
+          CSS_PATH=$(grep -o '/assets/[A-Za-z0-9_.-]*\.css' dist/index.html | head -n1)
+          MIME=$(curl -s -o /dev/null -w '%{content_type}' "http://localhost:4180$CSS_PATH")
+          case "$MIME" in text/css*) ;; *) { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; } ;; esac
           kill $SERVER_PID
 
       - name: Push to nvoos-schedule-anything-velocity
