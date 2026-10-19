@@ -429,4 +429,7 @@ functionally equivalent.
 - `addons/toolkit-shell/src/components/ui/` and `addons/schedule-anything-spa/src/components/ui/` — reference UI kits
 - `addons/saas-controller/README.md` + `THIRD_PARTY_NOTICES.md` — Pattern C reference
 - `mcp-ai-wpoos-test-suite` skill — PHPUnit side of testing (disjoint scope)
+- `mcp-ai-schedule-anything-ops` skill — Schedule Anything SaaS ops: the
+  presets/toolkits REST contract, the WP 6.9 nonce cookie-auth pitfall, the
+  sa-e2e harness, and the Cloudways Velocity deploy/mirror-sync loop
 - `.github/agents/toolkit-spa-maintainer.agent.md` — addon-scoped writer agent
