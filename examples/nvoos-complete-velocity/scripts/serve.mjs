@@ -1,25 +1,28 @@
 #!/usr/bin/env node
 /**
- * Minimal static server for the Schedule Anything SPA on Cloudways Velocity
- * (and `npm run serve`).
+ * Minimal static server for the NV oOS Complete Console on Cloudways
+ * Velocity (and `npm run serve`).
  *
  * Serves the production build from dist/ with SPA-friendly fallback to
  * index.html. Velocity injects PORT and runs Node apps behind NGINX + PM2.
  * No dependencies.
  *
  * Built-in reverse proxy for cookie-auth mode: when NVOOS_TARGET_SITE is set
- * (the WordPress backend running base + Pro + schedule-anything-platform),
- * /wp-json, /wp-admin, /wp-login.php and /wp-includes are proxied to that
- * site — same-origin for the browser, so WordPress cookies + the wp_rest
- * nonce handshake (GET /wp-json/nvoos-saas/v1/auth/nonce) just work. The
- * wp-login.php page body is re-scoped to the app origin (relative form
+ * (the WordPress backend running the NV oOS Complete bundle — base + Pro +
+ * addons), /wp-json, /wp-admin, /wp-login.php and /wp-includes are proxied
+ * to that site — same-origin for the browser, so WordPress cookies + the
+ * wp_rest nonce handshake (wp-admin page scrape with the
+ * mcp-ai/v1/session/nonce fallback — see src/runtime-config.ts) just work.
+ * The wp-login.php page body is re-scoped to the app origin (relative form
  * action + redirect_to) so the login POST and post-login redirect stay
  * inside the proxy — otherwise the auth cookies would be set for the
  * WordPress host and the app origin would never see the session.
  *
  * Ported from examples/schedule-anything-velocity/scripts/serve.mjs (the
  * proven Schedule Anything Velocity entry). The proxy core is intentionally
- * identical; only the default port and log prefix were changed.
+ * identical; only the default port and log prefix were changed. The
+ * schedule-anything-platform plugin is NOT part of this app's backend —
+ * that plugin serves the Schedule Anything tenant SPA only.
  * Never set NVOOS_TARGET_SITE to a URL you do not control; the proxy
  * forwards cookies for those prefixes.
  */
