@@ -5,6 +5,7 @@
   "type": "module",
   "license": "UNLICENSED",
   "description": "Cloudways Velocity app serving the Schedule Anything tenant SPA (prebuilt bundle) and proxying its WordPress backend (base + Pro + schedule-anything-platform). No dependencies — no build step on Velocity.",
+  "main": "server.js",
   "scripts": {
     "serve": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",

@@ -25,13 +25,14 @@ Browser ──> Velocity app (scripts/serve.mjs, PM2)
 
 ```
 .
-├── package.json        # zero dependencies; no-op build + start shims
+├── server.js          # Velocity default entry (shim → scripts/serve.mjs)
+├── package.json       # zero dependencies; no-op build + start shims
 ├── scripts/
-│   └── serve.mjs       # Velocity entry — static serving + reverse proxy
-├── dist/               # prebuilt SPA bundle (git-tracked)
-│   ├── index.html      # entry (served with Cache-Control: no-cache)
-│   └── assets/         # hashed chunks (immutable, 1-year cache)
-└── README.md           # this file
+│   └── serve.mjs      # the real server — static serving + reverse proxy
+├── dist/              # prebuilt SPA bundle (git-tracked)
+│   ├── index.html     # entry (served with Cache-Control: no-cache)
+│   └── assets/        # hashed chunks (immutable, 1-year cache)
+└── README.md          # this file
 ```
 
 > `scripts/sync-dist.mjs` exists in the **monorepo** copy of this app
@@ -67,13 +68,23 @@ curl -I localhost:4180/assets/index-*.js         # 200, public, max-age=31536000
 curl localhost:4180/wp-json/nvoos-saas/v1/auth/nonce   # proxied nonce handshake
 ```
 
+Both `npm run serve` and `node server.js` (the Velocity entry) boot the same
+server; `PORT` overrides the listen port (Velocity injects it from its
+app-level `.env`).
+
 ## Velocity setup
 
 1. Create a Node.js app and connect **this repository**.
 2. **Root directory:** the repo root (default) — `package.json` sits at the
    top of this repo.
-3. **Entry file:** `scripts/serve.mjs` (carries the `#!/usr/bin/env node`
-   shebang — without it the shell parses the ESM and PM2 restart-loops).
+3. **Entry file:** leave Velocity's default — it executes `server.js` at
+   the app root, which is a one-line shim that boots `scripts/serve.mjs`.
+   (The shim exists because Velocity's default entry is `server.js`; without
+   it PM2 fails with `Script not found` and the deploy ends
+   `Status: FAILED (rc=1)`. If you prefer, set the entry to
+   `scripts/serve.mjs` explicitly — both work. The real server carries the
+   `#!/usr/bin/env node` shebang, required because Velocity executes the
+   entry through the shell.)
 4. **Build command:** none (a no-op `npm run build` shim is defined for
    Velocity auto-detection).
 5. **Environment variables:** `NVOOS_TARGET_SITE=https://<your-wp-site>`
