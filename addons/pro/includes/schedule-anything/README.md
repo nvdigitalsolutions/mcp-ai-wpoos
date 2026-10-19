@@ -11,7 +11,7 @@ idempotency bookkeeping the SPA's presets/toolkits REST endpoints consume.
 - `WP_MCP_AI_SA_Toolkit_Adapter` — bridges the REST surface to the platform
   plugin's canonical `SA_Toolkit_Manager` slug/flag map; degrades to an empty
   catalogue when the platform plugin is absent.
-- `WP_MCP_AI_Pro_Schedule_Presets` — static preset catalogue, query/filter/
+- `WP_MCP_AI_SA_Schedule_Presets` — static preset catalogue, query/filter/
   pagination, override whitelisting (mass-assignment guard), deterministic
   install-idempotency keys, and the `create_schedule()` payload builder.
 

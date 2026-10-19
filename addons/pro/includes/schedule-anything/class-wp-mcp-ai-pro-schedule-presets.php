@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.2.8
  */
-class WP_MCP_AI_Pro_Schedule_Presets {
+class WP_MCP_AI_SA_Schedule_Presets {
 
 	/**
 	 * Install-idempotency option: install_key => schedule_id.
@@ -34,7 +34,7 @@ class WP_MCP_AI_Pro_Schedule_Presets {
 	/**
 	 * The preset catalogue.
 	 *
-	 * schedule_data carries the machine configuration handed to
+	 * The `schedule_data` key carries the machine configuration handed to
 	 * WP_MCP_AI_Pro_Schedule_Manager::create_schedule(). `schedule` is the
 	 * registered WP cron interval slug (hourly, twicedaily, daily, weekly,
 	 * or the manager's custom wp_mcp_ai_monthly); the top-level `schedule`

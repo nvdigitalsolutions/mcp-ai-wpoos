@@ -263,7 +263,7 @@ class WP_MCP_AI_SA_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function list_presets( $request ) {
-		$result = WP_MCP_AI_Pro_Schedule_Presets::get_presets(
+		$result = WP_MCP_AI_SA_Schedule_Presets::get_presets(
 			array(
 				'search'   => $request->get_param( 'search' ),
 				'category' => $request->get_param( 'category' ),
@@ -291,7 +291,7 @@ class WP_MCP_AI_SA_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_preset( $request ) {
-		$preset = WP_MCP_AI_Pro_Schedule_Presets::get_preset( $request->get_param( 'id' ) );
+		$preset = WP_MCP_AI_SA_Schedule_Presets::get_preset( $request->get_param( 'id' ) );
 
 		if ( null === $preset ) {
 			return new WP_Error(
@@ -332,7 +332,7 @@ class WP_MCP_AI_SA_REST_Controller {
 
 		$id = $request->get_param( 'id' );
 
-		$preset = WP_MCP_AI_Pro_Schedule_Presets::get_preset( $id );
+		$preset = WP_MCP_AI_SA_Schedule_Presets::get_preset( $id );
 		if ( null === $preset ) {
 			return new WP_Error(
 				'sa_preset_not_found',
@@ -343,12 +343,12 @@ class WP_MCP_AI_SA_REST_Controller {
 
 		$raw_overrides = $request->get_param( 'overrides' );
 		$raw_overrides = is_array( $raw_overrides ) ? $raw_overrides : array();
-		$overrides     = WP_MCP_AI_Pro_Schedule_Presets::sanitize_overrides( $raw_overrides );
+		$overrides     = WP_MCP_AI_SA_Schedule_Presets::sanitize_overrides( $raw_overrides );
 
-		$key = WP_MCP_AI_Pro_Schedule_Presets::install_key( $id, $raw_overrides );
+		$key = WP_MCP_AI_SA_Schedule_Presets::install_key( $id, $raw_overrides );
 
 		// Idempotent replay.
-		$existing_id = WP_MCP_AI_Pro_Schedule_Presets::get_installed_schedule_id( $key );
+		$existing_id = WP_MCP_AI_SA_Schedule_Presets::get_installed_schedule_id( $key );
 		if ( $existing_id ) {
 			$schedules = WP_MCP_AI_Pro_Schedule_Manager::get_schedules();
 			if ( isset( $schedules[ $existing_id ] ) ) {
@@ -363,7 +363,7 @@ class WP_MCP_AI_SA_REST_Controller {
 			}
 		}
 
-		$payload = WP_MCP_AI_Pro_Schedule_Presets::build_install_payload( $preset, $overrides );
+		$payload = WP_MCP_AI_SA_Schedule_Presets::build_install_payload( $preset, $overrides );
 
 		$schedule_id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule( $payload, get_current_user_id() );
 
@@ -371,7 +371,7 @@ class WP_MCP_AI_SA_REST_Controller {
 			return $schedule_id;
 		}
 
-		WP_MCP_AI_Pro_Schedule_Presets::record_install( $key, $schedule_id );
+		WP_MCP_AI_SA_Schedule_Presets::record_install( $key, $schedule_id );
 
 		$schedules = WP_MCP_AI_Pro_Schedule_Manager::get_schedules();
 		$created   = isset( $schedules[ $schedule_id ] ) ? $schedules[ $schedule_id ] : array( 'id' => $schedule_id );
