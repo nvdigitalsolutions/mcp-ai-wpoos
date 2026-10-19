@@ -55,6 +55,17 @@ jobs:
           # Dev-only tool: sync-dist.mjs builds from the monorepo spa-v2
           # sources and cannot work in the mirror (no sources there).
           rm -f /tmp/nvoos-complete-velocity/scripts/sync-dist.mjs
+          # Prune build-time-only files: the mirror ships the prebuilt
+          # bundle + serve scripts only (no sources vendored — unlike the
+          # Pro SPA standalone mirror, this app compiles spa-v2 in at
+          # monorepo build time).
+          rm -rf /tmp/nvoos-complete-velocity/src \
+            /tmp/nvoos-complete-velocity/index.html \
+            /tmp/nvoos-complete-velocity/vite.config.ts \
+            /tmp/nvoos-complete-velocity/tsconfig.json \
+            /tmp/nvoos-complete-velocity/eslint.config.js \
+            /tmp/nvoos-complete-velocity/vitest.config.ts \
+            /tmp/nvoos-complete-velocity/package-lock.json
           cd /tmp/nvoos-complete-velocity
           # Pin the initial branch to main: git init alone honours the runner's
           # init.defaultBranch (or falls back to master), which makes the later
