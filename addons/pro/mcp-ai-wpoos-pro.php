@@ -3067,6 +3067,7 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 	$wp_mcp_ai_pro_cli_dir = WP_MCP_AI_PRO_PATH . 'includes/cli/';
 
 	$wp_mcp_ai_pro_cli_files = array(
+		'class-wp-mcp-ai-pro-toolkit-settings-map.php',
 		'class-wp-mcp-ai-pro-cli-status-command.php',
 		'class-wp-mcp-ai-pro-cli-toolkit-command.php',
 		'class-wp-mcp-ai-pro-cli-fnb-seed-command.php',
@@ -3087,6 +3088,11 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 		'class-wp-mcp-ai-pro-cli-remote-site-command.php',
 		'class-wp-mcp-ai-pro-cli-communication-command.php',
 		'class-wp-mcp-ai-pro-cli-media-studio-command.php',
+		'class-wp-mcp-ai-pro-cli-foundry-command.php',
+		'class-wp-mcp-ai-pro-cli-para-command.php',
+		'class-wp-mcp-ai-pro-cli-qms-command.php',
+		'class-wp-mcp-ai-pro-cli-mcp-app-command.php',
+		'class-wp-mcp-ai-pro-cli-fnb-command.php',
 	);
 
 	foreach ( $wp_mcp_ai_pro_cli_files as $wp_mcp_ai_pro_cli_file ) {
@@ -3096,7 +3102,24 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 		}
 	}
 
-	unset( $wp_mcp_ai_pro_cli_dir, $wp_mcp_ai_pro_cli_files, $wp_mcp_ai_pro_cli_file, $wp_mcp_ai_pro_cli_path );
+	// Integration CLIs live in includes/ (outside the cli/ folder). They used
+	// to be required from their toolkit init.php only when the toolkit toggle
+	// was on, which made them invisible to `wp help mcp-ai` on every site
+	// with the toolkit disabled. Load them here unconditionally — each verb
+	// asserts its toolkit toggle itself.
+	$wp_mcp_ai_pro_integration_cli_files = array(
+		'includes/class-wp-mcp-ai-ezuite-cli.php',
+		'includes/class-wp-mcp-ai-flowhub-cli.php',
+		'includes/class-wp-mcp-ai-shopify-sync-cli.php',
+	);
+	foreach ( $wp_mcp_ai_pro_integration_cli_files as $wp_mcp_ai_pro_integration_cli_file ) {
+		$wp_mcp_ai_pro_integration_cli_path = WP_MCP_AI_PRO_PATH . $wp_mcp_ai_pro_integration_cli_file;
+		if ( file_exists( $wp_mcp_ai_pro_integration_cli_path ) ) {
+			require_once $wp_mcp_ai_pro_integration_cli_path;
+		}
+	}
+
+	unset( $wp_mcp_ai_pro_cli_dir, $wp_mcp_ai_pro_cli_files, $wp_mcp_ai_pro_cli_file, $wp_mcp_ai_pro_cli_path, $wp_mcp_ai_pro_integration_cli_files, $wp_mcp_ai_pro_integration_cli_file, $wp_mcp_ai_pro_integration_cli_path );
 }
 
 /**

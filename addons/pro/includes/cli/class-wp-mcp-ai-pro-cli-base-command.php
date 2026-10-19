@@ -80,4 +80,39 @@ abstract class WP_MCP_AI_Pro_CLI_Base_Command extends WP_MCP_AI_CLI_Base_Command
 			);
 		}
 	}
+
+	/**
+	 * Render an associative result envelope (key → scalar/array).
+	 *
+	 * JSON pretty-prints the raw envelope; table/yaml/csv render key/value
+	 * rows with arrays JSON-encoded and booleans mapped to yes/no.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array  $result Envelope to render.
+	 * @param string $format Output format (table, json, yaml, csv, ids).
+	 * @return void
+	 */
+	protected function render_envelope( $result, $format ) {
+		if ( 'json' === $format ) {
+			WP_CLI::line( wp_json_encode( $result, JSON_PRETTY_PRINT ) );
+			return;
+		}
+
+		$rows = array();
+		foreach ( $result as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$value = wp_json_encode( $value );
+			} elseif ( is_bool( $value ) ) {
+				$value = $value ? 'yes' : 'no';
+			}
+
+			$rows[] = array(
+				'key'   => $key,
+				'value' => is_scalar( $value ) ? (string) $value : wp_json_encode( $value ),
+			);
+		}
+
+		\WP_CLI\Utils\format_items( $format, $rows, array( 'key', 'value' ) );
+	}
 }

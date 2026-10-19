@@ -104,6 +104,7 @@ class Test_WP_CLI_Command_Tree extends WP_UnitTestCase {
 			'mcp-ai approval',
 			'mcp-ai bulk',
 			'mcp-ai chat',
+			'mcp-ai chat-profile',
 			'mcp-ai content',
 			'mcp-ai credential',
 			'mcp-ai cron',
@@ -138,6 +139,11 @@ class Test_WP_CLI_Command_Tree extends WP_UnitTestCase {
 			'mcp-ai remote-site',
 			'mcp-ai communication',
 			'mcp-ai media-studio',
+			'mcp-ai foundry',
+			'mcp-ai para',
+			'mcp-ai qms',
+			'mcp-ai mcp-app',
+			'mcp-ai fnb',
 			// Namespace unification (canonical + legacy alias).
 			'mcp-ai calendar',
 			'mcp calendar',
@@ -155,8 +161,9 @@ class Test_WP_CLI_Command_Tree extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Integration CLIs register both the canonical mcp-ai name and the
-	 * legacy top-level alias (loop-based registration).
+	 * Integration CLIs register the canonical mcp-ai name as a class command
+	 * (class-level help + subcommand discovery) and keep the legacy top-level
+	 * names working per verb (Proposal 050 namespace unification).
 	 *
 	 * @dataProvider data_integration_clis
 	 *
@@ -166,7 +173,7 @@ class Test_WP_CLI_Command_Tree extends WP_UnitTestCase {
 	public function test_integration_clis_register_canonical_and_legacy_names( $noun, $method ) {
 		$source = $this->read_plugin_file( 'addons/pro/includes/class-wp-mcp-ai-' . $noun . '-cli.php' );
 
-		$this->assertStringContainsString( "'mcp-ai {$noun} ' . ", $source, "{$noun} CLI should register the canonical mcp-ai namespace" );
+		$this->assertStringContainsString( "WP_CLI::add_command( 'mcp-ai {$noun}',", $source, "{$noun} CLI should register the canonical mcp-ai class command" );
 		$this->assertStringContainsString( "'{$noun} ' . ", $source, "{$noun} CLI should keep the legacy top-level namespace" );
 		$this->assertStringContainsString( "'{$method}'", $source, "{$noun} CLI verb map should include {$method}" );
 	}
@@ -178,9 +185,45 @@ class Test_WP_CLI_Command_Tree extends WP_UnitTestCase {
 	 */
 	public static function data_integration_clis() {
 		return array(
-			'ezuite'      => array( 'ezuite', 'sync_log' ),
-			'flowhub'     => array( 'flowhub', 'compliance_report' ),
-			'shopify'     => array( 'shopify-sync', 'cost_report' ),
+			'ezuite'  => array( 'ezuite', 'sync_log' ),
+			'flowhub' => array( 'flowhub', 'compliance_report' ),
+			'shopify' => array( 'shopify-sync', 'cost_report' ),
+		);
+	}
+
+	/**
+	 * Every mutating verb in the integration CLIs gates on manage_options
+	 * (they predate the base-command convention, so they self-gate).
+	 *
+	 * @dataProvider data_integration_cli_mutating_verbs
+	 *
+	 * @param string   $noun    Noun used in the command names.
+	 * @param string[] $methods Mutating method names.
+	 */
+	public function test_integration_cli_mutating_verbs_are_gated( $noun, $methods ) {
+		$source = $this->read_plugin_file( 'addons/pro/includes/class-wp-mcp-ai-' . $noun . '-cli.php' );
+
+		$this->assertStringContainsString( "current_user_can( 'manage_options' )", $source, "{$noun} CLI should define the capability gate" );
+
+		foreach ( $methods as $method ) {
+			$pos = strpos( $source, 'public function ' . $method . '(' );
+			$this->assertNotFalse( $pos, "{$noun}::{$method} should exist" );
+
+			$body = substr( $source, $pos, 800 );
+			$this->assertStringContainsString( 'self::require_capability();', $body, "{$noun}::{$method} should be capability gated" );
+		}
+	}
+
+	/**
+	 * Data provider: integration CLI mutating verbs.
+	 *
+	 * @return array<string,array{string,string[]}>
+	 */
+	public static function data_integration_cli_mutating_verbs() {
+		return array(
+			'ezuite'  => array( 'ezuite', array( 'trigger', 'clear_cache' ) ),
+			'flowhub' => array( 'flowhub', array( 'trigger', 'clear_cache' ) ),
+			'shopify' => array( 'shopify-sync', array( 'trigger', 'clear_cache', 'register_webhooks', 'unregister_webhooks' ) ),
 		);
 	}
 
@@ -209,10 +252,13 @@ class Test_WP_CLI_Command_Tree extends WP_UnitTestCase {
 	 */
 	public static function data_pro_mutating_verbs() {
 		$rows = array(
-			'incident-resolve'     => array( 'class-wp-mcp-ai-pro-cli-incident-command.php', 'resolve' ),
-			'maintenance-cancel'   => array( 'class-wp-mcp-ai-pro-cli-maintenance-command.php', 'cancel' ),
-			'schedule-run'         => array( 'class-wp-mcp-ai-pro-cli-schedule-command.php', 'run' ),
-			'vault-list'           => array( 'class-wp-mcp-ai-pro-cli-vault-command.php', 'list' ),
+			'incident-resolve'   => array( 'class-wp-mcp-ai-pro-cli-incident-command.php', 'resolve' ),
+			'maintenance-cancel' => array( 'class-wp-mcp-ai-pro-cli-maintenance-command.php', 'cancel' ),
+			'schedule-run'       => array( 'class-wp-mcp-ai-pro-cli-schedule-command.php', 'run' ),
+			'vault-list'         => array( 'class-wp-mcp-ai-pro-cli-vault-command.php', 'list' ),
+			'toolkit-enable'     => array( 'class-wp-mcp-ai-pro-cli-toolkit-command.php', 'enable' ),
+			'toolkit-disable'    => array( 'class-wp-mcp-ai-pro-cli-toolkit-command.php', 'disable' ),
+			'foundry-export'     => array( 'class-wp-mcp-ai-pro-cli-foundry-command.php', 'export' ),
 		);
 
 		$data = array();
