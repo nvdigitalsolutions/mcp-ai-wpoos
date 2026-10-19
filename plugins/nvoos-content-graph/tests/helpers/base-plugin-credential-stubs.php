@@ -74,3 +74,54 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 		}
 	}
 }
+
+if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+	/**
+	 * Minimal stand-in for the base plugin's guest-token validator.
+	 *
+	 * The content-graph REST controller delegates guest-token validation to
+	 * WP_MCP_AI_Shortcode::validate_guest_token() (X-WP-MCP-AI-Guest header
+	 * or guest_token parameter), guarded by class_exists() so the integration
+	 * stays optional. This stub backs the in-test token table.
+	 */
+	// phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound -- Test helper pairs the credential and guest-token stubs the controller calls.
+	class WP_MCP_AI_Shortcode {
+
+		/**
+		 * In-test token table: token => assistant_id.
+		 *
+		 * @var array<string,int>
+		 */
+		public static $guest_tokens = array();
+
+		/**
+		 * Seed a valid guest token for the next test(s).
+		 *
+		 * @param int $assistant_id Assistant ID the token is scoped to.
+		 * @return string Guest token.
+		 */
+		public static function seed_guest_token( $assistant_id = 0 ) {
+			$token                        = 'guest_' . strtolower( wp_generate_password( 16, false, false ) );
+			self::$guest_tokens[ $token ] = absint( $assistant_id );
+			return $token;
+		}
+
+		/**
+		 * Validate a guest token against the seeded table.
+		 *
+		 * @param string            $token        Guest access token.
+		 * @param int               $assistant_id Requested assistant ID.
+		 * @param WP_REST_Request|null $request     REST request (unused in the stub).
+		 * @return int|false Assistant ID when valid, false otherwise.
+		 */
+		public static function validate_guest_token( $token, $assistant_id = 0, $request = null ) {
+			// Signature mirrors the base plugin; the unused slots keep the stub drop-in.
+			unset( $assistant_id, $request );
+			$token = is_string( $token ) ? trim( $token ) : '';
+			if ( '' === $token || ! array_key_exists( $token, self::$guest_tokens ) ) {
+				return false;
+			}
+			return self::$guest_tokens[ $token ];
+		}
+	}
+}

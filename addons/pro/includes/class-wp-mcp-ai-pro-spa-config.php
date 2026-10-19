@@ -265,7 +265,7 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'threads'       => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
 				'tools'         => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
 				'assistants'    => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
-				'settings'      => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),
+				'settings'      => '', // The base plugin has no mcp-ai/v1/settings REST route — the SPA Settings page degrades to an unavailable state.
 
 				// WordPress media upload endpoint (matches legacy chat-spa).
 				'upload'        => esc_url_raw( rest_url( 'wp/v2/media' ) ),

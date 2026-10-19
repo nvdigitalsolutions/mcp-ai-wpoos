@@ -7,11 +7,15 @@
  * plugin's REST conventions for any WordPress site running NV oOS:
  *
  *   {site}/wp-json/mcp-ai/v1/{chat,chat-client,chat-transcripts,chat-memory,
- *     threads,tools,assistants,settings,approvals}
+ *     threads,tools,assistants,approvals}
  *   {site}/wp-json/mcp-ai-pro/v1/{workflows,analytics,tool-shortcuts,
  *     slash-commands,okf}
  *   {site}/wp-json/wp/v2/media
  *   {site}/wp-json/mcp-ai/v1/session/nonce   (fresh wp_rest nonce, cookie auth)
+ *
+ * Note: `settings` is intentionally '' — the base plugin does not expose a
+ * mcp-ai/v1/settings REST route yet, and the Settings page renders an
+ * unavailable state instead of a guaranteed 404.
  */
 
 import type { ProSpaRuntime, ProSpaUser, ProSpaEndpoints } from '@nvoos/pro-spa-v2/api/config';
@@ -114,7 +118,10 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		threads: `${core}/threads`,
 		tools: `${core}/tools`,
 		assistants: `${core}/assistants`,
-		settings: `${core}/settings`,
+		// The base plugin does not expose a settings REST route yet — the
+		// Settings page renders an unavailable state instead of firing a
+		// guaranteed 404 against /mcp-ai/v1/settings.
+		settings: '',
 		upload: `${api}/wp/v2/media`,
 		workflows: `${pro}/workflows`,
 		analytics: `${pro}/analytics`,

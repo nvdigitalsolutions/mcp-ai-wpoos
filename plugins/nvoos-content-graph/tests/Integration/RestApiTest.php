@@ -194,8 +194,8 @@ class RestApiTest extends WP_UnitTestCase {
 	 */
 	public function testBearerCredentialCanReadGraph(): void {
 		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
-		$token    = \WP_MCP_AI_Credentials::seed_token();
-		$request  = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph' );
+		$token   = \WP_MCP_AI_Credentials::seed_token();
+		$request = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph' );
 		$request->set_header( 'Authorization', 'Bearer ' . $token );
 		$response = rest_do_request( $request );
 
@@ -209,7 +209,7 @@ class RestApiTest extends WP_UnitTestCase {
 	 */
 	public function testBearerCredentialWithBadTokenReturns401(): void {
 		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
-		$request  = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph' );
+		$request = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph' );
 		$request->set_header( 'Authorization', 'Bearer cred_forged.wrongsecret' );
 		$response = rest_do_request( $request );
 
@@ -223,8 +223,8 @@ class RestApiTest extends WP_UnitTestCase {
 	 */
 	public function testRawCredentialHeaderCanReadGraph(): void {
 		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
-		$token    = \WP_MCP_AI_Credentials::seed_token();
-		$request  = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph' );
+		$token   = \WP_MCP_AI_Credentials::seed_token();
+		$request = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph' );
 		$request->set_header( 'Authorization', $token );
 		$response = rest_do_request( $request );
 
@@ -238,8 +238,8 @@ class RestApiTest extends WP_UnitTestCase {
 	 */
 	public function testBearerCredentialCannotBuild(): void {
 		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
-		$token    = \WP_MCP_AI_Credentials::seed_token();
-		$request  = new \WP_REST_Request( 'POST', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/build' );
+		$token   = \WP_MCP_AI_Credentials::seed_token();
+		$request = new \WP_REST_Request( 'POST', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/build' );
 		$request->set_header( 'Authorization', 'Bearer ' . $token );
 		$response = rest_do_request( $request );
 
@@ -276,12 +276,41 @@ class RestApiTest extends WP_UnitTestCase {
 	 */
 	public function testVisualConfigAcceptsBearerCredential(): void {
 		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
-		$token    = \WP_MCP_AI_Credentials::seed_token();
-		$request  = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph/visual-config' );
+		$token   = \WP_MCP_AI_Credentials::seed_token();
+		$request = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph/visual-config' );
 		$request->set_header( 'Authorization', 'Bearer ' . $token );
 		$response = rest_do_request( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
+	 * GET /graph/visual-config is available to a valid base-plugin guest token.
+	 *
+	 * @return void
+	 */
+	public function testVisualConfigAcceptsGuestToken(): void {
+		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
+		$token   = \WP_MCP_AI_Shortcode::seed_guest_token( 1 );
+		$request = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph/visual-config' );
+		$request->set_header( 'X-WP-MCP-AI-Guest', $token );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
+	 * GET /graph/visual-config rejects an invalid guest token.
+	 *
+	 * @return void
+	 */
+	public function testVisualConfigRejectsBadGuestToken(): void {
+		require_once __DIR__ . '/../helpers/base-plugin-credential-stubs.php';
+		$request = new \WP_REST_Request( 'GET', '/' . \NvoosContentGraph\Schema::REST_NAMESPACE . '/graph/visual-config' );
+		$request->set_header( 'X-WP-MCP-AI-Guest', 'guest_does_not_exist' );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 401, $response->get_status() );
 	}
 
 	/**
