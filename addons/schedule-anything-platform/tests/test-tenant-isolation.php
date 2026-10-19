@@ -20,6 +20,23 @@ use PHPUnit\Framework\TestCase;
 class Test_Tenant_Isolation extends WP_UnitTestCase {
 
 	/**
+	 * Reset per-test state.
+	 *
+	 * wp_mcp_ai_settings is the shared NV oOS settings blob that earlier
+	 * suites leave populated; SA_Toolkit_Manager::ensure_defaults() never
+	 * overwrites a non-empty option, so a stale blob would make the seeded
+	 * tier assertions below order-dependent. Delete it before every test
+	 * (mirrors Test_Single_Site_Mode and Test_SA_Toolkit_Manager).
+	 *
+	 * @return void
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
 	 * Test that toolkit flags are scoped per blog.
 	 *
 	 * When SA_Toolkit_Manager sets flags on blog A,
