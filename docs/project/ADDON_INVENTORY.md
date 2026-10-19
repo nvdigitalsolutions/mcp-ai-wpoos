@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** October 17, 2026 (v1.2.7 — **no addon version moves in-window**; everything unchanged (Docs Hub 0.5.3, Toolkit Shell 0.3.0, Schedule Anything SPA 0.2.0, MCP Gateway 0.1.1, Media Worker 3.4.0, Fleet Operator 1.0.0, Media Studio 0.6.1, SaaS Controller 0.3.0, Design System 0.3.0, ChatGPT Plugin 0.1.0, Checkout API 0.1.2, nvoos-content-graph 1.0.11, nvoos-content-graph-ai 1.0.4 — the sub-projects keep their own tracks, flag-not-edited here; the window's `nvoos-content-graph-ai-v1.0.4` ZIP build is build-only; #7074 bumps the gateway SDK, not the addon version)
+> **Last Updated:** October 19, 2026 (v1.2.8 — **Schedule Anything Platform 0.1.0 → 0.1.1** (#7134, single-site sole-tenant mode — the row below was already updated in-window); everything else unchanged (Docs Hub 0.5.3, Toolkit Shell 0.3.0, Schedule Anything SPA 0.2.0, MCP Gateway 0.1.1, **Media Worker 3.4.0 — the new `/api/ingest/parse` route ships without a worker bump**, Fleet Operator 1.0.0, Media Studio 0.6.1, SaaS Controller 0.3.0, Design System 0.3.0, ChatGPT Plugin 0.1.0, Checkout API 0.1.2, nvoos-content-graph 1.0.11, nvoos-content-graph-ai 1.0.4 — the sub-projects keep their own tracks, flag-not-edited here; the SA Velocity app (#7125) is an `examples/` app, not an addon)
 
 ---
 
