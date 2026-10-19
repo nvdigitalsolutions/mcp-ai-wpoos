@@ -152,6 +152,20 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   would break `script-src 'self'`).
 - **Media worker:** the app fronts the worker directly (URL + `X-Site-Token`
   in the connection screen) — the two stay separate Velocity apps.
+- **Second standalone host — NV oOS Complete Console**
+  (`examples/nvoos-complete-velocity/`, Proposal 083, PR #7150): same Vite
+  host recipe (alias + tsconfig paths + shims) **minus the connection
+  screen** — fixed cookie-auth console that boots straight into spa-v2's
+  `App` (mode admin). Deltas vs this section: `buildConsoleRuntime()`
+  builds the runtime from the session (nonce via wp-admin scrape →
+  `session/nonce` fallback, user via `wp/v2/users/me?context=edit`);
+  assistant provisioning is "both" — `defaultAssistantId` pin + selector
+  on; serve.mjs is the **Schedule Anything** variant (no runtime-env
+  injection), port 4181; the sync workflow triggers on the app folder
+  **and** `addons/pro/assets/spa-v2/**` (the console embeds spa-v2
+  sources) and **prunes build-time files** (`src/`, configs, lockfile)
+  from the mirror tree — bundle + serve scripts only. Cross-app SSO with
+  the SA app is a deferred shared-domain-cookie follow-up.
 
 ## Porting a plugin JS widget into spa-v2 (vendored-upstream pattern)
 
@@ -291,6 +305,59 @@ AND the standalone Vite app, without forking the widget.
 - Drop autoprefixer (Lightning CSS handles prefixing).
 - Never reference undefined theme tokens in utility classes (e.g.
   `ring-ring`); use real palette keys or define them.
+- **Tracked-dist feedback loop (found 2026-10-20, PR #7148):** Tailwind's
+  automatic source detection includes the **git-tracked `assets/dist`** —
+  the prebuilt bundle the repo commits. Each build then harvests phantom
+  class candidates from the previous build's minified JS, so the emitted
+  CSS differs run-to-run (observed: 35.14 → 35.49 → 34.98 KB across three
+  unchanged-source builds) and dist hashes never settle — the
+  byte-identical-rebuild check below fails forever. **Fix:** exclude the
+  output dir from the scan in `src/styles/global.css` (path is relative to
+  the CSS file):
+  ```css
+  /* Exclude the git-tracked build output from Tailwind's automatic source
+     detection — otherwise each build scans the previous build's minified
+     JS and dist hashes never settle. */
+  @source not "../../assets/dist";
+  ```
+  After the fix, consecutive builds are byte-identical and the CSS shrank
+  ~2 KB (the phantom classes). Any Tailwind-v4 addon that commits its
+  build output needs the same exclusion; add it at scaffold time.
+- **Determinism gate:** after any build-affecting change (deps, CSS,
+  config), build twice and byte-compare — deterministic bundles produce no
+  diff on the second run. If hashes rotate between runs, suspect a scan or
+  ordering feedback loop, not tooling noise.
+
+## Upgrading a Pattern B SPA to React 19 (checklist, case study PR #7148)
+
+Works for schedule-anything-spa and any future Vite product SPA when the
+Pattern-B React 18.3 pin is lifted (see rule 1 — only valid while the SPA
+is standalone, never embedded inline in wp-admin).
+
+1. **Migration-surface greps first** — the React 19 removals/type changes
+   that break code: `React.FC` (implicit children gone in @types 19),
+   global `JSX.Element`, `forwardRef`, `defaultProps`, `PropTypes`,
+   `ReactDOM.render`, `findDOMNode`, argument-less `useRef()`. The SA SPA
+   had zero matches, and the upgrade was clean.
+2. **Peer-dep tolerance via the lockfile** — verify what `npm install`
+   actually resolved: `recharts` needs ≥2.15 (peer includes ^19);
+   `@axe-core/react` 4.13 has **no react peer**; react-transition-group is
+   `>=16.6`. If a dev-only tool hard-pins React 18 peers, `--legacy-peer-deps`
+   or an override beats downgrading.
+3. **Pins** — `react`/`react-dom` exact `19.1.0` (matches spa-v2 + the
+   standalone app); `@types/react`/`@types/react-dom` `^19.1.4`.
+4. **Gates** — `typecheck` (the real risk: @types 19 strictness), a11y
+   lint, vitest, **build ×2 determinism**, main-chunk budget (SA grew
+   93 → 105.95 KB gzip: part React 19, part Radix minors from the lock
+   refresh — still under the 150 KB gate; call the growth out in the PR).
+5. **Document the deviation** — addon README + this skill's matrix row, so
+   future agents don't "fix" it back to 18.
+6. **Dist-only merge conflicts are the norm afterwards** — two branches
+   rebuilding the same source rotate chunk hashes. Never hand-merge
+   minified bundles: merge the sources, rebuild (`npm run build`), re-sync
+   (`npm run sync:dist` in the velocity app), `git add` both dist trees.
+   Dry-run mergeability without touching the worktree:
+   `git merge-tree --write-tree HEAD origin/<base>` (exit 0 = clean).
 
 ## @xyflow/react v12 (upgraded from reactflow 11)
 
