@@ -31,7 +31,7 @@ class Test_SA_Toolkit_REST extends WP_UnitTestCase {
 			self::markTestSkipped( 'Pro Schedule Manager not available.' );
 		}
 
-		$base = dirname( __DIR__, 2 );
+		$base = dirname( __DIR__, 3 );
 
 		require_once $base . '/addons/pro/includes/schedule-anything/class-wp-mcp-ai-pro-sa-toolkit-adapter.php';
 		require_once $base . '/addons/pro/includes/rest/class-wp-mcp-ai-pro-sa-rest-controller.php';
