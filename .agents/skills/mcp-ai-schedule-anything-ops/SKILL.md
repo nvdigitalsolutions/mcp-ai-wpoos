@@ -6,7 +6,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.8"
   plugin-version-tested: "1.2.8"
-  last-updated: "2026-10-18"
+  last-updated: "2026-10-19"
 ---
 
 # Schedule Anything SaaS — Operational Guide
@@ -48,6 +48,15 @@ see the single-site section below): base + Pro + schedule-anything-platform
   the **built distribution zip** (`build/mcp-ai-wpoos-pro-*.zip`) on a real
   site; a headerless copy is invisible to WP and a header-added copy
   redeclares functions (E2E-verified both failure modes).
+- **Do NOT add `Requires Plugins: mcp-ai-wpoos` to the platform plugin**
+  (removed by #7132): core matches dependency entries against the installed
+  plugin's **folder slug** with AND semantics, and the base ships under three
+  slugs (`mcp-ai-wpoos` dev checkout, `nvdigital-open-operator-system-oos`
+  wp.org base, `-oos-complete` bundle) — one static header blocks two of the
+  three distributions. The runtime guard `sa_platform_base_is_active()`
+  (→ `wp_mcp_ai_core_loaded()`) is slug-agnostic and already detects all
+  three. `addons/page-agent/nvoos-page-agent.php` still carries the same
+  header — apply the same treatment if it needs bundle support.
 
 ## 2. REST surface contract (Proposal 081, `rest_schedule_anything` module)
 
@@ -163,6 +172,12 @@ MSYS_NO_PATHCONV=1 docker run --rm --network sa-e2e-net -v sa-e2e-core:/var/www/
   never `alert`.
 - The SPA payload builder is `addons/schedule-anything-spa/src/lib/schedulePayload.ts`
   (pure, unit-tested — extend it, don't inline payload logic in FlowCanvas).
+- **Schedule delivery-time editing (Pro Schedule Manager, #7130)** — the edit
+  modal now carries a Delivery Date & Time (`datetime-local`) field: prefill
+  from the stored first-run `timestamp` only while it is still in the future;
+  `saveEdit()` sends `timestamp` only for future values (past → alert, blank
+  → keep the current cron event); `ajax_get_schedules` exposes the stored
+  `timestamp` for the prefill.
 - After SPA changes: `npm test` + `npm run build` in the addon, commit the
   rebuilt `assets/dist/` (deterministic byte-identical hashes), and rebuild
   the SPA zip (`bin/build-spa-zips.js`).
@@ -175,9 +190,15 @@ MSYS_NO_PATHCONV=1 docker run --rm --network sa-e2e-net -v sa-e2e-core:/var/www/
   (public, flat history, force-push only, never commit directly).
 - **The app ships at the mirror repo ROOT** (unlike the Pro SPA mirror, which
   nests under `examples/` because it also vendors spa-v2 sources). Velocity
-  root directory = repo root; entry `scripts/serve.mjs` (shebang mandatory —
-  without it PM2 restart-loops); no build command (no-op `build`/`start`
-  shims exist for auto-detection); env `NVOOS_TARGET_SITE=<wp-site>`.
+  root directory = repo root. **Velocity PM2 defaults its entry to `server.js`
+  at the app root** — the repo ships a one-line ESM shim
+  (`import('./scripts/serve.mjs')`, `package.json` `"main": "server.js"`, the
+  `"type": "module"` field makes the root file ESM) so the deploy needs zero
+  entry-file configuration; the real server logic stays in
+  `scripts/serve.mjs` (shebang mandatory — without it PM2 restart-loops). The
+  sync workflow smoke-tests `node server.js` (the actual Velocity entry). No
+  build command (no-op `build`/`start` shims exist for auto-detection); env
+  `NVOOS_TARGET_SITE=<wp-site>`.
 - Cookie-auth proxy: `/wp-json` etc. proxied, login page re-scoped (relative
   form action + redirect_to), Set-Cookie Domain stripped → **no CORS config
   needed** in proxy mode.
@@ -239,6 +260,22 @@ single blog is the tenant. No constant opt-in; it is automatic.
   (17 cases) + a self-guarding `tests/bootstrap.php` wired into the root
   suite (`phpunit.xml.dist`); all three platform test files now run in the
   standard single-site PHPUnit suite.
+
+## 9. WP-CLI toolkit + SA-adjacent commands (Pro, #7135)
+
+- **Canonical toolkit key-map** — `WP_MCP_AI_Pro_Toolkit_Settings_Map`
+  (`addons/pro/includes/cli/class-wp-mcp-ai-pro-toolkit-settings-map.php`,
+  40 toolkits) is consumed by `toolkit list/enable/disable` **and**
+  `pro status` — never hardcode a toolkit list in a command (11 real settings
+  keys were missing and `toolkit enable enable_cloudways_toolkit` failed with
+  "Unknown toolkit key").
+- **Gates** — `toolkit enable|disable` require `manage_options`; `enable` takes
+  `--yes`; formats include `ids`/`count`. Integration CLIs (ezuite/flowhub/
+  shopify-sync) load unconditionally from the Pro loader (so
+  `wp help mcp-ai` discovers them) and assert their toolkit toggle per verb.
+- **SA-adjacent commands** — `wp mcp-ai fnb status`; `foundry status` +
+  `export <assistant-id>` (canonical export tools, `--dry-run`);
+  `mcp-app list --assistant-id=<id>` (metadata only, never renders secrets).
 
 ## References
 

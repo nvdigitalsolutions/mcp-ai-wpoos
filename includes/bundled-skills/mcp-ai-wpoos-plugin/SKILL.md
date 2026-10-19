@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.7"
-  plugin-version-tested: "1.2.7"
-  last-updated: "2026-10-17"
+  plugin-version: "1.2.8"
+  plugin-version-tested: "1.2.8"
+  last-updated: "2026-10-19"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -47,11 +47,38 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~353 base / ~1,692 full tools
+     │  Tool Registry     │  ~355 base / ~1,731 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
 ```
+
+## Plugin Distribution & Dependency Headers
+
+- **The base plugin ships under three folder slugs** depending on distribution:
+  `mcp-ai-wpoos` (dev checkout), `nvdigital-open-operator-system-oos`
+  (wp.org base), `nvdigital-open-operator-system-oos-complete` (complete
+  bundle).
+- **Never declare `Requires Plugins: mcp-ai-wpoos` in an addon.** WordPress
+  core matches dependency entries against the installed plugin's **folder
+  slug** (`dirname()` of the plugin file) with AND semantics — not the slug
+  the dependency declares in its own header — so one static header can only
+  ever satisfy one of the three distributions and blocks the other two at
+  activation ("requires 1 plugin to be installed and activated"). The
+  Schedule Anything platform shipped exactly this header and was blocked on
+  complete-bundle sites — fixed by #7132 (header dropped with a comment; the
+  slug-agnostic runtime guard `sa_platform_base_is_active()` →
+  `wp_mcp_ai_core_loaded()` already detects all three flavors).
+  `addons/page-agent` still carries the header — tracked in issue #7140.
+- **Repo-specific deviations from curated skills belong in internal
+  (project-owned) skills, never in the curated copies.** The `wp-*` skills
+  under `.agents/skills/` + `includes/bundled-skills/` are curated from the
+  upstream `Lonsdale201/wp-agent-skills` catalogue and are refreshed through
+  the curation flow — an edit made directly in a curated SKILL.md is lost on
+  the next re-curation/update. This section is the persistent home for the
+  folder-slug lesson the upstream `wp-plugin-bootstrap` skill does not carry;
+  future repo-specific WP lessons should land here (or in another
+  project-owned skill) for the same reason.
 
 ## Quick Start (Docker)
 

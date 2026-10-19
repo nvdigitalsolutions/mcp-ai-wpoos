@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **October 17, 2026** · Version: **2.60**
+> Last reviewed: **October 19, 2026** · Version: **2.61**
 
 ### Related Files
 
@@ -537,7 +537,16 @@ Twelve security infrastructure classes in `includes/security/` that operate acro
 - **F&B reliability** (v1.2.7, PRs #7091/#7092/#7102/#7103) — recoverable unknown-metric errors (Levenshtein closest-ID), complete-by-default + resumable imports (25,000-row cap), header-dictionary metric resolution + covers fallbacks + fixed-height KPI charts, and a WPCS indentation pass.
 - **Team-member tool invocation** (v1.2.7, PR #7088) — `invoke_team_member()` resolves profession slugs via `build_tools_payload()` (proper `{type,function}` definitions + attention/capability inheritance).
 - **Framed SPA credential auth + surface fix** (v1.2.7, PRs #7075/#7076/#7085) — headless `Bearer cred_…` auth for framed Media Studio/Document Editor (capability-gated to the issuing user, `auth-bridge.ts` postMessage), the home-URL iframe fallback removed, keep-alive hub tabs.
-- **Dependency** (v1.2.7, PR #7074) — `@modelcontextprotocol/sdk` 1.30.1 → 1.31.0 in the mcp-wordpress-gateway (GHSA-6qxp-vccf-f47h). **Tool counts +1 base +1 Pro → ~355 base + ~1,377 Pro, ~1,731 total.**
+- **Schedule Anything presets/toolkits API + single-site mode** (v1.2.8, PRs #7124/#7134, Proposals 081/082) — four `mcp-ai-pro/v1` routes (`rest_schedule_anything`): toolkits list/toggle with server-side tier entitlements (`403 sa_toolkit_not_entitled`), presets catalogue, idempotent install; schedule records leave REST redacted (`redact_schedule_for_public()`); the platform plugin (0.1.0 → 0.1.1) runs sole-tenant mode on single-site (self-provisioning, `manage_options` capability seam, offboard-sole-tenant 409, `SA_SAAS_API_KEY`-gated heartbeat).
+- **F&B ingest × media-worker offload** (v1.2.8, PR #7114, Proposal 079 + Appendix B) — the worker's `POST /api/ingest/parse` (matrix contract) + hardened `/api/image/batch`; the F&B loader parses heavy formats sidecar-first (`WP_MCP_AI_Fnb_Worker_Client`) with local fallbacks; opt-in `ocr_vision_fallback` rung. The worker stays **3.4.0** (the route ships without a version bump).
+- **MCP OAuth authorize hardening** (v1.2.8, PR #7133) — RFC 9700 exact-string redirect-URI matching (wildcard bypass removed), registration-time URI validation, a nonce-bound consent page, unknown-scope rejection, token-endpoint `redirect_uri` matching — Pro + CG Pro mirror byte-identical.
+- **WP-CLI integration gaps closed** (v1.2.8, PR #7135) — the dead `mcp-ai content` command registers again; canonical `WP_MCP_AI_Pro_Toolkit_Settings_Map` (40 toolkits) fixes the 11 missing settings keys; `toolkit enable|disable` are `manage_options`-gated; new `foundry`/`para`/`qms`/`mcp-app`/`fnb` commands.
+- **Chat composer + toolbar** (v1.2.8, Proposal 080, PRs #7113/#7116/#7118–#7120) — auto-grow 1→3 lines, iOS keyboard reflow, drag-resize divider, focus composer, in-place collapsing toolbar (202 vitest tests green).
+- **Gmail body hydration + attachment text** (v1.2.8, PR #7110) — HTML-only `empty_parts` emails hydrate via `body.attachmentId`; attachments return extracted text (smalot/pdfparser); base64url re-padding.
+- **F&B fixes** (v1.2.8, PRs #7108–#7112) — serial dates (`46023` = 2026-01-01) no longer collapse trends to 1970-01; the universal reader honors `table_map`; resume/retry imports with a persistent cursor.
+- **Dictation macOS CI + universal builds** (v1.2.8, PRs #7122/#7123/#7137) — `macos-latest` boot-smoke (30 s residency) + headless engine probe, interactive tmate workflow, one universal arm64+x86_64 artifact (lipo-merged, both slices boot-verified).
+- **Schedule Anything Velocity + distribution** (v1.2.8, PRs #7125/#7126/#7131/#7132) — `examples/schedule-anything-velocity/` (prebuilt dist + proxy core, root `server.js` ESM shim for PM2); the platform's `Requires Plugins: mcp-ai-wpoos` header dropped (core matches the dependency against the folder slug — three distribution slugs; the runtime guard is slug-agnostic; `addons/page-agent` carries the same header — follow-up).
+- **Skills + dependency** (v1.2.8) — new coding-time skill `mcp-ai-schedule-anything-ops` (74 → 75); `handlebars` → 4.7.10 (GHSA-8r5x-fm3f-whwj). **Tool counts unchanged: ~355 base + ~1,377 Pro, ~1,731 total.**
 - **Google Drive OAuth restored** (v1.2.6, PR #7053) — the #6981 `drive.file`-only narrowing broke `search_drive`/`get_drive_file` + the F&B tools for pre-existing content; `drive.readonly` restored alongside `drive.file` behind `wp_mcp_ai_google_drive_oauth_scope` (CG-AI platform mirror — sub-project).
 - **F&B reader reliability** (v1.2.6, PRs #7057/#7060/#7061/#7062) — Sheets-API-v4 multi-worksheet reads (`get_sheet_values()`/`get_sheets_metadata()`, fuzzy tab matching, split-file fallback), `DEMO_WORKBOOK_ID` fallback + `workbook_id()`, the `spreadsheets.readonly` OAuth scope + `maybe_annotate_sheets_error()`, a `WP_MCP_AI_Fnb_Csv_Exporter` + 18 shipped demo tables (`data/*.csv`). No new tool.
 - **Self-hosted OCR vLLM contract** (v1.2.6, PR #7055) — `ocr_images()` was SGLang-shaped; rewritten to the vLLM OpenAI-compatible payload (`extra_body.vllm_xargs`), base + CG Pro mirror byte-identical.
