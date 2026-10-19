@@ -1,6 +1,6 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.2.8] - 2026-10-19
 
 ### Added — Schedule Anything Platform: Single-Site (Sole Tenant) Mode (Proposal 082)
 
@@ -22,7 +22,7 @@
 
 ### Added — F&B Ingest × Media Worker Offload (Proposal 079)
 
-- **Worker `POST /api/ingest/parse` (media-worker v3.5.0+)** — a toolkit-neutral parse endpoint returning the F&B `{columns, rows}` matrix contract: XLSX via the existing ExcelJS dependency (first worksheet unless `sheet` given), CSV/TSV with delimiter sniffing, JSON/JSONL with union headers, PDF via pdf-parse with a render→OCR chain for scanned PDFs (pdfjs-dist + canvas + tesseract.js), and photo OCR via tesseract.js. Legacy `.xls` and gated `.ods` return `503 capability_unavailable` so callers fall back to local PhpSpreadsheet. Full matrix by default (no hidden row cap); optional `offset`/`limit` paging. Registered in the health endpoints/capabilities map (`ingest_parsing`).
+- **Worker `POST /api/ingest/parse` (media-worker v3.4.0)** — a toolkit-neutral parse endpoint returning the F&B `{columns, rows}` matrix contract: XLSX via the existing ExcelJS dependency (first worksheet unless `sheet` given), CSV/TSV with delimiter sniffing, JSON/JSONL with union headers, PDF via pdf-parse with a render→OCR chain for scanned PDFs (pdfjs-dist + canvas + tesseract.js), and photo OCR via tesseract.js. Legacy `.xls` and gated `.ods` return `503 capability_unavailable` so callers fall back to local PhpSpreadsheet. Full matrix by default (no hidden row cap); optional `offset`/`limit` paging. Registered in the health endpoints/capabilities map (`ingest_parsing`).
 - **Plugin cascade seam (Pro)** — `WP_MCP_AI_Fnb_Worker_Client` (reuses the shared `WP_MCP_AI_Media_Worker_Client` trait) and a sidecar-first path in `WP_MCP_AI_Fnb_Loader::load_file()`: heavy formats (XLSX/XLS/ODS/PDF/photo) parse in the worker when configured, with every failure falling back to the local PhpSpreadsheet/PdfParser/OCR-pointer paths unchanged. PDF/photo envelopes convert through the same delimited path so the structure matcher sees identical shapes; low-confidence OCR keeps the actionable `wp_mcp_ai_fnb_photo_needs_ocr` pointer. CSV/TSV/JSON/JSONL are never offloaded.
 - **Settings** — F&B `use_media_worker` (`auto` default, `off` to force local parsing) surfaced under a new "Media Worker Offload" section; filters `wp_mcp_ai_fnb_worker_enabled`, `wp_mcp_ai_fnb_worker_client` (test seam), and `wp_mcp_ai_fnb_ocr_confidence_floor`.
 - **Tests** — worker jest suite `src/routes/ingest.test.js` (10 cases: matrix shapes, sheet selection, 503 gates, 415/400, shared-volume `source` path, PDF text layer); PHPUnit `test-fnb-worker-offload.php` (seam normalisation, fallback, PDF/photo conversion, real-client gates) with a zero-HTTP fake client helper.
@@ -34,6 +34,72 @@
 - **Image-production batch offload** — `optimise_images_batch` gains a sidecar batch path (`execute_sidecar_batch`, one `/api/image/batch` call via `sidecar_upload_multi`): original-format re-encodes overwrite the source file with metadata regen, WebP conversions register the linked sibling attachment exactly like the GD path; GD remains the fallback and dry-run previews never touch the sidecar.
 - **Provider-vision OCR rung (opt-in)** — F&B `ocr_vision_fallback` setting (default off): when a photo cannot be OCR'd confidently (or no sidecar exists), the image is staged as a temporary attachment and OCR'd through `extract_image_text` (plugin vision provider), then deleted; failures keep the actionable pointer with the vision error in `data`.
 - **Tests** — worker `image-batch.test.js` (5 cases); PHPUnit `test-ocr-service-sidecar-pdf.php` (3), `test-optimise-images-batch-sidecar.php` (3), plus 3 vision-rung cases in `test-fnb-worker-offload.php`.
+
+### Added — WP-CLI Integration Gap Closure (PR #7135)
+
+- **Dead `mcp-ai content` command fixed** — the dispatcher never required the self-registering `content-command.php`, so the documented command silently failed to register; now loaded from the dispatcher with a regression pin.
+- **Canonical toolkit key-map** — new `WP_MCP_AI_Pro_Toolkit_Settings_Map` (40 toolkits) consumed by `toolkit list/enable/disable` + `pro status`; the 11 missing settings keys (cloudways, dietpi, calendar-booking, outbound-booking, ezuite, law-firm, cre-debt, healthcare-imaging, medical-vitals, extended-cognition, vision-analysis) no longer fail with "Unknown toolkit key".
+- **Gated toolkit mutations** — `toolkit enable|disable` now require `manage_options`; `enable` gained `--yes`; formats extended with `ids`/`count`.
+- **New commands** — `wp mcp-ai foundry` (`status`, `export <assistant-id>` — routes through the canonical export tools, gated + `--dry-run`), `para` (`list`, `get`), `qms` (`status`, `list`), `mcp-app` (`list --assistant-id=<id>`, metadata only), `fnb` (`status`). Integration CLIs (ezuite/flowhub/shopify-sync) now load unconditionally from the Pro loader (so `wp help mcp-ai` discovers them) and assert their toolkit toggle per verb; mutating verbs capability-gated.
+
+### Security — MCP OAuth Authorize Redirect Hardening (PR #7133)
+
+- **Exact-string redirect URI matching (RFC 9700 §4.1.3)** — the empty-registered-list wildcard bypass is removed; mismatched/missing `redirect_uri` returns 400 with no redirect and no minted code.
+- **Registration-time URI validation** — absolute HTTP(S) only, no fragments/userinfo/wildcards, HTTPS required except loopback; `register_client()` returns WP_Error for invalid URIs.
+- **Consent step** — browser requests render a nonce-bound Allow/Deny consent page (client name + scopes) before any code is issued; Deny redirects back with `error=access_denied`. Authenticated non-browser requests keep the direct flow.
+- **Scope + resource-indicator validation** — unknown scopes rejected instead of silently dropped; resource indicators must be HTTPS or loopback HTTP; a token-endpoint `redirect_uri` must match the one stored with the authorization code.
+- Applied to both the Pro addon and the byte-identical `nvoos-content-graph-pro` mirror (19-test `Test_OAuth_Authorize_Hardening` suite each; 114 adjacent OAuth/MCP assertions on WP 6.9 + 7.1).
+
+### Added — Schedule Anything Delivery Editing, Distribution & Velocity App (PRs #7121, #7125, #7126, #7130, #7131, #7132)
+
+- **Delivery-time editing (#7130)** — the Pro Schedule Manager edit modal now edits the delivery date/time (`datetime-local` prefilled from the stored future `timestamp`); past values alert, blank keeps the current cron event, and `ajax_get_schedules` exposes the stored `timestamp`.
+- **SA preset class collision fixed (#7130)** — the Schedule Anything presets registry renamed `WP_MCP_AI_Pro_Schedule_Presets` → `WP_MCP_AI_SA_Schedule_Presets` (it shadowed the Schedule Manager registry whenever the `rest_schedule_anything` module loaded, fatalling preset-browser AJAX + the SA-platform provisioner).
+- **oos-complete bundle support (#7132)** — the platform plugin's `Requires Plugins: mcp-ai-wpoos` header removed: core matches the dependency against the installed plugin's **folder slug** (`mcp-ai-wpoos` vs `nvdigital-open-operator-system-oos` vs `-oos-complete`), so one static header blocked two of the three distributions; the runtime guard is slug-agnostic. (`addons/page-agent` carries the same header — follow-up candidate.)
+- **Velocity app (#7125/#7126/#7131)** — `examples/schedule-anything-velocity/` serves the prebuilt SPA with the proven zero-dependency proxy core (no CORS config needed); a root `server.js` one-line ESM shim satisfies Velocity PM2's default entry; the sync-token secret renamed `NVOOS_SA_VELOCITY_REPO_TOKEN` (the first name was 43 chars — GitHub caps secret names at 40).
+- **SPA zip builds (#7121)** — the Schedule Anything SPA joins `bin/build-spa-zips.js` + all three SPA workflows (Pattern-B, 150 KB gzip main-chunk guard); `nvoos-schedule-anything-spa-v0.2.0.zip` now builds and publishes.
+
+### Added — Chat Composer Vertical Expansion & Toolbar Collapse (Proposal 080, PRs #7113, #7116, #7118–#7120)
+
+- **Expandable composer (#7113)** — auto-grow 1→3 lines (`field-sizing: content` + scrollHeight/ResizeObserver fallback), iOS keyboard reflow (`interactive-widget=resizes-content` + dvh chain + `useVisualViewport` padding), a Zed-style drag-resize divider (pointer + keyboard, clamped, persisted), and a focus (expanded) composer dialog; three pre-existing a11y lint failures fixed.
+- **Manual-resize fill (#7116)** — the 3-line cap dropped; a manually resized panel stretches the textarea (`field-sizing: fixed; height: 100%`).
+- **Collapsible toolbar (#7118/#7119/#7120)** — desktop toolbar collapses in place to a single row (model selector + toggle); mobile single-line row with expandable controls; toggle pinned top-right; mobile composer bottom margin (≤782px). Embedded widget keeps the full top bar. 202 vitest tests green.
+
+### Added — Gmail Body Hydration & Attachment Text (PR #7110)
+
+- `empty_parts` on HTML-only emails fixed — `hydrate_inline_attachments()` downloads `body.attachmentId` parts and inlines them before `normalize_message()` (wired into `get_gmail_message`/`get_gmail_thread`, with `body_hydration_warnings` on partial failure).
+- Attachments are no longer filename-only — `get_attachments_with_text()` fetches each attachment and extracts text (PDFs via smalot/pdfparser, text/csv/json directly, actionable errors for scanned PDFs); both read tools return an `attachments[]` array. Also fixes the latent strict-base64 bug (unpadded base64url re-padding).
+
+### Fixed — F&B Trend Dates, Resume/Retry, table_map & Raw-Row Import (PRs #7108–#7112)
+
+- **Serial dates (#7112)** — exported Sheets serial dates (`46023` = 2026-01-01) were read as Unix epoch timestamps, collapsing every row into `1970-01` (phantom "Latest analytics (1970-01)" + vanished charts); `available_months()` now derives months from row dates first, with the month label as a fallback for the covers/utilities tables only.
+- **`table_map` trust order (#7112)** — the universal single-folder reader now consults the operator-authored `table_map` (documented highest trust); the native-storage import bridge no longer silently drops non-canonical source columns.
+- **Trend months (#7108)** — the preprinted current-period month label no longer produces a phantom zero data point.
+- **Resume/retry (#7109)** — the dashboard retries a failed batch's same offset (3× backoff) and persists a `resumeCursor` so re-imports continue instead of restarting at 0; the final count includes prior aborted rows.
+- **Progress placeholders (#7111)** — the `%N$d` regex now captures the placeholder index (offset-indexing rendered every number empty).
+
+### Build & CI — Dictation macOS Verification & Universal Builds (PRs #7122, #7123, #7137)
+
+- **Boot-smoke gate (#7122)** — a `macos-latest` job builds the real `.app` (production frontend + Swift sidecar), inspects the bundle, enforces a 30 s boot-residency gate, plus a headless `--mcp < /dev/null` engine-load probe in the rust job (hard failure on `engine unavailable`).
+- **Interactive session (#7123)** — a `workflow_dispatch` macOS job uploads evidence then holds the runner open for an actor-limited tmate SSH session (up to 360 min); `scripts/macos-matrix-remote.sh` runs the automatable subset of the PTT matrix.
+- **Universal builds (#7137)** — one universal (arm64 + x86_64) macOS artifact: `build-helper.mjs` `universal` arch with `lipo -create` merging + self-check, the checked-in universal externalBin stub, both-slice boot verification (native + Rosetta 2), and a single signed/notarized universal DMG from the publish workflow (plan M7.5; ADR 0004 updated).
+
+### Dependency — Handlebars Patched (PR #7106)
+
+- `handlebars` 4.7.9 → 4.7.10 in `examples/schedule-anything-velocity`'s lockfile tree (GHSA-8r5x-fm3f-whwj — JavaScript injection via AST type confusion, bypass of CVE-2024-45592); override floor raised to `>=4.7.10` with `minimist` transitives.
+
+### Docs & Skills (PRs #7115, #7128, #7129)
+
+- New coding-time skill `mcp-ai-schedule-anything-ops` (74 → 75) — the SA 3-plugin stack, Proposal 081 REST contract, WP 6.9 nonce pitfall, sa-e2e harness, SPA↔REST alignment, and the Velocity deploy/mirror-sync loop.
+- `mcp-ai-wpoos-dictation-app` skill updated with the macOS remote verification loop (gate matrix, tmate session, TCC-grant path, pitfalls).
+- Pro tool coverage manifest regenerated (1,387 classes; +`fnb-worker-client`).
+
+### Sub-project & Release Sync (PRs #7117, #7136, #7133-mirror)
+
+- **#7136** — `nvoos-content-graph-ai` `GetEnvironmentStatusTool` namespaced `stdClass` fatal fixed (`new \stdClass()`); standalone-matrix-only.
+- **#7133-mirror** — the OAuth authorize hardening lands byte-identical in `nvoos-content-graph-pro`.
+- **#7117** — `alpha-working` (v1.2.7) squash-merged into `main` (tree-identical; build/release-only).
+
+**Tool count: ~355 base + ~1,377 Pro (~1,731 total — unchanged; live registry authoritative). Coding-time skills: 74 → 75 (+`mcp-ai-schedule-anything-ops`). Bundled skills: 77 base + 41 Pro (unchanged — the dictation-app bundled copy re-synced byte-identical). Security classes: 12 (unchanged). Provider count: 18 (unchanged). Addon count: 30 (unchanged; Schedule Anything Platform 0.1.1). Media Worker stays 3.4.0 (the new ingest route ships without a worker version bump).**
 
 ## [1.2.7] - 2026-10-17
 

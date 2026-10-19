@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.7
+Stable tag: 1.2.8
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.8 - October 19, 2026 =
+
+Bumped to 1.2.8 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Schedule Anything presets + toolkits REST API (Proposal 081) with schedule-record redaction, and single-site sole-tenant mode for the platform plugin (Proposal 082, 0.1.1). F&B ingest offloads to the media worker (Proposal 079: the new /api/ingest/parse route, batch image hardening, and an opt-in vision OCR rung). MCP OAuth authorize hardening (RFC 9700 exact-string redirect matching, consent page, scope validation). WP-CLI integration gaps closed: a canonical 40-toolkit settings map, gated toolkit mutations, and new foundry/para/qms/mcp-app/fnb commands. Expandable chat composer and collapsible toolbar (Proposal 080). Gmail body hydration + attachment text. F&B fixes: serial-date trend collapse, resume/retry imports, table_map trust order. Schedule Anything Velocity app with a server.js entry shim; the platform plugin's slug-specific Requires Plugins header dropped so the oos-complete bundle activates. Dictation macOS boot-smoke + interactive CI and universal builds. New mcp-ai-schedule-anything-ops coding-time skill (74 → 75). Tool count unchanged: ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative).
 
 = 1.2.7 - October 17, 2026 =
 

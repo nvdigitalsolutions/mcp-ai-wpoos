@@ -19,7 +19,7 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.2.7 (October 2026)
+**Current version:** 1.2.8 (October 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
 **Total tools:** ~1,731 (~355 base + ~1,377 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
@@ -50,7 +50,7 @@ includes/                     ← 1,060 PHP files
 ├── class-wp-mcp-ai-plugin.php ← Kernel / DI container / singleton
 ├── class-wp-mcp-ai-rest.php   ← REST route registration (151 calls, 36 files)
 ├── class-wp-mcp-ai-tool-registry.php ← Central tool registry
-├── tools/                     ← ~354 base tool classes (~1,730 total registered through the singleton registry)
+├── tools/                     ← ~355 base tool classes (~1,731 total registered through the singleton registry)
 ├── admin/                     ← Admin UI, settings, dashboards
 ├── rest/                      ← REST controllers (chat, MCP, webhooks)
 ├── assistants/                ← Assistant CPT & CCT management
@@ -125,7 +125,7 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 |---|---|---|---|
 | **Page Agent** | 0.1.0 | GPLv3 | Alibaba Page Agent (MIT) browser copilot. Natural-language page control — click, type, navigate. Client-side only. |
 | **MCP Gateway** | 0.1.1 | GPLv3 | Public fleet MCP endpoint (Express service, streamable HTTP MCP 2026-07-28). Public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, fail-closed env config. Subtree mirror to `nvoos-mcp-gateway`. |
-| **Schedule Anything** | 0.1.0 | Proprietary | Full SaaS booking platform with Stripe, calendar management, multi-tenant architecture. |
+| **Schedule Anything** | 0.1.1 | Proprietary | Full SaaS booking platform with Stripe, calendar management, multi-tenant architecture, and single-site sole-tenant mode (Proposal 082) — activates on non-multisite installs with idempotent self-provisioning. |
 | **Schedule Anything SPA** | 0.2.0 | Proprietary | React SPA frontend (Vite + Tailwind v4) for Schedule Anything. |
 | **Design System** | 0.3.0 | GPLv3 | Design token system + token-driven email templates (formerly "Crocoblock DS" at `addons/crocoblock-ds/` — renamed 0.1.0 → 0.3.0). 55+ CSS tokens, admin editor, DTCG export, a11y tokens, 8 addon-provided email-template tools. |
 
@@ -214,7 +214,7 @@ If you have limited budget for a review, focus on this order:
 ### Phase 2: Architecture review (~3-4 hours)
 4. **Plugin architecture** — DI container usage, class loading, lifecycle hooks (60+), singleton patterns
 5. **Base/Pro separation** — Verify no pro feature gating in base plugin
-6. **Tool registry** — How ~1,730 tools are registered and discovered
+6. **Tool registry** — How ~1,731 tools are registered and discovered
 7. **lib/core extraction** — Hexagonal Architecture (32 domain contracts, 21 WordPress adapters), agentic loop, provider routing, 109+ migrated tools. `includes/bridge/` adapters.
 
 ### Phase 3: Deep dives (~4-6 hours, if budget allows)
@@ -266,7 +266,7 @@ The project currently employs:
 - **GitHub Copilot** — inline suggestions and code completion
 - **OpenAI Codex** — prototyping and exploration
 - **BMAD Agents** — 6 internal workflow agents (`.bmad/agents/*.yaml`) running inside NV oOS assistants
-- **Zed Agent Skills** — 52 coding-time skills (`.agents/skills/`: 20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide)
+- **Zed Agent Skills** — 75 coding-time skills (`.agents/skills/`: 20 wp-* WordPress plugin development patterns + 36 design-* skills + 19 mcp-ai-* operational guides incl. mcp-ai-wpoos-plugin)
 
 See [AI-Assisted Development](../developer/AI_ASSISTED_DEVELOPMENT.md) for full transparency about the tools, workflow, and what this means for code review.
 
