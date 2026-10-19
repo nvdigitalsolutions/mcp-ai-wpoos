@@ -63,6 +63,20 @@ registered in `addons/pro/includes/class-wp-mcp-ai-pro-module-registry.php`.
 | `GET /mcp-ai-pro/v1/presets/{id}` | 404 `sa_preset_not_found` |
 | `POST /mcp-ai-pro/v1/presets/{id}/install` | idempotent: key `preset:{id}:h{sha256(overrides)}` in option `wp_mcp_ai_sa_installs`; replay returns the original schedule with `replayed: true` |
 
+Platform REST (`/nvoos-saas/v1`, platform 0.1.1+):
+
+- `GET /tenants/lookup?slug=` resolves a bare slug against the network
+  domain in both subdomain (`<slug>.<domain>`) and path
+  (`<domain>/<slug>/`) forms — the old exact-domain-only match 404'd on
+  both install types.
+- Tier preset seeding (`SA_Toolkit_Manager::get_presets_for_tier()`) derives
+  from the Proposal 081 catalogue — capped starter 5 / professional 10 /
+  enterprise all — and provisioning installs through
+  `WP_MCP_AI_SA_Schedule_Presets::install_catalogue_preset()` (same
+  idempotency-key flow as the REST install). The legacy underscore ids
+  resolved through the old `WP_MCP_AI_Pro_Schedule_Presets` registry and
+  silently installed nothing.
+
 - Capability seam is **shared** with the schedule CRUD controller:
   `wp_mcp_ai_pro_schedule_rest_capability` filter (default
   `sa_manage_workspace` when the platform plugin is active, else

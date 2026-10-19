@@ -168,10 +168,10 @@ class SA_Multisite_Provisioner {
 
 		// Install tier-appropriate schedule presets.
 		$installed_presets = array();
-		if ( class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
+		if ( class_exists( 'WP_MCP_AI_SA_Schedule_Presets' ) ) {
 			$preset_ids = SA_Toolkit_Manager::get_presets_for_tier( $tier );
 			foreach ( $preset_ids as $preset_id ) {
-				$result = WP_MCP_AI_Pro_Schedule_Presets::install_preset( $preset_id, 1 );
+				$result = WP_MCP_AI_SA_Schedule_Presets::install_catalogue_preset( $preset_id, 1 );
 				if ( ! is_wp_error( $result ) ) {
 					$installed_presets[] = $preset_id;
 				}
@@ -363,12 +363,12 @@ class SA_Multisite_Provisioner {
 			update_option( 'wp_mcp_ai_settings', array_merge( $settings, $flags ) );
 		}
 
-		// Install tier-appropriate schedule presets.
+		// Install tier-appropriate schedule presets from the SPA catalogue.
 		$installed_presets = array();
-		if ( class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
+		if ( class_exists( 'WP_MCP_AI_SA_Schedule_Presets' ) ) {
 			$preset_ids = SA_Toolkit_Manager::get_presets_for_tier( $tier );
 			foreach ( $preset_ids as $preset_id ) {
-				$result = WP_MCP_AI_Pro_Schedule_Presets::install_preset( $preset_id, $user->ID );
+				$result = WP_MCP_AI_SA_Schedule_Presets::install_catalogue_preset( $preset_id, $user->ID );
 				if ( ! is_wp_error( $result ) ) {
 					$installed_presets[] = $preset_id;
 				}

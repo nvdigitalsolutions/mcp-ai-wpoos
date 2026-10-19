@@ -383,6 +383,58 @@ class WP_MCP_AI_SA_Schedule_Presets {
 	}
 
 	/**
+	 * Install a catalogue preset as a schedule (server-side provisioning).
+	 *
+	 * Mirrors the REST install flow (lookup, idempotency, create, record)
+	 * for callers that provision tenants without a user request, e.g. the
+	 * Schedule Anything Platform addon's tier seeding.
+	 *
+	 * @since 1.2.9
+	 *
+	 * @param string $id      Catalogue preset id.
+	 * @param int    $user_id Schedule author user id.
+	 * @return string|WP_Error Schedule id on success, WP_Error on failure.
+	 */
+	public static function install_catalogue_preset( $id, $user_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
+			return new WP_Error(
+				'sa_schedule_manager_missing',
+				__( 'The Schedule Manager is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$preset = self::get_preset( $id );
+		if ( null === $preset ) {
+			return new WP_Error(
+				'sa_preset_not_found',
+				__( 'Preset not found.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$key = self::install_key( $id, array() );
+
+		// Idempotent replay: re-provisioning returns the original schedule.
+		$existing_id = self::get_installed_schedule_id( $key );
+		if ( $existing_id ) {
+			$schedules = WP_MCP_AI_Pro_Schedule_Manager::get_schedules();
+			if ( isset( $schedules[ $existing_id ] ) ) {
+				return $existing_id;
+			}
+		}
+
+		$payload     = self::build_install_payload( $preset, array() );
+		$schedule_id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule( $payload, absint( $user_id ) );
+
+		if ( is_wp_error( $schedule_id ) ) {
+			return $schedule_id;
+		}
+
+		self::record_install( $key, $schedule_id );
+
+		return $schedule_id;
+	}
+
+	/**
 	 * Seconds for a registered cron interval slug.
 	 *
 	 * @since 1.2.8

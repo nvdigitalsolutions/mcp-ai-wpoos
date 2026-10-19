@@ -201,12 +201,61 @@ class SA_Toolkit_Manager {
 	/**
 	 * Get the preset IDs that should be installed for a given tier.
 	 *
+	 * Derived from the Proposal 081 catalogue (WP_MCP_AI_SA_Schedule_Presets)
+	 * when Pro provides it: the first preset per entitled toolkit in
+	 * catalogue order, capped per tier (starter 5, professional 10,
+	 * enterprise unlimited). The legacy static ids only resolve through the
+	 * older WP_MCP_AI_Pro_Schedule_Presets registry, which no longer matches
+	 * the install surface - they are kept only as a fallback when Pro is
+	 * absent.
+	 *
 	 * @since 0.1.0
 	 *
 	 * @param string $tier Subscription tier.
-	 * @return array<string> Preset IDs from WP_MCP_AI_Pro_Schedule_Presets.
+	 * @return array<string> Preset IDs from WP_MCP_AI_SA_Schedule_Presets.
 	 */
 	public static function get_presets_for_tier( $tier ) {
+		$valid_tiers = array( 'starter', 'professional', 'enterprise' );
+		if ( ! in_array( $tier, $valid_tiers, true ) ) {
+			return array();
+		}
+
+		if ( class_exists( 'WP_MCP_AI_SA_Schedule_Presets' ) ) {
+			$toolkits  = self::get_toolkit_slugs_for_tier( $tier );
+			$catalogue = WP_MCP_AI_SA_Schedule_Presets::get_catalogue();
+
+			// Group catalogue presets per toolkit, preserving catalogue order.
+			$per_toolkit = array();
+			foreach ( $catalogue as $id => $preset ) {
+				$tk = isset( $preset['toolkit'] ) ? sanitize_key( $preset['toolkit'] ) : '';
+				if ( in_array( $tk, $toolkits, true ) ) {
+					$per_toolkit[ $tk ][] = $id;
+				}
+			}
+
+			$caps = array(
+				'starter'      => 5,
+				'professional' => 10,
+				'enterprise'   => PHP_INT_MAX,
+			);
+
+			$out = array();
+			foreach ( $toolkits as $tk ) {
+				if ( empty( $per_toolkit[ $tk ] ) ) {
+					continue;
+				}
+				foreach ( $per_toolkit[ $tk ] as $id ) {
+					if ( count( $out ) >= $caps[ $tier ] ) {
+						break 2;
+					}
+					$out[] = $id;
+				}
+			}
+
+			return $out;
+		}
+
+		// Legacy fallback when Pro's SA catalogue is absent.
 		$all_presets = array();
 
 		if ( in_array( $tier, array( 'starter', 'professional', 'enterprise' ), true ) ) {

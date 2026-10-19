@@ -432,7 +432,7 @@ class SA_REST_Controller {
 			);
 		}
 
-		$blog_id = get_blog_id_from_url( $slug );
+		$blog_id = self::resolve_tenant_blog( $slug );
 
 		if ( ! $blog_id ) {
 			return new WP_Error(
@@ -464,6 +464,44 @@ class SA_REST_Controller {
 				'status'   => 'active',
 			)
 		);
+	}
+
+	/**
+	 * Resolve a tenant slug to a blog id (multisite).
+	 *
+	 * Tries the slug as a full domain, then as a subdomain of the network
+	 * domain (production subdomain installs), then as a path on the network
+	 * domain (path-based installs such as the e2e stack). A bare slug never
+	 * matched either form before, so tenant lookup failed on both install
+	 * types.
+	 *
+	 * @since 0.1.1
+	 *
+	 * @param string $slug Sanitized tenant slug.
+	 * @return int Blog id, or 0 when no blog matches.
+	 */
+	private static function resolve_tenant_blog( $slug ) {
+		// Full-domain form (e.g. a host the router passed through).
+		$blog_id = get_blog_id_from_url( $slug );
+		if ( $blog_id ) {
+			return $blog_id;
+		}
+
+		$network = get_network();
+		if ( ! $network || empty( $network->domain ) ) {
+			return 0;
+		}
+
+		// Subdomain installs: <slug>.<network-domain>.
+		if ( false === strpos( $slug, '.' ) ) {
+			$blog_id = get_blog_id_from_url( $slug . '.' . $network->domain );
+			if ( $blog_id ) {
+				return $blog_id;
+			}
+		}
+
+		// Path-based installs: <network-domain>/<slug>/.
+		return (int) get_blog_id_from_url( $network->domain, '/' . $slug . '/' );
 	}
 
 	/**

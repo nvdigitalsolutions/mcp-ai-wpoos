@@ -75,6 +75,41 @@ class Test_Single_Site_Mode extends WP_UnitTestCase {
 
 		$users = get_users( array( 'search' => 'tenant@example.test' ) );
 		$this->assertCount( 1, $users );
+
+		// Tier presets are derived from the install-ready SPA catalogue.
+		if ( class_exists( 'WP_MCP_AI_SA_Schedule_Presets' ) ) {
+			$this->assertNotEmpty( $result['installed_presets'] );
+			$catalogue = WP_MCP_AI_SA_Schedule_Presets::get_catalogue();
+			foreach ( $result['installed_presets'] as $preset_id ) {
+				$this->assertArrayHasKey( $preset_id, $catalogue );
+			}
+		}
+	}
+
+	/**
+	 * Tier presets come from the Proposal 081 catalogue with per-tier caps.
+	 */
+	public function test_get_presets_for_tier_uses_catalogue() {
+		if ( ! class_exists( 'WP_MCP_AI_SA_Schedule_Presets' ) ) {
+			$this->markTestSkipped( 'Pro SA presets catalogue not available.' );
+		}
+
+		$catalogue = WP_MCP_AI_SA_Schedule_Presets::get_catalogue();
+
+		$starter      = SA_Toolkit_Manager::get_presets_for_tier( 'starter' );
+		$professional = SA_Toolkit_Manager::get_presets_for_tier( 'professional' );
+		$enterprise   = SA_Toolkit_Manager::get_presets_for_tier( 'enterprise' );
+		$invalid      = SA_Toolkit_Manager::get_presets_for_tier( 'platinum' );
+
+		$this->assertCount( 5, $starter );
+		$this->assertCount( 10, $professional );
+		$this->assertGreaterThan( 10, count( $enterprise ) );
+		$this->assertEmpty( $invalid );
+
+		// Every returned id exists in the install-ready catalogue.
+		foreach ( array_merge( $starter, $professional, $enterprise ) as $id ) {
+			$this->assertArrayHasKey( $id, $catalogue );
+		}
 	}
 
 	/**

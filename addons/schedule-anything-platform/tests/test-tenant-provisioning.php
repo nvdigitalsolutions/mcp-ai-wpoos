@@ -91,4 +91,23 @@ class Test_Tenant_Provisioning extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'sa_invalid_tier', $result->get_error_code() );
 	}
+
+	/**
+	 * Multisite lookup resolves path-based tenants by bare slug.
+	 */
+	public function test_lookup_resolves_path_based_tenant() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Requires Multisite.' );
+		}
+
+		$blog = $this->factory->blog->create_and_get( array( 'path' => '/lookup-test/' ) );
+
+		$request = new WP_REST_Request( 'GET', '/nvoos-saas/v1/tenants/lookup' );
+		$request->set_param( 'slug', 'lookup-test' );
+
+		$response = SA_REST_Controller::lookup_tenant( $request );
+
+		$this->assertNotWPError( $response );
+		$this->assertSame( $blog->blog_id, $response->get_data()['blog_id'] );
+	}
 }
