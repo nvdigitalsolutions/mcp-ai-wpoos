@@ -90,9 +90,12 @@ class Test_SA_Toolkit_REST extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Authenticated list returns the canonical toolkit shape.
+	 * Authenticated list returns the canonical toolkit shape, now with
+	 * tier + per-toolkit entitlement so the SPA can grey out out-of-tier
+	 * toggles without being the authority for the decision.
 	 */
 	public function test_list_returns_toolkits() {
+		update_option( 'sa_tenant_meta', array( 'tier' => 'starter' ) );
 		wp_set_current_user( $this->admin_id );
 
 		$response = $this->dispatch( 'GET', '/mcp-ai-pro/v1/toolkits' );
@@ -101,11 +104,44 @@ class Test_SA_Toolkit_REST extends WP_UnitTestCase {
 		$this->assertEquals( 200, $response->get_status() );
 		$this->assertTrue( $data['ok'] );
 		$this->assertNotEmpty( $data['toolkits'] );
+		$this->assertSame( 'starter', $data['tier'] );
+		$this->assertTrue( $data['platform_active'] );
 
 		$first = $data['toolkits'][0];
 		$this->assertArrayHasKey( 'slug', $first );
 		$this->assertArrayHasKey( 'flag_key', $first );
 		$this->assertArrayHasKey( 'enabled', $first );
+		$this->assertArrayHasKey( 'entitled', $first );
+	}
+
+	/**
+	 * Entitlement flags reflect the tier: starter entitles the 5 core
+	 * toolkits only.
+	 */
+	public function test_list_marks_entitlement_by_tier() {
+		update_option( 'sa_tenant_meta', array( 'tier' => 'starter' ) );
+		wp_set_current_user( $this->admin_id );
+
+		$data     = $this->dispatch( 'GET', '/mcp-ai-pro/v1/toolkits' )->get_data();
+		$entitled = wp_list_pluck( $data['toolkits'], 'entitled', 'slug' );
+
+		$this->assertTrue( $entitled['crm'] );
+		$this->assertFalse( $entitled['ecommerce'] );
+		$this->assertFalse( $entitled['document-generation'] );
+	}
+
+	/**
+	 * Every toolkit in the canonical flag map is listed (drift guard for
+	 * the ordering list the manager uses).
+	 */
+	public function test_list_covers_full_flag_map() {
+		wp_set_current_user( $this->admin_id );
+
+		$data    = $this->dispatch( 'GET', '/mcp-ai-pro/v1/toolkits' )->get_data();
+		$listed  = wp_list_pluck( $data['toolkits'], 'slug' );
+		$missing = array_diff( array_keys( SA_Toolkit_Manager::TOOLKIT_FLAGS ), $listed );
+
+		$this->assertSame( array(), $missing );
 	}
 
 	/**
@@ -146,6 +182,19 @@ class Test_SA_Toolkit_REST extends WP_UnitTestCase {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$this->assertArrayHasKey( 'enable_crm_toolkit', $settings );
 		$this->assertTrue( $settings['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * Toggling to the CURRENT state returns 200 (idempotent no-op) instead
+	 * of the bogus 500 caused by update_option()'s unchanged-value false.
+	 */
+	public function test_toggle_to_current_state_returns_200() {
+		update_option( 'wp_mcp_ai_settings', array( 'enable_crm_toolkit' => true ) );
+		wp_set_current_user( $this->admin_id );
+
+		$response = $this->dispatch( 'POST', '/mcp-ai-pro/v1/toolkits/crm/toggle', array( 'enabled' => true ) );
+
+		$this->assertEquals( 200, $response->get_status() );
 	}
 
 	/**

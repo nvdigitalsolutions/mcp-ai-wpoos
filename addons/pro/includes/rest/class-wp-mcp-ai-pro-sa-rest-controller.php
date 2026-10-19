@@ -189,6 +189,45 @@ class WP_MCP_AI_SA_REST_Controller {
 				),
 			)
 		);
+
+		// Schedulable tool catalogue for the visual builder's palette.
+		// Mirrors the MCP tools/list pattern (progressive discovery,
+		// pagination, server-side filtering) but serves light rows - the
+		// full inputSchema never leaves the server for palette rendering.
+		register_rest_route(
+			$this->namespace,
+			'/sa-tools',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'list_sa_tools' ),
+				'permission_callback' => array( $this, 'permission_check' ),
+				'args'                => array(
+					'search'   => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'group'    => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'page'     => array(
+						'type'              => 'integer',
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+						'minimum'           => 1,
+					),
+					'per_page' => array(
+						'type'              => 'integer',
+						'default'           => 30,
+						'sanitize_callback' => 'absint',
+						'minimum'           => 1,
+						'maximum'           => 100,
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -219,10 +258,14 @@ class WP_MCP_AI_SA_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function list_toolkits( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		$data = WP_MCP_AI_SA_Toolkit_Adapter::get_toolkits();
+
 		return rest_ensure_response(
 			array(
-				'ok'       => true,
-				'toolkits' => WP_MCP_AI_SA_Toolkit_Adapter::get_toolkits(),
+				'ok'              => true,
+				'tier'            => isset( $data['tier'] ) ? $data['tier'] : 'unknown',
+				'platform_active' => ! empty( $data['platform_active'] ),
+				'toolkits'        => isset( $data['toolkits'] ) ? $data['toolkits'] : array(),
 			)
 		);
 	}
@@ -278,6 +321,7 @@ class WP_MCP_AI_SA_REST_Controller {
 				'ok'      => true,
 				'presets' => $result['presets'],
 				'total'   => $result['total'],
+				'filters' => WP_MCP_AI_SA_Schedule_Presets::get_facet_values(),
 			)
 		);
 	}
@@ -305,6 +349,128 @@ class WP_MCP_AI_SA_REST_Controller {
 			array(
 				'ok'     => true,
 				'preset' => $preset,
+			)
+		);
+	}
+
+	/**
+	 * GET /sa-tools
+	 *
+	 * Lists schedulable tools from the live NV oOS registry as light rows
+	 * (slug, name, description, group) with search, group filter, and
+	 * page/per_page pagination. The visual builder consumes this endpoint
+	 * instead of a hardcoded palette.
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function list_sa_tools( $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			return rest_ensure_response(
+				array(
+					'ok'       => true,
+					'tools'    => array(),
+					'total'    => 0,
+					'page'     => 1,
+					'per_page' => 30,
+					'has_more' => false,
+					'groups'   => array(),
+				)
+			);
+		}
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tools    = $registry->get_tools();
+
+		if ( ! is_array( $tools ) ) {
+			return rest_ensure_response(
+				array(
+					'ok'       => true,
+					'tools'    => array(),
+					'total'    => 0,
+					'page'     => 1,
+					'per_page' => 30,
+					'has_more' => false,
+					'groups'   => array(),
+				)
+			);
+		}
+
+		$group_map    = $registry->get_tool_group_map();
+		$group_labels = $registry->get_tool_group_labels();
+		$search       = strtolower( trim( (string) $request->get_param( 'search' ) ) );
+		$group        = (string) $request->get_param( 'group' );
+		$page         = max( 1, absint( $request->get_param( 'page' ) ) );
+		$per_page     = min( 100, max( 1, absint( $request->get_param( 'per_page' ) ) ) );
+
+		$rows = array();
+		foreach ( $tools as $tool ) {
+			if ( ! $tool instanceof WP_MCP_AI_Tool_Interface ) {
+				continue;
+			}
+
+			$slug = $tool->get_slug();
+			if ( '' === $slug ) {
+				continue;
+			}
+
+			$tool_group = isset( $group_map[ $slug ] ) ? sanitize_key( $group_map[ $slug ] ) : 'other';
+			if ( $group && $tool_group !== $group ) {
+				continue;
+			}
+
+			$name = $tool->get_name();
+			if ( '' === $name ) {
+				$name = ucwords( str_replace( '_', ' ', $slug ) );
+			}
+
+			$description = $tool->get_description();
+
+			if ( $search ) {
+				$haystack = strtolower( $slug . ' ' . $name . ' ' . $description );
+				if ( false === strpos( $haystack, $search ) ) {
+					continue;
+				}
+			}
+
+			$rows[] = array(
+				'slug'        => $slug,
+				'name'        => $name,
+				'description' => $description,
+				'group'       => $tool_group,
+				'group_label' => isset( $group_labels[ $tool_group ] ) ? $group_labels[ $tool_group ] : $tool_group,
+			);
+		}
+
+		$total    = count( $rows );
+		$offset   = ( $page - 1 ) * $per_page;
+		$paged    = array_slice( $rows, $offset, $per_page );
+		$has_more = ( $offset + $per_page ) < $total;
+
+		// Facet groups in label order (used by the palette sidebar).
+		$used_groups = array();
+		foreach ( $rows as $row ) {
+			$used_groups[ $row['group'] ] = $row['group_label'];
+		}
+		$groups = array();
+		foreach ( $used_groups as $group_id => $group_label ) {
+			$groups[] = array(
+				'slug'  => $group_id,
+				'label' => $group_label,
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'ok'       => true,
+				'tools'    => array_values( $paged ),
+				'total'    => $total,
+				'page'     => $page,
+				'per_page' => $per_page,
+				'has_more' => $has_more,
+				'groups'   => $groups,
 			)
 		);
 	}

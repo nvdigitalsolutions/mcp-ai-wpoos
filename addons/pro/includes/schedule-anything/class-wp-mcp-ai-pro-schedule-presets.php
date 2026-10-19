@@ -320,6 +320,37 @@ class WP_MCP_AI_SA_Schedule_Presets {
 	}
 
 	/**
+	 * Facet values across the whole catalogue (ignoring pagination).
+	 *
+	 * Lets list consumers render filter controls whose values always match
+	 * the actual catalogue data (no drift between hardcoded option lists
+	 * and catalogue keys).
+	 *
+	 * @since 1.2.8
+	 *
+	 * @return array{toolkits: array<int, string>, categories: array<int, string>}
+	 */
+	public static function get_facet_values() {
+		$catalogue = self::get_catalogue();
+		$toolkits  = array();
+		$cats      = array();
+
+		foreach ( $catalogue as $preset ) {
+			if ( ! empty( $preset['toolkit'] ) ) {
+				$toolkits[] = sanitize_key( $preset['toolkit'] );
+			}
+			if ( ! empty( $preset['category'] ) ) {
+				$cats[] = sanitize_key( $preset['category'] );
+			}
+		}
+
+		return array(
+			'toolkits'   => array_values( array_unique( $toolkits ) ),
+			'categories' => array_values( array_unique( $cats ) ),
+		);
+	}
+
+	/**
 	 * Fetch a single preset by id.
 	 *
 	 * @since 1.2.8

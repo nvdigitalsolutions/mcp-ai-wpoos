@@ -55,20 +55,43 @@ class WP_MCP_AI_SA_Toolkit_Adapter {
 	}
 
 	/**
-	 * List toolkits with their per-tenant status.
+	 * List toolkits with their per-tenant status and tier entitlement.
+	 *
+	 * Entitlement is computed server-side (Proposal 081 §2.1) so the SPA
+	 * can grey out toggles for toolkits the tenant's tier cannot enable
+	 * without ever being the authority for that decision.
 	 *
 	 * @since 1.2.8
 	 *
-	 * @return array<int, array{slug: string, flag_key: string, enabled: bool}>
+	 * @return array{
+	 *     tier: string,
+	 *     platform_active: bool,
+	 *     toolkits: array<int, array{slug: string, flag_key: string, enabled: bool, entitled: bool}>
+	 * }
 	 */
 	public static function get_toolkits() {
 		if ( ! self::is_platform_active() ) {
-			return array();
+			return array(
+				'tier'            => 'unknown',
+				'platform_active' => false,
+				'toolkits'        => array(),
+			);
 		}
 
 		$statuses = SA_Toolkit_Manager::get_all_statuses();
+		$statuses = is_array( $statuses ) ? $statuses : array();
 
-		return is_array( $statuses ) ? $statuses : array();
+		$toolkits = array();
+		foreach ( $statuses as $item ) {
+			$item['entitled'] = self::is_entitled( $item['slug'] );
+			$toolkits[]       = $item;
+		}
+
+		return array(
+			'tier'            => self::get_tier(),
+			'platform_active' => true,
+			'toolkits'        => $toolkits,
+		);
 	}
 
 	/**

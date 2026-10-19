@@ -258,6 +258,32 @@ class SA_Plugin {
 				$capabilities
 			);
 		}
+
+		// Site administrators on tenant blogs manage their own workspace
+		// (sa_manage_workspace gates ONLY the schedule/preset/toolkit REST
+		// seam - it carries no platform-level power). Grant it idempotently.
+		self::grant_workspace_capability_to_admins();
+	}
+
+	/**
+	 * Grant sa_manage_workspace to the administrator role.
+	 *
+	 * Capability grants are treated as version-gated migrations (see
+	 * https://wppoland.com/en/wordpress-roles-and-capabilities-guide/):
+	 * add only when missing, never remove, and re-run harmlessly on every
+	 * init. On multisite the role is per-blog, so this grants on the tenant
+	 * blog only - network super admins are unaffected.
+	 *
+	 * @since 0.1.2
+	 *
+	 * @return void
+	 */
+	public static function grant_workspace_capability_to_admins() {
+		$role = get_role( 'administrator' );
+
+		if ( $role && ! $role->has_cap( 'sa_manage_workspace' ) ) {
+			$role->add_cap( 'sa_manage_workspace' );
+		}
 	}
 
 	/**
