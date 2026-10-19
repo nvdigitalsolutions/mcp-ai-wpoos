@@ -103,6 +103,11 @@ app-level `.env`).
 
 - **SPA caching contract:** `index.html` → `Cache-Control: no-cache`;
   hashed `/assets/*` → `public, max-age=31536000, immutable`.
+- **Missing files 404 loudly:** only extensionless navigation paths fall
+  back to `index.html`. A missing file-like path (e.g. a stale `index.html`
+  referencing a rotated asset hash) returns 404 instead of the entry HTML —
+  serving HTML for a `.css`/`.js` request trips browser strict-MIME refusal
+  and masks a broken dist deploy.
 - **Headers on static responses:** `X-Content-Type-Options: nosniff` +
   ramping HSTS (`max-age=86400` → 31536000 after a clean week). Proxied
   WordPress responses pass their own headers through untouched.

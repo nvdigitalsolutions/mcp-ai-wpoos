@@ -250,11 +250,28 @@ const server = createServer(async (req, res) => {
     let pathname = normalize(decodeURIComponent(url.pathname)).replace(/^([/\\])+/, '');
     if (!pathname || pathname === '.') pathname = 'index.html';
 
+    // Only extensionless navigation paths may fall back to the SPA entry.
+    // A file-like path that is missing (e.g. /assets/index-<hash>.css after
+    // a stale or partial dist deploy) means the bundle is broken — serving
+    // index.html for it answers text/html where the browser expected a
+    // stylesheet/script, which strict MIME checking rejects with a
+    // confusing console error. 404 it instead so the broken deploy is loud.
+    const hasExtension = /\.[^/\\]+$/.test(pathname);
+
     let file = join(ROOT, pathname);
     try {
-      await stat(file);
-      if ((await stat(file)).isDirectory()) file = join(file, 'index.html');
+      const st = await stat(file);
+      if (st.isDirectory()) file = join(file, 'index.html');
     } catch {
+      if (hasExtension) {
+        res.writeHead(404, {
+          'Content-Type': 'text/plain',
+          'Cache-Control': 'no-cache',
+          ...SECURITY_HEADERS,
+        });
+        res.end('Not found');
+        return;
+      }
       // SPA fallback for client-side (hash) routes.
       file = join(ROOT, 'index.html');
     }
