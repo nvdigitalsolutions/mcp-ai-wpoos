@@ -46,14 +46,21 @@ The canonical addon pattern itself is
 | Pattern | Addons | Stack | Choose when |
 |---|---|---|---|
 | **A — standalone bundle** | `toolkit-shell`, `chat-spa` | esbuild IIFE, **bundled React 19.1**, hand-rolled or token CSS, `@wordpress/i18n` externalized to `window.wp.i18n` | The SPA embeds on **front end and admin** and must not depend on WP core scripts (any WP 6.x) |
-| **B — Vite product SPA** | `schedule-anything-spa` | Vite 6, **React 18.3**, Tailwind v4, `@wordpress/api-fetch` + i18n bundled | Tenant-facing product with a public (unauthenticated) surface and its own brand |
+| **B — Vite product SPA** | `schedule-anything-spa` | Vite 6, **React 19.1** (deliberate deviation from the 18.3 pin as of 2026-10-20 — see rule 1), Tailwind v4, `@wordpress/api-fetch` + i18n bundled | Tenant-facing product with a public (unauthenticated) surface and its own brand |
 | **C — WP-core externals** | `saas-controller` | `wp-scripts`, `@wordpress/components`/`element`/`icons` externalized to `window.wp.*`, React 18 from WP core | Admin-only settings surfaces where zero-KB bundle and native wp-admin look matter |
 
 Rules that follow from the matrix:
 
 1. **React version constraint:** WP core ships React 18 through WP 7.1; the
-   React 19 core upgrade is experimental in Gutenberg. Patterns B and C run
-   on WP's React 18. Pattern A ships its own React 19 — fine in isolation.
+   React 19 core upgrade is experimental in Gutenberg. Pattern C runs on
+   WP's React 18 (it externalizes `window.wp.*`). Pattern A ships its own
+   React 19 — fine in isolation. Pattern B (`schedule-anything-spa`) ships
+   React 19.1 as of 2026-10-20 — a deliberate deviation because the SPA is
+   served standalone (Velocity / nginx / built zip) and is never embedded
+   inline in a WP page; its only WP deps (`@wordpress/api-fetch` +
+   `@wordpress/i18n`) are React-free, so the WP-core React 18 constraint does
+   not apply. If an inline wp-admin embed is ever added, revert to 18 (or
+   keep the embed iframe/standalone).
 2. **Dual-React guard (Pattern A):** a bundled React 19 tree must never import
    `@wordpress/element` or `@wordpress/components` (they pull WP's React 18
    renderer and corrupt hooks state). Only the React-free `@wordpress/i18n` is
