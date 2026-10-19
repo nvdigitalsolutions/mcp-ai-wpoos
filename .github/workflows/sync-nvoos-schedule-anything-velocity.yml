@@ -62,12 +62,13 @@ jobs:
       - name: Smoke-test the assembled app
         working-directory: /tmp/nvoos-schedule-anything-velocity
         run: |
-          # Syntax + shape gates, then boot serve.mjs and exercise the
-          # static branch (same file the Velocity entry executes).
+          # Syntax + shape gates, then boot the VELOCITY ENTRY (server.js
+          # shim → serve.mjs) and exercise the static branch.
           node --check scripts/serve.mjs
+          node --check server.js
           test -f dist/index.html
           test -n "$(find dist/assets -maxdepth 1 -name 'index-*.js' | head -n1)"
-          node scripts/serve.mjs > /tmp/sa-velocity-smoke.log 2>&1 &
+          node server.js > /tmp/sa-velocity-smoke.log 2>&1 &
           SERVER_PID=$!
           sleep 1
           curl -sf -o /dev/null http://localhost:4180/ || { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; }
