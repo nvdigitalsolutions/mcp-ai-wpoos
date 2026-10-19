@@ -80,6 +80,9 @@ class WP_MCP_AI_Ext_Cog_Sensor_Session {
 			'not_found_in_trash' => __( 'No sessions found in Trash.', 'mcp-ai-wpoos' ),
 		);
 
+		// No rewrite rules: the CPT is private and the module registers it at
+		// include time (plugins_loaded), before $wp_rewrite exists. With the
+		// rewrite default (true), add_rewrite_rules() fatals on null.
 		$args = array(
 			'labels'             => $labels,
 			'public'             => false,
@@ -88,6 +91,7 @@ class WP_MCP_AI_Ext_Cog_Sensor_Session {
 			'show_in_menu'       => 'options-general.php',
 			'show_in_rest'       => false,
 			'query_var'          => false,
+			'rewrite'            => false,
 			'capability_type'    => 'post',
 			'has_archive'        => false,
 			'hierarchical'       => false,
