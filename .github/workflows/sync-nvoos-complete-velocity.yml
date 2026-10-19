@@ -4,8 +4,8 @@ name: Sync nvoos-complete-velocity
 # nvdigitalsolutions/nvoos-complete-velocity.
 #
 # The app ships the prebuilt bundle (dist/) + zero-dependency serve scripts —
-# no sources are vendored and Velocity runs no build step, so there is no
-# npm ci/build gate; the tree is smoke-tested by booting server.js and
+# no sources or npm dependencies are vendored and Velocity runs no build step,
+# so there is no npm ci/build gate; the tree is smoke-tested by booting server.js and
 # curling it instead. The bundle is built in the monorepo (where the
 # spa-v2 tsconfig paths resolve); this workflow only assembles and verifies.
 #
@@ -67,6 +67,28 @@ jobs:
             /tmp/nvoos-complete-velocity/vitest.config.ts \
             /tmp/nvoos-complete-velocity/package-lock.json
           cd /tmp/nvoos-complete-velocity
+          # Velocity's default deploy pipeline runs `npm run build`; the
+          # mirror ships the prebuilt bundle only (no src/, tsconfig.json
+          # or vite), so the monorepo build script would fail here — tsc
+          # with no tsconfig prints its help text and exits 1, failing the
+          # deploy. Rewrite the monorepo-only scripts to no-op shims: the
+          # Velocity app is configured with no build command, and these
+          # shims are the second line of defence if the build step is ever
+          # left enabled. `serve`/`start` stay live (serve.mjs ships).
+          # Dependencies are stripped too — the runtime is zero-dependency
+          # Node (node: builtins only), so Velocity's `npm install` becomes
+          # a no-op and npm-audit noise never appears in deploy logs.
+          node -e '
+            const fs = require("fs");
+            const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const noop = "node -e \"process.exit(0)\"";
+            for (const s of ["build", "dev", "preview", "typecheck", "lint:a11y", "test", "test:watch", "sync:dist"]) {
+              p.scripts[s] = noop;
+            }
+            delete p.dependencies;
+            delete p.devDependencies;
+            fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n");
+          '
           # Pin the initial branch to main: git init alone honours the runner's
           # init.defaultBranch (or falls back to master), which makes the later
           # `git push ... main --force` fail with "src refspec main does not match any".
