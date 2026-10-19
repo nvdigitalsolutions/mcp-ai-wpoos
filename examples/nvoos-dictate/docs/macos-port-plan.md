@@ -1,6 +1,6 @@
 # NV oOS Dictation — macOS Port: Implementation Plan
 
-**Status:** In progress — phases M0–M6 implemented on `feat/nvoos-dictate-macos-port` (code complete, unverified on macOS hardware); M7 publish wiring done; M8 matrix pending first signed builds
+**Status:** In progress — phases M0–M6 implemented on `feat/nvoos-dictate-macos-port` (code complete, unverified on macOS hardware); M7 publish wiring done (universal build M7.5 shipped — single arm64+x86_64 DMG); M8 matrix pending first signed builds
 **Date:** 2026-10-12 (implementation started)
 **Scope:** Port `examples/nvoos-dictate` (Tauri v2 + Rust + React/TS) from Windows/MSVC to macOS (Apple Silicon + Intel), reaching P0/P1/P2 feature parity with macOS-native permissions, system-audio capture, and distribution
 **Related:** `docs/project/proposals/067-tauri-dictation-companion-app-implementation-plan.md` (Phase 6 is the 4-row sketch this plan replaces), `examples/nvoos-dictate/docs/decisions/0001–0003-*.md`, `.agents/skills/mcp-ai-wpoos-dictation-app`
@@ -25,8 +25,8 @@ from a first-run wizard.
   every denied permission degrades gracefully with an in-app explanation
 - Meetings: system audio captured on macOS 14.2+ via the ScreenCaptureKit
   sidecar; mic-only fallback everywhere else; > 5 min chunked transcription
-- Release artifact: signed + notarized `.app` in a `.dmg`, per-arch (arm64 +
-  x86_64), updater feed wired; unsigned dev-build recipe documented
+- Release artifact: signed + notarized universal `.app` in a `.dmg` (arm64 +
+  x86_64 — M7.5), updater feed wired; unsigned dev-build recipe documented
 - No telemetry, no audio retention by default, secrets only in Keychain
   (unchanged product invariants)
 
@@ -134,7 +134,7 @@ keyUp, flagsChanged])`:
 | D3 | System audio via a bundled Swift helper (`externalBin`), speaking newline-delimited JSON over stdout | ScreenCaptureKit is Swift-only; stdout framing reuses the app's existing JSON/base64 tooling; no network sockets, no daemon |
 | D4 | Foreground-app detection via `objc2` + `objc2-app-kit` (NSWorkspace) in Rust | Avoids a second sidecar process; target-scoped deps keep the Windows tree untouched |
 | D5 | Paste = enigo macOS backend if verified, core-graphics `CGEventPost` backend as the drop-in fallback | `PasteBackend` trait exists; do not fork the Windows path |
-| D6 | Per-arch DMGs (arm64 + x86_64) first; universal binary as a fast-follow | Universal builds complicate the Swift helper + whisper Metal flags; defer until both arches verified |
+| D6 | Per-arch DMGs (arm64 + x86_64) first; universal binary as a fast-follow | Universal builds complicate the Swift helper + whisper Metal flags; defer until both arches verified (universal shipped — see M7.5) |
 | D7 | App lifecycle parity with Windows for v1 (exit on window close); menu-bar tray deferred | Tray-only apps need LSUIElement + reopen handling; not required for P0 parity |
 
 ## 5. Phase M0 — Compile baseline & CI (1 day)
@@ -240,7 +240,7 @@ per-arch; unsigned dev-build recipe in README.
 | M7.2 | `.github/workflows/publish-nvoos-dictate.yml` | macOS matrix (aarch64-apple-darwin, x86_64-apple-darwin) via `tauri-action`; helper built with `swift build` per arch before bundling; signing/notarization via `APPLE_CERTIFICATE`/`APPLE_CERTIFICATE_PASSWORD`/`APPLE_SIGNING_IDENTITY`/`APPLE_ID`/`APPLE_PASSWORD`/`APPLE_TEAM_ID` secrets |
 | M7.3 | `README.md` + `docs/distribution-macos.md` | Apple Developer Program prerequisite; ad-hoc dev-build recipe (`codesign -s - --deep`, `xattr -dr com.apple.quarantine`); Gatekeeper expectations |
 | M7.4 | Updater | Per-arch `platforms` entries in `latest.json`; pubkey generation for minisign once signing lands; **unsigned macOS builds cannot self-update** — document |
-| M7.5 | Follow-up | Universal binary (lipo merge or `universal-apple-darwin`) after both arches verified (D6) |
+| M7.5 | Done (2026-10) | Universal binary via `universal-apple-darwin` (Rust lipo) + lipo'd Swift sidecar (`NVOOS_HELPER_ARCH=universal`); boot-smoke boots both slices (native + Rosetta) and `lipo -info`-verifies the bundle; publish ships a single universal DMG |
 
 ## 13. Phase M8 — QA matrix, docs, release (1 day)
 
@@ -301,7 +301,6 @@ the Windows track.
 ## 17. Deliberately out of scope / deferred
 
 - Menu-bar-only (tray) mode & LSUIElement — post-port backlog (D7)
-- Universal binary merge (D6 follow-up)
 - macOS 12 support (D1 floor is 13.0)
 - Speaker diarization, wake-word, voice commands — already deferred repo-wide
 - App Sandbox — incompatible with the product (documented in §3.4)

@@ -5,9 +5,10 @@
 # everywhere; native engine features are exercised locally. The macOS job
 # also builds + smoke-tests the ScreenCaptureKit sidecar (mac-helper), runs
 # a headless engine-load probe, and the boot-smoke job below boots the real
-# .app bundle on the runner's Aqua session — the runtime verification of the
-# macOS port that is possible without macOS hardware (TCC-gated paths still
-# need a human on real hardware; see docs/ptt-matrix-macos.md).
+# universal .app bundle (both CPU slices — the Intel slice under Rosetta 2)
+# on the runner's Aqua session — the runtime verification of the macOS port
+# that is possible without macOS hardware (TCC-gated paths still need a
+# human on real hardware; see docs/ptt-matrix-macos.md).
 
 name: Build NV oOS Dictation
 
@@ -134,15 +135,24 @@ jobs:
           echo "headless probe OK (engine loaded, clean teardown)"
 
   # Runtime verification of the macOS port without macOS hardware: build the
-  # real .app (production frontend embed + Swift sidecar staged over the
-  # externalBin stub), boot it on the runner's Aqua session, and screenshot
-  # it. This catches crash-at-boot regressions in the port surface
-  # (Info.plist, entitlements, event-tap/permission wiring at startup) that
-  # compile gates cannot. The debug bundle is ad-hoc signed; signing and
-  # notarization verification belongs to publish-nvoos-dictate.yml.
+  # real UNIVERSAL .app (arm64 + x86_64 — production frontend embed +
+  # lipo'd Swift sidecar staged over the externalBin stub), boot BOTH slices
+  # on the runner's Aqua session (native arm64, then the Intel slice via
+  # `arch -x86_64` under Rosetta 2), and screenshot it. This catches
+  # crash-at-boot regressions in the port surface (Info.plist,
+  # entitlements, event-tap/permission wiring at startup) that compile gates
+  # cannot, and the single artifact runs on Apple Silicon AND Intel Macs
+  # (macOS 13+, Sequoia included — an arm64-only app fails on Intel with
+  # "this application is not supported on this Mac"). The debug bundle is
+  # ad-hoc signed; signing and notarization verification belongs to
+  # publish-nvoos-dictate.yml.
   boot-smoke:
-    name: macOS boot smoke (bundle + launch)
+    name: macOS boot smoke (universal, both slices)
     runs-on: macos-latest
+    env:
+      # build:helper lipo's the Swift sidecar into a universal binary and
+      # stages it over the -universal-apple-darwin externalBin stub.
+      NVOOS_HELPER_ARCH: universal
     steps:
       - uses: actions/checkout@v4
 
@@ -151,9 +161,16 @@ jobs:
           node-version: 20
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          # universal-apple-darwin (stable since Rust 1.77) compiles both
+          # arch slices and lipo's them; the per-arch targets are listed as
+          # well so rustup installs their std components too.
+          targets: universal-apple-darwin, aarch64-apple-darwin, x86_64-apple-darwin
 
-      # Same cache key as the rust job's macOS leg, so the boot job reuses
-      # the compile cache on every push.
+      # Same key as the rust job's macOS leg: ~/.cargo/registry + git are the
+      # big reuse win (the universal target compiles into its own
+      # target/universal-apple-darwin tree, so compiled-artifact reuse with
+      # the native job is limited).
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -169,59 +186,86 @@ jobs:
       - name: Generate icons
         run: node scripts/gen-icons.mjs
 
+      # The Intel-slice boot below runs under Rosetta 2 (the runner is
+      # Apple Silicon) — install it if the image doesn't already ship it.
+      - name: Ensure Rosetta 2
+        run: |
+          if arch -x86_64 /usr/bin/true 2>/dev/null; then
+            echo "Rosetta 2 already installed"
+          else
+            echo "Installing Rosetta 2 (one-time, headless)"
+            softwareupdate --install-rosetta --agree-to-license
+          fi
+
       # `tauri build` runs beforeBuildCommand (npm run build = webview dist,
       # required by generate_context!) and beforeBundleCommand
-      # (build:helper = Swift sidecar built for the native arch and staged
-      # over the externalBin stub) automatically, so the .app embeds both.
-      - name: Build debug .app bundle
-        run: npm run tauri -- build --debug --bundles app
+      # (build:helper = Swift sidecar lipo'd universal via
+      # NVOOS_HELPER_ARCH=universal and staged over the
+      # -universal-apple-darwin externalBin stub) automatically, so the
+      # .app embeds both. The universal-apple-darwin cargo target compiles
+      # arm64 + x86_64 slices and merges them with lipo.
+      - name: Build debug universal .app bundle
+        run: npm run tauri -- build --debug --bundles app --target universal-apple-darwin
 
       # Zip the debug .app so a human can download it from the run's
-      # artifacts and test on any Mac — the "GitHub worker creates the
-      # app" path. Ad-hoc signed: first launch needs right-click > Open.
-      # The publish workflow produces the signed + notarized DMG instead.
+      # artifacts and test on ANY Mac (Apple Silicon or Intel) — the
+      # "GitHub worker creates the app" path. Ad-hoc signed: first launch
+      # needs right-click > Open. The publish workflow produces the signed
+      # + notarized universal DMG instead.
       - name: Package .app for download
         run: |
-          APP="src-tauri/target/debug/bundle/macos/NV oOS Dictation.app"
-          ditto -c -k --sequesterRsrc --keepParent "$APP" /tmp/nvoos-dictate-macos-arm64.zip
-          ls -lh /tmp/nvoos-dictate-macos-arm64.zip
+          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Dictation.app"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" /tmp/nvoos-dictate-macos-universal.zip
+          ls -lh /tmp/nvoos-dictate-macos-universal.zip
 
-      - name: Inspect bundle (Info.plist + entitlements)
+      - name: Inspect bundle (Info.plist + entitlements + universal slices)
         run: |
-          APP="src-tauri/target/debug/bundle/macos/NV oOS Dictation.app"
-          test -d "$APP" || { echo "bundle missing: $APP"; ls -R src-tauri/target/debug/bundle 2>/dev/null || true; exit 1; }
+          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Dictation.app"
+          test -d "$APP" || { echo "bundle missing: $APP"; ls -R src-tauri/target/universal-apple-darwin/debug/bundle 2>/dev/null || true; exit 1; }
           plutil -p "$APP/Contents/Info.plist"
           echo "--- entitlements (debug build = ad-hoc signed) ---"
           codesign -dv --entitlements - "$APP" 2>&1 || echo "codesign inspect failed (expected for ad-hoc debug builds)"
+          # Hard evidence of the universal build: both the main binary and
+          # the sidecar must contain BOTH CPU slices.
+          echo "--- universal slices (main binary + sidecar) ---"
+          MAIN="$(find "$APP/Contents/MacOS" -maxdepth 1 -type f -perm -u+x ! -name '*helper*' -print -quit)"
+          INFO="$(lipo -info "$MAIN")" || { echo "main binary is not a Mach-O"; exit 1; }
+          echo "$INFO"
+          echo "$INFO" | grep -q "arm64" || { echo "main binary missing arm64 slice"; exit 1; }
+          echo "$INFO" | grep -q "x86_64" || { echo "main binary missing x86_64 slice"; exit 1; }
+          SIDE_INFO="$(lipo -info "$APP/Contents/MacOS/nvoos-audio-helper")" || { echo "sidecar is not a Mach-O — build:helper staging failed"; exit 1; }
+          echo "$SIDE_INFO"
+          echo "$SIDE_INFO" | grep -q "arm64" || { echo "sidecar missing arm64 slice"; exit 1; }
+          echo "$SIDE_INFO" | grep -q "x86_64" || { echo "sidecar missing x86_64 slice"; exit 1; }
 
-      - name: Boot the app (30 s residency)
+      # Tauri v2 keeps the Cargo binary name (nvoos-dictate) as the bundle
+      # executable — do not assume productName here. Exclude the sidecar
+      # helper and pick the remaining executable.
+      - name: Boot the app (native arm64 slice, 30 s residency)
         run: |
-          APP="src-tauri/target/debug/bundle/macos/NV oOS Dictation.app"
-          # Tauri v2 keeps the Cargo binary name (nvoos-dictate) as the
-          # bundle executable — do not assume productName here. Exclude the
-          # sidecar helper and pick the remaining executable.
+          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Dictation.app"
           BIN="$(find "$APP/Contents/MacOS" -maxdepth 1 -type f -perm -u+x ! -name '*helper*' -print -quit)"
           if [[ -z "$BIN" ]]; then echo "no executable in $APP/Contents/MacOS"; ls -la "$APP/Contents/MacOS"; exit 1; fi
-          echo "launching $BIN"
-          "$BIN" > /tmp/nvoos-boot.log 2>&1 &
+          echo "launching $BIN (native)"
+          "$BIN" > /tmp/nvoos-boot-native.log 2>&1 &
           BOOT_PID=$!
           for i in $(seq 1 30); do
             sleep 1
             if ! kill -0 "$BOOT_PID" 2>/dev/null; then
-              echo "app exited before the 30 s mark — boot log:"
-              cat /tmp/nvoos-boot.log
+              echo "app exited before the 30 s mark (native) — boot log:"
+              cat /tmp/nvoos-boot-native.log
               echo "--- unified log (last 2 min, best effort) ---"
               log show --last 2m --predicate 'processImagePath CONTAINS "NV oOS Dictation"' 2>/dev/null | tail -40 || true
               exit 1
             fi
           done
-          echo "boot OK — process alive after 30 s (pid $BOOT_PID)"
-          cat /tmp/nvoos-boot.log
+          echo "boot OK (native) — process alive after 30 s (pid $BOOT_PID)"
+          cat /tmp/nvoos-boot-native.log
 
       # Best effort: GitHub macOS runners expose an Aqua session and
       # screencapture normally works, but a session quirk must not red the
       # job — boot residency (previous step) is the hard gate, the image is
-      # evidence for humans.
+      # evidence for humans. (Shot while the native instance is still up.)
       - name: Screenshot the Aqua session
         run: |
           if screencapture -x /tmp/nvoos-boot.png && test -s /tmp/nvoos-boot.png; then
@@ -230,10 +274,41 @@ jobs:
             echo "WARNING: screencapture produced no image (runner session quirk)"
           fi
 
+      # Second residency gate: the SAME bundle's Intel slice, launched via
+      # `arch -x86_64` under Rosetta 2 — the closest a non-Intel runner can
+      # get to booting the x86_64 slice users on Intel Macs will run.
+      - name: Boot the app (Intel slice under Rosetta, 30 s residency)
+        run: |
+          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Dictation.app"
+          # Tear down the native instance cleanly first — the single-instance
+          # guard must not redirect this boot to a dying process.
+          pkill -f "$APP/Contents/MacOS" 2>/dev/null || true
+          for i in $(seq 1 10); do
+            pgrep -f "$APP/Contents/MacOS" >/dev/null 2>&1 || break
+            sleep 1
+          done
+          BIN="$(find "$APP/Contents/MacOS" -maxdepth 1 -type f -perm -u+x ! -name '*helper*' -print -quit)"
+          if [[ -z "$BIN" ]]; then echo "no executable in $APP/Contents/MacOS"; ls -la "$APP/Contents/MacOS"; exit 1; fi
+          echo "launching $BIN (Intel slice under Rosetta)"
+          arch -x86_64 "$BIN" > /tmp/nvoos-boot-rosetta.log 2>&1 &
+          BOOT_PID=$!
+          for i in $(seq 1 30); do
+            sleep 1
+            if ! kill -0 "$BOOT_PID" 2>/dev/null; then
+              echo "app exited before the 30 s mark (rosetta) — boot log:"
+              cat /tmp/nvoos-boot-rosetta.log
+              echo "--- unified log (last 2 min, best effort) ---"
+              log show --last 2m --predicate 'processImagePath CONTAINS "NV oOS Dictation"' 2>/dev/null | tail -40 || true
+              exit 1
+            fi
+          done
+          echo "boot OK (rosetta) — process alive after 30 s (pid $BOOT_PID)"
+          cat /tmp/nvoos-boot-rosetta.log
+
       - name: Stop the app
         if: always()
         run: |
-          APP="src-tauri/target/debug/bundle/macos/NV oOS Dictation.app"
+          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Dictation.app"
           pkill -f "$APP/Contents/MacOS" 2>/dev/null || true
 
       - name: Upload boot evidence
@@ -243,15 +318,16 @@ jobs:
           name: nvoos-dictate-macos-boot
           path: |
             /tmp/nvoos-boot.png
-            /tmp/nvoos-boot.log
+            /tmp/nvoos-boot-native.log
+            /tmp/nvoos-boot-rosetta.log
           if-no-files-found: warn
           retention-days: 7
-      - name: Upload testable .app
+      - name: Upload testable .app (universal)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nvoos-dictate-macos-app
-          path: /tmp/nvoos-dictate-macos-arm64.zip
+          path: /tmp/nvoos-dictate-macos-universal.zip
           if-no-files-found: warn
           retention-days: 7
 

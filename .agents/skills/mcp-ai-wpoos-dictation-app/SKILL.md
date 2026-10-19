@@ -152,9 +152,23 @@ are local gates.
 The GitHub macOS runner is the remote Mac. The full remote loop:
 
 - **Every push:** `boot-smoke` in `build-nvoos-dictate.yml` builds the
-  debug `.app` (production frontend + Swift sidecar staged via
-  `build:helper`), enforces 30 s boot residency, and uploads the app
-  zipped as artifact `nvoos-dictate-macos-app` (7 days) + boot evidence.
+  debug **universal** `.app` (`--target universal-apple-darwin` — Rust
+  lipo's the binary; `build:helper` with `NVOOS_HELPER_ARCH=universal`
+  builds both Swift slices in isolated scratch dirs, lipo's them over the
+  `-universal-apple-darwin` externalBin stub, and self-checks with
+  `lipo -info`) — production frontend + sidecar — boots **both slices**
+  (native arm64, then the Intel slice via `arch -x86_64` under Rosetta 2,
+  with a defensive `softwareupdate --install-rosetta` step and a teardown
+  wait so the single-instance guard doesn't redirect the second boot),
+  enforces 30 s boot residency per slice, hard-verifies the bundle is
+  universal (`lipo -info` on the main binary AND the sidecar), and uploads
+  the app zipped as artifact `nvoos-dictate-macos-app` (7 days) + boot
+  evidence. **One download serves Apple Silicon AND Intel Macs** (macOS
+  13+, incl. Sequoia 15.x) — an arm64-only app fails on Intel with "this
+  application is not supported on this Mac". Release DMGs are a single
+  universal DMG via publish-nvoos-dictate.yml; targeted builds land under
+  `src-tauri/target/<triple>/debug/bundle/macos/`
+  (`universal-apple-darwin` for universal), not `target/debug/`.
 - **Interactive:** run the `NV oOS Dictation — macOS interactive session`
   workflow (`workflow_dispatch`) — builds the bundle, runs
   `scripts/macos-matrix-remote.sh` (the automatable subset of
