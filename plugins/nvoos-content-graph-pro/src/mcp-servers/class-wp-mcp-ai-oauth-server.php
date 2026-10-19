@@ -99,6 +99,14 @@ class WP_MCP_AI_OAuth_Server {
 	 */
 	const SCOPE_MCP_WRITE = 'mcp:write';
 
+	/**
+	 * Hosts that may serve plain-HTTP (non-TLS) redirect URIs — loopback
+	 * hosts only, per RFC 8252 §7.3 (native apps).
+	 *
+	 * @var string[]
+	 */
+	const LOOPBACK_HOSTS = array( 'localhost', '127.0.0.1', '::1' );
+
 	// -----------------------------------------------------------------------
 	// Scope System
 	// -----------------------------------------------------------------------
@@ -187,6 +195,113 @@ class WP_MCP_AI_OAuth_Server {
 		$effective = array_unique( $effective );
 
 		return in_array( $required, $effective, true );
+	}
+
+	// -----------------------------------------------------------------------
+	// URI & Scope Validation (RFC 9700 hardening)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Check whether a URL's host is a loopback host
+	 * (localhost / 127.0.0.1 / ::1).
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param string $uri URL to inspect.
+	 * @return bool
+	 */
+	public static function is_loopback_redirect_uri( $uri ) {
+		$host = strtolower( (string) wp_parse_url( $uri, PHP_URL_HOST ) );
+		if ( '' === $host ) {
+			return false;
+		}
+
+		// wp_parse_url() returns '::1' for IPv6 hosts without brackets.
+		$host = trim( $host, '[]' );
+
+		return in_array( $host, self::LOOPBACK_HOSTS, true );
+	}
+
+	/**
+	 * Validate a redirect URI (or resource indicator) used for client
+	 * registration and authorization requests.
+	 *
+	 * Rules (RFC 9700 §4.1.2, RFC 8252 §7.3):
+	 *  - Absolute HTTP(S) URL.
+	 *  - No fragment, no userinfo, no wildcard hosts.
+	 *  - Plain HTTP is only allowed on loopback hosts (native apps).
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param string $uri URI to validate.
+	 * @return true|WP_Error
+	 */
+	public static function validate_redirect_uri( $uri ) {
+		$uri = esc_url_raw( (string) $uri );
+		if ( '' === $uri ) {
+			return new WP_Error( 'invalid_redirect_uri', __( 'A valid URL is required.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$parts = wp_parse_url( $uri );
+		if ( false === $parts || empty( $parts['host'] ) ) {
+			return new WP_Error( 'invalid_redirect_uri', __( 'The URL must be absolute and include a host.', 'nvoos-content-graph-pro' ) );
+		}
+
+		$scheme = isset( $parts['scheme'] ) ? strtolower( (string) $parts['scheme'] ) : '';
+		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+			return new WP_Error( 'invalid_redirect_uri', __( 'The URL must use HTTP or HTTPS.', 'nvoos-content-graph-pro' ) );
+		}
+
+		if ( isset( $parts['fragment'] ) || isset( $parts['user'] ) || isset( $parts['pass'] ) ) {
+			return new WP_Error( 'invalid_redirect_uri', __( 'The URL must not contain a fragment or embedded credentials.', 'nvoos-content-graph-pro' ) );
+		}
+
+		if ( false !== strpos( (string) $parts['host'], '*' ) ) {
+			return new WP_Error( 'invalid_redirect_uri', __( 'Wildcard hosts are not allowed.', 'nvoos-content-graph-pro' ) );
+		}
+
+		if ( 'http' === $scheme && ! self::is_loopback_redirect_uri( $uri ) ) {
+			return new WP_Error( 'invalid_redirect_uri', __( 'Plain-HTTP URLs are only allowed on loopback hosts.', 'nvoos-content-graph-pro' ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Validate a space-separated scope string against the supported scopes.
+	 *
+	 * RFC 9700 §2.2.1: authorization servers should reject requests for
+	 * unknown scopes rather than silently dropping them.
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param string $scope Space-separated scope string.
+	 * @return true|WP_Error
+	 */
+	public static function validate_scope_string( $scope ) {
+		$scope = trim( (string) $scope );
+		if ( '' === $scope ) {
+			return true;
+		}
+
+		$requested = array_filter( array_map( 'trim', explode( ' ', $scope ) ) );
+		$supported = array_keys( self::get_supported_scopes() );
+
+		foreach ( $requested as $requested_scope ) {
+			if ( ! in_array( $requested_scope, $supported, true ) ) {
+				return new WP_Error(
+					'invalid_scope',
+					sprintf(
+						/* translators: %s: Unsupported OAuth scope. */
+						__( 'Unsupported OAuth scope: %s', 'nvoos-content-graph-pro' ),
+						$requested_scope
+					),
+					array( 'status' => 400 )
+				);
+			}
+		}
+
+		return true;
 	}
 
 	// -----------------------------------------------------------------------
@@ -500,11 +615,23 @@ class WP_MCP_AI_OAuth_Server {
 
 		$client_id = 'mcp_client_' . bin2hex( random_bytes( 16 ) );
 
+		// Validate every redirect URI up front (RFC 9700 §4.1.2): absolute
+		// HTTP(S), no fragment, no userinfo, no wildcards, HTTPS unless the
+		// host is loopback (RFC 8252 §7.3).
+		$redirect_uris = array();
+		if ( isset( $metadata['redirect_uris'] ) && is_array( $metadata['redirect_uris'] ) ) {
+			foreach ( $metadata['redirect_uris'] as $uri ) {
+				$check = self::validate_redirect_uri( $uri );
+				if ( is_wp_error( $check ) ) {
+					return $check;
+				}
+				$redirect_uris[] = esc_url_raw( (string) $uri );
+			}
+		}
+
 		$clients[ $client_id ] = array(
 			'client_name'   => isset( $metadata['client_name'] ) ? sanitize_text_field( $metadata['client_name'] ) : 'MCP Client',
-			'redirect_uris' => isset( $metadata['redirect_uris'] ) && is_array( $metadata['redirect_uris'] )
-				? array_map( 'esc_url_raw', $metadata['redirect_uris'] )
-				: array(),
+			'redirect_uris' => array_values( array_unique( $redirect_uris ) ),
 			'created_at'    => time(),
 		);
 
@@ -544,6 +671,19 @@ class WP_MCP_AI_OAuth_Server {
 		return isset( $clients[ $client_id ]['redirect_uris'] )
 			? $clients[ $client_id ]['redirect_uris']
 			: array();
+	}
+
+	/**
+	 * Get a registered client record.
+	 *
+	 * @since 1.2.8
+	 *
+	 * @param string $client_id Client identifier.
+	 * @return array|null Client record, or null when unknown.
+	 */
+	public function get_client( $client_id ) {
+		$clients = $this->load_clients();
+		return isset( $clients[ $client_id ] ) ? $clients[ $client_id ] : null;
 	}
 
 	// -----------------------------------------------------------------------
