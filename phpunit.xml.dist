@@ -13,6 +13,7 @@
             <directory suffix=".php">addons/saas-controller/tests</directory>
             <directory suffix=".php">addons/checkout-api/tests</directory>
             <directory suffix=".php">addons/nvoos-design-system/tests</directory>
+            <directory suffix=".php">addons/schedule-anything-platform/tests</directory>
             <exclude>tests/manual-test-preset-preview.php</exclude>
             <exclude>tests/manual-verify-auto-aspect-ratio.php</exclude>
             <exclude>tests/manual</exclude>
@@ -43,6 +44,7 @@
             <exclude>addons/saas-controller/tests/bootstrap.php</exclude>
             <exclude>addons/checkout-api/tests/bootstrap.php</exclude>
             <exclude>addons/nvoos-design-system/tests/bootstrap.php</exclude>
+            <exclude>addons/schedule-anything-platform/tests/bootstrap.php</exclude>
         </testsuite>
     </testsuites>
     <groups>

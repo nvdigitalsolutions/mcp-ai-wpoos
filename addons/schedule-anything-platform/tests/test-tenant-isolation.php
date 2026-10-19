@@ -78,7 +78,10 @@ class Test_Tenant_Isolation extends WP_UnitTestCase {
 
 		$this->assertSame( 5, $starter_enabled, 'Starter tier should have exactly 5 toolkits enabled.' );
 		$this->assertSame( 15, $pro_enabled, 'Professional tier should have exactly 15 toolkits enabled.' );
-		$this->assertSame( 30, $ent_enabled, 'Enterprise tier should have all 30 toolkits enabled.' );
+
+		// Enterprise enables every toolkit in the canonical flag map.
+		$expected_total = count( SA_Toolkit_Manager::TOOLKIT_FLAGS );
+		$this->assertSame( $expected_total, $ent_enabled, 'Enterprise tier should enable every toolkit flag.' );
 	}
 
 	/**

@@ -32,7 +32,8 @@ implementation, and the Velocity deploy. The authoritative design doc is
 Browser → static SPA bundle (Vite/React 18, zero-dependency server or nginx)
   → GET /wp-json/nvoos-saas/v1/auth/nonce   (public; returns wp_rest nonce + user)
   → all data via /wp-json/mcp-ai-pro/v1/*   (schedules/presets/toolkits) + mcp-ai/v1
-WP backend (Multisite): base + Pro + schedule-anything-platform
+WP backend (Multisite for the SaaS; single-site runs sole-tenant demo mode,
+see the single-site section below): base + Pro + schedule-anything-platform
   → platform REST (/nvoos-saas/v1) is service-to-service (X-SaaS-API-Key) for
     the Cloud Worker (provisioning, offboarding, lookup, status) — not the SPA
 ```
@@ -61,6 +62,20 @@ registered in `addons/pro/includes/class-wp-mcp-ai-pro-module-registry.php`.
 | `GET /mcp-ai-pro/v1/presets` | `{ ok, presets, total }`; search/category/toolkit/page/per_page |
 | `GET /mcp-ai-pro/v1/presets/{id}` | 404 `sa_preset_not_found` |
 | `POST /mcp-ai-pro/v1/presets/{id}/install` | idempotent: key `preset:{id}:h{sha256(overrides)}` in option `wp_mcp_ai_sa_installs`; replay returns the original schedule with `replayed: true` |
+
+Platform REST (`/nvoos-saas/v1`, platform 0.1.1+):
+
+- `GET /tenants/lookup?slug=` resolves a bare slug against the network
+  domain in both subdomain (`<slug>.<domain>`) and path
+  (`<domain>/<slug>/`) forms — the old exact-domain-only match 404'd on
+  both install types.
+- Tier preset seeding (`SA_Toolkit_Manager::get_presets_for_tier()`) derives
+  from the Proposal 081 catalogue — capped starter 5 / professional 10 /
+  enterprise all — and provisioning installs through
+  `WP_MCP_AI_SA_Schedule_Presets::install_catalogue_preset()` (same
+  idempotency-key flow as the REST install). The legacy underscore ids
+  resolved through the old `WP_MCP_AI_Pro_Schedule_Presets` registry and
+  silently installed nothing.
 
 - Capability seam is **shared** with the schedule CRUD controller:
   `wp_mcp_ai_pro_schedule_rest_capability` filter (default
@@ -189,6 +204,41 @@ MSYS_NO_PATHCONV=1 docker run --rm --network sa-e2e-net -v sa-e2e-core:/var/www/
   (`assets/dist/assets/index-*.js`, 150 KB gzip limit for this SPA).
 - Presets/toolkits REST routes are NOT MCP tools — no registry surfaces;
   CHANGELOG + proposal docs only.
+
+## 8. Single-site (sole tenant) mode (Proposal 082, platform 0.1.1+)
+
+On a non-multisite install the platform runs in **sole-tenant mode** — the
+single blog is the tenant. No constant opt-in; it is automatic.
+
+- **Activation** no longer `wp_die`s or self-deactivates. It seeds
+  `sa_tenant_meta` (tier default `enterprise`, filter `sa_single_site_tier`)
+  + `SA_Toolkit_Manager::ensure_defaults( $tier )` — both idempotent, never
+  overwrite. The old multisite-required error notice is replaced by a
+  dismissible `notice-info` (option `sa_single_site_notice_dismissed`,
+  nonce'd GET link).
+- **Capability seam**: the platform filters
+  `wp_mcp_ai_pro_schedule_rest_capability` to `manage_options` on
+  single-site (Pro defaults to `sa_manage_workspace` when the platform is
+  active — site admins don't hold it, so without this every SPA REST call
+  403s).
+- **Provisioner**: `provision()` = idempotent self-registration (no
+  `wpmu_create_blog`); same tenant contract + `single_site: true`. Admin
+  user created via `wp_create_user`, elevated to `administrator` ONLY when
+  newly created (existing users are never escalated). `offboard()` of the
+  sole tenant → `409 sa_cannot_offboard_sole_tenant`; unknown IDs →
+  `sa_blog_not_found`. `generate_subdomain()` uniqueness loop is
+  `is_multisite()`-guarded (the old call to multisite-only
+  `get_blog_id_from_url()` was a latent single-site fatal).
+- **REST**: `lookup` matches the provisioned `sa_tenant_meta.subdomain` or
+  the host label only (never fabricates tenants); `status` resolves the
+  sole tenant; `healthz` already reports `multisite: false, blog_count: 1`.
+  Platform auth (X-SaaS-API-Key) is NOT relaxed.
+- **Heartbeat**: `SA_Usage_Tracker::send_heartbeat()` no-ops without
+  `SA_SAAS_API_KEY` (both modes — fixes the latent empty-key POST).
+- **Tests**: `addons/schedule-anything-platform/tests/test-single-site-mode.php`
+  (17 cases) + a self-guarding `tests/bootstrap.php` wired into the root
+  suite (`phpunit.xml.dist`); all three platform test files now run in the
+  standard single-site PHPUnit suite.
 
 ## References
 
