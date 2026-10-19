@@ -13,7 +13,14 @@
  * License URI: https://nvdigitalsolutions.com/wpoos/license
  * Text Domain: schedule-anything
  * Domain Path: /languages
- * Requires Plugins: mcp-ai-wpoos
+ *
+ * Note: deliberately NO "Requires Plugins" header. The base plugin ships
+ * under several slugs — mcp-ai-wpoos (GitHub/dev), nvdigital-open-operator-system-oos
+ * (WordPress.org base) and nvdigital-open-operator-system-oos-complete (the
+ * combined bundle) — and core matches the header against the installed
+ * plugin's FOLDER slug with AND semantics, so a static header would block
+ * activation on every other distribution. The runtime guard below
+ * (sa_platform_base_is_active) covers all flavors instead.
  *
  * @package Schedule_Anything
  *
