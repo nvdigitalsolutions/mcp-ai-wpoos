@@ -19,7 +19,14 @@ Deploy runbook for the Complete Console on Cloudways Velocity. Companion to
      `package.json`, `server.js`, `dist/`, `scripts/` at the top level).
    - **Entry: `server.js`** (PM2 default; delegates to `scripts/serve.mjs`,
      which carries the mandatory shebang).
-   - **No build command** (`build`/`start` are no-op shims).
+   - **No build command** — the sync workflow rewrites the mirror's
+     `build` (and the other monorepo-only scripts) to no-op shims, so a
+     Velocity build step left enabled succeeds harmlessly instead of
+     failing (`tsc` has no tsconfig in the mirror). `start`/`serve` still
+     run the shipped server. The workflow also strips
+     `dependencies`/`devDependencies` (the runtime is zero-dependency
+     Node), so the install step is a no-op and npm-audit noise never
+     appears in deploy logs.
    - **Env:** `NVOOS_TARGET_SITE=<Complete-bundle WordPress site>`.
 
 ## Sync flow

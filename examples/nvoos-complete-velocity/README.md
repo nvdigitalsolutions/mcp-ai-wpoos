@@ -41,7 +41,12 @@ npm run serve        # node scripts/serve.mjs (needs dist/ + NVOOS_TARGET_SITE)
 this folder or `addons/pro/assets/spa-v2/**` trigger
 `sync-nvoos-complete-velocity.yml` → mirror repo
 `nvdigitalsolutions/nvoos-complete-velocity` (flat history, force-push) →
-Velocity redeploys. Never commit to the mirror directly.
+Velocity redeploys. Never commit to the mirror directly. The assembled
+mirror rewrites the monorepo-only npm scripts (`build`, `dev`, `test`, …)
+to no-op shims — it ships the prebuilt `dist/` only, so a Velocity build
+step, if enabled, succeeds without a real build. Dependencies are stripped
+too (the runtime is zero-dependency Node), keeping Velocity's `npm install`
+a silent no-op with no audit noise.
 
 ## Auth
 
