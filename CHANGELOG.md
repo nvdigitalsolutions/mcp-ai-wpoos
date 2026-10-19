@@ -85,7 +85,7 @@
 
 ### Dependency — Handlebars Patched (PR #7106)
 
-- `handlebars` 4.7.9 → 4.7.10 in `examples/schedule-anything-velocity`'s lockfile tree (GHSA-8r5x-fm3f-whwj — JavaScript injection via AST type confusion, bypass of CVE-2024-45592); override floor raised to `>=4.7.10` with `minimist` transitives.
+- `handlebars` 4.7.9 → 4.7.10 in the **root** lockfile tree (GHSA-8r5x-fm3f-whwj — JavaScript injection via AST type confusion, bypass of CVE-2024-45592); override floor raised to `>=4.7.10` with `minimist` `^1.2.5` → `^1.2.8` transitives. The same 4.7.10 patch also covers the 2026-10-19 advisory GHSA-p8wg-vrv2-v86f (own-property-check RCE via `allowProtoMethodsByDefault` — dependabot alert #1335, verified stale: `main`'s root lockfile already at 4.7.10 via the #7117 sync).
 
 ### Docs & Skills (PRs #7115, #7128, #7129)
 
