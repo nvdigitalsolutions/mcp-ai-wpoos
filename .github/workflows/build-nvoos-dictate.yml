@@ -162,10 +162,13 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          # universal-apple-darwin (stable since Rust 1.77) compiles both
-          # arch slices and lipo's them; the per-arch targets are listed as
-          # well so rustup installs their std components too.
-          targets: universal-apple-darwin, aarch64-apple-darwin, x86_64-apple-darwin
+          # universal-apple-darwin is a TAURI CLI merge target, not a
+          # rustup-installable component — listing it here fails with
+          # "component 'rust-std' for target 'universal-apple-darwin' is
+          # unavailable for download". Install the two real arch stds;
+          # tauri's --target universal-apple-darwin compiles both slices
+          # itself and lipo-merges them.
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
 
       # Same key as the rust job's macOS leg: ~/.cargo/registry + git are the
       # big reuse win (the universal target compiles into its own
@@ -202,8 +205,9 @@ jobs:
       # (build:helper = Swift sidecar lipo'd universal via
       # NVOOS_HELPER_ARCH=universal and staged over the
       # -universal-apple-darwin externalBin stub) automatically, so the
-      # .app embeds both. The universal-apple-darwin cargo target compiles
-      # arm64 + x86_64 slices and merges them with lipo.
+      # .app embeds both. Tauri's universal-apple-darwin target compiles
+      # arm64 + x86_64 slices and merges them with lipo (cargo and rustup
+      # know only the per-arch targets).
       - name: Build debug universal .app bundle
         run: npm run tauri -- build --debug --bundles app --target universal-apple-darwin
 

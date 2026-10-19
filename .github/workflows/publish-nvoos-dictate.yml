@@ -45,7 +45,9 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: universal-apple-darwin, aarch64-apple-darwin, x86_64-apple-darwin
+          # universal-apple-darwin is a Tauri CLI merge target — not a
+          # rustup target. Install the two real arch stds instead.
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
