@@ -26,6 +26,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Trace_Memory_Provenance' ) ) {
 	require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-trace-memory-provenance.php';
 }
 
+require_once __DIR__ . '/helpers/memory-provenance-graph-stubs.php';
+
 /**
  * Test case for `WP_MCP_AI_Tool_Trace_Memory_Provenance`.
  *
@@ -74,15 +76,22 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		remove_all_filters( 'wp_mcp_ai_memory_provenance_include_versions_default' );
 		remove_all_filters( 'wp_mcp_ai_memory_provenance_include_graph_default' );
 		remove_all_filters( 'wp_mcp_ai_memory_provenance_summary' );
+		remove_all_filters( 'wp_mcp_ai_memory_provenance_graph_bridge' );
+		remove_all_filters( 'wp_mcp_ai_memory_provenance_graph_db' );
+		remove_all_filters( 'wp_mcp_ai_memory_provenance_graph_relations' );
 		remove_all_actions( 'wp_mcp_ai_memory_provenance_traced' );
+
+		WP_MCP_AI_Test_Memory_Graph_Db_Stub::$edges = array();
 
 		$this->clear_fixtures( $this->agent_id, $this->context_id );
 		parent::tearDown();
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * Fixture helpers
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Seed an audit log entry for the given agent + context.
@@ -155,34 +164,52 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 			$this->context_id,
 			'create',
 			'2026-11-01 09:00:00',
-			array( 'source' => array( 'type' => 'tool', 'value' => 'store_agent_context' ) )
+			array(
+				'source' => array(
+					'type'  => 'tool',
+					'value' => 'store_agent_context',
+				),
+			)
 		);
 		$this->seed_audit_entry(
 			$this->agent_id,
 			$this->context_id,
 			'update',
 			'2026-11-02 10:15:00',
-			array( 'source' => array( 'type' => 'user', 'value' => 'editor-1' ) )
+			array(
+				'source' => array(
+					'type'  => 'user',
+					'value' => 'editor-1',
+				),
+			)
 		);
 		$this->seed_version(
 			$this->agent_id,
 			$this->context_id,
 			1,
-			array( 'title' => 'v1', 'content' => 'first revision' ),
+			array(
+				'title'   => 'v1',
+				'content' => 'first revision',
+			),
 			'2026-11-01 09:00:00'
 		);
 		$this->seed_version(
 			$this->agent_id,
 			$this->context_id,
 			2,
-			array( 'title' => 'v2', 'content' => 'second revision' ),
+			array(
+				'title'   => 'v2',
+				'content' => 'second revision',
+			),
 			'2026-11-02 10:15:00'
 		);
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 1. Happy path
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Valid agent_id + context_id with audit + version data returns the
@@ -219,9 +246,11 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		$this->assertSame( 'update', $result['trace']['audit']['events'][1]['action'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 2. Missing context_id
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Missing context_id returns WP_Error with code `invalid_context_id`.
@@ -237,9 +266,11 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		$this->assertSame( 'invalid_context_id', $result->get_error_code() );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 3. Non-existent context_id
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Non-existent context_id returns WP_Error with code `memory_not_found`.
@@ -259,9 +290,11 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		$this->assertSame( 404, $data['status'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 4. include_audit=false
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Setting include_audit=false suppresses the audit section while
@@ -287,9 +320,11 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'available', $result['trace']['graph'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 5. include_versions=false
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Setting include_versions=false suppresses the versions section while
@@ -315,9 +350,11 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'available', $result['trace']['graph'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 6. include_graph=false
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Setting include_graph=false suppresses the graph section while
@@ -342,14 +379,16 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		$this->assertTrue( $result['trace']['versions']['available'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 7. Graphify absent
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
-	 * When the Graphify bridge class isn't loaded (the default in the
-	 * Base-build test environment), the graph section reports
-	 * available=false and the call still succeeds.
+	 * When no graph bridge class is loaded (the default in the Base-build
+	 * test environment), the graph section reports available=false and the
+	 * call still succeeds.
 	 */
 	public function test_graphify_absent_returns_unavailable_graph() {
 		if ( class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
@@ -368,12 +407,141 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertTrue( $result['success'] );
 		$this->assertFalse( $result['trace']['graph']['available'] );
-		$this->assertSame( 'Graphify bridge unavailable', $result['trace']['graph']['reason'] );
+		$this->assertSame( 'Graph bridge unavailable', $result['trace']['graph']['reason'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
+	 * 7b. Graph bridge filter seams
+	 * ------------------------------------------------------------------
+	 */
+
+	/**
+	 * The bridge + DB walker seams let a site swap in any duck-typed graph
+	 * implementation (e.g. the standalone Content Graph plugin) and the BFS
+	 * traverses the relations the memory bridges actually write, surfacing
+	 * non-memory anchors with their kind.
+	 */
+	public function test_graph_bridge_filter_seam_walks_populated_relations() {
+		$this->seed_full_fixture();
+
+		WP_MCP_AI_Test_Memory_Graph_Db_Stub::$edges = array(
+			'memory:' . $this->context_id => array(
+				'OBSERVED_BY'  => array( 'agent:' . $this->agent_id ),
+				'MEMBER_OF'    => array( 'wing:site-a' ),
+				'DERIVED_FROM' => array( 'post_7' ),
+			),
+			'wing:site-a'                 => array(
+				'MEMBER_OF' => array( 'memory:ctx_related' ),
+			),
+		);
+
+		add_filter(
+			'wp_mcp_ai_memory_provenance_graph_bridge',
+			static function () {
+				return 'WP_MCP_AI_Test_Memory_Graph_Bridge_Stub';
+			}
+		);
+		add_filter(
+			'wp_mcp_ai_memory_provenance_graph_db',
+			static function () {
+				return 'WP_MCP_AI_Test_Memory_Graph_Db_Stub';
+			}
+		);
+
+		$result = $this->tool->execute(
+			array(
+				'agent_id'   => $this->agent_id,
+				'context_id' => $this->context_id,
+				'max_depth'  => 2,
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertTrue( $result['trace']['graph']['available'] );
+
+		$nodes = $result['trace']['graph']['nodes'];
+
+		$agent_node = $this->find_graph_node( $nodes, 'agent:' . $this->agent_id );
+		$this->assertNotNull( $agent_node );
+		$this->assertSame( 1, $agent_node['depth'] );
+		$this->assertSame( 'OBSERVED_BY', $agent_node['edge'] );
+		$this->assertSame( 'agent', $agent_node['kind'] );
+
+		$wing_node = $this->find_graph_node( $nodes, 'wing:site-a' );
+		$this->assertNotNull( $wing_node );
+		$this->assertSame( 'MEMBER_OF', $wing_node['edge'] );
+		$this->assertSame( 'wing', $wing_node['kind'] );
+
+		$post_node = $this->find_graph_node( $nodes, 'post_7' );
+		$this->assertNotNull( $post_node );
+		$this->assertSame( 'DERIVED_FROM', $post_node['edge'] );
+		$this->assertSame( 'other', $post_node['kind'] );
+		$this->assertSame( '', $post_node['context_id'] );
+
+		$related = $this->find_graph_node( $nodes, 'memory:ctx_related' );
+		$this->assertNotNull( $related );
+		$this->assertSame( 2, $related['depth'] );
+		$this->assertSame( 'ctx_related', $related['context_id'] );
+		$this->assertSame( 'memory', $related['kind'] );
+	}
+
+	/**
+	 * An empty relations list (via filter) disables the graph walk without
+	 * failing the whole trace.
+	 */
+	public function test_empty_graph_relations_disables_walk() {
+		$this->seed_full_fixture();
+
+		add_filter(
+			'wp_mcp_ai_memory_provenance_graph_bridge',
+			static function () {
+				return 'WP_MCP_AI_Test_Memory_Graph_Bridge_Stub';
+			}
+		);
+		add_filter(
+			'wp_mcp_ai_memory_provenance_graph_db',
+			static function () {
+				return 'WP_MCP_AI_Test_Memory_Graph_Db_Stub';
+			}
+		);
+		add_filter( 'wp_mcp_ai_memory_provenance_graph_relations', '__return_empty_array' );
+
+		$result = $this->tool->execute(
+			array(
+				'agent_id'   => $this->agent_id,
+				'context_id' => $this->context_id,
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertFalse( $result['trace']['graph']['available'] );
+		$this->assertSame( 'No graph relations configured', $result['trace']['graph']['reason'] );
+	}
+
+	/**
+	 * Find a node in the graph section by node id.
+	 *
+	 * @param array  $nodes   Graph nodes list.
+	 * @param string $node_id Node id to find.
+	 * @return array|null Node payload or null.
+	 */
+	private function find_graph_node( $nodes, $node_id ) {
+		foreach ( $nodes as $node ) {
+			if ( isset( $node['node_id'] ) && $node_id === $node['node_id'] ) {
+				return $node;
+			}
+		}
+		return null;
+	}
+
+	/*
+	------------------------------------------------------------------
 	 * 8. Summary modification_count
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * `summary.modification_count` equals the number of stored versions.
@@ -385,7 +553,10 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 			$this->agent_id,
 			$this->context_id,
 			3,
-			array( 'title' => 'v3', 'content' => 'third revision' ),
+			array(
+				'title'   => 'v3',
+				'content' => 'third revision',
+			),
 			'2026-11-03 11:30:00'
 		);
 
@@ -403,9 +574,11 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		$this->assertSame( 'tool', $result['summary']['first_source']['type'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 9. max_depth clamping via filter
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Setting the `wp_mcp_ai_memory_provenance_max_depth` filter to 3
@@ -464,9 +637,11 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		$this->assertSame( 3, $result['trace']['graph']['depth'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 10. Action fires once per successful trace
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * `wp_mcp_ai_memory_provenance_traced` fires exactly once per
@@ -505,9 +680,11 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'modification_count', $calls[0]['summary'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 11. Action does NOT fire on failure (defensive bonus case)
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * The `wp_mcp_ai_memory_provenance_traced` action must NOT fire when

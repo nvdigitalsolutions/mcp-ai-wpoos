@@ -40,11 +40,17 @@ use function sanitize_title_with_dashes;
  * memory write. The source store (the base plugin's transient store or the
  * JetEngine CCT) remains the source of truth.
  *
- * The bridge also registers the graph-retrieval seam consumed by the base
- * plugin's `wake_up_context` tool (`wp_mcp_ai_wake_up_context_graph_retriever`),
- * so a site running NV oOS together with this plugin gets graph-ranked memory
- * wake-ups without the bundled Graphify addon. When the base plugin is
- * absent the filter is never invoked, so the registration is inert.
+	 * The bridge also registers the graph-retrieval seam consumed by the base
+	 * plugin's `wake_up_context` tool (`wp_mcp_ai_wake_up_context_graph_retriever`),
+	 * so a site running NV oOS together with this plugin gets graph-ranked memory
+	 * wake-ups without the bundled Graphify addon. When the base plugin is
+	 * absent the filter is never invoked, so the registration is inert.
+	 *
+	 * The bridge likewise self-declares as the memory-graph bridge for the
+	 * base plugin's provenance trace (`wp_mcp_ai_memory_provenance_graph_bridge` /
+	 * `wp_mcp_ai_memory_provenance_graph_db`) and RRF fusion graph stream
+	 * (`wp_mcp_ai_memory_rrf_graph_bridge`) — same inert-when-absent
+	 * semantics, since those filters are only applied by base-plugin code.
  *
  * Embedding generation is deliberately not enqueued here: the core plugin's
  * `EmbeddingsOnIngest` cron is a stub whose real backend ships with the
@@ -88,6 +94,12 @@ class Bridge {
 		add_action( Schema::ACTION_MEMORY_STORED, array( __CLASS__, 'onMemoryStored' ), 10, 1 );
 		add_action( 'wp_mcp_ai_memory_stored', array( __CLASS__, 'onMemoryStored' ), 10, 1 );
 		add_filter( 'wp_mcp_ai_wake_up_context_graph_retriever', array( __CLASS__, 'onWakeUpGraphRetriever' ), 10, 2 );
+		// Self-declare as the memory-graph bridge for the base plugin's
+		// provenance trace and RRF graph stream. Inert when the base plugin
+		// is absent — the filters are never applied.
+		add_filter( 'wp_mcp_ai_memory_provenance_graph_bridge', array( __CLASS__, 'onGraphBridgeClass' ), 10, 1 );
+		add_filter( 'wp_mcp_ai_memory_provenance_graph_db', array( __CLASS__, 'onGraphDbClass' ), 10, 1 );
+		add_filter( 'wp_mcp_ai_memory_rrf_graph_bridge', array( __CLASS__, 'onGraphBridgeClass' ), 10, 1 );
 	}
 
 	/**
@@ -311,6 +323,35 @@ class Bridge {
 			return null;
 		}
 		return self::retrieveGraph( $args );
+	}
+
+	/**
+	 * Filter callback: declare this plugin's bridge class for the base
+	 * plugin's memory-graph seams.
+	 *
+	 * @since 1.0.12
+	 *
+	 * @param string $bridge_class Current bridge class name (ignored — this
+	 *                             plugin always wins by migration contract).
+	 * @return string Bridge class name.
+	 */
+	public static function onGraphBridgeClass( $bridge_class ) {
+		unset( $bridge_class ); // Incoming default replaced unconditionally (migration contract).
+		return self::class;
+	}
+
+	/**
+	 * Filter callback: declare this plugin's graph DB layer for the base
+	 * plugin's memory-graph seams.
+	 *
+	 * @since 1.0.12
+	 *
+	 * @param string $db_class Current DB walker class name (ignored).
+	 * @return string DB walker class name.
+	 */
+	public static function onGraphDbClass( $db_class ) {
+		unset( $db_class ); // Incoming default replaced unconditionally (migration contract).
+		return Db::class;
 	}
 
 	/**

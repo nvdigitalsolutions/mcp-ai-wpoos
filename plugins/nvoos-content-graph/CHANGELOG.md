@@ -1,5 +1,20 @@
 # NV oOS Content Graph — Changelog
 
+## 1.0.12 — 2026-10-19
+
+### Added — Self-declared memory-graph bridge for NV oOS base+Pro
+
+- **Provenance + RRF graph seams** — `Bridge::register()` now declares this
+  plugin as the memory-graph bridge for the base plugin's
+  `trace_memory_provenance` graph neighborhood
+  (`wp_mcp_ai_memory_provenance_graph_bridge` /
+  `wp_mcp_ai_memory_provenance_graph_db`) and the RRF memory-fusion graph
+  stream (`wp_mcp_ai_memory_rrf_graph_bridge`), so sites running the
+  standalone plugin without the bundled Graphify addon get graph-backed
+  memory provenance and hybrid recall. The registrations are inert when the
+  base plugin is absent — the filters are never applied.
+- Tests: seam-registration contract in `BridgeTest`.
+
 ## 1.0.11 — 2026-10-11
 
 ### Added — Headless explorer support
