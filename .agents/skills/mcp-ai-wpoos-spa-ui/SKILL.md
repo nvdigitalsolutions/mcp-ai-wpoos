@@ -174,6 +174,30 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   app alone never changes the live console; every spa-v2 source fix must
   be compiled into **both** `addons/pro/assets/spa-v2/assets/dist/` and
   `examples/nvoos-complete-velocity/dist/` (see the rebuild map below).
+- **Console nav gating (Proposal 084 Phase 0, shipped 2026-10-20):**
+  the sidebar, dashboard quick-actions, and route guards all consume one
+  catalogue — `examples/nvoos-complete-velocity/src/console/nav-features.tsx`
+  (`CONSOLE_NAV_ITEMS` with per-item `capability?`/`feature?` gates,
+  `isNavItemVisible()`, `RequireGate` redirect-to-`/` guard). Feature
+  availability comes from the **server**, never URL guessing:
+  `GET /mcp-ai/v1/features` (`includes/rest/class-wp-mcp-ai-rest-features-controller.php`,
+  logged-in users) backed by `WP_MCP_AI_Feature_Flags`
+  (`includes/class-wp-mcp-ai-feature-flags.php` — docs_hub, knowledge_graph,
+  media_studio, document_editor, pro, okf; each filterable via
+  `wp_mcp_ai_feature_available_<key>`). The PHP SPA config emits the same
+  map as `runtime.features`, and `buildConsoleRuntime()` **empties the
+  optional-surface endpoints** when a feature is off (pages then render
+  their unavailable states). Console boot fetches the map via
+  `fetchFeatureMap()` (runtime-config.ts) — **fail-open** by design (a
+  failed fetch returns `{}`, never hides nav). Nav capabilities come from
+  `wp/v2/users/me?context=edit`; the 7 admin-only items are gated on
+  `manage_options` mirroring the PHP endpoint gating. Tools page is
+  assistant-aware: `ToolsClient.list( assistantId? )` →
+  `?assistant_id=…`, `useTools` refetches on the store's `assistantId`
+  change, `ToolsPage` shows the scoped assistant in its subtitle (falls
+  back to the server-resolved default assistant, then the full registry).
+  New console pages register their gates in `nav-features.tsx` — never
+  inline.
 
 ## Porting a plugin JS widget into spa-v2 (vendored-upstream pattern)
 
