@@ -1096,10 +1096,24 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-message-view--user .nvoos-pro-spa-message-view__body {
 	background: #f0f6fc;
+	/* The user bubble is always light — pin dark text so dark-mode
+	   themes don't inherit near-white text onto it. */
+	color: #1e1e1e;
 	padding: 10px 14px;
 	border-radius: 8px;
 	max-width: 80%;
 	margin-left: auto;
+}
+
+/* Keep markdown elements inside the always-light user bubble readable
+   in dark mode (their theme-variable colors would go light on white). */
+.nvoos-pro-spa-message-view--user .nvoos-pro-spa-message-view__body .nvoos-pro-spa-markdown blockquote {
+	color: #555d66;
+}
+
+.nvoos-pro-spa-message-view--user .nvoos-pro-spa-message-view__body .nvoos-pro-spa-markdown code {
+	background: #dbe4f0;
+	color: #1e1e1e;
 }
 
 .nvoos-pro-spa-message-view--assistant .nvoos-pro-spa-message-view__body {

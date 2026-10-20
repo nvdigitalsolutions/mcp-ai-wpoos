@@ -27,6 +27,20 @@ export interface ToolsListResponse {
 	total: number;
 }
 
+/**
+ * Server-side tool entry served by GET mcp-ai/v1/tools — the MCP-facing
+ * shape (name/description/inputSchema) with additive catalogue fields.
+ */
+interface ServerToolListItem {
+	slug?: string;
+	name: string;
+	description: string;
+	category?: string;
+	required_capability?: string;
+	inputSchema?: Record< string, unknown >;
+	[ k: string ]: unknown;
+}
+
 export interface ToolExecutionResult {
 	success: boolean;
 	data?: {
@@ -58,17 +72,48 @@ export class ToolsClient {
 
 	/**
 	 * List registered tools (GET with pagination).
+	 *
+	 * The REST route returns a top-level envelope — `{ tools: [...], total }`
+	 * — where each entry is the MCP-facing shape (`name`, `description`,
+	 * `inputSchema`) plus catalogue fields. Map it onto the page's
+	 * ToolDefinition and fall back to the legacy
+	 * `{ success, data: { tools } }` envelope for older installs.
 	 */
 	async list( signal?: AbortSignal ): Promise< ToolsListResponse > {
 		const url = new URL( this.endpoint, window.location.origin );
 		url.searchParams.set( 'per_page', '200' );
 		const data = await this.request< {
-			success: boolean;
-			data: ToolsListResponse;
+			success?: boolean;
+			tools?: ServerToolListItem[];
+			total?: number;
+			data?: {
+				tools?: ServerToolListItem[];
+				total?: number;
+			};
 		} >( { method: 'GET', url: url.toString(), signal } );
+
+		const raw = Array.isArray( data?.tools )
+			? data.tools
+			: Array.isArray( data?.data?.tools )
+			? data.data.tools
+			: [];
+
 		return {
-			tools: Array.isArray( data?.data?.tools ) ? data.data.tools : [],
-			total: typeof data?.data?.total === 'number' ? data.data.total : 0,
+			tools: raw.map( ( t ) => ( {
+				slug: typeof t?.slug === 'string' && t.slug ? t.slug : ( t?.name ?? '' ),
+				name: t?.name ?? '',
+				description: t?.description ?? '',
+				category: typeof t?.category === 'string' ? t.category : '',
+				required_capability:
+					typeof t?.required_capability === 'string' ? t.required_capability : '',
+				parameters: t?.inputSchema ?? {},
+			} ) ),
+			total:
+				typeof data?.total === 'number'
+					? data.total
+					: typeof data?.data?.total === 'number'
+					? data.data.total
+					: raw.length,
 		};
 	}
 
