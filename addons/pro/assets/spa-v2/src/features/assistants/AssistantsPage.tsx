@@ -40,7 +40,7 @@ function parseCapabilities( raw: string ): string[] {
 }
 
 export function AssistantsPage(): JSX.Element {
-	const { runtime } = useBootstrap();
+	const { runtime, loading: bootstrapLoading } = useBootstrap();
 	const availableModels = useModelStore( ( s ) => s.availableModels );
 
 	const { assistants, loading, error, fetchAssistants, createAssistant, updateAssistant, deleteAssistant } =
@@ -123,6 +123,26 @@ export function AssistantsPage(): JSX.Element {
 		},
 		[ deleteAssistant ]
 	);
+
+	// While the bootstrap is still reading the runtime config, show the
+	// loading UI — showing the runtime-error state here would flash an
+	// alarming message before the config is even read.
+	if ( bootstrapLoading ) {
+		return (
+			<div
+				className="nvoos-pro-spa-page nvoos-pro-spa-page--loading"
+				aria-busy="true"
+			>
+				<h2 className="nvoos-pro-spa-page__title">
+					{ __( 'Assistants', 'nvoos-pro-spa' ) }
+				</h2>
+				<div className="nvoos-pro-spa-page__loader" role="status">
+					<span className="nvoos-pro-spa-page__spinner" />
+					{ __( 'Loading assistants…', 'nvoos-pro-spa' ) }
+				</div>
+			</div>
+		);
+	}
 
 	if ( ! runtime ) {
 		return (

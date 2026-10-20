@@ -452,6 +452,29 @@ body,
   color: var(--shell-accent);
 }
 
+/* Pulsing placeholder while a stat's data is still loading. */
+.nvoos-console-stat__loading {
+  display: inline-block;
+  opacity: 0.45;
+  animation: nvoos-console-stat-pulse 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nvoos-console-stat__loading {
+    animation: none;
+  }
+}
+
+@keyframes nvoos-console-stat-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
 .nvoos-console-quick {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

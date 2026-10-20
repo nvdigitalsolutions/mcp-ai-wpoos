@@ -27,10 +27,16 @@ export function useTools( options: UseToolsOptions ): UseToolsReturn {
 
 	const [ tools, setTools ] = useState< ToolDefinition[] >( [] );
 	const [ total, setTotal ] = useState< number >( 0 );
-	const [ loading, setLoading ] = useState< boolean >( false );
+	// Start in the loading state — the first fetch kicks off in an effect
+	// (after first paint); without this the page shows "No tools found" for
+	// a frame (or longer on a heavy shell) before the fetch actually starts.
+	const [ loading, setLoading ] = useState< boolean >( true );
 	const [ error, setError ] = useState< string | null >( null );
 
 	const fetchTools = useCallback( async () => {
+		if ( ! options.endpoint ) {
+			return;
+		}
 		setLoading( true );
 		setError( null );
 		try {
@@ -42,11 +48,17 @@ export function useTools( options: UseToolsOptions ): UseToolsReturn {
 		} finally {
 			setLoading( false );
 		}
-	}, [ client ] );
+	}, [ client, options.endpoint ] );
 
 	useEffect( () => {
+		if ( ! options.endpoint ) {
+			// Runtime not ready yet — nothing to fetch; stop blocking the page
+			// so the bootstrap/runtime gate can render instead of a spinner.
+			setLoading( false );
+			return;
+		}
 		void fetchTools();
-	}, [ fetchTools ] );
+	}, [ fetchTools, options.endpoint ] );
 
 	const executeTool = useCallback(
 		async ( slug: string, args: Record< string, unknown > ): Promise< unknown > => {

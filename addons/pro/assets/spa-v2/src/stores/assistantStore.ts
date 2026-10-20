@@ -9,6 +9,13 @@ import { readProSpaConfig, type RuntimeAssistantSummary } from '../api/config';
 export interface AssistantState {
 	assistantId: number;
 	assistants: AssistantRecord[];
+	/**
+	 * True once the assistant list reflects the server (either seeded from the
+	 * runtime config or fetched by ChatSidebar) — false while the initial
+	 * fetch is still in flight. Lets consumers render a loading placeholder
+	 * instead of a misleading "0 assistants".
+	 */
+	assistantsLoaded: boolean;
 
 	setActiveAssistant: ( id: number ) => void;
 	setAssistants: ( list: AssistantRecord[] ) => void;
@@ -79,24 +86,31 @@ function getInitialAssistants(): AssistantRecord[] {
 	} ) );
 }
 
-export const useAssistantStore = create< AssistantState >( ( set ) => ( {
-	assistantId: getInitialAssistantId(),
-	assistants: getInitialAssistants(),
+export const useAssistantStore = create< AssistantState >( ( set ) => {
+	const initialAssistants = getInitialAssistants();
 
-	setActiveAssistant: ( id ) => {
-		const userId = getUserId();
-		if ( userId > 0 ) {
-			try {
-				localStorage.setItem(
-					`${ STORAGE_KEY_PREFIX }-${ userId }`,
-					String( id )
-				);
-			} catch ( _ ) {
-				// Silently ignore storage failures.
+	return {
+		assistantId: getInitialAssistantId(),
+		assistants: initialAssistants,
+		// A non-empty server-provided seed is authoritative immediately; an empty
+		// list still needs the ChatSidebar fetch to confirm it is truly empty.
+		assistantsLoaded: initialAssistants.length > 0,
+
+		setActiveAssistant: ( id ) => {
+			const userId = getUserId();
+			if ( userId > 0 ) {
+				try {
+					localStorage.setItem(
+						`${ STORAGE_KEY_PREFIX }-${ userId }`,
+						String( id )
+					);
+				} catch ( _ ) {
+					// Silently ignore storage failures.
+				}
 			}
-		}
-		set( { assistantId: id } );
-	},
+			set( { assistantId: id } );
+		},
 
-	setAssistants: ( list ) => set( { assistants: list } ),
-} ) );
+		setAssistants: ( list ) => set( { assistants: list, assistantsLoaded: true } ),
+	};
+} );

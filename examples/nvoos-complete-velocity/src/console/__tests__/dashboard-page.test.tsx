@@ -2,7 +2,7 @@
  * DashboardPage tests — welcome card, live stats, quick-action navigation.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -10,6 +10,11 @@ import { MemoryRouter } from 'react-router-dom';
 import { DashboardPage } from '../DashboardPage';
 import type { useTranscripts } from '@nvoos/pro-spa-v2/hooks/useTranscripts';
 import type { ProSpaUser } from '@nvoos/pro-spa-v2/api/config';
+import { useAssistantStore } from '@nvoos/pro-spa-v2/stores/assistantStore';
+
+beforeEach(() => {
+  useAssistantStore.setState({ assistants: [], assistantsLoaded: false });
+});
 
 const user: ProSpaUser = {
   id: 7,
@@ -18,14 +23,17 @@ const user: ProSpaUser = {
   capabilities: ['manage_options'],
 };
 
-function fakeTranscripts(sessionCount: number): ReturnType<typeof useTranscripts> {
+function fakeTranscripts(sessionCount: number | null): ReturnType<typeof useTranscripts> {
   return {
     sessionKey: 'session-1',
     isLoading: false,
     initialMessages: [],
-    sessions: Array.from({ length: sessionCount }, (_, i) => ({
-      session_key: `session-${i + 1}`,
-    })),
+    sessions:
+      sessionCount === null
+        ? null
+        : Array.from({ length: sessionCount }, (_, i) => ({
+            session_key: `session-${i + 1}`,
+          })),
     unavailableMessage: null,
     error: null,
     refreshList: vi.fn(async () => {}),
@@ -63,6 +71,25 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Conversations')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('Open')).toBeInTheDocument();
+  });
+
+  it('shows loading placeholders instead of zeroes while the stats load', () => {
+    renderDashboard({ transcripts: fakeTranscripts(null) });
+    expect(screen.getAllByText('…').length).toBe(2);
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
+  });
+
+  it('renders the assistant count once the store is seeded', () => {
+    useAssistantStore.setState({
+      assistants: [
+        { id: 1, title: 'Support Bot', provider: 'openai', model: 'gpt-4o' },
+      ],
+      assistantsLoaded: true,
+    });
+    renderDashboard({ transcripts: fakeTranscripts(null) });
+    expect(screen.getByText('1')).toBeInTheDocument();
+    // Conversations still pending → placeholder remains.
+    expect(screen.getAllByText('…').length).toBe(1);
   });
 
   it('links to every addon page', () => {
