@@ -92,6 +92,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Webhook_Status_Page' ) ) {
 		 * @return void
 		 */
 		public function register_page() {
+			/**
+			 * Kill-switch for the wp-admin Pro webhook-status surface
+			 * (Proposal 084 Phase 3). The console's Pro Ops page renders the
+			 * webhook-capable connection list over REST; live Telegram
+			 * setWebhook/deleteWebhook calls stay here (network-bound) until a
+			 * POST route wraps them.
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_pro_webhook_status', true ) ) {
+				return;
+			}
+
 			$this->page_hook = add_submenu_page(
 				'nvoos-pro-dashboard',
 				__( 'Webhook Status', 'mcp-ai-wpoos-pro' ),

@@ -43,6 +43,16 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 	 * @return void
 	 */
 	public static function add_diagnostic_page() {
+		/**
+		 * Kill-switch for the wp-admin REST-context diagnostic surface
+		 * (Proposal 084 Phase 3). The Complete Console's Diagnostics page
+		 * ships the consolidated overview; flip this filter off per cohort
+		 * once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_diagnostics_rest_context', true ) ) {
+			return;
+		}
+
 		add_submenu_page(
 			'tools.php',
 			__( 'REST API Context Diagnostic', 'mcp-ai-wpoos' ),

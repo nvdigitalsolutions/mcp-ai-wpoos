@@ -39,6 +39,16 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 	 * @return void
 	 */
 	public function add_menu_page() {
+		/**
+		 * Kill-switch for the wp-admin multi-agent dashboard surface
+		 * (Proposal 084 Phase 3). The console's Orchestration page renders
+		 * the same agent statistics over REST; flip this filter off per
+		 * cohort once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_multi_agent_dashboard', true ) ) {
+			return;
+		}
+
 		add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'Multi-Agent System', 'mcp-ai-wpoos' ),
@@ -362,11 +372,14 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 	}
 
 	/**
-	 * Get agent statistics.
+	 * Collect agent statistics across installed default assistants.
 	 *
-	 * @return array Statistics data.
+	 * Public since 2.4.0 (Proposal 084 Phase 3): the orchestration-stats
+	 * REST controller consumes this shape directly — no logic fork.
+	 *
+	 * @return array Agent statistics.
 	 */
-	protected function get_agent_statistics() {
+	public function get_agent_statistics() {
 		$stats = array(
 			'installed'     => WP_MCP_AI_Default_Assistants::is_installed(),
 			'installation'  => WP_MCP_AI_Default_Assistants::get_installation_info(),

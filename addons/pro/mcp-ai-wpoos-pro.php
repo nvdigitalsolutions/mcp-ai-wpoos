@@ -280,6 +280,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			// Note: Class instantiates itself at the bottom of the file.
 		}
 
+		// Load Pro Ops REST overview (Proposal 084 Phase 3) — groups the four
+		// ops surfaces behind GET /mcp-ai-pro/v1/ops/overview.
+		$pro_ops_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-rest-ops-controller.php';
+		if ( file_exists( $pro_ops_rest ) ) {
+			require_once $pro_ops_rest;
+			WP_MCP_AI_Pro_REST_Ops_Controller::init();
+		}
+
 		// Register Pro export providers for Backup & Restore.
 		add_action(
 			'wp_mcp_ai_register_export_providers',
