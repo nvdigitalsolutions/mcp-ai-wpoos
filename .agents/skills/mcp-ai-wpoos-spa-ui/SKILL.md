@@ -165,7 +165,15 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   **and** `addons/pro/assets/spa-v2/**` (the console embeds spa-v2
   sources) and **prunes build-time files** (`src/`, configs, lockfile)
   from the mirror tree — bundle + serve scripts only. Cross-app SSO with
-  the SA app is a deferred shared-domain-cookie follow-up.
+  the SA app is a deferred shared-domain-cookie follow-up. Independence
+  note (2026-10-20): the console does **not** import
+  `examples/nvoos-pro-spa-vite` — both apps alias
+  `addons/pro/assets/spa-v2/src` directly, and the console wraps the chat
+  surface in its own `ConsoleShell` + `ChatDock` (`src/console/`), so the
+  chat surface ships inside the console bundle. Rebuilding the standalone
+  app alone never changes the live console; every spa-v2 source fix must
+  be compiled into **both** `addons/pro/assets/spa-v2/assets/dist/` and
+  `examples/nvoos-complete-velocity/dist/` (see the rebuild map below).
 
 ## Porting a plugin JS widget into spa-v2 (vendored-upstream pattern)
 
@@ -454,6 +462,8 @@ scope is the whole tree, not one addon. Verified inventory (2026-10-09):
 | Pattern B SPA | `schedule-anything-spa` — `npm run build` (`tsc && vite build`) | |
 | Pattern C SPA | `saas-controller` — `npm run build` (worker esbuild + drift-manifest stamp + wp-scripts admin) | |
 | Legacy pro SPA | `addons/pro/assets/spa` — `npm run build` (wp-scripts webpack → `dist/`) | |
+| spa-v2 plugin bundle | `addons/pro/assets/spa-v2` — `npm run build` | esbuild → **tracked** `assets/dist/pro-spa.js` + `.css` (plugin-served admin SPA) |
+| Complete Console (Velocity) | `examples/nvoos-complete-velocity` — `npm run build` (`tsc --noEmit && vite build`); `npm run sync:dist` = typecheck+build+closure gate | Vite → **tracked** `dist/`; Velocity serves it prebuilt, no build step on the server |
 | npm packages | `packages/nvoos-*` — each has `npm run build` (`adapt-for-npm.cjs`); `nvoos-mcp-bridge` has none by design | loop with a small node script; dist folders are git-tracked |
 | content-graph vendor | `plugins/nvoos-content-graph` — `npm install` then `node scripts/copy-vendor.js` | |
 
@@ -468,6 +478,18 @@ mtimes to confirm a build actually ran. Full run: ~15 min, mostly `npm ci`
 for saas-controller (2k+ deps). npm on dev machines blocks dependency install
 scripts (esbuild postinstall etc.) — harmless, platform binaries ship via
 optional deps.
+
+**Two-bundle rule for spa-v2 (learned 2026-10-20, PR #7158/#7159):** the
+auto `build: update compiled assets [skip ci]` commit covers neither of
+the two spa-v2 trees, so a spa-v2 change reaches production only when
+BOTH `addons/pro/assets/spa-v2/assets/dist/` and
+`examples/nvoos-complete-velocity/dist/` are rebuilt and merged.
+Squash-merging a multi-commit rebuild PR can silently drop the second
+bundle: #7158's squash only carried the plugin bundle, the console
+`dist/` rebuild was left unmerged, and the live Complete Console showed
+none of the fixes until #7159. After any rebuild-PR merge, verify each
+rebuild commit is an ancestor of the target branch
+(`git merge-base --is-ancestor <sha> origin/alpha-working`).
 
 ## TS-shadows-JS resolution gotcha (wp-scripts)
 
