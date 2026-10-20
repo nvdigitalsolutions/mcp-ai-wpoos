@@ -122,6 +122,9 @@
 - [📜 Release History](#-release-history)
 - [📋 Previous Releases](#-previous-releases)
 
+### Sponsor & Support
+- [❤️ Sponsor & Support](#-sponsor--support)
+
 ---
 
 ## 🗺 Repository Map
@@ -3319,6 +3322,27 @@ For security issues, please review our [Security Policy](SECURITY.md) and report
 - **GitHub Repository:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 - **Maintained by:** [NV Digital Solutions](https://nvdigitalsolutions.com/)
 - **License:** GPLv3 or later
+
+---
+
+## ❤️ Sponsor & Support
+
+NV oOS is free and open source, and it stays that way because of the community. If the plugin saves you time or helps your site run more smoothly, here are the ways you can support the project:
+
+### 💖 Financial Support
+
+| Option | Details |
+|--------|---------|
+| **GitHub Sponsors** | Monthly or one-time sponsorship of the NV Digital Solutions organization. Sponsorship directly funds long-term maintenance, documentation, and new features. → [github.com/sponsors/nvdigitalsolutions](https://github.com/sponsors/nvdigitalsolutions) |
+| **NV oOS Pro / Complete** | Buy the commercial Pro addon (or the Complete bundle: base + Pro). It adds ~1,300 tools — multi-agent orchestration, CRM, project management, vault/secret management, and more — on top of the free base plugin. → [nvdigitalsolutions.com/wpoos](https://nvdigitalsolutions.com/wpoos) |
+| **Sponsor button** | The **Sponsor** button on the GitHub repository (powered by [`.github/FUNDING.yml`](.github/FUNDING.yml)) links to the options above. |
+
+### 🙌 Free Ways to Help
+
+- ⭐ **Star the repository** — it helps more people discover the project.
+- 🐛 **Report bugs & request features** — quality issues make the project better; see [Reporting Issues](#reporting-issues).
+- 🤝 **Contribute** — code, docs, tests, or translations; start with [CONTRIBUTING.md](CONTRIBUTING.md).
+- 💬 **Spread the word** — tell other WordPress site owners about NV oOS.
 
 ---
 
