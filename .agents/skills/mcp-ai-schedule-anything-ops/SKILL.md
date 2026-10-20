@@ -1,12 +1,12 @@
 ---
 name: mcp-ai-schedule-anything-ops
-description: Operational guide for the Schedule Anything SaaS surface — the 3-plugin WordPress stack (base + Pro + schedule-anything-platform) and its tenant SPA, the mcp-ai-pro/v1 presets/toolkits REST contract (Proposal 081), the WP 6.9 nonce cookie-auth pitfall and its fix pattern, the sa-e2e Docker harness quirks, the SPA↔REST contract-alignment rules, and the Cloudways Velocity deploy + mirror-sync loop. Use when working on the Schedule Anything SPA or platform plugin, debugging its REST/auth surface, rebuilding its E2E stack, deploying or syncing the Velocity app, or extending presets/toolkits.
+description: Operational guide for the Schedule Anything SaaS surface — the 3-plugin WordPress stack (base + Pro + schedule-anything-platform) and its tenant SPA, the mcp-ai-pro/v1 presets/toolkits/sa-tools REST contract (Proposal 081), the WP 6.9 nonce cookie-auth pitfall and its fix pattern, the sa-e2e Docker harness quirks, the SPA↔REST contract-alignment rules, the Cloudways Velocity deploy + mirror-sync loop for both Velocity apps (schedule-anything + Complete Console on console.nvoos.cloud), and the Complete-bundle zip build/verify/staleness loop. Use when working on the Schedule Anything SPA or platform plugin, debugging its REST/auth surface, rebuilding its E2E stack, deploying or syncing a Velocity app, extending presets/toolkits, or diagnosing a 404 on a new SPA-consumed route (e.g. sa-tools).
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.8"
   plugin-version-tested: "1.2.8"
-  last-updated: "2026-10-19"
+  last-updated: "2026-10-20"
 ---
 
 # Schedule Anything SaaS — Operational Guide
@@ -68,6 +68,7 @@ registered in `addons/pro/includes/class-wp-mcp-ai-pro-module-registry.php`.
 |---|---|
 | `GET /mcp-ai-pro/v1/toolkits` | `{ ok, toolkits: [{slug, flag_key, enabled}] }` — via `SA_Toolkit_Manager` (platform plugin); empty list without the platform |
 | `POST /mcp-ai-pro/v1/toolkits/{slug}/toggle` | `{ enabled }` body; unknown slug 404, tier-locked → 403 `sa_toolkit_not_entitled` (server-side entitlements — the SPA never decides) |
+| `GET /mcp-ai-pro/v1/sa-tools` | `{ ok, tools: [{slug, name, description, group, group_label}] }` — live-tool-registry light rows for the visual builder palette (#7147, since 1.2.8); args `search`/`group`/`page`/`per_page` (max 100); registers **unconditionally** (works without the platform plugin) |
 | `GET /mcp-ai-pro/v1/presets` | `{ ok, presets, total }`; search/category/toolkit/page/per_page |
 | `GET /mcp-ai-pro/v1/presets/{id}` | 404 `sa_preset_not_found` |
 | `POST /mcp-ai-pro/v1/presets/{id}/install` | idempotent: key `preset:{id}:h{sha256(overrides)}` in option `wp_mcp_ai_sa_installs`; replay returns the original schedule with `replayed: true` |
@@ -158,6 +159,37 @@ MSYS_NO_PATHCONV=1 docker run --rm --network sa-e2e-net -v sa-e2e-core:/var/www/
 - Clean up after every test run: DELETE created schedules via REST and delete
   the `wp_mcp_ai_sa_installs` option — the shared stack must stay clean.
 
+### Built-zip verification in a throwaway stack (cross-worktree)
+
+When the release zip itself is the deliverable (e.g. proving a Complete
+bundle zip contains a route), install it in a **fresh** stack instead of
+reusing sa-e2e — its bind mounts declare the same functions, so installing
+a bundle zip alongside would collide:
+
+- Containers: `mariadb:10.11` + `wordpress:6.9-php8.3-apache` with
+  `-v <vol>:/var/www/html -e WORDPRESS_SKIP_INSTALL=1` (same image as
+  sa-e2e-wp) + `wordpress:cli-php8.3` one-off runners on a dedicated
+  network. Run `wp core install` via the cli runner.
+- Get the zip into the shared volume with
+  `docker cp <zip> <wp-container>:/var/www/html/` — host-path
+  `-v F:/…:/build` mounts are unreliable on this box (install fails with a
+  misleading "plugin could not be found").
+- The cli image runs as uid 82 (www-data) while the wp image owns the
+  volume as uid 33 → add `--user root` (plus `--allow-root`) to cli runs,
+  or wp-cli cannot create `wp-content/upgrade`.
+- `wp config set WP_MEMORY_LIMIT 512M --type=constant` first — the bundle's
+  tool classes fatally exhaust the image's 128M default during plugin load.
+- `wp rewrite structure "/%postname%/"` — with plain permalinks `/wp-json/*`
+  serves HTML instead of routing (production has pretty permalinks).
+- REST URLs 301 to their trailing-slash canonical form — probe with
+  `curl -sL` (a missing route stays a hard 404; a 301→200 proves the route
+  exists).
+- `MSYS_NO_PATHCONV=1` on **every** `docker run`/`docker exec` (even plain
+  `ls`: `/var/www/html` gets mangled to `C:/Program Files/Git/...`), and
+  `docker exec` does not glob-expand — use `sh -c "ls /var/www/html/"`.
+- Tear down after: `docker rm -f` both containers, then `docker network rm`
+  + `docker volume rm` the throwaway resources.
+
 ## 5. SPA ↔ REST contract-alignment rules (Builder/presets)
 
 - The manager's cron cadence is `$data['schedule']` (a **registered cron
@@ -214,6 +246,41 @@ MSYS_NO_PATHCONV=1 docker run --rm --network sa-e2e-net -v sa-e2e-core:/var/www/
   Merges touching only `addons/schedule-anything-spa/**` or workflows do NOT
   trigger the sync (path filter) — dispatch manually if needed.
 
+### Complete Console (`console.nvoos.cloud`) — mirror + WP backend
+
+Second Velocity app in the same family, serving the NV oOS **Complete
+Console** SPA (compiled from `addons/pro/assets/spa-v2/` — not the SA
+addon SPA):
+
+- Mirror repo **`nvdigitalsolutions/nvoos-complete-velocity`** (flat,
+  force-push), assembled from `examples/nvoos-complete-velocity/` by
+  `sync-nvoos-complete-velocity.yml`. Triggers: pushes to main/alpha-working
+  touching `examples/nvoos-complete-velocity/**` **or
+  `addons/pro/assets/spa-v2/**`** (the console compiles spa-v2 in at
+  monorepo build time — a spa-v2 change must redeploy the console or it
+  serves stale code) + workflow_dispatch. Secret:
+  `NVOOS_COMPLETE_VELOCITY_REPO_TOKEN`. Ships at the repo ROOT (entry
+  `server.js` → `scripts/serve.mjs`), no build command, env
+  `NVOOS_TARGET_SITE=<complete-bundle-wordpress-site>`.
+- The app proxies `/wp-json`, `/wp-admin`, `/wp-login.php` and
+  `/wp-includes` to `NVOOS_TARGET_SITE` (cookie-auth mode — same-origin
+  cookies + the wp_rest nonce handshake; the login page is re-scoped to the
+  app origin). The target site runs the **Complete bundle**
+  (`nvdigital-open-operator-system-oos-complete`), not the standalone
+  base/pro pair — the console app needs only the bundle (the
+  `schedule-anything-platform` plugin serves the SA tenant SPA and is not
+  part of this app's backend). Any SPA-consumed Pro route must therefore
+  ship in the complete zip. Never point `NVOOS_TARGET_SITE` at a URL you
+  do not control — the proxy forwards cookies for those prefixes.
+- **Failure class "SPA ahead of the bundle"**: the SPA redeploys calling a
+  newer route while the installed bundle predates it → that one route 404s
+  while sibling routes still answer. Probe ladder (unauthenticated):
+  `GET /wp-json/mcp-ai-pro/v1/sa-tools` → **404 = route missing (bundle
+  stale)**; `toolkits`/`presets` → **403 = routes exist, auth-gated**;
+  `GET /wp-json/nvoos-saas/v1/auth/nonce` → **200 = platform plugin
+  present**. Fix = deploy a bundle zip containing the route; verify
+  freshness before deploying (see §7).
+
 ## 7. Release bookkeeping
 
 - Platform plugin zip: `bin/build-addon-zips.sh` step 13 (PHP-only).
@@ -225,6 +292,30 @@ MSYS_NO_PATHCONV=1 docker run --rm --network sa-e2e-net -v sa-e2e-core:/var/www/
   (`assets/dist/assets/index-*.js`, 150 KB gzip limit for this SPA).
 - Presets/toolkits REST routes are NOT MCP tools — no registry surfaces;
   CHANGELOG + proposal docs only.
+- **`build/*.zip` are git-tracked** — they are committed release artifacts,
+  not throwaway output. CI (`build-assets.yml`) rebuilds the wp.org-slug
+  `nvdigital-open-operator-system-oos-*` zips on main/alpha-working/release
+  merges, so a "stale zip" claim must be re-verified against the current
+  HEAD before rebuilding:
+  `unzip -p build/nvdigital-open-operator-system-oos-complete-1.2.8.zip "nvdigital-open-operator-system-oos-complete/addons/pro/includes/rest/class-wp-mcp-ai-pro-sa-rest-controller.php" | grep -c "sa-tools"`
+  must be > 0 (2 in the 1.2.8 build: registration + docblock). In the
+  complete zip the Pro controller ships at `addons/pro/includes/rest/` — it
+  is NOT flattened into `includes/rest/`. The repo-slug
+  `mcp-ai-wpoos-pro-*.zip` can lag its wp.org-slug sibling (per-slug CI
+  coverage — seen 2026-10-20: repo-slug 0 hits vs wp.org-slug 2).
+- **Rebuilding zips on this Windows box**: the native Git Bash `rsync.exe`
+  is broken (`msys-xxhash-0.dll` missing → exit 127) and
+  `build-plugin-zip.sh` has no WSL fallback (only
+  `build-wordpress-org-from-base.sh` re-execs via WSL) → run the whole
+  build in WSL:
+  `wsl -e bash -c "cd /mnt/f/GITHUB/mcp-ai-wpoos && bash bin/build-plugin-zip.sh --base --pro --combined --core-only --wp-org"`
+  (WSL has php 8.3 / composer / node / zip / unzip / rsync). `--combined`
+  alone is NOT enough for the `nvdigital-…-complete` zip: the wp.org
+  transform runs under `set -e` and aborts if any of its four input zips
+  (base/pro/combined/core) is missing. Build inside
+  `git worktree add --detach <path> <commit>` so `composer install
+  --no-dev` + `npm ci && npm run build:full` churn stays out of the main
+  tree.
 
 ## 8. Single-site (sole tenant) mode (Proposal 082, platform 0.1.1+)
 
