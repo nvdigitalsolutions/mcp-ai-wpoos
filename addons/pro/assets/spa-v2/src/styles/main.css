@@ -1478,9 +1478,9 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-settings-form__section {
 	margin-bottom: 24px;
 	padding: 20px;
-	background: #f9f9f9;
+	background: var(--nvoos-bg-secondary, #fff);
 	border-radius: 8px;
-	border: 1px solid #f0f0f1;
+	border: 1px solid var(--nvoos-border, #dcdcde);
 }
 
 .nvoos-pro-spa-settings-form__section-title {
@@ -1509,6 +1509,8 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-family: inherit;
 	box-sizing: border-box;
 	max-width: 480px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
 }
 
 .nvoos-pro-spa-settings-form__input--password {
@@ -1527,16 +1529,16 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	gap: 8px;
 }
 
-/* Unavailable state — the connected site does not expose a settings REST
-   route (mcp-ai/v1/settings is not implemented yet), so the page points the
-   user at the WordPress admin instead of failing a request. */
+/* Unavailable state — shown on installs that predate the mcp-ai/v1/settings
+   REST route; the page points the user at the WordPress admin instead of
+   failing a request. */
 .nvoos-pro-spa-settings-page__unavailable {
 	margin: 24px 0;
 	padding: 16px;
-	border: 1px dashed var( --nds-color-border, #c3c4c7 );
+	border: 1px dashed var(--nvoos-border, #c3c4c7);
 	border-radius: 4px;
-	background: var( --nds-color-surface, #fff );
-	color: var( --nds-color-text-primary, #1d2327 );
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1d2327);
 }
 
 .nvoos-pro-spa-settings-page__unavailable p {
@@ -4795,6 +4797,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	box-sizing: border-box;
 	max-width: 480px;
 	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
 }
 
 .nvoos-pro-spa-settings-form__field--checkbox {
