@@ -42,10 +42,27 @@ const QUICK_ACTIONS: QuickAction[] = [
   { title: 'Settings', description: 'Configure the console', to: '/settings', icon: '⚙️' },
 ];
 
+/**
+ * Inline placeholder shown inside a stat card while its value loads — an
+ * ellipsis with a subtle pulse, so "0" never flashes before real data lands.
+ */
+function LoadingDash(): JSX.Element {
+  return (
+    <span className="nvoos-console-stat__loading" role="status" aria-label="Loading">
+      <span aria-hidden="true">…</span>
+    </span>
+  );
+}
+
 export function DashboardPage(props: DashboardPageProps): JSX.Element {
   const { transcripts, user, dockOpen, onToggleDock } = props;
 
   const assistants = useAssistantStore((s) => s.assistants);
+  // The console seeds the assistant store asynchronously (ChatSidebar fetch),
+  // so a bare `assistants.length` would flash 0 while that fetch runs.
+  const assistantsLoaded = useAssistantStore((s) => s.assistantsLoaded);
+  // `sessions` is null until the transcript list has loaded.
+  const sessionsLoading = transcripts.sessions === null;
   const sessionCount = transcripts.sessions?.length ?? 0;
 
   return (
@@ -67,13 +84,13 @@ export function DashboardPage(props: DashboardPageProps): JSX.Element {
         <div className="nvoos-console-card nvoos-console-stat">
           <p className="nvoos-console-stat__label">Assistants</p>
           <p className="nvoos-console-stat__value nvoos-console-stat__value--accent">
-            {assistants.length}
+            {assistantsLoaded ? assistants.length : <LoadingDash />}
           </p>
         </div>
         <div className="nvoos-console-card nvoos-console-stat">
           <p className="nvoos-console-stat__label">Conversations</p>
           <p className="nvoos-console-stat__value nvoos-console-stat__value--green">
-            {sessionCount}
+            {sessionsLoading ? <LoadingDash /> : sessionCount}
           </p>
         </div>
         <div className="nvoos-console-card nvoos-console-stat">

@@ -27,7 +27,10 @@ export function useSettings( options: UseSettingsOptions ): UseSettingsReturn {
 	);
 
 	const [ settings, setSettings ] = useState< PluginSettings | null >( null );
-	const [ loading, setLoading ] = useState< boolean >( false );
+	// Start in the loading state — the first fetch kicks off in an effect
+	// (after first paint); without this the form renders with blank fields
+	// (and a save would overwrite them) until the fetch actually starts.
+	const [ loading, setLoading ] = useState< boolean >( true );
 	const [ error, setError ] = useState< string | null >( null );
 	const addToast = useUIStore( ( s ) => s.addToast );
 
@@ -56,8 +59,14 @@ export function useSettings( options: UseSettingsOptions ): UseSettingsReturn {
 	}, [ client, unavailable ] );
 
 	useEffect( () => {
+		if ( unavailable ) {
+			// Runtime not ready yet — nothing to fetch; stop blocking the page
+			// so the bootstrap/runtime gate can render instead of a spinner.
+			setLoading( false );
+			return;
+		}
 		void fetchSettings();
-	}, [ fetchSettings ] );
+	}, [ fetchSettings, unavailable ] );
 
 	const updateSettings = useCallback(
 		async ( changes: Partial< PluginSettings > ): Promise< PluginSettings | null > => {

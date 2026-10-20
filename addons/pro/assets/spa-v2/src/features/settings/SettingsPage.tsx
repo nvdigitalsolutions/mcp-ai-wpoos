@@ -77,7 +77,7 @@ function mapFormToSettings(
 }
 
 export function SettingsPage(): JSX.Element {
-	const { runtime } = useBootstrap();
+	const { runtime, loading: bootstrapLoading } = useBootstrap();
 	const { settings, loading, error, unavailable, fetchSettings, updateSettings } =
 		useSettings(
 			runtime
@@ -123,6 +123,26 @@ export function SettingsPage(): JSX.Element {
 		setForm( mapSettingsToForm( settings ) );
 		setDirty( false );
 	}, [ settings ] );
+
+	// While the bootstrap is still reading the runtime config, show the
+	// loading UI — showing the runtime-error state here would flash an
+	// alarming message before the config is even read.
+	if ( bootstrapLoading ) {
+		return (
+			<div
+				className="nvoos-pro-spa-page nvoos-pro-spa-page--loading"
+				aria-busy="true"
+			>
+				<h2 className="nvoos-pro-spa-page__title">
+					{ __( 'Settings', 'nvoos-pro-spa' ) }
+				</h2>
+				<div className="nvoos-pro-spa-page__loader" role="status">
+					<span className="nvoos-pro-spa-page__spinner" />
+					{ __( 'Loading settings…', 'nvoos-pro-spa' ) }
+				</div>
+			</div>
+		);
+	}
 
 	if ( ! runtime ) {
 		return (

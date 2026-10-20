@@ -15,7 +15,7 @@ import { useBootstrap } from '../../hooks/useBootstrap';
 type SortKey = 'name' | 'category' | 'capability';
 
 export function ToolsPage(): JSX.Element {
-	const { runtime } = useBootstrap();
+	const { runtime, loading: bootstrapLoading } = useBootstrap();
 
 	const { tools, loading, error, fetchTools } = useTools(
 		runtime
@@ -68,6 +68,26 @@ export function ToolsPage(): JSX.Element {
 
 		return result;
 	}, [ tools, search, categoryFilter, sortBy ] );
+
+	// While the bootstrap is still reading the runtime config, show the
+	// loading UI — showing the runtime-error state here would flash an
+	// alarming message before the config is even read.
+	if ( bootstrapLoading ) {
+		return (
+			<div
+				className="nvoos-pro-spa-page nvoos-pro-spa-page--loading"
+				aria-busy="true"
+			>
+				<h2 className="nvoos-pro-spa-page__title">
+					{ __( 'Tools', 'nvoos-pro-spa' ) }
+				</h2>
+				<div className="nvoos-pro-spa-page__loader" role="status">
+					<span className="nvoos-pro-spa-page__spinner" />
+					{ __( 'Loading tools…', 'nvoos-pro-spa' ) }
+				</div>
+			</div>
+		);
+	}
 
 	if ( ! runtime ) {
 		return (
