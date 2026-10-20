@@ -41,6 +41,15 @@ class WP_MCP_AI_Admin_Workflow_Triggers {
 	 * @return void
 	 */
 	public function add_menu_page() {
+		/**
+		 * Kill-switch for the wp-admin workflow-triggers surface (Proposal 084
+		 * Phase 1). The Complete Console ships the equivalent page; flip this
+		 * filter off per cohort once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_workflow_triggers', true ) ) {
+			return;
+		}
+
 		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'Workflow Triggers', 'mcp-ai-wpoos' ),

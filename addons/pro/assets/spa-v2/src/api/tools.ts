@@ -78,10 +78,17 @@ export class ToolsClient {
 	 * `inputSchema`) plus catalogue fields. Map it onto the page's
 	 * ToolDefinition and fall back to the legacy
 	 * `{ success, data: { tools } }` envelope for older installs.
+	 *
+	 * @param assistantId — Optional assistant post ID; the server scopes the
+	 * list to that assistant's selected tools (omitted = the full registry).
+	 * @param signal      — AbortSignal for cancellation.
 	 */
-	async list( signal?: AbortSignal ): Promise< ToolsListResponse > {
+	async list( assistantId?: number, signal?: AbortSignal ): Promise< ToolsListResponse > {
 		const url = new URL( this.endpoint, window.location.origin );
 		url.searchParams.set( 'per_page', '200' );
+		if ( assistantId && assistantId > 0 ) {
+			url.searchParams.set( 'assistant_id', String( assistantId ) );
+		}
 		const data = await this.request< {
 			success?: boolean;
 			tools?: ServerToolListItem[];

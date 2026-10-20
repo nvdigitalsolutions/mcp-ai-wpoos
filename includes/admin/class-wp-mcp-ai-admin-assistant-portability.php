@@ -328,6 +328,15 @@ class WP_MCP_AI_Admin_Assistant_Portability {
 	 * @return void
 	 */
 	public static function register_menu_page() {
+		/**
+		 * Kill-switch for the wp-admin portability surface (Proposal 084
+		 * Phase 1). The Complete Console ships the Portability page; flip this
+		 * filter off per cohort once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_portability', true ) ) {
+			return;
+		}
+
 		add_submenu_page(
 			'edit.php?post_type=mcp_ai_assistant',
 			__( 'Import / Export Assistants', 'mcp-ai-wpoos' ),
