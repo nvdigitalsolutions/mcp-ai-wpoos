@@ -29,6 +29,17 @@ const KnowledgeGraphPage = lazy( () => import( './features/knowledge-graph/Knowl
 const DocsPage = lazy( () => import( './features/docs-hub/DocsPage' ).then( ( m ) => ( { default: m.DocsPage } ) ) );
 const MediaStudioPage = lazy( () => import( './features/media-studio/MediaStudioPage' ).then( ( m ) => ( { default: m.MediaStudioPage } ) ) );
 const DocumentEditorPage = lazy( () => import( './features/document-editor/DocumentEditorPage' ).then( ( m ) => ( { default: m.DocumentEditorPage } ) ) );
+const ApprovalsPage = lazy( () => import( './features/approvals/ApprovalsPage' ).then( ( m ) => ( { default: m.ApprovalsPage } ) ) );
+const SlashCommandsPage = lazy( () => import( './features/slash-commands/SlashCommandsPage' ).then( ( m ) => ( { default: m.SlashCommandsPage } ) ) );
+const TriggersPage = lazy( () => import( './features/triggers/TriggersPage' ).then( ( m ) => ( { default: m.TriggersPage } ) ) );
+const TeamsPage = lazy( () => import( './features/teams/TeamsPage' ).then( ( m ) => ( { default: m.TeamsPage } ) ) );
+const PortabilityPage = lazy( () => import( './features/portability/PortabilityPage' ).then( ( m ) => ( { default: m.PortabilityPage } ) ) );
+const SecurityCenterPage = lazy( () => import( './features/security-center/SecurityCenterPage' ).then( ( m ) => ( { default: m.SecurityCenterPage } ) ) );
+const OperationsPage = lazy( () => import( './features/operations/OperationsPage' ).then( ( m ) => ( { default: m.OperationsPage } ) ) );
+const DiagnosticsPage = lazy( () => import( './features/diagnostics/DiagnosticsPage' ).then( ( m ) => ( { default: m.DiagnosticsPage } ) ) );
+const TokenManagerPage = lazy( () => import( './features/token-manager/TokenManagerPage' ).then( ( m ) => ( { default: m.TokenManagerPage } ) ) );
+const OrchestrationStatsPage = lazy( () => import( './features/orchestration-stats/OrchestrationStatsPage' ).then( ( m ) => ( { default: m.OrchestrationStatsPage } ) ) );
+const ProOpsPage = lazy( () => import( './features/pro-ops/ProOpsPage' ).then( ( m ) => ( { default: m.ProOpsPage } ) ) );
 
 export interface AppRouterProps {
 	/** Shared transcript hook result from Layout. */
@@ -61,6 +72,17 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/docs" element={ <DocsPage /> } />
 				<Route path="/media" element={ <MediaStudioPage /> } />
 				<Route path="/documents" element={ <DocumentEditorPage /> } />
+				<Route path="/approvals" element={ <ApprovalsPage /> } />
+				<Route path="/slash-commands" element={ <SlashCommandsPage /> } />
+				<Route path="/triggers" element={ <TriggersPage /> } />
+				<Route path="/teams" element={ <TeamsPage /> } />
+				<Route path="/portability" element={ <PortabilityPage /> } />
+				<Route path="/security-center" element={ <SecurityCenterPage /> } />
+				<Route path="/operations" element={ <OperationsPage /> } />
+				<Route path="/diagnostics" element={ <DiagnosticsPage /> } />
+				<Route path="/token-manager" element={ <TokenManagerPage /> } />
+				<Route path="/orchestration-stats" element={ <OrchestrationStatsPage /> } />
+				<Route path="/pro-ops" element={ <ProOpsPage /> } />
 				<Route path="*" element={ <Navigate to="/chat" replace /> } />
 			</Routes>
 		</Suspense>

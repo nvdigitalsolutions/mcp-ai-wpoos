@@ -4682,6 +4682,143 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-size: 14px;
 }
 
+.nvoos-pro-spa-tools-page__pager {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	padding: 12px 0;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-tools-page__pager-label {
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+/* =========================================================================
+   Diagnostics page (2.4.0 — Proposal 084 Phase 3)
+   ========================================================================= */
+
+.nvoos-pro-spa-diagnostics__grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 320px, 1fr ) );
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.nvoos-pro-spa-diagnostics__card {
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-diagnostics__card--standalone {
+	margin-top: 16px;
+}
+
+.nvoos-pro-spa-diagnostics__card-title {
+	margin: 0 0 12px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-diagnostics__muted {
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-diagnostics__badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+	vertical-align: middle;
+}
+
+.nvoos-pro-spa-diagnostics__badge--ok {
+	background: rgba( 0, 170, 102, 0.12 );
+	color: #007a4d;
+}
+
+.nvoos-pro-spa-diagnostics__badge--warning {
+	background: rgba( 217, 119, 6, 0.12 );
+	color: #9a5b00;
+}
+
+.nvoos-pro-spa-diagnostics__badge--error {
+	background: rgba( 214, 54, 56, 0.12 );
+	color: #b32d2e;
+}
+
+/* =========================================================================
+   Token Manager page (2.4.0 — Proposal 084 Phase 3)
+   ========================================================================= */
+
+.nvoos-pro-spa-token-manager__stats {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 16px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-token-manager__stat {
+	flex: 1;
+	min-width: 120px;
+	padding: 14px 16px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-token-manager__stat-label {
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-bottom: 4px;
+}
+
+.nvoos-pro-spa-token-manager__stat-value {
+	font-size: 24px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-token-manager__action {
+	padding: 4px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	cursor: pointer;
+	font-size: 13px;
+	font-family: inherit;
+	margin-right: 6px;
+}
+
+.nvoos-pro-spa-token-manager__action:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-token-manager__action--danger {
+	color: #b32d2e;
+	border-color: rgba( 179, 45, 46, 0.4 );
+}
+
+.nvoos-pro-spa-token-manager__action--danger:hover {
+	background: rgba( 179, 45, 46, 0.06 );
+}
+
+.nvoos-pro-spa-token-manager__action:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
 .nvoos-pro-spa-tools-page__footer {
 	margin-top: 16px;
 	padding: 8px 0;

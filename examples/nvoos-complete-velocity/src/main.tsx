@@ -22,6 +22,7 @@ import './shell.css';
 import {
   buildConsoleRuntime,
   fetchCurrentUser,
+  fetchFeatureMap,
   fetchSessionNonce,
 } from './runtime-config';
 import { installFetchWrapper } from './fetch-wrapper';
@@ -60,11 +61,13 @@ function Console(): JSX.Element {
 
         const nonce = await fetchSessionNonce();
         const user = await fetchCurrentUser(nonce);
+        // Feature map fails open — never block boot on optional surfaces.
+        const features = await fetchFeatureMap(nonce);
         if (cancelled) {
           return;
         }
 
-        window.NVOOS_PRO_SPA = buildConsoleRuntime({ nonce, user });
+        window.NVOOS_PRO_SPA = buildConsoleRuntime({ nonce, user, features });
         setBoot({ phase: 'ready' });
       } catch (error) {
         if (!cancelled) {

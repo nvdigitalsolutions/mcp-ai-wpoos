@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildConsoleRuntime,
   fetchCurrentUser,
+  fetchFeatureMap,
   fetchSessionNonce,
 } from '../runtime-config';
 
@@ -41,6 +42,38 @@ describe('buildConsoleRuntime', () => {
   it('defaults assistantId to 0 (selector)', () => {
     const runtime = buildConsoleRuntime();
     expect(runtime.config?.assistantId).toBe(0);
+  });
+
+  it('fails open — optional endpoints stay set without a feature map', () => {
+    const runtime = buildConsoleRuntime();
+    expect(runtime.endpoints.docsHub).not.toBe('');
+    expect(runtime.endpoints.contentGraph).not.toBe('');
+    expect(runtime.endpoints.mediaStudio).not.toBe('');
+    expect(runtime.endpoints.documentEditor).not.toBe('');
+  });
+
+  it('empties optional endpoints the server reports unavailable', () => {
+    const runtime = buildConsoleRuntime({
+      features: {
+        docs_hub: false,
+        knowledge_graph: false,
+        media_studio: false,
+        document_editor: false,
+      },
+    });
+    expect(runtime.endpoints.docsHub).toBe('');
+    expect(runtime.endpoints.contentGraph).toBe('');
+    expect(runtime.endpoints.mediaStudio).toBe('');
+    expect(runtime.endpoints.documentEditor).toBe('');
+  });
+
+  it('keeps available surfaces wired when the map says so', () => {
+    const runtime = buildConsoleRuntime({
+      features: { docs_hub: true, knowledge_graph: true },
+    });
+    expect(runtime.endpoints.docsHub).not.toBe('');
+    expect(runtime.endpoints.contentGraph).not.toBe('');
+    expect(runtime.features).toEqual({ docs_hub: true, knowledge_graph: true });
   });
 });
 
@@ -91,6 +124,59 @@ describe('fetchSessionNonce', () => {
         ),
     );
     await expect(fetchSessionNonce()).rejects.toThrow(/expected JSON/);
+  });
+});
+
+describe('fetchFeatureMap', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns the server map on success', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({ success: true, data: { features: { docs_hub: false, pro: true } } }),
+      ),
+    );
+    await expect(fetchFeatureMap('nonce')).resolves.toEqual({
+      docs_hub: false,
+      pro: true,
+    });
+  });
+
+  it('fails open to an empty map on HTTP errors', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({ code: 'rest_forbidden' }, 403),
+      ),
+    );
+    await expect(fetchFeatureMap()).resolves.toEqual({});
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('fails open on non-JSON responses', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('<!doctype html>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' },
+        }),
+      ),
+    );
+    await expect(fetchFeatureMap()).resolves.toEqual({});
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('fails open on network errors', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
+    await expect(fetchFeatureMap()).resolves.toEqual({});
+    expect(warn).toHaveBeenCalled();
   });
 });
 

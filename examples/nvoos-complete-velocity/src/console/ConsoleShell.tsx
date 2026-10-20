@@ -34,6 +34,7 @@ import { ToastContainer } from '@nvoos/pro-spa-v2/components/shared/Toast';
 import { ConsoleSidebar } from './ConsoleSidebar';
 import { DashboardPage } from './DashboardPage';
 import { ChatDock } from './ChatDock';
+import { RequireGate, gateForPath } from './nav-features';
 
 // Route-based code splitting, same recipe as spa-v2's router. Each addon is
 // its own page in the SA-format content area.
@@ -76,6 +77,61 @@ const DocumentEditorPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('@nvoos/pro-spa-v2/features/settings/SettingsPage').then((m) => ({
     default: m.SettingsPage,
+  })),
+);
+const ApprovalsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/approvals/ApprovalsPage').then((m) => ({
+    default: m.ApprovalsPage,
+  })),
+);
+const SlashCommandsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/slash-commands/SlashCommandsPage').then((m) => ({
+    default: m.SlashCommandsPage,
+  })),
+);
+const TriggersPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/triggers/TriggersPage').then((m) => ({
+    default: m.TriggersPage,
+  })),
+);
+const TeamsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/teams/TeamsPage').then((m) => ({
+    default: m.TeamsPage,
+  })),
+);
+const PortabilityPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/portability/PortabilityPage').then((m) => ({
+    default: m.PortabilityPage,
+  })),
+);
+const SecurityCenterPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/security-center/SecurityCenterPage').then((m) => ({
+    default: m.SecurityCenterPage,
+  })),
+);
+const OperationsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/operations/OperationsPage').then((m) => ({
+    default: m.OperationsPage,
+  })),
+);
+const DiagnosticsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/diagnostics/DiagnosticsPage').then((m) => ({
+    default: m.DiagnosticsPage,
+  })),
+);
+const TokenManagerPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/token-manager/TokenManagerPage').then((m) => ({
+    default: m.TokenManagerPage,
+  })),
+);
+const OrchestrationStatsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/orchestration-stats/OrchestrationStatsPage').then((m) => ({
+    default: m.OrchestrationStatsPage,
+  })),
+);
+const ProOpsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/pro-ops/ProOpsPage').then((m) => ({
+    default: m.ProOpsPage,
   })),
 );
 
@@ -138,6 +194,9 @@ function ConsoleApp(): JSX.Element {
     config: { assistantId },
     apiUrl,
   } = runtime;
+
+  // Server-reported feature availability — gates nav + optional routes.
+  const features = runtime.features ?? {};
 
   // Same fallback chain as spa-v2's Layout so the transcript hook and the
   // chat transport bind to the same assistant.
@@ -202,6 +261,7 @@ function ConsoleApp(): JSX.Element {
         onToggleDock={toggleDock}
         isChatRoute={isChatRoute}
         user={runtime.user}
+        features={features}
       />
 
       <main className="nvoos-console-content" id="nvoos-console-main-content">
@@ -216,18 +276,228 @@ function ConsoleApp(): JSX.Element {
                     user={runtime.user}
                     dockOpen={dockOpen}
                     onToggleDock={toggleDock}
+                    features={features}
                   />
                 }
               />
               <Route path="/assistants" element={<AssistantsPage />} />
               <Route path="/tools" element={<ToolsPage />} />
-              <Route path="/workflows" element={<WorkflowsPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
-              <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
-              <Route path="/docs" element={<DocsPage />} />
-              <Route path="/media" element={<MediaStudioPage />} />
-              <Route path="/documents" element={<DocumentEditorPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
+              <Route
+                path="/workflows"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/workflows')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <WorkflowsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/analytics')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <AnalyticsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/knowledge-graph"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/knowledge-graph')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <KnowledgeGraphPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/docs"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/docs')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <DocsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/media"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/media')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <MediaStudioPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/documents"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/documents')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <DocumentEditorPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/settings')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <SettingsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/approvals"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/approvals')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <ApprovalsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/slash-commands"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/slash-commands')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <SlashCommandsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/triggers"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/triggers')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <TriggersPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/teams"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/teams')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <TeamsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/portability"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/portability')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <PortabilityPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/security-center"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/security-center')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <SecurityCenterPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/operations"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/operations')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <OperationsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/diagnostics"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/diagnostics')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <DiagnosticsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/token-manager"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/token-manager')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <TokenManagerPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/orchestration-stats"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/orchestration-stats')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <OrchestrationStatsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/pro-ops"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/pro-ops')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <ProOpsPage />
+                  </RequireGate>
+                }
+              />
               {/* /chat renders through ChatDock's full-page mode. */}
               <Route path="/chat" element={null} />
               <Route path="*" element={<Navigate to="/" replace />} />

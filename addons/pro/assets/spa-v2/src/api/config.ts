@@ -86,6 +86,24 @@ export interface ProSpaEndpoints {
 	workflows: string;
 	analytics: string;
 	approvals: string;
+	/** Workflow triggers REST base (mcp-ai/v1/orchestration/triggers, 2.4.0). */
+	triggers: string;
+	/** Teams REST base (mcp-ai/v1/teams, 2.4.0). */
+	teams: string;
+	/** Assistant portability REST base (mcp-ai/v1/assistants, 2.4.0). */
+	portability: string;
+	/** Security Center REST base (mcp-ai/v1/security, 2.4.0). */
+	security: string;
+	/** Operations REST base (mcp-ai/v1/operations, 2.4.0). */
+	operations: string;
+	/** Diagnostics REST base (mcp-ai/v1/diagnostics, 2.4.0). */
+	diagnostics: string;
+	/** Token Manager REST base (mcp-ai/v1/token-manager, 2.4.0). */
+	tokenManager: string;
+	/** Orchestration stats REST base (mcp-ai/v1/orchestration/stats, 2.4.0). */
+	orchestrationStats: string;
+	/** Pro ops REST base (mcp-ai-pro/v1/ops, 2.4.0). */
+	proOps: string;
 	shortcuts: string;
 	slashCommands: string;
 	/** OKF Skills & Knowledge browse endpoint (v2.1.1). */
@@ -135,6 +153,12 @@ export interface ProSpaRuntime {
 	assistants?: RuntimeAssistantSummary[];
 	/** Chat profile catalogue (2.2.0). */
 	profiles?: ChatProfileSummary[];
+	/**
+	 * Server-reported feature availability (2.4.0, Proposal 084 Phase 0).
+	 * Maps feature keys (docs_hub, knowledge_graph, …) to booleans; surfaces
+	 * gate their navigation on it. Absent = unknown = fail open.
+	 */
+	features?: Record< string, boolean >;
 }
 
 export interface ProSpaUser {
@@ -232,6 +256,15 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			workflows: typeof e.workflows === 'string' ? e.workflows : '',
 			analytics: typeof e.analytics === 'string' ? e.analytics : '',
 			approvals: typeof e.approvals === 'string' ? e.approvals : '',
+			triggers: typeof e.triggers === 'string' ? e.triggers : '',
+			teams: typeof e.teams === 'string' ? e.teams : '',
+			portability: typeof e.portability === 'string' ? e.portability : '',
+			security: typeof e.security === 'string' ? e.security : '',
+			operations: typeof e.operations === 'string' ? e.operations : '',
+			diagnostics: typeof e.diagnostics === 'string' ? e.diagnostics : '',
+			tokenManager: typeof e.tokenManager === 'string' ? e.tokenManager : '',
+			orchestrationStats: typeof e.orchestrationStats === 'string' ? e.orchestrationStats : '',
+			proOps: typeof e.proOps === 'string' ? e.proOps : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 			okf: typeof e.okf === 'string' ? e.okf : '',
@@ -244,5 +277,9 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 		mentionTypes: Array.isArray( g.mentionTypes ) ? g.mentionTypes : [],
 		assistants: Array.isArray( g.assistants ) ? g.assistants : undefined,
 		profiles: Array.isArray( g.profiles ) ? ( g.profiles as ChatProfileSummary[] ) : undefined,
+		features:
+			g.features && typeof g.features === 'object' && ! Array.isArray( g.features )
+				? ( g.features as Record< string, boolean > )
+				: undefined,
 	};
 }
