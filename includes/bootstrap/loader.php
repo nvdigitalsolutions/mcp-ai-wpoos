@@ -1675,6 +1675,17 @@ add_action(
 		$controller->register_routes();
 	}
 );
+// SPA settings REST surface — the Pro SPA Settings page (GET/POST /settings).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-settings-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-settings-controller.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Settings_Controller();
+		$controller->register_routes();
+	}
+);
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-workflow-cpt-controller.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-workflow-cpt-controller.php';
 }
