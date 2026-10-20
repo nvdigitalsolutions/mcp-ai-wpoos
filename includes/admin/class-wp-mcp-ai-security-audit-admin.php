@@ -38,6 +38,15 @@ class WP_MCP_AI_Security_Audit_Admin {
 	 * @return void
 	 */
 	public function add_admin_page() {
+		/**
+		 * Kill-switch for the wp-admin security-audits surface (Proposal 084
+		 * Phase 1). The Complete Console ships the Security Center page; flip
+		 * this filter off per cohort once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_security_center', true ) ) {
+			return;
+		}
+
 		add_submenu_page(
 			'nvoos-pro-dashboard',
 			__( 'Security Audits Dashboard', 'mcp-ai-wpoos' ),

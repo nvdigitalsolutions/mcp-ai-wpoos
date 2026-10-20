@@ -111,4 +111,38 @@ describe( 'ToolsClient.list', () => {
 		expect( result.tools ).toEqual( [] );
 		expect( result.total ).toBe( 0 );
 	} );
+
+	it( 'scopes the request to an assistant when an id is provided', async () => {
+		let requestedUrl = '';
+		global.fetch = vi.fn( ( input: RequestInfo | URL ) => {
+			requestedUrl = String( input );
+			return Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () => Promise.resolve( { tools: [], total: 0 } ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+
+		const client = new ToolsClient( { endpoint: ENDPOINT, nonce: 'n' } );
+		await client.list( 42 );
+
+		expect( requestedUrl ).toContain( 'assistant_id=42' );
+	} );
+
+	it( 'omits the assistant param when no id is provided', async () => {
+		let requestedUrl = '';
+		global.fetch = vi.fn( ( input: RequestInfo | URL ) => {
+			requestedUrl = String( input );
+			return Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () => Promise.resolve( { tools: [], total: 0 } ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+
+		const client = new ToolsClient( { endpoint: ENDPOINT, nonce: 'n' } );
+		await client.list( 0 );
+
+		expect( requestedUrl ).not.toContain( 'assistant_id' );
+	} );
 } );

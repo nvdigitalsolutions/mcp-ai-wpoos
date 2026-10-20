@@ -1,141 +1,104 @@
 /**
- * SettingsPage — Plugin settings form.
+ * SettingsPage — schema-driven plugin settings form (2.4.0, Proposal 084
+ * Phase 2).
  *
- * Displays and edits plugin settings including API keys for AI providers,
- * model defaults, and logging options. API key fields are masked by default.
- * Uses the useSettings hook and useBootstrap for runtime config.
+ * Renders whatever the server's settings catalogue exposes (GET
+ * /mcp-ai/v1/settings/schema) instead of a hardcoded field list: sections
+ * group into tabs, fields render per type, password fields come back masked
+ * and only round-trip when the user replaces the placeholder. Writes go
+ * through POST /settings/values — the server sanitizes every key against
+ * the schema (unknown keys and out-of-enum selects are rejected server-side).
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import type { JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useSettings } from '../../hooks/useSettings';
 import { useBootstrap } from '../../hooks/useBootstrap';
-import type { PluginSettings } from '../../api/settings';
+import { MASKED_PLACEHOLDER, type SettingsField, type SettingsValues } from '../../api/settings';
 
-interface FormState {
-	openai_api_key: string;
-	google_api_key: string;
-	anthropic_api_key: string;
-	ollama_endpoint: string;
-	default_model: string;
-	default_provider: string;
-	max_tokens: string;
-	temperature: string;
-	enable_logging: boolean;
-}
+type FormValue = string | number | boolean;
 
-const INITIAL_FORM: FormState = {
-	openai_api_key: '',
-	google_api_key: '',
-	anthropic_api_key: '',
-	ollama_endpoint: '',
-	default_model: '',
-	default_provider: 'openai',
-	max_tokens: '4096',
-	temperature: '0.7',
-	enable_logging: false,
-};
-
-function mapSettingsToForm(
-	settings: PluginSettings | null
-): FormState {
-	if ( ! settings ) {
-		return { ...INITIAL_FORM };
+function toFormValue( field: SettingsField, value: unknown ): FormValue {
+	if ( field.type === 'checkbox' ) {
+		return value === true;
 	}
-	return {
-		openai_api_key: settings.openai_api_key ?? '',
-		google_api_key: settings.google_api_key ?? '',
-		anthropic_api_key: settings.anthropic_api_key ?? '',
-		ollama_endpoint: settings.ollama_endpoint ?? '',
-		default_model: settings.default_model ?? '',
-		default_provider: settings.default_provider ?? 'openai',
-		max_tokens: String( settings.max_tokens ?? 4096 ),
-		temperature: String( settings.temperature ?? 0.7 ),
-		enable_logging: settings.enable_logging ?? false,
-	};
-}
-
-function mapFormToSettings(
-	form: FormState
-): Partial< PluginSettings > {
-	return {
-		openai_api_key:
-			form.openai_api_key.trim() || undefined,
-		google_api_key:
-			form.google_api_key.trim() || undefined,
-		anthropic_api_key:
-			form.anthropic_api_key.trim() || undefined,
-		ollama_endpoint:
-			form.ollama_endpoint.trim() || undefined,
-		default_model: form.default_model.trim() || undefined,
-		default_provider: form.default_provider,
-		max_tokens: parseInt( form.max_tokens, 10 ) || 4096,
-		temperature: parseFloat( form.temperature ) || 0.7,
-		enable_logging: form.enable_logging,
-	};
+	if ( field.type === 'number' ) {
+		return typeof value === 'number' ? value : 0;
+	}
+	return typeof value === 'string' ? value : '';
 }
 
 export function SettingsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
-	const { settings, loading, error, unavailable, fetchSettings, updateSettings } =
+	const { schema, fields, values, loading, saving, error, unavailable, fetchSettings, saveSettings } =
 		useSettings(
 			runtime
-				? {
-						endpoint: runtime.endpoints.settings,
-						nonce: runtime.nonce,
-				  }
+				? { endpoint: runtime.endpoints.settings, nonce: runtime.nonce }
 				: { endpoint: '', nonce: '' }
 		);
 
-	const [ form, setForm ] = useState< FormState >( INITIAL_FORM );
-	const [ dirty, setDirty ] = useState< boolean >( false );
-	const [ saving, setSaving ] = useState< boolean >( false );
-	const [ unmaskKeys, setUnmaskKeys ] = useState< boolean >( false );
+	const [ form, setForm ] = useState< Record< string, FormValue > >( {} );
+	const [ dirtyKeys, setDirtyKeys ] = useState< Set< string > >( new Set() );
+	const [ activeTab, setActiveTab ] = useState< string >( '' );
+
+	// Seed the form from the server values once they land.
+	useEffect( () => {
+		const next: Record< string, FormValue > = {};
+		for ( const field of fields ) {
+			if ( field.type === 'hidden' ) {
+				continue;
+			}
+			next[ field.key ] = toFormValue( field, values[ field.key ] ?? field.default );
+		}
+		setForm( next );
+		setDirtyKeys( new Set() );
+	}, [ fields, values ] );
+
+	const tabs = useMemo( () => {
+		const seen: string[] = [];
+		for ( const field of fields ) {
+			if ( ! seen.includes( field.tab ) ) {
+				seen.push( field.tab );
+			}
+		}
+		return seen;
+	}, [ fields ] );
 
 	useEffect( () => {
-		setForm( mapSettingsToForm( settings ) );
-		setDirty( false );
-	}, [ settings ] );
-
-	const handleChange = useCallback(
-		<K extends keyof FormState>(
-			key: K,
-			value: FormState[ K ]
-		) => {
-			setForm( ( prev ) => ( { ...prev, [ key ]: value } ) );
-			setDirty( true );
-		},
-		[]
-	);
-
-	const handleSave = useCallback( async () => {
-		setSaving( true );
-		try {
-			await updateSettings( mapFormToSettings( form ) );
-			setDirty( false );
-		} finally {
-			setSaving( false );
+		if ( ! activeTab && tabs.length > 0 ) {
+			setActiveTab( tabs[ 0 ] );
 		}
-	}, [ form, updateSettings ] );
+	}, [ tabs, activeTab ] );
 
-	const handleReset = useCallback( () => {
-		setForm( mapSettingsToForm( settings ) );
-		setDirty( false );
-	}, [ settings ] );
+	const setField = ( key: string, value: FormValue ): void => {
+		setForm( ( prev ) => ( { ...prev, [ key ]: value } ) );
+		setDirtyKeys( ( prev ) => new Set( prev ).add( key ) );
+	};
 
-	// While the bootstrap is still reading the runtime config, show the
-	// loading UI — showing the runtime-error state here would flash an
-	// alarming message before the config is even read.
-	if ( bootstrapLoading ) {
+	const handleSave = async (): Promise< void > => {
+		const changes: SettingsValues = {};
+		for ( const field of fields ) {
+			if ( field.type === 'hidden' || ! dirtyKeys.has( field.key ) ) {
+				continue;
+			}
+			const submitted = form[ field.key ];
+			// A masked placeholder means "keep the stored secret".
+			if ( field.type === 'password' && submitted === MASKED_PLACEHOLDER ) {
+				continue;
+			}
+			changes[ field.key ] = submitted;
+		}
+		if ( Object.keys( changes ).length === 0 ) {
+			return;
+		}
+		await saveSettings( changes );
+		setDirtyKeys( new Set() );
+	};
+
+	if ( bootstrapLoading || loading ) {
 		return (
-			<div
-				className="nvoos-pro-spa-page nvoos-pro-spa-page--loading"
-				aria-busy="true"
-			>
-				<h2 className="nvoos-pro-spa-page__title">
-					{ __( 'Settings', 'nvoos-pro-spa' ) }
-				</h2>
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--loading" aria-busy="true">
+				<h2 className="nvoos-pro-spa-page__title">{ __( 'Settings', 'nvoos-pro-spa' ) }</h2>
 				<div className="nvoos-pro-spa-page__loader" role="status">
 					<span className="nvoos-pro-spa-page__spinner" />
 					{ __( 'Loading settings…', 'nvoos-pro-spa' ) }
@@ -146,16 +109,22 @@ export function SettingsPage(): JSX.Element {
 
 	if ( ! runtime ) {
 		return (
-			<div
-				className="nvoos-pro-spa-page nvoos-pro-spa-page--error"
-				role="alert"
-			>
-				<h2 className="nvoos-pro-spa-page__title">
-					{ __( 'Settings', 'nvoos-pro-spa' ) }
-				</h2>
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--error" role="alert">
+				<h2 className="nvoos-pro-spa-page__title">{ __( 'Settings', 'nvoos-pro-spa' ) }</h2>
+				<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">
+					{ __( 'Runtime configuration not available. Please reload the page.', 'nvoos-pro-spa' ) }
+				</p>
+			</div>
+		);
+	}
+
+	if ( unavailable && ! loading ) {
+		return (
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--error" role="alert">
+				<h2 className="nvoos-pro-spa-page__title">{ __( 'Settings', 'nvoos-pro-spa' ) }</h2>
 				<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">
 					{ __(
-						'Runtime configuration not available. Please reload the page.',
+						'The settings catalogue is unavailable on this site.',
 						'nvoos-pro-spa'
 					) }
 				</p>
@@ -163,422 +132,196 @@ export function SettingsPage(): JSX.Element {
 		);
 	}
 
-	if ( loading ) {
-		return (
-			<div
-				className="nvoos-pro-spa-page nvoos-pro-spa-page--loading"
-				aria-busy="true"
-			>
-				<h2 className="nvoos-pro-spa-page__title">
-					{ __( 'Settings', 'nvoos-pro-spa' ) }
-				</h2>
-				<div className="nvoos-pro-spa-page__loader" role="status">
-					<span className="nvoos-pro-spa-page__spinner" />
-					{ __( 'Loading settings…', 'nvoos-pro-spa' ) }
-				</div>
-			</div>
-		);
-	}
-
-	if ( unavailable ) {
-		return (
-			<div className="nvoos-pro-spa-page nvoos-pro-spa-settings-page">
-				<header className="nvoos-pro-spa-settings-page__header">
-					<h2 className="nvoos-pro-spa-page__title">
-						{ __( 'Settings', 'nvoos-pro-spa' ) }
-					</h2>
-				</header>
-				<div className="nvoos-pro-spa-settings-page__unavailable" role="status">
-					<p>
-						{ __(
-							'The connected WordPress site does not expose the plugin settings REST API.',
-							'nvoos-pro-spa'
-						) }
-					</p>
-					<p>
-						{ __(
-							'Manage API keys and model defaults under Settings → NV oOS in the WordPress admin.',
-							'nvoos-pro-spa'
-						) }
-					</p>
-				</div>
-			</div>
-		);
-	}
-
-	if ( error ) {
-		return (
-			<div
-				className="nvoos-pro-spa-page nvoos-pro-spa-page--error"
-				role="alert"
-			>
-				<h2 className="nvoos-pro-spa-page__title">
-					{ __( 'Settings', 'nvoos-pro-spa' ) }
-				</h2>
-				<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">
-					{ error }
-				</p>
-				<button
-					type="button"
-					className="nvoos-pro-spa-page__retry"
-					onClick={ () => void fetchSettings() }
-				>
-					{ __( 'Retry', 'nvoos-pro-spa' ) }
-				</button>
-			</div>
-		);
-	}
+	const visibleFields = fields.filter( ( field ) => field.tab === activeTab && field.type !== 'hidden' );
 
 	return (
-		<div className="nvoos-pro-spa-page nvoos-pro-spa-settings-page">
-			<header className="nvoos-pro-spa-settings-page__header">
-				<h2 className="nvoos-pro-spa-page__title">
-					{ __( 'Settings', 'nvoos-pro-spa' ) }
-				</h2>
+		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">
+			<header className="nvoos-pro-spa-tools-page__header">
+				<h2 className="nvoos-pro-spa-page__title">{ __( 'Settings', 'nvoos-pro-spa' ) }</h2>
 				<p className="nvoos-pro-spa-page__subtitle">
-					{ __(
-						'Configure API keys and default model behavior for the AI Assistant.',
-						'nvoos-pro-spa'
-					) }
+					{ __( 'Site-wide NV oOS configuration.', 'nvoos-pro-spa' ) }
 				</p>
 			</header>
 
-			<form
-				className="nvoos-pro-spa-settings-form"
-				onSubmit={ ( e ) => {
-					e.preventDefault();
-					void handleSave();
-				} }
-				aria-label={ __(
-					'Plugin settings',
-					'nvoos-pro-spa'
-				) }
-			>
-				<fieldset className="nvoos-pro-spa-settings-form__section">
-					<legend className="nvoos-pro-spa-settings-form__section-title">
-						{ __( 'API Keys', 'nvoos-pro-spa' ) }
-					</legend>
-
-					<div className="nvoos-pro-spa-settings-form__field">
-						<label
-							htmlFor="nvoos-pro-spa-settings-openai-key"
-							className="nvoos-pro-spa-settings-form__label"
-						>
-							{ __(
-								'OpenAI API Key',
-								'nvoos-pro-spa'
-							) }
-						</label>
-						<input
-							id="nvoos-pro-spa-settings-openai-key"
-							type={ unmaskKeys ? 'text' : 'password' }
-							className="nvoos-pro-spa-settings-form__input"
-							value={ form.openai_api_key }
-							onChange={ ( e ) =>
-								handleChange(
-									'openai_api_key',
-									e.target.value
-								)
-							}
-							autoComplete="off"
-							spellCheck={ false }
-						/>
-					</div>
-
-					<div className="nvoos-pro-spa-settings-form__field">
-						<label
-							htmlFor="nvoos-pro-spa-settings-google-key"
-							className="nvoos-pro-spa-settings-form__label"
-						>
-							{ __(
-								'Google API Key (Gemini)',
-								'nvoos-pro-spa'
-							) }
-						</label>
-						<input
-							id="nvoos-pro-spa-settings-google-key"
-							type={ unmaskKeys ? 'text' : 'password' }
-							className="nvoos-pro-spa-settings-form__input"
-							value={ form.google_api_key }
-							onChange={ ( e ) =>
-								handleChange(
-									'google_api_key',
-									e.target.value
-								)
-							}
-							autoComplete="off"
-							spellCheck={ false }
-						/>
-					</div>
-
-					<div className="nvoos-pro-spa-settings-form__field">
-						<label
-							htmlFor="nvoos-pro-spa-settings-anthropic-key"
-							className="nvoos-pro-spa-settings-form__label"
-						>
-							{ __(
-								'Anthropic API Key',
-								'nvoos-pro-spa'
-							) }
-						</label>
-						<input
-							id="nvoos-pro-spa-settings-anthropic-key"
-							type={ unmaskKeys ? 'text' : 'password' }
-							className="nvoos-pro-spa-settings-form__input"
-							value={ form.anthropic_api_key }
-							onChange={ ( e ) =>
-								handleChange(
-									'anthropic_api_key',
-									e.target.value
-								)
-							}
-							autoComplete="off"
-							spellCheck={ false }
-						/>
-					</div>
-
-					<div className="nvoos-pro-spa-settings-form__field">
-						<label
-							htmlFor="nvoos-pro-spa-settings-ollama-url"
-							className="nvoos-pro-spa-settings-form__label"
-						>
-							{ __(
-								'Ollama Endpoint URL',
-								'nvoos-pro-spa'
-							) }
-						</label>
-						<input
-							id="nvoos-pro-spa-settings-ollama-url"
-							type="text"
-							className="nvoos-pro-spa-settings-form__input"
-							value={ form.ollama_endpoint }
-							onChange={ ( e ) =>
-								handleChange(
-									'ollama_endpoint',
-									e.target.value
-								)
-							}
-							placeholder="http://localhost:11434"
-						/>
-					</div>
-
-					<div className="nvoos-pro-spa-settings-form__field">
-						<button
-							type="button"
-							className="nvoos-pro-spa-settings-form__toggle-visibility"
-							onClick={ () =>
-								setUnmaskKeys( ( prev ) => ! prev )
-							}
-							aria-label={
-								unmaskKeys
-									? __(
-											'Hide API keys',
-											'nvoos-pro-spa'
-									  )
-									: __(
-											'Show API keys',
-											'nvoos-pro-spa'
-									  )
-							}
-						>
-							{ unmaskKeys
-								? __(
-										'Hide API keys',
-										'nvoos-pro-spa'
-								  )
-								: __(
-										'Show API keys',
-										'nvoos-pro-spa'
-								  ) }
-						</button>
-					</div>
-				</fieldset>
-
-				<fieldset className="nvoos-pro-spa-settings-form__section">
-					<legend className="nvoos-pro-spa-settings-form__section-title">
-						{ __( 'Model Defaults', 'nvoos-pro-spa' ) }
-					</legend>
-
-					<div className="nvoos-pro-spa-settings-form__row">
-						<div className="nvoos-pro-spa-settings-form__field">
-							<label
-								htmlFor="nvoos-pro-spa-settings-provider"
-								className="nvoos-pro-spa-settings-form__label"
-							>
-								{ __(
-									'Default Provider',
-									'nvoos-pro-spa'
-								) }
-							</label>
-							<select
-								id="nvoos-pro-spa-settings-provider"
-								className="nvoos-pro-spa-settings-form__select"
-								value={ form.default_provider }
-								onChange={ ( e ) =>
-									handleChange(
-										'default_provider',
-										e.target.value
-									)
-								}
-							>
-								<option value="openai">OpenAI</option>
-								<option value="google">
-									Google Gemini
-								</option>
-								<option value="anthropic">
-									Anthropic
-								</option>
-								<option value="ollama">Ollama</option>
-							</select>
-						</div>
-
-						<div className="nvoos-pro-spa-settings-form__field">
-							<label
-								htmlFor="nvoos-pro-spa-settings-model"
-								className="nvoos-pro-spa-settings-form__label"
-							>
-								{ __(
-									'Default Model',
-									'nvoos-pro-spa'
-								) }
-							</label>
-							<input
-								id="nvoos-pro-spa-settings-model"
-								type="text"
-								className="nvoos-pro-spa-settings-form__input"
-								value={ form.default_model }
-								onChange={ ( e ) =>
-									handleChange(
-										'default_model',
-										e.target.value
-									)
-								}
-								placeholder={
-									form.default_provider ===
-									'openai'
-										? 'gpt-4o'
-										: form.default_provider ===
-										  'google'
-										? 'gemini-2.5-flash'
-										: form.default_provider ===
-										  'anthropic'
-										? 'claude-sonnet-4-20250514'
-										: ''
-								}
-							/>
-						</div>
-					</div>
-
-					<div className="nvoos-pro-spa-settings-form__row">
-						<div className="nvoos-pro-spa-settings-form__field">
-							<label
-								htmlFor="nvoos-pro-spa-settings-max-tokens"
-								className="nvoos-pro-spa-settings-form__label"
-							>
-								{ __(
-									'Max Tokens',
-									'nvoos-pro-spa'
-								) }
-							</label>
-							<input
-								id="nvoos-pro-spa-settings-max-tokens"
-								type="number"
-								className="nvoos-pro-spa-settings-form__input"
-								value={ form.max_tokens }
-								onChange={ ( e ) =>
-									handleChange(
-										'max_tokens',
-										e.target.value
-									)
-								}
-								min="1"
-								max="131072"
-							/>
-						</div>
-
-						<div className="nvoos-pro-spa-settings-form__field">
-							<label
-								htmlFor="nvoos-pro-spa-settings-temperature"
-								className="nvoos-pro-spa-settings-form__label"
-							>
-								{ __(
-									'Temperature',
-									'nvoos-pro-spa'
-								) }
-							</label>
-							<input
-								id="nvoos-pro-spa-settings-temperature"
-								type="number"
-								className="nvoos-pro-spa-settings-form__input"
-								value={ form.temperature }
-								onChange={ ( e ) =>
-									handleChange(
-										'temperature',
-										e.target.value
-									)
-								}
-								min="0"
-								max="2"
-								step="0.1"
-							/>
-						</div>
-					</div>
-				</fieldset>
-
-				<fieldset className="nvoos-pro-spa-settings-form__section">
-					<legend className="nvoos-pro-spa-settings-form__section-title">
-						{ __( 'Debugging', 'nvoos-pro-spa' ) }
-					</legend>
-
-					<div className="nvoos-pro-spa-settings-form__field nvoos-pro-spa-settings-form__field--checkbox">
-						<label className="nvoos-pro-spa-settings-form__checkbox-label">
-							<input
-								type="checkbox"
-								className="nvoos-pro-spa-settings-form__checkbox"
-								checked={ form.enable_logging }
-								onChange={ ( e ) =>
-									handleChange(
-										'enable_logging',
-										e.target.checked
-									)
-								}
-							/>
-							<span className="nvoos-pro-spa-settings-form__checkbox-text">
-								{ __(
-									'Enable logging',
-									'nvoos-pro-spa'
-								) }
-							</span>
-						</label>
-						<p className="nvoos-pro-spa-settings-form__help">
-							{ __(
-								'Log API requests, tool executions, and errors for debugging purposes.',
-								'nvoos-pro-spa'
-							) }
-						</p>
-					</div>
-				</fieldset>
-
-				<div className="nvoos-pro-spa-settings-form__actions">
-					<button
-						type="submit"
-						className="nvoos-pro-spa-settings-form__save-btn"
-						disabled={ saving || ! dirty }
-					>
-						{ saving
-							? __( 'Saving…', 'nvoos-pro-spa' )
-							: __( 'Save Settings', 'nvoos-pro-spa' ) }
-					</button>
+			{ error && (
+				<div className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error" role="alert">
+					<p>{ error }</p>
 					<button
 						type="button"
-						className="nvoos-pro-spa-settings-form__reset-btn"
-						onClick={ handleReset }
-						disabled={ saving || ! dirty }
+						className="nvoos-pro-spa-page__retry"
+						onClick={ () => void fetchSettings() }
 					>
-						{ __( 'Reset', 'nvoos-pro-spa' ) }
+						{ __( 'Retry', 'nvoos-pro-spa' ) }
 					</button>
 				</div>
-			</form>
+			) }
+
+			<div className="nvoos-pro-spa-settings__tabs" role="tablist" aria-label={ __( 'Settings tabs', 'nvoos-pro-spa' ) }>
+				{ tabs.map( ( tab ) => (
+					<button
+						key={ tab }
+						type="button"
+						role="tab"
+						aria-selected={ activeTab === tab }
+						className={
+							activeTab === tab
+								? 'nvoos-pro-spa-settings__tab nvoos-pro-spa-settings__tab--active'
+								: 'nvoos-pro-spa-settings__tab'
+						}
+						onClick={ () => setActiveTab( tab ) }
+					>
+						{ schema.tabs[ tab ] ?? tab }
+					</button>
+				) ) }
+			</div>
+
+			{ visibleFields.length === 0 ? (
+				<div className="nvoos-pro-spa-tools-page__empty" role="status">
+					<p>{ __( 'No editable settings in this tab.', 'nvoos-pro-spa' ) }</p>
+				</div>
+			) : (
+				<div className="nvoos-pro-spa-settings__fields">
+					{ visibleFields.map( ( field ) => (
+						<SettingsFieldRow
+							key={ field.key }
+							field={ field }
+							value={ form[ field.key ] ?? toFormValue( field, field.default ) }
+							onChange={ ( value ) => setField( field.key, value ) }
+						/>
+					) ) }
+				</div>
+			) }
+
+			<footer className="nvoos-pro-spa-tools-page__footer">
+				<button
+					type="button"
+					className="nvoos-pro-spa-page__retry"
+					disabled={ saving || dirtyKeys.size === 0 }
+					onClick={ () => void handleSave() }
+				>
+					{ saving ? __( 'Saving…', 'nvoos-pro-spa' ) : __( 'Save settings', 'nvoos-pro-spa' ) }
+				</button>
+				{dirtyKeys.size > 0 && <p>{ __( 'Unsaved changes', 'nvoos-pro-spa' ) }</p>}
+			</footer>
+		</div>
+	);
+}
+
+interface SettingsFieldRowProps {
+	field: SettingsField;
+	value: FormValue;
+	onChange: ( value: FormValue ) => void;
+}
+
+function SettingsFieldRow( { field, value, onChange }: SettingsFieldRowProps ): JSX.Element {
+	const inputId = `nvoos-pro-spa-setting-${ field.key }`;
+
+	let control: JSX.Element;
+	switch ( field.type ) {
+		case 'checkbox':
+			control = (
+				<input
+					id={ inputId }
+					type="checkbox"
+					checked={ value === true }
+					onChange={ ( e ) => onChange( e.target.checked ) }
+				/>
+			);
+			break;
+		case 'select':
+			control = (
+				<select
+					id={ inputId }
+					className="nvoos-pro-spa-tools-page__select"
+					value={ String( value ) }
+					onChange={ ( e ) => onChange( e.target.value ) }
+				>
+					{ Object.entries( field.options ?? {} ).map( ( [ optionValue, optionLabel ] ) => (
+						<option key={ optionValue } value={ optionValue }>
+							{ optionLabel }
+						</option>
+					) ) }
+				</select>
+			);
+			break;
+		case 'number':
+			control = (
+				<input
+					id={ inputId }
+					type="number"
+					className="nvoos-pro-spa-tools-page__input"
+					min={ field.min }
+					max={ field.max }
+					step={ field.step }
+					value={ typeof value === 'number' ? value : '' }
+					onChange={ ( e ) => onChange( parseFloat( e.target.value ) || 0 ) }
+				/>
+			);
+			break;
+		case 'textarea':
+			control = (
+				<textarea
+					id={ inputId }
+					className="nvoos-pro-spa-tools-page__input"
+					rows={ 4 }
+					value={ String( value ) }
+					onChange={ ( e ) => onChange( e.target.value ) }
+				/>
+			);
+			break;
+		case 'password':
+			control = (
+				<input
+					id={ inputId }
+					type="password"
+					className="nvoos-pro-spa-tools-page__input"
+					value={ String( value ) }
+					placeholder={ MASKED_PLACEHOLDER }
+					autoComplete="new-password"
+					onChange={ ( e ) => onChange( e.target.value ) }
+				/>
+			);
+			break;
+		case 'url':
+		case 'email':
+			control = (
+				<input
+					id={ inputId }
+					type={ field.type }
+					className="nvoos-pro-spa-tools-page__input"
+					value={ String( value ) }
+					onChange={ ( e ) => onChange( e.target.value ) }
+				/>
+			);
+			break;
+		case 'text':
+		default:
+			control = (
+				<input
+					id={ inputId }
+					type="text"
+					className="nvoos-pro-spa-tools-page__input"
+					value={ String( value ) }
+					onChange={ ( e ) => onChange( e.target.value ) }
+				/>
+			);
+			break;
+	}
+
+	return (
+		<div className="nvoos-pro-spa-settings__field">
+			<label htmlFor={ inputId } className="nvoos-pro-spa-tools-page__label">
+				{ field.label }
+			</label>
+			{ control }
+			{ field.description && (
+				<p className="nvoos-pro-spa-settings__hint">{ field.description }</p>
+			) }
+			{ field.sensitive && (
+				<p className="nvoos-pro-spa-settings__hint">
+					{ __( 'Stored value is masked — leave unchanged to keep it.', 'nvoos-pro-spa' ) }
+				</p>
+			) }
 		</div>
 	);
 }

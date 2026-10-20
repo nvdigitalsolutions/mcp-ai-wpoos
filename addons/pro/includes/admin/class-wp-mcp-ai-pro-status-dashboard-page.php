@@ -70,6 +70,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Status_Dashboard_Page' ) ) {
 		 * @return void
 		 */
 		public function register_page(): void {
+			/**
+			 * Kill-switch for the wp-admin Pro status-dashboard surface (Proposal 084
+			 * Phase 3). The console's Pro Ops page renders the service-status
+			 * snapshot over REST; flip this filter off per cohort once parity is
+			 * verified.
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_pro_status_dashboard', true ) ) {
+				return;
+			}
+
 			$this->page_hook = add_submenu_page(
 				'nvoos-pro-dashboard',
 				__( 'Status Page', 'mcp-ai-wpoos-pro' ),

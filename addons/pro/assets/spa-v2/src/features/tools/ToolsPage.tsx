@@ -2,8 +2,10 @@
  * ToolsPage — Tool registry browser.
  *
  * Lists all available tools with search/filter by name, description, category,
- * and required capability. Uses the useTools hook for data fetching and
- * useBootstrap for endpoint runtime config.
+ * and required capability. Assistant-aware: reads the shared assistant store
+ * (the same selection the chat sidebar writes) and scopes the list to that
+ * assistant's selected tools — falling back to the site default assistant
+ * (the store's initial value) or the full registry when none is selected.
  */
 
 import { useState, useMemo } from 'react';
@@ -11,19 +13,29 @@ import type { JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useTools } from '../../hooks/useTools';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import { useAssistantStore } from '../../stores/assistantStore';
 
 type SortKey = 'name' | 'category' | 'capability';
 
 export function ToolsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
 
+	// The active assistant is the single source of truth for tool scoping —
+	// its initial value is the server-resolved default assistant, so the
+	// page shows the default assistant's tools until the user picks another
+	// one in the chat sidebar (or the full registry when there is none).
+	const assistantId = useAssistantStore( ( s ) => s.assistantId );
+	const assistants = useAssistantStore( ( s ) => s.assistants );
+	const activeAssistant = assistants.find( ( a ) => a.id === assistantId );
+
 	const { tools, loading, error, fetchTools } = useTools(
-		runtime
-			? {
-					endpoint: runtime.endpoints.tools,
-					nonce: runtime.nonce,
-			  }
-			: { endpoint: '', nonce: '' }
+			runtime
+				? {
+						endpoint: runtime.endpoints.tools,
+						nonce: runtime.nonce,
+						assistantId,
+				  }
+				: { endpoint: '', nonce: '' }
 	);
 
 	const [ search, setSearch ] = useState< string >( '' );
@@ -155,9 +167,16 @@ export function ToolsPage(): JSX.Element {
 					{ __( 'Tools', 'nvoos-pro-spa' ) }
 				</h2>
 				<p className="nvoos-pro-spa-page__subtitle">
-					{ __(
-						'Browse registered tools available to AI assistants.',
-						'nvoos-pro-spa'
+					{ activeAssistant ? (
+						<>
+							{ __( 'Tools available to', 'nvoos-pro-spa' ) }{ ' ' }
+							<strong>{ activeAssistant.title }</strong>
+						</>
+					) : (
+						__(
+							'Browse registered tools available to AI assistants.',
+							'nvoos-pro-spa'
+						)
 					) }
 				</p>
 			</header>

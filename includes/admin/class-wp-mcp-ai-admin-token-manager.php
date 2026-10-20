@@ -51,6 +51,16 @@ class WP_MCP_AI_Admin_Token_Manager {
 	 * Register the token manager page under the NV oOS menu.
 	 */
 	public function register_page() {
+		/**
+		 * Kill-switch for the wp-admin token-manager surface (Proposal 084
+		 * Phase 3). The Complete Console's Token Manager page ships the same
+		 * credentials + restrictions management over REST; flip this filter
+		 * off per cohort once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_token_manager', true ) ) {
+			return;
+		}
+
 		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'NV oOS Token Manager', 'mcp-ai-wpoos' ),

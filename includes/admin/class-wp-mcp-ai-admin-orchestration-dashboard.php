@@ -43,6 +43,16 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	 * @return void
 	 */
 	public function add_menu_page() {
+		/**
+		 * Kill-switch for the wp-admin orchestration dashboard surface
+		 * (Proposal 084 Phase 3). The console's Orchestration page renders
+		 * the same statistics over REST; flip this filter off per cohort
+		 * once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_orchestration_dashboard', true ) ) {
+			return;
+		}
+
 		add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'Orchestration Dashboard', 'mcp-ai-wpoos' ),
@@ -205,11 +215,14 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
-	 * Get orchestration statistics.
+	 * Collect orchestration statistics (profession seeding, roles, patterns).
 	 *
-	 * @return array Statistics data.
+	 * Public since 2.4.0 (Proposal 084 Phase 3): the orchestration-stats
+	 * REST controller consumes this shape directly — no logic fork.
+	 *
+	 * @return array Orchestration statistics.
 	 */
-	protected function get_orchestration_statistics() {
+	public function get_orchestration_statistics() {
 		$roles = array( 'planner', 'executor', 'critic', 'specialist', 'generalist' );
 		$stats = array(
 			'total_professions'  => 0,
@@ -786,13 +799,14 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
-	 * Get system status information for dashboard updates.
+	 * Collect subsystem status (cron, async, SSE, health).
 	 *
-	 * Includes cron status, async job health, orchestration health, and SSE connectivity.
+	 * Public since 2.4.0 (Proposal 084 Phase 3): the orchestration-stats
+	 * REST controller consumes this shape directly — no logic fork.
 	 *
-	 * @return array System status data.
+	 * @return array System status blocks.
 	 */
-	protected function get_system_status() {
+	public function get_system_status() {
 		$status = array(
 			'cron'   => array(),
 			'async'  => array(),
@@ -946,11 +960,14 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
-	 * Get recent workflows from transients.
+	 * Get recent workflows from transients (5-minute cached).
+	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 3): the orchestration-stats
+	 * REST controller consumes this shape directly — no logic fork.
 	 *
 	 * @return array List of recent workflows.
 	 */
-	protected function get_recent_workflows() {
+	public function get_recent_workflows() {
 		// Try to get from cache first (5 minute cache for dashboard performance).
 		$cache_key = 'wp_mcp_ai_recent_workflows';
 		$cached    = get_transient( $cache_key );

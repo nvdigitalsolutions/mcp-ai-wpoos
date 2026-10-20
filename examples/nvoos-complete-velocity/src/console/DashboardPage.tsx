@@ -12,6 +12,8 @@ import { useAssistantStore } from '@nvoos/pro-spa-v2/stores/assistantStore';
 import type { useTranscripts } from '@nvoos/pro-spa-v2/hooks/useTranscripts';
 import type { ProSpaUser } from '@nvoos/pro-spa-v2/api/config';
 
+import { isNavItemVisible, type NavGate } from './nav-features';
+
 export interface DashboardPageProps {
   /** Shared transcript hook result (single source of truth in the shell). */
   transcripts: ReturnType<typeof useTranscripts>;
@@ -21,9 +23,11 @@ export interface DashboardPageProps {
   dockOpen: boolean;
   /** Toggle the chat dock from the quick actions. */
   onToggleDock: () => void;
+  /** Server-reported feature availability (absent = fail open). */
+  features?: Record<string, boolean>;
 }
 
-interface QuickAction {
+interface QuickAction extends NavGate {
   title: string;
   description: string;
   to: string;
@@ -33,13 +37,59 @@ interface QuickAction {
 const QUICK_ACTIONS: QuickAction[] = [
   { title: 'Assistants', description: 'Create and configure AI assistants', to: '/assistants', icon: '🤖' },
   { title: 'Tools', description: 'Browse the MCP tool registry', to: '/tools', icon: '🧰' },
-  { title: 'Workflows', description: 'Build DAG automation pipelines', to: '/workflows', icon: '🔀' },
-  { title: 'Analytics', description: 'Usage and cost dashboards', to: '/analytics', icon: '📈' },
-  { title: 'Knowledge Graph', description: 'Explore connected content', to: '/knowledge-graph', icon: '🕸️' },
-  { title: 'Docs', description: 'Browse the NV oOS docs hub', to: '/docs', icon: '📚' },
-  { title: 'Media Studio', description: 'Generate and edit media', to: '/media', icon: '🎨' },
-  { title: 'Documents', description: 'Draft and export documents', to: '/documents', icon: '📄' },
-  { title: 'Settings', description: 'Configure the console', to: '/settings', icon: '⚙️' },
+  {
+    title: 'Workflows',
+    description: 'Build DAG automation pipelines',
+    to: '/workflows',
+    icon: '🔀',
+    capability: 'manage_options',
+  },
+  {
+    title: 'Analytics',
+    description: 'Usage and cost dashboards',
+    to: '/analytics',
+    icon: '📈',
+    capability: 'manage_options',
+  },
+  {
+    title: 'Knowledge Graph',
+    description: 'Explore connected content',
+    to: '/knowledge-graph',
+    icon: '🕸️',
+    capability: 'manage_options',
+    feature: 'knowledge_graph',
+  },
+  {
+    title: 'Docs',
+    description: 'Browse the NV oOS docs hub',
+    to: '/docs',
+    icon: '📚',
+    capability: 'manage_options',
+    feature: 'docs_hub',
+  },
+  {
+    title: 'Media Studio',
+    description: 'Generate and edit media',
+    to: '/media',
+    icon: '🎨',
+    capability: 'manage_options',
+    feature: 'media_studio',
+  },
+  {
+    title: 'Documents',
+    description: 'Draft and export documents',
+    to: '/documents',
+    icon: '📄',
+    capability: 'manage_options',
+    feature: 'document_editor',
+  },
+  {
+    title: 'Settings',
+    description: 'Configure the console',
+    to: '/settings',
+    icon: '⚙️',
+    capability: 'manage_options',
+  },
 ];
 
 /**
@@ -55,7 +105,7 @@ function LoadingDash(): JSX.Element {
 }
 
 export function DashboardPage(props: DashboardPageProps): JSX.Element {
-  const { transcripts, user, dockOpen, onToggleDock } = props;
+  const { transcripts, user, dockOpen, onToggleDock, features } = props;
 
   const assistants = useAssistantStore((s) => s.assistants);
   // The console seeds the assistant store asynchronously (ChatSidebar fetch),
@@ -64,6 +114,10 @@ export function DashboardPage(props: DashboardPageProps): JSX.Element {
   // `sessions` is null until the transcript list has loaded.
   const sessionsLoading = transcripts.sessions === null;
   const sessionCount = transcripts.sessions?.length ?? 0;
+
+  const visibleActions = QUICK_ACTIONS.filter((action) =>
+    isNavItemVisible(action, features, user.capabilities),
+  );
 
   return (
     <div className="nvoos-console-dashboard">
@@ -127,7 +181,7 @@ export function DashboardPage(props: DashboardPageProps): JSX.Element {
               Keep a chat panel pinned to the right
             </span>
           </button>
-          {QUICK_ACTIONS.map((action) => (
+          {visibleActions.map((action) => (
             <Link key={action.to} to={action.to} className="nvoos-console-quick-card">
               <span className="nvoos-console-quick-card__icon" aria-hidden="true">
                 {action.icon}

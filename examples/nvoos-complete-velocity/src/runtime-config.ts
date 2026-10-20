@@ -59,6 +59,15 @@ function buildEndpoints(origin: string): ProSpaEndpoints {
     workflows: `${pro}/workflows`,
     analytics: `${pro}/analytics`,
     approvals: `${core}/approvals`,
+    triggers: `${core}/orchestration/triggers`,
+    teams: `${core}/teams`,
+    portability: `${core}/assistants`,
+    security: `${core}/security`,
+    operations: `${core}/operations`,
+    diagnostics: `${core}/diagnostics`,
+    tokenManager: `${core}/token-manager`,
+    orchestrationStats: `${core}/orchestration/stats`,
+    proOps: `${pro}/ops`,
     shortcuts: `${pro}/tool-shortcuts`,
     slashCommands: `${pro}/slash-commands`,
     okf: `${pro}/okf`,
@@ -81,6 +90,11 @@ export interface ConsoleRuntimeOptions {
   defaultAssistantId?: number;
   nonce?: string;
   user?: Partial<ProSpaUser>;
+  /**
+   * Server-reported feature availability (GET /mcp-ai/v1/features). Gates the
+   * nav and the optional-surface endpoints. Absent = fail open (show).
+   */
+  features?: Record<string, boolean>;
 }
 
 /**
@@ -92,6 +106,24 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
   const origin =
     typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
   const assistantId = options.assistantId ?? options.defaultAssistantId ?? 0;
+  const features = options.features ?? {};
+
+  // Optional surfaces resolve to an empty endpoint when the server reports
+  // them unavailable — their pages then render the unavailable state instead
+  // of framing a dead URL (and the nav hides them entirely).
+  const endpoints = buildEndpoints(origin);
+  if (features.docs_hub === false) {
+    endpoints.docsHub = '';
+  }
+  if (features.knowledge_graph === false) {
+    endpoints.contentGraph = '';
+  }
+  if (features.media_studio === false) {
+    endpoints.mediaStudio = '';
+  }
+  if (features.document_editor === false) {
+    endpoints.documentEditor = '';
+  }
 
   return {
     apiUrl: `${origin}/wp-json/mcp-ai/v1`,
@@ -111,7 +143,7 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
       routes: ['chat'],
       profileSelector: false,
     },
-    endpoints: buildEndpoints(origin),
+    endpoints,
     user: {
       id: options.user?.id ?? 0,
       login: options.user?.login ?? '',
@@ -121,6 +153,7 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
     mentionTypes: [],
     assistants: undefined,
     profiles: undefined,
+    features,
   };
 }
 
@@ -194,4 +227,46 @@ export async function fetchCurrentUser(nonce = ''): Promise<Partial<ProSpaUser>>
       .filter(([, enabled]) => enabled)
       .map(([cap]) => cap),
   };
+}
+
+/**
+ * Fetch the server-side feature-availability map (GET /mcp-ai/v1/features).
+ *
+ * Fail-open by design: on any failure (older plugin without the endpoint,
+ * proxy hiccup, non-JSON response) the empty map is returned so a nav item
+ * is never hidden by a transient error — the feature pages render their own
+ * unavailable states, and the server still enforces every capability.
+ */
+export async function fetchFeatureMap(nonce = ''): Promise<Record<string, boolean>> {
+  const base = typeof window !== 'undefined' ? window.location.origin : '';
+  try {
+    const headers: Record<string, string> = {};
+    if (nonce) {
+      headers['X-WP-Nonce'] = nonce;
+    }
+    const response = await fetch(`${base}/wp-json/mcp-ai/v1/features`, {
+      credentials: 'include',
+      headers,
+    });
+    if (!response.ok) {
+      console.warn(
+        `features endpoint returned ${response.status} — showing all nav items`,
+      );
+      return {};
+    }
+    const data = await readJson<{
+      success?: boolean;
+      data?: { features?: Record<string, boolean> };
+    }>(response, 'features endpoint');
+    const features = data?.data?.features;
+    if (!features || typeof features !== 'object' || Array.isArray(features)) {
+      return {};
+    }
+    return features;
+  } catch (error) {
+    console.warn(
+      `features fetch failed (${error instanceof Error ? error.message : String(error)}) — showing all nav items`,
+    );
+    return {};
+  }
 }

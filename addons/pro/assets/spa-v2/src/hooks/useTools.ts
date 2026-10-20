@@ -8,6 +8,11 @@ import { ToolsClient, type ToolDefinition } from '../api/tools';
 export interface UseToolsOptions {
 	endpoint: string;
 	nonce: string;
+	/**
+	 * Optional assistant post ID — the list is scoped to that assistant's
+	 * selected tools. 0/undefined = the full registry (the server default).
+	 */
+	assistantId?: number;
 }
 
 export interface UseToolsReturn {
@@ -40,7 +45,7 @@ export function useTools( options: UseToolsOptions ): UseToolsReturn {
 		setLoading( true );
 		setError( null );
 		try {
-			const result = await client.list();
+			const result = await client.list( options.assistantId );
 			setTools( result.tools );
 			setTotal( result.total );
 		} catch ( err ) {
@@ -48,7 +53,7 @@ export function useTools( options: UseToolsOptions ): UseToolsReturn {
 		} finally {
 			setLoading( false );
 		}
-	}, [ client, options.endpoint ] );
+	}, [ client, options.endpoint, options.assistantId ] );
 
 	useEffect( () => {
 		if ( ! options.endpoint ) {

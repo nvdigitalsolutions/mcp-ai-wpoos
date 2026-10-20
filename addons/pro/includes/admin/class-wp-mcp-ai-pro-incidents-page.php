@@ -70,6 +70,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Incidents_Page' ) ) {
 		 * @return void
 		 */
 		public function register_page(): void {
+			/**
+			 * Kill-switch for the wp-admin Pro incidents surface (Proposal 084
+			 * Phase 3). The console's Pro Ops page renders the same incidents
+			 * over REST; flip this filter off per cohort once parity is verified.
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_pro_incidents', true ) ) {
+				return;
+			}
+
 			$this->page_hook = add_submenu_page(
 				'nvoos-pro-dashboard',
 				__( 'Incidents', 'mcp-ai-wpoos-pro' ),

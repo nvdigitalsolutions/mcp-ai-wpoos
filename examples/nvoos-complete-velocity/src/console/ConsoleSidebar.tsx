@@ -3,12 +3,17 @@
  *
  * Mirrors Schedule Anything's AppLayout sidebar (collapsible rail + active
  * link states) but styled with the spa-v2 theme tokens instead of Tailwind,
- * and extended with the global chat-dock toggle.
+ * and extended with the global chat-dock toggle. Nav items come from the
+ * shared catalogue (nav-features.ts) and are filtered by the session's
+ * capabilities and the server-reported feature map — the Docs item, for
+ * example, disappears when docs-hub is not installed on the target site.
  */
 
 import { useState, type JSX } from 'react';
 import { NavLink } from 'react-router-dom';
 import type { ProSpaUser } from '@nvoos/pro-spa-v2/api/config';
+
+import { CONSOLE_NAV_ITEMS, isNavItemVisible } from './nav-features';
 
 export interface ConsoleSidebarProps {
   /** Whether the persistent chat dock is open (drives the toggle button). */
@@ -17,31 +22,11 @@ export interface ConsoleSidebarProps {
   onToggleDock: () => void;
   /** True on /chat — the chat is the page itself, so the dock toggle is moot. */
   isChatRoute: boolean;
-  /** Logged-in WordPress user (footer readout). */
+  /** Logged-in WordPress user (footer readout + capability gating). */
   user: ProSpaUser;
+  /** Server-reported feature availability (absent = fail open). */
+  features?: Record<string, boolean>;
 }
-
-interface NavItem {
-  path: string;
-  label: string;
-  icon: string;
-  /** Match the path exactly (the dashboard lives at "/"). */
-  end?: boolean;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { path: '/', label: 'Dashboard', icon: '📊', end: true },
-  { path: '/chat', label: 'Chat', icon: '💬' },
-  { path: '/assistants', label: 'Assistants', icon: '🤖' },
-  { path: '/tools', label: 'Tools', icon: '🧰' },
-  { path: '/workflows', label: 'Workflows', icon: '🔀' },
-  { path: '/analytics', label: 'Analytics', icon: '📈' },
-  { path: '/knowledge-graph', label: 'Knowledge Graph', icon: '🕸️' },
-  { path: '/docs', label: 'Docs', icon: '📚' },
-  { path: '/media', label: 'Media Studio', icon: '🎨' },
-  { path: '/documents', label: 'Documents', icon: '📄' },
-  { path: '/settings', label: 'Settings', icon: '⚙️' },
-];
 
 const COLLAPSED_PREF_KEY = 'nvoos-complete-console.nav-collapsed';
 
@@ -54,7 +39,7 @@ function readCollapsedPref(): boolean {
 }
 
 export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
-  const { dockOpen, onToggleDock, isChatRoute, user } = props;
+  const { dockOpen, onToggleDock, isChatRoute, user, features } = props;
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
 
   const toggleCollapsed = (): void => {
@@ -68,6 +53,10 @@ export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
       return next;
     });
   };
+
+  const visibleItems = CONSOLE_NAV_ITEMS.filter((item) =>
+    isNavItemVisible(item, features, user.capabilities),
+  );
 
   return (
     <aside
@@ -92,7 +81,7 @@ export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
       </div>
 
       <nav className="nvoos-console-nav__list" aria-label="Pages">
-        {NAV_ITEMS.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}

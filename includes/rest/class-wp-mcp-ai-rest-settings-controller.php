@@ -67,6 +67,32 @@ class WP_MCP_AI_REST_Settings_Controller {
 	const SENSITIVE_KEYS = array( 'openai_api_key', 'gemini_api_key', 'anthropic_api_key' );
 
 	/**
+	 * The masked placeholder emitted for sensitive values.
+	 *
+	 * @var string
+	 */
+	const MASKED_PLACEHOLDER = '**************';
+
+	/**
+	 * Field types the schema-driven SPA form renders (Proposal 084 Phase 2).
+	 * Structural/admin-only types (html, heading, slider, custom, multiselect,
+	 * specialist/generalist) stay wp-admin-only for now.
+	 *
+	 * @var string[]
+	 */
+	const SUPPORTED_FIELD_TYPES = array(
+		'checkbox',
+		'number',
+		'select',
+		'text',
+		'password',
+		'url',
+		'email',
+		'textarea',
+		'hidden',
+	);
+
+	/**
 	 * Register the settings routes.
 	 *
 	 * @since 2.1.0
@@ -85,6 +111,37 @@ class WP_MCP_AI_REST_Settings_Controller {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'update_settings_item' ),
+					'permission_callback' => array( $this, 'permissions_check' ),
+				),
+			)
+		);
+
+		// Schema-driven settings surface (2.4.0, Proposal 084 Phase 2): the
+		// SPA renders any section/field registered in the settings registry.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::ROUTE_BASE . '/schema',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_schema' ),
+					'permission_callback' => array( $this, 'permissions_check' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::ROUTE_BASE . '/values',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_values' ),
+					'permission_callback' => array( $this, 'permissions_check' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'update_values' ),
 					'permission_callback' => array( $this, 'permissions_check' ),
 				),
 			)
@@ -231,5 +288,257 @@ class WP_MCP_AI_REST_Settings_Controller {
 		}
 
 		return $payload;
+	}
+
+	/* ── Schema-driven surface (2.4.0, Proposal 084 Phase 2) ─────────── */
+
+	/**
+	 * Flatten every SPA-supported field across the registered settings
+	 * sections into one schema key => definition map.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return array<string,array<string,mixed>> Keyed by setting key.
+	 */
+	private function build_schema_fields() {
+		$fields = array();
+
+		if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+			return $fields;
+		}
+
+		foreach ( WP_MCP_AI_Settings_Registry::get_sections() as $section ) {
+			if ( ! $section instanceof WP_MCP_AI_Settings_Section ) {
+				continue;
+			}
+
+			foreach ( $section->get_fields() as $key => $field ) {
+				if ( ! is_array( $field ) || isset( $fields[ $key ] ) ) {
+					continue;
+				}
+
+				$type = isset( $field['type'] ) ? sanitize_key( (string) $field['type'] ) : 'text';
+				if ( ! in_array( $type, self::SUPPORTED_FIELD_TYPES, true ) ) {
+					continue;
+				}
+
+				$fields[ $key ] = array(
+					'key'         => sanitize_key( (string) $key ),
+					'type'        => $type,
+					'section_id'  => sanitize_key( (string) $section->get_id() ),
+					'section'     => wp_strip_all_tags( (string) $section->get_title() ),
+					'tab'         => sanitize_key( (string) $section->get_tab() ),
+					'label'       => isset( $field['label'] ) ? wp_strip_all_tags( (string) $field['label'] ) : $key,
+					'description' => isset( $field['description'] ) ? wp_strip_all_tags( (string) $field['description'] ) : '',
+					'sensitive'   => 'password' === $type,
+				);
+
+				if ( ! empty( $field['options'] ) && is_array( $field['options'] ) ) {
+					$fields[ $key ]['options'] = array_map( 'wp_strip_all_tags', $field['options'] );
+				}
+				if ( array_key_exists( 'default', $field ) ) {
+					$fields[ $key ]['default'] = $field['default'];
+				}
+				if ( isset( $field['min'] ) ) {
+					$fields[ $key ]['min'] = (float) $field['min'];
+				}
+				if ( isset( $field['max'] ) ) {
+					$fields[ $key ]['max'] = (float) $field['max'];
+				}
+				if ( isset( $field['step'] ) ) {
+					$fields[ $key ]['step'] = (float) $field['step'];
+				}
+			}
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Read every schema key, masking sensitive values.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array<string,array<string,mixed>> $schema_fields Schema key => definition.
+	 * @return array<string,mixed> Key => value (secrets masked).
+	 */
+	private function build_values_payload( array $schema_fields ) {
+		$values = array();
+
+		if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+			return $values;
+		}
+
+		foreach ( $schema_fields as $key => $field ) {
+			$default = array_key_exists( 'default', $field ) ? $field['default'] : '';
+			$stored  = WP_MCP_AI_Settings_Registry::get_setting( $key, $default );
+
+			if ( ! empty( $field['sensitive'] ) ) {
+				$values[ $key ] = WP_MCP_AI_Admin_Settings_Base::mask_sensitive_setting_value( $stored );
+				continue;
+			}
+
+			switch ( $field['type'] ) {
+				case 'checkbox':
+					$values[ $key ] = (bool) $stored;
+					break;
+				case 'number':
+					$values[ $key ] = is_numeric( $stored ) ? (float) $stored : (float) $default;
+					break;
+				default:
+					$values[ $key ] = is_scalar( $stored ) ? $stored : ( is_scalar( $default ) ? $default : '' );
+			}
+		}
+
+		return $values;
+	}
+
+	/**
+	 * GET /settings/schema — the SPA-renderable settings catalogue.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function get_schema() {
+		$fields = $this->build_schema_fields();
+		$tabs   = array();
+
+		if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+			foreach ( WP_MCP_AI_Settings_Registry::get_tabs() as $tab_id => $tab ) {
+				$tabs[ sanitize_key( (string) $tab_id ) ] = is_array( $tab ) && isset( $tab['title'] )
+					? wp_strip_all_tags( (string) $tab['title'] )
+					: sanitize_key( (string) $tab_id );
+			}
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'tabs'   => $tabs,
+					'fields' => array_values( $fields ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * GET /settings/values — every schema key, secrets masked.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function get_values() {
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'values' => $this->build_values_payload( $this->build_schema_fields() ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * POST /settings/values — sanitize a partial update against the schema.
+	 *
+	 * Unknown keys are ignored; sensitive keys submitted as the masked
+	 * placeholder keep their stored value.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response
+	 */
+	public function update_values( WP_REST_Request $request ) {
+		$schema_fields = $this->build_schema_fields();
+		$body          = $request->get_json_params();
+		$current       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+
+		if ( ! is_array( $current ) ) {
+			$current = array();
+		}
+
+		$changes = array();
+		if ( is_array( $body ) ) {
+			foreach ( $schema_fields as $key => $field ) {
+				if ( ! array_key_exists( $key, $body ) ) {
+					continue;
+				}
+
+				$current_value   = isset( $current[ $key ] ) ? $current[ $key ] : '';
+				$changes[ $key ] = $this->sanitize_schema_value( $field, $body[ $key ], $current_value );
+			}
+		}
+
+		if ( ! empty( $changes ) ) {
+			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array_merge( $current, $changes ) );
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'values' => $this->build_values_payload( $schema_fields ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Sanitize one submitted value against its schema field definition.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array<string,mixed> $field         Schema field definition.
+	 * @param mixed               $value         Submitted value.
+	 * @param mixed               $current_value Currently stored value.
+	 * @return mixed Sanitized value.
+	 */
+	private function sanitize_schema_value( array $field, $value, $current_value ) {
+		$type = $field['type'];
+
+		if ( ! empty( $field['sensitive'] ) || 'password' === $type ) {
+			return WP_MCP_AI_Admin_Settings_Base::sanitize_sensitive_setting_value( $value, $current_value );
+		}
+
+		switch ( $type ) {
+			case 'checkbox':
+				return rest_sanitize_boolean( $value );
+
+			case 'number':
+				$number = (float) $value;
+				if ( isset( $field['min'] ) && $number < (float) $field['min'] ) {
+					$number = (float) $field['min'];
+				}
+				if ( isset( $field['max'] ) && $number > (float) $field['max'] ) {
+					$number = (float) $field['max'];
+				}
+				return $number;
+
+			case 'select':
+				$select_value = sanitize_key( (string) $value );
+				if ( ! empty( $field['options'] ) && is_array( $field['options'] ) && ! array_key_exists( $select_value, $field['options'] ) ) {
+					return $current_value;
+				}
+				return $select_value;
+
+			case 'url':
+				return esc_url_raw( (string) $value );
+
+			case 'email':
+				return sanitize_email( (string) $value );
+
+			case 'textarea':
+				return sanitize_textarea_field( (string) $value );
+
+			case 'hidden':
+			case 'text':
+			default:
+				return sanitize_text_field( (string) $value );
+		}
 	}
 }
