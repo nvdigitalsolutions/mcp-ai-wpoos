@@ -336,6 +336,12 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				return WP_MCP_AI_Admin_Settings::is_chat_interaction_logging_enabled();
 			}
 
+			// Debug events: gated behind a dedicated opt-in setting because they
+			// are extremely noisy (hot paths fire them on every request).
+			if ( self::LEVEL_DEBUG === $type ) {
+				return WP_MCP_AI_Admin_Settings::is_debug_logging_enabled();
+			}
+
 			// Schedule run events (start, completion, failure).
 			if ( 'schedule_run' === $type ) {
 				return true;

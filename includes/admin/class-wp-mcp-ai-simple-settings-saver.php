@@ -53,6 +53,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 				'enable_api_logging'                 => 'checkbox',
 				'enable_tool_execution_logging'      => 'checkbox',
 				'enable_chat_interaction_logging'    => 'checkbox',
+				'enable_debug_logging'               => 'checkbox',
 				'delete_on_uninstall'                => 'checkbox',
 				'enable_openai'                      => 'checkbox',
 				'enable_huggingface'                 => 'checkbox',

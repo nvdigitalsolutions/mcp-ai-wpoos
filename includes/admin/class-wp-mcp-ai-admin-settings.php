@@ -1549,6 +1549,29 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Check if debug-level logging is enabled.
+		 *
+		 * Debug events are high-frequency diagnostics (hot paths such as skipped
+		 * CCT registrations fire them on every request) that would flood the
+		 * PHP error log and mask real errors. Unlike the other granular logging
+		 * helpers, this one defaults to disabled when the key is absent, matching
+		 * the field default.
+		 *
+		 * @since 1.2.9
+		 *
+		 * @return bool True if both base logging and debug logging are enabled.
+		 */
+		public static function is_debug_logging_enabled() {
+			if ( ! self::is_logging_enabled() ) {
+				return false;
+			}
+
+			$settings = self::get_settings();
+
+			return ! empty( $settings['enable_debug_logging'] );
+		}
+
+		/**
 		 * Check if extended (verbose) logging is enabled.
 		 *
 		 * Extended logging raises the per-entry context budget used when persisting

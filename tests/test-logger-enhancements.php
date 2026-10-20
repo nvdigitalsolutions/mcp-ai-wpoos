@@ -110,9 +110,47 @@ class WP_MCP_AI_Logger_Enhancements_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test debug log level is suppressed by default (opt-in setting).
+	 */
+	public function test_log_debug_suppressed_by_default() {
+		// Debug logging is opt-in and defaults to off.
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'enable_logging' => true,
+			)
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		$captured_entry = null;
+		$filter         = function ( $entry ) use ( &$captured_entry ) {
+			$captured_entry = $entry;
+			return false;
+		};
+
+		add_filter( 'wp_mcp_ai_log_entry', $filter, 10, 1 );
+
+		WP_MCP_AI_Logger::log_debug( 'Noisy diagnostic' );
+
+		remove_filter( 'wp_mcp_ai_log_entry', $filter, 10 );
+
+		$this->assertNull( $captured_entry );
+	}
+
+	/**
 	 * Test debug log level.
 	 */
 	public function test_log_debug() {
+		// Debug logging is opt-in; enable it for this test.
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'enable_logging'       => true,
+				'enable_debug_logging' => true,
+			)
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
 		$captured_entry = null;
 		$filter         = function ( $entry ) use ( &$captured_entry ) {
 			$captured_entry = $entry;
