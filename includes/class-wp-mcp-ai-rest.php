@@ -6341,9 +6341,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						}
 
 						$tools_list[] = array(
-							'name'        => $tool->get_slug(),
-							'description' => $tool->get_description(),
-							'inputSchema' => $schema,
+							'name'                => $tool->get_slug(),
+							'slug'                => $tool->get_slug(),
+							'description'         => $tool->get_description(),
+							'required_capability' => $tool->get_required_capability(),
+							'inputSchema'         => $schema,
 						);
 					} catch ( Exception $e ) {
 						// Log the error and skip this tool.
@@ -6400,6 +6402,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			return rest_ensure_response(
 				array(
 					'tools' => $tools_list,
+					'total' => count( $tools_list ),
 				)
 			);
 		}
@@ -8026,6 +8029,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					: '' );
 
 			if ( is_string( $required ) && '' !== $required && 'public' !== $required ) {
+				// The capability derives from wp_mcp_ai_get_effective_chat_capability(),
+				// which sanitizes at both of its sources (the assistant meta value and
+				// the wp_mcp_ai_chat_capability filter) — never from request input.
+				// Guard the slug shape anyway so a corrupted stored value fails closed
+				// instead of reaching current_user_can() with junk. Behaviour for valid
+				// slugs is unchanged: unknown capabilities deny by default.
+				if ( 1 !== preg_match( '/^[a-z0-9_\-]+$/', $required ) ) {
+					return false;
+				}
+				// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- $required is a sanitized capability slug derived from plugin settings/filters, not request input.
 				return current_user_can( $required );
 			}
 
