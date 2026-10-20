@@ -154,6 +154,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'description'    => __( 'Logs complete chat interactions including user messages and assistant responses. Helps track conversation flow and debugging message handling.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+				'enable_debug_logging'                  => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Debug Logging', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable debug-level diagnostic messages', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Writes debug-level events (high-frequency diagnostics such as skipped registrations) to the PHP error log. Very noisy — only enable for short-term debugging.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 				'delete_on_uninstall'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Delete Data on Uninstall', 'mcp-ai-wpoos' ),
@@ -377,6 +384,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 						'enable_api_logging',
 						'enable_tool_execution_logging',
 						'enable_chat_interaction_logging',
+						'enable_debug_logging',
 						'delete_on_uninstall',
 						'enable_activation_tracking',
 					),

@@ -209,15 +209,6 @@ class WP_MCP_AI_JetEngine_CCT {
 					'reason'   => 'instance->get_item_handler() returned null',
 				)
 			);
-		} else {
-			WP_MCP_AI_Logger::log_event(
-				'debug',
-				'JetEngine CCT: get_item_handler() successful',
-				array(
-					'slug'    => self::SLUG,
-					'handler' => is_object( $handler ) ? get_class( $handler ) : gettype( $handler ),
-				)
-			);
 		}
 
 		return $handler;
@@ -291,13 +282,6 @@ class WP_MCP_AI_JetEngine_CCT {
 		}
 
 		if ( self::cct_exists( $module ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'debug',
-				'JetEngine CCT: maybe_register_cct() - CCT already exists, skipping registration',
-				array(
-					'slug' => self::SLUG,
-				)
-			);
 			return;
 		}
 
