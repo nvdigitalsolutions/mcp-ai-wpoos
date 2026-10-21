@@ -1133,6 +1133,198 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 				),
 			),
 
+			'mcp_ai_customer'     => array(
+				'email'           => array(
+					'meta_key'    => 'email',
+					'label'       => __( 'Email', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Primary contact email address.', 'mcp-ai-wpoos-pro' ),
+				),
+				'first_name'      => array(
+					'meta_key'    => 'first_name',
+					'label'       => __( 'First Name', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Customer contact first name.', 'mcp-ai-wpoos-pro' ),
+				),
+				'last_name'       => array(
+					'meta_key'    => 'last_name',
+					'label'       => __( 'Last Name', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Customer contact last name.', 'mcp-ai-wpoos-pro' ),
+				),
+				'phone'           => array(
+					'meta_key'    => 'phone',
+					'label'       => __( 'Phone', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Customer contact phone number.', 'mcp-ai-wpoos-pro' ),
+				),
+				'company_name'    => array(
+					'meta_key'    => 'company_name',
+					'label'       => __( 'Company', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Company the customer belongs to.', 'mcp-ai-wpoos-pro' ),
+				),
+				'lifecycle_stage' => array(
+					'meta_key'    => 'lifecycle_stage',
+					'label'       => __( 'Lifecycle Stage', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'CRM lifecycle stage for this customer.', 'mcp-ai-wpoos-pro' ),
+				),
+				'contact_owner'   => array(
+					'meta_key'    => 'contact_owner',
+					'label'       => __( 'Contact Owner', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'integer',
+					'description' => __( 'WordPress user ID of the account owner.', 'mcp-ai-wpoos-pro' ),
+				),
+				'customer_since'  => array(
+					'meta_key'    => 'customer_since',
+					'label'       => __( 'Customer Since', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Date the lead converted to a customer.', 'mcp-ai-wpoos-pro' ),
+				),
+				'source_lead_id'  => array(
+					'meta_key'    => 'source_lead_id',
+					'label'       => __( 'Source Lead', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'integer',
+					'description' => __( 'Lead post ID this customer converted from.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
+			'mcp_ai_lead'         => array(
+				'email'           => array(
+					'meta_key'    => 'email',
+					'label'       => __( 'Email', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Lead contact email address.', 'mcp-ai-wpoos-pro' ),
+				),
+				'phone'           => array(
+					'meta_key'    => 'phone',
+					'label'       => __( 'Phone', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Lead contact phone number.', 'mcp-ai-wpoos-pro' ),
+				),
+				'company_name'    => array(
+					'meta_key'    => 'company_name',
+					'label'       => __( 'Company', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Company name attached to this lead.', 'mcp-ai-wpoos-pro' ),
+				),
+				'lead_status'     => array(
+					'meta_key'    => 'lead_status',
+					'label'       => __( 'Lead Status', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Current qualification status of the lead.', 'mcp-ai-wpoos-pro' ),
+				),
+				'lifecycle_stage' => array(
+					'meta_key'    => 'lifecycle_stage',
+					'label'       => __( 'Lifecycle Stage', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'CRM lifecycle stage for this lead.', 'mcp-ai-wpoos-pro' ),
+				),
+				'lead_score'      => array(
+					'meta_key'    => 'lead_score',
+					'label'       => __( 'Lead Score', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'integer',
+					'description' => __( 'Qualification score assigned to the lead.', 'mcp-ai-wpoos-pro' ),
+				),
+				'contact_owner'   => array(
+					'meta_key'    => 'contact_owner',
+					'label'       => __( 'Contact Owner', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'integer',
+					'description' => __( 'WordPress user ID of the account owner.', 'mcp-ai-wpoos-pro' ),
+				),
+				'source'          => array(
+					'meta_key'    => 'source',
+					'label'       => __( 'Source', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Channel the lead originated from.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
+			'mcp_ai_deal'         => array(
+				'_deal_amount'      => array(
+					'meta_key'    => '_deal_amount',
+					'label'       => __( 'Amount', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'number',
+					'description' => __( 'Deal monetary value.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_deal_stage'       => array(
+					'meta_key'    => '_deal_stage',
+					'label'       => __( 'Stage', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Current pipeline stage of the deal.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_deal_probability' => array(
+					'meta_key'    => '_deal_probability',
+					'label'       => __( 'Probability', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'integer',
+					'description' => __( 'Win probability percentage (0-100).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_deal_close_date'  => array(
+					'meta_key'    => '_deal_close_date',
+					'label'       => __( 'Close Date', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Expected or actual close date.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_deal_owner'       => array(
+					'meta_key'    => '_deal_owner',
+					'label'       => __( 'Owner', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'integer',
+					'description' => __( 'WordPress user ID of the deal owner.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_deal_source'      => array(
+					'meta_key'    => '_deal_source',
+					'label'       => __( 'Source', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Channel the deal originated from.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
+			'mcp_ai_ticket'       => array(
+				'_ticket_status'      => array(
+					'meta_key'    => '_ticket_status',
+					'label'       => __( 'Status', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Current support ticket status.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_ticket_priority'    => array(
+					'meta_key'    => '_ticket_priority',
+					'label'       => __( 'Priority', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Support priority of the ticket.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_ticket_category'    => array(
+					'meta_key'    => '_ticket_category',
+					'label'       => __( 'Category', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Support category the ticket belongs to.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_ticket_assignee_id' => array(
+					'meta_key'    => '_ticket_assignee_id',
+					'label'       => __( 'Assignee', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'integer',
+					'description' => __( 'WordPress user ID of the assigned agent.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_ticket_contact_id'  => array(
+					'meta_key'    => '_ticket_contact_id',
+					'label'       => __( 'Contact', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'integer',
+					'description' => __( 'Customer post ID the ticket belongs to.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_ticket_source'      => array(
+					'meta_key'    => '_ticket_source',
+					'label'       => __( 'Source', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Channel the ticket was raised from.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_ticket_sla_status'  => array(
+					'meta_key'    => '_ticket_sla_status',
+					'label'       => __( 'SLA Status', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'SLA tracking state for the ticket.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
 			// ----------------------------------------------------------------
 			// Finance Toolkit
 			// ----------------------------------------------------------------
@@ -1382,49 +1574,49 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			// ----------------------------------------------------------------
 
 			'mcp_ai_fnb_sale'     => array(
-				'_fnb_date'        => array(
+				'_fnb_date'     => array(
 					'meta_key'    => '_fnb_date',
 					'label'       => __( 'Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Sale date (spec table 6.0).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_month'       => array(
+				'_fnb_month'    => array(
 					'meta_key'    => '_fnb_month',
 					'label'       => __( 'Month', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Sale month (Y-m).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_item_id'     => array(
+				'_fnb_item_id'  => array(
 					'meta_key'    => '_fnb_item_id',
 					'label'       => __( 'Item ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Menu item ID from spec table 1.0.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_item'        => array(
+				'_fnb_item'     => array(
 					'meta_key'    => '_fnb_item',
 					'label'       => __( 'Item', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Menu item name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_type'        => array(
+				'_fnb_type'     => array(
 					'meta_key'    => '_fnb_type',
 					'label'       => __( 'Type', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Sale type (Food, Beverage, Other).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_qty_sold'    => array(
+				'_fnb_qty_sold' => array(
 					'meta_key'    => '_fnb_qty_sold',
 					'label'       => __( 'Qty Sold', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Units sold.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_price'   => array(
+				'_fnb_price'    => array(
 					'meta_key'    => '_fnb_price',
 					'label'       => __( 'Price', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Unit price.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_revenue' => array(
+				'_fnb_revenue'  => array(
 					'meta_key'    => '_fnb_revenue',
 					'label'       => __( 'Revenue', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
@@ -1433,67 +1625,67 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			),
 
 			'mcp_ai_fnb_purchase' => array(
-				'_fnb_delivery_date'  => array(
+				'_fnb_delivery_date' => array(
 					'meta_key'    => '_fnb_delivery_date',
 					'label'       => __( 'Delivery Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Delivery date (spec table 8.0).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_month'          => array(
+				'_fnb_month'         => array(
 					'meta_key'    => '_fnb_month',
 					'label'       => __( 'Month', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Delivery month (Y-m).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_supplier_id'    => array(
+				'_fnb_supplier_id'   => array(
 					'meta_key'    => '_fnb_supplier_id',
 					'label'       => __( 'Supplier ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Supplier ID from spec table 4.0.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_invoice'        => array(
+				'_fnb_invoice'       => array(
 					'meta_key'    => '_fnb_invoice',
 					'label'       => __( 'Invoice', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Supplier invoice number.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_ingredient_id'  => array(
+				'_fnb_ingredient_id' => array(
 					'meta_key'    => '_fnb_ingredient_id',
 					'label'       => __( 'Ingredient ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Ingredient ID from spec table 3.0.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_category'       => array(
+				'_fnb_category'      => array(
 					'meta_key'    => '_fnb_category',
 					'label'       => __( 'Category', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Ingredient category.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_packs'          => array(
+				'_fnb_packs'         => array(
 					'meta_key'    => '_fnb_packs',
 					'label'       => __( 'Packs', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Number of packs ordered.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_pack_size'      => array(
+				'_fnb_pack_size'     => array(
 					'meta_key'    => '_fnb_pack_size',
 					'label'       => __( 'Pack Size', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Pack size description.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_qty_delivered'  => array(
+				'_fnb_qty_delivered' => array(
 					'meta_key'    => '_fnb_qty_delivered',
 					'label'       => __( 'Qty Delivered', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Quantity delivered.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_pack_price' => array(
+				'_fnb_pack_price'    => array(
 					'meta_key'    => '_fnb_pack_price',
 					'label'       => __( 'Pack Price', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Price per pack.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_line_total' => array(
+				'_fnb_line_total'    => array(
 					'meta_key'    => '_fnb_line_total',
 					'label'       => __( 'Line Total', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
@@ -1502,61 +1694,61 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			),
 
 			'mcp_ai_fnb_stock'    => array(
-				'_fnb_count_date'        => array(
+				'_fnb_count_date'    => array(
 					'meta_key'    => '_fnb_count_date',
 					'label'       => __( 'Count Date', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Stock-count date (spec table 9.0).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_count_type'        => array(
+				'_fnb_count_type'    => array(
 					'meta_key'    => '_fnb_count_type',
 					'label'       => __( 'Count Type', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Count type (Opening, Full, Closing, …).', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_period_start'      => array(
+				'_fnb_period_start'  => array(
 					'meta_key'    => '_fnb_period_start',
 					'label'       => __( 'Period Start', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Start of the counted period.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_ingredient_id'     => array(
+				'_fnb_ingredient_id' => array(
 					'meta_key'    => '_fnb_ingredient_id',
 					'label'       => __( 'Ingredient ID', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Ingredient ID from spec table 3.0.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_unit'              => array(
+				'_fnb_unit'          => array(
 					'meta_key'    => '_fnb_unit',
 					'label'       => __( 'Unit', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Unit of measure.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_category'          => array(
+				'_fnb_category'      => array(
 					'meta_key'    => '_fnb_category',
 					'label'       => __( 'Category', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'string',
 					'description' => __( 'Ingredient category.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_opening'           => array(
+				'_fnb_opening'       => array(
 					'meta_key'    => '_fnb_opening',
 					'label'       => __( 'Opening', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Opening quantity.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_bought'            => array(
+				'_fnb_bought'        => array(
 					'meta_key'    => '_fnb_bought',
 					'label'       => __( 'Bought', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Quantity bought during the period.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_closing'           => array(
+				'_fnb_closing'       => array(
 					'meta_key'    => '_fnb_closing',
 					'label'       => __( 'Closing', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
 					'description' => __( 'Closing quantity.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_used'              => array(
+				'_fnb_used'          => array(
 					'meta_key'    => '_fnb_used',
 					'label'       => __( 'Used', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',
@@ -1625,7 +1817,7 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 					'type'        => 'string',
 					'description' => __( 'Staff member who logged the waste.', 'mcp-ai-wpoos-pro' ),
 				),
-				'_fnb_value'     => array(
+				'_fnb_value'         => array(
 					'meta_key'    => '_fnb_value',
 					'label'       => __( 'Value', 'mcp-ai-wpoos-pro' ),
 					'type'        => 'number',

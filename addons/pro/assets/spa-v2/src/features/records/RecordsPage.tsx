@@ -6,7 +6,7 @@
  * (GET /mcp-ai-pro/v1/records/schema): entity switcher, search, list with
  * schema columns, and a detail panel. Data lives on core REST
  * (wp/v2/{post_type}) — the audit's wp-core storage strategy. W11 ships the
- * company pilot entity; the remaining CRM entities join in W11b.
+ * five CRM entities (company/customer/deal/lead/ticket).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';

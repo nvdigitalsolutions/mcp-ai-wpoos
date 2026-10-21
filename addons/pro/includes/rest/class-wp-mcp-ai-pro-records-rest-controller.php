@@ -42,18 +42,41 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 	const ROUTE_BASE = '/records';
 
 	/**
-	 * Record entities exposed to the console (W11 pilot: company only; the
-	 * remaining CRM entities join in W11b once their meta schemas land in
-	 * WP_MCP_AI_Pro_CPT_Meta_Schema).
+	 * Record entities exposed to the console (W11: the five CRM entities —
+	 * their meta schemas live in WP_MCP_AI_Pro_CPT_Meta_Schema).
 	 *
 	 * @var array<string, array<string, string>>
 	 */
 	const RECORD_ENTITIES = array(
-		'company' => array(
+		'company'  => array(
 			'post_type' => 'mcp_ai_company',
 			'label'     => 'Companies',
 			'singular'  => 'Company',
 			'icon'      => '🏢',
+		),
+		'customer' => array(
+			'post_type' => 'mcp_ai_customer',
+			'label'     => 'Customers',
+			'singular'  => 'Customer',
+			'icon'      => '🧑',
+		),
+		'deal'     => array(
+			'post_type' => 'mcp_ai_deal',
+			'label'     => 'Deals',
+			'singular'  => 'Deal',
+			'icon'      => '🤝',
+		),
+		'lead'     => array(
+			'post_type' => 'mcp_ai_lead',
+			'label'     => 'Leads',
+			'singular'  => 'Lead',
+			'icon'      => '🔍',
+		),
+		'ticket'   => array(
+			'post_type' => 'mcp_ai_ticket',
+			'label'     => 'Tickets',
+			'singular'  => 'Ticket',
+			'icon'      => '🎫',
 		),
 	);
 

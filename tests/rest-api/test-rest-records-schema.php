@@ -15,11 +15,11 @@
 class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 
 	/**
-	 * Whether this test registered the scratch company CPT (for cleanup).
+	 * Slugs of the scratch CPTs this test may register (for cleanup).
 	 *
-	 * @var bool
+	 * @var string[]
 	 */
-	private $registered_scratch_cpt = false;
+	private $scratch_cpts = array();
 
 	/**
 	 * Skip when the Pro addon classes are absent.
@@ -33,34 +33,38 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Remove the scratch CPT when this test created it.
+	 * Remove the scratch CPTs this test created.
 	 */
 	public function tearDown(): void {
-		if ( $this->registered_scratch_cpt && post_type_exists( 'mcp_ai_company' ) ) {
-			unregister_post_type( 'mcp_ai_company' );
+		foreach ( $this->scratch_cpts as $slug ) {
+			if ( post_type_exists( $slug ) ) {
+				unregister_post_type( $slug );
+			}
 		}
-		$this->registered_scratch_cpt = false;
+		$this->scratch_cpts = array();
 		parent::tearDown();
 	}
 
 	/**
-	 * Register the company CPT when the CRM toolkit did not (it is
+	 * Register a scratch CPT when the toolkit did not (the CRM CPTs are
 	 * settings-gated — enable_crm_toolkit).
+	 *
+	 * @param string $slug Post type slug.
 	 */
-	private function ensure_company_cpt() {
-		if ( post_type_exists( 'mcp_ai_company' ) ) {
+	private function ensure_cpt( $slug ) {
+		if ( post_type_exists( $slug ) ) {
 			return;
 		}
 		register_post_type(
-			'mcp_ai_company',
+			$slug,
 			array(
-				'labels'       => array( 'name' => 'Companies' ),
+				'labels'       => array( 'name' => ucfirst( $slug ) ),
 				'public'       => false,
 				'show_in_rest' => true,
 				'supports'     => array( 'title' ),
 			)
 		);
-		$this->registered_scratch_cpt = true;
+		$this->scratch_cpts[] = $slug;
 	}
 
 	/**
@@ -92,30 +96,38 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * With the company CPT present, its config carries the meta columns.
+	 * With the CRM CPTs present, each entity carries its meta columns.
 	 */
-	public function test_schema_includes_company_columns() {
+	public function test_schema_includes_all_crm_entities() {
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		$this->ensure_company_cpt();
+		foreach ( array( 'mcp_ai_company', 'mcp_ai_customer', 'mcp_ai_deal', 'mcp_ai_lead', 'mcp_ai_ticket' ) as $slug ) {
+			$this->ensure_cpt( $slug );
+		}
 
 		$result = ( new WP_MCP_AI_Pro_Records_REST_Controller() )->get_schema( new WP_REST_Request() );
 		$data   = $result->get_data();
 
 		if ( ! isset( $data['entities']['company'] ) ) {
-			$this->markTestSkipped( 'Company meta schema unavailable in this bootstrap.' );
+			$this->markTestSkipped( 'CRM meta schemas unavailable in this bootstrap.' );
+		}
+
+		$expected_keys = array( 'company', 'customer', 'deal', 'lead', 'ticket' );
+		foreach ( $expected_keys as $key ) {
+			$this->assertArrayHasKey( $key, $data['entities'], 'Entity should be exposed: ' . $key );
+			$this->assertNotEmpty( $data['entities'][ $key ]['columns'], 'Entity should carry columns: ' . $key );
 		}
 
 		$this->assertSame( 'mcp_ai_company', $data['entities']['company']['postType'] );
-		$this->assertNotEmpty( $data['entities']['company']['columns'] );
 	}
 
 	/**
 	 * The schema meta keys are exposed through the core wp/v2 REST.
 	 */
 	public function test_company_meta_registered_in_rest() {
-		$this->ensure_company_cpt();
+		$this->ensure_cpt( 'mcp_ai_company' );
+		$this->ensure_cpt( 'mcp_ai_deal' );
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_CPT_Meta_Schema' ) ) {
 			$this->markTestSkipped( 'CPT meta schema registry unavailable in this bootstrap.' );
@@ -134,6 +146,12 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 			}
 		}
 		$this->assertTrue( $has_any, 'The company schema should declare at least one meta field.' );
+
+		// One spot-check from the W11b entities (deal).
+		$this->assertTrue(
+			registered_meta_key_exists( 'post', '_deal_stage', 'mcp_ai_deal' ),
+			'Deal meta should be REST-exposed.'
+		);
 	}
 
 	/**
