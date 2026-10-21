@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.8
+Stable tag: 1.2.9
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.9 - October 22, 2026 =
+
+Bumped to 1.2.9 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. The NV oOS Complete Console Velocity app (Proposal 083) and the admin-surface console migration Phases 0–4d (Proposal 084) — a schema-driven Settings engine, feature-gated console nav, and nine REST contract parity fixes. Schedule Anything gets the live sa-tools registry route, toolkit entitlement visibility, idempotent toggles, and a platform bump to 0.1.2. New base routes: GET/POST mcp-ai/v1/settings, /features, /teams, and the settings schema/values pair. Debug logging gates behind an opt-in setting. Memory-graph bridge seams for provenance and RRF. The Pro zip stops shipping root examples/ (5.4 MB smaller). Dependency advisories closed (vite, hono, follow-redirects). New mcp-ai-wpoos-spa-rest-contract coding-time skill (75 → 76). Tool count unchanged: ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative).
 
 = 1.2.8 - October 19, 2026 =
 
