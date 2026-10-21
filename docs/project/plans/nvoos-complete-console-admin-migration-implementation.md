@@ -473,7 +473,20 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   console Teams surface).
 - [ ] **W13 (4c) — Repeating dashboards feature.** P15: one configurable
   dashboard-with-filters feature (CRE portfolio, ECA, health, vitals,
-  registration, law-firm).
+  registration, law-firm). Sequenced 2026-10-21 into sub-slices:
+  - [ ] **W13a — generic dashboards scaffold + CRE pilot.**
+    `GET /mcp-ai-pro/v1/dashboards/schema` (dashboard configs: label,
+    filter fields, metric card list) + `GET /dashboards/{id}/data` for the
+    CRE portfolio (wraps the `ajax_filter_portfolio` query in
+    `class-wp-mcp-ai-cre-debt-dashboard-page.php` via a promoted public
+    seam); console `dashboards` feature (`/dashboards` route) with a
+    dashboard picker, schema-driven filter form and metric cards.
+  - [ ] **W13b — chart cards.** Render chart metrics through the existing
+    console chart component (the analytics page's chart tier); one chart
+    type per dashboard config entry.
+  - [ ] **W13c — remaining dashboards.** ECA, health, vitals,
+    registration, law-firm — one REST data provider each, reusing the
+    W13a scaffold; per-dashboard checks against the storage audit §1/§2.
 - [ ] **W14 (4d) — Remaining command centers.** Calendar booking (existing
   REST), F&B (Proposal 078 universalisation REST), Media (P2), Chat
   Channels (P4) — per-toolkit checks against the storage audit before each
