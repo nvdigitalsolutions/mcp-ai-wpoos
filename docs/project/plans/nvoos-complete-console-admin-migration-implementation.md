@@ -433,11 +433,12 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   `features/records/RecordsPage.tsx` (entity tabs, search, schema columns,
   detail panel); `wpBase`/`recordsSchema` endpoints in all three runtime
   configs; PHPUnit `tests/rest-api/test-rest-records-schema.php` (5 tests)
-  + vitest `records-client.test.ts` (5 tests). **Slice 2 (W11b)** extends
-  the meta-schema registry with customer/deal/lead/ticket
-  (`_customer_*`/`_deal_*`/`_ticket_*` keys enumerated per CPT file) and
-  adds them to `RECORD_ENTITIES` — then import + create-from-research
-  (4a-b).
+  + vitest `records-client.test.ts` (5 tests). **Slice 2 shipped
+  2026-10-21 (full entity set):** meta schemas for customer/deal/lead/
+  ticket enumerated from their CPT files and added to the schema registry;
+  all five CRM entities in `RECORD_ENTITIES`; deal meta spot-checked in the
+  PHPUnit suite (26 assertions). **Slice 3 (4a-b) remains:**
+  create-from-research + import for the Records feature.
 - [ ] **W12 (4b) — PM command center + professions.** P3 (projects/tasks/
   events/sprints via `wp/v2/mcp_ai_*`) reusing the W11 Records feature;
   **B23 Team/profession research + settings (T4-lite)** — the console
