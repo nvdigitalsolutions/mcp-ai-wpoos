@@ -40,9 +40,9 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Admins get the dashboard catalogue with the CRE pilot config.
+	 * Admins get the dashboard catalogue with the CRE + law configs.
 	 */
-	public function test_schema_includes_cre_dashboard() {
+	public function test_schema_includes_dashboards() {
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -60,6 +60,13 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $cre['filters'] );
 		$this->assertSame( 'loan_type', $cre['filters'][0]['key'] );
 		$this->assertSame( 'loan_status', $cre['filters'][1]['key'] );
+		$this->assertNotEmpty( $cre['charts'] );
+		$this->assertSame( 'loan_list', $cre['lists'][0]['key'] );
+
+		// The law-firm pilot (W13c) joins the catalogue with count metrics.
+		$this->assertArrayHasKey( 'law', $data['dashboards'] );
+		$this->assertNotEmpty( $data['dashboards']['law']['metrics'] );
+		$this->assertSame( 'active_matters', $data['dashboards']['law']['metrics'][0]['key'] );
 	}
 
 	/**
@@ -104,6 +111,31 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'total_loans', $data['data'] );
 		$this->assertSame( 0, $data['data']['total_loans'] );
 		$this->assertSame( 0, $data['data']['total_balance'] );
+	}
+
+	/**
+	 * The law-firm provider returns the zeroed count envelope when the
+	 * toolkit CPTs are absent (zero network).
+	 */
+	public function test_law_data_zeroed_envelope() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/law/data' );
+		$request->set_param( 'id', 'law' );
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+
+		if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
+			$this->markTestSkipped( 'Law-firm dashboard page unavailable in this bootstrap.' );
+		}
+
+		$this->assertNotWPError( $result );
+		$data = $result->get_data();
+
+		$this->assertSame( 'law', $data['dashboard'] );
+		$this->assertArrayHasKey( 'active_matters', $data['data'] );
+		$this->assertSame( 0, $data['data']['active_matters'] );
 	}
 
 	/**

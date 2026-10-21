@@ -102,7 +102,16 @@ class WP_MCP_AI_Law_Firm_Dashboard_Page {
 	 *
 	 * @return array Dashboard data.
 	 */
-	private static function get_dashboard_data(): array {
+	/**
+	 * Gather the dashboard counts.
+	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 4 W13c): the dashboards REST
+	 * controller consumes this as the dashboard's data provider; the page
+	 * render calls it unchanged.
+	 *
+	 * @return array Dashboard counts.
+	 */
+	public static function get_dashboard_data(): array {
 		$active       = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_lf_matter',

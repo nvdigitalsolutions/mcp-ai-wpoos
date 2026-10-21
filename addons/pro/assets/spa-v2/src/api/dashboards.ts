@@ -31,6 +31,24 @@ export interface DashboardMetric {
 	format: 'number' | 'money' | 'percent';
 }
 
+export interface DashboardChart {
+	key: string;
+	title: string;
+	type: 'bar' | 'donut';
+}
+
+export interface DashboardListColumn {
+	key: string;
+	label: string;
+	format?: 'number' | 'money' | 'percent';
+}
+
+export interface DashboardList {
+	key: string;
+	title: string;
+	columns: DashboardListColumn[];
+}
+
 export interface DashboardConfig {
 	id: string;
 	label: string;
@@ -38,6 +56,8 @@ export interface DashboardConfig {
 	icon: string;
 	filters: DashboardFilter[];
 	metrics: DashboardMetric[];
+	charts?: DashboardChart[];
+	lists?: DashboardList[];
 }
 
 export interface DashboardsSchemaResponse {

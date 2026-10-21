@@ -493,6 +493,11 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   - [ ] **W13c — remaining dashboards.** ECA, health, vitals,
     registration, law-firm — one REST data provider each, reusing the
     W13a scaffold; per-dashboard checks against the storage audit §1/§2.
+    **Slice 1 shipped 2026-10-21:** the dashboard config gains
+    schema-declared `charts` + `lists` (the page renders both purely from
+    config — no CRE-specific branches) and the law-firm dashboard joins
+    (`get_dashboard_data()` promoted, 4 count metrics). Remaining:
+    ECA, health/wellness, medical vitals, registration.
 - [ ] **W14 (4d) — Remaining command centers.** Calendar booking (existing
   REST), F&B (Proposal 078 universalisation REST), Media (P2), Chat
   Channels (P4) — per-toolkit checks against the storage audit before each

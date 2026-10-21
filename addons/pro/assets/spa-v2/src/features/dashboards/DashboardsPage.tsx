@@ -18,7 +18,6 @@ import {
 	formatMetric,
 	type DashboardConfig,
 	type DashboardData,
-	type DashboardLoanRow,
 } from '../../api/dashboards';
 
 function useDashboards( schemaEndpoint: string, nonce: string ): {
@@ -253,12 +252,15 @@ export function DashboardsPage(): JSX.Element {
 					</div>
 
 					{ ( () => {
-						const charts = [
-							distributionChartSpec( __( 'By Loan Type', 'nvoos-pro-spa' ), data.by_loan_type ),
-							distributionChartSpec( __( 'By Status', 'nvoos-pro-spa' ), data.by_status ),
-							distributionChartSpec( __( 'By Property Type', 'nvoos-pro-spa' ), data.by_property_type ),
-							distributionChartSpec( __( 'Maturity Schedule', 'nvoos-pro-spa' ), data.maturity_schedule ),
-						].filter( ( spec ) => spec !== '' );
+						const charts = ( dashboard.charts ?? [] )
+							.map( ( chart ) =>
+								distributionChartSpec(
+									chart.title,
+									data[ chart.key ] as Record< string, number > | undefined,
+									chart.type
+								)
+							)
+							.filter( ( spec ) => spec !== '' );
 						return charts.length > 0 ? (
 							<div className="nvoos-pro-spa-records-detail__grid" role="list">
 								{ charts.map( ( spec ) => (
@@ -275,28 +277,43 @@ export function DashboardsPage(): JSX.Element {
 						) : null;
 					} )() }
 
-					{ Array.isArray( data.loan_list ) && data.loan_list.length > 0 && (
-						<section className="nvoos-pro-spa-records-detail" aria-label={ __( 'Loan summary', 'nvoos-pro-spa' ) }>
-							<h3 className="nvoos-pro-spa-records-detail__title">
-								{ __( 'Loan summary', 'nvoos-pro-spa' ) }
-							</h3>
-							<div className="nvoos-pro-spa-tools-list" role="table" aria-label={ __( 'Loan summary', 'nvoos-pro-spa' ) }>
-								{ ( data.loan_list as DashboardLoanRow[] ).map( ( row ) => (
-									<div key={ row.id } className="nvoos-pro-spa-tools-list__row" role="row">
-										<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-											{ row.title }
+					{ ( dashboard.lists ?? [] ).map( ( list ) => {
+						const rows = data[ list.key ];
+						if ( ! Array.isArray( rows ) || rows.length === 0 ) {
+							return null;
+						}
+						return (
+							<section key={ list.key } className="nvoos-pro-spa-records-detail" aria-label={ list.title }>
+								<h3 className="nvoos-pro-spa-records-detail__title">{ list.title }</h3>
+								<div className="nvoos-pro-spa-tools-list" role="table" aria-label={ list.title }>
+									{ ( rows as Record< string, unknown >[] ).map( ( row, index ) => (
+										<div
+											key={ String( row.id ?? index ) }
+											className="nvoos-pro-spa-tools-list__row"
+											role="row"
+										>
+											{ list.columns.map( ( column ) => (
+												<div
+													key={ column.key }
+													className={
+														'nvoos-pro-spa-tools-list__cell' +
+														( column.format
+															? ''
+															: ' nvoos-pro-spa-tools-list__cell--desc' )
+													}
+													role="cell"
+												>
+													{ column.format
+														? formatMetric( row[ column.key ], column.format )
+														: String( row[ column.key ] ?? '—' ) }
+												</div>
+											) ) }
 										</div>
-										<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-											{ formatMetric( row.balance, 'money' ) }
-										</div>
-										<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-											{ row.type } · { row.status }
-										</div>
-									</div>
-								) ) }
-							</div>
-						</section>
-					) }
+									) ) }
+								</div>
+							</section>
+						);
+					} ) }
 				</>
 			) }
 		</div>

@@ -184,6 +184,81 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 						'format' => 'percent',
 					),
 				),
+				'charts'      => array(
+					array(
+						'key'   => 'by_loan_type',
+						'title' => __( 'By Loan Type', 'mcp-ai-wpoos-pro' ),
+						'type'  => 'bar',
+					),
+					array(
+						'key'   => 'by_status',
+						'title' => __( 'By Status', 'mcp-ai-wpoos-pro' ),
+						'type'  => 'bar',
+					),
+					array(
+						'key'   => 'by_property_type',
+						'title' => __( 'By Property Type', 'mcp-ai-wpoos-pro' ),
+						'type'  => 'bar',
+					),
+					array(
+						'key'   => 'maturity_schedule',
+						'title' => __( 'Maturity Schedule', 'mcp-ai-wpoos-pro' ),
+						'type'  => 'bar',
+					),
+				),
+				'lists'       => array(
+					array(
+						'key'     => 'loan_list',
+						'title'   => __( 'Loan summary', 'mcp-ai-wpoos-pro' ),
+						'columns' => array(
+							array(
+								'key'   => 'title',
+								'label' => __( 'Loan', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'    => 'balance',
+								'label'  => __( 'Balance', 'mcp-ai-wpoos-pro' ),
+								'format' => 'money',
+							),
+							array(
+								'key'   => 'type',
+								'label' => __( 'Type', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'status',
+								'label' => __( 'Status', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+			),
+			'law' => array(
+				'label'       => __( 'Law Firm', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Active matters, clients, time entries and trust transactions.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '⚖️',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'active_matters',
+						'label'  => __( 'Active Matters', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_clients',
+						'label'  => __( 'Clients', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_time_entries',
+						'label'  => __( 'Time Entries', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_trust_txns',
+						'label'  => __( 'Trust Transactions', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+				),
 			),
 		);
 	}
@@ -298,6 +373,22 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			$loan_status = isset( $filters['loan_status'] ) ? $filters['loan_status'] : '';
 
 			return WP_MCP_AI_CRE_Debt_Dashboard_Page::get_portfolio_data( $loan_type, $loan_status );
+		}
+
+		if ( 'law' === $dashboard_id ) {
+			$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-law-firm-dashboard-page.php';
+			if ( ! class_exists( 'WP_MCP_AI_Law_Firm_Dashboard_Page' ) && file_exists( $page_file ) ) {
+				require_once $page_file;
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Law_Firm_Dashboard_Page' ) ) {
+				return new WP_Error(
+					'dashboards_provider_unavailable',
+					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 501 )
+				);
+			}
+
+			return WP_MCP_AI_Law_Firm_Dashboard_Page::get_dashboard_data();
 		}
 
 		return new WP_Error(
