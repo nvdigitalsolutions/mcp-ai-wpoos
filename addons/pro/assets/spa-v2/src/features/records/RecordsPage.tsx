@@ -105,6 +105,10 @@ export const RECORDS_GROUP_COPY: Record< string, { title: string; subtitle: stri
 		title: __( 'Professions', 'nvoos-pro-spa' ),
 		subtitle: __( 'Profession definitions and agent roles.', 'nvoos-pro-spa' ),
 	},
+	calendar: {
+		title: __( 'Calendar', 'nvoos-pro-spa' ),
+		subtitle: __( 'Appointments and bookings.', 'nvoos-pro-spa' ),
+	},
 	records: {
 		title: __( 'Records', 'nvoos-pro-spa' ),
 		subtitle: __( 'Entity records across the toolkits.', 'nvoos-pro-spa' ),

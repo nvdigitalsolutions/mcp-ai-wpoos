@@ -103,7 +103,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		foreach ( array( 'mcp_ai_company', 'mcp_ai_customer', 'mcp_ai_deal', 'mcp_ai_lead', 'mcp_ai_ticket', 'mcp_ai_project', 'mcp_ai_task', 'mcp_ai_event', 'mcp_ai_profession' ) as $slug ) {
+		foreach ( array( 'mcp_ai_company', 'mcp_ai_customer', 'mcp_ai_deal', 'mcp_ai_lead', 'mcp_ai_ticket', 'mcp_ai_project', 'mcp_ai_task', 'mcp_ai_event', 'mcp_ai_profession', 'mcp_appointment' ) as $slug ) {
 			$this->ensure_cpt( $slug );
 		}
 
@@ -114,7 +114,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Record meta schemas unavailable in this bootstrap.' );
 		}
 
-		$expected_keys = array( 'company', 'customer', 'deal', 'lead', 'ticket', 'project', 'task', 'event', 'profession' );
+		$expected_keys = array( 'company', 'customer', 'deal', 'lead', 'ticket', 'project', 'task', 'event', 'profession', 'appointment' );
 		foreach ( $expected_keys as $key ) {
 			$this->assertArrayHasKey( $key, $data['entities'], 'Entity should be exposed: ' . $key );
 			$this->assertNotEmpty( $data['entities'][ $key ]['columns'], 'Entity should carry columns: ' . $key );
@@ -126,6 +126,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertSame( 'crm', $data['entities']['company']['group'] );
 		$this->assertSame( 'pm', $data['entities']['project']['group'] );
 		$this->assertSame( 'professions', $data['entities']['profession']['group'] );
+		$this->assertSame( 'calendar', $data['entities']['appointment']['group'] );
 	}
 
 	/**

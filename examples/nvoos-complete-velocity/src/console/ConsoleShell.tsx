@@ -466,6 +466,18 @@ function ConsoleApp(): JSX.Element {
                 }
               />
               <Route
+                path="/calendar"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/calendar')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RecordsPage group="calendar" />
+                  </RequireGate>
+                }
+              />
+              <Route
                 path="/dashboards"
                 element={
                   <RequireGate

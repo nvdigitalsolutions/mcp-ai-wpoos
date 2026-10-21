@@ -50,68 +50,75 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 	 * @var array<string, array<string, string>>
 	 */
 	const RECORD_ENTITIES = array(
-		'company'    => array(
+		'company'     => array(
 			'post_type' => 'mcp_ai_company',
 			'label'     => 'Companies',
 			'singular'  => 'Company',
 			'icon'      => '🏢',
 			'group'     => 'crm',
 		),
-		'customer'   => array(
+		'customer'    => array(
 			'post_type' => 'mcp_ai_customer',
 			'label'     => 'Customers',
 			'singular'  => 'Customer',
 			'icon'      => '🧑',
 			'group'     => 'crm',
 		),
-		'deal'       => array(
+		'deal'        => array(
 			'post_type' => 'mcp_ai_deal',
 			'label'     => 'Deals',
 			'singular'  => 'Deal',
 			'icon'      => '🤝',
 			'group'     => 'crm',
 		),
-		'lead'       => array(
+		'lead'        => array(
 			'post_type' => 'mcp_ai_lead',
 			'label'     => 'Leads',
 			'singular'  => 'Lead',
 			'icon'      => '🔍',
 			'group'     => 'crm',
 		),
-		'ticket'     => array(
+		'ticket'      => array(
 			'post_type' => 'mcp_ai_ticket',
 			'label'     => 'Tickets',
 			'singular'  => 'Ticket',
 			'icon'      => '🎫',
 			'group'     => 'crm',
 		),
-		'project'    => array(
+		'project'     => array(
 			'post_type' => 'mcp_ai_project',
 			'label'     => 'Projects',
 			'singular'  => 'Project',
 			'icon'      => '📁',
 			'group'     => 'pm',
 		),
-		'task'       => array(
+		'task'        => array(
 			'post_type' => 'mcp_ai_task',
 			'label'     => 'Tasks',
 			'singular'  => 'Task',
 			'icon'      => '✅',
 			'group'     => 'pm',
 		),
-		'event'      => array(
+		'event'       => array(
 			'post_type' => 'mcp_ai_event',
 			'label'     => 'Events',
 			'singular'  => 'Event',
 			'icon'      => '📅',
 			'group'     => 'pm',
 		),
-		'profession' => array(
+		'profession'  => array(
 			'post_type' => 'mcp_ai_profession',
 			'label'     => 'Professions',
 			'singular'  => 'Profession',
 			'icon'      => '👔',
 			'group'     => 'professions',
+		),
+		'appointment' => array(
+			'post_type' => 'mcp_appointment',
+			'label'     => 'Appointments',
+			'singular'  => 'Appointment',
+			'icon'      => '📅',
+			'group'     => 'calendar',
 		),
 	);
 

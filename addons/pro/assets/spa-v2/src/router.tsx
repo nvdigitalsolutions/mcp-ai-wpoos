@@ -82,6 +82,7 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/crm" element={ <RecordsPage group="crm" /> } />
 				<Route path="/pm" element={ <RecordsPage group="pm" /> } />
 				<Route path="/professions" element={ <RecordsPage group="professions" /> } />
+				<Route path="/calendar" element={ <RecordsPage group="calendar" /> } />
 				<Route path="/dashboards" element={ <DashboardsPage /> } />
 				<Route path="/portability" element={ <PortabilityPage /> } />
 				<Route path="/security-center" element={ <SecurityCenterPage /> } />

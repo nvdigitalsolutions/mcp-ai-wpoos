@@ -1375,6 +1375,43 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			),
 
 			// ----------------------------------------------------------------
+			// Calendar Booking (Proposal 084 Phase 4d W14 console port)
+			// ----------------------------------------------------------------
+
+			'mcp_appointment'     => array(
+				'_client_name'      => array(
+					'meta_key'    => '_client_name',
+					'label'       => __( 'Client', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Client name for the appointment.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_appointment_type' => array(
+					'meta_key'    => '_appointment_type',
+					'label'       => __( 'Type', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Appointment type or service category.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_start_time'       => array(
+					'meta_key'    => '_start_time',
+					'label'       => __( 'Start', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Appointment start time.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_end_time'         => array(
+					'meta_key'    => '_end_time',
+					'label'       => __( 'End', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Appointment end time.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_status'           => array(
+					'meta_key'    => '_status',
+					'label'       => __( 'Status', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Appointment status (booked, confirmed, cancelled…).', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
+			// ----------------------------------------------------------------
 			// Finance Toolkit
 			// ----------------------------------------------------------------
 
