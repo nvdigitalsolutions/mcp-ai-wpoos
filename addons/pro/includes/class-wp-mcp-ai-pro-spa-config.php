@@ -310,6 +310,9 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'scheduleManager'    => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) )
 					: '',
+				'workflowBuilder'    => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/orchestration/workflows' ) )
+					: '',
 				'shortcuts'          => esc_url_raw( rest_url( 'mcp-ai-pro/v1/tool-shortcuts' ) ),
 				'slashCommands'      => esc_url_raw( rest_url( 'mcp-ai-pro/v1/slash-commands' ) ),
 				'okf'                => WP_MCP_AI_Feature_Flags::okf()

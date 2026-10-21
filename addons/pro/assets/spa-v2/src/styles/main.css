@@ -4819,6 +4819,23 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	cursor: not-allowed;
 }
 
+/* =========================================================================
+   Workflows page (2.4.0 — Proposal 084 Phase 3b W10.2a)
+   ========================================================================= */
+
+.nvoos-pro-spa-workflows-page__layout {
+	display: grid;
+	grid-template-columns: 300px minmax( 0, 1fr );
+	gap: 16px;
+	align-items: start;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-workflows-page__layout {
+		grid-template-columns: 1fr;
+	}
+}
+
 .nvoos-pro-spa-tools-page__footer {
 	margin-top: 16px;
 	padding: 8px 0;

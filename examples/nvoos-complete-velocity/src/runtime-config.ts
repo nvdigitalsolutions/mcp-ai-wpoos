@@ -69,6 +69,7 @@ function buildEndpoints(origin: string): ProSpaEndpoints {
     orchestrationStats: `${core}/orchestration/stats`,
     proOps: `${pro}/ops`,
     scheduleManager: `${pro}`,
+    workflowBuilder: `${core}/orchestration/workflows`,
     shortcuts: `${pro}/tool-shortcuts`,
     slashCommands: `${pro}/slash-commands`,
     okf: `${pro}/okf`,

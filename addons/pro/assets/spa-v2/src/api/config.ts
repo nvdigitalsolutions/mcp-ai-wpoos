@@ -106,6 +106,8 @@ export interface ProSpaEndpoints {
 	proOps: string;
 	/** Schedule Manager REST base (mcp-ai-pro/v1 schedules + presets, 2.4.0). */
 	scheduleManager: string;
+	/** Workflow builder REST base (mcp-ai/v1/orchestration/workflows, 2.4.0). */
+	workflowBuilder: string;
 	shortcuts: string;
 	slashCommands: string;
 	/** OKF Skills & Knowledge browse endpoint (v2.1.1). */
@@ -268,6 +270,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			orchestrationStats: typeof e.orchestrationStats === 'string' ? e.orchestrationStats : '',
 			proOps: typeof e.proOps === 'string' ? e.proOps : '',
 			scheduleManager: typeof e.scheduleManager === 'string' ? e.scheduleManager : '',
+			workflowBuilder: typeof e.workflowBuilder === 'string' ? e.workflowBuilder : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 			okf: typeof e.okf === 'string' ? e.okf : '',

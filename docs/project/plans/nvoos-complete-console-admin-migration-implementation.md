@@ -335,8 +335,13 @@ on); retirement stays gated on the port.
 - [x] W10.1 Feature parity audit — recorded above; gap-matrix rows B8/P10
   notes corrected.
 - [ ] W10.2 Builder port (sub-steps):
-  - [ ] W10.2a spa-v2 Workflows page: workflow list + canvas shell consuming
-    `mcp-ai/v1/orchestration/workflows` (base REST already exists).
+  - [x] W10.2a spa-v2 Workflows page: workflow list + canvas shell consuming
+    `mcp-ai/v1/orchestration/workflows` (base REST already exists) —
+    placeholder replaced with full CRUD (create/rename via list/run/
+    delete) + a canvas shell rendering the selected graph's metadata;
+    `api/workflow-builder.ts` + `hooks/useWorkflowBuilder.ts` +
+    `workflowBuilder` endpoint in both runtime configs; vitest
+    `workflow-builder-client.test.ts`.
   - [ ] W10.2b ReactFlow canvas parity: node types, validation, run/execute
     (reuse `@xyflow/react` v12 per the spa-ui skill; port the Pro builder's
     node catalog).
