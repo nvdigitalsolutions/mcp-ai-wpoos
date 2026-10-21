@@ -5,8 +5,8 @@ description: Audit NV oOS console SPA clients (addons/pro/assets/spa-v2/src/api/
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "2.4.0"
-  plugin-version-tested: "2.4.0"
+  plugin-version: "1.2.9"
+  plugin-version-tested: "1.2.9"
   last-updated: "2026-10-22"
 ---
 

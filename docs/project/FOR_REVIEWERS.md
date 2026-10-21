@@ -19,7 +19,7 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.2.8 (October 2026)
+**Current version:** 1.2.9 (October 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
 **Total tools:** ~1,731 (~355 base + ~1,377 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
@@ -125,7 +125,7 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 |---|---|---|---|
 | **Page Agent** | 0.1.0 | GPLv3 | Alibaba Page Agent (MIT) browser copilot. Natural-language page control — click, type, navigate. Client-side only. |
 | **MCP Gateway** | 0.1.1 | GPLv3 | Public fleet MCP endpoint (Express service, streamable HTTP MCP 2026-07-28). Public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, fail-closed env config. Subtree mirror to `nvoos-mcp-gateway`. |
-| **Schedule Anything** | 0.1.1 | Proprietary | Full SaaS booking platform with Stripe, calendar management, multi-tenant architecture, and single-site sole-tenant mode (Proposal 082) — activates on non-multisite installs with idempotent self-provisioning. |
+| **Schedule Anything** | 0.1.2 | Proprietary | Full SaaS booking platform with Stripe, calendar management, multi-tenant architecture, and single-site sole-tenant mode (Proposal 082) — activates on non-multisite installs with idempotent self-provisioning. **0.1.2 (v1.2.9):** the live `sa-tools` registry route, server-decided toolkit entitlements, multisite admin capability grants, preset facets + pagination, and idempotent toggles. |
 | **Schedule Anything SPA** | 0.2.0 | Proprietary | React SPA frontend (Vite + Tailwind v4) for Schedule Anything. |
 | **Design System** | 0.3.0 | GPLv3 | Design token system + token-driven email templates (formerly "Crocoblock DS" at `addons/crocoblock-ds/` — renamed 0.1.0 → 0.3.0). 55+ CSS tokens, admin editor, DTCG export, a11y tokens, 8 addon-provided email-template tools. |
 
@@ -266,7 +266,7 @@ The project currently employs:
 - **GitHub Copilot** — inline suggestions and code completion
 - **OpenAI Codex** — prototyping and exploration
 - **BMAD Agents** — 6 internal workflow agents (`.bmad/agents/*.yaml`) running inside NV oOS assistants
-- **Zed Agent Skills** — 75 coding-time skills (`.agents/skills/`: 20 wp-* WordPress plugin development patterns + 36 design-* skills + 19 mcp-ai-* operational guides incl. mcp-ai-wpoos-plugin)
+- **Zed Agent Skills** — 76 coding-time skills (`.agents/skills/`: 20 wp-* WordPress plugin development patterns + 36 design-* skills + 20 mcp-ai-* operational guides incl. mcp-ai-wpoos-plugin)
 
 See [AI-Assisted Development](../developer/AI_ASSISTED_DEVELOPMENT.md) for full transparency about the tools, workflow, and what this means for code review.
 

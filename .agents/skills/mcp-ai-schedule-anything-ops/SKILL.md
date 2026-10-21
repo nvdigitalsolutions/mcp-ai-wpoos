@@ -4,8 +4,8 @@ description: Operational guide for the Schedule Anything SaaS surface — the 3-
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.8"
-  plugin-version-tested: "1.2.8"
+  plugin-version: "1.2.9"
+  plugin-version-tested: "1.2.9"
   last-updated: "2026-10-22"
 ---
 
@@ -68,7 +68,7 @@ registered in `addons/pro/includes/class-wp-mcp-ai-pro-module-registry.php`.
 |---|---|
 | `GET /mcp-ai-pro/v1/toolkits` | `{ ok, toolkits: [{slug, flag_key, enabled}] }` — via `SA_Toolkit_Manager` (platform plugin); empty list without the platform |
 | `POST /mcp-ai-pro/v1/toolkits/{slug}/toggle` | `{ enabled }` body; unknown slug 404, tier-locked → 403 `sa_toolkit_not_entitled` (server-side entitlements — the SPA never decides) |
-| `GET /mcp-ai-pro/v1/sa-tools` | `{ ok, tools: [{slug, name, description, group, group_label}] }` — live-tool-registry light rows for the visual builder palette (#7147, since 1.2.8); args `search`/`group`/`page`/`per_page` (max 100); registers **unconditionally** (works without the platform plugin) |
+| `GET /mcp-ai-pro/v1/sa-tools` | `{ ok, tools: [{slug, name, description, group, group_label}] }` — live-tool-registry light rows for the visual builder palette (#7147, since 1.2.9); args `search`/`group`/`page`/`per_page` (max 100); registers **unconditionally** (works without the platform plugin) |
 | `GET /mcp-ai-pro/v1/schedules` | `{ ok, schedules, total }` — owned by the schedule CRUD controller (the console + SA SPA contract). The scheduled-result picker moved to its own literal `/schedules/selectable` (bare `[{id, name, …}]` array, block-editor caller follows) so two GET handlers can never collide on one route (2026-10-22) |
 | `GET /mcp-ai-pro/v1/presets` | `{ ok, presets, total }`; search/category/toolkit/page/per_page |
 | `GET /mcp-ai-pro/v1/presets/{id}` | 404 `sa_preset_not_found` |
