@@ -91,9 +91,18 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Enable logging for tests. Logging state lives inside the grouped
 		// wp_mcp_ai_settings option (enable_logging key); the legacy standalone
 		// wp_mcp_ai_enable_logging option is no longer read by the logger.
-		$settings                    = WP_MCP_AI_Admin_Settings::get_settings();
-		$settings['enable_logging'] = true;
+		// Debug-typed events also require the opt-in enable_debug_logging
+		// gate (WP_MCP_AI_Logger::should_log_event_type drops them otherwise),
+		// so both keys must be on for this suite's assertions.
+		$settings                         = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['enable_logging']       = true;
+		$settings['enable_debug_logging'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+		// The settings base class caches the merged settings in a static;
+		// update_option() does not invalidate it, so the logger would keep
+		// reading the pre-update cache (enable_logging false) and never fire
+		// wp_mcp_ai_log_entry — reset the cache so the write takes effect.
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
 		// Hook into log events to capture them.
 		add_filter( 'wp_mcp_ai_log_entry', array( $this, 'capture_log_event' ), 10, 4 );
@@ -112,7 +121,9 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 		// Disable logging again and reset any injected repository mock.
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		unset( $settings['enable_logging'] );
+		unset( $settings['enable_debug_logging'] );
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
 		$this->set_transcript_repository_mock( null );
 
@@ -367,7 +378,7 @@ class Test_Chat_Transcript_Logging extends WP_UnitTestCase {
 	 */
 	public function test_logging_respects_enabled_setting() {
 		// Disable logging via the grouped settings option.
-		$settings                    = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                   = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['enable_logging'] = false;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 

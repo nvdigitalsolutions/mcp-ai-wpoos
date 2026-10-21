@@ -280,57 +280,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			// Note: Class instantiates itself at the bottom of the file.
 		}
 
-		// Load Pro Ops REST overview (Proposal 084 Phase 3) — groups the four
-		// ops surfaces behind GET /mcp-ai-pro/v1/ops/overview.
-		$pro_ops_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-rest-ops-controller.php';
-		if ( file_exists( $pro_ops_rest ) ) {
-			require_once $pro_ops_rest;
-			WP_MCP_AI_Pro_REST_Ops_Controller::init();
-		}
-
-		// Load Pro Workflow Presets REST bridge (Proposal 084 Phase 3b,
-		// W10.2c) — GET /mcp-ai-pro/v1/workflow-presets +
-		// POST /workflow-presets/{id}/install for the console canvas.
-		$workflow_presets_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-workflow-presets-rest-controller.php';
-		if ( file_exists( $workflow_presets_rest ) ) {
-			require_once $workflow_presets_rest;
-			WP_MCP_AI_Pro_Workflow_Presets_REST_Controller::init();
-		}
-
-		// Load Pro Workflow Node REST bridge (Proposal 084 Phase 3b,
-		// W10.2d) — POST /mcp-ai-pro/v1/workflow-builder/nodes/execute.
-		$workflow_node_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-workflow-node-rest-controller.php';
-		if ( file_exists( $workflow_node_rest ) ) {
-			require_once $workflow_node_rest;
-			WP_MCP_AI_Pro_Workflow_Node_REST_Controller::init();
-		}
-
-		// Load Pro Records REST bridge (Proposal 084 Phase 4, W11) —
-		// GET /mcp-ai-pro/v1/records/schema + meta-in-REST for the CRM
-		// command center's generic Records page.
-		$records_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-records-rest-controller.php';
-		if ( file_exists( $records_rest ) ) {
-			require_once $records_rest;
-			WP_MCP_AI_Pro_Records_REST_Controller::init();
-		}
-
-		// Load Pro Dashboards REST bridge (Proposal 084 Phase 4, W13) —
-		// GET /mcp-ai-pro/v1/dashboards/schema + /dashboards/{id}/data for
-		// the console's repeating-dashboard feature.
-		$dashboards_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-dashboards-rest-controller.php';
-		if ( file_exists( $dashboards_rest ) ) {
-			require_once $dashboards_rest;
-			WP_MCP_AI_Pro_Dashboards_REST_Controller::init();
-		}
-
-		// Load Pro Media Command Center REST bridge (Proposal 084 Phase 4,
-		// W14) — GET /mcp-ai-pro/v1/media-cc/health +
-		// POST /media-cc/compression-sweep for the console Media Ops page.
-		$media_cc_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-media-cc-rest-controller.php';
-		if ( file_exists( $media_cc_rest ) ) {
-			require_once $media_cc_rest;
-			WP_MCP_AI_Pro_Media_CC_REST_Controller::init();
-		}
+		// The six console REST bridges (ops overview, workflow presets,
+		// workflow node execution, records, dashboards, media command center)
+		// are loaded by the `rest_console_bridges` module in the Pro module
+		// registry instead — this function is admin-gated, and REST requests
+		// from the front-end SPA never satisfy is_admin(), so registering them
+		// here left those routes 404ing on the live console.
 
 		// Register Pro export providers for Backup & Restore.
 		add_action(

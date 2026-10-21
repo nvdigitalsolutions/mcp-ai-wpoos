@@ -53,37 +53,34 @@
             <group>external-http</group>
         </exclude>
     </groups>
-    <source>
-        <include>
-            <directory suffix=".php">includes</directory>
-            <directory suffix=".php">addons/pro/includes</directory>
-            <directory suffix=".php">addons/chat-spa/includes</directory>
-            <directory suffix=".php">addons/canvas-toolkit/includes</directory>
-            <directory suffix=".php">addons/document-editor/includes</directory>
-            <directory suffix=".php">addons/media-studio/includes</directory>
-            <directory suffix=".php">addons/toolkit-shell/includes</directory>
-            <directory suffix=".php">addons/docs-hub/includes</directory>
-            <directory suffix=".php">addons/saas-controller/includes</directory>
-            <directory suffix=".php">addons/embedded/includes</directory>
-            <directory suffix=".php">addons/algorave/includes</directory>
-            <directory suffix=".php">addons/fantasy-football/includes</directory>
-            <directory suffix=".php">addons/graphify/includes</directory>
-            <directory suffix=".php">addons/checkout-api/includes</directory>
-            <directory suffix=".php">addons/nvoos-design-system/includes</directory>
-        </include>
-        <exclude>
-            <directory>vendor</directory>
-            <directory>node_modules</directory>
-            <directory>addons/pro/vendor</directory>
-            <directory>tests</directory>
-            <directory>addons/pro/tests</directory>
-            <directory>addons/checkout-api/tests</directory>
-            <directory>addons/nvoos-design-system/tests</directory>
-            <directory>bin</directory>
-            <directory>examples</directory>
-            <directory>assets/examples</directory>
-        </exclude>
-    </source>
+    	<source>
+    		<include>
+    			<directory suffix=".php">includes</directory>
+    			<directory suffix=".php">addons/pro/includes</directory>
+    			<directory suffix=".php">addons/chat-spa/includes</directory>
+    			<directory suffix=".php">addons/canvas-toolkit/includes</directory>
+    			<directory suffix=".php">addons/document-editor/includes</directory>
+    			<directory suffix=".php">addons/media-studio/includes</directory>
+    			<directory suffix=".php">addons/toolkit-shell/includes</directory>
+    			<directory suffix=".php">addons/docs-hub/includes</directory>
+    			<directory suffix=".php">addons/saas-controller/includes</directory>
+    			<directory suffix=".php">addons/embedded/includes</directory>
+    			<directory suffix=".php">addons/algorave/includes</directory>
+    			<directory suffix=".php">addons/fantasy-football/includes</directory>
+    			<directory suffix=".php">addons/graphify/includes</directory>
+    			<directory suffix=".php">addons/checkout-api/includes</directory>
+    			<directory suffix=".php">addons/nvoos-design-system/includes</directory>
+    		</include>
+    		<!--
+    			No <exclude> directories: PHPUnit 11's SourceMapper recursively
+    			walks every exclude path to build its file map, and none of the
+    			previously-listed trees (vendor, node_modules, tests, bin,
+    			examples, assets/examples) is ever reachable from an include
+    			directory above — they were semantic no-ops that still paid the
+    			full walk cost (pathological on bind-mounted worktrees where
+    			examples/nvoos-dictate/src-tauri's Rust target/ alone is 70 GB+).
+    		-->
+    	</source>
     <coverage includeUncoveredFiles="true"
               pathCoverage="false"
               ignoreDeprecatedCodeUnits="true"

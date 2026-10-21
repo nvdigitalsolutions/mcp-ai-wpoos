@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 71 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 74 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-19"
+  last-updated: "2026-10-21"
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
 ---
@@ -1118,6 +1118,65 @@ the changed files is the substantive gate; plan CI waits accordingly.
       the production API accepts an explicit path. Same rule for any
       corpus/exporter test asserting counts over a directory scan — never
       assume the directory is empty.
+
+   72. **The whole suite "hangs" after plugin boot — PHPUnit 11's SourceMapper
+      walks every `<source><exclude>` directory (2026-10-21).** Symptom: runs
+      print the plugin boot lines ("Module … skipped") but never reach the
+      PHPUnit banner, with the `php` process cycling `R`/`D` on the bind
+      mount — looks infinite but is just an enormous enumeration. PHPUnit 11's
+      `SourceMapper::map()` calls `FileIteratorFacade::getFilesAsArray()` not
+      only for every `<source><include>` dir but **also for every
+      `<source><exclude>` dir**, so no-op excludes still pay the full
+      recursive walk. `phpunit.xml.dist` listed `examples`, `node_modules`,
+      `vendor`, `tests`, `bin` — none of which an include path can ever
+      produce — and this worktree's `examples/nvoos-dictate/src-tauri` Rust
+      `target/` is 70 GB+, making the walk hours-long on a slow bind mount.
+      Diagnosis: `strace -f -e trace=%file` (apt install strace) or an xdebug
+      trace (`xdebug.mode=trace`, `tail` the `.xt` file) shows php-file-
+      iterator's `Facade.php:36` iterating the huge tree, called from
+      `SourceMapper.php:83`. Fix: **delete `<exclude>` directories that no
+      include can produce** (excludes only subtract from the include set) —
+      same rule for `phpunit-basepro.xml.dist` and any new `<source>` block.
+      Secondary noise on the same mount: the `oos-wp` entrypoint runs a 60s
+      `wp-cron.php` loop whose stuck apache workers (D-state, `p9_client_rpc`)
+      pile up and compound the slowdown — `pkill -f wp-cron.php` + kill the
+      D-state workers before re-running.
+
+   73. **Static settings-registry leak — a suite unregisters real sections in
+      `tearDown` and leaves the process-wide registry gutted (2026-10-21,
+      the first full-suite CI run after the Proposal 084 console PRs: 23
+      failures).** `tests/rest-api/test-rest-settings-schema.php` registered
+      fresh `WP_MCP_AI_Section_General`/`Providers` instances in `setUp()` and
+      `unregister_section()`-ed them in `tearDown()` **without restoring the
+      boot-time instances**. `WP_MCP_AI_Settings_Registry::$sections` is a
+      private static, so every suite that runs later in the single-process
+      run found `get_section()` null: documentation-link rendering,
+      provider-subtab saves (keys never updated), simple-settings save,
+      subtab-wiping — all "sections not registered"/"should be saved"
+      failures that pass in isolation and only break in the full run.
+      Fix pattern: **snapshot the previously registered instances in `setUp`
+      and re-register them in `tearDown`** (static array on the test class;
+      guard with `instanceof`). Same discipline for any test that mutates a
+      process-wide static registry — always restore, never just clean up.
+      Triage: when the full CI run fails but the files pass in isolation,
+      reproduce locally by running the suspected culprit file FIRST, followed
+      by the affected files, in one phpunit invocation (alphabetical order
+      matches the suite enumeration).
+
+   74. **Debug-typed log events never fire in tests — the granular
+      `enable_debug_logging` gate plus the settings static cache
+      (2026-10-21, `test-chat-transcript-logging.php`).**
+      `WP_MCP_AI_Logger::log_event()` checks `is_logging_enabled()` AND
+      `should_log_event_type()`, and `LEVEL_DEBUG` events require the opt-in
+      `enable_debug_logging` key (default false — the gate exists because
+      debug events fire on hot paths). A test asserting `type === 'debug'`
+      entries must set BOTH `enable_logging` and `enable_debug_logging`.
+      Additionally, `WP_MCP_AI_Admin_Settings_Base::$settings_cache` is a
+      static that `update_option()` does NOT invalidate — call
+      `WP_MCP_AI_Admin_Settings::reset_settings_cache()` after every
+      `update_option( OPTION_NAME, … )` in a test, or the logger keeps
+      reading the pre-update cache and the `wp_mcp_ai_log_entry` filter
+      never fires.
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
