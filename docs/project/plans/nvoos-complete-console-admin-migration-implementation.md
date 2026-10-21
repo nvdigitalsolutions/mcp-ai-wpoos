@@ -513,7 +513,11 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
 - [ ] **W14 (4d) — Remaining command centers.** Calendar booking (existing
   REST), F&B (Proposal 078 universalisation REST), Media (P2), Chat
   Channels (P4) — per-toolkit checks against the storage audit before each
-  port.
+  port. **Slice 1 shipped 2026-10-21:** calendar booking — the
+  `mcp_appointment` CPT joins wp/v2 (the audit's "calendar has its own
+  REST" note was stale — the toolkit has CPTs but no REST controller) with
+  its meta schema in the registry; the `/calendar` Records route renders
+  the appointments group. Remaining: F&B, Media, Chat Channels.
 
 ## 7. Phase 5 — Retirement & hardening
 
