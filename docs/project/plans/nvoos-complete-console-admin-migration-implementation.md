@@ -289,18 +289,24 @@ REST (Proposal 081) and `WP_MCP_AI_Pro_Schedule_REST_Controller` (registered
 in the Pro module registry). The port consumes those instead of the admin
 AJAX.
 
-- [ ] W9.1 REST audit — enumerate the page's list/create/update/delete/
-  dry-run/history + presets surface against
-  `addons/pro/includes/rest/class-wp-mcp-ai-pro-schedule-rest-controller.php`
-  and the Proposal 081 presets/toolkits contract
-  (`class-wp-mcp-ai-pro-schedule-manager-page.php` is the source surface).
-- [ ] W9.2 spa-v2 `ScheduleManagerPage` — schedules table + presets tabs via
-  a new `api/` client + hook; route `#/schedule-manager`.
-- [ ] W9.3 Console route + nav entry (`/schedule-manager`,
+- [x] W9.1 REST audit — the existing bridge is complete: `mcp-ai-pro/v1`
+  `/schedules` (list/create), `/schedules/{id}` (get/update/delete),
+  `/schedules/{id}/{trigger,toggle,history}`
+  (`class-wp-mcp-ai-pro-schedule-rest-controller.php`, redacted public
+  shape) + `/presets`, `/presets/{id}/install`
+  (`class-wp-mcp-ai-pro-sa-rest-controller.php`, Proposal 081). No new
+  controller required — the port consumes these directly.
+- [x] W9.2 spa-v2 `ScheduleManagerPage` — schedules tab (create form, run
+  now, enable/disable, delete) + presets tab (install) via
+  `api/schedule-manager.ts` + `hooks/useScheduleManager.ts`; route
+  `#/schedule-manager`.
+- [x] W9.3 Console route + nav entry (`/schedule-manager`,
   `manage_options`, registered in `nav-features.tsx` — never inline).
-- [ ] W9.4 Kill-switch `wp_mcp_ai_admin_page_enabled_pro_schedule_manager`
+- [x] W9.4 Kill-switch `wp_mcp_ai_admin_page_enabled_pro_schedule_manager`
   on the wp-admin page.
-- [ ] W9.5 Tests (PHPUnit controller + vitest client) + both-bundle rebuild.
+- [x] W9.5 Tests (vitest `schedule-manager-client.test.ts` — the PHP REST
+  surface predates this port and is already covered by its own suites) +
+  both-bundle rebuild.
 - **Exit:** schedules and presets fully operable in the console; the wp-admin
   page filter-gated off by default for Console cohorts.
 

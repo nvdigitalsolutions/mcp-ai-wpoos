@@ -68,6 +68,7 @@ function buildEndpoints(origin: string): ProSpaEndpoints {
     tokenManager: `${core}/token-manager`,
     orchestrationStats: `${core}/orchestration/stats`,
     proOps: `${pro}/ops`,
+    scheduleManager: `${pro}`,
     shortcuts: `${pro}/tool-shortcuts`,
     slashCommands: `${pro}/slash-commands`,
     okf: `${pro}/okf`,

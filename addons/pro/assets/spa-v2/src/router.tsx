@@ -40,6 +40,7 @@ const DiagnosticsPage = lazy( () => import( './features/diagnostics/DiagnosticsP
 const TokenManagerPage = lazy( () => import( './features/token-manager/TokenManagerPage' ).then( ( m ) => ( { default: m.TokenManagerPage } ) ) );
 const OrchestrationStatsPage = lazy( () => import( './features/orchestration-stats/OrchestrationStatsPage' ).then( ( m ) => ( { default: m.OrchestrationStatsPage } ) ) );
 const ProOpsPage = lazy( () => import( './features/pro-ops/ProOpsPage' ).then( ( m ) => ( { default: m.ProOpsPage } ) ) );
+const ScheduleManagerPage = lazy( () => import( './features/schedule-manager/ScheduleManagerPage' ).then( ( m ) => ( { default: m.ScheduleManagerPage } ) ) );
 
 export interface AppRouterProps {
 	/** Shared transcript hook result from Layout. */
@@ -83,6 +84,7 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/token-manager" element={ <TokenManagerPage /> } />
 				<Route path="/orchestration-stats" element={ <OrchestrationStatsPage /> } />
 				<Route path="/pro-ops" element={ <ProOpsPage /> } />
+				<Route path="/schedule-manager" element={ <ScheduleManagerPage /> } />
 				<Route path="*" element={ <Navigate to="/chat" replace /> } />
 			</Routes>
 		</Suspense>

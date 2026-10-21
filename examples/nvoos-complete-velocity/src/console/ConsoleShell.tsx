@@ -134,6 +134,11 @@ const ProOpsPage = lazy(() =>
     default: m.ProOpsPage,
   })),
 );
+const ScheduleManagerPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/schedule-manager/ScheduleManagerPage').then((m) => ({
+    default: m.ScheduleManagerPage,
+  })),
+);
 
 const DOCK_PREF_KEY = 'nvoos-complete-console.dock-open';
 
@@ -495,6 +500,18 @@ function ConsoleApp(): JSX.Element {
                     capabilities={runtime.user.capabilities}
                   >
                     <ProOpsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/schedule-manager"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/schedule-manager')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <ScheduleManagerPage />
                   </RequireGate>
                 }
               />

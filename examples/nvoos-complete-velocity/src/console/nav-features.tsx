@@ -124,6 +124,12 @@ export const CONSOLE_NAV_ITEMS: ConsoleNavItem[] = [
     icon: '🛰️',
     capability: 'manage_options',
   },
+  {
+    path: '/schedule-manager',
+    label: 'Schedules',
+    icon: '⏰',
+    capability: 'manage_options',
+  },
 ];
 
 /**
