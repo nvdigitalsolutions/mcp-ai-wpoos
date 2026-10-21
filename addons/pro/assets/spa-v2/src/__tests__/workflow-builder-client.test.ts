@@ -87,4 +87,44 @@ describe( 'WorkflowBuilderClient', () => {
 		const client = new WorkflowBuilderClient( { endpoint: ENDPOINT, nonce: 'n' } );
 		expect( await client.get( 99 ) ).toBeNull();
 	} );
+
+	it( 'POSTs node execution to the nodes endpoint', async () => {
+		const urls: string[] = [];
+		global.fetch = vi.fn( ( input: RequestInfo | URL, init?: RequestInit ) => {
+			urls.push( `${ init?.method ?? 'GET' } ${ String( input ) }` );
+			return Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () => Promise.resolve( { ok: true, result: {} } ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+		const client = new WorkflowBuilderClient( {
+			endpoint: ENDPOINT,
+			nonce: 'n',
+			nodesEndpoint: 'https://example.com/wp-json/mcp-ai-pro/v1/workflow-builder',
+		} );
+		await client.executeNode( {
+			node_type: 'tool',
+			node_id: 'n1',
+			workflow_id: 'wf_1',
+			tool_name: 'web_search',
+			tool_arguments: {},
+		} );
+		expect( urls[ 0 ] ).toContain( 'POST' );
+		expect( urls[ 0 ] ).toContain( '/nodes/execute' );
+	} );
+
+	it( 'lists workflow runs from the runs endpoint and tolerates failures', async () => {
+		mockFetch( [ { id: 3, status: 'completed', started_at: '2026-01-01' } ] );
+		const client = new WorkflowBuilderClient( {
+			endpoint: ENDPOINT,
+			nonce: 'n',
+			runsEndpoint: 'https://example.com/wp-json/mcp-ai/v1/orchestration/runs',
+		} );
+		const rows = await client.runs( 7 );
+		expect( rows[ 0 ] ).toMatchObject( { id: 3, status: 'completed' } );
+
+		mockFetch( { message: 'boom' }, false );
+		expect( await client.runs( 7 ) ).toEqual( [] );
+	} );
 } );

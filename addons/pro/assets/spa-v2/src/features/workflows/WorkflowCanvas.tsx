@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useMemo, useState, type JSX } from 'react';
+import { __ } from '@wordpress/i18n';
 import {
 	ReactFlow,
 	ReactFlowProvider,
@@ -26,6 +27,7 @@ import '@xyflow/react/dist/style.css';
 import type { WorkflowDetail, WorkflowGraph } from '../../api/workflow-builder';
 import {
 	NODE_TYPE_LABELS,
+	nodeExecutePayload,
 	toCanvasNode,
 	toCanvasNodes,
 	toGraphEdges,
@@ -47,6 +49,9 @@ export interface WorkflowCanvasProps {
 	workflow: WorkflowDetail;
 	saving: boolean;
 	onSave: ( graph: WorkflowGraph ) => Promise< void >;
+	/** Run a single selected node (null payload = button disabled). */
+	onRunNode?: ( node: CanvasWorkflowNode ) => void;
+	nodeRunning?: boolean;
 }
 
 /** Fresh id for a palette-added node. */
@@ -55,7 +60,7 @@ function freshNodeId(): string {
 }
 
 export function WorkflowCanvas( props: WorkflowCanvasProps ): JSX.Element {
-	const { workflow, saving, onSave } = props;
+	const { workflow, saving, onSave, onRunNode, nodeRunning = false } = props;
 
 	const [ nodes, setNodes, onNodesChange ] = useNodesState< CanvasWorkflowNode >(
 		useMemo( () => toCanvasNodes( workflow.graph?.nodes ?? [] ), [ workflow.graph?.nodes ] )
@@ -174,6 +179,16 @@ export function WorkflowCanvas( props: WorkflowCanvasProps ): JSX.Element {
 								aria-label="Node label"
 								onChange={ ( event ) => renameSelected( event.target.value ) }
 							/>
+							{ onRunNode && (
+								<button
+									type="button"
+									className="nvoos-pro-spa-token-manager__action"
+									disabled={ nodeRunning || ! nodeExecutePayload( selectedNode, String( workflow.id ) ) }
+									onClick={ () => onRunNode( selectedNode ) }
+								>
+									{ __( 'Run node', 'nvoos-pro-spa' ) }
+								</button>
+							) }
 							<button
 								type="button"
 								className="nvoos-pro-spa-token-manager__action nvoos-pro-spa-token-manager__action--danger"

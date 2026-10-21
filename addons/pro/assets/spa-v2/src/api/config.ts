@@ -110,6 +110,10 @@ export interface ProSpaEndpoints {
 	workflowBuilder: string;
 	/** Workflow presets REST base (mcp-ai-pro/v1/workflow-presets, 2.4.0). */
 	workflowPresets: string;
+	/** Workflow node execution REST base (mcp-ai-pro/v1/workflow-builder, 2.4.0). */
+	workflowNodes: string;
+	/** Workflow runs REST base (mcp-ai/v1/orchestration/runs, 2.4.0). */
+	workflowRuns: string;
 	shortcuts: string;
 	slashCommands: string;
 	/** OKF Skills & Knowledge browse endpoint (v2.1.1). */
@@ -274,6 +278,8 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			scheduleManager: typeof e.scheduleManager === 'string' ? e.scheduleManager : '',
 			workflowBuilder: typeof e.workflowBuilder === 'string' ? e.workflowBuilder : '',
 			workflowPresets: typeof e.workflowPresets === 'string' ? e.workflowPresets : '',
+			workflowNodes: typeof e.workflowNodes === 'string' ? e.workflowNodes : '',
+			workflowRuns: typeof e.workflowRuns === 'string' ? e.workflowRuns : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 			okf: typeof e.okf === 'string' ? e.okf : '',

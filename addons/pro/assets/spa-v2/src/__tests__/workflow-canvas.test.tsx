@@ -13,6 +13,7 @@ import type { JSX } from 'react';
 
 import {
 	NODE_TYPE_LABELS,
+	nodeExecutePayload,
 	toCanvasNode,
 	toCanvasNodes,
 	toGraphEdges,
@@ -67,10 +68,75 @@ describe( 'workflow-graph converters', () => {
 		expect( toGraphNode( canvas ) ).toMatchObject( { id: 'i1', type: 'input' } );
 	} );
 
+	it( 'preserves executable node data through the round-trip', () => {
+		const canvas = toCanvasNode(
+			{
+				id: 't1',
+				type: 'tool',
+				label: 'Demand',
+				data: { toolSlug: 'fnb_weekend_demand', arguments: { friday: true } },
+			},
+			0
+		);
+		const restored = toGraphNode( canvas );
+		expect( restored ).toMatchObject( {
+			id: 't1',
+			type: 'tool',
+			label: 'Demand',
+		} );
+		expect( ( restored as { data?: Record< string, unknown > } ).data ).toMatchObject( {
+			toolSlug: 'fnb_weekend_demand',
+		} );
+	} );
+
 	it( 'filters malformed edges and keeps valid ones', () => {
 		expect(
 			toGraphEdges( [ { source: 'a', target: 'b' }, { source: '', target: 'b' } ] )
 		).toEqual( [ { id: 'edge_0_a_b', source: 'a', target: 'b' } ] );
+	} );
+} );
+
+describe( 'nodeExecutePayload', () => {
+	it( 'builds a tool payload from toolSlug data', () => {
+		const node = toCanvasNode(
+			{ id: 't1', type: 'tool', label: 'Demand', data: { toolSlug: 'fnb_weekend_demand' } },
+			0
+		);
+		expect( nodeExecutePayload( node, 'wf_1' ) ).toMatchObject( {
+			node_type: 'tool',
+			node_id: 't1',
+			workflow_id: 'wf_1',
+			tool_name: 'fnb_weekend_demand',
+		} );
+	} );
+
+	it( 'returns null when the executable field is missing', () => {
+		const bare = toCanvasNode( { id: 't2', type: 'tool', label: 'Bare' }, 0 );
+		expect( nodeExecutePayload( bare, 'wf_1' ) ).toBeNull();
+
+		const action = toCanvasNode( { id: 'a1', type: 'action', label: 'Action' }, 0 );
+		expect( nodeExecutePayload( action, 'wf_1' ) ).toBeNull();
+	} );
+
+	it( 'builds action and agent payloads from their data', () => {
+		const action = toCanvasNode(
+			{ id: 'a1', type: 'action', label: 'Notify', data: { command: 'notify', params: {} } },
+			0
+		);
+		expect( nodeExecutePayload( action, 'wf_1' ) ).toMatchObject( {
+			node_type: 'action',
+			command: 'notify',
+		} );
+
+		const agent = toCanvasNode(
+			{ id: 'g1', type: 'agent', label: 'Planner', data: { prompt: 'Plan it' } },
+			0
+		);
+		expect( nodeExecutePayload( agent, 'wf_1' ) ).toMatchObject( {
+			node_type: 'agent',
+			prompt: 'Plan it',
+			agent_id: 'default',
+		} );
 	} );
 } );
 

@@ -15,6 +15,7 @@ import { useBootstrap } from '../../hooks/useBootstrap';
 import { WorkflowCanvasWithProvider } from './WorkflowCanvas';
 import { WorkflowPresetsClient, type WorkflowPresetSummary } from '../../api/workflow-presets';
 import type { WorkflowGraph } from '../../api/workflow-builder';
+import { nodeExecutePayload, type CanvasWorkflowNode } from './workflow-graph';
 
 function Badge( { label }: { label: string } ): JSX.Element {
 	return (
@@ -29,6 +30,8 @@ export function WorkflowsPage(): JSX.Element {
 	const {
 		workflows,
 		selected,
+		runs,
+		lastNodeResult,
 		loading,
 		saving,
 		error,
@@ -38,10 +41,16 @@ export function WorkflowsPage(): JSX.Element {
 		createWorkflow,
 		removeWorkflow,
 		executeWorkflow,
+		executeNode,
 		saveGraph,
 	} = useWorkflowBuilder(
 		runtime
-			? { endpoint: runtime.endpoints.workflowBuilder ?? '', nonce: runtime.nonce }
+			? {
+					endpoint: runtime.endpoints.workflowBuilder ?? '',
+					nonce: runtime.nonce,
+					nodesEndpoint: runtime.endpoints.workflowNodes ?? '',
+					runsEndpoint: runtime.endpoints.workflowRuns ?? '',
+			  }
 			: { endpoint: '', nonce: '' }
 	);
 
@@ -156,6 +165,15 @@ export function WorkflowsPage(): JSX.Element {
 		} finally {
 			setBusy( null );
 		}
+	};
+
+	const handleRunNode = ( node: CanvasWorkflowNode ): void => {
+		const payload = nodeExecutePayload( node, String( selected?.id ?? '' ) );
+		if ( ! payload ) {
+			return;
+		}
+		setBusy( `run-node-${ node.id }` );
+		void executeNode( payload ).finally( () => setBusy( null ) );
 	};
 
 	const visiblePresets = presetCategory
@@ -353,6 +371,8 @@ export function WorkflowsPage(): JSX.Element {
 								key={ selected.id + ( canvasOverride ? ':draft' : '' ) }
 								workflow={ { ...selected, graph: canvasOverride ?? selected.graph } }
 								saving={ saving }
+								onRunNode={ handleRunNode }
+								nodeRunning={ busy !== null }
 								onSave={ async ( graph ) => {
 									await saveGraph( selected.id, graph );
 								} }
@@ -385,6 +405,31 @@ export function WorkflowsPage(): JSX.Element {
 									{ __( 'Delete', 'nvoos-pro-spa' ) }
 								</button>
 							</p>
+
+							{ lastNodeResult && (
+								<p className="nvoos-pro-spa-diagnostics__muted">{ lastNodeResult }</p>
+							) }
+
+							<h3 className="nvoos-pro-spa-diagnostics__card-title">{ __( 'Run history', 'nvoos-pro-spa' ) }</h3>
+							{ runs.length === 0 ? (
+								<p className="nvoos-pro-spa-diagnostics__muted">
+									{ __( 'No runs recorded yet.', 'nvoos-pro-spa' ) }
+								</p>
+							) : (
+								<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Run history', 'nvoos-pro-spa' ) }>
+									{ runs.map( ( run ) => (
+										<div key={ run.id } className="nvoos-pro-spa-tools-list__row" role="listitem">
+											<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+												<strong className="nvoos-pro-spa-tools-list__name">#{ run.id }</strong>
+												<Badge label={ typeof run.status === 'string' ? run.status : 'unknown' } />
+											</div>
+											<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
+												{ typeof run.started_at === 'string' && run.started_at ? run.started_at : '—' }
+											</div>
+										</div>
+									) ) }
+								</div>
+							) }
 						</>
 					) }
 				</main>

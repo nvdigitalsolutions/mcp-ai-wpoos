@@ -45,27 +45,57 @@ export interface WorkflowDetail extends WorkflowSummary {
 	graph: WorkflowGraph;
 }
 
+export interface WorkflowRunSummary {
+	id: number;
+	status: string;
+	started_at?: string;
+	finished_at?: string;
+	workflow_id?: number;
+	[ k: string ]: unknown;
+}
+
+export interface WorkflowNodeExecutePayload {
+	node_type: 'action' | 'tool' | 'agent';
+	node_id: string;
+	workflow_id: string;
+	context?: Record< string, unknown >;
+	command?: string;
+	params?: Record< string, unknown >;
+	tool_name?: string;
+	tool_arguments?: Record< string, unknown >;
+	agent_id?: string;
+	prompt?: string;
+}
+
 export interface WorkflowBuilderClientOptions {
 	endpoint: string;
 	nonce: string;
+	/** Node-execution REST base (mcp-ai-pro/v1/workflow-builder). */
+	nodesEndpoint?: string;
+	/** Workflow runs REST base (mcp-ai/v1/orchestration/runs). */
+	runsEndpoint?: string;
 }
 
 export class WorkflowBuilderClient {
 	private readonly endpoint: string;
 	private readonly nonce: string;
+	private readonly nodesEndpoint: string;
+	private readonly runsEndpoint: string;
 
 	constructor( opts: WorkflowBuilderClientOptions ) {
 		this.endpoint = opts.endpoint.replace( /\/+$/, '' );
 		this.nonce = opts.nonce;
+		this.nodesEndpoint = ( opts.nodesEndpoint ?? '' ).replace( /\/+$/, '' );
+		this.runsEndpoint = ( opts.runsEndpoint ?? '' ).replace( /\/+$/, '' );
 	}
 
-	private async request< T >( path: string, init?: RequestInit ): Promise< T > {
+	private async requestTo< T >( base: string, path: string, init?: RequestInit ): Promise< T > {
 		const headers: Record< string, string > = {
 			Accept: 'application/json',
 			'X-WP-Nonce': this.nonce,
 			...( init?.body ? { 'Content-Type': 'application/json' } : {} ),
 		};
-		const response = await fetch( `${ this.endpoint }${ path }`, {
+		const response = await fetch( `${ base }${ path }`, {
 			method: init?.method ?? 'GET',
 			credentials: 'same-origin',
 			headers,
@@ -87,14 +117,14 @@ export class WorkflowBuilderClient {
 
 	/** GET /orchestration/workflows — bare array of summaries. */
 	async list( signal?: AbortSignal ): Promise< WorkflowSummary[] > {
-		const rows = await this.request< WorkflowSummary[] | null >( '', { signal } );
+		const rows = await this.requestTo< WorkflowSummary[] | null >( this.endpoint, '', { signal } );
 		return Array.isArray( rows ) ? rows : [];
 	}
 
 	/** GET /orchestration/workflows/{id} — bare detail object. */
 	async get( id: number, signal?: AbortSignal ): Promise< WorkflowDetail | null > {
 		try {
-			return await this.request< WorkflowDetail >( `/${ id }`, { signal } );
+			return await this.requestTo< WorkflowDetail >( this.endpoint, `/${ id }`, { signal } );
 		} catch {
 			return null;
 		}
@@ -106,7 +136,7 @@ export class WorkflowBuilderClient {
 		graph?: WorkflowGraph;
 		tags?: string[];
 	} ): Promise< void > {
-		await this.request( '', {
+		await this.requestTo( this.endpoint, '', {
 			method: 'POST',
 			body: JSON.stringify( payload ),
 		} );
@@ -117,7 +147,7 @@ export class WorkflowBuilderClient {
 		id: number,
 		payload: { name?: string; graph?: WorkflowGraph; tags?: string[] }
 	): Promise< void > {
-		await this.request( `/${ id }`, {
+		await this.requestTo( this.endpoint, `/${ id }`, {
 			method: 'PUT',
 			body: JSON.stringify( payload ),
 		} );
@@ -125,11 +155,38 @@ export class WorkflowBuilderClient {
 
 	/** DELETE /orchestration/workflows/{id} — trash the workflow. */
 	async remove( id: number ): Promise< void > {
-		await this.request( `/${ id }`, { method: 'DELETE' } );
+		await this.requestTo( this.endpoint, `/${ id }`, { method: 'DELETE' } );
 	}
 
 	/** POST /orchestration/workflows/{id}/execute — run via Engine V2. */
 	async execute( id: number ): Promise< void > {
-		await this.request( `/${ id }/execute`, { method: 'POST' } );
+		await this.requestTo( this.endpoint, `/${ id }/execute`, { method: 'POST' } );
+	}
+
+	/** POST /workflow-builder/nodes/execute — run a single node. */
+	async executeNode( payload: WorkflowNodeExecutePayload ): Promise< void > {
+		if ( ! this.nodesEndpoint ) {
+			throw new Error( __( 'Node execution is not available.', 'nvoos-pro-spa' ) );
+		}
+		await this.requestTo( this.nodesEndpoint, '/nodes/execute', {
+			method: 'POST',
+			body: JSON.stringify( payload ),
+		} );
+	}
+
+	/** GET /orchestration/runs?workflow_id=… — run history for a workflow. */
+	async runs( workflowId: number ): Promise< WorkflowRunSummary[] > {
+		if ( ! this.runsEndpoint ) {
+			return [];
+		}
+		try {
+			const rows = await this.requestTo< unknown >(
+				this.runsEndpoint,
+				`?workflow_id=${ workflowId }`
+			);
+			return Array.isArray( rows ) ? ( rows as WorkflowRunSummary[] ) : [];
+		} catch {
+			return [];
+		}
 	}
 }

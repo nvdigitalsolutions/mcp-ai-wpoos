@@ -10,7 +10,12 @@
  */
 
 import type { Edge, Node } from '@xyflow/react';
-import type { WorkflowGraph, WorkflowGraphNode, WorkflowGraphEdge } from '../../api/workflow-builder';
+import type {
+	WorkflowGraph,
+	WorkflowGraphNode,
+	WorkflowGraphEdge,
+	WorkflowNodeExecutePayload,
+} from '../../api/workflow-builder';
 
 /** Engine V2 node vocabulary (defaults to tool). */
 export const WORKFLOW_NODE_TYPES = [ 'tool', 'action', 'agent' ] as const;
@@ -31,6 +36,8 @@ export type WorkflowNodeData = {
 	description?: string;
 	/** Preserved stored type outside the execution trio (e.g. input/output). */
 	rawType?: string;
+	/** Executable fields pass through untouched (toolSlug, arguments, …). */
+	[ key: string ]: unknown;
 };
 
 export type CanvasWorkflowNode = Node< WorkflowNodeData, CanvasNodeType >;
@@ -64,9 +71,21 @@ export function isWorkflowNodeType( value: unknown ): value is WorkflowNodeType 
 export function toCanvasNode( node: WorkflowGraphNode, index: number ): CanvasWorkflowNode {
 	const rawType = node.type;
 	const graphType: WorkflowNodeType = isWorkflowNodeType( rawType ) ? rawType : 'tool';
+	const storedData: Record< string, unknown > =
+		node.data && typeof node.data === 'object' && ! Array.isArray( node.data )
+			? ( node.data as Record< string, unknown > )
+			: {};
 	const rawLabel = typeof node.label === 'string' && node.label ? node.label : '';
+	const storedLabel =
+		storedData.label && typeof storedData.label === 'string'
+			? storedData.label
+			: '';
 	const rawDescription =
-		typeof node.description === 'string' ? node.description : undefined;
+		typeof node.description === 'string'
+			? node.description
+			: storedData.description && typeof storedData.description === 'string'
+			? storedData.description
+			: undefined;
 	const position =
 		node.position &&
 		typeof node.position === 'object' &&
@@ -83,7 +102,8 @@ export function toCanvasNode( node: WorkflowGraphNode, index: number ): CanvasWo
 		type: CANVAS_TYPE_FOR[ graphType ],
 		position,
 		data: {
-			label: rawLabel || NODE_TYPE_LABELS[ graphType ],
+			...( storedData as WorkflowNodeData ),
+			label: rawLabel || storedLabel || NODE_TYPE_LABELS[ graphType ],
 			description: rawDescription,
 			...( typeof rawType === 'string' && ! isWorkflowNodeType( rawType )
 				? { rawType }
@@ -92,7 +112,12 @@ export function toCanvasNode( node: WorkflowGraphNode, index: number ): CanvasWo
 	};
 }
 
-/** Map a canvas node back onto the REST graph shape. */
+/**
+ * Map a canvas node back onto the REST graph shape. Preset nodes store
+ * { id, type, position, data: { label, toolSlug, ... } }; label is kept at
+ * the top level too because the Engine V2 reads it there when building node
+ * descriptions. Non-core canvas data is re-nested under `data`.
+ */
 export function toGraphNode( node: CanvasWorkflowNode ): WorkflowGraphNode {
 	const canvasType: CanvasNodeType = ( [ 'toolNode', 'actionNode', 'agentNode' ] as string[] ).includes(
 		node.type ?? ''
@@ -100,11 +125,22 @@ export function toGraphNode( node: CanvasWorkflowNode ): WorkflowGraphNode {
 		? ( node.type as CanvasNodeType )
 		: 'toolNode';
 
+	const data = node.data ?? {};
+	const storedType =
+		typeof data.rawType === 'string' && data.rawType
+			? data.rawType
+			: GRAPH_TYPE_FOR[ canvasType ];
+
 	return {
 		id: node.id,
-		type: node.data?.rawType ?? GRAPH_TYPE_FOR[ canvasType ],
-		label: node.data?.label ?? NODE_TYPE_LABELS[ GRAPH_TYPE_FOR[ canvasType ] ],
-		...( node.data?.description ? { description: node.data.description } : {} ),
+		type: storedType,
+		position: { x: node.position.x, y: node.position.y },
+		label: typeof data.label === 'string' ? data.label : NODE_TYPE_LABELS[ GRAPH_TYPE_FOR[ canvasType ] ],
+		data: Object.fromEntries(
+			Object.entries( data ).filter(
+				( [ key ] ) => ! [ 'label', 'rawType' ].includes( key )
+			)
+		),
 	};
 }
 
@@ -134,6 +170,69 @@ export function toGraphEdges( edges: WorkflowGraphEdge[] ): Edge[] {
 export interface GraphValidation {
 	valid: boolean;
 	errors: string[];
+}
+
+/**
+ * Build the node-execution payload for a canvas node, or null when the
+ * node's data lacks its executable field (toolSlug / command / prompt).
+ */
+export function nodeExecutePayload(
+	node: CanvasWorkflowNode,
+	workflowId: string
+): WorkflowNodeExecutePayload | null {
+	const data = node.data ?? {};
+	const type = toGraphNode( node ).type;
+
+	if ( type === 'tool' ) {
+		if ( typeof data.toolSlug !== 'string' || ! data.toolSlug ) {
+			return null;
+		}
+		return {
+			node_type: 'tool',
+			node_id: node.id,
+			workflow_id: workflowId,
+			context: {},
+			tool_name: data.toolSlug,
+			tool_arguments:
+				data.arguments && typeof data.arguments === 'object'
+					? ( data.arguments as Record< string, unknown > )
+					: {},
+		};
+	}
+
+	if ( type === 'action' ) {
+		if ( typeof data.command !== 'string' || ! data.command ) {
+			return null;
+		}
+		return {
+			node_type: 'action',
+			node_id: node.id,
+			workflow_id: workflowId,
+			context: {},
+			command: data.command,
+			params:
+				data.params && typeof data.params === 'object'
+					? ( data.params as Record< string, unknown > )
+					: {},
+		};
+	}
+
+	if ( type === 'agent' ) {
+		const prompt = typeof data.prompt === 'string' ? data.prompt : '';
+		if ( ! prompt ) {
+			return null;
+		}
+		return {
+			node_type: 'agent',
+			node_id: node.id,
+			workflow_id: workflowId,
+			context: {},
+			agent_id: typeof data.agentId === 'string' ? data.agentId : 'default',
+			prompt,
+		};
+	}
+
+	return null;
 }
 
 /**
