@@ -6299,3 +6299,20 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	margin: 0;
 	word-break: break-word;
 }
+
+.nvoos-pro-spa-records-research {
+	margin-bottom: 16px;
+	padding: 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-records-search__input:disabled,
+.nvoos-pro-spa-page__retry:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.nvoos-pro-spa-page__message--success {
+	color: var(--nvoos-positive, #008a20);
+}

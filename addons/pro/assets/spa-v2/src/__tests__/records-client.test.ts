@@ -102,4 +102,54 @@ describe( 'RecordsClient', () => {
 		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
 		await expect( client.schema() ).rejects.toThrow( 'Sorry, you are not allowed.' );
 	} );
+
+	it( 'POSTs research to /records/{entity}/research and maps the envelope', async () => {
+		const calls: { url: string; body: unknown }[] = [];
+		global.fetch = vi.fn( ( input: RequestInfo | URL, init?: RequestInit ) => {
+			calls.push( { url: String( input ), body: JSON.parse( String( init?.body ?? '{}' ) ) } );
+			return Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () =>
+					Promise.resolve( {
+						title: 'Acme Ltd',
+						fields: { _company_industry: 'manufacturing' },
+					} ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
+		const result = await client.research( COMPANY, 'acme ltd' );
+		expect( calls[ 0 ].url ).toContain( '/records/company/research' );
+		expect( calls[ 0 ].body ).toMatchObject( { query: 'acme ltd' } );
+		expect( result.title ).toBe( 'Acme Ltd' );
+		expect( result.fields._company_industry ).toBe( 'manufacturing' );
+	} );
+
+	it( 'POSTs a reviewed record to wp/v2 with the meta fields', async () => {
+		const calls: { url: string; body: Record< string, unknown > }[] = [];
+		global.fetch = vi.fn( ( input: RequestInfo | URL, init?: RequestInit ) => {
+			calls.push( { url: String( input ), body: JSON.parse( String( init?.body ?? '{}' ) ) } );
+			return Promise.resolve( {
+				ok: true,
+				status: 201,
+				json: () =>
+					Promise.resolve( {
+						id: 42,
+						date: '2026-10-01T08:00:00',
+						status: 'publish',
+						title: { rendered: 'Acme Ltd' },
+						meta: { _company_industry: 'manufacturing' },
+					} ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
+		const created = await client.create( COMPANY, 'Acme Ltd', { _company_industry: 'manufacturing' } );
+		expect( calls[ 0 ].url ).toContain( '/wp/v2/mcp_ai_company' );
+		expect( calls[ 0 ].body ).toMatchObject( {
+			title: 'Acme Ltd',
+			status: 'publish',
+			meta: { _company_industry: 'manufacturing' },
+		} );
+		expect( created ).toMatchObject( { id: 42, title: 'Acme Ltd' } );
+	} );
 } );

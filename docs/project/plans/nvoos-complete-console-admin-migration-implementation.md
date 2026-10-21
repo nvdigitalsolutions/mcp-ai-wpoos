@@ -437,8 +437,20 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   2026-10-21 (full entity set):** meta schemas for customer/deal/lead/
   ticket enumerated from their CPT files and added to the schema registry;
   all five CRM entities in `RECORD_ENTITIES`; deal meta spot-checked in the
-  PHPUnit suite (26 assertions). **Slice 3 (4a-b) remains:**
-  create-from-research + import for the Records feature.
+  PHPUnit suite (26 assertions). **Slice 3 shipped 2026-10-21
+  (create-from-research):** `POST /mcp-ai-pro/v1/records/{entity}/research`
+  runs the base `deep_research` tool (basic, immediate, no site content)
+  then maps the report onto the entity's schema fields via
+  `WP_MCP_AI_Pro_Records_Research_Extractor` (a Pro subclass of the deep
+  research tool — provider chains stay in one place; one bounded JSON
+  completion with a field contract from the schema); the console Research &
+  Add card offers the suggested fields as an editable form and creates the
+  reviewed record via `POST wp/v2/{post_type}`. PHPUnit 10 tests / 43
+  assertions (zero-network: stub research tool + no-provider gate) + vitest
+  research/create contract tests. **W11 exit criteria met** — the five CRM
+  entities are operable in the console with list/search/detail and
+  research-driven create; import mode deferred to the dashboard-feature
+  pass (W13) if still needed.
 - [ ] **W12 (4b) — PM command center + professions.** P3 (projects/tasks/
   events/sprints via `wp/v2/mcp_ai_*`) reusing the W11 Records feature;
   **B23 Team/profession research + settings (T4-lite)** — the console

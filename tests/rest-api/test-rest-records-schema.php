@@ -55,6 +55,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 		if ( post_type_exists( $slug ) ) {
 			return;
 		}
+		// phpcs:ignore WordPress.NamingConventions.ValidPostTypeSlug.NotStringLiteral -- The scratch CPT slug is a parameter; each call site passes a literal.
 		register_post_type(
 			$slug,
 			array(
@@ -155,9 +156,9 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The REST route is registered under the Pro namespace.
+	 * The REST routes are registered under the Pro namespace.
 	 */
-	public function test_route_is_registered() {
+	public function test_routes_are_registered() {
 		$routes = rest_get_server()->get_routes( 'mcp-ai-pro/v1' );
 
 		if ( ! isset( $routes['/mcp-ai-pro/v1/records/schema'] ) ) {
@@ -175,5 +176,142 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 		}
 
 		$this->assertArrayHasKey( '/mcp-ai-pro/v1/records/schema', $routes );
+		$this->assertArrayHasKey( '/mcp-ai-pro/v1/records/(?P<entity>[a-z0-9_-]+)/research', $routes );
+	}
+
+	/**
+	 * Unknown entities are rejected as readable 400s.
+	 */
+	public function test_research_unknown_entity_is_400() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$result = ( new WP_MCP_AI_Pro_Records_REST_Controller() )->research(
+			$this->research_request( 'mystery', 'acme' )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'records_unknown_entity', $result->get_error_code() );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * Empty queries are rejected.
+	 */
+	public function test_research_missing_query_is_400() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$result = ( new WP_MCP_AI_Pro_Records_REST_Controller() )->research(
+			$this->research_request( 'company', '   ' )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'records_missing_query', $result->get_error_code() );
+	}
+
+	/**
+	 * Entities whose CPT is absent are refused with 501.
+	 */
+	public function test_research_unavailable_entity_is_501() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		// No scratch CPT — the ticket post type is not registered.
+		$result = ( new WP_MCP_AI_Pro_Records_REST_Controller() )->research(
+			$this->research_request( 'ticket', 'billing question' )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'records_entity_unavailable', $result->get_error_code() );
+		$this->assertSame( 501, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * The full pipeline surfaces provider errors as readable 400s: a stub
+	 * research tool returns a canned report, then the extractor fails at
+	 * the provider-setup gate (no API keys in CI) — zero network.
+	 */
+	public function test_research_surfaces_extraction_errors() {
+		$this->ensure_cpt( 'mcp_ai_company' );
+
+		// Deterministic provider gate: no keys configured anywhere.
+		update_option( 'wp_mcp_ai_settings', array() );
+		delete_option( 'wp_mcp_ai_credentials' );
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'reset_settings_cache' ) ) {
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
+		}
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$original = $registry->get_tool( 'deep_research' );
+		if ( ! class_exists( 'WP_MCP_AI_Test_Records_Deep_Research_Stub' ) ) {
+			require_once dirname( __DIR__ ) . '/helpers/class-wp-mcp-ai-test-records-deep-research-stub.php';
+		}
+		$stub = new WP_MCP_AI_Test_Records_Deep_Research_Stub();
+		$registry->register_tool( $stub );
+
+		try {
+			$result = ( new WP_MCP_AI_Pro_Records_REST_Controller() )->research(
+				$this->research_request( 'company', 'acme ltd' )
+			);
+		} finally {
+			// Restore the shared registry instance untouched.
+			if ( $original ) {
+				$registry->register_tool( $original );
+			} else {
+				$registry->unregister_tool( 'deep_research' );
+			}
+		}
+
+		$this->assertWPError( $result );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * Build a research request with the given params.
+	 *
+	 * @param string $entity Entity key.
+	 * @param string $query  Research query.
+	 * @return WP_REST_Request
+	 */
+	private function research_request( $entity, $query ) {
+		$request = new WP_REST_Request( 'POST', '/mcp-ai-pro/v1/records/' . $entity . '/research' );
+		$request->set_param( 'entity', $entity );
+		$request->set_param( 'query', $query );
+		return $request;
+	}
+
+	/**
+	 * The extractor's JSON parser keeps only allowed keys.
+	 */
+	public function test_parse_fields_json() {
+		$extractor_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-records-research-extractor.php';
+		if ( file_exists( $extractor_file ) ) {
+			require_once $extractor_file;
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Records_Research_Extractor' ) ) {
+			$this->markTestSkipped( 'Research extractor unavailable in this bootstrap.' );
+		}
+
+		$extractor = new WP_MCP_AI_Pro_Records_Research_Extractor();
+		$allowed   = array( 'title', '_company_industry', '_company_status' );
+
+		// Fenced JSON.
+		$fields = $extractor->parse_fields_json( "```json\n{\"title\":\"Acme\",\"_company_industry\":\"manufacturing\",\"_evil\":\"x\"}\n```", $allowed );
+		$this->assertSame( 'Acme', $fields['title'] );
+		$this->assertSame( 'manufacturing', $fields['_company_industry'] );
+		$this->assertArrayNotHasKey( '_evil', $fields );
+
+		// JSON embedded in prose.
+		$fields = $extractor->parse_fields_json( 'Here you go: {"title":"Beta"} thanks!', $allowed );
+		$this->assertSame( 'Beta', $fields['title'] );
+
+		// Garbage → readable error.
+		$result = $extractor->parse_fields_json( 'no json here', $allowed );
+		$this->assertWPError( $result );
+		$this->assertSame( 'records_invalid_extraction', $result->get_error_code() );
 	}
 }

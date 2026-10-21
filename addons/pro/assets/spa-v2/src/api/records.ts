@@ -70,6 +70,7 @@ export class RecordsClient {
 		const data = await this.request< RecordsSchemaResponse >(
 			'GET',
 			this.schemaEndpoint,
+			undefined,
 			signal
 		);
 		return data && typeof data.entities === 'object' && data.entities !== null
@@ -96,6 +97,7 @@ export class RecordsClient {
 		const data = await this.request< unknown >(
 			'GET',
 			`${ this.wpBase }/${ entity.restBase }?${ params.toString() }`,
+			undefined,
 			signal
 		);
 		return Array.isArray( data ) ? data.map( mapRecord ) : [];
@@ -110,24 +112,79 @@ export class RecordsClient {
 		const data = await this.request< unknown >(
 			'GET',
 			`${ this.wpBase }/${ entity.restBase }/${ id }?context=edit&_fields=${ WP_FIELDS }`,
+			undefined,
+			signal
+		);
+		return data && typeof data === 'object' ? mapRecord( data ) : null;
+	}
+
+	/**
+	 * Research a query and map the report onto the entity's schema fields
+	 * (POST /records/{entity}/research — the 4a-b create-from-research
+	 * flow; the server returns suggested fields, nothing is created).
+	 */
+	async research(
+		entity: RecordEntityConfig,
+		query: string,
+		signal?: AbortSignal
+	): Promise< { title: string; fields: Record< string, string > } > {
+		const recordsBase = this.schemaEndpoint.replace( /\/schema\/?$/, '' );
+		const data = await this.request< { title?: string; fields?: Record< string, string > } >(
+			'POST',
+			`${ recordsBase }/${ entity.key }/research`,
+			{ query },
+			signal
+		);
+		return {
+			title: typeof data?.title === 'string' ? data.title : '',
+			fields:
+				data?.fields && typeof data.fields === 'object' && ! Array.isArray( data.fields )
+					? data.fields
+					: {},
+		};
+	}
+
+	/**
+	 * Create a record from reviewed fields (POST wp/v2/{post_type}).
+	 * The server's registered meta sanitizers apply on write.
+	 */
+	async create(
+		entity: RecordEntityConfig,
+		title: string,
+		fields: Record< string, unknown >,
+		signal?: AbortSignal
+	): Promise< RecordSummary | null > {
+		const data = await this.request< unknown >(
+			'POST',
+			`${ this.wpBase }/${ entity.restBase }`,
+			{
+				title,
+				status: 'publish',
+				meta: fields,
+			},
 			signal
 		);
 		return data && typeof data === 'object' ? mapRecord( data ) : null;
 	}
 
 	private async request< T >(
-		method: 'GET',
+		method: 'GET' | 'POST',
 		url: string,
+		body?: unknown,
 		signal?: AbortSignal
 	): Promise< T > {
 		const headers: Record< string, string > = {
 			Accept: 'application/json',
 			'X-WP-Nonce': this.nonce,
 		};
+		if ( body !== undefined ) {
+			headers[ 'Content-Type' ] = 'application/json';
+		}
 		const response = await fetch( url, {
 			method,
 			credentials: 'same-origin',
 			headers,
+			body: body !== undefined ? JSON.stringify( body ) : undefined,
 			signal,
 		} );
 		if ( ! response.ok ) {

@@ -95,6 +95,19 @@ export function RecordsPage(): JSX.Element {
 	const [ error, setError ] = useState< string | null >( null );
 	const [ selected, setSelected ] = useState< RecordSummary | null >( null );
 
+	// Research & Add (4a-b): query → suggested fields → reviewed create.
+	const [ researchQuery, setResearchQuery ] = useState( '' );
+	const [ researchBusy, setResearchBusy ] = useState< boolean >( false );
+	const [ researchError, setResearchError ] = useState< string | null >( null );
+	const [ suggestion, setSuggestion ] = useState< {
+		title: string;
+		fields: Record< string, string >;
+	} | null >( null );
+	const [ formTitle, setFormTitle ] = useState( '' );
+	const [ formFields, setFormFields ] = useState< Record< string, string > >( {} );
+	const [ createBusy, setCreateBusy ] = useState< boolean >( false );
+	const [ notice, setNotice ] = useState< string | null >( null );
+
 	// The entity-change effect applies the current search without
 	// subscribing to every keystroke (the form submit triggers re-fetch).
 	const searchRef = useRef( search );
@@ -140,6 +153,51 @@ export function RecordsPage(): JSX.Element {
 
 	const openRecord = ( record: RecordSummary ): void => {
 		setSelected( record );
+	};
+
+	const runResearch = (): void => {
+		if ( ! entity || ! researchQuery.trim() ) {
+			return;
+		}
+		setResearchBusy( true );
+		setResearchError( null );
+		setNotice( null );
+		client
+			.research( entity, researchQuery.trim() )
+			.then( ( result ) => {
+				setSuggestion( result );
+				setFormTitle( result.title );
+				setFormFields( { ...result.fields } );
+				setResearchBusy( false );
+			} )
+			.catch( ( err: unknown ) => {
+				setResearchError(
+					err instanceof Error ? err.message : __( 'Research failed.', 'nvoos-pro-spa' )
+				);
+				setResearchBusy( false );
+			} );
+	};
+
+	const createFromSuggestion = (): void => {
+		if ( ! entity || ! formTitle.trim() ) {
+			return;
+		}
+		setCreateBusy( true );
+		client
+			.create( entity, formTitle.trim(), formFields )
+			.then( () => {
+				setCreateBusy( false );
+				setNotice( __( 'Record created.', 'nvoos-pro-spa' ) );
+				setSuggestion( null );
+				setResearchQuery( '' );
+				refresh( entity, searchRef.current );
+			} )
+			.catch( ( err: unknown ) => {
+				setCreateBusy( false );
+				setResearchError(
+					err instanceof Error ? err.message : __( 'Failed to create the record.', 'nvoos-pro-spa' )
+				);
+			} );
 	};
 
 	if ( bootstrapLoading ) {
@@ -227,6 +285,104 @@ export function RecordsPage(): JSX.Element {
 						{ __( 'Go', 'nvoos-pro-spa' ) }
 					</button>
 				</form>
+			) }
+
+			{ entity && (
+				<section className="nvoos-pro-spa-records-research" aria-label={ __( 'Research & Add', 'nvoos-pro-spa' ) }>
+					<h3 className="nvoos-pro-spa-records-detail__title">
+						{ __( 'Research & Add', 'nvoos-pro-spa' ) } { entity.singular.toLowerCase() }
+					</h3>
+					<form
+						className="nvoos-pro-spa-records-search"
+						onSubmit={ ( event ) => {
+							event.preventDefault();
+							runResearch();
+						} }
+					>
+						<label className="nvoos-pro-spa-records-search__label" htmlFor="records-research-query">
+							{ __( 'Research', 'nvoos-pro-spa' ) }
+						</label>
+						<input
+							id="records-research-query"
+							type="search"
+							className="nvoos-pro-spa-records-search__input"
+							value={ researchQuery }
+							onChange={ ( event ) => setResearchQuery( event.target.value ) }
+							placeholder={ __( 'e.g. Acme Ltd, London', 'nvoos-pro-spa' ) }
+						/>
+						<button type="submit" className="nvoos-pro-spa-page__retry" disabled={ researchBusy }>
+							{ researchBusy ? __( 'Researching…', 'nvoos-pro-spa' ) : __( 'Research', 'nvoos-pro-spa' ) }
+						</button>
+					</form>
+
+					{ researchError && (
+						<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error" role="alert">
+							{ researchError }
+						</p>
+					) }
+
+					{ notice && (
+						<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--success" role="status">
+							{ notice }
+						</p>
+					) }
+
+					{ suggestion && (
+						<form
+							className="nvoos-pro-spa-records-detail"
+							onSubmit={ ( event ) => {
+								event.preventDefault();
+								createFromSuggestion();
+							} }
+						>
+							<label className="nvoos-pro-spa-records-search__label" htmlFor="records-form-title">
+								{ __( 'Title', 'nvoos-pro-spa' ) }
+							</label>
+							<input
+								id="records-form-title"
+								type="text"
+								className="nvoos-pro-spa-records-search__input"
+								value={ formTitle }
+								onChange={ ( event ) => setFormTitle( event.target.value ) }
+							/>
+							<dl className="nvoos-pro-spa-records-detail__grid">
+								{ entity.columns.map( ( column ) => (
+									<div key={ column.key } className="nvoos-pro-spa-records-detail__item">
+										<dt>
+											<label htmlFor={ `records-form-${ column.key }` }>{ column.label }</label>
+										</dt>
+										<dd>
+											<input
+												id={ `records-form-${ column.key }` }
+												type="text"
+												className="nvoos-pro-spa-records-search__input"
+												value={ formFields[ column.key ] ?? '' }
+												onChange={ ( event ) =>
+													setFormFields( ( prev ) => ( {
+														...prev,
+														[ column.key ]: event.target.value,
+													} ) )
+												}
+											/>
+										</dd>
+									</div>
+								) ) }
+							</dl>
+							<div className="nvoos-pro-spa-records-search">
+								<button type="submit" className="nvoos-pro-spa-page__retry" disabled={ createBusy }>
+									{ createBusy ? __( 'Creating…', 'nvoos-pro-spa' ) : __( 'Create record', 'nvoos-pro-spa' ) }
+								</button>
+								<button
+									type="button"
+									className="nvoos-pro-spa-page__retry"
+									onClick={ () => setSuggestion( null ) }
+								>
+									{ __( 'Discard', 'nvoos-pro-spa' ) }
+								</button>
+							</div>
+						</form>
+					) }
+				</section>
 			) }
 
 			{ error && (

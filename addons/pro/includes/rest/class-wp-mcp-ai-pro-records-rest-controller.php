@@ -100,7 +100,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 	}
 
 	/**
-	 * Register the schema route.
+	 * Register the schema + research routes.
 	 *
 	 * @since 2.4.0
 	 * @return void
@@ -113,6 +113,28 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_schema' ),
 				'permission_callback' => array( $this, 'permissions_check' ),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::ROUTE_BASE . '/(?P<entity>[a-z0-9_-]+)/research',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'research' ),
+				'permission_callback' => array( $this, 'permissions_check' ),
+				'args'                => array(
+					'entity' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'query'  => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
 			)
 		);
 	}
@@ -289,6 +311,131 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 				'single'            => true,
 				'show_in_rest'      => true,
 				'sanitize_callback' => $sanitizer,
+			)
+		);
+	}
+
+	/**
+	 * POST /records/{entity}/research — research a query and map the
+	 * report onto the entity's schema fields (no record is created).
+	 *
+	 * @since 2.4.0
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function research( WP_REST_Request $request ) {
+		$entity_key = $request->get_param( 'entity' );
+		$query      = trim( (string) $request->get_param( 'query' ) );
+
+		// The args `required` gate serves dispatch; these guards keep direct
+		// calls honest (and give the PHPUnit suite deterministic paths).
+		if ( ! isset( self::RECORD_ENTITIES[ $entity_key ] ) ) {
+			return new WP_Error(
+				'records_unknown_entity',
+				__( 'Unknown record entity.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+		if ( '' === $query ) {
+			return new WP_Error(
+				'records_missing_query',
+				__( 'A research query is required.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+		$query = substr( $query, 0, 200 );
+
+		$config    = self::RECORD_ENTITIES[ $entity_key ];
+		$post_type = $config['post_type'];
+		if ( ! post_type_exists( $post_type ) ) {
+			return new WP_Error(
+				'records_entity_unavailable',
+				__( 'The entity is not available on this site.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 501 )
+			);
+		}
+
+		// Entity config for the extractor (labels + column types).
+		$entity_config = array(
+			'label'   => $config['label'],
+			'columns' => class_exists( 'WP_MCP_AI_Pro_CPT_Meta_Schema' )
+				? $this->build_columns( WP_MCP_AI_Pro_CPT_Meta_Schema::get( $post_type ) )
+				: array(),
+		);
+
+		// Step 1 — the base deep-research tool is the product's research
+		// engine (provider chains, retries, caching) — no reimplementation.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'deep_research' );
+		if ( ! $tool ) {
+			return new WP_Error(
+				'records_research_unavailable',
+				__( 'Deep research is not available on this site.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 501 )
+			);
+		}
+
+		$result = $tool->execute(
+			array(
+				'topic'                => sprintf(
+					/* translators: 1: entity label, 2: query. */
+					__( '%1$s: %2$s', 'mcp-ai-wpoos-pro' ),
+					$config['label'],
+					$query
+				),
+				'depth'                => 'basic',
+				'include_sources'      => false,
+				'include_site_content' => false,
+				'run_mode'             => 'immediate',
+			),
+			array( 'user_id' => get_current_user_id() )
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error(
+				$result->get_error_code(),
+				$result->get_error_message(),
+				array( 'status' => 400 )
+			);
+		}
+
+		$report = isset( $result['report'] ) && is_string( $result['report'] ) ? $result['report'] : '';
+		if ( '' === $report ) {
+			return new WP_Error(
+				'records_empty_report',
+				__( 'The research pass produced no report.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 502 )
+			);
+		}
+
+		// Step 2 — map the report onto the entity's schema fields.
+		$extractor_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-records-research-extractor.php';
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Records_Research_Extractor' ) && file_exists( $extractor_file ) ) {
+			require_once $extractor_file;
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Records_Research_Extractor' ) ) {
+			return new WP_Error(
+				'records_extractor_unavailable',
+				__( 'The research extractor is not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 501 )
+			);
+		}
+
+		$extractor = new WP_MCP_AI_Pro_Records_Research_Extractor();
+		$fields    = $extractor->extract_fields( $entity_config, $query, $report );
+		if ( is_wp_error( $fields ) ) {
+			return new WP_Error(
+				$fields->get_error_code(),
+				$fields->get_error_message(),
+				array( 'status' => 400 )
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'entity' => $entity_key,
+				'query'  => $query,
+				'fields' => $fields,
 			)
 		);
 	}
