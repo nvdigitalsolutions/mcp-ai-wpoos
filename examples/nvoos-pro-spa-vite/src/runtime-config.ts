@@ -139,6 +139,7 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		wpBase: `${api}/wp/v2`,
 		recordsSchema: `${pro}/records/schema`,
 		dashboardsSchema: `${pro}/dashboards/schema`,
+		chatChannels: `${pro}/chat-channels`,
 		shortcuts: `${pro}/tool-shortcuts`,
 		slashCommands: `${pro}/slash-commands`,
 		okf: `${pro}/okf`,

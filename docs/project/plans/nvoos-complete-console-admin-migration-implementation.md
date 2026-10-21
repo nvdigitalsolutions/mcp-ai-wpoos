@@ -521,7 +521,12 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   native-CPT storage trait's default flips to REST exposure (all five
   `mcp_ai_fnb_*` entities) and the sale/purchase/stock/waste/booking
   entities join the `/fnb` Records route with their registry schemas.
-  Remaining: Media, Chat Channels.
+  **Slice 3 shipped 2026-10-21:** Chat Channels — the console
+  `/chat-channels` route consumes the pre-existing
+  `mcp-ai-pro/v1/chat-channels` REST (conversations list with
+  channel/status/search filters, thread panel, reply box);
+  `chatChannels` endpoint in all three runtime configs. Remaining:
+  Media (P2 command-center workflows).
 
 ## 7. Phase 5 — Retirement & hardening
 

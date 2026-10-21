@@ -120,6 +120,8 @@ export interface ProSpaEndpoints {
 	recordsSchema: string;
 	/** Dashboards schema REST base (mcp-ai-pro/v1/dashboards/schema, 2.4.0). */
 	dashboardsSchema: string;
+	/** Chat channels REST base (mcp-ai-pro/v1/chat-channels, 2.4.0). */
+	chatChannels: string;
 	shortcuts: string;
 	slashCommands: string;
 	/** OKF Skills & Knowledge browse endpoint (v2.1.1). */
@@ -289,6 +291,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			wpBase: typeof e.wpBase === 'string' ? e.wpBase : '',
 			recordsSchema: typeof e.recordsSchema === 'string' ? e.recordsSchema : '',
 			dashboardsSchema: typeof e.dashboardsSchema === 'string' ? e.dashboardsSchema : '',
+			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 			okf: typeof e.okf === 'string' ? e.okf : '',

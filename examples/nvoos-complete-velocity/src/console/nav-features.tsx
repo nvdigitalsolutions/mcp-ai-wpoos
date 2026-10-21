@@ -88,6 +88,7 @@ export const CONSOLE_NAV_ITEMS: ConsoleNavItem[] = [
   { path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options' },
   { path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options' },
   { path: '/dashboards', label: 'Dashboards', icon: '🧮', capability: 'manage_options' },
+  { path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options' },
   {
     path: '/portability',
     label: 'Portability',
