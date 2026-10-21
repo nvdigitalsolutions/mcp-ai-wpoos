@@ -75,6 +75,7 @@ function buildEndpoints(origin: string): ProSpaEndpoints {
     workflowRuns: `${core}/orchestration/runs`,
     wpBase: `${api}/wp/v2`,
     recordsSchema: `${pro}/records/schema`,
+    dashboardsSchema: `${pro}/dashboards/schema`,
     shortcuts: `${pro}/tool-shortcuts`,
     slashCommands: `${pro}/slash-commands`,
     okf: `${pro}/okf`,

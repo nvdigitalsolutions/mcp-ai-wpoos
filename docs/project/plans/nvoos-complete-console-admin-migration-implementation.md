@@ -474,13 +474,17 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
 - [ ] **W13 (4c) — Repeating dashboards feature.** P15: one configurable
   dashboard-with-filters feature (CRE portfolio, ECA, health, vitals,
   registration, law-firm). Sequenced 2026-10-21 into sub-slices:
-  - [ ] **W13a — generic dashboards scaffold + CRE pilot.**
+  - [x] **W13a — generic dashboards scaffold + CRE pilot.**
     `GET /mcp-ai-pro/v1/dashboards/schema` (dashboard configs: label,
     filter fields, metric card list) + `GET /dashboards/{id}/data` for the
     CRE portfolio (wraps the `ajax_filter_portfolio` query in
     `class-wp-mcp-ai-cre-debt-dashboard-page.php` via a promoted public
-    seam); console `dashboards` feature (`/dashboards` route) with a
-    dashboard picker, schema-driven filter form and metric cards.
+    seam — `get_portfolio_data()` is now public static); console
+    `dashboards` feature (`/dashboards` route + nav, `🧮`) with a
+    dashboard picker, schema-driven filter form, metric cards and the loan
+    summary table; `dashboardsSchema` endpoint in all three runtime
+    configs. PHPUnit `tests/rest-api/test-rest-dashboards.php` (6 tests,
+    zero-network) + vitest `dashboards-client.test.ts` (6 tests).
   - [ ] **W13b — chart cards.** Render chart metrics through the existing
     console chart component (the analytics page's chart tier); one chart
     type per dashboard config entry.

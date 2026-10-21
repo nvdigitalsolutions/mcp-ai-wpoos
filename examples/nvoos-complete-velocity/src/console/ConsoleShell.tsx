@@ -144,6 +144,11 @@ const RecordsPage = lazy(() =>
     default: m.RecordsPage,
   })),
 );
+const DashboardsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/dashboards/DashboardsPage').then((m) => ({
+    default: m.DashboardsPage,
+  })),
+);
 
 const DOCK_PREF_KEY = 'nvoos-complete-console.dock-open';
 
@@ -457,6 +462,18 @@ function ConsoleApp(): JSX.Element {
                     capabilities={runtime.user.capabilities}
                   >
                     <RecordsPage group="professions" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/dashboards"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/dashboards')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <DashboardsPage />
                   </RequireGate>
                 }
               />

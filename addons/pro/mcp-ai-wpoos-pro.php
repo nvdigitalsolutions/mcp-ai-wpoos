@@ -314,6 +314,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			WP_MCP_AI_Pro_Records_REST_Controller::init();
 		}
 
+		// Load Pro Dashboards REST bridge (Proposal 084 Phase 4, W13) —
+		// GET /mcp-ai-pro/v1/dashboards/schema + /dashboards/{id}/data for
+		// the console's repeating-dashboard feature.
+		$dashboards_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-dashboards-rest-controller.php';
+		if ( file_exists( $dashboards_rest ) ) {
+			require_once $dashboards_rest;
+			WP_MCP_AI_Pro_Dashboards_REST_Controller::init();
+		}
+
 		// Register Pro export providers for Backup & Restore.
 		add_action(
 			'wp_mcp_ai_register_export_providers',

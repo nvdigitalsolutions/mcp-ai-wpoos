@@ -59,7 +59,7 @@ describe('ConsoleSidebar', () => {
 
   it('marks the active route link', () => {
     renderSidebar();
-    const dashboardLink = screen.getByRole('link', { name: /dashboard/i });
+        const dashboardLink = screen.getByRole('link', { name: 'Dashboard' });
     expect(dashboardLink.className).toContain('nvoos-console-nav__link--active');
   });
 

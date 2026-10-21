@@ -85,6 +85,7 @@ export const CONSOLE_NAV_ITEMS: ConsoleNavItem[] = [
   { path: '/crm', label: 'CRM', icon: '🏢', capability: 'manage_options' },
   { path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options' },
   { path: '/professions', label: 'Professions', icon: '👔', capability: 'manage_options' },
+  { path: '/dashboards', label: 'Dashboards', icon: '🧮', capability: 'manage_options' },
   {
     path: '/portability',
     label: 'Portability',

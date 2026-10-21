@@ -42,6 +42,7 @@ const OrchestrationStatsPage = lazy( () => import( './features/orchestration-sta
 const ProOpsPage = lazy( () => import( './features/pro-ops/ProOpsPage' ).then( ( m ) => ( { default: m.ProOpsPage } ) ) );
 const ScheduleManagerPage = lazy( () => import( './features/schedule-manager/ScheduleManagerPage' ).then( ( m ) => ( { default: m.ScheduleManagerPage } ) ) );
 const RecordsPage = lazy( () => import( './features/records/RecordsPage' ).then( ( m ) => ( { default: m.RecordsPage } ) ) );
+const DashboardsPage = lazy( () => import( './features/dashboards/DashboardsPage' ).then( ( m ) => ( { default: m.DashboardsPage } ) ) );
 
 export interface AppRouterProps {
 	/** Shared transcript hook result from Layout. */
@@ -81,6 +82,7 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/crm" element={ <RecordsPage group="crm" /> } />
 				<Route path="/pm" element={ <RecordsPage group="pm" /> } />
 				<Route path="/professions" element={ <RecordsPage group="professions" /> } />
+				<Route path="/dashboards" element={ <DashboardsPage /> } />
 				<Route path="/portability" element={ <PortabilityPage /> } />
 				<Route path="/security-center" element={ <SecurityCenterPage /> } />
 				<Route path="/operations" element={ <OperationsPage /> } />
