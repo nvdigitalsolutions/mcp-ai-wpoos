@@ -67,6 +67,10 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'law', $data['dashboards'] );
 		$this->assertNotEmpty( $data['dashboards']['law']['metrics'] );
 		$this->assertSame( 'active_matters', $data['dashboards']['law']['metrics'][0]['key'] );
+
+		// The registration dashboard joins with stats + the country list.
+		$this->assertArrayHasKey( 'registration', $data['dashboards'] );
+		$this->assertSame( 'countries', $data['dashboards']['registration']['lists'][0]['key'] );
 	}
 
 	/**
@@ -136,6 +140,32 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertSame( 'law', $data['dashboard'] );
 		$this->assertArrayHasKey( 'active_matters', $data['data'] );
 		$this->assertSame( 0, $data['data']['active_matters'] );
+	}
+
+	/**
+	 * The registration provider returns the zeroed envelope when the
+	 * toolkit CPTs are absent (zero network).
+	 */
+	public function test_registration_data_zeroed_envelope() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/registration/data' );
+		$request->set_param( 'id', 'registration' );
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+
+		if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
+			$this->markTestSkipped( 'Registration dashboard page unavailable in this bootstrap.' );
+		}
+
+		$this->assertNotWPError( $result );
+		$data = $result->get_data();
+
+		$this->assertSame( 'registration', $data['dashboard'] );
+		$this->assertArrayHasKey( 'total_products', $data['data'] );
+		$this->assertSame( 0, $data['data']['total_products'] );
+		$this->assertSame( array(), $data['data']['countries'] );
 	}
 
 	/**

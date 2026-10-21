@@ -122,7 +122,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	 */
 	private function dashboard_catalogue() {
 		return array(
-			'cre' => array(
+			'cre'          => array(
 				'label'       => __( 'CRE Debt Portfolio', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Commercial real-estate loan portfolio: balances, averages and distributions with loan-type and status filters.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🏦',
@@ -232,7 +232,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'law' => array(
+			'law'          => array(
 				'label'       => __( 'Law Firm', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Active matters, clients, time entries and trust transactions.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '⚖️',
@@ -257,6 +257,72 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 						'key'    => 'total_trust_txns',
 						'label'  => __( 'Trust Transactions', 'mcp-ai-wpoos-pro' ),
 						'format' => 'number',
+					),
+				),
+			),
+			'registration' => array(
+				'label'       => __( 'Registration', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Product registrations by status and country.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '📋',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'total_products',
+						'label'  => __( 'Products', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_registrations',
+						'label'  => __( 'Registrations', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'approved',
+						'label'  => __( 'Approved', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'under_review',
+						'label'  => __( 'Under Review', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'draft',
+						'label'  => __( 'Drafts', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'expiring_soon',
+						'label'  => __( 'Expiring Soon', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+				),
+				'lists'       => array(
+					array(
+						'key'     => 'countries',
+						'title'   => __( 'By Country', 'mcp-ai-wpoos-pro' ),
+						'columns' => array(
+							array(
+								'key'   => 'name',
+								'label' => __( 'Country', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'authority',
+								'label' => __( 'Authority', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'total',
+								'label' => __( 'Total', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'approved',
+								'label' => __( 'Approved', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'pending',
+								'label' => __( 'Pending', 'mcp-ai-wpoos-pro' ),
+							),
+						),
 					),
 				),
 			),
@@ -389,6 +455,25 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			}
 
 			return WP_MCP_AI_Law_Firm_Dashboard_Page::get_dashboard_data();
+		}
+
+		if ( 'registration' === $dashboard_id ) {
+			$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-registration-dashboard-page.php';
+			if ( ! class_exists( 'WP_MCP_AI_Registration_Dashboard_Page' ) && file_exists( $page_file ) ) {
+				require_once $page_file;
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Registration_Dashboard_Page' ) ) {
+				return new WP_Error(
+					'dashboards_provider_unavailable',
+					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 501 )
+				);
+			}
+
+			$stats     = WP_MCP_AI_Registration_Dashboard_Page::get_registration_stats();
+			$countries = WP_MCP_AI_Registration_Dashboard_Page::get_countries_stats();
+
+			return array_merge( $stats, array( 'countries' => $countries ) );
 		}
 
 		return new WP_Error(
