@@ -77,6 +77,14 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertSame( 'total_ecas', $data['dashboards']['eca']['metrics'][0]['key'] );
 		$this->assertSame( 'categories', $data['dashboards']['eca']['charts'][0]['key'] );
 		$this->assertSame( 'ecas', $data['dashboards']['eca']['lists'][0]['key'] );
+
+		// The member-filtered pair joins with member + date-range filters.
+		$this->assertArrayHasKey( 'health', $data['dashboards'] );
+		$this->assertSame( 'member', $data['dashboards']['health']['filters'][0]['type'] );
+		$this->assertSame( 'history', $data['dashboards']['health']['lists'][0]['key'] );
+		$this->assertArrayHasKey( 'vitals', $data['dashboards'] );
+		$this->assertSame( 'member', $data['dashboards']['vitals']['filters'][0]['type'] );
+		$this->assertSame( 'history', $data['dashboards']['vitals']['lists'][0]['key'] );
 	}
 
 	/**
@@ -199,6 +207,80 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertSame( 0, $data['data']['total_ecas'] );
 		$this->assertSame( array(), $data['data']['categories'] );
 		$this->assertSame( array(), $data['data']['ecas'] );
+	}
+
+	/**
+	 * The member-filtered dashboards require a member — 400 without one
+	 * (deterministic: the provider is never reached).
+	 */
+	public function test_member_dashboards_require_a_member() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		foreach ( array( 'health', 'vitals' ) as $id ) {
+			$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/' . $id . '/data' );
+			$request->set_param( 'id', $id );
+			$request->set_param( 'filters', array() );
+
+			$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+
+			if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
+				$this->markTestSkipped( 'Dashboard page unavailable in this bootstrap.' );
+			}
+
+			$this->assertWPError( $result, $id . ' should refuse a missing member.' );
+			$this->assertSame( 400, $result->get_error_data()['status'] );
+		}
+	}
+
+	/**
+	 * With a real member and no stored metrics, the history provider
+	 * returns the zeroed envelope (zero network — the tool reads the
+	 * member's option, which is absent in the test env).
+	 */
+	public function test_health_data_zeroed_envelope() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		if ( ! post_type_exists( 'mcp_ai_member' ) ) {
+			register_post_type(
+				'mcp_ai_member',
+				array(
+					'labels'   => array( 'name' => 'Members' ),
+					'public'   => false,
+					'supports' => array( 'title' ),
+				)
+			);
+		}
+		$member_id = $this->factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_member',
+				'post_title' => 'Test Member',
+			)
+		);
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/health/data' );
+		$request->set_param( 'id', 'health' );
+		$request->set_param(
+			'filters',
+			array(
+				'member_id' => (string) $member_id,
+				'days_back' => '30',
+			)
+		);
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+
+		if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
+			$this->markTestSkipped( 'Health dashboard page unavailable in this bootstrap.' );
+		}
+
+		$this->assertNotWPError( $result );
+		$data = $result->get_data();
+
+		$this->assertSame( 'health', $data['dashboard'] );
+		$this->assertArrayHasKey( 'history', $data['data'] );
+		$this->assertSame( array(), $data['data']['history'] );
 	}
 
 	/**

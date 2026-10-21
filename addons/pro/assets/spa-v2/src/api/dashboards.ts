@@ -20,8 +20,9 @@ export interface DashboardFilterOption {
 export interface DashboardFilter {
 	key: string;
 	label: string;
-	type: 'taxonomy' | 'select';
+	type: 'taxonomy' | 'select' | 'member';
 	taxonomy?: string;
+	post_type?: string;
 	options?: DashboardFilterOption;
 }
 

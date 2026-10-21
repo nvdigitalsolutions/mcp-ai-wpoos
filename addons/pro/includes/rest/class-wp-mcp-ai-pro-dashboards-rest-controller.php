@@ -413,6 +413,118 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
+			'health'       => array(
+				'label'       => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Daily health metrics history per member (steps, water, sleep, calories, mood).', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '🫀',
+				'filters'     => array(
+					array(
+						'key'       => 'member_id',
+						'label'     => __( 'Member', 'mcp-ai-wpoos-pro' ),
+						'type'      => 'member',
+						'post_type' => 'mcp_ai_member',
+					),
+					array(
+						'key'     => 'days_back',
+						'label'   => __( 'Date Range', 'mcp-ai-wpoos-pro' ),
+						'type'    => 'select',
+						'options' => array(
+							'7'  => __( 'Last 7 days', 'mcp-ai-wpoos-pro' ),
+							'30' => __( 'Last 30 days', 'mcp-ai-wpoos-pro' ),
+							'90' => __( 'Last 90 days', 'mcp-ai-wpoos-pro' ),
+						),
+					),
+				),
+				'metrics'     => array(),
+				'lists'       => array(
+					array(
+						'key'     => 'history',
+						'title'   => __( 'Metrics history', 'mcp-ai-wpoos-pro' ),
+						'columns' => array(
+							array(
+								'key'   => 'date',
+								'label' => __( 'Date', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'steps',
+								'label' => __( 'Steps', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'water',
+								'label' => __( 'Water', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'sleep',
+								'label' => __( 'Sleep', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'calories',
+								'label' => __( 'Calories', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'mood',
+								'label' => __( 'Mood', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+			),
+			'vitals'       => array(
+				'label'       => __( 'Medical Vitals', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Vital signs history per member (heart rate, temperature, blood pressure, weight).', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '🩺',
+				'filters'     => array(
+					array(
+						'key'       => 'member_id',
+						'label'     => __( 'Member', 'mcp-ai-wpoos-pro' ),
+						'type'      => 'member',
+						'post_type' => 'mcp_ai_member',
+					),
+					array(
+						'key'     => 'days_back',
+						'label'   => __( 'Date Range', 'mcp-ai-wpoos-pro' ),
+						'type'    => 'select',
+						'options' => array(
+							'7'  => __( 'Last 7 days', 'mcp-ai-wpoos-pro' ),
+							'30' => __( 'Last 30 days', 'mcp-ai-wpoos-pro' ),
+							'90' => __( 'Last 90 days', 'mcp-ai-wpoos-pro' ),
+						),
+					),
+				),
+				'metrics'     => array(),
+				'lists'       => array(
+					array(
+						'key'     => 'history',
+						'title'   => __( 'Vital signs history', 'mcp-ai-wpoos-pro' ),
+						'columns' => array(
+							array(
+								'key'   => 'timestamp',
+								'label' => __( 'Recorded', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'heart_rate',
+								'label' => __( 'Heart Rate', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'temperature',
+								'label' => __( 'Temperature', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'blood_pressure_systolic',
+								'label' => __( 'BP Systolic', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'blood_pressure_diastolic',
+								'label' => __( 'BP Diastolic', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'weight',
+								'label' => __( 'Weight', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+			),
 		);
 	}
 
@@ -431,22 +543,38 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 
 		foreach ( $dashboards as $id => $config ) {
 			foreach ( $config['filters'] as $index => $filter ) {
-				if ( 'taxonomy' !== $filter['type'] || ! taxonomy_exists( $filter['taxonomy'] ) ) {
-					continue;
-				}
-				$terms   = get_terms(
-					array(
-						'taxonomy'   => $filter['taxonomy'],
-						'hide_empty' => false,
-					)
-				);
-				$options = array( '' => __( 'All', 'mcp-ai-wpoos-pro' ) );
-				if ( is_array( $terms ) ) {
-					foreach ( $terms as $term ) {
-						$options[ sanitize_text_field( $term->name ) ] = sanitize_text_field( $term->name );
+				if ( 'taxonomy' === $filter['type'] && taxonomy_exists( $filter['taxonomy'] ) ) {
+					$terms   = get_terms(
+						array(
+							'taxonomy'   => $filter['taxonomy'],
+							'hide_empty' => false,
+						)
+					);
+					$options = array( '' => __( 'All', 'mcp-ai-wpoos-pro' ) );
+					if ( is_array( $terms ) ) {
+						foreach ( $terms as $term ) {
+							$options[ sanitize_text_field( $term->name ) ] = sanitize_text_field( $term->name );
+						}
 					}
+					$dashboards[ $id ]['filters'][ $index ]['options'] = $options;
 				}
-				$dashboards[ $id ]['filters'][ $index ]['options'] = $options;
+
+				if ( 'member' === $filter['type'] && ! empty( $filter['post_type'] ) && post_type_exists( $filter['post_type'] ) ) {
+					$members = get_posts(
+						array(
+							'post_type'      => $filter['post_type'],
+							'post_status'    => 'publish',
+							'posts_per_page' => -1,
+							'orderby'        => 'title',
+							'order'          => 'ASC',
+						)
+					);
+					$options = array( '' => __( '— Select a member —', 'mcp-ai-wpoos-pro' ) );
+					foreach ( $members as $member ) {
+						$options[ (string) $member->ID ] = get_the_title( $member );
+					}
+					$dashboards[ $id ]['filters'][ $index ]['options'] = $options;
+				}
 			}
 			$dashboards[ $id ]['id'] = $id;
 		}
@@ -587,6 +715,44 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					'ecas'       => isset( $data['ecas'] ) ? $data['ecas'] : array(),
 				)
 			);
+		}
+
+		if ( 'health' === $dashboard_id ) {
+			$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-health-wellness-dashboard-page.php';
+			if ( ! class_exists( 'WP_MCP_AI_Health_Wellness_Dashboard_Page' ) && file_exists( $page_file ) ) {
+				require_once $page_file;
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Health_Wellness_Dashboard_Page' ) ) {
+				return new WP_Error(
+					'dashboards_provider_unavailable',
+					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 501 )
+				);
+			}
+
+			$member_id = isset( $filters['member_id'] ) ? absint( $filters['member_id'] ) : 0;
+			$days_back = isset( $filters['days_back'] ) ? absint( $filters['days_back'] ) : 30;
+
+			return WP_MCP_AI_Health_Wellness_Dashboard_Page::get_history( $member_id, $days_back );
+		}
+
+		if ( 'vitals' === $dashboard_id ) {
+			$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-medical-vitals-dashboard-page.php';
+			if ( ! class_exists( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page' ) && file_exists( $page_file ) ) {
+				require_once $page_file;
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page' ) ) {
+				return new WP_Error(
+					'dashboards_provider_unavailable',
+					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 501 )
+				);
+			}
+
+			$member_id = isset( $filters['member_id'] ) ? absint( $filters['member_id'] ) : 0;
+			$days_back = isset( $filters['days_back'] ) ? absint( $filters['days_back'] ) : 90;
+
+			return WP_MCP_AI_Medical_Vitals_Dashboard_Page::get_history( $member_id, $days_back );
 		}
 
 		return new WP_Error(

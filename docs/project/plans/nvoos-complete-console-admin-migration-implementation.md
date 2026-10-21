@@ -502,9 +502,14 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
     promoted). **Slice 3 shipped 2026-10-21:** the ECA dashboard joins
     (7 KPIs + category/type charts + the activities list; the AJAX
     handler's inline computation extracted into a public
-    `get_dashboard_data()` the handler now sends unchanged). Remaining:
-    health/wellness, medical vitals (member-filtered interactive
-    surfaces — see the next session note).
+    `get_dashboard_data()` the handler now sends unchanged). **Slice 4
+    shipped 2026-10-21 (final pair):** the health/wellness + medical
+    vitals dashboards join — a `member` filter type resolves member
+    pickers from `mcp_ai_member` in the schema, and both pages gain a
+    public `get_history( $member_id, $days_back )` the AJAX handlers send
+    unchanged (member-required 400, history list rendered from the
+    schema). **W13 exit criteria met** — all six repeating dashboards are
+    operable in the console.
 - [ ] **W14 (4d) — Remaining command centers.** Calendar booking (existing
   REST), F&B (Proposal 078 universalisation REST), Media (P2), Chat
   Channels (P4) — per-toolkit checks against the storage audit before each
