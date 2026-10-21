@@ -13,6 +13,7 @@ import { useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useWorkflowBuilder } from '../../hooks/useWorkflowBuilder';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import { WorkflowCanvasWithProvider } from './WorkflowCanvas';
 
 function Badge( { label }: { label: string } ): JSX.Element {
 	return (
@@ -28,6 +29,7 @@ export function WorkflowsPage(): JSX.Element {
 		workflows,
 		selected,
 		loading,
+		saving,
 		error,
 		actionError,
 		refresh,
@@ -35,6 +37,7 @@ export function WorkflowsPage(): JSX.Element {
 		createWorkflow,
 		removeWorkflow,
 		executeWorkflow,
+		saveGraph,
 	} = useWorkflowBuilder(
 		runtime
 			? { endpoint: runtime.endpoints.workflowBuilder ?? '', nonce: runtime.nonce }
@@ -88,9 +91,6 @@ export function WorkflowsPage(): JSX.Element {
 			setShowForm( false );
 		}
 	};
-
-	const nodes = selected?.graph?.nodes ?? [];
-	const edges = selected?.graph?.edges ?? [];
 
 	return (
 		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">
@@ -207,37 +207,14 @@ export function WorkflowsPage(): JSX.Element {
 								<p className="nvoos-pro-spa-diagnostics__muted">{ selected.description }</p>
 							) }
 
-							<div className="nvoos-pro-spa-token-manager__stats" role="list" aria-label={ __( 'Graph stats', 'nvoos-pro-spa' ) }>
-								<div className="nvoos-pro-spa-token-manager__stat" role="listitem">
-									<div className="nvoos-pro-spa-token-manager__stat-label">{ __( 'Nodes', 'nvoos-pro-spa' ) }</div>
-									<div className="nvoos-pro-spa-token-manager__stat-value">{ nodes.length }</div>
-								</div>
-								<div className="nvoos-pro-spa-token-manager__stat" role="listitem">
-									<div className="nvoos-pro-spa-token-manager__stat-label">{ __( 'Edges', 'nvoos-pro-spa' ) }</div>
-									<div className="nvoos-pro-spa-token-manager__stat-value">{ edges.length }</div>
-								</div>
-							</div>
-
-							{ nodes.length > 0 && (
-								<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Graph nodes', 'nvoos-pro-spa' ) }>
-									{ nodes.map( ( node ) => (
-										<div key={ node.id } className="nvoos-pro-spa-tools-list__row" role="listitem">
-											<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-												<strong className="nvoos-pro-spa-tools-list__name">
-													{ typeof node.label === 'string' && node.label ? node.label : node.id }
-												</strong>
-												<code className="nvoos-pro-spa-tools-list__slug">
-													{ typeof node.type === 'string' ? node.type : 'node' }
-												</code>
-											</div>
-										</div>
-									) ) }
-								</div>
-							) }
-
-							<p className="nvoos-pro-spa-diagnostics__muted">
-								{ __( 'The visual drag-and-drop canvas ships in the next increment (Phase 3b W10.2b).', 'nvoos-pro-spa' ) }
-							</p>
+							<WorkflowCanvasWithProvider
+								key={ selected.id }
+								workflow={ selected }
+								saving={ saving }
+								onSave={ async ( graph ) => {
+									await saveGraph( selected.id, graph );
+								} }
+							/>
 
 							<p>
 								<button

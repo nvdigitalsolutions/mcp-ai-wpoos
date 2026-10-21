@@ -4836,6 +4836,82 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	}
 }
 
+/* ── Workflow canvas (Phase 3b W10.2b) ──────────────────────────────── */
+
+.nvoos-pro-spa-wf-canvas__toolbar {
+	margin-bottom: 8px;
+}
+
+.nvoos-pro-spa-wf-canvas__palette {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-wf-canvas__rename {
+	max-width: 180px;
+}
+
+.nvoos-pro-spa-wf-canvas__board {
+	height: 460px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-wf-node {
+	min-width: 150px;
+	max-width: 220px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-left: 4px solid var(--nvoos-wf-accent, #2271b1);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	box-shadow: 0 1px 3px rgba( 0, 0, 0, 0.08 );
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-wf-node.is-selected {
+	box-shadow: 0 0 0 2px var(--nvoos-wf-accent, #2271b1);
+}
+
+.nvoos-pro-spa-wf-node__header {
+	padding: 4px 10px;
+	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
+}
+
+.nvoos-pro-spa-wf-node__kind {
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--nvoos-wf-accent, #2271b1);
+}
+
+.nvoos-pro-spa-wf-node__body {
+	padding: 8px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.nvoos-pro-spa-wf-node__label {
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-wf-node__desc {
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-wf-node__handle {
+	width: 8px;
+	height: 8px;
+	background: var(--nvoos-wf-accent, #2271b1);
+	border: 2px solid var(--nvoos-bg-secondary, #fff);
+}
+
 .nvoos-pro-spa-tools-page__footer {
 	margin-top: 16px;
 	padding: 8px 0;

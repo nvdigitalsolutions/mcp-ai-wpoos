@@ -342,9 +342,15 @@ on); retirement stays gated on the port.
     `api/workflow-builder.ts` + `hooks/useWorkflowBuilder.ts` +
     `workflowBuilder` endpoint in both runtime configs; vitest
     `workflow-builder-client.test.ts`.
-  - [ ] W10.2b ReactFlow canvas parity: node types, validation, run/execute
-    (reuse `@xyflow/react` v12 per the spa-ui skill; port the Pro builder's
-    node catalog).
+  - [x] W10.2b ReactFlow canvas parity — `@xyflow/react` v12 added to the
+    spa-v2 bundle; `WorkflowCanvas` (provider-wrapped, lazy-split route)
+    with the three Engine V2 node kinds (tool/action/agent — matching
+    `execute_*_node` in the Pro builder and Engine V2's default), palette
+    add, drag-to-connect with arrow markers, selected-node rename/delete,
+    MiniMap/Controls/Background, and save-back through the existing PUT;
+    pure `workflow-graph.ts` model (converters + `validateGraph`); vitest
+    `workflow-canvas.test.tsx` (converters, validator, node components
+    under ReactFlowProvider).
   - [ ] W10.2c Workflow presets: 10 categories + install — needs a REST
     bridge over `WP_MCP_AI_Pro_Workflow_Presets` (the AJAX handlers are
     wp-admin-only today).

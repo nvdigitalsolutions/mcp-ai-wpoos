@@ -2,30 +2,33 @@
  * useWorkflowBuilder — Hook for the workflow list + selected detail.
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import {
-	WorkflowBuilderClient,
-	type WorkflowDetail,
-	type WorkflowSummary,
-} from '../api/workflow-builder';
+	import { useState, useCallback, useEffect, useMemo } from 'react';
+	import {
+		WorkflowBuilderClient,
+		type WorkflowDetail,
+		type WorkflowGraph,
+		type WorkflowSummary,
+	} from '../api/workflow-builder';
 
 export interface UseWorkflowBuilderOptions {
 	endpoint: string;
 	nonce: string;
 }
 
-export interface UseWorkflowBuilderReturn {
-	workflows: WorkflowSummary[];
-	selected: WorkflowDetail | null;
-	loading: boolean;
-	error: string | null;
-	actionError: string | null;
-	refresh: () => Promise< void >;
-	selectWorkflow: ( id: number ) => Promise< void >;
-	createWorkflow: ( name: string, tags?: string[] ) => Promise< boolean >;
-	removeWorkflow: ( id: number ) => Promise< boolean >;
-	executeWorkflow: ( id: number ) => Promise< boolean >;
-}
+	export interface UseWorkflowBuilderReturn {
+		workflows: WorkflowSummary[];
+		selected: WorkflowDetail | null;
+		loading: boolean;
+		saving: boolean;
+		error: string | null;
+		actionError: string | null;
+		refresh: () => Promise< void >;
+		selectWorkflow: ( id: number ) => Promise< void >;
+		createWorkflow: ( name: string, tags?: string[] ) => Promise< boolean >;
+		removeWorkflow: ( id: number ) => Promise< boolean >;
+		executeWorkflow: ( id: number ) => Promise< boolean >;
+		saveGraph: ( id: number, graph: WorkflowGraph ) => Promise< boolean >;
+	}
 
 export function useWorkflowBuilder(
 	options: UseWorkflowBuilderOptions
@@ -38,6 +41,7 @@ export function useWorkflowBuilder(
 	const [ workflows, setWorkflows ] = useState< WorkflowSummary[] >( [] );
 	const [ selected, setSelected ] = useState< WorkflowDetail | null >( null );
 	const [ loading, setLoading ] = useState< boolean >( true );
+	const [ saving, setSaving ] = useState< boolean >( false );
 	const [ error, setError ] = useState< string | null >( null );
 	const [ actionError, setActionError ] = useState< string | null >( null );
 
@@ -105,10 +109,29 @@ export function useWorkflowBuilder(
 		[ client, runAction ]
 	);
 
+	const saveGraph = useCallback(
+		async ( id: number, graph: WorkflowGraph ): Promise< boolean > => {
+			setActionError( null );
+			setSaving( true );
+			try {
+				await client.update( id, { graph } );
+				setSelected( await client.get( id ) );
+				return true;
+			} catch ( err ) {
+				setActionError( err instanceof Error ? err.message : String( err ) );
+				return false;
+			} finally {
+				setSaving( false );
+			}
+		},
+		[ client ]
+	);
+
 	return {
 		workflows,
 		selected,
 		loading,
+		saving,
 		error,
 		actionError,
 		refresh,
@@ -116,5 +139,6 @@ export function useWorkflowBuilder(
 		createWorkflow,
 		removeWorkflow,
 		executeWorkflow,
+		saveGraph,
 	};
 }
