@@ -70,6 +70,7 @@ function buildEndpoints(origin: string): ProSpaEndpoints {
     proOps: `${pro}/ops`,
     scheduleManager: `${pro}`,
     workflowBuilder: `${core}/orchestration/workflows`,
+    workflowPresets: `${pro}/workflow-presets`,
     shortcuts: `${pro}/tool-shortcuts`,
     slashCommands: `${pro}/slash-commands`,
     okf: `${pro}/okf`,

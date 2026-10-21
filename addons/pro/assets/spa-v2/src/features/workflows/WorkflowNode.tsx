@@ -14,14 +14,17 @@ function WorkflowNodeShell( {
 	accent,
 	label,
 	description,
+	rawType,
 	selected,
 }: {
 	nodeType: WorkflowNodeType;
 	accent: string;
 	label: string;
 	description?: string;
+	rawType?: string;
 	selected?: boolean;
 } ): JSX.Element {
+	const kind = rawType || NODE_TYPE_LABELS[ nodeType ];
 	return (
 		<div
 			className={ `nvoos-pro-spa-wf-node nvoos-pro-spa-wf-node--${ nodeType }${ selected ? ' is-selected' : '' }` }
@@ -29,7 +32,7 @@ function WorkflowNodeShell( {
 		>
 			<Handle type="target" position={ Position.Left } className="nvoos-pro-spa-wf-node__handle" />
 			<div className="nvoos-pro-spa-wf-node__header">
-				<span className="nvoos-pro-spa-wf-node__kind">{ NODE_TYPE_LABELS[ nodeType ] }</span>
+				<span className="nvoos-pro-spa-wf-node__kind">{ kind }</span>
 			</div>
 			<div className="nvoos-pro-spa-wf-node__body">
 				<strong className="nvoos-pro-spa-wf-node__label">{ label }</strong>
@@ -47,6 +50,7 @@ export function ToolNode( props: NodeProps< CanvasWorkflowNode > ): JSX.Element 
 			accent="#2271b1"
 			label={ props.data?.label ?? 'Tool' }
 			description={ props.data?.description }
+			rawType={ props.data?.rawType }
 			selected={ props.selected }
 		/>
 	);
@@ -59,6 +63,7 @@ export function ActionNode( props: NodeProps< CanvasWorkflowNode > ): JSX.Elemen
 			accent="#007a4d"
 			label={ props.data?.label ?? 'Action' }
 			description={ props.data?.description }
+			rawType={ props.data?.rawType }
 			selected={ props.selected }
 		/>
 	);
@@ -71,6 +76,7 @@ export function AgentNode( props: NodeProps< CanvasWorkflowNode > ): JSX.Element
 			accent="#7c3aed"
 			label={ props.data?.label ?? 'Agent' }
 			description={ props.data?.description }
+			rawType={ props.data?.rawType }
 			selected={ props.selected }
 		/>
 	);

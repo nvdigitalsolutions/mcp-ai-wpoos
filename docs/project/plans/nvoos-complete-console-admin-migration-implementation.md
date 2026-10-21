@@ -351,9 +351,16 @@ on); retirement stays gated on the port.
     pure `workflow-graph.ts` model (converters + `validateGraph`); vitest
     `workflow-canvas.test.tsx` (converters, validator, node components
     under ReactFlowProvider).
-  - [ ] W10.2c Workflow presets: 10 categories + install — needs a REST
-    bridge over `WP_MCP_AI_Pro_Workflow_Presets` (the AJAX handlers are
-    wp-admin-only today).
+  - [x] W10.2c Workflow presets: 10 categories + install — new REST bridge
+    `GET /mcp-ai-pro/v1/workflow-presets` +
+    `POST /workflow-presets/{id}/install`
+    (`addons/pro/includes/rest/class-wp-mcp-ai-pro-workflow-presets-rest-controller.php`,
+    wraps `WP_MCP_AI_Pro_Workflow_Presets`); Presets tab in the console
+    Workflows page (category filter, load-into-canvas draft); the canvas
+    preserves preset node types outside the execution trio
+    (input/output/condition, report kinds) via `data.rawType` round-trip;
+    PHPUnit `tests/rest-api/test-rest-workflow-presets.php` + vitest
+    `workflow-presets-client.test.ts`.
   - [ ] W10.2d Node execution + execution history REST bridge.
 - [x] W10.3 Kill-switches `wp_mcp_ai_admin_page_enabled_dag_builder` +
   `wp_mcp_ai_admin_page_enabled_pro_workflow_builder` on the two wp-admin

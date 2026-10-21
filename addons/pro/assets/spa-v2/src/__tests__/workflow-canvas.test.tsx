@@ -60,6 +60,13 @@ describe( 'workflow-graph converters', () => {
 		expect( graphNode ).toMatchObject( { id: 'a', type: 'action', label: 'Notify' } );
 	} );
 
+	it( 'preserves preset node types outside the execution trio', () => {
+		const canvas = toCanvasNode( { id: 'i1', type: 'input', label: 'Topic' }, 0 );
+		expect( canvas.type ).toBe( 'toolNode' );
+		expect( canvas.data.rawType ).toBe( 'input' );
+		expect( toGraphNode( canvas ) ).toMatchObject( { id: 'i1', type: 'input' } );
+	} );
+
 	it( 'filters malformed edges and keeps valid ones', () => {
 		expect(
 			toGraphEdges( [ { source: 'a', target: 'b' }, { source: '', target: 'b' } ] )

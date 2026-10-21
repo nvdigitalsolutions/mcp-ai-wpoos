@@ -288,6 +288,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			WP_MCP_AI_Pro_REST_Ops_Controller::init();
 		}
 
+		// Load Pro Workflow Presets REST bridge (Proposal 084 Phase 3b,
+		// W10.2c) — GET /mcp-ai-pro/v1/workflow-presets +
+		// POST /workflow-presets/{id}/install for the console canvas.
+		$workflow_presets_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-workflow-presets-rest-controller.php';
+		if ( file_exists( $workflow_presets_rest ) ) {
+			require_once $workflow_presets_rest;
+			WP_MCP_AI_Pro_Workflow_Presets_REST_Controller::init();
+		}
+
 		// Register Pro export providers for Backup & Restore.
 		add_action(
 			'wp_mcp_ai_register_export_providers',

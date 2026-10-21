@@ -1,19 +1,20 @@
 /**
- * WorkflowsPage — workflow list + canvas shell (Proposal 084 Phase 3b,
- * W10.2a).
+ * WorkflowsPage — workflow list + visual builder (Proposal 084 Phase 3b).
  *
- * Replaces the "Coming Soon" placeholder with the first builder increment:
- * full workflow CRUD over the existing base REST
- * (mcp-ai/v1/orchestration/workflows) plus a canvas shell that renders the
- * selected workflow's graph metadata. The visual ReactFlow canvas itself
- * is W10.2b — the shell reserves the canvas region for it.
+ * W10.2a/b: full workflow CRUD over the existing base REST
+ * (mcp-ai/v1/orchestration/workflows) with the ReactFlow canvas.
+ * W10.2c: the Presets tab loads SA workflow presets through the
+ * mcp-ai-pro/v1/workflow-presets bridge into the canvas as a draft graph
+ * (saved back through the standard PUT).
  */
 
-import { useState, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useWorkflowBuilder } from '../../hooks/useWorkflowBuilder';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import { WorkflowCanvasWithProvider } from './WorkflowCanvas';
+import { WorkflowPresetsClient, type WorkflowPresetSummary } from '../../api/workflow-presets';
+import type { WorkflowGraph } from '../../api/workflow-builder';
 
 function Badge( { label }: { label: string } ): JSX.Element {
 	return (
@@ -47,6 +48,47 @@ export function WorkflowsPage(): JSX.Element {
 	const [ busy, setBusy ] = useState< string | null >( null );
 	const [ showForm, setShowForm ] = useState< boolean >( false );
 	const [ form, setForm ] = useState( { name: '', tags: '' } );
+
+	// W10.2c — workflow presets (Pro surface; empty when Pro is absent).
+	const [ view, setView ] = useState< 'canvas' | 'presets' >( 'canvas' );
+	const [ presetCategories, setPresetCategories ] = useState< Record< string, string > >( {} );
+	const [ presets, setPresets ] = useState< WorkflowPresetSummary[] >( [] );
+	const [ presetCategory, setPresetCategory ] = useState< string >( '' );
+	const [ presetError, setPresetError ] = useState< string | null >( null );
+	const [ canvasOverride, setCanvasOverride ] = useState< WorkflowGraph | null >( null );
+
+	const presetsClient = useMemo( () => {
+		if ( ! runtime || ! runtime.endpoints.workflowPresets ) {
+			return null;
+		}
+		return new WorkflowPresetsClient( {
+			endpoint: runtime.endpoints.workflowPresets,
+			nonce: runtime.nonce,
+		} );
+	}, [ runtime ] );
+
+	useEffect( () => {
+		if ( ! presetsClient ) {
+			return;
+		}
+		let cancelled = false;
+		presetsClient
+			.list()
+			.then( ( data ) => {
+				if ( ! cancelled ) {
+					setPresetCategories( data.categories );
+					setPresets( data.presets );
+				}
+			} )
+			.catch( ( err: unknown ) => {
+				if ( ! cancelled ) {
+					setPresetError( err instanceof Error ? err.message : String( err ) );
+				}
+			} );
+		return () => {
+			cancelled = true;
+		};
+	}, [ presetsClient ] );
 
 	if ( bootstrapLoading || loading ) {
 		return (
@@ -92,6 +134,34 @@ export function WorkflowsPage(): JSX.Element {
 		}
 	};
 
+	const handleSelect = ( id: number ): void => {
+		setCanvasOverride( null );
+		void selectWorkflow( id );
+	};
+
+	const loadPreset = async ( id: string ): Promise< void > => {
+		if ( ! presetsClient || ! selected ) {
+			return;
+		}
+		setBusy( `preset-${ id }` );
+		setPresetError( null );
+		try {
+			const preset = await presetsClient.install( id );
+			if ( preset ) {
+				setCanvasOverride( { nodes: preset.nodes, edges: preset.edges } );
+				setView( 'canvas' );
+			}
+		} catch ( err ) {
+			setPresetError( err instanceof Error ? err.message : String( err ) );
+		} finally {
+			setBusy( null );
+		}
+	};
+
+	const visiblePresets = presetCategory
+		? presets.filter( ( preset ) => preset.category === presetCategory )
+		: presets;
+
 	return (
 		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">
 			<header className="nvoos-pro-spa-tools-page__header">
@@ -110,11 +180,32 @@ export function WorkflowsPage(): JSX.Element {
 				</button>
 			</header>
 
-			{ ( error || actionError ) && (
+			{ ( error || actionError || presetError ) && (
 				<div className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error" role="alert">
-					<p>{ actionError ?? error }</p>
+					<p>{ presetError ?? actionError ?? error }</p>
 				</div>
 			) }
+
+			<div className="nvoos-pro-spa-token-manager__stats" role="tablist" aria-label={ __( 'Workflow views', 'nvoos-pro-spa' ) }>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={ view === 'canvas' }
+					className="nvoos-pro-spa-token-manager__action"
+					onClick={ () => setView( 'canvas' ) }
+				>
+					{ __( 'Canvas', 'nvoos-pro-spa' ) }
+				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={ view === 'presets' }
+					className="nvoos-pro-spa-token-manager__action"
+					onClick={ () => setView( 'presets' ) }
+				>
+					{ __( 'Presets', 'nvoos-pro-spa' ) } ({ presets.length })
+				</button>
+			</div>
 
 			<div className="nvoos-pro-spa-workflows-page__layout">
 				<aside className="nvoos-pro-spa-diagnostics__card" aria-label={ __( 'Workflow list', 'nvoos-pro-spa' ) }>
@@ -174,7 +265,7 @@ export function WorkflowsPage(): JSX.Element {
 										<button
 											type="button"
 											className="nvoos-pro-spa-token-manager__action"
-											onClick={ () => void selectWorkflow( workflow.id ) }
+											onClick={ () => handleSelect( workflow.id ) }
 										>
 											<strong className="nvoos-pro-spa-tools-list__name">{ workflow.title }</strong>
 										</button>
@@ -186,8 +277,59 @@ export function WorkflowsPage(): JSX.Element {
 					) }
 				</aside>
 
-				<main className="nvoos-pro-spa-diagnostics__card" aria-label={ __( 'Workflow canvas', 'nvoos-pro-spa' ) }>
-					{ ! selected ? (
+				<main className="nvoos-pro-spa-diagnostics__card" aria-label={ __( 'Workflow builder', 'nvoos-pro-spa' ) }>
+					{ view === 'presets' ? (
+						<>
+							<h3 className="nvoos-pro-spa-diagnostics__card-title">{ __( 'Presets', 'nvoos-pro-spa' ) }</h3>
+							{ Object.keys( presetCategories ).length > 0 && (
+								<p>
+									<select
+										className="nvoos-pro-spa-assistants-form__select"
+										value={ presetCategory }
+										onChange={ ( event ) => setPresetCategory( event.target.value ) }
+									>
+										<option value="">{ __( 'All categories', 'nvoos-pro-spa' ) }</option>
+										{ Object.entries( presetCategories ).map( ( [ slug, label ] ) => (
+											<option key={ slug } value={ slug }>
+												{ label }
+											</option>
+										) ) }
+									</select>
+								</p>
+							) }
+							{ visiblePresets.length === 0 ? (
+								<p className="nvoos-pro-spa-diagnostics__muted">
+									{ __( 'No presets available.', 'nvoos-pro-spa' ) }
+								</p>
+							) : (
+								<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Workflow presets', 'nvoos-pro-spa' ) }>
+									{ visiblePresets.map( ( preset ) => (
+										<div key={ preset.id } className="nvoos-pro-spa-tools-list__row" role="listitem">
+											<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+												<strong className="nvoos-pro-spa-tools-list__name">{ preset.name }</strong>
+												<code className="nvoos-pro-spa-tools-list__slug">
+													{ presetCategories[ preset.category ] ?? preset.category }
+												</code>
+											</div>
+											<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
+												{ preset.description || '—' }
+											</div>
+											<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+												<button
+													type="button"
+													className="nvoos-pro-spa-token-manager__action"
+													disabled={ busy !== null || ! selected }
+													onClick={ () => void loadPreset( preset.id ) }
+												>
+													{ __( 'Load into canvas', 'nvoos-pro-spa' ) }
+												</button>
+											</div>
+										</div>
+									) ) }
+								</div>
+							) }
+						</>
+					) : ! selected ? (
 						<p className="nvoos-pro-spa-diagnostics__muted">
 							{ __( 'Select a workflow to inspect its graph.', 'nvoos-pro-spa' ) }
 						</p>
@@ -208,8 +350,8 @@ export function WorkflowsPage(): JSX.Element {
 							) }
 
 							<WorkflowCanvasWithProvider
-								key={ selected.id }
-								workflow={ selected }
+								key={ selected.id + ( canvasOverride ? ':draft' : '' ) }
+								workflow={ { ...selected, graph: canvasOverride ?? selected.graph } }
 								saving={ saving }
 								onSave={ async ( graph ) => {
 									await saveGraph( selected.id, graph );

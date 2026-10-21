@@ -29,6 +29,8 @@ export const NODE_TYPE_LABELS: Record< WorkflowNodeType, string > = {
 export type WorkflowNodeData = {
 	label: string;
 	description?: string;
+	/** Preserved stored type outside the execution trio (e.g. input/output). */
+	rawType?: string;
 };
 
 export type CanvasWorkflowNode = Node< WorkflowNodeData, CanvasNodeType >;
@@ -53,8 +55,11 @@ export function isWorkflowNodeType( value: unknown ): value is WorkflowNodeType 
 }
 
 /**
- * Map a stored graph node onto a canvas node (positions default to a loose
- * vertical stack so an existing graph is still legible).
+ * Map a stored graph node onto a canvas node. Preset graphs may carry node
+ * types outside the execution trio (input/output/condition, report kinds) —
+ * those render as generic tool nodes and keep their original type in
+ * data.rawType so saving round-trips them untouched. Stored positions are
+ * honoured when present; otherwise nodes stack loosely.
  */
 export function toCanvasNode( node: WorkflowGraphNode, index: number ): CanvasWorkflowNode {
 	const rawType = node.type;
@@ -62,14 +67,27 @@ export function toCanvasNode( node: WorkflowGraphNode, index: number ): CanvasWo
 	const rawLabel = typeof node.label === 'string' && node.label ? node.label : '';
 	const rawDescription =
 		typeof node.description === 'string' ? node.description : undefined;
+	const position =
+		node.position &&
+		typeof node.position === 'object' &&
+		typeof ( node.position as { x?: unknown } ).x === 'number' &&
+		typeof ( node.position as { y?: unknown } ).y === 'number'
+			? {
+					x: ( node.position as { x: number } ).x,
+					y: ( node.position as { y: number } ).y,
+			  }
+			: { x: 40 + ( index % 4 ) * 260, y: 40 + Math.floor( index / 4 ) * 140 };
 
 	return {
 		id: String( node.id ),
 		type: CANVAS_TYPE_FOR[ graphType ],
-		position: { x: 40 + ( index % 4 ) * 260, y: 40 + Math.floor( index / 4 ) * 140 },
+		position,
 		data: {
 			label: rawLabel || NODE_TYPE_LABELS[ graphType ],
 			description: rawDescription,
+			...( typeof rawType === 'string' && ! isWorkflowNodeType( rawType )
+				? { rawType }
+				: {} ),
 		},
 	};
 }
@@ -84,7 +102,7 @@ export function toGraphNode( node: CanvasWorkflowNode ): WorkflowGraphNode {
 
 	return {
 		id: node.id,
-		type: GRAPH_TYPE_FOR[ canvasType ],
+		type: node.data?.rawType ?? GRAPH_TYPE_FOR[ canvasType ],
 		label: node.data?.label ?? NODE_TYPE_LABELS[ GRAPH_TYPE_FOR[ canvasType ] ],
 		...( node.data?.description ? { description: node.data.description } : {} ),
 	};
