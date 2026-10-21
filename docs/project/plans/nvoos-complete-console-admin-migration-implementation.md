@@ -310,22 +310,45 @@ AJAX.
 - **Exit:** schedules and presets fully operable in the console; the wp-admin
   page filter-gated off by default for Console cohorts.
 
-### 5b.2 B8 + P10 — DAG Builder & Workflow Builder parity + retirement (T0/T2)
+### 5b.2 B8 + P10 — DAG Builder & Workflow Builder (re-tiered T2/T3)
 
-The console already ships the ReactFlow visual builder (spa-v2
-`features/workflows/WorkflowsPage`, `#/workflows`). The remaining work is
-verification, not porting.
+**W10.1 audit (2026-10-21) — the premise was wrong:** the spa-v2
+`WorkflowsPage` is a "Coming Soon" placeholder, not the ReactFlow visual
+builder the gap analysis assumed. There is no console builder to verify
+parity against — the port is real work:
 
-- [ ] W10.1 Feature parity audit — spa-v2 Workflows builder vs the base DAG
-  Builder page and the Pro Workflow Builder PHP page (ReactFlow): node
-  types, the 10 preset categories, validation, execution hand-off. Record
-  deltas in the gap analysis tables.
-- [ ] W10.2 Close any functional gaps in the spa-v2 builder per the audit.
-- [ ] W10.3 Kill-switches `wp_mcp_ai_admin_page_enabled_dag_builder` +
+- Base **DAG Builder** (`includes/admin/class-wp-mcp-ai-admin-dag-builder.php`,
+  196 lines) — workflow-CPT sidebar + canvas root driven by bundled JS
+  against `mcp-ai/v1/orchestration/workflows`
+  (`class-wp-mcp-ai-rest-workflow-cpt-controller.php` — already REST-backed).
+- **Pro Workflow Builder**
+  (`addons/pro/includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php`,
+  1,890 lines) — ReactFlow canvas with 12 admin-ajax handlers (save/load/
+  delete/list/export/duplicate/rename, templates, node execution,
+  execution save) + workflow presets (10 categories) via AJAX
+  (`WP_MCP_AI_Pro_Workflow_Presets`), plus its own ReactFlow bundles.
+
+P10 is re-tiered to **T2/T3** (B12 reclassification precedent); W10.2 is
+re-scoped as the builder port; kill-switches ship now (zero-risk, default
+on); retirement stays gated on the port.
+
+- [x] W10.1 Feature parity audit — recorded above; gap-matrix rows B8/P10
+  notes corrected.
+- [ ] W10.2 Builder port (sub-steps):
+  - [ ] W10.2a spa-v2 Workflows page: workflow list + canvas shell consuming
+    `mcp-ai/v1/orchestration/workflows` (base REST already exists).
+  - [ ] W10.2b ReactFlow canvas parity: node types, validation, run/execute
+    (reuse `@xyflow/react` v12 per the spa-ui skill; port the Pro builder's
+    node catalog).
+  - [ ] W10.2c Workflow presets: 10 categories + install — needs a REST
+    bridge over `WP_MCP_AI_Pro_Workflow_Presets` (the AJAX handlers are
+    wp-admin-only today).
+  - [ ] W10.2d Node execution + execution history REST bridge.
+- [x] W10.3 Kill-switches `wp_mcp_ai_admin_page_enabled_dag_builder` +
   `wp_mcp_ai_admin_page_enabled_pro_workflow_builder` on the two wp-admin
-  pages.
-- [ ] W10.4 Retirement soak, then remove the PHP pages and their admin-ajax
-  handlers when no WP consumer remains.
+  pages (default on).
+- [ ] W10.4 Retirement soak — gated on W10.2 shipping; then remove the PHP
+  pages and their admin-ajax handlers when no WP consumer remains.
 - **Exit:** one workflow-builder surface (console/spa-v2) with full parity;
   both PHP pages retired (landing inside the Phase 5 window).
 

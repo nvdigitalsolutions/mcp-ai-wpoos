@@ -80,6 +80,17 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @since 2.0.0
 	 */
 	public function register_page() {
+		/**
+		 * Kill-switch for the wp-admin Pro Workflow Builder surface
+		 * (Proposal 084 Phase 3b, gap P10). The console Workflows page is a
+		 * placeholder today — the builder port is sequenced as W10.2 before
+		 * any retirement; flip this filter off per cohort once the console
+		 * builder reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_pro_workflow_builder', true ) ) {
+			return;
+		}
+
 		$this->page_hook = add_submenu_page(
 			'nvoos-pro-dashboard',
 			__( 'Pro Workflow Builder', 'mcp-ai-wpoos' ),

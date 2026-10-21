@@ -234,7 +234,7 @@ wp-admin-native by design (T5), or is it not ours to migrate (T6).
 | B5 | Run Timeline | T2 | ajax `run_timeline_*` | Workflow-run REST exists (`rest-workflow-run-controller`) — extend it |
 | B6 | Multi-Agent dashboard | T2 | ajax `multi_agent_stats` | Agent re-install is destructive — confirm-gate UX + capability check |
 | B7 | Orchestration dashboard | T2 | ajax `orchestration_*` | Overlaps spa-v2 Workflows/Analytics; merge, don't duplicate |
-| B8 | DAG Builder | T2 | — | spa-v2 Workflows page is the visual builder already — verify parity, retire the PHP page |
+| B8 | DAG Builder | T2 → T2/T3 | — | Audit 2026-10-21: spa-v2 Workflows is a placeholder, not a builder; base REST `orchestration/workflows` exists — builder port sequenced as Phase 3b W10.2 |
 | B9 | Workflow Triggers | T1 | `rest-triggers-controller` | |
 | B10 | Cron Manager | T2 | ajax | High-value ops surface; REST + read-only default |
 | B11 | DLQ Manager | T2 | ajax | Ops surface; pair with cron manager |
@@ -267,7 +267,7 @@ wp-admin-native by design (T5), or is it not ours to migrate (T6).
 | P7 | Research & Add family (~35 pages) | T4 | — | One configurable React feature (entity config: fields, store, import mode, create-from-research) replaces the base class instances |
 | P8 | Consolidate & Add family (~6 pages) | T4 | — | Variant of P7 with batch/merge mode |
 | P9 | Schedule Manager page | T1/T2 | SA presets/toolkits REST (Proposal 081) | |
-| P10 | Workflow Builder page | T0/T2 | spa-v2 Workflows | Verify parity vs the PHP ReactFlow page, then retire |
+| P10 | Workflow Builder page | T0/T2 → T2/T3 | spa-v2 Workflows | Audit 2026-10-21: console page is a placeholder — the ReactFlow builder + 10 preset categories + node execution are a real port (Phase 3b W10.2), not a parity check |
 | P11 | Pro maintenance / incidents / webhook status / status dashboard | T2 | `status-rest-controller` (base) | Ops cluster — group under one Console "Operations" page |
 | P12 | Skill manager / skill research / skill settings | T2 | — | Skills are a console-native concept — high priority |
 | P13 | Password Vault admin | T5/T2 | metadata-only WP-CLI | Security-sensitive vault; console read-mostly first, admin in wp-admin |
