@@ -2,11 +2,12 @@
 
 - **Date:** 2026-10-20
 - **Status:** Phases 0–3 shipped (merged as #7164, 2026-10-21); Phase 3b
-  sequenced (P9 Schedule Manager port + B8/P10 builder parity/retirement);
-  next: Phase 4 (Records feature — unblocked by the storage audit) and
-  Phase 5 retirement soak. Latest validation (per-slice): phpcs 0 errors,
-  PHPUnit green on WP 6.9 + WP 7.1 (Docker), spa-v2 vitest 260/260, console
-  vitest 47/47, all bundles rebuilt.
+  shipped (P9 Schedule Manager port + B8/P10 builder port, PR #7166 —
+  workflow-builder retirement soak open into Phase 5); next: Phase 4
+  (Records feature — unblocked by the storage audit) and Phase 5 retirement
+  soak. Latest validation (per-slice): phpcs 0 errors, PHPUnit green on
+  WP 6.9 + WP 7.1 (Docker), spa-v2 vitest 288/288, console vitest 47/47,
+  all bundles rebuilt.
 - **Companion analysis:** [`docs/project/proposals/084-admin-surface-console-migration-gap-analysis.md`](../proposals/084-admin-surface-console-migration-gap-analysis.md)
 - **Precedes:** Proposal 083 implementation plan (console scaffold — complete)
 - **Surfaces:** `examples/nvoos-complete-velocity/` (target), `includes/` + `addons/pro/` (source), `addons/pro/assets/spa-v2/` (shared surface), `includes/rest/` (API bridge)
@@ -361,14 +362,44 @@ on); retirement stays gated on the port.
     (input/output/condition, report kinds) via `data.rawType` round-trip;
     PHPUnit `tests/rest-api/test-rest-workflow-presets.php` + vitest
     `workflow-presets-client.test.ts`.
-  - [ ] W10.2d Node execution + execution history REST bridge.
+  - [x] W10.2d Node execution + execution history REST bridge —
+    `POST /mcp-ai-pro/v1/workflow-builder/nodes/execute`
+    (`addons/pro/includes/rest/class-wp-mcp-ai-pro-workflow-node-rest-controller.php`)
+    wraps the builder page's promoted `execute_action_node`/
+    `execute_tool_node`/`execute_agent_node` seams and fires the same
+    `wp_mcp_ai_pro_workflow_node_executed` action the AJAX path uses, so
+    the Pro Workflow Bridge keeps mirroring runs into the base Workflow
+    Run CPT (history read via the existing `/orchestration/runs` — no new
+    history controller); `workflowNodes` + `workflowRuns` endpoints in both
+    runtime configs; canvas "Run node" button (gated on
+    `nodeExecutePayload`), run-history section and `lastNodeResult` on the
+    Workflows page; preset round-trip fidelity fixed (`toGraphNode` re-nests
+    non-core data under `data`, preserves `position`; `toCanvasNode` falls
+    back to `data.label`/`data.description`); PHPUnit
+    `tests/rest-api/test-rest-workflow-node.php` (5 tests) + vitest client
+    and canvas tests; both bundles rebuilt.
 - [x] W10.3 Kill-switches `wp_mcp_ai_admin_page_enabled_dag_builder` +
   `wp_mcp_ai_admin_page_enabled_pro_workflow_builder` on the two wp-admin
   pages (default on).
-- [ ] W10.4 Retirement soak — gated on W10.2 shipping; then remove the PHP
-  pages and their admin-ajax handlers when no WP consumer remains.
+- [x] W10.4 Retirement soak — started 2026-10-21 (W10.2 shipped). Console
+  surface is at parity (list + CRUD, ReactFlow canvas, 10 preset categories,
+  node execution, run history) with both kill-switches live. The PHP pages
+  stay default-on through the soak; removal is a Phase 5 mechanical job:
+  (1) flip both kill-switch defaults to off, (2) delete
+  `includes/admin/class-wp-mcp-ai-admin-dag-builder.php` + its menu
+  registration and the 12 admin-ajax handlers + preset AJAX in
+  `addons/pro/includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php`,
+  (3) drop the Pro builder's own ReactFlow bundles from the enqueue path,
+  (4) subtract the B8/P10 rows from the gap-analysis tracker. Node-execution
+  REST and the presets REST controllers are the surviving consumers of the
+  promoted seams/`WP_MCP_AI_Pro_Workflow_Presets` and are NOT removed.
 - **Exit:** one workflow-builder surface (console/spa-v2) with full parity;
   both PHP pages retired (landing inside the Phase 5 window).
+
+**Phase 3b exit criteria met** — P9 (Schedule Manager) and B8/P10 (workflow
+builder: list + CRUD, ReactFlow canvas, presets, node execution, run
+history) are fully operable in the console; kill-switches live on both
+wp-admin pages; retirement soak open, removal slated for Phase 5.
 
 
 ## 6. Phase 4 — Entity workflows (T4)
