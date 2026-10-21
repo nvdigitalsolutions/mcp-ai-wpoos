@@ -249,7 +249,7 @@ wp-admin-native by design (T5), or is it not ours to migrate (T6).
 | B20 | OKF bundle manager | T2 | — | |
 | B21 | Measurement dashboard | T1/T2 | `admin-measurement-dashboard` | Ecosystem port already has a copy — reuse its seam |
 | B22 | Assistant builder/add/test/portability pages | T1 | `rest-assistant-portability-controller`, assistant CPT | spa-v2 Assistants covers builder; portability (export/import) needs a page |
-| B23 | Team/profession research + settings | T4-lite | `rest-teams-controller` | CPT-adjacent; low frequency |
+| B23 | Team/profession research + settings | T4-lite | `rest-teams-controller` | CPT-adjacent; low frequency. Sequenced 2026-10-21 → Phase 4b W12 (with P3 PM command center); team catalogue already console-shipped via `/teams` (Phase 1) |
 | B24 | Integration screens — JetEngine, WooCommerce, Elementor, plugins | T5 | — | Config of third-party plugins; stays in wp-admin |
 | B25 | Media-library columns, Gmail crawl, Auth0 setup, onboarding wizard, Site Health panels, ISO badge, dashboard widgets | T5 | — | WP-native or site-plumbing; proxied |
 | B26 | User profile chat-profile/memory pages | T5 | — | Per-user WP profile surface |

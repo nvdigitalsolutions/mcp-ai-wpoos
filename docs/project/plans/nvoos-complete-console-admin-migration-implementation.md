@@ -417,6 +417,30 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   appointments, F&B and CCT-backed surfaces use toolkit REST or a thin
   `records/{entity}` controller. Q5 resolved; Q2's UX half remains open.
 
+### 6a. Sequenced sub-phases (audit §4 order; B23 sequenced 2026-10-21)
+
+- [ ] **W11 (4a) — Records feature + CRM command center.** P1 + P7/P8 pilot:
+  the generic list/filter/detail Records page parameterized by entity
+  configs (storage strategy = config, not code — `wp-core` first) with the
+  five CRM entities (company/customer/deal/lead/ticket via
+  `wp/v2/mcp_ai_*`) and the CRM command-center nav entry. Import and
+  create-from-research are 4a-b (second slice of the same feature).
+- [ ] **W12 (4b) — PM command center + professions.** P3 (projects/tasks/
+  events/sprints via `wp/v2/mcp_ai_*`) reusing the W11 Records feature;
+  **B23 Team/profession research + settings (T4-lite)** — the console
+  `/teams` page (Phase 1) already covers the team catalogue + profession
+  members via `rest-teams-controller`; 4b adds profession definitions
+  (create/edit `mcp_ai_profession` records, role assignments) and ports the
+  profession research/settings wp-admin pages onto the same controller
+  surface.
+- [ ] **W13 (4c) — Repeating dashboards feature.** P15: one configurable
+  dashboard-with-filters feature (CRE portfolio, ECA, health, vitals,
+  registration, law-firm).
+- [ ] **W14 (4d) — Remaining command centers.** Calendar booking (existing
+  REST), F&B (Proposal 078 universalisation REST), Media (P2), Chat
+  Channels (P4) — per-toolkit checks against the storage audit before each
+  port.
+
 ## 7. Phase 5 — Retirement & hardening
 
 Kill-switch flips per surface after a soak window; dead admin-ajax handler
