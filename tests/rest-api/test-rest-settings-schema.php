@@ -14,6 +14,18 @@
 class WP_MCP_AI_REST_Settings_Schema_Test extends WP_UnitTestCase {
 
 	/**
+	 * Boot-time section instances captured in set_up and restored in
+	 * tear_down. The registry is a process-wide static, so tearing down the
+	 * test sections without restoring the originals would leave every
+	 * downstream suite (settings saves, provider subtabs, documentation
+	 * links) with an empty registry — the 26-failure full-suite cascade
+	 * caught by the CI run of 2026-10-21.
+	 *
+	 * @var array<string, WP_MCP_AI_Settings_Section|null>
+	 */
+	private static $previous_sections = array();
+
+	/**
 	 * Register two representative sections so the schema has content, and
 	 * start from a clean settings option.
 	 */
@@ -30,6 +42,11 @@ class WP_MCP_AI_REST_Settings_Schema_Test extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-providers.php';
 		}
 
+		// Snapshot the boot-time instances before overwriting them, so
+		// tear_down can put the registry back exactly as it found it.
+		self::$previous_sections['general']   = WP_MCP_AI_Settings_Registry::get_section( 'general' );
+		self::$previous_sections['providers'] = WP_MCP_AI_Settings_Registry::get_section( 'providers' );
+
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_General() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Providers() );
 
@@ -38,11 +55,16 @@ class WP_MCP_AI_REST_Settings_Schema_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Drop the test sections + option.
+	 * Drop the test sections + option, then restore the boot-time sections.
 	 */
 	public function tear_down() {
 		WP_MCP_AI_Settings_Registry::unregister_section( 'general' );
 		WP_MCP_AI_Settings_Registry::unregister_section( 'providers' );
+		foreach ( self::$previous_sections as $section ) {
+			if ( $section instanceof WP_MCP_AI_Settings_Section ) {
+				WP_MCP_AI_Settings_Registry::register_section( $section );
+			}
+		}
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 		parent::tear_down();
