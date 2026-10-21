@@ -256,9 +256,15 @@ export default defineConfig(({ mode }) => {
         // imports jquery + cytoscape; force them onto this app's single
         // dependency tree like react/zustand above (a second cytoscape
         // instance would break extension registration).
-        jquery: fileURLToPath(new URL('./node_modules/jquery', import.meta.url)),
-        cytoscape: fileURLToPath(new URL('./node_modules/cytoscape', import.meta.url)),
-        'cytoscape-fcose': fileURLToPath(new URL('./node_modules/cytoscape-fcose', import.meta.url)),
+        			jquery: fileURLToPath( new URL( './node_modules/jquery', import.meta.url ) ),
+        			cytoscape: fileURLToPath( new URL( './node_modules/cytoscape', import.meta.url ) ),
+        			'cytoscape-fcose': fileURLToPath( new URL( './node_modules/cytoscape-fcose', import.meta.url ) ),
+        			// Workflow Builder canvas (Phase 3b): the vendored spa-v2 has no
+        			// node_modules in the standalone mirror, so force the canvas onto
+        			// this app's tree like react/zustand above (the prefix alias also
+        			// covers the '@xyflow/react/dist/style.css' subpath import).
+        			'@xyflow/react': fileURLToPath( new URL( './node_modules/@xyflow/react', import.meta.url ) ),
+        			'@xyflow/system': fileURLToPath( new URL( './node_modules/@xyflow/system', import.meta.url ) ),
       },
     },
     server: {
