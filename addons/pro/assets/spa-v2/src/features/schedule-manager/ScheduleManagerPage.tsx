@@ -34,6 +34,7 @@ export function ScheduleManagerPage(): JSX.Element {
 		presets,
 		loading,
 		error,
+		schedulesError,
 		actionError,
 		refresh,
 		createSchedule,
@@ -215,6 +216,12 @@ export function ScheduleManagerPage(): JSX.Element {
 									{ __( 'Create schedule', 'nvoos-pro-spa' ) }
 								</button>
 							</p>
+						</div>
+					) }
+
+					{ schedulesError && schedules.length === 0 && (
+						<div className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error" role="alert">
+							<p>{ schedulesError }</p>
 						</div>
 					) }
 

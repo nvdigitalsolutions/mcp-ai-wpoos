@@ -24,6 +24,27 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboards_REST_Controller' ) ) {
 			$this->markTestSkipped( 'Pro addon not loaded.' );
 		}
+
+		// Toolkits are default-off; clear the settings between tests so
+		// each case starts from the unconfigured state.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Enable every dashboard-gating toolkit flag.
+	 */
+	private function seed_toolkit_flags(): void {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_cre_debt_toolkit'              => 1,
+				'enable_law_firm_toolkit'              => 1,
+				'enable_regulatory_registration_toolkit' => 1,
+				'enable_eca_management'                => 1,
+				'enable_health_wellness_management'    => 1,
+				'enable_medical_vitals'                => 1,
+			)
+		);
 	}
 
 	/**
@@ -43,6 +64,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	 * Admins get the dashboard catalogue with the CRE + law configs.
 	 */
 	public function test_schema_includes_dashboards() {
+		$this->seed_toolkit_flags();
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -88,6 +110,53 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Disabled toolkits never appear in the catalogue — the console renders
+	 * this list verbatim, so feature-gating happens server-side.
+	 */
+	public function test_schema_hides_disabled_dashboards() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_schema( new WP_REST_Request() );
+		$data   = $result->get_data();
+
+		foreach ( array( 'cre', 'law', 'registration', 'eca', 'health', 'vitals' ) as $id ) {
+			$this->assertArrayNotHasKey( $id, $data['dashboards'], $id . ' should hide when its toolkit is off.' );
+		}
+
+		// Enabling only Health & Wellness restores health AND vitals (the
+		// medical-vitals BC fallback mirrors includes/tools/healthcare/init.php).
+		update_option( 'wp_mcp_ai_settings', array( 'enable_health_wellness_management' => 1 ) );
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_schema( new WP_REST_Request() );
+		$data   = $result->get_data();
+
+		$this->assertArrayHasKey( 'health', $data['dashboards'] );
+		$this->assertArrayHasKey( 'vitals', $data['dashboards'] );
+		$this->assertArrayNotHasKey( 'cre', $data['dashboards'] );
+		$this->assertArrayNotHasKey( 'law', $data['dashboards'] );
+		$this->assertArrayNotHasKey( 'eca', $data['dashboards'] );
+	}
+
+	/**
+	 * Direct data requests for a disabled dashboard are refused — not just
+	 * hidden from the picker.
+	 */
+	public function test_data_rejects_disabled_dashboard() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/health/data' );
+		$request->set_param( 'id', 'health' );
+		$request->set_param( 'filters', array() );
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'dashboards_unavailable', $result->get_error_code() );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
+	}
+
+	/**
 	 * Unknown dashboards are rejected as readable 400s.
 	 */
 	public function test_unknown_dashboard_is_400() {
@@ -109,6 +178,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	 * (the loan CPT is absent in the test env — zero network).
 	 */
 	public function test_cre_data_zeroed_envelope() {
+		$this->seed_toolkit_flags();
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -136,6 +206,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	 * toolkit CPTs are absent (zero network).
 	 */
 	public function test_law_data_zeroed_envelope() {
+		$this->seed_toolkit_flags();
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -161,6 +232,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	 * toolkit CPTs are absent (zero network).
 	 */
 	public function test_registration_data_zeroed_envelope() {
+		$this->seed_toolkit_flags();
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -187,6 +259,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	 * are absent (zero network).
 	 */
 	public function test_eca_data_zeroed_envelope() {
+		$this->seed_toolkit_flags();
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -214,6 +287,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	 * (deterministic: the provider is never reached).
 	 */
 	public function test_member_dashboards_require_a_member() {
+		$this->seed_toolkit_flags();
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -239,6 +313,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	 * member's option, which is absent in the test env).
 	 */
 	public function test_health_data_zeroed_envelope() {
+		$this->seed_toolkit_flags();
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -287,6 +362,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	 * Filter values are whitelisted against the dashboard's filter keys.
 	 */
 	public function test_filters_are_whitelisted() {
+		$this->seed_toolkit_flags();
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -320,6 +396,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	 * zeroed envelope proves the decoded filter reached the provider.
 	 */
 	public function test_json_string_filters_reach_the_provider() {
+		$this->seed_toolkit_flags();
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 

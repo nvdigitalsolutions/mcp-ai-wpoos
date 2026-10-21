@@ -22,10 +22,14 @@ import {
 
 function useDashboards( schemaEndpoint: string, nonce: string ): {
 	dashboards: DashboardConfig[];
+	schemaLoading: boolean;
 	schemaError: string | null;
 	client: DashboardsClient;
 } {
 	const [ dashboards, setDashboards ] = useState< DashboardConfig[] >( [] );
+	// Distinct from `dashboards.length` so a genuinely empty catalogue
+	// (all toolkits disabled) never renders the loading state forever.
+	const [ schemaLoading, setSchemaLoading ] = useState< boolean >( true );
 	const [ schemaError, setSchemaError ] = useState< string | null >( null );
 
 	const client = useMemo(
@@ -35,6 +39,7 @@ function useDashboards( schemaEndpoint: string, nonce: string ): {
 
 	useEffect( () => {
 		if ( ! schemaEndpoint ) {
+			setSchemaLoading( false );
 			return;
 		}
 		let cancelled = false;
@@ -46,6 +51,7 @@ function useDashboards( schemaEndpoint: string, nonce: string ): {
 					return;
 				}
 				setDashboards( list );
+				setSchemaLoading( false );
 			} )
 			.catch( ( error: unknown ) => {
 				if ( cancelled ) {
@@ -56,6 +62,7 @@ function useDashboards( schemaEndpoint: string, nonce: string ): {
 						? error.message
 						: __( 'Failed to load the dashboard catalogue.', 'nvoos-pro-spa' )
 				);
+				setSchemaLoading( false );
 			} );
 		return () => {
 			cancelled = true;
@@ -63,12 +70,12 @@ function useDashboards( schemaEndpoint: string, nonce: string ): {
 		};
 	}, [ client, schemaEndpoint ] );
 
-	return { dashboards, schemaError, client };
+	return { dashboards, schemaLoading, schemaError, client };
 }
 
 export function DashboardsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
-	const { dashboards, schemaError, client } = useDashboards(
+	const { dashboards, schemaLoading, schemaError, client } = useDashboards(
 		runtime?.endpoints.dashboardsSchema ?? '',
 		runtime?.nonce ?? ''
 	);
@@ -139,6 +146,18 @@ export function DashboardsPage(): JSX.Element {
 				<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">
 					{ __( 'Runtime configuration not available. Please reload the page.', 'nvoos-pro-spa' ) }
 				</p>
+			</div>
+		);
+	}
+
+	if ( schemaLoading && dashboards.length === 0 ) {
+		return (
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--loading" aria-busy="true">
+				<h2 className="nvoos-pro-spa-page__title">{ __( 'Dashboards', 'nvoos-pro-spa' ) }</h2>
+				<div className="nvoos-pro-spa-page__loader" role="status">
+					<span className="nvoos-pro-spa-page__spinner" />
+					{ __( 'Loading dashboards…', 'nvoos-pro-spa' ) }
+				</div>
 			</div>
 		);
 	}
@@ -237,6 +256,12 @@ export function DashboardsPage(): JSX.Element {
 					>
 						{ __( 'Retry', 'nvoos-pro-spa' ) }
 					</button>
+				</div>
+			) }
+
+			{ dashboard && ! data && loading && (
+				<div className="nvoos-pro-spa-tools-page__empty" role="status">
+					<p>{ __( 'Loading dashboard data…', 'nvoos-pro-spa' ) }</p>
 				</div>
 			) }
 

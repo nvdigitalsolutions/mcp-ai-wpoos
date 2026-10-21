@@ -34,7 +34,7 @@
 
 				useEffect(
 					function () {
-						apiFetch( { path: '/mcp-ai-pro/v1/schedules?selectable=1' } )
+						apiFetch( { path: '/mcp-ai-pro/v1/schedules/selectable' } )
 						.then(
 							function ( items ) {
 								if ( Array.isArray( items ) ) {

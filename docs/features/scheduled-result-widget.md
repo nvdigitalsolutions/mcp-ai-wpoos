@@ -32,7 +32,9 @@ same server-side renderer powering both editors and the front end.
 2. **REST controller**
    (`addons/pro/includes/rest/class-wp-mcp-ai-pro-schedule-result-controller.php`)
    exposes four routes under `mcp-ai-pro/v1/`:
-   - `GET  /schedules?selectable=1` — lightweight picker.
+   - `GET  /schedules/selectable` — lightweight picker (its own literal
+     route so it never collides with the CRUD controller's `GET /schedules`
+     envelope).
    - `GET  /schedules/{id}/latest-result` — full or redacted envelope; ETag
      header on every 200 response.
    - `GET  /schedules/{id}/results?limit=N` — authenticated-only history.

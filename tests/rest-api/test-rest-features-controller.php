@@ -53,4 +53,33 @@ class WP_MCP_AI_REST_Features_Controller_Test extends WP_UnitTestCase {
 			$this->assertIsBool( $value );
 		}
 	}
+
+	/**
+	 * The toolkit enable toggles flow into the map — the console gates its
+	 * command-center nav items on these, so a disabled toolkit must come
+	 * back as explicit `false` (never absent).
+	 */
+	public function test_toolkit_feature_keys_follow_settings() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		delete_option( 'wp_mcp_ai_settings' );
+		$features = WP_MCP_AI_Feature_Flags::all();
+
+		$this->assertFalse( $features['fnb'] );
+		$this->assertFalse( $features['crm'] );
+		$this->assertFalse( $features['project_management'] );
+		$this->assertFalse( $features['calendar_booking'] );
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array( 'enable_fnb_toolkit' => 1 )
+		);
+		$features = WP_MCP_AI_Feature_Flags::all();
+
+		$this->assertTrue( $features['fnb'] );
+		$this->assertFalse( $features['crm'] );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
 }

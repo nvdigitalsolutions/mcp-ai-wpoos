@@ -57,6 +57,11 @@ export function AssistantsPage(): JSX.Element {
 	const [ editingId, setEditingId ] = useState< number | null >( null );
 	const [ formFields, setFormFields ] = useState< AssistantFormFields >( EMPTY_FORM );
 	const [ saving, setSaving ] = useState< boolean >( false );
+	// True while the full record (system prompt + tools) is fetched for an
+	// edit — the form is seeded from the list row first, so without this
+	// the system-prompt field flashes empty and a premature save would
+	// overwrite the stored prompt with ''.
+	const [ recordLoading, setRecordLoading ] = useState< boolean >( false );
 	const [ deleteConfirm, setDeleteConfirm ] = useState< number | null >( null );
 
 	const providers = useMemo< string[] >( () => {
@@ -67,9 +72,10 @@ export function AssistantsPage(): JSX.Element {
 	}, [ availableModels ] );
 
 	const openCreate = useCallback( () => {
-		setFormFields( EMPTY_FORM );
-		setEditingId( null );
-		setFormOpen( true );
+			setFormFields( EMPTY_FORM );
+			setEditingId( null );
+			setRecordLoading( false );
+			setFormOpen( true );
 	}, [] );
 
 	const openEdit = useCallback(
@@ -86,10 +92,12 @@ export function AssistantsPage(): JSX.Element {
 				tools: Array.isArray( assistant.tools ) ? assistant.tools.join( ', ' ) : '',
 			} );
 			setEditingId( assistant.id );
+			setRecordLoading( true );
 			setFormOpen( true );
 
 			void getAssistant( assistant.id ).then( ( full ) => {
 				if ( ! full || ! full.id ) {
+					setRecordLoading( false );
 					return;
 				}
 				setFormFields( ( current ) => ( {
@@ -100,6 +108,7 @@ export function AssistantsPage(): JSX.Element {
 					system_prompt: full.system_prompt ?? '',
 					tools: Array.isArray( full.tools ) ? full.tools.join( ', ' ) : current.tools,
 				} ) );
+				setRecordLoading( false );
 			} );
 		},
 		[ getAssistant ]
@@ -109,6 +118,7 @@ export function AssistantsPage(): JSX.Element {
 		setFormOpen( false );
 		setEditingId( null );
 		setFormFields( EMPTY_FORM );
+		setRecordLoading( false );
 	}, [] );
 
 	const handleSave = useCallback( async () => {
@@ -397,6 +407,15 @@ export function AssistantsPage(): JSX.Element {
 								  ) }
 						</h3>
 
+						{ recordLoading && (
+							<p className="nvoos-pro-spa-assistants-form__loading" role="status">
+								{ __(
+									'Loading assistant details…',
+									'nvoos-pro-spa'
+								) }
+							</p>
+						) }
+
 						<div className="nvoos-pro-spa-assistants-form__field">
 							<label
 								htmlFor="nvoos-pro-spa-assistant-title"
@@ -606,11 +625,16 @@ export function AssistantsPage(): JSX.Element {
 								type="button"
 								className="nvoos-pro-spa-assistants-form__save-btn"
 								onClick={ () => void handleSave() }
-								disabled={ saving || ! formFields.title.trim() }
+								disabled={ saving || recordLoading || ! formFields.title.trim() }
 							>
 								{ saving
 									? __(
 											'Saving…',
+											'nvoos-pro-spa'
+									  )
+									: recordLoading
+									? __(
+											'Loading…',
 											'nvoos-pro-spa'
 									  )
 									: editingId !== null

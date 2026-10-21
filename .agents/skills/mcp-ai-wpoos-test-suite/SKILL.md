@@ -5,7 +5,7 @@ description: Repair and triage guide for the NV oOS PHPUnit test suite — Docke
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-21"
+  last-updated: "2026-10-22"
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
 ---
@@ -160,6 +160,14 @@ with `Class "PHPUnit\TextUI\Application" not found`. Quick check:
 Linux vendor volume is the fix for container runs; for host-side runs,
 `composer install` on the host rebuilds a Windows vendor that then breaks
 INSIDE Linux — pick one environment per session.
+
+Also true for the MAIN checkout on this box (2026-10-22): `vendor/` exists
+but is pruned, so even a direct `docker exec oos-wp … vendor/bin/phpunit`
+fails the same way. Use the one-off runner with the existing **complete**
+`mcp-ai-wpoos-vendor` volume (verified: 934 PHPUnit classmap entries) and,
+for the WP 7.1 matrix, the reusable `wp71-core` named volume mounted at
+`/tmp/wp71` (DB `wordpress_test_wp71`) — no `docker cp` dance needed when
+`/tmp/wp71` is gone from the container.
 
 **`docker-tmp-logs/` artifact:** running the root suite writes an untracked
 `docker-tmp-logs/` directory into the repo root (random `.jpg` files +

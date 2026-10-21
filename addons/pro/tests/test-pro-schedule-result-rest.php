@@ -143,16 +143,50 @@ class Test_Pro_Schedule_Result_REST extends WP_UnitTestCase {
 
 	/**
 	 * The selectable schedules endpoint lists what the picker should show.
+	 *
+	 * It lives on its own literal route (/schedules/selectable) — GET
+	 * /schedules is owned by the schedule CRUD controller, which returns
+	 * the { ok, schedules, total } envelope the console consumes.
 	 */
 	public function test_selectable_endpoint_returns_array() {
 		$this->seed_schedule();
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/schedules' );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/schedules/selectable' );
 		$request->set_param( 'selectable', '1' );
 		$response = rest_get_server()->dispatch( $request );
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertIsArray( $response->get_data() );
+	}
+
+	/**
+	 * Route-collision regression: GET /schedules must keep returning the
+	 * CRUD controller's envelope even when this controller registers AFTER
+	 * it (the pre-disambiguation order). This suite requires this file in
+	 * setUpBeforeClass, so the picker's routes are the last ones added to
+	 * rest_api_init — the exact ordering that used to shadow the console's
+	 * schedules list with the bare picker array.
+	 */
+	public function test_get_schedules_envelope_survives_picker_registration() {
+		$schedule_id = $this->seed_schedule();
+		// The manager caches its list; the direct option seed bypasses the
+		// cache invalidation in save_schedules() (pattern 48).
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+			WP_MCP_AI_Cache_Helper::delete( 'pro_schedules' );
+		}
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/schedules' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'schedules', $data );
+		$this->assertArrayHasKey( 'total', $data );
+		$this->assertSame( 1, $data['total'] );
+		$this->assertSame( $schedule_id, $data['schedules'][0]['id'] );
 	}
 }

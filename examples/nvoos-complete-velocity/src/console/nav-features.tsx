@@ -41,7 +41,7 @@ export const CONSOLE_NAV_ITEMS: ConsoleNavItem[] = [
   { path: '/schedule-manager', label: 'Schedules', icon: '⏰', capability: 'manage_options' },
   { path: '/tools', label: 'Tools', icon: '🧰' },
   { path: '/dashboards', label: 'Dashboards', icon: '🧮', capability: 'manage_options' },
-  { path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options' },
+  { path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options', feature: 'project_management' },
   {
     path: '/orchestration-stats',
     label: 'Orchestration',
@@ -77,9 +77,9 @@ export const CONSOLE_NAV_ITEMS: ConsoleNavItem[] = [
     capability: 'manage_options',
     feature: 'docs_hub',
   },
-  { path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options' },
-  { path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options' },
-  { path: '/crm', label: 'CRM', icon: '🏢', capability: 'manage_options' },
+  { path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options', feature: 'calendar_booking' },
+  { path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options', feature: 'fnb' },
+  { path: '/crm', label: 'CRM', icon: '🏢', capability: 'manage_options', feature: 'crm' },
   { path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options' },
   { path: '/media-ops', label: 'Media Ops', icon: '🎞️', capability: 'manage_options' },
   {

@@ -4529,6 +4529,12 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-weight: 600;
 }
 
+.nvoos-pro-spa-assistants-form__loading {
+	margin: 0 0 16px;
+	font-size: 13px;
+	color: var( --nvoos-pro-spa-muted, #757575 );
+}
+
 .nvoos-pro-spa-assistants-form__field {
 	margin-bottom: 16px;
 }

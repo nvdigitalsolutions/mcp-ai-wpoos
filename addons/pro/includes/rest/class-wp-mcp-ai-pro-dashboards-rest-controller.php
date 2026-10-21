@@ -565,6 +565,58 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	}
 
 	/**
+	 * Settings flag that gates each dashboard (the toolkit enable toggles
+	 * from Settings → NV oOS). Dashboards not in this map stay ungated.
+	 *
+	 * @since 2.4.0
+	 * @return array<string, string> Dashboard id => settings flag key.
+	 */
+	public static function dashboard_flag_keys() {
+		return array(
+			'cre'          => 'enable_cre_debt_toolkit',
+			'law'          => 'enable_law_firm_toolkit',
+			'registration' => 'enable_regulatory_registration_toolkit',
+			'eca'          => 'enable_eca_management',
+			'health'       => 'enable_health_wellness_management',
+			'vitals'       => 'enable_medical_vitals',
+		);
+	}
+
+	/**
+	 * Whether a dashboard's toolkit is enabled for this site.
+	 *
+	 * Unknown ids are treated as available — the callers perform their own
+	 * existence checks. Medical Vitals falls back to the Health & Wellness
+	 * toggle for BC, mirroring includes/tools/healthcare/init.php.
+	 *
+	 * @since 2.4.0
+	 * @param string $id Dashboard key.
+	 * @return bool
+	 */
+	public static function is_dashboard_available( $id ) {
+		$flag_keys = self::dashboard_flag_keys();
+		if ( ! isset( $flag_keys[ $id ] ) ) {
+			return true;
+		}
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
+
+		$flag_key = $flag_keys[ $id ];
+
+		// Medical Vitals mirrors includes/tools/healthcare/init.php: the
+		// dedicated toggle wins when present, otherwise the dashboard
+		// follows the Health & Wellness toggle for BC.
+		if ( 'vitals' === $id && ! array_key_exists( 'enable_medical_vitals', $settings ) ) {
+			$flag_key = 'enable_health_wellness_management';
+		}
+
+		return ! empty( $settings[ $flag_key ] );
+	}
+
+	/**
 	 * GET /dashboards/schema — dashboard configs with resolved filter
 	 * options (taxonomy terms fetched live).
 	 *
@@ -575,7 +627,14 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	public function get_schema( WP_REST_Request $request ) {
 		unset( $request );
 
-		$dashboards = $this->dashboard_catalogue();
+		// Only expose dashboards whose toolkit is enabled — the console
+		// renders this catalogue verbatim, so disabled features must not
+		// show up in the app (REST is the enforcement).
+		$dashboards = array_filter(
+			$this->dashboard_catalogue(),
+			array( __CLASS__, 'is_dashboard_available' ),
+			ARRAY_FILTER_USE_KEY
+		);
 
 		foreach ( $dashboards as $id => $config ) {
 			foreach ( $config['filters'] as $index => $filter ) {
@@ -635,6 +694,14 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 				'dashboards_unknown',
 				__( 'Unknown dashboard.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
+			);
+		}
+
+		if ( ! self::is_dashboard_available( $dashboard_id ) ) {
+			return new WP_Error(
+				'dashboards_unavailable',
+				__( 'This dashboard requires a toolkit that is not enabled on this site.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
 			);
 		}
 
