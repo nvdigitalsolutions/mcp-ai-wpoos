@@ -510,7 +510,7 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
     unchanged (member-required 400, history list rendered from the
     schema). **W13 exit criteria met** — all six repeating dashboards are
     operable in the console.
-- [ ] **W14 (4d) — Remaining command centers.** Calendar booking (existing
+- [x] **W14 (4d) — Remaining command centers.** Calendar booking (existing
   REST), F&B (Proposal 078 universalisation REST), Media (P2), Chat
   Channels (P4) — per-toolkit checks against the storage audit before each
   port. **Slice 1 shipped 2026-10-21:** calendar booking — the
@@ -525,8 +525,15 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   `/chat-channels` route consumes the pre-existing
   `mcp-ai-pro/v1/chat-channels` REST (conversations list with
   channel/status/search filters, thread panel, reply box);
-  `chatChannels` endpoint in all three runtime configs. Remaining:
-  Media (P2 command-center workflows).
+  `chatChannels` endpoint in all three runtime configs.
+  **Slice 4 (final) shipped 2026-10-21:** Media — the command-center
+  health snapshot and compression-sweep dispatch are promoted to public
+  seams on the wp-admin page and served by a new
+  `mcp-ai-pro/v1/media-cc` REST controller (health GET + sweep POST,
+  manage_options-gated); the `/media-ops` route renders the read-only
+  metric view (coverage, storage, queue, schedules) with the sweep
+  trigger; `mediaCc` endpoint in all three runtime configs. W14 exit
+  criteria met — Phase 4 closed.
 
 ## 7. Phase 5 — Retirement & hardening
 

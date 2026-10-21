@@ -323,6 +323,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			WP_MCP_AI_Pro_Dashboards_REST_Controller::init();
 		}
 
+		// Load Pro Media Command Center REST bridge (Proposal 084 Phase 4,
+		// W14) — GET /mcp-ai-pro/v1/media-cc/health +
+		// POST /media-cc/compression-sweep for the console Media Ops page.
+		$media_cc_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-media-cc-rest-controller.php';
+		if ( file_exists( $media_cc_rest ) ) {
+			require_once $media_cc_rest;
+			WP_MCP_AI_Pro_Media_CC_REST_Controller::init();
+		}
+
 		// Register Pro export providers for Backup & Restore.
 		add_action(
 			'wp_mcp_ai_register_export_providers',

@@ -77,6 +77,7 @@ function buildEndpoints(origin: string): ProSpaEndpoints {
     recordsSchema: `${pro}/records/schema`,
     dashboardsSchema: `${pro}/dashboards/schema`,
     chatChannels: `${pro}/chat-channels`,
+    mediaCc: `${pro}/media-cc`,
     shortcuts: `${pro}/tool-shortcuts`,
     slashCommands: `${pro}/slash-commands`,
     okf: `${pro}/okf`,

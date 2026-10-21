@@ -332,6 +332,9 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'chatChannels'       => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) )
 					: '',
+				'mediaCc'            => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/media-cc' ) )
+					: '',
 				'shortcuts'          => esc_url_raw( rest_url( 'mcp-ai-pro/v1/tool-shortcuts' ) ),
 				'slashCommands'      => esc_url_raw( rest_url( 'mcp-ai-pro/v1/slash-commands' ) ),
 				'okf'                => WP_MCP_AI_Feature_Flags::okf()

@@ -154,6 +154,11 @@ const ChatChannelsPage = lazy(() =>
     default: m.ChatChannelsPage,
   })),
 );
+const MediaOpsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/media-ops/MediaOpsPage').then((m) => ({
+    default: m.MediaOpsPage,
+  })),
+);
 
 const DOCK_PREF_KEY = 'nvoos-complete-console.dock-open';
 
@@ -515,6 +520,18 @@ function ConsoleApp(): JSX.Element {
                     capabilities={runtime.user.capabilities}
                   >
                     <ChatChannelsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/media-ops"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/media-ops')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <MediaOpsPage />
                   </RequireGate>
                 }
               />
