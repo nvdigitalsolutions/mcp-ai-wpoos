@@ -196,8 +196,28 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   `?assistant_id=…`, `useTools` refetches on the store's `assistantId`
   change, `ToolsPage` shows the scoped assistant in its subtitle (falls
   back to the server-resolved default assistant, then the full registry).
-  New console pages register their gates in `nav-features.tsx` — never
-  inline.
+	  New console pages register their gates in `nav-features.tsx` — never
+	  inline.
+
+### Clean-install CI gate (the npm ci lockfile gotcha — PR #7171)
+
+The standalone app's CI gate is `npm ci && npm run build`, and `npm ci`
+installs **strictly from the committed lockfile**. When a dependency is
+added to `package.json` (e.g. `@xyflow/react` for the Workflow Builder
+canvas) without regenerating `package-lock.json`, a stale local
+`node_modules` masks the break — everything passes in dev, then CI fails
+with `TS2307: Cannot find module` (+ cascading TS7006 implicit-any from
+the lost types). Rules:
+
+- Any `package.json` dependency change in `examples/nvoos-pro-spa-vite`
+  (or any `npm ci`-gated app) must ship with the regenerated
+  `package-lock.json` (`npm install`).
+- The standalone app mirrors spa-v2's dependency set — when spa-v2 gains a
+  runtime dep consumed by shared source (`src/features/**` compiled through
+  the Vite alias), add the same version to the standalone manifest in the
+  same commit.
+- Verify with the exact gate before pushing:
+  `rm -rf node_modules && npm ci && npm run build`.
 
 ## Porting a plugin JS widget into spa-v2 (vendored-upstream pattern)
 
