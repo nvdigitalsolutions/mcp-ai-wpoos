@@ -1,7 +1,12 @@
 # NV oOS Complete Console — Admin Surface Migration: Implementation Plan
 
 - **Date:** 2026-10-20
-- **Status:** Phase 0 shipped (0-B deferred); Phase 1 shipped (six T1 surfaces); Phase 2 core shipped (schema-driven settings); Phase 3 in progress (operations + run-timeline + diagnostics slices shipped). Latest validation: phpcs 5/5, PHPUnit 7/7 on WP 6.9 + WP 7.1, console vitest 47/47, spa-v2 vitest 212/212, both bundles rebuilt (Phase 0 checkpoint).
+- **Status:** Phases 0–3 shipped (merged as #7164, 2026-10-21); Phase 3b
+  sequenced (P9 Schedule Manager port + B8/P10 builder parity/retirement);
+  next: Phase 4 (Records feature — unblocked by the storage audit) and
+  Phase 5 retirement soak. Latest validation (per-slice): phpcs 0 errors,
+  PHPUnit green on WP 6.9 + WP 7.1 (Docker), spa-v2 vitest 260/260, console
+  vitest 47/47, all bundles rebuilt.
 - **Companion analysis:** [`docs/project/proposals/084-admin-surface-console-migration-gap-analysis.md`](../proposals/084-admin-surface-console-migration-gap-analysis.md)
 - **Precedes:** Proposal 083 implementation plan (console scaffold — complete)
 - **Surfaces:** `examples/nvoos-complete-velocity/` (target), `includes/` + `addons/pro/` (source), `addons/pro/assets/spa-v2/` (shared surface), `includes/rest/` (API bridge)
@@ -266,9 +271,58 @@ green; the wp-admin page filter-gated off by default for Console cohorts.
 
 **Phase 3 exit criteria met** — all tracked slices shipped (operations,
 run-timeline, diagnostics, token manager, multi-agent/orchestration stats,
-Pro ops). Next: Phase 4 (Records feature) + Phase 5 retirement soak.
+Pro ops). Next: Phase 3b (P9 + B8/P10), then Phase 4 (Records feature) +
+Phase 5 retirement soak.
 - New REST controllers wrap the existing service classes; admin-ajax
   handlers deprecated when their last WP consumer is gone.
+
+## 5b. Phase 3b — Remaining T1/T2 surfaces (P9 + B8/P10) — SEQUENCED
+
+Two gap-matrix rows remain in the T0–T2 band after Phase 3. Sequenced here
+(2026-10-21) ahead of Phase 4; either work package may proceed
+independently.
+
+### 5b.1 P9 — Schedule Manager page (T1/T2)
+
+The Pro Schedule Manager already has a REST bridge — the SA presets/toolkits
+REST (Proposal 081) and `WP_MCP_AI_Pro_Schedule_REST_Controller` (registered
+in the Pro module registry). The port consumes those instead of the admin
+AJAX.
+
+- [ ] W9.1 REST audit — enumerate the page's list/create/update/delete/
+  dry-run/history + presets surface against
+  `addons/pro/includes/rest/class-wp-mcp-ai-pro-schedule-rest-controller.php`
+  and the Proposal 081 presets/toolkits contract
+  (`class-wp-mcp-ai-pro-schedule-manager-page.php` is the source surface).
+- [ ] W9.2 spa-v2 `ScheduleManagerPage` — schedules table + presets tabs via
+  a new `api/` client + hook; route `#/schedule-manager`.
+- [ ] W9.3 Console route + nav entry (`/schedule-manager`,
+  `manage_options`, registered in `nav-features.tsx` — never inline).
+- [ ] W9.4 Kill-switch `wp_mcp_ai_admin_page_enabled_pro_schedule_manager`
+  on the wp-admin page.
+- [ ] W9.5 Tests (PHPUnit controller + vitest client) + both-bundle rebuild.
+- **Exit:** schedules and presets fully operable in the console; the wp-admin
+  page filter-gated off by default for Console cohorts.
+
+### 5b.2 B8 + P10 — DAG Builder & Workflow Builder parity + retirement (T0/T2)
+
+The console already ships the ReactFlow visual builder (spa-v2
+`features/workflows/WorkflowsPage`, `#/workflows`). The remaining work is
+verification, not porting.
+
+- [ ] W10.1 Feature parity audit — spa-v2 Workflows builder vs the base DAG
+  Builder page and the Pro Workflow Builder PHP page (ReactFlow): node
+  types, the 10 preset categories, validation, execution hand-off. Record
+  deltas in the gap analysis tables.
+- [ ] W10.2 Close any functional gaps in the spa-v2 builder per the audit.
+- [ ] W10.3 Kill-switches `wp_mcp_ai_admin_page_enabled_dag_builder` +
+  `wp_mcp_ai_admin_page_enabled_pro_workflow_builder` on the two wp-admin
+  pages.
+- [ ] W10.4 Retirement soak, then remove the PHP pages and their admin-ajax
+  handlers when no WP consumer remains.
+- **Exit:** one workflow-builder surface (console/spa-v2) with full parity;
+  both PHP pages retired (landing inside the Phase 5 window).
+
 
 ## 6. Phase 4 — Entity workflows (T4)
 
