@@ -11,8 +11,10 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import { renderChartRecipe } from '../../components/shared/chartRecipes';
 import {
 	DashboardsClient,
+	distributionChartSpec,
 	formatMetric,
 	type DashboardConfig,
 	type DashboardData,
@@ -249,6 +251,29 @@ export function DashboardsPage(): JSX.Element {
 							</div>
 						) ) }
 					</div>
+
+					{ ( () => {
+						const charts = [
+							distributionChartSpec( __( 'By Loan Type', 'nvoos-pro-spa' ), data.by_loan_type ),
+							distributionChartSpec( __( 'By Status', 'nvoos-pro-spa' ), data.by_status ),
+							distributionChartSpec( __( 'By Property Type', 'nvoos-pro-spa' ), data.by_property_type ),
+							distributionChartSpec( __( 'Maturity Schedule', 'nvoos-pro-spa' ), data.maturity_schedule ),
+						].filter( ( spec ) => spec !== '' );
+						return charts.length > 0 ? (
+							<div className="nvoos-pro-spa-records-detail__grid" role="list">
+								{ charts.map( ( spec ) => (
+									<div
+										key={ spec }
+										className="nvoos-pro-spa-records-detail__item nvoos-pro-spa-dashboards-chart"
+										role="listitem"
+										// renderChartRecipe builds its HTML with textContent
+										// only — values are inert by construction.
+										dangerouslySetInnerHTML={ { __html: renderChartRecipe( spec ) } }
+									/>
+								) ) }
+							</div>
+						) : null;
+					} )() }
 
 					{ Array.isArray( data.loan_list ) && data.loan_list.length > 0 && (
 						<section className="nvoos-pro-spa-records-detail" aria-label={ __( 'Loan summary', 'nvoos-pro-spa' ) }>

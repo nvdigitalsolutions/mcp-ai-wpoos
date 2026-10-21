@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-import { DashboardsClient, formatMetric } from '../api/dashboards';
+import { DashboardsClient, distributionChartSpec, formatMetric } from '../api/dashboards';
 
 const SCHEMA = 'https://example.com/wp-json/mcp-ai-pro/v1/dashboards/schema';
 
@@ -84,5 +84,27 @@ describe( 'formatMetric', () => {
 	it( 'falls back to zero for non-numeric values', () => {
 		expect( formatMetric( undefined, 'number' ) ).toBe( '0' );
 		expect( formatMetric( 'nope', 'percent' ) ).toBe( '0.00%' );
+	} );
+} );
+
+describe( 'distributionChartSpec', () => {
+	it( 'builds a sorted chart spec for a distribution', () => {
+		const spec = distributionChartSpec( 'By Status', {
+			performing: 4,
+			watchlist: 2,
+			foreclosure: 1,
+		} );
+		expect( spec ).toContain( '"type":"bar"' );
+		expect( spec ).toContain( '"title":"By Status"' );
+
+		const parsed = JSON.parse( spec ) as { labels: string[]; values: number[] };
+		expect( parsed.labels ).toEqual( [ 'performing', 'watchlist', 'foreclosure' ] );
+		expect( parsed.values ).toEqual( [ 4, 2, 1 ] );
+	} );
+
+	it( 'returns an empty string for empty or zeroed distributions', () => {
+		expect( distributionChartSpec( 'Empty', {} ) ).toBe( '' );
+		expect( distributionChartSpec( 'Zero', { a: 0 } ) ).toBe( '' );
+		expect( distributionChartSpec( 'Missing', undefined ) ).toBe( '' );
 	} );
 } );

@@ -485,9 +485,11 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
     summary table; `dashboardsSchema` endpoint in all three runtime
     configs. PHPUnit `tests/rest-api/test-rest-dashboards.php` (6 tests,
     zero-network) + vitest `dashboards-client.test.ts` (6 tests).
-  - [ ] **W13b — chart cards.** Render chart metrics through the existing
-    console chart component (the analytics page's chart tier); one chart
-    type per dashboard config entry.
+  - [x] **W13b — chart cards.** The dashboards page renders the CRE
+    distributions (by loan type / status / property type, maturity
+    schedule) through the shared `renderChartRecipe` tier via a pure
+    `distributionChartSpec()` builder (sorted descending, empty-safe);
+    vitest spec coverage.
   - [ ] **W13c — remaining dashboards.** ECA, health, vitals,
     registration, law-firm — one REST data provider each, reusing the
     W13a scaffold; per-dashboard checks against the storage audit §1/§2.

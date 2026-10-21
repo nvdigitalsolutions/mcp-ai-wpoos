@@ -167,3 +167,30 @@ export function formatMetric( value: unknown, format: DashboardMetric[ 'format' 
 	}
 	return new Intl.NumberFormat( 'en-US' ).format( numeric );
 }
+
+/**
+ * Build an `nvoos-chart`-recipe JSON spec string for a keyed distribution
+ * (by_status / by_loan_type / maturity_schedule …). Sorted descending so
+ * the dominant buckets lead; an empty distribution yields an empty string
+ * (the page renders nothing instead of an empty chart).
+ */
+export function distributionChartSpec(
+	title: string,
+	distribution: Record< string, number > | undefined,
+	type: 'bar' | 'donut' = 'bar'
+): string {
+	const entries = Object.entries( distribution ?? {} ).filter(
+		( [ , value ] ) => typeof value === 'number' && value > 0
+	);
+	if ( entries.length === 0 ) {
+		return '';
+	}
+	entries.sort( ( a, b ) => b[ 1 ] - a[ 1 ] );
+	return JSON.stringify( {
+		type,
+		title,
+		labels: entries.map( ( [ key ] ) => key ),
+		values: entries.map( ( [ , value ] ) => value ),
+		sort: 'none',
+	} );
+}
