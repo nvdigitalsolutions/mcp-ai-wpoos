@@ -97,13 +97,13 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * With the CRM CPTs present, each entity carries its meta columns.
+	 * With the entity CPTs present, each carries its meta columns and group.
 	 */
-	public function test_schema_includes_all_crm_entities() {
+	public function test_schema_includes_all_record_entities() {
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		foreach ( array( 'mcp_ai_company', 'mcp_ai_customer', 'mcp_ai_deal', 'mcp_ai_lead', 'mcp_ai_ticket' ) as $slug ) {
+		foreach ( array( 'mcp_ai_company', 'mcp_ai_customer', 'mcp_ai_deal', 'mcp_ai_lead', 'mcp_ai_ticket', 'mcp_ai_project', 'mcp_ai_task', 'mcp_ai_event', 'mcp_ai_profession' ) as $slug ) {
 			$this->ensure_cpt( $slug );
 		}
 
@@ -111,16 +111,21 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 		$data   = $result->get_data();
 
 		if ( ! isset( $data['entities']['company'] ) ) {
-			$this->markTestSkipped( 'CRM meta schemas unavailable in this bootstrap.' );
+			$this->markTestSkipped( 'Record meta schemas unavailable in this bootstrap.' );
 		}
 
-		$expected_keys = array( 'company', 'customer', 'deal', 'lead', 'ticket' );
+		$expected_keys = array( 'company', 'customer', 'deal', 'lead', 'ticket', 'project', 'task', 'event', 'profession' );
 		foreach ( $expected_keys as $key ) {
 			$this->assertArrayHasKey( $key, $data['entities'], 'Entity should be exposed: ' . $key );
 			$this->assertNotEmpty( $data['entities'][ $key ]['columns'], 'Entity should carry columns: ' . $key );
 		}
 
 		$this->assertSame( 'mcp_ai_company', $data['entities']['company']['postType'] );
+
+		// Groups partition the Records page per command center.
+		$this->assertSame( 'crm', $data['entities']['company']['group'] );
+		$this->assertSame( 'pm', $data['entities']['project']['group'] );
+		$this->assertSame( 'professions', $data['entities']['profession']['group'] );
 	}
 
 	/**
@@ -153,6 +158,15 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 			registered_meta_key_exists( 'post', '_deal_stage', 'mcp_ai_deal' ),
 			'Deal meta should be REST-exposed.'
 		);
+
+		// The profession CPT owns its meta registration (W12 flipped it to
+		// REST exposure) — the records registrar must not re-register it.
+		if ( post_type_exists( 'mcp_ai_profession' ) ) {
+			$this->assertTrue(
+				registered_meta_key_exists( 'post', '_wp_mcp_ai_profession_category', 'mcp_ai_profession' ),
+				'Profession meta should be REST-exposed.'
+			);
+		}
 	}
 
 	/**

@@ -1,12 +1,12 @@
 /**
- * RecordsPage — the generic entity-records surface (Proposal 084 Phase 4,
- * W11 CRM command center pilot).
+ * RecordsPage — the generic entity-records surface (Proposal 084 Phase 4).
  *
  * One page parameterized by server-driven entity configs
  * (GET /mcp-ai-pro/v1/records/schema): entity switcher, search, list with
- * schema columns, and a detail panel. Data lives on core REST
- * (wp/v2/{post_type}) — the audit's wp-core storage strategy. W11 ships the
- * five CRM entities (company/customer/deal/lead/ticket).
+ * schema columns, a detail panel, and the Research & Add card. Data lives on
+ * core REST (wp/v2/{post_type}) — the audit's wp-core storage strategy.
+ * The optional `group` prop partitions the page per command center
+ * (W11 CRM: /crm; W12 PM: /pm; professions: /professions).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
@@ -80,13 +80,56 @@ function formatValue( value: unknown ): string {
 	return String( value );
 }
 
-export function RecordsPage(): JSX.Element {
+/** Keep only the entities of one command-center group (undefined = all). */
+export function filterEntitiesByGroup(
+	entities: RecordEntityConfig[],
+	group?: string
+): RecordEntityConfig[] {
+	if ( ! group ) {
+		return entities;
+	}
+	return entities.filter( ( e ) => ( e.group ?? 'records' ) === group );
+}
+
+/** Page titles + subtitles per command-center group. */
+export const RECORDS_GROUP_COPY: Record< string, { title: string; subtitle: string } > = {
+	crm: {
+		title: __( 'CRM', 'nvoos-pro-spa' ),
+		subtitle: __( 'Companies, customers, deals, leads and tickets.', 'nvoos-pro-spa' ),
+	},
+	pm: {
+		title: __( 'Projects', 'nvoos-pro-spa' ),
+		subtitle: __( 'Projects, tasks and events.', 'nvoos-pro-spa' ),
+	},
+	professions: {
+		title: __( 'Professions', 'nvoos-pro-spa' ),
+		subtitle: __( 'Profession definitions and agent roles.', 'nvoos-pro-spa' ),
+	},
+	records: {
+		title: __( 'Records', 'nvoos-pro-spa' ),
+		subtitle: __( 'Entity records across the toolkits.', 'nvoos-pro-spa' ),
+	},
+};
+
+export interface RecordsPageProps {
+	/** Command-center partition to render (undefined = every entity). */
+	group?: string;
+}
+
+export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
-	const { entities, schemaError, client } = useRecords(
+	const { entities: allEntities, schemaError, client } = useRecords(
 		runtime?.endpoints.recordsSchema ?? '',
 		runtime?.endpoints.wpBase ?? '',
 		runtime?.nonce ?? ''
 	);
+
+	const entities = useMemo(
+		() => filterEntitiesByGroup( allEntities, group ),
+		[ allEntities, group ]
+	);
+
+	const pageCopy = RECORDS_GROUP_COPY[ group ?? 'records' ] ?? RECORDS_GROUP_COPY.records;
 
 	const [ entityKey, setEntityKey ] = useState< string >( '' );
 	const [ search, setSearch ] = useState( '' );
@@ -203,7 +246,7 @@ export function RecordsPage(): JSX.Element {
 	if ( bootstrapLoading ) {
 		return (
 			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--loading" aria-busy="true">
-				<h2 className="nvoos-pro-spa-page__title">{ __( 'CRM', 'nvoos-pro-spa' ) }</h2>
+				<h2 className="nvoos-pro-spa-page__title">{ pageCopy.title }</h2>
 				<div className="nvoos-pro-spa-page__loader" role="status">
 					<span className="nvoos-pro-spa-page__spinner" />
 					{ __( 'Loading…', 'nvoos-pro-spa' ) }
@@ -215,7 +258,7 @@ export function RecordsPage(): JSX.Element {
 	if ( ! runtime ) {
 		return (
 			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--error" role="alert">
-				<h2 className="nvoos-pro-spa-page__title">{ __( 'CRM', 'nvoos-pro-spa' ) }</h2>
+				<h2 className="nvoos-pro-spa-page__title">{ pageCopy.title }</h2>
 				<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">
 					{ __( 'Runtime configuration not available. Please reload the page.', 'nvoos-pro-spa' ) }
 				</p>
@@ -226,7 +269,7 @@ export function RecordsPage(): JSX.Element {
 	if ( schemaError ) {
 		return (
 			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--error" role="alert">
-				<h2 className="nvoos-pro-spa-page__title">{ __( 'CRM', 'nvoos-pro-spa' ) }</h2>
+				<h2 className="nvoos-pro-spa-page__title">{ pageCopy.title }</h2>
 				<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">
 					{ schemaError }
 				</p>
@@ -237,10 +280,8 @@ export function RecordsPage(): JSX.Element {
 	return (
 		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">
 			<header className="nvoos-pro-spa-tools-page__header">
-				<h2 className="nvoos-pro-spa-page__title">{ __( 'CRM', 'nvoos-pro-spa' ) }</h2>
-				<p className="nvoos-pro-spa-page__subtitle">
-					{ __( 'Companies, customers, deals, leads and tickets.', 'nvoos-pro-spa' ) }
-				</p>
+				<h2 className="nvoos-pro-spa-page__title">{ pageCopy.title }</h2>
+				<p className="nvoos-pro-spa-page__subtitle">{ pageCopy.subtitle }</p>
 			</header>
 
 			{ entities.length > 1 && (

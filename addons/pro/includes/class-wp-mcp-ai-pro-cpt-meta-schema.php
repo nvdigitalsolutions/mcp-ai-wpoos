@@ -1326,6 +1326,55 @@ class WP_MCP_AI_Pro_CPT_Meta_Schema {
 			),
 
 			// ----------------------------------------------------------------
+			// Professions (base CPT — Proposal 084 Phase 4b W12 console port)
+			// ----------------------------------------------------------------
+
+			'mcp_ai_profession'   => array(
+				'_wp_mcp_ai_profession_category'         => array(
+					'meta_key'    => '_wp_mcp_ai_profession_category',
+					'label'       => __( 'Category', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Profession category (advisory, creative, technical…).', 'mcp-ai-wpoos-pro' ),
+				),
+				'_wp_mcp_ai_profession_expertise'        => array(
+					'meta_key'    => '_wp_mcp_ai_profession_expertise',
+					'label'       => __( 'Expertise', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'array',
+					'description' => __( 'Expertise areas for this profession.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_wp_mcp_ai_profession_default_tools'    => array(
+					'meta_key'    => '_wp_mcp_ai_profession_default_tools',
+					'label'       => __( 'Default Tools', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'array',
+					'description' => __( 'Default tool slugs for this profession.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_wp_mcp_ai_profession_role_description' => array(
+					'meta_key'    => '_wp_mcp_ai_profession_role_description',
+					'label'       => __( 'Role Description', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Primary role description for assistants of this profession.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_wp_mcp_ai_profession_agent_role'       => array(
+					'meta_key'    => '_wp_mcp_ai_profession_agent_role',
+					'label'       => __( 'Agent Role', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Agent role designation for this profession.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_wp_mcp_ai_profession_region'           => array(
+					'meta_key'    => '_wp_mcp_ai_profession_region',
+					'label'       => __( 'Region', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'string',
+					'description' => __( 'Geographic or market region this profession serves.', 'mcp-ai-wpoos-pro' ),
+				),
+				'_wp_mcp_ai_profession_warnings'         => array(
+					'meta_key'    => '_wp_mcp_ai_profession_warnings',
+					'label'       => __( 'Warnings', 'mcp-ai-wpoos-pro' ),
+					'type'        => 'array',
+					'description' => __( 'Warnings and disclaimers for assistants of this profession.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+
+			// ----------------------------------------------------------------
 			// Finance Toolkit
 			// ----------------------------------------------------------------
 

@@ -451,14 +451,26 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   entities are operable in the console with list/search/detail and
   research-driven create; import mode deferred to the dashboard-feature
   pass (W13) if still needed.
-- [ ] **W12 (4b) — PM command center + professions.** P3 (projects/tasks/
-  events/sprints via `wp/v2/mcp_ai_*`) reusing the W11 Records feature;
+- [x] **W12 (4b) — PM command center + professions.** P3 (projects/tasks/
+  events via `wp/v2/mcp_ai_*`) reusing the W11 Records feature;
   **B23 Team/profession research + settings (T4-lite)** — the console
   `/teams` page (Phase 1) already covers the team catalogue + profession
   members via `rest-teams-controller`; 4b adds profession definitions
   (create/edit `mcp_ai_profession` records, role assignments) and ports the
   profession research/settings wp-admin pages onto the same controller
   surface.
+  **Shipped 2026-10-21:** the profession CPT (`includes/professions/`) is
+  flipped to `show_in_rest=true` with REST item schemas for its array meta
+  (same access as the existing wp-admin editor); a `mcp_ai_profession`
+  block joins the meta-schema registry; `project`/`task`/`event`/
+  `profession` join `RECORD_ENTITIES` with `group` partitions (crm/pm/
+  professions); console routes `/pm` + `/professions` render the Records
+  page filtered per group (nav entries added); the records meta registrar
+  skips keys the owning CPT already REST-exposed (idempotence guard) and
+  emits items schemas for array fields. PHPUnit 10/55 on WP 6.9 + 7.1;
+  vitest `filterEntitiesByGroup` coverage. **Remaining for B23 parity:**
+  team→profession role-assignment UI on the Teams page (tracked under the
+  console Teams surface).
 - [ ] **W13 (4c) — Repeating dashboards feature.** P15: one configurable
   dashboard-with-filters feature (CRE portfolio, ECA, health, vitals,
   registration, law-firm).

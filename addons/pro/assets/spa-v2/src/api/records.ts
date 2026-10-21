@@ -29,6 +29,8 @@ export interface RecordEntityConfig {
 	label: string;
 	singular: string;
 	icon: string;
+	/** Command-center partition (crm | pm | professions) — routes filter by it. */
+	group?: string;
 	columns: RecordColumn[];
 }
 

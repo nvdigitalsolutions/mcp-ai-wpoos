@@ -42,41 +42,76 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 	const ROUTE_BASE = '/records';
 
 	/**
-	 * Record entities exposed to the console (W11: the five CRM entities —
-	 * their meta schemas live in WP_MCP_AI_Pro_CPT_Meta_Schema).
+	 * Record entities exposed to the console (W11/W12: the CRM + PM
+	 * entities and professions — their meta schemas live in
+	 * WP_MCP_AI_Pro_CPT_Meta_Schema). `group` partitions the Records page
+	 * per command center (the nav registers one route per group).
 	 *
 	 * @var array<string, array<string, string>>
 	 */
 	const RECORD_ENTITIES = array(
-		'company'  => array(
+		'company'    => array(
 			'post_type' => 'mcp_ai_company',
 			'label'     => 'Companies',
 			'singular'  => 'Company',
 			'icon'      => '🏢',
+			'group'     => 'crm',
 		),
-		'customer' => array(
+		'customer'   => array(
 			'post_type' => 'mcp_ai_customer',
 			'label'     => 'Customers',
 			'singular'  => 'Customer',
 			'icon'      => '🧑',
+			'group'     => 'crm',
 		),
-		'deal'     => array(
+		'deal'       => array(
 			'post_type' => 'mcp_ai_deal',
 			'label'     => 'Deals',
 			'singular'  => 'Deal',
 			'icon'      => '🤝',
+			'group'     => 'crm',
 		),
-		'lead'     => array(
+		'lead'       => array(
 			'post_type' => 'mcp_ai_lead',
 			'label'     => 'Leads',
 			'singular'  => 'Lead',
 			'icon'      => '🔍',
+			'group'     => 'crm',
 		),
-		'ticket'   => array(
+		'ticket'     => array(
 			'post_type' => 'mcp_ai_ticket',
 			'label'     => 'Tickets',
 			'singular'  => 'Ticket',
 			'icon'      => '🎫',
+			'group'     => 'crm',
+		),
+		'project'    => array(
+			'post_type' => 'mcp_ai_project',
+			'label'     => 'Projects',
+			'singular'  => 'Project',
+			'icon'      => '📁',
+			'group'     => 'pm',
+		),
+		'task'       => array(
+			'post_type' => 'mcp_ai_task',
+			'label'     => 'Tasks',
+			'singular'  => 'Task',
+			'icon'      => '✅',
+			'group'     => 'pm',
+		),
+		'event'      => array(
+			'post_type' => 'mcp_ai_event',
+			'label'     => 'Events',
+			'singular'  => 'Event',
+			'icon'      => '📅',
+			'group'     => 'pm',
+		),
+		'profession' => array(
+			'post_type' => 'mcp_ai_profession',
+			'label'     => 'Professions',
+			'singular'  => 'Profession',
+			'icon'      => '👔',
+			'group'     => 'professions',
 		),
 	);
 
@@ -189,6 +224,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 				'label'    => $config['label'],
 				'singular' => $config['singular'],
 				'icon'     => $config['icon'],
+				'group'    => isset( $config['group'] ) ? sanitize_key( $config['group'] ) : 'records',
 				'columns'  => $columns,
 			);
 		}
@@ -260,6 +296,12 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 				if ( ! is_array( $field ) || empty( $field['meta_key'] ) ) {
 					continue;
 				}
+				// Skip keys the owning CPT already registered (e.g. the
+				// profession CPT exposes its own meta in REST) — re-registering
+				// would trip the register_meta doing-it-wrong notice.
+				if ( registered_meta_key_exists( 'post', $field['meta_key'], $post_type ) ) {
+					continue;
+				}
 				$this->register_meta_key( $post_type, $field );
 			}
 		}
@@ -282,25 +324,39 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 
 		switch ( $type ) {
 			case 'integer':
-				$rest_type = 'integer';
-				$sanitizer = 'absint';
+				$rest_type    = 'integer';
+				$sanitizer    = 'absint';
+				$show_in_rest = true;
 				break;
 			case 'number':
-				$rest_type = 'number';
-				$sanitizer = 'floatval';
+				$rest_type    = 'number';
+				$sanitizer    = 'floatval';
+				$show_in_rest = true;
 				break;
 			case 'boolean':
-				$rest_type = 'boolean';
-				$sanitizer = 'rest_sanitize_boolean';
+				$rest_type    = 'boolean';
+				$sanitizer    = 'rest_sanitize_boolean';
+				$show_in_rest = true;
 				break;
 			case 'array':
-			case 'object':
 				$rest_type = 'array';
 				$sanitizer = array( $this, 'sanitize_meta_deep' );
+				// WP 5.3+ requires an items schema for REST-exposed arrays.
+				$show_in_rest = array(
+					'schema' => array(
+						'items' => array( 'type' => 'string' ),
+					),
+				);
+				break;
+			case 'object':
+				$rest_type    = 'object';
+				$sanitizer    = array( $this, 'sanitize_meta_deep' );
+				$show_in_rest = true;
 				break;
 			default:
-				$rest_type = 'string';
-				$sanitizer = 'sanitize_text_field';
+				$rest_type    = 'string';
+				$sanitizer    = 'sanitize_text_field';
+				$show_in_rest = true;
 		}
 
 		register_post_meta(
@@ -309,7 +365,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			array(
 				'type'              => $rest_type,
 				'single'            => true,
-				'show_in_rest'      => true,
+				'show_in_rest'      => $show_in_rest,
 				'sanitize_callback' => $sanitizer,
 			)
 		);

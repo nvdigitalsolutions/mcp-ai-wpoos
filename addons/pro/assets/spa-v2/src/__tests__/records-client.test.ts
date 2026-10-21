@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 import { RecordsClient, type RecordEntityConfig } from '../api/records';
+import { filterEntitiesByGroup } from '../features/records/RecordsPage';
 
 const SCHEMA = 'https://example.com/wp-json/mcp-ai-pro/v1/records/schema';
 const WP_BASE = 'https://example.com/wp-json/wp/v2';
@@ -151,5 +152,32 @@ describe( 'RecordsClient', () => {
 			meta: { _company_industry: 'manufacturing' },
 		} );
 		expect( created ).toMatchObject( { id: 42, title: 'Acme Ltd' } );
+	} );
+} );
+
+describe( 'filterEntitiesByGroup', () => {
+	const entities: RecordEntityConfig[] = [
+		{ ...COMPANY, key: 'company', group: 'crm' },
+		{
+			key: 'project',
+			postType: 'mcp_ai_project',
+			restBase: 'mcp_ai_project',
+			label: 'Projects',
+			singular: 'Project',
+			icon: '📁',
+			group: 'pm',
+			columns: [],
+		},
+		{ ...COMPANY, key: 'profession', postType: 'mcp_ai_profession', restBase: 'mcp_ai_profession', group: 'professions' },
+	];
+
+	it( 'partitions entities by command-center group', () => {
+		expect( filterEntitiesByGroup( entities, 'pm' ).map( ( e ) => e.key ) ).toEqual( [ 'project' ] );
+		expect( filterEntitiesByGroup( entities, 'crm' ).map( ( e ) => e.key ) ).toEqual( [ 'company' ] );
+		expect( filterEntitiesByGroup( entities, 'professions' ).map( ( e ) => e.key ) ).toEqual( [ 'profession' ] );
+	} );
+
+	it( 'returns every entity when no group is given', () => {
+		expect( filterEntitiesByGroup( entities ) ).toHaveLength( 3 );
 	} );
 } );

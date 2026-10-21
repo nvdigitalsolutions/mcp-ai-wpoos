@@ -432,7 +432,31 @@ function ConsoleApp(): JSX.Element {
                     features={features}
                     capabilities={runtime.user.capabilities}
                   >
-                    <RecordsPage />
+                    <RecordsPage group="crm" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/pm"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/pm')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RecordsPage group="pm" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/professions"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/professions')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RecordsPage group="professions" />
                   </RequireGate>
                 }
               />
