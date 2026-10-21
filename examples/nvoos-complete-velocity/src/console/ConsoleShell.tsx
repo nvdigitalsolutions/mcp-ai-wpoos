@@ -478,6 +478,18 @@ function ConsoleApp(): JSX.Element {
                 }
               />
               <Route
+                path="/fnb"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/fnb')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RecordsPage group="fnb" />
+                  </RequireGate>
+                }
+              />
+              <Route
                 path="/dashboards"
                 element={
                   <RequireGate

@@ -120,6 +120,41 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			'icon'      => '📅',
 			'group'     => 'calendar',
 		),
+		'sale'        => array(
+			'post_type' => 'mcp_ai_fnb_sale',
+			'label'     => 'Sales',
+			'singular'  => 'Sale',
+			'icon'      => '💰',
+			'group'     => 'fnb',
+		),
+		'purchase'    => array(
+			'post_type' => 'mcp_ai_fnb_purchase',
+			'label'     => 'Purchases',
+			'singular'  => 'Purchase',
+			'icon'      => '🛒',
+			'group'     => 'fnb',
+		),
+		'stock'       => array(
+			'post_type' => 'mcp_ai_fnb_stock',
+			'label'     => 'Stock Counts',
+			'singular'  => 'Stock Count',
+			'icon'      => '📦',
+			'group'     => 'fnb',
+		),
+		'waste'       => array(
+			'post_type' => 'mcp_ai_fnb_waste',
+			'label'     => 'Waste Logs',
+			'singular'  => 'Waste Log',
+			'icon'      => '🗑️',
+			'group'     => 'fnb',
+		),
+		'fnb_booking' => array(
+			'post_type' => 'mcp_ai_fnb_booking',
+			'label'     => 'Bookings',
+			'singular'  => 'Booking',
+			'icon'      => '🍽️',
+			'group'     => 'fnb',
+		),
 	);
 
 	/**

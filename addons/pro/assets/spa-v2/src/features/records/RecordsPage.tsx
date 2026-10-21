@@ -109,6 +109,10 @@ export const RECORDS_GROUP_COPY: Record< string, { title: string; subtitle: stri
 		title: __( 'Calendar', 'nvoos-pro-spa' ),
 		subtitle: __( 'Appointments and bookings.', 'nvoos-pro-spa' ),
 	},
+	fnb: {
+		title: __( 'Food & Beverage', 'nvoos-pro-spa' ),
+		subtitle: __( 'Sales, purchases, stock counts, waste and bookings.', 'nvoos-pro-spa' ),
+	},
 	records: {
 		title: __( 'Records', 'nvoos-pro-spa' ),
 		subtitle: __( 'Entity records across the toolkits.', 'nvoos-pro-spa' ),

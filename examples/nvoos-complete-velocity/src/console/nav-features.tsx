@@ -86,6 +86,7 @@ export const CONSOLE_NAV_ITEMS: ConsoleNavItem[] = [
   { path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options' },
   { path: '/professions', label: 'Professions', icon: '👔', capability: 'manage_options' },
   { path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options' },
+  { path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options' },
   { path: '/dashboards', label: 'Dashboards', icon: '🧮', capability: 'manage_options' },
   {
     path: '/portability',

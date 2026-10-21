@@ -517,7 +517,11 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   `mcp_appointment` CPT joins wp/v2 (the audit's "calendar has its own
   REST" note was stale — the toolkit has CPTs but no REST controller) with
   its meta schema in the registry; the `/calendar` Records route renders
-  the appointments group. Remaining: F&B, Media, Chat Channels.
+  the appointments group. **Slice 2 shipped 2026-10-21:** F&B — the
+  native-CPT storage trait's default flips to REST exposure (all five
+  `mcp_ai_fnb_*` entities) and the sale/purchase/stock/waste/booking
+  entities join the `/fnb` Records route with their registry schemas.
+  Remaining: Media, Chat Channels.
 
 ## 7. Phase 5 — Retirement & hardening
 
