@@ -3325,7 +3325,7 @@ For security issues, please review our [Security Policy](SECURITY.md) and report
 
 ---
 
-## ❤️ Sponsor & Support
+## ❤ Sponsor & Support
 
 NV oOS is free and open source, and it stays that way because of the community. If the plugin saves you time or helps your site run more smoothly, here are the ways you can support the project:
 
