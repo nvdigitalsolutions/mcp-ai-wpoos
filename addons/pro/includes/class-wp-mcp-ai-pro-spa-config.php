@@ -322,6 +322,10 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'workflowRuns'       => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/orchestration/runs' ) )
 					: '',
+				'wpBase'             => esc_url_raw( rest_url( 'wp/v2' ) ),
+				'recordsSchema'      => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/records/schema' ) )
+					: '',
 				'shortcuts'          => esc_url_raw( rest_url( 'mcp-ai-pro/v1/tool-shortcuts' ) ),
 				'slashCommands'      => esc_url_raw( rest_url( 'mcp-ai-pro/v1/slash-commands' ) ),
 				'okf'                => WP_MCP_AI_Feature_Flags::okf()

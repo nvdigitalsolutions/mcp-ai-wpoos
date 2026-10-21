@@ -305,6 +305,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			WP_MCP_AI_Pro_Workflow_Node_REST_Controller::init();
 		}
 
+		// Load Pro Records REST bridge (Proposal 084 Phase 4, W11) —
+		// GET /mcp-ai-pro/v1/records/schema + meta-in-REST for the CRM
+		// command center's generic Records page.
+		$records_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-records-rest-controller.php';
+		if ( file_exists( $records_rest ) ) {
+			require_once $records_rest;
+			WP_MCP_AI_Pro_Records_REST_Controller::init();
+		}
+
 		// Register Pro export providers for Backup & Restore.
 		add_action(
 			'wp_mcp_ai_register_export_providers',

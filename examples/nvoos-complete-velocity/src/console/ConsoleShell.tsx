@@ -139,6 +139,11 @@ const ScheduleManagerPage = lazy(() =>
     default: m.ScheduleManagerPage,
   })),
 );
+const RecordsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/records/RecordsPage').then((m) => ({
+    default: m.RecordsPage,
+  })),
+);
 
 const DOCK_PREF_KEY = 'nvoos-complete-console.dock-open';
 
@@ -416,6 +421,18 @@ function ConsoleApp(): JSX.Element {
                     capabilities={runtime.user.capabilities}
                   >
                     <TeamsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/crm"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/crm')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RecordsPage />
                   </RequireGate>
                 }
               />

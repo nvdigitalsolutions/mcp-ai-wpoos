@@ -114,6 +114,10 @@ export interface ProSpaEndpoints {
 	workflowNodes: string;
 	/** Workflow runs REST base (mcp-ai/v1/orchestration/runs, 2.4.0). */
 	workflowRuns: string;
+	/** Core wp/v2 REST base — the Records feature's wp-core storage strategy (2.4.0). */
+	wpBase: string;
+	/** Records schema REST base (mcp-ai-pro/v1/records/schema, 2.4.0). */
+	recordsSchema: string;
 	shortcuts: string;
 	slashCommands: string;
 	/** OKF Skills & Knowledge browse endpoint (v2.1.1). */
@@ -280,6 +284,8 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			workflowPresets: typeof e.workflowPresets === 'string' ? e.workflowPresets : '',
 			workflowNodes: typeof e.workflowNodes === 'string' ? e.workflowNodes : '',
 			workflowRuns: typeof e.workflowRuns === 'string' ? e.workflowRuns : '',
+			wpBase: typeof e.wpBase === 'string' ? e.wpBase : '',
+			recordsSchema: typeof e.recordsSchema === 'string' ? e.recordsSchema : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 			okf: typeof e.okf === 'string' ? e.okf : '',

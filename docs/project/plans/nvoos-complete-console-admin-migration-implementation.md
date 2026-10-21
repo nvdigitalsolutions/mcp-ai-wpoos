@@ -419,12 +419,25 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
 
 ### 6a. Sequenced sub-phases (audit §4 order; B23 sequenced 2026-10-21)
 
-- [ ] **W11 (4a) — Records feature + CRM command center.** P1 + P7/P8 pilot:
+- [x] **W11 (4a) — Records feature + CRM command center.** P1 + P7/P8 pilot:
   the generic list/filter/detail Records page parameterized by entity
   configs (storage strategy = config, not code — `wp-core` first) with the
   five CRM entities (company/customer/deal/lead/ticket via
   `wp/v2/mcp_ai_*`) and the CRM command-center nav entry. Import and
   create-from-research are 4a-b (second slice of the same feature).
+  **Slice 1 shipped 2026-10-21 (company pilot):**
+  `GET /mcp-ai-pro/v1/records/schema` (entity configs built from
+  `WP_MCP_AI_Pro_CPT_Meta_Schema`) + `register_post_meta` REST exposure of
+  the company schema keys (the architectural-drawing CPT precedent);
+  console `/crm` route + nav entry; `api/records.ts` +
+  `features/records/RecordsPage.tsx` (entity tabs, search, schema columns,
+  detail panel); `wpBase`/`recordsSchema` endpoints in all three runtime
+  configs; PHPUnit `tests/rest-api/test-rest-records-schema.php` (5 tests)
+  + vitest `records-client.test.ts` (5 tests). **Slice 2 (W11b)** extends
+  the meta-schema registry with customer/deal/lead/ticket
+  (`_customer_*`/`_deal_*`/`_ticket_*` keys enumerated per CPT file) and
+  adds them to `RECORD_ENTITIES` — then import + create-from-research
+  (4a-b).
 - [ ] **W12 (4b) — PM command center + professions.** P3 (projects/tasks/
   events/sprints via `wp/v2/mcp_ai_*`) reusing the W11 Records feature;
   **B23 Team/profession research + settings (T4-lite)** — the console
