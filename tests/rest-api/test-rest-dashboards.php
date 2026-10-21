@@ -71,6 +71,12 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		// The registration dashboard joins with stats + the country list.
 		$this->assertArrayHasKey( 'registration', $data['dashboards'] );
 		$this->assertSame( 'countries', $data['dashboards']['registration']['lists'][0]['key'] );
+
+		// The ECA dashboard joins with KPIs, charts and the activity list.
+		$this->assertArrayHasKey( 'eca', $data['dashboards'] );
+		$this->assertSame( 'total_ecas', $data['dashboards']['eca']['metrics'][0]['key'] );
+		$this->assertSame( 'categories', $data['dashboards']['eca']['charts'][0]['key'] );
+		$this->assertSame( 'ecas', $data['dashboards']['eca']['lists'][0]['key'] );
 	}
 
 	/**
@@ -166,6 +172,33 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'total_products', $data['data'] );
 		$this->assertSame( 0, $data['data']['total_products'] );
 		$this->assertSame( array(), $data['data']['countries'] );
+	}
+
+	/**
+	 * The ECA provider returns the zeroed envelope when the toolkit CPTs
+	 * are absent (zero network).
+	 */
+	public function test_eca_data_zeroed_envelope() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/eca/data' );
+		$request->set_param( 'id', 'eca' );
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+
+		if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
+			$this->markTestSkipped( 'ECA dashboard page unavailable in this bootstrap.' );
+		}
+
+		$this->assertNotWPError( $result );
+		$data = $result->get_data();
+
+		$this->assertSame( 'eca', $data['dashboard'] );
+		$this->assertArrayHasKey( 'total_ecas', $data['data'] );
+		$this->assertSame( 0, $data['data']['total_ecas'] );
+		$this->assertSame( array(), $data['data']['categories'] );
+		$this->assertSame( array(), $data['data']['ecas'] );
 	}
 
 	/**

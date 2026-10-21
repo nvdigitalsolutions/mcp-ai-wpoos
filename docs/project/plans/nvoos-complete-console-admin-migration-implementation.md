@@ -499,7 +499,12 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
     (`get_dashboard_data()` promoted, 4 count metrics). **Slice 2 shipped
     2026-10-21:** the registration dashboard joins (6 count metrics +
     the countries list; `get_registration_stats()`/`get_countries_stats()`
-    promoted). Remaining: ECA, health/wellness, medical vitals.
+    promoted). **Slice 3 shipped 2026-10-21:** the ECA dashboard joins
+    (7 KPIs + category/type charts + the activities list; the AJAX
+    handler's inline computation extracted into a public
+    `get_dashboard_data()` the handler now sends unchanged). Remaining:
+    health/wellness, medical vitals (member-filtered interactive
+    surfaces — see the next session note).
 - [ ] **W14 (4d) — Remaining command centers.** Calendar booking (existing
   REST), F&B (Proposal 078 universalisation REST), Media (P2), Chat
   Channels (P4) — per-toolkit checks against the storage audit before each

@@ -326,6 +326,93 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
+			'eca'          => array(
+				'label'       => __( 'ECA', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Extra-curricular activities: enrollments, capacity, participation and attendance.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '🏫',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'total_ecas',
+						'label'  => __( 'Activities', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_students',
+						'label'  => __( 'Students', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_enrollments',
+						'label'  => __( 'Enrollments', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'participation_rate',
+						'label'  => __( 'Participation', 'mcp-ai-wpoos-pro' ),
+						'format' => 'percent',
+					),
+					array(
+						'key'    => 'attendance_rate',
+						'label'  => __( 'Attendance', 'mcp-ai-wpoos-pro' ),
+						'format' => 'percent',
+					),
+					array(
+						'key'    => 'capacity_rate',
+						'label'  => __( 'Capacity Utilisation', 'mcp-ai-wpoos-pro' ),
+						'format' => 'percent',
+					),
+					array(
+						'key'    => 'total_waitlisted',
+						'label'  => __( 'Waitlisted', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+				),
+				'charts'      => array(
+					array(
+						'key'   => 'categories',
+						'title' => __( 'By Category', 'mcp-ai-wpoos-pro' ),
+						'type'  => 'bar',
+					),
+					array(
+						'key'   => 'types',
+						'title' => __( 'By Type', 'mcp-ai-wpoos-pro' ),
+						'type'  => 'bar',
+					),
+				),
+				'lists'       => array(
+					array(
+						'key'     => 'ecas',
+						'title'   => __( 'Activities', 'mcp-ai-wpoos-pro' ),
+						'columns' => array(
+							array(
+								'key'   => 'title',
+								'label' => __( 'Activity', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'type',
+								'label' => __( 'Type', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'day',
+								'label' => __( 'Day', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'venue',
+								'label' => __( 'Venue', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'enrolled',
+								'label' => __( 'Enrolled', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'status',
+								'label' => __( 'Status', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+			),
 		);
 	}
 
@@ -474,6 +561,32 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			$countries = WP_MCP_AI_Registration_Dashboard_Page::get_countries_stats();
 
 			return array_merge( $stats, array( 'countries' => $countries ) );
+		}
+
+		if ( 'eca' === $dashboard_id ) {
+			$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-eca-dashboard-page.php';
+			if ( ! class_exists( 'WP_MCP_AI_ECA_Dashboard_Page' ) && file_exists( $page_file ) ) {
+				require_once $page_file;
+			}
+			if ( ! class_exists( 'WP_MCP_AI_ECA_Dashboard_Page' ) ) {
+				return new WP_Error(
+					'dashboards_provider_unavailable',
+					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 501 )
+				);
+			}
+
+			$data = WP_MCP_AI_ECA_Dashboard_Page::get_dashboard_data();
+			$kpis = isset( $data['kpis'] ) && is_array( $data['kpis'] ) ? $data['kpis'] : array();
+
+			return array_merge(
+				$kpis,
+				array(
+					'categories' => isset( $data['categories'] ) ? $data['categories'] : array(),
+					'types'      => isset( $data['types'] ) ? $data['types'] : array(),
+					'ecas'       => isset( $data['ecas'] ) ? $data['ecas'] : array(),
+				)
+			);
 		}
 
 		return new WP_Error(
