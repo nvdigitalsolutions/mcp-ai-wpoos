@@ -4,8 +4,8 @@ description: Operational guide for the Schedule Anything SaaS surface — the 3-
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.8"
-  plugin-version-tested: "1.2.8"
+  plugin-version: "1.2.9"
+  plugin-version-tested: "1.2.9"
   last-updated: "2026-10-22"
 ---
 
