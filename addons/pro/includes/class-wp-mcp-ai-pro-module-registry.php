@@ -635,6 +635,41 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'rest_console_bridges',
+				'Console REST Bridges',
+				array(),
+				array(),
+				function () use ( $p ) {
+					// Proposal 084 console bridges. Deliberately NOT admin-gated:
+					// the Pro SPA renders on a front-end page and issues its
+					// REST calls from that origin, where is_admin() is false —
+					// an admin-context gate here would leave every one of these
+					// routes 404ing ("No route was found matching the URL and
+					// request method"). Each controller is idempotent and only
+					// hooks rest_api_init (records also hooks init at priority
+					// 20 for meta-in-REST), so booting on every request is safe.
+					$controllers = array(
+						'class-wp-mcp-ai-pro-rest-ops-controller.php'              => 'WP_MCP_AI_Pro_REST_Ops_Controller',
+						'class-wp-mcp-ai-pro-workflow-presets-rest-controller.php' => 'WP_MCP_AI_Pro_Workflow_Presets_REST_Controller',
+						'class-wp-mcp-ai-pro-workflow-node-rest-controller.php'    => 'WP_MCP_AI_Pro_Workflow_Node_REST_Controller',
+						'class-wp-mcp-ai-pro-records-rest-controller.php'          => 'WP_MCP_AI_Pro_Records_REST_Controller',
+						'class-wp-mcp-ai-pro-dashboards-rest-controller.php'       => 'WP_MCP_AI_Pro_Dashboards_REST_Controller',
+						'class-wp-mcp-ai-pro-media-cc-rest-controller.php'         => 'WP_MCP_AI_Pro_Media_CC_REST_Controller',
+					);
+					foreach ( $controllers as $file => $class ) {
+						$path = $p . 'rest/' . $file;
+						if ( ! file_exists( $path ) ) {
+							continue;
+						}
+						require_once $path;
+						if ( class_exists( $class ) ) {
+							$class::init();
+						}
+					}
+				}
+			);
+
+			$this->add_module(
 				'spa_loader',
 				'SPA Loader',
 				array(),

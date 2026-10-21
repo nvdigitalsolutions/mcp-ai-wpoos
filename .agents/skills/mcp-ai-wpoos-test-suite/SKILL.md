@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 71 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 72 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-19"
+  last-updated: "2026-10-21"
   plugin-version: "1.1.99"
   plugin-version-tested: "1.1.99"
 ---
@@ -1118,6 +1118,29 @@ the changed files is the substantive gate; plan CI waits accordingly.
       the production API accepts an explicit path. Same rule for any
       corpus/exporter test asserting counts over a directory scan — never
       assume the directory is empty.
+
+   72. **The whole suite "hangs" after plugin boot — PHPUnit 11's SourceMapper
+      walks every `<source><exclude>` directory (2026-10-21).** Symptom: runs
+      print the plugin boot lines ("Module … skipped") but never reach the
+      PHPUnit banner, with the `php` process cycling `R`/`D` on the bind
+      mount — looks infinite but is just an enormous enumeration. PHPUnit 11's
+      `SourceMapper::map()` calls `FileIteratorFacade::getFilesAsArray()` not
+      only for every `<source><include>` dir but **also for every
+      `<source><exclude>` dir**, so no-op excludes still pay the full
+      recursive walk. `phpunit.xml.dist` listed `examples`, `node_modules`,
+      `vendor`, `tests`, `bin` — none of which an include path can ever
+      produce — and this worktree's `examples/nvoos-dictate/src-tauri` Rust
+      `target/` is 70 GB+, making the walk hours-long on a slow bind mount.
+      Diagnosis: `strace -f -e trace=%file` (apt install strace) or an xdebug
+      trace (`xdebug.mode=trace`, `tail` the `.xt` file) shows php-file-
+      iterator's `Facade.php:36` iterating the huge tree, called from
+      `SourceMapper.php:83`. Fix: **delete `<exclude>` directories that no
+      include can produce** (excludes only subtract from the include set) —
+      same rule for `phpunit-basepro.xml.dist` and any new `<source>` block.
+      Secondary noise on the same mount: the `oos-wp` entrypoint runs a 60s
+      `wp-cron.php` loop whose stuck apache workers (D-state, `p9_client_rpc`)
+      pile up and compound the slowdown — `pkill -f wp-cron.php` + kill the
+      D-state workers before re-running.
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
