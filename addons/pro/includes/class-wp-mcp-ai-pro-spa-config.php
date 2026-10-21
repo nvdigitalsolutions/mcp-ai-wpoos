@@ -153,9 +153,21 @@ class WP_MCP_AI_Pro_SPA_Config {
 				: 'admin' === $requested_mode
 		);
 
+		// ---- vector store pre-load (mirrors legacy chat.js) --------------------
+		// Exposed so useBootstrap can surface the optional vector-store preload
+		// notice; empty when the assistant has no vector store configured.
+		$vector_store_id = '';
+		if ( $assistant_id > 0 && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			if ( ! empty( $assistant_config['vector_store_id'] ) ) {
+				$vector_store_id = (string) $assistant_config['vector_store_id'];
+			}
+		}
+
 		// ---- per-instance SPA config ----------------------------------------
 		$config = array(
 			'assistantId'         => $assistant_id,
+			'vectorStoreId'       => $vector_store_id,
 			'theme'               => $theme,
 			'allowSensitiveTools' => ! empty( $per_instance['allow_sensitive_tools'] ),
 			'mode'                => $mode,

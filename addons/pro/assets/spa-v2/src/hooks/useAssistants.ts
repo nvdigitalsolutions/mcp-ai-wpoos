@@ -16,6 +16,7 @@ export interface UseAssistantsReturn {
 	loading: boolean;
 	error: string | null;
 	fetchAssistants: () => Promise< void >;
+	getAssistant: ( id: number ) => Promise< AssistantRecord | null >;
 	createAssistant: ( fields: Partial< AssistantRecord > ) => Promise< AssistantRecord | null >;
 	updateAssistant: ( id: number, changes: Partial< AssistantRecord > ) => Promise< AssistantRecord | null >;
 	deleteAssistant: ( id: number ) => Promise< void >;
@@ -60,6 +61,18 @@ export function useAssistants( options: UseAssistantsOptions ): UseAssistantsRet
 		}
 		void fetchAssistants();
 	}, [ fetchAssistants, options.endpoint ] );
+
+	const getAssistant = useCallback(
+		async ( id: number ): Promise< AssistantRecord | null > => {
+			try {
+				return await client.get( id );
+			} catch ( err ) {
+				addToast( err instanceof Error ? err.message : String( err ), 'error' );
+				return null;
+			}
+		},
+		[ client, addToast ]
+	);
 
 	const createAssistant = useCallback(
 		async ( fields: Partial< AssistantRecord > ): Promise< AssistantRecord | null > => {
@@ -113,6 +126,7 @@ export function useAssistants( options: UseAssistantsOptions ): UseAssistantsRet
 		loading,
 		error,
 		fetchAssistants,
+		getAssistant,
 		createAssistant,
 		updateAssistant,
 		deleteAssistant,

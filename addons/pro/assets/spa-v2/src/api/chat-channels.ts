@@ -44,9 +44,9 @@ export interface ConversationsEnvelope {
 
 export interface ChatMessage {
 	id?: number;
-	sender?: string;
+	contact_name?: string;
 	direction?: string;
-	message?: string;
+	content?: string;
 	timestamp?: number;
 	[ k: string ]: unknown;
 }

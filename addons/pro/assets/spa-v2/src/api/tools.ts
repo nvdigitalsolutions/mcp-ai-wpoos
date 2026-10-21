@@ -41,6 +41,90 @@ interface ServerToolListItem {
 	[ k: string ]: unknown;
 }
 
+/**
+ * Slug prefixes that are verbs/core actions, not toolkit namespaces — tools
+ * with these prefixes fall back to the 'Core' group instead of a bogus
+ * category like 'Get' or 'Create'.
+ */
+const CORE_VERB_PREFIXES = new Set( [
+	'get',
+	'set',
+	'create',
+	'update',
+	'delete',
+	'list',
+	'run',
+	'search',
+	'fetch',
+	'add',
+	'remove',
+	'check',
+	'convert',
+	'import',
+	'export',
+	'generate',
+	'analyze',
+	'read',
+	'write',
+	'post',
+	'send',
+	'start',
+	'stop',
+	'pause',
+	'resume',
+	'enable',
+	'disable',
+	'install',
+	'activate',
+	'deactivate',
+	'register',
+	'unregister',
+	'duplicate',
+	'copy',
+	'move',
+	'rename',
+	'upload',
+	'download',
+	'count',
+	'compare',
+	'schedule',
+	'queue',
+	'execute',
+	'parse',
+	'extract',
+	'merge',
+	'split',
+	'format',
+	'validate',
+	'test',
+	'sync',
+	'toggle',
+	'bulk',
+	'restore',
+	'publish',
+	'translate',
+	'resize',
+	'optimize',
+	'compress',
+	'detect',
+	'scan',
+	'track',
+	'log',
+] );
+
+/**
+ * Derive a display category from a tool slug when the server envelope
+ * carries none: the toolkit namespace prefix, or 'Core' for verb-prefixed
+ * and prefix-less slugs.
+ */
+export function deriveToolCategory( slug: string ): string {
+	const prefix = ( slug.split( '_' )[ 0 ] ?? '' ).toLowerCase();
+	if ( ! prefix || CORE_VERB_PREFIXES.has( prefix ) ) {
+		return 'Core';
+	}
+	return prefix.charAt( 0 ).toUpperCase() + prefix.slice( 1 );
+}
+
 export interface ToolExecutionResult {
 	success: boolean;
 	data?: {
@@ -106,15 +190,23 @@ export class ToolsClient {
 			: [];
 
 		return {
-			tools: raw.map( ( t ) => ( {
-				slug: typeof t?.slug === 'string' && t.slug ? t.slug : ( t?.name ?? '' ),
-				name: t?.name ?? '',
-				description: t?.description ?? '',
-				category: typeof t?.category === 'string' ? t.category : '',
-				required_capability:
-					typeof t?.required_capability === 'string' ? t.required_capability : '',
-				parameters: t?.inputSchema ?? {},
-			} ) ),
+			tools: raw.map( ( t ) => {
+				const slug = typeof t?.slug === 'string' && t.slug ? t.slug : ( t?.name ?? '' );
+				return {
+					slug,
+					name: t?.name ?? '',
+					description: t?.description ?? '',
+					// The modern envelope carries no category — derive one from the
+					// toolkit slug prefix so the page's filter and badges work.
+					category:
+						typeof t?.category === 'string' && t.category
+							? t.category
+							: deriveToolCategory( slug ),
+					required_capability:
+						typeof t?.required_capability === 'string' ? t.required_capability : '',
+					parameters: t?.inputSchema ?? {},
+				};
+			} ),
 			total:
 				typeof data?.total === 'number'
 					? data.total

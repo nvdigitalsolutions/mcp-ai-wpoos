@@ -529,10 +529,17 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			);
 		}
 
+		// The extractor contract includes a suggested `title` — surface it
+		// at the top level (the console form uses it to prefill the record
+		// title) and keep `fields` as pure schema fields.
+		$title = isset( $fields['title'] ) && is_string( $fields['title'] ) ? $fields['title'] : '';
+		unset( $fields['title'] );
+
 		return rest_ensure_response(
 			array(
 				'entity' => $entity_key,
 				'query'  => $query,
+				'title'  => $title,
 				'fields' => $fields,
 			)
 		);

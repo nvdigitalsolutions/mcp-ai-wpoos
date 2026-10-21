@@ -210,6 +210,7 @@ class WP_MCP_AI_Pro_Workflow_Presets_REST_Controller {
 					'name'        => isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '',
 					'description' => isset( $data['description'] ) ? sanitize_text_field( $data['description'] ) : '',
 					'category'    => isset( $data['category'] ) ? sanitize_key( $data['category'] ) : '',
+					'icon'        => isset( $data['icon'] ) ? sanitize_text_field( $data['icon'] ) : '',
 					'tags'        => isset( $data['tags'] ) && is_array( $data['tags'] )
 						? array_map( 'sanitize_text_field', $data['tags'] )
 						: array(),

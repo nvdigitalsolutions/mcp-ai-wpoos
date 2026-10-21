@@ -20,7 +20,7 @@ interface AssistantFormFields {
 	provider: string;
 	temperature: number;
 	system_prompt: string;
-	capabilities: string;
+	tools: string;
 }
 
 const EMPTY_FORM: AssistantFormFields = {
@@ -29,10 +29,10 @@ const EMPTY_FORM: AssistantFormFields = {
 	provider: 'openai',
 	temperature: 0.7,
 	system_prompt: '',
-	capabilities: '',
+	tools: '',
 };
 
-function parseCapabilities( raw: string ): string[] {
+function parseTools( raw: string ): string[] {
 	return raw
 		.split( ',' )
 		.map( ( s ) => s.trim() )
@@ -43,7 +43,7 @@ export function AssistantsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
 	const availableModels = useModelStore( ( s ) => s.availableModels );
 
-	const { assistants, loading, error, fetchAssistants, createAssistant, updateAssistant, deleteAssistant } =
+	const { assistants, loading, error, fetchAssistants, getAssistant, createAssistant, updateAssistant, deleteAssistant } =
 		useAssistants(
 			runtime
 				? {
@@ -72,20 +72,38 @@ export function AssistantsPage(): JSX.Element {
 		setFormOpen( true );
 	}, [] );
 
-	const openEdit = useCallback( ( assistant: AssistantRecord ) => {
-		setFormFields( {
-			title: assistant.title ?? '',
-			model: assistant.model ?? '',
-			provider: assistant.provider ?? 'openai',
-			temperature: assistant.temperature ?? 0.7,
-			system_prompt: assistant.system_prompt ?? '',
-			capabilities: Array.isArray( assistant.capabilities )
-				? assistant.capabilities.join( ', ' )
-				: '',
-		} );
-		setEditingId( assistant.id );
-		setFormOpen( true );
-	}, [] );
+	const openEdit = useCallback(
+		( assistant: AssistantRecord ) => {
+			// Seed the form from the list record immediately, then replace
+			// with the full record (system prompt + tools) from the new
+			// GET /assistants/{id} route.
+			setFormFields( {
+				title: assistant.title ?? '',
+				model: assistant.model ?? '',
+				provider: assistant.provider ?? 'openai',
+				temperature: assistant.temperature ?? 0.7,
+				system_prompt: '',
+				tools: Array.isArray( assistant.tools ) ? assistant.tools.join( ', ' ) : '',
+			} );
+			setEditingId( assistant.id );
+			setFormOpen( true );
+
+			void getAssistant( assistant.id ).then( ( full ) => {
+				if ( ! full || ! full.id ) {
+					return;
+				}
+				setFormFields( ( current ) => ( {
+					...current,
+					model: full.model ?? current.model,
+					provider: full.provider ?? current.provider,
+					temperature: full.temperature ?? current.temperature,
+					system_prompt: full.system_prompt ?? '',
+					tools: Array.isArray( full.tools ) ? full.tools.join( ', ' ) : current.tools,
+				} ) );
+			} );
+		},
+		[ getAssistant ]
+	);
 
 	const closeForm = useCallback( () => {
 		setFormOpen( false );
@@ -101,8 +119,10 @@ export function AssistantsPage(): JSX.Element {
 			model: formFields.model.trim() || undefined,
 			provider: formFields.provider,
 			temperature: formFields.temperature,
-			system_prompt: formFields.system_prompt.trim() || undefined,
-			capabilities: parseCapabilities( formFields.capabilities ),
+			// Always sent (not undefined-trimmed) so an edit can clear a
+			// stored system prompt; the server deletes the meta on ''.
+			system_prompt: formFields.system_prompt,
+			tools: parseTools( formFields.tools ),
 		};
 		try {
 			if ( editingId !== null ) {
@@ -558,7 +578,7 @@ export function AssistantsPage(): JSX.Element {
 								className="nvoos-pro-spa-assistants-form__label"
 							>
 								{ __(
-									'Capabilities',
+									'Tools',
 									'nvoos-pro-spa'
 								) }
 							</label>
@@ -566,16 +586,16 @@ export function AssistantsPage(): JSX.Element {
 								id="nvoos-pro-spa-assistant-capabilities"
 								type="text"
 								className="nvoos-pro-spa-assistants-form__input"
-								value={ formFields.capabilities }
+								value={ formFields.tools }
 								onChange={ ( e ) =>
 									setFormFields( ( f ) => ( {
 										...f,
-										capabilities:
+										tools:
 											e.target.value,
 									} ) )
 								}
 								placeholder={ __(
-									'Comma-separated capabilities, e.g. edit_posts, manage_options',
+									'Comma-separated tool slugs, e.g. get_site_health, web_search',
 									'nvoos-pro-spa'
 								) }
 							/>

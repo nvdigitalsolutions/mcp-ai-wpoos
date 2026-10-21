@@ -88,8 +88,9 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 					'filters' => array(
-						'type'    => 'object',
-						'default' => array(),
+						'type'              => 'object',
+						'default'           => array(),
+						'sanitize_callback' => array( __CLASS__, 'sanitize_filters' ),
 					),
 				),
 			)
@@ -112,6 +113,41 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			);
 		}
 		return true;
+	}
+
+	/**
+	 * Sanitize the dashboards `filters` argument.
+	 *
+	 * The console SPA sends filters as a JSON-encoded query string
+	 * (`?filters={"loan_status":"performing"}`). The REST pipeline runs
+	 * this callback before type validation, so the string must become an
+	 * associative array here or the request dies with rest_invalid_type.
+	 * Arrays pass through untouched (array-style query params and direct
+	 * handler calls). Anything else — including JSON that does not decode
+	 * to an object — degrades to an empty array.
+	 *
+	 * @since 2.4.1
+	 *
+	 * @param mixed           $value   Raw `filters` value.
+	 * @param WP_REST_Request $request Unused (REST callback signature).
+	 * @param string          $param   Unused (REST callback signature).
+	 * @return array Decoded associative filters, or array() on failure.
+	 */
+	public static function sanitize_filters( $value, $request = null, $param = '' ) {
+		unset( $request, $param );
+
+		if ( is_array( $value ) ) {
+			return $value;
+		}
+
+		if ( is_string( $value ) && '' !== $value ) {
+			$decoded = json_decode( $value );
+			if ( $decoded instanceof stdClass ) {
+				return get_object_vars( $decoded );
+			}
+		}
+
+		return array();
 	}
 
 	/**
@@ -603,8 +639,13 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 		}
 
 		// Whitelist filter values against the dashboard's filter keys.
+		// The console SPA may hand over a JSON string directly; decode it
+		// defensively so handler-level calls behave like the REST pipeline.
 		$raw_filters = $request->get_param( 'filters' );
-		$filters     = array();
+		if ( is_string( $raw_filters ) ) {
+			$raw_filters = self::sanitize_filters( $raw_filters );
+		}
+		$filters = array();
 		if ( is_array( $raw_filters ) ) {
 			foreach ( $catalogue[ $dashboard_id ]['filters'] as $filter ) {
 				$key = $filter['key'];

@@ -304,7 +304,7 @@ export function ChatChannelsPage(): JSX.Element {
 										</span>
 									</div>
 									<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-										{ String( message.message ?? '' ) }
+										{ String( message.content ?? '' ) }
 									</div>
 								</div>
 							) ) }

@@ -10,9 +10,11 @@ export interface AssistantRecord {
 	model?: string;
 	provider?: string;
 	temperature?: number;
-	max_tokens?: number;
 	system_prompt?: string;
-	capabilities?: string[];
+	/** Tool slugs enabled for this assistant (the REST `tools` field). */
+	tools?: string[];
+	description?: string;
+	is_default?: boolean;
 	is_preset?: boolean;
 }
 
@@ -78,13 +80,14 @@ export class AssistantsClient {
 		fields: Partial< AssistantRecord >,
 		signal?: AbortSignal
 	): Promise< AssistantRecord > {
-		const data = await this.request< { success: boolean; data: AssistantRecord } >( {
+		// The create handler returns the directory summary directly (201),
+		// not a { success, data } envelope.
+		return this.request< AssistantRecord >( {
 			method: 'POST',
 			url: this.endpoint,
 			body: fields,
 			signal,
 		} );
-		return data?.data ?? ( {} as AssistantRecord );
 	}
 
 	async delete( id: number, signal?: AbortSignal ): Promise< void > {

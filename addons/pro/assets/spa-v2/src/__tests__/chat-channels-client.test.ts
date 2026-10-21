@@ -57,11 +57,16 @@ describe( 'ChatChannelsClient', () => {
 	} );
 
 	it( 'fetches messages for a contact', async () => {
-		mockFetch( { items: [ { id: 4, message: 'Hello', direction: 'inbound' } ] } );
+		mockFetch( {
+			items: [
+				{ id: 4, contact_name: 'Amina', content: 'Hello', direction: 'inbound' },
+			],
+		} );
 		const client = new ChatChannelsClient( { endpoint: ENDPOINT, nonce: 'n' } );
 		const messages = await client.messages( 9 );
 		expect( messages ).toHaveLength( 1 );
-		expect( messages[ 0 ].message ).toBe( 'Hello' );
+		expect( messages[ 0 ].content ).toBe( 'Hello' );
+		expect( messages[ 0 ].contact_name ).toBe( 'Amina' );
 	} );
 
 	it( 'POSTs a reply with the contact and connection ids', async () => {

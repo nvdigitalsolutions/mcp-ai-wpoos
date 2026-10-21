@@ -313,6 +313,77 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Filters may arrive as a JSON-encoded query string (the console SPA
+	 * sends `?filters={"member_id":"…"}`). The handler decodes the string
+	 * before the whitelist: an undecoded payload would leave member_id
+	 * empty and the provider would refuse with a 400, so reaching the
+	 * zeroed envelope proves the decoded filter reached the provider.
+	 */
+	public function test_json_string_filters_reach_the_provider() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		if ( ! post_type_exists( 'mcp_ai_member' ) ) {
+			register_post_type(
+				'mcp_ai_member',
+				array(
+					'labels'   => array( 'name' => 'Members' ),
+					'public'   => false,
+					'supports' => array( 'title' ),
+				)
+			);
+		}
+		$member_id = $this->factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_member',
+				'post_title' => 'JSON Filter Member',
+			)
+		);
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/health/data' );
+		$request->set_param( 'id', 'health' );
+		$request->set_param(
+			'filters',
+			'{"member_id":"' . $member_id . '","days_back":"30"}'
+		);
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+
+		if ( is_wp_error( $result ) && 'dashboards_provider_unavailable' === $result->get_error_code() ) {
+			$this->markTestSkipped( 'Health dashboard page unavailable in this bootstrap.' );
+		}
+
+		$this->assertNotWPError( $result );
+		$data = $result->get_data();
+
+		$this->assertSame( 'health', $data['dashboard'] );
+		$this->assertArrayHasKey( 'history', $data['data'] );
+		$this->assertSame( array(), $data['data']['history'] );
+	}
+
+	/**
+	 * The sanitize callback decodes a JSON object string into an
+	 * associative array and degrades to an empty array on non-object or
+	 * invalid JSON. Arrays pass through untouched.
+	 */
+	public function test_sanitize_filters_decodes_json_strings() {
+		$controller = new WP_MCP_AI_Pro_Dashboards_REST_Controller();
+
+		$this->assertSame(
+			array( 'loan_status' => 'performing' ),
+			$controller->sanitize_filters( '{"loan_status":"performing"}' )
+		);
+		$this->assertSame( array(), $controller->sanitize_filters( '{"broken":' ) );
+		$this->assertSame( array(), $controller->sanitize_filters( '[1,2,3]' ) );
+		$this->assertSame( array(), $controller->sanitize_filters( 'not-json' ) );
+		$this->assertSame( array(), $controller->sanitize_filters( '' ) );
+		$this->assertSame(
+			array( 'a' => 'b' ),
+			$controller->sanitize_filters( array( 'a' => 'b' ) )
+		);
+	}
+
+	/**
 	 * The REST routes are registered under the Pro namespace.
 	 */
 	public function test_routes_are_registered() {
