@@ -104,6 +104,26 @@ export interface ProSpaEndpoints {
 	orchestrationStats: string;
 	/** Pro ops REST base (mcp-ai-pro/v1/ops, 2.4.0). */
 	proOps: string;
+	/** Schedule Manager REST base (mcp-ai-pro/v1 schedules + presets, 2.4.0). */
+	scheduleManager: string;
+	/** Workflow builder REST base (mcp-ai/v1/orchestration/workflows, 2.4.0). */
+	workflowBuilder: string;
+	/** Workflow presets REST base (mcp-ai-pro/v1/workflow-presets, 2.4.0). */
+	workflowPresets: string;
+	/** Workflow node execution REST base (mcp-ai-pro/v1/workflow-builder, 2.4.0). */
+	workflowNodes: string;
+	/** Workflow runs REST base (mcp-ai/v1/orchestration/runs, 2.4.0). */
+	workflowRuns: string;
+	/** Core wp/v2 REST base — the Records feature's wp-core storage strategy (2.4.0). */
+	wpBase: string;
+	/** Records schema REST base (mcp-ai-pro/v1/records/schema, 2.4.0). */
+	recordsSchema: string;
+	/** Dashboards schema REST base (mcp-ai-pro/v1/dashboards/schema, 2.4.0). */
+	dashboardsSchema: string;
+	/** Chat channels REST base (mcp-ai-pro/v1/chat-channels, 2.4.0). */
+	chatChannels: string;
+	/** Media command-center REST base (mcp-ai-pro/v1/media-cc, 2.4.0). */
+	mediaCc: string;
 	shortcuts: string;
 	slashCommands: string;
 	/** OKF Skills & Knowledge browse endpoint (v2.1.1). */
@@ -265,6 +285,16 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			tokenManager: typeof e.tokenManager === 'string' ? e.tokenManager : '',
 			orchestrationStats: typeof e.orchestrationStats === 'string' ? e.orchestrationStats : '',
 			proOps: typeof e.proOps === 'string' ? e.proOps : '',
+			scheduleManager: typeof e.scheduleManager === 'string' ? e.scheduleManager : '',
+			workflowBuilder: typeof e.workflowBuilder === 'string' ? e.workflowBuilder : '',
+			workflowPresets: typeof e.workflowPresets === 'string' ? e.workflowPresets : '',
+			workflowNodes: typeof e.workflowNodes === 'string' ? e.workflowNodes : '',
+			workflowRuns: typeof e.workflowRuns === 'string' ? e.workflowRuns : '',
+			wpBase: typeof e.wpBase === 'string' ? e.wpBase : '',
+			recordsSchema: typeof e.recordsSchema === 'string' ? e.recordsSchema : '',
+			dashboardsSchema: typeof e.dashboardsSchema === 'string' ? e.dashboardsSchema : '',
+			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
+			mediaCc: typeof e.mediaCc === 'string' ? e.mediaCc : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 			okf: typeof e.okf === 'string' ? e.okf : '',

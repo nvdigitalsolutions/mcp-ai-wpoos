@@ -74,6 +74,7 @@ describe( 'SPA_V2_NAV_ROUTES catalogue', () => {
 			'nav-token-manager',
 			'nav-orchestration-stats',
 			'nav-pro-ops',
+			'nav-schedule-manager',
 		] );
 	} );
 } );

@@ -1,8 +1,9 @@
 /**
  * Pro SPA v2 — Slash commands client.
  *
- * Wraps mcp-ai/v1/slash-command (execute) and /slash-command/list (catalogue)
- * for the SlashCommandsPage. Mirrors the ToolsClient fetch discipline.
+ * Wraps mcp-ai-pro/v1/slash-commands (catalogue) and
+ * /slash-commands/execute (executor) for the SlashCommandsPage. Mirrors
+ * the ToolsClient fetch discipline.
  *
  * @package NV_oOS_Pro_Spa
  * @since   2.4.0
@@ -11,11 +12,11 @@
 import { __ } from '@wordpress/i18n';
 
 export interface SlashCommandSummary {
-	name: string;
+	command: string;
 	description: string;
 	usage: string;
-	capability?: string;
-	aliases?: string[];
+	parameters?: string[];
+	category?: string;
 	[ k: string ]: unknown;
 }
 
@@ -34,12 +35,13 @@ export class SlashCommandsClient {
 	}
 
 	/**
-	 * List the commands visible to the current user (capability-filtered).
+	 * List the commands visible to the current user (capability-filtered
+	 * server-side).
 	 */
 	async list( signal?: AbortSignal ): Promise< SlashCommandSummary[] > {
 		const data = await this.request< { commands?: SlashCommandSummary[] } | SlashCommandSummary[] >(
 			'GET',
-			`${ this.endpoint }/list`,
+			this.endpoint,
 			undefined,
 			signal
 		);
@@ -56,7 +58,7 @@ export class SlashCommandsClient {
 		command: string,
 		signal?: AbortSignal
 	): Promise< { success?: boolean; message?: string; [ k: string ]: unknown } > {
-		return this.request( 'POST', this.endpoint, { command }, signal );
+		return this.request( 'POST', `${ this.endpoint }/execute`, { command }, signal );
 	}
 
 	private async request< T >(

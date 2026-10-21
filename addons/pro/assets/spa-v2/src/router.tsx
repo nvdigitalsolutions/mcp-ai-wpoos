@@ -40,6 +40,11 @@ const DiagnosticsPage = lazy( () => import( './features/diagnostics/DiagnosticsP
 const TokenManagerPage = lazy( () => import( './features/token-manager/TokenManagerPage' ).then( ( m ) => ( { default: m.TokenManagerPage } ) ) );
 const OrchestrationStatsPage = lazy( () => import( './features/orchestration-stats/OrchestrationStatsPage' ).then( ( m ) => ( { default: m.OrchestrationStatsPage } ) ) );
 const ProOpsPage = lazy( () => import( './features/pro-ops/ProOpsPage' ).then( ( m ) => ( { default: m.ProOpsPage } ) ) );
+const ScheduleManagerPage = lazy( () => import( './features/schedule-manager/ScheduleManagerPage' ).then( ( m ) => ( { default: m.ScheduleManagerPage } ) ) );
+const RecordsPage = lazy( () => import( './features/records/RecordsPage' ).then( ( m ) => ( { default: m.RecordsPage } ) ) );
+const DashboardsPage = lazy( () => import( './features/dashboards/DashboardsPage' ).then( ( m ) => ( { default: m.DashboardsPage } ) ) );
+const ChatChannelsPage = lazy( () => import( './features/chat-channels/ChatChannelsPage' ).then( ( m ) => ( { default: m.ChatChannelsPage } ) ) );
+const MediaOpsPage = lazy( () => import( './features/media-ops/MediaOpsPage' ).then( ( m ) => ( { default: m.MediaOpsPage } ) ) );
 
 export interface AppRouterProps {
 	/** Shared transcript hook result from Layout. */
@@ -76,6 +81,14 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/slash-commands" element={ <SlashCommandsPage /> } />
 				<Route path="/triggers" element={ <TriggersPage /> } />
 				<Route path="/teams" element={ <TeamsPage /> } />
+				<Route path="/crm" element={ <RecordsPage group="crm" /> } />
+				<Route path="/pm" element={ <RecordsPage group="pm" /> } />
+				<Route path="/professions" element={ <RecordsPage group="professions" /> } />
+				<Route path="/calendar" element={ <RecordsPage group="calendar" /> } />
+				<Route path="/fnb" element={ <RecordsPage group="fnb" /> } />
+				<Route path="/dashboards" element={ <DashboardsPage /> } />
+				<Route path="/chat-channels" element={ <ChatChannelsPage /> } />
+				<Route path="/media-ops" element={ <MediaOpsPage /> } />
 				<Route path="/portability" element={ <PortabilityPage /> } />
 				<Route path="/security-center" element={ <SecurityCenterPage /> } />
 				<Route path="/operations" element={ <OperationsPage /> } />
@@ -83,6 +96,7 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/token-manager" element={ <TokenManagerPage /> } />
 				<Route path="/orchestration-stats" element={ <OrchestrationStatsPage /> } />
 				<Route path="/pro-ops" element={ <ProOpsPage /> } />
+				<Route path="/schedule-manager" element={ <ScheduleManagerPage /> } />
 				<Route path="*" element={ <Navigate to="/chat" replace /> } />
 			</Routes>
 		</Suspense>

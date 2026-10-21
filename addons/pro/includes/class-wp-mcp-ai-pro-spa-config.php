@@ -153,9 +153,21 @@ class WP_MCP_AI_Pro_SPA_Config {
 				: 'admin' === $requested_mode
 		);
 
+		// ---- vector store pre-load (mirrors legacy chat.js) --------------------
+		// Exposed so useBootstrap can surface the optional vector-store preload
+		// notice; empty when the assistant has no vector store configured.
+		$vector_store_id = '';
+		if ( $assistant_id > 0 && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			if ( ! empty( $assistant_config['vector_store_id'] ) ) {
+				$vector_store_id = (string) $assistant_config['vector_store_id'];
+			}
+		}
+
 		// ---- per-instance SPA config ----------------------------------------
 		$config = array(
 			'assistantId'         => $assistant_id,
+			'vectorStoreId'       => $vector_store_id,
 			'theme'               => $theme,
 			'allowSensitiveTools' => ! empty( $per_instance['allow_sensitive_tools'] ),
 			'mode'                => $mode,
@@ -306,6 +318,34 @@ class WP_MCP_AI_Pro_SPA_Config {
 					: '',
 				'proOps'             => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/ops' ) )
+					: '',
+				'scheduleManager'    => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) )
+					: '',
+				'workflowBuilder'    => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/orchestration/workflows' ) )
+					: '',
+				'workflowPresets'    => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflow-presets' ) )
+					: '',
+				'workflowNodes'      => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflow-builder' ) )
+					: '',
+				'workflowRuns'       => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/orchestration/runs' ) )
+					: '',
+				'wpBase'             => esc_url_raw( rest_url( 'wp/v2' ) ),
+				'recordsSchema'      => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/records/schema' ) )
+					: '',
+				'dashboardsSchema'   => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/dashboards/schema' ) )
+					: '',
+				'chatChannels'       => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) )
+					: '',
+				'mediaCc'            => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/media-cc' ) )
 					: '',
 				'shortcuts'          => esc_url_raw( rest_url( 'mcp-ai-pro/v1/tool-shortcuts' ) ),
 				'slashCommands'      => esc_url_raw( rest_url( 'mcp-ai-pro/v1/slash-commands' ) ),

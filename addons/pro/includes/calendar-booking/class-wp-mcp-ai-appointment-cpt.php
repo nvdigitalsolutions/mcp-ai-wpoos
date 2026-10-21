@@ -300,7 +300,9 @@ class WP_MCP_AI_Appointment_CPT {
 				'hierarchical'       => false,
 				'menu_position'      => null,
 				'supports'           => array( 'title', 'editor', 'author' ),
-				'show_in_rest'       => false,
+				// Proposal 084 Phase 4d W14: the console Records feature
+				// consumes appointments via wp/v2.
+				'show_in_rest'       => true,
 			)
 		);
 	}

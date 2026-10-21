@@ -134,6 +134,31 @@ const ProOpsPage = lazy(() =>
     default: m.ProOpsPage,
   })),
 );
+const ScheduleManagerPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/schedule-manager/ScheduleManagerPage').then((m) => ({
+    default: m.ScheduleManagerPage,
+  })),
+);
+const RecordsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/records/RecordsPage').then((m) => ({
+    default: m.RecordsPage,
+  })),
+);
+const DashboardsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/dashboards/DashboardsPage').then((m) => ({
+    default: m.DashboardsPage,
+  })),
+);
+const ChatChannelsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/chat-channels/ChatChannelsPage').then((m) => ({
+    default: m.ChatChannelsPage,
+  })),
+);
+const MediaOpsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/media-ops/MediaOpsPage').then((m) => ({
+    default: m.MediaOpsPage,
+  })),
+);
 
 const DOCK_PREF_KEY = 'nvoos-complete-console.dock-open';
 
@@ -415,6 +440,102 @@ function ConsoleApp(): JSX.Element {
                 }
               />
               <Route
+                path="/crm"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/crm')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RecordsPage group="crm" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/pm"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/pm')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RecordsPage group="pm" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/professions"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/professions')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RecordsPage group="professions" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/calendar"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/calendar')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RecordsPage group="calendar" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/fnb"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/fnb')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RecordsPage group="fnb" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/dashboards"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/dashboards')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <DashboardsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/chat-channels"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/chat-channels')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <ChatChannelsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/media-ops"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/media-ops')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <MediaOpsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
                 path="/portability"
                 element={
                   <RequireGate
@@ -495,6 +616,18 @@ function ConsoleApp(): JSX.Element {
                     capabilities={runtime.user.capabilities}
                   >
                     <ProOpsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/schedule-manager"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/schedule-manager')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <ScheduleManagerPage />
                   </RequireGate>
                 }
               />

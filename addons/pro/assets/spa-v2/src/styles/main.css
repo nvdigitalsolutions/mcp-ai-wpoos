@@ -4819,6 +4819,99 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	cursor: not-allowed;
 }
 
+/* =========================================================================
+   Workflows page (2.4.0 — Proposal 084 Phase 3b W10.2a)
+   ========================================================================= */
+
+.nvoos-pro-spa-workflows-page__layout {
+	display: grid;
+	grid-template-columns: 300px minmax( 0, 1fr );
+	gap: 16px;
+	align-items: start;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-workflows-page__layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ── Workflow canvas (Phase 3b W10.2b) ──────────────────────────────── */
+
+.nvoos-pro-spa-wf-canvas__toolbar {
+	margin-bottom: 8px;
+}
+
+.nvoos-pro-spa-wf-canvas__palette {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-wf-canvas__rename {
+	max-width: 180px;
+}
+
+.nvoos-pro-spa-wf-canvas__board {
+	height: 460px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-wf-node {
+	min-width: 150px;
+	max-width: 220px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-left: 4px solid var(--nvoos-wf-accent, #2271b1);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	box-shadow: 0 1px 3px rgba( 0, 0, 0, 0.08 );
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-wf-node.is-selected {
+	box-shadow: 0 0 0 2px var(--nvoos-wf-accent, #2271b1);
+}
+
+.nvoos-pro-spa-wf-node__header {
+	padding: 4px 10px;
+	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
+}
+
+.nvoos-pro-spa-wf-node__kind {
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--nvoos-wf-accent, #2271b1);
+}
+
+.nvoos-pro-spa-wf-node__body {
+	padding: 8px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.nvoos-pro-spa-wf-node__label {
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-wf-node__desc {
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-wf-node__handle {
+	width: 8px;
+	height: 8px;
+	background: var(--nvoos-wf-accent, #2271b1);
+	border: 2px solid var(--nvoos-bg-secondary, #fff);
+}
+
 .nvoos-pro-spa-tools-page__footer {
 	margin-top: 16px;
 	padding: 8px 0;
@@ -6130,4 +6223,96 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	--chart-series-8: #a6adc8;
 	--chart-negative: #f38ba8;
 	--chart-positive: #a6e3a1;
+}
+
+/* Records feature (Proposal 084 Phase 4, W11) — entity tabs, search, detail. */
+.nvoos-pro-spa-records-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.nvoos-pro-spa-records-tab {
+	padding: 5px 10px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: transparent;
+	cursor: pointer;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-records-tab.is-active {
+	background: var(--nvoos-accent, #2271b1);
+	border-color: var(--nvoos-accent, #2271b1);
+	color: #fff;
+}
+
+.nvoos-pro-spa-records-search {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.nvoos-pro-spa-records-search__label {
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-records-search__input {
+	min-width: 240px;
+	padding: 5px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-records-detail {
+	margin-top: 16px;
+	padding: 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-records-detail__title {
+	margin: 0 0 4px;
+	font-size: 16px;
+}
+
+.nvoos-pro-spa-records-detail__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 10px 16px;
+	margin: 12px 0 0;
+}
+
+.nvoos-pro-spa-records-detail__item dt {
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin: 0 0 2px;
+}
+
+.nvoos-pro-spa-records-detail__item dd {
+	font-size: 13px;
+	margin: 0;
+	word-break: break-word;
+}
+
+.nvoos-pro-spa-records-research {
+	margin-bottom: 16px;
+	padding: 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-records-search__input:disabled,
+.nvoos-pro-spa-page__retry:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.nvoos-pro-spa-page__message--success {
+	color: var(--nvoos-positive, #008a20);
 }

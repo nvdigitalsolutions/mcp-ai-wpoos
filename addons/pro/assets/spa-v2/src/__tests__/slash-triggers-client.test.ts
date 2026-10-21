@@ -22,30 +22,36 @@ afterEach( () => {
 } );
 
 describe( 'SlashCommandsClient', () => {
-	const ENDPOINT = 'https://example.com/wp-json/mcp-ai/v1/slash-command';
+	const ENDPOINT = 'https://example.com/wp-json/mcp-ai-pro/v1/slash-commands';
 
 	it( 'maps a { commands } envelope to summaries', async () => {
 		mockFetch( {
-			commands: [ { name: 'research', description: 'Research a topic', usage: '/research', capability: 'edit_posts' } ],
+			commands: [
+				{ command: 'research', description: 'Research a topic', usage: '/research', category: 'Content' },
+			],
+			categories: [ 'Content' ],
 		} );
 		const client = new SlashCommandsClient( { endpoint: ENDPOINT, nonce: 'n' } );
 		const result = await client.list();
 		expect( result ).toHaveLength( 1 );
-		expect( result[ 0 ] ).toMatchObject( { name: 'research', usage: '/research' } );
+		expect( result[ 0 ] ).toMatchObject( { command: 'research', usage: '/research', category: 'Content' } );
 	} );
 
 	it( 'POSTs the command string to the execute route', async () => {
+		let requestedUrl = '';
 		let requestedBody = '';
 		global.fetch = vi.fn( ( input: RequestInfo | URL, init?: RequestInit ) => {
+			requestedUrl = String( input );
 			requestedBody = String( init?.body ?? '' );
 			return Promise.resolve( {
 				ok: true,
 				status: 200,
-				json: () => Promise.resolve( { success: true, message: 'ok' } ),
+				json: () => Promise.resolve( { success: true, command: '/research', result: 'ok', correlation_id: 'abc' } ),
 			} as Response );
 		} ) as unknown as typeof fetch;
 		const client = new SlashCommandsClient( { endpoint: ENDPOINT, nonce: 'n' } );
 		const result = await client.execute( '/research cars' );
+		expect( requestedUrl ).toBe( `${ ENDPOINT }/execute` );
 		expect( result.success ).toBe( true );
 		expect( JSON.parse( requestedBody ) ).toEqual( { command: '/research cars' } );
 	} );

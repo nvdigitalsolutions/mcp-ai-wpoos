@@ -181,6 +181,13 @@ export const SPA_V2_NAV_ROUTES: SpaV2NavRoute[] = [
 		description: __( 'Service status, maintenance, incidents, webhooks', 'nvoos-pro-spa' ),
 		capability: 'manage_options',
 	},
+	{
+		id: 'nav-schedule-manager',
+		hash: '#/schedule-manager',
+		label: __( 'Go to Schedule Manager', 'nvoos-pro-spa' ),
+		description: __( 'Schedules and presets', 'nvoos-pro-spa' ),
+		capability: 'manage_options',
+	},
 ];
 
 /**

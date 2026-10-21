@@ -329,6 +329,7 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 				'category'      => $category_display,
 				'category_slug' => $category,
 				'excerpt'       => $member->post_excerpt,
+				'description'   => $member->post_excerpt ? $member->post_excerpt : $member->post_content,
 				'expertise'     => is_array( $expertise ) ? $expertise : array(),
 				'tools_count'   => is_array( $tools ) ? count( $tools ) : 0,
 			);

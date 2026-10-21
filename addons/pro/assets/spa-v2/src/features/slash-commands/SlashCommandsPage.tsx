@@ -108,12 +108,17 @@ export function SlashCommandsPage(): JSX.Element {
 			) }
 
 			{ lastResult && (
-				<div className="nvoos-pro-spa-tools-page__controls" role="status">
+				<div
+					className="nvoos-pro-spa-tools-page__controls"
+					role="status"
+				>
 					<h3 className="nvoos-pro-spa-tools-page__label">
 						{ __( 'Result', 'nvoos-pro-spa' ) }
 					</h3>
 					<pre className="nvoos-pro-spa-slash__result">
-						{ typeof lastResult.message === 'string'
+						{ typeof lastResult.result === 'string'
+							? lastResult.result
+							: typeof lastResult.message === 'string'
 							? lastResult.message
 							: JSON.stringify( lastResult, null, 2 ) }
 					</pre>
@@ -130,26 +135,26 @@ export function SlashCommandsPage(): JSX.Element {
 						{ __( 'Command', 'nvoos-pro-spa' ) }
 					</div>
 					<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-						{ __( 'Capability', 'nvoos-pro-spa' ) }
+						{ __( 'Category', 'nvoos-pro-spa' ) }
 					</div>
 					<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
 						{ __( 'Description', 'nvoos-pro-spa' ) }
 					</div>
 				</div>
 				{ commands.map( ( item ) => (
-					<div key={ item.name } className="nvoos-pro-spa-tools-list__row" role="row">
+					<div key={ item.command } className="nvoos-pro-spa-tools-list__row" role="row">
 						<div className="nvoos-pro-spa-tools-list__cell" role="cell">
 							<button
 								type="button"
 								className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
-								onClick={ () => setCommand( ( item.usage as string ) ?? `/${ item.name }` ) }
+								onClick={ () => setCommand( ( item.usage as string ) ?? `/${ item.command }` ) }
 							>
-								{ item.usage ?? `/${ item.name }` }
+								{ item.usage ?? `/${ item.command }` }
 							</button>
 						</div>
 						<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-							{ item.capability ? (
-								<code className="nvoos-pro-spa-tools-list__capability">{ item.capability }</code>
+							{ item.category ? (
+								<code className="nvoos-pro-spa-tools-list__capability">{ item.category }</code>
 							) : (
 								<span className="nvoos-pro-spa-tools-list__badge nvoos-pro-spa-tools-list__badge--empty">
 									—

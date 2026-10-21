@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-import { ToolsClient } from '../api/tools';
+import { ToolsClient, deriveToolCategory } from '../api/tools';
 
 const ENDPOINT = 'https://example.com/wp-json/mcp-ai/v1/tools';
 
@@ -51,7 +51,7 @@ describe( 'ToolsClient.list', () => {
 			slug: 'create_deal',
 			name: 'create_deal',
 			description: 'Create a CRM deal.',
-			category: '',
+			category: 'Core',
 			required_capability: 'edit_posts',
 			parameters: { type: 'object', properties: {} },
 		} );
@@ -74,6 +74,26 @@ describe( 'ToolsClient.list', () => {
 
 		expect( result.tools[ 0 ].slug ).toBe( 'create_deal' );
 		expect( result.tools[ 0 ].required_capability ).toBe( '' );
+	} );
+
+	it( 'derives a toolkit category when the modern envelope omits it', async () => {
+		mockFetch( {
+			tools: [
+				{
+					name: 'ecommerce_get_orders',
+					slug: 'ecommerce_get_orders',
+					description: 'List orders.',
+					required_capability: 'edit_posts',
+					inputSchema: { type: 'object', properties: {} },
+				},
+			],
+			total: 1,
+		} );
+
+		const client = new ToolsClient( { endpoint: ENDPOINT, nonce: 'n' } );
+		const result = await client.list();
+
+		expect( result.tools[ 0 ].category ).toBe( 'Ecommerce' );
 	} );
 
 	it( 'accepts the legacy { success, data: { tools } } envelope', async () => {

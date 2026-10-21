@@ -302,9 +302,12 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 	/**
 	 * Get registration statistics.
 	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 4 W13c): the dashboards REST
+	 * controller consumes this as the dashboard's data provider.
+	 *
 	 * @return array Statistics data.
 	 */
-	private static function get_registration_stats() {
+	public static function get_registration_stats() {
 		$stats = array(
 			'total_products'      => 0,
 			'total_registrations' => 0,
@@ -431,9 +434,12 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 	/**
 	 * Get countries statistics.
 	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 4 W13c): the dashboards REST
+	 * controller consumes this as the dashboard's data provider.
+	 *
 	 * @return array Countries data.
 	 */
-	private static function get_countries_stats() {
+	public static function get_countries_stats() {
 		$countries = array();
 
 		$countries_query = new WP_Query(

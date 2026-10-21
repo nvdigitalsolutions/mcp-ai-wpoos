@@ -82,6 +82,14 @@ export const CONSOLE_NAV_ITEMS: ConsoleNavItem[] = [
     capability: 'manage_options',
   },
   { path: '/teams', label: 'Teams', icon: '👥', capability: 'manage_options' },
+  { path: '/crm', label: 'CRM', icon: '🏢', capability: 'manage_options' },
+  { path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options' },
+  { path: '/professions', label: 'Professions', icon: '👔', capability: 'manage_options' },
+  { path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options' },
+  { path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options' },
+  { path: '/dashboards', label: 'Dashboards', icon: '🧮', capability: 'manage_options' },
+  { path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options' },
+  { path: '/media-ops', label: 'Media Ops', icon: '🎞️', capability: 'manage_options' },
   {
     path: '/portability',
     label: 'Portability',
@@ -122,6 +130,12 @@ export const CONSOLE_NAV_ITEMS: ConsoleNavItem[] = [
     path: '/pro-ops',
     label: 'Pro Ops',
     icon: '🛰️',
+    capability: 'manage_options',
+  },
+  {
+    path: '/schedule-manager',
+    label: 'Schedules',
+    icon: '⏰',
     capability: 'manage_options',
   },
 ];

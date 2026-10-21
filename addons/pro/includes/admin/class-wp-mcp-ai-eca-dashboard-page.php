@@ -163,6 +163,19 @@ class WP_MCP_AI_ECA_Dashboard_Page {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ), 403 );
 		}
 
+		wp_send_json_success( self::get_dashboard_data() );
+	}
+
+	/**
+	 * Aggregate the dashboard data from ECA and Student CPTs.
+	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 4 W13c): the dashboards REST
+	 * controller consumes this as the dashboard's data provider; the AJAX
+	 * handler above sends the same payload unchanged.
+	 *
+	 * @return array Dashboard aggregates.
+	 */
+	public static function get_dashboard_data() {
 		// Get all ECAs.
 		$ecas = get_posts(
 			array(
@@ -313,29 +326,27 @@ class WP_MCP_AI_ECA_Dashboard_Page {
 			}
 		);
 
-		wp_send_json_success(
-			array(
-				'kpis'       => array(
-					'total_ecas'           => $total_ecas,
-					'total_students'       => $total_students,
-					'total_enrollments'    => $total_enrollments,
-					'total_capacity'       => $total_capacity,
-					'students_with_eca'    => $students_with_eca,
-					'participation_rate'   => $participation_rate,
-					'attendance_rate'      => $attendance_rate,
-					'capacity_rate'        => $capacity_rate,
-					'total_waitlisted'     => $total_waitlisted,
-					'avg_ecas_per_student' => $avg_ecas_per_student,
-					'active_count'         => $active_count,
-					'inactive_count'       => $inactive_count,
-					'full_count'           => $full_count,
-					'cancelled_count'      => $cancelled_count,
-					'attendance_sessions'  => $attendance_sessions,
-				),
-				'categories' => $categories,
-				'types'      => $types,
-				'ecas'       => $eca_list,
-			)
+		return array(
+			'kpis'       => array(
+				'total_ecas'           => $total_ecas,
+				'total_students'       => $total_students,
+				'total_enrollments'    => $total_enrollments,
+				'total_capacity'       => $total_capacity,
+				'students_with_eca'    => $students_with_eca,
+				'participation_rate'   => $participation_rate,
+				'attendance_rate'      => $attendance_rate,
+				'capacity_rate'        => $capacity_rate,
+				'total_waitlisted'     => $total_waitlisted,
+				'avg_ecas_per_student' => $avg_ecas_per_student,
+				'active_count'         => $active_count,
+				'inactive_count'       => $inactive_count,
+				'full_count'           => $full_count,
+				'cancelled_count'      => $cancelled_count,
+				'attendance_sessions'  => $attendance_sessions,
+			),
+			'categories' => $categories,
+			'types'      => $types,
+			'ecas'       => $eca_list,
 		);
 	}
 
