@@ -245,7 +245,11 @@ export function ChatChannelsPage(): JSX.Element {
 				</div>
 			) }
 
-			{ ! error && ! loading && conversations.length === 0 ? (
+			{ loading && conversations.length === 0 ? (
+				<div className="nvoos-pro-spa-tools-page__empty" role="status">
+					<p>{ __( 'Loading conversations…', 'nvoos-pro-spa' ) }</p>
+				</div>
+			) : ! error && conversations.length === 0 ? (
 				<div className="nvoos-pro-spa-tools-page__empty" role="status">
 					<p>{ __( 'No conversations found.', 'nvoos-pro-spa' ) }</p>
 				</div>

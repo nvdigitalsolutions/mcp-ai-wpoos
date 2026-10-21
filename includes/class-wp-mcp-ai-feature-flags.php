@@ -119,6 +119,25 @@ class WP_MCP_AI_Feature_Flags {
 			'document_editor' => self::document_editor(),
 			'pro'             => self::pro(),
 			'okf'             => self::okf(),
+			// Toolkit enable toggles — the console gates the command-center
+			// pages (CRM, Projects, Calendar, F&B) on these so disabled
+			// features do not show in the app.
+			'fnb'                => self::toolkit_flag( 'enable_fnb_toolkit' ),
+			'crm'                => self::toolkit_flag( 'enable_crm_toolkit' ),
+			'project_management' => self::toolkit_flag( 'enable_project_management' ),
+			'calendar_booking'   => self::toolkit_flag( 'enable_calendar_booking_toolkit' ),
 		);
+	}
+
+	/**
+	 * Read a boolean toolkit toggle from the plugin settings.
+	 *
+	 * @since 2.4.0
+	 * @param string $key Settings key (e.g. 'enable_fnb_toolkit').
+	 * @return bool
+	 */
+	private static function toolkit_flag( $key ) {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return is_array( $settings ) && ! empty( $settings[ $key ] );
 	}
 }

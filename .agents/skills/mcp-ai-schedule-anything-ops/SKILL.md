@@ -6,7 +6,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.8"
   plugin-version-tested: "1.2.8"
-  last-updated: "2026-10-20"
+  last-updated: "2026-10-22"
 ---
 
 # Schedule Anything SaaS — Operational Guide
@@ -69,6 +69,7 @@ registered in `addons/pro/includes/class-wp-mcp-ai-pro-module-registry.php`.
 | `GET /mcp-ai-pro/v1/toolkits` | `{ ok, toolkits: [{slug, flag_key, enabled}] }` — via `SA_Toolkit_Manager` (platform plugin); empty list without the platform |
 | `POST /mcp-ai-pro/v1/toolkits/{slug}/toggle` | `{ enabled }` body; unknown slug 404, tier-locked → 403 `sa_toolkit_not_entitled` (server-side entitlements — the SPA never decides) |
 | `GET /mcp-ai-pro/v1/sa-tools` | `{ ok, tools: [{slug, name, description, group, group_label}] }` — live-tool-registry light rows for the visual builder palette (#7147, since 1.2.8); args `search`/`group`/`page`/`per_page` (max 100); registers **unconditionally** (works without the platform plugin) |
+| `GET /mcp-ai-pro/v1/schedules` | `{ ok, schedules, total }` — owned by the schedule CRUD controller (the console + SA SPA contract). The scheduled-result picker moved to its own literal `/schedules/selectable` (bare `[{id, name, …}]` array, block-editor caller follows) so two GET handlers can never collide on one route (2026-10-22) |
 | `GET /mcp-ai-pro/v1/presets` | `{ ok, presets, total }`; search/category/toolkit/page/per_page |
 | `GET /mcp-ai-pro/v1/presets/{id}` | 404 `sa_preset_not_found` |
 | `POST /mcp-ai-pro/v1/presets/{id}/install` | idempotent: key `preset:{id}:h{sha256(overrides)}` in option `wp_mcp_ai_sa_installs`; replay returns the original schedule with `replayed: true` |
@@ -272,6 +273,14 @@ addon SPA):
   part of this app's backend). Any SPA-consumed Pro route must therefore
   ship in the complete zip. Never point `NVOOS_TARGET_SITE` at a URL you
   do not control — the proxy forwards cookies for those prefixes.
+- **Feature gating (2026-10-22):** the console nav + route guards gate
+  `/crm`, `/pm`, `/calendar`, `/fnb` on toolkit toggles from the features map
+  (`GET /mcp-ai/v1/features` now carries `crm`, `project_management`,
+  `calendar_booking`, `fnb` — fail-open when the map is absent), and the
+  dashboards catalogue (`/dashboards/schema`) is server-filtered by toolkit
+  flags — health/wellness, vitals, eca, law, cre and registration only
+  appear when their toolkit is enabled (their `/dashboards/{id}/data`
+  returns 404 `dashboards_unavailable` otherwise).
 - **Failure class "SPA ahead of the bundle"**: the SPA redeploys calling a
   newer route while the installed bundle predates it → that one route 404s
   while sibling routes still answer. Probe ladder (unauthenticated):

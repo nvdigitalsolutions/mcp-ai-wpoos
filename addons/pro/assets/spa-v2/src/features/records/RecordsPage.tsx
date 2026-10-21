@@ -24,10 +24,14 @@ function useRecords(
 	nonce: string
 ): {
 	entities: RecordEntityConfig[];
+	schemaLoading: boolean;
 	schemaError: string | null;
 	client: RecordsClient;
 } {
 	const [ entities, setEntities ] = useState< RecordEntityConfig[] >( [] );
+	// Distinct from `entities.length` so a genuinely empty schema (no
+	// entities for this group) never renders the loading state forever.
+	const [ schemaLoading, setSchemaLoading ] = useState< boolean >( true );
 	const [ schemaError, setSchemaError ] = useState< string | null >( null );
 
 	const client = useMemo(
@@ -37,6 +41,7 @@ function useRecords(
 
 	useEffect( () => {
 		if ( ! schemaEndpoint ) {
+			setSchemaLoading( false );
 			return;
 		}
 		let cancelled = false;
@@ -48,6 +53,7 @@ function useRecords(
 					return;
 				}
 				setEntities( Object.values( map ) );
+				setSchemaLoading( false );
 			} )
 			.catch( ( error: unknown ) => {
 				if ( cancelled ) {
@@ -56,6 +62,7 @@ function useRecords(
 				setSchemaError(
 					error instanceof Error ? error.message : __( 'Failed to load the record schema.', 'nvoos-pro-spa' )
 				);
+				setSchemaLoading( false );
 			} );
 		return () => {
 			cancelled = true;
@@ -63,7 +70,7 @@ function useRecords(
 		};
 	}, [ client, schemaEndpoint ] );
 
-	return { entities, schemaError, client };
+	return { entities, schemaLoading, schemaError, client };
 }
 
 /** Format a meta value for the list/detail cells. */
@@ -126,7 +133,7 @@ export interface RecordsPageProps {
 
 export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
-	const { entities: allEntities, schemaError, client } = useRecords(
+	const { entities: allEntities, schemaLoading, schemaError, client } = useRecords(
 		runtime?.endpoints.recordsSchema ?? '',
 		runtime?.endpoints.wpBase ?? '',
 		runtime?.nonce ?? ''
@@ -270,6 +277,18 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 				<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">
 					{ __( 'Runtime configuration not available. Please reload the page.', 'nvoos-pro-spa' ) }
 				</p>
+			</div>
+		);
+	}
+
+	if ( schemaLoading && allEntities.length === 0 ) {
+		return (
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--loading" aria-busy="true">
+				<h2 className="nvoos-pro-spa-page__title">{ pageCopy.title }</h2>
+				<div className="nvoos-pro-spa-page__loader" role="status">
+					<span className="nvoos-pro-spa-page__spinner" />
+					{ __( 'Loading records…', 'nvoos-pro-spa' ) }
+				</div>
 			</div>
 		);
 	}
@@ -447,7 +466,11 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 				</div>
 			) }
 
-			{ entity && ! error && ! loading && records.length === 0 ? (
+			{ entity && loading && records.length === 0 ? (
+				<div className="nvoos-pro-spa-tools-page__empty" role="status">
+					<p>{ __( 'Loading records…', 'nvoos-pro-spa' ) }</p>
+				</div>
+			) : entity && ! error && records.length === 0 ? (
 				<div className="nvoos-pro-spa-tools-page__empty" role="status">
 					<p>{ __( 'No records found.', 'nvoos-pro-spa' ) }</p>
 				</div>

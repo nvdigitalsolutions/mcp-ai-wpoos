@@ -38,9 +38,9 @@ describe('ConsoleSidebar', () => {
     window.localStorage.clear();
   });
 
-  it('renders every nav destination', () => {
+  it( 'renders every nav destination', () => {
     renderSidebar();
-    for (const label of [
+    for ( const label of [
       'Dashboard',
       'Chat',
       'Assistants',
@@ -52,10 +52,41 @@ describe('ConsoleSidebar', () => {
       'Media Studio',
       'Documents',
       'Settings',
-    ]) {
-      expect(screen.getByText(label)).toBeInTheDocument();
+    ] ) {
+      expect( screen.getByText( label ) ).toBeInTheDocument();
     }
-  });
+  } );
+
+  it( 'hides toolkit command centers when the server reports them disabled', () => {
+    renderSidebar( {
+      features: {
+        fnb: false,
+        crm: false,
+        project_management: false,
+        calendar_booking: false,
+      },
+    } );
+    for ( const label of [
+      'Food & Beverage',
+      'CRM',
+      'Projects',
+      'Calendar',
+    ] ) {
+      expect( screen.queryByText( label ) ).not.toBeInTheDocument();
+    }
+  } );
+
+  it( 'fails open when the feature map is absent', () => {
+    renderSidebar( { features: undefined } );
+    for ( const label of [
+      'Food & Beverage',
+      'CRM',
+      'Projects',
+      'Calendar',
+    ] ) {
+      expect( screen.getByText( label ) ).toBeInTheDocument();
+    }
+  } );
 
   it('marks the active route link', () => {
     renderSidebar();

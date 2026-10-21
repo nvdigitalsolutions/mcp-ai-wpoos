@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-rest-contract
-description: Audit NV oOS console SPA clients (addons/pro/assets/spa-v2/src/api/*.ts) against their WordPress REST controllers and fix contract drift — phantom fields, ignored params, missing routes/methods, admin-gated route registration (front-end SPA gets core 404s), envelope mismatches, field-name drift, and settings gates. Covers the audit path (config key → PHP emission → route → boot path → handler → response shape), the live REST-index route-presence cross-check, fix decision rules, the 2026-10-21 baseline + registration pass, parallel sub-agent delegation, and the validation matrix. Use when a console page shows blank or wrong data, when adding a console surface, or when asked to "audit the REST contracts".
+description: Audit NV oOS console SPA clients (addons/pro/assets/spa-v2/src/api/*.ts) against their WordPress REST controllers and fix contract drift — phantom fields, ignored params, missing routes/methods, admin-gated route registration (front-end SPA gets core 404s), envelope mismatches, field-name drift, settings gates, route collisions (last registrant silently wins), and empty-then-loaded loading-state flashes. Covers the audit path (config key → PHP emission → route → boot path → handler → response shape), the live REST-index route-presence cross-check, fix decision rules, the 2026-10-21 baseline + registration pass, parallel sub-agent delegation, and the validation matrix. Use when a console page shows blank or wrong data, when adding a console surface, or when asked to "audit the REST contracts".
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "2.4.0"
   plugin-version-tested: "2.4.0"
-  last-updated: "2026-10-21"
+  last-updated: "2026-10-22"
 ---
 
 # NV oOS Console SPA ↔ REST Contract Audit
@@ -68,6 +68,42 @@ the form read fields the directory never returned).
    asserts the routes exist after a fresh `rest_api_init` — the per-controller
    tests masked this bug with a manual-registration fallback, so pin the real
    boot path, not the class in isolation.
+9. **Route collision — two controllers register the same namespace + route
+   + method; the last registrant silently wins.** WP REST stores one handler
+   per route+method (`$routes[$route][$method] = $endpoint` — a later
+   `register_rest_route()` REPLACES the earlier one), so whichever controller
+   registers last on `rest_api_init` owns the route. Real case (2026-10-22):
+   the scheduled-result controller's picker and the schedule CRUD controller
+   both registered `GET /mcp-ai-pro/v1/schedules` — the picker returns a bare
+   `[{ id, name, … }]` array while the console + SA SPA expect the CRUD
+   `{ ok, schedules, total }` envelope. Whichever won, the other surface
+   silently broke (schedules list empty/blank while presets — a different
+   route — kept working). Diagnosis: grep the REST tree for duplicate route
+   strings (`grep -rn "'/schedules'" addons/pro/includes/rest/ includes/`),
+   check the module-registry boot order (`resolve_order()` preserves insertion
+   order for dep-free modules — later modules overwrite earlier ones), and
+   inspect `rest_get_server()->get_routes()` for the surviving handler. Fix:
+   move the lesser-consumed handler to its own literal sub-path (picker →
+   `/schedules/selectable`, its block-editor caller follows) so both shapes
+   always resolve; pin with a regression test that registers the conflicting
+   controller in the *losing* order (require the file after the other
+   controller registered) and asserts the surviving envelope
+   (`addons/pro/tests/test-pro-schedule-result-rest.php`).
+10. **Empty-then-loaded flashes — pages seed `useState([])`/`null` and render
+    the empty state before the fetch resolves.** Symptom: "shows empty for a
+    sec then loads in". Fix discipline: keep a loading flag distinct from the
+    data length (`schemaLoading` vs `entities.length === 0` — a genuinely
+    empty schema must never spin forever), gate the empty state on
+    `! loading`, and render a loading placeholder while in flight. Detail
+    forms are worse than cosmetic: the assistants edit form seeded
+    `system_prompt: ''` from the list row until `GET /assistants/{id}`
+    landed, so a premature save overwrote the stored prompt — disable form
+    saves (and show a "Loading…" cue) until the full record arrives. Swept
+    surfaces (2026-10-22): assistants edit form, RecordsPage, DashboardsPage
+    (schema + data), ChatChannelsPage. Already-safe patterns to copy:
+    MediaOpsPage's `bootstrapLoading || loading` early return, TeamsPage's
+    `loadingMembers` ternary, the console DashboardPage's `assistantsLoaded`
+    + `LoadingDash` stat placeholder.
 
 ## Audit path per client (4 hops, verify every hop)
 
@@ -125,6 +161,21 @@ schedule-manager (+ presets), portability, approvals, hitl, chatProfile,
 memory, threads, transcripts, toolShortcuts, slashCommands (chat drawer),
 triggers, okf, workflow-builder, workflow-presets, records list, media
 (wp/v2), config envelope. Re-audit only if one of these changes.
+
+**2026-10-22 additions:** the features map (`GET /mcp-ai/v1/features` →
+`WP_MCP_AI_Feature_Flags::all()`) now carries toolkit enable toggles —
+`fnb`, `crm`, `project_management`, `calendar_booking` — and the console nav
++ route guards gate `/fnb`, `/crm`, `/pm`, `/calendar` on them (fail-open
+when the map is absent). The dashboards catalogue (`/dashboards/schema`) is
+server-filtered by
+`WP_MCP_AI_Pro_Dashboards_REST_Controller::is_dashboard_available()` —
+disabled toolkits (health/wellness, vitals, eca, law, cre, registration) are
+omitted from the schema and their `/dashboards/{id}/data` returns 404
+`dashboards_unavailable`; re-audit tests must seed the `wp_mcp_ai_settings`
+toolkit flags (toolkits are default-off). `GET /mcp-ai-pro/v1/schedules` is
+owned exclusively by the schedule CRUD controller (`{ ok, schedules, total }`);
+the scheduled-result picker lives at `/schedules/selectable` (bare array) —
+bug class 9.
 
 **Registration pass (same-day follow-up):** the six Proposal 084 console
 bridges (ops overview, workflow-presets, workflow-builder node exec, records,

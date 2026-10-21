@@ -19,6 +19,8 @@ export interface UseScheduleManagerReturn {
 	presets: SchedulePreset[];
 	loading: boolean;
 	error: string | null;
+	/** Failure of the schedules list specifically (presets stay loaded). */
+	schedulesError: string | null;
 	actionError: string | null;
 	refresh: () => Promise< void >;
 	createSchedule: ( payload: Record< string, unknown > ) => Promise< boolean >;
@@ -40,6 +42,7 @@ export function useScheduleManager(
 	const [ presets, setPresets ] = useState< SchedulePreset[] >( [] );
 	const [ loading, setLoading ] = useState< boolean >( true );
 	const [ error, setError ] = useState< string | null >( null );
+	const [ schedulesError, setSchedulesError ] = useState< string | null >( null );
 	const [ actionError, setActionError ] = useState< string | null >( null );
 
 	const refresh = useCallback( async () => {
@@ -49,15 +52,34 @@ export function useScheduleManager(
 		}
 		setLoading( true );
 		setError( null );
+		setSchedulesError( null );
 		try {
-			const [ scheduleRows, presetRows ] = await Promise.all( [
+			// The two lists share the REST base but are separate requests —
+			// one failing must never blank the other, and the schedules tab
+			// must surface its own failure instead of a silent "No schedules
+			// yet." empty state.
+			const [ scheduleResult, presetResult ] = await Promise.allSettled( [
 				client.list(),
 				client.presets(),
 			] );
-			setSchedules( scheduleRows );
-			setPresets( presetRows );
-		} catch ( err ) {
-			setError( err instanceof Error ? err.message : String( err ) );
+			if ( scheduleResult.status === 'fulfilled' ) {
+				setSchedules( scheduleResult.value );
+			} else {
+				setSchedulesError(
+					scheduleResult.reason instanceof Error
+						? scheduleResult.reason.message
+						: String( scheduleResult.reason )
+				);
+			}
+			if ( presetResult.status === 'fulfilled' ) {
+				setPresets( presetResult.value );
+			} else {
+				setError(
+					presetResult.reason instanceof Error
+						? presetResult.reason.message
+						: String( presetResult.reason )
+				);
+			}
 		} finally {
 			setLoading( false );
 		}
@@ -112,6 +134,7 @@ export function useScheduleManager(
 		presets,
 		loading,
 		error,
+		schedulesError,
 		actionError,
 		refresh,
 		createSchedule,

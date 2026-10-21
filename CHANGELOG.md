@@ -19,6 +19,15 @@
 - **Presets pagination + facet filters** — `GET /presets` returns facet metadata (`filters.toolkits`/`filters.categories`) and the SPA loads pages progressively (`per_page=20` + load-more) instead of depending on the server default with no way to page (anything past `per_page` would be unreachable); the hardcoded filter dropdowns used underscore slugs that matched nothing in the hyphenated catalogue, so filtering by toolkit/category now uses the server facet values.
 - **Tests** — PHPUnit `test-sa-tools-rest.php` (permission gate, light rows, search, pagination, groups facet) + `test-toolkit-manager.php` (catalogue drift guard, ordering, idempotent admin capability grant, non-admin roles untouched) + toolkit REST entitlement assertions; SPA vitest `toolCatalogue.test.ts` (group accumulation, humanization, name fallback — suite 35).
 
+### Fixed — Complete Console: feature gating + schedule list
+
+- **No empty-then-loaded flashes on REST-driven pages** — the console pages that seed empty state before their REST fetch resolves now gate on an explicit loading state: the assistants edit form shows a "Loading assistant details…" cue (and blocks saving while the full record loads — a premature save used to overwrite the stored system prompt with ''), and the Records, Dashboards and Channels pages show loading placeholders instead of a blank list/panel while their schema or rows are in flight.
+
+- **Dashboards gate on toolkit toggles** — `GET /mcp-ai-pro/v1/dashboards/schema` omits dashboards whose toolkit is disabled (health/wellness, medical vitals, ECA, law-firm, CRE, registration) and `GET /dashboards/{id}/data` refuses them with 404 `dashboards_unavailable` — features that are off in the plugin no longer show in the console (e.g. Health & Wellbeing).
+- **Nav hides disabled command centers** — the feature map (`GET /mcp-ai/v1/features`) now carries the CRM / Projects / Calendar / Food & Beverage toolkit toggles, and the console sidebar + route guards gate those pages on them (fail-open when the map is absent).
+- **Schedule list route collision fixed** — the scheduled-result controller's picker moved from `GET /mcp-ai-pro/v1/schedules` (bare array) to its own literal `/schedules/selectable` (block editor follows); the CRUD controller's `{ ok, schedules, total }` envelope is now the unambiguous owner of `GET /schedules`, so the console and the Schedule Anything SPA reliably list Pro schedules — previously whichever controller registered last silently won.
+- **Console Schedule Manager resilience** — schedules and presets fetch independently; a failing schedules request surfaces its error in the Schedules tab instead of a silent "No schedules yet." empty state.
+
 ## [1.2.8] - 2026-10-19
 
 ### Added — Schedule Anything Platform: Single-Site (Sole Tenant) Mode (Proposal 082)
