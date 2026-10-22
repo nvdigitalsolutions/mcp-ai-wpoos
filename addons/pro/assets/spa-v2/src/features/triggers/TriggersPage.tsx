@@ -8,10 +8,15 @@
  * verified.
  */
 
-import { type JSX } from 'react';
+import { useMemo, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useTriggers } from '../../hooks/useTriggers';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import {
+	DataTable,
+	type DataTableColumn,
+	type DataTableRow,
+} from '../../components/shared/DataTable';
 
 export function TriggersPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
@@ -21,6 +26,67 @@ export function TriggersPage(): JSX.Element {
 				? { endpoint: runtime.endpoints.triggers, nonce: runtime.nonce }
 				: { endpoint: '', nonce: '' }
 		);
+
+const columns = useMemo< DataTableColumn[] >(
+	() => [
+		{ key: 'trigger', label: __( 'Trigger', 'nvoos-pro-spa' ), width: 'minmax(220px, 1.4fr)' },
+		{ key: 'type', label: __( 'Type', 'nvoos-pro-spa' ), width: '130px' },
+		{ key: 'workflow', label: __( 'Workflow', 'nvoos-pro-spa' ), width: '110px' },
+		{ key: 'last', label: __( 'Last fired', 'nvoos-pro-spa' ), width: '190px' },
+		{ key: 'actions', label: __( 'Actions', 'nvoos-pro-spa' ), width: 'minmax(200px, 0.8fr)' },
+	],
+	[]
+);
+
+const rows = useMemo< DataTableRow[] >(
+	() =>
+		triggers.map( ( trigger ) => ( {
+			id: trigger.id,
+			cells: [
+				<>
+					<strong className="nvoos-pro-spa-tools-list__name">
+						{ trigger.name }
+					</strong>
+					{ trigger.webhook_url ? (
+						<code className="nvoos-pro-spa-tools-list__slug">
+							{ trigger.webhook_url }
+						</code>
+					) : null }
+				</>,
+				<span className="nvoos-pro-spa-tools-list__badge">
+					{ trigger.type }
+				</span>,
+				<code className="nvoos-pro-spa-tools-list__capability">
+					#{ trigger.workflow_id }
+				</code>,
+				trigger.last_fired_at
+					? new Date( trigger.last_fired_at * 1000 ).toLocaleString()
+					: '—',
+				<div className="nvoos-pro-spa-approvals__actions">
+					<button
+						type="button"
+						className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
+						disabled={ mutating }
+						aria-pressed={ trigger.enabled }
+						onClick={ () => void toggleTrigger( trigger.id, ! trigger.enabled ) }
+					>
+						{ trigger.enabled
+							? __( 'Disable', 'nvoos-pro-spa' )
+							: __( 'Enable', 'nvoos-pro-spa' ) }
+					</button>
+					<button
+						type="button"
+						className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--danger nvoos-pro-spa-page__retry--small"
+						disabled={ mutating }
+						onClick={ () => void deleteTrigger( trigger.id ) }
+					>
+						{ __( 'Delete', 'nvoos-pro-spa' ) }
+					</button>
+				</div>,
+			],
+		} ) ),
+	[ triggers, mutating, toggleTrigger, deleteTrigger ]
+);
 
 	if ( bootstrapLoading || ( loading && triggers.length === 0 ) ) {
 		return (
@@ -81,75 +147,11 @@ export function TriggersPage(): JSX.Element {
 					<p>{ __( 'No workflow triggers registered.', 'nvoos-pro-spa' ) }</p>
 				</div>
 			) : (
-				<div
-					className="nvoos-pro-spa-tools-list"
-					role="list"
-					aria-label={ __( 'Workflow triggers', 'nvoos-pro-spa' ) }
-				>
-					<div className="nvoos-pro-spa-tools-list__header" role="row">
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Trigger', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Type', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Workflow', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Last fired', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Actions', 'nvoos-pro-spa' ) }
-						</div>
-					</div>
-					{ triggers.map( ( trigger ) => (
-						<div key={ trigger.id } className="nvoos-pro-spa-tools-list__row" role="row">
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								<strong className="nvoos-pro-spa-tools-list__name">{ trigger.name }</strong>
-								{ trigger.webhook_url ? (
-									<code className="nvoos-pro-spa-tools-list__slug">{ trigger.webhook_url }</code>
-								) : null }
-							</div>
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								<span className="nvoos-pro-spa-tools-list__badge">{ trigger.type }</span>
-							</div>
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								<code className="nvoos-pro-spa-tools-list__capability">
-									#{ trigger.workflow_id }
-								</code>
-							</div>
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								{ trigger.last_fired_at
-									? new Date( trigger.last_fired_at * 1000 ).toLocaleString()
-									: '—' }
-							</div>
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								<div className="nvoos-pro-spa-approvals__actions">
-									<button
-										type="button"
-										className="nvoos-pro-spa-page__retry"
-										disabled={ mutating }
-										aria-pressed={ trigger.enabled }
-										onClick={ () => void toggleTrigger( trigger.id, ! trigger.enabled ) }
-									>
-										{ trigger.enabled
-											? __( 'Disable', 'nvoos-pro-spa' )
-											: __( 'Enable', 'nvoos-pro-spa' ) }
-									</button>
-									<button
-										type="button"
-										className="nvoos-pro-spa-page__retry"
-										disabled={ mutating }
-										onClick={ () => void deleteTrigger( trigger.id ) }
-									>
-										{ __( 'Delete', 'nvoos-pro-spa' ) }
-									</button>
-								</div>
-							</div>
-						</div>
-					) ) }
-				</div>
+				<DataTable
+					columns={ columns }
+					rows={ rows }
+					caption={ __( 'Workflow triggers', 'nvoos-pro-spa' ) }
+				/>
 			) }
 
 			<footer className="nvoos-pro-spa-tools-page__footer">

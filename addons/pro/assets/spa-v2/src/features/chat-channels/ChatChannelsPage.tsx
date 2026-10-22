@@ -11,6 +11,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'rea
 import { __ } from '@wordpress/i18n';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import {
+	DataTable,
+	type DataTableColumn,
+	type DataTableRow,
+} from '../../components/shared/DataTable';
+import {
 	ChatChannelsClient,
 	type ChatConversation,
 	type ChatMessage,
@@ -148,6 +153,79 @@ export function ChatChannelsPage(): JSX.Element {
 
 	const listRef = useRef< HTMLDivElement >( null );
 
+	const conversationColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'contact',
+				label: __( 'Contact', 'nvoos-pro-spa' ),
+				width: 'minmax(220px, 1.2fr)',
+			},
+			{ key: 'channel', label: __( 'Channel', 'nvoos-pro-spa' ), width: '130px' },
+			{ key: 'status', label: __( 'Status', 'nvoos-pro-spa' ), width: '120px' },
+			{
+				key: 'last',
+				label: __( 'Last message', 'nvoos-pro-spa' ),
+				className: 'nvoos-pro-spa-tools-list__cell--desc',
+				width: 'minmax(160px, 0.8fr)',
+			},
+		],
+		[]
+	);
+
+	const conversationRows = useMemo< DataTableRow[] >(
+		() =>
+			conversations.map( ( conversation ) => ( {
+				id: conversation.id,
+				cells: [
+					<button
+						type="button"
+						className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
+						aria-expanded={ selected?.id === conversation.id }
+						onClick={ () => openConversation( conversation ) }
+					>
+						{ conversation.display_name ||
+							conversation.phone_number ||
+							conversation.email }
+					</button>,
+					<span className="nvoos-pro-spa-tools-list__badge">
+						{ conversation.channel }
+					</span>,
+					<span className="nvoos-pro-spa-tools-list__badge">
+						{ conversation.crm_status }
+					</span>,
+					formatWhen( conversation.last_message_at ),
+				],
+			} ) ),
+		[ conversations, selected, openConversation ]
+	);
+
+	const messageColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{ key: 'direction', label: __( 'Direction', 'nvoos-pro-spa' ), width: '110px' },
+			{
+				key: 'content',
+				label: __( 'Message', 'nvoos-pro-spa' ),
+				className: 'nvoos-pro-spa-tools-list__cell--desc',
+				width: 'minmax(280px, 1fr)',
+			},
+		],
+		[]
+	);
+
+	const messageRows = useMemo< DataTableRow[] >(
+		() =>
+			messages.map( ( message, index ) => ( {
+				id: message.id ?? index,
+				cells: [
+					<span className="nvoos-pro-spa-tools-list__badge">
+						{ typeof message.direction === 'string' ? message.direction : '' }
+					</span>,
+					String( message.content ?? '' ),
+				],
+			} ) ),
+		[ messages ]
+	);
+
 	if ( bootstrapLoading ) {
 		return (
 			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--loading" aria-busy="true">
@@ -254,31 +332,11 @@ export function ChatChannelsPage(): JSX.Element {
 					<p>{ __( 'No conversations found.', 'nvoos-pro-spa' ) }</p>
 				</div>
 			) : (
-				<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Conversations', 'nvoos-pro-spa' ) }>
-					{ conversations.map( ( conversation ) => (
-						<div key={ conversation.id } className="nvoos-pro-spa-tools-list__row" role="row">
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								<button
-									type="button"
-									className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
-									aria-expanded={ selected?.id === conversation.id }
-									onClick={ () => openConversation( conversation ) }
-								>
-									{ conversation.display_name || conversation.phone_number || conversation.email }
-								</button>
-							</div>
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								<span className="nvoos-pro-spa-tools-list__badge">{ conversation.channel }</span>
-							</div>
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								<span className="nvoos-pro-spa-tools-list__badge">{ conversation.crm_status }</span>
-							</div>
-							<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-								{ formatWhen( conversation.last_message_at ) }
-							</div>
-						</div>
-					) ) }
-				</div>
+				<DataTable
+					columns={ conversationColumns }
+					rows={ conversationRows }
+					caption={ __( 'Conversations', 'nvoos-pro-spa' ) }
+				/>
 			) }
 
 			{ selected && (
@@ -299,20 +357,12 @@ export function ChatChannelsPage(): JSX.Element {
 					) : messages.length === 0 ? (
 						<p className="nvoos-pro-spa-page__subtitle">{ __( 'No messages yet.', 'nvoos-pro-spa' ) }</p>
 					) : (
-						<div className="nvoos-pro-spa-tools-list" role="log" aria-label={ __( 'Messages', 'nvoos-pro-spa' ) }>
-							{ messages.map( ( message, index ) => (
-								<div key={ message.id ?? index } className="nvoos-pro-spa-tools-list__row" role="row">
-									<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-										<span className="nvoos-pro-spa-tools-list__badge">
-											{ typeof message.direction === 'string' ? message.direction : '' }
-										</span>
-									</div>
-									<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-										{ String( message.content ?? '' ) }
-									</div>
-								</div>
-							) ) }
-						</div>
+						<DataTable
+							columns={ messageColumns }
+							rows={ messageRows }
+							caption={ __( 'Messages', 'nvoos-pro-spa' ) }
+							hideHeader
+						/>
 					) }
 
 					{ notice && (
@@ -338,7 +388,7 @@ export function ChatChannelsPage(): JSX.Element {
 							value={ replyText }
 							onChange={ ( event ) => setReplyText( event.target.value ) }
 						/>
-						<button type="submit" className="nvoos-pro-spa-page__retry" disabled={ replyBusy }>
+						<button type="submit" className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary" disabled={ replyBusy }>
 							{ replyBusy ? __( 'Sending…', 'nvoos-pro-spa' ) : __( 'Send', 'nvoos-pro-spa' ) }
 						</button>
 					</form>
