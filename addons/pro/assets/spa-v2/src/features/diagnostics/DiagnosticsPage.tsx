@@ -11,6 +11,11 @@ import { useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useDiagnostics } from '../../hooks/useDiagnostics';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import {
+	DataTable,
+	type DataTableColumn,
+	type DataTableRow,
+} from '../../components/shared/DataTable';
 import type {
 	DiagnosticsHealth,
 	DiagnosticsSystem,
@@ -60,6 +65,31 @@ function HealthCard( { health }: { health: DiagnosticsHealth } ): JSX.Element {
 	const checks = health.checks ?? {};
 	const entries = Object.entries( checks );
 
+	const columns: DataTableColumn[] = [
+		{ key: 'check', label: __( 'Check', 'nvoos-pro-spa' ), width: 'minmax(180px, 1fr)' },
+		{ key: 'status', label: __( 'Status', 'nvoos-pro-spa' ), width: '110px' },
+		{
+			key: 'message',
+			label: __( 'Message', 'nvoos-pro-spa' ),
+			className: 'nvoos-pro-spa-tools-list__cell--desc',
+			width: 'minmax(240px, 2fr)',
+		},
+	];
+
+	const rows: DataTableRow[] = entries.map( ( [ key, check ] ) => {
+		const value = ( check ?? {} ) as Record< string, unknown >;
+		const status = typeof value.status === 'string' ? value.status : 'unknown';
+		const message = typeof value.message === 'string' ? value.message : '';
+		return {
+			id: key,
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ key }</strong>,
+				<StatusBadge status={ status } />,
+				message || '—',
+			],
+		};
+	} );
+
 	return (
 		<section className="nvoos-pro-spa-diagnostics__card">
 			<h3 className="nvoos-pro-spa-diagnostics__card-title">
@@ -70,105 +100,173 @@ function HealthCard( { health }: { health: DiagnosticsHealth } ): JSX.Element {
 					{ __( 'No subsystem checks reported.', 'nvoos-pro-spa' ) }
 				</p>
 			) : (
-				<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Health checks', 'nvoos-pro-spa' ) }>
-					{ entries.map( ( [ key, check ] ) => {
-						const value = ( check ?? {} ) as Record< string, unknown >;
-						const status = typeof value.status === 'string' ? value.status : 'unknown';
-						const message = typeof value.message === 'string' ? value.message : '';
-						return (
-							<div key={ key } className="nvoos-pro-spa-tools-list__row" role="listitem">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">{ key }</strong>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<StatusBadge status={ status } />
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-									{ message || '—' }
-								</div>
-							</div>
-						);
-					} ) }
-				</div>
+				<DataTable
+					columns={ columns }
+					rows={ rows }
+					caption={ __( 'Health checks', 'nvoos-pro-spa' ) }
+				/>
 			) }
 		</section>
 	);
 }
 
 function SystemCard( { system }: { system: DiagnosticsSystem } ): JSX.Element {
-	const rows: Array< [ string, string ] > = [
-		[ __( 'WordPress', 'nvoos-pro-spa' ), system.wp_version ],
-		[ __( 'PHP', 'nvoos-pro-spa' ), system.php_version ],
-		[ __( 'Plugin', 'nvoos-pro-spa' ), system.plugin_version ],
-		[ __( 'Memory limit', 'nvoos-pro-spa' ), system.memory_limit ],
+	const columns: DataTableColumn[] = [
+		{
+			key: 'setting',
+			label: __( 'Setting', 'nvoos-pro-spa' ),
+			width: 'minmax(180px, 1fr)',
+		},
+		{ key: 'value', label: __( 'Value', 'nvoos-pro-spa' ), width: 'minmax(160px, 1fr)' },
+	];
+
+	const rows: DataTableRow[] = [
+		{
+			id: 'wp',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'WordPress', 'nvoos-pro-spa' ) }</strong>,
+				<code className="nvoos-pro-spa-tools-list__slug">{ system.wp_version || '—' }</code>,
+			],
+		},
+		{
+			id: 'php',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'PHP', 'nvoos-pro-spa' ) }</strong>,
+				<code className="nvoos-pro-spa-tools-list__slug">{ system.php_version || '—' }</code>,
+			],
+		},
+		{
+			id: 'plugin',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'Plugin', 'nvoos-pro-spa' ) }</strong>,
+				<code className="nvoos-pro-spa-tools-list__slug">{ system.plugin_version || '—' }</code>,
+			],
+		},
+		{
+			id: 'memory',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'Memory limit', 'nvoos-pro-spa' ) }</strong>,
+				<code className="nvoos-pro-spa-tools-list__slug">{ system.memory_limit || '—' }</code>,
+			],
+		},
+		{
+			id: 'multisite',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'Multisite', 'nvoos-pro-spa' ) }</strong>,
+				<BooleanBadge value={ system.is_multisite } />,
+			],
+		},
 	];
 
 	return (
 		<section className="nvoos-pro-spa-diagnostics__card">
 			<h3 className="nvoos-pro-spa-diagnostics__card-title">{ __( 'System', 'nvoos-pro-spa' ) }</h3>
-			<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'System facts', 'nvoos-pro-spa' ) }>
-				{ rows.map( ( [ label, value ] ) => (
-					<div key={ label } className="nvoos-pro-spa-tools-list__row" role="listitem">
-						<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-							<strong className="nvoos-pro-spa-tools-list__name">{ label }</strong>
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-							<code className="nvoos-pro-spa-tools-list__slug">{ value || '—' }</code>
-						</div>
-					</div>
-				) ) }
-				<div className="nvoos-pro-spa-tools-list__row" role="listitem">
-					<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-						<strong className="nvoos-pro-spa-tools-list__name">{ __( 'Multisite', 'nvoos-pro-spa' ) }</strong>
-					</div>
-					<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-						<BooleanBadge value={ system.is_multisite } />
-					</div>
-				</div>
-			</div>
+			<DataTable
+				columns={ columns }
+				rows={ rows }
+				caption={ __( 'System facts', 'nvoos-pro-spa' ) }
+			/>
 		</section>
 	);
 }
 
 function McpServerCard( { mcp }: { mcp: DiagnosticsMcpServer } ): JSX.Element {
-	const rows: Array< [ string, boolean ] > = [
-		[ __( 'Auth0 configured', 'nvoos-pro-spa' ), mcp.auth0_configured ],
-		[ __( 'Federation enabled', 'nvoos-pro-spa' ), mcp.federation_enabled ],
-		[ __( 'Federation directory enabled', 'nvoos-pro-spa' ), mcp.federation_directory_enabled ],
-		[ __( 'Mesh enabled', 'nvoos-pro-spa' ), mcp.mesh_enabled ],
-		[ __( 'MCP REST routes present', 'nvoos-pro-spa' ), mcp.mcp_routes_present ],
+	const columns: DataTableColumn[] = [
+		{
+			key: 'setting',
+			label: __( 'Setting', 'nvoos-pro-spa' ),
+			width: 'minmax(220px, 1.5fr)',
+		},
+		{ key: 'value', label: __( 'Value', 'nvoos-pro-spa' ), width: 'minmax(120px, 1fr)' },
+	];
+
+	const rows: DataTableRow[] = [
+		{
+			id: 'auth0',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'Auth0 configured', 'nvoos-pro-spa' ) }</strong>,
+				<BooleanBadge value={ mcp.auth0_configured } />,
+			],
+		},
+		{
+			id: 'federation',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'Federation enabled', 'nvoos-pro-spa' ) }</strong>,
+				<BooleanBadge value={ mcp.federation_enabled } />,
+			],
+		},
+		{
+			id: 'federation-directory',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'Federation directory enabled', 'nvoos-pro-spa' ) }</strong>,
+				<BooleanBadge value={ mcp.federation_directory_enabled } />,
+			],
+		},
+		{
+			id: 'mesh',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'Mesh enabled', 'nvoos-pro-spa' ) }</strong>,
+				<BooleanBadge value={ mcp.mesh_enabled } />,
+			],
+		},
+		{
+			id: 'routes',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'MCP REST routes present', 'nvoos-pro-spa' ) }</strong>,
+				<BooleanBadge value={ mcp.mcp_routes_present } />,
+			],
+		},
+		{
+			id: 'tool-count',
+			cells: [
+				<strong className="nvoos-pro-spa-tools-list__name">{ __( 'Registered tools', 'nvoos-pro-spa' ) }</strong>,
+				<code className="nvoos-pro-spa-tools-list__slug">
+					{ mcp.tool_count >= 0 ? mcp.tool_count : '—' }
+				</code>,
+			],
+		},
 	];
 
 	return (
 		<section className="nvoos-pro-spa-diagnostics__card">
 			<h3 className="nvoos-pro-spa-diagnostics__card-title">{ __( 'MCP Server', 'nvoos-pro-spa' ) }</h3>
-			<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'MCP server facts', 'nvoos-pro-spa' ) }>
-				{ rows.map( ( [ label, value ] ) => (
-					<div key={ label } className="nvoos-pro-spa-tools-list__row" role="listitem">
-						<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-							<strong className="nvoos-pro-spa-tools-list__name">{ label }</strong>
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-							<BooleanBadge value={ value } />
-						</div>
-					</div>
-				) ) }
-				<div className="nvoos-pro-spa-tools-list__row" role="listitem">
-					<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-						<strong className="nvoos-pro-spa-tools-list__name">{ __( 'Registered tools', 'nvoos-pro-spa' ) }</strong>
-					</div>
-					<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-						<code className="nvoos-pro-spa-tools-list__slug">
-							{ mcp.tool_count >= 0 ? mcp.tool_count : '—' }
-						</code>
-					</div>
-				</div>
-			</div>
+			<DataTable
+				columns={ columns }
+				rows={ rows }
+				caption={ __( 'MCP server facts', 'nvoos-pro-spa' ) }
+			/>
 		</section>
 	);
 }
 
 function ProvidersCard( { providers }: { providers: ProviderDiagnostic[] } ): JSX.Element {
+	const columns: DataTableColumn[] = [
+		{
+			key: 'provider',
+			label: __( 'Provider', 'nvoos-pro-spa' ),
+			width: 'minmax(180px, 1fr)',
+		},
+		{ key: 'credentials', label: __( 'Credentials', 'nvoos-pro-spa' ), width: '120px' },
+		{
+			key: 'source',
+			label: __( 'Key source', 'nvoos-pro-spa' ),
+			className: 'nvoos-pro-spa-tools-list__cell--desc',
+			width: 'minmax(160px, 1fr)',
+		},
+	];
+
+	const rows: DataTableRow[] = providers.map( ( provider ) => ( {
+		id: provider.slug,
+		cells: [
+			<>
+				<strong className="nvoos-pro-spa-tools-list__name">{ provider.label }</strong>
+				<code className="nvoos-pro-spa-tools-list__slug">{ provider.slug }</code>
+			</>,
+			<BooleanBadge value={ provider.has_credentials } />,
+			provider.key_source,
+		],
+	} ) );
+
 	return (
 		<section className="nvoos-pro-spa-diagnostics__card">
 			<h3 className="nvoos-pro-spa-diagnostics__card-title">
@@ -179,22 +277,11 @@ function ProvidersCard( { providers }: { providers: ProviderDiagnostic[] } ): JS
 					{ __( 'No enabled providers reported.', 'nvoos-pro-spa' ) }
 				</p>
 			) : (
-				<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Provider status', 'nvoos-pro-spa' ) }>
-					{ providers.map( ( provider ) => (
-						<div key={ provider.slug } className="nvoos-pro-spa-tools-list__row" role="listitem">
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								<strong className="nvoos-pro-spa-tools-list__name">{ provider.label }</strong>
-								<code className="nvoos-pro-spa-tools-list__slug">{ provider.slug }</code>
-							</div>
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								<BooleanBadge value={ provider.has_credentials } />
-							</div>
-							<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-								{ provider.key_source }
-							</div>
-						</div>
-					) ) }
-				</div>
+				<DataTable
+					columns={ columns }
+					rows={ rows }
+					caption={ __( 'Provider status', 'nvoos-pro-spa' ) }
+				/>
 			) }
 		</section>
 	);
@@ -323,24 +410,35 @@ export function DiagnosticsPage(): JSX.Element {
 						{ __( 'REST context diagnostics not available.', 'nvoos-pro-spa' ) }
 					</p>
 				) : (
-					<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'REST context facts', 'nvoos-pro-spa' ) }>
-						{ Object.entries( overview.rest_context ).map( ( [ key, value ] ) => (
-							<div key={ key } className="nvoos-pro-spa-tools-list__row" role="listitem">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">{ key }</strong>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-									{ typeof value === 'boolean' ? (
-										<BooleanBadge value={ value } />
-									) : Array.isArray( value ) ? (
-										value.join( ', ' )
-									) : (
-										String( value )
-									) }
-								</div>
-							</div>
-						) ) }
-					</div>
+					<DataTable
+						columns={ [
+							{
+								key: 'fact',
+								label: __( 'Fact', 'nvoos-pro-spa' ),
+								width: 'minmax(200px, 1fr)',
+							},
+							{
+								key: 'value',
+								label: __( 'Value', 'nvoos-pro-spa' ),
+								className: 'nvoos-pro-spa-tools-list__cell--desc',
+								width: 'minmax(240px, 2fr)',
+							},
+						] }
+						rows={ Object.entries( overview.rest_context ).map( ( [ key, value ] ) => ( {
+							id: key,
+							cells: [
+								<strong className="nvoos-pro-spa-tools-list__name">{ key }</strong>,
+								typeof value === 'boolean' ? (
+									<BooleanBadge value={ value } />
+								) : Array.isArray( value ) ? (
+									value.join( ', ' )
+								) : (
+									String( value )
+								),
+							],
+						} ) ) }
+						caption={ __( 'REST context facts', 'nvoos-pro-spa' ) }
+					/>
 				) }
 			</section>
 

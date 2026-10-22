@@ -13,6 +13,11 @@ import { __ } from '@wordpress/i18n';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import { renderChartRecipe } from '../../components/shared/chartRecipes';
 import {
+	DataTable,
+	type DataTableColumn,
+	type DataTableRow,
+} from '../../components/shared/DataTable';
+import {
 	DashboardsClient,
 	distributionChartSpec,
 	formatMetric,
@@ -267,14 +272,14 @@ export function DashboardsPage(): JSX.Element {
 
 			{ dashboard && data && (
 				<>
-					<div className="nvoos-pro-spa-records-detail__grid" role="list">
+					<dl className="nvoos-pro-spa-records-detail__grid">
 						{ dashboard.metrics.map( ( metric ) => (
-							<div key={ metric.key } className="nvoos-pro-spa-records-detail__item" role="listitem">
+							<div key={ metric.key } className="nvoos-pro-spa-records-detail__item">
 								<dt>{ metric.label }</dt>
 								<dd>{ formatMetric( data[ metric.key ], metric.format ) }</dd>
 							</div>
 						) ) }
-					</div>
+					</dl>
 
 					{ ( () => {
 						const charts = ( dashboard.charts ?? [] )
@@ -287,18 +292,17 @@ export function DashboardsPage(): JSX.Element {
 							)
 							.filter( ( spec ) => spec !== '' );
 						return charts.length > 0 ? (
-							<div className="nvoos-pro-spa-records-detail__grid" role="list">
+							<ul className="nvoos-pro-spa-records-detail__grid nvoos-pro-spa-records-detail__grid--list">
 								{ charts.map( ( spec ) => (
-									<div
+									<li
 										key={ spec }
 										className="nvoos-pro-spa-records-detail__item nvoos-pro-spa-dashboards-chart"
-										role="listitem"
 										// renderChartRecipe builds its HTML with textContent
 										// only — values are inert by construction.
 										dangerouslySetInnerHTML={ { __html: renderChartRecipe( spec ) } }
 									/>
 								) ) }
-							</div>
+							</ul>
 						) : null;
 					} )() }
 
@@ -307,35 +311,39 @@ export function DashboardsPage(): JSX.Element {
 						if ( ! Array.isArray( rows ) || rows.length === 0 ) {
 							return null;
 						}
+						const tableColumns: DataTableColumn[] = list.columns.map(
+							( column ) => ( {
+								key: column.key,
+								label: column.label,
+								className: column.format
+									? 'nvoos-pro-spa-tools-list__cell--num'
+									: 'nvoos-pro-spa-tools-list__cell--desc',
+							} )
+						);
+						const tableRows: DataTableRow[] = (
+							rows as Record< string, unknown >[]
+						).map( ( row, index ) => {
+							return {
+								id: String( row.id ?? index ),
+								cells: list.columns.map( ( column ) =>
+									column.format
+										? formatMetric( row[ column.key ], column.format )
+										: String( row[ column.key ] ?? '—' )
+								),
+							};
+						} );
 						return (
-							<section key={ list.key } className="nvoos-pro-spa-records-detail" aria-label={ list.title }>
+							<section
+								key={ list.key }
+								className="nvoos-pro-spa-records-detail"
+								aria-label={ list.title }
+							>
 								<h3 className="nvoos-pro-spa-records-detail__title">{ list.title }</h3>
-								<div className="nvoos-pro-spa-tools-list" role="table" aria-label={ list.title }>
-									{ ( rows as Record< string, unknown >[] ).map( ( row, index ) => (
-										<div
-											key={ String( row.id ?? index ) }
-											className="nvoos-pro-spa-tools-list__row"
-											role="row"
-										>
-											{ list.columns.map( ( column ) => (
-												<div
-													key={ column.key }
-													className={
-														'nvoos-pro-spa-tools-list__cell' +
-														( column.format
-															? ''
-															: ' nvoos-pro-spa-tools-list__cell--desc' )
-													}
-													role="cell"
-												>
-													{ column.format
-														? formatMetric( row[ column.key ], column.format )
-														: String( row[ column.key ] ?? '—' ) }
-												</div>
-											) ) }
-										</div>
-									) ) }
-								</div>
+								<DataTable
+									columns={ tableColumns }
+									rows={ tableRows }
+									caption={ list.title }
+								/>
 							</section>
 						);
 					} ) }

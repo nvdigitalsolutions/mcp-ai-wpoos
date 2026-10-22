@@ -8,10 +8,15 @@
  * until parity is verified.
  */
 
-import { type JSX } from 'react';
+import { useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useSecurityCenter } from '../../hooks/useSecurityCenter';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import {
+	DataTable,
+	type DataTableColumn,
+	type DataTableRow,
+} from '../../components/shared/DataTable';
 
 export function SecurityCenterPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
@@ -31,6 +36,49 @@ export function SecurityCenterPage(): JSX.Element {
 		runtime
 			? { endpoint: runtime.endpoints.security ?? '', nonce: runtime.nonce }
 			: { endpoint: '', nonce: '' }
+	);
+
+	const [ saveBusy, setSaveBusy ] = useState< boolean >( false );
+	const [ testBusy, setTestBusy ] = useState< boolean >( false );
+
+	const columns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'snapshot',
+				label: __( 'Snapshot', 'nvoos-pro-spa' ),
+				width: 'minmax(240px, 2fr)',
+			},
+			{
+				key: 'actions',
+				label: __( 'Actions', 'nvoos-pro-spa' ),
+				width: '140px',
+			},
+		],
+		[]
+	);
+
+	const rows = useMemo< DataTableRow[] >(
+		() =>
+			snapshots.map( ( snapshot ) => {
+				const key = String( snapshot.snapshot_id ?? snapshot.id ?? '' );
+				return {
+					id: key,
+					cells: [
+						<strong className="nvoos-pro-spa-tools-list__name">
+							{ String( snapshot.label ?? key ) }
+						</strong>,
+						<button
+							type="button"
+							className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
+							disabled={ busy }
+							onClick={ () => void restoreSnapshot( key ) }
+						>
+							{ __( 'Restore', 'nvoos-pro-spa' ) }
+						</button>,
+					],
+				};
+			} ),
+		[ snapshots, busy, restoreSnapshot ]
 	);
 
 	if ( bootstrapLoading || ( loading && ! posture ) ) {
@@ -90,19 +138,29 @@ export function SecurityCenterPage(): JSX.Element {
 			<div className="nvoos-pro-spa-tools-page__controls" aria-label={ __( 'Security actions', 'nvoos-pro-spa' ) }>
 				<button
 					type="button"
-					className="nvoos-pro-spa-page__retry"
-					disabled={ busy }
-					onClick={ () => void saveSnapshot() }
+					className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary"
+					disabled={ busy || saveBusy }
+					onClick={ () => {
+						setSaveBusy( true );
+						void saveSnapshot().finally( () => setSaveBusy( false ) );
+					} }
 				>
-					{ __( 'Save snapshot', 'nvoos-pro-spa' ) }
+					{ saveBusy
+						? __( 'Saving…', 'nvoos-pro-spa' )
+						: __( 'Save snapshot', 'nvoos-pro-spa' ) }
 				</button>
 				<button
 					type="button"
 					className="nvoos-pro-spa-page__retry"
-					disabled={ busy }
-					onClick={ () => void runSelfTest() }
+					disabled={ busy || testBusy }
+					onClick={ () => {
+						setTestBusy( true );
+						void runSelfTest().finally( () => setTestBusy( false ) );
+					} }
 				>
-					{ __( 'Run self-test', 'nvoos-pro-spa' ) }
+					{ testBusy
+						? __( 'Testing…', 'nvoos-pro-spa' )
+						: __( 'Run self-test', 'nvoos-pro-spa' ) }
 				</button>
 			</div>
 
@@ -139,29 +197,11 @@ export function SecurityCenterPage(): JSX.Element {
 				{ snapshots.length === 0 ? (
 					<p>{ __( 'No snapshots saved.', 'nvoos-pro-spa' ) }</p>
 				) : (
-					<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Snapshots', 'nvoos-pro-spa' ) }>
-						{ snapshots.map( ( snapshot ) => (
-							<div key={ String( snapshot.snapshot_id ?? snapshot.id ?? '' ) } className="nvoos-pro-spa-tools-list__row">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">
-										{ String( snapshot.label ?? snapshot.snapshot_id ?? snapshot.id ?? '' ) }
-									</strong>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<button
-										type="button"
-										className="nvoos-pro-spa-page__retry"
-										disabled={ busy }
-										onClick={ () =>
-											void restoreSnapshot( String( snapshot.snapshot_id ?? snapshot.id ?? '' ) )
-										}
-									>
-										{ __( 'Restore', 'nvoos-pro-spa' ) }
-									</button>
-								</div>
-							</div>
-						) ) }
-					</div>
+					<DataTable
+						columns={ columns }
+						rows={ rows }
+						caption={ __( 'Saved security snapshots', 'nvoos-pro-spa' ) }
+					/>
 				) }
 			</section>
 		</div>
