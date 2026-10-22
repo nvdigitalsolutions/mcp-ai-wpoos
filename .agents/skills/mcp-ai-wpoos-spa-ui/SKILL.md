@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-ui
-description: UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns plus the standalone Pro SPA Vite app (examples/nvoos-pro-spa-vite), dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map, and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging.
+description: UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns plus the standalone Pro SPA Vite app (examples/nvoos-pro-spa-vite), dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map (incl. staleness detection and the vendor never-commit rule), and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -534,6 +534,59 @@ bundle: #7158's squash only carried the plugin bundle, the console
 none of the fixes until #7159. After any rebuild-PR merge, verify each
 rebuild commit is an ancestor of the target branch
 (`git merge-base --is-ancestor <sha> origin/alpha-working`).
+
+### Rebuild discipline — staleness, vendor, drift (learned 2026-10-22)
+
+**Lockfile movement stales tracked bundles.** Any commit that changes
+`package-lock.json` without a rebuild (advisory patches #7175/#7106, dep
+bumps) leaves the bundles in git embedding the old dependency graph.
+Signature: `git status` shows modified `*.bundle.js`/`dist/` files whose
+sources are clean, and `git log --oneline origin/alpha-working --
+package-lock.json` is newer than `git log --oneline -1 -- <bundle>`.
+Prove it is dependency-internal churn with a marker grep — committed vs
+fresh `grep -c EXPANSION_MAX_DEPTH addons/pro/bin/generate-excel.bundle.js`
+went 2 → 0 after the brace-expansion override moved. Fix: run the full map
+above and PR the artifact diffs. Verified 2026-10-22 (PR #7182): 16 files
+— chat-spa, librechat, legacy spa, the three `generate-*` worker bundles,
+2 of 4 TMA entries, saas drift-manifest, root chat/http-client assets;
+spa-v2 + complete-velocity came out byte-identical (rebuilt same-day).
+
+**Vendor is tracked in production state — never commit composer regen.**
+`composer install` rewrites `vendor/composer/autoload_*.php` +
+`installed.{json,php}` to the dev flavor; committing them breaks cloning
+the repo as a production plugin (PR #7179 was reverted for exactly this;
+#7180 re-applied the work without vendor). Keep the regen as local-only
+dirt — it is what makes `vendor/bin/phpunit` runnable. Pre-commit gate
+before ANY commit: `git diff --cached --name-only | grep -E '^vendor/'`
+must print nothing.
+
+**node_modules drift vs lockfile.** `npm ci --dry-run` reveals drift in a
+shared worktree. Before rebuilding, check whether drift touches the bundle
+chains (`npm ls <pkg>` vs the lockfile entries) — a rebuild with drifted
+`node_modules` bakes non-lockfile versions into committed bundles. Bare
+`npm ci` in a shared worktree is risky: npm 12 blocks install scripts by
+default (esbuild postinstall among them) and `.npmrc` sets `omit=optional`;
+if an addon build then fails for a missing esbuild binary, remove the
+addon's `node_modules/esbuild` so resolution falls back to the working
+root copy.
+
+**Standalone addon deps are not hoisted (no workspaces).** `chat-spa`'s
+`@ai-sdk/react@1.2.12` exists only in its own committed
+`package-lock.json`; a build failing with "Could not resolve <pkg>" means
+the addon's `node_modules` is missing — run `npm ci` inside the addon dir
+(not the root), then rebuild.
+
+**Reverting a bad merge on a shared branch.** When a rebuild (or any)
+squash lands with unintended paths and other commits have arrived on top
+of `alpha-working`, force-push is off the table. Revert in a throwaway
+worktree: `git worktree add <tmp>` → `git revert --no-edit <merge-sha>` →
+push → `git worktree remove`. Drive it with `git -C <tmp> …` because the
+temp path is outside the terminal tool's allowed project roots. Then
+rewrite the feature branch without the offending paths and re-PR.
+
+**PR merge discipline.** Create the PR and stop — merge only when the
+user explicitly asks for the merge. Never self-merge a PR off the back of
+an inferred intent.
 
 ## TS-shadows-JS resolution gotcha (wp-scripts)
 

@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dependabot-loop
-description: "Operational guide for the NV oOS Dependabot alert triage-and-remediation loop: querying open alerts via gh api, separating stale from genuinely vulnerable lockfile entries (default-branch forensics), deciding between safe in-major override bumps, scoped overrides, or deferred major migrations (npm pack signature diffing), regenerating the 13-lockfile tree, dismissing alerts with the right reason, GitHub issue housekeeping, and triaging the known CI failure modes. Use when asked to fix dependabot alerts, close out dependabot issues, bump vulnerable npm packages, or resume a dependabot session."
+description: "Operational guide for the NV oOS Dependabot alert triage-and-remediation loop: querying open alerts via gh api, separating stale from genuinely vulnerable lockfile entries (default-branch forensics), deciding between safe in-major override bumps, scoped overrides, or deferred major migrations (npm pack signature diffing), regenerating the 13-lockfile tree, rebuilding the tracked JS bundles that lockfile movement stales, dismissing alerts with the right reason, GitHub issue housekeeping, and triaging the known CI failure modes. Use when asked to fix dependabot alerts, close out dependabot issues, bump vulnerable npm packages, or resume a dependabot session."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.94"
   plugin-version-tested: "1.1.94"
-  last-updated: "2026-10-03"
+  last-updated: "2026-10-22"
 ---
 
 # NV oOS Dependabot Loop — Alert Triage, Safe Bumps & Dismissal
@@ -15,8 +15,8 @@ metadata:
 Playbook for the recurring Dependabot sweep in this repo, distilled from the
 executed 2026-09-30 run (PR #6817: js-yaml + webpack-dev-middleware bumps;
 alerts 803/804, 898, 901, 922–976 triaged; issues #6647/#6818). It covers the
-full loop: discovery → forensics → fix decision → lockfile regen → dismissal →
-issue housekeeping → CI triage. The workflow implements Dependabot's own
+full loop: discovery → forensics → fix decision → lockfile regen → bundle
+rebuild → dismissal → issue housekeeping → CI triage. The workflow implements Dependabot's own
 dismissal semantics (`fix_started` vs `tolerable_risk`) adapted to this repo's
 alpha-working → main merge flow.
 
@@ -111,7 +111,7 @@ gh api "repos/nvdigitalsolutions/mcp-ai-wpoos/contents/addons/pro/package-lock.j
 **C. Classify** each alert group:
 - **Stale** — patched version already present in the relevant lockfile(s)
   (default branch or the branch carrying the fix). No code change; these
-  auto-dismiss after the fix reaches `main` (or dismiss manually, Step 7).
+  auto-dismiss after the fix reaches `main` (or dismiss manually, Step 8).
 - **Genuinely vulnerable** — a copy inside `vulnerable_version_range` exists.
   Proceed to Step 3–4.
 - **Stale-graph false positive** — the alert fired against an outdated
@@ -202,7 +202,7 @@ react 1.2.12 calls `safeValidateTypes()` synchronously; both became
 Promise-returning in provider-utils 3.x, so an override silently breaks chat
 streaming. The entire 2.x line is vulnerable (no backport), so the only fix is
 the `@ai-sdk/react` 1.x → 2.x migration — file a tracking issue instead
-(Step 8). Never ship an override you have not verified against the consumer's
+(Step 9). Never ship an override you have not verified against the consumer's
 call sites.
 
 Case study — a verified-safe cross-major bump that SHIPPED (the 2026-10-01
@@ -243,6 +243,9 @@ with `fix_started` referencing the branch that already carries the fix).
   alert numbers + GHSA IDs resolved, and calls out what was left open and why.
 - Create the PR with `gh pr create --base alpha-working --head <branch>` (the
   `create_pull_request` MCP tool may lack credentials — fall back to `gh`).
+- **Do not merge unless told to.** Create the PR and stop; merge only when
+  the user explicitly asks for the merge. Never self-merge off inferred
+  intent.
 
 ## Step 6 — Lockfile regen & validation
 
@@ -265,7 +268,35 @@ npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 - Verify the final state with the Step 2A scanner — every previously
   vulnerable copy must be at/above `first_patched_version`.
 
-## Step 7 — Alert dismissal (close-out)
+## Step 7 — Rebuild tracked JS bundles (lockfile movement stales them)
+
+A lockfile-only bump leaves the repo's tracked build artifacts stale: the
+bundles in git still embed the pre-bump dependency graph, so packaged ZIPs
+ship old code. Proof case 2026-10-22 (PR #7182): #7175 + #7106 moved
+`package-lock.json` after the 2026-10-09 rebuild (#6979);
+`addons/pro/bin/generate-{word,pdf,excel}.bundle.js` were 13 days stale —
+a fresh `npm run build:js:pro` diffed hundreds of dependency-internal
+lines with zero source changes.
+
+- **Detect:** `git status` shows modified bundles whose sources are clean,
+  and `git log --oneline origin/alpha-working -- package-lock.json` is
+  newer than `git log --oneline -1 -- <bundle>`. Marker-grep to prove it:
+  `grep -c EXPANSION_MAX_DEPTH addons/pro/bin/generate-excel.bundle.js`
+  (2 committed → 0 freshly built after the brace-expansion override moved).
+- **Rebuild:** run the Full JS rebuild map in the `mcp-ai-wpoos-spa-ui`
+  skill (it also carries the rebuild discipline: vendor never-commit gate,
+  node_modules drift, standalone-addon `npm ci`, bad-merge recovery).
+  Standalone addons with their own committed lockfiles (e.g. `chat-spa` →
+  `@ai-sdk/react@1.2.12`) need `npm ci` inside the addon dir first —
+  "Could not resolve <pkg>" means the addon's `node_modules` is missing,
+  not the root's (no npm workspaces here).
+- **Commit discipline:** stage only the rebuilt artifacts. Never commit
+  `vendor/composer/*` regen (`vendor/` is tracked in production state;
+  local composer output is dev-only dirt) and never foreign WIP in a
+  shared worktree. Pre-commit gate:
+  `git diff --cached --name-only | grep -E '^vendor/'` must be empty.
+
+## Step 8 — Alert dismissal (close-out)
 
 When asked to close out the dashboard, dismiss with honest reasons via
 `gh api` (50 PATCH calls in a sh `for` loop is fine; rate limit is 5000/hr):
@@ -297,7 +328,7 @@ gh api repos/nvdigitalsolutions/mcp-ai-wpoos/dependabot/alerts --paginate \
 **Caveat to state in the report:** dismissal is permanent, but `main` stays
 vulnerable until alpha-working merges — call that out and recommend the merge.
 
-## Step 8 — GitHub issue housekeeping
+## Step 9 — GitHub issue housekeeping
 
 - **Search before filing**: `gh issue list --search dependabot` — the AI SDK
   migration already had issue #6647 before the sweep filed #6818; close the
@@ -308,7 +339,7 @@ vulnerable until alpha-working merges — call that out and recommend the merge.
 - Unrelated issues that merely *mention* a dependabot PR (e.g. #6366) are out
   of scope — leave them.
 
-## Step 9 — CI triage (known failure modes)
+## Step 10 — CI triage (known failure modes)
 
 - **`npm error EEXIST ... /home/runner/.npm/_cacache/tmp/<hex>`** — transient
   npm cache race on GitHub runners (npm/cli#7447), not a lockfile problem.
