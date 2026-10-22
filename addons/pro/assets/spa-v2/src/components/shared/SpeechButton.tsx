@@ -21,10 +21,13 @@ const ICONS: Record< SpeechState, string > = { idle: '🔈', loading: '⏳', pla
 const LABELS: Record< SpeechState, string > = { idle: 'Listen', loading: 'Loading…', playing: 'Stop', error: 'Retry' };
 
 export function SpeechButton( { text, state, onPlay, onStop }: SpeechButtonProps ): JSX.Element | null {
-	if ( ! text ) return null;
 	const handleClick = useCallback( () => {
 		if ( state === 'playing' ) { onStop(); } else { onPlay( text ); }
 	}, [ text, state, onPlay, onStop ] );
+
+	// Null-return AFTER the hook — rules-of-hooks forbids an early return
+	// before a hook (React error #310 class).
+	if ( ! text ) return null;
 
 	return (
 		<button type="button" className={ `nvoos-pro-spa-speech-btn nvoos-pro-spa-speech-btn--${ state }` }

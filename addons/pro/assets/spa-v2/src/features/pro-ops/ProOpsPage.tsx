@@ -10,7 +10,7 @@ import { useMemo, type JSX, type ReactNode } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useProOps } from '../../hooks/useProOps';
 import { useBootstrap } from '../../hooks/useBootstrap';
-import type { ProOpsComponent } from '../../api/pro-ops';
+import type { ProOpsComponent, ProOpsOverview } from '../../api/pro-ops';
 import {
 	DataTable,
 	type DataTableColumn,
@@ -95,6 +95,21 @@ export function ProOpsPage(): JSX.Element {
 		);
 	}
 
+	return <ProOpsTables overview={ overview } error={ error } onRefresh={ refresh } />;
+}
+
+interface ProOpsTablesProps {
+	overview: ProOpsOverview;
+	error: string | null;
+	onRefresh: () => Promise< void >;
+}
+
+/**
+ * Render-phase split: the tables component only mounts once the overview is
+ * guaranteed non-null, so its memo hooks can never be skipped by the
+ * parent's loading/error early returns (rules-of-hooks — React error #310).
+ */
+function ProOpsTables( { overview, error, onRefresh }: ProOpsTablesProps ): JSX.Element {
 	const { status, incidents, maintenance, webhooks } = overview;
 
 	const componentColumns = useMemo< DataTableColumn[] >(
@@ -257,7 +272,7 @@ export function ProOpsPage(): JSX.Element {
 					type="button"
 					className="nvoos-pro-spa-page__retry"
 					onClick={ () => {
-						void refresh();
+						void onRefresh();
 					} }
 				>
 					{ __( 'Refresh', 'nvoos-pro-spa' ) }

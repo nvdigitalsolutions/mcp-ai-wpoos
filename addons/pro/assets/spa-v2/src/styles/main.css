@@ -1558,6 +1558,160 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	margin-bottom: 0;
 }
 
+/* ── Settings page (schema-driven form, 2.4.x) ───────────────────────────
+   Card-grouped sections per tab, cross-tab search, underline tabs and a
+   sticky save footer — the modern admin-settings pattern (GitHub/Vercel
+   style) instead of WP's legacy form-table. */
+.nvoos-pro-spa-settings__search-row {
+	margin: 0 0 12px;
+}
+
+.nvoos-pro-spa-settings__search {
+	max-width: 420px;
+}
+
+.nvoos-pro-spa-settings__tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	margin: 0 0 16px;
+}
+
+.nvoos-pro-spa-settings__tab {
+	appearance: none;
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	padding: 8px 12px;
+	font-size: 13px;
+	font-weight: 500;
+	font-family: inherit;
+	color: var(--nvoos-text-secondary, #787c82);
+	cursor: pointer;
+}
+
+.nvoos-pro-spa-settings__tab:hover {
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-settings__tab:focus-visible {
+	outline: 2px solid var(--nvoos-primary, #2271b1);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-settings__tab--active {
+	color: var(--nvoos-primary, #2271b1);
+	border-bottom-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-settings__fields {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.nvoos-pro-spa-settings__section {
+	padding: 16px;
+	background: var(--nvoos-bg-secondary, #fff);
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-settings__section-title {
+	margin: 0 0 12px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-settings__field {
+	margin-bottom: 14px;
+}
+
+.nvoos-pro-spa-settings__field:last-child {
+	margin-bottom: 0;
+}
+
+.nvoos-pro-spa-settings__label {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	margin-bottom: 4px;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-settings__label--inline {
+	display: inline;
+	font-weight: 400;
+	margin-bottom: 0;
+}
+
+.nvoos-pro-spa-settings__field--dirty .nvoos-pro-spa-settings__label::before {
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--nvoos-warning, #f0c33c);
+	margin-right: 6px;
+	vertical-align: middle;
+}
+
+.nvoos-pro-spa-settings__checkbox {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-pro-spa-settings__checkbox input[type='checkbox'] {
+	width: 1rem;
+	height: 1rem;
+	margin: 0;
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-settings__control {
+	max-width: 480px;
+}
+
+.nvoos-pro-spa-settings__hint {
+	margin: 4px 0 0;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-settings__hint--section {
+	margin: 0 0 4px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-settings__footer {
+	position: sticky;
+	bottom: 0;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 16px;
+	padding: 12px 0;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-settings__dirty-hint {
+	margin: 0;
+	font-size: 12px;
+	color: #bd8600;
+}
+
 /* ── Toast Notifications ─────────────────────────────────────────────────── */
 
 .nvoos-pro-spa-toast-container {
