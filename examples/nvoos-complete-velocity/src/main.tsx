@@ -17,6 +17,7 @@ import { lazy, Suspense, useEffect, useState, type JSX } from 'react';
 import '@nvoos/pro-spa-v2/styles/main.css';
 import '@nvoos/pro-spa-v2/styles/drawers.css';
 import '@nvoos/pro-spa-v2/styles/embedded.css';
+import { useUIStore } from '@nvoos/pro-spa-v2/stores/uiStore';
 import './shell.css';
 
 import {
@@ -123,5 +124,13 @@ function SurfaceLoader(): JSX.Element {
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
+  // Boot the sidebar state from the route BEFORE first paint: the docked
+  // chat starts with the conversation list collapsed and the full-page
+  // /chat breakout starts with it open. ChatDock re-syncs on every mode
+  // change; the status bar ☰ toggles the same store state in between.
+  useUIStore
+    .getState()
+    .setSidebarOpen(window.location.hash.startsWith('#/chat'));
+
   createRoot(rootElement).render(<Console />);
 }

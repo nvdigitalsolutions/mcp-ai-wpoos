@@ -404,14 +404,25 @@ body,
   flex: 1;
   min-height: 0;
   display: flex;
-  padding-bottom: 24px; /* reserve space for the fixed status bar */
+  padding-bottom: 40px; /* clears the 33px status bar (height + padding + border) */
 }
 
 /* Pin the spa-v2 conversation sidebar to its natural width inside the dock —
-   spa-v2's collapse rule (layout without --sidebar-open) must not shrink it. */
+   spa-v2's collapse rule (layout without --sidebar-open) must not shrink it.
+   The dock's own --sidebar-collapsed modifier (below) is what collapses it. */
 .nvoos-console-dock .nvoos-pro-spa-sidebar {
   width: 260px !important;
   min-width: 260px !important;
+  transition: width 0.2s ease, min-width 0.2s ease;
+}
+
+/* Docked mode starts with the conversation list collapsed; the full-page
+   /chat breakout starts with it open. The status bar's ☰ toggle drives the
+   same state, so the list can be collapsed/expanded in either mode. */
+.nvoos-console-dock--sidebar-collapsed .nvoos-pro-spa-sidebar {
+  width: 0 !important;
+  min-width: 0 !important;
+  border-right: none;
 }
 
 .nvoos-console-dock__chat {
@@ -421,11 +432,49 @@ body,
   flex-direction: column;
 }
 
-/* The status bar's sidebar toggle controlled spa-v2's old conversation
-   sidebar, which no longer exists in this shell — the nav rail + dock
-   toggle replace it. */
-.nvoos-console-shell .nvoos-pro-spa-status-bar__toggle-sidebar {
-  display: none;
+/* Docked chat composer: the narrow column cannot fit the toolbar and the
+   send actions beside the input, so the input takes its own full-width row
+   with the toolbar (left) and actions (right) below it — the same stacked
+   pattern spa-v2 already applies at the mobile breakpoint. A manually
+   resized composer is ignored in the dock so the stacked rows never clip. */
+.nvoos-console-dock:not(.nvoos-console-dock--fullpage) .nvoos-pro-spa-agent-panel__composer-input {
+  order: 0;
+  flex: 1 0 100%;
+  min-width: 0;
+}
+
+.nvoos-console-dock:not(.nvoos-console-dock--fullpage) .nvoos-pro-spa-agent-panel__composer-toolbar {
+  order: 1;
+  flex-shrink: 0;
+  padding: 2px 0;
+}
+
+.nvoos-console-dock:not(.nvoos-console-dock--fullpage) .nvoos-pro-spa-agent-panel__composer-actions {
+  order: 2;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.nvoos-console-dock:not(.nvoos-console-dock--fullpage) .nvoos-pro-spa-attachment-strip {
+  order: 3;
+  width: 100%;
+}
+
+.nvoos-console-dock:not(.nvoos-console-dock--fullpage) .nvoos-pro-spa-agent-panel--composer-resized .nvoos-pro-spa-agent-panel__composer {
+  height: auto;
+}
+
+.nvoos-console-dock:not(.nvoos-console-dock--fullpage) .nvoos-pro-spa-agent-panel--composer-resized .nvoos-pro-spa-agent-panel__composer-input {
+  field-sizing: content;
+  height: auto;
+  max-height: min(40vh, 300px);
+}
+
+/* The status bar carries the sidebar toggle for the dock's conversation
+   list, so it must stay on top of the narrow-screen dock overlay
+   (z-index 100) and reachable from both chat layouts. */
+.nvoos-console-shell > .nvoos-pro-spa-status-bar {
+  z-index: 120;
 }
 
 /* Narrow screens: the dock overlays instead of squeezing the content. */
