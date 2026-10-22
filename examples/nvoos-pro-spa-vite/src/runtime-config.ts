@@ -129,6 +129,8 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		operations: `${core}/operations`,
 		diagnostics: `${core}/diagnostics`,
 		tokenManager: `${core}/token-manager`,
+		// Cost analytics — manage_options-gated; empty for non-admin sessions.
+		cost: `${core}/cost`,
 		orchestrationStats: `${core}/orchestration/stats`,
 		proOps: `${pro}/ops`,
 		scheduleManager: `${pro}`,
@@ -141,6 +143,10 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		dashboardsSchema: `${pro}/dashboards/schema`,
 		chatChannels: `${pro}/chat-channels`,
 		mediaCc: `${pro}/media-cc`,
+		// Assistant blueprints — empty for sessions without edit_posts.
+		blueprints: `${pro}/blueprints`,
+		// Command Center KPI + activity feed — empty for non-admin sessions.
+		commandCenter: `${pro}/command-center`,
 		shortcuts: `${pro}/tool-shortcuts`,
 		slashCommands: `${pro}/slash-commands`,
 		okf: `${pro}/okf`,
