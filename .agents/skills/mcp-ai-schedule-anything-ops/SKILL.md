@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-schedule-anything-ops
-description: Operational guide for the Schedule Anything SaaS surface — the 3-plugin WordPress stack (base + Pro + schedule-anything-platform) and its tenant SPA, the mcp-ai-pro/v1 presets/toolkits/sa-tools REST contract (Proposal 081), the WP 6.9 nonce cookie-auth pitfall and its fix pattern, the sa-e2e Docker harness quirks, the SPA↔REST contract-alignment rules, the Cloudways Velocity deploy + mirror-sync loop for both Velocity apps (schedule-anything + Complete Console on console.nvoos.cloud), and the Complete-bundle zip build/verify/staleness loop. Use when working on the Schedule Anything SPA or platform plugin, debugging its REST/auth surface, rebuilding its E2E stack, deploying or syncing a Velocity app, extending presets/toolkits, or diagnosing a 404 on a new SPA-consumed route (e.g. sa-tools).
+description: Operational guide for the Schedule Anything SaaS surface — the 3-plugin WordPress stack (base + Pro + schedule-anything-platform) and its tenant SPA, the mcp-ai-pro/v1 presets/toolkits/sa-tools REST contract (Proposal 081), the WP 6.9 nonce cookie-auth pitfall and its fix pattern, the sa-e2e Docker harness quirks, the SPA↔REST contract-alignment rules, the Cloudways Velocity deploy + mirror-sync loop for both Velocity apps (schedule-anything + Complete Console on console.nvoos.cloud), and the Complete-bundle zip build/verify/staleness loop. Use when working on the Schedule Anything SPA or platform plugin, debugging its REST/auth surface, rebuilding its E2E stack, deploying or syncing a Velocity app, extending presets/toolkits, or diagnosing a 404 on a new SPA-consumed route (e.g. sa-tools), or a Velocity console that fails the nonce check with 'expected JSON but got text/html' (Cloudways Anti-Bot Protection / Imunify360 WebShield on the WP target's server).
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -25,6 +25,8 @@ implementation, and the Velocity deploy. The authoritative design doc is
 - Rebuilding or driving the `sa-e2e` Docker stack
 - Deploying/syncing the Cloudways Velocity app
 - Extending the presets catalogue or toolkit entitlements
+- Debugging a Velocity console blocked by a nonce/challenge failure
+  (Cloudways Anti-Bot Protection / Imunify360 WebShield on the WP target)
 
 ## 1. Architecture (how the SPA and plugin work together)
 
@@ -289,6 +291,63 @@ addon SPA):
   `GET /wp-json/nvoos-saas/v1/auth/nonce` → **200 = platform plugin
   present**. Fix = deploy a bundle zip containing the route; verify
   freshness before deploying (see §7).
+
+### Cloudways Anti-Bot Protection (Imunify360 WebShield) blocks the proxy
+
+Both Velocity apps proxy `/wp-json`, `/wp-admin`, `/wp-login.php` and
+`/wp-includes` to the WP target, so a **server-level** bot WAF on the
+target's Cloudways server sits directly in that upstream path. Case study
+2026-10-22: ECA Directory console (`eca.nvoos.cloud` → `eca.directory` on
+server 1122552 "NV Digital - SIN2").
+
+- **Symptom**: the SPA loads but fails with `nonce endpoint: expected JSON
+  but got text/html (status 200)`; `/wp-login.php` on the app origin shows
+  "One moment, please..." / "Please wait while your request is being
+  verified..." and then redirects to
+  `/z0f76a1d14fd21a8fb5fd0d03e0fdc3d3cedae52f?wsidchk=…&pdata=…&cttl=0`.
+- **The blocker is Cloudways Anti-Bot Protection — "AI-driven heuristics
+  and challenges" — the Imunify360 WebShield WAF ("IM360 WAF" in Security
+  Suite events), NOT Cloudflare.** The fixed `/z0f76…?wsidchk=` challenge
+  path is Imunify360's signature (traced in Cloudflare Community threads);
+  it only looks like Cloudflare because the page is served through the
+  zone. Decisive clue: the challenge page's `pdata` names the **target
+  site's** URL — the challenge was issued for the proxy's upstream request
+  on the WP zone, not for the app origin.
+- **Trigger**: the proxy aggregates every console user's REST traffic
+  behind the Velocity app's single egress IP → the heuristics (plus the WAF
+  request limit, 250/window default) flag that IP as a bot → CAPTCHA
+  challenge. Direct visitors to the WP site are never challenged (the
+  discriminator is the source IP), so the site "looks fine" and the
+  failure looks app-specific.
+- **It can never self-heal**: the challenge is a document-level JS
+  challenge (browser checks + Turnstile jsd + a wsidchk form POST to the
+  `/z<hex>` endpoint). The console's `fetch()` receives it as HTML and
+  cannot render it, and even a real browser on the app origin cannot
+  complete the handshake — `serve.mjs` does not proxy the `/z<hex>` path
+  (SPA fallback) and the clearance is bound to the issuing context.
+- **Intermittency is expected**: Imunify360 auto-whitelists IPs that pass
+  challenges, with expiries (e.g. 12h/23h) — the console works while the
+  egress IP is auto-whitelisted, then breaks again on expiry. "It worked
+  yesterday" is not evidence against this.
+- **Diagnostic ladder** (fastest first):
+  - `curl -D- https://<app>/wp-json/mcp-ai/v1/session/nonce` → `text/html`
+    challenge vs `curl -D- https://<target>/wp-json/mcp-ai/v1/session/nonce`
+    → `application/json`. The split = server-level WAF on the target keyed
+    on the proxy's egress IP.
+  - Challenge body contains `pdata=https%3A%2F%2F<target>…` + the fixed
+    `/z0f76a1d14fd21a8fb5fd0d03e0fdc3d3cedae52f?wsidchk=` path → Imunify360.
+  - Cloudways → target's server → Security → Security Suite: `captcha_blocked`
+    stats spike (hundreds/hour) while the console retries; the allowlist
+    shows "IP auto-whitelisted with expiration date" entries (those AWS IPs
+    are the Velocity egress).
+  - Cloudflare zones will be clean (Bot Fight Mode off, no challenge/WAF
+    rules, no waiting rooms) — rule CF out and stop chasing it.
+- **Fix**: Cloudways → the target's server → Security → **Anti-Bot
+  Protection: OFF** (verified 2026-10-22 — instantly unblocked the
+  console), or keep it on and exempt the Velocity app's egress IP via the
+  Security Suite allowlist / raise the WAF request limit. Cloudflare-side
+  skip rules or IP whitelists on the zone do NOT help — CF is never the
+  challenger.
 
 ## 7. Release bookkeeping
 
