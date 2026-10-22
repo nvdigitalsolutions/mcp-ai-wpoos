@@ -3,6 +3,6 @@
   "expected_sha256": "7801acbde169637974ec50a04fc0267f55587b2122220eaf2e08e07e7415881c",
   "expected_etag": null,
   "version": "0.3.0",
-  "built_at": "2026-10-09T13:09:17.930Z",
+  "built_at": "2026-10-22T10:07:15.362Z",
   "worker_dist_path": "worker/dist/index.js"
 }

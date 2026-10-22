@@ -177222,8 +177222,6 @@ var require_symbols = __commonJS({
       kDestroy: /* @__PURE__ */ Symbol("destroy"),
       kDispatch: /* @__PURE__ */ Symbol("dispatch"),
       kUrl: /* @__PURE__ */ Symbol("url"),
-      kRequestOrigin: /* @__PURE__ */ Symbol("request origin"),
-      kOriginless: /* @__PURE__ */ Symbol("originless"),
       kWriting: /* @__PURE__ */ Symbol("writing"),
       kResuming: /* @__PURE__ */ Symbol("resuming"),
       kQueue: /* @__PURE__ */ Symbol("queue"),
@@ -179786,7 +179784,6 @@ var require_dispatcher = __commonJS({
   "addons/pro/node_modules/undici/lib/dispatcher/dispatcher.js"(exports2, module2) {
     "use strict";
     var EventEmitter = require("node:events");
-    var { kOriginless, kUrl } = require_symbols();
     var Dispatcher = class extends EventEmitter {
       dispatch() {
         throw new Error("not implemented");
@@ -179798,9 +179795,7 @@ var require_dispatcher = __commonJS({
         throw new Error("not implemented");
       }
       compose(...args) {
-        var _a;
         const interceptors = Array.isArray(args[0]) ? args[0] : args;
-        const interceptorOrigin = this[kOriginless] === true ? null : (_a = this[kUrl]) == null ? void 0 : _a.origin;
         let dispatch = this.dispatch.bind(this);
         for (const interceptor of interceptors) {
           if (interceptor == null) {
@@ -179809,19 +179804,11 @@ var require_dispatcher = __commonJS({
           if (typeof interceptor !== "function") {
             throw new TypeError(`invalid interceptor, expected function received ${typeof interceptor}`);
           }
-          dispatch = interceptor(dispatch, interceptorOrigin);
+          dispatch = interceptor(dispatch);
           if (dispatch == null || typeof dispatch !== "function" || dispatch.length !== 2) {
             throw new TypeError("invalid interceptor");
           }
         }
-        const originalDispatch = dispatch;
-        const self2 = this;
-        dispatch = function(opts, handler) {
-          if (opts && typeof opts === "object" && !opts.origin && self2[kUrl]) {
-            opts = Object.assign({}, opts, { origin: self2[kUrl].origin });
-          }
-          return originalDispatch(opts, handler);
-        };
         return new Proxy(this, {
           get: (target, key) => key === "dispatch" ? dispatch : target[key]
         });
@@ -179835,7 +179822,6 @@ var require_dispatcher = __commonJS({
 var require_dispatcher_base = __commonJS({
   "addons/pro/node_modules/undici/lib/dispatcher/dispatcher-base.js"(exports2, module2) {
     "use strict";
-    var buffer = require("node:buffer");
     var Dispatcher = require_dispatcher();
     var {
       ClientDestroyedError,
@@ -179846,7 +179832,6 @@ var require_dispatcher_base = __commonJS({
     var kOnDestroyed = /* @__PURE__ */ Symbol("onDestroyed");
     var kOnClosed = /* @__PURE__ */ Symbol("onClosed");
     var kWebSocketOptions = /* @__PURE__ */ Symbol("webSocketOptions");
-    var kEventSourceOptions = /* @__PURE__ */ Symbol("eventSourceOptions");
     var DispatcherBase = class extends Dispatcher {
       /** @type {boolean} */
       [kDestroyed] = false;
@@ -179862,24 +179847,15 @@ var require_dispatcher_base = __commonJS({
       constructor(opts) {
         super();
         this[kWebSocketOptions] = (opts == null ? void 0 : opts.webSocket) ?? {};
-        this[kEventSourceOptions] = (opts == null ? void 0 : opts.eventSource) ?? {};
       }
       /**
-       * @returns {import('../../types/client').Client.WebSocketOptions}
+       * @returns {import('../../types/dispatcher').WebSocketOptions}
        */
       get webSocketOptions() {
         return {
           maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
           maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
           // 128 MB default
-        };
-      }
-      /**
-       * @returns {import('../../types/client').Client.EventSourceOptions}
-       */
-      get eventSourceOptions() {
-        return {
-          maxEventSize: this[kEventSourceOptions].maxEventSize ?? buffer.kStringMaxLength
         };
       }
       /** @returns {boolean} */
@@ -182200,9 +182176,6 @@ var require_util2 = __commonJS({
       return "success";
     }
     function appendFetchMetadata(httpRequest) {
-      if (!isURLPotentiallyTrustworthy(requestCurrentURL(httpRequest))) {
-        return;
-      }
       let header = null;
       header = httpRequest.mode;
       httpRequest.headersList.set("sec-fetch-mode", header, true);
@@ -184567,20 +184540,22 @@ var require_client_h1 = __commonJS({
     }
     function clearIdleSocketValidation(socket) {
       if (socket[kIdleSocketValidationTimeout]) {
-        clearImmediate(socket[kIdleSocketValidationTimeout]);
+        clearTimeout(socket[kIdleSocketValidationTimeout]);
         socket[kIdleSocketValidationTimeout] = null;
       }
       socket[kIdleSocketValidation] = 0;
     }
     function scheduleIdleSocketValidation(client, socket) {
+      var _a, _b;
       socket[kIdleSocketValidation] = 1;
-      socket[kIdleSocketValidationTimeout] = setImmediate(() => {
+      socket[kIdleSocketValidationTimeout] = setTimeout(() => {
         socket[kIdleSocketValidationTimeout] = null;
         socket[kIdleSocketValidation] = 2;
         if (client[kSocket] === socket && !socket.destroyed) {
           client[kResume]();
         }
-      });
+      }, 0);
+      (_b = (_a = socket[kIdleSocketValidationTimeout]).unref) == null ? void 0 : _b.call(_a);
     }
     function resumeH1(client) {
       const socket = client[kSocket];
@@ -185087,8 +185062,7 @@ var require_client_h2 = __commonJS({
       InformationalError,
       InvalidArgumentError,
       HeadersTimeoutError,
-      BodyTimeoutError,
-      ResponseExceededMaxSizeError
+      BodyTimeoutError
     } = require_errors();
     var {
       kUrl,
@@ -185117,8 +185091,7 @@ var require_client_h2 = __commonJS({
       kRemoteSettings,
       kHTTP2Stream,
       kHTTP2SessionState,
-      kHTTP2Options,
-      kMaxResponseSize
+      kHTTP2Options
     } = require_symbols();
     var { channels } = require_diagnostics();
     var kOpenStreams = /* @__PURE__ */ Symbol("open streams");
@@ -185824,11 +185797,9 @@ var require_client_h2 = __commonJS({
       const state = {
         abort: null,
         body: request.body,
-        bytesRead: 0,
         client,
         contentLength: null,
         expectsPayload: false,
-        maxResponseSize: client[kMaxResponseSize],
         request,
         headersTimeout,
         bodyTimeout,
@@ -185967,7 +185938,6 @@ var require_client_h2 = __commonJS({
         stream.once("continue", writeBodyH2);
       }
       stream.on("response", onResponse);
-      stream.on("headers", onInterimResponse);
       stream.on("end", onEnd);
       stream.on("error", onError);
       stream.on("frameError", onFrameError);
@@ -185985,7 +185955,6 @@ var require_client_h2 = __commonJS({
       stream.off("error", noop);
       stream.off("continue", writeBodyH2);
       stream.off("response", onResponse);
-      stream.off("headers", onInterimResponse);
       stream.off("end", onEnd);
       stream.off("error", onError);
       stream.off("frameError", onFrameError);
@@ -186017,32 +185986,13 @@ var require_client_h2 = __commonJS({
       if (state == null) {
         return;
       }
-      const { request, maxResponseSize } = state;
-      if (request.aborted || request.completed) {
-        return;
-      }
-      if (maxResponseSize > -1 && state.bytesRead + chunk.length > maxResponseSize) {
-        state.abort(new ResponseExceededMaxSizeError());
-        return;
-      }
-      state.bytesRead += chunk.length;
-      if (request.onResponseData(chunk) === false) {
-        stream.pause();
-      }
-    }
-    function onInterimResponse(headers) {
-      const stream = this;
-      const state = stream[kRequestStreamState];
-      if (state == null) {
-        return;
-      }
       const { request } = state;
       if (request.aborted || request.completed) {
         return;
       }
-      const statusCode = headers[HTTP2_HEADER_STATUS];
-      delete headers[HTTP2_HEADER_STATUS];
-      request.onResponseStart(Number(statusCode), headers, noop, "");
+      if (request.onResponseData(chunk) === false) {
+        stream.pause();
+      }
     }
     function onResponse(headers) {
       const stream = this;
@@ -186465,8 +186415,7 @@ var require_client = __commonJS({
         connectionWindowSize,
         pingInterval,
         webSocket,
-        h2Options,
-        eventSource
+        h2Options
       } = {}) {
         var _a;
         if (keepAlive !== void 0) {
@@ -186570,7 +186519,7 @@ var require_client = __commonJS({
             }
           }
         }
-        super({ webSocket, eventSource });
+        super({ webSocket });
         if (typeof connect2 !== "function") {
           connect2 = buildConnector({
             ...tls,
@@ -187336,7 +187285,7 @@ var require_balanced_pool = __commonJS({
       kGetDispatcher
     } = require_pool_base();
     var Pool = require_pool();
-    var { kOriginless, kUrl } = require_symbols();
+    var { kUrl } = require_symbols();
     var util = require_util();
     var kFactory = /* @__PURE__ */ Symbol("factory");
     var kOptions = /* @__PURE__ */ Symbol("options");
@@ -187359,15 +187308,12 @@ var require_balanced_pool = __commonJS({
       return new Pool(origin, opts);
     }
     var BalancedPool = class extends PoolBase {
-      constructor(upstreams = [], { factory = defaultFactory, connect, tls, ...opts } = {}) {
+      constructor(upstreams = [], { factory = defaultFactory, ...opts } = {}) {
         if (typeof factory !== "function") {
           throw new InvalidArgumentError("factory must be a function.");
         }
-        super(opts);
-        this[kOriginless] = true;
-        if (connect && typeof connect !== "function") connect = { ...connect };
-        if (tls && typeof tls !== "function") tls = { ...tls };
-        this[kOptions] = { ...util.deepClone(opts), connect, tls };
+        super();
+        this[kOptions] = { ...util.deepClone(opts) };
         this[kIndex] = -1;
         this[kCurrentWeight] = 0;
         this[kMaxWeightPerServer] = this[kOptions].maxWeightPerServer || 100;
@@ -187529,7 +187475,7 @@ var require_round_robin_pool = __commonJS({
             ...connect
           });
         }
-        super(options);
+        super();
         this[kConnections] = connections || null;
         this[kUrl] = util.parseOrigin(origin);
         this[kOptions] = { ...util.deepClone(options), connect, allowH2, clientTtl, socketPath };
@@ -187609,7 +187555,7 @@ var require_agent = __commonJS({
   "addons/pro/node_modules/undici/lib/dispatcher/agent.js"(exports2, module2) {
     "use strict";
     var { InvalidArgumentError, MaxOriginsReachedError } = require_errors();
-    var { kBusy, kClients, kConnected, kRunning, kPending, kClose, kDestroy, kDispatch, kUrl } = require_symbols();
+    var { kBusy, kClients, kConnected, kRunning, kClose, kDestroy, kDispatch, kUrl } = require_symbols();
     var DispatcherBase = require_dispatcher_base();
     var Pool = require_pool();
     var Client = require_client();
@@ -187682,7 +187628,7 @@ var require_agent = __commonJS({
             if (this[kClients].get(key) !== dispatcher) {
               return;
             }
-            if (dispatcher[kConnected] > 0 || dispatcher[kBusy] || dispatcher[kPending] > 0) {
+            if (dispatcher[kConnected] > 0 || dispatcher[kBusy]) {
               return;
             }
             this[kClients].delete(key);
@@ -187749,7 +187695,6 @@ var require_dispatcher1_wrapper = __commonJS({
     var Dispatcher = require_dispatcher();
     var { InvalidArgumentError } = require_errors();
     var { toRawHeaders } = require_util();
-    var { kOriginless, kUrl } = require_symbols();
     var _handler;
     var LegacyHandlerWrapper = class {
       constructor(handler) {
@@ -187812,8 +187757,6 @@ var require_dispatcher1_wrapper = __commonJS({
           throw new InvalidArgumentError("Argument dispatcher must implement dispatch");
         }
         __privateSet(this, _dispatcher, dispatcher);
-        this[kUrl] = dispatcher[kUrl];
-        this[kOriginless] = dispatcher[kOriginless];
       }
       static wrapHandler(handler) {
         if (!handler || typeof handler !== "object") {
@@ -188344,34 +188287,25 @@ var require_socks5_proxy_agent = __commonJS({
     var { URL: URL2 } = require("node:url");
     var tls;
     var DispatcherBase = require_dispatcher_base();
-    var { ConnectTimeoutError, InvalidArgumentError } = require_errors();
+    var { InvalidArgumentError } = require_errors();
     var { Socks5Client, STATES } = require_socks5_client();
     var { kBusy, kConnected, kDispatch, kClose, kDestroy } = require_symbols();
     var Pool = require_pool();
     var buildConnector = require_connect();
-    var { setupConnectTimeout } = require_util();
     var { debuglog } = require("node:util");
     var debug = debuglog("undici:socks5-proxy");
-    var DEFAULT_SOCKS5_CONNECT_TIMEOUT = 5e3;
     var kProxyUrl = /* @__PURE__ */ Symbol("proxy url");
     var kProxyHeaders = /* @__PURE__ */ Symbol("proxy headers");
     var kProxyAuth = /* @__PURE__ */ Symbol("proxy auth");
     var kProxyProtocol = /* @__PURE__ */ Symbol("proxy protocol");
     var kPools = /* @__PURE__ */ Symbol("pools");
     var kConnector = /* @__PURE__ */ Symbol("connector");
-    var kConnectTimeout = /* @__PURE__ */ Symbol("connect timeout");
     var kRequestTls = /* @__PURE__ */ Symbol("request tls settings");
-    var kRequestTlsTimeout = /* @__PURE__ */ Symbol("request tls timeout");
-    function createConnectTimeoutError(hostname, port, timeout) {
-      return new ConnectTimeoutError(
-        `Connect Timeout Error (attempted address: ${hostname}:${port}, timeout: ${timeout}ms)`
-      );
-    }
     var experimentalWarningEmitted = false;
     var Socks5ProxyAgent = class extends DispatcherBase {
       constructor(proxyUrl, options = {}) {
-        var _a, _b;
-        super(options);
+        var _a;
+        super();
         if (!experimentalWarningEmitted) {
           process.emitWarning(
             "SOCKS5 proxy support is experimental and subject to change",
@@ -188389,30 +188323,14 @@ var require_socks5_proxy_agent = __commonJS({
         this[kProxyUrl] = url;
         this[kProxyHeaders] = options.headers || {};
         this[kProxyProtocol] = options.proxyTls ? "https:" : "http:";
-        const connectTimeout = options.connectTimeout ?? DEFAULT_SOCKS5_CONNECT_TIMEOUT;
-        if (!Number.isFinite(connectTimeout) || connectTimeout < 0) {
-          throw new InvalidArgumentError("invalid connectTimeout");
-        }
-        this[kConnectTimeout] = connectTimeout;
-        const { timeout, ...requestTls } = options.requestTls || {};
-        const requestTlsTimeout = timeout ?? connectTimeout;
-        if (!Number.isFinite(requestTlsTimeout) || requestTlsTimeout < 0) {
-          throw new InvalidArgumentError("invalid requestTls.timeout");
-        }
-        this[kRequestTls] = requestTls;
-        this[kRequestTlsTimeout] = requestTlsTimeout;
+        this[kRequestTls] = options.requestTls;
         this[kProxyAuth] = {
           username: options.username || (url.username ? decodeURIComponent(url.username) : null),
           password: options.password || (url.password ? decodeURIComponent(url.password) : null)
         };
-        const proxyTlsTimeout = ((_a = options.proxyTls) == null ? void 0 : _a.timeout) ?? connectTimeout;
-        if (!Number.isFinite(proxyTlsTimeout) || proxyTlsTimeout < 0) {
-          throw new InvalidArgumentError("invalid proxyTls.timeout");
-        }
         this[kConnector] = options.connect || buildConnector({
           ...options.proxyTls,
-          timeout: proxyTlsTimeout,
-          servername: ((_b = options.proxyTls) == null ? void 0 : _b.servername) || url.hostname
+          servername: ((_a = options.proxyTls) == null ? void 0 : _a.servername) || url.hostname
         });
         this[kPools] = /* @__PURE__ */ new Map();
       }
@@ -188444,24 +188362,17 @@ var require_socks5_proxy_agent = __commonJS({
         });
         await socks5Client.handshake();
         const authenticationReady = Promise.withResolvers();
-        const authenticationTimeout = this[kConnectTimeout] === 0 ? null : setTimeout(() => {
-          cleanupAuthenticationListeners();
-          socks5Client.destroy();
-          authenticationReady.reject(
-            createConnectTimeoutError(proxyHost, proxyPort, this[kConnectTimeout])
-          );
-        }, this[kConnectTimeout]);
-        const cleanupAuthenticationListeners = () => {
-          clearTimeout(authenticationTimeout);
-          socks5Client.removeListener("authenticated", onAuthenticated);
-          socks5Client.removeListener("error", onAuthenticationError);
-        };
+        const authenticationTimeout = setTimeout(() => {
+          authenticationReady.reject(new Error("SOCKS5 authentication timeout"));
+        }, 5e3);
         const onAuthenticated = () => {
-          cleanupAuthenticationListeners();
+          clearTimeout(authenticationTimeout);
+          socks5Client.removeListener("error", onAuthenticationError);
           authenticationReady.resolve();
         };
         const onAuthenticationError = (err) => {
-          cleanupAuthenticationListeners();
+          clearTimeout(authenticationTimeout);
+          socks5Client.removeListener("authenticated", onAuthenticated);
           authenticationReady.reject(err);
         };
         if (socks5Client.state === STATES.AUTHENTICATED) {
@@ -188474,25 +188385,18 @@ var require_socks5_proxy_agent = __commonJS({
         await authenticationReady.promise;
         await socks5Client.connect(targetHost, targetPort);
         const connectionReady = Promise.withResolvers();
-        const connectionTimeout = this[kConnectTimeout] === 0 ? null : setTimeout(() => {
-          cleanupConnectionListeners();
-          socks5Client.destroy();
-          connectionReady.reject(
-            createConnectTimeoutError(targetHost, targetPort, this[kConnectTimeout])
-          );
-        }, this[kConnectTimeout]);
-        const cleanupConnectionListeners = () => {
-          clearTimeout(connectionTimeout);
-          socks5Client.removeListener("connected", onConnected);
-          socks5Client.removeListener("error", onConnectionError);
-        };
+        const connectionTimeout = setTimeout(() => {
+          connectionReady.reject(new Error("SOCKS5 connection timeout"));
+        }, 5e3);
         const onConnected = (info) => {
           debug("SOCKS5 tunnel established to", targetHost, targetPort, "via", info);
-          cleanupConnectionListeners();
+          clearTimeout(connectionTimeout);
+          socks5Client.removeListener("error", onConnectionError);
           connectionReady.resolve();
         };
         const onConnectionError = (err) => {
-          cleanupConnectionListeners();
+          clearTimeout(connectionTimeout);
+          socks5Client.removeListener("connected", onConnected);
           connectionReady.reject(err);
         };
         socks5Client.once("connected", onConnected);
@@ -188533,26 +188437,8 @@ var require_socks5_proxy_agent = __commonJS({
                       servername: ((_a = this[kRequestTls]) == null ? void 0 : _a.servername) || targetHost
                     });
                     const tlsReady = Promise.withResolvers();
-                    const cleanupTlsListeners = () => {
-                      queueMicrotask(clearTlsTimeout);
-                      finalSocket.removeListener("secureConnect", onSecureConnect);
-                      finalSocket.removeListener("error", onTlsError);
-                    };
-                    const onSecureConnect = () => {
-                      cleanupTlsListeners();
-                      tlsReady.resolve();
-                    };
-                    const onTlsError = (err) => {
-                      cleanupTlsListeners();
-                      tlsReady.reject(err);
-                    };
-                    const clearTlsTimeout = setupConnectTimeout(new WeakRef(finalSocket), {
-                      timeout: this[kRequestTlsTimeout],
-                      hostname: targetHost,
-                      port: targetPort
-                    });
-                    finalSocket.once("secureConnect", onSecureConnect);
-                    finalSocket.once("error", onTlsError);
+                    finalSocket.once("secureConnect", tlsReady.resolve);
+                    finalSocket.once("error", tlsReady.reject);
                     await tlsReady.promise;
                   }
                   callback(null, finalSocket);
@@ -188623,7 +188509,6 @@ var require_proxy_agent = __commonJS({
     var Client = require_client();
     var { channels } = require_diagnostics();
     var Socks5ProxyAgent = require_socks5_proxy_agent();
-    var { hasSafeIterator } = require_util();
     var kAgent = /* @__PURE__ */ Symbol("proxy agent");
     var kClient = /* @__PURE__ */ Symbol("proxy client");
     var kProxyHeaders = /* @__PURE__ */ Symbol("proxy headers");
@@ -188714,7 +188599,7 @@ var require_proxy_agent = __commonJS({
           throw new InvalidArgumentError("Proxy opts.clientFactory must be a function.");
         }
         const { proxyTunnel, connectTimeout } = opts;
-        super(opts);
+        super();
         __privateAdd(this, _ProxyAgent_instances);
         const url = __privateMethod(this, _ProxyAgent_instances, getUrl_fn).call(this, opts);
         const { href, origin, port, protocol, username, password, hostname: proxyHostname } = url;
@@ -188749,7 +188634,6 @@ var require_proxy_agent = __commonJS({
               factory: agentFactory,
               username: opts.username || username,
               password: opts.password || password,
-              connectTimeout,
               proxyTls: opts.proxyTls,
               requestTls: opts.requestTls
             });
@@ -188893,13 +188777,6 @@ var require_proxy_agent = __commonJS({
         }
         return headersPair;
       }
-      if (headers && typeof headers === "object" && hasSafeIterator(headers)) {
-        const headersPair = {};
-        for (const [key, value] of headers) {
-          headersPair[key] = value;
-        }
-        return headersPair;
-      }
       return headers;
     }
     function throwIfProxyAuthIsSent(headers) {
@@ -188934,7 +188811,7 @@ var require_env_http_proxy_agent = __commonJS({
     var _noProxyValue, _noProxyEntries, _opts, _EnvHttpProxyAgent_instances, getProxyAgentForUrl_fn, shouldProxy_fn, parseNoProxy_fn, noProxyChanged_get, noProxyEnv_get;
     var EnvHttpProxyAgent = class extends DispatcherBase {
       constructor(opts = {}) {
-        super(opts);
+        super();
         __privateAdd(this, _EnvHttpProxyAgent_instances);
         __privateAdd(this, _noProxyValue, null);
         __privateAdd(this, _noProxyEntries, null);
@@ -188983,9 +188860,6 @@ var require_env_http_proxy_agent = __commonJS({
     getProxyAgentForUrl_fn = function(url) {
       let { protocol, host: hostname, port } = url;
       hostname = hostname.replace(/:\d*$/, "").replace(/^\[(.+)\]$/, "$1").toLowerCase();
-      if (hostname.length > 1 && hostname.charCodeAt(hostname.length - 1) === 46) {
-        hostname = hostname.slice(0, -1);
-      }
       port = Number.parseInt(port, 10) || DEFAULT_PORTS[protocol] || 0;
       if (!__privateMethod(this, _EnvHttpProxyAgent_instances, shouldProxy_fn).call(this, hostname, port)) {
         return this[kNoProxyAgent];
@@ -189041,8 +188915,8 @@ var require_env_http_proxy_agent = __commonJS({
           port = parsed ? Number.parseInt(parsed[2], 10) : 0;
         }
         noProxyEntries.push({
-          // strip leading dot or asterisk with dot, and any trailing dot
-          hostname: hostname.replace(/^\*?\./, "").replace(/^(.+)\.$/, "$1").toLowerCase(),
+          // strip leading dot or asterisk with dot
+          hostname: hostname.replace(/^\*?\./, "").toLowerCase(),
           port
         });
       }
@@ -189068,7 +188942,7 @@ var require_retry_handler = __commonJS({
     "use strict";
     var assert = require("node:assert");
     var { kRetryHandlerDefaultRetry } = require_symbols();
-    var { RequestRetryError, RequestAbortedError } = require_errors();
+    var { RequestRetryError } = require_errors();
     var {
       isDisturbed,
       parseRangeHeader,
@@ -189095,11 +188969,8 @@ var require_retry_handler = __commonJS({
         });
       }
     }
-    var _onAbort;
     var RetryController = class {
-      constructor(onAbort) {
-        __privateAdd(this, _onAbort);
-        __privateSet(this, _onAbort, onAbort);
+      constructor() {
         this.target = null;
       }
       pause() {
@@ -189113,7 +188984,6 @@ var require_retry_handler = __commonJS({
       abort(reason) {
         var _a;
         (_a = this.target) == null ? void 0 : _a.abort(reason);
-        __privateGet(this, _onAbort).call(this, reason);
       }
       get paused() {
         var _a;
@@ -189131,26 +189001,13 @@ var require_retry_handler = __commonJS({
         var _a;
         return ((_a = this.target) == null ? void 0 : _a.rawHeaders) ?? null;
       }
-      set rawHeaders(value) {
-        if (this.target) {
-          this.target.rawHeaders = value;
-        }
-      }
       get rawTrailers() {
         var _a;
         return ((_a = this.target) == null ? void 0 : _a.rawTrailers) ?? null;
       }
-      set rawTrailers(value) {
-        if (this.target) {
-          this.target.rawTrailers = value;
-        }
-      }
     };
-    _onAbort = new WeakMap();
-    var _RetryHandler_instances, onAbort_fn;
-    var _RetryHandler = class _RetryHandler {
+    var RetryHandler = class _RetryHandler {
       constructor(opts, { dispatch, handler }) {
-        __privateAdd(this, _RetryHandler_instances);
         const { retryOptions, ...dispatchOpts } = opts;
         const {
           // Retry scoped
@@ -189205,22 +189062,14 @@ var require_retry_handler = __commonJS({
         this.etag = null;
         this.statusCode = null;
         this.headers = null;
-        this.controllerProxy = new RetryController((reason) => __privateMethod(this, _RetryHandler_instances, onAbort_fn).call(this, reason));
-        this.retryPending = false;
-        this.retryTimer = null;
-        this.aborted = false;
+        this.controllerProxy = new RetryController();
       }
       onResponseStartWithRetry(controller, statusCode, headers, statusMessage, err) {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d;
         if (this.retryOpts.throwOnError) {
           if (this.retryOpts.statusCodes.includes(statusCode) === false) {
-            if (this.headersSent) {
-              (_b = (_a = this.handler).onResponseError) == null ? void 0 : _b.call(_a, this.controllerProxy, err);
-            } else {
-              this.headersSent = true;
-              this.checkpointResponseEnd(headers);
-              (_d = (_c = this.handler).onResponseStart) == null ? void 0 : _d.call(_c, this.controllerProxy, statusCode, headers, statusMessage);
-            }
+            this.headersSent = true;
+            (_b = (_a = this.handler).onResponseStart) == null ? void 0 : _b.call(_a, this.controllerProxy, statusCode, headers, statusMessage);
           } else {
             this.error = err;
           }
@@ -189228,25 +189077,14 @@ var require_retry_handler = __commonJS({
         }
         if (isDisturbed(this.opts.body)) {
           this.headersSent = true;
-          this.checkpointResponseEnd(headers);
-          (_f = (_e = this.handler).onResponseStart) == null ? void 0 : _f.call(_e, this.controllerProxy, statusCode, headers, statusMessage);
+          (_d = (_c = this.handler).onResponseStart) == null ? void 0 : _d.call(_c, this.controllerProxy, statusCode, headers, statusMessage);
           return;
         }
         function shouldRetry(passedErr) {
-          var _a2, _b2, _c2, _d2;
-          if (this.aborted) {
-            return;
-          }
-          this.retryPending = false;
-          this.retryTimer = null;
+          var _a2, _b2;
           if (passedErr) {
-            if (this.headersSent) {
-              (_b2 = (_a2 = this.handler).onResponseError) == null ? void 0 : _b2.call(_a2, this.controllerProxy, passedErr);
-            } else {
-              this.headersSent = true;
-              this.checkpointResponseEnd(headers);
-              (_d2 = (_c2 = this.handler).onResponseStart) == null ? void 0 : _d2.call(_c2, this.controllerProxy, statusCode, headers, statusMessage);
-            }
+            this.headersSent = true;
+            (_b2 = (_a2 = this.handler).onResponseStart) == null ? void 0 : _b2.call(_a2, this.controllerProxy, statusCode, headers, statusMessage);
             controller.resume();
             return;
           }
@@ -189254,26 +189092,14 @@ var require_retry_handler = __commonJS({
           controller.resume();
         }
         controller.pause();
-        this.retryPending = true;
-        this.retryTimer = this.retryOpts.retry(
+        this.retryOpts.retry(
           err,
           {
             state: { counter: this.retryCount },
             opts: { retryOptions: this.retryOpts, ...this.opts }
           },
           shouldRetry.bind(this)
-        ) ?? null;
-      }
-      checkpointResponseEnd(headers) {
-        if (this.end == null && this.opts.method !== "HEAD") {
-          const contentLength = headers["content-length"];
-          this.end = contentLength != null ? Number(contentLength) - 1 : null;
-          assert(
-            this.end == null || Number.isFinite(this.end),
-            "invalid content-length"
-          );
-          this.resume = this.end != null;
-        }
+        );
       }
       onRequestStart(controller, context) {
         var _a, _b;
@@ -189281,14 +189107,6 @@ var require_retry_handler = __commonJS({
         if (!this.headersSent) {
           (_b = (_a = this.handler).onRequestStart) == null ? void 0 : _b.call(_a, this.controllerProxy, context);
         }
-      }
-      onBodySent(chunk) {
-        var _a, _b;
-        (_b = (_a = this.handler).onBodySent) == null ? void 0 : _b.call(_a, chunk);
-      }
-      onRequestSent() {
-        var _a, _b;
-        (_b = (_a = this.handler).onRequestSent) == null ? void 0 : _b.call(_a);
       }
       onRequestUpgrade(_controller, statusCode, headers, socket) {
         var _a, _b;
@@ -189304,8 +189122,7 @@ var require_retry_handler = __commonJS({
           timeoutFactor,
           statusCodes,
           errorCodes,
-          methods,
-          retryAfter
+          methods
         } = retryOptions;
         const { counter } = state;
         if (code && code !== "UND_ERR_REQ_RETRY" && !errorCodes.includes(code)) {
@@ -189324,13 +189141,13 @@ var require_retry_handler = __commonJS({
           cb(err);
           return;
         }
-        let retryAfterHeader = retryAfter === false ? void 0 : headers == null ? void 0 : headers["retry-after"];
+        let retryAfterHeader = headers == null ? void 0 : headers["retry-after"];
         if (retryAfterHeader) {
           retryAfterHeader = Number(retryAfterHeader);
           retryAfterHeader = Number.isNaN(retryAfterHeader) ? calculateRetryAfterHeader(headers["retry-after"]) : retryAfterHeader * 1e3;
         }
         const retryTimeout = retryAfterHeader === 0 ? 0 : retryAfterHeader > 0 ? Math.min(retryAfterHeader, maxTimeout) : Math.min(minTimeout * timeoutFactor ** (counter - 1), maxTimeout);
-        return setTimeout(() => cb(null), retryTimeout);
+        setTimeout(() => cb(null), retryTimeout);
       }
       onResponseStart(controller, statusCode, headers, statusMessage) {
         var _a, _b, _c, _d, _e, _f;
@@ -189342,6 +189159,16 @@ var require_retry_handler = __commonJS({
         this.retryCount += 1;
         this.statusCode = statusCode;
         this.headers = headers;
+        if (statusCode >= 300) {
+          const err = new RequestRetryError("Request failed", statusCode, {
+            headers,
+            data: {
+              count: this.retryCount
+            }
+          });
+          this.onResponseStartWithRetry(controller, statusCode, headers, statusMessage, err);
+          return;
+        }
         if (this.headersSent) {
           if (statusCode !== 206 && (this.start > 0 || statusCode !== 200)) {
             throw new RequestRetryError("server does not support the range header and the payload was partially consumed", statusCode, {
@@ -189364,22 +189191,8 @@ var require_retry_handler = __commonJS({
           }
           validatePartialResponseContentLength(headers, contentRange, statusCode, this.retryCount);
           const { start, size, end = size ? size - 1 : null } = contentRange;
-          if (this.start !== start || this.end != null && this.end !== end) {
-            throw new RequestRetryError("Content-Range mismatch", statusCode, {
-              headers,
-              data: { count: this.retryCount }
-            });
-          }
-          return;
-        }
-        if (statusCode >= 300) {
-          const err = new RequestRetryError("Request failed", statusCode, {
-            headers,
-            data: {
-              count: this.retryCount
-            }
-          });
-          this.onResponseStartWithRetry(controller, statusCode, headers, statusMessage, err);
+          assert(this.start === start, "content-range mismatch");
+          assert(this.end == null || this.end === end, "content-range mismatch");
           return;
         }
         if (this.end == null) {
@@ -189486,20 +189299,12 @@ var require_retry_handler = __commonJS({
       }
       onResponseError(controller, err) {
         var _a, _b;
-        if (this.aborted) {
-          return;
-        }
-        if ((controller == null ? void 0 : controller.aborted) || isDisturbed(this.opts.body) || this.headersSent && !this.resume) {
+        if ((controller == null ? void 0 : controller.aborted) || isDisturbed(this.opts.body)) {
           (_b = (_a = this.handler).onResponseError) == null ? void 0 : _b.call(_a, this.controllerProxy, err);
           return;
         }
         function shouldRetry(returnedErr) {
           var _a2, _b2;
-          if (this.aborted) {
-            return;
-          }
-          this.retryPending = false;
-          this.retryTimer = null;
           if (!returnedErr) {
             this.retry();
             return;
@@ -189511,30 +189316,16 @@ var require_retry_handler = __commonJS({
         } else {
           this.retryCount += 1;
         }
-        this.retryPending = true;
-        this.retryTimer = this.retryOpts.retry(
+        this.retryOpts.retry(
           err,
           {
             state: { counter: this.retryCount },
             opts: { retryOptions: this.retryOpts, ...this.opts }
           },
           shouldRetry.bind(this)
-        ) ?? null;
+        );
       }
     };
-    _RetryHandler_instances = new WeakSet();
-    onAbort_fn = function(reason) {
-      var _a, _b;
-      if (!this.retryPending) {
-        return;
-      }
-      this.aborted = true;
-      this.retryPending = false;
-      clearTimeout(this.retryTimer);
-      this.retryTimer = null;
-      (_b = (_a = this.handler).onResponseError) == null ? void 0 : _b.call(_a, this.controllerProxy, reason ?? new RequestAbortedError());
-    };
-    var RetryHandler = _RetryHandler;
     module2.exports = RetryHandler;
   }
 });
@@ -189545,7 +189336,6 @@ var require_retry_agent = __commonJS({
     "use strict";
     var Dispatcher = require_dispatcher();
     var RetryHandler = require_retry_handler();
-    var { kOriginless, kUrl } = require_symbols();
     var _agent, _options;
     var RetryAgent = class extends Dispatcher {
       constructor(agent, options = {}) {
@@ -189554,8 +189344,6 @@ var require_retry_agent = __commonJS({
         __privateAdd(this, _options, null);
         __privateSet(this, _agent, agent);
         __privateSet(this, _options, options);
-        this[kUrl] = agent[kUrl];
-        this[kOriginless] = agent[kOriginless];
       }
       dispatch(opts, handler) {
         const retry = new RetryHandler({
@@ -191234,7 +191022,8 @@ var require_mock_utils = __commonJS({
                 handler.onResponseError(null, new InvalidArgumentError("reply options callback must return an object"));
                 return;
               }
-              dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler, { ...responseDefaults, ...resolvedData });
+              mockDispatch2.data = { ...responseDefaults, ...resolvedData };
+              dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler);
             },
             (error) => {
               handler.onResponseError(null, error);
@@ -191245,14 +191034,13 @@ var require_mock_utils = __commonJS({
         if (callbackResult == null || typeof callbackResult !== "object") {
           throw new InvalidArgumentError("reply options callback must return an object");
         }
-        return dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler, { ...responseDefaults, ...callbackResult });
+        mockDispatch2.data = { ...responseDefaults, ...callbackResult };
       }
       return dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler);
     }
-    function dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler, resolvedResponse) {
+    function dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler) {
       var _a;
-      const { data: responseData, delay } = mockDispatch2;
-      const response = resolvedResponse ?? responseData;
+      const { data: response, delay } = mockDispatch2;
       if (response.error !== null) {
         deleteMockDispatch(mockDispatches, key);
         handler.onResponseError(null, response.error);
@@ -191327,7 +191115,8 @@ var require_mock_utils = __commonJS({
                   handler.onResponseError(null, new InvalidArgumentError("reply options callback must return an object"));
                   return;
                 }
-                handleReply(dispatches, { ...responseDefaults, ...resolvedData });
+                mockDispatch2.data = { ...responseDefaults, ...resolvedData };
+                handleReply(dispatches, mockDispatch2.data);
               },
               (err) => {
                 handler.onResponseError(null, err);
@@ -191338,7 +191127,8 @@ var require_mock_utils = __commonJS({
           if (callbackResult == null || typeof callbackResult !== "object") {
             throw new InvalidArgumentError("reply options callback must return an object");
           }
-          handleReply(dispatches, { ...responseDefaults, ...callbackResult });
+          mockDispatch2.data = { ...responseDefaults, ...callbackResult };
+          handleReply(dispatches, mockDispatch2.data);
           return;
         }
         if (typeof delay === "number" && delay > 0) {
@@ -191364,13 +191154,13 @@ var require_mock_utils = __commonJS({
         if (aborted) {
           return;
         }
-        const responseData2 = getResponseData(body);
+        const responseData = getResponseData(body);
         const responseHeaders = generateKeyValues(headers ?? {});
         const responseTrailers = generateKeyValues(trailers ?? {});
         controller.rawHeaders = responseHeaders;
         controller.rawTrailers = responseTrailers;
         (_a2 = handler.onResponseStart) == null ? void 0 : _a2.call(handler, controller, statusCode, parseHeaders(responseHeaders), getStatusText(statusCode));
-        (_b = handler.onResponseData) == null ? void 0 : _b.call(handler, controller, Buffer.from(responseData2));
+        (_b = handler.onResponseData) == null ? void 0 : _b.call(handler, controller, Buffer.from(responseData));
         (_c = handler.onResponseEnd) == null ? void 0 : _c.call(handler, controller, parseHeaders(responseTrailers));
         deleteMockDispatch(mockDispatches2, key);
       }
@@ -192135,18 +191925,10 @@ var require_mock_agent = __commonJS({
       }
       dispatch(opts, handler) {
         opts.origin = normalizeOrigin(opts.origin);
-        const mockDispatcher = this.get(opts.origin);
+        this.get(opts.origin);
         this[kMockAgentAddCallHistoryLog](opts);
         const acceptNonStandardSearchParameters = this[kMockAgentAcceptsNonStandardSearchParameters];
         const dispatchOpts = { ...opts };
-        if (dispatchOpts.allowH2 === false) {
-          const http1OnlyKey = `${dispatchOpts.origin}#http1-only`;
-          if (!this[kClients].has(http1OnlyKey)) {
-            const http1OnlyDispatcher = this[kFactory](dispatchOpts.origin);
-            http1OnlyDispatcher[kDispatches] = mockDispatcher[kDispatches];
-            this[kMockAgentSet](http1OnlyKey, http1OnlyDispatcher);
-          }
-        }
         if (acceptNonStandardSearchParameters && dispatchOpts.path) {
           const [path, searchParams] = dispatchOpts.path.split("?");
           const normalizedSearchParams = normalizeSearchParams(searchParams, acceptNonStandardSearchParameters);
@@ -193180,13 +192962,7 @@ var require_decorator_handler = __commonJS({
       /**
        * @deprecated
        */
-      onBodySent(...args) {
-        var _a2, _b;
-        return (_b = (_a2 = __privateGet(this, _handler)).onBodySent) == null ? void 0 : _b.call(_a2, ...args);
-      }
-      onRequestSent(...args) {
-        var _a2, _b;
-        return (_b = (_a2 = __privateGet(this, _handler)).onRequestSent) == null ? void 0 : _b.call(_a2, ...args);
+      onBodySent() {
       }
     }, _handler = new WeakMap(), _onCompleteCalled = new WeakMap(), _onErrorCalled = new WeakMap(), _onResponseStartCalled = new WeakMap(), _a);
   }
@@ -193199,7 +192975,6 @@ var require_redirect_handler = __commonJS({
     var util = require_util();
     var assert = require("node:assert");
     var { InvalidArgumentError } = require_errors();
-    var { kRequestOrigin } = require_symbols();
     var redirectableStatusCodes = [300, 301, 302, 303, 307, 308];
     var noop = () => {
     };
@@ -193233,14 +193008,6 @@ var require_redirect_handler = __commonJS({
         var _a, _b;
         (_b = (_a = this.handler).onRequestStart) == null ? void 0 : _b.call(_a, controller, { ...context, history: this.history });
       }
-      onBodySent(chunk) {
-        var _a, _b;
-        (_b = (_a = this.handler).onBodySent) == null ? void 0 : _b.call(_a, chunk);
-      }
-      onRequestSent() {
-        var _a, _b;
-        (_b = (_a = this.handler).onRequestSent) == null ? void 0 : _b.call(_a);
-      }
       onRequestUpgrade(controller, statusCode, headers, socket) {
         var _a, _b;
         (_b = (_a = this.handler).onRequestUpgrade) == null ? void 0 : _b.call(_a, controller, statusCode, headers, socket);
@@ -193267,16 +193034,14 @@ var require_redirect_handler = __commonJS({
           this.opts.body = null;
         }
         this.location = this.history.length >= this.maxRedirections || util.isDisturbed(this.opts.body) || redirectableStatusCodes.indexOf(statusCode) === -1 ? null : headers.location;
-        const requestOrigin = this.opts[kRequestOrigin] === void 0 ? this.opts.origin : this.opts[kRequestOrigin];
-        if (requestOrigin) {
-          this.history.push(new URL(this.opts.path, requestOrigin));
+        if (this.opts.origin) {
+          this.history.push(new URL(this.opts.path, this.opts.origin));
         }
         if (!this.location) {
           (_b = (_a = this.handler).onResponseStart) == null ? void 0 : _b.call(_a, controller, statusCode, headers, statusMessage);
           return;
         }
-        const baseUrl = requestOrigin ? new URL(this.opts.path, requestOrigin) : void 0;
-        const { origin, pathname, search } = util.parseURL(new URL(this.location, baseUrl));
+        const { origin, pathname, search } = util.parseURL(new URL(this.location, this.opts.origin && new URL(this.opts.path, this.opts.origin)));
         const path = search ? `${pathname}${search}` : pathname;
         const redirectUrlString = `${origin}${path}`;
         for (const historyUrl of this.history) {
@@ -193284,10 +193049,9 @@ var require_redirect_handler = __commonJS({
             throw new InvalidArgumentError(`Redirect loop detected. Cannot redirect to ${origin}. This typically happens when using a Client or Pool with cross-origin redirects. Use an Agent for cross-origin redirects.`);
           }
         }
-        this.opts.headers = cleanRequestHeaders(this.opts.headers, removeContentHeaders, requestOrigin !== origin, this.stripHeadersOnRedirect, this.stripHeadersOnCrossOriginRedirect);
+        this.opts.headers = cleanRequestHeaders(this.opts.headers, removeContentHeaders, this.opts.origin !== origin, this.stripHeadersOnRedirect, this.stripHeadersOnCrossOriginRedirect);
         this.opts.path = path;
         this.opts.origin = origin;
-        this.opts[kRequestOrigin] = origin;
         this.opts.query = null;
       }
       onResponseData(controller, chunk) {
@@ -193509,7 +193273,7 @@ var require_dump = __commonJS({
     "use strict";
     var { InvalidArgumentError, RequestAbortedError } = require_errors();
     var DecoratorHandler = require_decorator_handler();
-    var _maxSize, _dumped, _size, _DumpHandler_instances, abort_fn;
+    var _maxSize, _dumped, _size, _controller, _DumpHandler_instances, abort_fn;
     var DumpHandler = class extends DecoratorHandler {
       constructor({ maxSize, signal }, handler) {
         if (maxSize != null && (!Number.isFinite(maxSize) || maxSize < 1)) {
@@ -193520,12 +193284,14 @@ var require_dump = __commonJS({
         __privateAdd(this, _maxSize, 1024 * 1024);
         __privateAdd(this, _dumped, false);
         __privateAdd(this, _size, 0);
+        __privateAdd(this, _controller, null);
         __publicField(this, "aborted", false);
         __publicField(this, "reason", false);
         __privateSet(this, _maxSize, maxSize ?? __privateGet(this, _maxSize));
       }
       onRequestStart(controller, context) {
         controller.abort = __privateMethod(this, _DumpHandler_instances, abort_fn).bind(this);
+        __privateSet(this, _controller, controller);
         return super.onRequestStart(controller, context);
       }
       onResponseStart(controller, statusCode, headers, statusMessage) {
@@ -193541,31 +193307,40 @@ var require_dump = __commonJS({
         return super.onResponseStart(controller, statusCode, headers, statusMessage);
       }
       onResponseError(controller, err) {
-        super.onResponseError(controller, this.aborted === true ? this.reason : err);
+        var _a;
+        if (__privateGet(this, _dumped)) {
+          return;
+        }
+        err = ((_a = __privateGet(this, _controller)) == null ? void 0 : _a.reason) ?? err;
+        super.onResponseError(controller, err);
       }
       onResponseData(controller, chunk) {
         __privateSet(this, _size, __privateGet(this, _size) + chunk.length);
-        if (__privateGet(this, _size) > __privateGet(this, _maxSize)) {
-          throw new RequestAbortedError(
-            `Response size (${__privateGet(this, _size)}) larger than maxSize (${__privateGet(this, _maxSize)})`
-          );
-        }
-        if (__privateGet(this, _size) === __privateGet(this, _maxSize)) {
+        if (__privateGet(this, _size) >= __privateGet(this, _maxSize)) {
           __privateSet(this, _dumped, true);
+          if (this.aborted === true) {
+            super.onResponseError(controller, this.reason);
+          } else {
+            super.onResponseEnd(controller, {});
+          }
         }
         return true;
       }
       onResponseEnd(controller, trailers) {
-        if (this.aborted === true) {
+        if (__privateGet(this, _dumped)) {
+          return;
+        }
+        if (__privateGet(this, _controller).aborted === true) {
           super.onResponseError(controller, this.reason);
           return;
         }
-        super.onResponseEnd(controller, __privateGet(this, _dumped) ? {} : trailers);
+        super.onResponseEnd(controller, trailers);
       }
     };
     _maxSize = new WeakMap();
     _dumped = new WeakMap();
     _size = new WeakMap();
+    _controller = new WeakMap();
     _DumpHandler_instances = new WeakSet();
     abort_fn = function(reason) {
       this.aborted = true;
@@ -193594,7 +193369,6 @@ var require_dns = __commonJS({
     var { lookup } = require("node:dns");
     var DecoratorHandler = require_decorator_handler();
     var { InvalidArgumentError, InformationalError } = require_errors();
-    var { kRequestOrigin } = require_symbols();
     var maxInt = Math.pow(2, 31) - 1;
     function hasSafeIterator(headers) {
       const prototype = Object.getPrototypeOf(headers);
@@ -193944,7 +193718,6 @@ var require_dns = __commonJS({
               const dispatchOpts = {
                 ...__privateGet(this, _opts),
                 origin: `${__privateGet(this, _origin).protocol}//${ip.family === 6 ? `[${ip.address}]` : ip.address}${port}`,
-                [kRequestOrigin]: __privateGet(this, _opts)[kRequestOrigin] === void 0 ? __privateGet(this, _origin) : __privateGet(this, _opts)[kRequestOrigin],
                 headers: withHostHeader(__privateGet(this, _origin).host, __privateGet(this, _opts).headers)
               };
               __privateGet(this, _dispatch).call(this, dispatchOpts, this);
@@ -194031,7 +193804,6 @@ var require_dns = __commonJS({
               servername: origin.hostname,
               // For SNI on TLS
               origin: newOrigin.origin,
-              [kRequestOrigin]: origDispatchOpts[kRequestOrigin] === void 0 ? origin : origDispatchOpts[kRequestOrigin],
               headers: withHostHeader(origin.host, origDispatchOpts.headers)
             };
             dispatch(
@@ -194060,7 +193832,6 @@ var require_cache = __commonJS({
       isValidHTTPToken
     } = require_util();
     var { serializePathWithQuery } = require_util();
-    var { kRequestOrigin } = require_symbols();
     var MAX_DELTA_SECONDS = 2147483647;
     var RESTRICTIVE_DIRECTIVE_NAMES = ["no-store", "private", "no-cache"];
     var kInvalidCacheControlDirectives = /* @__PURE__ */ Symbol("invalid cache-control directives");
@@ -194173,39 +193944,14 @@ var require_cache = __commonJS({
         return tokenOnlyKey;
       }
     }
-    function getRequestOrigin(opts) {
-      const origin = opts[kRequestOrigin] === void 0 ? opts.origin : opts[kRequestOrigin];
-      return typeof origin === "string" || origin instanceof URL ? origin : null;
-    }
-    function getInterceptorOrigin(opts, interceptorOrigin) {
-      const requestOrigin = getRequestOrigin(opts);
-      if (interceptorOrigin === void 0) {
-        return requestOrigin;
-      }
-      if (interceptorOrigin === null) {
-        return null;
-      }
-      if (requestOrigin) {
-        try {
-          if (new URL(requestOrigin).origin !== interceptorOrigin) {
-            return null;
-          }
-        } catch {
-          return interceptorOrigin;
-        }
-      }
-      return interceptorOrigin;
-    }
-    function makeCacheKey(opts, origin = getRequestOrigin(opts)) {
-      if (!origin) {
-        throw new Error("opts.origin is undefined");
-      }
+    function makeCacheKey(opts) {
+      const origin = opts.origin ? opts.origin.toString() : "";
       let fullPath = opts.path || "/";
       if (opts.query && !pathHasQueryOrFragment(fullPath)) {
         fullPath = serializePathWithQuery(fullPath, opts.query);
       }
       return {
-        origin: origin.toString(),
+        origin,
         method: opts.method,
         path: fullPath,
         headers: opts.headers
@@ -194580,8 +194326,6 @@ var require_cache = __commonJS({
       return JSON.stringify([cacheKey.origin, cacheKey.method, cacheKey.path, headers]);
     }
     module2.exports = {
-      getInterceptorOrigin,
-      getRequestOrigin,
       makeCacheKey,
       normalizeHeaders,
       assertCacheKey,
@@ -195250,14 +194994,6 @@ var require_cache_handler = __commonJS({
         __privateSet(this, _writeStream, void 0);
         (_c = (_b = __privateGet(this, _handler)).onRequestStart) == null ? void 0 : _c.call(_b, controller, context);
       }
-      onBodySent(chunk) {
-        var _a, _b;
-        (_b = (_a = __privateGet(this, _handler)).onBodySent) == null ? void 0 : _b.call(_a, chunk);
-      }
-      onRequestSent() {
-        var _a, _b;
-        (_b = (_a = __privateGet(this, _handler)).onRequestSent) == null ? void 0 : _b.call(_a);
-      }
       onRequestUpgrade(controller, statusCode, headers, socket) {
         var _a, _b;
         (_b = (_a = __privateGet(this, _handler)).onRequestUpgrade) == null ? void 0 : _b.call(_a, controller, statusCode, headers, socket);
@@ -195285,11 +195021,6 @@ var require_cache_handler = __commonJS({
           return downstreamOnHeaders();
         }
         const cacheControlHeader = resHeaders["cache-control"];
-        const cacheControlDirectives = cacheControlHeader ? parseCacheControlHeader(cacheControlHeader) : {};
-        if (revalidationResponseDisallowsCachedReuse(__privateGet(this, _cacheType), resHeaders, cacheControlDirectives)) {
-          deleteCachedValue(__privateGet(this, _store), __privateGet(this, _cacheKey));
-          return downstreamOnHeaders();
-        }
         const heuristicallyCacheable = resHeaders["last-modified"] && arrayIncludes(HEURISTICALLY_CACHEABLE_STATUS_CODES, statusCode);
         if (!cacheControlHeader && !resHeaders["expires"] && !heuristicallyCacheable && !__privateGet(this, _cacheByDefault)) {
           if (statusCode === 304 && resHeaders.vary && isInvalidOrWildcardVaryHeader(resHeaders.vary)) {
@@ -195297,7 +195028,8 @@ var require_cache_handler = __commonJS({
           }
           return downstreamOnHeaders();
         }
-        if (!canCacheResponse(__privateGet(this, _cacheType), __privateGet(this, _cacheKey).method, statusCode, resHeaders, cacheControlDirectives, __privateGet(this, _cacheKey).headers)) {
+        const cacheControlDirectives = cacheControlHeader ? parseCacheControlHeader(cacheControlHeader) : {};
+        if (!canCacheResponse(__privateGet(this, _cacheType), statusCode, resHeaders, cacheControlDirectives, __privateGet(this, _cacheKey).headers)) {
           if (statusCode === 304 && (cacheControlHeader || revalidationResponseDisallowsCachedReuse(__privateGet(this, _cacheType), resHeaders, cacheControlDirectives))) {
             deleteCachedValue(__privateGet(this, _store), __privateGet(this, _cacheKey));
           }
@@ -195474,12 +195206,9 @@ var require_cache_handler = __commonJS({
       }
     }
     function revalidationResponseDisallowsCachedReuse(cacheType, resHeaders, cacheControlDirectives) {
-      return cacheControlDirectives["no-store"] === true || cacheType === "shared" && (cacheControlDirectives.private === true || Object.hasOwn(resHeaders, "set-cookie")) || (resHeaders.vary ? isInvalidOrWildcardVaryHeader(resHeaders.vary) : false);
+      return cacheControlDirectives["no-store"] === true || cacheType === "shared" && cacheControlDirectives.private === true || (resHeaders.vary ? isInvalidOrWildcardVaryHeader(resHeaders.vary) : false);
     }
-    function canCacheResponse(cacheType, method, statusCode, resHeaders, cacheControlDirectives, reqHeaders) {
-      if (!arrayIncludes(util.safeHTTPMethods, method)) {
-        return false;
-      }
+    function canCacheResponse(cacheType, statusCode, resHeaders, cacheControlDirectives, reqHeaders) {
       if (statusCode < 200 || arrayIncludes(NOT_UNDERSTOOD_STATUS_CODES, statusCode)) {
         return false;
       }
@@ -195490,7 +195219,7 @@ var require_cache_handler = __commonJS({
       if (cacheControlDirectives["no-store"]) {
         return false;
       }
-      if (cacheType === "shared" && (cacheControlDirectives.private === true || Object.hasOwn(resHeaders, "set-cookie"))) {
+      if (cacheType === "shared" && cacheControlDirectives.private === true) {
         return false;
       }
       if (resHeaders.vary && hasVaryStar(resHeaders.vary)) {
@@ -195726,7 +195455,7 @@ var require_memory_cache_store = __commonJS({
         return __privateGet(this, _size) >= __privateGet(this, _maxSize) || __privateGet(this, _count) >= __privateGet(this, _maxCount);
       }
       /**
-       * @param {import('../../types/cache-interceptor.d.ts').default.CacheKey} key
+       * @param {import('../../types/cache-interceptor.d.ts').default.CacheKey} req
        * @returns {import('../../types/cache-interceptor.d.ts').default.GetResult | undefined}
        */
       get(key) {
@@ -195799,7 +195528,7 @@ var require_memory_cache_store = __commonJS({
                 __privateSet(store, _hasEmittedMaxSizeEvent, true);
               }
               for (const [key2, entries2] of __privateGet(store, _entries)) {
-                for (const entry2 of entries2.splice(0, Math.ceil(entries2.length / 2))) {
+                for (const entry2 of entries2.splice(0, entries2.length / 2)) {
                   __privateSet(store, _size, __privateGet(store, _size) - entry2.size);
                   __privateSet(store, _count, __privateGet(store, _count) - 1);
                 }
@@ -195995,16 +195724,7 @@ var require_cache2 = __commonJS({
     var CacheHandler = require_cache_handler();
     var MemoryCacheStore = require_memory_cache_store();
     var CacheRevalidationHandler = require_cache_revalidation_handler();
-    var {
-      assertCacheStore,
-      assertCacheMethods,
-      getInterceptorOrigin,
-      makeCacheKey,
-      normalizeHeaders,
-      parseCacheControlHeader,
-      isInvalidOrWildcardVaryHeader,
-      parseVaryHeader
-    } = require_cache();
+    var { assertCacheStore, assertCacheMethods, makeCacheKey, normalizeHeaders, parseCacheControlHeader, isInvalidOrWildcardVaryHeader } = require_cache();
     var { AbortError } = require_errors();
     var { parseHttpDate } = require_date();
     function assertCacheOrigins(origins, name) {
@@ -196072,7 +195792,7 @@ var require_cache2 = __commonJS({
       ((_c = result.cacheControlDirectives) == null ? void 0 : _c["s-maxage"]) !== void 0);
     }
     function revalidationResponseDisallowsCachedReuse(cacheType, headers) {
-      if (headers.vary && isInvalidOrWildcardVaryHeader(headers.vary) || cacheType === "shared" && Object.hasOwn(headers, "set-cookie")) {
+      if (headers.vary && isInvalidOrWildcardVaryHeader(headers.vary)) {
         return true;
       }
       const cacheControl = headers["cache-control"];
@@ -196084,17 +195804,6 @@ var require_cache2 = __commonJS({
     }
     function revalidationResponseUpdatesCacheControl(headers) {
       return headers["cache-control"] !== void 0;
-    }
-    function revalidationResponseAddsVary(result, varyDirectives) {
-      if (!varyDirectives) {
-        return false;
-      }
-      for (const key in varyDirectives) {
-        if (result.vary == null || !Object.hasOwn(result.vary, key)) {
-          return true;
-        }
-      }
-      return false;
     }
     function deleteCachedValue(store, cacheKey) {
       var _a, _b;
@@ -196255,13 +195964,6 @@ var require_cache2 = __commonJS({
       if (!result) {
         return handleUncachedResponse(dispatch, globalOpts, cacheKey, handler, opts, reqCacheControl);
       }
-      if (globalOpts.type === "shared" && Object.hasOwn(result.headers, "set-cookie")) {
-        if (util.isStream(result.body)) {
-          result.body.on("error", nop).destroy();
-        }
-        deleteCachedValue(globalOpts.store, cacheKey);
-        return handleUncachedResponse(dispatch, globalOpts, cacheKey, handler, opts, reqCacheControl);
-      }
       const now = Date.now();
       if (now > result.deleteAt) {
         return dispatch(opts, new CacheHandler(globalOpts, cacheKey, handler));
@@ -196328,12 +196030,6 @@ var require_cache2 = __commonJS({
                   }
                   if (revalidationResponseUpdatesCacheControl(headers2)) {
                     deleteCachedValue(globalOpts.store, cacheKey);
-                  } else if (revalidationResponseAddsVary(result, headers2.vary ? parseVaryHeader(headers2.vary, opts.headers) : void 0)) {
-                    if (util.isStream(result.body)) {
-                      result.body.on("error", nop).destroy();
-                    }
-                    deleteCachedValue(globalOpts.store, cacheKey);
-                    return dispatch(opts, new CacheHandler(globalOpts, cacheKey, handler));
                   }
                 }
                 sendCachedValue(handler, opts, result, age, context, stale);
@@ -196384,24 +196080,26 @@ var require_cache2 = __commonJS({
           safeMethodsToNotCache.push(method);
         }
       }
-      return (dispatch, interceptorOrigin) => {
+      return (dispatch) => {
         return (opts2, handler) => {
           var _a;
-          const requestOrigin = getInterceptorOrigin(opts2, interceptorOrigin);
-          if (!requestOrigin || arrayIncludes(safeMethodsToNotCache, opts2.method)) {
+          if (arrayIncludes(safeMethodsToNotCache, opts2.method)) {
             return dispatch(opts2, handler);
           }
           if (origins !== void 0) {
-            const normalizedRequestOrigin = requestOrigin.toString().toLowerCase();
+            if (!opts2.origin) {
+              return dispatch(opts2, handler);
+            }
+            const requestOrigin = opts2.origin.toString().toLowerCase();
             let isAllowed = false;
             for (let i = 0; i < origins.length; i++) {
               const allowed = origins[i];
               if (typeof allowed === "string") {
-                if (allowed.toLowerCase() === normalizedRequestOrigin) {
+                if (allowed.toLowerCase() === requestOrigin) {
                   isAllowed = true;
                   break;
                 }
-              } else if (allowed.test(normalizedRequestOrigin)) {
+              } else if (allowed.test(requestOrigin)) {
                 isAllowed = true;
                 break;
               }
@@ -196418,10 +196116,7 @@ var require_cache2 = __commonJS({
           if (reqCacheControl == null ? void 0 : reqCacheControl["no-store"]) {
             return dispatch(opts2, handler);
           }
-          const cacheKey = makeCacheKey(opts2, requestOrigin);
-          if (!arrayIncludes(util.safeHTTPMethods, opts2.method)) {
-            return dispatch(opts2, new CacheHandler(globalOpts, cacheKey, handler));
-          }
+          const cacheKey = makeCacheKey(opts2);
           const result = store.get(cacheKey);
           if (result && typeof result.then === "function") {
             return result.then((result2) => handleResult(
@@ -196455,8 +196150,7 @@ var require_decompress2 = __commonJS({
   "addons/pro/node_modules/undici/lib/interceptor/decompress.js"(exports2, module2) {
     "use strict";
     var { createInflate, createGunzip, createBrotliDecompress, createZstdDecompress } = require("node:zlib");
-    var { pipeline, Transform: TransformStream2 } = require("node:stream");
-    var { InvalidArgumentError, ResponseExceededMaxSizeError } = require_errors();
+    var { pipeline } = require("node:stream");
     var DecoratorHandler = require_decorator_handler();
     var supportedEncodings = {
       gzip: createGunzip,
@@ -196471,33 +196165,13 @@ var require_decompress2 = __commonJS({
       /** @type {const} */
       [204, 304]
     );
-    var defaultMaxSize = 64 * 1024 * 1024;
-    function createMaxSizeLimiter(maxSize) {
-      let size = 0;
-      return new TransformStream2({
-        transform(chunk, _encoding, callback) {
-          const decompressedSize = size + chunk.length;
-          if (decompressedSize > maxSize) {
-            callback(new ResponseExceededMaxSizeError(
-              `Decompressed response size (${decompressedSize}) exceeded maxSize (${maxSize})`
-            ));
-            return;
-          }
-          size = decompressedSize;
-          callback(null, chunk);
-        }
-      });
-    }
     var warningEmitted = (
       /** @type {boolean} */
       false
     );
-    var _decompressors, _trailers, _skipStatusCodes, _skipErrorResponses, _maxSize, _decompressedSize, _terminated, _inputEnded, _DecompressHandler_instances, shouldSkipDecompression_fn, createDecompressionChain_fn, fail_fn, setupDecompressorEvents_fn, setupSingleDecompressor_fn, setupMultipleDecompressors_fn, cleanupDecompressors_fn;
+    var _decompressors, _trailers, _skipStatusCodes, _skipErrorResponses, _DecompressHandler_instances, shouldSkipDecompression_fn, createDecompressionChain_fn, setupDecompressorEvents_fn, setupSingleDecompressor_fn, setupMultipleDecompressors_fn, cleanupDecompressors_fn;
     var _DecompressHandler = class _DecompressHandler extends DecoratorHandler {
-      constructor(handler, { skipStatusCodes = defaultSkipStatusCodes, skipErrorResponses = true, maxSize = defaultMaxSize } = {}) {
-        if (!Number.isSafeInteger(maxSize) || maxSize < 1) {
-          throw new InvalidArgumentError("maxSize must be a positive integer");
-        }
+      constructor(handler, { skipStatusCodes = defaultSkipStatusCodes, skipErrorResponses = true } = {}) {
         super(handler);
         __privateAdd(this, _DecompressHandler_instances);
         /** @type {Transform[]} */
@@ -196508,17 +196182,8 @@ var require_decompress2 = __commonJS({
         __privateAdd(this, _skipStatusCodes);
         /** @type {boolean} */
         __privateAdd(this, _skipErrorResponses);
-        /** @type {number} */
-        __privateAdd(this, _maxSize);
-        /** @type {number} */
-        __privateAdd(this, _decompressedSize, 0);
-        /** @type {boolean} */
-        __privateAdd(this, _terminated, false);
-        /** @type {boolean} */
-        __privateAdd(this, _inputEnded, false);
         __privateSet(this, _skipStatusCodes, skipStatusCodes);
         __privateSet(this, _skipErrorResponses, skipErrorResponses);
-        __privateSet(this, _maxSize, maxSize);
       }
       /**
        * @param {Controller} controller
@@ -196552,7 +196217,7 @@ var require_decompress2 = __commonJS({
               }
               filteredHeaders.push(rawHeaders[i], rawHeaders[i + 1]);
             }
-            rawHeaders.splice(0, rawHeaders.length, ...filteredHeaders);
+            controller.rawHeaders = filteredHeaders;
           } else if (typeof rawHeaders === "object") {
             for (const name of Object.keys(rawHeaders)) {
               const lowerName = name.toLowerCase();
@@ -196588,9 +196253,9 @@ var require_decompress2 = __commonJS({
        */
       onResponseEnd(controller, trailers) {
         if (__privateGet(this, _decompressors).length > 0) {
-          __privateSet(this, _inputEnded, true);
           __privateSet(this, _trailers, trailers);
           __privateGet(this, _decompressors)[0].end();
+          __privateMethod(this, _DecompressHandler_instances, cleanupDecompressors_fn).call(this);
           return;
         }
         super.onResponseEnd(controller, trailers);
@@ -196601,14 +196266,12 @@ var require_decompress2 = __commonJS({
        * @returns {void}
        */
       onResponseError(controller, err) {
-        if (__privateGet(this, _terminated)) {
-          return;
+        if (__privateGet(this, _decompressors).length > 0) {
+          for (const decompressor of __privateGet(this, _decompressors)) {
+            decompressor.destroy(err);
+          }
+          __privateMethod(this, _DecompressHandler_instances, cleanupDecompressors_fn).call(this);
         }
-        __privateSet(this, _terminated, true);
-        for (const decompressor of __privateGet(this, _decompressors)) {
-          decompressor.destroy();
-        }
-        __privateMethod(this, _DecompressHandler_instances, cleanupDecompressors_fn).call(this);
         super.onResponseError(controller, err);
       }
     };
@@ -196616,10 +196279,6 @@ var require_decompress2 = __commonJS({
     _trailers = new WeakMap();
     _skipStatusCodes = new WeakMap();
     _skipErrorResponses = new WeakMap();
-    _maxSize = new WeakMap();
-    _decompressedSize = new WeakMap();
-    _terminated = new WeakMap();
-    _inputEnded = new WeakMap();
     _DecompressHandler_instances = new WeakSet();
     /**
      * Determines if decompression should be skipped based on encoding and status code
@@ -196637,7 +196296,7 @@ var require_decompress2 = __commonJS({
      * Creates a chain of decompressors for multiple content encodings
      *
      * @param {string} encodings - Comma-separated list of content encodings
-     * @returns {Array<Transform>} - Array of decompressor and limiting streams
+     * @returns {Array<DecompressorStream>} - Array of decompressor streams
      * @throws {Error} - If the number of content-encodings exceeds the maximum allowed
      */
     createDecompressionChain_fn = function(encodings) {
@@ -196656,33 +196315,7 @@ var require_decompress2 = __commonJS({
         }
         decompressors.push(supportedEncodings[encoding]());
       }
-      if (decompressors.length < 2) {
-        return decompressors;
-      }
-      const streams = [];
-      for (let i = 0; i < decompressors.length; i++) {
-        streams.push(decompressors[i]);
-        if (i < decompressors.length - 1) {
-          streams.push(createMaxSizeLimiter(__privateGet(this, _maxSize)));
-        }
-      }
-      return streams;
-    };
-    /**
-     * Stops decompression and reports an error.
-     * @param {Controller} controller - The controller to coordinate with
-     * @param {Error} error - The decompression error
-     * @returns {void}
-     */
-    fail_fn = function(controller, error) {
-      if (__privateGet(this, _terminated)) {
-        return;
-      }
-      if (__privateGet(this, _inputEnded)) {
-        this.onResponseError(controller, error);
-      } else {
-        controller.abort(error);
-      }
+      return decompressors;
     };
     /**
      * Sets up event handlers for a decompressor stream using readable events
@@ -196692,19 +196325,8 @@ var require_decompress2 = __commonJS({
      */
     setupDecompressorEvents_fn = function(decompressor, controller) {
       decompressor.on("readable", () => {
-        if (__privateGet(this, _terminated)) {
-          return;
-        }
         let chunk;
         while ((chunk = decompressor.read()) !== null) {
-          const decompressedSize = __privateGet(this, _decompressedSize) + chunk.length;
-          if (decompressedSize > __privateGet(this, _maxSize)) {
-            __privateMethod(this, _DecompressHandler_instances, fail_fn).call(this, controller, new ResponseExceededMaxSizeError(
-              `Decompressed response size (${decompressedSize}) exceeded maxSize (${__privateGet(this, _maxSize)})`
-            ));
-            return;
-          }
-          __privateSet(this, _decompressedSize, decompressedSize);
           const result = __superGet(_DecompressHandler.prototype, this, "onResponseData").call(this, controller, chunk);
           if (result === false) {
             break;
@@ -196712,7 +196334,7 @@ var require_decompress2 = __commonJS({
         }
       });
       decompressor.on("error", (error) => {
-        __privateMethod(this, _DecompressHandler_instances, fail_fn).call(this, controller, error);
+        __superGet(_DecompressHandler.prototype, this, "onResponseError").call(this, controller, error);
       });
     };
     /**
@@ -196724,11 +196346,6 @@ var require_decompress2 = __commonJS({
       const decompressor = __privateGet(this, _decompressors)[0];
       __privateMethod(this, _DecompressHandler_instances, setupDecompressorEvents_fn).call(this, decompressor, controller);
       decompressor.on("end", () => {
-        if (__privateGet(this, _terminated)) {
-          return;
-        }
-        __privateSet(this, _terminated, true);
-        __privateMethod(this, _DecompressHandler_instances, cleanupDecompressors_fn).call(this);
         __superGet(_DecompressHandler.prototype, this, "onResponseEnd").call(this, controller, __privateGet(this, _trailers));
       });
     };
@@ -196741,15 +196358,10 @@ var require_decompress2 = __commonJS({
       const lastDecompressor = __privateGet(this, _decompressors)[__privateGet(this, _decompressors).length - 1];
       __privateMethod(this, _DecompressHandler_instances, setupDecompressorEvents_fn).call(this, lastDecompressor, controller);
       pipeline(__privateGet(this, _decompressors), (err) => {
-        if (__privateGet(this, _terminated)) {
-          return;
-        }
         if (err) {
-          __privateMethod(this, _DecompressHandler_instances, fail_fn).call(this, controller, err);
+          __superGet(_DecompressHandler.prototype, this, "onResponseError").call(this, controller, err);
           return;
         }
-        __privateSet(this, _terminated, true);
-        __privateMethod(this, _DecompressHandler_instances, cleanupDecompressors_fn).call(this);
         __superGet(_DecompressHandler.prototype, this, "onResponseEnd").call(this, controller, __privateGet(this, _trailers));
       });
     };
@@ -197092,20 +196704,12 @@ var require_deduplication_handler = __commonJS({
           return state.reason;
         },
         abort: (reason) => {
-          var _a;
-          if (state.aborted) {
-            return;
-          }
           state.aborted = true;
           state.reason = reason ?? null;
           waitingHandler.done = true;
           waitingHandler.pendingTrailers = null;
           waitingHandler.bufferedChunks = [];
           waitingHandler.bufferedBytes = 0;
-          try {
-            (_a = handler.onResponseError) == null ? void 0 : _a.call(handler, waitingHandler.controller, state.reason ?? new RequestAbortedError());
-          } catch {
-          }
         }
       };
       return waitingHandler;
@@ -197156,6 +196760,7 @@ var require_deduplication_handler = __commonJS({
      * @param {Error} err
      */
     errorWaitingHandler_fn = function(waitingHandler, err) {
+      var _a, _b;
       if (waitingHandler.done) {
         return;
       }
@@ -197163,7 +196768,11 @@ var require_deduplication_handler = __commonJS({
       waitingHandler.pendingTrailers = null;
       waitingHandler.bufferedChunks = [];
       waitingHandler.bufferedBytes = 0;
-      waitingHandler.controller.abort(err);
+      try {
+        waitingHandler.controller.abort(err);
+        (_b = (_a = waitingHandler.handler).onResponseError) == null ? void 0 : _b.call(_a, waitingHandler.controller, err);
+      } catch {
+      }
     };
     pruneDoneWaitingHandlers_fn = function() {
       __privateSet(this, _waitingHandlers, __privateGet(this, _waitingHandlers).filter((waitingHandler) => waitingHandler.done === false));
@@ -197179,7 +196788,7 @@ var require_deduplicate = __commonJS({
     var diagnosticsChannel = require("node:diagnostics_channel");
     var util = require_util();
     var DeduplicationHandler = require_deduplication_handler();
-    var { getInterceptorOrigin, normalizeHeaders, makeCacheKey, makeDeduplicationKey } = require_cache();
+    var { normalizeHeaders, makeCacheKey, makeDeduplicationKey } = require_cache();
     var pendingRequestsChannel = diagnosticsChannel.channel("undici:request:pending-requests");
     module2.exports = (opts = {}) => {
       const {
@@ -197211,10 +196820,9 @@ var require_deduplicate = __commonJS({
       const skipHeaderNamesSet = new Set(skipHeaderNames.map((name) => name.toLowerCase()));
       const excludeHeaderNamesSet = new Set(excludeHeaderNames.map((name) => name.toLowerCase()));
       const pendingRequests = /* @__PURE__ */ new Map();
-      return (dispatch, interceptorOrigin) => {
+      return (dispatch) => {
         return (opts2, handler) => {
-          const requestOrigin = getInterceptorOrigin(opts2, interceptorOrigin);
-          if (!requestOrigin || opts2.upgrade || methods.includes(opts2.method) === false) {
+          if (opts2.upgrade || methods.includes(opts2.method) === false) {
             return dispatch(opts2, handler);
           }
           opts2 = {
@@ -197228,7 +196836,7 @@ var require_deduplicate = __commonJS({
               }
             }
           }
-          const cacheKey = makeCacheKey(opts2, requestOrigin);
+          const cacheKey = makeCacheKey(opts2);
           const dedupeKey = makeDeduplicationKey(cacheKey, excludeHeaderNamesSet);
           const pendingHandler = pendingRequests.get(dedupeKey);
           if (pendingHandler) {
@@ -199118,7 +198726,7 @@ var require_request2 = __commonJS({
         serviceWorkers: init.serviceWorkers ?? "all",
         initiator: init.initiator ?? "",
         destination: init.destination ?? "",
-        priority: init.priority ?? "auto",
+        priority: init.priority ?? null,
         origin: init.origin ?? "client",
         policyContainer: init.policyContainer ?? "client",
         referrer: init.referrer ?? "client",
@@ -199287,7 +198895,8 @@ var require_request2 = __commonJS({
       {
         key: "priority",
         converter: webidl.converters.DOMString,
-        allowedValues: ["high", "low", "auto"]
+        allowedValues: ["high", "low", "auto"],
+        defaultValue: () => "auto"
       }
     ]);
     module2.exports = {
@@ -199502,7 +199111,6 @@ var require_fetch = __commonJS({
     var EE = require("node:events");
     var { Readable, pipeline, finished, isErrored, isReadable } = require("node:stream");
     var { addAbortListener, bufferToLowerCasedHeaderName } = require_util();
-    var { SocketError } = require_errors();
     var { dataURLProcessor, serializeAMimeType, minimizeSupportedMimeType } = require_data_url();
     var { getGlobalDispatcher } = require_global2();
     var { webidl } = require_webidl();
@@ -200574,9 +200182,6 @@ var require_fetch = __commonJS({
               },
               onRequestUpgrade(controller, status, headers, socket) {
                 if (socket.session != null && status !== 200 || socket.session == null && status !== 101) {
-                  if (socket.session != null) {
-                    controller.abort(new SocketError("bad upgrade", null));
-                  }
                   return false;
                 }
                 const rawHeaders = (controller == null ? void 0 : controller.rawHeaders) ?? [];
@@ -201567,93 +201172,90 @@ var require_parse4 = __commonJS({
       };
     }
     function parseUnparsedAttributes(unparsedAttributes, cookieAttributeList = {}) {
-      while (true) {
-        if (unparsedAttributes.length === 0) {
-          return cookieAttributeList;
-        }
-        assert(unparsedAttributes[0] === ";");
-        unparsedAttributes = unparsedAttributes.slice(1);
-        let cookieAv = "";
-        if (unparsedAttributes.includes(";")) {
-          cookieAv = collectASequenceOfCodePointsFast(
-            ";",
-            unparsedAttributes,
-            { position: 0 }
-          );
-          unparsedAttributes = unparsedAttributes.slice(cookieAv.length);
-        } else {
-          cookieAv = unparsedAttributes;
-          unparsedAttributes = "";
-        }
-        let attributeName = "";
-        let attributeValue = "";
-        if (cookieAv.includes("=")) {
-          const position = { position: 0 };
-          attributeName = collectASequenceOfCodePointsFast(
-            "=",
-            cookieAv,
-            position
-          );
-          attributeValue = cookieAv.slice(position.position + 1);
-        } else {
-          attributeName = cookieAv;
-        }
-        attributeName = attributeName.trim();
-        attributeValue = attributeValue.trim();
-        if (attributeValue.length > maxAttributeValueSize) {
-          continue;
-        }
-        const attributeNameLowercase = attributeName.toLowerCase();
-        if (attributeNameLowercase === "expires") {
-          const expiryTime = new Date(attributeValue);
-          if (!Number.isNaN(expiryTime.getTime())) {
-            cookieAttributeList.expires = expiryTime;
-          }
-        } else if (attributeNameLowercase === "max-age") {
-          const charCode = attributeValue.charCodeAt(0);
-          const startsWithDigit = charCode >= 48 && charCode <= 57;
-          const startsWithSignedDigit = attributeValue[0] === "-" && attributeValue.length > 1;
-          if (!startsWithDigit && !startsWithSignedDigit) {
-            continue;
-          }
-          if (/[^\d]/.test(attributeValue.slice(1))) {
-            continue;
-          }
-          const deltaSeconds = Number(attributeValue);
-          cookieAttributeList.maxAge = deltaSeconds;
-        } else if (attributeNameLowercase === "domain") {
-          let cookieDomain = attributeValue;
-          if (cookieDomain[0] === ".") {
-            cookieDomain = cookieDomain.slice(1);
-          }
-          cookieDomain = cookieDomain.toLowerCase();
-          cookieAttributeList.domain = cookieDomain;
-        } else if (attributeNameLowercase === "path") {
-          let cookiePath = "";
-          if (attributeValue.length === 0 || attributeValue[0] !== "/") {
-            cookiePath = "/";
-          } else {
-            cookiePath = attributeValue;
-          }
-          cookieAttributeList.path = cookiePath;
-        } else if (attributeNameLowercase === "secure") {
-          cookieAttributeList.secure = true;
-        } else if (attributeNameLowercase === "httponly") {
-          cookieAttributeList.httpOnly = true;
-        } else if (attributeNameLowercase === "samesite") {
-          const attributeValueLowercase = attributeValue.toLowerCase();
-          if (attributeValueLowercase === "none") {
-            cookieAttributeList.sameSite = "None";
-          } else if (attributeValueLowercase === "strict") {
-            cookieAttributeList.sameSite = "Strict";
-          } else if (attributeValueLowercase === "lax") {
-            cookieAttributeList.sameSite = "Lax";
-          }
-        } else {
-          cookieAttributeList.unparsed ?? (cookieAttributeList.unparsed = []);
-          cookieAttributeList.unparsed.push(`${attributeName}=${attributeValue}`);
-        }
+      if (unparsedAttributes.length === 0) {
+        return cookieAttributeList;
       }
+      assert(unparsedAttributes[0] === ";");
+      unparsedAttributes = unparsedAttributes.slice(1);
+      let cookieAv = "";
+      if (unparsedAttributes.includes(";")) {
+        cookieAv = collectASequenceOfCodePointsFast(
+          ";",
+          unparsedAttributes,
+          { position: 0 }
+        );
+        unparsedAttributes = unparsedAttributes.slice(cookieAv.length);
+      } else {
+        cookieAv = unparsedAttributes;
+        unparsedAttributes = "";
+      }
+      let attributeName = "";
+      let attributeValue = "";
+      if (cookieAv.includes("=")) {
+        const position = { position: 0 };
+        attributeName = collectASequenceOfCodePointsFast(
+          "=",
+          cookieAv,
+          position
+        );
+        attributeValue = cookieAv.slice(position.position + 1);
+      } else {
+        attributeName = cookieAv;
+      }
+      attributeName = attributeName.trim();
+      attributeValue = attributeValue.trim();
+      if (attributeValue.length > maxAttributeValueSize) {
+        return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
+      }
+      const attributeNameLowercase = attributeName.toLowerCase();
+      if (attributeNameLowercase === "expires") {
+        const expiryTime = new Date(attributeValue);
+        if (!Number.isNaN(expiryTime.getTime())) {
+          cookieAttributeList.expires = expiryTime;
+        }
+      } else if (attributeNameLowercase === "max-age") {
+        const charCode = attributeValue.charCodeAt(0);
+        if ((charCode < 48 || charCode > 57) && attributeValue[0] !== "-") {
+          return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
+        }
+        if (!/^\d+$/.test(attributeValue)) {
+          return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
+        }
+        const deltaSeconds = Number(attributeValue);
+        cookieAttributeList.maxAge = deltaSeconds;
+      } else if (attributeNameLowercase === "domain") {
+        let cookieDomain = attributeValue;
+        if (cookieDomain[0] === ".") {
+          cookieDomain = cookieDomain.slice(1);
+        }
+        cookieDomain = cookieDomain.toLowerCase();
+        cookieAttributeList.domain = cookieDomain;
+      } else if (attributeNameLowercase === "path") {
+        let cookiePath = "";
+        if (attributeValue.length === 0 || attributeValue[0] !== "/") {
+          cookiePath = "/";
+        } else {
+          cookiePath = attributeValue;
+        }
+        cookieAttributeList.path = cookiePath;
+      } else if (attributeNameLowercase === "secure") {
+        cookieAttributeList.secure = true;
+      } else if (attributeNameLowercase === "httponly") {
+        cookieAttributeList.httpOnly = true;
+      } else if (attributeNameLowercase === "samesite") {
+        const attributeValueLowercase = attributeValue.toLowerCase();
+        if (attributeValueLowercase === "none") {
+          cookieAttributeList.sameSite = "None";
+        } else if (attributeValueLowercase === "strict") {
+          cookieAttributeList.sameSite = "Strict";
+        } else if (attributeValueLowercase === "lax") {
+          cookieAttributeList.sameSite = "Lax";
+        }
+      } else {
+        cookieAttributeList.unparsed ?? (cookieAttributeList.unparsed = []);
+        cookieAttributeList.unparsed.push(`${attributeName}=${attributeValue}`);
+      }
+      return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
     }
     module2.exports = {
       parseSetCookie,
@@ -202503,7 +202105,7 @@ var require_connection = __commonJS({
           const secProtocol = response.headersList.get("Sec-WebSocket-Protocol");
           if (secProtocol !== null) {
             const requestProtocols = getDecodeSplit("sec-websocket-protocol", request.headersList);
-            if (requestProtocols === null || !requestProtocols.includes(secProtocol)) {
+            if (!requestProtocols.includes(secProtocol)) {
               failWebsocketConnection(handler, 1002, "Protocol was not set in the opening handshake.");
               return;
             }
@@ -202623,7 +202225,6 @@ var require_permessage_deflate = __commonJS({
             if (__privateGet(this, _maxPayloadSize) > 0 && __privateGet(this, _inflate)[kLength] > __privateGet(this, _maxPayloadSize)) {
               callback(new MessageSizeExceededError());
               __privateGet(this, _inflate).removeAllListeners();
-              __privateGet(this, _inflate).destroy();
               __privateSet(this, _inflate, null);
               return;
             }
@@ -203747,7 +203348,7 @@ var require_websocketstream = __commonJS({
     var { kEnumerableProperty } = require_util();
     var { utf8DecodeBytes } = require_encoding();
     var emittedExperimentalWarning = false;
-    var _url, _openedPromise, _closedPromise, _readableStream, _readableStreamController, _writableStreamController, _handshakeAborted, _handler, _parser, _WebSocketStream_instances, write_fn, onConnectionEstablished_fn, onMessage_fn, onSocketClose_fn, closeUsingReason_fn, cancel_fn;
+    var _url, _openedPromise, _closedPromise, _readableStream, _readableStreamController, _writableStream, _handshakeAborted, _handler, _parser, _WebSocketStream_instances, write_fn, onConnectionEstablished_fn, onMessage_fn, onSocketClose_fn, closeUsingReason_fn, cancel_fn;
     var WebSocketStream = class {
       constructor(url, options = void 0) {
         __privateAdd(this, _WebSocketStream_instances);
@@ -203765,9 +203366,9 @@ var require_websocketstream = __commonJS({
         __privateAdd(this, _readableStream);
         /** @type {ReadableStreamDefaultController} */
         __privateAdd(this, _readableStreamController);
-        // Retain the controller so the writable stream can be errored while locked.
-        /** @type {WritableStreamDefaultController} */
-        __privateAdd(this, _writableStreamController);
+        // Each WebSocketStream object has an associated writable stream , which is a WritableStream .
+        /** @type {WritableStream} */
+        __privateAdd(this, _writableStream);
         // Each WebSocketStream object has an associated boolean handshake aborted , which is initially false.
         __privateAdd(this, _handshakeAborted, false);
         /** @type {import('../websocket').Handler} */
@@ -203878,7 +203479,7 @@ var require_websocketstream = __commonJS({
     _closedPromise = new WeakMap();
     _readableStream = new WeakMap();
     _readableStreamController = new WeakMap();
-    _writableStreamController = new WeakMap();
+    _writableStream = new WeakMap();
     _handshakeAborted = new WeakMap();
     _handler = new WeakMap();
     _parser = new WeakMap();
@@ -203933,14 +203534,12 @@ var require_websocketstream = __commonJS({
         cancel: (reason) => __privateMethod(this, _WebSocketStream_instances, cancel_fn).call(this, reason)
       });
       const writable = new WritableStream({
-        start: (controller) => {
-          __privateSet(this, _writableStreamController, controller);
-        },
         write: (chunk) => __privateMethod(this, _WebSocketStream_instances, write_fn).call(this, chunk),
         close: () => closeWebSocketConnection(__privateGet(this, _handler), null, null),
         abort: (reason) => __privateMethod(this, _WebSocketStream_instances, closeUsingReason_fn).call(this, reason)
       });
       __privateSet(this, _readableStream, readable);
+      __privateSet(this, _writableStream, writable);
       __privateGet(this, _openedPromise).resolve({
         extensions,
         protocol,
@@ -203985,7 +203584,9 @@ var require_websocketstream = __commonJS({
       const reason = (result == null ? void 0 : result.reason) == null ? "" : utf8DecodeBytes(Buffer.from(result.reason));
       if (wasClean) {
         readableStreamClose(__privateGet(this, _readableStreamController));
-        __privateGet(this, _writableStreamController).error(new DOMException("A closed WebSocketStream cannot be written to", "InvalidStateError"));
+        if (!__privateGet(this, _writableStream).locked) {
+          __privateGet(this, _writableStream).abort(new DOMException("A closed WebSocketStream cannot be written to", "InvalidStateError"));
+        }
         __privateGet(this, _closedPromise).resolve({
           closeCode: code,
           reason
@@ -203993,7 +203594,7 @@ var require_websocketstream = __commonJS({
       } else {
         const error = createUnvalidatedWebSocketError("unclean close", code, reason);
         (_b = __privateGet(this, _readableStreamController)) == null ? void 0 : _b.error(error);
-        (_c = __privateGet(this, _writableStreamController)) == null ? void 0 : _c.error(error);
+        (_c = __privateGet(this, _writableStream)) == null ? void 0 : _c.abort(error);
         __privateGet(this, _closedPromise).reject(error);
       }
     };
@@ -204099,7 +203700,6 @@ var require_util6 = __commonJS({
 var require_eventsource_stream = __commonJS({
   "addons/pro/node_modules/undici/lib/web/eventsource/eventsource-stream.js"(exports2, module2) {
     "use strict";
-    var buffer = require("node:buffer");
     var { Transform } = require("node:stream");
     var { isASCIINumber, isValidLastEventId } = require_util6();
     var BOM = [239, 187, 191];
@@ -204107,25 +203707,24 @@ var require_eventsource_stream = __commonJS({
     var CR = 13;
     var COLON = 58;
     var SPACE = 32;
-    var defaultMaxEventSize = buffer.kStringMaxLength;
     var DATA = Buffer.from("data");
     var EVENT = Buffer.from("event");
     var ID = Buffer.from("id");
     var RETRY = Buffer.from("retry");
-    function isASCIINumberBytes(buffer2, start) {
-      if (start >= buffer2.length) {
+    function isASCIINumberBytes(buffer, start) {
+      if (start >= buffer.length) {
         return false;
       }
-      for (let i = start; i < buffer2.length; i++) {
-        if (buffer2[i] < 48 || buffer2[i] > 57) {
+      for (let i = start; i < buffer.length; i++) {
+        if (buffer[i] < 48 || buffer[i] > 57) {
           return false;
         }
       }
       return true;
     }
-    function isValidLastEventIdBytes(buffer2, start) {
-      for (let i = start; i < buffer2.length; i++) {
-        if (buffer2[i] === 0) {
+    function isValidLastEventIdBytes(buffer, start) {
+      for (let i = start; i < buffer.length; i++) {
+        if (buffer[i] === 0) {
           return false;
         }
       }
@@ -204141,11 +203740,6 @@ var require_eventsource_stream = __commonJS({
         }
       }
       return true;
-    }
-    function createMaxEventSizeExceededError() {
-      const error = new Error("EventSource message size exceeded");
-      error.aborted = false;
-      return error;
     }
     var EventSourceStream = class extends Transform {
       /**
@@ -204173,8 +203767,6 @@ var require_eventsource_stream = __commonJS({
       pos = 0;
       lineChunkIndex = 0;
       linePos = 0;
-      eventDataSize = 0;
-      maxEventSize;
       event = {
         data: void 0,
         event: void 0,
@@ -204184,7 +203776,6 @@ var require_eventsource_stream = __commonJS({
       /**
        * @param {object} options
        * @param {boolean} [options.readableObjectMode]
-       * @param {number} [options.maxEventSize]
        * @param {eventSourceSettings} [options.eventSourceSettings]
        * @param {(chunk: any, encoding?: BufferEncoding | undefined) => boolean} [options.push]
        */
@@ -204192,7 +203783,6 @@ var require_eventsource_stream = __commonJS({
         options.readableObjectMode = true;
         super(options);
         this.state = options.eventSourceSettings || {};
-        this.maxEventSize = options.maxEventSize ?? defaultMaxEventSize;
         if (options.push) {
           this.push = options.push;
         }
@@ -204244,12 +203834,7 @@ var require_eventsource_stream = __commonJS({
             if (byte === CR) {
               this.crlfCheck = true;
             }
-            try {
-              this.parseLine(this.readLine(), this.event);
-            } catch (error) {
-              callback(error);
-              return;
-            }
+            this.parseLine(this.readLine(), this.event);
             this.consumeCurrentByte();
             this.eventEndCheck = true;
             continue;
@@ -204280,11 +203865,6 @@ var require_eventsource_stream = __commonJS({
           }
         }
         if (isFieldName(line, fieldLength, DATA)) {
-          const valueBytes = line.length - valueStart;
-          const eventDataSize = this.eventDataSize + (event.data === void 0 ? 0 : 1) + valueBytes;
-          if (this.maxEventSize > 0 && eventDataSize > this.maxEventSize) {
-            throw createMaxEventSizeExceededError();
-          }
           const value = line.toString("utf8", valueStart);
           if (event.data === void 0) {
             event.data = value;
@@ -204292,7 +203872,6 @@ var require_eventsource_stream = __commonJS({
             event.data += `
 ${value}`;
           }
-          this.eventDataSize = eventDataSize;
           return;
         }
         if (isFieldName(line, fieldLength, RETRY)) {
@@ -204340,7 +203919,6 @@ ${value}`;
         this.event.event = void 0;
         this.event.id = void 0;
         this.event.retry = void 0;
-        this.eventDataSize = 0;
       }
       hasPendingEvent() {
         return this.event.data !== void 0 || this.event.event !== void 0 || this.event.id !== void 0 || this.event.retry !== void 0;
@@ -204470,12 +204048,9 @@ var require_eventsource = __commonJS({
     var { parseMIMEType } = require_data_url();
     var { createFastMessageEvent } = require_events();
     var { isNetworkError } = require_response();
-    var { isValidHeaderValue, kEnumerableProperty } = require_util();
+    var { kEnumerableProperty } = require_util();
     var { environmentSettingsObject } = require_util2();
     var { createPotentialCORSRequest } = require_util6();
-    var { getGlobalDispatcher } = require_global2();
-    var { isomorphicDecode } = require_infra();
-    var textEncoder = new TextEncoder();
     var experimentalWarned = false;
     var defaultReconnectionTime = 3e3;
     var CONNECTING = 0;
@@ -204654,7 +204229,6 @@ var require_eventsource = __commonJS({
       };
       fetchParams.processResponseEndOfBody = processEventSourceEndOfBody;
       fetchParams.processResponse = (response) => {
-        var _a;
         if (isNetworkError(response)) {
           if (response.aborted) {
             this.close();
@@ -204678,7 +204252,6 @@ var require_eventsource = __commonJS({
         __privateGet(this, _state).origin = response.urlList[response.urlList.length - 1].origin;
         const eventSourceStream = new EventSourceStream({
           eventSourceSettings: __privateGet(this, _state),
-          maxEventSize: (_a = __privateGet(this, _dispatcher).eventSourceOptions) == null ? void 0 : _a.maxEventSize,
           push: (event) => {
             this.dispatchEvent(createFastMessageEvent(
               event.type,
@@ -204710,12 +204283,8 @@ var require_eventsource = __commonJS({
       this.dispatchEvent(new Event("error"));
       (_a = setTimeout(() => {
         if (__privateGet(this, _readyState) !== CONNECTING) return;
-        __privateGet(this, _request).headersList.delete("last-event-id", true);
         if (__privateGet(this, _state).lastEventId.length) {
-          const lastEventId = isomorphicDecode(textEncoder.encode(__privateGet(this, _state).lastEventId));
-          if (isValidHeaderValue(lastEventId)) {
-            __privateGet(this, _request).headersList.set("last-event-id", lastEventId, true);
-          }
+          __privateGet(this, _request).headersList.set("last-event-id", __privateGet(this, _state).lastEventId, true);
         }
         __privateMethod(this, _EventSource_instances, connect_fn).call(this);
       }, __privateGet(this, _state).reconnectionTime)) == null ? void 0 : _a.unref();
@@ -204764,8 +204333,7 @@ var require_eventsource = __commonJS({
       {
         key: "dispatcher",
         // undici only
-        converter: webidl.converters.any,
-        defaultValue: () => getGlobalDispatcher()
+        converter: webidl.converters.any
       },
       {
         key: "node",
