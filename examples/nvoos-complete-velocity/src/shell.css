@@ -464,10 +464,14 @@ body,
   height: auto;
 }
 
+/* Manual resize still works in the dock: the dragged height applies to the
+   input (the stacked toolbar stays below it) instead of the whole composer,
+   so dragging up/down visibly grows/shrinks the textarea without clipping. */
 .nvoos-console-dock:not(.nvoos-console-dock--fullpage) .nvoos-pro-spa-agent-panel--composer-resized .nvoos-pro-spa-agent-panel__composer-input {
-  field-sizing: content;
-  height: auto;
-  max-height: min(40vh, 300px);
+  field-sizing: fixed;
+  height: var( --nvoos-composer-height, 72px );
+  max-height: none;
+  overflow-y: auto;
 }
 
 /* The status bar carries the sidebar toggle for the dock's conversation
