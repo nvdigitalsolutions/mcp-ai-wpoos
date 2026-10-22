@@ -7,10 +7,57 @@
  * a dead letter.
  */
 
-import { useState, type JSX } from 'react';
+import { useState, useMemo, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useOperations } from '../../hooks/useOperations';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import {
+	DataTable,
+	type DataTableColumn,
+	type DataTableRow,
+} from '../../components/shared/DataTable';
+
+const CRON_COLUMNS: DataTableColumn[] = [
+	{ key: 'job', label: __( 'Job', 'nvoos-pro-spa' ), width: 'minmax(220px, 1.2fr)' },
+	{ key: 'schedule', label: __( 'Schedule', 'nvoos-pro-spa' ), width: '140px' },
+	{ key: 'status', label: __( 'Status', 'nvoos-pro-spa' ), width: '120px' },
+	{ key: 'actions', label: __( 'Actions', 'nvoos-pro-spa' ), width: '130px' },
+];
+
+const DLQ_COLUMNS: DataTableColumn[] = [
+	{ key: 'item', label: __( 'Item', 'nvoos-pro-spa' ), width: 'minmax(220px, 1fr)' },
+	{ key: 'type', label: __( 'Type', 'nvoos-pro-spa' ), width: '140px' },
+	{
+		key: 'reason',
+		label: __( 'Failure reason', 'nvoos-pro-spa' ),
+		className: 'nvoos-pro-spa-tools-list__cell--desc',
+		width: 'minmax(240px, 1.4fr)',
+	},
+	{ key: 'actions', label: __( 'Actions', 'nvoos-pro-spa' ), width: 'minmax(180px, 0.8fr)' },
+];
+
+const TIMELINE_COLUMNS: DataTableColumn[] = [
+	{ key: 'run', label: __( 'Run', 'nvoos-pro-spa' ), width: 'minmax(180px, 0.8fr)' },
+	{ key: 'started', label: __( 'Started', 'nvoos-pro-spa' ), width: '200px' },
+	{
+		key: 'tokens',
+		label: __( 'Tokens', 'nvoos-pro-spa' ),
+		className: 'nvoos-pro-spa-tools-list__cell--num',
+		width: '100px',
+	},
+	{
+		key: 'cost',
+		label: __( 'Cost', 'nvoos-pro-spa' ),
+		className: 'nvoos-pro-spa-tools-list__cell--num',
+		width: '110px',
+	},
+	{
+		key: 'latency',
+		label: __( 'Latency', 'nvoos-pro-spa' ),
+		className: 'nvoos-pro-spa-tools-list__cell--num',
+		width: '110px',
+	},
+];
 
 export function OperationsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
@@ -33,6 +80,98 @@ export function OperationsPage(): JSX.Element {
 	);
 
 	const [ activeTab, setActiveTab ] = useState< 'cron' | 'dlq' | 'timeline' >( 'cron' );
+
+	const cronRows = useMemo< DataTableRow[] >(
+		() =>
+			cronJobs.map( ( job ) => ( {
+				id: job.job_id,
+				cells: [
+					<>
+						<strong className="nvoos-pro-spa-tools-list__name">
+							{ job.hook ?? job.job_id }
+						</strong>
+						<code className="nvoos-pro-spa-tools-list__slug">{ job.job_id }</code>
+					</>,
+					job.schedule ? (
+						<span className="nvoos-pro-spa-tools-list__badge">{ job.schedule }</span>
+					) : (
+						'—'
+					),
+					<span className="nvoos-pro-spa-tools-list__badge">{ job.status ?? '—' }</span>,
+					<button
+						type="button"
+						className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--danger nvoos-pro-spa-page__retry--small"
+						disabled={ mutating }
+						onClick={ () => void removeCronJob( job.job_id ) }
+					>
+						{ __( 'Remove', 'nvoos-pro-spa' ) }
+					</button>,
+				],
+			} ) ),
+		[ cronJobs, mutating, removeCronJob ]
+	);
+
+	const dlqRows = useMemo< DataTableRow[] >(
+		() =>
+			dlqItems.map( ( item ) => ( {
+				id: item.item_id,
+				cells: [
+					<>
+						<strong className="nvoos-pro-spa-tools-list__name">
+							{ item.identifier || item.item_id }
+						</strong>
+						<code className="nvoos-pro-spa-tools-list__slug">{ item.item_id }</code>
+					</>,
+					<span className="nvoos-pro-spa-tools-list__badge">{ item.type }</span>,
+					item.failure_reason || '—',
+					<div className="nvoos-pro-spa-approvals__actions">
+						<button
+							type="button"
+							className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary nvoos-pro-spa-page__retry--small"
+							disabled={ mutating }
+							onClick={ () => void retryDlq( item.item_id ) }
+						>
+							{ __( 'Retry', 'nvoos-pro-spa' ) }
+						</button>
+						<button
+							type="button"
+							className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
+							disabled={ mutating }
+							onClick={ () => void dismissDlq( item.item_id ) }
+						>
+							{ __( 'Dismiss', 'nvoos-pro-spa' ) }
+						</button>
+					</div>,
+				],
+			} ) ),
+		[ dlqItems, mutating, retryDlq, dismissDlq ]
+	);
+
+	const timelineRows = useMemo< DataTableRow[] >(
+		() =>
+			timeline.runs.map( ( run ) => ( {
+				id: run.run_id,
+				cells: [
+					<>
+						<strong className="nvoos-pro-spa-tools-list__name">{ run.run_id }</strong>
+						{ run.assistant_id > 0 && (
+							<code className="nvoos-pro-spa-tools-list__slug">
+								{ __( 'Assistant', 'nvoos-pro-spa' ) } #{ run.assistant_id }
+							</code>
+						) }
+					</>,
+					run.started_at
+						? new Date( run.started_at * 1000 ).toLocaleString()
+						: '—',
+					run.total_tokens ?? '—',
+					typeof run.cost_usd === 'number'
+						? `$${ run.cost_usd.toFixed( 4 ) }`
+						: '—',
+					typeof run.latency_ms === 'number' ? `${ run.latency_ms } ms` : '—',
+				],
+			} ) ),
+		[ timeline.runs ]
+	);
 
 	if ( bootstrapLoading || ( loading && cronJobs.length === 0 && dlqItems.length === 0 ) ) {
 		return (
@@ -74,7 +213,7 @@ export function OperationsPage(): JSX.Element {
 					<p>{ error }</p>
 					<button
 						type="button"
-						className="nvoos-pro-spa-page__retry"
+						className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary"
 						onClick={ () => void refresh() }
 					>
 						{ __( 'Retry', 'nvoos-pro-spa' ) }
@@ -125,206 +264,62 @@ export function OperationsPage(): JSX.Element {
 			</div>
 
 			{ activeTab === 'cron' && (
-				<div
-					className="nvoos-pro-spa-tools-list"
-					role="list"
-					aria-label={ __( 'Cron jobs', 'nvoos-pro-spa' ) }
-				>
-					<div className="nvoos-pro-spa-tools-list__header" role="row">
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Job', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Schedule', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Status', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Actions', 'nvoos-pro-spa' ) }
-						</div>
-					</div>
-					{ cronJobs.length === 0 ? (
-						<div className="nvoos-pro-spa-tools-page__empty" role="status">
-							<p>{ __( 'No tracked cron jobs.', 'nvoos-pro-spa' ) }</p>
-						</div>
-					) : (
-						cronJobs.map( ( job ) => (
-							<div key={ job.job_id } className="nvoos-pro-spa-tools-list__row" role="row">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">{ job.hook ?? job.job_id }</strong>
-									<code className="nvoos-pro-spa-tools-list__slug">{ job.job_id }</code>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									{ job.schedule ? (
-										<span className="nvoos-pro-spa-tools-list__badge">{ job.schedule }</span>
-									) : (
-										'—'
-									) }
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<span className="nvoos-pro-spa-tools-list__badge">{ job.status ?? '—' }</span>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<button
-										type="button"
-										className="nvoos-pro-spa-page__retry"
-										disabled={ mutating }
-										onClick={ () => void removeCronJob( job.job_id ) }
-									>
-										{ __( 'Remove', 'nvoos-pro-spa' ) }
-									</button>
-								</div>
-							</div>
-						) )
-					) }
-				</div>
+				<DataTable
+					columns={ CRON_COLUMNS }
+					rows={ cronRows }
+					caption={ __( 'Cron jobs', 'nvoos-pro-spa' ) }
+					empty={
+						<p>{ __( 'No tracked cron jobs.', 'nvoos-pro-spa' ) }</p>
+					}
+				/>
 			) }
 
 			{ activeTab === 'dlq' && (
-				<div
-					className="nvoos-pro-spa-tools-list"
-					role="list"
-					aria-label={ __( 'Dead-letter queue', 'nvoos-pro-spa' ) }
-				>
-					<div className="nvoos-pro-spa-tools-list__header" role="row">
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Item', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Type', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Failure reason', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Actions', 'nvoos-pro-spa' ) }
-						</div>
-					</div>
-					{ dlqItems.length === 0 ? (
-						<div className="nvoos-pro-spa-tools-page__empty" role="status">
-							<p>{ __( 'No dead letters.', 'nvoos-pro-spa' ) }</p>
-						</div>
-					) : (
-						dlqItems.map( ( item ) => (
-							<div key={ item.item_id } className="nvoos-pro-spa-tools-list__row" role="row">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">{ item.identifier || item.item_id }</strong>
-									<code className="nvoos-pro-spa-tools-list__slug">{ item.item_id }</code>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<span className="nvoos-pro-spa-tools-list__badge">{ item.type }</span>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-									{ item.failure_reason || '—' }
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<div className="nvoos-pro-spa-approvals__actions">
-										<button
-											type="button"
-											className="nvoos-pro-spa-page__retry"
-											disabled={ mutating }
-											onClick={ () => void retryDlq( item.item_id ) }
-										>
-											{ __( 'Retry', 'nvoos-pro-spa' ) }
-										</button>
-										<button
-											type="button"
-											className="nvoos-pro-spa-page__retry"
-											disabled={ mutating }
-											onClick={ () => void dismissDlq( item.item_id ) }
-										>
-											{ __( 'Dismiss', 'nvoos-pro-spa' ) }
-										</button>
-									</div>
-								</div>
-							</div>
-						) )
-					) }
-				</div>
+				<DataTable
+					columns={ DLQ_COLUMNS }
+					rows={ dlqRows }
+					caption={ __( 'Dead-letter queue', 'nvoos-pro-spa' ) }
+					empty={
+						<p>{ __( 'No dead letters.', 'nvoos-pro-spa' ) }</p>
+					}
+				/>
 			) }
 
 			{ activeTab === 'timeline' && (
-				<div
-					className="nvoos-pro-spa-tools-list"
-					role="list"
-					aria-label={ __( 'Run timeline', 'nvoos-pro-spa' ) }
-				>
-					<div className="nvoos-pro-spa-tools-list__header" role="row">
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Run', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Started', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Tokens', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Cost', 'nvoos-pro-spa' ) }
-						</div>
-						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
-							{ __( 'Latency', 'nvoos-pro-spa' ) }
-						</div>
-					</div>
-					{ timeline.runs.length === 0 ? (
-						<div className="nvoos-pro-spa-tools-page__empty" role="status">
-							<p>{ __( 'No recorded runs yet.', 'nvoos-pro-spa' ) }</p>
-						</div>
-					) : (
-						timeline.runs.map( ( run ) => (
-							<div key={ run.run_id } className="nvoos-pro-spa-tools-list__row" role="row">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">{ run.run_id }</strong>
-									{ run.assistant_id > 0 && (
-										<code className="nvoos-pro-spa-tools-list__slug">
-											{ __( 'Assistant', 'nvoos-pro-spa' ) } #{ run.assistant_id }
-										</code>
-									) }
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									{ run.started_at
-										? new Date( run.started_at * 1000 ).toLocaleString()
-										: '—' }
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									{ run.total_tokens ?? '—' }
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									{ typeof run.cost_usd === 'number'
-										? `$${ run.cost_usd.toFixed( 4 ) }`
-										: '—' }
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									{ typeof run.latency_ms === 'number' ? `${ run.latency_ms } ms` : '—' }
-								</div>
+				<DataTable
+					columns={ TIMELINE_COLUMNS }
+					rows={ timelineRows }
+					caption={ __( 'Run timeline', 'nvoos-pro-spa' ) }
+					empty={
+						<p>{ __( 'No recorded runs yet.', 'nvoos-pro-spa' ) }</p>
+					}
+					footer={
+						( timeline.page > 1 ||
+							timeline.total > timeline.page * timeline.per_page ) && (
+							<div className="nvoos-pro-spa-tools-page__pager">
+								<span className="nvoos-pro-spa-tools-page__pager-label">
+									{ __( 'Page', 'nvoos-pro-spa' ) } { timeline.page }
+								</span>
+								<button
+									type="button"
+									className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
+									disabled={ timeline.page <= 1 }
+									onClick={ () => void loadTimelinePage( timeline.page - 1 ) }
+								>
+									{ __( 'Previous', 'nvoos-pro-spa' ) }
+								</button>
+								<button
+									type="button"
+									className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
+									disabled={ timeline.total <= timeline.page * timeline.per_page }
+									onClick={ () => void loadTimelinePage( timeline.page + 1 ) }
+								>
+									{ __( 'Next', 'nvoos-pro-spa' ) }
+								</button>
 							</div>
-						) )
-					) }
-					{ ( timeline.page > 1 || timeline.total > timeline.page * timeline.per_page ) && (
-						<div className="nvoos-pro-spa-tools-page__pager">
-							<button
-								type="button"
-								className="nvoos-pro-spa-page__retry"
-								disabled={ timeline.page <= 1 }
-								onClick={ () => void loadTimelinePage( timeline.page - 1 ) }
-							>
-								{ __( 'Previous', 'nvoos-pro-spa' ) }
-							</button>
-							<span className="nvoos-pro-spa-tools-page__pager-label">
-								{ __( 'Page', 'nvoos-pro-spa' ) } { timeline.page }
-							</span>
-							<button
-								type="button"
-								className="nvoos-pro-spa-page__retry"
-								disabled={ timeline.total <= timeline.page * timeline.per_page }
-								onClick={ () => void loadTimelinePage( timeline.page + 1 ) }
-							>
-								{ __( 'Next', 'nvoos-pro-spa' ) }
-							</button>
-						</div>
-					) }
-				</div>
+						)
+					}
+				/>
 			) }
 		</div>
 	);

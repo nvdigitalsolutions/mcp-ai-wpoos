@@ -9,10 +9,15 @@
  * re-install, workflow execute/restart, seeders) stay wp-admin.
  */
 
-import { type JSX } from 'react';
+import { useMemo, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useOrchestrationStats } from '../../hooks/useOrchestrationStats';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import {
+	DataTable,
+	type DataTableColumn,
+	type DataTableRow,
+} from '../../components/shared/DataTable';
 import type {
 	OrchestrationAgent,
 	OrchestrationWorkflow,
@@ -48,14 +53,14 @@ function Badge( { label }: { label: string } ): JSX.Element {
 
 function StatCards( { items }: { items: Array< [ string, string | number ] > } ): JSX.Element {
 	return (
-		<div className="nvoos-pro-spa-token-manager__stats" role="list" aria-label={ __( 'Statistics', 'nvoos-pro-spa' ) }>
+		<ul className="nvoos-pro-spa-token-manager__stats" aria-label={ __( 'Statistics', 'nvoos-pro-spa' ) }>
 			{ items.map( ( [ label, value ] ) => (
-				<div key={ label } className="nvoos-pro-spa-token-manager__stat" role="listitem">
+				<li key={ label } className="nvoos-pro-spa-token-manager__stat">
 					<div className="nvoos-pro-spa-token-manager__stat-label">{ label }</div>
 					<div className="nvoos-pro-spa-token-manager__stat-value">{ value }</div>
-				</div>
+				</li>
 			) ) }
-		</div>
+		</ul>
 	);
 }
 
@@ -104,6 +109,127 @@ export function OrchestrationStatsPage(): JSX.Element {
 	const cron = system?.cron as Record< string, unknown > | undefined;
 	const sse = system?.sse as Record< string, unknown > | undefined;
 
+	const agentColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'agent',
+				label: __( 'Agent', 'nvoos-pro-spa' ),
+				width: 'minmax(200px, 1fr)',
+			},
+			{ key: 'status', label: __( 'Status', 'nvoos-pro-spa' ), width: '120px' },
+			{ key: 'pattern', label: __( 'Pattern', 'nvoos-pro-spa' ), width: '150px' },
+			{
+				key: 'details',
+				label: __( 'Details', 'nvoos-pro-spa' ),
+				className: 'nvoos-pro-spa-tools-list__cell--desc',
+				width: 'minmax(180px, 1fr)',
+			},
+		],
+		[]
+	);
+
+	const agentRows = useMemo< DataTableRow[] >(
+		() =>
+			multiAgent.agents.map( ( agent: OrchestrationAgent ) => ( {
+				id: agent.id || agent.slug,
+				cells: [
+					<>
+						<strong className="nvoos-pro-spa-tools-list__name">{ agent.title }</strong>
+						<code className="nvoos-pro-spa-tools-list__slug">
+							{ agent.provider || '—' } { agent.model ? `· ${ agent.model }` : '' }
+						</code>
+					</>,
+					<Badge label={ agent.status } />,
+					<code className="nvoos-pro-spa-tools-list__slug">
+						{ agent.workflow_pattern || '—' }
+					</code>,
+					<>
+						{ __( 'Tools', 'nvoos-pro-spa' ) }: { agent.tool_count }
+						{ agent.last_used && (
+							<>
+								<br />
+								{ __( 'Last used', 'nvoos-pro-spa' ) }: { agent.last_used }
+							</>
+						) }
+					</>,
+				],
+			} ) ),
+		[ multiAgent.agents ]
+	);
+
+	const roleColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'role',
+				label: __( 'Role', 'nvoos-pro-spa' ),
+				width: 'minmax(200px, 2fr)',
+			},
+			{
+				key: 'count',
+				label: __( 'Agents', 'nvoos-pro-spa' ),
+				className: 'nvoos-pro-spa-tools-list__cell--num',
+				width: '120px',
+			},
+		],
+		[]
+	);
+
+	const roleRows = useMemo< DataTableRow[] >(
+		() =>
+			Object.entries( orchestration.roles ).map( ( [ role, count ] ) => ( {
+				id: role,
+				cells: [
+					<strong className="nvoos-pro-spa-tools-list__name">{ role }</strong>,
+					count,
+				],
+			} ) ),
+		[ orchestration.roles ]
+	);
+
+	const workflowColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'workflow',
+				label: __( 'Workflow', 'nvoos-pro-spa' ),
+				width: 'minmax(180px, 1fr)',
+			},
+			{ key: 'state', label: __( 'State', 'nvoos-pro-spa' ), width: '120px' },
+			{
+				key: 'progress',
+				label: __( 'Progress', 'nvoos-pro-spa' ),
+				className: 'nvoos-pro-spa-tools-list__cell--desc',
+				width: 'minmax(200px, 1.5fr)',
+			},
+		],
+		[]
+	);
+
+	const workflowRows = useMemo< DataTableRow[] >(
+		() =>
+			workflows.map( ( workflow: OrchestrationWorkflow ) => ( {
+				id: workflow.workflow_id,
+				cells: [
+					<>
+						<strong className="nvoos-pro-spa-tools-list__name">
+							{ workflow.workflow_id }
+						</strong>
+						<code className="nvoos-pro-spa-tools-list__slug">{ workflow.task_type }</code>
+					</>,
+					<Badge label={ workflow.state } />,
+					<>
+						{ __( 'Tasks', 'nvoos-pro-spa' ) }: { workflow.tasks_done }/{ workflow.tasks_total }
+						{ workflow.created_at && (
+							<>
+								<br />
+								{ workflow.created_at }
+							</>
+						) }
+					</>,
+				],
+			} ) ),
+		[ workflows ]
+	);
+
 	return (
 		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">
 			<header className="nvoos-pro-spa-tools-page__header">
@@ -151,35 +277,11 @@ export function OrchestrationStatsPage(): JSX.Element {
 								{ __( 'No agents reported.', 'nvoos-pro-spa' ) }
 							</p>
 						) : (
-							<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Agents', 'nvoos-pro-spa' ) }>
-								{ multiAgent.agents.map( ( agent: OrchestrationAgent ) => (
-									<div key={ agent.id || agent.slug } className="nvoos-pro-spa-tools-list__row" role="listitem">
-										<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-											<strong className="nvoos-pro-spa-tools-list__name">{ agent.title }</strong>
-											<code className="nvoos-pro-spa-tools-list__slug">
-												{ agent.provider || '—' } { agent.model ? `· ${ agent.model }` : '' }
-											</code>
-										</div>
-										<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-											<Badge label={ agent.status } />
-										</div>
-										<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-											<code className="nvoos-pro-spa-tools-list__slug">
-												{ agent.workflow_pattern || '—' }
-											</code>
-										</div>
-										<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-											{ __( 'Tools', 'nvoos-pro-spa' ) }: { agent.tool_count }
-											{ agent.last_used && (
-												<>
-													<br />
-													{ __( 'Last used', 'nvoos-pro-spa' ) }: { agent.last_used }
-												</>
-											) }
-										</div>
-									</div>
-								) ) }
-							</div>
+							<DataTable
+								columns={ agentColumns }
+								rows={ agentRows }
+								caption={ __( 'Agents', 'nvoos-pro-spa' ) }
+							/>
 						) }
 					</>
 				) }
@@ -195,21 +297,16 @@ export function OrchestrationStatsPage(): JSX.Element {
 						[ __( 'Seeder version', 'nvoos-pro-spa' ), orchestration.seeder_version ],
 					] }
 				/>
-				<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Role distribution', 'nvoos-pro-spa' ) }>
-					{ Object.entries( orchestration.roles ).map( ( [ role, count ] ) => (
-						<div key={ role } className="nvoos-pro-spa-tools-list__row" role="listitem">
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-								<strong className="nvoos-pro-spa-tools-list__name">{ role }</strong>
-							</div>
-							<div className="nvoos-pro-spa-tools-list__cell" role="cell">{ count }</div>
-						</div>
-					) ) }
-				</div>
+				<DataTable
+					columns={ roleColumns }
+					rows={ roleRows }
+					caption={ __( 'Role distribution', 'nvoos-pro-spa' ) }
+				/>
 			</section>
 
 			<section className="nvoos-pro-spa-diagnostics__card nvoos-pro-spa-diagnostics__card--standalone">
 				<h3 className="nvoos-pro-spa-diagnostics__card-title">{ __( 'System Status', 'nvoos-pro-spa' ) }</h3>
-				<div className="nvoos-pro-spa-token-manager__stats" role="list" aria-label={ __( 'Subsystem status', 'nvoos-pro-spa' ) }>
+				<ul className="nvoos-pro-spa-token-manager__stats" aria-label={ __( 'Subsystem status', 'nvoos-pro-spa' ) }>
 					{ [
 						[
 							__( 'Cron', 'nvoos-pro-spa' ),
@@ -232,12 +329,12 @@ export function OrchestrationStatsPage(): JSX.Element {
 								: '—',
 						],
 					].map( ( [ label, value ] ) => (
-						<div key={ label } className="nvoos-pro-spa-token-manager__stat" role="listitem">
+						<li key={ label } className="nvoos-pro-spa-token-manager__stat">
 							<div className="nvoos-pro-spa-token-manager__stat-label">{ label }</div>
 							<div className="nvoos-pro-spa-token-manager__stat-value">{ value }</div>
-						</div>
+						</li>
 					) ) }
-				</div>
+				</ul>
 			</section>
 
 			<section className="nvoos-pro-spa-diagnostics__card nvoos-pro-spa-diagnostics__card--standalone">
@@ -247,28 +344,11 @@ export function OrchestrationStatsPage(): JSX.Element {
 						{ __( 'No recent workflows.', 'nvoos-pro-spa' ) }
 					</p>
 				) : (
-					<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Recent workflows', 'nvoos-pro-spa' ) }>
-						{ workflows.map( ( workflow: OrchestrationWorkflow ) => (
-							<div key={ workflow.workflow_id } className="nvoos-pro-spa-tools-list__row" role="listitem">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">{ workflow.workflow_id }</strong>
-									<code className="nvoos-pro-spa-tools-list__slug">{ workflow.task_type }</code>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<Badge label={ workflow.state } />
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-									{ __( 'Tasks', 'nvoos-pro-spa' ) }: { workflow.tasks_done }/{ workflow.tasks_total }
-									{ workflow.created_at && (
-										<>
-											<br />
-											{ workflow.created_at }
-										</>
-									) }
-								</div>
-							</div>
-						) ) }
-					</div>
+					<DataTable
+						columns={ workflowColumns }
+						rows={ workflowRows }
+						caption={ __( 'Recent workflows', 'nvoos-pro-spa' ) }
+					/>
 				) }
 			</section>
 		</div>

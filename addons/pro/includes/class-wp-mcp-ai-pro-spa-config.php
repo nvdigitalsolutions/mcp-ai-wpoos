@@ -286,8 +286,11 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'workflows'          => $is_admin
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflows' ) )
 					: '',
-				'analytics'          => $is_admin
-					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/analytics' ) )
+				'analytics'          => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/analytics' ) )
+					: '',
+				'cost'               => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/cost' ) )
 					: '',
 				'approvals'          => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/approvals' ) )
@@ -346,6 +349,12 @@ class WP_MCP_AI_Pro_SPA_Config {
 					: '',
 				'mediaCc'            => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/media-cc' ) )
+					: '',
+				'blueprints'         => ! $guest && defined( 'WP_MCP_AI_PRO_FILE' ) && current_user_can( 'edit_posts' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/blueprints' ) )
+					: '',
+				'commandCenter'      => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/command-center' ) )
 					: '',
 				'shortcuts'          => esc_url_raw( rest_url( 'mcp-ai-pro/v1/tool-shortcuts' ) ),
 				'slashCommands'      => esc_url_raw( rest_url( 'mcp-ai-pro/v1/slash-commands' ) ),
