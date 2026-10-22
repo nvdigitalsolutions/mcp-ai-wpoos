@@ -12,11 +12,6 @@ import { useEffect, useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useWorkflowBuilder } from '../../hooks/useWorkflowBuilder';
 import { useBootstrap } from '../../hooks/useBootstrap';
-import {
-	DataTable,
-	type DataTableColumn,
-	type DataTableRow,
-} from '../../components/shared/DataTable';
 import { WorkflowCanvasWithProvider } from './WorkflowCanvas';
 import { WorkflowPresetsClient, type WorkflowPresetSummary } from '../../api/workflow-presets';
 import type { WorkflowGraph } from '../../api/workflow-builder';
@@ -185,106 +180,6 @@ export function WorkflowsPage(): JSX.Element {
 		? presets.filter( ( preset ) => preset.category === presetCategory )
 		: presets;
 
-	const workflowColumns = useMemo< DataTableColumn[] >(
-		() => [ { key: 'workflow', label: __( 'Workflow', 'nvoos-pro-spa' ) } ],
-		[]
-	);
-
-	const workflowRows = useMemo< DataTableRow[] >(
-		() =>
-			workflows.map( ( workflow ) => ( {
-				id: workflow.id,
-				cells: [
-					<>
-						<button
-							type="button"
-							className="nvoos-pro-spa-token-manager__action"
-							onClick={ () => handleSelect( workflow.id ) }
-						>
-							<strong className="nvoos-pro-spa-tools-list__name">{ workflow.title }</strong>
-						</button>
-						<code className="nvoos-pro-spa-tools-list__slug">v{ workflow.version }</code>
-					</>,
-				],
-			} ) ),
-		[ workflows ]
-	);
-
-	const presetColumns = useMemo< DataTableColumn[] >(
-		() => [
-			{
-				key: 'preset',
-				label: __( 'Preset', 'nvoos-pro-spa' ),
-				width: 'minmax(180px, 1fr)',
-			},
-			{
-				key: 'description',
-				label: __( 'Description', 'nvoos-pro-spa' ),
-				className: 'nvoos-pro-spa-tools-list__cell--desc',
-				width: 'minmax(220px, 2fr)',
-			},
-			{ key: 'actions', label: __( 'Actions', 'nvoos-pro-spa' ), width: '160px' },
-		],
-		[]
-	);
-
-	const presetRows = useMemo< DataTableRow[] >(
-		() =>
-			visiblePresets.map( ( preset ) => ( {
-				id: preset.id,
-				cells: [
-					<>
-						<strong className="nvoos-pro-spa-tools-list__name">{ preset.name }</strong>
-						<code className="nvoos-pro-spa-tools-list__slug">
-							{ presetCategories[ preset.category ] ?? preset.category }
-						</code>
-					</>,
-					<span className="nvoos-pro-spa-tools-list__desc-clamp">
-						{ preset.description || '—' }
-					</span>,
-					<button
-						type="button"
-						className="nvoos-pro-spa-token-manager__action"
-						disabled={ busy !== null || ! selected }
-						onClick={ () => void loadPreset( preset.id ) }
-					>
-						{ __( 'Load into canvas', 'nvoos-pro-spa' ) }
-					</button>,
-				],
-			} ) ),
-		[ visiblePresets, presetCategories, busy, selected ]
-	);
-
-	const runColumns = useMemo< DataTableColumn[] >(
-		() => [
-			{ key: 'run', label: __( 'Run', 'nvoos-pro-spa' ), width: '160px' },
-			{
-				key: 'started',
-				label: __( 'Started', 'nvoos-pro-spa' ),
-				className: 'nvoos-pro-spa-tools-list__cell--desc',
-				width: 'minmax(200px, 2fr)',
-			},
-		],
-		[]
-	);
-
-	const runRows = useMemo< DataTableRow[] >(
-		() =>
-			runs.map( ( run ) => ( {
-				id: run.id,
-				cells: [
-					<>
-						<strong className="nvoos-pro-spa-tools-list__name">#{ run.id }</strong>
-						<Badge label={ typeof run.status === 'string' ? run.status : 'unknown' } />
-					</>,
-					typeof run.started_at === 'string' && run.started_at
-						? run.started_at
-						: '—',
-				],
-			} ) ),
-		[ runs ]
-	);
-
 	return (
 		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">
 			<header className="nvoos-pro-spa-tools-page__header">
@@ -366,7 +261,7 @@ export function WorkflowsPage(): JSX.Element {
 							<p>
 								<button
 									type="button"
-									className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary"
+									className="nvoos-pro-spa-token-manager__action"
 									disabled={ busy !== null || ! form.name.trim() }
 									onClick={ () => void submitForm() }
 								>
@@ -381,11 +276,22 @@ export function WorkflowsPage(): JSX.Element {
 							{ __( 'No workflows yet.', 'nvoos-pro-spa' ) }
 						</p>
 					) : (
-						<DataTable
-							columns={ workflowColumns }
-							rows={ workflowRows }
-							caption={ __( 'Workflows', 'nvoos-pro-spa' ) }
-						/>
+						<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Workflows', 'nvoos-pro-spa' ) }>
+							{ workflows.map( ( workflow ) => (
+								<div key={ workflow.id } className="nvoos-pro-spa-tools-list__row" role="listitem">
+									<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+										<button
+											type="button"
+											className="nvoos-pro-spa-token-manager__action"
+											onClick={ () => handleSelect( workflow.id ) }
+										>
+											<strong className="nvoos-pro-spa-tools-list__name">{ workflow.title }</strong>
+										</button>
+										<code className="nvoos-pro-spa-tools-list__slug">v{ workflow.version }</code>
+									</div>
+								</div>
+							) ) }
+						</div>
 					) }
 				</aside>
 
@@ -414,11 +320,31 @@ export function WorkflowsPage(): JSX.Element {
 									{ __( 'No presets available.', 'nvoos-pro-spa' ) }
 								</p>
 							) : (
-								<DataTable
-									columns={ presetColumns }
-									rows={ presetRows }
-									caption={ __( 'Workflow presets', 'nvoos-pro-spa' ) }
-								/>
+								<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Workflow presets', 'nvoos-pro-spa' ) }>
+									{ visiblePresets.map( ( preset ) => (
+										<div key={ preset.id } className="nvoos-pro-spa-tools-list__row" role="listitem">
+											<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+												<strong className="nvoos-pro-spa-tools-list__name">{ preset.name }</strong>
+												<code className="nvoos-pro-spa-tools-list__slug">
+													{ presetCategories[ preset.category ] ?? preset.category }
+												</code>
+											</div>
+											<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
+												{ preset.description || '—' }
+											</div>
+											<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+												<button
+													type="button"
+													className="nvoos-pro-spa-token-manager__action"
+													disabled={ busy !== null || ! selected }
+													onClick={ () => void loadPreset( preset.id ) }
+												>
+													{ __( 'Load into canvas', 'nvoos-pro-spa' ) }
+												</button>
+											</div>
+										</div>
+									) ) }
+								</div>
 							) }
 						</>
 					) : ! selected ? (
@@ -490,11 +416,19 @@ export function WorkflowsPage(): JSX.Element {
 									{ __( 'No runs recorded yet.', 'nvoos-pro-spa' ) }
 								</p>
 							) : (
-								<DataTable
-									columns={ runColumns }
-									rows={ runRows }
-									caption={ __( 'Run history', 'nvoos-pro-spa' ) }
-								/>
+								<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Run history', 'nvoos-pro-spa' ) }>
+									{ runs.map( ( run ) => (
+										<div key={ run.id } className="nvoos-pro-spa-tools-list__row" role="listitem">
+											<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+												<strong className="nvoos-pro-spa-tools-list__name">#{ run.id }</strong>
+												<Badge label={ typeof run.status === 'string' ? run.status : 'unknown' } />
+											</div>
+											<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
+												{ typeof run.started_at === 'string' && run.started_at ? run.started_at : '—' }
+											</div>
+										</div>
+									) ) }
+								</div>
 							) }
 						</>
 					) }

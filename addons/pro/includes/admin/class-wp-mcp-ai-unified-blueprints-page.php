@@ -95,23 +95,6 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_unified_install_blueprint', array( __CLASS__, 'ajax_install_blueprint' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_unified_get_blueprint_details', array( __CLASS__, 'ajax_get_blueprint_details' ) );
 
-		self::get_toolkit_labels();
-	}
-
-	/**
-	 * Map of human-readable toolkit labels keyed by directory name.
-	 *
-	 * Public since 2.4.0 — the console REST bridge (Proposal 084 Phase 5c)
-	 * reuses the same labels; the map self-populates on first call so the
-	 * labels are available outside the admin-menu boot path.
-	 *
-	 * @return array<string,string>
-	 */
-	public static function get_toolkit_labels() {
-		if ( ! empty( self::$toolkit_labels ) ) {
-			return self::$toolkit_labels;
-		}
-
 		self::$toolkit_labels = array(
 			'crm'                     => __( 'CRM & Email Marketing', 'mcp-ai-wpoos-pro' ),
 			'healthcare'              => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
@@ -139,8 +122,6 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 			'media'                   => __( 'Media Toolkit', 'mcp-ai-wpoos-pro' ),
 			'email-marketing'         => __( 'Email Marketing', 'mcp-ai-wpoos-pro' ),
 		);
-
-		return self::$toolkit_labels;
 	}
 
 	/**
@@ -369,12 +350,9 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 	/**
 	 * Get all blueprints for enabled toolkits, grouped by toolkit directory.
 	 *
-	 * Public since 2.4.0 — the console REST bridge (Proposal 084 Phase 5c)
-	 * serves this exact grouping.
-	 *
 	 * @return array<string,array>
 	 */
-	public static function get_all_blueprints_grouped() {
+	private static function get_all_blueprints_grouped() {
 		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
 			$installer_path = WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-blueprint-installer.php';
 			if ( file_exists( $installer_path ) ) {
@@ -420,12 +398,10 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 	/**
 	 * Whether a toolkit's blueprints should be listed.
 	 *
-	 * Public since 2.4.0 — the console REST bridge reuses the same gate.
-	 *
 	 * @param string $dir Toolkit directory name.
 	 * @return bool
 	 */
-	public static function is_toolkit_enabled( $dir ) {
+	private static function is_toolkit_enabled( $dir ) {
 		if ( ! isset( self::$toolkit_enable_keys[ $dir ] ) ) {
 			return true;
 		}
@@ -444,11 +420,9 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 	/**
 	 * Build a map of installed blueprint name → assistant post ID.
 	 *
-	 * Public since 2.4.0 — the console REST bridge reuses the same map.
-	 *
 	 * @return array<string,int>
 	 */
-	public static function get_installed_blueprint_map() {
+	private static function get_installed_blueprint_map() {
 		$posts = get_posts(
 			array(
 				'post_type'        => 'mcp_ai_assistant',
@@ -474,30 +448,40 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 	/**
 	 * Resolve the examples directory for a given toolkit.
 	 *
-	 * Public since 2.4.0 — the console REST bridge reuses the same resolver.
-	 *
 	 * @param string $toolkit_dir Toolkit directory name.
 	 * @return string Absolute path to examples/.
 	 */
-	public static function resolve_examples_dir( $toolkit_dir ) {
+	private static function resolve_examples_dir( $toolkit_dir ) {
 		return WP_MCP_AI_PRO_PATH . 'includes/tools/' . basename( $toolkit_dir ) . '/examples';
 	}
 
+	// ─────────────────────────────────────────────
+	// AJAX handlers
+	// ─────────────────────────────────────────────
+
 	/**
-	 * Load + normalise the details payload for one blueprint.
-	 *
-	 * Shared by the admin-ajax handler and the console REST bridge
-	 * (Proposal 084 Phase 5c) — one normalisation, no forks.
-	 *
-	 * @param string $toolkit Toolkit directory name.
-	 * @param string $slug    Blueprint slug.
-	 * @return array|WP_Error
+	 * AJAX: Install a blueprint.
 	 */
-	public static function get_blueprint_details_data( $toolkit, $slug ) {
+	public static function ajax_install_blueprint() {
+		check_ajax_referer( 'wp_mcp_ai_unified_bp', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$slug      = isset( $_POST['blueprint_slug'] ) ? sanitize_key( wp_unslash( $_POST['blueprint_slug'] ) ) : '';
+		$toolkit   = isset( $_POST['toolkit'] ) ? sanitize_key( wp_unslash( $_POST['toolkit'] ) ) : '';
+		$overwrite = ! empty( $_POST['overwrite'] );
+
+		if ( empty( $slug ) || empty( $toolkit ) ) {
+			wp_send_json_error( array( 'message' => __( 'Missing parameters.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
 		if ( ! self::is_toolkit_enabled( $toolkit ) ) {
-			return new WP_Error(
-				'toolkit_disabled',
-				__( 'This toolkit is not enabled. Enable it in Settings → NV oOS to see its blueprints.', 'mcp-ai-wpoos-pro' )
+			wp_send_json_error(
+				array(
+					'message' => __( 'This toolkit is not enabled. Enable it in Settings → NV oOS to install its blueprints.', 'mcp-ai-wpoos-pro' ),
+				)
 			);
 		}
 
@@ -511,15 +495,63 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
-			return new WP_Error(
-				'installer_unavailable',
-				__( 'Installer not available.', 'mcp-ai-wpoos-pro' )
-			);
+			wp_send_json_error( array( 'message' => __( 'Installer not available.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		$data = WP_MCP_AI_Blueprint_Installer::load_blueprint( $examples_dir, $slug );
 		if ( is_wp_error( $data ) ) {
-			return $data;
+			wp_send_json_error( array( 'message' => $data->get_error_message() ) );
+		}
+
+		$result = WP_MCP_AI_Blueprint_Installer::install( $data, $slug, $overwrite );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: Get blueprint details.
+	 */
+	public static function ajax_get_blueprint_details() {
+		check_ajax_referer( 'wp_mcp_ai_unified_bp', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$slug    = isset( $_POST['blueprint_slug'] ) ? sanitize_key( wp_unslash( $_POST['blueprint_slug'] ) ) : '';
+		$toolkit = isset( $_POST['toolkit'] ) ? sanitize_key( wp_unslash( $_POST['toolkit'] ) ) : '';
+
+		if ( empty( $slug ) || empty( $toolkit ) ) {
+			wp_send_json_error( array( 'message' => __( 'Missing parameters.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		if ( ! self::is_toolkit_enabled( $toolkit ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'This toolkit is not enabled. Enable it in Settings → NV oOS to see its blueprints.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		$examples_dir = self::resolve_examples_dir( $toolkit );
+
+		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
+			$installer_path = WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-blueprint-installer.php';
+			if ( file_exists( $installer_path ) ) {
+				require_once $installer_path;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Installer not available.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$data = WP_MCP_AI_Blueprint_Installer::load_blueprint( $examples_dir, $slug );
+		if ( is_wp_error( $data ) ) {
+			wp_send_json_error( array( 'message' => $data->get_error_message() ) );
 		}
 
 		// Normalise across CRM-style and Healthcare-style schemas.
@@ -556,109 +588,13 @@ class WP_MCP_AI_Unified_Blueprints_Page {
 			$defaults['channels'] = $meta['channels'];
 		}
 
-		return array(
+		$result = array(
 			'name'         => $data['name'] ?? $data['post_title'] ?? '',
 			'description'  => $data['description'] ?? $data['post_content'] ?? '',
 			'instructions' => $instructions,
 			'tools'        => is_array( $tools ) ? $tools : array(),
 			'defaults'     => ! empty( $defaults ) ? $defaults : null,
 		);
-	}
-
-	/**
-	 * Install a blueprint into a new assistant post.
-	 *
-	 * Shared by the admin-ajax handler and the console REST bridge
-	 * (Proposal 084 Phase 5c).
-	 *
-	 * @param string $toolkit   Toolkit directory name.
-	 * @param string $slug      Blueprint slug.
-	 * @param bool   $overwrite Overwrite an existing assistant of the same name.
-	 * @return array|WP_Error Installer result (carries assistant_id) or error.
-	 */
-	public static function install_blueprint( $toolkit, $slug, $overwrite = false ) {
-		if ( ! self::is_toolkit_enabled( $toolkit ) ) {
-			return new WP_Error(
-				'toolkit_disabled',
-				__( 'This toolkit is not enabled. Enable it in Settings → NV oOS to install its blueprints.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		$examples_dir = self::resolve_examples_dir( $toolkit );
-
-		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
-			$installer_path = WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-blueprint-installer.php';
-			if ( file_exists( $installer_path ) ) {
-				require_once $installer_path;
-			}
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
-			return new WP_Error(
-				'installer_unavailable',
-				__( 'Installer not available.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		$data = WP_MCP_AI_Blueprint_Installer::load_blueprint( $examples_dir, $slug );
-		if ( is_wp_error( $data ) ) {
-			return $data;
-		}
-
-		return WP_MCP_AI_Blueprint_Installer::install( $data, $slug, $overwrite );
-	}
-
-	// ─────────────────────────────────────────────
-	// AJAX handlers
-	// ─────────────────────────────────────────────
-
-	/**
-	 * AJAX: Install a blueprint.
-	 */
-	public static function ajax_install_blueprint() {
-		check_ajax_referer( 'wp_mcp_ai_unified_bp', 'nonce' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
-		}
-
-		$slug      = isset( $_POST['blueprint_slug'] ) ? sanitize_key( wp_unslash( $_POST['blueprint_slug'] ) ) : '';
-		$toolkit   = isset( $_POST['toolkit'] ) ? sanitize_key( wp_unslash( $_POST['toolkit'] ) ) : '';
-		$overwrite = ! empty( $_POST['overwrite'] );
-
-		if ( empty( $slug ) || empty( $toolkit ) ) {
-			wp_send_json_error( array( 'message' => __( 'Missing parameters.', 'mcp-ai-wpoos-pro' ) ) );
-		}
-
-		$result = self::install_blueprint( $toolkit, $slug, $overwrite );
-		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
-		}
-
-		wp_send_json_success( $result );
-	}
-
-	/**
-	 * AJAX: Get blueprint details.
-	 */
-	public static function ajax_get_blueprint_details() {
-		check_ajax_referer( 'wp_mcp_ai_unified_bp', 'nonce' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
-		}
-
-		$slug    = isset( $_POST['blueprint_slug'] ) ? sanitize_key( wp_unslash( $_POST['blueprint_slug'] ) ) : '';
-		$toolkit = isset( $_POST['toolkit'] ) ? sanitize_key( wp_unslash( $_POST['toolkit'] ) ) : '';
-
-		if ( empty( $slug ) || empty( $toolkit ) ) {
-			wp_send_json_error( array( 'message' => __( 'Missing parameters.', 'mcp-ai-wpoos-pro' ) ) );
-		}
-
-		$result = self::get_blueprint_details_data( $toolkit, $slug );
-		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
-		}
 
 		wp_send_json_success( $result );
 	}

@@ -655,8 +655,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						'class-wp-mcp-ai-pro-records-rest-controller.php'          => 'WP_MCP_AI_Pro_Records_REST_Controller',
 						'class-wp-mcp-ai-pro-dashboards-rest-controller.php'       => 'WP_MCP_AI_Pro_Dashboards_REST_Controller',
 						'class-wp-mcp-ai-pro-media-cc-rest-controller.php'         => 'WP_MCP_AI_Pro_Media_CC_REST_Controller',
-						'class-wp-mcp-ai-pro-blueprints-rest-controller.php'       => 'WP_MCP_AI_Pro_Blueprints_REST_Controller',
-						'class-wp-mcp-ai-pro-command-center-rest-controller.php'    => 'WP_MCP_AI_Pro_Command_Center_REST_Controller',
 					);
 					foreach ( $controllers as $file => $class ) {
 						$path = $p . 'rest/' . $file;

@@ -28,130 +28,115 @@ export interface ConsoleNavItem extends NavGate {
 }
 
 /**
- * A collapsible sidebar section (W3C disclosure-navigation pattern).
- * Groups with a single visible item flatten to that item; empty groups hide.
+ * The console route catalogue. Feature keys match the server-side
+ * WP_MCP_AI_Feature_Flags map; capability gates mirror the endpoint gating
+ * in WP_MCP_AI_Pro_SPA_Config (admin-only surfaces).
  */
-export interface ConsoleNavGroup {
-  /** Stable id — used for the disclosure region and the localStorage pref. */
-  id: string;
-  label: string;
-  items: ConsoleNavItem[];
-  /** Start expanded unless the user has toggled it (active group always expands). */
-  defaultExpanded?: boolean;
-}
-
-/**
- * The console route catalogue, grouped for the sidebar.
- *
- * Feature keys match the server-side WP_MCP_AI_Feature_Flags map;
- * capability gates mirror the endpoint gating in WP_MCP_AI_Pro_SPA_Config
- * (admin-only surfaces). Order within a group is the display order.
- */
-export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
+export const CONSOLE_NAV_ITEMS: ConsoleNavItem[] = [
+  { path: '/', label: 'Dashboard', icon: '📊', end: true },
+  { path: '/chat', label: 'Chat', icon: '💬' },
+  { path: '/assistants', label: 'Assistants', icon: '🤖' },
+  { path: '/professions', label: 'Professions', icon: '👔', capability: 'manage_options' },
+  { path: '/teams', label: 'Teams', icon: '👥', capability: 'manage_options' },
+  { path: '/schedule-manager', label: 'Schedules', icon: '⏰', capability: 'manage_options' },
+  { path: '/tools', label: 'Tools', icon: '🧰' },
+  { path: '/dashboards', label: 'Dashboards', icon: '🧮', capability: 'manage_options' },
+  { path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options', feature: 'project_management' },
   {
-    id: 'workspace',
-    label: 'Workspace',
-    defaultExpanded: true,
-    items: [
-      { path: '/', label: 'Dashboard', icon: '📊', end: true },
-      { path: '/chat', label: 'Chat', icon: '💬' },
-      { path: '/assistants', label: 'Assistants', icon: '🤖' },
-      { path: '/blueprints', label: 'Blueprints', icon: '🗂️', capability: 'edit_posts' },
-      { path: '/tools', label: 'Tools', icon: '🧰' },
-    ],
+    path: '/orchestration-stats',
+    label: 'Orchestration',
+    icon: '🧩',
+    capability: 'manage_options',
   },
   {
-    id: 'automation',
-    label: 'Automation',
-    items: [
-      { path: '/workflows', label: 'Workflows', icon: '🔀', capability: 'manage_options' },
-      { path: '/schedule-manager', label: 'Schedules', icon: '⏰', capability: 'manage_options' },
-      { path: '/triggers', label: 'Triggers', icon: '⚡', capability: 'manage_options' },
-      { path: '/slash-commands', label: 'Slash Commands', icon: '⌨️', capability: 'manage_options' },
-      { path: '/approvals', label: 'Approvals', icon: '🛡️', capability: 'manage_options' },
-      { path: '/operations', label: 'Operations', icon: '🔧', capability: 'manage_options' },
-      { path: '/pro-ops', label: 'Pro Ops', icon: '🛰️', capability: 'manage_options' },
-      {
-        path: '/orchestration-stats',
-        label: 'Orchestration',
-        icon: '🧩',
-        capability: 'manage_options',
-      },
-    ],
+    path: '/pro-ops',
+    label: 'Pro Ops',
+    icon: '🛰️',
+    capability: 'manage_options',
+  },
+  { path: '/workflows', label: 'Workflows', icon: '🔀', capability: 'manage_options' },
+  { path: '/analytics', label: 'Analytics', icon: '📈', capability: 'manage_options' },
+  {
+    path: '/knowledge-graph',
+    label: 'Knowledge Graph',
+    icon: '🕸️',
+    capability: 'manage_options',
+    feature: 'knowledge_graph',
+  },
+  { path: '/approvals', label: 'Approvals', icon: '🛡️', capability: 'manage_options' },
+  {
+    path: '/security-center',
+    label: 'Security',
+    icon: '🔐',
+    capability: 'manage_options',
   },
   {
-    id: 'command-centers',
-    label: 'Command Centers',
-    items: [
-      { path: '/crm', label: 'CRM', icon: '🏢', capability: 'manage_options', feature: 'crm' },
-      { path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options', feature: 'project_management' },
-      { path: '/professions', label: 'Professions', icon: '👔', capability: 'manage_options' },
-      { path: '/teams', label: 'Teams', icon: '👥', capability: 'manage_options' },
-      { path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options', feature: 'calendar_booking' },
-      { path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options', feature: 'fnb' },
-      { path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options' },
-      { path: '/media-ops', label: 'Media Ops', icon: '🎞️', capability: 'manage_options' },
-    ],
+    path: '/docs',
+    label: 'Docs',
+    icon: '📚',
+    capability: 'manage_options',
+    feature: 'docs_hub',
+  },
+  { path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options', feature: 'calendar_booking' },
+  { path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options', feature: 'fnb' },
+  { path: '/crm', label: 'CRM', icon: '🏢', capability: 'manage_options', feature: 'crm' },
+  { path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options' },
+  { path: '/media-ops', label: 'Media Ops', icon: '🎞️', capability: 'manage_options' },
+  {
+    path: '/operations',
+    label: 'Operations',
+    icon: '🔧',
+    capability: 'manage_options',
   },
   {
-    id: 'insights',
-    label: 'Insights',
-    items: [
-      { path: '/dashboards', label: 'Dashboards', icon: '🧮', capability: 'manage_options' },
-      { path: '/analytics', label: 'Analytics', icon: '📈', capability: 'manage_options' },
-      { path: '/diagnostics', label: 'Diagnostics', icon: '🩺', capability: 'manage_options' },
-      { path: '/security-center', label: 'Security', icon: '🔐', capability: 'manage_options' },
-    ],
+    path: '/slash-commands',
+    label: 'Slash Commands',
+    icon: '⌨️',
+    capability: 'manage_options',
   },
   {
-    id: 'admin',
-    label: 'Admin',
-    items: [
-      { path: '/token-manager', label: 'Tokens', icon: '🔑', capability: 'manage_options' },
-      { path: '/portability', label: 'Portability', icon: '📦', capability: 'manage_options' },
-      {
-        path: '/knowledge-graph',
-        label: 'Knowledge Graph',
-        icon: '🕸️',
-        capability: 'manage_options',
-        feature: 'knowledge_graph',
-      },
-      {
-        path: '/docs',
-        label: 'Docs',
-        icon: '📚',
-        capability: 'manage_options',
-        feature: 'docs_hub',
-      },
-      {
-        path: '/media',
-        label: 'Media Studio',
-        icon: '🎨',
-        capability: 'manage_options',
-        feature: 'media_studio',
-      },
-      {
-        path: '/documents',
-        label: 'Documents',
-        icon: '📄',
-        capability: 'manage_options',
-        feature: 'document_editor',
-      },
-      { path: '/settings', label: 'Settings', icon: '⚙️', capability: 'manage_options' },
-    ],
+    path: '/triggers',
+    label: 'Triggers',
+    icon: '⚡',
+    capability: 'manage_options',
+  },
+  {
+    path: '/portability',
+    label: 'Portability',
+    icon: '📦',
+    capability: 'manage_options',
+  },
+  {
+    path: '/diagnostics',
+    label: 'Diagnostics',
+    icon: '🩺',
+    capability: 'manage_options',
+  },
+  {
+    path: '/token-manager',
+    label: 'Tokens',
+    icon: '🔑',
+    capability: 'manage_options',
+  },
+  { path: '/settings', label: 'Settings', icon: '⚙️', capability: 'manage_options' },
+  // Feature-gated editor surfaces (Media Studio, Document Editor) are not
+  // part of the primary ordering — they only appear when their addons are
+  // enabled, and tail the list so the core nav order above stays stable.
+  {
+    path: '/media',
+    label: 'Media Studio',
+    icon: '🎨',
+    capability: 'manage_options',
+    feature: 'media_studio',
+  },
+  {
+    path: '/documents',
+    label: 'Documents',
+    icon: '📄',
+    capability: 'manage_options',
+    feature: 'document_editor',
   },
 ];
-
-/**
- * Flat route catalogue, derived from the groups.
- *
- * The route guards and gate lookup (`gateForPath`) need the flat list; the
- * sidebar consumes the groups directly. Both read the same declarations, so
- * they can never disagree.
- */
-export const CONSOLE_NAV_ITEMS: ConsoleNavItem[] = CONSOLE_NAV_GROUPS.flatMap(
-  ( group ) => group.items,
-);
 
 /**
  * Decide whether a gated item is visible for this session.

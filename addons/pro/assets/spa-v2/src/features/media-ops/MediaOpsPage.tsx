@@ -141,24 +141,24 @@ export function MediaOpsPage(): JSX.Element {
 
 			<section className="nvoos-pro-spa-records-detail" aria-label={ __( 'Library coverage', 'nvoos-pro-spa' ) }>
 				<h3 className="nvoos-pro-spa-records-detail__title">{ __( 'Library Coverage', 'nvoos-pro-spa' ) }</h3>
-				<dl className="nvoos-pro-spa-records-detail__grid">
-					<div className="nvoos-pro-spa-records-detail__item">
+				<dl className="nvoos-pro-spa-records-detail__grid" role="list">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Attachments', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ new Intl.NumberFormat( 'en-US' ).format( attachments.total ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Images', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ new Intl.NumberFormat( 'en-US' ).format( attachments.image_count ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Alt-text coverage', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ formatPercent( snapshot.alt_pct ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Next-gen formats', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ formatPercent( snapshot.nextgen_pct ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Descriptive filenames', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ new Intl.NumberFormat( 'en-US' ).format( attachments.descriptive_filename_count ) }</dd>
 					</div>
@@ -167,12 +167,12 @@ export function MediaOpsPage(): JSX.Element {
 
 			<section className="nvoos-pro-spa-records-detail" aria-label={ __( 'Storage', 'nvoos-pro-spa' ) }>
 				<h3 className="nvoos-pro-spa-records-detail__title">{ __( 'Storage', 'nvoos-pro-spa' ) }</h3>
-				<dl className="nvoos-pro-spa-records-detail__grid">
-					<div className="nvoos-pro-spa-records-detail__item">
+				<dl className="nvoos-pro-spa-records-detail__grid" role="list">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Used by attachments', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ formatBytes( snapshot.storage ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Compression savings', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ formatBytes( snapshot.compression ) }</dd>
 					</div>
@@ -181,20 +181,20 @@ export function MediaOpsPage(): JSX.Element {
 
 			<section className="nvoos-pro-spa-records-detail" aria-label={ __( 'Processing queue', 'nvoos-pro-spa' ) }>
 				<h3 className="nvoos-pro-spa-records-detail__title">{ __( 'Processing Queue', 'nvoos-pro-spa' ) }</h3>
-				<dl className="nvoos-pro-spa-records-detail__grid">
-					<div className="nvoos-pro-spa-records-detail__item">
+				<dl className="nvoos-pro-spa-records-detail__grid" role="list">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Pending', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ new Intl.NumberFormat( 'en-US' ).format( queue.pending ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Completed today', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ new Intl.NumberFormat( 'en-US' ).format( queue.completed_today ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Failed', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ new Intl.NumberFormat( 'en-US' ).format( queue.failed ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Total processed', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ new Intl.NumberFormat( 'en-US' ).format( queue.total_processed ) }</dd>
 					</div>
@@ -203,20 +203,20 @@ export function MediaOpsPage(): JSX.Element {
 
 			<section className="nvoos-pro-spa-records-detail" aria-label={ __( 'Schedules', 'nvoos-pro-spa' ) }>
 				<h3 className="nvoos-pro-spa-records-detail__title">{ __( 'Schedules', 'nvoos-pro-spa' ) }</h3>
-				<dl className="nvoos-pro-spa-records-detail__grid">
-					<div className="nvoos-pro-spa-records-detail__item">
+				<dl className="nvoos-pro-spa-records-detail__grid" role="list">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Active', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ new Intl.NumberFormat( 'en-US' ).format( schedule.active ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Ran today', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ new Intl.NumberFormat( 'en-US' ).format( schedule.ran_today ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Overdue', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ new Intl.NumberFormat( 'en-US' ).format( schedule.overdue ) }</dd>
 					</div>
-					<div className="nvoos-pro-spa-records-detail__item">
+					<div className="nvoos-pro-spa-records-detail__item" role="listitem">
 						<dt>{ __( 'Next run', 'nvoos-pro-spa' ) }</dt>
 						<dd>{ schedule.next_run || '—' }</dd>
 					</div>
@@ -227,7 +227,7 @@ export function MediaOpsPage(): JSX.Element {
 				<h3 className="nvoos-pro-spa-records-detail__title">{ __( 'Actions', 'nvoos-pro-spa' ) }</h3>
 				<button
 					type="button"
-					className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary"
+					className="nvoos-pro-spa-page__retry"
 					disabled={ sweepBusy }
 					onClick={ () => {
 						void runSweep();

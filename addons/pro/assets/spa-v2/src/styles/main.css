@@ -174,17 +174,8 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	transition: background 0.15s, border-color 0.15s;
 }
 
-.nvoos-pro-spa-btn:hover:not( :disabled ) {
+.nvoos-pro-spa-btn:hover {
 	background: var(--nvoos-bg, #f0f0f1);
-}
-
-.nvoos-pro-spa-btn:active:not( :disabled ) {
-	transform: translateY( 1px );
-}
-
-.nvoos-pro-spa-btn:focus-visible {
-	outline: 2px solid var(--nvoos-primary, #2271b1);
-	outline-offset: 2px;
 }
 
 .nvoos-pro-spa-btn:disabled {
@@ -198,7 +189,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border-color: var(--nvoos-primary, #2271b1);
 }
 
-.nvoos-pro-spa-btn--primary:hover:not( :disabled ) {
+.nvoos-pro-spa-btn--primary:hover {
 	background: var(--nvoos-primary-hover, #135e96);
 	border-color: var(--nvoos-primary-hover, #135e96);
 }
@@ -209,7 +200,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border-color: var(--nvoos-danger, #d63638);
 }
 
-.nvoos-pro-spa-btn--danger:hover:not( :disabled ) {
+.nvoos-pro-spa-btn--danger:hover {
 	background: #b32d2e;
 	border-color: #b32d2e;
 }
@@ -4327,76 +4318,18 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	animation: nvoos-pro-spa-spin 0.8s linear infinite;
 }
 
-/* Generic console action button. Every page reuses this class for its
-   primary actions, so it carries the full interactive treatment — variants
-   below (`--primary`, `--danger`, `--small`) replace ad-hoc one-off buttons. */
 .nvoos-pro-spa-page__retry {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 32px;
-	padding: 0 14px;
+	padding: 6px 16px;
 	border: 1px solid var(--nvoos-border, #dcdcde);
 	border-radius: 6px;
 	background: var(--nvoos-bg-secondary, #fff);
-	color: var(--nvoos-text, #1e1e1e);
 	cursor: pointer;
 	font-size: 13px;
-	font-weight: 500;
-	line-height: 1.4;
 	font-family: inherit;
-	text-decoration: none;
-	white-space: nowrap;
-	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.nvoos-pro-spa-page__retry:hover:not( :disabled ) {
+.nvoos-pro-spa-page__retry:hover {
 	background: var(--nvoos-bg, #f0f0f1);
-	border-color: var(--nvoos-text-secondary, #787c82);
-}
-
-.nvoos-pro-spa-page__retry:active:not( :disabled ) {
-	transform: translateY( 1px );
-}
-
-.nvoos-pro-spa-page__retry:focus-visible {
-	outline: 2px solid var(--nvoos-primary, #2271b1);
-	outline-offset: 2px;
-}
-
-.nvoos-pro-spa-page__retry:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
-}
-
-.nvoos-pro-spa-page__retry--primary {
-	background: var(--nvoos-primary, #2271b1);
-	border-color: var(--nvoos-primary, #2271b1);
-	color: #fff;
-}
-
-.nvoos-pro-spa-page__retry--primary:hover:not( :disabled ) {
-	background: var(--nvoos-primary-hover, #135e96);
-	border-color: var(--nvoos-primary-hover, #135e96);
-	color: #fff;
-}
-
-.nvoos-pro-spa-page__retry--danger {
-	background: var(--nvoos-bg-secondary, #fff);
-	border-color: var(--nvoos-danger, #d63638);
-	color: var(--nvoos-danger, #d63638);
-}
-
-.nvoos-pro-spa-page__retry--danger:hover:not( :disabled ) {
-	background: var(--nvoos-danger, #d63638);
-	border-color: var(--nvoos-danger, #d63638);
-	color: #fff;
-}
-
-.nvoos-pro-spa-page__retry--small {
-	min-height: 26px;
-	padding: 0 10px;
-	font-size: 12px;
 }
 
 /* =========================================================================
@@ -4698,23 +4631,9 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-tools-page__header {
 	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 16px;
-	margin-bottom: 20px;
-}
-
-.nvoos-pro-spa-tools-page__count {
-	flex-shrink: 0;
-	display: inline-flex;
 	align-items: center;
-	padding: 2px 10px;
-	border: 1px solid var(--nvoos-border, #dcdcde);
-	border-radius: 12px;
-	background: var(--nvoos-bg-secondary, #fff);
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--nvoos-text-secondary, #787c82);
+	justify-content: space-between;
+	margin-bottom: 20px;
 }
 
 .nvoos-pro-spa-tools-page__controls {
@@ -4737,11 +4656,6 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	gap: 4px;
 }
 
-.nvoos-pro-spa-tools-page__search {
-	flex: 1;
-	min-width: 240px;
-}
-
 .nvoos-pro-spa-tools-page__label {
 	font-size: 11px;
 	font-weight: 600;
@@ -4755,15 +4669,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border-radius: 6px;
 	font-size: 13px;
 	font-family: inherit;
-	width: 100%;
-	box-sizing: border-box;
-}
-
-.nvoos-pro-spa-tools-page__input:focus,
-.nvoos-pro-spa-tools-page__select:focus {
-	outline: none;
-	border-color: var(--nvoos-primary, #2271b1);
-	box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.2);
+	width: 240px;
 }
 
 .nvoos-pro-spa-tools-page__select {
@@ -4773,7 +4679,6 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-size: 13px;
 	font-family: inherit;
 	background: var(--nvoos-bg-secondary, #fff);
-	color: var(--nvoos-text, #1e1e1e);
 }
 
 .nvoos-pro-spa-tools-page__empty {
@@ -4783,345 +4688,27 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-size: 14px;
 }
 
-.nvoos-pro-spa-tools-page__empty p {
-	margin: 0 0 12px;
-}
-
 .nvoos-pro-spa-tools-page__pager {
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
-	gap: 8px;
-	flex-wrap: wrap;
+	justify-content: center;
+	gap: 16px;
 	padding: 12px 0;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
 }
 
 .nvoos-pro-spa-tools-page__pager-label {
-	margin: 0 auto 0 0;
 	font-size: 13px;
 	color: var(--nvoos-text-secondary, #787c82);
 }
 
-.nvoos-pro-spa-tools-page__pager-size {
-	display: inline-flex;
-	align-items: center;
-}
-
-.nvoos-pro-spa-tools-page__pager-size .nvoos-pro-spa-tools-page__select {
-	padding: 4px 6px;
-	font-size: 12px;
-}
-
-.nvoos-pro-spa-tools-page__pager-page {
-	min-width: 32px;
-	height: 32px;
-	padding: 0 6px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	border: 1px solid var(--nvoos-border, #dcdcde);
-	border-radius: 6px;
-	background: var(--nvoos-bg-secondary, #fff);
-	color: var(--nvoos-text, #1e1e1e);
-	font-size: 13px;
-	font-family: inherit;
-	cursor: pointer;
-	transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.nvoos-pro-spa-tools-page__pager-page:hover {
-	border-color: var(--nvoos-primary, #2271b1);
-	color: var(--nvoos-primary, #2271b1);
-}
-
-.nvoos-pro-spa-tools-page__pager-page--active,
-.nvoos-pro-spa-tools-page__pager-page--active:hover {
-	background: var(--nvoos-primary, #2271b1);
-	border-color: var(--nvoos-primary, #2271b1);
-	color: #fff;
-	cursor: default;
-}
-
-.nvoos-pro-spa-tools-page__pager-ellipsis {
-	color: var(--nvoos-text-secondary, #787c82);
-	padding: 0 2px;
-}
-
-.nvoos-pro-spa-tools-page__footer {
-	margin-top: 16px;
-	padding: 8px 0;
-	border-top: 1px solid var(--nvoos-border, #dcdcde);
-	font-size: 12px;
-	color: var(--nvoos-text-secondary, #787c82);
-}
-
-/* -------------------------------------------------------------------------
-   Shared list/table surface (legacy div rows AND native <table> rows).
-   The legacy pages keep div-based rows; DataTable renders the same classes
-   on native table elements. Both are styled here.
-   ------------------------------------------------------------------------- */
-
-.nvoos-pro-spa-tools-list-scroll {
-	overflow: auto;
-	max-height: min(65vh, 760px);
-	border: 1px solid var(--nvoos-border, #dcdcde);
-	border-radius: 8px;
-	background: var(--nvoos-bg-secondary, #fff);
-}
-
-.nvoos-pro-spa-tools-list__header {
-	display: flex;
-	border-bottom: 2px solid var(--nvoos-border, #dcdcde);
-	background: var(--nvoos-bg, #f0f0f1);
-	position: sticky;
-	top: 0;
-	z-index: 1;
-}
-
-.nvoos-pro-spa-tools-list__row {
-	display: flex;
-	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
-	transition: background 0.1s;
-}
-
-.nvoos-pro-spa-tools-list__row:hover {
-	background: rgba(34, 113, 177, 0.04);
-}
-
-.nvoos-pro-spa-tools-list__cell {
-	padding: 10px 12px;
-	font-size: 13px;
-}
-
-.nvoos-pro-spa-tools-list__cell--head {
-	font-weight: 600;
-	font-size: 11px;
-	text-transform: uppercase;
-	color: var(--nvoos-text-secondary, #787c82);
-	letter-spacing: 0.02em;
-}
-
-/* Native table variant (DataTable component). */
-.nvoos-pro-spa-tools-list--table {
-	width: 100%;
-	min-width: 640px;
-	border-collapse: separate;
-	border-spacing: 0;
-}
-
-.nvoos-pro-spa-tools-list--table thead th {
-	position: sticky;
-	top: 0;
-	z-index: 2;
-	padding: 10px 12px;
-	background: var(--nvoos-bg, #f0f0f1);
-	border-bottom: 2px solid var(--nvoos-border, #dcdcde);
-	text-align: left;
-	white-space: nowrap;
-	box-shadow: 0 1px 0 var(--nvoos-border, #dcdcde) inset;
-}
-
-.nvoos-pro-spa-tools-list--table tbody td {
-	padding: 10px 12px;
-	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
-	font-size: 13px;
-	vertical-align: top;
-	background: var(--nvoos-bg-secondary, #fff);
-}
-
-.nvoos-pro-spa-tools-list--table tbody tr:last-child td {
-	border-bottom: none;
-}
-
-.nvoos-pro-spa-tools-list--table tbody tr:hover td {
-	background: rgba(34, 113, 177, 0.04);
-}
-
-.nvoos-pro-spa-tools-list--table .nvoos-pro-spa-tools-list__cell--desc {
-	max-width: 560px;
-}
-
-/* Plain bordered list (checklists and similar non-tabular rows). */
-.nvoos-pro-spa-tools-list--list {
-	list-style: none;
-	margin: 0 0 12px;
-	padding: 0;
-	border: 1px solid var(--nvoos-border, #dcdcde);
-	border-radius: 8px;
-	overflow: hidden;
-	background: var(--nvoos-bg-secondary, #fff);
-}
-
-.nvoos-pro-spa-tools-list--list .nvoos-pro-spa-tools-list__row {
-	align-items: center;
-	gap: 8px;
-	padding: 10px 12px;
-}
-
-.nvoos-pro-spa-tools-list--list .nvoos-pro-spa-tools-list__row:last-child {
-	border-bottom: none;
-}
-
-.nvoos-pro-spa-tools-list__row--empty .nvoos-pro-spa-tools-list__cell {
-	padding: 40px 16px;
-	text-align: center;
-	color: var(--nvoos-text-secondary, #787c82);
-}
-
-/* Master-detail row (full-width expandable detail below a table row). */
-.nvoos-pro-spa-tools-list--table tr.nvoos-pro-spa-tools-list__row--detail td {
-	padding: 14px 16px;
-	background: var(--nvoos-bg, #f0f0f1);
-	border-bottom: 2px solid var(--nvoos-border, #dcdcde);
-	border-left: 3px solid var(--nvoos-primary, #2271b1);
-}
-
-/* Numeric cells right-align with tabular figures (industry standard). */
-.nvoos-pro-spa-tools-list__cell--num {
-	text-align: right;
-	font-variant-numeric: tabular-nums;
-	white-space: nowrap;
-}
-
-.nvoos-pro-spa-tools-list--table .nvoos-pro-spa-tools-list__cell--num {
-	text-align: right;
-}
-
-/* Sortable header button (W3C sortable-table pattern). */
-.nvoos-pro-spa-tools-list__sort {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	padding: 2px 4px;
-	margin: -2px -4px;
-	border: none;
-	border-radius: 4px;
-	background: transparent;
-	color: inherit;
-	font-family: inherit;
-	font-size: inherit;
-	font-weight: inherit;
-	text-transform: inherit;
-	letter-spacing: inherit;
-	line-height: inherit;
-	cursor: pointer;
-}
-
-.nvoos-pro-spa-tools-list__sort:hover {
-	background: rgba(0, 0, 0, 0.06);
-	color: var(--nvoos-text, #1e1e1e);
-}
-
-.nvoos-pro-spa-tools-list__sort:focus-visible {
-	outline: 2px solid var(--nvoos-primary, #2271b1);
-	outline-offset: 2px;
-}
-
-.nvoos-pro-spa-tools-list__sort-icon {
-	font-size: 12px;
-	line-height: 1;
-	opacity: 0.45;
-}
-
-.nvoos-pro-spa-tools-list--table thead th[aria-sort='ascending'] .nvoos-pro-spa-tools-list__sort-icon,
-.nvoos-pro-spa-tools-list--table thead th[aria-sort='descending'] .nvoos-pro-spa-tools-list__sort-icon {
-	opacity: 1;
-	color: var(--nvoos-primary, #2271b1);
-}
-
-.nvoos-pro-spa-tools-list__name {
-	display: block;
-	font-weight: 500;
-	color: var(--nvoos-text, #1e1e1e);
-	word-break: break-word;
-}
-
-.nvoos-pro-spa-tools-list__slug {
-	display: block;
-	font-size: 11px;
-	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
-	color: var(--nvoos-text-secondary, #787c82);
-	margin-top: 2px;
-	word-break: break-all;
-}
-
-.nvoos-pro-spa-tools-list__badge {
-	display: inline-flex;
-	align-items: center;
-	max-width: 100%;
-	padding: 2px 8px;
-	border: 1px solid var(--nvoos-border, #dcdcde);
-	border-radius: 10px;
-	background: var(--nvoos-bg, #f0f0f1);
-	color: var(--nvoos-text, #1e1e1e);
-	font-size: 11px;
-	font-weight: 500;
-	line-height: 1.5;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	box-sizing: border-box;
-}
-
-.nvoos-pro-spa-tools-list__badge--empty {
-	color: var(--nvoos-text-secondary, #787c82);
-	border-style: dashed;
-}
-
-.nvoos-pro-spa-tools-list__capability {
-	display: inline-block;
-	max-width: 100%;
-	padding: 2px 8px;
-	border: 1px solid var(--nvoos-border, #dcdcde);
-	border-radius: 4px;
-	background: var(--nvoos-bg, #f0f0f1);
-	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
-	font-size: 12px;
-	color: var(--nvoos-text-secondary, #787c82);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	box-sizing: border-box;
-}
-
-.nvoos-pro-spa-tools-list__name--button {
-	width: 100%;
-	padding: 0;
-	border: none;
-	background: transparent;
-	color: var(--nvoos-primary, #2271b1);
-	font-family: inherit;
-	font-size: inherit;
-	text-align: left;
-	cursor: pointer;
-	word-break: break-word;
-}
-
-.nvoos-pro-spa-tools-list__name--button:hover {
-	text-decoration: underline;
-}
-
-.nvoos-pro-spa-tools-list__name--button:focus-visible {
-	outline: 2px solid var(--nvoos-primary, #2271b1);
-	outline-offset: 2px;
-}
-
-.nvoos-pro-spa-tools-list__desc-clamp {
-	display: -webkit-box;
-	-webkit-line-clamp: 3;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
-}
-
-.nvoos-pro-spa-tools-list__cell--desc {
-	flex: 2;
-	color: var(--nvoos-text-secondary, #787c82);
-	line-height: 1.4;
-}
+/* =========================================================================
+   Diagnostics page (2.4.0 — Proposal 084 Phase 3)
+   ========================================================================= */
 
 .nvoos-pro-spa-diagnostics__grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	grid-template-columns: repeat( auto-fit, minmax( 320px, 1fr ) );
 	gap: 16px;
 	margin-bottom: 16px;
 }
@@ -5182,9 +4769,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-token-manager__stats {
 	display: flex;
 	gap: 16px;
-	margin: 0 0 16px;
-	padding: 0;
-	list-style: none;
+	margin-bottom: 16px;
 	flex-wrap: wrap;
 }
 
@@ -5211,11 +4796,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 }
 
 .nvoos-pro-spa-token-manager__action {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 28px;
-	padding: 0 12px;
+	padding: 4px 12px;
 	border: 1px solid var(--nvoos-border, #dcdcde);
 	border-radius: 4px;
 	background: var(--nvoos-bg-secondary, #fff);
@@ -5224,21 +4805,6 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-size: 13px;
 	font-family: inherit;
 	margin-right: 6px;
-	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.nvoos-pro-spa-token-manager__action:hover:not( :disabled ) {
-	border-color: var(--nvoos-primary, #2271b1);
-	color: var(--nvoos-primary, #2271b1);
-}
-
-.nvoos-pro-spa-token-manager__action:active:not( :disabled ) {
-	transform: translateY( 1px );
-}
-
-.nvoos-pro-spa-token-manager__action:focus-visible {
-	outline: 2px solid var(--nvoos-primary, #2271b1);
-	outline-offset: 2px;
 }
 
 .nvoos-pro-spa-token-manager__action:hover {
@@ -5250,10 +4816,8 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border-color: rgba( 179, 45, 46, 0.4 );
 }
 
-.nvoos-pro-spa-token-manager__action--danger:hover:not( :disabled ) {
+.nvoos-pro-spa-token-manager__action--danger:hover {
 	background: rgba( 179, 45, 46, 0.06 );
-	border-color: #b32d2e;
-	color: #b32d2e;
 }
 
 .nvoos-pro-spa-token-manager__action:disabled {
@@ -5603,40 +5167,38 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	margin-bottom: 24px;
 }
 
-/* Side-by-side chart cards (line + donut) for the cost analytics page. */
-.nvoos-pro-spa-analytics-page__charts {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-	gap: 16px;
-	margin: 0 0 16px;
-}
-
-/* Blueprint detail rows (master-detail expansion on the Blueprints page). */
-.nvoos-pro-spa-blueprints__heading {
-	margin: 12px 0 4px;
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--nvoos-text-secondary, #787c82);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-}
-
-.nvoos-pro-spa-blueprints__heading:first-child {
-	margin-top: 0;
-}
-
-.nvoos-pro-spa-blueprints__tags {
+.nvoos-pro-spa-analytics-page__placeholder {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 4px;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 64px 24px;
+	text-align: center;
 }
 
-.nvoos-pro-spa-blueprints__defaults {
-	list-style: none;
-	margin: 0;
-	padding: 0;
+.nvoos-pro-spa-analytics-page__icon {
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-bottom: 16px;
+	opacity: 0.5;
+}
+
+.nvoos-pro-spa-analytics-page__coming-soon {
+	font-size: 24px;
+	font-weight: 600;
+	margin: 0 0 8px;
+}
+
+.nvoos-pro-spa-analytics-page__description {
+	color: var(--nvoos-text-secondary, #787c82);
+	max-width: 480px;
+	line-height: 1.6;
+}
+
+.nvoos-pro-spa-analytics-page__note {
+	margin: 16px 0 0;
 	font-size: 13px;
-	line-height: 1.7;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-style: italic;
 }
 
 /* ── Chart Recipes (nvoos-chart fences) ──────────────────────────────────── */
@@ -6730,12 +6292,6 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 	gap: 10px 16px;
 	margin: 12px 0 0;
-}
-
-/* Chart-card variant is a plain <ul> — reset list chrome. */
-.nvoos-pro-spa-records-detail__grid--list {
-	list-style: none;
-	padding: 0;
 }
 
 .nvoos-pro-spa-records-detail__item dt {

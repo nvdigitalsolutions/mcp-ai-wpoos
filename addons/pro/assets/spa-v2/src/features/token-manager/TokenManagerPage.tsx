@@ -8,15 +8,10 @@
  * both behind the /token-manager REST surface. Read-only until an action.
  */
 
-import { useState, useMemo, type JSX } from 'react';
+import { useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useTokenManager } from '../../hooks/useTokenManager';
 import { useBootstrap } from '../../hooks/useBootstrap';
-import {
-	DataTable,
-	type DataTableColumn,
-	type DataTableRow,
-} from '../../components/shared/DataTable';
 import type {
 	TokenCredential,
 	TokenManagerOverview,
@@ -49,14 +44,14 @@ function StatsRow( { stats }: { stats: TokenManagerOverview['stats'] } ): JSX.El
 	];
 
 	return (
-		<ul className="nvoos-pro-spa-token-manager__stats" aria-label={ __( 'Token statistics', 'nvoos-pro-spa' ) }>
+		<div className="nvoos-pro-spa-token-manager__stats" role="list" aria-label={ __( 'Token statistics', 'nvoos-pro-spa' ) }>
 			{ items.map( ( [ label, value ] ) => (
-				<li key={ label } className="nvoos-pro-spa-token-manager__stat">
+				<div key={ label } className="nvoos-pro-spa-token-manager__stat" role="listitem">
 					<div className="nvoos-pro-spa-token-manager__stat-label">{ label }</div>
 					<div className="nvoos-pro-spa-token-manager__stat-value">{ value }</div>
-				</li>
+				</div>
 			) ) }
-		</ul>
+		</div>
 	);
 }
 
@@ -78,36 +73,6 @@ export function TokenManagerPage(): JSX.Element {
 	);
 
 	const [ busy, setBusy ] = useState< string | null >( null );
-
-	const credentialColumns = useMemo< DataTableColumn[] >(
-		() => [
-			{ key: 'assistant', label: __( 'Assistant', 'nvoos-pro-spa' ), width: 'minmax(200px, 1fr)' },
-			{ key: 'status', label: __( 'Status', 'nvoos-pro-spa' ), width: '110px' },
-			{
-				key: 'details',
-				label: __( 'Details', 'nvoos-pro-spa' ),
-				className: 'nvoos-pro-spa-tools-list__cell--desc',
-				width: 'minmax(240px, 1.4fr)',
-			},
-			{ key: 'actions', label: __( 'Actions', 'nvoos-pro-spa' ), width: 'minmax(180px, 0.8fr)' },
-		],
-		[]
-	);
-
-	const restrictionColumns = useMemo< DataTableColumn[] >(
-		() => [
-			{ key: 'user', label: __( 'User', 'nvoos-pro-spa' ), width: 'minmax(200px, 1fr)' },
-			{ key: 'type', label: __( 'Type', 'nvoos-pro-spa' ), width: '150px' },
-			{
-				key: 'details',
-				label: __( 'Details', 'nvoos-pro-spa' ),
-				className: 'nvoos-pro-spa-tools-list__cell--desc',
-				width: 'minmax(240px, 1.4fr)',
-			},
-			{ key: 'actions', label: __( 'Actions', 'nvoos-pro-spa' ), width: '180px' },
-		],
-		[]
-	);
 
 	if ( bootstrapLoading || loading ) {
 		return (
@@ -198,21 +163,21 @@ export function TokenManagerPage(): JSX.Element {
 						{ __( 'No credentials issued yet. Credentials are created from the assistant edit screen.', 'nvoos-pro-spa' ) }
 					</p>
 				) : (
-					<DataTable
-						columns={ credentialColumns }
-						rows={ overview.credentials.map( ( credential: TokenCredential ) => {
+					<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Assistant credentials', 'nvoos-pro-spa' ) }>
+						{ overview.credentials.map( ( credential: TokenCredential ) => {
 							const key = `${ credential.assistant_id }-${ credential.id }`;
-							return {
-								id: key,
-								cells: [
-									<>
+							return (
+								<div key={ key } className="nvoos-pro-spa-tools-list__row" role="listitem">
+									<div className="nvoos-pro-spa-tools-list__cell" role="cell">
 										<strong className="nvoos-pro-spa-tools-list__name">
 											{ credential.assistant_title }
 										</strong>
 										<code className="nvoos-pro-spa-tools-list__slug">{ credential.id }</code>
-									</>,
-									<StatusBadge status={ credential.status } />,
-									<>
+									</div>
+									<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+										<StatusBadge status={ credential.status } />
+									</div>
+									<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
 										{ __( 'Created', 'nvoos-pro-spa' ) }{ ' ' }
 										{ formatDate( credential.created_at ) }
 										{ credential.expires_at && (
@@ -225,12 +190,11 @@ export function TokenManagerPage(): JSX.Element {
 										{ credential.created_by_name && (
 											<>
 												<br />
-												{ __( 'By', 'nvoos-pro-spa' ) }{ ' ' }
-												{ credential.created_by_name }
+												{ __( 'By', 'nvoos-pro-spa' ) } { credential.created_by_name }
 											</>
 										) }
-									</>,
-									<>
+									</div>
+									<div className="nvoos-pro-spa-tools-list__cell" role="cell">
 										{ credential.status === 'active' && (
 											<button
 												type="button"
@@ -261,12 +225,11 @@ export function TokenManagerPage(): JSX.Element {
 										>
 											{ __( 'Delete', 'nvoos-pro-spa' ) }
 										</button>
-									</>,
-								],
-							};
+									</div>
+								</div>
+							);
 						} ) }
-						caption={ __( 'Assistant credentials', 'nvoos-pro-spa' ) }
-					/>
+					</div>
 				) }
 			</section>
 
@@ -280,25 +243,19 @@ export function TokenManagerPage(): JSX.Element {
 						{ __( 'No active restrictions.', 'nvoos-pro-spa' ) }
 					</p>
 				) : (
-					<DataTable
-						columns={ restrictionColumns }
-						rows={ overview.restrictions.map( ( restriction: TokenRestriction ) => ( {
-							id: `${ restriction.user_id }-${ restriction.type }`,
-							cells: [
-								<>
-									<strong className="nvoos-pro-spa-tools-list__name">
-										{ restriction.display_name }
-									</strong>
+					<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Restricted users', 'nvoos-pro-spa' ) }>
+						{ overview.restrictions.map( ( restriction: TokenRestriction ) => (
+							<div key={ `${ restriction.user_id }-${ restriction.type }` } className="nvoos-pro-spa-tools-list__row" role="listitem">
+								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+									<strong className="nvoos-pro-spa-tools-list__name">{ restriction.display_name }</strong>
 									{ restriction.user_login && (
-										<code className="nvoos-pro-spa-tools-list__slug">
-											{ restriction.user_login }
-										</code>
+										<code className="nvoos-pro-spa-tools-list__slug">{ restriction.user_login }</code>
 									) }
-								</>,
-								<StatusBadge
-									status={ restriction.type_label || restriction.type }
-								/>,
-								<>
+								</div>
+								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+									<StatusBadge status={ restriction.type_label || restriction.type } />
+								</div>
+								<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
 									{ restriction.scope && (
 										<>
 											{ restriction.scope }
@@ -309,24 +266,23 @@ export function TokenManagerPage(): JSX.Element {
 									{ restriction.triggered_at > 0 && (
 										<>
 											<br />
-											{ new Date(
-												restriction.triggered_at * 1000
-											).toLocaleString() }
+											{ new Date( restriction.triggered_at * 1000 ).toLocaleString() }
 										</>
 									) }
-								</>,
-								<button
-									type="button"
-									className="nvoos-pro-spa-token-manager__action"
-									disabled={ busy !== null }
-									onClick={ () => void runLift( restriction ) }
-								>
-									{ __( 'Lift Restriction', 'nvoos-pro-spa' ) }
-								</button>,
-							],
-						} ) ) }
-						caption={ __( 'Restricted users', 'nvoos-pro-spa' ) }
-					/>
+								</div>
+								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+									<button
+										type="button"
+										className="nvoos-pro-spa-token-manager__action"
+										disabled={ busy !== null }
+										onClick={ () => void runLift( restriction ) }
+									>
+										{ __( 'Lift Restriction', 'nvoos-pro-spa' ) }
+									</button>
+								</div>
+							</div>
+						) ) }
+					</div>
 				) }
 			</section>
 		</div>

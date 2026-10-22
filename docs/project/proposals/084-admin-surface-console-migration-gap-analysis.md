@@ -233,7 +233,7 @@ wp-admin-native by design (T5), or is it not ours to migrate (T6).
 | B4 | Slash Commands dashboard | T1 | `rest-slash-command-controller` | Execution + history endpoints exist |
 | B5 | Run Timeline | T2 | ajax `run_timeline_*` | Workflow-run REST exists (`rest-workflow-run-controller`) — extend it |
 | B6 | Multi-Agent dashboard | T2 | ajax `multi_agent_stats` | Agent re-install is destructive — confirm-gate UX + capability check |
-| B7 | Orchestration dashboard | T2 | ajax `orchestration_*` | Overlaps spa-v2 Workflows/Analytics; merge, don't duplicate. **2026-10-22:** the cost side is now real in console Analytics (Phase 5b); remaining chart parity tracked there |
+| B7 | Orchestration dashboard | T2 | ajax `orchestration_*` | Overlaps spa-v2 Workflows/Analytics; merge, don't duplicate |
 | B8 | DAG Builder | T2 → T2/T3 | — | Audit 2026-10-21: spa-v2 Workflows is a placeholder, not a builder; base REST `orchestration/workflows` exists — builder port sequenced as Phase 3b W10.2 |
 | B9 | Workflow Triggers | T1 | `rest-triggers-controller` | |
 | B10 | Cron Manager | T2 | ajax | High-value ops surface; REST + read-only default |
@@ -243,7 +243,7 @@ wp-admin-native by design (T5), or is it not ours to migrate (T6).
 | B14 | Crawl4AI monitor | T2 | — | Depends on engine state; watch page |
 | B15 | Markup telemetry page | T2 | — | |
 | B16 | Diagnostics cluster (dashboard, MCP server, provider, REST-context, pro-dashboard diagnostic) | T2 | `rest-health` partially | Merge into one Diagnostics console page |
-| B17 | Pro Dashboard hub + chart settings (base-registered) | T2 | `pro-dashboard-rest` | Largely superseded by spa-v2 Analytics — verify, then deprecate hub. **2026-10-22:** verified NOT yet superseded (Analytics was a placeholder until Phase 5b); deprecate only after gauge/forecast/anomalies parity |
+| B17 | Pro Dashboard hub + chart settings (base-registered) | T2 | `pro-dashboard-rest` | Largely superseded by spa-v2 Analytics — verify, then deprecate hub |
 | B18 | Asset inventory | T1 | `asset-inventory-rest` | |
 | B19 | Conversation import | T2 | — | File-upload flow; media endpoint + REST |
 | B20 | OKF bundle manager | T2 | — | |

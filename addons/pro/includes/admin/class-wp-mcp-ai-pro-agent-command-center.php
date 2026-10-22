@@ -841,7 +841,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		?>
 		<tr>
 			<td><code><?php echo esc_html( substr( $session_id, 0, 12 ) ); ?></code></td>
-			<td><?php echo esc_html( isset( $session['agent_name'] ) ? $session['agent_name'] : 'â' ); ?></td>
+			<td><?php echo esc_html( isset( $session['agent_name'] ) ? $session['agent_name'] : '—' ); ?></td>
 			<td><span class="acc-status-badge status-<?php echo esc_attr( $status ); ?>"><?php echo esc_html( ucfirst( $status ) ); ?></span></td>
 			<td>
 				<div class="acc-progress-bar">
@@ -881,7 +881,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 					<?php echo esc_html( $plan->post_title ); ?>
 				</a>
 			</td>
-			<td><?php echo esc_html( $goal ? wp_trim_words( $goal, 10 ) : 'â' ); ?></td>
+			<td><?php echo esc_html( $goal ? wp_trim_words( $goal, 10 ) : '—' ); ?></td>
 			<td><span class="acc-status-badge status-<?php echo esc_attr( $status ); ?>"><?php echo esc_html( ucfirst( $status ) ); ?></span></td>
 			<td>
 				<div class="acc-progress-bar">
@@ -1007,15 +1007,15 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 								<?php foreach ( array_slice( array_reverse( $resolved ), 0, 50 ) as $a ) : ?>
 									<tr>
 										<td><?php echo esc_html( $a['action_label'] ); ?></td>
-										<td><?php echo esc_html( isset( $a['agent_name'] ) ? $a['agent_name'] : 'â' ); ?></td>
+										<td><?php echo esc_html( isset( $a['agent_name'] ) ? $a['agent_name'] : '—' ); ?></td>
 										<td>
 											<span class="acc-status-badge status-<?php echo esc_attr( $a['status'] ); ?>">
 												<?php echo esc_html( ucfirst( $a['status'] ) ); ?>
 											</span>
 										</td>
-										<td><?php echo esc_html( isset( $a['decided_by'] ) ? $a['decided_by'] : 'â' ); ?></td>
-										<td><?php echo esc_html( isset( $a['decided_at'] ) ? wp_date( 'M j, Y g:i a', $a['decided_at'] ) : 'â' ); ?></td>
-										<td><?php echo esc_html( isset( $a['reason'] ) ? $a['reason'] : 'â' ); ?></td>
+										<td><?php echo esc_html( isset( $a['decided_by'] ) ? $a['decided_by'] : '—' ); ?></td>
+										<td><?php echo esc_html( isset( $a['decided_at'] ) ? wp_date( 'M j, Y g:i a', $a['decided_at'] ) : '—' ); ?></td>
+										<td><?php echo esc_html( isset( $a['reason'] ) ? $a['reason'] : '—' ); ?></td>
 									</tr>
 								<?php endforeach; ?>
 							</tbody>
@@ -1424,7 +1424,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @param callable $callback Data-collection callback.
 	 * @return mixed The callback's return value.
 	 */
-	public static function with_suppressed_db_errors( $callback ) {
+	private function with_suppressed_db_errors( $callback ) {
 		global $wpdb;
 
 		$old_suppress = $wpdb->suppress_errors( true );
@@ -1869,7 +1869,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 										<?php endif; ?>
 									</td>
 									<td><span class="acc-restriction-pill acc-restriction-pill--<?php echo esc_attr( $row['type'] ); ?>"><?php echo esc_html( $row['type_label'] ); ?></span></td>
-									<td><?php echo esc_html( $row['scope'] ); ?><?php echo ( ! empty( $row['tool_slug'] ) ? ' Â· ' . esc_html( $row['tool_slug'] ) : '' ); ?></td>
+									<td><?php echo esc_html( $row['scope'] ); ?><?php echo ( ! empty( $row['tool_slug'] ) ? ' · ' . esc_html( $row['tool_slug'] ) : '' ); ?></td>
 									<td><?php echo esc_html( '' !== $row['reason'] ? $row['reason'] : '-' ); ?></td>
 									<td><?php echo esc_html( $triggered ); ?></td>
 									<td><?php echo esc_html( $released ); ?></td>
@@ -1904,8 +1904,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 *
 	 * @return array Array of assistant data.
 	 */
-	public static function get_all_assistants() {
-		// Public since 2.4.0 - the console REST bridge (Proposal 084 Phase 5d) reuses these collectors.
+	private function get_all_assistants() {
 		$args = array(
 			'post_type'      => 'mcp_ai_assistant',
 			'post_status'    => 'publish',
@@ -1937,7 +1936,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 *
 	 * @return array Session overview with active_count and task_count.
 	 */
-	public static function get_session_overview() {
+	private function get_session_overview() {
 		global $wpdb;
 
 		$active_count = 0;
@@ -1973,7 +1972,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	}
 
 	/**
-	 * Get active sessions data â CCT-first with transient fallback.
+	 * Get active sessions data — CCT-first with transient fallback.
 	 *
 	 * @since 2.1.0
 	 *
@@ -2088,8 +2087,8 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @param int $agent_id The assistant post ID.
 	 * @return string Status string: 'online', 'idle', or 'offline'.
 	 */
-	public static function get_agent_status( $agent_id ) {
-		$last_active = self::get_agent_last_active( $agent_id );
+	private function get_agent_status( $agent_id ) {
+		$last_active = $this->get_agent_last_active( $agent_id );
 
 		if ( ! $last_active ) {
 			return 'offline';
@@ -2114,7 +2113,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @param int $agent_id The assistant post ID.
 	 * @return int|false Last active timestamp or false.
 	 */
-	public static function get_agent_last_active( $agent_id ) {
+	private function get_agent_last_active( $agent_id ) {
 		$last_active = get_transient( 'mcp_ai_agent_active_' . $agent_id );
 		return $last_active ? (int) $last_active : false;
 	}
@@ -2126,7 +2125,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 *
 	 * @return int Number of pending approvals.
 	 */
-	public static function get_pending_approval_count() {
+	private function get_pending_approval_count() {
 		$approvals = get_option( self::APPROVALS_OPTION, array() );
 		return count(
 			array_filter(
@@ -2156,7 +2155,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 *
 	 * @return int Total tokens used today.
 	 */
-	public static function get_tokens_today() {
+	private function get_tokens_today() {
 		$metrics = get_option( self::USAGE_METRICS_OPTION, array() );
 		$today   = gmdate( 'Y-m-d' );
 
@@ -2174,7 +2173,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 *
 	 * @return float Uptime percentage.
 	 */
-	public static function get_system_uptime_pct() {
+	private function get_system_uptime_pct() {
 		$history = get_option( self::UPTIME_OPTION, array() );
 
 		if ( empty( $history ) ) {
@@ -2202,11 +2201,11 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @param int $limit Maximum number of events.
 	 * @return array Activity events.
 	 */
-	public static function get_recent_activity_events( $limit = 20 ) {
+	private function get_recent_activity_events( $limit = 20 ) {
 		$events = get_option( self::ACTIVITY_LOG_OPTION, array() );
 
 		// Merge assistant activity entries from the core Logger.
-		$events = self::merge_logger_activity_entries( $events );
+		$events = $this->merge_logger_activity_entries( $events );
 
 		// Sort by timestamp descending.
 		usort(
@@ -2292,8 +2291,8 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	/**
 	 * Merge activity entries from the core Logger into the activity stream.
 	 *
-	 * Pulls assistant activity entries from WP_MCP_AI_Logger â including chat
-	 * interactions, API requests/responses, tool errors, and schedule runs â
+	 * Pulls assistant activity entries from WP_MCP_AI_Logger — including chat
+	 * interactions, API requests/responses, tool errors, and schedule runs —
 	 * and normalises them into the same format used by the command center
 	 * activity log so they can be displayed alongside agent-level events.
 	 *
@@ -2303,7 +2302,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @param array $events Existing activity events.
 	 * @return array Merged events array.
 	 */
-	public static function merge_logger_activity_entries( $events ) {
+	private function merge_logger_activity_entries( $events ) {
 		if ( ! class_exists( 'WP_MCP_AI_Logger' ) || ! method_exists( 'WP_MCP_AI_Logger', 'get_recent_activity_entries' ) ) {
 			return $events;
 		}
@@ -3039,7 +3038,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @param int $number The number to format.
 	 * @return string Formatted number string.
 	 */
-	public static function format_number( $number ) {
+	private function format_number( $number ) {
 		if ( $number >= 1000000 ) {
 			return round( $number / 1000000, 1 ) . 'M';
 		} elseif ( $number >= 1000 ) {

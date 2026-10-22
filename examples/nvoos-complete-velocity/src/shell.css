@@ -141,73 +141,6 @@ body,
   gap: 2px;
 }
 
-.nvoos-console-nav__items {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.nvoos-console-nav__group {
-  margin-top: 6px;
-}
-
-.nvoos-console-nav__group-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  width: 100%;
-  padding: 7px 10px;
-  border: none;
-  border-radius: 6px;
-  background: none;
-  color: var(--nvoos-text-secondary, #787c82);
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  text-align: left;
-  cursor: pointer;
-}
-
-.nvoos-console-nav__group-toggle:hover {
-  background: var(--nvoos-bg, #f0f0f1);
-  color: var(--nvoos-text, #1e1e1e);
-}
-
-.nvoos-console-nav__group-toggle:focus-visible {
-  outline: 2px solid var(--nvoos-primary, #2271b1);
-  outline-offset: -2px;
-}
-
-.nvoos-console-nav__group-chevron {
-  font-size: 10px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.nvoos-console-nav__group-list {
-  list-style: none;
-  margin: 2px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* The class-level display beats the UA `[hidden] { display: none }` — restate it. */
-.nvoos-console-nav__group-list[hidden] {
-  display: none;
-}
-
-.nvoos-console-nav__group-list .nvoos-console-nav__link {
-  padding-left: 20px;
-}
-
 .nvoos-console-nav__link {
   display: flex;
   align-items: center;
@@ -586,52 +519,6 @@ body,
 
 .nvoos-console-quick-card--button {
   width: 100%;
-}
-
-/* Command-center section on the dashboard (Proposal 084 Phase 5d). */
-
-.nvoos-console-cc__banner {
-  margin: 0 0 14px;
-  padding: 10px 14px;
-  border-left: 3px solid var(--shell-warn, #dba617);
-  border-radius: 4px;
-  background: var(--nvoos-bg, #f0f0f1);
-  font-size: 13px;
-}
-
-.nvoos-console-cc__banner a {
-  font-weight: 600;
-}
-
-.nvoos-console-cc__heading {
-  margin: 16px 0 8px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--nvoos-text-secondary, #787c82);
-}
-
-.nvoos-console-cc__activity {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.nvoos-console-cc__event {
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.nvoos-console-cc__event-time {
-  display: inline-block;
-  min-width: 70px;
-  margin-right: 8px;
-  font-variant-numeric: tabular-nums;
-  color: var(--nvoos-text-secondary, #787c82);
 }
 
 /* ── Boot screens (main.tsx + ConsoleShell gate) ─────────────────────────── */

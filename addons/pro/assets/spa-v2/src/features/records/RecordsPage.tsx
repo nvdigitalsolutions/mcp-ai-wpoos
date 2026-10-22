@@ -13,11 +13,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'rea
 import { __ } from '@wordpress/i18n';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import {
-	DataTable,
-	type DataTableColumn,
-	type DataTableRow,
-} from '../../components/shared/DataTable';
-import {
 	RecordsClient,
 	type RecordEntityConfig,
 	type RecordSummary,
@@ -263,48 +258,6 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 			} );
 	};
 
-	const listColumns = useMemo< DataTableColumn[] >( () => {
-		if ( ! entity ) {
-			return [];
-		}
-		return [
-			{
-				key: 'record',
-				label: __( 'Record', 'nvoos-pro-spa' ),
-				width: 'minmax(180px, 1fr)',
-			},
-			...entity.columns.slice( 0, 2 ).map( ( column ) => ( {
-				key: column.key,
-				label: column.label,
-				className: 'nvoos-pro-spa-tools-list__cell--desc',
-				width: 'minmax(160px, 1fr)',
-			} ) ),
-			{ key: 'status', label: __( 'Status', 'nvoos-pro-spa' ), width: '130px' },
-		];
-	}, [ entity ] );
-
-	const listRows = useMemo< DataTableRow[] >(
-		() =>
-			records.map( ( record ) => ( {
-				id: record.id,
-				cells: [
-					<button
-						type="button"
-						className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
-						aria-expanded={ selected?.id === record.id }
-						onClick={ () => openRecord( record ) }
-					>
-						{ record.title }
-					</button>,
-					...( entity?.columns ?? [] )
-						.slice( 0, 2 )
-						.map( ( column ) => formatValue( record.meta[ column.key ] ) ),
-					<span className="nvoos-pro-spa-tools-list__badge">{ record.status }</span>,
-				],
-			} ) ),
-		[ records, entity, selected ]
-	);
-
 	if ( bootstrapLoading ) {
 		return (
 			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--loading" aria-busy="true">
@@ -522,11 +475,34 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 					<p>{ __( 'No records found.', 'nvoos-pro-spa' ) }</p>
 				</div>
 			) : (
-				<DataTable
-					columns={ listColumns }
-					rows={ listRows }
-					caption={ entity?.label ?? __( 'Records', 'nvoos-pro-spa' ) }
-				/>
+				<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ entity?.label ?? '' }>
+					{ records.map( ( record ) => (
+						<div key={ record.id } className="nvoos-pro-spa-tools-list__row" role="row">
+							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+								<button
+									type="button"
+									className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
+									aria-expanded={ selected?.id === record.id }
+									onClick={ () => openRecord( record ) }
+								>
+									{ record.title }
+								</button>
+							</div>
+							{ ( entity?.columns ?? [] ).slice( 0, 2 ).map( ( column ) => (
+								<div
+									key={ column.key }
+									className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc"
+									role="cell"
+								>
+									{ formatValue( record.meta[ column.key ] ) }
+								</div>
+							) ) }
+							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+								<span className="nvoos-pro-spa-tools-list__badge">{ record.status }</span>
+							</div>
+						</div>
+					) ) }
+				</div>
 			) }
 
 			{ selected && entity && (

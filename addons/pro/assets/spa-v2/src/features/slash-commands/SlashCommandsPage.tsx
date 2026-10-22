@@ -9,15 +9,10 @@
  * is verified.
  */
 
-import { useState, useMemo, type JSX } from 'react';
+import { useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useSlashCommands } from '../../hooks/useSlashCommands';
 import { useBootstrap } from '../../hooks/useBootstrap';
-import {
-	DataTable,
-	type DataTableColumn,
-	type DataTableRow,
-} from '../../components/shared/DataTable';
 
 export function SlashCommandsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
@@ -29,51 +24,6 @@ export function SlashCommandsPage(): JSX.Element {
 		);
 
 	const [ command, setCommand ] = useState< string >( '' );
-
-	const columns = useMemo< DataTableColumn[] >(
-		() => [
-			{ key: 'command', label: __( 'Command', 'nvoos-pro-spa' ), width: 'minmax(200px, 0.8fr)' },
-			{ key: 'category', label: __( 'Category', 'nvoos-pro-spa' ), width: '150px' },
-			{
-				key: 'description',
-				label: __( 'Description', 'nvoos-pro-spa' ),
-				className: 'nvoos-pro-spa-tools-list__cell--desc',
-				width: 'minmax(280px, 2fr)',
-			},
-		],
-		[]
-	);
-
-	const rows = useMemo< DataTableRow[] >(
-		() =>
-			commands.map( ( item ) => ( {
-				id: item.command,
-				cells: [
-					<button
-						type="button"
-						className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
-						onClick={ () =>
-							setCommand(
-								( item.usage as string ) ?? `/${ item.command }`
-							)
-						}
-					>
-						{ item.usage ?? `/${ item.command }` }
-					</button>,
-					item.category ? (
-						<code className="nvoos-pro-spa-tools-list__capability">
-							{ item.category }
-						</code>
-					) : (
-						<span className="nvoos-pro-spa-tools-list__badge nvoos-pro-spa-tools-list__badge--empty">
-							—
-						</span>
-					),
-					item.description || '—',
-				],
-			} ) ),
-		[ commands ]
-	);
 
 	if ( bootstrapLoading || ( loading && commands.length === 0 ) ) {
 		return (
@@ -135,7 +85,7 @@ export function SlashCommandsPage(): JSX.Element {
 					/>
 					<button
 						type="button"
-						className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary"
+						className="nvoos-pro-spa-page__retry"
 						disabled={ executing || ! command.trim() }
 						onClick={ () => void executeCommand( command ) }
 					>
@@ -175,11 +125,48 @@ export function SlashCommandsPage(): JSX.Element {
 				</div>
 			) }
 
-			<DataTable
-				columns={ columns }
-				rows={ rows }
-				caption={ __( 'Available commands', 'nvoos-pro-spa' ) }
-			/>
+			<div
+				className="nvoos-pro-spa-tools-list"
+				role="list"
+				aria-label={ __( 'Available commands', 'nvoos-pro-spa' ) }
+			>
+				<div className="nvoos-pro-spa-tools-list__header" role="row">
+					<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
+						{ __( 'Command', 'nvoos-pro-spa' ) }
+					</div>
+					<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
+						{ __( 'Category', 'nvoos-pro-spa' ) }
+					</div>
+					<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--head" role="columnheader">
+						{ __( 'Description', 'nvoos-pro-spa' ) }
+					</div>
+				</div>
+				{ commands.map( ( item ) => (
+					<div key={ item.command } className="nvoos-pro-spa-tools-list__row" role="row">
+						<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+							<button
+								type="button"
+								className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
+								onClick={ () => setCommand( ( item.usage as string ) ?? `/${ item.command }` ) }
+							>
+								{ item.usage ?? `/${ item.command }` }
+							</button>
+						</div>
+						<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+							{ item.category ? (
+								<code className="nvoos-pro-spa-tools-list__capability">{ item.category }</code>
+							) : (
+								<span className="nvoos-pro-spa-tools-list__badge nvoos-pro-spa-tools-list__badge--empty">
+									—
+								</span>
+							) }
+						</div>
+						<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
+							{ item.description || '—' }
+						</div>
+					</div>
+				) ) }
+			</div>
 
 			<footer className="nvoos-pro-spa-tools-page__footer">
 				<p>

@@ -8,15 +8,10 @@
  * until parity is verified.
  */
 
-import { useState, useMemo, type JSX } from 'react';
+import { useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useTeams } from '../../hooks/useTeams';
 import { useBootstrap } from '../../hooks/useBootstrap';
-import {
-	DataTable,
-	type DataTableColumn,
-	type DataTableRow,
-} from '../../components/shared/DataTable';
 
 export function TeamsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
@@ -37,66 +32,6 @@ export function TeamsPage(): JSX.Element {
 		setExpandedId( teamId );
 		void loadMembers( teamId );
 	};
-
-	const columns = useMemo< DataTableColumn[] >(
-		() => [
-			{
-				key: 'team',
-				label: __( 'Team', 'nvoos-pro-spa' ),
-				width: 'minmax(220px, 1fr)',
-			},
-			{
-				key: 'members',
-				label: __( 'Members', 'nvoos-pro-spa' ),
-				width: '180px',
-			},
-		],
-		[]
-	);
-
-	const rows = useMemo< DataTableRow[] >(
-		() =>
-			teams.map( ( team ) => ( {
-				id: team.id,
-				cells: [
-					<button
-						type="button"
-						className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
-						aria-expanded={ expandedId === team.id }
-						onClick={ () => toggleTeam( team.id ) }
-					>
-						{ team.title }
-					</button>,
-					<span className="nvoos-pro-spa-tools-list__badge">
-						{ team.member_count }{ ' ' }
-						{ team.member_count === 1
-							? __( 'member', 'nvoos-pro-spa' )
-							: __( 'members', 'nvoos-pro-spa' ) }
-					</span>,
-				],
-				detail:
-					expandedId === team.id ? (
-						loadingMembers ? (
-							<p className="nvoos-pro-spa-slash__result">
-								{ __( 'Loading members…', 'nvoos-pro-spa' ) }
-							</p>
-						) : members.length === 0 ? (
-							<p>{ __( 'No profession members.', 'nvoos-pro-spa' ) }</p>
-						) : (
-							<ul className="nvoos-pro-spa-teams__members">
-								{ members.map( ( member, index ) => (
-									<li key={ member.id ?? index }>
-										<strong>{ member.title ?? `#${ member.id }` }</strong>
-										{ member.category ? ` — ${ member.category }` : '' }
-										{ member.description ? `: ${ member.description }` : '' }
-									</li>
-								) ) }
-							</ul>
-						)
-					) : undefined,
-			} ) ),
-		[ teams, expandedId, loadingMembers, members ]
-	);
 
 	if ( bootstrapLoading || ( loading && teams.length === 0 ) ) {
 		return (
@@ -148,20 +83,58 @@ export function TeamsPage(): JSX.Element {
 					<p>{ __( 'No teams configured.', 'nvoos-pro-spa' ) }</p>
 				</div>
 			) : (
-				<DataTable
-					columns={ columns }
-					rows={ rows }
-					caption={ __( 'Teams', 'nvoos-pro-spa' ) }
-					footer={
-						<footer className="nvoos-pro-spa-tools-page__footer">
-							<p>
-								{ __( 'Showing', 'nvoos-pro-spa' ) } { teams.length }{ ' ' }
-								{ __( 'teams', 'nvoos-pro-spa' ) }
-							</p>
-						</footer>
-					}
-				/>
+				<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Teams', 'nvoos-pro-spa' ) }>
+					{ teams.map( ( team ) => (
+						<div key={ team.id } className="nvoos-pro-spa-tools-list__row" role="row">
+							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+								<button
+									type="button"
+									className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
+									aria-expanded={ expandedId === team.id }
+									onClick={ () => toggleTeam( team.id ) }
+								>
+									{ team.title }
+								</button>
+							</div>
+							<div className="nvoos-pro-spa-tools-list__cell" role="cell">
+								<span className="nvoos-pro-spa-tools-list__badge">
+									{ team.member_count }{ ' ' }
+									{ team.member_count === 1
+										? __( 'member', 'nvoos-pro-spa' )
+										: __( 'members', 'nvoos-pro-spa' ) }
+								</span>
+							</div>
+							{ expandedId === team.id && (
+								<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
+									{ loadingMembers ? (
+										<p className="nvoos-pro-spa-slash__result">
+											{ __( 'Loading members…', 'nvoos-pro-spa' ) }
+										</p>
+									) : members.length === 0 ? (
+										<p>{ __( 'No profession members.', 'nvoos-pro-spa' ) }</p>
+									) : (
+										<ul className="nvoos-pro-spa-teams__members">
+											{ members.map( ( member, index ) => (
+												<li key={ member.id ?? index }>
+													<strong>{ member.title ?? `#${ member.id }` }</strong>
+													{ member.category ? ` — ${ member.category }` : '' }
+													{ member.description ? `: ${ member.description }` : '' }
+												</li>
+											) ) }
+										</ul>
+									) }
+								</div>
+							) }
+						</div>
+					) ) }
+				</div>
 			) }
+
+			<footer className="nvoos-pro-spa-tools-page__footer">
+				<p>
+					{ __( 'Showing', 'nvoos-pro-spa' ) } { teams.length } { __( 'teams', 'nvoos-pro-spa' ) }
+				</p>
+			</footer>
 		</div>
 	);
 }
