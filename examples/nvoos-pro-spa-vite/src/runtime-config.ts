@@ -120,7 +120,9 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		settings: `${core}/settings`,
 		upload: `${api}/wp/v2/media`,
 		workflows: `${pro}/workflows`,
-		analytics: `${pro}/analytics`,
+		// Site-wide usage analytics (core namespace, admin-gated) — matches the
+		// canonical PHP config (class-wp-mcp-ai-pro-spa-config.php).
+		analytics: `${core}/analytics`,
 		approvals: `${core}/approvals`,
 		triggers: `${core}/orchestration/triggers`,
 		teams: `${core}/teams`,
@@ -129,6 +131,8 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		operations: `${core}/operations`,
 		diagnostics: `${core}/diagnostics`,
 		tokenManager: `${core}/token-manager`,
+		// Cost analytics — manage_options-gated; empty for non-admin sessions.
+		cost: `${core}/cost`,
 		orchestrationStats: `${core}/orchestration/stats`,
 		proOps: `${pro}/ops`,
 		scheduleManager: `${pro}`,
@@ -141,6 +145,10 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		dashboardsSchema: `${pro}/dashboards/schema`,
 		chatChannels: `${pro}/chat-channels`,
 		mediaCc: `${pro}/media-cc`,
+		// Assistant blueprints — empty for sessions without edit_posts.
+		blueprints: `${pro}/blueprints`,
+		// Command Center KPI + activity feed — empty for non-admin sessions.
+		commandCenter: `${pro}/command-center`,
 		shortcuts: `${pro}/tool-shortcuts`,
 		slashCommands: `${pro}/slash-commands`,
 		okf: `${pro}/okf`,
