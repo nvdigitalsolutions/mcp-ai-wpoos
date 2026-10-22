@@ -8,10 +8,15 @@
  * stays behind its kill-switch until parity is verified.
  */
 
-import { useState, type JSX } from 'react';
+import { useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useScheduleManager } from '../../hooks/useScheduleManager';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import {
+	DataTable,
+	type DataTableColumn,
+	type DataTableRow,
+} from '../../components/shared/DataTable';
 
 const SCHEDULE_TYPES = [
 	{ value: 'assistant_run', label: __( 'Assistant Run', 'nvoos-pro-spa' ) },
@@ -102,6 +107,150 @@ export function ScheduleManagerPage(): JSX.Element {
 			setShowForm( false );
 		}
 	};
+
+	const scheduleColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'schedule',
+				label: __( 'Schedule', 'nvoos-pro-spa' ),
+				width: 'minmax(200px, 1.2fr)',
+			},
+			{ key: 'status', label: __( 'Status', 'nvoos-pro-spa' ), width: '110px' },
+			{
+				key: 'runs',
+				label: __( 'Runs', 'nvoos-pro-spa' ),
+				className: 'nvoos-pro-spa-tools-list__cell--desc',
+				width: 'minmax(160px, 1fr)',
+			},
+			{ key: 'actions', label: __( 'Actions', 'nvoos-pro-spa' ), width: '240px' },
+		],
+		[]
+	);
+
+	const scheduleRows = useMemo< DataTableRow[] >(
+		() =>
+			schedules.map( ( schedule ) => {
+				const key = `schedule-${ schedule.id }`;
+				return {
+					id: schedule.id,
+					cells: [
+						<>
+							<strong className="nvoos-pro-spa-tools-list__name">{ schedule.name }</strong>
+							<code className="nvoos-pro-spa-tools-list__slug">
+								{ schedule.schedule_type || '—' } · { schedule.schedule || '—' }
+							</code>
+						</>,
+						<Badge
+							label={ schedule.enabled ? __( 'enabled', 'nvoos-pro-spa' ) : __( 'disabled', 'nvoos-pro-spa' ) }
+							ok={ Boolean( schedule.enabled ) }
+						/>,
+						<>
+							{ schedule.next_run && (
+								<>
+									{ __( 'Next', 'nvoos-pro-spa' ) }: { schedule.next_run }
+									<br />
+								</>
+							) }
+							{ schedule.last_run && (
+								<>
+									{ __( 'Last', 'nvoos-pro-spa' ) }: { schedule.last_run }
+								</>
+							) }
+						</>,
+						<>
+							<button
+								type="button"
+								className="nvoos-pro-spa-token-manager__action"
+								disabled={ busy !== null }
+								onClick={ () => {
+									setBusy( key );
+									void triggerSchedule( schedule.id ).finally( () => setBusy( null ) );
+								} }
+							>
+								{ __( 'Run now', 'nvoos-pro-spa' ) }
+							</button>
+							<button
+								type="button"
+								className="nvoos-pro-spa-token-manager__action"
+								disabled={ busy !== null }
+								onClick={ () => {
+									setBusy( key );
+									void toggleSchedule( schedule.id ).finally( () => setBusy( null ) );
+								} }
+							>
+								{ schedule.enabled ? __( 'Disable', 'nvoos-pro-spa' ) : __( 'Enable', 'nvoos-pro-spa' ) }
+							</button>
+							<button
+								type="button"
+								className="nvoos-pro-spa-token-manager__action nvoos-pro-spa-token-manager__action--danger"
+								disabled={ busy !== null }
+								onClick={ () => {
+									// eslint-disable-next-line no-alert -- parity with the wp-admin confirm().
+									if ( window.confirm( __( 'Delete this schedule permanently?', 'nvoos-pro-spa' ) ) ) {
+										setBusy( key );
+										void removeSchedule( schedule.id ).finally( () => setBusy( null ) );
+									}
+								} }
+							>
+								{ __( 'Delete', 'nvoos-pro-spa' ) }
+							</button>
+						</>,
+					],
+				};
+			} ),
+		[ schedules, busy ]
+	);
+
+	const presetColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'preset',
+				label: __( 'Preset', 'nvoos-pro-spa' ),
+				width: 'minmax(200px, 1fr)',
+			},
+			{
+				key: 'description',
+				label: __( 'Description', 'nvoos-pro-spa' ),
+				className: 'nvoos-pro-spa-tools-list__cell--desc',
+				width: 'minmax(240px, 2fr)',
+			},
+			{ key: 'actions', label: __( 'Actions', 'nvoos-pro-spa' ), width: '130px' },
+		],
+		[]
+	);
+
+	const presetRows = useMemo< DataTableRow[] >(
+		() =>
+			presets.map( ( preset ) => {
+				const key = `preset-${ preset.id }`;
+				return {
+					id: preset.id,
+					cells: [
+						<>
+							<strong className="nvoos-pro-spa-tools-list__name">{ preset.name }</strong>
+							<code className="nvoos-pro-spa-tools-list__slug">
+								{ [ preset.category, preset.toolkit ].filter( Boolean ).join( ' · ' ) || '—' }
+							</code>
+						</>,
+						<span className="nvoos-pro-spa-tools-list__desc-clamp">
+							{ preset.description || '—' }
+						</span>,
+						<button
+							type="button"
+							className="nvoos-pro-spa-token-manager__action"
+							disabled={ busy !== null }
+							onClick={ () => {
+								setBusy( key );
+								void installPreset( preset.id ).finally( () => setBusy( null ) );
+							} }
+						>
+							{ __( 'Install', 'nvoos-pro-spa' ) }
+						</button>,
+					],
+				};
+			} ),
+		[ presets, busy ]
+	);
 
 	return (
 		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">
@@ -209,7 +358,7 @@ export function ScheduleManagerPage(): JSX.Element {
 							<p>
 								<button
 									type="button"
-									className="nvoos-pro-spa-token-manager__action"
+									className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary"
 									disabled={ busy !== null || ! form.name.trim() }
 									onClick={ () => void submitForm() }
 								>
@@ -230,78 +379,11 @@ export function ScheduleManagerPage(): JSX.Element {
 							{ __( 'No schedules yet.', 'nvoos-pro-spa' ) }
 						</p>
 					) : (
-						<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Schedules', 'nvoos-pro-spa' ) }>
-							{ schedules.map( ( schedule ) => {
-								const key = `schedule-${ schedule.id }`;
-								return (
-									<div key={ key } className="nvoos-pro-spa-tools-list__row" role="listitem">
-										<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-											<strong className="nvoos-pro-spa-tools-list__name">{ schedule.name }</strong>
-											<code className="nvoos-pro-spa-tools-list__slug">
-												{ schedule.schedule_type || '—' } · { schedule.schedule || '—' }
-											</code>
-										</div>
-										<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-											<Badge
-												label={ schedule.enabled ? __( 'enabled', 'nvoos-pro-spa' ) : __( 'disabled', 'nvoos-pro-spa' ) }
-												ok={ Boolean( schedule.enabled ) }
-											/>
-										</div>
-										<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-											{ schedule.next_run && (
-												<>
-													{ __( 'Next', 'nvoos-pro-spa' ) }: { schedule.next_run }
-													<br />
-												</>
-											) }
-											{ schedule.last_run && (
-												<>
-													{ __( 'Last', 'nvoos-pro-spa' ) }: { schedule.last_run }
-												</>
-											) }
-										</div>
-										<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-											<button
-												type="button"
-												className="nvoos-pro-spa-token-manager__action"
-												disabled={ busy !== null }
-												onClick={ () => {
-													setBusy( key );
-													void triggerSchedule( schedule.id ).finally( () => setBusy( null ) );
-												} }
-											>
-												{ __( 'Run now', 'nvoos-pro-spa' ) }
-											</button>
-											<button
-												type="button"
-												className="nvoos-pro-spa-token-manager__action"
-												disabled={ busy !== null }
-												onClick={ () => {
-													setBusy( key );
-													void toggleSchedule( schedule.id ).finally( () => setBusy( null ) );
-												} }
-											>
-												{ schedule.enabled ? __( 'Disable', 'nvoos-pro-spa' ) : __( 'Enable', 'nvoos-pro-spa' ) }
-											</button>
-											<button
-												type="button"
-												className="nvoos-pro-spa-token-manager__action nvoos-pro-spa-token-manager__action--danger"
-												disabled={ busy !== null }
-												onClick={ () => {
-													// eslint-disable-next-line no-alert -- parity with the wp-admin confirm().
-													if ( window.confirm( __( 'Delete this schedule permanently?', 'nvoos-pro-spa' ) ) ) {
-														setBusy( key );
-														void removeSchedule( schedule.id ).finally( () => setBusy( null ) );
-													}
-												} }
-											>
-												{ __( 'Delete', 'nvoos-pro-spa' ) }
-											</button>
-										</div>
-									</div>
-								);
-							} ) }
-						</div>
+						<DataTable
+							columns={ scheduleColumns }
+							rows={ scheduleRows }
+							caption={ __( 'Schedules', 'nvoos-pro-spa' ) }
+						/>
 					) }
 				</section>
 			) }
@@ -314,37 +396,11 @@ export function ScheduleManagerPage(): JSX.Element {
 							{ __( 'No presets available.', 'nvoos-pro-spa' ) }
 						</p>
 					) : (
-						<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Schedule presets', 'nvoos-pro-spa' ) }>
-							{ presets.map( ( preset ) => {
-								const key = `preset-${ preset.id }`;
-								return (
-									<div key={ key } className="nvoos-pro-spa-tools-list__row" role="listitem">
-										<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-											<strong className="nvoos-pro-spa-tools-list__name">{ preset.name }</strong>
-											<code className="nvoos-pro-spa-tools-list__slug">
-												{ [ preset.category, preset.toolkit ].filter( Boolean ).join( ' · ' ) || '—' }
-											</code>
-										</div>
-										<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-											{ preset.description || '—' }
-										</div>
-										<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-											<button
-												type="button"
-												className="nvoos-pro-spa-token-manager__action"
-												disabled={ busy !== null }
-												onClick={ () => {
-													setBusy( key );
-													void installPreset( preset.id ).finally( () => setBusy( null ) );
-												} }
-											>
-												{ __( 'Install', 'nvoos-pro-spa' ) }
-											</button>
-										</div>
-									</div>
-								);
-							} ) }
-						</div>
+						<DataTable
+							columns={ presetColumns }
+							rows={ presetRows }
+							caption={ __( 'Schedule presets', 'nvoos-pro-spa' ) }
+						/>
 					) }
 				</section>
 			) }

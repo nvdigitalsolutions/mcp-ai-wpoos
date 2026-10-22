@@ -6,11 +6,16 @@
  * set/delete and maintenance/incident creation stay wp-admin.
  */
 
-import { type JSX, type ReactNode } from 'react';
+import { useMemo, type JSX, type ReactNode } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useProOps } from '../../hooks/useProOps';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import type { ProOpsComponent } from '../../api/pro-ops';
+import {
+	DataTable,
+	type DataTableColumn,
+	type DataTableRow,
+} from '../../components/shared/DataTable';
 
 function toneFor( status: string ): 'ok' | 'warning' | 'error' {
 	switch ( status ) {
@@ -92,6 +97,155 @@ export function ProOpsPage(): JSX.Element {
 
 	const { status, incidents, maintenance, webhooks } = overview;
 
+	const componentColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'component',
+				label: __( 'Component', 'nvoos-pro-spa' ),
+				width: 'minmax(240px, 2fr)',
+			},
+			{ key: 'status', label: __( 'Status', 'nvoos-pro-spa' ), width: '140px' },
+		],
+		[]
+	);
+
+	const componentRows = useMemo< DataTableRow[] >(
+		() =>
+			status.components.map( ( component: ProOpsComponent ) => ( {
+				id: component.slug,
+				cells: [
+					<>
+						<strong className="nvoos-pro-spa-tools-list__name">{ component.name }</strong>
+						<code className="nvoos-pro-spa-tools-list__slug">
+							{ component.group }
+							{ component.public ? ` · ${ __( 'public', 'nvoos-pro-spa' ) }` : '' }
+						</code>
+					</>,
+					<Badge
+						label={ typeof component.status === 'string' ? component.status : 'unknown' }
+					/>,
+				],
+			} ) ),
+		[ status.components ]
+	);
+
+	const maintenanceColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'window',
+				label: __( 'Window', 'nvoos-pro-spa' ),
+				width: 'minmax(200px, 1fr)',
+			},
+			{ key: 'status', label: __( 'Status', 'nvoos-pro-spa' ), width: '130px' },
+			{
+				key: 'schedule',
+				label: __( 'Schedule', 'nvoos-pro-spa' ),
+				className: 'nvoos-pro-spa-tools-list__cell--desc',
+				width: 'minmax(220px, 1.5fr)',
+			},
+		],
+		[]
+	);
+
+	const maintenanceRows = useMemo< DataTableRow[] >(
+		() =>
+			maintenance.map( ( window ) => ( {
+				id: window.id,
+				cells: [
+					<strong className="nvoos-pro-spa-tools-list__name">{ window.title }</strong>,
+					<Badge label={ window.status } />,
+					<>
+						{ window.start || '—' } → { window.end || '—' }
+						{ window.banner_enabled && (
+							<>
+								<br />
+								{ __( 'Banner enabled', 'nvoos-pro-spa' ) }
+							</>
+						) }
+					</>,
+				],
+			} ) ),
+		[ maintenance ]
+	);
+
+	const incidentColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'incident',
+				label: __( 'Incident', 'nvoos-pro-spa' ),
+				width: 'minmax(200px, 1fr)',
+			},
+			{ key: 'phase', label: __( 'Phase', 'nvoos-pro-spa' ), width: '130px' },
+			{
+				key: 'services',
+				label: __( 'Affected services', 'nvoos-pro-spa' ),
+				className: 'nvoos-pro-spa-tools-list__cell--desc',
+				width: 'minmax(220px, 1.5fr)',
+			},
+		],
+		[]
+	);
+
+	const incidentRows = useMemo< DataTableRow[] >(
+		() =>
+			incidents.map( ( incident ) => ( {
+				id: incident.id,
+				cells: [
+					<>
+						<strong className="nvoos-pro-spa-tools-list__name">{ incident.title }</strong>
+						<code className="nvoos-pro-spa-tools-list__slug">{ incident.severity || '—' }</code>
+					</>,
+					<Badge label={ incident.phase || 'unknown' } />,
+					<>
+						{ incident.services.length > 0 ? incident.services.join( ', ' ) : '—' }
+						{ incident.date && (
+							<>
+								<br />
+								{ incident.date }
+							</>
+						) }
+					</>,
+				],
+			} ) ),
+		[ incidents ]
+	);
+
+	const webhookColumns = useMemo< DataTableColumn[] >(
+		() => [
+			{
+				key: 'connection',
+				label: __( 'Connection', 'nvoos-pro-spa' ),
+				width: 'minmax(200px, 1fr)',
+			},
+			{ key: 'webhook', label: __( 'Webhook', 'nvoos-pro-spa' ), width: '130px' },
+			{
+				key: 'url',
+				label: __( 'Expected URL', 'nvoos-pro-spa' ),
+				className: 'nvoos-pro-spa-tools-list__cell--desc',
+				width: 'minmax(220px, 1.5fr)',
+			},
+		],
+		[]
+	);
+
+	const webhookRows = useMemo< DataTableRow[] >(
+		() =>
+			webhooks.map( ( webhook ) => ( {
+				id: webhook.id,
+				cells: [
+					<>
+						<strong className="nvoos-pro-spa-tools-list__name">
+							{ webhook.label || webhook.id }
+						</strong>
+						<code className="nvoos-pro-spa-tools-list__slug">{ webhook.type }</code>
+					</>,
+					<Badge label={ webhook.webhook_set ? 'set' : 'unset' } />,
+					webhook.expected_url || '—',
+				],
+			} ) ),
+		[ webhooks ]
+	);
+
 	return (
 		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">
 			<header className="nvoos-pro-spa-tools-page__header">
@@ -127,22 +281,11 @@ export function ProOpsPage(): JSX.Element {
 						{ __( 'No service components reported.', 'nvoos-pro-spa' ) }
 					</p>
 				) : (
-					<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Service components', 'nvoos-pro-spa' ) }>
-						{ status.components.map( ( component: ProOpsComponent ) => (
-							<div key={ component.slug } className="nvoos-pro-spa-tools-list__row" role="listitem">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">{ component.name }</strong>
-									<code className="nvoos-pro-spa-tools-list__slug">
-										{ component.group }
-										{ component.public ? ` · ${ __( 'public', 'nvoos-pro-spa' ) }` : '' }
-									</code>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<Badge label={ typeof component.status === 'string' ? component.status : 'unknown' } />
-								</div>
-							</div>
-						) ) }
-					</div>
+					<DataTable
+						columns={ componentColumns }
+						rows={ componentRows }
+						caption={ __( 'Service components', 'nvoos-pro-spa' ) }
+					/>
 				) }
 			</Card>
 
@@ -152,27 +295,11 @@ export function ProOpsPage(): JSX.Element {
 						{ __( 'No maintenance windows scheduled.', 'nvoos-pro-spa' ) }
 					</p>
 				) : (
-					<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Maintenance windows', 'nvoos-pro-spa' ) }>
-						{ maintenance.map( ( window ) => (
-							<div key={ window.id } className="nvoos-pro-spa-tools-list__row" role="listitem">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">{ window.title }</strong>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<Badge label={ window.status } />
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-									{ window.start || '—' } → { window.end || '—' }
-									{ window.banner_enabled && (
-										<>
-											<br />
-											{ __( 'Banner enabled', 'nvoos-pro-spa' ) }
-										</>
-									) }
-								</div>
-							</div>
-						) ) }
-					</div>
+					<DataTable
+						columns={ maintenanceColumns }
+						rows={ maintenanceRows }
+						caption={ __( 'Maintenance windows', 'nvoos-pro-spa' ) }
+					/>
 				) }
 			</Card>
 
@@ -182,28 +309,11 @@ export function ProOpsPage(): JSX.Element {
 						{ __( 'No incidents recorded.', 'nvoos-pro-spa' ) }
 					</p>
 				) : (
-					<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Incidents', 'nvoos-pro-spa' ) }>
-						{ incidents.map( ( incident ) => (
-							<div key={ incident.id } className="nvoos-pro-spa-tools-list__row" role="listitem">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">{ incident.title }</strong>
-									<code className="nvoos-pro-spa-tools-list__slug">{ incident.severity || '—' }</code>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<Badge label={ incident.phase || 'unknown' } />
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-									{ incident.services.length > 0 ? incident.services.join( ', ' ) : '—' }
-									{ incident.date && (
-										<>
-											<br />
-											{ incident.date }
-										</>
-									) }
-								</div>
-							</div>
-						) ) }
-					</div>
+					<DataTable
+						columns={ incidentColumns }
+						rows={ incidentRows }
+						caption={ __( 'Incidents', 'nvoos-pro-spa' ) }
+					/>
 				) }
 			</Card>
 
@@ -213,22 +323,11 @@ export function ProOpsPage(): JSX.Element {
 						{ __( 'No webhook-capable connections configured.', 'nvoos-pro-spa' ) }
 					</p>
 				) : (
-					<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Webhook connections', 'nvoos-pro-spa' ) }>
-						{ webhooks.map( ( webhook ) => (
-							<div key={ webhook.id } className="nvoos-pro-spa-tools-list__row" role="listitem">
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<strong className="nvoos-pro-spa-tools-list__name">{ webhook.label || webhook.id }</strong>
-									<code className="nvoos-pro-spa-tools-list__slug">{ webhook.type }</code>
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell" role="cell">
-									<Badge label={ webhook.webhook_set ? 'set' : 'unset' } />
-								</div>
-								<div className="nvoos-pro-spa-tools-list__cell nvoos-pro-spa-tools-list__cell--desc" role="cell">
-									{ webhook.expected_url || '—' }
-								</div>
-							</div>
-						) ) }
-					</div>
+					<DataTable
+						columns={ webhookColumns }
+						rows={ webhookRows }
+						caption={ __( 'Webhook connections', 'nvoos-pro-spa' ) }
+					/>
 				) }
 			</Card>
 		</div>

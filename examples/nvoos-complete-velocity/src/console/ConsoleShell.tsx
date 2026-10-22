@@ -159,6 +159,11 @@ const MediaOpsPage = lazy(() =>
     default: m.MediaOpsPage,
   })),
 );
+const BlueprintsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/blueprints/BlueprintsPage').then((m) => ({
+    default: m.BlueprintsPage,
+  })),
+);
 
 const DOCK_PREF_KEY = 'nvoos-complete-console.dock-open';
 
@@ -302,6 +307,8 @@ function ConsoleApp(): JSX.Element {
                     dockOpen={dockOpen}
                     onToggleDock={toggleDock}
                     features={features}
+                    commandCenterEndpoint={runtime.endpoints.commandCenter ?? ''}
+                    nonce={runtime.nonce}
                   />
                 }
               />
@@ -532,6 +539,18 @@ function ConsoleApp(): JSX.Element {
                     capabilities={runtime.user.capabilities}
                   >
                     <MediaOpsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/blueprints"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/blueprints')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <BlueprintsPage />
                   </RequireGate>
                 }
               />

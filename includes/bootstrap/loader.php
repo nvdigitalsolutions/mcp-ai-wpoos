@@ -1740,6 +1740,30 @@ add_action(
 		$controller->register_routes();
 	}
 );
+// Cost + analytics REST surfaces — Proposal 084 Phase 5b: the console's
+// Analytics page consumes the site-wide cost manager (dashboard summary,
+// cost trend, provider breakdown — all manage_options-gated) and the
+// analytics manager (user trends/patterns, site-wide anomalies). Both wrap
+// the existing WP_MCP_AI_Cost_Tracking_Service / WP_MCP_AI_Analytics_Engine
+// service layers — no logic forks.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cost-manager.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cost-manager.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		WP_MCP_AI_REST_Cost_Manager::register_routes();
+	}
+);
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		WP_MCP_AI_REST_Analytics_Manager::register_routes();
+	}
+);
 // Orchestration stats REST surface — Proposal 084 Phase 3: the console's
 // Orchestration page consumes the multi-agent + orchestration dashboards'
 // statistics collectors (multi-agent stats, profession/role stats, system

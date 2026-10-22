@@ -100,6 +100,12 @@ export interface ProSpaEndpoints {
 	diagnostics: string;
 	/** Token Manager REST base (mcp-ai/v1/token-manager, 2.4.0). */
 	tokenManager: string;
+	/**
+	 * Cost analytics REST base (mcp-ai/v1/cost, 2.4.0) — the console
+	 * Analytics page's cost summary/trend/provider charts. Empty for
+	 * non-admin sessions (the endpoints are manage_options-gated).
+	 */
+	cost: string;
 	/** Orchestration stats REST base (mcp-ai/v1/orchestration/stats, 2.4.0). */
 	orchestrationStats: string;
 	/** Pro ops REST base (mcp-ai-pro/v1/ops, 2.4.0). */
@@ -124,6 +130,18 @@ export interface ProSpaEndpoints {
 	chatChannels: string;
 	/** Media command-center REST base (mcp-ai-pro/v1/media-cc, 2.4.0). */
 	mediaCc: string;
+	/**
+	 * Assistant blueprints REST base (mcp-ai-pro/v1/blueprints, 2.4.0) —
+	 * the blueprint catalogue + install flow. Empty for sessions without
+	 * edit_posts (the endpoints mirror the wp-admin page's gate).
+	 */
+	blueprints: string;
+	/**
+	 * Command Center overview REST base (mcp-ai-pro/v1/command-center,
+	 * 2.4.0) — the console Dashboard's KPI + activity feed. Empty for
+	 * non-admin sessions.
+	 */
+	commandCenter: string;
 	shortcuts: string;
 	slashCommands: string;
 	/** OKF Skills & Knowledge browse endpoint (v2.1.1). */
@@ -283,6 +301,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			operations: typeof e.operations === 'string' ? e.operations : '',
 			diagnostics: typeof e.diagnostics === 'string' ? e.diagnostics : '',
 			tokenManager: typeof e.tokenManager === 'string' ? e.tokenManager : '',
+			cost: typeof e.cost === 'string' ? e.cost : '',
 			orchestrationStats: typeof e.orchestrationStats === 'string' ? e.orchestrationStats : '',
 			proOps: typeof e.proOps === 'string' ? e.proOps : '',
 			scheduleManager: typeof e.scheduleManager === 'string' ? e.scheduleManager : '',
@@ -295,6 +314,8 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			dashboardsSchema: typeof e.dashboardsSchema === 'string' ? e.dashboardsSchema : '',
 			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
 			mediaCc: typeof e.mediaCc === 'string' ? e.mediaCc : '',
+			blueprints: typeof e.blueprints === 'string' ? e.blueprints : '',
+			commandCenter: typeof e.commandCenter === 'string' ? e.commandCenter : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 			okf: typeof e.okf === 'string' ? e.okf : '',

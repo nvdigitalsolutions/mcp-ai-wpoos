@@ -138,19 +138,24 @@ export function PortabilityPage(): JSX.Element {
 						? __( 'No assistants selected — exporting all.', 'nvoos-pro-spa' )
 						: `${ selected.size } ${ __( 'assistants selected', 'nvoos-pro-spa' ) }` }
 				</p>
-				<div className="nvoos-pro-spa-tools-list" role="list" aria-label={ __( 'Assistants', 'nvoos-pro-spa' ) }>
+				<ul
+					className="nvoos-pro-spa-tools-list nvoos-pro-spa-tools-list--list"
+					aria-label={ __( 'Assistants to export', 'nvoos-pro-spa' ) }
+				>
 					{ assistants.map( ( assistant ) => (
-						<label key={ assistant.id } className="nvoos-pro-spa-tools-list__row">
-							<input
-								type="checkbox"
-								checked={ selected.has( assistant.id ) }
-								onChange={ () => toggleSelected( assistant.id ) }
-							/>{ ' ' }
-							<strong>{ assistant.title }</strong>
-							<code className="nvoos-pro-spa-tools-list__slug">#{ assistant.id }</code>
-						</label>
+						<li key={ assistant.id } className="nvoos-pro-spa-tools-list__row">
+							<label>
+								<input
+									type="checkbox"
+									checked={ selected.has( assistant.id ) }
+									onChange={ () => toggleSelected( assistant.id ) }
+								/>{ ' ' }
+								<strong>{ assistant.title }</strong>
+								<code className="nvoos-pro-spa-tools-list__slug">#{ assistant.id }</code>
+							</label>
+						</li>
 					) ) }
-				</div>
+				</ul>
 				<label>
 					<input
 						type="checkbox"
@@ -161,7 +166,7 @@ export function PortabilityPage(): JSX.Element {
 				</label>
 				<button
 					type="button"
-					className="nvoos-pro-spa-page__retry"
+					className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary"
 					disabled={ exporting }
 					onClick={ () => void handleExport() }
 				>
@@ -212,7 +217,7 @@ export function PortabilityPage(): JSX.Element {
 				</label>
 				<button
 					type="button"
-					className="nvoos-pro-spa-page__retry"
+					className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary"
 					disabled={ importing || ( ! importJson.trim() && attachmentId === 0 ) }
 					onClick={ () =>
 						void importAssistants( {
