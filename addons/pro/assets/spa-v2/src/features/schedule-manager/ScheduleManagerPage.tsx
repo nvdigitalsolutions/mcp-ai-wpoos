@@ -63,51 +63,11 @@ export function ScheduleManagerPage(): JSX.Element {
 		description: '',
 	} );
 
-	if ( bootstrapLoading || loading ) {
-		return (
-			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--loading" aria-busy="true">
-				<h2 className="nvoos-pro-spa-page__title">{ __( 'Schedule Manager', 'nvoos-pro-spa' ) }</h2>
-				<div className="nvoos-pro-spa-page__loader" role="status">
-					<span className="nvoos-pro-spa-page__spinner" />
-					{ __( 'Loading schedules…', 'nvoos-pro-spa' ) }
-				</div>
-			</div>
-		);
-	}
-
-	if ( ! runtime ) {
-		return (
-			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--error" role="alert">
-				<h2 className="nvoos-pro-spa-page__title">{ __( 'Schedule Manager', 'nvoos-pro-spa' ) }</h2>
-				{ error && <p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">{ error }</p> }
-				<button
-					type="button"
-					className="nvoos-pro-spa-page__retry"
-					onClick={ () => {
-						void refresh();
-					} }
-				>
-					{ __( 'Retry', 'nvoos-pro-spa' ) }
-				</button>
-			</div>
-		);
-	}
-
-	const submitForm = async (): Promise< void > => {
-		setBusy( 'create' );
-		const created = await createSchedule( {
-			name: form.name.trim(),
-			description: form.description.trim(),
-			schedule_type: form.schedule_type,
-			schedule: form.schedule.trim(),
-		} );
-		setBusy( null );
-		if ( created ) {
-			setForm( { name: '', schedule_type: 'assistant_run', schedule: '', description: '' } );
-			setShowForm( false );
-		}
-	};
-
+	// Every hook below must run on every render — the early loading/error
+	// returns above would otherwise change the hook count between renders
+	// (React error #310, "Rendered more hooks than during the previous
+	// render"). All four memos only read hook state, so computing them
+	// before the early returns is free.
 	const scheduleColumns = useMemo< DataTableColumn[] >(
 		() => [
 			{
@@ -251,6 +211,51 @@ export function ScheduleManagerPage(): JSX.Element {
 			} ),
 		[ presets, busy ]
 	);
+
+	if ( bootstrapLoading || loading ) {
+		return (
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--loading" aria-busy="true">
+				<h2 className="nvoos-pro-spa-page__title">{ __( 'Schedule Manager', 'nvoos-pro-spa' ) }</h2>
+				<div className="nvoos-pro-spa-page__loader" role="status">
+					<span className="nvoos-pro-spa-page__spinner" />
+					{ __( 'Loading schedules…', 'nvoos-pro-spa' ) }
+				</div>
+			</div>
+		);
+	}
+
+	if ( ! runtime ) {
+		return (
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--error" role="alert">
+				<h2 className="nvoos-pro-spa-page__title">{ __( 'Schedule Manager', 'nvoos-pro-spa' ) }</h2>
+				{ error && <p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">{ error }</p> }
+				<button
+					type="button"
+					className="nvoos-pro-spa-page__retry"
+					onClick={ () => {
+						void refresh();
+					} }
+				>
+					{ __( 'Retry', 'nvoos-pro-spa' ) }
+				</button>
+			</div>
+		);
+	}
+
+	const submitForm = async (): Promise< void > => {
+		setBusy( 'create' );
+		const created = await createSchedule( {
+			name: form.name.trim(),
+			description: form.description.trim(),
+			schedule_type: form.schedule_type,
+			schedule: form.schedule.trim(),
+		} );
+		setBusy( null );
+		if ( created ) {
+			setForm( { name: '', schedule_type: 'assistant_run', schedule: '', description: '' } );
+			setShowForm( false );
+		}
+	};
 
 	return (
 		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">

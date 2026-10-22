@@ -538,10 +538,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				'admin_blueprints',
 				'Unified Blueprints',
 				array(),
-				array( 'context' => 'admin' ),
+				array(),
 				function () use ( $p ) {
+					// Deliberately NOT admin-gated: the blueprints REST bridge
+					// (rest_console_bridges) calls the page class's promoted
+					// static catalogue seams from front-end-originated REST
+					// requests, where is_admin() is false. Skipping this file
+					// there left the routes registered against a class that
+					// was never loaded — every /blueprints call fataled with
+					// "Class not found" (HTTP 500). Loading the class file is
+					// side-effect free; only init() (admin-menu + AJAX hooks)
+					// stays behind the is_admin() guard.
 					require_once $p . 'admin/class-wp-mcp-ai-unified-blueprints-page.php';
-					WP_MCP_AI_Unified_Blueprints_Page::init();
+					if ( is_admin() ) {
+						WP_MCP_AI_Unified_Blueprints_Page::init();
+					}
 				}
 			);
 

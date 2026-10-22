@@ -17,11 +17,12 @@
  * disagree about the active conversation.
  */
 
-import { type JSX, useMemo } from 'react';
+import { type JSX, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChatSidebar } from '@nvoos/pro-spa-v2/components/layout/ChatSidebar';
 import { ChatPage } from '@nvoos/pro-spa-v2/features/chat/ChatPage';
 import type { useTranscripts } from '@nvoos/pro-spa-v2/hooks/useTranscripts';
+import { useUIStore } from '@nvoos/pro-spa-v2/stores/uiStore';
 import { formatSessionTitle } from './session-utils';
 
 export interface ChatDockProps {
@@ -51,6 +52,21 @@ export function ChatDock(props: ChatDockProps): JSX.Element {
     onClose,
   } = props;
 
+  // The conversation list follows the layout mode: collapsed while the chat
+  // is docked (the fixed-width panel has no room for a 260px sidebar) and
+  // open on the full-page /chat breakout. The status bar's ☰ toggle drives
+  // the same store state, so it works as the collapse/expand control in both
+  // modes; navigating back to a mode resets its default. The initial value
+  // is synced at boot in main.tsx so the dock never flashes the list open.
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
+  const theme = useUIStore((s) => s.theme);
+  const setTheme = useUIStore((s) => s.setTheme);
+
+  useEffect(() => {
+    setSidebarOpen(mode === 'fullpage');
+  }, [mode, setSidebarOpen]);
+
   const activeSession = useMemo(
     () =>
       (transcripts.sessions ?? []).find(
@@ -64,6 +80,7 @@ export function ChatDock(props: ChatDockProps): JSX.Element {
     'nvoos-console-dock',
     mode === 'fullpage' ? 'nvoos-console-dock--fullpage' : '',
     hidden ? 'nvoos-console-dock--hidden' : '',
+    sidebarOpen ? '' : 'nvoos-console-dock--sidebar-collapsed',
   ]
     .filter(Boolean)
     .join(' ');
@@ -79,6 +96,15 @@ export function ChatDock(props: ChatDockProps): JSX.Element {
             </span>
           )}
           <div className="nvoos-console-dock__actions">
+            <button
+              type="button"
+              className="nvoos-console-dock__action"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
             <Link
               to="/chat"
               className="nvoos-console-dock__action"

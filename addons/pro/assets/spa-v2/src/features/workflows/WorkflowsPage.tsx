@@ -104,50 +104,6 @@ export function WorkflowsPage(): JSX.Element {
 		};
 	}, [ presetsClient ] );
 
-	if ( bootstrapLoading || loading ) {
-		return (
-			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--loading" aria-busy="true">
-				<h2 className="nvoos-pro-spa-page__title">{ __( 'Workflows', 'nvoos-pro-spa' ) }</h2>
-				<div className="nvoos-pro-spa-page__loader" role="status">
-					<span className="nvoos-pro-spa-page__spinner" />
-					{ __( 'Loading workflows…', 'nvoos-pro-spa' ) }
-				</div>
-			</div>
-		);
-	}
-
-	if ( ! runtime ) {
-		return (
-			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--error" role="alert">
-				<h2 className="nvoos-pro-spa-page__title">{ __( 'Workflows', 'nvoos-pro-spa' ) }</h2>
-				{ error && <p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">{ error }</p> }
-				<button
-					type="button"
-					className="nvoos-pro-spa-page__retry"
-					onClick={ () => {
-						void refresh();
-					} }
-				>
-					{ __( 'Retry', 'nvoos-pro-spa' ) }
-				</button>
-			</div>
-		);
-	}
-
-	const submitForm = async (): Promise< void > => {
-		setBusy( 'create' );
-		const tags = form.tags
-			.split( ',' )
-			.map( ( tag ) => tag.trim() )
-			.filter( Boolean );
-		const created = await createWorkflow( form.name.trim(), tags );
-		setBusy( null );
-		if ( created ) {
-			setForm( { name: '', tags: '' } );
-			setShowForm( false );
-		}
-	};
-
 	const handleSelect = ( id: number ): void => {
 		setCanvasOverride( null );
 		void selectWorkflow( id );
@@ -182,9 +138,14 @@ export function WorkflowsPage(): JSX.Element {
 	};
 
 	const visiblePresets = presetCategory
-		? presets.filter( ( preset ) => preset.category === presetCategory )
-		: presets;
+			? presets.filter( ( preset ) => preset.category === presetCategory )
+			: presets;
 
+	// Every hook below must run on every render — the loading/error early
+	// returns would otherwise change the hook count between renders
+	// (React error #310, "Rendered more hooks than during the previous
+	// render"). The memos only read hook state, so computing them before
+	// the early returns is free.
 	const workflowColumns = useMemo< DataTableColumn[] >(
 		() => [ { key: 'workflow', label: __( 'Workflow', 'nvoos-pro-spa' ) } ],
 		[]
@@ -284,6 +245,50 @@ export function WorkflowsPage(): JSX.Element {
 			} ) ),
 		[ runs ]
 	);
+
+	if ( bootstrapLoading || loading ) {
+		return (
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--loading" aria-busy="true">
+				<h2 className="nvoos-pro-spa-page__title">{ __( 'Workflows', 'nvoos-pro-spa' ) }</h2>
+				<div className="nvoos-pro-spa-page__loader" role="status">
+					<span className="nvoos-pro-spa-page__spinner" />
+					{ __( 'Loading workflows…', 'nvoos-pro-spa' ) }
+				</div>
+			</div>
+		);
+	}
+
+	if ( ! runtime ) {
+		return (
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--error" role="alert">
+				<h2 className="nvoos-pro-spa-page__title">{ __( 'Workflows', 'nvoos-pro-spa' ) }</h2>
+				{ error && <p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">{ error }</p> }
+				<button
+					type="button"
+					className="nvoos-pro-spa-page__retry"
+					onClick={ () => {
+						void refresh();
+					} }
+				>
+					{ __( 'Retry', 'nvoos-pro-spa' ) }
+				</button>
+			</div>
+		);
+	}
+
+	const submitForm = async (): Promise< void > => {
+		setBusy( 'create' );
+		const tags = form.tags
+			.split( ',' )
+			.map( ( tag ) => tag.trim() )
+			.filter( Boolean );
+		const created = await createWorkflow( form.name.trim(), tags );
+		setBusy( null );
+		if ( created ) {
+			setForm( { name: '', tags: '' } );
+			setShowForm( false );
+		}
+	};
 
 	return (
 		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">

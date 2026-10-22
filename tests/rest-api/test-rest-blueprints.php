@@ -196,4 +196,31 @@ class WP_MCP_AI_Pro_Blueprints_REST_Test extends WP_UnitTestCase {
 			$routes
 		);
 	}
+
+	/**
+	 * The blueprints page class must load outside the admin context — the
+	 * REST bridge calls its static catalogue seams from front-end-originated
+	 * REST requests (is_admin() false). The module was previously
+	 * admin-context-gated, so every production /blueprints call fataled with
+	 * "Class not found" (HTTP 500) while this suite stayed green behind the
+	 * classmap fallback autoloader. Pins the non-admin boot so the gate can
+	 * never silently come back.
+	 */
+	public function test_blueprints_page_class_loads_outside_admin_context() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
+			$this->markTestSkipped( 'Pro addon not loaded.' );
+		}
+
+		$registry = WP_MCP_AI_Pro_Module_Registry::get_instance();
+		$registry->boot();
+
+		$this->assertTrue(
+			$registry->is_loaded( 'admin_blueprints' ),
+			'The admin_blueprints module must load its class file outside the admin context.'
+		);
+		$this->assertTrue(
+			class_exists( 'WP_MCP_AI_Unified_Blueprints_Page' ),
+			'The page class must be defined once the module has loaded.'
+		);
+	}
 }

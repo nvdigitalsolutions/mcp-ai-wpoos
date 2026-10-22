@@ -20,6 +20,7 @@ import {
 } from '../../components/shared/DataTable';
 import type {
 	OrchestrationAgent,
+	OrchestrationStatsOverview,
 	OrchestrationWorkflow,
 } from '../../api/orchestration-stats';
 
@@ -102,6 +103,27 @@ export function OrchestrationStatsPage(): JSX.Element {
 		);
 	}
 
+	return (
+			<OrchestrationStatsTables overview={ overview } error={ error } onRefresh={ refresh } />
+	);
+}
+
+interface OrchestrationStatsTablesProps {
+	overview: OrchestrationStatsOverview;
+	error: string | null;
+	onRefresh: () => Promise< void >;
+}
+
+/**
+ * Render-phase split: the tables component only mounts once the overview is
+ * guaranteed non-null, so its memo hooks can never be skipped by the
+ * parent's loading/error early returns (rules-of-hooks — React error #310).
+ */
+function OrchestrationStatsTables( {
+	overview,
+	error,
+	onRefresh,
+}: OrchestrationStatsTablesProps ): JSX.Element {
 	const { multi_agent: multiAgent, orchestration, recent_workflows: workflows } = overview;
 	const system = orchestration.system_status;
 	const health = system?.health as Record< string, unknown > | undefined;
@@ -241,7 +263,7 @@ export function OrchestrationStatsPage(): JSX.Element {
 					type="button"
 					className="nvoos-pro-spa-page__retry"
 					onClick={ () => {
-						void refresh();
+						void onRefresh();
 					} }
 				>
 					{ __( 'Refresh', 'nvoos-pro-spa' ) }
