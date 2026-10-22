@@ -120,7 +120,9 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		settings: `${core}/settings`,
 		upload: `${api}/wp/v2/media`,
 		workflows: `${pro}/workflows`,
-		analytics: `${pro}/analytics`,
+		// Site-wide usage analytics (core namespace, admin-gated) — matches the
+		// canonical PHP config (class-wp-mcp-ai-pro-spa-config.php).
+		analytics: `${core}/analytics`,
 		approvals: `${core}/approvals`,
 		triggers: `${core}/orchestration/triggers`,
 		teams: `${core}/teams`,
