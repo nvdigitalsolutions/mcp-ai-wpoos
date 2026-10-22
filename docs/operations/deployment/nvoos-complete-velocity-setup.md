@@ -52,6 +52,18 @@ Deploy runbook for the Complete Console on Cloudways Velocity. Companion to
    carry the session nonce.
 5. Capability check: a lower-cap user gets server-enforced gating.
 
+## Troubleshooting — nonce endpoint returns the Imunify360 challenge page
+
+If the console fails with `nonce endpoint: expected JSON but got text/html`
+and `/wp-login.php` on the app origin shows "One moment, please..." followed
+by a redirect to
+`/z0f76a1d14fd21a8fb5fd0d03e0fdc3d3cedae52f?wsidchk=…`, the blocker is
+**Cloudways Anti-Bot Protection** (Imunify360 WebShield WAF) on the server
+hosting the `NVOOS_TARGET_SITE` WordPress app — not Cloudflare. Fix:
+Cloudways → that server → Security → Anti-Bot Protection: off (or allowlist
+the Velocity app's egress IP in the Security Suite). Full diagnostic ladder
+in the `mcp-ai-schedule-anything-ops` skill, §6.
+
 ## Rollback
 
 The mirror history is flat — redeploy the previous mirror commit on
