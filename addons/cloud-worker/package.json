@@ -28,7 +28,7 @@
     "source-map-js": ">=1.2.2 <2"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.16.3",
+    "@cloudflare/vitest-pool-workers": "^0.23.0",
     "@cloudflare/workers-types": "^4.20260617.1",
     "typescript": "^6.0.3",
     "vite": ">=8.2.4 <8.3",
