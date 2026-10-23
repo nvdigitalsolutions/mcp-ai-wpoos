@@ -6,10 +6,15 @@
  * (GET /mcp-ai-pro/v1/dashboards/schema): dashboard picker, schema-driven
  * filter form, metric cards, and the loan summary table. W13a ships the
  * CRE Debt Portfolio; W13c adds the remaining repeating dashboards.
+ *
+ * Empty catalogue: every dashboard is gated by a toolkit toggle that is
+ * OFF by default, so a fresh site returns an empty catalogue. The schema
+ * envelope carries a `disabled` metadata map for exactly that case and the
+ * page renders a guided empty state instead of a blank content area.
  */
 
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import { renderChartRecipe } from '../../components/shared/chartRecipes';
 import {
@@ -23,19 +28,25 @@ import {
 	formatMetric,
 	type DashboardConfig,
 	type DashboardData,
+	type DisabledDashboard,
 } from '../../api/dashboards';
 
 function useDashboards( schemaEndpoint: string, nonce: string ): {
 	dashboards: DashboardConfig[];
+	disabled: DisabledDashboard[];
 	schemaLoading: boolean;
 	schemaError: string | null;
+	refreshSchema: () => void;
 	client: DashboardsClient;
 } {
 	const [ dashboards, setDashboards ] = useState< DashboardConfig[] >( [] );
+	const [ disabled, setDisabled ] = useState< DisabledDashboard[] >( [] );
 	// Distinct from `dashboards.length` so a genuinely empty catalogue
 	// (all toolkits disabled) never renders the loading state forever.
 	const [ schemaLoading, setSchemaLoading ] = useState< boolean >( true );
 	const [ schemaError, setSchemaError ] = useState< string | null >( null );
+	// Manual refresh (header button + empty-state retry) — bumps the effect.
+	const [ refreshNonce, setRefreshNonce ] = useState< number >( 0 );
 
 	const client = useMemo(
 		() => new DashboardsClient( { schemaEndpoint, nonce } ),
@@ -49,13 +60,16 @@ function useDashboards( schemaEndpoint: string, nonce: string ): {
 		}
 		let cancelled = false;
 		const controller = new AbortController();
+		setSchemaLoading( true );
+		setSchemaError( null );
 		client
-			.schema( controller.signal )
-			.then( ( list ) => {
+			.catalogue( controller.signal )
+			.then( ( catalogue ) => {
 				if ( cancelled ) {
 					return;
 				}
-				setDashboards( list );
+				setDashboards( catalogue.dashboards );
+				setDisabled( catalogue.disabled );
 				setSchemaLoading( false );
 			} )
 			.catch( ( error: unknown ) => {
@@ -73,14 +87,32 @@ function useDashboards( schemaEndpoint: string, nonce: string ): {
 			cancelled = true;
 			controller.abort();
 		};
-	}, [ client, schemaEndpoint ] );
+	}, [ client, schemaEndpoint, refreshNonce ] );
 
-	return { dashboards, schemaLoading, schemaError, client };
+	const refreshSchema = useCallback( () => {
+		setRefreshNonce( ( prev ) => prev + 1 );
+	}, [] );
+
+	return { dashboards, disabled, schemaLoading, schemaError, refreshSchema, client };
+}
+
+/** Human hint for a disabled dashboard — where to flip the toolkit on. */
+function disabledDashboardHint( flag: string ): string {
+	if ( ! flag ) {
+		return __(
+			'Enable its toolkit under Settings → NV oOS in wp-admin, then reload this page.',
+			'nvoos-pro-spa'
+		);
+	}
+	return (
+		/* translators: %s: the settings flag that enables the toolkit. */
+		sprintf( __( 'Enable the %s toolkit under Settings → NV oOS in wp-admin.', 'nvoos-pro-spa' ), flag )
+	);
 }
 
 export function DashboardsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
-	const { dashboards, schemaLoading, schemaError, client } = useDashboards(
+	const { dashboards, disabled, schemaLoading, schemaError, refreshSchema, client } = useDashboards(
 		runtime?.endpoints.dashboardsSchema ?? '',
 		runtime?.nonce ?? ''
 	);
@@ -174,9 +206,18 @@ export function DashboardsPage(): JSX.Element {
 				<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error">
 					{ schemaError }
 				</p>
+				<button
+					type="button"
+					className="nvoos-pro-spa-page__retry"
+					onClick={ refreshSchema }
+				>
+					{ __( 'Retry', 'nvoos-pro-spa' ) }
+				</button>
 			</div>
 		);
 	}
+
+	const hasDashboards = dashboards.length > 0;
 
 	return (
 		<div className="nvoos-pro-spa-page nvoos-pro-spa-tools-page">
@@ -185,9 +226,66 @@ export function DashboardsPage(): JSX.Element {
 				<p className="nvoos-pro-spa-page__subtitle">
 					{ __( 'Filtered metric dashboards across the toolkits.', 'nvoos-pro-spa' ) }
 				</p>
+				<button
+					type="button"
+					className="nvoos-pro-spa-page__retry"
+					disabled={ schemaLoading }
+					onClick={ refreshSchema }
+				>
+					{ __( 'Refresh', 'nvoos-pro-spa' ) }
+				</button>
 			</header>
 
-			{ dashboards.length > 1 && (
+			{ ! hasDashboards && (
+				<section className="nvoos-pro-spa-dashboards-empty" role="status">
+					<div className="nvoos-pro-spa-dashboards-empty__icon" aria-hidden="true">
+						🧮
+					</div>
+					<h3 className="nvoos-pro-spa-dashboards-empty__title">
+						{ __( 'No dashboards available yet', 'nvoos-pro-spa' ) }
+					</h3>
+					<p className="nvoos-pro-spa-dashboards-empty__message">
+						{ __(
+							'Dashboard pages are gated by their toolkits, which are all disabled on this site. Enable a toolkit to see its dashboard here.',
+							'nvoos-pro-spa'
+						) }
+					</p>
+					{ disabled.length > 0 && (
+						<ul className="nvoos-pro-spa-dashboards-empty__list">
+							{ disabled.map( ( entry, index ) => (
+								<li key={ entry.toolkit_flag || String( index ) } className="nvoos-pro-spa-dashboards-empty__item">
+									<span className="nvoos-pro-spa-dashboards-empty__item-icon" aria-hidden="true">
+										{ entry.icon }
+									</span>
+									<div className="nvoos-pro-spa-dashboards-empty__item-body">
+										<strong className="nvoos-pro-spa-dashboards-empty__item-label">
+											{ entry.label }
+										</strong>
+										<p className="nvoos-pro-spa-dashboards-empty__item-description">
+											{ entry.description }
+										</p>
+										<p className="nvoos-pro-spa-dashboards-empty__item-hint">
+											{ disabledDashboardHint( entry.toolkit_flag ) }
+										</p>
+									</div>
+								</li>
+							) ) }
+						</ul>
+					) }
+					<div className="nvoos-pro-spa-dashboards-empty__actions">
+						<button
+							type="button"
+							className="nvoos-pro-spa-page__retry"
+							disabled={ schemaLoading }
+							onClick={ refreshSchema }
+						>
+							{ schemaLoading ? __( 'Checking…', 'nvoos-pro-spa' ) : __( 'Check again', 'nvoos-pro-spa' ) }
+						</button>
+					</div>
+				</section>
+			) }
+
+			{ hasDashboards && dashboards.length > 1 && (
 				<div className="nvoos-pro-spa-records-tabs" role="tablist" aria-label={ __( 'Dashboards', 'nvoos-pro-spa' ) }>
 					{ dashboards.map( ( d ) => (
 						<button

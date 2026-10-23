@@ -37,10 +37,33 @@ describe( 'DashboardsClient', () => {
 			},
 		} );
 		const client = new DashboardsClient( { schemaEndpoint: SCHEMA, nonce: 'n' } );
-		const dashboards = await client.schema();
+		const { dashboards, disabled } = await client.catalogue();
 		expect( dashboards ).toHaveLength( 1 );
 		expect( dashboards[ 0 ] ).toMatchObject( { id: 'cre', label: 'CRE Debt Portfolio' } );
 		expect( dashboards[ 0 ].metrics[ 0 ] ).toMatchObject( { key: 'total_loans' } );
+		expect( disabled ).toEqual( [] );
+	} );
+
+	it( 'parses the disabled-toolkit metadata that backs the empty state', async () => {
+		mockFetch( {
+			dashboards: {},
+			disabled: {
+				cre: {
+					label: 'CRE Debt Portfolio',
+					description: 'Portfolio stats',
+					icon: '🏦',
+					toolkit_flag: 'enable_cre_debt_toolkit',
+				},
+			},
+		} );
+		const client = new DashboardsClient( { schemaEndpoint: SCHEMA, nonce: 'n' } );
+		const { dashboards, disabled } = await client.catalogue();
+		expect( dashboards ).toEqual( [] );
+		expect( disabled ).toHaveLength( 1 );
+		expect( disabled[ 0 ] ).toMatchObject( {
+			label: 'CRE Debt Portfolio',
+			toolkit_flag: 'enable_cre_debt_toolkit',
+		} );
 	} );
 
 	it( 'requests data with the filters serialized', async () => {
@@ -70,7 +93,7 @@ describe( 'DashboardsClient', () => {
 	it( 'throws the server message on a failed request', async () => {
 		mockFetch( { code: 'rest_forbidden', message: 'Sorry, you are not allowed.' }, false );
 		const client = new DashboardsClient( { schemaEndpoint: SCHEMA, nonce: 'n' } );
-		await expect( client.schema() ).rejects.toThrow( 'Sorry, you are not allowed.' );
+		await expect( client.catalogue() ).rejects.toThrow( 'Sorry, you are not allowed.' );
 	} );
 } );
 

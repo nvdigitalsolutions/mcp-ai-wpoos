@@ -107,11 +107,17 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'vitals', $data['dashboards'] );
 		$this->assertSame( 'member', $data['dashboards']['vitals']['filters'][0]['type'] );
 		$this->assertSame( 'history', $data['dashboards']['vitals']['lists'][0]['key'] );
+
+		// With every toolkit on, the guidance map is empty.
+		$this->assertArrayHasKey( 'disabled', $data );
+		$this->assertSame( array(), $data['disabled'] );
 	}
 
 	/**
 	 * Disabled toolkits never appear in the catalogue — the console renders
-	 * this list verbatim, so feature-gating happens server-side.
+	 * this list verbatim, so feature-gating happens server-side. They DO
+	 * appear in the `disabled` metadata map, which powers the console's
+	 * empty-state guidance when the whole catalogue is off (the default).
 	 */
 	public function test_schema_hides_disabled_dashboards() {
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
@@ -122,19 +128,46 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 
 		foreach ( array( 'cre', 'law', 'registration', 'eca', 'health', 'vitals' ) as $id ) {
 			$this->assertArrayNotHasKey( $id, $data['dashboards'], $id . ' should hide when its toolkit is off.' );
+			$this->assertArrayHasKey( $id, $data['disabled'], $id . ' should be listed in the disabled map.' );
 		}
 
+		// The disabled entries carry the console-guidance metadata: the
+		// display label/icon and the settings flag that would enable them.
+		$this->assertSame( 'CRE Debt Portfolio', $data['disabled']['cre']['label'] );
+		$this->assertSame( 'enable_cre_debt_toolkit', $data['disabled']['cre']['toolkit_flag'] );
+		// Vitals follows the Health & Wellness toggle when the dedicated
+		// flag was never saved (BC fallback).
+		$this->assertSame( 'enable_health_wellness_management', $data['disabled']['vitals']['toolkit_flag'] );
+
 		// Enabling only Health & Wellness restores health AND vitals (the
-		// medical-vitals BC fallback mirrors includes/tools/healthcare/init.php).
+		// medical-vitals BC fallback mirrors includes/tools/healthcare/init.php)
+		// and moves both out of the disabled map.
 		update_option( 'wp_mcp_ai_settings', array( 'enable_health_wellness_management' => 1 ) );
 		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_schema( new WP_REST_Request() );
 		$data   = $result->get_data();
 
 		$this->assertArrayHasKey( 'health', $data['dashboards'] );
 		$this->assertArrayHasKey( 'vitals', $data['dashboards'] );
+		$this->assertArrayNotHasKey( 'health', $data['disabled'] );
+		$this->assertArrayNotHasKey( 'vitals', $data['disabled'] );
 		$this->assertArrayNotHasKey( 'cre', $data['dashboards'] );
 		$this->assertArrayNotHasKey( 'law', $data['dashboards'] );
 		$this->assertArrayNotHasKey( 'eca', $data['dashboards'] );
+
+		// The dedicated vitals toggle, once saved, wins over the BC fallback.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_health_wellness_management' => 1,
+				'enable_medical_vitals'             => 0,
+			)
+		);
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_schema( new WP_REST_Request() );
+		$data   = $result->get_data();
+
+		$this->assertArrayHasKey( 'health', $data['dashboards'] );
+		$this->assertArrayNotHasKey( 'vitals', $data['dashboards'] );
+		$this->assertSame( 'enable_medical_vitals', $data['disabled']['vitals']['toolkit_flag'] );
 	}
 
 	/**

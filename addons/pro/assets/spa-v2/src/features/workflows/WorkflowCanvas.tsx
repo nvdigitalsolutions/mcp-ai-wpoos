@@ -35,9 +35,11 @@ import {
 	validateGraph,
 	WORKFLOW_NODE_TYPES,
 	type CanvasWorkflowNode,
+	type WorkflowNodeData,
 	type WorkflowNodeType,
 } from './workflow-graph';
 import { ActionNode, AgentNode, ToolNode } from './WorkflowNode';
+import { NodeEditor } from './NodeEditor';
 
 const nodeTypes = {
 	toolNode: ToolNode,
@@ -119,6 +121,24 @@ export function WorkflowCanvas( props: WorkflowCanvasProps ): JSX.Element {
 				current.map( ( node ) =>
 					node.id === selectedNodeId
 						? { ...node, data: { ...node.data, label } }
+						: node
+				)
+			);
+		},
+		[ selectedNodeId, setNodes ]
+	);
+
+	// Merge an arbitrary configuration patch into the selected node's data
+	// (the NodeEditor writes toolSlug/arguments/command/params/agentId/prompt).
+	const patchSelected = useCallback(
+		( patch: Partial< WorkflowNodeData > ) => {
+			if ( ! selectedNodeId ) {
+				return;
+			}
+			setNodes( ( current ) =>
+				current.map( ( node ) =>
+					node.id === selectedNodeId
+						? { ...node, data: { ...node.data, ...patch } }
 						: node
 				)
 			);
@@ -217,6 +237,14 @@ export function WorkflowCanvas( props: WorkflowCanvasProps ): JSX.Element {
 						) ) }
 					</ul>
 				</div>
+			) }
+
+			{ selectedNode && (
+				<NodeEditor
+					key={ selectedNode.id + ':' + ( selectedNode.type ?? '' ) }
+					node={ selectedNode }
+					onPatch={ patchSelected }
+				/>
 			) }
 
 			<div className="nvoos-pro-spa-wf-canvas__board">
