@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-continuati
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-continuation-dispatcher.php';
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-session-frame-buffer.php';
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-continuation-llm-re-entry.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-stream-offload-worker.php';
 
 // Register cron + completion handlers.
 WP_MCP_AI_Chat_Continuation_Dispatcher::init();

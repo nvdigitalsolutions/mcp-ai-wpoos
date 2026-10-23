@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.10"
   plugin-version-tested: "1.2.10"
-  last-updated: "2026-10-23"
+  last-updated: "2026-10-24"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -198,6 +198,22 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   back to the server-resolved default assistant, then the full registry).
 	  New console pages register their gates in `nav-features.tsx` — never
 	  inline.
+- **SSE mid-stream frame bridging (AI SDK v1.2.12 has NO `onData` callback;
+  learned 2026-10-24, job_offload pass):** `chat-spa`'s `@ai-sdk/react@1.2.12`
+  `useChat` exposes no data-stream callback, so mid-stream server events
+  (e.g. the Phase 4b `job_offload` frame from a long-run offload) can't
+  reach React through the SDK. The shipped pattern: `sse-adapter.ts`
+  `translateFrame()` (already takes `assistantId`) dispatches a **window
+  `CustomEvent`** — `window.dispatchEvent(new CustomEvent('nvoos:job_offload',
+  { detail })`) — while also emitting the normal type-8 data annotation;
+  `useChatSpoke.ts` subscribes with `addEventListener`, filters by
+  `assistant_id`/`session_key`, toasts the status, and follows the job via
+  `wpMcPaiJobBus.watchJob(jobId)` → `setMessages` to append the final
+  assistant message. Reuse this bridge for any frame type the chat UI needs
+  but the SDK can't deliver; type the globals (`JobBusShape`/`JobBusWindow`)
+  on `window`. This is a spa-v2 source change, so the **two-bundle rule**
+  applies — rebuild BOTH `addons/pro/assets/spa-v2/assets/dist/` and
+  `examples/nvoos-complete-velocity/dist/`.
 
 ### Clean-install CI gate (the npm ci lockfile gotcha — PR #7171)
 

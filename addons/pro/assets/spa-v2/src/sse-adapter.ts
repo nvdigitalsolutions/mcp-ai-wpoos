@@ -149,7 +149,8 @@ function emitToolResultsAsToolCalls(
 
 function translateFrame(
 	frame: NvOosFrame,
-	emittedIds?: Set< string >
+	emittedIds?: Set< string >,
+	assistantId?: number
 ): Uint8Array[] {
 	const out: Uint8Array[] = [];
 
@@ -222,6 +223,35 @@ function translateFrame(
 	if ( frame.type === 'error' ) {
 		const msg = typeof frame.message === 'string' ? frame.message : 'Unknown error';
 		out.push( encodeChunk( '3', msg ) );
+		return out;
+	}
+
+	// Phase 4b (SSE long-run offload): the server hands the remaining turn
+	// to the background job queue and closes the stream. Forward the job
+	// identity as a data annotation AND as a window event so useChatSpoke
+	// can follow the job via the job event bus and render the final
+	// resumed message (this AI SDK version has no onData callback).
+	if ( typeof frame.job_id === 'string' && frame.job_id ) {
+		const offload = {
+			type: 'job_offload',
+			job_id: frame.job_id,
+			session_key:
+				typeof frame.session_key === 'string' ? frame.session_key : '',
+			message: typeof frame.message === 'string' ? frame.message : '',
+		};
+		try {
+			window.dispatchEvent(
+				new CustomEvent( 'nvoos:job_offload', {
+					detail: {
+						...offload,
+						assistant_id: assistantId ?? null,
+					},
+				} )
+			);
+		} catch {
+			// Non-browser or jsdom edge — the annotation below still lands.
+		}
+		out.push( encodeChunk( '8', [ offload ] ) );
 		return out;
 	}
 
@@ -556,7 +586,7 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 						const { frames, rest } = parseSseBuffer( buffer );
 						buffer = rest;
 						for ( const frame of frames ) {
-							for ( const chunk of translateFrame( frame, emittedToolIds ) ) {
+							for ( const chunk of translateFrame( frame, emittedToolIds, opts.assistantId ) ) {
 								controller.enqueue( chunk );
 							}
 						}
@@ -565,7 +595,7 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 					if ( buffer.trim() ) {
 						const { frames } = parseSseBuffer( buffer + '\n\n' );
 						for ( const frame of frames ) {
-							for ( const chunk of translateFrame( frame, emittedToolIds ) ) {
+							for ( const chunk of translateFrame( frame, emittedToolIds, opts.assistantId ) ) {
 								controller.enqueue( chunk );
 							}
 						}
