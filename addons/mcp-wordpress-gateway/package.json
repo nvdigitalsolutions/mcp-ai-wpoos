@@ -15,9 +15,12 @@
     "check:pins": "node tests/check-pins.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.31.0",
+    "@modelcontextprotocol/sdk": "1.32.0",
     "express": "4.22.3",
     "mcp-wordpress": "3.3.36"
+  },
+  "overrides": {
+    "hono": ">=4.13.11 <5"
   },
   "license": "GPL-3.0-or-later"
 }

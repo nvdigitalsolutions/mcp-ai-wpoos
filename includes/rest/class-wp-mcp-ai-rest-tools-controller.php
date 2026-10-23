@@ -521,9 +521,11 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 				}
 
 				$tools_list[] = array(
-					'name'        => $tool->get_slug(),
-					'description' => $tool->get_description(),
-					'inputSchema' => $schema,
+					'name'                => $tool->get_slug(),
+					'slug'                => $tool->get_slug(),
+					'description'         => $tool->get_description(),
+					'required_capability' => $tool->get_required_capability(),
+					'inputSchema'         => $schema,
 				);
 			} catch ( Exception $e ) {
 				// Skip tools with invalid schemas.
@@ -534,7 +536,12 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			}
 		}
 
-		return $this->success( array( 'tools' => $tools_list ) );
+		return $this->success(
+			array(
+				'tools' => $tools_list,
+				'total' => count( $tools_list ),
+			)
+		);
 	}
 
 	/**

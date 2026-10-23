@@ -7,8 +7,9 @@
  *
  *   - Audit trail (events filtered by context_id from the per-agent audit log)
  *   - Version history (rollback snapshots stored by `memory_audit_trail`)
- *   - Graph neighborhood (BFS over Graphify `RECALLS` edges, gated by
- *     `class_exists( 'NV_oOS_Graphify_Memory_Bridge' )`)
+ *   - Graph neighborhood (depth-bounded BFS over configurable graph
+ *     relations via a filterable bridge — see
+ *     `wp_mcp_ai_memory_provenance_graph_bridge`)
  *
  * Each section is independently include-gated and the tool degrades
  * gracefully when a data source is unavailable — Graphify being absent
@@ -60,7 +61,7 @@ class WP_MCP_AI_Tool_Trace_Memory_Provenance implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Return the full origin chain for a single memory record: audit trail, version history, and (when Graphify is active) the graph neighbourhood reachable via RECALLS edges. Read-only; powers the Memory Drawer "Why does the agent know this?" row and GDPR DSAR workflows.', 'mcp-ai-wpoos' );
+		return __( 'Return the full origin chain for a single memory record: audit trail, version history, and (when a graph bridge is available) the graph neighbourhood. Read-only; powers the Memory Drawer "Why does the agent know this?" row and GDPR DSAR workflows.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -70,10 +71,10 @@ class WP_MCP_AI_Tool_Trace_Memory_Provenance implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_usage_guidance() {
 		return array(
-			'when_to_use'     => __( 'Explaining why an agent knows something: audit trail, version history, and Graphify graph neighborhood for one context_id.', 'mcp-ai-wpoos' ),
+			'when_to_use'     => __( 'Explaining why an agent knows something: audit trail, version history, and the memory-graph neighborhood for one context_id.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'Searching or listing memories; use retrieve_agent_memory for lookups and memory_audit_trail for the raw audit log.', 'mcp-ai-wpoos' ),
 			'related_tools'   => array( 'retrieve_agent_memory', 'store_agent_context', 'memory_audit_trail' ),
-			'notes'           => __( 'Read-only and local-only; degrades gracefully when Graphify is absent and supports GDPR DSAR workflows.', 'mcp-ai-wpoos' ),
+			'notes'           => __( 'Read-only and local-only; degrades gracefully when no graph bridge is loaded and supports GDPR DSAR workflows.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -404,42 +405,107 @@ class WP_MCP_AI_Tool_Trace_Memory_Provenance implements WP_MCP_AI_Tool_Interface
 	 * Build the graph-neighbourhood section.
 	 *
 	 * Performs a depth-bounded BFS from the memory node `memory:<context_id>`
-	 * over `RECALLS` edges via the Graphify bridge. When Graphify is not
-	 * loaded, returns `available=false` with a descriptive reason instead of
-	 * failing — provenance must always succeed on a Base build.
+	 * over the configurable graph relations via a filterable bridge + DB
+	 * walker pair. Defaults to the bundled Graphify addon; sites on the
+	 * standalone Content Graph plugin swap the bridge through
+	 * `wp_mcp_ai_memory_provenance_graph_bridge`. When no bridge is loaded,
+	 * returns `available=false` with a descriptive reason instead of failing
+	 * — provenance must always succeed on a Base build.
 	 *
 	 * @param string $context_id Memory context_id.
 	 * @param int    $max_depth  Maximum BFS depth (already clamped).
 	 * @return array<string,mixed> Graph section payload.
 	 */
 	private function build_graph_section( $context_id, $max_depth ) {
-		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+		/**
+		 * Filters the bridge class that owns the memory-node prefix and the
+		 * graph edge vocabulary.
+		 *
+		 * @since 1.2.9
+		 *
+		 * @param string $bridge_class Class name. Defaults to the bundled
+		 *                             Graphify memory bridge.
+		 */
+		$bridge_class = (string) apply_filters( 'wp_mcp_ai_memory_provenance_graph_bridge', 'NV_oOS_Graphify_Memory_Bridge' );
+		if ( '' === $bridge_class || ! class_exists( $bridge_class ) ) {
 			return array(
 				'available' => false,
-				'reason'    => 'Graphify bridge unavailable',
+				'reason'    => 'Graph bridge unavailable',
 			);
 		}
 
-		// Resolve the memory node prefix. Newer Graphify builds expose a
-		// `NODE_PREFIX_MEMORY` constant; older builds hard-coded `'memory:'`.
-		$prefix        = defined( 'NV_oOS_Graphify_Memory_Bridge::NODE_PREFIX_MEMORY' )
-			? constant( 'NV_oOS_Graphify_Memory_Bridge::NODE_PREFIX_MEMORY' )
+		/**
+		 * Filters the DB walker class used to expand graph neighbours.
+		 *
+		 * @since 1.2.9
+		 *
+		 * @param string $db_class Class name. Defaults to the bundled Graphify
+		 *                         DB layer.
+		 */
+		$db_class = (string) apply_filters( 'wp_mcp_ai_memory_provenance_graph_db', 'NV_oOS_Graphify_DB' );
+		if ( '' === $db_class || ! class_exists( $db_class ) ) {
+			return array(
+				'available' => false,
+				'reason'    => 'Graph DB walker unavailable',
+			);
+		}
+
+		// Duck-type the walker method: Graphify exposes `get_neighbor_ids`,
+		// the standalone Content Graph plugin exposes `getNeighborIds`.
+		$walk_method = method_exists( $db_class, 'get_neighbor_ids' )
+			? 'get_neighbor_ids'
+			: ( method_exists( $db_class, 'getNeighborIds' ) ? 'getNeighborIds' : '' );
+		if ( '' === $walk_method ) {
+			return array(
+				'available' => false,
+				'reason'    => 'Graph DB walker unavailable',
+			);
+		}
+
+		// Resolve the memory node prefix. Newer bridges expose a
+		// `NODE_PREFIX_MEMORY` constant; older Graphify builds hard-coded
+		// `'memory:'`.
+		$prefix        = defined( $bridge_class . '::NODE_PREFIX_MEMORY' )
+			? constant( $bridge_class . '::NODE_PREFIX_MEMORY' )
 			: 'memory:';
 		$start_node_id = $prefix . $context_id;
+
+		// Node-kind prefixes used to label surfaced neighbours (agent / wing
+		// / room anchors and the DERIVED_FROM source post stay visible with
+		// their kind instead of being dropped as noise).
+		$kind_prefixes = array(
+			'memory' => $prefix,
+			'agent'  => defined( $bridge_class . '::NODE_PREFIX_AGENT' ) ? constant( $bridge_class . '::NODE_PREFIX_AGENT' ) : 'agent:',
+			'wing'   => defined( $bridge_class . '::NODE_PREFIX_WING' ) ? constant( $bridge_class . '::NODE_PREFIX_WING' ) : 'wing:',
+			'room'   => defined( $bridge_class . '::NODE_PREFIX_ROOM' ) ? constant( $bridge_class . '::NODE_PREFIX_ROOM' ) : 'room:',
+		);
+
+		/**
+		 * Filters the graph relations the BFS traverses.
+		 *
+		 * Defaults to the relations the memory bridges actually write —
+		 * `DERIVED_FROM`, `OBSERVED_BY`, `MEMBER_OF` — plus `RECALLS` for
+		 * legacy Graphify data. An empty list disables the graph walk.
+		 *
+		 * @since 1.2.9
+		 *
+		 * @param string[] $relations Edge relation names.
+		 */
+		$relations = (array) apply_filters(
+			'wp_mcp_ai_memory_provenance_graph_relations',
+			array( 'DERIVED_FROM', 'OBSERVED_BY', 'MEMBER_OF', 'RECALLS' )
+		);
+		$relations = array_values( array_unique( array_filter( array_map( 'strval', $relations ) ) ) );
+		if ( empty( $relations ) ) {
+			return array(
+				'available' => false,
+				'reason'    => 'No graph relations configured',
+			);
+		}
 
 		$nodes    = array();
 		$visited  = array( $start_node_id => true );
 		$frontier = array( $start_node_id );
-
-		$can_walk_edges = class_exists( 'NV_oOS_Graphify_DB' )
-			&& method_exists( 'NV_oOS_Graphify_DB', 'get_neighbor_ids' );
-
-		if ( ! $can_walk_edges ) {
-			return array(
-				'available' => false,
-				'reason'    => 'Graphify DB walker unavailable',
-			);
-		}
 
 		for ( $depth = 1; $depth <= $max_depth; $depth++ ) {
 			if ( empty( $frontier ) ) {
@@ -448,27 +514,34 @@ class WP_MCP_AI_Tool_Trace_Memory_Provenance implements WP_MCP_AI_Tool_Interface
 
 			$next_frontier = array();
 			foreach ( $frontier as $node_id ) {
-				$neighbours = NV_oOS_Graphify_DB::get_neighbor_ids( $node_id, 'RECALLS' );
-				if ( ! is_array( $neighbours ) ) {
-					continue;
-				}
-
-				foreach ( $neighbours as $nid ) {
-					$nid = (string) $nid;
-					if ( '' === $nid || isset( $visited[ $nid ] ) ) {
+				foreach ( $relations as $relation ) {
+					$neighbours = call_user_func( array( $db_class, $walk_method ), $node_id, $relation );
+					if ( ! is_array( $neighbours ) ) {
 						continue;
 					}
-					$visited[ $nid ] = true;
-					$next_frontier[] = $nid;
 
-					// Only surface memory nodes — wing / room / agent
-					// anchors are noise for a provenance trace.
-					if ( 0 === strpos( $nid, $prefix ) ) {
+					foreach ( $neighbours as $nid ) {
+						$nid = (string) $nid;
+						if ( '' === $nid || isset( $visited[ $nid ] ) ) {
+							continue;
+						}
+						$visited[ $nid ] = true;
+						$next_frontier[] = $nid;
+
+						$kind = 'other';
+						foreach ( $kind_prefixes as $kind_name => $kind_prefix ) {
+							if ( '' !== $kind_prefix && 0 === strpos( $nid, $kind_prefix ) ) {
+								$kind = $kind_name;
+								break;
+							}
+						}
+
 						$nodes[] = array(
 							'node_id'    => $nid,
-							'context_id' => substr( $nid, strlen( $prefix ) ),
+							'context_id' => 'memory' === $kind ? substr( $nid, strlen( $prefix ) ) : '',
 							'depth'      => $depth,
-							'edge'       => 'RECALLS',
+							'edge'       => $relation,
+							'kind'       => $kind,
 						);
 					}
 				}

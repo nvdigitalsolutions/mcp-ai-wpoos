@@ -80,6 +80,17 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @since 2.0.0
 	 */
 	public function register_page() {
+		/**
+		 * Kill-switch for the wp-admin Pro Workflow Builder surface
+		 * (Proposal 084 Phase 3b, gap P10). The console Workflows page is a
+		 * placeholder today — the builder port is sequenced as W10.2 before
+		 * any retirement; flip this filter off per cohort once the console
+		 * builder reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_pro_workflow_builder', true ) ) {
+			return;
+		}
+
 		$this->page_hook = add_submenu_page(
 			'nvoos-pro-dashboard',
 			__( 'Pro Workflow Builder', 'mcp-ai-wpoos' ),
@@ -1042,11 +1053,27 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @param array $context Execution context from previous nodes.
 	 * @return array|WP_Error Execution result.
 	 */
-	private function execute_action_node( $context ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
-		$command = isset( $_POST['command'] ) ? sanitize_text_field( wp_unslash( $_POST['command'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in caller; JSON payload decoded with json_decode().
-		$params = isset( $_POST['params'] ) ? wp_unslash( $_POST['params'] ) : '{}';
+	/**
+	 * Execute an action (slash command) node.
+	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 3b W10.2d): the workflow-node
+	 * REST controller passes explicit values; the AJAX handler still relies
+	 * on the $_POST fallbacks — no logic fork.
+	 *
+	 * @param array       $context Execution context from previous nodes.
+	 * @param string|null $command Slash command (null = $_POST fallback).
+	 * @param string|null $params  Command parameters JSON (null = $_POST fallback).
+	 * @return array|WP_Error Execution result.
+	 */
+	public function execute_action_node( $context, $command = null, $params = null ) {
+		if ( null === $command ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
+			$command = isset( $_POST['command'] ) ? sanitize_text_field( wp_unslash( $_POST['command'] ) ) : '';
+		}
+		if ( null === $params ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in caller; JSON payload decoded with json_decode().
+			$params = isset( $_POST['params'] ) ? wp_unslash( $_POST['params'] ) : '{}';
+		}
 
 		if ( empty( $command ) ) {
 			return new WP_Error( 'missing_command', __( 'Action node missing command.', 'mcp-ai-wpoos' ) );
@@ -1094,17 +1121,33 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @param array $context Execution context from previous nodes.
 	 * @return array|WP_Error Execution result.
 	 */
-	private function execute_tool_node( $context ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
-		$tool_name = isset( $_POST['tool_name'] ) ? sanitize_text_field( wp_unslash( $_POST['tool_name'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in caller; JSON payload decoded with json_decode().
-		$args_json = isset( $_POST['tool_arguments'] ) ? wp_unslash( $_POST['tool_arguments'] ) : '{}';
+	/**
+	 * Execute a tool node via the tool registry.
+	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 3b W10.2d): the workflow-node
+	 * REST controller passes explicit values; the AJAX handler still relies
+	 * on the $_POST fallbacks — no logic fork.
+	 *
+	 * @param array       $context        Execution context from previous nodes.
+	 * @param string|null $tool_name      Tool name (null = $_POST fallback).
+	 * @param string|null $tool_arguments Tool arguments JSON (null = $_POST fallback).
+	 * @return array|WP_Error Execution result.
+	 */
+	public function execute_tool_node( $context, $tool_name = null, $tool_arguments = null ) {
+		if ( null === $tool_name ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
+			$tool_name = isset( $_POST['tool_name'] ) ? sanitize_text_field( wp_unslash( $_POST['tool_name'] ) ) : '';
+		}
+		if ( null === $tool_arguments ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in caller; JSON payload decoded with json_decode().
+			$tool_arguments = isset( $_POST['tool_arguments'] ) ? wp_unslash( $_POST['tool_arguments'] ) : '{}';
+		}
 
 		if ( empty( $tool_name ) ) {
 			return new WP_Error( 'missing_tool', __( 'Tool node missing tool_name.', 'mcp-ai-wpoos' ) );
 		}
 
-		$arguments = json_decode( $args_json, true );
+		$arguments = json_decode( $tool_arguments, true );
 		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			$arguments = array();
 		}
@@ -1181,11 +1224,27 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @param array $context Execution context from previous nodes.
 	 * @return array|WP_Error Execution result.
 	 */
-	private function execute_agent_node( $context ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
-		$agent_id = isset( $_POST['agent_id'] ) ? sanitize_text_field( wp_unslash( $_POST['agent_id'] ) ) : 'default';
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
-		$prompt = isset( $_POST['prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['prompt'] ) ) : '';
+	/**
+	 * Execute an agent node via the internal REST API.
+	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 3b W10.2d): the workflow-node
+	 * REST controller passes explicit values; the AJAX handler still relies
+	 * on the $_POST fallbacks — no logic fork.
+	 *
+	 * @param array       $context  Execution context from previous nodes.
+	 * @param string|null $agent_id Agent identifier (null = $_POST fallback).
+	 * @param string|null $prompt   Prompt text (null = $_POST fallback).
+	 * @return array|WP_Error Execution result.
+	 */
+	public function execute_agent_node( $context, $agent_id = null, $prompt = null ) {
+		if ( null === $agent_id ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
+			$agent_id = isset( $_POST['agent_id'] ) ? sanitize_text_field( wp_unslash( $_POST['agent_id'] ) ) : 'default';
+		}
+		if ( null === $prompt ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
+			$prompt = isset( $_POST['prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['prompt'] ) ) : '';
+		}
 
 		if ( empty( $prompt ) ) {
 			return new WP_Error( 'missing_prompt', __( 'Agent node missing prompt.', 'mcp-ai-wpoos' ) );

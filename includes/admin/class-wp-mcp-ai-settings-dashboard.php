@@ -105,6 +105,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * Register the settings page in WordPress admin menu.
 		 */
 		public function register_menu() {
+			/**
+			 * Kill-switch for the wp-admin settings dashboard (Proposal 084
+			 * Phase 2). The Complete Console ships the schema-driven Settings
+			 * page; flip this filter off per cohort once the SPA surface
+			 * reaches parity (structural field types stay wp-admin-only for
+			 * now — see the settings controller's SUPPORTED_FIELD_TYPES).
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_settings_dashboard', true ) ) {
+				return;
+			}
+
 			add_menu_page(
 				__( 'NV oOS Settings', 'mcp-ai-wpoos' ),
 				__( 'NV oOS', 'mcp-ai-wpoos' ),

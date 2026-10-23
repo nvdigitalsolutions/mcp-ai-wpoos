@@ -8,6 +8,11 @@ import { ToolsClient, type ToolDefinition } from '../api/tools';
 export interface UseToolsOptions {
 	endpoint: string;
 	nonce: string;
+	/**
+	 * Optional assistant post ID — the list is scoped to that assistant's
+	 * selected tools. 0/undefined = the full registry (the server default).
+	 */
+	assistantId?: number;
 }
 
 export interface UseToolsReturn {
@@ -27,14 +32,20 @@ export function useTools( options: UseToolsOptions ): UseToolsReturn {
 
 	const [ tools, setTools ] = useState< ToolDefinition[] >( [] );
 	const [ total, setTotal ] = useState< number >( 0 );
-	const [ loading, setLoading ] = useState< boolean >( false );
+	// Start in the loading state — the first fetch kicks off in an effect
+	// (after first paint); without this the page shows "No tools found" for
+	// a frame (or longer on a heavy shell) before the fetch actually starts.
+	const [ loading, setLoading ] = useState< boolean >( true );
 	const [ error, setError ] = useState< string | null >( null );
 
 	const fetchTools = useCallback( async () => {
+		if ( ! options.endpoint ) {
+			return;
+		}
 		setLoading( true );
 		setError( null );
 		try {
-			const result = await client.list();
+			const result = await client.list( options.assistantId );
 			setTools( result.tools );
 			setTotal( result.total );
 		} catch ( err ) {
@@ -42,11 +53,17 @@ export function useTools( options: UseToolsOptions ): UseToolsReturn {
 		} finally {
 			setLoading( false );
 		}
-	}, [ client ] );
+	}, [ client, options.endpoint, options.assistantId ] );
 
 	useEffect( () => {
+		if ( ! options.endpoint ) {
+			// Runtime not ready yet — nothing to fetch; stop blocking the page
+			// so the bootstrap/runtime gate can render instead of a spinner.
+			setLoading( false );
+			return;
+		}
 		void fetchTools();
-	}, [ fetchTools ] );
+	}, [ fetchTools, options.endpoint ] );
 
 	const executeTool = useCallback(
 		async ( slug: string, args: Record< string, unknown > ): Promise< unknown > => {

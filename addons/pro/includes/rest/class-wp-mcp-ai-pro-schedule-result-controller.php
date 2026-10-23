@@ -54,9 +54,14 @@ class WP_MCP_AI_Pro_Schedule_Result_Controller {
 	 * Register REST routes.
 	 */
 	public function register_routes() {
+		// The selectable-schedules picker lives on its own literal route —
+		// the schedule CRUD controller owns GET /schedules (the { ok,
+		// schedules, total } envelope the console and the SA SPA consume),
+		// and two GET handlers on one route means the last registrant
+		// silently wins. Disambiguation keeps both shapes stable.
 		register_rest_route(
 			$this->namespace,
-			'/schedules',
+			'/schedules/selectable',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'list_selectable_schedules' ),

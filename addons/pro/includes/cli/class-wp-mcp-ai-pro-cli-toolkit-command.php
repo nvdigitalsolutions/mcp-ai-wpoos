@@ -30,39 +30,27 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	/**
 	 * Settings key → human-readable label for every known Pro toolkit.
 	 *
+	 * Source of truth is the shared
+	 * `WP_MCP_AI_Pro_Toolkit_Settings_Map` (three hardcoded copies drifted
+	 * out of sync with the real settings keys before — see the F&B toggle
+	 * bug, PR #7010).
+	 *
 	 * @var array<string,string>
 	 */
-	const TOOLKITS = array(
-		'enable_crm_toolkit'                     => 'CRM Toolkit',
-		'enable_ecommerce_toolkit'               => 'E-commerce Toolkit',
-		'enable_flowhub_toolkit'                 => 'FlowHub Toolkit',
-		'enable_shopify_sync_toolkit'            => 'Shopify Sync Toolkit',
-		'enable_social_media_toolkit'            => 'Social Media Toolkit',
-		'enable_analytics_toolkit'               => 'Analytics Toolkit',
-		'enable_multilingual_toolkit'            => 'Multilingual Toolkit',
-		'enable_video_production_toolkit'        => 'Video Production Toolkit',
-		'enable_financial_planner_toolkit'       => 'Financial Planner Toolkit',
-		'enable_dj_management_toolkit'           => 'DJ Management Toolkit',
-		'enable_image_production_toolkit'        => 'Image Production Toolkit',
-		'enable_comic_creation_toolkit'          => 'Comic Creation Toolkit',
-		'enable_ai_tool_builder_toolkit'         => 'AI Tool Builder Toolkit',
-		'enable_architect_agent_toolkit'         => 'Architect Agent Toolkit',
-		'enable_architectural_design_toolkit'    => 'Architectural Design Toolkit',
-		'enable_site_creator_toolkit'            => 'Site Creator Toolkit',
-		'enable_document_generation_toolkit'     => 'Document Generation Toolkit',
-		'enable_regulatory_registration_toolkit' => 'Regulatory Registration Toolkit',
-		'enable_chat_channels_toolkit'           => 'Chat Channels Toolkit',
-		'enable_fnb_toolkit'                     => 'Food & Beverage Toolkit',
-		'enable_gtmetrix_toolkit'               => 'GTmetrix Performance Toolkit',
-		'enable_project_management'              => 'Project Management',
-		'enable_eca_management'                  => 'ECA Management',
-		'enable_quiz_system'                     => 'Quiz System',
-		'enable_places_management'               => 'Places Management',
-		'enable_health_wellness_management'      => 'Health & Wellness Management',
-		'enable_media_toolkit'                   => 'Media Toolkit',
-		'enable_ai_cpt_management'               => 'AI CPT Management',
-		'enable_advanced_analytics_toolkit'      => 'Advanced Analytics Toolkit',
-	);
+	private static $toolkit_keys = array();
+
+	/**
+	 * Resolve the canonical toolkit map (lazy, so this file stays loadable
+	 * without the map class).
+	 *
+	 * @return array<string,string>
+	 */
+	private static function toolkit_map() {
+		if ( empty( self::$toolkit_keys ) && class_exists( 'WP_MCP_AI_Pro_Toolkit_Settings_Map' ) ) {
+			self::$toolkit_keys = WP_MCP_AI_Pro_Toolkit_Settings_Map::get();
+		}
+		return self::$toolkit_keys;
+	}
 
 	/**
 	 * List all toolkits and their current enabled/disabled state.
@@ -86,6 +74,8 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 *   - json
 	 *   - yaml
 	 *   - csv
+	 *   - ids
+	 *   - count
 	 * ---
 	 *
 	 * ## EXAMPLES
@@ -113,7 +103,7 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$items    = array();
 
-		foreach ( self::TOOLKITS as $key => $label ) {
+		foreach ( self::toolkit_map() as $key => $label ) {
 			$is_enabled = ! empty( $settings[ $key ] );
 			$status     = $is_enabled ? 'enabled' : 'disabled';
 
@@ -144,9 +134,12 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 * <key>
 	 * : The toolkit settings key (e.g. enable_crm_toolkit).
 	 *
+	 * [--yes]
+	 * : Skip the confirmation prompt.
+	 *
 	 * ## EXAMPLES
 	 *
-	 *     $ wp mcp-ai toolkit enable enable_crm_toolkit
+	 *     $ wp mcp-ai toolkit enable enable_crm_toolkit --yes
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
@@ -154,6 +147,7 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 */
 	public function enable( $args, $assoc_args ) {
 		$this->assert_pro_loaded();
+		$this->require_capability( 'manage_options' );
 
 		$key = isset( $args[0] ) ? sanitize_key( $args[0] ) : '';
 
@@ -161,9 +155,14 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 			WP_CLI::error( __( 'Please provide a toolkit settings key.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		if ( ! array_key_exists( $key, self::TOOLKITS ) ) {
+		if ( ! array_key_exists( $key, self::toolkit_map() ) ) {
 			/* translators: %s: toolkit key */
 			WP_CLI::error( sprintf( __( 'Unknown toolkit key "%s". Run `wp mcp-ai toolkit list` to see valid keys.', 'mcp-ai-wpoos-pro' ), $key ) );
+		}
+
+		if ( ! \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false ) ) {
+			/* translators: 1: toolkit label, 2: toolkit key */
+			WP_CLI::confirm( sprintf( __( 'Enable toolkit "%1$s" (%2$s)?', 'mcp-ai-wpoos-pro' ), self::toolkit_map()[ $key ], $key ) );
 		}
 
 		$settings         = get_option( 'wp_mcp_ai_settings', array() );
@@ -175,7 +174,7 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		}
 
 		/* translators: 1: toolkit key, 2: toolkit label */
-		WP_CLI::success( sprintf( __( 'Toolkit "%2$s" (%1$s) enabled.', 'mcp-ai-wpoos-pro' ), $key, self::TOOLKITS[ $key ] ) );
+		WP_CLI::success( sprintf( __( 'Toolkit "%2$s" (%1$s) enabled.', 'mcp-ai-wpoos-pro' ), $key, self::toolkit_map()[ $key ] ) );
 	}
 
 	/**
@@ -199,6 +198,7 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 */
 	public function disable( $args, $assoc_args ) {
 		$this->assert_pro_loaded();
+		$this->require_capability( 'manage_options' );
 
 		$key = isset( $args[0] ) ? sanitize_key( $args[0] ) : '';
 		$yes = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
@@ -207,14 +207,14 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 			WP_CLI::error( __( 'Please provide a toolkit settings key.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		if ( ! array_key_exists( $key, self::TOOLKITS ) ) {
+		if ( ! array_key_exists( $key, self::toolkit_map() ) ) {
 			/* translators: %s: toolkit key */
 			WP_CLI::error( sprintf( __( 'Unknown toolkit key "%s". Run `wp mcp-ai toolkit list` to see valid keys.', 'mcp-ai-wpoos-pro' ), $key ) );
 		}
 
 		if ( ! $yes ) {
 			/* translators: 1: toolkit label, 2: toolkit key */
-			WP_CLI::confirm( sprintf( __( 'Disable toolkit "%1$s" (%2$s)?', 'mcp-ai-wpoos-pro' ), self::TOOLKITS[ $key ], $key ) );
+			WP_CLI::confirm( sprintf( __( 'Disable toolkit "%1$s" (%2$s)?', 'mcp-ai-wpoos-pro' ), self::toolkit_map()[ $key ], $key ) );
 		}
 
 		$settings         = get_option( 'wp_mcp_ai_settings', array() );
@@ -226,11 +226,12 @@ class WP_MCP_AI_Pro_CLI_Toolkit_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		}
 
 		/* translators: 1: toolkit key, 2: toolkit label */
-		WP_CLI::success( sprintf( __( 'Toolkit "%2$s" (%1$s) disabled.', 'mcp-ai-wpoos-pro' ), $key, self::TOOLKITS[ $key ] ) );
+		WP_CLI::success( sprintf( __( 'Toolkit "%2$s" (%1$s) disabled.', 'mcp-ai-wpoos-pro' ), $key, self::toolkit_map()[ $key ] ) );
 	}
 }
 
 // Register command.
 if ( class_exists( 'WP_CLI' ) ) {
+	require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-settings-map.php';
 	WP_CLI::add_command( 'mcp-ai toolkit', 'WP_MCP_AI_Pro_CLI_Toolkit_Command' );
 }

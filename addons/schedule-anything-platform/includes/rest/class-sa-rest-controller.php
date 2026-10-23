@@ -207,15 +207,37 @@ class SA_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public static function get_nonce( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		// This endpoint is called without a nonce by design, so WordPress
+		// core's rest_cookie_check_errors() has already set the current user
+		// to 0 before the callback runs. Minting now would produce a nonce
+		// bound to user 0 that fails rest_cookie_check_errors() on the very
+		// first authenticated request the SPA makes (403
+		// rest_cookie_invalid_nonce). Re-establish the identity the request's
+		// auth cookie proves before minting so wp_create_nonce() binds the
+		// nonce to that session. Requests without a valid cookie keep the
+		// guest nonce they receive today (mirrors handle_session_nonce() in
+		// the base plugin's REST chat controller).
+		$cookie_user_id = wp_validate_auth_cookie( '', 'logged_in' );
+		if ( $cookie_user_id && absint( $cookie_user_id ) !== get_current_user_id() ) {
+			wp_set_current_user( absint( $cookie_user_id ) );
+		}
+
 		$user_id = get_current_user_id();
 
-		return rest_ensure_response(
+		$response = rest_ensure_response(
 			array(
 				'nonce'     => wp_create_nonce( 'wp_rest' ),
 				'user_id'   => $user_id,
 				'logged_in' => 0 !== $user_id,
 			)
 		);
+
+		// Never cache the payload: it is session-bound and invalidates on
+		// session-token rotation.
+		$response->header( 'Cache-Control', 'no-cache, no-store, must-revalidate' );
+		$response->header( 'Pragma', 'no-cache' );
+
+		return $response;
 	}
 
 	/**
@@ -286,6 +308,44 @@ class SA_REST_Controller {
 	 */
 	public static function get_tenant_status( $request ) {
 		$blog_id = $request->get_param( 'id' );
+
+		if ( ! is_multisite() ) {
+			// Sole-tenant mode (Proposal 082): only the current blog exists.
+			if ( absint( $blog_id ) !== absint( get_current_blog_id() ) ) {
+				return new WP_Error(
+					'sa_blog_not_found',
+					__( 'Tenant workspace not found.', 'schedule-anything' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			$meta          = get_option( 'sa_tenant_meta', array() );
+			$pending       = get_option( 'sa_pending_deletion', array() );
+			$toolkit_count = 0;
+
+			if ( class_exists( 'SA_Toolkit_Manager' ) ) {
+				$statuses = SA_Toolkit_Manager::get_all_statuses();
+				foreach ( $statuses as $status ) {
+					if ( $status['enabled'] ) {
+						++$toolkit_count;
+					}
+				}
+			}
+
+			return rest_ensure_response(
+				array(
+					'blog_id'          => absint( $blog_id ),
+					'site_url'         => home_url(),
+					'registered'       => isset( $meta['created_at'] ) ? gmdate( 'c', $meta['created_at'] ) : '',
+					'tier'             => $meta['tier'] ?? 'starter',
+					'toolkits_enabled' => $toolkit_count,
+					'pending_deletion' => ! empty( $pending ),
+					'deletion_date'    => $pending['scheduled_at'] ?? null,
+					'single_site'      => true,
+				)
+			);
+		}
+
 		$details = get_blog_details( $blog_id );
 
 		if ( ! $details ) {
@@ -337,8 +397,42 @@ class SA_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function lookup_tenant( $request ) {
-		$slug    = sanitize_key( $request->get_param( 'slug' ) );
-		$blog_id = get_blog_id_from_url( $slug );
+		$slug = sanitize_key( $request->get_param( 'slug' ) );
+
+		if ( ! is_multisite() ) {
+			// Sole-tenant mode (Proposal 082): match the slug against the
+			// subdomain stored at provisioning time, falling back to the
+			// site's own host label. Unknown slugs never fabricate tenants.
+			$meta   = get_option( 'sa_tenant_meta', array() );
+			$stored = isset( $meta['subdomain'] ) ? sanitize_key( $meta['subdomain'] ) : '';
+
+			$host  = wp_parse_url( home_url(), PHP_URL_HOST );
+			$label = '';
+			if ( $host ) {
+				$label = sanitize_key( strtok( $host, '.' ) );
+			}
+
+			if ( $slug !== $stored && ( '' === $label || $slug !== $label ) ) {
+				return new WP_Error(
+					'sa_tenant_not_found',
+					__( 'No tenant workspace found for this slug.', 'schedule-anything' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'slug'        => $slug,
+					'blog_id'     => get_current_blog_id(),
+					'site_url'    => home_url(),
+					'tier'        => $meta['tier'] ?? 'starter',
+					'status'      => 'active',
+					'single_site' => true,
+				)
+			);
+		}
+
+		$blog_id = self::resolve_tenant_blog( $slug );
 
 		if ( ! $blog_id ) {
 			return new WP_Error(
@@ -370,6 +464,44 @@ class SA_REST_Controller {
 				'status'   => 'active',
 			)
 		);
+	}
+
+	/**
+	 * Resolve a tenant slug to a blog id (multisite).
+	 *
+	 * Tries the slug as a full domain, then as a subdomain of the network
+	 * domain (production subdomain installs), then as a path on the network
+	 * domain (path-based installs such as the e2e stack). A bare slug never
+	 * matched either form before, so tenant lookup failed on both install
+	 * types.
+	 *
+	 * @since 0.1.1
+	 *
+	 * @param string $slug Sanitized tenant slug.
+	 * @return int Blog id, or 0 when no blog matches.
+	 */
+	private static function resolve_tenant_blog( $slug ) {
+		// Full-domain form (e.g. a host the router passed through).
+		$blog_id = get_blog_id_from_url( $slug );
+		if ( $blog_id ) {
+			return $blog_id;
+		}
+
+		$network = get_network();
+		if ( ! $network || empty( $network->domain ) ) {
+			return 0;
+		}
+
+		// Subdomain installs: <slug>.<network-domain>.
+		if ( false === strpos( $slug, '.' ) ) {
+			$blog_id = get_blog_id_from_url( $slug . '.' . $network->domain );
+			if ( $blog_id ) {
+				return $blog_id;
+			}
+		}
+
+		// Path-based installs: <network-domain>/<slug>/.
+		return (int) get_blog_id_from_url( $network->domain, '/' . $slug . '/' );
 	}
 
 	/**

@@ -1675,6 +1675,109 @@ add_action(
 		$controller->register_routes();
 	}
 );
+// SPA settings REST surface — the Pro SPA Settings page (GET/POST /settings).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-settings-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-settings-controller.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Settings_Controller();
+		$controller->register_routes();
+	}
+);
+// Feature-availability REST surface (GET /features) — Proposal 084 Phase 0:
+// headless surfaces gate their navigation on the server-side availability map.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-feature-flags.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-feature-flags.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-features-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-features-controller.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Features_Controller();
+		$controller->register_routes();
+	}
+);
+// Operations REST surface (cron + DLQ) — Proposal 084 Phase 3: the console's
+// Operations page wraps the cron manager + dead-letter queue services.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-operations-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-operations-controller.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Operations_Controller();
+		$controller->register_routes();
+	}
+);
+// Diagnostics REST surface — Proposal 084 Phase 3: the console's Diagnostics
+// page consolidates the five wp-admin diagnostic pages' data behind one
+// read-only overview (rest-health, provider status, REST context, Pro charts).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-diagnostics-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-diagnostics-controller.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Diagnostics_Controller();
+		$controller->register_routes();
+	}
+);
+// Token Manager REST surface — Proposal 084 Phase 3: the console's Token
+// Manager page wraps the admin-post revoke/delete handlers and the
+// restrictions panel behind REST (WP_MCP_AI_Credentials +
+// WP_MCP_AI_Restriction_Registry — the same services the admin page uses).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-token-manager-credentials-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-token-manager-credentials-controller.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Token_Manager_Credentials_Controller();
+		$controller->register_routes();
+	}
+);
+// Cost + analytics REST surfaces — Proposal 084 Phase 5b: the console's
+// Analytics page consumes the site-wide cost manager (dashboard summary,
+// cost trend, provider breakdown — all manage_options-gated) and the
+// analytics manager (user trends/patterns, site-wide anomalies). Both wrap
+// the existing WP_MCP_AI_Cost_Tracking_Service / WP_MCP_AI_Analytics_Engine
+// service layers — no logic forks.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cost-manager.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cost-manager.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		WP_MCP_AI_REST_Cost_Manager::register_routes();
+	}
+);
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		WP_MCP_AI_REST_Analytics_Manager::register_routes();
+	}
+);
+// Orchestration stats REST surface — Proposal 084 Phase 3: the console's
+// Orchestration page consumes the multi-agent + orchestration dashboards'
+// statistics collectors (multi-agent stats, profession/role stats, system
+// status, recent workflows) behind one read-only overview.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-orchestration-stats-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-orchestration-stats-controller.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Orchestration_Stats_Controller();
+		$controller->register_routes();
+	}
+);
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-workflow-cpt-controller.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-workflow-cpt-controller.php';
 }

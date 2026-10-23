@@ -4,9 +4,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { readProSpaConfig, type ProSpaRuntime } from '../api/config';
-import { useCommandStore } from '../stores/commandStore';
+import { useCommandStore, type Command } from '../stores/commandStore';
 import { useModelStore } from '../stores/modelStore';
 import { useUIStore } from '../stores/uiStore';
+import { SPA_V2_NAV_ROUTES, isRouteVisible } from '../utils/navGates';
 
 export interface BootstrapResult {
 	loading: boolean;
@@ -100,98 +101,25 @@ export function useBootstrap(): BootstrapResult {
 			}
 		}
 
-		// Register navigation commands.
+		// Register navigation commands — gated by capability + server-reported
+		// feature availability (Proposal 084 Phase 0; keep in sync with the
+		// Complete Console's nav-features.tsx catalogue).
+		const features = config.features ?? {};
+		const capabilities = config.user?.capabilities ?? [];
+		const navCommands: Command[] = SPA_V2_NAV_ROUTES.filter( ( route ) =>
+			isRouteVisible( route, features, capabilities )
+		).map( ( route ) => ( {
+			id: route.id,
+			label: route.label,
+			description: route.description,
+			category: 'navigation',
+			handler: () => {
+				window.location.hash = route.hash;
+			},
+		} ) );
+
 		setCommands( [
-			{
-				id: 'nav-chat',
-				label: 'Go to Chat',
-				description: 'Open the agent chat panel',
-				category: 'navigation',
-				handler: () => {
-					window.location.hash = '#/chat';
-				},
-			},
-			{
-				id: 'nav-settings',
-				label: 'Go to Settings',
-				description: 'Open plugin settings',
-				category: 'navigation',
-				handler: () => {
-					window.location.hash = '#/settings';
-				},
-			},
-			{
-				id: 'nav-tools',
-				label: 'Go to Tools',
-				description: 'Browse tool registry',
-				category: 'navigation',
-				handler: () => {
-					window.location.hash = '#/tools';
-				},
-			},
-			{
-				id: 'nav-assistants',
-				label: 'Go to Assistants',
-				description: 'Manage assistants',
-				category: 'navigation',
-				handler: () => {
-					window.location.hash = '#/assistants';
-				},
-			},
-			{
-				id: 'nav-workflows',
-				label: 'Go to Workflows',
-				description: 'Build workflows',
-				category: 'navigation',
-				handler: () => {
-					window.location.hash = '#/workflows';
-				},
-			},
-			{
-				id: 'nav-analytics',
-				label: 'Go to Analytics',
-				description: 'View usage dashboard',
-				category: 'navigation',
-				handler: () => {
-					window.location.hash = '#/analytics';
-				},
-			},
-			{
-				id: 'nav-knowledge-graph',
-				label: 'Go to Knowledge Graph',
-				description: 'Explore the content graph',
-				category: 'navigation',
-				handler: () => {
-					window.location.hash = '#/knowledge-graph';
-				},
-			},
-			{
-				id: 'nav-docs',
-				label: 'Go to Docs',
-				description: 'Browse the documentation',
-				category: 'navigation',
-				handler: () => {
-					window.location.hash = '#/docs';
-				},
-			},
-			{
-				id: 'nav-media',
-				label: 'Go to Media Studio',
-				description: 'Open the media editor',
-				category: 'navigation',
-				handler: () => {
-					window.location.hash = '#/media';
-				},
-			},
-			{
-				id: 'nav-documents',
-				label: 'Go to Document Editor',
-				description: 'Open the document editor',
-				category: 'navigation',
-				handler: () => {
-					window.location.hash = '#/documents';
-				},
-			},
+			...navCommands,
 			{
 				id: 'action-toggle-sidebar',
 				label: 'Toggle Sidebar',

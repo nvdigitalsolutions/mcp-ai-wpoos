@@ -20,6 +20,23 @@ use PHPUnit\Framework\TestCase;
 class Test_Tenant_Isolation extends WP_UnitTestCase {
 
 	/**
+	 * Reset per-test state.
+	 *
+	 * wp_mcp_ai_settings is the shared NV oOS settings blob that earlier
+	 * suites leave populated; SA_Toolkit_Manager::ensure_defaults() never
+	 * overwrites a non-empty option, so a stale blob would make the seeded
+	 * tier assertions below order-dependent. Delete it before every test
+	 * (mirrors Test_Single_Site_Mode and Test_SA_Toolkit_Manager).
+	 *
+	 * @return void
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
 	 * Test that toolkit flags are scoped per blog.
 	 *
 	 * When SA_Toolkit_Manager sets flags on blog A,
@@ -78,7 +95,10 @@ class Test_Tenant_Isolation extends WP_UnitTestCase {
 
 		$this->assertSame( 5, $starter_enabled, 'Starter tier should have exactly 5 toolkits enabled.' );
 		$this->assertSame( 15, $pro_enabled, 'Professional tier should have exactly 15 toolkits enabled.' );
-		$this->assertSame( 30, $ent_enabled, 'Enterprise tier should have all 30 toolkits enabled.' );
+
+		// Enterprise enables every toolkit in the canonical flag map.
+		$expected_total = count( SA_Toolkit_Manager::TOOLKIT_FLAGS );
+		$this->assertSame( $expected_total, $ent_enabled, 'Enterprise tier should enable every toolkit flag.' );
 	}
 
 	/**

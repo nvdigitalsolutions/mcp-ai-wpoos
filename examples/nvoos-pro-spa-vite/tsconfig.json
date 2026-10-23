@@ -36,8 +36,15 @@
       // Knowledge-graph page imports in spa-v2: the standalone mirror ships
       // addons/ without node_modules, so these resolve against the @types
       // packages in the app's own node_modules.
-      "jquery": ["node_modules/@types/jquery"],
-      "cytoscape": ["node_modules/@types/cytoscape"]
+      		"jquery": ["node_modules/@types/jquery"],
+      		"cytoscape": ["node_modules/@types/cytoscape"],
+      		// Workflow Builder canvas deps (Phase 3b): the vendored spa-v2 has no
+      		// node_modules in the standalone mirror, so @xyflow/react resolves
+      		// against this app's tree like react/zustand above.
+      		"@xyflow/react": ["node_modules/@xyflow/react"],
+      		"@xyflow/react/*": ["node_modules/@xyflow/react/*"],
+      		"@xyflow/system": ["node_modules/@xyflow/system"],
+      		"@xyflow/system/*": ["node_modules/@xyflow/system/*"]
     }
   },
   "include": ["src", "vite.config.ts"]

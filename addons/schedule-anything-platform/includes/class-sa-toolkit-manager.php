@@ -96,6 +96,8 @@ class SA_Toolkit_Manager {
 		'video-production',
 		'financial-planner',
 		'ecommerce',
+		'shopify-sync',
+		'flowhub',
 		'chat-channels',
 		'password-vault',
 		'skills-manager',
@@ -201,12 +203,61 @@ class SA_Toolkit_Manager {
 	/**
 	 * Get the preset IDs that should be installed for a given tier.
 	 *
+	 * Derived from the Proposal 081 catalogue (WP_MCP_AI_SA_Schedule_Presets)
+	 * when Pro provides it: the first preset per entitled toolkit in
+	 * catalogue order, capped per tier (starter 5, professional 10,
+	 * enterprise unlimited). The legacy static ids only resolve through the
+	 * older WP_MCP_AI_Pro_Schedule_Presets registry, which no longer matches
+	 * the install surface - they are kept only as a fallback when Pro is
+	 * absent.
+	 *
 	 * @since 0.1.0
 	 *
 	 * @param string $tier Subscription tier.
-	 * @return array<string> Preset IDs from WP_MCP_AI_Pro_Schedule_Presets.
+	 * @return array<string> Preset IDs from WP_MCP_AI_SA_Schedule_Presets.
 	 */
 	public static function get_presets_for_tier( $tier ) {
+		$valid_tiers = array( 'starter', 'professional', 'enterprise' );
+		if ( ! in_array( $tier, $valid_tiers, true ) ) {
+			return array();
+		}
+
+		if ( class_exists( 'WP_MCP_AI_SA_Schedule_Presets' ) ) {
+			$toolkits  = self::get_toolkit_slugs_for_tier( $tier );
+			$catalogue = WP_MCP_AI_SA_Schedule_Presets::get_catalogue();
+
+			// Group catalogue presets per toolkit, preserving catalogue order.
+			$per_toolkit = array();
+			foreach ( $catalogue as $id => $preset ) {
+				$tk = isset( $preset['toolkit'] ) ? sanitize_key( $preset['toolkit'] ) : '';
+				if ( in_array( $tk, $toolkits, true ) ) {
+					$per_toolkit[ $tk ][] = $id;
+				}
+			}
+
+			$caps = array(
+				'starter'      => 5,
+				'professional' => 10,
+				'enterprise'   => PHP_INT_MAX,
+			);
+
+			$out = array();
+			foreach ( $toolkits as $tk ) {
+				if ( empty( $per_toolkit[ $tk ] ) ) {
+					continue;
+				}
+				foreach ( $per_toolkit[ $tk ] as $id ) {
+					if ( count( $out ) >= $caps[ $tier ] ) {
+						break 2;
+					}
+					$out[] = $id;
+				}
+			}
+
+			return $out;
+		}
+
+		// Legacy fallback when Pro's SA catalogue is absent.
 		$all_presets = array();
 
 		if ( in_array( $tier, array( 'starter', 'professional', 'enterprise' ), true ) ) {
@@ -263,15 +314,34 @@ class SA_Toolkit_Manager {
 			return false;
 		}
 
-		$settings              = get_option( self::SETTINGS_OPTION, array() );
-		$flag_key              = self::TOOLKIT_FLAGS[ $slug ];
-		$settings[ $flag_key ] = (bool) $enabled;
+		$settings = get_option( self::SETTINGS_OPTION, array() );
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
 
-		return update_option( self::SETTINGS_OPTION, $settings );
+		$flag_key = self::TOOLKIT_FLAGS[ $slug ];
+		$enabled  = (bool) $enabled;
+
+		// Idempotent: toggling to the current state is a successful no-op.
+		// (update_option() returns false when the value is unchanged, which
+		// would otherwise surface as a bogus 500 on the REST toggle.)
+		if ( isset( $settings[ $flag_key ] ) && (bool) $settings[ $flag_key ] === $enabled ) {
+			return true;
+		}
+
+		$settings[ $flag_key ] = $enabled;
+
+		$updated = update_option( self::SETTINGS_OPTION, $settings );
+
+		return false !== $updated;
 	}
 
 	/**
 	 * Get all toolkits with their current status for the current tenant.
+	 *
+	 * Ordering follows TOOLKIT_ORDER; any slug present in TOOLKIT_FLAGS but
+	 * missing from TOOLKIT_ORDER is appended at the end so the catalogue
+	 * cannot silently drift (the single source of truth is TOOLKIT_FLAGS).
 	 *
 	 * @since 0.1.0
 	 *
@@ -279,9 +349,17 @@ class SA_Toolkit_Manager {
 	 */
 	public static function get_all_statuses() {
 		$settings = get_option( self::SETTINGS_OPTION, array() );
-		$result   = array();
 
-		foreach ( self::TOOLKIT_ORDER as $slug ) {
+		// Derive the slug list from TOOLKIT_FLAGS so every registered toolkit
+		// appears even when TOOLKIT_ORDER lags behind (drift-proof).
+		$known_slugs = array_keys( self::TOOLKIT_FLAGS );
+		$ordered     = array_values( array_intersect( self::TOOLKIT_ORDER, $known_slugs ) );
+		$missing     = array_values( array_diff( $known_slugs, $ordered ) );
+		$slugs       = array_merge( $ordered, $missing );
+
+		$result = array();
+
+		foreach ( $slugs as $slug ) {
 			if ( ! isset( self::TOOLKIT_FLAGS[ $slug ] ) ) {
 				continue;
 			}

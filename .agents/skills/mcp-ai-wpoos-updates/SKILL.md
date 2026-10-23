@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.99"
-  plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-07"
+  plugin-version: "1.2.10"
+  plugin-version-tested: "1.2.10"
+  last-updated: "2026-10-23"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -864,7 +864,34 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.97-docs-catch-up.md`,
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
   `docs/project/plans/v1.1.99-docs-catch-up.md`,
-  `docs/project/plans/1.2.4-docs-catch-up.md` (latest executed — the
+  `docs/project/plans/1.2.10-docs-catch-up.md` (latest executed — the
+1.2.10 pass over PRs #7178–#7186: the console-migration Phase 5b–5d
+continuation (#7180, Proposal 084 — the orphaned cost/analytics
+REST-controller registration fix in `includes/bootstrap/loader.php`,
+the real Analytics page, the Unified Blueprints catalogue, the
+Command-Center-into-Dashboard absorption, plus the semantic DataTable
++ grouped collapsible sidebar console polish), the console crash fixes
+(#7184 — the blueprints 500 admin-context class gating, React error
+#310 on four pages with the permanent `react-hooks/rules-of-hooks`
+ESLint gate, the settings page + chat dock UX), the server
+transcript-storage meter (#7185 — `get_storage_bytes()` + the
+`storage_bytes` envelope field), the dependency advisory sweep
+(#7186 — markdown-it 14.3.3 / MCP SDK 1.32.0 / launch-editor 2.14.2,
+14 of 16 alerts), the full tracked-bundle rebuild (#7182, 16 files),
+the standalone SPA endpoint sync (#7181), the rebuild-discipline
+skills (#7183 — spa-ui + dependabot-loop Step 7), and the Cloudways
+Anti-Bot Protection playbook (#7178). New scope rule executed: a
+reverted-and-relanded PR pair (#7179 → #7180) counts once — the
+reverted PR's tree is a strict subset of the re-land. OI-1 group 60
+extension (+13 `@since 2.4.0` in the two Pro REST controllers,
+recorded not fixed), zero tool-count change, zero catalog diff, five
+in-window skill frontmatter reconciliations (spa-ui, dependabot-loop,
+spa-rest-contract, test-suite, schedule-anything-ops → 1.2.10), and
+the stale 1.2.8 build-set removal (30 files — 9 + 2 + 19))
+
+Preceding windows:
+  `docs/project/plans/1.2.9-docs-catch-up.md` (the
+  `docs/project/plans/1.2.4-docs-catch-up.md` (executed — the
   1.2.4 pass over PRs #6998–#7010: the MCP client-quirk hardening
   (#7007, Proposal 066 — the `WP_MCP_AI_Tool_Schema_Auditor`, the
   pre-staged `[Unreleased]` converted, zero tool-count change), the

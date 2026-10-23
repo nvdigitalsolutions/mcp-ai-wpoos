@@ -174,8 +174,17 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	transition: background 0.15s, border-color 0.15s;
 }
 
-.nvoos-pro-spa-btn:hover {
+.nvoos-pro-spa-btn:hover:not( :disabled ) {
 	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-btn:active:not( :disabled ) {
+	transform: translateY( 1px );
+}
+
+.nvoos-pro-spa-btn:focus-visible {
+	outline: 2px solid var(--nvoos-primary, #2271b1);
+	outline-offset: 2px;
 }
 
 .nvoos-pro-spa-btn:disabled {
@@ -189,7 +198,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border-color: var(--nvoos-primary, #2271b1);
 }
 
-.nvoos-pro-spa-btn--primary:hover {
+.nvoos-pro-spa-btn--primary:hover:not( :disabled ) {
 	background: var(--nvoos-primary-hover, #135e96);
 	border-color: var(--nvoos-primary-hover, #135e96);
 }
@@ -200,7 +209,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border-color: var(--nvoos-danger, #d63638);
 }
 
-.nvoos-pro-spa-btn--danger:hover {
+.nvoos-pro-spa-btn--danger:hover:not( :disabled ) {
 	background: #b32d2e;
 	border-color: #b32d2e;
 }
@@ -671,15 +680,75 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	flex-wrap: wrap;
 	gap: 12px 16px;
 	padding: 12px 20px;
+	padding-right: 64px; /* room for the pinned top-right toggle */
+	position: relative;
 	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
 }
 
-/* On mobile, tighten up the toolbar so Memory / Tools / Commands
-   buttons wrap naturally instead of overflowing off-screen. */
+/* Collapse/expand toggle inside the toolbar — the gear/close control.
+   Pinned to the top-right corner of the top bar so the close icon stays
+   put whether the bar is collapsed or expanded. */
+.nvoos-pro-spa-chat-toolbar-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	position: absolute;
+	top: 12px;
+	right: 20px;
+	padding: 3px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	font-size: 14px;
+	line-height: 1.4;
+	cursor: pointer;
+}
+
+.nvoos-pro-spa-chat-toolbar-toggle:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+/* Collapsed state (all surfaces): only the model selector and the toggle
+   are visible; the extra controls stay hidden until the toolbar expands. */
+.nvoos-pro-spa-chat-toolbar-extra {
+	display: none;
+}
+
+.nvoos-pro-spa-chat-page__toolbar--open .nvoos-pro-spa-chat-toolbar-extra {
+	display: block;
+}
+
+/* Desktop: the toolbar stays in-flow at the top and collapses exactly like
+   mobile — no floating panel, no modal. The embedded widget keeps the full
+   top bar instead. */
+@media screen and ( min-width: 783px ) {
+	.nvoos-pro-spa-embedded__main .nvoos-pro-spa-chat-toolbar-toggle {
+		display: none;
+	}
+
+	.nvoos-pro-spa-embedded__main .nvoos-pro-spa-chat-page__toolbar {
+		padding-right: 20px; /* no toggle — reclaim the reserved space */
+	}
+
+	.nvoos-pro-spa-embedded__main .nvoos-pro-spa-chat-toolbar-extra {
+		display: revert;
+	}
+}
+
+/* Mobile: tighten the collapsed row — model label + selector on the left,
+   the toggle on the right. The shared collapse rules above hide the extra
+   controls until the toolbar is expanded. */
 @media screen and ( max-width: 782px ) {
 	.nvoos-pro-spa-chat-page__toolbar {
 		gap: 6px 10px;
-		padding: 10px 12px;
+		padding: 8px 12px;
+		padding-right: 52px; /* room for the pinned top-right toggle */
+	}
+
+	.nvoos-pro-spa-chat-toolbar-toggle {
+		top: 8px;
+		right: 12px;
 	}
 
 	.nvoos-pro-spa-chat-page__toolbar .nvoos-pro-spa-btn {
@@ -687,25 +756,37 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 		font-size: 12px;
 	}
 
+	.nvoos-pro-spa-chat-page__model-select {
+		display: flex;
+		align-items: center;
+		min-width: 0;
+	}
+
 	.nvoos-pro-spa-chat-page__select {
-		max-width: 160px;
+		max-width: 150px;
 	}
 }
 
+/* Model and profile selectors — keep the label and control at the same
+   compact size so "Model" and "Full access" read consistently. */
 .nvoos-pro-spa-chat-page__select-label {
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 500;
 	color: var(--nvoos-text-secondary, #787c82);
 	margin-right: 6px;
+	white-space: nowrap;
 }
 
 .nvoos-pro-spa-chat-page__select {
-	padding: 4px 8px;
+	padding: 3px 6px;
 	border: 1px solid var(--nvoos-border, #dcdcde);
 	border-radius: 4px;
 	font-size: 12px;
+	line-height: 1.4;
 	font-family: inherit;
 	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	max-width: 220px;
 }
 
 /* ── Agent Panel ──────────────────────────────────────────────────────────── */
@@ -777,11 +858,13 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	overflow-y: auto;
 }
 
-/* On mobile, add extra bottom padding so the wrapped toolbar
-   buttons (mic, voice, attach) aren't clipped by the viewport edge. */
+/* On mobile, add extra bottom padding and an outer margin so the wrapped
+   composer rows (mic, voice, attach, send) aren't clipped by the
+   viewport edge. */
 @media screen and ( max-width: 782px ) {
 	.nvoos-pro-spa-agent-panel__composer {
 		padding: 8px 12px 36px;
+		margin-bottom: 25px;
 	}
 }
 
@@ -1022,10 +1105,24 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-message-view--user .nvoos-pro-spa-message-view__body {
 	background: #f0f6fc;
+	/* The user bubble is always light — pin dark text so dark-mode
+	   themes don't inherit near-white text onto it. */
+	color: #1e1e1e;
 	padding: 10px 14px;
 	border-radius: 8px;
 	max-width: 80%;
 	margin-left: auto;
+}
+
+/* Keep markdown elements inside the always-light user bubble readable
+   in dark mode (their theme-variable colors would go light on white). */
+.nvoos-pro-spa-message-view--user .nvoos-pro-spa-message-view__body .nvoos-pro-spa-markdown blockquote {
+	color: #555d66;
+}
+
+.nvoos-pro-spa-message-view--user .nvoos-pro-spa-message-view__body .nvoos-pro-spa-markdown code {
+	background: #dbe4f0;
+	color: #1e1e1e;
 }
 
 .nvoos-pro-spa-message-view--assistant .nvoos-pro-spa-message-view__body {
@@ -1390,9 +1487,9 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-settings-form__section {
 	margin-bottom: 24px;
 	padding: 20px;
-	background: #f9f9f9;
+	background: var(--nvoos-bg-secondary, #fff);
 	border-radius: 8px;
-	border: 1px solid #f0f0f1;
+	border: 1px solid var(--nvoos-border, #dcdcde);
 }
 
 .nvoos-pro-spa-settings-form__section-title {
@@ -1421,6 +1518,8 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-family: inherit;
 	box-sizing: border-box;
 	max-width: 480px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
 }
 
 .nvoos-pro-spa-settings-form__input--password {
@@ -1437,6 +1536,180 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-settings-form__footer {
 	display: flex;
 	gap: 8px;
+}
+
+/* Unavailable state — shown on installs that predate the mcp-ai/v1/settings
+   REST route; the page points the user at the WordPress admin instead of
+   failing a request. */
+.nvoos-pro-spa-settings-page__unavailable {
+	margin: 24px 0;
+	padding: 16px;
+	border: 1px dashed var(--nvoos-border, #c3c4c7);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1d2327);
+}
+
+.nvoos-pro-spa-settings-page__unavailable p {
+	margin: 0 0 8px;
+}
+
+.nvoos-pro-spa-settings-page__unavailable p:last-child {
+	margin-bottom: 0;
+}
+
+/* ── Settings page (schema-driven form, 2.4.x) ───────────────────────────
+   Card-grouped sections per tab, cross-tab search, underline tabs and a
+   sticky save footer — the modern admin-settings pattern (GitHub/Vercel
+   style) instead of WP's legacy form-table. */
+.nvoos-pro-spa-settings__search-row {
+	margin: 0 0 12px;
+}
+
+.nvoos-pro-spa-settings__search {
+	max-width: 420px;
+}
+
+.nvoos-pro-spa-settings__tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	margin: 0 0 16px;
+}
+
+.nvoos-pro-spa-settings__tab {
+	appearance: none;
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	padding: 8px 12px;
+	font-size: 13px;
+	font-weight: 500;
+	font-family: inherit;
+	color: var(--nvoos-text-secondary, #787c82);
+	cursor: pointer;
+}
+
+.nvoos-pro-spa-settings__tab:hover {
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-settings__tab:focus-visible {
+	outline: 2px solid var(--nvoos-primary, #2271b1);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-settings__tab--active {
+	color: var(--nvoos-primary, #2271b1);
+	border-bottom-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-settings__fields {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.nvoos-pro-spa-settings__section {
+	padding: 16px;
+	background: var(--nvoos-bg-secondary, #fff);
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-settings__section-title {
+	margin: 0 0 12px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-settings__field {
+	margin-bottom: 14px;
+}
+
+.nvoos-pro-spa-settings__field:last-child {
+	margin-bottom: 0;
+}
+
+.nvoos-pro-spa-settings__label {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	margin-bottom: 4px;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-settings__label--inline {
+	display: inline;
+	font-weight: 400;
+	margin-bottom: 0;
+}
+
+.nvoos-pro-spa-settings__field--dirty .nvoos-pro-spa-settings__label::before {
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--nvoos-warning, #f0c33c);
+	margin-right: 6px;
+	vertical-align: middle;
+}
+
+.nvoos-pro-spa-settings__checkbox {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-pro-spa-settings__checkbox input[type='checkbox'] {
+	width: 1rem;
+	height: 1rem;
+	margin: 0;
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-settings__control {
+	max-width: 480px;
+}
+
+.nvoos-pro-spa-settings__hint {
+	margin: 4px 0 0;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-settings__hint--section {
+	margin: 0 0 4px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-settings__footer {
+	position: sticky;
+	bottom: 0;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 16px;
+	padding: 12px 0;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-settings__dirty-hint {
+	margin: 0;
+	font-size: 12px;
+	color: #bd8600;
 }
 
 /* ── Toast Notifications ─────────────────────────────────────────────────── */
@@ -2566,27 +2839,31 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	padding: 4px 0;
 }
 
-/* On mobile, reorder the composer so the toolbar and attachment strip
-   wrap below the textarea and send button instead of sitting beside them. */
+/* On mobile, stack the textarea on top (full width) with the toolbar
+   buttons and actions below it side by side — toolbar on the left,
+   actions (expand/send) pushed to the right. Only the attachment strip
+   wraps below them. */
 @media screen and ( max-width: 782px ) {
 	.nvoos-pro-spa-agent-panel__composer-toolbar {
-		width: 100%;
-		order: 3;
-		padding: 2px 0 0;
+		order: 1;
+		flex-shrink: 0;
+		padding: 2px 0;
 	}
 
 	.nvoos-pro-spa-agent-panel__composer-input {
 		order: 0;
-		flex: 1 1 calc( 100% - 80px );
+		flex: 1 0 100%;
 		min-width: 0;
 	}
 
 	.nvoos-pro-spa-agent-panel__composer-actions {
-		order: 1;
+		order: 2;
+		flex-shrink: 0;
+		margin-left: auto;
 	}
 
 	.nvoos-pro-spa-attachment-strip {
-		order: 2;
+		order: 3;
 		width: 100%;
 	}
 }
@@ -4204,18 +4481,76 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	animation: nvoos-pro-spa-spin 0.8s linear infinite;
 }
 
+/* Generic console action button. Every page reuses this class for its
+   primary actions, so it carries the full interactive treatment — variants
+   below (`--primary`, `--danger`, `--small`) replace ad-hoc one-off buttons. */
 .nvoos-pro-spa-page__retry {
-	padding: 6px 16px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 32px;
+	padding: 0 14px;
 	border: 1px solid var(--nvoos-border, #dcdcde);
 	border-radius: 6px;
 	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
 	cursor: pointer;
 	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.4;
 	font-family: inherit;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.nvoos-pro-spa-page__retry:hover {
+.nvoos-pro-spa-page__retry:hover:not( :disabled ) {
 	background: var(--nvoos-bg, #f0f0f1);
+	border-color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-page__retry:active:not( :disabled ) {
+	transform: translateY( 1px );
+}
+
+.nvoos-pro-spa-page__retry:focus-visible {
+	outline: 2px solid var(--nvoos-primary, #2271b1);
+	outline-offset: 2px;
+}
+
+.nvoos-pro-spa-page__retry:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.nvoos-pro-spa-page__retry--primary {
+	background: var(--nvoos-primary, #2271b1);
+	border-color: var(--nvoos-primary, #2271b1);
+	color: #fff;
+}
+
+.nvoos-pro-spa-page__retry--primary:hover:not( :disabled ) {
+	background: var(--nvoos-primary-hover, #135e96);
+	border-color: var(--nvoos-primary-hover, #135e96);
+	color: #fff;
+}
+
+.nvoos-pro-spa-page__retry--danger {
+	background: var(--nvoos-bg-secondary, #fff);
+	border-color: var(--nvoos-danger, #d63638);
+	color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-page__retry--danger:hover:not( :disabled ) {
+	background: var(--nvoos-danger, #d63638);
+	border-color: var(--nvoos-danger, #d63638);
+	color: #fff;
+}
+
+.nvoos-pro-spa-page__retry--small {
+	min-height: 26px;
+	padding: 0 10px;
+	font-size: 12px;
 }
 
 /* =========================================================================
@@ -4415,6 +4750,12 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-weight: 600;
 }
 
+.nvoos-pro-spa-assistants-form__loading {
+	margin: 0 0 16px;
+	font-size: 13px;
+	color: var( --nvoos-pro-spa-muted, #757575 );
+}
+
 .nvoos-pro-spa-assistants-form__field {
 	margin-bottom: 16px;
 }
@@ -4511,9 +4852,23 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-tools-page__header {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
+	gap: 16px;
 	margin-bottom: 20px;
+}
+
+.nvoos-pro-spa-tools-page__count {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 10px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 12px;
+	background: var(--nvoos-bg-secondary, #fff);
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--nvoos-text-secondary, #787c82);
 }
 
 .nvoos-pro-spa-tools-page__controls {
@@ -4536,6 +4891,11 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	gap: 4px;
 }
 
+.nvoos-pro-spa-tools-page__search {
+	flex: 1;
+	min-width: 240px;
+}
+
 .nvoos-pro-spa-tools-page__label {
 	font-size: 11px;
 	font-weight: 600;
@@ -4549,7 +4909,15 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border-radius: 6px;
 	font-size: 13px;
 	font-family: inherit;
-	width: 240px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-tools-page__input:focus,
+.nvoos-pro-spa-tools-page__select:focus {
+	outline: none;
+	border-color: var(--nvoos-primary, #2271b1);
+	box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.2);
 }
 
 .nvoos-pro-spa-tools-page__select {
@@ -4559,6 +4927,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-size: 13px;
 	font-family: inherit;
 	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
 }
 
 .nvoos-pro-spa-tools-page__empty {
@@ -4566,6 +4935,577 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	text-align: center;
 	color: var(--nvoos-text-secondary, #787c82);
 	font-size: 14px;
+}
+
+.nvoos-pro-spa-tools-page__empty p {
+	margin: 0 0 12px;
+}
+
+.nvoos-pro-spa-tools-page__pager {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding: 12px 0;
+}
+
+.nvoos-pro-spa-tools-page__pager-label {
+	margin: 0 auto 0 0;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tools-page__pager-size {
+	display: inline-flex;
+	align-items: center;
+}
+
+.nvoos-pro-spa-tools-page__pager-size .nvoos-pro-spa-tools-page__select {
+	padding: 4px 6px;
+	font-size: 12px;
+}
+
+.nvoos-pro-spa-tools-page__pager-page {
+	min-width: 32px;
+	height: 32px;
+	padding: 0 6px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	font-size: 13px;
+	font-family: inherit;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.nvoos-pro-spa-tools-page__pager-page:hover {
+	border-color: var(--nvoos-primary, #2271b1);
+	color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-tools-page__pager-page--active,
+.nvoos-pro-spa-tools-page__pager-page--active:hover {
+	background: var(--nvoos-primary, #2271b1);
+	border-color: var(--nvoos-primary, #2271b1);
+	color: #fff;
+	cursor: default;
+}
+
+.nvoos-pro-spa-tools-page__pager-ellipsis {
+	color: var(--nvoos-text-secondary, #787c82);
+	padding: 0 2px;
+}
+
+.nvoos-pro-spa-tools-page__footer {
+	margin-top: 16px;
+	padding: 8px 0;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+/* -------------------------------------------------------------------------
+   Shared list/table surface (legacy div rows AND native <table> rows).
+   The legacy pages keep div-based rows; DataTable renders the same classes
+   on native table elements. Both are styled here.
+   ------------------------------------------------------------------------- */
+
+.nvoos-pro-spa-tools-list-scroll {
+	overflow: auto;
+	max-height: min(65vh, 760px);
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-tools-list__header {
+	display: flex;
+	border-bottom: 2px solid var(--nvoos-border, #dcdcde);
+	background: var(--nvoos-bg, #f0f0f1);
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.nvoos-pro-spa-tools-list__row {
+	display: flex;
+	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
+	transition: background 0.1s;
+}
+
+.nvoos-pro-spa-tools-list__row:hover {
+	background: rgba(34, 113, 177, 0.04);
+}
+
+.nvoos-pro-spa-tools-list__cell {
+	padding: 10px 12px;
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-tools-list__cell--head {
+	font-weight: 600;
+	font-size: 11px;
+	text-transform: uppercase;
+	color: var(--nvoos-text-secondary, #787c82);
+	letter-spacing: 0.02em;
+}
+
+/* Native table variant (DataTable component). */
+.nvoos-pro-spa-tools-list--table {
+	width: 100%;
+	min-width: 640px;
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.nvoos-pro-spa-tools-list--table thead th {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	padding: 10px 12px;
+	background: var(--nvoos-bg, #f0f0f1);
+	border-bottom: 2px solid var(--nvoos-border, #dcdcde);
+	text-align: left;
+	white-space: nowrap;
+	box-shadow: 0 1px 0 var(--nvoos-border, #dcdcde) inset;
+}
+
+.nvoos-pro-spa-tools-list--table tbody td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
+	font-size: 13px;
+	vertical-align: top;
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-tools-list--table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.nvoos-pro-spa-tools-list--table tbody tr:hover td {
+	background: rgba(34, 113, 177, 0.04);
+}
+
+.nvoos-pro-spa-tools-list--table .nvoos-pro-spa-tools-list__cell--desc {
+	max-width: 560px;
+}
+
+/* Plain bordered list (checklists and similar non-tabular rows). */
+.nvoos-pro-spa-tools-list--list {
+	list-style: none;
+	margin: 0 0 12px;
+	padding: 0;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	overflow: hidden;
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-tools-list--list .nvoos-pro-spa-tools-list__row {
+	align-items: center;
+	gap: 8px;
+	padding: 10px 12px;
+}
+
+.nvoos-pro-spa-tools-list--list .nvoos-pro-spa-tools-list__row:last-child {
+	border-bottom: none;
+}
+
+.nvoos-pro-spa-tools-list__row--empty .nvoos-pro-spa-tools-list__cell {
+	padding: 40px 16px;
+	text-align: center;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+/* Master-detail row (full-width expandable detail below a table row). */
+.nvoos-pro-spa-tools-list--table tr.nvoos-pro-spa-tools-list__row--detail td {
+	padding: 14px 16px;
+	background: var(--nvoos-bg, #f0f0f1);
+	border-bottom: 2px solid var(--nvoos-border, #dcdcde);
+	border-left: 3px solid var(--nvoos-primary, #2271b1);
+}
+
+/* Numeric cells right-align with tabular figures (industry standard). */
+.nvoos-pro-spa-tools-list__cell--num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.nvoos-pro-spa-tools-list--table .nvoos-pro-spa-tools-list__cell--num {
+	text-align: right;
+}
+
+/* Sortable header button (W3C sortable-table pattern). */
+.nvoos-pro-spa-tools-list__sort {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 2px 4px;
+	margin: -2px -4px;
+	border: none;
+	border-radius: 4px;
+	background: transparent;
+	color: inherit;
+	font-family: inherit;
+	font-size: inherit;
+	font-weight: inherit;
+	text-transform: inherit;
+	letter-spacing: inherit;
+	line-height: inherit;
+	cursor: pointer;
+}
+
+.nvoos-pro-spa-tools-list__sort:hover {
+	background: rgba(0, 0, 0, 0.06);
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-tools-list__sort:focus-visible {
+	outline: 2px solid var(--nvoos-primary, #2271b1);
+	outline-offset: 2px;
+}
+
+.nvoos-pro-spa-tools-list__sort-icon {
+	font-size: 12px;
+	line-height: 1;
+	opacity: 0.45;
+}
+
+.nvoos-pro-spa-tools-list--table thead th[aria-sort='ascending'] .nvoos-pro-spa-tools-list__sort-icon,
+.nvoos-pro-spa-tools-list--table thead th[aria-sort='descending'] .nvoos-pro-spa-tools-list__sort-icon {
+	opacity: 1;
+	color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-tools-list__name {
+	display: block;
+	font-weight: 500;
+	color: var(--nvoos-text, #1e1e1e);
+	word-break: break-word;
+}
+
+.nvoos-pro-spa-tools-list__slug {
+	display: block;
+	font-size: 11px;
+	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-top: 2px;
+	word-break: break-all;
+}
+
+.nvoos-pro-spa-tools-list__badge {
+	display: inline-flex;
+	align-items: center;
+	max-width: 100%;
+	padding: 2px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 10px;
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text, #1e1e1e);
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.5;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-tools-list__badge--empty {
+	color: var(--nvoos-text-secondary, #787c82);
+	border-style: dashed;
+}
+
+.nvoos-pro-spa-tools-list__capability {
+	display: inline-block;
+	max-width: 100%;
+	padding: 2px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg, #f0f0f1);
+	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-tools-list__name--button {
+	width: 100%;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--nvoos-primary, #2271b1);
+	font-family: inherit;
+	font-size: inherit;
+	text-align: left;
+	cursor: pointer;
+	word-break: break-word;
+}
+
+.nvoos-pro-spa-tools-list__name--button:hover {
+	text-decoration: underline;
+}
+
+.nvoos-pro-spa-tools-list__name--button:focus-visible {
+	outline: 2px solid var(--nvoos-primary, #2271b1);
+	outline-offset: 2px;
+}
+
+.nvoos-pro-spa-tools-list__desc-clamp {
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-tools-list__cell--desc {
+	flex: 2;
+	color: var(--nvoos-text-secondary, #787c82);
+	line-height: 1.4;
+}
+
+.nvoos-pro-spa-diagnostics__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.nvoos-pro-spa-diagnostics__card {
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-diagnostics__card--standalone {
+	margin-top: 16px;
+}
+
+.nvoos-pro-spa-diagnostics__card-title {
+	margin: 0 0 12px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-diagnostics__muted {
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-diagnostics__badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+	vertical-align: middle;
+}
+
+.nvoos-pro-spa-diagnostics__badge--ok {
+	background: rgba( 0, 170, 102, 0.12 );
+	color: #007a4d;
+}
+
+.nvoos-pro-spa-diagnostics__badge--warning {
+	background: rgba( 217, 119, 6, 0.12 );
+	color: #9a5b00;
+}
+
+.nvoos-pro-spa-diagnostics__badge--error {
+	background: rgba( 214, 54, 56, 0.12 );
+	color: #b32d2e;
+}
+
+/* =========================================================================
+   Token Manager page (2.4.0 — Proposal 084 Phase 3)
+   ========================================================================= */
+
+.nvoos-pro-spa-token-manager__stats {
+	display: flex;
+	gap: 16px;
+	margin: 0 0 16px;
+	padding: 0;
+	list-style: none;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-token-manager__stat {
+	flex: 1;
+	min-width: 120px;
+	padding: 14px 16px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-token-manager__stat-label {
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-bottom: 4px;
+}
+
+.nvoos-pro-spa-token-manager__stat-value {
+	font-size: 24px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-token-manager__action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 28px;
+	padding: 0 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	cursor: pointer;
+	font-size: 13px;
+	font-family: inherit;
+	margin-right: 6px;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.nvoos-pro-spa-token-manager__action:hover:not( :disabled ) {
+	border-color: var(--nvoos-primary, #2271b1);
+	color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-token-manager__action:active:not( :disabled ) {
+	transform: translateY( 1px );
+}
+
+.nvoos-pro-spa-token-manager__action:focus-visible {
+	outline: 2px solid var(--nvoos-primary, #2271b1);
+	outline-offset: 2px;
+}
+
+.nvoos-pro-spa-token-manager__action:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-token-manager__action--danger {
+	color: #b32d2e;
+	border-color: rgba( 179, 45, 46, 0.4 );
+}
+
+.nvoos-pro-spa-token-manager__action--danger:hover:not( :disabled ) {
+	background: rgba( 179, 45, 46, 0.06 );
+	border-color: #b32d2e;
+	color: #b32d2e;
+}
+
+.nvoos-pro-spa-token-manager__action:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* =========================================================================
+   Workflows page (2.4.0 — Proposal 084 Phase 3b W10.2a)
+   ========================================================================= */
+
+.nvoos-pro-spa-workflows-page__layout {
+	display: grid;
+	grid-template-columns: 300px minmax( 0, 1fr );
+	gap: 16px;
+	align-items: start;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-workflows-page__layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ── Workflow canvas (Phase 3b W10.2b) ──────────────────────────────── */
+
+.nvoos-pro-spa-wf-canvas__toolbar {
+	margin-bottom: 8px;
+}
+
+.nvoos-pro-spa-wf-canvas__palette {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-wf-canvas__rename {
+	max-width: 180px;
+}
+
+.nvoos-pro-spa-wf-canvas__board {
+	height: 460px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-wf-node {
+	min-width: 150px;
+	max-width: 220px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-left: 4px solid var(--nvoos-wf-accent, #2271b1);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	box-shadow: 0 1px 3px rgba( 0, 0, 0, 0.08 );
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-wf-node.is-selected {
+	box-shadow: 0 0 0 2px var(--nvoos-wf-accent, #2271b1);
+}
+
+.nvoos-pro-spa-wf-node__header {
+	padding: 4px 10px;
+	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
+}
+
+.nvoos-pro-spa-wf-node__kind {
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--nvoos-wf-accent, #2271b1);
+}
+
+.nvoos-pro-spa-wf-node__body {
+	padding: 8px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.nvoos-pro-spa-wf-node__label {
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-wf-node__desc {
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-wf-node__handle {
+	width: 8px;
+	height: 8px;
+	background: var(--nvoos-wf-accent, #2271b1);
+	border: 2px solid var(--nvoos-bg-secondary, #fff);
 }
 
 .nvoos-pro-spa-tools-page__footer {
@@ -4683,6 +5623,7 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	box-sizing: border-box;
 	max-width: 480px;
 	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
 }
 
 .nvoos-pro-spa-settings-form__field--checkbox {
@@ -4816,38 +5757,40 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	margin-bottom: 24px;
 }
 
-.nvoos-pro-spa-analytics-page__placeholder {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	padding: 64px 24px;
-	text-align: center;
+/* Side-by-side chart cards (line + donut) for the cost analytics page. */
+.nvoos-pro-spa-analytics-page__charts {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+	gap: 16px;
+	margin: 0 0 16px;
 }
 
-.nvoos-pro-spa-analytics-page__icon {
-	color: var(--nvoos-text-secondary, #787c82);
-	margin-bottom: 16px;
-	opacity: 0.5;
-}
-
-.nvoos-pro-spa-analytics-page__coming-soon {
-	font-size: 24px;
+/* Blueprint detail rows (master-detail expansion on the Blueprints page). */
+.nvoos-pro-spa-blueprints__heading {
+	margin: 12px 0 4px;
+	font-size: 12px;
 	font-weight: 600;
-	margin: 0 0 8px;
-}
-
-.nvoos-pro-spa-analytics-page__description {
 	color: var(--nvoos-text-secondary, #787c82);
-	max-width: 480px;
-	line-height: 1.6;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
 }
 
-.nvoos-pro-spa-analytics-page__note {
-	margin: 16px 0 0;
+.nvoos-pro-spa-blueprints__heading:first-child {
+	margin-top: 0;
+}
+
+.nvoos-pro-spa-blueprints__tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.nvoos-pro-spa-blueprints__defaults {
+	list-style: none;
+	margin: 0;
+	padding: 0;
 	font-size: 13px;
-	color: var(--nvoos-text-secondary, #787c82);
-	font-style: italic;
+	line-height: 1.7;
 }
 
 /* ── Chart Recipes (nvoos-chart fences) ──────────────────────────────────── */
@@ -5878,4 +6821,102 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	--chart-series-8: #a6adc8;
 	--chart-negative: #f38ba8;
 	--chart-positive: #a6e3a1;
+}
+
+/* Records feature (Proposal 084 Phase 4, W11) — entity tabs, search, detail. */
+.nvoos-pro-spa-records-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.nvoos-pro-spa-records-tab {
+	padding: 5px 10px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: transparent;
+	cursor: pointer;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-records-tab.is-active {
+	background: var(--nvoos-accent, #2271b1);
+	border-color: var(--nvoos-accent, #2271b1);
+	color: #fff;
+}
+
+.nvoos-pro-spa-records-search {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.nvoos-pro-spa-records-search__label {
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-records-search__input {
+	min-width: 240px;
+	padding: 5px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-records-detail {
+	margin-top: 16px;
+	padding: 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-records-detail__title {
+	margin: 0 0 4px;
+	font-size: 16px;
+}
+
+.nvoos-pro-spa-records-detail__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 10px 16px;
+	margin: 12px 0 0;
+}
+
+/* Chart-card variant is a plain <ul> — reset list chrome. */
+.nvoos-pro-spa-records-detail__grid--list {
+	list-style: none;
+	padding: 0;
+}
+
+.nvoos-pro-spa-records-detail__item dt {
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin: 0 0 2px;
+}
+
+.nvoos-pro-spa-records-detail__item dd {
+	font-size: 13px;
+	margin: 0;
+	word-break: break-word;
+}
+
+.nvoos-pro-spa-records-research {
+	margin-bottom: 16px;
+	padding: 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-records-search__input:disabled,
+.nvoos-pro-spa-page__retry:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.nvoos-pro-spa-page__message--success {
+	color: var(--nvoos-positive, #008a20);
 }

@@ -292,6 +292,16 @@ Pro Dashboard initialization complete
 		 * Add diagnostic page to Pro Dashboard menu.
 		 */
 		public static function add_diagnostic_page() {
+			/**
+			 * Kill-switch for the wp-admin Pro-dashboard charts diagnostic
+			 * (Proposal 084 Phase 3). The Complete Console's Diagnostics page
+			 * ships the consolidated overview; flip this filter off per cohort
+			 * once the SPA surface reaches parity.
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_diagnostics_pro_dashboard', true ) ) {
+				return;
+			}
+
 			add_submenu_page(
 				self::PARENT_SLUG,
 				__( 'Charts Diagnostic', 'mcp-ai-wpoos' ),

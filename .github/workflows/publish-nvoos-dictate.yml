@@ -1,9 +1,10 @@
 # Release: build + publish the NV oOS Dictation desktop app via tauri-action.
 #
 # Tag `nvoos-dictate-v*` to cut a release. tauri-action builds NSIS/MSI on
-# Windows and .app/.dmg per-arch on macOS (the Swift sidecar is built and
-# staged first), attaches the artifacts to a GitHub release, and generates
-# the updater's static JSON feed. Signing requires the
+# Windows and a single UNIVERSAL .app/.dmg on macOS (arm64 + x86_64 — the
+# Swift sidecar is lipo'd universal and staged first), attaches the
+# artifacts to a GitHub release, and generates the updater's static JSON
+# feed. Signing requires the
 # TAURI_SIGNING_PRIVATE_KEY repository secret (minisign); without it the
 # release is unsigned and SmartScreen/Gatekeeper will warn (documented in
 # README). macOS notarization additionally requires the Apple Developer
@@ -27,16 +28,13 @@ jobs:
             args: ''
             helperArch: ''
           - platform: macos-latest
-            args: '--target aarch64-apple-darwin'
-            helperArch: arm64
-          - platform: macos-latest
-            args: '--target x86_64-apple-darwin'
-            helperArch: x86_64
+            args: '--target universal-apple-darwin'
+            helperArch: universal
     runs-on: ${{ matrix.platform }}
     env:
       # Pinned by the matrix; beforeBundleCommand (build:helper) reads it so
-      # the right-arch Swift sidecar is staged over the externalBin stub
-      # even when it re-runs inside tauri-action.
+      # the Swift sidecar (universal on macOS) is staged over the
+      # externalBin stub even when it re-runs inside tauri-action.
       NVOOS_HELPER_ARCH: ${{ matrix.helperArch }}
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +45,8 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
+          # universal-apple-darwin is a Tauri CLI merge target — not a
+          # rustup target. Install the two real arch stds instead.
           targets: aarch64-apple-darwin, x86_64-apple-darwin
 
       - name: Rust cache
@@ -64,8 +64,9 @@ jobs:
 
       # macOS: tauri-action runs the configured beforeBundleCommand
       # (npm run build:helper), which builds the ScreenCaptureKit sidecar
-      # for NVOOS_HELPER_ARCH and stages it over the externalBin stub — the
-      # real binary is therefore signed and embedded inside the .app.
+      # as a universal binary (NVOOS_HELPER_ARCH=universal — per-slice
+      # scratch builds + lipo) and stages it over the externalBin stub —
+      # the real binary is therefore signed and embedded inside the .app.
 
       - name: Build and publish
         uses: tauri-apps/tauri-action@v0

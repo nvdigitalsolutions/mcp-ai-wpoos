@@ -53,7 +53,9 @@ notarization for distribution. These decisions shaped the port.
    incompatible with global hotkeys, event taps, the sidecar child process,
    and keychain ACLs. Distribution therefore requires notarization (Apple
    Developer Program) rather than the Mac App Store. Per-arch DMGs first;
-   universal binary is a fast-follow.
+   universal binary was the fast-follow and has shipped (single
+   arm64+x86_64 DMG via `universal-apple-darwin` — see macos-port-plan.md
+   M7.5).
 
 ## Consequences
 

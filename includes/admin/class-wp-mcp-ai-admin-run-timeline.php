@@ -52,6 +52,16 @@ class WP_MCP_AI_Admin_Run_Timeline {
 	 * Register the submenu page.
 	 */
 	public function add_menu_page() {
+		/**
+		 * Kill-switch for the wp-admin run-timeline surface (Proposal 084
+		 * Phase 3). The Complete Console's Operations page ships the same
+		 * run summaries; flip this filter off per cohort once the SPA
+		 * surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_run_timeline', true ) ) {
+			return;
+		}
+
 		add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'Run Timeline', 'mcp-ai-wpoos' ),
@@ -223,7 +233,7 @@ class WP_MCP_AI_Admin_Run_Timeline {
 			$page         = max( 1, (int) sanitize_text_field( wp_unslash( isset( $_GET['page'] ) ? $_GET['page'] : '1' ) ) );
 			$assistant_id = (int) sanitize_text_field( wp_unslash( isset( $_GET['assistant_id'] ) ? $_GET['assistant_id'] : '0' ) );
 
-			$runs = $this->load_run_summaries( $page, $assistant_id );
+			$runs = self::load_run_summaries( $page, $assistant_id );
 			wp_send_json_success( $runs );
 		} catch ( Throwable $e ) {
 			$this->log_error_safe(
@@ -333,7 +343,7 @@ class WP_MCP_AI_Admin_Run_Timeline {
 	 * @param int $assistant_id Filter by assistant (0 = all).
 	 * @return array{runs: array, total: int, page: int, per_page: int}
 	 */
-	private function load_run_summaries( $page, $assistant_id ) {
+	public static function load_run_summaries( $page, $assistant_id ) {
 		$summaries = array();
 
 		// Pull from the metric event store if available and the table is provisioned.
@@ -395,7 +405,7 @@ class WP_MCP_AI_Admin_Run_Timeline {
 
 		// Fall back to reasoning trace post meta scan when no metric store data.
 		if ( empty( $summaries ) ) {
-			$summaries = $this->load_summaries_from_post_meta( $assistant_id );
+			$summaries = self::load_summaries_from_post_meta( $assistant_id );
 		}
 
 		$total  = count( $summaries );
@@ -416,7 +426,7 @@ class WP_MCP_AI_Admin_Run_Timeline {
 	 * @param int $assistant_id Filter by assistant (0 = all).
 	 * @return array
 	 */
-	private function load_summaries_from_post_meta( $assistant_id ) {
+	private static function load_summaries_from_post_meta( $assistant_id ) {
 		$args = array(
 			'post_type'      => 'mcp_ai_assistant',
 			'post_status'    => 'publish',

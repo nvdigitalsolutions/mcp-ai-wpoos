@@ -994,3 +994,10 @@ if ( file_exists( __DIR__ . '/../addons/comic-reader/tests/bootstrap.php' ) ) {
 if ( file_exists( __DIR__ . '/../addons/nvoos-design-system/tests/bootstrap.php' ) ) {
 	require_once __DIR__ . '/../addons/nvoos-design-system/tests/bootstrap.php';
 }
+
+// Schedule Anything Platform addon tests
+// (addons/schedule-anything-platform). Same self-guarding constants +
+// class-requires pattern.
+if ( file_exists( __DIR__ . '/../addons/schedule-anything-platform/tests/bootstrap.php' ) ) {
+	require_once __DIR__ . '/../addons/schedule-anything-platform/tests/bootstrap.php';
+}

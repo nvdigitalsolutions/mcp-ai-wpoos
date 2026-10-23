@@ -3,7 +3,7 @@
  * Plugin Name: Schedule Anything Platform
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Multi-tenant SaaS platform for scheduling and automating work across all NV oOS toolkits. Handles tenant provisioning, cross-tenant security, usage tracking, and platform REST endpoints. Requires NV oOS Base + Pro.
- * Version:     0.1.0
+ * Version:     0.1.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -13,7 +13,14 @@
  * License URI: https://nvdigitalsolutions.com/wpoos/license
  * Text Domain: schedule-anything
  * Domain Path: /languages
- * Requires Plugins: mcp-ai-wpoos
+ *
+ * Note: deliberately NO "Requires Plugins" header. The base plugin ships
+ * under several slugs — mcp-ai-wpoos (GitHub/dev), nvdigital-open-operator-system-oos
+ * (WordPress.org base) and nvdigital-open-operator-system-oos-complete (the
+ * combined bundle) — and core matches the header against the installed
+ * plugin's FOLDER slug with AND semantics, so a static header would block
+ * activation on every other distribution. The runtime guard below
+ * (sa_platform_base_is_active) covers all flavors instead.
  *
  * @package Schedule_Anything
  *
@@ -37,7 +44,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'SA_PLATFORM_VERSION', '0.1.0' );
+define( 'SA_PLATFORM_VERSION', '0.1.2' );
 
 /** Absolute path to this plugin file. */
 define( 'SA_PLATFORM_FILE', __FILE__ );

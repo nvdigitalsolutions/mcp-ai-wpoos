@@ -232,6 +232,82 @@ class WP_MCP_AI_Transcript_Repository {
 	}
 
 	/**
+	 * Total byte size of a user's stored chat transcripts.
+	 *
+	 * Sums the serialized payload lengths (`request_payload` +
+	 * `response_payload`) so the SPA status bar can report server-side
+	 * session storage — the Pro SPA keeps transcripts in this table, not in
+	 * localStorage, so a client-side quota meter always reads ~0 there.
+	 *
+	 * Uses the same custom `user_id` column with `cct_author_id` fallback
+	 * as `get_sessions()`, and returns 0 when the table is unavailable.
+	 *
+	 * @param int $user_id      User identifier.
+	 * @param int $assistant_id Optional assistant ID to filter by.
+	 * @return int Total stored bytes (0 when unavailable or empty).
+	 */
+	public function get_storage_bytes( $user_id, $assistant_id = 0 ) {
+		global $wpdb;
+
+		if ( ! $this->table_exists() ) {
+			return 0;
+		}
+
+		// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
+		$table        = esc_sql( $this->get_table_name() );
+		$user_id      = absint( $user_id );
+		$assistant_id = absint( $assistant_id );
+
+		if ( $user_id > 0 ) {
+			$where_clauses = array( 'user_id = %d' );
+			$where_values  = array( $user_id );
+		} else {
+			$where_clauses = array();
+			$where_values  = array();
+		}
+
+		if ( $assistant_id > 0 ) {
+			$where_clauses[] = 'assistant_id = %s';
+			$where_values[]  = (string) $assistant_id;
+		}
+
+		$where_part = ! empty( $where_clauses ) ? 'WHERE ' . implode( ' AND ', $where_clauses ) : '';
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_part contains only hardcoded placeholders.
+		$query_template = "SELECT COALESCE( SUM( LENGTH( COALESCE( request_payload, '' ) ) + LENGTH( COALESCE( response_payload, '' ) ) ), 0 )
+         FROM `{$table}`
+         {$where_part}";
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
+		$bytes = (int) $wpdb->get_var( $wpdb->prepare( $query_template, $where_values ) );
+
+		// Fallback to JetEngine's built-in cct_author_id field when the
+		// custom user_id column yields nothing.
+		if ( 0 === $bytes && $user_id > 0 ) {
+			$fallback_where_clauses = array( 'cct_author_id = %d' );
+			$fallback_where_values  = array( $user_id );
+
+			if ( $assistant_id > 0 ) {
+				$fallback_where_clauses[] = 'assistant_id = %s';
+				$fallback_where_values[]  = (string) $assistant_id;
+			}
+
+			$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $fallback_where_sql contains only hardcoded placeholders.
+			$fallback_query_template = "SELECT COALESCE( SUM( LENGTH( COALESCE( request_payload, '' ) ) + LENGTH( COALESCE( response_payload, '' ) ) ), 0 )
+             FROM `{$table}`
+             WHERE {$fallback_where_sql}";
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
+			$bytes = (int) $wpdb->get_var( $wpdb->prepare( $fallback_query_template, $fallback_where_values ) );
+		}
+
+		return $bytes;
+	}
+
+	/**
 	 * Get a single transcript session with all messages.
 	 *
 	 * Uses progressive fallback queries to handle various edge cases:

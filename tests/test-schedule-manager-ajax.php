@@ -118,6 +118,41 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 			$this->assertArrayHasKey( 'schedules', $response['data'] );
 			$this->assertIsArray( $response['data']['schedules'] );
 		}
+
+		// The edit modal needs the stored first-run timestamp to prefill the
+		// delivery date & time field, so the list payload must expose it.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
+			return;
+		}
+
+		$schedule_id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'wp_mcp_ai_ajax_ts_hook',
+				'name'          => 'Timestamp exposure',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 3600,
+			),
+			$this->as_admin()
+		);
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_sm_get_schedules',
+			array( 'nonce' => wp_create_nonce( self::NONCE ) )
+		);
+
+		$rows  = isset( $response['data']['schedules'] ) ? $response['data']['schedules'] : array();
+		$found = false;
+		foreach ( $rows as $row ) {
+			if ( $schedule_id !== $row['id'] ) {
+				continue;
+			}
+			$found = true;
+			$this->assertArrayHasKey( 'timestamp', $row );
+			$this->assertIsInt( $row['timestamp'] );
+			$this->assertGreaterThan( 0, $row['timestamp'] );
+		}
+		$this->assertTrue( $found, 'Created schedule missing from get_schedules response.' );
 	}
 
 	// ---

@@ -2525,6 +2525,62 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Permission check for fetching a single assistant.
+		 *
+		 * Standard authentication plus admin capability: the full record
+		 * includes the system prompt, which is admin-only material.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return bool|WP_Error
+		 */
+		public function permissions_check_assistant_get( WP_REST_Request $request ) {
+			// First check standard permissions.
+			$base_check = $this->permissions_check( $request );
+
+			if ( is_wp_error( $base_check ) || ! $base_check ) {
+				return $base_check;
+			}
+
+			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
+				return true;
+			}
+
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Administrator access required.', 'mcp-ai-wpoos' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		/**
+		 * Permission check for updating an assistant via REST API.
+		 *
+		 * Standard authentication plus admin capability (the console edit
+		 * surface is admin-only; there is no settings toggle for updates).
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return bool|WP_Error
+		 */
+		public function permissions_check_assistant_update( WP_REST_Request $request ) {
+			// First check standard permissions.
+			$base_check = $this->permissions_check( $request );
+
+			if ( is_wp_error( $base_check ) || ! $base_check ) {
+				return $base_check;
+			}
+
+			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
+				return true;
+			}
+
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Administrator access required.', 'mcp-ai-wpoos' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		/**
 		 * Handle assistant deletion via REST API.
 		 *
 		 * @param WP_REST_Request $request REST request.
@@ -2713,6 +2769,162 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$response->header( 'Location', rest_url( self::REST_NAMESPACE . '/assistants/' . $assistant_id ) );
 
 			return $response;
+		}
+
+		/**
+		 * Fetch a single assistant's full record for the console edit form.
+		 *
+		 * Returns the directory summary plus the system prompt (admin-only
+		 * material that the directory listing deliberately omits).
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_assistant_get( WP_REST_Request $request ) {
+			$assistant_id = absint( $request->get_param( 'id' ) );
+
+			if ( ! $assistant_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_assistant_id',
+					__( 'Assistant ID is required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$assistant_post = $this->validate_assistant_access( $assistant_id );
+			if ( is_wp_error( $assistant_post ) ) {
+				return $assistant_post;
+			}
+
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$default_assistant = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+
+			$record                    = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
+			$config                    = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			$record['system_prompt']   = isset( $config['system_prompt'] ) ? (string) $config['system_prompt'] : '';
+
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'data'    => $record,
+				)
+			);
+		}
+
+		/**
+		 * Update an assistant via REST API (the console edit form).
+		 *
+		 * Accepts the same field names as handle_assistant_create() — title,
+		 * description, provider, model, temperature, system_prompt, tools,
+		 * status — and returns the refreshed directory summary. An empty
+		 * system_prompt clears the stored value so the form can blank it.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_assistant_update( WP_REST_Request $request ) {
+			$assistant_id = absint( $request->get_param( 'id' ) );
+
+			if ( ! $assistant_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_assistant_id',
+					__( 'Assistant ID is required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$assistant_post = $this->validate_assistant_access( $assistant_id );
+			if ( is_wp_error( $assistant_post ) ) {
+				return $assistant_post;
+			}
+
+			$post_data = array( 'ID' => $assistant_id );
+
+			$title = $request->get_param( 'title' );
+			if ( ! empty( $title ) ) {
+				$post_data['post_title'] = sanitize_text_field( $title );
+			}
+
+			$description = $request->get_param( 'description' );
+			if ( null !== $description ) {
+				$post_data['post_content'] = wp_kses_post( $description );
+			}
+
+			$status = $request->get_param( 'status' );
+			if ( ! empty( $status ) ) {
+				$allowed_statuses = array( 'publish', 'draft', 'private' );
+				$status           = sanitize_key( $status );
+				if ( in_array( $status, $allowed_statuses, true ) ) {
+					$post_data['post_status'] = $status;
+				}
+			}
+
+			$updated = wp_update_post( $post_data );
+			if ( is_wp_error( $updated ) ) {
+				return new WP_Error(
+					'rest_cannot_update',
+					__( 'Could not update the assistant.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			$provider = $request->get_param( 'provider' );
+			if ( ! empty( $provider ) ) {
+				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PROVIDER, sanitize_key( $provider ) );
+			}
+
+			$model = $request->get_param( 'model' );
+			if ( ! empty( $model ) ) {
+				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_MODEL, sanitize_text_field( $model ) );
+			}
+
+			$temperature = $request->get_param( 'temperature' );
+			if ( isset( $temperature ) && is_numeric( $temperature ) ) {
+				$temperature = max( 0.0, min( 2.0, floatval( $temperature ) ) );
+				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TEMPERATURE, $temperature );
+			}
+
+			$system_prompt = $request->get_param( 'system_prompt' );
+			if ( null !== $system_prompt ) {
+				if ( '' === trim( (string) $system_prompt ) ) {
+					delete_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SYSTEM_PROMPT );
+				} else {
+					update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SYSTEM_PROMPT, wp_kses_post( $system_prompt ) );
+				}
+			}
+
+			$tools = $request->get_param( 'tools' );
+			if ( null !== $tools && is_array( $tools ) ) {
+				$valid_tools = array();
+				foreach ( $tools as $tool_slug ) {
+					$tool_slug = sanitize_key( $tool_slug );
+					if ( ! empty( $tool_slug ) ) {
+						$valid_tools[] = $tool_slug;
+					}
+				}
+				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array_values( array_unique( $valid_tools ) ) );
+			}
+
+			/**
+			 * Fires after an assistant is updated via REST API.
+			 *
+			 * @since 2.4.0
+			 *
+			 * @param int             $assistant_id Updated assistant post ID.
+			 * @param WP_REST_Request $request      Request object.
+			 */
+			do_action( 'wp_mcp_ai_rest_assistant_updated', $assistant_id, $request );
+
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$default_assistant = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+			$summary           = $this->summarize_assistant_for_directory( get_post( $assistant_id ), $default_assistant, $settings, $request );
+
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'data'    => $summary,
+				)
+			);
 		}
 
 		/**
@@ -6341,9 +6553,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						}
 
 						$tools_list[] = array(
-							'name'        => $tool->get_slug(),
-							'description' => $tool->get_description(),
-							'inputSchema' => $schema,
+							'name'                => $tool->get_slug(),
+							'slug'                => $tool->get_slug(),
+							'description'         => $tool->get_description(),
+							'required_capability' => $tool->get_required_capability(),
+							'inputSchema'         => $schema,
 						);
 					} catch ( Exception $e ) {
 						// Log the error and skip this tool.
@@ -6400,6 +6614,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			return rest_ensure_response(
 				array(
 					'tools' => $tools_list,
+					'total' => count( $tools_list ),
 				)
 			);
 		}
@@ -8026,6 +8241,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					: '' );
 
 			if ( is_string( $required ) && '' !== $required && 'public' !== $required ) {
+				// The capability derives from wp_mcp_ai_get_effective_chat_capability(),
+				// which sanitizes at both of its sources (the assistant meta value and
+				// the wp_mcp_ai_chat_capability filter) — never from request input.
+				// Guard the slug shape anyway so a corrupted stored value fails closed
+				// instead of reaching current_user_can() with junk. Behaviour for valid
+				// slugs is unchanged: unknown capabilities deny by default.
+				if ( 1 !== preg_match( '/^[a-z0-9_\-]+$/', $required ) ) {
+					return false;
+				}
+				// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- $required is a sanitized capability slug derived from plugin settings/filters, not request input.
 				return current_user_can( $required );
 			}
 
@@ -10667,6 +10892,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'items' => $sessions,
 				'total' => $result['total'],
 			);
+		}
+
+		/**
+		 * Total byte size of the user's stored chat transcripts.
+		 *
+		 * Exposes the repository aggregate to the chat-transcripts REST list
+		 * endpoint so SPA clients can report server-side session storage
+		 * instead of a (usually empty) same-origin localStorage figure.
+		 *
+		 * @param int|string $user_id      User identifier.
+		 * @param int|string $assistant_id Optional assistant ID to filter by.
+		 * @return int Total stored bytes (0 when unavailable or empty).
+		 */
+		public function get_transcript_storage_bytes( $user_id, $assistant_id = 0 ) {
+			$repository = $this->get_transcript_repository();
+
+			if ( ! method_exists( $repository, 'get_storage_bytes' ) ) {
+				return 0;
+			}
+
+			$bytes = $repository->get_storage_bytes( $user_id, $assistant_id );
+
+			if ( is_wp_error( $bytes ) ) {
+				return 0;
+			}
+
+			return is_int( $bytes ) && $bytes > 0 ? $bytes : 0;
 		}
 
 		/**

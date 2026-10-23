@@ -43,6 +43,16 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 		 * Note: Located under Tools menu to ensure easy access for troubleshooting.
 		 */
 		public static function register_page() {
+			/**
+			 * Kill-switch for the wp-admin MCP-server diagnostic surface
+			 * (Proposal 084 Phase 3). The Complete Console's Diagnostics page
+			 * ships the consolidated overview; flip this filter off per cohort
+			 * once the SPA surface reaches parity.
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_diagnostics_mcp_server', true ) ) {
+				return;
+			}
+
 			self::$page_hook = add_submenu_page(
 				'tools.php',
 				__( 'MCP Server Diagnostic', 'mcp-ai-wpoos' ),

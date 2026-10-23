@@ -36,6 +36,44 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 class WP_MCP_AI_Shopify_Sync_CLI {
 
 	/**
+	 * Require the manage_options capability for mutating verbs.
+	 *
+	 * @return void
+	 */
+	private static function require_capability() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			WP_CLI::error(
+				sprintf(
+					/* translators: %s: WordPress capability name */
+					__( 'Sorry, you are not allowed to perform this action. Required capability: %s', 'mcp-ai-wpoos-pro' ),
+					'manage_options'
+				)
+			);
+		}
+	}
+
+	/**
+	 * Assert the toolkit toggle is on, or exit with a clear error.
+	 *
+	 * @param string $setting_key Settings key for the toolkit toggle.
+	 * @param string $label       Human-readable toolkit name.
+	 * @return void
+	 */
+	private static function assert_toolkit_enabled( $setting_key, $label ) {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings[ $setting_key ] ) ) {
+			WP_CLI::error(
+				sprintf(
+					/* translators: 1: toolkit label, 2: settings key */
+					__( 'The %1$s toolkit is not enabled. Enable it in NV oOS → Settings (%2$s).', 'mcp-ai-wpoos-pro' ),
+					$label,
+					$setting_key
+				)
+			);
+		}
+	}
+
+	/**
 	 * Show sync status for one or all connections.
 	 *
 	 * ## OPTIONS
@@ -63,6 +101,8 @@ class WP_MCP_AI_Shopify_Sync_CLI {
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function status( $args, $assoc_args ) {
+		self::assert_toolkit_enabled( 'enable_shopify_sync_toolkit', 'Shopify Sync' );
+
 		$settings         = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
 		$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
 
@@ -155,6 +195,8 @@ class WP_MCP_AI_Shopify_Sync_CLI {
 	 */
 	public function trigger( $args, $assoc_args ) {
 		unset( $assoc_args ); // Reserved for future options.
+		self::require_capability();
+		self::assert_toolkit_enabled( 'enable_shopify_sync_toolkit', 'Shopify Sync' );
 		$connection_id = isset( $args[0] ) ? sanitize_key( $args[0] ) : '';
 
 		if ( empty( $connection_id ) ) {
@@ -229,6 +271,8 @@ class WP_MCP_AI_Shopify_Sync_CLI {
 	 */
 	public function clear_cache( $args, $assoc_args ) {
 		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Reserved for future options.
+		self::require_capability();
+		self::assert_toolkit_enabled( 'enable_shopify_sync_toolkit', 'Shopify Sync' );
 		$connection_id = isset( $args[0] ) ? sanitize_key( $args[0] ) : '';
 
 		if ( empty( $connection_id ) ) {
@@ -274,6 +318,8 @@ class WP_MCP_AI_Shopify_Sync_CLI {
 	 */
 	public function register_webhooks( $args, $assoc_args ) {
 		unset( $assoc_args ); // Reserved for future options.
+		self::require_capability();
+		self::assert_toolkit_enabled( 'enable_shopify_sync_toolkit', 'Shopify Sync' );
 		$connection_id = isset( $args[0] ) ? sanitize_key( $args[0] ) : '';
 
 		if ( empty( $connection_id ) ) {
@@ -329,6 +375,8 @@ class WP_MCP_AI_Shopify_Sync_CLI {
 	 */
 	public function unregister_webhooks( $args, $assoc_args ) {
 		unset( $assoc_args ); // Reserved for future options.
+		self::require_capability();
+		self::assert_toolkit_enabled( 'enable_shopify_sync_toolkit', 'Shopify Sync' );
 		$connection_id = isset( $args[0] ) ? sanitize_key( $args[0] ) : '';
 
 		if ( empty( $connection_id ) ) {
@@ -376,6 +424,8 @@ class WP_MCP_AI_Shopify_Sync_CLI {
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function cost_report( $args, $assoc_args ) {
+		self::assert_toolkit_enabled( 'enable_shopify_sync_toolkit', 'Shopify Sync' );
+
 		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Reserved for future options.
 		$settings         = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
 		$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
@@ -464,6 +514,7 @@ class WP_MCP_AI_Shopify_Sync_CLI {
 	 */
 	public function list_connections( $args, $assoc_args ) {
 		unset( $assoc_args ); // Reserved for future options.
+		self::assert_toolkit_enabled( 'enable_shopify_sync_toolkit', 'Shopify Sync' );
 		$settings         = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
 		$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
 
@@ -518,6 +569,8 @@ class WP_MCP_AI_Shopify_Sync_CLI {
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function sync_log( $args, $assoc_args ) {
+		self::assert_toolkit_enabled( 'enable_shopify_sync_toolkit', 'Shopify Sync' );
+
 		$limit  = isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 10;
 		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
 
@@ -568,24 +621,25 @@ class WP_MCP_AI_Shopify_Sync_CLI {
 	}
 }
 
-// Register commands under the canonical mcp-ai tree, keeping the legacy
-// top-level `shopify-sync` names as aliases (Proposal 050 namespace unification).
+// Register commands under the canonical mcp-ai tree (class registration —
+// exposes class-level help and subcommand discovery), keeping the legacy
+// top-level `shopify-sync` names working per verb (Proposal 050 namespace
+// unification).
 if ( class_exists( 'WP_CLI' ) ) {
+	WP_CLI::add_command( 'mcp-ai shopify-sync', 'WP_MCP_AI_Shopify_Sync_CLI' );
+
 	$shopify_verbs = array(
-		'status'               => 'status',
-		'trigger'              => 'trigger',
-		'clear-cache'          => 'clear_cache',
-		'register-webhooks'    => 'register_webhooks',
-		'unregister-webhooks'  => 'unregister_webhooks',
-		'cost-report'          => 'cost_report',
-		'list-connections'     => 'list_connections',
-		'sync-log'             => 'sync_log',
+		'status'              => 'status',
+		'trigger'             => 'trigger',
+		'clear-cache'         => 'clear_cache',
+		'register-webhooks'   => 'register_webhooks',
+		'unregister-webhooks' => 'unregister_webhooks',
+		'cost-report'         => 'cost_report',
+		'list-connections'    => 'list_connections',
+		'sync-log'            => 'sync_log',
 	);
 
 	foreach ( $shopify_verbs as $shopify_verb => $shopify_method ) {
-		WP_CLI::add_command( 'mcp-ai shopify-sync ' . $shopify_verb, array( 'WP_MCP_AI_Shopify_Sync_CLI', $shopify_method ) );
 		WP_CLI::add_command( 'shopify-sync ' . $shopify_verb, array( 'WP_MCP_AI_Shopify_Sync_CLI', $shopify_method ) );
 	}
-
-	unset( $shopify_verbs, $shopify_verb, $shopify_method );
 }

@@ -53,6 +53,7 @@ export function StatusBar( props: StatusBarProps ): JSX.Element {
 		sessions,
 		error: transcriptsError,
 		refreshList: refreshTranscripts,
+		storageBytes,
 	} = useTranscripts( {
 		endpoint: transcriptsEndpoint,
 		nonce,
@@ -79,11 +80,14 @@ export function StatusBar( props: StatusBarProps ): JSX.Element {
 		[ model ]
 	);
 
-	// ── localStorage quota (v2.1.0) ────────────────────────────────────
-	// Re-read on the transcripts refresh *and* on a light interval so the
-	// figure tracks the growing chat history instead of freezing at the
-	// value captured on mount.
-	const storageUsed = useStorageUsage( sessions );
+	// ── session storage (v2.1.0) ────────────────────────────────────
+	// The Pro SPA stores transcripts server-side, so the same-origin
+	// localStorage meter (base chat history) is almost always ~0 here.
+	// Prefer the server-reported transcript storage when the list
+	// endpoint provides it; fall back to the localStorage figure only
+	// when the server figure is unknown (older installs / unavailable).
+	const localStorageUsage = useStorageUsage( sessions );
+	const storageUsed = storageBytes !== null ? storageBytes : localStorageUsage;
 
 	// ---- render ----
 	return (

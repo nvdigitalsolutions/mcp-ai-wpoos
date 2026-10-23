@@ -20,7 +20,7 @@ interface AssistantFormFields {
 	provider: string;
 	temperature: number;
 	system_prompt: string;
-	capabilities: string;
+	tools: string;
 }
 
 const EMPTY_FORM: AssistantFormFields = {
@@ -29,10 +29,10 @@ const EMPTY_FORM: AssistantFormFields = {
 	provider: 'openai',
 	temperature: 0.7,
 	system_prompt: '',
-	capabilities: '',
+	tools: '',
 };
 
-function parseCapabilities( raw: string ): string[] {
+function parseTools( raw: string ): string[] {
 	return raw
 		.split( ',' )
 		.map( ( s ) => s.trim() )
@@ -40,10 +40,10 @@ function parseCapabilities( raw: string ): string[] {
 }
 
 export function AssistantsPage(): JSX.Element {
-	const { runtime } = useBootstrap();
+	const { runtime, loading: bootstrapLoading } = useBootstrap();
 	const availableModels = useModelStore( ( s ) => s.availableModels );
 
-	const { assistants, loading, error, fetchAssistants, createAssistant, updateAssistant, deleteAssistant } =
+	const { assistants, loading, error, fetchAssistants, getAssistant, createAssistant, updateAssistant, deleteAssistant } =
 		useAssistants(
 			runtime
 				? {
@@ -57,6 +57,11 @@ export function AssistantsPage(): JSX.Element {
 	const [ editingId, setEditingId ] = useState< number | null >( null );
 	const [ formFields, setFormFields ] = useState< AssistantFormFields >( EMPTY_FORM );
 	const [ saving, setSaving ] = useState< boolean >( false );
+	// True while the full record (system prompt + tools) is fetched for an
+	// edit — the form is seeded from the list row first, so without this
+	// the system-prompt field flashes empty and a premature save would
+	// overwrite the stored prompt with ''.
+	const [ recordLoading, setRecordLoading ] = useState< boolean >( false );
 	const [ deleteConfirm, setDeleteConfirm ] = useState< number | null >( null );
 
 	const providers = useMemo< string[] >( () => {
@@ -67,30 +72,53 @@ export function AssistantsPage(): JSX.Element {
 	}, [ availableModels ] );
 
 	const openCreate = useCallback( () => {
-		setFormFields( EMPTY_FORM );
-		setEditingId( null );
-		setFormOpen( true );
+			setFormFields( EMPTY_FORM );
+			setEditingId( null );
+			setRecordLoading( false );
+			setFormOpen( true );
 	}, [] );
 
-	const openEdit = useCallback( ( assistant: AssistantRecord ) => {
-		setFormFields( {
-			title: assistant.title ?? '',
-			model: assistant.model ?? '',
-			provider: assistant.provider ?? 'openai',
-			temperature: assistant.temperature ?? 0.7,
-			system_prompt: assistant.system_prompt ?? '',
-			capabilities: Array.isArray( assistant.capabilities )
-				? assistant.capabilities.join( ', ' )
-				: '',
-		} );
-		setEditingId( assistant.id );
-		setFormOpen( true );
-	}, [] );
+	const openEdit = useCallback(
+		( assistant: AssistantRecord ) => {
+			// Seed the form from the list record immediately, then replace
+			// with the full record (system prompt + tools) from the new
+			// GET /assistants/{id} route.
+			setFormFields( {
+				title: assistant.title ?? '',
+				model: assistant.model ?? '',
+				provider: assistant.provider ?? 'openai',
+				temperature: assistant.temperature ?? 0.7,
+				system_prompt: '',
+				tools: Array.isArray( assistant.tools ) ? assistant.tools.join( ', ' ) : '',
+			} );
+			setEditingId( assistant.id );
+			setRecordLoading( true );
+			setFormOpen( true );
+
+			void getAssistant( assistant.id ).then( ( full ) => {
+				if ( ! full || ! full.id ) {
+					setRecordLoading( false );
+					return;
+				}
+				setFormFields( ( current ) => ( {
+					...current,
+					model: full.model ?? current.model,
+					provider: full.provider ?? current.provider,
+					temperature: full.temperature ?? current.temperature,
+					system_prompt: full.system_prompt ?? '',
+					tools: Array.isArray( full.tools ) ? full.tools.join( ', ' ) : current.tools,
+				} ) );
+				setRecordLoading( false );
+			} );
+		},
+		[ getAssistant ]
+	);
 
 	const closeForm = useCallback( () => {
 		setFormOpen( false );
 		setEditingId( null );
 		setFormFields( EMPTY_FORM );
+		setRecordLoading( false );
 	}, [] );
 
 	const handleSave = useCallback( async () => {
@@ -101,8 +129,10 @@ export function AssistantsPage(): JSX.Element {
 			model: formFields.model.trim() || undefined,
 			provider: formFields.provider,
 			temperature: formFields.temperature,
-			system_prompt: formFields.system_prompt.trim() || undefined,
-			capabilities: parseCapabilities( formFields.capabilities ),
+			// Always sent (not undefined-trimmed) so an edit can clear a
+			// stored system prompt; the server deletes the meta on ''.
+			system_prompt: formFields.system_prompt,
+			tools: parseTools( formFields.tools ),
 		};
 		try {
 			if ( editingId !== null ) {
@@ -123,6 +153,26 @@ export function AssistantsPage(): JSX.Element {
 		},
 		[ deleteAssistant ]
 	);
+
+	// While the bootstrap is still reading the runtime config, show the
+	// loading UI — showing the runtime-error state here would flash an
+	// alarming message before the config is even read.
+	if ( bootstrapLoading ) {
+		return (
+			<div
+				className="nvoos-pro-spa-page nvoos-pro-spa-page--loading"
+				aria-busy="true"
+			>
+				<h2 className="nvoos-pro-spa-page__title">
+					{ __( 'Assistants', 'nvoos-pro-spa' ) }
+				</h2>
+				<div className="nvoos-pro-spa-page__loader" role="status">
+					<span className="nvoos-pro-spa-page__spinner" />
+					{ __( 'Loading assistants…', 'nvoos-pro-spa' ) }
+				</div>
+			</div>
+		);
+	}
 
 	if ( ! runtime ) {
 		return (
@@ -357,6 +407,15 @@ export function AssistantsPage(): JSX.Element {
 								  ) }
 						</h3>
 
+						{ recordLoading && (
+							<p className="nvoos-pro-spa-assistants-form__loading" role="status">
+								{ __(
+									'Loading assistant details…',
+									'nvoos-pro-spa'
+								) }
+							</p>
+						) }
+
 						<div className="nvoos-pro-spa-assistants-form__field">
 							<label
 								htmlFor="nvoos-pro-spa-assistant-title"
@@ -538,7 +597,7 @@ export function AssistantsPage(): JSX.Element {
 								className="nvoos-pro-spa-assistants-form__label"
 							>
 								{ __(
-									'Capabilities',
+									'Tools',
 									'nvoos-pro-spa'
 								) }
 							</label>
@@ -546,16 +605,16 @@ export function AssistantsPage(): JSX.Element {
 								id="nvoos-pro-spa-assistant-capabilities"
 								type="text"
 								className="nvoos-pro-spa-assistants-form__input"
-								value={ formFields.capabilities }
+								value={ formFields.tools }
 								onChange={ ( e ) =>
 									setFormFields( ( f ) => ( {
 										...f,
-										capabilities:
+										tools:
 											e.target.value,
 									} ) )
 								}
 								placeholder={ __(
-									'Comma-separated capabilities, e.g. edit_posts, manage_options',
+									'Comma-separated tool slugs, e.g. get_site_health, web_search',
 									'nvoos-pro-spa'
 								) }
 							/>
@@ -566,11 +625,16 @@ export function AssistantsPage(): JSX.Element {
 								type="button"
 								className="nvoos-pro-spa-assistants-form__save-btn"
 								onClick={ () => void handleSave() }
-								disabled={ saving || ! formFields.title.trim() }
+								disabled={ saving || recordLoading || ! formFields.title.trim() }
 							>
 								{ saving
 									? __(
 											'Saving…',
+											'nvoos-pro-spa'
+									  )
+									: recordLoading
+									? __(
+											'Loading…',
 											'nvoos-pro-spa'
 									  )
 									: editingId !== null

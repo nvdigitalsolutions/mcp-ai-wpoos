@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Exclude the git-tracked build output from Tailwind's automatic source
+ * detection. assets/dist is committed (Velocity ships the prebuilt bundle),
+ * so without this each build scans the previous build's minified JS — the
+ * emitted CSS then differs run to run and rebuilt dist hashes never settle.
+ */
+@source not "../../assets/dist";
+
 /* ---------------------------------------------------------------------------
  * Schedule Anything SPA — Global Styles (Tailwind CSS v4, CSS-first config)
  * ------------------------------------------------------------------------- */

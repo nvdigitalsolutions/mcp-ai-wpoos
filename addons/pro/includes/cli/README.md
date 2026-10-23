@@ -19,12 +19,13 @@ The contract is the **`wp mcp-ai <subcommand>`** invocation, not the PHP class. 
 
 | Symbol | File | Subcommands | Used by |
 |---|---|---|---|
-| `WP_MCP_AI_Pro_CLI_Base_Command` (abstract) | `class-wp-mcp-ai-pro-cli-base-command.php` | — extends Base's `WP_MCP_AI_CLI_Base_Command`; adds `assert_pro_loaded()` + `assert_toolkit_enabled()` | All concrete Pro commands |
+| `WP_MCP_AI_Pro_CLI_Base_Command` (abstract) | `class-wp-mcp-ai-pro-cli-base-command.php` | — extends Base's `WP_MCP_AI_CLI_Base_Command`; adds `assert_pro_loaded()` + `assert_toolkit_enabled()` + `render_envelope()` | All concrete Pro commands |
+| `WP_MCP_AI_Pro_Toolkit_Settings_Map` | `class-wp-mcp-ai-pro-toolkit-settings-map.php` | — canonical toolkit key → label map consumed by `toolkit` and `pro status` (no WP-CLI dependency) | WP-CLI runtime + tests |
 | `WP_MCP_AI_Pro_CLI_Connection_Command` → `wp mcp-ai connection` | `class-wp-mcp-ai-pro-cli-connection-command.php` | `list`, `create`, `get`, `delete`, `test`. Use `--remote-url` (not `--url`) for create. | WP-CLI runtime |
 | `WP_MCP_AI_Pro_CLI_Project_Command` → `wp mcp-ai project` | `class-wp-mcp-ai-pro-cli-project-command.php` | `list`, `create`, `get`, `update`, `delete`. Requires `enable_project_management` toolkit. | WP-CLI runtime |
 | `WP_MCP_AI_Pro_CLI_Task_Command` → `wp mcp-ai task` | `class-wp-mcp-ai-pro-cli-task-command.php` | `list`, `create`, `get`, `update`, `delete`, `complete`, `dependencies`. Requires `enable_project_management` toolkit. | WP-CLI runtime |
 | `WP_MCP_AI_Pro_CLI_Mcp_Server_Command` → `wp mcp-ai mcp-server` | `class-wp-mcp-ai-pro-cli-mcp-server-command.php` | `list`, `get`, `enable`, `disable`, `tools`, `token-generate`, `token-list`, `token-revoke`. Reference implementation. | WP-CLI runtime |
-| `WP_MCP_AI_Pro_CLI_Toolkit_Command` → `wp mcp-ai toolkit` | `class-wp-mcp-ai-pro-cli-toolkit-command.php` | `list`, `enable`, `disable` (accepts `--yes`). 24 toolkits. | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Toolkit_Command` → `wp mcp-ai toolkit` | `class-wp-mcp-ai-pro-cli-toolkit-command.php` | `list`, `enable`, `disable` (mutations gated `manage_options`, `--yes` skips the prompt). Reads the canonical settings map. | WP-CLI runtime |
 | `WP_MCP_AI_Pro_CLI_Status_Command` → `wp mcp-ai pro status` | `class-wp-mcp-ai-pro-cli-status-command.php` | Default action showing Pro version, core version, active toolkits, remote connections. | WP-CLI runtime |
 | `WP_MCP_AI_Pro_CLI_CRM_Command` → `wp mcp-ai crm` | `class-wp-mcp-ai-pro-cli-crm-command.php` | `lead`, `deal`, `company`, `customer`, `activity`, `ticket` × list/get (CRM toolkit). | WP-CLI runtime |
 | `WP_MCP_AI_Pro_CLI_Incident_Command` → `wp mcp-ai incident` | `class-wp-mcp-ai-pro-cli-incident-command.php` | `list`, `get`, `resolve` (gated `manage_options`). | WP-CLI runtime |
@@ -35,6 +36,11 @@ The contract is the **`wp mcp-ai <subcommand>`** invocation, not the PHP class. 
 | `WP_MCP_AI_Pro_CLI_Remote_Site_Command` → `wp mcp-ai remote-site` | `class-wp-mcp-ai-pro-cli-remote-site-command.php` | `list`, `get`, `test`, `peer-list` (read-only). | WP-CLI runtime |
 | `WP_MCP_AI_Pro_CLI_Communication_Command` → `wp mcp-ai communication` | `class-wp-mcp-ai-pro-cli-communication-command.php` | `contacts`, `messages` (chat-channels toolkit). | WP-CLI runtime |
 | `WP_MCP_AI_Pro_CLI_Media_Studio_Command` → `wp mcp-ai media-studio` | `class-wp-mcp-ai-pro-cli-media-studio-command.php` | `status`, `list-jobs`. | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Foundry_Command` → `wp mcp-ai foundry` | `class-wp-mcp-ai-pro-cli-foundry-command.php` | `status`, `export <assistant-id>` (`--corpus`, `--dry-run`; export gated `manage_options` — routes through the canonical export tools). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Para_Command` → `wp mcp-ai para` | `class-wp-mcp-ai-pro-cli-para-command.php` | `list`, `get` (read-only over `mcp_ai_area`). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Qms_Command` → `wp mcp-ai qms` | `class-wp-mcp-ai-pro-cli-qms-command.php` | `status`, `list` (read-only over `mcp_ai_doc_record`). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Mcp_App_Command` → `wp mcp-ai mcp-app` | `class-wp-mcp-ai-pro-cli-mcp-app-command.php` | `list --assistant-id=<id>` (metadata only — never renders token / oauth_data). | WP-CLI runtime |
+| `WP_MCP_AI_Pro_CLI_Fnb_Command` → `wp mcp-ai fnb` | `class-wp-mcp-ai-pro-cli-fnb-command.php` | `status` (toolkit gate, tenant profile, native-storage flag). | WP-CLI runtime |
 
 ## Inputs / Outputs / Neighbors
 
@@ -51,10 +57,12 @@ Folder-specific deltas:
 
 - Every concrete command extends `WP_MCP_AI_Pro_CLI_Base_Command` (which extends Base's `WP_MCP_AI_CLI_Base_Command`) so progress bars, batch counters, capability checks, and error/success summaries stay consistent with Base.
 - Each file MUST be a no-op outside WP-CLI — guard with `if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) { return; }` near the top, and gate `WP_CLI::add_command(…)` on `class_exists( 'WP_CLI' )`.
+- Every new command file MUST be added to the `$wp_mcp_ai_pro_cli_files` list in `wp_mcp_ai_pro_load_cli_commands()` ([`addons/pro/mcp-ai-wpoos-pro.php`](../../mcp-ai-wpoos-pro.php)) — a file that self-registers but is never required silently drops its command (the `mcp-ai content` regression).
 - Always call `assert_pro_loaded()` first and `assert_toolkit_enabled( $setting_key, $label )` before invoking toolkit-scoped operations.
 - Mutating subcommands MUST call `$this->require_capability( 'manage_options' )` (inherited from base) after input validation.
+- Toolkit labels come from `WP_MCP_AI_Pro_Toolkit_Settings_Map` — never hardcode a second copy of the key → label list.
 - Output goes through `WP_CLI::log` / `WP_CLI::success` / `WP_CLI::warning` / `WP_CLI::error` — never `echo` or `print_r`.
-- Use `$this->get_format( $assoc_args )` for consistent format parsing (inherited from base).
+- Use `$this->get_format( $assoc_args )` / `$this->get_fields( $assoc_args, $defaults )` / `$this->render_envelope( $result, $format )` for consistent output (inherited from base).
 - Long-running subcommands SHOULD accept `--dry-run` and `--batch-size=` flags where applicable; mirror the shapes used by Base's `WP_MCP_AI_CLI_Bulk_Command`.
 
 ## Tests

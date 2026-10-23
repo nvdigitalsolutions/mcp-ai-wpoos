@@ -11,9 +11,10 @@
  *   2. **Vector** — cosine similarity from
  *      {@see WP_MCP_AI_Vector_Context_Service::get_vector_candidates()}, the
  *      same embedding pipeline used by the existing booster path.
- *   3. **Graph** — Graphify `RECALLS` neighborhood expansion via
- *      {@see NV_oOS_Graphify_Memory_Bridge::retrieve_graph()} when the addon
- *      is loaded; silently skipped otherwise.
+ *   3. **Graph** — memory-graph neighbourhood expansion via the filterable
+ *      bridge (`wp_mcp_ai_memory_rrf_graph_bridge`; defaults to the bundled
+ *      Graphify `NV_oOS_Graphify_Memory_Bridge::retrieve_graph()`); silently
+ *      skipped when no bridge is available.
  *
  * Streams are merged with the RRF formula (Cormack, Clarke & Buettcher 2009):
  *
@@ -476,9 +477,9 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 	}
 
 	/**
-	 * Graph stream candidates via the Graphify bridge.
+	 * Graph stream candidates via the filterable memory-graph bridge.
 	 *
-	 * Silently returns an empty list when Graphify is not installed/active.
+	 * Silently returns an empty list when no bridge is installed/active.
 	 *
 	 * @since 1.1.20
 	 *
@@ -489,10 +490,26 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 	 * @return array<int, array>
 	 */
 	public static function get_graph_candidates( $query, $agent_id, $filters, $limit ) {
-		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+		/**
+		 * Filters the memory-graph bridge class for the graph retrieval
+		 * stream. Duck-typed: any class exposing a static `retrieve_graph()`
+		 * (Graphify) or `retrieveGraph()` (standalone Content Graph plugin)
+		 * method works, so sites can swap the bridge when the bundled
+		 * Graphify addon is replaced by the standalone plugin.
+		 *
+		 * @since 1.2.9
+		 *
+		 * @param string $bridge_class Class name. Defaults to the bundled
+		 *                             Graphify memory bridge.
+		 */
+		$bridge_class = (string) apply_filters( 'wp_mcp_ai_memory_rrf_graph_bridge', 'NV_oOS_Graphify_Memory_Bridge' );
+		if ( '' === $bridge_class || ! class_exists( $bridge_class ) ) {
 			return array();
 		}
-		if ( ! method_exists( 'NV_oOS_Graphify_Memory_Bridge', 'retrieve_graph' ) ) {
+		$retrieve_method = method_exists( $bridge_class, 'retrieve_graph' )
+			? 'retrieve_graph'
+			: ( method_exists( $bridge_class, 'retrieveGraph' ) ? 'retrieveGraph' : '' );
+		if ( '' === $retrieve_method || ! is_callable( array( $bridge_class, $retrieve_method ) ) ) {
 			return array();
 		}
 
@@ -510,12 +527,12 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 			'room'      => isset( $filters['room'] ) ? (string) $filters['room'] : '',
 			'query'     => $entity_q,
 			'limit'     => max( 1, (int) $limit ),
-			// Forwarded for forward-compat with future Graphify versions; the
-			// current bridge ignores unknown keys.
+			// Forwarded for forward-compat with future bridge versions; the
+			// current bridges ignore unknown keys.
 			'max_depth' => max( 1, $max_depth ),
 		);
 
-		$rows = NV_oOS_Graphify_Memory_Bridge::retrieve_graph( $args );
+		$rows = call_user_func( array( $bridge_class, $retrieve_method ), $args );
 		if ( ! is_array( $rows ) || empty( $rows ) ) {
 			return array();
 		}

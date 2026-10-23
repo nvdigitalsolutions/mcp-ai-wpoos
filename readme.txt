@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.7
+Stable tag: 1.2.10
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,18 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.10 - October 23, 2026 =
+
+Bumped to 1.2.10 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. The admin-surface console migration continues (Proposal 084 Phase 5b–5d): the orphaned cost/analytics REST controllers now register, the real Analytics page ships, the Unified Blueprints catalogue bridges behind mcp-ai-pro/v1/blueprints, and the Agent Command Center absorbs into the console Dashboard — plus the console polish (semantic DataTable, standardized buttons, grouped collapsible sidebar). Fixed: the blueprints 500 (admin-context class gating), React error #310 on four console pages (rules-of-hooks ESLint gate), the settings page (section cards, cross-tab search, sticky save), and the chat dock UX. The SPA status-bar storage meter now reads real server transcript storage via the storage_bytes envelope field. Dependency advisories closed: markdown-it 14.3.3, @modelcontextprotocol/sdk 1.32.0, launch-editor 2.14.2 (14 of 16 alerts). Full tracked-bundle rebuild after the lockfile movement. Cloudways Anti-Bot Protection playbook added to the Schedule Anything ops skill. Tool count unchanged: ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative).
+
+= 1.2.9 - October 22, 2026 =
+
+Bumped to 1.2.9 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. The NV oOS Complete Console Velocity app (Proposal 083) and the admin-surface console migration Phases 0–4d (Proposal 084) — a schema-driven Settings engine, feature-gated console nav, and nine REST contract parity fixes. Schedule Anything gets the live sa-tools registry route, toolkit entitlement visibility, idempotent toggles, and a platform bump to 0.1.2. New base routes: GET/POST mcp-ai/v1/settings, /features, /teams, and the settings schema/values pair. Debug logging gates behind an opt-in setting. Memory-graph bridge seams for provenance and RRF. The Pro zip stops shipping root examples/ (5.4 MB smaller). Dependency advisories closed (vite, hono, follow-redirects). New mcp-ai-wpoos-spa-rest-contract coding-time skill (75 → 76). Tool count unchanged: ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative).
+
+= 1.2.8 - October 19, 2026 =
+
+Bumped to 1.2.8 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Schedule Anything presets + toolkits REST API (Proposal 081) with schedule-record redaction, and single-site sole-tenant mode for the platform plugin (Proposal 082, 0.1.1). F&B ingest offloads to the media worker (Proposal 079: the new /api/ingest/parse route, batch image hardening, and an opt-in vision OCR rung). MCP OAuth authorize hardening (RFC 9700 exact-string redirect matching, consent page, scope validation). WP-CLI integration gaps closed: a canonical 40-toolkit settings map, gated toolkit mutations, and new foundry/para/qms/mcp-app/fnb commands. Expandable chat composer and collapsible toolbar (Proposal 080). Gmail body hydration + attachment text. F&B fixes: serial-date trend collapse, resume/retry imports, table_map trust order. Schedule Anything Velocity app with a server.js entry shim; the platform plugin's slug-specific Requires Plugins header dropped so the oos-complete bundle activates. Dictation macOS boot-smoke + interactive CI and universal builds. New mcp-ai-schedule-anything-ops coding-time skill (74 → 75). Tool count unchanged: ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative).
 
 = 1.2.7 - October 17, 2026 =
 

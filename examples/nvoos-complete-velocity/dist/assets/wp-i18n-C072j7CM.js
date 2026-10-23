@@ -1,0 +1,2 @@
+function e(e,t){return e}function t(e,...t){let n=0;return e.replace(/%(\d+\$)?([sdf])/g,(e,r,i)=>{let a=r?parseInt(r,10)-1:n;n+=1;let o=t[a];return String(i===`d`?Math.trunc(Number(o)):i===`f`?Number(o):o??``)})}export{t as n,e as t};
+//# sourceMappingURL=wp-i18n-C072j7CM.js.map

@@ -61,6 +61,15 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	 * @return void
 	 */
 	public function add_menu_page() {
+		/**
+		 * Kill-switch for the wp-admin slash-commands surface (Proposal 084
+		 * Phase 1). The Complete Console ships the equivalent page; flip this
+		 * filter off per cohort once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_slash_commands', true ) ) {
+			return;
+		}
+
 		add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'Slash Commands', 'mcp-ai-wpoos' ),

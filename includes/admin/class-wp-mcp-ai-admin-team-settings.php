@@ -40,6 +40,15 @@ class WP_MCP_AI_Admin_Team_Settings {
 	 * Register the submenu page under Teams CPT.
 	 */
 	public function register_submenu_page() {
+		/**
+		 * Kill-switch for the wp-admin team-settings surface (Proposal 084
+		 * Phase 1). The Complete Console ships the Teams page; flip this
+		 * filter off per cohort once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_teams', true ) ) {
+			return;
+		}
+
 		$post_type = class_exists( 'WP_MCP_AI_Team_CPT' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
 
 		$this->page_hook = add_submenu_page(

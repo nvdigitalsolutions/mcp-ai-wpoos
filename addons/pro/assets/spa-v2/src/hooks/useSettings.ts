@@ -1,9 +1,19 @@
 /**
- * useSettings — Hook for plugin settings.
+ * useSettings — Schema-driven settings hook (2.4.0, Proposal 084 Phase 2).
+ *
+ * Loads the settings catalogue (GET /settings/schema) and the values
+ * (GET /settings/values, secrets masked), and persists partial updates
+ * (POST /settings/values) — the server sanitizes every key against the
+ * schema, so the client only tracks dirty keys.
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { SettingsClient, type PluginSettings } from '../api/settings';
+import {
+	SettingsClient,
+	type SettingsSchema,
+	type SettingsField,
+	type SettingsValues,
+} from '../api/settings';
 import { useUIStore } from '../stores/uiStore';
 
 export interface UseSettingsOptions {
@@ -12,11 +22,15 @@ export interface UseSettingsOptions {
 }
 
 export interface UseSettingsReturn {
-	settings: PluginSettings | null;
+	schema: SettingsSchema;
+	fields: SettingsField[];
+	values: SettingsValues;
 	loading: boolean;
+	saving: boolean;
 	error: string | null;
+	unavailable: boolean;
 	fetchSettings: () => Promise< void >;
-	updateSettings: ( changes: Partial< PluginSettings > ) => Promise< PluginSettings | null >;
+	saveSettings: ( changes: SettingsValues ) => Promise< SettingsValues | null >;
 }
 
 export function useSettings( options: UseSettingsOptions ): UseSettingsReturn {
@@ -24,44 +38,75 @@ export function useSettings( options: UseSettingsOptions ): UseSettingsReturn {
 		() => new SettingsClient( { endpoint: options.endpoint, nonce: options.nonce } ),
 		[ options.endpoint, options.nonce ]
 	);
-
-	const [ settings, setSettings ] = useState< PluginSettings | null >( null );
-	const [ loading, setLoading ] = useState< boolean >( false );
-	const [ error, setError ] = useState< string | null >( null );
 	const addToast = useUIStore( ( s ) => s.addToast );
 
+	const [ schema, setSchema ] = useState< SettingsSchema >( { tabs: {}, fields: [] } );
+	const [ values, setValues ] = useState< SettingsValues >( {} );
+	// Start in the loading state — the first fetch kicks off in an effect
+	// (after first paint); without this the form renders with blank fields
+	// (and a save would overwrite them) until the fetch actually starts.
+	const [ loading, setLoading ] = useState< boolean >( true );
+	const [ saving, setSaving ] = useState< boolean >( false );
+	const [ error, setError ] = useState< string | null >( null );
+	const [ unavailable, setUnavailable ] = useState< boolean >( false );
+
 	const fetchSettings = useCallback( async () => {
+		if ( ! options.endpoint ) {
+			setLoading( false );
+			return;
+		}
 		setLoading( true );
 		setError( null );
 		try {
-			const result = await client.get();
-			setSettings( result );
+			const [ schemaResult, valuesResult ] = await Promise.all( [
+				client.schema(),
+				client.values(),
+			] );
+			setSchema( schemaResult );
+			setValues( valuesResult );
+			setUnavailable( schemaResult.fields.length === 0 );
 		} catch ( err ) {
 			setError( err instanceof Error ? err.message : String( err ) );
 		} finally {
 			setLoading( false );
 		}
-	}, [ client ] );
+	}, [ client, options.endpoint ] );
 
 	useEffect( () => {
 		void fetchSettings();
 	}, [ fetchSettings ] );
 
-	const updateSettings = useCallback(
-		async ( changes: Partial< PluginSettings > ): Promise< PluginSettings | null > => {
+	const saveSettings = useCallback(
+		async ( changes: SettingsValues ): Promise< SettingsValues | null > => {
+			if ( unavailable || ! options.endpoint ) {
+				return null;
+			}
+			setSaving( true );
+			setError( null );
 			try {
-				const updated = await client.update( changes );
-				setSettings( updated );
+				const updated = await client.updateValues( changes );
+				setValues( updated );
 				addToast( 'Settings saved', 'success' );
 				return updated;
 			} catch ( err ) {
-				const msg = err instanceof Error ? err.message : String( err );
-				addToast( msg, 'error' );
+				setError( err instanceof Error ? err.message : String( err ) );
 				return null;
+			} finally {
+				setSaving( false );
 			}
 		},
-		[ client, addToast ]
+		[ client, options.endpoint, unavailable, addToast ]
 	);
 
-	return { settings, loading, error, fetchSettings, updateSettings };
+	return {
+		schema,
+		fields: schema.fields,
+		values,
+		loading,
+		saving,
+		error,
+		unavailable,
+		fetchSettings,
+		saveSettings,
+	};
 }

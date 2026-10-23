@@ -114,6 +114,45 @@ describe( 'assistantStore', () => {
 			expect( freshStore.getState().assistantId ).toBe( 7 );
 		} );
 	} );
+
+	describe( 'assistantsLoaded', () => {
+		it( 'starts false when the runtime ships no assistant list', async () => {
+			setRuntime( BASE_RUNTIME );
+			vi.resetModules();
+			const { useAssistantStore: freshStore } = await import(
+				'../stores/assistantStore'
+			);
+
+			expect( freshStore.getState().assistantsLoaded ).toBe( false );
+		} );
+
+		it( 'starts true when the runtime pre-loads assistants', async () => {
+			setRuntime( {
+				...BASE_RUNTIME,
+				assistants: [
+					{ id: 1, title: 'Support Bot' },
+				],
+			} );
+			vi.resetModules();
+			const { useAssistantStore: freshStore } = await import(
+				'../stores/assistantStore'
+			);
+
+			expect( freshStore.getState().assistantsLoaded ).toBe( true );
+		} );
+
+		it( 'flips to true when setAssistants records the server list', async () => {
+			setRuntime( BASE_RUNTIME );
+			vi.resetModules();
+			const { useAssistantStore: freshStore } = await import(
+				'../stores/assistantStore'
+			);
+
+			freshStore.getState().setAssistants( [] );
+
+			expect( freshStore.getState().assistantsLoaded ).toBe( true );
+		} );
+	} );
 } );
 
 // ═══════════════════════════════════════════════════════════════════════════════

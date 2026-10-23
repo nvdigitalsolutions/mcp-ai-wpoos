@@ -108,6 +108,24 @@ describe( 'KnowledgeGraphPage', () => {
 		expect( initMock ).not.toHaveBeenCalled();
 	} );
 
+	it( 'sends the runtime nonce on the visual-config fetch (cookie mode auth)', async () => {
+		setRuntime( { contentGraph: CONTENT_GRAPH_BASE } );
+		setFetch( {}, true, 200 );
+		render( <KnowledgeGraphPage /> );
+
+		await waitFor( () => {
+			expect( global.fetch ).toHaveBeenCalledWith(
+				`${ CONTENT_GRAPH_BASE }/graph/visual-config`,
+				expect.objectContaining( {
+					credentials: 'same-origin',
+					headers: expect.objectContaining( {
+						'X-WP-Nonce': 'test-nonce',
+					} ),
+				} )
+			);
+		} );
+	} );
+
 	it( 'writes the localized config and initialises the explorer', async () => {
 		setRuntime( { contentGraph: CONTENT_GRAPH_BASE } );
 		setFetch( {
@@ -120,6 +138,18 @@ describe( 'KnowledgeGraphPage', () => {
 
 		await waitFor( () => {
 			expect( initMock ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		// The window hand-off happens in the same effect that calls the
+		// factory, but React may tear down and re-run the effect while the
+		// previous test's async state settles — wait for the global instead
+		// of reading it synchronously.
+		await waitFor( () => {
+			expect(
+				( window as unknown as {
+					nvoosContentGraphAdmin?: Record< string, unknown >;
+				} ).nvoosContentGraphAdmin
+			).toBeDefined();
 		} );
 
 		const config = ( window as unknown as {

@@ -79,7 +79,7 @@ class Test_WP_CLI_Parity_Hardening extends WP_UnitTestCase {
 	 * get_tools reads the canonical array and ignores legacy string shapes.
 	 */
 	public function test_meta_map_get_tools_reads_array_only() {
-		$id = wp_insert_post(
+		$id                    = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_assistant',
 				'post_title'  => 'Tools Map Test',
@@ -122,6 +122,11 @@ class Test_WP_CLI_Parity_Hardening extends WP_UnitTestCase {
 		foreach ( array( 'root', 'plugins', 'queue', 'token', 'rabbitmq', 'stdio', 'health', 'cache', 'version' ) as $noun ) {
 			$this->assertStringContainsString( "cli/class-wp-mcp-ai-cli-{$noun}-command.php", $shim, "Dispatcher should require the {$noun} command file" );
 		}
+
+		// Regression pin: `mcp-ai content` shipped with a self-registering
+		// command file that nothing required, so the command silently never
+		// registered under WP-CLI (the tree test only asserts on source).
+		$this->assertStringContainsString( 'cli/class-wp-mcp-ai-cli-content-command.php', $shim, 'Dispatcher should require the content command file' );
 	}
 
 	/**
@@ -139,13 +144,13 @@ class Test_WP_CLI_Parity_Hardening extends WP_UnitTestCase {
 	 */
 	public function test_extracted_mutating_commands_are_capability_gated() {
 		$mutating_files = array(
-			'root'      => array( 'cleanup_cct' ),
-			'plugins'   => array( 'activate', 'deactivate' ),
-			'queue'     => array( 'process', 'clear', 'retry' ),
-			'token'     => array( 'migrate_providers' ),
-			'rabbitmq'  => array( 'setup', 'send_test_message', 'worker' ),
-			'stdio'     => array( '__invoke' ),
-			'cache'     => array( 'clear' ),
+			'root'     => array( 'cleanup_cct' ),
+			'plugins'  => array( 'activate', 'deactivate' ),
+			'queue'    => array( 'process', 'clear', 'retry' ),
+			'token'    => array( 'migrate_providers' ),
+			'rabbitmq' => array( 'setup', 'send_test_message', 'worker' ),
+			'stdio'    => array( '__invoke' ),
+			'cache'    => array( 'clear' ),
 		);
 
 		foreach ( $mutating_files as $noun => $methods ) {
@@ -178,5 +183,70 @@ class Test_WP_CLI_Parity_Hardening extends WP_UnitTestCase {
 		$contents = $this->read_plugin_file( 'includes/cli/class-wp-mcp-ai-cli-tool-command.php' );
 		$this->assertStringContainsString( 'public function call( $args, $assoc_args )', $contents );
 		$this->assertStringContainsString( 'get_required_capability', $contents, 'tool call should honor per-tool capabilities' );
+	}
+
+	// -----------------------------------------------------------------------
+	// Toolkit settings-map centralisation (CLI gap closure)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * The canonical map covers every toolkit key that previously drifted out
+	 * of the hardcoded CLI lists (cloudways, dietpi, calendar-booking, …).
+	 */
+	public function test_toolkit_map_covers_drift_keys() {
+		$map = $this->read_plugin_file( 'addons/pro/includes/cli/class-wp-mcp-ai-pro-toolkit-settings-map.php' );
+
+		$drift_keys = array(
+			'enable_cloudways_toolkit',
+			'enable_dietpi_toolkit',
+			'enable_calendar_booking_toolkit',
+			'enable_outbound_booking_toolkit',
+			'enable_ezuite_toolkit',
+			'enable_law_firm_toolkit',
+			'enable_cre_debt_toolkit',
+			'enable_healthcare_imaging',
+			'enable_medical_vitals',
+			'enable_extended_cognition_toolkit',
+			'enable_vision_analysis_toolkit',
+		);
+
+		foreach ( $drift_keys as $key ) {
+			$this->assertStringContainsString( "'{$key}'", $map, "Toolkit map should contain {$key}" );
+		}
+	}
+
+	/**
+	 * Both CLI consumers read the shared map instead of hardcoding their own
+	 * copies (the drift source for the F&B toggle bug class).
+	 */
+	public function test_toolkit_and_status_commands_use_shared_map() {
+		foreach ( array( 'toolkit', 'status' ) as $noun ) {
+			$contents = $this->read_plugin_file( "addons/pro/includes/cli/class-wp-mcp-ai-pro-cli-{$noun}-command.php" );
+			$this->assertStringContainsString( 'WP_MCP_AI_Pro_Toolkit_Settings_Map', $contents, "{$noun} command should read the shared toolkit settings map" );
+		}
+	}
+
+	/**
+	 * The Pro loader requires the map and the new subsystem commands, so they
+	 * register under WP-CLI (a load-order regression drops them silently).
+	 */
+	public function test_pro_loader_requires_map_and_new_commands() {
+		$loader = $this->read_plugin_file( 'addons/pro/mcp-ai-wpoos-pro.php' );
+
+		foreach (
+			array(
+				'class-wp-mcp-ai-pro-toolkit-settings-map.php',
+				'class-wp-mcp-ai-pro-cli-foundry-command.php',
+				'class-wp-mcp-ai-pro-cli-para-command.php',
+				'class-wp-mcp-ai-pro-cli-qms-command.php',
+				'class-wp-mcp-ai-pro-cli-mcp-app-command.php',
+				'class-wp-mcp-ai-pro-cli-fnb-command.php',
+				'includes/class-wp-mcp-ai-ezuite-cli.php',
+				'includes/class-wp-mcp-ai-flowhub-cli.php',
+				'includes/class-wp-mcp-ai-shopify-sync-cli.php',
+			) as $file
+		) {
+			$this->assertStringContainsString( $file, $loader, "Pro CLI loader should require {$file}" );
+		}
 	}
 }

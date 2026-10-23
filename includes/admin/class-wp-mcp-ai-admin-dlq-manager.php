@@ -40,6 +40,15 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 	 * Register the DLQ manager page under the NV oOS menu.
 	 */
 	public function register_page() {
+		/**
+		 * Kill-switch for the wp-admin dead-letter-queue surface (Proposal 084
+		 * Phase 3). The Complete Console ships the Operations page; flip this
+		 * filter off per cohort once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_dlq_manager', true ) ) {
+			return;
+		}
+
 		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'Dead Letter Queue', 'mcp-ai-wpoos' ),

@@ -153,9 +153,21 @@ class WP_MCP_AI_Pro_SPA_Config {
 				: 'admin' === $requested_mode
 		);
 
+		// ---- vector store pre-load (mirrors legacy chat.js) --------------------
+		// Exposed so useBootstrap can surface the optional vector-store preload
+		// notice; empty when the assistant has no vector store configured.
+		$vector_store_id = '';
+		if ( $assistant_id > 0 && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			if ( ! empty( $assistant_config['vector_store_id'] ) ) {
+				$vector_store_id = (string) $assistant_config['vector_store_id'];
+			}
+		}
+
 		// ---- per-instance SPA config ----------------------------------------
 		$config = array(
 			'assistantId'         => $assistant_id,
+			'vectorStoreId'       => $vector_store_id,
 			'theme'               => $theme,
 			'allowSensitiveTools' => ! empty( $per_instance['allow_sensitive_tools'] ),
 			'mode'                => $mode,
@@ -258,44 +270,108 @@ class WP_MCP_AI_Pro_SPA_Config {
 			'config'       => $config,
 			'endpoints'    => array(
 				// Core chat endpoints (mcp-ai/v1).
-				'chat'          => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
-				'chatClient'    => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
-				'transcripts'   => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
-				'memory'        => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
-				'threads'       => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
-				'tools'         => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
-				'assistants'    => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
-				'settings'      => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),
+				'chat'               => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
+				'chatClient'         => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
+				'transcripts'        => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
+				'memory'             => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
+				'threads'            => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
+				'tools'              => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
+				'assistants'         => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
+				'settings'           => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),
 
 				// WordPress media upload endpoint (matches legacy chat-spa).
-				'upload'        => esc_url_raw( rest_url( 'wp/v2/media' ) ),
+				'upload'             => esc_url_raw( rest_url( 'wp/v2/media' ) ),
 
 				// Pro endpoints (mcp-ai-pro/v1).
-				'workflows'     => $is_admin
+				'workflows'          => $is_admin
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflows' ) )
 					: '',
-				'analytics'     => $is_admin
-					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/analytics' ) )
+				'analytics'          => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/analytics' ) )
 					: '',
-				'approvals'     => $is_admin && ! $guest
+				'cost'               => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/cost' ) )
+					: '',
+				'approvals'          => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/approvals' ) )
 					: '',
-				'shortcuts'     => esc_url_raw( rest_url( 'mcp-ai-pro/v1/tool-shortcuts' ) ),
-				'slashCommands' => esc_url_raw( rest_url( 'mcp-ai-pro/v1/slash-commands' ) ),
-				'okf'           => class_exists( 'WP_MCP_AI_OKF_Bundle_Manager' )
+				'triggers'           => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/orchestration/triggers' ) )
+					: '',
+				'teams'              => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/teams' ) )
+					: '',
+				'portability'        => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) )
+					: '',
+				'security'           => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/security' ) )
+					: '',
+				'operations'         => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/operations' ) )
+					: '',
+				'diagnostics'        => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/diagnostics' ) )
+					: '',
+				'tokenManager'       => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/token-manager' ) )
+					: '',
+				'orchestrationStats' => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/orchestration/stats' ) )
+					: '',
+				'proOps'             => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/ops' ) )
+					: '',
+				'scheduleManager'    => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) )
+					: '',
+				'workflowBuilder'    => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/orchestration/workflows' ) )
+					: '',
+				'workflowPresets'    => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflow-presets' ) )
+					: '',
+				'workflowNodes'      => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflow-builder' ) )
+					: '',
+				'workflowRuns'       => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/orchestration/runs' ) )
+					: '',
+				'wpBase'             => esc_url_raw( rest_url( 'wp/v2' ) ),
+				'recordsSchema'      => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/records/schema' ) )
+					: '',
+				'dashboardsSchema'   => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/dashboards/schema' ) )
+					: '',
+				'chatChannels'       => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) )
+					: '',
+				'mediaCc'            => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/media-cc' ) )
+					: '',
+				'blueprints'         => ! $guest && defined( 'WP_MCP_AI_PRO_FILE' ) && current_user_can( 'edit_posts' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/blueprints' ) )
+					: '',
+				'commandCenter'      => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/command-center' ) )
+					: '',
+				'shortcuts'          => esc_url_raw( rest_url( 'mcp-ai-pro/v1/tool-shortcuts' ) ),
+				'slashCommands'      => esc_url_raw( rest_url( 'mcp-ai-pro/v1/slash-commands' ) ),
+				'okf'                => WP_MCP_AI_Feature_Flags::okf()
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/okf' ) )
 					: '',
 
 				// NV oOS Content Graph (standalone plugin) — the knowledge-graph
 				// page renders an unavailable state when it's not installed.
-				'contentGraph'  => ( $is_admin && ! $guest && class_exists( 'NvoosContentGraph\Plugin' ) )
+				'contentGraph'       => ( $is_admin && ! $guest && WP_MCP_AI_Feature_Flags::knowledge_graph() )
 					? esc_url_raw( rest_url( 'nvoos-content-graph/v1' ) )
 					: '',
 
 				// NV oOS Docs Hub — the #/docs page renders this front-end URL
 				// in a sandboxed iframe (defaults to the hosted console URL;
 				// admins can override via the filter).
-				'docsHub'       => ( $is_admin && ! $guest )
+				'docsHub'            => ( $is_admin && ! $guest )
 					? (string) apply_filters(
 						'wp_mcp_ai_pro_spa_docs_url',
 						'https://console.nvoos.cloud/docs-hub/'
@@ -304,13 +380,13 @@ class WP_MCP_AI_Pro_SPA_Config {
 
 				// NV oOS Media Studio — the #/media page frames its same-site
 				// shortcode page (hosted at /media-studio/ by default; overridable).
-				'mediaStudio'    => ( $is_admin && ! $guest && class_exists( 'NV_oOS_Media_Studio_Shortcode' ) )
+				'mediaStudio'        => ( $is_admin && ! $guest && WP_MCP_AI_Feature_Flags::media_studio() )
 					? (string) apply_filters( 'wp_mcp_ai_pro_spa_media_studio_url', home_url( '/media-studio/' ) )
 					: '',
 
 				// NV oOS Document Editor — the #/documents page frames its
 				// same-site shortcode page (hosted at /document-editor/ by default).
-				'documentEditor' => ( $is_admin && ! $guest && class_exists( 'NV_oOS_Document_Editor_Shortcode' ) )
+				'documentEditor'     => ( $is_admin && ! $guest && WP_MCP_AI_Feature_Flags::document_editor() )
 					? (string) apply_filters( 'wp_mcp_ai_pro_spa_document_editor_url', home_url( '/document-editor/' ) )
 					: '',
 			),
@@ -324,6 +400,9 @@ class WP_MCP_AI_Pro_SPA_Config {
 			'mentionTypes' => array(),
 			'assistants'   => $assistants,
 			'profiles'     => $chat_profiles,
+			// Server-side feature availability (Proposal 084 Phase 0) — the
+			// map gate-driving surfaces consume instead of guessing from URLs.
+			'features'     => WP_MCP_AI_Feature_Flags::all(),
 		);
 
 		// Populate mention types if the resolver is available.
