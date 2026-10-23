@@ -20,7 +20,7 @@ import { submitWpLogin } from '../login';
 interface LoginScreenProps {
   /** Re-run the session bootstrap after a successful sign-in. */
   onSuccess: () => void;
-  /** Informational line (e.g. "your session expired") shown above the form. */
+  /** Informational line (e.g. "please click the button below") shown above the form. */
   notice?: string;
 }
 

@@ -74,7 +74,7 @@ function Console(): JSX.Element {
           setBoot((prev) =>
             prev.phase === 'login'
               ? prev
-              : { phase: 'login', notice: 'Your session expired — please sign in again.' },
+              : { phase: 'login', notice: 'Please click the button below.' },
           ),
       });
 

@@ -58,10 +58,10 @@ describe('LoginScreen', () => {
     render(
       <LoginScreen
         onSuccess={() => {}}
-        notice="Your session expired — please sign in again."
+        notice="Please click the button below."
       />,
     );
-    expect(screen.getByRole('status')).toHaveTextContent('Your session expired');
+    expect(screen.getByRole('status')).toHaveTextContent('Please click the button below');
   });
 
   it('toggles password visibility with an accessible pressed state', async () => {
