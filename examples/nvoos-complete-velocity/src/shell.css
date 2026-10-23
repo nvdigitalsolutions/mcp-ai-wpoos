@@ -748,3 +748,226 @@ body,
   max-width: 560px;
   color: var(--shell-muted);
 }
+
+.nvoos-console-error__login {
+  margin-top: 12px;
+  min-height: 44px;
+  padding: 0 22px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(90deg, var(--shell-accent), #9d6bff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.nvoos-console-error__login:focus-visible {
+  outline: 2px solid var(--shell-accent-2);
+  outline-offset: 2px;
+}
+
+/* ── Sign-in screen (replaces the proxied wp-login.php page) ────────────── */
+
+.nvoos-login {
+  flex: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 70% -10%, rgba(124, 92, 255, 0.14), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(53, 208, 165, 0.1), transparent 60%),
+    var(--shell-bg);
+}
+
+.nvoos-login__card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--shell-card);
+  border: 1px solid var(--shell-border);
+  border-radius: 14px;
+  padding: 32px;
+  box-sizing: border-box;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.nvoos-login__header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.nvoos-login__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--shell-accent), var(--shell-accent-2));
+  margin-bottom: 12px;
+}
+
+.nvoos-login__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--shell-text);
+}
+
+.nvoos-login__subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--shell-muted);
+}
+
+.nvoos-login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nvoos-login__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nvoos-login__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nvoos-login__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shell-text);
+}
+
+.nvoos-login__input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 16px; /* ≥16px — prevents iOS focus zoom (NN/g mobile checklist) */
+  padding: 10px 12px;
+  color: var(--shell-text);
+  background: #10131b;
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.nvoos-login__input:focus-visible {
+  outline: none;
+  border-color: var(--shell-accent);
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.25);
+}
+
+.nvoos-login__input:disabled {
+  opacity: 0.6;
+}
+
+.nvoos-login__toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--shell-accent);
+  padding: 2px 4px;
+}
+
+.nvoos-login__toggle:focus-visible {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.nvoos-login__remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--shell-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.nvoos-login__remember input {
+  accent-color: var(--shell-accent);
+  width: 16px;
+  height: 16px;
+}
+
+.nvoos-login__error {
+  margin: 0;
+  font-size: 13px;
+  color: #ff8f8f;
+  background: rgba(255, 90, 90, 0.08);
+  border: 1px solid rgba(255, 90, 90, 0.35);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.nvoos-login__submit {
+  min-height: 44px; /* NN/g: ≥44px touch target */
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(90deg, var(--shell-accent), #9d6bff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.15s, opacity 0.15s;
+}
+
+.nvoos-login__submit:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.nvoos-login__submit:focus-visible {
+  outline: 2px solid var(--shell-accent-2);
+  outline-offset: 2px;
+}
+
+.nvoos-login__submit:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.nvoos-login__notice {
+  margin: 0;
+  font-size: 13px;
+  color: #ffd58a;
+  background: rgba(255, 190, 90, 0.08);
+  border: 1px solid rgba(255, 190, 90, 0.35);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* ── Sidebar sign-out action ────────────────────────────────────────────── */
+
+.nvoos-console-nav__btn--signout {
+  margin-top: 6px;
+  color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-console-nav__btn--signout:hover:not(:disabled) {
+  color: #d64545;
+}
+
+.nvoos-console-nav__btn--signout:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

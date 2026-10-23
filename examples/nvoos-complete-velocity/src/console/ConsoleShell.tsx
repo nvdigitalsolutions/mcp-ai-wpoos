@@ -205,7 +205,7 @@ function MissingConfigScreen(): JSX.Element {
 /**
  * Inner component — rendered inside HashRouter so it can read the location.
  */
-function ConsoleApp(): JSX.Element {
+function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
   const location = useLocation();
   const isChatRoute = location.pathname === '/chat';
 
@@ -292,6 +292,7 @@ function ConsoleApp(): JSX.Element {
         isChatRoute={isChatRoute}
         user={runtime.user}
         features={features}
+        onSignOut={onSignOut}
       />
 
       <main className="nvoos-console-content" id="nvoos-console-main-content">
@@ -686,10 +687,15 @@ function CommandPaletteGate(): JSX.Element | null {
   return isOpen ? <CommandPalette /> : null;
 }
 
+export interface ConsoleShellProps {
+  /** End the WordPress session and return to the sign-in screen. */
+  onSignOut: () => Promise<void> | void;
+}
+
 /**
  * Public shell — bootstrap gate, then the HashRouter'd console.
  */
-export function ConsoleShell(): JSX.Element {
+export function ConsoleShell({ onSignOut }: ConsoleShellProps): JSX.Element {
   const { loading, error } = useBootstrap();
 
   if (loading) {
@@ -712,7 +718,7 @@ export function ConsoleShell(): JSX.Element {
 
   return (
     <HashRouter>
-      <ConsoleApp />
+      <ConsoleApp onSignOut={onSignOut} />
     </HashRouter>
   );
 }

@@ -38,6 +38,13 @@ export interface FetchWrapperOptions {
    */
   mediaWorkerUrl?: string;
   mediaWorkerToken?: string;
+  /**
+   * Session-expiry signal: a WordPress-origin request answered 401 means the
+   * cookie session died mid-use. The console surfaces its sign-in screen
+   * instead of letting pages error individually. Scoped to `siteOrigin`;
+   * never fired for external services.
+   */
+  onUnauthorized?: () => void;
 }
 
 // The prefilter reads the latest options so reconnect with different
@@ -118,12 +125,50 @@ function installJQueryCredentialPrefilter(): void {
   });
 }
 
+/**
+ * jQuery-based page data (the vendored Content Graph explorer) bypasses the
+ * fetch wrapper — mirror the 401 → sign-in signal through a global ajaxError
+ * hook, scoped to the WordPress origin like the fetch path. Installed once
+ * per page load (there is no hook-removal API); it reads `activeOptions` at
+ * event time so re-installs with new callbacks keep working.
+ */
+let jqueryUnauthorizedHookInstalled = false;
+
+function installJQueryUnauthorizedHook(): void {
+  if (jqueryUnauthorizedHookInstalled) {
+    return;
+  }
+  jqueryUnauthorizedHookInstalled = true;
+
+  $(document).ajaxError(function (_event, jqXHR, ajaxSettings) {
+    try {
+      if (!activeOptions.onUnauthorized || jqXHR.status !== 401) {
+        return;
+      }
+      const url = typeof ajaxSettings?.url === 'string' ? ajaxSettings.url : '';
+      const targetOrigin = new URL(url, window.location.origin).origin;
+      if (activeOptions.siteOrigin !== undefined && targetOrigin === activeOptions.siteOrigin) {
+        activeOptions.onUnauthorized();
+      }
+    } catch {
+      // Never throw from a global hook; the request's own error path runs.
+    }
+  });
+}
+
+// The true native fetch, captured once: re-installing the wrapper (session
+// bootstrap re-runs after every sign-in) must wrap the ORIGINAL, not the
+// previous wrapper — otherwise layers accumulate and 401 callbacks fire
+// once per layer.
+let nativeFetch: typeof window.fetch | null = null;
+
 export function installFetchWrapper(options: FetchWrapperOptions): () => void {
   activeOptions = options;
   refreshMediaWorkerOrigin();
   installJQueryCredentialPrefilter();
+  installJQueryUnauthorizedHook();
 
-  const original = window.fetch.bind(window);
+  const original = (nativeFetch ??= window.fetch.bind(window));
   const workerOrigin = options.mediaWorkerUrl?.trim()
     ? new URL(options.mediaWorkerUrl.trim()).origin
     : '';
@@ -164,10 +209,22 @@ export function installFetchWrapper(options: FetchWrapperOptions): () => void {
       headers.delete('X-WP-Nonce');
     }
 
-    return original(input, { ...init, headers });
+    const promise = original(input, { ...init, headers });
+    if (!activeOptions.onUnauthorized) {
+      return promise;
+    }
+    // Session-expiry detection for the WordPress origin only (see
+    // FetchWrapperOptions.onUnauthorized).
+    return promise.then((response) => {
+      if (response.status === 401 && isSiteRequest) {
+        activeOptions.onUnauthorized?.();
+      }
+      return response;
+    });
   };
 
   return () => {
     window.fetch = original;
+    nativeFetch = null;
   };
 }
