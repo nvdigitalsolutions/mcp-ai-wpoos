@@ -20,7 +20,8 @@
     "mcp-wordpress": "3.3.36"
   },
   "overrides": {
-    "hono": ">=4.13.11 <5"
+    "hono": ">=4.13.11 <5",
+        "ip-address": ">=10.7.4"
   },
   "license": "GPL-3.0-or-later"
 }

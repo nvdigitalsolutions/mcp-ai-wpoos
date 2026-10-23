@@ -56,7 +56,7 @@
 		"puppeteer": "^25.7.0",
 		"qrcode": "^1.5.4",
 		"regression": "^2.0.1",
-		"sharp": "^0.35.4",
+		"sharp": "^0.35.5",
 		"subtitle": "^3.0.0",
 		"tesseract.js": "^5.1.1",
 		"turndown": "^7.2.0",
