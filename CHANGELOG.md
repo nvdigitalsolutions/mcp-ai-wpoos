@@ -1,5 +1,15 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — Complete Console + Schedule Anything caching layers, backend shared-cache opt-in
+
+- **`examples/nvoos-complete-velocity/scripts/serve.mjs` caching contract** — the Velocity app now keeps browser + CDN load off the WordPress backend on three fronts: (1) `index.html` serves `no-cache` + a weak ETag so repeat navigations revalidate with 304s; (2) text assets (JS/CSS/HTML/SVG) serve gzip/brotli from an in-memory file cache with `Vary: Accept-Encoding` (entry chunk ~90 KB gzip vs ~300 KB raw); (3) a **default-deny proxy micro-cache** stores proxied `GET` responses only when WordPress itself marks them `Cache-Control: public` with an explicit `max-age`/`s-maxage` and no `Set-Cookie`/`Vary: Cookie` — the nonce + SSE endpoints (`no-store`) can never be cached. `X-Cache-Status: HIT/MISS/BYPASS` + `Age` on every proxied response; session-bound `X-WP-Nonce` response headers are stripped from cached entries; env knobs `NVOOS_PROXY_CACHE=0` and `NVOOS_PROXY_CACHE_MAX_TTL` (default 300 s).
+- **Same layer ported to `examples/schedule-anything-velocity/scripts/serve.mjs`** — byte-parity with the Complete Console module (SA port/prefix deltas only); both sync workflows now smoke-assert the contract (`no-cache`+ETag→304, `immutable` on hashed assets, gzip delivery).
+- **Favicon over-caching fixed (both apps)** — unversioned root files previously inherited the one-year `immutable` treatment meant for hashed assets; they now get `public, max-age=86400` + ETag. Also fixed a win32 `normalize()` backslash quirk that silently downgraded the `immutable` contract on Windows dev servers.
+- **Backend shared-cache opt-in** — `GET /mcp-ai/v1/features` now emits `Cache-Control: public, max-age=60, s-maxage=60` (the map is user-invariant; the console fetches it on every boot). New `WP_MCP_AI_REST_Cache_Control` (`includes/rest/class-wp-mcp-ai-rest-cache-control.php`, wired in `includes/bootstrap/loader.php`) opts the request out of WP 6.9's authenticated no-cache injection (`rest_send_nocache_headers` defaults to `is_user_logged_in()` and overwrites controller-set headers) — only when the response explicitly declares `public`/`s-maxage`; default-deny preserved for everything else. New suites: 1 features-header test + 5 cache-control tests (10 tests / 29 assertions, green on WP 6.9 + 7.1 in Docker).
+- **End-to-end validated in Docker** — the console app booted against the live `oos-wp` WordPress: full cookie login through the proxy (re-scoped form, host-only cookies), nonce scrape via proxied `/wp-admin/`, then `features` served `MISS` (fresh `x-wp-nonce`) followed by `HIT` (nonce stripped); uncacheable surfaces (`users/me`, session nonce, wp-admin HTML) all `BYPASS`. Deploy runbook + both app READMEs document the contract and opt-in path.
+
 ## [1.2.10] - 2026-10-23
 
 ### Added — Console migration Phase 5b–5d + console polish

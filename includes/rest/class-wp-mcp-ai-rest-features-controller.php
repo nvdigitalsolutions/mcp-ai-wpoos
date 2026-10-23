@@ -76,11 +76,18 @@ class WP_MCP_AI_REST_Features_Controller {
 	/**
 	 * GET /features — the server-side availability map.
 	 *
+	 * The map is site-level (identical for every logged-in user), so shared
+	 * caches — the Complete Console's BFF micro-cache, the Velocity CDN —
+	 * may hold it for 60 s and absorb the console's boot-time fetch.
+	 * Browsers hold it for the same 60 s: a freshly activated addon's nav
+	 * item can lag up to one minute, matching the status endpoints'
+	 * staleness window.
+	 *
 	 * @since 2.4.0
 	 * @return WP_REST_Response
 	 */
 	public function get_features() {
-		return rest_ensure_response(
+		$response = rest_ensure_response(
 			array(
 				'success' => true,
 				'data'    => array(
@@ -88,5 +95,9 @@ class WP_MCP_AI_REST_Features_Controller {
 				),
 			)
 		);
+
+		$response->header( 'Cache-Control', 'public, max-age=60, s-maxage=60' );
+
+		return $response;
 	}
 }
