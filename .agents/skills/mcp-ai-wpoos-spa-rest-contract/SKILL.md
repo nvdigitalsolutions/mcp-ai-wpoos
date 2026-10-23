@@ -120,6 +120,60 @@ the form read fields the directory never returned).
     when the server value is unknown (older installs / endpoint down). When
     auditing a displayed metric, first verify *where the underlying data
     lives* and which origin the app runs on, before trusting the meter.
+12. **Provider class loaded only in admin context — routes register fine but
+    handlers silently degrade.** The sibling of bug class 8 one layer down:
+    the controller boots context-free, but the DATA/PROVIDER class it wraps
+    is only `require_once`d by `wp_mcp_ai_pro_load_admin_sections()` (the
+    admin-gated `admin_sections` module) or inside `is_admin()` branches, so
+    on front-end-originated REST requests `class_exists()` fails and the
+    handler degrades — often silently. Real cases (2026-10-23, Complete
+    console live repros): `GET /workflow-presets` returned `ok: true` with an
+    EMPTY catalogue (Presets tab: "No presets available", zero error);
+    `POST /workflow-builder/nodes/execute` always 501'd `builder_unavailable`
+    (canvas "Run node"); the `/ops/overview` webhook list was silently
+    `array()` (Operations page empty webhook table); `/command-center/overview`
+    returned `success: false` (console Dashboard hid the whole Command
+    center section — the client treats it fail-soft, so no error surfaced).
+
+    **Two fix patterns, pick by constructor side effects:**
+    - **Eager require in the `rest_console_bridges` module** when the
+      provider file self-instantiates but the constructor only registers
+      `admin_menu` / `admin_enqueue_scripts` / `wp_ajax_*` hooks (all dormant
+      on front-end requests). Applied to: workflow presets registry, workflow
+      builder page (`class-wp-mcp-ai-pro-workflow-builder-page.php`), webhook
+      status page. Same rationale as the blueprints page module
+      (commit `1444de08d0`).
+    - **Lazy `load_provider()` in the controller** (mirror the media-cc
+      controller) when the provider's constructor registers LIVE hooks that
+      fire during normal request handling — the agent command center registers
+      `wp_mcp_ai_after_tool_execution`, `wp_mcp_ai_after_chat_response`,
+      `wp_mcp_ai_session_started/ended`, so eager loading would silently flip
+      activity recording on for every front-end chat/tool event. Load inside
+      the handler only.
+
+    **Audit every bridge's provider class, not just its routes** — grep the
+    controller for `class_exists` / `WP_MCP_AI_*::` references, then grep the
+    provider file's load path (`grep -rn "provider-file.php" addons/pro
+    includes/`); it must land in a context-free module, a self-require in the
+    controller, or the bridge module's own eager require. Degraded-missing
+    branches should return a 501 `WP_Error` (never `ok: true` empty or
+    `success => false` envelopes — the canonical-envelope sniff flags those).
+    Known-safe patterns to copy: records (extractor self-required), dashboards
+    + model-comparison (self-require per page class), media-cc
+    (`load_provider()`), SA REST + schedule REST (context-free modules load
+    their adapters).
+
+    **Test-masking trap:** `tests/bootstrap.php` registers
+    `wp_mcp_ai_register_pro_classmap_fallback_autoloader()`, which resolves
+    ANY `WP_MCP_AI_*` class from `addons/pro/includes` on demand — so
+    `class_exists()` guards pass in PHPUnit even when production would never
+    load the file. The honest pin asserts the provider file is EAGERLY
+    included right after the registry boot (`get_included_files()` scan in
+    the test, before any handler runs) — and is verified by reverting the
+    production fix (`git stash push -- <file>`) and watching the pin fail.
+    `tests/rest-api/test-rest-console-bridges.php` carries these pins as a
+    static data provider (`provider_bridge_class_files()` — PHPUnit 11
+    requires `public static` providers).
 
 ## Audit path per client (4 hops, verify every hop)
 
@@ -131,7 +185,11 @@ the form read fields the directory never returned).
    **Then find the boot path** (`grep 'Controller::init' addons/pro/includes/
    addons/pro/mcp-ai-wpoos-pro.php`): the registration must not sit behind an
    admin-context gate (`wp_mcp_ai_pro_load_admin_sections()`, a registry module
-   with `context => 'admin'`, or an `is_admin()` guard) — bug class 8.
+   with `context => 'admin'`, or an `is_admin()` guard) — bug class 8. **Then
+   find every PROVIDER class the handler references** (`class_exists` guards,
+   `WP_MCP_AI_*::` statics, `new ...`) and verify its file loads outside
+   admin context — context-free module, self-require, or the bridge module's
+   eager require — bug class 12.
 4. Handler: the exact response array. Quote decisive lines; don't trust the
    docblock.
 
@@ -168,6 +226,13 @@ manually as a fallback (see bug class 8).
   `category` from the slug prefix; verb-prefix set falls back to "Core").
 - REST callbacks return `rest_ensure_response(...)` (or WP_Error) — raw
   arrays break `->get_data()` consumers and are wrong for WP core.
+- **Provider classes (bug class 12):** eager-require in `rest_console_bridges`
+  when the provider's self-instantiation registers only admin-dormant hooks;
+  lazy `load_provider()` in the controller when the constructor registers
+  live tracking hooks. A missing-provider branch must return a 501
+  `WP_Error` — never an `ok: true` empty catalogue or a `success => false`
+  envelope (both mask the outage as "no data"; the canonical-envelope sniff
+  flags the latter).
 
 ## Known-good baseline (2026-10-21 audit)
 
@@ -201,6 +266,18 @@ aggregate byte size of the user's stored transcripts (repository
 StatusBar prefers it over the same-origin localStorage meter (bug class 11).
 Re-audit the transcripts client with this field in mind; it is absent on
 older base-plugin installs (client falls back).
+
+**Provider-loading pass (2026-10-23, same session as bug class 11):** four
+console bridges degraded on the Complete console because their provider
+classes were only loaded by the admin-gated `admin_sections` module —
+workflow-presets (empty catalogue), workflow-builder node exec (501),
+ops-overview webhooks (silent `array()`), command-center overview
+(`success: false`). Fixed per the bug-class-12 rules above (eager for the
+three inert-constructor providers, lazy `load_provider()` for the agent
+command center whose constructor registers live tracking hooks); pinned in
+`tests/rest-api/test-rest-console-bridges.php` with the eager-include
+provider + end-to-end contract tests. Re-audit any bridge's PROVIDER class
+load path when touching it, not just its routes.
 
 **Registration pass (same-day follow-up):** the six Proposal 084 console
 bridges (ops overview, workflow-presets, workflow-builder node exec, records,
@@ -249,3 +326,14 @@ sub-agents; keep one coordinator for fixes + final gates.
   handlers; don't assume a filtered key exists in the cached shape.
 - Two token-manager controllers coexist (`/token-manager/*` used by the SPA
   vs `/users/{id}/token-tier`) — don't patch the wrong one.
+- **The test bootstrap's Pro fallback autoloader masks bug class 12.**
+  `wp_mcp_ai_register_pro_classmap_fallback_autoloader()` (in
+  `tests/bootstrap.php`) resolves any `WP_MCP_AI_*` class from
+  `addons/pro/includes` on demand, so a controller's `class_exists()` guard
+  loads the provider file in PHPUnit even when production never would — the
+  end-to-end handler test passes while the live console still degrades. Pin
+  the EAGER include instead (scan `get_included_files()` right after the
+  registry boot, before any handler runs) and prove the pin by reverting the
+  production fix (`git stash push -- <file>`) and watching it fail.
+- PHPUnit 11 requires data providers to be `public static` — a non-static
+  provider errors at suite construction, not at the test body.
