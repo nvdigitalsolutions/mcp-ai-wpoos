@@ -314,6 +314,32 @@ carries its own review-artifact convention next to the docs-hub one:
   "Project-Id-Version: Name 1.0.9 1.0.9". Verify with a msgid set-diff:
   `comm -23 <(git show HEAD:<pot> | grep '^msgid "' | sort) <(grep '^msgid "' <pot> | sort)`
   must be empty (1.0.9: +3 msgids, 0 lost).
+- **1.0.12 released (2026-10-24):** memory-graph bridge seams (#7145:
+  `Bridge::register()` declares the base plugin's provenance + RRF graph
+  bridges) and the guest-token read-route fix (#7155 — the old check called
+  the nonexistent `wp_mcp_ai_validate_guest_token()`; the new one mirrors
+  the base chat-transcript layer via `WP_MCP_AI_Shortcode::
+  validate_guest_token()`). Validation: PHPUnit Unit 164/743 + Integration
+  29/80 green on WP 6.9 AND 7.1; PCP exit 0, 0 ERRORs, 171 WARNINGs
+  (unchanged profile); POT regen 0 lost / 0 new msgids.
+- **Local PCP for content-graph:** no `bin/` runner exists — build the ZIP
+  with `bin/build-nvoos-content-graph.sh` (WSL-rerun path on Windows; runs
+  `composer install --no-dev`), extract it with Python `zipfile` using a
+  WINDOWS path (`F:/...` — msys `/f/...` resolves to `F:\f\...`), then
+  reuse the docs-hub heredoc runner with
+  `cp -r /plugin-src/nvoos-content-graph` and the grep gate WITHOUT the
+  OffloadedContent allowlist (content-graph needs none).
+- **Build-script side effect:** `bin/build-nvoos-content-graph.sh` runs
+  `rm -f build/nvoos-content-graph-v*.zip` — that deletes the TRACKED
+  previous-version ZIP + sha256 (gitignored via `*.zip`, force-added by the
+  `[skip ci]` build commits). Restore them after a local build
+  (`git --no-optional-locks checkout -- build/nvoos-content-graph-v<old>.zip*`)
+  and leave the new ZIP untracked on disk for the upload; ZIPs land in
+  separate "build: add ... [skip ci]" commits, not the prep PR.
+- **phpcs empty-catch:** `Generic.CodeAnalysis.EmptyStatement.DetectedCatch`
+  fires on an empty catch even WITH a comment inside (comments count as
+  empty tokens). The `phpcs:ignore` must sit on the line ABOVE the
+  `} catch (...)` line — the error reports at the `T_CATCH` token.
 
 ### Fourth pass: docs-hub 0.5.2 — NV oOS Complete checkout integration (PR #6963)
 
@@ -383,6 +409,17 @@ live cache and relied on the async chunked rebuild — standalone installs with
   (build + PCP gate + GitHub release — no publish-back onto the tag).
 - **0.5.3 is LIVE on the wp.org directory** (2026-10-09) — the docs-hub SVN
   loop now tracks 0.5.3; future passes diff against it.
+
+### Sixth check (2026-10-24): post-0.5.3 changes are dev-only — no bump
+
+The only docs-hub diffs since the `docs-hub-v0.5.3` tag were
+`package.json`/`package-lock.json` (vite + `@vitest/mocker` dev-tooling
+overrides) and `blueprints/demo.json` (Playground demo URL) — both excluded
+from the shipping ZIP. Decision pattern when only dev files changed since
+the tag: `npm run build` in the addon, then `git diff assets/dist` —
+byte-identical output means the next version would ship an identical ZIP,
+so skip the bump and re-upload. The full gate still passes for the record
+(phpcs 0 errors, 139 tests green on 6.9 + 7.1, PCP 0 blocking errors).
 
 ## The reviewer reply pass (0.4.3 → 0.4.4, PR #6606)
 
@@ -518,11 +555,21 @@ explicitly:
 ```bash
 vendor/bin/phpunit -c phpunit.xml.dist --no-coverage \
   addons/docs-hub/tests/test-cache-staging.php \
-  addons/docs-hub/tests/test-rest-manifest.php \
+  addons/docs-hub/tests/test-checkout.php \
+  addons/docs-hub/tests/test-indexer.php \
+  addons/docs-hub/tests/test-link-fixer.php \
   addons/docs-hub/tests/test-rebuild-chunked.php \
   addons/docs-hub/tests/test-rebuild-job.php \
   addons/docs-hub/tests/test-rebuild-pipeline-inline-kick.php \
-  # … (all files except test-fnmatch-polyfill.php)
+  addons/docs-hub/tests/test-remote-repo-hardening.php \
+  addons/docs-hub/tests/test-remote-repos-defensive.php \
+  addons/docs-hub/tests/test-remote-selection.php \
+  addons/docs-hub/tests/test-remote-tree-endpoint.php \
+  addons/docs-hub/tests/test-rest-manifest.php \
+  addons/docs-hub/tests/test-scanner.php \
+  addons/docs-hub/tests/test-shortcode.php \
+  addons/docs-hub/tests/test-shortcode-emoji.php \
+  addons/docs-hub/tests/test-uploads-source.php
 ```
 
 - `test-fnmatch-polyfill.php` is a **standalone script**, not PHPUnit —
@@ -532,8 +579,13 @@ vendor/bin/phpunit -c phpunit.xml.dist --no-coverage \
   The host `vendor/` is frequently a pruned copy whose classmap has zero
   PHPUnit entries (`Class "PHPUnit\\TextUI\\Application" not found` on BOTH
   host and container); the Linux vendor volume is the reliable path. The
-  0.4.7 pass validated the full docs-hub set on **WP 6.9 and WP 7.1** with
-  an isolated DB (`wordpress_test_moth*`) — 107 tests, 0 failures each.
+  The 0.4.7 pass validated the full docs-hub set on **WP 6.9 and WP 7.1** with
+  an isolated DB (`wordpress_test_moth*`) — 107 tests, 0 failures each; the
+  0.5.3-era set is **139 tests, still 0 failures**. The 3 warnings the suite
+  reports are intentional: `Test_Docs_Hub_Remote_Repos_Defensive::
+  test_render_remote_repos_survives_malformed_row` feeds a malformed row and
+  the renderer emits "Undefined array key" notices (`class-nvoos-docs-hub-
+  settings.php:1523-1525`) — pre-existing, not a regression.
 - Known pre-existing **Windows-only failure**:
   `Test_Docs_Hub_Scanner::test_path_traversal_prevented` (realpath behavior
   differs on Windows; passes on Linux CI). Don't chase it in local runs.
@@ -561,7 +613,9 @@ file. Playground-demo dev folders and their exclusion checklist live in the
 (missing DLLs — hit on the docs-hub 0.5.1 trunk build), stage with GNU
 `tar` using the same exclude set and zip with Python `zipfile` (normalize
 entry names to forward slashes, verify the listing, and check `readme.txt`
-sits at the ZIP root) before uploading.
+sits at the ZIP root) before uploading. Python `zipfile.extractall()` needs
+WINDOWS-style paths (`F:/...`) — msys-style `/f/...` silently resolves to
+`F:\f\...` (hit on the content-graph 1.0.12 pass).
 
 ## .wordpress-org assets
 
