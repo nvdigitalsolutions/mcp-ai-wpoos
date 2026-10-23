@@ -476,7 +476,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					if ( file_exists( $f ) ) {
 						require_once $f;
 						WP_MCP_AI_Content_Format_Template_CPT::init();
-						WP_MCP_AI_Content_Format_Template_CPT::seed_defaults();
+						// Seeding runs wp_insert_post(), whose slug generator
+						// reads $wp_rewrite — but WP core instantiates that
+						// global only AFTER `init` fires (wp-settings.php),
+						// so an init-time insert raises a PHP 8 "property
+						// on null" warning on every fresh boot. Defer to
+						// wp_loaded, which fires after $wp_rewrite exists.
+						if ( did_action( 'wp_loaded' ) ) {
+							WP_MCP_AI_Content_Format_Template_CPT::seed_defaults();
+						} else {
+							add_action( 'wp_loaded', array( 'WP_MCP_AI_Content_Format_Template_CPT', 'seed_defaults' ) );
+						}
 					}
 					$engine = $p . 'services/class-wp-mcp-ai-content-template-engine.php';
 					if ( file_exists( $engine ) ) {

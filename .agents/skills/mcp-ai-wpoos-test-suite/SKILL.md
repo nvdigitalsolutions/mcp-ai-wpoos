@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 75 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, fallback-autoloader masking, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 79 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, fallback-autoloader masking, init-time post-insert $wp_rewrite warnings, wp-phpunit _delete_all_posts boot wiping, queue-worker failure contract, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-23"
+  last-updated: "2026-10-24"
   plugin-version: "1.2.10"
   plugin-version-tested: "1.2.10"
 ---
@@ -1241,8 +1241,71 @@ the changed files is the substantive gate; plan CI waits accordingly.
       - End-to-end handler tests remain useful as response-contract tests,
         but they cannot detect this bug class in this bootstrap — say so in
         the test docblock instead of pretending they pin it.
-      - PHPUnit 11 requires data providers to be `public static`; a
-        non-static provider errors at suite construction, not in the test.
+	      - PHPUnit 11 requires data providers to be `public static`; a
+	        non-static provider errors at suite construction, not in the test.
+
+	   76. **Init-time `wp_insert_post()` → "Attempt to read property 'feeds' on
+	      null" (PHP 8, bootstrap logs; 2026-10-24, SSE offload pass).**
+	      `wp_unique_post_slug()` reads the `$wp_rewrite` global, which WP core
+	      instantiates only AFTER `init` finishes (`wp-settings.php`: `init`
+	      fires ~line 630, `$GLOBALS['wp_rewrite'] = new WP_Rewrite()` at ~line
+	      671). Any module seeding posts during `init` raises this warning on
+	      every fresh boot — first request after activation in production, every
+	      suite boot in tests (fixed in the Pro module registry's
+	      `content_format_templates` factory). Fix: defer seeding to
+	      `wp_loaded` (fires after `$wp_rewrite` exists) with a
+	      `did_action( 'wp_loaded' )` guard for late boots. Diagnostic: a
+	      scratch `auto_prepend_file` error handler printing
+	      `debug_backtrace()` shows `wp_unique_post_slug ← wp_insert_post ←
+	      seed_defaults`. Warning-absence is NOT proof the seeding ran — see
+	      #77; verify with a production-like boot.
+
+	   77. **Posts seeded during bootstrap never survive to test time —
+	      wp-phpunit calls `_delete_all_posts()` right after requiring
+	      `wp-settings.php`.** Default-seeding modules therefore show 0 rows at
+	      test time regardless of when the seed hook fires — that is the
+	      historical baseline, not a regression. Verify seeding with a
+	      production-like boot instead: (1) scratch `wp_install()` — define
+	      `WP_INSTALLING` + `DISABLE_WP_CRON`, set `$_SERVER['HTTP_HOST']`
+	      (CLI boots otherwise warn "Undefined array key HTTP_HOST"), require
+	      `wp-config.php` + `wp-settings.php` + `wp-admin/includes/upgrade.php`,
+	      `wp_install()`, `update_option( 'active_plugins', … )`; (2) a second
+	      scratch `wp-load` run counts the posts. Fresh scratch DBs must be
+	      GRANTed first: root-created DBs do not inherit the `wordpress` user's
+	      grants ("Access denied for user 'wordpress'@'%'") —
+	      `GRANT ALL ON <db>.* TO 'wordpress'@'%'`.
+
+	   78. **Queue-worker failure contract — the notifier only reads `WP_Error`;
+	      returning a `WP_Error` marks the row completed; only a thrown
+	      `Exception` marks it failed (2026-10-24, chat_stream_continuation).**
+	      `WP_MCP_AI_Job_Notifier::handle_job_failed()` records
+	      "Unknown error"/"unknown_error" for array errors — always pass a
+	      `WP_Error`. `WP_MCP_AI_Async_Job_Queue` marks a job `completed`
+	      whenever the worker RETURNS (even a `WP_Error` result); a thrown
+	      `Exception` is what marks the row `failed`. Terminal pattern for
+	      workers: record notifier + session frame, THEN throw. Client UX
+	      rule: without a notifier entry the job-bus `watchJob` hangs its full
+	      budget before a generic error — every failure path must call
+	      `handle_job_failed()`, using payload fallbacks
+	      (`chat_session_id`/`assistant_id` in `job_data`) for context when
+	      the primary data is gone. Prove it in the suite: assert
+	      `get_job_status()` = `failed` + the `chat:error` frame after a
+	      catch of the worker's exception.
+
+	   79. **PHPUnit 11 "Metadata found in doc-comment" deprecation noise from
+	      vendored wp-phpunit.** `WP_UnitTestCase_Base::checkRequirements()`
+	      carries an `@deprecated 5.9.0` docblock; PHPUnit 11 reports a
+	      test-runner deprecation per concrete test class ("Metadata in
+	      doc-comments is deprecated and will no longer be supported in
+	      PHPUnit 12"). The "PHPUnit Deprecations: 2" in a 2-class run is
+	      this, one per class — pre-existing suite-wide, not your code.
+	      Not actionable per-branch (vendor patch or a repo-wide shared base
+	      class); PHPUnit 12 removes doc-comment metadata entirely, so plan
+	      for it when the wp-phpunit pin moves. Similarly, run PHPUnit with
+	      `--no-coverage` (the canonical runner already does): without it the
+	      container has no coverage driver and the run reports
+	      "No code coverage driver available" + exit 1 even though every
+	      test passed — read "OK, but there were issues!" as green tests.
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 

@@ -10,6 +10,26 @@
 - **Backend shared-cache opt-in** — `GET /mcp-ai/v1/features` now emits `Cache-Control: public, max-age=60, s-maxage=60` (the map is user-invariant; the console fetches it on every boot). New `WP_MCP_AI_REST_Cache_Control` (`includes/rest/class-wp-mcp-ai-rest-cache-control.php`, wired in `includes/bootstrap/loader.php`) opts the request out of WP 6.9's authenticated no-cache injection (`rest_send_nocache_headers` defaults to `is_user_logged_in()` and overwrites controller-set headers) — only when the response explicitly declares `public`/`s-maxage`; default-deny preserved for everything else. New suites: 1 features-header test + 5 cache-control tests (10 tests / 29 assertions, green on WP 6.9 + 7.1 in Docker).
 - **End-to-end validated in Docker** — the console app booted against the live `oos-wp` WordPress: full cookie login through the proxy (re-scoped form, host-only cookies), nonce scrape via proxied `/wp-admin/`, then `features` served `MISS` (fresh `x-wp-nonce`) followed by `HIT` (nonce stripped); uncacheable surfaces (`users/me`, session nonce, wp-admin HTML) all `BYPASS`. Deploy runbook + both app READMEs document the contract and opt-in path.
 
+### Added — SSE long-run offload (Proposal Phase 4b)
+
+- **Deadline-triggered offload** — a chat SSE stream that nears proxy idle-read timeouts (~75 s default, filter `wp_mcp_ai_sse_offload_elapsed_seconds`, 0 = off) hands the remaining agentic work to the background job queue and closes the stream with a `job_offload` event instead of letting Cloudflare/nginx reset the connection. New `WP_MCP_AI_Chat_Stream_Offload_Worker` (`includes/services/class-wp-mcp-ai-chat-stream-offload-worker.php`, job type `chat_stream_continuation`, 240 s cap, heartbeats via the job notifier) resumes the agentic loop off-request — pending tool batch, bounded LLM→tool loop, cost attribution — and delivers the final message through the session frame buffer (`chat:resumed`).
+- **Snapshot round-trip extended** — the continuation store now persists `assistant_config`, `iteration`, `max_iterations`, `agentic_cost_accumulator`, `pending_tool_calls`, and `continuation_kind`, so the worker restores the exact loop state.
+- **Client follow-up (both surfaces)** — `chat.js` surfaces the offload status and subscribes the job bus for terminal failures; the spa-v2 `sse-adapter` emits a window `CustomEvent` (`nvoos:job_offload` — AI SDK v1.2.12 has no `onData`), `useChatSpoke` watches the job via `wpMcPaiJobBus.watchJob()` and appends the final assistant message.
+
+### Fixed — offload terminal contract + pre-existing init warning
+
+- **Terminal failure contract** — worker failures now record `handle_job_failed()` (with a `WP_Error`, not an array — the notifier otherwise logs "Unknown error") + a `chat:error` session frame and **throw**, so the queue row is marked `failed` (returning a `WP_Error` would mark it `completed`); the offload payload carries `chat_session_id`/`assistant_id`/`user_id` fallbacks so terminal failures reach the right session even when the snapshot is missing or expired.
+- **Init-time post-insert warning** — the Pro module registry's `content_format_templates` seeding ran `wp_insert_post()` during `init`, reading `$wp_rewrite` before WP core instantiates it (PHP 8 "property 'feeds' on null" on every fresh boot); seeding now defers to `wp_loaded` (verified with a production-like fresh-site boot: 5 templates seeded, zero warnings).
+
+### Tests
+
+- **New suite `tests/rest/test-sse-stream-offload.php`** (9 tests / 43 assertions) — deadline decision (under/past/disabled), pre-tool offload emission, fast-turn no-offload, snapshot round-trip, missing-snapshot terminal failure (notifier + frame), worker loop resume + frame buffer + notifier completion. Green on WP 6.9 + WP 7.1 in Docker; keepalive suite regression-green.
+
+### Docs & skills
+
+- **Proposal + plan updated** — `sse-stream-hardening-long-run-offload-proposal.md` status flipped to shipped (Phase 4a + 4b), interim-mitigations section reworded; the implementation plan's three open decisions recorded as resolved (global default-on at 75 s, 240 s worker cap, `resume` deep-recovery path skipped in favour of the client re-send fallback).
+- **Coding-time skills updated in place** — the test-suite skill gains patterns 76–79 (init-time `wp_insert_post` → null `$wp_rewrite` warning; wp-phpunit `_delete_all_posts()` boot wiping; queue-worker failure contract; PHPUnit 11 wp-phpunit doc-comment deprecation noise + `--no-coverage`), and the spa-ui skill gains the SSE mid-stream frame bridging note (AI SDK no-`onData` → window `CustomEvent` pattern).
+
 ## [1.2.10] - 2026-10-23
 
 ### Added — Console migration Phase 5b–5d + console polish
