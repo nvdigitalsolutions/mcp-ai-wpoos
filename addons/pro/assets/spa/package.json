@@ -38,7 +38,7 @@
 	      "linkify-it": ">=5.0.2",
 	      "launch-editor": ">=2.14.2",
 	 "markdown-it": ">=14.3.3 <15",
-	      "ip-address": ">=10.7.2",
+	      "ip-address": ">=10.7.4",
 	      "qs": ">=6.16.0",
 	      "follow-redirects": ">=1.16.1 <2",
 	      "browserslist": ">=4.28.7",
