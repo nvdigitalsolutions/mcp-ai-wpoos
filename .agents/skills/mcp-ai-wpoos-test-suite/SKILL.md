@@ -169,6 +169,21 @@ for the WP 7.1 matrix, the reusable `wp71-core` named volume mounted at
 `/tmp/wp71` (DB `wordpress_test_wp71`) — no `docker cp` dance needed when
 `/tmp/wp71` is gone from the container.
 
+**Host-side recovery without the volume (2026-10-23, main checkout):**
+the pruned classmap can be fixed in place — run
+`composer install --no-interaction --prefer-dist` on the **host** (the
+plugin dir is bind-mounted into `oos-wp`, so the container sees the same
+vendor), then `bin/run-tests-docker.sh <file>` works again. Two caveats:
+(1) `run-tests-docker.sh` runs its own `composer install` step on the HOST
+and, when it fails, silently falls back to `composer dump-autoload` — that
+fallback regenerates the classmap from the production-only `installed.json`,
+which is precisely what produces the unmapped-dev-packages state, so treat
+the line `WARNING: composer install failed — attempting dump-autoload
+fallback` as the root cause and repair the host install before rerunning.
+(2) `vendor/` is committed — after a host `composer install`, run
+`git --no-optional-locks restore vendor` to drop the unrelated churn
+(guzzle etc.) from the changeset.
+
 **`docker-tmp-logs/` artifact:** running the root suite writes an untracked
 `docker-tmp-logs/` directory into the repo root (random `.jpg` files +
 `chunk8.txt`). Delete it before staging anything (`git status --porcelain`

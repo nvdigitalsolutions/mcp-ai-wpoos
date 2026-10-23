@@ -10895,6 +10895,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Total byte size of the user's stored chat transcripts.
+		 *
+		 * Exposes the repository aggregate to the chat-transcripts REST list
+		 * endpoint so SPA clients can report server-side session storage
+		 * instead of a (usually empty) same-origin localStorage figure.
+		 *
+		 * @param int|string $user_id      User identifier.
+		 * @param int|string $assistant_id Optional assistant ID to filter by.
+		 * @return int Total stored bytes (0 when unavailable or empty).
+		 */
+		public function get_transcript_storage_bytes( $user_id, $assistant_id = 0 ) {
+			$repository = $this->get_transcript_repository();
+
+			if ( ! method_exists( $repository, 'get_storage_bytes' ) ) {
+				return 0;
+			}
+
+			$bytes = $repository->get_storage_bytes( $user_id, $assistant_id );
+
+			if ( is_wp_error( $bytes ) ) {
+				return 0;
+			}
+
+			return is_int( $bytes ) && $bytes > 0 ? $bytes : 0;
+		}
+
+		/**
 		 * Retrieve the full transcript for a specific session.
 		 *
 		 * @param int    $user_id      User identifier.

@@ -26,6 +26,11 @@ export interface TranscriptListResponse {
 	total: number;
 	per_page: number;
 	page: number;
+	/**
+	 * Aggregate byte size of the user's stored transcripts, reported by the
+	 * server. Absent on older base-plugin installs that predate the field.
+	 */
+	storage_bytes?: number;
 	message?: string;
 }
 
@@ -122,6 +127,8 @@ export class TranscriptsClient {
 			total: typeof data?.total === 'number' ? data.total : 0,
 			per_page: typeof data?.per_page === 'number' ? data.per_page : 50,
 			page: typeof data?.page === 'number' ? data.page : 1,
+			storage_bytes:
+				typeof data?.storage_bytes === 'number' ? data.storage_bytes : undefined,
 			message: typeof data?.message === 'string' ? data.message : undefined,
 		};
 	}
