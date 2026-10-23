@@ -228,10 +228,14 @@ Mounting the parent silently runs the WRONG code — verify with
 the allowed directory even when the terminal's repo root is the main
 checkout; trust `git rev-parse`, not the tool metadata.
 
-# Write the wp-phpunit config the plugin bootstrap expects. Default lookup is
-# vendor/wp-phpunit/wp-phpunit/wp-tests-config.php (dirname of includes/).
-# vendor/ paths are excluded from repo file tools — use the shell:
-cat > vendor/wp-phpunit/wp-phpunit/wp-tests-config.php <<'EOF'
+# Write the wp-phpunit config the plugin bootstrap expects. wp-phpunit 7.x
+# ships vendor/wp-phpunit/wp-phpunit/wp-tests-config.php as a "DO NOT EDIT"
+# LOADER stub that requires the file named by the WP_PHPUNIT__TESTS_CONFIG
+# env var (and reads WP_PHPUNIT__TABLE_PREFIX). Write the real config to a
+# sibling path and point the env var at it — overwriting the loader with the
+# config also works, but the loader + env-var pattern survives vendor
+# refreshes. vendor/ paths are excluded from repo file tools — use the shell:
+cat > vendor/wp-tests-config.php <<'EOF'
 <?php
 define( 'ABSPATH', '/var/www/html/' );
 define( 'DB_NAME', 'wordpress_test' );
@@ -259,6 +263,8 @@ MSYS_NO_PATHCONV=1 docker run --rm --entrypoint php \
   -v F:/GITHUB/mcp-ai-wpoos:/var/www/html/wp-content/plugins/mcp-ai-wpoos \
   --network oos-wp_default \
   -e WP_TESTS_DIR=/var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/wp-phpunit/wp-phpunit \
+  -e WP_PHPUNIT__TESTS_CONFIG=/var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/wp-tests-config.php \
+  -e WP_PHPUNIT__TABLE_PREFIX=wptests_ \
   wordpress:6.9-php8.2-apache \
   /var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/bin/phpunit \
   -c /var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/phpunit.xml.dist --testsuite=Unit
@@ -312,15 +318,26 @@ test (hundreds — not failures). A summary of "OK, but there were issues"
 with only warnings/deprecations/skips is a pass.
 - phpcs for the addon: `--standard=plugins/nvoos-content-graph-pro/phpcs.xml.dist`
 (phpcbf exit 1 = fixed files, not an error; re-run phpcs to confirm exit 0).
-- **content-graph session notes (1.0.9 pass):** the plugin's `vendor/` may
-  be PRUNED of PHPUnit entirely (`vendor/phpunit` gone; `vendor/bin/phpunit`
-  points at nothing) — a plain `composer install` in the plugin dir restores
-  the locked set (PHPUnit 9.6.35 + wp-phpunit 7.0.2) and the recipe above
-  then works as written. Point the plugin's gitignored
-  `vendor/wp-phpunit/wp-phpunit/wp-tests-config.php` at an isolated DB
-  (`wordpress_test_nvooscg` pattern) before the run. Current sizes: Unit
-  154 tests / 725 assertions (~7 s) and Integration 18 / 57 (~8 s) on
-  `wordpress:6.9-php8.2-apache`.
+- **content-graph session notes (1.0.9 → 1.0.12 passes):** the plugin's
+  `vendor/` may be PRUNED of PHPUnit — sometimes partially, with
+  `vendor/bin/phpunit` present while `vendor/phpunit/phpunit/phpunit` is
+  gone (the run then dies with a PHP file-open warning from the bin shim,
+  `Failed to open stream: .../phpunit/phpunit/phpunit`, not "Could not open
+  input file") — a plain `composer install` in the plugin dir restores the
+  locked set (PHPUnit 9.6.35 + wp-phpunit 7.0.2) and the recipe above then
+  works as written. Point the gitignored `vendor/wp-tests-config.php` at an
+  isolated DB (`wordpress_test_cg12` pattern) before the run. Current
+  sizes: Unit 164 tests / 743 assertions (~7 s) and Integration 29 / 80
+  (~10 s) on `wordpress:6.9-php8.2-apache`, green on WP 6.9 AND WP 7.1
+  (for 7.1 mount the `wp71-core` volume at `/tmp/wp71`, set `ABSPATH` to
+  `/tmp/wp71/`, and reuse the same isolated DB).
+- **Do not let local test configs leak into the standalone ZIP.** The
+  config file above lives in the gitignored `vendor/`, and
+  `bin/build-nvoos-content-graph.sh` rsyncs `vendor/` wholesale into the
+  distribution ZIP — DB credentials and all. Delete `vendor/wp-tests-config*.php`
+  before building and verify the built ZIP listing has no `wp-tests-config`
+  entries (hit on the 1.0.12 pass: the first build shipped the scratch
+  config).
 
 ## Cluster → PR workflow
 

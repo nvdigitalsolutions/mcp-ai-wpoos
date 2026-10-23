@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-3.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Content Graph 1.0.11\n"
+"Project-Id-Version: NV oOS Content Graph 1.0.12\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-content-graph\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-11T17:49:55+00:00\n"
+"POT-Creation-Date: 2026-10-23T20:26:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nvoos-content-graph\n"
@@ -2011,7 +2011,7 @@ msgid "Circuit breaker open for host: %s"
 msgstr ""
 
 #: src/Rest/CommerceController.php:150
-#: src/Rest/Controller.php:1084
+#: src/Rest/Controller.php:1101
 msgid "Administrator access required."
 msgstr ""
 
@@ -2094,7 +2094,7 @@ msgstr ""
 msgid "Invalid or missing signature."
 msgstr ""
 
-#: src/Rest/Controller.php:1029
+#: src/Rest/Controller.php:1046
 msgid "You must be logged in to access the knowledge graph."
 msgstr ""
 

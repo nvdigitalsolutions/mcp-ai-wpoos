@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.11
+Stable tag: 1.0.12
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -168,6 +168,10 @@ All libraries are served locally from `assets/vendor/` and never loaded from thi
 6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
+
+= 1.0.12 — 2026-10-24 =
+* Fixed: guest tokens are validated again on every read route — the check now reads the token from the X-WP-MCP-AI-Guest header (or guest_token parameter) and validates it through the base plugin's WP_MCP_AI_Shortcode::validate_guest_token(), so headless guest sessions no longer receive 401s
+* Added: the plugin now self-declares as the memory-graph bridge for the base plugin's memory provenance and RRF fusion streams, giving graph-backed memory provenance and hybrid recall when the base plugin is active (inert on standalone installs)
 
 = 1.0.11 — 2026-10-11 =
 * New read-only GET /graph/visual-config REST route returning the explorer's display and theme config (visual tokens, presets, height, node budget) for headless surfaces such as the NV oOS Pro SPA
