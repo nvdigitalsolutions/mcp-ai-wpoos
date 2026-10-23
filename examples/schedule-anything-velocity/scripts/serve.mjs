@@ -17,10 +17,30 @@
  * inside the proxy — otherwise the auth cookies would be set for the
  * WordPress host and the app origin would never see the session.
  *
+ * Caching contract (keeps browser + Velocity CDN load off WordPress):
+ *   - index.html → `Cache-Control: no-cache` + weak ETag → 304 revalidation
+ *     instead of a full-body re-download on every navigation.
+ *   - Hashed /assets/* → `public, max-age=31536000, immutable` (Vite
+ *     content-hashes every chunk; the Velocity CDN caches these at the
+ *     edge, so WordPress never sees them).
+ *   - Unversioned root files (favicon, …) → `public, max-age=86400` + ETag
+ *     (they are NOT hashed, so they must not get the immutable treatment).
+ *   - gzip/brotli served from an in-memory file cache for compressible
+ *     types with `Vary: Accept-Encoding`.
+ *   - Proxied GET responses are micro-cached ONLY when the WordPress
+ *     backend explicitly marks them cacheable (`Cache-Control: public` /
+ *     `s-maxage` / `max-age`, no Set-Cookie, `Vary` ≠ Cookie/Origin/*).
+ *     The nonce endpoint and SSE already send `no-store` and are never
+ *     cached. Default-deny: unmarked responses stream through uncached.
+ *     Env knobs: `NVOOS_PROXY_CACHE=0` (disable),
+ *     `NVOOS_PROXY_CACHE_MAX_TTL` (TTL cap in seconds, default 300).
+ *
  * Ported from examples/nvoos-pro-spa-vite/scripts/serve.mjs (the proven
  * standalone-Pro-SPA Velocity entry). The proxy core is intentionally
- * identical; only the runtime-env injection block was removed (that is
- * specific to the Pro SPA connection screen) and log prefixes changed.
+ * identical; the runtime-env injection block was removed (that is specific
+ * to the Pro SPA connection screen), the caching layer from the Complete
+ * Console (examples/nvoos-complete-velocity) was added, and log prefixes
+ * changed.
  * Never set NVOOS_TARGET_SITE to a URL you do not control; the proxy
  * forwards cookies for those prefixes.
  */
@@ -31,6 +51,7 @@ import { request as httpsRequest } from 'node:https';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gzipSync, brotliCompressSync } from 'node:zlib';
 
 const PORT = Number(process.env.PORT || 4180);
 const ROOT = fileURLToPath(new URL('../dist', import.meta.url));
@@ -56,10 +77,15 @@ const MIME = {
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
   '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
   '.woff2': 'font/woff2',
 };
 
@@ -91,6 +117,141 @@ const SECURITY_HEADERS = {
  *     'report-to csp-endpoint',
  * };
  */
+
+// --- Static file cache (in-memory) ------------------------------------
+// dist/ ships with the app and never changes during a process lifetime
+// (deploys start a fresh PM2 process), so entries are validated by
+// mtime+size and never need invalidation.
+const COMPRESSIBLE_TYPES = new Set(['.html', '.js', '.css', '.json', '.map', '.svg', '.txt']);
+// Skip compression below 1 KB — the overhead outweighs the win.
+const MIN_COMPRESS_BYTES = 1024;
+// Files larger than this are read from disk per request instead of being
+// pinned in memory (the console bundle is far below this).
+const STATIC_CACHE_MAX_BYTES = 4 * 1024 * 1024;
+
+const staticCache = new Map(); // path -> { size, mtimeMs, etag, identity, gzip, br }
+
+function etagMatches(headerValue, etag) {
+  if (!headerValue) return false;
+  const wanted = etag.replace(/^W\//, '').trim();
+  return headerValue
+    .split(',')
+    .some((candidate) => candidate.trim().replace(/^W\//, '') === wanted);
+}
+
+function compressedVariant(entry, encoding) {
+  // Lazy per-encoding build — an encoding a client never asks for costs
+  // no CPU.
+  if (encoding === 'br') {
+    if (entry.br === null) entry.br = brotliCompressSync(entry.identity);
+    return entry.br;
+  }
+  if (entry.gzip === null) entry.gzip = gzipSync(entry.identity);
+  return entry.gzip;
+}
+
+function pickContentEncoding(req, entry) {
+  if (!entry.compressible || entry.size < MIN_COMPRESS_BYTES) return null;
+  const accept = String(req.headers['accept-encoding'] ?? '').toLowerCase();
+  if (accept.includes('br')) return 'br';
+  if (accept.includes('gzip')) return 'gzip';
+  return null;
+}
+
+async function loadStaticFile(file) {
+  const cached = staticCache.get(file);
+  const st = await stat(file);
+  if (cached && cached.size === st.size && cached.mtimeMs === st.mtimeMs) {
+    return cached;
+  }
+  const identity = await readFile(file);
+  const entry = {
+    size: identity.length,
+    mtimeMs: st.mtimeMs,
+    // Weak ETag: the body varies with Accept-Encoding (see Vary below).
+    etag: `W/"${identity.length.toString(16)}-${Math.floor(st.mtimeMs).toString(16)}"`,
+    compressible: COMPRESSIBLE_TYPES.has(extname(file)),
+    identity,
+    gzip: null,
+    br: null,
+  };
+  if (identity.length <= STATIC_CACHE_MAX_BYTES) staticCache.set(file, entry);
+  return entry;
+}
+
+// --- Proxy response micro-cache ----------------------------------------
+// Default-deny: only responses WordPress itself marks as publicly
+// cacheable are stored, and only for the TTL the backend declared (capped
+// by NVOOS_PROXY_CACHE_MAX_TTL). Session-bound payloads (Set-Cookie,
+// Cache-Control: private/no-store/no-cache, Vary: Cookie/Origin/*) and
+// non-GET methods are never cached, so no user's response can be replayed
+// to another. This absorbs console polling/navigation bursts (dashboard
+// stats, lists refetched on route change) that would otherwise hit
+// WordPress every time.
+const proxyCache = new Map(); // key -> { headers, body, storedAt, expiresAt }
+const PROXY_CACHE_MAX_ENTRIES = 512;
+const PROXY_CACHE_MAX_BYTES = 2 * 1024 * 1024; // per response
+const PROXY_CACHE_TTL_CAP = Number(process.env.NVOOS_PROXY_CACHE_MAX_TTL || 300);
+const PROXY_CACHE_ENABLED = process.env.NVOOS_PROXY_CACHE !== '0';
+
+function proxyCacheKey(req, incoming) {
+  // The stored bytes depend on the negotiated Content-Encoding, so the
+  // encoding bucket is part of the key (clients are consistent per URL).
+  const accept = String(req.headers['accept-encoding'] ?? '').toLowerCase();
+  const encoding = accept.includes('br') ? 'br' : accept.includes('gzip') ? 'gzip' : 'identity';
+  return `${req.method} ${incoming.pathname}${incoming.search} ${encoding}`;
+}
+
+/**
+ * TTL in seconds the upstream response may be cached, or 0 when it must
+ * not be. Only explicit backend signals count — no heuristic caching.
+ */
+function proxyCacheableTtl(upRes) {
+  if (upRes.statusCode !== 200) return 0;
+  if (upRes.headers['set-cookie']) return 0;
+  const contentType = String(upRes.headers['content-type'] ?? '').toLowerCase();
+  if (contentType.includes('text/event-stream')) return 0;
+  const vary = String(upRes.headers.vary ?? '').toLowerCase();
+  if (vary.split(',').some((v) => ['*', 'cookie', 'origin'].includes(v.trim()))) return 0;
+  const tokens = String(upRes.headers['cache-control'] ?? '')
+    .toLowerCase()
+    .split(',')
+    .map((token) => token.trim());
+  if (tokens.includes('private') || tokens.includes('no-store') || tokens.includes('no-cache')) {
+    return 0;
+  }
+  let ttl = 0;
+  for (const token of tokens) {
+    const match = token.match(/^(s-maxage|max-age)=(\d+)$/);
+    if (match) ttl = Math.max(ttl, Number(match[2]));
+  }
+  if (!ttl) {
+    const expires = Date.parse(String(upRes.headers.expires ?? ''));
+    if (!Number.isNaN(expires)) ttl = Math.floor((expires - Date.now()) / 1000);
+  }
+  if (ttl <= 0) return 0;
+  return Math.min(ttl, PROXY_CACHE_TTL_CAP);
+}
+
+function proxyCacheStore(key, ttl, headers, body) {
+  if (proxyCache.size >= PROXY_CACHE_MAX_ENTRIES) {
+    // Map iteration is insertion order — evict the oldest entry.
+    proxyCache.delete(proxyCache.keys().next().value);
+  }
+  const stored = { ...headers }; // Already hop-by-hop-stripped by the caller.
+  // Session-bound response headers must never be replayed to another
+  // user. Set-Cookie already disqualifies a response from caching;
+  // WordPress also mints a fresh X-WP-Nonce per authenticated response,
+  // which is dropped here for the same reason.
+  delete stored['x-wp-nonce'];
+  const now = Date.now();
+  proxyCache.set(key, {
+    headers: stored,
+    body,
+    storedAt: now,
+    expiresAt: now + ttl * 1000,
+  });
+}
 
 function isProxyPath(pathname) {
   return PROXY_PREFIXES.some(
@@ -167,6 +328,38 @@ function proxyRequest(req, res) {
   const transport = upstreamUrl.protocol === 'https:' ? httpsRequest : httpRequest;
   const isLoginPage = incoming.pathname === LOGIN_PATH;
 
+  // Micro-cache lookup. GET/HEAD only; the HTML surfaces (wp-admin,
+  // wp-login) are per-user and never cached; an explicit client opt-out or
+  // Authorization header also bypasses.
+  const method = String(req.method ?? 'GET').toUpperCase();
+  const clientCacheControl = String(req.headers['cache-control'] ?? '').toLowerCase();
+  const bypassCache =
+    !PROXY_CACHE_ENABLED ||
+    (method !== 'GET' && method !== 'HEAD') ||
+    Boolean(req.headers.authorization) ||
+    clientCacheControl.includes('no-cache') ||
+    clientCacheControl.includes('no-store') ||
+    String(req.headers.pragma ?? '').toLowerCase().includes('no-cache') ||
+    isLoginPage ||
+    incoming.pathname === '/wp-admin' ||
+    incoming.pathname.startsWith('/wp-admin/');
+  const cacheKey = bypassCache ? null : proxyCacheKey(req, incoming);
+
+  if (cacheKey) {
+    const hit = proxyCache.get(cacheKey);
+    if (hit && hit.expiresAt > Date.now()) {
+      res.writeHead(200, {
+        ...hit.headers,
+        'Content-Length': hit.body.length,
+        Age: Math.floor((Date.now() - hit.storedAt) / 1000),
+        'X-Cache-Status': 'HIT',
+      });
+      res.end(method === 'HEAD' ? undefined : hit.body);
+      return;
+    }
+    if (hit) proxyCache.delete(cacheKey); // Expired.
+  }
+
   const headers = { ...req.headers };
   delete headers.host; // Replaced below.
   delete headers.origin; // Browser origin — meaningless to the upstream.
@@ -193,9 +386,51 @@ function proxyRequest(req, res) {
         !upRes.headers['content-encoding'];
 
       if (!canRewrite) {
-        // SSE, chunked bodies and non-HTML responses pipe through unchanged.
-        res.writeHead(upRes.statusCode ?? 502, upRes.statusMessage, outHeaders);
-        upRes.pipe(res);
+        const ttl = cacheKey ? proxyCacheableTtl(upRes) : 0;
+        const declaredLength = Number(upRes.headers['content-length'] ?? NaN);
+        if (!ttl || (Number.isFinite(declaredLength) && declaredLength > PROXY_CACHE_MAX_BYTES)) {
+          // SSE, chunked bodies and non-HTML responses pipe through unchanged.
+          res.writeHead(upRes.statusCode ?? 502, upRes.statusMessage, {
+            ...outHeaders,
+            'X-Cache-Status': 'BYPASS',
+          });
+          upRes.pipe(res);
+          return;
+        }
+
+        // Buffer (bounded) so the response can be replayed from the
+        // micro-cache. Over-cap responses degrade to streaming mid-flight.
+        const chunks = [];
+        let size = 0;
+        let flushed = false;
+        upRes.on('data', (chunk) => {
+          if (flushed) return;
+          size += chunk.length;
+          if (size > PROXY_CACHE_MAX_BYTES) {
+            flushed = true;
+            res.writeHead(upRes.statusCode ?? 502, upRes.statusMessage, {
+              ...outHeaders,
+              'X-Cache-Status': 'BYPASS',
+            });
+            for (const buffered of chunks) res.write(buffered);
+            res.write(chunk);
+            upRes.pipe(res);
+            return;
+          }
+          chunks.push(chunk);
+        });
+        upRes.on('end', () => {
+          if (flushed) return; // pipe() ends the response.
+          const body = Buffer.concat(chunks);
+          proxyCacheStore(cacheKey, ttl, outHeaders, body);
+          res.writeHead(upRes.statusCode ?? 502, upRes.statusMessage, {
+            ...outHeaders,
+            'Content-Length': body.length,
+            'X-Cache-Status': 'MISS',
+          });
+          res.end(method === 'HEAD' ? undefined : body);
+        });
+        upRes.on('error', () => res.destroy());
         return;
       }
 
@@ -276,17 +511,51 @@ const server = createServer(async (req, res) => {
       file = join(ROOT, 'index.html');
     }
 
-    const body = await readFile(file);
-    res.writeHead(200, {
+    const entry = await loadStaticFile(file);
+
+    // Industry SPA caching contract: the entry HTML is never cached
+    // (revalidated via ETag → 304); hashed bundle assets are immutable for
+    // a year; unversioned root files (favicon) get a bounded day + ETag
+    // because their URL cannot rotate. Split on both separators — win32's
+    // normalize() uses backslashes, so a plain 'assets/' prefix check
+    // silently downgrades the immutable contract when run on Windows.
+    const isHashedAsset = pathname.split(/[\\/]/)[0] === 'assets';
+    const cacheControl = file.endsWith('index.html')
+      ? 'no-cache'
+      : isHashedAsset
+        ? 'public, max-age=31536000, immutable'
+        : 'public, max-age=86400';
+
+    const responseHeaders = {
       'Content-Type': MIME[extname(file)] ?? 'application/octet-stream',
-      // Industry SPA caching contract: the entry HTML is never cached;
-      // hashed bundle assets are immutable for a year.
-      'Cache-Control': file.endsWith('index.html') ? 'no-cache' : 'public, max-age=31536000, immutable',
+      'Cache-Control': cacheControl,
+      ETag: entry.etag,
       ...SECURITY_HEADERS,
-    });
+    };
+    if (entry.compressible) responseHeaders.Vary = 'Accept-Encoding';
+
+    // Conditional request — revalidate without resending the body.
+    if (etagMatches(req.headers['if-none-match'], entry.etag)) {
+      res.writeHead(304, responseHeaders);
+      res.end();
+      return;
+    }
+
+    let body = entry.identity;
+    const encoding = pickContentEncoding(req, entry);
+    if (encoding) {
+      body = compressedVariant(entry, encoding);
+      responseHeaders['Content-Encoding'] = encoding;
+    }
+    responseHeaders['Content-Length'] = body.length;
+    res.writeHead(200, responseHeaders);
     res.end(body);
   } catch {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.writeHead(404, {
+      'Content-Type': 'text/plain',
+      'Cache-Control': 'no-store',
+      ...SECURITY_HEADERS,
+    });
     res.end('Not found');
   }
 });
@@ -311,6 +580,9 @@ server.listen(PORT, () => {
   if (PROXY_TARGET) {
     console.log(
       `[nvoos-schedule-anything] proxying ${PROXY_PREFIXES.join(', ')} → ${PROXY_TARGET} (cookie auth enabled)`,
+    );
+    console.log(
+      `[nvoos-schedule-anything] proxy micro-cache ${PROXY_CACHE_ENABLED ? `on (TTL cap ${PROXY_CACHE_TTL_CAP}s)` : 'off (NVOOS_PROXY_CACHE=0)'}`,
     );
   } else {
     console.log(

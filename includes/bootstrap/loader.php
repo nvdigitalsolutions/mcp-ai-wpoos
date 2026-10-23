@@ -1827,6 +1827,14 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/clas
 if ( class_exists( 'WP_MCP_AI_Rate_Limit_Headers' ) ) {
 	WP_MCP_AI_Rate_Limit_Headers::register();
 }
+// Preserve explicit Cache-Control: public/s-maxage declarations against
+// WP 6.9's authenticated no-cache injection (rest_send_nocache_headers).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cache-control.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cache-control.php';
+}
+if ( class_exists( 'WP_MCP_AI_REST_Cache_Control' ) ) {
+	WP_MCP_AI_REST_Cache_Control::register();
+}
 add_action(
 	'rest_api_init',
 	function () {

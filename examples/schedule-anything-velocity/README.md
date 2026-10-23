@@ -13,6 +13,15 @@ that also reverse-proxies the WordPress backend, so the SPA, the `wp_rest`
 nonce handshake, and WordPress login all live on one origin — cookie auth
 works cross-host with **no CORS configuration**.
 
+**Caching contract** (same layer as the Complete Console): hashed
+`/assets/*` → `public, max-age=31536000, immutable`; `index.html` →
+`no-cache` + ETag (304 revalidation); unversioned root files (favicon) →
+`max-age=86400` + ETag; gzip/brotli from an in-memory file cache;
+default-deny proxy micro-cache for `GET` responses WordPress itself marks
+`Cache-Control: public` (nonce/SSE `no-store` endpoints can never be
+cached; `X-Cache-Status: HIT/MISS/BYPASS` for observability; knobs
+`NVOOS_PROXY_CACHE=0` / `NVOOS_PROXY_CACHE_MAX_TTL`).
+
 ```
 Browser ──> Velocity app (scripts/serve.mjs, PM2)
               ├── dist/                      # prebuilt SPA (no build step)
