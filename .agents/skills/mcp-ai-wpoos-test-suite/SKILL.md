@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 74 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 75 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, fallback-autoloader masking, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -1200,6 +1200,32 @@ the changed files is the substantive gate; plan CI waits accordingly.
       `update_option( OPTION_NAME, … )` in a test, or the logger keeps
       reading the pre-update cache and the `wp_mcp_ai_log_entry` filter
       never fires.
+
+   75. **`class_exists()` guards pass for the wrong reason — the bootstrap's
+      Pro fallback autoloader loads the class on demand (2026-10-23, console
+      REST provider-loading pass).** `tests/bootstrap.php` registers
+      `wp_mcp_ai_register_pro_classmap_fallback_autoloader()`, which globs
+      any `WP_MCP_AI_*` class out of `addons/pro/includes` (up to three
+      levels deep) the moment `class_exists()` asks. A production bug where a
+      REST handler's provider class is only `require_once`d by the
+      admin-gated `admin_sections` module therefore does NOT reproduce in
+      PHPUnit: the handler test passes because the autoloader supplies the
+      class, while the live front-end-originated console request silently
+      degrades (empty catalogue `ok: true`, 501s, `success: false`). Honest
+      pin recipe, used in `tests/rest-api/test-rest-console-bridges.php`:
+
+      - Assert the provider FILE is **eagerly** included right after the
+        registry boot — scan `get_included_files()` before any handler runs
+        (a lazy autoload include only happens once a handler calls
+        `class_exists()`, so the eager scan distinguishes the real loader).
+      - Prove the pin bites: `git stash push -- <production-file>`, run the
+        test (must FAIL), `git stash pop` (must PASS). A pin you haven't
+        watched fail is a pin you can't trust.
+      - End-to-end handler tests remain useful as response-contract tests,
+        but they cannot detect this bug class in this bootstrap — say so in
+        the test docblock instead of pretending they pin it.
+      - PHPUnit 11 requires data providers to be `public static`; a
+        non-static provider errors at suite construction, not in the test.
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 

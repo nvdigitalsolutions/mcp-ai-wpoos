@@ -659,6 +659,42 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					// request method"). Each controller is idempotent and only
 					// hooks rest_api_init (records also hooks init at priority
 					// 20 for meta-in-REST), so booting on every request is safe.
+
+					// The workflow-presets bridge wraps WP_MCP_AI_Pro_Workflow_Presets,
+					// which the admin-gated admin_sections module only loads when
+					// is_admin() is true. On front-end REST requests the class
+					// was never loaded, so GET /workflow-presets silently returned
+					// an empty catalogue (ok: true, presets: []) and the console
+					// Presets tab rendered "No presets available." Loading the
+					// class file is side-effect free (a guarded, static data
+					// registry with no hooks), so require it here for every request.
+					$presets_class = $p . 'class-wp-mcp-ai-pro-workflow-presets.php';
+					if ( file_exists( $presets_class ) ) {
+						require_once $presets_class;
+					}
+
+					// Same gate for the two bridge providers that wrap wp-admin
+					// page classes which admin_sections only loads in admin
+					// context: the workflow node executor
+					// (WP_MCP_AI_Pro_Workflow_Builder_Page — POST
+					// /workflow-builder/nodes/execute 501'd "builder_unavailable"
+					// on the console) and the ops overview webhook collector
+					// (WP_MCP_AI_Pro_Webhook_Status_Page — the console Operations
+					// page silently rendered an empty webhook list). Both files
+					// self-instantiate, but their constructors only register
+					// admin_menu / admin_enqueue_scripts / wp_ajax_* hooks, all
+					// dormant on front-end requests — the same rationale as the
+					// blueprints page module.
+					$bridge_providers = array(
+						$p . 'admin/class-wp-mcp-ai-pro-workflow-builder-page.php',
+						$p . 'admin/class-wp-mcp-ai-pro-webhook-status-page.php',
+					);
+					foreach ( $bridge_providers as $provider_file ) {
+						if ( file_exists( $provider_file ) ) {
+							require_once $provider_file;
+						}
+					}
+
 					$controllers = array(
 						'class-wp-mcp-ai-pro-rest-ops-controller.php'              => 'WP_MCP_AI_Pro_REST_Ops_Controller',
 						'class-wp-mcp-ai-pro-workflow-presets-rest-controller.php' => 'WP_MCP_AI_Pro_Workflow_Presets_REST_Controller',

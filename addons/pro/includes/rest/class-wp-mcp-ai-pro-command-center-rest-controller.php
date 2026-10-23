@@ -90,21 +90,46 @@ class WP_MCP_AI_Pro_Command_Center_REST_Controller {
 	}
 
 	/**
+	 * Load the wp-admin page class if it is not already available.
+	 *
+	 * Deliberately lazy rather than eager: unlike the other console bridge
+	 * providers, the command center constructor registers live tracking
+	 * hooks (wp_mcp_ai_after_tool_execution, wp_mcp_ai_after_chat_response,
+	 * wp_mcp_ai_session_started/ended) that record activity on every chat
+	 * and tool event. Requiring the file on every request would silently
+	 * flip activity recording on for front-end-originated sessions, so the
+	 * class loads only while an overview request is being served — the
+	 * handler fires none of those hooks.
+	 *
+	 * @since 2.4.0
+	 * @return bool True when the provider class is loaded.
+	 */
+	private function load_provider() {
+		if ( class_exists( 'WP_MCP_AI_Pro_Agent_Command_Center' ) ) {
+			return true;
+		}
+
+		$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-agent-command-center.php';
+		if ( file_exists( $page_file ) ) {
+			require_once $page_file;
+		}
+
+		return class_exists( 'WP_MCP_AI_Pro_Agent_Command_Center' );
+	}
+
+	/**
 	 * The dashboard overview: KPIs, agent statuses, and recent activity.
 	 *
 	 * @since 2.4.0
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_overview() {
 		$class = 'WP_MCP_AI_Pro_Agent_Command_Center';
-		if ( ! class_exists( $class ) ) {
-			return rest_ensure_response(
-				array(
-					'success' => false,
-					'data'    => array(
-						'message' => __( 'Command Center unavailable.', 'mcp-ai-wpoos-pro' ),
-					),
-				)
+		if ( ! $this->load_provider() || ! class_exists( $class ) ) {
+			return new WP_Error(
+				'command_center_unavailable',
+				__( 'Command Center unavailable.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 501 )
 			);
 		}
 
@@ -115,7 +140,7 @@ class WP_MCP_AI_Pro_Command_Center_REST_Controller {
 				$agent_statuses = array();
 
 				foreach ( $assistants as $assistant ) {
-					$agent_id                = isset( $assistant['id'] ) ? absint( $assistant['id'] ) : 0;
+					$agent_id                    = isset( $assistant['id'] ) ? absint( $assistant['id'] ) : 0;
 					$agent_statuses[ $agent_id ] = array(
 						'status'      => sanitize_key( $class::get_agent_status( $agent_id ) ),
 						'last_active' => $class::get_agent_last_active( $agent_id ) ? (int) $class::get_agent_last_active( $agent_id ) : 0,
@@ -133,7 +158,7 @@ class WP_MCP_AI_Pro_Command_Center_REST_Controller {
 				$recent_events     = $class::get_recent_activity_events( 8 );
 
 				return array(
-					'kpis'           => array(
+					'kpis'              => array(
 						'total_agents'      => count( $assistants ),
 						'agents_online'     => (int) $session_data['active_count'],
 						'active_tasks'      => (int) $session_data['task_count'],
