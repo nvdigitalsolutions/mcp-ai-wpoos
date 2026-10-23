@@ -10,6 +10,7 @@ import {
   fetchCurrentUser,
   fetchFeatureMap,
   fetchSessionNonce,
+  UnauthorizedError,
 } from '../runtime-config';
 
 const jsonResponse = (body: unknown, status = 200): Response =>
@@ -206,13 +207,13 @@ describe('fetchCurrentUser', () => {
     });
   });
 
-  it('surfaces login-required errors', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse({ code: 'rest_forbidden' }, 403),
-      ),
-    );
-    await expect(fetchCurrentUser('nonce')).rejects.toThrow(/log into WordPress/);
-  });
-});
+  	it( 'treats 403 as not-signed-in (hardened cookie auth)', async () => {
+  		vi.stubGlobal(
+  			'fetch',
+  			vi.fn().mockResolvedValue(
+  				jsonResponse( { code: 'rest_forbidden' }, 403 ),
+  			),
+  		);
+		await expect( fetchCurrentUser( 'nonce' ) ).rejects.toBeInstanceOf( UnauthorizedError );
+	} );
+} );

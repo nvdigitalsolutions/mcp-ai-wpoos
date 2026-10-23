@@ -223,7 +223,15 @@ export class UnauthorizedError extends Error {
   }
 }
 
-/** Fetch the logged-in user via WordPress core (cookie auth + nonce). */
+/**
+ * Fetch the logged-in user via WordPress core (cookie auth + nonce).
+ *
+ * No-session detection: core answers cookie requests without a valid
+ * session with 401, but hardened installs (the plugin's REST layer)
+ * reject the cookie+nonce pair with 403 instead — treat both as
+ * "not signed in" so the console shows its sign-in screen rather than
+ * an infrastructure error.
+ */
 export async function fetchCurrentUser(nonce = ''): Promise<Partial<ProSpaUser>> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
   const headers: Record<string, string> = {};
@@ -234,13 +242,13 @@ export async function fetchCurrentUser(nonce = ''): Promise<Partial<ProSpaUser>>
     credentials: 'include',
     headers,
   });
-  if (response.status === 401) {
-    throw new UnauthorizedError('wp/v2/users/me returned 401 — no WordPress session');
+  if (response.status === 401 || response.status === 403) {
+    throw new UnauthorizedError(
+      `wp/v2/users/me returned ${response.status} — no WordPress session`,
+    );
   }
   if (!response.ok) {
-    throw new Error(
-      `wp/v2/users/me returned ${response.status} — log into WordPress first`,
-    );
+    throw new Error('Session expired, please login first');
   }
   const data = await readJson<{
     id?: number;
