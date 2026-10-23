@@ -1,4 +1,4 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.9)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.10)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
@@ -6,6 +6,16 @@ Operational content stays in SKILL.md; append new per-version sections here.
 ---
 
 ---
+
+## Console Phase 5b–5d, Crash Fixes, Storage Meter & Advisory Sweep (v1.2.10)
+
+- **Console migration Phase 5b–5d + polish (PR #7180, Proposal 084)** — the orphaned `WP_MCP_AI_REST_Cost_Manager` + `WP_MCP_AI_REST_Analytics_Manager` controllers now register in `includes/bootstrap/loader.php` and power the real Analytics page (`manage_options`-gated, wrapping the existing service layers); the Unified Blueprints page bridges behind `GET /mcp-ai-pro/v1/blueprints` (searchable install catalogue); the Agent Command Center absorbs into the Dashboard (fail-soft). Console-wide: semantic `DataTable`, standardized buttons, grouped collapsible sidebar (W3C disclosure).
+- **Crash fixes + chat dock (PR #7184)** — the blueprints 500 (the `admin_blueprints` module gated the page class behind `context => 'admin'` — its static catalogue seams fataled on front-end REST; class loads unconditionally now, only `init()` stays `is_admin()`); React error #310 on four console pages (all hooks before the early returns; `react-hooks/rules-of-hooks` joined the spa-v2 ESLint gate — 21 latent violations); settings page (section cards, cross-tab search, sticky save); chat dock (mode-synced conversation-list collapse, theme switch, stacked composer, textarea drag-resize).
+- **Server transcript storage bytes (PR #7185)** — `WP_MCP_AI_Transcript_Repository::get_storage_bytes()` aggregates per-user payload lengths (0 when the CCT is unavailable); the `/chat-transcripts` envelope carries `storage_bytes`; the Pro SPA StatusBar prefers the server figure with a localStorage fallback for older installs (the old meter always read 0 KB — the standalone app's origin can never hold the legacy keys).
+- **Dependency advisories (PR #7186)** — markdown-it → 14.3.3 (bounded override `>=14.3.3 <15`), `@modelcontextprotocol/sdk` exact pin → 1.32.0 (gateway, 22/22), launch-editor floor → ≥2.14.2 — 14 of 16 open alerts; the vite pair already fixed on the alpha line.
+- **Build (PRs #7182/#7181)** — full tracked-bundle rebuild (16 files — lockfile-only advisory bumps had left tracked bundles stale for 13 days); the standalone SPA mirror gains the `cost`/`blueprints`/`commandCenter` endpoints + the analytics namespace fix.
+- **Docs & skills (PRs #7178/#7183/#7185)** — the spa-ui skill gains the rebuild-discipline subsection (lockfile staleness signature, vendor never-commit rule, revert-on-shared-branch play, merge discipline); the dependabot-loop skill gains Step 7 (rebuild tracked JS bundles); the schedule-anything-ops skill gains the Cloudways Anti-Bot Protection (Imunify360 WebShield) failure class; the spa-rest-contract skill gains bug class 11 (wrong-store meters) + the `storage_bytes` baseline; the test-suite skill documents the `run-tests-docker.sh` silent `dump-autoload` fallback.
+- **Versioning** — 1.2.10 across all version-bearing files. No addon moves. Tool count unchanged (~355 base + ~1,377 Pro, ~1,731 total). Coding-time skills 76 (unchanged). Stale 1.2.8 build ZIPs removed (30 files).
 
 ## Complete Console + Admin Console Migration, SA Visibility & New REST Routes (v1.2.9)
 

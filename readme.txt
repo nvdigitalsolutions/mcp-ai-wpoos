@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.9
+Stable tag: 1.2.10
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.10 - October 23, 2026 =
+
+Bumped to 1.2.10 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. The admin-surface console migration continues (Proposal 084 Phase 5b–5d): the orphaned cost/analytics REST controllers now register, the real Analytics page ships, the Unified Blueprints catalogue bridges behind mcp-ai-pro/v1/blueprints, and the Agent Command Center absorbs into the console Dashboard — plus the console polish (semantic DataTable, standardized buttons, grouped collapsible sidebar). Fixed: the blueprints 500 (admin-context class gating), React error #310 on four console pages (rules-of-hooks ESLint gate), the settings page (section cards, cross-tab search, sticky save), and the chat dock UX. The SPA status-bar storage meter now reads real server transcript storage via the storage_bytes envelope field. Dependency advisories closed: markdown-it 14.3.3, @modelcontextprotocol/sdk 1.32.0, launch-editor 2.14.2 (14 of 16 alerts). Full tracked-bundle rebuild after the lockfile movement. Cloudways Anti-Bot Protection playbook added to the Schedule Anything ops skill. Tool count unchanged: ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative).
 
 = 1.2.9 - October 22, 2026 =
 

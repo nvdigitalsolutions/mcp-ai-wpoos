@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.99"
-  plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-22"
+  plugin-version: "1.2.10"
+  plugin-version-tested: "1.2.10"
+  last-updated: "2026-10-23"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -864,31 +864,33 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.97-docs-catch-up.md`,
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
   `docs/project/plans/v1.1.99-docs-catch-up.md`,
-  `docs/project/plans/1.2.9-docs-catch-up.md` (latest executed — the
-  1.2.9 pass over PRs #7144–#7176: the Complete Console Velocity app
-  (#7150/#7154, Proposal 083) + the admin-surface console migration
-  Phases 0–4d (#7164/#7166, Proposal 084 — the `@since 2.4.0` ×101
-  module family recorded as OI-1 group 60, never fixed in-pass) with
-  the nine-fix REST contract parity audit, Schedule Anything full
-  visibility + platform 0.1.1 → 0.1.2 (#7147 — the superseded v0.1.1
-  ZIP removed), the new base settings/features/teams routes
-  (#7157/#7164), the opt-in `enable_debug_logging` gate (#7161), the
-  memory-graph bridge seams (#7145 — sub-project flag-not-edited for
-  the CG Bridge.php `@since 1.0.12` ahead-of-ship tags), the
-  `rest_console_bridges` registration fix (#7174), the
-  `/schedules/selectable` route-collision fix (#7176), the new
-  `mcp-ai-wpoos-spa-rest-contract` skill (75 → 76 — AGENTS.md +
-  copilot-instructions self-bookkept, README repo-map fold-in owed,
-  A5 fired again; the skill shipped a wrong `plugin-version: 2.4.0`
-  frontmatter copied from the module `@since` tags — corrected to
-  1.2.9 in-pass), the Pro zip `examples/` removal (#7168), the
-  dependency advisory sweep (#7167/#7175), the Proposals 083/084/085
-  README entries owed (in-window PRs added proposals without README
-  status entries), zero tool-count change, zero catalog diff, and
-  the stale 1.2.7 build-set removal (30 files — 9 + 2 + 19) + the
-  superseded SA platform v0.1.1 ZIP)
+  `docs/project/plans/1.2.10-docs-catch-up.md` (latest executed — the
+1.2.10 pass over PRs #7178–#7186: the console-migration Phase 5b–5d
+continuation (#7180, Proposal 084 — the orphaned cost/analytics
+REST-controller registration fix in `includes/bootstrap/loader.php`,
+the real Analytics page, the Unified Blueprints catalogue, the
+Command-Center-into-Dashboard absorption, plus the semantic DataTable
++ grouped collapsible sidebar console polish), the console crash fixes
+(#7184 — the blueprints 500 admin-context class gating, React error
+#310 on four pages with the permanent `react-hooks/rules-of-hooks`
+ESLint gate, the settings page + chat dock UX), the server
+transcript-storage meter (#7185 — `get_storage_bytes()` + the
+`storage_bytes` envelope field), the dependency advisory sweep
+(#7186 — markdown-it 14.3.3 / MCP SDK 1.32.0 / launch-editor 2.14.2,
+14 of 16 alerts), the full tracked-bundle rebuild (#7182, 16 files),
+the standalone SPA endpoint sync (#7181), the rebuild-discipline
+skills (#7183 — spa-ui + dependabot-loop Step 7), and the Cloudways
+Anti-Bot Protection playbook (#7178). New scope rule executed: a
+reverted-and-relanded PR pair (#7179 → #7180) counts once — the
+reverted PR's tree is a strict subset of the re-land. OI-1 group 60
+extension (+13 `@since 2.4.0` in the two Pro REST controllers,
+recorded not fixed), zero tool-count change, zero catalog diff, five
+in-window skill frontmatter reconciliations (spa-ui, dependabot-loop,
+spa-rest-contract, test-suite, schedule-anything-ops → 1.2.10), and
+the stale 1.2.8 build-set removal (30 files — 9 + 2 + 19))
 
 Preceding windows:
+  `docs/project/plans/1.2.9-docs-catch-up.md` (the
   `docs/project/plans/1.2.4-docs-catch-up.md` (executed — the
   1.2.4 pass over PRs #6998–#7010: the MCP client-quirk hardening
   (#7007, Proposal 066 — the `WP_MCP_AI_Tool_Schema_Auditor`, the
