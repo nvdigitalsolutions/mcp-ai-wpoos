@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState, type FormEvent, type JSX } from 'react';
 
 import { submitWpLogin } from '../login';
+import nvoosIcon from '../assets/nvoos-icon.svg';
 
 interface LoginScreenProps {
   /** Re-run the session bootstrap after a successful sign-in. */
@@ -62,7 +63,7 @@ export function LoginScreen({ onSuccess, notice }: LoginScreenProps): JSX.Elemen
       <main className="nvoos-login__card">
         <header className="nvoos-login__header">
           <span className="nvoos-login__mark" aria-hidden="true">
-            NV
+            <img src={nvoosIcon} alt="" />
           </span>
           <h1 className="nvoos-login__title">NV oOS Console</h1>
           <p className="nvoos-login__subtitle">Sign in with your site account</p>

@@ -136,10 +136,12 @@ const LOGOUT_CONFIRM_PATH = '/wp-login.php?action=logout';
 /**
  * Pull the `log-out` nonce out of a rendered WordPress page. The wp-login
  * logout-confirmation page embeds it in the confirmation link; the wp-admin
- * page embeds it in the admin-bar logout link (HTML-escaped as `&amp;`).
+ * page embeds it in the admin-bar logout link. The ampersand may be
+ * HTML-escaped as `&amp;` or as numeric `&#038;` (esc_attr on hardened
+ * installs) — accept both, plus a raw `&`.
  */
 function extractLogoutNonce(html: string): string {
-  const match = html.match(/action=logout(?:&amp;|&)_wpnonce=([a-f0-9]{10})/i);
+  const match = html.match(/action=logout(?:&amp;|&#0*38;|&)_wpnonce=([a-f0-9]{10})/i);
   return match?.[1] ?? '';
 }
 

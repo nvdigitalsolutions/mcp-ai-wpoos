@@ -145,26 +145,49 @@ describe('logoutFromWordPress', () => {
     expect(logout[1].redirect).toBe('manual');
   });
 
-  it('falls back to the wp-admin page nonce when the confirmation page has none', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(htmlResponse('<p>nothing here</p>'))
-      .mockResolvedValueOnce(
-        htmlResponse(
-          '<a href="https://site.example/wp-login.php?action=logout&amp;_wpnonce=aa11bb22cc">Log Out</a>',
-        ),
-      )
-      .mockResolvedValueOnce(new Response(null, { status: 302 }));
-    vi.stubGlobal('fetch', fetchMock);
+  	it( 'falls back to the wp-admin page nonce when the confirmation page has none', async () => {
+  		const fetchMock = vi
+  			.fn()
+  			.mockResolvedValueOnce( htmlResponse( '<p>nothing here</p>' ) )
+  			.mockResolvedValueOnce(
+  				htmlResponse(
+  					'<a href="https://site.example/wp-login.php?action=logout&amp;_wpnonce=aa11bb22cc">Log Out</a>',
+  				),
+  			)
+  			.mockResolvedValueOnce( new Response( null, { status: 302 } ) );
+  		vi.stubGlobal( 'fetch', fetchMock );
 
-    const result = await logoutFromWordPress();
-    expect(result.ok).toBe(true);
+  		const result = await logoutFromWordPress();
+  		expect( result.ok ).toBe( true );
 
-    const logout = fetchMock.mock.calls[2] as [string, RequestInit];
-    expect(logout[0]).toContain('_wpnonce=aa11bb22cc');
-  });
+  		const logout = fetchMock.mock.calls[ 2 ] as [ string, RequestInit ];
+  		expect( logout[ 0 ] ).toContain( '_wpnonce=aa11bb22cc' );
+  	} );
 
-  it('reports failure when no nonce can be scraped', async () => {
+  	// Regression (live console): hardened installs render the admin-bar
+  	// logout link with the numeric `&#038;` ampersand escape and answer the
+  	// nonce-less action=logout URL with 403 — the old `&amp;`-only regex
+  	// found no nonce and sign-out silently left the session alive.
+  	it( 'scrapes the &#038;-escaped admin-bar nonce behind a hardened wp-login', async () => {
+  		const fetchMock = vi
+  			.fn()
+  			.mockResolvedValueOnce( new Response( null, { status: 403 } ) )
+  			.mockResolvedValueOnce(
+  				htmlResponse(
+  					"<a class='ab-item' href='https://site.example/wp-login.php?action=logout&#038;_wpnonce=cc11dd22ee'>Log Out</a>",
+  				),
+  			)
+  			.mockResolvedValueOnce( new Response( null, { status: 302 } ) );
+  		vi.stubGlobal( 'fetch', fetchMock );
+
+  		const result = await logoutFromWordPress();
+  		expect( result.ok ).toBe( true );
+
+  		const logout = fetchMock.mock.calls[ 2 ] as [ string, RequestInit ];
+		expect( logout[ 0 ] ).toBe( '/wp-login.php?action=logout&_wpnonce=cc11dd22ee' );
+	} );
+
+	it( 'reports failure when no nonce can be scraped', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(htmlResponse('<p>nope</p>')));
 
     const result = await logoutFromWordPress();
@@ -191,24 +214,40 @@ describe('fetchCurrentUser 401 → UnauthorizedError', () => {
     vi.restoreAllMocks();
   });
 
-  it('throws UnauthorizedError on 401', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response('{"code":"rest_cookie_invalid_nonce"}', {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      ),
-    );
-    await expect(fetchCurrentUser('stale')).rejects.toBeInstanceOf(UnauthorizedError);
-  });
+  	it( 'throws UnauthorizedError on 401', async () => {
+  		vi.stubGlobal(
+  			'fetch',
+  			vi.fn().mockResolvedValue(
+  				new Response( '{"code":"rest_cookie_invalid_nonce"}', {
+  					status: 401,
+  					headers: { 'Content-Type': 'application/json' },
+  				} ),
+  			),
+  		);
+  		await expect( fetchCurrentUser( 'stale' ) ).rejects.toBeInstanceOf( UnauthorizedError );
+  	} );
 
-  it('keeps generic errors for non-401 failures', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response('bad gateway', { status: 502 })),
-    );
-    await expect(fetchCurrentUser('ok')).rejects.not.toBeInstanceOf(UnauthorizedError);
-  });
-});
+  	// Hardened installs reject the cookie+nonce pair with 403 instead of
+  	// 401 — the console must still treat that as "not signed in" and show
+  	// the sign-in screen, not the infrastructure error screen.
+  	it( 'throws UnauthorizedError on 403 (hardened cookie auth)', async () => {
+  		vi.stubGlobal(
+  			'fetch',
+  			vi.fn().mockResolvedValue(
+  				new Response( '{"code":"rest_cookie_invalid_nonce"}', {
+  					status: 403,
+  					headers: { 'Content-Type': 'application/json' },
+  				} ),
+  			),
+  		);
+  		await expect( fetchCurrentUser( 'stale' ) ).rejects.toBeInstanceOf( UnauthorizedError );
+  	} );
+
+  	it( 'keeps a friendly message for non-401/403 failures', async () => {
+  		vi.stubGlobal(
+  			'fetch',
+  			vi.fn().mockResolvedValue( new Response( 'bad gateway', { status: 502 } ) ),
+  		);
+		await expect( fetchCurrentUser( 'ok' ) ).rejects.toThrow( 'Session expired, please login first' );
+	} );
+} );

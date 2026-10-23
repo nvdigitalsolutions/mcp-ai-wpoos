@@ -254,6 +254,10 @@ body,
   display: flex;
   flex-direction: column;
   gap: 4px;
+  /* The status bar is absolutely positioned over the shell's bottom 32px
+     (z-index 120), which covers the sign-out button — lift the footer clear
+     of it so the button stays visible and clickable. */
+  margin-bottom: 35px;
 }
 
 .nvoos-console-nav__btn {
@@ -814,6 +818,12 @@ body,
   color: #fff;
   background: linear-gradient(135deg, var(--shell-accent), var(--shell-accent-2));
   margin-bottom: 12px;
+}
+
+.nvoos-login__mark img {
+  width: 30px;
+  height: 30px;
+  display: block;
 }
 
 .nvoos-login__title {
