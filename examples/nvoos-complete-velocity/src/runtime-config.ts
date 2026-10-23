@@ -210,6 +210,19 @@ export async function fetchSessionNonce(): Promise<string> {
   return data.nonce;
 }
 
+/**
+ * The session endpoints answered 401 — the visitor has no WordPress session
+ * (or it expired). The console answers this with its own sign-in screen
+ * instead of a link to the proxied wp-login.php page, so the boot gate can
+ * tell "not signed in" apart from infrastructure failures.
+ */
+export class UnauthorizedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UnauthorizedError';
+  }
+}
+
 /** Fetch the logged-in user via WordPress core (cookie auth + nonce). */
 export async function fetchCurrentUser(nonce = ''): Promise<Partial<ProSpaUser>> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
@@ -221,6 +234,9 @@ export async function fetchCurrentUser(nonce = ''): Promise<Partial<ProSpaUser>>
     credentials: 'include',
     headers,
   });
+  if (response.status === 401) {
+    throw new UnauthorizedError('wp/v2/users/me returned 401 — no WordPress session');
+  }
   if (!response.ok) {
     throw new Error(
       `wp/v2/users/me returned ${response.status} — log into WordPress first`,
