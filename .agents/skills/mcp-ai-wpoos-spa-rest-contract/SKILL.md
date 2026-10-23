@@ -104,6 +104,22 @@ the form read fields the directory never returned).
     MediaOpsPage's `bootstrapLoading || loading` early return, TeamsPage's
     `loadingMembers` ternary, the console DashboardPage's `assistantsLoaded`
     + `LoadingDash` stat placeholder.
+11. **Wrong-store meters — a displayed metric measures a different store than
+    the data actually lives in.** Real case (2026-10-23): the status-bar
+    "Sessions: X KB" figure summed same-origin localStorage keys
+    (`wp_mcp_ai_*`, `nvoos-chat-spa*`, `nvoos-pro-spa*`), designed around the
+    legacy base chat writing history to localStorage. The Pro SPA stores
+    transcripts **server-side** (JetEngine CCT via `/chat-transcripts`), so
+    the meter read ~0 bytes and rendered "0 KB"; the standalone
+    nvoos-complete-velocity app runs on a different origin where the base
+    chat's keys can never exist at all. Fix pattern (2026-10-23, PR against
+    alpha-working): server-extend an aggregate into the list envelope — the
+    transcripts list now carries `storage_bytes` (sum of payload lengths for
+    the user, 0 in the transcripts-unavailable branch) — and have the client
+    prefer the server figure, falling back to the localStorage meter only
+    when the server value is unknown (older installs / endpoint down). When
+    auditing a displayed metric, first verify *where the underlying data
+    lives* and which origin the app runs on, before trusting the meter.
 
 ## Audit path per client (4 hops, verify every hop)
 
@@ -176,6 +192,15 @@ toolkit flags (toolkits are default-off). `GET /mcp-ai-pro/v1/schedules` is
 owned exclusively by the schedule CRUD controller (`{ ok, schedules, total }`);
 the scheduled-result picker lives at `/schedules/selectable` (bare array) —
 bug class 9.
+
+**2026-10-23 addition:** the chat-transcripts list envelope
+(`GET /mcp-ai/v1/chat-transcripts`) now includes `storage_bytes` — the
+aggregate byte size of the user's stored transcripts (repository
+`WP_MCP_AI_Transcript_Repository::get_storage_bytes()`, seam
+`WP_MCP_AI_REST::get_transcript_storage_bytes()`) — plus the Pro SPA
+StatusBar prefers it over the same-origin localStorage meter (bug class 11).
+Re-audit the transcripts client with this field in mind; it is absent on
+older base-plugin installs (client falls back).
 
 **Registration pass (same-day follow-up):** the six Proposal 084 console
 bridges (ops overview, workflow-presets, workflow-builder node exec, records,
