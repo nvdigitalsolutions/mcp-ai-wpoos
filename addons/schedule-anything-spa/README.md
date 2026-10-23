@@ -2,11 +2,18 @@
 
 React single-page application for the Schedule Anything SaaS platform. Provides tenant admin dashboard, visual schedule builder (React Flow via `@xyflow/react` v12), preset library, run history, analytics, and public booking portal.
 
-**0.2.0 stack:** Tailwind CSS v4 (CSS-first config, NDS design-token aliases),
-a shadcn-style in-repo UI kit (`src/components/ui/` — Radix primitives +
-CVA + tailwind-merge + sonner), route-level code splitting for the builder
-and analytics surfaces, `@wordpress/i18n` across the app chrome, and
-jsx-a11y/axe lint gates.
+**0.2.0 stack:** React 19.1 + Vite 6, Tailwind CSS v4 (CSS-first config, NDS
+design-token aliases), a shadcn-style in-repo UI kit (`src/components/ui/` —
+Radix primitives + CVA + tailwind-merge + sonner), route-level code splitting
+for the builder and analytics surfaces, `@wordpress/i18n` across the app
+chrome, and jsx-a11y/axe lint gates.
+
+**React 19 note:** this addon deviates from the Pattern-B React 18.3 pin
+because the SPA is standalone-only (served from `assets/dist` via nginx, the
+Schedule Anything Velocity app, or the SPA zip) and never embeds inline in a
+wp-admin page, so coexistence with WP core's React 18 never occurs. If an
+inline wp-admin embed is ever introduced, revisit. The vestigial
+`data-sa-mount` mount path in `src/index.tsx` must stay out of wp-admin.
 
 ## Quick Start
 

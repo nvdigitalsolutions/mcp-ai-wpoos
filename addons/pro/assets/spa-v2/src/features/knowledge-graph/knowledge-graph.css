@@ -13,7 +13,7 @@
 
 .nvoos-pro-spa-knowledge-graph .nvoos-pro-spa-page__subtitle {
 	margin: 0 0 16px;
-	color: var( --nds-color-text-primary, #50575e );
+	color: var( --nvoos-text-secondary, #50575e );
 	font-size: 13px;
 }
 
@@ -24,17 +24,17 @@
 	justify-content: center;
 	min-height: 30px;
 	padding: 0 10px;
-	border: 1px solid var( --nds-color-border, #2271b1 );
+	border: 1px solid var( --nvoos-primary, #2271b1 );
 	border-radius: 3px;
-	background: var( --nds-color-surface, #f6f7f7 );
-	color: var( --nds-color-accent, #2271b1 );
+	background: var( --nvoos-bg-secondary, #f6f7f7 );
+	color: var( --nvoos-primary, #2271b1 );
 	font-size: 13px;
 	line-height: 2;
 	cursor: pointer;
 }
 
 .nvoos-pro-spa-knowledge-graph .button:hover {
-	background: var( --nds-color-accent, #2271b1 );
+	background: var( --nvoos-primary, #2271b1 );
 	color: #fff;
 }
 
@@ -44,14 +44,14 @@
 }
 
 /* The explorer manages its own canvas colors via --nvoos-cg-* tokens, but
-   the page shell (header, empty states) follows the SPA's NDS tokens. */
+   the page shell (header, empty states) follows the SPA's theme tokens. */
 .nvoos-pro-spa-knowledge-graph__unavailable {
 	margin: 24px 0;
 	padding: 16px;
-	border: 1px dashed var( --nds-color-border, #c3c4c7 );
+	border: 1px dashed var( --nvoos-border, #c3c4c7 );
 	border-radius: 4px;
-	background: var( --nds-color-surface, #fff );
-	color: var( --nds-color-text-primary, #1d2327 );
+	background: var( --nvoos-bg-secondary, #fff );
+	color: var( --nvoos-text, #1d2327 );
 }
 
 .nvoos-pro-spa-knowledge-graph__unavailable p {

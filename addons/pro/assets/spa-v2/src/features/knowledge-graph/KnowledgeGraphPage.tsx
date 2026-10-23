@@ -85,13 +85,26 @@ export function KnowledgeGraphPage(): JSX.Element {
 	const explorerRef = useRef< HTMLDivElement | null >( null );
 
 	// Fetch the explorer config (visual tokens + presets) from the plugin.
+	// Cookie mode (the standalone app's same-origin connection) authenticates
+	// through the WordPress session cookie plus the runtime's wp_rest nonce —
+	// without the nonce header the route rejects the request (401/403). Token
+	// modes are unaffected: the fetch wrapper layers bearer/guest auth on top.
 	useEffect( () => {
 		if ( ! endpoint ) {
 			return;
 		}
 		let cancelled = false;
 		setError( '' );
-		fetch( `${ endpoint.replace( /\/+$/, '' ) }/graph/visual-config` )
+		const headers: Record< string, string > = {
+			Accept: 'application/json',
+		};
+		if ( nonce ) {
+			headers[ 'X-WP-Nonce' ] = nonce;
+		}
+		fetch( `${ endpoint.replace( /\/+$/, '' ) }/graph/visual-config`, {
+			credentials: 'same-origin',
+			headers,
+		} )
 			.then( ( response ) => {
 				if ( ! response.ok ) {
 					throw new Error( `visual-config returned ${ response.status }` );
@@ -119,7 +132,7 @@ export function KnowledgeGraphPage(): JSX.Element {
 		return () => {
 			cancelled = true;
 		};
-	}, [ endpoint ] );
+	}, [ endpoint, nonce ] );
 
 	// Mount the vendored explorer once the config is present and the DOM is
 	// rendered; destroy it on unmount (React ⇄ jQuery imperative-island

@@ -38,6 +38,15 @@ class WP_MCP_AI_Admin_Approvals {
 	 * Register submenu page.
 	 */
 	public function add_menu_page() {
+		/**
+		 * Kill-switch for the wp-admin approvals surface (Proposal 084 Phase 1).
+		 * The Complete Console ships the equivalent Approvals page; flip this
+		 * filter off per cohort once the SPA surface reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_approvals', true ) ) {
+			return;
+		}
+
 		$pending_count = $this->get_pending_count();
 		$menu_title    = $pending_count > 0
 			/* translators: %d: number of pending approval items */

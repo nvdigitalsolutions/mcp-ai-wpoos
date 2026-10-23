@@ -256,8 +256,32 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
 		$days_back = isset( $_POST['days_back'] ) ? absint( $_POST['days_back'] ) : 30;
 
+		$result = self::get_history( $member_id, $days_back );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * Return health metrics history for a member.
+	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 4 W13c): the dashboards REST
+	 * controller consumes this as the dashboard's data provider; the AJAX
+	 * handler above sends the same payload unchanged.
+	 *
+	 * @param int $member_id Member post ID.
+	 * @param int $days_back Days of history to return.
+	 * @return array|WP_Error History envelope or error.
+	 */
+	public static function get_history( $member_id, $days_back ) {
 		if ( ! $member_id ) {
-			wp_send_json_error( array( 'message' => __( 'Member ID is required.', 'mcp-ai-wpoos-pro' ) ), 400 );
+			return new WP_Error(
+				'hw_member_required',
+				__( 'Member ID is required.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
 		}
 
 		// Use the log_health_metrics tool directly.
@@ -280,8 +304,7 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 			}
 			ksort( $history );
 
-			wp_send_json_success( array( 'history' => array_values( $history ) ) );
-			return;
+			return array( 'history' => array_values( $history ) );
 		}
 
 		$tool   = new $tool_class();
@@ -295,11 +318,10 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 		);
 
 		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
-			return;
+			return $result;
 		}
 
-		wp_send_json_success( array( 'history' => isset( $result['history'] ) ? $result['history'] : array() ) );
+		return array( 'history' => isset( $result['history'] ) ? $result['history'] : array() );
 	}
 
 	/**

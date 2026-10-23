@@ -57,7 +57,9 @@ trait WP_MCP_AI_Fnb_Native_Cpt_Storage {
 			'public'              => false,
 			'show_ui'             => true,
 			'show_in_menu'        => false,
-			'show_in_rest'        => false,
+			// Proposal 084 Phase 4d W14: the console Records feature
+			// consumes F&B entities via wp/v2.
+			'show_in_rest'        => true,
 			'has_archive'         => false,
 			'rewrite'             => false,
 			'capability_type'     => 'post',

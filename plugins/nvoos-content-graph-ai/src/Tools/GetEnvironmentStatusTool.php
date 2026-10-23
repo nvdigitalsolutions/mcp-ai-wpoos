@@ -36,8 +36,11 @@ class GetEnvironmentStatusTool extends AbstractAiTool {
 		return array(
 			'type'                 => 'object',
 			// Empty stdClass encodes as `{}`; an empty PHP array would encode
-			// as `[]`, which strict providers (DeepSeek) reject.
-			'properties'           => new stdClass(),
+			// as `[]`, which strict providers (DeepSeek) reject. Fully
+			// qualified: inside this namespace an unqualified stdClass resolves
+			// to NvoosContentGraphAi\Tools\stdClass and fatals (standalone
+			// matrix, Stdio tools-list builds every tool schema).
+			'properties'           => new \stdClass(),
 			'additionalProperties' => false,
 		);
 	}

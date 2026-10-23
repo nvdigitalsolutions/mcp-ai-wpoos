@@ -1,10 +1,176 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.2.10] - 2026-10-23
+
+### Added — Console migration Phase 5b–5d + console polish
+
+- **Cost + analytics REST surfaces registered (Phase 5b, #7180)** — `includes/bootstrap/loader.php` now registers the orphaned `WP_MCP_AI_REST_Cost_Manager` + `WP_MCP_AI_REST_Analytics_Manager` controllers (they existed but never booted), and the console's real Analytics page (cost trend, provider donut, top tools/users) consumes them — both `manage_options`-gated and wrapping the existing `WP_MCP_AI_Cost_Tracking_Service` / `WP_MCP_AI_Analytics_Engine` layers, no logic forks.
+- **Unified Blueprints catalogue (Phase 5c, #7180)** — the console Blueprints page bridges behind `GET /mcp-ai-pro/v1/blueprints` with a searchable install catalogue.
+- **Command Center absorbed into the Dashboard (Phase 5d, #7180)** — the Pro Agent Command Center overview renders as a fail-soft KPI + activity section on the console Dashboard.
+- **Console surface polish (#7180)** — a semantic `DataTable` component (sortable headers, master–detail rows, sticky header, scroll containment, zebra striping) replaces the div-list tools tables; standardized primary/danger buttons; a grouped collapsible sidebar (`ConsoleSidebar` + `nav-features`: Workspace / Automation / Command Centers / Insights / Admin) with the W3C disclosure pattern, persisted group state, and default-Workspace-expanded.
+
+### Fixed — console crashes, blueprints 500, chat dock UX
+
+- **Blueprints 500 (#7184)** — the `admin_blueprints` module gated the unified blueprints page class behind `context => 'admin'`, so its static catalogue seams fataled with "Class not found" on front-end REST requests; the class now loads unconditionally with only `init()` behind `is_admin()` (pinned by `tests/rest-api/test-rest-blueprints.php`, 11 tests / 103 assertions).
+- **React error #310 on four console pages (#7184)** — Schedule Manager, Workflows, Pro Ops, and Orchestration Stats early-returned their loading/error states before their `useMemo` table builders (hook count changed when data arrived); all hooks now run before the early returns, plus a `SpeechButton` conditional-hook fix. Permanent guard: `react-hooks/rules-of-hooks` joined the spa-v2 ESLint gate — 21 latent violations across 4 files found and fixed.
+- **Settings page (#7184)** — fields group into section cards per tab (the schema's previously unused `section`/`section_id`), cross-tab settings search with section breadcrumbs, a sticky save footer, dirty-field indicators, and `aria-describedby` hint wiring.
+- **Chat dock (#7184)** — docked chat starts with the conversation list collapsed (full-page `/chat` starts open, boot-synced in `main.tsx` to avoid a first-frame flash); the status-bar ☰ toggle is visible again and drives the same state in both modes; a light/dark theme switch joins the dock header; the docked composer stacks (input row, then toolbar + send actions) so the textarea is no longer squashed to 31px; drag-resize sizes the textarea itself; the status bar clears the narrow-screen dock overlay.
+
+### Fixed — SPA status-bar storage meter
+
+- **Server transcript storage bytes (#7185)** — the Pro SPA status-bar "Sessions: X KB" meter measured same-origin `localStorage` keys that can never exist for the server-side transcript store (always `0 KB`). `WP_MCP_AI_Transcript_Repository::get_storage_bytes()` now aggregates per-user `request_payload`/`response_payload` lengths (same `user_id` → `cct_author_id` fallback as `get_sessions()`; 0 when the CCT is unavailable), `GET /mcp-ai/v1/chat-transcripts` includes `storage_bytes` in its envelope, and the StatusBar prefers the server figure, falling back to the localStorage meter only when the server figure is unknown (older installs). New 3-test suite + SPA parsing/fallback tests.
+
+### Fixed — dependency advisories (2026-10-23 sweep)
+
+- **markdown-it → 14.3.3 (#7186)** — the existing bounded override `>=14.3.1 <15` → `>=14.3.3 <15` across root / `addons/pro/assets/spa` / `addons/saas-controller` resolves the ReDoS + O(n²) advisories (GHSA-vfgh-jcmw-g37q, GHSA-gfr2-rv44-r23c) — 6 alerts.
+- **`@modelcontextprotocol/sdk` exact pin 1.31.0 → 1.32.0 (#7186)** — `addons/mcp-wordpress-gateway` (in-major bump; `McpServer` + `StreamableHTTPServerTransport` exports verified, gateway suite 22/22) — 8 alerts (GHSA-46jr-4wx8-v453, GHSA-22jm-h49p-29qw, GHSA-rvq5-wwqv-78pq, GHSA-6prh-2h8m-c8cw).
+- **launch-editor floor → ≥2.14.2 (#7186)** — root + saas-controller floors and a new override in `addons/pro/assets/spa` — 2 alerts. 14 of 16 open alerts closed; the remaining 2 (vite 1380/1384) already fixed on alpha-working (#7167/#7175) and clear on the next main sync. `examples/nvoos-dictate` + `nvoos-vite-demo` still pin vite 5.4.21 (inside the advisory window but out of Dependabot alert scope — noted, left untouched).
+
+### Build
+
+- **Full tracked-bundle rebuild (#7182)** — lockfile-only advisory bumps (#7175/#7106) had left tracked bundles silently stale for 13 days (e.g. the three `generate-*` worker bundles still embedded pre-bump dependency internals). Rebuilt the full artifact tree (16 files): worker bundles, chat bundles, SPA dists, 2 of 4 TMA entries, the saas-controller drift manifest; spa-v2 + complete-velocity rebuilt byte-identical same-day. No source or vendor changes.
+- **Standalone SPA endpoint sync (#7181)** — `examples/nvoos-pro-spa-vite/src/runtime-config.ts` gains the three canonical `ProSpaEndpoints` keys added by the 5b–5d ports (`cost`, `blueprints`, `commandCenter`) and points `analytics` at the core `mcp-ai/v1/analytics` namespace (matching the canonical PHP config) — the Velocity build gate's TS2739 fixed.
+
+### Docs & skills
+
+- **Rebuild discipline codified (#7183)** — the spa-ui skill gains a "Rebuild discipline" subsection (lockfile movement stales tracked bundles — detection signature + the #7182 proof case; vendor is tracked in production state — the #7179 revert → #7180 case and the pre-commit vendor gate; node_modules drift vs lockfile; standalone-addon deps are not hoisted; reverting a bad merge on a shared branch; PR merge discipline), and the dependabot-loop skill gains Step 7 (rebuild tracked JS bundles) with the later steps renumbered.
+- **Cloudways Anti-Bot Protection playbook (#7178)** — the schedule-anything-ops skill gains the Imunify360 WebShield failure class (the console proxy's single egress IP trips the WAF → every proxied `/wp-json` request receives the JS challenge the console can never satisfy; the `pdata`-names-the-target-site + wsidchk signature, the auto-whitelist intermittency trap, the 4-step diagnostic ladder, and the Anti-Bot Protection: OFF fix), cross-referenced from the Complete Console deploy runbook.
+- **SPA storage-meter + test-runner learnings (#7185)** — the spa-rest-contract skill gains bug class 11 ("wrong-store meters") + the `storage_bytes` baseline; the test-suite skill documents the `run-tests-docker.sh` silent `dump-autoload` fallback that produces the pruned classmap, plus the host-side `composer install` + `git restore vendor` recovery.
+
+### Tests
+
+- **Regression pins (#7184/#7185)** — the blueprints REST suite (11 tests), the cost/analytics/command-center REST suites (17 tests), the loading → loaded transitions for the four hook-order pages, the new transcript-storage-bytes suite (3 tests), and the `useTranscripts` storageBytes parsing/fallback cases.
+
+### Versioning
+
+Bumped to **1.2.10** across all version-bearing files (plugin header, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, readme.txt Stable tag). Pro addon: 1.2.10. No addon version moves in-window (Schedule Anything Platform stays 0.1.2). Media Worker: **3.4.0** (unchanged — verified across package.json + both health/status surfaces). Model catalog: **v2026.10.03** (unchanged — zero catalog diff). Tool count: **~355 base + ~1,377 Pro (~1,731 total — unchanged)** — zero registry registrations in-window (#7180's cost/analytics managers are REST controllers and #7185's repository method is a service seam; live registry authoritative). Provider count: **18** chat providers (unchanged). Addon count: **30** (unchanged). Bundled skills: **77** base + **41** Pro (unchanged). Coding-time agent skills: **76** (unchanged — five skills updated in place). Security classes: **12** (unchanged). Stale build ZIPs removed: the 1.2.8 oOS set (30 files — 9 + 2 + 19).
+
+## [1.2.9] - 2026-10-22
+
+### Added — NV oOS Complete Console (Proposal 083)
+
+- **`examples/nvoos-complete-velocity/`** — new Cloudways Velocity app serving the full NV oOS Pro SPA (spa-v2) admin surface (chat, settings, tools, assistants, workflows, analytics, knowledge-graph, docs, media, documents) for NV oOS Complete customers. Vite host over the spa-v2 sources (alias, no fork), fixed cookie-auth through the proven same-origin BFF proxy (`serve.mjs` ported byte-identical from the Schedule Anything app), no connection screen, entry chunk 91.47 KB gzip (150 KB budget).
+- **Sync pipeline** — `sync-nvoos-complete-velocity.yml` mirrors the app (root-level tree, flat history) to `nvdigitalsolutions/nvoos-complete-velocity`; triggers on the app folder **and** `addons/pro/assets/spa-v2/**` (the console embeds spa-v2 sources). Requires the repo secret `NVOOS_COMPLETE_VELOCITY_REPO_TOKEN` (owner step).
+- **Docs** — Proposal 083 + implementation plan + Velocity setup runbook (`docs/operations/deployment/nvoos-complete-velocity-setup.md`).
+- **Decisions recorded** — console naming, assistant provisioning (default + selector both supported), standalone Pro SPA persists alongside, cross-app SSO deferred as shared-domain cookie follow-up.
+
+### Fixed — Schedule Anything: full tool/schedule/preset visibility
+
+- **Live tool catalogue for the SPA builder** — new `GET /mcp-ai-pro/v1/sa-tools` route serves light, paginated rows (slug/name/description/group/group_label) from the live NV oOS tool registry with server-side search + group filtering + `has_more`, mirroring the MCP `tools/list` progressive-discovery pattern; the builder palette previously rendered a hardcoded 19-tool fixture and could never show the real registry. The palette now loads page-by-page with search and a load-more control, and the full `inputSchema` never leaves the server.
+- **Toolkit list drift fixed** — `SA_Toolkit_Manager::TOOLKIT_ORDER` was missing `flowhub` and `shopify-sync`, so they never appeared in the SPA settings list; `get_all_statuses()` now derives from the canonical `TOOLKIT_FLAGS` map (order list first, stragglers appended) so future drift is impossible.
+- **Entitlement visibility** — `GET /toolkits` now returns `tier`, `platform_active`, and a per-toolkit `entitled` flag computed server-side; the SPA settings page greys out out-of-tier toggles with an explanation instead of silently allowing a doomed 403 toggle.
+- **Idempotent toolkit toggle** — `SA_Toolkit_Manager::toggle_toolkit()` returned false (REST 500 `sa_toolkit_toggle_failed`) when toggling a toolkit to the state it already had, because `update_option()` returns false for unchanged values; same-state toggles are now a successful no-op (E2E-caught regression, regression-tested at both the manager and REST layers).
+- **Multisite administrator access** — the platform grants the scoped `sa_manage_workspace` capability to the tenant blog's `administrator` role idempotently (capability grants as version-gated migrations). Previously only the custom `sa_tenant_admin` role could use the SPA on multisite, so site admins saw empty schedules/toolkits/presets lists.
+- **Presets pagination + facet filters** — `GET /presets` returns facet metadata (`filters.toolkits`/`filters.categories`) and the SPA loads pages progressively (`per_page=20` + load-more) instead of depending on the server default with no way to page (anything past `per_page` would be unreachable); the hardcoded filter dropdowns used underscore slugs that matched nothing in the hyphenated catalogue, so filtering by toolkit/category now uses the server facet values.
+- **Tests** — PHPUnit `test-sa-tools-rest.php` (permission gate, light rows, search, pagination, groups facet) + `test-toolkit-manager.php` (catalogue drift guard, ordering, idempotent admin capability grant, non-admin roles untouched) + toolkit REST entitlement assertions; SPA vitest `toolCatalogue.test.ts` (group accumulation, humanization, name fallback — suite 35).
+- **Platform version 0.1.1 → 0.1.2** — the capability-grant migration, entitlement facet, and idempotent-toggle fixes ship in the addon itself (header + `SA_PLATFORM_VERSION`; the superseded v0.1.1 ZIP is removed this pass).
+
+### Fixed — Complete Console: feature gating + schedule list
+
+- **No empty-then-loaded flashes on REST-driven pages** — the console pages that seed empty state before their REST fetch resolves now gate on an explicit loading state: the assistants edit form shows a "Loading assistant details…" cue (and blocks saving while the full record loads — a premature save used to overwrite the stored system prompt with ''), and the Records, Dashboards and Channels pages show loading placeholders instead of a blank list/panel while their schema or rows are in flight.
+
+- **Dashboards gate on toolkit toggles** — `GET /mcp-ai-pro/v1/dashboards/schema` omits dashboards whose toolkit is disabled (health/wellness, medical vitals, ECA, law-firm, CRE, registration) and `GET /dashboards/{id}/data` refuses them with 404 `dashboards_unavailable` — features that are off in the plugin no longer show in the console (e.g. Health & Wellbeing).
+- **Nav hides disabled command centers** — the feature map (`GET /mcp-ai/v1/features`) now carries the CRM / Projects / Calendar / Food & Beverage toolkit toggles, and the console sidebar + route guards gate those pages on them (fail-open when the map is absent).
+- **Schedule list route collision fixed** — the scheduled-result controller's picker moved from `GET /mcp-ai-pro/v1/schedules` (bare array) to its own literal `/schedules/selectable` (block editor follows); the CRUD controller's `{ ok, schedules, total }` envelope is now the unambiguous owner of `GET /schedules`, so the console and the Schedule Anything SPA reliably list Pro schedules — previously whichever controller registered last silently won.
+- **Console Schedule Manager resilience** — schedules and presets fetch independently; a failing schedules request surfaces its error in the Schedules tab instead of a silent "No schedules yet." empty state.
+
+### Added — Admin Surface Console Migration, Phases 0–4d (Proposal 084, PRs #7164/#7166)
+
+- **Phase 0 foundations** — the base `WP_MCP_AI_Feature_Flags` registry + `GET /mcp-ai/v1/features`; capability- and feature-driven console navigation with fail-open semantics; the assistant-aware Tools page.
+- **Phase 1 (T1 ports)** — Approvals, Slash Commands, Workflow Triggers, Assistant Portability, Security Center and Teams become REST-backed console pages with per-page wp-admin kill-switches (`wp_mcp_ai_admin_page_enabled_*`, default on); new `GET /mcp-ai/v1/teams` list.
+- **Phase 2 (settings engine)** — `GET /mcp-ai/v1/settings/schema` + `GET/POST /mcp-ai/v1/settings/values`: a schema-driven tabbed Settings page with dirty-diff saves and secret masking.
+- **Phase 3 (ops cluster)** — operations (cron + DLQ + run timeline), consolidated diagnostics, the token manager (credentials + restrictions lift), multi-agent + orchestration stats, and `GET /mcp-ai-pro/v1/ops/overview` (service status, maintenance, incidents, webhooks).
+- **Phases 3b–4d (entity workflows)** — Schedule Manager (P9) + Workflow Builder (B8/P10) over the existing `mcp-ai-pro/v1` routes (ReactFlow canvas parity, presets + node-execution bridges with run history); CRM Records (`GET /mcp-ai-pro/v1/records/schema`, `register_post_meta` REST exposure for five CRM entities, research-driven create via `POST /records/{entity}/research`); the PM command center + professions; config-driven Dashboards (CRE, law-firm, registration, ECA, health/wellness, medical vitals); Calendar, F&B, Chat Channels, and Media Ops (`GET /mcp-ai-pro/v1/media-cc` — the health snapshot + compression-sweep promoted to public seams).
+- **REST contract parity audit — nine client/server mismatches fixed** — every spa-v2 client audited against its controller: assistants **GET/PUT `/assistants/{id}`** single-record routes (the console edit form was broken), the slash-commands page rewired to the pro routes (was 404ing), dashboards `filters` JSON query-string decoding, chat-channels `content`/`contact_name` fields, teams member `description`, records research `title`, workflow-preset install `icon`, tools category derivation, and `vectorStoreId` config emit.
+- **Conventions honored** — `manage_options` on every new route, canonical envelopes, two-gate sanitisation; no logic forks (controllers wrap the existing services); credential hashes and raw assistant configs are never serialized; network-bound live tests and destructive actions stay wp-admin (tracked follow-up POST routes). Phase 5 (retirement soak + kill-switch flips) is the remaining track.
+
+### Added — Funiq Bridge Velocity Storefront (Proposal 085, docs-only — PR #7169)
+
+- **Proposal 085 + implementation plan + Laravel standalone appendix** — a Cloudways Velocity app for a purchased Funiq PWA at root with a proxied WordPress backend (BFF same-origin cookie model, `/api/*` → `/wp-json/funiq/v1/*`); the Envato licensing boundary is structural (all NV-authored files public in `examples/funiq-bridge-velocity/`, the purchased bundle confined to private repos and injected at CI time). Open decisions (Proposal 085 §7): Envato Regular vs Extended tier, private repo names, domain layout, v1 SEO posture.
+
+### Added — SA-Format Console Shell + Persistent Chat Dock (PR #7154)
+
+- The Complete Console reworked from spa-v2's three-column admin layout into a **Schedule Anything-format shell**: a dashboard home page with live stats, one route-split page per addon, a collapsible nav rail, and a **persistent chat dock** (global toggle persisted in `localStorage`, overlay on narrow screens, `#/chat` full-page breakout) — one `ChatPage`/`ChatSidebar` instance serves both dock and full page so a conversation keeps streaming while browsing (28 vitest tests; dual-React guard on the host's vitest config).
+
+### Added — Memory-Graph Bridge Seams for Provenance and RRF (PR #7145)
+
+- **`trace_memory_provenance`** (base) now resolves its graph bridge/DB walker through three filters (`wp_mcp_ai_memory_provenance_graph_bridge`, `_graph_db`, `_graph_relations`) and walks the relations the memory bridges actually write (`DERIVED_FROM`, `OBSERVED_BY`, `MEMBER_OF`) instead of the never-populated `RECALLS`; visited nodes surface a new `kind` field (memory/agent/wing/room/other).
+- **RRF fusion graph stream** resolves its bridge via `wp_mcp_ai_memory_rrf_graph_bridge` (duck-typing `retrieve_graph()`/`retrieveGraph()`).
+- **Content Graph plugin self-declares** as the bridge for all three seams in `Bridge::register()` (inert without the base plugin; no CG version bump — release prep is a follow-up) and the AI addon's `TraceMemoryProvenanceTool` keeps byte parity.
+
+### Added — SPA Settings REST Route + Contract Fixes (PRs #7157/#7156)
+
+- **`GET/POST /mcp-ai/v1/settings`** (base) — the SPA-shaped payload (`{ success, data }`) with secrets masked as the admin placeholder (never raw), POST whitelisted through the admin sanitizers (encryption at rest via `sanitize_sensitive_setting_value`), SPA→stored key mapping (`google_api_key` → `gemini_api_key`, `ollama_endpoint` → `ollama_endpoint_url`), `max_tokens`/`temperature` clamping, and a settings-cache reset. `manage_options`-only on both verbs; the masked round-trip keeps existing secrets, an empty field clears them.
+- **Tools-list envelope fix** — `ToolsClient.list()` parsed a nested envelope the route never serves; the client now maps the real `{ tools, total }` payload (MCP-facing `name`/`description`/`inputSchema`, slug fallback) with legacy-envelope compatibility, and the route additively returns `slug` + `required_capability` per entry.
+- **Knowledge-graph nonce fix** — `KnowledgeGraphPage` fetched `visual-config` without the `wp_rest` nonce (401 on cookie-mode installs); the fetch now sends the runtime nonce with `credentials: same-origin`.
+- **Fail-closed slug-shape guard** on `assistant_visible_to_current_user()` (WPCS `Capabilities.Undetermined` resolved with a documented ignore); dark-mode user-bubble contrast fixed.
+
+### Fixed — Console REST Bridge Registration + Loading States (PRs #7174/#7163)
+
+- **Six `mcp-ai-pro/v1` console routes no longer 404 on the live console** — the Proposal 084 bridges (ops overview, workflow presets, workflow node execution, records, dashboards, media command center) were booted from the `admin_sections` module's `context => 'admin'` gate, which never fires for the front-end-rendered Pro SPA; a new context-free `rest_console_bridges` registry module boots all six idempotent controllers. Pinned by a regression test that boots the registry without an admin context.
+- **Sidebar nav reordered** to the requested 29-item sequence (Dashboard → Chat → Assistants → … → Settings); feature-gated surfaces tail the list.
+- **No more empty-then-loaded flashes** — `useAssistants`/`useTools`/`useSettings` start `loading: true` and skip the fetch while the endpoint is unresolved; pages render loading UI instead of the runtime-error state while `useBootstrap` loads; the dashboard's stat cards pulse while the assistant store + transcript list load (`assistantsLoaded` store flag; `prefers-reduced-motion` respected).
+
+### Fixed — Headless SPA Connectivity + CG Guest Auth (PR #7155)
+
+- **Content Graph guest mode** — `Controller::checkReadPermission()` called the nonexistent `wp_mcp_ai_validate_guest_token()` (dead branch); it now mirrors the base plugin's chat-transcript permission layer (guest header/param validated through `WP_MCP_AI_Shortcode::validate_guest_token()`).
+- **Transcript 404 tolerance** — `TranscriptsClient.get()` treats 404 as "no stored transcript" (fresh session) instead of flagging a broken connection; the settings endpoint maps emit an empty route and the Settings page renders an unavailable state until `mcp-ai/v1/settings` exists on the connected site.
+
+### Fixed — Schedule Anything Velocity Deploy Chain (PRs #7146/#7148/#7151)
+
+- **Missing CSS assets** — the deployed SPA shipped an `index.html` referencing CSS that was never committed and `serve.mjs` answered the stylesheet request with the entry HTML (`text/html` → browser MIME refusal). The dist is re-synced (asset-closure gate: every `index.html`/`__vite__mapDeps` reference must exist), `serve.mjs` returns 404 for missing file-like paths (SPA fallback for navigation paths only), and the sync workflow curls the entry stylesheet asserting `text/css`. The Pro SPA sibling gets the same fallback hardening preventively.
+- **React 19.1.0** — the Schedule Anything SPA upgrades 18.3 → 19.1.0 as a documented Pattern-B deviation (standalone-only, no `window.wp.*` renderer coupling); unblocks same-major chat-feature ports (main chunk ~105.95 KB gzip, under the 150 KB gate).
+- **Velocity mirror build fix** — the nvoos-complete-console mirror shipped the real `"build": "tsc && vite build"` with no `tsconfig.json` (tsc help-screen failure); the sync workflow now rewrites build/dev/preview/typecheck/test scripts to no-op shims and strips `dependencies`/`devDependencies` (zero-dependency Node runtime — `npm install` audits 0 packages).
+
+### Added — Opt-In Debug Logging Gate (PR #7161)
+
+- The JetEngine CCT hot path no longer logs a debug event on every request (flooding the error log); all debug-level events gate behind a new `enable_debug_logging` setting (default off, Logs settings subtab) while errors/warnings/criticals stay always-on; the CG Pro logger port mirrors the gate and degrades to a safe no-op when the base settings class is absent (standalone installs — previously a fatal).
+
+### Build & CI
+
+- **Pro ZIP stops shipping root `examples/`** (#7168) — the `rsync examples/ → build/…/examples/` block removed from `bin/build-plugin-zip.sh` (zero runtime references; the per-toolkit blueprint dirs are a different path and still ship). Pro zip −5.4 MB compressed (dictate Rust sources, Velocity demos with source maps).
+- **Dependency advisories closed** — vite patched to 8.2.4 across the 9 alerted manifests + schedule-anything-spa 6.4.4 (#7167, alerts 1336–1344); hono → ≥4.13.11, follow-redirects → ≥1.16.1, cloud-worker vite → 8.2.4 (#7175, alerts 1345/1346/1365–1377) — in-major/patch bumps only, lockfiles regenerated, `npm ci --dry-run` green in all trees.
+- **Standalone SPA build fixes** — the `@xyflow/react` dependency + regenerated lockfile (#7171), tsconfig paths + vite aliases routing `@xyflow/react`/`@xyflow/system` through the standalone tree (#7173), and the new `ProSpaEndpoints` keys in the Vite app's runtime config (#7165).
+- **Dictation macOS CI** — the workflows passed the Tauri merge target `universal-apple-darwin` to rustup's `targets` input (not a rustup component); now `aarch64-apple-darwin, x86_64-apple-darwin` with tauri lipo-merging both slices (#7144).
+- **Bundle rebuilds** — the squash of #7158 landed only the plugin-served spa-v2 bundle; #7159 landed the second half (the git-tracked Complete Console `dist/` the live Velocity app serves — 30 files). The 1.2.8 wp.org ZIP set, SPA addon ZIPs, comic-reader v0.5.0, CG 1.0.11, CG-AI 1.0.4 and CG-AI-platform 2.0.0 ZIPs built in-window (build-only). This pass removes the superseded 1.2.7 oOS set (30 files) + the SA platform v0.1.1 ZIP.
+
+### Docs & Skills
+
+- **New coding-time skill `mcp-ai-wpoos-spa-rest-contract`** (#7172, 75 → 76) — canonizes the 2026-10-21 REST contract parity audit: the seven bug classes, the four-hop audit path (config key → PHP emission → route → handler response), fix decision rules, the known-good baseline, parallel sub-agent delegation, and the validation matrix. AGENTS.md + copilot-instructions updated in-window; the README repo-map fold-in lands with this pass.
+- **Skill upkeep** — `mcp-ai-wpoos-spa-ui` gains the Tailwind v4 tracked-dist feedback loop, the Pattern-B React 19 checklist, the second-standalone-host deltas, the Complete Console independence note, the full JS-rebuild map, the two-bundle squash rule, and the clean-install `npm ci` lockfile gotcha (#7153/#7160/#7172); `mcp-ai-wpoos-content-graph-spa` gains the cookie-mode guest-auth fix + visual-config nonce (#7160); `mcp-ai-schedule-anything-ops` gains the `sa-tools` route, the built-zip Docker verification recipe, and the console mirror mechanics (#7162); `mcp-ai-wpoos-test-suite` moves to 74 patterns (source-exclude walk hangs, static-registry leak, debug-log gate) (#7174/#7176).
+- **README sponsor surfaces** — a new Sponsor & Support section + TOC entry, `.github/FUNDING.yml` activated (GitHub Sponsors, the NV oOS Pro/Complete bundle), and the section's VS16 emoji anchor fixed (the invisible `U+FE0F` after `❤` broke the `#-sponsor--support` anchor) (#7162/#7170).
+
+### Tests
+
+- **Order-dependent tenant-isolation test fixed** (#7149) — `Test_Tenant_Isolation::test_toggle_toolkit` failed every full-suite run since the platform suites joined the root suite: the seed silently no-ops on a non-empty `wp_mcp_ai_settings`; the test now resets the option in `setUp()` like its sibling suites, and the leftover `TEMP DEBUG` option-write hooks were removed from `tests/bootstrap.php`.
+
+### Versioning
+
+Bumped to **1.2.9** across all version-bearing files (plugin header, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, readme.txt Stable tag). Pro addon: 1.2.9. **Schedule Anything Platform: 0.1.1 → 0.1.2** (#7147 — capability-grant migration + entitlement facet + idempotent toggles). Media Worker: **3.4.0** (unchanged). Model catalog: **v2026.10.03** (unchanged — zero catalog diff). Tool count: **~355 base + ~1,377 Pro (~1,731 total — unchanged)** — zero registry registrations in-window (#7147's `sa-tools`, #7157/#7164/#7166's REST routes and #7161's setting are non-tool surfaces; live registry authoritative). Provider count: **18** chat providers (unchanged). Addon count: **30** (unchanged). Bundled skills: **77** base + **41** Pro (unchanged). Coding-time agent skills: **75 → 76** (+`mcp-ai-wpoos-spa-rest-contract`). Security classes: **12** (unchanged). Stale build ZIPs removed: the 1.2.7 oOS set (30 files) + the superseded Schedule Anything Platform v0.1.1 ZIP.
+
+## [1.2.8] - 2026-10-19
+
+### Added — Schedule Anything Platform: Single-Site (Sole Tenant) Mode (Proposal 082)
+
+- **Single-site mode** — the platform plugin no longer refuses single-site installs (activation `wp_die` + `sa_not_multisite` removed). On a non-multisite install it runs in sole-tenant mode: the single blog is the tenant. Activation seeds `sa_tenant_meta` (default tier `enterprise`, filter `sa_single_site_tier`) and toolkit defaults, plus a dismissible `notice-info` replaces the old multisite-required error.
+- **Provisioner degradation** — `provision()` on single-site is an idempotent self-registration returning the same tenant contract with `single_site: true` (admin user created via `wp_create_user`, elevated to `administrator` only when newly created); `offboard()` refuses the sole tenant with `409 sa_cannot_offboard_sole_tenant`; `lookup` matches the provisioned subdomain or host label only; `status` resolves the sole tenant. `generate_subdomain()` uniqueness loop guarded so the multisite-only `get_blog_id_from_url()` can't fatal on single-site.
+- **Capability seam** — the platform filters `wp_mcp_ai_pro_schedule_rest_capability` to `manage_options` on single-site, so site admins can use the SPA presets/toolkits surface (Pro defaults to `sa_manage_workspace` when the platform is active).
+- **Heartbeat gate** — `SA_Usage_Tracker::send_heartbeat()` early-returns without `SA_SAAS_API_KEY`, removing the latent empty-key POST on unconfigured installs (both modes).
+- **Extended-cognition CPT fatal fix** — the sensor-session CPT registered at `plugins_loaded` with the `rewrite` default (true), so `add_rewrite_rules()` fatals on the null `$wp_rewrite` (created 41 lines after `plugins_loaded` in wp-settings) on every REST/admin/CLI request when the toolkit is enabled. The CPT is private, so `rewrite => false` — matching the places and project-management toolkits. Surfaced by the single-site E2E smoke (enterprise seeding enables all toolkits).
+- **Tier preset seeding fixed** — `SA_Toolkit_Manager::get_presets_for_tier()` now derives ids from the Proposal 081 SPA catalogue (first presets per entitled toolkit in catalogue order, capped starter 5 / professional 10 / enterprise all) and provisioning installs them through a new `WP_MCP_AI_SA_Schedule_Presets::install_catalogue_preset()` helper (same idempotency key flow as the REST install). The legacy underscore ids resolved through the old `WP_MCP_AI_Pro_Schedule_Presets` registry and silently installed nothing at provision time.
+- **Multisite tenant lookup fixed** — `GET /tenants/lookup?slug=` now resolves a bare slug against the network domain in both subdomain (`<slug>.<domain>`) and path (`<domain>/<slug>/`) forms; previously only an exact domain match worked, so lookup 404'd on both install types.
+- **Tests** — new `addons/schedule-anything-platform/tests/test-single-site-mode.php` (17 cases: provisioning contract + idempotency, no-escalation, offboard 409, seeding + tier filter, capability seam, heartbeat zero-HTTP, lookup/status, notice dismissal) wired into the root suite via a self-guarding addon tests bootstrap; platform version 0.1.1. E2E-verified in Docker on a live single-site stack (activation, notice + dismissal, toolkits/toggles, preset install + idempotent replay, API-key provision/offboard/lookup/healthz) and the sa-e2e multisite stack (provision creates a subsite, per-tenant seeding, offboard pending_deletion, cross-tenant isolation).
+
+### Added — Schedule Anything: Presets + Toolkits API (Proposal 081)
+
+- **Pro REST surface** — four new `mcp-ai-pro/v1` routes for the Schedule Anything SPA: `GET /toolkits`, `POST /toolkits/{slug}/toggle` (server-side tier entitlements via the platform plugin's `SA_Toolkit_Manager`, `403 sa_toolkit_not_entitled` outside the tenant's tier), `GET /presets` + `GET /presets/{id}` backed by a new static `WP_MCP_AI_Pro_Schedule_Presets` registry (12 presets across 6 toolkits), and an idempotent `POST /presets/{id}/install` (deterministic key; replay returns the original schedule instead of duplicating). Registered as the `rest_schedule_anything` Pro module.
+- **Schedule record redaction** — new `WP_MCP_AI_Pro_Schedule_Manager::redact_schedule_for_public()` strips credential-bearing fields (`broadcast_config`, `assistant_config`, `result_delivery`, `notify_email`, `callback_secret`, `notify_channel_credentials`) before records leave REST; also fixes the schedule CRUD controller's latent one-arg `redact_envelope_for_public()` calls, which fatalled on any non-empty schedule list.
+- **SPA builder contract alignment** — `buildSchedulePayload()` helper: task schedules dispatch through the central `wp_mcp_ai_pro_schedule_exec` hook, workflow saves serialize canvas nodes into `workflow_steps`, the monthly option uses the registered `wp_mcp_ai_monthly` interval, and save failures surface the server's `WP_Error` message via sonner toasts instead of `alert`.
+- **Tests** — PHPUnit `test-sa-toolkit-rest.php` (permissions, slug validation, tier 403s, persistence, cross-tenant isolation) + `test-schedule-presets-rest.php` (catalogue integrity, search/filter/pagination, override whitelisting, install idempotency); SPA vitest `schedulePayload.test.ts` (4 cases, suite 23 → 27). E2E-verified against the sa-e2e Docker stack (Settings toggles persist, Presets render + install, builder task save redirects to Schedules).
 
 ### Added — F&B Ingest × Media Worker Offload (Proposal 079)
 
-- **Worker `POST /api/ingest/parse` (media-worker v3.5.0+)** — a toolkit-neutral parse endpoint returning the F&B `{columns, rows}` matrix contract: XLSX via the existing ExcelJS dependency (first worksheet unless `sheet` given), CSV/TSV with delimiter sniffing, JSON/JSONL with union headers, PDF via pdf-parse with a render→OCR chain for scanned PDFs (pdfjs-dist + canvas + tesseract.js), and photo OCR via tesseract.js. Legacy `.xls` and gated `.ods` return `503 capability_unavailable` so callers fall back to local PhpSpreadsheet. Full matrix by default (no hidden row cap); optional `offset`/`limit` paging. Registered in the health endpoints/capabilities map (`ingest_parsing`).
+- **Worker `POST /api/ingest/parse` (media-worker v3.4.0)** — a toolkit-neutral parse endpoint returning the F&B `{columns, rows}` matrix contract: XLSX via the existing ExcelJS dependency (first worksheet unless `sheet` given), CSV/TSV with delimiter sniffing, JSON/JSONL with union headers, PDF via pdf-parse with a render→OCR chain for scanned PDFs (pdfjs-dist + canvas + tesseract.js), and photo OCR via tesseract.js. Legacy `.xls` and gated `.ods` return `503 capability_unavailable` so callers fall back to local PhpSpreadsheet. Full matrix by default (no hidden row cap); optional `offset`/`limit` paging. Registered in the health endpoints/capabilities map (`ingest_parsing`).
 - **Plugin cascade seam (Pro)** — `WP_MCP_AI_Fnb_Worker_Client` (reuses the shared `WP_MCP_AI_Media_Worker_Client` trait) and a sidecar-first path in `WP_MCP_AI_Fnb_Loader::load_file()`: heavy formats (XLSX/XLS/ODS/PDF/photo) parse in the worker when configured, with every failure falling back to the local PhpSpreadsheet/PdfParser/OCR-pointer paths unchanged. PDF/photo envelopes convert through the same delimited path so the structure matcher sees identical shapes; low-confidence OCR keeps the actionable `wp_mcp_ai_fnb_photo_needs_ocr` pointer. CSV/TSV/JSON/JSONL are never offloaded.
 - **Settings** — F&B `use_media_worker` (`auto` default, `off` to force local parsing) surfaced under a new "Media Worker Offload" section; filters `wp_mcp_ai_fnb_worker_enabled`, `wp_mcp_ai_fnb_worker_client` (test seam), and `wp_mcp_ai_fnb_ocr_confidence_floor`.
 - **Tests** — worker jest suite `src/routes/ingest.test.js` (10 cases: matrix shapes, sheet selection, 503 gates, 415/400, shared-volume `source` path, PDF text layer); PHPUnit `test-fnb-worker-offload.php` (seam normalisation, fallback, PDF/photo conversion, real-client gates) with a zero-HTTP fake client helper.
@@ -16,6 +182,72 @@
 - **Image-production batch offload** — `optimise_images_batch` gains a sidecar batch path (`execute_sidecar_batch`, one `/api/image/batch` call via `sidecar_upload_multi`): original-format re-encodes overwrite the source file with metadata regen, WebP conversions register the linked sibling attachment exactly like the GD path; GD remains the fallback and dry-run previews never touch the sidecar.
 - **Provider-vision OCR rung (opt-in)** — F&B `ocr_vision_fallback` setting (default off): when a photo cannot be OCR'd confidently (or no sidecar exists), the image is staged as a temporary attachment and OCR'd through `extract_image_text` (plugin vision provider), then deleted; failures keep the actionable pointer with the vision error in `data`.
 - **Tests** — worker `image-batch.test.js` (5 cases); PHPUnit `test-ocr-service-sidecar-pdf.php` (3), `test-optimise-images-batch-sidecar.php` (3), plus 3 vision-rung cases in `test-fnb-worker-offload.php`.
+
+### Added — WP-CLI Integration Gap Closure (PR #7135)
+
+- **Dead `mcp-ai content` command fixed** — the dispatcher never required the self-registering `content-command.php`, so the documented command silently failed to register; now loaded from the dispatcher with a regression pin.
+- **Canonical toolkit key-map** — new `WP_MCP_AI_Pro_Toolkit_Settings_Map` (40 toolkits) consumed by `toolkit list/enable/disable` + `pro status`; the 11 missing settings keys (cloudways, dietpi, calendar-booking, outbound-booking, ezuite, law-firm, cre-debt, healthcare-imaging, medical-vitals, extended-cognition, vision-analysis) no longer fail with "Unknown toolkit key".
+- **Gated toolkit mutations** — `toolkit enable|disable` now require `manage_options`; `enable` gained `--yes`; formats extended with `ids`/`count`.
+- **New commands** — `wp mcp-ai foundry` (`status`, `export <assistant-id>` — routes through the canonical export tools, gated + `--dry-run`), `para` (`list`, `get`), `qms` (`status`, `list`), `mcp-app` (`list --assistant-id=<id>`, metadata only), `fnb` (`status`). Integration CLIs (ezuite/flowhub/shopify-sync) now load unconditionally from the Pro loader (so `wp help mcp-ai` discovers them) and assert their toolkit toggle per verb; mutating verbs capability-gated.
+
+### Security — MCP OAuth Authorize Redirect Hardening (PR #7133)
+
+- **Exact-string redirect URI matching (RFC 9700 §4.1.3)** — the empty-registered-list wildcard bypass is removed; mismatched/missing `redirect_uri` returns 400 with no redirect and no minted code.
+- **Registration-time URI validation** — absolute HTTP(S) only, no fragments/userinfo/wildcards, HTTPS required except loopback; `register_client()` returns WP_Error for invalid URIs.
+- **Consent step** — browser requests render a nonce-bound Allow/Deny consent page (client name + scopes) before any code is issued; Deny redirects back with `error=access_denied`. Authenticated non-browser requests keep the direct flow.
+- **Scope + resource-indicator validation** — unknown scopes rejected instead of silently dropped; resource indicators must be HTTPS or loopback HTTP; a token-endpoint `redirect_uri` must match the one stored with the authorization code.
+- Applied to both the Pro addon and the byte-identical `nvoos-content-graph-pro` mirror (19-test `Test_OAuth_Authorize_Hardening` suite each; 114 adjacent OAuth/MCP assertions on WP 6.9 + 7.1).
+
+### Added — Schedule Anything Delivery Editing, Distribution & Velocity App (PRs #7121, #7125, #7126, #7130, #7131, #7132)
+
+- **Delivery-time editing (#7130)** — the Pro Schedule Manager edit modal now edits the delivery date/time (`datetime-local` prefilled from the stored future `timestamp`); past values alert, blank keeps the current cron event, and `ajax_get_schedules` exposes the stored `timestamp`.
+- **SA preset class collision fixed (#7130)** — the Schedule Anything presets registry renamed `WP_MCP_AI_Pro_Schedule_Presets` → `WP_MCP_AI_SA_Schedule_Presets` (it shadowed the Schedule Manager registry whenever the `rest_schedule_anything` module loaded, fatalling preset-browser AJAX + the SA-platform provisioner).
+- **oos-complete bundle support (#7132)** — the platform plugin's `Requires Plugins: mcp-ai-wpoos` header removed: core matches the dependency against the installed plugin's **folder slug** (`mcp-ai-wpoos` vs `nvdigital-open-operator-system-oos` vs `-oos-complete`), so one static header blocked two of the three distributions; the runtime guard is slug-agnostic. (`addons/page-agent` carries the same header — follow-up candidate.)
+- **Velocity app (#7125/#7126/#7131)** — `examples/schedule-anything-velocity/` serves the prebuilt SPA with the proven zero-dependency proxy core (no CORS config needed); a root `server.js` one-line ESM shim satisfies Velocity PM2's default entry; the sync-token secret renamed `NVOOS_SA_VELOCITY_REPO_TOKEN` (the first name was 43 chars — GitHub caps secret names at 40).
+- **SPA zip builds (#7121)** — the Schedule Anything SPA joins `bin/build-spa-zips.js` + all three SPA workflows (Pattern-B, 150 KB gzip main-chunk guard); `nvoos-schedule-anything-spa-v0.2.0.zip` now builds and publishes.
+
+### Added — Chat Composer Vertical Expansion & Toolbar Collapse (Proposal 080, PRs #7113, #7116, #7118–#7120)
+
+- **Expandable composer (#7113)** — auto-grow 1→3 lines (`field-sizing: content` + scrollHeight/ResizeObserver fallback), iOS keyboard reflow (`interactive-widget=resizes-content` + dvh chain + `useVisualViewport` padding), a Zed-style drag-resize divider (pointer + keyboard, clamped, persisted), and a focus (expanded) composer dialog; three pre-existing a11y lint failures fixed.
+- **Manual-resize fill (#7116)** — the 3-line cap dropped; a manually resized panel stretches the textarea (`field-sizing: fixed; height: 100%`).
+- **Collapsible toolbar (#7118/#7119/#7120)** — desktop toolbar collapses in place to a single row (model selector + toggle); mobile single-line row with expandable controls; toggle pinned top-right; mobile composer bottom margin (≤782px). Embedded widget keeps the full top bar. 202 vitest tests green.
+
+### Added — Gmail Body Hydration & Attachment Text (PR #7110)
+
+- `empty_parts` on HTML-only emails fixed — `hydrate_inline_attachments()` downloads `body.attachmentId` parts and inlines them before `normalize_message()` (wired into `get_gmail_message`/`get_gmail_thread`, with `body_hydration_warnings` on partial failure).
+- Attachments are no longer filename-only — `get_attachments_with_text()` fetches each attachment and extracts text (PDFs via smalot/pdfparser, text/csv/json directly, actionable errors for scanned PDFs); both read tools return an `attachments[]` array. Also fixes the latent strict-base64 bug (unpadded base64url re-padding).
+
+### Fixed — F&B Trend Dates, Resume/Retry, table_map & Raw-Row Import (PRs #7108–#7112)
+
+- **Serial dates (#7112)** — exported Sheets serial dates (`46023` = 2026-01-01) were read as Unix epoch timestamps, collapsing every row into `1970-01` (phantom "Latest analytics (1970-01)" + vanished charts); `available_months()` now derives months from row dates first, with the month label as a fallback for the covers/utilities tables only.
+- **`table_map` trust order (#7112)** — the universal single-folder reader now consults the operator-authored `table_map` (documented highest trust); the native-storage import bridge no longer silently drops non-canonical source columns.
+- **Trend months (#7108)** — the preprinted current-period month label no longer produces a phantom zero data point.
+- **Resume/retry (#7109)** — the dashboard retries a failed batch's same offset (3× backoff) and persists a `resumeCursor` so re-imports continue instead of restarting at 0; the final count includes prior aborted rows.
+- **Progress placeholders (#7111)** — the `%N$d` regex now captures the placeholder index (offset-indexing rendered every number empty).
+
+### Build & CI — Dictation macOS Verification & Universal Builds (PRs #7122, #7123, #7137)
+
+- **Boot-smoke gate (#7122)** — a `macos-latest` job builds the real `.app` (production frontend + Swift sidecar), inspects the bundle, enforces a 30 s boot-residency gate, plus a headless `--mcp < /dev/null` engine-load probe in the rust job (hard failure on `engine unavailable`).
+- **Interactive session (#7123)** — a `workflow_dispatch` macOS job uploads evidence then holds the runner open for an actor-limited tmate SSH session (up to 360 min); `scripts/macos-matrix-remote.sh` runs the automatable subset of the PTT matrix.
+- **Universal builds (#7137)** — one universal (arm64 + x86_64) macOS artifact: `build-helper.mjs` `universal` arch with `lipo -create` merging + self-check, the checked-in universal externalBin stub, both-slice boot verification (native + Rosetta 2), and a single signed/notarized universal DMG from the publish workflow (plan M7.5; ADR 0004 updated).
+
+### Dependency — Handlebars Patched (PR #7106)
+
+- `handlebars` 4.7.9 → 4.7.10 in the **root** lockfile tree (GHSA-8r5x-fm3f-whwj — JavaScript injection via AST type confusion, bypass of CVE-2024-45592); override floor raised to `>=4.7.10` with `minimist` `^1.2.5` → `^1.2.8` transitives. The same 4.7.10 patch also covers the 2026-10-19 advisory GHSA-p8wg-vrv2-v86f (own-property-check RCE via `allowProtoMethodsByDefault` — dependabot alert #1335, verified stale: `main`'s root lockfile already at 4.7.10 via the #7117 sync).
+
+### Docs & Skills (PRs #7115, #7128, #7129)
+
+- New coding-time skill `mcp-ai-schedule-anything-ops` (74 → 75) — the SA 3-plugin stack, Proposal 081 REST contract, WP 6.9 nonce pitfall, sa-e2e harness, SPA↔REST alignment, and the Velocity deploy/mirror-sync loop.
+- `mcp-ai-wpoos-dictation-app` skill updated with the macOS remote verification loop (gate matrix, tmate session, TCC-grant path, pitfalls).
+- Pro tool coverage manifest regenerated (1,387 classes; +`fnb-worker-client`).
+
+### Sub-project & Release Sync (PRs #7117, #7136, #7133-mirror)
+
+- **#7136** — `nvoos-content-graph-ai` `GetEnvironmentStatusTool` namespaced `stdClass` fatal fixed (`new \stdClass()`); standalone-matrix-only.
+- **#7133-mirror** — the OAuth authorize hardening lands byte-identical in `nvoos-content-graph-pro`.
+- **#7117** — `alpha-working` (v1.2.7) squash-merged into `main` (tree-identical; build/release-only).
+
+**Tool count: ~355 base + ~1,377 Pro (~1,731 total — unchanged; live registry authoritative). Coding-time skills: 74 → 75 (+`mcp-ai-schedule-anything-ops`). Bundled skills: 77 base + 41 Pro (unchanged — the dictation-app bundled copy re-synced byte-identical). Security classes: 12 (unchanged). Provider count: 18 (unchanged). Addon count: 30 (unchanged; Schedule Anything Platform 0.1.1). Media Worker stays 3.4.0 (the new ingest route ships without a worker version bump).**
 
 ## [1.2.7] - 2026-10-17
 

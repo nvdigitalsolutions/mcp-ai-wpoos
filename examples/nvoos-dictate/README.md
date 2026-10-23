@@ -166,7 +166,10 @@ npm run test:ui                     # Playwright smoke (dev server on :1420)
   global-shortcut restrictions documented; meeting system audio not yet
   supported.
 - **macOS:** implemented (P5 port — see `docs/macos-port-plan.md` and
-  ADR 0004). Default PTT is the permission-free toggle combo
+  ADR 0004). Supported on **Apple Silicon and Intel** Macs, macOS 13
+  (Ventura) or newer — Sequoia 15.x included. One **universal** binary
+  serves both CPUs (plan M7.5). Default PTT is the
+  permission-free toggle combo
   `Command+Option+Space`; Right-Option hold is opt-in (CGEventTap, needs
   Accessibility + Input Monitoring). Meetings capture system audio through
   the bundled ScreenCaptureKit sidecar on macOS 14.2+ (mic-only fallback).
@@ -190,6 +193,36 @@ For unsigned local builds, clear Gatekeeper quarantine before first launch:
 `xattr -dr com.apple.quarantine "NV oOS Dictation.app"`. Keychain entries
 created by unsigned dev builds can re-prompt (the ACL binds to the code
 signature).
+
+Local builds compile for your Mac's own CPU (Intel or Apple Silicon) by
+default. To produce ONE app that runs on both:
+`rustup target add universal-apple-darwin`, then
+`npm run tauri build -- --target universal-apple-darwin` — Rust lipo's the
+binary and `build:helper` lipo's the Swift sidecar
+(`NVOOS_HELPER_ARCH=universal`). An app built for the wrong CPU arch fails
+to launch with "this application is not supported on this Mac".
+
+### Testing the macOS build without a Mac
+
+The GitHub Actions runner is the remote Mac:
+
+- **Every push** (`.github/workflows/build-nvoos-dictate.yml`) runs a
+  `boot-smoke` job that builds the debug **universal** `.app` (arm64 +
+  x86_64 — one download runs on Apple Silicon AND Intel Macs), boots both
+  slices on the runner (native + Intel slice under Rosetta 2, 30 s
+  residency each), verifies the bundle with `lipo -info`, screenshots the
+  desktop, and uploads the app zipped as run artifact
+  `nvoos-dictate-macos-app` plus boot evidence. Release tags publish a
+  single signed + notarized universal DMG.
+- **Interactive sessions:** run the `NV oOS Dictation — macOS interactive
+  session` workflow (manual `workflow_dispatch`) to build the app, run
+  `scripts/macos-matrix-remote.sh` (the automatable subset of
+  `docs/ptt-matrix-macos.md`), and hold the runner open for SSH (tmate).
+- **TCC grants** (mic / Screen Recording / Accessibility) need a human at
+  the GUI: use a Namespace macOS runner (VNC) or any physical/rented Mac.
+
+Signed + notarized DMGs come from tagging `nvoos-dictate-v*` (publish
+workflow + Apple Developer secrets — see `docs/macos-port-plan.md` §12).
 
 ## NV oOS plugin integration
 

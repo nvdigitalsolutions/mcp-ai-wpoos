@@ -60,6 +60,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
 		 * @return void
 		 */
 		public function register_page() {
+			/**
+			 * Kill-switch for the wp-admin Pro Schedule Manager surface
+			 * (Proposal 084 Phase 3b). The console's Schedule Manager page
+			 * consumes the existing schedule REST surface; flip this filter
+			 * off per cohort once parity is verified.
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_pro_schedule_manager', true ) ) {
+				return;
+			}
+
 			$this->page_hook = add_submenu_page(
 				'nvoos-pro-dashboard',
 				__( 'Pro Schedule Manager', 'mcp-ai-wpoos-pro' ),

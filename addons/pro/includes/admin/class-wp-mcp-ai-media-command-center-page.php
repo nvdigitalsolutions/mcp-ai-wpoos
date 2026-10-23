@@ -2359,24 +2359,27 @@ class WP_MCP_AI_Media_Command_Center_Page {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$attachments = self::get_attachment_stats();
-		$storage     = self::get_storage_used();
-		$alt_pct     = self::get_alt_text_compliance();
-		$nextgen_pct = self::get_nextgen_format_pct();
-		$compression = self::get_compression_savings();
-		$queue       = self::get_processing_queue_status();
-		$schedule    = self::get_schedule_health_summary();
+		wp_send_json_success( self::get_health_snapshot() );
+	}
 
-		wp_send_json_success(
-			array(
-				'attachments' => $attachments,
-				'storage'     => $storage,
-				'alt_pct'     => $alt_pct,
-				'nextgen_pct' => $nextgen_pct,
-				'compression' => $compression,
-				'queue'       => $queue,
-				'schedule'    => $schedule,
-			)
+	/**
+	 * Gather the command-center health snapshot.
+	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 4d W14): the media-cc REST
+	 * controller consumes this as the Media Ops data provider; the AJAX
+	 * handler above sends the same payload unchanged.
+	 *
+	 * @return array Snapshot metrics.
+	 */
+	public static function get_health_snapshot() {
+		return array(
+			'attachments' => self::get_attachment_stats(),
+			'storage'     => self::get_storage_used(),
+			'alt_pct'     => self::get_alt_text_compliance(),
+			'nextgen_pct' => self::get_nextgen_format_pct(),
+			'compression' => self::get_compression_savings(),
+			'queue'       => self::get_processing_queue_status(),
+			'schedule'    => self::get_schedule_health_summary(),
 		);
 	}
 
@@ -2390,18 +2393,46 @@ class WP_MCP_AI_Media_Command_Center_Page {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		// Dispatch compression sweep as an Action Scheduler task (dedupe: one
-		// pending sweep at a time so repeated clicks don't stack full-library jobs).
-		if ( function_exists( 'as_enqueue_async_action' ) ) {
-			if ( ! function_exists( 'as_has_scheduled_action' ) || ! as_has_scheduled_action( 'wp_mcp_ai_media_compression_sweep' ) ) {
-				as_enqueue_async_action( 'wp_mcp_ai_media_compression_sweep' );
-				wp_send_json_success( array( 'message' => __( 'Compression sweep queued. Check the Processing tab for status.', 'mcp-ai-wpoos-pro' ) ) );
-			}
-
-			wp_send_json_success( array( 'message' => __( 'A compression sweep is already queued.', 'mcp-ai-wpoos-pro' ) ) );
+		$result = self::dispatch_compression_sweep();
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 
-		wp_send_json_error( array( 'message' => __( 'Action Scheduler is not available.', 'mcp-ai-wpoos-pro' ) ) );
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * Dispatch a compression sweep as an Action Scheduler task (dedupe: one
+	 * pending sweep at a time so repeated clicks don't stack full-library jobs).
+	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 4d W14): the media-cc REST
+	 * controller consumes this as the Media Ops sweep trigger; the AJAX
+	 * handler above relays the same result unchanged.
+	 *
+	 * @return array|WP_Error Queued state + message, or an error when
+	 *                         Action Scheduler is unavailable.
+	 */
+	public static function dispatch_compression_sweep() {
+		if ( ! function_exists( 'as_enqueue_async_action' ) ) {
+			return new WP_Error(
+				'media_cc_as_unavailable',
+				__( 'Action Scheduler is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( 'wp_mcp_ai_media_compression_sweep' ) ) {
+			return array(
+				'queued'  => false,
+				'message' => __( 'A compression sweep is already queued.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		as_enqueue_async_action( 'wp_mcp_ai_media_compression_sweep' );
+
+		return array(
+			'queued'  => true,
+			'message' => __( 'Compression sweep queued. Check the Processing tab for status.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**

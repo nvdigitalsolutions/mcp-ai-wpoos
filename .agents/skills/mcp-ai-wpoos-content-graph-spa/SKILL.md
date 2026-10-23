@@ -63,6 +63,15 @@ max_nodes }` — the shape the SPA page assembles into
 `window.nvoosContentGraphAdmin`. The SPA page shows an unavailable/error
 state without it; the version hint in the page text says "1.1.0 or later".
 
+**Cookie-mode headless fixes (2026-10-20, PRs #7155/#7156):** the guest
+fall-through originally called a base-plugin
+`wp_mcp_ai_validate_guest_token()` helper that no longer exists, so
+anonymous/cookie-mode console reads of `/graph/visual-config` returned
+401; the controller now mirrors the chat controller's guest-token
+handling (#7155). The SPA page also fetches visual-config through the
+fetch wrapper with the session nonce (#7156) so cookie-mode consoles
+work without bearer credentials.
+
 CORS: cross-origin SPA modes need the app origin in `cors_allowed_origins`
 AND `/nvoos-content-graph/v1` in `wp_mcp_ai_cors_guard_route_prefixes`
 (default scope is `/mcp-ai/v1` only). Cookie mode needs neither.

@@ -25,6 +25,7 @@ interface RouteOptions {
 	sessions?: Array< Record< string, unknown > >;
 	detail?: Record< string, unknown > | null;
 	detailStatus?: number;
+	storageBytes?: number;
 }
 
 /**
@@ -32,7 +33,7 @@ interface RouteOptions {
  * in the path (`/chat-transcripts/<key>`).
  */
 function routeFetch( options: RouteOptions = {} ): void {
-	const { sessions = [], detail = null, detailStatus = 200 } = options;
+	const { sessions = [], detail = null, detailStatus = 200, storageBytes } = options;
 	mockFetch.mockImplementation( ( input: unknown ) => {
 		const url = String( input );
 		if ( url.includes( '/chat-transcripts/' ) ) {
@@ -49,6 +50,7 @@ function routeFetch( options: RouteOptions = {} ): void {
 					total: sessions.length,
 					per_page: 50,
 					page: 1,
+					...( typeof storageBytes === 'number' ? { storage_bytes: storageBytes } : {} ),
 				} ),
 				{ status: 200 }
 			)
@@ -219,6 +221,36 @@ describe( 'useTranscripts — selectSession', () => {
 		} );
 
 		expect( onSessionAssistantChange ).not.toHaveBeenCalled();
+	} );
+} );
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Server-side storage figure
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe( 'useTranscripts — storageBytes', () => {
+	it( 'reports the server-side storage figure from the list envelope', async () => {
+		routeFetch( {
+			sessions: [ { session_key: 'wp-mcp-ai-session-a', turn_count: 1 } ],
+			storageBytes: 2048,
+		} );
+
+		const { result } = renderHook( () =>
+			useTranscripts( { endpoint: ENDPOINT, nonce: 'n', assistantId: 7 } )
+		);
+
+		await waitFor( () => expect( result.current.storageBytes ).toBe( 2048 ) );
+	} );
+
+	it( 'falls back to null when the server omits the figure', async () => {
+		routeFetch( { sessions: [] } );
+
+		const { result } = renderHook( () =>
+			useTranscripts( { endpoint: ENDPOINT, nonce: 'n', assistantId: 7 } )
+		);
+
+		await waitFor( () => expect( result.current.sessions ).toEqual( [] ) );
+		expect( result.current.storageBytes ).toBeNull();
 	} );
 } );
 

@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-audit
-description: "Per-toolkit hardening audit loop for NV oOS Pro tools. Systematically scans each addons/pro/includes/tools/<toolkit> (and its plugins/nvoos-content-graph-pro mirror) for the recurring production failure classes — unguarded shell calls that fatal on exec-disabled hosts, calls to nonexistent client methods, string-assuming parsing of provider responses that may be arrays, provider enum/service mismatches, metric/source column drift that silently returns 0, secondary-table denominator gaps, the Chart.js fixed-height loop, misleading native-source errors, and silent import truncation that reports partial writes as success — then fixes, tests (Docker PHPUnit), and validates (phpcs both standards) before moving to the next toolkit. Use when asked to audit a toolkit, review the X tools for similar issues, do the same for the other toolkits, or continue the toolkit audit loop. The first case study (document-generation) found 3 fatal bugs + 1 broken regex; the food-beverage pass added classes 5–9."
+description: "Per-toolkit hardening audit loop for NV oOS Pro tools. Systematically scans each addons/pro/includes/tools/<toolkit> (and its plugins/nvoos-content-graph-pro mirror) for the recurring production failure classes — unguarded shell calls that fatal on exec-disabled hosts, calls to nonexistent client methods, string-assuming parsing of provider responses that may be arrays, provider enum/service mismatches, metric/source column drift that silently returns 0, secondary-table denominator gaps, the Chart.js fixed-height loop, misleading native-source errors, and silent import truncation that reports partial writes as success — then fixes, tests (Docker PHPUnit), and validates (phpcs both standards) before moving to the next toolkit. Use when asked to audit a toolkit, review the X tools for similar issues, do the same for the other toolkits, or continue the toolkit audit loop. The first case study (document-generation) found 3 fatal bugs + 1 broken regex; the food-beverage pass added classes 5–10."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.94"
   plugin-version-tested: "1.1.94"
-  last-updated: "2026-10-17"
+  last-updated: "2026-10-19"
 ---
 
 # NV oOS Toolkit Hardening Audit Loop
@@ -121,6 +121,25 @@ own reviewable cluster. First completed cluster: **document-generation**
    `summary.total === source_total`, then with a real import that
    `native_count === source_total` and a row from the newest month is readable.
 
+10. **Spreadsheet serial-date misreads — every row collapses into epoch
+    `1970-01`.** Exported Google Sheets carry **serial dates** (`46023` =
+    2026-01-01, `46235` = 2026-08-01) in the `date` column. A `date_only()`
+    helper that reads any numeric cell as a Unix epoch timestamp silently
+    collapses every row into month `1970-01` — the dashboard showed "Latest
+    analytics (1970-01)", `trend_payload()` had fewer than two months and
+    returned null, and no charts (or even canvases) were emitted. Audit every
+    date parser in a data toolkit for: serial-date detection **before** epoch
+    interpretation (serial base 1899-12-30; values below ~60,000 are serials,
+    not epoch), and month derivation that reads the **date column first** with
+    the preprinted month label as a fallback only for tables with no dated
+    rows. Two companion gaps found in the same investigation: the universal
+    single-folder reader **must consult the operator-authored `table_map`**
+    first (highest trust — explicit hints must override header scoring), and
+    the native-storage import bridge must not silently drop source columns
+    outside the canonical set. Verify with a workbook carrying serial dates:
+    latest month = the real last record, charts render, and a `table_map`
+    hint overrides a wrong header match.
+
 ## Scan procedure
 
 Use the grep tool with the **full project-rooted glob** — a bare
@@ -148,13 +167,14 @@ Note: the class-3 grep must include BOTH `choices[0]` and `choices'][0]`
 spellings — the crm toolkit wrote `$result['choices'][0]['message']['content']`
 and a `choices\[0\]`-only scan produced a false negative.
 
-Extra scans for data/UI-heavy toolkits (classes 5–9):
+Extra scans for data/UI-heavy toolkits (classes 5–10):
 
 ```text
 recipe_cost|gross_margin|cost_per_portion|total_covers|resolve_column
 <canvas|maintainAspectRatio|responsive:true
 sheet_tab_missing|sheet_not_found|native storage|native_storage
 array_slice|numberposts|posts_per_page|limit.*default|has_more|next_offset
+serial.*date|date_only|epoch|1970|table_map|available_months|trend_payload
 ```
 
 Then read every hit. Do not trust "No matches found" until the glob is the

@@ -1,5 +1,36 @@
 # NV oOS Content Graph — Changelog
 
+## Unreleased
+
+### Fixed — Guest tokens were rejected on every read route
+
+- **Guest-token fallback restored** — `Controller::checkReadPermission()`
+  referenced a base-plugin helper (`wp_mcp_ai_validate_guest_token()`) that
+  does not exist, so the guest branch was dead code and headless guest
+  sessions (e.g. the standalone Pro SPA in guest mode) always received a
+  401 from `/graph/visual-config` and the other read routes. The check now
+  mirrors the base plugin's chat-transcript permission layer: the token is
+  read from the `X-WP-MCP-AI-Guest` header (or the `guest_token` parameter)
+  and validated through `WP_MCP_AI_Shortcode::validate_guest_token()`,
+  guarded by `class_exists()` so standalone installs are unaffected.
+- Tests: guest accept/reject cases for `GET /graph/visual-config` in
+  `RestApiTest`.
+
+## 1.0.12 — 2026-10-19
+
+### Added — Self-declared memory-graph bridge for NV oOS base+Pro
+
+- **Provenance + RRF graph seams** — `Bridge::register()` now declares this
+  plugin as the memory-graph bridge for the base plugin's
+  `trace_memory_provenance` graph neighborhood
+  (`wp_mcp_ai_memory_provenance_graph_bridge` /
+  `wp_mcp_ai_memory_provenance_graph_db`) and the RRF memory-fusion graph
+  stream (`wp_mcp_ai_memory_rrf_graph_bridge`), so sites running the
+  standalone plugin without the bundled Graphify addon get graph-backed
+  memory provenance and hybrid recall. The registrations are inert when the
+  base plugin is absent — the filters are never applied.
+- Tests: seam-registration contract in `BridgeTest`.
+
 ## 1.0.11 — 2026-10-11
 
 ### Added — Headless explorer support

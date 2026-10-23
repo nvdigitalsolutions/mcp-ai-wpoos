@@ -47,6 +47,16 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Note: Located under Tools menu to ensure easy access for troubleshooting.
 		 */
 		public static function register_page() {
+			/**
+			 * Kill-switch for the wp-admin provider-diagnostics surface
+			 * (Proposal 084 Phase 3). The Complete Console's Diagnostics page
+			 * ships the consolidated overview; flip this filter off per cohort
+			 * once the SPA surface reaches parity.
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_diagnostics_providers', true ) ) {
+				return;
+			}
+
 			self::$page_hook = add_submenu_page(
 				'tools.php',
 				__( 'Provider Connectivity Diagnostic', 'mcp-ai-wpoos' ),

@@ -4078,6 +4078,38 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		}
 
 		/**
+		 * Redact a schedule record for REST display.
+		 *
+		 * Strips credential-bearing blocks (broadcast config, assistant config,
+		 * result delivery, notify emails) before a schedule record leaves the
+		 * capability-gated REST surface. Credentials are write-only: the SPA
+		 * updates schedules with partial payloads and never needs them echoed back.
+		 *
+		 * @since 1.2.8
+		 *
+		 * @param array $schedule Schedule record.
+		 * @return array Redacted schedule record.
+		 */
+		public static function redact_schedule_for_public( array $schedule ) {
+			$sensitive = array(
+				'broadcast_config',
+				'assistant_config',
+				'result_delivery',
+				'notify_email',
+				'callback_secret',
+				'notify_channel_credentials',
+			);
+
+			foreach ( $sensitive as $key ) {
+				if ( isset( $schedule[ $key ] ) ) {
+					unset( $schedule[ $key ] );
+				}
+			}
+
+			return $schedule;
+		}
+
+		/**
 		 * Public-facing redaction: trim a stored envelope to allow-listed fields.
 		 *
 		 * Used by the REST controller and the renderer when surfacing results to

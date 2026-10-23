@@ -1022,9 +1022,26 @@ class Controller {
 			}
 		}
 
-		// Allow public access if the base plugin guest token is valid.
-		if ( function_exists( '\wp_mcp_ai_validate_guest_token' ) && \wp_mcp_ai_validate_guest_token() ) {
-			return true;
+		// Allow public access when the request presents a valid, origin-bound
+		// base-plugin guest token. Mirrors the base plugin's chat-transcript
+		// permission check: the token arrives via the X-WP-MCP-AI-Guest header
+		// (or the guest_token parameter) and is validated through
+		// WP_MCP_AI_Shortcode::validate_guest_token().
+		$guest_token = '';
+		if ( $request instanceof WP_REST_Request ) {
+			$guest_token = $request->get_header( 'X-WP-MCP-AI-Guest' );
+			if ( ! $guest_token ) {
+				$guest_token = $request->get_param( 'guest_token' );
+			}
+		}
+		if (
+			is_string( $guest_token ) && '' !== trim( $guest_token ) &&
+			class_exists( 'WP_MCP_AI_Shortcode' )
+		) {
+			$assistant_id = ( $request instanceof WP_REST_Request ) ? absint( $request->get_param( 'assistant_id' ) ) : 0;
+			if ( \WP_MCP_AI_Shortcode::validate_guest_token( trim( $guest_token ), $assistant_id, $request ) ) {
+				return true;
+			}
 		}
 		return new WP_Error( 'nvoos_content_graph_forbidden', __( 'You must be logged in to access the knowledge graph.', 'nvoos-content-graph' ), array( 'status' => 401 ) );
 	}

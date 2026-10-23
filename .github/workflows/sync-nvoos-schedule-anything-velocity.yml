@@ -1,0 +1,110 @@
+name: Sync nvoos-schedule-anything-velocity
+
+# One-way mirror of the Schedule Anything Velocity app to the repo
+# nvdigitalsolutions/nvoos-schedule-anything-velocity.
+#
+# The app ships only the prebuilt SPA bundle (dist/) + zero-dependency
+# serve scripts — no sources are vendored and Velocity runs no build step,
+# so unlike the Pro SPA standalone sync there is no npm ci/build gate; the
+# tree is smoke-tested by booting serve.mjs and curling it instead.
+#
+# The mirror repo history is intentionally flat (one commit per sync,
+# force-pushed). Never commit to the mirror directly.
+#
+# Unlike the Pro SPA mirror (which also ships vendored spa-v2 sources under
+# addons/ and must nest its app under examples/), this mirror contains ONLY
+# the app — so the tree is assembled at the repo ROOT and Velocity's root
+# directory is simply the repo root (package.json sits at the top).
+#
+# Activation (owner steps, one-time):
+#   1. Create the repo nvdigitalsolutions/nvoos-schedule-anything-velocity.
+#   2. Add a repo-scoped deploy token as the repository secret
+#      NVOOS_SA_VELOCITY_REPO_TOKEN.
+#   3. Run this workflow once via workflow_dispatch (backfills the mirror).
+#   4. In Velocity: connect the mirror repo, root directory = repo root,
+#      entry scripts/serve.mjs, no build command,
+#      env NVOOS_TARGET_SITE=<wordpress-site>.
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/schedule-anything-velocity/**'
+  # Manual runs let you force a sync without waiting for a merge (first-run
+  # verification after adding the token, backfills, etc.).
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assemble mirror tree
+        run: |
+          rm -rf /tmp/nvoos-schedule-anything-velocity
+          mkdir -p /tmp/nvoos-schedule-anything-velocity
+          # cp -r, not git archive: the repo .gitattributes export-ignores
+          # package.json, which Velocity requires at the repo root.
+          cp -r examples/schedule-anything-velocity/. /tmp/nvoos-schedule-anything-velocity/
+          # Dev-only tool: sync-dist.mjs copies the build out of the monorepo
+          # addon and cannot work in the mirror (no addon sources there).
+          rm -f /tmp/nvoos-schedule-anything-velocity/scripts/sync-dist.mjs
+          cd /tmp/nvoos-schedule-anything-velocity
+          # Pin the initial branch to main: git init alone honours the runner's
+          # init.defaultBranch (or falls back to master), which makes the later
+          # `git push ... main --force` fail with "src refspec main does not match any".
+          git init -q -b main
+          git add .
+          git -c user.name="GitHub Actions" -c user.email="actions@github.com" commit -q -m "Sync Schedule Anything Velocity app ($GITHUB_SHA)"
+
+      - name: Smoke-test the assembled app
+        working-directory: /tmp/nvoos-schedule-anything-velocity
+        run: |
+          # Syntax + shape gates, then boot the VELOCITY ENTRY (server.js
+          # shim → serve.mjs) and exercise the static branch.
+          node --check scripts/serve.mjs
+          node --check server.js
+          test -f dist/index.html
+          test -n "$(find dist/assets -maxdepth 1 -name 'index-*.js' | head -n1)"
+          # Asset-closure gate: every asset referenced by index.html and every
+          # CSS chunk in Vite's __vite__mapDeps dep maps must exist in dist/.
+          # The #7125 snapshot shipped index.html without its hashed CSS, so
+          # serve.mjs answered the stylesheet path with text/html and browsers
+          # refused it under strict MIME checking. Never ship that again.
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const dist = "dist";
+            const refs = [];
+            const html = fs.readFileSync(path.join(dist, "index.html"), "utf8");
+            for (const m of html.matchAll(/(?:src|href)="\/assets\/([^"]+)"/g)) refs.push(m[1]);
+            for (const name of fs.readdirSync(path.join(dist, "assets"))) {
+              if (!name.endsWith(".js")) continue;
+              const source = fs.readFileSync(path.join(dist, "assets", name), "utf8");
+              for (const m of source.matchAll(/"assets\/([A-Za-z0-9_.-]+\.css)"/g)) refs.push(m[1]);
+            }
+            const missing = [...new Set(refs)].filter((name) => !fs.existsSync(path.join(dist, "assets", name)));
+            if (missing.length) {
+              console.error("Missing bundle assets: " + missing.join(", "));
+              process.exit(1);
+            }
+            console.log("Asset closure OK: " + new Set(refs).size + " referenced assets present");
+          '
+          node server.js > /tmp/sa-velocity-smoke.log 2>&1 &
+          SERVER_PID=$!
+          sleep 1
+          curl -sf -o /dev/null http://localhost:4180/ || { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          curl -sf -o /dev/null http://localhost:4180/schedules || { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          # The entry stylesheet must be served as text/css (not the SPA
+          # fallback's text/html) — end-to-end guard for the MIME fix.
+          CSS_PATH=$(grep -o '/assets/[A-Za-z0-9_.-]*\.css' dist/index.html | head -n1)
+          MIME=$(curl -s -o /dev/null -w '%{content_type}' "http://localhost:4180$CSS_PATH")
+          case "$MIME" in text/css*) ;; *) { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; } ;; esac
+          kill $SERVER_PID
+
+      - name: Push to nvoos-schedule-anything-velocity
+        working-directory: /tmp/nvoos-schedule-anything-velocity
+        run: |
+          git push https://x-access-token:${{ secrets.NVOOS_SA_VELOCITY_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-schedule-anything-velocity.git main --force

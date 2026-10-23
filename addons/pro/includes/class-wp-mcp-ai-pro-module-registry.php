@@ -538,10 +538,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				'admin_blueprints',
 				'Unified Blueprints',
 				array(),
-				array( 'context' => 'admin' ),
+				array(),
 				function () use ( $p ) {
+					// Deliberately NOT admin-gated: the blueprints REST bridge
+					// (rest_console_bridges) calls the page class's promoted
+					// static catalogue seams from front-end-originated REST
+					// requests, where is_admin() is false. Skipping this file
+					// there left the routes registered against a class that
+					// was never loaded — every /blueprints call fataled with
+					// "Class not found" (HTTP 500). Loading the class file is
+					// side-effect free; only init() (admin-menu + AJAX hooks)
+					// stays behind the is_admin() guard.
 					require_once $p . 'admin/class-wp-mcp-ai-unified-blueprints-page.php';
-					WP_MCP_AI_Unified_Blueprints_Page::init();
+					if ( is_admin() ) {
+						WP_MCP_AI_Unified_Blueprints_Page::init();
+					}
 				}
 			);
 
@@ -630,6 +641,43 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					if ( file_exists( $f ) ) {
 						require_once $f;
 						add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_REST_Okf', 'register_routes' ) );
+					}
+				}
+			);
+
+			$this->add_module(
+				'rest_console_bridges',
+				'Console REST Bridges',
+				array(),
+				array(),
+				function () use ( $p ) {
+					// Proposal 084 console bridges. Deliberately NOT admin-gated:
+					// the Pro SPA renders on a front-end page and issues its
+					// REST calls from that origin, where is_admin() is false —
+					// an admin-context gate here would leave every one of these
+					// routes 404ing ("No route was found matching the URL and
+					// request method"). Each controller is idempotent and only
+					// hooks rest_api_init (records also hooks init at priority
+					// 20 for meta-in-REST), so booting on every request is safe.
+					$controllers = array(
+						'class-wp-mcp-ai-pro-rest-ops-controller.php'              => 'WP_MCP_AI_Pro_REST_Ops_Controller',
+						'class-wp-mcp-ai-pro-workflow-presets-rest-controller.php' => 'WP_MCP_AI_Pro_Workflow_Presets_REST_Controller',
+						'class-wp-mcp-ai-pro-workflow-node-rest-controller.php'    => 'WP_MCP_AI_Pro_Workflow_Node_REST_Controller',
+						'class-wp-mcp-ai-pro-records-rest-controller.php'          => 'WP_MCP_AI_Pro_Records_REST_Controller',
+						'class-wp-mcp-ai-pro-dashboards-rest-controller.php'       => 'WP_MCP_AI_Pro_Dashboards_REST_Controller',
+						'class-wp-mcp-ai-pro-media-cc-rest-controller.php'         => 'WP_MCP_AI_Pro_Media_CC_REST_Controller',
+						'class-wp-mcp-ai-pro-blueprints-rest-controller.php'       => 'WP_MCP_AI_Pro_Blueprints_REST_Controller',
+						'class-wp-mcp-ai-pro-command-center-rest-controller.php'    => 'WP_MCP_AI_Pro_Command_Center_REST_Controller',
+					);
+					foreach ( $controllers as $file => $class ) {
+						$path = $p . 'rest/' . $file;
+						if ( ! file_exists( $path ) ) {
+							continue;
+						}
+						require_once $path;
+						if ( class_exists( $class ) ) {
+							$class::init();
+						}
 					}
 				}
 			);
@@ -840,6 +888,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				function () use ( $p ) {
 					require_once $p . 'rest/class-wp-mcp-ai-pro-schedule-rest-controller.php';
 					WP_MCP_AI_Pro_Schedule_REST_Controller::init();
+				}
+			);
+
+			$this->add_module(
+				'rest_schedule_anything',
+				'Schedule Anything REST (presets + toolkits)',
+				array(),
+				array(),
+				function () use ( $p ) {
+					require_once $p . 'schedule-anything/class-wp-mcp-ai-pro-sa-toolkit-adapter.php';
+					require_once $p . 'schedule-anything/class-wp-mcp-ai-pro-schedule-presets.php';
+					require_once $p . 'rest/class-wp-mcp-ai-pro-sa-rest-controller.php';
+					WP_MCP_AI_SA_REST_Controller::init();
 				}
 			);
 

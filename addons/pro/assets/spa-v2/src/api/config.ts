@@ -86,6 +86,62 @@ export interface ProSpaEndpoints {
 	workflows: string;
 	analytics: string;
 	approvals: string;
+	/** Workflow triggers REST base (mcp-ai/v1/orchestration/triggers, 2.4.0). */
+	triggers: string;
+	/** Teams REST base (mcp-ai/v1/teams, 2.4.0). */
+	teams: string;
+	/** Assistant portability REST base (mcp-ai/v1/assistants, 2.4.0). */
+	portability: string;
+	/** Security Center REST base (mcp-ai/v1/security, 2.4.0). */
+	security: string;
+	/** Operations REST base (mcp-ai/v1/operations, 2.4.0). */
+	operations: string;
+	/** Diagnostics REST base (mcp-ai/v1/diagnostics, 2.4.0). */
+	diagnostics: string;
+	/** Token Manager REST base (mcp-ai/v1/token-manager, 2.4.0). */
+	tokenManager: string;
+	/**
+	 * Cost analytics REST base (mcp-ai/v1/cost, 2.4.0) — the console
+	 * Analytics page's cost summary/trend/provider charts. Empty for
+	 * non-admin sessions (the endpoints are manage_options-gated).
+	 */
+	cost: string;
+	/** Orchestration stats REST base (mcp-ai/v1/orchestration/stats, 2.4.0). */
+	orchestrationStats: string;
+	/** Pro ops REST base (mcp-ai-pro/v1/ops, 2.4.0). */
+	proOps: string;
+	/** Schedule Manager REST base (mcp-ai-pro/v1 schedules + presets, 2.4.0). */
+	scheduleManager: string;
+	/** Workflow builder REST base (mcp-ai/v1/orchestration/workflows, 2.4.0). */
+	workflowBuilder: string;
+	/** Workflow presets REST base (mcp-ai-pro/v1/workflow-presets, 2.4.0). */
+	workflowPresets: string;
+	/** Workflow node execution REST base (mcp-ai-pro/v1/workflow-builder, 2.4.0). */
+	workflowNodes: string;
+	/** Workflow runs REST base (mcp-ai/v1/orchestration/runs, 2.4.0). */
+	workflowRuns: string;
+	/** Core wp/v2 REST base — the Records feature's wp-core storage strategy (2.4.0). */
+	wpBase: string;
+	/** Records schema REST base (mcp-ai-pro/v1/records/schema, 2.4.0). */
+	recordsSchema: string;
+	/** Dashboards schema REST base (mcp-ai-pro/v1/dashboards/schema, 2.4.0). */
+	dashboardsSchema: string;
+	/** Chat channels REST base (mcp-ai-pro/v1/chat-channels, 2.4.0). */
+	chatChannels: string;
+	/** Media command-center REST base (mcp-ai-pro/v1/media-cc, 2.4.0). */
+	mediaCc: string;
+	/**
+	 * Assistant blueprints REST base (mcp-ai-pro/v1/blueprints, 2.4.0) —
+	 * the blueprint catalogue + install flow. Empty for sessions without
+	 * edit_posts (the endpoints mirror the wp-admin page's gate).
+	 */
+	blueprints: string;
+	/**
+	 * Command Center overview REST base (mcp-ai-pro/v1/command-center,
+	 * 2.4.0) — the console Dashboard's KPI + activity feed. Empty for
+	 * non-admin sessions.
+	 */
+	commandCenter: string;
 	shortcuts: string;
 	slashCommands: string;
 	/** OKF Skills & Knowledge browse endpoint (v2.1.1). */
@@ -135,6 +191,12 @@ export interface ProSpaRuntime {
 	assistants?: RuntimeAssistantSummary[];
 	/** Chat profile catalogue (2.2.0). */
 	profiles?: ChatProfileSummary[];
+	/**
+	 * Server-reported feature availability (2.4.0, Proposal 084 Phase 0).
+	 * Maps feature keys (docs_hub, knowledge_graph, …) to booleans; surfaces
+	 * gate their navigation on it. Absent = unknown = fail open.
+	 */
+	features?: Record< string, boolean >;
 }
 
 export interface ProSpaUser {
@@ -232,6 +294,28 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			workflows: typeof e.workflows === 'string' ? e.workflows : '',
 			analytics: typeof e.analytics === 'string' ? e.analytics : '',
 			approvals: typeof e.approvals === 'string' ? e.approvals : '',
+			triggers: typeof e.triggers === 'string' ? e.triggers : '',
+			teams: typeof e.teams === 'string' ? e.teams : '',
+			portability: typeof e.portability === 'string' ? e.portability : '',
+			security: typeof e.security === 'string' ? e.security : '',
+			operations: typeof e.operations === 'string' ? e.operations : '',
+			diagnostics: typeof e.diagnostics === 'string' ? e.diagnostics : '',
+			tokenManager: typeof e.tokenManager === 'string' ? e.tokenManager : '',
+			cost: typeof e.cost === 'string' ? e.cost : '',
+			orchestrationStats: typeof e.orchestrationStats === 'string' ? e.orchestrationStats : '',
+			proOps: typeof e.proOps === 'string' ? e.proOps : '',
+			scheduleManager: typeof e.scheduleManager === 'string' ? e.scheduleManager : '',
+			workflowBuilder: typeof e.workflowBuilder === 'string' ? e.workflowBuilder : '',
+			workflowPresets: typeof e.workflowPresets === 'string' ? e.workflowPresets : '',
+			workflowNodes: typeof e.workflowNodes === 'string' ? e.workflowNodes : '',
+			workflowRuns: typeof e.workflowRuns === 'string' ? e.workflowRuns : '',
+			wpBase: typeof e.wpBase === 'string' ? e.wpBase : '',
+			recordsSchema: typeof e.recordsSchema === 'string' ? e.recordsSchema : '',
+			dashboardsSchema: typeof e.dashboardsSchema === 'string' ? e.dashboardsSchema : '',
+			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
+			mediaCc: typeof e.mediaCc === 'string' ? e.mediaCc : '',
+			blueprints: typeof e.blueprints === 'string' ? e.blueprints : '',
+			commandCenter: typeof e.commandCenter === 'string' ? e.commandCenter : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 			okf: typeof e.okf === 'string' ? e.okf : '',
@@ -244,5 +328,9 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 		mentionTypes: Array.isArray( g.mentionTypes ) ? g.mentionTypes : [],
 		assistants: Array.isArray( g.assistants ) ? g.assistants : undefined,
 		profiles: Array.isArray( g.profiles ) ? ( g.profiles as ChatProfileSummary[] ) : undefined,
+		features:
+			g.features && typeof g.features === 'object' && ! Array.isArray( g.features )
+				? ( g.features as Record< string, boolean > )
+				: undefined,
 	};
 }

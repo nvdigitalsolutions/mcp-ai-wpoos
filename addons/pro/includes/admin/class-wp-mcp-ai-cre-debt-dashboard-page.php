@@ -141,11 +141,15 @@ class WP_MCP_AI_CRE_Debt_Dashboard_Page {
 	/**
 	 * Gather portfolio data from CPT posts.
 	 *
+	 * Public since 2.4.0 (Proposal 084 Phase 4 W13): the dashboards REST
+	 * controller consumes this as the dashboard's data provider; the AJAX
+	 * handler and the page render call it unchanged.
+	 *
 	 * @param string $filter_loan_type   Optional loan type taxonomy filter.
 	 * @param string $filter_loan_status Optional loan status meta filter.
 	 * @return array Portfolio statistics.
 	 */
-	private static function get_portfolio_data( $filter_loan_type = '', $filter_loan_status = '' ) {
+	public static function get_portfolio_data( $filter_loan_type = '', $filter_loan_status = '' ) {
 		$query_args = array(
 			'post_type'      => 'mcp_ai_cre_loan',
 			'post_status'    => 'publish',

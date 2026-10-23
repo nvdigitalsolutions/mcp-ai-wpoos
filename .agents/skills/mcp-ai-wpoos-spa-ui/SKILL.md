@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-ui
-description: UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns plus the standalone Pro SPA Vite app (examples/nvoos-pro-spa-vite), dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map, and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging.
+description: UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns plus the standalone Pro SPA Vite app (examples/nvoos-pro-spa-vite), dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map (incl. staleness detection and the vendor never-commit rule), and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.4"
-  plugin-version-tested: "1.2.4"
-  last-updated: "2026-10-11"
+  plugin-version: "1.2.10"
+  plugin-version-tested: "1.2.10"
+  last-updated: "2026-10-23"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -46,14 +46,21 @@ The canonical addon pattern itself is
 | Pattern | Addons | Stack | Choose when |
 |---|---|---|---|
 | **A — standalone bundle** | `toolkit-shell`, `chat-spa` | esbuild IIFE, **bundled React 19.1**, hand-rolled or token CSS, `@wordpress/i18n` externalized to `window.wp.i18n` | The SPA embeds on **front end and admin** and must not depend on WP core scripts (any WP 6.x) |
-| **B — Vite product SPA** | `schedule-anything-spa` | Vite 6, **React 18.3**, Tailwind v4, `@wordpress/api-fetch` + i18n bundled | Tenant-facing product with a public (unauthenticated) surface and its own brand |
+| **B — Vite product SPA** | `schedule-anything-spa` | Vite 6, **React 19.1** (deliberate deviation from the 18.3 pin as of 2026-10-20 — see rule 1), Tailwind v4, `@wordpress/api-fetch` + i18n bundled | Tenant-facing product with a public (unauthenticated) surface and its own brand |
 | **C — WP-core externals** | `saas-controller` | `wp-scripts`, `@wordpress/components`/`element`/`icons` externalized to `window.wp.*`, React 18 from WP core | Admin-only settings surfaces where zero-KB bundle and native wp-admin look matter |
 
 Rules that follow from the matrix:
 
 1. **React version constraint:** WP core ships React 18 through WP 7.1; the
-   React 19 core upgrade is experimental in Gutenberg. Patterns B and C run
-   on WP's React 18. Pattern A ships its own React 19 — fine in isolation.
+   React 19 core upgrade is experimental in Gutenberg. Pattern C runs on
+   WP's React 18 (it externalizes `window.wp.*`). Pattern A ships its own
+   React 19 — fine in isolation. Pattern B (`schedule-anything-spa`) ships
+   React 19.1 as of 2026-10-20 — a deliberate deviation because the SPA is
+   served standalone (Velocity / nginx / built zip) and is never embedded
+   inline in a WP page; its only WP deps (`@wordpress/api-fetch` +
+   `@wordpress/i18n`) are React-free, so the WP-core React 18 constraint does
+   not apply. If an inline wp-admin embed is ever added, revert to 18 (or
+   keep the embed iframe/standalone).
 2. **Dual-React guard (Pattern A):** a bundled React 19 tree must never import
    `@wordpress/element` or `@wordpress/components` (they pull WP's React 18
    renderer and corrupt hooks state). Only the React-free `@wordpress/i18n` is
@@ -145,6 +152,72 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   would break `script-src 'self'`).
 - **Media worker:** the app fronts the worker directly (URL + `X-Site-Token`
   in the connection screen) — the two stay separate Velocity apps.
+- **Second standalone host — NV oOS Complete Console**
+  (`examples/nvoos-complete-velocity/`, Proposal 083, PR #7150): same Vite
+  host recipe (alias + tsconfig paths + shims) **minus the connection
+  screen** — fixed cookie-auth console that boots straight into spa-v2's
+  `App` (mode admin). Deltas vs this section: `buildConsoleRuntime()`
+  builds the runtime from the session (nonce via wp-admin scrape →
+  `session/nonce` fallback, user via `wp/v2/users/me?context=edit`);
+  assistant provisioning is "both" — `defaultAssistantId` pin + selector
+  on; serve.mjs is the **Schedule Anything** variant (no runtime-env
+  injection), port 4181; the sync workflow triggers on the app folder
+  **and** `addons/pro/assets/spa-v2/**` (the console embeds spa-v2
+  sources) and **prunes build-time files** (`src/`, configs, lockfile)
+  from the mirror tree — bundle + serve scripts only. Cross-app SSO with
+  the SA app is a deferred shared-domain-cookie follow-up. Independence
+  note (2026-10-20): the console does **not** import
+  `examples/nvoos-pro-spa-vite` — both apps alias
+  `addons/pro/assets/spa-v2/src` directly, and the console wraps the chat
+  surface in its own `ConsoleShell` + `ChatDock` (`src/console/`), so the
+  chat surface ships inside the console bundle. Rebuilding the standalone
+  app alone never changes the live console; every spa-v2 source fix must
+  be compiled into **both** `addons/pro/assets/spa-v2/assets/dist/` and
+  `examples/nvoos-complete-velocity/dist/` (see the rebuild map below).
+- **Console nav gating (Proposal 084 Phase 0, shipped 2026-10-20):**
+  the sidebar, dashboard quick-actions, and route guards all consume one
+  catalogue — `examples/nvoos-complete-velocity/src/console/nav-features.tsx`
+  (`CONSOLE_NAV_ITEMS` with per-item `capability?`/`feature?` gates,
+  `isNavItemVisible()`, `RequireGate` redirect-to-`/` guard). Feature
+  availability comes from the **server**, never URL guessing:
+  `GET /mcp-ai/v1/features` (`includes/rest/class-wp-mcp-ai-rest-features-controller.php`,
+  logged-in users) backed by `WP_MCP_AI_Feature_Flags`
+  (`includes/class-wp-mcp-ai-feature-flags.php` — docs_hub, knowledge_graph,
+  media_studio, document_editor, pro, okf; each filterable via
+  `wp_mcp_ai_feature_available_<key>`). The PHP SPA config emits the same
+  map as `runtime.features`, and `buildConsoleRuntime()` **empties the
+  optional-surface endpoints** when a feature is off (pages then render
+  their unavailable states). Console boot fetches the map via
+  `fetchFeatureMap()` (runtime-config.ts) — **fail-open** by design (a
+  failed fetch returns `{}`, never hides nav). Nav capabilities come from
+  `wp/v2/users/me?context=edit`; the 7 admin-only items are gated on
+  `manage_options` mirroring the PHP endpoint gating. Tools page is
+  assistant-aware: `ToolsClient.list( assistantId? )` →
+  `?assistant_id=…`, `useTools` refetches on the store's `assistantId`
+  change, `ToolsPage` shows the scoped assistant in its subtitle (falls
+  back to the server-resolved default assistant, then the full registry).
+	  New console pages register their gates in `nav-features.tsx` — never
+	  inline.
+
+### Clean-install CI gate (the npm ci lockfile gotcha — PR #7171)
+
+The standalone app's CI gate is `npm ci && npm run build`, and `npm ci`
+installs **strictly from the committed lockfile**. When a dependency is
+added to `package.json` (e.g. `@xyflow/react` for the Workflow Builder
+canvas) without regenerating `package-lock.json`, a stale local
+`node_modules` masks the break — everything passes in dev, then CI fails
+with `TS2307: Cannot find module` (+ cascading TS7006 implicit-any from
+the lost types). Rules:
+
+- Any `package.json` dependency change in `examples/nvoos-pro-spa-vite`
+  (or any `npm ci`-gated app) must ship with the regenerated
+  `package-lock.json` (`npm install`).
+- The standalone app mirrors spa-v2's dependency set — when spa-v2 gains a
+  runtime dep consumed by shared source (`src/features/**` compiled through
+  the Vite alias), add the same version to the standalone manifest in the
+  same commit.
+- Verify with the exact gate before pushing:
+  `rm -rf node_modules && npm ci && npm run build`.
 
 ## Porting a plugin JS widget into spa-v2 (vendored-upstream pattern)
 
@@ -284,6 +357,59 @@ AND the standalone Vite app, without forking the widget.
 - Drop autoprefixer (Lightning CSS handles prefixing).
 - Never reference undefined theme tokens in utility classes (e.g.
   `ring-ring`); use real palette keys or define them.
+- **Tracked-dist feedback loop (found 2026-10-20, PR #7148):** Tailwind's
+  automatic source detection includes the **git-tracked `assets/dist`** —
+  the prebuilt bundle the repo commits. Each build then harvests phantom
+  class candidates from the previous build's minified JS, so the emitted
+  CSS differs run-to-run (observed: 35.14 → 35.49 → 34.98 KB across three
+  unchanged-source builds) and dist hashes never settle — the
+  byte-identical-rebuild check below fails forever. **Fix:** exclude the
+  output dir from the scan in `src/styles/global.css` (path is relative to
+  the CSS file):
+  ```css
+  /* Exclude the git-tracked build output from Tailwind's automatic source
+     detection — otherwise each build scans the previous build's minified
+     JS and dist hashes never settle. */
+  @source not "../../assets/dist";
+  ```
+  After the fix, consecutive builds are byte-identical and the CSS shrank
+  ~2 KB (the phantom classes). Any Tailwind-v4 addon that commits its
+  build output needs the same exclusion; add it at scaffold time.
+- **Determinism gate:** after any build-affecting change (deps, CSS,
+  config), build twice and byte-compare — deterministic bundles produce no
+  diff on the second run. If hashes rotate between runs, suspect a scan or
+  ordering feedback loop, not tooling noise.
+
+## Upgrading a Pattern B SPA to React 19 (checklist, case study PR #7148)
+
+Works for schedule-anything-spa and any future Vite product SPA when the
+Pattern-B React 18.3 pin is lifted (see rule 1 — only valid while the SPA
+is standalone, never embedded inline in wp-admin).
+
+1. **Migration-surface greps first** — the React 19 removals/type changes
+   that break code: `React.FC` (implicit children gone in @types 19),
+   global `JSX.Element`, `forwardRef`, `defaultProps`, `PropTypes`,
+   `ReactDOM.render`, `findDOMNode`, argument-less `useRef()`. The SA SPA
+   had zero matches, and the upgrade was clean.
+2. **Peer-dep tolerance via the lockfile** — verify what `npm install`
+   actually resolved: `recharts` needs ≥2.15 (peer includes ^19);
+   `@axe-core/react` 4.13 has **no react peer**; react-transition-group is
+   `>=16.6`. If a dev-only tool hard-pins React 18 peers, `--legacy-peer-deps`
+   or an override beats downgrading.
+3. **Pins** — `react`/`react-dom` exact `19.1.0` (matches spa-v2 + the
+   standalone app); `@types/react`/`@types/react-dom` `^19.1.4`.
+4. **Gates** — `typecheck` (the real risk: @types 19 strictness), a11y
+   lint, vitest, **build ×2 determinism**, main-chunk budget (SA grew
+   93 → 105.95 KB gzip: part React 19, part Radix minors from the lock
+   refresh — still under the 150 KB gate; call the growth out in the PR).
+5. **Document the deviation** — addon README + this skill's matrix row, so
+   future agents don't "fix" it back to 18.
+6. **Dist-only merge conflicts are the norm afterwards** — two branches
+   rebuilding the same source rotate chunk hashes. Never hand-merge
+   minified bundles: merge the sources, rebuild (`npm run build`), re-sync
+   (`npm run sync:dist` in the velocity app), `git add` both dist trees.
+   Dry-run mergeability without touching the worktree:
+   `git merge-tree --write-tree HEAD origin/<base>` (exit 0 = clean).
 
 ## @xyflow/react v12 (upgraded from reactflow 11)
 
@@ -380,6 +506,8 @@ scope is the whole tree, not one addon. Verified inventory (2026-10-09):
 | Pattern B SPA | `schedule-anything-spa` — `npm run build` (`tsc && vite build`) | |
 | Pattern C SPA | `saas-controller` — `npm run build` (worker esbuild + drift-manifest stamp + wp-scripts admin) | |
 | Legacy pro SPA | `addons/pro/assets/spa` — `npm run build` (wp-scripts webpack → `dist/`) | |
+| spa-v2 plugin bundle | `addons/pro/assets/spa-v2` — `npm run build` | esbuild → **tracked** `assets/dist/pro-spa.js` + `.css` (plugin-served admin SPA) |
+| Complete Console (Velocity) | `examples/nvoos-complete-velocity` — `npm run build` (`tsc --noEmit && vite build`); `npm run sync:dist` = typecheck+build+closure gate | Vite → **tracked** `dist/`; Velocity serves it prebuilt, no build step on the server |
 | npm packages | `packages/nvoos-*` — each has `npm run build` (`adapt-for-npm.cjs`); `nvoos-mcp-bridge` has none by design | loop with a small node script; dist folders are git-tracked |
 | content-graph vendor | `plugins/nvoos-content-graph` — `npm install` then `node scripts/copy-vendor.js` | |
 
@@ -394,6 +522,71 @@ mtimes to confirm a build actually ran. Full run: ~15 min, mostly `npm ci`
 for saas-controller (2k+ deps). npm on dev machines blocks dependency install
 scripts (esbuild postinstall etc.) — harmless, platform binaries ship via
 optional deps.
+
+**Two-bundle rule for spa-v2 (learned 2026-10-20, PR #7158/#7159):** the
+auto `build: update compiled assets [skip ci]` commit covers neither of
+the two spa-v2 trees, so a spa-v2 change reaches production only when
+BOTH `addons/pro/assets/spa-v2/assets/dist/` and
+`examples/nvoos-complete-velocity/dist/` are rebuilt and merged.
+Squash-merging a multi-commit rebuild PR can silently drop the second
+bundle: #7158's squash only carried the plugin bundle, the console
+`dist/` rebuild was left unmerged, and the live Complete Console showed
+none of the fixes until #7159. After any rebuild-PR merge, verify each
+rebuild commit is an ancestor of the target branch
+(`git merge-base --is-ancestor <sha> origin/alpha-working`).
+
+### Rebuild discipline — staleness, vendor, drift (learned 2026-10-22)
+
+**Lockfile movement stales tracked bundles.** Any commit that changes
+`package-lock.json` without a rebuild (advisory patches #7175/#7106, dep
+bumps) leaves the bundles in git embedding the old dependency graph.
+Signature: `git status` shows modified `*.bundle.js`/`dist/` files whose
+sources are clean, and `git log --oneline origin/alpha-working --
+package-lock.json` is newer than `git log --oneline -1 -- <bundle>`.
+Prove it is dependency-internal churn with a marker grep — committed vs
+fresh `grep -c EXPANSION_MAX_DEPTH addons/pro/bin/generate-excel.bundle.js`
+went 2 → 0 after the brace-expansion override moved. Fix: run the full map
+above and PR the artifact diffs. Verified 2026-10-22 (PR #7182): 16 files
+— chat-spa, librechat, legacy spa, the three `generate-*` worker bundles,
+2 of 4 TMA entries, saas drift-manifest, root chat/http-client assets;
+spa-v2 + complete-velocity came out byte-identical (rebuilt same-day).
+
+**Vendor is tracked in production state — never commit composer regen.**
+`composer install` rewrites `vendor/composer/autoload_*.php` +
+`installed.{json,php}` to the dev flavor; committing them breaks cloning
+the repo as a production plugin (PR #7179 was reverted for exactly this;
+#7180 re-applied the work without vendor). Keep the regen as local-only
+dirt — it is what makes `vendor/bin/phpunit` runnable. Pre-commit gate
+before ANY commit: `git diff --cached --name-only | grep -E '^vendor/'`
+must print nothing.
+
+**node_modules drift vs lockfile.** `npm ci --dry-run` reveals drift in a
+shared worktree. Before rebuilding, check whether drift touches the bundle
+chains (`npm ls <pkg>` vs the lockfile entries) — a rebuild with drifted
+`node_modules` bakes non-lockfile versions into committed bundles. Bare
+`npm ci` in a shared worktree is risky: npm 12 blocks install scripts by
+default (esbuild postinstall among them) and `.npmrc` sets `omit=optional`;
+if an addon build then fails for a missing esbuild binary, remove the
+addon's `node_modules/esbuild` so resolution falls back to the working
+root copy.
+
+**Standalone addon deps are not hoisted (no workspaces).** `chat-spa`'s
+`@ai-sdk/react@1.2.12` exists only in its own committed
+`package-lock.json`; a build failing with "Could not resolve <pkg>" means
+the addon's `node_modules` is missing — run `npm ci` inside the addon dir
+(not the root), then rebuild.
+
+**Reverting a bad merge on a shared branch.** When a rebuild (or any)
+squash lands with unintended paths and other commits have arrived on top
+of `alpha-working`, force-push is off the table. Revert in a throwaway
+worktree: `git worktree add <tmp>` → `git revert --no-edit <merge-sha>` →
+push → `git worktree remove`. Drive it with `git -C <tmp> …` because the
+temp path is outside the terminal tool's allowed project roots. Then
+rewrite the feature branch without the offending paths and re-PR.
+
+**PR merge discipline.** Create the PR and stop — merge only when the
+user explicitly asks for the merge. Never self-merge a PR off the back of
+an inferred intent.
 
 ## TS-shadows-JS resolution gotcha (wp-scripts)
 
@@ -429,4 +622,7 @@ functionally equivalent.
 - `addons/toolkit-shell/src/components/ui/` and `addons/schedule-anything-spa/src/components/ui/` — reference UI kits
 - `addons/saas-controller/README.md` + `THIRD_PARTY_NOTICES.md` — Pattern C reference
 - `mcp-ai-wpoos-test-suite` skill — PHPUnit side of testing (disjoint scope)
+- `mcp-ai-schedule-anything-ops` skill — Schedule Anything SaaS ops: the
+  presets/toolkits REST contract, the WP 6.9 nonce cookie-auth pitfall, the
+  sa-e2e harness, and the Cloudways Velocity deploy/mirror-sync loop
 - `.github/agents/toolkit-spa-maintainer.agent.md` — addon-scoped writer agent

@@ -59,15 +59,15 @@ class Test_Logger_Method_Calls extends WP_UnitTestCase {
 
 		$orchestrator = new WP_MCP_AI_Agent_Team_Orchestrator();
 
-		// Call compose_team which internally uses logger
+		// Call compose_team which internally uses logger.
 		$task_requirements = array(
 			'task_type' => 'content',
 		);
 
-		// This should not throw a fatal error anymore
+		// This should not throw a fatal error anymore.
 		$result = $orchestrator->compose_team( $task_requirements );
 
-		// If we got this far without a fatal error, the fix works
+		// If we got this far without a fatal error, the fix works.
 		$this->assertTrue( true, 'Agent team orchestrator should not throw fatal error on logger call' );
 	}
 
@@ -93,10 +93,10 @@ class Test_Logger_Method_Calls extends WP_UnitTestCase {
 			'user_id'      => 1,
 		);
 
-		// This should not throw a fatal error anymore
+		// This should not throw a fatal error anymore.
 		$result = $tool->execute( $arguments, $context );
 
-		// If we got this far without a fatal error, the fix works
+		// If we got this far without a fatal error, the fix works.
 		$this->assertTrue( true, 'Create agent team tool should not throw fatal error on logger call' );
 		$this->assertIsArray( $result, 'Result should be an array' );
 	}
@@ -107,7 +107,7 @@ class Test_Logger_Method_Calls extends WP_UnitTestCase {
 	public function test_no_files_use_incorrect_logger_call() {
 		$plugin_dir = dirname( __DIR__ );
 
-		// Files that were fixed
+		// Files that were fixed.
 		$fixed_files = array(
 			'includes/services/class-wp-mcp-ai-agent-communication-service.php',
 			'includes/services/class-wp-mcp-ai-agent-team-orchestrator.php',
@@ -118,6 +118,9 @@ class Test_Logger_Method_Calls extends WP_UnitTestCase {
 			'includes/class-wp-mcp-ai-elementor-integration.php',
 		);
 
+		$scanned_files = 0;
+		$violations    = array();
+
 		foreach ( $fixed_files as $file ) {
 			$file_path = $plugin_dir . '/' . $file;
 
@@ -125,6 +128,9 @@ class Test_Logger_Method_Calls extends WP_UnitTestCase {
 				continue;
 			}
 
+			++$scanned_files;
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local plugin source file scan, not a remote URL.
 			$content = file_get_contents( $file_path );
 
 			// Check that file doesn't contain "WP_MCP_AI_Logger::log(" without "log_event", "log_error", etc.
@@ -136,12 +142,13 @@ class Test_Logger_Method_Calls extends WP_UnitTestCase {
 				$context = substr( $content, $offset, 50 );
 
 				// Make sure it's not a valid method like log_event, log_error, etc.
-				$this->assertMatchesRegularExpression(
-					'/log_(event|error|warning|info|debug|critical|chat_interaction|tool_execution)/',
-					$context,
-					"File {$file} should only use valid logger methods, found: {$context}"
-				);
+				if ( ! preg_match( '/log_(event|error|warning|info|debug|critical|chat_interaction|tool_execution)/', $context ) ) {
+					$violations[] = "File {$file} should only use valid logger methods, found: {$context}";
+				}
 			}
 		}
+
+		$this->assertGreaterThan( 0, $scanned_files, 'Expected at least one fixed file to be scanned.' );
+		$this->assertEmpty( $violations, implode( "\n", $violations ) );
 	}
 }

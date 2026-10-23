@@ -283,7 +283,7 @@ The Scheduled Result feature turns the latest successful Pro Schedule output int
 
 | Route | Method | Capability / auth | Purpose |
 |---|---|---|---|
-| `/wp-json/mcp-ai-pro/v1/schedules?selectable=1` | `GET` | Authenticated read via `wp_mcp_ai_pro_schedule_result_capability` | Lightweight picker for the block inspector and dashboards |
+| `/wp-json/mcp-ai-pro/v1/schedules/selectable` | `GET` | Authenticated read via `wp_mcp_ai_pro_schedule_result_capability` | Lightweight picker for the block inspector and dashboards |
 | `/wp-json/mcp-ai-pro/v1/schedules/{id}/latest-result` | `GET` | Authenticated read, or public when the schedule opts into `display.public_render` | Returns the latest envelope, with weak `ETag` and `Cache-Control: private, max-age=30` when available |
 | `/wp-json/mcp-ai-pro/v1/schedules/{id}/results?limit=N` | `GET` | Authenticated read | Returns retained result envelopes, clamped by endpoint and schedule retention |
 | `/wp-json/mcp-ai-pro/v1/schedules/{id}/preview` | `POST` | `manage_options`, `X-WP-Nonce`, and a per-user 10-second preview rate limit | Runs a one-shot preview and writes only the result store, not the normal history ring |

@@ -50,6 +50,26 @@ Subsystem-specific:
 - Add a Pro-only skill (depends on Pro tools/CCTs) under `includes/bundled-skills/` → refuse; route to `addons/pro/includes/bundled-skills/`.
 - Ship a SKILL.md without a valid YAML frontmatter `name` and `description` → refuse.
 - Embed binary files inside the skill folder unless the upstream skill requires them and the license allows redistribution.
+- Edit a curated upstream SKILL.md to carry a repo-specific amendment → refuse; propose the internal-skill home instead (see below).
+
+## Persistence policy (repo-specific amendments)
+
+- **Curated skills stay upstream-faithful.** When refreshing a curated skill
+  (e.g. from `Lonsdale201/wp-agent-skills`), do not carry repo-specific
+  amendments into the curated copy — an amendment edited directly into a
+  curated SKILL.md is silently lost on the next re-curation/update.
+- **Repo-specific deviations belong in project-owned (internal) skills.** The
+  internal home for repo-specific WP lessons is `mcp-ai-wpoos-plugin`
+  (section "Plugin Distribution & Dependency Headers") or another
+  project-owned skill under `.agents/skills/`. When an upstream skill is
+  missing a lesson the repo needs, add it to the internal skill and
+  cross-reference the curated one rather than editing the curated copy.
+- **Keep the copies in sync after editing.** Project-owned skills live in
+  `.agents/skills/<slug>/` and mirror to `includes/bundled-skills/<slug>/`
+  (byte-identical); `composer run skills:sync` propagates bundled → Zed. The
+  CG-AI-platform bundled copy (`plugins/nvoos-content-graph-ai-platform/
+  data/bundled-skills/`) is a deliberately trimmed variant — stamp-only
+  treatment, never content edits.
 
 ## Success criteria
 

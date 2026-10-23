@@ -74,6 +74,18 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 	 * @since 1.0.0
 	 */
 	public function register_routes() {
+		// Team catalogue endpoint (2.4.0) — the TeamsPage needs a list before
+		// it can request members; the team CPT is not show_in_rest.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/teams',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_teams' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
 		// Get team members endpoint.
 		register_rest_route(
 			self::REST_NAMESPACE,
@@ -166,6 +178,49 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 			WP_MCP_AI_Logger::log_error( $message, $context );
 		}
+	}
+
+	/**
+	 * List all teams with a member count (admin-only, 2.4.0).
+	 *
+	 * @return WP_REST_Response|WP_Error Response object or error.
+	 */
+	public function get_teams() {
+		if ( ! class_exists( 'WP_MCP_AI_Team_CPT' ) ) {
+			return new WP_Error(
+				'team_cpt_not_loaded',
+				__( 'Team system is not available.', 'mcp-ai-wpoos' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$teams = array();
+		$posts = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_team',
+				'post_status'    => 'publish',
+				'posts_per_page' => 100,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'no_found_rows'  => true,
+			)
+		);
+
+		foreach ( $posts as $post ) {
+			$members = get_post_meta( $post->ID, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
+			$teams[] = array(
+				'id'           => $post->ID,
+				'title'        => esc_html( $post->post_title ),
+				'member_count' => is_array( $members ) ? count( $members ) : 0,
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'teams'   => $teams,
+			)
+		);
 	}
 
 	/**
@@ -274,6 +329,7 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 				'category'      => $category_display,
 				'category_slug' => $category,
 				'excerpt'       => $member->post_excerpt,
+				'description'   => $member->post_excerpt ? $member->post_excerpt : $member->post_content,
 				'expertise'     => is_array( $expertise ) ? $expertise : array(),
 				'tools_count'   => is_array( $tools ) ? count( $tools ) : 0,
 			);

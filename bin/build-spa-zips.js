@@ -19,17 +19,33 @@ const EXCLUDES = ['node_modules', '.git', 'tests', 'package-lock.json', '.DS_Sto
 // NOTE: chat-spa, comic-reader, and docs-hub are built by bin/build-addon-zips.sh
 // (which handles npm build steps, source exclusions, and version stamping).
 // This script handles only the remaining SPA addons that are NOT built there.
+//
+// schedule-anything-spa is the Pattern-B Vite product SPA (no PHP entry
+// file): its version lives in package.json and its build output is
+// assets/dist/ (index.html + hashed chunks), so it declares `versionFile`
+// instead of `entryFile` and ships extra dev-file excludes.
 const ADDONS = [
 	{ dir: 'canvas-toolkit',  slug: 'nvoos-canvas-toolkit',  entryFile: 'nvoos-canvas-toolkit.php' },
 	{ dir: 'document-editor', slug: 'nvoos-document-editor', entryFile: 'nvoos-document-editor.php' },
 	{ dir: 'media-studio',    slug: 'nvoos-media-studio',    entryFile: 'nvoos-media-studio.php' },
 	{ dir: 'toolkit-shell',   slug: 'nvoos-toolkit-shell',   entryFile: 'nvoos-toolkit-shell.php' },
+	{
+		dir: 'schedule-anything-spa',
+		slug: 'nvoos-schedule-anything-spa',
+		versionFile: 'package.json',
+		extraExcludes: [ 'src', 'index.html', 'vite.config.ts', 'vitest.config.ts', 'postcss.config.js', 'tsconfig.json', 'eslint.config.js' ],
+	},
 ];
 
-function readVersion(entryFile) {
-	const content = fs.readFileSync(entryFile, 'utf8');
-	const match = content.match(/^\s*\*\s*Version:\s*(.+)$/m);
-	return match ? match[1].trim() : 'dev';
+function readVersion(versionFile) {
+	const content = fs.readFileSync(versionFile, 'utf8');
+	const phpMatch = content.match(/^\s*\*\s*Version:\s*(.+)$/m);
+	if (phpMatch) {
+		return phpMatch[1].trim();
+	}
+	// Pattern-B addons carry the version in package.json instead of a PHP header.
+	const pkgMatch = content.match(/"version"\s*:\s*"([^"]+)"/);
+	return pkgMatch ? pkgMatch[1].trim() : 'dev';
 }
 
 // Ensure build dir exists
@@ -39,8 +55,8 @@ let totalSize = 0;
 
 for (const addon of ADDONS) {
 	const addonSrc = path.join(ROOT, 'addons', addon.dir);
-	const entryFile = path.join(addonSrc, addon.entryFile);
-	const version = readVersion(entryFile);
+	const versionFile = path.join(addonSrc, addon.versionFile || addon.entryFile);
+	const version = readVersion(versionFile);
 	const zipName = `${addon.slug}-v${version}.zip`;
 	const zipPath = path.join(BUILD_DIR, zipName);
 
@@ -62,7 +78,7 @@ for (const addon of ADDONS) {
 			const relativePath = path.relative(addonSrc, fullPath);
 			const topLevel = relativePath.split(path.sep)[0];
 
-			if (EXCLUDES.includes(topLevel)) continue;
+			if (EXCLUDES.includes(topLevel) || (addon.extraExcludes || []).includes(topLevel)) continue;
 
 			if (entry.isDirectory()) {
 				addDir(fullPath, zipPathPrefix);

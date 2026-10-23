@@ -652,13 +652,14 @@ if [ "$BUILD_PRO" = true ]; then
             echo "✓ Fixed masterminds/html5 case collision (HTML5.php → HTML5_main.php)"
         fi
         
-        # Copy examples and CSV templates from root to Pro (excluded from base)
-        if [ -d "examples" ]; then
-            rsync -av --quiet examples/ "build/${PRO_SLUG}/examples/" \
-                --exclude '.git'
-            echo "✓ Copied examples/ to Pro addon"
-        fi
-        
+        # NOTE: Root examples/ (standalone dev/demo apps: nvoos-dictate whisper
+        # sources, velocity SPA demos, source maps) is intentionally NOT copied
+        # into the Pro addon — nothing in the Pro runtime references it.
+        # (Removed 2026-10-21 to cut ~5.4 MB compressed from the Pro zip.)
+        # Per-toolkit blueprints under addons/pro/includes/tools/*/examples/
+        # still ship via the rsync of addons/pro/ above.
+
+        # Copy CSV templates from root to Pro (excluded from base)
         if [ -d "assets/csv-templates" ]; then
             mkdir -p "build/${PRO_SLUG}/assets"
             rsync -av --quiet assets/csv-templates/ "build/${PRO_SLUG}/assets/csv-templates/" \

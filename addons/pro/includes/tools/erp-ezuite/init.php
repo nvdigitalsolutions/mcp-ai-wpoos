@@ -65,9 +65,10 @@ if ( wp_mcp_ai_is_ezuite_toolkit_enabled()
 	}
 
 	// Load WP-CLI commands when running via CLI.
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-ezuite-cli.php';
-	}
+	// WP-CLI commands load unconditionally from
+	// wp_mcp_ai_pro_load_cli_commands() in mcp-ai-wpoos-pro.php (each verb
+	// asserts the toolkit toggle itself), so `wp help mcp-ai` always
+	// discovers them.
 
 	// Load migration helper if standalone plugin is active.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-ezuite-migration.php';

@@ -45,6 +45,17 @@ class WP_MCP_AI_Admin_DAG_Builder {
 	 * @return void
 	 */
 	public function add_menu_page() {
+		/**
+		 * Kill-switch for the wp-admin DAG Builder surface (Proposal 084
+		 * Phase 3b, gap B8). The console Workflows page is a placeholder
+		 * today — the builder port is sequenced as W10.2 before any
+		 * retirement; flip this filter off per cohort once the console
+		 * builder reaches parity.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_dag_builder', true ) ) {
+			return;
+		}
+
 		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'Workflow DAG Builder', 'mcp-ai-wpoos' ),

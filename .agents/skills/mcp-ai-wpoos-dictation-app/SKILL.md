@@ -26,6 +26,7 @@ with the NV oOS plugin as the optional AI-enrichment backend.
 - Embedding the hosted Pro SPA in the Assistant tab, or changing its reachability probe / CSP
 - Producing a "complete" hand-off exe (the full feature union, not just STT flags)
 - Continuing P2 (loopback + PTT matrix), P4/P5 ports, or distribution
+- Verifying the macOS port from CI or a remote Mac (boot smoke, interactive SSH session, VNC options)
 
 ## Layout
 
@@ -139,7 +140,68 @@ cargo test --features parakeet  # 46 lib (+1 tar.bz2 extraction test)
 Native feature compile checks: `parakeet`, `whisper`, `moonshine`,
 `silero-vad`, and the combined `--features parakeet,silero-vad,moonshine`.
 **whisper needs extra env** (below). CI (`build-nvoos-dictate.yml`) runs
-fmt/clippy/test default + `mcp` only; the native engines are local gates.
+fmt/clippy/test default + `mcp` on windows/ubuntu/macos, plus two macOS
+runtime gates: a headless `--mcp` engine-load probe (rmcp's exit-1
+"connection closed" on stdin EOF is expected teardown — fail only on
+"engine unavailable") and a `boot-smoke` job (real debug `.app`, 30 s
+boot-residency gate, `.app` zip + boot-log artifacts). The native engines
+are local gates.
+
+## Verifying the macOS port from a non-Mac machine
+
+The GitHub macOS runner is the remote Mac. The full remote loop:
+
+- **Every push:** `boot-smoke` in `build-nvoos-dictate.yml` builds the
+  debug **universal** `.app` (`--target universal-apple-darwin` — Rust
+  lipo's the binary; `build:helper` with `NVOOS_HELPER_ARCH=universal`
+  builds both Swift slices in isolated scratch dirs, lipo's them over the
+  `-universal-apple-darwin` externalBin stub, and self-checks with
+  `lipo -info`) — production frontend + sidecar — boots **both slices**
+  (native arm64, then the Intel slice via `arch -x86_64` under Rosetta 2,
+  with a defensive `softwareupdate --install-rosetta` step and a teardown
+  wait so the single-instance guard doesn't redirect the second boot),
+  enforces 30 s boot residency per slice, hard-verifies the bundle is
+  universal (`lipo -info` on the main binary AND the sidecar), and uploads
+  the app zipped as artifact `nvoos-dictate-macos-app` (7 days) + boot
+  evidence. **One download serves Apple Silicon AND Intel Macs** (macOS
+  13+, incl. Sequoia 15.x) — an arm64-only app fails on Intel with "this
+  application is not supported on this Mac". Release DMGs are a single
+  universal DMG via publish-nvoos-dictate.yml; targeted builds land under
+  `src-tauri/target/<triple>/debug/bundle/macos/`
+  (`universal-apple-darwin` for universal), not `target/debug/`.
+- **Interactive:** run the `NV oOS Dictation — macOS interactive session`
+  workflow (`workflow_dispatch`) — builds the bundle, runs
+  `scripts/macos-matrix-remote.sh` (the automatable subset of
+  `docs/ptt-matrix-macos.md`: bundle surface, sidecar `--check`, boot
+  residency, screenshots), uploads evidence, then holds the runner for
+  SSH via tmate (up to 360 min, `limit-access-to-actor`).
+- **Human matrix (TCC grants):** mic / Screen Recording / Accessibility
+  clicks need a person at the GUI — GitHub-hosted runners have no VNC.
+  Namespace runners support VNC into macOS (swap `runs-on` to a
+  Namespace profile), or use a physical/rented Mac with
+  `scripts/macos-matrix-remote.sh`.
+- **Signed + notarized DMG:** Apple Developer provisioning needs **no
+  Mac** — openssl CSR → Developer ID Application cert at
+  developer.apple.com → p12 (base64) → repo secrets (`APPLE_CERTIFICATE`,
+  `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`,
+  `APPLE_PASSWORD`, `APPLE_TEAM_ID`) → tag `nvoos-dictate-v*`
+  (`publish-nvoos-dictate.yml`).
+
+Remote-Mac landscape (2026-10): **Cirrus CI shut down 2026-06-01**
+(Cirrus Labs joined OpenAI) — do not recommend it. Docker/QEMU macOS
+(`dockurr/macos`, `docker-osx`) needs a Linux KVM host and violates
+Apple's EULA (DMCA takedown 2024) — not a path from Windows.
+
+Platform pitfalls that already cost CI runs:
+
+- **Tauri v2 keeps the Cargo binary name as the bundle executable** —
+  `Contents/MacOS/nvoos-dictate`, NOT productName
+  (`Contents/MacOS/NV oOS Dictation` does not exist). Discover it with
+  `find "$APP/Contents/MacOS" -maxdepth 1 -type f -perm -u+x ! -name
+  '*helper*' -print -quit` or read `CFBundleExecutable`.
+- **`screencapture -x` produces no image on GitHub macOS runners** —
+  treat it as best-effort evidence, never a hard gate (boot residency is
+  the gate).
 
 ## Engine track (ADR 0003: local-first, embedded as fallback)
 
@@ -833,15 +895,18 @@ real-call), embedded live test (needs a Gemma 4 audio endpoint), Embedded
 addon permission tweak for `cred_x.SECRET`, P4 (Linux) port, the macOS
 port, and release signing/updater feed. See the implementation plan
 (`docs/project/proposals/067-…-plan.md`) for the full item list. The macOS
-port (067-P5) is implemented on `feat/nvoos-dictate-macos-port`
-(2026-10-12, unverified on macOS hardware): `hotkey/macos_event_tap.rs` +
-portable `tap_state.rs` state machine, `paste/macos_cgevent.rs`,
-`permissions.rs` TCC layer + Settings Permissions tab,
-`meetings/macos_system_audio.rs` + `sidecar_protocol.rs` + `mac-helper/`
-Swift package (externalBin stubs in `src-tauri/binaries/`),
-`util/macos_foreground.rs`, Info.plist + entitlements, macOS CI/publish
-matrix. macOS-side compile gates run in CI (`macos-latest` job) — not
-verifiable from the Windows reference PC. See the comprehensive plan
+port (067-P5) is merged into `alpha-working` (PR #7030, 2026-10-12):
+`hotkey/macos_event_tap.rs` + portable `tap_state.rs` state machine,
+`paste/macos_cgevent.rs`, `permissions.rs` TCC layer + Settings
+Permissions tab, `meetings/macos_system_audio.rs` + `sidecar_protocol.rs`
++ `mac-helper/` Swift package (externalBin stubs in
+`src-tauri/binaries/`), `util/macos_foreground.rs`, Info.plist +
+entitlements, macOS CI/publish matrix. **Boot-verified on `macos-latest`
+(2026-10-18):** the CI boot-smoke job boots the real `.app` and holds it
+30 s, and the headless `--mcp` probe loads the engine — see "Verifying
+the macOS port from a non-Mac machine" above (PRs #7122 + #7123). What
+remains hardware-only: TCC grants, real PTT input, meeting capture
+(`docs/ptt-matrix-macos.md`). See the comprehensive plan
 `examples/nvoos-dictate/docs/macos-port-plan.md` (phases M0–M8: TCC
 permission model + first-run wizard, permission-free combo PTT default +
 opt-in Right-Option CGEventTap hold mode, ScreenCaptureKit Swift sidecar

@@ -7,7 +7,9 @@
  * byte-identical. The base plugin owns the class in monolith installs - the addon boots nothing when
  * `WP_MCP_AI_PRO_PATH` is defined (see the plugin entry). Self-contained (no path constants).
  *
- * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`.
+ * Documented deviations: `declare(strict_types=1)` added; text domain `nvoos-content-graph-pro`;
+ * standalone installs have no `WP_MCP_AI_Admin_Settings` class, so `log_event()` short-circuits
+ * (safe no-op logger) when the class is absent, and the debug-level gate carries a `class_exists` guard.
  *
  * Simple logging utility for NV oOS.
  *
@@ -207,7 +209,11 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 */
 		public static function log_event( $type, $message, $context = array() ) {
 			// Check base logging first.
-			if ( ! WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
+			//
+			// DEVIATION (standalone port): the base settings class may be absent
+			// in this context; without it the logger degrades to a safe no-op
+			// rather than fataling on the unguarded static call.
+			if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) || ! WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
 				return;
 			}
 
@@ -346,6 +352,18 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			// Chat interaction events.
 			if ( 'chat_interaction' === $type ) {
 				return WP_MCP_AI_Admin_Settings::is_chat_interaction_logging_enabled();
+			}
+
+			// Debug events: gated behind a dedicated opt-in setting because they
+			// are extremely noisy (hot paths fire them on every request).
+			//
+			// DEVIATION (standalone port): the base settings class may be absent
+			// in this context, in which case debug logging stays off (it already
+			// defaults to off).
+			if ( self::LEVEL_DEBUG === $type ) {
+				return class_exists( 'WP_MCP_AI_Admin_Settings' )
+					&& method_exists( 'WP_MCP_AI_Admin_Settings', 'is_debug_logging_enabled' )
+					&& WP_MCP_AI_Admin_Settings::is_debug_logging_enabled();
 			}
 
 			// Schedule run events (start, completion, failure).

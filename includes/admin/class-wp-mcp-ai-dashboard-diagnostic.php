@@ -33,6 +33,16 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 		 * Note: Located under Tools menu to ensure easy access for troubleshooting.
 		 */
 		public static function register_page() {
+			/**
+			 * Kill-switch for the wp-admin settings-dashboard diagnostic surface
+			 * (Proposal 084 Phase 3). The Complete Console's Diagnostics page
+			 * ships the consolidated overview; flip this filter off per cohort
+			 * once the SPA surface reaches parity.
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_diagnostics_dashboard', true ) ) {
+				return;
+			}
+
 			add_submenu_page(
 				'tools.php',
 				__( 'NV oOS Dashboard Diagnostic', 'mcp-ai-wpoos' ),

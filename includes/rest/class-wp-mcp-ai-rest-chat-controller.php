@@ -1004,11 +1004,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			if ( 'wp_mcp_ai_transcripts_unavailable' === $sessions->get_error_code() ) {
 				return rest_ensure_response(
 					array(
-						'sessions' => array(),
-						'total'    => 0,
-						'per_page' => $per_page,
-						'page'     => $page,
-						'message'  => $sessions->get_error_message(),
+						'sessions'      => array(),
+						'total'         => 0,
+						'per_page'      => $per_page,
+						'page'          => $page,
+						'storage_bytes' => 0,
+						'message'       => $sessions->get_error_message(),
 					)
 				);
 			}
@@ -1016,12 +1017,21 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return $sessions;
 		}
 
+		// Aggregate byte size of the user's stored transcripts — the SPA
+		// status bar reports this instead of a same-origin localStorage
+		// figure, which is ~0 for server-side transcript storage.
+		$storage_bytes = 0;
+		if ( method_exists( $main_controller, 'get_transcript_storage_bytes' ) ) {
+			$storage_bytes = (int) $main_controller->get_transcript_storage_bytes( $user_id, $assistant_id );
+		}
+
 		return rest_ensure_response(
 			array(
-				'sessions' => isset( $sessions['items'] ) ? $sessions['items'] : array(),
-				'total'    => isset( $sessions['total'] ) ? (int) $sessions['total'] : 0,
-				'per_page' => $per_page,
-				'page'     => $page,
+				'sessions'      => isset( $sessions['items'] ) ? $sessions['items'] : array(),
+				'total'         => isset( $sessions['total'] ) ? (int) $sessions['total'] : 0,
+				'per_page'      => $per_page,
+				'page'          => $page,
+				'storage_bytes' => $storage_bytes,
 			)
 		);
 	}

@@ -10,6 +10,7 @@ export function SettingsPage() {
   const toggleToolkit = useToggleToolkit();
 
   const toolkits = data?.toolkits || [];
+  const tier = data?.tier || 'unknown';
 
   if (isLoading) {
     return (
@@ -40,7 +41,8 @@ export function SettingsPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Settings</h1>
       <p className="text-sm text-gray-500 mb-6">
-        {enabledCount} of {toolkits.length} toolkits enabled
+        {enabledCount} of {toolkits.length} toolkits enabled ·{' '}
+        <span className="font-medium text-gray-600 capitalize">{tier} tier</span>
       </p>
 
       {/* Toolkits section */}
@@ -97,18 +99,33 @@ function ToolkitRow({
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
+  // Entitlement is decided server-side; the SPA only reflects it by
+  // disabling the control and explaining why.
+  const toggleDisabled = isToggling || !toolkit.entitled;
+
   return (
     <div className="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors">
       <div>
         <p className="text-sm font-medium text-gray-800">{label}</p>
-        <p className="text-xs text-gray-400">{toolkit.flag_key}</p>
+        <p className="text-xs text-gray-400">
+          {toolkit.flag_key}
+          {!toolkit.entitled && (
+            <span className="ml-2 text-amber-600">Not available on your tier</span>
+          )}
+        </p>
       </div>
       <button
         onClick={onToggle}
-        disabled={isToggling}
+        disabled={toggleDisabled}
+        title={
+          toolkit.entitled
+            ? undefined
+            : 'This toolkit is not available on your subscription tier.'
+        }
         className={clsx(
           'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-          toolkit.enabled ? 'bg-blue-600' : 'bg-gray-200'
+          toolkit.enabled ? 'bg-blue-600' : 'bg-gray-200',
+          !toolkit.entitled && 'opacity-50 cursor-not-allowed'
         )}
       >
         <span

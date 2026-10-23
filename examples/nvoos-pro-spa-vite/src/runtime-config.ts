@@ -114,11 +114,41 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		threads: `${core}/threads`,
 		tools: `${core}/tools`,
 		assistants: `${core}/assistants`,
+		// GET/POST /mcp-ai/v1/settings (manage_options, secrets masked) — the
+		// Settings page degrades to an unavailable state on older installs
+		// that predate the route.
 		settings: `${core}/settings`,
 		upload: `${api}/wp/v2/media`,
 		workflows: `${pro}/workflows`,
-		analytics: `${pro}/analytics`,
+		// Site-wide usage analytics (core namespace, admin-gated) — matches the
+		// canonical PHP config (class-wp-mcp-ai-pro-spa-config.php).
+		analytics: `${core}/analytics`,
 		approvals: `${core}/approvals`,
+		triggers: `${core}/orchestration/triggers`,
+		teams: `${core}/teams`,
+		portability: `${core}/assistants`,
+		security: `${core}/security`,
+		operations: `${core}/operations`,
+		diagnostics: `${core}/diagnostics`,
+		tokenManager: `${core}/token-manager`,
+		// Cost analytics — manage_options-gated; empty for non-admin sessions.
+		cost: `${core}/cost`,
+		orchestrationStats: `${core}/orchestration/stats`,
+		proOps: `${pro}/ops`,
+		scheduleManager: `${pro}`,
+		workflowBuilder: `${core}/orchestration/workflows`,
+		workflowPresets: `${pro}/workflow-presets`,
+		workflowNodes: `${pro}/workflow-builder`,
+		workflowRuns: `${core}/orchestration/runs`,
+		wpBase: `${api}/wp/v2`,
+		recordsSchema: `${pro}/records/schema`,
+		dashboardsSchema: `${pro}/dashboards/schema`,
+		chatChannels: `${pro}/chat-channels`,
+		mediaCc: `${pro}/media-cc`,
+		// Assistant blueprints — empty for sessions without edit_posts.
+		blueprints: `${pro}/blueprints`,
+		// Command Center KPI + activity feed — empty for non-admin sessions.
+		commandCenter: `${pro}/command-center`,
 		shortcuts: `${pro}/tool-shortcuts`,
 		slashCommands: `${pro}/slash-commands`,
 		okf: `${pro}/okf`,

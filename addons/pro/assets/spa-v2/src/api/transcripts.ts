@@ -26,6 +26,11 @@ export interface TranscriptListResponse {
 	total: number;
 	per_page: number;
 	page: number;
+	/**
+	 * Aggregate byte size of the user's stored transcripts, reported by the
+	 * server. Absent on older base-plugin installs that predate the field.
+	 */
+	storage_bytes?: number;
 	message?: string;
 }
 
@@ -56,6 +61,22 @@ interface InternalRequest {
 	url: string;
 	body?: unknown;
 	signal?: AbortSignal;
+}
+
+/**
+ * Error carrying the HTTP status of a failed transcripts request.
+ *
+ * Lets callers distinguish "not found" (e.g. a base-plugin install without
+ * the per-session GET route) from real connection/server failures.
+ */
+export class TranscriptsRequestError extends Error {
+	readonly status: number;
+
+	constructor( status: number, message: string ) {
+		super( message );
+		this.name = 'TranscriptsRequestError';
+		this.status = status;
+	}
 }
 
 export function generateSessionKey(): string {
@@ -106,6 +127,8 @@ export class TranscriptsClient {
 			total: typeof data?.total === 'number' ? data.total : 0,
 			per_page: typeof data?.per_page === 'number' ? data.per_page : 50,
 			page: typeof data?.page === 'number' ? data.page : 1,
+			storage_bytes:
+				typeof data?.storage_bytes === 'number' ? data.storage_bytes : undefined,
 			message: typeof data?.message === 'string' ? data.message : undefined,
 		};
 	}
@@ -118,11 +141,23 @@ export class TranscriptsClient {
 		if ( this.assistantId ) {
 			url.searchParams.set( 'assistant_id', String( this.assistantId ) );
 		}
-		const data = await this.request< TranscriptDetailResponse >( {
-			method: 'GET',
-			url: url.toString(),
-			signal,
-		} );
+		let data: TranscriptDetailResponse;
+		try {
+			data = await this.request< TranscriptDetailResponse >( {
+				method: 'GET',
+				url: url.toString(),
+				signal,
+			} );
+		} catch ( err ) {
+			// Older base-plugin installs register the transcripts collection
+			// route but not GET /chat-transcripts/{session_key}. A 404 there
+			// means "no stored transcript for this session" — degrade to an
+			// empty history instead of flagging the connection as broken.
+			if ( err instanceof TranscriptsRequestError && err.status === 404 ) {
+				return { session: null };
+			}
+			throw err;
+		}
 		return {
 			session: data?.session ?? null,
 			message: typeof data?.message === 'string' ? data.message : undefined,
@@ -178,7 +213,8 @@ export class TranscriptsClient {
 			} catch {
 				// Body wasn't JSON — fall through.
 			}
-			throw new Error(
+			throw new TranscriptsRequestError(
+				response.status,
 				detail ||
 					__( 'Transcripts request failed (status %d).', 'nvoos-pro-spa' ).replace(
 						'%d',

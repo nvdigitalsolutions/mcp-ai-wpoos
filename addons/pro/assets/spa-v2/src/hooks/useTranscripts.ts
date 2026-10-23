@@ -42,6 +42,11 @@ export interface UseTranscriptsReturn {
 	isLoading: boolean;
 	initialMessages: TranscriptMessage[];
 	sessions: TranscriptSession[] | null;
+	/**
+	 * Server-reported byte size of the user's stored transcripts, or null
+	 * when the figure is unknown/unavailable (older server or disabled).
+	 */
+	storageBytes: number | null;
 	unavailableMessage: string | null;
 	error: string | null;
 	refreshList: () => Promise< void >;
@@ -134,6 +139,7 @@ export function useTranscripts(
 	const [ initialMessages, setInitialMessages ] = useState< TranscriptMessage[] >( [] );
 	const [ isLoading, setIsLoading ] = useState< boolean >( false );
 	const [ sessions, setSessions ] = useState< TranscriptSession[] | null >( null );
+	const [ storageBytes, setStorageBytes ] = useState< number | null >( null );
 	const [ unavailableMessage, setUnavailableMessage ] = useState< string | null >( null );
 	const [ error, setError ] = useState< string | null >( null );
 
@@ -187,6 +193,7 @@ export function useTranscripts(
 	const refreshList = useCallback( async () => {
 		if ( disabled ) {
 			setSessions( [] );
+			setStorageBytes( null );
 			return;
 		}
 		try {
@@ -194,13 +201,18 @@ export function useTranscripts(
 			if ( data.message ) {
 				setUnavailableMessage( data.message );
 				setSessions( [] );
+				setStorageBytes( null );
 				return;
 			}
 			setUnavailableMessage( null );
 			setSessions( data.sessions );
+			setStorageBytes(
+				typeof data.storage_bytes === 'number' ? data.storage_bytes : null
+			);
 		} catch ( err ) {
 			setError( err instanceof Error ? err.message : String( err ) );
 			setSessions( [] );
+			setStorageBytes( null );
 		}
 	}, [ client, disabled ] );
 
@@ -347,6 +359,7 @@ export function useTranscripts(
 		isLoading,
 		initialMessages,
 		sessions,
+		storageBytes,
 		unavailableMessage,
 		error,
 		refreshList,

@@ -1282,6 +1282,23 @@
 			} );
 			html += this.editRow( 'Interval', '<select id="edit-schedule">' + intervalOpts + '</select>' );
 
+			// Delivery date & time — prefill from the stored first-run timestamp
+			// only while it is still in the future. Past values (e.g. a consumed
+			// one-shot) are left blank so an untouched save keeps the current
+			// cron event instead of being rejected as a past timestamp.
+			let tsValue   = '';
+			const storedTs = parseInt( schedule.timestamp, 10 ) || 0;
+			if ( storedTs > Math.floor( Date.now() / 1000 ) ) {
+				const d   = new Date( storedTs * 1000 );
+				const pad = function ( n ) { return ( '0' + n ).slice( -2 ); };
+				tsValue   = d.getFullYear() + '-' + pad( d.getMonth() + 1 ) + '-' + pad( d.getDate() ) + 'T' + pad( d.getHours() ) + ':' + pad( d.getMinutes() );
+			}
+			html += this.editRow(
+				'Delivery Date & Time',
+				'<input type="datetime-local" id="edit-timestamp" class="regular-text" value="' + this.esc( tsValue ) + '">' +
+				'<br><span class="description">Leave blank to keep the current delivery time. Setting a future time reschedules the next run.</span>'
+			);
+
 			html += this.editRow( 'Priority (1-10)', '<input type="number" id="edit-priority" class="small-text" min="1" max="10" value="' + parseInt( schedule.priority, 10 ) + '">' );
 			html += this.editRow( 'Tags', '<input type="text" id="edit-tags" class="regular-text" value="' + this.esc( ( schedule.tags || [] ).join( ', ' ) ) + '">' );
 			html += this.editRow( 'Max Retries', '<input type="number" id="edit-max-retries" class="small-text" min="0" max="5" value="' + parseInt( schedule.max_retries, 10 ) + '">' );
@@ -1436,6 +1453,21 @@
 				notify_on_failure: $( '#edit-notify' ).is( ':checked' ),
 				notify_email:     $( '#edit-notify-email' ).val().trim(),
 			};
+
+			// Delivery date & time — only send when a future value is provided,
+			// so a metadata-only save keeps the existing cron event. The backend
+			// rejects past timestamps, so surface that explicitly here instead of
+			// silently dropping the change.
+			const editTsRaw = $( '#edit-timestamp' ).val();
+			if ( editTsRaw ) {
+				const editTs = Math.floor( new Date( editTsRaw ).getTime() / 1000 );
+				if ( isNaN( editTs ) || editTs <= Math.floor( Date.now() / 1000 ) ) {
+					$btn.prop( 'disabled', false ).text( 'Save Changes' );
+					alert( 'Delivery date & time must be in the future.' );
+					return;
+				}
+				data.timestamp = editTs;
+			}
 
 			// Workflow steps — scoped to the edit modal. The create form also
 			// renders a #sm-workflow-steps container, so a document-wide check

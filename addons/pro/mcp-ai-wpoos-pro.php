@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.2.7' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.2.10' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -279,6 +279,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $incidents_page;
 			// Note: Class instantiates itself at the bottom of the file.
 		}
+
+		// The six console REST bridges (ops overview, workflow presets,
+		// workflow node execution, records, dashboards, media command center)
+		// are loaded by the `rest_console_bridges` module in the Pro module
+		// registry instead — this function is admin-gated, and REST requests
+		// from the front-end SPA never satisfy is_admin(), so registering them
+		// here left those routes 404ing on the live console.
 
 		// Register Pro export providers for Backup & Restore.
 		add_action(
@@ -1560,7 +1567,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Fnb_Labour_Analysis'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-labour-analysis.php',
 				'WP_MCP_AI_Tool_Fnb_Utilities_Per_Cover' => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-utilities-per-cover.php',
 				'WP_MCP_AI_Tool_Fnb_Generate_Report'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-generate-report.php',
-				'WP_MCP_AI_Tool_Fnb_Export_Report'      => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-export-report.php',
+				'WP_MCP_AI_Tool_Fnb_Export_Report'       => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-export-report.php',
 				'WP_MCP_AI_Tool_Fnb_Save_Draft'          => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-save-draft.php',
 				'WP_MCP_AI_Tool_Fnb_List_Drafts'         => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-list-drafts.php',
 				'WP_MCP_AI_Tool_Fnb_Audit_Log'           => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-tool-fnb-audit-log.php',
@@ -1574,7 +1581,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Fnb_Pr_Cancel'           => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-cancel.php',
 				'WP_MCP_AI_Tool_Fnb_Pr_List'             => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-list.php',
 				'WP_MCP_AI_Tool_Fnb_Pr_Audit'            => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/pr/class-wp-mcp-ai-tool-fnb-pr-audit.php',
-				'WP_MCP_AI_Tool_Import_Fnb_Blueprint'     => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/examples/class-wp-mcp-ai-tool-import-fnb-blueprint.php',
+				'WP_MCP_AI_Tool_Import_Fnb_Blueprint'    => WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/examples/class-wp-mcp-ai-tool-import-fnb-blueprint.php',
 			);
 			$pro_tools         = array_merge( $pro_tools, $fnb_toolkit_tools );
 		}
@@ -1582,31 +1589,31 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add GTmetrix Performance Toolkit tools if enabled (Pro feature — GTmetrix API testing, deterministic analysis, WPCode fix delivery).
 		if ( ! empty( $settings['enable_gtmetrix_toolkit'] ) ) {
 			$gtmetrix_toolkit_tools = array(
-				'WP_MCP_AI_Tool_GTmetrix_Account_Status'          => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-account-status.php',
-				'WP_MCP_AI_Tool_GTmetrix_List_Locations'          => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-locations.php',
-				'WP_MCP_AI_Tool_GTmetrix_List_Browsers'           => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-browsers.php',
-				'WP_MCP_AI_Tool_GTmetrix_List_Simulated_Devices'  => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-simulated-devices.php',
-				'WP_MCP_AI_Tool_GTmetrix_Start_Test'              => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-start-test.php',
-				'WP_MCP_AI_Tool_GTmetrix_Get_Test_Status'         => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-test-status.php',
-				'WP_MCP_AI_Tool_GTmetrix_List_Tests'              => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-tests.php',
-				'WP_MCP_AI_Tool_GTmetrix_Get_Report'              => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-report.php',
-				'WP_MCP_AI_Tool_GTmetrix_Get_Lighthouse_Audits'   => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-lighthouse-audits.php',
-				'WP_MCP_AI_Tool_GTmetrix_Get_Resource_Summary'    => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-resource-summary.php',
-				'WP_MCP_AI_Tool_GTmetrix_List_Report_Resources'   => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-report-resources.php',
-				'WP_MCP_AI_Tool_GTmetrix_Compare_Reports'         => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-compare-reports.php',
-				'WP_MCP_AI_Tool_GTmetrix_Analyze_Report'          => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-analyze-report.php',
+				'WP_MCP_AI_Tool_GTmetrix_Account_Status'   => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-account-status.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Locations'   => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-locations.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Browsers'    => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-browsers.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Simulated_Devices' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-simulated-devices.php',
+				'WP_MCP_AI_Tool_GTmetrix_Start_Test'       => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-start-test.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Test_Status'  => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-test-status.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Tests'       => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-tests.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Report'       => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-report.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Lighthouse_Audits' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-lighthouse-audits.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Resource_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-resource-summary.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Report_Resources' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-report-resources.php',
+				'WP_MCP_AI_Tool_GTmetrix_Compare_Reports'  => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-compare-reports.php',
+				'WP_MCP_AI_Tool_GTmetrix_Analyze_Report'   => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-analyze-report.php',
 				'WP_MCP_AI_Tool_GTmetrix_Generate_WPCode_Snippet' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-generate-wpcode-snippet.php',
-				'WP_MCP_AI_Tool_GTmetrix_Install_WPCode_Fix'      => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-install-wpcode-fix.php',
-				'WP_MCP_AI_Tool_GTmetrix_List_Pages'              => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-pages.php',
-				'WP_MCP_AI_Tool_GTmetrix_Get_Page'                => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-page.php',
-				'WP_MCP_AI_Tool_GTmetrix_Retest_Page'             => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-retest-page.php',
-				'WP_MCP_AI_Tool_GTmetrix_Set_Monitoring'          => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-set-monitoring.php',
-				'WP_MCP_AI_Tool_GTmetrix_Get_Alert_Conditions'    => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-alert-conditions.php',
-				'WP_MCP_AI_Tool_GTmetrix_Set_Alert_Conditions'    => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-set-alert-conditions.php',
-				'WP_MCP_AI_Tool_GTmetrix_Get_Alert_Events'        => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-alert-events.php',
-				'WP_MCP_AI_Tool_GTmetrix_Manage_Page_Tags'        => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-manage-page-tags.php',
+				'WP_MCP_AI_Tool_GTmetrix_Install_WPCode_Fix' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-install-wpcode-fix.php',
+				'WP_MCP_AI_Tool_GTmetrix_List_Pages'       => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-list-pages.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Page'         => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-page.php',
+				'WP_MCP_AI_Tool_GTmetrix_Retest_Page'      => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-retest-page.php',
+				'WP_MCP_AI_Tool_GTmetrix_Set_Monitoring'   => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-set-monitoring.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Alert_Conditions' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-alert-conditions.php',
+				'WP_MCP_AI_Tool_GTmetrix_Set_Alert_Conditions' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-set-alert-conditions.php',
+				'WP_MCP_AI_Tool_GTmetrix_Get_Alert_Events' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-get-alert-events.php',
+				'WP_MCP_AI_Tool_GTmetrix_Manage_Page_Tags' => WP_MCP_AI_PRO_PATH . 'includes/tools/gtmetrix/class-wp-mcp-ai-tool-gtmetrix-manage-page-tags.php',
 			);
-			$pro_tools             = array_merge( $pro_tools, $gtmetrix_toolkit_tools );
+			$pro_tools              = array_merge( $pro_tools, $gtmetrix_toolkit_tools );
 		}
 
 		// Add Shopify Sync Toolkit tools if enabled (Pro feature — Shopify↔WooCommerce sync with CCT cache).
@@ -3067,6 +3074,7 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 	$wp_mcp_ai_pro_cli_dir = WP_MCP_AI_PRO_PATH . 'includes/cli/';
 
 	$wp_mcp_ai_pro_cli_files = array(
+		'class-wp-mcp-ai-pro-toolkit-settings-map.php',
 		'class-wp-mcp-ai-pro-cli-status-command.php',
 		'class-wp-mcp-ai-pro-cli-toolkit-command.php',
 		'class-wp-mcp-ai-pro-cli-fnb-seed-command.php',
@@ -3087,6 +3095,11 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 		'class-wp-mcp-ai-pro-cli-remote-site-command.php',
 		'class-wp-mcp-ai-pro-cli-communication-command.php',
 		'class-wp-mcp-ai-pro-cli-media-studio-command.php',
+		'class-wp-mcp-ai-pro-cli-foundry-command.php',
+		'class-wp-mcp-ai-pro-cli-para-command.php',
+		'class-wp-mcp-ai-pro-cli-qms-command.php',
+		'class-wp-mcp-ai-pro-cli-mcp-app-command.php',
+		'class-wp-mcp-ai-pro-cli-fnb-command.php',
 	);
 
 	foreach ( $wp_mcp_ai_pro_cli_files as $wp_mcp_ai_pro_cli_file ) {
@@ -3096,7 +3109,24 @@ function wp_mcp_ai_pro_load_cli_commands(): void {
 		}
 	}
 
-	unset( $wp_mcp_ai_pro_cli_dir, $wp_mcp_ai_pro_cli_files, $wp_mcp_ai_pro_cli_file, $wp_mcp_ai_pro_cli_path );
+	// Integration CLIs live in includes/ (outside the cli/ folder). They used
+	// to be required from their toolkit init.php only when the toolkit toggle
+	// was on, which made them invisible to `wp help mcp-ai` on every site
+	// with the toolkit disabled. Load them here unconditionally — each verb
+	// asserts its toolkit toggle itself.
+	$wp_mcp_ai_pro_integration_cli_files = array(
+		'includes/class-wp-mcp-ai-ezuite-cli.php',
+		'includes/class-wp-mcp-ai-flowhub-cli.php',
+		'includes/class-wp-mcp-ai-shopify-sync-cli.php',
+	);
+	foreach ( $wp_mcp_ai_pro_integration_cli_files as $wp_mcp_ai_pro_integration_cli_file ) {
+		$wp_mcp_ai_pro_integration_cli_path = WP_MCP_AI_PRO_PATH . $wp_mcp_ai_pro_integration_cli_file;
+		if ( file_exists( $wp_mcp_ai_pro_integration_cli_path ) ) {
+			require_once $wp_mcp_ai_pro_integration_cli_path;
+		}
+	}
+
+	unset( $wp_mcp_ai_pro_cli_dir, $wp_mcp_ai_pro_cli_files, $wp_mcp_ai_pro_cli_file, $wp_mcp_ai_pro_cli_path, $wp_mcp_ai_pro_integration_cli_files, $wp_mcp_ai_pro_integration_cli_file, $wp_mcp_ai_pro_integration_cli_path );
 }
 
 /**

@@ -1,0 +1,147 @@
+name: Sync nvoos-complete-velocity
+
+# One-way mirror of the NV oOS Complete Console app to the repo
+# nvdigitalsolutions/nvoos-complete-velocity.
+#
+# The app ships the prebuilt bundle (dist/) + zero-dependency serve scripts —
+# no sources or npm dependencies are vendored and Velocity runs no build step,
+# so there is no npm ci/build gate; the tree is smoke-tested by booting server.js and
+# curling it instead. The bundle is built in the monorepo (where the
+# spa-v2 tsconfig paths resolve); this workflow only assembles and verifies.
+#
+# Triggers on spa-v2 source changes too: the console compiles
+# addons/pro/assets/spa-v2/src into its bundle, so a spa-v2 change must
+# redeploy the console or it serves stale code.
+#
+# The mirror repo history is intentionally flat (one commit per sync,
+# force-pushed). Never commit to the mirror directly.
+#
+# The tree is assembled at the repo ROOT (like the Schedule Anything mirror):
+# Velocity's root directory = repo root, package.json sits at the top.
+#
+# Activation (owner steps, one-time):
+#   1. Create the repo nvdigitalsolutions/nvoos-complete-velocity.
+#   2. Add a repo-scoped deploy token as the repository secret
+#      NVOOS_COMPLETE_VELOCITY_REPO_TOKEN.
+#   3. Run this workflow once via workflow_dispatch (backfills the mirror).
+#   4. In Velocity: connect the mirror repo, root directory = repo root,
+#      entry server.js, no build command,
+#      env NVOOS_TARGET_SITE=<complete-bundle-wordpress-site>.
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/nvoos-complete-velocity/**'
+      - 'addons/pro/assets/spa-v2/**'
+  # Manual runs let you force a sync without waiting for a merge (first-run
+  # verification after adding the token, backfills, etc.).
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assemble mirror tree
+        run: |
+          rm -rf /tmp/nvoos-complete-velocity
+          mkdir -p /tmp/nvoos-complete-velocity
+          # cp -r, not git archive: the repo .gitattributes export-ignores
+          # package.json, which Velocity requires at the repo root.
+          cp -r examples/nvoos-complete-velocity/. /tmp/nvoos-complete-velocity/
+          # Dev-only tool: sync-dist.mjs builds from the monorepo spa-v2
+          # sources and cannot work in the mirror (no sources there).
+          rm -f /tmp/nvoos-complete-velocity/scripts/sync-dist.mjs
+          # Prune build-time-only files: the mirror ships the prebuilt
+          # bundle + serve scripts only (no sources vendored — unlike the
+          # Pro SPA standalone mirror, this app compiles spa-v2 in at
+          # monorepo build time).
+          rm -rf /tmp/nvoos-complete-velocity/src \
+            /tmp/nvoos-complete-velocity/index.html \
+            /tmp/nvoos-complete-velocity/vite.config.ts \
+            /tmp/nvoos-complete-velocity/tsconfig.json \
+            /tmp/nvoos-complete-velocity/eslint.config.js \
+            /tmp/nvoos-complete-velocity/vitest.config.ts \
+            /tmp/nvoos-complete-velocity/package-lock.json
+          cd /tmp/nvoos-complete-velocity
+          # Velocity's default deploy pipeline runs `npm run build`; the
+          # mirror ships the prebuilt bundle only (no src/, tsconfig.json
+          # or vite), so the monorepo build script would fail here — tsc
+          # with no tsconfig prints its help text and exits 1, failing the
+          # deploy. Rewrite the monorepo-only scripts to no-op shims: the
+          # Velocity app is configured with no build command, and these
+          # shims are the second line of defence if the build step is ever
+          # left enabled. `serve`/`start` stay live (serve.mjs ships).
+          # Dependencies are stripped too — the runtime is zero-dependency
+          # Node (node: builtins only), so Velocity's `npm install` becomes
+          # a no-op and npm-audit noise never appears in deploy logs.
+          node -e '
+            const fs = require("fs");
+            const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const noop = "node -e \"process.exit(0)\"";
+            for (const s of ["build", "dev", "preview", "typecheck", "lint:a11y", "test", "test:watch", "sync:dist"]) {
+              p.scripts[s] = noop;
+            }
+            delete p.dependencies;
+            delete p.devDependencies;
+            fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n");
+          '
+          # Pin the initial branch to main: git init alone honours the runner's
+          # init.defaultBranch (or falls back to master), which makes the later
+          # `git push ... main --force` fail with "src refspec main does not match any".
+          git init -q -b main
+          git add .
+          git -c user.name="GitHub Actions" -c user.email="actions@github.com" commit -q -m "Sync NV oOS Complete Console app ($GITHUB_SHA)"
+
+      - name: Smoke-test the assembled app
+        working-directory: /tmp/nvoos-complete-velocity
+        run: |
+          # Syntax + shape gates, then boot the VELOCITY ENTRY (server.js
+          # shim → serve.mjs) and exercise the static branch.
+          node --check scripts/serve.mjs
+          node --check server.js
+          test -f dist/index.html
+          test -n "$(find dist/assets -maxdepth 1 -name 'index-*.js' | head -n1)"
+          # Asset-closure gate: every asset referenced by index.html and every
+          # CSS chunk in Vite's __vite__mapDeps dep maps must exist in dist/.
+          # (Same failure class as the SA #7125 snapshot: HTML without its
+          # hashed CSS answers text/html and browsers refuse it.)
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const dist = "dist";
+            const refs = [];
+            const html = fs.readFileSync(path.join(dist, "index.html"), "utf8");
+            for (const m of html.matchAll(/(?:src|href)="\/assets\/([^"]+)"/g)) refs.push(m[1]);
+            for (const name of fs.readdirSync(path.join(dist, "assets"))) {
+              if (!name.endsWith(".js")) continue;
+              const source = fs.readFileSync(path.join(dist, "assets", name), "utf8");
+              for (const m of source.matchAll(/"assets\/([A-Za-z0-9_.-]+\.css)"/g)) refs.push(m[1]);
+            }
+            const missing = [...new Set(refs)].filter((name) => !fs.existsSync(path.join(dist, "assets", name)));
+            if (missing.length) {
+              console.error("Missing bundle assets: " + missing.join(", "));
+              process.exit(1);
+            }
+            console.log("Asset closure OK: " + new Set(refs).size + " referenced assets present");
+          '
+          node server.js > /tmp/complete-velocity-smoke.log 2>&1 &
+          SERVER_PID=$!
+          sleep 1
+          curl -sf -o /dev/null http://localhost:4181/ || { cat /tmp/complete-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          # Extensionless SPA route falls back to index.html (hash router).
+          curl -sf -o /dev/null http://localhost:4181/chat || { cat /tmp/complete-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          # The entry stylesheet must be served as text/css (not the SPA
+          # fallback's text/html) — end-to-end guard for the MIME fix.
+          CSS_PATH=$(grep -o '/assets/[A-Za-z0-9_.-]*\.css' dist/index.html | head -n1)
+          MIME=$(curl -s -o /dev/null -w '%{content_type}' "http://localhost:4181$CSS_PATH")
+          case "$MIME" in text/css*) ;; *) { cat /tmp/complete-velocity-smoke.log; kill $SERVER_PID; exit 1; } ;; esac
+          kill $SERVER_PID
+
+      - name: Push to nvoos-complete-velocity
+        working-directory: /tmp/nvoos-complete-velocity
+        run: |
+          git push https://x-access-token:${{ secrets.NVOOS_COMPLETE_VELOCITY_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-complete-velocity.git main --force

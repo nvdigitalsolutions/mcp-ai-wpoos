@@ -9,8 +9,8 @@
  * - Serialization to schedule data on save
  */
 
-import { useCallback, useRef, useState, type DragEvent } from 'react';
-import { __, sprintf } from '@/lib/i18n';
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { __ } from '@/lib/i18n';
 import {
   ReactFlow,
   Background,
@@ -33,6 +33,10 @@ import { TriggerNode } from './TriggerNode';
 import { PropertyPanel } from './PropertyPanel';
 import { useCreateSchedule } from '@/hooks/useSchedules';
 import type { Schedule } from '@/hooks/useSchedules';
+import { useSaTools } from '@/hooks/useSaTools';
+import { accumulateToolGroups, toolDisplayName, type ToolGroupAccumulator } from '@/lib/toolCatalogue';
+import { buildSchedulePayload } from '@/lib/schedulePayload';
+import { toast } from 'sonner';
 
 const nodeTypes: NodeTypes = {
   toolNode: ToolNode,
@@ -146,36 +150,37 @@ export function FlowCanvas() {
   // Serialize and save
   const handleSave = useCallback(async () => {
     if (!scheduleName.trim()) {
-      alert(__('Please enter a schedule name.', 'schedule-anything-spa'));
+      toast.error(__('Please enter a schedule name.', 'schedule-anything-spa'));
       return;
     }
 
     const toolNodes = nodes.filter((n) => n.type === 'toolNode');
-    const workflowSteps = toolNodes.map((n) => ({
-      tool_slug: (n.data as any).toolSlug,
-      arguments: (n.data as any).arguments || {},
-      label: (n.data as any).label || (n.data as any).toolName || '',
-    }));
 
-    const scheduleData: Partial<Schedule> = {
+    if (scheduleType === 'workflow' && toolNodes.length === 0) {
+      toast.error(
+        __('Add at least one tool to the canvas before saving a workflow schedule.', 'schedule-anything-spa')
+      );
+      return;
+    }
+
+    const scheduleData = buildSchedulePayload({
       name: scheduleName,
-      schedule_type: scheduleType,
-      schedule: cronInterval,
-      tags: [],
-      workflow_steps: scheduleType === 'workflow' ? workflowSteps : undefined,
-    };
+      scheduleType,
+      cron: cronInterval,
+      toolNodes,
+    });
 
     try {
       await createSchedule.mutateAsync(scheduleData);
+      toast.success(__('Schedule created.', 'schedule-anything-spa'));
       // Redirect to schedules page on success
       window.location.href = '/schedules';
     } catch (err) {
-      alert(
-        sprintf(
-          /* translators: %s: error message */
-          __('Failed to create schedule: %s', 'schedule-anything-spa'),
-          err instanceof Error ? err.message : __('Unknown error', 'schedule-anything-spa')
-        )
+      // Surface the server's validation message (WP_Error.message) verbatim.
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : __('Failed to create schedule.', 'schedule-anything-spa')
       );
     }
   }, [scheduleName, scheduleType, cronInterval, nodes, createSchedule]);
@@ -183,7 +188,7 @@ export function FlowCanvas() {
   return (
     <div className="flex h-full">
       {/* Left: Tool Palette */}
-      <div className="w-56 border-r border-gray-200 bg-white overflow-y-auto">
+      <div className="w-56 border-r border-gray-200 bg-white flex flex-col">
         <div className="p-3 border-b border-gray-100">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
             { __('Tools', 'schedule-anything-spa') }
@@ -226,7 +231,7 @@ export function FlowCanvas() {
             <option value="wp_mcp_ai_every_6_hours">{ __('Every 6 hours', 'schedule-anything-spa') }</option>
             <option value="wp_mcp_ai_every_30_minutes">{ __('Every 30 minutes', 'schedule-anything-spa') }</option>
             <option value="weekly">{ __('Weekly', 'schedule-anything-spa') }</option>
-            <option value="monthly">{ __('Monthly', 'schedule-anything-spa') }</option>
+            <option value="wp_mcp_ai_monthly">{ __('Monthly', 'schedule-anything-spa') }</option>
           </select>
           <button
             onClick={addTriggerNode}
@@ -292,59 +297,41 @@ export function FlowCanvas() {
 
 /**
  * Tool palette content — draggable tools grouped by toolkit.
+ *
+ * The palette consumes the live tool catalogue from GET /sa-tools
+ * (progressive discovery: search + load-more, grouped by the server's
+ * tool-group facet). The drag payload shape is unchanged, so the canvas
+ * drop handler and payload builder stay compatible.
  */
 function ToolPaletteContent() {
-  const toolkits = [
-    {
-      name: 'Calendar Booking',
-      tools: [
-        { slug: 'create_appointment', name: 'Create Appointment' },
-        { slug: 'check_availability', name: 'Check Availability' },
-        { slug: 'send_booking_confirmation', name: 'Send Confirmation' },
-        { slug: 'send_appointment_reminder', name: 'Send Reminder' },
-      ],
-    },
-    {
-      name: 'CRM',
-      tools: [
-        { slug: 'create_lead', name: 'Create Lead' },
-        { slug: 'send_email_campaign', name: 'Send Email Campaign' },
-        { slug: 'update_contact', name: 'Update Contact' },
-      ],
-    },
-    {
-      name: 'E-commerce',
-      tools: [
-        { slug: 'get_abandoned_carts', name: 'Get Abandoned Carts' },
-        { slug: 'send_cart_recovery_email', name: 'Send Recovery Email' },
-        { slug: 'check_inventory', name: 'Check Inventory' },
-      ],
-    },
-    {
-      name: 'Analytics',
-      tools: [
-        { slug: 'generate_traffic_report', name: 'Traffic Report' },
-        { slug: 'check_seo_rankings', name: 'SEO Rankings' },
-        { slug: 'generate_performance_digest', name: 'Performance Digest' },
-      ],
-    },
-    {
-      name: 'Social Media',
-      tools: [
-        { slug: 'get_content_calendar', name: 'Get Content Calendar' },
-        { slug: 'schedule_social_posts', name: 'Schedule Posts' },
-        { slug: 'publish_to_social', name: 'Publish to Social' },
-      ],
-    },
-    {
-      name: 'Chat Channels',
-      tools: [
-        { slug: 'broadcast_slack', name: 'Broadcast to Slack' },
-        { slug: 'broadcast_teams', name: 'Broadcast to Teams' },
-        { slug: 'broadcast_telegram', name: 'Broadcast to Telegram' },
-      ],
-    },
-  ];
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isFetching, error, refetch } = useSaTools(search, '', page);
+
+  // Accumulate loaded pages so "Load more" extends the palette instead of
+  // replacing it.
+  const [groups, setGroups] = useState<ToolGroupAccumulator[]>([]);
+
+  useEffect(() => {
+    setPage(1);
+    setGroups([]);
+  }, [search]);
+
+  useEffect(() => {
+    if (!data?.tools?.length) return;
+    setGroups((prev) => {
+      const next = accumulateToolGroups(data.tools, page === 1 ? [] : prev);
+      // Avoid churn when nothing changed (e.g. refetch of the same page).
+      if (JSON.stringify(next) === JSON.stringify(prev)) return prev;
+      return next;
+    });
+  }, [data, page]);
+
+  const hasMore = Boolean(data?.has_more);
+  const shownCount = useMemo(
+    () => groups.reduce((sum, g) => sum + g.tools.length, 0),
+    [groups]
+  );
 
   const onDragStart = (event: React.DragEvent, tool: { slug: string; name: string }, toolkitName: string) => {
     event.dataTransfer.setData(
@@ -354,23 +341,85 @@ function ToolPaletteContent() {
     event.dataTransfer.effectAllowed = 'move';
   };
 
+  if (isLoading) {
+    return (
+      <div className="p-4 space-y-2">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="skeleton h-8 rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-xs text-red-600 mb-3">
+          { __('Could not load the tool catalogue.', 'schedule-anything-spa') }
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+        >
+          { __('Retry', 'schedule-anything-spa') }
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-2 space-y-3">
-      {toolkits.map((tk) => (
-        <div key={tk.name}>
-          <h4 className="text-xs font-semibold text-gray-400 uppercase px-2 mb-1">{tk.name}</h4>
-          {tk.tools.map((tool) => (
-            <div
-              key={tool.slug}
-              draggable
-              onDragStart={(e) => onDragStart(e, tool, tk.name)}
-              className="px-3 py-2 text-xs text-gray-700 rounded-lg cursor-grab hover:bg-blue-50 hover:text-blue-700 transition-colors border border-transparent hover:border-blue-200"
-            >
-              {tool.name}
+    <div className="flex flex-col h-full">
+      <div className="p-2">
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={ __('Search tools…', 'schedule-anything-spa') }
+          aria-label={ __('Search tools', 'schedule-anything-spa') }
+          className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-2 space-y-3">
+        {groups.length === 0 && !isFetching ? (
+          <p className="text-xs text-gray-400 text-center py-4">
+            { __('No tools found.', 'schedule-anything-spa') }
+          </p>
+        ) : (
+          groups.map((tk) => (
+            <div key={tk.group}>
+              <h4 className="text-xs font-semibold text-gray-400 uppercase px-2 mb-1">
+                {tk.label}
+              </h4>
+              {tk.tools.map((tool) => (
+                <div
+                  key={tool.slug}
+                  draggable
+                  onDragStart={(e) => onDragStart(e, tool, tk.label)}
+                  title={tool.description}
+                  className="px-3 py-2 text-xs text-gray-700 rounded-lg cursor-grab hover:bg-blue-50 hover:text-blue-700 transition-colors border border-transparent hover:border-blue-200"
+                >
+                  {toolDisplayName(tool)}
+                </div>
+              ))}
             </div>
-          ))}
+          ))
+        )}
+      </div>
+
+      {hasMore && (
+        <div className="p-2 border-t border-gray-100">
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={isFetching}
+            className="w-full px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {isFetching
+              ? __('Loading…', 'schedule-anything-spa')
+              : __('Load more', 'schedule-anything-spa') + ` (${shownCount} / ${data?.total})`}
+          </button>
         </div>
-      ))}
+      )}
     </div>
   );
 }

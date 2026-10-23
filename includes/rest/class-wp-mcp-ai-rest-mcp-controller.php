@@ -294,6 +294,84 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			'/assistants/(?P<id>\d+)',
 			array(
 				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check_assistant_get' ),
+					'callback'            => array( $this, 'handle_assistant_get' ),
+					'args'                => array(
+						'id' => array(
+							'description'       => __( 'Unique identifier for the assistant.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => true,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'permission_callback' => array( $this, 'permissions_check_assistant_update' ),
+					'callback'            => array( $this, 'handle_assistant_update' ),
+					'args'                => array(
+						'id'            => array(
+							'description'       => __( 'Unique identifier for the assistant.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => true,
+							'sanitize_callback' => 'absint',
+						),
+						'title'         => array(
+							'description'       => __( 'The title for the assistant.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'description'   => array(
+							'description'       => __( 'The description for the assistant.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'wp_kses_post',
+						),
+						'provider'      => array(
+							'description'       => __( 'AI provider.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_key',
+						),
+						'model'         => array(
+							'description'       => __( 'Model identifier.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'temperature'   => array(
+							'description' => __( 'Temperature setting (0.0 to 2.0).', 'mcp-ai-wpoos' ),
+							'type'        => 'number',
+							'required'    => false,
+							'minimum'     => 0.0,
+							'maximum'     => 2.0,
+						),
+						'system_prompt' => array(
+							'description'       => __( 'System prompt for the assistant.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'wp_kses_post',
+						),
+						'tools'         => array(
+							'description' => __( 'Array of tool slugs to enable for this assistant.', 'mcp-ai-wpoos' ),
+							'type'        => 'array',
+							'required'    => false,
+							'items'       => array(
+								'type' => 'string',
+							),
+						),
+						'status'        => array(
+							'description'       => __( 'Post status (publish, draft, private).', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'enum'              => array( 'publish', 'draft', 'private' ),
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'permission_callback' => array( $this, 'permissions_check_assistant_delete' ),
 					'callback'            => array( $this, 'handle_assistant_delete' ),
@@ -472,6 +550,86 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Fallback: Require admin capabilities.
 		return $this->permissions_check_admin( $request );
+	}
+
+	/**
+	 * Permission check for fetching a single assistant.
+	 *
+	 * Requires admin capabilities (manage_options). Falls back to base class
+	 * admin permission check if main controller is unavailable.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
+	 */
+	public function permissions_check_assistant_get( WP_REST_Request $request ) {
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check_assistant_get' ) ) {
+			return $this->main_controller->permissions_check_assistant_get( $request );
+		}
+
+		// Fallback: Require admin capabilities.
+		return $this->permissions_check_admin( $request );
+	}
+
+	/**
+	 * Permission check for updating an assistant.
+	 *
+	 * Requires admin capabilities (manage_options). Falls back to base class
+	 * admin permission check if main controller is unavailable.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return bool|WP_Error True if authorized, WP_Error otherwise.
+	 */
+	public function permissions_check_assistant_update( WP_REST_Request $request ) {
+		// Try main controller first for full functionality.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check_assistant_update' ) ) {
+			return $this->main_controller->permissions_check_assistant_update( $request );
+		}
+
+		// Fallback: Require admin capabilities.
+		return $this->permissions_check_admin( $request );
+	}
+
+	/**
+	 * Handle fetching a single assistant.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_assistant_get( WP_REST_Request $request ) {
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_assistant_get' ) ) {
+			return $this->main_controller->handle_assistant_get( $request );
+		}
+
+		// Self-contained fallback: the full record needs the directory
+		// summary builder, which lives on the main controller.
+		return $this->error(
+			'wp_mcp_ai_assistant_get_unavailable',
+			__( 'Single-assistant retrieval is unavailable in this context.', 'mcp-ai-wpoos' ),
+			501
+		);
+	}
+
+	/**
+	 * Handle updating an assistant.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_assistant_update( WP_REST_Request $request ) {
+		// Delegate to main controller if available.
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_assistant_update' ) ) {
+			return $this->main_controller->handle_assistant_update( $request );
+		}
+
+		// Self-contained fallback: updates mutate the assistant CPT through
+		// the main controller's meta constants and summary builder.
+		return $this->error(
+			'wp_mcp_ai_assistant_update_unavailable',
+			__( 'Assistant updates are unavailable in this context.', 'mcp-ai-wpoos' ),
+			501
+		);
 	}
 
 	/**

@@ -94,6 +94,19 @@ class BridgeTest extends TestCase {
 	}
 
 	/** @test */
+	public function registerSelfDeclaresTheMemoryGraphBridgeSeams(): void {
+		Bridge::register();
+
+		$this->assertSame( 10, has_filter( 'wp_mcp_ai_memory_provenance_graph_bridge', array( Bridge::class, 'onGraphBridgeClass' ) ) );
+		$this->assertSame( 10, has_filter( 'wp_mcp_ai_memory_provenance_graph_db', array( Bridge::class, 'onGraphDbClass' ) ) );
+		$this->assertSame( 10, has_filter( 'wp_mcp_ai_memory_rrf_graph_bridge', array( Bridge::class, 'onGraphBridgeClass' ) ) );
+
+		$this->assertSame( Bridge::class, apply_filters( 'wp_mcp_ai_memory_provenance_graph_bridge', 'NV_oOS_Graphify_Memory_Bridge' ) );
+		$this->assertSame( Db::class, apply_filters( 'wp_mcp_ai_memory_provenance_graph_db', 'NV_oOS_Graphify_DB' ) );
+		$this->assertSame( Bridge::class, apply_filters( 'wp_mcp_ai_memory_rrf_graph_bridge', 'NV_oOS_Graphify_Memory_Bridge' ) );
+	}
+
+	/** @test */
 	public function tablesInstalledReportsTrueWhenProbeMatches(): void {
 		$this->mockWpdb->expects( $this->once() )
 			->method( 'get_var' )

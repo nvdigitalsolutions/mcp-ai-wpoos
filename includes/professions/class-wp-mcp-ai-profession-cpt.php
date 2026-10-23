@@ -235,7 +235,7 @@ class WP_MCP_AI_Profession_CPT {
 			'menu_position'      => null,
 			'menu_icon'          => 'dashicons-businessperson',
 			'supports'           => array( 'title', 'editor', 'thumbnail' ),
-			'show_in_rest'       => false,
+			'show_in_rest'       => true, // Proposal 084 W12: the console Records feature consumes professions via wp/v2.
 		);
 
 		register_post_type( self::POST_TYPE, $args );
@@ -255,7 +255,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => 'sanitize_key',
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 			)
 		);
 
@@ -269,7 +269,11 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_array_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => array(
+					'schema' => array(
+						'items' => array( 'type' => 'string' ),
+					),
+				),
 			)
 		);
 
@@ -283,7 +287,11 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_array_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => array(
+					'schema' => array(
+						'items' => array( 'type' => 'string' ),
+					),
+				),
 			)
 		);
 
@@ -297,7 +305,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => 'wp_kses_post',
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 			)
 		);
 
@@ -311,7 +319,11 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_array_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => array(
+					'schema' => array(
+						'items' => array( 'type' => 'string' ),
+					),
+				),
 			)
 		);
 
@@ -325,7 +337,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => 'wp_kses_post',
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 			)
 		);
 
@@ -339,7 +351,11 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_memory_files' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => array(
+					'schema' => array(
+						'items' => array( 'type' => 'string' ),
+					),
+				),
 			)
 		);
 
@@ -353,7 +369,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_vector_store_id' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 			)
 		);
 
@@ -367,7 +383,11 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_array_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => array(
+					'schema' => array(
+						'items' => array( 'type' => 'string' ),
+					),
+				),
 			)
 		);
 
@@ -381,7 +401,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( __CLASS__, 'sanitize_associated_assistant_meta' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 			)
 		);
 
@@ -395,7 +415,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => 'sanitize_key',
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 				'default'           => '',
 			)
 		);
@@ -410,7 +430,11 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( __CLASS__, 'sanitize_preferred_datasets' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => array(
+					'schema' => array(
+						'items' => array( 'type' => 'string' ),
+					),
+				),
 				'default'           => array(),
 			)
 		);
@@ -425,7 +449,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => 'sanitize_key',
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 				'default'           => 'generalist',
 			)
 		);
@@ -440,7 +464,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 				'default'           => '[]',
 			)
 		);
@@ -455,7 +479,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 				'default'           => '{}',
 			)
 		);
@@ -470,7 +494,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 				'default'           => '{}',
 			)
 		);
@@ -485,7 +509,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 				'default'           => '{}',
 			)
 		);
@@ -500,7 +524,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 				'default'           => '{}',
 			)
 		);
@@ -515,7 +539,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 				'default'           => '[]',
 			)
 		);
@@ -530,7 +554,7 @@ class WP_MCP_AI_Profession_CPT {
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
 				'auth_callback'     => '__return_true',
-				'show_in_rest'      => false,
+				'show_in_rest'      => true,
 				'default'           => '{}',
 			)
 		);
