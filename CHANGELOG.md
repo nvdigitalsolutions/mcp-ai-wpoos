@@ -1,5 +1,50 @@
 # oOS – Changelog
 
+## [1.2.10] - 2026-10-23
+
+### Added — Console migration Phase 5b–5d + console polish
+
+- **Cost + analytics REST surfaces registered (Phase 5b, #7180)** — `includes/bootstrap/loader.php` now registers the orphaned `WP_MCP_AI_REST_Cost_Manager` + `WP_MCP_AI_REST_Analytics_Manager` controllers (they existed but never booted), and the console's real Analytics page (cost trend, provider donut, top tools/users) consumes them — both `manage_options`-gated and wrapping the existing `WP_MCP_AI_Cost_Tracking_Service` / `WP_MCP_AI_Analytics_Engine` layers, no logic forks.
+- **Unified Blueprints catalogue (Phase 5c, #7180)** — the console Blueprints page bridges behind `GET /mcp-ai-pro/v1/blueprints` with a searchable install catalogue.
+- **Command Center absorbed into the Dashboard (Phase 5d, #7180)** — the Pro Agent Command Center overview renders as a fail-soft KPI + activity section on the console Dashboard.
+- **Console surface polish (#7180)** — a semantic `DataTable` component (sortable headers, master–detail rows, sticky header, scroll containment, zebra striping) replaces the div-list tools tables; standardized primary/danger buttons; a grouped collapsible sidebar (`ConsoleSidebar` + `nav-features`: Workspace / Automation / Command Centers / Insights / Admin) with the W3C disclosure pattern, persisted group state, and default-Workspace-expanded.
+
+### Fixed — console crashes, blueprints 500, chat dock UX
+
+- **Blueprints 500 (#7184)** — the `admin_blueprints` module gated the unified blueprints page class behind `context => 'admin'`, so its static catalogue seams fataled with "Class not found" on front-end REST requests; the class now loads unconditionally with only `init()` behind `is_admin()` (pinned by `tests/rest-api/test-rest-blueprints.php`, 11 tests / 103 assertions).
+- **React error #310 on four console pages (#7184)** — Schedule Manager, Workflows, Pro Ops, and Orchestration Stats early-returned their loading/error states before their `useMemo` table builders (hook count changed when data arrived); all hooks now run before the early returns, plus a `SpeechButton` conditional-hook fix. Permanent guard: `react-hooks/rules-of-hooks` joined the spa-v2 ESLint gate — 21 latent violations across 4 files found and fixed.
+- **Settings page (#7184)** — fields group into section cards per tab (the schema's previously unused `section`/`section_id`), cross-tab settings search with section breadcrumbs, a sticky save footer, dirty-field indicators, and `aria-describedby` hint wiring.
+- **Chat dock (#7184)** — docked chat starts with the conversation list collapsed (full-page `/chat` starts open, boot-synced in `main.tsx` to avoid a first-frame flash); the status-bar ☰ toggle is visible again and drives the same state in both modes; a light/dark theme switch joins the dock header; the docked composer stacks (input row, then toolbar + send actions) so the textarea is no longer squashed to 31px; drag-resize sizes the textarea itself; the status bar clears the narrow-screen dock overlay.
+
+### Fixed — SPA status-bar storage meter
+
+- **Server transcript storage bytes (#7185)** — the Pro SPA status-bar "Sessions: X KB" meter measured same-origin `localStorage` keys that can never exist for the server-side transcript store (always `0 KB`). `WP_MCP_AI_Transcript_Repository::get_storage_bytes()` now aggregates per-user `request_payload`/`response_payload` lengths (same `user_id` → `cct_author_id` fallback as `get_sessions()`; 0 when the CCT is unavailable), `GET /mcp-ai/v1/chat-transcripts` includes `storage_bytes` in its envelope, and the StatusBar prefers the server figure, falling back to the localStorage meter only when the server figure is unknown (older installs). New 3-test suite + SPA parsing/fallback tests.
+
+### Fixed — dependency advisories (2026-10-23 sweep)
+
+- **markdown-it → 14.3.3 (#7186)** — the existing bounded override `>=14.3.1 <15` → `>=14.3.3 <15` across root / `addons/pro/assets/spa` / `addons/saas-controller` resolves the ReDoS + O(n²) advisories (GHSA-vfgh-jcmw-g37q, GHSA-gfr2-rv44-r23c) — 6 alerts.
+- **`@modelcontextprotocol/sdk` exact pin 1.31.0 → 1.32.0 (#7186)** — `addons/mcp-wordpress-gateway` (in-major bump; `McpServer` + `StreamableHTTPServerTransport` exports verified, gateway suite 22/22) — 8 alerts (GHSA-46jr-4wx8-v453, GHSA-22jm-h49p-29qw, GHSA-rvq5-wwqv-78pq, GHSA-6prh-2h8m-c8cw).
+- **launch-editor floor → ≥2.14.2 (#7186)** — root + saas-controller floors and a new override in `addons/pro/assets/spa` — 2 alerts. 14 of 16 open alerts closed; the remaining 2 (vite 1380/1384) already fixed on alpha-working (#7167/#7175) and clear on the next main sync. `examples/nvoos-dictate` + `nvoos-vite-demo` still pin vite 5.4.21 (inside the advisory window but out of Dependabot alert scope — noted, left untouched).
+
+### Build
+
+- **Full tracked-bundle rebuild (#7182)** — lockfile-only advisory bumps (#7175/#7106) had left tracked bundles silently stale for 13 days (e.g. the three `generate-*` worker bundles still embedded pre-bump dependency internals). Rebuilt the full artifact tree (16 files): worker bundles, chat bundles, SPA dists, 2 of 4 TMA entries, the saas-controller drift manifest; spa-v2 + complete-velocity rebuilt byte-identical same-day. No source or vendor changes.
+- **Standalone SPA endpoint sync (#7181)** — `examples/nvoos-pro-spa-vite/src/runtime-config.ts` gains the three canonical `ProSpaEndpoints` keys added by the 5b–5d ports (`cost`, `blueprints`, `commandCenter`) and points `analytics` at the core `mcp-ai/v1/analytics` namespace (matching the canonical PHP config) — the Velocity build gate's TS2739 fixed.
+
+### Docs & skills
+
+- **Rebuild discipline codified (#7183)** — the spa-ui skill gains a "Rebuild discipline" subsection (lockfile movement stales tracked bundles — detection signature + the #7182 proof case; vendor is tracked in production state — the #7179 revert → #7180 case and the pre-commit vendor gate; node_modules drift vs lockfile; standalone-addon deps are not hoisted; reverting a bad merge on a shared branch; PR merge discipline), and the dependabot-loop skill gains Step 7 (rebuild tracked JS bundles) with the later steps renumbered.
+- **Cloudways Anti-Bot Protection playbook (#7178)** — the schedule-anything-ops skill gains the Imunify360 WebShield failure class (the console proxy's single egress IP trips the WAF → every proxied `/wp-json` request receives the JS challenge the console can never satisfy; the `pdata`-names-the-target-site + wsidchk signature, the auto-whitelist intermittency trap, the 4-step diagnostic ladder, and the Anti-Bot Protection: OFF fix), cross-referenced from the Complete Console deploy runbook.
+- **SPA storage-meter + test-runner learnings (#7185)** — the spa-rest-contract skill gains bug class 11 ("wrong-store meters") + the `storage_bytes` baseline; the test-suite skill documents the `run-tests-docker.sh` silent `dump-autoload` fallback that produces the pruned classmap, plus the host-side `composer install` + `git restore vendor` recovery.
+
+### Tests
+
+- **Regression pins (#7184/#7185)** — the blueprints REST suite (11 tests), the cost/analytics/command-center REST suites (17 tests), the loading → loaded transitions for the four hook-order pages, the new transcript-storage-bytes suite (3 tests), and the `useTranscripts` storageBytes parsing/fallback cases.
+
+### Versioning
+
+Bumped to **1.2.10** across all version-bearing files (plugin header, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, readme.txt Stable tag). Pro addon: 1.2.10. No addon version moves in-window (Schedule Anything Platform stays 0.1.2). Media Worker: **3.4.0** (unchanged — verified across package.json + both health/status surfaces). Model catalog: **v2026.10.03** (unchanged — zero catalog diff). Tool count: **~355 base + ~1,377 Pro (~1,731 total — unchanged)** — zero registry registrations in-window (#7180's cost/analytics managers are REST controllers and #7185's repository method is a service seam; live registry authoritative). Provider count: **18** chat providers (unchanged). Addon count: **30** (unchanged). Bundled skills: **77** base + **41** Pro (unchanged). Coding-time agent skills: **76** (unchanged — five skills updated in place). Security classes: **12** (unchanged). Stale build ZIPs removed: the 1.2.8 oOS set (30 files — 9 + 2 + 19).
+
 ## [1.2.9] - 2026-10-22
 
 ### Added — NV oOS Complete Console (Proposal 083)
