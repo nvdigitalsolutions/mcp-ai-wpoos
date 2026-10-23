@@ -583,6 +583,41 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	}
 
 	/**
+	 * The effective settings flag that gates a dashboard.
+	 *
+	 * Unknown ids return an empty string — the callers treat them as
+	 * ungated. Medical Vitals falls back to the Health & Wellness toggle
+	 * for BC, mirroring includes/tools/healthcare/init.php.
+	 *
+	 * @since 2.4.2
+	 * @param string $id Dashboard key.
+	 * @return string Settings flag key, or '' when ungated.
+	 */
+	public static function effective_flag_key( $id ) {
+		$flag_keys = self::dashboard_flag_keys();
+		if ( ! isset( $flag_keys[ $id ] ) ) {
+			return '';
+		}
+
+		$flag_key = $flag_keys[ $id ];
+
+		// Medical Vitals mirrors includes/tools/healthcare/init.php: the
+		// dedicated toggle wins when present, otherwise the dashboard
+		// follows the Health & Wellness toggle for BC.
+		if ( 'vitals' === $id ) {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( ! is_array( $settings ) ) {
+				$settings = array();
+			}
+			if ( ! array_key_exists( 'enable_medical_vitals', $settings ) ) {
+				$flag_key = 'enable_health_wellness_management';
+			}
+		}
+
+		return $flag_key;
+	}
+
+	/**
 	 * Whether a dashboard's toolkit is enabled for this site.
 	 *
 	 * Unknown ids are treated as available — the callers perform their own
@@ -594,8 +629,8 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	 * @return bool
 	 */
 	public static function is_dashboard_available( $id ) {
-		$flag_keys = self::dashboard_flag_keys();
-		if ( ! isset( $flag_keys[ $id ] ) ) {
+		$flag_key = self::effective_flag_key( $id );
+		if ( '' === $flag_key ) {
 			return true;
 		}
 
@@ -604,21 +639,17 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			$settings = array();
 		}
 
-		$flag_key = $flag_keys[ $id ];
-
-		// Medical Vitals mirrors includes/tools/healthcare/init.php: the
-		// dedicated toggle wins when present, otherwise the dashboard
-		// follows the Health & Wellness toggle for BC.
-		if ( 'vitals' === $id && ! array_key_exists( 'enable_medical_vitals', $settings ) ) {
-			$flag_key = 'enable_health_wellness_management';
-		}
-
 		return ! empty( $settings[ $flag_key ] );
 	}
 
 	/**
 	 * GET /dashboards/schema — dashboard configs with resolved filter
 	 * options (taxonomy terms fetched live).
+	 *
+	 * The envelope also carries a `disabled` map (label/icon/description +
+	 * the settings flag that gates it) for dashboards whose toolkit is off,
+	 * so the console can explain an empty catalogue instead of rendering a
+	 * blank page when every toolkit is disabled (the default state).
 	 *
 	 * @since 2.4.0
 	 * @param WP_REST_Request $request Request object.
@@ -630,11 +661,27 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 		// Only expose dashboards whose toolkit is enabled — the console
 		// renders this catalogue verbatim, so disabled features must not
 		// show up in the app (REST is the enforcement).
-		$dashboards = array_filter(
-			$this->dashboard_catalogue(),
+		$catalogue   = $this->dashboard_catalogue();
+		$dashboards  = array_filter(
+			$catalogue,
 			array( __CLASS__, 'is_dashboard_available' ),
 			ARRAY_FILTER_USE_KEY
 		);
+
+		// Metadata-only entries for the dashboards that were filtered out.
+		// The console renders these as guidance in its empty state.
+		$disabled = array();
+		foreach ( $catalogue as $id => $config ) {
+			if ( isset( $dashboards[ $id ] ) ) {
+				continue;
+			}
+			$disabled[ $id ] = array(
+				'label'        => $config['label'],
+				'description'  => $config['description'],
+				'icon'         => $config['icon'],
+				'toolkit_flag' => self::effective_flag_key( $id ),
+			);
+		}
 
 		foreach ( $dashboards as $id => $config ) {
 			foreach ( $config['filters'] as $index => $filter ) {
@@ -674,7 +721,12 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			$dashboards[ $id ]['id'] = $id;
 		}
 
-		return rest_ensure_response( array( 'dashboards' => $dashboards ) );
+		return rest_ensure_response(
+			array(
+				'dashboards' => $dashboards,
+				'disabled'   => $disabled,
+			)
+		);
 	}
 
 	/**

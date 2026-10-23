@@ -61,9 +61,28 @@ export interface DashboardConfig {
 	lists?: DashboardList[];
 }
 
+/**
+ * A dashboard whose toolkit is disabled on the site — metadata only, so the
+ * console can explain an empty catalogue instead of rendering a blank page.
+ */
+export interface DisabledDashboard {
+	label: string;
+	description: string;
+	icon: string;
+	/** wp_mcp_ai_settings flag that would enable the dashboard's toolkit. */
+	toolkit_flag: string;
+}
+
 export interface DashboardsSchemaResponse {
 	dashboards?: Record< string, DashboardConfig >;
+	disabled?: Record< string, DisabledDashboard >;
 	[ k: string ]: unknown;
+}
+
+/** The parsed catalogue: enabled dashboards + disabled-toolkit metadata. */
+export interface DashboardsCatalogue {
+	dashboards: DashboardConfig[];
+	disabled: DisabledDashboard[];
 }
 
 export interface DashboardLoanRow {
@@ -109,16 +128,21 @@ export class DashboardsClient {
 		this.nonce = opts.nonce;
 	}
 
-	/** Fetch the dashboard catalogue. */
-	async schema( signal?: AbortSignal ): Promise< DashboardConfig[] > {
+	/**
+	 * Fetch the dashboard catalogue: enabled dashboards plus the disabled-
+	 * toolkit metadata that backs the console's empty-state guidance.
+	 */
+	async catalogue( signal?: AbortSignal ): Promise< DashboardsCatalogue > {
 		const data = await this.request< DashboardsSchemaResponse >(
 			'GET',
 			this.schemaBase + '/schema',
 			undefined,
 			signal
 		);
-		const map = data?.dashboards ?? {};
-		return Object.values( map );
+		return {
+			dashboards: Object.values( data?.dashboards ?? {} ),
+			disabled: Object.values( data?.disabled ?? {} ),
+		};
 	}
 
 	/** Fetch filtered data for one dashboard. */
