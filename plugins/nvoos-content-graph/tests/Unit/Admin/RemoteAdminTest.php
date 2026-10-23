@@ -83,8 +83,8 @@ class RemoteAdminTest extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'nvoos_content_graph_test_remote_source' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* ends the request via wp_die().
 		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected: wp_send_json_* ends the request via wp_die().
 		}
 
 		$raw = (string) $this->_last_response;
