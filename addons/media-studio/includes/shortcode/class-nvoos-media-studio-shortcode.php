@@ -10,11 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * Shortcode handler.
- *
- * @since 0.1.0
- */
+if ( ! class_exists( 'NV_oOS_Media_Studio_Shortcode' ) ) {
+	/**
+	 * Shortcode handler.
+	 *
+	 * @since 0.1.0
+	 */
 class NV_oOS_Media_Studio_Shortcode {
 
 	const SHORTCODE = 'nvoos_media_studio_app';
@@ -123,4 +124,5 @@ class NV_oOS_Media_Studio_Shortcode {
 		wp_enqueue_style( 'nvoos-media-studio' );
 		wp_enqueue_script( 'nvoos-media-studio' );
 	}
+}
 }

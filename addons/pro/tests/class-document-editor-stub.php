@@ -16,6 +16,16 @@
  */
 
 if ( ! class_exists( 'NV_oOS_Document_Editor_Shortcode' ) ) {
+	// When the real addon ships in the tree (monorepo full-suite runs), always
+	// load the real class so later document-editor suites never see an empty
+	// stub that would collide with the real unguarded declaration.
+	$real_class_file = dirname( __DIR__, 2 ) . '/document-editor/includes/shortcode/class-nvoos-document-editor-shortcode.php';
+	if ( file_exists( $real_class_file ) ) {
+		require_once $real_class_file;
+	}
+}
+
+if ( ! class_exists( 'NV_oOS_Document_Editor_Shortcode' ) ) {
 	/**
 	 * Stub Document Editor shortcode class (the feature flag gate).
 	 */

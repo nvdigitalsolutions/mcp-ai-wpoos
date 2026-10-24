@@ -10,11 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * Shortcode handler.
- *
- * @since 0.1.0
- */
+if ( ! class_exists( 'NV_oOS_Document_Editor_Shortcode' ) ) {
+	/**
+	 * Shortcode handler.
+	 *
+	 * @since 0.1.0
+	 */
 class NV_oOS_Document_Editor_Shortcode {
 
 	const SHORTCODE = 'nvoos_document_editor_app';
@@ -125,4 +126,5 @@ class NV_oOS_Document_Editor_Shortcode {
 		wp_enqueue_style( 'nvoos-document-editor' );
 		wp_enqueue_script( 'nvoos-document-editor' );
 	}
+}
 }
