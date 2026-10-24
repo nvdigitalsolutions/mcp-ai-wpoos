@@ -18,6 +18,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 
 import { DocsPage } from '../DocsPage';
+import { useUIStore } from '../../../stores/uiStore';
 
 // The vendored bundle is a self-contained 660KB IIFE — mock the module so
 // jsdom never executes it, and expose the island API the bundle assigns to
@@ -80,6 +81,8 @@ beforeEach( () => {
 		mountDocsHub: mountMock,
 	};
 	delete ( window as unknown as Record< string, unknown > ).NVOOS_DOCS_HUB;
+	// jsdom has no matchMedia, so 'auto' resolves to 'light' deterministically.
+	useUIStore.getState().setTheme( 'auto' );
 } );
 
 afterEach( () => {
@@ -113,7 +116,7 @@ describe( 'DocsPage', () => {
 		expect( injectedHub() ).toEqual( {
 			apiUrl: DOCS_BASE,
 			nonce: 'test-nonce',
-			config: { router: 'memory', defer_mount: true },
+			config: { router: 'memory', defer_mount: true, theme: 'light' },
 		} );
 
 		expect( mountMock ).toHaveBeenCalledTimes( 1 );
@@ -121,13 +124,9 @@ describe( 'DocsPage', () => {
 		expect( unmountMock ).not.toHaveBeenCalled();
 	} );
 
-	it( 'forwards an explicit light/dark theme from the runtime config', () => {
+	it( 'forwards the host theme from the UI store (dark override)', () => {
 		setRuntime( DOCS_BASE );
-		( window as unknown as Record< string, unknown > ).NVOOS_PRO_SPA = {
-			...( window as unknown as Record< string, unknown > )
-				.NVOOS_PRO_SPA as object,
-			config: { assistantId: 1, theme: 'dark', mode: 'admin' },
-		};
+		useUIStore.getState().setTheme( 'dark' );
 		render( <DocsPage /> );
 
 		expect( injectedHub().config ).toEqual( {

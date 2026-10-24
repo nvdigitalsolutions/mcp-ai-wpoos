@@ -29,11 +29,15 @@
 }
 
 /* ── Host design-token bridge ───────────────────────────────────────────
-   Light mode: the island adopts the host's accent, text, borders, surfaces
-   and font. Specificity (0-2-0) outranks the island's own root tokens
-   (0-1-0); the dark counterpart below (0-3-0) outranks this so the island's
-   dark mode stays exactly as the upstream curates it. */
-.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root {
+   The island follows the host's LIVE theme (DocsPage forwards the resolved
+   light/dark from the UI store). Light hosts: the island adopts the host's
+   accent, text, borders, surfaces and font — scoped to a light host so the
+   host's dark tokens can never leak into the island's light mode.
+   Dark hosts: the island's dark mode follows the host's neutral dark tokens
+   (the console dark palette), not the island's blue-slate. An island that
+   was manually toggled to dark while the HOST stays light keeps the island's
+   own curated dark palette (the independent counterpart below). */
+.nvoos-pro-spa-layout:not( [data-theme='dark'] ) .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root {
 	--dh-accent-primary: var( --nds-color-accent, var( --nvoos-primary, #2563eb ) );
 	--dh-text-link: var( --nds-color-accent, var( --nvoos-primary, #2563eb ) );
 	--dh-text-link-hover: var( --nds-color-accent, var( --nvoos-primary-hover, #1d4ed8 ) );
@@ -57,9 +61,8 @@
 	--dh-border-radius: var( --nds-radius-md, 6px );
 }
 
-/* The island's own dark palette, restored verbatim — it wins over the light
-   bridge above and never follows host tokens (the island toggles dark mode
-   independently of the host). */
+/* Island manually toggled to dark while the host is light: the island's own
+   dark palette, restored verbatim — it never follows host tokens. */
 .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root[data-theme='dark'],
 .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root.dh-dark {
 	--dh-accent-primary: #2563eb;
@@ -72,6 +75,48 @@
 	--dh-bg-primary: #0f172a;
 	--dh-bg-secondary: #1e293b;
 	--dh-bg-sidebar: #1a2332;
+}
+
+/* Host in dark mode: the island's dark mode adopts the host's neutral dark
+   tokens (0-4-0 outranks the verbatim counterpart above). */
+.nvoos-pro-spa-layout[data-theme='dark'] .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root[data-theme='dark'],
+.nvoos-pro-spa-layout[data-theme='dark'] .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root.dh-dark {
+	--dh-accent-primary: var( --nvoos-primary, #2563eb );
+	--dh-text-link: var( --nvoos-primary, #60a5fa );
+	--dh-text-link-hover: var( --nvoos-primary-hover, #93c5fd );
+	--dh-text-primary: var( --nvoos-text, #e2e8f0 );
+	--dh-text-secondary: var( --nvoos-text-secondary, #cbd5e1 );
+	--dh-text-muted: var( --nvoos-text-secondary, #94a3b8 );
+	--dh-border-default: var( --nvoos-border, #334155 );
+	--dh-border-subtle: var( --nvoos-border, #1e293b );
+	--dh-bg-primary: var( --nvoos-bg-secondary, #0f172a );
+	--dh-bg-secondary: var( --nvoos-bg, #1e293b );
+	--dh-bg-sidebar: var( --nvoos-bg, #1a2332 );
+	--dh-bg-code: var( --nvoos-bg, #0d1117 );
+	--dh-active-sidebar-bg: var( --nvoos-selected-bg, #1e3a5f );
+	--dh-active-sidebar-text: var( --nvoos-text, #93c5fd );
+}
+
+/* 'auto' hosts flip their tokens via prefers-color-scheme while the
+   attribute stays 'auto' — mirror the same mapping for that case. */
+@media ( prefers-color-scheme: dark ) {
+	.nvoos-pro-spa-layout[data-theme='auto'] .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root[data-theme='dark'],
+	.nvoos-pro-spa-layout[data-theme='auto'] .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root.dh-dark {
+		--dh-accent-primary: var( --nvoos-primary, #2563eb );
+		--dh-text-link: var( --nvoos-primary, #60a5fa );
+		--dh-text-link-hover: var( --nvoos-primary-hover, #93c5fd );
+		--dh-text-primary: var( --nvoos-text, #e2e8f0 );
+		--dh-text-secondary: var( --nvoos-text-secondary, #cbd5e1 );
+		--dh-text-muted: var( --nvoos-text-secondary, #94a3b8 );
+		--dh-border-default: var( --nvoos-border, #334155 );
+		--dh-border-subtle: var( --nvoos-border, #1e293b );
+		--dh-bg-primary: var( --nvoos-bg-secondary, #0f172a );
+		--dh-bg-secondary: var( --nvoos-bg, #1e293b );
+		--dh-bg-sidebar: var( --nvoos-bg, #1a2332 );
+		--dh-bg-code: var( --nvoos-bg, #0d1117 );
+		--dh-active-sidebar-bg: var( --nvoos-selected-bg, #1e3a5f );
+		--dh-active-sidebar-text: var( --nvoos-text, #93c5fd );
+	}
 }
 
 /* The island app is a three-pane grid (header / sidebar / main / TOC) that

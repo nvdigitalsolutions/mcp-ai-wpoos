@@ -473,28 +473,36 @@ Industry pattern for embedded surfaces: **"map only design tokens"** — the
 host rebrands the island by remapping the island's own semantic variables at
 the boundary; it never restyles internals and never ports its design system
 in (the island stays standalone + byte-identical). The docs-hub bridge lives
-in `spa-v2/src/features/docs-hub/docs-hub.css`:
+in `spa-v2/src/features/docs-hub/docs-hub.css`, with **theme forwarding** in
+DocsPage: the island theme comes from the UI store (resolved 'auto' →
+`matchMedia`), NOT the static runtime config, so the island follows the
+console's live light/dark toggle.
 
 ```css
-/* Light: NDS addon (when active) → SPA tokens → island default */
-.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root {
+/* Light bridge — SCOPED to a light host. The host's tokens flip with
+   data-theme, so an unscoped light bridge lets dark-host tokens leak into
+   the island's light mode (the "palettes look swapped" bug). */
+.nvoos-pro-spa-layout:not([data-theme='dark']) .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root {
 	--dh-accent-primary: var(--nds-color-accent, var(--nvoos-primary, #2563eb));
-	/* ... text, borders, surfaces, font-family, radius ... */
+	/* ... */
 }
-/* Dark: the island's own palette restored VERBATIM (0-3-0 beats the light
-   bridge) — the island toggles dark mode independently of the host. */
-.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root[data-theme='dark'],
-.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root.dh-dark { /* ... */ }
+/* Independent dark — island manually toggled dark while the HOST is light:
+   the island's own palette, restored verbatim. */
+.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root[data-theme='dark'], ... { ... }
+/* Host-dark — island dark mode follows the host's neutral dark tokens
+   (0-4-0 beats the verbatim counterpart). Plus a @media (prefers-color-scheme:
+   dark) twin for [data-theme='auto'] hosts (the attr stays 'auto'). */
+.nvoos-pro-spa-layout[data-theme='dark'] .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root[data-theme='dark'], ... { ... }
 ```
 
 Cascade rules learned: the bridge must be declared ON `.nvoos-docs-hub-root`
-(child-root declarations always beat container-level inheritance), the light
-bridge needs 0-2-0 (island light tokens are 0-1-0), and the dark counterpart
-needs 0-3-0 (island dark tokens are 0-2-0 — a tie with the bridge, and the
-wrapper CSS imports AFTER the upstream file, so a tie would clobber the
-island's dark mode). Never let dark mode chase host tokens. Velocity-hosted
-apps never resolve `--nds-*` (the design-system addon generates them on WP
-pages only) — the fallback chain handles that by design.
+(child-root declarations always beat container-level inheritance); the light
+bridge needs to outrank the island's light tokens (0-1-0); the verbatim dark
+counterpart must outrank the light bridge (same specificity, later file wins
+— the wrapper CSS imports AFTER the upstream file); the host-dark mapping
+needs one more level (0-4-0). Velocity-hosted apps never resolve `--nds-*`
+(the design-system addon generates them on WP pages only) — the fallback
+chain handles that by design.
 
 ### Endpoints + mirror sync
 

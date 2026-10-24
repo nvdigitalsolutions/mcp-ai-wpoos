@@ -30,6 +30,7 @@
 import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
 import { __ } from '@wordpress/i18n';
 import { readProSpaConfig } from '../../api/config';
+import { useUIStore } from '../../stores/uiStore';
 import './upstream/docs-hub';
 import './upstream/docs-hub.css';
 import './docs-hub.css';
@@ -50,7 +51,21 @@ export function DocsPage(): JSX.Element {
 		.replace( /\/+$/, '' );
 	const okfDocsBase = okfRoot ? `${ okfRoot }/docs` : '';
 	const nonce = runtime?.nonce ?? '';
-	const theme = runtime?.config?.theme;
+	// Follow the host's LIVE theme (the UI store drives data-theme on the
+	// shell) instead of the static runtime config, so the island matches the
+	// console's light/dark toggle. 'auto' resolves to the OS preference — the
+	// island's own default when no theme is forwarded.
+	const uiTheme = useUIStore( ( s ) => s.theme );
+	const islandTheme = useMemo( () => {
+		if ( uiTheme === 'light' || uiTheme === 'dark' ) {
+			return uiTheme;
+		}
+		return typeof window !== 'undefined' &&
+			typeof window.matchMedia === 'function' &&
+			window.matchMedia( '(prefers-color-scheme: dark)' ).matches
+			? 'dark'
+			: 'light';
+	}, [ uiTheme ] );
 
 	// Auto-select the only available source; prefer the Docs Hub plugin when
 	// both are present (the toggle lets the user switch).
@@ -78,7 +93,7 @@ export function DocsPage(): JSX.Element {
 			config: {
 				router: 'memory',
 				defer_mount: true,
-				...( theme === 'light' || theme === 'dark' ? { theme } : {} ),
+				theme: islandTheme,
 			},
 		};
 
@@ -104,7 +119,7 @@ export function DocsPage(): JSX.Element {
 				window as unknown as { NVOOS_DOCS_HUB?: unknown }
 			 ).NVOOS_DOCS_HUB;
 		};
-	}, [ apiBase, nonce, theme ] );
+	}, [ apiBase, nonce, islandTheme ] );
 
 	// Neither source is available — same contract as the knowledge-graph page.
 	if ( ! docsBase && ! okfDocsBase ) {
