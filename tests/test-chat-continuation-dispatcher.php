@@ -22,6 +22,13 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 		WP_MCP_AI_Chat_Continuation_Store::reset_for_tests();
 		// Dispatcher is already initialized via chat-continuation-init.php; we
 		// rely on its idempotent init() guarding against duplicate hooks.
+
+		// Detach the globally-registered LLM re-entry subscriber. This suite
+		// asserts the dispatcher's own contract (ready + dispatched hooks and
+		// the injected tool message); letting the real re-entry run would
+		// drive the live router and make the suite depend on provider state
+		// that is outside its scope.
+		remove_action( 'wp_mcp_ai_chat_continuation_ready', array( 'WP_MCP_AI_Chat_Continuation_LLM_Re_Entry', 'on_continuation_ready' ), 10 );
 	}
 
 	public function tearDown(): void {
@@ -31,6 +38,11 @@ class Test_Chat_Continuation_Dispatcher extends WP_UnitTestCase {
 		remove_all_filters( 'wp_mcp_ai_chat_continuation_message' );
 		remove_all_actions( 'wp_mcp_ai_chat_continuation_ready' );
 		remove_all_actions( 'wp_mcp_ai_chat_continuation_dispatched' );
+
+		// Restore the global LLM re-entry wiring detached in setUp so later
+		// suites observe the production hook set.
+		WP_MCP_AI_Chat_Continuation_LLM_Re_Entry::reset_for_tests();
+		WP_MCP_AI_Chat_Continuation_LLM_Re_Entry::init();
 		parent::tearDown();
 	}
 
