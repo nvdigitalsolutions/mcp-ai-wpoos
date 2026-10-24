@@ -28,7 +28,7 @@ import {
   UnauthorizedError,
 } from './runtime-config';
 import { installFetchWrapper } from './fetch-wrapper';
-import { logoutFromWordPress } from './login';
+import { confirmMagicLink, logoutFromWordPress } from './login';
 import { LoginScreen } from './console/LoginScreen';
 
 declare global {
@@ -48,9 +48,17 @@ const ConsoleShell = lazy(() =>
 
 type BootState =
   | { phase: 'loading' }
-  | { phase: 'login'; notice?: string }
+  | { phase: 'login'; notice?: string; error?: string }
   | { phase: 'error'; message: string }
   | { phase: 'ready' };
+
+const MAGIC_LOGIN_HASH = /^#\/magic-login\?token=([A-Za-z0-9]+)/;
+
+/** Pull the one-shot token out of a magic-link URL hash, if present. */
+function extractMagicLoginToken(): string {
+  const match = window.location.hash.match(MAGIC_LOGIN_HASH);
+  return match?.[1] ?? '';
+}
 
 function Console(): JSX.Element {
   const [boot, setBoot] = useState<BootState>({ phase: 'loading' });
@@ -98,8 +106,40 @@ function Console(): JSX.Element {
   }, []);
 
   useEffect(() => {
+    // Magic-link sign-in: the emailed link lands on this origin with the
+    // token in the hash. Confirm it first (the backend starts the WordPress
+    // session — the auth cookie lands on this origin via the proxy); the
+    // regular bootstrap only runs once a session exists or the link failed.
+    const token = extractMagicLoginToken();
+    if (token) {
+      void completeMagicLogin(token);
+      return;
+    }
     void bootstrap();
   }, [bootstrap]);
+
+  /**
+   * Consume a magic-link token from the URL hash.
+   *
+   * Success: the session cookie is set on this origin, so a hard reload
+   * lands on the dashboard with a clean URL and a fresh bootstrap.
+   * Failure (unknown, expired, or used token): drop the hash so a refresh
+   * doesn't retry it, then show the sign-in screen with the backend's
+   * uniform message.
+   */
+  const completeMagicLogin = useCallback(async (token: string): Promise<void> => {
+    const result = await confirmMagicLink(token);
+    if (result.ok) {
+      window.location.replace(window.location.pathname + window.location.search + '#/');
+      return;
+    }
+    window.history.replaceState(
+      null,
+      '',
+      window.location.pathname + window.location.search + '#/',
+    );
+    setBoot({ phase: 'login', error: result.message });
+  }, []);
 
   /**
    * Sign out without leaving the app: clear the WordPress session (nonce
@@ -125,7 +165,13 @@ function Console(): JSX.Element {
   }
 
   if (boot.phase === 'login') {
-    return <LoginScreen notice={boot.notice} onSuccess={() => void bootstrap()} />;
+    return (
+      <LoginScreen
+        notice={boot.notice}
+        error={boot.error}
+        onSuccess={() => void bootstrap()}
+      />
+    );
   }
 
   if (boot.phase === 'error') {

@@ -52,6 +52,32 @@ Deploy runbook for the Complete Console on Cloudways Velocity. Companion to
    carry the session nonce.
 5. Capability check: a lower-cap user gets server-enforced gating.
 
+## Magic-link sign-in (passwordless, opt-in)
+
+The console sign-in screen also offers a **Magic link** mode, backed by the
+plugin's public `/wp-json/mcp-ai/v1/magic-login/*` routes
+(`WP_MCP_AI_REST_Magic_Login_Controller` in `includes/rest/`). Disabled by
+default — while disabled the routes 404, so enable it on the
+`NVOOS_TARGET_SITE` WordPress install first:
+
+```bash
+wp option update wp_mcp_ai_magic_login_enabled 1
+# Emailed links land on the console app (default: the site's home_url):
+wp option update wp_mcp_ai_magic_login_app_origin https://console.example.com
+```
+
+Both options have matching filters (`wp_mcp_ai_magic_login_enabled`,
+`wp_mcp_ai_magic_login_app_origin`) for code-based deployments.
+
+Security contract: ~256-bit tokens via `wp_generate_password(43)`
+(SHA-256-hashed at rest), 15-minute expiry, single-use, one outstanding
+link per user, uniform anti-enumeration responses, transient rate limits
+(3 requests/identifier/15 min, 10/IP/hour), and the confirm route fires
+`wp_login` so login-auditing plugins still observe the sign-in. The client
+never chooses the link target — the emailed URL is always the configured
+app origin — and the console consumes the token at `#/magic-login` with a
+hard reload into the dashboard on success.
+
 ## Caching — keeping load off WordPress
 
 `scripts/serve.mjs` ships a three-layer caching contract; the Velocity

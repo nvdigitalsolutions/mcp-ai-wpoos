@@ -407,246 +407,252 @@ export function AssistantsPage(): JSX.Element {
 								  ) }
 						</h3>
 
-						{ recordLoading && (
-							<p className="nvoos-pro-spa-assistants-form__loading" role="status">
+						{ recordLoading ? (
+							<div
+								className="nvoos-pro-spa-assistants-form__loading"
+								role="status"
+							>
+								<span
+									className="nvoos-pro-spa-page__spinner"
+									aria-hidden="true"
+								/>
 								{ __(
 									'Loading assistant details…',
 									'nvoos-pro-spa'
 								) }
-							</p>
+							</div>
+						) : (
+							<>
+								<div className="nvoos-pro-spa-assistants-form__field">
+									<label
+										htmlFor="nvoos-pro-spa-assistant-title"
+										className="nvoos-pro-spa-assistants-form__label"
+									>
+										{ __(
+											'Title',
+											'nvoos-pro-spa'
+										) }
+									</label>
+									<input
+										id="nvoos-pro-spa-assistant-title"
+										type="text"
+										className="nvoos-pro-spa-assistants-form__input"
+										value={ formFields.title }
+										onChange={ ( e ) =>
+											setFormFields( ( f ) => ( {
+												...f,
+												title: e.target.value,
+											} ) )
+										}
+										required
+									/>
+								</div>
+
+								<div className="nvoos-pro-spa-assistants-form__row">
+									<div className="nvoos-pro-spa-assistants-form__field">
+										<label
+											htmlFor="nvoos-pro-spa-assistant-provider"
+											className="nvoos-pro-spa-assistants-form__label"
+										>
+											{ __(
+												'Provider',
+												'nvoos-pro-spa'
+											) }
+										</label>
+										<select
+											id="nvoos-pro-spa-assistant-provider"
+											className="nvoos-pro-spa-assistants-form__select"
+											value={ formFields.provider }
+											onChange={ ( e ) =>
+												setFormFields( ( f ) => ( {
+													...f,
+													provider:
+														e.target.value,
+													model: '',
+												} ) )
+											}
+										>
+											<option value="openai">
+												OpenAI
+											</option>
+											<option value="google">
+												Google Gemini
+											</option>
+											<option value="anthropic">
+												Anthropic
+											</option>
+											<option value="ollama">
+												Ollama
+											</option>
+											{ providers
+												.filter(
+													( p ) =>
+														! [
+															'openai',
+															'google',
+															'anthropic',
+															'ollama',
+														].includes( p )
+												)
+												.map( ( p ) => (
+													<option
+														key={ p }
+														value={ p }
+													>
+														{ p }
+													</option>
+												) ) }
+										</select>
+									</div>
+
+									<div className="nvoos-pro-spa-assistants-form__field">
+										<label
+											htmlFor="nvoos-pro-spa-assistant-model"
+											className="nvoos-pro-spa-assistants-form__label"
+										>
+											{ __(
+												'Model',
+												'nvoos-pro-spa'
+											) }
+										</label>
+										<input
+											id="nvoos-pro-spa-assistant-model"
+											type="text"
+											className="nvoos-pro-spa-assistants-form__input"
+											value={ formFields.model }
+											onChange={ ( e ) =>
+												setFormFields( ( f ) => ( {
+													...f,
+													model: e.target.value,
+												} ) )
+											}
+											placeholder={
+												formFields.provider ===
+												'openai'
+													? 'gpt-4o'
+													: formFields.provider ===
+													  'google'
+													? 'gemini-2.5-flash'
+													: formFields.provider ===
+													  'anthropic'
+													? 'claude-sonnet-4-20250514'
+													: ''
+											}
+										/>
+									</div>
+								</div>
+
+								<div className="nvoos-pro-spa-assistants-form__field">
+									<label
+										htmlFor="nvoos-pro-spa-assistant-temperature"
+										className="nvoos-pro-spa-assistants-form__label"
+									>
+										{ __(
+											'Temperature',
+											'nvoos-pro-spa'
+										) }{ ' ' }
+										({ formFields.temperature })
+									</label>
+									<input
+										id="nvoos-pro-spa-assistant-temperature"
+										type="range"
+										className="nvoos-pro-spa-assistants-form__range"
+										min="0"
+										max="2"
+										step="0.1"
+										value={ formFields.temperature }
+										onChange={ ( e ) =>
+											setFormFields( ( f ) => ( {
+												...f,
+												temperature:
+													parseFloat(
+														e.target.value
+													),
+											} ) )
+										}
+									/>
+								</div>
+
+								<div className="nvoos-pro-spa-assistants-form__field">
+									<label
+										htmlFor="nvoos-pro-spa-assistant-prompt"
+										className="nvoos-pro-spa-assistants-form__label"
+									>
+										{ __(
+											'System Prompt',
+											'nvoos-pro-spa'
+										) }
+									</label>
+									<textarea
+										id="nvoos-pro-spa-assistant-prompt"
+										className="nvoos-pro-spa-assistants-form__textarea"
+										value={ formFields.system_prompt }
+										onChange={ ( e ) =>
+											setFormFields( ( f ) => ( {
+												...f,
+												system_prompt:
+													e.target.value,
+											} ) )
+										}
+										rows={ 4 }
+									/>
+								</div>
+
+								<div className="nvoos-pro-spa-assistants-form__field">
+									<label
+										htmlFor="nvoos-pro-spa-assistant-capabilities"
+										className="nvoos-pro-spa-assistants-form__label"
+									>
+										{ __(
+											'Tools',
+											'nvoos-pro-spa'
+										) }
+									</label>
+									<input
+										id="nvoos-pro-spa-assistant-capabilities"
+										type="text"
+										className="nvoos-pro-spa-assistants-form__input"
+										value={ formFields.tools }
+										onChange={ ( e ) =>
+											setFormFields( ( f ) => ( {
+												...f,
+												tools:
+													e.target.value,
+											} ) )
+										}
+										placeholder={ __(
+											'Comma-separated tool slugs, e.g. get_site_health, web_search',
+											'nvoos-pro-spa'
+										) }
+									/>
+								</div>
+							</>
 						) }
 
-						<div className="nvoos-pro-spa-assistants-form__field">
-							<label
-								htmlFor="nvoos-pro-spa-assistant-title"
-								className="nvoos-pro-spa-assistants-form__label"
-							>
-								{ __(
-									'Title',
-									'nvoos-pro-spa'
-								) }
-							</label>
-							<input
-								id="nvoos-pro-spa-assistant-title"
-								type="text"
-								className="nvoos-pro-spa-assistants-form__input"
-								value={ formFields.title }
-								onChange={ ( e ) =>
-									setFormFields( ( f ) => ( {
-										...f,
-										title: e.target.value,
-									} ) )
-								}
-								required
-							/>
-						</div>
-
-						<div className="nvoos-pro-spa-assistants-form__row">
-							<div className="nvoos-pro-spa-assistants-form__field">
-								<label
-									htmlFor="nvoos-pro-spa-assistant-provider"
-									className="nvoos-pro-spa-assistants-form__label"
-								>
-									{ __(
-										'Provider',
-										'nvoos-pro-spa'
-									) }
-								</label>
-								<select
-									id="nvoos-pro-spa-assistant-provider"
-									className="nvoos-pro-spa-assistants-form__select"
-									value={ formFields.provider }
-									onChange={ ( e ) =>
-										setFormFields( ( f ) => ( {
-											...f,
-											provider:
-												e.target.value,
-											model: '',
-										} ) )
-									}
-								>
-									<option value="openai">
-										OpenAI
-									</option>
-									<option value="google">
-										Google Gemini
-									</option>
-									<option value="anthropic">
-										Anthropic
-									</option>
-									<option value="ollama">
-										Ollama
-									</option>
-									{ providers
-										.filter(
-											( p ) =>
-												! [
-													'openai',
-													'google',
-													'anthropic',
-													'ollama',
-												].includes( p )
-										)
-										.map( ( p ) => (
-											<option
-												key={ p }
-												value={ p }
-											>
-												{ p }
-											</option>
-										) ) }
-								</select>
-							</div>
-
-							<div className="nvoos-pro-spa-assistants-form__field">
-								<label
-									htmlFor="nvoos-pro-spa-assistant-model"
-									className="nvoos-pro-spa-assistants-form__label"
-								>
-									{ __(
-										'Model',
-										'nvoos-pro-spa'
-									) }
-								</label>
-								<input
-									id="nvoos-pro-spa-assistant-model"
-									type="text"
-									className="nvoos-pro-spa-assistants-form__input"
-									value={ formFields.model }
-									onChange={ ( e ) =>
-										setFormFields( ( f ) => ( {
-											...f,
-											model: e.target.value,
-										} ) )
-									}
-									placeholder={
-										formFields.provider ===
-										'openai'
-											? 'gpt-4o'
-											: formFields.provider ===
-											  'google'
-											? 'gemini-2.5-flash'
-											: formFields.provider ===
-											  'anthropic'
-											? 'claude-sonnet-4-20250514'
-											: ''
-									}
-								/>
-							</div>
-						</div>
-
-						<div className="nvoos-pro-spa-assistants-form__field">
-							<label
-								htmlFor="nvoos-pro-spa-assistant-temperature"
-								className="nvoos-pro-spa-assistants-form__label"
-							>
-								{ __(
-									'Temperature',
-									'nvoos-pro-spa'
-								) }{ ' ' }
-								({ formFields.temperature })
-							</label>
-							<input
-								id="nvoos-pro-spa-assistant-temperature"
-								type="range"
-								className="nvoos-pro-spa-assistants-form__range"
-								min="0"
-								max="2"
-								step="0.1"
-								value={ formFields.temperature }
-								onChange={ ( e ) =>
-									setFormFields( ( f ) => ( {
-										...f,
-										temperature:
-											parseFloat(
-												e.target.value
-											),
-									} ) )
-								}
-							/>
-						</div>
-
-						<div className="nvoos-pro-spa-assistants-form__field">
-							<label
-								htmlFor="nvoos-pro-spa-assistant-prompt"
-								className="nvoos-pro-spa-assistants-form__label"
-							>
-								{ __(
-									'System Prompt',
-									'nvoos-pro-spa'
-								) }
-							</label>
-							<textarea
-								id="nvoos-pro-spa-assistant-prompt"
-								className="nvoos-pro-spa-assistants-form__textarea"
-								value={ formFields.system_prompt }
-								onChange={ ( e ) =>
-									setFormFields( ( f ) => ( {
-										...f,
-										system_prompt:
-											e.target.value,
-									} ) )
-								}
-								rows={ 4 }
-							/>
-						</div>
-
-						<div className="nvoos-pro-spa-assistants-form__field">
-							<label
-								htmlFor="nvoos-pro-spa-assistant-capabilities"
-								className="nvoos-pro-spa-assistants-form__label"
-							>
-								{ __(
-									'Tools',
-									'nvoos-pro-spa'
-								) }
-							</label>
-							<input
-								id="nvoos-pro-spa-assistant-capabilities"
-								type="text"
-								className="nvoos-pro-spa-assistants-form__input"
-								value={ formFields.tools }
-								onChange={ ( e ) =>
-									setFormFields( ( f ) => ( {
-										...f,
-										tools:
-											e.target.value,
-									} ) )
-								}
-								placeholder={ __(
-									'Comma-separated tool slugs, e.g. get_site_health, web_search',
-									'nvoos-pro-spa'
-								) }
-							/>
-						</div>
-
 						<div className="nvoos-pro-spa-assistants-form__actions">
-							<button
-								type="button"
-								className="nvoos-pro-spa-assistants-form__save-btn"
-								onClick={ () => void handleSave() }
-								disabled={ saving || recordLoading || ! formFields.title.trim() }
-							>
-								{ saving
-									? __(
-											'Saving…',
-											'nvoos-pro-spa'
-									  )
-									: recordLoading
-									? __(
-											'Loading…',
-											'nvoos-pro-spa'
-									  )
-									: editingId !== null
-									? __(
-											'Update',
-											'nvoos-pro-spa'
-									  )
-									: __(
-											'Create',
-											'nvoos-pro-spa'
-									  ) }
-							</button>
+							{ ! recordLoading && (
+								<button
+									type="button"
+									className="nvoos-pro-spa-assistants-form__save-btn"
+									onClick={ () => void handleSave() }
+									disabled={ saving || ! formFields.title.trim() }
+								>
+									{ saving
+										? __(
+												'Saving…',
+												'nvoos-pro-spa'
+										  )
+										: editingId !== null
+										? __(
+												'Update',
+												'nvoos-pro-spa'
+										  )
+										: __(
+												'Create',
+												'nvoos-pro-spa'
+										  ) }
+								</button>
+							) }
 							<button
 								type="button"
 								className="nvoos-pro-spa-assistants-form__cancel-btn"

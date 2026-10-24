@@ -20,7 +20,7 @@ import {
 
 export function TeamsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
-	const { teams, loading, error, members, loadingMembers, fetchTeams, loadMembers } =
+	const { teams, loading, error, members, loadingMembers, membersError, fetchTeams, loadMembers } =
 		useTeams(
 			runtime
 				? { endpoint: runtime.endpoints.teams ?? '', nonce: runtime.nonce }
@@ -77,8 +77,15 @@ export function TeamsPage(): JSX.Element {
 				detail:
 					expandedId === team.id ? (
 						loadingMembers ? (
-							<p className="nvoos-pro-spa-slash__result">
+							<p className="nvoos-pro-spa-slash__result" role="status">
 								{ __( 'Loading members…', 'nvoos-pro-spa' ) }
+							</p>
+						) : membersError ? (
+							<p
+								className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error"
+								role="alert"
+							>
+								{ membersError }
 							</p>
 						) : members.length === 0 ? (
 							<p>{ __( 'No profession members.', 'nvoos-pro-spa' ) }</p>
@@ -95,7 +102,7 @@ export function TeamsPage(): JSX.Element {
 						)
 					) : undefined,
 			} ) ),
-		[ teams, expandedId, loadingMembers, members ]
+		[ teams, expandedId, loadingMembers, membersError, members ]
 	);
 
 	if ( bootstrapLoading || ( loading && teams.length === 0 ) ) {

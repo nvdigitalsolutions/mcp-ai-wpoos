@@ -53,11 +53,12 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
     label: 'Workspace',
     defaultExpanded: true,
     items: [
-      { path: '/', label: 'Dashboard', icon: '📊', end: true },
-      { path: '/chat', label: 'Chat', icon: '💬' },
-      { path: '/assistants', label: 'Assistants', icon: '🤖' },
-      { path: '/blueprints', label: 'Blueprints', icon: '🗂️', capability: 'edit_posts' },
-      { path: '/tools', label: 'Tools', icon: '🧰' },
+      		{ path: '/', label: 'Dashboard', icon: '📊', end: true },
+      		{ path: '/chat', label: 'Chat', icon: '💬' },
+      		{ path: '/assistants', label: 'Assistants', icon: '🤖' },
+      		{ path: '/blueprints', label: 'Blueprints', icon: '🗂️', capability: 'edit_posts' },
+      		{ path: '/tools', label: 'Tools', icon: '🧰' },
+      		{ path: '/paper-store', label: 'Paper Store', icon: '📝', capability: 'manage_options' },
     ],
   },
   {

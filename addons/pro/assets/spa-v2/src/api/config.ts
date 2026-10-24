@@ -98,6 +98,8 @@ export interface ProSpaEndpoints {
 	operations: string;
 	/** Diagnostics REST base (mcp-ai/v1/diagnostics, 2.4.0). */
 	diagnostics: string;
+	/** Paper Store REST base (mcp-ai/v1/paper-store, 2.4.0). */
+	paperStore: string;
 	/** Token Manager REST base (mcp-ai/v1/token-manager, 2.4.0). */
 	tokenManager: string;
 	/**
@@ -300,6 +302,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			security: typeof e.security === 'string' ? e.security : '',
 			operations: typeof e.operations === 'string' ? e.operations : '',
 			diagnostics: typeof e.diagnostics === 'string' ? e.diagnostics : '',
+			paperStore: typeof e.paperStore === 'string' ? e.paperStore : '',
 			tokenManager: typeof e.tokenManager === 'string' ? e.tokenManager : '',
 			cost: typeof e.cost === 'string' ? e.cost : '',
 			orchestrationStats: typeof e.orchestrationStats === 'string' ? e.orchestrationStats : '',
