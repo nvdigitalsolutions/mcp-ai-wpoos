@@ -324,8 +324,7 @@ body,
    no border or radius. The small bottom reserve keeps the fixed status bar
    from covering the island's last row (the island scrolls internally). */
 .nvoos-console-shell .nvoos-console-page:has(> .nvoos-pro-spa-docs-hub) {
-  padding: 0;
-  padding-bottom: 44px;
+  padding: 0 0 30px;
 }
 
 .nvoos-console-shell .nvoos-pro-spa-docs-hub {
@@ -338,6 +337,7 @@ body,
 
 .nvoos-console-shell .nvoos-pro-spa-docs-hub .nvoos-pro-spa-page__header {
   flex-shrink: 0;
+  margin-bottom: 0; /* flush against the island below */
   padding: 16px 24px;
   border-bottom: 1px solid var(--nvoos-border, #dcdcde);
   background: var(--nvoos-bg-secondary, #fff);
