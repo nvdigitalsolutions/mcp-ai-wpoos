@@ -130,6 +130,9 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		security: `${core}/security`,
 		operations: `${core}/operations`,
 		diagnostics: `${core}/diagnostics`,
+		// Paper Store collections/records REST base (mcp-ai/v1/paper-store) —
+		// the #/paper-store page renders an unavailable state when empty.
+		paperStore: `${core}/paper-store`,
 		tokenManager: `${core}/token-manager`,
 		// Cost analytics — manage_options-gated; empty for non-admin sessions.
 		cost: `${core}/cost`,
