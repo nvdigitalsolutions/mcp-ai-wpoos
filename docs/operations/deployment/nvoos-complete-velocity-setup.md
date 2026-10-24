@@ -57,8 +57,14 @@ Deploy runbook for the Complete Console on Cloudways Velocity. Companion to
 The console sign-in screen also offers a **Magic link** mode, backed by the
 plugin's public `/wp-json/mcp-ai/v1/magic-login/*` routes
 (`WP_MCP_AI_REST_Magic_Login_Controller` in `includes/rest/`). Disabled by
-default — while disabled the routes 404, so enable it on the
-`NVOOS_TARGET_SITE` WordPress install first:
+default — while disabled the routes 404.
+
+**Enable it in the UI** on the `NVOOS_TARGET_SITE` WordPress install:
+`Settings → NV oOS → Authentication → Magic Link Sign-In` — tick *Enable
+Magic Link Sign-In* and set *Magic Link App Origin* to the console address
+(e.g. `https://console.example.com`; empty falls back to the site address).
+
+Or via WP-CLI (the controller also honours these standalone options):
 
 ```bash
 wp option update wp_mcp_ai_magic_login_enabled 1

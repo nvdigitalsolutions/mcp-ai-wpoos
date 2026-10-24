@@ -238,6 +238,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'description'    => __( 'When enabled, tools flagged as <code>destructive</code> or <code>state-changing</code> will require the AI client to pass <code>confirm_destructive=true</code> as an explicit confirmation parameter. Without this confirmation, the tool returns a preview of affected items instead of executing. Guards against accidental bulk deletion, user modification, and mass-email dispatch by AI agents.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+
+				// Magic Link (passwordless) Sign-In — opt-in console surface.
+				'enable_magic_login'               => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Magic Link Sign-In', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Allow passwordless sign-in via emailed one-time links', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Exposes POST /wp-json/mcp-ai/v1/magic-login/request and /confirm. Emailed links contain a hashed, single-use token that expires in 15 minutes; requests are rate-limited and answered uniformly to prevent account enumeration. Off by default.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'magic_login_app_origin'           => array(
+					'type'        => 'url',
+					'label'       => __( 'Magic Link App Origin', 'mcp-ai-wpoos' ),
+					'description' => __( 'Origin the emailed sign-in links point at — e.g. the NV oOS Complete Console address. Leave empty to use the site address.', 'mcp-ai-wpoos' ),
+					'default'     => '',
+					'placeholder' => 'https://console.example.com',
+				),
 			);
 		}
 
@@ -295,6 +311,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 						'oauth_disable_open_registration',
 						'require_confirm_destructive_ops',
 					),
+				),
+				'magic_link'     => array(
+					'id'     => 'magic_link',
+					'label'  => __( 'Magic Link Sign-In', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-email-alt',
+					'fields' => array( 'enable_magic_login', 'magic_login_app_origin' ),
 				),
 			);
 		}
@@ -554,6 +576,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				);
 				if ( is_wp_error( $result ) ) {
 					$errors[] = __( 'Guest Token Lifetime must be between 60 seconds and 7 days (604800 seconds).', 'mcp-ai-wpoos' );
+				}
+			}
+
+			// Validate the magic-link app origin (http/https only — it is the
+			// emailed link target, so no other scheme may ever be accepted).
+			if ( isset( $input['magic_login_app_origin'] ) && ! empty( $input['magic_login_app_origin'] ) ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_url( $input['magic_login_app_origin'] );
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Magic Link App Origin: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
+				} else {
+					$scheme = wp_parse_url( $input['magic_login_app_origin'], PHP_URL_SCHEME );
+					if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+						$errors[] = __( 'Magic Link App Origin must use http or https.', 'mcp-ai-wpoos' );
+					}
 				}
 			}
 
