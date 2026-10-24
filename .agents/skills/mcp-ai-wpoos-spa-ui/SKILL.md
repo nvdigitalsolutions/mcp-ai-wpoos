@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-ui
-description: UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns plus the standalone Pro SPA Vite app (examples/nvoos-pro-spa-vite), dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map (incl. staleness detection and the vendor never-commit rule), and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging.
+description: "UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns plus the standalone Pro SPA Vite app (examples/nvoos-pro-spa-vite), the island-embed pattern for self-contained React apps in the Pro SPA (Proposal 087 — docs-hub MemoryRouter island, media/document lazy-asset islands, OKF docs adapter, auth-bridge removal), dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas (incl. the vi.mock depth trap and the Windows rolldown binding repair), the full-JS-rebuild map (incl. staleness detection and the vendor never-commit rule), and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -336,6 +336,22 @@ AND the standalone Vite app, without forking the widget.
   specifiers: from `__tests__/` mock `'../upstream/content-graph-admin'`,
   not `'./upstream/...'` — the wrong path silently leaves the REAL module
   active (symptom: `$ is not a function` from the real jQuery IIFE).
+- **Depth trap (Proposal 087):** the mock specifier must resolve to the SAME
+  absolute file as the page's own import. `vi.mock( '../../utils/x' )` from
+  `src/features/foo/__tests__/` resolves to `src/features/utils/x` — a
+  NONEXISTENT file — so the mock silently never applies and the real module
+  runs (symptom: `Number of calls: 0` on your `vi.fn()` mocks while the
+  page clearly works; no resolution error is raised). Count the levels from
+  the TEST file's directory: `features/foo/__tests__/` → `../../../utils/x`.
+- Components that call router hooks (`useNavigate`, `useLocation` — e.g.
+  ContentArea after Proposal 087) throw outside a router; wrap their test
+  renders in `<MemoryRouter>` via a `renderArea( ui )` helper instead of
+  scattering wrappers.
+- **Windows rolldown binding:** vitest on a Windows worktree can die at
+  startup with `Cannot find native binding` /
+  `Cannot find module '@rolldown/binding-win32-x64-msvc'` (npm bug #4828
+  skips optional deps). `npm install` in the addon repairs it — check the
+  lockfile stayed untouched before committing.
 - jsdom cannot run Cytoscape's canvas — mock the vendored factory + deps;
   test the config hand-off (`window.nvoosContentGraphAdmin` shape) and the
   destroy-on-unmount contract, not the vendored internals.
@@ -366,6 +382,85 @@ AND the standalone Vite app, without forking the widget.
   prefilter-removal API), never throwing. Any widget using `$.ajax` against
   the backend needs the same prefilter — the fetch wrapper alone is not
   enough.
+
+## Island embeds in the Pro SPA (Proposal 087 — self-contained React apps)
+
+Canonical case study: PR #7213 (merged 2026-10-24) replaced the sandboxed
+iframe framing of the Docs Hub / Media Studio / Document Editor with native
+imperative islands — the same shell-owns-config/auth contract as the
+knowledge-graph page, but for apps that ship their OWN React tree. Proposals:
+`docs/project/proposals/087-docs-hub-native-island-proposal.md` + the
+implementation-plan twin.
+
+### The three island variants
+
+| Variant | Apps | Mount | Asset delivery |
+|---|---|---|---|
+| **Vendored inline** | Docs Hub | static `import './upstream/docs-hub'` (IIFE executes at bundle load) | Inlined into `pro-spa.js` (~660 KB minified) |
+| **Lazy script asset** | Media Studio, Document Editor | `utils/island-assets.ts` `loadIslandScript()` (once per session) + `loadIslandStyle()` | `*Asset` / `*Css` endpoints (PHP `plugins_url`) or Vite `?url` imports in the standalone app |
+| **REST adapter** | OKF knowledge (docs page second source) | same vendored Docs Hub island, `apiUrl` remounted per source | `mcp-ai-pro/v1/okf/docs` serves the docs-hub manifest/pages/search shape |
+
+### Island API contract (the upstream apps, e.g. `addons/docs-hub/src/index.tsx`)
+
+1. Export `mountX( container: HTMLElement ): { unmount(): void }` and assign
+   it explicitly on `globalThis` (`window.NVoosDocsHub` /
+   `NVoosMediaStudio` / `NVoosDocumentEditor`) — REMOVE the esbuild
+   `globalName` option (an inlined IIFE's `var` never reaches `window`; the
+   explicit assignment does, and keeps the vendored file byte-identical).
+2. Add `defer_mount?: boolean` to the app's config type; the auto-mount DOM
+   scan returns early when it's set (the host mounts explicitly). Inject
+   the app's config global BEFORE the script loads so the scan sees the flag.
+3. Each unmount must teardown the React root (`root.unmount()`) — the page
+   calls it in its effect cleanup and deletes the injected global.
+
+### Hash ownership — islands must never write `window.location.hash`
+
+- Docs Hub uses a HashRouter internally → new MemoryRouter mode
+  (`config.router: 'memory'` + `DocRouterModeContext`); all internal links
+  normalized to path form (`to="/slug"`, not `/#/slug`), raw `#/…` content
+  anchors intercepted to `navigate()`, fragment scroll reads
+  `useLocation().hash`, skip link prevents default. Hash mode remains the
+  wp.org shortcode default.
+- Media Studio / Document Editor have no router, but their skip links
+  (`a.nvoos-skip-link[href^="#"]`) would still touch the hash — the pages
+  install `useIslandSkipLinkGuard()` (capture-phase listener: preventDefault
+  + focus the target).
+
+### Auth — postMessage bridge is gone
+
+- The `utils/auth-bridge.ts` `postAuthToChild()` was removed; pages inject
+  the headless credential straight into the island config global as an
+  `authorization` key (the islands already honoured that key for same-origin
+  hosts), origin-checked: only when `new URL(apiBase).origin ===
+  credential.siteOrigin`. Cookie mode passes the `wp_rest` nonce only.
+  `getAuthCredential()` + the `__NVOOS_AUTH__` slot remain (the standalone
+  app's `fetch-wrapper.ts` owns the slot).
+
+### Endpoints + mirror sync
+
+- `docsHub` / `mediaStudio` / `documentEditor` now carry **REST bases**
+  (e.g. `nvoos-media-studio/v1`), class/feature-flag-gated like
+  `contentGraph`; the `wp_mcp_ai_pro_spa_*_url` filters retained but now
+  take REST bases, not page/URLs.
+- The standalone app imports the island bundles via Vite `?url`
+  (`import x from '../../../addons/media-studio/assets/dist/media-studio.js?url'`).
+  The mirror (`sync-nvoos-pro-spa-standalone.yml`) must copy those dist
+  folders too — UNRESOLVED_IMPORT in the mirror build is the symptom when it
+  doesn't (the monorepo build stays green). Both dist folders are now in the
+  workflow's `paths` trigger as well.
+
+### Sync/release discipline
+
+- docs-hub: after ANY `addons/docs-hub/src` change, `npm run build` (dist is
+  tracked), copy `assets/dist/docs-hub.{js,css}` into
+  `spa-v2/src/features/docs-hub/upstream/` (byte-identical — verify with
+  `cmp`), rebuild `pro-spa.js`. The upstream apps' vitest suites run in CI
+  (docs-hub vitest needs `npm install` locally on Windows — see testing
+  gotchas below).
+- media-studio / document-editor: `npm run build` in the addon after src
+  changes; the dists are consumed directly (no vendored copy).
+- Bundle-size rule from the graph page still applies: media/document are
+  NOT inlined (2.7 MB + 1.7 MB) — they load lazily from their asset URLs.
 
 ## Component rules — headless only
 

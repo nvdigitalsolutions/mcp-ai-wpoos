@@ -25,6 +25,15 @@ rebuild-reliability pre-submission pass (PRs #6967/#6968 — PCP 0 blocking
 errors, 0.5.3 live on the directory). Covers everything between "this
 plugin should ship to wp.org" and "the reviewer approves it".
 
+> **Status note (2026-10-24, Proposal 087 / PR #7213):** docs-hub has shipped
+> SOURCE changes since 0.5.3 — the island API (`window.NVoosDocsHub.mountDocsHub`
+> + `defer_mount`), the MemoryRouter island mode (`config.router`), path-form
+> breadcrumb links, and ContentArea link interception. The wp.org plugin's
+> own shortcode/block behaviour is unchanged (island mode is opt-in), but the
+> next docs-hub release must bump (0.5.4+) and re-run the PCP gate before
+> upload — the dist bundle changed. The media-studio / document-editor addons
+> gained the same island APIs; they are not wp.org-submitted yet.
+
 ## When to use this skill
 
 - "Prepare <plugin> for wp.org submission" / "run the 18-point checklist"

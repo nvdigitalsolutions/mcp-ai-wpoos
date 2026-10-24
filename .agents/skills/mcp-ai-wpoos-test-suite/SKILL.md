@@ -1315,6 +1315,27 @@ the changed files is the substantive gate; plan CI waits accordingly.
       `$this->assertSame( 1, preg_match( $pattern, $subject, $matches ) );`
       then read `$matches[1]`.
 
+  81. **Direct REST-handler calls never populate route params.** Calling a
+      controller method directly (`WP_MCP_AI_Pro_REST_Okf_Docs::handle_page(
+      $request )` — the Pro SPA test pattern) leaves `$request->get_param(
+      'slug' )` null because route captures (`(?P<slug>...)`) only exist
+      when the request is DISPATCHED through the REST server. Symptom:
+      handlers return 404s or null payloads in direct-call tests even though
+      the route is correct (hit in test-pro-okf-docs-rest.php, 2026-10-24).
+      Fix: the test's `request()` helper must `$request->set_param( 'slug',
+      'site-knowledge/policies/refunds' )` for every path segment — the
+      route string in the helper is decorative.
+
+  82. **WPCS "Only one object structure is allowed in a file" — split stub
+      classes.** A shared test-stub file defining two stand-in classes fails
+      phpcs with this error. One class per file (`class-media-studio-stub.php`,
+      `class-document-editor-stub.php`), required lazily from inside test
+      methods. Related ordering trap: a stub loaded by an EARLIER test file
+      in the same run poisons later "plugin inactive" assertions — guard
+      those with `class_exists()` + `markTestSkipped` (the pattern in
+      test-pro-spa-config-docs-hub.php), and keep the inactive-path test
+      FIRST in the file (hit 2026-10-24, Proposal 087).
+
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
  `shivammathur/setup-php` `tools: wp-cli` fails intermittently (`✗ wp-cli

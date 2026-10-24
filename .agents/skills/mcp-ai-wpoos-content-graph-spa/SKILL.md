@@ -135,3 +135,11 @@ silently never fire.
   — validation now mirrors the base chat-transcript layer via
   `WP_MCP_AI_Shortcode::validate_guest_token()`). Auth-surface behavior for
   the SPA is unchanged (bearer auth + visual-config route carried forward).
+- Sibling surface (Proposal 087, PR #7213, merged 2026-10-24): the same
+  island pattern now hosts the Docs Hub (#/docs, vendored inline +
+  MemoryRouter), Media Studio / Document Editor (#/media, #/documents,
+  lazy script assets), and an OKF docs REST adapter — see the
+  `mcp-ai-wpoos-spa-ui` skill's island-embed section. The mirror sync
+  workflow (`sync-nvoos-pro-spa-standalone.yml`) now also ships
+  `addons/media-studio/assets/dist` + `addons/document-editor/assets/dist`
+  (the standalone app imports them via Vite `?url`).
