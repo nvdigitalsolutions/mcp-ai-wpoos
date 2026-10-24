@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.10
+Stable tag: 1.2.11
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.11 - October 24, 2026 =
+
+Bumped to 1.2.11 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. The Complete Console and Schedule Anything Velocity apps gain a full caching layer (no-cache + ETag index, immutable hashed assets, gzip/brotli, and a default-deny proxy micro-cache with NVOOS_PROXY_CACHE knobs), and GET /mcp-ai/v1/features opts into a 60-second shared cache via the new WP_MCP_AI_REST_Cache_Control. Chat SSE streams that near proxy idle-read timeouts now hand the remaining agentic work to the job queue (the new WP_MCP_AI_Chat_Stream_Offload_Worker) and close with a job_offload event instead of being reset. The Complete Console gains in-app login, sign-out, a session-expiry gate, and favicon. Fixed: the console REST bridges silently degrading on front-end requests, the profession ballooning (stale counts cache + duplicate seeding), the dashboards blank page (disabled map), the Security Center raw-JSON dump, the workflow node config editor, the command-center 500 (static-call fatal), the chat continuation null response, and the console mobile gutters/dock. Dependency advisories closed: vitest-mocker, dompurify, sharp, ip-address, vite, and esbuild (67 of 74 alerts). Sub-projects: nvoos-content-graph 1.0.12 upload prep. Tool count unchanged: ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative).
 
 = 1.2.10 - October 23, 2026 =
 
