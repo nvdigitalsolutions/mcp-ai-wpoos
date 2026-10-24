@@ -5,8 +5,8 @@ description: UI stack, build, and test conventions for NV oOS React SPA addons (
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
+  plugin-version: "1.2.11"
+  plugin-version-tested: "1.2.11"
   last-updated: "2026-10-24"
 ---
 

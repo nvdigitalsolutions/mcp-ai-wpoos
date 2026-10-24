@@ -6,8 +6,8 @@ license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   last-updated: "2026-10-24"
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
+  plugin-version: "1.2.11"
+  plugin-version-tested: "1.2.11"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide

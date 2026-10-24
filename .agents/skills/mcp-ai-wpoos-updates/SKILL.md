@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
-  last-updated: "2026-10-23"
+  plugin-version: "1.2.11"
+  plugin-version-tested: "1.2.11"
+  last-updated: "2026-10-24"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -864,7 +864,40 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.97-docs-catch-up.md`,
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
   `docs/project/plans/v1.1.99-docs-catch-up.md`,
-  `docs/project/plans/1.2.10-docs-catch-up.md` (latest executed — the
+  `docs/project/plans/1.2.11-docs-catch-up.md` (latest executed — the
+1.2.11 pass over PRs #7189–#7203: the Velocity caching layers + REST
+cache opt-in (#7197 — both Velocity `serve.mjs` apps gain the caching
+contract with the default-deny proxy micro-cache + `NVOOS_PROXY_CACHE`
+knobs; `GET /mcp-ai/v1/features` emits `public, max-age=60, s-maxage=60`;
+the new `WP_MCP_AI_REST_Cache_Control` opts out of WP 6.9's authenticated
+no-cache injection only for explicitly public responses), the SSE long-run
+offload Phase 4b (#7199 — `WP_MCP_AI_Chat_Stream_Offload_Worker` +
+`job_offload` event + the extended continuation snapshot; the
+`content_format_templates` seeding deferred to `wp_loaded`), the Complete
+Console login/sign-out/session gate (#7190/#7192/#7196), the front-end
+REST bridge-provider fix (#7189 — eager-require + lazy `load_provider()`
+seam + 501 `WP_Error` branches), the profession ballooning fix (#7191 —
+counts-cache invalidation + slug-match seeder dedupe, mirrored to
+CG-AI-platform), the dashboards `disabled` map + Security Center UI +
+workflow NodeEditor (#7193), the dependency sweep (#7195 — 67 of 74
+alerts, deferred #7089/#7090/#7194 tracked), the continuation null-safety
++ risky-test repairs (#7201), the console mobile fixes (#7200/#7202),
+Proposal 086 (#7203, docs-only), and the content-graph 1.0.12 upload prep
+(#7198 — sub-project flag-not-edited, ZIP built). New scope rules
+executed: the `[Unreleased]` pre-staging conversion (#6809 rule); the
+in-window sub-project version bump corrected the ADDON_INVENTORY row
+in-pass (1.0.11 → 1.0.12); the wporg-submission skill's frontmatter was
+found two versions stale (1.1.99) despite its in-window content update.
+OI-1 group 62 (new: `@since 1.2.10` ×7 one-behind) + group 60 extension
+(+2 `2.4.x`), zero tool-count change, zero catalog diff, seven skill
+reconciliations (plugin ×3 + RELEASE-NOTES, spa-rest-contract, spa-ui,
+wporg-submission, test-suite, dependabot-loop, schedule-anything-ops,
+content-graph-spa, checkout-integration → 1.2.11), and the stale 1.2.9
+build-set removal (30 files — 9 + 2 + 19) + the superseded content-graph
+v1.0.11 ZIP (2 files — v1.0.12 built in-window))
+
+Preceding windows:
+`docs/project/plans/1.2.10-docs-catch-up.md` (latest executed — the
 1.2.10 pass over PRs #7178–#7186: the console-migration Phase 5b–5d
 continuation (#7180, Proposal 084 — the orphaned cost/analytics
 REST-controller registration fix in `includes/bootstrap/loader.php`,

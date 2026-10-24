@@ -1,6 +1,6 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.2.11] - 2026-10-24
 
 ### Added — Complete Console + Schedule Anything caching layers, backend shared-cache opt-in
 
@@ -29,6 +29,63 @@
 
 - **Proposal + plan updated** — `sse-stream-hardening-long-run-offload-proposal.md` status flipped to shipped (Phase 4a + 4b), interim-mitigations section reworded; the implementation plan's three open decisions recorded as resolved (global default-on at 75 s, 240 s worker cap, `resume` deep-recovery path skipped in favour of the client re-send fallback).
 - **Coding-time skills updated in place** — the test-suite skill gains patterns 76–79 (init-time `wp_insert_post` → null `$wp_rewrite` warning; wp-phpunit `_delete_all_posts()` boot wiping; queue-worker failure contract; PHPUnit 11 wp-phpunit doc-comment deprecation noise + `--no-coverage`), and the spa-ui skill gains the SSE mid-stream frame bridging note (AI SDK no-`onData` → window `CustomEvent` pattern).
+
+### Added — Complete Console in-app login, sign-out, and session-expiry gate
+
+- **Branded in-app sign-in (#7190)** — `LoginScreen.tsx` + `login.ts` replay WordPress' native login form (test-cookie GET → form-encoded POST) against the same-origin proxy, so authenticated access never shows a WordPress page. OWASP-uniform error messages (no account enumeration), visible labels, 16px inputs, accessible show/hide-password, double-submit prevention.
+- **Session-expiry gate (#7190)** — the global `fetch-wrapper.ts` now accepts a site-origin `onUnauthorized`: any 401 (REST or SSE chat) switches to the sign-in screen with a "session expired" notice; 403 answers are treated like 401 (#7196 — hardened installs answer `users/me` with 403).
+- **In-app sign-out (#7190/#7196)** — the sidebar footer button scrapes the log-out nonce (wp-login confirmation page, wp-admin fallback) and hits the nonced logout URL; the `&#038;`-escaped nonce form is now accepted (only `&amp;`/`&` were before — the session never actually died), and the z-index coverage over the nav footer is fixed.
+- **Sign-in notice + favicon (#7192)** — the pre-button notice softened to "Please click the button below."; the stray `""` after the favicon `<link>` removed.
+
+### Fixed — console REST bridges on front-end requests (#7189)
+
+- **Silent degradation closed** — four console bridges registered fine on the Complete console but degraded on front-end-originated requests because their provider classes were only `require_once`d by the admin-gated `admin_sections` module: `/workflow-presets` returned an empty catalogue, the workflow-builder node executor always 501'd, the ops webhook table came back `array()`, and the command-center overview returned `success: false`. The `rest_console_bridges` module now eager-requires the workflow-presets registry, workflow-builder page, and webhook status page (constructors only register admin hooks — dormant on front-end), and the command-center controller gains a lazy `load_provider()` seam (the media-cc pattern) instead of eager loading. Missing-provider branches now return 501 `WP_Error`s instead of silent-empty envelopes (canonical-envelope sniff). Pinned by `tests/rest-api/test-rest-console-bridges.php` (7/7, with eager-include pins the test bootstrap's fallback autoloader would otherwise mask).
+
+### Fixed — profession ballooning and stale count display (#7191)
+
+- **Root cause** — "Update Professions" already heals a ballooned database (a 2799-post DB returns to exactly 311), but a stale `wp_count_posts()` cache kept showing the old ballooned total (core only invalidates counts on status transitions, and the reseed paths publish-to-publish + force-delete — no transitions; persistent object caches made the stale total stick). "Replace All" appeared to fix it only because inserting fresh posts fires transitions. A second vector: the seeder blind-inserted the whole catalog whenever the seeded option was missing on a populated database (settings reset, staging sync, partial seed).
+- **Fix** — `WP_MCP_AI_Profession_Repository::clear_cache()` invalidates the post-type counts cache (fired via the plugin's `delete_post` hook and every save); the Data Management panel busts the cache before reading and shows a "Duplicates Detected — run Update Professions" status when the published count exceeds the knowledge base (Update preserves assistant links — no new post IDs); the seeder matches existing professions by slug and updates instead of inserting duplicates. Mirrored into the Content Graph AI platform plugin. Pinned by `tests/test-profession-reseeding.php` (15/15) + an AJAX healing e2e (ballooned DB → Update → exactly the KB count in the DB and in `wp_count_posts()`).
+
+### Fixed — console dashboards, security, and workflows (#7193)
+
+- **Dashboards blank page** — every dashboard is gated by an off-by-default toolkit toggle, so a fresh site returned an empty catalogue with no empty-state branch. `GET /mcp-ai-pro/v1/dashboards/schema` now ships a `disabled` map (label/icon/description + the gating settings flag) via the new `effective_flag_key()` seam shared with `is_dashboard_available()`; the DashboardsPage renders a guided empty state (each disabled dashboard + how to enable it) with header Refresh / Check again actions. Pinned by `tests/rest-api/test-rest-dashboards.php` (15 tests / 102 assertions).
+- **Security Center raw JSON** — `SecurityCenterPage` renders structured UI instead of `JSON.stringify` dumps: an nvoos-chart dial score card + grade badge, a quick-wins card, posture checks grouped by subtab with Pass/Fail badges and guidance columns, security headers as a badge row + table, snapshot timestamps, and structured action results — parsed by the pure, unit-tested `posture-utils.ts` (11 tests).
+- **Workflow node config not editable** — a new selected-node `NodeEditor.tsx` edits the full executable configuration (tool slug + arguments JSON, action command + params, agent ID + prompt) with apply-on-valid inline errors; preset passthrough nodes stay label-only.
+
+### Fixed — command-center 500 (#7196)
+
+- **`GET /mcp-ai-pro/v1/command-center/overview` fataled** whenever the core Logger held `chat_interaction`/API entries — `merge_logger_activity_entries()` was `static` but called instance helpers via `$this` ("Using $this when not in object context"). The helpers are now static with `self::` calls, regression-pinned (5/5, 24 assertions). Deploy note: the live site keeps 500ing until the updated Complete bundle deploys; the console fails soft meanwhile.
+
+### Fixed — chat continuation null response and risky tests (#7201)
+
+- **Continuation re-entry null-safety** — `WP_MCP_AI_Chat_Continuation_LLM_Re_Entry::call_llm()` normalizes non-array, non-WP_Error router responses to a logged `WP_Error` (`wp_mcp_ai_continuation_invalid_response`) so `extract_text()` never receives a null — fixes the CI `TypeError`. The new regression pin reproduces the exact TypeError when the guard is removed.
+- **Risky-test repairs** — the dispatcher suite detaches the globally-registered LLM re-entry subscriber in setUp (contract tests no longer drive the live router); the cleanup-cron test calls the scheduler directly instead of re-firing `plugins_loaded`; the Excel/Pro-Excel schema walks assert a non-zero visit count; media-template paths fixed (`tools/media/`); JetEngine list-shape assertions added. 68 tests / 209 assertions green on WP 6.9 + 7.1; phpcs net-zero.
+
+### Fixed — console mobile gutters and dock (#7200/#7202)
+
+- **Mobile gutters (#7200)** — a ≤782px media query drops the horizontal gutters on the main content area and the chat dock; the dist bundle rebuilt.
+- **Dock padding + sidebar toggle (#7202)** — ≤1440px the dock goes full-width; ≤782px restores 10px gutters, composer breathing room, and the chat-page top margin (spa-v2's 50px assumes the full-page admin-bar layout). The status-bar ☰ now drives a real overlay drawer in the dock (the old `--sidebar-collapsed` modifier flipped width on an invisible element — the layout class was never set).
+
+### Fixed — dependency advisories (2026-10-23 sweep, #7195)
+
+- **In-major advisory patches across 21 npm trees, closing 67 of 74 open Dependabot alerts** — `@vitest/mocker` ≥4.1.12 <5 (24 alerts, Windows traversal bypass), `dompurify` ^3.4.17 (18 alerts, xhtml+xml SMIL guard skip), `sharp` ^0.35.5 (5 alerts, librsvg CVE-2026-96889), `ip-address` ≥10.7.4 (2 alerts, zone-id quadratic scan), `vite` → ^6.4.4 for nvoos-dictate + nvoos-vite-demo (16 alerts), `esbuild` resolved by the vite bump (2 alerts).
+- **Tracked bundles rebuilt** — the root `chat-bundle`/`markdown` bundles were stale at dompurify 3.4.13, canvas-toolkit at 3.4.13 since the 2026-10-06 sweep, and chat-spa/pro-spa at 3.4.16 — all rebuilt at 3.4.17. Lockfile scan: zero copies remain in a vulnerable range.
+- **Deferred (tracked issues)** — `@ai-sdk/provider-utils` 2.x (#7090, breaking 3.x), `react-router` 6.x (#7089, breaking 7.18), `glib` 0.18 for nvoos-dictate (#7194, gtk-rs 0.20 train).
+
+### Docs — Proposal 086 (#7203)
+
+- **Chat frontend transport abstraction (BYOK backend)** — proposal + phased implementation plan added (docs only): a `ChatTransport` + `ChatFeatureAdapters` seam for `addons/chat-spa` so the chat UI runs against any backend — the default `NvOosRestTransport` (zero-behavior refactor of `sse-adapter.ts`), a `DataStreamTransport` for foreign AI SDK / provider-SDK backends, null/in-memory feature adapters for no-WordPress runs, the `packages/nvoos-chat-ui` extraction, and a reference `@ai-sdk/openai`/`@ai-sdk/anthropic` backend. Registered in the proposals index; five open decisions with recommended defaults in §8.
+
+### Sub-projects
+
+- **nvoos-content-graph 1.0.12 (#7198)** — upload prep merged (own track, not edited here): folds the post-1.0.11 shipped changes — the memory-graph bridge seams (#7145, `Bridge::register()` self-declares the base plugin's provenance + RRF graph bridges) and the guest-token read-route fix (#7155, validation mirrors the base chat-transcript layer) — with the full version sweep (header + constant + readme + CHANGELOG + POT + blueprints + SVN examples + commerce notes) and a full re-verification + PCP pass. ZIP built at `build/nvoos-content-graph-v1.0.12.zip` (508 KB, 152 files). Docs-hub fully checked this pass: no shipped changes since 0.5.3, no bump.
+- **nvoos-content-graph-ai-platform (#7191)** — the profession repository + seeder fixes mirrored byte-identical in-window; the standalone plugin ZIP v2.0.0 built.
+
+### Versioning
+
+- **Tool count unchanged** — ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative) — zero registry registrations in-window.
+- **Coding-time agent skills unchanged (76)**; bundled skills 77 base + 41 Pro (unchanged). Model catalog: **v2026.10.03** (zero diff). Provider count **18** (unchanged). Addon count **30** (unchanged). Security classes **12** (unchanged). Media Worker **3.4.0** (unchanged).
+- **Build hygiene** — the stale 1.2.9 oOS build set removed (30 files: 9 root + 2 optional-components + 19 toolkit-addons) together with the superseded content-graph v1.0.11 ZIP + `.sha256` (v1.0.12 built).
 
 ## [1.2.10] - 2026-10-23
 

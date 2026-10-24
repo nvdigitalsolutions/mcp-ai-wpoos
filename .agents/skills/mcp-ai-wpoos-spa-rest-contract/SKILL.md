@@ -5,9 +5,9 @@ description: Audit NV oOS console SPA clients (addons/pro/assets/spa-v2/src/api/
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
-  last-updated: "2026-10-23"
+  plugin-version: "1.2.11"
+  plugin-version-tested: "1.2.11"
+  last-updated: "2026-10-24"
 ---
 
 # NV oOS Console SPA ↔ REST Contract Audit
@@ -257,6 +257,18 @@ toolkit flags (toolkits are default-off). `GET /mcp-ai-pro/v1/schedules` is
 owned exclusively by the schedule CRUD controller (`{ ok, schedules, total }`);
 the scheduled-result picker lives at `/schedules/selectable` (bare array) —
 bug class 9.
+
+**2026-10-24 contract change (#7193 — supersedes the "omitted" note above):**
+`GET /mcp-ai-pro/v1/dashboards/schema` now ships a **`disabled` map**
+(label/icon/description + the `wp_mcp_ai_settings` flag that gates each
+dashboard) via the new `effective_flag_key()` seam shared with
+`is_dashboard_available()` (vitals BC fallback preserved) — disabled
+dashboards are described, not omitted, so the SPA can render a guided empty
+state. The SPA client changed `DashboardsClient.schema()` → `catalogue()`
+and returns both lists; `/dashboards/{id}/data` still 404s
+`dashboards_unavailable` for disabled toolkits. Re-audit expectations that
+assert the disabled dashboards are absent from the schema must now assert
+their presence in `disabled` instead.
 
 **2026-10-23 addition:** the chat-transcripts list envelope
 (`GET /mcp-ai/v1/chat-transcripts`) now includes `storage_bytes` — the

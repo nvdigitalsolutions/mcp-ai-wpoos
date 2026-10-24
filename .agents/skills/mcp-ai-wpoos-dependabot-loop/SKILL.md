@@ -5,16 +5,20 @@ description: "Operational guide for the NV oOS Dependabot alert triage-and-remed
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
-  last-updated: "2026-10-23"
+  plugin-version: "1.2.11"
+  plugin-version-tested: "1.2.11"
+  last-updated: "2026-10-24"
 ---
 
 # NV oOS Dependabot Loop — Alert Triage, Safe Bumps & Dismissal
 
 Playbook for the recurring Dependabot sweep in this repo, distilled from the
 executed 2026-09-30 run (PR #6817: js-yaml + webpack-dev-middleware bumps;
-alerts 803/804, 898, 901, 922–976 triaged; issues #6647/#6818). It covers the
+alerts 803/804, 898, 901, 922–976 triaged; issues #6647/#6818) and the
+2026-10-23 run (PR #7195: vitest-mocker/dompurify/sharp/ip-address/vite/
+esbuild in-major patches across 21 trees — 67 of 74 alerts closed; tracked
+bundles rebuilt where stale; deferred as tracked issues: #7090
+`@ai-sdk/provider-utils` 3.x, #7089 react-router 7, #7194 glib/gtk-rs). It covers the
 full loop: discovery → forensics → fix decision → lockfile regen → bundle
 rebuild → dismissal → issue housekeeping → CI triage. The workflow implements Dependabot's own
 dismissal semantics (`fix_started` vs `tolerable_risk`) adapted to this repo's
