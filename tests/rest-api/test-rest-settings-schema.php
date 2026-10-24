@@ -13,6 +13,8 @@
  */
 class WP_MCP_AI_REST_Settings_Schema_Test extends WP_UnitTestCase {
 
+	use WP_MCP_AI_REST_Test_Helper;
+
 	/**
 	 * Boot-time section instances captured in set_up and restored in
 	 * tear_down. The registry is a process-wide static, so tearing down the
@@ -199,5 +201,111 @@ class WP_MCP_AI_REST_Settings_Schema_Test extends WP_UnitTestCase {
 
 		$stored = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$this->assertSame( 'gemini', $stored['default_provider'] );
+	}
+
+	/**
+	 * Sections with the '__hidden__' sentinel tab (Custom Filters, Pro
+	 * Performance) own no tab — the schema must not surface their fields or
+	 * a phantom '__hidden__' tab the SPA would render as a tab button.
+	 */
+	public function test_hidden_tab_sections_excluded_from_schema() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$response = ( new WP_MCP_AI_REST_Settings_Controller() )->get_schema();
+		$data     = $response->get_data();
+
+		$this->assertArrayNotHasKey( '__hidden__', $data['data']['tabs'] );
+		foreach ( $data['data']['fields'] as $field ) {
+			$this->assertNotSame(
+				'__hidden__',
+				$field['tab'],
+				'Hidden-tab fields must not reach the schema.'
+			);
+		}
+	}
+
+	/**
+	 * Numeric-option selects (default_assistant) store ints: the SPA submits
+	 * the option value as a string and the sanitizer must coerce it back so
+	 * the stored type matches what the admin UI writes (absint).
+	 */
+	public function test_numeric_select_stores_int() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$assistant_id = $this->create_assistant_post( 'Schema Numeric Select Assistant' );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/settings/values' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array( 'default_assistant' => (string) $assistant_id )
+			)
+		);
+
+		( new WP_MCP_AI_REST_Settings_Controller() )->update_values( $request );
+
+		$stored = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$this->assertArrayHasKey( 'default_assistant', $stored );
+		$this->assertIsInt( $stored['default_assistant'] );
+		$this->assertSame( $assistant_id, $stored['default_assistant'] );
+	}
+
+	/**
+	 * Selects with raw slug option keys (provider model names containing
+	 * slashes, e.g. meta/llama-3.1-8b-instruct) must round-trip: the
+	 * sanitizer matches against the literal option list — sanitize_key()
+	 * would mangle such keys and silently reject every save.
+	 */
+	public function test_select_slug_key_round_trips() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$schema = ( new WP_MCP_AI_REST_Settings_Controller() )->get_schema()->get_data();
+		$model  = '';
+		foreach ( $schema['data']['fields'] as $field ) {
+			if ( 'nvidia_model' === $field['key'] && ! empty( $field['options'] ) ) {
+				$model = (string) array_key_first( $field['options'] );
+				break;
+			}
+		}
+		if ( '' === $model ) {
+			$this->markTestSkipped( 'nvidia_model select not in the test schema.' );
+		}
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/settings/values' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( array( 'nvidia_model' => $model ) ) );
+
+		( new WP_MCP_AI_REST_Settings_Controller() )->update_values( $request );
+
+		$stored = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$this->assertSame( $model, $stored['nvidia_model'] );
+	}
+
+	/**
+	 * A stored select value that has left the option list (provider model
+	 * catalogs churn) is appended to the schema options, so the SPA never
+	 * silently displays the first option instead of the live config.
+	 */
+	public function test_schema_appends_stored_unlisted_select_value() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'nvidia_model' => 'test/model-no-longer-listed' )
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		$schema = ( new WP_MCP_AI_REST_Settings_Controller() )->get_schema()->get_data();
+		foreach ( $schema['data']['fields'] as $field ) {
+			if ( 'nvidia_model' === $field['key'] ) {
+				$this->assertArrayHasKey( 'test/model-no-longer-listed', $field['options'] );
+				return;
+			}
+		}
+		$this->fail( 'nvidia_model not in the test schema.' );
 	}
 }

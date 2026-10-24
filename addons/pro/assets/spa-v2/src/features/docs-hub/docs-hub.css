@@ -2,8 +2,19 @@
  * DocsPage — SPA shell styles for the native Docs Hub island.
  *
  * The vendored island brings its own design system (docs-hub.css upstream);
- * this file only sizes the island container so it fills the page shell with a
- * sensible minimum height, plus the shared unavailable/error state.
+ * this file sizes the island container so it fills the page shell with a
+ * sensible minimum height, plus the shared unavailable/error state — and the
+ * host design-token bridge below.
+ *
+ * Token bridge (industry pattern — "map only design tokens" for embedded
+ * surfaces): hosts rebrand the island the same way they rebrand every other
+ * SPA surface, by remapping the island's semantic `--dh-*` contract tokens
+ * at the boundary instead of restyling it. The chain is the NV oOS Design
+ * System addon (`--nds-*`, when active) → the SPA's own theme tokens
+ * (`--nvoos-*`) → the island's default. The dark counterpart restores the
+ * island's curated dark palette verbatim: the island can enter dark mode on
+ * its own (header toggle) while the host stays light, so dark mode must not
+ * chase host tokens.
  */
 
 .nvoos-pro-spa-docs-hub__island {
@@ -15,6 +26,52 @@
 	border-radius: 8px;
 	background: var( --nvoos-bg-secondary, #fff );
 	overflow: hidden;
+}
+
+/* ── Host design-token bridge ───────────────────────────────────────────
+   Light mode: the island adopts the host's accent, text, borders, surfaces
+   and font. Specificity (0-2-0) outranks the island's own root tokens
+   (0-1-0); the dark counterpart below (0-3-0) outranks this so the island's
+   dark mode stays exactly as the upstream curates it. */
+.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root {
+	--dh-accent-primary: var( --nds-color-accent, var( --nvoos-primary, #2563eb ) );
+	--dh-text-link: var( --nds-color-accent, var( --nvoos-primary, #2563eb ) );
+	--dh-text-link-hover: var( --nds-color-accent, var( --nvoos-primary-hover, #1d4ed8 ) );
+	--dh-text-primary: var( --nds-color-text-primary, var( --nvoos-text, #1a1a2e ) );
+	--dh-text-secondary: var( --nds-color-text-secondary, var( --nvoos-text-secondary, #374151 ) );
+	--dh-border-default: var( --nds-color-border, var( --nvoos-border, #e5e7eb ) );
+	--dh-border-subtle: var( --nds-color-border, var( --nvoos-border-light, #f3f4f6 ) );
+	--dh-bg-primary: var( --nds-color-surface, var( --nvoos-bg-secondary, #ffffff ) );
+	--dh-bg-secondary: var( --nds-color-surface-hover, var( --nvoos-bg, #f8f9fa ) );
+	--dh-bg-sidebar: var( --nds-color-surface-hover, var( --nvoos-bg, #f3f4f6 ) );
+	--dh-font-sans: var(
+		--nds-font-family,
+		-apple-system,
+		BlinkMacSystemFont,
+		'Segoe UI',
+		Roboto,
+		'Helvetica Neue',
+		Arial,
+		sans-serif
+	);
+	--dh-border-radius: var( --nds-radius-md, 6px );
+}
+
+/* The island's own dark palette, restored verbatim — it wins over the light
+   bridge above and never follows host tokens (the island toggles dark mode
+   independently of the host). */
+.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root[data-theme='dark'],
+.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root.dh-dark {
+	--dh-accent-primary: #2563eb;
+	--dh-text-link: #60a5fa;
+	--dh-text-link-hover: #93c5fd;
+	--dh-text-primary: #e2e8f0;
+	--dh-text-secondary: #cbd5e1;
+	--dh-border-default: #334155;
+	--dh-border-subtle: #1e293b;
+	--dh-bg-primary: #0f172a;
+	--dh-bg-secondary: #1e293b;
+	--dh-bg-sidebar: #1a2332;
 }
 
 /* The island app is a three-pane grid (header / sidebar / main / TOC) that

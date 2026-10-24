@@ -189,6 +189,38 @@ the form read fields the directory never returned).
     under the wrong row. Same discipline applied to RecordsPage's expanded
     detail (loading/error/loaded branches on fetch-on-expand) and the Paper
     Store page.
+14. **Settings-schema value coercion — the SPA select/checkbox renders a
+    silent lie about the live config (2026-10-25, console audit).** The
+    schema-driven settings surface (`GET /settings/schema` +
+    `GET|POST /settings/values`) drifted from the SPA render logic in four
+    concrete ways, all fixed in `SettingsPage.tsx` +
+    `class-wp-mcp-ai-rest-settings-controller.php`:
+    - **Numeric-option selects** (`default_assistant`, int-keyed options):
+      the stored int hit `toFormValue()`'s string-only branch → `''` → the
+      `<select>` silently matched the FIRST option ("None"). Fix both ends:
+      SPA `toFormValue`/`onChange` round-trip numbers when every option key
+      is numeric, server coerces numeric selects with `absint` so REST writes
+      can't leave string values behind.
+    - **`sanitize_key()` mangles select option keys with slashes/dashes**
+      (`meta/llama-3.1-8b-instruct` → `metallama318binstruct`): every SPA
+      save of provider-model selects failed the enum check and silently kept
+      the old value. The enum membership check IS the sanitizer — match the
+      submitted string against the RAW option keys, never `sanitize_key()` it.
+    - **Stored values leaving the option list** (provider catalogs churn —
+      live `nvidia_model` case): the select shows option #1 while the stored
+      value differs. Server-side: `build_schema_fields` appends the stored
+      value as a `"<value> (stored)"` option (raw key, not sanitized).
+      SPA-side: render an extra `<option>` for any unlisted current value so
+      an older plugin can never silently misdisplay either.
+    - **Checkbox truth**: `build_values_payload` already emits real booleans
+      (`(bool)` cast) — the SPA's `value === true` is CORRECT. Before
+      "fixing" a checkbox display bug, check the live `/settings/values`
+      payload type first (a genuinely-`false` value is a config issue, not a
+      rendering bug — the `enable_provider_failover` live case).
+    - **Audit recipe**: pull the live schema + values and cross-check every
+      field — select value ∈ options, number is numeric, checkbox is bool,
+      text/url/email/password are strings. 559 live fields, this pass found
+      exactly `nvidia_model`.
 
 ## Audit path per client (4 hops, verify every hop)
 

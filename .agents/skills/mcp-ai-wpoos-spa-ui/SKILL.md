@@ -208,6 +208,37 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   THAT app's sync gate with TS2741 (missing required property) — #7207 was
   exactly that for the standalone app. When adding an endpoint key, grep
   `runtime-config.ts` across `examples/` and update them all.
+- **Island PRs must update the console's endpoint VALUES, not just the type
+  keys (learned 2026-10-25, console audit).** #7213 rewired
+  `docsHub`/`mediaStudio`/`documentEditor` to REST bases + `?url` asset keys
+  in the standalone app but left
+  `examples/nvoos-complete-velocity/src/runtime-config.ts` carrying the
+  **iframe-era values** (`docsHub: 'https://console.nvoos.cloud/docs-hub/'`,
+  shortcode-page `mediaStudio`/`documentEditor`). Consequences: the console
+  `tsc --noEmit` gate failed with TS2741 (nobody rebuilt, so nobody
+  noticed), the sync workflow kept shipping the stale committed dist, and
+  the LIVE console served the old iframe framing (theme padding + visible
+  skip link inside the docs page). After any island/endpoint PR: diff both
+  `buildEndpoints()` key sets AND values against the standalone app, fix the
+  console, and rebuild `examples/nvoos-complete-velocity/dist/` in the SAME
+  PR.
+- **Console vitest vs `?url` island imports (learned 2026-10-25):** once
+  `runtime-config.ts` imports the media-studio/document-editor bundles via
+  `?url`, vitest dies with `Denied ID .../media-studio.js?url` — the imports
+  live outside the app root. Fix: `server.fs.allow: [appRoot, repoRoot]` in
+  the console's `vitest.config.ts` (mirror what `vite.config.ts` already
+  allows for the dev server).
+- **Magic-link emails must target the SPA origin, not the WP backend
+  (learned 2026-10-25):** `magic_login_app_origin` (Authentication → Magic
+  Link Sign-In) defaults to the WP `home_url()` — emails land on the
+  WordPress site (a "Coming Soon" page on the console backend) instead of
+  the console SPA. Set it to the SPA origin (`https://pro.nvoos.cloud` for
+  the Complete Console) via wp-admin, the console's own `#/settings` (the
+  field auto-surfaces from the schema), or `POST /settings/values`. The
+  console already consumes `#/magic-login?token=` on boot (`main.tsx`
+  `completeMagicLogin` → `POST mcp-ai/v1/magic-login/confirm` through the
+  proxy) — the token handler needs no SPA work; the origin config is the
+  whole fix.
 - **Admin settings fields auto-surface in the console `#/settings`.**
   Fields added to a settings section (`get_fields()` + a subtab group in
   `includes/admin/sections/`) flow through
@@ -435,6 +466,35 @@ implementation-plan twin.
   credential.siteOrigin`. Cookie mode passes the `wp_rest` nonce only.
   `getAuthCredential()` + the `__NVOOS_AUTH__` slot remain (the standalone
   app's `fetch-wrapper.ts` owns the slot).
+
+### Theming islands — host token bridge (2026-10-25)
+
+Industry pattern for embedded surfaces: **"map only design tokens"** — the
+host rebrands the island by remapping the island's own semantic variables at
+the boundary; it never restyles internals and never ports its design system
+in (the island stays standalone + byte-identical). The docs-hub bridge lives
+in `spa-v2/src/features/docs-hub/docs-hub.css`:
+
+```css
+/* Light: NDS addon (when active) → SPA tokens → island default */
+.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root {
+	--dh-accent-primary: var(--nds-color-accent, var(--nvoos-primary, #2563eb));
+	/* ... text, borders, surfaces, font-family, radius ... */
+}
+/* Dark: the island's own palette restored VERBATIM (0-3-0 beats the light
+   bridge) — the island toggles dark mode independently of the host. */
+.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root[data-theme='dark'],
+.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root.dh-dark { /* ... */ }
+```
+
+Cascade rules learned: the bridge must be declared ON `.nvoos-docs-hub-root`
+(child-root declarations always beat container-level inheritance), the light
+bridge needs 0-2-0 (island light tokens are 0-1-0), and the dark counterpart
+needs 0-3-0 (island dark tokens are 0-2-0 — a tie with the bridge, and the
+wrapper CSS imports AFTER the upstream file, so a tie would clobber the
+island's dark mode). Never let dark mode chase host tokens. Velocity-hosted
+apps never resolve `--nds-*` (the design-system addon generates them on WP
+pages only) — the fallback chain handles that by design.
 
 ### Endpoints + mirror sync
 

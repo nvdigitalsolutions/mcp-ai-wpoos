@@ -1695,15 +1695,24 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-settings__footer {
 	position: sticky;
-	bottom: 0;
+	/* Tuck the footer 30px below the scroll edge so it sits flush against
+	   the bottom of the content area (no visible gap under the border-top).
+	   Narrow screens need less tuck — see the media query below. */
+	bottom: -30px;
 	z-index: 10;
 	display: flex;
 	align-items: center;
 	gap: 12px;
 	margin-top: 16px;
 	padding: 12px 0;
-	border-top: 1px solid var(--nvoos-border, #dcdcde);
-	background: var(--nvoos-bg, #f0f0f1);
+	border-top: 1px solid var( --nvoos-border, #dcdcde );
+	background: var( --nvoos-bg, #f0f0f1 );
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-settings__footer {
+		bottom: -15px;
+	}
 }
 
 .nvoos-pro-spa-settings__dirty-hint {
