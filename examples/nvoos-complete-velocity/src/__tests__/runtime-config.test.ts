@@ -53,22 +53,24 @@ describe('buildConsoleRuntime', () => {
     expect(runtime.endpoints.documentEditor).not.toBe('');
   });
 
-  it('empties optional endpoints the server reports unavailable', () => {
-    const runtime = buildConsoleRuntime({
-      features: {
-        docs_hub: false,
-        knowledge_graph: false,
-        media_studio: false,
-        document_editor: false,
-      },
-    });
-    expect(runtime.endpoints.docsHub).toBe('');
-    expect(runtime.endpoints.contentGraph).toBe('');
-    expect(runtime.endpoints.mediaStudio).toBe('');
-    expect(runtime.endpoints.documentEditor).toBe('');
-  });
+	  it( 'empties optional endpoints the server reports unavailable', () => {
+		  const runtime = buildConsoleRuntime( {
+			  features: {
+				  docs_hub: false,
+				  knowledge_graph: false,
+				  media_studio: false,
+				  document_editor: false,
+				  okf: false,
+			  },
+		  } );
+		  expect( runtime.endpoints.docsHub ).toBe( '' );
+		  expect( runtime.endpoints.contentGraph ).toBe( '' );
+		  expect( runtime.endpoints.mediaStudio ).toBe( '' );
+		  expect( runtime.endpoints.documentEditor ).toBe( '' );
+		  expect( runtime.endpoints.okf ).toBe( '' );
+	  } );
 
-  it('keeps available surfaces wired when the map says so', () => {
+	  it( 'keeps available surfaces wired when the map says so', () => {
     const runtime = buildConsoleRuntime({
       features: { docs_hub: true, knowledge_graph: true },
     });

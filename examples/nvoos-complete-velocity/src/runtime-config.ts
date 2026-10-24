@@ -12,6 +12,16 @@
 
 import type { ProSpaRuntime, ProSpaUser, ProSpaEndpoints } from '@nvoos/pro-spa-v2/api/config';
 
+// Island bundles for Media Studio / Document Editor (Proposal 087 Phase 3).
+// Vite copies these self-contained IIFE bundles into the console build and
+// rewrites the imports to hashed asset URLs; the page components load them
+// lazily via spa-v2's utils/island-assets.ts. Same imports as the standalone
+// app's runtime-config.ts — keep them in sync.
+import mediaStudioAssetUrl from '../../../addons/media-studio/assets/dist/media-studio.js?url';
+import mediaStudioCssUrl from '../../../addons/media-studio/assets/dist/media-studio.css?url';
+import documentEditorAssetUrl from '../../../addons/document-editor/assets/dist/document-editor.js?url';
+import documentEditorCssUrl from '../../../addons/document-editor/assets/dist/document-editor.css?url';
+
 /**
  * Parse a fetch response as JSON, refusing non-JSON payloads. Without this
  * guard a 200 HTML response (SPA fallback, login redirect, Varnish error)
@@ -84,16 +94,25 @@ function buildEndpoints(origin: string): ProSpaEndpoints {
     commandCenter: `${pro}/command-center`,
     shortcuts: `${pro}/tool-shortcuts`,
     slashCommands: `${pro}/slash-commands`,
-    okf: `${pro}/okf`,
-    // NV oOS Content Graph (standalone plugin) — the knowledge-graph page
-    // renders an unavailable state when the site doesn't expose it.
-    contentGraph: `${api}/nvoos-content-graph/v1`,
-    // NV oOS Docs Hub — the #/docs page renders this front-end URL in a
-    // sandboxed iframe. Defaults to the hosted console docs URL.
-    docsHub: 'https://console.nvoos.cloud/docs-hub/',
-    // Media Studio / Document Editor — framed via their shortcode pages.
-    mediaStudio: `${origin}/media-studio/`,
-    documentEditor: `${origin}/document-editor/`,
+    		okf: `${pro}/okf`,
+    		// NV oOS Content Graph (standalone plugin) — the knowledge-graph page
+    		// renders an unavailable state when the site doesn't expose it.
+    		contentGraph: `${api}/nvoos-content-graph/v1`,
+    		// NV oOS Docs Hub — the #/docs page mounts the vendored Docs Hub island
+    		// against this local REST base and renders an unavailable state when
+    		// the connected site does not expose the plugin (same contract as
+    		// contentGraph above).
+    		docsHub: `${api}/nvoos-docs/v1`,
+    		// NV oOS Media Studio / Document Editor — the #/media and #/documents
+    		// pages mount the lazily-loaded islands against these local REST bases
+    		// (unconditional like contentGraph: the island's own error UI covers
+    		// sites without the addon). Asset URLs come from this app's build.
+    		mediaStudio: `${api}/nvoos-media-studio/v1`,
+    		mediaStudioAsset: mediaStudioAssetUrl,
+    		mediaStudioCss: mediaStudioCssUrl,
+    		documentEditor: `${api}/nvoos-document-editor/v1`,
+    		documentEditorAsset: documentEditorAssetUrl,
+    		documentEditorCss: documentEditorCssUrl,
   };
 }
 
@@ -135,9 +154,12 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
   if (features.media_studio === false) {
     endpoints.mediaStudio = '';
   }
-  if (features.document_editor === false) {
-    endpoints.documentEditor = '';
-  }
+  	if ( features.document_editor === false ) {
+  		endpoints.documentEditor = '';
+  	}
+  	if ( features.okf === false ) {
+  		endpoints.okf = '';
+  	}
 
   return {
     apiUrl: `${origin}/wp-json/mcp-ai/v1`,

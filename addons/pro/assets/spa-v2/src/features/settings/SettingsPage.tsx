@@ -23,12 +23,32 @@ import { MASKED_PLACEHOLDER, type SettingsField, type SettingsValues } from '../
 
 type FormValue = string | number | boolean;
 
+/**
+ * Whether a select field's option keys are all numeric (e.g. assistant IDs).
+ * Numeric selects store int values; the form must round-trip them as numbers
+ * so the rendered option matches the stored value (an int value coerced to
+ * '' would silently display the first option — the default_assistant bug).
+ */
+function isNumericSelect( field: SettingsField ): boolean {
+	const keys = Object.keys( field.options ?? {} );
+	return keys.length > 0 && keys.every( ( key ) => key !== '' && ! Number.isNaN( Number( key ) ) );
+}
+
 function toFormValue( field: SettingsField, value: unknown ): FormValue {
 	if ( field.type === 'checkbox' ) {
 		return value === true;
 	}
 	if ( field.type === 'number' ) {
 		return typeof value === 'number' ? value : 0;
+	}
+	if ( field.type === 'select' && isNumericSelect( field ) ) {
+		if ( typeof value === 'number' ) {
+			return value;
+		}
+		if ( typeof value === 'string' && value.trim() !== '' && ! Number.isNaN( Number( value ) ) ) {
+			return Number( value );
+		}
+		return 0;
 	}
 	return typeof value === 'string' ? value : '';
 }
@@ -69,9 +89,12 @@ export function SettingsPage(): JSX.Element {
 	const tabs = useMemo( () => {
 		const seen: string[] = [];
 		for ( const field of fields ) {
-			if ( ! seen.includes( field.tab ) ) {
-				seen.push( field.tab );
+			// '__hidden__' is the server sentinel for sections rendered inside
+			// another section — never a real tab.
+			if ( field.tab === '__hidden__' || seen.includes( field.tab ) ) {
+				continue;
 			}
+			seen.push( field.tab );
 		}
 		return seen;
 	}, [ fields ] );
@@ -90,7 +113,7 @@ export function SettingsPage(): JSX.Element {
 	// Computed BEFORE the early returns — rules-of-hooks (React error #310).
 	const groupedFields = useMemo< FieldGroup[] >( () => {
 		const visible = fields.filter( ( field ) => {
-			if ( field.type === 'hidden' ) {
+			if ( field.type === 'hidden' || field.tab === '__hidden__' ) {
 				return false;
 			}
 			if ( searching ) {
@@ -356,6 +379,15 @@ function SettingsFieldRow( { field, value, dirty, showSection, onChange }: Setti
 	}
 
 	let control: JSX.Element;
+	const numericSelect = field.type === 'select' && isNumericSelect( field );
+	const selectOptionKeys = Object.keys( field.options ?? {} );
+	// The stored value may not be among the options (catalog churn, older
+	// plugin). Render it as an extra option instead of silently displaying
+	// the first option — the select must never lie about the live config.
+	const unlistedSelectValue =
+		field.type === 'select' &&
+		String( value ) !== '' &&
+		! selectOptionKeys.includes( String( value ) );
 	switch ( field.type ) {
 		case 'select':
 			control = (
@@ -364,8 +396,13 @@ function SettingsFieldRow( { field, value, dirty, showSection, onChange }: Setti
 					className="nvoos-pro-spa-tools-page__select"
 					value={ String( value ) }
 					aria-describedby={ describedBy || undefined }
-					onChange={ ( e ) => onChange( e.target.value ) }
+					onChange={ ( e ) =>
+						onChange( numericSelect ? Number( e.target.value ) : e.target.value )
+					}
 				>
+					{ unlistedSelectValue && (
+						<option value={ String( value ) }>{ String( value ) }</option>
+					) }
 					{ Object.entries( field.options ?? {} ).map( ( [ optionValue, optionLabel ] ) => (
 						<option key={ optionValue } value={ optionValue }>
 							{ optionLabel }

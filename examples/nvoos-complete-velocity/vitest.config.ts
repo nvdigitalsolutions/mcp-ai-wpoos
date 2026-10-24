@@ -13,6 +13,13 @@ function nodeModulesAlias(pkg: string): Record<string, string> {
   return { [pkg]: fileURLToPath(new URL(`./node_modules/${pkg}`, import.meta.url)) };
 }
 
+// The app root + the monorepo root: runtime-config.ts imports the media-
+// studio/document-editor island bundles via `?url` (Proposal 087), which
+// live outside this app's root — without the fs allow entry vitest denies
+// the import with "Denied ID ... ?url".
+const appRoot = fileURLToPath(new URL('.', import.meta.url));
+const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -40,5 +47,10 @@ export default defineConfig({
     globals: false,
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/__tests__/**/*.test.{ts,tsx}'],
+  },
+  server: {
+    fs: {
+      allow: [appRoot, repoRoot],
+    },
   },
 });
