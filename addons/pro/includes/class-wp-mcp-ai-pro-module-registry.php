@@ -656,6 +656,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'rest_okf_docs',
+				'OKF Knowledge Docs REST (Docs Hub contract)',
+				array(),
+				array(),
+				function () use ( $p ) {
+					// Proposal 087 Phase 2 — serves OKF bundles in the Docs Hub
+					// manifest/pages/search shape so the vendored Docs Hub island
+					// can browse curated knowledge without the Docs Hub plugin.
+					$f = $p . 'rest/class-wp-mcp-ai-pro-rest-okf-docs.php';
+					if ( file_exists( $f ) ) {
+						require_once $f;
+						add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_REST_Okf_Docs', 'register_routes' ) );
+					}
+				}
+			);
+
+			$this->add_module(
 				'rest_console_bridges',
 				'Console REST Bridges',
 				array(),

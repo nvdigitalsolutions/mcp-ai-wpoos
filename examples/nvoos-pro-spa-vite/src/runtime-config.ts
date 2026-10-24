@@ -16,6 +16,15 @@
 
 import type { ProSpaRuntime, ProSpaUser, ProSpaEndpoints } from '@nvoos/pro-spa-v2/api/config';
 
+// Island bundles for Media Studio / Document Editor (Proposal 087 Phase 3).
+// Vite copies these self-contained IIFE bundles into the standalone build and
+// rewrites the imports to hashed asset URLs; the page components load them
+// lazily via utils/island-assets.ts.
+import mediaStudioAssetUrl from '../../../addons/media-studio/assets/dist/media-studio.js?url';
+import mediaStudioCssUrl from '../../../addons/media-studio/assets/dist/media-studio.css?url';
+import documentEditorAssetUrl from '../../../addons/document-editor/assets/dist/document-editor.js?url';
+import documentEditorCssUrl from '../../../addons/document-editor/assets/dist/document-editor.css?url';
+
 export type AuthMode = 'cookie' | 'bearer' | 'guest' | 'wp';
 
 export interface ConnectionSettings {
@@ -158,15 +167,25 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		// NV oOS Content Graph (standalone plugin) — the knowledge-graph page
 		// renders an unavailable state when the site doesn't expose it.
 		contentGraph: `${api}/nvoos-content-graph/v1`,
-		// NV oOS Docs Hub — the #/docs page renders this front-end URL in a
-		// sandboxed iframe. Defaults to the hosted console docs URL.
-		docsHub: 'https://console.nvoos.cloud/docs-hub/',
+		// NV oOS Docs Hub — the #/docs page mounts the vendored Docs Hub island
+		// against this local REST base and renders an unavailable state when
+		// the connected site does not expose the plugin (same contract as
+		// contentGraph above).
+		docsHub: `${ api }/nvoos-docs/v1`,
 		// NV oOS Media Studio / Document Editor — point at the site's shortcode
 		// pages so the #/media and #/documents pages frame the real apps. The
 		// headless credential is forwarded to those frames via postMessage (see
 		// src/utils/auth-bridge.ts on the spa-v2 side).
-		mediaStudio: `${origin}/media-studio/`,
-		documentEditor: `${origin}/document-editor/`,
+		// NV oOS Media Studio / Document Editor — the #/media and #/documents
+		// pages mount the lazily-loaded islands against these local REST bases
+		// (unconditional like contentGraph: the island's own error UI covers
+		// sites without the addon). Asset URLs come from this app's build.
+		mediaStudio: `${ api }/nvoos-media-studio/v1`,
+		mediaStudioAsset: mediaStudioAssetUrl,
+		mediaStudioCss: mediaStudioCssUrl,
+		documentEditor: `${ api }/nvoos-document-editor/v1`,
+		documentEditorAsset: documentEditorAssetUrl,
+		documentEditorCss: documentEditorCssUrl,
 	};
 }
 

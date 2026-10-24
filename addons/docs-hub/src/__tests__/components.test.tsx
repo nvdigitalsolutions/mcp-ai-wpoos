@@ -8,6 +8,8 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import type { ReactElement } from 'react';
 
 import CodeBlock from '../components/CodeBlock';
 import ContentArea from '../components/ContentArea';
@@ -84,24 +86,31 @@ describe( 'CodeBlock', () => {
 // ContentArea
 // ---------------------------------------------------------------------------
 describe( 'ContentArea', () => {
+	// ContentArea resolves internal links through useNavigate(), so every
+	// render needs a router context. Hash-mode behaviour is the default
+	// (the DocRouterModeContext default) — the island's MemoryRouter
+	// interception is covered in island.test.tsx.
+	const renderArea = ( ui: ReactElement ) =>
+		render( <MemoryRouter>{ ui }</MemoryRouter> );
+
 	it( 'renders an <article> with the dh-content class', () => {
-		const { container } = render( <ContentArea content="Hello" /> );
+		const { container } = renderArea( <ContentArea content="Hello" /> );
 		expect( container.querySelector( 'article.dh-content' ) ).not.toBeNull();
 	} );
 
 	it( 'renders plain text content', () => {
-		render( <ContentArea content="Hello world" /> );
+		renderArea( <ContentArea content="Hello world" /> );
 		expect( screen.getByText( /Hello world/i ) ).toBeInTheDocument();
 	} );
 
 	it( 'renders markdown heading as an <h1>', () => {
-		const { container } = render( <ContentArea content="# My Heading" /> );
+		const { container } = renderArea( <ContentArea content="# My Heading" /> );
 		expect( container.querySelector( 'h1' ) ).not.toBeNull();
 		expect( container.querySelector( 'h1' )?.textContent ).toContain( 'My Heading' );
 	} );
 
 	it( 'renders a markdown link', () => {
-		render( <ContentArea content="[Click here](https://example.com)" /> );
+		renderArea( <ContentArea content="[Click here](https://example.com)" /> );
 		const link = screen.getByRole( 'link', { name: 'Click here' } );
 		expect( link ).toBeInTheDocument();
 	} );
@@ -112,19 +121,19 @@ describe( 'ContentArea', () => {
 |------|-------|
 | foo  | bar   |
 `;
-		const { container } = render( <ContentArea content={ tableMarkdown } /> );
+		const { container } = renderArea( <ContentArea content={ tableMarkdown } /> );
 		expect( container.querySelector( 'table' ) ).not.toBeNull();
 	} );
 
 	it( 'renders a fenced code block via CodeBlock', () => {
 		const codeMarkdown = '```js\nconsole.log("hi")\n```';
-		const { container } = render( <ContentArea content={ codeMarkdown } /> );
+		const { container } = renderArea( <ContentArea content={ codeMarkdown } /> );
 		// CodeBlock wraps its output in .dh-code-block.
 		expect( container.querySelector( '.dh-code-block' ) ).not.toBeNull();
 	} );
 
 	it( 'opens remote links in a new tab when remoteUrl is supplied', () => {
-		render(
+		renderArea(
 			<ContentArea
 				content="[External](https://other.com/page)"
 				remoteUrl="https://github.com/owner/repo/blob/main/docs/page.md"
@@ -137,7 +146,7 @@ describe( 'ContentArea', () => {
 
 	it( 'rewrites a local .md link into a #/slug hash route', () => {
 		const slugSet = new Set( [ 'features/chat' ] );
-		render(
+		renderArea(
 			<ContentArea
 				content="[Chat](chat.md)"
 				slugSet={ slugSet }
@@ -150,7 +159,7 @@ describe( 'ContentArea', () => {
 
 	it( 'preserves heading anchors when rewriting a local .md link', () => {
 		const slugSet = new Set( [ 'features/chat' ] );
-		render(
+		renderArea(
 			<ContentArea
 				content="[Chat setup](chat.md#setup)"
 				slugSet={ slugSet }
@@ -163,7 +172,7 @@ describe( 'ContentArea', () => {
 
 	it( 'resolves parent-relative local .md links against the page path', () => {
 		const slugSet = new Set( [ 'reference/tools/tool-reference' ] );
-		render(
+		renderArea(
 			<ContentArea
 				content="[Tools](../reference/tools/tool-reference.md)"
 				slugSet={ slugSet }
@@ -176,7 +185,7 @@ describe( 'ContentArea', () => {
 
 	it( 'leaves links to unindexed files untouched', () => {
 		const slugSet = new Set( [ 'features/chat' ] );
-		render(
+		renderArea(
 			<ContentArea
 				content="[Internal](internal-notes.md)"
 				slugSet={ slugSet }
@@ -189,7 +198,7 @@ describe( 'ContentArea', () => {
 
 	it( 'leaves absolute URLs untouched on local pages', () => {
 		const slugSet = new Set( [ 'features/chat' ] );
-		render(
+		renderArea(
 			<ContentArea
 				content="[Site](https://example.com/x.md)"
 				slugSet={ slugSet }

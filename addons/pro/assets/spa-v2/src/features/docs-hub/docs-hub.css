@@ -1,11 +1,12 @@
 /**
- * DocsPage — SPA shell styles for the embedded Docs Hub iframe.
+ * DocsPage — SPA shell styles for the native Docs Hub island.
  *
- * The iframe owns its own design system; this file only sizes the frame so it
- * fills the page shell with a sensible minimum height.
+ * The vendored island brings its own design system (docs-hub.css upstream);
+ * this file only sizes the island container so it fills the page shell with a
+ * sensible minimum height, plus the shared unavailable/error state.
  */
 
-.nvoos-pro-spa-docs-hub__frame {
+.nvoos-pro-spa-docs-hub__island {
 	display: block;
 	width: 100%;
 	height: calc( 100vh - 160px );
@@ -13,6 +14,45 @@
 	border: 1px solid var( --nvoos-border, #dcdcde );
 	border-radius: 8px;
 	background: var( --nvoos-bg-secondary, #fff );
+	overflow: hidden;
+}
+
+/* The island app is a three-pane grid (header / sidebar / main / TOC) that
+   manages its own internal scroll areas. Pin it to the container's height so
+   the panes scroll internally instead of sizing to the viewport. */
+.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root {
+	width: 100%;
+	height: 100%;
+	min-height: 0;
+}
+
+.nvoos-pro-spa-docs-hub__island .dh-layout {
+	height: 100%;
+	min-height: 0;
+}
+
+.nvoos-pro-spa-docs-hub__source-toggle {
+	display: inline-flex;
+	gap: 4px;
+	padding: 4px;
+	border: 1px solid var( --nvoos-border, #dcdcde );
+	border-radius: 6px;
+	background: var( --nvoos-bg-secondary, #fff );
+}
+
+.nvoos-pro-spa-docs-hub__source-option {
+	padding: 4px 12px;
+	border: 0;
+	border-radius: 4px;
+	background: transparent;
+	color: var( --nvoos-text-secondary, #50575e );
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.nvoos-pro-spa-docs-hub__source-option[aria-pressed='true'] {
+	background: var( --nvoos-primary, #2271b1 );
+	color: #fff;
 }
 
 .nvoos-pro-spa-docs-hub__unavailable {
