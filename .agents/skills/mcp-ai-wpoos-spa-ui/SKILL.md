@@ -198,6 +198,34 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   back to the server-resolved default assistant, then the full registry).
 	  New console pages register their gates in `nav-features.tsx` — never
 	  inline.
+- **New endpoint key = four wiring points (learned 2026-10-24, PRs
+  #7206/#7207).** Adding `endpoints.paperStore` needed (1) the PHP emitter
+  `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php`, (2) the
+  `ProSpaEndpoints` interface + `readProSpaConfig()` mapper in
+  `api/config.ts`, and (3)+(4) **every app that builds its own endpoints
+  map** — `examples/nvoos-complete-velocity/src/runtime-config.ts` AND
+  `examples/nvoos-pro-spa-vite/src/runtime-config.ts`. Missing an app breaks
+  THAT app's sync gate with TS2741 (missing required property) — #7207 was
+  exactly that for the standalone app. When adding an endpoint key, grep
+  `runtime-config.ts` across `examples/` and update them all.
+- **Admin settings fields auto-surface in the console `#/settings`.**
+  Fields added to a settings section (`get_fields()` + a subtab group in
+  `includes/admin/sections/`) flow through
+  `WP_MCP_AI_REST_Settings_Controller::build_schema_fields()`
+  (SUPPORTED_FIELD_TYPES) into the console settings page with **zero SPA
+  changes**. Feature code reads them via
+  `WP_MCP_AI_Settings_Registry::get_setting()` (the grouped
+  `wp_mcp_ai_settings` option) — not a standalone `get_option` — and may
+  keep a standalone-option fallback for WP-CLI compat (the magic-login
+  controller pattern, 2026-10-24).
+- **Grid overflow containment recipe (learned 2026-10-24).** When a card or
+  table blows past 100% width, the chain is track min-content → grid-item
+  `min-width: auto`. Fix with `minmax(0, …)` tracks + `min-width: 0;
+  overflow-x: auto` on the grid children (workflows page, Paper Store
+  page). The shared DataTable's 640px `min-width` is the usual culprit
+  inside narrow panes. Adjacent action buttons in a table cell get a gutter
+  via `.nvoos-pro-spa-page__retry + .nvoos-pro-spa-page__retry {
+  margin-left: 6px }` (Blueprints Install/Details, Approvals pair).
 - **SSE mid-stream frame bridging (AI SDK v1.2.12 has NO `onData` callback;
   learned 2026-10-24, job_offload pass):** `chat-spa`'s `@ai-sdk/react@1.2.12`
   `useChat` exposes no data-stream callback, so mid-stream server events
@@ -550,6 +578,15 @@ bundle: #7158's squash only carried the plugin bundle, the console
 none of the fixes until #7159. After any rebuild-PR merge, verify each
 rebuild commit is an ancestor of the target branch
 (`git merge-base --is-ancestor <sha> origin/alpha-working`).
+
+**The sync workflow does NOT rebuild the console dist (learned
+2026-10-24).** `sync-nvoos-complete-velocity.yml` assembles the mirror from
+the **committed** `examples/nvoos-complete-velocity/dist/` (asset-closure
+check, npm-script no-ops, boot smoke) — it never runs Vite. A
+console-source change merged without `npm run sync:dist` + a dist commit
+ships the stale bundle to the mirror (case: #7206 merged carrying the
+#7205-era dist; fixed by the #7208 rebuild commit). Console source changes
+and their dist rebuild belong in the same PR.
 
 ### Rebuild discipline — staleness, vendor, drift (learned 2026-10-22)
 

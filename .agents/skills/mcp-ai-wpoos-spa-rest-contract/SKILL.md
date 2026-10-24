@@ -175,6 +175,21 @@ the form read fields the directory never returned).
     static data provider (`provider_bridge_class_files()` — PHPUnit 11
     requires `public static` providers).
 
+13. **Failure masquerades as empty — a detail fetch that throws leaves the
+    data array empty and the UI renders the "no data" state instead of the
+    error.** Real case (2026-10-24): expanding any team on `#/teams` showed
+    "No profession members." for every team — `useTeams.loadMembers()` caught
+    the failure into the shared list `error` and left `members=[]`, so the
+    detail row's empty branch rendered unconditionally (a stale in-flight
+    response could also overwrite the next team's list — no abort guard).
+    Fix discipline: keep a **separate error state per fetch** (`membersError`
+    vs `members.length === 0`), render it with `role="alert"` ahead of the
+    empty branch, clear the previous payload when a new fetch starts, and
+    AbortController the previous request so a late response can never paint
+    under the wrong row. Same discipline applied to RecordsPage's expanded
+    detail (loading/error/loaded branches on fetch-on-expand) and the Paper
+    Store page.
+
 ## Audit path per client (4 hops, verify every hop)
 
 1. Client: endpoint key + methods + request fields + parsed response fields.
@@ -349,3 +364,10 @@ sub-agents; keep one coordinator for fixes + final gates.
   production fix (`git stash push -- <file>`) and watching it fail.
 - PHPUnit 11 requires data providers to be `public static` — a non-static
   provider errors at suite construction, not at the test body.
+- **Public routes get a named permission callback, not `__return_true`.**
+  The magic-login controller (2026-10-24, `includes/rest/`) is the reference:
+  its routes are unauthenticated by design (pre-session visitors, same
+  documented exception as `/session/nonce`), but the permission callback
+  still enforces the feature flag (404 `rest_no_route` while disabled) and
+  the Security_Manager IP/HTTPS posture checks. Every future public route
+  follows this pattern.
