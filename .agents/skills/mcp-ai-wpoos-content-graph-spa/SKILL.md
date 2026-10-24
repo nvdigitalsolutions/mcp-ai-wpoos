@@ -128,3 +128,10 @@ silently never fire.
   + assistant-credential bearer auth on read routes) shipped in
   `nvoos-content-graph` 1.0.11 (wp.org upload prepared 2026-10-11;
   see `plugins/nvoos-content-graph/WPORG-REVIEW-18POINT-SIGNOFF.md`).
+- Release note (2026-10-24): `nvoos-content-graph` **1.0.12** upload prep
+  merged (PR #7198) — folds the post-1.0.11 changes: the memory-graph bridge
+  seams (#7145 — `Bridge::register()` self-declares the base plugin's
+  provenance + RRF graph bridges) and the guest-token read-route fix (#7155
+  — validation now mirrors the base chat-transcript layer via
+  `WP_MCP_AI_Shortcode::validate_guest_token()`). Auth-surface behavior for
+  the SPA is unchanged (bearer auth + visual-config route carried forward).

@@ -4,9 +4,9 @@ description: Operational guide for the Schedule Anything SaaS surface — the 3-
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
-  last-updated: "2026-10-23"
+  plugin-version: "1.2.11"
+  plugin-version-tested: "1.2.11"
+  last-updated: "2026-10-24"
 ---
 
 # Schedule Anything SaaS — Operational Guide
@@ -237,6 +237,21 @@ a bundle zip alongside would collide:
 - Cookie-auth proxy: `/wp-json` etc. proxied, login page re-scoped (relative
   form action + redirect_to), Set-Cookie Domain stripped → **no CORS config
   needed** in proxy mode.
+- **serve.mjs caching contract (2026-10-23, #7197 — both Velocity apps):**
+  `index.html` serves `no-cache` + weak ETag (304 revalidation); hashed
+  `/assets/*` are `public, max-age=31536000, immutable`; unversioned root
+  files (favicon) get `max-age=86400` + ETag; gzip/brotli from an in-memory
+  file cache with `Vary: Accept-Encoding`. A **default-deny proxy
+  micro-cache** stores proxied GETs only when WordPress itself declares
+  `Cache-Control: public` + explicit `max-age`/`s-maxage` with no
+  `Set-Cookie` and `Vary` ≠ Cookie/Origin/* — the nonce + SSE endpoints
+  (`no-store`) can never be cached, `X-WP-Nonce` is stripped from cached
+  entries, and every proxied response carries `X-Cache-Status:
+  HIT/MISS/BYPASS` + `Age`. Knobs: `NVOOS_PROXY_CACHE=0` (kill switch),
+  `NVOOS_PROXY_CACHE_MAX_TTL` (default 300 s). The sync workflow smoke-asserts
+  the contract — cache-related console symptoms (`features` HIT without a
+  fresh `x-wp-nonce`, stale nonce rejections after an addon activation) are
+  the 60 s `/features` TTL, not a proxy bug.
 - Sync: `.github/workflows/sync-nvoos-schedule-anything-velocity.yml` triggers
   on pushes touching `examples/schedule-anything-velocity/**` (main or
   alpha-working) + dispatch. It drops the dev-only `sync-dist.mjs` from the

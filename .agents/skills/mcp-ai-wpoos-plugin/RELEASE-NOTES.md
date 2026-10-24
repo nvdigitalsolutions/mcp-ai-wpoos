@@ -1,4 +1,4 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.10)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.11)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
@@ -6,6 +6,17 @@ Operational content stays in SKILL.md; append new per-version sections here.
 ---
 
 ---
+
+## Velocity Caching, SSE Offload, Console Login & a Fix Wave (v1.2.11)
+
+- **Velocity caching + REST cache opt-in (PR #7197)** — both Velocity apps (`examples/nvoos-complete-velocity` + `examples/schedule-anything-velocity`) gain the full caching contract: `no-cache` + weak-ETag `index.html` (304 revalidation), `immutable` hashed assets, gzip/brotli with `Vary: Accept-Encoding`, and a **default-deny proxy micro-cache** (proxied GETs stored only when WP declares `Cache-Control: public` + explicit `max-age`/`s-maxage`, no `Set-Cookie`, `Vary` ≠ Cookie/Origin/*; nonce + SSE endpoints can never be cached; `X-WP-Nonce` stripped from cached entries; knobs `NVOOS_PROXY_CACHE=0` / `NVOOS_PROXY_CACHE_MAX_TTL` 300 s). `GET /mcp-ai/v1/features` emits `public, max-age=60, s-maxage=60`; the new `WP_MCP_AI_REST_Cache_Control` opts out of WP 6.9's authenticated no-cache injection only when the response explicitly declares public caching.
+- **SSE long-run offload — Proposal Phase 4b (PR #7199)** — streams nearing proxy idle-read resets (~75 s default, `wp_mcp_ai_sse_offload_elapsed_seconds`, 0 = off) hand the remaining agentic work to the job queue (`WP_MCP_AI_Chat_Stream_Offload_Worker`, `chat_stream_continuation`, 240 s cap, notifier heartbeats) and close with a `job_offload` event; the continuation snapshot round-trip now persists `assistant_config`/`iteration`/`max_iterations`/`agentic_cost_accumulator`/`pending_tool_calls`/`continuation_kind`; terminal failures record `handle_job_failed()` (a `WP_Error`) + a `chat:error` frame and **throw** (queue row `failed`). `content_format_templates` seeding deferred `init` → `wp_loaded` (PHP 8 `$wp_rewrite` null on fresh boots).
+- **Complete Console login/sign-out/session gate (PRs #7190/#7192/#7196)** — branded in-app sign-in (wp-login form replay against the proxy), the global 401/403 → sign-in gate in `fetch-wrapper.ts`, working sign-out (`&#038;`-escaped nonce accepted), z-index + favicon fixes.
+- **Console fixes (PRs #7189/#7191/#7193/#7196/#7200/#7201/#7202)** — front-end REST bridge providers eager-required (`rest_console_bridges`) + the command-center lazy `load_provider()` seam + 501 `WP_Error` branches; profession ballooning (counts-cache invalidation + slug-match seeder dedupe); `/dashboards/schema` `disabled` map + `effective_flag_key()`; Security Center structured UI; workflow `NodeEditor`; the command-center 500 (static `$this` fatal); continuation null-safety; console mobile gutters/dock.
+- **Dependency advisories (PR #7195)** — 67 of 74 alerts closed across 21 npm trees (vitest-mocker ≥4.1.12 <5, dompurify ^3.4.17, sharp ^0.35.5, ip-address ≥10.7.4, vite → ^6.4.4, esbuild); tracked bundles rebuilt; deferred: #7090 (provider-utils 3.x), #7089 (react-router 7), #7194 (glib).
+- **Sub-projects (PRs #7198/#7191)** — nvoos-content-graph 1.0.12 upload prep (memory-graph bridge seams #7145 + guest-token read-route validation mirror #7155; ZIP at `build/nvoos-content-graph-v1.0.12.zip`); docs-hub checked — no shipped changes since 0.5.3; CG-AI-platform profession mirror + v2.0.0 ZIP.
+- **Docs (PR #7203)** — Proposal 086 (chat frontend transport abstraction, BYOK backend).
+- **Versioning** — 1.2.11 across all version-bearing files. No addon moves. Tool count unchanged (~355 base + ~1,377 Pro, ~1,731 total). Coding-time skills 76 (unchanged). Stale 1.2.9 build ZIPs (30 files) + the superseded content-graph v1.0.11 ZIP removed.
 
 ## Console Phase 5b–5d, Crash Fixes, Storage Meter & Advisory Sweep (v1.2.10)
 
