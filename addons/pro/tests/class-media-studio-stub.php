@@ -16,6 +16,16 @@
  */
 
 if ( ! class_exists( 'NV_oOS_Media_Studio_Shortcode' ) ) {
+	// When the real addon ships in the tree (monorepo full-suite runs), always
+	// load the real class so later media-studio suites never see an empty stub
+	// that would collide with the real unguarded declaration.
+	$real_class_file = dirname( __DIR__, 2 ) . '/media-studio/includes/shortcode/class-nvoos-media-studio-shortcode.php';
+	if ( file_exists( $real_class_file ) ) {
+		require_once $real_class_file;
+	}
+}
+
+if ( ! class_exists( 'NV_oOS_Media_Studio_Shortcode' ) ) {
 	/**
 	 * Stub Media Studio shortcode class (the feature flag gate).
 	 */
