@@ -153,6 +153,7 @@ class WP_MCP_AI_Tool_Bulk_Order_Status_Update implements WP_MCP_AI_Tool_Interfac
 						),
 						'customer_id' => array(
 							'type'        => 'integer',
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							'description' => 'Filter by customer ID',
 						),
 						'limit'       => array(

@@ -64,10 +64,12 @@ class WP_MCP_AI_Tool_Get_Team_Velocity implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'project_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional project ID to filter velocity by project.', 'mcp-ai-wpoos-pro' ),
 				),
 				'assignee_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional assignee user ID to filter velocity by person.', 'mcp-ai-wpoos-pro' ),
 				),
 				'periods'     => array(

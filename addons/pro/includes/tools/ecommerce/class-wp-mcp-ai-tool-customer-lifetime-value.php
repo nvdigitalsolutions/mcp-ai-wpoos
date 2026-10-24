@@ -130,6 +130,7 @@ class WP_MCP_AI_Tool_Customer_Lifetime_Value implements WP_MCP_AI_Tool_Interface
 			'properties' => array(
 				'customer_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Calculate CLV for specific customer ID', 'mcp-ai-wpoos-pro' ),
 				),
 				'email'             => array(

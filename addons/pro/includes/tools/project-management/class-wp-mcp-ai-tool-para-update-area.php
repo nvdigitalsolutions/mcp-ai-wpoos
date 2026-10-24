@@ -72,6 +72,7 @@ class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 				'area_id'        => array(
 					'type'    => 'integer',
 					'minimum' => 1,
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'title'          => array(
 					'type'      => 'string',
@@ -88,6 +89,7 @@ class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 				'owner_id'       => array(
 					'type'    => 'integer',
 					'minimum' => 1,
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'review_cadence' => array(
 					'type' => 'string',

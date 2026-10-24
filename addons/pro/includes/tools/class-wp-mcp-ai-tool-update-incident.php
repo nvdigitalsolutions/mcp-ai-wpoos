@@ -112,6 +112,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Update_Incident' ) ) {
 			return array(
 				'incident_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The ID of the incident to update.', 'mcp-ai-wpoos' ),
 					'required'    => true,
 				),

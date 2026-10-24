@@ -88,6 +88,7 @@ class WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol implements WP_MCP_AI_Tool_Inte
 					'type'        => 'integer',
 					'description' => __( 'When supplied, the modality is read from the stored study.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'study_uid' => array(
 					'type'        => 'string',

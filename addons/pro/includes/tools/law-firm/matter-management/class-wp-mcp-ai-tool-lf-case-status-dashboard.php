@@ -99,6 +99,7 @@ class WP_MCP_AI_Tool_LF_Case_Status_Dashboard implements WP_MCP_AI_Tool_Interfac
 				),
 				'attorney_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Filter by assigned attorney (WordPress user ID).', 'mcp-ai-wpoos-pro' ),
 				),
 				'status_filter' => array(

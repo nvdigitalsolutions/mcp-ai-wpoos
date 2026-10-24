@@ -133,6 +133,7 @@ class WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF implements WP_MCP_AI
 					'type'        => 'integer',
 					'description' => __( 'WooCommerce order ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'branding'         => array(
 					'type'        => 'object',

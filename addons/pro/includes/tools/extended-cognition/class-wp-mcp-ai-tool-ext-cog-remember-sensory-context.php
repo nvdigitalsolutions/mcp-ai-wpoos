@@ -120,6 +120,7 @@ class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context implements WP_MCP_AI_Ext_C
 					),
 					'assistant_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Assistant post ID to scope the memory to. If omitted, stores globally for the current user.',
 					),
 					'ttl_days'     => array(

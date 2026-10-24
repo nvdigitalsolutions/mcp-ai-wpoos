@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 					'type'        => 'integer',
 					'description' => __( 'The ID of the post to retrieve.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'include_meta'       => array(
 					'type'        => 'boolean',
@@ -276,6 +277,7 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			'properties' => array(
 				'ID'             => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'The post ID.',
 				),
 				'post_type'      => array(
@@ -300,6 +302,7 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				),
 				'author_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'The author user ID.',
 				),
 				'date'           => array(
@@ -316,6 +319,7 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				),
 				'parent_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'The parent post ID.',
 				),
 				'menu_order'     => array(

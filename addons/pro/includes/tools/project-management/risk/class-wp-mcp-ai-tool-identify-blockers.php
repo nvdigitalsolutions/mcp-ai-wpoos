@@ -64,6 +64,7 @@ class WP_MCP_AI_Tool_Identify_Blockers implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'project_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional project ID to scope detection to a single project.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

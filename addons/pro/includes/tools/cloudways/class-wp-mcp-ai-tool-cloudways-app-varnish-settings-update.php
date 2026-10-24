@@ -57,10 +57,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Varnish_Settings_Update' ) ) 
 				'properties' => array(
 					'server_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'The server ID.', 'mcp-ai-wpoos-pro' ),
 					),
 					'app_id'    => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'The application ID.', 'mcp-ai-wpoos-pro' ),
 					),
 					'ttl'       => array(

@@ -103,10 +103,12 @@ class WP_MCP_AI_Tool_Generate_Video_Thumbnails implements WP_MCP_AI_Tool_Interfa
 			'properties' => array(
 				'video_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Video media ID',
 				),
 				'count'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Number of thumbnails',
 					'default'     => 5,
 				),

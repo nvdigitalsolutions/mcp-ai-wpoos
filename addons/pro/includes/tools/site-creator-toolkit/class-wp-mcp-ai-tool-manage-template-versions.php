@@ -76,6 +76,7 @@ class WP_MCP_AI_Tool_Manage_Template_Versions implements WP_MCP_AI_Tool_Interfac
 			'properties'           => array(
 				'template_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Template ID', 'mcp-ai-wpoos-pro' ),
 				),
 				'action'         => array(

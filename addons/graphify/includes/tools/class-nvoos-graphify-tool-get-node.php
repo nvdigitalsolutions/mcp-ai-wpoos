@@ -57,6 +57,7 @@ class NV_oOS_Graphify_Tool_Get_Node implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'type'        => 'integer',
 					'description' => __( 'WordPress post ID. Use this or label.', 'nvoos-graphify' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'node_id' => array(
 					'type'        => 'string',

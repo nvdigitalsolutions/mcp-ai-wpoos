@@ -107,6 +107,7 @@ class WP_MCP_AI_Tool_Create_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP
 				),
 				'related_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Post ID of the related lead/deal/contact.', 'mcp-ai-wpoos-pro' ),
 				),
 				'body'          => array(

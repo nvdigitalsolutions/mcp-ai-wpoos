@@ -131,6 +131,7 @@ class WP_MCP_AI_Tool_Create_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'source_lead_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the originating lead, if converted from one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'total_revenue'   => array(

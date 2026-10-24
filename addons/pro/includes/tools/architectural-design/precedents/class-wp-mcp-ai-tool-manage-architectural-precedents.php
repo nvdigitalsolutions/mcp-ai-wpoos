@@ -108,7 +108,10 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 					'type' => 'string',
 					'enum' => array( 'list', 'get', 'create', 'update', 'delete' ),
 				),
-				'precedent_id'          => array( 'type' => 'integer' ),
+				'precedent_id'          => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'title'                 => array( 'type' => 'string' ),
 				'description'           => array( 'type' => 'string' ),
 				'excerpt'               => array( 'type' => 'string' ),

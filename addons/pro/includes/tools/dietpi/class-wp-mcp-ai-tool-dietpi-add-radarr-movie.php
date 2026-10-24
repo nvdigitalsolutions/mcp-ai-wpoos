@@ -61,6 +61,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Radarr_Movie' ) ) {
 					),
 					'tmdb_id'            => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'TMDB ID.', 'mcp-ai-wpoos-pro' ),
 					),
 					'imdb_id'            => array(
@@ -73,6 +74,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Radarr_Movie' ) ) {
 					),
 					'quality_profile_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'Quality profile ID. Default: 1.', 'mcp-ai-wpoos-pro' ),
 						'default'     => 1,
 					),

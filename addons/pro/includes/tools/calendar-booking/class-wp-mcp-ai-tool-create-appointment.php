@@ -126,6 +126,7 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 			'properties' => array(
 				'appointment_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional appointment ID. If provided, updates the existing appointment instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'client_name'       => array(
@@ -189,18 +190,22 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'provider_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Provider ID (required when target_system is jetappointment).', 'mcp-ai-wpoos-pro' ),
 				),
 				'service_id'        => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Service ID (required when target_system is jetappointment).', 'mcp-ai-wpoos-pro' ),
 				),
 				'instance_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Booking instance ID (required when target_system is jetbooking).', 'mcp-ai-wpoos-pro' ),
 				),
 				'unit_id'           => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Unit ID for JetBooking.', 'mcp-ai-wpoos-pro' ),
 				),
 				'sync_to_external'  => array(

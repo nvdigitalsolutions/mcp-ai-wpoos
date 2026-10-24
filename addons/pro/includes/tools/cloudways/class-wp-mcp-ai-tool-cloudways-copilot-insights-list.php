@@ -57,10 +57,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Copilot_Insights_List' ) ) {
 				'properties' => array(
 					'server_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'The server ID (optional).', 'mcp-ai-wpoos-pro' ),
 					),
 					'app_id'    => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'The application ID (optional).', 'mcp-ai-wpoos-pro' ),
 					),
 				),

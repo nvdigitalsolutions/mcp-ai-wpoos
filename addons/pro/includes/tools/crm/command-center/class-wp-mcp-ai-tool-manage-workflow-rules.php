@@ -76,7 +76,10 @@ class WP_MCP_AI_Tool_Manage_Workflow_Rules implements WP_MCP_AI_Tool_Interface, 
 					'type' => 'string',
 					'enum' => array( 'list', 'update', 'delete', 'toggle' ),
 				),
-				'rule_id'   => array( 'type' => 'integer' ),
+				'rule_id'   => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'name'      => array( 'type' => 'string' ),
 				'is_active' => array( 'type' => 'boolean' ),
 				'per_page'  => array(

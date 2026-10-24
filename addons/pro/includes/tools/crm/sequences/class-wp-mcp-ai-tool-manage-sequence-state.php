@@ -74,7 +74,10 @@ class WP_MCP_AI_Tool_Manage_Sequence_State implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id' => array( 'type' => 'integer' ),
+				'lead_id' => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'action'  => array(
 					'type' => 'string',
 					'enum' => array( 'pause', 'resume', 'exit' ),

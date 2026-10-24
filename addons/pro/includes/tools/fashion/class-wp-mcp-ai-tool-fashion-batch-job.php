@@ -113,16 +113,19 @@ class WP_MCP_AI_Tool_Fashion_Batch_Job implements WP_MCP_AI_Tool_Interface, WP_M
 				'identity_id'      => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Managed identity model for identity transforms.', 'mcp-ai-wpoos-pro' ),
 				),
 				'product_id'       => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WooCommerce product to attach approved variants to.', 'mcp-ai-wpoos-pro' ),
 				),
 				'collection_id'    => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Media collection to add approved variants to.', 'mcp-ai-wpoos-pro' ),
 				),
 				'profile'          => array(
@@ -147,6 +150,7 @@ class WP_MCP_AI_Tool_Fashion_Batch_Job implements WP_MCP_AI_Tool_Interface, WP_M
 				'job_id'           => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Batch job ID (get, review).', 'mcp-ai-wpoos-pro' ),
 				),
 				'variant_key'      => array(

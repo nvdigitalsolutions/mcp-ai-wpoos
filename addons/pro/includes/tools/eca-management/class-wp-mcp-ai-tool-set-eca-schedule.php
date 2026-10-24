@@ -63,6 +63,7 @@ class WP_MCP_AI_Tool_Set_ECA_Schedule implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => 'integer',
 					'description' => __( 'ECA ID to set schedule for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'sessions' => array(
 					'type'        => 'array',

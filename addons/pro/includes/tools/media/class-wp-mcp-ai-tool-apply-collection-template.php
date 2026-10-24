@@ -63,6 +63,7 @@ class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'integer',
 					'description' => __( 'ID of the media collection', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'template_ids'  => array(
 					'type'        => 'array',

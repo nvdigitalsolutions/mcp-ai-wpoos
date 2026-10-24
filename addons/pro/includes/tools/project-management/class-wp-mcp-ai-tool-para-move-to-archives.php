@@ -73,6 +73,7 @@ class WP_MCP_AI_Tool_PARA_Move_To_Archives implements WP_MCP_AI_Tool_Interface, 
 					'type'        => 'integer',
 					'description' => __( 'Post ID to archive.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'reason'  => array(
 					'type'        => 'string',

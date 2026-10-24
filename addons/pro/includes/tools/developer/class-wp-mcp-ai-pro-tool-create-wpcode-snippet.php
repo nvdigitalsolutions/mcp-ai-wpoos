@@ -92,6 +92,7 @@ class WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'integer',
 					'description' => __( 'Existing WPCode snippet ID to update. Leave empty to create a new snippet.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'title'             => array(
 					'type'        => 'string',

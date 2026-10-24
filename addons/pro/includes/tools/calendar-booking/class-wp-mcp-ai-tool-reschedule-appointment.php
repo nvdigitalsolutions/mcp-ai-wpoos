@@ -123,6 +123,7 @@ class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface,
 			'properties' => array(
 				'appointment_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Appointment ID to reschedule (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'new_start_time'    => array(

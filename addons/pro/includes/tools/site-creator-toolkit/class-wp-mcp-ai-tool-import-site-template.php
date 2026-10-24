@@ -76,6 +76,7 @@ class WP_MCP_AI_Tool_Import_Site_Template implements WP_MCP_AI_Tool_Interface, W
 			'properties'           => array(
 				'template_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Template post ID', 'mcp-ai-wpoos-pro' ),
 				),
 				'import_mode' => array(

@@ -75,6 +75,7 @@ class WP_MCP_AI_Tool_Get_Workflow_Inbox implements WP_MCP_AI_Tool_Interface, WP_
 			'properties' => array(
 				'owner_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Filter to a specific owner.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_section' => array(

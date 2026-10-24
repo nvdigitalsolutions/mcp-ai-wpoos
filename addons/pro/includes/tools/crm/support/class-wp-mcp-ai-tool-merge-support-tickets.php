@@ -79,10 +79,12 @@ class WP_MCP_AI_Tool_Merge_Support_Tickets implements WP_MCP_AI_Tool_Interface, 
 			'properties' => array(
 				'target_ticket_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the ticket to keep (target/parent).', 'mcp-ai-wpoos-pro' ),
 				),
 				'source_ticket_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the ticket to merge (will be closed as duplicate).', 'mcp-ai-wpoos-pro' ),
 				),
 			),

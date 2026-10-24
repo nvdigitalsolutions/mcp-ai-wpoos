@@ -73,6 +73,7 @@ class WP_MCP_AI_Tool_QMS_List_Controlled_Documents implements WP_MCP_AI_Tool_Int
 				'owner_id'      => array(
 					'type'    => 'integer',
 					'minimum' => 1,
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'review_due_by' => array(
 					'type'    => 'string',

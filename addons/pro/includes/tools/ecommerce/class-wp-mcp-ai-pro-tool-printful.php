@@ -102,14 +102,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Printful' ) ) {
 					// Catalog filters.
 					'category_id'       => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'Filter products by Printful category ID. Use get_categories to discover available category IDs.', 'mcp-ai-wpoos-pro' ),
 					),
 					'product_id'        => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'Printful product ID for catalog lookups.', 'mcp-ai-wpoos-pro' ),
 					),
 					'variant_id'        => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'Printful variant ID for variant lookups.', 'mcp-ai-wpoos-pro' ),
 					),
 					'sync_product_id'   => array(

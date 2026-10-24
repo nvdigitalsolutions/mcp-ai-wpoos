@@ -73,6 +73,7 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID to generate alt text for.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'image_url'     => array(
 					'type'        => 'string',
@@ -114,6 +115,7 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'integer',
 					'description' => __( 'Post ID to process images from (for batch mode).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'limit'         => array(
 					'type'        => 'integer',
@@ -123,10 +125,14 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 					'default'     => 10,
 				),
 			),
-			'anyOf'      => array(
-				array( 'required' => array( 'attachment_id' ) ),
-				array( 'required' => array( 'image_url' ) ),
-				array( 'required' => array( 'batch_mode' ) ),
+			'allOf'      => array(
+				array(
+					'anyOf' => array(
+						array( 'required' => array( 'attachment_id' ) ),
+						array( 'required' => array( 'image_url' ) ),
+						array( 'required' => array( 'batch_mode' ) ),
+					),
+				),
 			),
 		);
 	}

@@ -78,6 +78,7 @@ class WP_MCP_AI_Tool_Create_Application_Password implements WP_MCP_AI_Tool_Inter
 					'type'        => 'integer',
 					'description' => __( 'The ID of the user to create the password for. Defaults to the current user; another user requires manage_options.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'             => array( 'name' ),

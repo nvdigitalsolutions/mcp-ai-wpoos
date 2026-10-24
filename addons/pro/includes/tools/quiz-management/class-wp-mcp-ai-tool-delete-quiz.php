@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Delete_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'integer',
 					'description' => __( 'Quiz ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'             => array( 'quiz_id' ),

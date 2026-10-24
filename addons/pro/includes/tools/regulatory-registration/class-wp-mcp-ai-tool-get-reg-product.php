@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'type'        => 'integer',
 					'description' => __( 'Product ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'include_registrations' => array(
 					'type'        => 'boolean',

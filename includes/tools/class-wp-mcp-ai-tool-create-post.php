@@ -89,6 +89,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'integer',
 					'description' => __( 'The user ID to set as the post author. Defaults to current user.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'excerpt'           => array(
 					'type'        => 'string',
@@ -102,6 +103,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'integer',
 					'description' => __( 'Attachment ID to set as the featured image.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'categories'        => array(
 					'type'        => 'array',

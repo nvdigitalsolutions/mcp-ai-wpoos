@@ -117,7 +117,10 @@ class WP_MCP_AI_Tool_OKF_Write_Concept implements WP_MCP_AI_Tool_Interface, WP_M
 							'resource'      => array( 'type' => 'string' ),
 							'title'         => array( 'type' => 'string' ),
 							'author'        => array( 'type' => 'string' ),
-							'usage_count'   => array( 'type' => 'integer' ),
+							'usage_count'   => array(
+								'type'    => 'integer',
+								'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+							),
 							'last_modified' => array( 'type' => 'string' ),
 						),
 					),

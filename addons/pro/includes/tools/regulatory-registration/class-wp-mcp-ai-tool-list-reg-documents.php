@@ -62,11 +62,13 @@ class WP_MCP_AI_Tool_List_Reg_Documents implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'Filter by product ID (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'registration_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by registration ID (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'document_type'   => array(
 					'type'        => 'string',

@@ -87,6 +87,7 @@ class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'The ID of the export template to trigger.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'             => array( 'export_id' ),

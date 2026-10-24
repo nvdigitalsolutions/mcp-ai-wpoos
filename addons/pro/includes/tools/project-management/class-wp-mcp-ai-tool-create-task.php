@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'task_id'          => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional task ID. If provided, updates the existing task instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'title'            => array(
@@ -77,6 +78,7 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'project_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the project this task belongs to (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'status'           => array(

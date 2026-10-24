@@ -60,6 +60,7 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'event_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional event ID. If provided, updates the existing event instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'title'       => array(
@@ -75,6 +76,7 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				),
 				'project_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the project this event belongs to (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'start_date'  => array(

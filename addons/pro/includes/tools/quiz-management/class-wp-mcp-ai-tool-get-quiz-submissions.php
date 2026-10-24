@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'The ID of the quiz.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'status'   => array(
 					'type'        => 'string',

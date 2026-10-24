@@ -87,7 +87,10 @@ class WP_MCP_AI_Tool_Send_Lead_Dm implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id'  => array( 'type' => 'integer' ),
+				'lead_id'  => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'message'  => array( 'type' => 'string' ),
 				'platform' => array(
 					'type'    => 'string',

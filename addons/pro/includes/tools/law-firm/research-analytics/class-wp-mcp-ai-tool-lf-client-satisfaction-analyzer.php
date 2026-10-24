@@ -96,6 +96,7 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 			'properties' => array(
 				'client_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Client user ID to analyze.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

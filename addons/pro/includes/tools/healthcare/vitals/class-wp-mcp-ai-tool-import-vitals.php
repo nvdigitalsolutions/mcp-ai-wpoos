@@ -330,6 +330,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties' => array(
 				'member_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'WordPress post ID of the mcp_ai_member to import vitals for (required).',
 				),
 				'format'    => array(

@@ -107,6 +107,7 @@ class WP_MCP_AI_Tool_Get_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			'properties'           => array(
 				'lead_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the lead to retrieve (required).', 'mcp-ai-wpoos-pro' ),
 				),
 			),

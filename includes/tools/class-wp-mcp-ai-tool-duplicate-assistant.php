@@ -89,6 +89,7 @@ class WP_MCP_AI_Tool_Duplicate_Assistant implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'The assistant post ID to duplicate.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'title'               => array(
 					'type'        => 'string',

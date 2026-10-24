@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Link_Classroom_Course_To_ECA implements WP_MCP_AI_Tool_Inte
 				),
 				'eca_id'         => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress ECA post ID to link.', 'mcp-ai-wpoos-pro' ),
 				),
 				'course_id'      => array(

@@ -103,6 +103,7 @@ abstract class WP_MCP_AI_Fashion_Transform_Tool implements WP_MCP_AI_Tool_Interf
 			'attachment_id' => array(
 				'type'        => 'integer',
 				'minimum'     => 1,
+				'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				'description' => __( 'WordPress attachment ID of the product image to transform.', 'mcp-ai-wpoos-pro' ),
 			),
 			'description'   => array(

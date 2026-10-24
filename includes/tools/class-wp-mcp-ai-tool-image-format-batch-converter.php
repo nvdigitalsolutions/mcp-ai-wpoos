@@ -55,6 +55,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 			'category'            => 'media',
 			'required_capability' => 'upload_files',
 			'parameters'          => array(
+				'type'              => 'object',
 				'action'            => array(
 					'type'        => 'string',
 					'description' => __( 'Action: convert_batch, generate_srcset, create_picture_element, or validate_support', 'mcp-ai-wpoos' ),

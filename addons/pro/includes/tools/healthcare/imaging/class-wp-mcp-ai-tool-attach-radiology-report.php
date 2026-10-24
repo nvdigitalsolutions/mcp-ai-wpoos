@@ -109,6 +109,7 @@ class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'Local imaging study post ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'study_uid'        => array(
 					'type'        => 'string',

@@ -120,10 +120,12 @@ class WP_MCP_AI_Tool_Merge_Duplicates implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'survivor_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the lead to keep (the survivor). This record will receive the duplicate\'s data and children.', 'mcp-ai-wpoos-pro' ),
 				),
 				'duplicate_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the lead to merge away. Its data will fill empty fields and its children will be reassigned.', 'mcp-ai-wpoos-pro' ),
 				),
 				'dry_run'         => array(

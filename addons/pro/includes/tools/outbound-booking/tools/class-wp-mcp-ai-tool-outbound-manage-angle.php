@@ -73,7 +73,12 @@ class WP_MCP_AI_Tool_Outbound_Manage_Angle implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'angle_id'    => array( 'type' => 'integer', 'default' => 0, 'description' => __( 'Angle post ID. Omit to create; provide to update.', 'mcp-ai-wpoos-pro' ) ),
+				'angle_id'    => array(
+					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+					'default'     => 0,
+					'description' => __( 'Angle post ID. Omit to create; provide to update.', 'mcp-ai-wpoos-pro' ),
+				),
 				'name'        => array( 'type' => 'string' ),
 				'kind'        => array( 'type' => 'string', 'enum' => WP_MCP_AI_OA_Angle_CPT::KINDS, 'default' => 'angle' ),
 				'channel'     => array( 'type' => 'string', 'enum' => WP_MCP_AI_OA_Angle_CPT::CHANNELS, 'default' => 'any' ),

@@ -117,6 +117,7 @@ class WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer implements WP_MCP_AI_Tool_Interf
 			'properties' => array(
 				'matter_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Post ID of the legal matter (mcp_ai_lf_matter CPT).', 'mcp-ai-wpoos-pro' ),
 				),
 			),

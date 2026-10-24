@@ -94,6 +94,7 @@ class WP_MCP_AI_Tool_Fashion_Identity_Manage implements WP_MCP_AI_Tool_Interface
 				'identity_id'    => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Identity post ID (update, delete, set_consent).', 'mcp-ai-wpoos-pro' ),
 				),
 				'name'           => array(
@@ -123,6 +124,7 @@ class WP_MCP_AI_Tool_Fashion_Identity_Manage implements WP_MCP_AI_Tool_Interface
 				'thumbnail_id'   => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Attachment ID for the identity thumbnail (create, update).', 'mcp-ai-wpoos-pro' ),
 				),
 				'consent_status' => array(

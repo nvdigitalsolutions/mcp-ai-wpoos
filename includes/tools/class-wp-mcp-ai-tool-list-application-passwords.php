@@ -71,6 +71,7 @@ class WP_MCP_AI_Tool_List_Application_Passwords implements WP_MCP_AI_Tool_Interf
 					'type'        => 'integer',
 					'description' => __( 'The ID of the user whose application passwords to list. Defaults to the current user.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'additionalProperties' => false,

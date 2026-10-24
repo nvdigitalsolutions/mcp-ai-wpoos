@@ -59,6 +59,7 @@ class NV_oOS_Graphify_Tool_Suggest_Links implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'Focus suggestions on a specific post ID (optional).', 'nvoos-graphify' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'additionalProperties' => false,

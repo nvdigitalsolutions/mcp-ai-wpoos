@@ -116,6 +116,7 @@ class WP_MCP_AI_Tool_Create_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties' => array(
 				'lead_id'             => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Lead ID to associate this deal with (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'deal_name'           => array(

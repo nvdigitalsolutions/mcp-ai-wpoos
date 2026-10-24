@@ -98,6 +98,7 @@ class WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer implements WP_MCP_AI_Tool_I
 			'properties' => array(
 				'document_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress post ID of the document to analyze.', 'mcp-ai-wpoos-pro' ),
 				),
 				'analysis_type' => array(

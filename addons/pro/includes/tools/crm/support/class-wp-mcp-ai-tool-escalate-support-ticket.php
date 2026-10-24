@@ -79,6 +79,7 @@ class WP_MCP_AI_Tool_Escalate_Support_Ticket implements WP_MCP_AI_Tool_Interface
 			'properties' => array(
 				'ticket_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Support ticket post ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'new_priority' => array(

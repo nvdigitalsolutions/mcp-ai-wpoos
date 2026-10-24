@@ -80,7 +80,12 @@ class WP_MCP_AI_Tool_Get_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
-			'properties' => array( 'activity_id' => array( 'type' => 'integer' ) ),
+			'properties' => array(
+				'activity_id' => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
+			),
 			'required'   => array( 'activity_id' ),
 		);
 	}

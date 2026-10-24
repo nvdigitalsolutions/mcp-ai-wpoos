@@ -95,6 +95,7 @@ class WP_MCP_AI_Tool_LF_Case_Timeline_Generator implements WP_MCP_AI_Tool_Interf
 			'properties' => array(
 				'matter_id'         => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The matter ID to generate a timeline for.', 'mcp-ai-wpoos-pro' ),
 				),
 				'include_deadlines' => array(

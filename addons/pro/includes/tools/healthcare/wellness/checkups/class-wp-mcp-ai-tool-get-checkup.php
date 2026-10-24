@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Get_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'integer',
 					'description' => __( 'Checkup ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'             => array( 'checkup_id' ),
