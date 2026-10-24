@@ -153,6 +153,7 @@ class WP_MCP_AI_Tool_Watchlist_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				),
 				'user_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional target user ID. Defaults to the current user. Requires user-editing capability when targeting another user.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

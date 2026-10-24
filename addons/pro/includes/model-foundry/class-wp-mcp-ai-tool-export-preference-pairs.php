@@ -82,6 +82,7 @@ class WP_MCP_AI_Tool_Export_Preference_Pairs implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'Assistant CPT post ID whose stored preference pairs are exported.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'max_pairs'      => array(
 					'type'        => 'integer',

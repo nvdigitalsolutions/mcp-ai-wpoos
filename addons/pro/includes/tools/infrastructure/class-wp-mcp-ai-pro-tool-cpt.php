@@ -154,6 +154,7 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 				),
 				'item_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress post ID for get_item, update_item, and delete_item.', 'mcp-ai-wpoos-pro' ),
 				),
 				'fields'    => array(

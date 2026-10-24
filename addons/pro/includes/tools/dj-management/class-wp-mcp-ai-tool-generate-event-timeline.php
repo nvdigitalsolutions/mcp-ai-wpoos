@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'booking_id'         => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Booking ID to generate timeline for (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'event_date'         => array(

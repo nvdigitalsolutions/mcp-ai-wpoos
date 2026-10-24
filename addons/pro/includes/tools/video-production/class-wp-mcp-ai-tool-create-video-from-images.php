@@ -118,6 +118,7 @@ class WP_MCP_AI_Tool_Create_Video_From_Images implements WP_MCP_AI_Tool_Interfac
 				),
 				'audio_id'           => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Background audio media ID',
 				),
 				'resolution'         => array(

@@ -94,6 +94,7 @@ class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Inter
 			'properties' => array(
 				'matter_id'            => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Specific matter to check.', 'mcp-ai-wpoos-pro' ),
 				),
 				'threshold_percentage' => array(

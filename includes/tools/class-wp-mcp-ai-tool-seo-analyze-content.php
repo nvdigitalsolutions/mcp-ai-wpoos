@@ -73,6 +73,7 @@ class WP_MCP_AI_Tool_SEO_Analyze_Content implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'ID of the post to analyze.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'analysis_type'  => array(
 					'type'        => 'string',

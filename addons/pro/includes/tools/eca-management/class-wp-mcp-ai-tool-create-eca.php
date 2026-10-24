@@ -64,6 +64,7 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'properties'           => array(
 				'eca_id'            => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional ECA ID. If provided, updates the existing ECA instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'name'              => array(

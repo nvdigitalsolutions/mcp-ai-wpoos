@@ -88,6 +88,7 @@ class WP_MCP_AI_Tool_Log_Health_Metrics implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'Member ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'date'      => array(
 					'type'        => 'string',

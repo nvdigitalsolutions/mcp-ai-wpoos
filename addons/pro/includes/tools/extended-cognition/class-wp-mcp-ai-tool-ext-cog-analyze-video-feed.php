@@ -131,6 +131,7 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed implements WP_MCP_AI_Ext_Cog_Too
 						'type'        => 'integer',
 						'description' => 'WordPress attachment post ID (required for attachment_id mode).',
 						'minimum'     => 1,
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					),
 					'url'                => array(
 						'type'        => 'string',

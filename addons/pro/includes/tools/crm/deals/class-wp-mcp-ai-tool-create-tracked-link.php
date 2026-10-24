@@ -108,6 +108,7 @@ class WP_MCP_AI_Tool_Create_Tracked_Link implements WP_MCP_AI_Tool_Interface, WP
 			'properties' => array(
 				'deal_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Deal ID the link belongs to (required).', 'mcp-ai-wpoos-pro' ),
 				),
 				'url'     => array(

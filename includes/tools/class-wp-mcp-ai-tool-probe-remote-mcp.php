@@ -79,6 +79,7 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 				'assistant_id' => array(
 					'type'        => 'integer',
 					'minimum'     => 0,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Assistant ID hint appended to the /assistants probe.', 'mcp-ai-wpoos' ),
 				),
 				'timeout'      => array(

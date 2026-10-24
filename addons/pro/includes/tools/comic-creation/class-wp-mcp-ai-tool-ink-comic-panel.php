@@ -68,10 +68,12 @@ class WP_MCP_AI_Tool_Ink_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'properties'           => array(
 				'panel_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the `mcp_ai_comic_panel` post to ink.', 'mcp-ai-wpoos-pro' ),
 				),
 				'image_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of a WordPress attachment/image to ink. Used when panel_id is not provided.', 'mcp-ai-wpoos-pro' ),
 				),
 				'ink_style' => array(

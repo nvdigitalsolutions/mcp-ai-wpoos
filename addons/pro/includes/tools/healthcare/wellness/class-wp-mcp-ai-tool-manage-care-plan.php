@@ -70,6 +70,7 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => 'integer',
 					'description' => __( 'Member ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'care_plan_id'     => array(
 					'type'        => 'string',

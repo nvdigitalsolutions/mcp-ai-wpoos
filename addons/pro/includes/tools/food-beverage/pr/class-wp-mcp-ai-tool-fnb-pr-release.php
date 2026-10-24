@@ -67,6 +67,7 @@ class WP_MCP_AI_Tool_Fnb_Pr_Release extends WP_MCP_AI_Fnb_Tool_Base {
 			'properties' => array(
 				'post_id'        => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Purchase-request record ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'finance_cosign' => array(

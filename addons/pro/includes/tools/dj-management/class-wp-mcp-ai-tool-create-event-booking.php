@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 			'properties'           => array(
 				'booking_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional booking ID. If provided, updates the existing event booking instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'event_name'    => array(
@@ -120,6 +121,7 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'Expected number of guests (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'package'       => array(
 					'type'        => 'string',

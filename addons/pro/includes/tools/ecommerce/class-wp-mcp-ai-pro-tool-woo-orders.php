@@ -111,6 +111,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				),
 				'order_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Order ID for get action.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page'      => array(

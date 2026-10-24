@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Inter
 			'properties'           => array(
 				'equipment_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Equipment ID to track maintenance for (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'maintenance_type' => array(

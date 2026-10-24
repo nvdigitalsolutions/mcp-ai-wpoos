@@ -95,6 +95,7 @@ class WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction implements WP_MCP_AI_Tool
 				),
 				'message_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Identifier of the target message within the chat.', 'mcp-ai-wpoos-pro' ),
 				),
 				'emoji'      => array(

@@ -97,7 +97,10 @@ class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id'                => array( 'type' => 'integer' ),
+				'lead_id'                => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'message'                => array( 'type' => 'string' ),
 				'allow_template_message' => array(
 					'type'        => 'boolean',

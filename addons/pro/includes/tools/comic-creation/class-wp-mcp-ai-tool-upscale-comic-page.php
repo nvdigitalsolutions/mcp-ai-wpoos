@@ -68,10 +68,12 @@ class WP_MCP_AI_Tool_Upscale_Comic_Page implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'image_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of a WordPress attachment/image to upscale.', 'mcp-ai-wpoos-pro' ),
 				),
 				'panel_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of a `mcp_ai_comic_panel` post whose generated image should be upscaled.', 'mcp-ai-wpoos-pro' ),
 				),
 				'scale'    => array(

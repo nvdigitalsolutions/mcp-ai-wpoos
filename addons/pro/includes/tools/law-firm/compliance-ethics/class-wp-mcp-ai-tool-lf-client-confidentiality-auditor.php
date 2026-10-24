@@ -95,6 +95,7 @@ class WP_MCP_AI_Tool_LF_Client_Confidentiality_Auditor implements WP_MCP_AI_Tool
 			'properties' => array(
 				'matter_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Post ID of the legal matter to audit (mcp_ai_lf_matter CPT).', 'mcp-ai-wpoos-pro' ),
 				),
 				'audit_scope' => array(

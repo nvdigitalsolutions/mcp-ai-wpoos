@@ -69,6 +69,7 @@ class WP_MCP_AI_Tool_QMS_Release_Document implements WP_MCP_AI_Tool_Interface, W
 				'post_id'        => array(
 					'type'    => 'integer',
 					'minimum' => 1,
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'effective_date' => array(
 					'type'    => 'string',

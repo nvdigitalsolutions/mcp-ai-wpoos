@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Update_Prescription implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'Prescription ID to update (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'medication_name'    => array(
 					'type'        => 'string',

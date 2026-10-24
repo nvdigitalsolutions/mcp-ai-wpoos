@@ -166,6 +166,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'Stock quantity (requires manage_stock to be true).', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'stock_status'          => array(
 					'type'        => 'string',
@@ -260,6 +261,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 								'type'        => 'integer',
 								'description' => __( 'Stock quantity for this variation (optional).', 'mcp-ai-wpoos' ),
 								'minimum'     => 0,
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							),
 							'stock_status'   => array(
 								'type'        => 'string',
@@ -376,6 +378,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 						'type'        => 'integer',
 						'description' => __( 'Attachment ID of the variation image', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					),
 				),
 				'required'   => array( 'variation_attributes', 'image_id' ),

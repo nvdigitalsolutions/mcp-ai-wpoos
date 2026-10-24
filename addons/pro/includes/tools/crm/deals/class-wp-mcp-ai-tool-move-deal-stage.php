@@ -109,6 +109,7 @@ class WP_MCP_AI_Tool_Move_Deal_Stage implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'properties' => array(
 				'deal_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Deal ID to move (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'new_stage' => array(

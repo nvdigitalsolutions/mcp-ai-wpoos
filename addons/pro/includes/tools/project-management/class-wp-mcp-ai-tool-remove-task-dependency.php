@@ -89,10 +89,12 @@ class WP_MCP_AI_Tool_Remove_Task_Dependency implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'blocking_task_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the task that was acting as the blocker.', 'mcp-ai-wpoos-pro' ),
 				),
 				'blocked_task_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the task that was being blocked.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

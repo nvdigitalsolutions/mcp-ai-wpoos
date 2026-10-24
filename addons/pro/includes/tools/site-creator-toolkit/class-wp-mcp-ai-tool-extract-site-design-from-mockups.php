@@ -98,6 +98,7 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 									'media_id' => array(
 										'type'    => 'integer',
 										'minimum' => 1,
+										'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 									),
 									'url'      => array( 'type' => 'string' ),
 									'base64'   => array( 'type' => 'string' ),
@@ -118,6 +119,7 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 									'media_id' => array(
 										'type'    => 'integer',
 										'minimum' => 1,
+										'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 									),
 									'url'      => array( 'type' => 'string' ),
 									'content'  => array( 'type' => 'string' ),

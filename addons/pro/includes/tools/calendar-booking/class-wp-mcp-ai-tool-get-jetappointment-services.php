@@ -84,6 +84,7 @@ class WP_MCP_AI_Tool_Get_JetAppointment_Services implements WP_MCP_AI_Tool_Inter
 			'properties' => array(
 				'provider_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional provider ID to filter services.', 'mcp-ai-wpoos-pro' ),
 				),
 				'search'      => array(

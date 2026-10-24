@@ -91,6 +91,7 @@ class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'properties' => array(
 				'lead_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Lead or contact post ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'subject'     => array(

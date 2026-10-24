@@ -88,6 +88,7 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 				),
 				'wp_user_id'           => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional WordPress user ID to act as when the connection uses per-user identity mode. Ignored in shared (site-wide) mode.', 'mcp-ai-wpoos-pro' ),
 				),
 				'connection_id'        => array(

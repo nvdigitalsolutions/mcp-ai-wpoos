@@ -65,6 +65,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 					'type'        => 'integer',
 					'description' => __( 'Existing post ID to update. Leave empty to create a new post.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'post_type'         => array(
 					'type'        => 'string',
@@ -96,6 +97,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 					'type'        => 'integer',
 					'description' => __( 'Attachment ID to set as the featured image.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'categories'        => array(
 					'type'        => 'array',

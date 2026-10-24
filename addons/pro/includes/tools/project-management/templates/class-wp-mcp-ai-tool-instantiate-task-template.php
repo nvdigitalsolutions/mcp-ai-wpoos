@@ -70,14 +70,17 @@ class WP_MCP_AI_Tool_Instantiate_Task_Template implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'integer',
 					'description' => __( 'ID of the task template to instantiate (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'project_id'  => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the project to create tasks under (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'assignee_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional user ID to assign all created tasks to', 'mcp-ai-wpoos-pro' ),
 				),
 			),

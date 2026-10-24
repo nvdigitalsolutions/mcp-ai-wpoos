@@ -86,6 +86,7 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 				),
 				'subscriber_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Subscriber ID to unsubscribe (alternative to email).', 'mcp-ai-wpoos' ),
 				),
 				'action'        => array(

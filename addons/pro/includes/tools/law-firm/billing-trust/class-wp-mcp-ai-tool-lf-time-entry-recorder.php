@@ -94,6 +94,7 @@ class WP_MCP_AI_Tool_LF_Time_Entry_Recorder implements WP_MCP_AI_Tool_Interface,
 			'properties' => array(
 				'matter_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Matter ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'hours'        => array(

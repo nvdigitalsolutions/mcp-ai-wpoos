@@ -111,6 +111,7 @@ class WP_MCP_AI_Tool_Enrich_Place_Details implements WP_MCP_AI_Tool_Interface, W
 			'properties'           => array(
 				'place_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Place post ID to enrich.', 'mcp-ai-wpoos-pro' ),
 				),
 				'batch_size' => array(

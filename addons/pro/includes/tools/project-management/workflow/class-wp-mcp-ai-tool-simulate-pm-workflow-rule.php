@@ -69,6 +69,7 @@ class WP_MCP_AI_Tool_Simulate_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'integer',
 					'description' => __( 'ID of the workflow rule to simulate (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'limit'   => array(
 					'type'        => 'integer',

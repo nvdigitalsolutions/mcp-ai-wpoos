@@ -155,11 +155,13 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 							'type'        => 'integer',
 							'description' => __( 'Restrict to one assistant (post ID).', 'mcp-ai-wpoos' ),
 							'minimum'     => 0,
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						),
 						'user_id'          => array(
 							'type'        => 'integer',
 							'description' => __( 'Restrict to one user. Defaults to the current user.', 'mcp-ai-wpoos' ),
 							'minimum'     => 0,
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						),
 						'since'            => array(
 							'type'        => 'string',

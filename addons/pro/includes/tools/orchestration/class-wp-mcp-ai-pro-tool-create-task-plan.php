@@ -44,6 +44,7 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 				'properties' => array(
 					'task_plan_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Optional task plan ID. If provided, updates the existing task plan instead of creating a new one.',
 					),
 					'plan_name'    => array(
@@ -75,10 +76,12 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 					),
 					'project_id'   => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Optional project ID to link this task plan to',
 					),
 					'template_id'  => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Optional template ID if using a pre-built template',
 					),
 				),

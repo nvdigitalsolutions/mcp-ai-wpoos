@@ -75,6 +75,7 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'Post ID to optimize SEO meta tags for.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'content'            => array(
 					'type'        => 'string',
@@ -113,9 +114,13 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 					'default'     => false,
 				),
 			),
-			'anyOf'      => array(
-				array( 'required' => array( 'post_id' ) ),
-				array( 'required' => array( 'content', 'title' ) ),
+			'allOf'      => array(
+				array(
+					'anyOf' => array(
+						array( 'required' => array( 'post_id' ) ),
+						array( 'required' => array( 'content', 'title' ) ),
+					),
+				),
 			),
 		);
 	}

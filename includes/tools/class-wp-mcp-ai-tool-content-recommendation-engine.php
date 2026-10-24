@@ -55,6 +55,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 			'category'            => 'content',
 			'required_capability' => 'edit_posts',
 			'parameters'          => array(
+				'type'                => 'object',
 				'action'              => array(
 					'type'        => 'string',
 					'description' => __( 'Action: get_recommendations, train_model, track_interaction, or analyze_performance', 'mcp-ai-wpoos' ),

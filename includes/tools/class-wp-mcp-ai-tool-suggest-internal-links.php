@@ -72,6 +72,7 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'integer',
 					'description' => __( 'Post ID to analyze for internal link suggestions.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'content'         => array(
 					'type'        => 'string',
@@ -113,9 +114,13 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 					'default'     => true,
 				),
 			),
-			'anyOf'      => array(
-				array( 'required' => array( 'post_id' ) ),
-				array( 'required' => array( 'content' ) ),
+			'allOf'      => array(
+				array(
+					'anyOf' => array(
+						array( 'required' => array( 'post_id' ) ),
+						array( 'required' => array( 'content' ) ),
+					),
+				),
 			),
 		);
 	}

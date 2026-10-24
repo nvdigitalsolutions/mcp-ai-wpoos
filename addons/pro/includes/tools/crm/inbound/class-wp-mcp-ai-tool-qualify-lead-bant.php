@@ -86,7 +86,10 @@ class WP_MCP_AI_Tool_Qualify_Lead_Bant implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id'          => array( 'type' => 'integer' ),
+				'lead_id'          => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'message_or_notes' => array(
 					'type'        => 'string',
 					'description' => __( 'Conversation text, notes, or message body to analyse.', 'mcp-ai-wpoos-pro' ),

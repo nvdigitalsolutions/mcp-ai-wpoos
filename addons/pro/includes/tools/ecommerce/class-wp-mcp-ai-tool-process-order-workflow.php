@@ -138,6 +138,7 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'integer',
 					'description' => __( 'Order ID to process', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'order_ids'          => array(
 					'type'        => 'array',

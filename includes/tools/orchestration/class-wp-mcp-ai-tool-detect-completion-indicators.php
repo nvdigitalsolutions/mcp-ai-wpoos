@@ -84,6 +84,7 @@ class WP_MCP_AI_Tool_Detect_Completion_Indicators implements WP_MCP_AI_Tool_Inte
 					),
 					'plan_id'   => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Optional task plan ID to check completion against',
 					),
 					'threshold' => array(

@@ -68,6 +68,7 @@ class NV_oOS_Algorave_Tool_Modify_Pattern implements WP_MCP_AI_Tool_Interface, W
 				),
 				'pattern_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional: ID of a saved pattern to modify.', 'nvoos-algorave' ),
 				),
 			),

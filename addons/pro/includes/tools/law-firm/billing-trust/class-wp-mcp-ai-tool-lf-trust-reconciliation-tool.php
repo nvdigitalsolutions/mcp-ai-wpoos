@@ -102,6 +102,7 @@ class WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool implements WP_MCP_AI_Tool_Inte
 				),
 				'matter_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional: reconcile a single matter.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

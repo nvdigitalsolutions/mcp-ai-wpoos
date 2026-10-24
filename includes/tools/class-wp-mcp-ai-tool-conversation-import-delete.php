@@ -96,6 +96,7 @@ class WP_MCP_AI_Tool_Conversation_Import_Delete implements WP_MCP_AI_Tool_Interf
 					'type'        => 'integer',
 					'description' => __( 'Optional. Restrict deletion to conversations imported by this WordPress user ID. 0 means all importers.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'default'     => 0,
 				),
 				'limit'    => array(

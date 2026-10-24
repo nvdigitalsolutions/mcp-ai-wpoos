@@ -112,6 +112,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 				),
 				'customer_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Customer ID for get or get_orders actions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page'     => array(

@@ -163,6 +163,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 				),
 				'menu_config_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress attachment ID for a custom menu config (JSON). If omitted, the built-in default menu is used.', 'mcp-ai-wpoos' ),
 				),
 				'tax_rate'             => array(

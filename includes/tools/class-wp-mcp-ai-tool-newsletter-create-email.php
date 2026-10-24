@@ -135,6 +135,7 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'Attachment ID for the email featured image/banner.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'tags'              => array(
 					'type'        => 'array',

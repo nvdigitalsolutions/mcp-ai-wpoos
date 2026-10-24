@@ -106,6 +106,7 @@ class WP_MCP_AI_Tool_Delete_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'lead_id'               => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the lead to delete (required).', 'mcp-ai-wpoos-pro' ),
 				),
 				'confirmation_required' => array(

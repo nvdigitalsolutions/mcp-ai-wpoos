@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Get_My_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				),
 				'project_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Filter by project ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'limit'      => array(

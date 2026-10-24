@@ -89,6 +89,7 @@ class WP_MCP_AI_Tool_Trace_Memory_Provenance implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'Agent assistant ID (post ID) the memory belongs to.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'context_id'       => array(
 					'type'        => 'string',

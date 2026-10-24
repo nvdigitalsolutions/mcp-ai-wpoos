@@ -86,11 +86,13 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'Member to merge FROM (will be trashed or deleted).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'destination_member_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Member to merge INTO (the survivor).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'dry_run'               => array(
 					'type'        => 'boolean',

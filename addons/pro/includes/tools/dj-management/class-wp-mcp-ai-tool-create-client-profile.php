@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'client_id'        => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional client ID. If provided, updates the existing client profile instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'name'             => array(

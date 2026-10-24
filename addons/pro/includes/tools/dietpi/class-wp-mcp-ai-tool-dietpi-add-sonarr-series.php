@@ -61,6 +61,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Sonarr_Series' ) ) {
 					),
 					'tvdb_id'                     => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'TheTVDB ID (for tvdb lookup).', 'mcp-ai-wpoos-pro' ),
 					),
 					'imdb_id'                     => array(
@@ -73,6 +74,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Add_Sonarr_Series' ) ) {
 					),
 					'quality_profile_id'          => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'Quality profile ID. Use 1 if unsure (first/default profile).', 'mcp-ai-wpoos-pro' ),
 						'default'     => 1,
 					),

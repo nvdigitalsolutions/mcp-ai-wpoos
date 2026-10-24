@@ -64,6 +64,7 @@ class WP_MCP_AI_Tool_Get_Resource_Utilization implements WP_MCP_AI_Tool_Interfac
 			'properties'           => array(
 				'project_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional project ID to filter utilization to a single project.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

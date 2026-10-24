@@ -90,6 +90,7 @@ class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'task_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the task to retrieve dependencies for.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

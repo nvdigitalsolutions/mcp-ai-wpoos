@@ -101,6 +101,7 @@ class WP_MCP_AI_Tool_LF_Expert_Witness_Tracker implements WP_MCP_AI_Tool_Interfa
 				),
 				'matter_id'         => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress post ID of the related matter.', 'mcp-ai-wpoos-pro' ),
 				),
 				'expert_name'       => array(

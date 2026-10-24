@@ -118,6 +118,7 @@ class WP_MCP_AI_Tool_Create_ECA_Workflow_Rule implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'integer',
 					'description' => __( 'Scope rule to a specific ECA post ID, or omit for all ECAs', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'             => array( 'name', 'trigger', 'actions' ),

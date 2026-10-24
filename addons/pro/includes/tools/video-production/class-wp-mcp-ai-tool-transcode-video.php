@@ -81,6 +81,7 @@ class WP_MCP_AI_Tool_Transcode_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the video to transcode.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'file_id'       => $this->get_file_id_parameter_schema(),
 				'output_format' => array(

@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Update_Registration_Status implements WP_MCP_AI_Tool_Interf
 					'type'        => 'integer',
 					'description' => __( 'Registration ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'status'          => array(
 					'type'        => 'string',

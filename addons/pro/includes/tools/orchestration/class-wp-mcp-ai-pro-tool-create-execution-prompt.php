@@ -51,6 +51,7 @@ class WP_MCP_AI_Pro_Tool_Create_Execution_Prompt {
 				'properties' => array(
 					'plan_id'                => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Task plan ID to generate the prompt from',
 					),
 					'iteration_number'       => array(

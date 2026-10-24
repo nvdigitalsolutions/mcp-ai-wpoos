@@ -57,6 +57,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_SSH_Key_Delete' ) ) {
 				'properties' => array(
 					'ssh_key_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'The SSH key ID to delete.', 'mcp-ai-wpoos-pro' ),
 					),
 				),

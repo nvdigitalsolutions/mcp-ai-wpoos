@@ -95,10 +95,12 @@ class WP_MCP_AI_Tool_LF_Client_Communication_Logger implements WP_MCP_AI_Tool_In
 			'properties' => array(
 				'client_id'          => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The ID of the client record.', 'mcp-ai-wpoos-pro' ),
 				),
 				'matter_id'          => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional associated matter ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'communication_type' => array(

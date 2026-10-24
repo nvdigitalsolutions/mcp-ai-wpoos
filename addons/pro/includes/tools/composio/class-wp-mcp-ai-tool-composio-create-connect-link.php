@@ -69,6 +69,7 @@ class WP_MCP_AI_Tool_Composio_Create_Connect_Link implements WP_MCP_AI_Tool_Inte
 				),
 				'wp_user_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional WordPress user ID the connection belongs to (per-user mode).', 'mcp-ai-wpoos-pro' ),
 				),
 				'connection_id' => array(

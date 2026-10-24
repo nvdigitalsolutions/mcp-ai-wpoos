@@ -101,6 +101,7 @@ class WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist implements WP_MCP_AI_Tool_In
 				),
 				'matter_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress post ID of the matter.', 'mcp-ai-wpoos-pro' ),
 				),
 				'practice_area' => array(

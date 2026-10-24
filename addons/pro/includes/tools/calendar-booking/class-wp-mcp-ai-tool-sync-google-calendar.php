@@ -78,6 +78,7 @@ class WP_MCP_AI_Tool_Sync_Google_Calendar implements WP_MCP_AI_Tool_Interface, W
 			'properties' => array(
 				'appointment_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Appointment ID to sync', 'mcp-ai-wpoos-pro' ),
 				),
 				'sync_direction' => array(

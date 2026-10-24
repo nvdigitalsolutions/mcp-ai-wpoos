@@ -67,10 +67,12 @@ class WP_MCP_AI_Tool_Fnb_Pr_Submit extends WP_MCP_AI_Fnb_Tool_Base {
 			'properties' => array(
 				'post_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Purchase-request record ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'approver_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress user ID of the approver (required; cannot be the creator).', 'mcp-ai-wpoos-pro' ),
 				),
 				'reason'      => array(

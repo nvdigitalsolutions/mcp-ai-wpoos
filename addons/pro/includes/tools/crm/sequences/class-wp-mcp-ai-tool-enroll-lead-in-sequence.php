@@ -74,8 +74,14 @@ class WP_MCP_AI_Tool_Enroll_Lead_In_Sequence implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id'     => array( 'type' => 'integer' ),
-				'sequence_id' => array( 'type' => 'integer' ),
+				'lead_id'     => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
+				'sequence_id' => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 			),
 			'required'   => array( 'lead_id', 'sequence_id' ),
 		);

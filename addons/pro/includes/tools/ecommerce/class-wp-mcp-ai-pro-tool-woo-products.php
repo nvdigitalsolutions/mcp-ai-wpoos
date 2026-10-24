@@ -119,6 +119,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'product_id'        => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Product ID for get or update actions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page'          => array(
@@ -177,6 +178,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'stock_quantity'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Stock quantity.', 'mcp-ai-wpoos-pro' ),
 				),
 				'stock_status'      => array(
