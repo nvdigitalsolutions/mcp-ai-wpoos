@@ -139,6 +139,11 @@ const ScheduleManagerPage = lazy(() =>
     default: m.ScheduleManagerPage,
   })),
 );
+const PaperStorePage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/paper-store/PaperStorePage').then((m) => ({
+    default: m.PaperStorePage,
+  })),
+);
 const RecordsPage = lazy(() =>
   import('@nvoos/pro-spa-v2/features/records/RecordsPage').then((m) => ({
     default: m.RecordsPage,
@@ -543,18 +548,30 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                   </RequireGate>
                 }
               />
-              <Route
-                path="/blueprints"
-                element={
-                  <RequireGate
-                    gate={gateForPath('/blueprints')}
-                    features={features}
-                    capabilities={runtime.user.capabilities}
-                  >
-                    <BlueprintsPage />
-                  </RequireGate>
-                }
-              />
+              				<Route
+              					path="/blueprints"
+              					element={
+              						<RequireGate
+              							gate={ gateForPath( '/blueprints' ) }
+              							features={ features }
+              							capabilities={ runtime.user.capabilities }
+              						>
+              							<BlueprintsPage />
+              						</RequireGate>
+              					}
+              				/>
+              				<Route
+              					path="/paper-store"
+              					element={
+              						<RequireGate
+              							gate={ gateForPath( '/paper-store' ) }
+              							features={ features }
+              							capabilities={ runtime.user.capabilities }
+              						>
+              							<PaperStorePage />
+              						</RequireGate>
+              					}
+              				/>
               <Route
                 path="/portability"
                 element={

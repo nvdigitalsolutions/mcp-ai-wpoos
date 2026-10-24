@@ -44,6 +44,7 @@ All controllers extend `WP_MCP_AI_REST_Controller_Base` and share its `REST_NAME
 | `WP_MCP_AI_REST_Analytics_Manager`, `WP_MCP_AI_REST_Cost_Manager`, `WP_MCP_AI_REST_Token_Manager` | `class-wp-mcp-ai-rest-{analytics,cost,token}-manager.php` | Admin analytics dashboards |
 | `WP_MCP_AI_SSE_Handler` | `class-wp-mcp-ai-sse-handler.php` | Server-Sent Events transport |
 | `WP_MCP_AI_Asset_Inventory_REST`, `WP_MCP_AI_Security_Training_REST`, `WP_MCP_AI_Supplier_Security_REST` | `class-wp-mcp-ai-{asset-inventory,security-training,supplier-security}-rest.php` | Compliance dashboard routes |
+| `WP_MCP_AI_REST_Magic_Login_Controller` | `class-wp-mcp-ai-rest-magic-login-controller.php` | Passwordless sign-in: `POST /magic-login/request` (email a one-shot link) and `POST /magic-login/confirm` (consume token + start session). Public routes by design (pre-session visitors); opt-in via the `wp_mcp_ai_magic_login_enabled` option/filter |
 
 ## Inputs / Outputs / Neighbors
 

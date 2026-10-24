@@ -184,3 +184,101 @@ export async function logoutFromWordPress(): Promise<{ ok: boolean; message: str
   }
   return { ok: true, message: '' };
 }
+
+// --------------------------------------------------------------------------
+// Magic-link (passwordless) sign-in
+//
+// Backed by the plugin's opt-in public routes /wp-json/mcp-ai/v1/magic-login/*
+// (wp_mcp_ai_magic_login_enabled). Same-origin through the proxy, so the
+// auth cookie the /confirm route mints lands on the app origin — the same
+// BFF session pattern the password flow uses. The backend applies the
+// industry-standard magic-link controls (hashed single-use tokens, 15-min
+// expiry, uniform anti-enumeration responses, rate limits); the client just
+// relays the uniform messages and never tries to distinguish outcomes.
+// --------------------------------------------------------------------------
+
+const MAGIC_LOGIN_REQUEST_PATH = '/wp-json/mcp-ai/v1/magic-login/request';
+const MAGIC_LOGIN_CONFIRM_PATH = '/wp-json/mcp-ai/v1/magic-login/confirm';
+
+const MAGIC_LINK_UNAVAILABLE =
+  'Sign-in is temporarily unavailable. Please try again.';
+const MAGIC_LINK_INVALID =
+  'This sign-in link is invalid or has expired. Request a new one.';
+
+export interface MagicLinkResult {
+  ok: boolean;
+  message: string;
+}
+
+/**
+ * Ask the backend to email a one-shot sign-in link for an identifier.
+ *
+ * The endpoint answers identically whether or not the account exists
+ * (anti-enumeration) — the UI must not try to tell the outcomes apart.
+ * A 429 (rate limit) carries its own user-facing message.
+ */
+export async function requestMagicLink(
+  email: string,
+  signal?: AbortSignal,
+): Promise<MagicLinkResult> {
+  let response: Response;
+  try {
+    response = await fetch(MAGIC_LOGIN_REQUEST_PATH, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: email.trim() }),
+      signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw error;
+    }
+    return { ok: false, message: MAGIC_LINK_UNAVAILABLE };
+  }
+
+  const data = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    message?: string;
+  } | null;
+
+  if (response.ok && data?.ok) {
+    return { ok: true, message: typeof data.message === 'string' ? data.message : '' };
+  }
+  return {
+    ok: false,
+    message: typeof data?.message === 'string' && data.message ? data.message : MAGIC_LINK_UNAVAILABLE,
+  };
+}
+
+/**
+ * Consume a magic-link token. On success the backend starts the WordPress
+ * session (Set-Cookie lands on this origin via the proxy); the caller then
+ * re-runs the session bootstrap.
+ */
+export async function confirmMagicLink(token: string): Promise<MagicLinkResult> {
+  let response: Response;
+  try {
+    response = await fetch(MAGIC_LOGIN_CONFIRM_PATH, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+  } catch {
+    return { ok: false, message: MAGIC_LINK_UNAVAILABLE };
+  }
+
+  const data = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    message?: string;
+  } | null;
+
+  if (response.ok && data?.ok) {
+    return { ok: true, message: '' };
+  }
+  return {
+    ok: false,
+    message: typeof data?.message === 'string' && data.message ? data.message : MAGIC_LINK_INVALID,
+  };
+}

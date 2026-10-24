@@ -46,6 +46,7 @@ const DashboardsPage = lazy( () => import( './features/dashboards/DashboardsPage
 const ChatChannelsPage = lazy( () => import( './features/chat-channels/ChatChannelsPage' ).then( ( m ) => ( { default: m.ChatChannelsPage } ) ) );
 const MediaOpsPage = lazy( () => import( './features/media-ops/MediaOpsPage' ).then( ( m ) => ( { default: m.MediaOpsPage } ) ) );
 const BlueprintsPage = lazy( () => import( './features/blueprints/BlueprintsPage' ).then( ( m ) => ( { default: m.BlueprintsPage } ) ) );
+const PaperStorePage = lazy( () => import( './features/paper-store/PaperStorePage' ).then( ( m ) => ( { default: m.PaperStorePage } ) ) );
 
 export interface AppRouterProps {
 	/** Shared transcript hook result from Layout. */
@@ -91,6 +92,7 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/chat-channels" element={ <ChatChannelsPage /> } />
 				<Route path="/media-ops" element={ <MediaOpsPage /> } />
 				<Route path="/blueprints" element={ <BlueprintsPage /> } />
+				<Route path="/paper-store" element={ <PaperStorePage /> } />
 				<Route path="/portability" element={ <PortabilityPage /> } />
 				<Route path="/security-center" element={ <SecurityCenterPage /> } />
 				<Route path="/operations" element={ <OperationsPage /> } />

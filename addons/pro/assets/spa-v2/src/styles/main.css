@@ -4553,6 +4553,12 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-size: 12px;
 }
 
+/* Adjacent action buttons in a table cell (e.g. Install + Details) need a
+   gutter so they don't read as one control. */
+.nvoos-pro-spa-page__retry + .nvoos-pro-spa-page__retry {
+	margin-left: 6px;
+}
+
 /* =========================================================================
    Assistants page
    ========================================================================= */
@@ -4750,7 +4756,15 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-weight: 600;
 }
 
+/* Edit mode holds the whole form behind this block until the full record
+   (system prompt + tools) has loaded, so values render populated once
+   instead of popping in field by field. */
 .nvoos-pro-spa-assistants-form__loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	min-height: 160px;
 	margin: 0 0 16px;
 	font-size: 13px;
 	color: var( --nvoos-pro-spa-muted, #757575 );
@@ -5700,15 +5714,133 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-workflows-page__layout {
 	display: grid;
-	grid-template-columns: 300px minmax( 0, 1fr );
+	/* minmax( 0, … ) tracks: the workflow-list DataTable carries a 640px
+	   min-width, and a fixed/bare-1fr track would let that content minimum
+	   push the panes past the page width (card spilling off the right). */
+	grid-template-columns: minmax( 0, 300px ) minmax( 0, 1fr );
 	gap: 16px;
 	align-items: start;
 }
 
+/* Pane containment: let each card shrink with its track and scroll its
+   oversize content (wide tables, long tag rows) instead of widening the
+   page — grid items default to min-width: auto (min-content floor). */
+.nvoos-pro-spa-workflows-page__layout > * {
+	min-width: 0;
+	overflow-x: auto;
+}
+
 @media screen and ( max-width: 782px ) {
 	.nvoos-pro-spa-workflows-page__layout {
-		grid-template-columns: 1fr;
+		grid-template-columns: minmax( 0, 1fr );
 	}
+}
+
+/* ── Teams page ───────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-teams__members {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+/* ── Paper Store page ──────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-paper-store__layout {
+	display: grid;
+	grid-template-columns: minmax( 0, 260px ) minmax( 0, 1fr );
+	gap: 16px;
+	align-items: start;
+}
+
+.nvoos-pro-spa-paper-store__layout > * {
+	min-width: 0;
+	overflow-x: auto;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-paper-store__layout {
+		grid-template-columns: minmax( 0, 1fr );
+	}
+}
+
+.nvoos-pro-spa-paper-store__collections {
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.nvoos-pro-spa-paper-store__collection {
+	display: block;
+	width: 100%;
+	padding: 7px 10px;
+	border: none;
+	border-radius: 6px;
+	background: transparent;
+	font-family: inherit;
+	font-size: 13px;
+	text-align: left;
+	color: var( --nvoos-text, #1e1e1e );
+	cursor: pointer;
+	font-family: ui-monospace, Cascadia Code, Source Code Pro, Menlo, Consolas, monospace;
+}
+
+.nvoos-pro-spa-paper-store__collection:hover {
+	background: var( --nvoos-bg, #f0f0f1 );
+}
+
+.nvoos-pro-spa-paper-store__collection[aria-current='true'] {
+	background: var( --nvoos-selected-bg, #e5e5ff );
+	color: var( --nvoos-primary, #2271b1 );
+}
+
+.nvoos-pro-spa-paper-store__collection:focus-visible {
+	outline: 2px solid var( --nvoos-primary, #2271b1 );
+	outline-offset: 2px;
+}
+
+.nvoos-pro-spa-paper-store__records {
+	margin: 12px 0 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.nvoos-pro-spa-paper-store__record-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-paper-store__record-row .nvoos-pro-spa-tools-list__name--button {
+	flex: 1;
+	min-width: 180px;
+}
+
+.nvoos-pro-spa-paper-store__detail {
+	margin-top: 8px;
+	padding: 10px 12px;
+	border: 1px solid var( --nvoos-border, #dcdcde );
+	border-radius: 6px;
+	background: var( --nvoos-bg, #f0f0f1 );
+}
+
+.nvoos-pro-spa-paper-store__detail .nvoos-pro-spa-wf-editor__json {
+	margin: 0;
+	max-height: 320px;
+	overflow: auto;
+	white-space: pre-wrap;
 }
 
 /* ── Workflow canvas (Phase 3b W10.2b) ──────────────────────────────── */

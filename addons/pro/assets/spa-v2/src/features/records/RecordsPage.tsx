@@ -156,7 +156,14 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 	const [ records, setRecords ] = useState< RecordSummary[] >( [] );
 	const [ loading, setLoading ] = useState< boolean >( false );
 	const [ error, setError ] = useState< string | null >( null );
+	// Master-detail (Teams/Blueprints pattern): the expanded row's full
+	// record is fetched on expand — the bottom detail panel is gone, and
+	// values render once, already populated, instead of popping in.
+	const [ expandedId, setExpandedId ] = useState< number | null >( null );
 	const [ selected, setSelected ] = useState< RecordSummary | null >( null );
+	const [ detailLoading, setDetailLoading ] = useState< boolean >( false );
+	const [ detailError, setDetailError ] = useState< string | null >( null );
+	const detailAbort = useRef< AbortController | null >( null );
 
 	// Research & Add (4a-b): query → suggested fields → reviewed create.
 	const [ researchQuery, setResearchQuery ] = useState( '' );
@@ -210,13 +217,58 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 		if ( ! entity ) {
 			return;
 		}
+		detailAbort.current?.abort();
+		detailAbort.current = null;
+		setExpandedId( null );
 		setSelected( null );
+		setDetailError( null );
+		setDetailLoading( false );
 		refresh( entity, searchRef.current );
 	}, [ entity, refresh ] );
 
-	const openRecord = ( record: RecordSummary ): void => {
-		setSelected( record );
-	};
+	/**
+	 * Expand/collapse a row, fetching the full record on expand (the list
+	 * summary carries only the first columns' meta). The detail row shows a
+	 * loading state while the fetch is in flight — no field-by-field pop-in.
+	 */
+	const openRecord = useCallback(
+		( record: RecordSummary ): void => {
+			if ( expandedId === record.id ) {
+				detailAbort.current?.abort();
+				detailAbort.current = null;
+				setExpandedId( null );
+				setDetailLoading( false );
+				return;
+			}
+			setExpandedId( record.id );
+			setSelected( null );
+			setDetailError( null );
+			if ( ! entity ) {
+				return;
+			}
+
+			detailAbort.current?.abort();
+			const controller = new AbortController();
+			detailAbort.current = controller;
+			setDetailLoading( true );
+			client
+				.get( entity, record.id, controller.signal )
+				.then( ( full ) => {
+					setSelected( full ?? record );
+					setDetailLoading( false );
+				} )
+				.catch( ( err: unknown ) => {
+					if ( err instanceof Error && err.name === 'AbortError' ) {
+						return;
+					}
+					setDetailError(
+						err instanceof Error ? err.message : __( 'Failed to load the record.', 'nvoos-pro-spa' )
+					);
+					setDetailLoading( false );
+				} );
+		},
+		[ client, entity, expandedId ]
+	);
 
 	const runResearch = (): void => {
 		if ( ! entity || ! researchQuery.trim() ) {
@@ -291,7 +343,7 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 					<button
 						type="button"
 						className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
-						aria-expanded={ selected?.id === record.id }
+						aria-expanded={ expandedId === record.id }
 						onClick={ () => openRecord( record ) }
 					>
 						{ record.title }
@@ -301,8 +353,30 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 						.map( ( column ) => formatValue( record.meta[ column.key ] ) ),
 					<span className="nvoos-pro-spa-tools-list__badge">{ record.status }</span>,
 				],
+				detail:
+					expandedId === record.id ? (
+						detailLoading ? (
+							<p role="status">{ __( 'Loading record…', 'nvoos-pro-spa' ) }</p>
+						) : detailError ? (
+							<p
+								className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error"
+								role="alert"
+							>
+								{ detailError }
+							</p>
+						) : selected ? (
+							<dl className="nvoos-pro-spa-records-detail__grid">
+								{ entity?.columns.map( ( column ) => (
+									<div key={ column.key } className="nvoos-pro-spa-records-detail__item">
+										<dt>{ column.label }</dt>
+										<dd>{ formatValue( selected.meta[ column.key ] ) }</dd>
+									</div>
+								) ) }
+							</dl>
+						) : null
+					) : undefined,
 			} ) ),
-		[ records, entity, selected ]
+		[ records, entity, expandedId, selected, detailLoading, detailError, openRecord ]
 	);
 
 	if ( bootstrapLoading ) {
@@ -527,23 +601,6 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 					rows={ listRows }
 					caption={ entity?.label ?? __( 'Records', 'nvoos-pro-spa' ) }
 				/>
-			) }
-
-			{ selected && entity && (
-				<section className="nvoos-pro-spa-records-detail" aria-label={ __( 'Record detail', 'nvoos-pro-spa' ) }>
-					<h3 className="nvoos-pro-spa-records-detail__title">{ selected.title }</h3>
-					<p className="nvoos-pro-spa-page__subtitle">
-						{ entity.singular } · { selected.status }
-					</p>
-					<dl className="nvoos-pro-spa-records-detail__grid">
-						{ entity.columns.map( ( column ) => (
-							<div key={ column.key } className="nvoos-pro-spa-records-detail__item">
-								<dt>{ column.label }</dt>
-								<dd>{ formatValue( selected.meta[ column.key ] ) }</dd>
-							</div>
-						) ) }
-					</dl>
-				</section>
 			) }
 		</div>
 	);

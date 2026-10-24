@@ -565,6 +565,12 @@ body,
   .nvoos-pro-spa-chat-page {
     margin-top: 20px;
   }
+
+  /* Slim the page gutter (spa-v2 default: 24px) so tables and dashboards
+     get the full viewport width on phones. */
+  .nvoos-pro-spa-page {
+    padding: 5px;
+  }
 }
 
 /* ── Dashboard (SA DashboardPage format) ─────────────────────────────────── */
@@ -904,6 +910,85 @@ body,
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* Sign-in method tabs (WAI-ARIA tablist — segmented control). */
+.nvoos-login__modes {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 20px;
+  background: #0d0f17;
+  border: 1px solid var(--shell-border);
+  border-radius: 10px;
+}
+
+.nvoos-login__mode-tab {
+  flex: 1;
+  min-height: 40px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shell-muted);
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nvoos-login__mode-tab:hover {
+  color: var(--shell-text);
+}
+
+.nvoos-login__mode-tab[aria-selected='true'] {
+  color: var(--shell-text);
+  background: #171b28;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.nvoos-login__mode-tab:focus-visible {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 2px;
+}
+
+.nvoos-login__sent {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #a8f0cd;
+  background: rgba(53, 208, 165, 0.08);
+  border: 1px solid rgba(53, 208, 165, 0.35);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.nvoos-login__secondary {
+  min-height: 40px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shell-muted);
+  background: transparent;
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.nvoos-login__secondary:hover:not(:disabled) {
+  color: var(--shell-text);
+  border-color: var(--shell-accent);
+}
+
+.nvoos-login__secondary:focus-visible {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 2px;
+}
+
+.nvoos-login__secondary:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .nvoos-login__field {

@@ -82,6 +82,14 @@ WordPress session cookie through the proxy; login via the re-scoped
 the plugin's `mcp-ai/v1/session/nonce` endpoint as fallback; the real user +
 capabilities come from `wp/v2/users/me?context=edit`.
 
+**Magic-link sign-in (opt-in):** the sign-in screen also offers a
+passwordless "Magic link" mode against the plugin's `/magic-login/*` REST
+routes (off by default — enable `wp_mcp_ai_magic_login_enabled` and point
+`wp_mcp_ai_magic_login_app_origin` at the console origin). Emailed links
+resolve at `#/magic-login?token=…` and confirm through the same proxy;
+full contract in the deploy doc
+(`docs/operations/deployment/nvoos-complete-velocity-setup.md`).
+
 ## Caching
 
 `scripts/serve.mjs` keeps load off the WordPress backend on three fronts:

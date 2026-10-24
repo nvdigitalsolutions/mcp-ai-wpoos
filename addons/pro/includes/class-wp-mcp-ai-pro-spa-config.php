@@ -313,6 +313,9 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'diagnostics'        => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/diagnostics' ) )
 					: '',
+				'paperStore'         => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/paper-store' ) )
+					: '',
 				'tokenManager'       => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/token-manager' ) )
 					: '',
