@@ -80,6 +80,10 @@ class WP_MCP_AI_CPT_CCT_Sync_Test extends WP_UnitTestCase {
 			)
 		);
 
+		// The post creation itself is part of the contract regardless of the
+		// base/full version split, so the test always performs an assertion.
+		$this->assertInstanceOf( 'WP_Post', get_post( $post_id ), 'Assistant post should exist' );
+
 		// In base version, CCT item ID should not be set.
 		if ( wp_mcp_ai_is_base_version() ) {
 			$cct_item_id = get_post_meta( $post_id, '_wp_mcp_ai_cct_item_id', true );
