@@ -429,6 +429,39 @@ body,
   border-right: none;
 }
 
+/* Mobile: spa-v2 re-parents its sidebar into a viewport-fixed drawer that
+   only slides in via .nvoos-pro-spa-layout--sidebar-open — a class the
+   console shell never sets (the dock's own --sidebar-collapsed modifier
+   drives the same store state instead), so the ☰ toggle does nothing on
+   phones. Re-anchor the conversation list inside the dock as an overlay
+   drawer: expanded covers the dock's chat column, collapsed slides off the
+   dock's left edge (clipped by the dock's overflow: hidden). */
+@media screen and (max-width: 782px) {
+  .nvoos-console-dock__body {
+    position: relative;
+  }
+
+  .nvoos-console-dock .nvoos-pro-spa-sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    height: auto;
+    max-width: none;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease !important;
+    /* Beats spa-v2's :not(.nvoos-pro-spa-layout--sidebar-open) rule, which
+       keeps the drawer translated off-canvas regardless of dock state. */
+    transform: none !important;
+  }
+
+  .nvoos-console-dock--sidebar-collapsed .nvoos-pro-spa-sidebar {
+    width: 260px !important;
+    min-width: 260px !important;
+    transform: translateX(-100%) !important;
+  }
+}
+
 .nvoos-console-dock__chat {
   flex: 1;
   min-width: 0;
@@ -488,8 +521,7 @@ body,
 /* Narrow screens: the dock overlays instead of squeezing the content. */
 @media screen and (max-width: 1440px) {
   .nvoos-console-dock {
-    width: 600px;
-    min-width: 600px;
+    width: 100%;
   }
 }
 
@@ -514,13 +546,24 @@ body,
   }
 
   .nvoos-console-dock__chat .nvoos-pro-spa-chat-page {
-    margin-left: 0;
-    margin-right: 0;
+    margin-left: 10px;
+    margin-right: 10px;
   }
 
   .nvoos-console-dock__chat .nvoos-pro-spa-agent-panel__messages {
     padding-left: 12px;
     padding-right: 12px;
+  }
+
+  .nvoos-pro-spa-agent-panel__composer {
+    margin-bottom: 10px;
+    padding: 15px 12px 50px;
+  }
+
+  /* Overrides spa-v2's mobile margin-top of 50px (that value assumes the
+     full-page layout with the admin bar; the console dock starts lower). */
+  .nvoos-pro-spa-chat-page {
+    margin-top: 20px;
   }
 }
 
