@@ -31,9 +31,11 @@
  *   - Confirm fires do_action( 'wp_login', … ) so security plugins that hook
  *     login events still see the sign-in.
  *
- * Opt-in: enabled via the wp_mcp_ai_magic_login_enabled option (or the
- * wp_mcp_ai_magic_login_enabled filter). Disabled by default — while
- * disabled both routes 404 (rest_no_route) so the surface is invisible.
+ * Opt-in: enabled via Settings → NV oOS → Authentication → Magic Link
+ * Sign-In (`enable_magic_login`), or the standalone
+ * wp_mcp_ai_magic_login_enabled option, or the wp_mcp_ai_magic_login_enabled
+ * filter. Disabled by default — while disabled both routes 404
+ * (rest_no_route) so the surface is invisible.
  *
  * @package WP_MCP_AI
  * @author    NV Digital Solutions
@@ -75,15 +77,26 @@ class WP_MCP_AI_REST_Magic_Login_Controller extends WP_MCP_AI_REST_Controller_Ba
 	/**
 	 * Whether magic-link sign-in is enabled on this site.
 	 *
-	 * Defaults to off. The option is the operator-facing switch; the filter
-	 * lets deployments (e.g. the NV oOS Complete Console) force it.
+	 * Primary: the `enable_magic_login` setting in the Authentication
+	 * settings section (Settings → NV oOS → Authentication → Magic Link
+	 * Sign-In). Fallback: the standalone wp_mcp_ai_magic_login_enabled
+	 * option (WP-CLI friendly) for deployments configured before the
+	 * settings page shipped. The filter lets code force it either way.
+	 * Defaults to off.
 	 *
 	 * @return bool
 	 */
 	public static function is_enabled() {
+		$value = null;
+		if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+			$value = WP_MCP_AI_Settings_Registry::get_setting( 'enable_magic_login', null );
+		}
+		if ( null === $value ) {
+			$value = get_option( 'wp_mcp_ai_magic_login_enabled', false );
+		}
 		return (bool) apply_filters(
 			'wp_mcp_ai_magic_login_enabled',
-			(bool) get_option( 'wp_mcp_ai_magic_login_enabled', false )
+			(bool) $value
 		);
 	}
 
@@ -91,12 +104,20 @@ class WP_MCP_AI_REST_Magic_Login_Controller extends WP_MCP_AI_REST_Controller_Ba
 	 * Origin the emailed link points at.
 	 *
 	 * Never taken from the request payload: a link to an attacker-chosen
-	 * origin is a phishing vector. Defaults to home_url('/').
+	 * origin is a phishing vector. Primary: the `magic_login_app_origin`
+	 * setting (Authentication section); fallback: the standalone option;
+	 * otherwise home_url('/').
 	 *
 	 * @return string Origin URL with trailing slash.
 	 */
 	public static function app_origin() {
-		$origin = (string) get_option( 'wp_mcp_ai_magic_login_app_origin', '' );
+		$origin = null;
+		if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+			$origin = WP_MCP_AI_Settings_Registry::get_setting( 'magic_login_app_origin', null );
+		}
+		if ( ! is_string( $origin ) || '' === $origin ) {
+			$origin = (string) get_option( 'wp_mcp_ai_magic_login_app_origin', '' );
+		}
 		$origin = (string) apply_filters( 'wp_mcp_ai_magic_login_app_origin', $origin );
 		if ( '' === $origin ) {
 			$origin = home_url( '/' );
