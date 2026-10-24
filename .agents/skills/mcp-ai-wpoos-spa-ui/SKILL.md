@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-ui
-description: "UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns plus the standalone Pro SPA Vite app (examples/nvoos-pro-spa-vite), the island-embed pattern for self-contained React apps in the Pro SPA (Proposal 087 — docs-hub MemoryRouter island, media/document lazy-asset islands, OKF docs adapter, auth-bridge removal), dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas (incl. the vi.mock depth trap and the Windows rolldown binding repair), the full-JS-rebuild map (incl. staleness detection and the vendor never-commit rule), and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging."
+description: "UI stack, build, and test conventions for NV oOS React SPA addons — the three sanctioned build patterns; the standalone Pro SPA and Complete Console apps with the spa-v2 ↔ console wiring map and two-bundle rule; the island-embed pattern (Proposal 087) with the host token bridge; NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map, and the TS-shadows-JS gotcha. Use when building SPA addon UI, writing SPA JS tests, or rebuilding JS."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.11"
   plugin-version-tested: "1.2.11"
-  last-updated: "2026-10-24"
+  last-updated: "2026-10-25"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -77,6 +77,36 @@ Rules that follow from the matrix:
 (`../../addons/pro/assets/spa-v2/src`) and connects to **any WordPress backend**
 running the plugin — no WP host page, no fork (the app tracks the plugin SPA).
 Deploy playbook: `docs/operations/deployment/nvoos-pro-spa-velocity-setup.md`.
+
+### The spa-v2 ↔ Complete Console wiring map (connecting the dots)
+
+Agents repeatedly lose the connection between
+`examples/nvoos-complete-velocity/` (and the standalone app) and
+`addons/pro/assets/spa-v2/`. Both apps **alias spa-v2 sources** — they are
+NOT forks — so a spa-v2 source change only reaches the console when BOTH
+bundles are rebuilt, and every spa-v2-side contract has a mirror inside the
+app. Read this map when landing in either folder:
+
+| spa-v2 source | Console mirror / consumer | Sync rule |
+|---|---|---|
+| `addons/pro/assets/spa-v2/src/**` | aliased as `@nvoos/pro-spa-v2` in the console `vite.config.ts` **and** `vitest.config.ts` (the vitest config must repeat every alias + `server.fs.allow: [appRoot, repoRoot]`) | edit spa-v2 once; never copy |
+| `src/api/config.ts` (`ProSpaRuntime` / `ProSpaEndpoints` / `readProSpaConfig`) | `examples/nvoos-complete-velocity/src/runtime-config.ts` `buildConsoleRuntime()` builds the same `window.NVOOS_PRO_SPA` shape; the PHP emitter `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php` is the canonical shape both apps mirror | new endpoint key = 4 wiring points; island PRs must update the console's endpoint VALUES too |
+| `src/stores/uiStore.ts` | shared by both trees — the console shell renders `data-theme` from `useUIStore().theme`, so spa-v2 pages can follow the console theme | one store instance per app tree (alias forces the same module) |
+| `src/styles/main.css` / `drawers.css` / `embedded.css` | imported by the console `main.tsx`; console-only rules live in `src/shell.css` | never move spa-v2 tokens into shell.css or vice versa |
+| island bundles (`addons/media-studio/assets/dist/*`, `addons/document-editor/assets/dist/*`) | both apps import them via `?url` in their `runtime-config.ts`; the console `vitest.config.ts` needs `fs.allow` for them | `?url` imports are per-app — update BOTH runtime-configs |
+| vendored island (`src/features/docs-hub/upstream/`) | consumed by both apps through spa-v2's DocsPage | byte-identical upstream discipline |
+
+**"My spa-v2 fix doesn't show in the console" checklist** (the failure order
+seen live): (1) did the console build even pass — `tsc --noEmit` fails with
+TS2741 the moment a required endpoint key is missing, and nobody notices
+because nobody rebuilds; (2) was the console `dist/` rebuilt in the SAME PR
+— the sync workflow ships the committed dist and never runs Vite; (3) are
+both apps' `buildEndpoints()` key sets AND values in sync — diff them
+against each other; (4) did the console `runtime-config.ts` get the new
+island `?url` imports; (5) is the feature the page renders gated by the
+server feature map (`fetchFeatureMap`) — an unavailable feature empties the
+endpoint and renders the unavailable state, which looks like "my code is
+not running".
 
 Reusable mechanics (all learned the hard way — do not rediscover):
 
