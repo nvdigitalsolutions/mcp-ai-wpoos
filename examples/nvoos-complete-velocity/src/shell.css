@@ -506,6 +506,24 @@ body,
   }
 }
 
+/* Mobile: drop horizontal gutters so the main body and chat dock sit edge-to-edge. */
+@media screen and (max-width: 782px) {
+  .nvoos-console-page {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .nvoos-console-dock__chat .nvoos-pro-spa-chat-page {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .nvoos-console-dock__chat .nvoos-pro-spa-agent-panel__messages {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
 /* ── Dashboard (SA DashboardPage format) ─────────────────────────────────── */
 
 .nvoos-console-dashboard {
