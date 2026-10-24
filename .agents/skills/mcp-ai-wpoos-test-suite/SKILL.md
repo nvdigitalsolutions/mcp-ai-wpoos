@@ -1307,6 +1307,14 @@ the changed files is the substantive gate; plan CI waits accordingly.
 	      "No code coverage driver available" + exit 1 even though every
 	      test passed — read "OK, but there were issues!" as green tests.
 
+   80. **PHPUnit 11 `assertMatchesRegularExpression()` — the 3rd arg is
+      `$message`, not `$matches`.** Passing a capture array as the third
+      argument throws `TypeError: Argument #3 ($message) must be of type
+      string` (hit in the magic-login tests, 2026-10-24). To capture
+      groups, call `preg_match()` directly and assert the return:
+      `$this->assertSame( 1, preg_match( $pattern, $subject, $matches ) );`
+      then read `$matches[1]`.
+
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
  `shivammathur/setup-php` `tools: wp-cli` fails intermittently (`✗ wp-cli
