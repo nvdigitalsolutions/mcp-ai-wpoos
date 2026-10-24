@@ -37,7 +37,9 @@ const buildOptions = {
 	bundle:      true,
 	outfile:     path.join( outDir, 'document-editor.js' ),
 	format:      'iife',
-	globalName:  'NVoOS_Document_Editor',
+	// No `globalName`: the entry assigns `window.NVoosDocumentEditor`
+	// explicitly so host apps (the Pro SPA documents island) can call
+	// mountDocumentEditor().
 	platform:    'browser',
 	target:      [ 'es2017', 'chrome80', 'firefox78', 'safari15' ],
 	jsx:         'automatic',

@@ -99,6 +99,14 @@ declare global {
 				sidebar?: string;
 				home?: string;
 				api_url?: string;
+				/**
+				 * 'hash' (default) renders HashRouter for the standalone
+				 * shortcode/block; 'memory' renders MemoryRouter so host apps
+				 * (the Pro SPA island) keep ownership of window.location.hash.
+				 */
+				router?: 'hash' | 'memory';
+				/** Skip the entry point's auto-mount scan (island mode). */
+				defer_mount?: boolean;
 			};
 		};
 	}

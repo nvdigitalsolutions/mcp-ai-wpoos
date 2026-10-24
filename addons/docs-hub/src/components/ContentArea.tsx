@@ -16,6 +16,7 @@
  */
 
 import ReactMarkdown from 'react-markdown';
+import { useNavigate } from 'react-router-dom';
 import remarkGfm from 'remark-gfm';
 import remarkDirective from 'remark-directive';
 import remarkFrontmatter from 'remark-frontmatter';
@@ -25,6 +26,7 @@ import rehypeHighlight from 'rehype-highlight';
 import { visit } from 'unist-util-visit';
 import CodeBlock from './CodeBlock';
 import Callout from './Callout';
+import { useDocRouterMode } from '../navigation';
 import type { Components } from 'react-markdown';
 import type { Element } from 'hast';
 
@@ -341,6 +343,8 @@ function remarkDirectiveCallouts() {
 // ---------------------------------------------------------------------------
 
 export default function ContentArea( { content, remoteUrl, slugSet, pagePath }: ContentAreaProps ) {
+	const navigate = useNavigate();
+	const routerMode = useDocRouterMode();
 	const extraComponents: Components = {};
 
 	if ( ! remoteUrl && slugSet && pagePath ) {
@@ -351,6 +355,28 @@ export default function ContentArea( { content, remoteUrl, slugSet, pagePath }: 
 		extraComponents.a = function LocalAnchor( props: any ) {
 			const { href, children, ...rest } = props;
 			const hrefStr = href ? String( href ) : '';
+
+			// Literal `#/slug` route links authored in the content (or emitted
+			// by server-side adapters like the OKF knowledge source). Under
+			// MemoryRouter the host owns window.location.hash, so intercept
+			// and navigate the island router; HashRouter picks them up natively.
+			if ( hrefStr.startsWith( '#/' ) ) {
+				if ( routerMode === 'memory' ) {
+					return (
+						<a
+							href={ hrefStr }
+							{ ...rest }
+							onClick={ ( e: React.MouseEvent<HTMLAnchorElement> ) => {
+								e.preventDefault();
+								navigate( hrefStr.slice( 1 ) );
+							} }
+						>
+							{ children }
+						</a>
+					);
+				}
+				return <a href={ hrefStr } { ...rest }>{ children }</a>;
+			}
 
 			if ( hrefStr && isInPageAnchor( hrefStr ) ) {
 				return (
@@ -369,6 +395,22 @@ export default function ContentArea( { content, remoteUrl, slugSet, pagePath }: 
 			if ( hrefStr ) {
 				const resolved = resolveLocalHref( hrefStr, capturedPagePath, capturedSlugSet );
 				if ( resolved !== hrefStr ) {
+					// MemoryRouter islands: the host owns window.location.hash,
+					// so route anchors must navigate the island's own router.
+					if ( routerMode === 'memory' && resolved.startsWith( '#/' ) ) {
+						return (
+							<a
+								href={ resolved }
+								{ ...rest }
+								onClick={ ( e: React.MouseEvent<HTMLAnchorElement> ) => {
+									e.preventDefault();
+									navigate( resolved.slice( 1 ) );
+								} }
+							>
+								{ children }
+							</a>
+						);
+					}
 					return <a href={ resolved } { ...rest }>{ children }</a>;
 				}
 			}
@@ -400,8 +442,23 @@ export default function ContentArea( { content, remoteUrl, slugSet, pagePath }: 
 			}
 
 			// SPA hash route (e.g. #/slug from a same-repo .md link) → navigate
-			// normally; HashRouter will pick it up.
+			// normally; HashRouter will pick it up. Under MemoryRouter the host
+			// owns the hash, so intercept and navigate the island router.
 			if ( resolvedHref && resolvedHref.startsWith( '#' ) ) {
+				if ( routerMode === 'memory' && resolvedHref.startsWith( '#/' ) ) {
+					return (
+						<a
+							href={ resolvedHref }
+							{ ...rest }
+							onClick={ ( e: React.MouseEvent<HTMLAnchorElement> ) => {
+								e.preventDefault();
+								navigate( resolvedHref.slice( 1 ) );
+							} }
+						>
+							{ children }
+						</a>
+					);
+				}
 				return <a href={ resolvedHref } { ...rest }>{ children }</a>;
 			}
 

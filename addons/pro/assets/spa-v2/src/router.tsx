@@ -10,9 +10,9 @@
  *   #/workflows   — Workflow builder
  *   #/analytics   — Usage dashboard
  *   #/knowledge-graph — Content Graph explorer (NV oOS Content Graph plugin)
- *   #/docs        — Docs Hub (embedded hosted documentation browser)
- *   #/media       — Media Studio (embedded media editor SPA)
- *   #/documents   — Document Editor (embedded document editor SPA)
+ *   #/docs        — Docs Hub (native docs browser island)
+ *   #/media       — Media Studio (native media editor island)
+ *   #/documents   — Document Editor (native document editor island)
  */
 
 import { lazy, Suspense, type JSX } from 'react';
