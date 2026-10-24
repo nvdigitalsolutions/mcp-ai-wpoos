@@ -538,11 +538,11 @@ body,
   }
 }
 
-/* Mobile: drop horizontal gutters so the main body and chat dock sit edge-to-edge. */
+/* Mobile: slim horizontal gutters so the main body and chat dock sit edge-to-edge. */
 @media screen and (max-width: 782px) {
   .nvoos-console-page {
-    padding-left: 0;
-    padding-right: 0;
+    padding-left: 10px;
+    padding-right: 10px;
   }
 
   .nvoos-console-dock__chat .nvoos-pro-spa-chat-page {
