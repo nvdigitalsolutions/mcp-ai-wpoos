@@ -79,6 +79,7 @@ class WP_MCP_AI_Tool_Update_Support_Ticket implements WP_MCP_AI_Tool_Interface, 
 			'properties' => array(
 				'ticket_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Support ticket post ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'status'      => array(
@@ -95,6 +96,7 @@ class WP_MCP_AI_Tool_Update_Support_Ticket implements WP_MCP_AI_Tool_Interface, 
 				),
 				'assignee_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'New assignee WordPress user ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'body'        => array(

@@ -67,6 +67,7 @@ class WP_MCP_AI_Tool_List_Comments implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					'type'        => 'integer',
 					'description' => __( 'Optional: only list comments on this post.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'status'   => array(
 					'type'        => 'string',

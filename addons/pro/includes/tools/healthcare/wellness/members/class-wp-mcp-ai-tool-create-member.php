@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties'           => array(
 				'member_id'          => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional member ID. If provided, updates the existing member instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'name'               => array(

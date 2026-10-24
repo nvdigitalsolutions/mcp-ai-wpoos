@@ -63,6 +63,7 @@ class WP_MCP_AI_Tool_Generate_Cover_Letter implements WP_MCP_AI_Tool_Interface, 
 					'type'        => 'integer',
 					'description' => __( 'Registration ID for cover letter (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'submission_type' => array(
 					'type'        => 'string',

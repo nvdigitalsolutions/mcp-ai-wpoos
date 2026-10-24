@@ -138,6 +138,7 @@ class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'Product ID for forecast', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'product_ids'          => array(
 					'type'        => 'array',

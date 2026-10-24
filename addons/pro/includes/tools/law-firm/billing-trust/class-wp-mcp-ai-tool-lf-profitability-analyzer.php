@@ -94,6 +94,7 @@ class WP_MCP_AI_Tool_LF_Profitability_Analyzer implements WP_MCP_AI_Tool_Interfa
 			'properties' => array(
 				'matter_id'        => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Matter ID to analyze.', 'mcp-ai-wpoos-pro' ),
 				),
 				'include_overhead' => array(

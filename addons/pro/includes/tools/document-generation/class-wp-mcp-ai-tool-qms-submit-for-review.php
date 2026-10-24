@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_QMS_Submit_For_Review implements WP_MCP_AI_Tool_Interface, 
 				'post_id' => array(
 					'type'    => 'integer',
 					'minimum' => 1,
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'reason'  => array(
 					'type'      => 'string',

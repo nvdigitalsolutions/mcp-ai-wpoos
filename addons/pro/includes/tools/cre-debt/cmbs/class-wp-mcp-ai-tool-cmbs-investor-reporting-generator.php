@@ -116,6 +116,7 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 							),
 							'count'   => array(
 								'type'        => 'integer',
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 								'description' => __( 'Number of loans in this status.', 'mcp-ai-wpoos-pro' ),
 							),
 							'balance' => array(
@@ -128,6 +129,7 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 				),
 				'special_servicing_count'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Number of loans in special servicing.', 'mcp-ai-wpoos-pro' ),
 				),
 				'special_servicing_balance' => array(

@@ -55,6 +55,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 			'category'            => 'performance',
 			'required_capability' => 'manage_options',
 			'parameters'          => array(
+				'type'               => 'object',
 				'action'             => array(
 					'type'        => 'string',
 					'description' => __( 'Action: analyze_performance, optimize_database, configure_caching, monitor_cwv, or generate_report', 'mcp-ai-wpoos' ),

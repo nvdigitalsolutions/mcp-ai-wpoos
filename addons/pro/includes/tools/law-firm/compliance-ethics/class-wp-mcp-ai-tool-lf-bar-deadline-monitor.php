@@ -234,6 +234,7 @@ class WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor implements WP_MCP_AI_Tool_Interface
 				),
 				'attorney_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress user ID of the attorney to check deadlines for.', 'mcp-ai-wpoos-pro' ),
 				),
 				'include_cle' => array(

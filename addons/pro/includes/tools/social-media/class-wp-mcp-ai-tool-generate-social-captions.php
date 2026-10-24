@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Generate_Social_Captions implements WP_MCP_AI_Tool_Interfac
 			'properties' => array(
 				'post_id'          => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress post ID to generate captions for.', 'mcp-ai-wpoos-pro' ),
 				),
 				'platform'         => array(

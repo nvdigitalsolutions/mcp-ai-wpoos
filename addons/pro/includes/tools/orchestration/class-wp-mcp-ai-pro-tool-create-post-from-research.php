@@ -98,6 +98,7 @@ class WP_MCP_AI_Pro_Tool_Create_Post_From_Research implements WP_MCP_AI_Tool_Int
 				),
 				'category_id'            => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Category term ID to assign to the post.', 'mcp-ai-wpoos-pro' ),
 				),
 				'tags'                   => array(
@@ -107,6 +108,7 @@ class WP_MCP_AI_Pro_Tool_Create_Post_From_Research implements WP_MCP_AI_Tool_Int
 				),
 				'author_id'              => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'User ID to set as the post author. Defaults to current user.', 'mcp-ai-wpoos-pro' ),
 				),
 				'update_paper_status'    => array(

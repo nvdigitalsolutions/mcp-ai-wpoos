@@ -90,11 +90,13 @@ class WP_MCP_AI_Tool_Link_Prescription_To_Record implements WP_MCP_AI_Tool_Inter
 					'type'        => 'integer',
 					'description' => __( 'Prescription post ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'record_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Medical record post ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'   => array( 'prescription_id' ),

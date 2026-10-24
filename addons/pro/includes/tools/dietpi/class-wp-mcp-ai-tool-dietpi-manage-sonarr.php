@@ -63,6 +63,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Manage_Sonarr' ) ) {
 					),
 					'series_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'Series ID (required for rescan_series, search_missing, monitor, unmonitor).', 'mcp-ai-wpoos-pro' ),
 					),
 				),

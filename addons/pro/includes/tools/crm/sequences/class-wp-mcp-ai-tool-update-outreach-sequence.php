@@ -74,7 +74,10 @@ class WP_MCP_AI_Tool_Update_Outreach_Sequence implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'sequence_id' => array( 'type' => 'integer' ),
+				'sequence_id' => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'name'        => array( 'type' => 'string' ),
 				'description' => array( 'type' => 'string' ),
 				'steps'       => array( 'type' => 'array' ),

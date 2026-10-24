@@ -100,10 +100,12 @@ class WP_MCP_AI_Tool_LF_Client_Portal_Manager implements WP_MCP_AI_Tool_Interfac
 				),
 				'client_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The ID of the client record.', 'mcp-ai-wpoos-pro' ),
 				),
 				'document_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The ID of the document to share (attachment post ID).', 'mcp-ai-wpoos-pro' ),
 				),
 				'message'     => array(

@@ -87,6 +87,7 @@ class WP_MCP_AI_Tool_Scan_Assistant_Security implements WP_MCP_AI_Tool_Interface
 			'properties' => array(
 				'assistant_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The assistant post ID to scan.', 'mcp-ai-wpoos' ),
 				),
 			),

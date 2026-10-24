@@ -68,10 +68,12 @@ class WP_MCP_AI_Tool_Apply_Comic_Style implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'panel_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the `mcp_ai_comic_panel` post to apply style to.', 'mcp-ai-wpoos-pro' ),
 				),
 				'image_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of a WordPress attachment/image to style. Used when panel_id is not provided.', 'mcp-ai-wpoos-pro' ),
 				),
 				'style'    => array(

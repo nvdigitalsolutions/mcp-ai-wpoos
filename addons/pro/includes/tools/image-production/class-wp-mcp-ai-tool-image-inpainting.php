@@ -80,6 +80,7 @@ class WP_MCP_AI_Tool_Image_Inpainting extends WP_MCP_AI_Tool_Image_Base implemen
 						'properties'  => array(
 							'attachment_id' => array(
 								'type'        => 'integer',
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 								'description' => __( 'WordPress attachment ID of the mask image.', 'mcp-ai-wpoos-pro' ),
 							),
 							'url'           => array(

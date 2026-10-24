@@ -103,6 +103,7 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 			'properties' => array(
 				'post_id'          => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Post/page ID to translate',
 				),
 				'target_language'  => array(

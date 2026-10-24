@@ -96,6 +96,7 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 			'properties' => array(
 				'matter_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Matter ID to analyze.', 'mcp-ai-wpoos-pro' ),
 				),
 				'metrics'   => array(

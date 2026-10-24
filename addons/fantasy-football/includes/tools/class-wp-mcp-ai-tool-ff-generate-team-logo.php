@@ -85,6 +85,7 @@ class WP_MCP_AI_Tool_FF_Generate_Team_Logo implements WP_MCP_AI_Tool_Interface, 
 				),
 				'team_post_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Fantasy Team post ID to save logo to.', 'mcp-ai-wpoos' ),
 				),
 			),

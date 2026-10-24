@@ -102,7 +102,10 @@ class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id' => array( 'type' => 'integer' ),
+				'lead_id' => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'message' => array( 'type' => 'string' ),
 			),
 			'required'   => array( 'lead_id', 'message' ),

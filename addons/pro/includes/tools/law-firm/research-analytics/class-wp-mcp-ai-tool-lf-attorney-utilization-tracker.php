@@ -96,6 +96,7 @@ class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_I
 			'properties' => array(
 				'attorney_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress user ID of the attorney. If omitted, tracks all attorneys.', 'mcp-ai-wpoos-pro' ),
 				),
 				'period'       => array(

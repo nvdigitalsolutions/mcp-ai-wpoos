@@ -94,6 +94,7 @@ class WP_MCP_AI_Tool_LF_Billing_Compliance_Checker implements WP_MCP_AI_Tool_Int
 			'properties' => array(
 				'matter_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Matter ID to check.', 'mcp-ai-wpoos-pro' ),
 				),
 				'check_type' => array(

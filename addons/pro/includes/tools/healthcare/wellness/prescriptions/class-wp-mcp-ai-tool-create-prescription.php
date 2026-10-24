@@ -60,12 +60,14 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 			'properties'           => array(
 				'prescription_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional prescription ID. If provided, updates the existing prescription instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'member_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this prescription belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'medication_name'    => array(
 					'type'        => 'string',
@@ -135,6 +137,7 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'Quantity dispensed (optional, e.g. 30)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'quantity_unit'      => array(
 					'type'        => 'string',

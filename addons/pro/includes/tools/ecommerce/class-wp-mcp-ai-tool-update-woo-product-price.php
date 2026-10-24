@@ -146,6 +146,7 @@ class WP_MCP_AI_Tool_Update_Woo_Product_Price implements WP_MCP_AI_Tool_Interfac
 			'properties' => array(
 				'product_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WooCommerce product ID (or variation ID) to update.', 'mcp-ai-wpoos-pro' ),
 				),
 				'scope'          => array(

@@ -103,6 +103,7 @@ class WP_MCP_AI_Tool_Export_Plugin_Docs_Corpus implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'integer',
 					'description' => __( 'Assistant CPT post ID the corpus is exported for (consent + output namespace).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'dir'              => array(
 					'type'        => 'string',

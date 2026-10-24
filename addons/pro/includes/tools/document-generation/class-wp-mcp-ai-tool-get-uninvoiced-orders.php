@@ -76,6 +76,7 @@ class WP_MCP_AI_Tool_Get_Uninvoiced_Orders implements WP_MCP_AI_Tool_Interface, 
 					'type'        => 'integer',
 					'description' => __( 'Filter by customer ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'min_amount'  => array(
 					'type'        => 'number',

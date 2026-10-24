@@ -61,6 +61,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 			'category'            => 'security',
 			'required_capability' => 'read', // Users can set up their own 2FA.
 			'parameters'          => array(
+				'type'         => 'object',
 				'action'       => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: setup, status, enable, disable, generate_backup, or bulk_enforce', 'mcp-ai-wpoos' ),

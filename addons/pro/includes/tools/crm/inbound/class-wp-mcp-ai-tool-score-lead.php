@@ -87,7 +87,10 @@ class WP_MCP_AI_Tool_Score_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id'    => array( 'type' => 'integer' ),
+				'lead_id'    => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'fit'        => array(
 					'type'    => 'integer',
 					'minimum' => 0,

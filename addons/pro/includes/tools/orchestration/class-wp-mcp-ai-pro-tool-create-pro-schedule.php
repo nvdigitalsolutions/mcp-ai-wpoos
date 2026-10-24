@@ -101,6 +101,7 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 					'properties'  => array(
 						'assistant_id' => array(
 							'type'        => 'integer',
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							'description' => __( 'Post ID of the NV oOS assistant to run.', 'mcp-ai-wpoos-pro' ),
 						),
 						'message'      => array(
@@ -129,6 +130,7 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 				),
 				'timestamp'                  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Unix timestamp for the first (or only) execution. Defaults to 60 seconds from now for one-time runs, or one full interval from now for recurring schedules.', 'mcp-ai-wpoos-pro' ),
 				),
 				'args'                       => array(

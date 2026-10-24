@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Delete_Comment implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'type'        => 'integer',
 					'description' => __( 'The ID of the comment to delete.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'force'      => array(
 					'type'        => 'boolean',

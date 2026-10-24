@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'integer',
 					'description' => __( 'Registration ID to generate pack for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'submission_type'      => array(
 					'type'        => 'string',

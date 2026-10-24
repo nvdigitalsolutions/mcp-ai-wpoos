@@ -70,6 +70,7 @@ class WP_MCP_AI_Tool_Select_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_M
 				),
 				'assistant_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Assistant post ID, if any. Default 0.',
 				),
 				'model'        => array(

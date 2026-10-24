@@ -77,6 +77,7 @@ class WP_MCP_AI_Tool_Generate_Invoice_Batch implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'integer',
 					'description' => __( 'Optional document template ID to use for invoice generation. If omitted, the default invoice template is used.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'send_email'  => array(
 					'type'        => 'boolean',

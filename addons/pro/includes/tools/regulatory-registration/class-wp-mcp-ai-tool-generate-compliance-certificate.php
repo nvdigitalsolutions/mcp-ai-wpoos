@@ -63,6 +63,7 @@ class WP_MCP_AI_Tool_Generate_Compliance_Certificate implements WP_MCP_AI_Tool_I
 					'type'        => 'integer',
 					'description' => __( 'Registration ID for certificate generation (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'certificate_type' => array(
 					'type'        => 'string',

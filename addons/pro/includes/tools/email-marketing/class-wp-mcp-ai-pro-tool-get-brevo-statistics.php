@@ -74,6 +74,7 @@ class WP_MCP_AI_Pro_Tool_Get_Brevo_Statistics implements WP_MCP_AI_Tool_Interfac
 				),
 				'campaign_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional specific campaign ID to fetch detailed statistics for. Only used when type is "campaigns".', 'mcp-ai-wpoos-pro' ),
 				),
 				'start_date'  => array(

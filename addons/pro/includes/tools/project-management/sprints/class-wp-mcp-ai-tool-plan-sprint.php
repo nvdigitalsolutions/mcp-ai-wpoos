@@ -76,6 +76,7 @@ class WP_MCP_AI_Tool_Plan_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'integer',
 					'description' => __( 'ID of the sprint to plan (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'task_ids'  => array(
 					'type'        => 'array',

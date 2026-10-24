@@ -98,6 +98,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast implements WP_MCP_AI_Tool_In
 				),
 				'timestamp'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Unix timestamp for first (or only) send. Defaults to 60 seconds from now.', 'mcp-ai-wpoos-pro' ),
 				),
 				'enabled'     => array(

@@ -73,6 +73,7 @@ class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, W
 			'properties' => array(
 				'attachment_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress attachment ID of the PDF to watermark.', 'mcp-ai-wpoos-pro' ),
 				),
 				'url'           => array(

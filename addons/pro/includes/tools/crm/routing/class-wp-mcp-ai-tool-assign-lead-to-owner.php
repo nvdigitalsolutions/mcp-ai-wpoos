@@ -76,10 +76,12 @@ class WP_MCP_AI_Tool_Assign_Lead_To_Owner implements WP_MCP_AI_Tool_Interface, W
 			'properties' => array(
 				'lead_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Lead or contact post ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'owner_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WP user ID to assign. If 0 or omitted, uses the automatic routing strategy.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

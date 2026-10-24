@@ -56,6 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Start' ) ) {
 				'properties' => array(
 					'server_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'The server ID.', 'mcp-ai-wpoos-pro' ),
 					),
 				),

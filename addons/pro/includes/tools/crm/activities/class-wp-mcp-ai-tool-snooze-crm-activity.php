@@ -81,7 +81,10 @@ class WP_MCP_AI_Tool_Snooze_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'activity_id'  => array( 'type' => 'integer' ),
+				'activity_id'  => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'new_due_date' => array(
 					'type'        => 'string',
 					'description' => __( 'New due date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),

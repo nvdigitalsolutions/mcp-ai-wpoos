@@ -111,6 +111,7 @@ class WP_MCP_AI_Tool_Enrich_Place_Coordinates implements WP_MCP_AI_Tool_Interfac
 			'properties'           => array(
 				'place_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Place ID to geocode. Omit to run in batch mode.', 'mcp-ai-wpoos-pro' ),
 				),
 				'provider'   => array(

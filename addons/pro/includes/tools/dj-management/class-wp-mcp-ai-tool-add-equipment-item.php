@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'equipment_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional equipment ID. If provided, updates the existing equipment item instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'name'           => array(

@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 			'properties'           => array(
 				'booking_id'          => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Booking ID to generate contract for (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'dj_name'             => array(

@@ -66,6 +66,7 @@ class WP_MCP_AI_Tool_Export_Project_Csv implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'project_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The ID of the project whose tasks to export (required).', 'mcp-ai-wpoos-pro' ),
 				),
 			),

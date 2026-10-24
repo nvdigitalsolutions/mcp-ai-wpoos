@@ -69,6 +69,7 @@ class WP_MCP_AI_Tool_Add_Speech_Bubbles implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'panel_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the `mcp_ai_comic_panel` post to add bubbles to.', 'mcp-ai-wpoos-pro' ),
 				),
 				'bubbles'  => array(

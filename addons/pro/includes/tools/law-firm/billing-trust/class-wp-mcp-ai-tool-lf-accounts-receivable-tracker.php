@@ -102,6 +102,7 @@ class WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker implements WP_MCP_AI_Tool_In
 				),
 				'matter_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Filter by specific matter.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

@@ -76,6 +76,7 @@ class WP_MCP_AI_Tool_Delete_Application_Password implements WP_MCP_AI_Tool_Inter
 					'type'        => 'integer',
 					'description' => __( 'The ID of the user who owns the password. Defaults to the current user.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'             => array( 'uuid' ),

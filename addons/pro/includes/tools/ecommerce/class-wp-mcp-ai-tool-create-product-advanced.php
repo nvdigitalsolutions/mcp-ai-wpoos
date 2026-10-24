@@ -181,6 +181,7 @@ class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'Stock quantity (required if manage_stock is true)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'stock_status'      => array(
 					'type'        => 'string',

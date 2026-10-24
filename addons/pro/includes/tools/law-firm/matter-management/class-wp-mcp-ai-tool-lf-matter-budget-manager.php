@@ -100,6 +100,7 @@ class WP_MCP_AI_Tool_LF_Matter_Budget_Manager implements WP_MCP_AI_Tool_Interfac
 				),
 				'matter_id'         => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The matter ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'budget_amount'     => array(

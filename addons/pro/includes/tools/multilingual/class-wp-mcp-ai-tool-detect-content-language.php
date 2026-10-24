@@ -107,6 +107,7 @@ class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface
 				),
 				'post_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Post ID to detect language',
 				),
 			),

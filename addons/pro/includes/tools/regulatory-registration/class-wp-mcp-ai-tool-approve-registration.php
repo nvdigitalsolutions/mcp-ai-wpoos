@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Approve_Registration implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'Registration ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'approval_date'   => array(
 					'type'        => 'string',

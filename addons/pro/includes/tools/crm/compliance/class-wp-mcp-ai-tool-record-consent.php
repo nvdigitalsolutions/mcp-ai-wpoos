@@ -86,7 +86,10 @@ class WP_MCP_AI_Tool_Record_Consent implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'contact_id'   => array( 'type' => 'integer' ),
+				'contact_id'   => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'channel'      => array(
 					'type' => 'string',
 					'enum' => WP_MCP_AI_CRM_Codes::CHANNELS,

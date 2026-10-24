@@ -65,6 +65,7 @@ class WP_MCP_AI_Tool_Submit_To_Authority implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'Registration ID to submit (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'submission_type' => array(
 					'type'        => 'string',

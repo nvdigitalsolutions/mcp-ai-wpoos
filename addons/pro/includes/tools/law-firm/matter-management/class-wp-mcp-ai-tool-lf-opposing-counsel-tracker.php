@@ -100,6 +100,7 @@ class WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker implements WP_MCP_AI_Tool_Inter
 				),
 				'matter_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The matter ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'attorney_name' => array(

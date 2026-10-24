@@ -78,6 +78,7 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 						'properties' => array(
 							'agent_id'   => array(
 								'type'        => 'integer',
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 								'description' => __( 'ID of the agent that produced this result', 'mcp-ai-wpoos' ),
 							),
 							'agent_role' => array(

@@ -95,6 +95,7 @@ class WP_MCP_AI_Tool_Import_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => 'integer',
 					'description' => __( 'WordPress media attachment ID of a JSON export file. Alternative to json.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'mode'                => array(
 					'type'        => 'string',

@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Update_Task_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 				'properties' => array(
 					'plan_id'      => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Task plan ID',
 					),
 					'task_updates' => array(

@@ -70,6 +70,7 @@ class WP_MCP_AI_Tool_Get_Contact_Interactions implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'integer',
 					'description' => __( 'CRM contact ID. Required.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'interaction_type' => array(
 					'type'        => 'string',

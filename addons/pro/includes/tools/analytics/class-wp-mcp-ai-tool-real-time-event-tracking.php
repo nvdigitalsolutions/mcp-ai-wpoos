@@ -141,6 +141,7 @@ class WP_MCP_AI_Tool_Real_Time_Event_Tracking implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'integer',
 					'description' => 'User ID (0 for anonymous)',
 					'minimum'     => 0,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'session_id' => array(
 					'type'        => 'string',

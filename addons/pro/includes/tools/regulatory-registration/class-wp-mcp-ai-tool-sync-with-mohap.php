@@ -63,6 +63,7 @@ class WP_MCP_AI_Tool_Sync_With_Mohap implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'type'        => 'integer',
 					'description' => __( 'Registration ID to sync (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'action'          => array(
 					'type'        => 'string',

@@ -80,7 +80,10 @@ class WP_MCP_AI_Tool_Complete_CRM_Activity implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'activity_id' => array( 'type' => 'integer' ),
+				'activity_id' => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'outcome'     => array( 'type' => 'string' ),
 			),
 			'required'   => array( 'activity_id' ),

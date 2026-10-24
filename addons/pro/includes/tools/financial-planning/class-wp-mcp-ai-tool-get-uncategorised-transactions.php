@@ -80,6 +80,7 @@ class WP_MCP_AI_Tool_Get_Uncategorised_Transactions implements WP_MCP_AI_Tool_In
 					'type'        => 'integer',
 					'description' => __( 'Financial account post ID to filter by. If omitted, queries across all accounts.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'min_amount' => array(
 					'type'        => 'number',

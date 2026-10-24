@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Update_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'Product ID to update (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'name'               => array(
 					'type'        => 'string',

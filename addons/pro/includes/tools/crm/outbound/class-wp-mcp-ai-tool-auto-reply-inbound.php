@@ -89,7 +89,10 @@ class WP_MCP_AI_Tool_Auto_Reply_Inbound implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id'        => array( 'type' => 'integer' ),
+				'lead_id'        => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'intent'         => array(
 					'type' => 'string',
 					'enum' => WP_MCP_AI_CRM_Codes::INQUIRY_TYPES,

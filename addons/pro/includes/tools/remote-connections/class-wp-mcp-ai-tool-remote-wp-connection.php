@@ -186,10 +186,12 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				),
 				'post_id'            => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Post or product ID for single item queries.', 'mcp-ai-wpoos-pro' ),
 				),
 				'order_id'           => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WooCommerce order ID for order queries.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page'           => array(
@@ -261,6 +263,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				),
 				'item_id'            => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'JetEngine CCT item ID for get_jetengine_cct_item, update_jetengine_cct_item, or delete_jetengine_cct_item actions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'orderby'            => array(

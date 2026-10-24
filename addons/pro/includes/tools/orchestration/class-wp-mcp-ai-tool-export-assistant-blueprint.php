@@ -84,6 +84,7 @@ class WP_MCP_AI_Tool_Export_Assistant_Blueprint implements WP_MCP_AI_Tool_Interf
 					'type'        => 'integer',
 					'description' => __( 'The assistant post ID to export as a blueprint.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'save_to_media'       => array(
 					'type'        => 'boolean',

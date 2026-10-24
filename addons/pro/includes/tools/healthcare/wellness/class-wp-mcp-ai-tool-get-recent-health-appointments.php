@@ -89,11 +89,13 @@ class WP_MCP_AI_Tool_Get_Recent_Health_Appointments implements WP_MCP_AI_Tool_In
 					'type'        => 'integer',
 					'description' => __( 'Filter by member post ID. Optional.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'provider_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by provider (user) ID. Optional.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'appointment_type' => array(
 					'type'        => 'string',

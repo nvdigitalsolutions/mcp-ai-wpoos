@@ -186,6 +186,7 @@ class WP_MCP_AI_Tool_Verify_Prescription_Interactions implements WP_MCP_AI_Tool_
 					'type'        => 'integer',
 					'description' => __( 'When provided, also pulls active prescriptions for this member.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'medications' => array(
 					'type'        => 'array',

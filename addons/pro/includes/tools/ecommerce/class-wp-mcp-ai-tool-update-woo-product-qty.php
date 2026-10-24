@@ -146,12 +146,14 @@ class WP_MCP_AI_Tool_Update_Woo_Product_Qty implements WP_MCP_AI_Tool_Interface,
 			'properties' => array(
 				'product_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WooCommerce product ID (or variation ID) to update.', 'mcp-ai-wpoos-pro' ),
 				),
 				'quantity'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Stock quantity. Absolute value for "set", or the delta for "increase"/"decrease". Must be 0 or greater.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'operation'    => array(
 					'type'        => 'string',

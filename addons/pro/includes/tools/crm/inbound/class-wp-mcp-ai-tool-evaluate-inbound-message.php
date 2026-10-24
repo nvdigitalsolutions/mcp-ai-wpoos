@@ -131,6 +131,7 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 				),
 				'existing_contact_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'If a matching contact already exists, provide the ID to skip extraction.', 'mcp-ai-wpoos-pro' ),
 				),
 				'auto_reply'              => array(

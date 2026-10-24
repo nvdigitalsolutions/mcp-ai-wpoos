@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Get_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			'properties'           => array(
 				'place_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Place ID to retrieve (required)', 'mcp-ai-wpoos-pro' ),
 				),
 			),

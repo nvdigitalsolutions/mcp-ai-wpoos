@@ -74,6 +74,7 @@ class WP_MCP_AI_Tool_Get_Owner_Workload implements WP_MCP_AI_Tool_Interface, WP_
 			'properties' => array(
 				'owner_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Specific owner or omit for all in routing pool.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

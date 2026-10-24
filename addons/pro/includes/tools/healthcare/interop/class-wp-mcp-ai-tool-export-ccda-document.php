@@ -87,6 +87,7 @@ class WP_MCP_AI_Tool_Export_CCDA_Document implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'Member post ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'   => array( 'member_id' ),

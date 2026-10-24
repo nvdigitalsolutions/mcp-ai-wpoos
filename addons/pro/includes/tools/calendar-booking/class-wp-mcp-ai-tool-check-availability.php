@@ -141,14 +141,17 @@ class WP_MCP_AI_Tool_Check_Availability implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'provider_id'            => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional provider ID for JetAppointment availability check.', 'mcp-ai-wpoos-pro' ),
 				),
 				'service_id'             => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional service ID for JetAppointment availability check.', 'mcp-ai-wpoos-pro' ),
 				),
 				'instance_id'            => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional JetBooking instance ID for availability check.', 'mcp-ai-wpoos-pro' ),
 				),
 				'check_external_systems' => array(

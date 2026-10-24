@@ -79,6 +79,7 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the image to optimize', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'operation'       => array(
 					'type'        => 'string',

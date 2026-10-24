@@ -78,8 +78,14 @@ class WP_MCP_AI_Tool_Compare_Imaging_Studies implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'prior_study_id'    => array( 'type' => 'integer' ),
-				'current_study_id'  => array( 'type' => 'integer' ),
+				'prior_study_id'    => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
+				'current_study_id'  => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'prior_study_uid'   => array( 'type' => 'string' ),
 				'current_study_uid' => array( 'type' => 'string' ),
 			),

@@ -60,6 +60,7 @@ class WP_MCP_AI_Tool_List_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'project_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Filter by project ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'type'         => array(
