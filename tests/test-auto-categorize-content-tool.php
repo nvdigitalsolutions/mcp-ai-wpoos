@@ -24,6 +24,15 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 	protected $tool;
 
 	/**
+	 * Real router instance displaced by the deterministic mock.
+	 *
+	 * Restored in tearDown so other suites keep the production router.
+	 *
+	 * @var object|null
+	 */
+	protected $original_router;
+
+	/**
 	 * Test user ID.
 	 *
 	 * @var int
@@ -101,6 +110,12 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 	 * Clean up after tests.
 	 */
 	public function tearDown(): void {
+		// Restore the real router so other suites never see the mock.
+		if ( null !== $this->original_router ) {
+			wp_mcp_ai_container()->set( 'router', $this->original_router );
+			$this->original_router = null;
+		}
+
 		// Clean up posts and categories.
 		if ( $this->post_id ) {
 			wp_delete_post( $this->post_id, true );
@@ -192,6 +207,31 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Swap the container router for a mock that always fails the AI call.
+	 *
+	 * The execution tests assert that failures come from the AI path, not
+	 * from argument validation. In the full CI suite the environment can
+	 * occasionally present a working AI path (loaded Pro/provider state from
+	 * earlier suites), which flips these tests from WP_Error to a success
+	 * envelope. Pinning the router to a deterministic failure makes the
+	 * contract explicit and environment-independent.
+	 *
+	 * @return void
+	 */
+	private function mock_router_to_error() {
+		$container             = wp_mcp_ai_container();
+		$this->original_router = $container->has( 'router' ) ? $container->get( 'router' ) : null;
+
+		$mock_router = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+		$mock_router->method( 'create_chat_completion' )
+			->willReturn( new WP_Error( 'ai_client_unavailable', 'No AI client available in test environment.' ) );
+
+		$container->set( 'router', $mock_router );
+	}
+
+	/**
 	 * Test tool execution with content-only (no post_id).
 	 *
 	 * This test validates the tool can analyze content without a post.
@@ -209,6 +249,7 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 
 		// Since we don't have a real AI client in tests, we expect this to fail
 		// with an AI-path error rather than execute successfully.
+		$this->mock_router_to_error();
 		$result = $this->tool->execute( $arguments );
 
 		// The failure must come from the AI client path (missing keys,
@@ -242,6 +283,7 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 
 		// Since we don't have a real AI client in tests, we expect this to fail
 		// with an AI-path error rather than execute successfully.
+		$this->mock_router_to_error();
 		$result = $this->tool->execute( $arguments );
 
 		// Verify the error is related to the AI client, not post access or
