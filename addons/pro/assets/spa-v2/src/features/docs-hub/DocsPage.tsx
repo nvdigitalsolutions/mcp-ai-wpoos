@@ -165,11 +165,11 @@ export function DocsPage(): JSX.Element {
 				<p className="nvoos-pro-spa-page__subtitle">
 					{ source === 'okf'
 						? __(
-							'Curated OKF knowledge bundles. Content is managed through the OKF knowledge store.',
+							'Content is managed through the OKF knowledge store.',
 							'nvoos-pro-spa'
 						  )
 						: __(
-							'Site documentation served by the NV oOS Docs Hub. Content management lives in the WordPress admin.',
+							'Content management lives in the WordPress admin.',
 							'nvoos-pro-spa'
 						  ) }
 				</p>
