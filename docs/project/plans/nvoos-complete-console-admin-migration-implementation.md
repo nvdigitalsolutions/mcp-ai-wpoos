@@ -576,8 +576,13 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
     catalogue (`ezuite`/`shopify`/`flowhub`, flag-gated on their toolkit
     toggles); the commerce page Overview tabs render the metric cards +
     warehouse/location lists plus a last-sync freshness line.
-  - [ ] **W16f — Remote records browsing (B remainder).** Browse a remote
-    WordPress site's posts/products via the records surface.
+  - [x] **W16f — Remote records browsing (B remainder).** ✅ SHIPPED
+    2026-10-25: read-only proxy routes `GET /mcp-ai-pro/v1/records/remote/
+    {entity}[/{id}]` (wordpress-type connections, enabled + per-post-type
+    access-control checks, whitelisted wp/v2 passthrough re-sanitized at
+    exit, structured 400/403/404/501/502 errors); `RecordsClient`
+    listRemote/getRemote; the `/products` and `/content` Records pages
+    gain a SitePicker (remote mode hides Research & Add — read-mostly).
   - [ ] **W16g — Retirement + deep-links (5b/6b).** Flip the four toolkit
     kill-switches per cohort after parity; branded wp-admin edit deep-links
     on records once 084 Phase 6 machinery lands.

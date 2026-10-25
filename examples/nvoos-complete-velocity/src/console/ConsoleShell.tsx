@@ -629,22 +629,22 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                     features={features}
                     capabilities={runtime.user.capabilities}
                   >
-                    <RecordsPage group="commerce" />
-                  </RequireGate>
-                }
-              />
-              <Route
-                path="/content"
-                element={
-                  <RequireGate
-                    gate={gateForPath('/content')}
-                    features={features}
-                    capabilities={runtime.user.capabilities}
-                  >
-                    <RecordsPage group="content" />
-                  </RequireGate>
-                }
-              />
+                    									<RecordsPage group="commerce" allowRemote />
+                    								</RequireGate>
+                    							}
+                    						/>
+                    						<Route
+                    							path="/content"
+                    							element={
+                    								<RequireGate
+                    									gate={gateForPath('/content')}
+                    									features={features}
+                    									capabilities={runtime.user.capabilities}
+                    								>
+                    									<RecordsPage group="content" allowRemote />
+                    								</RequireGate>
+                    							}
+                    						/>
               				<Route
               					path="/blueprints"
               					element={

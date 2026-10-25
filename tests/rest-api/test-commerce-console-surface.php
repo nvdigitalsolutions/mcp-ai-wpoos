@@ -502,6 +502,124 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Phase B — an unknown remote site id on the records proxy is a 404.
+	 */
+	public function test_remote_records_unknown_site_is_404() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Records_REST_Controller' ) ) {
+			$this->markTestSkipped( 'Pro addon not loaded.' );
+		}
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/records/remote/post' );
+		$request->set_param( 'entity', 'post' );
+		$request->set_param( 'remote_site', 'no-such-site' );
+
+		$result = ( new WP_MCP_AI_Pro_Records_REST_Controller() )->get_remote_items( $request );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'records_remote_unknown_site', $result->get_error_code() );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * Phase B — unknown entities on the proxy are a structured 404 before
+	 * any connection work.
+	 */
+	public function test_remote_records_unknown_entity_is_404() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Records_REST_Controller' ) ) {
+			$this->markTestSkipped( 'Pro addon not loaded.' );
+		}
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/records/remote/mystery' );
+		$request->set_param( 'entity', 'mystery' );
+		$request->set_param( 'remote_site', 'whatever' );
+
+		$result = ( new WP_MCP_AI_Pro_Records_REST_Controller() )->get_remote_items( $request );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'records_unknown_entity', $result->get_error_code() );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * Phase B — the remote proxy passes the sanitized wp/v2 payload through
+	 * (zero real HTTP — pre_http_request intercepts the outbound request;
+	 * reads default-allow when no access controls are configured).
+	 */
+	public function test_remote_records_proxy_returns_items() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Records_REST_Controller' ) ) {
+			$this->markTestSkipped( 'Pro addon not loaded.' );
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Remote Site Manager not loaded.' );
+		}
+
+		$save = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Remote records fixture',
+				'url'             => 'https://store.example.com',
+				'connection_type' => 'wordpress',
+				'auth_type'       => 'application_password',
+				'username'        => 'fixture',
+				'password'        => 'app-password',
+				'enabled'         => 1,
+			)
+		);
+		if ( is_wp_error( $save ) ) {
+			$this->markTestSkipped( 'Connection fixture rejected: ' . $save->get_error_message() );
+		}
+
+		$http_calls = 0;
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$http_calls ) {
+				$http_calls++;
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							array(
+								'id'     => 42,
+								'title'  => array( 'rendered' => 'Remote <em>Post</em>' ),
+								'date'   => '2026-10-25T10:00:00',
+								'status' => 'publish',
+								'meta'   => array(),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/records/remote/post' );
+		$request->set_param( 'entity', 'post' );
+		$request->set_param( 'remote_site', $save );
+		$request->set_param( 'per_page', 50 );
+
+		$result = ( new WP_MCP_AI_Pro_Records_REST_Controller() )->get_remote_items( $request );
+
+		$this->assertNotWPError( $result );
+		$data = $result->get_data();
+		$this->assertTrue( $data['success'] );
+		$this->assertSame( $save, $data['data']['remote_site'] );
+		$this->assertCount( 1, $data['data']['items'] );
+		$this->assertSame( 42, $data['data']['items'][0]['id'] );
+		// The proxied title strips HTML at exit (two-gate rule).
+		$this->assertSame( 'Remote Post', $data['data']['items'][0]['title'] );
+		$this->assertSame( 1, $http_calls );
+	}
+
+	/**
 	 * Phase 4f — the dashboards schema gates the three commerce dashboards
 	 * on their toolkit toggles (enabled → catalogue, disabled → guidance).
 	 */

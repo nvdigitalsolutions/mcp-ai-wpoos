@@ -121,6 +121,48 @@ export class RecordsClient {
 	}
 
 	/**
+	 * List one entity's records on a remote WordPress site (Proposal 089
+	 * Phase B — the read-only proxy; credentials stay server-side).
+	 */
+	async listRemote(
+		entity: RecordEntityConfig,
+		search: string,
+		remoteSite: string,
+		signal?: AbortSignal
+	): Promise< RecordSummary[] > {
+		const recordsBase = this.schemaEndpoint.replace( /\/schema\/?$/, '' );
+		const params = new URLSearchParams( { per_page: '50', remote_site: remoteSite } );
+		if ( search.trim() ) {
+			params.set( 'search', search.trim() );
+		}
+		const data = await this.request< { data?: { items?: unknown[] } } >(
+			'GET',
+			`${ recordsBase }/remote/${ entity.key }?${ params.toString() }`,
+			undefined,
+			signal
+		);
+		return Array.isArray( data?.data?.items ) ? data.data.items.map( mapRecord ) : [];
+	}
+
+	/** Fetch a single record on a remote WordPress site (Phase B proxy). */
+	async getRemote(
+		entity: RecordEntityConfig,
+		id: number,
+		remoteSite: string,
+		signal?: AbortSignal
+	): Promise< RecordSummary | null > {
+		const recordsBase = this.schemaEndpoint.replace( /\/schema\/?$/, '' );
+		const params = new URLSearchParams( { remote_site: remoteSite } );
+		const data = await this.request< { data?: { item?: unknown } } >(
+			'GET',
+			`${ recordsBase }/remote/${ entity.key }/${ id }?${ params.toString() }`,
+			undefined,
+			signal
+		);
+		return data?.data?.item && typeof data.data.item === 'object' ? mapRecord( data.data.item ) : null;
+	}
+
+	/**
 	 * Research a query and map the report onto the entity's schema fields
 	 * (POST /records/{entity}/research — the 4a-b create-from-research
 	 * flow; the server returns suggested fields, nothing is created).

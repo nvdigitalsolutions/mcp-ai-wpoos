@@ -240,6 +240,71 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 				),
 			)
 		);
+
+		// Proposal 089 Phase B — read-only browsing of a remote WordPress
+		// site's records through the Remote Sites connection manager.
+		// Credentials stay server-side; access controls apply per post type.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::ROUTE_BASE . '/remote/(?P<entity>[a-z0-9_-]+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_remote_items' ),
+				'permission_callback' => array( $this, 'permissions_check' ),
+				'args'                => array(
+					'entity'      => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'remote_site' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'search'      => array(
+						'required'          => false,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'per_page'    => array(
+						'required'          => false,
+						'type'              => 'integer',
+						'default'           => 50,
+						'minimum'           => 1,
+						'maximum'           => 50,
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::ROUTE_BASE . '/remote/(?P<entity>[a-z0-9_-]+)/(?P<record_id>\d+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_remote_item' ),
+				'permission_callback' => array( $this, 'permissions_check' ),
+				'args'                => array(
+					'entity'      => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'record_id'   => array(
+						'required'          => true,
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+					),
+					'remote_site' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -335,6 +400,205 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 		}
 
 		return $columns;
+	}
+
+	/**
+	 * Resolve and validate a remote browsing request (Proposal 089 Phase B).
+	 *
+	 * Read-only: credentials never leave the server, the connection must be
+	 * an enabled WordPress Remote Site, and the per-post-type access
+	 * controls apply exactly as they do for the remote-wp-connection tool.
+	 *
+	 * @since 2.4.0
+	 * @param WP_REST_Request $request Request object.
+	 * @return array{connection: array, post_type: string}|WP_Error
+	 */
+	private function resolve_remote_target( WP_REST_Request $request ) {
+		$entity = $request->get_param( 'entity' );
+		if ( ! isset( self::RECORD_ENTITIES[ $entity ] ) ) {
+			return new WP_Error(
+				'records_unknown_entity',
+				__( 'Unknown record entity.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return new WP_Error(
+				'records_remote_unavailable',
+				__( 'Remote Sites is unavailable on this site.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 501 )
+			);
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $request->get_param( 'remote_site' ) );
+		if ( null === $connection ) {
+			return new WP_Error(
+				'records_remote_unknown_site',
+				__( 'Unknown remote site connection.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( empty( $connection['enabled'] ) ) {
+			return new WP_Error(
+				'records_remote_site_disabled',
+				__( 'The remote site connection is disabled.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+		if ( 'wordpress' !== $type ) {
+			return new WP_Error(
+				'records_remote_site_not_wordpress',
+				__( 'Only WordPress remote sites expose records.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$post_type = self::RECORD_ENTITIES[ $entity ]['post_type'];
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_post_type_operation_allowed( $connection, $post_type, 'read' ) ) {
+			return new WP_Error(
+				'records_remote_access_denied',
+				sprintf(
+					/* translators: %s: post type slug */
+					__( 'Read access to post type "%s" is not permitted for this connection.', 'mcp-ai-wpoos-pro' ),
+					$post_type
+				),
+				array( 'status' => 403 )
+			);
+		}
+
+		return array(
+			'connection' => $connection,
+			'post_type'  => $post_type,
+		);
+	}
+
+	/**
+	 * GET /records/remote/{entity} — browse a remote WordPress site's
+	 * records (list, read-only, Phase B).
+	 *
+	 * @since 2.4.0
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_remote_items( WP_REST_Request $request ) {
+		$target = $this->resolve_remote_target( $request );
+		if ( is_wp_error( $target ) ) {
+			return $target;
+		}
+
+		$params = array(
+			'per_page' => absint( $request->get_param( 'per_page' ) ),
+			'_fields'  => 'id,date,status,title,meta',
+		);
+		$search = (string) $request->get_param( 'search' );
+		if ( '' !== $search ) {
+			$params['search'] = $search;
+		}
+
+		$endpoint = add_query_arg( $params, 'wp/v2/' . $target['post_type'] );
+		$response = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $target['connection'], $endpoint );
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'records_remote_failed',
+				sprintf(
+					/* translators: %s: remote error message */
+					__( 'Remote records request failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				),
+				array( 'status' => 502 )
+			);
+		}
+
+		$items = is_array( $response ) ? array_map( array( $this, 'sanitize_remote_record' ), $response ) : array();
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'items'       => $items,
+					'entity'      => sanitize_key( (string) $request->get_param( 'entity' ) ),
+					'remote_site' => sanitize_key( (string) $request->get_param( 'remote_site' ) ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * GET /records/remote/{entity}/{record_id} — one remote record
+	 * (detail, read-only, Phase B).
+	 *
+	 * @since 2.4.0
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_remote_item( WP_REST_Request $request ) {
+		$target = $this->resolve_remote_target( $request );
+		if ( is_wp_error( $target ) ) {
+			return $target;
+		}
+
+		$record_id = absint( $request->get_param( 'record_id' ) );
+		$endpoint  = add_query_arg(
+			array( '_fields' => 'id,date,status,title,meta' ),
+			'wp/v2/' . $target['post_type'] . '/' . $record_id
+		);
+
+		$response = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $target['connection'], $endpoint );
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'records_remote_failed',
+				sprintf(
+					/* translators: %s: remote error message */
+					__( 'Remote records request failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				),
+				array( 'status' => 502 )
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'item'        => is_array( $response ) ? $this->sanitize_remote_record( $response ) : array(),
+					'entity'      => sanitize_key( (string) $request->get_param( 'entity' ) ),
+					'remote_site' => sanitize_key( (string) $request->get_param( 'remote_site' ) ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Whitelist-map a proxied wp/v2 post onto the records summary shape
+	 * (two-gate rule: every proxied value re-sanitizes at exit).
+	 *
+	 * @since 2.4.0
+	 * @param mixed $post Raw remote post payload.
+	 * @return array
+	 */
+	private function sanitize_remote_record( $post ) {
+		if ( ! is_array( $post ) ) {
+			return array();
+		}
+
+		$title = '';
+		if ( isset( $post['title'] ) && is_array( $post['title'] ) ) {
+			$title = isset( $post['title']['rendered'] ) ? wp_strip_all_tags( (string) $post['title']['rendered'] ) : '';
+		} elseif ( isset( $post['title'] ) && is_scalar( $post['title'] ) ) {
+			$title = sanitize_text_field( (string) $post['title'] );
+		}
+
+		return array(
+			'id'     => isset( $post['id'] ) ? absint( $post['id'] ) : 0,
+			'title'  => $title,
+			'date'   => isset( $post['date'] ) ? sanitize_text_field( (string) $post['date'] ) : '',
+			'status' => isset( $post['status'] ) ? sanitize_key( (string) $post['status'] ) : '',
+			'meta'   => ( isset( $post['meta'] ) && is_array( $post['meta'] ) ) ? $post['meta'] : array(),
+		);
 	}
 
 	/**
