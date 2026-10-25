@@ -4932,8 +4932,8 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-tool-picker__chip--unknown .nvoos-pro-spa-tool-picker__chip-remove {
 	border-color: var(--nvoos-warning, #b26a00);
+	color: #000000;
 	background: #fcf0df;
-	color: var(--nvoos-warning, #b26a00);
 	border-style: dashed;
 }
 

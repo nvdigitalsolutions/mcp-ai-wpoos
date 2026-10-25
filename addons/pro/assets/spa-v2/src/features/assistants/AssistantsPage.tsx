@@ -48,22 +48,25 @@ export function AssistantsPage(): JSX.Element {
 				: { endpoint: '', nonce: '' }
 		);
 
-// Full tool registry for the picker — deliberately fetched WITHOUT an
-// assistant_id: the tools route scopes the list to the assistant's
-// allowed tools when one is passed, and the picker needs the catalogue.
-const {
-	tools: registryTools,
-	loading: registryLoading,
-	error: registryError,
-	fetchTools: fetchRegistryTools,
-} = useTools(
-	runtime
-		? {
-				endpoint: runtime.endpoints.tools,
-				nonce: runtime.nonce,
-		  }
-		: { endpoint: '', nonce: '' }
-);
+	// Full tool registry for the picker. `scope: 'all'` is required: without
+	// an assistant_id the server resolves the site/token DEFAULT assistant
+	// and scopes the listing to that assistant's tools, which made the picker
+	// show only tools already assigned elsewhere (and flag every stored slug
+	// as "not found"). The MCP tools/list contract keeps that default.
+	const {
+		tools: registryTools,
+		loading: registryLoading,
+		error: registryError,
+		fetchTools: fetchRegistryTools,
+	} = useTools(
+		runtime
+			? {
+					endpoint: runtime.endpoints.tools,
+					nonce: runtime.nonce,
+					scope: 'all',
+			  }
+			: { endpoint: '', nonce: '' }
+	);
 
 	const [ formOpen, setFormOpen ] = useState< boolean >( false );
 	const [ editingId, setEditingId ] = useState< number | null >( null );
