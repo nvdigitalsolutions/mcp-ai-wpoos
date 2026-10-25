@@ -26,6 +26,7 @@ import { __ } from '@wordpress/i18n';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import {
 	RemoteSitesClient,
+	buildWpAdminSettingsUrl,
 	type RemoteSiteConnection,
 	type RemoteSiteTestResult,
 	type RemoteSiteType,
@@ -272,13 +273,10 @@ export function RemoteSitesPage(): JSX.Element {
 		return connection.has_credentials ? 'connected' : 'needs-setup';
 	};
 
-	const wpAdminSettingsUrl = useMemo( () => {
-		const api = runtime?.apiUrl ?? '';
-		const base = api.replace( /\/wp-json\/?$/, '' );
-		return base
-			? `${ base }/wp-admin/options-general.php?page=wp-mcp-ai-settings`
-			: '';
-	}, [ runtime ] );
+	const wpAdminSettingsUrl = useMemo(
+		() => buildWpAdminSettingsUrl( runtime?.apiUrl ?? '' ),
+		[ runtime ]
+	);
 
 	if ( bootstrapLoading ) {
 		return (
