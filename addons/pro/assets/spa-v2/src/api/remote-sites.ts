@@ -72,6 +72,21 @@ export interface RemoteSitesClientOptions {
 	nonce: string;
 }
 
+/**
+ * Build the wp-admin settings URL for the base-plugin connections from a
+ * WordPress REST base URL.
+ *
+ * `apiUrl` is either `{origin}/wp-json` or `{origin}/wp-json/{ns}/{v}` —
+ * both must collapse to `{origin}/wp-admin/options-general.php?page=…`.
+ * Empty input (no runtime) yields an empty link.
+ */
+export function buildWpAdminSettingsUrl( apiUrl: string ): string {
+	const origin = apiUrl.replace( /\/wp-json(\/.*)?$/, '' );
+	return origin
+		? `${ origin }/wp-admin/options-general.php?page=wp-mcp-ai-settings`
+		: '';
+}
+
 export class RemoteSitesClient {
 	private readonly endpoint: string;
 	private readonly nonce: string;
