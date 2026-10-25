@@ -234,8 +234,9 @@ README pointers, and workflow targets.
 
 - [ ] Proposal 085 Phase 0–6 v1 is shipped and verified (WP-backend Velocity
       storefront live).
-- [ ] Owner confirms **Laravel over FastAPI** (the Python alternative is a
-      live open option — appendix §6).
+- [x] Owner confirms **Laravel over FastAPI** — resolved 2026-10-25
+      (decision #15, `fastapi-porting-implementation-plan.md` §18; flip
+      conditions in `090-laravel-adapter-spike-implementation-plan.md` §8).
 - [ ] **Laravel adapter spike** completed in dev: `nvoos/core` +
       `nvoos/laravel-adapter` on Octane (FrankenPHP) with one real tool
       executed end-to-end — the repo's stated v1.4.0 spike, de-risking the
