@@ -1156,6 +1156,10 @@ class WP_MCP_AI_Pro_Remote_Sites_REST_Controller extends WP_REST_Controller {
 		}
 
 		$pseudo = array(
+			// The manager's validate_connection_data() runs before the
+			// provider-specific test and requires a display name even for
+			// pseudo-connections built from site settings.
+			'name'            => __( 'Gmail (site settings)', 'mcp-ai-wpoos-pro' ),
 			'connection_type' => 'gmail',
 			'client_id'       => $settings['gmail_client_id'],
 			'client_secret'   => isset( $settings['gmail_client_secret'] ) ? $settings['gmail_client_secret'] : '',
