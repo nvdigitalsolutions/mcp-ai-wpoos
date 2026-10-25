@@ -55,11 +55,12 @@ class WP_MCP_AI_REST_Tools_List_Envelope_Test extends WP_UnitTestCase {
 		$data  = $this->fetch_tools_list();
 		$first = $data['tools'][0];
 
-		foreach ( array( 'name', 'slug', 'description', 'required_capability', 'inputSchema' ) as $key ) {
+		foreach ( array( 'name', 'slug', 'description', 'required_capability', 'flags', 'inputSchema' ) as $key ) {
 			$this->assertArrayHasKey( $key, $first, "Tool entry must include the {$key} field." );
 		}
 
 		$this->assertSame( $first['name'], $first['slug'] );
 		$this->assertIsArray( $first['inputSchema'] );
+		$this->assertIsArray( $first['flags'] );
 	}
 }

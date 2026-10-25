@@ -36,6 +36,7 @@ describe( 'ToolsClient.list', () => {
 					slug: 'create_deal',
 					description: 'Create a CRM deal.',
 					required_capability: 'edit_posts',
+					flags: [ 'write', 'state-changing' ],
 					inputSchema: { type: 'object', properties: {} },
 				},
 			],
@@ -53,6 +54,7 @@ describe( 'ToolsClient.list', () => {
 			description: 'Create a CRM deal.',
 			category: 'Core',
 			required_capability: 'edit_posts',
+			flags: [ 'write', 'state-changing' ],
 			parameters: { type: 'object', properties: {} },
 		} );
 	} );

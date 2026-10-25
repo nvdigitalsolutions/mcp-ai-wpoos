@@ -11,8 +11,10 @@ import type { JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useAssistants } from '../../hooks/useAssistants';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import { useTools } from '../../hooks/useTools';
 import { useModelStore } from '../../stores/modelStore';
 import type { AssistantRecord } from '../../api/assistants';
+import { ToolPicker } from './ToolPicker';
 
 interface AssistantFormFields {
 	title: string;
@@ -20,7 +22,7 @@ interface AssistantFormFields {
 	provider: string;
 	temperature: number;
 	system_prompt: string;
-	tools: string;
+	tools: string[];
 }
 
 const EMPTY_FORM: AssistantFormFields = {
@@ -29,15 +31,8 @@ const EMPTY_FORM: AssistantFormFields = {
 	provider: 'openai',
 	temperature: 0.7,
 	system_prompt: '',
-	tools: '',
+	tools: [],
 };
-
-function parseTools( raw: string ): string[] {
-	return raw
-		.split( ',' )
-		.map( ( s ) => s.trim() )
-		.filter( ( s ) => s.length > 0 );
-}
 
 export function AssistantsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
@@ -52,6 +47,23 @@ export function AssistantsPage(): JSX.Element {
 				  }
 				: { endpoint: '', nonce: '' }
 		);
+
+// Full tool registry for the picker — deliberately fetched WITHOUT an
+// assistant_id: the tools route scopes the list to the assistant's
+// allowed tools when one is passed, and the picker needs the catalogue.
+const {
+	tools: registryTools,
+	loading: registryLoading,
+	error: registryError,
+	fetchTools: fetchRegistryTools,
+} = useTools(
+	runtime
+		? {
+				endpoint: runtime.endpoints.tools,
+				nonce: runtime.nonce,
+		  }
+		: { endpoint: '', nonce: '' }
+);
 
 	const [ formOpen, setFormOpen ] = useState< boolean >( false );
 	const [ editingId, setEditingId ] = useState< number | null >( null );
@@ -89,7 +101,7 @@ export function AssistantsPage(): JSX.Element {
 				provider: assistant.provider ?? 'openai',
 				temperature: assistant.temperature ?? 0.7,
 				system_prompt: '',
-				tools: Array.isArray( assistant.tools ) ? assistant.tools.join( ', ' ) : '',
+				tools: Array.isArray( assistant.tools ) ? assistant.tools : [],
 			} );
 			setEditingId( assistant.id );
 			setRecordLoading( true );
@@ -106,7 +118,7 @@ export function AssistantsPage(): JSX.Element {
 					provider: full.provider ?? current.provider,
 					temperature: full.temperature ?? current.temperature,
 					system_prompt: full.system_prompt ?? '',
-					tools: Array.isArray( full.tools ) ? full.tools.join( ', ' ) : current.tools,
+					tools: Array.isArray( full.tools ) ? full.tools : current.tools,
 				} ) );
 				setRecordLoading( false );
 			} );
@@ -132,7 +144,7 @@ export function AssistantsPage(): JSX.Element {
 			// Always sent (not undefined-trimmed) so an edit can clear a
 			// stored system prompt; the server deletes the meta on ''.
 			system_prompt: formFields.system_prompt,
-			tools: parseTools( formFields.tools ),
+			tools: formFields.tools,
 		};
 		try {
 			if ( editingId !== null ) {
@@ -600,7 +612,7 @@ export function AssistantsPage(): JSX.Element {
 
 								<div className="nvoos-pro-spa-assistants-form__field">
 									<label
-										htmlFor="nvoos-pro-spa-assistant-capabilities"
+										htmlFor="nvoos-pro-spa-assistant-tools"
 										className="nvoos-pro-spa-assistants-form__label"
 									>
 										{ __(
@@ -608,22 +620,22 @@ export function AssistantsPage(): JSX.Element {
 											'nvoos-pro-spa'
 										) }
 									</label>
-									<input
-										id="nvoos-pro-spa-assistant-capabilities"
-										type="text"
-										className="nvoos-pro-spa-assistants-form__input"
-										value={ formFields.tools }
-										onChange={ ( e ) =>
+									<ToolPicker
+										id="nvoos-pro-spa-assistant-tools"
+										selected={ formFields.tools }
+										onChange={ ( next ) =>
 											setFormFields( ( f ) => ( {
 												...f,
-												tools:
-													e.target.value,
+												tools: next,
 											} ) )
 										}
-										placeholder={ __(
-											'Comma-separated tool slugs, e.g. get_site_health, web_search',
-											'nvoos-pro-spa'
-										) }
+										tools={ registryTools }
+										loading={ registryLoading }
+										error={ registryError }
+										onRetry={ () => void fetchRegistryTools() }
+										capabilities={
+											runtime?.user?.capabilities ?? []
+										}
 									/>
 								</div>
 							</>

@@ -18,6 +18,8 @@ export interface ToolDefinition {
 	description: string;
 	category: string;
 	required_capability: string;
+	/** Capability flags (read-only, write, data-destruction, …) — powers severity colour coding. */
+	flags?: string[];
 	parameters?: Record< string, unknown >;
 	enabled?: boolean;
 }
@@ -204,6 +206,7 @@ export class ToolsClient {
 							: deriveToolCategory( slug ),
 					required_capability:
 						typeof t?.required_capability === 'string' ? t.required_capability : '',
+					flags: Array.isArray( t?.flags ) ? t.flags : [],
 					parameters: t?.inputSchema ?? {},
 				};
 			} ),
