@@ -712,6 +712,15 @@ the changed files is the substantive gate; plan CI waits accordingly.
     $controller->register_routes() )`, then force a fresh server
     (`$GLOBALS['wp_rest_server'] = null; rest_get_server();`) so
     `rest_api_init` re-fires and the hook runs on the correct action.
+    Related fatal (learned 2026-10-25, `tests/test-remote-sites-rest.php`):
+    `register_routes()` CANNOT be declared `static` on a
+    `WP_REST_Controller` subclass — PHP fatals with *"Cannot make non
+    static method WP_REST_Controller::register_routes() static"* the moment
+    the class is loaded. Use the instance pattern
+    (`public static function init() { $c = new self();
+    add_action( 'rest_api_init', array( $c, 'register_routes' ) ); }` +
+    non-static `register_routes()`), and have tests register through the
+    `rest_api_init` hook rather than calling it directly.
 45. **`rest_url()` in tests uses the `?rest_route=` query form** (plain
     permalinks), e.g. `http://example.org/index.php?rest_route=/ns/route` —
     never assert a `/wp-json/` URL shape. Assert
@@ -1324,7 +1333,15 @@ the changed files is the substantive gate; plan CI waits accordingly.
       the route is correct (hit in test-pro-okf-docs-rest.php, 2026-10-24).
       Fix: the test's `request()` helper must `$request->set_param( 'slug',
       'site-knowledge/policies/refunds' )` for every path segment — the
-      route string in the helper is decorative.
+      route string in the helper is decorative. **Sharper edge (learned
+      2026-10-25, `tests/test-remote-sites-rest.php`):
+      `WP_REST_Request::set_body_params()` REPLACES the whole `$params`
+      array — a `set_param( 'id', … )` issued before it is silently wiped.
+      Put route params INSIDE the body-params array when a handler reads
+      both:**
+      `$request->set_body_params( array( 'id' => $id, 'name' => … ) );`
+      (missing the id then 404s as `get_param( 'id' )` returns null →
+      `sanitize_key( '' )` → lookup fails).
 
   82. **WPCS "Only one object structure is allowed in a file" — split stub
       classes.** A shared test-stub file defining two stand-in classes fails

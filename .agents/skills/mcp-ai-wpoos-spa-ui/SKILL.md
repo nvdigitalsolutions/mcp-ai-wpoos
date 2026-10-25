@@ -94,6 +94,7 @@ app. Read this map when landing in either folder:
 | `src/stores/uiStore.ts` | shared by both trees — the console shell renders `data-theme` from `useUIStore().theme`, so spa-v2 pages can follow the console theme | one store instance per app tree (alias forces the same module) |
 | `src/styles/main.css` / `drawers.css` / `embedded.css` | imported by the console `main.tsx`; console-only rules live in `src/shell.css` | never move spa-v2 tokens into shell.css or vice versa |
 | island bundles (`addons/media-studio/assets/dist/*`, `addons/document-editor/assets/dist/*`) | both apps import them via `?url` in their `runtime-config.ts`; the console `vitest.config.ts` needs `fs.allow` for them | `?url` imports are per-app — update BOTH runtime-configs |
+| `src/features/remote-sites/RemoteSitesPage.tsx` (Connections page) + `src/api/remote-sites.ts` | mounted ONLY by the console: `ConsoleShell.tsx` lazy route `/connections` + `nav-features.tsx` item under Command Centers → Channels. Its REST base `mcp-ai-pro/v1/remote-sites` (manage_options-gated controller in `addons/pro/includes/rest/`) is NOT in spa-v2's own router — a page wired this way needs no spa-v2 bundle rebuild (see the churn rule below) | new console-only page = console dist rebuild only |
 | vendored island (`src/features/docs-hub/upstream/`) | consumed by both apps through spa-v2's DocsPage | byte-identical upstream discipline |
 
 **"My spa-v2 fix doesn't show in the console" checklist** (the failure order
@@ -228,6 +229,28 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   back to the server-resolved default assistant, then the full registry).
 	  New console pages register their gates in `nav-features.tsx` — never
 	  inline.
+- **spa-v2 theme tokens & dark mode (learned 2026-10-25, Connections PRs
+  #7220/#7225/#7226).** The ONLY theme tokens are the block defined on
+  `.nvoos-pro-spa-layout` (NOT `:root`) in `styles/main.css`: `--nvoos-bg`,
+  `--nvoos-bg-secondary`, `--nvoos-text`, `--nvoos-text-secondary`,
+  `--nvoos-border`, `--nvoos-primary`, `--nvoos-primary-hover`,
+  `--nvoos-danger`, `--nvoos-success`, `--nvoos-warning`,
+  `--nvoos-selected-bg`, plus `--nvoos-chip-bg`/`--nvoos-muted` added for
+  the usage-badge fix. There is **no `--nvoos-surface`** —
+  `var(--nvoos-surface, #fff)` silently pins white in dark mode (the bug the
+  Connections page shipped with). Rules: (1) dark values live in
+  `.nvoos-pro-spa-layout[data-theme="dark"]` AND in
+  `@media (prefers-color-scheme: dark) { .nvoos-pro-spa-layout[data-theme="auto"] {...} }`
+  — the attr stays `auto` under system dark, so both selectors are required
+  (main.css already models this pair); (2) when adding a NEW token, define
+  it in all three blocks — a token referenced with only a light fallback
+  keeps every consumer light in dark mode; (3) feature-scoped dark overrides
+  go in the feature's own CSS file using the same
+  `[data-theme="dark"]`/`[data-theme="auto"]` pair, scoped under
+  `.nvoos-pro-spa-layout` (see `features/remote-sites/remote-sites.css`);
+  (4) surface chips (attachment chips, usage badges) go transparent in dark
+  via `--nvoos-chip-bg` and need a themed border in dark so they keep their
+  shape.
 - **New endpoint key = four wiring points (learned 2026-10-24, PRs
   #7206/#7207).** Adding `endpoints.paperStore` needed (1) the PHP emitter
   `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php`, (2) the
@@ -755,7 +778,20 @@ workflow only; use `--skip-canvas` on dev machines).
 
 Verification: deterministic bundles rebuild **byte-identical** — those files
 don't show in `git status`; only stale artifacts appear as modified. Check
-mtimes to confirm a build actually ran. Full run: ~15 min, mostly `npm ci`
+mtimes to confirm a build actually ran.
+
+**esbuild churn caveat (learned 2026-10-25, #7225/#7226):** the spa-v2
+bundle is the exception — rebuilding `pro-spa.js` with an **unchanged source
+graph** still diffs (minifier identifier churn, ~100 insertions/~100
+deletions). Before committing a rebuilt `pro-spa.js`, prove it carries a real
+change: `git show HEAD:<path> | tr -d '[:space:]'` vs the working copy +
+`cmp` (whitespace-stripped). Pure churn → `git checkout --` it. The same probe
+detects the opposite failure: a committed bundle that is STALE relative to
+its sources (someone merged spa-v2 JS changes without rebuilding) — don't
+sweep that unrelated staleness into your PR; flag it instead. `pro-spa.css`
+rebuilds cleanly for CSS-only changes (it concatenates the entry graph's CSS
+only — a console-only page like `features/remote-sites/` does NOT appear in
+it). Full run: ~15 min, mostly `npm ci`
 for saas-controller (2k+ deps). npm on dev machines blocks dependency install
 scripts (esbuild postinstall etc.) — harmless, platform binaries ship via
 optional deps.
