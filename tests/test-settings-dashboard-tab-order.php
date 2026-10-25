@@ -120,11 +120,16 @@ class Test_Settings_Dashboard_Tab_Order extends WP_UnitTestCase {
 
 	/**
 	 * Test that all expected tabs are present in the correct order.
+	 *
+	 * The nine base tabs must lead, with General first. Addon-owned tabs
+	 * (the four commerce toolkit settings tabs from Proposal 089 Phase 2b)
+	 * are appended after `advanced` by the Pro module registry when
+	 * WooCommerce is active, so they are asserted separately.
 	 */
 	public function test_tabs_are_in_expected_order() {
 		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
 
-		$expected_order = array(
+		$base_expected_order = array(
 			'general',
 			'overview',
 			'providers',
@@ -138,10 +143,34 @@ class Test_Settings_Dashboard_Tab_Order extends WP_UnitTestCase {
 
 		$actual_order = array_keys( $tabs );
 
+		$base_actual = array_slice( $actual_order, 0, count( $base_expected_order ) );
 		$this->assertEquals(
-			$expected_order,
-			$actual_order,
-			'Tabs should be in the expected order with General first'
+			$base_expected_order,
+			$base_actual,
+			'Base tabs should lead in the expected order with General first'
 		);
+
+		// The commerce toolkit tabs register only when WooCommerce is
+		// active (mirrors the gate in the Pro module registry), and form
+		// the final block of the tab list in registration order.
+		$commerce_expected_order = array(
+			'ecommerce',
+			'ezuite',
+			'shopify_sync',
+			'flowhub',
+		);
+
+		$commerce_position = array_search( 'ecommerce', $actual_order, true );
+		if ( class_exists( 'WooCommerce' ) ) {
+			$this->assertNotFalse( $commerce_position, 'E-Commerce tab should be registered when WooCommerce is active' );
+			$commerce_actual = array_slice( $actual_order, (int) $commerce_position );
+			$this->assertEquals(
+				$commerce_expected_order,
+				$commerce_actual,
+				'Commerce toolkit tabs should be appended after the base tabs in registration order'
+			);
+		} else {
+			$this->assertFalse( $commerce_position, 'Commerce toolkit tabs should only be registered when WooCommerce is active' );
+		}
 	}
 }
