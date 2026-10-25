@@ -12,6 +12,8 @@
 	--nvoos-text: #1e1e1e;
 	--nvoos-text-secondary: #787c82;
 	--nvoos-border: #dcdcde;
+	--nvoos-chip-bg: #f0f0f1;
+	--nvoos-muted: #757575;
 	--nvoos-primary: #2271b1;
 	--nvoos-primary-hover: #135e96;
 	--nvoos-danger: #d63638;
@@ -26,6 +28,8 @@
 	--nvoos-text: #e0e0e0;
 	--nvoos-text-secondary: #a0a0a0;
 	--nvoos-border: #444;
+	--nvoos-chip-bg: transparent;
+	--nvoos-muted: #a0a0a0;
 	--nvoos-primary: #4f94d4;
 	--nvoos-primary-hover: #72aee6;
 	--nvoos-danger: #f86363;
@@ -39,6 +43,8 @@
 		--nvoos-text: #e0e0e0;
 		--nvoos-text-secondary: #a0a0a0;
 		--nvoos-border: #444;
+		--nvoos-chip-bg: transparent;
+		--nvoos-muted: #a0a0a0;
 		--nvoos-primary: #4f94d4;
 		--nvoos-primary-hover: #72aee6;
 		--nvoos-danger: #f86363;
@@ -3060,6 +3066,19 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 }
 .nvoos-pro-spa-usage-badge--cost {
 	border: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+/* Chip surfaces go transparent in dark mode (the --nvoos-chip-bg token) —
+   add a border so attachment chips and usage badges keep their shape. */
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-attachment-chip,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-usage-badge {
+	border: 1px solid var(--nvoos-border);
+}
+@media (prefers-color-scheme: dark) {
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-attachment-chip,
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-usage-badge {
+		border: 1px solid var(--nvoos-border);
+	}
 }
 
 /* ------------------------------------------------------------------ */
