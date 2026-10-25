@@ -285,8 +285,17 @@ exists today.)
    Manager already ships `build_flowhub_mcp_app_config()` + FlowHub MCP
    connection support; the console FlowHub page uses the plugin REST path
    for now. Wiring FlowHub MCP as an assistant MCP App remains an option.
-2. **Connection types for Shopify** — still open; the SitePicker only lists
-   `wordpress` connections today.
+2. **Connection types for Shopify** — ✅ *Resolved (2026-10-25):* the
+   SitePicker stays wordpress-only. Shopify store data flows through the
+   existing **GraphQL Admin API client** (`WP_MCP_AI_Shopify_Client` wraps
+   `graphql.json`) plus the **Catalog API / UCP** modes — not through
+   Shopify's MCP servers, whose storefront catalog/cart tools Shopify
+   itself removed in favour of UCP (its remaining MCPs are dev-facing or
+   buyer-facing). Follow-up: audit the legacy REST fallback in the Remote
+   Site Manager (`build_api_url` `admin/api/{version}` branch) against
+   Shopify's REST sunset waves (started Oct 2025, continuing 2026) and
+   remove it; optionally add a Shopify MCP App connection type later for
+   assistant-facing dev/store Q&A (FlowHub MCP pattern).
 3. **Content group name/cap** — ✅ *Resolved:* `/content` gated on
    `manage_options` (matches the records schema endpoint contract;
    widening to `edit_posts` is a follow-up).

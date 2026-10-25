@@ -18,6 +18,19 @@
 | 5b Retirement | ⏸️ Deferred by design | Kill-switches default-on; flip per cohort after console parity verification |
 | 6b Deep-links | ⚠️ Partial | Commerce pages link `/products` + `/connections`; wp-admin edit deep-links on records need the 084 Phase 6 machinery (not yet shipped) |
 
+**Follow-ups added 2026-10-25 (Shopify REST sunset):** Shopify marked its
+REST Admin API legacy on 2024-10-01; the first sunset wave (incl.
+`products/count.json`) went dark 2025-10 with waves continuing through
+2026, and new apps are GraphQL-only. Our sync backplane is already
+GraphQL (`WP_MCP_AI_Shopify_Client`) + Catalog API/UCP modes — the risk
+is the legacy REST fallback branch in the Remote Site Manager's
+`build_api_url()`. Task: audit every `admin/api/{version}` REST call site,
+migrate or remove, and add a regression test that Shopify connections
+never resolve to a REST URL. Optional later: a Shopify MCP App connection
+type (FlowHub MCP pattern) — Shopify's own MCP catalog/cart tools were
+removed in favour of UCP, so this is assistant-facing only, not a sync
+path.
+
 This plan extends the 084 phase machinery (its invariants apply unchanged) with
 commerce-specific phases. Phase letters continue 084's numbering: **2b**
 (settings), **3c** (sync ops), **4e/4f** (records/dashboards), **5b**
