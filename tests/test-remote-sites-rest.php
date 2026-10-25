@@ -101,6 +101,13 @@ class Test_Remote_Sites_REST extends WP_UnitTestCase {
 		delete_option( self::CONNECTIONS_OPTION );
 		delete_option( 'wp_mcp_ai_settings' );
 		delete_option( 'wp_mcp_ai_credentials' );
+
+		// get_settings() caches statically; clear it so seeded/deleted options
+		// never leak between test methods.
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
+			WP_MCP_AI_Admin_Settings_Base::reset_settings_cache();
+		}
+
 		parent::tearDown();
 	}
 
@@ -442,6 +449,38 @@ class Test_Remote_Sites_REST extends WP_UnitTestCase {
 		$data = $response->get_data();
 		$this->assertFalse( $data['success'] );
 		$this->assertNotEmpty( $data['message'] );
+	}
+
+	/**
+	 * Testing the base Gmail pseudo-connection with configured site settings
+	 * must pass the manager's shared validation — the pseudo connection carries
+	 * a display name, so the result is the Gmail success message rather than
+	 * the "Connection name is required." validation error.
+	 */
+	public function test_base_gmail_test_configured() {
+		$this->load_controller();
+		$this->login_as_admin();
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'gmail_client_id'     => 'client-id-from-site-settings',
+				'gmail_client_secret' => 'client-secret-from-site-settings',
+				'gmail_refresh_token' => 'refresh-token-from-site-settings',
+				'gmail_user_email'    => 'owner@example.com',
+			)
+		);
+
+		$controller = new WP_MCP_AI_Pro_Remote_Sites_REST_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai-pro/v1/remote-sites/base-gmail/test' );
+		$request->set_body_params( array( 'id' => 'base-gmail' ) );
+
+		$response = $controller->test_item( $request );
+		$this->assertNotWPError( $response );
+
+		$data = $response->get_data();
+		$this->assertTrue( $data['success'] );
+		$this->assertNotSame( 'Connection name is required.', $data['message'] );
 	}
 
 	/**
