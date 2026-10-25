@@ -6790,11 +6790,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Handle GET requests to list available tools for an assistant.
 		 *
+		 * Default behaviour (and the MCP tools/list contract): a missing
+		 * `assistant_id` resolves to the token/site default assistant, so the
+		 * listing is scoped to that assistant's allowed tools. Pass
+		 * `scope=all` for the explicit full-registry opt-out (the SPA
+		 * assistant tool picker needs the whole catalogue).
+		 *
 		 * @param WP_REST_Request $request REST request.
 		 * @return WP_REST_Response|WP_Error
 		 */
 		public function handle_tools_list( WP_REST_Request $request ) {
-			$assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
+			// `scope=all` skips the default-assistant fallback below; token-bound
+			// credentials remain scoped by apply_token_assistant_scope().
+			$scope_all = 'all' === $request->get_param( 'scope' );
+
+			$assistant_id = $scope_all
+			? 0
+			: $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
 			$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
 
 			if ( is_wp_error( $scoped_id ) ) {
@@ -6803,9 +6815,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $scoped_id;
 
-			// Try to serve from cache (keyed on assistant_id).
+			// Try to serve from cache (keyed on assistant_id + scope).
 			$cache_params = array_filter(
-				array( 'assistant_id' => $assistant_id ? $assistant_id : null ),
+				array(
+					'assistant_id' => $assistant_id ? $assistant_id : null,
+					'scope'        => $scope_all ? 'all' : null,
+				),
 				static function ( $v ) {
 					return null !== $v;
 				}

@@ -164,6 +164,14 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'required'          => false,
 							'sanitize_callback' => 'absint',
 						),
+						'scope'        => array(
+							'description'       => __( 'Listing scope: "assistant" (default) scopes to the resolved/default assistant; "all" returns the full registry.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'default'           => 'assistant',
+							'enum'              => array( 'assistant', 'all' ),
+							'sanitize_callback' => 'sanitize_text_field',
+						),
 						'_fields'      => array(
 							'description'       => __( 'Comma-separated list of tool fields to include in each item (name, description, inputSchema). Defaults to all fields.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',

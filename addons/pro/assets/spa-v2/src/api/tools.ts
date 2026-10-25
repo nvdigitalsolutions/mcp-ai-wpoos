@@ -166,13 +166,22 @@ export class ToolsClient {
 	 * `{ success, data: { tools } }` envelope for older installs.
 	 *
 	 * @param assistantId — Optional assistant post ID; the server scopes the
-	 * list to that assistant's selected tools (omitted = the full registry).
+	 * list to that assistant's selected tools. Omitted, the server resolves
+	 * the site/token DEFAULT assistant (MCP tools/list contract).
 	 * @param signal      — AbortSignal for cancellation.
+	 * @param scope       — Pass 'all' for the explicit full-registry opt-out
+	 * (assistant tool picker); any other value keeps the default scoping.
 	 */
-	async list( assistantId?: number, signal?: AbortSignal ): Promise< ToolsListResponse > {
+	async list(
+		assistantId?: number,
+		signal?: AbortSignal,
+		scope?: 'all',
+	): Promise< ToolsListResponse > {
 		const url = new URL( this.endpoint, window.location.origin );
 		url.searchParams.set( 'per_page', '200' );
-		if ( assistantId && assistantId > 0 ) {
+		if ( scope === 'all' ) {
+			url.searchParams.set( 'scope', 'all' );
+		} else if ( assistantId && assistantId > 0 ) {
 			url.searchParams.set( 'assistant_id', String( assistantId ) );
 		}
 		const data = await this.request< {
