@@ -125,6 +125,15 @@ export const RECORDS_GROUP_COPY: Record< string, { title: string; subtitle: stri
 		title: __( 'Food & Beverage', 'nvoos-pro-spa' ),
 		subtitle: __( 'Sales, purchases, stock counts, waste and bookings.', 'nvoos-pro-spa' ),
 	},
+	// Proposal 089 Phase 4e — commerce products and core content records.
+	commerce: {
+		title: __( 'Products', 'nvoos-pro-spa' ),
+		subtitle: __( 'WooCommerce product catalogue (read-mostly; edits stay in wp-admin).', 'nvoos-pro-spa' ),
+	},
+	content: {
+		title: __( 'Content', 'nvoos-pro-spa' ),
+		subtitle: __( 'Posts and pages — browse here, edit in wp-admin.', 'nvoos-pro-spa' ),
+	},
 	records: {
 		title: __( 'Records', 'nvoos-pro-spa' ),
 		subtitle: __( 'Entity records across the toolkits.', 'nvoos-pro-spa' ),
