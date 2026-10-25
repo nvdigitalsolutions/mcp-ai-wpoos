@@ -576,11 +576,13 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   - [ ] **W16g — Retirement + deep-links (5b/6b).** Flip the four toolkit
     kill-switches per cohort after parity; branded wp-admin edit deep-links
     on records once 084 Phase 6 machinery lands.
-  Follow-up (2026-10-25, Shopify REST sunset): audit the legacy
+  Follow-up (2026-10-25, Shopify REST sunset): ✅ SHIPPED — the legacy
   `admin/api/{version}` REST fallback in the Remote Site Manager's
-  `build_api_url()` against Shopify's REST sunset waves (Oct 2025 → 2026)
-  and add a regression test that Shopify connections never resolve to a
-  REST URL.
+  `build_api_url()` now returns a structured `WP_Error`
+  (`wp_mcp_ai_pro_shopify_rest_retired`) instead of building a
+  sunset-prone URL; regression suite `tests/rest-api/test-shopify-rest-sunset.php`
+  pins the contract (REST rejected, GraphQL resolves, UCP modes resolve to
+  their UCP origins).
   Full plan: `docs/project/plans/089-ecommerce-toolkits-console-surface-implementation-plan.md`;
   proposal: `docs/project/proposals/089-ecommerce-toolkits-console-surface-port-proposal.md`.
 
