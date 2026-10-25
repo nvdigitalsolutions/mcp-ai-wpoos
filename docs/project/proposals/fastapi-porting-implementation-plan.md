@@ -2053,6 +2053,13 @@ async def test_chat_stream_endpoint(auth_headers):
 | 12 | MCP transport | Streamable HTTP vs SSE vs STDIO | **Streamable HTTP** | MCP spec recommends for production; SSE being superseded |
 | 13 | Container orchestration | Docker Compose vs Kubernetes | **Docker Compose** (dev), **Kubernetes** (production) | Compose for local dev; K8s manifests provided for production |
 | 14 | Frontend | Reuse JS vs React rewrite | **Reuse JS** (Phase A), **Extract later** (Phase D) | Minimizes scope; API contract is identical |
+| 15 | Standalone-stack language (G9) | Laravel (PHP) vs FastAPI (Python) | **Laravel** | Owner decision 2026-10-25: the engine is PHP — Laravel reuses `nvoos/core` as-is; FastAPI would re-implement it. This plan is retained as the documented fallback; flip conditions in `090-laravel-adapter-spike-implementation-plan.md` §8 |
+
+> **Plan status (2026-10-25):** superseded as the primary standalone track by
+decision #15 above. The Laravel spike plan is
+`090-laravel-adapter-spike-implementation-plan.md`. This document remains the
+valid fallback implementation path if any §8 flip condition in that plan
+fires.
 
 ---
 
