@@ -155,6 +155,32 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			'icon'      => '🍽️',
 			'group'     => 'fnb',
 		),
+		// Proposal 089 Phase 4e — commerce products (WooCommerce native
+		// post type; present only while WooCommerce is active) and core
+		// posts/pages as console-browsable content records. These carry no
+		// private `_*` meta schema, so register_meta_in_rest() is a no-op
+		// for them and wp/v2 serves them as usual.
+		'product'     => array(
+			'post_type' => 'product',
+			'label'     => 'Products',
+			'singular'  => 'Product',
+			'icon'      => '🛍️',
+			'group'     => 'commerce',
+		),
+		'post'        => array(
+			'post_type' => 'post',
+			'label'     => 'Posts',
+			'singular'  => 'Post',
+			'icon'      => '📰',
+			'group'     => 'content',
+		),
+		'page'        => array(
+			'post_type' => 'page',
+			'label'     => 'Pages',
+			'singular'  => 'Page',
+			'icon'      => '📄',
+			'group'     => 'content',
+		),
 	);
 
 	/**
@@ -339,6 +365,17 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 				continue;
 			}
 
+			$meta_schema = WP_MCP_AI_Pro_CPT_Meta_Schema::get( $post_type );
+
+			// Entities without a private meta schema (core posts/pages,
+			// WooCommerce products — Proposal 089 Phase 4e) are served by
+			// wp/v2 as-is. Never grant custom-fields support to
+			// platform-owned post types: that would surface the legacy
+			// custom-fields metabox in the block editor.
+			if ( empty( $meta_schema ) ) {
+				continue;
+			}
+
 			// WP core's posts controller only adds `meta` to the REST
 			// schema when the post type supports custom-fields — grant it
 			// so the meta keys registered below are actually served.
@@ -346,7 +383,6 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 				add_post_type_support( $post_type, 'custom-fields' );
 			}
 
-			$meta_schema = WP_MCP_AI_Pro_CPT_Meta_Schema::get( $post_type );
 			foreach ( $meta_schema as $field ) {
 				if ( ! is_array( $field ) || empty( $field['meta_key'] ) ) {
 					continue;
