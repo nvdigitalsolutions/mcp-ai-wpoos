@@ -561,6 +561,139 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
+			// Proposal 089 Phase 4f — the commerce toolkit dashboards
+			// (formerly wp-admin dashboard widgets; same promoted seams).
+			'ezuite'       => array(
+				'label'       => __( 'EZuite Inventory', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'EZuite ERP inventory health: stock buckets, cached rows, total value and top warehouses.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '🏭',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'in_stock',
+						'label'  => __( 'In Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'low_stock',
+						'label'  => __( 'Low Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'out_of_stock',
+						'label'  => __( 'Out of Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_items',
+						'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_value',
+						'label'  => __( 'Total Value', 'mcp-ai-wpoos-pro' ),
+						'format' => 'money',
+					),
+				),
+				'lists'       => array(
+					array(
+						'key'     => 'warehouses',
+						'title'   => __( 'Top Warehouses', 'mcp-ai-wpoos-pro' ),
+						'columns' => array(
+							array(
+								'key'   => 'name',
+								'label' => __( 'Warehouse', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'count',
+								'label' => __( 'Items', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+			),
+			'shopify'      => array(
+				'label'       => __( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Shopify GraphQL cost budget, cached items and sync health per connection.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '🛍️',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'cost_remaining_pct',
+						'label'  => __( 'Cost Budget', 'mcp-ai-wpoos-pro' ),
+						'format' => 'percent',
+					),
+					array(
+						'key'    => 'cost_used',
+						'label'  => __( 'Points Used', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'cost_limit',
+						'label'  => __( 'Point Limit', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'cached_items',
+						'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'connections',
+						'label'  => __( 'Connections', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+				),
+			),
+			'flowhub'      => array(
+				'label'       => __( 'FlowHub Inventory', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'FlowHub POS inventory health: stock buckets, cached rows, total value and top locations. Read-mostly — compliance reporting stays in FlowHub.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '🌿',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'in_stock',
+						'label'  => __( 'In Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'low_stock',
+						'label'  => __( 'Low Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'out_of_stock',
+						'label'  => __( 'Out of Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_items',
+						'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_value',
+						'label'  => __( 'Total Value', 'mcp-ai-wpoos-pro' ),
+						'format' => 'money',
+					),
+				),
+				'lists'       => array(
+					array(
+						'key'     => 'locations',
+						'title'   => __( 'Top Locations', 'mcp-ai-wpoos-pro' ),
+						'columns' => array(
+							array(
+								'key'   => 'name',
+								'label' => __( 'Location', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'count',
+								'label' => __( 'Items', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+			),
 		);
 	}
 
@@ -579,6 +712,10 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			'eca'          => 'enable_eca_management',
 			'health'       => 'enable_health_wellness_management',
 			'vitals'       => 'enable_medical_vitals',
+			// Proposal 089 Phase 4f — commerce toolkit dashboards.
+			'ezuite'       => 'enable_ezuite_toolkit',
+			'shopify'      => 'enable_shopify_sync_toolkit',
+			'flowhub'      => 'enable_flowhub_toolkit',
 		);
 	}
 
@@ -913,6 +1050,39 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			$days_back = isset( $filters['days_back'] ) ? absint( $filters['days_back'] ) : 90;
 
 			return WP_MCP_AI_Medical_Vitals_Dashboard_Page::get_history( $member_id, $days_back );
+		}
+
+		// Proposal 089 Phase 4f — the commerce dashboard widgets (promoted
+		// public seams on the widget classes; the wp-admin widgets render
+		// the same payloads).
+		$commerce_providers = array(
+			'ezuite'  => array(
+				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-ezuite-dashboard-widget.php',
+				'class' => 'WP_MCP_AI_EZuite_Dashboard_Widget',
+			),
+			'shopify' => array(
+				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-shopify-sync-dashboard-widget.php',
+				'class' => 'WP_MCP_AI_Shopify_Sync_Dashboard_Widget',
+			),
+			'flowhub' => array(
+				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-flowhub-dashboard-widget.php',
+				'class' => 'WP_MCP_AI_FlowHub_Dashboard_Widget',
+			),
+		);
+		if ( isset( $commerce_providers[ $dashboard_id ] ) ) {
+			$provider = $commerce_providers[ $dashboard_id ];
+			if ( ! class_exists( $provider['class'] ) && file_exists( $provider['file'] ) ) {
+				require_once $provider['file'];
+			}
+			if ( ! class_exists( $provider['class'] ) ) {
+				return new WP_Error(
+					'dashboards_provider_unavailable',
+					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 501 )
+				);
+			}
+
+			return call_user_func( array( $provider['class'], 'get_dashboard_data' ) );
 		}
 
 		return new WP_Error(

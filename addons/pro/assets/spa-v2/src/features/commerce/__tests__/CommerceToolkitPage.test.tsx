@@ -26,6 +26,7 @@ function setRuntime(): void {
 			tools: 'https://example.com/wp-json/mcp-ai/v1/tools',
 			assistants: 'https://example.com/wp-json/mcp-ai/v1/assistants',
 			settings: 'https://example.com/wp-json/mcp-ai/v1/settings',
+			dashboardsSchema: 'https://example.com/wp-json/mcp-ai-pro/v1/dashboards',
 			memory: '',
 			workflows: '',
 			analytics: '',
@@ -233,5 +234,50 @@ describe( 'CommerceToolkitPage', () => {
 				expect.any( Object )
 			);
 		} );
+	} );
+
+	it( 'renders dashboard metrics and latest sync on the Overview tab (Phase 4f)', async () => {
+		setRuntime();
+		setFetchRoutes( {
+			'/commerce/sync-runs/ezuite/latest': {
+				success: true,
+				data: {
+					run: {
+						toolkit: 'ezuite',
+						run_id: 'r9',
+						connection_id: '',
+						dry_run: false,
+						started_at: '2026-10-25 11:00:00',
+						finished_at: '2026-10-25 11:01:00',
+						status: 'completed',
+						summary: { items_updated: 9, items_skipped: 0, items_errored: 0 },
+					},
+				},
+			},
+			'/dashboards/schema': {
+				dashboards: {
+					ezuite: {
+						id: 'ezuite',
+						label: 'EZuite Inventory',
+						description: '',
+						icon: '🏭',
+						filters: [],
+						metrics: [
+							{ key: 'in_stock', label: 'In Stock', format: 'number' },
+							{ key: 'total_value', label: 'Total Value', format: 'money' },
+						],
+					},
+				},
+				disabled: {},
+			},
+			'/dashboards/ezuite/data': { data: { in_stock: 7, total_value: 1234.5 } },
+		} );
+		render( <CommerceToolkitPage toolkit="ezuite" /> );
+
+		await waitFor( () => {
+			expect( screen.getByText( 'In Stock' ) ).toBeInTheDocument();
+		} );
+		expect( screen.getByText( '7' ) ).toBeInTheDocument();
+		expect( screen.getByText( /Last sync: completed/ ) ).toBeInTheDocument();
 	} );
 } );

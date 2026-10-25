@@ -37,12 +37,16 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_cre_debt_toolkit'              => 1,
-				'enable_law_firm_toolkit'              => 1,
+				'enable_cre_debt_toolkit'               => 1,
+				'enable_law_firm_toolkit'               => 1,
 				'enable_regulatory_registration_toolkit' => 1,
-				'enable_eca_management'                => 1,
-				'enable_health_wellness_management'    => 1,
-				'enable_medical_vitals'                => 1,
+				'enable_eca_management'                 => 1,
+				'enable_health_wellness_management'     => 1,
+				'enable_medical_vitals'                 => 1,
+				// Proposal 089 Phase 4f — commerce toolkit dashboards.
+				'enable_ezuite_toolkit'                 => 1,
+				'enable_shopify_sync_toolkit'           => 1,
+				'enable_flowhub_toolkit'                => 1,
 			)
 		);
 	}
@@ -107,6 +111,16 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'vitals', $data['dashboards'] );
 		$this->assertSame( 'member', $data['dashboards']['vitals']['filters'][0]['type'] );
 		$this->assertSame( 'history', $data['dashboards']['vitals']['lists'][0]['key'] );
+
+		// The commerce trio joins (Proposal 089 Phase 4f) with metric cards
+		// and the warehouse/location lists.
+		$this->assertArrayHasKey( 'ezuite', $data['dashboards'] );
+		$this->assertSame( 'in_stock', $data['dashboards']['ezuite']['metrics'][0]['key'] );
+		$this->assertSame( 'warehouses', $data['dashboards']['ezuite']['lists'][0]['key'] );
+		$this->assertArrayHasKey( 'shopify', $data['dashboards'] );
+		$this->assertSame( 'cost_remaining_pct', $data['dashboards']['shopify']['metrics'][0]['key'] );
+		$this->assertArrayHasKey( 'flowhub', $data['dashboards'] );
+		$this->assertSame( 'locations', $data['dashboards']['flowhub']['lists'][0]['key'] );
 
 		// With every toolkit on, the guidance map is empty.
 		$this->assertArrayHasKey( 'disabled', $data );

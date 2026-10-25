@@ -500,4 +500,88 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 			$this->assertFalse( post_type_supports( 'page', 'custom-fields' ) );
 		}
 	}
+
+	/**
+	 * Phase 4f — the dashboards schema gates the three commerce dashboards
+	 * on their toolkit toggles (enabled → catalogue, disabled → guidance).
+	 */
+	public function test_dashboards_schema_gates_commerce_entries() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboards_REST_Controller' ) ) {
+			$this->markTestSkipped( 'Pro addon not loaded.' );
+		}
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$controller = new WP_MCP_AI_Pro_Dashboards_REST_Controller();
+
+		// All toggles off → all three land in the `disabled` guidance map.
+		update_option( 'wp_mcp_ai_settings', array() );
+		$data = $controller->get_schema( new WP_REST_Request() )->get_data();
+		$this->assertArrayHasKey( 'ezuite', $data['disabled'] );
+		$this->assertArrayHasKey( 'shopify', $data['disabled'] );
+		$this->assertArrayHasKey( 'flowhub', $data['disabled'] );
+
+		// Toggles on → all three land in the catalogue with metric cards.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ezuite_toolkit'       => true,
+				'enable_shopify_sync_toolkit' => true,
+				'enable_flowhub_toolkit'      => true,
+			)
+		);
+		$data = $controller->get_schema( new WP_REST_Request() )->get_data();
+		$this->assertArrayHasKey( 'ezuite', $data['dashboards'] );
+		$this->assertArrayHasKey( 'shopify', $data['dashboards'] );
+		$this->assertArrayHasKey( 'flowhub', $data['dashboards'] );
+
+		$metric_keys = wp_list_pluck( $data['dashboards']['ezuite']['metrics'], 'key' );
+		$this->assertContains( 'in_stock', $metric_keys );
+		$this->assertContains( 'total_value', $metric_keys );
+
+		$metric_keys = wp_list_pluck( $data['dashboards']['shopify']['metrics'], 'key' );
+		$this->assertContains( 'cost_remaining_pct', $metric_keys );
+	}
+
+	/**
+	 * Phase 4f — the commerce dashboard data path dispatches to the widget
+	 * seams: a structured 501 when the CCT manager is absent (the default
+	 * bootstrap), the payload shape when it is present.
+	 */
+	public function test_commerce_dashboard_data_contract() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboards_REST_Controller' ) ) {
+			$this->markTestSkipped( 'Pro addon not loaded.' );
+		}
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ezuite_toolkit'       => true,
+				'enable_shopify_sync_toolkit' => true,
+				'enable_flowhub_toolkit'      => true,
+			)
+		);
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/dashboards/ezuite/data' );
+		$request->set_param( 'id', 'ezuite' );
+
+		$result = ( new WP_MCP_AI_Pro_Dashboards_REST_Controller() )->get_data( $request );
+
+		if ( class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
+			$this->assertNotWPError( $result );
+			$data = $result->get_data();
+			$this->assertSame( 'ezuite', $data['dashboard'] );
+			$this->assertArrayHasKey( 'in_stock', $data['data'] );
+			$this->assertArrayHasKey( 'warehouses', $data['data'] );
+			return;
+		}
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'ezuite_cct_unavailable', $result->get_error_code() );
+		$this->assertSame( 501, $result->get_error_data()['status'] );
+	}
 }

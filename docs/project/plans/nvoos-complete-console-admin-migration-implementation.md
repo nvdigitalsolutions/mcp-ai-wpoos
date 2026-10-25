@@ -568,9 +568,14 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
     accepts `remote_site` and proxies against wordpress-type Remote Sites
     connections (read-only; 404/403/400/502 contracts; zero credential
     echo); console `SitePicker` on the Sync Runs tab (wordpress-only).
-  - [ ] **W16e — Commerce dashboard widgets (4f).** EZuite/Shopify/FlowHub
-    wp-admin dashboard widgets → configurable dashboards feature (W13
-    scaffold); retire the widget pages after console parity.
+  - [x] **W16e — Commerce dashboard widgets (4f).** ✅ SHIPPED 2026-10-25:
+    the three wp-admin dashboard widgets (EZuite/Shopify/FlowHub) expose
+    public `get_dashboard_data()` seams (render consumes the same payload),
+    gain kill-switch filters (`wp_mcp_ai_admin_page_enabled_{ezuite,
+    shopify_sync,flowhub}_widget`, default-on), and join the dashboards
+    catalogue (`ezuite`/`shopify`/`flowhub`, flag-gated on their toolkit
+    toggles); the commerce page Overview tabs render the metric cards +
+    warehouse/location lists plus a last-sync freshness line.
   - [ ] **W16f — Remote records browsing (B remainder).** Browse a remote
     WordPress site's posts/products via the records surface.
   - [ ] **W16g — Retirement + deep-links (5b/6b).** Flip the four toolkit

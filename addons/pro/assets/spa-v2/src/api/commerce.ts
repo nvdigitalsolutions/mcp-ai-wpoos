@@ -78,6 +78,16 @@ export class CommerceClient {
 		return data?.items ?? [];
 	}
 
+	/** GET /commerce/sync-runs/{toolkit}/latest — most recent run (or null). */
+	async latestRun( toolkit: string, signal?: AbortSignal ): Promise< SyncRunSummary | null > {
+		const url = new URL( `${ this.base }/commerce/sync-runs/${ toolkit }/latest`, window.location.origin );
+		const data = await this.request< { success: boolean; data: { run: SyncRunSummary | null } } >( {
+			url: url.toString(),
+			signal,
+		} );
+		return data?.data?.run ?? null;
+	}
+
 	private async request< T >( req: { url: string; signal?: AbortSignal } ): Promise< T | null > {
 		const response = await fetch( req.url, {
 			method: 'GET',
