@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.11"
-  plugin-version-tested: "1.2.11"
-  last-updated: "2026-10-24"
+  plugin-version: "1.2.12"
+  plugin-version-tested: "1.2.12"
+  last-updated: "2026-10-25"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -864,7 +864,39 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.97-docs-catch-up.md`,
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
   `docs/project/plans/v1.1.99-docs-catch-up.md`,
-  `docs/project/plans/1.2.11-docs-catch-up.md` (latest executed — the
+  `docs/project/plans/1.2.11-docs-catch-up.md`,
+  `docs/project/plans/1.2.12-docs-catch-up.md` (latest executed — the
+1.2.12 pass over PRs #7205–#7235: the magic-login REST controller (#7206 —
+unauthenticated-by-design with a named permission callback, CSPRNG tokens
+hashed at rest, rate-limited; #7208 adds the settings subtab), the native
+addon islands (Proposal 087, #7213 — the vendored docs-hub IIFE + the
+`mcp-ai-pro/v1/okf/docs` adapter; the three addon sources gain island APIs
+**without version bumps** — shipped ZIPs stay current, the inventory note
+refreshed), the registry-backed tool picker (Proposal 088, #7221/#7232 —
+per-tool `flags` + the `scope=all` tools-route opt-out), the console
+Connections page (`mcp-ai-pro/v1/remote-sites`, #7220), the Commerce
+console surfaces (Proposal 089, #7231), the tool-schema bounds sweep
+(#7210 — 763 integer fields to the 2^53−1 ceiling, zero tool-count
+change), the profession-meta/team-relink + records `restBase` fixes
+(#7219/#7233), the settings-coercion + dark-mode + author-403 fixes
+(#7215/#7224–#7226), and Proposal 090 (#7230, docs-only). New scope rules
+executed: the two-set build retention convention (each pass removes the
+N−2 artifact set — 1.2.12 removed 1.2.10 while 1.2.11 stays as the
+fallback); the correctly-pre-tagged new file (`@since 1.2.12` ×6, #7210 —
+no action); proposals 087/088/089/090 shipped **unregistered** in-window
+(the pass owns the README registration — unlike #7203's 086); in-window
+skill updates (spa-ui/spa-rest-contract/test-suite ×4 PRs) still left the
+commerce wiring row + ToolPicker note + the three new controllers missing
+— the pass extended both skills in-pass. OI-1: group 60 extension (+46
+`2.4.0`) + group 40 extension (+4 addon-level `0.1.0`) + new groups 63
+(`2.1.2` ×23 OKF-docs), 64 (magic-login controller — missing tags), 65
+(`1.9.6` ×1 team-repository), zero tool-count change, zero catalog diff,
+three skill frontmatter reconciliations (spa-ui, spa-rest-contract,
+test-suite → 1.2.12) + the plugin ×3 + RELEASE-NOTES 1.2.12 section, and
+the stale 1.2.10 build-set removal (30 files — 9 + 2 + 19))
+
+Preceding windows:
+  `docs/project/plans/1.2.11-docs-catch-up.md` (executed — the
 1.2.11 pass over PRs #7189–#7203: the Velocity caching layers + REST
 cache opt-in (#7197 — both Velocity `serve.mjs` apps gain the caching
 contract with the default-deny proxy micro-cache + `NVOOS_PROXY_CACHE`
