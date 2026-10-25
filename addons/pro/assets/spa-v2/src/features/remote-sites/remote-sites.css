@@ -2,9 +2,12 @@
  * Connections page (Remote Sites console port) — scoped under
  * .nvoos-pro-spa-connections so it can't leak into other surfaces.
  *
- * Deliberately sparse: the page leans on the spa-v2 shared tokens and the
- * tools-page classes for layout, and only adds what the status chips, the
- * wizard, and the inline confirm dialog need.
+ * Deliberately sparse: the page leans on the spa-v2 shared theme tokens
+ * (--nvoos-bg, --nvoos-bg-secondary, --nvoos-border) and the tools-page
+ * classes for layout, and only adds what the status chips, the wizard, and
+ * the inline confirm dialog need. Dark mode follows the main.css convention:
+ * .nvoos-pro-spa-layout[data-theme="dark"] plus the data-theme="auto" +
+ * prefers-color-scheme variant.
  */
 
 .nvoos-pro-spa-connections__list {
@@ -24,7 +27,7 @@
 	padding: 10px 14px;
 	border: 1px solid var(--nvoos-border, #dcdcde);
 	border-radius: 6px;
-	background: var(--nvoos-surface, #fff);
+	background: var(--nvoos-bg-secondary, #fff);
 }
 
 .nvoos-pro-spa-connections__icon {
@@ -54,7 +57,7 @@
 	align-self: flex-start;
 	padding: 1px 8px;
 	border-radius: 999px;
-	background: var(--nvoos-surface-muted, #f0f0f1);
+	background: var(--nvoos-bg, #f0f0f1);
 	color: inherit;
 	opacity: 0.85;
 }
@@ -68,17 +71,17 @@
 }
 
 .nvoos-pro-spa-connections__status--connected {
-	background: rgba( 0, 138, 66, 0.12 );
+	background: rgba(0, 138, 66, 0.12);
 	color: #007017;
 }
 
 .nvoos-pro-spa-connections__status--needs-setup {
-	background: rgba( 201, 138, 0, 0.14 );
+	background: rgba(201, 138, 0, 0.14);
 	color: #996800;
 }
 
 .nvoos-pro-spa-connections__status--disabled {
-	background: rgba( 100, 100, 100, 0.12 );
+	background: rgba(100, 100, 100, 0.12);
 	color: #555;
 }
 
@@ -102,12 +105,12 @@
 }
 
 .nvoos-pro-spa-connections__test--ok {
-	background: rgba( 0, 138, 66, 0.1 );
+	background: rgba(0, 138, 66, 0.1);
 	color: #007017;
 }
 
 .nvoos-pro-spa-connections__test--fail {
-	background: rgba( 179, 45, 46, 0.1 );
+	background: rgba(179, 45, 46, 0.1);
 	color: #b32d2e;
 }
 
@@ -118,7 +121,7 @@
 	padding: 16px;
 	border: 1px solid var(--nvoos-border, #dcdcde);
 	border-radius: 6px;
-	background: var(--nvoos-surface, #fff);
+	background: var(--nvoos-bg-secondary, #fff);
 }
 
 .nvoos-pro-spa-connections__wizard-title {
@@ -139,7 +142,7 @@
 	margin: 0;
 	padding: 0;
 	display: grid;
-	grid-template-columns: repeat( auto-fill, minmax( 240px, 1fr ) );
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 	gap: 8px;
 }
 
@@ -197,9 +200,68 @@
 	padding: 14px;
 	border: 1px solid #b32d2e;
 	border-radius: 6px;
-	background: rgba( 179, 45, 46, 0.06 );
+	background: rgba(179, 45, 46, 0.06);
 }
 
 .nvoos-pro-spa-connections__confirm p {
 	margin: 0 0 12px;
+}
+
+/* ── Dark mode (main.css convention: data-theme="dark", plus
+      data-theme="auto" following prefers-color-scheme) ───────────────────── */
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-connections__status--connected,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-connections__test--ok {
+	color: #5dd97e;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-connections__status--needs-setup {
+	color: #ffd166;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-connections__status--disabled {
+	color: #b5b5b5;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-connections__test--fail {
+	color: #ff7b7b;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-connections__danger {
+	border-color: #f86363 !important;
+	color: #f86363 !important;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-connections__confirm {
+	border-color: #f86363;
+	background: rgba(248, 99, 99, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-connections__status--connected,
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-connections__test--ok {
+		color: #5dd97e;
+	}
+
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-connections__status--needs-setup {
+		color: #ffd166;
+	}
+
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-connections__status--disabled {
+		color: #b5b5b5;
+	}
+
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-connections__test--fail {
+		color: #ff7b7b;
+	}
+
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-connections__danger {
+		border-color: #f86363 !important;
+		color: #f86363 !important;
+	}
+
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-connections__confirm {
+		border-color: #f86363;
+		background: rgba(248, 99, 99, 0.08);
+	}
 }

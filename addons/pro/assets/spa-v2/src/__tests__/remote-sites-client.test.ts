@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-import { RemoteSitesClient } from '../api/remote-sites';
+import { RemoteSitesClient, buildWpAdminSettingsUrl } from '../api/remote-sites';
 
 const ENDPOINT = 'https://example.com/wp-json/mcp-ai-pro/v1/remote-sites';
 
@@ -127,5 +127,23 @@ describe( 'RemoteSitesClient', () => {
 		await expect( client.create( { connection_type: 'telegram' } ) ).rejects.toThrow(
 			'Connection name is required.'
 		);
+	} );
+} );
+
+describe( 'buildWpAdminSettingsUrl', () => {
+	it( 'strips a namespaced REST base down to the origin', () => {
+		expect( buildWpAdminSettingsUrl( 'https://pro.example.com/wp-json/mcp-ai/v1' ) ).toBe(
+			'https://pro.example.com/wp-admin/options-general.php?page=wp-mcp-ai-settings'
+		);
+	} );
+
+	it( 'strips a bare /wp-json base down to the origin', () => {
+		expect( buildWpAdminSettingsUrl( 'https://pro.example.com/wp-json' ) ).toBe(
+			'https://pro.example.com/wp-admin/options-general.php?page=wp-mcp-ai-settings'
+		);
+	} );
+
+	it( 'returns an empty string when no runtime URL is available', () => {
+		expect( buildWpAdminSettingsUrl( '' ) ).toBe( '' );
 	} );
 } );
