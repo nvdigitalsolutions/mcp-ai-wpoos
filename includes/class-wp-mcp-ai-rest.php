@@ -6866,11 +6866,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							continue;
 						}
 
+						// Capability flags power severity colour coding in the
+						// SPA (read-only/write/destructive…) — the same flags the
+						// legacy assistant editor chip bar consumes.
+						$flags = array();
+						if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+							$flags = $tool->get_capability_flags();
+						}
+
 						$tools_list[] = array(
 							'name'                => $tool->get_slug(),
 							'slug'                => $tool->get_slug(),
 							'description'         => $tool->get_description(),
 							'required_capability' => $tool->get_required_capability(),
+							'flags'               => $flags,
 							'inputSchema'         => $schema,
 						);
 					} catch ( Exception $e ) {
@@ -6909,7 +6918,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( $fields_param && is_string( $fields_param ) ) {
 				$allowed_fields = wp_parse_list( $fields_param );
 				// Valid tool fields: name, description, inputSchema. 'name' is always included.
-				$valid_fields   = array( 'name', 'description', 'inputSchema' );
+				$valid_fields   = array( 'name', 'description', 'inputSchema', 'flags' );
 				$allowed_fields = array_intersect( $allowed_fields, $valid_fields );
 				if ( ! empty( $allowed_fields ) ) {
 					if ( ! in_array( 'name', $allowed_fields, true ) ) {
