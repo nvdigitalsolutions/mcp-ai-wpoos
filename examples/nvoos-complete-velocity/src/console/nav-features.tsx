@@ -91,6 +91,7 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
       { path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options', feature: 'calendar_booking' },
       { path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options', feature: 'fnb' },
       { path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options' },
+      { path: '/connections', label: 'Connections', icon: '🔌', capability: 'manage_options' },
       { path: '/media-ops', label: 'Media Ops', icon: '🎞️', capability: 'manage_options' },
     ],
   },

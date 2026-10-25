@@ -89,6 +89,7 @@ function buildEndpoints(origin: string): ProSpaEndpoints {
     recordsSchema: `${pro}/records/schema`,
     dashboardsSchema: `${pro}/dashboards/schema`,
     chatChannels: `${pro}/chat-channels`,
+    remoteSites: `${pro}/remote-sites`,
     mediaCc: `${pro}/media-cc`,
     blueprints: `${pro}/blueprints`,
     commandCenter: `${pro}/command-center`,

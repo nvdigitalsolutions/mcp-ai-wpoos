@@ -130,6 +130,12 @@ export interface ProSpaEndpoints {
 	dashboardsSchema: string;
 	/** Chat channels REST base (mcp-ai-pro/v1/chat-channels, 2.4.0). */
 	chatChannels: string;
+	/**
+	 * Remote Sites (Connections) REST base (mcp-ai-pro/v1/remote-sites,
+	 * 2.4.0) — the console's Channels → Connections page. Empty for
+	 * non-admin sessions (the endpoints are manage_options-gated).
+	 */
+	remoteSites: string;
 	/** Media command-center REST base (mcp-ai-pro/v1/media-cc, 2.4.0). */
 	mediaCc: string;
 	/**
@@ -330,6 +336,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			recordsSchema: typeof e.recordsSchema === 'string' ? e.recordsSchema : '',
 			dashboardsSchema: typeof e.dashboardsSchema === 'string' ? e.dashboardsSchema : '',
 			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
+			remoteSites: typeof e.remoteSites === 'string' ? e.remoteSites : '',
 			mediaCc: typeof e.mediaCc === 'string' ? e.mediaCc : '',
 			blueprints: typeof e.blueprints === 'string' ? e.blueprints : '',
 			commandCenter: typeof e.commandCenter === 'string' ? e.commandCenter : '',

@@ -350,6 +350,9 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'chatChannels'        => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) )
 					: '',
+				'remoteSites'         => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/remote-sites' ) )
+					: '',
 				'mediaCc'             => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/media-cc' ) )
 					: '',
