@@ -4023,8 +4023,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( '' === $endpoint || 'graphql' === $endpoint || 'graphql.json' === $endpoint ) {
 				return $base_url . '/admin/api/' . $api_version . '/graphql.json';
 			}
-			// REST fallback: endpoint is used as-is under the versioned admin path.
-			return $base_url . '/admin/api/' . $api_version . '/' . ltrim( $endpoint, '/' );
+			// Shopify retired the REST Admin API (legacy since 2024-10-01;
+			// sunset waves from 2025-10 through 2026 — products/count.json
+			// et al. went dark in the first wave). Never silently build a
+			// sunset-prone REST URL: fail loudly so callers migrate to the
+			// GraphQL Admin API or a UCP catalog mode (Proposal 089 follow-up).
+			return new WP_Error(
+				'wp_mcp_ai_pro_shopify_rest_retired',
+				__( 'Shopify REST Admin API endpoints are retired. Use the GraphQL Admin API or a UCP catalog mode instead.', 'mcp-ai-wpoos-pro' )
+			);
 		}
 
 		// For WordPress/WooCommerce endpoints, use /wp-json/ prefix.

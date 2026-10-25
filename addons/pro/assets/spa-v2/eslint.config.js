@@ -21,7 +21,7 @@ export default [
 	{
 		...jsxA11y.flatConfigs.recommended,
 		files: [ 'src/**/*.{ts,tsx,js,jsx}' ],
-		ignores: [ 'src/features/knowledge-graph/upstream/**' ],
+		ignores: [ 'src/features/knowledge-graph/upstream/**', 'src/features/docs-hub/upstream/**' ],
 		languageOptions: {
 			parser: tsParser,
 			parserOptions: {
@@ -37,7 +37,7 @@ export default [
 			'react-hooks': reactHooks,
 		},
 		files: [ 'src/**/*.{ts,tsx,js,jsx}' ],
-		ignores: [ 'src/features/knowledge-graph/upstream/**' ],
+		ignores: [ 'src/features/knowledge-graph/upstream/**', 'src/features/docs-hub/upstream/**' ],
 		languageOptions: {
 			parser: tsParser,
 			parserOptions: {

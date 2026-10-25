@@ -39,10 +39,82 @@ class WP_MCP_AI_Shopify_Sync_Dashboard_Widget {
 			return;
 		}
 
+		/**
+		 * Kill-switch for the wp-admin Shopify Sync dashboard widget
+		 * (Proposal 089 Phase 4f). The console renders the same metrics
+		 * through the dashboards feature; flip this filter off per cohort
+		 * once console parity is verified.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_shopify_sync_widget', true ) ) {
+			return;
+		}
+
 		wp_add_dashboard_widget(
 			'wp_mcp_ai_shopify_sync_dashboard',
 			__( 'Shopify Sync — Cost & Health', 'mcp-ai-wpoos-pro' ),
 			array( __CLASS__, 'render_widget' )
+		);
+	}
+
+	/**
+	 * Cost & health metrics for the console dashboards feature
+	 * (Proposal 089 Phase 4f — promoted public seam; the wp-admin widget
+	 * renders the same payload). GraphQL-only: the REST Admin API is
+	 * retired, so cost reporting reads the sync engine's GraphQL cost
+	 * tracker.
+	 *
+	 * @since 2.4.0
+	 * @return array Metric payload.
+	 */
+	public static function get_dashboard_data() {
+		$settings         = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
+		$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
+
+		$total_used  = 0;
+		$total_limit = 0;
+		$total_rows  = 0;
+		$all_fresh   = true;
+		$has_errors  = false;
+
+		if ( ! empty( $sync_connections ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-sync-engine.php';
+			}
+
+			foreach ( $sync_connections as $conn_id ) {
+				$engine       = new WP_MCP_AI_Shopify_Sync_Engine( $conn_id );
+				$cost         = $engine->get_cost_report();
+				$total_used  += isset( $cost['used'] ) ? absint( $cost['used'] ) : 0;
+				$total_limit += isset( $cost['limit'] ) ? absint( $cost['limit'] ) : 0;
+				if ( ! empty( $cost['is_low'] ) ) {
+					$all_fresh = false;
+				}
+
+				if ( class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
+					$cct_manager = new WP_MCP_AI_Shopify_Sync_CCT_Manager( $conn_id );
+					$total_rows += absint( $cct_manager->get_row_count() );
+					if ( ! $cct_manager->is_fresh() ) {
+						$all_fresh = false;
+					}
+				}
+
+				$last_error = get_option( 'wp_mcp_ai_shopify_last_sync_error_' . $conn_id, '' );
+				if ( ! empty( $last_error ) ) {
+					$has_errors = true;
+				}
+			}
+		}
+
+		$pct_remaining = $total_limit > 0 ? round( ( ( $total_limit - $total_used ) / $total_limit ) * 100, 1 ) : 100;
+
+		return array(
+			'cost_used'          => $total_used,
+			'cost_limit'         => $total_limit,
+			'cost_remaining_pct' => (float) $pct_remaining,
+			'cached_items'       => $total_rows,
+			'connections'        => count( $sync_connections ),
+			'healthy'            => (bool) ( $all_fresh && ! $has_errors ),
+			'has_errors'         => (bool) $has_errors,
 		);
 	}
 
@@ -52,49 +124,20 @@ class WP_MCP_AI_Shopify_Sync_Dashboard_Widget {
 	 * @since 1.3.0
 	 */
 	public static function render_widget() {
-		$settings         = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
-		$sync_connections = isset( $settings['sync_connections'] ) ? $settings['sync_connections'] : array();
+		$data = self::get_dashboard_data();
 
-		if ( empty( $sync_connections ) ) {
+		if ( 0 === $data['connections'] ) {
 			echo '<p>' . esc_html__( 'No Shopify connections configured for sync.', 'mcp-ai-wpoos-pro' ) . '</p>';
 			echo '<p><a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-shopify-sync-toolkit-settings' ) ) . '" class="button">' . esc_html__( 'Configure Shopify Sync', 'mcp-ai-wpoos-pro' ) . '</a></p>';
 			return;
 		}
 
-		if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_Engine' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-sync-engine.php';
-		}
-
-		$total_used  = 0;
-		$total_limit = 0;
-		$total_rows  = 0;
-		$all_fresh   = true;
-		$has_errors  = false;
-
-		foreach ( $sync_connections as $conn_id ) {
-			$engine       = new WP_MCP_AI_Shopify_Sync_Engine( $conn_id );
-			$cost         = $engine->get_cost_report();
-			$total_used  += $cost['used'];
-			$total_limit += $cost['limit'];
-			if ( $cost['is_low'] ) {
-				$all_fresh = false;
-			}
-
-			if ( class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
-				$cct_manager = new WP_MCP_AI_Shopify_Sync_CCT_Manager( $conn_id );
-				$total_rows += $cct_manager->get_row_count();
-				if ( ! $cct_manager->is_fresh() ) {
-					$all_fresh = false;
-				}
-			}
-
-			$last_error = get_option( 'wp_mcp_ai_shopify_last_sync_error_' . $conn_id, '' );
-			if ( ! empty( $last_error ) ) {
-				$has_errors = true;
-			}
-		}
-
-		$pct_remaining = $total_limit > 0 ? round( ( ( $total_limit - $total_used ) / $total_limit ) * 100, 1 ) : 100;
+		$total_used    = $data['cost_used'];
+		$total_limit   = $data['cost_limit'];
+		$total_rows    = $data['cached_items'];
+		$all_fresh     = ! $data['has_errors'] && $data['healthy'];
+		$has_errors    = $data['has_errors'];
+		$pct_remaining = $data['cost_remaining_pct'];
 		$status_color  = $pct_remaining < 20 ? '#d63638' : ( $pct_remaining < 50 ? '#f0ad4e' : '#46b450' );
 		?>
 		<div class="shopify-sync-dashboard-widget">
@@ -127,7 +170,7 @@ class WP_MCP_AI_Shopify_Sync_Dashboard_Widget {
 					</tr>
 					<tr>
 						<td><strong><?php esc_html_e( 'Connections', 'mcp-ai-wpoos-pro' ); ?></strong></td>
-						<td><?php echo esc_html( (string) count( $sync_connections ) ); ?></td>
+						<td><?php echo esc_html( (string) $data['connections'] ); ?></td>
 					</tr>
 					<tr>
 						<td><strong><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></strong></td>

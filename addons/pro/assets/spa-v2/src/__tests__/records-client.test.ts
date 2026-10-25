@@ -153,6 +153,69 @@ describe( 'RecordsClient', () => {
 		} );
 		expect( created ).toMatchObject( { id: 42, title: 'Acme Ltd' } );
 	} );
+
+	it( 'lists remote records through the read-only proxy (Phase B)', async () => {
+		const calls: string[] = [];
+		global.fetch = vi.fn( ( input: RequestInfo | URL ) => {
+			calls.push( String( input ) );
+			return Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () =>
+					Promise.resolve( {
+						success: true,
+						data: {
+							items: [
+								{
+									id: 42,
+									date: '2026-10-25T10:00:00',
+									status: 'publish',
+									title: 'Remote Post',
+									meta: {},
+								},
+							],
+							remote_site: 'store-1',
+						},
+					} ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
+		const rows = await client.listRemote( { ...COMPANY, key: 'post' }, 'acme', 'store-1' );
+		expect( calls[ 0 ] ).toContain( '/records/remote/post' );
+		expect( calls[ 0 ] ).toContain( 'remote_site=store-1' );
+		expect( calls[ 0 ] ).toContain( 'search=acme' );
+		expect( rows ).toHaveLength( 1 );
+		expect( rows[ 0 ] ).toMatchObject( { id: 42, title: 'Remote Post' } );
+	} );
+
+	it( 'fetches a remote record through the proxy (Phase B)', async () => {
+		const calls: string[] = [];
+		global.fetch = vi.fn( ( input: RequestInfo | URL ) => {
+			calls.push( String( input ) );
+			return Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () =>
+					Promise.resolve( {
+						success: true,
+						data: {
+							item: {
+								id: 12,
+								date: '2026-10-25T10:00:00',
+								status: 'publish',
+								title: { raw: 'Remote Detail' },
+								meta: {},
+							},
+						},
+					} ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
+		const record = await client.getRemote( { ...COMPANY, key: 'post' }, 12, 'store-1' );
+		expect( calls[ 0 ] ).toContain( '/records/remote/post/12' );
+		expect( calls[ 0 ] ).toContain( 'remote_site=store-1' );
+		expect( record ).toMatchObject( { id: 12, title: 'Remote Detail' } );
+	} );
 } );
 
 describe( 'filterEntitiesByGroup', () => {

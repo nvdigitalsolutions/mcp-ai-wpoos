@@ -174,6 +174,11 @@ const BlueprintsPage = lazy(() =>
     default: m.BlueprintsPage,
   })),
 );
+const CommerceToolkitPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/commerce/CommerceToolkitPage').then((m) => ({
+    default: m.CommerceToolkitPage,
+  })),
+);
 
 const DOCK_PREF_KEY = 'nvoos-complete-console.dock-open';
 
@@ -565,6 +570,81 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                   </RequireGate>
                 }
               />
+              {/* Proposal 089 — the four commerce toolkit pages share one
+                  parameterized page component (tabs: Overview, Settings,
+                  Sync Runs). */}
+              <Route
+                path="/ecommerce"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/ecommerce')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <CommerceToolkitPage toolkit="ecommerce" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/ezuite"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/ezuite')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <CommerceToolkitPage toolkit="ezuite" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/shopify-sync"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/shopify-sync')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <CommerceToolkitPage toolkit="shopify_sync" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/flowhub"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/flowhub')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <CommerceToolkitPage toolkit="flowhub" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/products"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/products')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    									<RecordsPage group="commerce" allowRemote />
+                    								</RequireGate>
+                    							}
+                    						/>
+                    						<Route
+                    							path="/content"
+                    							element={
+                    								<RequireGate
+                    									gate={gateForPath('/content')}
+                    									features={features}
+                    									capabilities={runtime.user.capabilities}
+                    								>
+                    									<RecordsPage group="content" allowRemote />
+                    								</RequireGate>
+                    							}
+                    						/>
               				<Route
               					path="/blueprints"
               					element={

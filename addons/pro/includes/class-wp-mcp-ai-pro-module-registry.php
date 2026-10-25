@@ -749,6 +749,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						'class-wp-mcp-ai-pro-media-cc-rest-controller.php'         => 'WP_MCP_AI_Pro_Media_CC_REST_Controller',
 						'class-wp-mcp-ai-pro-blueprints-rest-controller.php'       => 'WP_MCP_AI_Pro_Blueprints_REST_Controller',
 						'class-wp-mcp-ai-pro-command-center-rest-controller.php'    => 'WP_MCP_AI_Pro_Command_Center_REST_Controller',
+						// Proposal 089 Phase 3c — read-only sync receipts for the
+						// four commerce toolkits.
+						'class-wp-mcp-ai-pro-commerce-sync-runs-rest-controller.php' => 'WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller',
 					);
 					foreach ( $controllers as $file => $class ) {
 						$path = $p . 'rest/' . $file;
@@ -758,6 +761,54 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						require_once $path;
 						if ( class_exists( $class ) ) {
 							$class::init();
+						}
+					}
+
+					// Commerce toolkit settings sections (Proposal 089 Phase 2b).
+					// The schema-driven settings surface (GET /mcp-ai/v1/settings/
+					// schema) must include the four toolkit option groups on
+					// front-end REST requests too (same non-admin gate note as the
+					// controllers above), so sections and their tabs register here
+					// on every request. WooCommerce presence mirrors the wp-admin
+					// pages: no WooCommerce, no commerce settings.
+					if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) && class_exists( 'WooCommerce' ) ) {
+						$commerce_sections = array(
+							'abstract-wp-mcp-ai-commerce-toolkit-section.php'      => 'WP_MCP_AI_Commerce_Toolkit_Settings_Section',
+							'class-wp-mcp-ai-section-ecommerce-toolkit.php'         => 'WP_MCP_AI_Section_Ecommerce_Toolkit',
+							'class-wp-mcp-ai-section-ezuite-toolkit.php'            => 'WP_MCP_AI_Section_Ezuite_Toolkit',
+							'class-wp-mcp-ai-section-shopify-sync-toolkit.php'      => 'WP_MCP_AI_Section_Shopify_Sync_Toolkit',
+							'class-wp-mcp-ai-section-flowhub-toolkit.php'           => 'WP_MCP_AI_Section_FlowHub_Toolkit',
+						);
+						$commerce_tabs     = array(
+							'ecommerce'    => array(
+								'title' => __( 'E-Commerce', 'mcp-ai-wpoos-pro' ),
+								'icon'  => 'dashicons-cart',
+							),
+							'ezuite'       => array(
+								'title' => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
+								'icon'  => 'dashicons-networking',
+							),
+							'shopify_sync' => array(
+								'title' => __( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),
+								'icon'  => 'dashicons-store',
+							),
+							'flowhub'      => array(
+								'title' => __( 'FlowHub', 'mcp-ai-wpoos-pro' ),
+								'icon'  => 'dashicons-shield-alt',
+							),
+						);
+						foreach ( $commerce_tabs as $tab_id => $tab ) {
+							WP_MCP_AI_Settings_Registry::register_tab( $tab_id, $tab );
+						}
+						foreach ( $commerce_sections as $file => $class ) {
+							$path = $p . 'admin/sections/' . $file;
+							if ( ! file_exists( $path ) ) {
+								continue;
+							}
+							require_once $path;
+							if ( class_exists( $class ) && is_subclass_of( $class, 'WP_MCP_AI_Commerce_Toolkit_Settings_Section' ) ) {
+								WP_MCP_AI_Settings_Registry::register_section( new $class() );
+							}
 						}
 					}
 				}
