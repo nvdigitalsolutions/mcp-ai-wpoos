@@ -1,5 +1,72 @@
 # oOS – Changelog
 
+## [1.2.12] - 2026-10-25
+
+### Added — magic-link sign-in, Paper Store page, and console UX (#7206/#7208)
+
+- **Opt-in passwordless sign-in** — new `WP_MCP_AI_REST_Magic_Login_Controller` (`includes/rest/class-wp-mcp-ai-rest-magic-login-controller.php`): `POST /mcp-ai/v1/magic-login/request` + `/confirm`, off by default (routes 404 until `enable_magic_login` is on). Industry-standard hygiene: ~256-bit CSPRNG tokens (`wp_generate_password(43, false, false)`) stored SHA-256-hashed in a transient, 15-minute single-use expiry, one outstanding link per user, uniform anti-enumeration responses, transient rate limits (3/identifier/15 min, 10/IP/hour), the link always targets the configured app origin (`magic_login_app_origin`, empty falls back to `home_url`), and `wp_login` fired on confirm. Deliberately unauthenticated by design (same documented exception as `/session/nonce`) — a named permission callback still enforces the feature flag + the Security Manager's IP/HTTPS posture. New Authentication → **Magic Link Sign-In** subtab exposes both settings (the controller reads the settings registry first, standalone-option fallback for WP-CLI); the console `#/settings` page picks the fields up automatically via the schema-driven settings engine. Complete Console login gains Password/Magic-link tabs (WAI-ARIA tablist) + a `#/magic-login?token=…` consumer. 7 controller tests / 38 assertions + extended login-screen tests.
+- **Paper Store page (#7206/#7207)** — new `#/paper-store` management page (collections sidebar, searchable record list, expandable detail, create/edit modal with JSON validation, two-step delete) wired through the new `endpoints.paperStore` in both the Complete Console and the standalone SPA config (the mirror sync gate fix).
+- **Console UX fixes (#7206)** — the assistants editor renders a loading skeleton (no field-by-field pop-in); failed team-member fetches show the real error with an abort guard (no more "No profession members" masquerade); Records pages expand master-detail inline; the workflows grid uses `minmax(0, …)` containment; adjacent action buttons get a 6px gutter; `.nvoos-pro-spa-page` mobile padding 5px, dashboard gutters 10px ≤782px (#7205).
+
+### Added — native addon islands replace the iframe embeds (#7213, Proposal 087)
+
+- **Docs Hub / Media Studio / Document Editor mount natively** — the Pro SPA `#/docs`, `#/media`, and `#/documents` pages no longer frame the three apps behind sandboxed iframes. Docs Hub ships as a vendored byte-identical IIFE (`spa-v2/src/features/docs-hub/upstream/`) with a new island API (`window.NVoosDocsHub.mountDocsHub`) + MemoryRouter mode (it never touches the Pro SPA's hash); the other two load lazily as script/link assets via new `*Asset`/`*Css` config endpoints (the standalone app copies them through Vite `?url` imports). The `postMessage` auth bridge is removed — headless credentials are injected origin-checked straight into the islands' config globals. Theming, routing, a11y, and asset dedupe all improve; a hosted console is no longer required.
+- **OKF knowledge source** — new `mcp-ai-pro/v1/okf/docs` REST adapter serves OKF bundles in the Docs Hub manifest/pages/search shape (bundle-prefixed slugs, server-side cross-link rewriting per OKF v0.2 §6.1 + cross-bundle extension, rehype-slug-compatible TOC, prev/next); the docs page gains a Docs Hub / OKF Knowledge source toggle.
+- **Filter semantics change** — `wp_mcp_ai_pro_spa_docs_url` / `wp_mcp_ai_pro_spa_media_studio_url` / `wp_mcp_ai_pro_spa_document_editor_url` now take `wp-json` REST bases instead of front-end/page URLs (media/document filters keep their names but override REST bases).
+
+### Added — console Connections page for Remote Sites (#7220)
+
+- **`WP_MCP_AI_Pro_Remote_Sites_REST_Controller`** at `mcp-ai-pro/v1/remote-sites` (manage_options-gated): list (secrets redacted, `has_credentials` flags), a `/types` catalogue (32 connection types, canonical stored keys, provider-URL auto-fill), create, partial update (blank secrets keep the stored value), delete, and test — test-before-trust UX with status chips and destructive confirmation. The `rest_remote_sites` module always loads (console REST calls come from a front-end origin) and `remoteSites` joins the Pro SPA config endpoints.
+- **Connections page** — console-only (`#/connections` under Command Centers → Channels): a grouped type-catalogue wizard, write-only secrets, dark-mode-correct status chips (#7225), and the base-settings Gmail connection aggregated as `base-gmail` (test through the same manager path, editing deep-links to wp-admin). The base-Gmail pseudo connection now carries its `name` (#7229). 15 REST tests + 7 SPA client tests + a new `docs/features/remote-sites.md` section.
+
+### Added — registry-backed assistant tool picker (#7221/#7232, Proposal 088)
+
+- **Searchable multiselect replaces the comma text field** — a `ToolPicker` combobox + grouped listbox per the WAI-ARIA APG patterns: name/description/slug search, category groups, removable chips, `aria-activedescendant` keyboard contract, capability colour coding (the legacy severity palette), creatable raw-slug entry, `Add all matching` / `Clear all`, loading/error/retry states. Unknown slugs stored on an assistant are preserved and flagged, never silently dropped.
+- **Backend (additive)** — `handle_tools_list()` now includes per-tool `flags` (from the Capability-Flags interface, `[]` otherwise) + a `_fields` allowlist entry; the assistant payload contract is unchanged.
+- **`scope=all` opt-out (#7232)** — `GET mcp-ai/v1/tools` without an `assistant_id` had silently resolved the site/token default assistant, so the picker only saw that assistant's tools. A new declared `scope=all` route arg (default behaviour unchanged — unscoped requests still resolve the default assistant; token-bound credentials stay pinned) lets the picker fetch the full registry; cache keys include `scope`.
+
+### Added — Commerce toolkit console surfaces (#7231, Proposal 089)
+
+- **Settings + sync runs + records** — four WooCommerce-gated commerce feature flags plus `content_records`; four schema-driven settings sections (safety buffer, reconciliation cadence, rate cap) on new registry tabs with kill-switch filters for the four wp-admin toolkit pages; a read-only `mcp-ai-pro/v1/commerce/sync-runs` bridge over the shared Sync Log Manager; a `remote_site` proxy against wordpress-type Remote Sites connections (structured 404/403/400/502, zero credential echo); product/post/page record entities with a meta-in-REST registrar that skips schema-free post types. The SPA gains `CommerceToolkitPage` (Overview/Settings/Sync Runs with SitePicker) on routes `/ecommerce` `/ezuite` `/shopify-sync` `/flowhub` `/products` `/content`, and `SettingsForm` is extracted from SettingsPage. 13 REST tests. Deferred by design (tracked W16e/W16f/W16g): 4f dashboard widgets, remote records browsing, 5b retirement, 6b deep-links.
+
+### Fixed — tool-schema integer bounds and shape hygiene (#7210/#7211)
+
+- **JSON-safe ceiling on 763 integer fields** — the three remaining `wp_mcp_ai_mcp_schema_compliance` Site Health findings are cleared: a new `WP_MCP_AI_Tool_Schema_Helper` (`MAX_SAFE_INTEGER` = 2^53−1 fragments) bounds every id/amount/total-style integer across `includes/tools` and the addon toolkits — 2^53−1 is always an honest ceiling, so no schema lies; smaller semantic caps were deliberately not invented. Eight legacy flat parameter maps gain `type: object`, seven root-`anyOf` tools move the combinator into a single-branch `allOf` wrapper (root stays clean for strict clients). Zero tool-count change. New `tests/test-tool-schema-helper.php` + a registry-wide auditor canary (audits every registered plugin-owned tool and fails on any `root_type_missing` / `root_combinator_with_properties` / `unsafe_integer_range`).
+- **phpcs array indentation (#7211)** — the seven single-line multi-item arrays in the two outbound-booking tools expanded (whitespace-only).
+
+### Fixed — profession meta, team relink, and records REST (#7219/#7233)
+
+- **Professions detail all `—` (#7219)** — WP core attaches `meta` to the posts REST schema only when the post type supports `custom-fields`; the profession CPT now declares the support (with the raw Custom Fields meta box hidden) and `WP_MCP_AI_Pro_Records_REST_Controller::register_meta_in_rest()` grants it to every records entity — the whole Records surface (CRM, PM, calendar, F&B, professions) now reads meta over wp/v2.
+- **Teams orphaned after "Replace All"** — the destructive reseed force-deleted every profession and re-created fresh IDs, orphaning team members. New `Team_Repository::relink_members_after_profession_replace()` re-resolves stored member IDs through the pre-delete ID → slug map (keeps live IDs, drops dangling ones); the admin-ajax reseed handler captures pre-delete slugs and re-links after the run, reporting the refreshed team count.
+- **Records 404 on Posts/Pages (#7233)** — the schema emitted `restBase` as the raw post-type slug (`wp/v2/post` doesn't exist). New `get_post_type_rest_base()` resolves the registered route base (`post` → `posts`, `page` → `pages`) and both remote proxy endpoints carry the resolved base; pinned by a schema invariant test + a proxied-URL assertion.
+
+### Fixed — console settings, docs island, dark mode, and author login (#7215/#7218/#7224/#7225/#7226)
+
+- **Settings contract (#7215)** — numeric-option selects (`default_assistant`) round-trip as ints (SPA + server `absint`); select sanitization matches RAW option keys (`sanitize_key()` was mangling slug keys like `meta/llama-3.1-8b-instruct`, silently rejecting every SPA save); stored values that left the option list are appended as `(stored)` options; the `__hidden__` sentinel tab no longer surfaces as a phantom tab; sticky footer tuck.
+- **Docs island (#7215/#7218)** — console-scoped full-bleed integration with a host design-token bridge (`--dh-*` → `--nds-*` → `--nvoos-*` → island defaults), the island follows the console's live theme via the UI store (`auto`/prefers-color-scheme mapping), shorter OKF subtitles, and the previously reverted header/padding tighten re-landed.
+- **Dark mode (#7225/#7226)** — the Connections page referenced a nonexistent `--nvoos-surface` token (white rows in dark themes); it now uses the real spa-v2 tokens with per-theme overrides, and `--nvoos-chip-bg`/`--nvoos-muted` are defined in all three theme blocks so attachment chips and usage badges go transparent with themed borders. The "Manage in wp-admin" deep link now strips `/wp-json` + namespace suffixes via the unit-tested `buildWpAdminSettingsUrl()`.
+- **Author login (#7224)** — authors (roles without `list_users`) could not get past the sign-in screen: the session bootstrap treated any `users/me` 403 as "no session". It now re-mints the nonce via `/session/nonce` and retries with the view context (any logged-in role can read it); only a second 401/403 throws. Authors boot with `capabilities: []` — admin-gated nav hides correctly and the server still enforces every capability.
+
+### Tests
+
+- **New suites** — `tests/rest/test-rest-magic-login-controller.php` (7), `tests/test-remote-sites-rest.php` (15 + 378 assertions), `tests/rest-api/test-commerce-console-surface.php` (13), `tests/rest-api/test-rest-records-schema.php` (custom-fields grant + end-to-end wp/v2 meta serving), `tests/test-team-member-relink.php`, `tests/test-tool-schema-helper.php` + the registry-wide schema-auditor canary (#7210), `tests/test-settings-dashboard-tab-order.php` re-pinned for the commerce tabs (#7234).
+- **CI-order hardening** — the auto-categorize execution tests swap the DI container's `router` binding for a deterministic `WP_Error` mock with tearDown restore (#7214); the two lazy addon stubs are excluded from PHPUnit discovery so the bare-environment feature-flag contract holds (#7223); the media-studio/document-editor stub files prefer the real addon classes and the real class files are `class_exists()` self-guarded (#7216).
+
+### Docs & skills
+
+- **Proposal 090 (#7230)** — G9 language decision #15 recorded (Laravel chosen for the standalone stack; the FastAPI plan stays the documented fallback) + the v1.4.0 Laravel adapter spike implementation plan (P1–P7 pass criteria — Octane boot, one real tool, SSE stream, queue job, persistence round-trip, MCP streamable-HTTP smoke, adapter tests — 6-week timeline with a concurrent-stream soak, and flip conditions F1–F4).
+- **Skills updated in place (#7209/#7215/#7217/#7227)** — spa-ui gains the spa-v2 ↔ console wiring map + the "my spa-v2 fix doesn't show in the console" checklist + the island token bridge + the Connections page row + the theme-token list; spa-rest-contract gains bug class 13 (failure masquerades as empty), the named-permission-callback rule, and the settings-schema coercion taxonomy; test-suite gains patterns 80/81/44 (assertMatchesRegularExpression's third arg, REST-request body-param replacement, static register_routes fatal).
+
+### Sub-projects
+
+- **docs-hub / media-studio / document-editor sources gain the island APIs without version bumps (#7213)** — the three addon sources ship `mountDocsHub`/island entry changes + rebuilt dists for the vendored spa-v2 integration, but keep their shipped versions (docs-hub 0.5.3, media-studio 0.6.1, document-editor 0.2.0 — own tracks, flag-not-edited); the existing `build/` ZIPs stay current and the island surfaces ride the vendored spa-v2 bundles until each addon's next release.
+
+### Versioning
+
+- **Tool count unchanged** — ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative) — zero registry registrations in-window (#7210's bound touches 763 existing tool schemas without adding slugs; #7206/#7220/#7221/#7231/#7233 are REST/settings/SPA surfaces).
+- **Coding-time agent skills unchanged (76)**; bundled skills 77 base + 41 Pro (unchanged). Model catalog: **v2026.10.03** (zero diff). Provider count **18** (unchanged). Addon count **30** (unchanged). Security classes **12** (unchanged). Media Worker **3.4.0** (unchanged).
+- **Build hygiene** — the stale 1.2.10 oOS build set removed (30 files: 9 root ZIPs + `.sha256` pairs, 2 optional-components, 19 toolkit-addons); the 1.2.11 set stays as the current fallback.
+
 ## [1.2.11] - 2026-10-24
 
 ### Added — Complete Console + Schedule Anything caching layers, backend shared-cache opt-in

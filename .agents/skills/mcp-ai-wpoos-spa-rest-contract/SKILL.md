@@ -5,8 +5,8 @@ description: Audit NV oOS console SPA clients (addons/pro/assets/spa-v2/src/api/
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.11"
-  plugin-version-tested: "1.2.11"
+  plugin-version: "1.2.12"
+  plugin-version-tested: "1.2.12"
   last-updated: "2026-10-25"
 ---
 
@@ -379,6 +379,45 @@ live console 404'd all six (bug class 8). They now boot from the context-free
 `tests/rest-api/test-rest-console-bridges.php`. When re-auditing any of them,
 verify route *presence* (live index or `rest_get_server()->get_routes()`),
 not just shape.
+
+**2026-10-25 additions (the v1.2.12 console wave — new controllers + contract changes):**
+
+- **`mcp-ai-pro/v1/remote-sites` (PR #7220)** — new
+  `WP_MCP_AI_Pro_Remote_Sites_REST_Controller`: list (secrets redacted,
+  `has_credentials` flags), `/types` catalogue (32 canonical types),
+  create, partial update (**blank secrets keep the stored value** — the
+  client sends empty strings to preserve secrets), delete, test —
+  `manage_options`-gated, `rest_remote_sites` module always loaded
+  (front-end origin). The list **aggregates the base-settings Gmail as
+  `base-gmail`** (test through the same manager path; editing deep-links
+  to wp-admin). Config key: `endpoints.remoteSites` (admin-only).
+- **`mcp-ai-pro/v1/commerce/sync-runs` (PR #7231, Proposal 089)** — read-only
+  bridge over the shared Sync Log Manager; the `remote_site` proxy rides
+  the remote-sites connections (wordpress-type) with structured
+  404/403/400/502 errors and **zero credential echo**; four
+  WooCommerce-gated commerce flags + `content_records` join the feature map
+  (the console nav gates on them fail-open). Records entities
+  product/post/page: the schema emits `restBase` resolved from the
+  registered route base — **`post` → `posts`, `page` → `pages`** (PR #7233;
+  raw post-type slugs 404 on `wp/v2` — the client already trusted the
+  schema value).
+- **`mcp-ai-pro/v1/okf/docs` (PR #7213, Proposal 087)** — OKF bundles in the
+  Docs Hub manifest/pages/search shape (bundle-prefixed slugs,
+  server-side cross-link rewriting); the docs page's source toggle.
+  Island config: `docsHub`/`mediaStudio`/`documentEditor` now carry local
+  REST bases + `*Asset`/`*Css` keys (the three `wp_mcp_ai_pro_spa_*_url`
+  filters now take REST bases — a filter-semantics change, not a rename).
+- **Tools list `flags` + `scope=all` (PRs #7221/#7232, Proposal 088)** —
+  `handle_tools_list()` adds per-tool `flags` (`_fields` allowlisted); the
+  new declared `scope=all` route arg opts the request out of default-
+  assistant resolution (unscoped requests unchanged; token-bound
+  credentials stay pinned; cache keys include `scope`). `flags` is absent
+  on cached pre-deploy entries (the client tolerates the absence).
+- **Magic-login routes (PRs #7206/#7208)** — `POST /mcp-ai/v1/magic-login/
+  request` + `/confirm`, opt-in via `enable_magic_login` (off → 404);
+  unauthenticated by design with a **named permission callback** (the
+  public-route reference — feature flag + IP/HTTPS posture), never
+  `__return_true`.
 
 ## Parallel delegation pattern
 
