@@ -250,11 +250,21 @@ export class UnauthorizedError extends Error {
 /**
  * Fetch the logged-in user via WordPress core (cookie auth + nonce).
  *
- * No-session detection: core answers cookie requests without a valid
- * session with 401, but hardened installs (the plugin's REST layer)
- * reject the cookie+nonce pair with 403 instead — treat both as
- * "not signed in" so the console shows its sign-in screen rather than
- * an infrastructure error.
+ * The edit context is requested because it is the only one that includes
+ * `capabilities` (which drive the console's nav gating). It can answer 403
+ * in two ways that still leave a usable session:
+ *
+ *  - The cookie is valid but the nonce was minted for a different session
+ *    token (stale page HTML, full-page cache, session rotation) — core
+ *    answers `rest_cookie_invalid_nonce` with 403.
+ *  - A hardened install denies the edit context to roles that lack
+ *    `list_users` (e.g. authors) even though the session is valid.
+ *
+ * In both cases the browser may still hold a valid session, so a 403 falls
+ * back to re-minting the nonce from the auth cookie and retrying the
+ * default (view) context, which any logged-in role can read. Only a second
+ * 401/403 counts as "no WordPress session" and routes to the sign-in
+ * screen.
  */
 export async function fetchCurrentUser(nonce = ''): Promise<Partial<ProSpaUser>> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
@@ -266,20 +276,32 @@ export async function fetchCurrentUser(nonce = ''): Promise<Partial<ProSpaUser>>
     credentials: 'include',
     headers,
   });
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     throw new UnauthorizedError(
       `wp/v2/users/me returned ${response.status} — no WordPress session`,
     );
   }
+  if (response.status === 403) {
+    return fetchCurrentUserFallback(nonce);
+  }
   if (!response.ok) {
     throw new Error('Session expired, please login first');
   }
-  const data = await readJson<{
-    id?: number;
-    name?: string;
-    slug?: string;
-    capabilities?: Record<string, boolean>;
-  }>(response, 'wp/v2/users/me');
+  return mapCurrentUser(
+    await readJson<CurrentUserPayload>(response, 'wp/v2/users/me'),
+  );
+}
+
+/** Raw `wp/v2/users/me` payload — the edit and view contexts share this shape. */
+interface CurrentUserPayload {
+  id?: number;
+  name?: string;
+  slug?: string;
+  capabilities?: Record<string, boolean>;
+}
+
+/** Map a core user payload onto the SPA user shape (capabilities absent in view context). */
+function mapCurrentUser(data: CurrentUserPayload): Partial<ProSpaUser> {
   return {
     id: data.id ?? 0,
     login: data.slug ?? '',
@@ -288,6 +310,60 @@ export async function fetchCurrentUser(nonce = ''): Promise<Partial<ProSpaUser>>
       .filter(([, enabled]) => enabled)
       .map(([cap]) => cap),
   };
+}
+
+/**
+ * Retry `users/me` with a fresh session-bound nonce and the view context
+ * after the edit-context request answered 403.
+ *
+ * Prefers a nonce re-minted from the auth cookie (see mintSessionNonce) so
+ * a stale-nonce 403 recovers; when minting is unavailable the previously
+ * rejected nonce is reused, which still recovers the role-gated edit
+ * context (the nonce was fine, the context was the problem).
+ */
+async function fetchCurrentUserFallback(previousNonce: string): Promise<Partial<ProSpaUser>> {
+  const base = typeof window !== 'undefined' ? window.location.origin : '';
+  const nonce = (await mintSessionNonce()) || previousNonce;
+  const response = await fetch(`${base}/wp-json/wp/v2/users/me`, {
+    credentials: 'include',
+    headers: nonce ? { 'X-WP-Nonce': nonce } : {},
+  });
+  if (response.status === 401 || response.status === 403) {
+    throw new UnauthorizedError(
+      `wp/v2/users/me returned ${response.status} — no WordPress session`,
+    );
+  }
+  if (!response.ok) {
+    throw new Error('Session expired, please login first');
+  }
+  return mapCurrentUser(
+    await readJson<CurrentUserPayload>(response, 'wp/v2/users/me'),
+  );
+}
+
+/**
+ * Mint a fresh `wp_rest` nonce via the plugin's session endpoint.
+ *
+ * The endpoint intentionally requires no nonce and no capability: it
+ * re-binds the current user from the request's own auth cookie before
+ * minting, so a logged-in visitor always receives a nonce that passes
+ * core's rest_cookie_check_errors. Returns '' when the endpoint is
+ * unavailable so the caller can pick its own fallback.
+ */
+async function mintSessionNonce(): Promise<string> {
+  const base = typeof window !== 'undefined' ? window.location.origin : '';
+  try {
+    const response = await fetch(`${base}/wp-json/mcp-ai/v1/session/nonce`, {
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      return '';
+    }
+    const data = await readJson<{ nonce?: string }>(response, 'nonce endpoint');
+    return typeof data?.nonce === 'string' ? data.nonce : '';
+  } catch {
+    return '';
+  }
 }
 
 /**
