@@ -575,10 +575,12 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 		}
 
 		$http_calls = 0;
+		$requested_urls = array();
 		add_filter(
 			'pre_http_request',
-			function ( $preempt, $args, $url ) use ( &$http_calls ) {
+			function ( $preempt, $args, $url ) use ( &$http_calls, &$requested_urls ) {
 				$http_calls++;
+				$requested_urls[] = $url;
 				return array(
 					'response' => array( 'code' => 200 ),
 					'body'     => wp_json_encode(
@@ -617,6 +619,8 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 		// The proxied title strips HTML at exit (two-gate rule).
 		$this->assertSame( 'Remote Post', $data['data']['items'][0]['title'] );
 		$this->assertSame( 1, $http_calls );
+		// The proxy must hit the plural core route (wp/v2/post is a 404).
+		$this->assertStringContainsString( 'wp/v2/posts', $requested_urls[0] );
 	}
 
 	/**
