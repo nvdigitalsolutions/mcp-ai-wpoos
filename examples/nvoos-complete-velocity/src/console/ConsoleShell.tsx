@@ -159,6 +159,11 @@ const ChatChannelsPage = lazy(() =>
     default: m.ChatChannelsPage,
   })),
 );
+const RemoteSitesPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/remote-sites/RemoteSitesPage').then((m) => ({
+    default: m.RemoteSitesPage,
+  })),
+);
 const MediaOpsPage = lazy(() =>
   import('@nvoos/pro-spa-v2/features/media-ops/MediaOpsPage').then((m) => ({
     default: m.MediaOpsPage,
@@ -533,6 +538,18 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                     capabilities={runtime.user.capabilities}
                   >
                     <ChatChannelsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/connections"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/connections')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RemoteSitesPage />
                   </RequireGate>
                 }
               />

@@ -1,0 +1,205 @@
+/**
+ * Connections page (Remote Sites console port) — scoped under
+ * .nvoos-pro-spa-connections so it can't leak into other surfaces.
+ *
+ * Deliberately sparse: the page leans on the spa-v2 shared tokens and the
+ * tools-page classes for layout, and only adds what the status chips, the
+ * wizard, and the inline confirm dialog need.
+ */
+
+.nvoos-pro-spa-connections__list {
+	list-style: none;
+	margin: 16px 0 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.nvoos-pro-spa-connections__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 16px;
+	padding: 10px 14px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: var(--nvoos-surface, #fff);
+}
+
+.nvoos-pro-spa-connections__icon {
+	font-size: 20px;
+	line-height: 1;
+}
+
+.nvoos-pro-spa-connections__identity {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 200px;
+	flex: 1;
+}
+
+.nvoos-pro-spa-connections__name {
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-connections__detail {
+	font-size: 12px;
+	opacity: 0.75;
+}
+
+.nvoos-pro-spa-connections__source-badge {
+	font-size: 11px;
+	align-self: flex-start;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: var(--nvoos-surface-muted, #f0f0f1);
+	color: inherit;
+	opacity: 0.85;
+}
+
+.nvoos-pro-spa-connections__status {
+	font-size: 12px;
+	font-weight: 600;
+	padding: 2px 10px;
+	border-radius: 999px;
+	white-space: nowrap;
+}
+
+.nvoos-pro-spa-connections__status--connected {
+	background: rgba( 0, 138, 66, 0.12 );
+	color: #007017;
+}
+
+.nvoos-pro-spa-connections__status--needs-setup {
+	background: rgba( 201, 138, 0, 0.14 );
+	color: #996800;
+}
+
+.nvoos-pro-spa-connections__status--disabled {
+	background: rgba( 100, 100, 100, 0.12 );
+	color: #555;
+}
+
+.nvoos-pro-spa-connections__actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-connections__danger {
+	border-color: #b32d2e !important;
+	color: #b32d2e !important;
+}
+
+.nvoos-pro-spa-connections__test {
+	margin: 4px 0 0;
+	padding: 6px 10px;
+	border-radius: 4px;
+	font-size: 13px;
+	flex-basis: 100%;
+}
+
+.nvoos-pro-spa-connections__test--ok {
+	background: rgba( 0, 138, 66, 0.1 );
+	color: #007017;
+}
+
+.nvoos-pro-spa-connections__test--fail {
+	background: rgba( 179, 45, 46, 0.1 );
+	color: #b32d2e;
+}
+
+/* Wizard (add / edit) */
+
+.nvoos-pro-spa-connections__wizard {
+	margin: 16px 0;
+	padding: 16px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: var(--nvoos-surface, #fff);
+}
+
+.nvoos-pro-spa-connections__wizard-title {
+	margin: 0 0 12px;
+}
+
+.nvoos-pro-spa-connections__type-group {
+	margin: 12px 0;
+}
+
+.nvoos-pro-spa-connections__type-group-label {
+	margin: 0 0 6px;
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-connections__type-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 240px, 1fr ) );
+	gap: 8px;
+}
+
+.nvoos-pro-spa-connections__type-pick {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	width: 100%;
+	padding: 10px 12px;
+	text-align: left;
+	cursor: pointer;
+}
+
+.nvoos-pro-spa-connections__type-pick-label {
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-connections__type-pick-help {
+	font-size: 12px;
+	opacity: 0.75;
+}
+
+.nvoos-pro-spa-connections__form {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	max-width: 560px;
+}
+
+.nvoos-pro-spa-connections__field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.nvoos-pro-spa-connections__field-label {
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-connections__field-help {
+	font-size: 12px;
+	opacity: 0.75;
+}
+
+.nvoos-pro-spa-connections__test-after {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Inline destructive-confirmation dialog */
+
+.nvoos-pro-spa-connections__confirm {
+	margin: 12px 0;
+	padding: 14px;
+	border: 1px solid #b32d2e;
+	border-radius: 6px;
+	background: rgba( 179, 45, 46, 0.06 );
+}
+
+.nvoos-pro-spa-connections__confirm p {
+	margin: 0 0 12px;
+}
