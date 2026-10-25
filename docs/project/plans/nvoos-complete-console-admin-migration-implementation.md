@@ -534,6 +534,55 @@ wp-admin pages; retirement soak open, removal slated for Phase 5.
   metric view (coverage, storage, queue, schedules) with the sweep
   trigger; `mediaCc` endpoint in all three runtime configs. W14 exit
   criteria met — Phase 4 closed.
+- [x] **W16 (4e) — Commerce toolkits + content records (Proposal 089).**
+  P6/P7/P8/P15 commerce slice: the four commerce toolkit settings groups
+  (E-Commerce, EZuite, Shopify Sync, FlowHub) as schema-driven sections on
+  their own registry tabs (guardrail fields — safety buffer, reconciliation
+  cadence, rate cap; the enable toggles stay owned by the base `tools`
+  section and are pulled in by key); four `WP_MCP_AI_Feature_Flags` keys
+  (WooCommerce-gated) + `content_records`; kill-switch filters on the four
+  wp-admin toolkit pages (`wp_mcp_ai_admin_page_enabled_{ecommerce,ezuite,
+  shopify_sync,flowhub}_toolkit`, default-on).
+  **Shipped 2026-10-25 (feat/089-ecommerce-console-port):**
+  - [x] **W16a — Settings schemas (2b).** Four section classes +
+    `register_tab()`; registered every-request from the Pro module registry
+    so the console REST schema sees them; PHPUnit
+    `tests/rest-api/test-commerce-console-surface.php` (schema fields,
+    tabs, guardrail defaults, flag gating).
+  - [x] **W16b — Sync-run monitor (3c).** Read-only
+    `mcp-ai-pro/v1/commerce/sync-runs` (+ `/latest`, `/{run_id}`) wrapping
+    the shared `WP_MCP_AI_Sync_Log_Manager` (woocommerce/ezuite/
+    shopify_sync/flowhub); canonical envelope, manage_options, 403/404/501
+    contracts; console `CommerceToolkitPage` (Overview/Settings/Sync Runs
+    tabs) per toolkit route (`/ecommerce`, `/ezuite`, `/shopify-sync`,
+    `/flowhub`).
+  - [x] **W16c — Records entities (4e).** `product` (group `commerce`,
+    WooCommerce native post type), `post`/`page` (group `content`) join
+    `RECORD_ENTITIES`; the meta-in-REST registrar now skips schema-free
+    post types (never grants `custom-fields` to platform-owned types — the
+    Elementor-bootstrap hazard); console routes `/products` +
+    `/content` (Records page groups). Deviation: dedicated routes instead
+    of page tabs; `/content` gated `manage_options` (records schema
+    contract) — widening to `edit_posts` is a follow-up.
+  - [x] **W16d — Remote-site sync runs (B, partial).** The sync-runs list
+    accepts `remote_site` and proxies against wordpress-type Remote Sites
+    connections (read-only; 404/403/400/502 contracts; zero credential
+    echo); console `SitePicker` on the Sync Runs tab (wordpress-only).
+  - [ ] **W16e — Commerce dashboard widgets (4f).** EZuite/Shopify/FlowHub
+    wp-admin dashboard widgets → configurable dashboards feature (W13
+    scaffold); retire the widget pages after console parity.
+  - [ ] **W16f — Remote records browsing (B remainder).** Browse a remote
+    WordPress site's posts/products via the records surface.
+  - [ ] **W16g — Retirement + deep-links (5b/6b).** Flip the four toolkit
+    kill-switches per cohort after parity; branded wp-admin edit deep-links
+    on records once 084 Phase 6 machinery lands.
+  Follow-up (2026-10-25, Shopify REST sunset): audit the legacy
+  `admin/api/{version}` REST fallback in the Remote Site Manager's
+  `build_api_url()` against Shopify's REST sunset waves (Oct 2025 → 2026)
+  and add a regression test that Shopify connections never resolve to a
+  REST URL.
+  Full plan: `docs/project/plans/089-ecommerce-toolkits-console-surface-implementation-plan.md`;
+  proposal: `docs/project/proposals/089-ecommerce-toolkits-console-surface-port-proposal.md`.
 
 ## 6b. Phase 5b — Analytics & cost charts (B7/B17 correction) — ✅ SHIPPED 2026-10-22
 
