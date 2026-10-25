@@ -673,6 +673,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'rest_remote_sites',
+				'Remote Sites REST',
+				array(),
+				array(),
+				function () use ( $p ) {
+					// Console Connections page (nvoos-complete-velocity). Always
+					// loaded: the console issues REST calls from a front-end
+					// origin where is_admin() is false. The controller only
+					// hooks rest_api_init and gates every route on manage_options.
+					$f = $p . 'rest/class-wp-mcp-ai-pro-remote-sites-rest-controller.php';
+					if ( file_exists( $f ) ) {
+						require_once $f;
+						WP_MCP_AI_Pro_Remote_Sites_REST_Controller::init();
+					}
+				}
+			);
+
+			$this->add_module(
 				'rest_console_bridges',
 				'Console REST Bridges',
 				array(),

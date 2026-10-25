@@ -10,6 +10,36 @@ The Remote Sites system enables NV oOS to manage and interact with remote WordPr
 
 The system supports managing WordPress posts, WooCommerce products/orders, JetEngine CCT records, and — as of v1.1.52 — Paper Store records on remote sites.
 
+## Console Connections page (nv oOS Complete console)
+
+The console (Command Centers → Channels → Connections, `#/connections`) ports
+the wp-admin Remote Sites screen into the Pro SPA with a simple-first flow:
+
+- **One list for every connection** — Remote Sites entries plus the
+  base-plugin Gmail settings connection (surfaced as `base-gmail`, display +
+  test only; its secrets stay in wp-admin site settings and the row deep-links
+  there).
+- **Wizard, not a wall of fields** — pick a type from the grouped catalogue,
+  then only that type's fields appear; provider URLs (Telegram, Slack,
+  Discord, Google APIs, …) are auto-filled server-side exactly like the
+  wp-admin form does.
+- **Write-only secrets** — the list never echoes credentials
+  (`has_credentials` flags only); editing shows a masked placeholder and
+  blank fields keep the stored value (the reauthorize pattern).
+- **Test before trust** — Test is an explicit per-row action with a
+  plain-language inline result; Save & test runs it right after saving.
+- **Destructive confirmation** — delete uses a two-step inline dialog stating
+  what stops working.
+
+REST contract (`mcp-ai-pro/v1/remote-sites`, manage_options-gated):
+`GET /` (list, redacted), `GET /types` (the field catalogue driving the
+wizard), `POST /` (create), `POST /{id}` (partial update),
+`DELETE /{id}`, `POST /{id}/test`. The controller is
+`WP_MCP_AI_Pro_Remote_Sites_REST_Controller`
+(`addons/pro/includes/rest/class-wp-mcp-ai-pro-remote-sites-rest-controller.php`),
+registered by the `rest_remote_sites` module; the SPA endpoint key is
+`endpoints.remoteSites`.
+
 ## Features
 
 ### Connection Management
