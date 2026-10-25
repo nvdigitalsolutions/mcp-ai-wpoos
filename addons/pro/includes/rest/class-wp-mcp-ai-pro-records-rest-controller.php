@@ -353,7 +353,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			$entities[ $key ] = array(
 				'key'      => $key,
 				'postType' => $post_type,
-				'restBase' => $post_type,
+				'restBase' => $this->get_post_type_rest_base( $post_type ),
 				'label'    => $config['label'],
 				'singular' => $config['singular'],
 				'icon'     => $config['icon'],
@@ -363,6 +363,26 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 		}
 
 		return rest_ensure_response( array( 'entities' => $entities ) );
+	}
+
+	/**
+	 * Resolve the wp/v2 route base for a record post type.
+	 *
+	 * The raw post type slug is not always the REST base: core's built-in
+	 * `post`/`page` types register `posts`/`pages` (plural), and third-party
+	 * types (e.g. WooCommerce `product`) register an explicit `rest_base`.
+	 * Falls back to the slug when the registration is unavailable.
+	 *
+	 * @since 2.4.0
+	 * @param string $post_type Post type slug.
+	 * @return string REST route base (e.g. `posts`, `pages`, `mcp_ai_company`).
+	 */
+	private function get_post_type_rest_base( $post_type ) {
+		$post_type_object = get_post_type_object( $post_type );
+
+		return ( $post_type_object && ! empty( $post_type_object->rest_base ) )
+			? $post_type_object->rest_base
+			: $post_type;
 	}
 
 	/**
@@ -411,7 +431,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 	 *
 	 * @since 2.4.0
 	 * @param WP_REST_Request $request Request object.
-	 * @return array{connection: array, post_type: string}|WP_Error
+	 * @return array{connection: array, post_type: string, rest_base: string}|WP_Error
 	 */
 	private function resolve_remote_target( WP_REST_Request $request ) {
 		$entity = $request->get_param( 'entity' );
@@ -473,6 +493,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 		return array(
 			'connection' => $connection,
 			'post_type'  => $post_type,
+			'rest_base'  => $this->get_post_type_rest_base( $post_type ),
 		);
 	}
 
@@ -499,7 +520,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			$params['search'] = $search;
 		}
 
-		$endpoint = add_query_arg( $params, 'wp/v2/' . $target['post_type'] );
+		$endpoint = add_query_arg( $params, 'wp/v2/' . $target['rest_base'] );
 		$response = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $target['connection'], $endpoint );
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
@@ -544,7 +565,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 		$record_id = absint( $request->get_param( 'record_id' ) );
 		$endpoint  = add_query_arg(
 			array( '_fields' => 'id,date,status,title,meta' ),
-			'wp/v2/' . $target['post_type'] . '/' . $record_id
+			'wp/v2/' . $target['rest_base'] . '/' . $record_id
 		);
 
 		$response = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $target['connection'], $endpoint );

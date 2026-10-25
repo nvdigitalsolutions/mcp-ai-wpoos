@@ -131,6 +131,35 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The console builds wp/v2 URLs from `restBase`, so core `post`/`page`
+	 * must emit their plural route bases (`posts`/`pages`) — the raw slug
+	 * (`wp/v2/post`) is a 404. Regression: Proposal 089 content records
+	 * shipped the raw post type as the REST base.
+	 */
+	public function test_schema_emits_registered_rest_base() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$result = ( new WP_MCP_AI_Pro_Records_REST_Controller() )->get_schema( new WP_REST_Request() );
+		$data   = $result->get_data();
+
+		$this->assertArrayHasKey( 'post', $data['entities'] );
+		$this->assertSame( 'posts', $data['entities']['post']['restBase'] );
+		$this->assertArrayHasKey( 'page', $data['entities'] );
+		$this->assertSame( 'pages', $data['entities']['page']['restBase'] );
+
+		// The invariant: every emitted restBase mirrors the registered
+		// route base (the fix is the lookup, not per-entity special cases).
+		foreach ( $data['entities'] as $entity ) {
+			$post_type_object = get_post_type_object( $entity['postType'] );
+			$expected         = $post_type_object && ! empty( $post_type_object->rest_base )
+				? $post_type_object->rest_base
+				: $entity['postType'];
+			$this->assertSame( $expected, $entity['restBase'], 'restBase should match the registered route base: ' . $entity['key'] );
+		}
+	}
+
+	/**
 	 * The schema meta keys are exposed through the core wp/v2 REST.
 	 */
 	public function test_company_meta_registered_in_rest() {
