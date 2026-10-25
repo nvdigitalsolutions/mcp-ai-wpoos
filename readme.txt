@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.11
+Stable tag: 1.2.12
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.12 - October 25, 2026 =
+
+Bumped to 1.2.12 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Opt-in passwordless sign-in ships: the new WP_MCP_AI_REST_Magic_Login_Controller (POST /mcp-ai/v1/magic-login/request + /confirm, off by default) with CSPRNG tokens hashed at rest, 15-minute single-use expiry, uniform anti-enumeration responses, and transient rate limits, plus a Magic Link Sign-In settings subtab and Password/Magic-link tabs on the Complete Console login screen. The console gains the registry-backed assistant tool picker (Proposal 088 — searchable multiselect with capability colour coding and a new scope=all tools-route opt-out), the Connections page for Remote Sites (mcp-ai-pro/v1/remote-sites with a 32-type catalogue and test-before-trust), the Commerce toolkit surfaces (Proposal 089 — settings tabs, sync-runs bridge, records entities, remote-site proxy), the Paper Store page, and native addon islands for Docs Hub / Media Studio / Document Editor replacing the iframe embeds (Proposal 087, plus the mcp-ai-pro/v1/okf/docs OKF adapter). Fixed: tool-schema integer bounds on 763 fields (JSON-safe 2^53-1 ceiling, Site Health clean), profession meta invisible to the console (custom-fields support + team relink after Replace All), records 404 on posts/pages (registered restBase), console settings coercion (int round-trip, RAW option keys, hidden-tab exclusion), Connections/dark-mode token gaps, and the author sign-in 403. Proposal 090 records the G9 Laravel decision + v1.4.0 spike plan. Tool count unchanged: ~355 base + ~1,377 Pro (~1,731 total; live registry authoritative).
 
 = 1.2.11 - October 24, 2026 =
 
