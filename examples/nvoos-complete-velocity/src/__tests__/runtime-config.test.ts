@@ -218,4 +218,43 @@ describe('fetchCurrentUser', () => {
   		);
 		await expect( fetchCurrentUser( 'nonce' ) ).rejects.toBeInstanceOf( UnauthorizedError );
 	} );
+
+	it( 'recovers a session when the edit context 403s (author role) via fresh nonce + view context', async () => {
+		const mockFetch = vi
+			.fn()
+			.mockResolvedValueOnce( jsonResponse( { code: 'rest_forbidden' }, 403 ) )
+			.mockResolvedValueOnce( jsonResponse( { nonce: 'fresh456' } ) )
+			.mockResolvedValueOnce(
+				jsonResponse( { id: 9, name: 'An Author', slug: 'author-one' } ),
+			);
+		vi.stubGlobal( 'fetch', mockFetch );
+
+		await expect( fetchCurrentUser( 'stale123' ) ).resolves.toEqual( {
+			id: 9,
+			login: 'author-one',
+			displayName: 'An Author',
+			capabilities: [],
+		} );
+
+		expect( mockFetch ).toHaveBeenCalledTimes( 3 );
+		const retryUrl = mockFetch.mock.calls[ 2 ][ 0 ] as string;
+		const [, retryInit] = mockFetch.mock.calls[ 2 ] as [ string, RequestInit ];
+		expect( retryUrl ).toContain( '/wp-json/wp/v2/users/me' );
+		expect( retryUrl ).not.toContain( 'context' );
+		expect( retryInit.headers ).toEqual( { 'X-WP-Nonce': 'fresh456' } );
+	} );
+
+	it( 'reuses the rejected nonce when minting fails but the view context succeeds', async () => {
+		const mockFetch = vi
+			.fn()
+			.mockResolvedValueOnce( jsonResponse( { code: 'rest_forbidden' }, 403 ) )
+			.mockResolvedValueOnce( jsonResponse( { code: 'rest_forbidden' }, 403 ) )
+			.mockResolvedValueOnce( jsonResponse( { id: 4, name: 'A', slug: 'a' } ) );
+		vi.stubGlobal( 'fetch', mockFetch );
+
+		await expect( fetchCurrentUser( 'stale123' ) ).resolves.toMatchObject( { id: 4 } );
+
+		const [, retryInit] = mockFetch.mock.calls[ 2 ] as [ string, RequestInit ];
+		expect( retryInit.headers ).toEqual( { 'X-WP-Nonce': 'stale123' } );
+	} );
 } );
