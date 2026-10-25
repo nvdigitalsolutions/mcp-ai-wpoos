@@ -22,6 +22,9 @@ import {
 	type RecordEntityConfig,
 	type RecordSummary,
 } from '../../api/records';
+import { SitePicker } from '../commerce/SitePicker';
+
+const REMOTE_SITE_KEY = 'nvoos-console.records.site';
 
 function useRecords(
 	schemaEndpoint: string,
@@ -125,6 +128,15 @@ export const RECORDS_GROUP_COPY: Record< string, { title: string; subtitle: stri
 		title: __( 'Food & Beverage', 'nvoos-pro-spa' ),
 		subtitle: __( 'Sales, purchases, stock counts, waste and bookings.', 'nvoos-pro-spa' ),
 	},
+	// Proposal 089 Phase 4e — commerce products and core content records.
+	commerce: {
+		title: __( 'Products', 'nvoos-pro-spa' ),
+		subtitle: __( 'WooCommerce product catalogue (read-mostly; edits stay in wp-admin).', 'nvoos-pro-spa' ),
+	},
+	content: {
+		title: __( 'Content', 'nvoos-pro-spa' ),
+		subtitle: __( 'Posts and pages — browse here, edit in wp-admin.', 'nvoos-pro-spa' ),
+	},
 	records: {
 		title: __( 'Records', 'nvoos-pro-spa' ),
 		subtitle: __( 'Entity records across the toolkits.', 'nvoos-pro-spa' ),
@@ -134,15 +146,30 @@ export const RECORDS_GROUP_COPY: Record< string, { title: string; subtitle: stri
 export interface RecordsPageProps {
 	/** Command-center partition to render (undefined = every entity). */
 	group?: string;
+	/**
+	 * Enable Phase B remote browsing: a site picker switches the list and
+	 * detail fetches to the read-only remote proxy. Research/create are
+	 * hidden while a remote site is selected.
+	 */
+	allowRemote?: boolean;
 }
 
-export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
+export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
 	const { entities: allEntities, schemaLoading, schemaError, client } = useRecords(
 		runtime?.endpoints.recordsSchema ?? '',
 		runtime?.endpoints.wpBase ?? '',
 		runtime?.nonce ?? ''
 	);
+
+	// Phase B — the selected remote site (empty = local records).
+	const [ remoteSite, setRemoteSite ] = useState< string >( () => {
+		try {
+			return window.localStorage.getItem( REMOTE_SITE_KEY ) ?? '';
+		} catch {
+			return '';
+		}
+	} );
 
 	const entities = useMemo(
 		() => filterEntitiesByGroup( allEntities, group ),
@@ -196,8 +223,10 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 			setLoading( true );
 			setError( null );
 			const controller = new AbortController();
-			client
-				.list( currentEntity, currentSearch, controller.signal )
+			const request = remoteSite
+				? client.listRemote( currentEntity, currentSearch, remoteSite, controller.signal )
+				: client.list( currentEntity, currentSearch, controller.signal );
+			request
 				.then( ( rows ) => {
 					setRecords( rows );
 					setLoading( false );
@@ -210,7 +239,7 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 				} );
 			return () => controller.abort();
 		},
-		[ client ]
+		[ client, remoteSite ]
 	);
 
 	useEffect( () => {
@@ -251,8 +280,10 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 			const controller = new AbortController();
 			detailAbort.current = controller;
 			setDetailLoading( true );
-			client
-				.get( entity, record.id, controller.signal )
+			const request = remoteSite
+				? client.getRemote( entity, record.id, remoteSite, controller.signal )
+				: client.get( entity, record.id, controller.signal );
+			request
 				.then( ( full ) => {
 					setSelected( full ?? record );
 					setDetailLoading( false );
@@ -267,8 +298,8 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 					setDetailLoading( false );
 				} );
 		},
-		[ client, entity, expandedId ]
-	);
+		[ client, entity, expandedId, remoteSite ]
+);
 
 	const runResearch = (): void => {
 		if ( ! entity || ! researchQuery.trim() ) {
@@ -432,6 +463,28 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 				<p className="nvoos-pro-spa-page__subtitle">{ pageCopy.subtitle }</p>
 			</header>
 
+			{ allowRemote && (
+				<SitePicker
+					value={ remoteSite }
+					onChange={ ( siteId ) => {
+						try {
+							window.localStorage.setItem( REMOTE_SITE_KEY, siteId );
+						} catch {
+							// localStorage unavailable — session-only.
+						}
+						setRemoteSite( siteId );
+						setExpandedId( null );
+						setSelected( null );
+					} }
+				/>
+			) }
+
+			{ remoteSite && (
+				<p className="nvoos-pro-spa-settings__hint" role="status">
+					{ __( 'Browsing a remote site — read-only. Create and Research are hidden.', 'nvoos-pro-spa' ) }
+				</p>
+			) }
+
 			{ entities.length > 1 && (
 				<div className="nvoos-pro-spa-records-tabs" role="tablist" aria-label={ __( 'Entities', 'nvoos-pro-spa' ) }>
 					{ entities.map( ( e ) => (
@@ -476,7 +529,7 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 				</form>
 			) }
 
-			{ entity && (
+			{ entity && ! remoteSite && (
 				<section className="nvoos-pro-spa-records-research" aria-label={ __( 'Research & Add', 'nvoos-pro-spa' ) }>
 					<h3 className="nvoos-pro-spa-records-detail__title">
 						{ __( 'Research & Add', 'nvoos-pro-spa' ) } { entity.singular.toLowerCase() }

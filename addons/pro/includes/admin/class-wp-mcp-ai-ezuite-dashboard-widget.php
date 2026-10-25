@@ -39,6 +39,16 @@ class WP_MCP_AI_EZuite_Dashboard_Widget {
 			return;
 		}
 
+		/**
+		 * Kill-switch for the wp-admin EZuite dashboard widget (Proposal 089
+		 * Phase 4f). The console renders the same metrics through the
+		 * dashboards feature; flip this filter off per cohort once console
+		 * parity is verified.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_ezuite_widget', true ) ) {
+			return;
+		}
+
 		wp_add_dashboard_widget(
 			'wp_mcp_ai_ezuite_dashboard_widget',
 			__( 'EZuite Inventory Sync', 'mcp-ai-wpoos-pro' ),
@@ -47,14 +57,20 @@ class WP_MCP_AI_EZuite_Dashboard_Widget {
 	}
 
 	/**
-	 * Render the dashboard widget.
+	 * Inventory-health metrics for the console dashboards feature
+	 * (Proposal 089 Phase 4f — promoted public seam; the wp-admin widget
+	 * renders the same payload).
 	 *
-	 * @since 1.9.0
+	 * @since 2.4.0
+	 * @return array|WP_Error Metric payload or unavailable error.
 	 */
-	public static function render_widget() {
+	public static function get_dashboard_data() {
 		if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
-			echo '<p>' . esc_html__( 'EZuite CCT Manager is not available.', 'mcp-ai-wpoos-pro' ) . '</p>';
-			return;
+			return new WP_Error(
+				'ezuite_cct_unavailable',
+				__( 'EZuite CCT Manager is not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 501 )
+			);
 		}
 
 		$cct_manager = new WP_MCP_AI_EZuite_CCT_Manager();
@@ -62,12 +78,6 @@ class WP_MCP_AI_EZuite_Dashboard_Widget {
 		$last_sync   = $cct_manager->get_last_sync_time();
 		$is_fresh    = $cct_manager->is_fresh();
 		$row_count   = $cct_manager->get_row_count();
-
-		if ( empty( $items ) ) {
-			echo '<p>' . esc_html__( 'No inventory data yet. Run a sync to populate the cache.', 'mcp-ai-wpoos-pro' ) . '</p>';
-			echo '<p><a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-ezuite-toolkit-settings' ) ) . '" class="button">' . esc_html__( 'Go to EZuite Toolkit', 'mcp-ai-wpoos-pro' ) . '</a></p>';
-			return;
-		}
 
 		$settings      = get_option( 'wp_mcp_ai_ezuite_toolkit_settings', array() );
 		$low_threshold = isset( $settings['low_stock_threshold'] ) ? absint( $settings['low_stock_threshold'] ) : 5;
@@ -98,8 +108,59 @@ class WP_MCP_AI_EZuite_Dashboard_Widget {
 			++$warehouses[ $wh ];
 		}
 
-		// Sort warehouses by item count.
+		// Sort warehouses by item count and shape the list rows.
 		arsort( $warehouses );
+		$warehouse_rows = array();
+		foreach ( array_slice( $warehouses, 0, 5, true ) as $name => $count ) {
+			$warehouse_rows[] = array(
+				'name'  => sanitize_text_field( (string) $name ),
+				'count' => absint( $count ),
+			);
+		}
+
+		return array(
+			'in_stock'      => $in_stock,
+			'low_stock'     => $low_stock,
+			'out_of_stock'  => $out_of_stock,
+			'total_items'   => absint( $row_count ),
+			'total_value'   => (float) $total_value,
+			'last_sync'     => sanitize_text_field( (string) $last_sync ),
+			'is_fresh'      => (bool) $is_fresh,
+			'low_threshold' => $low_threshold,
+			'warehouses'    => $warehouse_rows,
+		);
+	}
+
+	/**
+	 * Render the dashboard widget.
+	 *
+	 * @since 1.9.0
+	 */
+	public static function render_widget() {
+		$data = self::get_dashboard_data();
+		if ( is_wp_error( $data ) ) {
+			echo '<p>' . esc_html( $data->get_error_message() ) . '</p>';
+			return;
+		}
+
+		$in_stock     = $data['in_stock'];
+		$low_stock    = $data['low_stock'];
+		$out_of_stock = $data['out_of_stock'];
+		$row_count    = $data['total_items'];
+		$total_value  = $data['total_value'];
+		$last_sync    = $data['last_sync'];
+		$is_fresh     = $data['is_fresh'];
+		$low_threshold = $data['low_threshold'];
+		$warehouses   = array();
+		foreach ( $data['warehouses'] as $row ) {
+			$warehouses[ $row['name'] ] = $row['count'];
+		}
+
+		if ( 0 === $row_count && empty( $data['warehouses'] ) ) {
+			echo '<p>' . esc_html__( 'No inventory data yet. Run a sync to populate the cache.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			echo '<p><a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-ezuite-toolkit-settings' ) ) . '" class="button">' . esc_html__( 'Go to EZuite Toolkit', 'mcp-ai-wpoos-pro' ) . '</a></p>';
+			return;
+		}
 		?>
 		<div class="ezuite-dashboard-widget">
 			<div class="ezuite-health-gauges" style="display:flex; gap:12px; margin-bottom:12px;">

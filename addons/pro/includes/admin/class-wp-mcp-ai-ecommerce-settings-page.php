@@ -48,6 +48,16 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 			return;
 		}
 
+		/**
+		 * Kill-switch for the wp-admin E-Commerce Toolkit surface
+		 * (Proposal 089 Phase 2b). The Complete Console renders the same
+		 * toolkit settings through the schema-driven settings surface; flip
+		 * this filter off per cohort once console parity is verified.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_ecommerce_toolkit', true ) ) {
+			return;
+		}
+
 		add_menu_page(
 			__( 'E-Commerce Toolkit', 'mcp-ai-wpoos-pro' ),
 			__( 'E-Commerce Toolkit', 'mcp-ai-wpoos-pro' ),

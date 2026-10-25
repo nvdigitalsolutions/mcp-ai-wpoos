@@ -80,21 +80,45 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
       },
     ],
   },
-  {
-    id: 'command-centers',
-    label: 'Command Centers',
-    items: [
-      { path: '/crm', label: 'CRM', icon: '🏢', capability: 'manage_options', feature: 'crm' },
-      { path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options', feature: 'project_management' },
-      { path: '/professions', label: 'Professions', icon: '👔', capability: 'manage_options' },
-      { path: '/teams', label: 'Teams', icon: '👥', capability: 'manage_options' },
-      { path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options', feature: 'calendar_booking' },
-      { path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options', feature: 'fnb' },
-      { path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options' },
-      { path: '/connections', label: 'Connections', icon: '🔌', capability: 'manage_options' },
-      { path: '/media-ops', label: 'Media Ops', icon: '🎞️', capability: 'manage_options' },
-    ],
-  },
+  	{
+  		id: 'command-centers',
+  		label: 'Command Centers',
+  		items: [
+  			{ path: '/crm', label: 'CRM', icon: '🏢', capability: 'manage_options', feature: 'crm' },
+  			{ path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options', feature: 'project_management' },
+  			{ path: '/professions', label: 'Professions', icon: '👔', capability: 'manage_options' },
+  			{ path: '/teams', label: 'Teams', icon: '👥', capability: 'manage_options' },
+  			{ path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options', feature: 'calendar_booking' },
+  			{ path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options', feature: 'fnb' },
+  			{ path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options' },
+  			{ path: '/connections', label: 'Connections', icon: '🔌', capability: 'manage_options' },
+  			{ path: '/media-ops', label: 'Media Ops', icon: '🎞️', capability: 'manage_options' },
+  		],
+  	},
+  	{
+  		id: 'commerce',
+  		label: 'Commerce',
+  		items: [
+  			// Proposal 089 — the four commerce toolkits, gated on their
+  			// enable toggles (server-side feature map mirrors the WooCommerce
+  			// presence gate, so pages never render against a dead backend).
+  			{ path: '/ecommerce', label: 'E-Commerce', icon: '🛒', capability: 'manage_options', feature: 'ecommerce' },
+  			{ path: '/ezuite', label: 'EZuite ERP', icon: '🏭', capability: 'manage_options', feature: 'ezuite' },
+  			{ path: '/shopify-sync', label: 'Shopify Sync', icon: '🛍️', capability: 'manage_options', feature: 'shopify_sync' },
+  			{ path: '/flowhub', label: 'FlowHub', icon: '🌿', capability: 'manage_options', feature: 'flowhub' },
+  			{ path: '/products', label: 'Products', icon: '🏷️', capability: 'manage_options', feature: 'ecommerce' },
+  		],
+  	},
+  	{
+  		id: 'content',
+  		label: 'Content',
+  		items: [
+  			// Proposal 089 Phase 4e — posts/pages browse surface. Gated on
+  			// manage_options to match the records schema endpoint's contract
+  			// (widening to edit_posts is a follow-up).
+  			{ path: '/content', label: 'Posts & Pages', icon: '📰', capability: 'manage_options', feature: 'content_records' },
+  		],
+  	},
   {
     id: 'insights',
     label: 'Insights',
