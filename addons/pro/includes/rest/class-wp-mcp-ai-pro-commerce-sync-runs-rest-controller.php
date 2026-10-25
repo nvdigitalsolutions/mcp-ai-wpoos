@@ -96,6 +96,13 @@ class WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller {
 						'maximum'           => 50,
 						'sanitize_callback' => 'absint',
 					),
+					// Proposal 089 Phase B — proxy against a Remote Sites
+					// WordPress connection instead of the local logs.
+					'remote_site' => array(
+						'required'          => false,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
 				),
 			)
 		);
@@ -166,13 +173,20 @@ class WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_runs( WP_REST_Request $request ) {
+		$toolkit     = $request->get_param( 'toolkit' );
+		$remote_site = $request->get_param( 'remote_site' );
+		$limit       = absint( $request->get_param( 'limit' ) );
+		$limit       = ( $limit > 0 ) ? $limit : 20;
+
+		// Phase B — a remote site id proxies against that site's own
+		// sync-runs bridge (read-only, credentials stay server-side).
+		if ( '' !== (string) $remote_site ) {
+			return $this->get_remote_runs( $remote_site, (string) $toolkit, $limit );
+		}
+
 		if ( ! $this->logs_available() ) {
 			return $this->unavailable_error();
 		}
-
-		$toolkit = $request->get_param( 'toolkit' );
-		$limit   = absint( $request->get_param( 'limit' ) );
-		$limit   = ( $limit > 0 ) ? $limit : 20;
 
 		$slugs = ( '' !== (string) $toolkit ) ? array( $toolkit ) : self::TOOLKIT_SLUGS;
 		$runs  = array();
@@ -202,6 +216,102 @@ class WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller {
 			array(
 				'success' => true,
 				'data'    => array( 'runs' => $runs ),
+			)
+		);
+	}
+
+	/**
+	 * Proxy the sync-runs list against a Remote Sites WordPress connection.
+	 *
+	 * Read-only: the remote site's own controller enforces its permission
+	 * check (manage_options on that site) on top of this site's check.
+	 *
+	 * @since 2.4.0
+	 * @param string $remote_site Remote connection id.
+	 * @param string $toolkit     Optional toolkit slug.
+	 * @param int    $limit       Run limit.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	private function get_remote_runs( $remote_site, $toolkit, $limit ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return new WP_Error(
+				'sync_runs_remote_unavailable',
+				__( 'Remote Sites is unavailable on this site.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 501 )
+			);
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $remote_site );
+		if ( null === $connection ) {
+			return new WP_Error(
+				'sync_runs_unknown_remote_site',
+				__( 'Unknown remote site connection.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( empty( $connection['enabled'] ) ) {
+			return new WP_Error(
+				'sync_runs_remote_site_disabled',
+				__( 'The remote site connection is disabled.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+		if ( 'wordpress' !== $type ) {
+			return new WP_Error(
+				'sync_runs_remote_site_not_wordpress',
+				__( 'Only WordPress remote sites expose sync runs.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$endpoint = add_query_arg(
+			array(
+				'toolkit' => sanitize_key( $toolkit ),
+				'limit'   => $limit,
+			),
+			'mcp-ai-pro/v1/commerce/sync-runs'
+		);
+
+		$response = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'sync_runs_remote_failed',
+				sprintf(
+					/* translators: %s: remote error message */
+					__( 'Remote sync-run request failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				),
+				array( 'status' => 502 )
+			);
+		}
+
+		$runs = ( is_array( $response ) && isset( $response['data']['runs'] ) && is_array( $response['data']['runs'] ) )
+			? $response['data']['runs']
+			: array();
+
+		// The remote controller already escaped at exit; re-sanitize the
+		// passthrough surface defensively (never trust a proxy payload).
+		$runs = array_map(
+			function ( $run ) {
+				if ( ! is_array( $run ) ) {
+					return array();
+				}
+				$toolkit = isset( $run['toolkit'] ) ? sanitize_key( (string) $run['toolkit'] ) : '';
+				return $this->sanitize_run_summary( $run, $toolkit );
+			},
+			$runs
+		);
+
+		return rest_ensure_response(
+			array(
+				'success'     => true,
+				'data'        => array(
+					'runs'        => $runs,
+					'remote_site' => sanitize_key( $remote_site ),
+				),
 			)
 		);
 	}

@@ -32,7 +32,8 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Restore the settings registry to its boot-time state.
+	 * Restore the settings registry to its boot-time state and drop the
+	 * Remote Sites fixtures this suite may have created.
 	 */
 	public function tear_down() {
 		foreach ( $this->registered_sections as $section_id ) {
@@ -40,6 +41,9 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 		}
 		$this->registered_sections = array();
 		delete_option( 'wp_mcp_ai_settings' );
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
+		}
 		parent::tear_down();
 	}
 
@@ -281,6 +285,145 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 		$data = $result->get_data();
 		$this->assertTrue( $data['success'] );
 		$this->assertArrayHasKey( 'runs', $data['data'] );
+	}
+
+	/**
+	 * Phase B — an unknown remote site id gets a structured 404.
+	 */
+	public function test_sync_runs_unknown_remote_site_is_404() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller' ) ) {
+			$this->markTestSkipped( 'Pro addon not loaded.' );
+		}
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/commerce/sync-runs' );
+		$request->set_param( 'remote_site', 'no-such-site' );
+
+		$result = ( new WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller() )->get_runs( $request );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'sync_runs_unknown_remote_site', $result->get_error_code() );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * Phase B — a disabled remote WordPress connection is refused.
+	 */
+	public function test_sync_runs_disabled_remote_site_is_403() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller' ) ) {
+			$this->markTestSkipped( 'Pro addon not loaded.' );
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Remote Site Manager not loaded.' );
+		}
+
+		$save = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Disabled fixture store',
+				'url'             => 'https://store.example.com',
+				'connection_type' => 'wordpress',
+				'enabled'         => 0,
+			)
+		);
+		if ( is_wp_error( $save ) ) {
+			$this->markTestSkipped( 'Connection fixture rejected: ' . $save->get_error_message() );
+		}
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/commerce/sync-runs' );
+		$request->set_param( 'remote_site', $save );
+
+		$result = ( new WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller() )->get_runs( $request );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'sync_runs_remote_site_disabled', $result->get_error_code() );
+		$this->assertSame( 403, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * Phase B — the remote proxy passes the run payload through (zero real
+	 * HTTP — the pre_http_request filter intercepts the outbound request).
+	 */
+	public function test_sync_runs_remote_proxy_returns_runs() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller' ) ) {
+			$this->markTestSkipped( 'Pro addon not loaded.' );
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Remote Site Manager not loaded.' );
+		}
+
+		$save = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Remote fixture store',
+				'url'             => 'https://store.example.com',
+				'connection_type' => 'wordpress',
+				'auth_type'       => 'application_password',
+				'username'        => 'fixture',
+				'password'        => 'app-password',
+				'enabled'         => 1,
+			)
+		);
+		if ( is_wp_error( $save ) ) {
+			$this->markTestSkipped( 'Connection fixture rejected: ' . $save->get_error_message() );
+		}
+
+		$http_calls = 0;
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$http_calls ) {
+				$http_calls++;
+				$payload = wp_json_encode(
+					array(
+						'success' => true,
+						'data'    => array(
+							'runs' => array(
+								array(
+									'toolkit'       => 'woocommerce',
+									'run_id'        => 'remote-run-1',
+									'connection_id' => '',
+									'dry_run'       => false,
+									'started_at'    => '2026-10-25 10:00:00',
+									'finished_at'   => '2026-10-25 10:01:00',
+									'status'        => 'completed',
+									'summary'       => array(
+										'items_updated' => 4,
+										'items_skipped' => 0,
+										'items_errored' => 0,
+									),
+								),
+							),
+						),
+					)
+				);
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => $payload,
+				);
+			},
+			10,
+			3
+		);
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/commerce/sync-runs' );
+		$request->set_param( 'remote_site', $save );
+		$request->set_param( 'toolkit', 'woocommerce' );
+
+		$result = ( new WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller() )->get_runs( $request );
+
+		$this->assertNotWPError( $result );
+		$data = $result->get_data();
+		$this->assertTrue( $data['success'] );
+		$this->assertSame( $save, $data['data']['remote_site'] );
+		$this->assertCount( 1, $data['data']['runs'] );
+		$this->assertSame( 'remote-run-1', $data['data']['runs'][0]['run_id'] );
+		$this->assertSame( 1, $http_calls );
 	}
 
 	/**

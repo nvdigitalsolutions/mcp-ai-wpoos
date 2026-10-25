@@ -55,6 +55,7 @@ function setFetchRoutes( routes: Record< string, unknown > ): void {
 afterEach( () => {
 	vi.restoreAllMocks();
 	cleanup();
+	window.localStorage.removeItem( 'nvoos-console.commerce.site' );
 	delete ( window as unknown as Record< string, unknown > ).NVOOS_PRO_SPA;
 } );
 
@@ -180,5 +181,57 @@ describe( 'CommerceToolkitPage', () => {
 		} );
 		expect( screen.getByText( 'Enable E-commerce Toolkit' ) ).toBeInTheDocument();
 		expect( screen.queryByText( 'Unrelated field' ) ).not.toBeInTheDocument();
+	} );
+
+	it( 'sends remote_site on the sync-runs fetch when a WordPress remote site is selected (Phase B)', async () => {
+		setRuntime();
+		setFetchRoutes( {
+			'/remote-sites': {
+				items: [
+					{
+						id: 'store-1',
+						name: 'Store One',
+						connection_type: 'wordpress',
+						url: 'https://store-one.example.com',
+						enabled: 1,
+						source: 'pro',
+					},
+					{
+						id: 'shop-9',
+						name: 'Shopify Store',
+						connection_type: 'shopify',
+						url: 'https://shop.example.com',
+						enabled: 1,
+						source: 'pro',
+					},
+				],
+			},
+			'/commerce/sync-runs': { success: true, data: { runs: [] } },
+		} );
+		render( <CommerceToolkitPage toolkit="ecommerce" /> );
+
+		fireEvent.click( screen.getByRole( 'tab', { name: 'Sync Runs' } ) );
+
+		await waitFor( () => {
+			expect( screen.getByText( 'Site' ) ).toBeInTheDocument();
+		} );
+
+		// Only WordPress connections are selectable.
+		const picker = screen.getByLabelText( 'Site' ) as HTMLSelectElement;
+		expect( picker.options.length ).toBe( 2 ); // local + Store One.
+		expect( picker.options[ 1 ].text ).toBe( 'Store One' );
+
+		fireEvent.change( picker, { target: { value: 'store-1' } } );
+
+		await waitFor( () => {
+			expect( global.fetch ).toHaveBeenCalledWith(
+				expect.stringContaining( '/commerce/sync-runs?toolkit=woocommerce' ),
+				expect.any( Object )
+			);
+			expect( global.fetch ).toHaveBeenCalledWith(
+				expect.stringContaining( 'remote_site=store-1' ),
+				expect.any( Object )
+			);
+		} );
 	} );
 } );

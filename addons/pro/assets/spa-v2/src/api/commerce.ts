@@ -13,6 +13,16 @@ export interface SyncRunCounters {
 	items_errored: number;
 }
 
+/** Redacted Remote Sites connection (never-echo-back shape). */
+export interface RemoteSiteSummary {
+	id: string;
+	name?: string;
+	connection_type?: string;
+	url?: string;
+	enabled?: boolean | number;
+	source?: string;
+}
+
 export interface SyncRunSummary {
 	toolkit: string;
 	run_id: string;
@@ -39,16 +49,33 @@ export class CommerceClient {
 		this.nonce = opts.nonce;
 	}
 
-	/** GET /commerce/sync-runs?toolkit={toolkit} — newest first. */
-	async syncRuns( toolkit: string, limit = 20, signal?: AbortSignal ): Promise< SyncRunSummary[] > {
+	/** GET /commerce/sync-runs?toolkit={toolkit} — newest first.
+	 *  When `remoteSite` is set the request proxies against that Remote
+	 *  Sites WordPress connection (read-only, Phase B). */
+	async syncRuns(
+		toolkit: string,
+		limit = 20,
+		remoteSite = '',
+		signal?: AbortSignal
+	): Promise< SyncRunSummary[] > {
 		const url = new URL( `${ this.base }/commerce/sync-runs`, window.location.origin );
 		url.searchParams.set( 'toolkit', toolkit );
 		url.searchParams.set( 'limit', String( Math.min( Math.max( limit, 1 ), 50 ) ) );
+		if ( remoteSite ) {
+			url.searchParams.set( 'remote_site', remoteSite );
+		}
 		const data = await this.request< { success: boolean; data: { runs: SyncRunSummary[] } } >( {
 			url: url.toString(),
 			signal,
 		} );
 		return data?.data?.runs ?? [];
+	}
+
+	/** GET /remote-sites — redacted connection list for the site picker. */
+	async remoteSites( signal?: AbortSignal ): Promise< RemoteSiteSummary[] > {
+		const url = new URL( `${ this.base }/remote-sites`, window.location.origin );
+		const data = await this.request< { items: RemoteSiteSummary[] } >( { url: url.toString(), signal } );
+		return data?.items ?? [];
 	}
 
 	private async request< T >( req: { url: string; signal?: AbortSignal } ): Promise< T | null > {

@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import { SettingsForm } from '../settings/SettingsForm';
+import { SitePicker } from './SitePicker';
 import { CommerceClient, type SyncRunSummary } from '../../api/commerce';
 
 export interface CommerceToolkitConfig {
@@ -87,6 +88,15 @@ export function CommerceToolkitPage( { toolkit }: { toolkit: string } ): JSX.Ele
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
 	const config = COMMERCE_TOOLKITS[ toolkit ];
 	const [ tab, setTab ] = useState< CommerceTab >( 'overview' );
+	// Phase B — the selected site drives the sync-runs bridge; the local
+	// site is the default (empty id).
+	const [ siteId, setSiteId ] = useState< string >( () => {
+		try {
+			return window.localStorage.getItem( 'nvoos-console.commerce.site' ) ?? '';
+		} catch {
+			return '';
+		}
+	} );
 
 	const client = useMemo(
 		() => new CommerceClient( { base: runtime?.proApi ?? '', nonce: runtime?.nonce ?? '' } ),
@@ -148,6 +158,8 @@ export function CommerceToolkitPage( { toolkit }: { toolkit: string } ): JSX.Ele
 				) ) }
 			</div>
 
+			{ tab === 'sync' && <SitePicker value={ siteId } onChange={ setSiteId } /> }
+
 			{ tab === 'overview' && (
 				<section className="nvoos-pro-spa-settings__section" aria-label={ __( 'Overview', 'nvoos-pro-spa' ) }>
 					<p className="nvoos-pro-spa-settings__hint">{ config.description }</p>
@@ -171,12 +183,20 @@ export function CommerceToolkitPage( { toolkit }: { toolkit: string } ): JSX.Ele
 				<SettingsForm title={ config.title } tabFilter={ config.settingsTab } includeKeys={ [ config.enableKey ] } />
 			) }
 
-			{ tab === 'sync' && <SyncRunsPanel client={ client } toolkit={ config.logSlug } /> }
+			{ tab === 'sync' && <SyncRunsPanel client={ client } toolkit={ config.logSlug } remoteSite={ siteId } /> }
 		</div>
 	);
 }
 
-function SyncRunsPanel( { client, toolkit }: { client: CommerceClient; toolkit: string } ): JSX.Element {
+function SyncRunsPanel( {
+	client,
+	toolkit,
+	remoteSite,
+}: {
+	client: CommerceClient;
+	toolkit: string;
+	remoteSite: string;
+} ): JSX.Element {
 	const [ runs, setRuns ] = useState< SyncRunSummary[] >( [] );
 	const [ loading, setLoading ] = useState< boolean >( true );
 	const [ error, setError ] = useState< string | null >( null );
@@ -185,13 +205,13 @@ function SyncRunsPanel( { client, toolkit }: { client: CommerceClient; toolkit: 
 		setLoading( true );
 		setError( null );
 		try {
-			setRuns( await client.syncRuns( toolkit ) );
+			setRuns( await client.syncRuns( toolkit, 20, remoteSite ) );
 		} catch ( err ) {
 			setError( err instanceof Error ? err.message : String( err ) );
 		} finally {
 			setLoading( false );
 		}
-	}, [ client, toolkit ] );
+	}, [ client, toolkit, remoteSite ] );
 
 	useEffect( () => {
 		void load();
