@@ -3241,10 +3241,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// never miss an existing profession due to non-publish
 			// status, stale repository caches, or slug changes between
 			// knowledge-base versions.
-			$preserved_datasets = array();
-			$slug_to_post       = array();
-			$title_to_post      = array();
-			$existing_posts     = get_posts(
+			$preserved_datasets  = array();
+			$slug_to_post        = array();
+			$title_to_post       = array();
+			$replaced_slug_by_id = array();
+			$existing_posts      = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_profession',
 					'posts_per_page' => -1,
@@ -3253,6 +3254,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 
 			foreach ( $existing_posts as $post ) {
+				// Teams store resolved profession post IDs in their members
+				// meta — the destructive Replace All orphans them, so capture
+				// each pre-delete ID → slug pair for re-linking afterwards.
+				$replaced_slug_by_id[ $post->ID ] = $post->post_name;
 				$slug_to_post[ $post->post_name ] = $post;
 				// Build title map — only the first (oldest) post wins so
 				// that we don't pick a duplicate created by a previous
@@ -3418,12 +3423,30 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 			WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
 
+			// A destructive Replace All deleted every profession post, which
+			// orphans the member IDs stored on teams — re-link them through
+			// the captured slug map so teams survive the replace.
+			$relink_note = '';
+			if ( 'replace' === $action && ! empty( $replaced_slug_by_id ) ) {
+				if ( ! class_exists( 'WP_MCP_AI_Team_Repository' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-team-repository.php';
+				}
+				$relinked_teams = WP_MCP_AI_Team_Repository::relink_members_after_profession_replace( $replaced_slug_by_id );
+				if ( $relinked_teams > 0 ) {
+					$relink_note = sprintf(
+						/* translators: %d: Number of teams whose member links were refreshed */
+						__( ' Team member links refreshed: %d teams.', 'mcp-ai-wpoos' ),
+						$relinked_teams
+					);
+				}
+			}
+
 			$message = sprintf(
 				/* translators: 1: Number of professions created, 2: Number of professions updated */
 				__( 'Professions reloaded successfully. Created: %1$d, Updated: %2$d', 'mcp-ai-wpoos' ),
 				$saved,
 				$updated
-			);
+			) . $relink_note;
 
 			if ( ! empty( $errors ) ) {
 				$message .= ' ' . sprintf(

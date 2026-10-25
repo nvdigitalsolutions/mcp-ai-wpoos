@@ -319,6 +319,12 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 	 * could not render anything but title/content. Sanitizers mirror the
 	 * schema types.
 	 *
+	 * Each entity post type also gains custom-fields support: WP core only
+	 * attaches the `meta` property to the posts REST schema for
+	 * custom-fields-supporting types, so without it every
+	 * register_post_meta( show_in_rest ) key below stays invisible to
+	 * wp/v2 (the response context filter strips it).
+	 *
 	 * @since 2.4.0
 	 * @return void
 	 */
@@ -331,6 +337,13 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			$post_type = $config['post_type'];
 			if ( ! post_type_exists( $post_type ) ) {
 				continue;
+			}
+
+			// WP core's posts controller only adds `meta` to the REST
+			// schema when the post type supports custom-fields — grant it
+			// so the meta keys registered below are actually served.
+			if ( ! post_type_supports( $post_type, 'custom-fields' ) ) {
+				add_post_type_support( $post_type, 'custom-fields' );
 			}
 
 			$meta_schema = WP_MCP_AI_Pro_CPT_Meta_Schema::get( $post_type );

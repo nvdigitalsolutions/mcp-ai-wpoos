@@ -165,6 +165,7 @@ class WP_MCP_AI_Profession_CPT {
 		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'init', array( $this, 'register_meta' ) );
 		add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
+		add_action( 'do_meta_boxes', array( $this, 'remove_custom_fields_metabox' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_post' ), 10, 2 );
 		add_filter( 'use_block_editor_for_post_type', array( $this, 'disable_block_editor' ), 10, 2 );
 		add_filter( 'manage_' . self::POST_TYPE . '_posts_columns', array( $this, 'add_admin_columns' ) );
@@ -234,7 +235,13 @@ class WP_MCP_AI_Profession_CPT {
 			'hierarchical'       => false,
 			'menu_position'      => null,
 			'menu_icon'          => 'dashicons-businessperson',
-			'supports'           => array( 'title', 'editor', 'thumbnail' ),
+			// custom-fields support is what makes WP core attach the `meta`
+			// property to the posts REST schema — without it every
+			// register_post_meta( ..., show_in_rest => true ) below is
+			// invisible to wp/v2, and the console Records detail renders
+			// empty values. The raw Custom Fields meta box is removed for
+			// admins (this CPT has its own structured metaboxes).
+			'supports'           => array( 'title', 'editor', 'thumbnail', 'custom-fields' ),
 			'show_in_rest'       => true, // Proposal 084 W12: the console Records feature consumes professions via wp/v2.
 		);
 
@@ -716,6 +723,26 @@ class WP_MCP_AI_Profession_CPT {
 			return false;
 		}
 		return $use_block_editor;
+	}
+
+	/**
+	 * Remove the raw Custom Fields meta box.
+	 *
+	 * The CPT declares custom-fields support so WP core exposes its
+	 * registered meta over the wp/v2 REST API (the console Records
+	 * surface reads it). In the classic editor that support also renders
+	 * the raw "Custom Fields" box — this CPT has its own structured
+	 * metaboxes, so the raw one is hidden.
+	 *
+	 * Hooked on do_meta_boxes: core registers the postcustom box after
+	 * add_meta_boxes fires, so removal must run later than registration.
+	 *
+	 * @return void
+	 */
+	public function remove_custom_fields_metabox() {
+		remove_meta_box( 'postcustom', self::POST_TYPE, 'normal' );
+		remove_meta_box( 'postcustom', self::POST_TYPE, 'side' );
+		remove_meta_box( 'postcustom', self::POST_TYPE, 'advanced' );
 	}
 
 	/**
