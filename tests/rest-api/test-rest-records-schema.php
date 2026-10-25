@@ -143,6 +143,15 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 
 		( new WP_MCP_AI_Pro_Records_REST_Controller() )->register_meta_in_rest();
 
+		// WP core only attaches the `meta` property to the posts REST
+		// schema for custom-fields-supporting types — the records bridge
+		// must grant that support or the console Records page can never
+		// read a value (the 2026-10-25 all-`—` professions bug).
+		$this->assertTrue(
+			post_type_supports( 'mcp_ai_company', 'custom-fields' ),
+			'Record entity post types must support custom-fields for wp/v2 meta exposure.'
+		);
+
 		$has_any = false;
 		foreach ( WP_MCP_AI_Pro_CPT_Meta_Schema::get( 'mcp_ai_company' ) as $field ) {
 			if ( ! empty( $field['meta_key'] ) ) {
@@ -169,6 +178,65 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 				'Profession meta should be REST-exposed.'
 			);
 		}
+	}
+
+	/**
+	 * The profession CPT's registered meta is actually served by wp/v2.
+	 *
+	 * End-to-end pin for the 2026-10-25 console bug: the CPT registered
+	 * meta with show_in_rest but did not declare custom-fields support,
+	 * so WP core never attached `meta` to the posts schema and the
+	 * Records detail rendered every field as `—`.
+	 */
+	public function test_profession_meta_served_by_wp_v2() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			$this->markTestSkipped( 'Profession CPT class not loaded in this bootstrap.' );
+		}
+
+		if ( ! post_type_exists( 'mcp_ai_profession' ) ) {
+			$this->ensure_cpt( 'mcp_ai_profession' );
+		}
+
+		// wp-phpunit unregisters every registered meta key in tear_down(), so
+		// re-register the CPT and its meta here (both idempotent) to keep this
+		// test order-independent within the single-process run.
+		$cpt = new WP_MCP_AI_Profession_CPT();
+		$cpt->register_post_type();
+		$cpt->register_meta();
+
+		$this->assertTrue(
+			post_type_supports( 'mcp_ai_profession', 'custom-fields' ),
+			'The profession CPT must declare custom-fields support.'
+		);
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Profession',
+			)
+		);
+		update_post_meta( $post_id, '_wp_mcp_ai_profession_category', 'technical' );
+
+		$request  = new WP_REST_Request( 'GET', '/wp/v2/mcp_ai_profession/' . $post_id );
+		$request->set_param( 'context', 'edit' );
+		$request->set_param( '_fields', 'id,title,meta' );
+		$response = rest_do_request( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'meta', $data, 'wp/v2 must serve the meta field.' );
+		$this->assertArrayHasKey(
+			'_wp_mcp_ai_profession_category',
+			$data['meta'],
+			'The registered profession meta must appear in the response.'
+		);
+		$this->assertSame( 'technical', $data['meta']['_wp_mcp_ai_profession_category'] );
+
+		wp_delete_post( $post_id, true );
 	}
 
 	/**

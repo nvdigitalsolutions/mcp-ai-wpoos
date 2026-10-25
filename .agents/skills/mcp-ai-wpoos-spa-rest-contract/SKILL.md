@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-rest-contract
-description: Audit NV oOS console SPA clients (addons/pro/assets/spa-v2/src/api/*.ts) against their WordPress REST controllers and fix contract drift — phantom fields, ignored params, missing routes/methods, admin-gated route registration (front-end SPA gets core 404s), envelope mismatches, field-name drift, settings gates, route collisions (last registrant silently wins), and empty-then-loaded loading-state flashes. Covers the audit path (config key → PHP emission → route → boot path → handler → response shape), the live REST-index route-presence cross-check, fix decision rules, the 2026-10-21 baseline + registration pass, parallel sub-agent delegation, and the validation matrix. Use when a console page shows blank or wrong data, when adding a console surface, or when asked to "audit the REST contracts".
+description: Audit NV oOS console SPA clients (addons/pro/assets/spa-v2/src/api/*.ts) against their WordPress REST controllers and fix contract drift — phantom fields, ignored params, missing routes/methods, admin-gated route registration (front-end SPA gets core 404s), envelope mismatches, field-name drift, settings gates, route collisions (last registrant silently wins), wp/v2 meta-stripping when a CPT lacks custom-fields support, and empty-then-loaded loading-state flashes. Covers the audit path (config key → PHP emission → route → boot path → handler → response shape), the live REST-index route-presence cross-check, fix decision rules, the 2026-10-21 baseline + registration pass, parallel sub-agent delegation, and the validation matrix. Use when a console page shows blank or wrong data, when adding a console surface, or when asked to "audit the REST contracts".
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.11"
   plugin-version-tested: "1.2.11"
-  last-updated: "2026-10-24"
+  last-updated: "2026-10-25"
 ---
 
 # NV oOS Console SPA ↔ REST Contract Audit
@@ -221,6 +221,34 @@ the form read fields the directory never returned).
       field — select value ∈ options, number is numeric, checkbox is bool,
       text/url/email/password are strings. 559 live fields, this pass found
       exactly `nvidia_model`.
+15. **wp/v2 `meta` stripped — the CPT lacks `custom-fields` support.** WP
+    core's `WP_REST_Posts_Controller` only registers the `meta` property in
+    a post type's REST schema (and only emits it from
+    `filter_response_by_context()`) when the post type declares
+    `supports => array( 'custom-fields' )`. A CPT that registers 20+
+    `show_in_rest => true` meta keys but omits `custom-fields` therefore
+    serves **every** meta value as absent — the SPA renders all expanded
+    detail fields as `—` while the list rows work fine. Real case
+    (2026-10-25, PR #7219): the profession CPT (`mcp_ai_profession`) lost
+    all of its meta fields from wp/v2 responses; the live OPTIONS schema on
+    console.nvoos.cloud had **zero** `meta` properties (same for the
+    records CPTs and even `mcp-ai-assistants`). Diagnosis: OPTIONS the CPT
+    route and check the schema for `meta`:
+
+    ```bash
+    curl -s -X OPTIONS https://<site>/wp-json/wp/v2/mcp_ai_profession \
+      | jq '.endpoints[0].args | keys'
+    ```
+
+    Fix: add `custom-fields` to the CPT `supports` array and hide the
+    metabox it would otherwise add (`remove_meta_box( 'postcustom', … )` on
+    `do_meta_boxes`), or call `register_meta_in_rest()` for the entity — it
+    internally grants the post type `custom-fields` support
+    (`includes/professions/class-wp-mcp-ai-profession-cpt.php`,
+    `addons/pro/includes/rest/class-wp-mcp-ai-pro-records-rest-controller.php`).
+    Pin with an end-to-end wp/v2 test that registers the CPT + meta INSIDE
+    the test body (wp-phpunit's `unregister_all_meta_keys()` wipes
+    bootstrap-registered keys — see the test-suite skill).
 
 ## Audit path per client (4 hops, verify every hop)
 
@@ -256,6 +284,11 @@ failure is auth or data. In tests, the same check is
 `rest_get_server()->get_routes( 'mcp-ai-pro/v1' )` after a fresh
 `rest_api_init` — never trust a controller test that registers the routes
 manually as a fallback (see bug class 8).
+
+For surfaces reading CPT data through **wp/v2** (records, professions,
+teams), also OPTIONS the CPT route and confirm `meta` is in the schema —
+without `custom-fields` support every meta field is silently absent (bug
+class 15).
 
 ## Fix decision rules
 
@@ -403,3 +436,14 @@ sub-agents; keep one coordinator for fixes + final gates.
   still enforces the feature flag (404 `rest_no_route` while disabled) and
   the Security_Manager IP/HTTPS posture checks. Every future public route
   follows this pattern.
+- **"Blank detail" can be a data bug, not a contract bug.** The 2026-10-25
+  `#/teams` "No profession members." symptom looked like a class-13 empty
+  state, but that frontend fix was already shipped and present in the dist
+  chunks — the real cause was server-side: the destructive "Replace All
+  Professions" reseed force-deletes and re-creates every profession post
+  with new IDs, orphaning the member IDs stored on team posts. The
+  catalogue badge counts the raw meta array; the members endpoint
+  re-resolves and drops the dead IDs. Before re-fixing a frontend
+  empty-state, verify the server data actually resolves — the reseed now
+  relinks members automatically
+  (`WP_MCP_AI_Team_Repository::relink_members_after_profession_replace()`).

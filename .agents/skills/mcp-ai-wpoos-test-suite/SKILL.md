@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 79 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, fallback-autoloader masking, init-time post-insert $wp_rewrite warnings, wp-phpunit _delete_all_posts boot wiping, queue-worker failure contract, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 84 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, fallback-autoloader masking, init-time post-insert $wp_rewrite warnings, wp-phpunit _delete_all_posts boot wiping, queue-worker failure contract, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-24"
+  last-updated: "2026-10-25"
   plugin-version: "1.2.11"
   plugin-version-tested: "1.2.11"
 ---
@@ -1335,6 +1335,28 @@ the changed files is the substantive gate; plan CI waits accordingly.
       those with `class_exists()` + `markTestSkipped` (the pattern in
       test-pro-spa-config-docs-hub.php), and keep the inactive-path test
       FIRST in the file (hit 2026-10-24, Proposal 087).
+
+  83. **wp-phpunit `unregister_all_meta_keys()` wipes bootstrap-registered
+      meta — end-to-end wp/v2 schema pins must re-register inside the test
+      body (2026-10-25, professions meta fix, PR #7219).**
+      `WP_UnitTestCase`'s teardown unregisters EVERY registered meta key
+      after each test (in
+      `vendor/wp-phpunit/wp-phpunit/includes/abstract-testcase.php`),
+      including keys registered at suite bootstrap. A test that merely
+      asserts pre-registered meta in a wp/v2 response therefore skips or
+      fails order-dependently. Fix: re-run the idempotent registration in
+      the test body — `new WP_MCP_AI_Profession_CPT();
+      register_post_type(); register_meta();` — so each assertion owns its
+      schema (`tests/rest-api/test-rest-records-schema.php`).
+
+  84. **Registered meta sanitizers fire on `add_post_meta`/`update_post_meta`
+      (pattern 10) — fabricate legacy/orphaned rows with a raw
+      `$wpdb->insert` into `postmeta` (2026-10-25, team-member relink tests,
+      PR #7219).** The team-members meta sanitizer drops dead/foreign IDs on
+      write, so `add_post_meta()` can never produce the orphaned legacy data
+      the relink must be tested against. Insert the raw row directly into
+      the `postmeta` table to bypass the sanitizer, then assert the relink
+      remaps it (`tests/test-team-member-relink.php`).
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
