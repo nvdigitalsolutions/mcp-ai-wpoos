@@ -1,9 +1,22 @@
 # Implementation Plan 089 — E-Commerce & Inventory Toolkits → Complete Console Surface Port
 
-**Status:** Ready for scheduling (slots into the Proposal 084 migration tracker)
+**Status:** Phases 2b, 3c, 4e, B (sync-runs) shipped on `feat/089-ecommerce-console-port` · 4f/6b partial · 5b deferred by design (per-cohort)
 **Date:** 2026-10-25
 **Proposal:** `docs/project/proposals/089-ecommerce-toolkits-console-surface-port-proposal.md`
 **Tracker:** `docs/project/plans/nvoos-complete-console-admin-migration-implementation.md`
+
+## Shipped status (2026-10-25)
+
+| Phase | State | Notes |
+|---|---|---|
+| 0 Preflight | ✅ Done in-line | Enable toggles are owned by the base `tools` settings section — commerce sections contribute only guardrail fields; FlowHub MCP connections already exist in the Remote Site Manager (`build_flowhub_mcp_app_config`) |
+| 2b Settings schemas | ✅ Shipped | 4 feature flags + 4 section classes + 4 registry tabs + kill-switch filters on the 4 wp-admin pages |
+| 3c Sync-run monitor | ✅ Shipped | `mcp-ai-pro/v1/commerce/sync-runs` (read-only) + Sync Runs tab |
+| 4e Records | ✅ Shipped | `product` (group `commerce`), `post`/`page` (group `content`); **deviation:** dedicated `/products` + `/content` routes instead of Records tabs on the commerce pages; `/content` gated `manage_options` (records schema endpoint contract) |
+| 4f Dashboards | ⚠️ Partial | Overview tabs + quick links shipped; widget-config port to the dashboards controller deferred |
+| B Connections | ⚠️ Partial | Remote-site sync-runs proxy (server + SitePicker + client) shipped; remote *records* browsing deferred |
+| 5b Retirement | ⏸️ Deferred by design | Kill-switches default-on; flip per cohort after console parity verification |
+| 6b Deep-links | ⚠️ Partial | Commerce pages link `/products` + `/connections`; wp-admin edit deep-links on records need the 084 Phase 6 machinery (not yet shipped) |
 
 This plan extends the 084 phase machinery (its invariants apply unchanged) with
 commerce-specific phases. Phase letters continue 084's numbering: **2b**

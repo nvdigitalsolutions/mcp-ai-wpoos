@@ -281,22 +281,19 @@ exists today.)
 
 ## 7. Open questions
 
-1. **FlowHub MCP vs REST** — FlowHub publishes an MCP server. Should the
-   FlowHub page consume plugin REST (parity with other toolkits) or wire
-   FlowHub MCP as an assistant MCP App and make the console page a thin
-   status surface? Decision needed before C7 (FlowHub dashboard).
-2. **Connection types for Shopify** — `remote_shopify_connection` stores
-   Shopify creds; should the Console Connections page add a "Shopify"
-   connection type (schema + test), or reuse the WP remote-site record with
-   a `type=shopify` field? Proposal 041's type registry is the precedent.
-3. **Content group name/cap** — `/content` under `edit_posts` vs
-   `manage_options`; confirm the product-research CCT names for the records
-   entity map (P7 stores CPT/CCT dual).
-4. **Multi-site write-through** — Phase B reads are safe; should any
-   console surface ever *write* cross-site (e.g. push a price sync to a
-   remote store), and if so under which gate?
-5. **EZuite ERP scope** — confirm whether EZuite sync is one-directional
-   (ERP → Woo) or bidirectional before defining the sync-run monitor schema.
+1. **FlowHub MCP vs REST** — ✅ *Partially resolved (2026-10-25):* the Remote Site
+   Manager already ships `build_flowhub_mcp_app_config()` + FlowHub MCP
+   connection support; the console FlowHub page uses the plugin REST path
+   for now. Wiring FlowHub MCP as an assistant MCP App remains an option.
+2. **Connection types for Shopify** — still open; the SitePicker only lists
+   `wordpress` connections today.
+3. **Content group name/cap** — ✅ *Resolved:* `/content` gated on
+   `manage_options` (matches the records schema endpoint contract;
+   widening to `edit_posts` is a follow-up).
+4. **Multi-site write-through** — ✅ *Resolved: no.* The Phase B proxy is
+   strictly read-only; writes stay chat-only via the destructive-ops gate.
+5. **EZuite ERP scope** — still open; sync direction verification needed
+   before the sync-run monitor schema is extended.
 
 ## 8. References
 
