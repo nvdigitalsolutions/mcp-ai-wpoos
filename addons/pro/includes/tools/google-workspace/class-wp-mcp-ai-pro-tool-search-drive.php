@@ -67,7 +67,7 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'connection_id'  => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Google Drive connection ID from Remote Sites. If not provided, uses settings-based credentials.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional Google Drive connection ID from Remote Sites. If not provided, uses settings-based credentials; when those are not configured, the only enabled Remote Sites Google Drive connection is used automatically. Call list_drive_connections to discover IDs.', 'mcp-ai-wpoos-pro' ),
 				),
 				'query'          => array(
 					'type'        => 'string',
@@ -165,13 +165,17 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 		$refresh_token     = $credentials['refresh_token'];
 		$configured_user   = $credentials['configured_user'];
 		$credential_source = $credentials['source'];
+		$resolved_id       = isset( $credentials['connection_id'] ) ? (string) $credentials['connection_id'] : '';
+		$resolved_name     = isset( $credentials['connection_name'] ) ? (string) $credentials['connection_name'] : '';
 		$folder_id         = '';
 
 		// A scoped folder may also be supplied by the connection. Resolving it
 		// here keeps folder scoping on the connection while still allowing an
-		// explicit folder_id argument to override it below.
-		if ( '' !== $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		// explicit folder_id argument to override it below. Use the resolved
+		// connection because an omitted connection_id may auto-resolve to the
+		// only enabled Remote Sites Drive connection.
+		if ( '' !== $resolved_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $resolved_id );
 			if ( is_array( $connection ) && isset( $connection['folder_id'] ) ) {
 				$folder_id = trim( (string) $connection['folder_id'] );
 			}
@@ -336,7 +340,8 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 			'next_page_token'   => isset( $list_payload['nextPageToken'] ) ? (string) $list_payload['nextPageToken'] : '',
 			'has_more'          => ! empty( $list_payload['nextPageToken'] ),
 			'connection'        => $configured_user ? $configured_user : __( 'Connected', 'mcp-ai-wpoos-pro' ),
-			'connection_id'     => $connection_id,
+			'connection_id'     => '' !== $resolved_id ? $resolved_id : $connection_id,
+			'connection_name'   => $resolved_name,
 			'user_email'        => $configured_user,
 			'credential_source' => $credential_source,
 		);

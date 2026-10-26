@@ -77,7 +77,7 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Google Drive connection ID from Remote Sites. If not provided, uses settings-based credentials.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional Google Drive connection ID from Remote Sites. If not provided, uses settings-based credentials; when those are not configured, the only enabled Remote Sites Google Drive connection is used automatically. Call list_drive_connections to discover IDs.', 'mcp-ai-wpoos-pro' ),
 				),
 				'max_chars'     => array(
 					'type'        => 'integer',
@@ -158,6 +158,9 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 			return $credentials;
 		}
 
+		$resolved_id   = isset( $credentials['connection_id'] ) ? (string) $credentials['connection_id'] : '';
+		$resolved_name = isset( $credentials['connection_name'] ) ? (string) $credentials['connection_name'] : '';
+
 		$timeout = WP_MCP_AI_Pro_Google_Drive_Client::get_request_timeout();
 
 		$access_token = WP_MCP_AI_Pro_Google_Drive_Client::request_access_token(
@@ -185,6 +188,8 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 			'type_label'       => WP_MCP_AI_Pro_Google_Drive_Client::get_type_label( $mime_type ),
 			'is_folder'        => WP_MCP_AI_Pro_Google_Drive_Client::is_folder( $mime_type ),
 			'exportable'       => WP_MCP_AI_Pro_Google_Drive_Client::is_text_exportable( $mime_type ),
+			'connection_id'    => $resolved_id,
+			'connection_name'  => $resolved_name,
 			'size'             => $size,
 			'size_formatted'   => WP_MCP_AI_Pro_Google_Drive_Client::format_size( $size ),
 			'created_time'     => isset( $metadata['createdTime'] ) ? (string) $metadata['createdTime'] : '',

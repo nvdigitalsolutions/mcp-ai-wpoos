@@ -149,7 +149,7 @@ class WP_MCP_AI_Pro_Tool_List_Drive_Connections implements WP_MCP_AI_Tool_Interf
 
 		$data = array(
 			'connections' => $connections,
-			'note'        => __( 'Credentials are never included in this list. Omit connection_id to use the settings-based default ("settings" row).', 'mcp-ai-wpoos-pro' ),
+			'note'        => __( 'Credentials are never included in this list. Omit connection_id to use the settings-based default; when no settings credentials are configured, the only enabled connection is used automatically. If several connections are enabled, pass the connection_id explicitly.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $this->format_success_response(

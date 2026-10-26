@@ -845,11 +845,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Google Drive footer content.
 		 */
 		private function render_google_drive_footer() {
-			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
-			$drive_connected   = ! empty( $settings['google_drive_refresh_token'] );
-			$drive_email       = isset( $settings['google_drive_user_email'] ) ? $settings['google_drive_user_email'] : '';
-			$has_credentials   = ! empty( $settings['google_drive_client_id'] ) && ! empty( $settings['google_drive_client_secret'] );
-			$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$drive_connected = ! empty( $settings['google_drive_refresh_token'] );
+			$drive_email     = isset( $settings['google_drive_user_email'] ) ? $settings['google_drive_user_email'] : '';
+			$has_credentials = ! empty( $settings['google_drive_client_id'] ) && ! empty( $settings['google_drive_client_secret'] );
+			$is_pro_active   = defined( 'WP_MCP_AI_PRO_VERSION' );
+
+			// Pro Remote Sites connections: list them here so this page never
+			// reports Drive as unconfigured when a working named connection
+			// exists. Drive tools auto-resolve to those connections when the
+			// settings-based credentials below are absent.
+			$remote_drive_connections = array();
+			if ( $is_pro_active && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$all_remote = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+				foreach ( $all_remote as $remote_connection ) {
+					if ( is_array( $remote_connection ) && isset( $remote_connection['connection_type'] ) && 'google_drive' === $remote_connection['connection_type'] ) {
+						$remote_drive_connections[] = $remote_connection;
+					}
+				}
+			}
+
 			$oauth_connect_url = wp_nonce_url(
 				admin_url( 'admin-post.php?action=wp_mcp_ai_google_drive_oauth_start' ),
 				'wp_mcp_ai_google_drive_oauth_start'
@@ -885,6 +900,43 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</td>
 			</tr>
 		<?php endif; ?>
+			<?php if ( ! empty( $remote_drive_connections ) ) : ?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Remote Sites Drive Connections', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<div style="padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0 0 6px; color: #0c5460;">
+							<span class="dashicons dashicons-admin-site-alt" style="color: #0c5460;"></span>
+							<strong><?php esc_html_e( 'Google Drive is configured via Remote Sites:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ul style="margin: 0 0 6px 20px; list-style: disc; color: #0c5460;">
+							<?php foreach ( $remote_drive_connections as $remote_connection ) : ?>
+								<li>
+									<strong><?php echo esc_html( isset( $remote_connection['name'] ) ? (string) $remote_connection['name'] : '' ); ?></strong>
+									<?php if ( ! empty( $remote_connection['user_email'] ) ) : ?>
+										<?php
+										printf(
+											/* translators: %s: Google account email address. */
+											esc_html__( '— %s', 'mcp-ai-wpoos' ),
+											esc_html( (string) $remote_connection['user_email'] )
+										);
+										?>
+									<?php endif; ?>
+									<?php if ( empty( $remote_connection['enabled'] ) ) : ?>
+										<?php esc_html_e( '(disabled)', 'mcp-ai-wpoos' ); ?>
+									<?php endif; ?>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+						<p style="margin: 0; color: #0c5460;">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>">
+								<?php esc_html_e( 'Manage Drive connections in Remote Sites', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					</div>
+				</td>
+			</tr>
+			<?php endif; ?>
 		<tr>
 			<th scope="row"><?php esc_html_e( 'Google Drive Connection', 'mcp-ai-wpoos' ); ?></th>
 			<td>
@@ -950,13 +1002,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<ul style="list-style: disc; margin-left: 20px;">
 						<li><code>drive.file</code>: <?php esc_html_e( 'Per-file access (files created by or shared with NV oOS). Non-sensitive — no Google verification needed.', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
-				<?php else : ?>
-					<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
-						<p style="margin: 0; color: #721c24;">
-							<span class="dashicons dashicons-info" style="color: #721c24;"></span>
-							<strong><?php esc_html_e( 'Google Drive OAuth Credentials Required', 'mcp-ai-wpoos' ); ?></strong>
+					<?php elseif ( ! empty( $remote_drive_connections ) ) : ?>
+						<div style="padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #0c5460;">
+								<span class="dashicons dashicons-info" style="color: #0c5460;"></span>
+								<strong><?php esc_html_e( 'No settings-based Drive credentials — using the Remote Sites connection.', 'mcp-ai-wpoos' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'The Client ID and Client Secret fields above only control the settings-based default Google Drive connection. Because no credentials are stored there, Drive tools will use the Google Drive connection configured under Remote Sites automatically.',
+									'mcp-ai-wpoos'
+								)
+							);
+							?>
 						</p>
-					</div>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #721c24;">
+								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+								<strong><?php esc_html_e( 'Google Drive OAuth Credentials Required', 'mcp-ai-wpoos' ); ?></strong>
+							</p>
+						</div>
 					<p class="description">
 						<?php
 						echo wp_kses_post(
@@ -1034,7 +1103,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			</td>
 		</tr>
 				<?php
-			}
+		}
 
 		/**
 		 * Render Google Calendar footer content.
