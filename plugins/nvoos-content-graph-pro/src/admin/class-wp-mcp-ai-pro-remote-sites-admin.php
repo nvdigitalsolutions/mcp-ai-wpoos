@@ -161,6 +161,45 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		// Check for OAuth handler parameter (used instead of 'action' to avoid Google OAuth restrictions).
 		$oauth_handler = isset( $_GET['oauth_handler'] ) ? sanitize_key( $_GET['oauth_handler'] ) : '';
 
+		// Legacy OAuth return routing: some OAuth client configurations
+		// register the bare Remote Sites URL (no oauth_handler) as the redirect
+		// URI. The provider then returns state/code to that URL and no handler
+		// branch below matches. When a live OAuth state transient for any flow
+		// (Google Drive/Gmail/Chat/Calendar/Classroom, Microsoft Teams, Upwork,
+		// LinkedIn) proves an authorization was started moments ago, route the
+		// request to the matching callback so the flow completes. The callbacks
+		// re-verify the state and user ID, so the CSRF posture is unchanged.
+		// Calendar and Classroom store state through the shared Google OAuth
+		// service; their keys below mirror
+		// WP_MCP_AI_Google_OAuth_Service::state_transient_key() for the
+		// 'google_calendar_remote' / 'google_classroom_remote' services.
+		if ( '' === $oauth_handler && '' === $action ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+			$oauth_state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth code/error parameters verify request authenticity.
+			$oauth_return = isset( $_GET['code'] ) || isset( $_GET['error'] );
+
+			if ( '' !== $oauth_state && $oauth_return ) {
+				if ( get_transient( 'wp_mcp_ai_google_drive_oauth_state_' . md5( $oauth_state ) ) ) {
+					$oauth_handler = 'google_drive_oauth_callback';
+				} elseif ( get_transient( 'wp_mcp_ai_gmail_oauth_state_' . md5( $oauth_state ) ) ) {
+					$oauth_handler = 'gmail_oauth_callback';
+				} elseif ( get_transient( 'wp_mcp_ai_google_chat_oauth_state_' . md5( $oauth_state ) ) ) {
+					$oauth_handler = 'google_chat_oauth_callback';
+				} elseif ( get_transient( 'wp_mcp_ai_google_calendar_remote_oauth_state_' . md5( $oauth_state ) ) ) {
+					$oauth_handler = 'google_calendar_oauth_callback';
+				} elseif ( get_transient( 'wp_mcp_ai_google_classroom_remote_oauth_state_' . md5( $oauth_state ) ) ) {
+					$oauth_handler = 'google_classroom_oauth_callback';
+				} elseif ( get_transient( 'wp_mcp_ai_teams_oauth_state_' . md5( $oauth_state ) ) ) {
+					$oauth_handler = 'teams_oauth_callback';
+				} elseif ( get_transient( 'wp_mcp_ai_upwork_oauth_state_' . md5( $oauth_state ) ) ) {
+					$oauth_handler = 'upwork_oauth_callback';
+				} elseif ( get_transient( 'wp_mcp_ai_linkedin_oauth_state_' . md5( $oauth_state ) ) ) {
+					$oauth_handler = 'linkedin_oauth_callback';
+				}
+			}
+		}
+
 		// Handle delete action.
 		if ( 'delete' === $action && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
 			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
