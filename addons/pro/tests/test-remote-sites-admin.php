@@ -1273,6 +1273,235 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test Google Drive OAuth callback completes when Google returns to the
+	 * bare Remote Sites URL (no oauth_handler) — legacy Google Cloud Console
+	 * client configurations register that URL as the redirect URI.
+	 */
+	public function test_google_drive_oauth_callback_bare_redirect_uri_fallback() {
+		// Create a test Google Drive connection.
+		$connection_data = array(
+			'name'            => 'Test Google Drive Bare URI',
+			'url'             => 'https://www.googleapis.com/drive/v3',
+			'connection_type' => 'google_drive',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_client_id',
+			'client_secret'   => 'test_client_secret',
+			'enabled'         => true,
+		);
+		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Create state parameter and transient (as handle_google_drive_oauth_start does).
+		$state         = wp_generate_uuid4();
+		$transient_key = 'wp_mcp_ai_google_drive_oauth_state_' . md5( $state );
+		set_transient(
+			$transient_key,
+			array(
+				'user_id'       => get_current_user_id(),
+				'connection_id' => $connection_id,
+				'time'          => time(),
+			),
+			10 * MINUTE_IN_SECONDS
+		);
+
+		// Mock wp_remote_post for token exchange.
+		add_filter( 'pre_http_request', array( $this, 'mock_google_drive_token_exchange' ), 10, 3 );
+
+		// Simulate Google returning to the bare Remote Sites URL — state and
+		// code present but NO oauth_handler parameter.
+		$_GET['page']  = 'wp-mcp-ai-remote-sites';
+		$_GET['state'] = $state;
+		$_GET['code']  = 'test_authorization_code';
+
+		// Capture redirect.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
+		$this->redirect_url = '';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		try {
+			$admin->handle_actions();
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
+		remove_filter( 'pre_http_request', array( $this, 'mock_google_drive_token_exchange' ) );
+
+		// Verify the fallback routed the request into the Drive callback and
+		// completed the flow.
+		$this->assertStringContainsString( 'oauth_success=', $redirect_url, 'Should redirect to success page' );
+
+		$updated_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $updated_connection, 'Connection should still exist' );
+		$this->assertEquals( 'test_drive_refresh_token_456', WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $updated_connection['refresh_token'] ), 'Refresh token should be saved' );
+
+		// Verify transient was deleted (CSRF protection cleanup).
+		$this->assertFalse( get_transient( $transient_key ), 'State transient should be deleted after use' );
+
+		// Clean up.
+		unset( $_GET['page'] );
+		unset( $_GET['state'] );
+		unset( $_GET['code'] );
+	}
+
+	/**
+	 * Test that a bare Remote Sites URL without a live OAuth state transient
+	 * does not route into any OAuth callback (renders normally instead).
+	 */
+	public function test_bare_redirect_uri_without_state_transient_is_ignored() {
+		$_GET['page']  = 'wp-mcp-ai-remote-sites';
+		$_GET['state'] = 'stale-or-unknown-state';
+		$_GET['code']  = 'test_authorization_code';
+
+		// Capture redirect (should never be issued).
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
+		$this->redirect_url = '';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		$admin->handle_actions();
+		$admin->render_admin_page();
+		$output = ob_get_clean();
+
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
+
+		// No OAuth redirect should occur; the normal connections list renders.
+		$this->assertSame( '', $this->redirect_url, 'No redirect should be issued without a live state transient' );
+		$this->assertStringContainsString( 'Add New Connection', $output, 'Should render the connections list' );
+
+		// Clean up.
+		unset( $_GET['page'] );
+		unset( $_GET['state'] );
+		unset( $_GET['code'] );
+	}
+
+	/**
+	 * Test Google Calendar OAuth return routing when Google redirects to the
+	 * bare Remote Sites URL (no oauth_handler).
+	 */
+	public function test_google_calendar_oauth_callback_bare_redirect_uri_fallback() {
+		// Create a test Google Calendar connection.
+		$connection_data = array(
+			'name'            => 'Test Google Calendar Bare URI',
+			'url'             => 'https://www.googleapis.com/calendar/v3',
+			'connection_type' => 'google_calendar',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_client_id',
+			'client_secret'   => 'test_client_secret',
+			'enabled'         => true,
+		);
+		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Store a Calendar OAuth state through the shared Google OAuth service
+		// (as handle_google_calendar_oauth_start does).
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
+		$state = WP_MCP_AI_Google_OAuth_Service::store_state(
+			'google_calendar_remote',
+			array( 'connection_id' => $connection_id )
+		);
+
+		// Simulate Google returning to the bare Remote Sites URL — state and
+		// code present but NO oauth_handler parameter.
+		$_GET['page']  = 'wp-mcp-ai-remote-sites';
+		$_GET['state'] = $state;
+		$_GET['code']  = 'test_authorization_code';
+
+		// Capture redirect.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
+		$this->redirect_url = '';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		try {
+			$admin->handle_actions();
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
+
+		// The fallback must route into the Calendar callback. The token exchange
+		// cannot run in the test environment (no HTTP transport), so the callback
+		// redirects to the connection edit page with an error — a non-routed
+		// request would render the page instead of redirecting.
+		$this->assertStringContainsString( 'edit=' . $connection_id, $redirect_url, 'Should route into the Calendar callback' );
+
+		// Clean up.
+		unset( $_GET['page'] );
+		unset( $_GET['state'] );
+		unset( $_GET['code'] );
+	}
+
+	/**
+	 * Test Microsoft Teams OAuth return routing when the provider redirects to
+	 * the bare Remote Sites URL (no oauth_handler).
+	 */
+	public function test_teams_oauth_callback_bare_redirect_uri_fallback() {
+		// Create a test Microsoft Teams connection.
+		$connection_data = array(
+			'name'            => 'Test Microsoft Teams Bare URI',
+			'url'             => 'https://smba.trafficmanager.net/apis',
+			'connection_type' => 'microsoft_teams',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_client_id',
+			'client_secret'   => 'test_client_secret',
+			'enabled'         => true,
+		);
+		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Store a Teams OAuth state (as handle_teams_oauth_start does).
+		$state         = wp_generate_uuid4();
+		$transient_key = 'wp_mcp_ai_teams_oauth_state_' . md5( $state );
+		set_transient(
+			$transient_key,
+			array(
+				'user_id'       => get_current_user_id(),
+				'connection_id' => $connection_id,
+				'time'          => time(),
+			),
+			10 * MINUTE_IN_SECONDS
+		);
+
+		// Simulate Microsoft returning to the bare Remote Sites URL — state and
+		// code present but NO oauth_handler parameter.
+		$_GET['page']  = 'wp-mcp-ai-remote-sites';
+		$_GET['state'] = $state;
+		$_GET['code']  = 'test_authorization_code';
+
+		// Capture redirect.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
+		$this->redirect_url = '';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		try {
+			$admin->handle_actions();
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
+
+		// The fallback must route into the Teams callback. The token exchange
+		// cannot run in the test environment (no HTTP transport), so the callback
+		// redirects to the connection edit page with an error — a non-routed
+		// request would render the page instead of redirecting.
+		$this->assertStringContainsString( 'edit=' . $connection_id, $redirect_url, 'Should route into the Teams callback' );
+
+		// Clean up.
+		unset( $_GET['page'] );
+		unset( $_GET['state'] );
+		unset( $_GET['code'] );
+	}
+
+	/**
 	 * Test Google Drive OAuth callback with error from Google.
 	 *
 	 * Verifies proper error handling when user denies authorization.
