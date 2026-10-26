@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.12"
   plugin-version-tested: "1.2.12"
-  last-updated: "2026-10-24"
+  last-updated: "2026-10-26"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -1194,6 +1194,12 @@ curl -s -D - -o /dev/null -H "Origin: https://bogus.example.com" \
 
 **Cause:** `wp_safe_redirect()` rejects off-site consent-page hosts missing from the `allowed_redirect_hosts` allowlist and silently falls back to `admin_url()` — the connect click lands on the dashboard instead of the provider's consent page.
 **Fix (v1.1.91+):** LinkedIn (`www.linkedin.com`), QuickBooks (`appcenter.intuit.com`), Mailjet (`app.mailjet.com`), and Yahoo Sports (`api.login.yahoo.com`) are now allowlisted via per-provider filters deriving the host from the authorize-endpoint filter. When wiring a **new** OAuth flow, register its consent host the same way — the GitHub/Meta pattern in `includes/integrations/` is the template.
+
+### OAuth connect returns to the bare Remote Sites URL and never completes
+
+**Cause:** the OAuth client's registered redirect URI is the bare Remote Sites URL (`admin.php?page=wp-mcp-ai-remote-sites`, no `oauth_handler`). Providers redirect to exactly the URI the request sent, so the return carries `state`/`code`/`scope` but no `oauth_handler` — `handle_actions()` found no handler, silently dropped the code, and the connection never completed. Google Cloud Console is the common culprit: the same client can hold both the bare URI and the canonical `&oauth_handler=<callback>` URI.
+**Diagnosis:** the post-consent address-bar URL still contains `state` + `code`/`scope` but no `oauth_handler`; deleting the bare URI from the console and retrying produces `redirect_uri_mismatch` — proof the running flow sends the bare URI. Case study: scm.nvdigital.solutions Google Drive, 2026-10-26.
+**Fix (PR #7240):** `WP_MCP_AI_Pro_Remote_Sites_Admin::handle_actions()` now routes a bare-URL return (`state` + `code`/`error`, no `oauth_handler`/`action`) to the matching callback when a live per-service OAuth state transient exists — Google Drive, Gmail, Google Chat, Google Calendar, Google Classroom, Microsoft Teams, Upwork, and LinkedIn. CSRF posture is unchanged (the callbacks still consume/verify the state and user ID). Composio is deliberately excluded (hosted connect-link flow returns `session_uri`). State transient keys: `wp_mcp_ai_{gmail|google_drive|google_chat|teams|upwork|linkedin}_oauth_state_<md5(state)>` plus the shared-service keys `wp_mcp_ai_google_calendar_remote_oauth_state_…` / `wp_mcp_ai_google_classroom_remote_oauth_state_…` (`WP_MCP_AI_Google_OAuth_Service::state_transient_key()`). Keep the `oauth_handler` URIs as the canonical registrations; the fallback is a safety net. The CG Pro mirror is byte-identical.
 
 ### Vision requests fail with "Failed to download image from https://…" (OpenAI/DeepSeek)
 
