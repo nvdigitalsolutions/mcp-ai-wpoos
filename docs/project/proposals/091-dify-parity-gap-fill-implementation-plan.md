@@ -30,25 +30,25 @@ D1 approved 2026-10-27 — canonical format is the vendor-neutral NV oOS DSL; JS
 
 | File | Change |
 |---|---|
-| `includes/rest/class-wp-mcp-ai-rest-workflow-cpt-controller.php` | **Upgrade the existing export/import routes to DSL v1.** `export` returns the DSL YAML (JSON via `?format=json`) with redaction applied; `import` accepts DSL v1 **and** the legacy JSON shape (via `accept_legacy_json()`), gains `dry_run` (validation report + canonical preview, no write) and `source=dify` delegation to the Pro adapter when present; findings returned in the canonical envelope. Existing route paths and capabilities unchanged. |
-| `addons/pro/includes/class-wp-mcp-ai-pro-module-registry.php` | Register the Dify adapter bridge (`source=dify` hook) next to the workflow bridge entries (`services/class-wp-mcp-ai-pro-workflow-bridge.php`); no new Pro REST controller needed (base routes carry the DSL). |
+| `includes/rest/class-wp-mcp-ai-rest-workflow-cpt-controller.php` | **Upgrade the existing export/import routes to DSL v1.** `export` returns the DSL v1 JSON (cosmetic YAML via `?format=yaml`) with redaction applied; `POST /orchestration/workflows/export` accepts `{ source: 'workflow', id }` **or** `{ source: 'preset', preset_slug }` — preset resolution goes through the `wp_mcp_ai_workflow_preset_export` filter (Pro bridges its presets class), so **bundled presets export directly, no save-first round trip**; `import` accepts DSL v1 **and** the legacy JSON shape (via `accept_legacy_json()`), gains `dry_run` (validation report + canonical preview, no write) and `source=dify` delegation to the Pro adapter when present; findings returned in the canonical envelope. `/{id}/export` remains as a shorthand. Existing capabilities unchanged. |
+| `addons/pro/includes/class-wp-mcp-ai-pro-module-registry.php` | Register the Dify adapter bridge (`source=dify` hook) **and** the `wp_mcp_ai_workflow_preset_export` filter (preset slug → canonical array from `class-wp-mcp-ai-pro-workflow-presets.php`) next to the workflow bridge entries (`services/class-wp-mcp-ai-pro-workflow-bridge.php`); no new Pro REST controller needed (base routes carry the DSL). |
 
 ### A.4 Builder UI — Pro SPA (primary) + base admin page
 
 | File | Change |
 |---|---|
-| `addons/pro/assets/spa-v2/src/features/workflows/WorkflowsPage.tsx` | Export / Import buttons per workflow; import modal (paste/upload) with a **dry-run-first** validation-report panel rendering the findings table; confirm-to-import; credential-redaction notice on export; `source=dify` toggle when the Pro adapter is active. |
+| `addons/pro/assets/spa-v2/src/features/workflows/WorkflowsPage.tsx` | Export / Import buttons per workflow; **Export button on the Presets tab** (calls the base preset-export route — no save-first); import modal (paste/upload) with a **dry-run-first** validation-report panel rendering the findings table; confirm-to-import; credential-redaction notice on export; `source=dify` toggle when the Pro adapter is active. |
 | `addons/pro/assets/spa-v2/src/features/workflows/workflow-graph.ts` | DSL types + a `validate_dsl_findings` normaliser (pure, unit-testable) for the report panel. |
 | `addons/pro/assets/spa-v2/src/features/workflows/__tests__/` | Extend the workflow test set: export button wires the DSL payload; dry-run report renders error vs warning rows; import confirm flow (vitest). |
 | `includes/admin/class-wp-mcp-ai-admin-dag-builder.php` | Parity Export/Import buttons + dry-run findings panel on the base admin DAG builder page (same REST contract). |
-| WP-CLI command file (`wp mcp-ai workflow` commands — confirm exact file) | `wp mcp-ai workflow export <id|slug> [--format=json|yaml] [--include-credentials]`, `wp mcp-ai workflow import <file> [--dry-run] [--source=dify]`, `wp mcp-ai workflow validate <file>`. |
+| WP-CLI command file (`wp mcp-ai workflow` commands — confirm exact file) | `wp mcp-ai workflow export <id|slug> [--format=json|yaml] [--include-credentials]`, `wp mcp-ai workflow export --preset=<slug> [--format=json|yaml]`, `wp mcp-ai workflow import <file> [--dry-run] [--source=dify]`, `wp mcp-ai workflow validate <file>`. |
 
 ### A.5 Tests + validation
 
 | File | Change |
 |---|---|
-| `tests/test-workflow-dsl.php` | **New (base).** Round-trip fidelity across the bundled presets + Engine V2 fixtures; redaction masks tokens and `--include-credentials` restores them; one-error fixture returns an actionable finding and blocks import; dry-run never writes; **legacy JSON still imports** (backward-compat gate); capability/nonce rejection; JSON mode parity. |
-| `addons/pro/tests/test-pro-workflow-dify-adapter.php` | **New.** Sample Dify DSL fixtures → expected Engine V2 maps; unmappable-node stub + finding. |
+| `tests/test-workflow-dsl.php` | **New (base).** Round-trip fidelity across the bundled presets + Engine V2 fixtures (incl. **preset-source export via a stubbed `wp_mcp_ai_workflow_preset_export` filter**); redaction masks tokens and `--include-credentials` restores them; one-error fixture returns an actionable finding and blocks import; dry-run never writes; **legacy JSON still imports** (backward-compat gate); capability/nonce rejection; JSON mode parity. |
+| `addons/pro/tests/test-pro-workflow-dify-adapter.php` | **New.** Sample Dify DSL fixtures → expected Engine V2 maps; unmappable-node stub + finding; the `wp_mcp_ai_workflow_preset_export` filter resolves real preset slugs from `class-wp-mcp-ai-pro-workflow-presets.php`. |
 
 Validation: phpcs 0 errors; base + Pro PHPUnit via the Docker one-off runner; spa-v2 tsc + vitest; manual smoke — export a preset from the Pro SPA, delete it, import the file, run the workflow unchanged.
 
