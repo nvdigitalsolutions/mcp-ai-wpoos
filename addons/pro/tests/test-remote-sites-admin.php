@@ -1192,6 +1192,71 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the Drive OAuth authorize URL percent-encodes the redirect_uri
+	 * value.
+	 *
+	 * add_query_arg() deliberately leaves array values unencoded, so a raw
+	 * redirect_uri containing `&oauth_handler=…` gets flattened into top-level
+	 * authorize parameters and Google matches a truncated redirect URI
+	 * (scm.nvdigital.solutions incident, 2026-10-26).
+	 */
+	public function test_google_drive_oauth_authorize_url_encodes_redirect_uri() {
+		// Create a test Google Drive connection.
+		$connection_data = array(
+			'name'            => 'Test Google Drive Encoded',
+			'url'             => 'https://www.googleapis.com/drive/v3',
+			'connection_type' => 'google_drive',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_client_id',
+			'client_secret'   => 'test_client_secret',
+			'enabled'         => true,
+		);
+		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Mock the OAuth start by calling it directly with reflection.
+		$admin      = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$reflection = new ReflectionClass( $admin );
+		$method     = $reflection->getMethod( 'handle_google_drive_oauth_start' );
+		$method->setAccessible( true );
+
+		// Capture redirect.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
+		$this->redirect_url = '';
+
+		try {
+			$method->invoke( $admin, $connection_id );
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
+
+		// The redirect_uri VALUE must stay percent-encoded inside the authorize
+		// URL so Google decodes it back to the full callback URI.
+		$expected_encoded = 'redirect_uri=' . rawurlencode(
+			add_query_arg(
+				array(
+					'page'          => 'wp-mcp-ai-remote-sites',
+					'oauth_handler' => 'google_drive_oauth_callback',
+				),
+				admin_url( 'admin.php' )
+			)
+		);
+		$this->assertStringContainsString( $expected_encoded, $redirect_url, 'redirect_uri value must be percent-encoded' );
+		$this->assertStringContainsString( '%26oauth_handler%3Dgoogle_drive_oauth_callback', $redirect_url, 'oauth_handler must remain inside the encoded redirect_uri value' );
+		$this->assertStringNotContainsString( 'redirect_uri=' . admin_url( 'admin.php' ), $redirect_url, 'redirect_uri value must not be raw in the authorize URL' );
+
+		// Extract the state and clean up its transient.
+		$parsed = wp_parse_url( $redirect_url );
+		parse_str( $parsed['query'], $params );
+		if ( isset( $params['state'] ) ) {
+			delete_transient( 'wp_mcp_ai_google_drive_oauth_state_' . md5( $params['state'] ) );
+		}
+	}
+
+	/**
 	 * Test Google Drive OAuth callback with valid authorization code.
 	 *
 	 * Verifies successful token exchange and connection update.

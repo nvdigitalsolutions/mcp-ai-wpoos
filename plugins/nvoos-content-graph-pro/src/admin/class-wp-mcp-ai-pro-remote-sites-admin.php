@@ -3810,7 +3810,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								// Build Google OAuth authorization URL.
 								$oauth_params = array(
 									'client_id'     => $connection['client_id'],
-									'redirect_uri'  => $redirect_uri,
+									'redirect_uri'  => rawurlencode( $redirect_uri ),
 									'response_type' => 'code',
 									'scope'         => 'https://www.googleapis.com/auth/gmail.readonly',
 									'access_type'   => 'offline',
@@ -11025,12 +11025,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$params = array(
 			'client_id'              => $connection['client_id'],
-			'redirect_uri'           => add_query_arg(
-				array(
-					'page'          => 'wp-mcp-ai-remote-sites',
-					'oauth_handler' => 'gmail_oauth_callback',
-				),
-				admin_url( 'admin.php' )
+			'redirect_uri'           => rawurlencode(
+				add_query_arg(
+					array(
+						'page'          => 'wp-mcp-ai-remote-sites',
+						'oauth_handler' => 'gmail_oauth_callback',
+					),
+					admin_url( 'admin.php' )
+				)
 			),
 			'response_type'          => 'code',
 			'scope'                  => 'https://www.googleapis.com/auth/gmail.readonly',
@@ -11241,15 +11243,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$params = array(
 			'client_id'              => $connection['client_id'],
-			'redirect_uri'           => add_query_arg(
-				array(
-					'page'          => 'wp-mcp-ai-remote-sites',
-					'oauth_handler' => 'google_drive_oauth_callback',
-				),
-				admin_url( 'admin.php' )
+			'redirect_uri'           => rawurlencode(
+				add_query_arg(
+					array(
+						'page'          => 'wp-mcp-ai-remote-sites',
+						'oauth_handler' => 'google_drive_oauth_callback',
+					),
+					admin_url( 'admin.php' )
+				)
 			),
 			'response_type'          => 'code',
-			'scope'                  => 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets.readonly',
+			'scope'                  => rawurlencode( 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets.readonly' ),
 			'access_type'            => 'offline',
 			'include_granted_scopes' => 'true',
 			'prompt'                 => 'consent',
@@ -11658,15 +11662,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$params = array(
 			'client_id'              => $connection['client_id'],
-			'redirect_uri'           => add_query_arg(
-				array(
-					'page'          => 'wp-mcp-ai-remote-sites',
-					'oauth_handler' => 'google_chat_oauth_callback',
-				),
-				admin_url( 'admin.php' )
+			'redirect_uri'           => rawurlencode(
+				add_query_arg(
+					array(
+						'page'          => 'wp-mcp-ai-remote-sites',
+						'oauth_handler' => 'google_chat_oauth_callback',
+					),
+					admin_url( 'admin.php' )
+				)
 			),
 			'response_type'          => 'code',
-			'scope'                  => 'https://www.googleapis.com/auth/chat.messages https://www.googleapis.com/auth/chat.spaces.readonly',
+			'scope'                  => rawurlencode( 'https://www.googleapis.com/auth/chat.messages https://www.googleapis.com/auth/chat.spaces.readonly' ),
 			'access_type'            => 'offline',
 			'include_granted_scopes' => 'true',
 			'prompt'                 => 'consent',
@@ -11897,8 +11903,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$params = array(
 			'client_id'     => $connection['client_id'],
 			'response_type' => 'code',
-			'redirect_uri'  => $redirect_uri,
-			'scope'         => $scopes,
+			'redirect_uri'  => rawurlencode( $redirect_uri ),
+			'scope'         => rawurlencode( $scopes ),
 			'response_mode' => 'query',
 			'state'         => $state,
 			'prompt'        => 'select_account',
@@ -17252,12 +17258,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$params = array(
 			'response_type' => 'code',
 			'client_id'     => $connection['client_id'],
-			'redirect_uri'  => add_query_arg(
-				array(
-					'page'          => 'wp-mcp-ai-remote-sites',
-					'oauth_handler' => 'upwork_oauth_callback',
-				),
-				admin_url( 'admin.php' )
+			'redirect_uri'  => rawurlencode(
+				add_query_arg(
+					array(
+						'page'          => 'wp-mcp-ai-remote-sites',
+						'oauth_handler' => 'upwork_oauth_callback',
+					),
+					admin_url( 'admin.php' )
+				)
 			),
 			'state'         => $state,
 		);
@@ -17462,15 +17470,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$params = array(
 			'response_type' => 'code',
 			'client_id'     => $connection['client_id'],
-			'redirect_uri'  => add_query_arg(
-				array(
-					'page'          => 'wp-mcp-ai-remote-sites',
-					'oauth_handler' => 'linkedin_oauth_callback',
-				),
-				admin_url( 'admin.php' )
+			'redirect_uri'  => rawurlencode(
+				add_query_arg(
+					array(
+						'page'          => 'wp-mcp-ai-remote-sites',
+						'oauth_handler' => 'linkedin_oauth_callback',
+					),
+					admin_url( 'admin.php' )
+				)
 			),
 			'state'         => $state,
-			'scope'         => implode( ' ', $scopes ),
+			'scope'         => rawurlencode( implode( ' ', $scopes ) ),
 		);
 
 		$authorize_url = add_query_arg( $params, 'https://www.linkedin.com/oauth/v2/authorization' );
