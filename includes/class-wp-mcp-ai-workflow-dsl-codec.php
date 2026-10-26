@@ -43,12 +43,13 @@ class WP_MCP_AI_Workflow_DSL_Codec {
 	const DSL_VERSION = 1;
 
 	/**
-	 * Engine V2 node type vocabulary.
+	 * Node type vocabulary (Engine V2 core types plus the input/output kinds
+	 * the bundled presets use).
 	 *
 	 * @since 1.2.13
 	 * @var string[]
 	 */
-	const NODE_TYPES = array( 'tool', 'action', 'agent' );
+	const NODE_TYPES = array( 'tool', 'action', 'agent', 'input', 'output' );
 
 	/**
 	 * Param keys treated as credential-bearing (redacted on export).

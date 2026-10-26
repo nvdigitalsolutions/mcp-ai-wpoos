@@ -718,6 +718,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						require_once $presets_class;
 					}
 
+					// Proposal 091 Track A — DSL seams (preset export bridge +
+					// Dify import adapter). Filters only, safe on every request.
+					$dsl_bridge = $p . 'class-wp-mcp-ai-pro-workflow-dsl-bridge.php';
+					if ( file_exists( $dsl_bridge ) ) {
+						require_once $dsl_bridge;
+					}
+
 					// Same gate for the two bridge providers that wrap wp-admin
 					// page classes which admin_sections only loads in admin
 					// context: the workflow node executor
