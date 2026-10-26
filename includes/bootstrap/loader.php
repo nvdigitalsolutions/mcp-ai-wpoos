@@ -938,6 +938,9 @@ add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_meta' ), 12 );
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dsl-codec.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dsl-codec.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dispatcher.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dispatcher.php';
 }
