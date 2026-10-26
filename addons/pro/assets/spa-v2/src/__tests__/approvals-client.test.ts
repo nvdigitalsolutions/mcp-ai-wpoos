@@ -44,6 +44,41 @@ describe( 'ApprovalsClient.list', () => {
 		expect( result.total ).toBe( 1 );
 		expect( result.approvals ).toHaveLength( 1 );
 		expect( result.approvals[ 0 ] ).toMatchObject( { id: 7, tool: 'delete_post' } );
+		expect( result ).toMatchObject( { page: 1, perPage: 25 } );
+	} );
+
+	it( 'requests a window with limit/offset and keeps the queue-depth total', async () => {
+		let requestedUrl = '';
+		global.fetch = vi.fn( ( input: RequestInfo | URL ) => {
+			requestedUrl = String( input );
+			return Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () =>
+					Promise.resolve( {
+						approvals: [ { id: 9, status: 'pending', tool: 'drop_table' } ],
+						// Queue depth, not the page length.
+						total: 312,
+					} ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+
+		const client = new ApprovalsClient( { endpoint: ENDPOINT, nonce: 'n' } );
+		const result = await client.list( { page: 3, perPage: 50 } );
+
+		expect( requestedUrl ).toContain( 'limit=50' );
+		// Page 3 at 50 per page skips 100.
+		expect( requestedUrl ).toContain( 'offset=100' );
+		expect( result ).toMatchObject( { total: 312, page: 3, perPage: 50 } );
+	} );
+
+	it( 'falls back to the page length when the server omits total', async () => {
+		mockFetch( { approvals: [ { id: 1 }, { id: 2 } ] } );
+
+		const client = new ApprovalsClient( { endpoint: ENDPOINT, nonce: 'n' } );
+		const result = await client.list();
+
+		expect( result.total ).toBe( 2 );
 	} );
 
 	it( 'tolerates a missing approvals key', async () => {

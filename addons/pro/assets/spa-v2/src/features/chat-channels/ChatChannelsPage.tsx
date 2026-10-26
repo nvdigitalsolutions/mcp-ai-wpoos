@@ -15,11 +15,15 @@ import {
 	type DataTableColumn,
 	type DataTableRow,
 } from '../../components/shared/DataTable';
+import { Pagination } from '../../components/shared/Pagination';
 import {
 	ChatChannelsClient,
 	type ChatConversation,
 	type ChatMessage,
 } from '../../api/chat-channels';
+
+/** Default page size for the conversation list. */
+const CONVERSATIONS_PER_PAGE = 50;
 
 const CHANNEL_OPTIONS = [
 	[ '', __( 'All Channels', 'nvoos-pro-spa' ) ],
@@ -69,9 +73,22 @@ export function ChatChannelsPage(): JSX.Element {
 	const [ channel, setChannel ] = useState( '' );
 	const [ status, setStatus ] = useState( '' );
 	const [ search, setSearch ] = useState( '' );
+	// The filters the list was actually fetched with — typing does not refetch,
+	// submitting the filter form does.
+	const [ appliedFilters, setAppliedFilters ] = useState( {
+		channel: '',
+		status: '',
+		search: '',
+	} );
 	const [ conversations, setConversations ] = useState< ChatConversation[] >( [] );
 	const [ loading, setLoading ] = useState< boolean >( false );
 	const [ error, setError ] = useState< string | null >( null );
+	// Server-side pagination — the REST envelope reports `total`, so the pager
+	// can show the real conversation count beyond the loaded slice.
+	const [ page, setPage ] = useState< number >( 1 );
+	const [ perPage, setPerPage ] = useState< number >( CONVERSATIONS_PER_PAGE );
+	const [ total, setTotal ] = useState< number >( 0 );
+	const [ reloadToken, setReloadToken ] = useState< number >( 0 );
 
 	const [ selected, setSelected ] = useState< ChatConversation | null >( null );
 	const [ messages, setMessages ] = useState< ChatMessage[] >( [] );
@@ -82,41 +99,57 @@ export function ChatChannelsPage(): JSX.Element {
 
 	const refresh = useCallback(
 		( filters: { channel: string; status: string; search: string } ) => {
-			if ( ! runtime?.endpoints.chatChannels ) {
-				return;
-			}
+			setAppliedFilters( filters );
+			setPage( 1 );
+			// Clear the current slice so the previous filter's rows (and its
+			// pager total) never linger under the new query.
+			setConversations( [] );
+			setTotal( 0 );
 			setLoading( true );
-			setError( null );
-			const controller = new AbortController();
-			client
-				.conversations( filters, controller.signal )
-				.then( ( envelope ) => {
-					setConversations( envelope.items );
-					setLoading( false );
-				} )
-				.catch( ( err: unknown ) => {
-					setError(
-						err instanceof Error
-							? err.message
-							: __( 'Failed to load conversations.', 'nvoos-pro-spa' )
-					);
-					setLoading( false );
-				} );
-			return () => controller.abort();
 		},
-		[ client, runtime ]
+		[]
 	);
 
 	useEffect( () => {
-		refresh( { channel: '', status: '', search: '' } );
-	}, [ refresh ] );
+		if ( ! runtime?.endpoints.chatChannels ) {
+			return;
+		}
+		setLoading( true );
+		setError( null );
+		const controller = new AbortController();
+		client
+			.conversations( { ...appliedFilters, page, perPage }, controller.signal )
+			.then( ( envelope ) => {
+				setConversations( envelope.items );
+				setTotal( envelope.total );
+				setLoading( false );
+			} )
+			.catch( ( err: unknown ) => {
+				if ( err instanceof Error && err.name === 'AbortError' ) {
+					return;
+				}
+				setError(
+					err instanceof Error
+						? err.message
+						: __( 'Failed to load conversations.', 'nvoos-pro-spa' )
+				);
+				setLoading( false );
+			} );
+		return () => controller.abort();
+	}, [ client, runtime, appliedFilters, page, perPage, reloadToken ] );
+
+	const messagesAbort = useRef< AbortController | null >( null );
 
 	const openConversation = ( conversation: ChatConversation ): void => {
 		setSelected( conversation );
 		setMessages( [] );
 		setNotice( null );
 		setMessagesLoading( true );
+		// Abort the previous thread request: a slow response for a previously
+		// selected conversation must never overwrite the thread on screen.
+		messagesAbort.current?.abort();
 		const controller = new AbortController();
+		messagesAbort.current = controller;
 		client
 			.messages( conversation.id, controller.signal )
 			.then( ( rows ) => {
@@ -124,12 +157,18 @@ export function ChatChannelsPage(): JSX.Element {
 				setMessagesLoading( false );
 			} )
 			.catch( ( err: unknown ) => {
+				if ( err instanceof Error && err.name === 'AbortError' ) {
+					return;
+				}
 				setError(
 					err instanceof Error ? err.message : __( 'Failed to load messages.', 'nvoos-pro-spa' )
 				);
 				setMessagesLoading( false );
 			} );
 	};
+
+	// Abort an in-flight thread fetch when the page unmounts.
+	useEffect( () => () => messagesAbort.current?.abort(), [] );
 
 	const sendReply = (): void => {
 		if ( ! selected || ! replyText.trim() ) {
@@ -316,7 +355,7 @@ export function ChatChannelsPage(): JSX.Element {
 					<button
 						type="button"
 						className="nvoos-pro-spa-page__retry"
-						onClick={ () => refresh( { channel, status, search } ) }
+						onClick={ () => setReloadToken( ( token ) => token + 1 ) }
 					>
 						{ __( 'Retry', 'nvoos-pro-spa' ) }
 					</button>
@@ -336,6 +375,21 @@ export function ChatChannelsPage(): JSX.Element {
 					columns={ conversationColumns }
 					rows={ conversationRows }
 					caption={ __( 'Conversations', 'nvoos-pro-spa' ) }
+					footer={
+						<Pagination
+							page={ page }
+							perPage={ perPage }
+							total={ total }
+							itemLabel={ __( 'conversations', 'nvoos-pro-spa' ) }
+							label={ __( 'Conversations pagination', 'nvoos-pro-spa' ) }
+							busy={ loading }
+							onPageChange={ setPage }
+							onPerPageChange={ ( next ) => {
+								setPerPage( next );
+								setPage( 1 );
+							} }
+						/>
+					}
 				/>
 			) }
 

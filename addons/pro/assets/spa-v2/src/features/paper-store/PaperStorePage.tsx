@@ -9,10 +9,12 @@
  */
 
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import { Pagination } from '../../components/shared/Pagination';
 import {
 	PaperStoreClient,
+	PAPER_STORE_PER_PAGE,
 	type PaperRecord,
 	type PaperRecordStatus,
 } from '../../api/paper-store';
@@ -79,6 +81,12 @@ export function PaperStorePage(): JSX.Element {
 	const [ records, setRecords ] = useState< PaperRecord[] >( [] );
 	const [ recordsLoading, setRecordsLoading ] = useState< boolean >( false );
 	const [ recordsError, setRecordsError ] = useState< string | null >( null );
+	// Server-side pagination — the REST envelope counts the collection before
+	// slicing, so the pager reports the real size instead of the page length.
+	const [ page, setPage ] = useState< number >( 1 );
+	const [ perPage, setPerPage ] = useState< number >( PAPER_STORE_PER_PAGE );
+	const [ total, setTotal ] = useState< number >( 0 );
+	const [ reloadToken, setReloadToken ] = useState< number >( 0 );
 
 	const [ search, setSearch ] = useState( '' );
 	const [ expandedId, setExpandedId ] = useState< string | null >( null );
@@ -111,16 +119,22 @@ export function PaperStorePage(): JSX.Element {
 	}, [ client ] );
 
 	const loadRecords = useCallback(
-		async ( collection: string ) => {
+		async ( collection: string, targetPage: number, targetPerPage: number ) => {
 			if ( ! client || ! collection ) {
 				setRecords( [] );
+				setTotal( 0 );
 				return;
 			}
 			setRecordsLoading( true );
 			setRecordsError( null );
 			setExpandedId( null );
 			try {
-				setRecords( await client.records( collection ) );
+				const result = await client.records( collection, {
+					page: targetPage,
+					perPage: targetPerPage,
+				} );
+				setRecords( result.items );
+				setTotal( result.total );
 			} catch ( err ) {
 				setRecordsError(
 					err instanceof Error ? err.message : __( 'Failed to load records.', 'nvoos-pro-spa' )
@@ -138,9 +152,21 @@ export function PaperStorePage(): JSX.Element {
 
 	useEffect( () => {
 		if ( activeCollection ) {
-			void loadRecords( activeCollection );
+			void loadRecords( activeCollection, page, perPage );
 		}
-	}, [ activeCollection, loadRecords ] );
+	}, [ activeCollection, page, perPage, reloadToken, loadRecords ] );
+
+	// Deleting the last record on the final page shrinks the collection past the
+	// current offset; fall back to the last page that still exists.
+	useEffect( () => {
+		if ( ! activeCollection ) {
+			return;
+		}
+		const pageCount = Math.max( 1, Math.ceil( total / perPage ) );
+		if ( page > pageCount ) {
+			setPage( pageCount );
+		}
+	}, [ total, perPage, page, activeCollection ] );
 
 	const visibleRecords = useMemo( () => {
 		const q = search.trim().toLowerCase();
@@ -208,7 +234,10 @@ export function PaperStorePage(): JSX.Element {
 				} );
 			}
 			closeForm();
-			await loadRecords( activeCollection );
+			// Records are ordered by updated_at desc, so a new record lands on
+			// page 1.
+			setPage( 1 );
+			setReloadToken( ( token ) => token + 1 );
 		} catch ( err ) {
 			setFormError( err instanceof Error ? err.message : __( 'Save failed.', 'nvoos-pro-spa' ) );
 		} finally {
@@ -223,7 +252,7 @@ export function PaperStorePage(): JSX.Element {
 		}
 		try {
 			await client.remove( activeCollection, id );
-			await loadRecords( activeCollection );
+			setReloadToken( ( token ) => token + 1 );
 		} catch ( err ) {
 			setRecordsError(
 				err instanceof Error ? err.message : __( 'Delete failed.', 'nvoos-pro-spa' )
@@ -293,7 +322,12 @@ export function PaperStorePage(): JSX.Element {
 										type="button"
 										className="nvoos-pro-spa-paper-store__collection"
 										aria-current={ activeCollection === name ? 'true' : undefined }
-										onClick={ () => setActiveCollection( name ) }
+										onClick={ () => {
+											setActiveCollection( name );
+											setPage( 1 );
+											setRecords( [] );
+											setTotal( 0 );
+										} }
 									>
 										{ name }
 									</button>
@@ -325,7 +359,7 @@ export function PaperStorePage(): JSX.Element {
 								onSubmit={ ( event ) => event.preventDefault() }
 							>
 								<label className="nvoos-pro-spa-records-search__label" htmlFor="paper-store-search">
-									{ __( 'Search', 'nvoos-pro-spa' ) }
+									{ __( 'Filter this page', 'nvoos-pro-spa' ) }
 								</label>
 								<input
 									id="paper-store-search"
@@ -346,18 +380,40 @@ export function PaperStorePage(): JSX.Element {
 									<button
 										type="button"
 										className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
-										onClick={ () => void loadRecords( activeCollection ) }
+										onClick={ () => setReloadToken( ( token ) => token + 1 ) }
 									>
 										{ __( 'Retry', 'nvoos-pro-spa' ) }
 									</button>
 								</div>
 							) }
 
-							{ recordsLoading ? (
+							{ search.trim() && records.length > 0 && (
+								<p className="nvoos-pro-spa-diagnostics__muted" role="status">
+									{ sprintf(
+										/* translators: %1$d: matching records on this page, %2$d: records on this page */
+										__( '%1$d of %2$d records on this page match.', 'nvoos-pro-spa' ),
+										visibleRecords.length,
+										records.length
+									) }{ ' ' }
+									<button
+										type="button"
+										className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
+										onClick={ () => setSearch( '' ) }
+									>
+										{ __( 'Clear filter', 'nvoos-pro-spa' ) }
+									</button>
+								</p>
+							) }
+
+							{ recordsLoading && records.length === 0 ? (
 								<p role="status">{ __( 'Loading records…', 'nvoos-pro-spa' ) }</p>
-							) : visibleRecords.length === 0 ? (
+							) : records.length === 0 ? (
 								<p className="nvoos-pro-spa-diagnostics__muted">
 									{ __( 'No records found.', 'nvoos-pro-spa' ) }
+								</p>
+							) : visibleRecords.length === 0 ? (
+								<p className="nvoos-pro-spa-diagnostics__muted">
+									{ __( 'No records on this page match the filter.', 'nvoos-pro-spa' ) }
 								</p>
 							) : (
 								<ul className="nvoos-pro-spa-paper-store__records">
@@ -440,6 +496,21 @@ export function PaperStorePage(): JSX.Element {
 										</li>
 									) ) }
 								</ul>
+							) }
+
+							{ ! recordsLoading && ! search.trim() && records.length > 0 && (
+								<Pagination
+									page={ page }
+									perPage={ perPage }
+									total={ total }
+									itemLabel={ __( 'records', 'nvoos-pro-spa' ) }
+									label={ __( 'Paper Store records pagination', 'nvoos-pro-spa' ) }
+									onPageChange={ setPage }
+									onPerPageChange={ ( next ) => {
+										setPerPage( next );
+										setPage( 1 );
+									} }
+								/>
 							) }
 						</>
 					) }

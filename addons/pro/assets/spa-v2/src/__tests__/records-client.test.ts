@@ -23,11 +23,12 @@ const COMPANY: RecordEntityConfig = {
 	],
 };
 
-function mockFetch( payload: unknown, ok = true ): void {
+function mockFetch( payload: unknown, ok = true, headers: Record< string, string > = {} ): void {
 	global.fetch = vi.fn( () =>
 		Promise.resolve( {
 			ok,
 			status: ok ? 200 : 403,
+			headers: new Headers( headers ),
 			json: () => Promise.resolve( payload ),
 		} as Response )
 	) as unknown as typeof fetch;
@@ -57,14 +58,29 @@ describe( 'RecordsClient', () => {
 			},
 		] );
 		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
-		const rows = await client.list( COMPANY, '' );
-		expect( rows ).toHaveLength( 1 );
-		expect( rows[ 0 ] ).toMatchObject( {
+		const page = await client.list( COMPANY );
+		expect( page.items ).toHaveLength( 1 );
+		expect( page.items[ 0 ] ).toMatchObject( {
 			id: 12,
 			title: 'Acme Ltd',
 			status: 'publish',
 		} );
-		expect( rows[ 0 ].meta._company_industry ).toBe( 'manufacturing' );
+		expect( page.items[ 0 ].meta._company_industry ).toBe( 'manufacturing' );
+	} );
+
+	it( 'reads the collection total from the X-WP-Total headers', async () => {
+		mockFetch( [], true, { 'X-WP-Total': '320', 'X-WP-TotalPages': '7' } );
+		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
+		const page = await client.list( COMPANY, { page: 3, perPage: 50 } );
+		expect( page ).toMatchObject( { total: 320, totalPages: 7, page: 3, perPage: 50 } );
+	} );
+
+	it( 'falls back to item counts when pagination headers are absent', async () => {
+		mockFetch( [ { id: 1, title: { rendered: 'One' }, meta: {} } ] );
+		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
+		const page = await client.list( COMPANY, { perPage: 50 } );
+		expect( page.total ).toBe( 1 );
+		expect( page.totalPages ).toBe( 1 );
 	} );
 
 	it( 'requests edit context and passes the search term', async () => {
@@ -78,10 +94,11 @@ describe( 'RecordsClient', () => {
 			} as Response );
 		} ) as unknown as typeof fetch;
 		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
-		await client.list( COMPANY, 'acme' );
+		await client.list( COMPANY, { search: 'acme' } );
 		expect( calls[ 0 ] ).toContain( '/wp/v2/mcp_ai_company' );
 		expect( calls[ 0 ] ).toContain( 'context=edit' );
 		expect( calls[ 0 ] ).toContain( 'search=acme' );
+		expect( calls[ 0 ] ).toContain( 'page=1' );
 	} );
 
 	it( 'maps a single wp/v2 post on get()', async () => {
@@ -174,18 +191,28 @@ describe( 'RecordsClient', () => {
 									meta: {},
 								},
 							],
+							total: 120,
+							total_pages: 3,
+							page: 2,
+							per_page: 50,
 							remote_site: 'store-1',
 						},
 					} ),
 			} as Response );
 		} ) as unknown as typeof fetch;
 		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
-		const rows = await client.listRemote( { ...COMPANY, key: 'post' }, 'acme', 'store-1' );
+		const page = await client.listRemote(
+			{ ...COMPANY, key: 'post' },
+			{ search: 'acme', page: 2 },
+			'store-1'
+		);
 		expect( calls[ 0 ] ).toContain( '/records/remote/post' );
 		expect( calls[ 0 ] ).toContain( 'remote_site=store-1' );
 		expect( calls[ 0 ] ).toContain( 'search=acme' );
-		expect( rows ).toHaveLength( 1 );
-		expect( rows[ 0 ] ).toMatchObject( { id: 42, title: 'Remote Post' } );
+		expect( calls[ 0 ] ).toContain( 'page=2' );
+		expect( page.items ).toHaveLength( 1 );
+		expect( page.items[ 0 ] ).toMatchObject( { id: 42, title: 'Remote Post' } );
+		expect( page ).toMatchObject( { total: 120, totalPages: 3 } );
 	} );
 
 	it( 'fetches a remote record through the proxy (Phase B)', async () => {

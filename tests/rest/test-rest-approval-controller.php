@@ -161,6 +161,29 @@ class Test_REST_Approval_Controller extends WP_UnitTestCase {
 		$this->assertGreaterThanOrEqual( 1, $data['total'] );
 	}
 
+	/**
+	 * Pagination contract: `offset` windows the queue and `total` is the full
+	 * pending depth, not the length of the returned page.
+	 */
+	public function test_get_items_paginates_and_reports_queue_depth() {
+		$this->enqueue_approval( $this->subscriber_id );
+		$this->enqueue_approval( $this->subscriber_id );
+		$this->enqueue_approval( $this->subscriber_id );
+		wp_set_current_user( $this->admin_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/approvals' );
+		$request->set_param( 'limit', 1 );
+		$request->set_param( 'offset', 1 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertCount( 1, $data['approvals'], 'limit=1 must return exactly one row.' );
+		$this->assertSame( 3, $data['total'], 'total must be the queue depth, not the page length.' );
+		$this->assertSame( 1, $data['limit'] );
+		$this->assertSame( 1, $data['offset'] );
+	}
+
 	// -------------------------------------------------------------------------
 	// Permission gates: single-item read (admin OR requester-self).
 	// -------------------------------------------------------------------------
