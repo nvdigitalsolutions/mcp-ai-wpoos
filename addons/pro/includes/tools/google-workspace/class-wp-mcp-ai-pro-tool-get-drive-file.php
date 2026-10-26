@@ -77,7 +77,7 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Google Drive connection ID from Remote Sites. If not provided, uses settings-based credentials; when those are not configured, the only enabled Remote Sites Google Drive connection is used automatically. Call list_drive_connections to discover IDs.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional Google Drive connection ID from Remote Sites. If not provided, uses settings-based credentials; when those are not configured, the only enabled Remote Sites Google Drive connection is used automatically (if several are enabled, pass one explicitly). Call list_drive_connections to discover IDs.', 'mcp-ai-wpoos-pro' ),
 				),
 				'max_chars'     => array(
 					'type'        => 'integer',

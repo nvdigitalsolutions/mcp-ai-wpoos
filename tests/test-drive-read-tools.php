@@ -919,6 +919,10 @@ class WP_MCP_AI_Drive_Read_Tools_Test extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_drive_ambiguous_connection', $result->get_error_code() );
 		$this->assertStringContainsString( 'conn_a', $result->get_error_message() );
 		$this->assertStringContainsString( 'conn_b', $result->get_error_message() );
+		// The error must reassure that the connections are healthy so an
+		// assistant cannot mistake ambiguity for misconfiguration.
+		$this->assertStringContainsString( 'healthy', $result->get_error_message() );
+		$this->assertStringContainsString( 'will not guess', $result->get_error_message() );
 	}
 
 	/**

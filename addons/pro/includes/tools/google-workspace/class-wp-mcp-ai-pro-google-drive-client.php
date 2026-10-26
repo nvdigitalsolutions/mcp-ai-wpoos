@@ -225,7 +225,7 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 				'wp_mcp_ai_drive_ambiguous_connection',
 				sprintf(
 					/* translators: %s: comma-separated connection IDs and names. */
-					__( 'Multiple Google Drive connections are enabled but no connection_id was given. Pass one of: %s. Call list_drive_connections for details.', 'mcp-ai-wpoos-pro' ),
+					__( 'Multiple Google Drive connections are enabled and healthy, but no connection_id was given — the tool will not guess which account to use. Pass one of: %s. Call list_drive_connections for their names and enabled state.', 'mcp-ai-wpoos-pro' ),
 					implode( ', ', $labels )
 				)
 			);
