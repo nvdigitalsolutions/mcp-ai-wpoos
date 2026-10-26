@@ -259,6 +259,7 @@ class WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller {
 		}
 
 		$type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+		// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- intentional lowercase comparison
 		if ( 'wordpress' !== $type ) {
 			return new WP_Error(
 				'sync_runs_remote_site_not_wordpress',

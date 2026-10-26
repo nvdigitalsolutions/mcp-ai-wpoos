@@ -22,6 +22,7 @@ import {
 	type DataTableColumn,
 	type DataTableRow,
 } from '../../components/shared/DataTable';
+import { Pagination } from '../../components/shared/Pagination';
 
 /** Flattened catalogue row (toolkit context carried alongside). */
 interface BlueprintRow {
@@ -62,6 +63,11 @@ export function BlueprintsPage(): JSX.Element {
 
 	const [ search, setSearch ] = useState< string >( '' );
 	const [ toolkitFilter, setToolkitFilter ] = useState< string >( '' );
+	// The catalogue ships whole (a curated set the toolkit filter and search
+	// must stay instant over), so paging is client-side. Server-side paging
+	// would break search — it would only ever match the loaded page.
+	const [ page, setPage ] = useState< number >( 1 );
+	const [ perPage, setPerPage ] = useState< number >( 25 );
 
 	const [ expandedKey, setExpandedKey ] = useState< string | null >( null );
 	const [ details, setDetails ] = useState< Record< string, BlueprintDetails > >( {} );
@@ -192,9 +198,16 @@ export function BlueprintsPage(): JSX.Element {
 		[]
 	);
 
+	const pageCount = Math.max( 1, Math.ceil( rows.length / perPage ) );
+	const currentPage = Math.min( page, pageCount );
+	const pagedRows = useMemo(
+		() => rows.slice( ( currentPage - 1 ) * perPage, currentPage * perPage ),
+		[ rows, currentPage, perPage ]
+	);
+
 	const tableRows = useMemo< DataTableRow[] >(
 		() =>
-			rows.map( ( row ) => {
+			pagedRows.map( ( row ) => {
 				const key = detailKey( row.toolkit, row.slug );
 				const expanded = expandedKey === key;
 				const current = details[ key ];
@@ -327,7 +340,7 @@ export function BlueprintsPage(): JSX.Element {
 				};
 			} ),
 		[
-			rows,
+			pagedRows,
 			expandedKey,
 			details,
 			detailLoading,
@@ -429,8 +442,8 @@ export function BlueprintsPage(): JSX.Element {
 						role="status"
 						aria-live="polite"
 					>
-						{ catalogue.total }{ ' ' }
-						{ catalogue.total === 1
+						{ rows.length }{ ' ' }
+						{ rows.length === 1
 							? __( 'blueprint', 'nvoos-pro-spa' )
 							: __( 'blueprints', 'nvoos-pro-spa' ) }
 					</span>
@@ -454,7 +467,10 @@ export function BlueprintsPage(): JSX.Element {
 						type="search"
 						className="nvoos-pro-spa-tools-page__input"
 						value={ search }
-						onChange={ ( e ) => setSearch( e.target.value ) }
+						onChange={ ( e ) => {
+							setSearch( e.target.value );
+							setPage( 1 );
+						} }
 						placeholder={ __(
 							'Search by name or description…',
 							'nvoos-pro-spa'
@@ -473,7 +489,10 @@ export function BlueprintsPage(): JSX.Element {
 						id="nvoos-pro-spa-blueprints-toolkit"
 						className="nvoos-pro-spa-tools-page__select"
 						value={ toolkitFilter }
-						onChange={ ( e ) => setToolkitFilter( e.target.value ) }
+						onChange={ ( e ) => {
+							setToolkitFilter( e.target.value );
+							setPage( 1 );
+						} }
 					>
 						<option value="">
 							{ __( 'All toolkits', 'nvoos-pro-spa' ) }
@@ -493,6 +512,7 @@ export function BlueprintsPage(): JSX.Element {
 						onClick={ () => {
 							setSearch( '' );
 							setToolkitFilter( '' );
+							setPage( 1 );
 						} }
 					>
 						{ __( 'Clear filters', 'nvoos-pro-spa' ) }
@@ -544,6 +564,25 @@ export function BlueprintsPage(): JSX.Element {
 					columns={ columns }
 					rows={ tableRows }
 					caption={ __( 'Assistant blueprints', 'nvoos-pro-spa' ) }
+					footer={
+						<Pagination
+							page={ currentPage }
+							perPage={ perPage }
+							total={ rows.length }
+							itemLabel={ __( 'blueprints', 'nvoos-pro-spa' ) }
+							label={ __( 'Blueprint catalogue pagination', 'nvoos-pro-spa' ) }
+							onPageChange={ ( next ) => {
+								// Detail rows belong to the row being left behind.
+								setExpandedKey( null );
+								setPage( next );
+							} }
+							onPerPageChange={ ( next ) => {
+								setExpandedKey( null );
+								setPerPage( next );
+								setPage( 1 );
+							} }
+						/>
+					}
 				/>
 			) }
 		</div>

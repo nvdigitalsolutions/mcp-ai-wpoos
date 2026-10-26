@@ -624,6 +624,82 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Remote records pagination — the proxy forwards `page` to the remote
+	 * collection and returns its X-WP-Total / X-WP-TotalPages so the console
+	 * pager shows the real result count instead of the slice length.
+	 */
+	public function test_remote_records_proxy_forwards_page_and_reports_totals() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Records_REST_Controller' ) ) {
+			$this->markTestSkipped( 'Pro addon not loaded.' );
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Remote Site Manager not loaded.' );
+		}
+
+		$save = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Remote records pagination fixture',
+				'url'             => 'https://paged.example.com',
+				'connection_type' => 'wordpress',
+				'auth_type'       => 'application_password',
+				'username'        => 'fixture',
+				'password'        => 'app-password',
+				'enabled'         => 1,
+			)
+		);
+		if ( is_wp_error( $save ) ) {
+			$this->markTestSkipped( 'Connection fixture rejected: ' . $save->get_error_message() );
+		}
+
+		$requested_urls = array();
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$requested_urls ) {
+				$requested_urls[] = $url;
+				return array(
+					'headers'  => array(
+						'x-wp-total'      => 120,
+						'x-wp-totalpages' => 3,
+					),
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							array(
+								'id'     => 7,
+								'title'  => array( 'rendered' => 'Paged Post' ),
+								'status' => 'publish',
+								'meta'   => array(),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/records/remote/post' );
+		$request->set_param( 'entity', 'post' );
+		$request->set_param( 'remote_site', $save );
+		$request->set_param( 'per_page', 50 );
+		$request->set_param( 'page', 2 );
+
+		$result = ( new WP_MCP_AI_Pro_Records_REST_Controller() )->get_remote_items( $request );
+
+		$this->assertNotWPError( $result );
+		$data = $result->get_data();
+		$this->assertSame( 2, $data['data']['page'] );
+		$this->assertSame( 50, $data['data']['per_page'] );
+		$this->assertSame( 120, $data['data']['total'] );
+		$this->assertSame( 3, $data['data']['total_pages'] );
+		$this->assertStringContainsString( 'page=2', $requested_urls[0] );
+		$this->assertStringContainsString( 'per_page=50', $requested_urls[0] );
+	}
+
+	/**
 	 * Phase 4f — the dashboards schema gates the three commerce dashboards
 	 * on their toolkit toggles (enabled → catalogue, disabled → guidance).
 	 */

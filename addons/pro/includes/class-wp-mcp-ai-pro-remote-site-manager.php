@@ -3798,15 +3798,24 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array  $connection Connection data.
-	 * @param string $endpoint   API endpoint (relative to REST base).
-	 * @param string $method     HTTP method (GET, POST, etc.).
-	 * @param array  $body       Request body for POST/PUT requests.
+	 * @param array      $connection    Connection data.
+	 * @param string     $endpoint      API endpoint (relative to REST base).
+	 * @param string     $method        HTTP method (GET, POST, etc.).
+	 * @param array      $body          Request body for POST/PUT requests.
+	 * @param array|null $response_meta Optional out-param. Pass `array()` to receive
+	 *                                  the remote WordPress collection's
+	 *                                  `total` / `total_pages` (from the X-WP-Total
+	 *                                  and X-WP-TotalPages headers) for pagination.
+	 *                                  Meta requests bypass the read cache because
+	 *                                  cached bodies carry no headers.
 	 * @return array|WP_Error Response data or error.
 	 */
-	public static function make_request( $connection, $endpoint, $method = 'GET', $body = array() ) {
+	public static function make_request( $connection, $endpoint, $method = 'GET', $body = array(), &$response_meta = null ) {
 		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
 		$start_time    = microtime( true );
+		// `null` means the caller does not want response metadata; an array
+		// (even an empty one) opts into the pagination headers.
+		$wants_meta = is_array( $response_meta );
 
 		$url = self::build_api_url( $connection['url'], $endpoint, $connection );
 
@@ -3847,7 +3856,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// Check cache for GET requests only (read-only operations).
-		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+		// Metadata requests skip the read cache: the cached value is the decoded
+		// body alone, so served-from-cache pages would lose their total counts.
+		if ( ! $wants_meta && 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			$cache_key     = self::get_request_cache_key( $connection_id, $endpoint );
 			$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
 
@@ -3906,6 +3917,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body        = wp_remote_retrieve_body( $response );
+
+		if ( $wants_meta ) {
+			$response_meta = array(
+				'total'       => self::retrieve_header_ci( $response, 'x-wp-total' ),
+				'total_pages' => self::retrieve_header_ci( $response, 'x-wp-totalpages' ),
+			);
+		}
 
 		if ( $status_code >= 400 ) {
 			$duration = microtime( true ) - $start_time;
@@ -3977,6 +3995,40 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $decoded;
+	}
+
+	/**
+	 * Read one response header case-insensitively.
+	 *
+	 * The Requests transport returns a case-insensitive dictionary, while test
+	 * doubles and older transport builds hand back a plain array — this handles
+	 * both shapes without the caller caring which one it got.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array  $response HTTP response array.
+	 * @param string $header   Header name (any case).
+	 * @return string Header value, or an empty string when absent.
+	 */
+	private static function retrieve_header_ci( $response, $header ) {
+		$headers = isset( $response['headers'] ) ? $response['headers'] : array();
+
+		if ( is_object( $headers ) && method_exists( $headers, 'getAll' ) ) {
+			$headers = $headers->getAll();
+		}
+
+		if ( is_array( $headers ) ) {
+			foreach ( $headers as $name => $value ) {
+				if ( 0 === strcasecmp( (string) $name, $header ) ) {
+					return is_array( $value ) ? implode( ', ', $value ) : (string) $value;
+				}
+			}
+
+			return '';
+		}
+
+		// Object dictionary without getAll() (older Requests builds).
+		return (string) wp_remote_retrieve_header( $response, $header );
 	}
 
 	/**

@@ -10,15 +10,17 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import {
 	DataTable,
 	type DataTableColumn,
 	type DataTableRow,
 } from '../../components/shared/DataTable';
+import { Pagination } from '../../components/shared/Pagination';
 import {
 	RecordsClient,
+	RECORDS_PER_PAGE,
 	type RecordEntityConfig,
 	type RecordSummary,
 } from '../../api/records';
@@ -180,9 +182,34 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 
 	const [ entityKey, setEntityKey ] = useState< string >( '' );
 	const [ search, setSearch ] = useState( '' );
+	// The search term the list was actually fetched with — typing does not
+	// refetch, submitting the form does (see the search form below).
+	const [ appliedSearch, setAppliedSearch ] = useState( '' );
 	const [ records, setRecords ] = useState< RecordSummary[] >( [] );
 	const [ loading, setLoading ] = useState< boolean >( false );
 	const [ error, setError ] = useState< string | null >( null );
+	// Server-side pagination (wp/v2 reports the true counts through the
+	// X-WP-Total / X-WP-TotalPages headers). The console must never present a
+	// truncated first page as if it were the whole collection.
+	const [ page, setPage ] = useState< number >( 1 );
+	const [ perPage, setPerPage ] = useState< number >( RECORDS_PER_PAGE );
+	const [ total, setTotal ] = useState< number >( 0 );
+	// Bumped to force a refetch when the query has not changed (retry, or a
+	// record was just created).
+	const [ reloadToken, setReloadToken ] = useState< number >( 0 );
+
+	/**
+	 * Clear the visible page while a new query (entity, connection or search)
+	 * is in flight — otherwise stale rows would render under the new columns,
+	 * and the pager would advertise the previous collection's totals.
+	 * `loading` is set here so the loading state shows on the very next render
+	 * instead of flashing “No records found.” before the effect fires.
+	 */
+	const resetList = (): void => {
+		setRecords( [] );
+		setTotal( 0 );
+		setLoading( true );
+	};
 	// Master-detail (Teams/Blueprints pattern): the expanded row's full
 	// record is fetched on expand — the bottom detail panel is gone, and
 	// values render once, already populated, instead of popping in.
@@ -205,33 +232,49 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 	const [ createBusy, setCreateBusy ] = useState< boolean >( false );
 	const [ notice, setNotice ] = useState< string | null >( null );
 
-	// The entity-change effect applies the current search without
-	// subscribing to every keystroke (the form submit triggers re-fetch).
-	const searchRef = useRef( search );
-	searchRef.current = search;
-
 	const entity = useMemo(
 		() => entities.find( ( e ) => e.key === entityKey ) ?? entities[ 0 ] ?? null,
 		[ entities, entityKey ]
 	);
 
 	const refresh = useCallback(
-		( currentEntity: RecordEntityConfig | null, currentSearch: string ) => {
+		(
+			currentEntity: RecordEntityConfig | null,
+			currentSearch: string,
+			currentPage: number,
+			currentPerPage: number
+		) => {
 			if ( ! currentEntity ) {
 				return;
 			}
 			setLoading( true );
 			setError( null );
 			const controller = new AbortController();
+			const options = {
+				search: currentSearch,
+				page: currentPage,
+				perPage: currentPerPage,
+				signal: controller.signal,
+			};
 			const request = remoteSite
-				? client.listRemote( currentEntity, currentSearch, remoteSite, controller.signal )
-				: client.list( currentEntity, currentSearch, controller.signal );
+				? client.listRemote( currentEntity, options, remoteSite )
+				: client.list( currentEntity, options );
 			request
-				.then( ( rows ) => {
-					setRecords( rows );
+				.then( ( result ) => {
+					setRecords( result.items );
+					setTotal( result.total );
 					setLoading( false );
 				} )
 				.catch( ( err: unknown ) => {
+					// WordPress answers 400 (rest_post_invalid_page_number) once a
+					// page scrolls past the end — e.g. after deleting the last row
+					// of the last page. Fall back to the first page instead of
+					// dead-ending the console.
+					if ( ( err as { status?: number } | null )?.status === 400 && currentPage > 1 ) {
+						setLoading( false );
+						setPage( 1 );
+						return;
+					}
 					setError(
 						err instanceof Error ? err.message : __( 'Failed to load records.', 'nvoos-pro-spa' )
 					);
@@ -252,8 +295,8 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 		setSelected( null );
 		setDetailError( null );
 		setDetailLoading( false );
-		refresh( entity, searchRef.current );
-	}, [ entity, refresh ] );
+		return refresh( entity, appliedSearch, page, perPage );
+	}, [ entity, appliedSearch, page, perPage, reloadToken, refresh ] );
 
 	/**
 	 * Expand/collapse a row, fetching the full record on expand (the list
@@ -299,7 +342,12 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 				} );
 		},
 		[ client, entity, expandedId, remoteSite ]
-);
+	);
+
+	// Abort an in-flight detail fetch when the page unmounts. The list fetch is
+	// already aborted by its own effect cleanup; this covers the detail request,
+	// which lives in a ref rather than an effect.
+	useEffect( () => () => detailAbort.current?.abort(), [] );
 
 	const runResearch = (): void => {
 		if ( ! entity || ! researchQuery.trim() ) {
@@ -336,7 +384,9 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 				setNotice( __( 'Record created.', 'nvoos-pro-spa' ) );
 				setSuggestion( null );
 				setResearchQuery( '' );
-				refresh( entity, searchRef.current );
+				// New records are ordered by date desc, so they land on page 1.
+				setPage( 1 );
+				setReloadToken( ( token ) => token + 1 );
 			} )
 			.catch( ( err: unknown ) => {
 				setCreateBusy( false );
@@ -475,6 +525,9 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 						setRemoteSite( siteId );
 						setExpandedId( null );
 						setSelected( null );
+						// The connection changes the dataset entirely — start over.
+						setPage( 1 );
+						resetList();
 					} }
 				/>
 			) }
@@ -497,7 +550,13 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 								'nvoos-pro-spa-records-tab' +
 								( ( entity?.key ?? '' ) === e.key ? ' is-active' : '' )
 							}
-							onClick={ () => setEntityKey( e.key ) }
+							onClick={ () => {
+								setEntityKey( e.key );
+								setPage( 1 );
+								// Columns come from the schema, so rows from the previous
+								// entity must not linger under the new headers.
+								resetList();
+							} }
 						>
 							{ e.icon } { e.label }
 						</button>
@@ -510,7 +569,9 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 					className="nvoos-pro-spa-records-search"
 					onSubmit={ ( event ) => {
 						event.preventDefault();
-						refresh( entity, search );
+						setAppliedSearch( search );
+						setPage( 1 );
+						resetList();
 					} }
 				>
 					<label className="nvoos-pro-spa-records-search__label" htmlFor="records-search">
@@ -633,26 +694,76 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 					<button
 						type="button"
 						className="nvoos-pro-spa-page__retry"
-						onClick={ () => refresh( entity, search ) }
+						onClick={ () => setReloadToken( ( token ) => token + 1 ) }
 					>
 						{ __( 'Retry', 'nvoos-pro-spa' ) }
 					</button>
 				</div>
 			) }
 
-			{ entity && loading && records.length === 0 ? (
+			{ ! entity ? (
+				<div className="nvoos-pro-spa-tools-page__empty" role="status">
+					<p>
+						{ __(
+							'No record types are available for this command center yet.',
+							'nvoos-pro-spa'
+						) }
+					</p>
+				</div>
+			) : loading && records.length === 0 ? (
 				<div className="nvoos-pro-spa-tools-page__empty" role="status">
 					<p>{ __( 'Loading records…', 'nvoos-pro-spa' ) }</p>
 				</div>
-			) : entity && ! error && records.length === 0 ? (
+			) : ! error && records.length === 0 ? (
 				<div className="nvoos-pro-spa-tools-page__empty" role="status">
-					<p>{ __( 'No records found.', 'nvoos-pro-spa' ) }</p>
+					<p>
+						{ appliedSearch
+							? sprintf(
+									/* translators: %s: the search term */
+									__( 'No records match “%s”.', 'nvoos-pro-spa' ),
+									appliedSearch
+							  )
+							: __( 'No records found.', 'nvoos-pro-spa' ) }
+					</p>
+					{ appliedSearch ? (
+						<button
+							type="button"
+							className="nvoos-pro-spa-page__retry"
+							onClick={ () => {
+								setSearch( '' );
+								setAppliedSearch( '' );
+								setPage( 1 );
+								resetList();
+							} }
+						>
+							{ __( 'Clear search', 'nvoos-pro-spa' ) }
+						</button>
+					) : null }
 				</div>
 			) : (
 				<DataTable
 					columns={ listColumns }
 					rows={ listRows }
 					caption={ entity?.label ?? __( 'Records', 'nvoos-pro-spa' ) }
+					footer={
+						<Pagination
+							page={ page }
+							perPage={ perPage }
+							total={ total }
+							itemLabel={ ( entity?.label ?? __( 'Records', 'nvoos-pro-spa' ) ).toLowerCase() }
+							label={ sprintf(
+								/* translators: %s: entity plural label (e.g. "Professions") */
+								__( '%s pagination', 'nvoos-pro-spa' ),
+								entity?.label ?? __( 'Records', 'nvoos-pro-spa' )
+							) }
+							busy={ loading }
+							onPageChange={ setPage }
+							onPerPageChange={ ( next ) => {
+								setPerPage( next );
+								setPage( 1 );
+							} }
+						/>
+					}
 				/>
 			) }
 		</div>

@@ -272,7 +272,14 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 						'type'              => 'integer',
 						'default'           => 50,
 						'minimum'           => 1,
-						'maximum'           => 50,
+						'maximum'           => 100,
+						'sanitize_callback' => 'absint',
+					),
+					'page'        => array(
+						'required'          => false,
+						'type'              => 'integer',
+						'default'           => 1,
+						'minimum'           => 1,
 						'sanitize_callback' => 'absint',
 					),
 				),
@@ -469,6 +476,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 		}
 
 		$type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+		// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- intentional lowercase comparison
 		if ( 'wordpress' !== $type ) {
 			return new WP_Error(
 				'records_remote_site_not_wordpress',
@@ -511,17 +519,23 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			return $target;
 		}
 
-		$params = array(
-			'per_page' => absint( $request->get_param( 'per_page' ) ),
+		$per_page = absint( $request->get_param( 'per_page' ) );
+		$page     = max( 1, absint( $request->get_param( 'page' ) ) );
+		$params   = array(
+			'per_page' => $per_page,
+			'page'     => $page,
 			'_fields'  => 'id,date,status,title,meta',
 		);
-		$search = (string) $request->get_param( 'search' );
+		$search   = (string) $request->get_param( 'search' );
 		if ( '' !== $search ) {
 			$params['search'] = $search;
 		}
 
 		$endpoint = add_query_arg( $params, 'wp/v2/' . $target['rest_base'] );
-		$response = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $target['connection'], $endpoint );
+		// Ask for the remote WordPress collection's pagination headers so the
+		// console pager can show the true total instead of the slice length.
+		$response_meta = array();
+		$response      = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $target['connection'], $endpoint, 'GET', array(), $response_meta );
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'records_remote_failed',
@@ -536,11 +550,22 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 
 		$items = is_array( $response ) ? array_map( array( $this, 'sanitize_remote_record' ), $response ) : array();
 
+		$total       = isset( $response_meta['total'] ) && '' !== $response_meta['total']
+			? absint( $response_meta['total'] )
+			: count( $items );
+		$total_pages = isset( $response_meta['total_pages'] ) && '' !== $response_meta['total_pages']
+			? absint( $response_meta['total_pages'] )
+			: max( 1, (int) ceil( $total / max( 1, $per_page ) ) );
+
 		return rest_ensure_response(
 			array(
 				'success' => true,
 				'data'    => array(
 					'items'       => $items,
+					'total'       => $total,
+					'total_pages' => $total_pages,
+					'page'        => $page,
+					'per_page'    => $per_page,
 					'entity'      => sanitize_key( (string) $request->get_param( 'entity' ) ),
 					'remote_site' => sanitize_key( (string) $request->get_param( 'remote_site' ) ),
 				),

@@ -36,6 +36,27 @@ export interface PaperRecordInput {
 	meta?: Record< string, unknown >;
 }
 
+export interface PaperRecordPage {
+	items: PaperRecord[];
+	/** Total records in the collection for the active filters (not the page length). */
+	total: number;
+	page: number;
+	perPage: number;
+}
+
+export interface PaperRecordsOptions {
+	tag?: string;
+	status?: PaperRecordStatus;
+	/** 1-based page (default 1). */
+	page?: number;
+	/** Rows per page (default 25, capped at the API's 200). */
+	perPage?: number;
+	signal?: AbortSignal;
+}
+
+/** Default page size for Paper Store record lists. */
+export const PAPER_STORE_PER_PAGE = 25;
+
 export interface PaperStoreClientOptions {
 	endpoint: string;
 	nonce: string;
@@ -61,26 +82,49 @@ export class PaperStoreClient {
 		return Array.isArray( data?.collections ) ? data.collections : [];
 	}
 
-	/** List records in one collection (optional tag/status filters). */
+	/**
+	 * List one page of records in a collection (optional tag/status filters).
+	 *
+	 * The REST envelope carries `total` counted before the `limit`/`offset`
+	 * slice, so the console pager can show the true collection size.
+	 */
 	async records(
 		collection: string,
-		filters: { tag?: string; status?: PaperRecordStatus } = {},
-		signal?: AbortSignal
-	): Promise< PaperRecord[] > {
-		const params = new URLSearchParams( { limit: '100' } );
-		if ( filters.tag ) {
-			params.set( 'tag', filters.tag );
+		options: PaperRecordsOptions = {}
+	): Promise< PaperRecordPage > {
+		const page = Math.max( 1, Math.floor( options.page ?? 1 ) );
+		const perPage = Math.min(
+			200,
+			Math.max( 1, Math.floor( options.perPage ?? PAPER_STORE_PER_PAGE ) )
+		);
+		const params = new URLSearchParams( {
+			limit: String( perPage ),
+			offset: String( ( page - 1 ) * perPage ),
+		} );
+		if ( options.tag ) {
+			params.set( 'tag', options.tag );
 		}
-		if ( filters.status ) {
-			params.set( 'status', filters.status );
+		if ( options.status ) {
+			params.set( 'status', options.status );
 		}
-		const data = await this.request< { records?: PaperRecord[] } >(
+		const data = await this.request< { records?: PaperRecord[]; total?: number } >(
 			'GET',
 			`${ this.endpoint }/${ encodeURIComponent( collection ) }?${ params.toString() }`,
 			undefined,
-			signal
+			options.signal
 		);
-		return Array.isArray( data?.records ) ? data.records : [];
+		const items = Array.isArray( data?.records ) ? data.records : [];
+		const reportedTotal = data?.total;
+
+		return {
+			items,
+			total:
+				typeof reportedTotal === 'number' && reportedTotal >= items.length
+					? reportedTotal
+					: items.length,
+			page,
+			perPage,
+		};
 	}
 
 	/** Cross-collection search. */

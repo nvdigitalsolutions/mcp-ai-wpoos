@@ -25,35 +25,11 @@ import {
 	type DataTableColumn,
 	type DataTableRow,
 } from '../../components/shared/DataTable';
+import { Pagination } from '../../components/shared/Pagination';
 
 type SortKey = 'name' | 'category' | 'capability';
 
-const PAGE_SIZE_OPTIONS = [ 25, 50, 100 ] as const;
 const DEFAULT_PAGE_SIZE = 50;
-
-/**
- * Build the page-number sequence for the pager, collapsing long ranges with
- * ellipsis gaps around the current page (e.g. `1 … 4 5 6 … 35`).
- */
-function buildPageList( current: number, total: number ): ( number | 'gap' )[] {
-	if ( total <= 7 ) {
-		return Array.from( { length: total }, ( _, i ) => i + 1 );
-	}
-	const pages = new Set< number >( [ 1, 2, total - 1, total, current - 1, current, current + 1 ] );
-	const sorted = Array.from( pages )
-		.filter( ( p ) => p >= 1 && p <= total )
-		.sort( ( a, b ) => a - b );
-	const list: ( number | 'gap' )[] = [];
-	let previous = 0;
-	for ( const page of sorted ) {
-		if ( previous && page - previous > 1 ) {
-			list.push( 'gap' );
-		}
-		list.push( page );
-		previous = page;
-	}
-	return list;
-}
 
 export function ToolsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
@@ -153,9 +129,6 @@ export function ToolsPage(): JSX.Element {
 	const currentPage = Math.min( page, pageCount );
 	const pageStart = ( currentPage - 1 ) * perPage;
 	const pageTools = filteredTools.slice( pageStart, pageStart + perPage );
-	const pageList = buildPageList( currentPage, pageCount );
-	const rangeStart = filteredTools.length === 0 ? 0 : pageStart + 1;
-	const rangeEnd = Math.min( pageStart + perPage, filteredTools.length );
 
 	const columns = useMemo< DataTableColumn[] >(
 		() => [
@@ -459,95 +432,18 @@ export function ToolsPage(): JSX.Element {
 					sortDir={ sortDir }
 					onSort={ toggleSort }
 					footer={
-						<div className="nvoos-pro-spa-tools-page__pager">
-							<p
-								className="nvoos-pro-spa-tools-page__pager-label"
-								role="status"
-								aria-live="polite"
-							>
-								{ __( 'Showing', 'nvoos-pro-spa' ) }{ ' ' }
-								{ rangeStart }–{ rangeEnd }{ ' ' }
-								{ __( 'of', 'nvoos-pro-spa' ) }{ ' ' }
-								{ filteredTools.length }{ ' ' }
-								{ __( 'tools', 'nvoos-pro-spa' ) }
-							</p>
-
-							<label
-								className="nvoos-pro-spa-tools-page__pager-size"
-							>
-								<span className="nvoos-pro-spa-sr-only">
-									{ __( 'Rows per page', 'nvoos-pro-spa' ) }
-								</span>
-								<select
-									className="nvoos-pro-spa-tools-page__select"
-									value={ perPage }
-									onChange={ ( e ) => {
-										setPerPage( Number( e.target.value ) );
-										setPage( 1 );
-									} }
-								>
-									{ PAGE_SIZE_OPTIONS.map( ( size ) => (
-										<option key={ size } value={ size }>
-											{ size }{ ' ' }
-											{ __( 'per page', 'nvoos-pro-spa' ) }
-										</option>
-									) ) }
-								</select>
-							</label>
-
-							<button
-								type="button"
-								className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
-								disabled={ currentPage <= 1 }
-								onClick={ () => setPage( currentPage - 1 ) }
-							>
-								{ __( 'Previous', 'nvoos-pro-spa' ) }
-							</button>
-
-							{ pageList.map( ( item, index ) =>
-								item === 'gap' ? (
-									<span
-										key={ `gap-${ index }` }
-										className="nvoos-pro-spa-tools-page__pager-ellipsis"
-										aria-hidden="true"
-									>
-										…
-									</span>
-								) : (
-									<button
-										key={ item }
-										type="button"
-										className={ [
-											'nvoos-pro-spa-tools-page__pager-page',
-											item === currentPage
-												? 'nvoos-pro-spa-tools-page__pager-page--active'
-												: '',
-										]
-											.filter( Boolean )
-											.join( ' ' ) }
-										aria-current={
-											item === currentPage ? 'page' : undefined
-										}
-										aria-label={ `${ __(
-											'Page',
-											'nvoos-pro-spa'
-										) } ${ item }` }
-										onClick={ () => setPage( item ) }
-									>
-										{ item }
-									</button>
-								)
-							) }
-
-							<button
-								type="button"
-								className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
-								disabled={ currentPage >= pageCount }
-								onClick={ () => setPage( currentPage + 1 ) }
-							>
-								{ __( 'Next', 'nvoos-pro-spa' ) }
-							</button>
-						</div>
+						<Pagination
+							page={ currentPage }
+							perPage={ perPage }
+							total={ filteredTools.length }
+							itemLabel={ __( 'tools', 'nvoos-pro-spa' ) }
+							label={ __( 'Tool results pagination', 'nvoos-pro-spa' ) }
+							onPageChange={ setPage }
+							onPerPageChange={ ( next ) => {
+								setPerPage( next );
+								setPage( 1 );
+							} }
+						/>
 					}
 				/>
 			) }

@@ -7,7 +7,7 @@
  * wp_mcp_ai_admin_page_enabled_approvals filter until parity is verified.
  */
 
-import { useState, useMemo, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useApprovals } from '../../hooks/useApprovals';
 import { useBootstrap } from '../../hooks/useBootstrap';
@@ -16,15 +16,37 @@ import {
 	type DataTableColumn,
 	type DataTableRow,
 } from '../../components/shared/DataTable';
+import { Pagination } from '../../components/shared/Pagination';
+
+const APPROVALS_PER_PAGE = 25;
 
 export function ApprovalsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
+	// Server-side pagination: the queue can outgrow one screen, and resolving
+	// items removes rows — so the page is derived from the queue depth rather
+	// than assuming everything fits in a single fetch.
+	const [ page, setPage ] = useState( 1 );
+	const [ perPage, setPerPage ] = useState( APPROVALS_PER_PAGE );
 	const { approvals, total, loading, error, resolving, fetchApprovals, resolveApproval } =
 		useApprovals(
 			runtime
-				? { endpoint: runtime.endpoints.approvals, nonce: runtime.nonce }
+				? {
+						endpoint: runtime.endpoints.approvals,
+						nonce: runtime.nonce,
+						page,
+						perPage,
+				  }
 				: { endpoint: '', nonce: '' }
 		);
+
+	// Resolving the last row on a page shrinks the queue and can leave the
+	// current page past the end; fall back to the last page that still exists.
+	useEffect( () => {
+		const pageCount = Math.max( 1, Math.ceil( total / perPage ) );
+		if ( page > pageCount ) {
+			setPage( pageCount );
+		}
+	}, [ total, perPage, page ] );
 
 	const [ noteMap, setNoteMap ] = useState< Record< number, string > >( {} );
 
@@ -180,15 +202,23 @@ export function ApprovalsPage(): JSX.Element {
 					columns={ columns }
 					rows={ rows }
 					caption={ __( 'Pending approvals', 'nvoos-pro-spa' ) }
+					footer={
+						<Pagination
+							page={ page }
+							perPage={ perPage }
+							total={ total }
+							itemLabel={ __( 'pending approvals', 'nvoos-pro-spa' ) }
+							label={ __( 'Approvals pagination', 'nvoos-pro-spa' ) }
+							busy={ loading || resolving }
+							onPageChange={ setPage }
+							onPerPageChange={ ( next ) => {
+								setPerPage( next );
+								setPage( 1 );
+							} }
+						/>
+					}
 				/>
 			) }
-
-			<footer className="nvoos-pro-spa-tools-page__footer">
-				<p>
-					{ __( 'Showing', 'nvoos-pro-spa' ) } { approvals.length }{ ' ' }
-					{ __( 'pending approvals', 'nvoos-pro-spa' ) }
-				</p>
-			</footer>
 		</div>
 	);
 }

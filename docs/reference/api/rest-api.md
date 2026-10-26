@@ -217,6 +217,102 @@ Execute a registered tool without generating a full chat turn.
 
 Tool responses include the assistant ID, the tool slug, and the tool result. Errors bubble up as `WP_Error` instances so remote clients can react to permission failures, missing dependencies, or validation issues. Every execution is logged for auditing.【F:includes/class-wp-mcp-ai-rest.php†L1252-L1321】
 
+## GET `/approvals`
+
+List the human-in-the-loop (HITL) approval queue: tool executions that paused
+and are waiting for an administrator to approve or deny. Newest first.
+
+### Query parameters
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `assistant_id` | integer | `0` | Only return approvals raised for this assistant. Credential-authenticated requests are always scoped to their own assistant. |
+| `session_id` | string | `""` | Only return approvals raised in this chat session. |
+| `limit` | integer | `20` | Rows per page. Capped at `100` server-side. |
+| `offset` | integer | `0` | Rows to skip. Page *n* at *limit* rows uses `offset = (n - 1) * limit`. |
+
+Arguments are declared on the collection route.【F:includes/rest/class-wp-mcp-ai-rest-approval-controller.php†L55-L77】
+
+### Authorization
+
+Requires the `manage_options` capability, or a valid assistant credential.
+A credential is scoped to the assistant it was issued for, so it can never
+enumerate another assistant's queue.【F:includes/rest/class-wp-mcp-ai-rest-approval-controller.php†L274-L293】
+
+### Response
+
+```json
+{
+  "approvals": [
+    {
+      "id": 812,
+      "status": "pending",
+      "tool": "delete_post",
+      "arguments": { "post_id": 42 },
+      "assistant_id": 123,
+      "requester_id": 45,
+      "session_id": "chat-9f2c…",
+      "reason": "Destructive operation",
+      "created_at": 1761400000,
+      "expires_at": 1761486400,
+      "resolved_by": 0,
+      "resolved_at": 0,
+      "note": ""
+    }
+  ],
+  "total": 312,
+  "limit": 20,
+  "offset": 0
+}
+```
+
+- `total` is the **full pending-queue depth** for the caller's scope, not the
+  length of the `approvals` array. Earlier builds returned the page length,
+  which made the value indistinguishable from `count( approvals )` — a client
+  that needs the page length should count the array, and a pager should always
+  paginate against `total`.【F:includes/rest/class-wp-mcp-ai-rest-approval-controller.php†L178-L186】
+- `limit` and `offset` echo the window the server actually applied; `limit` is
+  clamped to the `1–100` range before the query runs.【F:includes/rest/class-wp-mcp-ai-rest-approval-controller.php†L159-L176】
+- `status` is normalised from the backing post status: `pending`, `approved`,
+  `denied`, or `expired`. The record shape also carries `arguments`,
+  `reason`, `resolved_by`, `resolved_at`, and `note`.【F:includes/class-wp-mcp-ai-approval-queue.php†L425-L450】
+- The list is ordered by date descending, so newly raised approvals appear
+  first. The queue depth and the filtered list share one WP_Query argument
+  builder, so a filtered `total` always matches the filtered rows.【F:includes/class-wp-mcp-ai-approval-queue.php†L346-L378】
+
+### Pagination example
+
+Page 3 at 25 rows per page:
+
+```http
+GET /wp-json/mcp-ai/v1/approvals?limit=25&offset=50
+```
+
+```json
+{ "approvals": [ … ], "total": 312, "limit": 25, "offset": 50 }
+```
+
+The pager renders `ceil( total / limit )` pages (13 here) and the visible range
+`offset + 1` – `min( offset + limit, total )` (51–75).
+
+### Resolving an approval
+
+| Method | Route | Body |
+| --- | --- | --- |
+| `POST` | `/approvals/{id}/approve` | `{ "note": "optional" }` |
+| `POST` | `/approvals/{id}/deny` | `{ "note": "optional" }` |
+
+Both require `manage_options` and return
+`{ "success": true, "approval_id": <id>, "status": "approved" | "denied" }`.
+Resolved items leave the pending queue, so a client that pages the list should
+re-fetch the current page (and step back a page when it becomes empty) rather
+than assuming the resolved row simply disappears in place.【F:includes/rest/class-wp-mcp-ai-rest-approval-controller.php†L211-L264】
+
+### Error responses
+
+- **403 Forbidden**: no `manage_options` capability and no valid assistant credential.【F:includes/rest/class-wp-mcp-ai-rest-approval-controller.php†L274-L293】
+- **404 Not Found**: `approval_not_found` for an unknown `{id}`.
+
 ## GET `/teams/{id}/members`
 
 Retrieve the list of profession members for a specific team. This endpoint powers the team member selection UI in the test team page.
