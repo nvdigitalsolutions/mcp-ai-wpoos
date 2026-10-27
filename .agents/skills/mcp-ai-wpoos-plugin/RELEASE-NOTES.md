@@ -7,6 +7,16 @@ Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
 
+## Session Identity, Breeze Exclusions & Console Access Gating (unreleased — post-1.2.12)
+
+- **`GET /mcp-ai/v1/session/me` (PR #7257)** — the requesting session's identity (id/name/slug + role capability map) without core's `list_users` gate on `users/me?context=edit`; same no-nonce/no-capability contract as `/session/nonce` (401 without a valid auth cookie, `no-store`). The Complete Console's view-context fallback uses it to recover capabilities so nav gating works for non-admin roles (server still enforces everything).
+- **Breeze cache integration (PR #7257)** — `includes/integrations/class-wp-mcp-ai-breeze-cache-integration.php` appends `/dashboard/` + `/wp-admin/` to Breeze's `breeze_exclude_urls` (self-gated on `BREEZE_VERSION`, filterable via `wp_mcp_ai_breeze_cache_excluded_urls`) so cached logged-in page renders can't leak session-bound nonces. Plugin-level only — Cloudways platform cache and Cloudflare zone rules are separate layers.
+- **Console stale-nonce boot fix (PR #7257, examples/nvoos-complete-velocity)** — `fetchSessionNonce()` mints from `session/nonce` first (the `/wp-admin/` scrape is fallback-only — cached `/dashboard/` HTML embedded nonces from earlier sessions) and `fetchCurrentUser()` returns `{ user, nonce }` so the 403-fallback's recovered nonce reaches the runtime. Closes the author-role "Cookie check failed" wall (403 `rest_cookie_invalid_nonce`).
+- **Console access gating (PR #7259)** — the console endpoint map mirrors `WP_MCP_AI_Pro_SPA_Config::build()`'s capability matrix (admin-gated endpoints are empty strings for non-admin sessions); central `can()`/`usePermissions()` in spa-v2 (`src/auth/permissions.ts`); HITL approval bar, assistants create/edit/delete, and the dashboard command-center section gated to `manage_options`.
+- **Docs** — spa-ui skill gains the "Access gating for non-admin roles (capability-driven)" section; schedule-anything-ops gains the failure class + follow-up.
+
+---
+
 ## Magic Login, Native Islands, Tool Picker & Commerce Console Surfaces (v1.2.12)
 
 - **Magic-link sign-in (PRs #7206/#7208)** — opt-in `WP_MCP_AI_REST_Magic_Login_Controller` (`POST /mcp-ai/v1/magic-login/request` + `/confirm`, off by default → 404): ~256-bit CSPRNG tokens (`wp_generate_password(43, false, false)`) stored SHA-256-hashed in transients, 15-min single-use expiry, one outstanding link per user, uniform anti-enumeration responses, transient rate limits (3/identifier/15 min, 10/IP/hour), `wp_login` on confirm. Deliberately **unauthenticated by design** (the `/session/nonce` exception) — a named permission callback still enforces the feature flag + the Security Manager's IP/HTTPS posture. Settings subtab (Authentication → Magic Link Sign-In: `enable_magic_login`, `magic_login_app_origin`); the controller reads the settings registry first with standalone-option fallbacks; the console gains Password/Magic-link tabs + `#/magic-login?token=…`; author sign-in fixed when `users/me?context=edit` 403s (#7224 — nonce re-mint + view-context retry).

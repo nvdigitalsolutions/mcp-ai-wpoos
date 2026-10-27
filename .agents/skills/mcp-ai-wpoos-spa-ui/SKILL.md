@@ -40,6 +40,62 @@ The canonical addon pattern itself is
 - Building or deploying the standalone Pro SPA app
   (`examples/nvoos-pro-spa-vite/`, Cloudways Velocity, `chat.nvoos.cloud`)
   — see "Standalone SPA app (pattern D)"
+- Gating admin surfaces for non-admin roles — see
+  "Access gating for non-admin roles (capability-driven)"
+
+## Access gating for non-admin roles (capability-driven)
+
+Canonized 2026-10-27 from the author-role 403 wall on the Complete Console
+(victory.nvoos.cloud, PRs #7257/#7259). Industry pattern (OWASP REST
+Security / Authorization cheat sheets, Auth0 + react-admin RBAC guidance):
+
+- **Capability-based, never role-based.** Gate on WordPress capabilities
+  (`manage_options`, `edit_posts`), never on role slugs — roles are
+  per-site, capabilities are the contract.
+- **The server is authoritative.** Every `permission_callback` check
+  server-side stays the security boundary. Client gates are UX-only: they
+  hide unavailable surfaces and skip fetches that would only answer 403.
+- **One source of truth on the client:**
+  `addons/pro/assets/spa-v2/src/auth/permissions.ts` (`can()`,
+  `usePermissions()`). No ad-hoc
+  `capabilities.includes( 'manage_options' )` memos — ChatPage (model
+  selector + HITL gate) and AssistantsPage (create/edit/delete) are the
+  reference consumers.
+
+The permission matrix (server contract mirrored client-side):
+
+| Capability | Surfaces |
+|---|---|
+| `manage_options` | workflows, workflow-builder/presets/nodes/runs, analytics, cost, approvals, triggers, teams, portability, security, operations, diagnostics, paper-store, token-manager, orchestration/stats, pro/ops, schedule-manager, records/schema, dashboards/schema, chat-channels, remote-sites, media-cc, command-center |
+| `edit_posts` | blueprints, slash-commands |
+| logged-in | transcripts, memory, threads, assistants, settings |
+| public/guest | chat, chat-client, tools, wp/v2/media upload |
+
+**Endpoint-emptiness is a gate too.** The server SPA config
+(`WP_MCP_AI_Pro_SPA_Config::build()`) emits empty endpoint strings for
+admin-gated surfaces on non-admin sessions; pages skip fetches when the
+endpoint is empty. **The Complete Console builds its own endpoint map**
+(`examples/nvoos-complete-velocity/src/runtime-config.ts`
+`buildEndpoints()`) and must mirror that matrix exactly — every new
+admin-gated route must be gated in BOTH places or non-admin users poll
+403s.
+
+**Failure class: "author hits admin-only fetch" (403 console noise).**
+Console works but the network tab shows 403s on admin routes for
+non-admin roles. Cases fixed so far: HITL approval bar polling
+`/approvals` (list + resolve are manage_options — gate the mount on
+`isAdmin`), AssistantsPage Edit firing `GET /assistants/{id}`
+(manage_options — hide create/edit/delete + guard the fetch), Dashboard
+firing `command-center/overview` (console endpoint map not emptied +
+defense-in-depth capability check in the component). Fix pattern:
+(1) mirror the endpoint gate, (2) gate the mount on `usePermissions()`,
+(3) fail-soft so the section hides rather than errors.
+
+**Verify as a non-admin role.** Log in as an author and inspect the
+network tab — every admin-route 403 is a gating bug, not a feature. 404s
+on `GET /chat-transcripts/{session_key}` are benign (the resume probe
+treats 404 as "no stored transcript" and rotates the key; the red lines
+are Chrome's own network logging).
 
 ## The three sanctioned build patterns — pick one, don't mix
 

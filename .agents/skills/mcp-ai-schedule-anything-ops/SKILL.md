@@ -324,6 +324,19 @@ addon SPA):
   (`includes/integrations/class-wp-mcp-ai-breeze-cache-integration.php`)
   excluding `/dashboard/` + `/wp-admin/` from `breeze_exclude_urls` so
   session-bearing HTML is never served from cache.
+- **Follow-up (2026-10-27, PR #7259): admin-surface gating for non-admin
+  roles.** After #7257 the author console still logged 403s on admin-only
+  routes (HITL `/approvals` polling, AssistantsPage `GET /assistants/{id}`,
+  Dashboard `command-center/overview`): the console's `buildEndpoints()`
+  hardcoded the full endpoint set, bypassing
+  `WP_MCP_AI_Pro_SPA_Config::build()`'s capability gating. Fix: the console
+  endpoint map mirrors the server matrix (admin-gated = empty string for
+  non-admins) + a central `usePermissions()`/`can()` layer in spa-v2
+  (`addons/pro/assets/spa-v2/src/auth/permissions.ts`). Any new admin
+  endpoint must be gated in both the PHP config and the console map — see
+  the mcp-ai-wpoos-spa-ui skill → "Access gating for non-admin roles".
+  Rule of thumb: every admin-route 403 in an author's network tab is a
+  gating bug, not a feature.
 - **Feature gating (2026-10-22):** the console nav + route guards gate
   `/crm`, `/pm`, `/calendar`, `/fnb` on toolkit toggles from the features map
   (`GET /mcp-ai/v1/features` now carries `crm`, `project_management`,
