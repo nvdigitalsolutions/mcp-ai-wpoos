@@ -1234,6 +1234,9 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php';
 	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-breeze-cache-integration.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-breeze-cache-integration.php';
+	}
 	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php' );
 	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php' );
 	// Cloudways integration has been migrated to the Pro addon's cloudways-toolkit.
@@ -1925,6 +1928,9 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	}
 	if ( class_exists( 'WP_MCP_AI_Comments' ) ) {
 		WP_MCP_AI_Comments::get_instance();
+	}
+	if ( class_exists( 'WP_MCP_AI_Breeze_Cache_Integration' ) ) {
+		WP_MCP_AI_Breeze_Cache_Integration::init();
 	}
 }
 

@@ -248,6 +248,89 @@ class Test_REST_Chat_Controller extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the /session/me route is registered.
+	 */
+	public function test_session_me_route_registered() {
+		$routes = $this->get_routes_via_init();
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/session/me',
+			$routes,
+			'Session me route should be registered'
+		);
+	}
+
+	/**
+	 * Test that the /session/me route only supports GET.
+	 */
+	public function test_session_me_route_methods() {
+		$routes   = $this->get_routes_via_init();
+		$me_route = $routes['/mcp-ai/v1/session/me'];
+
+		$methods = array();
+		foreach ( $me_route as $endpoint ) {
+			$methods = array_merge( $methods, array_keys( $endpoint['methods'] ) );
+		}
+
+		$this->assertContains( 'GET', $methods, 'Session me route should support GET' );
+	}
+
+	/**
+	 * Test that the session-me handler exists.
+	 */
+	public function test_session_me_handler_exists() {
+		$this->assertTrue( method_exists( $this->controller, 'handle_session_me' ) );
+	}
+
+	/**
+	 * Test that a request without a logged-in cookie receives a 401.
+	 */
+	public function test_session_me_rejects_guest_requests() {
+		wp_set_current_user( 0 );
+
+		$response = $this->controller->handle_session_me();
+
+		$this->assertWPError( $response );
+		$this->assertSame( 401, $response->get_error_data()['status'] );
+	}
+
+	/**
+	 * Test that a cookie-authenticated request receives the session's own
+	 * identity + capability map without the list_users gate core applies to
+	 * the users/me edit context (author-role console recovery path).
+	 */
+	public function test_session_me_returns_cookie_session_identity_and_caps() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'author' ) );
+
+		$expiration    = time() + DAY_IN_SECONDS;
+		$session_token = WP_Session_Tokens::get_instance( $user_id )->create( $expiration );
+		$auth_cookie   = wp_generate_auth_cookie( $user_id, $expiration, 'logged_in', $session_token );
+
+		$_COOKIE[ LOGGED_IN_COOKIE ] = $auth_cookie;
+
+		// Simulate core's rest_cookie_check_errors() neutralising the user for
+		// a no-nonce REST request.
+		wp_set_current_user( 0 );
+
+		$response = $this->controller->handle_session_me();
+		$data     = $response->get_data();
+
+		$this->assertSame( $user_id, $data['id'] );
+		$this->assertNotSame( '', $data['name'] );
+		$this->assertNotSame( '', $data['slug'] );
+		$this->assertArrayHasKey( 'upload_files', $data['capabilities'] );
+		$this->assertTrue( $data['capabilities']['upload_files'] );
+		$this->assertArrayNotHasKey( 'manage_options', array_filter( $data['capabilities'] ) );
+
+		// Never cache session identity.
+		$this->assertStringContainsString( 'no-store', $response->get_headers()['Cache-Control'] );
+
+		// Clean up cookie state so subsequent tests see a guest request.
+		unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
+		wp_set_current_user( 0 );
+	}
+
+	/**
 	 * Test that an assistant credential is accepted by the transcripts
 	 * permission check and scopes the request to the credential's assistant
 	 * and issuing user (#6987).

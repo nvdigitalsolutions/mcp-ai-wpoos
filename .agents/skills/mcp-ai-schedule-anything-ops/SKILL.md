@@ -304,6 +304,26 @@ addon SPA):
   part of this app's backend). Any SPA-consumed Pro route must therefore
   ship in the complete zip. Never point `NVOOS_TARGET_SITE` at a URL you
   do not control — the proxy forwards cookies for those prefixes.
+- **Author-role 403 wall + stale-nonce boot failure (learned 2026-10-27,
+  victory.nvoos.cloud → victory.nvdigital.solutions).** Symptom: console
+  boots, `users/me?context=edit` 403s (core `list_users` gate — expected for
+  non-admin roles), and every authenticated request then answers 403
+  `rest_cookie_invalid_nonce` ("Cookie check failed"). Root cause: the
+  console's `fetchSessionNonce()` scraped `"nonce":"…"` from `/wp-admin/`
+  HTML; the target 302s `/wp-admin/` → `/dashboard/` (non-admin redirect)
+  and the browser lands on a **cached** `/dashboard/` copy embedding a nonce
+  minted for an earlier session — the scraped stale nonce was adopted as the
+  runtime nonce while the fallback's freshly minted valid nonce was
+  discarded. Fix (examples/nvoos-complete-velocity): `fetchSessionNonce()`
+  mints from `GET /mcp-ai/v1/session/nonce` first (scrape only as fallback),
+  and `fetchCurrentUser()` returns `{ user, nonce }` so the recovered nonce
+  reaches `buildConsoleRuntime()`. Companion hardening: new
+  `GET /mcp-ai/v1/session/me` (session identity + capability map without
+  core's `list_users` gate — the console's view-context fallback now recovers
+  capabilities so author nav gating works) and a Breeze cache integration
+  (`includes/integrations/class-wp-mcp-ai-breeze-cache-integration.php`)
+  excluding `/dashboard/` + `/wp-admin/` from `breeze_exclude_urls` so
+  session-bearing HTML is never served from cache.
 - **Feature gating (2026-10-22):** the console nav + route guards gate
   `/crm`, `/pm`, `/calendar`, `/fnb` on toolkit toggles from the features map
   (`GET /mcp-ai/v1/features` now carries `crm`, `project_management`,

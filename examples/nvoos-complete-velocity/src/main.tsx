@@ -87,11 +87,11 @@ function Console(): JSX.Element {
       });
 
       const nonce = await fetchSessionNonce();
-      const user = await fetchCurrentUser(nonce);
+      const { user, nonce: effectiveNonce } = await fetchCurrentUser(nonce);
       // Feature map fails open — never block boot on optional surfaces.
-      const features = await fetchFeatureMap(nonce);
+      const features = await fetchFeatureMap(effectiveNonce);
 
-      window.NVOOS_PRO_SPA = buildConsoleRuntime({ nonce, user, features });
+      window.NVOOS_PRO_SPA = buildConsoleRuntime({ nonce: effectiveNonce, user, features });
       setBoot({ phase: 'ready' });
     } catch (error) {
       if (error instanceof UnauthorizedError) {
