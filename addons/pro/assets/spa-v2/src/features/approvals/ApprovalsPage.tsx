@@ -202,6 +202,7 @@ export function ApprovalsPage(): JSX.Element {
 					columns={ columns }
 					rows={ rows }
 					caption={ __( 'Pending approvals', 'nvoos-pro-spa' ) }
+					busy={ loading || resolving }
 					footer={
 						<Pagination
 							page={ page }

@@ -416,7 +416,15 @@ export function PaperStorePage(): JSX.Element {
 									{ __( 'No records on this page match the filter.', 'nvoos-pro-spa' ) }
 								</p>
 							) : (
-								<ul className="nvoos-pro-spa-paper-store__records">
+								<ul
+									className={
+										'nvoos-pro-spa-paper-store__records' +
+										( recordsLoading
+											? ' nvoos-pro-spa-tools-list--busy'
+											: '' )
+									}
+									aria-busy={ recordsLoading || undefined }
+								>
 									{ visibleRecords.map( ( record ) => (
 										<li key={ record.id }>
 											<div className="nvoos-pro-spa-paper-store__record-row">
@@ -498,13 +506,14 @@ export function PaperStorePage(): JSX.Element {
 								</ul>
 							) }
 
-							{ ! recordsLoading && ! search.trim() && records.length > 0 && (
+							{ ! search.trim() && records.length > 0 && (
 								<Pagination
 									page={ page }
 									perPage={ perPage }
 									total={ total }
 									itemLabel={ __( 'records', 'nvoos-pro-spa' ) }
 									label={ __( 'Paper Store records pagination', 'nvoos-pro-spa' ) }
+									busy={ recordsLoading }
 									onPageChange={ setPage }
 									onPerPageChange={ ( next ) => {
 										setPerPage( next );

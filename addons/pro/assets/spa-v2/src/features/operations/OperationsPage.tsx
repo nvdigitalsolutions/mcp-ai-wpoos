@@ -303,6 +303,7 @@ export function OperationsPage(): JSX.Element {
 					empty={
 						<p>{ __( 'No recorded runs yet.', 'nvoos-pro-spa' ) }</p>
 					}
+					busy={ timelineBusy }
 					footer={
 						<Pagination
 							page={ timeline.page }

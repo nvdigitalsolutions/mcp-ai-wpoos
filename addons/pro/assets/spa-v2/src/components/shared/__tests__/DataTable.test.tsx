@@ -110,4 +110,25 @@ describe( 'DataTable', () => {
 		expect( scroll!.querySelector( 'nav' ) ).toBeNull();
 		expect( screen.getByRole( 'navigation', { name: 'Pagination' } ) ).toBeInTheDocument();
 	} );
+
+	it( 'marks the table busy and dims stale rows while a page fetch is in flight', () => {
+		const { container } = render(
+			<DataTable columns={ columns } rows={ rows() } busy />
+		);
+
+		expect( screen.getByRole( 'table' ) ).toHaveClass( 'nvoos-pro-spa-tools-list--busy' );
+		expect( container.querySelector( '.nvoos-pro-spa-tools-list-scroll' ) ).toHaveAttribute(
+			'aria-busy',
+			'true'
+		);
+	} );
+
+	it( 'renders an idle table without the busy markers', () => {
+		const { container } = render( <DataTable columns={ columns } rows={ rows() } /> );
+
+		expect( screen.getByRole( 'table' ) ).not.toHaveClass( 'nvoos-pro-spa-tools-list--busy' );
+		expect( container.querySelector( '.nvoos-pro-spa-tools-list-scroll' ) ).not.toHaveAttribute(
+			'aria-busy'
+		);
+	} );
 } );
