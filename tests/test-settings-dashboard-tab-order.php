@@ -222,4 +222,32 @@ class Test_Settings_Dashboard_Tab_Order extends WP_UnitTestCase {
 		// Clean up.
 		unset( $_GET['tab'] );
 	}
+
+	/**
+	 * A later re-registration without `subtab_of` must not strip a child
+	 * tab's parent — register_tab() merges over the existing definition, so
+	 * the shared tab catalogue is registration-order independent.
+	 */
+	public function test_register_tab_preserves_subtab_of_on_re_registration() {
+		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+
+		if ( ! isset( $tabs['ecommerce'] ) ) {
+			$this->markTestSkipped( 'Commerce tabs are not registered (WooCommerce inactive).' );
+		}
+
+		// Mirror the drift this pins: a definition without subtab_of (as an
+		// addon or test mirror would register).
+		WP_MCP_AI_Settings_Registry::register_tab(
+			'ezuite',
+			array(
+				'title' => 'EZuite ERP',
+				'icon'  => 'dashicons-networking',
+			)
+		);
+
+		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+
+		$this->assertSame( 'ecommerce', $tabs['ezuite']['subtab_of'], 'Re-registration must preserve the subtab_of parent.' );
+		$this->assertSame( 'EZuite ERP', $tabs['ezuite']['title'], 'Re-registration must still update supplied keys.' );
+	}
 }

@@ -171,7 +171,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 				$definition['icon'] = 'dashicons-admin-generic';
 			}
 
-			self::$tabs[ $tab_id ] = $definition;
+			// Merge over any existing definition so a later re-registration
+			// (an addon, or a test mirror that drifted from the production
+			// closure) cannot silently drop structural keys such as
+			// `subtab_of`. The tab catalogue is shared by the wp-admin
+			// dashboard and the schema-driven settings surface, and
+			// registration order must not change the rendered hierarchy.
+			$existing              = isset( self::$tabs[ $tab_id ] ) ? self::$tabs[ $tab_id ] : array();
+			$existing              = is_array( $existing ) ? $existing : array();
+			self::$tabs[ $tab_id ] = array_merge( $existing, $definition );
 		}
 
 		/**

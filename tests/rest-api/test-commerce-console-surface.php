@@ -87,16 +87,19 @@ class WP_MCP_AI_Commerce_Console_Surface_Test extends WP_UnitTestCase {
 				'icon'  => 'dashicons-cart',
 			),
 			'ezuite'       => array(
-				'title' => 'EZuite ERP',
-				'icon'  => 'dashicons-networking',
+				'title'     => 'EZuite ERP',
+				'icon'      => 'dashicons-networking',
+				'subtab_of' => 'ecommerce',
 			),
 			'shopify_sync' => array(
-				'title' => 'Shopify Sync',
-				'icon'  => 'dashicons-store',
+				'title'     => 'Shopify Sync',
+				'icon'      => 'dashicons-store',
+				'subtab_of' => 'ecommerce',
 			),
 			'flowhub'      => array(
-				'title' => 'FlowHub',
-				'icon'  => 'dashicons-shield-alt',
+				'title'     => 'FlowHub',
+				'icon'      => 'dashicons-shield-alt',
+				'subtab_of' => 'ecommerce',
 			),
 		);
 		foreach ( $tabs as $tab_id => $tab ) {
