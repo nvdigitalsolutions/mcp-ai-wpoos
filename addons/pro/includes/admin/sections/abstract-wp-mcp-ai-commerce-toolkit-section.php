@@ -95,6 +95,148 @@ if ( ! class_exists( 'WP_MCP_AI_Commerce_Toolkit_Settings_Section' ) ) {
 		}
 
 		/**
+		 * Commerce subtab groups (wp-admin settings dashboard).
+		 *
+		 * The four toolkit sections keep their own registry tabs for the
+		 * settings schema / SPA contract, but in wp-admin they render as
+		 * subtabs of the E-Commerce tab (Tools → Connections pattern).
+		 *
+		 * @return array
+		 */
+		protected function get_commerce_subtab_groups() {
+			return array(
+				'ecommerce'    => array(
+					'id'    => 'ecommerce',
+					'label' => __( 'E-Commerce Toolkit', 'mcp-ai-wpoos-pro' ),
+					'icon'  => 'dashicons-cart',
+				),
+				'ezuite'       => array(
+					'id'    => 'ezuite',
+					'label' => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
+					'icon'  => 'dashicons-networking',
+				),
+				'shopify_sync' => array(
+					'id'    => 'shopify_sync',
+					'label' => __( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),
+					'icon'  => 'dashicons-store',
+				),
+				'flowhub'      => array(
+					'id'    => 'flowhub',
+					'label' => __( 'FlowHub', 'mcp-ai-wpoos-pro' ),
+					'icon'  => 'dashicons-shield-alt',
+				),
+			);
+		}
+
+		/**
+		 * Get the active commerce subtab.
+		 *
+		 * Reads the posted `subtab` field first (form submission), then the
+		 * URL `subtab`, then falls back to a legacy `?tab=<toolkit>` URL so
+		 * pre-existing links land on the right toolkit.
+		 *
+		 * @return string
+		 */
+		protected function get_active_subtab() {
+			$groups = $this->get_commerce_subtab_groups();
+			$subtab = '';
+
+			// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended -- Read-only UI state parameter.
+			if ( isset( $_POST['subtab'] ) && ! empty( $_POST['subtab'] ) ) {
+				$subtab = sanitize_key( wp_unslash( $_POST['subtab'] ) );
+			} elseif ( isset( $_GET['subtab'] ) ) {
+				$subtab = sanitize_key( wp_unslash( $_GET['subtab'] ) );
+			} elseif ( isset( $_GET['tab'] ) ) {
+				$legacy_tab = sanitize_key( wp_unslash( $_GET['tab'] ) );
+				if ( isset( $groups[ $legacy_tab ] ) ) {
+					$subtab = $legacy_tab;
+				}
+			}
+			// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
+
+			if ( empty( $subtab ) || ! isset( $groups[ $subtab ] ) ) {
+				$subtab = 'ecommerce';
+			}
+
+			return $subtab;
+		}
+
+		/**
+		 * Render section wrapper with the commerce subtab navigation.
+		 *
+		 * The E-Commerce section is the host: it always renders the subtab
+		 * nav and renders its own fields only while its subtab is active.
+		 * The sibling sections render only while their subtab is active.
+		 */
+		public function render_wrapper() {
+			$slug        = $this->get_toolkit_slug();
+			$groups      = $this->get_commerce_subtab_groups();
+			$active      = $this->get_active_subtab();
+			$is_host     = ( 'ecommerce' === $slug );
+			$render_self = ( $active === $slug );
+
+			if ( ! $is_host && ! $render_self ) {
+				return;
+			}
+
+			$description       = $this->get_description();
+			$documentation_url = $this->get_documentation_url();
+			?>
+			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
+				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
+
+				<?php if ( $is_host ) : ?>
+					<div class="wp-mcp-ai-provider-subtabs">
+						<nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'Commerce settings sub-tabs', 'mcp-ai-wpoos-pro' ); ?>">
+							<?php foreach ( $groups as $group ) : ?>
+								<?php
+								$subtab_url = add_query_arg(
+									array(
+										'page'   => 'wp-mcp-ai-dashboard',
+										'tab'    => 'ecommerce',
+										'subtab' => $group['id'],
+									),
+									admin_url( 'admin.php' )
+								);
+								$is_active  = ( $group['id'] === $active );
+								?>
+								<a href="<?php echo esc_url( $subtab_url ); ?>"
+									class="wp-mcp-ai-subtab <?php echo esc_attr( $is_active ? 'wp-mcp-ai-subtab-active' : '' ); ?>"
+									data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
+									<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
+									<?php echo esc_html( $group['label'] ); ?>
+								</a>
+							<?php endforeach; ?>
+						</nav>
+
+						<!-- Hidden fields preserve the subtab during form submission. -->
+						<input type="hidden" name="subtab_<?php echo esc_attr( $this->get_id() ); ?>" value="<?php echo esc_attr( $active ); ?>" />
+						<input type="hidden" name="subtab" value="<?php echo esc_attr( $active ); ?>" />
+					</div>
+				<?php endif; ?>
+
+				<?php if ( $render_self ) : ?>
+					<?php if ( $description ) : ?>
+						<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
+					<?php endif; ?>
+					<?php if ( $documentation_url ) : ?>
+						<p class="section-documentation">
+							<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+							<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
+								<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
+								<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
+							</a>
+						</p>
+					<?php endif; ?>
+					<table class="form-table" role="presentation">
+						<?php $this->render(); ?>
+					</table>
+				<?php endif; ?>
+			</div>
+			<?php
+		}
+
+		/**
 		 * Get documentation URL for this section.
 		 *
 		 * @return string

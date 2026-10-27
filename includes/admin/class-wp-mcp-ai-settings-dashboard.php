@@ -399,8 +399,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$sanitized = array();
 
 			// Get sections to process - either from a specific tab or all sections.
+			// A tab also pulls in its child-tab sections (subtab_of), so saves
+			// from a subtabbed view (e.g. E-Commerce → Shopify Sync) sanitize
+			// the posted fields.
 			if ( ! empty( $active_tab ) ) {
-				$sections = WP_MCP_AI_Settings_Registry::get_sections( $active_tab );
+				$sections = $this->get_sections_for_tab( $active_tab );
 			} else {
 				$sections = WP_MCP_AI_Settings_Registry::get_sections();
 			}
@@ -1428,7 +1431,39 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$active_tab = 'general';
 			}
 
+			// Child tabs (e.g. the commerce sync toolkits) render as subtabs of
+			// their parent tab, so legacy ?tab=<child> URLs resolve to the parent.
+			if ( ! empty( $tabs[ $active_tab ]['subtab_of'] ) && isset( $tabs[ $tabs[ $active_tab ]['subtab_of'] ] ) ) {
+				$active_tab = $tabs[ $active_tab ]['subtab_of'];
+			}
+
 			return $active_tab;
+		}
+
+		/**
+		 * Get the sections rendered on a tab, including sections that belong to
+		 * child tabs (tabs declaring `subtab_of` pointing at this tab).
+		 *
+		 * The commerce sync toolkits (EZuite, Shopify Sync, FlowHub) keep their
+		 * own registry tabs for the settings schema / SPA contract but render as
+		 * subtabs of E-Commerce in wp-admin, so both render and save must see
+		 * their sections when the parent tab is active.
+		 *
+		 * @since 1.2.14
+		 *
+		 * @param string $tab_id Tab ID.
+		 * @return array<WP_MCP_AI_Settings_Section>
+		 */
+		private function get_sections_for_tab( $tab_id ) {
+			$sections = WP_MCP_AI_Settings_Registry::get_sections( $tab_id );
+
+			foreach ( WP_MCP_AI_Settings_Registry::get_tabs() as $candidate_id => $candidate ) {
+				if ( ! empty( $candidate['subtab_of'] ) && $tab_id === $candidate['subtab_of'] ) {
+					$sections = array_merge( $sections, WP_MCP_AI_Settings_Registry::get_sections( $candidate_id ) );
+				}
+			}
+
+			return $sections;
 		}
 
 		/**
@@ -1441,7 +1476,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			$active_tab = $this->get_active_tab();
 			$tabs       = WP_MCP_AI_Settings_Registry::get_tabs();
-			$sections   = WP_MCP_AI_Settings_Registry::get_sections( $active_tab );
+			$sections   = $this->get_sections_for_tab( $active_tab );
 
 			?>
 			<div class="wrap wp-mcp-ai-settings-dashboard">
@@ -1461,6 +1496,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Settings tabs', 'mcp-ai-wpoos' ); ?>">
 					<?php foreach ( $tabs as $tab_id => $tab ) : ?>
 						<?php
+						// Tabs declared as children of another tab (subtab_of) render
+						// inside their parent's content, not as top-level nav tabs.
+						if ( ! empty( $tab['subtab_of'] ) ) {
+							continue;
+						}
 						$tab_url = add_query_arg(
 							array(
 								'page' => self::PAGE_SLUG,

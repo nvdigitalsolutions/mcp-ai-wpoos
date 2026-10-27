@@ -31,6 +31,17 @@ type (FlowHub MCP pattern) — Shopify's own MCP catalog/cart tools were
 removed in favour of UCP, so this is assistant-facing only, not a sync
 path.
 
+**Follow-up added 2026-10-27 (wp-admin tab grouping):** the four
+registry tabs stay (the settings schema + SPA commerce pages filter
+fields by tab id), but the wp-admin settings dashboard now renders
+EZuite / Shopify Sync / FlowHub as **subtabs of the E-Commerce tab**
+(Tools → Connections pattern) instead of top-level nav tabs — the
+`subtab_of` tab-definition key, `WP_MCP_AI_Settings_Dashboard::
+get_sections_for_tab()`, and the commerce section base's subtab
+render_wrapper. Legacy `?tab=<toolkit>` URLs still resolve (parent tab +
+legacy-tab→subtab mapping). Tests: `tests/test-settings-dashboard-tab-order.php`
++ `tests/test-commerce-settings-subtabs.php`.
+
 This plan extends the 084 phase machinery (its invariants apply unchanged) with
 commerce-specific phases. Phase letters continue 084's numbering: **2b**
 (settings), **3c** (sync ops), **4e/4f** (records/dashboards), **5b**

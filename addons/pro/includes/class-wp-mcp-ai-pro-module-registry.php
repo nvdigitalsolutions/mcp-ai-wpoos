@@ -786,22 +786,31 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 							'class-wp-mcp-ai-section-shopify-sync-toolkit.php'      => 'WP_MCP_AI_Section_Shopify_Sync_Toolkit',
 							'class-wp-mcp-ai-section-flowhub-toolkit.php'           => 'WP_MCP_AI_Section_FlowHub_Toolkit',
 						);
-						$commerce_tabs     = array(
+						// The four toolkits keep their own registry tabs (the
+						// settings schema + the SPA commerce pages filter
+						// fields by tab id), but the wp-admin settings
+						// dashboard renders the three sync toolkits as
+						// subtabs of the E-Commerce tab (Tools → Connections
+						// pattern) instead of top-level nav tabs.
+						$commerce_tabs = array(
 							'ecommerce'    => array(
 								'title' => __( 'E-Commerce', 'mcp-ai-wpoos-pro' ),
 								'icon'  => 'dashicons-cart',
 							),
 							'ezuite'       => array(
-								'title' => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
-								'icon'  => 'dashicons-networking',
+								'title'     => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
+								'icon'      => 'dashicons-networking',
+								'subtab_of' => 'ecommerce',
 							),
 							'shopify_sync' => array(
-								'title' => __( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),
-								'icon'  => 'dashicons-store',
+								'title'     => __( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),
+								'icon'      => 'dashicons-store',
+								'subtab_of' => 'ecommerce',
 							),
 							'flowhub'      => array(
-								'title' => __( 'FlowHub', 'mcp-ai-wpoos-pro' ),
-								'icon'  => 'dashicons-shield-alt',
+								'title'     => __( 'FlowHub', 'mcp-ai-wpoos-pro' ),
+								'icon'      => 'dashicons-shield-alt',
+								'subtab_of' => 'ecommerce',
 							),
 						);
 						foreach ( $commerce_tabs as $tab_id => $tab ) {
