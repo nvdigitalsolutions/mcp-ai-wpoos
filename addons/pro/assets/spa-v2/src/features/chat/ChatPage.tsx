@@ -13,8 +13,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'rea
 import { type Message } from '@ai-sdk/react';
 import { __, sprintf } from '@wordpress/i18n';
 
-import { useBootstrap } from '../../hooks/useBootstrap';
-import { useChatSpoke } from '../../hooks/useChatSpoke';
+	import { useBootstrap } from '../../hooks/useBootstrap';
+	import { usePermissions } from '../../auth/permissions';
+	import { useChatSpoke } from '../../hooks/useChatSpoke';
 import { useTranscripts } from '../../hooks/useTranscripts';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useSpeechPlayback } from '../../hooks/useSpeechPlayback';
@@ -122,13 +123,9 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 
 	// Model / profile overrides are an admin concern — assistants carry their
 	// own provider+model configuration, so non-admin operators should pick an
-	// assistant (the sidebar selector) rather than a raw model.
-	const isAdmin = useMemo(
-		() =>
-			Array.isArray( runtime?.user?.capabilities ) &&
-			runtime.user.capabilities.includes( 'manage_options' ),
-		[ runtime ]
-	);
+	// assistant (the sidebar selector) rather than a raw model. Central
+	// capability source (see auth/permissions.ts).
+	const { isAdmin } = usePermissions();
 
 	// Use assistant store for dynamic selection (with runtime config fallback).
 	const storedAssistantId = useAssistantStore( ( s ) => s.assistantId );

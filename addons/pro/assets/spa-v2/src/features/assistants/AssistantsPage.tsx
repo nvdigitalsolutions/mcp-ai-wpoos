@@ -9,9 +9,10 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { JSX } from 'react';
 import { __ } from '@wordpress/i18n';
-import { useAssistants } from '../../hooks/useAssistants';
-import { useBootstrap } from '../../hooks/useBootstrap';
-import { useTools } from '../../hooks/useTools';
+	import { useAssistants } from '../../hooks/useAssistants';
+	import { useBootstrap } from '../../hooks/useBootstrap';
+	import { usePermissions } from '../../auth/permissions';
+	import { useTools } from '../../hooks/useTools';
 import { useModelStore } from '../../stores/modelStore';
 import type { AssistantRecord } from '../../api/assistants';
 import { ToolPicker } from './ToolPicker';
@@ -40,13 +41,9 @@ export function AssistantsPage(): JSX.Element {
 
 	// Create/edit/delete and the single-assistant GET are manage_options-only
 	// server-side — non-admin roles get a read-only list without the actions
-	// that would only ever answer 403.
-	const isAdmin = useMemo(
-		() =>
-			Array.isArray( runtime?.user?.capabilities ) &&
-			runtime.user.capabilities.includes( 'manage_options' ),
-		[ runtime ]
-	);
+	// that would only ever answer 403. Central capability source (see
+	// auth/permissions.ts).
+	const { isAdmin } = usePermissions();
 
 	const { assistants, loading, error, fetchAssistants, getAssistant, createAssistant, updateAssistant, deleteAssistant } =
 		useAssistants(
