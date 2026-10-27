@@ -35,6 +35,41 @@ describe('buildConsoleRuntime', () => {
     expect(runtime.endpoints.chat).toContain('/mcp-ai/v1/chat');
   });
 
+  it('empties admin-gated endpoints for non-admin users (mirrors the server config)', () => {
+    const runtime = buildConsoleRuntime({ user: { id: 7, capabilities: ['edit_posts'] } });
+
+    // manage_options surfaces must be empty so pages skip the fetch instead
+    // of hitting a 403.
+    expect(runtime.endpoints.commandCenter).toBe('');
+    expect(runtime.endpoints.approvals).toBe('');
+    expect(runtime.endpoints.workflows).toBe('');
+    expect(runtime.endpoints.remoteSites).toBe('');
+    expect(runtime.endpoints.mediaCc).toBe('');
+    // Logged-in surfaces stay available.
+    expect(runtime.endpoints.settings).not.toBe('');
+    expect(runtime.endpoints.assistants).not.toBe('');
+    expect(runtime.endpoints.slashCommands).not.toBe('');
+    // edit_posts surfaces stay available.
+    expect(runtime.endpoints.blueprints).not.toBe('');
+  });
+
+  it('keeps admin-gated endpoints for administrators', () => {
+    const runtime = buildConsoleRuntime({
+      user: { id: 1, capabilities: ['manage_options', 'edit_posts'] },
+    });
+
+    expect(runtime.endpoints.commandCenter).toContain('/command-center');
+    expect(runtime.endpoints.approvals).toContain('/approvals');
+    expect(runtime.endpoints.blueprints).not.toBe('');
+  });
+
+  it('empties edit_posts surfaces for users without the capability', () => {
+    const runtime = buildConsoleRuntime({ user: { id: 9, capabilities: [] } });
+
+    expect(runtime.endpoints.blueprints).toBe('');
+    expect(runtime.endpoints.commandCenter).toBe('');
+  });
+
   it('pins the default assistant id when provided', () => {
     const runtime = buildConsoleRuntime({ defaultAssistantId: 42 });
     expect(runtime.config?.assistantId).toBe(42);

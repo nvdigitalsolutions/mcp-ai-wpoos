@@ -52,7 +52,16 @@ async function readJson<T>(response: Response, context: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-function buildEndpoints(origin: string): ProSpaEndpoints {
+/**
+ * Build the console endpoint map, mirroring the server SPA config's
+ * capability gating (WP_MCP_AI_Pro_SPA_Config::build()): admin-gated
+ * endpoints are empty strings for non-admin sessions so pages skip the
+ * fetch instead of hitting a 403. Keep this matrix in sync with the
+ * server and with src/auth/permissions.ts in spa-v2.
+ */
+function buildEndpoints(origin: string, capabilities: string[]): ProSpaEndpoints {
+  const isAdmin = capabilities.includes('manage_options');
+  const canEdit = capabilities.includes('edit_posts');
   const api = `${origin}/wp-json`;
   const core = `${api}/mcp-ai/v1`;
   const pro = `${api}/mcp-ai-pro/v1`;
@@ -66,33 +75,33 @@ function buildEndpoints(origin: string): ProSpaEndpoints {
     assistants: `${core}/assistants`,
     settings: `${core}/settings`,
     upload: `${api}/wp/v2/media`,
-    workflows: `${pro}/workflows`,
-    analytics: `${core}/analytics`,
-    cost: `${core}/cost`,
-    approvals: `${core}/approvals`,
-    triggers: `${core}/orchestration/triggers`,
-    teams: `${core}/teams`,
-    portability: `${core}/assistants`,
-    security: `${core}/security`,
-    		operations: `${ core }/operations`,
-    		diagnostics: `${ core }/diagnostics`,
-    		paperStore: `${ core }/paper-store`,
-    tokenManager: `${core}/token-manager`,
-    orchestrationStats: `${core}/orchestration/stats`,
-    proOps: `${pro}/ops`,
-    scheduleManager: `${pro}`,
-    workflowBuilder: `${core}/orchestration/workflows`,
-    workflowPresets: `${pro}/workflow-presets`,
-    workflowNodes: `${pro}/workflow-builder`,
-    workflowRuns: `${core}/orchestration/runs`,
+    workflows: isAdmin ? `${pro}/workflows` : '',
+    analytics: isAdmin ? `${core}/analytics` : '',
+    cost: isAdmin ? `${core}/cost` : '',
+    approvals: isAdmin ? `${core}/approvals` : '',
+    triggers: isAdmin ? `${core}/orchestration/triggers` : '',
+    teams: isAdmin ? `${core}/teams` : '',
+    portability: isAdmin ? `${core}/assistants` : '',
+    security: isAdmin ? `${core}/security` : '',
+    operations: isAdmin ? `${core}/operations` : '',
+    diagnostics: isAdmin ? `${core}/diagnostics` : '',
+    paperStore: isAdmin ? `${core}/paper-store` : '',
+    tokenManager: isAdmin ? `${core}/token-manager` : '',
+    orchestrationStats: isAdmin ? `${core}/orchestration/stats` : '',
+    proOps: isAdmin ? `${pro}/ops` : '',
+    scheduleManager: isAdmin ? `${pro}` : '',
+    workflowBuilder: isAdmin ? `${core}/orchestration/workflows` : '',
+    workflowPresets: isAdmin ? `${pro}/workflow-presets` : '',
+    workflowNodes: isAdmin ? `${pro}/workflow-builder` : '',
+    workflowRuns: isAdmin ? `${core}/orchestration/runs` : '',
     wpBase: `${api}/wp/v2`,
-    recordsSchema: `${pro}/records/schema`,
-    dashboardsSchema: `${pro}/dashboards/schema`,
-    chatChannels: `${pro}/chat-channels`,
-    remoteSites: `${pro}/remote-sites`,
-    mediaCc: `${pro}/media-cc`,
-    blueprints: `${pro}/blueprints`,
-    commandCenter: `${pro}/command-center`,
+    recordsSchema: isAdmin ? `${pro}/records/schema` : '',
+    dashboardsSchema: isAdmin ? `${pro}/dashboards/schema` : '',
+    chatChannels: isAdmin ? `${pro}/chat-channels` : '',
+    remoteSites: isAdmin ? `${pro}/remote-sites` : '',
+    mediaCc: isAdmin ? `${pro}/media-cc` : '',
+    blueprints: canEdit ? `${pro}/blueprints` : '',
+    commandCenter: isAdmin ? `${pro}/command-center` : '',
     shortcuts: `${pro}/tool-shortcuts`,
     slashCommands: `${pro}/slash-commands`,
     		okf: `${pro}/okf`,
@@ -144,8 +153,9 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
 
   // Optional surfaces resolve to an empty endpoint when the server reports
   // them unavailable — their pages then render the unavailable state instead
-  // of framing a dead URL (and the nav hides them entirely).
-  const endpoints = buildEndpoints(origin);
+  // of framing a dead URL (and the nav hides them entirely). Admin-gated
+  // surfaces were already emptied for non-admin users inside buildEndpoints().
+  const endpoints = buildEndpoints(origin, options.user?.capabilities ?? []);
   if (features.docs_hub === false) {
     endpoints.docsHub = '';
   }
