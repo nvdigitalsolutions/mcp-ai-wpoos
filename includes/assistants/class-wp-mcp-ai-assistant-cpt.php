@@ -28,6 +28,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_MODEL                   = '_wp_mcp_ai_model';
 		const META_TEMPERATURE             = '_wp_mcp_ai_temperature';
 		const META_SYSTEM_PROMPT           = '_wp_mcp_ai_system_prompt';
+		const META_FALLBACK_CHAIN          = '_wp_mcp_ai_fallback_chain';
 		const META_ADAPTIVE_TOOL_CAP       = '_wp_mcp_ai_adaptive_tool_cap';
 		const META_MEMORY_FILES            = '_wp_mcp_ai_memory_files';
 		const META_VECTOR_STORE_ID         = '_wp_mcp_ai_vector_store_id';
@@ -1399,6 +1400,19 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				)
 			);
 
+			// Proposal 091 Track D — ordered provider fallback chain.
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_FALLBACK_CHAIN,
+				array(
+					'type'              => 'array',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_fallback_chain_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
+
 			register_post_meta(
 				self::POST_TYPE,
 				self::META_ADAPTIVE_TOOL_CAP,
@@ -1843,6 +1857,37 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			return wp_kses_post( $prompt );
+		}
+
+		/**
+		 * Sanitize the ordered provider fallback chain meta (Proposal 091).
+		 *
+		 * Accepts a JSON string or an array of slugs; returns a de-duplicated
+		 * array of sanitized slugs.
+		 *
+		 * @since 1.2.13
+		 *
+		 * @param mixed $chain Raw chain value.
+		 * @return string[]
+		 */
+		public static function sanitize_fallback_chain_meta( $chain ) {
+			if ( is_string( $chain ) && '' !== trim( $chain ) ) {
+				$decoded = json_decode( wp_unslash( $chain ), true );
+				$chain   = is_array( $decoded ) ? $decoded : array();
+			}
+			if ( ! is_array( $chain ) ) {
+				return array();
+			}
+
+			$clean = array();
+			foreach ( $chain as $slug ) {
+				$slug = sanitize_key( (string) $slug );
+				if ( '' !== $slug && ! in_array( $slug, $clean, true ) ) {
+					$clean[] = $slug;
+				}
+			}
+
+			return $clean;
 		}
 
 		/**
@@ -5366,6 +5411,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'model'                      => get_post_meta( $assistant_id, self::META_MODEL, true ),
 				'temperature'                => get_post_meta( $assistant_id, self::META_TEMPERATURE, true ),
 				'system_prompt'              => get_post_meta( $assistant_id, self::META_SYSTEM_PROMPT, true ),
+				'fallback_chain'             => get_post_meta( $assistant_id, self::META_FALLBACK_CHAIN, true ),
 				'adaptive_tool_cap'          => get_post_meta( $assistant_id, self::META_ADAPTIVE_TOOL_CAP, true ),
 				'memory_files'               => get_post_meta( $assistant_id, self::META_MEMORY_FILES, true ),
 				'vector_store_id'            => get_post_meta( $assistant_id, self::META_VECTOR_STORE_ID, true ),
@@ -5410,6 +5456,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			} else {
 				$config['system_prompt'] = self::sanitize_system_prompt_meta( $config['system_prompt'] );
 			}
+
+			$config['fallback_chain'] = self::sanitize_fallback_chain_meta( $config['fallback_chain'] );
 
 			// Build prompt from primary roles if assigned.
 			$primary_roles = get_post_meta( $assistant_id, self::META_PRIMARY_ROLES, true );
