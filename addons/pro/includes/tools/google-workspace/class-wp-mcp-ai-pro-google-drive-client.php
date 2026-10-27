@@ -208,20 +208,17 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 	}
 
 	/**
-	 * Find the Remote Sites Google Drive connection to use when no
-	 * connection_id was given and the settings-based credentials are absent.
-	 *
-	 * Returns null when no usable connection exists, the single enabled
-	 * connection when exactly one does, or a WP_Error listing the candidates
-	 * when several are enabled (ambiguous — the caller must name one).
+	 * Enumerate the Remote Sites Google Drive connections that auto-resolution
+	 * considers: enabled, typed google_drive, with complete credentials.
 	 *
 	 * When the context carries a restricted assistant, only connections from
-	 * the assistant's Remote Site Connections list are considered.
+	 * the assistant's Remote Site Connections list are considered — the same
+	 * rules resolve_auto_connection() applies.
 	 *
 	 * @param array $context Optional execution context (assistant_id is honoured).
-	 * @return array|null|WP_Error
+	 * @return array<string,array> Connection ID => connection array.
 	 */
-	private static function resolve_auto_connection( array $context = array() ) {
+	public static function get_auto_connection_candidates( array $context = array() ) {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 		}
@@ -253,6 +250,26 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 
 			$candidates[ (string) $candidate_id ] = $connection;
 		}
+
+		return $candidates;
+	}
+
+	/**
+	 * Find the Remote Sites Google Drive connection to use when no
+	 * connection_id was given and the settings-based credentials are absent.
+	 *
+	 * Returns null when no usable connection exists, the single enabled
+	 * connection when exactly one does, or a WP_Error listing the candidates
+	 * when several are enabled (ambiguous — the caller must name one).
+	 *
+	 * When the context carries a restricted assistant, only connections from
+	 * the assistant's Remote Site Connections list are considered.
+	 *
+	 * @param array $context Optional execution context (assistant_id is honoured).
+	 * @return array|null|WP_Error
+	 */
+	private static function resolve_auto_connection( array $context = array() ) {
+		$candidates = self::get_auto_connection_candidates( $context );
 
 		if ( empty( $candidates ) ) {
 			return null;
