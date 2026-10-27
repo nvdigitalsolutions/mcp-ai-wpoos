@@ -1,2 +1,0 @@
-import{r as e}from"./index-DZ8dktii.js";import{t}from"./wp-i18n-C072j7CM.js";import{t as n}from"./SettingsForm-B6oXNHrl.js";var r=e();function i(){return(0,r.jsx)(n,{title:t(`Settings`,`nvoos-pro-spa`),subtitle:t(`Site-wide NV oOS configuration.`,`nvoos-pro-spa`)})}export{i as SettingsPage};
-//# sourceMappingURL=SettingsPage-3fuPotir.js.map
