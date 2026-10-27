@@ -280,6 +280,14 @@ addon SPA):
   `NVOOS_COMPLETE_VELOCITY_REPO_TOKEN`. Ships at the repo ROOT (entry
   `server.js` → `scripts/serve.mjs`), no build command, env
   `NVOOS_TARGET_SITE=<complete-bundle-wordpress-site>`.
+- **Live-console staleness diagnosis** — when the console is missing a
+  feature that landed in spa-v2 (e.g. pagination on the Records groups,
+  #7239), the recipe is: compare the live chunk hashes (DevTools Network)
+  against `examples/nvoos-complete-velocity/dist/assets/`, then
+  `git show --stat <feature-commit> -- examples/nvoos-complete-velocity`
+  and rebuild the console dist. Full playbook (incl. the grep caveat and
+  the one-sided two-bundle case) lives in the `mcp-ai-wpoos-spa-ui`
+  skill → "Live-console staleness diagnosis (learned 2026-10-27)".
 - The app proxies `/wp-json`, `/wp-admin`, `/wp-login.php` and
   `/wp-includes` to `NVOOS_TARGET_SITE` (cookie-auth mode — same-origin
   cookies + the wp_rest nonce handshake; the login page is re-scoped to the
