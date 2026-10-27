@@ -952,6 +952,17 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/assistant
 	require_once WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-prompt-versions.php';
 }
 WP_MCP_AI_Prompt_Versions::init();
+
+// ---------------------------------------------------------------------------
+// Proposal 091 Track E — GenAI span emitter + annotation store
+// ---------------------------------------------------------------------------
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-genai-span-emitter.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-genai-span-emitter.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/chat/class-wp-mcp-ai-annotation-store.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/chat/class-wp-mcp-ai-annotation-store.php';
+}
+
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-prompt-versions-command.php';
 	require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-workflow-command.php';

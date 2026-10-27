@@ -1407,7 +1407,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				array(
 					'type'              => 'array',
 					'single'            => true,
-					'show_in_rest'      => true,
+					'show_in_rest'      => array(
+						'schema' => array(
+							'items' => array( 'type' => 'string' ),
+						),
+					),
 					'sanitize_callback' => array( __CLASS__, 'sanitize_fallback_chain_meta' ),
 					'auth_callback'     => $auth_callback,
 				)
