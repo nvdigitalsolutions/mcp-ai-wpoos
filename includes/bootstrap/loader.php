@@ -938,8 +938,38 @@ add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_meta' ), 12 );
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dsl-codec.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dsl-codec.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dispatcher.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dispatcher.php';
+}
+
+// ---------------------------------------------------------------------------
+// Proposal 091 Track B — assistant prompt versioning (lite)
+// ---------------------------------------------------------------------------
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-prompt-versions.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-prompt-versions.php';
+}
+WP_MCP_AI_Prompt_Versions::init();
+
+// ---------------------------------------------------------------------------
+// Proposal 091 Track E — GenAI span emitter + annotation store
+// ---------------------------------------------------------------------------
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-genai-span-emitter.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-genai-span-emitter.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/chat/class-wp-mcp-ai-annotation-store.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/chat/class-wp-mcp-ai-annotation-store.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/observability/class-wp-mcp-ai-otlp-exporter.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/observability/class-wp-mcp-ai-otlp-exporter.php';
+}
+WP_MCP_AI_OTLP_Exporter::init();
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-prompt-versions-command.php';
+	require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-workflow-command.php';
 }
 
 // ---------------------------------------------------------------------------

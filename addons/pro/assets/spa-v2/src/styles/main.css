@@ -7763,3 +7763,90 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-page__message--success {
 	color: var(--nvoos-positive, #008a20);
 }
+
+/* =========================================================================
+   Workflow DSL import panel (2.5.0 — Proposal 091, Track A)
+   ========================================================================= */
+
+.nvoos-pro-spa-dsl-import {
+	margin-top: 12px;
+	padding: 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-dsl-import__input {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text, #1e1e1e);
+	font-family: monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	resize: vertical;
+}
+
+.nvoos-pro-spa-dsl-import__input:focus {
+	border-color: var(--nvoos-primary, #2271b1);
+	outline: 1px solid var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-dsl-import__controls {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 8px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-dsl-import__controls label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-dsl-import__findings {
+	width: 100%;
+	margin-top: 12px;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.nvoos-pro-spa-dsl-import__findings th,
+.nvoos-pro-spa-dsl-import__findings td {
+	padding: 6px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	text-align: left;
+	vertical-align: top;
+}
+
+.nvoos-pro-spa-dsl-import__findings th {
+	background: var(--nvoos-bg, #f0f0f1);
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-dsl-import__findings tr[data-severity='error'] td:first-child {
+	color: #b32d2e;
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-dsl-import__findings tr[data-severity='warning'] td:first-child {
+	color: #996800;
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-dsl-import__blocked {
+	margin-top: 8px;
+	padding: 8px 10px;
+	border-left: 4px solid #b32d2e;
+	background: rgba( 179, 45, 46, 0.06 );
+	color: #b32d2e;
+	font-size: 13px;
+}

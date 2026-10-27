@@ -89,6 +89,7 @@ class WP_MCP_AI_Analytics_Service_Page {
 			<?php $this->render_adapter_dashboard(); ?>
 			<?php $this->render_cache_dashboard(); ?>
 			<?php $this->render_rate_limit_dashboard(); ?>
+			<?php $this->render_observability_dashboard(); ?>
 			<?php $this->render_cache_actions(); ?>
 		</div>
 
@@ -301,6 +302,138 @@ class WP_MCP_AI_Analytics_Service_Page {
 					</p>
 				</div>
 			<?php endforeach; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Proposal 091 Track E — read-only observability series (annotation
+	 * totals + recent GenAI span counts) shared by this wp-admin page and
+	 * the Pro Dashboards REST controller's `observability` dashboard.
+	 *
+	 * Annotation totals come from the base annotation store (transcript
+	 * post meta, decision D5). Span counts scan the audit activity log
+	 * (`wp_mcp_ai_recent_activity`, capped at 100 entries), so they are
+	 * labelled "recent" — the log is a bounded ring buffer, not a metric
+	 * store.
+	 *
+	 * @since 1.2.13
+	 * @return array<string, int|array> Observability series.
+	 */
+	public static function get_observability_data() {
+		$rows = array();
+		if ( class_exists( 'WP_MCP_AI_Annotation_Store' ) ) {
+			$rows = WP_MCP_AI_Annotation_Store::export_dataset();
+		}
+
+		$positive    = 0;
+		$negative    = 0;
+		$neutral     = 0;
+		$transcripts = array();
+		foreach ( $rows as $row ) {
+			if ( ! is_array( $row ) || ! isset( $row['transcript_id'] ) ) {
+				continue;
+			}
+			$transcripts[ absint( $row['transcript_id'] ) ] = true;
+
+			$rating = isset( $row['rating'] ) ? (int) $row['rating'] : 0;
+			if ( $rating > 0 ) {
+				++$positive;
+			} elseif ( $rating < 0 ) {
+				++$negative;
+			} else {
+				++$neutral;
+			}
+		}
+
+		$spans_chat = 0;
+		$spans_tool = 0;
+		$activity   = get_option( 'wp_mcp_ai_recent_activity', array() );
+		if ( is_array( $activity ) ) {
+			foreach ( $activity as $entry ) {
+				if ( ! is_array( $entry ) || 'genai_span' !== ( isset( $entry['type'] ) ? $entry['type'] : '' ) ) {
+					continue;
+				}
+
+				$context   = isset( $entry['context'] ) && is_array( $entry['context'] ) ? $entry['context'] : array();
+				$operation = isset( $context['gen_ai.operation.name'] ) ? (string) $context['gen_ai.operation.name'] : '';
+				if ( 'execute_tool' === $operation ) {
+					++$spans_tool;
+				} else {
+					++$spans_chat;
+				}
+			}
+		}
+
+		return array(
+			'annotations_total'     => count( $rows ),
+			'annotations_positive'  => $positive,
+			'annotations_negative'  => $negative,
+			'annotations_neutral'   => $neutral,
+			'transcripts_annotated' => count( $transcripts ),
+			'spans_chat'            => $spans_chat,
+			'spans_tool'            => $spans_tool,
+			'by_rating'             => array(
+				'positive' => $positive,
+				'neutral'  => $neutral,
+				'negative' => $negative,
+			),
+			'spans_by_operation'    => array(
+				'chat'         => $spans_chat,
+				'execute_tool' => $spans_tool,
+			),
+		);
+	}
+
+	/**
+	 * Render the Proposal 091 observability section (read-only).
+	 *
+	 * @since 1.2.13
+	 * @return void
+	 */
+	private function render_observability_dashboard() {
+		$data = self::get_observability_data();
+
+		?>
+		<h2><?php esc_html_e( 'AI Observability (Proposal 091)', 'mcp-ai-wpoos-pro' ); ?></h2>
+		<div class="analytics-service-grid">
+			<div class="analytics-service-card">
+				<h3><?php esc_html_e( 'Chat Annotations', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<table>
+					<tr>
+						<th><?php esc_html_e( 'Total', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td><?php echo esc_html( (int) $data['annotations_total'] ); ?></td>
+					</tr>
+					<tr>
+						<th><?php esc_html_e( 'Positive', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td><?php echo esc_html( (int) $data['annotations_positive'] ); ?></td>
+					</tr>
+					<tr>
+						<th><?php esc_html_e( 'Negative', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td><?php echo esc_html( (int) $data['annotations_negative'] ); ?></td>
+					</tr>
+					<tr>
+						<th><?php esc_html_e( 'Transcripts', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td><?php echo esc_html( (int) $data['transcripts_annotated'] ); ?></td>
+					</tr>
+				</table>
+			</div>
+			<div class="analytics-service-card">
+				<h3><?php esc_html_e( 'GenAI Spans (recent)', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<table>
+					<tr>
+						<th><?php esc_html_e( 'Chat', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td><?php echo esc_html( (int) $data['spans_chat'] ); ?></td>
+					</tr>
+					<tr>
+						<th><?php esc_html_e( 'Tool', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td><?php echo esc_html( (int) $data['spans_tool'] ); ?></td>
+					</tr>
+				</table>
+				<p style="font-size:12px;color:#555;">
+					<?php esc_html_e( 'Counts scan the audit activity log (last 100 events) and require logging to be enabled.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+			</div>
 		</div>
 		<?php
 	}

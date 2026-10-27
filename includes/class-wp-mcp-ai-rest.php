@@ -620,6 +620,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$portability_controller = new WP_MCP_AI_REST_Assistant_Portability_Controller();
 			$portability_controller->register_routes();
 
+			// Proposal 091 Track B — assistant prompt versioning (lite).
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-prompt-versions-controller.php';
+			$prompt_versions_controller = new WP_MCP_AI_REST_Prompt_Versions_Controller();
+			$prompt_versions_controller->register_routes();
+
+			// Proposal 091 Track E — annotation dataset export.
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-annotation-controller.php';
+			$annotation_controller = new WP_MCP_AI_REST_Annotation_Controller();
+			$annotation_controller->register_routes();
+
 			// Note: /mcp route now handled by MCP Controller (Phase 3.3).
 		}
 
