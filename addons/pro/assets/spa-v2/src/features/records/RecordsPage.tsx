@@ -745,6 +745,7 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 					columns={ listColumns }
 					rows={ listRows }
 					caption={ entity?.label ?? __( 'Records', 'nvoos-pro-spa' ) }
+					busy={ loading }
 					footer={
 						<Pagination
 							page={ page }

@@ -13,6 +13,10 @@
  * - `aria-current="page"` on the active page button.
  * - Boundary controls stay in the DOM but are `disabled`, so the layout never
  *   jumps between pages and the inactive state is announced.
+ * - While a page fetch is in flight (`busy`), an inline spinner + “Loading…”
+ *   live region appears in the pager and every control is disabled — the
+ *   industry keep-previous-data pattern (stale rows stay visible but dimmed
+ *   by the page, the pager owns the progress signal).
  * - A polite live region announcing the visible row range on every change —
  *   "Showing 1–50 of 320 records" — so a truncated list can never be mistaken
  *   for the full result set.
@@ -78,7 +82,8 @@ export interface PaginationProps {
 	label?: string;
 	/** Extra class names for the nav element. */
 	className?: string;
-	/** Disable every control while a page fetch is in flight. */
+	/** Disable every control and show an inline loading indicator while a
+	 * page fetch is in flight. */
 	busy?: boolean;
 }
 
@@ -110,6 +115,7 @@ export function Pagination( {
 				.filter( Boolean )
 				.join( ' ' ) }
 			aria-label={ label }
+			aria-busy={ busy || undefined }
 		>
 			<p
 				className="nvoos-pro-spa-tools-page__pager-label"
@@ -125,6 +131,20 @@ export function Pagination( {
 					itemLabel
 				) }
 			</p>
+
+			{ busy ? (
+				<p
+					className="nvoos-pro-spa-tools-page__pager-busy"
+					role="status"
+					aria-live="polite"
+				>
+					<span
+						className="nvoos-pro-spa-page__spinner nvoos-pro-spa-page__spinner--small"
+						aria-hidden="true"
+					/>
+					{ __( 'Loading…', 'nvoos-pro-spa' ) }
+				</p>
+			) : null }
 
 			{ onPerPageChange ? (
 				<label className="nvoos-pro-spa-tools-page__pager-size">

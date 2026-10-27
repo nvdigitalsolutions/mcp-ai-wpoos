@@ -375,6 +375,7 @@ export function ChatChannelsPage(): JSX.Element {
 					columns={ conversationColumns }
 					rows={ conversationRows }
 					caption={ __( 'Conversations', 'nvoos-pro-spa' ) }
+					busy={ loading }
 					footer={
 						<Pagination
 							page={ page }

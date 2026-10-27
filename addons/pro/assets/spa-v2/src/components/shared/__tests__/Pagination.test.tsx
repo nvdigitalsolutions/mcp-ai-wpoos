@@ -109,6 +109,38 @@ describe( 'Pagination', () => {
 		expect( screen.getByRole( 'button', { name: 'Page 1' } ) ).toBeDisabled();
 	} );
 
+	it( 'shows an inline loading indicator while busy and marks the pager busy', () => {
+		render(
+			<Pagination
+				page={ 2 }
+				perPage={ 10 }
+				total={ 100 }
+				busy
+				onPageChange={ () => {} }
+			/>
+		);
+
+		expect( screen.getByRole( 'navigation', { name: 'Pagination' } ) ).toHaveAttribute(
+			'aria-busy',
+			'true'
+		);
+		// Both the range label and the in-flight indicator are polite live
+		// regions — the page change is announced, then the new range.
+		const statuses = screen.getAllByRole( 'status' );
+		expect( statuses ).toHaveLength( 2 );
+		expect( statuses[ 1 ] ).toHaveTextContent( 'Loading…' );
+	} );
+
+	it( 'shows no loading indicator when idle', () => {
+		render( <Pagination page={ 1 } perPage={ 50 } total={ 320 } onPageChange={ () => {} } /> );
+
+		expect( screen.getByRole( 'navigation', { name: 'Pagination' } ) ).not.toHaveAttribute(
+			'aria-busy'
+		);
+		expect( screen.getAllByRole( 'status' ) ).toHaveLength( 1 );
+		expect( screen.queryByText( 'Loading…' ) ).not.toBeInTheDocument();
+	} );
+
 	it( 'renders an empty range when there are no rows', () => {
 		render( <Pagination page={ 1 } perPage={ 50 } total={ 0 } onPageChange={ () => {} } /> );
 

@@ -4509,6 +4509,12 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	animation: nvoos-pro-spa-spin 0.8s linear infinite;
 }
 
+.nvoos-pro-spa-page__spinner--small {
+	width: 16px;
+	height: 16px;
+	border-width: 2px;
+}
+
 /* Generic console action button. Every page reuses this class for its
    primary actions, so it carries the full interactive treatment — variants
    below (`--primary`, `--danger`, `--small`) replace ad-hoc one-off buttons. */
@@ -5353,6 +5359,18 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	color: var(--nvoos-text-secondary, #787c82);
 }
 
+/* In-flight page fetch: inline spinner + label next to the range text
+   (keep-previous-data pattern — the pager owns the progress signal while
+   the table dims its stale rows). */
+.nvoos-pro-spa-tools-page__pager-busy {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
 .nvoos-pro-spa-tools-page__pager-size {
 	display: inline-flex;
 	align-items: center;
@@ -5458,6 +5476,15 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	min-width: 640px;
 	border-collapse: separate;
 	border-spacing: 0;
+}
+
+/* Keep-previous-data busy state: stale rows stay mounted but read as
+   clearly inactive while the next page fetches (opacity dim + pointer
+   shield so a stale row can never be acted on). */
+.nvoos-pro-spa-tools-list--busy {
+	opacity: 0.5;
+	pointer-events: none;
+	transition: opacity 0.15s ease;
 }
 
 .nvoos-pro-spa-tools-list--table thead th {
