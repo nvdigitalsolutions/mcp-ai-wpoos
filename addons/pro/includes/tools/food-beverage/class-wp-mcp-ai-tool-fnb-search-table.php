@@ -47,32 +47,36 @@ class WP_MCP_AI_Tool_Fnb_Search_Table extends WP_MCP_AI_Fnb_Tool_Base {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'table_id'    => array(
+				'table_id'      => array(
 					'type'        => 'string',
 					'description' => __( 'Spec table ID: 1.0…17.0.', 'mcp-ai-wpoos-pro' ),
 				),
-				'column'      => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites Drive connection ID override for this table. Omit to auto-route: the table\'s mapped source (F&B settings → Table Sources), then the toolkit default Drive Connection, then the only enabled Drive connection.', 'mcp-ai-wpoos-pro' ),
+				),
+				'column'        => array(
 					'type'        => 'string',
 					'description' => __( 'Canonical column to filter on (e.g. item_id, ingredient_id, date).', 'mcp-ai-wpoos-pro' ),
 				),
-				'value'       => array(
+				'value'         => array(
 					'type'        => 'string',
 					'description' => __( 'Value to match (case-insensitive substring).', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_column' => array(
+				'date_column'   => array(
 					'type'        => 'string',
 					'description' => __( 'Date column for range filtering (default "date").', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'date',
 				),
-				'from'        => array(
+				'from'          => array(
 					'type'        => 'string',
 					'description' => __( 'Start date (Y-m-d).', 'mcp-ai-wpoos-pro' ),
 				),
-				'to'          => array(
+				'to'            => array(
 					'type'        => 'string',
 					'description' => __( 'End date (Y-m-d).', 'mcp-ai-wpoos-pro' ),
 				),
-				'limit'       => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum rows (default 500).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 500,
@@ -97,18 +101,19 @@ class WP_MCP_AI_Tool_Fnb_Search_Table extends WP_MCP_AI_Fnb_Tool_Base {
 			return $error;
 		}
 
-		$table_id    = isset( $arguments['table_id'] ) ? sanitize_text_field( (string) $arguments['table_id'] ) : '';
-		$column      = isset( $arguments['column'] ) ? sanitize_key( (string) $arguments['column'] ) : '';
-		$value       = isset( $arguments['value'] ) ? sanitize_text_field( (string) $arguments['value'] ) : '';
-		$date_column = isset( $arguments['date_column'] ) ? sanitize_key( (string) $arguments['date_column'] ) : 'date';
-		$from        = isset( $arguments['from'] ) ? sanitize_text_field( (string) $arguments['from'] ) : null;
-		$to          = isset( $arguments['to'] ) ? sanitize_text_field( (string) $arguments['to'] ) : null;
-		$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 500;
+		$table_id            = isset( $arguments['table_id'] ) ? sanitize_text_field( (string) $arguments['table_id'] ) : '';
+		$connection_override = isset( $arguments['connection_id'] ) ? sanitize_key( (string) $arguments['connection_id'] ) : '';
+		$column              = isset( $arguments['column'] ) ? sanitize_key( (string) $arguments['column'] ) : '';
+		$value               = isset( $arguments['value'] ) ? sanitize_text_field( (string) $arguments['value'] ) : '';
+		$date_column         = isset( $arguments['date_column'] ) ? sanitize_key( (string) $arguments['date_column'] ) : 'date';
+		$from                = isset( $arguments['from'] ) ? sanitize_text_field( (string) $arguments['from'] ) : null;
+		$to                  = isset( $arguments['to'] ) ? sanitize_text_field( (string) $arguments['to'] ) : null;
+		$limit               = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 500;
 		if ( $limit < 1 ) {
 			$limit = 500;
 		}
 
-		$result = WP_MCP_AI_Fnb_Data_Source::search_table( $table_id, $column, $value, $date_column, $from, $to, $limit );
+		$result = WP_MCP_AI_Fnb_Data_Source::search_table( $table_id, $column, $value, $date_column, $from, $to, $limit, $connection_override );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
