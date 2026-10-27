@@ -173,12 +173,13 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 				$api_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
 			}
 		} else {
-			// A restricted assistant cannot fall back to the site-wide settings:
-			// the assistant editor can only grant named Remote Sites connections.
-			if ( null !== $this->get_allowed_connection_ids( $context ) ) {
+			// A restricted assistant may only fall back to the site-wide settings
+			// when the assistant editor granted the "settings" row.
+			$allowed_ids = $this->get_allowed_connection_ids( $context );
+			if ( null !== $allowed_ids && ! in_array( 'settings', $allowed_ids, true ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_quickbooks_settings_not_allowed',
-					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide QuickBooks settings cannot be used. Enable a QuickBooks connection for the assistant in the assistant editor (Remote Site Connections) and pass its connection_id.', 'mcp-ai-wpoos-pro' ),
+					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide QuickBooks settings cannot be used. Enable the site-wide QuickBooks settings row (or a QuickBooks connection) for the assistant in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 403 )
 				);
 			}

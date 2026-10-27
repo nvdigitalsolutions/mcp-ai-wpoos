@@ -151,9 +151,11 @@ class WP_MCP_AI_Pro_Tool_List_Gmail_Connections implements WP_MCP_AI_Tool_Interf
 		}
 
 		// Settings-based fallback: represents the inbox used when connection_id is omitted.
-		// Restricted assistants cannot use it, so it is hidden from their discovery output.
+		// Restricted assistants only see it when the assistant editor granted the
+		// "settings" row; unrestricted assistants always see it.
+		$settings_fallback_allowed = ( null === $allowed_ids || in_array( 'settings', $allowed_ids, true ) );
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		if ( null === $allowed_ids && ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_refresh_token'] ) ) {
+		if ( $settings_fallback_allowed && ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_refresh_token'] ) ) {
 			$connections[] = array(
 				'id'              => 'settings',
 				'name'            => __( 'NV oOS Gmail settings (default connection)', 'mcp-ai-wpoos-pro' ),
@@ -165,7 +167,7 @@ class WP_MCP_AI_Pro_Tool_List_Gmail_Connections implements WP_MCP_AI_Tool_Interf
 
 		$data = array(
 			'connections' => $connections,
-			'note'        => __( 'Credentials are never included in this list. Omit connection_id to use the settings-based default; when no settings credentials are configured, the only enabled connection is used automatically. If several connections are enabled, pass the connection_id explicitly — Gmail tools will not guess between them. Assistants with a Remote Site Connections restriction only see the connections enabled for them.', 'mcp-ai-wpoos-pro' ),
+			'note'        => __( 'Credentials are never included in this list. Omit connection_id to use the site-wide settings-based default ("settings" row); when no settings credentials are configured, the only enabled connection is used automatically. If several connections are enabled, pass the connection_id explicitly — Gmail tools will not guess between them. Assistants with a Remote Site Connections restriction only see the connections enabled for them, including the "settings" row when it is checked in the assistant editor.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $this->format_success_response(

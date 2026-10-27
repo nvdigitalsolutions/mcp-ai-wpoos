@@ -49,6 +49,13 @@ class Test_Google_Drive_Assistant_Scoping extends WP_UnitTestCase {
 	public function tearDown(): void {
 		remove_all_filters( 'pre_http_request' );
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		// Restore a clean settings surface so settings-based credentials written
+		// by these tests cannot leak into later suites in the same process,
+		// where they would hijack the settings fallback of unrelated tools.
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
 		wp_set_current_user( 0 );
 
 		parent::tearDown();
@@ -214,6 +221,29 @@ class Test_Google_Drive_Assistant_Scoping extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_drive_settings_not_allowed', $result->get_error_code() );
 		$this->assertSame( 403, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * A restricted assistant granted the "settings" row may use the site-wide
+	 * Drive settings fallback.
+	 */
+	public function test_resolve_credentials_allows_settings_fallback_when_granted() {
+		$settings                               = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['google_drive_client_id']     = 'client-id';
+		$settings['google_drive_client_secret'] = 'client-secret';
+		$settings['google_drive_refresh_token'] = 'refresh-token';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$this->restrict_assistant_to( array( 'settings' ) );
+
+		$credentials = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials(
+			'',
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		$this->assertNotWPError( $credentials );
+		$this->assertSame( 'settings', $credentials['source'] );
+		$this->assertSame( 'client-id', $credentials['client_id'] );
 	}
 
 	/**

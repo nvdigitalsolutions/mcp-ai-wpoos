@@ -51,6 +51,14 @@ class Test_Remote_Connections_Assistant_Scoping extends WP_UnitTestCase {
 		remove_all_filters( 'pre_http_request' );
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 		delete_option( 'wp_mcp_ai_flowhub_toolkit_settings' );
+
+		// Restore a clean settings surface so settings-based credentials written
+		// by these tests (Gmail, Drive, Calendar, …) cannot leak into later
+		// suites in the same process, where they would hijack the settings
+		// fallback of unrelated tools.
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
 		wp_set_current_user( 0 );
 
 		parent::tearDown();
@@ -168,6 +176,52 @@ class Test_Remote_Connections_Assistant_Scoping extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A restricted assistant granted the "settings" row may use the site-wide
+	 * Gmail settings fallback.
+	 */
+	public function test_gmail_client_allows_settings_fallback_when_granted() {
+		$settings                            = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['gmail_client_id']         = 'client-id';
+		$settings['gmail_client_secret']     = 'client-secret';
+		$settings['gmail_refresh_token']     = 'refresh-token';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$this->restrict_assistant_to( array( 'settings' ) );
+
+		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials(
+			'',
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		$this->assertNotWPError( $credentials );
+		$this->assertSame( 'settings', $credentials['source'] );
+		$this->assertSame( 'client-id', $credentials['client_id'] );
+	}
+
+	/**
+	 * A restricted assistant without the "settings" grant is still refused the
+	 * settings fallback even when other connections are enabled.
+	 */
+	public function test_gmail_client_blocks_settings_when_grant_absent() {
+		$settings                            = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['gmail_client_id']         = 'client-id';
+		$settings['gmail_client_secret']     = 'client-secret';
+		$settings['gmail_refresh_token']     = 'refresh-token';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$this->restrict_assistant_to( array( 'conn_inbox_a' ) );
+
+		$result = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials(
+			'settings',
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_gmail_settings_not_allowed', $result->get_error_code() );
+		$this->assertSame( 403, $result->get_error_data()['status'] );
+	}
+
+	/**
 	 * The list_gmail_connections tool must only reveal the assistant's
 	 * enabled connections and hide the settings fallback row.
 	 */
@@ -217,6 +271,38 @@ class Test_Remote_Connections_Assistant_Scoping extends WP_UnitTestCase {
 		$ids = wp_list_pluck( $rows, 'id' );
 		$this->assertNotContains( 'conn_inbox_b', $ids, 'Connections outside the assistant list must be hidden.' );
 		$this->assertNotContains( 'settings', $ids, 'The settings fallback must be hidden from restricted assistants.' );
+	}
+
+	/**
+	 * The list_gmail_connections tool shows the settings row to an assistant
+	 * that was granted it in the assistant editor.
+	 */
+	public function test_list_gmail_connections_shows_settings_row_when_granted() {
+		$settings                            = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['gmail_client_id']         = 'client-id';
+		$settings['gmail_client_secret']     = 'client-secret';
+		$settings['gmail_refresh_token']     = 'refresh-token';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$admin_id = $this->login_as_admin();
+
+		$this->restrict_assistant_to( array( 'settings' ) );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_List_Gmail_Connections();
+		$result = $tool->execute(
+			array(),
+			array(
+				'user_id'      => $admin_id,
+				'assistant_id' => $this->assistant_id,
+			)
+		);
+
+		$this->assertNotWPError( $result );
+		$this->assertTrue( $result['success'] );
+
+		$rows = $result['data']['connections'];
+		$ids  = wp_list_pluck( $rows, 'id' );
+		$this->assertContains( 'settings', $ids, 'The settings fallback must be visible to an assistant that was granted it.' );
 	}
 
 	/**
@@ -290,7 +376,7 @@ class Test_Remote_Connections_Assistant_Scoping extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A restricted assistant cannot fall back to the site-wide calendar settings.
+	 * A restricted assistant cannot use the site-wide settings fallback.
 	 */
 	public function test_calendar_resolve_blocks_settings_when_assistant_restricted() {
 		$settings                                  = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -310,6 +396,57 @@ class Test_Remote_Connections_Assistant_Scoping extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_calendar_no_allowed_connection', $result->get_error_code() );
 		$this->assertSame( 403, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * A restricted assistant granted the "settings" row may use the site-wide
+	 * FlowHub toolkit settings fallback.
+	 */
+	public function test_flowhub_helper_allows_settings_fallback_when_granted() {
+		update_option(
+			'wp_mcp_ai_flowhub_toolkit_settings',
+			array(
+				'client_id' => 'fh-client',
+				'api_key'   => 'fh-key',
+			)
+		);
+
+		$this->restrict_assistant_to( array( 'settings' ) );
+
+		$result = WP_MCP_AI_FlowHub_Connection_Helper::resolve_connection(
+			null,
+			array( 'assistant_id' => $this->assistant_id )
+		);
+
+		delete_option( 'wp_mcp_ai_flowhub_toolkit_settings' );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'settings', $result['source'] );
+		$this->assertSame( 'fh-client', $result['credentials']['client_id'] );
+	}
+
+	/**
+	 * A restricted assistant granted the "settings" row may use the site-wide
+	 * Google Calendar settings fallback.
+	 */
+	public function test_calendar_resolve_allows_settings_fallback_when_granted() {
+		$settings                                  = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['google_calendar_client_id']     = 'client-id';
+		$settings['google_calendar_client_secret'] = 'client-secret';
+		$settings['google_calendar_refresh_token'] = 'refresh-token';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$this->restrict_assistant_to( array( 'settings' ) );
+
+		$credentials = WP_MCP_AI_Google_Calendar_Credentials::resolve(
+			'',
+			array( 'assistant_id' => $this->assistant_id ),
+			array()
+		);
+
+		$this->assertNotWPError( $credentials );
+		$this->assertSame( 'settings', $credentials['source'] );
+		$this->assertSame( 'client-id', $credentials['client_id'] );
 	}
 
 	/**

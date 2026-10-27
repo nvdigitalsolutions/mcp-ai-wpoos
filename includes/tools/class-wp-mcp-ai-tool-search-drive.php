@@ -217,13 +217,14 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$refresh_token   = isset( $settings['google_drive_refresh_token'] ) ? trim( (string) $settings['google_drive_refresh_token'] ) : '';
 			$configured_user = isset( $settings['google_drive_user_email'] ) ? trim( (string) $settings['google_drive_user_email'] ) : '';
 
-			// A restricted assistant cannot use the site-wide settings fallback:
-			// the assistant editor can only grant named Remote Sites connections.
-			// Checked only when settings credentials are actually configured.
-			if ( null !== $this->get_allowed_connection_ids( $context ) && '' !== $client_id && '' !== $client_secret && '' !== $refresh_token ) {
+			// A restricted assistant may only use the site-wide settings fallback
+			// when the assistant editor granted the "settings" row. Checked only
+			// when settings credentials are actually configured.
+			$allowed_ids = $this->get_allowed_connection_ids( $context );
+			if ( null !== $allowed_ids && ! in_array( 'settings', $allowed_ids, true ) && '' !== $client_id && '' !== $client_secret && '' !== $refresh_token ) {
 				return new WP_Error(
 					'wp_mcp_ai_drive_settings_not_allowed',
-					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide Google Drive settings cannot be used. Enable a Google Drive connection for the assistant in the assistant editor (Remote Site Connections) and pass its connection_id.', 'mcp-ai-wpoos' ),
+					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide Google Drive settings cannot be used. Enable the site-wide Google Drive settings row (or a Drive connection) for the assistant in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}

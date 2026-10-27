@@ -120,17 +120,17 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 			}
 
 			// 2. Settings-based credentials (toolkit, then legacy admin store).
-			// A restricted assistant cannot fall back to the site-wide settings:
-			// the assistant editor can only grant named Remote Sites connections.
 			// Checked only when settings credentials are actually configured, so
 			// a restricted assistant without them can still resolve one of its
 			// allowed connections below.
 			$credentials = self::get_settings_credentials();
 			if ( ! empty( $credentials['client_id'] ) && ! empty( $credentials['api_key'] ) ) {
-				if ( null !== $allowed_ids ) {
+				// A restricted assistant may only fall back to the site-wide settings
+				// when the assistant editor granted the "settings" row.
+				if ( null !== $allowed_ids && ! in_array( 'settings', $allowed_ids, true ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_flowhub_settings_not_allowed',
-						__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide FlowHub toolkit settings cannot be used. Enable a FlowHub connection for the assistant in the assistant editor (Remote Site Connections) and pass its connection_id.', 'mcp-ai-wpoos' ),
+						__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide FlowHub toolkit settings cannot be used. Enable the site-wide FlowHub settings row (or a FlowHub connection) for the assistant in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos' ),
 						array( 'status' => 403 )
 					);
 				}

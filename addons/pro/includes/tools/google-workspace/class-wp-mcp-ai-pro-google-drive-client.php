@@ -139,14 +139,15 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 			$refresh_token   = isset( $settings['google_drive_refresh_token'] ) ? trim( (string) $settings['google_drive_refresh_token'] ) : '';
 			$configured_user = isset( $settings['google_drive_user_email'] ) ? trim( (string) $settings['google_drive_user_email'] ) : '';
 
-			// A restricted assistant cannot use the site-wide settings fallback:
-			// the assistant editor can only grant named Remote Sites connections.
-			// Checked only when settings credentials are actually configured, so
-			// a restricted assistant without them can still auto-resolve below.
-			if ( null !== self::get_allowed_connection_ids( $context ) && '' !== $client_id && '' !== $client_secret && '' !== $refresh_token ) {
+			// A restricted assistant may only use the site-wide settings fallback
+			// when the assistant editor explicitly granted it (the "settings"
+			// row in the Remote Site Connections metabox). Checked only when
+			// settings credentials are actually configured, so a restricted
+			// assistant without them can still auto-resolve below.
+			if ( ! self::is_settings_fallback_allowed( $context ) && '' !== $client_id && '' !== $client_secret && '' !== $refresh_token ) {
 				return new WP_Error(
 					'wp_mcp_ai_drive_settings_not_allowed',
-					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide Google Drive settings cannot be used. Enable a Google Drive connection for the assistant in the assistant editor (Remote Site Connections) and pass its connection_id.', 'mcp-ai-wpoos-pro' ),
+					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide Google Drive settings cannot be used. Enable the site-wide Google Drive settings row (or a Drive connection) for the assistant in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -350,6 +351,26 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 		}
 
 		return in_array( (string) $connection_id, $allowed_ids, true );
+	}
+
+	/**
+	 * Whether the site-wide settings fallback is allowed in the execution context.
+	 *
+	 * Unrestricted assistants (no Remote Site Connections list) may always use
+	 * the fallback; restricted assistants must have the literal "settings"
+	 * entry checked in the assistant editor metabox.
+	 *
+	 * @param array $context Execution context.
+	 * @return bool True when allowed, false otherwise.
+	 */
+	public static function is_settings_fallback_allowed( array $context ) {
+		$allowed_ids = self::get_allowed_connection_ids( $context );
+
+		if ( null === $allowed_ids ) {
+			return true;
+		}
+
+		return in_array( 'settings', $allowed_ids, true );
 	}
 
 	/**

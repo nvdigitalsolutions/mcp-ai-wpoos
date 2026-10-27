@@ -9,6 +9,26 @@
 class WP_MCP_AI_Google_Calendar_Tool_Test extends WP_UnitTestCase {
 
 	/**
+	 * Pin the settings surface clean between tests.
+	 *
+	 * The tool prefers site-wide settings credentials over the access-token
+	 * and service-account filters, so settings credentials written by an
+	 * earlier suite in the same process change the resolution path and break
+	 * these tests order-dependently (the settings fallback wins and a token
+	 * exchange is attempted instead of using the filter-supplied credentials).
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		update_option( 'wp_mcp_ai_settings', array() );
+		delete_option( 'wp_mcp_ai_credentials' );
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'reset_settings_cache' ) ) {
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
+		}
+	}
+
+	/**
 	 * Reset state between tests.
 	 */
 	public function tearDown(): void {

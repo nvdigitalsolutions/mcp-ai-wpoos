@@ -109,12 +109,15 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 				return self::resolve_from_connection( $connection_id, $context );
 			}
 
-			// A restricted assistant can only use its allowed Remote Sites
-			// connections. Auto-resolve an omitted connection_id to the only
-			// allowed Google Calendar connection with usable credentials; the
-			// site-wide settings and filter surfaces are refused (a client
-			// cannot widen its own grant).
-			if ( null !== self::get_allowed_connection_ids( $context ) ) {
+			// A restricted assistant may only fall back to the site-wide settings
+			// credentials when the assistant editor explicitly granted the
+			// "settings" row. Without that grant it can only use its allowed
+			// Remote Sites connections: auto-resolve an omitted connection_id to
+			// the only allowed Google Calendar connection with usable
+			// credentials; the site-wide settings and filter surfaces are
+			// refused (a client cannot widen its own grant).
+			$allowed_ids = self::get_allowed_connection_ids( $context );
+			if ( null !== $allowed_ids && ! in_array( 'settings', $allowed_ids, true ) ) {
 				$auto = self::resolve_auto_connection( $context );
 
 				if ( is_wp_error( $auto ) ) {
