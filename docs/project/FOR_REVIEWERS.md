@@ -19,10 +19,10 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.2.12 (October 2026)
+**Current version:** 1.2.13 (October 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
-**Total tools:** ~1,731 (~355 base + ~1,377 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,732 (~355 base + ~1,378 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 

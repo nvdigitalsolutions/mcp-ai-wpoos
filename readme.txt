@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.12
+Stable tag: 1.2.13
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.13 - October 27, 2026 =
+
+Bumped to 1.2.13 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Dify parity gap-fill ships (Proposal 091): workflow DSL export/import with a v1 envelope, validation findings, credential redaction, dry-run, a Dify import adapter, and the Pro SPA import/export panel; assistant prompt versioning lite (immutable snapshots, restore/promote, 50-version cap); ordered model fallback chains in the ProviderRouter with provider cooldowns and Retry-After honoring (assistant chain wins over global); GenAI observability spans with an opt-in, off-by-default OTLP exporter plus the annotation store and the new export_annotation_dataset Pro tool. The OTLP endpoint joins a deny-list that AI tools can never write even with manage_options (DifyTap defense in depth). The console gains accessible pagination with true totals on every server-side-paged table, keep-previous-data loading states, and admin-only surface gating for non-admin roles; the /approvals envelope now returns the pending-queue depth with an offset. New GET /mcp-ai/v1/session/me plus a Breeze cache integration (dashboard/wp-admin exclusions) close the author-role stale-nonce boot wall. Fixed: OAuth redirect_uri values are now percent-encoded in every authorize URL (verified live — redirect_uri_mismatch resolved) with a bare-URL return fallback across all eight Remote Sites flows, Drive tools auto-resolve the only enabled Remote Sites connection, and every Remote Sites connection family enforces the assistant's connection allowlist (403 gates, settings-fallback refusal, Drive folder-scope enforcement). Proposal 092 (Astro storefront layer) ships as docs. Sub-projects: content-graph-ai RAG upgrades (hybrid RRF, local reranker, hit-test runner, searchHybrid) and the CG-Pro scoping/OAuth mirrors. Tool count: ~355 base + ~1,378 Pro (~1,732 total; +1 Pro — export_annotation_dataset; live registry authoritative). Stale 1.2.11 build ZIPs removed.
 
 = 1.2.12 - October 25, 2026 =
 
