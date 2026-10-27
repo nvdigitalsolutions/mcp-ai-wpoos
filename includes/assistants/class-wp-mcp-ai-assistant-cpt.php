@@ -2150,6 +2150,16 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'default'
 			);
 
+			// Proposal 091 Track D — ordered provider fallback chain.
+			add_meta_box(
+				'wp-mcp-ai-fallback-chain',
+				__( 'Fallback Chain', 'mcp-ai-wpoos' ),
+				array( $this, 'render_fallback_chain_meta_box' ),
+				self::POST_TYPE,
+				'side',
+				'default'
+			);
+
 			add_meta_box(
 				'wp-mcp-ai-tools',
 				__( 'Available Tools', 'mcp-ai-wpoos' ),
@@ -2371,6 +2381,30 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 			echo '</ul>';
 			echo '<p class="description">' . esc_html__( 'Restoring a version snapshots the restore itself, so it can be undone.', 'mcp-ai-wpoos' ) . '</p>';
+		}
+
+		/**
+		 * Render the fallback-chain meta box (Proposal 091, Track D).
+		 *
+		 * Ordered, comma-separated provider slugs tried after the primary
+		 * provider fails; failed providers cool down automatically.
+		 *
+		 * @since 1.2.13
+		 *
+		 * @param WP_Post $post Assistant post.
+		 * @return void
+		 */
+		public function render_fallback_chain_meta_box( $post ) {
+			if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+				return;
+			}
+
+			$chain = get_post_meta( $post->ID, self::META_FALLBACK_CHAIN, true );
+			$chain = is_array( $chain ) ? $chain : array();
+
+			echo '<p><label for="wp-mcp-ai-fallback-chain"><strong>' . esc_html__( 'Ordered fallback providers', 'mcp-ai-wpoos' ) . '</strong></label></p>';
+			echo '<input type="text" id="wp-mcp-ai-fallback-chain" name="wp_mcp_ai_fallback_chain" class="widefat" value="' . esc_attr( implode( ', ', $chain ) ) . '" placeholder="openai, gemini, anthropic">';
+			echo '<p class="description">' . esc_html__( 'Comma-separated provider slugs, tried in order when the primary provider fails. Failed providers are cooled down automatically (Retry-After honored). Leave empty to use health-based failover only.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
 		/**
@@ -5199,6 +5233,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_system_prompt_meta().
 				$system_prompt = isset( $_POST['wp_mcp_ai_system_prompt'] ) ? self::sanitize_system_prompt_meta( wp_unslash( $_POST['wp_mcp_ai_system_prompt'] ) ) : '';
 				update_post_meta( $post_id, self::META_SYSTEM_PROMPT, $system_prompt );
+
+				// Proposal 091 Track D — ordered provider fallback chain.
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_fallback_chain_meta().
+				$fallback_raw = isset( $_POST['wp_mcp_ai_fallback_chain'] ) ? wp_unslash( $_POST['wp_mcp_ai_fallback_chain'] ) : '';
+				$fallback_raw = is_string( $fallback_raw ) ? array_map( 'trim', explode( ',', $fallback_raw ) ) : array();
+				update_post_meta( $post_id, self::META_FALLBACK_CHAIN, self::sanitize_fallback_chain_meta( $fallback_raw ) );
 
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_adaptive_tool_cap_meta().
 				$adaptive_tool_cap = isset( $_POST['wp_mcp_ai_adaptive_tool_cap'] ) ? self::sanitize_adaptive_tool_cap_meta( wp_unslash( $_POST['wp_mcp_ai_adaptive_tool_cap'] ) ) : '';
