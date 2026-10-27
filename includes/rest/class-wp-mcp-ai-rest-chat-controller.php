@@ -445,6 +445,23 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'callback'            => array( $this, 'handle_session_nonce' ),
 			)
 		);
+
+		// /session/me - Return the requesting session's identity (id/name/slug
+		// + capability map) without core's `list_users` gate on the
+		// users/me edit context.  The Complete Console calls this when a
+		// non-admin role (e.g. author) is denied the edit context so
+		// client-side capability gating keeps working.  Same no-nonce,
+		// no-capability contract as /session/nonce: the payload only
+		// describes the requesting session itself.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/session/me',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'permission_callback' => '__return_true',
+				'callback'            => array( $this, 'handle_session_me' ),
+			)
+		);
 	}
 
 	/**
@@ -1861,6 +1878,60 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Never cache the payload: it is session-bound and invalidates on
 		// session-token rotation.  Edge caches (Cloudflare, Varnish) would
 		// otherwise hand one user's nonce to another.
+		$response->header( 'Cache-Control', 'no-cache, no-store, must-revalidate' );
+		$response->header( 'Pragma', 'no-cache' );
+
+		return $response;
+	}
+
+	/**
+	 * Handle GET /session/me.
+	 *
+	 * Returns the identity of the session carried by the request's auth
+	 * cookie — id, name, slug, and the role capability map — without
+	 * requiring the `list_users` capability that core's /wp/v2/users/me
+	 * edit context demands.  The Complete Console uses this to recover the
+	 * capability list when a non-admin role (e.g. author) is denied the
+	 * edit context, so client-side nav gating keeps working while the
+	 * server still enforces every capability.
+	 *
+	 * Same auth contract as /session/nonce: no nonce and no capability
+	 * required, because the payload only describes the requesting session
+	 * itself.  Requests without a valid logged-in cookie receive a 401.
+	 *
+	 * @since 1.2.13
+	 *
+	 * @return WP_REST_Response|WP_Error Response or error.
+	 */
+	public function handle_session_me() {
+		$cookie_user_id = wp_validate_auth_cookie( '', 'logged_in' );
+		if ( ! $cookie_user_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_session',
+				__( 'No WordPress session found for this request.', 'mcp-ai-wpoos' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		$user = get_userdata( absint( $cookie_user_id ) );
+		if ( ! $user ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_session',
+				__( 'No WordPress session found for this request.', 'mcp-ai-wpoos' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		$response = rest_ensure_response(
+			array(
+				'id'           => $user->ID,
+				'name'         => $user->display_name,
+				'slug'         => $user->user_nicename,
+				'capabilities' => $user->get_role_caps(),
+			)
+		);
+
+		// Never cache: session-bound identity data.
 		$response->header( 'Cache-Control', 'no-cache, no-store, must-revalidate' );
 		$response->header( 'Pragma', 'no-cache' );
 

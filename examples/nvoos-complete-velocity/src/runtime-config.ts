@@ -197,14 +197,36 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
 /**
  * Resolve a fresh `wp_rest` nonce for the logged-in session.
  *
- * Preferred source: the nonce WordPress embeds in the wp-admin page
- * (`wpApiSettings.nonce`), fetched same-origin through the proxy. On
- * hardened installs the plugin's `session/nonce` endpoint can mint an
- * unauthenticated nonce, which WordPress then rejects — so the endpoint is
- * only a fallback here.
+ * Preferred source: the plugin's `session/nonce` endpoint, which mints the
+ * nonce server-side for the session identified by the request's own auth
+ * cookie — it cannot go stale. The wp-admin scrape is only a fallback: a
+ * cached `/wp-admin/` or `/dashboard/` page embeds a nonce minted for
+ * whichever session rendered the cached copy, and adopting it makes every
+ * authenticated REST call fail with 403 `rest_cookie_invalid_nonce`
+ * ("Cookie check failed").
  */
 export async function fetchSessionNonce(): Promise<string> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
+
+  let mintError = '';
+  try {
+    const response = await fetch(`${base}/wp-json/mcp-ai/v1/session/nonce`, {
+      credentials: 'include',
+    });
+    if (response.ok) {
+      const data = await readJson<{ nonce?: string; success?: boolean }>(
+        response,
+        'nonce endpoint',
+      );
+      if (typeof data?.nonce === 'string' && data.nonce) {
+        return data.nonce;
+      }
+    }
+  } catch (error) {
+    // Keep the reason (e.g. an HTML challenge page) for the final error.
+    mintError = error instanceof Error ? error.message : String(error);
+  }
+
   try {
     const admin = await fetch(`${base}/wp-admin/`, { credentials: 'include' });
     if (admin.ok) {
@@ -215,23 +237,13 @@ export async function fetchSessionNonce(): Promise<string> {
       }
     }
   } catch {
-    // Fall through to the REST endpoint.
+    // Fall through to the error below.
   }
 
-  const response = await fetch(`${base}/wp-json/mcp-ai/v1/session/nonce`, {
-    credentials: 'include',
-  });
-  if (!response.ok) {
-    throw new Error(`nonce endpoint returned ${response.status}`);
-  }
-  const data = await readJson<{ nonce?: string; success?: boolean }>(
-    response,
-    'nonce endpoint',
+  throw new Error(
+    mintError ||
+      'Could not obtain a wp_rest nonce — the session/nonce endpoint and the wp-admin scrape both failed',
   );
-  if (typeof data?.nonce !== 'string' || !data.nonce) {
-    throw new Error('nonce endpoint did not return a nonce');
-  }
-  return data.nonce;
 }
 
 /**
@@ -266,7 +278,21 @@ export class UnauthorizedError extends Error {
  * 401/403 counts as "no WordPress session" and routes to the sign-in
  * screen.
  */
-export async function fetchCurrentUser(nonce = ''): Promise<Partial<ProSpaUser>> {
+/**
+ * Result of the current-user fetch: the mapped user plus the nonce the
+ * caller must adopt for subsequent authenticated requests.
+ */
+export interface CurrentUserResult {
+  user: Partial<ProSpaUser>;
+  /**
+   * Nonce to use for subsequent authenticated requests. Differs from the
+   * nonce passed in when the 403 fallback minted a fresh session-bound
+   * nonce — callers must use this value, not the original one.
+   */
+  nonce: string;
+}
+
+export async function fetchCurrentUser(nonce = ''): Promise<CurrentUserResult> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
   const headers: Record<string, string> = {};
   if (nonce) {
@@ -287,9 +313,12 @@ export async function fetchCurrentUser(nonce = ''): Promise<Partial<ProSpaUser>>
   if (!response.ok) {
     throw new Error('Session expired, please login first');
   }
-  return mapCurrentUser(
-    await readJson<CurrentUserPayload>(response, 'wp/v2/users/me'),
-  );
+  return {
+    user: mapCurrentUser(
+      await readJson<CurrentUserPayload>(response, 'wp/v2/users/me'),
+    ),
+    nonce,
+  };
 }
 
 /** Raw `wp/v2/users/me` payload — the edit and view contexts share this shape. */
@@ -321,7 +350,7 @@ function mapCurrentUser(data: CurrentUserPayload): Partial<ProSpaUser> {
  * rejected nonce is reused, which still recovers the role-gated edit
  * context (the nonce was fine, the context was the problem).
  */
-async function fetchCurrentUserFallback(previousNonce: string): Promise<Partial<ProSpaUser>> {
+async function fetchCurrentUserFallback(previousNonce: string): Promise<CurrentUserResult> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
   const nonce = (await mintSessionNonce()) || previousNonce;
   const response = await fetch(`${base}/wp-json/wp/v2/users/me`, {
@@ -336,9 +365,41 @@ async function fetchCurrentUserFallback(previousNonce: string): Promise<Partial<
   if (!response.ok) {
     throw new Error('Session expired, please login first');
   }
-  return mapCurrentUser(
+  const user = mapCurrentUser(
     await readJson<CurrentUserPayload>(response, 'wp/v2/users/me'),
   );
+
+  // The view context omits `capabilities` (core gates them behind
+  // list_users), so recover them from the plugin's session/me endpoint —
+  // it returns the requesting session's own capability map without that
+  // gate. Best-effort: older bundles without the route keep the
+  // view-context user (empty capabilities), and the server still enforces
+  // every capability either way.
+  try {
+    const meResponse = await fetch(`${base}/wp-json/mcp-ai/v1/session/me`, {
+      credentials: 'include',
+      headers: nonce ? { 'X-WP-Nonce': nonce } : {},
+    });
+    if (meResponse.ok) {
+      const me = await readJson<{ capabilities?: Record<string, boolean> }>(
+        meResponse,
+        'session/me endpoint',
+      );
+      if (me.capabilities && typeof me.capabilities === 'object') {
+        user.capabilities = Object.entries(me.capabilities)
+          .filter(([, enabled]) => enabled)
+          .map(([cap]) => cap);
+      }
+    }
+  } catch {
+    // Capability recovery is optional — never fail the boot over it.
+  }
+
+  return {
+    user,
+    // The recovered nonce must win — it is the one bound to this session.
+    nonce,
+  };
 }
 
 /**
