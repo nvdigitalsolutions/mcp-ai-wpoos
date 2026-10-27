@@ -5,8 +5,8 @@ description: "UI stack, build, and test conventions for NV oOS React SPA addons 
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.12"
-  plugin-version-tested: "1.2.12"
+  plugin-version: "1.2.13"
+  plugin-version-tested: "1.2.13"
   last-updated: "2026-10-27"
 ---
 
@@ -96,6 +96,36 @@ network tab — every admin-route 403 is a gating bug, not a feature. 404s
 on `GET /chat-transcripts/{session_key}` are benign (the resume probe
 treats 404 as "no stored transcript" and rotates the key; the red lines
 are Chrome's own network logging).
+
+## Server-side pagination + keep-previous-data loading states (v1.2.13, PRs #7239/#7255)
+
+Every console table that can outgrow a screen uses the shared
+`Pagination` component + the `DataTable` busy prop (USWDS / W3C APG
+conventions):
+
+- **Server-side paging (true totals)** — records (professions/crm/pm/
+  calendar/fnb/products/content), chat channels, approvals, Paper Store,
+  and the operations run timeline take `page`/`page_size` and render
+  `total`/`total_pages` from the envelope. The remote records proxy
+  forwards `page` and reports totals. The `/approvals` envelope returns
+  the **pending-queue depth** as its total (not the page length) and
+  accepts an `offset`. Client-side paging stays in-memory for the
+  Blueprints catalogue and the tools registry (whole-ship + instant
+  search).
+- **Pager contract** — `nav` landmark, native buttons, `aria-current` on
+  the active page, out-of-range boundaries kept in the DOM but disabled,
+  a polite "Showing X–Y of Z" live region, a page-size selector, and an
+  ellipsis-collapsed page list. A truncated first page must never be
+  mistaken for the whole collection.
+- **Keep-previous-data busy state** — while a page fetch is in flight the
+  stale rows stay mounted but dimmed (opacity + pointer shield) with an
+  inline spinner + `aria-busy` on the scroll wrapper and nav; controls
+  are disabled. Abort in-flight list/detail/thread fetches on unmount and
+  on query change; clear stale rows when switching entity/collection/
+  search so old columns never render under new headers.
+- **phpcbf guard** — the persisted lowercase `wordpress` connection-type
+  literal is guarded so `composer run format` cannot rewrite it and break
+  saved remote connections.
 
 ## The three sanctioned build patterns — pick one, don't mix
 

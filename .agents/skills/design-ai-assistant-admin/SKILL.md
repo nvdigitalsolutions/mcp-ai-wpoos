@@ -127,6 +127,8 @@ Constants in `includes/assistants/class-wp-mcp-ai-assistant-cpt.php`:
 | `_wp_mcp_ai_corpus_name` | string | Corpus name for knowledge routing |
 | `_wp_mcp_ai_tool_shortcuts` | array | Tool shortcut definitions |
 | `_wp_mcp_ai_harness_profile` | array (JSON) | Agent-harness profile (memory summary etc.) |
+| `_wp_mcp_ai_fallback_chain` | array (JSON) | Ordered model fallback chain (`META_FALLBACK_CHAIN` — **assistant wins over the global default**; sanitized via `sanitize_fallback_chain_meta()`; the Pro SPA picker metabox writes it) |
+| `_wp_mcp_ai_prompt_versions` | array (JSON) | Immutable prompt snapshots (v1.2.13 `WP_MCP_AI_Prompt_Versions`: save-time snapshots, versioned restores, explicit production promotion, 50-version cap; `VERSION_META`) |
 
 ### `ai_peer`
 

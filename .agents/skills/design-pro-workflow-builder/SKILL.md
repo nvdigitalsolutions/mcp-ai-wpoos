@@ -26,6 +26,31 @@ Key `mcp-ai` WP-CLI commands for workflow development. Run via `terminal`:
 | `wp mcp-ai cron` | Check scheduled workflow-builder cron events |
 | `wp mcp-ai log` | View per-node execution logs and error traces |
 | `wp mcp-ai harness` | Semantic search across workflow outputs |
+| `wp mcp-ai workflow export` | Export a workflow (or preset) as DSL v1 JSON (`--source=workflow|preset`) |
+| `wp mcp-ai workflow import` | Import a DSL v1 JSON workflow (`--dry-run` to preview findings) |
+| `wp mcp-ai workflow validate` | Validate a DSL v1 document (errors block; warnings don't) |
+
+## Workflow DSL export/import (v1.2.13, PR #7247, Proposal 091 Track A)
+
+The base workflow export/import upgraded to a versioned **DSL v1** wire
+format (`WP_MCP_AI_Workflow_DSL_Codec`):
+
+- **Envelope** — `dsl_version` field; validation findings return an
+  **errors block** (warnings don't block); **credentials are redacted by
+  default** (redaction beats export; never ship a workflow file with raw
+  secrets).
+- **Routes** — `POST /orchestration/workflows/export` by source
+  (`workflow | preset`, via the `wp_mcp_ai_workflow_preset_export` seam —
+  presets export directly, no save-first); import routes take a `dsl`
+  string input, a `dry_run` flag, and `source: native|dify`.
+- **Dify adapter (Pro)** — the one-way best-effort Dify import adapter
+  produces honest `foreign` stubs for unsupported node semantics — never
+  claim parity the mapping cannot deliver.
+- **Legacy** — `accept_legacy_json()` keeps the pre-DSL import working;
+  canonicalization normalizes on write.
+- **UI** — the Pro SPA `WorkflowsPage` carries per-workflow/preset export
+  buttons and an import panel with a dry-run findings table + blocker
+  gate; the base admin DAG-builder gained the export/import UI.
 
 ## When to use this skill
 
