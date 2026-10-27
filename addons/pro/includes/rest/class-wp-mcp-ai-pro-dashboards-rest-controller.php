@@ -158,7 +158,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	 */
 	private function dashboard_catalogue() {
 		return array(
-			'cre'          => array(
+			'cre'           => array(
 				'label'       => __( 'CRE Debt Portfolio', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Commercial real-estate loan portfolio: balances, averages and distributions with loan-type and status filters.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🏦',
@@ -268,7 +268,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'law'          => array(
+			'law'           => array(
 				'label'       => __( 'Law Firm', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Active matters, clients, time entries and trust transactions.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '⚖️',
@@ -296,7 +296,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'registration' => array(
+			'registration'  => array(
 				'label'       => __( 'Registration', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Product registrations by status and country.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '📋',
@@ -362,7 +362,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'eca'          => array(
+			'eca'           => array(
 				'label'       => __( 'ECA', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Extra-curricular activities: enrollments, capacity, participation and attendance.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🏫',
@@ -449,7 +449,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'health'       => array(
+			'health'        => array(
 				'label'       => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Daily health metrics history per member (steps, water, sleep, calories, mood).', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🫀',
@@ -505,7 +505,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'vitals'       => array(
+			'vitals'        => array(
 				'label'       => __( 'Medical Vitals', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Vital signs history per member (heart rate, temperature, blood pressure, weight).', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🩺',
@@ -563,7 +563,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			),
 			// Proposal 089 Phase 4f — the commerce toolkit dashboards
 			// (formerly wp-admin dashboard widgets; same promoted seams).
-			'ezuite'       => array(
+			'ezuite'        => array(
 				'label'       => __( 'EZuite Inventory', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'EZuite ERP inventory health: stock buckets, cached rows, total value and top warehouses.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🏭',
@@ -612,7 +612,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'shopify'      => array(
+			'shopify'       => array(
 				'label'       => __( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Shopify GraphQL cost budget, cached items and sync health per connection.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🛍️',
@@ -645,7 +645,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'flowhub'      => array(
+			'flowhub'       => array(
 				'label'       => __( 'FlowHub Inventory', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'FlowHub POS inventory health: stock buckets, cached rows, total value and top locations. Read-mostly — compliance reporting stays in FlowHub.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🌿',
@@ -693,6 +693,59 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 						),
 					),
 				),
+			),
+			// Proposal 091 Track E — AI observability (annotations + recent
+			// GenAI spans). Ungated: core observability, not a toolkit.
+			'observability' => array(
+				'label'       => __( 'AI Observability', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Chat annotation totals and recent GenAI span counts from the audit activity log.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '📡',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'annotations_total',
+						'label'  => __( 'Annotations', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'annotations_positive',
+						'label'  => __( 'Positive', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'annotations_negative',
+						'label'  => __( 'Negative', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'transcripts_annotated',
+						'label'  => __( 'Transcripts Annotated', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'spans_chat',
+						'label'  => __( 'Chat Spans (recent)', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'spans_tool',
+						'label'  => __( 'Tool Spans (recent)', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+				),
+				'charts'      => array(
+					array(
+						'key'   => 'by_rating',
+						'title' => __( 'Annotations by Rating', 'mcp-ai-wpoos-pro' ),
+						'type'  => 'bar',
+					),
+					array(
+						'key'   => 'spans_by_operation',
+						'title' => __( 'Spans by Operation (recent)', 'mcp-ai-wpoos-pro' ),
+						'type'  => 'bar',
+					),
+				),
+				'lists'       => array(),
 			),
 		);
 	}
@@ -798,8 +851,8 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 		// Only expose dashboards whose toolkit is enabled — the console
 		// renders this catalogue verbatim, so disabled features must not
 		// show up in the app (REST is the enforcement).
-		$catalogue   = $this->dashboard_catalogue();
-		$dashboards  = array_filter(
+		$catalogue  = $this->dashboard_catalogue();
+		$dashboards = array_filter(
 			$catalogue,
 			array( __CLASS__, 'is_dashboard_available' ),
 			ARRAY_FILTER_USE_KEY
@@ -1083,6 +1136,23 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			}
 
 			return call_user_func( array( $provider['class'], 'get_dashboard_data' ) );
+		}
+
+		// Proposal 091 Track E — AI observability dashboard (ungated).
+		if ( 'observability' === $dashboard_id ) {
+			$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-analytics-service-page.php';
+			if ( ! class_exists( 'WP_MCP_AI_Analytics_Service_Page' ) && file_exists( $page_file ) ) {
+				require_once $page_file;
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Analytics_Service_Page' ) ) {
+				return new WP_Error(
+					'dashboards_provider_unavailable',
+					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 501 )
+				);
+			}
+
+			return WP_MCP_AI_Analytics_Service_Page::get_observability_data();
 		}
 
 		return new WP_Error(
