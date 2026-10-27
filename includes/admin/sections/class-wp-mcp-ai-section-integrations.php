@@ -651,15 +651,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Render Gmail footer content.
 		 */
-		/**
-		 * Render Gmail footer content.
-		 */
 		private function render_gmail_footer() {
-			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
-			$gmail_connected   = ! empty( $settings['gmail_refresh_token'] );
-			$gmail_email       = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
-			$has_credentials   = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
-			$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$gmail_connected = ! empty( $settings['gmail_refresh_token'] );
+			$gmail_email     = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
+			$has_credentials = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
+			$is_pro_active   = defined( 'WP_MCP_AI_PRO_VERSION' );
+
+			// Pro Remote Sites connections: list them here so this page never
+			// reports Gmail as unconfigured when a working named connection
+			// exists. Gmail tools auto-resolve to those connections when the
+			// settings-based credentials below are absent.
+			$remote_gmail_connections = array();
+			if ( $is_pro_active && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$gmail_connection_types = array( 'gmail', 'google_workspace', 'email_imap' );
+				$all_remote             = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+				foreach ( $all_remote as $remote_connection ) {
+					if ( is_array( $remote_connection ) && isset( $remote_connection['connection_type'] ) && in_array( $remote_connection['connection_type'], $gmail_connection_types, true ) ) {
+						$remote_gmail_connections[] = $remote_connection;
+					}
+				}
+			}
+
 			$oauth_connect_url = wp_nonce_url(
 				admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
 				'wp_mcp_ai_gmail_oauth_start'
@@ -695,6 +708,43 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</td>
 			</tr>
 		<?php endif; ?>
+			<?php if ( ! empty( $remote_gmail_connections ) ) : ?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Remote Sites Gmail Connections', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<div style="padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0 0 6px; color: #0c5460;">
+							<span class="dashicons dashicons-admin-site-alt" style="color: #0c5460;"></span>
+							<strong><?php esc_html_e( 'Gmail is configured via Remote Sites:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ul style="margin: 0 0 6px 20px; list-style: disc; color: #0c5460;">
+							<?php foreach ( $remote_gmail_connections as $remote_connection ) : ?>
+								<li>
+									<strong><?php echo esc_html( isset( $remote_connection['name'] ) ? (string) $remote_connection['name'] : '' ); ?></strong>
+									<?php if ( ! empty( $remote_connection['user_email'] ) ) : ?>
+										<?php
+										printf(
+											/* translators: %s: Google account email address. */
+											esc_html__( '— %s', 'mcp-ai-wpoos' ),
+											esc_html( (string) $remote_connection['user_email'] )
+										);
+										?>
+									<?php endif; ?>
+									<?php if ( empty( $remote_connection['enabled'] ) ) : ?>
+										<?php esc_html_e( '(disabled)', 'mcp-ai-wpoos' ); ?>
+									<?php endif; ?>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+						<p style="margin: 0; color: #0c5460;">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>">
+								<?php esc_html_e( 'Manage Gmail connections in Remote Sites', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					</div>
+				</td>
+			</tr>
+			<?php endif; ?>
 		<tr>
 			<th scope="row"><?php esc_html_e( 'Gmail Connection', 'mcp-ai-wpoos' ); ?></th>
 			<td>
@@ -760,13 +810,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<ul style="list-style: disc; margin-left: 20px;">
 						<li><code>gmail.readonly</code>: <?php esc_html_e( 'Read access to Gmail messages and settings', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
-				<?php else : ?>
-					<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
-						<p style="margin: 0; color: #721c24;">
-							<span class="dashicons dashicons-info" style="color: #721c24;"></span>
-							<strong><?php esc_html_e( 'Gmail OAuth Credentials Required', 'mcp-ai-wpoos' ); ?></strong>
+					<?php elseif ( ! empty( $remote_gmail_connections ) ) : ?>
+						<div style="padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #0c5460;">
+								<span class="dashicons dashicons-info" style="color: #0c5460;"></span>
+								<strong><?php esc_html_e( 'No settings-based Gmail credentials — using the Remote Sites connection.', 'mcp-ai-wpoos' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'The Client ID and Client Secret fields above only control the settings-based default Gmail connection. Because no credentials are stored there, Gmail tools will use the Gmail connection configured under Remote Sites automatically.',
+									'mcp-ai-wpoos'
+								)
+							);
+							?>
 						</p>
-					</div>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #721c24;">
+								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+								<strong><?php esc_html_e( 'Gmail OAuth Credentials Required', 'mcp-ai-wpoos' ); ?></strong>
+							</p>
+						</div>
 					<p class="description">
 						<?php
 						echo wp_kses_post(
@@ -1126,6 +1193,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$has_credentials = ! empty( $settings['google_calendar_client_id'] ) && ! empty( $settings['google_calendar_client_secret'] );
 			$is_pro_active   = defined( 'WP_MCP_AI_PRO_VERSION' );
 
+			// Pro Remote Sites connections: list them here so this page never
+			// reports Google Calendar as unconfigured when a working named
+			// connection exists. Calendar tools auto-resolve to those
+			// connections when the settings-based credentials below are absent.
+			$remote_calendar_connections = array();
+			if ( $is_pro_active && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$all_remote = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+				foreach ( $all_remote as $remote_connection ) {
+					if ( is_array( $remote_connection ) && isset( $remote_connection['connection_type'] ) && 'google_calendar' === $remote_connection['connection_type'] ) {
+						$remote_calendar_connections[] = $remote_connection;
+					}
+				}
+			}
+
 			$profile        = WP_MCP_AI_Google_Calendar_Scopes::normalise_profile(
 				isset( $settings['google_calendar_scope_profile'] ) ? $settings['google_calendar_scope_profile'] : ''
 			);
@@ -1233,6 +1314,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<?php esc_html_e( 'Connect Google Calendar Account', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</p>
+			<?php elseif ( ! empty( $remote_calendar_connections ) ) : ?>
+				<p style="color: #0c5460; font-weight: 600; margin-top: 0;">
+					<span class="dashicons dashicons-info"></span>
+					<?php esc_html_e( 'No settings-based Calendar credentials — using the Remote Sites connection.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<p class="description">
+					<?php esc_html_e( 'The Client ID and Client Secret fields above only control the settings-based Google Calendar connection. Because no credentials are stored there, Calendar tools will use the Google Calendar connection configured under Remote Sites automatically.', 'mcp-ai-wpoos' ); ?>
+				</p>
 			<?php else : ?>
 				<p style="color: #d63638; font-weight: 600; margin-top: 0;">
 					<span class="dashicons dashicons-dismiss"></span>
@@ -1244,6 +1333,43 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			<?php endif; ?>
 		</td>
 	</tr>
+			<?php if ( ! empty( $remote_calendar_connections ) ) : ?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Remote Sites Calendar Connections', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<div style="padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0 0 6px; color: #0c5460;">
+							<span class="dashicons dashicons-admin-site-alt" style="color: #0c5460;"></span>
+							<strong><?php esc_html_e( 'Google Calendar is configured via Remote Sites:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ul style="margin: 0 0 6px 20px; list-style: disc; color: #0c5460;">
+							<?php foreach ( $remote_calendar_connections as $remote_connection ) : ?>
+								<li>
+									<strong><?php echo esc_html( isset( $remote_connection['name'] ) ? (string) $remote_connection['name'] : '' ); ?></strong>
+									<?php if ( ! empty( $remote_connection['user_email'] ) ) : ?>
+										<?php
+										printf(
+											/* translators: %s: Google account email address. */
+											esc_html__( '— %s', 'mcp-ai-wpoos' ),
+											esc_html( (string) $remote_connection['user_email'] )
+										);
+										?>
+									<?php endif; ?>
+									<?php if ( empty( $remote_connection['enabled'] ) ) : ?>
+										<?php esc_html_e( '(disabled)', 'mcp-ai-wpoos' ); ?>
+									<?php endif; ?>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+						<p style="margin: 0; color: #0c5460;">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>">
+								<?php esc_html_e( 'Manage Calendar connections in Remote Sites', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					</div>
+				</td>
+			</tr>
+			<?php endif; ?>
 	<tr>
 		<th scope="row"><?php esc_html_e( 'Granted Permissions', 'mcp-ai-wpoos' ); ?></th>
 		<td>

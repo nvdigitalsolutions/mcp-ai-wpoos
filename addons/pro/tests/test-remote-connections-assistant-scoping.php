@@ -149,10 +149,10 @@ class Test_Remote_Connections_Assistant_Scoping extends WP_UnitTestCase {
 	 * A restricted assistant cannot use the site-wide Gmail settings fallback.
 	 */
 	public function test_gmail_client_blocks_settings_when_assistant_restricted() {
-		$settings                            = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['gmail_client_id']         = 'client-id';
-		$settings['gmail_client_secret']     = 'client-secret';
-		$settings['gmail_refresh_token']     = 'refresh-token';
+		$settings                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['gmail_client_id']     = 'client-id';
+		$settings['gmail_client_secret'] = 'client-secret';
+		$settings['gmail_refresh_token'] = 'refresh-token';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$this->restrict_assistant_to( array( 'conn_inbox_a' ) );
@@ -172,10 +172,10 @@ class Test_Remote_Connections_Assistant_Scoping extends WP_UnitTestCase {
 	 * enabled connections and hide the settings fallback row.
 	 */
 	public function test_list_gmail_connections_filters_by_assistant() {
-		$settings                            = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['gmail_client_id']         = 'client-id';
-		$settings['gmail_client_secret']     = 'client-secret';
-		$settings['gmail_refresh_token']     = 'refresh-token';
+		$settings                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['gmail_client_id']     = 'client-id';
+		$settings['gmail_client_secret'] = 'client-secret';
+		$settings['gmail_refresh_token'] = 'refresh-token';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$admin_id = $this->login_as_admin();
@@ -293,6 +293,12 @@ class Test_Remote_Connections_Assistant_Scoping extends WP_UnitTestCase {
 	 * A restricted assistant cannot fall back to the site-wide calendar settings.
 	 */
 	public function test_calendar_resolve_blocks_settings_when_assistant_restricted() {
+		$settings                                  = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['google_calendar_client_id']     = 'client-id';
+		$settings['google_calendar_client_secret'] = 'client-secret';
+		$settings['google_calendar_refresh_token'] = 'refresh-token';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
 		$this->restrict_assistant_to( array( 'conn_cal_a' ) );
 
 		$result = WP_MCP_AI_Google_Calendar_Credentials::resolve(
@@ -302,7 +308,7 @@ class Test_Remote_Connections_Assistant_Scoping extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_calendar_settings_not_allowed', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_calendar_no_allowed_connection', $result->get_error_code() );
 		$this->assertSame( 403, $result->get_error_data()['status'] );
 	}
 

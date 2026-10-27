@@ -93,8 +93,10 @@ sharing the WP-core volume, with your worktree mounted over the plugin path:
 #    breaks inside Linux — classmap paths with backslashes →
 #    'Class "PHPUnit\\TextUI\\Application" not found').
 #    REUSE an existing complete volume when present (docker volume ls):
-#    mcp-ai-wpoos-vendor / mcp-ai-wpoos-alpha-vendor ship with PHPUnit +
-#    wp-phpunit and need no build.
+#    mcp-ai-wpoos-vendor / mcp-ai-wpoos-alpha-vendor / alpha-working-vendor
+#    ship with PHPUnit + wp-phpunit and need no build. On this box
+#    (2026-10-27) only `alpha-working-vendor` exists — verify with
+#    docker volume ls, never assume the name.
 #
 #    Session note (2026-10-17): the main checkout may have no vendor/ at all;
 #    `docker exec oos-wp ... vendor/bin/phpunit` then fails with
@@ -161,13 +163,16 @@ Linux vendor volume is the fix for container runs; for host-side runs,
 `composer install` on the host rebuilds a Windows vendor that then breaks
 INSIDE Linux — pick one environment per session.
 
-Also true for the MAIN checkout on this box (2026-10-22): `vendor/` exists
-but is pruned, so even a direct `docker exec oos-wp … vendor/bin/phpunit`
-fails the same way. Use the one-off runner with the existing **complete**
-`mcp-ai-wpoos-vendor` volume (verified: 934 PHPUnit classmap entries) and,
-for the WP 7.1 matrix, the reusable `wp71-core` named volume mounted at
-`/tmp/wp71` (DB `wordpress_test_wp71`) — no `docker cp` dance needed when
-`/tmp/wp71` is gone from the container.
+Also true for the MAIN checkout on this box (2026-10-22, re-verified
+2026-10-27): `vendor/` exists but is pruned, so even a direct
+`docker exec oos-wp … vendor/bin/phpunit` fails the same way. Use the
+one-off runner with the existing **complete** `alpha-working-vendor`
+volume (verified: 934 PHPUnit classmap entries + wp-phpunit present;
+ran the Gmail/Calendar auto-fallback suites green on
+`wordpress:6.9-php8.2-apache`) and, for the WP 7.1 matrix, the reusable
+`wp71-core` named volume mounted at `/tmp/wp71` (DB
+`wordpress_test_wp71`) — no `docker cp` dance needed when `/tmp/wp71` is
+gone from the container.
 
 **Host-side recovery without the volume (2026-10-23, main checkout):**
 the pruned classmap can be fixed in place — run
@@ -1392,6 +1397,20 @@ the changed files is the substantive gate; plan CI waits accordingly.
       fixtures use plain `post_type => 'post'` via `wp_insert_post()` unless
       the test itself registers the CPT. Same trap applies to Pro tests under
       `addons/pro/tests/`.
+  86. **phpcs "Line indented incorrectly; expected at least 3 tabs" in a
+      mixed HTML/PHP admin template** (2026-10-27, the Gmail/Calendar
+      auto-fallback footer blocks in `class-wp-mcp-ai-section-integrations.php`).
+      WPCS scope-indents PHP constructs (`<?php if … : ?>`) inside a
+      `render_*_footer()` method at method-body + 1 (3 tabs) even when the
+      surrounding inline HTML (`<tr>`, `<td>`) sits shallower — a block that
+      "looks aligned" with its neighbours still fails, and the error names
+      ONLY the PHP line. Match a sibling block (the Gmail footer's Remote
+      Sites block is the reference) and verify raw tabs with
+      `sed -n 'X,Yp' file | cat -A` (`^I` = one tab). Related: the Zed edit
+      tool can silently normalize leading-tab indentation written in
+      `new_text` (3 tabs landed as 2, fuzzy-matched whitespace) — when
+      re-indenting a template block, fix deterministically with
+      `sed -i 'X,Ys/^/\t/' file` instead of re-applying the edit.
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
