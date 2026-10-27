@@ -9,15 +9,15 @@
 ( function () {
 	'use strict';
 
-	var cfg = window.mcpAiDagBuilder || {};
+	const cfg = window.mcpAiDagBuilder || {};
 	if ( ! cfg.restUrl ) {
 		return;
 	}
 
 	function download( text, filename ) {
-		var blob = new Blob( [ text ], { type: 'application/json' } );
-		var url = URL.createObjectURL( blob );
-		var a = document.createElement( 'a' );
+		const blob = new Blob( [ text ], { type: 'application/json' } );
+		const url = URL.createObjectURL( blob );
+		const a = document.createElement( 'a' );
 		a.href = url;
 		a.download = filename;
 		document.body.appendChild( a );
@@ -27,7 +27,7 @@
 	}
 
 	function request( path, body, done ) {
-		var xhr = new XMLHttpRequest();
+		const xhr = new XMLHttpRequest();
 		xhr.open( 'POST', cfg.restUrl + path, true );
 		xhr.setRequestHeader( 'Content-Type', 'application/json' );
 		xhr.setRequestHeader( 'X-WP-Nonce', cfg.nonce );
@@ -35,7 +35,7 @@
 			if ( 4 !== xhr.readyState ) {
 				return;
 			}
-			var data = {};
+			let data = {};
 			try {
 				data = JSON.parse( xhr.responseText );
 			} catch ( e ) {
@@ -55,11 +55,11 @@
 	}
 
 	document.addEventListener( 'click', function ( event ) {
-		var el = event.target;
+		const el = event.target;
 		if ( ! el.classList || ! el.classList.contains( 'mcp-ai-dag-export-btn' ) ) {
 			return;
 		}
-		var id = el.getAttribute( 'data-workflow-id' );
+		const id = el.getAttribute( 'data-workflow-id' );
 		request( '/' + id + '/export', {}, function ( status, data ) {
 			if ( 200 !== status ) {
 				window.alert( 'Export failed.' ); // eslint-disable-line no-alert
@@ -69,9 +69,9 @@
 		} );
 	} );
 
-	var importBtn = document.querySelector( '.mcp-ai-dag-import-btn' );
+	const importBtn = document.querySelector( '.mcp-ai-dag-import-btn' );
 	if ( importBtn ) {
-		var fileInput = document.createElement( 'input' );
+		const fileInput = document.createElement( 'input' );
 		fileInput.type = 'file';
 		fileInput.accept = 'application/json,.json';
 		fileInput.style.display = 'none';
@@ -82,13 +82,13 @@
 		} );
 
 		fileInput.addEventListener( 'change', function () {
-			var file = fileInput.files[ 0 ];
+			const file = fileInput.files[ 0 ];
 			if ( ! file ) {
 				return;
 			}
-			var reader = new FileReader();
+			const reader = new FileReader();
 			reader.onload = function () {
-				var dsl;
+				let dsl;
 				try {
 					dsl = JSON.parse( reader.result );
 				} catch ( e ) {
@@ -100,7 +100,7 @@
 						window.alert( 'Validation failed.' ); // eslint-disable-line no-alert
 						return;
 					}
-					var blockers = ( data.findings || [] ).filter( function ( f ) {
+					const blockers = ( data.findings || [] ).filter( function ( f ) {
 						return 'error' === f.severity;
 					} );
 					if ( blockers.length ) {
@@ -110,7 +110,7 @@
 					if ( ! window.confirm( 'Dry run passed. Import this workflow?' ) ) {
 						return;
 					}
-					request( '/import', { workflow_json: dsl }, function ( status2, data2 ) {
+					request( '/import', { workflow_json: dsl }, function ( status2 ) {
 						if ( 200 === status2 ) {
 							window.location.reload();
 						} else {
