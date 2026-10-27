@@ -137,6 +137,22 @@ Dependencies: Track A touches the Pro Workflow Builder (module registry registra
 - **Rerank without an API** — local score-based rerank is a bounded approximation of a cross-encoder; document the boundary honestly rather than claiming parity.
 - **Track C lives in the standalone plugin** — `nvoos-content-graph-ai` has its own PHPUnit matrix and no access to base-plugin test helpers; the hit-test CLI must run in standalone mode (no monolith assumptions).
 - **Obsolescence risk** — Dify evolves fast; the scorecard and the Dify adapter must be re-verified against Dify's current docs before any public comparison is made (compliance rule: no unverified competitive claims).
+- **Dify-side security incidents** — the DifyTap disclosure (Zafran Labs, 2026-06) affected Dify's own tracing, plugin-daemon and file surfaces. Assessed against this proposal's surfaces on 2026-10-27: no exploitable mapping (see Security notes below); one defense-in-depth deny-list entry added to the `update_option` tool.
+
+## Security notes — DifyTap (2026-10-27)
+
+Zafran Labs disclosed four Dify vulnerabilities ("DifyTap", fixed in Dify 1.14.2). Each was checked against this proposal's surfaces; none maps to an exploitable issue here, for structural reasons recorded below.
+
+| DifyTap flaw | Dify surface | Closest NV oOS surface | Verdict |
+|---|---|---|---|
+| CVE-2026-41947 (9.1) — tracing exfiltration: any console account can point an app's tracing at their own server | Tracing config is tenant/client-configurable | OTLP exporter (`includes/observability/class-wp-mcp-ai-otlp-exporter.php`) | **No mapping** — `wp_mcp_ai_otlp_endpoint` is a site-level option, off by default (D4), with self-contained validation (scheme allowlist, host required, no user-info, host allowlist). Nothing in the codebase even writes it (no settings UI, no REST write route): the only configuration path is wp-config/filter or WP-CLI, i.e. someone who already owns the site. There is no per-user/per-assistant tracing target to hijack. |
+| CVE-2026-41948 (9.4) — Plugin Daemon path traversal, unauthenticated | Separate internal plugin-runtime daemon | Dify import adapter + workflow REST | **No mapping** — NV oOS has no plugin daemon; tool execution is in-process PHP behind `manage_options` + nonces. The Dify adapter is a pure structural mapper (grep-verified: no file/path/network/eval operations); no filename parameter exists to traverse. We embed no Dify code — only the DSL format mapping. |
+| CVE-2026-41949/41950 — file IDORs (preview without ownership check; attach another user's file UUID to chat) | Multi-tenant console | Annotation REST export, `export_annotation_dataset`, observability dashboard | **Not applicable** — single-tenant WordPress has no cross-tenant boundary; all three 091 surfaces are admin/`edit_posts`-gated. Lesson retained: if NV oOS ever grows multi-tenancy, ownership checks on every object-ID route are the anti-template from this disclosure. |
+| PDFium UAF (CVE-2024-5846) run unpatched ~18 months | Untrusted PDFs parsed by a memory-unsafe binary | DomPDF/TCPDF/PhpOffice (memory-safe PHP) | **Category note** — the generic lesson (parsing untrusted files with unpatched native binaries) applies to the pre-existing ffmpeg-based tools (`extract_video_frames`, transcode), not to anything this proposal added: keep those binaries patched and prefer sandboxed parsing. |
+
+Defense-in-depth applied (same commit as this note): `wp_mcp_ai_otlp_endpoint` added to a `DENIED_OPTIONS` deny-list in the Pro `update_option` tool — its `wp_mcp_ai_` prefix allowlist would otherwise let a manage_options-gated assistant session repoint the tracing sink (a DifyTap-class exfiltration channel with no visible site impact). Admin configuration remains available via the `wp_mcp_ai_otlp_endpoint` filter or WP-CLI.
+
+When a settings UI for the OTLP endpoint is eventually added, it must stay `manage_options`-gated (the settings registry enforces this) and keep routing through `WP_MCP_AI_OTLP_Exporter::validate_endpoint()` — which is deliberately environment-independent.
 
 ## References
 
@@ -166,3 +182,4 @@ Dependencies: Track A touches the Pro Workflow Builder (module registry registra
 24. OpenObserve — OTel GenAI semantic conventions practical guide: https://openobserve.ai/blog/opentelemetry-genai-semantic-conventions/
 25. Greptime — how OTel traces LLM calls, agents, MCP tools: https://greptime.com/blogs/2026-05-09-opentelemetry-genai-semantic-conventions
 26. MLflow — GenAI semantic conventions: https://mlflow.org/docs/latest/genai/tracing/opentelemetry/genai-semconv/
+27. Security Affairs — DifyTap: Four Bugs Put over 1 million AI Apps at Risk: https://securityaffairs.com/194081/hacking/difytap-four-bugs-put-over-1-million-ai-apps-at-risk.html

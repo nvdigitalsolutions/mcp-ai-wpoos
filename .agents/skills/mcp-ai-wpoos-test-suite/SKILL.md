@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 84 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, fallback-autoloader masking, init-time post-insert $wp_rewrite warnings, wp-phpunit _delete_all_posts boot wiping, queue-worker failure contract, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 85 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, fallback-autoloader masking, init-time post-insert $wp_rewrite warnings, wp-phpunit _delete_all_posts boot wiping, queue-worker failure contract, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -1374,6 +1374,16 @@ the changed files is the substantive gate; plan CI waits accordingly.
       the relink must be tested against. Insert the raw row directly into
       the `postmeta` table to bypass the sanitizer, then assert the relink
       remaps it (`tests/test-team-member-relink.php`).
+  85. **`$this->factory()->post->create()` with an unregistered CPT returns
+      `WP_Error`, which then explodes inside typed signatures** (Proposal 091
+      Pro observability tests, 2026-10-27). Passing `'post_type' =>
+      'mcp_ai_*'` when the Pro CPT is not registered in the test bootstrap
+      yields `WP_Error` — surfaced only later as a `TypeError` when the value
+      hits a typed param (e.g. `WP_MCP_AI_Annotation_Store::record( int
+      $transcript_id )`). Convention (see `tests/test-annotation-store.php`):
+      fixtures use plain `post_type => 'post'` via `wp_insert_post()` unless
+      the test itself registers the CPT. Same trap applies to Pro tests under
+      `addons/pro/tests/`.
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 

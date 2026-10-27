@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.12"
   plugin-version-tested: "1.2.12"
-  last-updated: "2026-10-25"
+  last-updated: "2026-10-27"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -731,6 +731,21 @@ bootstrap fixture and heavy-view mocks (see `api.test.tsx`).
 5. **jsdom pointer events lack `pointerType`** — Radix pointer paths are
    unreliable; prefer `user.click` on triggers/options (works form-free) or
    `fireEvent` for isolated cases.
+6. **DataTable cells need a fragment once they hold more than one element**
+   (Proposal 091, spa-v2 `WorkflowsPage`, 2026-10-27). `DataTableRow.cells`
+   entries are array items — a second sibling `<button>` in one cell fails
+   `tsc` with *TS2657: JSX expressions must have one parent element*. Wrap
+   the cell contents in `<>…</>` (see the preset-actions cell with
+   Load/Export buttons in `WorkflowsPage.tsx`).
+7. **Testing browser-download + confirm-gated flows in jsdom** (Proposal 091
+   DSL export/import tests, `workflows-page.test.tsx`). jsdom does not
+   implement `URL.createObjectURL`/`revokeObjectURL` — stub them per test
+   with `Object.defineProperty( URL, 'createObjectURL', { configurable:
+   true, value: () => 'blob:mock' } )` (same for `revokeObjectURL`), and
+   `vi.spyOn( HTMLAnchorElement.prototype, 'click' )` so the download anchor
+   never navigates. For dry-run-then-confirm flows, mock
+   `vi.spyOn( window, 'confirm' ).mockReturnValue( true )`; assert the import
+   endpoint was called twice by filtering `fetchMock.mock.calls` on the URL.
 
 ## Release bookkeeping
 
@@ -829,6 +844,30 @@ console-source change merged without `npm run sync:dist` + a dist commit
 ships the stale bundle to the mirror (case: #7206 merged carrying the
 #7205-era dist; fixed by the #7208 rebuild commit). Console source changes
 and their dist rebuild belong in the same PR.
+
+**Live-console staleness diagnosis (learned 2026-10-27, pagination #7239
+case).** A spa-v2 feature can be present in the source AND in the plugin
+`pro-spa.js` bundle yet still be missing from the live console — the
+two-bundle violation is often **one-sided**; check both trees separately.
+Browser-side signature: DevTools → Network shows the page chunk with a
+content hash (`RecordsPage-BkrX3yyH.js`); if the same hash exists in
+`examples/nvoos-complete-velocity/dist/assets/`, the repo's **committed**
+dist is stale (not the deploy). Confirm with
+`git show --stat <feature-commit> -- examples/nvoos-complete-velocity`
+(empty output = that PR never rebuilt the console) and
+`git log --oneline -1 -- examples/nvoos-complete-velocity/dist` vs the
+feature commit. The fix needs **no source edits**: `npm run build` in
+`examples/nvoos-complete-velocity` (the Vite alias compiles current spa-v2
+in), `npm test` (console gate — 87/87 as of this case), verify the new page
+chunk imports the new feature chunk (`Pagination-*.js`) and wires its props
+(`footer: …`), commit the dist, PR — the sync workflow then ships the
+committed dist to the mirror and Velocity redeploys. Grep caveat: the page
+chunk itself may show 0 hits for the feature's CSS class names (`__pager`)
+— they live in the imported feature chunk; grep for the import + the JSX
+prop wiring instead. Case: `#/professions` and the other Records groups
+showed no pager on pro.nvoos.cloud although #7239 had landed in spa-v2 —
+root cause was the console `dist/` predating the PR (live chunk hashes
+matched the stale repo chunks exactly).
 
 ### Rebuild discipline — staleness, vendor, drift (learned 2026-10-22)
 

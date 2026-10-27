@@ -58,6 +58,29 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 	);
 
 	/**
+	 * Options denied even though they match the `wp_mcp_ai_` allowlist
+	 * prefix (defense-in-depth, Proposal 091 / DifyTap analysis,
+	 * 2026-10-27).
+	 *
+	 * `wp_mcp_ai_otlp_endpoint` is the OTLP span exporter's target — a
+	 * tracing sink. The DifyTap research (CVE-2026-41947) showed the
+	 * tracing-exfiltration class: whoever can set the tracing target
+	 * receives every chat message and response. The exporter is
+	 * off-by-default and validated (scheme/host allowlist, no user-info),
+	 * and this tool already requires manage_options — but a compromised
+	 * admin-level assistant session that silently repoints the OTLP
+	 * endpoint is an exfiltration channel with no visible site impact, so
+	 * the option stays out of AI-tool reach. Configure it via wp-config
+	 * (the `wp_mcp_ai_otlp_endpoint` filter) or WP-CLI only.
+	 *
+	 * @since 1.2.13
+	 * @var string[]
+	 */
+	const DENIED_OPTIONS = array(
+		'wp_mcp_ai_otlp_endpoint',
+	);
+
+	/**
 	 * Per-option type schema for value coercion.
 	 *
 	 * @since 1.0.0
@@ -130,7 +153,7 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 			'when_to_use'     => __( 'Writing a single live WordPress option such as blogname, posts_per_page, or show_on_front.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Creating real pages or posts; use create_post. Whole-site provisioning with options and content; use site_creator.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'site_creator', 'install_and_activate_theme' ),
-			'notes'           => __( 'State-changing and allowlisted: only safe core options, wp_mcp_ai_* names, and theme_mods_* are accepted.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'State-changing and allowlisted: only safe core options, wp_mcp_ai_* names, and theme_mods_* are accepted. A small deny list (e.g. the OTLP tracing endpoint) overrides the prefix.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -204,6 +227,19 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 			return new WP_Error(
 				'wp_mcp_ai_missing_option_name',
 				__( 'Option name not provided.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Deny-list first: a few wp_mcp_ai_-prefixed options must stay out of
+		// AI-tool reach even though the allowlist below would accept them.
+		if ( in_array( $option_name, self::DENIED_OPTIONS, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden_option',
+				sprintf(
+					/* translators: %s: option name */
+					__( 'The option "%s" cannot be modified via AI tools for security reasons.', 'mcp-ai-wpoos-pro' ),
+					$option_name
+				)
 			);
 		}
 
