@@ -163,7 +163,7 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Thread implements WP_MCP_AI_Tool_Interface, W
 			$format = 'plain';
 		}
 
-		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( $connection_id );
+		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( $connection_id, $context );
 		if ( is_wp_error( $credentials ) ) {
 			return $credentials;
 		}

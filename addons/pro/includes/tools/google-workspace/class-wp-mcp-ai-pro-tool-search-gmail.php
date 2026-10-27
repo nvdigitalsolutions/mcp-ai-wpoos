@@ -150,7 +150,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-gmail-client.php';
 		}
 
-		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( $connection_id );
+		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( $connection_id, $context );
 		if ( is_wp_error( $credentials ) ) {
 			return $credentials;
 		}

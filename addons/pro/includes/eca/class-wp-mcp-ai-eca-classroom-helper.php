@@ -111,7 +111,7 @@ class WP_MCP_AI_ECA_Classroom_Helper {
 
 		self::require_foundation();
 
-		$credentials = WP_MCP_AI_Google_Classroom_Credentials::resolve( $connection_id );
+		$credentials = WP_MCP_AI_Google_Classroom_Credentials::resolve( $connection_id, $context );
 
 		if ( is_wp_error( $credentials ) ) {
 			return $credentials;

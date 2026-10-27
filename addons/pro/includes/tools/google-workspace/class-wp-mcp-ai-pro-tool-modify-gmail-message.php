@@ -184,7 +184,7 @@ class WP_MCP_AI_Pro_Tool_Modify_Gmail_Message implements WP_MCP_AI_Tool_Interfac
 			return new WP_Error( 'wp_mcp_ai_gmail_modify_nothing_to_do', __( 'No label operations were requested. Provide add_label_ids, remove_label_ids, mark_read, mark_unread, or archive.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( $connection_id );
+		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( $connection_id, $context );
 		if ( is_wp_error( $credentials ) ) {
 			return $credentials;
 		}

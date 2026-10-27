@@ -46,15 +46,13 @@ trait WP_MCP_AI_FlowHub_Connection_Resolver {
 	 *                        or WP_Error when nothing resolves.
 	 */
 	protected function resolve_flowhub_connection( $arguments = array(), $context = array() ) {
-		unset( $context );
-
 		if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-connection-helper.php';
 		}
 
 		$explicit = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
 
-		return WP_MCP_AI_FlowHub_Connection_Helper::resolve_connection( $explicit );
+		return WP_MCP_AI_FlowHub_Connection_Helper::resolve_connection( $explicit, $context );
 	}
 
 	/**

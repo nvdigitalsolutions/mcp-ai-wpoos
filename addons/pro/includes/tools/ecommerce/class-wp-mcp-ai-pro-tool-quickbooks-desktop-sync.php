@@ -302,6 +302,20 @@ class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Inter
 			);
 		}
 
+		// Assistant-level restriction: an assistant with a configured Remote
+		// Site Connections list may only use connections from that list.
+		if ( ! $this->is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_qbd_connection_not_enabled',
+				sprintf(
+					/* translators: %s: connection name. */
+					__( 'QuickBooks Desktop connection "%s" is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
+					isset( $connection['name'] ) ? (string) $connection['name'] : $connection_id
+				),
+				array( 'status' => 403 )
+			);
+		}
+
 		// ── Extract connection credentials ────────────────────────────────
 		$relay_url = ! empty( $connection['url'] ) ? esc_url_raw( trim( (string) $connection['url'] ) ) : '';
 		$api_key   = '';
@@ -795,6 +809,50 @@ class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Inter
 		}
 
 		return null;
+	}
+
+	/**
+	 * Resolve the assistant's allowed connection IDs from the execution context.
+	 *
+	 * Returns null when unrestricted (no assistant context, or the assistant
+	 * has no configured Remote Site Connections list) — mirroring the
+	 * remote_wp_connection semantics — or the allowed connection IDs as strings.
+	 *
+	 * @param array $context Execution context.
+	 * @return array|null Allowed connection IDs, or null when unrestricted.
+	 */
+	private function get_allowed_connection_ids( array $context ) {
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		if ( ! $assistant_id ) {
+			return null;
+		}
+
+		$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+
+		if ( ! is_array( $enabled_connections ) ) {
+			// Not configured — legacy behaviour allows all connections.
+			return null;
+		}
+
+		return array_map( 'strval', $enabled_connections );
+	}
+
+	/**
+	 * Whether a connection is enabled for the assistant in the execution context.
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param array  $context       Execution context.
+	 * @return bool True when allowed (or unrestricted), false otherwise.
+	 */
+	private function is_connection_enabled_for_assistant( $connection_id, array $context ) {
+		$allowed_ids = $this->get_allowed_connection_ids( $context );
+
+		if ( null === $allowed_ids ) {
+			return true;
+		}
+
+		return in_array( (string) $connection_id, $allowed_ids, true );
 	}
 
 	/**

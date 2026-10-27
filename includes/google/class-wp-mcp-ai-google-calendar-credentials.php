@@ -91,7 +91,18 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 			$connection_id = is_string( $connection_id ) ? sanitize_key( $connection_id ) : '';
 
 			if ( '' !== $connection_id ) {
-				return self::resolve_from_connection( $connection_id );
+				return self::resolve_from_connection( $connection_id, $context );
+			}
+
+			// A restricted assistant cannot fall back to the site-wide settings
+			// credentials: the assistant editor can only grant named Remote Sites
+			// connections.
+			if ( null !== self::get_allowed_connection_ids( $context ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_calendar_settings_not_allowed',
+					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide Google Calendar settings cannot be used. Enable a Google Calendar connection for the assistant in the assistant editor (Remote Site Connections) and pass its connection_id.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
+				);
 			}
 
 			$settings = self::resolve_from_settings();
@@ -116,9 +127,10 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 		 * @since 1.0.0
 		 *
 		 * @param string $connection_id Connection ID.
+		 * @param array  $context       Optional execution context (assistant_id is honoured).
 		 * @return array<string,mixed>|WP_Error
 		 */
-		protected static function resolve_from_connection( $connection_id ) {
+		protected static function resolve_from_connection( $connection_id, array $context = array() ) {
 			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 				if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 					return new WP_Error(
@@ -169,6 +181,20 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 				);
 			}
 
+			// Assistant-level restriction: an assistant with a configured Remote
+			// Site Connections list may only use connections from that list.
+			if ( ! self::is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_calendar_connection_not_enabled',
+					sprintf(
+						/* translators: %s: connection name. */
+						__( 'Google Calendar connection "%s" is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos' ),
+						isset( $connection['name'] ) ? (string) $connection['name'] : $connection_id
+					),
+					array( 'status' => 403 )
+				);
+			}
+
 			if ( isset( $connection['enabled'] ) && ! $connection['enabled'] ) {
 				return new WP_Error(
 					'wp_mcp_ai_calendar_connection_disabled',
@@ -216,6 +242,50 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 				'cache_key'       => 'connection:' . $connection_id,
 				'service_account' => array(),
 			);
+		}
+
+		/**
+		 * Resolve the assistant's allowed connection IDs from the execution context.
+		 *
+		 * Returns null when unrestricted (no assistant context, or the assistant
+		 * has no configured Remote Site Connections list) — mirroring the
+		 * remote_wp_connection semantics — or the allowed connection IDs as strings.
+		 *
+		 * @param array $context Execution context.
+		 * @return array|null Allowed connection IDs, or null when unrestricted.
+		 */
+		private static function get_allowed_connection_ids( array $context ) {
+			$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+			if ( ! $assistant_id ) {
+				return null;
+			}
+
+			$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+
+			if ( ! is_array( $enabled_connections ) ) {
+				// Not configured — legacy behaviour allows all connections.
+				return null;
+			}
+
+			return array_map( 'strval', $enabled_connections );
+		}
+
+		/**
+		 * Whether a connection is enabled for the assistant in the execution context.
+		 *
+		 * @param string $connection_id Connection ID.
+		 * @param array  $context       Execution context.
+		 * @return bool True when allowed (or unrestricted), false otherwise.
+		 */
+		private static function is_connection_enabled_for_assistant( $connection_id, array $context ) {
+			$allowed_ids = self::get_allowed_connection_ids( $context );
+
+			if ( null === $allowed_ids ) {
+				return true;
+			}
+
+			return in_array( (string) $connection_id, $allowed_ids, true );
 		}
 
 		/**

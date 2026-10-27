@@ -60,7 +60,7 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 			'when_to_use'     => __( 'Reading a known Drive file or folder by ID: Docs and Slides export to text, Sheets read as tabular text with tab names, folders list children, binary files return metadata.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Discovering files by name or query; use search_drive. Discovering connection IDs; use list_drive_connections.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'search_drive', 'list_drive_connections' ),
-			'notes'           => __( 'Docs text is capped at max_chars (100-50000, default 4000). Sheets are read via the Sheets API as tabular text with a data.tabs list; use sheet_name to target a specific tab. Binary files return metadata and links only, never content.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Docs text is capped at max_chars (100-50000, default 4000). Sheets are read via the Sheets API as tabular text with a data.tabs list; use sheet_name to target a specific tab. Binary files return metadata and links only, never content. Reads are limited to the resolved connection\'s scoped folder tree when the connection has a Folder ID set, and to the connections enabled for the assistant in the assistant editor.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -153,13 +153,23 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 			$max_children = 100;
 		}
 
-		$credentials = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials( $connection_id );
+		$credentials = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials( $connection_id, $context );
 		if ( is_wp_error( $credentials ) ) {
 			return $credentials;
 		}
 
 		$resolved_id   = isset( $credentials['connection_id'] ) ? (string) $credentials['connection_id'] : '';
 		$resolved_name = isset( $credentials['connection_name'] ) ? (string) $credentials['connection_name'] : '';
+
+		// Resolve the connection's scoped folder (the hard limit this read must
+		// stay inside). The settings fallback has no folder scope.
+		$scoped_folder_id = '';
+		if ( '' !== $resolved_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $resolved_id );
+			if ( is_array( $connection ) && isset( $connection['folder_id'] ) ) {
+				$scoped_folder_id = trim( (string) $connection['folder_id'] );
+			}
+		}
 
 		$timeout = WP_MCP_AI_Pro_Google_Drive_Client::get_request_timeout();
 
@@ -176,6 +186,27 @@ class WP_MCP_AI_Pro_Tool_Get_Drive_File implements WP_MCP_AI_Tool_Interface, WP_
 		$metadata = WP_MCP_AI_Pro_Google_Drive_Client::get_metadata( $file_id, $access_token, $timeout );
 		if ( is_wp_error( $metadata ) ) {
 			return $metadata;
+		}
+
+		// Folder scope enforcement: a connection-scoped folder limits reads to
+		// that folder's tree. Unverifiable chains fail closed.
+		if ( '' !== $scoped_folder_id ) {
+			$in_scope = WP_MCP_AI_Pro_Google_Drive_Client::is_file_within_folder_tree( $metadata, $file_id, $scoped_folder_id, $access_token, $timeout );
+			if ( is_wp_error( $in_scope ) ) {
+				return $in_scope;
+			}
+			if ( ! $in_scope ) {
+				return new WP_Error(
+					'wp_mcp_ai_drive_file_outside_scope',
+					sprintf(
+						/* translators: 1: connection name, 2: file name. */
+						__( 'The requested file "%2$s" is outside the folder this Drive connection "%1$s" is scoped to. This assistant may only read files inside the connection\'s scoped folder tree.', 'mcp-ai-wpoos-pro' ),
+						$resolved_name,
+						isset( $metadata['name'] ) ? (string) $metadata['name'] : $file_id
+					),
+					array( 'status' => 403 )
+				);
+			}
 		}
 
 		$mime_type = isset( $metadata['mimeType'] ) ? (string) $metadata['mimeType'] : '';

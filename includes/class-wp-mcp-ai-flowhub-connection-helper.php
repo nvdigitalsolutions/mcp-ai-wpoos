@@ -73,6 +73,7 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 		 * @since 1.1.81
 		 *
 		 * @param string|null $explicit_connection_id Optional connection ID from tool arguments.
+		 * @param array       $context                Optional execution context (assistant_id is honoured).
 		 * @return array|WP_Error Resolved connection array:
 		 *                        array(
 		 *                            'connection_id' => string,       // '' means settings mode.
@@ -83,7 +84,9 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 		 *                        )
 		 *                        WP_Error when nothing resolves.
 		 */
-		public static function resolve_connection( $explicit_connection_id = null ) {
+		public static function resolve_connection( $explicit_connection_id = null, array $context = array() ) {
+			$allowed_ids = self::get_allowed_connection_ids( $context );
+
 			// 1. Explicit connection ID from tool arguments.
 			if ( ! empty( $explicit_connection_id ) ) {
 				$connection_id = sanitize_key( $explicit_connection_id );
@@ -91,6 +94,20 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 
 				if ( is_wp_error( $connection ) ) {
 					return $connection;
+				}
+
+				// Assistant-level restriction: an assistant with a configured
+				// Remote Site Connections list may only use connections from it.
+				if ( ! self::is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_flowhub_connection_not_enabled',
+						sprintf(
+							/* translators: %s: connection name. */
+							__( 'FlowHub connection "%s" is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos' ),
+							isset( $connection['name'] ) ? (string) $connection['name'] : $connection_id
+						),
+						array( 'status' => 403 )
+					);
 				}
 
 				return array(
@@ -103,8 +120,21 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 			}
 
 			// 2. Settings-based credentials (toolkit, then legacy admin store).
+			// A restricted assistant cannot fall back to the site-wide settings:
+			// the assistant editor can only grant named Remote Sites connections.
+			// Checked only when settings credentials are actually configured, so
+			// a restricted assistant without them can still resolve one of its
+			// allowed connections below.
 			$credentials = self::get_settings_credentials();
 			if ( ! empty( $credentials['client_id'] ) && ! empty( $credentials['api_key'] ) ) {
+				if ( null !== $allowed_ids ) {
+					return new WP_Error(
+						'wp_mcp_ai_flowhub_settings_not_allowed',
+						__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide FlowHub toolkit settings cannot be used. Enable a FlowHub connection for the assistant in the assistant editor (Remote Site Connections) and pass its connection_id.', 'mcp-ai-wpoos' ),
+						array( 'status' => 403 )
+					);
+				}
+
 				return array(
 					'connection_id' => '',
 					'connection'    => null,
@@ -116,6 +146,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 
 			// 3. The toolkit's configured sync connections (admin's explicit choice).
 			foreach ( self::get_sync_connections() as $connection_id ) {
+				if ( null !== $allowed_ids && ! in_array( (string) $connection_id, $allowed_ids, true ) ) {
+					continue;
+				}
+
 				$connection = self::validate_connection( $connection_id );
 				if ( ! is_wp_error( $connection ) ) {
 					return array(
@@ -128,7 +162,50 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 				}
 			}
 
-			// 4. First enabled FlowHub connection in Remote Sites.
+			// 4. First enabled FlowHub connection in Remote Sites. A restricted
+			// assistant resolves to the first enabled connection inside its own
+			// allowed list instead of the first connection in the roster.
+			if ( null !== $allowed_ids ) {
+				foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $candidate_id => $candidate ) {
+					if ( ! in_array( (string) $candidate_id, $allowed_ids, true ) ) {
+						continue;
+					}
+
+					if (
+						! is_array( $candidate )
+						|| self::CONNECTION_TYPE !== ( isset( $candidate['connection_type'] ) ? $candidate['connection_type'] : '' )
+					) {
+						continue;
+					}
+
+					if ( empty( $candidate['enabled'] ) || empty( $candidate['client_id'] ) || empty( $candidate['api_key'] ) ) {
+						continue;
+					}
+
+					$first = array(
+						'id'         => (string) $candidate_id,
+						'connection' => $candidate,
+					);
+					break;
+				}
+
+				if ( null === $first ) {
+					return new WP_Error(
+						'wp_mcp_ai_flowhub_no_allowed_connection',
+						__( 'None of the FlowHub connections enabled for this assistant have usable credentials. Enable a FlowHub connection in the assistant editor (Remote Site Connections) and complete its configuration under Remote Sites.', 'mcp-ai-wpoos' ),
+						array( 'status' => 403 )
+					);
+				}
+
+				return array(
+					'connection_id' => $first['id'],
+					'connection'    => $first['connection'],
+					'source'        => 'connection',
+					'credentials'   => self::get_connection_credentials( $first['id'] ),
+					'proxy'         => self::resolve_proxy( $first['id'], $first['connection'] ),
+				);
+			}
+
 			$first = self::get_first_enabled_connection();
 			if ( null !== $first ) {
 				return array(
@@ -140,10 +217,62 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_Connection_Helper' ) ) {
 				);
 			}
 
+			if ( null !== $allowed_ids ) {
+				return new WP_Error(
+					'wp_mcp_ai_flowhub_no_allowed_connection',
+					__( 'None of the FlowHub connections enabled for this assistant have usable credentials. Enable a FlowHub connection in the assistant editor (Remote Site Connections) and complete its configuration under Remote Sites.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
+				);
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_flowhub_missing_credentials',
 				__( 'FlowHub API credentials are not configured. Set your client ID and API key in the FlowHub Toolkit settings, or create an enabled FlowHub connection in Remote Sites.', 'mcp-ai-wpoos' )
 			);
+		}
+
+		/**
+		 * Resolve the assistant's allowed connection IDs from the execution context.
+		 *
+		 * Returns null when unrestricted (no assistant context, or the assistant
+		 * has no configured Remote Site Connections list) — mirroring the
+		 * remote_wp_connection semantics — or the allowed connection IDs as strings.
+		 *
+		 * @param array $context Execution context.
+		 * @return array|null Allowed connection IDs, or null when unrestricted.
+		 */
+		private static function get_allowed_connection_ids( array $context ) {
+			$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+			if ( ! $assistant_id ) {
+				return null;
+			}
+
+			$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+
+			if ( ! is_array( $enabled_connections ) ) {
+				// Not configured — legacy behaviour allows all connections.
+				return null;
+			}
+
+			return array_map( 'strval', $enabled_connections );
+		}
+
+		/**
+		 * Whether a connection is enabled for the assistant in the execution context.
+		 *
+		 * @param string $connection_id Connection ID.
+		 * @param array  $context       Execution context.
+		 * @return bool True when allowed (or unrestricted), false otherwise.
+		 */
+		private static function is_connection_enabled_for_assistant( $connection_id, array $context ) {
+			$allowed_ids = self::get_allowed_connection_ids( $context );
+
+			if ( null === $allowed_ids ) {
+				return true;
+			}
+
+			return in_array( (string) $connection_id, $allowed_ids, true );
 		}
 
 		/**

@@ -33,11 +33,16 @@ class WP_MCP_AI_Pro_Gmail_Client {
 	/**
 	 * Resolve Gmail credentials from a Remote Sites connection or from base settings.
 	 *
+	 * When the execution context carries an assistant whose Remote Site
+	 * Connections are restricted (the assistant editor metabox), resolution is
+	 * limited to the enabled connections and the settings fallback is refused.
+	 *
 	 * @param string $connection_id Optional Remote Sites connection ID. Empty falls back to settings.
+	 * @param array  $context       Optional execution context (assistant_id is honoured).
 	 * @return array|WP_Error Credentials array with keys client_id, client_secret,
 	 *         refresh_token, configured_user and source — or WP_Error.
 	 */
-	public static function resolve_credentials( $connection_id ) {
+	public static function resolve_credentials( $connection_id, array $context = array() ) {
 		$connection_id = sanitize_key( (string) $connection_id );
 
 		// The tool schema documents the fallback as "settings-based
@@ -84,6 +89,20 @@ class WP_MCP_AI_Pro_Gmail_Client {
 				);
 			}
 
+			// Assistant-level restriction: an assistant with a configured Remote
+			// Site Connections list may only use connections from that list.
+			if ( ! self::is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_gmail_connection_not_enabled',
+					sprintf(
+						/* translators: %s: connection name. */
+						__( 'Gmail connection "%s" is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections, or use one of the connections returned by list_gmail_connections.', 'mcp-ai-wpoos-pro' ),
+						isset( $connection['name'] ) ? (string) $connection['name'] : $connection_id
+					),
+					array( 'status' => 403 )
+				);
+			}
+
 			$client_id       = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
 			$client_secret   = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
 			$refresh_token   = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
@@ -105,6 +124,17 @@ class WP_MCP_AI_Pro_Gmail_Client {
 			$client_secret   = isset( $settings['gmail_client_secret'] ) ? trim( (string) $settings['gmail_client_secret'] ) : '';
 			$refresh_token   = isset( $settings['gmail_refresh_token'] ) ? trim( (string) $settings['gmail_refresh_token'] ) : '';
 			$configured_user = isset( $settings['gmail_user_email'] ) ? trim( (string) $settings['gmail_user_email'] ) : '';
+
+			// A restricted assistant cannot use the site-wide settings fallback:
+			// the assistant editor can only grant named Remote Sites connections.
+			// Checked only when settings credentials are actually configured.
+			if ( null !== self::get_allowed_connection_ids( $context ) && '' !== $client_id && '' !== $client_secret && '' !== $refresh_token ) {
+				return new WP_Error(
+					'wp_mcp_ai_gmail_settings_not_allowed',
+					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide Gmail settings cannot be used. Enable a Gmail connection for the assistant in the assistant editor (Remote Site Connections) and pass its connection_id.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
 		}
 
 		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
@@ -121,6 +151,50 @@ class WP_MCP_AI_Pro_Gmail_Client {
 			'configured_user' => $configured_user,
 			'source'          => $source,
 		);
+	}
+
+	/**
+	 * Resolve the assistant's allowed connection IDs from the execution context.
+	 *
+	 * Returns null when unrestricted (no assistant context, or the assistant
+	 * has no configured Remote Site Connections list) — mirroring the
+	 * remote_wp_connection semantics — or the allowed connection IDs as strings.
+	 *
+	 * @param array $context Execution context.
+	 * @return array|null Allowed connection IDs, or null when unrestricted.
+	 */
+	public static function get_allowed_connection_ids( array $context ) {
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		if ( ! $assistant_id ) {
+			return null;
+		}
+
+		$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+
+		if ( ! is_array( $enabled_connections ) ) {
+			// Not configured — legacy behaviour allows all connections.
+			return null;
+		}
+
+		return array_map( 'strval', $enabled_connections );
+	}
+
+	/**
+	 * Whether a connection is enabled for the assistant in the execution context.
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param array  $context       Execution context.
+	 * @return bool True when allowed (or unrestricted), false otherwise.
+	 */
+	public static function is_connection_enabled_for_assistant( $connection_id, array $context ) {
+		$allowed_ids = self::get_allowed_connection_ids( $context );
+
+		if ( null === $allowed_ids ) {
+			return true;
+		}
+
+		return in_array( (string) $connection_id, $allowed_ids, true );
 	}
 
 	/**
