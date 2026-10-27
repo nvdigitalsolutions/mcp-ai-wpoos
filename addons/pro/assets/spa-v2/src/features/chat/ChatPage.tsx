@@ -815,8 +815,10 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 											</button>
 										</div>
 
-			{/* HITL approval bar */}
-			{ hasApprovals && (
+			{/* HITL approval bar — the approval queue is manage_options-only
+			    server-side (list + resolve), so non-admin roles would only ever
+			    poll a 403. Mount it for admins only. */}
+			{ isAdmin && hasApprovals && (
 				<HitlApprovalBar
 					endpoint={ endpoints!.approvals }
 					nonce={ nonce }

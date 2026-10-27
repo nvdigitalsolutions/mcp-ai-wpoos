@@ -38,6 +38,16 @@ export function AssistantsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
 	const availableModels = useModelStore( ( s ) => s.availableModels );
 
+	// Create/edit/delete and the single-assistant GET are manage_options-only
+	// server-side — non-admin roles get a read-only list without the actions
+	// that would only ever answer 403.
+	const isAdmin = useMemo(
+		() =>
+			Array.isArray( runtime?.user?.capabilities ) &&
+			runtime.user.capabilities.includes( 'manage_options' ),
+		[ runtime ]
+	);
+
 	const { assistants, loading, error, fetchAssistants, getAssistant, createAssistant, updateAssistant, deleteAssistant } =
 		useAssistants(
 			runtime
@@ -95,6 +105,12 @@ export function AssistantsPage(): JSX.Element {
 
 	const openEdit = useCallback(
 		( assistant: AssistantRecord ) => {
+			// GET /assistants/{id} requires manage_options — never fetch it
+			// for non-admin roles (the row action is hidden for them anyway).
+			if ( ! isAdmin ) {
+				return;
+			}
+
 			// Seed the form from the list record immediately, then replace
 			// with the full record (system prompt + tools) from the new
 			// GET /assistants/{id} route.
@@ -126,7 +142,7 @@ export function AssistantsPage(): JSX.Element {
 				setRecordLoading( false );
 			} );
 		},
-		[ getAssistant ]
+		[ getAssistant, isAdmin ]
 	);
 
 	const closeForm = useCallback( () => {
@@ -254,13 +270,15 @@ export function AssistantsPage(): JSX.Element {
 				<h2 className="nvoos-pro-spa-page__title">
 					{ __( 'Assistants', 'nvoos-pro-spa' ) }
 				</h2>
-				<button
-					type="button"
-					className="nvoos-pro-spa-assistants-page__add-btn"
-					onClick={ openCreate }
-				>
-					{ __( 'Add Assistant', 'nvoos-pro-spa' ) }
-				</button>
+				{ isAdmin && (
+					<button
+						type="button"
+						className="nvoos-pro-spa-assistants-page__add-btn"
+						onClick={ openCreate }
+					>
+						{ __( 'Add Assistant', 'nvoos-pro-spa' ) }
+					</button>
+				) }
 			</header>
 
 			{ assistants.length === 0 && ! formOpen ? (
@@ -322,78 +340,80 @@ export function AssistantsPage(): JSX.Element {
 									</p>
 								) }
 							</div>
-							<div className="nvoos-pro-spa-assistants-list__actions">
-								<button
-									type="button"
-									className="nvoos-pro-spa-assistants-list__edit-btn"
-									onClick={ () =>
-										openEdit( assistant )
-									}
-									aria-label={ __(
-										'Edit assistant',
-										'nvoos-pro-spa'
-									) }
-								>
-									{ __( 'Edit', 'nvoos-pro-spa' ) }
-								</button>
-								{ deleteConfirm === assistant.id ? (
-									<div className="nvoos-pro-spa-assistants-list__confirm">
-										<span>
-											{ __(
-												'Delete?',
-												'nvoos-pro-spa'
-											) }
-										</span>
-										<button
-											type="button"
-											className="nvoos-pro-spa-assistants-list__confirm-yes"
-											onClick={ () =>
-												void handleDelete(
-													assistant.id
-												)
-											}
-										>
-											{ __(
-												'Yes',
-												'nvoos-pro-spa'
-											) }
-										</button>
-										<button
-											type="button"
-											className="nvoos-pro-spa-assistants-list__confirm-no"
-											onClick={ () =>
-												setDeleteConfirm(
-													null
-												)
-											}
-										>
-											{ __(
-												'No',
-												'nvoos-pro-spa'
-											) }
-										</button>
-									</div>
-								) : (
+							{ isAdmin && (
+								<div className="nvoos-pro-spa-assistants-list__actions">
 									<button
 										type="button"
-										className="nvoos-pro-spa-assistants-list__delete-btn"
+										className="nvoos-pro-spa-assistants-list__edit-btn"
 										onClick={ () =>
-											setDeleteConfirm(
-												assistant.id
-											)
+											openEdit( assistant )
 										}
 										aria-label={ __(
-											'Delete assistant',
+											'Edit assistant',
 											'nvoos-pro-spa'
 										) }
 									>
-										{ __(
-											'Delete',
-											'nvoos-pro-spa'
-										) }
+										{ __( 'Edit', 'nvoos-pro-spa' ) }
 									</button>
-								) }
-							</div>
+									{ deleteConfirm === assistant.id ? (
+										<div className="nvoos-pro-spa-assistants-list__confirm">
+											<span>
+												{ __(
+													'Delete?',
+													'nvoos-pro-spa'
+												) }
+											</span>
+											<button
+												type="button"
+												className="nvoos-pro-spa-assistants-list__confirm-yes"
+												onClick={ () =>
+													void handleDelete(
+														assistant.id
+													)
+												}
+											>
+												{ __(
+													'Yes',
+													'nvoos-pro-spa'
+												) }
+											</button>
+											<button
+												type="button"
+												className="nvoos-pro-spa-assistants-list__confirm-no"
+												onClick={ () =>
+													setDeleteConfirm(
+														null
+													)
+												}
+											>
+												{ __(
+													'No',
+													'nvoos-pro-spa'
+												) }
+											</button>
+										</div>
+									) : (
+										<button
+											type="button"
+											className="nvoos-pro-spa-assistants-list__delete-btn"
+										onClick={ () =>
+												setDeleteConfirm(
+													assistant.id
+												)
+											}
+											aria-label={ __(
+												'Delete assistant',
+												'nvoos-pro-spa'
+											) }
+										>
+											{ __(
+												'Delete',
+												'nvoos-pro-spa'
+											) }
+										</button>
+									) }
+								</div>
+							) }
 						</li>
 					) ) }
 				</ul>
