@@ -8,13 +8,13 @@
 ( function () {
 	'use strict';
 
-	var cfg = window.wpMcpAiPromptVersions || {};
+	const cfg = window.wpMcpAiPromptVersions || {};
 	if ( ! cfg.restBase ) {
 		return;
 	}
 
 	function request( version, action, done ) {
-		var xhr = new XMLHttpRequest();
+		const xhr = new XMLHttpRequest();
 		xhr.open( 'POST', cfg.restBase + '/' + version + '/' + action, true );
 		xhr.setRequestHeader( 'Content-Type', 'application/json' );
 		xhr.setRequestHeader( 'X-WP-Nonce', cfg.nonce );
@@ -22,7 +22,7 @@
 			if ( 4 !== xhr.readyState ) {
 				return;
 			}
-			var data = {};
+			let data = {};
 			try {
 				data = JSON.parse( xhr.responseText );
 			} catch ( e ) {
@@ -34,12 +34,12 @@
 	}
 
 	function handle( event, action, confirmMessage ) {
-		var el = event.target;
+		const el = event.target;
 		if ( ! el.classList || ! el.classList.contains( 'wp-mcp-ai-prompt-' + action ) ) {
 			return;
 		}
 		event.preventDefault();
-		var version = el.getAttribute( 'data-version' );
+		const version = el.getAttribute( 'data-version' );
 		if ( window.confirm( confirmMessage + ' v' + version + '?' ) ) {
 			request( version, action, function ( status ) {
 				if ( 200 === status ) {
