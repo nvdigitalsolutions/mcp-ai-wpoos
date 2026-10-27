@@ -2140,6 +2140,16 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'high'
 			);
 
+			// Proposal 091 Track B — prompt version history + restore/promote.
+			add_meta_box(
+				'wp-mcp-ai-prompt-versions',
+				__( 'Prompt Versions', 'mcp-ai-wpoos' ),
+				array( $this, 'render_prompt_versions_meta_box' ),
+				self::POST_TYPE,
+				'side',
+				'default'
+			);
+
 			add_meta_box(
 				'wp-mcp-ai-tools',
 				__( 'Available Tools', 'mcp-ai-wpoos' ),
@@ -2295,6 +2305,72 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$metabox->get_priority()
 				);
 			}
+		}
+
+		/**
+		 * Render the prompt versions meta box (Proposal 091, Track B).
+		 *
+		 * Lists immutable prompt snapshots with the production badge and
+		 * Restore/Promote actions backed by the prompt-versions REST routes.
+		 *
+		 * @since 1.2.13
+		 *
+		 * @param WP_Post $post Assistant post.
+		 * @return void
+		 */
+		public function render_prompt_versions_meta_box( $post ) {
+			if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+				return;
+			}
+
+			$versions   = WP_MCP_AI_Prompt_Versions::get_versions( $post->ID );
+			$production = WP_MCP_AI_Prompt_Versions::get_production( $post->ID );
+
+			if ( empty( $versions ) ) {
+				echo '<p>' . esc_html__( 'No versions yet — the first prompt save creates version 1.', 'mcp-ai-wpoos' ) . '</p>';
+				return;
+			}
+
+			wp_enqueue_script(
+				'wp-mcp-ai-prompt-versions-metabox',
+				WP_MCP_AI_URL . 'assets/js/prompt-versions-metabox.js',
+				array(),
+				(string) filemtime( WP_MCP_AI_PATH . 'assets/js/prompt-versions-metabox.js' ),
+				true
+			);
+			wp_add_inline_script(
+				'wp-mcp-ai-prompt-versions-metabox',
+				'window.wpMcpAiPromptVersions = ' . wp_json_encode(
+					array(
+						'restBase' => esc_url_raw( rest_url( 'mcp-ai/v1/assistants/' . $post->ID . '/prompt-versions' ) ),
+						'nonce'    => wp_create_nonce( 'wp_rest' ),
+					)
+				) . ';',
+				'before'
+			);
+
+			echo '<ul class="wp-mcp-ai-prompt-versions-list">';
+			foreach ( array_reverse( $versions ) as $entry ) {
+				$is_production = $entry['v'] === $production;
+				$created       = $entry['created'] ? mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), gmdate( 'Y-m-d H:i:s', $entry['created'] ) ) : '';
+
+				echo '<li class="wp-mcp-ai-prompt-version' . ( $is_production ? ' is-production' : '' ) . '">';
+				echo '<strong>v' . esc_html( (string) $entry['v'] ) . '</strong>';
+				if ( $is_production ) {
+					echo ' <span class="wp-mcp-ai-prompt-production-badge">' . esc_html__( 'production', 'mcp-ai-wpoos' ) . '</span>';
+				}
+				if ( $created ) {
+					echo '<br><small>' . esc_html( $created ) . '</small>';
+				}
+				echo '<br>';
+				echo '<button type="button" class="button button-small wp-mcp-ai-prompt-restore" data-version="' . esc_attr( (string) $entry['v'] ) . '">' . esc_html__( 'Restore', 'mcp-ai-wpoos' ) . '</button> ';
+				if ( ! $is_production ) {
+					echo '<button type="button" class="button button-small wp-mcp-ai-prompt-promote" data-version="' . esc_attr( (string) $entry['v'] ) . '">' . esc_html__( 'Promote', 'mcp-ai-wpoos' ) . '</button>';
+				}
+				echo '</li>';
+			}
+			echo '</ul>';
+			echo '<p class="description">' . esc_html__( 'Restoring a version snapshots the restore itself, so it can be undone.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
 		/**
