@@ -47,11 +47,15 @@ class WP_MCP_AI_Tool_Fnb_Read_Table extends WP_MCP_AI_Fnb_Tool_Base {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'table_id' => array(
+				'table_id'      => array(
 					'type'        => 'string',
 					'description' => __( 'Spec table ID: 1.0…17.0 or "assumptions".', 'mcp-ai-wpoos-pro' ),
 				),
-				'limit'    => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites Drive connection ID override for this table. Omit to auto-route: the table\'s mapped source (F&B settings → Table Sources), then the toolkit default Drive Connection, then the only enabled Drive connection.', 'mcp-ai-wpoos-pro' ),
+				),
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum rows to return (default 200).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 200,
@@ -76,20 +80,21 @@ class WP_MCP_AI_Tool_Fnb_Read_Table extends WP_MCP_AI_Fnb_Tool_Base {
 			return $error;
 		}
 
-		$table_id = isset( $arguments['table_id'] ) ? sanitize_text_field( (string) $arguments['table_id'] ) : '';
-		$limit    = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 200;
+		$table_id            = isset( $arguments['table_id'] ) ? sanitize_text_field( (string) $arguments['table_id'] ) : '';
+		$connection_override = isset( $arguments['connection_id'] ) ? sanitize_key( (string) $arguments['connection_id'] ) : '';
+		$limit               = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 200;
 		if ( $limit < 1 ) {
 			$limit = 200;
 		}
 
-		$table = WP_MCP_AI_Fnb_Data_Source::get_table( $table_id );
+		$table = WP_MCP_AI_Fnb_Data_Source::get_table( $table_id, null, $connection_override );
 		if ( is_wp_error( $table ) ) {
 			return $table;
 		}
 
 		$rows = array_slice( $table['rows'], 0, $limit );
 
-		return array(
+		$out = array(
 			'success'    => true,
 			'table_id'   => $table['table_id'],
 			'label'      => $table['label'],
@@ -100,5 +105,12 @@ class WP_MCP_AI_Tool_Fnb_Read_Table extends WP_MCP_AI_Fnb_Tool_Base {
 			'truncated'  => count( $rows ) < $table['count'],
 			'source'     => $table['source'],
 		);
+
+		if ( isset( $table['connection_id'] ) ) {
+			$out['connection_id']   = $table['connection_id'];
+			$out['connection_name'] = isset( $table['connection_name'] ) ? $table['connection_name'] : '';
+		}
+
+		return $out;
 	}
 }

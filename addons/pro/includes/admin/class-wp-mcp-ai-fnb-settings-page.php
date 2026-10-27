@@ -43,6 +43,13 @@ class WP_MCP_AI_Fnb_Settings_Page {
 	const SETTINGS_GROUP = 'wp_mcp_ai_fnb_settings_group';
 
 	/**
+	 * Option key holding the auto-map review proposals.
+	 *
+	 * @var string
+	 */
+	const PROPOSALS_KEY = 'wp_mcp_ai_fnb_table_map_proposals';
+
+	/**
 	 * Admin page slug.
 	 *
 	 * @var string
@@ -59,6 +66,8 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 		add_action( 'admin_post_wp_mcp_ai_fnb_seed_assistants', array( __CLASS__, 'handle_seed_submission' ) );
 		add_action( 'admin_post_wp_mcp_ai_fnb_export_csv', array( __CLASS__, 'handle_export_submission' ) );
+		add_action( 'admin_post_wp_mcp_ai_fnb_automap_scan', array( __CLASS__, 'handle_automap_scan' ) );
+		add_action( 'admin_post_wp_mcp_ai_fnb_automap_apply', array( __CLASS__, 'handle_automap_apply' ) );
 	}
 
 	/**
@@ -133,7 +142,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			'wp_mcp_ai_fnb_data',
 			array(
 				'setting_key' => 'connection_id',
-				'description' => __( 'Remote Sites connection ID used to resolve the Google Drive credentials. Leave empty to use the default workspace credentials.', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Default Remote Sites connection ID used to resolve the Google Drive credentials. Leave empty to use the only enabled Drive connection automatically (an error is raised when several are enabled — map each table explicitly under Table Sources instead).', 'mcp-ai-wpoos-pro' ),
 			)
 		);
 
@@ -326,6 +335,32 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		);
 
 		self::register_tenant_profile_section();
+		self::register_table_sources_section();
+	}
+
+	/**
+	 * Register the Table Sources section (per-table connection/folder mapping).
+	 *
+	 * @return void
+	 */
+	private static function register_table_sources_section() {
+		add_settings_section(
+			'wp_mcp_ai_fnb_sources',
+			__( 'Table Sources', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_table_sources_intro' ),
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'table_map',
+			__( 'Per-Table Sources', 'mcp-ai-wpoos-pro' ),
+			array( __CLASS__, 'render_table_sources_grid' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_fnb_sources',
+			array(
+				'description' => __( 'Route each data table to the Drive connection and folder that holds it. Tools and metrics then read the right connection automatically — no connection IDs in prompts. Leave a row empty to use the default Data Source settings above.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
 	}
 
 	/**
@@ -412,6 +447,39 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		$current['use_media_worker'] = in_array( $submitted_worker, array( 'auto', 'off' ), true ) ? $submitted_worker : 'auto';
 
 		$current['ocr_vision_fallback'] = ! empty( $input['ocr_vision_fallback'] );
+
+		// Per-table source mapping (Table Sources grid).
+		if ( isset( $input['table_map'] ) && is_array( $input['table_map'] ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Fnb_Data_Source' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-fnb-data-source.php';
+			}
+			$known_tables = wp_list_pluck( WP_MCP_AI_Fnb_Data_Source::list_tables(), 'id' );
+			$known_tables = array_map( 'strval', $known_tables );
+			$known        = array_flip( $known_tables );
+			$clean_map    = array();
+
+			foreach ( $input['table_map'] as $table_id => $row ) {
+				$table_id = (string) $table_id;
+				if ( ! is_array( $row ) || ! isset( $known[ $table_id ] ) ) {
+					continue;
+				}
+				$entry = array();
+				foreach ( array( 'connection_id', 'folder_id', 'file', 'sheet' ) as $key ) {
+					$value = isset( $row[ $key ] ) ? sanitize_text_field( (string) $row[ $key ] ) : '';
+					if ( 'connection_id' === $key ) {
+						$value = sanitize_key( $value );
+					}
+					if ( '' !== $value ) {
+						$entry[ $key ] = $value;
+					}
+				}
+				if ( ! empty( $entry ) ) {
+					$clean_map[ $table_id ] = $entry;
+				}
+			}
+
+			$current['table_map'] = $clean_map;
+		}
 
 		return $current;
 	}
@@ -722,6 +790,455 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			esc_attr( $type ),
 			esc_html( $notice['message'] )
 		);
+	}
+
+	/**
+	 * The settings page URL (with a source-map tab anchor when given).
+	 *
+	 * @param string $anchor Optional in-page anchor.
+	 * @return string
+	 */
+	private static function settings_url( $anchor = '' ) {
+		$url = admin_url( 'admin.php?page=' . self::PAGE_SLUG );
+
+		return '' !== $anchor ? $url . '#' . $anchor : $url;
+	}
+
+	/**
+	 * Enabled Remote Sites Drive connections, as id => name.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function drive_connections() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return array();
+		}
+
+		$out = array();
+		foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $id => $connection ) {
+			if ( ! is_array( $connection ) || empty( $connection['enabled'] ) ) {
+				continue;
+			}
+			$type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+			if ( 'google_drive' !== $type ) {
+				continue;
+			}
+			$out[ (string) $id ] = isset( $connection['name'] ) ? trim( (string) $connection['name'] ) : (string) $id;
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Render the Table Sources section intro + auto-map review panel.
+	 *
+	 * @return void
+	 */
+	public static function render_table_sources_intro() {
+		$proposals = get_option( self::PROPOSALS_KEY, array() );
+		$proposals = is_array( $proposals ) ? $proposals : array();
+		$scan_url  = wp_nonce_url( admin_url( 'admin-post.php?action=wp_mcp_ai_fnb_automap_scan' ), 'wp_mcp_ai_fnb_automap' );
+		?>
+		<p>
+			<?php esc_html_e( 'Each table can live on a different Drive connection and folder. Map them here once and every tool and metric (including cross-connection calculations like dish margin) reads the right source automatically — the assistant never passes connection IDs.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<p>
+			<a class="button" href="<?php echo esc_url( $scan_url ); ?>">
+				<?php esc_html_e( 'Scan sources & propose mappings', 'mcp-ai-wpoos-pro' ); ?>
+			</a>
+			<span class="description">
+				<?php esc_html_e( 'Scans the default data folder plus every folder mapped below, then proposes a table per file with a confidence score for your review.', 'mcp-ai-wpoos-pro' ); ?>
+			</span>
+		</p>
+		<?php
+		if ( empty( $proposals ) ) {
+			return;
+		}
+
+		$high = array();
+		$low  = array();
+		foreach ( $proposals as $proposal ) {
+			if ( (float) $proposal['confidence'] >= 0.7 ) {
+				$high[] = $proposal;
+			} else {
+				$low[] = $proposal;
+			}
+		}
+
+		$apply_url = wp_nonce_url( admin_url( 'admin-post.php?action=wp_mcp_ai_fnb_automap_apply' ), 'wp_mcp_ai_fnb_automap_apply' );
+		?>
+		<div class="card" style="max-width:none; margin-bottom:12px;">
+			<h3 style="margin-top:0;"><?php esc_html_e( 'Mapping proposals (review before applying)', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<form method="post" action="<?php echo esc_url( $apply_url ); ?>">
+				<?php if ( ! empty( $high ) ) : ?>
+					<p>
+						<strong><?php esc_html_e( 'High confidence (auto-accept candidates)', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<button type="submit" class="button button-primary">
+							<?php esc_html_e( 'Apply accepted mappings', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</p>
+					<table class="widefat striped" style="margin-bottom:12px;">
+						<thead>
+							<tr>
+								<td style="width:36px;"></td>
+								<th><?php esc_html_e( 'Table', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Folder', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'File', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Confidence', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Sample headers', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $high as $proposal ) : ?>
+								<tr>
+									<td><input type="checkbox" name="proposals[<?php echo esc_attr( $proposal['table_id'] ); ?>]" value="1" checked></td>
+									<td><?php echo esc_html( $proposal['table_id'] . ' · ' . self::table_label( $proposal['table_id'] ) ); ?></td>
+									<td><?php echo esc_html( '' !== $proposal['connection_id'] ? self::connection_label( $proposal['connection_id'] ) : __( '(default)', 'mcp-ai-wpoos-pro' ) ); ?></td>
+									<td><code><?php echo esc_html( $proposal['folder_id'] ); ?></code></td>
+									<td><?php echo esc_html( $proposal['file'] ); ?></td>
+									<td><?php echo esc_html( round( (float) $proposal['confidence'] * 100 ) . '%' ); ?></td>
+									<td><code><?php echo esc_html( implode( ', ', array_slice( (array) $proposal['sample_columns'], 0, 5 ) ) ); ?></code></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+
+				<?php if ( ! empty( $low ) ) : ?>
+					<p><strong><?php esc_html_e( 'Low confidence (review individually)', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+					<table class="widefat striped" style="margin-bottom:12px;">
+						<thead>
+							<tr>
+								<td style="width:36px;"></td>
+								<th><?php esc_html_e( 'Table', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Folder', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'File', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Confidence', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Sample headers', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $low as $proposal ) : ?>
+								<tr>
+									<td><input type="checkbox" name="proposals[<?php echo esc_attr( $proposal['table_id'] ); ?>]" value="1"></td>
+									<td><?php echo esc_html( $proposal['table_id'] . ' · ' . self::table_label( $proposal['table_id'] ) ); ?></td>
+									<td><?php echo esc_html( '' !== $proposal['connection_id'] ? self::connection_label( $proposal['connection_id'] ) : __( '(default)', 'mcp-ai-wpoos-pro' ) ); ?></td>
+									<td><code><?php echo esc_html( $proposal['folder_id'] ); ?></code></td>
+									<td><?php echo esc_html( $proposal['file'] ); ?></td>
+									<td><?php echo esc_html( round( (float) $proposal['confidence'] * 100 ) . '%' ); ?></td>
+									<td><code><?php echo esc_html( implode( ', ', array_slice( (array) $proposal['sample_columns'], 0, 5 ) ) ); ?></code></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+
+				<p class="description">
+					<label>
+						<input type="checkbox" name="overwrite" value="1">
+						<?php esc_html_e( 'Overwrite existing mappings for the selected tables (off by default: operator-authored mappings win).', 'mcp-ai-wpoos-pro' ); ?>
+					</label>
+				</p>
+				<p>
+					<button type="submit" class="button button-primary"><?php esc_html_e( 'Apply accepted mappings', 'mcp-ai-wpoos-pro' ); ?></button>
+					<button type="submit" name="discard" value="1" class="button"><?php esc_html_e( 'Discard proposals', 'mcp-ai-wpoos-pro' ); ?></button>
+				</p>
+			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Human label for a spec table ID.
+	 *
+	 * @param string $table_id Spec table ID.
+	 * @return string
+	 */
+	private static function table_label( $table_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Data_Source' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-fnb-data-source.php';
+		}
+
+		$definition = WP_MCP_AI_Fnb_Data_Source::table_definition( $table_id );
+
+		return is_array( $definition ) && ! empty( $definition['label'] ) ? (string) $definition['label'] : (string) $table_id;
+	}
+
+	/**
+	 * Human label for a connection ID.
+	 *
+	 * @param string $connection_id Remote Sites connection ID.
+	 * @return string
+	 */
+	private static function connection_label( $connection_id ) {
+		$connections = self::drive_connections();
+
+		return isset( $connections[ $connection_id ] ) ? $connections[ $connection_id ] . ' (' . $connection_id . ')' : $connection_id;
+	}
+
+	/**
+	 * Render the per-table source mapping grid.
+	 *
+	 * @param array $args Field arguments.
+	 * @return void
+	 */
+	public static function render_table_sources_grid( $args ) {
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Data_Source' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-fnb-data-source.php';
+		}
+
+		$tables      = WP_MCP_AI_Fnb_Data_Source::list_tables();
+		$map         = WP_MCP_AI_Fnb_Settings::table_map();
+		$connections = self::drive_connections();
+		?>
+		<table class="widefat striped" id="fnb-table-sources">
+			<thead>
+				<tr>
+					<th style="width:220px;"><?php esc_html_e( 'Table', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th><?php esc_html_e( 'Drive connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th><?php esc_html_e( 'Folder ID', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th><?php esc_html_e( 'File or sheet hint', 'mcp-ai-wpoos-pro' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $tables as $table ) : ?>
+					<?php
+					$table_id = (string) $table['id'];
+					$entry    = isset( $map[ $table_id ] ) ? $map[ $table_id ] : array();
+					$base     = 'wp_mcp_ai_fnb_settings[table_map][' . $table_id . ']';
+					?>
+					<tr>
+						<td><strong><?php echo esc_html( $table_id . ' · ' . $table['label'] ); ?></strong></td>
+						<td>
+							<select name="<?php echo esc_attr( $base . '[connection_id]' ); ?>">
+								<option value=""><?php esc_html_e( '— Default source —', 'mcp-ai-wpoos-pro' ); ?></option>
+								<?php foreach ( $connections as $connection_id => $name ) : ?>
+									<option value="<?php echo esc_attr( $connection_id ); ?>" <?php selected( isset( $entry['connection_id'] ) ? $entry['connection_id'] : '', $connection_id ); ?>>
+										<?php echo esc_html( $name . ' (' . $connection_id . ')' ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</td>
+						<td>
+							<input type="text" class="regular-text code" name="<?php echo esc_attr( $base . '[folder_id]' ); ?>" value="<?php echo esc_attr( isset( $entry['folder_id'] ) ? $entry['folder_id'] : '' ); ?>" placeholder="<?php esc_attr_e( 'Drive folder ID', 'mcp-ai-wpoos-pro' ); ?>">
+						</td>
+						<td>
+							<input type="text" class="regular-text" name="<?php echo esc_attr( $base . '[file]' ); ?>" value="<?php echo esc_attr( isset( $entry['file'] ) ? $entry['file'] : '' ); ?>" placeholder="<?php esc_attr_e( 'e.g. menu.xlsx', 'mcp-ai-wpoos-pro' ); ?>">
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
+		self::render_field_description( $args );
+	}
+
+	/**
+	 * Handle the "Scan sources & propose mappings" action.
+	 *
+	 * Scans the toolkit-default source plus every (connection, folder) pair
+	 * already mapped below, keeps the best proposal per table, and stores them
+	 * for review. Nothing is applied automatically.
+	 *
+	 * @return void
+	 */
+	public static function handle_automap_scan() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You are not allowed to scan the F&B sources.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		check_admin_referer( 'wp_mcp_ai_fnb_automap' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Settings' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-fnb-settings.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Fnb_Universal_Reader' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/food-beverage/class-wp-mcp-ai-fnb-universal-reader.php';
+		}
+
+		// Collect the (connection, folder) pairs to scan: the default source and
+		// every distinct pair already mapped below.
+		$pairs = array();
+		$add   = function ( $connection_id, $folder_id ) use ( &$pairs ) {
+			$connection_id = sanitize_key( (string) $connection_id );
+			$folder_id     = trim( (string) $folder_id );
+			if ( '' === $folder_id ) {
+				return;
+			}
+			$pair = array( $connection_id, $folder_id );
+			if ( ! in_array( $pair, $pairs, true ) ) {
+				$pairs[] = $pair;
+			}
+		};
+
+		$add(
+			WP_MCP_AI_Fnb_Settings::get( 'connection_id', '' ),
+			WP_MCP_AI_Fnb_Settings::get( 'data_folder_id', '' )
+		);
+		foreach ( WP_MCP_AI_Fnb_Settings::table_map() as $entry ) {
+			$add(
+				isset( $entry['connection_id'] ) ? $entry['connection_id'] : WP_MCP_AI_Fnb_Settings::get( 'connection_id', '' ),
+				isset( $entry['folder_id'] ) ? $entry['folder_id'] : ''
+			);
+		}
+
+		if ( empty( $pairs ) ) {
+			set_transient(
+				'wp_mcp_ai_fnb_seed_notice',
+				array(
+					'type'    => 'error',
+					'message' => __( 'No sources to scan — set the Data Folder ID above, or map at least one table to a connection + folder below.', 'mcp-ai-wpoos-pro' ),
+				),
+				60
+			);
+
+			wp_safe_redirect( self::settings_url() );
+			exit;
+		}
+
+		$reader    = new WP_MCP_AI_Fnb_Universal_Reader();
+		$proposals = array();
+		$errors    = array();
+		foreach ( $pairs as $pair ) {
+			$scan = $reader->scan_folder( $pair[0], $pair[1] );
+			if ( '' !== $scan['error'] ) {
+				$errors[] = sprintf(
+					/* translators: 1: connection id, 2: folder id, 3: error message */
+					__( 'Connection %1$s / folder %2$s: %3$s', 'mcp-ai-wpoos-pro' ),
+					'' !== $pair[0] ? $pair[0] : __( '(default)', 'mcp-ai-wpoos-pro' ),
+					$pair[1],
+					$scan['error']
+				);
+				continue;
+			}
+			$proposals = array_merge( $proposals, $scan['proposals'] );
+		}
+
+		// Keep the best proposal per table.
+		$best = array();
+		foreach ( $proposals as $proposal ) {
+			$table_id = $proposal['table_id'];
+			if ( ! isset( $best[ $table_id ] ) || (float) $proposal['confidence'] > (float) $best[ $table_id ]['confidence'] ) {
+				$best[ $table_id ] = $proposal;
+			}
+		}
+
+		update_option( self::PROPOSALS_KEY, array_values( $best ), false );
+
+		$high = 0;
+		foreach ( $best as $proposal ) {
+			if ( (float) $proposal['confidence'] >= 0.7 ) {
+				++$high;
+			}
+		}
+
+		set_transient(
+			'wp_mcp_ai_fnb_seed_notice',
+			array(
+				'type'    => empty( $best ) ? 'error' : 'success',
+				/* translators: 1: total proposals, 2: high-confidence count, 3: source count, 4: error list */
+				'message' => empty( $best )
+					? sprintf( __( 'No table mappings could be proposed. %1$s', 'mcp-ai-wpoos-pro' ), implode( ' ', $errors ) )
+					: sprintf(
+						__( 'Scanned %3$d source(s) and proposed %1$d table mapping(s) (%2$d high-confidence). Review and apply them in the Table Sources section.', 'mcp-ai-wpoos-pro' ),
+						count( $best ),
+						$high,
+						count( $pairs )
+					),
+			),
+			60
+		);
+
+		wp_safe_redirect( self::settings_url() );
+		exit;
+	}
+
+	/**
+	 * Handle the "Apply accepted mappings" action.
+	 *
+	 * Writes the checked proposals into the operator-authored table_map.
+	 * Existing operator mappings are preserved unless overwrite is checked.
+	 *
+	 * @return void
+	 */
+	public static function handle_automap_apply() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You are not allowed to apply F&B table mappings.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		check_admin_referer( 'wp_mcp_ai_fnb_automap_apply' );
+
+		$discard = isset( $_POST['discard'] ) ? sanitize_key( (string) wp_unslash( $_POST['discard'] ) ) : '';
+		if ( '1' === $discard ) {
+			delete_option( self::PROPOSALS_KEY );
+
+			set_transient(
+				'wp_mcp_ai_fnb_seed_notice',
+				array(
+					'type'    => 'success',
+					'message' => __( 'Mapping proposals discarded.', 'mcp-ai-wpoos-pro' ),
+				),
+				60
+			);
+
+			wp_safe_redirect( self::settings_url() );
+			exit;
+		}
+
+		$raw      = isset( $_POST['proposals'] ) ? (array) wp_unslash( $_POST['proposals'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Keys sanitised below; values are the constant string "1".
+		$selected = array();
+		foreach ( $raw as $table_id => $value ) {
+			$selected[ sanitize_key( (string) $table_id ) ] = $value;
+		}
+		$overwrite = ! empty( $_POST['overwrite'] );
+		$proposals = get_option( self::PROPOSALS_KEY, array() );
+		$proposals = is_array( $proposals ) ? $proposals : array();
+
+		$all = get_option( self::OPTION_NAME, array() );
+		$all = is_array( $all ) ? $all : array();
+		$map = isset( $all['table_map'] ) && is_array( $all['table_map'] ) ? $all['table_map'] : array();
+
+		$applied = 0;
+		$skipped = 0;
+		foreach ( $proposals as $proposal ) {
+			$table_id = (string) $proposal['table_id'];
+			if ( empty( $selected[ $table_id ] ) ) {
+				++$skipped;
+				continue;
+			}
+
+			// Operator-authored mappings win unless overwrite is requested.
+			if ( ! empty( $map[ $table_id ] ) && ! $overwrite ) {
+				++$skipped;
+				continue;
+			}
+
+			$map[ $table_id ] = array(
+				'connection_id' => sanitize_key( (string) $proposal['connection_id'] ),
+				'folder_id'     => trim( (string) $proposal['folder_id'] ),
+				'file'          => isset( $proposal['file'] ) ? sanitize_text_field( (string) $proposal['file'] ) : '',
+			);
+			++$applied;
+		}
+
+		$all['table_map'] = $map;
+		update_option( self::OPTION_NAME, $all );
+		delete_option( self::PROPOSALS_KEY );
+
+		set_transient(
+			'wp_mcp_ai_fnb_seed_notice',
+			array(
+				'type'    => 'success',
+				/* translators: 1: applied count, 2: skipped count */
+				'message' => sprintf( __( 'Table Sources updated: %1$d mapping(s) applied, %2$d skipped.', 'mcp-ai-wpoos-pro' ), $applied, $skipped ),
+			),
+			60
+		);
+
+		wp_safe_redirect( self::settings_url() );
+		exit;
 	}
 
 	/**

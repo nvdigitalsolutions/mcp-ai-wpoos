@@ -23,8 +23,11 @@ interface WP_MCP_AI_Fnb_Table_Reader {
 	/**
 	 * Read a table by spec ID.
 	 *
-	 * @param string $table_id Spec table ID (1.0…17.0 or setup name).
+	 * @param string $table_id           Spec table ID (1.0…17.0 or setup name).
+	 * @param string $connection_override Optional Drive connection ID override for
+	 *                                    this read; readers resolve the table's
+	 *                                    mapped source themselves when empty.
 	 * @return array|WP_Error array{columns: string[], rows: array<int,array>}
 	 */
-	public function read_table( $table_id );
+	public function read_table( $table_id, $connection_override = '' );
 }

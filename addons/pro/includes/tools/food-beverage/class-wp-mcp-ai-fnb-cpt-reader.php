@@ -112,10 +112,13 @@ class WP_MCP_AI_Fnb_Cpt_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	/**
 	 * {@inheritdoc}
 	 *
-	 * @param string $table_id Spec table ID.
+	 * @param string $table_id           Spec table ID.
+	 * @param string $connection_override Ignored — native storage is connection-less.
 	 * @return array|WP_Error array{columns: string[], rows: array<int,array>}
 	 */
-	public function read_table( $table_id ) {
+	public function read_table( $table_id, $connection_override = '' ) {
+		unset( $connection_override );
+
 		if ( ! self::is_native_table( $table_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_fnb_not_native_table',

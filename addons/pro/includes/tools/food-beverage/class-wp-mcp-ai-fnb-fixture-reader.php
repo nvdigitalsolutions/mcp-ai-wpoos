@@ -211,10 +211,13 @@ class WP_MCP_AI_Fnb_Fixture_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	/**
 	 * {@inheritdoc}
 	 *
-	 * @param string $table_id Spec table ID.
+	 * @param string $table_id           Spec table ID.
+	 * @param string $connection_override Ignored — fixtures are connection-less.
 	 * @return array|WP_Error
 	 */
-	public function read_table( $table_id ) {
+	public function read_table( $table_id, $connection_override = '' ) {
+		unset( $connection_override );
+
 		$path = $this->locate( $table_id );
 		if ( false === $path ) {
 			return new WP_Error(
