@@ -5,8 +5,8 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.12"
-  plugin-version-tested: "1.2.12"
+  plugin-version: "1.2.13"
+  plugin-version-tested: "1.2.13"
   last-updated: "2026-10-25"
 ---
 
@@ -865,7 +865,11 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
   `docs/project/plans/v1.1.99-docs-catch-up.md`,
   `docs/project/plans/1.2.11-docs-catch-up.md`,
-  `docs/project/plans/1.2.12-docs-catch-up.md` (latest executed — the
+  `docs/project/plans/1.2.13-docs-catch-up.md` (latest executed — the
+1.2.13 pass over PRs #7239–#7260: the Dify parity gap-fill (#7246/#7247, Proposal 091 — the workflow DSL codec + routes + CLI + Pro SPA panel, prompt versioning lite, the `lib/core` ProviderRouter fallback chains with assistant-meta precedence, the `gen_ai.*` spans + opt-in OTLP exporter, the annotation store, and the +1 Pro `export_annotation_dataset` with the #7256 preset/manifest fold-in), the console pagination + loading states (#7239/#7255 — true totals, the `/approvals` pending-depth envelope, keep-previous-data busy states) and admin-only gating (#7259), `GET /mcp-ai/v1/session/me` + the Breeze cache integration + the console stale-nonce fix (#7257), the OAuth `rawurlencode()` + bare-URL fallback (#7240/#7242), the Drive auto-fallback (#7244), the Remote Sites assistant-scoping wave (#7258 — 12 families, CG-Pro mirrors), the OTLP endpoint deny-list (#7251), and Proposal 092 (#7260, docs-only). New scope rules executed: the `[Unreleased]` conversion (#7260's pre-staged docs entry); the RELEASE-NOTES "unreleased — post-1.2.12" section conversion + the Zed/base-bundled plugin-skill byte-identical re-sync (the in-window PRs touched only the Zed copy); the toolkit-audit class 11 addition. OI-1: group 60 extension (+1 `2.4.0` in the Pro remote-site-manager) + the CG-AI Embeddings `1.1.0` ×3 sub-project convention note; `@since 1.2.13` ×110 correctly pre-tagged in-window. Tool count +1 Pro → ~355/~1,378/~1,732, skill count 76 unchanged, zero catalog diff, no addon bumps, and the stale 1.2.11 build-set removal (30 files — 9 + 2 + 19))
+
+Preceding windows:
+  `docs/project/plans/1.2.12-docs-catch-up.md` (executed — the
 1.2.12 pass over PRs #7205–#7235: the magic-login REST controller (#7206 —
 unauthenticated-by-design with a named permission callback, CSPRNG tokens
 hashed at rest, rate-limited; #7208 adds the settings subtab), the native

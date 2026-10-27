@@ -5,9 +5,9 @@ description: Audit NV oOS console SPA clients (addons/pro/assets/spa-v2/src/api/
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.12"
-  plugin-version-tested: "1.2.12"
-  last-updated: "2026-10-25"
+  plugin-version: "1.2.13"
+  plugin-version-tested: "1.2.13"
+  last-updated: "2026-10-27"
 ---
 
 # NV oOS Console SPA ↔ REST Contract Audit
@@ -418,6 +418,44 @@ not just shape.
   unauthenticated by design with a **named permission callback** (the
   public-route reference — feature flag + IP/HTTPS posture), never
   `__return_true`.
+
+**2026-10-27 additions (the v1.2.13 window — new routes + contract changes):**
+
+- **`GET /mcp-ai/v1/session/me` (PR #7257)** — session identity + capability
+  map without core's `list_users` gate on `users/me?context=edit`; 401
+  without a valid auth cookie, `no-store`; lives on the chat controller.
+  The console's `fetchCurrentUser()` view-context fallback consumes it
+  (best-effort — older bundles keep the previous behaviour);
+  `fetchSessionNonce()` mints from `/session/nonce` first (the `/wp-admin/`
+  HTML scrape is fallback-only).
+- **Approvals envelope (PR #7239)** — `GET /approvals` previously returned
+  the **page length** as its total; it now returns the **pending-queue
+  depth** and accepts an `offset`. Pagination params: the server-side-paged
+  tables (records, chat channels, approvals, paper store, operations)
+  take `page`/`page_size` and return true `total`/`total_pages`; the remote
+  records proxy forwards `page` and reports totals. Don't treat a fixed
+  first page as the whole collection.
+- **Workflow DSL routes (PR #7247, Proposal 091 Track A)** — the workflow
+  export/import routes are DSL-aware: `dry_run` flag, `dsl` string input,
+  `source: native|dify`, and the new `POST /orchestration/workflows/export`
+  by source (workflow | preset); validation findings come back as an
+  errors block (warnings don't block).
+- **Prompt-versions routes (Track B)** — `GET/POST
+  /mcp-ai/v1/assistants/{id}/prompt-versions[/{v}/restore|promote]`
+  (immutable snapshots, production promotion, 50-version cap).
+- **Annotation store (Track E)** — the new
+  `WP_MCP_AI_REST_Annotation_Controller` (annotations as transcript post
+  meta, decision D5).
+- **Admin gating for non-admin sessions (PR #7259)** — the console endpoint
+  map mirrors the SPA-config capability matrix: admin-gated endpoints
+  resolve to **empty strings** for non-admin sessions (the client gates
+  mounts on `can()`/`usePermissions()` in `src/auth/permissions.ts`) — an
+  empty endpoint value for a non-admin is a feature, not a contract bug.
+- **OAuth authorize URLs (PRs #7240/#7242)** — `rawurlencode()`d
+  `redirect_uri` + `scope` in every authorize-URL builder (the raw-`&`
+  truncation bug); the bare-URL return fallback routes through the
+  per-service state transient. Client-side connect buttons must carry the
+  encoded values — never rebuild them from unencoded query args.
 
 ## Parallel delegation pattern
 

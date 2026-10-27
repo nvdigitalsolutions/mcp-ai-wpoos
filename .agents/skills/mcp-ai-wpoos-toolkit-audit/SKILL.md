@@ -140,6 +140,20 @@ own reviewable cluster. First completed cluster: **document-generation**
     latest month = the real last record, charts render, and a `table_map`
     hint overrides a wrong header match.
 
+11. **Option-mutating tools without a deny-list — a privileged tool can
+    rewrite security-relevant options (v1.2.13, PR #7251).** The Pro
+    `update_option` tool's `wp_mcp_ai_*` prefix allowlist alone let a
+    `manage_options` session point the site's tracing sink at an
+    attacker-controlled endpoint (`wp_mcp_ai_otlp_endpoint` — the DifyTap
+    tracing-exfiltration class, CVE-2026-41947). The fix pattern: a
+    `DENIED_OPTIONS` const checked **before** the prefix allowlist (the
+    deny-list wins), with admin configuration preserved through an
+    explicit filter (`wp_mcp_ai_otlp_endpoint`) or WP-CLI — never through
+    the AI tool surface. Audit every option-writing tool for a
+    `DENIED_OPTIONS`-style deny-list covering endpoint/URL/credential-style
+    option names, and pin the denial with a test asserting the forbidden
+    error code **even for an admin** and that the option is never written.
+
 ## Scan procedure
 
 Use the grep tool with the **full project-rooted glob** — a bare

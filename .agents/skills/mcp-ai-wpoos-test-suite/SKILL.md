@@ -5,9 +5,9 @@ description: Repair and triage guide for the NV oOS PHPUnit test suite — Docke
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-25"
-  plugin-version: "1.2.12"
-  plugin-version-tested: "1.2.12"
+  last-updated: "2026-10-27"
+  plugin-version: "1.2.13"
+  plugin-version-tested: "1.2.13"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -961,6 +961,14 @@ the changed files is the substantive gate; plan CI waits accordingly.
         `addons/pro/tests/tools/.coverage-manifest.txt`, pattern 57); new base
         tool classes must land in both the preset(s) and the base manifest, or
         `test_tool_class_manifest_is_up_to_date` fails too.
+      - **The recurrence (v1.2.13, PR #7256)** — Proposal 091's
+        `export_annotation_dataset` shipped registered in the Pro map but
+        orphaned from **both** gate surfaces (presets + Pro manifest); CI
+        failed 2 tests until #7256 added it to the `assistant_management`
+        preset (next to its sibling `run_assistant_eval`) and regenerated
+        both manifests via `bin/generate-tool-coverage-manifest.sh`. A new
+        Pro tool is not done until the preset **and** the Pro manifest move
+        in the same PR.
       - **Image/attachment assertions follow the pipeline** — a test pinning
         an earlier behavior (e.g. `convert_image_files_to_image_url` asserting
         `http` URLs after #6846 switched to inline `data:image/…;base64`)

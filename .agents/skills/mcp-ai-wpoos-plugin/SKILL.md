@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.12"
-  plugin-version-tested: "1.2.12"
-  last-updated: "2026-10-26"
+  plugin-version: "1.2.13"
+  plugin-version-tested: "1.2.13"
+  last-updated: "2026-10-27"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -47,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~355 base / ~1,731 full tools
+     │  Tool Registry     │  ~355 base / ~1,732 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -1199,7 +1199,7 @@ curl -s -D - -o /dev/null -H "Origin: https://bogus.example.com" \
 
 **Cause:** `add_query_arg()` deliberately leaves array values **unencoded**, so every authorize URL built as `add_query_arg( $params, $authorize_endpoint )` sent the `redirect_uri` value with raw `&` characters. Providers parse everything after the first `&` inside the value as separate top-level parameters — the effective redirect URI becomes the bare `admin.php?page=wp-mcp-ai-remote-sites` and the `oauth_handler` is silently dropped. Sites only "worked" while the bare URI happened to be registered in the console; the callback then landed without `oauth_handler` and `handle_actions()` dropped the code.
 **Diagnosis (verified live, scm.nvdigital.solutions 2026-10-26):** capture the 302 Location from the `oauth_handler=…_oauth_connect` click — the auth URL shows `redirect_uri=https://…/admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=…` with a **raw** `&` inside the value. Google's error page (`authError` protobuf field 2) echoes the truncated redirect URI; deleting the bare URI from the console and retrying yields `redirect_uri_mismatch`.
-**Fix (PR #7240):** `rawurlencode()` the `redirect_uri` value (and space-delimited `scope`) in every authorize-URL builder — the Pro Remote Sites Gmail/Drive/Chat/Teams/Upwork/LinkedIn starts plus the Gmail direct-link button, the shared `WP_MCP_AI_Google_OAuth_Service::build_authorize_url()` (Calendar/Classroom), and the base OAuth manager's `build_google_oauth_url()` fallback (CG Pro + CG-AI platform mirrors byte-identical). `wp_sanitize_redirect()` preserves percent-encoding, so the encoded value reaches the provider intact. `handle_actions()` also gained a bare-URL return fallback that routes `state` + `code`/`error` to the matching callback when a live per-service OAuth state transient exists (all eight flows; Composio excluded — hosted `session_uri` flow) — defense in depth if a provider still returns to the bare URL. CSRF posture is unchanged. State transient keys: `wp_mcp_ai_{gmail|google_drive|google_chat|teams|upwork|linkedin}_oauth_state_<md5(state)>` plus the shared-service keys `wp_mcp_ai_google_calendar_remote_oauth_state_…` / `wp_mcp_ai_google_classroom_remote_oauth_state_…` (`WP_MCP_AI_Google_OAuth_Service::state_transient_key()`). Keep the `oauth_handler` URIs as the canonical console registrations.
+**Fix (PR #7242, with the #7240 bare-URL fallback):** `rawurlencode()` the `redirect_uri` value (and space-delimited `scope`) in every authorize-URL builder — the Pro Remote Sites Gmail/Drive/Chat/Teams/Upwork/LinkedIn starts plus the Gmail direct-link button, the shared `WP_MCP_AI_Google_OAuth_Service::build_authorize_url()` (Calendar/Classroom), and the base OAuth manager's `build_google_oauth_url()` fallback (CG Pro + CG-AI platform mirrors byte-identical). `wp_sanitize_redirect()` preserves percent-encoding, so the encoded value reaches the provider intact. `handle_actions()` also gained a bare-URL return fallback that routes `state` + `code`/`error` to the matching callback when a live per-service OAuth state transient exists (all eight flows; Composio excluded — hosted `session_uri` flow) — defense in depth if a provider still returns to the bare URL. CSRF posture is unchanged. State transient keys: `wp_mcp_ai_{gmail|google_drive|google_chat|teams|upwork|linkedin}_oauth_state_<md5(state)>` plus the shared-service keys `wp_mcp_ai_google_calendar_remote_oauth_state_…` / `wp_mcp_ai_google_classroom_remote_oauth_state_…` (`WP_MCP_AI_Google_OAuth_Service::state_transient_key()`). Keep the `oauth_handler` URIs as the canonical console registrations.
 
 ### Vision requests fail with "Failed to download image from https://…" (OpenAI/DeepSeek)
 

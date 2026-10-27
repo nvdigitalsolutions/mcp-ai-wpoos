@@ -1,10 +1,50 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.2.13] - 2026-10-27
+
+### Added — Dify parity gap-fill (Proposal 091, #7246/#7247)
+
+- **Workflow DSL export/import (base + Pro)** — new `WP_MCP_AI_Workflow_DSL_Codec` (`includes/class-wp-mcp-ai-workflow-dsl-codec.php`) with the DSL v1 envelope (`dsl_version`), validation findings (errors block / warnings don't), credential redaction by default, canonicalization, and an `accept_legacy_json()` backward-compat gate. The workflow REST export/import routes are DSL-aware (`dry_run`, `dsl` string input, `source: native|dify`) with a new `POST /orchestration/workflows/export` by source; `wp mcp-ai workflow export|import|validate`; the base admin DAG-builder export/import UI; and the Pro DSL bridge (`WP_MCP_AI_Pro_Workflow_DSL_Bridge` — presets export directly + the one-way best-effort Dify import adapter with honest `foreign` stubs). The Pro SPA `WorkflowsPage` gains per-workflow/preset export buttons and a DSL import panel with a dry-run findings table + blocker gate.
+- **Assistant prompt versioning lite (base + Pro picker)** — `WP_MCP_AI_Prompt_Versions` (`includes/assistants/class-wp-mcp-ai-prompt-versions.php`): immutable snapshots on save, versioned restores, explicit production promotion, a 50-version cap, hooks; `GET/POST /mcp-ai/v1/assistants/{id}/prompt-versions[/{v}/restore|promote]` + `wp mcp-ai assistant prompt-versions list|restore|promote`; the Pro assistant-screen version picker metabox.
+- **Ordered model fallback chains (lib/core + Pro)** — the framework `ProviderRouter` gains ordered fallback chains with provider cooldowns and `Retry-After` honoring; assistant-meta wiring means the assistant's chain wins over the global default; the Pro SPA ships the fallback-chain picker metabox.
+- **GenAI observability + annotations** — the `gen_ai.*` span emitter (OTel GenAI conventions) with an **opt-in, off-by-default** OTLP exporter; an annotation store (transcript post meta, decision D5) + its REST controller; Pro `export_annotation_dataset` (**+1 Pro** — registered in the Pro tools map and the `assistant_management` preset, #7256) + the AI Observability dashboard + the wp-admin Analytics observability section.
+- **OTLP endpoint deny-list (#7251)** — the Pro `update_option` tool gains a `DENIED_OPTIONS` const (`wp_mcp_ai_otlp_endpoint`) checked **before** the `wp_mcp_ai_*` prefix allowlist — the tracing sink stays out of AI-tool reach even for `manage_options` sessions (DifyTap CVE-2026-41947 class, defense in depth); admin configuration stays available via the `wp_mcp_ai_otlp_endpoint` filter or WP-CLI.
+
+### Added — console pagination, loading states, and role gating (#7239/#7255/#7259)
+
+- **Accessible pagination across console tables** — one pager (USWDS / W3C APG conventions: nav landmark, native buttons, `aria-current`, disabled boundaries, a polite "Showing X–Y of Z" live region, page-size selector, ellipsis-collapsed page list) wired into every table that can outgrow a screen. Server-side paging (true totals) on Records, chat channels, approvals, Paper Store, and the operations timeline; the remote records proxy forwards `page` and reports totals. Client-side paging stays in-memory for the Blueprints catalogue and tools registry.
+- **Approvals envelope corrected** — `GET /approvals` returned the page length as its total; it now returns the pending-queue depth and accepts an `offset` (documented in `docs/reference/api/rest-api.md`).
+- **Loading states** — every server-side-paginated table keeps the previous data visible while a page fetch is in flight (inline spinner + polite live region, `aria-busy` nav, dimmed stale rows with a pointer shield).
+- **Admin-only surface gating** — non-admin console users no longer hit admin-only routes they can never satisfy: the HITL approval bar mounts only when `isAdmin && hasApprovals`, and the Assistants page hides Add/Edit/Delete for non-admins (read-only list, matching the server contract) — no more permanent red 403s.
+
+### Added — session identity + Breeze exclusions for the console (#7257)
+
+- **`GET /mcp-ai/v1/session/me`** — the requesting session's identity + capability map without core's `list_users` gate on `users/me?context=edit`; 401 without a valid auth cookie, `no-store` headers. The console's `fetchSessionNonce()` now mints from `/session/nonce` first (the `/wp-admin/` scrape is fallback-only — cached `/dashboard/` HTML embedded nonces from earlier sessions) and the `users/me` 403 fallback propagates its recovered nonce + capabilities into the runtime — the author-role "Cookie check failed" wall is closed.
+- **Breeze cache integration** — new `includes/integrations/class-wp-mcp-ai-breeze-cache-integration.php` excludes `/dashboard/` + `/wp-admin/` from `breeze_exclude_urls` (self-gated on `BREEZE_VERSION`, filterable via `wp_mcp_ai_breeze_cache_excluded_urls`) so session-bearing HTML is never served from cache.
+
+### Fixed — OAuth redirect URIs and Remote Sites behavior (#7240/#7242/#7244/#7258)
+
+- **OAuth `redirect_uri` encoding** — `add_query_arg()` leaves array values unencoded, so every authorize URL sent the `redirect_uri` value with a raw `&`; providers truncated the URI and returned `redirect_uri_mismatch` (verified live on scm.nvdigital.solutions). All authorize-URL builders now `rawurlencode()` the `redirect_uri` value and the space-delimited `scope` (Pro Remote Sites starts + Gmail direct link, `WP_MCP_AI_Google_OAuth_Service`, the base `WP_MCP_AI_OAuth_Manager` fallback; CG Pro + CG-AI platform mirrors byte-identical). `wp_sanitize_redirect()` preserves percent-encoding; token-exchange POST bodies keep the decoded form.
+- **Bare-URL OAuth return fallback** — `handle_actions()` now routes a return with `state` + `code`/`error` but no `oauth_handler` to the matching callback when a live per-service OAuth state transient exists (all eight Remote Sites flows; Composio excluded — hosted `session_uri` flow). CSRF posture unchanged — callbacks still consume/verify the state transient and user ID.
+- **Drive connection auto-fallback** — `search_drive`/`get_drive_file` called without `connection_id` auto-resolve to the only enabled Remote Sites `google_drive` connection with complete credentials when settings credentials are absent (multiple enabled → actionable ambiguity error; disabled/incomplete never picked; settings credentials keep priority). The Drive settings page lists Remote Sites Drive connections with a neutral status instead of the misleading red "Credentials Required" box.
+- **Assistant scoping on Remote Sites tools** — every connection family (Drive, Gmail, Calendar, Classroom, FlowHub, Printful, Composio, Upwork, LinkedIn, PayHere, QuickBooks, iSAMS) honors the assistant's Remote Site Connections list the same way `remote_wp_connection` does: discovery filtered to allowed connections, explicit `connection_id` gated with 403 (`*_connection_not_enabled`), auto-resolution inside the allowed list, site-wide settings fallbacks refused (`*_settings_not_allowed`), and Drive folder scope enforced (`search_drive` rejects a differing `folder_id`; `get_drive_file` verifies the parent chain with a bounded BFS, fail closed). Content Graph Pro mirrors carry the same gates.
 
 ### Docs
 
 - **Proposal 092 — Astro Storefront Layer (docs-only)** — analysis of Astro as an NV-authored, MIT-licensed headless frontend for the Funiq Payload-shaped contract, shipped as the `nvoos-astro-velocity` Velocity app: research (Astro CWV data, official Headless WordPress guide, Astro + Laravel frontend/API split, Astro MCP server, Cloudways sponsor/platform fit), a contract-invariant design that survives the WP → Laravel backend migration (085 appendix T1/T2/T3), rendering strategy (prerendered catalog + server islands + React islands reusing PWA components), the retire-at-parity posture (Option A — the licensed PWA kept only as a transitional rollback, then retired; contract liberation once both ends are NV-authored), a 4-phase plan (spike → parity → SEO → PWA retirement; generic starter optional), risks, and five open owner decisions. Solves 085 §2.3's deferred SSR/SEO constraint without modifying licensed code.
+
+### Sub-projects
+
+- **nvoos-content-graph-ai (Track C RAG upgrades)** — plugin chunking, hybrid RRF search, a local score-based reranker (default), a RAGAS-style hit-test runner, and the `searchHybrid` tool + CLI (sub-project-owned — described, not counted in base/Pro totals).
+- **nvoos-content-graph-pro mirrors** — the OAuth encoding + bare-URL fallback (#7240/#7242) and the Remote Sites assistant-scoping gates (#7258) carry byte-identical bodies (text-domain swap).
+- **ZIP builds** — `nvoos-content-graph-ai-v1.0.4` and `nvoos-content-graph-ai-platform-v2.0.0` ZIPs built in-window (build-only; the plugin version bumps landed in earlier windows).
+
+### Versioning
+
+- **Tool count: +1 Pro** — `export_annotation_dataset` (#7247/#7256) → **~355 base + ~1,378 Pro (~1,732 total)**; `lib/core/src/Tool/` gained zero tools (dual-layer rule — registry registration only); the CG-AI `searchHybrid` tool is sub-project-owned.
+- Skills: **76 coding-time skills unchanged** — four updated in place (`mcp-ai-wpoos-plugin` ×2 PRs, `mcp-ai-wpoos-spa-ui` ×2, `mcp-ai-wpoos-test-suite` pattern #85, `mcp-ai-schedule-anything-ops` ×3); bundled skills 77 base + 41 Pro unchanged.
+- Addons: **30** (no version moves in-window). Providers: **18** (model catalog zero diff — v2026.10.03). Security classes: **12**. Media Worker: **3.4.0**.
+- Stale build ZIPs removed: the **1.2.11** oOS set (30 files — 9 + 2 + 19); the 1.2.12 set stays as the current fallback.
 
 ## [1.2.12] - 2026-10-25
 
