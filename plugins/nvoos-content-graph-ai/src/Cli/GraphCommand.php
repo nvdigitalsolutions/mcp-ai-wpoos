@@ -112,6 +112,67 @@ final class GraphCommand {
 		\WP_CLI\Utils\format_items( $format, self::get_stats(), array( 'Label', 'Value' ) );
 	}
 
+	/**
+	 * Run a RAG hit-test over a golden set (Proposal 091, Track C).
+	 *
+	 * Retrieval-only evaluation (no LLM calls): reports context_precision,
+	 * context_recall, MRR and hit@k per query and as a summary.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <file>
+	 * : Path to the golden-set JSONL file
+	 *   ({ "query": "…", "gold_node_ids": ["…"] } per line).
+	 *
+	 * [--top-k=<number>]
+	 * : Results per query.
+	 * ---
+	 * default: 5
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     $ wp nvoos-cg-ai rag hit-test ./golden.jsonl --top-k=5
+	 *
+	 * @param array<int, mixed>    $args       Positional arguments.
+	 * @param array<string, mixed> $assoc_args Associative arguments.
+	 * @return void
+	 */
+	public static function hit_test( array $args, array $assoc_args ): void {
+		if ( empty( $args[0] ) || ! \file_exists( (string) $args[0] ) ) {
+			\WP_CLI::error( 'Golden-set file not found.' );
+		}
+
+		$raw = \file_get_contents( (string) $args[0] );
+		if ( false === $raw ) {
+			\WP_CLI::error( 'Could not read golden-set file.' );
+		}
+
+		$golden = \NvoosContentGraphAi\Embeddings\HitTestRunner::parseGolden( $raw );
+		if ( array() === $golden ) {
+			\WP_CLI::error( 'No valid golden entries found in the file.' );
+		}
+
+		if ( ! \class_exists( 'NvoosContentGraphAi\CoreBridge' ) ) {
+			\WP_CLI::error( 'Content Graph AI runtime is not available (CoreBridge missing).' );
+		}
+
+		$topK   = (int) \WP_CLI\Utils\get_flag_value( $assoc_args, 'top-k', 5 );
+		$retriever = static fn( string $query, int $k ): mixed => \NvoosContentGraphAi\CoreBridge::instance()->rag->searchHybrid( $query, $k );
+
+		$report = ( new \NvoosContentGraphAi\Embeddings\HitTestRunner( $retriever ) )->evaluate( $golden, \max( 1, $topK ) );
+
+		\WP_CLI::log( 'Hit-test summary:' );
+		foreach ( $report['summary'] as $metric => $value ) {
+			\WP_CLI::log( sprintf( '  %s: %s', $metric, $value ) );
+		}
+
+		\WP_CLI\Utils\format_items(
+			\WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' ),
+			$report['rows'],
+			array( 'query', 'context_precision', 'context_recall', 'mrr', 'hit' )
+		);
+	}
+
 	/** Private constructor — not instantiable. */
 	private function __construct() {}
 }
