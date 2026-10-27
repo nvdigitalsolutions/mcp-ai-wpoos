@@ -54,7 +54,7 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 			'when_to_use'     => __( 'Finding Drive files and folders by name, MIME type, or advanced query syntax across owned items.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Reading file contents or listing a folder; use get_drive_file with the returned file or folder ID.', 'mcp-ai-wpoos-pro' ),
 			'related_tools'   => array( 'get_drive_file', 'list_drive_connections' ),
-			'notes'           => __( 'Excludes trashed items by default; set include_shared true to search files shared with the account.', 'mcp-ai-wpoos-pro' ),
+			'notes'           => __( 'Excludes trashed items by default; set include_shared true to search files shared with the account. When the resolved connection is scoped to a folder, searches are limited to that folder and a different folder_id is rejected. Only connections enabled for the assistant in the assistant editor are usable.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -97,7 +97,7 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'folder_id'      => array(
 					'type'        => 'string',
-					'description' => __( 'Optional folder ID to limit search to a specific folder.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional folder ID to limit search to a specific folder. When the resolved Drive connection is scoped to a folder, this argument may only repeat that folder (or be omitted); searching another folder is rejected.', 'mcp-ai-wpoos-pro' ),
 				),
 				'include_shared' => array(
 					'type'        => 'boolean',
@@ -155,7 +155,7 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-google-drive-client.php';
 		}
 
-		$credentials = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials( $connection_id );
+		$credentials = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials( $connection_id, $context );
 		if ( is_wp_error( $credentials ) ) {
 			return $credentials;
 		}
@@ -167,17 +167,16 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 		$credential_source = $credentials['source'];
 		$resolved_id       = isset( $credentials['connection_id'] ) ? (string) $credentials['connection_id'] : '';
 		$resolved_name     = isset( $credentials['connection_name'] ) ? (string) $credentials['connection_name'] : '';
-		$folder_id         = '';
 
-		// A scoped folder may also be supplied by the connection. Resolving it
-		// here keeps folder scoping on the connection while still allowing an
-		// explicit folder_id argument to override it below. Use the resolved
-		// connection because an omitted connection_id may auto-resolve to the
-		// only enabled Remote Sites Drive connection.
+		$connection_folder_id = '';
+
+		// A scoped folder may also be supplied by the connection. Use the
+		// resolved connection because an omitted connection_id may auto-resolve
+		// to the only enabled Remote Sites Drive connection.
 		if ( '' !== $resolved_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $resolved_id );
 			if ( is_array( $connection ) && isset( $connection['folder_id'] ) ) {
-				$folder_id = trim( (string) $connection['folder_id'] );
+				$connection_folder_id = trim( (string) $connection['folder_id'] );
 			}
 		}
 
@@ -213,9 +212,28 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$ids_only = ! empty( $arguments['ids_only'] );
 
-		// Check if folder_id is provided in arguments (overrides connection setting).
-		if ( isset( $arguments['folder_id'] ) && '' !== trim( (string) $arguments['folder_id'] ) ) {
-			$folder_id = trim( (string) $arguments['folder_id'] );
+		// Folder scope enforcement: a connection-scoped folder is a hard limit.
+		// An explicit folder_id argument may only repeat that folder; anything
+		// else is rejected instead of silently overriding the scope.
+		$argument_folder_id = isset( $arguments['folder_id'] ) ? trim( (string) $arguments['folder_id'] ) : '';
+
+		if ( '' !== $connection_folder_id ) {
+			if ( '' !== $argument_folder_id && $argument_folder_id !== $connection_folder_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_drive_folder_not_allowed',
+					sprintf(
+						/* translators: 1: connection name, 2: scoped folder ID. */
+						__( 'The Drive connection "%1$s" is scoped to a single folder (%2$s). Searching another folder is not allowed; omit folder_id to search the connection\'s scoped folder.', 'mcp-ai-wpoos-pro' ),
+						$resolved_name,
+						$connection_folder_id
+					),
+					array( 'status' => 403 )
+				);
+			}
+
+			$folder_id = $connection_folder_id;
+		} else {
+			$folder_id = $argument_folder_id;
 		}
 
 		// Modify query if folder_id is set.

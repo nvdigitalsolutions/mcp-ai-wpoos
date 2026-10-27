@@ -109,7 +109,7 @@ class WP_MCP_AI_Tool_Composio_Create_Connect_Link implements WP_MCP_AI_Tool_Inte
 		}
 
 		$connection = null;
-		$resolved   = WP_MCP_AI_Composio_Tools::resolve_connection( $arguments, $connection );
+		$resolved   = WP_MCP_AI_Composio_Tools::resolve_connection( $arguments, $connection, $context );
 
 		if ( is_wp_error( $resolved ) ) {
 			return $resolved;

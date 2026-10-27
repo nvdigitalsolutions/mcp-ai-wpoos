@@ -180,6 +180,20 @@ class WP_MCP_AI_Tool_Import_LinkedIn_Profile implements WP_MCP_AI_Tool_Interface
 		// Attempt API enrichment when a connection is available.
 		$enriched = false;
 		if ( $this->has_valid_connection( $arguments ) && ! empty( $arguments['linkedin_url'] ) ) {
+			// Assistant-level restriction: an assistant with a configured Remote
+			// Site Connections list may only use connections from that list.
+			if ( ! empty( $arguments['connection_id'] ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-linkedin-client.php';
+
+				if ( ! WP_MCP_AI_LinkedIn_Client::is_connection_enabled_for_assistant( $arguments['connection_id'], $context ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_linkedin_connection_not_enabled',
+						__( 'This LinkedIn connection is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
+						array( 'status' => 403 )
+					);
+				}
+			}
+
 			$enriched_data = $this->fetch_profile_data( $arguments );
 			if ( ! is_wp_error( $enriched_data ) && ! empty( $enriched_data ) ) {
 				$name     = ! empty( $enriched_data['name'] ) ? $enriched_data['name'] : $name;

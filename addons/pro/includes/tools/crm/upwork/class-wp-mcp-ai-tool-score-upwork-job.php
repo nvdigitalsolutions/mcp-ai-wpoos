@@ -268,6 +268,17 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Fetch job details.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-upwork-client.php';
+
+		// Assistant-level restriction: an assistant with a configured Remote
+		// Site Connections list may only use connections from that list.
+		if ( ! WP_MCP_AI_Upwork_Client::is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_upwork_connection_not_enabled',
+				__( 'This Upwork connection is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
 		$client = new WP_MCP_AI_Upwork_Client( $connection_id );
 
 		$variables = array(

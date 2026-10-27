@@ -276,7 +276,7 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$connection = null;
-		$resolved   = WP_MCP_AI_Composio_Tools::resolve_connection( $arguments, $connection );
+		$resolved   = WP_MCP_AI_Composio_Tools::resolve_connection( $arguments, $connection, $context );
 
 		if ( is_wp_error( $resolved ) ) {
 			return $resolved;

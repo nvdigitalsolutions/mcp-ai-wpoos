@@ -105,6 +105,14 @@ class WP_MCP_AI_Pro_Tool_List_Drive_Connections implements WP_MCP_AI_Tool_Interf
 			return new WP_Error( 'wp_mcp_ai_drive_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Drive_Client' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-google-drive-client.php';
+		}
+
+		// Assistant-level restriction: when the assistant has a configured
+		// Remote Site Connections list, discovery is limited to that list — the
+		// same contract as remote_wp_connection's list_connections.
+		$allowed_ids = WP_MCP_AI_Pro_Google_Drive_Client::get_allowed_connection_ids( $context );
 		$connections = array();
 
 		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -113,6 +121,10 @@ class WP_MCP_AI_Pro_Tool_List_Drive_Connections implements WP_MCP_AI_Tool_Interf
 			if ( is_array( $all_connections ) ) {
 				foreach ( $all_connections as $conn_id => $connection ) {
 					if ( ! is_array( $connection ) ) {
+						continue;
+					}
+
+					if ( null !== $allowed_ids && ! in_array( (string) $conn_id, $allowed_ids, true ) ) {
 						continue;
 					}
 
@@ -135,8 +147,9 @@ class WP_MCP_AI_Pro_Tool_List_Drive_Connections implements WP_MCP_AI_Tool_Interf
 		}
 
 		// Settings-based fallback: represents the Drive account used when connection_id is omitted.
+		// Restricted assistants cannot use it, so it is hidden from their discovery output.
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		if ( ! empty( $settings['google_drive_client_id'] ) && ! empty( $settings['google_drive_refresh_token'] ) ) {
+		if ( null === $allowed_ids && ! empty( $settings['google_drive_client_id'] ) && ! empty( $settings['google_drive_refresh_token'] ) ) {
 			$connections[] = array(
 				'id'              => 'settings',
 				'name'            => __( 'NV oOS Google Drive settings (default connection)', 'mcp-ai-wpoos-pro' ),
@@ -149,7 +162,7 @@ class WP_MCP_AI_Pro_Tool_List_Drive_Connections implements WP_MCP_AI_Tool_Interf
 
 		$data = array(
 			'connections' => $connections,
-			'note'        => __( 'Credentials are never included in this list. Omit connection_id to use the settings-based default; when no settings credentials are configured, the only enabled connection is used automatically. If several connections are enabled, pass the connection_id explicitly — Drive tools will not guess between them.', 'mcp-ai-wpoos-pro' ),
+			'note'        => __( 'Credentials are never included in this list. Omit connection_id to use the settings-based default; when no settings credentials are configured, the only enabled connection is used automatically. If several connections are enabled, pass the connection_id explicitly — Drive tools will not guess between them. Assistants with a Remote Site Connections restriction only see the connections enabled for them.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $this->format_success_response(
