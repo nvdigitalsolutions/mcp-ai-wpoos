@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, waitFor, fireEvent } from '@testing-library/react';
 
 import { WorkflowsPage } from '../features/workflows/WorkflowsPage';
 
@@ -123,5 +123,121 @@ describe( 'WorkflowsPage', () => {
 		await waitFor( () => {
 			expect( screen.getByText( 'No workflows yet.' ) ).toBeTruthy();
 		} );
+	} );
+
+	it( 'exports a workflow as a downloaded DSL file (Proposal 091)', async () => {
+		setRuntime();
+
+		Object.defineProperty( URL, 'createObjectURL', {
+			configurable: true,
+			value: () => 'blob:mock',
+		} );
+		Object.defineProperty( URL, 'revokeObjectURL', {
+			configurable: true,
+			value: () => undefined,
+		} );
+		const clickSpy = vi
+			.spyOn( HTMLAnchorElement.prototype, 'click' )
+			.mockImplementation( () => undefined );
+
+		const fetchMock = vi.fn( ( input: RequestInfo | URL ) => {
+			const url = String( input );
+			if ( url === WORKFLOWS_ENDPOINT ) {
+				return Promise.resolve(
+					jsonResponse( [
+						{
+							id: 7,
+							title: 'Nightly pipeline',
+							version: '1.0',
+							tags: [],
+							modified: '2026-10-22T00:00:00Z',
+						},
+					] )
+				);
+			}
+			if ( url === PRESETS_ENDPOINT ) {
+				return Promise.resolve(
+					jsonResponse( { ok: true, categories: {}, presets: [] } )
+				);
+			}
+			if ( url === `${ WORKFLOWS_ENDPOINT }/7/export` ) {
+				return Promise.resolve(
+					jsonResponse( { dsl_version: 1, workflow: { name: 'Nightly pipeline' } } )
+				);
+			}
+			return Promise.reject( new Error( `Unexpected fetch: ${ url }` ) );
+		} );
+		vi.stubGlobal( 'fetch', fetchMock );
+
+		render( <WorkflowsPage /> );
+
+		await waitFor( () => {
+			expect( screen.getByText( 'Nightly pipeline' ) ).toBeTruthy();
+		} );
+
+		fireEvent.click( screen.getAllByText( 'Export' )[ 0 ] );
+
+		await waitFor( () => {
+			expect( fetchMock ).toHaveBeenCalledWith(
+				`${ WORKFLOWS_ENDPOINT }/7/export`,
+				expect.objectContaining( { method: 'POST' } )
+			);
+		} );
+		expect( clickSpy ).toHaveBeenCalled();
+
+		clickSpy.mockRestore();
+		delete ( URL as unknown as Record< string, unknown > ).createObjectURL;
+		delete ( URL as unknown as Record< string, unknown > ).revokeObjectURL;
+	} );
+
+	it( 'dry-runs then imports a pasted DSL (Proposal 091)', async () => {
+		setRuntime();
+		vi.spyOn( window, 'confirm' ).mockReturnValue( true );
+
+		const fetchMock = vi.fn( ( input: RequestInfo | URL, init?: RequestInit ) => {
+			const url = String( input );
+			if ( url === WORKFLOWS_ENDPOINT ) {
+				return Promise.resolve( jsonResponse( [] ) );
+			}
+			if ( url === PRESETS_ENDPOINT ) {
+				return Promise.resolve(
+					jsonResponse( { ok: true, categories: {}, presets: [] } )
+				);
+			}
+			if ( url === `${ WORKFLOWS_ENDPOINT }/import` ) {
+				const body = JSON.parse( String( init?.body ) ) as { dry_run: boolean };
+				return Promise.resolve(
+					jsonResponse(
+						body.dry_run
+							? { dry_run: true, findings: [], preview: {} }
+							: { id: 12, findings: [] }
+					)
+				);
+			}
+			return Promise.reject( new Error( `Unexpected fetch: ${ url }` ) );
+		} );
+		vi.stubGlobal( 'fetch', fetchMock );
+
+		render( <WorkflowsPage /> );
+
+		await waitFor( () => {
+			expect( screen.getByText( 'No workflows yet.' ) ).toBeTruthy();
+		} );
+
+		fireEvent.click( screen.getByText( 'Import DSL…' ) );
+		fireEvent.change(
+			screen.getByPlaceholderText( 'Paste a workflow DSL (JSON)…' ),
+			{ target: { value: '{ "dsl_version": 1, "workflow": {} }' } }
+		);
+		fireEvent.click( screen.getByText( 'Validate & import' ) );
+
+		await waitFor( () => {
+			expect( screen.getByText( 'Workflow imported.' ) ).toBeTruthy();
+		} );
+
+		const importCalls = fetchMock.mock.calls.filter(
+			( [ input ] ) => String( input ) === `${ WORKFLOWS_ENDPOINT }/import`
+		);
+		expect( importCalls ).toHaveLength( 2 );
 	} );
 } );
