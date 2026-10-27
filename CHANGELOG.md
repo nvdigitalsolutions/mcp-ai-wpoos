@@ -1,5 +1,11 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Fixed — wp-admin commerce tabs grouped under E-Commerce
+
+- **EZuite ERP / Shopify Sync / FlowHub are no longer top-level dashboard tabs.** The three sync toolkits were never meant to sit beside E-Commerce in the wp-admin nav; they now render as subtabs of the E-Commerce tab (the Tools → Connections pattern) via a declarative `subtab_of` tab-definition key. The four registry tabs stay registered untouched (the settings schema + the SPA commerce pages filter fields by tab id), `WP_MCP_AI_Settings_Dashboard::get_sections_for_tab()` pulls child-tab sections into both render and save so subtabbed saves sanitize correctly, and legacy `?tab=<toolkit>` URLs still resolve to the parent tab with the right subtab selected. New `tests/test-commerce-settings-subtabs.php` (8 tests) + extended `tests/test-settings-dashboard-tab-order.php`.
+
 ## [1.2.13] - 2026-10-27
 
 ### Added — Dify parity gap-fill (Proposal 091, #7246/#7247)

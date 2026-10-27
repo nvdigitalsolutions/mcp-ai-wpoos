@@ -173,4 +173,53 @@ class Test_Settings_Dashboard_Tab_Order extends WP_UnitTestCase {
 			$this->assertFalse( $commerce_position, 'Commerce toolkit tabs should only be registered when WooCommerce is active' );
 		}
 	}
+
+	/**
+	 * Test that the three sync toolkit tabs declare E-Commerce as their
+	 * parent (subtab_of) so the dashboard renders them as subtabs instead
+	 * of top-level nav tabs, while E-Commerce itself stays a top-level tab.
+	 */
+	public function test_commerce_child_tabs_declare_subtab_of() {
+		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+
+		if ( ! isset( $tabs['ecommerce'] ) ) {
+			$this->markTestSkipped( 'Commerce tabs are not registered (WooCommerce inactive).' );
+		}
+
+		$this->assertArrayNotHasKey( 'subtab_of', $tabs['ecommerce'], 'E-Commerce should remain a top-level tab' );
+
+		foreach ( array( 'ezuite', 'shopify_sync', 'flowhub' ) as $child_tab ) {
+			$this->assertArrayHasKey( $child_tab, $tabs, 'Child commerce tab should stay registered: ' . $child_tab );
+			$this->assertSame(
+				'ecommerce',
+				isset( $tabs[ $child_tab ]['subtab_of'] ) ? $tabs[ $child_tab ]['subtab_of'] : null,
+				'Child commerce tab should declare E-Commerce as its parent: ' . $child_tab
+			);
+		}
+	}
+
+	/**
+	 * Test that legacy ?tab=<child-toolkit> URLs resolve to the parent
+	 * E-Commerce tab (the sections map the legacy tab to their subtab).
+	 */
+	public function test_child_tab_param_resolves_to_parent() {
+		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+
+		if ( ! isset( $tabs['ezuite'] ) || empty( $tabs['ezuite']['subtab_of'] ) ) {
+			$this->markTestSkipped( 'Commerce child tabs are not registered (WooCommerce inactive).' );
+		}
+
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_active_tab' );
+		$method->setAccessible( true );
+
+		$_GET['tab'] = 'ezuite';
+		$active_tab  = $method->invoke( $dashboard );
+		$this->assertEquals( 'ecommerce', $active_tab, 'A child tab parameter should resolve to its parent tab' );
+
+		// Clean up.
+		unset( $_GET['tab'] );
+	}
 }
