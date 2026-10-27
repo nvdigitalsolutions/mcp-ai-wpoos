@@ -1,5 +1,11 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Docs
+
+- **Proposal 092 — Astro Storefront Layer (docs-only)** — analysis of Astro as an NV-authored, MIT-licensed headless frontend for the Funiq Payload-shaped contract, shipped as the `nvoos-astro-velocity` Velocity app: research (Astro CWV data, official Headless WordPress guide, Astro + Laravel frontend/API split, Astro MCP server, Cloudways sponsor/platform fit), a contract-invariant design that survives the WP → Laravel backend migration (085 appendix T1/T2/T3), rendering strategy (prerendered catalog + server islands + React islands reusing PWA components), the retire-at-parity posture (Option A — the licensed PWA kept only as a transitional rollback, then retired; contract liberation once both ends are NV-authored), a 4-phase plan (spike → parity → SEO → PWA retirement; generic starter optional), risks, and five open owner decisions. Solves 085 §2.3's deferred SSR/SEO constraint without modifying licensed code.
+
 ## [1.2.12] - 2026-10-25
 
 ### Added — magic-link sign-in, Paper Store page, and console UX (#7206/#7208)
