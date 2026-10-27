@@ -867,7 +867,12 @@ chunk itself may show 0 hits for the feature's CSS class names (`__pager`)
 prop wiring instead. Case: `#/professions` and the other Records groups
 showed no pager on pro.nvoos.cloud although #7239 had landed in spa-v2 —
 root cause was the console `dist/` predating the PR (live chunk hashes
-matched the stale repo chunks exactly).
+matched the stale repo chunks exactly). Backend-log tell: the old bundle's
+RecordsPage requests `/wp-json/wp/v2/<cpt>?per_page=50&context=edit&_fields=…`
+have **no `page=` param**; the paginated bundle adds `page=N` — grepping the
+app's access log for that signature dates exactly when the new bundle went
+live (verified 2026-10-27: `page=1..4` appeared at 07:10 UTC, 33 min after
+the 06:37 sync).
 
 ### Rebuild discipline — staleness, vendor, drift (learned 2026-10-22)
 

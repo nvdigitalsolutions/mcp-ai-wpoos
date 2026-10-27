@@ -288,6 +288,12 @@ addon SPA):
   and rebuild the console dist. Full playbook (incl. the grep caveat and
   the one-sided two-bundle case) lives in the `mcp-ai-wpoos-spa-ui`
   skill → "Live-console staleness diagnosis (learned 2026-10-27)".
+- **The sync workflow makes zero backend requests (verified 2026-10-27).**
+  A 06:37:18 UTC mirror sync produced no traffic in the WP backend's access
+  log (window 06:15–06:55: only the admin's own browsing + server-self
+  cron) — the CI smoke test runs against the assembled mirror, not through
+  the live proxy. A backend load spike right after a sync is coincidence
+  (case: the 07:01 MariaDB restart on the MCP server), not the deploy.
 - The app proxies `/wp-json`, `/wp-admin`, `/wp-login.php` and
   `/wp-includes` to `NVOOS_TARGET_SITE` (cookie-auth mode — same-origin
   cookies + the wp_rest nonce handshake; the login page is re-scoped to the
