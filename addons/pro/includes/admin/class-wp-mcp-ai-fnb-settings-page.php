@@ -1036,6 +1036,58 @@ class WP_MCP_AI_Fnb_Settings_Page {
 	}
 
 	/**
+	 * Expand scan pairs whose connection is empty across the given candidate
+	 * connections.
+	 *
+	 * The default source (empty connection_id) resolves through the site-wide
+	 * settings credentials or the single healthy Drive connection. When several
+	 * healthy connections are enabled the Drive client refuses to guess — for the
+	 * scan, that ambiguity is a discovery task rather than an error: substitute
+	 * every candidate connection so the folder is scanned under each account.
+	 * The folder only exists in one of them, so the wrong accounts contribute no
+	 * proposals and the winners carry their connection_id back into the review.
+	 *
+	 * Pairs with an explicit connection and pairs without a folder are kept
+	 * as-is. When no candidates are known the input is returned unchanged so the
+	 * original resolution error still surfaces.
+	 *
+	 * @param array $pairs      Pairs of [ connection_id, folder_id ].
+	 * @param array $candidates Connection IDs to substitute for an empty connection.
+	 * @return array Expanded pairs (no duplicates).
+	 */
+	public static function expand_scan_pairs( array $pairs, array $candidates ) {
+		if ( empty( $candidates ) ) {
+			return $pairs;
+		}
+
+		$expanded = array();
+		$add      = function ( $connection_id, $folder_id ) use ( &$expanded ) {
+			$connection_id = sanitize_key( (string) $connection_id );
+			$folder_id     = trim( (string) $folder_id );
+			if ( '' === $folder_id ) {
+				return;
+			}
+			$pair = array( $connection_id, $folder_id );
+			if ( ! in_array( $pair, $expanded, true ) ) {
+				$expanded[] = $pair;
+			}
+		};
+
+		foreach ( $pairs as $pair ) {
+			if ( '' !== (string) $pair[0] ) {
+				$add( $pair[0], $pair[1] );
+				continue;
+			}
+
+			foreach ( $candidates as $connection_id ) {
+				$add( $connection_id, $pair[1] );
+			}
+		}
+
+		return $expanded;
+	}
+
+	/**
 	 * Handle the "Scan sources & propose mappings" action.
 	 *
 	 * Scans the toolkit-default source plus every (connection, folder) pair
@@ -1097,6 +1149,20 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			wp_safe_redirect( self::settings_url() );
 			exit;
 		}
+
+		// A pair with an empty connection_id resolves through the site-wide
+		// settings credentials or the single healthy Drive connection. When
+		// several healthy connections are enabled the Drive client refuses to
+		// guess — expand the pair across every candidate connection so the scan
+		// discovers which account owns the folder instead of failing outright.
+		$candidates = array();
+		if ( class_exists( 'WP_MCP_AI_Pro_Google_Drive_Client' ) ) {
+			$probe = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials( '' );
+			if ( is_wp_error( $probe ) && 'wp_mcp_ai_drive_ambiguous_connection' === $probe->get_error_code() ) {
+				$candidates = array_keys( WP_MCP_AI_Pro_Google_Drive_Client::get_auto_connection_candidates() );
+			}
+		}
+		$pairs = self::expand_scan_pairs( $pairs, $candidates );
 
 		$reader    = new WP_MCP_AI_Fnb_Universal_Reader();
 		$proposals = array();

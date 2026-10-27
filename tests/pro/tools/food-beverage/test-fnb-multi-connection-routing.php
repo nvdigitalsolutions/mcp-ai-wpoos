@@ -323,4 +323,56 @@ class Test_Fnb_Multi_Connection_Routing extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( '2.0', $clean['table_map'], 'Fully empty rows must be dropped.' );
 		$this->assertSame( 'The Test Venue', $clean['venue_name'], 'Unrelated settings must survive the merge.' );
 	}
+
+	/**
+	 * When the default source is ambiguous (several healthy Drive connections),
+	 * the auto-map scan expands the empty-connection pair across every candidate
+	 * connection instead of failing, while explicit connections stay untouched.
+	 */
+	public function test_expand_scan_pairs_expands_ambiguous_default_source() {
+		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) || ! file_exists( $this->admin_dir . '/class-wp-mcp-ai-fnb-settings-page.php' ) ) {
+			$this->markTestSkipped( 'F&B settings page not available in this matrix' );
+		}
+
+		require_once $this->admin_dir . '/class-wp-mcp-ai-fnb-settings-page.php';
+
+		$pairs = array(
+			array( '', 'folder_default' ),
+			array( 'conn_sales', 'folder_sales' ),
+		);
+
+		$expanded = WP_MCP_AI_Fnb_Settings_Page::expand_scan_pairs(
+			$pairs,
+			array( 'conn_a', 'conn_b' )
+		);
+
+		$this->assertSame(
+			array(
+				array( 'conn_a', 'folder_default' ),
+				array( 'conn_b', 'folder_default' ),
+				array( 'conn_sales', 'folder_sales' ),
+			),
+			$expanded
+		);
+	}
+
+	/**
+	 * Without known candidates (no ambiguity, or the Drive client unavailable)
+	 * the pairs pass through unchanged so the original resolution error still
+	 * surfaces to the operator.
+	 */
+	public function test_expand_scan_pairs_keeps_pairs_without_candidates() {
+		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) || ! file_exists( $this->admin_dir . '/class-wp-mcp-ai-fnb-settings-page.php' ) ) {
+			$this->markTestSkipped( 'F&B settings page not available in this matrix' );
+		}
+
+		require_once $this->admin_dir . '/class-wp-mcp-ai-fnb-settings-page.php';
+
+		$pairs = array(
+			array( '', 'folder_default' ),
+			array( 'conn_sales', 'folder_sales' ),
+		);
+
+		$this->assertSame( $pairs, WP_MCP_AI_Fnb_Settings_Page::expand_scan_pairs( $pairs, array() ) );
+	}
 }
