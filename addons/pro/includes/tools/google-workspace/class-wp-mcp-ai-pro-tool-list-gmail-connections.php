@@ -165,7 +165,7 @@ class WP_MCP_AI_Pro_Tool_List_Gmail_Connections implements WP_MCP_AI_Tool_Interf
 
 		$data = array(
 			'connections' => $connections,
-			'note'        => __( 'Credentials are never included in this list. Omit connection_id to use the settings-based default ("settings" row). Assistants with a Remote Site Connections restriction only see the connections enabled for them.', 'mcp-ai-wpoos-pro' ),
+			'note'        => __( 'Credentials are never included in this list. Omit connection_id to use the settings-based default; when no settings credentials are configured, the only enabled connection is used automatically. If several connections are enabled, pass the connection_id explicitly — Gmail tools will not guess between them. Assistants with a Remote Site Connections restriction only see the connections enabled for them.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $this->format_success_response(

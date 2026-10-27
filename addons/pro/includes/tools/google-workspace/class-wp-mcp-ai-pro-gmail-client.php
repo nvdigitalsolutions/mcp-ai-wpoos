@@ -33,6 +33,12 @@ class WP_MCP_AI_Pro_Gmail_Client {
 	/**
 	 * Resolve Gmail credentials from a Remote Sites connection or from base settings.
 	 *
+	 * When no connection_id is given and the settings-based credentials are
+	 * absent, resolution falls back to the only enabled Remote Sites Gmail
+	 * connection with complete credentials (ambiguity is an error). This
+	 * mirrors the Drive auto-fallback so an omitted connection_id never
+	 * reports Gmail as unconfigured while a healthy named connection exists.
+	 *
 	 * When the execution context carries an assistant whose Remote Site
 	 * Connections are restricted (the assistant editor metabox), resolution is
 	 * limited to the enabled connections and the settings fallback is refused.
@@ -40,7 +46,8 @@ class WP_MCP_AI_Pro_Gmail_Client {
 	 * @param string $connection_id Optional Remote Sites connection ID. Empty falls back to settings.
 	 * @param array  $context       Optional execution context (assistant_id is honoured).
 	 * @return array|WP_Error Credentials array with keys client_id, client_secret,
-	 *         refresh_token, configured_user and source — or WP_Error.
+	 *         refresh_token, configured_user, source, connection_id and
+	 *         connection_name — or WP_Error.
 	 */
 	public static function resolve_credentials( $connection_id, array $context = array() ) {
 		$connection_id = sanitize_key( (string) $connection_id );
@@ -59,6 +66,8 @@ class WP_MCP_AI_Pro_Gmail_Client {
 		$refresh_token   = '';
 		$configured_user = '';
 		$source          = 'settings';
+		$resolved_id     = '';
+		$resolved_name   = '';
 
 		if ( '' !== $connection_id ) {
 			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -116,7 +125,9 @@ class WP_MCP_AI_Pro_Gmail_Client {
 				$refresh_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $refresh_token );
 			}
 
-			$source = 'connection';
+			$source        = 'connection';
+			$resolved_id   = $connection_id;
+			$resolved_name = isset( $connection['name'] ) ? trim( (string) $connection['name'] ) : '';
 		} else {
 			$settings = self::get_settings();
 
@@ -127,7 +138,8 @@ class WP_MCP_AI_Pro_Gmail_Client {
 
 			// A restricted assistant cannot use the site-wide settings fallback:
 			// the assistant editor can only grant named Remote Sites connections.
-			// Checked only when settings credentials are actually configured.
+			// Checked only when settings credentials are actually configured, so
+			// a restricted assistant without them can still auto-resolve below.
 			if ( null !== self::get_allowed_connection_ids( $context ) && '' !== $client_id && '' !== $client_secret && '' !== $refresh_token ) {
 				return new WP_Error(
 					'wp_mcp_ai_gmail_settings_not_allowed',
@@ -137,11 +149,48 @@ class WP_MCP_AI_Pro_Gmail_Client {
 			}
 		}
 
+		// Self-correcting fallback: when no connection was named and the
+		// settings-based credentials are absent, resolve to the Remote Sites
+		// Gmail connection instead of failing. Pro sites commonly keep Gmail
+		// credentials only inside a named connection, and an omitted
+		// connection_id must then use that connection rather than report the
+		// integration as unconfigured (which previously led assistants to
+		// disable or remove the perfectly valid connection). A restricted
+		// assistant only ever auto-resolves to one of its allowed connections.
+		if ( '' === $connection_id && ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) ) {
+			$auto = self::resolve_auto_connection( $context );
+			if ( is_wp_error( $auto ) ) {
+				return $auto;
+			}
+			if ( is_array( $auto ) ) {
+				$client_id       = $auto['client_id'];
+				$client_secret   = $auto['client_secret'];
+				$refresh_token   = $auto['refresh_token'];
+				$configured_user = $auto['configured_user'];
+				$source          = 'connection';
+				$resolved_id     = $auto['id'];
+				$resolved_name   = $auto['name'];
+			} elseif ( null !== self::get_allowed_connection_ids( $context ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_gmail_no_allowed_connection',
+					__( 'None of the Gmail connections enabled for this assistant have usable credentials. Enable a Gmail connection in the assistant editor (Remote Site Connections) and complete its OAuth flow under Remote Sites.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
 		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
-			return new WP_Error(
-				'wp_mcp_ai_gmail_missing_credentials',
-				__( 'Gmail API credentials are not configured. Add the client ID, client secret, and refresh token either in a Gmail connection (Remote Sites) or in the NV oOS settings.', 'mcp-ai-wpoos-pro' )
-			);
+			$message = __( 'Gmail API credentials are not configured. Add the client ID, client secret, and refresh token either in a Gmail connection (Remote Sites) or in the NV oOS settings.', 'mcp-ai-wpoos-pro' );
+
+			if ( '' !== $connection_id ) {
+				$message = sprintf(
+					/* translators: %s: connection ID. */
+					__( 'Gmail connection "%s" has no usable credentials. Complete its OAuth flow under Remote Sites, or pass another connection_id (see list_gmail_connections).', 'mcp-ai-wpoos-pro' ),
+					$connection_id
+				);
+			}
+
+			return new WP_Error( 'wp_mcp_ai_gmail_missing_credentials', $message );
 		}
 
 		return array(
@@ -150,6 +199,95 @@ class WP_MCP_AI_Pro_Gmail_Client {
 			'refresh_token'   => $refresh_token,
 			'configured_user' => $configured_user,
 			'source'          => $source,
+			'connection_id'   => $resolved_id,
+			'connection_name' => $resolved_name,
+		);
+	}
+
+	/**
+	 * Find the Remote Sites Gmail connection to use when no connection_id was
+	 * given and the settings-based credentials are absent.
+	 *
+	 * Accepts every Gmail-compatible connection type (gmail, google_workspace,
+	 * email_imap) — the same set the Gmail tools accept explicitly.
+	 *
+	 * Returns null when no usable connection exists, the single enabled
+	 * connection when exactly one does, or a WP_Error listing the candidates
+	 * when several are enabled (ambiguous — the caller must name one).
+	 *
+	 * When the context carries a restricted assistant, only connections from
+	 * the assistant's Remote Site Connections list are considered.
+	 *
+	 * @param array $context Optional execution context (assistant_id is honoured).
+	 * @return array|null|WP_Error
+	 */
+	private static function resolve_auto_connection( array $context = array() ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$allowed_ids = self::get_allowed_connection_ids( $context );
+		$candidates  = array();
+
+		foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $candidate_id => $connection ) {
+			if ( ! is_array( $connection ) ) {
+				continue;
+			}
+
+			if ( null !== $allowed_ids && ! in_array( (string) $candidate_id, $allowed_ids, true ) ) {
+				continue;
+			}
+
+			$connection_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+			if ( ! in_array( $connection_type, self::GMAIL_CONNECTION_TYPES, true ) || empty( $connection['enabled'] ) ) {
+				continue;
+			}
+
+			$candidate_client_id = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+			$candidate_secret    = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
+			$candidate_refresh   = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
+
+			if ( '' === $candidate_client_id || '' === $candidate_secret || '' === $candidate_refresh ) {
+				continue;
+			}
+
+			$candidates[ (string) $candidate_id ] = $connection;
+		}
+
+		if ( empty( $candidates ) ) {
+			return null;
+		}
+
+		if ( count( $candidates ) > 1 ) {
+			$labels = array();
+			foreach ( $candidates as $candidate_id => $connection ) {
+				$labels[] = sprintf(
+					'%1$s (%2$s)',
+					(string) $candidate_id,
+					isset( $connection['name'] ) ? (string) $connection['name'] : (string) $candidate_id
+				);
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_gmail_ambiguous_connection',
+				sprintf(
+					/* translators: %s: comma-separated connection IDs and names. */
+					__( 'Multiple Gmail connections are enabled and healthy, but no connection_id was given — the tool will not guess which account to use. Pass one of: %s. Call list_gmail_connections for their names and enabled state.', 'mcp-ai-wpoos-pro' ),
+					implode( ', ', $labels )
+				)
+			);
+		}
+
+		$auto_id         = (string) array_key_first( $candidates );
+		$auto_connection = $candidates[ $auto_id ];
+
+		return array(
+			'id'              => $auto_id,
+			'name'            => isset( $auto_connection['name'] ) ? trim( (string) $auto_connection['name'] ) : $auto_id,
+			'client_id'       => trim( (string) $auto_connection['client_id'] ),
+			'client_secret'   => WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( trim( (string) $auto_connection['client_secret'] ) ),
+			'refresh_token'   => WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( trim( (string) $auto_connection['refresh_token'] ) ),
+			'configured_user' => isset( $auto_connection['user_email'] ) ? trim( (string) $auto_connection['user_email'] ) : '',
 		);
 	}
 

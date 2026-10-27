@@ -1310,6 +1310,28 @@ default 15) and kicks stuck jobs inline (`kick_inline_if_stale`) so hosts
 with a dead WP-Cron loopback self-heal; timeouts now surface as visible
 errors instead of resets.
 
+### Google tools (Drive/Gmail/Calendar) report "not configured" or "ambiguous" despite a healthy Remote Sites connection
+
+**Cause (pre-fix):** an omitted `connection_id` resolved only through the
+base-plugin settings, so a Pro site that stores Google credentials solely
+in a Remote Sites connection got `*_missing_credentials` — which assistants
+read as "the connection is broken" and then disabled or removed.
+
+**Behaviour now:** credential resolution order for Drive, Gmail and Google
+Calendar is (1) explicit `connection_id`, (2) settings-based credentials,
+(3) legacy `wp_mcp_ai_google_*` filters, (4) auto-fallback to the only
+enabled Remote Sites connection of the right type with complete
+credentials. Several enabled connections = a loud
+`wp_mcp_ai_{drive,gmail,calendar}_ambiguous_connection` ("enabled and
+healthy … will not guess") — pass `connection_id` explicitly.
+Settings-based credentials keep priority, and restricted assistants only
+auto-resolve among their allowed connections
+(`wp_mcp_ai_*_no_allowed_connection`, 403). The admin Connections page
+(Tools → Connections → Gmail/Drive/Calendar) mirrors this: a neutral
+"No settings-based … credentials — using the Remote Sites connection"
+state with the connection list and a "Manage in Remote Sites" link
+replaces the misleading red "Credentials Required" block.
+
 ### Cloudflare blocks non-browser clients (error 1010) or 524 timeouts
 
 **Cause:** Cloudflare WAF blocks default non-browser user agents (e.g.

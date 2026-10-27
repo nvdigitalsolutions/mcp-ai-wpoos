@@ -65,7 +65,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'connection_id'  => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Gmail connection ID from Remote Sites. If not provided, uses settings-based credentials.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional Gmail connection ID from Remote Sites. If not provided, uses settings-based credentials; when those are not configured, the only enabled Remote Sites Gmail connection is used automatically (if several are enabled, pass one explicitly). Call list_gmail_connections to discover IDs.', 'mcp-ai-wpoos-pro' ),
 				),
 				'query'          => array(
 					'type'        => 'string',
@@ -160,6 +160,8 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		$refresh_token     = $credentials['refresh_token'];
 		$configured_user   = $credentials['configured_user'];
 		$credential_source = $credentials['source'];
+		$resolved_id       = isset( $credentials['connection_id'] ) ? (string) $credentials['connection_id'] : '';
+		$resolved_name     = isset( $credentials['connection_name'] ) ? (string) $credentials['connection_name'] : '';
 
 		$query = isset( $arguments['query'] ) ? trim( (string) $arguments['query'] ) : '';
 
@@ -312,7 +314,8 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 			'result_size_estimate' => isset( $list_payload['resultSizeEstimate'] ) ? absint( $list_payload['resultSizeEstimate'] ) : count( $messages ),
 			'next_page_token'      => isset( $list_payload['nextPageToken'] ) ? (string) $list_payload['nextPageToken'] : '',
 			'has_more'             => ! empty( $list_payload['nextPageToken'] ),
-			'connection_id'        => $connection_id,
+			'connection_id'        => '' !== $resolved_id ? $resolved_id : $connection_id,
+			'connection_name'      => $resolved_name,
 			'user_email'           => $configured_user,
 			'credential_source'    => $credential_source,
 		);
