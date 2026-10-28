@@ -27,9 +27,18 @@ import express from 'express';
 import { callUpstream } from '../utils/upstream.js';
 import { prefixTool, splitToolName, isNamespacedFor } from '../utils/namespacer.js';
 import { recordSiteHealth } from './health.js';
+import { consumeToolQuota, quotaHeaders } from '../quota/check.js';
+import { createQuotaStore } from '../quota/token-bucket.js';
+import { evaluatePolicy } from '../policy/evaluator.js';
+import { resolveCountry } from '../policy/geo.js';
+import { emitAudit } from '../audit/sink.js';
+import { recorder } from '../admin/recorder.js';
 
 const PROTOCOL_VERSION = '2026-07-28';
 const UPSTREAM_TIMEOUT_MS = Number( process.env.UPSTREAM_TIMEOUT_MS ) || 20000;
+
+/** Module-level quota store (scoped per key × site × tool). */
+const quotaStore = createQuotaStore();
 
 /**
  * Timeout budget for tools/call proxying (read per call so tests and ops can
@@ -110,6 +119,49 @@ function negotiateProtocolVersion( params ) {
 }
 
 /**
+ * Evaluate the live policy (and the shadow policy, log-only) for a tool
+ * call.
+ *
+ * @param {object}  ctx      Request context.
+ * @param {string}  slug     Target site slug.
+ * @param {string}  toolName Unprefixed tool slug.
+ * @param {object}  [opts]   `shadow: true` to also evaluate + log the
+ *                           shadow policy (tools/call only — list filtering
+ *                           stays quiet).
+ * @return {{effect: string, ruleId: string|null, input: object}} Decision.
+ */
+function policyDecision( ctx, slug, toolName, opts = {} ) {
+	const input = {
+		tool: toolName,
+		site: slug,
+		key: ctx.req.gatewayKeyId || 'unknown',
+		time: new Date(),
+		country: resolveCountry( ctx.req, ctx.cfg ),
+	};
+	const decision = evaluatePolicy( ctx.cfg.policy, input );
+
+	// Shadow policy: evaluate + log, never enforce (Proposal 094, Phase 4).
+	if ( opts.shadow && ctx.cfg.shadowPolicy?.rules?.length ) {
+		const shadow = evaluatePolicy( ctx.cfg.shadowPolicy, input );
+		if ( 'allow' !== shadow.effect ) {
+			console.warn(
+				JSON.stringify( {
+					ts: new Date().toISOString(),
+					traceId: ctx.req.traceId || null,
+					kind: 'shadow_policy',
+					ruleId: shadow.ruleId,
+					effect: shadow.effect,
+					tool: toolName,
+					site: slug,
+				} )
+			);
+		}
+	}
+
+	return { ...decision, input };
+}
+
+/**
  * JSON-RPC error envelope factory.
  *
  * @param {*} id      Request id (null for parse errors).
@@ -164,7 +216,12 @@ async function forwardNotification( ctx, payload ) {
 	await Promise.allSettled(
 		ctx.sites.map( async ( slug ) => {
 			const site = ctx.cfg.sites.get( slug );
-			const outcome = await callUpstream( site, payload, UPSTREAM_TIMEOUT_MS );
+			const outcome = await callUpstream(
+				site,
+				payload,
+				UPSTREAM_TIMEOUT_MS,
+				{ traceparent: ctx.req.traceparent }
+			);
 			recordSiteHealth( slug, outcome.ok, outcome.error || '' );
 		} )
 	);
@@ -184,7 +241,8 @@ async function listTools( ctx, id ) {
 			const outcome = await callUpstream(
 				site,
 				{ jsonrpc: '2.0', id, method: 'tools/list', params: {} },
-				UPSTREAM_TIMEOUT_MS
+				UPSTREAM_TIMEOUT_MS,
+				{ traceparent: ctx.req.traceparent }
 			);
 			recordSiteHealth( slug, outcome.ok, outcome.error || '' );
 			return { slug, outcome };
@@ -205,6 +263,11 @@ async function listTools( ctx, id ) {
 		}
 		for ( const tool of outcome.data.result.tools ) {
 			if ( tool && 'string' === typeof tool.name ) {
+				// Catalog filtering: tools the policy denies for this key never
+				// appear in tools/list (kept out of model context).
+				if ( ctx.cfg.policy?.rules?.length && 'deny' === policyDecision( ctx, slug, tool.name ).effect ) {
+					continue;
+				}
 				const prefixed = prefixTool( slug, tool );
 				const hint = TOOL_DESCRIPTION_HINTS[ tool.name ];
 				if ( hint && 'string' === typeof prefixed.description ) {
@@ -238,7 +301,12 @@ async function proxyToSite( ctx, slug, payload, timeoutMs = UPSTREAM_TIMEOUT_MS 
 	if ( ! site ) {
 		return rpcError( payload.id ?? null, -32602, `Unknown site slug "${ slug }".` );
 	}
-	const outcome = await callUpstream( site, payload, timeoutMs );
+	const outcome = await callUpstream(
+		site,
+		payload,
+		timeoutMs,
+		{ traceparent: ctx.req.traceparent }
+	);
 	recordSiteHealth( slug, outcome.ok, outcome.error || '' );
 	if ( ! outcome.ok ) {
 		return rpcError(
@@ -312,12 +380,150 @@ async function dispatch( ctx, msg ) {
 					`Tool name must be namespaced "<site-slug>.<tool>" — this key is bound to: ${ ctx.sites.join( ', ' ) }.`
 				);
 			}
-			return proxyToSite(
+
+			// Record the call attempt for policy simulation (identity +
+			// argument KEYS only — never values).
+			recorder.record( {
+				ts: new Date().toISOString(),
+				tool: toolName,
+				site: slug,
+				key: ctx.req.gatewayKeyId || 'unknown',
+				country: resolveCountry( ctx.req, ctx.cfg ),
+				argsKeys: Object.keys( params?.arguments || {} ),
+				traceId: ctx.req.traceId || null,
+			} );
+
+			// dryRun: evaluate everything, execute nothing (Phase 4).
+			if ( true === params?.dryRun ) {
+				const dryDecision = policyDecision( ctx, slug, toolName, { shadow: true } );
+				const dryQuota = consumeToolQuota(
+					quotaStore,
+					ctx.cfg.quotas || [],
+					ctx.req.gatewayKeyId || 'unknown',
+					slug,
+					toolName,
+					Date.now(),
+					true
+				);
+				return {
+					jsonrpc: '2.0',
+					id,
+					result: {
+						dryRun: true,
+						would_execute: 'allow' === dryDecision.effect && dryQuota.allowed,
+						policy: { effect: dryDecision.effect, ruleId: dryDecision.ruleId },
+						quota: dryQuota.scoped
+							? { limit: dryQuota.limit, remaining: dryQuota.remaining, reset_seconds: dryQuota.resetSeconds }
+							: null,
+					},
+				};
+			}
+
+			// Fleet per-tool quota (Phase 1) — additive to the group
+			// budgets: the gateway ceiling never weakens site enforcement.
+			if ( ctx.cfg.quotas?.length ) {
+				const quota = consumeToolQuota(
+					quotaStore,
+					ctx.cfg.quotas,
+					ctx.req.gatewayKeyId || 'unknown',
+					slug,
+					toolName
+				);
+				if ( ! quota.allowed ) {
+					void emitAudit( ctx.cfg, {
+						kind: 'quota_exceeded',
+						traceId: ctx.req.traceId || null,
+						key: ctx.req.gatewayKeyId || 'unknown',
+						site: slug,
+						tool: toolName,
+						limit: quota.limit,
+						window_seconds: quota.windowSeconds,
+					} );
+					return {
+						jsonrpc: '2.0',
+						id,
+						error: {
+							code: -32099,
+							message: 'Rate limit exceeded',
+							data: {
+								requests_per_window: quota.limit,
+								window_seconds: quota.windowSeconds,
+								retry_after_seconds: quota.resetSeconds,
+							},
+						},
+						gateway: { quota },
+					};
+				}
+			}
+
+			// Policy evaluation (Phase 2) — deny and require_approval both
+			// short-circuit before upstream dispatch.
+			const decision = policyDecision( ctx, slug, toolName, { shadow: true } );
+			if ( 'deny' === decision.effect ) {
+				void emitAudit( ctx.cfg, {
+					kind: 'deny',
+					traceId: ctx.req.traceId || null,
+					key: ctx.req.gatewayKeyId || 'unknown',
+					site: slug,
+					tool: toolName,
+					ruleId: decision.ruleId,
+				} );
+				return {
+					jsonrpc: '2.0',
+					id,
+					error: {
+						code: -32001,
+						message: 'Tool execution denied by gateway policy',
+						data: { policy_id: decision.ruleId },
+					},
+					gateway: { policy: { effect: 'deny', ruleId: decision.ruleId } },
+					statusCode: 403,
+				};
+			}
+			if ( 'require_approval' === decision.effect ) {
+				void emitAudit( ctx.cfg, {
+					kind: 'require_approval',
+					traceId: ctx.req.traceId || null,
+					key: ctx.req.gatewayKeyId || 'unknown',
+					site: slug,
+					tool: toolName,
+					ruleId: decision.ruleId,
+				} );
+				return {
+					jsonrpc: '2.0',
+					id,
+					error: {
+						code: -32002,
+						message: 'Tool call requires approval',
+						data: {
+							policy_id: decision.ruleId,
+							preview: {
+								tool: name,
+								site: slug,
+								argument_keys: Object.keys( params?.arguments || {} ),
+							},
+						},
+					},
+					gateway: { policy: { effect: 'require_approval', ruleId: decision.ruleId } },
+					statusCode: 428,
+				};
+			}
+
+			const envelope = await proxyToSite(
 				ctx,
 				slug,
 				{ jsonrpc: '2.0', id, method, params: { ...params, name: toolName } },
 				toolCallTimeoutMs()
 			);
+			void emitAudit( ctx.cfg, {
+				kind: 'call_ok',
+				traceId: ctx.req.traceId || null,
+				key: ctx.req.gatewayKeyId || 'unknown',
+				site: slug,
+				tool: toolName,
+				upstream_ok: ! envelope?.error,
+			} );
+			return envelope;
 		}
 
 		case 'resources/list':
@@ -397,6 +603,17 @@ export function mcpRouter() {
 		if ( null === envelope ) {
 			// Notification: 202, no content.
 			return res.status( 202 ).end();
+		}
+		// Quota breaches surface with RFC 9558 headers + HTTP 429.
+		if ( envelope?.gateway?.quota ) {
+			for ( const [ header, value ] of Object.entries( quotaHeaders( envelope.gateway.quota ) ) ) {
+				res.setHeader( header, value );
+			}
+			return res.status( 429 ).json( envelope );
+		}
+		// Policy short-circuits carry their own HTTP status (403/428).
+		if ( envelope?.statusCode ) {
+			return res.status( envelope.statusCode ).json( envelope );
 		}
 		return res.json( envelope );
 	} );

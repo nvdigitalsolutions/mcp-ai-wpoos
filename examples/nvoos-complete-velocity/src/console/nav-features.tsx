@@ -135,6 +135,7 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
     items: [
       { path: '/token-manager', label: 'Tokens', icon: '🔑', capability: 'manage_options' },
       { path: '/portability', label: 'Portability', icon: '📦', capability: 'manage_options' },
+      { path: '/gateway', label: 'Gateway', icon: '🌐', capability: 'manage_options' },
       {
         path: '/knowledge-graph',
         label: 'Knowledge Graph',

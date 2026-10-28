@@ -124,6 +124,9 @@ const TokenManagerPage = lazy(() =>
     default: m.TokenManagerPage,
   })),
 );
+
+// Host-local page (Proposal 094, Phase 5) — fleet gateway catalog + policy.
+const GatewayPage = lazy(() => import('./GatewayPage').then((m) => ({ default: m.GatewayPage })));
 const OrchestrationStatsPage = lazy(() =>
   import('@nvoos/pro-spa-v2/features/orchestration-stats/OrchestrationStatsPage').then((m) => ({
     default: m.OrchestrationStatsPage,
@@ -726,6 +729,18 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                     capabilities={runtime.user.capabilities}
                   >
                     <TokenManagerPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/gateway"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/gateway')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <GatewayPage />
                   </RequireGate>
                 }
               />

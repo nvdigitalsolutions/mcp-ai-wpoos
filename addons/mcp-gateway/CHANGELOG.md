@@ -1,7 +1,42 @@
 # Changelog — NV oOS MCP Gateway
 
-## Unreleased (on the 0.1.1 line — v1.1.99 window, PRs #6941–#6945)
+## Unreleased
 
+Follow-ups (later phases): Auth0 tenant provisioning (RFC 8414 + DCR +
+PKCE, scopes, consent); scripted PKCE end-to-end + ChatGPT "Add custom MCP
+server" test; registry re-publish via `mcp-publisher` (0.2.0 metadata);
+Hub-style create → test → publish lifecycle console (the Complete Console
+Gateway page shipped the read-only catalog in 0.2.0).
+
+## 0.2.0 — 2026-10-28
+
+- **Policy & governance layer (Proposal 094)** — the gateway grows from an
+  auth+proxy into a fleet governance point, all env/Git-configured,
+  fail-closed, and stdlib-only (no new dependencies):
+  - **Per-tool quotas** — `TOOL_QUOTAS=<pattern>:<rate>/<window>:<burst>`
+    token buckets scoped `(public key × site × tool)`, RFC 9558
+    `RateLimit-*` headers on every MCP response, 429 + JSON-RPC `-32099`
+    on breach, and a `peek()` dry-run path that never consumes tokens.
+  - **Policy rules engine** — declarative `allow | deny |
+    require_approval` rules over tool globs, site, key, time window (IANA
+    tz, day-of-week, midnight-crossing ranges), and geo country
+    (`CF-IPCountry` + static `GEO_MAP`); first-match-wins; `tools/list`
+    catalog filtering (denied tools never enter model context);
+    403 + `-32001` / 428 + `-32002` with a redacted preview.
+    `SHADOW_POLICY=1` evaluates + logs without enforcing.
+  - **W3C trace propagation** — the gateway starts or inherits a
+    `traceparent`, stamps it on every upstream request and log line, and
+    passes it through so gateway logs join per-site `trace_id` /
+    `correlation_id` audit trails on one ID.
+  - **Fleet audit sink** — optional `AUDIT_SINK_URL` + `AUDIT_SINK_SECRET`
+    HMAC-`sha256=` webhook (the platform OutboundWebhook pattern) emitting
+    `deny` / `quota_exceeded` / `require_approval` / `call_ok`; tool
+    arguments are never included; retry ×3 then drop, sink outage never
+    blocks calls.
+  - **Policy inspector** — operator-token `GET /admin/policy` +
+    `POST /admin/policy-sim` replaying a candidate policy against the
+    200-entry recorded-call ring buffer, plus `dryRun: true` on
+    `tools/call` returning the decision envelope without executing.
 - **OAuth 2.1 resource server (Phase 1)** — with `GATEWAY_OAUTH_ISSUER` set,
   the gateway becomes an RFC 9728 protected resource alongside static API
   keys (inert — 404 / unchanged 401s — when unconfigured): RFC 9728 metadata
@@ -27,11 +62,6 @@
 - **Icon** — `assets/mcp-gateway.svg` + `/assets` static serving
   (same-origin, 1-day cache) before the auth/404 layers; landing-page logo
   + favicon; Dockerfile copies the asset.
-
-Follow-ups (later phases): Auth0 tenant provisioning (RFC 8414 + DCR +
-PKCE, scopes, consent); scripted PKCE end-to-end + ChatGPT "Add custom MCP
-server" test; `server.json` + `mcp-publisher` registry submission
-(namespace decision); deployment guide + submission-pack doc updates.
 
 ## 0.1.1 — 2026-10-06
 

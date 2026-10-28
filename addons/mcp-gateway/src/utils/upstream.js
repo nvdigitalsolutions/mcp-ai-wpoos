@@ -14,11 +14,13 @@
  * @param {object} site     Site config: `{ slug, url, token }`.
  * @param {object} payload  JSON-RPC request/notification object.
  * @param {number} timeoutMs Timeout budget.
+ * @param {object} [extraHeaders] Additional headers to propagate
+ *                                (e.g. `traceparent`).
  * @return {Promise<object>} `{ ok, status, data }` — `data` is the parsed
  *                           JSON body (or null when empty), `ok` is false on
  *                           transport failure or non-2xx status.
  */
-export async function callUpstream( site, payload, timeoutMs = 20000 ) {
+export async function callUpstream( site, payload, timeoutMs = 20000, extraHeaders = {} ) {
 	const started = Date.now();
 	try {
 		const res = await fetch( site.url, {
@@ -27,6 +29,7 @@ export async function callUpstream( site, payload, timeoutMs = 20000 ) {
 				'Content-Type': 'application/json',
 				Accept: 'application/json',
 				Authorization: `Bearer ${ site.token }`,
+				...extraHeaders,
 			},
 			body: JSON.stringify( payload ),
 			signal: AbortSignal.timeout( timeoutMs ),
