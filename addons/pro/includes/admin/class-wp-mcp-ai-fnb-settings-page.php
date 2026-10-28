@@ -501,6 +501,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			</p>
 			<?php self::render_seed_notice(); ?>
 			<?php self::render_status_card(); ?>
+			<?php self::render_automap_review(); ?>
 			<form method="post" action="options.php">
 				<?php
 				settings_fields( self::SETTINGS_GROUP );
@@ -830,7 +831,13 @@ class WP_MCP_AI_Fnb_Settings_Page {
 	}
 
 	/**
-	 * Render the Table Sources section intro + auto-map review panel.
+	 * Render the Table Sources section intro.
+	 *
+	 * Rendered inside the main settings form, so it must never emit a <form>
+	 * element of its own — the HTML parser drops nested form tags and the inner
+	 * </form> closes the outer settings form early, orphaning every section
+	 * rendered after it. The proposal review panel therefore lives in
+	 * render_automap_review(), rendered before the main form opens.
 	 *
 	 * @return void
 	 */
@@ -850,7 +857,28 @@ class WP_MCP_AI_Fnb_Settings_Page {
 				<?php esc_html_e( 'Scans the default data folder plus every folder mapped below, then proposes a table per file with a confidence score for your review.', 'mcp-ai-wpoos-pro' ); ?>
 			</span>
 		</p>
-		<?php
+		<?php if ( ! empty( $proposals ) ) : ?>
+			<p class="description">
+				<?php esc_html_e( 'Pending mapping proposals are shown in the review panel above this form — apply or discard them there before saving.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			<?php
+			endif;
+	}
+
+	/**
+	 * Render the auto-map proposal review panel.
+	 *
+	 * Rendered by render_page() BEFORE the main settings form opens. HTML does
+	 * not allow nested forms: when this panel was rendered as a section callback
+	 * inside the options.php form, browsers dropped the inner <form> tag, so the
+	 * Apply and Discard buttons submitted the outer settings form instead of the
+	 * admin-post handler and the proposals could never be cleared.
+	 *
+	 * @return void
+	 */
+	public static function render_automap_review() {
+		$proposals = get_option( self::PROPOSALS_KEY, array() );
+		$proposals = is_array( $proposals ) ? $proposals : array();
 		if ( empty( $proposals ) ) {
 			return;
 		}
@@ -865,15 +893,19 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			}
 		}
 
-		$apply_url = wp_nonce_url( admin_url( 'admin-post.php?action=wp_mcp_ai_fnb_automap_apply' ), 'wp_mcp_ai_fnb_automap_apply' );
+		$apply_confirm   = __( 'Apply the selected mapping proposals to the Table Sources map? Existing operator mappings are kept unless overwrite is checked.', 'mcp-ai-wpoos-pro' );
+		$discard_confirm = __( 'Discard all mapping proposals?', 'mcp-ai-wpoos-pro' );
 		?>
 		<div class="card" style="max-width:none; margin-bottom:12px;">
 			<h3 style="margin-top:0;"><?php esc_html_e( 'Mapping proposals (review before applying)', 'mcp-ai-wpoos-pro' ); ?></h3>
-			<form method="post" action="<?php echo esc_url( $apply_url ); ?>">
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'wp_mcp_ai_fnb_automap_apply' ); ?>
+				<input type="hidden" name="action" value="wp_mcp_ai_fnb_automap_apply" />
+				<input type="hidden" name="discard" value="" />
 				<?php if ( ! empty( $high ) ) : ?>
 					<p>
 						<strong><?php esc_html_e( 'High confidence (auto-accept candidates)', 'mcp-ai-wpoos-pro' ); ?></strong>
-						<button type="submit" class="button button-primary">
+						<button type="button" class="button button-primary" onclick="if ( confirm( '<?php echo esc_js( $apply_confirm ); ?>' ) ) { this.closest('form').submit(); }">
 							<?php esc_html_e( 'Apply accepted mappings', 'mcp-ai-wpoos-pro' ); ?>
 						</button>
 					</p>
@@ -892,7 +924,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 						<tbody>
 							<?php foreach ( $high as $proposal ) : ?>
 								<tr>
-									<td><input type="checkbox" name="proposals[<?php echo esc_attr( $proposal['table_id'] ); ?>]" value="1" checked></td>
+									<td><input type="checkbox" name="proposals[]" value="<?php echo esc_attr( $proposal['table_id'] ); ?>" checked></td>
 									<td><?php echo esc_html( $proposal['table_id'] . ' · ' . self::table_label( $proposal['table_id'] ) ); ?></td>
 									<td><?php echo esc_html( '' !== $proposal['connection_id'] ? self::connection_label( $proposal['connection_id'] ) : __( '(default)', 'mcp-ai-wpoos-pro' ) ); ?></td>
 									<td><code><?php echo esc_html( $proposal['folder_id'] ); ?></code></td>
@@ -922,7 +954,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 						<tbody>
 							<?php foreach ( $low as $proposal ) : ?>
 								<tr>
-									<td><input type="checkbox" name="proposals[<?php echo esc_attr( $proposal['table_id'] ); ?>]" value="1"></td>
+									<td><input type="checkbox" name="proposals[]" value="<?php echo esc_attr( $proposal['table_id'] ); ?>"></td>
 									<td><?php echo esc_html( $proposal['table_id'] . ' · ' . self::table_label( $proposal['table_id'] ) ); ?></td>
 									<td><?php echo esc_html( '' !== $proposal['connection_id'] ? self::connection_label( $proposal['connection_id'] ) : __( '(default)', 'mcp-ai-wpoos-pro' ) ); ?></td>
 									<td><code><?php echo esc_html( $proposal['folder_id'] ); ?></code></td>
@@ -942,8 +974,8 @@ class WP_MCP_AI_Fnb_Settings_Page {
 					</label>
 				</p>
 				<p>
-					<button type="submit" class="button button-primary"><?php esc_html_e( 'Apply accepted mappings', 'mcp-ai-wpoos-pro' ); ?></button>
-					<button type="submit" name="discard" value="1" class="button"><?php esc_html_e( 'Discard proposals', 'mcp-ai-wpoos-pro' ); ?></button>
+					<button type="button" class="button button-primary" onclick="if ( confirm( '<?php echo esc_js( $apply_confirm ); ?>' ) ) { this.closest('form').submit(); }"><?php esc_html_e( 'Apply accepted mappings', 'mcp-ai-wpoos-pro' ); ?></button>
+					<button type="button" class="button" onclick="if ( confirm( '<?php echo esc_js( $discard_confirm ); ?>' ) ) { this.closest('form').querySelector('input[name=discard]').value = '1'; this.closest('form').submit(); }"><?php esc_html_e( 'Discard proposals', 'mcp-ai-wpoos-pro' ); ?></button>
 				</p>
 			</form>
 		</div>
@@ -976,6 +1008,30 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		$connections = self::drive_connections();
 
 		return isset( $connections[ $connection_id ] ) ? $connections[ $connection_id ] . ' (' . $connection_id . ')' : $connection_id;
+	}
+
+	/**
+	 * Redirect and terminate the request.
+	 *
+	 * Mirrors the repo-wide redirect_and_exit() contract: when the
+	 * `wp_redirect` filter short-circuits the redirect — how the PHPUnit
+	 * suite captures redirects — the request aborts via WPDieException
+	 * instead of a bare exit killing the test process.
+	 *
+	 * @param string $location Redirect target URL.
+	 * @return void
+	 *
+	 * @throws WPDieException When running under PHPUnit and the redirect is blocked.
+	 */
+	private static function redirect_and_exit( $location ) {
+		if ( wp_safe_redirect( $location ) ) {
+			exit;
+		}
+
+		if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING && class_exists( 'WPDieException' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- the exception message is not rendered anywhere; it only aborts the request flow under tests.
+			throw new WPDieException( is_string( $location ) ? $location : '' );
+		}
 	}
 
 	/**
@@ -1146,8 +1202,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 				60
 			);
 
-			wp_safe_redirect( self::settings_url() );
-			exit;
+			self::redirect_and_exit( self::settings_url() );
 		}
 
 		// A pair with an empty connection_id resolves through the site-wide
@@ -1217,8 +1272,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			60
 		);
 
-		wp_safe_redirect( self::settings_url() );
-		exit;
+		self::redirect_and_exit( self::settings_url() );
 	}
 
 	/**
@@ -1249,14 +1303,19 @@ class WP_MCP_AI_Fnb_Settings_Page {
 				60
 			);
 
-			wp_safe_redirect( self::settings_url() );
-			exit;
+			self::redirect_and_exit( self::settings_url() );
 		}
 
-		$raw      = isset( $_POST['proposals'] ) ? (array) wp_unslash( $_POST['proposals'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Keys sanitised below; values are the constant string "1".
+		// Table IDs travel as checkbox VALUES ("6.0", "2.0", …), never as
+		// form key segments: sanitize_key() on a dotted key ("6.0" → "60")
+		// silently mismatches every spec table and the apply becomes a no-op.
+		$raw      = isset( $_POST['proposals'] ) ? (array) wp_unslash( $_POST['proposals'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each element is sanitised with sanitize_text_field() in the loop below.
 		$selected = array();
-		foreach ( $raw as $table_id => $value ) {
-			$selected[ sanitize_key( (string) $table_id ) ] = $value;
+		foreach ( $raw as $value ) {
+			$value = sanitize_text_field( (string) $value );
+			if ( '' !== $value ) {
+				$selected[] = $value;
+			}
 		}
 		$overwrite = ! empty( $_POST['overwrite'] );
 		$proposals = get_option( self::PROPOSALS_KEY, array() );
@@ -1270,7 +1329,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 		$skipped = 0;
 		foreach ( $proposals as $proposal ) {
 			$table_id = (string) $proposal['table_id'];
-			if ( empty( $selected[ $table_id ] ) ) {
+			if ( ! in_array( $table_id, $selected, true ) ) {
 				++$skipped;
 				continue;
 			}
@@ -1303,8 +1362,7 @@ class WP_MCP_AI_Fnb_Settings_Page {
 			60
 		);
 
-		wp_safe_redirect( self::settings_url() );
-		exit;
+		self::redirect_and_exit( self::settings_url() );
 	}
 
 	/**
