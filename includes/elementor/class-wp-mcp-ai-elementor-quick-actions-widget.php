@@ -463,6 +463,22 @@ class WP_MCP_AI_Elementor_Quick_Actions_Widget extends \Elementor\Widget_Base {
 		$settings   = $this->get_settings_for_display();
 		$categories = $this->get_categorized_tools();
 
+		/*
+		 * Enqueue the widget assets explicitly. The handler only enqueues them
+		 * eagerly inside the Elementor editor / preview, so live pages rely on
+		 * this call — Elementor's Improved Asset Loading can skip the
+		 * get_script_depends() / get_style_depends() handles during its
+		 * optimisation pass (same reason the chat bubble widget enqueues its
+		 * own assets in render()).
+		 */
+		wp_enqueue_style( 'wp-mcp-ai-quick-actions-widget' );
+		wp_enqueue_script( 'wp-mcp-ai-quick-actions-widget' );
+
+		// The widget offers a media-library picker for users who can upload.
+		if ( current_user_can( 'upload_files' ) ) {
+			wp_enqueue_media();
+		}
+
 		$widget_id = 'wp-mcp-ai-quick-actions-' . $this->get_id();
 
 		?>
