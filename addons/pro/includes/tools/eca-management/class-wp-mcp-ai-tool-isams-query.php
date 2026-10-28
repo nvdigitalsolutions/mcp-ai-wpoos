@@ -217,12 +217,13 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$api_key    = ! empty( $connection['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] ) : '';
 			$api_secret = ! empty( $connection['api_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] ) : '';
 		} else {
-			// A restricted assistant cannot fall back to the site-wide settings:
-			// the assistant editor can only grant named Remote Sites connections.
-			if ( null !== $this->get_allowed_connection_ids( $context ) ) {
+			// A restricted assistant may only fall back to the site-wide settings
+			// when the assistant editor granted the "settings" row.
+			$allowed_ids = $this->get_allowed_connection_ids( $context );
+			if ( null !== $allowed_ids && ! in_array( 'settings', $allowed_ids, true ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_isams_settings_not_allowed',
-					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide iSAMS settings cannot be used. Enable an iSAMS connection for the assistant in the assistant editor (Remote Site Connections) and pass its connection_id.', 'mcp-ai-wpoos-pro' ),
+					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide iSAMS settings cannot be used. Enable the site-wide iSAMS settings row (or an iSAMS connection) for the assistant in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 403 )
 				);
 			}
