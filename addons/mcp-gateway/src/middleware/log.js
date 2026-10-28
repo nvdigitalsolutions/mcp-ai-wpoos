@@ -26,6 +26,7 @@ export function requestLogger( req, res, next ) {
 			JSON.stringify( {
 				ts: new Date().toISOString(),
 				id: req.id,
+				traceId: req.traceId || null,
 				key: req.gatewayKeyId || null, // set by the auth middleware
 				sites: req.gatewaySites || null,
 				method: req.method,

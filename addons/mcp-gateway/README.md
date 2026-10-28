@@ -36,6 +36,9 @@ Deployment target: **Cloudways Velocity** (managed Node hosting) at
 | `POST /mcp` | Bearer key | JSON-RPC 2.0 (initialize, ping, notifications, tools/list, tools/call, resources/*, prompts/*) |
 | `GET /health` | public | Minimal status + per-site health registry |
 | `GET /health/full` | Bearer key | Full view (host-only URLs, bindings) |
+| `GET /admin/policy` | Operator token | Effective policy + quota table (read-only) |
+| `POST /admin/policy-sim` | Operator token | Replay a candidate policy against recorded calls |
+| `GET /admin/catalog` | Operator token | Fleet catalog with per-site lifecycle states |
 | `GET /` | public | Human landing page (directory reviewers) |
 
 ## Configuration (env only)
@@ -56,6 +59,14 @@ Deployment target: **Cloudways Velocity** (managed Node hosting) at
 | `ALLOWED_ORIGINS` | no | Comma-separated CORS origins for browser-based clients |
 | `MAX_JSON_BODY` | no | Body limit (default `1mb`) |
 | `RATE_LIMIT_GLOBAL` / `_MCP` / `_HEALTH` | no | Per-group budgets (defaults 600/5min, 120/min, 60/min) |
+| `TOOL_QUOTAS` | no | Per-tool quotas, compact form: `<pattern>:<rate>/<window>:<burst>` — e.g. `delete_post:5/1h:2,woo_*:60/1m:*`. Most-specific pattern wins. (Proposal 094) |
+| `GATEWAY_POLICY` | no | Policy ruleset (JSON string) — see the policy reference below. (Proposal 094) |
+| `POLICY_FILE` | no | Alternative: path to a JSON policy file (Git-versioned policy, read at boot). |
+| `SHADOW_POLICY` | no | Shadow ruleset (JSON string) — evaluated and logged, never enforced. |
+| `GEO_MAP` | no | JSON object mapping public key ids to ISO country codes (used when not behind a trusted proxy). |
+| `GATEWAY_ADMIN_TOKEN` | no | Operator token enabling the `/admin/*` surface (inert without it). |
+| `AUDIT_SINK_URL` / `AUDIT_SINK_SECRET` | no | HMAC-signed webhook for governance events (deny, quota_exceeded, call_ok…). Must be set together. |
+| `SITE_LIFECYCLE` | no | Per-site catalog states: `slug-a:draft,slug-b:published` (default `published`). |
 
 Slug → env suffix mapping: `site-a` → `NVOOS_SITE_SITE_A_*` (uppercase,
 hyphens → underscores).
@@ -70,8 +81,55 @@ AUTH_MODE=strict
 TRUST_PROXY=1
 ```
 
-## Tool namespacing
+## Policy & quotas (Proposal 094)
 
+Per-tool quotas and declarative policy ride on top of the group budgets.
+Sites remain the deep enforcement layer (per-tool RPM, token budgets,
+iteration caps, capability boundaries, nefarious-usage auto-shutdown) —
+the gateway adds the fleet layer and can only tighten, never weaken.
+
+### Quotas
+
+```env
+TOOL_QUOTAS=delete_post:5/1h:2,woo_*:60/1m:*,*:600/5m:*
+```
+
+Breaches return HTTP 429 + RFC 9558 headers
+(`RateLimit-Limit/Remaining/Reset`, `RateLimit-Policy`) with the JSON-RPC
+error `-32099`. Buckets are scoped `(key × site × tool)` — one noisy key
+cannot exhaust another's budget.
+
+### Policy grammar
+
+```json
+{
+  "rules": [
+    {
+      "id": "no-night-deletes",
+      "effect": "deny",
+      "tool": { "match": "delete_*" },
+      "time": { "window": { "tz": "Europe/London", "days": [1,2,3,4,5], "start": "09:00", "end": "17:00" } }
+    }
+  ]
+}
+```
+
+First match wins. Effects: `deny` (403 + `-32001`), `require_approval`
+(428 + `-32002` with a redacted preview). Conditions: `tool.match` (glob),
+`site`, `key`, `time.window` (IANA tz, ISO weekdays 1–7, midnight-crossing
+windows), `geo.country` (ISO alpha-2). Denied tools are filtered out of
+`tools/list` entirely (kept out of model context).
+
+### Inspection
+
+- `dryRun: true` on `tools/call` evaluates policy + quotas without
+executing or consuming — the result carries `would_execute`, `policy`, and
+`quota`.
+- `POST /admin/policy-sim` replays a candidate policy against the last 200
+recorded calls (argument keys only) and diffs it against the live policy.
+- `SHADOW_POLICY` evaluates in parallel and logs — never enforces.
+
+## Tool namespacing
 - `tools/list` merges every site bound to the key and prefixes names:
   `site-a.create_post`, `site-b.woo_get_products`.
 - `tools/call` accepts the prefixed name (always) or a bare name when the

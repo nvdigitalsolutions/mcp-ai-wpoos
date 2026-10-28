@@ -38,7 +38,32 @@
  *   GATEWAY_OAUTH_RESOURCE         RFC 8707 resource identifier — the
  *                                  canonical audience for access tokens
  *                                  (default https://mcp.nvoos.pro).
+ *   TOOL_QUOTAS                    Per-tool quotas, compact form:
+ *                                  `<pattern>:<rate>/<window>:<burst>` —
+ *                                  e.g. `delete_post:5/1h:2,woo_*:60/1m:*`.
+ *                                  Most-specific pattern wins; `*` bursts
+ *                                  equal the rate. (Proposal 094, Phase 1.)
+ *   GATEWAY_POLICY                 Policy ruleset (JSON string) — first-match
+ *                                  wins with allow/deny/require_approval
+ *                                  effects and tool/site/key/time/geo
+ *                                  conditions. (Proposal 094, Phase 2.)
+ *   POLICY_FILE                    Alternative: path to a JSON policy file
+ *                                  (Git-versioned policy; read at boot).
+ *   SHADOW_POLICY                  Shadow ruleset (JSON string) — evaluated
+ *                                  and logged, never enforced. (Phase 4.)
+ *   GEO_MAP                        JSON object mapping public key ids to ISO
+ *                                  country codes (used when not behind a
+ *                                  trusted proxy edge).
+ *   GATEWAY_ADMIN_TOKEN            Operator token for the /admin/* surface
+ *                                  (policy inspection, simulation, catalog).
+ *   SITE_LIFECYCLE                 Per-site lifecycle states for the catalog:
+ *                                  `slug-a:draft,slug-b:published`.
  */
+
+import fs from 'node:fs';
+import { parseToolQuotas } from '../quota/config.js';
+import { parsePolicy } from '../policy/evaluator.js';
+import { parseGeoMap } from '../policy/geo.js';
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,39}$/;
 const MIN_KEY_LENGTH = 16;
@@ -239,7 +264,96 @@ export function loadConfig( env = process.env ) {
 	// ── OAuth 2.1 resource server (opt-in, inert unless configured) ──
 	const oauth = parseOAuthConfig( env, errors );
 
-	return { keys, previousKeys, sites, oauth, errors };
+	// ── Per-tool quotas (Proposal 094, Phase 1) ─────────────────────
+	const quotas = parseToolQuotas( env.TOOL_QUOTAS, errors );
+
+	// ── Policy & governance (Proposal 094, Phases 2–5) ──────────────
+	const policy = parsePolicy( loadPolicySource( env, errors ), errors );
+	const shadowPolicy = parsePolicy( String( env.SHADOW_POLICY || '' ).trim(), errors );
+	const geoMap = parseGeoMap( env.GEO_MAP, errors );
+	const adminToken = String( env.GATEWAY_ADMIN_TOKEN || '' ).trim();
+	const trustProxy = '1' === env.TRUST_PROXY;
+	const siteLifecycle = parseSiteLifecycle( env.SITE_LIFECYCLE, errors );
+	const auditSinkUrl = String( env.AUDIT_SINK_URL || '' ).trim();
+	const auditSinkSecret = String( env.AUDIT_SINK_SECRET || '' ).trim();
+	if ( Boolean( auditSinkUrl ) !== Boolean( auditSinkSecret ) ) {
+		errors.push( 'AUDIT_SINK_URL and AUDIT_SINK_SECRET must be set together.' );
+	}
+
+	return {
+		keys,
+		previousKeys,
+		sites,
+		oauth,
+		quotas,
+		policy,
+		shadowPolicy,
+		geoMap,
+		adminToken,
+		trustProxy,
+		siteLifecycle,
+		auditSinkUrl,
+		auditSinkSecret,
+		errors,
+	};
+}
+
+/**
+ * Resolve the policy source: inline GATEWAY_POLICY wins; otherwise
+ * POLICY_FILE is read from disk (Git-versioned policy).
+ *
+ * @param {object}   env    Env object.
+ * @param {string[]} errors Shared error collector.
+ * @return {string} Policy JSON, or '' when unset/unreadable.
+ */
+function loadPolicySource( env, errors ) {
+	const inline = String( env.GATEWAY_POLICY || '' ).trim();
+	if ( inline ) {
+		return inline;
+	}
+	const file = String( env.POLICY_FILE || '' ).trim();
+	if ( ! file ) {
+		return '';
+	}
+	try {
+		return fs.readFileSync( file, 'utf8' );
+	} catch ( err ) {
+		errors.push( `POLICY_FILE could not be read: ${ err.message }` );
+		return '';
+	}
+}
+
+/** Lifecycle states the catalog recognises. */
+const LIFECYCLE_STATES = new Set( [ 'draft', 'test', 'published', 'retired' ] );
+
+/**
+ * Parse SITE_LIFECYCLE (`slug-a:draft,slug-b:published`). Unknown states are
+ * reported; unset values default to `published` at read time.
+ *
+ * @param {string}   raw    Raw env value.
+ * @param {string[]} errors Shared error collector.
+ * @return {Map<string, string>} slug → state.
+ */
+export function parseSiteLifecycle( raw, errors = [] ) {
+	const map = new Map();
+	if ( ! raw || ! String( raw ).trim() ) {
+		return map;
+	}
+	for ( const entry of String( raw ).split( ',' ) ) {
+		const trimmed = entry.trim();
+		if ( ! trimmed ) {
+			continue;
+		}
+		const [ slug, state ] = trimmed.split( ':' ).map( ( part ) => part.trim() );
+		if ( ! slug || ! LIFECYCLE_STATES.has( state ) ) {
+			errors.push(
+				`SITE_LIFECYCLE entry "${ trimmed }" must be <slug>:<draft|test|published|retired>.`
+			);
+			continue;
+		}
+		map.set( slug, state );
+	}
+	return map;
 }
 
 /**

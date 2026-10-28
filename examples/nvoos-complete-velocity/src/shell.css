@@ -1164,3 +1164,41 @@ body,
   opacity: 0.6;
   cursor: default;
 }
+
+/* ---------- Gateway page (Proposal 094, Phase 5) ---------- */
+.nvoos-gateway-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0.75rem 0 1.5rem;
+	font-size: 0.9rem;
+}
+.nvoos-gateway-table th,
+.nvoos-gateway-table td {
+	text-align: left;
+	padding: 0.45rem 0.6rem;
+	border-bottom: 1px solid var(--nvoos-line, #e3e7ef);
+}
+.nvoos-gateway-table th {
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #718096;
+}
+.nvoos-gateway-badge {
+	display: inline-block;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	border: 1px solid;
+	border-radius: 999px;
+	padding: 0.12rem 0.5rem;
+}
+.nvoos-gateway-empty,
+.nvoos-gateway-error {
+	max-width: 44rem;
+	line-height: 1.6;
+}
+.nvoos-gateway-error {
+	color: #b91c1c;
+}
