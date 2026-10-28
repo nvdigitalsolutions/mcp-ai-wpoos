@@ -298,3 +298,5 @@ docs/videos/narration/audio/
 /projects/
 /.perf-kaya/
 /.perf-tp/
+/kaya-*
+/tp-*
