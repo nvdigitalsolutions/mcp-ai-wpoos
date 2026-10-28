@@ -12,10 +12,9 @@
  *     burst    burst capacity (integer ≥ 1, or `*` = same as rate)
  *
  * The same quotas can be provided in JSON through the shared policy file
- * (GATEWAY_POLICY / POLICY_FILE — parsed by src/policy/config.js).
+ * (GATEWAY_POLICY / POLICY_FILE — parsed by src/policy/evaluator.js).
  */
 
-/** One compiled quota rule. */
 /**
  * Parse one window token (`5m`) to milliseconds.
  *
