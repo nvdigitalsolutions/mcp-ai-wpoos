@@ -1,7 +1,7 @@
 # Proposal 094 — MCP Gateway Policy & Governance Layer (Implementation Plan)
 
 **Date:** 2026-10-28
-**Status:** ✅ IMPLEMENTED — all six phases shipped 2026-10-28 on `feat/mcp-gateway-policy-governance` (PR link). Phases 0–5 landed in one PR (they were smaller than estimated and share the evaluation pipeline); Phase 6 = this docs/deploy close-out.
+**Status:** ✅ IMPLEMENTED — all six phases shipped 2026-10-28 on `feat/mcp-gateway-policy-governance` (PR #7269 → `alpha-working`). Phases 0–5 landed in one PR (they were smaller than estimated and share the evaluation pipeline); Phase 6 = this docs/deploy close-out.
 **Related:** [094-mcp-gateway-policy-governance-proposal.md](./094-mcp-gateway-policy-governance-proposal.md), [055-nvoos-mcp-gateway-implementation-plan.md](./055-nvoos-mcp-gateway-implementation-plan.md)
 
 ---

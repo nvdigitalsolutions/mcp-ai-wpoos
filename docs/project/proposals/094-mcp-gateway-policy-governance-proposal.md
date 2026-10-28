@@ -1,7 +1,7 @@
 # Proposal 094 — MCP Gateway Policy & Governance Layer
 
 **Date:** 2026-10-28
-**Status:** ✅ IMPLEMENTED — shipped 2026-10-28 on `feat/mcp-gateway-policy-governance` (PR link)
+**Status:** ✅ IMPLEMENTED — shipped 2026-10-28 on `feat/mcp-gateway-policy-governance` (PR #7269 → `alpha-working`)
 **Estimated Effort:** 5–7 dev-days (Phases 0–6) + ~1 day Velocity deploy & registry updates
 **Priority:** MEDIUM-HIGH
 **Related:** [055-nvoos-mcp-gateway-proposal.md](./055-nvoos-mcp-gateway-proposal.md),
