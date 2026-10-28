@@ -114,6 +114,57 @@ the same audits — apply these instead:
 
 ## CLS
 
+### Elementor/JupiterX header nav-menu first-paint "flash" (VERIFIED 2026-10-29)
+
+Symptom: PSI reports a big shift (0.35) on the header nav row
+(`elementor-widget-wrap elementor-element-populated` containing the menu
+items), persisting AFTER font-display and entrance-animation fixes. On mobile,
+the user reports "the menu flashes on the page".
+
+Root cause: on the very first layout the linked Elementor CSS has not been
+applied yet, so the nav `<ul>` renders as an unstyled block with ALL
+`.elementor-nav-menu--dropdown` sub-menus VISIBLE — the header renders at its
+expanded height (measured 1202px on kayaherbhouse.com) and then collapses to
+its final height (~170px) when the CSS lands. On PSI's throttled cold run the
+intermediate state persists for seconds and gets painted = the CLS. JupiterX
+sticky headers render a second header template (same menu pattern) inside the
+same wrapper — that is the "mobile menu flash" (hidden-mobile also comes from
+the late CSS).
+
+Diagnosis (this is how it was found): instrument the first frame —
+`addInitScript` + rAF loop recording `getBoundingClientRect()` of the header/
+nav/dropdowns from the very first frame; the flash shows as a huge height
+change (1202px → 170px) plus `display:block` on dropdowns at frame 1. Do NOT
+rely on warm-cache runs alone — the window is only ~130ms warm but seconds
+cold. Also verify with the HTML: two `<header data-elementor-id>` templates
+inside one `.jupiterx-header` wrapper + a `wp-custom-css` rule hiding one of
+them.
+
+**Flatsome does NOT exhibit this** (VERIFIED theparfumerie.lk 2026-10-29):
+~10 stylesheets, mobile menu `mfp-hide` already `display:none` at frame 1,
+header stable at its final height from the first frame, mega dropdowns
+`display:table` + absolute (no layout impact). Skip the fix on Flatsome; keep
+the probe as the diagnostic.
+
+Fix: inline critical CSS in `wp_head` that replicates Elementor's FINAL state
+from the first layout (inline styles need no fetch, so they apply before the
+linked CSS):
+
+```css
+.jupiterx-header .elementor-nav-menu--dropdown,
+.jupiterx-header .sub-menu { display: none; }
+.jupiterx-header .elementor-nav-menu--layout-horizontal .elementor-nav-menu { display: flex; flex-wrap: wrap; }
+.elementor-invisible { visibility: hidden; }
+@media (max-width: 767px) { .elementor-hidden-mobile { display: none; } }
+@media (min-width: 768px) and (max-width: 1024px) { .elementor-hidden-tablet { display: none; } }
+```
+
+**NO `!important` on the dropdown hide** — SmartMenus opens sub-menus by
+setting inline `display:block`, which must keep winning (verified: hover-open
+still works with the plain rule). Verify by re-running the first-frame probe:
+first-frame height must equal final height, and manually setting
+`dd.style.display='block'` must still show `block`.
+
 ### Avoid large layout shifts / explicit width & height
 
 Common WordPress culprits:
@@ -125,6 +176,31 @@ Common WordPress culprits:
   move them below the fold.
 - **Font swap** on large display headings: see "webfont load" below.
 
+### "Media element lacking an explicit size" — verify before trusting the report
+
+Check the CURRENT served HTML first: if the `<img>` already has `width`/`height`
+attributes (computed `aspect-ratio: auto W / H`), the audit cannot fire — the
+PSI run is stale or hit an edge-cached copy. Prove space is reserved:
+`img.removeAttribute('src')` and confirm the wrapper's `getBoundingClientRect()`
+is unchanged. Cloudflare APO serves stale HTML (`Age: N`, `cf-cache-status:
+HIT`) — purge and re-run PSI before believing a report.
+
+**Misplaced `fetchpriority="high"` (VERIFIED kaya 2026-10-29 + parfumerie
+2026-10-29):** a high-priority attribute on a hidden/below-fold image
+(image-box at 5,400px down; mega-menu banner inside a hidden dropdown)
+competes with the LCP for download priority. Detection: grep the HTML for
+`<img ... fetchpriority` and check WHERE the image sits. Two verified facts:
+- The `wp_get_attachment_image_attributes` filter at 999 did NOT remove it
+  on kaya — the injection path bypasses the filter (widget had no saved
+  settings, so it is not an Elementor control either). Don't rely on it.
+- The GUARANTEED fix is the output-buffer strip (verified live on both
+  sites): `template_redirect` priority 9999, `preg_replace_callback` over
+  `<img\b[^>]*>` removing the attribute — `<link rel="preload"
+  fetchpriority="high">` hero preloads are LINK elements and are untouched,
+  which is exactly right. Also: hardcoded hero-preload URLs ROT when
+  campaign banners change — document the update step in the snippet or make
+  the URL dynamic.
+
 ### Ensure text remains visible during webfont load (font-display)
 
 - Elementor Pro Custom Fonts: `add_filter( 'elementor_pro_custom_fonts_font_display', fn() => 'swap' );`
@@ -134,6 +210,29 @@ Common WordPress culprits:
   family/weight/style/src) with `font-display: swap` in a `wp_head` style
   block or the child theme CSS — the browser uses the last matching
   declaration. See `templates/optimization-snippet.php` block 2.
+- **`swap` alone does NOT fix font CLS** — the shift is the fallback text
+  occupying a different width than the webfont. Fix with metric-matched
+  fallback faces (`size-adjust`), VERIFIED 2026-10-29 on kayaherbhouse.com:
+  1. Measure the webfont vs the system fallback with fontTools (avg advance
+     over the ACTUAL strings rendered — all-caps menu text, accented chars).
+  2. Declare fallback faces: one with
+     `src: local('Arial'), local('Helvetica Neue'), local('Helvetica')`
+     (metric-identical family) and one with `src: local('Roboto')` for
+     Android — each with its OWN `size-adjust` (the browser uses the first
+     face whose local() font exists).
+  3. Push the fallback into the stacks:
+     `font-family: "chartrand", "chartrand-fallback", sans-serif` — the old
+     stacks end at the custom family with NO generic, so the pre-swap text
+     renders in the default serif (far wider) → menu wraps → the shift.
+  4. **Tune the numbers LIVE in the browser, not just fontTools** — kerning
+     and per-string glyph mixes make measured ratios authoritative. Render
+     the same string in webfont vs fallback face, and correct size-adjust by
+     the width ratio. Sub-1% deltas are the goal (achieved: nav -0.46%,
+     headings 0%).
+  5. Vertical overrides (`ascent-override` etc.) are often UNNECESSARY: when
+     the theme sets a global unitless line-height (JupiterX does, ~1.15),
+     box heights are CSS-driven, not font-metric-driven — check the site
+     before adding them.
 - Theme fonts: check the child theme's `style.css` @font-face blocks — they
   often omit `font-display` entirely (defaults to `auto`). Add `font-display:
   swap;` to each rule (curl the live stylesheet to verify; you can't see it
@@ -275,6 +374,14 @@ have long TTLs via Breeze/CDN headers).
 - **Breeze**: cache active + prefetch-links with a proper ignore list is the
   right baseline. Lazy-load images via Breeze only after the hero/LCP image
   is excluded or set eager.
+- **Cloudflare APO stale-HTML trap (VERIFIED 2026-10-29)**: after deploying
+  a snippet, the canonical URL can keep serving the OLD HTML from the edge
+  cache (`Age: N` seconds, `cf-cache-status: HIT`, `Cf-Apo-Via: tcache`).
+  Verify with a cache-buster query string (`?v=<n>`) and `grep` the raw HTML
+  for the new markers; a browser check alone can silently show the stale
+  copy. Purge via the Cloudflare API (`POST /zones/:zone_id/purge_cache`
+  with `purge_everything: true`) or dashboard, then confirm
+  `cf-cache-status: MISS` on the canonical URL.
 - **Cache-busting anti-pattern**: `rand()`/`time()` as enqueue versions force
   a re-download every page view and defeat CDN caching. Replace with
   `(string) ( filemtime( $file ) ?: 1 )`.
@@ -297,6 +404,14 @@ have long TTLs via Breeze/CDN headers).
 - [ ] Snippet has `defined( 'ABSPATH' ) || exit;` guard
 - [ ] Risky blocks commented with staging warnings
 - [ ] Only blocks matching this site's findings are included
+- [ ] **WPCode comment trap (hard rule, verified 2026-10-28 site-wide outage):**
+      WPCode evaluates all active snippets in ONE combined instance — a
+      slash-star comment containing the literal `*/` sequence terminates
+      early and turns a later `?>` inside the comment into a real PHP
+      closing tag, breaking EVERY snippet on the site. Never put `*/`
+      inside a block comment (escaped `\/` is safe), never emit a real
+      `?>` close tag, and before deploy run `php -l` + scan for close tags
+      in code position (all `?>` must sit inside strings/comments).
 - [ ] HTML report validates (no mismatched/unclosed tags)
 - [ ] New GTmetrix PDF archived for the next before/after diff
 - [ ] Anything unverifiable is stated with next steps (not guessed)
