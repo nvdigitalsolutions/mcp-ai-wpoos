@@ -135,7 +135,11 @@ class WP_MCP_AI_Shortcode {
 		$style_version             = $this->get_asset_version( $style_relative );
 		$cron_status_style_version = $this->get_asset_version( $cron_status_style_relative );
 
-		// Register cron status styles (still needed for CSS).
+		// Register cron status styles for the admin dashboards and the
+		// front-end jobs counter, which enqueue the handle explicitly.
+		// Deliberately NOT a dependency of the chat style: declaring it as
+		// one dragged the admin status-UI stylesheet onto every front-end
+		// page that enqueues the chat interface (issue #7270).
 
 		wp_register_style(
 			'wp-mcp-ai-cron-status',
@@ -147,7 +151,7 @@ class WP_MCP_AI_Shortcode {
 		wp_register_style(
 			self::STYLE_HANDLE,
 			$style_path,
-			array( 'wp-mcp-ai-cron-status' ), // Depend on cron status CSS.
+			array(),
 			$style_version
 		);
 
@@ -1074,6 +1078,14 @@ class WP_MCP_AI_Shortcode {
 			wp_enqueue_script( self::SCRIPT_HANDLE );
 			wp_enqueue_style( self::STYLE_HANDLE );
 			wp_enqueue_style( 'wp-mcp-ai-voice-chat' );
+
+			// The jobs counter is only populated for authenticated users (the
+			// cron-status REST route requires authentication), so enqueue its
+			// stylesheet only when the counter can actually render — anonymous
+			// visitors no longer download cron-status.css (issue #7270).
+			if ( is_user_logged_in() ) {
+				wp_enqueue_style( 'wp-mcp-ai-cron-status' );
+			}
 
 			// Enqueue voice mode integration when voice mode is enabled.
 			if ( isset( $settings['voice_mode'] ) && 'off' !== $settings['voice_mode'] ) {

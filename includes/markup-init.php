@@ -71,24 +71,48 @@ add_action(
 );
 
 /**
- * Auto-enqueue the chat client integration shim alongside the main
- * chat bundle so SSE `markup_elicitation` events render the canvas
- * widget without modifications to the chat bundle.
+ * Auto-enqueue the chat client integration shim alongside the main chat
+ * bundle so SSE `markup_elicitation` events render the canvas widget
+ * without modifications to the chat bundle.
+ *
+ * Runs just before wp_print_footer_scripts() (priority 20) because the
+ * shortcode and Elementor widgets enqueue the chat bundle while the page
+ * content renders — after `wp_enqueue_scripts` has already fired. Gating on
+ * `enqueued` here (instead of `registered`) means the Konva stack ships only
+ * on pages where the chat actually loads, not on every front-end page that
+ * merely has the assets registered (issue #7270).
  */
 add_action(
-	'wp_enqueue_scripts',
+	'wp_footer',
 	static function () {
 		if ( ! class_exists( 'WP_MCP_AI_Markup_Loop_Interceptor' ) ||
 			! WP_MCP_AI_Markup_Loop_Interceptor::is_enabled() ) {
 			return;
 		}
-		$chat_handle = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? 'wp-mcp-ai-chat' : 'wp-mcp-ai-chat';
-		if ( wp_script_is( $chat_handle, 'enqueued' ) ||
-			wp_script_is( $chat_handle, 'registered' ) ) {
+		$chat_handle = 'wp-mcp-ai-chat';
+		if ( wp_script_is( $chat_handle, 'enqueued' ) ) {
 			WP_MCP_AI_Markup_Assets::enqueue_widget();
+			return;
+		}
+
+		// Some surfaces enqueue the chat bundle indirectly, as a dependency of
+		// their own script (e.g. the Page Agent bridge), rather than calling
+		// wp_enqueue_script( 'wp-mcp-ai-chat' ) directly. Treat a queued script
+		// that declares the chat bundle as a dependency the same as an enqueued
+		// chat bundle.
+		global $wp_scripts;
+		if ( ! $wp_scripts instanceof WP_Scripts ) {
+			return;
+		}
+		foreach ( (array) $wp_scripts->queue as $queued ) {
+			$registered = isset( $wp_scripts->registered[ $queued ] ) ? $wp_scripts->registered[ $queued ] : null;
+			if ( $registered && is_array( $registered->deps ) && in_array( $chat_handle, $registered->deps, true ) ) {
+				WP_MCP_AI_Markup_Assets::enqueue_widget();
+				return;
+			}
 		}
 	},
-	20
+	19
 );
 
 /**

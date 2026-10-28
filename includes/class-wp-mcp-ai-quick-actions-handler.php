@@ -46,22 +46,31 @@ class WP_MCP_AI_Quick_Actions_Handler {
 	}
 
 	/**
-	 * Enqueue widget assets.
+	 * Register and conditionally enqueue widget assets.
+	 *
+	 * The handles are registered on every Elementor (or admin) request so the
+	 * Elementor widget's get_script_depends() / get_style_depends()
+	 * declarations always resolve, but the files themselves are only enqueued
+	 * eagerly inside the Elementor editor / preview canvas (and wp-admin),
+	 * where the editor needs them before the page body renders. On live pages
+	 * the widget's render() method enqueues them only when the widget is
+	 * actually present, so visitor pages never download the editor-only stack
+	 * (issue #7270).
 	 */
 	public function enqueue_assets() {
-		// Only enqueue if Elementor is active and on relevant pages.
-		if ( ! did_action( 'elementor/loaded' ) && ! is_admin() ) {
+		// Nothing to do on sites without Elementor (outside admin).
+		if ( ! is_admin() && ! did_action( 'elementor/loaded' ) ) {
 			return;
 		}
 
-		wp_enqueue_style(
+		wp_register_style(
 			'wp-mcp-ai-quick-actions-widget',
 			WP_MCP_AI_URL . 'assets/css/elementor-quick-actions-widget.css',
 			array(),
 			WP_MCP_AI_VERSION
 		);
 
-		wp_enqueue_script(
+		wp_register_script(
 			'wp-mcp-ai-quick-actions-widget',
 			WP_MCP_AI_URL . 'assets/js/elementor-quick-actions-widget.js',
 			array( 'jquery', 'wp-util' ),
@@ -69,6 +78,9 @@ class WP_MCP_AI_Quick_Actions_Handler {
 			true
 		);
 
+		// Attach the Ajax config to the registered handle so it is printed
+		// with the script wherever the script is later enqueued (editor canvas
+		// or live widget render).
 		wp_localize_script(
 			'wp-mcp-ai-quick-actions-widget',
 			'wpMcpAiQuickActions',
@@ -78,10 +90,49 @@ class WP_MCP_AI_Quick_Actions_Handler {
 			)
 		);
 
+		// Eager enqueue only inside editor / admin contexts.
+		if ( ! $this->is_editor_context() ) {
+			return;
+		}
+
+		wp_enqueue_style( 'wp-mcp-ai-quick-actions-widget' );
+		wp_enqueue_script( 'wp-mcp-ai-quick-actions-widget' );
+
 		// Enqueue media library scripts if user can upload files.
 		if ( current_user_can( 'upload_files' ) ) {
 			wp_enqueue_media();
 		}
+	}
+
+	/**
+	 * Whether the current request is a wp-admin screen or the Elementor
+	 * editor / preview canvas, where the widget assets must load eagerly.
+	 *
+	 * @return bool True in editor contexts.
+	 */
+	protected function is_editor_context() {
+		if ( is_admin() ) {
+			return true;
+		}
+
+		if ( ! did_action( 'elementor/loaded' ) || ! class_exists( '\Elementor\Plugin' ) ) {
+			return false;
+		}
+
+		$elementor = \Elementor\Plugin::instance();
+		if ( ! $elementor ) {
+			return false;
+		}
+
+		if ( isset( $elementor->editor ) && method_exists( $elementor->editor, 'is_edit_mode' ) && $elementor->editor->is_edit_mode() ) {
+			return true;
+		}
+
+		if ( isset( $elementor->preview ) && method_exists( $elementor->preview, 'is_preview_mode' ) && $elementor->preview->is_preview_mode() ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
