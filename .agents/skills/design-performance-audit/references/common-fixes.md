@@ -140,6 +140,12 @@ cold. Also verify with the HTML: two `<header data-elementor-id>` templates
 inside one `.jupiterx-header` wrapper + a `wp-custom-css` rule hiding one of
 them.
 
+**Flatsome does NOT exhibit this** (VERIFIED theparfumerie.lk 2026-10-29):
+~10 stylesheets, mobile menu `mfp-hide` already `display:none` at frame 1,
+header stable at its final height from the first frame, mega dropdowns
+`display:table` + absolute (no layout impact). Skip the fix on Flatsome; keep
+the probe as the diagnostic.
+
 Fix: inline critical CSS in `wp_head` that replicates Elementor's FINAL state
 from the first layout (inline styles need no fetch, so they apply before the
 linked CSS):
@@ -177,11 +183,23 @@ attributes (computed `aspect-ratio: auto W / H`), the audit cannot fire — the
 PSI run is stale or hit an edge-cached copy. Prove space is reserved:
 `img.removeAttribute('src')` and confirm the wrapper's `getBoundingClientRect()`
 is unchanged. Cloudflare APO serves stale HTML (`Age: N`, `cf-cache-status:
-HIT`) — purge and re-run PSI before believing a report. Note: `fetchpriority="high"`
-on a below-fold image steals LCP bandwidth — if the attribute exists but the
-widget has no saved settings (no `data-settings` on the widget div), it is
-injected by a filter; strip it with
-`wp_get_attachment_image_attributes` at priority 999.
+HIT`) — purge and re-run PSI before believing a report.
+
+**Misplaced `fetchpriority="high"` (VERIFIED kaya 2026-10-29 + parfumerie
+2026-10-29):** a high-priority attribute on a hidden/below-fold image
+(image-box at 5,400px down; mega-menu banner inside a hidden dropdown)
+competes with the LCP for download priority. Detection: grep the HTML for
+`<img ... fetchpriority` and check WHERE the image sits. Two verified facts:
+- The `wp_get_attachment_image_attributes` filter at 999 did NOT remove it
+  on kaya — the injection path bypasses the filter (widget had no saved
+  settings, so it is not an Elementor control either). Don't rely on it.
+- The GUARANTEED fix is the output-buffer strip (verified live on both
+  sites): `template_redirect` priority 9999, `preg_replace_callback` over
+  `<img\b[^>]*>` removing the attribute — `<link rel="preload"
+  fetchpriority="high">` hero preloads are LINK elements and are untouched,
+  which is exactly right. Also: hardcoded hero-preload URLs ROT when
+  campaign banners change — document the update step in the snippet or make
+  the URL dynamic.
 
 ### Ensure text remains visible during webfont load (font-display)
 
@@ -386,6 +404,14 @@ have long TTLs via Breeze/CDN headers).
 - [ ] Snippet has `defined( 'ABSPATH' ) || exit;` guard
 - [ ] Risky blocks commented with staging warnings
 - [ ] Only blocks matching this site's findings are included
+- [ ] **WPCode comment trap (hard rule, verified 2026-10-28 site-wide outage):**
+      WPCode evaluates all active snippets in ONE combined instance — a
+      slash-star comment containing the literal `*/` sequence terminates
+      early and turns a later `?>` inside the comment into a real PHP
+      closing tag, breaking EVERY snippet on the site. Never put `*/`
+      inside a block comment (escaped `\/` is safe), never emit a real
+      `?>` close tag, and before deploy run `php -l` + scan for close tags
+      in code position (all `?>` must sit inside strings/comments).
 - [ ] HTML report validates (no mismatched/unclosed tags)
 - [ ] New GTmetrix PDF archived for the next before/after diff
 - [ ] Anything unverifiable is stated with next steps (not guessed)
