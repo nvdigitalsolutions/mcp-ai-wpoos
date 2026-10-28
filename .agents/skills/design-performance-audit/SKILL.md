@@ -175,6 +175,18 @@ the browser instead:
 4. Check the console for NEW errors introduced by the snippet (e.g. a
    dequeue that broke a script): `browser_console_messages` with
    `level="error"`.
+5. **Unexplained layout shift? Instrument the first frame.** If the CLS
+   element's geometry looks stable in normal warm runs but the report still
+   flags it, the shift happens in the first-frames window (cold CSS).
+   Capture it: `addInitScript` + rAF loop recording
+   `getBoundingClientRect()` of the suspect element + its dropdowns/children
+   from the very first frame, compress the timeline to change points. A
+   huge height drop right after first paint (e.g. 1202px → 170px header)
+   with dropdowns `display:block` at frame 1 = the Elementor nav-menu
+   first-paint flash — see `references/common-fixes.md` → CLS. Validate a
+   CSS fix by rewriting the served HTML with `page.route()` (inject the
+   style into `<head>`) and confirming the first-frame geometry already
+   equals the final geometry.
 
 Also confirm whether the changes are truly live vs. cached (a page-cache/CDN
 may serve a stale copy; hard-reload or purge cache before concluding "not
