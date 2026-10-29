@@ -17,10 +17,18 @@
 //   /wp-includes/*    → ${NVOOS_TARGET_SITE}/wp-includes/*
 //   everything else   → Astro SSR handler
 //
-// Admin proxy hardening: responses for /wp-admin and /wp-login.php get their
-// Location headers rewritten onto the request origin (login redirects stay
-// same-origin — no backend host leak, no broken cookie handshake) and an
-// X-Robots-Tag: noindex. Admin responses are never micro-cached.
+// Admin proxy hardening (research-backed; console BFF parity):
+//   - /wp-login.php HTML bodies are re-scoped to the app origin (absolute
+//     form action + hidden redirect_to → relative), so the login POST and
+//     the post-login redirect stay inside the proxy and the host-only auth
+//     cookies round-trip. Identity body via Accept-Encoding strip upstream.
+//   - Location headers on /wp-admin and /wp-login.php responses become
+//     RELATIVE with redirect_to re-scoped (nginx proxy_redirect pattern —
+//     no backend host leak, no broken cookie handshake).
+//   - Set-Cookie Domain attributes are stripped (OWASP: host-only cookies).
+//   - X-Robots-Tag: noindex; admin responses are never micro-cached.
+//   - Upstream requests carry overwritten x-forwarded-proto/host (spoof-safe)
+//     and drop origin/referer (no app-origin leak into backend logs).
 //
 // Micro-cache (default-deny): proxied GET responses are cached only when
 // the backend marks them `Cache-Control: public` (bridge B1 does this for
@@ -34,8 +42,11 @@ import { request as httpRequest } from 'node:http';
 import { URL } from 'node:url';
 
 import {
+	HOP_BY_HOP,
 	applyAdminResponseHeaders,
+	buildUpstreamHeaders,
 	requestOrigin,
+	rewriteLoginPageHtml,
 	stripDomainFromSetCookie,
 } from './lib/proxy-headers.mjs';
 
@@ -66,17 +77,10 @@ const { handler: astroHandler } = await import('../dist/server/entry.mjs');
 // Proxy core.
 // ---------------------------------------------------------------------------
 
-const HOP_BY_HOP = new Set([
-	'connection',
-	'keep-alive',
-	'proxy-authenticate',
-	'proxy-authorization',
-	'proxy-connection',
-	'te',
-	'trailer',
-	'transfer-encoding',
-	'upgrade',
-]);
+// Cap on body size for the login-page rewrite. wp-login.php pages are a few
+// tens of KB; anything larger is passed through unchanged instead of running
+// the regexes over a huge body.
+const MAX_REWRITE_BYTES = 4 * 1024 * 1024;
 
 const microCache = new Map();
 
@@ -104,9 +108,19 @@ function forwardHeaders(headers, { dropHost = true } = {}) {
 	return out;
 }
 
-function proxyTo(target, req, res, { admin = false } = {}) {
+function proxyTo(target, req, res, { admin = false, loginPage = false } = {}) {
 	const targetUrl = new URL(target);
 	const client = targetUrl.protocol === 'https:' ? httpsRequest : httpRequest;
+
+	const upstreamHeaders = buildUpstreamHeaders(req.headers, {
+		targetHost: targetUrl.host,
+		origin: requestOrigin(req),
+	});
+	// Identity body so the login page can be rewritten (nginx sub_filter
+	// equivalent: Accept-Encoding "" upstream).
+	if (loginPage) {
+		delete upstreamHeaders['accept-encoding'];
+	}
 
 	const upstream = client(
 		{
@@ -115,7 +129,7 @@ function proxyTo(target, req, res, { admin = false } = {}) {
 			port: targetUrl.port || undefined,
 			path: targetUrl.pathname + targetUrl.search,
 			method: req.method,
-			headers: forwardHeaders(req.headers),
+			headers: upstreamHeaders,
 		},
 		(upstreamRes) => {
 			const status = upstreamRes.statusCode ?? 502;
@@ -123,15 +137,44 @@ function proxyTo(target, req, res, { admin = false } = {}) {
 			if (admin) {
 				headers = applyAdminResponseHeaders(headers, {
 					targetSite: TARGET_SITE,
-					origin: requestOrigin(req),
 				});
 			}
 			const setCookies = stripDomainFromSetCookie(upstreamRes.headers['set-cookie']);
 			if (setCookies) {
 				headers['set-cookie'] = setCookies;
 			}
-			res.writeHead(status, headers);
-			upstreamRes.pipe(res);
+
+			// Buffer the login page so the form can be re-scoped to the app
+			// origin (see rewriteLoginPageHtml). The Domain-stripped cookies
+			// are already in place; the rewritten body goes out chunked.
+			const contentType = String(upstreamRes.headers['content-type'] ?? '').toLowerCase();
+			const canRewrite =
+				loginPage &&
+				contentType.includes('text/html') &&
+				!upstreamRes.headers['content-encoding'];
+
+			if (!canRewrite) {
+				res.writeHead(status, headers);
+				upstreamRes.pipe(res);
+				return;
+			}
+
+			const chunks = [];
+			let size = 0;
+			upstreamRes.on('data', (chunk) => {
+				size += chunk.length;
+				chunks.push(chunk);
+			});
+			upstreamRes.on('end', () => {
+				let body = Buffer.concat(chunks).toString('utf8');
+				if (size <= MAX_REWRITE_BYTES) {
+					body = rewriteLoginPageHtml(body);
+					delete headers['content-length'];
+				}
+				res.writeHead(status, headers);
+				res.end(body);
+			});
+			upstreamRes.on('error', () => res.destroy());
 		}
 	);
 
@@ -166,10 +209,10 @@ function shouldCache(status, headers) {
 	return Math.min(Number(match[1]), PROXY_CACHE_MAX_TTL);
 }
 
-function proxyWithCache(target, req, res, { admin = false } = {}) {
+function proxyWithCache(target, req, res, { admin = false, loginPage = false } = {}) {
 	// Admin responses are never cached — login/dashboard state must not stick.
 	if (PROXY_CACHE_DISABLED || req.method !== 'GET' || admin) {
-		return proxyTo(target, req, res, { admin });
+		return proxyTo(target, req, res, { admin, loginPage });
 	}
 
 	const key = cacheKey(req);
@@ -195,7 +238,10 @@ function proxyWithCache(target, req, res, { admin = false } = {}) {
 			port: targetUrl.port || undefined,
 			path: targetUrl.pathname + targetUrl.search,
 			method: req.method,
-			headers: forwardHeaders(req.headers),
+			headers: buildUpstreamHeaders(req.headers, {
+				targetHost: targetUrl.host,
+				origin: requestOrigin(req),
+			}),
 		},
 		(upstreamRes) => {
 			upstreamRes.on('data', (chunk) => chunks.push(chunk));
@@ -206,7 +252,6 @@ function proxyWithCache(target, req, res, { admin = false } = {}) {
 				if (admin) {
 					headers = applyAdminResponseHeaders(headers, {
 						targetSite: TARGET_SITE,
-						origin: requestOrigin(req),
 					});
 				}
 				const setCookies = stripDomainFromSetCookie(upstreamRes.headers['set-cookie']);
@@ -263,6 +308,7 @@ function route(req, res) {
 	if (path.startsWith('/wp-admin/') || path === '/wp-admin' || path === '/wp-login.php') {
 		return proxyWithCache(`${TARGET_SITE}${path}${url.search}`, req, res, {
 			admin: isAdminProxy(path),
+			loginPage: path === '/wp-login.php',
 		});
 	}
 	if (path.startsWith('/wp-includes/')) {
