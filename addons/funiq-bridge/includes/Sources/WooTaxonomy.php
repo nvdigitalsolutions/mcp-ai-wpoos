@@ -133,9 +133,18 @@ final class WooTaxonomy {
 	 */
 	public static function stock_status_docs(): array {
 		return array(
-			array( 'id' => 1, 'name' => 'In stock' ),
-			array( 'id' => 2, 'name' => 'Out of stock' ),
-			array( 'id' => 3, 'name' => 'On backorder' ),
+			array(
+				'id'   => 1,
+				'name' => 'In stock',
+			),
+			array(
+				'id'   => 2,
+				'name' => 'Out of stock',
+			),
+			array(
+				'id'   => 3,
+				'name' => 'On backorder',
+			),
 		);
 	}
 

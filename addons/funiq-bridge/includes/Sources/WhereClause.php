@@ -66,10 +66,10 @@ final class WhereClause {
 	 * @param array<string, array<string, mixed>> $where    Normalized where.
 	 * @param string                              $field    Field name.
 	 * @param string                              $operator Operator name.
-	 * @param mixed                               $default  Fallback value.
+	 * @param mixed                               $fallback Fallback value.
 	 * @return mixed
 	 */
-	public static function value( array $where, string $field, string $operator, $default = null ) {
-		return self::has( $where, $field, $operator ) ? $where[ $field ][ $operator ] : $default;
+	public static function value( array $where, string $field, string $operator, $fallback = null ) {
+		return self::has( $where, $field, $operator ) ? $where[ $field ][ $operator ] : $fallback;
 	}
 }
