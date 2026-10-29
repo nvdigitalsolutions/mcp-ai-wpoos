@@ -51,13 +51,13 @@ abstract class BaseController extends WP_REST_Controller {
 	}
 
 	/**
-	 * Permission check for write operations — requires the manage_funiq cap.
+	 * Permission check for write operations — requires the manage cap.
 	 *
 	 * @param \WP_REST_Request $request Request object.
 	 * @return true|\WP_Error
 	 */
 	public function item_permissions_check( $request ) {
-		if ( ! current_user_can( \FuniqBridge\Schema::CAP_MANAGE_FUNIQ ) ) {
+		if ( ! current_user_can( \FuniqBridge\Schema::CAP_MANAGE ) ) {
 			return new \WP_Error(
 				'rest_forbidden',
 				'Sorry, you are not allowed to do that.',

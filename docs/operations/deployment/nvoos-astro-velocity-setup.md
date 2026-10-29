@@ -37,7 +37,7 @@
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `NVOOS_TARGET_SITE` | yes | Backend origin for the `/api/*` (→ `nvoos-commerce/v1`), `/media/*`, `/wp-json`, `/wp-admin`, `/wp-login.php`, `/wp-includes` proxies |
+| `NVOOS_TARGET_SITE` | yes | Backend origin for the `/api/*` (→ `nvoos-commerce/v1`) and `/media/*` proxies. No backend admin is proxied — the admin is the standalone Astro CMS on `/manage` |
 | `ASTRO_SITE` | no (runtime) | **Bake-time only** — the mirror rebuild sets it (default `https://astro.nvoos.cloud`, repo variable `ASTRO_SITE` / dispatch `client_payload.astro_site`). A runtime value does nothing. |
 | `NVOOS_CURRENCY` | no | Price formatting + JSON-LD (default `USD`) |
 | `PORT` | no | **Injected by Velocity** — do not set manually. A committed/manual `.env` `PORT` (observed: 3025) must match the routing target or pages won't be served. |

@@ -1,0 +1,73 @@
+/**
+ * Standalone styles for the Astro CMS SPA.
+ *
+ * The wp-admin build gets the wp-admin stylesheet chain for free; the
+ * standalone /manage surface does not, so the admin class names the
+ * components reuse (regular-text, widefat, …) are styled here. Plain CSS —
+ * no build step beyond esbuild's CSS bundling.
+ */
+
+#astro-admin-root {
+	min-height: 100vh;
+}
+
+/* --- Tables (ListView uses the wp-admin class names) --- */
+
+.wp-list-table.widefat {
+	width: 100%;
+	border-collapse: collapse;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+}
+
+.wp-list-table.widefat th,
+.wp-list-table.widefat td {
+	padding: 8px 10px;
+	border-bottom: 1px solid #f0f0f1;
+	text-align: left;
+	font-size: 14px;
+}
+
+.wp-list-table.widefat thead th {
+	background: #fff;
+	border-bottom: 1px solid #c3c4c7;
+	font-weight: 600;
+}
+
+.wp-list-table.striped tbody tr:nth-child(odd) {
+	background: #f6f7f7;
+}
+
+/* --- Form field widths (field components reuse the admin class names) --- */
+
+.regular-text {
+	width: 100%;
+	max-width: 400px;
+}
+
+.small-text {
+	width: 200px;
+}
+
+.large-text {
+	width: 100%;
+	max-width: 640px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+	font-size: 14px;
+	padding: 4px 8px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	box-sizing: border-box;
+}
+
+textarea {
+	min-height: 100px;
+}

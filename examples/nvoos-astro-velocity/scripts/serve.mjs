@@ -3,32 +3,22 @@
 // nvoos-astro-velocity — BFF server (Proposal 092 §5.5 / D2).
 //
 // Mounts the Astro standalone SSR handler and falls through to reverse-proxy
-// rules for the backend prefixes, so the storefront, the NV commerce
-// contract (/api/*), media (/media/*) and the backend admin all live on ONE
-// origin — cookie auth works with no CORS configuration (the proven console
-// BFF pattern).
+// rules for the commerce prefixes, so the storefront, the NV commerce
+// contract (/api/*), media (/media/*) and the Astro CMS manage surface
+// (/manage) all live on ONE origin — cookie auth works with no CORS
+// configuration (the proven console BFF pattern).
 //
 // Routing order (first match wins):
 //   /api/*            → ${NVOOS_TARGET_SITE}/wp-json/nvoos-commerce/v1/*
 //   /media/*          → ${NVOOS_TARGET_SITE}/wp-content/uploads/*
-//   /wp-json/*        → ${NVOOS_TARGET_SITE}/wp-json/*
-//   /wp-admin/*       → ${NVOOS_TARGET_SITE}/wp-admin/*
-//   /wp-login.php     → ${NVOOS_TARGET_SITE}/wp-login.php
-//   /wp-includes/*    → ${NVOOS_TARGET_SITE}/wp-includes/*
 //   everything else   → Astro SSR handler
 //
-// Admin proxy hardening (research-backed; console BFF parity):
-//   - /wp-login.php HTML bodies are re-scoped to the app origin (absolute
-//     form action + hidden redirect_to → relative), so the login POST and
-//     the post-login redirect stay inside the proxy and the host-only auth
-//     cookies round-trip. Identity body via Accept-Encoding strip upstream.
-//   - Location headers on /wp-admin and /wp-login.php responses become
-//     RELATIVE with redirect_to re-scoped (nginx proxy_redirect pattern —
-//     no backend host leak, no broken cookie handshake).
-//   - Set-Cookie Domain attributes are stripped (OWASP: host-only cookies).
-//   - X-Robots-Tag: noindex; admin responses are never micro-cached.
-//   - Upstream requests carry overwritten x-forwarded-proto/host (spoof-safe)
-//     and drop origin/referer (no app-origin leak into backend logs).
+// There is deliberately NO wp-admin / wp-login.php / wp-json / wp-includes
+// proxy (2026-10-29 decision): the storefront is a public surface and the
+// admin experience is the standalone Astro CMS SPA on /manage, which binds
+// to the contract (/api/*) like every other part of the app. Manager login
+// is the contract's own REST auth flow (POST /api/auth/login) — the cookies
+// it sets are host-only on the app origin thanks to the Domain strip below.
 //
 // Micro-cache (default-deny): proxied GET responses are cached only when
 // the backend marks them `Cache-Control: public` (bridge B1 does this for
@@ -43,10 +33,8 @@ import { URL } from 'node:url';
 
 import {
 	HOP_BY_HOP,
-	applyAdminResponseHeaders,
 	buildUpstreamHeaders,
 	requestOrigin,
-	rewriteLoginPageHtml,
 	stripDomainFromSetCookie,
 } from './lib/proxy-headers.mjs';
 
@@ -56,7 +44,7 @@ const PROXY_CACHE_DISABLED = process.env.NVOOS_PROXY_CACHE === '0';
 const PROXY_CACHE_MAX_TTL = Number(process.env.NVOOS_PROXY_CACHE_MAX_TTL) || 300;
 
 if (!TARGET_SITE) {
-	console.error('[serve] NVOOS_TARGET_SITE is not set — the /api and admin proxies have no backend.');
+	console.error('[serve] NVOOS_TARGET_SITE is not set — the /api and media proxies have no backend.');
 	// Continue booting: the Astro layer still serves (REST islands will fail).
 }
 
@@ -77,20 +65,10 @@ const { handler: astroHandler } = await import('../dist/server/entry.mjs');
 // Proxy core.
 // ---------------------------------------------------------------------------
 
-// Cap on body size for the login-page rewrite. wp-login.php pages are a few
-// tens of KB; anything larger is passed through unchanged instead of running
-// the regexes over a huge body.
-const MAX_REWRITE_BYTES = 4 * 1024 * 1024;
-
 const microCache = new Map();
 
 function cacheKey(req) {
 	return req.method + ' ' + req.url;
-}
-
-/** True for the admin surface — Location rewriting + noindex + no cache. */
-function isAdminProxy(path) {
-	return path.startsWith('/wp-admin') || path === '/wp-login.php';
 }
 
 function forwardHeaders(headers, { dropHost = true } = {}) {
@@ -108,7 +86,7 @@ function forwardHeaders(headers, { dropHost = true } = {}) {
 	return out;
 }
 
-function proxyTo(target, req, res, { admin = false, loginPage = false } = {}) {
+function proxyTo(target, req, res) {
 	const targetUrl = new URL(target);
 	const client = targetUrl.protocol === 'https:' ? httpsRequest : httpRequest;
 
@@ -116,11 +94,6 @@ function proxyTo(target, req, res, { admin = false, loginPage = false } = {}) {
 		targetHost: targetUrl.host,
 		origin: requestOrigin(req),
 	});
-	// Identity body so the login page can be rewritten (nginx sub_filter
-	// equivalent: Accept-Encoding "" upstream).
-	if (loginPage) {
-		delete upstreamHeaders['accept-encoding'];
-	}
 
 	const upstream = client(
 		{
@@ -133,48 +106,18 @@ function proxyTo(target, req, res, { admin = false, loginPage = false } = {}) {
 		},
 		(upstreamRes) => {
 			const status = upstreamRes.statusCode ?? 502;
-			let headers = forwardHeaders(upstreamRes.headers, { dropHost: false });
-			if (admin) {
-				headers = applyAdminResponseHeaders(headers, {
-					targetSite: TARGET_SITE,
-				});
-			}
+			const headers = forwardHeaders(upstreamRes.headers, { dropHost: false });
+
+			// Host-only auth cookies: the commerce auth flow sets WordPress
+			// cookies through this proxy — strip any Domain attribute so the
+			// session lands on the app origin (OWASP host-only cookies).
 			const setCookies = stripDomainFromSetCookie(upstreamRes.headers['set-cookie']);
 			if (setCookies) {
 				headers['set-cookie'] = setCookies;
 			}
 
-			// Buffer the login page so the form can be re-scoped to the app
-			// origin (see rewriteLoginPageHtml). The Domain-stripped cookies
-			// are already in place; the rewritten body goes out chunked.
-			const contentType = String(upstreamRes.headers['content-type'] ?? '').toLowerCase();
-			const canRewrite =
-				loginPage &&
-				contentType.includes('text/html') &&
-				!upstreamRes.headers['content-encoding'];
-
-			if (!canRewrite) {
-				res.writeHead(status, headers);
-				upstreamRes.pipe(res);
-				return;
-			}
-
-			const chunks = [];
-			let size = 0;
-			upstreamRes.on('data', (chunk) => {
-				size += chunk.length;
-				chunks.push(chunk);
-			});
-			upstreamRes.on('end', () => {
-				let body = Buffer.concat(chunks).toString('utf8');
-				if (size <= MAX_REWRITE_BYTES) {
-					body = rewriteLoginPageHtml(body);
-					delete headers['content-length'];
-				}
-				res.writeHead(status, headers);
-				res.end(body);
-			});
-			upstreamRes.on('error', () => res.destroy());
+			res.writeHead(status, headers);
+			upstreamRes.pipe(res);
 		}
 	);
 
@@ -209,10 +152,9 @@ function shouldCache(status, headers) {
 	return Math.min(Number(match[1]), PROXY_CACHE_MAX_TTL);
 }
 
-function proxyWithCache(target, req, res, { admin = false, loginPage = false } = {}) {
-	// Admin responses are never cached — login/dashboard state must not stick.
-	if (PROXY_CACHE_DISABLED || req.method !== 'GET' || admin) {
-		return proxyTo(target, req, res, { admin, loginPage });
+function proxyWithCache(target, req, res) {
+	if (PROXY_CACHE_DISABLED || req.method !== 'GET') {
+		return proxyTo(target, req, res);
 	}
 
 	const key = cacheKey(req);
@@ -248,12 +190,8 @@ function proxyWithCache(target, req, res, { admin = false, loginPage = false } =
 			upstreamRes.on('end', () => {
 				const body = Buffer.concat(chunks);
 				const status = upstreamRes.statusCode ?? 502;
-				let headers = forwardHeaders(upstreamRes.headers, { dropHost: false });
-				if (admin) {
-					headers = applyAdminResponseHeaders(headers, {
-						targetSite: TARGET_SITE,
-					});
-				}
+				const headers = forwardHeaders(upstreamRes.headers, { dropHost: false });
+
 				const setCookies = stripDomainFromSetCookie(upstreamRes.headers['set-cookie']);
 				if (setCookies) {
 					headers['set-cookie'] = setCookies;
@@ -302,20 +240,9 @@ function route(req, res) {
 		const rest = path.slice('/media/'.length);
 		return proxyWithCache(`${TARGET_SITE}/wp-content/uploads/${rest}${url.search}`, req, res);
 	}
-	if (path.startsWith('/wp-json/')) {
-		return proxyWithCache(`${TARGET_SITE}${path}${url.search}`, req, res);
-	}
-	if (path.startsWith('/wp-admin/') || path === '/wp-admin' || path === '/wp-login.php') {
-		return proxyWithCache(`${TARGET_SITE}${path}${url.search}`, req, res, {
-			admin: isAdminProxy(path),
-			loginPage: path === '/wp-login.php',
-		});
-	}
-	if (path.startsWith('/wp-includes/')) {
-		return proxyWithCache(`${TARGET_SITE}${path}${url.search}`, req, res);
-	}
 
-	// Astro handles everything else (pages, /_astro assets, sitemap, robots).
+	// Astro handles everything else (pages, /manage, /_astro assets, sitemap,
+	// robots).
 	return astroHandler(req, res, () => {
 		if (!res.headersSent) {
 			res.writeHead(404, { 'content-type': 'text/plain' });
@@ -329,6 +256,6 @@ const server = createServer(route);
 server.listen(PORT, () => {
 	console.log(`[serve] nvoos-astro-velocity listening on :${PORT}`);
 	console.log(
-		`[serve] proxy origin: ${TARGET_SITE || '(unset — /api and admin proxying disabled)'}`
+		`[serve] proxy origin: ${TARGET_SITE || '(unset — /api and media proxying disabled)'}`
 	);
 });

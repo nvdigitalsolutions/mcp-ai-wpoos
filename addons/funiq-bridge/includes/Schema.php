@@ -86,15 +86,48 @@ final class Schema {
 	public const OPTION_BANNER   = 'funiq_banner';
 	public const OPTION_CAROUSEL = 'funiq_carousel';
 
+	/**
+	 * Product source mode — `native` (default: the built-in CPTs),
+	 * `woo` (WooCommerce products) or `both` (merged). Read through the
+	 * `funiq_bridge_products_source` filter at runtime; a `woo`/`both` mode
+	 * degrades to `native` when WooCommerce is not active.
+	 */
+	public const OPTION_PRODUCT_SOURCE = 'funiq_bridge_products_source';
+
+	// -----------------------------------------------------------------------
+	// Product source names (the `source` field on product documents).
+	// -----------------------------------------------------------------------
+	public const SOURCE_NATIVE = 'native';
+	public const SOURCE_WOO    = 'woocommerce';
+
+	// -----------------------------------------------------------------------
+	// WooCommerce mapping targets (used when Woo is the products source).
+	// -----------------------------------------------------------------------
+	public const TAX_WOO_CATEGORY = 'product_cat';
+	public const ATTR_WOO_BRAND   = 'pa_brand';
+	public const ATTR_WOO_COLOR   = 'pa_color';
+
 	// -----------------------------------------------------------------------
 	// Capability slug.
+	//
+	// Renamed from `manage_funiq` (2026-10-29 brand cutover). The legacy slug
+	// is kept as a constant so existing installs can be migrated without a
+	// reactivation — see Plugin::maybe_migrate_caps().
 	// -----------------------------------------------------------------------
-	public const CAP_MANAGE_FUNIQ = 'manage_funiq';
+	public const CAP_MANAGE        = 'manage_astro';
+	public const CAP_MANAGE_LEGACY = 'manage_funiq';
+
+	/**
+	 * Option flag recording that the capability migration has run.
+	 *
+	 * @var string
+	 */
+	public const OPTION_CAP_VERSION = 'nvoos_bridge_cap_version';
 
 	// -----------------------------------------------------------------------
 	// Admin page slug.
 	// -----------------------------------------------------------------------
-	public const ADMIN_PAGE_SLUG = 'funiq-cms';
+	public const ADMIN_PAGE_SLUG = 'astro-cms';
 
 	// -----------------------------------------------------------------------
 	// Option defaults.

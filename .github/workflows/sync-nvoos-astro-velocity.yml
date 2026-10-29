@@ -38,6 +38,7 @@ on:
     branches: [main, alpha-working]
     paths:
       - 'examples/nvoos-astro-velocity/**'
+      - 'addons/funiq-bridge/**'
       - '.github/workflows/sync-nvoos-astro-velocity.yml'
   repository_dispatch:
     types: [nvoos-storefront-content-changed]
@@ -59,6 +60,14 @@ jobs:
 
       - name: Install
         working-directory: examples/nvoos-astro-velocity
+        run: npm ci
+
+      # The /manage surface ships the Astro CMS standalone bundle (built from
+      # the bridge's SPA source). `npm run build` in the app runs
+      # scripts/sync-manage-assets.mjs, which invokes the bridge's esbuild
+      # target — so the bridge deps must be installed first.
+      - name: Install bridge deps
+        working-directory: addons/funiq-bridge
         run: npm ci
 
       - name: Start fixture contract server

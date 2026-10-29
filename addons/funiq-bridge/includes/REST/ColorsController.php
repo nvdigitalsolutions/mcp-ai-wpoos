@@ -8,6 +8,7 @@
 namespace FuniqBridge\REST;
 
 use FuniqBridge\Schema;
+use FuniqBridge\Sources\WooTaxonomy;
 
 /**
  * Handles /funiq/v1/colors.
@@ -33,10 +34,13 @@ class ColorsController extends TermController {
 	/**
 	 * Get the taxonomy slug.
 	 *
+	 * Woo-mode serves the pa_color attribute when the store defines one;
+	 * the built-in taxonomy otherwise.
+	 *
 	 * @return string
 	 */
 	protected function taxonomy(): string {
-		return Schema::TAX_COLOR;
+		return WooTaxonomy::color_taxonomy();
 	}
 
 	/**

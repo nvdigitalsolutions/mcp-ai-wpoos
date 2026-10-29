@@ -8,6 +8,7 @@
 namespace FuniqBridge\REST;
 
 use FuniqBridge\Schema;
+use FuniqBridge\Sources\WooTaxonomy;
 use FuniqBridge\Transformers\CategoryTransformer;
 use WP_Error;
 use WP_REST_Request;
@@ -38,10 +39,13 @@ class CategoriesController extends TermController {
 	/**
 	 * Get the taxonomy slug.
 	 *
+	 * Woo-mode serves WooCommerce's product_cat; the built-in taxonomy
+	 * otherwise.
+	 *
 	 * @return string
 	 */
 	protected function taxonomy(): string {
-		return Schema::TAX_CATEGORY;
+		return WooTaxonomy::category_taxonomy();
 	}
 
 	/**

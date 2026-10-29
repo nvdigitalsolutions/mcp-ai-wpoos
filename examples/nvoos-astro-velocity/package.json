@@ -11,8 +11,9 @@
 	},
 	"scripts": {
 		"dev": "astro dev",
-		"build": "astro check && astro build",
+		"build": "astro check && npm run build:manage && astro build",
 		"build:fixtures": "node scripts/build-hermetic.mjs",
+		"build:manage": "node scripts/sync-manage-assets.mjs",
 		"preview": "astro preview",
 		"check": "astro check",
 		"test": "vitest run",

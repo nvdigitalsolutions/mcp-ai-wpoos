@@ -1,5 +1,5 @@
 /**
- * Entry point — mounts the Funiq Admin SPA into the WordPress admin page.
+ * Entry point — mounts the Astro Admin SPA into its root element.
  */
 import { createRoot } from '@wordpress/element';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -14,7 +14,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const rootEl = document.getElementById('funiq-admin-root');
+const rootEl = document.getElementById('astro-admin-root');
 if (rootEl) {
   const root = createRoot(rootEl);
   root.render(

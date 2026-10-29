@@ -55,6 +55,7 @@ class ProductTransformer {
 			'promotion'    => $promo_id ? $this->promo_ref( (int) $promo_id ) : null,
 			'createdAt'    => $post->post_date,
 			'updatedAt'    => $post->post_modified,
+			'source'       => Schema::SOURCE_NATIVE,
 		);
 	}
 

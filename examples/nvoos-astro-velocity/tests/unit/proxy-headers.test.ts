@@ -1,30 +1,23 @@
 // ---------------------------------------------------------------------------
 // BFF proxy header transforms — unit tests for scripts/lib/proxy-headers.mjs.
 //
-// Pins the admin-proxy contract:
-//   - same-origin login flow: wp-login.php bodies re-scoped to the app
-//     origin, backend Locations become relative with redirect_to re-scoped
-//   - host-only auth cookies (Domain stripped)
+// Pins the storefront proxy contract:
+//   - host-only auth cookies (Domain stripped) — the commerce auth flow
+//     (POST /api/auth/login) sets WordPress cookies through the proxy
 //   - spoof-safe forwarded headers (overwritten, not echoed)
-//   - noindex on the proxied admin surface
-// (2026-10-29 incidents: unauthenticated /wp-admin redirected to the backend
-// origin and broke the login loop; the login form POSTed straight to the
-// backend so the app origin never saw the session.)
+//   - no admin/login-page surface: wp-admin and wp-login.php are not
+//     proxied (2026-10-29 decision — the admin is the standalone /manage SPA)
 // ---------------------------------------------------------------------------
 
 import { describe, expect, it } from 'vitest';
 import type { ProxyRequestLike } from '../../scripts/lib/proxy-headers.d.mts';
 import {
 	HOP_BY_HOP,
-	applyAdminResponseHeaders,
 	buildUpstreamHeaders,
 	requestOrigin,
-	rewriteLocation,
-	rewriteLoginPageHtml,
 	stripDomainFromSetCookie,
 } from '../../scripts/lib/proxy-headers.mjs';
 
-const TARGET = 'https://nvoos.pro';
 const ORIGIN = 'https://astro.nvoos.cloud';
 
 function fakeRequest(headers: Record<string, string> = {}): ProxyRequestLike {
@@ -58,7 +51,7 @@ describe('buildUpstreamHeaders', () => {
 				'user-agent': 'Playwright',
 				'x-forwarded-for': '203.0.113.7, 10.0.0.1',
 			},
-			{ targetHost: 'nvoos.pro', origin: 'https://astro.nvoos.cloud' }
+			{ targetHost: 'nvoos.pro', origin: ORIGIN }
 		);
 
 		expect(out.host).toBe('nvoos.pro');
@@ -79,7 +72,7 @@ describe('buildUpstreamHeaders', () => {
 				'x-forwarded-proto': 'http',
 				'x-forwarded-host': 'evil.example',
 			},
-			{ targetHost: 'nvoos.pro', origin: 'https://astro.nvoos.cloud' }
+			{ targetHost: 'nvoos.pro', origin: ORIGIN }
 		);
 
 		expect(out['x-forwarded-proto']).toBe('https');
@@ -94,9 +87,9 @@ describe('buildUpstreamHeaders', () => {
 				referer: 'https://astro.nvoos.cloud/shop',
 				connection: 'keep-alive',
 				'transfer-encoding': 'chunked',
-				'content-type': 'application/x-www-form-urlencoded',
+				'content-type': 'application/json',
 			},
-			{ targetHost: 'nvoos.pro', origin: 'https://astro.nvoos.cloud' }
+			{ targetHost: 'nvoos.pro', origin: ORIGIN }
 		);
 
 		expect(out.origin).toBeUndefined();
@@ -104,7 +97,7 @@ describe('buildUpstreamHeaders', () => {
 		for (const name of HOP_BY_HOP) {
 			expect(out[name]).toBeUndefined();
 		}
-		expect(out['content-type']).toBe('application/x-www-form-urlencoded');
+		expect(out['content-type']).toBe('application/json');
 	});
 
 	it('carries the port through when the origin has one', () => {
@@ -115,99 +108,16 @@ describe('buildUpstreamHeaders', () => {
 	});
 });
 
-describe('rewriteLocation', () => {
-	it('rewrites absolute backend URLs to relative paths', () => {
-		expect(rewriteLocation('https://nvoos.pro/wp-login.php?reauth=1', TARGET)).toBe(
-			'/wp-login.php?reauth=1'
-		);
-	});
-
-	it('re-scopes an encoded absolute redirect_to onto the app origin', () => {
-		expect(
-			rewriteLocation(
-				'https://nvoos.pro/wp-login.php?redirect_to=https%3A%2F%2Fnvoos.pro%2Fwp-admin%2F&reauth=1',
-				TARGET
-			)
-		).toBe('/wp-login.php?redirect_to=%2Fwp-admin%2F&reauth=1');
-	});
-
-	it('re-scopes a raw (unencoded) absolute redirect_to', () => {
-		expect(
-			rewriteLocation('https://nvoos.pro/wp-login.php?redirect_to=https://nvoos.pro/wp-admin/', TARGET)
-		).toBe('/wp-login.php?redirect_to=%2Fwp-admin%2F');
-	});
-
-	it('handles a bare-backend-origin redirect_to value', () => {
-		expect(
-			rewriteLocation(
-				'https://nvoos.pro/wp-login.php?redirect_to=https%3A%2F%2Fnvoos.pro',
-				TARGET
-			)
-		).toBe('/wp-login.php?redirect_to=%2F');
-	});
-
-	it('leaves foreign redirect_to values untouched (backend wp_safe_redirect gates them)', () => {
-		const loc =
-			'https://nvoos.pro/wp-login.php?redirect_to=https%3A%2F%2Fevil.example%2Fphish';
-		expect(rewriteLocation(loc, TARGET)).toBe(
-			'/wp-login.php?redirect_to=https%3A%2F%2Fevil.example%2Fphish'
-		);
-	});
-
-	it('rewrites protocol-relative backend URLs to relative paths', () => {
-		expect(rewriteLocation('//nvoos.pro/wp-admin/', TARGET)).toBe('/wp-admin/');
-	});
-
-	it('leaves relative paths untouched (they stay same-origin through the proxy)', () => {
-		expect(rewriteLocation('/wp-admin/', TARGET)).toBe('/wp-admin/');
-	});
-
-	it('leaves foreign origins untouched', () => {
-		expect(rewriteLocation('https://evil.example/phish', TARGET)).toBe(
-			'https://evil.example/phish'
-		);
-	});
-
-	it('passes through empty values and missing targets', () => {
-		expect(rewriteLocation(undefined, TARGET)).toBeUndefined();
-		expect(rewriteLocation('https://nvoos.pro/x', '')).toBe('https://nvoos.pro/x');
-	});
-});
-
-describe('rewriteLoginPageHtml', () => {
-	it('re-scopes the absolute form action and login links to the app origin', () => {
-		const html = `<form name="loginform" id="loginform" action="https://nvoos.pro/wp-login.php" method="post">
-<a href="https://nvoos.pro/wp-login.php?action=lostpassword">Lost your password?</a>`;
-		const out = rewriteLoginPageHtml(html);
-		expect(out).toContain('action="/wp-login.php"');
-		expect(out).toContain('href="/wp-login.php?action=lostpassword"');
-		expect(out).not.toContain('nvoos.pro/wp-login.php');
-	});
-
-	it('re-scopes the hidden redirect_to input value', () => {
-		const html = `<input type="hidden" name="redirect_to" value="https://nvoos.pro/wp-admin/" />`;
-		expect(rewriteLoginPageHtml(html)).toContain('name="redirect_to" value="/wp-admin/"');
-	});
-
-	it('leaves unrelated absolute URLs untouched', () => {
-		const html = `<a href="https://nvoos.pro/">← Go to site</a>
-<img src="https://nvoos.pro/wp-content/uploads/logo.png">`;
-		const out = rewriteLoginPageHtml(html);
-		expect(out).toContain('href="https://nvoos.pro/"');
-		expect(out).toContain('src="https://nvoos.pro/wp-content/uploads/logo.png"');
-	});
-});
-
 describe('stripDomainFromSetCookie', () => {
 	it('strips Domain attributes from every cookie', () => {
 		expect(
 			stripDomainFromSetCookie([
 				'wordpress_logged_in_abc=value; path=/; Domain=nvoos.pro; HttpOnly',
-				'wordpress_sec_abc=value; path=/wp-admin; domain=.nvoos.pro',
+				'wordpress_sec_abc=value; path=/; domain=.nvoos.pro',
 			])
 		).toEqual([
 			'wordpress_logged_in_abc=value; path=/; HttpOnly',
-			'wordpress_sec_abc=value; path=/wp-admin',
+			'wordpress_sec_abc=value; path=/',
 		]);
 	});
 
@@ -219,28 +129,5 @@ describe('stripDomainFromSetCookie', () => {
 
 	it('passes through undefined unchanged', () => {
 		expect(stripDomainFromSetCookie(undefined)).toBeUndefined();
-	});
-});
-
-describe('applyAdminResponseHeaders', () => {
-	it('rewrites Location to a relative path and adds noindex without dropping other headers', () => {
-		const out = applyAdminResponseHeaders(
-			{
-				location: 'https://nvoos.pro/wp-login.php?reauth=1',
-				'content-type': 'text/html; charset=UTF-8',
-			},
-			{ targetSite: TARGET }
-		);
-
-		expect(out.location).toBe('/wp-login.php?reauth=1');
-		expect(out['x-robots-tag']).toBe('noindex, nofollow');
-		expect(out['content-type']).toBe('text/html; charset=UTF-8');
-	});
-
-	it('appends noindex to an existing robots tag instead of clobbering it', () => {
-		const out = applyAdminResponseHeaders({ 'x-robots-tag': 'none' }, {
-			targetSite: TARGET,
-		});
-		expect(out['x-robots-tag']).toBe('none, noindex');
 	});
 });

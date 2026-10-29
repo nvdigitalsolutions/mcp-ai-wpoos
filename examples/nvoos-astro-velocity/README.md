@@ -14,11 +14,17 @@ is invisible to this app (085 appendix §2).
 
 ```
 Browser ──> Velocity app (nvoos-astro-velocity, Node adapter + BFF)
-              ├── Astro SSR handler        # pages, /_astro assets
+              ├── Astro SSR handler        # pages, /manage, /_astro assets
               ├── /api/*   → nvoos-commerce/v1/*   (contract proxy)
-              ├── /media/* → uploads base          (media normalization, D7)
-              └── /wp-json, /wp-admin, /wp-login.php, /wp-includes  (BFF pass-through)
+              └── /media/* → uploads base          (media normalization, D7)
 ```
+
+**No backend admin is proxied.** `wp-admin`, `wp-login.php`, `wp-json` and
+`wp-includes` are deliberately NOT proxied (2026-10-29 decision): the admin
+experience is the standalone **Astro CMS** on `/manage` — the bridge's admin
+SPA (Astro-branded), bundled standalone (`@wordpress/*` + React baked in) and
+shipped in `public/manage-assets/`. It binds to the contract (`/api/*`) like
+every other surface; manager sign-in is the contract's own REST auth flow.
 
 | Surface | Rendering |
 |---|---|
@@ -26,6 +32,7 @@ Browser ──> Velocity app (nvoos-astro-velocity, Node adapter + BFF)
 | PLP (`/categories|brands|colors/{id}/{slug}/` + filters) | On-demand SSR, `s-maxage=300` (prerendered page-1s were dropped — a static page would ignore filter query strings) |
 | Home / promotions / promocodes / search | SSR, cached |
 | Cart badge, gallery, promo-code field, add-to-cart, account | React islands (`client:idle` / `client:visible` / `client:load` on account) |
+| `/manage` (Astro CMS) | SSR shell + `ManageGate` island (sign-in gate → injected CMS bundle); `noindex` |
 | About / terms | Static markdown |
 | Sitemap / robots | SSR endpoints (the sitemap integration cannot list SSR'd PLP bases, so a custom endpoint generates the full map) |
 
@@ -46,7 +53,7 @@ Browser ──> Velocity app (nvoos-astro-velocity, Node adapter + BFF)
 | Variable | Used by | Purpose |
 |---|---|---|
 | `NVOOS_API_BASE` | build (CI) | Full base URL of the commerce contract for `getStaticPaths` |
-| `NVOOS_TARGET_SITE` | `serve.mjs` (runtime) | Backend origin for the `/api`, `/media` and admin proxies |
+| `NVOOS_TARGET_SITE` | `serve.mjs` (runtime) | Backend origin for the `/api` and `/media` proxies |
 | `PUBLIC_API_BASE` | islands (dev only) | Client-side API base when `astro dev` has no BFF |
 | `ASTRO_SITE` | build/runtime | Canonical host for sitemap, robots, canonical/OG tags |
 | `NVOOS_CURRENCY` | build/runtime | Price formatting + JSON-LD (default `USD`) |
@@ -61,7 +68,9 @@ npm install
 # Fixture contract server (hermetic data for build/tests):
 node scripts/fixture-server.mjs            # :8123
 
-# Build against the fixtures (prerenders the full catalog):
+# Build against the fixtures (prerenders the full catalog; also builds the
+# Astro CMS bundle from addons/funiq-bridge — install its deps first):
+cd ../../addons/funiq-bridge && npm install && cd -
 NVOOS_API_BASE=http://localhost:8123/wp-json/nvoos-commerce/v1 npm run build
 
 # Serve the built app + BFF against the fixtures:
