@@ -1411,6 +1411,29 @@ the changed files is the substantive gate; plan CI waits accordingly.
       `new_text` (3 tabs landed as 2, fuzzy-matched whitespace) — when
       re-indenting a template block, fix deterministically with
       `sed -i 'X,Ys/^/\t/' file` instead of re-applying the edit.
+  87. **Optional-plugin availability checks fooled by stubs** (funiq-bridge
+      Woo tests, 2026-10-29). `tests/helpers/woocommerce-stubs.php` defines a
+      bare `class WooCommerce {}` when the plugin is absent, so
+      `class_exists( 'WooCommerce' )` alone is a false positive — the Woo
+      suite then fatals on `WC_Product_Simple` instead of skipping. Gate on
+      `class_exists( 'WooCommerce' ) && function_exists( 'wc_get_product' )`
+      (the stub provides no functions). Corollary: the **WP 7.1 matrix env
+      has NO WooCommerce plugin** (its `wp71-core` volume ships only
+      `mcp-ai-wpoos`) — optional-plugin-dependent tests MUST
+      `markTestSkipped` in `setUp()` there; N pass + N skipped is the correct
+      green, not a failure to chase.
+  88. **`add_action( 'init' )` registered from a late-loaded addon never
+      fires** (funiq-bridge cap migration, PR #7296, 2026-10-29). The fleet
+      addon-manager includes plugin files after `init` fired, so
+      one-shot-on-boot work hooked inside `Plugin::init()` silently never
+      runs — the brand-cutover capability migration never granted
+      `manage_astro` and production managers hit a permission wall. Follow
+      the PR #7281 direct-registration pattern: `if ( did_action( 'init' ) )
+      { $obj->migrate(); } else { add_action( 'init', … ); }`. In PHPUnit,
+      `did_action('init')` is already true, so the direct branch is
+      exercisable — but re-running `Plugin::init()` via reflection
+      double-registers unguarded hooks (e.g. `RebuildWebhook::init()`); test
+      the migration method's behaviour instead of re-booting the plugin.
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 

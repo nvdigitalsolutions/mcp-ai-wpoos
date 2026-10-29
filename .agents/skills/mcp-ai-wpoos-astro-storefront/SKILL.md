@@ -134,7 +134,12 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 - **Bridge late-load immunity (PR #7281):** the Complete bundle can load
   addon files mid-request (after `plugins_loaded`). `Plugin::init()` is
   idempotent and registers CPTs/taxonomies/REST routes directly when
-  `init`/`rest_api_init` already fired. If the contract returns 404 on a
+  `init`/`rest_api_init` already fired. The capability migration
+  (`Plugin::maybe_migrate_caps`) follows the same rule — it must run
+  directly when `did_action('init')` (fix 2026-10-29: the original
+  `add_action('init', …)` registration never fired on the fleet's
+  mid-request load, so `manage_astro` was never granted and managers hit
+  the /manage permission wall). If the contract returns 404 on a
   fleet site, check for a late-loader before touching the bridge.
 - **No admin proxy (2026-10-29 decision, replaces PR #7294's login gateway):**
   the storefront BFF (`scripts/serve.mjs`) proxies **only** `/api/*`
@@ -154,12 +159,30 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   (host-only), and `/api/auth/me`'s `canManage` gates everything. The sync
   workflow installs bridge deps (`npm ci` in `addons/funiq-bridge/`) before
   the app build and re-runs on bridge path changes.
+- **Standalone build — jsx-runtime (learned 2026-10-29):**
+  `@wordpress/element` ships NO `./jsx-runtime` export — a standalone
+  esbuild build with `jsxImportSource: '@wordpress/element'` fails with
+  `Could not resolve "@wordpress/element/jsx-runtime"`. The standalone
+  target sets `jsxImportSource: 'react'` (React is bundled anyway); the
+  wp-admin build keeps the element shim (window.React.createElement) that
+  piggybacks WP's React. Also: output naming comes from an object entryPoint
+  (`{ 'astro-admin': 'src/standalone.tsx' }`), not `entryNames`.
+- **`/manage` login triage:** a `401` on `/api/auth/me` in the network
+  panel BEFORE sign-in is the expected auth probe (the gate then renders
+  the form). A successful login landing on "does not have permission to
+  manage this store" = `canManage:false` = the `manage_astro` cap grant is
+  missing on the backend (the one-shot migration didn't run — the fleet
+  late-load bug fixed by PR #7296). Remediate: `wp cap add administrator
+  manage_astro` on the backend or re-activate the bridge plugin; never
+  chase the frontend for this error.
 - **Bridge media endpoint:** image fields use a native uploader against
   `POST /media` (multipart, manage-cap gated; `GET /media/{id}` for
   previews) — `wp_handle_upload` with a filterable action
   (`funiq_bridge_media_upload_action`, default `wp_handle_upload` keeps the
   `is_uploaded_file` gate; tests switch it to `wp_handle_sideload` since CLI
-  cannot produce real uploads).
+  cannot produce real uploads). WP 6.9 note: `wp_handle_upload()` takes the
+  action from `$overrides['action']` — there is NO 4th `$action` argument
+  (passing one silently ignored it; verified against core source).
 - **Astro CMS rebrand (2026-10-29):** user-facing funiq branding is gone —
   menu/slug `astro-cms`, sidebar brand "Astro CMS", mount id
   `astro-admin-root`, config global `AstroAdminConfig`, capability

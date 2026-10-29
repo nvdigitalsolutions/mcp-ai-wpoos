@@ -84,8 +84,16 @@ final class Plugin {
 		add_action( 'rest_api_init', array( $plugin, 'register_rest_routes' ) );
 
 		// 2a. One-shot capability migration for the brand cutover
-		// (manage_funiq -> manage_astro).
-		add_action( 'init', array( $plugin, 'maybe_migrate_caps' ) );
+		// (manage_funiq -> manage_astro). Late-load-immune: the fleet
+		// addon-manager includes this file after `init` has fired, so a hook
+		// registration alone would never run — call it directly then, the
+		// same pattern the main file uses for CPT/taxonomy/REST registration
+		// (PR #7281). Also covers the init:9 boot path deterministically.
+		if ( did_action( 'init' ) ) {
+			$plugin->maybe_migrate_caps();
+		} else {
+			add_action( 'init', array( $plugin, 'maybe_migrate_caps' ) );
+		}
 
 		// 2b. Cache headers on public GETs (B1, Proposal 092).
 		add_filter( 'rest_post_dispatch', array( BaseController::class, 'set_cache_headers_on_public_gets' ), 10, 3 );
