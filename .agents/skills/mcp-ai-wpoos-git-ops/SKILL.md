@@ -46,6 +46,26 @@ git push --force-with-lease origin <branch>
 - GitHub Docs reference: "Managing stacked pull requests" /
   "Troubleshooting stacked pull requests" (`gh stack rebase` alternative).
 
+## Windows reserved-name artifacts (learned 2026-10-29)
+
+A stray untracked file literally named `nul` (Windows reserved device name)
+can appear in the repo root. Two failure modes follow:
+
+- **`git stash push -u` aborts partway** with `failed to remove nul:
+  Permission denied` — the stash IS saved, but tracked files stay modified
+  and the untracked files get hidden in the stash's third parent.
+  Recovery: list with `git ls-tree -r --name-only "stash@{N}^3"` and restore
+  with `git checkout "stash@{N}^3" -- <paths>` (exclude `test-results/`).
+  When only a few tracked files block a branch switch onto a moved base,
+  the lighter tool is a pathspec stash: `git stash push -m <msg> -- <paths>`,
+  switch, then `git checkout stash@{0} -- <paths>`.
+- **Deleting the file itself:** normal `rm`/`del` fail (device semantics).
+  Write a tiny `.ps1` using `Remove-Item -LiteralPath "\\?\<abs-path>"`
+  (forward slashes OK after the prefix) and run it with
+  `powershell -NoProfile -ExecutionPolicy Bypass -File` — inline `-Command`
+  calls get the backslashes mangled by the sh layer. Never stage it —
+  explicit staging (above) keeps it out of commits.
+
 ## gh CLI gotchas
 
 - `gh workflow run <name>` **404s unless the workflow file exists on the
