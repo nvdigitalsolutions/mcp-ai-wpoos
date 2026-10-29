@@ -36,10 +36,10 @@ interface ProductSource {
 	/**
 	 * List published products (one page).
 	 *
-	 * @param int                          $page  1-based page.
-	 * @param int                          $limit Docs per page.
+	 * @param int                                 $page  1-based page.
+	 * @param int                                 $limit Docs per page.
 	 * @param array<string, array<string, mixed>> $where Normalized where clause.
-	 * @param string|null                  $sort  Raw sort param.
+	 * @param string|null                         $sort  Raw sort param.
 	 * @return array{docs: array<int, array<string, mixed>>, total: int}
 	 */
 	public function list_products( int $page, int $limit, array $where, ?string $sort ): array;

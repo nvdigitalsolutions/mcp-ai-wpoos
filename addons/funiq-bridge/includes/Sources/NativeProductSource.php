@@ -43,10 +43,10 @@ class NativeProductSource implements ProductSource {
 	/**
 	 * List published native products.
 	 *
-	 * @param int                           $page  1-based page.
-	 * @param int                           $limit Docs per page.
+	 * @param int                                 $page  1-based page.
+	 * @param int                                 $limit Docs per page.
 	 * @param array<string, array<string, mixed>> $where Normalized where clause.
-	 * @param string|null                   $sort  Raw sort param.
+	 * @param string|null                         $sort  Raw sort param.
 	 * @return array{docs: array<int, array<string, mixed>>, total: int}
 	 */
 	public function list_products( int $page, int $limit, array $where, ?string $sort ): array {
@@ -201,7 +201,7 @@ class NativeProductSource implements ProductSource {
 	 * Supported operators: id.equals, name.like, category.equals/in,
 	 * brand.equals/in, colors.equals/in, statuses.equals/in.
 	 *
-	 * @param array<string, mixed> $args  WP_Query args (by reference).
+	 * @param array<string, mixed>                $args  WP_Query args (by reference).
 	 * @param array<string, array<string, mixed>> $where Normalized where clause.
 	 * @return void
 	 */
