@@ -164,7 +164,10 @@ describe('base resolution (resolveBase precedence)', () => {
 		// use the same-origin /api/* proxy, or every render fetches
 		// localhost:8123 and 500s.
 		vi.stubEnv('NVOOS_API_BASE', 'http://localhost:8123/wp-json/nvoos-commerce/v1');
-		const fetchMock = vi.fn(async () => new Response(JSON.stringify(okEnvelope(24)), { status: 200 }));
+		const fetchMock = vi.fn(
+			async (_input: RequestInfo | URL) =>
+				new Response(JSON.stringify(okEnvelope(24)), { status: 200 })
+		);
 		vi.stubGlobal('fetch', fetchMock);
 
 		await getCollection<Product>('products', requestUrl);
@@ -176,7 +179,10 @@ describe('base resolution (resolveBase precedence)', () => {
 
 	it('falls back to NVOOS_API_BASE when no request URL exists (build)', async () => {
 		vi.stubEnv('NVOOS_API_BASE', 'http://localhost:8123/wp-json/nvoos-commerce/v1');
-		const fetchMock = vi.fn(async () => new Response(JSON.stringify(okEnvelope(100)), { status: 200 }));
+		const fetchMock = vi.fn(
+			async (_input: RequestInfo | URL) =>
+				new Response(JSON.stringify(okEnvelope(100)), { status: 200 })
+		);
 		vi.stubGlobal('fetch', fetchMock);
 
 		await getCollection<Product>('products', undefined);
