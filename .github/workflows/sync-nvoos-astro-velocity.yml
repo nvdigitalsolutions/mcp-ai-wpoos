@@ -69,6 +69,10 @@ jobs:
           sleep 1
           curl -fsS http://localhost:8123/wp-json/nvoos-commerce/v1/products | head -c 200
 
+      - name: Lint (eslint src — Astro components included)
+        working-directory: examples/nvoos-astro-velocity
+        run: npm run lint
+
       - name: Unit tests + contract gate
         working-directory: examples/nvoos-astro-velocity
         run: npm test

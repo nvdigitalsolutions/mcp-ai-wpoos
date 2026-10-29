@@ -22,11 +22,11 @@ const origin = renderOrigin(Astro.url, Astro.site);
 // viewports). Runtime-optimized via the /_image endpoint (hermetic builds).
 const image = product.image
 	? responsiveImage(origin, product.image, {
-			width: 400,
-			height: 500,
-			widths: [400, 800],
-			sizes: '(min-width: 800px) 400px, 100vw',
-		})
+		width: 400,
+		height: 500,
+		widths: [400, 800],
+		sizes: '(min-width: 800px) 400px, 100vw',
+	})
 	: null;
 ---
 
