@@ -32,7 +32,7 @@ abstract class PostTypeController extends BaseController {
 	/**
 	 * Transform a WP_Post into the output shape.
 	 *
-	 * @param \WP_Post $post
+	 * @param \WP_Post $post Post object.
 	 * @return array<string, mixed>
 	 */
 	abstract protected function transform( \WP_Post $post ): array;
@@ -49,8 +49,8 @@ abstract class PostTypeController extends BaseController {
 	/**
 	 * Save meta fields after creating/updating the post.
 	 *
-	 * @param int                   $post_id
-	 * @param array<string, mixed>  $data
+	 * @param int                  $post_id Post ID.
+	 * @param array<string, mixed> $data    Request body.
 	 * @return void
 	 */
 	abstract protected function save_meta( int $post_id, array $data ): void;
@@ -148,7 +148,7 @@ abstract class PostTypeController extends BaseController {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
-		$args = $this->post_args( $request->get_json_params(), null );
+		$args                = $this->post_args( $request->get_json_params(), null );
 		$args['post_status'] = 'publish';
 
 		$id = wp_insert_post( $args, true );
@@ -218,7 +218,7 @@ abstract class PostTypeController extends BaseController {
 	/**
 	 * Build a single-item REST response.
 	 *
-	 * @param int $post_id
+	 * @param int $post_id Post ID.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	protected function single_response( int $post_id ) {

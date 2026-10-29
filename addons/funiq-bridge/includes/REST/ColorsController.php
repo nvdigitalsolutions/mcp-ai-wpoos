@@ -16,13 +16,23 @@ use FuniqBridge\Schema;
  */
 class ColorsController extends TermController {
 
-	/** @var string */
+	/**
+	 * REST namespace.
+	 *
+	 * @var string
+	 */
 	protected $namespace = 'funiq/v1';
 
-	/** @var string */
+	/**
+	 * REST base path.
+	 *
+	 * @var string
+	 */
 	protected $rest_base = 'colors';
 
 	/**
+	 * Get the taxonomy slug.
+	 *
 	 * @return string
 	 */
 	protected function taxonomy(): string {
@@ -32,8 +42,8 @@ class ColorsController extends TermController {
 	/**
 	 * Save hexCode term meta.
 	 *
-	 * @param int                   $term_id Term ID.
-	 * @param array<string, mixed>  $data    Request body.
+	 * @param int                  $term_id Term ID.
+	 * @param array<string, mixed> $data    Request body.
 	 * @return void
 	 */
 	protected function save_term_meta( int $term_id, array $data ): void {

@@ -16,13 +16,23 @@ use WP_Post;
  */
 class PromotionsController extends PostTypeController {
 
-	/** @var string */
+	/**
+	 * REST namespace.
+	 *
+	 * @var string
+	 */
 	protected $namespace = 'funiq/v1';
 
-	/** @var string */
+	/**
+	 * REST base path.
+	 *
+	 * @var string
+	 */
 	protected $rest_base = 'promotions';
 
 	/**
+	 * Get the post type slug.
+	 *
 	 * @return string
 	 */
 	protected function post_type(): string {
@@ -30,7 +40,9 @@ class PromotionsController extends PostTypeController {
 	}
 
 	/**
-	 * @param WP_Post $post
+	 * Transform a WP_Post into the output shape.
+	 *
+	 * @param WP_Post $post Post object.
 	 * @return array<string, mixed>
 	 */
 	protected function transform( WP_Post $post ): array {
@@ -38,6 +50,8 @@ class PromotionsController extends PostTypeController {
 	}
 
 	/**
+	 * Build post insert/update args from request data.
+	 *
 	 * @param array<string, mixed> $data Request body.
 	 * @param int|null             $id   Post ID (null for create).
 	 * @return array<string, mixed>
@@ -62,8 +76,10 @@ class PromotionsController extends PostTypeController {
 	}
 
 	/**
-	 * @param int                   $post_id
-	 * @param array<string, mixed>  $data
+	 * Save meta fields after creating/updating the post.
+	 *
+	 * @param int                  $post_id Post ID.
+	 * @param array<string, mixed> $data    Request body.
 	 * @return void
 	 */
 	protected function save_meta( int $post_id, array $data ): void {
@@ -75,7 +91,7 @@ class PromotionsController extends PostTypeController {
 
 		foreach ( $fields as $key => $field ) {
 			if ( array_key_exists( $field, $data ) ) {
-				$value = $field === 'active' ? (bool) $data[ $field ] : $data[ $field ];
+				$value = 'active' === $field ? (bool) $data[ $field ] : $data[ $field ];
 				update_post_meta( $post_id, $key, $value );
 			}
 		}

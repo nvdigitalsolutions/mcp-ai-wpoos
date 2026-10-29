@@ -23,7 +23,7 @@ class Promotion {
 		register_post_type(
 			Schema::CPT_PROMOTION,
 			array(
-				'labels'        => array(
+				'labels'          => array(
 					'name'          => 'Funiq Promotions',
 					'singular_name' => 'Funiq Promotion',
 					'add_new'       => 'Add Promotion',
@@ -31,13 +31,13 @@ class Promotion {
 					'edit_item'     => 'Edit Promotion',
 					'view_item'     => 'View Promotion',
 				),
-				'public'        => false,
-				'show_ui'       => false,
-				'show_in_rest'  => true,
-				'supports'      => array( 'title', 'editor', 'revisions' ),
-				'has_archive'   => false,
+				'public'          => false,
+				'show_ui'         => false,
+				'show_in_rest'    => true,
+				'supports'        => array( 'title', 'editor', 'revisions' ),
+				'has_archive'     => false,
 				'capability_type' => 'post',
-				'rewrite'       => false,
+				'rewrite'         => false,
 			)
 		);
 	}

@@ -197,8 +197,8 @@ abstract class TermController extends BaseController {
 	 *
 	 * Override in subclasses for custom meta fields.
 	 *
-	 * @param int                   $term_id Term ID.
-	 * @param array<string, mixed>  $data    Request body.
+	 * @param int                  $term_id Term ID.
+	 * @param array<string, mixed> $data    Request body.
 	 * @return void
 	 */
 	protected function save_term_meta( int $term_id, array $data ): void {

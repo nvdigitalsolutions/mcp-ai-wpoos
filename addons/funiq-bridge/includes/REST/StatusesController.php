@@ -14,13 +14,23 @@ use FuniqBridge\Schema;
  */
 class StatusesController extends TermController {
 
-	/** @var string */
+	/**
+	 * REST namespace.
+	 *
+	 * @var string
+	 */
 	protected $namespace = 'funiq/v1';
 
-	/** @var string */
+	/**
+	 * REST base path.
+	 *
+	 * @var string
+	 */
 	protected $rest_base = 'statuses';
 
 	/**
+	 * Get the taxonomy slug.
+	 *
 	 * @return string
 	 */
 	protected function taxonomy(): string {

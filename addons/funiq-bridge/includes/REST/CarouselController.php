@@ -20,10 +20,18 @@ use WP_REST_Server;
  */
 class CarouselController extends BaseController {
 
-	/** @var string */
+	/**
+	 * REST namespace.
+	 *
+	 * @var string
+	 */
 	protected $namespace = 'funiq/v1';
 
-	/** @var string */
+	/**
+	 * REST base path.
+	 *
+	 * @var string
+	 */
 	protected $rest_base = 'globals/carousel';
 
 	/**

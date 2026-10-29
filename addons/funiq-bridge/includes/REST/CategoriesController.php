@@ -21,13 +21,23 @@ use WP_REST_Server;
  */
 class CategoriesController extends TermController {
 
-	/** @var string */
+	/**
+	 * REST namespace.
+	 *
+	 * @var string
+	 */
 	protected $namespace = 'funiq/v1';
 
-	/** @var string */
+	/**
+	 * REST base path.
+	 *
+	 * @var string
+	 */
 	protected $rest_base = 'categories';
 
 	/**
+	 * Get the taxonomy slug.
+	 *
 	 * @return string
 	 */
 	protected function taxonomy(): string {
@@ -79,8 +89,8 @@ class CategoriesController extends TermController {
 	/**
 	 * Save image term meta.
 	 *
-	 * @param int                   $term_id Term ID.
-	 * @param array<string, mixed>  $data    Request body.
+	 * @param int                  $term_id Term ID.
+	 * @param array<string, mixed> $data    Request body.
 	 * @return void
 	 */
 	protected function save_term_meta( int $term_id, array $data ): void {
