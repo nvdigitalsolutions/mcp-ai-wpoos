@@ -1,0 +1,47 @@
+{
+	"fixtureId": 1,
+	"createdAt": "2026-09-10 10:00:00",
+	"updatedAt": "2026-10-20 09:30:00",
+	"media": {
+		"image": "http://localhost:8000/wp-content/uploads/2026/10/aurora-sofa.jpg",
+		"images": [
+			"http://localhost:8000/wp-content/uploads/2026/10/aurora-sofa-2.jpg",
+			"http://localhost:8000/wp-content/uploads/2026/10/aurora-sofa-3.jpg"
+		],
+		"imageId": 11,
+		"imagesIds": [12, 13]
+	},
+	"refs": {
+		"category": 1,
+		"brand": 1,
+		"colors": [1, 2],
+		"statuses": [1],
+		"promotion": 1
+	},
+	"fields": {
+		"name": "Aurora 3-Seater Sofa",
+		"price": 1299,
+		"oldPrice": 1499,
+		"description": "<p>A deep, cloud-soft three-seater with a solid oak base.</p><p>Upholstered in a linen-blend fabric and built for daily life.</p>",
+		"category": { "name": "Sofas" },
+		"brand": { "name": "NV Home" },
+		"colors": [
+			{ "name": "Sage", "hexCode": "#9CAF88" },
+			{ "name": "Oat", "hexCode": "#D6C9B4" }
+		],
+		"width": 210,
+		"height": 85,
+		"depth": 95,
+		"rating": 4.8,
+		"isBestseller": true,
+		"isFeatured": true,
+		"statuses": [{ "name": "In Stock" }],
+		"promotion": {
+			"title": "Autumn Sale",
+			"description": "Up to 25% off selected pieces.",
+			"startDate": "2026-10-01",
+			"endDate": "2026-11-30",
+			"active": true
+		}
+	}
+}

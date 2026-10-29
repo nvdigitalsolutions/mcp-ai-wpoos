@@ -76,6 +76,10 @@ final class Plugin {
 		if ( is_admin() ) {
 			AdminPage::init();
 		}
+
+		// 5. Storefront rebuild webhook (Proposal 092 Phase 2.3 — no-ops
+		//    until the operator configures a webhook URL).
+		RebuildWebhook::init();
 	}
 
 	/**

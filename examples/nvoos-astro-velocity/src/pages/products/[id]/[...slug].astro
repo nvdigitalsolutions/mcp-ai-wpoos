@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import GalleryLightbox from '../../../islands/GalleryLightbox';
+import GalleryLightbox, { type GalleryEntry } from '../../../islands/GalleryLightbox';
 import AddToCartButton from '../../../islands/AddToCartButton';
 import PromoCodeField from '../../../islands/PromoCodeField';
 import ProductCard from '../../../components/ProductCard.astro';
@@ -20,6 +20,7 @@ import { formatPrice, resolveCurrency } from '../../../lib/commerce/money';
 import { categoryPath, slugify, absoluteUrl } from '../../../lib/url';
 import { breadcrumbJsonLd, productJsonLd } from '../../../lib/seo/jsonld';
 import { metaForProduct } from '../../../lib/seo/meta';
+import { fixedImage, renderOrigin, responsiveImage } from '../../../lib/images';
 
 export const prerender = true;
 
@@ -69,6 +70,21 @@ const jsonld = [
 	productJsonLd(product, site, resolveCurrency()),
 	breadcrumbJsonLd(breadcrumbs),
 ];
+
+// Gallery entries — runtime-optimized via the /_image endpoint so the
+// prerendered PDP build never fetches remote bytes.
+const origin = renderOrigin(Astro.url, Astro.site);
+const gallery: GalleryEntry[] = [product.image, ...product.images]
+	.filter(Boolean)
+	.map((src) => ({
+		full: responsiveImage(origin, src, {
+			width: 600,
+			height: 750,
+			widths: [600, 1200],
+			sizes: '(min-width: 800px) 600px, 100vw',
+		}),
+		thumb: fixedImage(origin, src, 80, 100),
+	}));
 ---
 
 <BaseLayout
@@ -96,11 +112,7 @@ const jsonld = [
 
 	<article class="pdp">
 		<div>
-			<GalleryLightbox
-				images={[product.image, ...product.images]}
-				alt={product.name}
-				client:visible
-			/>
+			<GalleryLightbox entries={gallery} alt={product.name} client:visible />
 		</div>
 		<div>
 			<h1>{product.name}</h1>

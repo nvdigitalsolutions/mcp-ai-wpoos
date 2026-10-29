@@ -26,5 +26,14 @@ export default defineConfig({
 
 	adapter: node({ mode: 'standalone' }),
 
+	// The runtime /_image endpoint fetches absolute same-origin hrefs; the
+	// site host must be allowlisted. Deriving it from ASTRO_SITE keeps test
+	// builds (localhost) and production builds (real host) both working.
+	image: {
+		domains: [
+			new URL(process.env.ASTRO_SITE || 'https://store.nvoos.cloud').hostname,
+		],
+	},
+
 	integrations: [react()],
 });

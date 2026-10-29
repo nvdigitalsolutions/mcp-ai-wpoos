@@ -1,226 +1,383 @@
 [
-	{
-		"id": 1,
-		"name": "Aurora 3-Seater Sofa",
-		"price": 1299,
-		"oldPrice": 1499,
-		"description": "<p>A deep, cloud-soft three-seater with a solid oak base.</p><p>Upholstered in a linen-blend fabric and built for daily life.</p>",
-		"category": { "id": 1, "name": "Sofas" },
-		"brand": { "id": 1, "name": "NV Home" },
-		"colors": [
-			{ "id": 1, "name": "Sage", "hexCode": "#9CAF88" },
-			{ "id": 2, "name": "Oat", "hexCode": "#D6C9B4" }
-		],
-		"width": 210,
-		"height": 85,
-		"depth": 95,
-		"rating": 4.8,
-		"isBestseller": true,
-		"isFeatured": true,
-		"image": "http://localhost:8000/wp-content/uploads/2026/10/aurora-sofa.jpg",
-		"images": [
-			"http://localhost:8000/wp-content/uploads/2026/10/aurora-sofa-2.jpg",
-			"http://localhost:8000/wp-content/uploads/2026/10/aurora-sofa-3.jpg"
-		],
-		"imageId": 11,
-		"imagesIds": [12, 13],
-		"statuses": [{ "id": 1, "name": "In Stock" }],
-		"promotion": {
-			"id": 1,
-			"title": "Autumn Sale",
-			"description": "Up to 25% off selected pieces.",
-			"startDate": "2026-10-01",
-			"endDate": "2026-11-30",
-			"active": true
-		},
-		"createdAt": "2026-09-10 10:00:00",
-		"updatedAt": "2026-10-20 09:30:00"
-	},
-	{
-		"id": 2,
-		"name": "Lumen Armchair",
-		"price": 549,
-		"oldPrice": null,
-		"description": "<p>A compact reading chair with a swivel base.</p>",
-		"category": { "id": 2, "name": "Chairs" },
-		"brand": { "id": 1, "name": "NV Home" },
-		"colors": [
-			{ "id": 2, "name": "Oat", "hexCode": "#D6C9B4" },
-			{ "id": 3, "name": "Charcoal", "hexCode": "#3A3A3A" }
-		],
-		"width": 78,
-		"height": 92,
-		"depth": 80,
-		"rating": 4.5,
-		"isBestseller": false,
-		"isFeatured": true,
-		"image": "http://localhost:8000/wp-content/uploads/2026/10/lumen-armchair.jpg",
-		"images": [],
-		"imageId": 21,
-		"imagesIds": [],
-		"statuses": [{ "id": 1, "name": "In Stock" }],
-		"promotion": null,
-		"createdAt": "2026-09-15 10:00:00",
-		"updatedAt": "2026-10-18 14:00:00"
-	},
-	{
-		"id": 3,
-		"name": "Halo Lounge Chair",
-		"price": 799,
-		"oldPrice": 899,
-		"description": "<p>Curved lounge chair with wool upholstery.</p>",
-		"category": { "id": 2, "name": "Chairs" },
-		"brand": { "id": 2, "name": "Craftline" },
-		"colors": [
-			{ "id": 3, "name": "Charcoal", "hexCode": "#3A3A3A" },
-			{ "id": 4, "name": "Terracotta", "hexCode": "#C97B5D" }
-		],
-		"width": 84,
-		"height": 88,
-		"depth": 86,
-		"rating": 4.2,
-		"isBestseller": true,
-		"isFeatured": false,
-		"image": "http://localhost:8000/wp-content/uploads/2026/10/halo-chair.jpg",
-		"images": ["http://localhost:8000/wp-content/uploads/2026/10/halo-chair-2.jpg"],
-		"imageId": 31,
-		"imagesIds": [32],
-		"statuses": [{ "id": 2, "name": "Made to Order" }],
-		"promotion": null,
-		"createdAt": "2026-09-20 10:00:00",
-		"updatedAt": "2026-10-21 11:00:00"
-	},
-	{
-		"id": 4,
-		"name": "Terra Side Table",
-		"price": 249,
-		"oldPrice": null,
-		"description": "<p>Solid ash side table with a round top.</p>",
-		"category": { "id": 3, "name": "Tables" },
-		"brand": { "id": 2, "name": "Craftline" },
-		"colors": [
-			{ "id": 1, "name": "Sage", "hexCode": "#9CAF88" },
-			{ "id": 4, "name": "Terracotta", "hexCode": "#C97B5D" }
-		],
-		"width": 45,
-		"height": 50,
-		"depth": 45,
-		"rating": 4,
-		"isBestseller": false,
-		"isFeatured": false,
-		"image": "http://localhost:8000/wp-content/uploads/2026/10/terra-table.jpg",
-		"images": [],
-		"imageId": 41,
-		"imagesIds": [],
-		"statuses": [{ "id": 1, "name": "In Stock" }],
-		"promotion": null,
-		"createdAt": "2026-09-25 10:00:00",
-		"updatedAt": "2026-10-19 16:00:00"
-	},
-	{
-		"id": 5,
-		"name": "Nimbus Coffee Table",
-		"price": 449,
-		"oldPrice": 499,
-		"description": "<p>Low-profile coffee table in smoked oak.</p>",
-		"category": { "id": 3, "name": "Tables" },
-		"brand": { "id": 1, "name": "NV Home" },
-		"colors": [{ "id": 1, "name": "Sage", "hexCode": "#9CAF88" }],
-		"width": 110,
-		"height": 38,
-		"depth": 60,
-		"rating": 4.6,
-		"isBestseller": false,
-		"isFeatured": true,
-		"image": "http://localhost:8000/wp-content/uploads/2026/10/nimbus-table.jpg",
-		"images": [],
-		"imageId": 51,
-		"imagesIds": [],
-		"statuses": [{ "id": 1, "name": "In Stock" }],
-		"promotion": null,
-		"createdAt": "2026-10-01 10:00:00",
-		"updatedAt": "2026-10-22 08:00:00"
-	},
-	{
-		"id": 6,
-		"name": "Drift Bookcase",
-		"price": 899,
-		"oldPrice": null,
-		"description": "<p>Five-shelf bookcase in white oak veneer.</p>",
-		"category": { "id": 3, "name": "Tables" },
-		"brand": { "id": 2, "name": "Craftline" },
-		"colors": [{ "id": 2, "name": "Oat", "hexCode": "#D6C9B4" }],
-		"width": 90,
-		"height": 180,
-		"depth": 35,
-		"rating": 4.3,
-		"isBestseller": false,
-		"isFeatured": false,
-		"image": "http://localhost:8000/wp-content/uploads/2026/10/drift-bookcase.jpg",
-		"images": [],
-		"imageId": 61,
-		"imagesIds": [],
-		"statuses": [{ "id": 2, "name": "Made to Order" }],
-		"promotion": null,
-		"createdAt": "2026-10-05 10:00:00",
-		"updatedAt": "2026-10-17 12:00:00"
-	},
-	{
-		"id": 7,
-		"name": "Cove Media Unit",
-		"price": 1099,
-		"oldPrice": null,
-		"description": "<p>Wall-mounted media unit with cable management.</p>",
-		"category": { "id": 3, "name": "Tables" },
-		"brand": { "id": 1, "name": "NV Home" },
-		"colors": [{ "id": 3, "name": "Charcoal", "hexCode": "#3A3A3A" }],
-		"width": 160,
-		"height": 45,
-		"depth": 40,
-		"rating": 4.1,
-		"isBestseller": false,
-		"isFeatured": false,
-		"image": "http://localhost:8000/wp-content/uploads/2026/10/cove-media.jpg",
-		"images": ["http://localhost:8000/wp-content/uploads/2026/10/cove-media-2.jpg"],
-		"imageId": 71,
-		"imagesIds": [72],
-		"statuses": [{ "id": 1, "name": "In Stock" }],
-		"promotion": null,
-		"createdAt": "2026-10-08 10:00:00",
-		"updatedAt": "2026-10-23 10:00:00"
-	},
-	{
-		"id": 8,
-		"name": "Solace Daybed",
-		"price": 1799,
-		"oldPrice": 1999,
-		"description": "<p>Upholstered daybed with storage drawers beneath.</p>",
-		"category": { "id": 1, "name": "Sofas" },
-		"brand": { "id": 2, "name": "Craftline" },
-		"colors": [
-			{ "id": 4, "name": "Terracotta", "hexCode": "#C97B5D" },
-			{ "id": 2, "name": "Oat", "hexCode": "#D6C9B4" }
-		],
-		"width": 200,
-		"height": 80,
-		"depth": 100,
-		"rating": 4.9,
-		"isBestseller": true,
-		"isFeatured": false,
-		"image": "http://localhost:8000/wp-content/uploads/2026/10/solace-daybed.jpg",
-		"images": [],
-		"imageId": 81,
-		"imagesIds": [],
-		"statuses": [{ "id": 1, "name": "In Stock" }],
-		"promotion": {
-			"id": 1,
-			"title": "Autumn Sale",
-			"description": "Up to 25% off selected pieces.",
-			"startDate": "2026-10-01",
-			"endDate": "2026-11-30",
-			"active": true
-		},
-		"createdAt": "2026-10-10 10:00:00",
-		"updatedAt": "2026-10-24 15:00:00"
-	}
+  {
+    "id": 1,
+    "name": "Aurora 3-Seater Sofa",
+    "price": 1299,
+    "oldPrice": 1499,
+    "description": "<p>A deep, cloud-soft three-seater with a solid oak base.</p><p>Upholstered in a linen-blend fabric and built for daily life.</p>",
+    "category": {
+      "id": 1,
+      "name": "Sofas"
+    },
+    "brand": {
+      "id": 1,
+      "name": "NV Home"
+    },
+    "colors": [
+      {
+        "id": 1,
+        "name": "Sage",
+        "hexCode": "#9CAF88"
+      },
+      {
+        "id": 2,
+        "name": "Oat",
+        "hexCode": "#D6C9B4"
+      }
+    ],
+    "width": 210,
+    "height": 85,
+    "depth": 95,
+    "rating": 4.8,
+    "isBestseller": true,
+    "isFeatured": true,
+    "image": "http://localhost:8000/wp-content/uploads/2026/10/aurora-sofa.jpg",
+    "images": [
+      "http://localhost:8000/wp-content/uploads/2026/10/aurora-sofa-2.jpg",
+      "http://localhost:8000/wp-content/uploads/2026/10/aurora-sofa-3.jpg"
+    ],
+    "imageId": 11,
+    "imagesIds": [
+      12,
+      13
+    ],
+    "statuses": [
+      {
+        "id": 1,
+        "name": "In Stock"
+      }
+    ],
+    "promotion": {
+      "id": 1,
+      "title": "Autumn Sale",
+      "description": "Up to 25% off selected pieces.",
+      "startDate": "2026-10-01",
+      "endDate": "2026-11-30",
+      "active": true
+    },
+    "createdAt": "2026-09-10 10:00:00",
+    "updatedAt": "2026-10-20 09:30:00"
+  },
+  {
+    "id": 2,
+    "name": "Lumen Armchair",
+    "price": 549,
+    "oldPrice": null,
+    "description": "<p>A compact reading chair with a swivel base.</p>",
+    "category": {
+      "id": 2,
+      "name": "Chairs"
+    },
+    "brand": {
+      "id": 1,
+      "name": "NV Home"
+    },
+    "colors": [
+      {
+        "id": 2,
+        "name": "Oat",
+        "hexCode": "#D6C9B4"
+      },
+      {
+        "id": 3,
+        "name": "Charcoal",
+        "hexCode": "#3A3A3A"
+      }
+    ],
+    "width": 78,
+    "height": 92,
+    "depth": 80,
+    "rating": 4.5,
+    "isBestseller": false,
+    "isFeatured": true,
+    "image": "http://localhost:8000/wp-content/uploads/2026/10/lumen-armchair.jpg",
+    "images": [],
+    "imageId": 21,
+    "imagesIds": [],
+    "statuses": [
+      {
+        "id": 1,
+        "name": "In Stock"
+      }
+    ],
+    "promotion": null,
+    "createdAt": "2026-09-15 10:00:00",
+    "updatedAt": "2026-10-18 14:00:00"
+  },
+  {
+    "id": 3,
+    "name": "Halo Lounge Chair",
+    "price": 799,
+    "oldPrice": 899,
+    "description": "<p>Curved lounge chair with wool upholstery.</p>",
+    "category": {
+      "id": 2,
+      "name": "Chairs"
+    },
+    "brand": {
+      "id": 2,
+      "name": "Craftline"
+    },
+    "colors": [
+      {
+        "id": 3,
+        "name": "Charcoal",
+        "hexCode": "#3A3A3A"
+      },
+      {
+        "id": 4,
+        "name": "Terracotta",
+        "hexCode": "#C97B5D"
+      }
+    ],
+    "width": 84,
+    "height": 88,
+    "depth": 86,
+    "rating": 4.2,
+    "isBestseller": true,
+    "isFeatured": false,
+    "image": "http://localhost:8000/wp-content/uploads/2026/10/halo-chair.jpg",
+    "images": [
+      "http://localhost:8000/wp-content/uploads/2026/10/halo-chair-2.jpg"
+    ],
+    "imageId": 31,
+    "imagesIds": [
+      32
+    ],
+    "statuses": [
+      {
+        "id": 2,
+        "name": "Made to Order"
+      }
+    ],
+    "promotion": null,
+    "createdAt": "2026-09-20 10:00:00",
+    "updatedAt": "2026-10-21 11:00:00"
+  },
+  {
+    "id": 4,
+    "name": "Terra Side Table",
+    "price": 249,
+    "oldPrice": null,
+    "description": "<p>Solid ash side table with a round top.</p>",
+    "category": {
+      "id": 3,
+      "name": "Tables"
+    },
+    "brand": {
+      "id": 2,
+      "name": "Craftline"
+    },
+    "colors": [
+      {
+        "id": 1,
+        "name": "Sage",
+        "hexCode": "#9CAF88"
+      },
+      {
+        "id": 4,
+        "name": "Terracotta",
+        "hexCode": "#C97B5D"
+      }
+    ],
+    "width": 45,
+    "height": 50,
+    "depth": 45,
+    "rating": 4,
+    "isBestseller": false,
+    "isFeatured": false,
+    "image": "http://localhost:8000/wp-content/uploads/2026/10/terra-table.jpg",
+    "images": [],
+    "imageId": 41,
+    "imagesIds": [],
+    "statuses": [
+      {
+        "id": 1,
+        "name": "In Stock"
+      }
+    ],
+    "promotion": null,
+    "createdAt": "2026-09-25 10:00:00",
+    "updatedAt": "2026-10-19 16:00:00"
+  },
+  {
+    "id": 5,
+    "name": "Nimbus Coffee Table",
+    "price": 449,
+    "oldPrice": 499,
+    "description": "<p>Low-profile coffee table in smoked oak.</p>",
+    "category": {
+      "id": 3,
+      "name": "Tables"
+    },
+    "brand": {
+      "id": 1,
+      "name": "NV Home"
+    },
+    "colors": [
+      {
+        "id": 1,
+        "name": "Sage",
+        "hexCode": "#9CAF88"
+      }
+    ],
+    "width": 110,
+    "height": 38,
+    "depth": 60,
+    "rating": 4.6,
+    "isBestseller": false,
+    "isFeatured": true,
+    "image": "http://localhost:8000/wp-content/uploads/2026/10/nimbus-table.jpg",
+    "images": [],
+    "imageId": 51,
+    "imagesIds": [],
+    "statuses": [
+      {
+        "id": 1,
+        "name": "In Stock"
+      }
+    ],
+    "promotion": null,
+    "createdAt": "2026-10-01 10:00:00",
+    "updatedAt": "2026-10-22 08:00:00"
+  },
+  {
+    "id": 6,
+    "name": "Drift Bookcase",
+    "price": 899,
+    "oldPrice": null,
+    "description": "<p>Five-shelf bookcase in white oak veneer.</p>",
+    "category": {
+      "id": 3,
+      "name": "Tables"
+    },
+    "brand": {
+      "id": 2,
+      "name": "Craftline"
+    },
+    "colors": [
+      {
+        "id": 2,
+        "name": "Oat",
+        "hexCode": "#D6C9B4"
+      }
+    ],
+    "width": 90,
+    "height": 180,
+    "depth": 35,
+    "rating": 4.3,
+    "isBestseller": false,
+    "isFeatured": false,
+    "image": "http://localhost:8000/wp-content/uploads/2026/10/drift-bookcase.jpg",
+    "images": [],
+    "imageId": 61,
+    "imagesIds": [],
+    "statuses": [
+      {
+        "id": 2,
+        "name": "Made to Order"
+      }
+    ],
+    "promotion": null,
+    "createdAt": "2026-10-05 10:00:00",
+    "updatedAt": "2026-10-17 12:00:00"
+  },
+  {
+    "id": 7,
+    "name": "Cove Media Unit",
+    "price": 1099,
+    "oldPrice": null,
+    "description": "<p>Wall-mounted media unit with cable management.</p>",
+    "category": {
+      "id": 3,
+      "name": "Tables"
+    },
+    "brand": {
+      "id": 1,
+      "name": "NV Home"
+    },
+    "colors": [
+      {
+        "id": 3,
+        "name": "Charcoal",
+        "hexCode": "#3A3A3A"
+      }
+    ],
+    "width": 160,
+    "height": 45,
+    "depth": 40,
+    "rating": 4.1,
+    "isBestseller": false,
+    "isFeatured": false,
+    "image": "http://localhost:8000/wp-content/uploads/2026/10/cove-media.jpg",
+    "images": [
+      "http://localhost:8000/wp-content/uploads/2026/10/cove-media-2.jpg"
+    ],
+    "imageId": 71,
+    "imagesIds": [
+      72
+    ],
+    "statuses": [
+      {
+        "id": 1,
+        "name": "In Stock"
+      }
+    ],
+    "promotion": null,
+    "createdAt": "2026-10-08 10:00:00",
+    "updatedAt": "2026-10-23 10:00:00"
+  },
+  {
+    "id": 8,
+    "name": "Solace Daybed",
+    "price": 1799,
+    "oldPrice": 1999,
+    "description": "<p>Upholstered daybed with storage drawers beneath.</p>",
+    "category": {
+      "id": 1,
+      "name": "Sofas"
+    },
+    "brand": {
+      "id": 2,
+      "name": "Craftline"
+    },
+    "colors": [
+      {
+        "id": 4,
+        "name": "Terracotta",
+        "hexCode": "#C97B5D"
+      },
+      {
+        "id": 2,
+        "name": "Oat",
+        "hexCode": "#D6C9B4"
+      }
+    ],
+    "width": 200,
+    "height": 80,
+    "depth": 100,
+    "rating": 4.9,
+    "isBestseller": true,
+    "isFeatured": false,
+    "image": "http://localhost:8000/wp-content/uploads/2026/10/solace-daybed.jpg",
+    "images": [],
+    "imageId": 81,
+    "imagesIds": [],
+    "statuses": [
+      {
+        "id": 1,
+        "name": "In Stock"
+      }
+    ],
+    "promotion": {
+      "id": 1,
+      "title": "Autumn Sale",
+      "description": "Up to 25% off selected pieces.",
+      "startDate": "2026-10-01",
+      "endDate": "2026-11-30",
+      "active": true
+    },
+    "createdAt": "2026-10-10 10:00:00",
+    "updatedAt": "2026-10-24 15:00:00"
+  }
 ]

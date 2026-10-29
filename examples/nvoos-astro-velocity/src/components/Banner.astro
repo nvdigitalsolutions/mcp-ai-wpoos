@@ -1,21 +1,37 @@
 ---
 import type { Promotion } from '../lib/commerce/types';
+import { fixedImage, renderOrigin } from '../lib/images';
 
 interface Props {
 	banner: { image: string; promotion: Promotion | null } | null;
 }
 
 const { banner } = Astro.props;
+
+const origin = renderOrigin(Astro.url, Astro.site);
+const image = banner?.image
+	? fixedImage(origin, banner.image, 1200, 300)
+	: null;
 ---
 
 {
 	banner && (banner.image || banner.promotion) && (
 		<section class="banner">
-			{banner.image && <img src={banner.image} alt="" width="1200" height="300" />}
+			{image && (
+				<img
+					src={image.src}
+					srcset={image.srcset}
+					width={image.width}
+					height={image.height}
+					alt=""
+					loading="eager"
+					decoding="async"
+				/>
+			)}
 			{banner.promotion?.active && (
 				<p class="banner__promo">
 					<a href="/promotions/">
-						<strong>{banner.promotion.title}</strong>
+					<strong>{banner.promotion.title}</strong>
 					</a>
 				</p>
 			)}

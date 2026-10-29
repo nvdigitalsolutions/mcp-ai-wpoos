@@ -2,6 +2,7 @@
 import type { Product } from '../lib/commerce/types';
 import { formatPrice } from '../lib/commerce/money';
 import { productPath } from '../lib/url';
+import { renderOrigin, responsiveImage } from '../lib/images';
 
 interface Props {
 	product: Product;
@@ -14,20 +15,35 @@ const hasPromo =
 	product.promotion.active &&
 	product.oldPrice !== null &&
 	product.oldPrice > product.price;
+
+const origin = renderOrigin(Astro.url, Astro.site);
+
+// 4:5 media box, two widths for the card grid (220px min → 400px on wider
+// viewports). Runtime-optimized via the /_image endpoint (hermetic builds).
+const image = product.image
+	? responsiveImage(origin, product.image, {
+			width: 400,
+			height: 500,
+			widths: [400, 800],
+			sizes: '(min-width: 800px) 400px, 100vw',
+		})
+	: null;
 ---
 
 <a class="product-card" href={href}>
 	<div class="product-card__media">
 		{hasPromo && <span class="promo-badge">Sale</span>}
 		{
-			product.image && (
+			image && (
 				<img
-					src={product.image}
+					src={image.src}
+					srcset={image.srcset}
+					sizes={image.sizes}
+					width={image.width}
+					height={image.height}
 					alt={product.name}
 					loading="lazy"
 					decoding="async"
-					width="400"
-					height="500"
 				/>
 			)
 		}

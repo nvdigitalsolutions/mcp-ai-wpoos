@@ -71,9 +71,24 @@ NVOOS_TARGET_SITE=http://localhost:8123 PORT=4321 npm run serve
 # Tests (unit + contract gate):
 npm test
 
+# E2E (Playwright — installs its own servers; run once to fetch Chromium):
+npx playwright install chromium
+npm run test:e2e
+
+# Lighthouse CI (needs Chromium — point CHROME_PATH at the Playwright build):
+npm run lhci:ci
+
 # Dev server (client islands need PUBLIC_API_BASE — see .env.example):
 PUBLIC_API_BASE=http://localhost:8123/wp-json/nvoos-commerce/v1 npm run dev
 ```
+
+## Contract drift guard (Phase 2.7)
+
+The bridge's golden snapshot test
+(`addons/funiq-bridge/tests/phpunit/Transformers/TestTransformerGolden.php`)
+pins the transformer output; `npm run sync:bridge-fixtures` propagates the
+goldens into `tests/fixtures/`. CI runs the generator and fails on any diff —
+a contract change must update both sides in the same PR.
 
 ## Deploy sync (mirror)
 

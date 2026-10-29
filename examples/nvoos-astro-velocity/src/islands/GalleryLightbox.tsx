@@ -1,26 +1,32 @@
 // ---------------------------------------------------------------------------
 // GalleryLightbox island — clean-room React component (D6), client:visible.
-// Thumbnail strip + fullscreen overlay. Product images are already
-// normalized to same-origin /media/* by the fetch edge.
+// Receives runtime-optimized image descriptors from the server-rendered page
+// (/_image endpoint — build stays hermetic).
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
+import type { OptimizedImage } from '../lib/images';
+
+export interface GalleryEntry {
+	full: OptimizedImage;
+	thumb: OptimizedImage;
+}
 
 interface Props {
-	images: string[];
+	entries: GalleryEntry[];
 	alt: string;
 }
 
-export default function GalleryLightbox({ images, alt }: Props) {
+export default function GalleryLightbox({ entries, alt }: Props) {
 	const [active, setActive] = useState(0);
 	const [open, setOpen] = useState(false);
 
-	if (images.length === 0) {
+	if (entries.length === 0) {
 		return null;
 	}
 
-	const current = images[active];
-	const hasMany = images.length > 1;
+	const current = entries[active];
+	const hasMany = entries.length > 1;
 
 	return (
 		<div className="gallery">
@@ -30,19 +36,32 @@ export default function GalleryLightbox({ images, alt }: Props) {
 				onClick={() => setOpen(true)}
 				aria-label="Open image fullscreen"
 			>
-				<img src={current} alt={alt} width="600" height="750" />
+				<img
+					src={current.full.src}
+					srcset={current.full.srcset}
+					sizes={current.full.sizes}
+					width={current.full.width}
+					height={current.full.height}
+					alt={alt}
+				/>
 			</button>
 			{hasMany && (
 				<div className="gallery__thumbs" role="tablist" aria-label="Product images">
-					{images.map((src, index) => (
+					{entries.map((entry, index) => (
 						<button
 							type="button"
-							key={src}
+							key={entry.thumb.src}
 							className={index === active ? 'gallery__thumb is-active' : 'gallery__thumb'}
 							onClick={() => setActive(index)}
-							aria-label={`Show image ${index + 1} of ${images.length}`}
+							aria-label={`Show image ${index + 1} of ${entries.length}`}
 						>
-							<img src={src} alt="" loading="lazy" width="80" height="100" />
+							<img
+								src={entry.thumb.src}
+								alt=""
+								loading="lazy"
+								width={entry.thumb.width}
+								height={entry.thumb.height}
+							/>
 						</button>
 					))}
 				</div>
@@ -55,7 +74,7 @@ export default function GalleryLightbox({ images, alt }: Props) {
 					aria-label={alt}
 					onClick={() => setOpen(false)}
 				>
-					<img src={current} alt={alt} />
+					<img src={current.full.src} alt={alt} />
 					<button
 						type="button"
 						className="gallery__close"
