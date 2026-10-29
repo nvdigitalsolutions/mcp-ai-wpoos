@@ -1,0 +1,7 @@
+# The PWA bundle is injected at CI time from the private repo — never
+# committed to the monorepo (Envato boundary, Proposal 085 D2).
+dist/
+
+# Local dev artifacts.
+node_modules/
+*.log

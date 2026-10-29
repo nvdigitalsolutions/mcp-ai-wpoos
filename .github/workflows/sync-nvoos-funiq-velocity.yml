@@ -1,0 +1,170 @@
+name: Sync nvoos-funiq-velocity
+
+# One-way mirror of the Funiq PWA Velocity app to the PRIVATE repo
+# nvdigitalsolutions/nvoos-funiq-velocity (Proposal 085 Phase 4).
+#
+# The app ships the PURCHASED Funiq PWA bundle (dist/) + zero-dependency
+# serve scripts. The bundle is Envato-licensed and must never appear in the
+# public monorepo — it is cloned from the PRIVATE repo nvoos-funiq-pwa at
+# build time and injected into the assembled tree. This workflow contains
+# no licensed bytes and no secret values.
+#
+# The mirror repo history is intentionally flat (one commit per sync,
+# force-pushed). Never commit to the mirror directly.
+#
+# Security hardening (per the repo's research notes for this track):
+#   - least-privilege `permissions: contents: read` at the workflow level;
+#   - tokens are referenced via env only, never inlined into command
+#     arguments (arg lists leak into process tables/logs);
+#   - the license boundary is enforced by CI: the mirror target MUST be
+#     private or the sync fails.
+#
+# Activation (owner steps, one-time — Proposal 085 Phase 1):
+#   1. Create the repo nvdigitalsolutions/nvoos-funiq-pwa (private) and
+#      commit the purchased PWA source + build script producing dist/.
+#   2. Create the repo nvdigitalsolutions/nvoos-funiq-velocity (private,
+#      empty) — this workflow backfills it.
+#   3. Add repo-scoped tokens as monorepo secrets:
+#      NVOOS_FUNIQ_PWA_READ_TOKEN (read-only clone of the PWA repo)
+#      NVOOS_FUNIQ_VELOCITY_REPO_TOKEN (push to the mirror)
+#   4. Run this workflow once via workflow_dispatch (backfills the mirror).
+#   5. In Velocity: connect the mirror, root directory = repo root, entry
+#      server.js, no build command, env NVOOS_TARGET_SITE=<bridge site>.
+#
+# Until step 3 is complete the workflow SKIPS with a notice (exit 0) so
+# alpha-working stays green; the notice repeats the checklist above.
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/funiq-bridge-velocity/**'
+  # Manual runs let you force a sync without waiting for a merge (first-run
+  # verification after adding the tokens, backfills, etc.).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Gate on owner Phase 1 (skip until the private repos + tokens exist)
+        env:
+          PWA_READ_TOKEN: ${{ secrets.NVOOS_FUNIQ_PWA_READ_TOKEN }}
+          VELOCITY_REPO_TOKEN: ${{ secrets.NVOOS_FUNIQ_VELOCITY_REPO_TOKEN }}
+        run: |
+          if [ -z "$PWA_READ_TOKEN" ] || [ -z "$VELOCITY_REPO_TOKEN" ]; then
+            echo "::notice::Skipping sync — owner Phase 1 incomplete. Create the private repos nvoos-funiq-pwa and nvoos-funiq-velocity and add the NVOOS_FUNIQ_PWA_READ_TOKEN / NVOOS_FUNIQ_VELOCITY_REPO_TOKEN secrets (see this workflow's header)."
+            exit 0
+          fi
+          echo "Phase 1 tokens present — proceeding with sync."
+
+      - name: Assemble mirror tree
+        run: |
+          rm -rf /tmp/nvoos-funiq-velocity
+          mkdir -p /tmp/nvoos-funiq-velocity
+          # cp -r, not git archive: the repo .gitattributes export-ignores
+          # package.json, which Velocity requires at the repo root.
+          cp -r examples/funiq-bridge-velocity/. /tmp/nvoos-funiq-velocity/
+          # Dev-only tool: sync-dist.mjs copies a LOCAL PWA build out of the
+          # private repo and cannot work in the mirror.
+          rm -f /tmp/nvoos-funiq-velocity/scripts/sync-dist.mjs
+
+      - name: Inject the licensed PWA bundle from the private repo
+        env:
+          PWA_READ_TOKEN: ${{ secrets.NVOOS_FUNIQ_PWA_READ_TOKEN }}
+        run: |
+          # Token via env + http.extraheader — never inlined into argv.
+          AUTH_HEADER=$(printf 'x-access-token:%s' "$PWA_READ_TOKEN" | base64 -w0)
+          rm -rf /tmp/nvoos-funiq-pwa
+          git -c http.extraheader="AUTHORIZATION: basic $AUTH_HEADER" \
+            clone --depth 1 https://github.com/nvdigitalsolutions/nvoos-funiq-pwa.git /tmp/nvoos-funiq-pwa
+          test -f /tmp/nvoos-funiq-pwa/dist/index.html || {
+            echo "::error::nvoos-funiq-pwa has no dist/index.html — build the PWA before syncing."
+            exit 1
+          }
+          cp -r /tmp/nvoos-funiq-pwa/dist/. /tmp/nvoos-funiq-velocity/dist/
+
+      - name: License boundary guard — the mirror target must be private
+        env:
+          VELOCITY_REPO_TOKEN: ${{ secrets.NVOOS_FUNIQ_VELOCITY_REPO_TOKEN }}
+        run: |
+          VISIBILITY=$(curl -sS -H "Authorization: Bearer $VELOCITY_REPO_TOKEN" \
+            https://api.github.com/repos/nvdigitalsolutions/nvoos-funiq-velocity \
+            | grep -o '"private": *[a-z]*' | cut -d' ' -f2)
+          if [ "$VISIBILITY" != "true" ]; then
+            echo "::error::nvoos-funiq-velocity is not private ($VISIBILITY) — licensed bytes must never reach a public repo. Aborting sync."
+            exit 1
+          fi
+          echo "License boundary verified: mirror is private."
+
+      - name: Smoke-test the assembled app
+        working-directory: /tmp/nvoos-funiq-velocity
+        run: |
+          node --check scripts/serve.mjs
+          node --check server.js
+          node --check scripts/lib/proxy-headers.mjs
+          test -f dist/index.html
+          # Asset-closure gate (conditional on the PWA's asset layout): every
+          # asset referenced by index.html must exist in dist/.
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const refs = [];
+            const html = fs.readFileSync(path.join("dist", "index.html"), "utf8");
+            for (const m of html.matchAll(/(?:src|href)="\/assets\/([^"]+)"/g)) refs.push(m[1]);
+            const assetsDir = path.join("dist", "assets");
+            if (fs.existsSync(assetsDir)) {
+              for (const name of fs.readdirSync(assetsDir)) {
+                if (!name.endsWith(".js")) continue;
+                const source = fs.readFileSync(path.join(assetsDir, name), "utf8");
+                for (const m of source.matchAll(/"assets\/([A-Za-z0-9_.-]+\.css)"/g)) refs.push(m[1]);
+              }
+              const missing = [...new Set(refs)].filter((name) => !fs.existsSync(path.join(assetsDir, name)));
+              if (missing.length) { console.error("Missing bundle assets: " + missing.join(", ")); process.exit(1); }
+              console.log("Asset closure OK: " + new Set(refs).size + " referenced assets present");
+            }
+          '
+          # Boot the VELOCITY ENTRY (server.js shim → serve.mjs). The proxy
+          # target is intentionally unreachable: the /api smoke asserts the
+          # route ENGAGES (the proxy's JSON 502), not a backend round-trip.
+          NVOOS_TARGET_SITE=https://example.invalid node server.js > /tmp/funiq-velocity-smoke.log 2>&1 &
+          SERVER_PID=$!
+          sleep 1
+          curl -sf -o /dev/null http://localhost:4180/ || { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          # /api/* must hit the bridge mapping (JSON), not the SPA fallback (HTML).
+          API_CT=$(curl -s -o /dev/null -w '%{content_type}' http://localhost:4180/api/products)
+          case "$API_CT" in application/json*) ;; *) { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; echo "::error::/api/products content-type: $API_CT (expected JSON — /api proxy rule not engaged)"; exit 1; } ;; esac
+          # Admin hardening: proxied admin responses carry noindex.
+          ADMIN_ROBOTS=$(curl -s -D - -o /dev/null http://localhost:4180/wp-admin/ | grep -i '^x-robots-tag' | tr -d '\r' || true)
+          case "$ADMIN_ROBOTS" in *noindex*) ;; *) { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; echo "::error::/wp-admin/ missing X-Robots-Tag noindex"; exit 1; } ;; esac
+          # Caching contract: entry HTML revalidates (no-cache + ETag → 304).
+          ENTRY_HEADERS=$(curl -s -D - -o /dev/null http://localhost:4180/)
+          echo "$ENTRY_HEADERS" | grep -qi '^Cache-Control: no-cache' || { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          ETAG=$(echo "$ENTRY_HEADERS" | grep -i '^etag' | tr -d '\r' | cut -d' ' -f2)
+          test -n "$ETAG" || { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' -H "If-None-Match: $ETAG" http://localhost:4180/)
+          test "$STATUS" = "304" || { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          kill $SERVER_PID
+
+      - name: Push to nvoos-funiq-velocity (private mirror)
+        working-directory: /tmp/nvoos-funiq-velocity
+        env:
+          VELOCITY_REPO_TOKEN: ${{ secrets.NVOOS_FUNIQ_VELOCITY_REPO_TOKEN }}
+        run: |
+          # Pin the initial branch to main: git init alone honours the runner's
+          # init.defaultBranch (or falls back to master), which makes the later
+          # `git push ... main --force` fail with "src refspec main does not match any".
+          git init -q -b main
+          git add .
+          git -c user.name="GitHub Actions" -c user.email="actions@github.com" \
+            commit -q -m "Sync Funiq PWA Velocity app ($GITHUB_SHA)" || echo "No changes to commit."
+          # Token via env + http.extraheader — never inlined into argv.
+          AUTH_HEADER=$(printf 'x-access-token:%s' "$VELOCITY_REPO_TOKEN" | base64 -w0)
+          git -c http.extraheader="AUTHORIZATION: basic $AUTH_HEADER" \
+            push https://github.com/nvdigitalsolutions/nvoos-funiq-velocity.git main --force

@@ -1,24 +1,70 @@
 # Funiq Bridge Velocity Storefront — Comprehensive Implementation Plan
 
-> **Status:** Implementation Plan (companion to Proposal 085) · **Target:** Phase 1–5 MVP in ~3 focused PRs + 1 private-repo scaffold · **Platform:** Cloudways Velocity (Node static + BFF proxy) + WordPress running `addons/funiq-bridge`
+> **Status:** Superseded in part (storefront track) — see the Decision Record below · **Superseded by:** Proposal 092 (Astro storefront, phases 0–2 done 2026-10-29) · **Retained scope:** A/B rollback leg + parity review · **Target:** Phase 1–5 MVP in ~3 focused PRs + 1 private-repo scaffold (original) · **Platform:** Cloudways Velocity (Node static + BFF proxy) + WordPress running `addons/funiq-bridge`
 >
-> **Last Updated:** 2026-10-21
+> **Last Updated:** 2026-10-29 (status update; plan body unchanged since 2026-10-21)
 > **Author:** NV Digital Solutions
 >
 > **Based on:** Proposal 085 (industry research: Envato Market licensing, Auth0/Duende BFF same-origin session pattern, headless-ecommerce SEO constraints, licensed-asset CI hygiene), the two proven Velocity apps (`examples/schedule-anything-velocity`, `examples/nvoos-complete-velocity`), Proposal 072 (proprietary marking), and PR #7166 (console client/hook/test patterns for the deferred admin track).
 
 ---
 
+## Status & Decision Record (added 2026-10-29)
+
+ADR-style resolution of the gap between this plan and what shipped. The
+phase text below is left as written (records are immutable); this section
+records what actually happened.
+
+**Context:** this plan landed 2026-10-21 with the PWA as THE storefront
+(Phases 0–6). Six days later Proposal 092 landed and re-scoped the PWA to
+an A/B rollback leg behind the Astro storefront (owner decision Q1: keep
+A/B until parity review, then retire). Phases 1–6 were never executed in
+the monorepo — the PWA stayed on its pre-existing manual Velocity deploy,
+and Phase 0's owner gates were never cleared.
+
+**Decision (supersedes the original plan's storefront intent):** the
+storefront track follows 092; this plan retains only (a) the governed A/B
+rollback leg (Phases 2/4/5/6 as re-scoped), (b) the parity review gate
+(092 Phase 3), and (c) the Phase B Laravel placeholder (unchanged,
+still gated).
+
+**Consequences:**
+
+- The rollback leg is now scaffolded in the monorepo:
+  `examples/funiq-bridge-velocity/` (NV-authored server/proxy shell,
+  zero licensed bytes) + `.github/workflows/sync-nvoos-funiq-velocity.yml`
+  (licensed-bundle injection from the private PWA repo, private-target
+  license-boundary guard, hardened secrets handling). The workflow skips
+  with a notice until the owner completes Phase 1 below.
+- The parity gate lives in
+  [`funiq-pwa-parity-review-checklist.md`](funiq-pwa-parity-review-checklist.md)
+  (research-backed hard gates + owner sign-off template).
+- Research backing: `docs/project/proposals/085-pwa-parity-rollback-research-notes.md`.
+
+**Per-phase status (what actually happened vs. the text below):**
+
+| Phase | Status | Note |
+|---|---|---|
+| 0 — Decision gates | Partially superseded | Q1 resolved by 092 §7 Q1 (keep A/B); license-tier question closes at PWA retirement; vendor-code audit still pending |
+| 1 — Private repo scaffolding | Owner-side, not verifiable from the coding machine | `nvoos-funiq-pwa` / `nvoos-funiq-velocity` do not resolve via the available token; the workflow skips until they exist |
+| 2 — Monorepo example tree | ✅ Done 2026-10-29 (re-scoped) | `examples/funiq-bridge-velocity/` — SA skeleton + `/api` bridge mapping + shared admin-proxy hardening |
+| 3 — Bridge nonce seed | ✅ Done in substance | `/funiq/v1/auth/nonce` + `/nvoos-commerce/v1` alias shipped in the bridge B4 surface; cache-header bug fixed 2026-10-29 |
+| 4 — Sync workflow | ✅ Done 2026-10-29 | `sync-nvoos-funiq-velocity.yml` with license-boundary guard + hardened token handling |
+| 5 — Velocity deploy runbook | Partially done | PWA app already live (manual deploy); governed redeploy documented in the example README |
+| 6 — Release bookkeeping | ✅ Done in this change | `THIRD_PARTY_NOTICES.md`, `LICENSE`, README mirror notice |
+| B — Laravel port | Unchanged — gated placeholder | See §8; no gates cleared |
+
 ## Table of Contents
 
-1. [Architecture Decisions](#1-architecture-decisions)
-2. [Repository Structure](#2-repository-structure)
-3. [Phase-by-Phase Build Plan](#3-phase-by-phase-build-plan)
-4. [Testing Strategy](#4-testing-strategy)
-5. [Deploy & Sync Runbook](#5-deploy--sync-runbook)
-6. [Verification Matrix](#6-verification-matrix)
-7. [Follow-on Work (deferred)](#7-follow-on-work-deferred)
-8. [Phase B — Laravel Standalone Port (gated placeholder)](#8-phase-b--laravel-standalone-port-gated-placeholder)
+1. [Status & Decision Record](#status--decision-record-added-2026-10-29)
+2. [Architecture Decisions](#1-architecture-decisions)
+3. [Repository Structure](#2-repository-structure)
+4. [Phase-by-Phase Build Plan](#3-phase-by-phase-build-plan)
+5. [Testing Strategy](#4-testing-strategy)
+6. [Deploy & Sync Runbook](#5-deploy--sync-runbook)
+7. [Verification Matrix](#6-verification-matrix)
+8. [Follow-on Work (deferred)](#7-follow-on-work-deferred)
+9. [Phase B — Laravel Standalone Port (gated placeholder)](#8-phase-b--laravel-standalone-port-gated-placeholder)
 
 ---
 
