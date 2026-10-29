@@ -10,7 +10,7 @@ interface LayoutProps {
 
 export function Layout({ sidebar, children }: LayoutProps) {
   return (
-    <div style={{ display: 'flex', minHeight: 'calc(100vh - 32px)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
       <aside style={{ width: 220, background: '#1e1e1e', color: '#fff', paddingTop: 16, flexShrink: 0 }}>
         {sidebar}
       </aside>

@@ -104,7 +104,7 @@ class CarouselController extends BaseController {
 	 * @return true|\WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-		if ( ! current_user_can( Schema::CAP_MANAGE_FUNIQ ) ) {
+		if ( ! current_user_can( Schema::CAP_MANAGE ) ) {
 			return new \WP_Error(
 				'rest_forbidden',
 				'Sorry, you are not allowed to do that.',

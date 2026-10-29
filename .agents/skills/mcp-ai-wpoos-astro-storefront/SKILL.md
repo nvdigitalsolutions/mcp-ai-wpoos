@@ -24,18 +24,53 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
 - The Astro app binds **only** to the Payload envelope (`nvoos-commerce/v1`
   REST namespace alias). Never call WP-specific endpoints from `src/`.
 - The word **"funiq" is banned from `examples/nvoos-astro-velocity/src/`**
-  (CI grep gate). The bridge addon and docs may still name it; the app may not.
+  (CI grep gate). The bridge addon and docs may still name it (data-layer
+  identifiers); the app may not. The standalone admin bundle is built output
+  in `public/` and contains zero brand strings anyway.
 - Golden fixtures are the contract test: `examples/nvoos-astro-velocity/tests/fixtures/products.json`
   must stay semantically identical to the bridge transformer output pinned by
   `addons/funiq-bridge/tests/phpunit/Transformers/TestTransformerGolden.php`.
+
+## WooCommerce integration (2026-10-29)
+
+- The bridge has two product backends behind one envelope: **`native`**
+  (CMS Basic — the built-in `funiq_product` CPTs, the default) and
+  **`woo`** (WooCommerce `product`), plus **`both`** (merged). Mode via
+  option `funiq_bridge_products_source` / filter
+  `funiq_bridge_products_source`; `woo`/`both` degrade to `native` when
+  WooCommerce is missing. Product docs carry an additive `source` field
+  (`native`|`woocommerce`).
+- **Source layer:** `addons/funiq-bridge/includes/Sources/` —
+  `ProductSource` interface, `NativeProductSource`, `WooProductSource`,
+  `ProductSources` (registry: `active()`/`primary()`/`resolve()`/
+  `from_name()`), `WooTaxonomy` (pa_brand/pa_color/product_cat/stock-status
+  mapping), `WhereClause`/`SortClause` (shared operators).
+  `ProductsController` is a thin delegator — the contract never changes.
+- **Woo availability check is `class_exists('WooCommerce') &&
+  function_exists('wc_get_product')`** — the repo's test bootstrap defines a
+  stub `WooCommerce` class when the plugin is absent, so class_exists alone
+  is a false positive (WP 7.1 matrix caught this).
+- **Listing uses `WP_Query` over the `product` post type + `wc_get_product`
+  hydration, NOT `WC_Product_Query`** — WC's data store drops `s` and
+  `meta_query` from its query vars (verified against WC 11.1.2 source).
+  Woo meta keys: `_price`, `_wc_average_rating` for price/rating sort and
+  filters.
+- In `both` mode, create routes via the body `source` field; merged
+  listings concatenate per-source pages (documented merged-pagination
+  semantics). Statuses in woo mode = stock-status pseudo-docs (ids 1-3,
+  read-only — writes 405). Categories in woo mode = `product_cat`
+  (productsCount via `term->count`).
+- Tests: `tests/phpunit/REST/TestWooProductSource.php` (10 tests — skipped
+  when Woo is absent, e.g. the WP 7.1 matrix env).
 
 ## Dev loop (hermetic — no live site needed)
 
 ```bash
 cd examples/nvoos-astro-velocity
 node scripts/fixture-server.mjs            # :8123 — hermetic contract + media
-NVOOS_API_BASE=http://localhost:8123/wp-json/nvoos-commerce/v1 npm run build   # prerenders catalog
-NVOOS_TARGET_SITE=http://localhost:8123 PORT=4321 npm run serve                # BFF + app
+cd ../../addons/funiq-bridge && npm install && cd -   # standalone CMS bundle deps
+NVOOS_API_BASE=http://localhost:8123/wp-json/nvoos-commerce/v1 npm run build   # prerenders catalog + /manage bundle
+NVOOS_TARGET_SITE=http://localhost:8123 PORT=4321 npm run serve                # BFF + app (/, /manage/, /api/*, /media/*)
 npm run check && npm run lint && npm run test          # astro check · eslint · vitest (unit + contract)
 npx playwright install chromium && npm run test:e2e    # 2 specs — JS-disabled SEO + islands
 npm run lhci:ci                                        # CHROME_PATH → Playwright's Chromium
@@ -101,20 +136,38 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   idempotent and registers CPTs/taxonomies/REST routes directly when
   `init`/`rest_api_init` already fired. If the contract returns 404 on a
   fleet site, check for a late-loader before touching the bridge.
-- **Admin login proxy (incident + fix 2026-10-29):** the storefront BFF
-  (`scripts/serve.mjs` + `scripts/lib/proxy-headers.mjs`) is a login gateway
-  for the backend WP admin, ported from the Complete Console BFF pattern and
-  hardened to industry standards: `/wp-login.php` HTML bodies are re-scoped
-  to the app origin (absolute form action + hidden `redirect_to` → relative,
-  identity body via `Accept-Encoding` strip, text/html + 4 MB gates), admin
-  Locations become **relative** with `redirect_to` re-scoped (nginx
-  `proxy_redirect` pattern), Set-Cookie `Domain` is stripped (OWASP:
-  host-only cookies), and upstream requests overwrite
-  `x-forwarded-proto/host/port` (spoof-safe — never echo client copies) while
-  dropping `origin`/`referer`. Admin HTML pages are NOT body-rewritten — the
-  proxied wp-admin keeps absolute backend links; managers doing real admin
-  work use the backend `admin_url` (the console sidesteps this because its
-  SPA is the UI). Pinned by `tests/unit/proxy-headers.test.ts`.
+- **No admin proxy (2026-10-29 decision, replaces PR #7294's login gateway):**
+  the storefront BFF (`scripts/serve.mjs`) proxies **only** `/api/*`
+  (contract) and `/media/*` (uploads). `wp-admin`, `wp-login.php`,
+  `wp-json` and `wp-includes` are deliberately NOT proxied — the admin
+  experience is the standalone **Astro CMS** on `/manage`: `src/pages/manage/index.astro`
+  + `src/islands/ManageGate.tsx` (sign-in via the contract's `/api/auth/*`,
+  `loginOnly` AuthForms, then injects the prebuilt bundle which self-mounts
+  on `#astro-admin-root`). The bundle lives in `public/manage-assets/` —
+  built by the bridge's **standalone esbuild target**
+  (`npm run build:standalone` in `addons/funiq-bridge/`, output
+  `build/standalone/astro-admin.{js,css}`; bundles `@wordpress/*` + React
+  instead of the wp-admin externals) and copied by
+  `scripts/sync-manage-assets.mjs` (wired into `npm run build` +
+  `build-hermetic.mjs`). Manager login never touches a proxied login page:
+  `POST /api/auth/login` sets the auth cookie, the BFF strips `Domain=`
+  (host-only), and `/api/auth/me`'s `canManage` gates everything. The sync
+  workflow installs bridge deps (`npm ci` in `addons/funiq-bridge/`) before
+  the app build and re-runs on bridge path changes.
+- **Bridge media endpoint:** image fields use a native uploader against
+  `POST /media` (multipart, manage-cap gated; `GET /media/{id}` for
+  previews) — `wp_handle_upload` with a filterable action
+  (`funiq_bridge_media_upload_action`, default `wp_handle_upload` keeps the
+  `is_uploaded_file` gate; tests switch it to `wp_handle_sideload` since CLI
+  cannot produce real uploads).
+- **Astro CMS rebrand (2026-10-29):** user-facing funiq branding is gone —
+  menu/slug `astro-cms`, sidebar brand "Astro CMS", mount id
+  `astro-admin-root`, config global `AstroAdminConfig`, capability
+  `manage_astro` (one-shot migration from `manage_funiq` in
+  `Plugin::maybe_migrate_caps()`; uninstall removes both). Data-layer
+  identifiers (CPT/meta/option names, `funiq/v1` REST namespace, PHP
+  namespaces, folder) are deliberately unchanged — renaming them is a
+  separate data-migration project.
 - **Mirror deploy tree (PR #7291):** `sync-dist.mjs` must ship every runtime
   import of `serve.mjs` (now `scripts/lib/`); a staged-tree boot smoke fails
   the assemble step when the tree crashes at boot (the 2026-10-29 502).

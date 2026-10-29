@@ -13,7 +13,7 @@ export function Sidebar({ activeSlug, onSelect }: SidebarProps) {
   return (
     <nav>
       <div style={{ padding: '0 16px 16px', fontWeight: 700, fontSize: 16 }}>
-        Funiq CMS
+        Astro CMS
       </div>
       {collections.map((col) => (
         <button

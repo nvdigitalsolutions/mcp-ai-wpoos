@@ -1,11 +1,12 @@
 {
   "name": "funiq-bridge",
   "version": "1.0.0",
-  "description": "Funiq Bridge — React SPA admin panel that replicates Payload CMS admin inside WordPress.",
+  "description": "Astro CMS bridge — React SPA admin panel that replicates Payload CMS admin inside WordPress and on the standalone storefront /manage surface.",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node esbuild.config.cjs --prod",
+    "build:standalone": "node esbuild.config.cjs --prod --standalone",
     "build:dev": "node esbuild.config.cjs",
     "watch": "node esbuild.config.cjs --watch"
   },
@@ -13,6 +14,12 @@
     "@tanstack/react-query": "^5.0.0"
   },
   "devDependencies": {
-    "esbuild": "^0.28.1"
+    "@wordpress/api-fetch": "^8.0.0",
+    "@wordpress/components": "^43.0.0",
+    "@wordpress/element": "^10.0.0",
+    "@wordpress/i18n": "^7.0.0",
+    "esbuild": "^0.28.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }

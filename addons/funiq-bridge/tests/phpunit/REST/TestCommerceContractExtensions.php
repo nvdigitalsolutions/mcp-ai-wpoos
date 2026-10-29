@@ -355,7 +355,7 @@ class TestCommerceContractExtensions extends WP_Test_REST_TestCase {
 	 * PHPUnit never runs — grant it explicitly to mirror production.
 	 */
 	public function test_auth_me_includes_manager_fields(): void {
-		get_role( 'administrator' )->add_cap( Schema::CAP_MANAGE_FUNIQ );
+		get_role( 'administrator' )->add_cap( Schema::CAP_MANAGE );
 		wp_set_current_user( $this->admin_id );
 
 		$request  = new WP_REST_Request( 'GET', '/nvoos-commerce/v1/auth/me' );

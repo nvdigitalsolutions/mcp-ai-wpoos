@@ -29,13 +29,13 @@ You can do this via SFTP, or zip the folder and upload via **Plugins → Add New
 Go to **Plugins → Installed Plugins**, find "Funiq Bridge", and click **Activate**.
 
 On activation the plugin:
-- Creates the `manage_funiq` capability and grants it to Administrators and Editors
+- Creates the `manage_astro` capability and grants it to Administrators and Editors (existing installs are migrated automatically from the legacy `manage_funiq` slug on the next page load)
 - Seeds default option values for Banner and Carousel
 - Flushes rewrite rules so the REST API endpoints are reachable
 
 ### 3. Done — no build step needed
 
-The admin SPA ships pre-compiled in `build/index.js`. After activation, a **Funiq CMS** menu item appears in the WordPress admin sidebar immediately. No `npm install` or build step is required on the server.
+The admin SPA ships pre-compiled in `build/index.js`. After activation, an **Astro CMS** menu item appears in the WordPress admin sidebar immediately. No `npm install` or build step is required on the server.
 
 > **For developers:** If you modify the React source in `src/`, rebuild with:
 > ```bash
@@ -44,7 +44,7 @@ The admin SPA ships pre-compiled in `build/index.js`. After activation, a **Funi
 
 ### 4. Verify it works
 
-- Visit **Funiq CMS** in the WP admin sidebar → you should see the Products list.
+- Visit **Astro CMS** in the WP admin sidebar → you should see the Products list.
 - Hit `GET /wp-json/funiq/v1/products` in your browser or `curl` → you should get a `{"docs":[],"totalDocs":0,...}` response.
 
 ---
@@ -196,9 +196,70 @@ curl -X POST https://yoursite.com/wp-json/nvoos-commerce/v1/products \
 
 ---
 
-## Admin SPA (Funiq CMS)
+## WooCommerce integration (WP/Woo mode vs CMS Basic)
 
-Log in to WordPress as an Administrator or Editor. Click **Funiq CMS** in the admin sidebar.
+The bridge has two product backends behind one contract:
+
+| Mode | Backing store | Products | Categories | Brands/Colors | Statuses |
+|---|---|---|---|---|---|
+| `native` (default) — **CMS Basic** | Built-in `funiq_product` CPTs | bridge CPTs | `funiq_category` | bridge taxonomies | `funiq_status` |
+| `woo` — **WP/Woo mode** | WooCommerce `product` | Woo products | `product_cat` | `pa_brand`/`pa_color` attributes (falls back to `product_brand` / bridge taxonomies) | stock-status pseudo-collection (read-only) |
+| `both` | merged | native first, then Woo | native taxonomy | native taxonomies | native taxonomy |
+
+**Enable via** `wp option update funiq_bridge_products_source woo` (or `both`),
+or in code: `add_filter( 'funiq_bridge_products_source', fn() => 'woo' );`.
+A `woo`/`both` mode **degrades to `native`** when WooCommerce is not active, so the contract never breaks.
+
+### Why this shape (industry-standard)
+
+- **In-process CRUD API, not the REST/Store API.** WooCommerce's REST API
+  (`/wc/v3`) and Store API exist for *remote* headless consumers and carry
+  HTTP + key-auth overhead. A plugin on the same install uses the CRUD
+  layer directly — `wc_get_product`, `WC_Product_Simple` setters, and
+  `WP_Query` over the `product` post type with Woo's own meta keys
+  (`_price`, `_wc_average_rating`) for filtering/sorting. (WC's
+  `WC_Product_Query` data store drops `s` and `meta_query`, so listing uses
+  `WP_Query` with `wc_get_product` hydration — pinned by tests.)
+- **One Payload envelope.** The storefront binds to `nvoos-commerce/v1`
+  regardless of backing store — the same contract-invariant that makes the
+  T1 Laravel flip a non-event. Product documents carry an additive
+  `source` field (`native` | `woocommerce`).
+- **IDs need no namespacing.** Posts and terms share global ID sequences,
+  so native and Woo documents can never collide — merged listings and
+  single-document routing are safe by construction.
+
+### Field mapping (contract ← WooCommerce)
+
+| Contract | WooCommerce |
+|---|---|
+| `price` | current price (sale price when on sale) |
+| `oldPrice` | `regular_price` when higher than the current price |
+| `description` | description (falls back to short description) |
+| `width` / `height` / `depth` | width / height / length |
+| `rating` | average rating |
+| `isFeatured` | featured flag |
+| `isBestseller` | total sales ≥ 10 (filter `funiq_bridge_woo_bestseller_threshold`) |
+| `category` / `brand` / `colors` | `product_cat` / `pa_brand` / `pa_color` |
+| `imageId` / `imagesIds` | thumbnail + gallery attachment IDs |
+| `statuses` | stock status (`instock` → In stock, …) |
+| `promotion` | always null in Woo mode |
+
+**Writes:** create/update use `WC_Product` setters — `price` + `oldPrice`
+map to regular/sale price, `imageId`/`imagesIds` to Woo's image fields,
+category/brand/colors to term assignment. In `both` mode, POST /products
+accepts a `source` body field (`native` | `woocommerce`) to choose the
+backing store (default: the primary source).
+
+**Query support (where/sort):** `id.equals`, `name.like`, `category/brand/colors`
+`.equals/.in`, and `price.gt/.gte/.lt/.lte` (native source additionally
+supports `statuses` filters); `sort` accepts `date/-date`, `price/-price`,
+`rating/-rating`, `name/-name`.
+
+---
+
+## Admin SPA (Astro CMS)
+
+Log in to WordPress as an Administrator or Editor. Click **Astro CMS** in the admin sidebar. The same SPA also runs **standalone** on the Astro storefront's `/manage` surface (see the storefront app — the standalone esbuild bundle ships `@wordpress/*` + React with no admin script chain).
 
 ### Collections managed
 
@@ -214,7 +275,7 @@ Each collection has a list view (paginated table) and create/edit forms with fie
 
 ### Media handling
 
-Image uploads use the WordPress Media Library (the same picker the block editor uses). When creating/editing a product, click **Select Image** to open the media modal. The selected attachment ID is stored as post meta and resolved to a URL in the API response.
+Image fields use a **native uploader** against the bridge's media endpoint (`POST /media`, multipart, `manage_astro`-gated) — identical in wp-admin and on the standalone surface, no media-modal dependency. The endpoint returns `{ id, url, path }`; previews use the host's media base (`/media/*` on the storefront, absolute URL in wp-admin). `GET /media/{id}` returns the same record for already-attached images.
 
 ---
 
@@ -234,6 +295,10 @@ npm run watch
 
 # Production build (minified)
 npm run build
+
+# Standalone bundle for the storefront /manage surface (bundles @wordpress/* +
+# React; output: build/standalone/astro-admin.{js,css})
+npm run build:standalone
 ```
 
 ### PHP autoloading
@@ -273,7 +338,7 @@ Deleting the plugin via **Plugins → Delete** runs `uninstall.php`, which remov
 - All `funiq_product`, `funiq_promotion`, and `funiq_promocode` posts
 - All terms in `funiq_category`, `funiq_brand`, `funiq_color`, and `funiq_status` taxonomies
 - The `funiq_banner` and `funiq_carousel` options
-- The `manage_funiq` capability from all roles
+- The `manage_astro` capability (and any legacy `manage_funiq` grants) from all roles
 
 **Deactivating** (not deleting) only flushes rewrite rules — no data is removed.
 

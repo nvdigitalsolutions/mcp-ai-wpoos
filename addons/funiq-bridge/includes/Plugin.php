@@ -20,6 +20,7 @@ use FuniqBridge\REST\{
 	CarouselController,
 	CategoriesController,
 	ColorsController,
+	MediaController,
 	ProductsController,
 	PromocodesController,
 	PromotionsController,
@@ -81,6 +82,10 @@ final class Plugin {
 
 		// 2. Register REST routes on rest_api_init.
 		add_action( 'rest_api_init', array( $plugin, 'register_rest_routes' ) );
+
+		// 2a. One-shot capability migration for the brand cutover
+		// (manage_funiq -> manage_astro).
+		add_action( 'init', array( $plugin, 'maybe_migrate_caps' ) );
 
 		// 2b. Cache headers on public GETs (B1, Proposal 092).
 		add_filter( 'rest_post_dispatch', array( BaseController::class, 'set_cache_headers_on_public_gets' ), 10, 3 );
@@ -153,6 +158,7 @@ final class Plugin {
 			new BannerController(),
 			new CarouselController(),
 			new AuthController(),
+			new MediaController(),
 		);
 
 		foreach ( $controllers as $controller ) {
@@ -181,6 +187,34 @@ final class Plugin {
 	// -----------------------------------------------------------------------
 
 	/**
+	 * One-shot capability migration for the brand cutover.
+	 *
+	 * Copies `manage_funiq` grants onto `manage_astro` and removes the legacy
+	 * cap from every role, then records the migration in an option so the
+	 * work runs exactly once (2026-10-29: the Astro CMS rename).
+	 *
+	 * @return void
+	 */
+	public function maybe_migrate_caps(): void {
+		if ( '2' === get_option( Schema::OPTION_CAP_VERSION, '1' ) ) {
+			return;
+		}
+
+		foreach ( wp_roles()->roles as $role_key => $role ) {
+			$wp_role = get_role( $role_key );
+			if ( ! $wp_role ) {
+				continue;
+			}
+			if ( $wp_role->has_cap( Schema::CAP_MANAGE_LEGACY ) ) {
+				$wp_role->add_cap( Schema::CAP_MANAGE );
+			}
+			$wp_role->remove_cap( Schema::CAP_MANAGE_LEGACY );
+		}
+
+		update_option( Schema::OPTION_CAP_VERSION, '2', false );
+	}
+
+	/**
 	 * Activation callback — flushes rewrite rules.
 	 *
 	 * @return void
@@ -206,12 +240,16 @@ final class Plugin {
 		// Add capabilities.
 		$admin = get_role( 'administrator' );
 		if ( $admin ) {
-			$admin->add_cap( Schema::CAP_MANAGE_FUNIQ );
+			$admin->add_cap( Schema::CAP_MANAGE );
 		}
 		$editor = get_role( 'editor' );
 		if ( $editor ) {
-			$editor->add_cap( Schema::CAP_MANAGE_FUNIQ );
+			$editor->add_cap( Schema::CAP_MANAGE );
 		}
+
+		// Record the capability migration as done on fresh installs (nothing
+		// to migrate, but the maybe_migrate_caps() gate reads this option).
+		update_option( Schema::OPTION_CAP_VERSION, '2', false );
 
 		flush_rewrite_rules();
 	}

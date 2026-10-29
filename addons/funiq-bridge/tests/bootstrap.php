@@ -34,10 +34,10 @@ if ( ! has_action( 'init', array( $bridge, 'register_post_types' ) ) ) {
 // Activation never runs under PHPUnit — grant the write capability the same
 // way Plugin::activate() does in production.
 $admin = get_role( 'administrator' );
-if ( $admin && ! $admin->has_cap( \FuniqBridge\Schema::CAP_MANAGE_FUNIQ ) ) {
-	$admin->add_cap( \FuniqBridge\Schema::CAP_MANAGE_FUNIQ );
+if ( $admin && ! $admin->has_cap( \FuniqBridge\Schema::CAP_MANAGE ) ) {
+	$admin->add_cap( \FuniqBridge\Schema::CAP_MANAGE );
 }
 $editor = get_role( 'editor' );
-if ( $editor && ! $editor->has_cap( \FuniqBridge\Schema::CAP_MANAGE_FUNIQ ) ) {
-	$editor->add_cap( \FuniqBridge\Schema::CAP_MANAGE_FUNIQ );
+if ( $editor && ! $editor->has_cap( \FuniqBridge\Schema::CAP_MANAGE ) ) {
+	$editor->add_cap( \FuniqBridge\Schema::CAP_MANAGE );
 }

@@ -11,7 +11,7 @@ namespace FuniqBridge\Admin;
 use FuniqBridge\Schema;
 
 /**
- * Registers the "Funiq CMS" top-level admin page and enqueues the SPA assets.
+ * Registers the "Astro CMS" top-level admin page and enqueues the SPA assets.
  */
 class AdminPage {
 
@@ -33,9 +33,9 @@ class AdminPage {
 	 */
 	public function add_menu(): void {
 		add_menu_page(
-			'Funiq CMS',
-			'Funiq CMS',
-			Schema::CAP_MANAGE_FUNIQ,
+			'Astro CMS',
+			'Astro CMS',
+			Schema::CAP_MANAGE,
 			Schema::ADMIN_PAGE_SLUG,
 			array( $this, 'render' ),
 			'dashicons-store',
@@ -49,13 +49,13 @@ class AdminPage {
 	 * @return void
 	 */
 	public function render(): void {
-		echo '<div id="funiq-admin-root"></div>';
+		echo '<div id="astro-admin-root"></div>';
 	}
 
 	/**
 	 * Enqueue the compiled React SPA assets.
 	 *
-	 * Only loads on the Funiq CMS admin page.
+	 * Only loads on the Astro CMS admin page.
 	 *
 	 * @param string $hook_suffix Current admin page hook.
 	 * @return void
@@ -70,9 +70,9 @@ class AdminPage {
 
 		if ( file_exists( $js_path ) ) {
 			wp_enqueue_script(
-				'funiq-admin',
+				'astro-admin',
 				FUNIQ_BRIDGE_URL . 'build/index.js',
-				array( 'wp-element', 'wp-components', 'wp-api-fetch', 'wp-block-editor', 'wp-i18n', 'wp-data' ),
+				array( 'wp-element', 'wp-components', 'wp-api-fetch', 'wp-i18n' ),
 				filemtime( $js_path ),
 				array(
 					'in_footer' => true,
@@ -83,20 +83,23 @@ class AdminPage {
 
 		if ( file_exists( $css_path ) ) {
 			wp_enqueue_style(
-				'funiq-admin',
+				'astro-admin',
 				FUNIQ_BRIDGE_URL . 'build/index.css',
 				array( 'wp-components' ),
 				filemtime( $css_path )
 			);
 		}
 
-		// Pass config to the SPA.
+		// Pass config to the SPA. The root is the absolute backend REST URL in
+		// wp-admin; the standalone /manage surface on the storefront supplies
+		// its own relative config (see the astro app's ManageGate island).
 		wp_add_inline_script(
-			'funiq-admin',
-			'window.FuniqAdminConfig = ' . wp_json_encode(
+			'astro-admin',
+			'window.AstroAdminConfig = ' . wp_json_encode(
 				array(
-					'root'  => esc_url_raw( rest_url( Schema::REST_NAMESPACE . '/' ) ),
-					'nonce' => wp_create_nonce( 'wp_rest' ),
+					'root'      => esc_url_raw( rest_url( Schema::REST_NAMESPACE . '/' ) ),
+					'nonce'     => wp_create_nonce( 'wp_rest' ),
+					'mediaBase' => '',
 				)
 			) . ';',
 			'before'

@@ -289,7 +289,7 @@ class AuthController extends BaseController {
 			);
 		}
 
-		$can_manage = current_user_can( Schema::CAP_MANAGE_FUNIQ );
+		$can_manage = current_user_can( Schema::CAP_MANAGE );
 
 		return array(
 			'id'         => $user->ID,

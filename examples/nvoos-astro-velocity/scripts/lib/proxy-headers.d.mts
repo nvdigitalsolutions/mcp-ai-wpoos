@@ -24,15 +24,3 @@ export function buildUpstreamHeaders(
 export function stripDomainFromSetCookie(
 	setCookies: string | string[] | undefined
 ): string | string[] | undefined;
-
-export function rewriteLocation(
-	location: string | undefined,
-	targetSite: string
-): string | undefined;
-
-export function rewriteLoginPageHtml(html: string): string;
-
-export function applyAdminResponseHeaders(
-	headers: Record<string, string | string[] | number | undefined>,
-	options: { targetSite: string }
-): Record<string, string | string[] | number | undefined>;

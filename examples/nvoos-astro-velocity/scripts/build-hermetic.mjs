@@ -8,7 +8,7 @@
 // succeed against the golden fixtures with zero network).
 // ---------------------------------------------------------------------------
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 
 const FIXTURE_PORT = process.env.FIXTURE_PORT || '8123';
 // Local/test builds use the local origin so the runtime /_image endpoint
@@ -27,6 +27,16 @@ const server = spawn(process.execPath, ['scripts/fixture-server.mjs'], {
 let exitCode = 0;
 try {
 	await sleep(1000);
+
+	// The /manage surface's CMS bundle must be present before astro build
+	// copies public/ into dist/.
+	const manage = spawnSync(process.execPath, ['scripts/sync-manage-assets.mjs'], {
+		stdio: 'inherit',
+	});
+	if (manage.status !== 0) {
+		exitCode = manage.status ?? 1;
+		process.exit(exitCode);
+	}
 
 	const build = spawn('npx astro build', {
 		shell: true,

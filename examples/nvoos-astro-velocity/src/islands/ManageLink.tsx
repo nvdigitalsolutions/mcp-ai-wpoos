@@ -2,20 +2,20 @@
 // ManageLink island — dashboard entry point for store managers.
 //
 // The commerce contract's /auth/me surface answers who is signed in; when the
-// session can manage the store it also carries a backend-owned dashboard URL,
-// which this island re-roots onto the storefront origin (the BFF proxies that
-// path same-origin). Renders nothing for anonymous shoppers — no layout
-// shift, no login prompts.
+// session can manage the store the header shows a "Manage store" link to the
+// standalone Astro CMS surface (/manage — served by this app, not a backend
+// admin URL). Renders nothing for anonymous shoppers — no layout shift, no
+// login prompts.
 // ---------------------------------------------------------------------------
 
 import { useEffect, useState } from 'react';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE || '/api';
+const MANAGE_PATH = '/manage/';
 
 interface MeResponse {
 	id?: number;
 	canManage?: boolean;
-	adminUrl?: string;
 }
 
 export default function ManageLink() {
@@ -33,17 +33,10 @@ export default function ManageLink() {
 					return;
 				}
 				const me = (await res.json()) as MeResponse;
-				if (cancelled || !me.canManage || !me.adminUrl) {
+				if (cancelled || !me.canManage) {
 					return;
 				}
-				try {
-					const url = new URL(me.adminUrl);
-					if (!cancelled) {
-						setHref(url.pathname + url.search);
-					}
-				} catch {
-					// Malformed dashboard URL — the link simply stays hidden.
-				}
+				setHref(MANAGE_PATH);
 			})
 			.catch(() => {
 				// Offline or contract unavailable — stay hidden.

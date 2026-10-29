@@ -90,13 +90,15 @@ delete_option( 'funiq_banner' );
 delete_option( 'funiq_carousel' );
 
 // ---------------------------------------------------------------------------
-// Remove capabilities from roles.
+// Remove capabilities from roles (both the current and legacy-brand slugs).
 // ---------------------------------------------------------------------------
 $admin = get_role( 'administrator' );
 if ( $admin ) {
+	$admin->remove_cap( 'manage_astro' );
 	$admin->remove_cap( 'manage_funiq' );
 }
 $editor = get_role( 'editor' );
 if ( $editor ) {
+	$editor->remove_cap( 'manage_astro' );
 	$editor->remove_cap( 'manage_funiq' );
 }
