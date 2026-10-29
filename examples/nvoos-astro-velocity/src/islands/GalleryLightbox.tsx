@@ -38,7 +38,7 @@ export default function GalleryLightbox({ entries, alt }: Props) {
 			>
 				<img
 					src={current.full.src}
-					srcset={current.full.srcset}
+					srcSet={current.full.srcset}
 					sizes={current.full.sizes}
 					width={current.full.width}
 					height={current.full.height}
