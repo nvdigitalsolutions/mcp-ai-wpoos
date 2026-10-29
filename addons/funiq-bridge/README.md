@@ -8,11 +8,19 @@
 
 ### 1. Copy the plugin folder
 
-Upload the entire `funiq-bridge/` folder to your WordPress site:
+Upload the entire plugin folder to your WordPress site:
 
 ```
-/wp-content/plugins/funiq-bridge/
+/wp-content/plugins/nvoos-funiq-bridge/
 ```
+
+The repo folder is `addons/funiq-bridge/`; the plugin is **packaged** as
+`nvoos-funiq-bridge/` (zip top-level folder, main file `funiq-bridge.php`
+inside). Build the zip with PowerShell `Compress-Archive` of the folder —
+`tar -a` produces broken zips, and zipping the folder's *contents* (files at
+the zip root) installs `funiq-bridge.php` directly into `wp-content/plugins/`.
+Uploading twice with the same folder name creates a random-suffix folder —
+delete the old copy first.
 
 You can do this via SFTP, or zip the folder and upload via **Plugins → Add New → Upload Plugin**.
 
@@ -231,6 +239,23 @@ npm run build
 ### PHP autoloading
 
 The addon uses PSR-4 autoloading via `spl_autoload_register` (no Composer `vendor/` required at runtime). If you have Composer available, run `composer install` for dev tooling.
+
+### Code standards
+
+The addon carries its own ruleset, `phpcs.xml.dist`, and is excluded from the
+base plugin's `phpcs.xml.dist` scan (PSR-4 class-file naming conflicts with
+the WPCS filename convention). Deliberate exclusions are documented in the
+ruleset: short ternaries and the meta_key/tax_query slow-query warnings (the
+bridge sorts products by meta and counts category products via `tax_query`
+against the small funiq CPT — mirrors the Payload frontend's query
+behaviour). A dedicated step in `.github/workflows/php-linting.yml` runs the
+addon ruleset on every PR/push:
+
+```bash
+vendor/bin/phpcs --standard=addons/funiq-bridge/phpcs.xml.dist \
+  addons/funiq-bridge/includes addons/funiq-bridge/funiq-bridge.php \
+  addons/funiq-bridge/uninstall.php
+```
 
 ### Running tests
 
