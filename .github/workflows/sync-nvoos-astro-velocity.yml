@@ -130,7 +130,10 @@ jobs:
         working-directory: examples/nvoos-astro-velocity
         env:
           NVOOS_API_BASE: http://localhost:8123/wp-json/nvoos-commerce/v1
-          ASTRO_SITE: https://store.nvoos.cloud
+          # Canonical host for the production artifact. Overridable per
+          # dispatch (client_payload.astro_site) and per repo variable
+          # (ASTRO_SITE); defaults to the live storefront host.
+          ASTRO_SITE: ${{ github.event.client_payload.astro_site || vars.ASTRO_SITE || 'https://astro.nvoos.cloud' }}
         run: |
           # Production artifact: canonical tags + /_image hrefs must use the
           # real host — rebuild before assembling the deploy tree.
