@@ -12,13 +12,26 @@ import type { CollectionSlug, PaginatedResponse } from '../types';
 const ROOT = (window as any).FuniqAdminConfig?.root || '/wp-json/funiq/v1/';
 
 /**
+ * Build an apiFetch request. The admin config hands us a FULL URL root
+ * (https://site/wp-json/funiq/v1/); apiFetch's `path` option would
+ * re-prepend the REST namespace to it (wp-json/https://... double base).
+ * Use the `url` option for absolute roots, `path` for relative ones.
+ */
+function request<T>(endpoint: string, options: Record<string, unknown> = {}): Promise<T> {
+	const target = `${ROOT}${endpoint}`;
+	return /^https?:\/\//i.test( target )
+		? ( apiFetch( { ...options, url: target } ) as Promise<T> )
+		: ( apiFetch( { ...options, path: target } ) as Promise<T> );
+}
+
+/**
  * Fetch a paginated collection.
  */
 export function useCollection<T>(slug: CollectionSlug, page = 1, limit = 10) {
   return useQuery<PaginatedResponse<T>>({
     queryKey: [slug, { page, limit }],
     queryFn: () =>
-      apiFetch({ path: `${ROOT}${slug}?page=${page}&limit=${limit}` }) as Promise<PaginatedResponse<T>>,
+      request<PaginatedResponse<T>>( `${slug}?page=${page}&limit=${limit}` ),
     placeholderData: (prev) => prev,
   });
 }
@@ -29,7 +42,7 @@ export function useCollection<T>(slug: CollectionSlug, page = 1, limit = 10) {
 export function useDocument<T>(slug: string, id: number | null) {
   return useQuery<T>({
     queryKey: [slug, id],
-    queryFn: () => apiFetch({ path: `${ROOT}${slug}/${id}` }) as Promise<T>,
+    queryFn: () => request<T>( `${slug}/${id}` ),
     enabled: id !== null,
   });
 }
@@ -43,17 +56,15 @@ export function useDocumentMutation(slug: string) {
   return useMutation({
     mutationFn: ({ id, data }: { id?: number; data: Record<string, unknown> }) => {
       if (id) {
-        return apiFetch({
-          path: `${ROOT}${slug}/${id}`,
+        return request( `${slug}/${id}`, {
           method: 'PUT',
           data,
-        });
+        } );
       }
-      return apiFetch({
-        path: `${ROOT}${slug}`,
+      return request( `${slug}`, {
         method: 'POST',
         data,
-      });
+      } );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [slug] });
@@ -69,10 +80,9 @@ export function useDocumentDelete(slug: string) {
 
   return useMutation({
     mutationFn: (id: number) =>
-      apiFetch({
-        path: `${ROOT}${slug}/${id}`,
+      request( `${slug}/${id}`, {
         method: 'DELETE',
-      }),
+      } ),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [slug] });
     },

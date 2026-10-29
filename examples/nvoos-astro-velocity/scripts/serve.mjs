@@ -41,6 +41,14 @@ if (!TARGET_SITE) {
 // The standalone entry auto-starts its own listener unless disabled — the
 // BFF owns the listening socket instead (official @astrojs/node switch).
 process.env.ASTRO_NODE_AUTOSTART = 'disabled';
+
+// SSR renders self-fetch the commerce contract through THIS listener
+// (http://127.0.0.1:<PORT>/api/*). On Velocity the public self-request
+// (https://astro.nvoos.cloud/api/*) fails at the network layer, so the
+// commerce client prefers this loopback origin when present
+// (incident 2026-10-29 #2).
+process.env.NVOOS_SSR_API_ORIGIN = `http://127.0.0.1:${PORT}`;
+
 const { handler: astroHandler } = await import('../dist/server/entry.mjs');
 
 // ---------------------------------------------------------------------------

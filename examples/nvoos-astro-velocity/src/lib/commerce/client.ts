@@ -47,13 +47,23 @@ type CollectionSlug =
 
 /** Resolve the base URL.
  *
- * - Runtime SSR: the request URL ALWAYS wins — the same-origin /api/* proxy.
- *   A build-time NVOOS_API_BASE (the hermetic fixture server) is baked into
+ * Precedence (highest first):
+ * - NVOOS_SSR_API_ORIGIN (set by scripts/serve.mjs to
+ *   `http://127.0.0.1:<PORT>`) — the SSR render self-fetches the in-process
+ *   BFF listener instead of the public URL. On Velocity the public self-
+ *   request fails at the network layer (~1s TLS/DNS error, incident
+ *   2026-10-29 #2) even though x-forwarded-* headers are present.
+ * - Runtime SSR: the request URL — the same-origin /api/* proxy. A
+ *   build-time NVOOS_API_BASE (the hermetic fixture server) is baked into
  *   the mirror dist and MUST be ignored at runtime, otherwise every SSR
  *   render fetches localhost:8123 and 500s (incident 2026-10-29).
  * - Build time (getStaticPaths): no request URL, so NVOOS_API_BASE applies.
  */
 function resolveBase(requestUrl: string | URL | undefined): string {
+	const ssrOrigin = process.env.NVOOS_SSR_API_ORIGIN;
+	if (ssrOrigin) {
+		return `${ssrOrigin.replace(/\/+$/, '')}/api`;
+	}
 	if (requestUrl) {
 		return new URL('/api', requestUrl).toString().replace(/\/+$/, '');
 	}
