@@ -1,7 +1,11 @@
-# The PWA bundle is injected at CI time from the private repo — never
-# committed to the monorepo (Envato boundary, Proposal 085 D2).
+# The licensed Payload CMS build is assembled at CI time from the private
+# repo nvoos-funiq-pwa and pushed to the private mirror — its bytes never
+# enter the public monorepo (Envato boundary, Proposal 085 D2).
+.next/
 dist/
+build/
 
 # Local dev artifacts.
 node_modules/
 *.log
+.mirror-staging/

@@ -1,16 +1,16 @@
 {
-	"name": "nvoos-funiq-velocity",
-	"version": "0.1.0",
-	"description": "Licensed Funiq PWA storefront on Cloudways Velocity — zero-dependency static server + bridge reverse proxy (Proposal 085).",
+	"name": "nvoos-funiq-velocity-leg",
+	"version": "0.2.0",
+	"private": true,
+	"description": "NV-authored deploy recipe + smoke harness for the licensed Funiq Payload admin on Cloudways Velocity (Proposal 085 rollback leg, repackaged 2026-10-29).",
 	"license": "UNLICENSED",
 	"type": "module",
-	"main": "server.js",
-	"private": true,
 	"scripts": {
-		"serve": "node scripts/serve.mjs",
-		"sync:dist": "node scripts/sync-dist.mjs"
+		"assemble": "node scripts/assemble-mirror.mjs",
+		"smoke": "node scripts/smoke.mjs",
+		"standalone": "node scripts/enable-standalone.mjs"
 	},
 	"engines": {
-		"node": ">=20"
+		"node": ">=20.9"
 	}
 }

@@ -77,10 +77,13 @@ the request URL takes priority over any baked `NVOOS_API_BASE` at runtime
 
 ## A/B coexistence (owner decision Q1: keep A/B)
 
-The licensed PWA app (`nvoos-funiq-velocity`) stays live as rollback. The
-split is hostname/cookie-based at the routing layer; both apps point at the
-same backend, so the bridge serves both namespaces (`nvoos-commerce/v1` +
-legacy) without conflict.
+The licensed leg (`nvoos-funiq-velocity`) is now the **Payload admin** leg
+(repackaged 2026-10-29 — the licensed item contains no web PWA; see
+`docs/operations/deployment/nvoos-funiq-velocity-setup.md`). It serves the
+mobile app's native Payload contract on its own origin/DB — no
+web-rule splitting between the two legs is required. The split below was
+written for the original manual PWA deploy and remains valid for any
+storefront-level A/B the owner runs.
 
 ## Revalidation
 
