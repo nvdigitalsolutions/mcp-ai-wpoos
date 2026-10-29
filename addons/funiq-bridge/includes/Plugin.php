@@ -13,7 +13,9 @@ namespace FuniqBridge;
 use FuniqBridge\PostTypes\{Product, Promotion, Promocode};
 use FuniqBridge\Taxonomies\{Brand, Category, Color, Status};
 use FuniqBridge\REST\{
+	AuthController,
 	BannerController,
+	BaseController,
 	BrandsController,
 	CarouselController,
 	CategoriesController,
@@ -64,6 +66,9 @@ final class Plugin {
 		// 2. Register REST routes on rest_api_init.
 		add_action( 'rest_api_init', array( $plugin, 'register_rest_routes' ) );
 
+		// 2b. Cache headers on public GETs (B1, Proposal 092).
+		add_filter( 'rest_post_dispatch', array( BaseController::class, 'set_cache_headers_on_public_gets' ), 10, 3 );
+
 		// 3. Seed default options on activation.
 		add_action( 'init', array( $plugin, 'seed_default_options' ) );
 
@@ -103,20 +108,38 @@ final class Plugin {
 	/**
 	 * Register all REST controllers.
 	 *
-	 * Hooked to rest_api_init.
+	 * Hooked to rest_api_init. Each controller is registered twice:
+	 *
+	 * 1. `funiq/v1` — legacy namespace, kept for the licensed PWA (Q1: keep
+	 *    A/B until retirement).
+	 * 2. `nvoos-commerce/v1` — the NV commerce contract (Proposal 092); the
+	 *    Astro storefront and all new consumers bind here.
+	 *
+	 * Both namespaces serve identical routes — the alias costs nothing and
+	 * makes the legacy namespace a one-line removal per controller at
+	 * PWA retirement.
 	 *
 	 * @return void
 	 */
 	public function register_rest_routes(): void {
-		( new ProductsController() )->register_routes();
-		( new CategoriesController() )->register_routes();
-		( new BrandsController() )->register_routes();
-		( new ColorsController() )->register_routes();
-		( new StatusesController() )->register_routes();
-		( new PromotionsController() )->register_routes();
-		( new PromocodesController() )->register_routes();
-		( new BannerController() )->register_routes();
-		( new CarouselController() )->register_routes();
+		$controllers = array(
+			new ProductsController(),
+			new CategoriesController(),
+			new BrandsController(),
+			new ColorsController(),
+			new StatusesController(),
+			new PromotionsController(),
+			new PromocodesController(),
+			new BannerController(),
+			new CarouselController(),
+			new AuthController(),
+		);
+
+		foreach ( $controllers as $controller ) {
+			$controller->register_routes();
+			$controller->set_namespace( Schema::REST_NAMESPACE_NV );
+			$controller->register_routes();
+		}
 	}
 
 	/**

@@ -1,0 +1,11 @@
+---
+// Cart page — server shell + client-hydrated CartView island.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CartView from '../../islands/CartView';
+import { pageTitle } from '../../lib/seo/meta';
+---
+
+<BaseLayout title={pageTitle('Cart')}>
+	<h1>Cart</h1>
+	<CartView client:load />
+</BaseLayout>

@@ -98,11 +98,15 @@ And remove the `/api` prefix from each endpoint URL (since `funiq/v1` already in
 
 ## REST API Endpoints
 
-All endpoints under `/wp-json/funiq/v1/`.
+All endpoints under `/wp-json/funiq/v1/` and — identically — under
+`/wp-json/nvoos-commerce/v1/` (the NV commerce contract namespace,
+Proposal 092; the Astro storefront binds here). The legacy namespace is
+retained for the licensed PWA (owner decision Q1: keep A/B) and retires
+with it.
 
 | Method | Path | Auth |
 |--------|------|------|
-| `GET` | `/products[?page=&limit=&where=...]` | Public |
+| `GET` | `/products[?page=&limit=&where=...&sort=...]` | Public |
 | `GET` | `/products/{id}` | Public |
 | `POST` | `/products` | `manage_funiq` |
 | `PUT` | `/products/{id}` | `manage_funiq` |
@@ -113,23 +117,49 @@ All endpoints under `/wp-json/funiq/v1/`.
 | `GET`/`POST`/`PUT`/`DELETE` | `/statuses[/{id}]` | Read public / Write cap |
 | `GET`/`POST`/`PUT`/`DELETE` | `/promotions[/{id}]` | Read public / Write cap |
 | `GET`/`POST`/`PUT`/`DELETE` | `/promocodes[/{id}]` | Read public / Write cap |
+| `GET` | `/promocodes/validate?code=...` | Public (idempotent read) |
 | `GET`/`PUT` | `/globals/banner` | Read public / Write cap |
 | `GET`/`PUT` | `/globals/carousel` | Read public / Write cap |
+| `GET` | `/auth/nonce` | Public (CSRF nonce) |
+| `POST` | `/auth/register` | Public (requires nonce) |
+| `POST` | `/auth/login` | Public |
+| `POST` | `/auth/logout` | Public |
+| `GET` | `/auth/me` | Logged-in cookie |
+
+**Filtering & sorting (B2):** `where` supports `id.equals`, `name.like`,
+`category.equals`/`category.in`, `brand.equals`/`brand.in`,
+`colors.equals`/`colors.in`, `statuses.equals`/`statuses.in`. `sort` accepts
+`date` (default), `-date`, `price`, `-price`, `rating`, `-rating`, `name`,
+`-name`.
+
+**Cache headers (B1):** successful **unauthenticated** GET responses on both
+namespaces carry `Cache-Control: public, s-maxage=300, stale-while-revalidate=60`,
+an ETag, and (for single documents) `Last-Modified` — enabling the Velocity
+`serve.mjs` proxy micro-cache and the Astro fetch layer to serve from cache.
 
 **Query examples:**
 
 ```bash
-# List products, page 2, 20 per page
-curl https://yoursite.com/wp-json/funiq/v1/products?page=2&limit=20
+# List products, page 2, 20 per page, sorted by price ascending
+curl "https://yoursite.com/wp-json/nvoos-commerce/v1/products?page=2&limit=20&sort=-price"
 
 # Get a single product
-curl https://yoursite.com/wp-json/funiq/v1/products/42
+curl https://yoursite.com/wp-json/nvoos-commerce/v1/products/42
 
 # Filter products by category
-curl "https://yoursite.com/wp-json/funiq/v1/products?where[category][equals]=5"
+curl "https://yoursite.com/wp-json/nvoos-commerce/v1/products?where[category][equals]=5"
+
+# Filter by brand and multiple colors
+curl "https://yoursite.com/wp-json/nvoos-commerce/v1/products?where[brand][equals]=3&where[colors][in]=1&where[colors][in]=2"
+
+# Free-text search
+curl "https://yoursite.com/wp-json/nvoos-commerce/v1/products?where[name][like]=sofa"
+
+# Validate a promo code
+curl "https://yoursite.com/wp-json/nvoos-commerce/v1/promocodes/validate?code=SUMMER10"
 
 # Create a product (requires authentication)
-curl -X POST https://yoursite.com/wp-json/funiq/v1/products \
+curl -X POST https://yoursite.com/wp-json/nvoos-commerce/v1/products \
   -H "Content-Type: application/json" \
   -H "X-WP-Nonce: YOUR_NONCE" \
   -d '{"name":"New Product","price":29.99}'

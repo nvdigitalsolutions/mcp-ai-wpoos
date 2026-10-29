@@ -21,6 +21,13 @@ final class Schema {
 	// -----------------------------------------------------------------------
 	public const REST_NAMESPACE = 'funiq/v1';
 
+	/**
+	 * NV commerce contract namespace (Proposal 092). Served as an alias of
+	 * REST_NAMESPACE — identical routes, two namespaces. The legacy namespace
+	 * retires with the licensed PWA (Q1: keep A/B until then).
+	 */
+	public const REST_NAMESPACE_NV = 'nvoos-commerce/v1';
+
 	// -----------------------------------------------------------------------
 	// Post type slugs.
 	// -----------------------------------------------------------------------

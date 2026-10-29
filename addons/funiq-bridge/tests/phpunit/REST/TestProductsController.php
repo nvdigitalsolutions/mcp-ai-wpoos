@@ -20,8 +20,15 @@ class TestProductsController extends WP_Test_REST_TestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Register post types and REST routes.
-		do_action( 'init' );
+		// Register the bridge CPTs/taxonomies directly — re-firing
+		// do_action('init') re-registers WooCommerce blocks/integrations and
+		// fails every test with "already registered" notices (test-suite
+		// skill pattern #2). REST routes register on the rest_api_init fire.
+		$plugin = \FuniqBridge\Plugin::instance();
+		if ( ! post_type_exists( Schema::CPT_PRODUCT ) ) {
+			$plugin->register_post_types();
+			$plugin->register_taxonomies();
+		}
 		do_action( 'rest_api_init' );
 
 		$this->admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );

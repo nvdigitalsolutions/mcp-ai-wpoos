@@ -1,0 +1,55 @@
+---
+// Carousel — server-fetched dynamic pocket.
+// For v1 the home page renders it inline (the home page is SSR + cached);
+// server:defer islands become relevant only once a prerendered shell needs a
+// fresh pocket (Proposal 092 §3.3 follow-up).
+import { getGlobal } from '../lib/commerce/client';
+import { normalizeMediaUrl } from '../lib/commerce/normalize';
+
+const carousel = (await getGlobal('carousel', Astro.url)) as {
+	carousel: Array<{ image: string; promotion: { title: string } | null }>;
+} | null;
+
+const slides = carousel?.carousel ?? [];
+---
+
+{
+	slides.length > 0 && (
+		<section class="carousel" aria-label="Featured promotions">
+			{slides.map((slide) => (
+				<figure>
+					{slide.image && (
+						<img src={normalizeMediaUrl(slide.image)} alt="" loading="lazy" />
+					)}
+					{slide.promotion && <figcaption>{slide.promotion.title}</figcaption>}
+				</figure>
+			))}
+		</section>
+	)
+}
+
+<style>
+	.carousel {
+		display: flex;
+		gap: 1rem;
+		overflow-x: auto;
+		margin-block: 1rem;
+	}
+
+	.carousel figure {
+		margin: 0;
+		flex: 0 0 280px;
+	}
+
+	.carousel img {
+		border-radius: var(--nv-radius);
+		aspect-ratio: 16 / 9;
+		object-fit: cover;
+		width: 100%;
+	}
+
+	.carousel figcaption {
+		font-weight: 600;
+		margin-top: 0.3rem;
+	}
+</style>

@@ -1001,3 +1001,9 @@ if ( file_exists( __DIR__ . '/../addons/nvoos-design-system/tests/bootstrap.php'
 if ( file_exists( __DIR__ . '/../addons/schedule-anything-platform/tests/bootstrap.php' ) ) {
 	require_once __DIR__ . '/../addons/schedule-anything-platform/tests/bootstrap.php';
 }
+
+// Funiq Bridge addon tests (addons/funiq-bridge). Same self-guarding
+// pattern — Proposal 092: the bridge serves the NV commerce contract.
+if ( file_exists( __DIR__ . '/../addons/funiq-bridge/tests/bootstrap.php' ) ) {
+	require_once __DIR__ . '/../addons/funiq-bridge/tests/bootstrap.php';
+}

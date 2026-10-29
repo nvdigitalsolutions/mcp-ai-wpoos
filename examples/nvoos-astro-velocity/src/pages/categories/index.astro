@@ -1,0 +1,30 @@
+---
+// Category index — SSR + cached.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllCategories } from '../../lib/commerce/client';
+import { categoryPath } from '../../lib/url';
+import { pageTitle, plainExcerpt } from '../../lib/seo/meta';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+const categories = await getAllCategories(Astro.url);
+---
+
+<BaseLayout
+	title={pageTitle('Categories')}
+	description={plainExcerpt('Browse all product categories.')}
+>
+	<h1>Categories</h1>
+	<ul>
+		{categories.map((category) => (
+			<li>
+				<a href={categoryPath(category.id, category.name)}>
+					{category.name} ({category.productsCount})
+				</a>
+			</li>
+		))}
+	</ul>
+</BaseLayout>

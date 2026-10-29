@@ -1,0 +1,164 @@
+---
+// ---------------------------------------------------------------------------
+// PDP — prerendered for the FULL catalog at build time (getStaticPaths over
+// the paginated products collection at limit=100). Zero-JS by default; the
+// gallery/add-to-cart/promo islands hydrate lazily. JSON-LD (Product/Offer/
+// AggregateRating/BreadcrumbList) is in the initial HTML (P3/D10).
+//
+// Slug behavior: the id is the canonical key; unknown slugs 404 (crawlers
+// learn the canonical via the canonical tag — prerendered pages cannot 301).
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import GalleryLightbox from '../../../islands/GalleryLightbox';
+import AddToCartButton from '../../../islands/AddToCartButton';
+import PromoCodeField from '../../../islands/PromoCodeField';
+import ProductCard from '../../../components/ProductCard.astro';
+import { getAllProducts } from '../../../lib/commerce/client';
+import { normalizeProductMedia, sanitizeDescription } from '../../../lib/commerce/normalize';
+import { formatPrice, resolveCurrency } from '../../../lib/commerce/money';
+import { categoryPath, slugify, absoluteUrl } from '../../../lib/url';
+import { breadcrumbJsonLd, productJsonLd } from '../../../lib/seo/jsonld';
+import { metaForProduct } from '../../../lib/seo/meta';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+	// Build-time fetches bind to NVOOS_API_BASE (fixtures in CI/dev).
+	const products = await getAllProducts(undefined);
+	return products.map((product) => ({
+		params: { id: String(product.id), slug: slugify(product.name) },
+		props: { product, allProducts: products },
+	}));
+}
+
+const { product: raw, allProducts } = Astro.props as {
+	product: import('../../../lib/commerce/types').Product;
+	allProducts: import('../../../lib/commerce/types').Product[];
+};
+
+const product = normalizeProductMedia(raw);
+const site = Astro.site ?? new URL('https://store.nvoos.cloud');
+const meta = metaForProduct(product, site);
+
+// Breadcrumb trail: Home → Category → Product (JSON-LD + visible).
+const breadcrumbs = [
+	{ name: 'Home', url: absoluteUrl(site, '/') },
+	...(product.category
+		? [
+			{
+				name: product.category.name,
+				url: absoluteUrl(site, categoryPath(product.category.id, product.category.name)),
+			},
+		]
+		: []),
+];
+
+// Related: same category, newest first, exclude self (computed at build).
+const related = allProducts
+	.filter(
+		(candidate) =>
+			candidate.id !== product.id &&
+			product.category !== null &&
+			candidate.category?.id === product.category.id
+	)
+	.slice(0, 8)
+	.map(normalizeProductMedia);
+
+const jsonld = [
+	productJsonLd(product, site, resolveCurrency()),
+	breadcrumbJsonLd(breadcrumbs),
+];
+---
+
+<BaseLayout
+	title={meta.title}
+	description={meta.description}
+	canonical={meta.canonical}
+	image={meta.og.image}
+	jsonld={jsonld}
+>
+	<nav class="breadcrumbs" aria-label="Breadcrumb">
+		<a href="/">Home</a>
+		{
+			product.category && (
+				<>
+					{' / '}
+					<a href={categoryPath(product.category.id, product.category.name)}>
+						{product.category.name}
+					</a>
+				</>
+			)
+		}
+		{' / '}
+		<span>{product.name}</span>
+	</nav>
+
+	<article class="pdp">
+		<div>
+			<GalleryLightbox
+				images={[product.image, ...product.images]}
+				alt={product.name}
+				client:visible
+			/>
+		</div>
+		<div>
+			<h1>{product.name}</h1>
+			{
+				product.brand && (
+					<p>
+						Brand:{' '}
+						<a href={`/brands/${product.brand.id}/${slugify(product.brand.name)}/`}>
+							{product.brand.name}
+						</a>
+					</p>
+				)
+			}
+			{product.rating !== null && <p>Rating: {product.rating.toFixed(1)} / 5</p>}
+			<p class="pdp__price">
+				{formatPrice(product.price)}
+				{product.oldPrice !== null && product.oldPrice > product.price && (
+					<span class="pdp__old-price">{formatPrice(product.oldPrice)}</span>
+				)}
+			</p>
+			{
+				product.colors.length > 0 && (
+					<p>
+						{product.colors.map((color) => (
+							<span
+								class="swatch"
+								title={color.name}
+								style={`background:${color.hexCode || '#ccc'}`}
+							/>
+						))}
+					</p>
+				)
+			}
+			<AddToCartButton
+				productId={product.id}
+				name={product.name}
+				price={product.price}
+				image={product.image}
+				client:visible
+			/>
+			<PromoCodeField client:visible />
+			<section>
+				<h2>Description</h2>
+				<div set:html={sanitizeDescription(product.description)} />
+			</section>
+		</div>
+	</article>
+
+	{
+		related.length > 0 && (
+			<section>
+				<h2>You may also like</h2>
+				<div class="product-grid">
+					{related.map((item) => (
+						<ProductCard product={item} />
+					))}
+				</div>
+			</section>
+		)
+	}
+</BaseLayout>
