@@ -113,6 +113,10 @@ export interface Customer {
 	canManage?: boolean;
 	/** Backend-owned dashboard URL — re-rooted onto the storefront origin. */
 	adminUrl?: string;
+	/** Granted WordPress capability slugs (server-authored, sorted). */
+	capabilities?: string[];
+	/** Collections the backend mode marks read-only (e.g. woo statuses). */
+	readOnlyCollections?: string[];
 }
 
 export interface NonceResponse {

@@ -11,11 +11,13 @@ interface RelationshipFieldProps {
   /** For singles: { id, name } | null. For hasMany: Array<{ id, name }>. */
   value: any;
   required?: boolean;
+  /** Validation message from the form schema (renders + sets aria-invalid). */
+  error?: string;
   onChange: (value: any) => void;
 }
 
-export function RelationshipField({ label, relation, hasMany, value, required, onChange }: RelationshipFieldProps) {
-  const { data } = useCollection<any>(relation as CollectionSlug, 1, 100);
+export function RelationshipField({ label, relation, hasMany, value, required, error, onChange }: RelationshipFieldProps) {
+  const { data } = useCollection<any>(relation as CollectionSlug, { page: 1, limit: 100 });
 
   const options = data?.docs ?? [];
 
@@ -52,6 +54,7 @@ export function RelationshipField({ label, relation, hasMany, value, required, o
           ))}
           {options.length === 0 && <p style={{ color: '#999', margin: 0 }}>No {relation} available.</p>}
         </div>
+        {error && <p style={{ color: '#b32d2e', margin: '4px 0 0' }}>{error}</p>}
       </div>
     );
   }
@@ -67,6 +70,7 @@ export function RelationshipField({ label, relation, hasMany, value, required, o
       <select
         value={currentId ?? ''}
         required={required}
+        aria-invalid={error ? true : undefined}
         onChange={(e) => {
           const id = e.target.value ? parseInt(e.target.value, 10) : null;
           if (id) {
@@ -85,6 +89,7 @@ export function RelationshipField({ label, relation, hasMany, value, required, o
           </option>
         ))}
       </select>
+      {error && <p style={{ color: '#b32d2e', margin: '4px 0 0' }}>{error}</p>}
     </div>
   );
 }

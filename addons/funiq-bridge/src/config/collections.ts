@@ -28,6 +28,17 @@ export interface CollectionConfig {
   type: 'collection' | 'global';
   defaultColumns: string[];
   fields: FieldConfig[];
+  /**
+   * Columns the bridge's list endpoint can sort server-side (native source:
+   * name/-name, price/-price, rating/-rating, date/-date). Sorting is hidden
+   * for collections that ignore the sort param.
+   */
+  sortable?: string[];
+  /**
+   * Whether the list surface shows the free-text search box. Only products
+   * implement the Payload-style where clause (name.like) server-side today.
+   */
+  searchable?: boolean;
 }
 
 export const collections: CollectionConfig[] = [
@@ -37,6 +48,8 @@ export const collections: CollectionConfig[] = [
     pluralLabel: 'Products',
     type: 'collection',
     defaultColumns: ['name', 'price', 'category', 'brand', 'source'],
+    sortable: ['name', 'price'],
+    searchable: true,
     fields: [
       { name: 'name', type: 'text', label: 'Product Name', required: true },
       { name: 'price', type: 'number', label: 'Price', required: true, min: 0, step: 0.01 },

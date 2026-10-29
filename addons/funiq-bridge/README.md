@@ -145,6 +145,16 @@ never touched. Guardrails: site owners (super admins) cannot be modified
 from the CMS, and a manager cannot remove their own access. The
 `funiq_bridge_managers_protected_user` filter extends the protected set.
 
+**Auth payload (camelCase, 2026-10-30):** `GET /auth/me` returns the
+session customer as `{ id, email, name, canManage, adminUrl, capabilities,
+readOnlyCollections }`. `capabilities` is the session's granted WordPress
+capability slugs (sorted); `readOnlyCollections` is the server-computed
+mode-derived list (woo mode → `["statuses"]`, whose writes answer 405).
+The admin SPA consumes both to gate surfaces without probing endpoints —
+the console's capability/endpoint-emptiness pattern. Cookie-authenticated
+writes require the `X-WP-Nonce` header minted by `GET /auth/nonce`; the
+admin bundle re-mints and retries once on `rest_cookie_invalid_nonce`.
+
 **Filtering & sorting (B2):** `where` supports `id.equals`, `name.like`,
 `category.equals`/`category.in`, `brand.equals`/`brand.in`,
 `colors.equals`/`colors.in`, `statuses.equals`/`statuses.in`. `sort` accepts

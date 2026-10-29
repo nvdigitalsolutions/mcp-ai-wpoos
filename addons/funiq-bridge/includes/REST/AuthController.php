@@ -17,6 +17,7 @@
 namespace FuniqBridge\REST;
 
 use FuniqBridge\Schema;
+use FuniqBridge\Sources\ProductSources;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -262,7 +263,7 @@ class AuthController extends BaseController {
 	 * GET /auth/me — current customer (cookie-authenticated).
 	 *
 	 * Sessions that can manage the store additionally get the dashboard
-	 * fields (can_manage + admin_url) so same-origin consumers can surface
+	 * fields (canManage + adminUrl) so same-origin consumers can surface
 	 * a "Manage store" entry point without hardcoding backend URLs.
 	 *
 	 * @return WP_REST_Response
@@ -274,6 +275,12 @@ class AuthController extends BaseController {
 	/**
 	 * Build the customer payload for a user ID.
 	 *
+	 * The payload is camelCase like every other bridge envelope (product
+	 * docs carry oldPrice/imageId). It also carries the session's WordPress
+	 * capabilities and the server-computed read-only collection map, so the
+	 * admin SPA can gate surfaces without probing endpoints (the console's
+	 * capability/endpoint-emptiness pattern — see Proposal 083/084).
+	 *
 	 * @param int $user_id WordPress user ID.
 	 * @return array<string, mixed>
 	 */
@@ -281,22 +288,59 @@ class AuthController extends BaseController {
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
 			return array(
-				'id'         => 0,
-				'email'      => '',
-				'name'       => '',
-				'can_manage' => false,
-				'admin_url'  => '',
+				'id'                  => 0,
+				'email'               => '',
+				'name'                => '',
+				'canManage'           => false,
+				'adminUrl'            => '',
+				'capabilities'        => array(),
+				'readOnlyCollections' => array(),
 			);
 		}
 
 		$can_manage = current_user_can( Schema::CAP_MANAGE );
 
 		return array(
-			'id'         => $user->ID,
-			'email'      => $user->user_email,
-			'name'       => ( '' !== $user->display_name ) ? $user->display_name : $user->user_login,
-			'can_manage' => $can_manage,
-			'admin_url'  => $can_manage ? admin_url( 'admin.php?page=' . Schema::ADMIN_PAGE_SLUG ) : '',
+			'id'                  => $user->ID,
+			'email'               => $user->user_email,
+			'name'                => ( '' !== $user->display_name ) ? $user->display_name : $user->user_login,
+			'canManage'           => $can_manage,
+			'adminUrl'            => $can_manage ? admin_url( 'admin.php?page=' . Schema::ADMIN_PAGE_SLUG ) : '',
+			'capabilities'        => $this->user_capabilities( $user ),
+			'readOnlyCollections' => $this->read_only_collections(),
 		);
+	}
+
+	/**
+	 * The session's granted capability slugs (sorted, stable order).
+	 *
+	 * Mirrors the console's users/me?context=edit capabilities contract so
+	 * the admin SPA can reuse the same capability-driven gating model.
+	 *
+	 * @param \WP_User $user WordPress user.
+	 * @return array<int, string>
+	 */
+	private function user_capabilities( \WP_User $user ): array {
+		$caps = array_filter( (array) $user->get_role_caps() );
+		$caps = array_keys( $caps );
+		sort( $caps );
+		return array_values( $caps );
+	}
+
+	/**
+	 * Collections that are read-only for the current backend mode.
+	 *
+	 * Woo-mode stock statuses are WooCommerce enumerations — every write
+	 * answers 405 (see StatusesController). The admin SPA uses this map to
+	 * hide Add/Edit/Delete instead of surfacing the rejection.
+	 *
+	 * @return array<int, string>
+	 */
+	private function read_only_collections(): array {
+		$read_only = array();
+		if ( ProductSources::is_woo_active_mode() ) {
+			$read_only[] = 'statuses';
+		}
+		return $read_only;
 	}
 }
