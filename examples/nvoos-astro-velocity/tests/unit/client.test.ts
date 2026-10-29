@@ -190,4 +190,24 @@ describe('base resolution (resolveBase precedence)', () => {
 		const url = String(fetchMock.mock.calls[0][0]);
 		expect(url).toContain('http://localhost:8123/wp-json/nvoos-commerce/v1/products');
 	});
+
+	it('prefers the in-process loopback origin set by serve.mjs (Velocity)', async () => {
+		// Regression (incident 2026-10-29 #2): on Velocity the public
+		// self-request fails at the network layer; serve.mjs sets
+		// NVOOS_SSR_API_ORIGIN to http://127.0.0.1:<PORT> and the render
+		// must self-fetch through the BFF listener instead.
+		vi.stubEnv('NVOOS_API_BASE', 'http://localhost:8123/wp-json/nvoos-commerce/v1');
+		vi.stubEnv('NVOOS_SSR_API_ORIGIN', 'http://127.0.0.1:4321');
+		const fetchMock = vi.fn(
+			async (_input: RequestInfo | URL) =>
+				new Response(JSON.stringify(okEnvelope(24)), { status: 200 })
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		await getCollection<Product>('products', requestUrl);
+
+		const url = String(fetchMock.mock.calls[0][0]);
+		expect(url).toContain('http://127.0.0.1:4321/api/products');
+		expect(url).not.toContain('store.example');
+	});
 });
