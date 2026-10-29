@@ -99,6 +99,17 @@ a:hover {
 	font-size: 0.95rem;
 }
 
+/* Manager dashboard entry point (ManageLink island — renders only for
+   signed-in store managers). */
+.site-nav__manage {
+	text-decoration: none;
+	font-size: 0.95rem;
+	font-weight: 600;
+	border: 1px solid var(--nv-line);
+	border-radius: var(--nv-radius);
+	padding: 0.25rem 0.6rem;
+}
+
 .site-footer {
 	border-top: 1px solid var(--nv-line);
 	margin-top: 3rem;

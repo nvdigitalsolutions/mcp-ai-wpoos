@@ -166,7 +166,13 @@ const server = createServer((req, res) => {
 			if (!req.headers.cookie) {
 				return send(res, 401, { code: 'rest_forbidden', message: 'Not signed in.' });
 			}
-			return send(res, 200, { id: 1, email: 'shopper@example.com', name: 'Fixture Shopper' });
+			return send(res, 200, {
+				id: 1,
+				email: 'shopper@example.com',
+				name: 'Fixture Shopper',
+				canManage: false,
+				adminUrl: '',
+			});
 		}
 		return send(res, 404, { code: 'fixture_not_found' });
 	}

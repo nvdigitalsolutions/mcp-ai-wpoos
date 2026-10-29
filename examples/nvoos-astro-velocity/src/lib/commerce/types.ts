@@ -109,6 +109,10 @@ export interface Customer {
 	id: number;
 	email: string;
 	name: string;
+	/** True when the session may manage the store (dashboard access). */
+	canManage?: boolean;
+	/** Backend-owned dashboard URL — re-rooted onto the storefront origin. */
+	adminUrl?: string;
 }
 
 export interface NonceResponse {

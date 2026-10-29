@@ -17,6 +17,11 @@
 //   /wp-includes/*    → ${NVOOS_TARGET_SITE}/wp-includes/*
 //   everything else   → Astro SSR handler
 //
+// Admin proxy hardening: responses for /wp-admin and /wp-login.php get their
+// Location headers rewritten onto the request origin (login redirects stay
+// same-origin — no backend host leak, no broken cookie handshake) and an
+// X-Robots-Tag: noindex. Admin responses are never micro-cached.
+//
 // Micro-cache (default-deny): proxied GET responses are cached only when
 // the backend marks them `Cache-Control: public` (bridge B1 does this for
 // public commerce GETs) with a TTL capped by NVOOS_PROXY_CACHE_MAX_TTL.
@@ -27,6 +32,12 @@ import { createServer } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { request as httpRequest } from 'node:http';
 import { URL } from 'node:url';
+
+import {
+	applyAdminResponseHeaders,
+	requestOrigin,
+	stripDomainFromSetCookie,
+} from './lib/proxy-headers.mjs';
 
 const PORT = Number(process.env.PORT) || 4321;
 const TARGET_SITE = (process.env.NVOOS_TARGET_SITE || '').replace(/\/+$/, '');
@@ -73,11 +84,9 @@ function cacheKey(req) {
 	return req.method + ' ' + req.url;
 }
 
-function stripDomainFromSetCookie(setCookies) {
-	if (!Array.isArray(setCookies)) {
-		return setCookies;
-	}
-	return setCookies.map((cookie) => cookie.replace(/;\s*Domain=[^;]+/gi, ''));
+/** True for the admin surface — Location rewriting + noindex + no cache. */
+function isAdminProxy(path) {
+	return path.startsWith('/wp-admin') || path === '/wp-login.php';
 }
 
 function forwardHeaders(headers, { dropHost = true } = {}) {
@@ -95,7 +104,7 @@ function forwardHeaders(headers, { dropHost = true } = {}) {
 	return out;
 }
 
-function proxyTo(target, req, res) {
+function proxyTo(target, req, res, { admin = false } = {}) {
 	const targetUrl = new URL(target);
 	const client = targetUrl.protocol === 'https:' ? httpsRequest : httpRequest;
 
@@ -110,8 +119,14 @@ function proxyTo(target, req, res) {
 		},
 		(upstreamRes) => {
 			const status = upstreamRes.statusCode ?? 502;
+			let headers = forwardHeaders(upstreamRes.headers, { dropHost: false });
+			if (admin) {
+				headers = applyAdminResponseHeaders(headers, {
+					targetSite: TARGET_SITE,
+					origin: requestOrigin(req),
+				});
+			}
 			const setCookies = stripDomainFromSetCookie(upstreamRes.headers['set-cookie']);
-			const headers = forwardHeaders(upstreamRes.headers, { dropHost: false });
 			if (setCookies) {
 				headers['set-cookie'] = setCookies;
 			}
@@ -151,9 +166,10 @@ function shouldCache(status, headers) {
 	return Math.min(Number(match[1]), PROXY_CACHE_MAX_TTL);
 }
 
-function proxyWithCache(target, req, res) {
-	if (PROXY_CACHE_DISABLED || req.method !== 'GET') {
-		return proxyTo(target, req, res);
+function proxyWithCache(target, req, res, { admin = false } = {}) {
+	// Admin responses are never cached — login/dashboard state must not stick.
+	if (PROXY_CACHE_DISABLED || req.method !== 'GET' || admin) {
+		return proxyTo(target, req, res, { admin });
 	}
 
 	const key = cacheKey(req);
@@ -186,8 +202,14 @@ function proxyWithCache(target, req, res) {
 			upstreamRes.on('end', () => {
 				const body = Buffer.concat(chunks);
 				const status = upstreamRes.statusCode ?? 502;
+				let headers = forwardHeaders(upstreamRes.headers, { dropHost: false });
+				if (admin) {
+					headers = applyAdminResponseHeaders(headers, {
+						targetSite: TARGET_SITE,
+						origin: requestOrigin(req),
+					});
+				}
 				const setCookies = stripDomainFromSetCookie(upstreamRes.headers['set-cookie']);
-				const headers = forwardHeaders(upstreamRes.headers, { dropHost: false });
 				if (setCookies) {
 					headers['set-cookie'] = setCookies;
 				}
@@ -238,11 +260,10 @@ function route(req, res) {
 	if (path.startsWith('/wp-json/')) {
 		return proxyWithCache(`${TARGET_SITE}${path}${url.search}`, req, res);
 	}
-	if (path.startsWith('/wp-admin/') || path === '/wp-admin') {
-		return proxyWithCache(`${TARGET_SITE}${path}${url.search}`, req, res);
-	}
-	if (path === '/wp-login.php') {
-		return proxyWithCache(`${TARGET_SITE}${path}${url.search}`, req, res);
+	if (path.startsWith('/wp-admin/') || path === '/wp-admin' || path === '/wp-login.php') {
+		return proxyWithCache(`${TARGET_SITE}${path}${url.search}`, req, res, {
+			admin: isAdminProxy(path),
+		});
 	}
 	if (path.startsWith('/wp-includes/')) {
 		return proxyWithCache(`${TARGET_SITE}${path}${url.search}`, req, res);
