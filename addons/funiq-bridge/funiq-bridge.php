@@ -98,6 +98,14 @@ add_action(
 // ---------------------------------------------------------------------------
 if ( did_action( 'plugins_loaded' ) ) {
 	FuniqBridge\Plugin::init();
+	$funiq_bridge = FuniqBridge\Plugin::instance();
+	if ( did_action( 'init' ) ) {
+		$funiq_bridge->register_post_types();
+		$funiq_bridge->register_taxonomies();
+	}
+	if ( did_action( 'rest_api_init' ) ) {
+		$funiq_bridge->register_rest_routes();
+	}
 }
 
 // ---------------------------------------------------------------------------
