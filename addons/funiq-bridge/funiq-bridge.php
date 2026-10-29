@@ -83,7 +83,20 @@ add_action(
 	static function (): void {
 		FuniqBridge\Plugin::init();
 	},
-	30  // After base plugin (20) and pro addon (15).
+	31  // After base plugin (20) and pro addon (15).
+);
+
+// Fleet bootstrap — on the Cloudways fleet the plugins_loaded priority-30
+// bucket is consumed before registered callbacks run (observed live on
+// nvoos.pro, 2026-10-29), so the closure above can sit unfired. init is the
+// reliable fleet hook; Plugin::init() is idempotent, so both paths are safe
+// and the first one to fire wins.
+add_action(
+	'init',
+	static function (): void {
+		FuniqBridge\Plugin::init();
+	},
+	9  // Before the init:11 CPT/taxonomy registration hooks.
 );
 
 // ---------------------------------------------------------------------------
