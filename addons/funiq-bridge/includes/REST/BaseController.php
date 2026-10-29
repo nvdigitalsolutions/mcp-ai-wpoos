@@ -93,6 +93,18 @@ abstract class BaseController extends WP_REST_Controller {
 			return $response;
 		}
 
+		// Per-session surfaces must never be marked public. /auth/nonce is a
+		// session-tied CSRF token — caching it at the edge serves one
+		// visitor's nonce to everyone and breaks cookie auth (incident
+		// 2026-10-29: the cached anonymous nonce failed validation for every
+		// authenticated REST call).
+		if (
+			0 === strpos( $route, '/' . \FuniqBridge\Schema::REST_NAMESPACE . '/auth' )
+			|| 0 === strpos( $route, '/' . \FuniqBridge\Schema::REST_NAMESPACE_NV . '/auth' )
+		) {
+			return $response;
+		}
+
 		$status = $response->get_status();
 		if ( $status < 200 || $status >= 300 ) {
 			return $response;

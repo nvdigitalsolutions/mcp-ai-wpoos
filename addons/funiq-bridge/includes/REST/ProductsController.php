@@ -285,7 +285,6 @@ class ProductsController extends BaseController {
 			Schema::META_RATING        => array( $data, 'rating', 'floatval' ),
 			Schema::META_IS_BESTSELLER => array( $data, 'isBestseller', 'boolval' ),
 			Schema::META_IS_FEATURED   => array( $data, 'isFeatured', 'boolval' ),
-			Schema::META_PROMOTION_ID  => array( $data, 'promotion', 'intval' ),
 			Schema::META_GALLERY       => array( $data, 'images', null ),
 		);
 
@@ -298,6 +297,19 @@ class ProductsController extends BaseController {
 				$value = call_user_func( $cast, $value );
 			}
 			update_post_meta( $product_id, $key, $value );
+		}
+
+		// Promotion is a single relationship ({ id, ... }) in the SPA payload —
+		// extract the ID explicitly. intval() on the object coerces to 1.
+		if ( array_key_exists( 'promotion', $data ) ) {
+			$promotion = $data['promotion'];
+			$promo_id  = 0;
+			if ( is_array( $promotion ) && isset( $promotion['id'] ) ) {
+				$promo_id = (int) $promotion['id'];
+			} elseif ( is_numeric( $promotion ) ) {
+				$promo_id = (int) $promotion;
+			}
+			update_post_meta( $product_id, Schema::META_PROMOTION_ID, $promo_id );
 		}
 
 		// Handle featured image — accept either `image` (numeric ID or URL) or

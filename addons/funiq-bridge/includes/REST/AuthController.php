@@ -16,6 +16,7 @@
 
 namespace FuniqBridge\REST;
 
+use FuniqBridge\Schema;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -260,6 +261,10 @@ class AuthController extends BaseController {
 	/**
 	 * GET /auth/me — current customer (cookie-authenticated).
 	 *
+	 * Sessions that can manage the store additionally get the dashboard
+	 * fields (can_manage + admin_url) so same-origin consumers can surface
+	 * a "Manage store" entry point without hardcoding backend URLs.
+	 *
 	 * @return WP_REST_Response
 	 */
 	public function get_me() {
@@ -276,16 +281,22 @@ class AuthController extends BaseController {
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
 			return array(
-				'id'    => 0,
-				'email' => '',
-				'name'  => '',
+				'id'         => 0,
+				'email'      => '',
+				'name'       => '',
+				'can_manage' => false,
+				'admin_url'  => '',
 			);
 		}
 
+		$can_manage = current_user_can( Schema::CAP_MANAGE_FUNIQ );
+
 		return array(
-			'id'    => $user->ID,
-			'email' => $user->user_email,
-			'name'  => ( '' !== $user->display_name ) ? $user->display_name : $user->user_login,
+			'id'         => $user->ID,
+			'email'      => $user->user_email,
+			'name'       => ( '' !== $user->display_name ) ? $user->display_name : $user->user_login,
+			'can_manage' => $can_manage,
+			'admin_url'  => $can_manage ? admin_url( 'admin.php?page=' . Schema::ADMIN_PAGE_SLUG ) : '',
 		);
 	}
 }

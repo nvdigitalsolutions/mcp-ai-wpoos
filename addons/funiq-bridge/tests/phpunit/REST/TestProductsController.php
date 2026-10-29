@@ -112,6 +112,40 @@ class TestProductsController extends WP_Test_REST_TestCase {
 	}
 
 	/**
+	 * The promotion relationship object is persisted as its ID — never the
+	 * intval() coercion of the array (which yields 1 for any non-empty
+	 * array, silently pointing every product at post 1).
+	 */
+	public function test_promotion_relationship_stores_id(): void {
+		$promo_id = $this->factory->post->create(
+			array(
+				'post_type'   => Schema::CPT_PROMOTION,
+				'post_title'  => 'Launch Week',
+				'post_status' => 'publish',
+			)
+		);
+		wp_set_current_user( $this->admin_id );
+
+		$request = new WP_REST_Request( 'POST', '/funiq/v1/products' );
+		$request->set_header( 'content-type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'name'      => 'Promo Product',
+					'price'     => 59.99,
+					'promotion' => array( 'id' => $promo_id ),
+				)
+			)
+		);
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertEquals( 200, $response->get_status() );
+		$this->assertNotNull( $data['promotion'] );
+		$this->assertEquals( $promo_id, $data['promotion']['id'] );
+	}
+
+	/**
 	 * GET /funiq/v1/products/{id} returns 404 for missing product.
 	 */
 	public function test_get_single_404(): void {

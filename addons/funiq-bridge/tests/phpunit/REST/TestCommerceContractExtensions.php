@@ -292,6 +292,21 @@ class TestCommerceContractExtensions extends WP_Test_REST_TestCase {
 	}
 
 	/**
+	 * /auth/nonce must never be marked cacheable — the nonce is a
+	 * session-tied CSRF token (cached copy breaks cookie auth).
+	 */
+	public function test_auth_nonce_is_never_marked_public(): void {
+		$request  = new WP_REST_Request( 'GET', '/nvoos-commerce/v1/auth/nonce' );
+		$response = \FuniqBridge\REST\BaseController::set_cache_headers_on_public_gets(
+			rest_ensure_response( array( 'nonce' => 'fixture-nonce' ) ),
+			rest_get_server(),
+			$request
+		);
+
+		$this->assertArrayNotHasKey( 'Cache-Control', $response->get_headers() );
+	}
+
+	/**
 	 * Registration requires a nonce (403 without one).
 	 */
 	public function test_register_requires_nonce(): void {
@@ -331,6 +346,45 @@ class TestCommerceContractExtensions extends WP_Test_REST_TestCase {
 		$user = get_user_by( 'email', $email );
 		$this->assertNotFalse( $user );
 		$this->assertContains( 'subscriber', $user->roles );
+	}
+
+	/**
+	 * GET /auth/me includes the dashboard fields for a manager.
+	 *
+	 * The capability is seeded on activation (Plugin::activate), which
+	 * PHPUnit never runs — grant it explicitly to mirror production.
+	 */
+	public function test_auth_me_includes_manager_fields(): void {
+		get_role( 'administrator' )->add_cap( Schema::CAP_MANAGE_FUNIQ );
+		wp_set_current_user( $this->admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-commerce/v1/auth/me' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertTrue( $data['can_manage'] );
+		$this->assertStringContainsString( 'admin.php?page=' . Schema::ADMIN_PAGE_SLUG, $data['admin_url'] );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * GET /auth/me for a subscriber carries no dashboard access.
+	 */
+	public function test_auth_me_subscriber_has_no_manager_fields(): void {
+		$subscriber_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-commerce/v1/auth/me' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertFalse( $data['can_manage'] );
+		$this->assertSame( '', $data['admin_url'] );
+
+		wp_set_current_user( 0 );
 	}
 
 	/**
