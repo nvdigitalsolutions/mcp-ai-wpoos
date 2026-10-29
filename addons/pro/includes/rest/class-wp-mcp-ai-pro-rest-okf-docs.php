@@ -405,6 +405,17 @@ class WP_MCP_AI_Pro_REST_Okf_Docs {
 				$concepts = array();
 			}
 
+			// Concept order comes from a recursive directory iterator and is
+			// filesystem-dependent. Sort by concept_id so the flattened
+			// manifest order — and the prev/next neighbours that neighbours()
+			// derives from it — is deterministic across environments.
+			usort(
+				$concepts,
+				static function ( $a, $b ) {
+					return strcmp( $a['concept_id'], $b['concept_id'] );
+				}
+			);
+
 			$out['bundles'][ $bundle['name'] ] = array(
 				'modified' => isset( $bundle['modified'] ) ? (int) $bundle['modified'] : 0,
 				'concepts' => $concepts,
