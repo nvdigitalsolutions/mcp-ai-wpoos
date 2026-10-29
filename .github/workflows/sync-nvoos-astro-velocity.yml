@@ -38,6 +38,7 @@ on:
     branches: [main, alpha-working]
     paths:
       - 'examples/nvoos-astro-velocity/**'
+      - '.github/workflows/sync-nvoos-astro-velocity.yml'
   repository_dispatch:
     types: [nvoos-storefront-content-changed]
   workflow_dispatch:
