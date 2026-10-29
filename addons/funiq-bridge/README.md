@@ -137,6 +137,13 @@ namespaces carry `Cache-Control: public, s-maxage=300, stale-while-revalidate=60
 an ETag, and (for single documents) `Last-Modified` — enabling the Velocity
 `serve.mjs` proxy micro-cache and the Astro fetch layer to serve from cache.
 
+**Rebuild webhook (Proposal 092 Phase 2.3):** when the options
+`funiq_bridge_rebuild_webhook_url` (e.g. a GitHub dispatches endpoint) and
+`funiq_bridge_rebuild_webhook_token` (optional bearer token) are configured,
+every catalog change (products, promotions, promocodes, terms, banner /
+carousel) fires one debounced `nvoos-storefront-content-changed` notification
+on shutdown — the storefront's CI re-syncs and redeploys. Empty URL = no-op.
+
 **Query examples:**
 
 ```bash

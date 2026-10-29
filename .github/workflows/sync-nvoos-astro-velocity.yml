@@ -12,6 +12,11 @@ name: Sync nvoos-astro-velocity
 # Mirror history is intentionally flat (one commit per sync, force-pushed).
 # Never commit to the mirror directly.
 #
+# Revalidation loop (Phase 2.3): the bridge's RebuildWebhook POSTs
+# `nvoos-storefront-content-changed` to this repo's dispatches endpoint when
+# catalog content changes; the repository_dispatch trigger below re-runs the
+# sync, which rebuilds the prerendered catalog and redeploys Velocity.
+#
 # Activation (owner steps, one-time):
 #   1. Create the repo nvdigitalsolutions/nvoos-astro-velocity (public).
 #   2. Add a repo-scoped deploy token as the repository secret
@@ -20,12 +25,21 @@ name: Sync nvoos-astro-velocity
 #   4. In Velocity: connect the mirror repo, root directory = repo root,
 #      entry server.js, no build command,
 #      env NVOOS_TARGET_SITE=<backend>, ASTRO_SITE=<canonical host>.
+#   5. On the backend: set funiq_bridge_rebuild_webhook_url to
+#      https://api.github.com/repos/nvdigitalsolutions/mcp-ai-wpoos/dispatches
+#      and funiq_bridge_rebuild_webhook_token to a repo-scoped PAT.
+#
+# Note: manual `gh workflow run` dispatches resolve against the DEFAULT
+# branch (main) — push-triggered and repository_dispatch runs work from
+# alpha-working regardless.
 
 on:
   push:
     branches: [main, alpha-working]
     paths:
       - 'examples/nvoos-astro-velocity/**'
+  repository_dispatch:
+    types: [nvoos-storefront-content-changed]
   workflow_dispatch:
 
 jobs:
@@ -58,11 +72,22 @@ jobs:
         working-directory: examples/nvoos-astro-velocity
         run: npm test
 
-      - name: Build (prerenders the full fixture catalog)
+      - name: Contract drift guard (Phase 2.7)
+        working-directory: examples/nvoos-astro-velocity
+        run: |
+          npm run sync:bridge-fixtures
+          cd "$GITHUB_WORKSPACE"
+          git diff --exit-code -- \
+            examples/nvoos-astro-velocity/tests/fixtures/ || {
+            echo "::error::Storefront fixtures drifted from the bridge goldens. Run 'npm run sync:bridge-fixtures' and commit the updated fixtures."
+            exit 1
+          }
+
+      - name: Build test artifact (localhost origin — feeds smoke/e2e/LHCI)
         working-directory: examples/nvoos-astro-velocity
         env:
           NVOOS_API_BASE: http://localhost:8123/wp-json/nvoos-commerce/v1
-          ASTRO_SITE: https://store.nvoos.cloud
+          ASTRO_SITE: http://localhost:4321
         run: npm run build
 
       - name: BFF smoke test (P6)
@@ -74,16 +99,38 @@ jobs:
           node server.js &
           echo $! > /tmp/serve.pid
           sleep 2
-          curl -fsS http://localhost:4321/ | grep -q 'NV Store'
-          curl -fsS http://localhost:4321/products/1/aurora-3-seater-sofa/ | grep -q 'application/ld+json'
-          curl -fsS http://localhost:4321/api/products | grep -q '"totalDocs"'
-          curl -fsS http://localhost:4321/sitemap.xml | grep -q '<urlset'
-          kill "$(cat /tmp/serve.pid)"
-          kill "$(cat /tmp/fixtures.pid)" || true
+          npm run smoke
+
+      - name: Playwright e2e (no-JS crawlability + islands, Phase 2.5)
+        working-directory: examples/nvoos-astro-velocity
+        env:
+          NVOOS_TARGET_SITE: http://localhost:8123
+          PORT: '4321'
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+
+      - name: Lighthouse CI (Phase 2.6)
+        working-directory: examples/nvoos-astro-velocity
+        env:
+          NVOOS_TARGET_SITE: http://localhost:8123
+          PORT: '4321'
+          CHROME_PATH: ${{ runner.temp }}/chrome
+        run: |
+          CHROME_BIN="$(find "$HOME/.cache/ms-playwright" -type f -name chrome -path '*chromium*' | head -n 1)"
+          cp "$CHROME_BIN" "$CHROME_PATH"
+          npm run lhci:ci
 
       - name: Assemble mirror tree
         working-directory: examples/nvoos-astro-velocity
-        run: node scripts/sync-dist.mjs
+        env:
+          NVOOS_API_BASE: http://localhost:8123/wp-json/nvoos-commerce/v1
+          ASTRO_SITE: https://store.nvoos.cloud
+        run: |
+          # Production artifact: canonical tags + /_image hrefs must use the
+          # real host — rebuild before assembling the deploy tree.
+          npm run build
+          node scripts/sync-dist.mjs
 
       - name: Push mirror
         working-directory: examples/nvoos-astro-velocity
@@ -100,3 +147,9 @@ jobs:
           git push -f \
             "https://x-access-token:${MIRROR_TOKEN}@github.com/nvdigitalsolutions/nvoos-astro-velocity.git" \
             main
+
+      - name: Stop servers
+        if: always()
+        run: |
+          kill "$(cat /tmp/serve.pid)" 2>/dev/null || true
+          kill "$(cat /tmp/fixtures.pid)" 2>/dev/null || true

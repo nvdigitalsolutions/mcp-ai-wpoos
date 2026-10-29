@@ -1,6 +1,6 @@
 # Proposal 092 — Astro Storefront Layer: The NV-Authored Headless Storefront (`nvoos-astro-velocity`)
 
-**Status:** Proposal (awaiting execution)
+**Status:** In Progress — Phases 0–2 complete (2026-10-29); Phase 3 awaits owner parity review; Phase 4 scheduled for the v1.5 roadmap
 **Date:** 2026-10-27
 **Relates to:** Proposal 085 (Funiq Velocity storefront) + `085-funiq-laravel-standalone-integration-appendix.md` (T1/T2/T3 topologies) · Proposal 090 (Laravel adapter spike) · 085 §3.5 deferred "Storefront SSR/prerender track" · `PROPOSALS_COMPLETION_STATUS.md` (stale register — per-file headers are ground truth)
 **Author:** NV oOS coding agent (Zed)
@@ -191,7 +191,7 @@ migration rail.
 | Repo | Visibility | Contents |
 |---|---|---|
 | `nvdigitalsolutions/mcp-ai-wpoos` (`examples/nvoos-astro-velocity/`) | Public | The complete Astro storefront (NV-authored, MIT) |
-| `nvdigitalsolutions/nvoos-astro-velocity` | Private | Assembled app: Astro `dist/` + server shim (same mirror pattern as 085 §3.3) |
+| `nvdigitalsolutions/nvoos-astro-velocity` | Public | Assembled app: Astro `dist/` + server shim (same mirror pattern as 085 §3.3) |
 | `nvdigitalsolutions/nvoos-funiq-pwa` | Private | PWA retained only as a transitional rollback (Q1) |
 
 Contrast with 085 §3.2: the licensed-bundle injection step disappears from
@@ -294,11 +294,11 @@ or proposed (092, 090) — the Astro layer is the one addition.
 
 | Phase | Scope | Exit criteria |
 |---|---|---|
-| **0 — Spike** (`examples/nvoos-astro-velocity/`, ~2–3 weeks) | Astro SSR app consuming `/api/products` + `/api/globals/*` through the same-origin proxy; Node adapter; one React island (cart badge) proving the reuse claim | P1 dev + `astro build` clean; P2 PLP server-rendered with real links; P3 PDP + JSON-LD in initial HTML; P4 zero-JS default with one hydrated island; P5 golden-contract smoke against the bridge's existing REST fixtures; P6 build output serves on plain Node (Velocity entry) |
-| **1 — Parity** (~3–4 weeks) | Promotions, promocodes (display), category/brand/color filtering, banner/carousel, View Transitions, image optimization | Feature parity with the PWA's public (unauthenticated) surface; same-origin routing in the private mirror |
-| **2 — SEO deliverables** (~2 weeks) | Prerendered catalog routes, `/sitemap.xml`, robots, cache headers + revalidation, full JSON-LD suite, real-link crawlability check with JS disabled | 085 §2.3 standards verifiable by inspection + Lighthouse (no-JS audit) |
-| **3 — Retire the PWA** | Owner confirms parity + the Phase 2 SEO criteria, then retires the PWA: the private PWA repo winds down, CI injection is deleted, the Envato decision closes (coexist A/B remains available as a transitional gate only) | Decision recorded in this doc's status line, mirroring decision #15's pattern |
-| **4 — Generic starter** (optional, v1.5 roadmap — Q3) | `nvoos-astro-starter`: Astro + core WP REST (posts/pages) + WooCommerce via existing Pro REST surfaces; docs + theme | Standalone public example with its own README; zero bridge dependency |
+| ✅ **0 — Spike** (`examples/nvoos-astro-velocity/`, ~2–3 weeks) — **done 2026-10-29** | Astro SSR app consuming `/api/products` + `/api/globals/*` through the same-origin proxy; Node adapter; one React island (cart badge) proving the reuse claim | P1 dev + `astro build` clean; P2 PLP server-rendered with real links; P3 PDP + JSON-LD in initial HTML; P4 zero-JS default with one hydrated island; P5 golden-contract smoke against the bridge's existing REST fixtures; P6 build output serves on plain Node (Velocity entry) |
+| ✅ **1 — Parity** (~3–4 weeks) — **done 2026-10-29** | Promotions, promocodes (display), category/brand/color filtering, banner/carousel, View Transitions, image optimization | Feature parity with the PWA's public (unauthenticated) surface; same-origin routing in the private mirror |
+| ✅ **2 — SEO deliverables** (~2 weeks) — **done 2026-10-29** | Prerendered catalog routes, `/sitemap.xml`, robots, cache headers + revalidation, full JSON-LD suite, real-link crawlability check with JS disabled | 085 §2.3 standards verifiable by inspection + Lighthouse (no-JS audit) |
+| **3 — Retire the PWA** — pending owner parity review | Owner confirms parity + the Phase 2 SEO criteria, then retires the PWA: the private PWA repo winds down, CI injection is deleted, the Envato decision closes (coexist A/B remains available as a transitional gate only) | Decision recorded in this doc's status line, mirroring decision #15's pattern |
+| **4 — Generic starter** (v1.5 roadmap — Q3: scheduled) | `nvoos-astro-starter`: Astro + core WP REST (posts/pages) + WooCommerce via existing Pro REST surfaces; docs + theme | Standalone public example with its own README; zero bridge dependency |
 
 Total through Phase 2: ~7–9 weeks, parallelizable with Proposal 090's
 timeline (disjoint scopes, no shared files).
@@ -327,18 +327,25 @@ timeline (disjoint scopes, no shared files).
 - [patterns.dev — Islands architecture](https://www.patterns.dev/vanilla/islands-architecture/)
 - Repo: Proposal 085 (+ §2.3 SEO constraint, §3.5 deferred SSR track, §7 open decisions), `085-funiq-laravel-standalone-integration-appendix.md` (§2 contract invariant, §4 topologies, §5 Strangler Fig), Proposal 090, Proposal 087 (native island mounts), Proposal 089 (toolkit console surfaces), `addons/funiq-bridge/` (README data-model map, REST surface), `addons/pro/assets/spa-v2/` (operations console)
 
-## 7. Open Decisions (owner)
+## 7. Decisions (owner, recorded 2026-10-29)
 
-- **Q1 — Phase 3 posture:** retire at parity (Option A — the owner's
-  recorded leaning). The PWA is retained only as a transitional A/B
-  rollback until the Phase 2 SEO criteria pass, then retired.
-- **Q2 — Backend binding:** confirm the Astro app binds **only to the
-  Payload envelope** (recommended) and never to WP-specific endpoints.
-- **Q3 — Generic starter:** schedule `nvoos-astro-starter` (Phase 4) in the
-  v1.5 roadmap, or park it.
-- **Q4 — Hosting:** Velocity (default, same connected-repo pattern) vs
-  Cloudflare Pages/Netlify static for the prerendered catalog.
-- **Q5 — Authenticated flows:** promo-code validation and accounts — the PWA
-  was built for Payload's `/api/users` JWT model, which the bridge does not
-  emulate (085 §3.5). Astro v1 stays anonymous-public; auth flows follow the
-  deferred standalone-admin/auth track.
+- **Q1 — Phase 3 posture:** **keep A/B.** The PWA is retained as a
+  transitional A/B rollback; retirement happens only after owner parity
+  review and the Phase 2 SEO criteria pass.
+- **Q2 — Backend binding:** **yes — contract-only.** The Astro app binds
+  only to the Payload-shaped envelope (`nvoos-commerce/v1` alias), never to
+  WP-specific endpoints.
+- **Q3 — Generic starter:** **yes — scheduled.** `nvoos-astro-starter`
+  (Phase 4) lands on the v1.5 roadmap.
+- **Q4 — Hosting:** **Velocity first** (same connected-repo pattern); the
+  static-export fallback (Cloudflare Pages/Netlify) applies only if Velocity
+  SSR load becomes a problem (§5 row 2).
+- **Q5 — Authenticated flows:** **include both** promo-code validation and
+  accounts — after v1. v1 stays anonymous-public; auth flows follow the
+  deferred standalone-admin/auth track (085 §3.5).
+- **Q6 — Repository visibility:** **public.** No licensed Funiq code ships;
+  the source (`examples/nvoos-astro-velocity/`) and the mirror
+  (`nvdigitalsolutions/nvoos-astro-velocity`, public) contain only
+  NV-authored bytes.
+- **Q7 — Currency:** **USD** default, env-overridable per deployment
+  (`NVOOS_CURRENCY`) until the contract grows a currency field.

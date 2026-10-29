@@ -5,12 +5,17 @@
 // fresh pocket (Proposal 092 §3.3 follow-up).
 import { getGlobal } from '../lib/commerce/client';
 import { normalizeMediaUrl } from '../lib/commerce/normalize';
+import { fixedImage, renderOrigin } from '../lib/images';
 
 const carousel = (await getGlobal('carousel', Astro.url)) as {
 	carousel: Array<{ image: string; promotion: { title: string } | null }>;
 } | null;
 
-const slides = carousel?.carousel ?? [];
+const origin = renderOrigin(Astro.url, Astro.site);
+const slides = (carousel?.carousel ?? []).map((slide) => ({
+	...slide,
+	image: slide.image ? fixedImage(origin, normalizeMediaUrl(slide.image), 560, 315) : null,
+}));
 ---
 
 {
@@ -19,7 +24,15 @@ const slides = carousel?.carousel ?? [];
 			{slides.map((slide) => (
 				<figure>
 					{slide.image && (
-						<img src={normalizeMediaUrl(slide.image)} alt="" loading="lazy" />
+						<img
+							src={slide.image.src}
+							srcset={slide.image.srcset}
+							width={slide.image.width}
+							height={slide.image.height}
+							alt=""
+							loading="lazy"
+							decoding="async"
+						/>
 					)}
 					{slide.promotion && <figcaption>{slide.promotion.title}</figcaption>}
 				</figure>

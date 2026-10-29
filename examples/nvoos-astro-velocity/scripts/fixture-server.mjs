@@ -111,6 +111,22 @@ function send(res, status, body, headers = {}) {
 
 const server = createServer((req, res) => {
 	const url = new URL(req.url, 'http://localhost');
+
+	// Media uploads — a real 1x1 PNG so Astro's runtime /_image endpoint has
+	// bytes to optimize (Phase 1.7 image-optimization smoke).
+	if (url.pathname.startsWith('/wp-content/uploads/')) {
+		const PNG = Buffer.from(
+			'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+			'base64'
+		);
+		res.writeHead(200, {
+			'content-type': 'image/png',
+			'cache-control': 'public, max-age=31536000, immutable',
+		});
+		res.end(PNG);
+		return;
+	}
+
 	const prefix = '/wp-json/nvoos-commerce/v1/';
 	if (!url.pathname.startsWith(prefix)) {
 		return send(res, 404, { code: 'fixture_not_found' });
@@ -146,6 +162,10 @@ const server = createServer((req, res) => {
 			return send(res, 200, { ok: true });
 		}
 		if (segments[1] === 'me') {
+			// Mirror the bridge: /me is cookie-authenticated — no cookie, 401.
+			if (!req.headers.cookie) {
+				return send(res, 401, { code: 'rest_forbidden', message: 'Not signed in.' });
+			}
 			return send(res, 200, { id: 1, email: 'shopper@example.com', name: 'Fixture Shopper' });
 		}
 		return send(res, 404, { code: 'fixture_not_found' });

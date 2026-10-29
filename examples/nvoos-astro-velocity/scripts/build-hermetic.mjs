@@ -11,7 +11,10 @@
 import { spawn } from 'node:child_process';
 
 const FIXTURE_PORT = process.env.FIXTURE_PORT || '8123';
-const ASTRO_SITE = process.env.ASTRO_SITE || 'https://store.nvoos.cloud';
+// Local/test builds use the local origin so the runtime /_image endpoint
+// resolves absolute hrefs through the local BFF. Production mirror builds
+// (CI's second pass) override with the real canonical host.
+const ASTRO_SITE = process.env.ASTRO_SITE || 'http://localhost:4321';
 const API_BASE = `http://localhost:${FIXTURE_PORT}/wp-json/nvoos-commerce/v1`;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

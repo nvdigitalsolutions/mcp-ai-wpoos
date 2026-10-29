@@ -14,15 +14,36 @@ import { spawn } from 'node:child_process';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const fixtureServer = spawn(process.execPath, ['scripts/fixture-server.mjs'], {
-	env: { ...process.env, PORT: '8123' },
-	stdio: 'inherit',
-});
+// Reuse servers that are already running (CI boots them for build/LHCI;
+// Playwright webServer also reuses them) — otherwise spawn the hermetic pair.
+async function reachable(url) {
+	try {
+		const res = await fetch(url);
+		return res.status < 500;
+	} catch {
+		return false;
+	}
+}
 
-const appServer = spawn(process.execPath, ['scripts/serve.mjs'], {
-	env: { ...process.env, PORT: '4321', NVOOS_TARGET_SITE: 'http://localhost:8123' },
-	stdio: 'inherit',
-});
+const alreadyUp = await reachable('http://localhost:4321/');
+
+const fixtureServer = alreadyUp
+	? null
+	: spawn(process.execPath, ['scripts/fixture-server.mjs'], {
+			env: { ...process.env, PORT: '8123' },
+			stdio: 'inherit',
+		});
+
+const appServer = alreadyUp
+	? null
+	: spawn(process.execPath, ['scripts/serve.mjs'], {
+			env: {
+				...process.env,
+				PORT: '4321',
+				NVOOS_TARGET_SITE: 'http://localhost:8123',
+			},
+			stdio: 'inherit',
+		});
 
 const checks = [
 	{
@@ -77,6 +98,17 @@ const checks = [
 		url: 'http://localhost:4321/api/auth/nonce',
 		assert: (body) => body.includes('nonce'),
 	},
+	{
+		name: 'home emits runtime-optimized /_image URLs (Phase 1.7)',
+		url: 'http://localhost:4321/',
+		assert: (body) => body.includes('/_image/?href='),
+	},
+	{
+		name: '/_image endpoint optimizes media on demand',
+		url: 'http://localhost:4321/_image/?href=http%3A%2F%2Flocalhost%3A4321%2Fmedia%2F2026%2F10%2Faurora-sofa.jpg&w=400&f=webp',
+		assert: (body, res) =>
+			res.status === 200 && String(res.headers.get('content-type')).startsWith('image/'),
+	},
 ];
 
 let failed = false;
@@ -99,8 +131,12 @@ try {
 		}
 	}
 } finally {
-	appServer.kill();
-	fixtureServer.kill();
+	if (appServer) {
+		appServer.kill();
+	}
+	if (fixtureServer) {
+		fixtureServer.kill();
+	}
 }
 
 process.exit(failed ? 1 : 0);

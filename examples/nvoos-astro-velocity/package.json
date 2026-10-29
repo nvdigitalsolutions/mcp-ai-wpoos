@@ -17,11 +17,14 @@
 		"check": "astro check",
 		"test": "vitest run",
 		"test:watch": "vitest",
+		"test:e2e": "playwright test",
+		"lhci:ci": "lhci collect --config=lighthouserc.cjs && lhci assert --config=lighthouserc.cjs",
 		"lint": "eslint src",
 		"serve": "node scripts/serve.mjs",
 		"start": "node server.js",
 		"smoke": "node scripts/smoke.mjs",
 		"record:fixtures": "node scripts/record-fixtures.mjs",
+		"sync:bridge-fixtures": "node scripts/sync-bridge-fixtures.mjs",
 		"sync:dist": "node scripts/sync-dist.mjs"
 	},
 	"dependencies": {
@@ -37,6 +40,8 @@
 	"devDependencies": {
 		"@astrojs/check": "^0.9.12",
 		"@eslint/js": "^10.0.1",
+		"@lhci/cli": "^0.15.1",
+		"@playwright/test": "^1.64.1",
 		"@types/node": "^26.6.6",
 		"@types/react": "^19.3.0",
 		"@types/react-dom": "^19.3.0",

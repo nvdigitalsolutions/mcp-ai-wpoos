@@ -65,9 +65,32 @@ legacy) without conflict.
 
 ## Revalidation
 
-Prerendered catalog pages update at build. Bridge "content changed" webhook
-→ Velocity redeploy keeps the catalog fresh between scheduled builds; SSR
-paths (PLP/home) revalidate within `s-maxage` anyway.
+Prerendered catalog pages update at build. The bridge's `RebuildWebhook`
+(Phase 2.3) closes the loop automatically:
+
+1. On the backend site, set the options:
+   - `funiq_bridge_rebuild_webhook_url` =
+     `https://api.github.com/repos/nvdigitalsolutions/mcp-ai-wpoos/dispatches`
+   - `funiq_bridge_rebuild_webhook_token` = a repo-scoped PAT
+2. Every catalog write (products, promotions, promocodes, terms, banner /
+   carousel) fires one **debounced** (10 min) POST on shutdown.
+3. The `repository_dispatch` trigger in `sync-nvoos-astro-velocity.yml`
+   re-runs the sync → rebuild + mirror push → Velocity redeploys.
+
+SSR paths (PLP/home) revalidate within `s-maxage` between builds anyway.
+
+## A/B coexistence routing (owner decision Q1: keep A/B)
+
+The licensed PWA app (`nvoos-funiq-velocity`) stays live as rollback. Once
+both Velocity apps exist, split traffic with Velocity **web rules**
+(available via the Cloudways MCP `app_web_rules_update`, type `redirect`):
+
+- `temporary` redirect on `src: /` with condition `cookie ~ nvoos_front=astro`
+  → the Astro app origin (canary by cookie).
+- The inverse rule on the Astro app for `nvoos_front=pwa` (rollback).
+
+Both apps point at the same backend, so the bridge serves both namespaces
+(`nvoos-commerce/v1` + legacy) without conflict.
 
 ## Rollback
 
