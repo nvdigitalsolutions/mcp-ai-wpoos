@@ -1,6 +1,6 @@
 # Funiq Bridge Velocity Storefront — Comprehensive Implementation Plan
 
-> **Status:** Superseded in part (storefront track) — see the Decision Record below · **Superseded by:** Proposal 092 (Astro storefront, phases 0–2 done 2026-10-29) · **Retained scope:** A/B rollback leg + parity review · **Target:** Phase 1–5 MVP in ~3 focused PRs + 1 private-repo scaffold (original) · **Platform:** Cloudways Velocity (Node static + BFF proxy) + WordPress running `addons/funiq-bridge`
+> **Status:** Superseded in part (storefront track) — see the Decision Record below · **Superseded by:** Proposal 092 (Astro storefront, phases 0–2 done 2026-10-29) · **Retained scope:** A/B rollback leg (re-scoped 2026-10-29 to the Payload admin — the licensed item contains no web PWA) + parity review · **Target:** Phase 1–5 MVP in ~3 focused PRs + 1 private-repo scaffold (original) · **Platform:** Cloudways Velocity (Node standalone, Payload admin) + WordPress running `addons/funiq-bridge`
 >
 > **Last Updated:** 2026-10-29 (status update; plan body unchanged since 2026-10-21)
 > **Author:** NV Digital Solutions
@@ -46,13 +46,48 @@ still gated).
 | Phase | Status | Note |
 |---|---|---|
 | 0 — Decision gates | Partially superseded | Q1 resolved by 092 §7 Q1 (keep A/B); license-tier question closes at PWA retirement; vendor-code audit still pending |
-| 1 — Private repo scaffolding | Owner-side, not verifiable from the coding machine | `nvoos-funiq-pwa` / `nvoos-funiq-velocity` do not resolve via the available token; the workflow skips until they exist |
-| 2 — Monorepo example tree | ✅ Done 2026-10-29 (re-scoped) | `examples/funiq-bridge-velocity/` — SA skeleton + `/api` bridge mapping + shared admin-proxy hardening |
+| 1 — Private repo scaffolding | ✅ Done 2026-10-29 | `nvoos-funiq-pwa` (licensed source committed, incl. `LICENSE.txt`) + `nvoos-funiq-velocity` (empty mirror) + both monorepo secrets |
+| 2 — Monorepo example tree | ✅ Done 2026-10-29, re-scoped 2026-10-29 | First: SA-style shell + `/api` bridge mapping. Then: item forensics showed no web PWA → rebuilt as the Payload-admin deploy recipe (second decision below) |
 | 3 — Bridge nonce seed | ✅ Done in substance | `/funiq/v1/auth/nonce` + `/nvoos-commerce/v1` alias shipped in the bridge B4 surface; cache-header bug fixed 2026-10-29 |
-| 4 — Sync workflow | ✅ Done 2026-10-29 | `sync-nvoos-funiq-velocity.yml` with license-boundary guard + hardened token handling |
-| 5 — Velocity deploy runbook | Partially done | PWA app already live (manual deploy); governed redeploy documented in the example README |
+| 4 — Sync workflow | ✅ Done 2026-10-29, rebuilt 2026-10-29 | First: licensed-`dist` injection + static-shell smoke. Now: standalone build + Postgres migrations + Payload-contract smoke + private-boundary guard |
+| 5 — Velocity deploy runbook | ✅ Done 2026-10-29 | `docs/operations/deployment/nvoos-funiq-velocity-setup.md` + leg README (Velocity settings, DB, uploads, MAIN_URL) |
 | 6 — Release bookkeeping | ✅ Done in this change | `THIRD_PARTY_NOTICES.md`, `LICENSE`, README mirror notice |
 | B — Laravel port | Unchanged — gated placeholder | See §8; no gates cleared |
+
+---
+
+## Decision Record — Second Entry (2026-10-29): the "PWA" is not a web app
+
+**Context:** owner Phase 1 completed (private repos + tokens,
+2026-10-29). Opening the purchased Envato item revealed it contains **no
+web PWA**: it ships a React Native 0.82 mobile app (Android/iOS only) and
+a Payload 3.64 CMS on Next.js 15. The rollback-leg premise in the first
+entry (serve a `dist/index.html` CSR SPA behind a `/api/*` → bridge proxy)
+was therefore invalid. Owner decision **option (a)**: repackage the
+rollback leg around the **Payload admin** — the licensed React backend.
+
+**Decision (supersedes the first entry's leg design):** the leg hosts the
+Payload admin natively on Velocity (`node server.js` — Next standalone +
+PostgreSQL). No proxy layer: Payload serves its own REST API (`/api/*`,
+the exact contract the mobile app binds to) and its admin (`/admin`). The
+`/api/*` → bridge mapping and the admin-proxy hardening move out of this
+leg (same-origin WP admin access remains an Astro-leg feature, PR #7289).
+
+**Consequences:**
+
+- `examples/funiq-bridge-velocity/` rebuilt: `enable-standalone.mjs`,
+  `assemble-mirror.mjs`, `smoke.mjs` + runbook README. The static shell
+  (`serve.mjs`, `sync-dist.mjs`, `proxy-headers`) is deleted.
+- `sync-nvoos-funiq-velocity.yml` rebuilt: clone licensed source → build
+  standalone → generate/apply migrations against a throwaway Postgres →
+  assemble mirror → hermetic Payload-contract smoke → private-boundary
+  guard → force-push. Validated locally end-to-end 2026-10-29.
+- Parity review updated with the forensic baseline + field-level matrix
+  (`funiq-pwa-parity-review-checklist.md` §1–§2).
+- Open owner decisions recorded in the leg README: media persistence (S3
+  adapter vs local disk), app `MAIN_URL` rebuild (incl. the list-hook
+  image-prefix fix), public-write lockdown on the licensed products
+  collection, `LICENSE.txt` tier field.
 
 ## Table of Contents
 

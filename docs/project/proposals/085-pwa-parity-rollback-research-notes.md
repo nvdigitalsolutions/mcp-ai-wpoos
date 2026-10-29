@@ -98,3 +98,52 @@ docs.github.com/actions/security/secure-use (OIDC, environments).
 - The SA/console Velocity precedent (`examples/schedule-anything-velocity`,
   `sync-nvoos-schedule-anything-velocity.yml`) — ported with deltas, not
   reinvented.
+
+## 5. Licensed-item forensics & the Payload-admin repackage (2026-10-29)
+
+Owner Phase 1 completed; the purchased item was mapped from source before
+any bytes moved. Method: read the licensed source in the private repo,
+extract the app's real network surface (axios call sites only), compare
+each endpoint/field against the bridge transformers and the Payload
+collection schemas, then validate the whole deploy design hermetically
+(Docker Postgres 16 + real `next build` + `payload migrate` + boot + curl
+of every public route) before writing any workflow code.
+
+Findings (evidence paths are private-repo-relative; nothing quoted here):
+
+- **No web PWA exists.** The app is React Native 0.82 (Android/iOS
+  scripts only); the web-adjacent artifact is the Payload 3.64 CMS on
+  Next.js 15. Deployable-on-Velocity = the Payload admin.
+- **The app's entire network surface is nine GET endpoints**
+  (brands/colors/statuses/categories/products/promocodes/banner/carousel);
+  everything else (orders, auth, reviews, notifications) is client-side
+  mock UI. `POST /api/orders` is a dead constant and the CMS has no orders
+  collection. Parity scope therefore collapses to the read contract —
+  which the bridge already emulates 1:1 (field-level table in the parity
+  checklist §2.2).
+- **Payload's own deploy mechanics, verified empirically:**
+  `next build` needs no database (the template's frontend page is dynamic
+  via `headers()`); the vendor config lacks `output: 'standalone'` (its
+  Dockerfile comment says the flag must be added — a behaviour-equivalent
+  replacement drops only an identity webpack passthrough); `payload
+  migrate:create <name>` is fully non-interactive; production never
+  auto-pushes schema; the standalone `server.js` serves `/admin`,
+  `/api/*`, GraphQL and `/` against a migrated Postgres, and the exact
+  `{docs, totalDocs}` envelope on `/api/products` — asserted by the new
+  CI smoke (the same class of "route engages" gate the research prescribed
+  for the old shell, upgraded from a 502 proxy probe to a real contract
+  assertion).
+- **App quirks recorded for the rebuild** (checklist §2.3): the product
+  list hook prefixes `MAIN_URL` onto absolute image URLs (breaks against
+  Payload AND the bridge; the by-ID hook already guards with an `http`
+  check), "by ID" is a client-side find over the full list, fetch failures
+  silently fall back to bundled sample data, and the licensed products
+  collection ships with public create/update access.
+- **Repo-pattern continuity:** the repackaged leg keeps the private-mirror
+  + flat-history + CI-boundary-guard pattern from §3 unchanged — only the
+  payload of the mirror changed (standalone build instead of `dist/`).
+
+Sources: payloadcms.com/docs (production deployment, database migrations,
+standalone/Docker guides); nextjs.org/docs (standalone output);
+Postgres official image docs (health checks for CI service containers);
+codecanyon item documentation bundled in the private repo.

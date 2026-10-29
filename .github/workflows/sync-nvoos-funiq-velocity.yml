@@ -1,16 +1,29 @@
 name: Sync nvoos-funiq-velocity
 
-# One-way mirror of the Funiq PWA Velocity app to the PRIVATE repo
-# nvdigitalsolutions/nvoos-funiq-velocity (Proposal 085 Phase 4).
+# One-way mirror of the licensed Funiq Payload admin to the PRIVATE repo
+# nvdigitalsolutions/nvoos-funiq-velocity (Proposal 085 Phase 4, re-scoped
+# 2026-10-29 — the Envato item contains no web PWA; the rollback leg is the
+# Payload CMS admin. See the decision record in
+# docs/project/plans/funiq-bridge-velocity-storefront-implementation.md).
 #
-# The app ships the PURCHASED Funiq PWA bundle (dist/) + zero-dependency
-# serve scripts. The bundle is Envato-licensed and must never appear in the
-# public monorepo — it is cloned from the PRIVATE repo nvoos-funiq-pwa at
-# build time and injected into the assembled tree. This workflow contains
-# no licensed bytes and no secret values.
+# Pipeline (validated locally 2026-10-29 against Payload 3.64 / Next 15.4 /
+# PostgreSQL 16):
+#   1. Clone the licensed CMS source from the PRIVATE repo nvoos-funiq-pwa.
+#   2. Enable Next standalone output, `npm ci`, `next build`.
+#   3. Generate + apply Payload migrations against a throwaway Postgres.
+#   4. Assemble the mirror tree (standalone entry + .next + vendor
+#      manifest — Velocity runs `npm install` + `node server.js`, no build).
+#   5. Hermetic smoke: boot the assembled app and assert the licensed
+#      mobile app's Payload contract (/admin, /api/products {docs,totalDocs},
+#      globals, assets, /).
+#   6. License-boundary guard (mirror MUST be private) + force-push.
 #
 # The mirror repo history is intentionally flat (one commit per sync,
 # force-pushed). Never commit to the mirror directly.
+#
+# No content rebuild loop exists: Payload serves the database live, so
+# content changes never need a redeploy. Re-sync only when the licensed
+# source or this recipe changes (workflow_dispatch).
 #
 # Security hardening (per the repo's research notes for this track):
 #   - least-privilege `permissions: contents: read` at the workflow level;
@@ -19,17 +32,18 @@ name: Sync nvoos-funiq-velocity
 #   - the license boundary is enforced by CI: the mirror target MUST be
 #     private or the sync fails.
 #
-# Activation (owner steps, one-time — Proposal 085 Phase 1):
-#   1. Create the repo nvdigitalsolutions/nvoos-funiq-pwa (private) and
-#      commit the purchased PWA source + build script producing dist/.
-#   2. Create the repo nvdigitalsolutions/nvoos-funiq-velocity (private,
-#      empty) — this workflow backfills it.
-#   3. Add repo-scoped tokens as monorepo secrets:
-#      NVOOS_FUNIQ_PWA_READ_TOKEN (read-only clone of the PWA repo)
-#      NVOOS_FUNIQ_VELOCITY_REPO_TOKEN (push to the mirror)
+# Activation (owner steps, one-time — Proposal 085 Phase 1; repos + tokens
+# created 2026-10-29):
+#   1. Repo nvdigitalsolutions/nvoos-funiq-pwa (private) with the licensed
+#      source (payload-cms/funiq-cms) + LICENSE.txt. DONE.
+#   2. Repo nvdigitalsolutions/nvoos-funiq-velocity (private, empty) —
+#      this workflow backfills it. DONE.
+#   3. Monorepo secrets NVOOS_FUNIQ_PWA_READ_TOKEN (read-only clone) and
+#      NVOOS_FUNIQ_VELOCITY_REPO_TOKEN (push to the mirror). DONE.
 #   4. Run this workflow once via workflow_dispatch (backfills the mirror).
 #   5. In Velocity: connect the mirror, root directory = repo root, entry
-#      server.js, no build command, env NVOOS_TARGET_SITE=<bridge site>.
+#      server.js, no build command, Node 22, env DATABASE_URI /
+#      PAYLOAD_SECRET / HOSTNAME=0.0.0.0 / NODE_ENV=production.
 #
 # Until step 3 is complete the workflow SKIPS with a notice (exit 0) so
 # alpha-working stays green; the notice repeats the checklist above.
@@ -39,8 +53,9 @@ on:
     branches: [main, alpha-working]
     paths:
       - 'examples/funiq-bridge-velocity/**'
+      - '.github/workflows/sync-nvoos-funiq-velocity.yml'
   # Manual runs let you force a sync without waiting for a merge (first-run
-  # verification after adding the tokens, backfills, etc.).
+  # verification after adding the tokens, backfills, licensed-source bumps).
   workflow_dispatch:
 
 permissions:
@@ -49,9 +64,31 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: funiq_smoke
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Gate on owner Phase 1 (skip until the private repos + tokens exist)
         env:
@@ -64,18 +101,7 @@ jobs:
           fi
           echo "Phase 1 tokens present — proceeding with sync."
 
-      - name: Assemble mirror tree
-        run: |
-          rm -rf /tmp/nvoos-funiq-velocity
-          mkdir -p /tmp/nvoos-funiq-velocity
-          # cp -r, not git archive: the repo .gitattributes export-ignores
-          # package.json, which Velocity requires at the repo root.
-          cp -r examples/funiq-bridge-velocity/. /tmp/nvoos-funiq-velocity/
-          # Dev-only tool: sync-dist.mjs copies a LOCAL PWA build out of the
-          # private repo and cannot work in the mirror.
-          rm -f /tmp/nvoos-funiq-velocity/scripts/sync-dist.mjs
-
-      - name: Inject the licensed PWA bundle from the private repo
+      - name: Clone the licensed CMS source from the private repo
         env:
           PWA_READ_TOKEN: ${{ secrets.NVOOS_FUNIQ_PWA_READ_TOKEN }}
         run: |
@@ -84,11 +110,27 @@ jobs:
           rm -rf /tmp/nvoos-funiq-pwa
           git -c http.extraheader="AUTHORIZATION: basic $AUTH_HEADER" \
             clone --depth 1 https://github.com/nvdigitalsolutions/nvoos-funiq-pwa.git /tmp/nvoos-funiq-pwa
-          test -f /tmp/nvoos-funiq-pwa/dist/index.html || {
-            echo "::error::nvoos-funiq-pwa has no dist/index.html — build the PWA before syncing."
+          test -f /tmp/nvoos-funiq-pwa/payload-cms/funiq-cms/package.json || {
+            echo "::error::nvoos-funiq-pwa has no payload-cms/funiq-cms — the licensed CMS checkout is missing."
             exit 1
           }
-          cp -r /tmp/nvoos-funiq-pwa/dist/. /tmp/nvoos-funiq-velocity/dist/
+          echo "CMS source cloned."
+
+      - name: Build the Payload admin (standalone)
+        env:
+          PAYLOAD_SECRET: ci-build-stub-not-used-at-runtime
+        run: |
+          CMS=/tmp/nvoos-funiq-pwa/payload-cms/funiq-cms
+          # The vendor config lacks `output: 'standalone'` (its own
+          # Dockerfile comment says the flag must be added). The replacement
+          # drops only an identity webpack passthrough — behaviour-equivalent.
+          node "$GITHUB_WORKSPACE/examples/funiq-bridge-velocity/scripts/enable-standalone.mjs" "$CMS"
+          cd "$CMS"
+          npm ci --no-audit --no-fund
+          NEXT_TELEMETRY_DISABLED=1 npm run build
+          test -f .next/standalone/server.js || { echo "::error::standalone build missing server.js"; exit 1; }
+          test -f .next/BUILD_ID || { echo "::error::build missing BUILD_ID"; exit 1; }
+          echo "Payload admin built (standalone)."
 
       - name: License boundary guard — the mirror target must be private
         env:
@@ -103,54 +145,46 @@ jobs:
           fi
           echo "License boundary verified: mirror is private."
 
-      - name: Smoke-test the assembled app
-        working-directory: /tmp/nvoos-funiq-velocity
+      - name: Assemble mirror tree
         run: |
-          node --check scripts/serve.mjs
+          node "$GITHUB_WORKSPACE/examples/funiq-bridge-velocity/scripts/assemble-mirror.mjs" \
+            /tmp/nvoos-funiq-pwa/payload-cms/funiq-cms /tmp/nvoos-funiq-velocity
+          test -f /tmp/nvoos-funiq-velocity/LICENSE.txt || {
+            echo "::error::LICENSE.txt (Envato purchase proof) missing from the private repo root — the license boundary requires it in the mirror."
+            exit 1
+          }
+
+      - name: Migrate a throwaway Postgres (schema for the smoke)
+        env:
+          DATABASE_URI: postgres://postgres:postgres@127.0.0.1:5432/funiq_smoke
+          PAYLOAD_SECRET: ci-smoke-secret
+        run: |
+          CMS=/tmp/nvoos-funiq-pwa/payload-cms/funiq-cms
+          # Wait for the postgres service container.
+          for i in $(seq 1 60); do
+            if (echo > /dev/tcp/127.0.0.1/5432) 2>/dev/null; then echo "postgres up"; break; fi
+            sleep 1
+            [ "$i" = "60" ] && { echo "::error::postgres service did not come up"; exit 1; }
+          done
+          cd "$CMS"
+          # Payload production never auto-pushes schema: create + apply the
+          # initial migration (validated: fully non-interactive with a name).
+          npx payload migrate:create initial
+          npx payload migrate
+          echo "Migrations applied."
+
+      - name: Smoke-test the assembled app (Payload contract)
+        env:
+          DATABASE_URI: postgres://postgres:postgres@127.0.0.1:5432/funiq_smoke
+          PAYLOAD_SECRET: ci-smoke-secret
+        run: |
+          # Velocity installs node_modules from the vendor manifest; the CI
+          # smoke reuses the checkout's install (identical tree).
+          cp -r /tmp/nvoos-funiq-pwa/payload-cms/funiq-cms/node_modules /tmp/nvoos-funiq-velocity/node_modules
+          cd /tmp/nvoos-funiq-velocity
           node --check server.js
-          node --check scripts/lib/proxy-headers.mjs
-          test -f dist/index.html
-          # Asset-closure gate (conditional on the PWA's asset layout): every
-          # asset referenced by index.html must exist in dist/.
-          node -e '
-            const fs = require("fs");
-            const path = require("path");
-            const refs = [];
-            const html = fs.readFileSync(path.join("dist", "index.html"), "utf8");
-            for (const m of html.matchAll(/(?:src|href)="\/assets\/([^"]+)"/g)) refs.push(m[1]);
-            const assetsDir = path.join("dist", "assets");
-            if (fs.existsSync(assetsDir)) {
-              for (const name of fs.readdirSync(assetsDir)) {
-                if (!name.endsWith(".js")) continue;
-                const source = fs.readFileSync(path.join(assetsDir, name), "utf8");
-                for (const m of source.matchAll(/"assets\/([A-Za-z0-9_.-]+\.css)"/g)) refs.push(m[1]);
-              }
-              const missing = [...new Set(refs)].filter((name) => !fs.existsSync(path.join(assetsDir, name)));
-              if (missing.length) { console.error("Missing bundle assets: " + missing.join(", ")); process.exit(1); }
-              console.log("Asset closure OK: " + new Set(refs).size + " referenced assets present");
-            }
-          '
-          # Boot the VELOCITY ENTRY (server.js shim → serve.mjs). The proxy
-          # target is intentionally unreachable: the /api smoke asserts the
-          # route ENGAGES (the proxy's JSON 502), not a backend round-trip.
-          NVOOS_TARGET_SITE=https://example.invalid node server.js > /tmp/funiq-velocity-smoke.log 2>&1 &
-          SERVER_PID=$!
-          sleep 1
-          curl -sf -o /dev/null http://localhost:4180/ || { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; exit 1; }
-          # /api/* must hit the bridge mapping (JSON), not the SPA fallback (HTML).
-          API_CT=$(curl -s -o /dev/null -w '%{content_type}' http://localhost:4180/api/products)
-          case "$API_CT" in application/json*) ;; *) { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; echo "::error::/api/products content-type: $API_CT (expected JSON — /api proxy rule not engaged)"; exit 1; } ;; esac
-          # Admin hardening: proxied admin responses carry noindex.
-          ADMIN_ROBOTS=$(curl -s -D - -o /dev/null http://localhost:4180/wp-admin/ | grep -i '^x-robots-tag' | tr -d '\r' || true)
-          case "$ADMIN_ROBOTS" in *noindex*) ;; *) { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; echo "::error::/wp-admin/ missing X-Robots-Tag noindex"; exit 1; } ;; esac
-          # Caching contract: entry HTML revalidates (no-cache + ETag → 304).
-          ENTRY_HEADERS=$(curl -s -D - -o /dev/null http://localhost:4180/)
-          echo "$ENTRY_HEADERS" | grep -qi '^Cache-Control: no-cache' || { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; exit 1; }
-          ETAG=$(echo "$ENTRY_HEADERS" | grep -i '^etag' | tr -d '\r' | cut -d' ' -f2)
-          test -n "$ETAG" || { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; exit 1; }
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' -H "If-None-Match: $ETAG" http://localhost:4180/)
-          test "$STATUS" = "304" || { cat /tmp/funiq-velocity-smoke.log; kill $SERVER_PID; exit 1; }
-          kill $SERVER_PID
+          node --check scripts/smoke.mjs
+          node scripts/smoke.mjs .
 
       - name: Push to nvoos-funiq-velocity (private mirror)
         working-directory: /tmp/nvoos-funiq-velocity
@@ -163,7 +197,7 @@ jobs:
           git init -q -b main
           git add .
           git -c user.name="GitHub Actions" -c user.email="actions@github.com" \
-            commit -q -m "Sync Funiq PWA Velocity app ($GITHUB_SHA)" || echo "No changes to commit."
+            commit -q -m "Sync Funiq Payload admin Velocity app ($GITHUB_SHA)" || echo "No changes to commit."
           # Token via env + http.extraheader — never inlined into argv.
           AUTH_HEADER=$(printf 'x-access-token:%s' "$VELOCITY_REPO_TOKEN" | base64 -w0)
           git -c http.extraheader="AUTHORIZATION: basic $AUTH_HEADER" \
