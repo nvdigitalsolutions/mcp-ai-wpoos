@@ -8,6 +8,7 @@
 // ---------------------------------------------------------------------------
 
 import { cpSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -48,7 +49,33 @@ writeFileSync(join(STAGE, 'package.json'), `${JSON.stringify(pkg, null, '\t')}\n
 cpSync(join(ROOT, 'dist'), join(STAGE, 'dist'), { recursive: true });
 cpSync(join(ROOT, 'server.js'), join(STAGE, 'server.js'));
 cpSync(join(HERE, 'serve.mjs'), join(STAGE, 'scripts', 'serve.mjs'));
+// Runtime libs imported by serve.mjs (proxy-headers et al.) — the mirror
+// must boot the same module graph the monorepo smoke-tests.
+cpSync(join(HERE, 'lib'), join(STAGE, 'scripts', 'lib'), { recursive: true });
 cpSync(join(ROOT, 'README.md'), join(STAGE, 'README.md'));
 cpSync(join(ROOT, 'LICENSE'), join(STAGE, 'LICENSE'));
 
 console.log(`[sync-dist] mirror tree assembled in ${STAGE}`);
+
+// Boot smoke: the assembled tree must start. This catches missing runtime
+// modules in the mirror (storefront 502 incident 2026-10-29 — serve.mjs
+// gained ./lib/proxy-headers.mjs but sync-dist didn't ship it).
+{
+	const child = spawn(process.execPath, [join(STAGE, 'server.js')], {
+		env: { ...process.env, PORT: '4399' },
+		stdio: 'ignore',
+	});
+
+	await new Promise((resolve) => setTimeout(resolve, 1500));
+
+	if (child.exitCode !== null) {
+		console.error(
+			`[sync-dist] staged tree exited at boot (code ${child.exitCode}) — the mirror would 502. ` +
+				'Check that every runtime import of scripts/serve.mjs is copied into the deploy tree.'
+		);
+		process.exit(1);
+	}
+
+	child.kill();
+	console.log('[sync-dist] staged tree boot check passed');
+}
