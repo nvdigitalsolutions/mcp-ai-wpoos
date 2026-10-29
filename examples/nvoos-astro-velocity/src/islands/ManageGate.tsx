@@ -14,6 +14,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Customer } from '../lib/commerce/types';
+import { buildAdminConfig } from '../lib/manage-config';
 import { AuthForms } from './AuthForms';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE || '/api';
@@ -26,7 +27,7 @@ interface MeState {
 
 declare global {
 	interface Window {
-		AstroAdminConfig?: { root?: string; mediaBase?: string };
+		AstroAdminConfig?: ReturnType<typeof buildAdminConfig>;
 		wpApiSettings?: { root?: string; nonce?: string };
 	}
 }
@@ -79,7 +80,10 @@ export default function ManageGate() {
 				return;
 			}
 
-			window.AstroAdminConfig = { root: API_BASE, mediaBase: '/media/' };
+			// Server-authored config: root + media base + fresh REST nonce +
+			// the session user (capabilities + read-only map) — the console's
+			// buildConsoleRuntime() contract for the admin bundle.
+			window.AstroAdminConfig = buildAdminConfig(me.customer, nonce, API_BASE);
 			window.wpApiSettings = { root: API_BASE, nonce };
 
 			const script = document.createElement('script');

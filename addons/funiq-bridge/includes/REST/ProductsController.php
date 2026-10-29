@@ -313,10 +313,19 @@ class ProductsController extends BaseController {
 	/**
 	 * Sanitize the where parameter.
 	 *
-	 * @param mixed $where Raw where value.
+	 * Query strings carry the Payload-style clause JSON-encoded; decode it
+	 * here so the source layer always receives the structured shape.
+	 *
+	 * @param mixed $where Raw where value (string or array).
 	 * @return array<string, array<string, mixed>>
 	 */
 	public function sanitize_where( $where ): array {
+		if ( is_string( $where ) && '' !== $where ) {
+			$decoded = json_decode( $where, true );
+			if ( is_array( $decoded ) ) {
+				$where = $decoded;
+			}
+		}
 		if ( ! is_array( $where ) ) {
 			return array();
 		}

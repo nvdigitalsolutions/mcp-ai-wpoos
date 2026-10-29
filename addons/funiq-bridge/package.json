@@ -8,18 +8,28 @@
     "build": "node esbuild.config.cjs --prod",
     "build:standalone": "node esbuild.config.cjs --prod --standalone",
     "build:dev": "node esbuild.config.cjs",
-    "watch": "node esbuild.config.cjs --watch"
+    "watch": "node esbuild.config.cjs --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.0.0"
+    "@tanstack/react-query": "^5.0.0",
+    "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.1.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "@wordpress/api-fetch": "^8.0.0",
     "@wordpress/components": "^43.0.0",
     "@wordpress/element": "^10.0.0",
     "@wordpress/i18n": "^7.0.0",
     "esbuild": "^0.28.1",
+    "jsdom": "^25.0.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "vitest": "^3.0.0"
   }
 }

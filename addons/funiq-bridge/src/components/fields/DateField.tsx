@@ -5,10 +5,12 @@ interface DateFieldProps {
   label: string;
   value: string;
   required?: boolean;
+  /** Validation message from the form schema (renders + sets aria-invalid). */
+  error?: string;
   onChange: (value: string) => void;
 }
 
-export function DateField({ label, value, required, onChange }: DateFieldProps) {
+export function DateField({ label, value, required, error, onChange }: DateFieldProps) {
   // Normalize date value to yyyy-mm-dd for the input.
   const formatted = value ? value.substring(0, 10) : '';
 
@@ -21,10 +23,12 @@ export function DateField({ label, value, required, onChange }: DateFieldProps) 
         type="date"
         value={formatted}
         required={required}
+        aria-invalid={error ? true : undefined}
         onChange={(e) => onChange(e.target.value)}
         className="regular-text"
         style={{ width: 200 }}
       />
+      {error && <p style={{ color: '#b32d2e', margin: '4px 0 0' }}>{error}</p>}
     </div>
   );
 }

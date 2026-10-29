@@ -172,6 +172,8 @@ const server = createServer((req, res) => {
 				name: 'Fixture Shopper',
 				canManage: false,
 				adminUrl: '',
+				capabilities: ['read'],
+				readOnlyCollections: [],
 			});
 		}
 		return send(res, 404, { code: 'fixture_not_found' });

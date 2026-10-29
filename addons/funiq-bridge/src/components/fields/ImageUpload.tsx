@@ -19,14 +19,16 @@ interface ImageUploadProps {
 	label: string;
 	/** Attachment ID or empty string / '' when no image. */
 	value: number | string | null;
+	/** Validation message from the form schema (renders below the field). */
+	error?: string;
 	onChange: (attachmentId: number | null) => void;
 }
 
-export function ImageUpload({ label, value, onChange }: ImageUploadProps) {
+export function ImageUpload({ label, value, error, onChange }: ImageUploadProps) {
 	const mediaId = typeof value === 'number' && value > 0 ? value : null;
 
 	const [media, setMedia] = useState<MediaUploadResult | null>(null);
-	const [error, setError] = useState<string | null>(null);
+	const [uploadError, setUploadError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 	const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -59,13 +61,13 @@ export function ImageUpload({ label, value, onChange }: ImageUploadProps) {
 			return;
 		}
 		setBusy(true);
-		setError(null);
+		setUploadError(null);
 		try {
 			const record = await uploadMedia(file);
 			setMedia(record);
 			onChange(record.id);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Upload failed.');
+			setUploadError(err instanceof Error ? err.message : 'Upload failed.');
 		} finally {
 			setBusy(false);
 		}
@@ -110,6 +112,7 @@ export function ImageUpload({ label, value, onChange }: ImageUploadProps) {
 					{mediaId ? 'Replace image' : 'Select image'}
 				</Button>
 			)}
+			{uploadError && <p style={{ color: '#b32d2e', margin: '8px 0 0' }}>{uploadError}</p>}
 			{error && <p style={{ color: '#b32d2e', margin: '8px 0 0' }}>{error}</p>}
 			{/* Hidden native input — works everywhere, no media-modal dependency. */}
 			<input

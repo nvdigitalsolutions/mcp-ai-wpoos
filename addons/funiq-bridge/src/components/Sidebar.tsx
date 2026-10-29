@@ -1,7 +1,9 @@
 /**
- * Sidebar navigation — collections plus the managers section.
+ * Sidebar navigation — the single nav catalogue (auth/permissions NAV),
+ * consumed the same way the console sidebar consumes CONSOLE_NAV_GROUPS:
+ * visibility is decided once, in one place.
  */
-import { collections } from '../config/collections';
+import { NAV, isNavEntryVisible, isCollectionWritable } from '../auth/permissions';
 import type { NavSlug } from '../types';
 
 interface SidebarProps {
@@ -22,7 +24,7 @@ const BUTTON_STYLE: Record<string, string | number> = {
 };
 
 export function Sidebar({ activeSlug, onSelect }: SidebarProps) {
-	const renderButton = (slug: NavSlug, label: string) => (
+	const renderButton = (slug: NavSlug, label: string, readonly = false) => (
 		<button
 			key={slug}
 			onClick={() => onSelect(slug)}
@@ -30,28 +32,47 @@ export function Sidebar({ activeSlug, onSelect }: SidebarProps) {
 				...BUTTON_STYLE,
 				background: slug === activeSlug ? '#007cba' : 'transparent',
 			}}
+			aria-current={slug === activeSlug ? 'page' : undefined}
 		>
 			{label}
+			{readonly ? ' (read-only)' : ''}
 		</button>
 	);
 
+	const visibleCatalog = NAV.filter(
+		(entry) => entry.section === 'catalog' && isNavEntryVisible(entry)
+	);
+	const visibleAccess = NAV.filter(
+		(entry) => entry.section === 'access' && isNavEntryVisible(entry)
+	);
+
 	return (
-		<nav>
+		<nav aria-label="Astro CMS">
 			<div style={{ padding: '0 16px 16px', fontWeight: 700, fontSize: 16 }}>
 				Astro CMS
 			</div>
-			{collections.map((col) => renderButton(col.slug, col.pluralLabel))}
-			<div
-				style={{
-					padding: '16px 16px 4px',
-					fontSize: 11,
-					textTransform: 'uppercase',
-					opacity: 0.7,
-				}}
-			>
-				Access
-			</div>
-			{renderButton('managers', 'Managers')}
+			{visibleCatalog.map((entry) =>
+				renderButton(
+					entry.slug,
+					entry.label,
+					entry.readOnlyAware && !isCollectionWritable(entry.slug)
+				)
+			)}
+			{visibleAccess.length > 0 && (
+				<>
+					<div
+						style={{
+							padding: '16px 16px 4px',
+							fontSize: 11,
+							textTransform: 'uppercase',
+							opacity: 0.7,
+						}}
+					>
+						Access
+					</div>
+					{visibleAccess.map((entry) => renderButton(entry.slug, entry.label))}
+				</>
+			)}
 		</nav>
 	);
 }

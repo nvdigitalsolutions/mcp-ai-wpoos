@@ -104,6 +104,22 @@ jobs:
           ASTRO_SITE: http://localhost:4321
         run: npm run build
 
+      # The build above re-syncs the Astro CMS admin bundle into
+      # public/manage-assets/ (scripts/sync-manage-assets.mjs). If the
+      # committed copy drifts from the bridge sources, fail here instead of
+      # shipping a stale admin on the mirror — the spa-v2 two-bundle rule,
+      # enforced. Rebuild + commit public/manage-assets in the same PR as
+      # any addons/funiq-bridge/src change.
+      - name: Astro CMS bundle staleness gate
+        working-directory: examples/nvoos-astro-velocity
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git diff --exit-code -- \
+            examples/nvoos-astro-velocity/public/manage-assets/ || {
+            echo "::error::The committed /manage admin bundle is stale relative to addons/funiq-bridge/src. Run 'npm run build:standalone' in addons/funiq-bridge and 'node scripts/sync-manage-assets.mjs' in examples/nvoos-astro-velocity, then commit public/manage-assets/ in the same PR."
+            exit 1
+          }
+
       - name: BFF smoke test (P6)
         working-directory: examples/nvoos-astro-velocity
         env:
