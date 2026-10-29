@@ -31,16 +31,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'FUNIQ_BRIDGE_VERSION', '1.0.0' );
+if ( ! defined( 'FUNIQ_BRIDGE_VERSION' ) ) {
+	define( 'FUNIQ_BRIDGE_VERSION', '1.0.0' );
+}
 
 /** Absolute path to this plugin file. */
-define( 'FUNIQ_BRIDGE_FILE', __FILE__ );
+if ( ! defined( 'FUNIQ_BRIDGE_FILE' ) ) {
+	define( 'FUNIQ_BRIDGE_FILE', __FILE__ );
+}
 
 /** Absolute path to this plugin directory (trailing slash). */
-define( 'FUNIQ_BRIDGE_PATH', plugin_dir_path( __FILE__ ) );
+if ( ! defined( 'FUNIQ_BRIDGE_PATH' ) ) {
+	define( 'FUNIQ_BRIDGE_PATH', plugin_dir_path( __FILE__ ) );
+}
 
 /** URL to this plugin directory (trailing slash). */
-define( 'FUNIQ_BRIDGE_URL', plugin_dir_url( __FILE__ ) );
+if ( ! defined( 'FUNIQ_BRIDGE_URL' ) ) {
+	define( 'FUNIQ_BRIDGE_URL', plugin_dir_url( __FILE__ ) );
+}
 
 // ---------------------------------------------------------------------------
 // PSR-4 autoloader for the FuniqBridge namespace.
@@ -77,6 +85,20 @@ add_action(
 	},
 	30  // After base plugin (20) and pro addon (15).
 );
+
+// ---------------------------------------------------------------------------
+// Late-load fallback.
+//
+// When a loader includes this file AFTER plugins_loaded has fired (e.g. an
+// addon-manager that loads addon plugins mid-request), the closure above is
+// registered on an already-fired hook and never runs — the plugin would load
+// without registering its post types, taxonomies, or REST routes. Init is
+// idempotent (Plugin::$initialized guard), so calling it directly here is
+// safe in both the normal and the late-load path.
+// ---------------------------------------------------------------------------
+if ( did_action( 'plugins_loaded' ) ) {
+	FuniqBridge\Plugin::init();
+}
 
 // ---------------------------------------------------------------------------
 // Activation / deactivation hooks.
