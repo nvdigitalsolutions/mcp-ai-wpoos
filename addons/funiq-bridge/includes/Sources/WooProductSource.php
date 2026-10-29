@@ -52,10 +52,10 @@ class WooProductSource implements ProductSource {
 	 * supports both natively. Documents are hydrated through the WC CRUD
 	 * layer (wc_get_product) so reads keep WC's caching + property mapping.
 	 *
-	 * @param int                           $page  1-based page.
-	 * @param int                           $limit Docs per page.
+	 * @param int                                 $page  1-based page.
+	 * @param int                                 $limit Docs per page.
 	 * @param array<string, array<string, mixed>> $where Normalized where clause.
-	 * @param string|null                   $sort  Raw sort param.
+	 * @param string|null                         $sort  Raw sort param.
 	 * @return array{docs: array<int, array<string, mixed>>, total: int}
 	 */
 	public function list_products( int $page, int $limit, array $where, ?string $sort ): array {
@@ -227,6 +227,22 @@ class WooProductSource implements ProductSource {
 				array( 'status' => 500 )
 			);
 		}
+
+		// WooCommerce 10.5+ keeps a request-scoped product instance cache
+		// (the experimental product_instance_caching feature). Its eviction
+		// hooks only register when the feature is already enabled at `init`;
+		// the installer enables the feature later
+		// (woocommerce_newly_installed on admin_init), after which
+		// wc_get_product() keeps serving deleted products for the rest of
+		// the request. Evict explicitly so the bridge contract — delete
+		// means gone — holds in every configuration.
+		if ( class_exists( '\Automattic\WooCommerce\Internal\Caches\ProductCache' ) && function_exists( 'wc_get_container' ) ) {
+			$product_cache = wc_get_container()->get( \Automattic\WooCommerce\Internal\Caches\ProductCache::class );
+			if ( $product_cache instanceof \Automattic\WooCommerce\Internal\Caches\ProductCache ) {
+				$product_cache->remove( $id );
+			}
+		}
+
 		return true;
 	}
 
@@ -326,7 +342,7 @@ class WooProductSource implements ProductSource {
 	 * Supported operators: id.equals, name.like, category.equals/in,
 	 * brand.equals/in, colors.equals/in, price.gt/gte/lt/lte.
 	 *
-	 * @param array<string, mixed> $args  Query args (by reference).
+	 * @param array<string, mixed>                $args  Query args (by reference).
 	 * @param array<string, array<string, mixed>> $where Normalized where clause.
 	 * @return void
 	 */
@@ -432,9 +448,9 @@ class WooProductSource implements ProductSource {
 	 * On create, required fields are defaulted (name, price, publish
 	 * status); on update only provided fields are touched.
 	 *
-	 * @param WC_Product         $product Product object.
+	 * @param WC_Product           $product Product object.
 	 * @param array<string, mixed> $data  Request body fields.
-	 * @param bool               $is_new  Whether this is a create.
+	 * @param bool                 $is_new  Whether this is a create.
 	 * @return void
 	 */
 	private function apply_fields( WC_Product $product, array $data, bool $is_new ): void {
@@ -464,7 +480,11 @@ class WooProductSource implements ProductSource {
 			}
 		}
 
-		foreach ( array( 'width' => 'set_width', 'height' => 'set_height', 'depth' => 'set_length' ) as $field => $setter ) {
+		foreach ( array(
+			'width'  => 'set_width',
+			'height' => 'set_height',
+			'depth'  => 'set_length',
+		) as $field => $setter ) {
 			if ( isset( $data[ $field ] ) && is_numeric( $data[ $field ] ) ) {
 				$product->{$setter}( (string) $data[ $field ] );
 			}

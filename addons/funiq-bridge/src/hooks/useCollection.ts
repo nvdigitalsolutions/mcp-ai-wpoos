@@ -9,7 +9,7 @@
  */
 import apiFetch from '@wordpress/api-fetch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CollectionSlug, PaginatedResponse } from '../types';
+import type { CollectionSlug, Manager, PaginatedResponse } from '../types';
 
 /** Runtime config supplied by the host page (backend or /manage gate). */
 interface AdminConfig {
@@ -21,8 +21,8 @@ interface AdminConfig {
 const CONFIG: AdminConfig =
 	(typeof window !== 'undefined' && (window as any).AstroAdminConfig) || {};
 
-/** Base URL for the CMS REST API. */
-const ROOT = CONFIG.root || '/api/';
+/** Base URL for the CMS REST API (always ends with a slash). */
+const ROOT = CONFIG.root ? CONFIG.root.replace(/\/?$/, '/') : '/api/';
 
 /**
  * Media proxy base for image previews. On the standalone storefront surface
@@ -148,6 +148,47 @@ export async function uploadMedia(file: File): Promise<MediaUploadResult> {
  */
 export async function fetchMedia(id: number): Promise<MediaUploadResult> {
 	return request<MediaUploadResult>(`media/${id}`);
+}
+
+/**
+ * Fetch the current managers list.
+ */
+export function useManagers() {
+	return useQuery<PaginatedResponse<Manager>>({
+		queryKey: ['managers'],
+		queryFn: () => request<PaginatedResponse<Manager>>('managers'),
+		placeholderData: (prev) => prev,
+	});
+}
+
+/**
+ * Search users by name or email for the add-manager picker.
+ */
+export function useManagerSearch(term: string) {
+	return useQuery<PaginatedResponse<Manager>>({
+		queryKey: ['managers', 'search', term],
+		queryFn: () =>
+			request<PaginatedResponse<Manager>>(`managers?search=${encodeURIComponent(term)}`),
+		enabled: term.trim().length >= 2,
+	});
+}
+
+/**
+ * Promote or demote a manager.
+ */
+export function useManagerMutation() {
+	const qc = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ id, manage }: { id: number; manage: boolean }) =>
+			request(`managers/${id}`, {
+				method: 'PUT',
+				data: { manage },
+			}),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ['managers'] });
+		},
+	});
 }
 
 /**
