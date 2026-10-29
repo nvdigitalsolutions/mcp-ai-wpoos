@@ -9,7 +9,12 @@ namespace FuniqBridge\REST;
 
 use FuniqBridge\Schema;
 use FuniqBridge\Transformers\PromocodeTransformer;
+use WP_Error;
 use WP_Post;
+use WP_Query;
+use WP_REST_Request;
+use WP_REST_Response;
+use WP_REST_Server;
 
 /**
  * Handles /funiq/v1/promocodes.
@@ -35,6 +40,92 @@ class PromocodesController extends PostTypeController {
 	 */
 	protected function transform( WP_Post $post ): array {
 		return ( new PromocodeTransformer() )->transform( $post );
+	}
+
+	/**
+	 * Register routes — CRUD (inherited) plus the public validation lookup.
+	 *
+	 * @return void
+	 */
+	public function register_routes(): void {
+		parent::register_routes();
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/validate',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'validate_code' ),
+					'permission_callback' => '__return_true',
+					'args'                => array(
+						'code' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * GET /promocodes/validate?code=… — public, idempotent read.
+	 *
+	 * Returns the promocode document when it exists, is active and has not
+	 * expired; 404/422 otherwise. Case-insensitive on the code.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function validate_code( $request ) {
+		$code = (string) $request->get_param( 'code' );
+
+		$query = new WP_Query(
+			array(
+				'post_type'      => Schema::CPT_PROMOCODE,
+				'post_status'    => 'publish',
+				's'              => $code,
+				'posts_per_page' => 20,
+			)
+		);
+
+		$match = null;
+		foreach ( $query->posts as $post ) {
+			if ( 0 === strcasecmp( (string) $post->post_title, $code ) ) {
+				$match = $post;
+				break;
+			}
+		}
+
+		if ( null === $match ) {
+			return new WP_Error(
+				'nvoos_promocode_not_found',
+				'Promo code not found.',
+				array( 'status' => 404 )
+			);
+		}
+
+		$is_active = (bool) get_post_meta( $match->ID, Schema::META_PROMOCODE_IS_ACTIVE, true );
+		if ( ! $is_active ) {
+			return new WP_Error(
+				'nvoos_promocode_inactive',
+				'This promo code is no longer active.',
+				array( 'status' => 422 )
+			);
+		}
+
+		$expires = get_post_meta( $match->ID, Schema::META_PROMOCODE_EXPIRES_AT, true );
+		if ( $expires && strtotime( (string) $expires ) < time() ) {
+			return new WP_Error(
+				'nvoos_promocode_expired',
+				'This promo code has expired.',
+				array( 'status' => 422 )
+			);
+		}
+
+		return rest_ensure_response( $this->transform( $match ) );
 	}
 
 	/**

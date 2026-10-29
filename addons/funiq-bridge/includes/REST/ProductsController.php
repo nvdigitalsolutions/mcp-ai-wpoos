@@ -112,6 +112,7 @@ class ProductsController extends BaseController {
 		);
 
 		$this->apply_where_query( $args, $request->get_param( 'where' ) );
+		$this->apply_sort( $args, $request->get_param( 'sort' ) );
 
 		$query   = new WP_Query( $args );
 		$total   = (int) $query->found_posts;
@@ -359,6 +360,14 @@ class ProductsController extends BaseController {
 	/**
 	 * Apply Payload-style where query to WP_Query args.
 	 *
+	 * Supported operators (bridge enhancement B2, Proposal 092):
+	 * - id.equals
+	 * - name.like (free-text search)
+	 * - category.equals / category.in
+	 * - brand.equals / brand.in
+	 * - colors.equals / colors.in
+	 * - statuses.equals / statuses.in
+	 *
 	 * @param array<string, mixed> $args  WP_Query args (by reference).
 	 * @param mixed                $where Where param from request.
 	 * @return void
@@ -368,23 +377,91 @@ class ProductsController extends BaseController {
 			return;
 		}
 
+		$tax_map = array(
+			'category' => Schema::TAX_CATEGORY,
+			'brand'    => Schema::TAX_BRAND,
+			'colors'   => Schema::TAX_COLOR,
+			'statuses' => Schema::TAX_STATUS,
+		);
+
 		foreach ( $where as $field => $operators ) {
 			if ( ! is_array( $operators ) ) {
 				continue;
 			}
 			foreach ( $operators as $operator => $value ) {
+				$operator = sanitize_key( (string) $operator );
+
 				if ( 'id' === $field && 'equals' === $operator ) {
 					$args['p'] = (int) $value;
 				}
-				if ( 'category' === $field && 'equals' === $operator ) {
+
+				if ( 'name' === $field && 'like' === $operator ) {
+					$args['s'] = sanitize_text_field( (string) $value );
+				}
+
+				if ( isset( $tax_map[ $field ] ) && in_array( $operator, array( 'equals', 'in' ), true ) ) {
+					$terms = 'equals' === $operator
+						? array( (int) $value )
+						: array_map( 'intval', (array) $value );
+					$terms = array_values( array_filter( $terms ) );
+					if ( empty( $terms ) ) {
+						continue;
+					}
 					$args['tax_query'][] = array(
-						'taxonomy' => Schema::TAX_CATEGORY,
+						'taxonomy' => $tax_map[ $field ],
 						'field'    => 'term_id',
-						'terms'    => (int) $value,
+						'terms'    => $terms,
 					);
 				}
 			}
 		}
+	}
+
+	/**
+	 * Apply sort param to WP_Query args (bridge enhancement B2, Proposal 092).
+	 *
+	 * Accepted values: date (default), -date, price, -price, rating,
+	 * -rating, name, -name. The `-` prefix flips to ascending.
+	 *
+	 * Note: price/rating sorting uses meta_value_num with the matching meta
+	 * key; posts missing that key sort last. Bridge-managed products always
+	 * carry price (schema-required), so this is an edge case only.
+	 *
+	 * @param array<string, mixed> $args WP_Query args (by reference).
+	 * @param mixed                $sort Sort param from request.
+	 * @return void
+	 */
+	private function apply_sort( array &$args, $sort ): void {
+		if ( empty( $sort ) || ! is_string( $sort ) ) {
+			return;
+		}
+
+		$direction = 'DESC';
+		$field     = $sort;
+		if ( '-' === substr( $field, 0, 1 ) ) {
+			$direction = 'ASC';
+			$field     = substr( $field, 1 );
+		}
+
+		switch ( $field ) {
+			case 'price':
+				$args['orderby']  = 'meta_value_num';
+				$args['meta_key'] = Schema::META_PRICE;
+				break;
+			case 'rating':
+				$args['orderby']  = 'meta_value_num';
+				$args['meta_key'] = Schema::META_RATING;
+				break;
+			case 'name':
+				$args['orderby'] = 'title';
+				break;
+			case 'date':
+			default:
+				$args['orderby'] = 'date';
+				break;
+		}
+
+		$args['order'] = $direction;
 	}
 
 	/**
@@ -434,6 +511,12 @@ class ProductsController extends BaseController {
 				'type'              => 'object',
 				'default'           => array(),
 				'sanitize_callback' => array( $this, 'sanitize_where' ),
+			),
+			'sort'  => array(
+				'description'       => 'Sort order: date (default), -date, price, -price, rating, -rating, name, -name.',
+				'type'              => 'string',
+				'default'           => 'date',
+				'sanitize_callback' => 'sanitize_text_field',
 			),
 		);
 	}

@@ -9,7 +9,6 @@ namespace FuniqBridge\REST;
 
 use FuniqBridge\Schema;
 use FuniqBridge\Transformers\PromotionTransformer;
-use WP_REST_Controller;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -19,7 +18,7 @@ use WP_REST_Server;
  *
  * GET is public; PUT requires manage_funiq capability.
  */
-class CarouselController extends WP_REST_Controller {
+class CarouselController extends BaseController {
 
 	/** @var string */
 	protected $namespace = 'funiq/v1';
