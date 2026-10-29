@@ -134,7 +134,12 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 - **Bridge late-load immunity (PR #7281):** the Complete bundle can load
   addon files mid-request (after `plugins_loaded`). `Plugin::init()` is
   idempotent and registers CPTs/taxonomies/REST routes directly when
-  `init`/`rest_api_init` already fired. If the contract returns 404 on a
+  `init`/`rest_api_init` already fired. The capability migration
+  (`Plugin::maybe_migrate_caps`) follows the same rule — it must run
+  directly when `did_action('init')` (fix 2026-10-29: the original
+  `add_action('init', …)` registration never fired on the fleet's
+  mid-request load, so `manage_astro` was never granted and managers hit
+  the /manage permission wall). If the contract returns 404 on a
   fleet site, check for a late-loader before touching the bridge.
 - **No admin proxy (2026-10-29 decision, replaces PR #7294's login gateway):**
   the storefront BFF (`scripts/serve.mjs`) proxies **only** `/api/*`
