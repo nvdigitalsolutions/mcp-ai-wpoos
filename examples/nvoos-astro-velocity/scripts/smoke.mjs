@@ -106,7 +106,7 @@ const checks = [
 	{
 		name: '/_image endpoint optimizes media on demand',
 		url: 'http://localhost:4321/_image/?href=http%3A%2F%2Flocalhost%3A4321%2Fmedia%2F2026%2F10%2Faurora-sofa.jpg&w=400&f=webp',
-		assert: (body, res) =>
+		assert: (_body, res) =>
 			res.status === 200 && String(res.headers.get('content-type')).startsWith('image/'),
 	},
 ];
