@@ -81,6 +81,26 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 - Drift guard: after touching the bridge transformer, run
   `npm run sync:bridge-fixtures` and confirm `tests/fixtures/products.json`
   shows a format-only reflow, not semantic changes.
+- **Base resolution precedence (incident 2026-10-29):** the mirror build bakes
+  `NVOOS_API_BASE` (fixture `localhost:8123`) into `dist/`. `resolveBase()` in
+  `src/lib/commerce/client.ts` must give the **request URL priority** at
+  runtime (same-origin `/api/*` proxy) and only fall back to the baked env
+  when there is no request URL (build-time `getStaticPaths`). The old
+  env-first order made every SSR render fetch localhost → 500 homepage while
+  `/api/*` stayed green. Regression tests pin this in
+  `tests/unit/client.test.ts` ("base resolution" describe block).
+- **ASTRO_SITE is bake-time only** — setting it at runtime on Velocity does
+  nothing. Canonical host comes from the mirror rebuild
+  (`sync-nvoos-astro-velocity.yml`, default `https://astro.nvoos.cloud`,
+  overridable via repo variable `ASTRO_SITE` / dispatch `client_payload.astro_site`).
+- **PORT on Velocity:** Velocity injects `PORT`; a manual or committed `.env`
+  `PORT` (e.g. 3025) must match the routing target or pages won't be served —
+  remove manual PORT if in doubt.
+- **Bridge late-load immunity (PR #7281):** the Complete bundle can load
+  addon files mid-request (after `plugins_loaded`). `Plugin::init()` is
+  idempotent and registers CPTs/taxonomies/REST routes directly when
+  `init`/`rest_api_init` already fired. If the contract returns 404 on a
+  fleet site, check for a late-loader before touching the bridge.
 
 ## Deploy & revalidation
 
@@ -90,6 +110,20 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   → GitHub `repository_dispatch` → the sync workflow.
 - Mirror repo is public (owner Q6). A/B coexistence rules and rollback:
   `docs/operations/deployment/nvoos-astro-velocity-setup.md`.
+- **Bridge packaging for zip upload (learned 2026-10-29):** the deploy zip
+  must contain the plugin as a **top-level `nvoos-funiq-bridge/` folder**
+  (main file `funiq-bridge.php` inside). Build it with PowerShell
+  `Compress-Archive` of the folder — `tar -a` produces a broken zip, and
+  zipping `folder\*` (files at zip root) installs `funiq-bridge.php` directly
+  into `wp-content/plugins/`, colliding with other plugins' `includes/`.
+  Uploading twice with the same folder name creates a random-suffix folder —
+  delete the old copy first.
+- **Bridge code standards:** the addon carries its own
+  `addons/funiq-bridge/phpcs.xml.dist` (PSR-4 filename sniffs, short
+  ternaries and the deliberate meta_key/tax_query slow-query warnings are
+  excluded) and is excluded from the base `phpcs.xml.dist` scan. A dedicated
+  step in `.github/workflows/php-linting.yml` enforces the addon ruleset on
+  every PR/push.
 
 ## Standards this app is built to (research-backed)
 

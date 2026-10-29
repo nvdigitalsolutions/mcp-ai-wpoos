@@ -38,13 +38,32 @@
 | Variable | Required | Purpose |
 |---|---|---|
 | `NVOOS_TARGET_SITE` | yes | Backend origin for the `/api/*` (→ `nvoos-commerce/v1`), `/media/*`, `/wp-json`, `/wp-admin`, `/wp-login.php`, `/wp-includes` proxies |
-| `ASTRO_SITE` | recommended | Canonical host for sitemap/robots/canonical tags |
+| `ASTRO_SITE` | no (runtime) | **Bake-time only** — the mirror rebuild sets it (default `https://astro.nvoos.cloud`, repo variable `ASTRO_SITE` / dispatch `client_payload.astro_site`). A runtime value does nothing. |
 | `NVOOS_CURRENCY` | no | Price formatting + JSON-LD (default `USD`) |
-| `PORT` | no | Injected by Velocity |
+| `PORT` | no | **Injected by Velocity** — do not set manually. A committed/manual `.env` `PORT` (observed: 3025) must match the routing target or pages won't be served. |
 | `NVOOS_PROXY_CACHE` / `NVOOS_PROXY_CACHE_MAX_TTL` | no | Micro-cache kill-switch / TTL cap (default enabled, 300 s) |
 
 `NVOOS_API_BASE` is a **build-time only** variable (CI) — the runtime binds
-to the same-origin `/api/*` proxy and needs no origin config.
+to the same-origin `/api/*` proxy and needs no origin config. Since PR #7284
+the request URL takes priority over any baked `NVOOS_API_BASE` at runtime
+(regression: SSR pages 500ed fetching the baked fixture origin).
+
+## Troubleshooting
+
+- **Pages 500 while `/api/*` returns 200** — the SSR fetch layer is hitting a
+  stale/baked base. Check the mirror `dist/` for a baked fixture origin
+  (`grep -r localhost:8123 dist/server/chunks/`). Fixed by the
+  request-URL-first precedence in `resolveBase()` (PR #7284, regression-tested
+  in `tests/unit/client.test.ts`).
+- **Bridge contract 404s on the backend** — a mid-request late-loader can load
+  the bridge after `rest_api_init`. `Plugin::init()` is idempotent and
+  registers routes directly when hooks already fired (PR #7281). If a WPCode
+  snippet (`probe-funiq-bridge`) was used as an interim fix, remove it once
+  the permanent build is deployed.
+- **Zip upload creates a random-suffix plugin folder** — an earlier copy of
+  the folder exists. Delete both entries, then re-upload a zip whose
+  top-level folder is `nvoos-funiq-bridge/` (PowerShell `Compress-Archive`;
+  `tar -a` produces broken zips).
 
 ## Caching contract
 
