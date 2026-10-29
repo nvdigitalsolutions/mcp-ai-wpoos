@@ -37,6 +37,9 @@ final class Plugin {
 	/** @var self|null */
 	private static ?self $instance = null;
 
+	/** @var bool Idempotency guard — init() is safe to call from both the normal and late-load paths. */
+	private static bool $initialized = false;
+
 	/**
 	 * Get (or create) the singleton instance.
 	 *
@@ -57,6 +60,11 @@ final class Plugin {
 	 * @return void
 	 */
 	public static function init(): void {
+		if ( self::$initialized ) {
+			return;
+		}
+		self::$initialized = true;
+
 		$plugin = self::instance();
 
 		// 1. Register CPTs and taxonomies on init.
