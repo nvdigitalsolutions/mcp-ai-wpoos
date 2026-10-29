@@ -98,6 +98,14 @@ class Test_Frontend_Asset_Leak_Guards extends WP_UnitTestCase {
 	 * dashboards and the front-end jobs counter can enqueue it explicitly.
 	 */
 	public function test_chat_style_does_not_depend_on_cron_status_style() {
+		// The style registry is process-wide and never reset between suites: an
+		// earlier admin suite can register wp-mcp-ai-chat with the cron-status
+		// dependency, and wp_register_style() is a no-op for already-registered
+		// handles. Deregister both handles first so this test asserts exactly
+		// what register_assets() declares.
+		wp_deregister_style( 'wp-mcp-ai-chat' );
+		wp_deregister_style( 'wp-mcp-ai-cron-status' );
+
 		$shortcode = new WP_MCP_AI_Shortcode();
 		$shortcode->register_assets();
 
