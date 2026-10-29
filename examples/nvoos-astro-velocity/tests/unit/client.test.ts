@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import {
 	buildCollectionQuery,
 	buildWhereParams,
@@ -133,5 +133,55 @@ describe('getCollection / getAll', () => {
 		);
 		const all = await getAll<{ id: number }>('products', requestUrl);
 		expect(all.map((doc) => doc.id)).toEqual([1, 2, 3]);
+	});
+});
+
+describe('base resolution (resolveBase precedence)', () => {
+	const requestUrl = new URL('https://store.example/shop/');
+
+	const okEnvelope = (limit: number) => ({
+		docs: [],
+		totalDocs: 0,
+		limit,
+		totalPages: 0,
+		page: 1,
+		hasNextPage: false,
+		hasPrevPage: false,
+	});
+
+	beforeEach(() => {
+		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
+	});
+
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	it('prefers the same-origin proxy over a baked NVOOS_API_BASE (runtime)', async () => {
+		// Regression (incident 2026-10-29): the mirror dist bakes the hermetic
+		// fixture origin into NVOOS_API_BASE; runtime SSR must ignore it and
+		// use the same-origin /api/* proxy, or every render fetches
+		// localhost:8123 and 500s.
+		vi.stubEnv('NVOOS_API_BASE', 'http://localhost:8123/wp-json/nvoos-commerce/v1');
+		const fetchMock = vi.fn(async () => new Response(JSON.stringify(okEnvelope(24)), { status: 200 }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await getCollection<Product>('products', requestUrl);
+
+		const url = String(fetchMock.mock.calls[0][0]);
+		expect(url).toContain('https://store.example/api/products');
+		expect(url).not.toContain('localhost');
+	});
+
+	it('falls back to NVOOS_API_BASE when no request URL exists (build)', async () => {
+		vi.stubEnv('NVOOS_API_BASE', 'http://localhost:8123/wp-json/nvoos-commerce/v1');
+		const fetchMock = vi.fn(async () => new Response(JSON.stringify(okEnvelope(100)), { status: 200 }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		await getCollection<Product>('products', undefined);
+
+		const url = String(fetchMock.mock.calls[0][0]);
+		expect(url).toContain('http://localhost:8123/wp-json/nvoos-commerce/v1/products');
 	});
 });

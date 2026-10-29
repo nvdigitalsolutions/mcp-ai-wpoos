@@ -45,17 +45,24 @@ type CollectionSlug =
 	| 'promotions'
 	| 'promocodes';
 
-/** Resolve the base URL: build env var first, then same-origin proxy. */
+/** Resolve the base URL.
+ *
+ * - Runtime SSR: the request URL ALWAYS wins — the same-origin /api/* proxy.
+ *   A build-time NVOOS_API_BASE (the hermetic fixture server) is baked into
+ *   the mirror dist and MUST be ignored at runtime, otherwise every SSR
+ *   render fetches localhost:8123 and 500s (incident 2026-10-29).
+ * - Build time (getStaticPaths): no request URL, so NVOOS_API_BASE applies.
+ */
 function resolveBase(requestUrl: string | URL | undefined): string {
+	if (requestUrl) {
+		return new URL('/api', requestUrl).toString().replace(/\/+$/, '');
+	}
 	const buildBase = import.meta.env.NVOOS_API_BASE;
 	if (buildBase) {
 		return buildBase.replace(/\/+$/, '');
 	}
-	if (requestUrl) {
-		return new URL('/api', requestUrl).toString().replace(/\/+$/, '');
-	}
 	throw new Error(
-		'Commerce client needs NVOOS_API_BASE (build) or a request URL (runtime).'
+		'Commerce client needs a request URL (runtime) or NVOOS_API_BASE (build).'
 	);
 }
 
