@@ -115,10 +115,14 @@ jobs:
         env:
           NVOOS_TARGET_SITE: http://localhost:8123
           PORT: '4321'
-          CHROME_PATH: ${{ runner.temp }}/chrome
         run: |
-          CHROME_BIN="$(find "$HOME/.cache/ms-playwright" -type f -name chrome -path '*chromium*' | head -n 1)"
-          cp "$CHROME_BIN" "$CHROME_PATH"
+          # Point chrome-launcher at the Playwright Chromium IN PLACE —
+          # copying the bare binary out of chrome-linux/ drops icudtl.dat and
+          # the .pak resources, and Chrome dies at ICU init with
+          # "Invalid file descriptor to ICU data received".
+          export CHROME_PATH="$(find "$HOME/.cache/ms-playwright" -type f -name chrome -path '*chromium*' | head -n 1)"
+          test -n "$CHROME_PATH" || { echo 'Chromium not found in the Playwright cache'; exit 1; }
+          echo "LHCI chrome: $CHROME_PATH"
           npm run lhci:ci
 
       - name: Assemble mirror tree
