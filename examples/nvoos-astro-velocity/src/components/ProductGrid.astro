@@ -1,0 +1,22 @@
+---
+import type { Product } from '../lib/commerce/types';
+import ProductCard from './ProductCard.astro';
+
+interface Props {
+	products: Product[];
+}
+
+const { products } = Astro.props;
+---
+
+{
+	products.length > 0 ? (
+		<div class="product-grid">
+			{products.map((product) => (
+				<ProductCard product={product} />
+			))}
+		</div>
+	) : (
+		<p>No products found.</p>
+	)
+}

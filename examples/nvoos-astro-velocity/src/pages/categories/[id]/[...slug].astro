@@ -1,0 +1,151 @@
+---
+// ---------------------------------------------------------------------------
+// Category PLP — on-demand SSR with CDN cache headers (D4).
+//
+// Prerendered page-1s were dropped deliberately: a prerendered page ignores
+// query strings, so filter URLs (?color=…&brand=…&page=2) would silently
+// serve unfiltered HTML. SSR + s-maxage caching keeps filters correct AND
+// cheap. Canonical points at the base category URL; filtered permutations
+// carry noindex,follow (crawl-budget discipline).
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProductGrid from '../../../components/ProductGrid.astro';
+import Pagination from '../../../components/Pagination.astro';
+import {
+	getAllBrands,
+	getAllCategories,
+	getAllColors,
+	getProducts,
+	PAGE_SIZE,
+} from '../../../lib/commerce/client';
+import type { SortValue, WhereClause } from '../../../lib/commerce/types';
+import { normalizeProductMedia } from '../../../lib/commerce/normalize';
+import { categoryPath, absoluteUrl } from '../../../lib/url';
+import { breadcrumbJsonLd } from '../../../lib/seo/jsonld';
+import { pageTitle, plainExcerpt } from '../../../lib/seo/meta';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+const categoryId = Number(Astro.params.id ?? 0);
+if (!Number.isInteger(categoryId) || categoryId <= 0) {
+	return new Response('Not found', { status: 404 });
+}
+
+// Term lookups: small datasets — fetch all and find (where[] on terms is
+// not part of the contract; only products support where operators).
+// Runtime fetches bind to the same-origin /api proxy.
+const categories = await getAllCategories(Astro.url);
+const category = categories.find((item) => item.id === categoryId);
+if (!category) {
+	return new Response('Category not found', { status: 404 });
+}
+
+const colors = await getAllColors(Astro.url);
+const brands = await getAllBrands(Astro.url);
+
+const url = Astro.url;
+const selectedColors = url.searchParams.getAll('color').map(Number).filter(Boolean);
+const selectedBrand = Number(url.searchParams.get('brand')) || null;
+const sort = (url.searchParams.get('sort') as SortValue | null) ?? 'date';
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const q = url.searchParams.get('q')?.trim() ?? '';
+
+const where: WhereClause = { category: { equals: categoryId } };
+if (selectedColors.length > 0) {
+	where.colors = { in: selectedColors };
+}
+if (selectedBrand) {
+	where.brand = { equals: selectedBrand };
+}
+if (q) {
+	where.name = { like: q };
+}
+
+const data = await getProducts(Astro.url, { page, limit: PAGE_SIZE, where, sort });
+const products = data.docs.map(normalizeProductMedia);
+
+const hasFilters = selectedColors.length > 0 || selectedBrand !== null || page > 1 || q !== '';
+const canonical = absoluteUrl(Astro.site ?? new URL('https://store.nvoos.cloud'), categoryPath(category.id, category.name));
+
+const baseHref = `${url.pathname}?${url.searchParams.toString()}`;
+
+const site = Astro.site ?? new URL('https://store.nvoos.cloud');
+const jsonld = [
+	breadcrumbJsonLd([
+		{ name: 'Home', url: absoluteUrl(site, '/') },
+		{ name: category.name, url: canonical },
+	]),
+];
+---
+
+<BaseLayout
+	title={pageTitle(category.name, q ? `Search: ${q}` : undefined)}
+	description={plainExcerpt(`Browse ${category.name} — ${category.productsCount} products.`)}
+	canonical={canonical}
+	jsonld={jsonld}
+>
+	<slot name="head">
+		{hasFilters && <meta name="robots" content="noindex, follow" />}
+	</slot>
+
+	<nav class="breadcrumbs" aria-label="Breadcrumb">
+		<a href="/">Home</a> {' / '} <span>{category.name}</span>
+	</nav>
+
+	<h1>{category.name}</h1>
+
+	<div class="plp">
+		<aside class="filters" aria-label="Filters">
+			<form method="get" action={url.pathname}>
+				<p>
+					<strong>Brands</strong>
+				</p>
+				<select name="brand" class="field" onchange="this.form.submit()">
+					<option value="">All brands</option>
+					{brands.map((brand) => (
+						<option value={brand.id} selected={selectedBrand === brand.id}>
+							{brand.name}
+						</option>
+					))}
+				</select>
+				<p>
+					<strong>Colors</strong>
+				</p>
+				{colors.map((color) => (
+					<label class="filter-chip">
+						<input
+							type="checkbox"
+							name="color"
+							value={color.id}
+							checked={selectedColors.includes(color.id)}
+							onchange="this.form.submit()"
+						/>
+						<span class="swatch" style={`background:${color.hexCode || '#ccc'}`} />
+						{color.name}
+					</label>
+				))}
+				<p>
+					<strong>Sort</strong>
+				</p>
+				<select name="sort" class="field" onchange="this.form.submit()">
+					<option value="date" selected={sort === 'date'}>Newest</option>
+					<option value="-price" selected={sort === '-price'}>Price: low to high</option>
+					<option value="price" selected={sort === 'price'}>Price: high to low</option>
+					<option value="-rating" selected={sort === '-rating'}>Top rated</option>
+					<option value="name" selected={sort === 'name'}>Name A–Z</option>
+				</select>
+				<noscript>
+					<button type="submit" class="btn">Apply</button>
+				</noscript>
+			</form>
+		</aside>
+		<section>
+			<ProductGrid products={products} />
+			<Pagination page={page} totalPages={data.totalPages} baseUrl={baseHref} />
+		</section>
+	</div>
+</BaseLayout>

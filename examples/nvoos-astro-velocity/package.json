@@ -1,0 +1,50 @@
+{
+	"name": "nvoos-astro-velocity",
+	"version": "0.1.0",
+	"description": "NV-authored headless storefront (Astro 7 SSR) for the NV commerce contract — Proposal 092.",
+	"type": "module",
+	"main": "server.js",
+	"license": "MIT",
+	"private": false,
+	"engines": {
+		"node": ">=20.3.0"
+	},
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro check && astro build",
+		"build:fixtures": "node scripts/build-hermetic.mjs",
+		"preview": "astro preview",
+		"check": "astro check",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"lint": "eslint src",
+		"serve": "node scripts/serve.mjs",
+		"start": "node server.js",
+		"smoke": "node scripts/smoke.mjs",
+		"record:fixtures": "node scripts/record-fixtures.mjs",
+		"sync:dist": "node scripts/sync-dist.mjs"
+	},
+	"dependencies": {
+		"@astrojs/node": "^11.1.9",
+		"@astrojs/react": "^7.1.2",
+		"@nanostores/react": "^2.0.1",
+		"astro": "^7.4.4",
+		"nanostores": "^1.5.5",
+		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
+		"sanitize-html": "^2.18.1"
+	},
+	"devDependencies": {
+		"@astrojs/check": "^0.9.12",
+		"@eslint/js": "^10.0.1",
+		"@types/node": "^26.6.6",
+		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
+		"@types/sanitize-html": "^2.16.2",
+		"eslint": "^10.13.0",
+		"eslint-plugin-astro": "^3.2.1",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.72.1",
+		"vitest": "^5.0.5"
+	}
+}

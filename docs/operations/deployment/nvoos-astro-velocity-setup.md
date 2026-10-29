@@ -1,0 +1,75 @@
+# nvoos-astro-velocity — Velocity Deploy Setup
+
+> Companion to `examples/nvoos-astro-velocity/README.md` (Proposal 092 plan,
+> deploy runbook §9). The app deploys to Cloudways **Velocity** (managed
+> Node.js: NGINX + PM2) using the connected-repo mirror pattern established
+> by Proposal 085 §3.3.
+
+## Repos
+
+| Repo | Visibility | Role |
+|---|---|---|
+| `nvdigitalsolutions/mcp-ai-wpoos` (`examples/nvoos-astro-velocity/`) | Public | Source of truth (MIT). Build, tests, and mirror assembly run here. |
+| `nvdigitalsolutions/nvoos-astro-velocity` | **Public** (owner decision Q6) | Deploy mirror — prebuilt `dist/` + BFF + runtime `package.json`. Flat history, force-pushed by `sync-nvoos-astro-velocity.yml`. **Never commit here directly.** |
+
+## One-time activation
+
+1. Create the public mirror repo `nvdigitalsolutions/nvoos-astro-velocity`.
+2. Add a repo-scoped deploy token as the monorepo secret
+   `NVOOS_ASTRO_VELOCITY_REPO_TOKEN`.
+3. Run the sync workflow once via `workflow_dispatch` (backfills the mirror).
+4. In Velocity: create a Node.js app, connect the mirror repo.
+
+## Velocity app settings
+
+| Setting | Value |
+|---|---|
+| Root directory | repo root (`package.json` at the top) |
+| Entry file | default — `server.js` (one-line shim → `scripts/serve.mjs`; PM2 requires the root entry and the shebang) |
+| Build command | none (a no-op `npm run build` shim ships as the second line of defence) |
+| Node version | 22 LTS (Astro 7 engines: ≥ 20.3.0) |
+
+> **Unlike the console mirrors:** the Astro SSR runtime needs its
+> dependencies, so the mirror keeps a real `package.json` and Velocity runs
+> its normal `npm install`. Only `dist/` is prebuilt.
+
+## Environment variables (app-level `.env` in Velocity)
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `NVOOS_TARGET_SITE` | yes | Backend origin for the `/api/*` (→ `nvoos-commerce/v1`), `/media/*`, `/wp-json`, `/wp-admin`, `/wp-login.php`, `/wp-includes` proxies |
+| `ASTRO_SITE` | recommended | Canonical host for sitemap/robots/canonical tags |
+| `NVOOS_CURRENCY` | no | Price formatting + JSON-LD (default `USD`) |
+| `PORT` | no | Injected by Velocity |
+| `NVOOS_PROXY_CACHE` / `NVOOS_PROXY_CACHE_MAX_TTL` | no | Micro-cache kill-switch / TTL cap (default enabled, 300 s) |
+
+`NVOOS_API_BASE` is a **build-time only** variable (CI) — the runtime binds
+to the same-origin `/api/*` proxy and needs no origin config.
+
+## Caching contract
+
+| Path | Headers |
+|---|---|
+| `/_astro/*` (hashed chunks) | `public, max-age=31536000, immutable` (Astro standalone) |
+| Prerendered PDPs | `public, s-maxage=3600, stale-while-revalidate=86400` — set per route (D4); PDP prerender pages carry route-level headers |
+| SSR PLP/home | `public, s-maxage=300, stale-while-revalidate=60` |
+| `sitemap.xml` / `robots.txt` | `public, s-maxage=3600` |
+| `/api/*` (proxied) | Micro-cached only when the bridge marks `Cache-Control: public` (B1) — `X-Cache-Status: HIT/MISS/BYPASS` |
+
+## A/B coexistence (owner decision Q1: keep A/B)
+
+The licensed PWA app (`nvoos-funiq-velocity`) stays live as rollback. The
+split is hostname/cookie-based at the routing layer; both apps point at the
+same backend, so the bridge serves both namespaces (`nvoos-commerce/v1` +
+legacy) without conflict.
+
+## Revalidation
+
+Prerendered catalog pages update at build. Bridge "content changed" webhook
+→ Velocity redeploy keeps the catalog fresh between scheduled builds; SSR
+paths (PLP/home) revalidate within `s-maxage` anyway.
+
+## Rollback
+
+Redeploy the previous mirror commit (`git push -f` of the prior flat commit)
+or flip the A/B routing back to the PWA app — no data migration involved.

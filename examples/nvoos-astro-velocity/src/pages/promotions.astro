@@ -1,0 +1,40 @@
+---
+// Promotions listing — SSR + cached.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPromotions } from '../lib/commerce/client';
+import { sanitizeDescription } from '../lib/commerce/normalize';
+import { pageTitle, plainExcerpt } from '../lib/seo/meta';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+const { docs: promotions } = await getPromotions(Astro.url, {
+	page: 1,
+	limit: 50,
+	sort: 'date',
+});
+const active = promotions.filter((promotion) => promotion.active);
+---
+
+<BaseLayout
+	title={pageTitle('Promotions')}
+	description={plainExcerpt('Current promotions and special offers.')}
+>
+	<h1>Promotions</h1>
+	{
+		active.length === 0 ? (
+			<p>No active promotions right now — check back soon.</p>
+		) : (
+			<ul>
+				{active.map((promotion) => (
+					<li>
+						<h2>{promotion.title}</h2>
+						<div set:html={sanitizeDescription(promotion.description)} />
+					</li>
+				))}
+			</ul>
+		)
+	}
+</BaseLayout>

@@ -1,0 +1,42 @@
+---
+import type { Product } from '../lib/commerce/types';
+import { formatPrice } from '../lib/commerce/money';
+import { productPath } from '../lib/url';
+
+interface Props {
+	product: Product;
+}
+
+const { product } = Astro.props;
+const href = productPath(product.id, product.name);
+const hasPromo =
+	product.promotion !== null &&
+	product.promotion.active &&
+	product.oldPrice !== null &&
+	product.oldPrice > product.price;
+---
+
+<a class="product-card" href={href}>
+	<div class="product-card__media">
+		{hasPromo && <span class="promo-badge">Sale</span>}
+		{
+			product.image && (
+				<img
+					src={product.image}
+					alt={product.name}
+					loading="lazy"
+					decoding="async"
+					width="400"
+					height="500"
+				/>
+			)
+		}
+	</div>
+	<span class="product-card__name">{product.name}</span>
+	<span class="product-card__price">
+		{formatPrice(product.price)}
+		{product.oldPrice !== null && product.oldPrice > product.price && (
+			<span class="product-card__old-price">{formatPrice(product.oldPrice)}</span>
+		)}
+	</span>
+</a>
