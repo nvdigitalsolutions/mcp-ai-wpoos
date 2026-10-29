@@ -31,9 +31,9 @@ final class Schema {
 	// -----------------------------------------------------------------------
 	// Post type slugs.
 	// -----------------------------------------------------------------------
-	public const CPT_PRODUCT    = 'funiq_product';
-	public const CPT_PROMOTION  = 'funiq_promotion';
-	public const CPT_PROMOCODE  = 'funiq_promocode';
+	public const CPT_PRODUCT   = 'funiq_product';
+	public const CPT_PROMOTION = 'funiq_promotion';
+	public const CPT_PROMOCODE = 'funiq_promocode';
 
 	// -----------------------------------------------------------------------
 	// Taxonomy slugs.
@@ -46,16 +46,16 @@ final class Schema {
 	// -----------------------------------------------------------------------
 	// Post meta keys (product).
 	// -----------------------------------------------------------------------
-	public const META_PRICE          = '_funiq_price';
-	public const META_OLD_PRICE      = '_funiq_old_price';
-	public const META_WIDTH          = '_funiq_width';
-	public const META_HEIGHT         = '_funiq_height';
-	public const META_DEPTH          = '_funiq_depth';
-	public const META_RATING         = '_funiq_rating';
-	public const META_IS_BESTSELLER  = '_funiq_is_bestseller';
-	public const META_IS_FEATURED    = '_funiq_is_featured';
-	public const META_PROMOTION_ID   = '_funiq_promotion_id';
-	public const META_GALLERY        = '_funiq_gallery';
+	public const META_PRICE         = '_funiq_price';
+	public const META_OLD_PRICE     = '_funiq_old_price';
+	public const META_WIDTH         = '_funiq_width';
+	public const META_HEIGHT        = '_funiq_height';
+	public const META_DEPTH         = '_funiq_depth';
+	public const META_RATING        = '_funiq_rating';
+	public const META_IS_BESTSELLER = '_funiq_is_bestseller';
+	public const META_IS_FEATURED   = '_funiq_is_featured';
+	public const META_PROMOTION_ID  = '_funiq_promotion_id';
+	public const META_GALLERY       = '_funiq_gallery';
 
 	// -----------------------------------------------------------------------
 	// Post meta keys (promotion).
@@ -77,8 +77,8 @@ final class Schema {
 	// -----------------------------------------------------------------------
 	// Term meta keys.
 	// -----------------------------------------------------------------------
-	public const TERM_META_HEX_CODE  = '_funiq_hex_code';
-	public const TERM_META_IMAGE_ID  = '_funiq_image_id';
+	public const TERM_META_HEX_CODE = '_funiq_hex_code';
+	public const TERM_META_IMAGE_ID = '_funiq_image_id';
 
 	// -----------------------------------------------------------------------
 	// Option names (globals — banner & carousel).

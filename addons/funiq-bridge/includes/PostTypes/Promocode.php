@@ -23,7 +23,7 @@ class Promocode {
 		register_post_type(
 			Schema::CPT_PROMOCODE,
 			array(
-				'labels'        => array(
+				'labels'          => array(
 					'name'          => 'Funiq Promocodes',
 					'singular_name' => 'Funiq Promocode',
 					'add_new'       => 'Add Promocode',
@@ -31,13 +31,13 @@ class Promocode {
 					'edit_item'     => 'Edit Promocode',
 					'view_item'     => 'View Promocode',
 				),
-				'public'        => false,
-				'show_ui'       => false,
-				'show_in_rest'  => true,
-				'supports'      => array( 'title', 'revisions' ),
-				'has_archive'   => false,
+				'public'          => false,
+				'show_ui'         => false,
+				'show_in_rest'    => true,
+				'supports'        => array( 'title', 'revisions' ),
+				'has_archive'     => false,
 				'capability_type' => 'post',
-				'rewrite'       => false,
+				'rewrite'         => false,
 			)
 		);
 	}

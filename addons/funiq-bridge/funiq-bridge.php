@@ -54,12 +54,12 @@ if ( ! defined( 'FUNIQ_BRIDGE_URL' ) ) {
 // PSR-4 autoloader for the FuniqBridge namespace.
 // ---------------------------------------------------------------------------
 spl_autoload_register(
-	static function ( string $class ): void {
+	static function ( string $class_name ): void {
 		$prefix = 'FuniqBridge\\';
-		if ( 0 !== strpos( $class, $prefix ) ) {
+		if ( 0 !== strpos( $class_name, $prefix ) ) {
 			return;
 		}
-		$relative = substr( $class, strlen( $prefix ) );
+		$relative = substr( $class_name, strlen( $prefix ) );
 		$file     = FUNIQ_BRIDGE_PATH . 'includes/'
 			. str_replace( '\\', '/', $relative ) . '.php';
 		if ( file_exists( $file ) ) {

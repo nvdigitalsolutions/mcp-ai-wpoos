@@ -30,7 +30,7 @@ class CategoryTransformer {
 			'id'            => $term->term_id,
 			'name'          => $term->name,
 			'image'         => $image_id ? ( wp_get_attachment_url( (int) $image_id ) ?: '' ) : '',
-			'productsCount' => $this->countProducts( $term->term_id ),
+			'productsCount' => $this->count_products( $term->term_id ),
 		);
 	}
 
@@ -40,7 +40,7 @@ class CategoryTransformer {
 	 * @param int $term_id Category term ID.
 	 * @return int
 	 */
-	private function countProducts( int $term_id ): int {
+	private function count_products( int $term_id ): int {
 		$query = new WP_Query(
 			array(
 				'post_type'      => Schema::CPT_PRODUCT,

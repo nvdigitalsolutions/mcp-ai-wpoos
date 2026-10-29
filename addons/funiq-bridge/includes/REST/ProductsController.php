@@ -23,10 +23,18 @@ use WP_REST_Server;
  */
 class ProductsController extends BaseController {
 
-	/** @var string */
+	/**
+	 * REST namespace.
+	 *
+	 * @var string
+	 */
 	protected $namespace = 'funiq/v1';
 
-	/** @var string */
+	/**
+	 * REST base path.
+	 *
+	 * @var string
+	 */
 	protected $rest_base = 'products';
 
 	/**
@@ -114,9 +122,9 @@ class ProductsController extends BaseController {
 		$this->apply_where_query( $args, $request->get_param( 'where' ) );
 		$this->apply_sort( $args, $request->get_param( 'sort' ) );
 
-		$query   = new WP_Query( $args );
-		$total   = (int) $query->found_posts;
-		$docs    = array();
+		$query       = new WP_Query( $args );
+		$total       = (int) $query->found_posts;
+		$docs        = array();
 		$transformer = new ProductTransformer();
 
 		foreach ( $query->posts as $post ) {
@@ -263,8 +271,8 @@ class ProductsController extends BaseController {
 	/**
 	 * Save product meta fields from request data.
 	 *
-	 * @param int                    $product_id Post ID.
-	 * @param array<string, mixed>   $data       Request body.
+	 * @param int                  $product_id Post ID.
+	 * @param array<string, mixed> $data       Request body.
 	 * @return void
 	 */
 	private function save_meta( int $product_id, array $data ): void {
@@ -322,8 +330,8 @@ class ProductsController extends BaseController {
 	/**
 	 * Save taxonomy terms from request data.
 	 *
-	 * @param int                    $product_id Post ID.
-	 * @param array<string, mixed>   $data       Request body.
+	 * @param int                  $product_id Post ID.
+	 * @param array<string, mixed> $data       Request body.
 	 * @return void
 	 */
 	private function save_taxonomies( int $product_id, array $data ): void {
@@ -467,7 +475,7 @@ class ProductsController extends BaseController {
 	/**
 	 * Build a single-product REST response.
 	 *
-	 * @param int $product_id
+	 * @param int $product_id Product post ID.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	private function build_single_response( int $product_id ) {
@@ -550,8 +558,14 @@ class ProductsController extends BaseController {
 			'type'       => 'object',
 			'properties' => array(
 				'id'           => array( 'type' => 'integer' ),
-				'name'         => array( 'type' => 'string', 'required' => true ),
-				'price'        => array( 'type' => 'number', 'required' => true ),
+				'name'         => array(
+					'type'     => 'string',
+					'required' => true,
+				),
+				'price'        => array(
+					'type'     => 'number',
+					'required' => true,
+				),
 				'oldPrice'     => array( 'type' => array( 'number', 'null' ) ),
 				'description'  => array( 'type' => 'string' ),
 				'category'     => array( 'type' => array( 'object', 'null' ) ),
@@ -563,10 +577,22 @@ class ProductsController extends BaseController {
 				'rating'       => array( 'type' => array( 'number', 'null' ) ),
 				'isBestseller' => array( 'type' => 'boolean' ),
 				'isFeatured'   => array( 'type' => 'boolean' ),
-				'image'        => array( 'type' => 'string', 'description' => 'Featured image URL (PWA-facing).' ),
-					'imageId'      => array( 'type' => array( 'integer', 'null' ), 'description' => 'Featured image attachment ID (admin-facing).' ),
-					'images'       => array( 'type' => 'array', 'description' => 'Gallery image URLs (PWA-facing).' ),
-					'imagesIds'    => array( 'type' => 'array', 'description' => 'Gallery attachment IDs (admin-facing).' ),
+				'image'        => array(
+					'type'        => 'string',
+					'description' => 'Featured image URL (PWA-facing).',
+				),
+				'imageId'      => array(
+					'type'        => array( 'integer', 'null' ),
+					'description' => 'Featured image attachment ID (admin-facing).',
+				),
+				'images'       => array(
+					'type'        => 'array',
+					'description' => 'Gallery image URLs (PWA-facing).',
+				),
+				'imagesIds'    => array(
+					'type'        => 'array',
+					'description' => 'Gallery attachment IDs (admin-facing).',
+				),
 				'statuses'     => array( 'type' => 'array' ),
 				'promotion'    => array( 'type' => array( 'object', 'null' ) ),
 				'createdAt'    => array( 'type' => 'string' ),

@@ -62,6 +62,11 @@
      scan. -->
 <exclude-pattern>*/plugins/nvoos-content-graph-ai-platform/**</exclude-pattern>
 
+<!-- Funiq Bridge is a PSR-4 addon with its own phpcs.xml.dist (filename
+     sniffs conflict with the PSR-4 autoloader; short ternaries are the
+     addon's intentional idiom). Exclude from the base plugin's scan. -->
+<exclude-pattern>*/addons/funiq-bridge/**</exclude-pattern>
+
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
 <!-- class-wp-mcp-ai-plugin.php contains the WP_MCP_AI singleton; the '-plugin' suffix

@@ -21,13 +21,23 @@ use WP_REST_Server;
  */
 class PromocodesController extends PostTypeController {
 
-	/** @var string */
+	/**
+	 * REST namespace.
+	 *
+	 * @var string
+	 */
 	protected $namespace = 'funiq/v1';
 
-	/** @var string */
+	/**
+	 * REST base path.
+	 *
+	 * @var string
+	 */
 	protected $rest_base = 'promocodes';
 
 	/**
+	 * Get the post type slug.
+	 *
 	 * @return string
 	 */
 	protected function post_type(): string {
@@ -35,7 +45,9 @@ class PromocodesController extends PostTypeController {
 	}
 
 	/**
-	 * @param WP_Post $post
+	 * Transform a WP_Post into the output shape.
+	 *
+	 * @param WP_Post $post Post object.
 	 * @return array<string, mixed>
 	 */
 	protected function transform( WP_Post $post ): array {
@@ -129,6 +141,8 @@ class PromocodesController extends PostTypeController {
 	}
 
 	/**
+	 * Build post insert/update args from request data.
+	 *
 	 * @param array<string, mixed> $data Request body.
 	 * @param int|null             $id   Post ID (null for create).
 	 * @return array<string, mixed>
@@ -150,8 +164,10 @@ class PromocodesController extends PostTypeController {
 	}
 
 	/**
-	 * @param int                   $post_id
-	 * @param array<string, mixed>  $data
+	 * Save meta fields after creating/updating the post.
+	 *
+	 * @param int                  $post_id Post ID.
+	 * @param array<string, mixed> $data    Request body.
 	 * @return void
 	 */
 	protected function save_meta( int $post_id, array $data ): void {

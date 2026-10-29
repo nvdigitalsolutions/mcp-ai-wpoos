@@ -34,10 +34,18 @@ use FuniqBridge\Admin\AdminPage;
  */
 final class Plugin {
 
-	/** @var self|null */
+	/**
+	 * Singleton instance.
+	 *
+	 * @var self|null
+	 */
 	private static ?self $instance = null;
 
-	/** @var bool Idempotency guard — init() is safe to call from both the normal and late-load paths. */
+	/**
+	 * Idempotency guard — init() is safe to call from both the normal and late-load paths.
+	 *
+	 * @var bool
+	 */
 	private static bool $initialized = false;
 
 	/**
@@ -86,7 +94,7 @@ final class Plugin {
 		}
 
 		// 5. Storefront rebuild webhook (Proposal 092 Phase 2.3 — no-ops
-		//    until the operator configures a webhook URL).
+		// until the operator configures a webhook URL).
 		RebuildWebhook::init();
 	}
 

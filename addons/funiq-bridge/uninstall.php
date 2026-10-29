@@ -24,8 +24,8 @@ $product_ids = get_posts(
 		'fields'         => 'ids',
 	)
 );
-foreach ( $product_ids as $id ) {
-	wp_delete_post( $id, true );
+foreach ( $product_ids as $product_id ) {
+	wp_delete_post( $product_id, true );
 }
 
 // ---------------------------------------------------------------------------
@@ -39,8 +39,8 @@ $promo_ids = get_posts(
 		'fields'         => 'ids',
 	)
 );
-foreach ( $promo_ids as $id ) {
-	wp_delete_post( $id, true );
+foreach ( $promo_ids as $promo_id ) {
+	wp_delete_post( $promo_id, true );
 }
 
 // ---------------------------------------------------------------------------
@@ -54,8 +54,8 @@ $promocode_ids = get_posts(
 		'fields'         => 'ids',
 	)
 );
-foreach ( $promocode_ids as $id ) {
-	wp_delete_post( $id, true );
+foreach ( $promocode_ids as $promocode_id ) {
+	wp_delete_post( $promocode_id, true );
 }
 
 // ---------------------------------------------------------------------------
@@ -68,17 +68,17 @@ $taxonomies = array(
 	'funiq_status',
 );
 
-foreach ( $taxonomies as $tax ) {
+foreach ( $taxonomies as $taxonomy_slug ) {
 	$terms = get_terms(
 		array(
-			'taxonomy'   => $tax,
+			'taxonomy'   => $taxonomy_slug,
 			'hide_empty' => false,
 			'fields'     => 'ids',
 		)
 	);
 	if ( ! is_wp_error( $terms ) ) {
-		foreach ( $terms as $term_id ) {
-			wp_delete_term( $term_id, $tax );
+		foreach ( $terms as $term_identifier ) {
+			wp_delete_term( $term_identifier, $taxonomy_slug );
 		}
 	}
 }
