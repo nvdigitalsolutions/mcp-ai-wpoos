@@ -7,7 +7,7 @@
 
 namespace FuniqBridge\REST;
 
-use FuniqBridge\Schema;
+use FuniqBridge\Sources\WooTaxonomy;
 
 /**
  * Handles /funiq/v1/brands.
@@ -31,9 +31,12 @@ class BrandsController extends TermController {
 	/**
 	 * Get the taxonomy slug.
 	 *
+	 * Woo-mode serves the pa_brand attribute (or product_brand) when the
+	 * store defines one; the built-in taxonomy otherwise.
+	 *
 	 * @return string
 	 */
 	protected function taxonomy(): string {
-		return Schema::TAX_BRAND;
+		return WooTaxonomy::brand_taxonomy();
 	}
 }

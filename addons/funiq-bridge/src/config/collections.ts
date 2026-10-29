@@ -36,7 +36,7 @@ export const collections: CollectionConfig[] = [
     label: 'Product',
     pluralLabel: 'Products',
     type: 'collection',
-    defaultColumns: ['name', 'price', 'category', 'brand'],
+    defaultColumns: ['name', 'price', 'category', 'brand', 'source'],
     fields: [
       { name: 'name', type: 'text', label: 'Product Name', required: true },
       { name: 'price', type: 'number', label: 'Price', required: true, min: 0, step: 0.01 },

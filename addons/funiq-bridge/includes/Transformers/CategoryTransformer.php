@@ -37,10 +37,18 @@ class CategoryTransformer {
 	/**
 	 * Count published products assigned to this category.
 	 *
+	 * WooCommerce maintains product_cat counts itself (term->count); the
+	 * built-in taxonomy is counted against the native CPT.
+	 *
 	 * @param int $term_id Category term ID.
 	 * @return int
 	 */
 	private function count_products( int $term_id ): int {
+		$term = get_term( $term_id );
+		if ( $term instanceof \WP_Term && Schema::TAX_WOO_CATEGORY === $term->taxonomy ) {
+			return (int) $term->count;
+		}
+
 		$query = new WP_Query(
 			array(
 				'post_type'      => Schema::CPT_PRODUCT,

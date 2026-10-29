@@ -2,15 +2,19 @@
 /**
  * Products REST controller — Payload-compatible endpoints.
  *
+ * Delegates every operation to the active product sources
+ * (FuniqBridge\Sources) — the built-in CPTs, WooCommerce, or both merged —
+ * so the contract shape is identical regardless of backing store.
+ *
  * @package FuniqBridge\REST
  */
 
 namespace FuniqBridge\REST;
 
 use FuniqBridge\Schema;
-use FuniqBridge\Transformers\ProductTransformer;
+use FuniqBridge\Sources\ProductSources;
+use FuniqBridge\Sources\WhereClause;
 use WP_Error;
-use WP_Query;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -19,7 +23,7 @@ use WP_REST_Server;
  * Handles /funiq/v1/products and /funiq/v1/products/{id}.
  *
  * GET is public (matches Payload's read: () => true).
- * POST/PUT/DELETE require manage_funiq capability.
+ * POST/PUT/DELETE require the manage capability.
  */
 class ProductsController extends BaseController {
 
@@ -101,7 +105,11 @@ class ProductsController extends BaseController {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * GET /funiq/v1/products
+	 * GET /funiq/v1/products — merged across all active sources.
+	 *
+	 * Each source paginates independently and the pages are concatenated
+	 * (native first, then WooCommerce) with summed totals — documented
+	 * merged-pagination semantics.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
@@ -109,26 +117,16 @@ class ProductsController extends BaseController {
 	public function get_items( $request ) {
 		$page  = max( 1, (int) ( $request->get_param( 'page' ) ?: 1 ) );
 		$limit = max( 1, min( 100, (int) ( $request->get_param( 'limit' ) ?: 10 ) ) );
+		$where = WhereClause::normalize( $request->get_param( 'where' ) );
+		$sort  = $request->get_param( 'sort' ) ? (string) $request->get_param( 'sort' ) : null;
 
-		$args = array(
-			'post_type'      => Schema::CPT_PRODUCT,
-			'post_status'    => 'publish',
-			'paged'          => $page,
-			'posts_per_page' => $limit,
-			'orderby'        => 'date',
-			'order'          => 'DESC',
-		);
+		$docs  = array();
+		$total = 0;
 
-		$this->apply_where_query( $args, $request->get_param( 'where' ) );
-		$this->apply_sort( $args, $request->get_param( 'sort' ) );
-
-		$query       = new WP_Query( $args );
-		$total       = (int) $query->found_posts;
-		$docs        = array();
-		$transformer = new ProductTransformer();
-
-		foreach ( $query->posts as $post ) {
-			$docs[] = $transformer->transform( $post );
+		foreach ( ProductSources::active() as $source ) {
+			$result = $source->list_products( $page, $limit, $where, $sort );
+			$docs   = array_merge( $docs, $result['docs'] );
+			$total += $result['total'];
 		}
 
 		return rest_ensure_response(
@@ -141,30 +139,35 @@ class ProductsController extends BaseController {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * POST /funiq/v1/products
+	 * POST /funiq/v1/products — routed to the requested (or primary) source.
+	 *
+	 * The optional `source` body field (native|woocommerce) selects the
+	 * backing store in `both` mode; the primary source is the default.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
-		$product_id = wp_insert_post(
-			array(
-				'post_type'    => Schema::CPT_PRODUCT,
-				'post_title'   => sanitize_text_field( $request->get_param( 'name' ) ?? '' ),
-				'post_content' => wp_kses_post( $request->get_param( 'description' ) ?? '' ),
-				'post_status'  => 'publish',
-			),
-			true
-		);
+		$data = $request->get_json_params();
+		if ( ! is_array( $data ) ) {
+			$data = array();
+		}
+		$source = ProductSources::from_name( isset( $data['source'] ) ? (string) $data['source'] : null );
 
-		if ( is_wp_error( $product_id ) ) {
-			return $product_id;
+		if ( null === $source ) {
+			return new WP_Error(
+				'funiq_invalid_source',
+				'Unknown or inactive product source.',
+				array( 'status' => 400 )
+			);
 		}
 
-		$this->save_meta( $product_id, $request->get_json_params() );
-		$this->save_taxonomies( $product_id, $request->get_json_params() );
+		$result = $source->create_product( $data );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
 
-		return $this->build_single_response( $product_id );
+		return rest_ensure_response( $result );
 	}
 
 	// -----------------------------------------------------------------------
@@ -172,16 +175,16 @@ class ProductsController extends BaseController {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * GET /funiq/v1/products/{id}
+	 * GET /funiq/v1/products/{id} — routed by the post's owning source.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
 		$product_id = (int) $request['id'];
-		$post       = get_post( $product_id );
+		$source     = ProductSources::resolve( $product_id );
 
-		if ( ! $post || Schema::CPT_PRODUCT !== $post->post_type ) {
+		if ( null === $source ) {
 			return new WP_Error(
 				'funiq_not_found',
 				'Product not found.',
@@ -189,7 +192,16 @@ class ProductsController extends BaseController {
 			);
 		}
 
-		return $this->build_single_response( $product_id );
+		$doc = $source->get_product( $product_id );
+		if ( null === $doc ) {
+			return new WP_Error(
+				'funiq_not_found',
+				'Product not found.',
+				array( 'status' => 404 )
+			);
+		}
+
+		return rest_ensure_response( $doc );
 	}
 
 	// -----------------------------------------------------------------------
@@ -197,16 +209,16 @@ class ProductsController extends BaseController {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * PUT /funiq/v1/products/{id}
+	 * PUT /funiq/v1/products/{id} — routed by the post's owning source.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
 		$product_id = (int) $request['id'];
-		$post       = get_post( $product_id );
+		$source     = ProductSources::resolve( $product_id );
 
-		if ( ! $post || Schema::CPT_PRODUCT !== $post->post_type ) {
+		if ( null === $source ) {
 			return new WP_Error(
 				'funiq_not_found',
 				'Product not found.',
@@ -215,19 +227,16 @@ class ProductsController extends BaseController {
 		}
 
 		$data = $request->get_json_params();
+		if ( ! is_array( $data ) ) {
+			$data = array();
+		}
 
-		wp_update_post(
-			array(
-				'ID'           => $product_id,
-				'post_title'   => isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : $post->post_title,
-				'post_content' => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : $post->post_content,
-			)
-		);
+		$result = $source->update_product( $product_id, $data );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
 
-		$this->save_meta( $product_id, $data );
-		$this->save_taxonomies( $product_id, $data );
-
-		return $this->build_single_response( $product_id );
+		return rest_ensure_response( $result );
 	}
 
 	// -----------------------------------------------------------------------
@@ -235,16 +244,16 @@ class ProductsController extends BaseController {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * DELETE /funiq/v1/products/{id}
+	 * DELETE /funiq/v1/products/{id} — routed by the post's owning source.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
 		$product_id = (int) $request['id'];
-		$post       = get_post( $product_id );
+		$source     = ProductSources::resolve( $product_id );
 
-		if ( ! $post || Schema::CPT_PRODUCT !== $post->post_type ) {
+		if ( null === $source ) {
 			return new WP_Error(
 				'funiq_not_found',
 				'Product not found.',
@@ -252,257 +261,17 @@ class ProductsController extends BaseController {
 			);
 		}
 
-		$result = wp_delete_post( $product_id, true );
-		if ( ! $result ) {
-			return new WP_Error(
-				'funiq_delete_failed',
-				'Failed to delete product.',
-				array( 'status' => 500 )
-			);
+		$result = $source->delete_product( $product_id );
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 
 		return new WP_REST_Response( null, 204 );
 	}
 
 	// -----------------------------------------------------------------------
-	// Helpers.
+	// Params + schema.
 	// -----------------------------------------------------------------------
-
-	/**
-	 * Save product meta fields from request data.
-	 *
-	 * @param int                  $product_id Post ID.
-	 * @param array<string, mixed> $data       Request body.
-	 * @return void
-	 */
-	private function save_meta( int $product_id, array $data ): void {
-		$meta_map = array(
-			Schema::META_PRICE         => array( $data, 'price', 'floatval' ),
-			Schema::META_OLD_PRICE     => array( $data, 'oldPrice', 'floatval' ),
-			Schema::META_WIDTH         => array( $data, 'width', 'floatval' ),
-			Schema::META_HEIGHT        => array( $data, 'height', 'floatval' ),
-			Schema::META_DEPTH         => array( $data, 'depth', 'floatval' ),
-			Schema::META_RATING        => array( $data, 'rating', 'floatval' ),
-			Schema::META_IS_BESTSELLER => array( $data, 'isBestseller', 'boolval' ),
-			Schema::META_IS_FEATURED   => array( $data, 'isFeatured', 'boolval' ),
-			Schema::META_GALLERY       => array( $data, 'images', null ),
-		);
-
-		foreach ( $meta_map as $key => list( $source, $field, $cast ) ) {
-			if ( ! array_key_exists( $field, $source ) ) {
-				continue;
-			}
-			$value = $source[ $field ];
-			if ( null !== $cast ) {
-				$value = call_user_func( $cast, $value );
-			}
-			update_post_meta( $product_id, $key, $value );
-		}
-
-		// Promotion is a single relationship ({ id, ... }) in the SPA payload —
-		// extract the ID explicitly. intval() on the object coerces to 1.
-		if ( array_key_exists( 'promotion', $data ) ) {
-			$promotion = $data['promotion'];
-			$promo_id  = 0;
-			if ( is_array( $promotion ) && isset( $promotion['id'] ) ) {
-				$promo_id = (int) $promotion['id'];
-			} elseif ( is_numeric( $promotion ) ) {
-				$promo_id = (int) $promotion;
-			}
-			update_post_meta( $product_id, Schema::META_PROMOTION_ID, $promo_id );
-		}
-
-		// Handle featured image — accept either `image` (numeric ID or URL) or
-		// `imageId` (numeric ID). The admin SPA sends `imageId` from ImageUpload.
-		$thumbnail_id = $data['imageId'] ?? $data['image'] ?? null;
-		if ( null !== $thumbnail_id ) {
-			if ( is_numeric( $thumbnail_id ) && (int) $thumbnail_id > 0 ) {
-				set_post_thumbnail( $product_id, (int) $thumbnail_id );
-			} elseif ( empty( $thumbnail_id ) ) {
-				delete_post_thumbnail( $product_id );
-			}
-		}
-
-		// Handle gallery — accept `imagesIds` (array of attachment IDs) or
-		// `images` (array of URLs or IDs).
-		$gallery_ids = $data['imagesIds'] ?? $data['images'] ?? null;
-		if ( null !== $gallery_ids && is_array( $gallery_ids ) ) {
-			$gallery_ids = array_filter(
-				array_map(
-					static function ( $v ) {
-						return is_numeric( $v ) ? (int) $v : 0;
-					},
-					$gallery_ids
-				)
-			);
-			update_post_meta( $product_id, Schema::META_GALLERY, $gallery_ids );
-		}
-	}
-
-	/**
-	 * Save taxonomy terms from request data.
-	 *
-	 * @param int                  $product_id Post ID.
-	 * @param array<string, mixed> $data       Request body.
-	 * @return void
-	 */
-	private function save_taxonomies( int $product_id, array $data ): void {
-		$tax_map = array(
-			Schema::TAX_CATEGORY => 'category',
-			Schema::TAX_BRAND    => 'brand',
-			Schema::TAX_COLOR    => 'colors',
-			Schema::TAX_STATUS   => 'statuses',
-		);
-
-		foreach ( $tax_map as $taxonomy => $field ) {
-			if ( ! isset( $data[ $field ] ) ) {
-				continue;
-			}
-
-			$value = $data[ $field ];
-
-			// Single relationship (category, brand): expect { id, name } or null.
-			if ( in_array( $field, array( 'category', 'brand' ), true ) ) {
-				$term_ids = null === $value ? array() : array( (int) $value['id'] ?? 0 );
-			} else {
-				// hasMany: array of { id, name }.
-				$term_ids = array_map(
-					static fn( $item ) => (int) ( $item['id'] ?? 0 ),
-					(array) $value
-				);
-			}
-
-			$term_ids = array_filter( $term_ids );
-			wp_set_object_terms( $product_id, $term_ids, $taxonomy, false );
-		}
-	}
-
-	/**
-	 * Apply Payload-style where query to WP_Query args.
-	 *
-	 * Supported operators (bridge enhancement B2, Proposal 092):
-	 * - id.equals
-	 * - name.like (free-text search)
-	 * - category.equals / category.in
-	 * - brand.equals / brand.in
-	 * - colors.equals / colors.in
-	 * - statuses.equals / statuses.in
-	 *
-	 * @param array<string, mixed> $args  WP_Query args (by reference).
-	 * @param mixed                $where Where param from request.
-	 * @return void
-	 */
-	private function apply_where_query( array &$args, $where ): void {
-		if ( empty( $where ) || ! is_array( $where ) ) {
-			return;
-		}
-
-		$tax_map = array(
-			'category' => Schema::TAX_CATEGORY,
-			'brand'    => Schema::TAX_BRAND,
-			'colors'   => Schema::TAX_COLOR,
-			'statuses' => Schema::TAX_STATUS,
-		);
-
-		foreach ( $where as $field => $operators ) {
-			if ( ! is_array( $operators ) ) {
-				continue;
-			}
-			foreach ( $operators as $operator => $value ) {
-				$operator = sanitize_key( (string) $operator );
-
-				if ( 'id' === $field && 'equals' === $operator ) {
-					$args['p'] = (int) $value;
-				}
-
-				if ( 'name' === $field && 'like' === $operator ) {
-					$args['s'] = sanitize_text_field( (string) $value );
-				}
-
-				if ( isset( $tax_map[ $field ] ) && in_array( $operator, array( 'equals', 'in' ), true ) ) {
-					$terms = 'equals' === $operator
-						? array( (int) $value )
-						: array_map( 'intval', (array) $value );
-					$terms = array_values( array_filter( $terms ) );
-					if ( empty( $terms ) ) {
-						continue;
-					}
-					$args['tax_query'][] = array(
-						'taxonomy' => $tax_map[ $field ],
-						'field'    => 'term_id',
-						'terms'    => $terms,
-					);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Apply sort param to WP_Query args (bridge enhancement B2, Proposal 092).
-	 *
-	 * Accepted values: date (default), -date, price, -price, rating,
-	 * -rating, name, -name. The `-` prefix flips to ascending.
-	 *
-	 * Note: price/rating sorting uses meta_value_num with the matching meta
-	 * key; posts missing that key sort last. Bridge-managed products always
-	 * carry price (schema-required), so this is an edge case only.
-	 *
-	 * @param array<string, mixed> $args WP_Query args (by reference).
-	 * @param mixed                $sort Sort param from request.
-	 * @return void
-	 */
-	private function apply_sort( array &$args, $sort ): void {
-		if ( empty( $sort ) || ! is_string( $sort ) ) {
-			return;
-		}
-
-		$direction = 'DESC';
-		$field     = $sort;
-		if ( '-' === substr( $field, 0, 1 ) ) {
-			$direction = 'ASC';
-			$field     = substr( $field, 1 );
-		}
-
-		switch ( $field ) {
-			case 'price':
-				$args['orderby']  = 'meta_value_num';
-				$args['meta_key'] = Schema::META_PRICE;
-				break;
-			case 'rating':
-				$args['orderby']  = 'meta_value_num';
-				$args['meta_key'] = Schema::META_RATING;
-				break;
-			case 'name':
-				$args['orderby'] = 'title';
-				break;
-			case 'date':
-			default:
-				$args['orderby'] = 'date';
-				break;
-		}
-
-		$args['order'] = $direction;
-	}
-
-	/**
-	 * Build a single-product REST response.
-	 *
-	 * @param int $product_id Product post ID.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	private function build_single_response( int $product_id ) {
-		$post = get_post( $product_id );
-		if ( ! $post ) {
-			return new WP_Error(
-				'funiq_not_found',
-				'Product not found after save.',
-				array( 'status' => 500 )
-			);
-		}
-
-		$transformer = new ProductTransformer();
-		return rest_ensure_response( $transformer->transform( $post ) );
-	}
 
 	/**
 	 * Get collection params for GET /products.
@@ -566,7 +335,7 @@ class ProductsController extends BaseController {
 
 		$this->schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'funiq_product',
+			'title'      => 'product',
 			'type'       => 'object',
 			'properties' => array(
 				'id'           => array( 'type' => 'integer' ),
@@ -609,6 +378,11 @@ class ProductsController extends BaseController {
 				'promotion'    => array( 'type' => array( 'object', 'null' ) ),
 				'createdAt'    => array( 'type' => 'string' ),
 				'updatedAt'    => array( 'type' => 'string' ),
+				'source'       => array(
+					'type'        => 'string',
+					'description' => 'Backing store: native (built-in) or woocommerce.',
+					'enum'        => array( Schema::SOURCE_NATIVE, Schema::SOURCE_WOO ),
+				),
 			),
 		);
 
