@@ -14,17 +14,25 @@ export type ProxyRequestLike = {
 
 export function requestOrigin(req: ProxyRequestLike): string;
 
+export const HOP_BY_HOP: Set<string>;
+
+export function buildUpstreamHeaders(
+	headers: Record<string, string | string[] | undefined>,
+	options: { targetHost: string; origin: string }
+): Record<string, string | string[] | undefined>;
+
 export function stripDomainFromSetCookie(
 	setCookies: string | string[] | undefined
 ): string | string[] | undefined;
 
 export function rewriteLocation(
 	location: string | undefined,
-	targetSite: string,
-	origin: string
+	targetSite: string
 ): string | undefined;
+
+export function rewriteLoginPageHtml(html: string): string;
 
 export function applyAdminResponseHeaders(
 	headers: Record<string, string | string[] | number | undefined>,
-	options: { targetSite: string; origin: string }
+	options: { targetSite: string }
 ): Record<string, string | string[] | number | undefined>;

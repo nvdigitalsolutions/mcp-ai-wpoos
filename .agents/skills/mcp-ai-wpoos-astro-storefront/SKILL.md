@@ -101,6 +101,23 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   idempotent and registers CPTs/taxonomies/REST routes directly when
   `init`/`rest_api_init` already fired. If the contract returns 404 on a
   fleet site, check for a late-loader before touching the bridge.
+- **Admin login proxy (incident + fix 2026-10-29):** the storefront BFF
+  (`scripts/serve.mjs` + `scripts/lib/proxy-headers.mjs`) is a login gateway
+  for the backend WP admin, ported from the Complete Console BFF pattern and
+  hardened to industry standards: `/wp-login.php` HTML bodies are re-scoped
+  to the app origin (absolute form action + hidden `redirect_to` → relative,
+  identity body via `Accept-Encoding` strip, text/html + 4 MB gates), admin
+  Locations become **relative** with `redirect_to` re-scoped (nginx
+  `proxy_redirect` pattern), Set-Cookie `Domain` is stripped (OWASP:
+  host-only cookies), and upstream requests overwrite
+  `x-forwarded-proto/host/port` (spoof-safe — never echo client copies) while
+  dropping `origin`/`referer`. Admin HTML pages are NOT body-rewritten — the
+  proxied wp-admin keeps absolute backend links; managers doing real admin
+  work use the backend `admin_url` (the console sidesteps this because its
+  SPA is the UI). Pinned by `tests/unit/proxy-headers.test.ts`.
+- **Mirror deploy tree (PR #7291):** `sync-dist.mjs` must ship every runtime
+  import of `serve.mjs` (now `scripts/lib/`); a staged-tree boot smoke fails
+  the assemble step when the tree crashes at boot (the 2026-10-29 502).
 
 ## Deploy & revalidation
 
