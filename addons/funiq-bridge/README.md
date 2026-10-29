@@ -116,9 +116,9 @@ with it.
 |--------|------|------|
 | `GET` | `/products[?page=&limit=&where=...&sort=...]` | Public |
 | `GET` | `/products/{id}` | Public |
-| `POST` | `/products` | `manage_funiq` |
-| `PUT` | `/products/{id}` | `manage_funiq` |
-| `DELETE` | `/products/{id}` | `manage_funiq` |
+| `POST` | `/products` | `manage_astro` |
+| `PUT` | `/products/{id}` | `manage_astro` |
+| `DELETE` | `/products/{id}` | `manage_astro` |
 | `GET`/`POST`/`PUT`/`DELETE` | `/categories[/{id}]` | Read public / Write cap |
 | `GET`/`POST`/`PUT`/`DELETE` | `/brands[/{id}]` | Read public / Write cap |
 | `GET`/`POST`/`PUT`/`DELETE` | `/colors[/{id}]` | Read public / Write cap |
@@ -133,6 +133,17 @@ with it.
 | `POST` | `/auth/login` | Public |
 | `POST` | `/auth/logout` | Public |
 | `GET` | `/auth/me` | Logged-in cookie |
+| `GET` | `/managers[?search=&page=&limit=]` | `manage_astro` |
+| `PUT` | `/managers/{id}` (`{"manage": true|false}`) | `manage_astro` |
+
+**Managers:** `GET /managers` lists every user holding the `manage_astro`
+capability (role- or user-granted). `?search=` returns up to 20 matching
+users (by name or email) with an `isManager` flag, powering the CMS "add a
+manager" picker. `PUT /managers/{id}` promotes (`manage: true`) or demotes
+(`manage: false`) via a user-level capability grant — role capabilities are
+never touched. Guardrails: site owners (super admins) cannot be modified
+from the CMS, and a manager cannot remove their own access. The
+`funiq_bridge_managers_protected_user` filter extends the protected set.
 
 **Filtering & sorting (B2):** `where` supports `id.equals`, `name.like`,
 `category.equals`/`category.in`, `brand.equals`/`brand.in`,

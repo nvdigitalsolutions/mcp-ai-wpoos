@@ -6,11 +6,12 @@ import { Layout } from './components/Layout';
 import { Sidebar } from './components/Sidebar';
 import { ListView } from './components/ListView';
 import { EditForm } from './components/EditForm';
+import { ManagersView } from './components/ManagersView';
 import { collections } from './config/collections';
-import type { CollectionSlug } from './types';
+import type { NavSlug } from './types';
 
 export function AdminApp() {
-  const [activeSlug, setActiveSlug] = useState<CollectionSlug>('products');
+  const [activeSlug, setActiveSlug] = useState<NavSlug>('products');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -35,15 +36,17 @@ export function AdminApp() {
     <Layout
       sidebar={<Sidebar activeSlug={activeSlug} onSelect={(s) => { setActiveSlug(s); handleBack(); }} />}
     >
-      {editingId !== null || creating ? (
+      {activeSlug === 'managers' || !activeCollection ? (
+        <ManagersView />
+      ) : editingId !== null || creating ? (
         <EditForm
-          config={activeCollection!}
+          config={activeCollection}
           id={editingId}
           onBack={handleBack}
         />
       ) : (
         <ListView
-          config={activeCollection!}
+          config={activeCollection}
           onEdit={handleEdit}
           onCreate={handleCreate}
         />

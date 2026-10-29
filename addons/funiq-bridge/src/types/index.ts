@@ -99,12 +99,27 @@ export interface PaginatedResponse<T> {
   hasPrevPage: boolean;
 }
 
+/** Astro CMS manager — a WordPress user with the manage capability. */
+export interface Manager {
+	id: number;
+	email: string;
+	name: string;
+	isManager: boolean;
+	/** Site owner (super admin) — the CMS can never modify these. */
+	protected: boolean;
+	/** The currently signed-in user. */
+	isSelf: boolean;
+}
+
 /** All collection types supported by the admin. */
 export type CollectionSlug =
-  | 'products'
-  | 'categories'
-  | 'brands'
-  | 'colors'
-  | 'statuses'
-  | 'promotions'
-  | 'promocodes';
+	| 'products'
+	| 'categories'
+	| 'brands'
+	| 'colors'
+	| 'statuses'
+	| 'promotions'
+	| 'promocodes';
+
+/** Sidebar navigation targets — collections plus the managers section. */
+export type NavSlug = CollectionSlug | 'managers';

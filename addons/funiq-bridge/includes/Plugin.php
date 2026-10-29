@@ -20,6 +20,7 @@ use FuniqBridge\REST\{
 	CarouselController,
 	CategoriesController,
 	ColorsController,
+	ManagersController,
 	MediaController,
 	ProductsController,
 	PromocodesController,
@@ -167,6 +168,7 @@ final class Plugin {
 			new CarouselController(),
 			new AuthController(),
 			new MediaController(),
+			new ManagersController(),
 		);
 
 		foreach ( $controllers as $controller ) {
