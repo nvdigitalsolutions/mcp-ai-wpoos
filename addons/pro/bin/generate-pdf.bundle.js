@@ -177222,6 +177222,9 @@ var require_symbols = __commonJS({
       kDestroy: /* @__PURE__ */ Symbol("destroy"),
       kDispatch: /* @__PURE__ */ Symbol("dispatch"),
       kUrl: /* @__PURE__ */ Symbol("url"),
+      kRequestOrigin: /* @__PURE__ */ Symbol("request origin"),
+      kRedirectCacheControl: /* @__PURE__ */ Symbol("redirect cache control"),
+      kOriginless: /* @__PURE__ */ Symbol("originless"),
       kWriting: /* @__PURE__ */ Symbol("writing"),
       kResuming: /* @__PURE__ */ Symbol("resuming"),
       kQueue: /* @__PURE__ */ Symbol("queue"),
@@ -177287,6 +177290,7 @@ var require_symbols = __commonJS({
       kRemoteSettings: /* @__PURE__ */ Symbol("http2session remote settings"),
       kHTTP2Stream: /* @__PURE__ */ Symbol("http2session client stream"),
       kPingInterval: /* @__PURE__ */ Symbol("ping interval"),
+      kUseMilo: /* @__PURE__ */ Symbol("use milo"),
       kNoProxyAgent: /* @__PURE__ */ Symbol("no proxy agent"),
       kHttpProxyAgent: /* @__PURE__ */ Symbol("http proxy agent"),
       kHttpsProxyAgent: /* @__PURE__ */ Symbol("https proxy agent"),
@@ -177783,6 +177787,19 @@ var require_errors = __commonJS({
         return true;
       }
     };
+    var kWebAssemblyNotSupportedError = /* @__PURE__ */ Symbol.for("undici.error.ERR_WEBASSEMBLY_NOT_SUPPORTED");
+    var WebAssemblyNotSupportedError = class extends Error {
+      constructor(message) {
+        super(message || "WebAssembly is not supported in this environment, but is required for HTTP/1 parsing");
+        this.code = "ERR_WEBASSEMBLY_NOT_SUPPORTED";
+      }
+      static [Symbol.hasInstance](instance) {
+        return instance && instance[kWebAssemblyNotSupportedError] === true;
+      }
+      get [kWebAssemblyNotSupportedError]() {
+        return true;
+      }
+    };
     var kHTTPParserError = /* @__PURE__ */ Symbol.for("undici.error.UND_ERR_HTTP_PARSER");
     var HTTPParserError = class extends Error {
       constructor(message, code, data) {
@@ -177833,13 +177850,14 @@ var require_errors = __commonJS({
     };
     var kResponseError = /* @__PURE__ */ Symbol.for("undici.error.UND_ERR_RESPONSE");
     var ResponseError = class extends UndiciError {
-      constructor(message, code, { headers, body }) {
+      constructor(message, code, { headers, body, bodyTruncated = false }) {
         super(message);
         this.name = "ResponseError";
         this.message = message || "Response error";
         this.code = "UND_ERR_RESPONSE";
         this.statusCode = code;
         this.body = body;
+        this.bodyTruncated = bodyTruncated;
         this.headers = headers;
       }
       static [Symbol.hasInstance](instance) {
@@ -177878,6 +177896,21 @@ var require_errors = __commonJS({
         return instance && instance[kProxyConnectionError] === true;
       }
       get [kProxyConnectionError]() {
+        return true;
+      }
+    };
+    var kMaxRedirectsError = /* @__PURE__ */ Symbol.for("undici.error.UND_ERR_REDIRECT_MAX");
+    var MaxRedirectsError = class extends UndiciError {
+      constructor(message) {
+        super(message);
+        this.name = "MaxRedirectsError";
+        this.message = message || "max redirects";
+        this.code = "UND_ERR_REDIRECT_MAX";
+      }
+      static [Symbol.hasInstance](instance) {
+        return instance && instance[kMaxRedirectsError] === true;
+      }
+      get [kMaxRedirectsError]() {
         return true;
       }
     };
@@ -177921,6 +177954,7 @@ var require_errors = __commonJS({
     };
     module2.exports = {
       AbortError,
+      WebAssemblyNotSupportedError,
       HTTPParserError,
       UndiciError,
       HeadersTimeoutError,
@@ -177944,6 +177978,7 @@ var require_errors = __commonJS({
       SecureProxyConnectionError,
       ProxyConnectionError,
       MaxOriginsReachedError,
+      MaxRedirectsError,
       Socks5ProxyError,
       MessageSizeExceededError
     };
@@ -178061,9 +178096,13 @@ var require_constants = __commonJS({
       const lowerCasedKey = key.toLowerCase();
       headerNameLowerCasedRecord[key] = headerNameLowerCasedRecord[lowerCasedKey] = lowerCasedKey;
     }
+    var defaultWebSocketMaxFragments = 131072;
+    var defaultWebSocketMaxPayloadSize = 128 * 1024 * 1024;
     module2.exports = {
       wellknownHeaderNames,
-      headerNameLowerCasedRecord
+      headerNameLowerCasedRecord,
+      defaultWebSocketMaxFragments,
+      defaultWebSocketMaxPayloadSize
     };
   }
 });
@@ -178415,7 +178454,7 @@ var require_util = __commonJS({
         stream2[kDestroyed] = true;
       }
     }
-    var KEEPALIVE_TIMEOUT_EXPR = /timeout=(\d+)/;
+    var KEEPALIVE_TIMEOUT_EXPR = /(?:^|,)[\t ]*timeout=(\d+)/i;
     function parseKeepAliveTimeout(val) {
       const m = val.match(KEEPALIVE_TIMEOUT_EXPR);
       return m ? parseInt(m[1], 10) * 1e3 : null;
@@ -178425,6 +178464,18 @@ var require_util = __commonJS({
     }
     function bufferToLowerCasedHeaderName(value) {
       return tree.lookup(value) ?? value.toString("latin1").toLowerCase();
+    }
+    function setHeader(obj, key, value) {
+      if (key === "__proto__") {
+        Object.defineProperty(obj, key, {
+          value,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      } else {
+        obj[key] = value;
+      }
     }
     function parseHeaders(headers, obj) {
       if (obj === void 0) obj = {};
@@ -178557,38 +178608,6 @@ var require_util = __commonJS({
         bytesWritten: socket.bytesWritten,
         bytesRead: socket.bytesRead
       };
-    }
-    function ReadableStreamFrom(iterable) {
-      let iterator;
-      return new ReadableStream(
-        {
-          start() {
-            iterator = iterable[Symbol.asyncIterator]();
-          },
-          pull(controller) {
-            return iterator.next().then(({ done, value }) => {
-              if (done) {
-                return queueMicrotask(() => {
-                  var _a;
-                  controller.close();
-                  (_a = controller.byobRequest) == null ? void 0 : _a.respond(0);
-                });
-              } else {
-                const buf = Buffer.isBuffer(value) ? value : Buffer.from(value);
-                if (buf.byteLength) {
-                  return controller.enqueue(new Uint8Array(buf));
-                } else {
-                  return this.pull(controller);
-                }
-              }
-            });
-          },
-          cancel() {
-            return iterator.return();
-          },
-          type: "bytes"
-        }
-      );
     }
     function isFormDataLike(object) {
       return object && typeof object === "object" && typeof object.append === "function" && typeof object.delete === "function" && typeof object.get === "function" && typeof object.getAll === "function" && typeof object.has === "function" && typeof object.set === "function" && object[Symbol.toStringTag] === "FormData";
@@ -179046,11 +179065,11 @@ var require_util = __commonJS({
       toRawHeaders,
       encodeRawHeaders,
       parseHeaders,
+      setHeader,
       parseKeepAliveTimeout,
       destroy,
       bodyLength,
       deepClone,
-      ReadableStreamFrom,
       isBuffer,
       assertRequestHandler,
       getSocketInfo,
@@ -179325,6 +179344,2299 @@ var require_diagnostics = __commonJS({
   }
 });
 
+// addons/pro/node_modules/undici/lib/web/fetch/constants.js
+var require_constants2 = __commonJS({
+  "addons/pro/node_modules/undici/lib/web/fetch/constants.js"(exports2, module2) {
+    "use strict";
+    var corsSafeListedMethods = (
+      /** @type {const} */
+      ["GET", "HEAD", "POST"]
+    );
+    var corsSafeListedMethodsSet = new Set(corsSafeListedMethods);
+    var nullBodyStatus = (
+      /** @type {const} */
+      [101, 204, 205, 304]
+    );
+    var redirectStatus = (
+      /** @type {const} */
+      [301, 302, 303, 307, 308]
+    );
+    var redirectStatusSet = new Set(redirectStatus);
+    var badPorts = (
+      /** @type {const} */
+      [
+        "1",
+        "7",
+        "9",
+        "11",
+        "13",
+        "15",
+        "17",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "25",
+        "37",
+        "42",
+        "43",
+        "53",
+        "69",
+        "77",
+        "79",
+        "87",
+        "95",
+        "101",
+        "102",
+        "103",
+        "104",
+        "109",
+        "110",
+        "111",
+        "113",
+        "115",
+        "117",
+        "119",
+        "123",
+        "135",
+        "137",
+        "139",
+        "143",
+        "161",
+        "179",
+        "389",
+        "427",
+        "465",
+        "512",
+        "513",
+        "514",
+        "515",
+        "526",
+        "530",
+        "531",
+        "532",
+        "540",
+        "548",
+        "554",
+        "556",
+        "563",
+        "587",
+        "601",
+        "636",
+        "989",
+        "990",
+        "993",
+        "995",
+        "1719",
+        "1720",
+        "1723",
+        "2049",
+        "3659",
+        "4045",
+        "4190",
+        "5060",
+        "5061",
+        "6000",
+        "6566",
+        "6665",
+        "6666",
+        "6667",
+        "6668",
+        "6669",
+        "6679",
+        "6697",
+        "10080"
+      ]
+    );
+    var badPortsSet = new Set(badPorts);
+    var referrerPolicyTokens = (
+      /** @type {const} */
+      [
+        "no-referrer",
+        "no-referrer-when-downgrade",
+        "same-origin",
+        "origin",
+        "strict-origin",
+        "origin-when-cross-origin",
+        "strict-origin-when-cross-origin",
+        "unsafe-url"
+      ]
+    );
+    var referrerPolicy = (
+      /** @type {const} */
+      [
+        "",
+        ...referrerPolicyTokens
+      ]
+    );
+    var referrerPolicyTokensSet = new Set(referrerPolicyTokens);
+    var requestRedirect = (
+      /** @type {const} */
+      ["follow", "manual", "error"]
+    );
+    var safeMethods = (
+      /** @type {const} */
+      ["GET", "HEAD", "OPTIONS", "TRACE", "QUERY"]
+    );
+    var safeMethodsSet = new Set(safeMethods);
+    var requestMode = (
+      /** @type {const} */
+      ["navigate", "same-origin", "no-cors", "cors"]
+    );
+    var requestCredentials = (
+      /** @type {const} */
+      ["omit", "same-origin", "include"]
+    );
+    var requestCache = (
+      /** @type {const} */
+      [
+        "default",
+        "no-store",
+        "reload",
+        "no-cache",
+        "force-cache",
+        "only-if-cached"
+      ]
+    );
+    var requestBodyHeader = (
+      /** @type {const} */
+      [
+        "content-encoding",
+        "content-language",
+        "content-location",
+        "content-type",
+        // See https://github.com/nodejs/undici/issues/2021
+        // 'Content-Length' is a forbidden header name, which is typically
+        // removed in the Headers implementation. However, undici doesn't
+        // filter out headers, so we add it here.
+        "content-length"
+      ]
+    );
+    var requestDuplex = (
+      /** @type {const} */
+      [
+        "half"
+      ]
+    );
+    var forbiddenMethods = (
+      /** @type {const} */
+      ["CONNECT", "TRACE", "TRACK"]
+    );
+    var forbiddenMethodsSet = new Set(forbiddenMethods);
+    var subresource = (
+      /** @type {const} */
+      [
+        "audio",
+        "audioworklet",
+        "font",
+        "image",
+        "manifest",
+        "paintworklet",
+        "script",
+        "style",
+        "track",
+        "video",
+        "xslt",
+        ""
+      ]
+    );
+    var subresourceSet = new Set(subresource);
+    module2.exports = {
+      subresource,
+      forbiddenMethods,
+      requestBodyHeader,
+      referrerPolicy,
+      requestRedirect,
+      requestMode,
+      requestCredentials,
+      requestCache,
+      redirectStatus,
+      corsSafeListedMethods,
+      nullBodyStatus,
+      safeMethods,
+      badPorts,
+      requestDuplex,
+      subresourceSet,
+      badPortsSet,
+      redirectStatusSet,
+      corsSafeListedMethodsSet,
+      safeMethodsSet,
+      forbiddenMethodsSet,
+      referrerPolicyTokens: referrerPolicyTokensSet
+    };
+  }
+});
+
+// addons/pro/node_modules/undici/lib/web/fetch/global.js
+var require_global = __commonJS({
+  "addons/pro/node_modules/undici/lib/web/fetch/global.js"(exports2, module2) {
+    "use strict";
+    var globalOrigin = /* @__PURE__ */ Symbol.for("undici.globalOrigin.1");
+    function getGlobalOrigin() {
+      return globalThis[globalOrigin];
+    }
+    function setGlobalOrigin(newOrigin) {
+      if (newOrigin === void 0) {
+        Object.defineProperty(globalThis, globalOrigin, {
+          value: void 0,
+          writable: true,
+          enumerable: false,
+          configurable: false
+        });
+        return;
+      }
+      const parsedURL = new URL(newOrigin);
+      if (parsedURL.protocol !== "http:" && parsedURL.protocol !== "https:") {
+        throw new TypeError(`Only http & https urls are allowed, received ${parsedURL.protocol}`);
+      }
+      Object.defineProperty(globalThis, globalOrigin, {
+        value: parsedURL,
+        writable: true,
+        enumerable: false,
+        configurable: false
+      });
+    }
+    module2.exports = {
+      getGlobalOrigin,
+      setGlobalOrigin
+    };
+  }
+});
+
+// addons/pro/node_modules/undici/lib/encoding/index.js
+var require_encoding = __commonJS({
+  "addons/pro/node_modules/undici/lib/encoding/index.js"(exports2, module2) {
+    "use strict";
+    var textDecoder = new TextDecoder();
+    function utf8DecodeBytes(buffer) {
+      if (buffer.length === 0) {
+        return "";
+      }
+      if (buffer[0] === 239 && buffer[1] === 187 && buffer[2] === 191) {
+        buffer = buffer.subarray(3);
+      }
+      const output = textDecoder.decode(buffer);
+      return output;
+    }
+    module2.exports = {
+      utf8DecodeBytes
+    };
+  }
+});
+
+// addons/pro/node_modules/undici/lib/web/infra/index.js
+var require_infra = __commonJS({
+  "addons/pro/node_modules/undici/lib/web/infra/index.js"(exports2, module2) {
+    "use strict";
+    var assert = require("node:assert");
+    var { utf8DecodeBytes } = require_encoding();
+    function collectASequenceOfCodePoints(condition, input, position) {
+      let result = "";
+      while (position.position < input.length && condition(input[position.position])) {
+        result += input[position.position];
+        position.position++;
+      }
+      return result;
+    }
+    function collectASequenceOfCodePointsFast(char, input, position) {
+      const idx = input.indexOf(char, position.position);
+      const start = position.position;
+      if (idx === -1) {
+        position.position = input.length;
+        return input.slice(start);
+      }
+      position.position = idx;
+      return input.slice(start, position.position);
+    }
+    var ASCII_WHITESPACE_REPLACE_REGEX = /[\u0009\u000A\u000C\u000D\u0020]/g;
+    function forgivingBase64(data) {
+      data = data.replace(ASCII_WHITESPACE_REPLACE_REGEX, "");
+      let dataLength = data.length;
+      if (dataLength % 4 === 0) {
+        if (data.charCodeAt(dataLength - 1) === 61) {
+          --dataLength;
+          if (data.charCodeAt(dataLength - 1) === 61) {
+            --dataLength;
+          }
+        }
+      }
+      if (dataLength % 4 === 1) {
+        return "failure";
+      }
+      if (/[^+/0-9A-Za-z]/.test(data.length === dataLength ? data : data.substring(0, dataLength))) {
+        return "failure";
+      }
+      const buffer = Buffer.from(data, "base64");
+      return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    }
+    function isASCIIWhitespace(char) {
+      return char === 9 || // \t
+      char === 10 || // \n
+      char === 12 || // \f
+      char === 13 || // \r
+      char === 32;
+    }
+    function isomorphicDecode(input) {
+      const length = input.length;
+      if ((2 << 15) - 1 > length) {
+        return String.fromCharCode.apply(null, input);
+      }
+      let result = "";
+      let i = 0;
+      let addition = (2 << 15) - 1;
+      while (i < length) {
+        if (i + addition > length) {
+          addition = length - i;
+        }
+        result += String.fromCharCode.apply(null, input.subarray(i, i += addition));
+      }
+      return result;
+    }
+    var invalidIsomorphicEncodeValueRegex = /[^\x00-\xFF]/;
+    function isomorphicEncode(input) {
+      assert(!invalidIsomorphicEncodeValueRegex.test(input));
+      return input;
+    }
+    var nonASCIIRegex = /[^\x00-\x7F]/;
+    function asciiLowercase(str) {
+      return nonASCIIRegex.test(str) ? str.replace(/[A-Z]+/g, (upper) => upper.toLowerCase()) : str.toLowerCase();
+    }
+    function parseJSONFromBytes(bytes) {
+      return JSON.parse(utf8DecodeBytes(bytes));
+    }
+    function removeASCIIWhitespace(str, leading = true, trailing = true) {
+      return removeChars(str, leading, trailing, isASCIIWhitespace);
+    }
+    function removeChars(str, leading, trailing, predicate) {
+      let lead = 0;
+      let trail = str.length - 1;
+      if (leading) {
+        while (lead < str.length && predicate(str.charCodeAt(lead))) lead++;
+      }
+      if (trailing) {
+        while (trail >= lead && predicate(str.charCodeAt(trail))) trail--;
+      }
+      return lead === 0 && trail === str.length - 1 ? str : str.slice(lead, trail + 1);
+    }
+    function serializeJavascriptValueToJSONString(value) {
+      const result = JSON.stringify(value);
+      if (result === void 0) {
+        throw new TypeError("Value is not JSON serializable");
+      }
+      assert(typeof result === "string");
+      return result;
+    }
+    module2.exports = {
+      asciiLowercase,
+      collectASequenceOfCodePoints,
+      collectASequenceOfCodePointsFast,
+      forgivingBase64,
+      isASCIIWhitespace,
+      isomorphicDecode,
+      isomorphicEncode,
+      parseJSONFromBytes,
+      removeASCIIWhitespace,
+      removeChars,
+      serializeJavascriptValueToJSONString
+    };
+  }
+});
+
+// addons/pro/node_modules/undici/lib/web/fetch/data-url.js
+var require_data_url = __commonJS({
+  "addons/pro/node_modules/undici/lib/web/fetch/data-url.js"(exports2, module2) {
+    "use strict";
+    var assert = require("node:assert");
+    var { asciiLowercase, forgivingBase64, collectASequenceOfCodePoints, collectASequenceOfCodePointsFast, isomorphicDecode, removeASCIIWhitespace, removeChars } = require_infra();
+    var encoder = new TextEncoder();
+    var HTTP_TOKEN_CODEPOINTS = /^[-!#$%&'*+.^_`|~A-Za-z0-9]+$/u;
+    var HTTP_WHITESPACE_REGEX = /[\u000A\u000D\u0009\u0020]/u;
+    var HTTP_QUOTED_STRING_TOKENS = /^[\u0009\u0020-\u007E\u0080-\u00FF]+$/u;
+    function dataURLProcessor(dataURL) {
+      assert(dataURL.protocol === "data:");
+      let input = URLSerializer(dataURL, true);
+      input = input.slice(5);
+      const position = { position: 0 };
+      let mimeType = collectASequenceOfCodePointsFast(
+        ",",
+        input,
+        position
+      );
+      const mimeTypeLength = mimeType.length;
+      mimeType = removeASCIIWhitespace(mimeType, true, true);
+      if (position.position >= input.length) {
+        return "failure";
+      }
+      position.position++;
+      const encodedBody = input.slice(mimeTypeLength + 1);
+      let body = stringPercentDecode(encodedBody);
+      if (/;\u0020*[Bb][Aa][Ss][Ee]64$/u.test(mimeType)) {
+        const stringBody = isomorphicDecode(body);
+        body = forgivingBase64(stringBody);
+        if (body === "failure") {
+          return "failure";
+        }
+        mimeType = mimeType.slice(0, -6);
+        mimeType = mimeType.replace(/(\u0020+)$/u, "");
+        mimeType = mimeType.slice(0, -1);
+      }
+      if (mimeType.startsWith(";")) {
+        mimeType = "text/plain" + mimeType;
+      }
+      let mimeTypeRecord = parseMIMEType(mimeType);
+      if (mimeTypeRecord === "failure") {
+        mimeTypeRecord = parseMIMEType("text/plain;charset=US-ASCII");
+      }
+      return { mimeType: mimeTypeRecord, body };
+    }
+    function URLSerializer(url, excludeFragment = false) {
+      if (!excludeFragment) {
+        return url.href;
+      }
+      const href = url.href;
+      const hashLength = url.hash.length;
+      const serialized = hashLength === 0 ? href : href.substring(0, href.length - hashLength);
+      if (!hashLength && href.endsWith("#")) {
+        return serialized.slice(0, -1);
+      }
+      return serialized;
+    }
+    function stringPercentDecode(input) {
+      const bytes = encoder.encode(input);
+      return percentDecode(bytes);
+    }
+    function isHexCharByte(byte) {
+      return byte >= 48 && byte <= 57 || byte >= 65 && byte <= 70 || byte >= 97 && byte <= 102;
+    }
+    function hexByteToNumber(byte) {
+      return (
+        // 0-9
+        byte >= 48 && byte <= 57 ? byte - 48 : (byte & 223) - 55
+      );
+    }
+    function percentDecode(input) {
+      const length = input.length;
+      const output = new Uint8Array(length);
+      let j = 0;
+      let i = 0;
+      while (i < length) {
+        const byte = input[i];
+        if (byte !== 37) {
+          output[j++] = byte;
+        } else if (byte === 37 && !(isHexCharByte(input[i + 1]) && isHexCharByte(input[i + 2]))) {
+          output[j++] = 37;
+        } else {
+          output[j++] = hexByteToNumber(input[i + 1]) << 4 | hexByteToNumber(input[i + 2]);
+          i += 2;
+        }
+        ++i;
+      }
+      return length === j ? output : output.subarray(0, j);
+    }
+    function parseMIMEType(input) {
+      input = removeHTTPWhitespace(input, true, true);
+      const position = { position: 0 };
+      const type = collectASequenceOfCodePointsFast(
+        "/",
+        input,
+        position
+      );
+      if (type.length === 0 || !HTTP_TOKEN_CODEPOINTS.test(type)) {
+        return "failure";
+      }
+      if (position.position >= input.length) {
+        return "failure";
+      }
+      position.position++;
+      let subtype = collectASequenceOfCodePointsFast(
+        ";",
+        input,
+        position
+      );
+      subtype = removeHTTPWhitespace(subtype, false, true);
+      if (subtype.length === 0 || !HTTP_TOKEN_CODEPOINTS.test(subtype)) {
+        return "failure";
+      }
+      const typeLowercase = asciiLowercase(type);
+      const subtypeLowercase = asciiLowercase(subtype);
+      const mimeType = {
+        type: typeLowercase,
+        subtype: subtypeLowercase,
+        /** @type {Map<string, string>} */
+        parameters: /* @__PURE__ */ new Map(),
+        // https://mimesniff.spec.whatwg.org/#mime-type-essence
+        essence: `${typeLowercase}/${subtypeLowercase}`
+      };
+      while (position.position < input.length) {
+        position.position++;
+        collectASequenceOfCodePoints(
+          // https://fetch.spec.whatwg.org/#http-whitespace
+          (char) => HTTP_WHITESPACE_REGEX.test(char),
+          input,
+          position
+        );
+        let parameterName = collectASequenceOfCodePoints(
+          (char) => char !== ";" && char !== "=",
+          input,
+          position
+        );
+        parameterName = asciiLowercase(parameterName);
+        if (position.position < input.length) {
+          if (input[position.position] === ";") {
+            continue;
+          }
+          position.position++;
+        }
+        if (position.position >= input.length) {
+          break;
+        }
+        let parameterValue = null;
+        if (input[position.position] === '"') {
+          parameterValue = collectAnHTTPQuotedString(input, position, true);
+          collectASequenceOfCodePointsFast(
+            ";",
+            input,
+            position
+          );
+        } else {
+          parameterValue = collectASequenceOfCodePointsFast(
+            ";",
+            input,
+            position
+          );
+          parameterValue = removeHTTPWhitespace(parameterValue, false, true);
+          if (parameterValue.length === 0) {
+            continue;
+          }
+        }
+        if (parameterName.length !== 0 && HTTP_TOKEN_CODEPOINTS.test(parameterName) && (parameterValue.length === 0 || HTTP_QUOTED_STRING_TOKENS.test(parameterValue)) && !mimeType.parameters.has(parameterName)) {
+          mimeType.parameters.set(parameterName, parameterValue);
+        }
+      }
+      return mimeType;
+    }
+    function collectAnHTTPQuotedString(input, position, extractValue = false) {
+      const positionStart = position.position;
+      let value = "";
+      assert(input[position.position] === '"');
+      position.position++;
+      while (true) {
+        value += collectASequenceOfCodePoints(
+          (char) => char !== '"' && char !== "\\",
+          input,
+          position
+        );
+        if (position.position >= input.length) {
+          break;
+        }
+        const quoteOrBackslash = input[position.position];
+        position.position++;
+        if (quoteOrBackslash === "\\") {
+          if (position.position >= input.length) {
+            value += "\\";
+            break;
+          }
+          value += input[position.position];
+          position.position++;
+        } else {
+          assert(quoteOrBackslash === '"');
+          break;
+        }
+      }
+      if (extractValue) {
+        return value;
+      }
+      return input.slice(positionStart, position.position);
+    }
+    function serializeAMimeType(mimeType) {
+      assert(mimeType !== "failure");
+      const { parameters, essence } = mimeType;
+      let serialization = essence;
+      for (let [name, value] of parameters.entries()) {
+        serialization += ";";
+        serialization += name;
+        serialization += "=";
+        if (!HTTP_TOKEN_CODEPOINTS.test(value)) {
+          value = value.replace(/[\\"]/ug, "\\$&");
+          value = '"' + value;
+          value += '"';
+        }
+        serialization += value;
+      }
+      return serialization;
+    }
+    function isHTTPWhiteSpace(char) {
+      return char === 13 || char === 10 || char === 9 || char === 32;
+    }
+    function removeHTTPWhitespace(str, leading = true, trailing = true) {
+      return removeChars(str, leading, trailing, isHTTPWhiteSpace);
+    }
+    function minimizeSupportedMimeType(mimeType) {
+      switch (mimeType.essence) {
+        case "application/ecmascript":
+        case "application/javascript":
+        case "application/x-ecmascript":
+        case "application/x-javascript":
+        case "text/ecmascript":
+        case "text/javascript":
+        case "text/javascript1.0":
+        case "text/javascript1.1":
+        case "text/javascript1.2":
+        case "text/javascript1.3":
+        case "text/javascript1.4":
+        case "text/javascript1.5":
+        case "text/jscript":
+        case "text/livescript":
+        case "text/x-ecmascript":
+        case "text/x-javascript":
+          return "text/javascript";
+        case "application/json":
+        case "text/json":
+          return "application/json";
+        case "image/svg+xml":
+          return "image/svg+xml";
+        case "text/xml":
+        case "application/xml":
+          return "application/xml";
+      }
+      if (mimeType.subtype.endsWith("+json")) {
+        return "application/json";
+      }
+      if (mimeType.subtype.endsWith("+xml")) {
+        return "application/xml";
+      }
+      return "";
+    }
+    module2.exports = {
+      dataURLProcessor,
+      URLSerializer,
+      stringPercentDecode,
+      parseMIMEType,
+      collectAnHTTPQuotedString,
+      serializeAMimeType,
+      removeHTTPWhitespace,
+      minimizeSupportedMimeType,
+      HTTP_TOKEN_CODEPOINTS
+    };
+  }
+});
+
+// addons/pro/node_modules/undici/lib/web/webidl/index.js
+var require_webidl = __commonJS({
+  "addons/pro/node_modules/undici/lib/web/webidl/index.js"(exports2, module2) {
+    "use strict";
+    var assert = require("node:assert");
+    var { types, inspect } = require("node:util");
+    var { markAsUncloneable } = require("node:worker_threads");
+    var UNDEFINED = 1;
+    var BOOLEAN = 2;
+    var STRING = 3;
+    var SYMBOL = 4;
+    var NUMBER = 5;
+    var BIGINT = 6;
+    var NULL = 7;
+    var OBJECT = 8;
+    var FunctionPrototypeSymbolHasInstance = Function.call.bind(Function.prototype[Symbol.hasInstance]);
+    var webidl = {
+      converters: {},
+      util: {},
+      errors: {},
+      is: {}
+    };
+    webidl.errors.exception = function(message) {
+      return new TypeError(`${message.header}: ${message.message}`);
+    };
+    webidl.errors.conversionFailed = function(opts) {
+      const plural = opts.types.length === 1 ? "" : " one of";
+      const message = `${opts.argument} could not be converted to${plural}: ${opts.types.join(", ")}.`;
+      return webidl.errors.exception({
+        header: opts.prefix,
+        message
+      });
+    };
+    webidl.errors.invalidArgument = function(context) {
+      return webidl.errors.exception({
+        header: context.prefix,
+        message: `"${context.value}" is an invalid ${context.type}.`
+      });
+    };
+    webidl.brandCheck = function(V, is) {
+      if (!is(V)) {
+        const err = new TypeError("Illegal invocation");
+        err.code = "ERR_INVALID_THIS";
+        throw err;
+      }
+    };
+    webidl.argumentLengthCheck = function({ length }, min, ctx) {
+      if (length < min) {
+        throw webidl.errors.exception({
+          message: `${min} argument${min !== 1 ? "s" : ""} required, but${length ? " only" : ""} ${length} found.`,
+          header: ctx
+        });
+      }
+    };
+    webidl.illegalConstructor = function() {
+      throw webidl.errors.exception({
+        header: "TypeError",
+        message: "Illegal constructor"
+      });
+    };
+    webidl.util.MakeTypeAssertion = function(I) {
+      return (O) => FunctionPrototypeSymbolHasInstance(I, O);
+    };
+    webidl.util.Type = function(V) {
+      switch (typeof V) {
+        case "undefined":
+          return UNDEFINED;
+        case "boolean":
+          return BOOLEAN;
+        case "string":
+          return STRING;
+        case "symbol":
+          return SYMBOL;
+        case "number":
+          return NUMBER;
+        case "bigint":
+          return BIGINT;
+        case "function":
+        case "object": {
+          if (V === null) {
+            return NULL;
+          }
+          return OBJECT;
+        }
+      }
+    };
+    webidl.util.Types = {
+      UNDEFINED,
+      BOOLEAN,
+      STRING,
+      SYMBOL,
+      NUMBER,
+      BIGINT,
+      NULL,
+      OBJECT
+    };
+    webidl.util.TypeValueToString = function(o) {
+      switch (webidl.util.Type(o)) {
+        case UNDEFINED:
+          return "Undefined";
+        case BOOLEAN:
+          return "Boolean";
+        case STRING:
+          return "String";
+        case SYMBOL:
+          return "Symbol";
+        case NUMBER:
+          return "Number";
+        case BIGINT:
+          return "BigInt";
+        case NULL:
+          return "Null";
+        case OBJECT:
+          return "Object";
+      }
+    };
+    webidl.util.markAsUncloneable = markAsUncloneable;
+    webidl.util.ConvertToInt = function(V, bitLength, signedness, flags) {
+      let upperBound;
+      let lowerBound;
+      if (bitLength === 64) {
+        upperBound = Math.pow(2, 53) - 1;
+        if (signedness === "unsigned") {
+          lowerBound = 0;
+        } else {
+          lowerBound = Math.pow(-2, 53) + 1;
+        }
+      } else if (signedness === "unsigned") {
+        lowerBound = 0;
+        upperBound = Math.pow(2, bitLength) - 1;
+      } else {
+        lowerBound = -Math.pow(2, bitLength - 1);
+        upperBound = Math.pow(2, bitLength - 1) - 1;
+      }
+      let x = Number(V);
+      if (x === 0) {
+        x = 0;
+      }
+      if (webidl.util.HasFlag(flags, webidl.attributes.EnforceRange)) {
+        if (Number.isNaN(x) || x === Number.POSITIVE_INFINITY || x === Number.NEGATIVE_INFINITY) {
+          throw webidl.errors.exception({
+            header: "Integer conversion",
+            message: `Could not convert ${webidl.util.Stringify(V)} to an integer.`
+          });
+        }
+        x = webidl.util.IntegerPart(x);
+        if (x < lowerBound || x > upperBound) {
+          throw webidl.errors.exception({
+            header: "Integer conversion",
+            message: `Value must be between ${lowerBound}-${upperBound}, got ${x}.`
+          });
+        }
+        return x;
+      }
+      if (!Number.isNaN(x) && webidl.util.HasFlag(flags, webidl.attributes.Clamp)) {
+        x = Math.min(Math.max(x, lowerBound), upperBound);
+        if (Math.floor(x) % 2 === 0) {
+          x = Math.floor(x);
+        } else {
+          x = Math.ceil(x);
+        }
+        return x;
+      }
+      if (Number.isNaN(x) || x === 0 && Object.is(0, x) || x === Number.POSITIVE_INFINITY || x === Number.NEGATIVE_INFINITY) {
+        return 0;
+      }
+      x = webidl.util.IntegerPart(x);
+      x = x % Math.pow(2, bitLength);
+      if (signedness === "signed" && x >= Math.pow(2, bitLength - 1)) {
+        return x - Math.pow(2, bitLength);
+      }
+      return x;
+    };
+    webidl.util.IntegerPart = function(n) {
+      const r = Math.floor(Math.abs(n));
+      if (n < 0) {
+        return -1 * r;
+      }
+      return r;
+    };
+    webidl.util.Stringify = function(V) {
+      const type = webidl.util.Type(V);
+      switch (type) {
+        case SYMBOL:
+          return `Symbol(${V.description})`;
+        case OBJECT:
+          return inspect(V);
+        case STRING:
+          return `"${V}"`;
+        case BIGINT:
+          return `${V}n`;
+        default:
+          return `${V}`;
+      }
+    };
+    webidl.util.IsResizableArrayBuffer = function(V) {
+      if (types.isArrayBuffer(V)) {
+        return V.resizable;
+      }
+      if (types.isSharedArrayBuffer(V)) {
+        return V.growable;
+      }
+      throw webidl.errors.exception({
+        header: "IsResizableArrayBuffer",
+        message: `"${webidl.util.Stringify(V)}" is not an array buffer.`
+      });
+    };
+    webidl.util.HasFlag = function(flags, attributes) {
+      return typeof flags === "number" && (flags & attributes) === attributes;
+    };
+    webidl.sequenceConverter = function(converter) {
+      return (V, prefix, argument, Iterable) => {
+        var _a;
+        if (webidl.util.Type(V) !== OBJECT) {
+          throw webidl.errors.exception({
+            header: prefix,
+            message: `${argument} (${webidl.util.Stringify(V)}) is not iterable.`
+          });
+        }
+        const method = typeof Iterable === "function" ? Iterable() : (_a = V == null ? void 0 : V[Symbol.iterator]) == null ? void 0 : _a.call(V);
+        const seq = [];
+        let index = 0;
+        if (method === void 0 || typeof method.next !== "function") {
+          throw webidl.errors.exception({
+            header: prefix,
+            message: `${argument} is not iterable.`
+          });
+        }
+        while (true) {
+          const { done, value } = method.next();
+          if (done) {
+            break;
+          }
+          seq.push(converter(value, prefix, `${argument}[${index++}]`));
+        }
+        return seq;
+      };
+    };
+    webidl.recordConverter = function(keyConverter, valueConverter) {
+      return (O, prefix, argument) => {
+        if (webidl.util.Type(O) !== OBJECT) {
+          throw webidl.errors.exception({
+            header: prefix,
+            message: `${argument} ("${webidl.util.TypeValueToString(O)}") is not an Object.`
+          });
+        }
+        const result = {};
+        if (!types.isProxy(O)) {
+          const keys2 = [...Object.getOwnPropertyNames(O), ...Object.getOwnPropertySymbols(O)];
+          for (const key of keys2) {
+            const keyName = webidl.util.Stringify(key);
+            const typedKey = keyConverter(key, prefix, `Key ${keyName} in ${argument}`);
+            const typedValue = valueConverter(O[key], prefix, `${argument}[${keyName}]`);
+            result[typedKey] = typedValue;
+          }
+          return result;
+        }
+        const keys = Reflect.ownKeys(O);
+        for (const key of keys) {
+          const desc = Reflect.getOwnPropertyDescriptor(O, key);
+          if (desc == null ? void 0 : desc.enumerable) {
+            const typedKey = keyConverter(key, prefix, argument);
+            const typedValue = valueConverter(O[key], prefix, argument);
+            result[typedKey] = typedValue;
+          }
+        }
+        return result;
+      };
+    };
+    webidl.interfaceConverter = function(TypeCheck, name) {
+      return (V, prefix, argument) => {
+        if (!TypeCheck(V)) {
+          throw webidl.errors.exception({
+            header: prefix,
+            message: `Expected ${argument} ("${webidl.util.Stringify(V)}") to be an instance of ${name}.`
+          });
+        }
+        return V;
+      };
+    };
+    webidl.dictionaryConverter = function(converters) {
+      converters.sort((a, b) => (a.key > b.key) - (a.key < b.key));
+      return (dictionary, prefix, argument) => {
+        const dict = {};
+        if (dictionary != null && webidl.util.Type(dictionary) !== OBJECT) {
+          throw webidl.errors.exception({
+            header: prefix,
+            message: `Expected ${dictionary} to be one of: Null, Undefined, Object.`
+          });
+        }
+        for (const options of converters) {
+          const { key, defaultValue, required, converter } = options;
+          if (required === true) {
+            if (dictionary == null || !Object.hasOwn(dictionary, key)) {
+              throw webidl.errors.exception({
+                header: prefix,
+                message: `Missing required key "${key}".`
+              });
+            }
+          }
+          let value = dictionary == null ? void 0 : dictionary[key];
+          const hasDefault = defaultValue !== void 0;
+          if (hasDefault && value === void 0) {
+            value = defaultValue();
+          }
+          if (required || hasDefault || value !== void 0) {
+            value = converter(value, prefix, `${argument}.${key}`);
+            if (options.allowedValues && !options.allowedValues.includes(value)) {
+              throw webidl.errors.exception({
+                header: prefix,
+                message: `${value} is not an accepted type. Expected one of ${options.allowedValues.join(", ")}.`
+              });
+            }
+            dict[key] = value;
+          }
+        }
+        return dict;
+      };
+    };
+    webidl.nullableConverter = function(converter) {
+      return (V, prefix, argument) => {
+        if (V === null) {
+          return V;
+        }
+        return converter(V, prefix, argument);
+      };
+    };
+    webidl.is.USVString = function(value) {
+      return typeof value === "string" && value.isWellFormed();
+    };
+    webidl.is.ReadableStream = webidl.util.MakeTypeAssertion(ReadableStream);
+    webidl.is.Blob = webidl.util.MakeTypeAssertion(Blob);
+    webidl.is.URLSearchParams = webidl.util.MakeTypeAssertion(URLSearchParams);
+    webidl.is.File = webidl.util.MakeTypeAssertion(File);
+    webidl.is.URL = webidl.util.MakeTypeAssertion(URL);
+    webidl.is.AbortSignal = webidl.util.MakeTypeAssertion(AbortSignal);
+    webidl.is.MessagePort = webidl.util.MakeTypeAssertion(MessagePort);
+    webidl.is.BufferSource = function(V) {
+      return types.isArrayBuffer(V) || ArrayBuffer.isView(V) && types.isArrayBuffer(V.buffer);
+    };
+    webidl.util.getCopyOfBytesHeldByBufferSource = function(bufferSource) {
+      const jsBufferSource = bufferSource;
+      let jsArrayBuffer = jsBufferSource;
+      let offset = 0;
+      let length = 0;
+      if (types.isTypedArray(jsBufferSource) || types.isDataView(jsBufferSource)) {
+        jsArrayBuffer = jsBufferSource.buffer;
+        offset = jsBufferSource.byteOffset;
+        length = jsBufferSource.byteLength;
+      } else {
+        assert(types.isAnyArrayBuffer(jsBufferSource));
+        length = jsBufferSource.byteLength;
+      }
+      if (jsArrayBuffer.detached) {
+        return new Uint8Array(0);
+      }
+      const bytes = new Uint8Array(length);
+      const view = new Uint8Array(jsArrayBuffer, offset, length);
+      bytes.set(view);
+      return bytes;
+    };
+    webidl.converters.DOMString = function(V, prefix, argument, flags) {
+      if (V === null && webidl.util.HasFlag(flags, webidl.attributes.LegacyNullToEmptyString)) {
+        return "";
+      }
+      if (typeof V === "symbol") {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} is a symbol, which cannot be converted to a DOMString.`
+        });
+      }
+      return String(V);
+    };
+    webidl.converters.ByteString = function(V, prefix, argument) {
+      if (typeof V === "symbol") {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} is a symbol, which cannot be converted to a ByteString.`
+        });
+      }
+      const x = String(V);
+      for (let index = 0; index < x.length; index++) {
+        if (x.charCodeAt(index) > 255) {
+          throw new TypeError(
+            `Cannot convert argument to a ByteString because the character at index ${index} has a value of ${x.charCodeAt(index)} which is greater than 255.`
+          );
+        }
+      }
+      return x;
+    };
+    webidl.converters.USVString = function(value) {
+      if (typeof value === "string") {
+        return value.toWellFormed();
+      }
+      return `${value}`.toWellFormed();
+    };
+    webidl.converters.boolean = function(V) {
+      const x = Boolean(V);
+      return x;
+    };
+    webidl.converters.any = function(V) {
+      return V;
+    };
+    webidl.converters["long long"] = function(V, prefix, argument) {
+      const x = webidl.util.ConvertToInt(V, 64, "signed", 0, prefix, argument);
+      return x;
+    };
+    webidl.converters["unsigned long long"] = function(V, prefix, argument) {
+      const x = webidl.util.ConvertToInt(V, 64, "unsigned", 0, prefix, argument);
+      return x;
+    };
+    webidl.converters["unsigned long"] = function(V, prefix, argument) {
+      const x = webidl.util.ConvertToInt(V, 32, "unsigned", 0, prefix, argument);
+      return x;
+    };
+    webidl.converters["unsigned short"] = function(V, prefix, argument, flags) {
+      const x = webidl.util.ConvertToInt(V, 16, "unsigned", flags, prefix, argument);
+      return x;
+    };
+    webidl.converters.ArrayBuffer = function(V, prefix, argument, flags) {
+      if (webidl.util.Type(V) !== OBJECT || !types.isArrayBuffer(V)) {
+        throw webidl.errors.conversionFailed({
+          prefix,
+          argument: `${argument} ("${webidl.util.Stringify(V)}")`,
+          types: ["ArrayBuffer"]
+        });
+      }
+      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowResizable) && webidl.util.IsResizableArrayBuffer(V)) {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} cannot be a resizable ArrayBuffer.`
+        });
+      }
+      return V;
+    };
+    webidl.converters.SharedArrayBuffer = function(V, prefix, argument, flags) {
+      if (webidl.util.Type(V) !== OBJECT || !types.isSharedArrayBuffer(V)) {
+        throw webidl.errors.conversionFailed({
+          prefix,
+          argument: `${argument} ("${webidl.util.Stringify(V)}")`,
+          types: ["SharedArrayBuffer"]
+        });
+      }
+      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowResizable) && webidl.util.IsResizableArrayBuffer(V)) {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} cannot be a resizable SharedArrayBuffer.`
+        });
+      }
+      return V;
+    };
+    webidl.converters.TypedArray = function(V, T, prefix, argument, flags) {
+      if (webidl.util.Type(V) !== OBJECT || !types.isTypedArray(V) || V.constructor.name !== T.name) {
+        throw webidl.errors.conversionFailed({
+          prefix,
+          argument: `${argument} ("${webidl.util.Stringify(V)}")`,
+          types: [T.name]
+        });
+      }
+      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowShared) && types.isSharedArrayBuffer(V.buffer)) {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} cannot be a view on a shared array buffer.`
+        });
+      }
+      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowResizable) && webidl.util.IsResizableArrayBuffer(V.buffer)) {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} cannot be a view on a resizable array buffer.`
+        });
+      }
+      return V;
+    };
+    webidl.converters.DataView = function(V, prefix, argument, flags) {
+      if (webidl.util.Type(V) !== OBJECT || !types.isDataView(V)) {
+        throw webidl.errors.conversionFailed({
+          prefix,
+          argument: `${argument} ("${webidl.util.Stringify(V)}")`,
+          types: ["DataView"]
+        });
+      }
+      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowShared) && types.isSharedArrayBuffer(V.buffer)) {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} cannot be a view on a shared array buffer.`
+        });
+      }
+      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowResizable) && webidl.util.IsResizableArrayBuffer(V.buffer)) {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} cannot be a view on a resizable array buffer.`
+        });
+      }
+      return V;
+    };
+    webidl.converters.ArrayBufferView = function(V, prefix, argument, flags) {
+      if (webidl.util.Type(V) !== OBJECT || !types.isArrayBufferView(V)) {
+        throw webidl.errors.conversionFailed({
+          prefix,
+          argument: `${argument} ("${webidl.util.Stringify(V)}")`,
+          types: ["ArrayBufferView"]
+        });
+      }
+      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowShared) && types.isSharedArrayBuffer(V.buffer)) {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} cannot be a view on a shared array buffer.`
+        });
+      }
+      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowResizable) && webidl.util.IsResizableArrayBuffer(V.buffer)) {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} cannot be a view on a resizable array buffer.`
+        });
+      }
+      return V;
+    };
+    webidl.converters.BufferSource = function(V, prefix, argument, flags) {
+      if (types.isArrayBuffer(V)) {
+        return webidl.converters.ArrayBuffer(V, prefix, argument, flags);
+      }
+      if (types.isArrayBufferView(V)) {
+        flags &= ~webidl.attributes.AllowShared;
+        return webidl.converters.ArrayBufferView(V, prefix, argument, flags);
+      }
+      if (types.isSharedArrayBuffer(V)) {
+        throw webidl.errors.exception({
+          header: prefix,
+          message: `${argument} cannot be a SharedArrayBuffer.`
+        });
+      }
+      throw webidl.errors.conversionFailed({
+        prefix,
+        argument: `${argument} ("${webidl.util.Stringify(V)}")`,
+        types: ["ArrayBuffer", "ArrayBufferView"]
+      });
+    };
+    webidl.converters.AllowSharedBufferSource = function(V, prefix, argument, flags) {
+      if (types.isArrayBuffer(V)) {
+        return webidl.converters.ArrayBuffer(V, prefix, argument, flags);
+      }
+      if (types.isSharedArrayBuffer(V)) {
+        return webidl.converters.SharedArrayBuffer(V, prefix, argument, flags);
+      }
+      if (types.isArrayBufferView(V)) {
+        flags |= webidl.attributes.AllowShared;
+        return webidl.converters.ArrayBufferView(V, prefix, argument, flags);
+      }
+      throw webidl.errors.conversionFailed({
+        prefix,
+        argument: `${argument} ("${webidl.util.Stringify(V)}")`,
+        types: ["ArrayBuffer", "SharedArrayBuffer", "ArrayBufferView"]
+      });
+    };
+    webidl.converters["sequence<ByteString>"] = webidl.sequenceConverter(
+      webidl.converters.ByteString
+    );
+    webidl.converters["sequence<sequence<ByteString>>"] = webidl.sequenceConverter(
+      webidl.converters["sequence<ByteString>"]
+    );
+    webidl.converters["record<ByteString, ByteString>"] = webidl.recordConverter(
+      webidl.converters.ByteString,
+      webidl.converters.ByteString
+    );
+    webidl.converters.Blob = webidl.interfaceConverter(webidl.is.Blob, "Blob");
+    webidl.converters.AbortSignal = webidl.interfaceConverter(
+      webidl.is.AbortSignal,
+      "AbortSignal"
+    );
+    webidl.converters.EventHandlerNonNull = function(V) {
+      if (webidl.util.Type(V) !== OBJECT) {
+        return null;
+      }
+      if (typeof V === "function") {
+        return V;
+      }
+      return () => {
+      };
+    };
+    webidl.attributes = {
+      Clamp: 1 << 0,
+      EnforceRange: 1 << 1,
+      AllowShared: 1 << 2,
+      AllowResizable: 1 << 3,
+      LegacyNullToEmptyString: 1 << 4
+    };
+    module2.exports = {
+      webidl
+    };
+  }
+});
+
+// addons/pro/node_modules/undici/lib/web/fetch/util.js
+var require_util2 = __commonJS({
+  "addons/pro/node_modules/undici/lib/web/fetch/util.js"(exports2, module2) {
+    "use strict";
+    var { Transform } = require("node:stream");
+    var zlib = require("node:zlib");
+    var { redirectStatusSet, referrerPolicyTokens, badPortsSet } = require_constants2();
+    var { getGlobalOrigin } = require_global();
+    var { collectAnHTTPQuotedString, parseMIMEType } = require_data_url();
+    var { performance: performance2 } = require("node:perf_hooks");
+    var { isValidHTTPToken, normalizedMethodRecordsBase } = require_util();
+    var assert = require("node:assert");
+    var { isUint8Array } = require("node:util/types");
+    var { webidl } = require_webidl();
+    var { isomorphicEncode, collectASequenceOfCodePoints, removeChars } = require_infra();
+    function responseURL(response) {
+      const urlList = response.urlList;
+      const length = urlList.length;
+      return length === 0 ? null : urlList[length - 1].toString();
+    }
+    function responseLocationURL(response, requestFragment) {
+      if (!redirectStatusSet.has(response.status)) {
+        return null;
+      }
+      let location = response.headersList.get("location", true);
+      if (location !== null && isValidHeaderValue(location)) {
+        if (!isValidEncodedURL(location)) {
+          location = normalizeBinaryStringToUtf8(location);
+        }
+        location = new URL(location, responseURL(response));
+      }
+      if (location && !location.hash) {
+        location.hash = requestFragment;
+      }
+      return location;
+    }
+    function isValidEncodedURL(url) {
+      for (let i = 0; i < url.length; ++i) {
+        const code = url.charCodeAt(i);
+        if (code > 126 || // Non-US-ASCII + DEL
+        code < 32) {
+          return false;
+        }
+      }
+      return true;
+    }
+    function normalizeBinaryStringToUtf8(value) {
+      return Buffer.from(value, "binary").toString("utf8");
+    }
+    function requestCurrentURL(request) {
+      return request.urlList[request.urlList.length - 1];
+    }
+    function requestBadPort(request) {
+      const url = requestCurrentURL(request);
+      if (urlIsHttpHttpsScheme(url) && badPortsSet.has(url.port)) {
+        return "blocked";
+      }
+      return "allowed";
+    }
+    function isErrorLike(object) {
+      var _a, _b;
+      return object instanceof Error || (((_a = object == null ? void 0 : object.constructor) == null ? void 0 : _a.name) === "Error" || ((_b = object == null ? void 0 : object.constructor) == null ? void 0 : _b.name) === "DOMException");
+    }
+    function isValidReasonPhrase(statusText) {
+      for (let i = 0; i < statusText.length; ++i) {
+        const c = statusText.charCodeAt(i);
+        if (!(c === 9 || // HTAB
+        c >= 32 && c <= 126 || // SP / VCHAR
+        c >= 128 && c <= 255)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    var isValidHeaderName = isValidHTTPToken;
+    function isValidHeaderValue(potentialValue) {
+      return (potentialValue[0] === "	" || potentialValue[0] === " " || potentialValue[potentialValue.length - 1] === "	" || potentialValue[potentialValue.length - 1] === " " || potentialValue.includes("\n") || potentialValue.includes("\r") || potentialValue.includes("\0")) === false;
+    }
+    function parseReferrerPolicy(actualResponse) {
+      const policyHeader = (actualResponse.headersList.get("referrer-policy", true) ?? "").split(",");
+      let policy = "";
+      if (policyHeader.length) {
+        for (let i = policyHeader.length; i !== 0; i--) {
+          const token = policyHeader[i - 1].trim();
+          if (referrerPolicyTokens.has(token)) {
+            policy = token;
+            break;
+          }
+        }
+      }
+      return policy;
+    }
+    function setRequestReferrerPolicyOnRedirect(request, actualResponse) {
+      const policy = parseReferrerPolicy(actualResponse);
+      if (policy !== "") {
+        request.referrerPolicy = policy;
+      }
+    }
+    function crossOriginResourcePolicyCheck() {
+      return "allowed";
+    }
+    function corsCheck() {
+      return "success";
+    }
+    function TAOCheck() {
+      return "success";
+    }
+    function appendFetchMetadata(httpRequest) {
+      if (!isURLPotentiallyTrustworthy(requestCurrentURL(httpRequest))) {
+        return;
+      }
+      let header = null;
+      header = httpRequest.mode;
+      httpRequest.headersList.set("sec-fetch-mode", header, true);
+    }
+    function appendRequestOriginHeader(request) {
+      let serializedOrigin = request.origin;
+      if (serializedOrigin === "client" || serializedOrigin === void 0) {
+        return;
+      }
+      if (request.responseTainting === "cors" || request.mode === "websocket") {
+        request.headersList.append("origin", serializedOrigin, true);
+      } else if (request.method !== "GET" && request.method !== "HEAD") {
+        switch (request.referrerPolicy) {
+          case "no-referrer":
+            serializedOrigin = null;
+            break;
+          case "no-referrer-when-downgrade":
+          case "strict-origin":
+          case "strict-origin-when-cross-origin":
+            if (request.origin && urlHasHttpsScheme(request.origin) && !urlHasHttpsScheme(requestCurrentURL(request))) {
+              serializedOrigin = null;
+            }
+            break;
+          case "same-origin":
+            if (!sameOrigin(request, requestCurrentURL(request))) {
+              serializedOrigin = null;
+            }
+            break;
+          default:
+        }
+        request.headersList.append("origin", serializedOrigin, true);
+      }
+    }
+    function coarsenTime(timestamp, crossOriginIsolatedCapability) {
+      return timestamp;
+    }
+    function clampAndCoarsenConnectionTimingInfo(connectionTimingInfo, defaultStartTime, crossOriginIsolatedCapability) {
+      if (!(connectionTimingInfo == null ? void 0 : connectionTimingInfo.startTime) || connectionTimingInfo.startTime < defaultStartTime) {
+        return {
+          domainLookupStartTime: defaultStartTime,
+          domainLookupEndTime: defaultStartTime,
+          connectionStartTime: defaultStartTime,
+          connectionEndTime: defaultStartTime,
+          secureConnectionStartTime: defaultStartTime,
+          ALPNNegotiatedProtocol: connectionTimingInfo == null ? void 0 : connectionTimingInfo.ALPNNegotiatedProtocol
+        };
+      }
+      return {
+        domainLookupStartTime: coarsenTime(connectionTimingInfo.domainLookupStartTime, crossOriginIsolatedCapability),
+        domainLookupEndTime: coarsenTime(connectionTimingInfo.domainLookupEndTime, crossOriginIsolatedCapability),
+        connectionStartTime: coarsenTime(connectionTimingInfo.connectionStartTime, crossOriginIsolatedCapability),
+        connectionEndTime: coarsenTime(connectionTimingInfo.connectionEndTime, crossOriginIsolatedCapability),
+        secureConnectionStartTime: coarsenTime(connectionTimingInfo.secureConnectionStartTime, crossOriginIsolatedCapability),
+        ALPNNegotiatedProtocol: connectionTimingInfo.ALPNNegotiatedProtocol
+      };
+    }
+    function coarsenedSharedCurrentTime(crossOriginIsolatedCapability) {
+      return coarsenTime(performance2.now(), crossOriginIsolatedCapability);
+    }
+    function createOpaqueTimingInfo(timingInfo) {
+      return {
+        startTime: timingInfo.startTime ?? 0,
+        redirectStartTime: 0,
+        redirectEndTime: 0,
+        postRedirectStartTime: timingInfo.startTime ?? 0,
+        finalServiceWorkerStartTime: 0,
+        finalNetworkResponseStartTime: 0,
+        finalNetworkRequestStartTime: 0,
+        endTime: 0,
+        encodedBodySize: 0,
+        decodedBodySize: 0,
+        finalConnectionTimingInfo: null
+      };
+    }
+    function makePolicyContainer() {
+      return {
+        referrerPolicy: "strict-origin-when-cross-origin"
+      };
+    }
+    function clonePolicyContainer(policyContainer) {
+      return {
+        referrerPolicy: policyContainer.referrerPolicy
+      };
+    }
+    function determineRequestsReferrer(request) {
+      const policy = request.referrerPolicy;
+      assert(policy);
+      let referrerSource = null;
+      if (request.referrer === "client") {
+        const globalOrigin = getGlobalOrigin();
+        if (!globalOrigin || globalOrigin.origin === "null") {
+          return "no-referrer";
+        }
+        referrerSource = new URL(globalOrigin);
+      } else if (webidl.is.URL(request.referrer)) {
+        referrerSource = request.referrer;
+      }
+      let referrerURL = stripURLForReferrer(referrerSource);
+      const referrerOrigin = stripURLForReferrer(referrerSource, true);
+      if (referrerURL.toString().length > 4096) {
+        referrerURL = referrerOrigin;
+      }
+      switch (policy) {
+        case "no-referrer":
+          return "no-referrer";
+        case "origin":
+          if (referrerOrigin != null) {
+            return referrerOrigin;
+          }
+          return stripURLForReferrer(referrerSource, true);
+        case "unsafe-url":
+          return referrerURL;
+        case "strict-origin": {
+          const currentURL = requestCurrentURL(request);
+          if (isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(currentURL)) {
+            return "no-referrer";
+          }
+          return referrerOrigin;
+        }
+        case "strict-origin-when-cross-origin": {
+          const currentURL = requestCurrentURL(request);
+          if (sameOrigin(referrerURL, currentURL)) {
+            return referrerURL;
+          }
+          if (isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(currentURL)) {
+            return "no-referrer";
+          }
+          return referrerOrigin;
+        }
+        case "same-origin":
+          if (sameOrigin(request, referrerURL)) {
+            return referrerURL;
+          }
+          return "no-referrer";
+        case "origin-when-cross-origin":
+          if (sameOrigin(request, referrerURL)) {
+            return referrerURL;
+          }
+          return referrerOrigin;
+        case "no-referrer-when-downgrade": {
+          const currentURL = requestCurrentURL(request);
+          if (isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(currentURL)) {
+            return "no-referrer";
+          }
+          return referrerURL;
+        }
+      }
+    }
+    function stripURLForReferrer(url, originOnly = false) {
+      assert(webidl.is.URL(url));
+      url = new URL(url);
+      if (urlIsLocal(url)) {
+        return "no-referrer";
+      }
+      url.username = "";
+      url.password = "";
+      url.hash = "";
+      if (originOnly === true) {
+        url.pathname = "";
+        url.search = "";
+      }
+      return url;
+    }
+    var isPotentialleTrustworthyIPv4 = RegExp.prototype.test.bind(/^127\.(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)\.){2}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)$/);
+    var isPotentiallyTrustworthyIPv6 = RegExp.prototype.test.bind(/^(?:(?:0{1,4}:){7}|(?:0{1,4}:){1,6}:|::)0{0,3}1$/);
+    function isOriginIPPotentiallyTrustworthy(origin) {
+      if (origin.includes(":")) {
+        if (origin[0] === "[" && origin[origin.length - 1] === "]") {
+          origin = origin.slice(1, -1);
+        }
+        return isPotentiallyTrustworthyIPv6(origin);
+      }
+      return isPotentialleTrustworthyIPv4(origin);
+    }
+    function isOriginPotentiallyTrustworthy(origin) {
+      if (origin == null || origin === "null") {
+        return false;
+      }
+      origin = new URL(origin);
+      if (origin.protocol === "https:" || origin.protocol === "wss:") {
+        return true;
+      }
+      if (isOriginIPPotentiallyTrustworthy(origin.hostname)) {
+        return true;
+      }
+      if (origin.hostname === "localhost" || origin.hostname === "localhost.") {
+        return true;
+      }
+      if (origin.hostname.endsWith(".localhost") || origin.hostname.endsWith(".localhost.")) {
+        return true;
+      }
+      if (origin.protocol === "file:") {
+        return true;
+      }
+      return false;
+    }
+    function isURLPotentiallyTrustworthy(url) {
+      if (!webidl.is.URL(url)) {
+        return false;
+      }
+      if (url.href === "about:blank" || url.href === "about:srcdoc") {
+        return true;
+      }
+      if (url.protocol === "data:") return true;
+      if (url.protocol === "blob:") return true;
+      return isOriginPotentiallyTrustworthy(url.origin);
+    }
+    function tryUpgradeRequestToAPotentiallyTrustworthyURL(request) {
+    }
+    function sameOrigin(A, B) {
+      if (A.origin === B.origin && A.origin === "null") {
+        return true;
+      }
+      if (A.protocol === B.protocol && A.hostname === B.hostname && A.port === B.port) {
+        return true;
+      }
+      return false;
+    }
+    function isAborted(fetchParams) {
+      return fetchParams.controller.state === "aborted";
+    }
+    function isCancelled(fetchParams) {
+      return fetchParams.controller.state === "aborted" || fetchParams.controller.state === "terminated";
+    }
+    function normalizeMethod(method) {
+      return normalizedMethodRecordsBase[method.toLowerCase()] ?? method;
+    }
+    var esIteratorPrototype = Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]()));
+    function createIterator(name, kInternalIterator, keyIndex = 0, valueIndex = 1) {
+      var _target, _kind, _index;
+      class FastIterableIterator {
+        /**
+         * @see https://webidl.spec.whatwg.org/#dfn-default-iterator-object
+         * @param {unknown} target
+         * @param {'key' | 'value' | 'key+value'} kind
+         */
+        constructor(target, kind) {
+          /** @type {any} */
+          __privateAdd(this, _target);
+          /** @type {'key' | 'value' | 'key+value'} */
+          __privateAdd(this, _kind);
+          /** @type {number} */
+          __privateAdd(this, _index);
+          __privateSet(this, _target, target);
+          __privateSet(this, _kind, kind);
+          __privateSet(this, _index, 0);
+        }
+        next() {
+          if (typeof this !== "object" || this === null || !__privateIn(_target, this)) {
+            throw new TypeError(
+              `'next' called on an object that does not implement interface ${name} Iterator.`
+            );
+          }
+          const index = __privateGet(this, _index);
+          const values = kInternalIterator(__privateGet(this, _target));
+          const len = values.length;
+          if (index >= len) {
+            return {
+              value: void 0,
+              done: true
+            };
+          }
+          const { [keyIndex]: key, [valueIndex]: value } = values[index];
+          __privateSet(this, _index, index + 1);
+          let result;
+          switch (__privateGet(this, _kind)) {
+            case "key":
+              result = key;
+              break;
+            case "value":
+              result = value;
+              break;
+            case "key+value":
+              result = [key, value];
+              break;
+          }
+          return {
+            value: result,
+            done: false
+          };
+        }
+      }
+      _target = new WeakMap();
+      _kind = new WeakMap();
+      _index = new WeakMap();
+      delete FastIterableIterator.prototype.constructor;
+      Object.setPrototypeOf(FastIterableIterator.prototype, esIteratorPrototype);
+      Object.defineProperties(FastIterableIterator.prototype, {
+        [Symbol.toStringTag]: {
+          writable: false,
+          enumerable: false,
+          configurable: true,
+          value: `${name} Iterator`
+        },
+        next: { writable: true, enumerable: true, configurable: true }
+      });
+      return function(target, kind) {
+        return new FastIterableIterator(target, kind);
+      };
+    }
+    function iteratorMixin(name, object, kInternalIterator, keyIndex = 0, valueIndex = 1, brandCheck) {
+      const makeIterator = createIterator(name, kInternalIterator, keyIndex, valueIndex);
+      const properties = {
+        keys: {
+          writable: true,
+          enumerable: true,
+          configurable: true,
+          value: function keys() {
+            webidl.brandCheck(this, brandCheck);
+            return makeIterator(this, "key");
+          }
+        },
+        values: {
+          writable: true,
+          enumerable: true,
+          configurable: true,
+          value: function values() {
+            webidl.brandCheck(this, brandCheck);
+            return makeIterator(this, "value");
+          }
+        },
+        entries: {
+          writable: true,
+          enumerable: true,
+          configurable: true,
+          value: function entries() {
+            webidl.brandCheck(this, brandCheck);
+            return makeIterator(this, "key+value");
+          }
+        },
+        forEach: {
+          writable: true,
+          enumerable: true,
+          configurable: true,
+          value: function forEach(callbackfn, thisArg = globalThis) {
+            webidl.brandCheck(this, brandCheck);
+            webidl.argumentLengthCheck(arguments, 1, `${name}.forEach`);
+            if (typeof callbackfn !== "function") {
+              throw new TypeError(
+                `Failed to execute 'forEach' on '${name}': parameter 1 is not of type 'Function'.`
+              );
+            }
+            for (const { 0: key, 1: value } of makeIterator(this, "key+value")) {
+              callbackfn.call(thisArg, value, key, this);
+            }
+          }
+        }
+      };
+      return Object.defineProperties(object.prototype, {
+        ...properties,
+        [Symbol.iterator]: {
+          writable: true,
+          enumerable: false,
+          configurable: true,
+          value: properties.entries.value
+        }
+      });
+    }
+    function fullyReadBody(body, processBody, processBodyError) {
+      const successSteps = processBody;
+      const errorSteps = processBodyError;
+      try {
+        const reader = body.stream.getReader();
+        readAllBytes(reader, successSteps, errorSteps);
+      } catch (e) {
+        errorSteps(e);
+      }
+    }
+    function readableStreamClose(controller) {
+      var _a;
+      try {
+        controller.close();
+        (_a = controller.byobRequest) == null ? void 0 : _a.respond(0);
+      } catch (err) {
+        if (!err.message.includes("Controller is already closed") && !err.message.includes("ReadableStream is already closed")) {
+          throw err;
+        }
+      }
+    }
+    async function readAllBytes(reader, successSteps, failureSteps) {
+      try {
+        const bytes = [];
+        let byteLength = 0;
+        do {
+          const { done, value: chunk } = await reader.read();
+          if (done) {
+            successSteps(Buffer.concat(bytes, byteLength));
+            return;
+          }
+          if (!isUint8Array(chunk)) {
+            failureSteps(new TypeError("Received non-Uint8Array chunk"));
+            return;
+          }
+          bytes.push(chunk);
+          byteLength += chunk.length;
+        } while (true);
+      } catch (e) {
+        failureSteps(e);
+      }
+    }
+    function urlIsLocal(url) {
+      assert("protocol" in url);
+      const protocol = url.protocol;
+      return protocol === "about:" || protocol === "blob:" || protocol === "data:";
+    }
+    function urlHasHttpsScheme(url) {
+      return typeof url === "string" && url[5] === ":" && url[0] === "h" && url[1] === "t" && url[2] === "t" && url[3] === "p" && url[4] === "s" || url.protocol === "https:";
+    }
+    function urlIsHttpHttpsScheme(url) {
+      assert("protocol" in url);
+      const protocol = url.protocol;
+      return protocol === "http:" || protocol === "https:";
+    }
+    function simpleRangeHeaderValue(value, allowWhitespace) {
+      const data = value;
+      if (!data.startsWith("bytes")) {
+        return "failure";
+      }
+      const position = { position: 5 };
+      if (allowWhitespace) {
+        collectASequenceOfCodePoints(
+          (char) => char === "	" || char === " ",
+          data,
+          position
+        );
+      }
+      if (data.charCodeAt(position.position) !== 61) {
+        return "failure";
+      }
+      position.position++;
+      if (allowWhitespace) {
+        collectASequenceOfCodePoints(
+          (char) => char === "	" || char === " ",
+          data,
+          position
+        );
+      }
+      const rangeStart = collectASequenceOfCodePoints(
+        (char) => {
+          const code = char.charCodeAt(0);
+          return code >= 48 && code <= 57;
+        },
+        data,
+        position
+      );
+      const rangeStartValue = rangeStart.length ? Number(rangeStart) : null;
+      if (allowWhitespace) {
+        collectASequenceOfCodePoints(
+          (char) => char === "	" || char === " ",
+          data,
+          position
+        );
+      }
+      if (data.charCodeAt(position.position) !== 45) {
+        return "failure";
+      }
+      position.position++;
+      if (allowWhitespace) {
+        collectASequenceOfCodePoints(
+          (char) => char === "	" || char === " ",
+          data,
+          position
+        );
+      }
+      const rangeEnd = collectASequenceOfCodePoints(
+        (char) => {
+          const code = char.charCodeAt(0);
+          return code >= 48 && code <= 57;
+        },
+        data,
+        position
+      );
+      const rangeEndValue = rangeEnd.length ? Number(rangeEnd) : null;
+      if (position.position < data.length) {
+        return "failure";
+      }
+      if (rangeEndValue === null && rangeStartValue === null) {
+        return "failure";
+      }
+      if (rangeStartValue !== null && rangeEndValue !== null && rangeStartValue > rangeEndValue) {
+        return "failure";
+      }
+      return { rangeStartValue, rangeEndValue };
+    }
+    function buildContentRange(rangeStart, rangeEnd, fullLength) {
+      let contentRange = "bytes ";
+      contentRange += isomorphicEncode(`${rangeStart}`);
+      contentRange += "-";
+      contentRange += isomorphicEncode(`${rangeEnd}`);
+      contentRange += "/";
+      contentRange += isomorphicEncode(`${fullLength}`);
+      return contentRange;
+    }
+    var _zlibOptions;
+    var InflateStream = class extends Transform {
+      /** @param {zlib.ZlibOptions} [zlibOptions] */
+      constructor(zlibOptions) {
+        super();
+        __privateAdd(this, _zlibOptions);
+        __privateSet(this, _zlibOptions, zlibOptions);
+      }
+      _transform(chunk, encoding, callback) {
+        if (!this._inflateStream) {
+          if (chunk.length === 0) {
+            callback();
+            return;
+          }
+          this._inflateStream = (chunk[0] & 15) === 8 ? zlib.createInflate(__privateGet(this, _zlibOptions)) : zlib.createInflateRaw(__privateGet(this, _zlibOptions));
+          this._inflateStream.on("data", this.push.bind(this));
+          this._inflateStream.on("end", () => this.push(null));
+          this._inflateStream.on("error", (err) => this.destroy(err));
+        }
+        this._inflateStream.write(chunk, encoding, callback);
+      }
+      _final(callback) {
+        if (this._inflateStream) {
+          this._inflateStream.end();
+          this._inflateStream = null;
+        }
+        callback();
+      }
+    };
+    _zlibOptions = new WeakMap();
+    function createInflate(zlibOptions) {
+      return new InflateStream(zlibOptions);
+    }
+    function extractMimeType(headers) {
+      let charset = null;
+      let essence = null;
+      let mimeType = null;
+      const values = getDecodeSplit("content-type", headers);
+      if (values === null) {
+        return "failure";
+      }
+      for (const value of values) {
+        const temporaryMimeType = parseMIMEType(value);
+        if (temporaryMimeType === "failure" || temporaryMimeType.essence === "*/*") {
+          continue;
+        }
+        mimeType = temporaryMimeType;
+        if (mimeType.essence !== essence) {
+          charset = null;
+          if (mimeType.parameters.has("charset")) {
+            charset = mimeType.parameters.get("charset");
+          }
+          essence = mimeType.essence;
+        } else if (!mimeType.parameters.has("charset") && charset !== null) {
+          mimeType.parameters.set("charset", charset);
+        }
+      }
+      if (mimeType == null) {
+        return "failure";
+      }
+      return mimeType;
+    }
+    function gettingDecodingSplitting(value) {
+      const input = value;
+      const position = { position: 0 };
+      const values = [];
+      let temporaryValue = "";
+      while (position.position < input.length) {
+        temporaryValue += collectASequenceOfCodePoints(
+          (char) => char !== '"' && char !== ",",
+          input,
+          position
+        );
+        if (position.position < input.length) {
+          if (input.charCodeAt(position.position) === 34) {
+            temporaryValue += collectAnHTTPQuotedString(
+              input,
+              position
+            );
+            if (position.position < input.length) {
+              continue;
+            }
+          } else {
+            assert(input.charCodeAt(position.position) === 44);
+            position.position++;
+          }
+        }
+        temporaryValue = removeChars(temporaryValue, true, true, (char) => char === 9 || char === 32);
+        values.push(temporaryValue);
+        temporaryValue = "";
+      }
+      return values;
+    }
+    function getDecodeSplit(name, list) {
+      const value = list.get(name, true);
+      if (value === null) {
+        return null;
+      }
+      return gettingDecodingSplitting(value);
+    }
+    function hasAuthenticationEntry(request) {
+      return false;
+    }
+    function includesCredentials(url) {
+      return !!(url.username || url.password);
+    }
+    function isTraversableNavigable(navigable) {
+      return navigable != null && navigable !== "client" && navigable !== "no-traversable";
+    }
+    var EnvironmentSettingsObjectBase = class {
+      get baseUrl() {
+        return getGlobalOrigin();
+      }
+      get origin() {
+        var _a;
+        return (_a = this.baseUrl) == null ? void 0 : _a.origin;
+      }
+      policyContainer = makePolicyContainer();
+    };
+    var EnvironmentSettingsObject = class {
+      settingsObject = new EnvironmentSettingsObjectBase();
+    };
+    var environmentSettingsObject = new EnvironmentSettingsObject();
+    module2.exports = {
+      isAborted,
+      isCancelled,
+      isValidEncodedURL,
+      tryUpgradeRequestToAPotentiallyTrustworthyURL,
+      clampAndCoarsenConnectionTimingInfo,
+      coarsenedSharedCurrentTime,
+      determineRequestsReferrer,
+      makePolicyContainer,
+      clonePolicyContainer,
+      appendFetchMetadata,
+      appendRequestOriginHeader,
+      TAOCheck,
+      corsCheck,
+      crossOriginResourcePolicyCheck,
+      createOpaqueTimingInfo,
+      setRequestReferrerPolicyOnRedirect,
+      isValidHTTPToken,
+      requestBadPort,
+      requestCurrentURL,
+      responseURL,
+      responseLocationURL,
+      isURLPotentiallyTrustworthy,
+      isValidReasonPhrase,
+      sameOrigin,
+      normalizeMethod,
+      iteratorMixin,
+      createIterator,
+      isValidHeaderName,
+      isValidHeaderValue,
+      isErrorLike,
+      fullyReadBody,
+      readableStreamClose,
+      urlIsLocal,
+      urlHasHttpsScheme,
+      urlIsHttpHttpsScheme,
+      readAllBytes,
+      simpleRangeHeaderValue,
+      buildContentRange,
+      createInflate,
+      extractMimeType,
+      getDecodeSplit,
+      environmentSettingsObject,
+      isOriginIPPotentiallyTrustworthy,
+      hasAuthenticationEntry,
+      includesCredentials,
+      isTraversableNavigable
+    };
+  }
+});
+
+// addons/pro/node_modules/undici/lib/util/runtime-features.js
+var require_runtime_features = __commonJS({
+  "addons/pro/node_modules/undici/lib/util/runtime-features.js"(exports2, module2) {
+    "use strict";
+    var lazyLoaders = {
+      __proto__: null,
+      "node:crypto": () => require("node:crypto"),
+      "node:sqlite": () => require("node:sqlite")
+    };
+    function detectRuntimeFeatureByNodeModule(moduleName) {
+      try {
+        lazyLoaders[moduleName]();
+        return true;
+      } catch (err) {
+        if (err.code !== "ERR_UNKNOWN_BUILTIN_MODULE" && err.code !== "ERR_NO_CRYPTO") {
+          throw err;
+        }
+        return false;
+      }
+    }
+    var runtimeFeaturesAsNodeModule = (
+      /** @type {const} */
+      ["crypto", "sqlite"]
+    );
+    function detectRuntimeFeature(feature) {
+      if (runtimeFeaturesAsNodeModule.includes(
+        /** @type {RuntimeFeatureByNodeModule} */
+        feature
+      )) {
+        return detectRuntimeFeatureByNodeModule(`node:${feature}`);
+      }
+      throw new TypeError(`unknown feature: ${feature}`);
+    }
+    var _map, _RuntimeFeatures_instances, detectRuntimeFeature_fn;
+    var RuntimeFeatures = class {
+      constructor() {
+        __privateAdd(this, _RuntimeFeatures_instances);
+        /** @type {Map<Feature, boolean>} */
+        __privateAdd(this, _map, /* @__PURE__ */ new Map());
+      }
+      /**
+       * Clears all cached feature detections.
+       */
+      clear() {
+        __privateGet(this, _map).clear();
+      }
+      /**
+       * @param {Feature} feature
+       * @returns {boolean}
+       */
+      has(feature) {
+        return __privateGet(this, _map).get(feature) ?? __privateMethod(this, _RuntimeFeatures_instances, detectRuntimeFeature_fn).call(this, feature);
+      }
+      /**
+       * @param {Feature} feature
+       * @param {boolean} value
+       */
+      set(feature, value) {
+        if (runtimeFeaturesAsNodeModule.includes(feature) === false) {
+          throw new TypeError(`unknown feature: ${feature}`);
+        }
+        __privateGet(this, _map).set(feature, value);
+      }
+    };
+    _map = new WeakMap();
+    _RuntimeFeatures_instances = new WeakSet();
+    /**
+     * @param {Feature} feature
+     * @returns {boolean}
+     */
+    detectRuntimeFeature_fn = function(feature) {
+      const result = detectRuntimeFeature(feature);
+      __privateGet(this, _map).set(feature, result);
+      return result;
+    };
+    var instance = new RuntimeFeatures();
+    module2.exports.runtimeFeatures = instance;
+    module2.exports.default = instance;
+  }
+});
+
+// addons/pro/node_modules/undici/lib/web/fetch/formdata.js
+var require_formdata = __commonJS({
+  "addons/pro/node_modules/undici/lib/web/fetch/formdata.js"(exports2, module2) {
+    "use strict";
+    var { iteratorMixin } = require_util2();
+    var { kEnumerableProperty } = require_util();
+    var { webidl } = require_webidl();
+    var nodeUtil = require("node:util");
+    var { runtimeFeatures } = require_runtime_features();
+    var random = runtimeFeatures.has("crypto") ? require("node:crypto").randomInt : (max) => Math.floor(Math.random() * max);
+    var getFormDataState;
+    var setFormDataState;
+    var getFormDataBoundary;
+    var _state, _boundary;
+    var FormData = class {
+      constructor(form = void 0) {
+        __privateAdd(this, _state, []);
+        __privateAdd(this, _boundary, null);
+        webidl.util.markAsUncloneable(this);
+        if (form !== void 0) {
+          throw webidl.errors.conversionFailed({
+            prefix: "FormData constructor",
+            argument: "Argument 1",
+            types: ["undefined"]
+          });
+        }
+      }
+      append(name, value, filename = void 0) {
+        webidl.brandCheck(this, webidl.is.FormData);
+        const prefix = "FormData.append";
+        webidl.argumentLengthCheck(arguments, 2, prefix);
+        name = webidl.converters.USVString(name);
+        if (arguments.length === 3 || webidl.is.Blob(value)) {
+          value = webidl.converters.Blob(value, prefix, "value");
+          if (filename !== void 0) {
+            filename = webidl.converters.USVString(filename);
+          }
+        } else {
+          value = webidl.converters.USVString(value);
+        }
+        const entry = makeEntry(name, value, filename);
+        __privateGet(this, _state).push(entry);
+      }
+      delete(name) {
+        webidl.brandCheck(this, webidl.is.FormData);
+        const prefix = "FormData.delete";
+        webidl.argumentLengthCheck(arguments, 1, prefix);
+        name = webidl.converters.USVString(name);
+        __privateSet(this, _state, __privateGet(this, _state).filter((entry) => entry.name !== name));
+      }
+      get(name) {
+        webidl.brandCheck(this, webidl.is.FormData);
+        const prefix = "FormData.get";
+        webidl.argumentLengthCheck(arguments, 1, prefix);
+        name = webidl.converters.USVString(name);
+        const idx = __privateGet(this, _state).findIndex((entry) => entry.name === name);
+        if (idx === -1) {
+          return null;
+        }
+        return __privateGet(this, _state)[idx].value;
+      }
+      getAll(name) {
+        webidl.brandCheck(this, webidl.is.FormData);
+        const prefix = "FormData.getAll";
+        webidl.argumentLengthCheck(arguments, 1, prefix);
+        name = webidl.converters.USVString(name);
+        return __privateGet(this, _state).filter((entry) => entry.name === name).map((entry) => entry.value);
+      }
+      has(name) {
+        webidl.brandCheck(this, webidl.is.FormData);
+        const prefix = "FormData.has";
+        webidl.argumentLengthCheck(arguments, 1, prefix);
+        name = webidl.converters.USVString(name);
+        return __privateGet(this, _state).findIndex((entry) => entry.name === name) !== -1;
+      }
+      set(name, value, filename = void 0) {
+        webidl.brandCheck(this, webidl.is.FormData);
+        const prefix = "FormData.set";
+        webidl.argumentLengthCheck(arguments, 2, prefix);
+        name = webidl.converters.USVString(name);
+        if (arguments.length === 3 || webidl.is.Blob(value)) {
+          value = webidl.converters.Blob(value, prefix, "value");
+          if (filename !== void 0) {
+            filename = webidl.converters.USVString(filename);
+          }
+        } else {
+          value = webidl.converters.USVString(value);
+        }
+        const entry = makeEntry(name, value, filename);
+        const idx = __privateGet(this, _state).findIndex((entry2) => entry2.name === name);
+        if (idx !== -1) {
+          __privateSet(this, _state, [
+            ...__privateGet(this, _state).slice(0, idx),
+            entry,
+            ...__privateGet(this, _state).slice(idx + 1).filter((entry2) => entry2.name !== name)
+          ]);
+        } else {
+          __privateGet(this, _state).push(entry);
+        }
+      }
+      [nodeUtil.inspect.custom](depth, options) {
+        const state = __privateGet(this, _state).reduce((a, b) => {
+          if (a[b.name]) {
+            if (Array.isArray(a[b.name])) {
+              a[b.name].push(b.value);
+            } else {
+              a[b.name] = [a[b.name], b.value];
+            }
+          } else {
+            a[b.name] = b.value;
+          }
+          return a;
+        }, { __proto__: null });
+        options.depth ?? (options.depth = depth);
+        options.colors ?? (options.colors = true);
+        const output = nodeUtil.formatWithOptions(options, state);
+        return `FormData ${output.slice(output.indexOf("]") + 2)}`;
+      }
+    };
+    _state = new WeakMap();
+    _boundary = new WeakMap();
+    getFormDataState = (formData) => __privateGet(formData, _state);
+    setFormDataState = (formData, newState) => {
+      __privateSet(formData, _state, newState);
+    };
+    getFormDataBoundary = (formData) => {
+      return __privateGet(formData, _boundary) ?? __privateSet(formData, _boundary, `----formdata-undici-0${`${random(1e11)}`.padStart(11, "0")}`);
+    };
+    webidl.is.FormData = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_state, arg);
+    };
+    iteratorMixin("FormData", FormData, getFormDataState, "name", "value", webidl.is.FormData);
+    Object.defineProperties(FormData.prototype, {
+      append: kEnumerableProperty,
+      delete: kEnumerableProperty,
+      get: kEnumerableProperty,
+      getAll: kEnumerableProperty,
+      has: kEnumerableProperty,
+      set: kEnumerableProperty,
+      [Symbol.toStringTag]: {
+        value: "FormData",
+        configurable: true
+      }
+    });
+    function makeEntry(name, value, filename) {
+      if (typeof value === "string") {
+      } else {
+        if (!webidl.is.File(value)) {
+          value = new File([value], "blob", { type: value.type });
+        }
+        if (filename !== void 0) {
+          const options = {
+            type: value.type,
+            lastModified: value.lastModified
+          };
+          value = new File([value], filename, options);
+        }
+      }
+      return { name, value };
+    }
+    module2.exports = { FormData, makeEntry, setFormDataState, getFormDataBoundary };
+  }
+});
+
 // addons/pro/node_modules/undici/lib/core/request.js
 var require_request = __commonJS({
   "addons/pro/node_modules/undici/lib/core/request.js"(exports2, module2) {
@@ -179503,7 +181815,12 @@ var require_request = __commonJS({
           this.body = body.byteLength ? Buffer.from(body) : null;
         } else if (typeof body === "string") {
           this.body = body.length ? Buffer.from(body) : null;
-        } else if (isFormDataLike(body) || isIterable(body) || isBlobLike(body)) {
+        } else if (isFormDataLike(body)) {
+          if (!isUndiciFormData(body)) {
+            throw new InvalidArgumentError("body must be a FormData created by this undici package instance; FormData from other sources, such as the built-in FormData provided by Node.js, is not supported");
+          }
+          this.body = body;
+        } else if (isIterable(body) || isBlobLike(body)) {
           this.body = body;
         } else {
           throw new InvalidArgumentError("body must be a string, a Buffer, a Readable stream, an iterable, or an async iterable");
@@ -179629,16 +181946,33 @@ var require_request = __commonJS({
           return false;
         }
       }
-      onRequestUpgrade(statusCode, headers, socket) {
+      /**
+       * @param {number} statusCode
+       * @param {Buffer[]|string[]|import('../../types/header.d.ts').IncomingHttpHeaders} headers
+       * @param {import('node:stream').Duplex} socket
+       * @param {string} [statusText]
+       */
+      onRequestUpgrade(statusCode, headers, socket, statusText = "") {
         var _a2, _b;
+        this.onFinally();
         assert(!this.aborted);
         assert(!this.completed);
+        if (channels.headers.hasSubscribers) {
+          channels.headers.publish({ request: this, response: { statusCode, headers, statusText } });
+        }
         const controller = this[kController];
         if (controller) {
           controller.rawHeaders = headers;
         }
         const parsedHeaders = Array.isArray(headers) ? parseHeaders(headers) : headers;
-        return (_b = (_a2 = this[kHandler]).onRequestUpgrade) == null ? void 0 : _b.call(_a2, controller, statusCode, parsedHeaders, socket);
+        const result = (_b = (_a2 = this[kHandler]).onRequestUpgrade) == null ? void 0 : _b.call(_a2, controller, statusCode, parsedHeaders, socket);
+        if (!this.aborted) {
+          this.completed = true;
+          if (channels.trailers.hasSubscribers) {
+            channels.trailers.publish({ request: this, trailers: [] });
+          }
+        }
+        return result;
       }
       onResponseEnd(trailers) {
         var _a2, _b;
@@ -179775,6 +182109,14 @@ var require_request = __commonJS({
         request.headers.push(key, val);
       }
     }
+    var isFormData;
+    function isUndiciFormData(body) {
+      if (isFormData === void 0) {
+        require_formdata();
+        isFormData = require_webidl().webidl.is.FormData;
+      }
+      return isFormData(body);
+    }
     module2.exports = Request;
   }
 });
@@ -179784,6 +182126,7 @@ var require_dispatcher = __commonJS({
   "addons/pro/node_modules/undici/lib/dispatcher/dispatcher.js"(exports2, module2) {
     "use strict";
     var EventEmitter = require("node:events");
+    var { kOriginless, kUrl } = require_symbols();
     var Dispatcher = class extends EventEmitter {
       dispatch() {
         throw new Error("not implemented");
@@ -179795,7 +182138,9 @@ var require_dispatcher = __commonJS({
         throw new Error("not implemented");
       }
       compose(...args) {
+        var _a;
         const interceptors = Array.isArray(args[0]) ? args[0] : args;
+        const interceptorOrigin = this[kOriginless] === true ? null : (_a = this[kUrl]) == null ? void 0 : _a.origin;
         let dispatch = this.dispatch.bind(this);
         for (const interceptor of interceptors) {
           if (interceptor == null) {
@@ -179804,11 +182149,19 @@ var require_dispatcher = __commonJS({
           if (typeof interceptor !== "function") {
             throw new TypeError(`invalid interceptor, expected function received ${typeof interceptor}`);
           }
-          dispatch = interceptor(dispatch);
+          dispatch = interceptor(dispatch, interceptorOrigin);
           if (dispatch == null || typeof dispatch !== "function" || dispatch.length !== 2) {
             throw new TypeError("invalid interceptor");
           }
         }
+        const originalDispatch = dispatch;
+        const self2 = this;
+        dispatch = function(opts, handler) {
+          if (opts && typeof opts === "object" && !opts.origin && self2[kUrl]) {
+            opts = Object.assign({}, opts, { origin: self2[kUrl].origin });
+          }
+          return originalDispatch(opts, handler);
+        };
         return new Proxy(this, {
           get: (target, key) => key === "dispatch" ? dispatch : target[key]
         });
@@ -179822,6 +182175,7 @@ var require_dispatcher = __commonJS({
 var require_dispatcher_base = __commonJS({
   "addons/pro/node_modules/undici/lib/dispatcher/dispatcher-base.js"(exports2, module2) {
     "use strict";
+    var buffer = require("node:buffer");
     var Dispatcher = require_dispatcher();
     var {
       ClientDestroyedError,
@@ -179829,9 +182183,11 @@ var require_dispatcher_base = __commonJS({
       InvalidArgumentError
     } = require_errors();
     var { kDestroy, kClose, kClosed, kDestroyed, kDispatch } = require_symbols();
+    var { defaultWebSocketMaxFragments, defaultWebSocketMaxPayloadSize } = require_constants();
     var kOnDestroyed = /* @__PURE__ */ Symbol("onDestroyed");
     var kOnClosed = /* @__PURE__ */ Symbol("onClosed");
     var kWebSocketOptions = /* @__PURE__ */ Symbol("webSocketOptions");
+    var kEventSourceOptions = /* @__PURE__ */ Symbol("eventSourceOptions");
     var DispatcherBase = class extends Dispatcher {
       /** @type {boolean} */
       [kDestroyed] = false;
@@ -179847,15 +182203,23 @@ var require_dispatcher_base = __commonJS({
       constructor(opts) {
         super();
         this[kWebSocketOptions] = (opts == null ? void 0 : opts.webSocket) ?? {};
+        this[kEventSourceOptions] = (opts == null ? void 0 : opts.eventSource) ?? {};
       }
       /**
-       * @returns {import('../../types/dispatcher').WebSocketOptions}
+       * @returns {import('../../types/client').Client.WebSocketOptions}
        */
       get webSocketOptions() {
         return {
-          maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
-          maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
-          // 128 MB default
+          maxFragments: this[kWebSocketOptions].maxFragments ?? defaultWebSocketMaxFragments,
+          maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? defaultWebSocketMaxPayloadSize
+        };
+      }
+      /**
+       * @returns {import('../../types/client').Client.EventSourceOptions}
+       */
+      get eventSourceOptions() {
+        return {
+          maxEventSize: this[kEventSourceOptions].maxEventSize ?? buffer.kStringMaxLength
         };
       }
       /** @returns {boolean} */
@@ -180005,15 +182369,19 @@ var require_connect = __commonJS({
         if (this._sessionCache.has(sessionKey)) {
           this._sessionCache.delete(sessionKey);
         } else if (this._sessionCache.size >= this._maxCachedSessions) {
+          let evicted = false;
           for (const [key, ref] of this._sessionCache) {
             if (ref.deref() === void 0) {
               this._sessionCache.delete(key);
-              return;
+              evicted = true;
+              break;
             }
           }
-          const oldest = this._sessionCache.keys().next();
-          if (!oldest.done) {
-            this._sessionCache.delete(oldest.value);
+          if (!evicted) {
+            const oldest = this._sessionCache.keys().next();
+            if (!oldest.done) {
+              this._sessionCache.delete(oldest.value);
+            }
           }
         }
         this._sessionCache.set(sessionKey, new WeakRef(session));
@@ -180141,7 +182509,7 @@ var require_utils2 = __commonJS({
 });
 
 // addons/pro/node_modules/undici/lib/llhttp/constants.js
-var require_constants2 = __commonJS({
+var require_constants3 = __commonJS({
   "addons/pro/node_modules/undici/lib/llhttp/constants.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -180763,6 +183131,2692 @@ var require_constants2 = __commonJS({
   }
 });
 
+// addons/pro/node_modules/undici/lib/milo/simd.js
+var require_simd = __commonJS({
+  "addons/pro/node_modules/undici/lib/milo/simd.js"(exports2, module2) {
+    var wasmModule = new WebAssembly.Module(
+      Buffer.from(
+        "AGFzbQEAAAABQgtgA39/fwBgAX8Bf2ACf38AYAF/AGABfwF+YAJ/fgBgBH9/f38AYAABf2AIf39/f39/f3wAYAN/f38Bf2ACf38BfwKUBBwDZW52CG9uX2Vycm9yAAADZW52Cm9uX2hlYWRlcnMACANlbnYJb25fZmluaXNoAAADZW52EG9uX21lc3NhZ2Vfc3RhcnQAAANlbnYTb25fbWVzc2FnZV9jb21wbGV0ZQAAA2Vudgpvbl9yZXF1ZXN0AAADZW52C29uX3Jlc3BvbnNlAAADZW52CG9uX3Jlc2V0AAADZW52CW9uX21ldGhvZAAAA2VudgZvbl91cmwAAANlbnYLb25fcHJvdG9jb2wAAANlbnYKb25fdmVyc2lvbgAAA2Vudglvbl9zdGF0dXMAAANlbnYJb25fcmVhc29uAAADZW52Dm9uX2hlYWRlcl9uYW1lAAADZW52D29uX2hlYWRlcl92YWx1ZQAAA2Vudgpvbl9jb25uZWN0AAADZW52Cm9uX3VwZ3JhZGUAAANlbnYPb25fY2h1bmtfbGVuZ3RoAAADZW52F29uX2NodW5rX2V4dGVuc2lvbl9uYW1lAAADZW52GG9uX2NodW5rX2V4dGVuc2lvbl92YWx1ZQAAA2Vudghvbl9jaHVuawAAA2Vudgdvbl9ib2R5AAADZW52B29uX2RhdGEAAANlbnYPb25fdHJhaWxlcl9uYW1lAAADZW52EG9uX3RyYWlsZXJfdmFsdWUAAANlbnYLb25fdHJhaWxlcnMAAANlbnYPb25fc3RhdGVfY2hhbmdlAAADQkEGAAEDAwcCAwYDBAQBBAQBAQEEAQQEAQEBAQEBAQEBAQEBAQEHCQMCAwUFAgICBQICAgICAgIBAQEBCgECAwICAgUDAQARBgkBfwFBgIDAAAsHnQg5Bm1lbW9yeQIABWFsbG9jAB4FY2xlYXIAHwhjb21wbGV0ZQAgBmNyZWF0ZQAhB2RlYWxsb2MAIgdkZXN0cm95ACMEZmFpbAAkBmZpbmlzaAAlDmdldF9jaHVua19zaXplACYSZ2V0X2NvbnRlbnRfbGVuZ3RoACcOZ2V0X2Vycm9yX2NvZGUAKBlnZXRfZXJyb3JfZGVzY3JpcHRpb25fcmF3ACkUZ2V0X21heF9ib2R5X3BheWxvYWQAKhVnZXRfbWF4X2hlYWRlcl9sZW5ndGgAKxlnZXRfbWF4X3N0YXJ0X2xpbmVfbGVuZ3RoACwKZ2V0X21ldGhvZAAtCmdldF9wYXJzZWQALgxnZXRfcG9zaXRpb24ALxhnZXRfcmVtYWluaW5nX2NodW5rX3NpemUAMBxnZXRfcmVtYWluaW5nX2NvbnRlbnRfbGVuZ3RoADEJZ2V0X3N0YXRlADIKZ2V0X3N0YXR1cwAzHWhhc19jaHVua2VkX3RyYW5zZmVyX2VuY29kaW5nADQUaGFzX2Nvbm5lY3Rpb25fY2xvc2UANRZoYXNfY29ubmVjdGlvbl91cGdyYWRlADYSaGFzX2NvbnRlbnRfbGVuZ3RoADcMaGFzX3RyYWlsZXJzADgVaGFzX3RyYW5zZmVyX2VuY29kaW5nADkLaGFzX3VwZ3JhZGUAOg1pc19hdXRvZGV0ZWN0ADsKaXNfY29ubmVjdAA8CGlzX2RlYnVnAD0JaXNfcGF1c2VkAD4KaXNfcmVxdWVzdAA/Dm1pbG9faGFzX2RlYnVnAEAFcGFyc2UAQQVwYXVzZQBCBXJlc2V0AEMGcmVzdW1lAEQUc2V0X2FjdGl2ZV9jYWxsYmFja3MARRFzZXRfYWN0aXZlX2V2ZW50cwBGCXNldF9kZWJ1ZwBHDnNldF9pc19jb25uZWN0AEgOc2V0X2lzX3JlcXVlc3QASRRzZXRfbWF4X2JvZHlfcGF5bG9hZABKFXNldF9tYXhfaGVhZGVyX2xlbmd0aABLGXNldF9tYXhfc3RhcnRfbGluZV9sZW5ndGgATBVzZXRfc2hvdWxkX2F1dG9kZXRlY3QATSBzZXRfc2hvdWxkX2NvbnRpbnVlX3dpdGhvdXRfZGF0YQBOHHNldF9zaG91bGRfbWFuYWdlX3VuY29uc3VtZWQATxRzZXRfc2hvdWxkX3NraXBfYm9keQBQIHNldF9zaG91bGRfc3VzcGVuZF9hZnRlcl9oZWFkZXJzAFEcc2hvdWxkX2NvbnRpbnVlX3dpdGhvdXRfZGF0YQBSGHNob3VsZF9tYW5hZ2VfdW5jb25zdW1lZABTEHNob3VsZF9za2lwX2JvZHkAVBxzaG91bGRfc3VzcGVuZF9hZnRlcl9oZWFkZXJzAFUKoLQCQdgDAgJ/BXsCQCACIANPDQAgAS0AACEBIAMgAmsiBUEPTQRAIANBAWsDQCABIAItAABGBEBBASEEDAMLIAJBAWoiAiADRw0ACyECDAELIAH9DyIGIAL9AAAA/SP9ZCIBBEAgAiABaGohAkEBIQQMAQsgAkFwcUEQaiEBAkACQCAFQcAASQ0AIAEgA0FAaiIFSw0AIAIgAkEPcWtBIGohAgNAIAYgAv0ABAD9IyIHIAYgAkEQayIB/QAEAP0jIgj9UCAGIAJBEGr9AAQA/SMiCf1QIAYgAkEgav0ABAD9IyIK/VD9ZA0CIAJBQGshAiABQUBrIAVNDQALIAJBEGshAQsgA0EQayICIAFPBEADQCAGIAH9AAAA/SP9ZCIFBEAgASAFaGohAkEBIQQMBAsgAUEQaiIBIAJNDQALCyABIANPDQEgA0EQayIBIAYgAf0AAAD9I/1kQf//A3EiAWhqIQIgAUEARyEEDAELAkAgCP1kIgFFBEAgB/1kIgENASAJ/WQiAUUEQCACIAr9ZGhqQSBqIQJBASEEDAMLIAIgAWhqQRBqIQJBASEEDAILIAIgAWhqQRBrIQJBASEEDAELIAIgAWhqIQJBASEECyAAIAI2AgQgACAENgIAC7ADAgR/AXsCQCACQRBPBEADQCACIANBEGoiBEkEQEECIQUgAiADTQ0DA0AgASADai0AACIEQQ1GBEBBACEFDAULAkAgBEEgTwRAIARB/wBHDQFBASEFDAYLIARBCUYNAEEBIQUMBQsgAiADQQFqIgNHDQALIAIhAwwDCyABIANqIAQhA/0AAAAiB/0Mf39/f39/f39/f39/f39/f/0jIAf9DAkJCQkJCQkJCQkJCQkJCQn9JCAH/QwgICAgICAgICAgICAgICAg/Sb9Tv1Q/VNFDQALQXAhA0ECIQUgBEUNASAEQRBrIQMgBCAEQQ9rIgIgAiAESRsDQCABIANqLQAAIgZBDUYEQEEAIQUMAwsCQCAGQSBPBEAgBkH/AEcNAUEBIQUMBAsgBkEJRg0AQQEhBQwDCyADQQFqIgMgBEkNAAshAwwBC0ECIQUgAkUEQAwBCwNAIAEgA2otAAAiBEENRgRAQQAhBQwCCwJAIARBIE8EQCAEQf8ARw0BQQEhBQwDCyAEQQlGDQBBASEFDAILIAIgA0EBaiIDRw0ACyACIQMLIAAgAzYCBCAAIAU2AgALJgACQCAAQQBOBEAgAEUEQEEBIQAMAgsgAEEBEFYiAA0BCwALIAALRwAgAEIANwMoIABBADoAFSAA/QwAAAAAAAAAAAAAAAAAAAAA/QsDMCAA/QwAAAAAAAAAAAAAAAAAAAAA/QsDQCAAQQA2AlAL0gMCA38BfgJAIAAiAS0AJCIAQQ5NQQBBASAAdEGAzwFxG0UEQCABQQM6ACYgAUECOgAkIAFBDToA9AJBACEAIAFBADoAeSABQaeYwAApAAA3AGwgAUGsmMAAKQAANwBxAkAgASkDWCABKQNghKdBAXFFBEAgASgC+AIhAgwBCyABKAL4AiICQQE6AAAgAkEFakEDOgAAIAJBAWogASgCIDYAAEEGIQALIAAgAmpBADoAAAwBCwJ/QQAgASkDWCABKQNghCIEQsgAg1ANABogBEIIg0IAUgRAIAEoAvgCIgBBBDoAACAAQQVqQQA2AAAgAEEBaiABKAIgNgAAQQkhAgsgAiAEQsAAg1ANABogASgC+AIgAmoiAEEHOgAAIABBBWpBADYAACAAQQFqIAEoAiA2AAAgAkEJagshAiABQQA6ABYgAUEAOgAUAkAgAS0AUkEBRgRAQQ4hACABLQARQQFxDQELIAEtAFAhAyAEQgKDUARAIAMhAAwBC0EBIQAgA0EBcUUEQCADIQAMAQsgASgC+AIgAmoiA0ECOgAAIANBBWpBADYAACADQQFqIAEoAiA2AAAgAkEJaiECCyABIAA6ACQgASgC+AIgAmpBADoAAAsL7wIBA38jAEHgAGsiASQAAkBBgIAEEFciAkUNACACQQRrLQAAQQNxRQ0AIAJBAEGAgAT8CwALAkAgAkUNACABQQA2AFwgAUIANwBUIAH9DAAAAAAAAAAAAAAAAAAAAAD9CwBEIAH9DAAAAAAAAAAAAAAAAAAAAAD9CwA0IAH9DAAAAAAAAAAAAAAAAAAAAAD9CwIcIAFBADYCLCABQgA3AA8gAUEAOgAXQYADQQgQViIARQ0AIABBAToAECAAQgA3AwggAEKAwICAgIAINwMAIAD9DAAAAAAAAAAAAAAAAAAAAAD9CwARIABCADcAHyAAIAEpADM3ACcgACAB/QAAO/0LAC8gACAB/QAAS/0LAD8gACABKQBYNwBMIAAgASgCKDYCZCAAIAH9AAIY/QsCVCAAQewAakEAQf8B/AsAIAAgAjYC+AIgACABLwAWOwDzAiAAIAEpAA43AOsCIAAgADYCaCABQeAAaiQAIAAPCwALFQACQCAARQ0AIAFFDQAgACABEFgLCzgBAX8gAARAIAAoAvACIgEEQCAAKALsAiABEFgLIAAoAvgCIgEEQCABQYCABBBYCyAAQYADEFgLC5IBAQF/IAAgAToAJiAAQQI6ACQgAEHsAGohBEH+ASADIANB/gFPGyIDBEAgBCACIAP8CgAACyAAIAM6APQCIAMgBGpBADoAAEEAIQMgACkDWCAAKQNghEIBg6cEfyAAKAL4AiICQQE6AAAgAkEFaiABOgAAIAJBAWogACgCIDYAAEEGBUEACyAAKAL4AmpBADoAAAuhAgECfwJAAkACQCAALQAkIgFBCU0EQEEBIAF0QRtxDQEgAUECRg0DIAFBCUYNAgsgAEEFOgAmIABBAjoAJCAAQRY6APQCIABBADoAggEgAEGAiMAA/QAAAP0LAGwgAEGOiMAAKQAANwB6AkAgACkDWCAAKQNghKdBAXFFBEAgACgC+AIhAQwBCyAAKAL4AiIBQQE6AAAgAUEFakEFOgAAIAFBAWogACgCIDYAAEEGIQILIAEgAmpBADoAAA8LIABBAToAJA8LAn8gACkDWCAAKQNghEIIg1AEQCAAKAL4AiEBQQAMAQsgACgC+AIiAUEEOgAAIAFBBWpBADYAACABQQFqIAAoAiA2AABBCQshAiAAQQE6ACQgASACakEAOgAACwsHACAAKQMwCwcAIAApAygLBwAgAC0AJgsTACAAMQD0AiAAQewAaq1CIIaECwcAIAApAwgLBwAgACgCBAsHACAAKAIACwcAIAAtAEwLBwAgACkDGAsHACAAKAIgCwcAIAApA0ALBwAgACkDOAsHACAALQAkCwcAIAAoAkgLBwAgAC0ATwsHACAALQBQCwcAIAAtAFELBwAgAC0ATQsHACAALQBTCwcAIAAtAE4LBwAgAC0AUgsHACAALQAQCwcAIAAtABULBwAgAC0AFwsHACAALQAlCwcAIAAtABELBABBAAvy4wEDK38cfgR7IAEhECACIRQjAEGQAWsiDCQAIAAiAykDWCADKQNghCEuAkACQCADAn8CQAJAAkACQAJAAkAgAy0AJEECRgRAIANBADYCIAwBCyADLQAlQQFHDQELIC5CAFINAQwHCwJAIAMtABMgAygC8AIiAEEAR3EiHwRAIAMoAuwCIQEgDCAQNgJ8IAwgATYCdCAMIAA2AnggDCAUNgKAASAAIBRqIhRBAEgNAQJAIBRFBEBBASEQDAELIBRBARBWIhBFDQILIAxBADYCjAEgDCAQNgKIASAMIBQ2AoQBQQAhAANAIAxB9ABqIABqIgEoAgAhDwJAAkAgAUEEaigCACINIAwoAoQBIAlrSwRAIAxBhAFqIQ4jAEEQayILJAAgDSAJIA1qIgFLBEAACyALQQRqIQogDigCBCERAkBBCCABIA4oAgAiAkEBdCIGIAEgBksbIgEgAUEITRsiB0EASARAIApBADYCBCAKQQE2AgAMAQsCfyACBEBBACEBAn8CQAJAAkACQAJAIBFBBGsiBCgCACIJQXhxIghBBEEIIAlBA3EiEBsgAmpJDQAgEEEAIAJBJ2ogCEkbDQAgB0HM/3tLDQRBECAHQQtqQXhxIAdBC0kbIQIgEUEIayEGAkACQAJAAkAgEARAIAYgCGohECACIAhNDQMgEEHgm8AAKAIARg0EIBBB3JvAACgCAEYNAiAQKAIEIglBAnENCCAJQXhxIgkgCGoiCCACSQ0IIBAgCRBaIAggAmsiEEEQSQ0BIAQgAiAEKAIAQQFxckECcjYCACACIAZqIgIgEEEDcjYCBCAGIAhqIgggCCgCBEEBcjYCBCACIBAQWwwHCyACQYACSQ0HIAZFDQcgAiAITw0HIAggAmtBgIAISw0HIBEMCQsgBCAIIAQoAgBBAXFyQQJyNgIAIAYgCGoiAiACKAIEQQFyNgIEDAULQdSbwAAoAgAgCGoiCCACSQ0FAkAgCCACayIQQQ9NBEAgBCAJQQFxIAhyQQJyNgIAIAYgCGoiAiACKAIEQQFyNgIEQQAhEEEAIQIMAQsgBCACIAlBAXFyQQJyNgIAIAIgBmoiAiAQQQFyNgIEIAYgCGoiCCAQNgIAIAggCCgCBEF+cTYCBAtB3JvAACACNgIAQdSbwAAgEDYCAAwECyAIIAJrIghBD00NAyAEIAIgCUEBcXJBAnI2AgAgAiAGaiICIAhBA3I2AgQgECAQKAIEQQFyNgIEIAIgCBBbDAMLQdibwAAoAgAgCGoiCCACSw0BDAMLAAsgBCACIAlBAXFyQQJyNgIAIAIgBmoiECAIIAJrIgJBAXI2AgRB2JvAACACNgIAQeCbwAAgEDYCAAsgBkUNACARDAILIAcQVyICRQ0AIAdBfEF4IAQoAgAiAUEDcRsgAUF4cWoiASABIAdLGyIBBEAgAiARIAH8CgAACyACIQEgERBZCyABCwwBCyAHQQEQVgsiAUUEQCAKIAc2AgggCkEBNgIEIApBATYCAAwBCyAKIAc2AgggCiABNgIEIApBADYCAAsgCygCBEEBRgRAIAsoAggaIAsoAgwACyALKAIIIQEgDiAHNgIAIA4gATYCBCALQRBqJAAgDCgCiAEhECAMKAKMASEJDAELIA1FDQELIA1FDQAgCSAQaiAPIA38CgAACyAMIAkgDWoiCTYCjAEgAEEIaiIAQRBHDQALIAkgFEkNAyAMKAKEASEYCyADQQA2AiBBASERQQEhBEEBIQlBASEAIC5QIiBFBEAgLkLIAINCAFIhFyAuQoA8g0IAUiEhIC5CgA+DQgBSISIgLkIkg0IAUiEcIC5CFINCAFIhHSAuQoCAgAiDUCEEIC5CgMAAg1AhCSAuQgKDQgGIpyEZIC5CgICAEINCGYinIR4gLkKAgAGDQg6IpyEaIC5CgIACg1AhAAsgAy0AJQRAIBAhBCAUIQkMBwsgAykDCCExIC5CEIMhOSAuQgSDITUgLkIggyE6IC5CgAKDIUAgLkKAAYMhQSAuQoAggyFCIC5CgBCDIUMgLkKACIMhOyAuQoAEgyE8IC5CgIAEgyFEIC5CgIAIgyFFIANBKGohFSAuQoCAEIMhRiAuQoCAgAKDITYgLkKAgMAAgyE9IC5CgIAggyE+IC5CgICABIMhNyAuQoCAgAGDIT8gLkLAAIMhMyAuQgiDITQgLkKAgIAggyFHIC5CgIACg1AgAHIhIyAupyIAQQ52IBpxISQgLkKAwACDUCAJciElIABBGXYgHnEhJiAuQoCAgAiDUCAEciEnIBQiCyEJIBAhBANAAkAgCw0AIAMtABRBAXENAAwICyADQQA6ABQCQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAn8CQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAn8CQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkAgAy0AJA4PAYYBiAECAwQFBgcICQonC4gBAAsgA0EDOgAmIANBAjoAJCADQaeYwAApAAA3AGwgA0GsmMAAKQAANwBxDIQBCyADLQAQIgBFBEAgAy0AEUEBcQ0LCyAADQwgHA0LDH0LIAtFDXogC0EBayAJTw16IAshESAEIQAgC0EPSw0MA0AgAC0AAEENRg1gIABBAWohACARQQFrIhENAAsMegsgC0UNdyALQQFrIAlPDXcgCyERIAQhACALQQ9LDQwDQCAALQAAQQ1GDVYgAEEBaiEAIBFBAWsiEQ0ACwx3CyALQQhPDQwMgwELIAxByABqIAQgCxAdIAwoAkwhASAMKAJIIgBFDQ4gAEECaw0MDA0LIAMoAkghACADLQBMIQcgAy0AUiIBQQFGBEAgAy0AUUEBcUUNEAsgAy0ATyIGQQFxRSADLQBTQQFGcQ0QIAMtABEhAiADKQMoIS8CQCAHQQFrQf8BcUEBSw0AIAJBAXFFDQAgL0IAUg0SCyADLQAVDRICQCAAQeUARyIHDQAgAUUNACACQQFxRQ0UCyACQQFxDRQgAy0AFg1wIABByAFJDRUgAEHMAWtBAkkNcCAAQbACRw0WDHALIAMpAzgiMiALrSIvIC8gMlYbIS8gMUIAUg0bDGsLIAutIS8gMUIAUg0bDGkLIAtFDWcgC0EBayAJTw1nIAshESAEIQAgC0EPSw0bA0AgAC0AAEENRg05IABBAWohACARQQFrIhENAAsMZwsgC0UNZSALQQFrIAlPDWUgBCEHIAsiAEEPSw0bA0AgBy0AAEENRg02IAdBAWohByAAQQFrIgANAAsMZQsgDEHoAGogBCALEB0gDCgCbCEBIAwoAmgiAEUNHiAAQQJrDRwMHQsgHUUNYCA5QgBSBEAgBUEQakGBgARPDXwgAygCICEAIAMoAvgCIAVqQQU6AAAgAygC+AIgBWpBAWogADYAACADKAL4AiAFakEFakEANgAAIAVBCWohBQsgNVANYCAFQRBqQYCABEsNeyADKAIgIQAgAygC+AIgBWpBAzoAACADKAL4AiAFakEBaiAANgAAIAMoAvgCIAVqQQVqQQA2AAAgBUEJaiEFDGALIDpCAFIEQCAFQRBqQYGABE8NeyADKAIgIQAgAygC+AIgBWpBBjoAACADKAL4AiAFakEBaiAANgAAIAMoAvgCIAVqQQVqQQA2AAAgBUEJaiEFCyA1UA1xIAVBEGpBgIAESw16IAMoAiAhACADKAL4AiAFakEDOgAAIAMoAvgCIAVqQQFqIAA2AAAgAygC+AIgBWpBBWpBADYAACAFQQlqIQUMcQsgCUEETQRAIAlBAU0NXgxcCyAELQAEQS9HDVsgBCgAAEHIqNGCBUcNWyADQQA6ABEgHEUNWiA6QgBSBEAgBUEQakGBgARPDXogAygCICEAIAMoAvgCIAVqQQY6AAAgAygC+AIgBWpBAWogADYAACADKAL4AiAFakEFakEANgAAIAVBCWohBQsgNVANWiAFQRBqQYCABEsNeSADKAIgIQAgAygC+AIgBWpBAzoAACADKAL4AiAFakEBaiAANgAAIAMoAvgCIAVqQQVqQQA2AAAgBUEJaiEFDFoLIAT9AAAA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SP9ZCIABEAgBCAAaGohAAxTCyAEIAtqIQEgBEEQIARBD3EiAmsiBmohAAJAAkAgC0HAAEkNACAGIAtBQGpLDQAgAUFAaiEGIAQgAmtBIGohAANAIAD9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiSiAAQRBrIgL9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiS/1QIABBEGr9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiTP1QIABBIGr9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiTf1Q/WQNAiAAQUBrIQAgAkFAayAGTQ0ACyAAQRBrIQALIAAgAUEQayICSw1SA0AgAP0AAAD9DA0NDQ0NDQ0NDQ0NDQ0NDQ39I/1kIgZFBEAgAiAAQRBqIgBPDQEMVAsLIAAgBmhqIQAMUwsgS/1kIgFFBEAgSv1kIgENICBM/WQiAUUEQCAAIE39ZGhqQSBqIQAMVAsgACABaGpBEGohAAxTCyAAIAFoakEQayEADFILIAT9AAAA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SP9ZCIABEAgBCAAaGohAAxJCyAEIAtqIQEgBEEQIARBD3EiAmsiBmohAAJAAkAgC0HAAEkNACAGIAtBQGpLDQAgAUFAaiEGIAQgAmtBIGohAANAIAD9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiSiAAQRBrIgL9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiS/1QIABBEGr9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiTP1QIABBIGr9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiTf1Q/WQNAiAAQUBrIQAgAkFAayAGTQ0ACyAAQRBrIQALIAAgAUEQayICSw1IA0AgAP0AAAD9DA0NDQ0NDQ0NDQ0NDQ0NDQ39I/1kIgZFBEAgAiAAQRBqIgBPDQEMSgsLIAAgBmhqIQAMSQsgS/1kIgFFBEAgSv1kIgENICBM/WQiAUUEQCAAIE39ZGhqQSBqIQAMSgsgACABaGpBEGohAAxJCyAAIAFoakEQayEADEgLIAlBB00NciAEKQAAQo2UzOrUwcKGClENGyADQQY6ACYgA0ECOgAkIANB54vAACkAADcAbCADQe+LwAD9AAAA/QsAdCADQf+LwAAvAAA7AIQBQYYBIQtBGgx1CyABIAlPDUQgDEE6OgB0IAxBQGsgDEH0AGogBCABIARqQQFqEBwgDCgCQEEBcUUNRCADQQY6ACYgA0ECOgAkIANBjZLAAP0AAAD9CwBsIANBnZLAAP0AAAD9CwB8IANBrZLAACgAADYAjAEMPAsgCyADKAIETw0BDHQLIAFBAWoiAiALRg1zIAIgCU8NbyACIARqIgYtAABBCkcNHAJAAkACQCABRQRAICMNAiAFQRpqQYCABE0NAUEBIQdBAiEADGULIAEgCU8NRSAEIQAgAiIHQQ9LBEAgAP0AAAD9DDo6Ojo6Ojo6Ojo6Ojo6Ojr9I/1kIgAEQCAEIABoaiEADDkLIARBECAEQQ9xIgdrIghqIQACQAJAIAJBwABJDQAgCCABQT9rSw0AIAZBQGohCCAEIAdrQSBqIQADQCAA/QAEAP0MOjo6Ojo6Ojo6Ojo6Ojo6Ov0jIkogAEEQayIH/QAEAP0MOjo6Ojo6Ojo6Ojo6Ojo6Ov0jIkv9UCAAQRBq/QAEAP0MOjo6Ojo6Ojo6Ojo6Ojo6Ov0jIkz9UCAAQSBq/QAEAP0MOjo6Ojo6Ojo6Ojo6Ojo6Ov0jIk39UP1kDQIgAEFAayEAIAdBQGsgCE0NAAsgAEEQayEACyAAIAZBEGsiB0sNOANAIAD9AAAA/Qw6Ojo6Ojo6Ojo6Ojo6Ojo6/SP9ZCIIRQRAIAcgAEEQaiIATw0BDDoLCyAAIAhoaiEADDkLIEv9ZCIGDSEgSv1kIgYNIiBM/WQiBkUEQCAAIE39ZGhqQSBqIQAMOQsgACAGaGpBEGohAAw4CwNAIAAtAABBOkYNOCAAQQFqIQAgB0EBayIHDQALDEULIAMtAEwgAygCSCIBIAMtABEiAhshBkEAIQBBAEECIAMtAE9rIAMtAE0iBxshCCADKAIgQQJqIQogAy0AUEF/c0EBcSENAkAgAy0AUkEBRw0AIAMtAFFBAXFFDQAgAiABQeUARnIhAAsgAykDKCEvIAMtAFMhASADKAL4AiAFakEQOgAAIAMoAvgCIAVqQQFqIAo2AAAgAygC+AIgBWpBBWogBjsAACADKAL4AiAFakEHaiANOgAAIAMoAvgCIAVqQQhqIAA6AAAgAygC+AIgBWpBCWogAToAACADKAL4AiAFakEKaiAIOgAAIAMoAvgCIAVqQQtqIC9CACAHGzcAACAFQRNqIQUgAy0AJEECRg0BCyADQQc6ACQLIANBAToAFCADLQASIQdBAiEADGELIANBBjoAJiADQQI6ACQgA0GxksAA/QAAAP0LAGwgA0HBksAAKAAANgB8DGYLIANBEDoAJiADQQI6ACQgA0HsAGpBxZLAAEHIAPwKAABBtAEhC0HIAAxwCyADQQo6ACYgA0ECOgAkIANB7ABqQY2TwABBwQD8CgAAQa0BIQtBwQAMbwsgA0EJOgAmIANBAjoAJCADQc6TwAD9AAAA/QsAbCADQd6TwAD9AAAA/QsAfCADQe6TwAD9AAAA/QsAjAEMLgsgRFANLCAFQRBqQYCABE0NCAxuCyBFUA0rIAVBEGpBgIAESw1tIAMoAiAhACADKAL4AiAFakESOgAAIAMoAvgCIAVqQQFqIAA2AABBACEHIAMoAvgCIAVqQQVqQQA2AAAgBUEJaiEFIAMtACRBAkYNZQwrCyAGQQFxIgBFIAMtAE5BAUZxDQIgAy0AFg0DIAMtAE0NBCAADRIgA0EBOgAUIAVB3/8Da0H//3tJDWwCQCAXRQ0AIDRCAFIEQCAFQXBIDW4gAygCICECIAMoAvgCIAVqIgBBBDoAACAAQQVqQQA2AAAgAEEBaiACNgAAIAVBCWohBQsgM1ANACAFQXBIDW0gAygCICECIAMoAvgCIAVqIgBBBzoAACAAQQVqQQA2AAAgAEEBaiACNgAAIAVBCWohBQsgA0EAOgAWIANBADoAFCABDSoMXAsgBw1aCyADLQBNRQRAIAZBAXENESADQQk6ACQMXAsgL0IAUg0DIANBAToAFCAFQd//A2tB//97SQ1qAkAgF0UNACA0QgBSBEAgBUFwSA1sIAMoAiAhASADKAL4AiAFaiIAQQQ6AAAgAEEFakEANgAAIABBAWogATYAACAFQQlqIQULIDNQDQAgBUFwSA1rIAMoAiAhASADKAL4AiAFaiIAQQc6AAAgAEEFakEANgAAIABBAWogATYAACAFQQlqIQULIANBADoAFiADQQA6ABQMWgsgA0EHOgAmIANBAjoAJCADQewAakH+k8AAQc4A/AoAAEG6ASELQc4ADGgLIANBAToAFCAFQd//A2tB//97SQ1oIBdFDSUgNEIAUgRAIAVBcEgNaSADKAIgIQIgAygC+AIgBWoiAEEEOgAAIABBBWpBADYAACAAQQFqIAI2AAAgBUEJaiEFCyAzUA0lIAVBcEgNaCADKAIgIQIgAygC+AIgBWoiAEEHOgAAIABBBWpBADYAACAAQQFqIAI2AAAgBUEJaiEFDCULIC9CAFINACADQQE6ABQgBUHf/wNrQf//e0kNZyAXRQ0jIDRCAFIEQCAFQXBIDWggAygCICECIAMoAvgCIAVqIgBBBDoAACAAQQVqQQA2AAAgAEEBaiACNgAAIAVBCWohBQsgM1ANIyAFQXBIDWcgAygCICECIAMoAvgCIAVqIgBBBzoAACAAQQVqQQA2AAAgAEEBaiACNgAAIAVBCWohBQwjCyADQQg6ACQMVwsgAygCICEAIAMoAvgCIAVqQRE6AAAgAygC+AIgBWpBAWogADYAAEEAIQcgAygC+AIgBWpBBWpBADYAACAFQQlqIQUgAy0AJEECRw0jDF0LIDAgMVoNZCAxIDB9IjggLyAvIDhWGyEvDE8LIDAgMVoNYyAxIDB9IjIgLyAvIDJWGyEvDE0LIAT9AAAA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SP9ZCIABEAgBCAAaGohAAwdCyAEIAtqIQEgBEEQIARBD3EiAmsiBmohAAJAAkAgC0HAAEkNACAGIAtBQGpLDQAgAUFAaiEGIAQgAmtBIGohAANAIAD9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiSiAAQRBrIgL9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiS/1QIABBEGr9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiTP1QIABBIGr9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiTf1Q/WQNAiAAQUBrIQAgAkFAayAGTQ0ACyAAQRBrIQALIAAgAUEQayICSw0cA0AgAP0AAAD9DA0NDQ0NDQ0NDQ0NDQ0NDQ39I/1kIgZFBEAgAiAAQRBqIgBPDQEMHgsLIAAgBmhqIQAMHQsgS/1kIgFFBEAgSv1kIgENDyBM/WQiAUUEQCAAIE39ZGhqQSBqIQAMHgsgACABaGpBEGohAAwdCyAAIAFoakEQayEADBwLIAT9AAAA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SP9ZCIABEAgBCAAaGohBwwaCyAEIAtqIQEgBEEQIARBD3EiAmsiBmohAAJAAkAgC0HAAEkNACAGIAtBQGpLDQAgAUFAaiEGIAQgAmtBIGohAANAIAD9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiSiAAQRBrIgL9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiS/1QIABBEGr9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiTP1QIABBIGr9AAQA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SMiTf1Q/WQNAiAAQUBrIQAgAkFAayAGTQ0ACyAAQRBrIQALIAAgAUEQayICSw0ZA0AgAP0AAAD9DA0NDQ0NDQ0NDQ0NDQ0NDQ39I/1kIgZFBEAgAiAAQRBqIgBPDQEMGwsLIAAgBmhqIQcMGgsgS/1kIgFFBEAgSv1kIgENDyBM/WQiAUUEQCAAIE39ZGhqQSBqIQcMGwsgACABaGpBEGohBwwaCyAAIAFoakEQayEHDBkLIAMpA0AiMlANFiAyIAutIi8gLyAyVhshLyAxUA0VIDAgMVoNYCAxIDB9IjggLyAvIDhWGyEvDBULIAEgCU8NAiAMQTo6AHQgDEHgAGogDEH0AGogBCABIARqQQFqEBwgDCgCYEEBcUUNAiADQQY6ACYgA0ECOgAkIANB7ZfAAP0AAAD9CwBsIANB/ZfAAP0AAAD9CwB8IANBipjAACkAADcAiQFBkQEhC0ElDF4LIAsgAygCBE8NAgxeCyABQQFqIgcgC0YNXSAHIAlPDVkgBCAHaiICLQAAQQpHDQsCQCABRQRAIAVB1v8Da0H//3tJDV8gR1ANASAFQRBqQYGABE8NXyADKAIgIQAgAygC+AIgBWpBGzoAACADKAL4AiAFakEBaiAAQQJqNgAAIAMoAvgCIAVqQQVqQQA2AAAgA0EBOgAUIAVBCWohBQwTCyABIAlPDREgB0EPTQRAIAQhAANAIAAtAABBOkYNEiAAQQFqIQAgB0EBayIHDQALDBILIAT9AAAA/Qw6Ojo6Ojo6Ojo6Ojo6Ojo6/SP9ZCIABEAgBCAAaGohAAwRCyAEQRAgBEEPcSIGayIIaiEAAkACQCAHQcAASQ0AIAggAUE/a0sNACACQUBqIQcgBCAGa0EgaiEAA0AgAP0ABAD9DDo6Ojo6Ojo6Ojo6Ojo6Ojr9IyJKIABBEGsiBv0ABAD9DDo6Ojo6Ojo6Ojo6Ojo6Ojr9IyJL/VAgAEEQav0ABAD9DDo6Ojo6Ojo6Ojo6Ojo6Ojr9IyJM/VAgAEEgav0ABAD9DDo6Ojo6Ojo6Ojo6Ojo6Ojr9IyJN/VD9ZA0CIABBQGshACAGQUBrIAdNDQALIABBEGshAAsgACACQRBrIgZLDRADQCAA/QAAAP0MOjo6Ojo6Ojo6Ojo6Ojo6Ov0j/WQiB0UEQCAGIABBEGoiAE8NAQwSCwsgACAHaGohAAwRCyBL/WQiAg0NIEr9ZCICDQ4gTP1kIgJFBEAgACBN/WRoakEgaiEADBELIAAgAmhqQRBqIQAMEAsgA0EBOgAUIAVBXk4NEQxdCyADQQY6ACYgA0ECOgAkIANByZfAAP0AAAD9CwBsIANB2ZfAAP0AAAD9CwB8IANB6ZfAACgAADYAjAEMIwsgA0EGOgAmIANBAjoAJCADQZKYwAD9AAAA/QsAbCADQZ+YwAApAAA3AHkMUQsgA0EOOgAkQQAhB0EIIQAMSAsgA0EKOgAkDEoLIAAgAWhqIQAMMgsgACABaGohAAwoCyADQQY6ACYgA0ECOgAkIANBrorAACkAADcAbCADQbOKwAApAAA3AHEMUwsgACAGaGpBEGshAAwWCyAAIAZoaiEADBULIAAgAWhqIQAMDQsgACABaGohBwwKCyADQQY6ACYgA0ECOgAkIANBrorAACkAADcAbCADQbOKwAApAAA3AHEMTgsgACACaGpBEGshAAwCCyAAIAJoaiEADAELIAAgAk8NASAG/QAAAP0MOjo6Ojo6Ojo6Ojo6Ojo6Ov0j/WQiAEUNASAGIABoaiEACyAAIARGDQAgACAEayIHQQFqIQACQCAeRQRAIAAhAiABIQYMAQsCQAJAIAdBAmoiAiABTw0AIAAgCU8NTCAAIARqLQAAQSBHDQAgAiAEai0AACIGQQlGDQAgBkEgRg0AIAEgBGpBAWstAAAiCEEJRg0AIAEhBiAIQSBHDQELAkAgACABTw0AA0AgACAEai0AACICQQlHIAJBIEdxDQEgASAAQQFqIgBHDQALIAEiAiEGDAILIAAiAiABTwRAIAEhBgwCCyAEQQFrIQggASEGA0AgBkEBayIAIAlPDUwgBiAIai0AACIKQQlHIApBIEdxDQEgACIGIAJLDQALIAIhBgsLQQAhAAJAA0AgACAJRg1LIAAgBGotAAAtAICAQARAIAcgAEEBaiIARg0CDAELCyADQQY6ACYgA0ECOgAkIANByZfAAP0AAAD9CwBsIANB2ZfAAP0AAAD9CwB8IANB6ZfAACgAADYAjAEMFQsgJ0UEQCAFQRBqQYCABEsNTiADKAIgIQAgAygC+AIgBWpBGToAACADKAL4AiAFakEBaiAANgAAIAMoAvgCIAVqQQVqIAc2AAAgBUEJaiEFCyAFICZFDTQaIAVBEGpBgIAESw1NIAYgAmshBiADKAIgIAJqIRFBGiEADDMLIANBBjoAJiADQQI6ACQgA0HJl8AA/QAAAP0LAGwgA0HZl8AA/QAAAP0LAHwgA0Hpl8AAKAAANgCMAQwTCwJAIBdFDQAgNEIAUgRAIAVBcEgNTSADKAIgIQEgAygC+AIgBWoiAEEEOgAAIABBBWpBADYAACAAQQFqIAFBAmo2AAAgBUEJaiEFCyAzUA0AIAVBcEgNTCADKAIgIQEgAygC+AIgBWoiAEEHOgAAIABBBWpBADYAACAAQQFqIAFBAmo2AAAgBUEJaiEFCyADQQA6ABYgA0EAOgAUAkACQCADLQBSQQFGBEAgAy0AEUEBcQ0BCyADLQBQDQFBAiEAIAMtACRBAkcNOUEAIQcMOwtBAiEAQQAhByADLQAkQQJGDTogA0EOOgAkDDoLIBkEQCAFQXBIDUwgAygCICEBIAMoAvgCIAVqIgBBAjoAACAAQQVqQQA2AAAgAEEBaiABNgAAIAVBCWohBQtBAiEAQQAhByADLQAkQQJGDTkgA0EBOgAkDDkLIC9QDUogL6chACA/QgBSBEAgBUEQakGBgARPDUsgAygCICEBIAMoAvgCIAVqQRY6AAAgAygC+AIgBWpBAWogATYAACADKAL4AiAFakEFaiAANgAAIAVBCWohBQsgN0IAUgRAIAVBEGpBgYAETw1LIAMoAiAhASADKAL4AiAFakEYOgAAIAMoAvgCIAVqQQFqIAE2AAAgAygC+AIgBWpBBWogADYAACAFQQlqIQULIC8gMHwhMCADIAMpA0AgL31CACAvIDJUGzcDQEEAIQcMOAsgC0ECSQ1JIAlFDUUCQCAELQAAQQ1HDQAgCUEBRg1GIAQtAAFBCkcNACADQQo6ACQMLQsgA0EGOgAmIANBAjoAJCADQauXwAApAAA3AGwgA0Gzl8AA/QAAAP0LAHQgA0HBl8AAKQAANwCCAQwECyAAIAFPDTAgAv0AAAD9DA0NDQ0NDQ0NDQ0NDQ0NDQ39I/1kIgBFDTAgAiAAaGohBwsgByAEayINQQFqIhMgC0YNRyAJIBNNDUMCfwJAAkAgBCATaiISLQAAQQpGBEAgEyEBIAQhACANQQ5LBEAgAP0AAAAiSv0MOzs7Ozs7Ozs7Ozs7Ozs7O/0jIksgSv0MPT09PT09PT09PT09PT09Pf0jIkr9UP1kBEAgACBL/WQgSv1kcmhqIQAMBAsgBEEQIARBD3FrIgFqIQACQAJAIA1BH0kNACABIA1BH2tLDQAgEkEgayEBA0AgAP0ABAAiSv0MOzs7Ozs7Ozs7Ozs7Ozs7O/0jIksgSv0MPT09PT09PT09PT09PT09Pf0jIkr9UCAAQRBq/QAEACJM/Qw9PT09PT09PT09PT09PT09/SMiTf1QIEz9DDs7Ozs7Ozs7Ozs7Ozs7Ozv9IyJM/VD9ZA0CIABBIGoiACABTQ0ACwsgACASQRBrIgFLDQMDQCAA/QAAACJK/Qw7Ozs7Ozs7Ozs7Ozs7Ozs7/SMiSyBK/Qw9PT09PT09PT09PT09PT09/SMiSv1Q/WRFBEAgASAAQRBqIgBPDQEMBQsLIAAgSv1kIEv9ZHJoaiAEawwFCyAAIE39ZCBM/WRyaGpBEGogBGsgSv1kIEv9ZHIiAUUNBBogACABaGogBGsMBAsDQAJAIAAtAABBO2sOAwQABAALIABBAWohACABQQFrIgENAAsgDQwDCyADQQY6ACYgA0ECOgAkIANBrorAACkAADcAbCADQbOKwAApAAA3AHEMRwsgDSAAIBJPDQEaIA0gAf0AAAAiSv0MOzs7Ozs7Ozs7Ozs7Ozs7O/0jIksgSv0MPT09PT09PT09PT09PT09Pf0jIkr9UP1kRQ0BGiABIEr9ZCBL/WRyaGogBGsMAQsgACAEawshCkEAIQACQCAKRQ0AA0AgACAJRg1FIAAgBGotAAAiAUEJRyABQSBHcQ0BIAogAEEBaiIARw0ACyAKIQALAkAgCiIBIABNDQAgBEEBayEGA0AgAUEBayICIAlPDUUgASAGai0AACIIQQlHIAhBIEdxDQEgAiIBIABLDQALIAAhAQsgACABRgRAIANBBjoAJiADQQI6ACQgA0GYlcAAKQAANwBsIANBoJXAAP0AAAD9CwB0IANBrZXAACkAADcAgQEMGgsCQCAAIAFPDQAgCSAAayICQQAgAiAJTRshBiABIABrIQggACAEaiECA0AgBkUNRSACLQAALQCAgEAEQCAGQQFrIQYgAkEBaiECIAhBAWsiCEUNAgwBCwsgA0EGOgAmIANBAjoAJCADQbWVwAD9AAAA/QsAbCADQcWVwAD9AAAA/QsAfCADQdOVwAApAAA3AIoBQZIBIQtBJgxHCwJAAkACQAJAIAEgDUYNACAJIApNDUcgBCAKai0AAEE7Rg0AIApBAWoiBiANTw0BA0ACQCAEIAZqLQAAIgJBCUYNACACQSBGDQAgBkEBayEKDAMLIAZBAWoiBiANSQ0ACwwCCyA+QgBSBEAgBUEQakGBgARPDUsgAygCICECIAMoAvgCIAVqQRQ6AAAgAygC+AIgBWpBAWogACACajYAACADKAL4AiAFakEFaiABIABrNgAAIAVBCWohBQsgCiANRwRAIApBAWohAEEAIQcgAy0AJEECRg05IANBCzoAJAw5CyADKQMwQgBSBEAgDUECaiEAQQAhByADLQAkQQJGDTkgA0EMOgAkDDkLIDZCAFIEQCAFQRBqQYGABE8NSyADKAIgIQAgAygC+AIgBWpBFzoAACADKAL4AiAFakEBaiAANgAAIAMoAvgCIAVqQQVqQQA2AAAgBUEJaiEFCyANQQJqIQBBACEHIAMtACRBAkYNOCADQQ06ACQMOAsgBiANRg0AIAYgCU8NRQJAIAQgBmoiCC0AAEEiRiIoBEAgCkECaiIIIA1LDQMgBEF/cyEpIARBIGohKiASQRBrIRYgDUE/ayErIBJBQGohLCAHQX9zIARqIS0gCCEOA0AgBCAOaiEPAkAgEyAOayICQQ9NBEAgDiAtaiEHIA8hAgNAIAItAABBIkYNAiACQQFqIQIgB0EBaiIHDQALDAYLIA/9AAAA/QwiIiIiIiIiIiIiIiIiIiIi/SP9ZCIHBEAgDyAHaGohAgwBCyAPQRAgD0EPcSIKayIbaiEHAkACQAJAIAJBwABJDQAgDiAbaiArSg0AICogDiAKa2ohBwNAIAf9AAQA/QwiIiIiIiIiIiIiIiIiIiIi/SMiSiAHQRBrIgL9AAQA/QwiIiIiIiIiIiIiIiIiIiIi/SMiS/1QIAdBEGr9AAQA/QwiIiIiIiIiIiIiIiIiIiIi/SMiTP1QIAdBIGr9AAQA/QwiIiIiIiIiIiIiIiIiIiIi/SMiTf1Q/WQNAiAHQUBrIQcgAkFAayAsTQ0ACyAHQRBrIQcLIAcgFksNAQNAIAf9AAAA/QwiIiIiIiIiIiIiIiIiIiIi/SP9ZCICRQRAIBYgB0EQaiIHTw0BDAMLCyAHIAJoaiECDAILAkAgS/1kIgJFBEAgSv1kIgINASBM/WQiAkUEQCAHIE39ZGhqQSBqIQIMBAsgByACaGpBEGohAgwDCyAHIAJoakEQayECDAILIAcgAmhqIQIMAQsgByASTw0FIBb9AAAA/QwiIiIiIiIiIiIiIiIiIiIi/SP9ZCICRQ0FIBYgAmhqIQILIAIgD2sgDmohCgJAIAIgD0YNACACIClqIQcgAiAEIA5qayEPQQAhAgJAA0AgByAJTw1LIAQgB2otAABB3ABHDQEgAkEBaiECIAcgDksgB0EBayEHDQALIA8hAgsgAkEBcUUNACAKQQFqIQ4gCiANSQ0BDAULCyAIIApJBEAgCCEHA0AgByAJTw1JAkACQCAEIAdqLQAAIgJB3ABGBEAgB0EBaiIHIApGDQEgByAJTw1MIAQgB2otAAAtAICCQEEBRw0BDAILIAItAICEQA0BCyADQQY6ACYgA0ECOgAkIANBi5bAACkAADcAbCADQZOWwAD9AAAA/QsAdCADQaOWwAD9AAAA/QsAhAEgA0GxlsAAKQAANwCSAUGaASELQS4MTQsgB0EBaiIHIApJDQALCyAKQQFqIQIMAQsgDSICIAZPBEAgDEE7OgB0IAxB2ABqIAxB9ABqIAggCCACIAprahAcIAwoAlhBAXEiAgR/IAwoAlwgCGsFIAcLIAZqIA0gAhshAgsgBiEIAkAgAiAGTQ0AIAkgBiAGIAlJGyEHA0AgByAIRg1IIAQgCGotAAAiCkEJRyAKQSBHcQ0BIAIgCEEBaiIIRw0ACyACIQgLIAIhCgJAIAIgCE0NACAEQQFrIQ4DQCAKQQFrIgcgCU8NSCAKIA5qLQAAIg9BCUcgD0EgR3ENASAHIgogCEsNAAsgCCEKCyAIIApGBEAgA0EGOgAmIANBAjoAJCADQbmWwAApAAA3AGwgA0HBlsAA/QAAAP0LAHQgA0HPlsAAKQAANwCCAQwGCyAIIApPDQAgCCAJIAggCUsbIQ4gCCEHA0AgByAORg1HIAQgB2otAAAtAICAQARAIAogB0EBaiIHRg0CDAELCyADQQY6ACYgA0ECOgAkIANB15bAAP0AAAD9CwBsIANB55bAAP0AAAD9CwB8IANB9pbAACkAADcAiwEMDAsgPkIAUgRAIAVBEGpBgYAETw1KIAMoAiAhByADKAL4AiAFakEUOgAAIAMoAvgCIAVqQQFqIAAgB2o2AAAgAygC+AIgBWpBBWogASAAazYAACAFQQlqIQULAkACfyAoRQRAID1QDQIgBUEQakGAgARLDUwgAygCICAIaiEHIAogCGsMAQsgPVANASAFQRBqQYCABEsNSyADKAIgIAZqIQcgCiAGa0EBagshACADKAL4AiAFakEVOgAAIAMoAvgCIAVqQQFqIAc2AAAgAygC+AIgBWpBBWogADYAACAFQQlqIQULIA0iCiACTwRAIAxBOzoAdCAMQdAAaiAMQfQAaiACIARqIgEgEhAcIAwoAlBBAXEiBgR/IAwoAlQgAWsFIAALIAJqIA0gBhshCgsCQCACIApJBEAgCSACayIAQQAgACAJTRshACAKIAJrIQEgAiAEaiEHA0AgAEUNSCAHLQAAIgJBCUcgAkEgR3ENAiAAQQFrIQAgB0EBaiEHIAFBAWsiAQ0ACwsCQCAKIA1PBEAgAykDMEIAUg0BIDZCAFIEQCAFQRBqQYGABE8NTSADKAIgIQAgAygC+AIgBWpBFzoAACADKAL4AiAFakEBaiAANgAAIAMoAvgCIAVqQQVqQQA2AAAgBUEJaiEFCyANQQJqIQBBACEHIAMtACRBAkYNOiADQQ06ACQMOgsgCkEBaiEAQQAhBww5CyANQQJqIQBBACEHIAMtACRBAkYNOCADQQw6ACQMOAsgA0EGOgAmIANBAjoAJCADQf6WwAApAAA3AGwgA0GGl8AA/QAAAP0LAHQgA0GWl8AA/QAAAP0LAIQBIANBo5fAACkAADcAkQFBmQEhC0EtDEgLIANBBjoAJiADQQI6ACQgA0G5lsAAKQAANwBsIANBwZbAAP0AAAD9CwB0IANBz5bAACkAADcAggEMAwsgA0EGOgAmIANBAjoAJCADQduVwAD9AAAA/QsAbCADQeuVwAD9AAAA/QsAfCADQfuVwAD9AAAA/QsAjAEMBgsgACABTw0vIAL9AAAA/QwNDQ0NDQ0NDQ0NDQ0NDQ0N/SP9ZCIARQ0vIAIgAGhqIQALQQEhESAAIARrIgFBAWoiByALRg1FIAcgCU8NQQJAAkACQCAEIAdqIgItAABBCkYEQCAEIQACQAJAIAFBDksEQCAA/QAAAP0MOzs7Ozs7Ozs7Ozs7Ozs7O/0j/WQiAARAIAQgAGhqIQAMBgsgBEEQIARBD3EiBmsiB2ohAAJAAkAgAUE/SQ0AIAcgAUE/a0sNACACQUBqIQcgBCAGa0EgaiEAA0AgAP0ABAD9DDs7Ozs7Ozs7Ozs7Ozs7Ozv9IyJKIABBEGsiBv0ABAD9DDs7Ozs7Ozs7Ozs7Ozs7Ozv9IyJL/VAgAEEQav0ABAD9DDs7Ozs7Ozs7Ozs7Ozs7Ozv9IyJM/VAgAEEgav0ABAD9DDs7Ozs7Ozs7Ozs7Ozs7Ozv9IyJN/VD9ZA0CIABBQGshACAGQUBrIAdNDQALIABBEGshAAsgACACQRBrIgdLDQUDQCAA/QAAAP0MOzs7Ozs7Ozs7Ozs7Ozs7O/0j/WQiBkUEQCAHIABBEGoiAE8NAQwHCwsgACAGaGogBGshBgwHCyBL/WQiAg0BIEr9ZCICDQIgTP1kIgJFBEAgACBN/WRoakEgaiAEayEGDAcLIAAgAmhqQRBqIARrIQYMBgsDQCAALQAAQTtGDQUgAEEBaiEAIAdBAWsiBw0ACyABIQYMBQsgACACaGpBEGsgBGshBgwECyAAIAJoaiAEayEGDAMLIANBBjoAJiADQQI6ACQgA0GuisAAKQAANwBsIANBs4rAACkAADcAcQxFCyABIQYgACACTw0BIAf9AAAA/Qw7Ozs7Ozs7Ozs7Ozs7Ozs7/SP9ZCIARQ0BIAcgAGhqIARrIQYMAQsgACAEayEGCyAGRQRAIANBBjoAJiADQQI6ACQgA0HhlMAAKQAANwBsIANB6ZTAAP0AAAD9CwB0IANB95TAACkAADcAggEMAQsgBkEQTQRAQQAhAEIAIS8DQCAAIAlGDUMCQCAAIARqLQAAIgJBMGsiB0H/AXFBCkkNACACQeEAa0H/AXFBBk8EQCACQcEAa0H/AXFBBk8EQCADQQY6ACYgA0ECOgAkIANB4ZTAACkAADcAbCADQemUwAD9AAAA/QsAdCADQfeUwAApAAA3AIIBDAULIAJBN2shBwwBCyACQdcAayEHCyAHrUL/AYMgL0IEhnwhLyAGIABBAWoiAEcNAAsgAyAvNwNAIAMgLzcDMCBGQgBSBEAgBUEQakGBgARPDUcgAygCICEAIAMoAvgCIAVqQRM6AAAgAygC+AIgBWpBAWogADYAACADKAL4AiAFakEFaiAGNgAAIAVBCWohBQsCQCABIAZNBEAgA0EBOgAUIAMpAzBCAFINASA/QgBSBEAgBUEQakGBgARPDUkgAygCICEAIAMoAvgCIAVqQRY6AAAgAygC+AIgBWpBAWogAEEDajYAACADKAL4AiAFakEFakEANgAAIAVBCWohBQsgNkIAUgRAIAVBEGpBgYAETw1JIAMoAiAhACADKAL4AiAFakEXOgAAIAMoAvgCIAVqQQFqIABBA2o2AAAgAygC+AIgBWpBBWpBADYAACAFQQlqIQULIAFBAmohAEEAIQcgAy0AJEECRg02IANBDToAJAw2CyAGQQFqIQBBACEHIAMtACRBAkYNNSADQQs6ACQMNQsgAUECaiEAQQAhByADLQAkQQJGDTQgA0EMOgAkDDQLIANBDzoAJiADQQI6ACQgA0H/lMAAKQAANwBsIANBh5XAAP0AAAD9CwB0IANBl5XAAC0AADoAhAFBhQEhC0EZDEQLQYoBIQtBHgxDCyADQQA6ABYgA0EAOgAUIAENAQwzCyADQQA6ABYgA0EAOgAUIAENAAwyCyADQQ46ACQMMgtBnAEhC0EwDD8LIAAgBk8NDiAH/QAAAP0MOjo6Ojo6Ojo6Ojo6Ojo6Ov0j/WQiAEUNDiAHIABoaiEACyAAIARGDQ0gACAEayINQQFqIQYCQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQCAELQAAIgBBwwBrDjMBAAAAAAAAAAAAAAAAAAAAAAEBAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAQEAC0EAIQADQCAAIAlGDVMgACAEai0AAC0AgIBABEAgDSAAQQFqIgBGDQMMAQsLDCULIAkgDUkNUSADKAJIIQgCQAJAAkACQCANQQdrDgsDISECISEhACEhASELIA0hByAEIABBIHJB4wBHDSEaIAQgBC0AAUEgckHvAEcNIRogBCAELQACQSByQe4ARw0hGiAEIAQtAANBIHJB9ABHDSEaIAQgBC0ABEEgckHlAEcNIRogBCAELQAFQSByQe4ARw0hGiAEIAQtAAZBIHJB9ABHDSEaIAQgBC0AB0EtRw0hGiAEIAQtAAhBIHJB7ABHDSEaIAQgBC0ACUEgckHlAEcNIRogBCAELQAKQSByQe4ARw0hGiAEIAQtAAtBIHJB5wBHDSEaIAQgBC0ADEEgckH0AEcNIRogBCAELQANQSByQegARw0hGiADLQBODQQgCEF+cUHMAUcgCEHkAGtB5ABPcUUEQCADQQc6ACYgA0ECOgAkIANBgYzAACkAADcAbCADQYmMwAD9AAAA/QsAdCADQZmMwAD9AAAA/QsAhAEgA0GpjMAA/QAAAP0LAJQBIANBuYzAACgAADYApAFBqAEhC0E8DFgLAkACQCADLQBNRQRAQQ8hByAGIAEiAE8NHyAAIARqQQFrIgItAAAiCEEgRiIKRSAIQQlHcQ0CIABBEEsNAQweCyADQQ06ACYgA0ECOgAkIANB/ozAAP0AAAD9CwBsIANBjo3AAP0AAAD9CwB8IANBnY3AACkAADcAiwEMHAsgBiAJTw1VIAQgBmotAABBIEcNHCAELQAQIgBBCUYNHCAAQSBGDRwgAi0AACIAQQlGDRwgAEEgRg0cDBoLQRAgBiAEIAZqLQAAIgJBIEYbIgcgAU8NGCAEIAdqLQAAIgZBCUYNFyAGQSBHDR0MFwsgDSEHIAQgAEEgckH0AEcNIBogBCAELQABQSByQfIARw0gGiAEIAQtAAJBIHJB4QBHDSAaIAQgBC0AA0EgckHuAEcNIBogBCAELQAEQSByQfMARw0gGiAEIAQtAAVBIHJB5gBHDSAaIAQgBC0ABkEgckHlAEcNIBogBCAELQAHQSByQfIARw0gGiAEIAQtAAhBLUcNIBogBCAELQAJQSByQeUARw0gGiAEIAQtAApBIHJB7gBHDSAaIAQgBC0AC0EgckHjAEcNIBogBCAELQAMQSByQe8ARw0gGiAEIAQtAA1BIHJB5ABHDSAaIAQgBC0ADkEgckHpAEcNIBogBCAELQAPQSByQe4ARw0gGiAEIAQtABBBIHJB5wBHDSAaIAMtAE0NBCAIQcwBa0ECSQ0VIAhBsAJGDRUgCEHkAGtB5ABJDRUgAUETTQRAQRIhByABIgBBE0cNEwwSCyAGIAlPDVMgBCAGai0AAEEgRw0RIAQtABMiAEEJRg0RIABBIEYNESABIARqQQFrLQAAIgZBCUYNEUETIQcgASEAIAZBIEYNEQwTCyANIQcgBCAAQSByQeMARw0fGiAEIAQtAAFBIHJB7wBHDR8aIAQgBC0AAkEgckHuAEcNHxogBCAELQADQSByQe4ARw0fGiAEIAQtAARBIHJB5QBHDR8aIAQgBC0ABUEgckHjAEcNHxogBCAELQAGQSByQfQARw0fGiAEIAQtAAdBIHJB6QBHDR8aIAQgBC0ACEEgckHvAEcNHxogBCAELQAJQSByQe4ARw0fGiABQQxNBEBBCyEHIAEiAEEMRw0ODA0LIAYgCU8NUiAEIAZqLQAAQSBHDQwgBC0ADCIAQQlGDQwgAEEgRg0MIAEgBGpBAWstAAAiBkEJRg0MQQwhByABIQAgBkEgRg0MDA4LAkACQCAAQdQAaw4iAAEfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8AAR8LAkAgBC0AAUEgckHyAEcNACAELQACQSByQeEARw0AIAQtAANBIHJB6QBHDQAgBC0ABEEgckHsAEcNACAELQAFQSByQeUARw0AIAQtAAZBIHJB8gBHDQAgA0EBOgBTIAFBCU0EQEEIIQcgASIAQQlHDQwMCwsgBiAJTw1TIAQgBmotAABBIEcNCiAELQAJIgBBCUYNCiAAQSBGDQpBCSEHIAEgBGpBAWstAAAiAkEJRg0KIAEhACACQSBGDQoMJQsgDSEHIAQgAEHVAEcNHxoLIA0hByAEIAQtAAFBIHJB8ABHDR4aIAQgBC0AAkEgckHnAEcNHhogBCAELQADQSByQfIARw0eGiAEIAQtAARBIHJB4QBHDR4aIAQgBC0ABUEgckHkAEcNHhogBCAELQAGQSByQeUARw0eGiABQQlNBEBBCCEHIAEiAEEJRw0GDAULIAYgCU8NUSAEIAZqLQAAQSBHDQQgBC0ACSIAQQlGDQQgAEEgRg0EQQkhByABIARqQQFrLQAAIgZBCUYNBCABIQAgBkEgRg0EDAYLIBpFDSAgDUECaiIHIAFPDQIgBiAJTw1QIAQgBmotAABBIEcNAiAEIAdqLQAAIgBBCUYNAiAAQSBGDQIgASAEakEBay0AACICQQlGDQIgASEAIAJBIEcNIgwCCyADQQc6ACYgA0ECOgAkIANB7ABqQaWNwABByQD8CgAAQbUBIQtByQAMUgsgA0EIOgAmIANBAjoAJCADQewAakGMkMAAQckA/AoAAEG1ASELQckADFELAkAgASAGTQ0AA0AgBCAGai0AACIAQQlHIABBIEdxDQEgBkEBaiIGIAFHDQALDBwLDBwLQQghBwNAAkAgBCAHai0AACIAQQlGDQAgAEEgRg0AIAEgB00EQCABIQAMAwsgBEEBayEGIAEhAANAIABBAWsiAiAJTw1PIAAgBmotAAAiCEEJRyAIQSBHcQ0DIAIiACAHSw0ACwwECyABIAdBAWoiB0cNAAsMAgsgACAHRg0BIABBAWohAgsgBEEBayETIAIgBGohEiAHIQYDQAJAIAAgBk0NACAGIAlPDUwgBCAGai0AACICQQlGBEAgBkEBaiEGDAILIAJBIEcNACAGQQFqIQYMAQsCQCAAIAZGDQACQAJAAn8gACAAIAlPDQAaIAAgACAGSQ0AGiAMQSw6AHQgDEE4aiAMQfQAaiAEIAZqIgggEhAcIAwoAjhBAXEiCgR/IAwoAjwgCGsFIAILIAZqIAAgChsLIgogBkEBaiIITQ0AIAYgCU8NTiAEIAZqLQAAQSBHDQAgCCAJTw1OIAQgCGotAAAiAkEJRg0AIAJBIEYNACAKQQFrIgIgCU8NTiACIARqLQAAIg5BCUYNACAKIQIgDkEgRw0BCwJAAn8CQCAGIApPDQAgBiAJIAYgCUsbIQIDQCACIAZGDVEgBCAGai0AACIIQQlHIAhBIEdxDQEgCiAGQQFqIgZHDQALIAoMAQsgBgsiCCAKIgJPDQADQCACQQFrIgYgCU8NTyACIBNqLQAAIg5BCUcgDkEgR3ENASAGIQIgBiAISw0ACyAIIQILIAIgCEcNACADQQY6ACYgA0ECOgAkIANBsZHAACkAADcAbCADQbmRwAD9AAAA/QsAdCADQcaRwAApAAA3AIEBDCMLAkACQAJ/IAIgAiAJTyIWDQAaIAIgAiAISQ0AGiAMQS86AHQgDEEwaiAMQfQAaiAEIAhqIg4gAiAEakEBahAcIAwoAjBBAXEiDwR/IAwoAjQgDmsFIAYLIAhqIAIgDxsLIg8gCEYNACAIIA9PDQEgCSAIayIGQQAgBiAJTRshBiAPIAhrIQ4gBCAIaiEIA0AgBkUNTyAILQAALQCAgEBFDQEgBkEBayEGIAhBAWohCCAOQQFrIg4NAAsMAQsgA0EGOgAmIANBAjoAJCADQc6RwAApAAA3AGwgA0HWkcAA/QAAAP0LAHQgA0HmkcAAKAAANgCEAQwpCwJAIAIgD00NACAPQQFqIQYCQCAWRQRAIAxBLzoAdCAMQShqIAxB9ABqIAQgBmoiCCAIIAIgD2tqEBwgDCgCKEEBcQ0BCyACIAZGDQAgAiAGTQ0BA0AgBiAJTw1PIAQgBmotAAAtAICAQEUNASAGQQFqIgYgAkcNAAsMAQsgA0EGOgAmIANBAjoAJCADQc6RwAApAAA3AGwgA0HWkcAA/QAAAP0LAHQgA0HmkcAAKAAANgCEAQwpCyAAIApGDQAgCkEBaiEGDAELCyADQQE6AFIMHAsgA0EGOgAmIANBAjoAJCADQbGRwAApAAA3AGwgA0G5kcAA/QAAAP0LAHQgA0HGkcAAKQAANwCBAQwfC0EIIQcDQAJAIAQgB2otAAAiAEEJRg0AIABBIEYNACABIAdNBEAgASEADAMLIARBAWshBiABIQADQCAAQQFrIgIgCU8NSyAAIAZqLQAAIghBCUcgCEEgR3ENAyACIgAgB0sNAAsMAwsgASAHQQFqIgdHDQALDAELIAAgB0cNGQsgA0EGOgAmIANBAjoAJCADQZSRwAApAAA3AGwgA0GckcAA/QAAAP0LAHQgA0GpkcAAKQAANwCBAQwcC0ELIQcDQAJAIAQgB2otAAAiAEEJRg0AIABBIEYNACABIAdNBEAgASEADAMLIARBAWshCCABIQADQCAAQQFrIgYgCU8NSCAAIAhqLQAAIgJBCUcgAkEgR3ENAyAGIgAgB0sNAAsMBAsgASAHQQFqIgdHDQALDAILIAAgB0YNAQsgACAJSw1DIAAgB0kNQyAEIAdqIQYCQAJAAkACQCAAIAdrQQVrDgYAAwIDAwEDCyAGLQAAQSByQeMARw0CIAYtAAFBIHJB7ABHDQIgBi0AAkEgckHvAEcNAiAGLQADQSByQfMARw0CIAYtAARBIHJB5QBHDQIgA0EBOgBQDBgLIAYtAABBIHJB6wBHDQEgBi0AAUEgckHlAEcNASAGLQACQSByQeUARw0BIAYtAANBIHJB8ABHDQEgBi0ABEEtRw0BIAYtAAVBIHJB4QBHDQEgBi0ABkEgckHsAEcNASAGLQAHQSByQekARw0BIAYtAAhBIHJB9gBHDQEgBi0ACUEgckHlAEcNAQwXCyAGLQAAQSByQfUARw0AIAYtAAFBIHJB8ABHDQAgBi0AAkEgckHnAEcNACAGLQADQSByQfIARw0AIAYtAARBIHJB4QBHDQAgBi0ABUEgckHkAEcNACAGLQAGQSByQeUARw0AIANBAToAUQwWCyAEQQFrIQ8gACAEakEBaiETIAchBgNAAkAgACAGTQ0AIAQgBmotAAAiAkEJRgRAIAZBAWohBgwCCyACQSBHDQAgBkEBaiEGDAELIAAgBkYNFgJAAkACfyAAIAAgCU8NABogACAAIAZJDQAaIAxBLDoAdCAMQSBqIAxB9ABqIAQgBmoiCCATEBwgDCgCIEEBcSIKBH8gDCgCJCAIawUgAgsgBmogACAKGwsiCiAGQQFqIghNDQAgBiAJTw1GIAQgBmotAABBIEcNACAIIAlPDUYgBCAIai0AACICQQlGDQAgAkEgRg0AIApBAWsiAiAJTw1GIAIgBGotAAAiDkEJRg0AIAohAiAOQSBHDQELAkACfwJAIAYgCk8NACAGIAkgBiAJSxshAgNAIAIgBkYNSSAEIAZqLQAAIghBCUcgCEEgR3ENASAKIAZBAWoiBkcNAAsgCgwBCyAGCyIIIAoiAk8NAANAIAJBAWsiBiAJTw1HIAIgD2otAAAiDkEJRyAOQSBHcQ0BIAYiAiAISw0ACyAIIQILIAIgCEcNAAwCCyACIAlLDUQgAiAISQ1EIAQgCGohBgJAAkACQAJAAkAgAiAIayIOQQVrDgYAAwEDAwIDCyAGLQAAQSByQeMARw0CIAYtAAFBIHJB7ABHDQIgBi0AAkEgckHvAEcNAiAGLQADQSByQfMARw0CIAYtAARBIHJB5QBHDQIgA0EBOgBQDAMLIAYtAABBIHJB9QBHDQEgBi0AAUEgckHwAEcNASAGLQACQSByQecARw0BIAYtAANBIHJB8gBHDQEgBi0ABEEgckHhAEcNASAGLQAFQSByQeQARw0BIAYtAAZBIHJB5QBHDQEgA0EBOgBRDAILIAYtAABBIHJB6wBHDQAgBi0AAUEgckHlAEcNACAGLQACQSByQeUARw0AIAYtAANBIHJB8ABHDQAgBi0ABEEtRw0AIAYtAAVBIHJB4QBHDQAgBi0ABkEgckHsAEcNACAGLQAHQSByQekARw0AIAYtAAhBIHJB9gBHDQAgBi0ACUEgckHlAEYNAQsCQCACIAhGDQAgAiAITQ0BA0AgBi0AAC0AgIBARQ0BIAZBAWohBiAOQQFrIg4NAAsMAQsgA0EGOgAmIANBAjoAJCADQfWQwAApAAA3AGwgA0H9kMAA/QAAAP0LAHQgA0GMkcAAKQAANwCDAQwkCyAAIApGDRYgCkEBaiEGDAALAAsgA0EGOgAmIANBAjoAJCADQdWQwAD9AAAA/QsAbCADQeWQwAD9AAAA/QsAfEGMASELQSAMRQtBEiEHA0ACQCAEIAdqLQAAIgBBCUYNACAAQSBGDQAgASAHTQRAIAEhAAwDCyAEQQFrIQggASEAA0AgAEEBayIGIAlPDUQgACAIai0AACICQQlHIAJBIEdxDQMgBiIAIAdLDQALDAQLIAEgB0EBaiIHRw0ACwwCCyAAIAdGDQELIANBAToATiAAIAlLDT8gACAHSQ0/AkAgACAHa0EHRgRAIAQgB2oiBjUAACAGQQZqMQAAQjCGIAZBBGozAABCIIaEhELj0NXztq2ZMlENAQsgBEEBayEPIAAgBGpBAWohEyADLQBPIQ4gByEGA0ACQCAAIAZNDQAgBCAGai0AACICQQlGBEAgBkEBaiEGDAILIAJBIEcNACAGQQFqIQYMAQsgACAGRg0TAkACQAJ/IAAgACAJTw0AGiAAIAAgBkkNABogDEEsOgB0IAxBGGogDEH0AGogBCAGaiIIIBMQHCAMKAIYQQFxIgoEfyAMKAIcIAhrBSACCyAGaiAAIAobCyIIIAZBAWoiCk0NACAGIAlPDUMgBCAGai0AAEEgRw0AIAkgCk0NQyAEIApqLQAAIgJBCUYNACACQSBGDQAgCEEBayICIAlPDUMgAiAEai0AACISQQlGDQAgCCECIBJBIEcNAQsCfwJAIAYgCE8NACAGIAkgBiAJSxshAgNAIAIgBkYNRSAEIAZqLQAAIgpBCUcgCkEgR3ENASAIIAZBAWoiBkcNAAsgCAwBCyAGCyEKAkAgCiAIIgJPDQADQCACQQFrIgYgCU8NRCACIA9qLQAAIhJBCUcgEkEgR3ENASAGIgIgCksNAAsgCiECCyACIApHDQAgA0EGOgAmIANBAjoAJCADQa2OwAD9AAAA/QsAbCADQb2OwAD9AAAA/QsAfCADQcyOwAApAAA3AIsBDAgLIANBAToATiACIAlLDUEgAiAKSQ1BAkACQCACIAprQQdHDQAgBCAKaiIGLQAAQSByQeMARw0AIAYtAAFBIHJB6ABHDQAgBi0AAkEgckH1AEcNACAGLQADQSByQe4ARw0AIAYtAARBIHJB6wBHDQAgBi0ABUEgckHlAEcNACAGLQAGQSByQeQARw0AIA5BAXFFBEBBASEOIANBAToATwwCCyADQQ46ACYgA0ECOgAkIANB7ABqQdSOwABB6wD8CgAAQdcBIQtB6wAMRgsgDkEBcUEAIQ5FDQAgA0EOOgAmIANBAjoAJCADQewAakG/j8AAQc0A/AoAAEG5ASELQc0ADEULIAAgCEYNEyAIQQFqIQYMAAsACyADLQBPRQRAIANBAToATwwSCyADQQ46ACYgA0ECOgAkIANB7ABqQdSOwABB6wD8CgAAQdcBIQtB6wAMQgsgA0EGOgAmIANBAjoAJCADQa2OwAD9AAAA/QsAbCADQb2OwAD9AAAA/QsAfCADQcyOwAApAAA3AIsBDAQLIANBCDoAJiADQQI6ACQgA0HujcAAKQAANwBsIANB9o3AAP0AAAD9CwB0IANBho7AAP0AAAD9CwCEASADQZaOwAD9AAAA/QsAlAEgA0GljsAAKQAANwCjAUGrASELQT8MQAsgAUERSQ0AIAJBIEcNACAELQAQIgBBCUYNACAAQSBGDQAgCkUNAQtBDyEHAkADQAJAAkAgBCAHai0AACIAQQlGDQAgAEEgRg0AIAcgASIATw0BIARBAWshBgNAIABBAWsiAiAJTw1AIAAgBmotAAAiCEEJRyAIQSBHcQ0CIAIiACAHSw0ACwwDCyABIAdBAWoiB0cNAQwCCwsgACAHRw0FCyADQQY6ACYgA0ECOgAkIANBvYzAAP0AAAD9CwBsIANBzYzAAP0AAAD9CwB8IANB3YzAACgAADYAjAEMBgtBECEHIAEhAAwDC0GTASELQScMPAsDQAJAIAQgB2otAAAiAEEJRg0AIABBIEYNACABIAdNBEAgASEADAMLIARBAWshBiABIQADQCAAQQFrIgIgCU8NOyAAIAZqLQAAIghBCUcgCEEgR3ENAyACIgAgB0sNAAsMBAsgASAHQQFqIgdHDQALDAILIAAgB0YNAQsgACAHayIIQRNNBEBCACEvIAAgB0sEQCAJIAdrIgJBACACIAlNGyEGIAQgB2ohAgNAIAZFDTkgAi0AAEEwayIKQf8BcUEKTwRAIANBDToAJiADQQI6ACQgA0HhjMAAKQAANwBsIANB6YzAAP0AAAD9CwB0IANB9ozAACkAADcAgQEMEAsgL0IKfiAKrUL/AYN8IS8gBkEBayEGIAJBAWohAiAIQQFrIggNAAsLIAMgLzcDOCADIC83AyggA0EBOgBNDAkLIANBDToAJiADQQI6ACQgA0HhjMAAKQAANwBsIANB6YzAAP0AAAD9CwB0IANB9ozAACkAADcAgQEMDAsgA0EGOgAmIANBAjoAJCADQb2MwAD9AAAA/QsAbCADQc2MwAD9AAAA/QsAfCADQd2MwAAoAAA2AIwBC0GQASELQSQMNwsgDSEHIAQLIQACQANAIAAtAAAtAICAQARAIABBAWohACAHQQFrIgcNAQwCCwsMBgsgGkUNAgJAIA1BAmoiByABTw0AIAYgCU8NMyAEIAZqLQAAQSBHDQAgBCAHai0AACIAQQlGDQAgAEEgRg0AIAEgBGpBAWstAAAiAkEJRg0AIAEhACACQSBHDQULIAEgBk0NAQNAIAQgBmotAAAiAEEJRyAAQSBHcQ0CIAEgBkEBaiIGRw0ACwsgASIAIQcMAwsgASAGTQ0AIARBAWshByABIQADQCAAQQFrIgIgCU8NMSAAIAdqLQAAIghBCUcgCEEgR3ENAiACIgAgBksNAAsgBiIAIQcMAgsgASEACyAGIQcLICVFBEAgBUEQakGAgARLDTIgAygCICECIAMoAvgCIAVqQQ46AAAgAygC+AIgBWpBAWogAjYAACADKAL4AiAFakEFaiANNgAAIAVBCWohBQsgBSAkRQ0YGiAFQRBqQYCABEsNMSAAIAdrIQYgAygCICAHaiERQQ8hAAwXCyADQQY6ACYgA0ECOgAkIANB6pHAAP0AAAD9CwBsIANB+pHAAP0AAAD9CwB8IANBiZLAACgAADYAiwFBjwEhC0EjDC8LIAAgAU8NIiAC/QAAAP0MDQ0NDQ0NDQ0NDQ0NDQ0NDf0j/WQiAEUNIiACIABoaiEAC0EBIREgACAEayICQQFqIgEgC0YNLiABIAlPDSoCQCABIARqLQAAQQpGBEBBACEHIAAgBEcNAUECIQAMHgsgA0EGOgAmIANBAjoAJCADQa6KwAApAAA3AGwgA0GzisAAKQAANwBxDCwLIAJBDUkNAiAVQgA3AwAgA0EAOgAVIBX9DAAAAAAAAAAAAAAAAAAAAAD9CwMIIBX9DAAAAAAAAAAAAAAAAAAAAAD9CwMYIBVBADYCKCAELQAIQSBGDQEgA0EGOgAmIANBAjoAJCADQbWLwAApAAA3AGwgA0G9i8AA/QAAAP0LAHQgA0HKi8AAKQAANwCBAQtBiQEhC0EdDCwLIAQtAABByABHDQggBC0AAUHUAEcNCAJAIAQtAAJB1ABHDQAgBC0AA0HQAEcNACAELQAEQS9HDQAgBC0ABUExRw0AIAQtAAZBLkcNACAELQAHQTFHDQAgBC0ACUEwa0H/AXEiCkEKTw0EIAQtAApBMGsiDUH/AXFBCUsNBCAELQALQTBrQf8BcSIOQQlLDQQgBC0ADEEgRw0CAkAgAkENRiIPDQACfyAEQQ1qIQggAkENayEGQQAhAAJAA0AgBiAAQRBqIgFJBEAgACAGSQ0CQQEMAwsgACAIaiABIQD9AAAAIkr9DH9/f39/f39/f39/f39/f3/9IyBK/QwJCQkJCQkJCQkJCQkJCQkJ/SQgSv0MICAgICAgICAgICAgICAgIP0m/U79UP1TRQ0AC0EADAELIAYgAGshASAAIAhqIQADQAJAIAAtAAAiBkEgTwRAIAZB/wBHDQFBAAwDCyAGQQlGDQBBAAwCCyAAQQFqIQAgAUEBayIBDQALQQELDQAgA0EGOgAmIANBAjoAJCADQeuKwAApAAA3AGwgA0HzisAA/QAAAP0LAHQgA0GCi8AAKQAANwCDAQwJCyADIApB5ABsIA1BCmxB/gFxaiAOajYCSCAhRQ0DIDxCAFIEQCAFQRBqQYGABE8NLiADKAIgIQAgAygC+AIgBWpBCjoAACADKAL4AiAFakEBaiAANgAAIAMoAvgCIAVqQQVqQQQ2AAAgBUEJaiEFCyA7QgBSBEAgBUEQakGBgARPDS4gAygCICEAIAMoAvgCIAVqQQs6AAAgAygC+AIgBWpBAWogAEEFajYAACADKAL4AiAFakEFakEDNgAAIAVBCWohBQsgQ0IAUgRAIAVBEGpBgYAETw0uIAMoAiAhACADKAL4AiAFakEMOgAAIAMoAvgCIAVqQQFqIABBCWo2AAAgAygC+AIgBWpBBWpBAzYAACAFQQlqIQULIEJQDQMgDw0DIAVBEGpBgIAESw0tIAMoAiAhACADKAL4AiAFakENOgAAIAMoAvgCIAVqQQFqIABBDWo2AAAgAygC+AIgBWpBBWogAkENazYAACAFQQlqIQUMAwsgBC0AAkHUAEcNCCAELQADQdAARw0IIAQtAARBL0cNCCADQRE6ACYgA0ECOgAkIANBhonAACkAADcAbCADQY6JwAD9AAAA/QsAdAwMCyADQQY6ACYgA0ECOgAkIANB0ovAAP0AAAD9CwBsIANB34vAACkAADcAeQwhCyADQQw6ACYgA0ECOgAkIANBiovAACkAADcAbCADQZKLwAD9AAAA/QsAdCADQaKLwAD9AAAA/QsAhAEgA0Gxi8AAKAAANgCTAUGXASELQSsMKQsgAkECaiEAIAMtACRBAkYNFyADQQY6ACQMFwsgA0EMOgAmIANBAjoAJCADQc+KwAApAAA3AGwgA0HXisAA/QAAAP0LAHQgA0HnisAAKAAANgCEAQtBiAEhC0EcDCYLIAAgAU8NGyAC/QAAAP0MDQ0NDQ0NDQ0NDQ0NDQ0NDf0j/WQiAEUNGyACIABoaiEAC0EBIREgACAEayIKQQFqIgEgC0YNJSABIAlPDSECQCABIARqIgEtAABBCkYEQEEAIQcgACAERw0BQQIhAAwVCyADQQY6ACYgA0ECOgAkIANBrorAACkAADcAbCADQbOKwAApAAA3AHEMIwsCQAJAAkACfwJAIApBDk8EQCAVQgA3AwAgA0EAOgAVIBX9DAAAAAAAAAAAAAAAAAAAAAD9CwMIIBX9DAAAAAAAAAAAAAAAAAAAAAD9CwMYIBVBADYCKCAMQSA6AHQgDEEQaiAMQfQAaiAEIAEQHAJAIAwoAhBBAXEEQCAMKAIUIgAgBEcNAQsgA0EGOgAmIANBAjoAJCADQf2JwAApAAA3AGwgA0GFisAA/QAAAP0LAHQgA0GUisAAKAAANgCDAUGHASELQRsMKwsCQAJAIAogACAEayICTQ0AIAxBIDoAdCAMQQhqIAxB9ABqIAQgAkEBaiIGaiIAIAAgCiACa2oQHCAMKAIIQQFxRQ0AIAwoAgwiASAARw0BCyADQQY6ACYgA0ECOgAkIANB5YnAACkAADcAbCADQe2JwAD9AAAA/QsAdAwMCwJAAkAgCiABIABrIgggBmoiE0EBaiINSQ0AIAxBLzoAdCAMIAxB9ABqIAQgDWoiDyAPIAogE2tqEBwgDCgCAEEBcUUNACAMKAIEIhIgD0cNAQsgA0EGOgAmIANBAjoAJCADQcOJwAD9AAAA/QsAbCADQdOJwAD9AAAA/QsAfCADQeOJwAAvAAA7AIwBQY4BIQtBIgwrCyACIAlLDScCQAJAAkACQAJAAkACQCACQQNrDgUAAQIDBAYLAkAgBC0AAEHHAGsOCgUGBgYGBgYGBgAGCwJAAkAgBC0AAUHSAGsOBAEHBwAHCyAELQACQdQARw0GQQQhAAwICyAELQACQckARw0FQQohAEEBDAgLAkACQCAELQAAQcgAaw4JAAYGBgYGBgYBBgsgBC0AAUHFAEcNBSAELQACQcEARw0FIAQtAANBxABHDQVBAiEADAcLIAQtAAFBzwBHDQQgBC0AAkHTAEcNBCAELQADQdQARw0EQQMhAAwGCwJAAkAgBC0AAEHQAGsOBQAFBQUBBQsgBC0AAUHBAEcNBCAELQACQdQARw0EIAQtAANBwwBHDQQgBC0ABEHIAEcNBEEJIQAMBgsgBC0AAUHSAEcNAyAELQACQcEARw0DIAQtAANBwwBHDQMgBC0ABEHFAEcNA0EIIQAMBQsgBC0AAEHEAEcNAiAELQABQcUARw0CIAQtAAJBzABHDQIgBC0AA0HFAEcNAiAELQAEQdQARw0CIAQtAAVBxQBHDQJBBSEADAQLAkACQCAELQAAQcMAaw4NAAMDAwMDAwMDAwMDAQMLIAQtAAFBzwBHDQIgBC0AAkHOAEcNAiAELQADQc4ARw0CIAQtAARBxQBHDQIgBC0ABUHDAEcNAiAELQAGQdQARw0CIANBAToAFUEGIQAMBAsgBC0AAUHQAEcNASAELQACQdQARw0BIAQtAANByQBHDQEgBC0ABEHPAEcNASAELQAFQc4ARw0BIAQtAAZB0wBHDQFBByEADAMLIAQtAAFBxQBGDQQLIANBADoATCACIQEgBCEADAQLIANBBjoAJiADQQI6ACQgA0GYisAA/QAAAP0LAGwgA0GmisAAKQAANwB6QYIBIQtBFgwpC0EACyEOIAMgADoATAwCCyADIAQtAAJB1ABGIg46AEwgAiEBIAQhACAORQ0AQQAhDgwBCwJAA0AgAC0AAC0AgIBARQ0BIABBAWohACABQQFrIgENAAtBACEODAELIANBBjoAJiADQQI6ACQgA0G6iMAAKQAANwBsIANBwojAAP0AAAD9CwB0DAYLIBIgD2siEiANaiEWIAghASAGIQACQANAIAAgCU8NIyAAIARqLQAALQCAhkAEQCAAQQFqIQAgAUEBayIBRQ0CDAELCyADQQY6ACYgA0ECOgAkIANB0ojAAP0AAAD9CwBsIANB34jAACkAADcAeQwcCyAKIBNBCWpHDQMgCiANa0EIRw0BIA8pAAAiL0LIqNGC9cWMlzBRDQIgL0LIqNGC9aWMlzFSDQEgDkUNBCADQRE6ACYgA0ECOgAkIANB54jAACkAADcAbCADQe+IwAD9AAAA/QsAdCADQf6IwAApAAA3AIMBC0GLASELQR8MIwsgA0EGOgAmIANBAjoAJCADQZ6JwAD9AAAA/QsAbEH8ACELQRAMIgsgDg0BIANBEToAJiADQQI6ACQgA0GGicAAKQAANwBsIANBjonAAP0AAAD9CwB0DAILIANBBjoAJiADQQI6ACQgA0GuicAA/QAAAP0LAGwgA0G7icAAKQAANwB5DBcLAkAgIkUNACBBQgBSBEAgBUEQakGBgARPDSIgAygCICEAIAMoAvgCIAVqQQg6AAAgAygC+AIgBWpBAWogADYAACADKAL4AiAFakEFaiACNgAAIAVBCWohBQsgQEIAUgRAIAVBEGpBgYAETw0iIAMoAiAhACADKAL4AiAFakEJOgAAIAMoAvgCIAVqQQFqIAAgBmo2AAAgAygC+AIgBWpBBWogCDYAACAFQQlqIQULIDxCAFIEQCAFQRBqQYGABE8NIiADKAIgIQAgAygC+AIgBWpBCjoAACADKAL4AiAFakEBaiAAIA1qNgAAIAMoAvgCIAVqQQVqIBI2AAAgBUEJaiEFCyA7UA0AIAVBEGpBgIAESw0hIAMoAiAhACADKAL4AiAFakELOgAAIAMoAvgCIAVqQQFqIAAgFkEBamo2AAAgAygC+AIgBWpBBWpBAzYAACAFQQlqIQULIApBAmohACADLQAkIQEgAy0ATEEKRgRAIAFBAkYNDyADQQU6ACQMDwsgAUECRg0OIANBBjoAJAwOC0GEASELQRgMHgtBACEHIAMtACRBAkYNFiADQQQ6ACQMFgsgBC8AAEGNFEcNAQtBACEHQQIhAAwKCyADQQE6ABECQCAdRQ0AIDlCAFIEQCAFQRBqQYGABE8NHSADKAIgIQAgAygC+AIgBWpBBToAACADKAL4AiAFakEBaiAANgAAIAMoAvgCIAVqQQVqQQA2AAAgBUEJaiEFCyA1UA0AIAVBEGpBgIAESw0cIAMoAiAhACADKAL4AiAFakEDOgAAIAMoAvgCIAVqQQFqIAA2AAAgAygC+AIgBWpBBWpBADYAACAFQQlqIQULQQAhByADLQAkQQJGDRMgA0EDOgAkDBMLQQAhByADLQAkQQJGDRIgA0EDOgAkDBILIAMoAvgCIAVqIAA6AAAgAygC+AIgBWpBAWogETYAACADKAL4AiAFakEFaiAGNgAAIAVBCWoLIQVBACEHIAFBAmoiAA0GDBALIAMoAgQgC0sNFyADQQY6ACYgA0ECOgAkIANBzJTAAP0AAAD9CwBsIANB2ZTAACkAADcAeQwNCyADKAIEIAtLBEBBASERDBcLIANBBjoAJiADQQI6ACQgA0HMlMAA/QAAAP0LAGwgA0HZlMAAKQAANwB5DAwLIC9QDRUgLyAwfCEwIC+nIQBBACEHIDdQDQMgBUEQakGAgARLDRUgAygCICEBIAMoAvgCIAVqQRg6AAAgAygC+AIgBWpBAWogATYAACADKAL4AiAFakEFaiAANgAAIAVBCWohBQwDCyAvUA0UIC8gMHwhMCAvpyEAAkACQAJAAkAgLyAyWgRAIAVBzf8Da0H//3tPDQEMGQsgN1ANAiAFQRBqQYGABEkNAQwYCyA3QgBSBEAgBUEQakGBgARPDRggAygCICEBIAMoAvgCIAVqQRg6AAAgAygC+AIgBWpBAWogATYAACADKAL4AiAFakEFaiAANgAAIAVBCWohBQsCQCA2QgBSBEAgBUEQakGBgARJDQEMGQsgA0EBOgAUIANCADcDOCAFQV5IDRgMAwsgAygCICEBIAMoAvgCIAVqQRc6AAAgAygC+AIgBWpBAWogACABajYAACADKAL4AiAFakEFakEANgAAIANBAToAFCADQgA3AzggBUEJaiEFDAILIAMoAiAhASADKAL4AiAFakEYOgAAIAMoAvgCIAVqQQFqIAE2AAAgAygC+AIgBWpBBWogADYAACAFQQlqIQULIAMgAykDOCAvfTcDOEEAIQcMAwsCQCAXRQ0AIDRCAFIEQCAFQXBIDRYgAygCICECIAMoAvgCIAVqIgFBBDoAACABQQVqQQA2AAAgAUEBaiAAIAJqNgAAIAVBCWohBQsgM1ANACAFQXBIDRUgAygCICECIAMoAvgCIAVqIgFBBzoAACABQQVqQQA2AAAgAUEBaiAAIAJqNgAAIAVBCWohBQsgA0EAOgAWIANBADoAFAJAAkAgAy0AUkEBRgRAIAMtABFBAXENAQsgAy0AUA0BIAMtACRBAkcNAkEAIQcMBAtBACEHIAMtACRBAkYNAyADQQ46ACQMAwsgGUUNASAFQXBIDRQgAygCICECIAMoAvgCIAVqIgFBAjoAACABQQVqQQA2AAAgAUEBaiACNgAAIAVBCWohBQwBC0EAIQcgA0EAOgAkDAELQQAhByADLQAkQQJGDQAgA0EBOgAkCyADIAMoAiAgAGo2AiAgACAJSw0NIAsgAGshCyAAIARqIQQgCSAAayEJDAkLIANBAToAFCAFQd//A2tB//97SQ0QAkAgF0UNACA0QgBSBEAgBUFwSA0SIAMoAiAhASADKAL4AiAFaiIAQQQ6AAAgAEEFakEANgAAIABBAWogATYAACAFQQlqIQULIDNQDQAgBUFwSA0RIAMoAiAhASADKAL4AiAFaiIAQQc6AAAgAEEFakEANgAAIABBAWogATYAACAFQQlqIQULIANBADoAFiADQQA6ABQLIAMtAFBBAUcNASAZBEAgBUFwSA0QIAMoAiAhASADKAL4AiAFaiIAQQI6AAAgAEEFakEANgAAIABBAWogATYAACAFQQlqIQULIANBAToAJAtBACEHDAYLQQAhByADQQA6ACQMBQsgAygCACALSwRAQQEhEQwNCyADQQY6ACYgA0ECOgAkIANBu4rAAP0AAAD9CwBsIANBy4rAACgAADYAfAtBgAEhC0EUDAoLIAMoAgAgC0sEQEEBIREMCwsgA0EGOgAmIANBAjoAJCADQaWIwAD9AAAA/QsAbCADQbKIwAApAAA3AHkLQYEBIQtBFQwIC0EAIQcgAy0AJEECRg0AIANBBDoAJAtBASERIAdBAXENByADLQAlQQFxRQ0ACwwGCwALIAMoAvgCQQA6AAAMBQsAC0H5ACELQQ0MAQsgA0EGOgAmIANBAjoAJCADQZaIwAApAAA3AGwgA0GdiMAAKQAANwBzQfsAIQtBDws6APQCQQAhESADIAtqQQA6AAALIAMgAykDGCADKAIgIgutfDcDGAJAIAMtABNFDQAgAygC8AIiAARAIAMoAuwCIAAQWAsgA0IANwLsAiALIBRPDQACQAJAIAlFBEBBASEADAELIAlBARBWIgBFDQEgCUUNACAAIAQgCfwKAAALIAMgADYC7AIgAyAJNgLwAgwBCwALAkACQCAuQgGDUCARcgRAICBFDQEMAgsgBUH6/wNrQf//e0kNACADKAL4AiAFaiIAQQE6AAAgAEEBaiADKAIgNgAAIABBBWogAy0AJjoAACAFQQZqIQULIAMoAvgCIAVqQQA6AAALAkAgAykDWCIuUA0AIC5CAYMhLyAuQoCAAoMhMCAuQgKDITEgLkIEgyEzIC5CCIMhNCAuQhCDITUgLkIggyE2IC5CwACDITcgLkKAAYMhMiAuQoACgyE5IC5CgASDITogLkKACIMhOyAuQoAQgyE8IC5CgCCDIT0gLkKAwACDIT4gLkKAgAGDIT8gLkKAgASDIUAgLkKAgAiDIUEgLkKAgBCDIUIgLkKAgCCDIUMgLkKAgMAAgyFEIC5CgICAAYMhRSAuQoCAgAKDIUYgLkKAgIAEgyFHIC5CgICACIMhOCAuQoCAgBCDIUggLkKAgIAggyFJIC5CgICAwACDIS4gAygCaCECIAMoAvgCIQZBACEEA0ACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkAgBCAGaiIALQAAQQFrDhwAAgMEBQYHCAkKCwwNDg8BEBESExQVFhcYGRobHwtBBiEBIC9QDRsgAiAAQQFqKAAAQQAQACAEQQZqIQQMHQtBEyEBIDBQDRogAiAAQQFqKAAAIABBBWovAAAgAEEHai0AAEEARyAAQQhqLQAAQQBHIABBCWotAABBAEcgAEEKai0AACAAQQtqKQAAuhABIARBE2ohBAwcC0EJIQEgMVANGSACIABBAWooAAAgAEEFaigAABACIARBCWohBAwbC0EJIQEgM1ANGCACIABBAWooAAAgAEEFaigAABADIARBCWohBAwaC0EJIQEgNFANFyACIABBAWooAAAgAEEFaigAABAEIARBCWohBAwZC0EJIQEgNVANFiACIABBAWooAAAgAEEFaigAABAFIARBCWohBAwYC0EJIQEgNlANFSACIABBAWooAAAgAEEFaigAABAGIARBCWohBAwXC0EJIQEgN1ANFCACIABBAWooAAAgAEEFaigAABAHIARBCWohBAwWC0EJIQEgMlANEyACIABBAWooAAAgAEEFaigAABAIIARBCWohBAwVC0EJIQEgOVANEiACIABBAWooAAAgAEEFaigAABAJIARBCWohBAwUC0EJIQEgOlANESACIABBAWooAAAgAEEFaigAABAKIARBCWohBAwTC0EJIQEgO1ANECACIABBAWooAAAgAEEFaigAABALIARBCWohBAwSC0EJIQEgPFANDyACIABBAWooAAAgAEEFaigAABAMIARBCWohBAwRC0EJIQEgPVANDiACIABBAWooAAAgAEEFaigAABANIARBCWohBAwQC0EJIQEgPlANDSACIABBAWooAAAgAEEFaigAABAOIARBCWohBAwPC0EJIQEgP1ANDCACIABBAWooAAAgAEEFaigAABAPIARBCWohBAwOC0EJIQEgQFANCyACIABBAWooAAAgAEEFaigAABAQIARBCWohBAwNC0EJIQEgQVANCiACIABBAWooAAAgAEEFaigAABARIARBCWohBAwMC0EJIQEgQlANCSACIABBAWooAAAgAEEFaigAABASIARBCWohBAwLC0EJIQEgQ1ANCCACIABBAWooAAAgAEEFaigAABATIARBCWohBAwKC0EJIQEgRFANByACIABBAWooAAAgAEEFaigAABAUIARBCWohBAwJC0EJIQEgRVANBiACIABBAWooAAAgAEEFaigAABAVIARBCWohBAwIC0EJIQEgRlANBSACIABBAWooAAAgAEEFaigAABAWIARBCWohBAwHC0EJIQEgR1ANBCAC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AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAEGJhMAACwEBAEGghMAAC+ABAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAQaGGwAALXgEAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEAAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAEAQYCIwAALtBBVbmV4cGVjdGVkIGVuZCBvZiBkYXRhVW5leHBlY3RlZCBkYXRhUmVxdWVzdCBsaW5lIHRvbyBsb25nSW52YWxpZCBtZXRob2QgY2hhcmFjdGVySW52YWxpZCBVUkwgY2hhcmFjdGVyUFJJIGlzIG9ubHkgdmFsaWQgd2l0aCBIVFRQLzIuMFVuc3VwcG9ydGVkIEhUVFAgdmVyc2lvbkludmFsaWQgcHJvdG9jb2xJbnZhbGlkIHByb3RvY29sIG5hbWVFeHBlY3RlZCAvIGFmdGVyIHRoZSBwcm90b2NvbCBuYW1lRXhwZWN0ZWQgc3BhY2UgYWZ0ZXIgVVJMRXhwZWN0ZWQgc3BhY2UgYWZ0ZXIgbWV0aG9kUmVxdWVzdCBsaW5lIHRvbyBzaG9ydEV4cGVjdGVkIENSTEZTdGF0dXMgbGluZSB0b28gbG9uZ0ludmFsaWQgSFRUUCByZXNwb25zZSBzdGF0dXNJbnZhbGlkIHN0YXR1cyByZWFzb24gY2hhcmFjdGVyRXhwZWN0ZWQgYSBzcGFjZSBhZnRlciBIVFRQIHJlc3BvbnNlIHN0YXR1c0V4cGVjdGVkIHNwYWNlIGFmdGVyIHByb3RvY29sU3RhdHVzIGxpbmUgdG9vIHNob3J0TWFsZm9ybWVkIEhUVFAvMi4wIHByZWZhY2VVbmV4cGVjdGVkIENvbnRlbnQtTGVuZ3RoIGhlYWRlciBmb3IgYSByZXNwb25zZSB3aXRob3V0IGJvZHlFeHBlY3RlZCBDb250ZW50LUxlbmd0aCBoZWFkZXIgdmFsdWVJbnZhbGlkIENvbnRlbnQtTGVuZ3RoIGhlYWRlckludmFsaWQgZHVwbGljYXRlIENvbnRlbnQtTGVuZ3RoIGhlYWRlclVuZXhwZWN0ZWQgQ29udGVudC1MZW5ndGggaGVhZGVyIHdoZW4gVHJhbnNmZXItRW5jb2RpbmcgaGVhZGVyIGlzIHByZXNlbnRVbmV4cGVjdGVkIFRyYW5zZmVyLUVuY29kaW5nIGhlYWRlciBmb3IgYSByZXNwb25zZSB3aXRob3V0IGJvZHlFeHBlY3RlZCBUcmFuc2Zlci1FbmNvZGluZyBoZWFkZXIgdmFsdWVUaGUgdmFsdWUgImNodW5rZWQiIGluIHRoZSBUcmFuc2Zlci1FbmNvZGluZyBoZWFkZXIgbXVzdCBiZSB0aGUgbGFzdCBwcm92aWRlZCBhbmQgY2FuIGJlIHByb3ZpZGVkIG9ubHkgb25jZVRoZSB2YWx1ZSAiY2h1bmtlZCIgaW4gdGhlIFRyYW5zZmVyLUVuY29kaW5nIGhlYWRlciBtdXN0IGJlIHRoZSBsYXN0IHByb3ZpZGVkVW5leHBlY3RlZCBUcmFuc2Zlci1FbmNvZGluZyBoZWFkZXIgd2hlbiBDb250ZW50LUxlbmd0aCBoZWFkZXIgaXMgcHJlc2VudEV4cGVjdGVkIENvbm5lY3Rpb24gaGVhZGVyIHZhbHVlSW52YWxpZCBDb25uZWN0aW9uIGhlYWRlciB2YWx1ZUV4cGVjdGVkIFRyYWlsZXIgaGVhZGVyIHZhbHVlRXhwZWN0ZWQgVXBncmFkZSBoZWFkZXIgdmFsdWVJbnZhbGlkIFVwZ3JhZGUgaGVhZGVyIHZhbHVlSW52YWxpZCBoZWFkZXIgZmllbGQgbmFtZSBjaGFyYWN0ZXJJbnZhbGlkIGhlYWRlciBmaWVsZCB2YWx1ZSBjaGFyYWN0ZXJIZWFkZXIgbGluZSB0b28gbG9uZ01pc3NpbmcgQ29ubmVjdGlvbiBoZWFkZXIgc2V0IHRvICJ1cGdyYWRlIiB3aGVuIHVzaW5nIHRoZSBVcGdyYWRlIGhlYWRlclRyYWlsZXJzIGFyZSBub3QgYWxsb3dlZCB3aGVuIG5vdCB1c2luZyBjaHVua2VkIHRyYW5zZmVyIGVuY29kaW5nVW5leHBlY3RlZCBjb250ZW50IGZvciB0aGUgcmVxdWVzdCAoR0VUIG9yIEhFQUQpVHJhbnNmZXItRW5jb2RpbmcgbGFzdCBoZWFkZXIgdmFsdWUgbXVzdCBiZSAiY2h1bmtlZCIgaWYgdGhlIGhlYWRlciBpcyBwcmVzZW50Q2h1bmsgaGVhZGVyIHRvbyBsb25nSW52YWxpZCBjaHVuayBsZW5ndGggY2hhcmFjdGVySW52YWxpZCBjaHVuayBsZW5ndGggc2l6ZUV4cGVjdGVkIGNodW5rIGV4dGVuc2lvbiBuYW1lSW52YWxpZCBjaHVuayBleHRlbnNpb24gbmFtZSBjaGFyYWN0ZXJFeHBlY3RlZCBjbG9zaW5nIHF1b3RlIGZvciBjaHVuayBleHRlbnNpb24gdmFsdWVJbnZhbGlkIGNodW5rIGV4dGVuc2lvbiBxdW90ZWQgdmFsdWUgY2hhcmFjdGVyRXhwZWN0ZWQgY2h1bmsgZXh0ZW5zaW9uIHZhbHVlSW52YWxpZCBjaHVuayBleHRlbnNpb24gdmFsdWUgY2hhcmFjdGVySW52YWxpZCBjaHVuayBleHRlbnNpb24gY2hhcmFjdGVyIGFmdGVyIHZhbHVlRXhwZWN0ZWQgQ1JMRiBhZnRlciBjaHVuayBkYXRhSW52YWxpZCB0cmFpbGVyIGZpZWxkIG5hbWUgY2hhcmFjdGVySW52YWxpZCB0cmFpbGVyIGZpZWxkIHZhbHVlIGNoYXJhY3RlclRyYWlsZXIgbGluZSB0b28gbG9uZ0ludmFsaWQgc3RhdGU=",
+        "base64"
+      )
+    );
+    var textEncoder = new TextEncoder();
+    var textDecoder = new TextDecoder();
+    function log(logger, raw) {
+      const len = Number(BigInt.asUintN(32, raw));
+      const ptr = Number(raw >> 32n);
+      logger(textDecoder.decode(new Uint8Array(this.memory.buffer, ptr, len)));
+    }
+    function alloc(len) {
+      return this.alloc(len) >>> 0;
+    }
+    function dealloc(ptr, len) {
+      return this.dealloc(ptr, len);
+    }
+    function create() {
+      return this.create() >>> 0;
+    }
+    function destroy(parser) {
+      this.destroy(parser);
+    }
+    function parse(parser, data, limit) {
+      return this.parse(parser, data, limit) >>> 0;
+    }
+    function fail(parser, code, description) {
+      const len = description.length;
+      const ptr = this.alloc(len);
+      const buffer = new Uint8Array(this.memory.buffer, ptr, len);
+      textEncoder.encodeInto(description, buffer);
+      this.fail(parser, code, ptr, len);
+      this.dealloc(ptr, len);
+    }
+    function hasDebug() {
+      return this.milo_has_debug() !== 0;
+    }
+    var Errors = Object.freeze({
+      NONE: 0,
+      USER: 1,
+      CALLBACK_ERROR: 2,
+      UNEXPECTED_STATE: 3,
+      UNEXPECTED_DATA: 4,
+      UNEXPECTED_EOF: 5,
+      UNEXPECTED_CHARACTER: 6,
+      UNEXPECTED_CONTENT_LENGTH: 7,
+      UNEXPECTED_TRANSFER_ENCODING: 8,
+      UNEXPECTED_CONTENT: 9,
+      UNEXPECTED_TRAILERS: 10,
+      INVALID_VERSION: 11,
+      INVALID_STATUS: 12,
+      INVALID_CONTENT_LENGTH: 13,
+      INVALID_TRANSFER_ENCODING: 14,
+      INVALID_CHUNK_SIZE: 15,
+      MISSING_CONNECTION_UPGRADE: 16,
+      UNSUPPORTED_HTTP_VERSION: 17,
+      0: "NONE",
+      1: "USER",
+      2: "CALLBACK_ERROR",
+      3: "UNEXPECTED_STATE",
+      4: "UNEXPECTED_DATA",
+      5: "UNEXPECTED_EOF",
+      6: "UNEXPECTED_CHARACTER",
+      7: "UNEXPECTED_CONTENT_LENGTH",
+      8: "UNEXPECTED_TRANSFER_ENCODING",
+      9: "UNEXPECTED_CONTENT",
+      10: "UNEXPECTED_TRAILERS",
+      11: "INVALID_VERSION",
+      12: "INVALID_STATUS",
+      13: "INVALID_CONTENT_LENGTH",
+      14: "INVALID_TRANSFER_ENCODING",
+      15: "INVALID_CHUNK_SIZE",
+      16: "MISSING_CONNECTION_UPGRADE",
+      17: "UNSUPPORTED_HTTP_VERSION"
+    });
+    var Methods = Object.freeze({
+      OTHER: 0,
+      GET: 1,
+      HEAD: 2,
+      POST: 3,
+      PUT: 4,
+      DELETE: 5,
+      CONNECT: 6,
+      OPTIONS: 7,
+      TRACE: 8,
+      PATCH: 9,
+      PRI: 10,
+      0: "OTHER",
+      1: "GET",
+      2: "HEAD",
+      3: "POST",
+      4: "PUT",
+      5: "DELETE",
+      6: "CONNECT",
+      7: "OPTIONS",
+      8: "TRACE",
+      9: "PATCH",
+      10: "PRI"
+    });
+    var Callbacks = Object.freeze({
+      ON_ERROR: 0,
+      ON_FINISH: 1,
+      ON_MESSAGE_START: 2,
+      ON_MESSAGE_COMPLETE: 3,
+      ON_REQUEST: 4,
+      ON_RESPONSE: 5,
+      ON_RESET: 6,
+      ON_METHOD: 7,
+      ON_URL: 8,
+      ON_PROTOCOL: 9,
+      ON_VERSION: 10,
+      ON_STATUS: 11,
+      ON_REASON: 12,
+      ON_HEADER_NAME: 13,
+      ON_HEADER_VALUE: 14,
+      ON_HEADERS: 15,
+      ON_CONNECT: 16,
+      ON_UPGRADE: 17,
+      ON_CHUNK_LENGTH: 18,
+      ON_CHUNK_EXTENSION_NAME: 19,
+      ON_CHUNK_EXTENSION_VALUE: 20,
+      ON_CHUNK: 21,
+      ON_BODY: 22,
+      ON_DATA: 23,
+      ON_TRAILER_NAME: 24,
+      ON_TRAILER_VALUE: 25,
+      ON_TRAILERS: 26,
+      ON_STATE_CHANGE: 27,
+      0: "ON_ERROR",
+      1: "ON_FINISH",
+      2: "ON_MESSAGE_START",
+      3: "ON_MESSAGE_COMPLETE",
+      4: "ON_REQUEST",
+      5: "ON_RESPONSE",
+      6: "ON_RESET",
+      7: "ON_METHOD",
+      8: "ON_URL",
+      9: "ON_PROTOCOL",
+      10: "ON_VERSION",
+      11: "ON_STATUS",
+      12: "ON_REASON",
+      13: "ON_HEADER_NAME",
+      14: "ON_HEADER_VALUE",
+      15: "ON_HEADERS",
+      16: "ON_CONNECT",
+      17: "ON_UPGRADE",
+      18: "ON_CHUNK_LENGTH",
+      19: "ON_CHUNK_EXTENSION_NAME",
+      20: "ON_CHUNK_EXTENSION_VALUE",
+      21: "ON_CHUNK",
+      22: "ON_BODY",
+      23: "ON_DATA",
+      24: "ON_TRAILER_NAME",
+      25: "ON_TRAILER_VALUE",
+      26: "ON_TRAILERS",
+      27: "ON_STATE_CHANGE"
+    });
+    var CallbackActives = Object.freeze({
+      NONE: 0n,
+      ON_ERROR: 1n,
+      ON_FINISH: 2n,
+      ON_MESSAGE_START: 4n,
+      ON_MESSAGE_COMPLETE: 8n,
+      ON_REQUEST: 16n,
+      ON_RESPONSE: 32n,
+      ON_RESET: 64n,
+      ON_METHOD: 128n,
+      ON_URL: 256n,
+      ON_PROTOCOL: 512n,
+      ON_VERSION: 1024n,
+      ON_STATUS: 2048n,
+      ON_REASON: 4096n,
+      ON_HEADER_NAME: 8192n,
+      ON_HEADER_VALUE: 16384n,
+      ON_HEADERS: 32768n,
+      ON_CONNECT: 65536n,
+      ON_UPGRADE: 131072n,
+      ON_CHUNK_LENGTH: 262144n,
+      ON_CHUNK_EXTENSION_NAME: 524288n,
+      ON_CHUNK_EXTENSION_VALUE: 1048576n,
+      ON_CHUNK: 2097152n,
+      ON_BODY: 4194304n,
+      ON_DATA: 8388608n,
+      ON_TRAILER_NAME: 16777216n,
+      ON_TRAILER_VALUE: 33554432n,
+      ON_TRAILERS: 67108864n,
+      ON_STATE_CHANGE: 134217728n,
+      ALL: 268435455n,
+      0n: "NONE",
+      1n: "ON_ERROR",
+      2n: "ON_FINISH",
+      4n: "ON_MESSAGE_START",
+      8n: "ON_MESSAGE_COMPLETE",
+      16n: "ON_REQUEST",
+      32n: "ON_RESPONSE",
+      64n: "ON_RESET",
+      128n: "ON_METHOD",
+      256n: "ON_URL",
+      512n: "ON_PROTOCOL",
+      1024n: "ON_VERSION",
+      2048n: "ON_STATUS",
+      4096n: "ON_REASON",
+      8192n: "ON_HEADER_NAME",
+      16384n: "ON_HEADER_VALUE",
+      32768n: "ON_HEADERS",
+      65536n: "ON_CONNECT",
+      131072n: "ON_UPGRADE",
+      262144n: "ON_CHUNK_LENGTH",
+      524288n: "ON_CHUNK_EXTENSION_NAME",
+      1048576n: "ON_CHUNK_EXTENSION_VALUE",
+      2097152n: "ON_CHUNK",
+      4194304n: "ON_BODY",
+      8388608n: "ON_DATA",
+      16777216n: "ON_TRAILER_NAME",
+      33554432n: "ON_TRAILER_VALUE",
+      67108864n: "ON_TRAILERS",
+      134217728n: "ON_STATE_CHANGE",
+      268435455n: "ALL"
+    });
+    var Events = Object.freeze({
+      END: 0,
+      ERROR: 1,
+      FINISH: 2,
+      MESSAGE_START: 3,
+      MESSAGE_COMPLETE: 4,
+      REQUEST: 5,
+      RESPONSE: 6,
+      RESET: 7,
+      METHOD: 8,
+      URL: 9,
+      PROTOCOL: 10,
+      VERSION: 11,
+      STATUS: 12,
+      REASON: 13,
+      HEADER_NAME: 14,
+      HEADER_VALUE: 15,
+      HEADERS: 16,
+      CONNECT: 17,
+      UPGRADE: 18,
+      CHUNK_LENGTH: 19,
+      CHUNK_EXTENSION_NAME: 20,
+      CHUNK_EXTENSION_VALUE: 21,
+      CHUNK: 22,
+      BODY: 23,
+      DATA: 24,
+      TRAILER_NAME: 25,
+      TRAILER_VALUE: 26,
+      TRAILERS: 27,
+      STATE_CHANGE: 28,
+      0: "END",
+      1: "ERROR",
+      2: "FINISH",
+      3: "MESSAGE_START",
+      4: "MESSAGE_COMPLETE",
+      5: "REQUEST",
+      6: "RESPONSE",
+      7: "RESET",
+      8: "METHOD",
+      9: "URL",
+      10: "PROTOCOL",
+      11: "VERSION",
+      12: "STATUS",
+      13: "REASON",
+      14: "HEADER_NAME",
+      15: "HEADER_VALUE",
+      16: "HEADERS",
+      17: "CONNECT",
+      18: "UPGRADE",
+      19: "CHUNK_LENGTH",
+      20: "CHUNK_EXTENSION_NAME",
+      21: "CHUNK_EXTENSION_VALUE",
+      22: "CHUNK",
+      23: "BODY",
+      24: "DATA",
+      25: "TRAILER_NAME",
+      26: "TRAILER_VALUE",
+      27: "TRAILERS",
+      28: "STATE_CHANGE"
+    });
+    var EventActives = Object.freeze({
+      NONE: 0n,
+      ON_ERROR: 1n,
+      ON_FINISH: 2n,
+      ON_MESSAGE_START: 4n,
+      ON_MESSAGE_COMPLETE: 8n,
+      ON_REQUEST: 16n,
+      ON_RESPONSE: 32n,
+      ON_RESET: 64n,
+      ON_METHOD: 128n,
+      ON_URL: 256n,
+      ON_PROTOCOL: 512n,
+      ON_VERSION: 1024n,
+      ON_STATUS: 2048n,
+      ON_REASON: 4096n,
+      ON_HEADER_NAME: 8192n,
+      ON_HEADER_VALUE: 16384n,
+      ON_HEADERS: 32768n,
+      ON_CONNECT: 65536n,
+      ON_UPGRADE: 131072n,
+      ON_CHUNK_LENGTH: 262144n,
+      ON_CHUNK_EXTENSION_NAME: 524288n,
+      ON_CHUNK_EXTENSION_VALUE: 1048576n,
+      ON_CHUNK: 2097152n,
+      ON_BODY: 4194304n,
+      ON_DATA: 8388608n,
+      ON_TRAILER_NAME: 16777216n,
+      ON_TRAILER_VALUE: 33554432n,
+      ON_TRAILERS: 67108864n,
+      ON_STATE_CHANGE: 134217728n,
+      ALL: 268435455n,
+      0n: "NONE",
+      1n: "ON_ERROR",
+      2n: "ON_FINISH",
+      4n: "ON_MESSAGE_START",
+      8n: "ON_MESSAGE_COMPLETE",
+      16n: "ON_REQUEST",
+      32n: "ON_RESPONSE",
+      64n: "ON_RESET",
+      128n: "ON_METHOD",
+      256n: "ON_URL",
+      512n: "ON_PROTOCOL",
+      1024n: "ON_VERSION",
+      2048n: "ON_STATUS",
+      4096n: "ON_REASON",
+      8192n: "ON_HEADER_NAME",
+      16384n: "ON_HEADER_VALUE",
+      32768n: "ON_HEADERS",
+      65536n: "ON_CONNECT",
+      131072n: "ON_UPGRADE",
+      262144n: "ON_CHUNK_LENGTH",
+      524288n: "ON_CHUNK_EXTENSION_NAME",
+      1048576n: "ON_CHUNK_EXTENSION_VALUE",
+      2097152n: "ON_CHUNK",
+      4194304n: "ON_BODY",
+      8388608n: "ON_DATA",
+      16777216n: "ON_TRAILER_NAME",
+      33554432n: "ON_TRAILER_VALUE",
+      67108864n: "ON_TRAILERS",
+      134217728n: "ON_STATE_CHANGE",
+      268435455n: "ALL"
+    });
+    var States = Object.freeze({
+      START: 0,
+      FINISH: 1,
+      ERROR: 2,
+      REQUEST_LINE: 3,
+      STATUS_LINE: 4,
+      HTTP2_PREFACE: 5,
+      HEADER: 6,
+      BODY_DECISION: 7,
+      BODY_VIA_CONTENT_LENGTH: 8,
+      BODY_WITH_NO_LENGTH: 9,
+      CHUNK_HEADER: 10,
+      CHUNK_EXTENSIONS: 11,
+      CHUNK_DATA: 12,
+      TRAILER: 13,
+      TUNNEL: 14,
+      0: "START",
+      1: "FINISH",
+      2: "ERROR",
+      3: "REQUEST_LINE",
+      4: "STATUS_LINE",
+      5: "HTTP2_PREFACE",
+      6: "HEADER",
+      7: "BODY_DECISION",
+      8: "BODY_VIA_CONTENT_LENGTH",
+      9: "BODY_WITH_NO_LENGTH",
+      10: "CHUNK_HEADER",
+      11: "CHUNK_EXTENSIONS",
+      12: "CHUNK_DATA",
+      13: "TRAILER",
+      14: "TUNNEL"
+    });
+    var ParserFields = Object.freeze({
+      MAX_START_LINE_LENGTH: 0,
+      MAX_HEADER_LENGTH: 4,
+      MAX_BODY_PAYLOAD: 8,
+      AUTODETECT: 16,
+      IS_REQUEST: 17,
+      SUSPEND_AFTER_HEADERS: 18,
+      MANAGE_UNCONSUMED: 19,
+      CONTINUE_WITHOUT_DATA: 20,
+      IS_CONNECT: 21,
+      SKIP_BODY: 22,
+      DEBUG: 23,
+      PARSED: 24,
+      POSITION: 32,
+      STATE: 36,
+      PAUSED: 37,
+      ERROR_CODE: 38,
+      CONTENT_LENGTH: 40,
+      CHUNK_SIZE: 48,
+      REMAINING_CONTENT_LENGTH: 56,
+      REMAINING_CHUNK_SIZE: 64,
+      STATUS: 72,
+      METHOD: 76,
+      HAS_CONTENT_LENGTH: 77,
+      HAS_TRANSFER_ENCODING: 78,
+      HAS_CHUNKED_TRANSFER_ENCODING: 79,
+      HAS_CONNECTION_CLOSE: 80,
+      HAS_CONNECTION_UPGRADE: 81,
+      HAS_UPGRADE: 82,
+      HAS_TRAILERS: 83,
+      ACTIVE_CALLBACKS: 88,
+      ACTIVE_EVENTS: 96,
+      PTR: 104,
+      ERROR_DESCRIPTION: 108,
+      UNCONSUMED: 364,
+      UNCONSUMED_LEN: 368,
+      ERROR_DESCRIPTION_LEN: 372,
+      EVENTS: 376,
+      0: "MAX_START_LINE_LENGTH",
+      4: "MAX_HEADER_LENGTH",
+      8: "MAX_BODY_PAYLOAD",
+      16: "AUTODETECT",
+      17: "IS_REQUEST",
+      18: "SUSPEND_AFTER_HEADERS",
+      19: "MANAGE_UNCONSUMED",
+      20: "CONTINUE_WITHOUT_DATA",
+      21: "IS_CONNECT",
+      22: "SKIP_BODY",
+      23: "DEBUG",
+      24: "PARSED",
+      32: "POSITION",
+      36: "STATE",
+      37: "PAUSED",
+      38: "ERROR_CODE",
+      40: "CONTENT_LENGTH",
+      48: "CHUNK_SIZE",
+      56: "REMAINING_CONTENT_LENGTH",
+      64: "REMAINING_CHUNK_SIZE",
+      72: "STATUS",
+      76: "METHOD",
+      77: "HAS_CONTENT_LENGTH",
+      78: "HAS_TRANSFER_ENCODING",
+      79: "HAS_CHUNKED_TRANSFER_ENCODING",
+      80: "HAS_CONNECTION_CLOSE",
+      81: "HAS_CONNECTION_UPGRADE",
+      82: "HAS_UPGRADE",
+      83: "HAS_TRAILERS",
+      88: "ACTIVE_CALLBACKS",
+      96: "ACTIVE_EVENTS",
+      104: "PTR",
+      108: "ERROR_DESCRIPTION",
+      364: "UNCONSUMED",
+      368: "UNCONSUMED_LEN",
+      372: "ERROR_DESCRIPTION_LEN",
+      376: "EVENTS"
+    });
+    function isAutodetect(parser) {
+      return this.is_autodetect(parser) !== 0;
+    }
+    function isRequest(parser) {
+      return this.is_request(parser) !== 0;
+    }
+    function isPaused(parser) {
+      return this.is_paused(parser) !== 0;
+    }
+    function shouldManageUnconsumed(parser) {
+      return this.should_manage_unconsumed(parser) !== 0;
+    }
+    function shouldSuspendAfterHeaders(parser) {
+      return this.should_suspend_after_headers(parser) !== 0;
+    }
+    function getMaxStartLineLength(parser) {
+      return this.get_max_start_line_length(parser) >>> 0;
+    }
+    function getMaxHeaderLength(parser) {
+      return this.get_max_header_length(parser) >>> 0;
+    }
+    function getMaxBodyPayload(parser) {
+      return BigInt.asUintN(64, this.get_max_body_payload(parser));
+    }
+    function shouldContinueWithoutData(parser) {
+      return this.should_continue_without_data(parser) !== 0;
+    }
+    function isConnect(parser) {
+      return this.is_connect(parser) !== 0;
+    }
+    function isDebug(parser) {
+      return this.is_debug(parser) !== 0;
+    }
+    function shouldSkipBody(parser) {
+      return this.should_skip_body(parser) !== 0;
+    }
+    function getState(parser) {
+      return this.get_state(parser) >>> 0;
+    }
+    function getPosition(parser) {
+      return this.get_position(parser) >>> 0;
+    }
+    function getParsed(parser) {
+      return BigInt.asUintN(64, this.get_parsed(parser));
+    }
+    function getErrorCode(parser) {
+      return this.get_error_code(parser) >>> 0;
+    }
+    function getMethod(parser) {
+      return this.get_method(parser) >>> 0;
+    }
+    function getStatus(parser) {
+      return this.get_status(parser) >>> 0;
+    }
+    function hasConnectionClose(parser) {
+      return this.has_connection_close(parser) !== 0;
+    }
+    function hasConnectionUpgrade(parser) {
+      return this.has_connection_upgrade(parser) !== 0;
+    }
+    function getContentLength(parser) {
+      return BigInt.asUintN(64, this.get_content_length(parser));
+    }
+    function getChunkSize(parser) {
+      return BigInt.asUintN(64, this.get_chunk_size(parser));
+    }
+    function getRemainingContentLength(parser) {
+      return BigInt.asUintN(64, this.get_remaining_content_length(parser));
+    }
+    function getRemainingChunkSize(parser) {
+      return BigInt.asUintN(64, this.get_remaining_chunk_size(parser));
+    }
+    function hasContentLength(parser) {
+      return this.has_content_length(parser) !== 0;
+    }
+    function hasTransferEncoding(parser) {
+      return this.has_transfer_encoding(parser) !== 0;
+    }
+    function hasChunkedTransferEncoding(parser) {
+      return this.has_chunked_transfer_encoding(parser) !== 0;
+    }
+    function hasUpgrade(parser) {
+      return this.has_upgrade(parser) !== 0;
+    }
+    function hasTrailers(parser) {
+      return this.has_trailers(parser) !== 0;
+    }
+    function getErrorDescription(parser) {
+      const raw = this.get_error_description_raw(parser);
+      const len = Number(BigInt.asUintN(32, raw));
+      const ptr = Number(raw >> 32n);
+      return textDecoder.decode(new Uint8Array(this.memory.buffer, ptr, len));
+    }
+    function setShouldAutodetect(parser, value) {
+      this.set_should_autodetect(parser, value);
+    }
+    function setShouldContinueWithoutData(parser, value) {
+      this.set_should_continue_without_data(parser, value);
+    }
+    function setIsRequest(parser, value) {
+      this.set_is_request(parser, value);
+    }
+    function setIsConnect(parser, value) {
+      this.set_is_connect(parser, value);
+    }
+    function setDebug(parser, value) {
+      this.set_debug(parser, value);
+    }
+    function setShouldManageUnconsumed(parser, value) {
+      this.set_should_manage_unconsumed(parser, value);
+    }
+    function setShouldSuspendAfterHeaders(parser, value) {
+      this.set_should_suspend_after_headers(parser, value);
+    }
+    function setMaxStartLineLength(parser, value) {
+      this.set_max_start_line_length(parser, value);
+    }
+    function setMaxHeaderLength(parser, value) {
+      this.set_max_header_length(parser, value);
+    }
+    function setMaxBodyPayload(parser, value) {
+      this.set_max_body_payload(parser, value);
+    }
+    function setShouldSkipBody(parser, value) {
+      this.set_should_skip_body(parser, value);
+    }
+    function setActiveCallbacks(parser, value) {
+      this.set_active_callbacks(parser, value);
+    }
+    function setActiveEvents(parser, value) {
+      this.set_active_events(parser, value);
+    }
+    function simpleCreate(spans, create2) {
+      const parser = create2();
+      spans[parser] = [];
+      this.setActiveCallbacks(parser, this.CALLBACK_ACTIVE_ALL);
+      return parser;
+    }
+    function simpleDestroy(spans, destroy2, parser) {
+      spans[parser] = void 0;
+      destroy2(parser);
+    }
+    function noop() {
+    }
+    function setup(env = {}) {
+      let { logger: logOption, ...instanceEnvironment } = env;
+      let logger = noop;
+      const context = {};
+      if (logOption) {
+        if (typeof logOption !== "function") {
+          logOption = console.log;
+        }
+        logger = log.bind(context, logOption);
+      }
+      const instance = new WebAssembly.Instance(wasmModule, {
+        env: {
+          logger,
+          on_error: noop,
+          on_finish: noop,
+          on_message_start: noop,
+          on_message_complete: noop,
+          on_request: noop,
+          on_response: noop,
+          on_reset: noop,
+          on_method: noop,
+          on_url: noop,
+          on_protocol: noop,
+          on_version: noop,
+          on_status: noop,
+          on_reason: noop,
+          on_header_name: noop,
+          on_header_value: noop,
+          on_headers: noop,
+          on_connect: noop,
+          on_upgrade: noop,
+          on_chunk_length: noop,
+          on_chunk_extension_name: noop,
+          on_chunk_extension_value: noop,
+          on_chunk: noop,
+          on_body: noop,
+          on_data: noop,
+          on_trailer_name: noop,
+          on_trailer_value: noop,
+          on_trailers: noop,
+          on_state_change: noop,
+          ...instanceEnvironment
+        }
+      });
+      const wasm = instance.exports;
+      context.memory = wasm.memory;
+      const milo = {
+        version: {
+          raw: "0.9.0",
+          major: 0,
+          minor: 9,
+          patch: 0,
+          prerelease: ""
+        },
+        METHOD_OTHER: 0,
+        METHOD_GET: 1,
+        METHOD_HEAD: 2,
+        METHOD_POST: 3,
+        METHOD_PUT: 4,
+        METHOD_DELETE: 5,
+        METHOD_CONNECT: 6,
+        METHOD_OPTIONS: 7,
+        METHOD_TRACE: 8,
+        METHOD_PATCH: 9,
+        METHOD_PRI: 10,
+        CALLBACK_ON_ERROR: 0,
+        CALLBACK_ON_FINISH: 1,
+        CALLBACK_ON_MESSAGE_START: 2,
+        CALLBACK_ON_MESSAGE_COMPLETE: 3,
+        CALLBACK_ON_REQUEST: 4,
+        CALLBACK_ON_RESPONSE: 5,
+        CALLBACK_ON_RESET: 6,
+        CALLBACK_ON_METHOD: 7,
+        CALLBACK_ON_URL: 8,
+        CALLBACK_ON_PROTOCOL: 9,
+        CALLBACK_ON_VERSION: 10,
+        CALLBACK_ON_STATUS: 11,
+        CALLBACK_ON_REASON: 12,
+        CALLBACK_ON_HEADER_NAME: 13,
+        CALLBACK_ON_HEADER_VALUE: 14,
+        CALLBACK_ON_HEADERS: 15,
+        CALLBACK_ON_CONNECT: 16,
+        CALLBACK_ON_UPGRADE: 17,
+        CALLBACK_ON_CHUNK_LENGTH: 18,
+        CALLBACK_ON_CHUNK_EXTENSION_NAME: 19,
+        CALLBACK_ON_CHUNK_EXTENSION_VALUE: 20,
+        CALLBACK_ON_CHUNK: 21,
+        CALLBACK_ON_BODY: 22,
+        CALLBACK_ON_DATA: 23,
+        CALLBACK_ON_TRAILER_NAME: 24,
+        CALLBACK_ON_TRAILER_VALUE: 25,
+        CALLBACK_ON_TRAILERS: 26,
+        CALLBACK_ON_STATE_CHANGE: 27,
+        EVENT_END: 0,
+        EVENT_ERROR: 1,
+        EVENT_FINISH: 2,
+        EVENT_MESSAGE_START: 3,
+        EVENT_MESSAGE_COMPLETE: 4,
+        EVENT_REQUEST: 5,
+        EVENT_RESPONSE: 6,
+        EVENT_RESET: 7,
+        EVENT_METHOD: 8,
+        EVENT_URL: 9,
+        EVENT_PROTOCOL: 10,
+        EVENT_VERSION: 11,
+        EVENT_STATUS: 12,
+        EVENT_REASON: 13,
+        EVENT_HEADER_NAME: 14,
+        EVENT_HEADER_VALUE: 15,
+        EVENT_HEADERS: 16,
+        EVENT_CONNECT: 17,
+        EVENT_UPGRADE: 18,
+        EVENT_CHUNK_LENGTH: 19,
+        EVENT_CHUNK_EXTENSION_NAME: 20,
+        EVENT_CHUNK_EXTENSION_VALUE: 21,
+        EVENT_CHUNK: 22,
+        EVENT_BODY: 23,
+        EVENT_DATA: 24,
+        EVENT_TRAILER_NAME: 25,
+        EVENT_TRAILER_VALUE: 26,
+        EVENT_TRAILERS: 27,
+        EVENT_STATE_CHANGE: 28,
+        CALLBACK_ACTIVE_NONE: 0n,
+        EVENT_ACTIVE_NONE: 0n,
+        CALLBACK_ACTIVE_ON_ERROR: 1n,
+        EVENT_ACTIVE_ON_ERROR: 1n,
+        CALLBACK_ACTIVE_ON_FINISH: 2n,
+        EVENT_ACTIVE_ON_FINISH: 2n,
+        CALLBACK_ACTIVE_ON_MESSAGE_START: 4n,
+        EVENT_ACTIVE_ON_MESSAGE_START: 4n,
+        CALLBACK_ACTIVE_ON_MESSAGE_COMPLETE: 8n,
+        EVENT_ACTIVE_ON_MESSAGE_COMPLETE: 8n,
+        CALLBACK_ACTIVE_ON_REQUEST: 16n,
+        EVENT_ACTIVE_ON_REQUEST: 16n,
+        CALLBACK_ACTIVE_ON_RESPONSE: 32n,
+        EVENT_ACTIVE_ON_RESPONSE: 32n,
+        CALLBACK_ACTIVE_ON_RESET: 64n,
+        EVENT_ACTIVE_ON_RESET: 64n,
+        CALLBACK_ACTIVE_ON_METHOD: 128n,
+        EVENT_ACTIVE_ON_METHOD: 128n,
+        CALLBACK_ACTIVE_ON_URL: 256n,
+        EVENT_ACTIVE_ON_URL: 256n,
+        CALLBACK_ACTIVE_ON_PROTOCOL: 512n,
+        EVENT_ACTIVE_ON_PROTOCOL: 512n,
+        CALLBACK_ACTIVE_ON_VERSION: 1024n,
+        EVENT_ACTIVE_ON_VERSION: 1024n,
+        CALLBACK_ACTIVE_ON_STATUS: 2048n,
+        EVENT_ACTIVE_ON_STATUS: 2048n,
+        CALLBACK_ACTIVE_ON_REASON: 4096n,
+        EVENT_ACTIVE_ON_REASON: 4096n,
+        CALLBACK_ACTIVE_ON_HEADER_NAME: 8192n,
+        EVENT_ACTIVE_ON_HEADER_NAME: 8192n,
+        CALLBACK_ACTIVE_ON_HEADER_VALUE: 16384n,
+        EVENT_ACTIVE_ON_HEADER_VALUE: 16384n,
+        CALLBACK_ACTIVE_ON_HEADERS: 32768n,
+        EVENT_ACTIVE_ON_HEADERS: 32768n,
+        CALLBACK_ACTIVE_ON_CONNECT: 65536n,
+        EVENT_ACTIVE_ON_CONNECT: 65536n,
+        CALLBACK_ACTIVE_ON_UPGRADE: 131072n,
+        EVENT_ACTIVE_ON_UPGRADE: 131072n,
+        CALLBACK_ACTIVE_ON_CHUNK_LENGTH: 262144n,
+        EVENT_ACTIVE_ON_CHUNK_LENGTH: 262144n,
+        CALLBACK_ACTIVE_ON_CHUNK_EXTENSION_NAME: 524288n,
+        EVENT_ACTIVE_ON_CHUNK_EXTENSION_NAME: 524288n,
+        CALLBACK_ACTIVE_ON_CHUNK_EXTENSION_VALUE: 1048576n,
+        EVENT_ACTIVE_ON_CHUNK_EXTENSION_VALUE: 1048576n,
+        CALLBACK_ACTIVE_ON_CHUNK: 2097152n,
+        EVENT_ACTIVE_ON_CHUNK: 2097152n,
+        CALLBACK_ACTIVE_ON_BODY: 4194304n,
+        EVENT_ACTIVE_ON_BODY: 4194304n,
+        CALLBACK_ACTIVE_ON_DATA: 8388608n,
+        EVENT_ACTIVE_ON_DATA: 8388608n,
+        CALLBACK_ACTIVE_ON_TRAILER_NAME: 16777216n,
+        EVENT_ACTIVE_ON_TRAILER_NAME: 16777216n,
+        CALLBACK_ACTIVE_ON_TRAILER_VALUE: 33554432n,
+        EVENT_ACTIVE_ON_TRAILER_VALUE: 33554432n,
+        CALLBACK_ACTIVE_ON_TRAILERS: 67108864n,
+        EVENT_ACTIVE_ON_TRAILERS: 67108864n,
+        CALLBACK_ACTIVE_ON_STATE_CHANGE: 134217728n,
+        EVENT_ACTIVE_ON_STATE_CHANGE: 134217728n,
+        CALLBACK_ACTIVE_ALL: 268435455n,
+        EVENT_ACTIVE_ALL: 268435455n,
+        ERROR_NONE: 0,
+        ERROR_USER: 1,
+        ERROR_CALLBACK_ERROR: 2,
+        ERROR_UNEXPECTED_STATE: 3,
+        ERROR_UNEXPECTED_DATA: 4,
+        ERROR_UNEXPECTED_EOF: 5,
+        ERROR_UNEXPECTED_CHARACTER: 6,
+        ERROR_UNEXPECTED_CONTENT_LENGTH: 7,
+        ERROR_UNEXPECTED_TRANSFER_ENCODING: 8,
+        ERROR_UNEXPECTED_CONTENT: 9,
+        ERROR_UNEXPECTED_TRAILERS: 10,
+        ERROR_INVALID_VERSION: 11,
+        ERROR_INVALID_STATUS: 12,
+        ERROR_INVALID_CONTENT_LENGTH: 13,
+        ERROR_INVALID_TRANSFER_ENCODING: 14,
+        ERROR_INVALID_CHUNK_SIZE: 15,
+        ERROR_MISSING_CONNECTION_UPGRADE: 16,
+        ERROR_UNSUPPORTED_HTTP_VERSION: 17,
+        STATE_START: 0,
+        STATE_FINISH: 1,
+        STATE_ERROR: 2,
+        STATE_REQUEST_LINE: 3,
+        STATE_STATUS_LINE: 4,
+        STATE_HTTP2_PREFACE: 5,
+        STATE_HEADER: 6,
+        STATE_BODY_DECISION: 7,
+        STATE_BODY_VIA_CONTENT_LENGTH: 8,
+        STATE_BODY_WITH_NO_LENGTH: 9,
+        STATE_CHUNK_HEADER: 10,
+        STATE_CHUNK_EXTENSIONS: 11,
+        STATE_CHUNK_DATA: 12,
+        STATE_TRAILER: 13,
+        STATE_TUNNEL: 14,
+        PARSER_FIELD_MAX_START_LINE_LENGTH: 0,
+        PARSER_FIELD_MAX_HEADER_LENGTH: 4,
+        PARSER_FIELD_MAX_BODY_PAYLOAD: 8,
+        PARSER_FIELD_AUTODETECT: 16,
+        PARSER_FIELD_IS_REQUEST: 17,
+        PARSER_FIELD_SUSPEND_AFTER_HEADERS: 18,
+        PARSER_FIELD_MANAGE_UNCONSUMED: 19,
+        PARSER_FIELD_CONTINUE_WITHOUT_DATA: 20,
+        PARSER_FIELD_IS_CONNECT: 21,
+        PARSER_FIELD_SKIP_BODY: 22,
+        PARSER_FIELD_DEBUG: 23,
+        PARSER_FIELD_PARSED: 24,
+        PARSER_FIELD_POSITION: 32,
+        PARSER_FIELD_STATE: 36,
+        PARSER_FIELD_PAUSED: 37,
+        PARSER_FIELD_ERROR_CODE: 38,
+        PARSER_FIELD_CONTENT_LENGTH: 40,
+        PARSER_FIELD_CHUNK_SIZE: 48,
+        PARSER_FIELD_REMAINING_CONTENT_LENGTH: 56,
+        PARSER_FIELD_REMAINING_CHUNK_SIZE: 64,
+        PARSER_FIELD_STATUS: 72,
+        PARSER_FIELD_METHOD: 76,
+        PARSER_FIELD_HAS_CONTENT_LENGTH: 77,
+        PARSER_FIELD_HAS_TRANSFER_ENCODING: 78,
+        PARSER_FIELD_HAS_CHUNKED_TRANSFER_ENCODING: 79,
+        PARSER_FIELD_HAS_CONNECTION_CLOSE: 80,
+        PARSER_FIELD_HAS_CONNECTION_UPGRADE: 81,
+        PARSER_FIELD_HAS_UPGRADE: 82,
+        PARSER_FIELD_HAS_TRAILERS: 83,
+        PARSER_FIELD_ACTIVE_CALLBACKS: 88,
+        PARSER_FIELD_ACTIVE_EVENTS: 96,
+        PARSER_FIELD_PTR: 104,
+        PARSER_FIELD_ERROR_DESCRIPTION: 108,
+        PARSER_FIELD_UNCONSUMED: 364,
+        PARSER_FIELD_UNCONSUMED_LEN: 368,
+        PARSER_FIELD_ERROR_DESCRIPTION_LEN: 372,
+        PARSER_FIELD_EVENTS: 376,
+        Errors,
+        Methods,
+        Callbacks,
+        CallbackActives,
+        Events,
+        EventActives,
+        States,
+        ParserFields,
+        isAutodetect: isAutodetect.bind(wasm),
+        isRequest: isRequest.bind(wasm),
+        isPaused: isPaused.bind(wasm),
+        shouldManageUnconsumed: shouldManageUnconsumed.bind(wasm),
+        shouldSuspendAfterHeaders: shouldSuspendAfterHeaders.bind(wasm),
+        getMaxStartLineLength: getMaxStartLineLength.bind(wasm),
+        getMaxHeaderLength: getMaxHeaderLength.bind(wasm),
+        getMaxBodyPayload: getMaxBodyPayload.bind(wasm),
+        shouldContinueWithoutData: shouldContinueWithoutData.bind(wasm),
+        isConnect: isConnect.bind(wasm),
+        isDebug: isDebug.bind(wasm),
+        shouldSkipBody: shouldSkipBody.bind(wasm),
+        getState: getState.bind(wasm),
+        getPosition: getPosition.bind(wasm),
+        getParsed: getParsed.bind(wasm),
+        getErrorCode: getErrorCode.bind(wasm),
+        getMethod: getMethod.bind(wasm),
+        getStatus: getStatus.bind(wasm),
+        hasConnectionClose: hasConnectionClose.bind(wasm),
+        hasConnectionUpgrade: hasConnectionUpgrade.bind(wasm),
+        getContentLength: getContentLength.bind(wasm),
+        getChunkSize: getChunkSize.bind(wasm),
+        getRemainingContentLength: getRemainingContentLength.bind(wasm),
+        getRemainingChunkSize: getRemainingChunkSize.bind(wasm),
+        hasContentLength: hasContentLength.bind(wasm),
+        hasTransferEncoding: hasTransferEncoding.bind(wasm),
+        hasChunkedTransferEncoding: hasChunkedTransferEncoding.bind(wasm),
+        hasUpgrade: hasUpgrade.bind(wasm),
+        hasTrailers: hasTrailers.bind(wasm),
+        getErrorDescription: getErrorDescription.bind(wasm),
+        setShouldAutodetect: setShouldAutodetect.bind(wasm),
+        setShouldContinueWithoutData: setShouldContinueWithoutData.bind(wasm),
+        setIsRequest: setIsRequest.bind(wasm),
+        setIsConnect: setIsConnect.bind(wasm),
+        setDebug: setDebug.bind(wasm),
+        setShouldManageUnconsumed: setShouldManageUnconsumed.bind(wasm),
+        setShouldSuspendAfterHeaders: setShouldSuspendAfterHeaders.bind(wasm),
+        setMaxStartLineLength: setMaxStartLineLength.bind(wasm),
+        setMaxHeaderLength: setMaxHeaderLength.bind(wasm),
+        setMaxBodyPayload: setMaxBodyPayload.bind(wasm),
+        setShouldSkipBody: setShouldSkipBody.bind(wasm),
+        setActiveCallbacks: setActiveCallbacks.bind(wasm),
+        setActiveEvents: setActiveEvents.bind(wasm),
+        memory: wasm.memory,
+        alloc: alloc.bind(wasm),
+        dealloc: dealloc.bind(wasm),
+        create: create.bind(wasm),
+        destroy: destroy.bind(wasm),
+        parse: parse.bind(wasm),
+        fail: fail.bind(wasm),
+        hasDebug: hasDebug.bind(wasm),
+        clear: wasm.clear,
+        complete: wasm.complete,
+        finish: wasm.finish,
+        pause: wasm.pause,
+        reset: wasm.reset,
+        resume: wasm.resume
+      };
+      return milo;
+    }
+    function simple() {
+      const spans = {};
+      const milo = setup({
+        /* REPLACE: callbacks:simple */
+      });
+      milo.spans = spans;
+      milo.create = simpleCreate.bind(milo, spans, milo.create);
+      milo.destroy = simpleDestroy.bind(milo, spans, milo.destroy);
+      return milo;
+    }
+    module2.exports = { wasmModule, noop, setup, simple };
+  }
+});
+
+// addons/pro/node_modules/undici/lib/milo/no-simd.js
+var require_no_simd = __commonJS({
+  "addons/pro/node_modules/undici/lib/milo/no-simd.js"(exports2, module2) {
+    var wasmModule = new WebAssembly.Module(
+      Buffer.from(
+        "AGFzbQEAAAABQgtgA39/fwBgAX8Bf2ACf38AYAF/AGABfwF+YAJ/fgBgBH9/f38AYAABf2AIf39/f39/f3wAYAN/f38Bf2ACf38BfwKUBBwDZW52CG9uX2Vycm9yAAADZW52Cm9uX2hlYWRlcnMACANlbnYJb25fZmluaXNoAAADZW52EG9uX21lc3NhZ2Vfc3RhcnQAAANlbnYTb25fbWVzc2FnZV9jb21wbGV0ZQAAA2Vudgpvbl9yZXF1ZXN0AAADZW52C29uX3Jlc3BvbnNlAAADZW52CG9uX3Jlc2V0AAADZW52CW9uX21ldGhvZAAAA2VudgZvbl91cmwAAANlbnYLb25fcHJvdG9jb2wAAANlbnYKb25fdmVyc2lvbgAAA2Vudglvbl9zdGF0dXMAAANlbnYJb25fcmVhc29uAAADZW52Dm9uX2hlYWRlcl9uYW1lAAADZW52D29uX2hlYWRlcl92YWx1ZQAAA2Vudgpvbl9jb25uZWN0AAADZW52Cm9uX3VwZ3JhZGUAAANlbnYPb25fY2h1bmtfbGVuZ3RoAAADZW52F29uX2NodW5rX2V4dGVuc2lvbl9uYW1lAAADZW52GG9uX2NodW5rX2V4dGVuc2lvbl92YWx1ZQAAA2Vudghvbl9jaHVuawAAA2Vudgdvbl9ib2R5AAADZW52B29uX2RhdGEAAANlbnYPb25fdHJhaWxlcl9uYW1lAAADZW52EG9uX3RyYWlsZXJfdmFsdWUAAANlbnYLb25fdHJhaWxlcnMAAANlbnYPb25fc3RhdGVfY2hhbmdlAAADQUAGAQMDBwIDBgMEBAEEBAEBAQQBBAQBAQEBAQEBAQEBAQEBAQcJAwIDBQUCAgIFAgICAgICAgEBAQEKAQIDAgICBQMBABEGCQF/AUGAgMAACwedCDkGbWVtb3J5AgAFYWxsb2MAHQVjbGVhcgAeCGNvbXBsZXRlAB8GY3JlYXRlACAHZGVhbGxvYwAhB2Rlc3Ryb3kAIgRmYWlsACMGZmluaXNoACQOZ2V0X2NodW5rX3NpemUAJRJnZXRfY29udGVudF9sZW5ndGgAJg5nZXRfZXJyb3JfY29kZQAnGWdldF9lcnJvcl9kZXNjcmlwdGlvbl9yYXcAKBRnZXRfbWF4X2JvZHlfcGF5bG9hZAApFWdldF9tYXhfaGVhZGVyX2xlbmd0aAAqGWdldF9tYXhfc3RhcnRfbGluZV9sZW5ndGgAKwpnZXRfbWV0aG9kACwKZ2V0X3BhcnNlZAAtDGdldF9wb3NpdGlvbgAuGGdldF9yZW1haW5pbmdfY2h1bmtfc2l6ZQAvHGdldF9yZW1haW5pbmdfY29udGVudF9sZW5ndGgAMAlnZXRfc3RhdGUAMQpnZXRfc3RhdHVzADIdaGFzX2NodW5rZWRfdHJhbnNmZXJfZW5jb2RpbmcAMxRoYXNfY29ubmVjdGlvbl9jbG9zZQA0Fmhhc19jb25uZWN0aW9uX3VwZ3JhZGUANRJoYXNfY29udGVudF9sZW5ndGgANgxoYXNfdHJhaWxlcnMANxVoYXNfdHJhbnNmZXJfZW5jb2RpbmcAOAtoYXNfdXBncmFkZQA5DWlzX2F1dG9kZXRlY3QAOgppc19jb25uZWN0ADsIaXNfZGVidWcAPAlpc19wYXVzZWQAPQppc19yZXF1ZXN0AD4ObWlsb19oYXNfZGVidWcAPwVwYXJzZQBABXBhdXNlAEEFcmVzZXQAQgZyZXN1bWUAQxRzZXRfYWN0aXZlX2NhbGxiYWNrcwBEEXNldF9hY3RpdmVfZXZlbnRzAEUJc2V0X2RlYnVnAEYOc2V0X2lzX2Nvbm5lY3QARw5zZXRfaXNfcmVxdWVzdABIFHNldF9tYXhfYm9keV9wYXlsb2FkAEkVc2V0X21heF9oZWFkZXJfbGVuZ3RoAEoZc2V0X21heF9zdGFydF9saW5lX2xlbmd0aABLFXNldF9zaG91bGRfYXV0b2RldGVjdABMIHNldF9zaG91bGRfY29udGludWVfd2l0aG91dF9kYXRhAE0cc2V0X3Nob3VsZF9tYW5hZ2VfdW5jb25zdW1lZABOFHNldF9zaG91bGRfc2tpcF9ib2R5AE8gc2V0X3Nob3VsZF9zdXNwZW5kX2FmdGVyX2hlYWRlcnMAUBxzaG91bGRfY29udGludWVfd2l0aG91dF9kYXRhAFEYc2hvdWxkX21hbmFnZV91bmNvbnN1bWVkAFIQc2hvdWxkX3NraXBfYm9keQBTHHNob3VsZF9zdXNwZW5kX2FmdGVyX2hlYWRlcnMAVAr7pwJAlgIBBH8CQCACIANPDQAgAS0AACEFAkAgAyACayIHQQNNBEAMAQtBgIKECCAFQYGChAhsIgEgAigAAHMiBmsgBnJBgIGChHhxQYCBgoR4RwRADAELIAJBfHFBBGohAgJAIAdBCU8EQCACIANBCGsiB0sNAQNAQYCChAggAigCACABcyIGayAGckGAgYKEeHFBgIGChHhHDQJBgIKECCACQQRqKAIAIAFzIgZrIAZyQYCBgoR4cUGAgYKEeEcNAiACQQhqIgIgB00NAAsMAQsgAiADTw0CDAELIAIgA08NAQsgA0EBa0EBIQQDQCAFIAItAABGDQEgAkEBaiICIANHDQALIQJBACEECyAAIAI2AgQgACAENgIACyYAAkAgAEEATgRAIABFBEBBASEADAILIABBARBVIgANAQsACyAACzMAIABCADcDKCAAQQA6ABUgAEIANwMwIABCADcDOCAAQgA3A0AgAEIANwNIIABBADYCUAvSAwIDfwF+AkAgACIBLQAkIgBBDk1BAEEBIAB0QYDPAXEbRQRAIAFBAzoAJiABQQI6ACQgAUENOgD0AkEAIQAgAUEAOgB5IAFBp5jAACkAADcAbCABQayYwAApAAA3AHECQCABKQNYIAEpA2CEp0EBcUUEQCABKAL4AiECDAELIAEoAvgCIgJBAToAACACQQVqQQM6AAAgAkEBaiABKAIgNgAAQQYhAAsgACACakEAOgAADAELAn9BACABKQNYIAEpA2CEIgRCyACDUA0AGiAEQgiDQgBSBEAgASgC+AIiAEEEOgAAIABBBWpBADYAACAAQQFqIAEoAiA2AABBCSECCyACIARCwACDUA0AGiABKAL4AiACaiIAQQc6AAAgAEEFakEANgAAIABBAWogASgCIDYAACACQQlqCyECIAFBADoAFiABQQA6ABQCQCABLQBSQQFGBEBBDiEAIAEtABFBAXENAQsgAS0AUCEDIARCAoNQBEAgAyEADAELQQEhACADQQFxRQRAIAMhAAwBCyABKAL4AiACaiIDQQI6AAAgA0EFakEANgAAIANBAWogASgCIDYAACACQQlqIQILIAEgADoAJCABKAL4AiACakEAOgAACwvfAgEDfyMAQeAAayIAJAACQEGAgAQQViICRQ0AIAJBBGstAABBA3FFDQAgAkEAQYCABPwLAAsCQCACRQ0AIABBADYAXCAAQgA3AFQgAEIANwBMIABCADcARCAAQgA3ADwgAEIANwA0IABCADcCHCAAQgA3AiQgAEEANgIsIABCADcADyAAQQA6ABdBgANBCBBVIgFFDQAgAUIANwARIAFBAToAECABQgA3AwggAUKAwICAgIAINwMAIAFCADcAGSABQgA3AB8gASAAKQAzNwAnIAEgACkAOzcALyABIAApAEM3ADcgASAAKQBLNwA/IAEgACkAUzcARyABIAApAFg3AEwgASAAKAIoNgJkIAEgACkCIDcCXCABIAApAhg3AlQgAUHsAGpBAEH/AfwLACABIAI2AvgCIAEgAC8AFjsA8wIgASAAKQAONwDrAiABIAE2AmggAEHgAGokACABDwsACxUAAkAgAEUNACABRQ0AIAAgARBXCws4AQF/IAAEQCAAKALwAiIBBEAgACgC7AIgARBXCyAAKAL4AiIBBEAgAUGAgAQQVwsgAEGAAxBXCwuSAQEBfyAAIAE6ACYgAEECOgAkIABB7ABqIQRB/gEgAyADQf4BTxsiAwRAIAQgAiAD/AoAAAsgACADOgD0AiADIARqQQA6AABBACEDIAApA1ggACkDYIRCAYOnBH8gACgC+AIiAkEBOgAAIAJBBWogAToAACACQQFqIAAoAiA2AABBBgVBAAsgACgC+AJqQQA6AAALrAIBAn8CQAJAAkAgAC0AJCIBQQlNBEBBASABdEEbcQ0BIAFBAkYNAyABQQlGDQILIABBBToAJiAAQQI6ACQgAEEWOgD0AiAAQQA6AIIBIABBgIjAACkAADcAbCAAQYiIwAApAAA3AHQgAEGOiMAAKQAANwB6AkAgACkDWCAAKQNghKdBAXFFBEAgACgC+AIhAQwBCyAAKAL4AiIBQQE6AAAgAUEFakEFOgAAIAFBAWogACgCIDYAAEEGIQILIAEgAmpBADoAAA8LIABBAToAJA8LAn8gACkDWCAAKQNghEIIg1AEQCAAKAL4AiEBQQAMAQsgACgC+AIiAUEEOgAAIAFBBWpBADYAACABQQFqIAAoAiA2AABBCQshAiAAQQE6ACQgASACakEAOgAACwsHACAAKQMwCwcAIAApAygLBwAgAC0AJgsTACAAMQD0AiAAQewAaq1CIIaECwcAIAApAwgLBwAgACgCBAsHACAAKAIACwcAIAAtAEwLBwAgACkDGAsHACAAKAIgCwcAIAApA0ALBwAgACkDOAsHACAALQAkCwcAIAAoAkgL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DQEMAgsgBkEJRg0BCyADQQY6ACYgA0ECOgAkIANB64rAACkAADcAbCADQfOKwAApAAA3AHQgA0H7isAAKQAANwB8IANBgovAACkAADcAgwEMJwsgAEEBaiEAIAlBAWsiCQ0ACwsgAyAHQeQAbCAOQQpsQf4BcWogC2o2AkggIkUNAyA7QgBSBEAgBUEQakGBgARPDTQgAygCICEAIAMoAvgCIAVqQQo6AAAgAygC+AIgBWpBAWogADYAACADKAL4AiAFakEFakEENgAAIAVBCWohBQsgOkIAUgRAIAVBEGpBgYAETw00IAMoAiAhACADKAL4AiAFakELOgAAIAMoAvgCIAVqQQFqIABBBWo2AAAgAygC+AIgBWpBBWpBAzYAACAFQQlqIQULIEJCAFIEQCAFQRBqQYGABE8NNCADKAIgIQAgAygC+AIgBWpBDDoAACADKAL4AiAFakEBaiAAQQlqNgAAIAMoAvgCIAVqQQVqQQM2AAAgBUEJaiEFCyBBUA0DIA0NAyAFQRBqQYCABEsNMyADKAIgIQAgAygC+AIgBWpBDToAACADKAL4AiAFakEBaiAAQQ1qNgAAIAMoAvgCIAVqQQVqIAJBDWs2AAAgBUEJaiEFDAMLIANBDDoAJiADQQI6ACQgA0GKi8AAKQAANwBsIANBkovAACkAADcAdCADQZqLwAApAAA3AHwgA0Gii8AAKQAANwCEASADQaqLwAApAAA3AIwBIANBsYvAACgAADYAkwFBKyEIQZcBDDELIANBBjoAJiADQQI6ACQgA0HSi8AAKQAANwBsIANB2ovAACkAADcAdCADQd+LwAApAAA3AHkMCwsgBC0AAkHUAEcNBCAELQADQdAARw0EIAQtAARBL0cNBCADQRE6ACYgA0ECOgAkIANBhonAACkAADcAbCADQY6JwAApAAA3AHQgA0GWicAAKQAANwB8DAgLIAJBAmohACADLQAkQQJGDScgA0EGOgAkDCcLIANBDDoAJiADQQI6ACQgA0HPisAAKQAANwBsIANB14rAACkAADcAdCADQd+KwAApAAA3AHwgA0HnisAAKAAANgCEAQwcCyADKAIAIAhLDS0gA0EGOgAmIANBAjoAJCADQbuKwAApAAA3AGwgA0HDisAAKQAANwB0IANBy4rAACgAADYAfAwdCyAIRQ0FIAhBAWsgCk8N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KQAANwBsIANBwojAACkAADcAdCADQcqIwAApAAA3AHwMBQsgEyANayITIAtqIRUgCSEHIAYhAAJAA0AgACAKTw0pIAAgBGotAAAtAICGQARAIABBAWohACAHQQFrIgdFDQIMAQsLIANBBjoAJiADQQI6ACQgA0HSiMAAKQAANwBsIANB2ojAACkAADcAdCADQd+IwAApAAA3AHkMBwsgDiAQQQlqRw0CAkAgDiALa0EIRw0AIA0pAAAiLkLIqNGC9cWMlzBRDQIgLkLIqNGC9aWMlzFSDQAgD0UNBCADQRE6ACYgA0ECOgAkIANB54jAACkAADcAbCADQe+IwAApAAA3AHQgA0H3iMAAKQAANwB8IANB/ojAACkAADcAgwEMHgsLIANBBjoAJiADQQI6ACQgA0GeicAAKQAANwBsIANBponAACkAADcAdEEQIQhB/AAMKgsgDw0BIANBEToAJiADQQI6ACQgA0GGicAAKQAANwBsIANBjonAACkAADcAdCADQZaJwAApAAA3AHwMAgsgA0EGOgAmIANBAjoAJCADQa6JwAApAAA3AGwgA0G2icAAKQAANwB0IANBu4nAACkAADcAeQwDCwJAICNFDQAgQEIAUgRAIAVBEGpBgYAETw0qIAMoAiAhACADKAL4AiAFakEIOgAAIAMoAvgCIAVqQQFqIAA2AAAgAygC+AIgBWpBBWogAjYAACAFQQlqIQULID9CAFIEQCAFQRBqQYGABE8NKiADKAIgIQAgAygC+AIgBWpBCToAACADKAL4AiAFakEBaiAAIAZqNgAAIAMoAvgCIAVqQQVqIAk2AAAgBUEJaiEFCyA7QgBSBEAgBUEQakGBgARPDSogAygCICEAIAMoAvgCIAVqQQo6AAAgAygC+AIgBWpBAWogACALajYAACADKAL4AiAFakEFaiATNgAAIAVBCWohBQsgOlANACAFQRBqQYCABEsNKSADKAIgIQAgAygC+AIgBWpBCzoAACADKAL4AiAFakEBaiAAIBVBAWpqNgAAIAMoAvgCIAVqQQVqQQM2AAAgBUEJaiEFCyAOQQJqIQAgAy0AJCECIAMtAExBCkYEQCACQQJGDSEgA0EFOgAkDCELIAJBAkYNICADQQY6ACQMIAtBGCEIQYQBDCYLIAMoAgAgCEsNJiADQQY6ACYgA0ECOgAkIANBpYjA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EFkgASAAIAJqIgBBAXI2AgQgACABaiAANgIAIAFB3JvAACgCAEcNAUHUm8AAIAA2AgAPCyACIANBfnE2AgQgASAAQQFyNgIEIAAgAWogADYCAAsgAEGAAkkNBCABIAAQW0H0m8AAQfSbwAAoAgBBAWsiADYCACAADQZBvJnAACgCACIADQJB/x8MAwtB4JvAACABNgIAQdibwABB2JvAACgCACAAaiIANgIAIAEgAEEBcjYCBEHcm8AAKAIAIAFGBEBB1JvAAEEANgIAQdybwABBADYCAAsgAEHsm8AAKAIAIgJNDQVB4JvAACgCACIARQ0FQdibwAAoAgAiA0EpSQ0EQbSZwAAhAQNAIAAgASgCACIETwRAIAAgBCABKAIEakkNBgsgASgCCCEBDAALAAtB3JvAACABNgIAQdSbwABB1JvAACgCACAAaiIANgIAIAEgAEEBcjYCBCAAIAFqIAA2AgAPC0EAIQEDQCABQQFqIQEgACgCCCIADQALQf8fIAEgAUH/H00bCzYCAA8LAkBBzJvAACgCACICQQEgAEEDdnQiA3FFBEBBzJvAACACIANyNgIAIABB+AFxQcSZwABqIgAhAgwBCyAAQfgBcSIAQcSZwABqIQIgAEHMmcAAaigCACEACyACIAE2AgggACABNgIMIAEgAjYCDCABIAA2AggPC0H0m8AAQbyZwAAoAgAiAAR/QQAhAQNAIAFBAWohASAAKAIIIgANAAtB/x8gASABQf8fTRsFQf8fCzYCACACIANPDQBB7JvAAEF/NgIACwuCAwEEfyAAKAIMIQICQAJAAkAgAUGAAk8EQCAAKAIYIQMCQAJAIAAgAkYEQCAAQRRBECAAKAIUIgIbaigCACIBDQFBACECDAILIAAoAggiASACNgIMIAIgATYCCAwBCyAAQRRqIABBEGogAhshBANAIAQhBSABIgJBFGogAkEQaiACKAIUIgEbIQQgAkEUQRAgARtqKAIAIgENAAsgBUEANgIACyADRQ0CAkAgACgCHEECdEG0mMAAaiIBKAIAIABHBEAgAygCECAARg0BIAMgAjYCFCACDQMMBAsgASACNgIAIAJFDQQMAgsgAyACNgIQIAINAQwCCyAAKAIIIgAgAkcEQCAAIAI2AgwgAiAANgIIDwtBzJvAAEHMm8AAKAIAQX4gAUEDdndxNgIADwsgAiADNgIYIAAoAhAiAQRAIAIgATYCECABIAI2AhgLIAAoAhQiAEUNACACIAA2AhQgACACNgIYDwsPC0HQm8AAQdCbwAAoAgBBfiAAKAIcd3E2AgALjgQBAn8gACABaiECAkACQAJAIAAoAgQiA0EBcQ0AIANBAnFFDQEgACgCACIDIAFqIQEgACADayIAQdybwAAoAgBGBEAgAigCBEEDcUEDRw0BQdSbwAAgATYCACACIAIoAgRBfnE2AgQgACABQQFyNgIEIAIgATYCAA8LIAAgAxBZCwJAAkAgAigCBCIDQQJxRQRAIAJB4JvAACgCAEYNAiACQdybwAAoAgBGDQQgAiADQXhxIgIQWSAAIAEgAmoiAUEBcjYCBCAAIAFqIAE2AgAgAEHcm8AAKAIARw0BQdSbwAAgATYCAA8LIAIgA0F+cTYCBCAAIAFBAXI2AgQgACABaiABNgIACyABQYACTwRAIAAgARBbDwsCQEHMm8AAKAIAIgJBASABQQN2dCIDcUUEQEHMm8AAIAIgA3I2AgAgAUH4AXFBxJnAAGoiASECDAELIAFB+AFxIgFBxJnAAGohAiABQcyZwABqKAIAIQELIAIgADYCCCABIAA2AgwgACACNgIMIAAgATYCCA8LQeCbwAAgADYCAEHYm8AAQdibwAAoAgAgAWoiATYCACAAIAFBAXI2AgQgAEHcm8AAKAIARw0AQdSbwABBADYCAEHcm8AAQQA2AgALDwtB3JvAACAANgIAQdSbwABB1JvAACgCACABaiIBNgIAIAAgAUEBcjYCBCAAIAFqIAE2AgALwwIBBH8gAEIANwIQIAACf0EAIAFBCHYiA0UNABpBHyABQYCAgAhPDQAaIAFBJiADZyIDa3ZBAXEgA0EBdHJBPnMLIgI2AhwgAkECdEG0mMAAaiEEQQEgAnQiA0HQm8AAKAIAcUUEQCAEIAA2AgAgACAENgIYIAAgADYCDCAAIAA2AghB0JvAAEHQm8AAKAIAIANyNgIADwsCQAJAIAEgBCgCACIDKAIEQXhxRgRAIAMhAgwBCyABQRkgAkEBdmtBACACQR9HG3QhBQNAIAMgBUEddkEEcWoiBCgCECICRQ0CIAVBAXQhBSACIQMgAigCBEF4cSABRw0ACwsgAigCCCIBIAA2AgwgAiAANgIIIABBADYCGCAAIAI2AgwgACABNgIIDwsgBEEQaiAANgIAIAAgAzYCGCAAIAA2AgwgACAANgIICwvuFQcAQaGAwAALXgEAAQEBAQEAAAEBAAEBAAEBAQEBAQEBAQEAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAAEAQYmCwAALAQEAQaCCwAAL4AEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQBBiYTAAAsBAQBBoITAAAvgAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAEGhhsAAC14BAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAAEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAABAEGAiMAAC7QQVW5leHBlY3RlZCBlbmQgb2YgZGF0YVVuZXhwZWN0ZWQgZGF0YVJlcXVlc3QgbGluZSB0b28gbG9uZ0ludmFsaWQgbWV0aG9kIGNoYXJhY3RlckludmFsaWQgVVJMIGNoYXJhY3RlclBSSSBpcyBvbmx5IHZhbGlkIHdpdGggSFRUUC8yLjBVbnN1cHBvcnRlZCBIVFRQIHZlcnNpb25JbnZhbGlkIHByb3RvY29sSW52YWxpZCBwcm90b2NvbCBuYW1lRXhwZWN0ZWQgLyBhZnRlciB0aGUgcHJvdG9jb2wgbmFtZUV4cGVjdGVkIHNwYWNlIGFmdGVyIFVSTEV4cGVjdGVkIHNwYWNlIGFmdGVyIG1ldGhvZFJlcXVlc3QgbGluZSB0b28gc2hvcnRFeHBlY3RlZCBDUkxGU3RhdHVzIGxpbmUgdG9vIGxvbmdJbnZhbGlkIEhUVFAgcmVzcG9uc2Ugc3RhdHVzSW52YWxpZCBzdGF0dXMgcmVhc29uIGNoYXJhY3RlckV4cGVjdGVkIGEgc3BhY2UgYWZ0ZXIgSFRUUCByZXNwb25zZSBzdGF0dXNFeHBlY3RlZCBzcGFjZSBhZnRlciBwcm90b2NvbFN0YXR1cyBsaW5lIHRvbyBzaG9ydE1hbGZvcm1lZCBIVFRQLzIuMCBwcmVmYWNlSGVhZGVyIGxpbmUgdG9vIGxvbmdVbmV4cGVjdGVkIENvbnRlbnQtTGVuZ3RoIGhlYWRlciBmb3IgYSByZXNwb25zZSB3aXRob3V0IGJvZHlFeHBlY3RlZCBDb250ZW50LUxlbmd0aCBoZWFkZXIgdmFsdWVJbnZhbGlkIENvbnRlbnQtTGVuZ3RoIGhlYWRlckludmFsaWQgZHVwbGljYXRlIENvbnRlbnQtTGVuZ3RoIGhlYWRlclVuZXhwZWN0ZWQgQ29udGVudC1MZW5ndGggaGVhZGVyIHdoZW4gVHJhbnNmZXItRW5jb2RpbmcgaGVhZGVyIGlzIHByZXNlbnRVbmV4cGVjdGVkIFRyYW5zZmVyLUVuY29kaW5nIGhlYWRlciBmb3IgYSByZXNwb25zZSB3aXRob3V0IGJvZHlFeHBlY3RlZCBUcmFuc2Zlci1FbmNvZGluZyBoZWFkZXIgdmFsdWVUaGUgdmFsdWUgImNodW5rZWQiIGluIHRoZSBUcmFuc2Zlci1FbmNvZGluZyBoZWFkZXIgbXVzdCBiZSB0aGUgbGFzdCBwcm92aWRlZCBhbmQgY2FuIGJlIHByb3ZpZGVkIG9ubHkgb25jZVRoZSB2YWx1ZSAiY2h1bmtlZCIgaW4gdGhlIFRyYW5zZmVyLUVuY29kaW5nIGhlYWRlciBtdXN0IGJlIHRoZSBsYXN0IHByb3ZpZGVkVW5leHBlY3RlZCBUcmFuc2Zlci1FbmNvZGluZyBoZWFkZXIgd2hlbiBDb250ZW50LUxlbmd0aCBoZWFkZXIgaXMgcHJlc2VudEV4cGVjdGVkIENvbm5lY3Rpb24gaGVhZGVyIHZhbHVlSW52YWxpZCBDb25uZWN0aW9uIGhlYWRlciB2YWx1ZUV4cGVjdGVkIFRyYWlsZXIgaGVhZGVyIHZhbHVlRXhwZWN0ZWQgVXBncmFkZSBoZWFkZXIgdmFsdWVJbnZhbGlkIFVwZ3JhZGUgaGVhZGVyIHZhbHVlSW52YWxpZCBoZWFkZXIgZmllbGQgbmFtZSBjaGFyYWN0ZXJJbnZhbGlkIGhlYWRlciBmaWVsZCB2YWx1ZSBjaGFyYWN0ZXJNaXNzaW5nIENvbm5lY3Rpb24gaGVhZGVyIHNldCB0byAidXBncmFkZSIgd2hlbiB1c2luZyB0aGUgVXBncmFkZSBoZWFkZXJUcmFpbGVycyBhcmUgbm90IGFsbG93ZWQgd2hlbiBub3QgdXNpbmcgY2h1bmtlZCB0cmFuc2ZlciBlbmNvZGluZ1VuZXhwZWN0ZWQgY29udGVudCBmb3IgdGhlIHJlcXVlc3QgKEdFVCBvciBIRUFEKVRyYW5zZmVyLUVuY29kaW5nIGxhc3QgaGVhZGVyIHZhbHVlIG11c3QgYmUgImNodW5rZWQiIGlmIHRoZSBoZWFkZXIgaXMgcHJlc2VudENodW5rIGhlYWRlciB0b28gbG9uZ0ludmFsaWQgY2h1bmsgbGVuZ3RoIGNoYXJhY3RlckludmFsaWQgY2h1bmsgbGVuZ3RoIHNpemVFeHBlY3RlZCBjaHVuayBleHRlbnNpb24gbmFtZUludmFsaWQgY2h1bmsgZXh0ZW5zaW9uIG5hbWUgY2hhcmFjdGVyRXhwZWN0ZWQgY2xvc2luZyBxdW90ZSBmb3IgY2h1bmsgZXh0ZW5zaW9uIHZhbHVlSW52YWxpZCBjaHVuayBleHRlbnNpb24gcXVvdGVkIHZhbHVlIGNoYXJhY3RlckV4cGVjdGVkIGNodW5rIGV4dGVuc2lvbiB2YWx1ZUludmFsaWQgY2h1bmsgZXh0ZW5zaW9uIHZhbHVlIGNoYXJhY3RlckludmFsaWQgY2h1bmsgZXh0ZW5zaW9uIGNoYXJhY3RlciBhZnRlciB2YWx1ZUV4cGVjdGVkIENSTEYgYWZ0ZXIgY2h1bmsgZGF0YVRyYWlsZXIgbGluZSB0b28gbG9uZ0ludmFsaWQgdHJhaWxlciBmaWVsZCBuYW1lIGNoYXJhY3RlckludmFsaWQgdHJhaWxlciBmaWVsZCB2YWx1ZSBjaGFyYWN0ZXJJbnZhbGlkIHN0YXRl",
+        "base64"
+      )
+    );
+    var textEncoder = new TextEncoder();
+    var textDecoder = new TextDecoder();
+    function log(logger, raw) {
+      const len = Number(BigInt.asUintN(32, raw));
+      const ptr = Number(raw >> 32n);
+      logger(textDecoder.decode(new Uint8Array(this.memory.buffer, ptr, len)));
+    }
+    function alloc(len) {
+      return this.alloc(len) >>> 0;
+    }
+    function dealloc(ptr, len) {
+      return this.dealloc(ptr, len);
+    }
+    function create() {
+      return this.create() >>> 0;
+    }
+    function destroy(parser) {
+      this.destroy(parser);
+    }
+    function parse(parser, data, limit) {
+      return this.parse(parser, data, limit) >>> 0;
+    }
+    function fail(parser, code, description) {
+      const len = description.length;
+      const ptr = this.alloc(len);
+      const buffer = new Uint8Array(this.memory.buffer, ptr, len);
+      textEncoder.encodeInto(description, buffer);
+      this.fail(parser, code, ptr, len);
+      this.dealloc(ptr, len);
+    }
+    function hasDebug() {
+      return this.milo_has_debug() !== 0;
+    }
+    var Errors = Object.freeze({
+      NONE: 0,
+      USER: 1,
+      CALLBACK_ERROR: 2,
+      UNEXPECTED_STATE: 3,
+      UNEXPECTED_DATA: 4,
+      UNEXPECTED_EOF: 5,
+      UNEXPECTED_CHARACTER: 6,
+      UNEXPECTED_CONTENT_LENGTH: 7,
+      UNEXPECTED_TRANSFER_ENCODING: 8,
+      UNEXPECTED_CONTENT: 9,
+      UNEXPECTED_TRAILERS: 10,
+      INVALID_VERSION: 11,
+      INVALID_STATUS: 12,
+      INVALID_CONTENT_LENGTH: 13,
+      INVALID_TRANSFER_ENCODING: 14,
+      INVALID_CHUNK_SIZE: 15,
+      MISSING_CONNECTION_UPGRADE: 16,
+      UNSUPPORTED_HTTP_VERSION: 17,
+      0: "NONE",
+      1: "USER",
+      2: "CALLBACK_ERROR",
+      3: "UNEXPECTED_STATE",
+      4: "UNEXPECTED_DATA",
+      5: "UNEXPECTED_EOF",
+      6: "UNEXPECTED_CHARACTER",
+      7: "UNEXPECTED_CONTENT_LENGTH",
+      8: "UNEXPECTED_TRANSFER_ENCODING",
+      9: "UNEXPECTED_CONTENT",
+      10: "UNEXPECTED_TRAILERS",
+      11: "INVALID_VERSION",
+      12: "INVALID_STATUS",
+      13: "INVALID_CONTENT_LENGTH",
+      14: "INVALID_TRANSFER_ENCODING",
+      15: "INVALID_CHUNK_SIZE",
+      16: "MISSING_CONNECTION_UPGRADE",
+      17: "UNSUPPORTED_HTTP_VERSION"
+    });
+    var Methods = Object.freeze({
+      OTHER: 0,
+      GET: 1,
+      HEAD: 2,
+      POST: 3,
+      PUT: 4,
+      DELETE: 5,
+      CONNECT: 6,
+      OPTIONS: 7,
+      TRACE: 8,
+      PATCH: 9,
+      PRI: 10,
+      0: "OTHER",
+      1: "GET",
+      2: "HEAD",
+      3: "POST",
+      4: "PUT",
+      5: "DELETE",
+      6: "CONNECT",
+      7: "OPTIONS",
+      8: "TRACE",
+      9: "PATCH",
+      10: "PRI"
+    });
+    var Callbacks = Object.freeze({
+      ON_ERROR: 0,
+      ON_FINISH: 1,
+      ON_MESSAGE_START: 2,
+      ON_MESSAGE_COMPLETE: 3,
+      ON_REQUEST: 4,
+      ON_RESPONSE: 5,
+      ON_RESET: 6,
+      ON_METHOD: 7,
+      ON_URL: 8,
+      ON_PROTOCOL: 9,
+      ON_VERSION: 10,
+      ON_STATUS: 11,
+      ON_REASON: 12,
+      ON_HEADER_NAME: 13,
+      ON_HEADER_VALUE: 14,
+      ON_HEADERS: 15,
+      ON_CONNECT: 16,
+      ON_UPGRADE: 17,
+      ON_CHUNK_LENGTH: 18,
+      ON_CHUNK_EXTENSION_NAME: 19,
+      ON_CHUNK_EXTENSION_VALUE: 20,
+      ON_CHUNK: 21,
+      ON_BODY: 22,
+      ON_DATA: 23,
+      ON_TRAILER_NAME: 24,
+      ON_TRAILER_VALUE: 25,
+      ON_TRAILERS: 26,
+      ON_STATE_CHANGE: 27,
+      0: "ON_ERROR",
+      1: "ON_FINISH",
+      2: "ON_MESSAGE_START",
+      3: "ON_MESSAGE_COMPLETE",
+      4: "ON_REQUEST",
+      5: "ON_RESPONSE",
+      6: "ON_RESET",
+      7: "ON_METHOD",
+      8: "ON_URL",
+      9: "ON_PROTOCOL",
+      10: "ON_VERSION",
+      11: "ON_STATUS",
+      12: "ON_REASON",
+      13: "ON_HEADER_NAME",
+      14: "ON_HEADER_VALUE",
+      15: "ON_HEADERS",
+      16: "ON_CONNECT",
+      17: "ON_UPGRADE",
+      18: "ON_CHUNK_LENGTH",
+      19: "ON_CHUNK_EXTENSION_NAME",
+      20: "ON_CHUNK_EXTENSION_VALUE",
+      21: "ON_CHUNK",
+      22: "ON_BODY",
+      23: "ON_DATA",
+      24: "ON_TRAILER_NAME",
+      25: "ON_TRAILER_VALUE",
+      26: "ON_TRAILERS",
+      27: "ON_STATE_CHANGE"
+    });
+    var CallbackActives = Object.freeze({
+      NONE: 0n,
+      ON_ERROR: 1n,
+      ON_FINISH: 2n,
+      ON_MESSAGE_START: 4n,
+      ON_MESSAGE_COMPLETE: 8n,
+      ON_REQUEST: 16n,
+      ON_RESPONSE: 32n,
+      ON_RESET: 64n,
+      ON_METHOD: 128n,
+      ON_URL: 256n,
+      ON_PROTOCOL: 512n,
+      ON_VERSION: 1024n,
+      ON_STATUS: 2048n,
+      ON_REASON: 4096n,
+      ON_HEADER_NAME: 8192n,
+      ON_HEADER_VALUE: 16384n,
+      ON_HEADERS: 32768n,
+      ON_CONNECT: 65536n,
+      ON_UPGRADE: 131072n,
+      ON_CHUNK_LENGTH: 262144n,
+      ON_CHUNK_EXTENSION_NAME: 524288n,
+      ON_CHUNK_EXTENSION_VALUE: 1048576n,
+      ON_CHUNK: 2097152n,
+      ON_BODY: 4194304n,
+      ON_DATA: 8388608n,
+      ON_TRAILER_NAME: 16777216n,
+      ON_TRAILER_VALUE: 33554432n,
+      ON_TRAILERS: 67108864n,
+      ON_STATE_CHANGE: 134217728n,
+      ALL: 268435455n,
+      0n: "NONE",
+      1n: "ON_ERROR",
+      2n: "ON_FINISH",
+      4n: "ON_MESSAGE_START",
+      8n: "ON_MESSAGE_COMPLETE",
+      16n: "ON_REQUEST",
+      32n: "ON_RESPONSE",
+      64n: "ON_RESET",
+      128n: "ON_METHOD",
+      256n: "ON_URL",
+      512n: "ON_PROTOCOL",
+      1024n: "ON_VERSION",
+      2048n: "ON_STATUS",
+      4096n: "ON_REASON",
+      8192n: "ON_HEADER_NAME",
+      16384n: "ON_HEADER_VALUE",
+      32768n: "ON_HEADERS",
+      65536n: "ON_CONNECT",
+      131072n: "ON_UPGRADE",
+      262144n: "ON_CHUNK_LENGTH",
+      524288n: "ON_CHUNK_EXTENSION_NAME",
+      1048576n: "ON_CHUNK_EXTENSION_VALUE",
+      2097152n: "ON_CHUNK",
+      4194304n: "ON_BODY",
+      8388608n: "ON_DATA",
+      16777216n: "ON_TRAILER_NAME",
+      33554432n: "ON_TRAILER_VALUE",
+      67108864n: "ON_TRAILERS",
+      134217728n: "ON_STATE_CHANGE",
+      268435455n: "ALL"
+    });
+    var Events = Object.freeze({
+      END: 0,
+      ERROR: 1,
+      FINISH: 2,
+      MESSAGE_START: 3,
+      MESSAGE_COMPLETE: 4,
+      REQUEST: 5,
+      RESPONSE: 6,
+      RESET: 7,
+      METHOD: 8,
+      URL: 9,
+      PROTOCOL: 10,
+      VERSION: 11,
+      STATUS: 12,
+      REASON: 13,
+      HEADER_NAME: 14,
+      HEADER_VALUE: 15,
+      HEADERS: 16,
+      CONNECT: 17,
+      UPGRADE: 18,
+      CHUNK_LENGTH: 19,
+      CHUNK_EXTENSION_NAME: 20,
+      CHUNK_EXTENSION_VALUE: 21,
+      CHUNK: 22,
+      BODY: 23,
+      DATA: 24,
+      TRAILER_NAME: 25,
+      TRAILER_VALUE: 26,
+      TRAILERS: 27,
+      STATE_CHANGE: 28,
+      0: "END",
+      1: "ERROR",
+      2: "FINISH",
+      3: "MESSAGE_START",
+      4: "MESSAGE_COMPLETE",
+      5: "REQUEST",
+      6: "RESPONSE",
+      7: "RESET",
+      8: "METHOD",
+      9: "URL",
+      10: "PROTOCOL",
+      11: "VERSION",
+      12: "STATUS",
+      13: "REASON",
+      14: "HEADER_NAME",
+      15: "HEADER_VALUE",
+      16: "HEADERS",
+      17: "CONNECT",
+      18: "UPGRADE",
+      19: "CHUNK_LENGTH",
+      20: "CHUNK_EXTENSION_NAME",
+      21: "CHUNK_EXTENSION_VALUE",
+      22: "CHUNK",
+      23: "BODY",
+      24: "DATA",
+      25: "TRAILER_NAME",
+      26: "TRAILER_VALUE",
+      27: "TRAILERS",
+      28: "STATE_CHANGE"
+    });
+    var EventActives = Object.freeze({
+      NONE: 0n,
+      ON_ERROR: 1n,
+      ON_FINISH: 2n,
+      ON_MESSAGE_START: 4n,
+      ON_MESSAGE_COMPLETE: 8n,
+      ON_REQUEST: 16n,
+      ON_RESPONSE: 32n,
+      ON_RESET: 64n,
+      ON_METHOD: 128n,
+      ON_URL: 256n,
+      ON_PROTOCOL: 512n,
+      ON_VERSION: 1024n,
+      ON_STATUS: 2048n,
+      ON_REASON: 4096n,
+      ON_HEADER_NAME: 8192n,
+      ON_HEADER_VALUE: 16384n,
+      ON_HEADERS: 32768n,
+      ON_CONNECT: 65536n,
+      ON_UPGRADE: 131072n,
+      ON_CHUNK_LENGTH: 262144n,
+      ON_CHUNK_EXTENSION_NAME: 524288n,
+      ON_CHUNK_EXTENSION_VALUE: 1048576n,
+      ON_CHUNK: 2097152n,
+      ON_BODY: 4194304n,
+      ON_DATA: 8388608n,
+      ON_TRAILER_NAME: 16777216n,
+      ON_TRAILER_VALUE: 33554432n,
+      ON_TRAILERS: 67108864n,
+      ON_STATE_CHANGE: 134217728n,
+      ALL: 268435455n,
+      0n: "NONE",
+      1n: "ON_ERROR",
+      2n: "ON_FINISH",
+      4n: "ON_MESSAGE_START",
+      8n: "ON_MESSAGE_COMPLETE",
+      16n: "ON_REQUEST",
+      32n: "ON_RESPONSE",
+      64n: "ON_RESET",
+      128n: "ON_METHOD",
+      256n: "ON_URL",
+      512n: "ON_PROTOCOL",
+      1024n: "ON_VERSION",
+      2048n: "ON_STATUS",
+      4096n: "ON_REASON",
+      8192n: "ON_HEADER_NAME",
+      16384n: "ON_HEADER_VALUE",
+      32768n: "ON_HEADERS",
+      65536n: "ON_CONNECT",
+      131072n: "ON_UPGRADE",
+      262144n: "ON_CHUNK_LENGTH",
+      524288n: "ON_CHUNK_EXTENSION_NAME",
+      1048576n: "ON_CHUNK_EXTENSION_VALUE",
+      2097152n: "ON_CHUNK",
+      4194304n: "ON_BODY",
+      8388608n: "ON_DATA",
+      16777216n: "ON_TRAILER_NAME",
+      33554432n: "ON_TRAILER_VALUE",
+      67108864n: "ON_TRAILERS",
+      134217728n: "ON_STATE_CHANGE",
+      268435455n: "ALL"
+    });
+    var States = Object.freeze({
+      START: 0,
+      FINISH: 1,
+      ERROR: 2,
+      REQUEST_LINE: 3,
+      STATUS_LINE: 4,
+      HTTP2_PREFACE: 5,
+      HEADER: 6,
+      BODY_DECISION: 7,
+      BODY_VIA_CONTENT_LENGTH: 8,
+      BODY_WITH_NO_LENGTH: 9,
+      CHUNK_HEADER: 10,
+      CHUNK_EXTENSIONS: 11,
+      CHUNK_DATA: 12,
+      TRAILER: 13,
+      TUNNEL: 14,
+      0: "START",
+      1: "FINISH",
+      2: "ERROR",
+      3: "REQUEST_LINE",
+      4: "STATUS_LINE",
+      5: "HTTP2_PREFACE",
+      6: "HEADER",
+      7: "BODY_DECISION",
+      8: "BODY_VIA_CONTENT_LENGTH",
+      9: "BODY_WITH_NO_LENGTH",
+      10: "CHUNK_HEADER",
+      11: "CHUNK_EXTENSIONS",
+      12: "CHUNK_DATA",
+      13: "TRAILER",
+      14: "TUNNEL"
+    });
+    var ParserFields = Object.freeze({
+      MAX_START_LINE_LENGTH: 0,
+      MAX_HEADER_LENGTH: 4,
+      MAX_BODY_PAYLOAD: 8,
+      AUTODETECT: 16,
+      IS_REQUEST: 17,
+      SUSPEND_AFTER_HEADERS: 18,
+      MANAGE_UNCONSUMED: 19,
+      CONTINUE_WITHOUT_DATA: 20,
+      IS_CONNECT: 21,
+      SKIP_BODY: 22,
+      DEBUG: 23,
+      PARSED: 24,
+      POSITION: 32,
+      STATE: 36,
+      PAUSED: 37,
+      ERROR_CODE: 38,
+      CONTENT_LENGTH: 40,
+      CHUNK_SIZE: 48,
+      REMAINING_CONTENT_LENGTH: 56,
+      REMAINING_CHUNK_SIZE: 64,
+      STATUS: 72,
+      METHOD: 76,
+      HAS_CONTENT_LENGTH: 77,
+      HAS_TRANSFER_ENCODING: 78,
+      HAS_CHUNKED_TRANSFER_ENCODING: 79,
+      HAS_CONNECTION_CLOSE: 80,
+      HAS_CONNECTION_UPGRADE: 81,
+      HAS_UPGRADE: 82,
+      HAS_TRAILERS: 83,
+      ACTIVE_CALLBACKS: 88,
+      ACTIVE_EVENTS: 96,
+      PTR: 104,
+      ERROR_DESCRIPTION: 108,
+      UNCONSUMED: 364,
+      UNCONSUMED_LEN: 368,
+      ERROR_DESCRIPTION_LEN: 372,
+      EVENTS: 376,
+      0: "MAX_START_LINE_LENGTH",
+      4: "MAX_HEADER_LENGTH",
+      8: "MAX_BODY_PAYLOAD",
+      16: "AUTODETECT",
+      17: "IS_REQUEST",
+      18: "SUSPEND_AFTER_HEADERS",
+      19: "MANAGE_UNCONSUMED",
+      20: "CONTINUE_WITHOUT_DATA",
+      21: "IS_CONNECT",
+      22: "SKIP_BODY",
+      23: "DEBUG",
+      24: "PARSED",
+      32: "POSITION",
+      36: "STATE",
+      37: "PAUSED",
+      38: "ERROR_CODE",
+      40: "CONTENT_LENGTH",
+      48: "CHUNK_SIZE",
+      56: "REMAINING_CONTENT_LENGTH",
+      64: "REMAINING_CHUNK_SIZE",
+      72: "STATUS",
+      76: "METHOD",
+      77: "HAS_CONTENT_LENGTH",
+      78: "HAS_TRANSFER_ENCODING",
+      79: "HAS_CHUNKED_TRANSFER_ENCODING",
+      80: "HAS_CONNECTION_CLOSE",
+      81: "HAS_CONNECTION_UPGRADE",
+      82: "HAS_UPGRADE",
+      83: "HAS_TRAILERS",
+      88: "ACTIVE_CALLBACKS",
+      96: "ACTIVE_EVENTS",
+      104: "PTR",
+      108: "ERROR_DESCRIPTION",
+      364: "UNCONSUMED",
+      368: "UNCONSUMED_LEN",
+      372: "ERROR_DESCRIPTION_LEN",
+      376: "EVENTS"
+    });
+    function isAutodetect(parser) {
+      return this.is_autodetect(parser) !== 0;
+    }
+    function isRequest(parser) {
+      return this.is_request(parser) !== 0;
+    }
+    function isPaused(parser) {
+      return this.is_paused(parser) !== 0;
+    }
+    function shouldManageUnconsumed(parser) {
+      return this.should_manage_unconsumed(parser) !== 0;
+    }
+    function shouldSuspendAfterHeaders(parser) {
+      return this.should_suspend_after_headers(parser) !== 0;
+    }
+    function getMaxStartLineLength(parser) {
+      return this.get_max_start_line_length(parser) >>> 0;
+    }
+    function getMaxHeaderLength(parser) {
+      return this.get_max_header_length(parser) >>> 0;
+    }
+    function getMaxBodyPayload(parser) {
+      return BigInt.asUintN(64, this.get_max_body_payload(parser));
+    }
+    function shouldContinueWithoutData(parser) {
+      return this.should_continue_without_data(parser) !== 0;
+    }
+    function isConnect(parser) {
+      return this.is_connect(parser) !== 0;
+    }
+    function isDebug(parser) {
+      return this.is_debug(parser) !== 0;
+    }
+    function shouldSkipBody(parser) {
+      return this.should_skip_body(parser) !== 0;
+    }
+    function getState(parser) {
+      return this.get_state(parser) >>> 0;
+    }
+    function getPosition(parser) {
+      return this.get_position(parser) >>> 0;
+    }
+    function getParsed(parser) {
+      return BigInt.asUintN(64, this.get_parsed(parser));
+    }
+    function getErrorCode(parser) {
+      return this.get_error_code(parser) >>> 0;
+    }
+    function getMethod(parser) {
+      return this.get_method(parser) >>> 0;
+    }
+    function getStatus(parser) {
+      return this.get_status(parser) >>> 0;
+    }
+    function hasConnectionClose(parser) {
+      return this.has_connection_close(parser) !== 0;
+    }
+    function hasConnectionUpgrade(parser) {
+      return this.has_connection_upgrade(parser) !== 0;
+    }
+    function getContentLength(parser) {
+      return BigInt.asUintN(64, this.get_content_length(parser));
+    }
+    function getChunkSize(parser) {
+      return BigInt.asUintN(64, this.get_chunk_size(parser));
+    }
+    function getRemainingContentLength(parser) {
+      return BigInt.asUintN(64, this.get_remaining_content_length(parser));
+    }
+    function getRemainingChunkSize(parser) {
+      return BigInt.asUintN(64, this.get_remaining_chunk_size(parser));
+    }
+    function hasContentLength(parser) {
+      return this.has_content_length(parser) !== 0;
+    }
+    function hasTransferEncoding(parser) {
+      return this.has_transfer_encoding(parser) !== 0;
+    }
+    function hasChunkedTransferEncoding(parser) {
+      return this.has_chunked_transfer_encoding(parser) !== 0;
+    }
+    function hasUpgrade(parser) {
+      return this.has_upgrade(parser) !== 0;
+    }
+    function hasTrailers(parser) {
+      return this.has_trailers(parser) !== 0;
+    }
+    function getErrorDescription(parser) {
+      const raw = this.get_error_description_raw(parser);
+      const len = Number(BigInt.asUintN(32, raw));
+      const ptr = Number(raw >> 32n);
+      return textDecoder.decode(new Uint8Array(this.memory.buffer, ptr, len));
+    }
+    function setShouldAutodetect(parser, value) {
+      this.set_should_autodetect(parser, value);
+    }
+    function setShouldContinueWithoutData(parser, value) {
+      this.set_should_continue_without_data(parser, value);
+    }
+    function setIsRequest(parser, value) {
+      this.set_is_request(parser, value);
+    }
+    function setIsConnect(parser, value) {
+      this.set_is_connect(parser, value);
+    }
+    function setDebug(parser, value) {
+      this.set_debug(parser, value);
+    }
+    function setShouldManageUnconsumed(parser, value) {
+      this.set_should_manage_unconsumed(parser, value);
+    }
+    function setShouldSuspendAfterHeaders(parser, value) {
+      this.set_should_suspend_after_headers(parser, value);
+    }
+    function setMaxStartLineLength(parser, value) {
+      this.set_max_start_line_length(parser, value);
+    }
+    function setMaxHeaderLength(parser, value) {
+      this.set_max_header_length(parser, value);
+    }
+    function setMaxBodyPayload(parser, value) {
+      this.set_max_body_payload(parser, value);
+    }
+    function setShouldSkipBody(parser, value) {
+      this.set_should_skip_body(parser, value);
+    }
+    function setActiveCallbacks(parser, value) {
+      this.set_active_callbacks(parser, value);
+    }
+    function setActiveEvents(parser, value) {
+      this.set_active_events(parser, value);
+    }
+    function simpleCreate(spans, create2) {
+      const parser = create2();
+      spans[parser] = [];
+      this.setActiveCallbacks(parser, this.CALLBACK_ACTIVE_ALL);
+      return parser;
+    }
+    function simpleDestroy(spans, destroy2, parser) {
+      spans[parser] = void 0;
+      destroy2(parser);
+    }
+    function noop() {
+    }
+    function setup(env = {}) {
+      let { logger: logOption, ...instanceEnvironment } = env;
+      let logger = noop;
+      const context = {};
+      if (logOption) {
+        if (typeof logOption !== "function") {
+          logOption = console.log;
+        }
+        logger = log.bind(context, logOption);
+      }
+      const instance = new WebAssembly.Instance(wasmModule, {
+        env: {
+          logger,
+          on_error: noop,
+          on_finish: noop,
+          on_message_start: noop,
+          on_message_complete: noop,
+          on_request: noop,
+          on_response: noop,
+          on_reset: noop,
+          on_method: noop,
+          on_url: noop,
+          on_protocol: noop,
+          on_version: noop,
+          on_status: noop,
+          on_reason: noop,
+          on_header_name: noop,
+          on_header_value: noop,
+          on_headers: noop,
+          on_connect: noop,
+          on_upgrade: noop,
+          on_chunk_length: noop,
+          on_chunk_extension_name: noop,
+          on_chunk_extension_value: noop,
+          on_chunk: noop,
+          on_body: noop,
+          on_data: noop,
+          on_trailer_name: noop,
+          on_trailer_value: noop,
+          on_trailers: noop,
+          on_state_change: noop,
+          ...instanceEnvironment
+        }
+      });
+      const wasm = instance.exports;
+      context.memory = wasm.memory;
+      const milo = {
+        version: {
+          raw: "0.9.0",
+          major: 0,
+          minor: 9,
+          patch: 0,
+          prerelease: ""
+        },
+        METHOD_OTHER: 0,
+        METHOD_GET: 1,
+        METHOD_HEAD: 2,
+        METHOD_POST: 3,
+        METHOD_PUT: 4,
+        METHOD_DELETE: 5,
+        METHOD_CONNECT: 6,
+        METHOD_OPTIONS: 7,
+        METHOD_TRACE: 8,
+        METHOD_PATCH: 9,
+        METHOD_PRI: 10,
+        CALLBACK_ON_ERROR: 0,
+        CALLBACK_ON_FINISH: 1,
+        CALLBACK_ON_MESSAGE_START: 2,
+        CALLBACK_ON_MESSAGE_COMPLETE: 3,
+        CALLBACK_ON_REQUEST: 4,
+        CALLBACK_ON_RESPONSE: 5,
+        CALLBACK_ON_RESET: 6,
+        CALLBACK_ON_METHOD: 7,
+        CALLBACK_ON_URL: 8,
+        CALLBACK_ON_PROTOCOL: 9,
+        CALLBACK_ON_VERSION: 10,
+        CALLBACK_ON_STATUS: 11,
+        CALLBACK_ON_REASON: 12,
+        CALLBACK_ON_HEADER_NAME: 13,
+        CALLBACK_ON_HEADER_VALUE: 14,
+        CALLBACK_ON_HEADERS: 15,
+        CALLBACK_ON_CONNECT: 16,
+        CALLBACK_ON_UPGRADE: 17,
+        CALLBACK_ON_CHUNK_LENGTH: 18,
+        CALLBACK_ON_CHUNK_EXTENSION_NAME: 19,
+        CALLBACK_ON_CHUNK_EXTENSION_VALUE: 20,
+        CALLBACK_ON_CHUNK: 21,
+        CALLBACK_ON_BODY: 22,
+        CALLBACK_ON_DATA: 23,
+        CALLBACK_ON_TRAILER_NAME: 24,
+        CALLBACK_ON_TRAILER_VALUE: 25,
+        CALLBACK_ON_TRAILERS: 26,
+        CALLBACK_ON_STATE_CHANGE: 27,
+        EVENT_END: 0,
+        EVENT_ERROR: 1,
+        EVENT_FINISH: 2,
+        EVENT_MESSAGE_START: 3,
+        EVENT_MESSAGE_COMPLETE: 4,
+        EVENT_REQUEST: 5,
+        EVENT_RESPONSE: 6,
+        EVENT_RESET: 7,
+        EVENT_METHOD: 8,
+        EVENT_URL: 9,
+        EVENT_PROTOCOL: 10,
+        EVENT_VERSION: 11,
+        EVENT_STATUS: 12,
+        EVENT_REASON: 13,
+        EVENT_HEADER_NAME: 14,
+        EVENT_HEADER_VALUE: 15,
+        EVENT_HEADERS: 16,
+        EVENT_CONNECT: 17,
+        EVENT_UPGRADE: 18,
+        EVENT_CHUNK_LENGTH: 19,
+        EVENT_CHUNK_EXTENSION_NAME: 20,
+        EVENT_CHUNK_EXTENSION_VALUE: 21,
+        EVENT_CHUNK: 22,
+        EVENT_BODY: 23,
+        EVENT_DATA: 24,
+        EVENT_TRAILER_NAME: 25,
+        EVENT_TRAILER_VALUE: 26,
+        EVENT_TRAILERS: 27,
+        EVENT_STATE_CHANGE: 28,
+        CALLBACK_ACTIVE_NONE: 0n,
+        EVENT_ACTIVE_NONE: 0n,
+        CALLBACK_ACTIVE_ON_ERROR: 1n,
+        EVENT_ACTIVE_ON_ERROR: 1n,
+        CALLBACK_ACTIVE_ON_FINISH: 2n,
+        EVENT_ACTIVE_ON_FINISH: 2n,
+        CALLBACK_ACTIVE_ON_MESSAGE_START: 4n,
+        EVENT_ACTIVE_ON_MESSAGE_START: 4n,
+        CALLBACK_ACTIVE_ON_MESSAGE_COMPLETE: 8n,
+        EVENT_ACTIVE_ON_MESSAGE_COMPLETE: 8n,
+        CALLBACK_ACTIVE_ON_REQUEST: 16n,
+        EVENT_ACTIVE_ON_REQUEST: 16n,
+        CALLBACK_ACTIVE_ON_RESPONSE: 32n,
+        EVENT_ACTIVE_ON_RESPONSE: 32n,
+        CALLBACK_ACTIVE_ON_RESET: 64n,
+        EVENT_ACTIVE_ON_RESET: 64n,
+        CALLBACK_ACTIVE_ON_METHOD: 128n,
+        EVENT_ACTIVE_ON_METHOD: 128n,
+        CALLBACK_ACTIVE_ON_URL: 256n,
+        EVENT_ACTIVE_ON_URL: 256n,
+        CALLBACK_ACTIVE_ON_PROTOCOL: 512n,
+        EVENT_ACTIVE_ON_PROTOCOL: 512n,
+        CALLBACK_ACTIVE_ON_VERSION: 1024n,
+        EVENT_ACTIVE_ON_VERSION: 1024n,
+        CALLBACK_ACTIVE_ON_STATUS: 2048n,
+        EVENT_ACTIVE_ON_STATUS: 2048n,
+        CALLBACK_ACTIVE_ON_REASON: 4096n,
+        EVENT_ACTIVE_ON_REASON: 4096n,
+        CALLBACK_ACTIVE_ON_HEADER_NAME: 8192n,
+        EVENT_ACTIVE_ON_HEADER_NAME: 8192n,
+        CALLBACK_ACTIVE_ON_HEADER_VALUE: 16384n,
+        EVENT_ACTIVE_ON_HEADER_VALUE: 16384n,
+        CALLBACK_ACTIVE_ON_HEADERS: 32768n,
+        EVENT_ACTIVE_ON_HEADERS: 32768n,
+        CALLBACK_ACTIVE_ON_CONNECT: 65536n,
+        EVENT_ACTIVE_ON_CONNECT: 65536n,
+        CALLBACK_ACTIVE_ON_UPGRADE: 131072n,
+        EVENT_ACTIVE_ON_UPGRADE: 131072n,
+        CALLBACK_ACTIVE_ON_CHUNK_LENGTH: 262144n,
+        EVENT_ACTIVE_ON_CHUNK_LENGTH: 262144n,
+        CALLBACK_ACTIVE_ON_CHUNK_EXTENSION_NAME: 524288n,
+        EVENT_ACTIVE_ON_CHUNK_EXTENSION_NAME: 524288n,
+        CALLBACK_ACTIVE_ON_CHUNK_EXTENSION_VALUE: 1048576n,
+        EVENT_ACTIVE_ON_CHUNK_EXTENSION_VALUE: 1048576n,
+        CALLBACK_ACTIVE_ON_CHUNK: 2097152n,
+        EVENT_ACTIVE_ON_CHUNK: 2097152n,
+        CALLBACK_ACTIVE_ON_BODY: 4194304n,
+        EVENT_ACTIVE_ON_BODY: 4194304n,
+        CALLBACK_ACTIVE_ON_DATA: 8388608n,
+        EVENT_ACTIVE_ON_DATA: 8388608n,
+        CALLBACK_ACTIVE_ON_TRAILER_NAME: 16777216n,
+        EVENT_ACTIVE_ON_TRAILER_NAME: 16777216n,
+        CALLBACK_ACTIVE_ON_TRAILER_VALUE: 33554432n,
+        EVENT_ACTIVE_ON_TRAILER_VALUE: 33554432n,
+        CALLBACK_ACTIVE_ON_TRAILERS: 67108864n,
+        EVENT_ACTIVE_ON_TRAILERS: 67108864n,
+        CALLBACK_ACTIVE_ON_STATE_CHANGE: 134217728n,
+        EVENT_ACTIVE_ON_STATE_CHANGE: 134217728n,
+        CALLBACK_ACTIVE_ALL: 268435455n,
+        EVENT_ACTIVE_ALL: 268435455n,
+        ERROR_NONE: 0,
+        ERROR_USER: 1,
+        ERROR_CALLBACK_ERROR: 2,
+        ERROR_UNEXPECTED_STATE: 3,
+        ERROR_UNEXPECTED_DATA: 4,
+        ERROR_UNEXPECTED_EOF: 5,
+        ERROR_UNEXPECTED_CHARACTER: 6,
+        ERROR_UNEXPECTED_CONTENT_LENGTH: 7,
+        ERROR_UNEXPECTED_TRANSFER_ENCODING: 8,
+        ERROR_UNEXPECTED_CONTENT: 9,
+        ERROR_UNEXPECTED_TRAILERS: 10,
+        ERROR_INVALID_VERSION: 11,
+        ERROR_INVALID_STATUS: 12,
+        ERROR_INVALID_CONTENT_LENGTH: 13,
+        ERROR_INVALID_TRANSFER_ENCODING: 14,
+        ERROR_INVALID_CHUNK_SIZE: 15,
+        ERROR_MISSING_CONNECTION_UPGRADE: 16,
+        ERROR_UNSUPPORTED_HTTP_VERSION: 17,
+        STATE_START: 0,
+        STATE_FINISH: 1,
+        STATE_ERROR: 2,
+        STATE_REQUEST_LINE: 3,
+        STATE_STATUS_LINE: 4,
+        STATE_HTTP2_PREFACE: 5,
+        STATE_HEADER: 6,
+        STATE_BODY_DECISION: 7,
+        STATE_BODY_VIA_CONTENT_LENGTH: 8,
+        STATE_BODY_WITH_NO_LENGTH: 9,
+        STATE_CHUNK_HEADER: 10,
+        STATE_CHUNK_EXTENSIONS: 11,
+        STATE_CHUNK_DATA: 12,
+        STATE_TRAILER: 13,
+        STATE_TUNNEL: 14,
+        PARSER_FIELD_MAX_START_LINE_LENGTH: 0,
+        PARSER_FIELD_MAX_HEADER_LENGTH: 4,
+        PARSER_FIELD_MAX_BODY_PAYLOAD: 8,
+        PARSER_FIELD_AUTODETECT: 16,
+        PARSER_FIELD_IS_REQUEST: 17,
+        PARSER_FIELD_SUSPEND_AFTER_HEADERS: 18,
+        PARSER_FIELD_MANAGE_UNCONSUMED: 19,
+        PARSER_FIELD_CONTINUE_WITHOUT_DATA: 20,
+        PARSER_FIELD_IS_CONNECT: 21,
+        PARSER_FIELD_SKIP_BODY: 22,
+        PARSER_FIELD_DEBUG: 23,
+        PARSER_FIELD_PARSED: 24,
+        PARSER_FIELD_POSITION: 32,
+        PARSER_FIELD_STATE: 36,
+        PARSER_FIELD_PAUSED: 37,
+        PARSER_FIELD_ERROR_CODE: 38,
+        PARSER_FIELD_CONTENT_LENGTH: 40,
+        PARSER_FIELD_CHUNK_SIZE: 48,
+        PARSER_FIELD_REMAINING_CONTENT_LENGTH: 56,
+        PARSER_FIELD_REMAINING_CHUNK_SIZE: 64,
+        PARSER_FIELD_STATUS: 72,
+        PARSER_FIELD_METHOD: 76,
+        PARSER_FIELD_HAS_CONTENT_LENGTH: 77,
+        PARSER_FIELD_HAS_TRANSFER_ENCODING: 78,
+        PARSER_FIELD_HAS_CHUNKED_TRANSFER_ENCODING: 79,
+        PARSER_FIELD_HAS_CONNECTION_CLOSE: 80,
+        PARSER_FIELD_HAS_CONNECTION_UPGRADE: 81,
+        PARSER_FIELD_HAS_UPGRADE: 82,
+        PARSER_FIELD_HAS_TRAILERS: 83,
+        PARSER_FIELD_ACTIVE_CALLBACKS: 88,
+        PARSER_FIELD_ACTIVE_EVENTS: 96,
+        PARSER_FIELD_PTR: 104,
+        PARSER_FIELD_ERROR_DESCRIPTION: 108,
+        PARSER_FIELD_UNCONSUMED: 364,
+        PARSER_FIELD_UNCONSUMED_LEN: 368,
+        PARSER_FIELD_ERROR_DESCRIPTION_LEN: 372,
+        PARSER_FIELD_EVENTS: 376,
+        Errors,
+        Methods,
+        Callbacks,
+        CallbackActives,
+        Events,
+        EventActives,
+        States,
+        ParserFields,
+        isAutodetect: isAutodetect.bind(wasm),
+        isRequest: isRequest.bind(wasm),
+        isPaused: isPaused.bind(wasm),
+        shouldManageUnconsumed: shouldManageUnconsumed.bind(wasm),
+        shouldSuspendAfterHeaders: shouldSuspendAfterHeaders.bind(wasm),
+        getMaxStartLineLength: getMaxStartLineLength.bind(wasm),
+        getMaxHeaderLength: getMaxHeaderLength.bind(wasm),
+        getMaxBodyPayload: getMaxBodyPayload.bind(wasm),
+        shouldContinueWithoutData: shouldContinueWithoutData.bind(wasm),
+        isConnect: isConnect.bind(wasm),
+        isDebug: isDebug.bind(wasm),
+        shouldSkipBody: shouldSkipBody.bind(wasm),
+        getState: getState.bind(wasm),
+        getPosition: getPosition.bind(wasm),
+        getParsed: getParsed.bind(wasm),
+        getErrorCode: getErrorCode.bind(wasm),
+        getMethod: getMethod.bind(wasm),
+        getStatus: getStatus.bind(wasm),
+        hasConnectionClose: hasConnectionClose.bind(wasm),
+        hasConnectionUpgrade: hasConnectionUpgrade.bind(wasm),
+        getContentLength: getContentLength.bind(wasm),
+        getChunkSize: getChunkSize.bind(wasm),
+        getRemainingContentLength: getRemainingContentLength.bind(wasm),
+        getRemainingChunkSize: getRemainingChunkSize.bind(wasm),
+        hasContentLength: hasContentLength.bind(wasm),
+        hasTransferEncoding: hasTransferEncoding.bind(wasm),
+        hasChunkedTransferEncoding: hasChunkedTransferEncoding.bind(wasm),
+        hasUpgrade: hasUpgrade.bind(wasm),
+        hasTrailers: hasTrailers.bind(wasm),
+        getErrorDescription: getErrorDescription.bind(wasm),
+        setShouldAutodetect: setShouldAutodetect.bind(wasm),
+        setShouldContinueWithoutData: setShouldContinueWithoutData.bind(wasm),
+        setIsRequest: setIsRequest.bind(wasm),
+        setIsConnect: setIsConnect.bind(wasm),
+        setDebug: setDebug.bind(wasm),
+        setShouldManageUnconsumed: setShouldManageUnconsumed.bind(wasm),
+        setShouldSuspendAfterHeaders: setShouldSuspendAfterHeaders.bind(wasm),
+        setMaxStartLineLength: setMaxStartLineLength.bind(wasm),
+        setMaxHeaderLength: setMaxHeaderLength.bind(wasm),
+        setMaxBodyPayload: setMaxBodyPayload.bind(wasm),
+        setShouldSkipBody: setShouldSkipBody.bind(wasm),
+        setActiveCallbacks: setActiveCallbacks.bind(wasm),
+        setActiveEvents: setActiveEvents.bind(wasm),
+        memory: wasm.memory,
+        alloc: alloc.bind(wasm),
+        dealloc: dealloc.bind(wasm),
+        create: create.bind(wasm),
+        destroy: destroy.bind(wasm),
+        parse: parse.bind(wasm),
+        fail: fail.bind(wasm),
+        hasDebug: hasDebug.bind(wasm),
+        clear: wasm.clear,
+        complete: wasm.complete,
+        finish: wasm.finish,
+        pause: wasm.pause,
+        reset: wasm.reset,
+        resume: wasm.resume
+      };
+      return milo;
+    }
+    function simple() {
+      const spans = {};
+      const milo = setup({
+        /* REPLACE: callbacks:simple */
+      });
+      milo.spans = spans;
+      milo.create = simpleCreate.bind(milo, spans, milo.create);
+      milo.destroy = simpleDestroy.bind(milo, spans, milo.destroy);
+      return milo;
+    }
+    module2.exports = { wasmModule, noop, setup, simple };
+  }
+});
+
+// addons/pro/node_modules/undici/lib/dispatcher/parser-h1.js
+var require_parser_h1 = __commonJS({
+  "addons/pro/node_modules/undici/lib/dispatcher/parser-h1.js"(exports2, module2) {
+    "use strict";
+    var assert = require("node:assert");
+    var util = require_util();
+    var timers = require_timers();
+    var {
+      HeadersTimeoutError,
+      HeadersOverflowError,
+      SocketError,
+      InformationalError,
+      BodyTimeoutError,
+      HTTPParserError,
+      ResponseContentLengthMismatchError,
+      ResponseExceededMaxSizeError
+    } = require_errors();
+    var {
+      kUrl,
+      kReset,
+      kClient,
+      kParser,
+      kBlocking,
+      kRunning,
+      kWriting,
+      kQueue,
+      kKeepAliveDefaultTimeout,
+      kRunningIdx,
+      kError,
+      kPipelining,
+      kSocket,
+      kKeepAliveTimeoutValue,
+      kKeepAliveMaxTimeout,
+      kKeepAliveTimeoutThreshold,
+      kBodyTimeout,
+      kMaxResponseSize,
+      kResume,
+      kHTTPContext,
+      kMaxHeadersSize
+    } = require_symbols();
+    var FastBuffer = Buffer[Symbol.species];
+    var removeAllListeners = util.removeAllListeners;
+    var kPausedByHandler = /* @__PURE__ */ Symbol("kPausedByHandler");
+    var BUFFER_PAGE_SIZE = 4096;
+    var INITIAL_BUFFER_SIZE = 128 * 1024;
+    var EMPTY_BUF = Buffer.alloc(0);
+    var BODY_KIND_CONTENT_LENGTH = 0;
+    var EVENT_RANGE_SIZE = 9;
+    var EVENT_HEADERS_SIZE = 19;
+    var miloPackage;
+    var useWasmSIMD = process.arch !== "ppc64";
+    if (process.env.UNDICI_NO_WASM_SIMD === "1") {
+      useWasmSIMD = false;
+    } else if (process.env.UNDICI_NO_WASM_SIMD === "0") {
+      useWasmSIMD = true;
+    }
+    var USE_NATIVE_TIMER = 0;
+    var USE_FAST_TIMER = 1;
+    var TIMEOUT_HEADERS = 2 | USE_FAST_TIMER;
+    var TIMEOUT_BODY = 4 | USE_FAST_TIMER;
+    var TIMEOUT_KEEP_ALIVE = 8 | USE_NATIVE_TIMER;
+    var miloEnabled = process.env.UNDICI_USE_MILO === "1" || process.env.UNDICI_USE_MILO === "true";
+    var miloInstance = null;
+    var currentBuffer = null;
+    var currentBufferSize = 0;
+    var currentBufferPtr = null;
+    var currentBufferRef = null;
+    function onParserTimeout(parserWeakRef) {
+      const parser = parserWeakRef.deref ? parserWeakRef.deref() : parserWeakRef;
+      if (!parser) {
+        return;
+      }
+      const { socket, timeoutType, client, paused } = parser;
+      if (timeoutType === TIMEOUT_HEADERS) {
+        if (!socket[kWriting] || socket.writableNeedDrain || client[kRunning] > 1) {
+          assert(!paused, "cannot be paused while waiting for headers");
+          util.destroy(socket, new HeadersTimeoutError());
+        }
+      } else if (timeoutType === TIMEOUT_BODY) {
+        if (!paused) {
+          util.destroy(socket, new BodyTimeoutError());
+        }
+      } else if (timeoutType === TIMEOUT_KEEP_ALIVE) {
+        assert(client[kRunning] === 0 && client[kKeepAliveTimeoutValue]);
+        util.destroy(socket, new InformationalError("socket idle timeout"));
+      }
+    }
+    function getMilo() {
+      if (miloInstance) {
+        return miloInstance;
+      }
+      if (useWasmSIMD) {
+        try {
+          miloPackage = require_simd();
+        } catch {
+        }
+      }
+      miloPackage = miloPackage || require_no_simd();
+      miloInstance = miloPackage.setup();
+      return miloInstance;
+    }
+    var H1Parser = class {
+      constructor(client, socket) {
+        this.milo = getMilo();
+        this.client = client;
+        this.socket = socket;
+        this.parser = this.milo.create();
+        this.events = new FastBuffer(
+          this.milo.memory.buffer,
+          this.parser + this.milo.ParserFields.EVENTS,
+          4
+        ).readUInt32LE(0);
+        this.milo.setShouldAutodetect(this.parser, false);
+        this.milo.setIsRequest(this.parser, false);
+        this.milo.setShouldManageUnconsumed(this.parser, false);
+        this.milo.setShouldSuspendAfterHeaders(this.parser, true);
+        this.milo.setMaxHeaderLength(this.parser, client[kMaxHeadersSize]);
+        this.milo.setActiveEvents(
+          this.parser,
+          this.milo.EVENT_ACTIVE_ON_ERROR | this.milo.EVENT_ACTIVE_ON_MESSAGE_COMPLETE | this.milo.EVENT_ACTIVE_ON_REASON | this.milo.EVENT_ACTIVE_ON_HEADER_NAME | this.milo.EVENT_ACTIVE_ON_HEADER_VALUE | this.milo.EVENT_ACTIVE_ON_HEADERS | this.milo.EVENT_ACTIVE_ON_DATA | this.milo.EVENT_ACTIVE_ON_TRAILER_NAME | this.milo.EVENT_ACTIVE_ON_TRAILER_VALUE
+        );
+        this.timeout = null;
+        this.timeoutWeakRef = new WeakRef(this);
+        this.timeoutValue = null;
+        this.timeoutType = null;
+        this.statusCode = 0;
+        this.statusText = "";
+        this.upgrade = false;
+        this.responseStarted = false;
+        this.pausedByParser = false;
+        this.pauseStateIsStart = false;
+        this.headers = [];
+        this.trailers = [];
+        this.headersSize = 0;
+        this.trailersSize = 0;
+        this.headersMaxSize = client[kMaxHeadersSize];
+        this.shouldKeepAlive = false;
+        this.paused = false;
+        this.errored = false;
+        this.waitingForMoreData = 0;
+        this.resume = this.resume.bind(this);
+        this.bytesRead = 0;
+        this.keepAlive = "";
+        this.connection = "";
+        this.contentLength = -1;
+        this.maxResponseSize = client[kMaxResponseSize];
+        this.directBodyRemaining = 0;
+        this.directBodyCompletePending = false;
+        this.headersSuspended = false;
+        this.skipBody = false;
+        this[kPausedByHandler] = false;
+        if (INITIAL_BUFFER_SIZE > currentBufferSize || currentBuffer.buffer !== this.milo.memory.buffer) {
+          this.ensureBuffers(INITIAL_BUFFER_SIZE);
+        } else {
+          this.updateBuffers();
+        }
+      }
+      setTimeout(delay, type) {
+        var _a, _b;
+        if (delay !== this.timeoutValue || type & USE_FAST_TIMER ^ this.timeoutType & USE_FAST_TIMER) {
+          if (this.timeout) {
+            timers.clearTimeout(this.timeout);
+            this.timeout = null;
+          }
+          if (delay) {
+            if (type & USE_FAST_TIMER) {
+              this.timeout = timers.setFastTimeout(
+                onParserTimeout,
+                delay,
+                this.timeoutWeakRef
+              );
+            } else {
+              this.timeout = setTimeout(
+                onParserTimeout,
+                delay,
+                this.timeoutWeakRef
+              );
+              (_a = this.timeout) == null ? void 0 : _a.unref();
+            }
+          }
+          this.timeoutValue = delay;
+        } else if ((_b = this.timeout) == null ? void 0 : _b.refresh) {
+          this.timeout.refresh();
+        }
+        this.timeoutType = type;
+      }
+      ensureBuffers(size) {
+        const { milo } = this;
+        if (currentBufferPtr != null) {
+          milo.dealloc(currentBufferPtr, currentBufferSize);
+        }
+        currentBufferSize = Math.ceil(size / BUFFER_PAGE_SIZE) * BUFFER_PAGE_SIZE;
+        currentBufferPtr = milo.alloc(currentBufferSize);
+        currentBuffer = new FastBuffer(
+          milo.memory.buffer,
+          currentBufferPtr,
+          currentBufferSize
+        );
+        this.updateBuffers();
+      }
+      updateBuffers() {
+        this.parserFields = new FastBuffer(this.milo.memory.buffer, this.parser);
+        this.parserEvents = new FastBuffer(
+          this.milo.memory.buffer,
+          this.events,
+          64 * 1024
+        );
+      }
+      resume() {
+        var _a;
+        if (this.socket.destroyed || !this.paused) {
+          return;
+        }
+        this.milo.resume(this.parser);
+        assert(this.timeoutType === TIMEOUT_BODY);
+        if ((_a = this.timeout) == null ? void 0 : _a.refresh) {
+          this.timeout.refresh();
+        }
+        this.paused = false;
+        if (this.directBodyCompletePending) {
+          try {
+            this.completeDirectBody();
+          } catch (err) {
+            util.destroy(this.socket, err);
+            return;
+          }
+          if (this.paused) {
+            return;
+          }
+        }
+        this.readMore();
+      }
+      readMore() {
+        if (this.paused || !this.parser) {
+          return;
+        }
+        while (!this.paused && this.parser) {
+          if (this.waitingForMoreData && this.socket.readableLength <= this.waitingForMoreData) {
+            break;
+          }
+          this.waitingForMoreData = 0;
+          const chunk = this.socket.read();
+          if (chunk === null) {
+            break;
+          }
+          if (this.execute(chunk) === false) {
+            break;
+          }
+        }
+      }
+      execute(data) {
+        const available = data.length;
+        assert(!this.paused);
+        const { socket, milo } = this;
+        try {
+          if (this.directBodyRemaining > 0) {
+            return this.consumeDirectBody(data);
+          }
+          if (currentBuffer.buffer !== milo.memory.buffer) {
+            currentBuffer = new FastBuffer(
+              milo.memory.buffer,
+              currentBufferPtr,
+              currentBufferSize
+            );
+            this.updateBuffers();
+          } else if (this.parserEvents.buffer !== milo.memory.buffer) {
+            this.updateBuffers();
+          }
+          let offset = 0;
+          let parseLen = available;
+          const headersEnd = this.statusCode === 0 ? data.indexOf("\r\n\r\n") : -1;
+          if (headersEnd !== -1) {
+            parseLen = headersEnd + 4;
+          }
+          for (; ; ) {
+            if (parseLen > currentBufferSize) {
+              this.ensureBuffers(parseLen);
+            }
+            const parseData = data.subarray(offset, offset + parseLen);
+            currentBuffer.set(parseData);
+            currentBufferRef = parseData;
+            const consumed = milo.parse(this.parser, currentBufferPtr, parseLen);
+            this.drainEvents();
+            const consumedTotal = offset + consumed;
+            if (this.errored || consumed === 0 && this.parserFields[milo.ParserFields.ERROR_CODE] !== milo.ERROR_NONE) {
+              throw this.createError(data.subarray(consumedTotal));
+            } else if (this.upgrade) {
+              this.onUpgrade(data.subarray(consumedTotal));
+              return false;
+            } else if (this.directBodyCompletePending) {
+              this.completeDirectBody();
+              if (this.paused) {
+                return false;
+              }
+            } else if (this.pausedByParser) {
+              this.pausedByParser = false;
+              this.headersSuspended = false;
+              if (this[kPausedByHandler] && this.pauseStateIsStart) {
+                this.pauseStateIsStart = false;
+                milo.resume(this.parser);
+                this[kPausedByHandler] = false;
+                return false;
+              }
+              this.pauseStateIsStart = false;
+              this.paused = true;
+              socket.unshift(data.subarray(consumedTotal));
+              return false;
+            }
+            if (this.directBodyRemaining > 0) {
+              return this.consumeDirectBody(data.subarray(consumedTotal));
+            }
+            if (consumed < parseLen) {
+              const remaining = data.subarray(consumedTotal);
+              socket.unshift(remaining);
+              this.waitingForMoreData = consumed === 0 ? remaining.length : 0;
+              return false;
+            }
+            offset = consumedTotal;
+            if (offset >= available) {
+              if (this.headersSuspended) {
+                this.headersSuspended = false;
+                parseLen = 0;
+                continue;
+              }
+              return true;
+            }
+            this.headersSuspended = false;
+            parseLen = available - offset;
+          }
+        } catch (err) {
+          util.destroy(socket, err);
+          return false;
+        } finally {
+          currentBufferRef = null;
+        }
+      }
+      consumeDirectBody(data) {
+        var _a;
+        const { socket, client, maxResponseSize } = this;
+        const available = data.length;
+        const len = Math.min(available, this.directBodyRemaining);
+        if ((_a = this.timeout) == null ? void 0 : _a.refresh) {
+          this.timeout.refresh();
+        }
+        if (len > 0) {
+          const request = client[kQueue][client[kRunningIdx]];
+          assert(request);
+          assert(this.timeoutType === TIMEOUT_BODY);
+          assert(this.statusCode >= 200);
+          if (maxResponseSize > -1 && this.bytesRead + len > maxResponseSize) {
+            throw new ResponseExceededMaxSizeError();
+          }
+          this.bytesRead += len;
+          this.directBodyRemaining -= len;
+          if (request.onResponseData(data.subarray(0, len)) === false) {
+            this.directBodyCompletePending = this.directBodyRemaining === 0;
+            this.pauseParser();
+            this[kPausedByHandler] = true;
+            this.pausedByParser = false;
+            this.paused = true;
+            if (len < available) {
+              socket.unshift(data.subarray(len));
+            }
+            return false;
+          }
+        }
+        if (this.directBodyRemaining === 0) {
+          this.completeDirectBody();
+          const remaining = data.subarray(len);
+          if (this.errored || this.parserFields[this.milo.ParserFields.ERROR_CODE] !== this.milo.ERROR_NONE) {
+            throw this.createError(remaining);
+          } else if (this.pausedByParser) {
+            this.pausedByParser = false;
+            this.pauseStateIsStart = false;
+            this.paused = true;
+            if (remaining.length > 0) {
+              socket.unshift(remaining);
+            }
+            return false;
+          }
+          if (remaining.length > 0) {
+            socket.unshift(remaining);
+            return false;
+          }
+        }
+        return true;
+      }
+      completeDirectBody() {
+        const { milo } = this;
+        if (currentBuffer.buffer !== milo.memory.buffer) {
+          currentBuffer = new FastBuffer(
+            milo.memory.buffer,
+            currentBufferPtr,
+            currentBufferSize
+          );
+          this.updateBuffers();
+        } else if (this.parserEvents.buffer !== milo.memory.buffer) {
+          this.updateBuffers();
+        }
+        this.directBodyCompletePending = false;
+        currentBufferRef = EMPTY_BUF;
+        milo.complete(this.parser);
+        this.drainEvents();
+      }
+      setShouldSkipBody(value) {
+        if (this.skipBody !== value) {
+          this.skipBody = value;
+          this.milo.setShouldSkipBody(this.parser, value);
+        }
+      }
+      finish() {
+        if (!this.parser) {
+          return null;
+        }
+        if (this.directBodyRemaining > 0) {
+          return new ResponseContentLengthMismatchError();
+        }
+        if (this.parserEvents.buffer !== this.milo.memory.buffer) {
+          this.updateBuffers();
+        }
+        this.milo.finish(this.parser);
+        this.drainEvents();
+        if (!this.errored) {
+          return null;
+        }
+        return this.createError(EMPTY_BUF);
+      }
+      createError(data) {
+        const { contentLength, bytesRead } = this;
+        if (contentLength !== -1 && bytesRead !== contentLength) {
+          return new ResponseContentLengthMismatchError();
+        }
+        const errorCode = this.parserFields[this.milo.ParserFields.ERROR_CODE];
+        const errorName = this.milo.Errors[errorCode];
+        const errorDescription = errorName === "UNEXPECTED_EOF" ? "Invalid EOF state" : this.milo.getErrorDescription(this.parser);
+        const reason = errorName === "UNEXPECTED_EOF" ? errorDescription : errorDescription ? `[ERROR_${errorName}] ${errorDescription}` : `ERROR_${errorName}`;
+        return new HTTPParserError(
+          `Response does not match the HTTP/1.1 protocol (${reason})`,
+          errorName,
+          data
+        );
+      }
+      destroy() {
+        if (this.parser) {
+          this.milo.destroy(this.parser);
+          this.parser = null;
+        }
+        this.timeout && timers.clearTimeout(this.timeout);
+        this.timeout = null;
+        this.timeoutValue = null;
+        this.timeoutType = null;
+        this.paused = false;
+        this.responseStarted = false;
+        this.pausedByParser = false;
+        this.pauseStateIsStart = false;
+        this.connection = "";
+        this.skipBody = false;
+      }
+      pauseParser(stateIsStart = false) {
+        this.milo.pause(this.parser);
+        this.pausedByParser = true;
+        this.pauseStateIsStart = stateIsStart;
+      }
+      drainEvents() {
+        var _a, _b;
+        const { socket, client, milo } = this;
+        let cursor = 0;
+        const firstEvent = this.parserEvents[0];
+        if (firstEvent !== milo.EVENT_END && firstEvent !== milo.EVENT_ERROR && !this.responseStarted) {
+          this.responseStarted = true;
+          if (socket.destroyed) {
+            return this.fail(this.milo.ERROR_CALLBACK_ERROR, "Other side closed");
+          }
+          const request = client[kQueue][client[kRunningIdx]];
+          if (!request) {
+            return this.fail(this.milo.ERROR_CALLBACK_ERROR, "Missing request");
+          }
+          request.onResponseStarted();
+        }
+        for (; ; ) {
+          const event = this.parserEvents[cursor];
+          let eventLen = EVENT_RANGE_SIZE;
+          switch (event) {
+            case milo.EVENT_END:
+              return;
+            case milo.EVENT_ERROR:
+              this.errored = true;
+              return;
+            case milo.EVENT_MESSAGE_COMPLETE: {
+              const {
+                client: client2,
+                socket: socket2,
+                statusCode,
+                upgrade,
+                trailers,
+                contentLength,
+                bytesRead,
+                shouldKeepAlive
+              } = this;
+              this.responseStarted = false;
+              if (socket2.destroyed && (!statusCode || shouldKeepAlive)) {
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Other side closed");
+              }
+              if (upgrade) {
+                this.pauseParser();
+                return;
+              }
+              assert(statusCode >= 100);
+              const request = client2[kQueue][client2[kRunningIdx]];
+              assert(request);
+              this.statusCode = 0;
+              this.statusText = "";
+              this.bytesRead = 0;
+              this.contentLength = -1;
+              this.directBodyRemaining = 0;
+              this.directBodyCompletePending = false;
+              this.headersSuspended = false;
+              this.skipBody = false;
+              this.keepAlive = "";
+              this.connection = "";
+              this.trailers = [];
+              this.trailersSize = 0;
+              if (statusCode < 200) {
+                break;
+              }
+              if (request.method !== "HEAD" && contentLength !== -1 && bytesRead !== contentLength) {
+                util.destroy(socket2, new ResponseContentLengthMismatchError());
+                this.pauseParser();
+                break;
+              }
+              request.onResponseEnd(trailers);
+              client2[kQueue][client2[kRunningIdx]++] = null;
+              if (socket2[kWriting]) {
+                assert(client2[kRunning] === 0);
+                util.destroy(socket2, new InformationalError("reset"));
+                this.pauseParser(true);
+              } else if (!shouldKeepAlive) {
+                util.destroy(socket2, new InformationalError("reset"));
+                this.pauseParser(true);
+              } else if (socket2[kReset] && client2[kRunning] === 0) {
+                util.destroy(socket2, new InformationalError("reset"));
+                this.pauseParser(true);
+              } else if (client2[kPipelining] == null || client2[kPipelining] === 1) {
+                setImmediate(client2[kResume]);
+              } else {
+                client2[kResume]();
+              }
+              break;
+            }
+            case milo.EVENT_REASON: {
+              const at = this.parserEvents.readUInt32LE(cursor + 1);
+              const len = this.parserEvents.readUInt32LE(cursor + 5);
+              this.statusText = new FastBuffer(
+                currentBufferRef.buffer,
+                currentBufferRef.byteOffset + at,
+                len
+              ).toString();
+              break;
+            }
+            case milo.EVENT_HEADER_NAME: {
+              const at = this.parserEvents.readUInt32LE(cursor + 1);
+              const len = this.parserEvents.readUInt32LE(cursor + 5);
+              const data = len > 0 ? new FastBuffer(
+                currentBufferRef.buffer,
+                currentBufferRef.byteOffset + at,
+                len
+              ) : EMPTY_BUF;
+              this.headers.push(data);
+              this.headersSize += len;
+              if (this.headersSize >= this.headersMaxSize) {
+                util.destroy(this.socket, new HeadersOverflowError());
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Headers overflow");
+              }
+              break;
+            }
+            case milo.EVENT_HEADER_VALUE: {
+              const at = this.parserEvents.readUInt32LE(cursor + 1);
+              const len = this.parserEvents.readUInt32LE(cursor + 5);
+              const data = len > 0 ? new FastBuffer(
+                currentBufferRef.buffer,
+                currentBufferRef.byteOffset + at,
+                len
+              ) : EMPTY_BUF;
+              const key = this.headers[this.headers.length - 1];
+              this.headers.push(data);
+              if (key.length === 10) {
+                const headerName = util.bufferToLowerCasedHeaderName(key);
+                if (headerName === "keep-alive") {
+                  this.keepAlive += (this.keepAlive.length === 0 ? "" : ",") + data.toString();
+                } else if (headerName === "connection") {
+                  this.connection += (this.connection.length === 0 ? "" : ",") + data.toString();
+                }
+              }
+              this.headersSize += len;
+              if (this.headersSize >= this.headersMaxSize) {
+                util.destroy(this.socket, new HeadersOverflowError());
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Headers overflow");
+              }
+              break;
+            }
+            case milo.EVENT_HEADERS: {
+              eventLen = EVENT_HEADERS_SIZE;
+              const statusCode = this.parserEvents.readUInt16LE(cursor + 5);
+              const shouldKeepAlive = this.parserEvents[cursor + 7] !== 0;
+              const shouldUpgrade = this.parserEvents[cursor + 8] !== 0;
+              const hasTrailers = this.parserEvents[cursor + 9] !== 0;
+              const bodyKind = this.parserEvents[cursor + 10];
+              const contentLength = this.parserEvents.readUInt32LE(cursor + 11) + this.parserEvents.readUInt32LE(cursor + 15) * 4294967296;
+              const { socket: socket2, client: client2, headers, statusText } = this;
+              if (socket2.destroyed) {
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Other side closed");
+              }
+              const request = client2[kQueue][client2[kRunningIdx]];
+              if (!request) {
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Missing request");
+              }
+              assert(!this.upgrade);
+              assert(this.statusCode < 200);
+              if (statusCode === 100) {
+                util.destroy(
+                  socket2,
+                  new SocketError("bad response", util.getSocketInfo(socket2))
+                );
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Bad response");
+              }
+              if (shouldUpgrade && !request.upgrade) {
+                util.destroy(
+                  socket2,
+                  new SocketError("bad upgrade", util.getSocketInfo(socket2))
+                );
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Bad upgrade");
+              }
+              assert(this.timeoutType === TIMEOUT_HEADERS);
+              this.statusCode = statusCode;
+              this.shouldKeepAlive = shouldKeepAlive || request.method === "HEAD" && !socket2[kReset] && /(?:^|,)[\t ]*keep-alive[\t ]*(?:,|$)/i.test(this.connection) && !/(?:^|,)[\t ]*close[\t ]*(?:,|$)/i.test(this.connection);
+              this.contentLength = bodyKind === BODY_KIND_CONTENT_LENGTH ? contentLength : -1;
+              if (this.statusCode >= 200) {
+                const bodyTimeout = request.bodyTimeout != null ? request.bodyTimeout : client2[kBodyTimeout];
+                this.setTimeout(bodyTimeout, TIMEOUT_BODY);
+              } else if ((_a = this.timeout) == null ? void 0 : _a.refresh) {
+                this.timeout.refresh();
+              }
+              if (request.method === "CONNECT") {
+                assert(client2[kRunning] === 1);
+                milo.setIsConnect(this.parser, true);
+                this.upgrade = true;
+                return;
+              }
+              if (shouldUpgrade) {
+                assert(client2[kRunning] === 1);
+                this.upgrade = true;
+                this.pauseParser();
+                return;
+              }
+              this.headers = [];
+              this.headersSize = 0;
+              if (this.shouldKeepAlive && client2[kPipelining]) {
+                const keepAliveTimeout = this.keepAlive ? util.parseKeepAliveTimeout(this.keepAlive) : null;
+                if (keepAliveTimeout != null) {
+                  const timeout = Math.min(
+                    keepAliveTimeout - client2[kKeepAliveTimeoutThreshold],
+                    client2[kKeepAliveMaxTimeout]
+                  );
+                  if (timeout <= 0) {
+                    socket2[kReset] = true;
+                  } else {
+                    client2[kKeepAliveTimeoutValue] = timeout;
+                  }
+                } else {
+                  client2[kKeepAliveTimeoutValue] = client2[kKeepAliveDefaultTimeout];
+                }
+              } else {
+                socket2[kReset] = true;
+              }
+              const pause = request.onResponseStart(
+                statusCode,
+                headers,
+                this.resume,
+                statusText
+              ) === false;
+              if (request.aborted) {
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Request aborted");
+              }
+              if (request.method === "HEAD" || statusCode < 200) {
+                this.setShouldSkipBody(true);
+              }
+              this.headersSuspended = true;
+              if (!pause && request.method !== "HEAD" && statusCode >= 200 && statusCode !== 204 && statusCode !== 205 && statusCode !== 304 && bodyKind === BODY_KIND_CONTENT_LENGTH && contentLength > 0 && !hasTrailers) {
+                this.directBodyRemaining = contentLength;
+              }
+              if (socket2[kBlocking]) {
+                socket2[kBlocking] = false;
+                client2[kResume]();
+              }
+              if (pause) {
+                this.pauseParser();
+                this[kPausedByHandler] = true;
+              } else if (request.method === "HEAD" || statusCode < 200 || statusCode === 204 || statusCode === 205 || statusCode === 304 || bodyKind === BODY_KIND_CONTENT_LENGTH && contentLength === 0) {
+                this.directBodyCompletePending = true;
+              }
+              break;
+            }
+            case milo.EVENT_DATA: {
+              const at = this.parserEvents.readUInt32LE(cursor + 1);
+              const len = this.parserEvents.readUInt32LE(cursor + 5);
+              const { client: client2, socket: socket2, statusCode, maxResponseSize } = this;
+              if (socket2.destroyed) {
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Other side closed");
+              }
+              const request = client2[kQueue][client2[kRunningIdx]];
+              assert(request);
+              assert(this.timeoutType === TIMEOUT_BODY);
+              if ((_b = this.timeout) == null ? void 0 : _b.refresh) {
+                this.timeout.refresh();
+              }
+              assert(statusCode >= 200);
+              if (maxResponseSize > -1 && this.bytesRead + len > maxResponseSize) {
+                util.destroy(socket2, new ResponseExceededMaxSizeError());
+                return this.fail(
+                  milo.ERROR_CALLBACK_ERROR,
+                  "Response size exceeded"
+                );
+              }
+              this.bytesRead += len;
+              const buffer = currentBufferRef;
+              if (request.onResponseData(
+                new FastBuffer(buffer.buffer, buffer.byteOffset + at, len)
+              ) === false) {
+                this.pauseParser();
+                this[kPausedByHandler] = true;
+              }
+              break;
+            }
+            case milo.EVENT_TRAILER_NAME: {
+              const at = this.parserEvents.readUInt32LE(cursor + 1);
+              const len = this.parserEvents.readUInt32LE(cursor + 5);
+              const data = len > 0 ? new FastBuffer(
+                currentBufferRef.buffer,
+                currentBufferRef.byteOffset + at,
+                len
+              ) : EMPTY_BUF;
+              this.trailers.push(data);
+              this.trailersSize += len;
+              if (this.trailersSize >= this.headersMaxSize) {
+                util.destroy(this.socket, new HeadersOverflowError());
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Headers overflow");
+              }
+              break;
+            }
+            case milo.EVENT_TRAILER_VALUE: {
+              const at = this.parserEvents.readUInt32LE(cursor + 1);
+              const len = this.parserEvents.readUInt32LE(cursor + 5);
+              const data = len > 0 ? new FastBuffer(
+                currentBufferRef.buffer,
+                currentBufferRef.byteOffset + at,
+                len
+              ) : EMPTY_BUF;
+              this.trailers.push(data);
+              this.trailersSize += len;
+              if (this.trailersSize >= this.headersMaxSize) {
+                util.destroy(this.socket, new HeadersOverflowError());
+                return this.fail(milo.ERROR_CALLBACK_ERROR, "Headers overflow");
+              }
+              break;
+            }
+            default:
+              return;
+          }
+          cursor += eventLen;
+        }
+      }
+      fail(code, message) {
+        this.milo.fail(this.parser, code, message);
+        this.errored = true;
+      }
+      onUpgrade(head) {
+        const { upgrade, client, socket, headers, statusCode } = this;
+        assert(upgrade);
+        assert(client[kSocket] === socket);
+        assert(!socket.destroyed);
+        assert(!this.paused);
+        const request = client[kQueue][client[kRunningIdx]];
+        assert(request);
+        assert(request.upgrade || request.method === "CONNECT");
+        this.statusCode = 0;
+        this.statusText = "";
+        this.shouldKeepAlive = false;
+        this.headers = [];
+        this.headersSize = 0;
+        socket.unshift(head);
+        socket[kParser].destroy();
+        socket[kParser] = null;
+        socket[kClient] = null;
+        socket[kError] = null;
+        removeAllListeners(socket);
+        client[kSocket] = null;
+        client[kHTTPContext] = null;
+        client[kQueue][client[kRunningIdx]++] = null;
+        client.emit(
+          "disconnect",
+          client[kUrl],
+          [client],
+          new InformationalError("upgrade")
+        );
+        try {
+          request.onRequestUpgrade(statusCode, headers, socket);
+        } catch (err) {
+          util.destroy(socket, err);
+        }
+        client[kResume]();
+      }
+    };
+    function setMiloEnabled(value) {
+      miloEnabled = value;
+    }
+    function getMiloEnabled() {
+      return miloEnabled;
+    }
+    module2.exports = { H1Parser, getMiloEnabled, setMiloEnabled };
+  }
+});
+
 // addons/pro/node_modules/undici/lib/llhttp/llhttp-wasm.js
 var require_llhttp_wasm = __commonJS({
   "addons/pro/node_modules/undici/lib/llhttp/llhttp-wasm.js"(exports2, module2) {
@@ -180790,2317 +185844,6 @@ var require_llhttp_simd_wasm = __commonJS({
         return wasmBuffer ? wasmBuffer : wasmBuffer = Buffer2.from(wasmBase64, "base64");
       }
     });
-  }
-});
-
-// addons/pro/node_modules/undici/lib/web/fetch/constants.js
-var require_constants3 = __commonJS({
-  "addons/pro/node_modules/undici/lib/web/fetch/constants.js"(exports2, module2) {
-    "use strict";
-    var corsSafeListedMethods = (
-      /** @type {const} */
-      ["GET", "HEAD", "POST"]
-    );
-    var corsSafeListedMethodsSet = new Set(corsSafeListedMethods);
-    var nullBodyStatus = (
-      /** @type {const} */
-      [101, 204, 205, 304]
-    );
-    var redirectStatus = (
-      /** @type {const} */
-      [301, 302, 303, 307, 308]
-    );
-    var redirectStatusSet = new Set(redirectStatus);
-    var badPorts = (
-      /** @type {const} */
-      [
-        "1",
-        "7",
-        "9",
-        "11",
-        "13",
-        "15",
-        "17",
-        "19",
-        "20",
-        "21",
-        "22",
-        "23",
-        "25",
-        "37",
-        "42",
-        "43",
-        "53",
-        "69",
-        "77",
-        "79",
-        "87",
-        "95",
-        "101",
-        "102",
-        "103",
-        "104",
-        "109",
-        "110",
-        "111",
-        "113",
-        "115",
-        "117",
-        "119",
-        "123",
-        "135",
-        "137",
-        "139",
-        "143",
-        "161",
-        "179",
-        "389",
-        "427",
-        "465",
-        "512",
-        "513",
-        "514",
-        "515",
-        "526",
-        "530",
-        "531",
-        "532",
-        "540",
-        "548",
-        "554",
-        "556",
-        "563",
-        "587",
-        "601",
-        "636",
-        "989",
-        "990",
-        "993",
-        "995",
-        "1719",
-        "1720",
-        "1723",
-        "2049",
-        "3659",
-        "4045",
-        "4190",
-        "5060",
-        "5061",
-        "6000",
-        "6566",
-        "6665",
-        "6666",
-        "6667",
-        "6668",
-        "6669",
-        "6679",
-        "6697",
-        "10080"
-      ]
-    );
-    var badPortsSet = new Set(badPorts);
-    var referrerPolicyTokens = (
-      /** @type {const} */
-      [
-        "no-referrer",
-        "no-referrer-when-downgrade",
-        "same-origin",
-        "origin",
-        "strict-origin",
-        "origin-when-cross-origin",
-        "strict-origin-when-cross-origin",
-        "unsafe-url"
-      ]
-    );
-    var referrerPolicy = (
-      /** @type {const} */
-      [
-        "",
-        ...referrerPolicyTokens
-      ]
-    );
-    var referrerPolicyTokensSet = new Set(referrerPolicyTokens);
-    var requestRedirect = (
-      /** @type {const} */
-      ["follow", "manual", "error"]
-    );
-    var safeMethods = (
-      /** @type {const} */
-      ["GET", "HEAD", "OPTIONS", "TRACE", "QUERY"]
-    );
-    var safeMethodsSet = new Set(safeMethods);
-    var requestMode = (
-      /** @type {const} */
-      ["navigate", "same-origin", "no-cors", "cors"]
-    );
-    var requestCredentials = (
-      /** @type {const} */
-      ["omit", "same-origin", "include"]
-    );
-    var requestCache = (
-      /** @type {const} */
-      [
-        "default",
-        "no-store",
-        "reload",
-        "no-cache",
-        "force-cache",
-        "only-if-cached"
-      ]
-    );
-    var requestBodyHeader = (
-      /** @type {const} */
-      [
-        "content-encoding",
-        "content-language",
-        "content-location",
-        "content-type",
-        // See https://github.com/nodejs/undici/issues/2021
-        // 'Content-Length' is a forbidden header name, which is typically
-        // removed in the Headers implementation. However, undici doesn't
-        // filter out headers, so we add it here.
-        "content-length"
-      ]
-    );
-    var requestDuplex = (
-      /** @type {const} */
-      [
-        "half"
-      ]
-    );
-    var forbiddenMethods = (
-      /** @type {const} */
-      ["CONNECT", "TRACE", "TRACK"]
-    );
-    var forbiddenMethodsSet = new Set(forbiddenMethods);
-    var subresource = (
-      /** @type {const} */
-      [
-        "audio",
-        "audioworklet",
-        "font",
-        "image",
-        "manifest",
-        "paintworklet",
-        "script",
-        "style",
-        "track",
-        "video",
-        "xslt",
-        ""
-      ]
-    );
-    var subresourceSet = new Set(subresource);
-    module2.exports = {
-      subresource,
-      forbiddenMethods,
-      requestBodyHeader,
-      referrerPolicy,
-      requestRedirect,
-      requestMode,
-      requestCredentials,
-      requestCache,
-      redirectStatus,
-      corsSafeListedMethods,
-      nullBodyStatus,
-      safeMethods,
-      badPorts,
-      requestDuplex,
-      subresourceSet,
-      badPortsSet,
-      redirectStatusSet,
-      corsSafeListedMethodsSet,
-      safeMethodsSet,
-      forbiddenMethodsSet,
-      referrerPolicyTokens: referrerPolicyTokensSet
-    };
-  }
-});
-
-// addons/pro/node_modules/undici/lib/web/fetch/global.js
-var require_global = __commonJS({
-  "addons/pro/node_modules/undici/lib/web/fetch/global.js"(exports2, module2) {
-    "use strict";
-    var globalOrigin = /* @__PURE__ */ Symbol.for("undici.globalOrigin.1");
-    function getGlobalOrigin() {
-      return globalThis[globalOrigin];
-    }
-    function setGlobalOrigin(newOrigin) {
-      if (newOrigin === void 0) {
-        Object.defineProperty(globalThis, globalOrigin, {
-          value: void 0,
-          writable: true,
-          enumerable: false,
-          configurable: false
-        });
-        return;
-      }
-      const parsedURL = new URL(newOrigin);
-      if (parsedURL.protocol !== "http:" && parsedURL.protocol !== "https:") {
-        throw new TypeError(`Only http & https urls are allowed, received ${parsedURL.protocol}`);
-      }
-      Object.defineProperty(globalThis, globalOrigin, {
-        value: parsedURL,
-        writable: true,
-        enumerable: false,
-        configurable: false
-      });
-    }
-    module2.exports = {
-      getGlobalOrigin,
-      setGlobalOrigin
-    };
-  }
-});
-
-// addons/pro/node_modules/undici/lib/encoding/index.js
-var require_encoding = __commonJS({
-  "addons/pro/node_modules/undici/lib/encoding/index.js"(exports2, module2) {
-    "use strict";
-    var textDecoder = new TextDecoder();
-    function utf8DecodeBytes(buffer) {
-      if (buffer.length === 0) {
-        return "";
-      }
-      if (buffer[0] === 239 && buffer[1] === 187 && buffer[2] === 191) {
-        buffer = buffer.subarray(3);
-      }
-      const output = textDecoder.decode(buffer);
-      return output;
-    }
-    module2.exports = {
-      utf8DecodeBytes
-    };
-  }
-});
-
-// addons/pro/node_modules/undici/lib/web/infra/index.js
-var require_infra = __commonJS({
-  "addons/pro/node_modules/undici/lib/web/infra/index.js"(exports2, module2) {
-    "use strict";
-    var assert = require("node:assert");
-    var { utf8DecodeBytes } = require_encoding();
-    function collectASequenceOfCodePoints(condition, input, position) {
-      let result = "";
-      while (position.position < input.length && condition(input[position.position])) {
-        result += input[position.position];
-        position.position++;
-      }
-      return result;
-    }
-    function collectASequenceOfCodePointsFast(char, input, position) {
-      const idx = input.indexOf(char, position.position);
-      const start = position.position;
-      if (idx === -1) {
-        position.position = input.length;
-        return input.slice(start);
-      }
-      position.position = idx;
-      return input.slice(start, position.position);
-    }
-    var ASCII_WHITESPACE_REPLACE_REGEX = /[\u0009\u000A\u000C\u000D\u0020]/g;
-    function forgivingBase64(data) {
-      data = data.replace(ASCII_WHITESPACE_REPLACE_REGEX, "");
-      let dataLength = data.length;
-      if (dataLength % 4 === 0) {
-        if (data.charCodeAt(dataLength - 1) === 61) {
-          --dataLength;
-          if (data.charCodeAt(dataLength - 1) === 61) {
-            --dataLength;
-          }
-        }
-      }
-      if (dataLength % 4 === 1) {
-        return "failure";
-      }
-      if (/[^+/0-9A-Za-z]/.test(data.length === dataLength ? data : data.substring(0, dataLength))) {
-        return "failure";
-      }
-      const buffer = Buffer.from(data, "base64");
-      return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-    }
-    function isASCIIWhitespace(char) {
-      return char === 9 || // \t
-      char === 10 || // \n
-      char === 12 || // \f
-      char === 13 || // \r
-      char === 32;
-    }
-    function isomorphicDecode(input) {
-      const length = input.length;
-      if ((2 << 15) - 1 > length) {
-        return String.fromCharCode.apply(null, input);
-      }
-      let result = "";
-      let i = 0;
-      let addition = (2 << 15) - 1;
-      while (i < length) {
-        if (i + addition > length) {
-          addition = length - i;
-        }
-        result += String.fromCharCode.apply(null, input.subarray(i, i += addition));
-      }
-      return result;
-    }
-    var invalidIsomorphicEncodeValueRegex = /[^\x00-\xFF]/;
-    function isomorphicEncode(input) {
-      assert(!invalidIsomorphicEncodeValueRegex.test(input));
-      return input;
-    }
-    function parseJSONFromBytes(bytes) {
-      return JSON.parse(utf8DecodeBytes(bytes));
-    }
-    function removeASCIIWhitespace(str, leading = true, trailing = true) {
-      return removeChars(str, leading, trailing, isASCIIWhitespace);
-    }
-    function removeChars(str, leading, trailing, predicate) {
-      let lead = 0;
-      let trail = str.length - 1;
-      if (leading) {
-        while (lead < str.length && predicate(str.charCodeAt(lead))) lead++;
-      }
-      if (trailing) {
-        while (trail > 0 && predicate(str.charCodeAt(trail))) trail--;
-      }
-      return lead === 0 && trail === str.length - 1 ? str : str.slice(lead, trail + 1);
-    }
-    function serializeJavascriptValueToJSONString(value) {
-      const result = JSON.stringify(value);
-      if (result === void 0) {
-        throw new TypeError("Value is not JSON serializable");
-      }
-      assert(typeof result === "string");
-      return result;
-    }
-    module2.exports = {
-      collectASequenceOfCodePoints,
-      collectASequenceOfCodePointsFast,
-      forgivingBase64,
-      isASCIIWhitespace,
-      isomorphicDecode,
-      isomorphicEncode,
-      parseJSONFromBytes,
-      removeASCIIWhitespace,
-      removeChars,
-      serializeJavascriptValueToJSONString
-    };
-  }
-});
-
-// addons/pro/node_modules/undici/lib/web/fetch/data-url.js
-var require_data_url = __commonJS({
-  "addons/pro/node_modules/undici/lib/web/fetch/data-url.js"(exports2, module2) {
-    "use strict";
-    var assert = require("node:assert");
-    var { forgivingBase64, collectASequenceOfCodePoints, collectASequenceOfCodePointsFast, isomorphicDecode, removeASCIIWhitespace, removeChars } = require_infra();
-    var encoder = new TextEncoder();
-    var HTTP_TOKEN_CODEPOINTS = /^[-!#$%&'*+.^_|~A-Za-z0-9]+$/u;
-    var HTTP_WHITESPACE_REGEX = /[\u000A\u000D\u0009\u0020]/u;
-    var HTTP_QUOTED_STRING_TOKENS = /^[\u0009\u0020-\u007E\u0080-\u00FF]+$/u;
-    function dataURLProcessor(dataURL) {
-      assert(dataURL.protocol === "data:");
-      let input = URLSerializer(dataURL, true);
-      input = input.slice(5);
-      const position = { position: 0 };
-      let mimeType = collectASequenceOfCodePointsFast(
-        ",",
-        input,
-        position
-      );
-      const mimeTypeLength = mimeType.length;
-      mimeType = removeASCIIWhitespace(mimeType, true, true);
-      if (position.position >= input.length) {
-        return "failure";
-      }
-      position.position++;
-      const encodedBody = input.slice(mimeTypeLength + 1);
-      let body = stringPercentDecode(encodedBody);
-      if (/;(?:\u0020*)base64$/ui.test(mimeType)) {
-        const stringBody = isomorphicDecode(body);
-        body = forgivingBase64(stringBody);
-        if (body === "failure") {
-          return "failure";
-        }
-        mimeType = mimeType.slice(0, -6);
-        mimeType = mimeType.replace(/(\u0020+)$/u, "");
-        mimeType = mimeType.slice(0, -1);
-      }
-      if (mimeType.startsWith(";")) {
-        mimeType = "text/plain" + mimeType;
-      }
-      let mimeTypeRecord = parseMIMEType(mimeType);
-      if (mimeTypeRecord === "failure") {
-        mimeTypeRecord = parseMIMEType("text/plain;charset=US-ASCII");
-      }
-      return { mimeType: mimeTypeRecord, body };
-    }
-    function URLSerializer(url, excludeFragment = false) {
-      if (!excludeFragment) {
-        return url.href;
-      }
-      const href = url.href;
-      const hashLength = url.hash.length;
-      const serialized = hashLength === 0 ? href : href.substring(0, href.length - hashLength);
-      if (!hashLength && href.endsWith("#")) {
-        return serialized.slice(0, -1);
-      }
-      return serialized;
-    }
-    function stringPercentDecode(input) {
-      const bytes = encoder.encode(input);
-      return percentDecode(bytes);
-    }
-    function isHexCharByte(byte) {
-      return byte >= 48 && byte <= 57 || byte >= 65 && byte <= 70 || byte >= 97 && byte <= 102;
-    }
-    function hexByteToNumber(byte) {
-      return (
-        // 0-9
-        byte >= 48 && byte <= 57 ? byte - 48 : (byte & 223) - 55
-      );
-    }
-    function percentDecode(input) {
-      const length = input.length;
-      const output = new Uint8Array(length);
-      let j = 0;
-      let i = 0;
-      while (i < length) {
-        const byte = input[i];
-        if (byte !== 37) {
-          output[j++] = byte;
-        } else if (byte === 37 && !(isHexCharByte(input[i + 1]) && isHexCharByte(input[i + 2]))) {
-          output[j++] = 37;
-        } else {
-          output[j++] = hexByteToNumber(input[i + 1]) << 4 | hexByteToNumber(input[i + 2]);
-          i += 2;
-        }
-        ++i;
-      }
-      return length === j ? output : output.subarray(0, j);
-    }
-    function parseMIMEType(input) {
-      input = removeHTTPWhitespace(input, true, true);
-      const position = { position: 0 };
-      const type = collectASequenceOfCodePointsFast(
-        "/",
-        input,
-        position
-      );
-      if (type.length === 0 || !HTTP_TOKEN_CODEPOINTS.test(type)) {
-        return "failure";
-      }
-      if (position.position >= input.length) {
-        return "failure";
-      }
-      position.position++;
-      let subtype = collectASequenceOfCodePointsFast(
-        ";",
-        input,
-        position
-      );
-      subtype = removeHTTPWhitespace(subtype, false, true);
-      if (subtype.length === 0 || !HTTP_TOKEN_CODEPOINTS.test(subtype)) {
-        return "failure";
-      }
-      const typeLowercase = type.toLowerCase();
-      const subtypeLowercase = subtype.toLowerCase();
-      const mimeType = {
-        type: typeLowercase,
-        subtype: subtypeLowercase,
-        /** @type {Map<string, string>} */
-        parameters: /* @__PURE__ */ new Map(),
-        // https://mimesniff.spec.whatwg.org/#mime-type-essence
-        essence: `${typeLowercase}/${subtypeLowercase}`
-      };
-      while (position.position < input.length) {
-        position.position++;
-        collectASequenceOfCodePoints(
-          // https://fetch.spec.whatwg.org/#http-whitespace
-          (char) => HTTP_WHITESPACE_REGEX.test(char),
-          input,
-          position
-        );
-        let parameterName = collectASequenceOfCodePoints(
-          (char) => char !== ";" && char !== "=",
-          input,
-          position
-        );
-        parameterName = parameterName.toLowerCase();
-        if (position.position < input.length) {
-          if (input[position.position] === ";") {
-            continue;
-          }
-          position.position++;
-        }
-        if (position.position >= input.length) {
-          break;
-        }
-        let parameterValue = null;
-        if (input[position.position] === '"') {
-          parameterValue = collectAnHTTPQuotedString(input, position, true);
-          collectASequenceOfCodePointsFast(
-            ";",
-            input,
-            position
-          );
-        } else {
-          parameterValue = collectASequenceOfCodePointsFast(
-            ";",
-            input,
-            position
-          );
-          parameterValue = removeHTTPWhitespace(parameterValue, false, true);
-          if (parameterValue.length === 0) {
-            continue;
-          }
-        }
-        if (parameterName.length !== 0 && HTTP_TOKEN_CODEPOINTS.test(parameterName) && (parameterValue.length === 0 || HTTP_QUOTED_STRING_TOKENS.test(parameterValue)) && !mimeType.parameters.has(parameterName)) {
-          mimeType.parameters.set(parameterName, parameterValue);
-        }
-      }
-      return mimeType;
-    }
-    function collectAnHTTPQuotedString(input, position, extractValue = false) {
-      const positionStart = position.position;
-      let value = "";
-      assert(input[position.position] === '"');
-      position.position++;
-      while (true) {
-        value += collectASequenceOfCodePoints(
-          (char) => char !== '"' && char !== "\\",
-          input,
-          position
-        );
-        if (position.position >= input.length) {
-          break;
-        }
-        const quoteOrBackslash = input[position.position];
-        position.position++;
-        if (quoteOrBackslash === "\\") {
-          if (position.position >= input.length) {
-            value += "\\";
-            break;
-          }
-          value += input[position.position];
-          position.position++;
-        } else {
-          assert(quoteOrBackslash === '"');
-          break;
-        }
-      }
-      if (extractValue) {
-        return value;
-      }
-      return input.slice(positionStart, position.position);
-    }
-    function serializeAMimeType(mimeType) {
-      assert(mimeType !== "failure");
-      const { parameters, essence } = mimeType;
-      let serialization = essence;
-      for (let [name, value] of parameters.entries()) {
-        serialization += ";";
-        serialization += name;
-        serialization += "=";
-        if (!HTTP_TOKEN_CODEPOINTS.test(value)) {
-          value = value.replace(/[\\"]/ug, "\\$&");
-          value = '"' + value;
-          value += '"';
-        }
-        serialization += value;
-      }
-      return serialization;
-    }
-    function isHTTPWhiteSpace(char) {
-      return char === 13 || char === 10 || char === 9 || char === 32;
-    }
-    function removeHTTPWhitespace(str, leading = true, trailing = true) {
-      return removeChars(str, leading, trailing, isHTTPWhiteSpace);
-    }
-    function minimizeSupportedMimeType(mimeType) {
-      switch (mimeType.essence) {
-        case "application/ecmascript":
-        case "application/javascript":
-        case "application/x-ecmascript":
-        case "application/x-javascript":
-        case "text/ecmascript":
-        case "text/javascript":
-        case "text/javascript1.0":
-        case "text/javascript1.1":
-        case "text/javascript1.2":
-        case "text/javascript1.3":
-        case "text/javascript1.4":
-        case "text/javascript1.5":
-        case "text/jscript":
-        case "text/livescript":
-        case "text/x-ecmascript":
-        case "text/x-javascript":
-          return "text/javascript";
-        case "application/json":
-        case "text/json":
-          return "application/json";
-        case "image/svg+xml":
-          return "image/svg+xml";
-        case "text/xml":
-        case "application/xml":
-          return "application/xml";
-      }
-      if (mimeType.subtype.endsWith("+json")) {
-        return "application/json";
-      }
-      if (mimeType.subtype.endsWith("+xml")) {
-        return "application/xml";
-      }
-      return "";
-    }
-    module2.exports = {
-      dataURLProcessor,
-      URLSerializer,
-      stringPercentDecode,
-      parseMIMEType,
-      collectAnHTTPQuotedString,
-      serializeAMimeType,
-      removeHTTPWhitespace,
-      minimizeSupportedMimeType,
-      HTTP_TOKEN_CODEPOINTS
-    };
-  }
-});
-
-// addons/pro/node_modules/undici/lib/web/webidl/index.js
-var require_webidl = __commonJS({
-  "addons/pro/node_modules/undici/lib/web/webidl/index.js"(exports2, module2) {
-    "use strict";
-    var assert = require("node:assert");
-    var { types, inspect } = require("node:util");
-    var { markAsUncloneable } = require("node:worker_threads");
-    var UNDEFINED = 1;
-    var BOOLEAN = 2;
-    var STRING = 3;
-    var SYMBOL = 4;
-    var NUMBER = 5;
-    var BIGINT = 6;
-    var NULL = 7;
-    var OBJECT = 8;
-    var FunctionPrototypeSymbolHasInstance = Function.call.bind(Function.prototype[Symbol.hasInstance]);
-    var webidl = {
-      converters: {},
-      util: {},
-      errors: {},
-      is: {}
-    };
-    webidl.errors.exception = function(message) {
-      return new TypeError(`${message.header}: ${message.message}`);
-    };
-    webidl.errors.conversionFailed = function(opts) {
-      const plural = opts.types.length === 1 ? "" : " one of";
-      const message = `${opts.argument} could not be converted to${plural}: ${opts.types.join(", ")}.`;
-      return webidl.errors.exception({
-        header: opts.prefix,
-        message
-      });
-    };
-    webidl.errors.invalidArgument = function(context) {
-      return webidl.errors.exception({
-        header: context.prefix,
-        message: `"${context.value}" is an invalid ${context.type}.`
-      });
-    };
-    webidl.brandCheck = function(V, I) {
-      if (!FunctionPrototypeSymbolHasInstance(I, V)) {
-        const err = new TypeError("Illegal invocation");
-        err.code = "ERR_INVALID_THIS";
-        throw err;
-      }
-    };
-    webidl.brandCheckMultiple = function(List) {
-      const prototypes = List.map((c) => webidl.util.MakeTypeAssertion(c));
-      return (V) => {
-        if (prototypes.every((typeCheck) => !typeCheck(V))) {
-          const err = new TypeError("Illegal invocation");
-          err.code = "ERR_INVALID_THIS";
-          throw err;
-        }
-      };
-    };
-    webidl.argumentLengthCheck = function({ length }, min, ctx) {
-      if (length < min) {
-        throw webidl.errors.exception({
-          message: `${min} argument${min !== 1 ? "s" : ""} required, but${length ? " only" : ""} ${length} found.`,
-          header: ctx
-        });
-      }
-    };
-    webidl.illegalConstructor = function() {
-      throw webidl.errors.exception({
-        header: "TypeError",
-        message: "Illegal constructor"
-      });
-    };
-    webidl.util.MakeTypeAssertion = function(I) {
-      return (O) => FunctionPrototypeSymbolHasInstance(I, O);
-    };
-    webidl.util.Type = function(V) {
-      switch (typeof V) {
-        case "undefined":
-          return UNDEFINED;
-        case "boolean":
-          return BOOLEAN;
-        case "string":
-          return STRING;
-        case "symbol":
-          return SYMBOL;
-        case "number":
-          return NUMBER;
-        case "bigint":
-          return BIGINT;
-        case "function":
-        case "object": {
-          if (V === null) {
-            return NULL;
-          }
-          return OBJECT;
-        }
-      }
-    };
-    webidl.util.Types = {
-      UNDEFINED,
-      BOOLEAN,
-      STRING,
-      SYMBOL,
-      NUMBER,
-      BIGINT,
-      NULL,
-      OBJECT
-    };
-    webidl.util.TypeValueToString = function(o) {
-      switch (webidl.util.Type(o)) {
-        case UNDEFINED:
-          return "Undefined";
-        case BOOLEAN:
-          return "Boolean";
-        case STRING:
-          return "String";
-        case SYMBOL:
-          return "Symbol";
-        case NUMBER:
-          return "Number";
-        case BIGINT:
-          return "BigInt";
-        case NULL:
-          return "Null";
-        case OBJECT:
-          return "Object";
-      }
-    };
-    webidl.util.markAsUncloneable = markAsUncloneable;
-    webidl.util.ConvertToInt = function(V, bitLength, signedness, flags) {
-      let upperBound;
-      let lowerBound;
-      if (bitLength === 64) {
-        upperBound = Math.pow(2, 53) - 1;
-        if (signedness === "unsigned") {
-          lowerBound = 0;
-        } else {
-          lowerBound = Math.pow(-2, 53) + 1;
-        }
-      } else if (signedness === "unsigned") {
-        lowerBound = 0;
-        upperBound = Math.pow(2, bitLength) - 1;
-      } else {
-        lowerBound = -Math.pow(2, bitLength - 1);
-        upperBound = Math.pow(2, bitLength - 1) - 1;
-      }
-      let x = Number(V);
-      if (x === 0) {
-        x = 0;
-      }
-      if (webidl.util.HasFlag(flags, webidl.attributes.EnforceRange)) {
-        if (Number.isNaN(x) || x === Number.POSITIVE_INFINITY || x === Number.NEGATIVE_INFINITY) {
-          throw webidl.errors.exception({
-            header: "Integer conversion",
-            message: `Could not convert ${webidl.util.Stringify(V)} to an integer.`
-          });
-        }
-        x = webidl.util.IntegerPart(x);
-        if (x < lowerBound || x > upperBound) {
-          throw webidl.errors.exception({
-            header: "Integer conversion",
-            message: `Value must be between ${lowerBound}-${upperBound}, got ${x}.`
-          });
-        }
-        return x;
-      }
-      if (!Number.isNaN(x) && webidl.util.HasFlag(flags, webidl.attributes.Clamp)) {
-        x = Math.min(Math.max(x, lowerBound), upperBound);
-        if (Math.floor(x) % 2 === 0) {
-          x = Math.floor(x);
-        } else {
-          x = Math.ceil(x);
-        }
-        return x;
-      }
-      if (Number.isNaN(x) || x === 0 && Object.is(0, x) || x === Number.POSITIVE_INFINITY || x === Number.NEGATIVE_INFINITY) {
-        return 0;
-      }
-      x = webidl.util.IntegerPart(x);
-      x = x % Math.pow(2, bitLength);
-      if (signedness === "signed" && x >= Math.pow(2, bitLength - 1)) {
-        return x - Math.pow(2, bitLength);
-      }
-      return x;
-    };
-    webidl.util.IntegerPart = function(n) {
-      const r = Math.floor(Math.abs(n));
-      if (n < 0) {
-        return -1 * r;
-      }
-      return r;
-    };
-    webidl.util.Stringify = function(V) {
-      const type = webidl.util.Type(V);
-      switch (type) {
-        case SYMBOL:
-          return `Symbol(${V.description})`;
-        case OBJECT:
-          return inspect(V);
-        case STRING:
-          return `"${V}"`;
-        case BIGINT:
-          return `${V}n`;
-        default:
-          return `${V}`;
-      }
-    };
-    webidl.util.IsResizableArrayBuffer = function(V) {
-      if (types.isArrayBuffer(V)) {
-        return V.resizable;
-      }
-      if (types.isSharedArrayBuffer(V)) {
-        return V.growable;
-      }
-      throw webidl.errors.exception({
-        header: "IsResizableArrayBuffer",
-        message: `"${webidl.util.Stringify(V)}" is not an array buffer.`
-      });
-    };
-    webidl.util.HasFlag = function(flags, attributes) {
-      return typeof flags === "number" && (flags & attributes) === attributes;
-    };
-    webidl.sequenceConverter = function(converter) {
-      return (V, prefix, argument, Iterable) => {
-        var _a;
-        if (webidl.util.Type(V) !== OBJECT) {
-          throw webidl.errors.exception({
-            header: prefix,
-            message: `${argument} (${webidl.util.Stringify(V)}) is not iterable.`
-          });
-        }
-        const method = typeof Iterable === "function" ? Iterable() : (_a = V == null ? void 0 : V[Symbol.iterator]) == null ? void 0 : _a.call(V);
-        const seq = [];
-        let index = 0;
-        if (method === void 0 || typeof method.next !== "function") {
-          throw webidl.errors.exception({
-            header: prefix,
-            message: `${argument} is not iterable.`
-          });
-        }
-        while (true) {
-          const { done, value } = method.next();
-          if (done) {
-            break;
-          }
-          seq.push(converter(value, prefix, `${argument}[${index++}]`));
-        }
-        return seq;
-      };
-    };
-    webidl.recordConverter = function(keyConverter, valueConverter) {
-      return (O, prefix, argument) => {
-        if (webidl.util.Type(O) !== OBJECT) {
-          throw webidl.errors.exception({
-            header: prefix,
-            message: `${argument} ("${webidl.util.TypeValueToString(O)}") is not an Object.`
-          });
-        }
-        const result = {};
-        if (!types.isProxy(O)) {
-          const keys2 = [...Object.getOwnPropertyNames(O), ...Object.getOwnPropertySymbols(O)];
-          for (const key of keys2) {
-            const keyName = webidl.util.Stringify(key);
-            const typedKey = keyConverter(key, prefix, `Key ${keyName} in ${argument}`);
-            const typedValue = valueConverter(O[key], prefix, `${argument}[${keyName}]`);
-            result[typedKey] = typedValue;
-          }
-          return result;
-        }
-        const keys = Reflect.ownKeys(O);
-        for (const key of keys) {
-          const desc = Reflect.getOwnPropertyDescriptor(O, key);
-          if (desc == null ? void 0 : desc.enumerable) {
-            const typedKey = keyConverter(key, prefix, argument);
-            const typedValue = valueConverter(O[key], prefix, argument);
-            result[typedKey] = typedValue;
-          }
-        }
-        return result;
-      };
-    };
-    webidl.interfaceConverter = function(TypeCheck, name) {
-      return (V, prefix, argument) => {
-        if (!TypeCheck(V)) {
-          throw webidl.errors.exception({
-            header: prefix,
-            message: `Expected ${argument} ("${webidl.util.Stringify(V)}") to be an instance of ${name}.`
-          });
-        }
-        return V;
-      };
-    };
-    webidl.dictionaryConverter = function(converters) {
-      converters.sort((a, b) => (a.key > b.key) - (a.key < b.key));
-      return (dictionary, prefix, argument) => {
-        const dict = {};
-        if (dictionary != null && webidl.util.Type(dictionary) !== OBJECT) {
-          throw webidl.errors.exception({
-            header: prefix,
-            message: `Expected ${dictionary} to be one of: Null, Undefined, Object.`
-          });
-        }
-        for (const options of converters) {
-          const { key, defaultValue, required, converter } = options;
-          if (required === true) {
-            if (dictionary == null || !Object.hasOwn(dictionary, key)) {
-              throw webidl.errors.exception({
-                header: prefix,
-                message: `Missing required key "${key}".`
-              });
-            }
-          }
-          let value = dictionary == null ? void 0 : dictionary[key];
-          const hasDefault = defaultValue !== void 0;
-          if (hasDefault && value === void 0) {
-            value = defaultValue();
-          }
-          if (required || hasDefault || value !== void 0) {
-            value = converter(value, prefix, `${argument}.${key}`);
-            if (options.allowedValues && !options.allowedValues.includes(value)) {
-              throw webidl.errors.exception({
-                header: prefix,
-                message: `${value} is not an accepted type. Expected one of ${options.allowedValues.join(", ")}.`
-              });
-            }
-            dict[key] = value;
-          }
-        }
-        return dict;
-      };
-    };
-    webidl.nullableConverter = function(converter) {
-      return (V, prefix, argument) => {
-        if (V === null) {
-          return V;
-        }
-        return converter(V, prefix, argument);
-      };
-    };
-    webidl.is.USVString = function(value) {
-      return typeof value === "string" && value.isWellFormed();
-    };
-    webidl.is.ReadableStream = webidl.util.MakeTypeAssertion(ReadableStream);
-    webidl.is.Blob = webidl.util.MakeTypeAssertion(Blob);
-    webidl.is.URLSearchParams = webidl.util.MakeTypeAssertion(URLSearchParams);
-    webidl.is.File = webidl.util.MakeTypeAssertion(File);
-    webidl.is.URL = webidl.util.MakeTypeAssertion(URL);
-    webidl.is.AbortSignal = webidl.util.MakeTypeAssertion(AbortSignal);
-    webidl.is.MessagePort = webidl.util.MakeTypeAssertion(MessagePort);
-    webidl.is.BufferSource = function(V) {
-      return types.isArrayBuffer(V) || ArrayBuffer.isView(V) && types.isArrayBuffer(V.buffer);
-    };
-    webidl.util.getCopyOfBytesHeldByBufferSource = function(bufferSource) {
-      const jsBufferSource = bufferSource;
-      let jsArrayBuffer = jsBufferSource;
-      let offset = 0;
-      let length = 0;
-      if (types.isTypedArray(jsBufferSource) || types.isDataView(jsBufferSource)) {
-        jsArrayBuffer = jsBufferSource.buffer;
-        offset = jsBufferSource.byteOffset;
-        length = jsBufferSource.byteLength;
-      } else {
-        assert(types.isAnyArrayBuffer(jsBufferSource));
-        length = jsBufferSource.byteLength;
-      }
-      if (jsArrayBuffer.detached) {
-        return new Uint8Array(0);
-      }
-      const bytes = new Uint8Array(length);
-      const view = new Uint8Array(jsArrayBuffer, offset, length);
-      bytes.set(view);
-      return bytes;
-    };
-    webidl.converters.DOMString = function(V, prefix, argument, flags) {
-      if (V === null && webidl.util.HasFlag(flags, webidl.attributes.LegacyNullToEmptyString)) {
-        return "";
-      }
-      if (typeof V === "symbol") {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} is a symbol, which cannot be converted to a DOMString.`
-        });
-      }
-      return String(V);
-    };
-    webidl.converters.ByteString = function(V, prefix, argument) {
-      if (typeof V === "symbol") {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} is a symbol, which cannot be converted to a ByteString.`
-        });
-      }
-      const x = String(V);
-      for (let index = 0; index < x.length; index++) {
-        if (x.charCodeAt(index) > 255) {
-          throw new TypeError(
-            `Cannot convert argument to a ByteString because the character at index ${index} has a value of ${x.charCodeAt(index)} which is greater than 255.`
-          );
-        }
-      }
-      return x;
-    };
-    webidl.converters.USVString = function(value) {
-      if (typeof value === "string") {
-        return value.toWellFormed();
-      }
-      return `${value}`.toWellFormed();
-    };
-    webidl.converters.boolean = function(V) {
-      const x = Boolean(V);
-      return x;
-    };
-    webidl.converters.any = function(V) {
-      return V;
-    };
-    webidl.converters["long long"] = function(V, prefix, argument) {
-      const x = webidl.util.ConvertToInt(V, 64, "signed", 0, prefix, argument);
-      return x;
-    };
-    webidl.converters["unsigned long long"] = function(V, prefix, argument) {
-      const x = webidl.util.ConvertToInt(V, 64, "unsigned", 0, prefix, argument);
-      return x;
-    };
-    webidl.converters["unsigned long"] = function(V, prefix, argument) {
-      const x = webidl.util.ConvertToInt(V, 32, "unsigned", 0, prefix, argument);
-      return x;
-    };
-    webidl.converters["unsigned short"] = function(V, prefix, argument, flags) {
-      const x = webidl.util.ConvertToInt(V, 16, "unsigned", flags, prefix, argument);
-      return x;
-    };
-    webidl.converters.ArrayBuffer = function(V, prefix, argument, flags) {
-      if (webidl.util.Type(V) !== OBJECT || !types.isArrayBuffer(V)) {
-        throw webidl.errors.conversionFailed({
-          prefix,
-          argument: `${argument} ("${webidl.util.Stringify(V)}")`,
-          types: ["ArrayBuffer"]
-        });
-      }
-      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowResizable) && webidl.util.IsResizableArrayBuffer(V)) {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} cannot be a resizable ArrayBuffer.`
-        });
-      }
-      return V;
-    };
-    webidl.converters.SharedArrayBuffer = function(V, prefix, argument, flags) {
-      if (webidl.util.Type(V) !== OBJECT || !types.isSharedArrayBuffer(V)) {
-        throw webidl.errors.conversionFailed({
-          prefix,
-          argument: `${argument} ("${webidl.util.Stringify(V)}")`,
-          types: ["SharedArrayBuffer"]
-        });
-      }
-      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowResizable) && webidl.util.IsResizableArrayBuffer(V)) {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} cannot be a resizable SharedArrayBuffer.`
-        });
-      }
-      return V;
-    };
-    webidl.converters.TypedArray = function(V, T, prefix, argument, flags) {
-      if (webidl.util.Type(V) !== OBJECT || !types.isTypedArray(V) || V.constructor.name !== T.name) {
-        throw webidl.errors.conversionFailed({
-          prefix,
-          argument: `${argument} ("${webidl.util.Stringify(V)}")`,
-          types: [T.name]
-        });
-      }
-      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowShared) && types.isSharedArrayBuffer(V.buffer)) {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} cannot be a view on a shared array buffer.`
-        });
-      }
-      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowResizable) && webidl.util.IsResizableArrayBuffer(V.buffer)) {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} cannot be a view on a resizable array buffer.`
-        });
-      }
-      return V;
-    };
-    webidl.converters.DataView = function(V, prefix, argument, flags) {
-      if (webidl.util.Type(V) !== OBJECT || !types.isDataView(V)) {
-        throw webidl.errors.conversionFailed({
-          prefix,
-          argument: `${argument} ("${webidl.util.Stringify(V)}")`,
-          types: ["DataView"]
-        });
-      }
-      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowShared) && types.isSharedArrayBuffer(V.buffer)) {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} cannot be a view on a shared array buffer.`
-        });
-      }
-      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowResizable) && webidl.util.IsResizableArrayBuffer(V.buffer)) {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} cannot be a view on a resizable array buffer.`
-        });
-      }
-      return V;
-    };
-    webidl.converters.ArrayBufferView = function(V, prefix, argument, flags) {
-      if (webidl.util.Type(V) !== OBJECT || !types.isArrayBufferView(V)) {
-        throw webidl.errors.conversionFailed({
-          prefix,
-          argument: `${argument} ("${webidl.util.Stringify(V)}")`,
-          types: ["ArrayBufferView"]
-        });
-      }
-      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowShared) && types.isSharedArrayBuffer(V.buffer)) {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} cannot be a view on a shared array buffer.`
-        });
-      }
-      if (!webidl.util.HasFlag(flags, webidl.attributes.AllowResizable) && webidl.util.IsResizableArrayBuffer(V.buffer)) {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} cannot be a view on a resizable array buffer.`
-        });
-      }
-      return V;
-    };
-    webidl.converters.BufferSource = function(V, prefix, argument, flags) {
-      if (types.isArrayBuffer(V)) {
-        return webidl.converters.ArrayBuffer(V, prefix, argument, flags);
-      }
-      if (types.isArrayBufferView(V)) {
-        flags &= ~webidl.attributes.AllowShared;
-        return webidl.converters.ArrayBufferView(V, prefix, argument, flags);
-      }
-      if (types.isSharedArrayBuffer(V)) {
-        throw webidl.errors.exception({
-          header: prefix,
-          message: `${argument} cannot be a SharedArrayBuffer.`
-        });
-      }
-      throw webidl.errors.conversionFailed({
-        prefix,
-        argument: `${argument} ("${webidl.util.Stringify(V)}")`,
-        types: ["ArrayBuffer", "ArrayBufferView"]
-      });
-    };
-    webidl.converters.AllowSharedBufferSource = function(V, prefix, argument, flags) {
-      if (types.isArrayBuffer(V)) {
-        return webidl.converters.ArrayBuffer(V, prefix, argument, flags);
-      }
-      if (types.isSharedArrayBuffer(V)) {
-        return webidl.converters.SharedArrayBuffer(V, prefix, argument, flags);
-      }
-      if (types.isArrayBufferView(V)) {
-        flags |= webidl.attributes.AllowShared;
-        return webidl.converters.ArrayBufferView(V, prefix, argument, flags);
-      }
-      throw webidl.errors.conversionFailed({
-        prefix,
-        argument: `${argument} ("${webidl.util.Stringify(V)}")`,
-        types: ["ArrayBuffer", "SharedArrayBuffer", "ArrayBufferView"]
-      });
-    };
-    webidl.converters["sequence<ByteString>"] = webidl.sequenceConverter(
-      webidl.converters.ByteString
-    );
-    webidl.converters["sequence<sequence<ByteString>>"] = webidl.sequenceConverter(
-      webidl.converters["sequence<ByteString>"]
-    );
-    webidl.converters["record<ByteString, ByteString>"] = webidl.recordConverter(
-      webidl.converters.ByteString,
-      webidl.converters.ByteString
-    );
-    webidl.converters.Blob = webidl.interfaceConverter(webidl.is.Blob, "Blob");
-    webidl.converters.AbortSignal = webidl.interfaceConverter(
-      webidl.is.AbortSignal,
-      "AbortSignal"
-    );
-    webidl.converters.EventHandlerNonNull = function(V) {
-      if (webidl.util.Type(V) !== OBJECT) {
-        return null;
-      }
-      if (typeof V === "function") {
-        return V;
-      }
-      return () => {
-      };
-    };
-    webidl.attributes = {
-      Clamp: 1 << 0,
-      EnforceRange: 1 << 1,
-      AllowShared: 1 << 2,
-      AllowResizable: 1 << 3,
-      LegacyNullToEmptyString: 1 << 4
-    };
-    module2.exports = {
-      webidl
-    };
-  }
-});
-
-// addons/pro/node_modules/undici/lib/web/fetch/util.js
-var require_util2 = __commonJS({
-  "addons/pro/node_modules/undici/lib/web/fetch/util.js"(exports2, module2) {
-    "use strict";
-    var { Transform } = require("node:stream");
-    var zlib = require("node:zlib");
-    var { redirectStatusSet, referrerPolicyTokens, badPortsSet } = require_constants3();
-    var { getGlobalOrigin } = require_global();
-    var { collectAnHTTPQuotedString, parseMIMEType } = require_data_url();
-    var { performance: performance2 } = require("node:perf_hooks");
-    var { ReadableStreamFrom, isValidHTTPToken, normalizedMethodRecordsBase } = require_util();
-    var assert = require("node:assert");
-    var { isUint8Array } = require("node:util/types");
-    var { webidl } = require_webidl();
-    var { isomorphicEncode, collectASequenceOfCodePoints, removeChars } = require_infra();
-    function responseURL(response) {
-      const urlList = response.urlList;
-      const length = urlList.length;
-      return length === 0 ? null : urlList[length - 1].toString();
-    }
-    function responseLocationURL(response, requestFragment) {
-      if (!redirectStatusSet.has(response.status)) {
-        return null;
-      }
-      let location = response.headersList.get("location", true);
-      if (location !== null && isValidHeaderValue(location)) {
-        if (!isValidEncodedURL(location)) {
-          location = normalizeBinaryStringToUtf8(location);
-        }
-        location = new URL(location, responseURL(response));
-      }
-      if (location && !location.hash) {
-        location.hash = requestFragment;
-      }
-      return location;
-    }
-    function isValidEncodedURL(url) {
-      for (let i = 0; i < url.length; ++i) {
-        const code = url.charCodeAt(i);
-        if (code > 126 || // Non-US-ASCII + DEL
-        code < 32) {
-          return false;
-        }
-      }
-      return true;
-    }
-    function normalizeBinaryStringToUtf8(value) {
-      return Buffer.from(value, "binary").toString("utf8");
-    }
-    function requestCurrentURL(request) {
-      return request.urlList[request.urlList.length - 1];
-    }
-    function requestBadPort(request) {
-      const url = requestCurrentURL(request);
-      if (urlIsHttpHttpsScheme(url) && badPortsSet.has(url.port)) {
-        return "blocked";
-      }
-      return "allowed";
-    }
-    function isErrorLike(object) {
-      var _a, _b;
-      return object instanceof Error || (((_a = object == null ? void 0 : object.constructor) == null ? void 0 : _a.name) === "Error" || ((_b = object == null ? void 0 : object.constructor) == null ? void 0 : _b.name) === "DOMException");
-    }
-    function isValidReasonPhrase(statusText) {
-      for (let i = 0; i < statusText.length; ++i) {
-        const c = statusText.charCodeAt(i);
-        if (!(c === 9 || // HTAB
-        c >= 32 && c <= 126 || // SP / VCHAR
-        c >= 128 && c <= 255)) {
-          return false;
-        }
-      }
-      return true;
-    }
-    var isValidHeaderName = isValidHTTPToken;
-    function isValidHeaderValue(potentialValue) {
-      return (potentialValue[0] === "	" || potentialValue[0] === " " || potentialValue[potentialValue.length - 1] === "	" || potentialValue[potentialValue.length - 1] === " " || potentialValue.includes("\n") || potentialValue.includes("\r") || potentialValue.includes("\0")) === false;
-    }
-    function parseReferrerPolicy(actualResponse) {
-      const policyHeader = (actualResponse.headersList.get("referrer-policy", true) ?? "").split(",");
-      let policy = "";
-      if (policyHeader.length) {
-        for (let i = policyHeader.length; i !== 0; i--) {
-          const token = policyHeader[i - 1].trim();
-          if (referrerPolicyTokens.has(token)) {
-            policy = token;
-            break;
-          }
-        }
-      }
-      return policy;
-    }
-    function setRequestReferrerPolicyOnRedirect(request, actualResponse) {
-      const policy = parseReferrerPolicy(actualResponse);
-      if (policy !== "") {
-        request.referrerPolicy = policy;
-      }
-    }
-    function crossOriginResourcePolicyCheck() {
-      return "allowed";
-    }
-    function corsCheck() {
-      return "success";
-    }
-    function TAOCheck() {
-      return "success";
-    }
-    function appendFetchMetadata(httpRequest) {
-      let header = null;
-      header = httpRequest.mode;
-      httpRequest.headersList.set("sec-fetch-mode", header, true);
-    }
-    function appendRequestOriginHeader(request) {
-      let serializedOrigin = request.origin;
-      if (serializedOrigin === "client" || serializedOrigin === void 0) {
-        return;
-      }
-      if (request.responseTainting === "cors" || request.mode === "websocket") {
-        request.headersList.append("origin", serializedOrigin, true);
-      } else if (request.method !== "GET" && request.method !== "HEAD") {
-        switch (request.referrerPolicy) {
-          case "no-referrer":
-            serializedOrigin = null;
-            break;
-          case "no-referrer-when-downgrade":
-          case "strict-origin":
-          case "strict-origin-when-cross-origin":
-            if (request.origin && urlHasHttpsScheme(request.origin) && !urlHasHttpsScheme(requestCurrentURL(request))) {
-              serializedOrigin = null;
-            }
-            break;
-          case "same-origin":
-            if (!sameOrigin(request, requestCurrentURL(request))) {
-              serializedOrigin = null;
-            }
-            break;
-          default:
-        }
-        request.headersList.append("origin", serializedOrigin, true);
-      }
-    }
-    function coarsenTime(timestamp, crossOriginIsolatedCapability) {
-      return timestamp;
-    }
-    function clampAndCoarsenConnectionTimingInfo(connectionTimingInfo, defaultStartTime, crossOriginIsolatedCapability) {
-      if (!(connectionTimingInfo == null ? void 0 : connectionTimingInfo.startTime) || connectionTimingInfo.startTime < defaultStartTime) {
-        return {
-          domainLookupStartTime: defaultStartTime,
-          domainLookupEndTime: defaultStartTime,
-          connectionStartTime: defaultStartTime,
-          connectionEndTime: defaultStartTime,
-          secureConnectionStartTime: defaultStartTime,
-          ALPNNegotiatedProtocol: connectionTimingInfo == null ? void 0 : connectionTimingInfo.ALPNNegotiatedProtocol
-        };
-      }
-      return {
-        domainLookupStartTime: coarsenTime(connectionTimingInfo.domainLookupStartTime, crossOriginIsolatedCapability),
-        domainLookupEndTime: coarsenTime(connectionTimingInfo.domainLookupEndTime, crossOriginIsolatedCapability),
-        connectionStartTime: coarsenTime(connectionTimingInfo.connectionStartTime, crossOriginIsolatedCapability),
-        connectionEndTime: coarsenTime(connectionTimingInfo.connectionEndTime, crossOriginIsolatedCapability),
-        secureConnectionStartTime: coarsenTime(connectionTimingInfo.secureConnectionStartTime, crossOriginIsolatedCapability),
-        ALPNNegotiatedProtocol: connectionTimingInfo.ALPNNegotiatedProtocol
-      };
-    }
-    function coarsenedSharedCurrentTime(crossOriginIsolatedCapability) {
-      return coarsenTime(performance2.now(), crossOriginIsolatedCapability);
-    }
-    function createOpaqueTimingInfo(timingInfo) {
-      return {
-        startTime: timingInfo.startTime ?? 0,
-        redirectStartTime: 0,
-        redirectEndTime: 0,
-        postRedirectStartTime: timingInfo.startTime ?? 0,
-        finalServiceWorkerStartTime: 0,
-        finalNetworkResponseStartTime: 0,
-        finalNetworkRequestStartTime: 0,
-        endTime: 0,
-        encodedBodySize: 0,
-        decodedBodySize: 0,
-        finalConnectionTimingInfo: null
-      };
-    }
-    function makePolicyContainer() {
-      return {
-        referrerPolicy: "strict-origin-when-cross-origin"
-      };
-    }
-    function clonePolicyContainer(policyContainer) {
-      return {
-        referrerPolicy: policyContainer.referrerPolicy
-      };
-    }
-    function determineRequestsReferrer(request) {
-      const policy = request.referrerPolicy;
-      assert(policy);
-      let referrerSource = null;
-      if (request.referrer === "client") {
-        const globalOrigin = getGlobalOrigin();
-        if (!globalOrigin || globalOrigin.origin === "null") {
-          return "no-referrer";
-        }
-        referrerSource = new URL(globalOrigin);
-      } else if (webidl.is.URL(request.referrer)) {
-        referrerSource = request.referrer;
-      }
-      let referrerURL = stripURLForReferrer(referrerSource);
-      const referrerOrigin = stripURLForReferrer(referrerSource, true);
-      if (referrerURL.toString().length > 4096) {
-        referrerURL = referrerOrigin;
-      }
-      switch (policy) {
-        case "no-referrer":
-          return "no-referrer";
-        case "origin":
-          if (referrerOrigin != null) {
-            return referrerOrigin;
-          }
-          return stripURLForReferrer(referrerSource, true);
-        case "unsafe-url":
-          return referrerURL;
-        case "strict-origin": {
-          const currentURL = requestCurrentURL(request);
-          if (isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(currentURL)) {
-            return "no-referrer";
-          }
-          return referrerOrigin;
-        }
-        case "strict-origin-when-cross-origin": {
-          const currentURL = requestCurrentURL(request);
-          if (sameOrigin(referrerURL, currentURL)) {
-            return referrerURL;
-          }
-          if (isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(currentURL)) {
-            return "no-referrer";
-          }
-          return referrerOrigin;
-        }
-        case "same-origin":
-          if (sameOrigin(request, referrerURL)) {
-            return referrerURL;
-          }
-          return "no-referrer";
-        case "origin-when-cross-origin":
-          if (sameOrigin(request, referrerURL)) {
-            return referrerURL;
-          }
-          return referrerOrigin;
-        case "no-referrer-when-downgrade": {
-          const currentURL = requestCurrentURL(request);
-          if (isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(currentURL)) {
-            return "no-referrer";
-          }
-          return referrerURL;
-        }
-      }
-    }
-    function stripURLForReferrer(url, originOnly = false) {
-      assert(webidl.is.URL(url));
-      url = new URL(url);
-      if (urlIsLocal(url)) {
-        return "no-referrer";
-      }
-      url.username = "";
-      url.password = "";
-      url.hash = "";
-      if (originOnly === true) {
-        url.pathname = "";
-        url.search = "";
-      }
-      return url;
-    }
-    var isPotentialleTrustworthyIPv4 = RegExp.prototype.test.bind(/^127\.(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)\.){2}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)$/);
-    var isPotentiallyTrustworthyIPv6 = RegExp.prototype.test.bind(/^(?:(?:0{1,4}:){7}|(?:0{1,4}:){1,6}:|::)0{0,3}1$/);
-    function isOriginIPPotentiallyTrustworthy(origin) {
-      if (origin.includes(":")) {
-        if (origin[0] === "[" && origin[origin.length - 1] === "]") {
-          origin = origin.slice(1, -1);
-        }
-        return isPotentiallyTrustworthyIPv6(origin);
-      }
-      return isPotentialleTrustworthyIPv4(origin);
-    }
-    function isOriginPotentiallyTrustworthy(origin) {
-      if (origin == null || origin === "null") {
-        return false;
-      }
-      origin = new URL(origin);
-      if (origin.protocol === "https:" || origin.protocol === "wss:") {
-        return true;
-      }
-      if (isOriginIPPotentiallyTrustworthy(origin.hostname)) {
-        return true;
-      }
-      if (origin.hostname === "localhost" || origin.hostname === "localhost.") {
-        return true;
-      }
-      if (origin.hostname.endsWith(".localhost") || origin.hostname.endsWith(".localhost.")) {
-        return true;
-      }
-      if (origin.protocol === "file:") {
-        return true;
-      }
-      return false;
-    }
-    function isURLPotentiallyTrustworthy(url) {
-      if (!webidl.is.URL(url)) {
-        return false;
-      }
-      if (url.href === "about:blank" || url.href === "about:srcdoc") {
-        return true;
-      }
-      if (url.protocol === "data:") return true;
-      if (url.protocol === "blob:") return true;
-      return isOriginPotentiallyTrustworthy(url.origin);
-    }
-    function tryUpgradeRequestToAPotentiallyTrustworthyURL(request) {
-    }
-    function sameOrigin(A, B) {
-      if (A.origin === B.origin && A.origin === "null") {
-        return true;
-      }
-      if (A.protocol === B.protocol && A.hostname === B.hostname && A.port === B.port) {
-        return true;
-      }
-      return false;
-    }
-    function isAborted(fetchParams) {
-      return fetchParams.controller.state === "aborted";
-    }
-    function isCancelled(fetchParams) {
-      return fetchParams.controller.state === "aborted" || fetchParams.controller.state === "terminated";
-    }
-    function normalizeMethod(method) {
-      return normalizedMethodRecordsBase[method.toLowerCase()] ?? method;
-    }
-    var esIteratorPrototype = Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]()));
-    function createIterator(name, kInternalIterator, keyIndex = 0, valueIndex = 1) {
-      var _target, _kind, _index;
-      class FastIterableIterator {
-        /**
-         * @see https://webidl.spec.whatwg.org/#dfn-default-iterator-object
-         * @param {unknown} target
-         * @param {'key' | 'value' | 'key+value'} kind
-         */
-        constructor(target, kind) {
-          /** @type {any} */
-          __privateAdd(this, _target);
-          /** @type {'key' | 'value' | 'key+value'} */
-          __privateAdd(this, _kind);
-          /** @type {number} */
-          __privateAdd(this, _index);
-          __privateSet(this, _target, target);
-          __privateSet(this, _kind, kind);
-          __privateSet(this, _index, 0);
-        }
-        next() {
-          if (typeof this !== "object" || this === null || !__privateIn(_target, this)) {
-            throw new TypeError(
-              `'next' called on an object that does not implement interface ${name} Iterator.`
-            );
-          }
-          const index = __privateGet(this, _index);
-          const values = kInternalIterator(__privateGet(this, _target));
-          const len = values.length;
-          if (index >= len) {
-            return {
-              value: void 0,
-              done: true
-            };
-          }
-          const { [keyIndex]: key, [valueIndex]: value } = values[index];
-          __privateSet(this, _index, index + 1);
-          let result;
-          switch (__privateGet(this, _kind)) {
-            case "key":
-              result = key;
-              break;
-            case "value":
-              result = value;
-              break;
-            case "key+value":
-              result = [key, value];
-              break;
-          }
-          return {
-            value: result,
-            done: false
-          };
-        }
-      }
-      _target = new WeakMap();
-      _kind = new WeakMap();
-      _index = new WeakMap();
-      delete FastIterableIterator.prototype.constructor;
-      Object.setPrototypeOf(FastIterableIterator.prototype, esIteratorPrototype);
-      Object.defineProperties(FastIterableIterator.prototype, {
-        [Symbol.toStringTag]: {
-          writable: false,
-          enumerable: false,
-          configurable: true,
-          value: `${name} Iterator`
-        },
-        next: { writable: true, enumerable: true, configurable: true }
-      });
-      return function(target, kind) {
-        return new FastIterableIterator(target, kind);
-      };
-    }
-    function iteratorMixin(name, object, kInternalIterator, keyIndex = 0, valueIndex = 1) {
-      const makeIterator = createIterator(name, kInternalIterator, keyIndex, valueIndex);
-      const properties = {
-        keys: {
-          writable: true,
-          enumerable: true,
-          configurable: true,
-          value: function keys() {
-            webidl.brandCheck(this, object);
-            return makeIterator(this, "key");
-          }
-        },
-        values: {
-          writable: true,
-          enumerable: true,
-          configurable: true,
-          value: function values() {
-            webidl.brandCheck(this, object);
-            return makeIterator(this, "value");
-          }
-        },
-        entries: {
-          writable: true,
-          enumerable: true,
-          configurable: true,
-          value: function entries() {
-            webidl.brandCheck(this, object);
-            return makeIterator(this, "key+value");
-          }
-        },
-        forEach: {
-          writable: true,
-          enumerable: true,
-          configurable: true,
-          value: function forEach(callbackfn, thisArg = globalThis) {
-            webidl.brandCheck(this, object);
-            webidl.argumentLengthCheck(arguments, 1, `${name}.forEach`);
-            if (typeof callbackfn !== "function") {
-              throw new TypeError(
-                `Failed to execute 'forEach' on '${name}': parameter 1 is not of type 'Function'.`
-              );
-            }
-            for (const { 0: key, 1: value } of makeIterator(this, "key+value")) {
-              callbackfn.call(thisArg, value, key, this);
-            }
-          }
-        }
-      };
-      return Object.defineProperties(object.prototype, {
-        ...properties,
-        [Symbol.iterator]: {
-          writable: true,
-          enumerable: false,
-          configurable: true,
-          value: properties.entries.value
-        }
-      });
-    }
-    function fullyReadBody(body, processBody, processBodyError) {
-      const successSteps = processBody;
-      const errorSteps = processBodyError;
-      try {
-        const reader = body.stream.getReader();
-        readAllBytes(reader, successSteps, errorSteps);
-      } catch (e) {
-        errorSteps(e);
-      }
-    }
-    function readableStreamClose(controller) {
-      var _a;
-      try {
-        controller.close();
-        (_a = controller.byobRequest) == null ? void 0 : _a.respond(0);
-      } catch (err) {
-        if (!err.message.includes("Controller is already closed") && !err.message.includes("ReadableStream is already closed")) {
-          throw err;
-        }
-      }
-    }
-    async function readAllBytes(reader, successSteps, failureSteps) {
-      try {
-        const bytes = [];
-        let byteLength = 0;
-        do {
-          const { done, value: chunk } = await reader.read();
-          if (done) {
-            successSteps(Buffer.concat(bytes, byteLength));
-            return;
-          }
-          if (!isUint8Array(chunk)) {
-            failureSteps(new TypeError("Received non-Uint8Array chunk"));
-            return;
-          }
-          bytes.push(chunk);
-          byteLength += chunk.length;
-        } while (true);
-      } catch (e) {
-        failureSteps(e);
-      }
-    }
-    function urlIsLocal(url) {
-      assert("protocol" in url);
-      const protocol = url.protocol;
-      return protocol === "about:" || protocol === "blob:" || protocol === "data:";
-    }
-    function urlHasHttpsScheme(url) {
-      return typeof url === "string" && url[5] === ":" && url[0] === "h" && url[1] === "t" && url[2] === "t" && url[3] === "p" && url[4] === "s" || url.protocol === "https:";
-    }
-    function urlIsHttpHttpsScheme(url) {
-      assert("protocol" in url);
-      const protocol = url.protocol;
-      return protocol === "http:" || protocol === "https:";
-    }
-    function simpleRangeHeaderValue(value, allowWhitespace) {
-      const data = value;
-      if (!data.startsWith("bytes")) {
-        return "failure";
-      }
-      const position = { position: 5 };
-      if (allowWhitespace) {
-        collectASequenceOfCodePoints(
-          (char) => char === "	" || char === " ",
-          data,
-          position
-        );
-      }
-      if (data.charCodeAt(position.position) !== 61) {
-        return "failure";
-      }
-      position.position++;
-      if (allowWhitespace) {
-        collectASequenceOfCodePoints(
-          (char) => char === "	" || char === " ",
-          data,
-          position
-        );
-      }
-      const rangeStart = collectASequenceOfCodePoints(
-        (char) => {
-          const code = char.charCodeAt(0);
-          return code >= 48 && code <= 57;
-        },
-        data,
-        position
-      );
-      const rangeStartValue = rangeStart.length ? Number(rangeStart) : null;
-      if (allowWhitespace) {
-        collectASequenceOfCodePoints(
-          (char) => char === "	" || char === " ",
-          data,
-          position
-        );
-      }
-      if (data.charCodeAt(position.position) !== 45) {
-        return "failure";
-      }
-      position.position++;
-      if (allowWhitespace) {
-        collectASequenceOfCodePoints(
-          (char) => char === "	" || char === " ",
-          data,
-          position
-        );
-      }
-      const rangeEnd = collectASequenceOfCodePoints(
-        (char) => {
-          const code = char.charCodeAt(0);
-          return code >= 48 && code <= 57;
-        },
-        data,
-        position
-      );
-      const rangeEndValue = rangeEnd.length ? Number(rangeEnd) : null;
-      if (position.position < data.length) {
-        return "failure";
-      }
-      if (rangeEndValue === null && rangeStartValue === null) {
-        return "failure";
-      }
-      if (rangeStartValue !== null && rangeEndValue !== null && rangeStartValue > rangeEndValue) {
-        return "failure";
-      }
-      return { rangeStartValue, rangeEndValue };
-    }
-    function buildContentRange(rangeStart, rangeEnd, fullLength) {
-      let contentRange = "bytes ";
-      contentRange += isomorphicEncode(`${rangeStart}`);
-      contentRange += "-";
-      contentRange += isomorphicEncode(`${rangeEnd}`);
-      contentRange += "/";
-      contentRange += isomorphicEncode(`${fullLength}`);
-      return contentRange;
-    }
-    var _zlibOptions;
-    var InflateStream = class extends Transform {
-      /** @param {zlib.ZlibOptions} [zlibOptions] */
-      constructor(zlibOptions) {
-        super();
-        __privateAdd(this, _zlibOptions);
-        __privateSet(this, _zlibOptions, zlibOptions);
-      }
-      _transform(chunk, encoding, callback) {
-        if (!this._inflateStream) {
-          if (chunk.length === 0) {
-            callback();
-            return;
-          }
-          this._inflateStream = (chunk[0] & 15) === 8 ? zlib.createInflate(__privateGet(this, _zlibOptions)) : zlib.createInflateRaw(__privateGet(this, _zlibOptions));
-          this._inflateStream.on("data", this.push.bind(this));
-          this._inflateStream.on("end", () => this.push(null));
-          this._inflateStream.on("error", (err) => this.destroy(err));
-        }
-        this._inflateStream.write(chunk, encoding, callback);
-      }
-      _final(callback) {
-        if (this._inflateStream) {
-          this._inflateStream.end();
-          this._inflateStream = null;
-        }
-        callback();
-      }
-    };
-    _zlibOptions = new WeakMap();
-    function createInflate(zlibOptions) {
-      return new InflateStream(zlibOptions);
-    }
-    function extractMimeType(headers) {
-      let charset = null;
-      let essence = null;
-      let mimeType = null;
-      const values = getDecodeSplit("content-type", headers);
-      if (values === null) {
-        return "failure";
-      }
-      for (const value of values) {
-        const temporaryMimeType = parseMIMEType(value);
-        if (temporaryMimeType === "failure" || temporaryMimeType.essence === "*/*") {
-          continue;
-        }
-        mimeType = temporaryMimeType;
-        if (mimeType.essence !== essence) {
-          charset = null;
-          if (mimeType.parameters.has("charset")) {
-            charset = mimeType.parameters.get("charset");
-          }
-          essence = mimeType.essence;
-        } else if (!mimeType.parameters.has("charset") && charset !== null) {
-          mimeType.parameters.set("charset", charset);
-        }
-      }
-      if (mimeType == null) {
-        return "failure";
-      }
-      return mimeType;
-    }
-    function gettingDecodingSplitting(value) {
-      const input = value;
-      const position = { position: 0 };
-      const values = [];
-      let temporaryValue = "";
-      while (position.position < input.length) {
-        temporaryValue += collectASequenceOfCodePoints(
-          (char) => char !== '"' && char !== ",",
-          input,
-          position
-        );
-        if (position.position < input.length) {
-          if (input.charCodeAt(position.position) === 34) {
-            temporaryValue += collectAnHTTPQuotedString(
-              input,
-              position
-            );
-            if (position.position < input.length) {
-              continue;
-            }
-          } else {
-            assert(input.charCodeAt(position.position) === 44);
-            position.position++;
-          }
-        }
-        temporaryValue = removeChars(temporaryValue, true, true, (char) => char === 9 || char === 32);
-        values.push(temporaryValue);
-        temporaryValue = "";
-      }
-      return values;
-    }
-    function getDecodeSplit(name, list) {
-      const value = list.get(name, true);
-      if (value === null) {
-        return null;
-      }
-      return gettingDecodingSplitting(value);
-    }
-    function hasAuthenticationEntry(request) {
-      return false;
-    }
-    function includesCredentials(url) {
-      return !!(url.username || url.password);
-    }
-    function isTraversableNavigable(navigable) {
-      return navigable != null && navigable !== "client" && navigable !== "no-traversable";
-    }
-    var EnvironmentSettingsObjectBase = class {
-      get baseUrl() {
-        return getGlobalOrigin();
-      }
-      get origin() {
-        var _a;
-        return (_a = this.baseUrl) == null ? void 0 : _a.origin;
-      }
-      policyContainer = makePolicyContainer();
-    };
-    var EnvironmentSettingsObject = class {
-      settingsObject = new EnvironmentSettingsObjectBase();
-    };
-    var environmentSettingsObject = new EnvironmentSettingsObject();
-    module2.exports = {
-      isAborted,
-      isCancelled,
-      isValidEncodedURL,
-      ReadableStreamFrom,
-      tryUpgradeRequestToAPotentiallyTrustworthyURL,
-      clampAndCoarsenConnectionTimingInfo,
-      coarsenedSharedCurrentTime,
-      determineRequestsReferrer,
-      makePolicyContainer,
-      clonePolicyContainer,
-      appendFetchMetadata,
-      appendRequestOriginHeader,
-      TAOCheck,
-      corsCheck,
-      crossOriginResourcePolicyCheck,
-      createOpaqueTimingInfo,
-      setRequestReferrerPolicyOnRedirect,
-      isValidHTTPToken,
-      requestBadPort,
-      requestCurrentURL,
-      responseURL,
-      responseLocationURL,
-      isURLPotentiallyTrustworthy,
-      isValidReasonPhrase,
-      sameOrigin,
-      normalizeMethod,
-      iteratorMixin,
-      createIterator,
-      isValidHeaderName,
-      isValidHeaderValue,
-      isErrorLike,
-      fullyReadBody,
-      readableStreamClose,
-      urlIsLocal,
-      urlHasHttpsScheme,
-      urlIsHttpHttpsScheme,
-      readAllBytes,
-      simpleRangeHeaderValue,
-      buildContentRange,
-      createInflate,
-      extractMimeType,
-      getDecodeSplit,
-      environmentSettingsObject,
-      isOriginIPPotentiallyTrustworthy,
-      hasAuthenticationEntry,
-      includesCredentials,
-      isTraversableNavigable
-    };
-  }
-});
-
-// addons/pro/node_modules/undici/lib/util/runtime-features.js
-var require_runtime_features = __commonJS({
-  "addons/pro/node_modules/undici/lib/util/runtime-features.js"(exports2, module2) {
-    "use strict";
-    var lazyLoaders = {
-      __proto__: null,
-      "node:crypto": () => require("node:crypto"),
-      "node:sqlite": () => require("node:sqlite")
-    };
-    function detectRuntimeFeatureByNodeModule(moduleName) {
-      try {
-        lazyLoaders[moduleName]();
-        return true;
-      } catch (err) {
-        if (err.code !== "ERR_UNKNOWN_BUILTIN_MODULE" && err.code !== "ERR_NO_CRYPTO") {
-          throw err;
-        }
-        return false;
-      }
-    }
-    var runtimeFeaturesAsNodeModule = (
-      /** @type {const} */
-      ["crypto", "sqlite"]
-    );
-    function detectRuntimeFeature(feature) {
-      if (runtimeFeaturesAsNodeModule.includes(
-        /** @type {RuntimeFeatureByNodeModule} */
-        feature
-      )) {
-        return detectRuntimeFeatureByNodeModule(`node:${feature}`);
-      }
-      throw new TypeError(`unknown feature: ${feature}`);
-    }
-    var _map, _RuntimeFeatures_instances, detectRuntimeFeature_fn;
-    var RuntimeFeatures = class {
-      constructor() {
-        __privateAdd(this, _RuntimeFeatures_instances);
-        /** @type {Map<Feature, boolean>} */
-        __privateAdd(this, _map, /* @__PURE__ */ new Map());
-      }
-      /**
-       * Clears all cached feature detections.
-       */
-      clear() {
-        __privateGet(this, _map).clear();
-      }
-      /**
-       * @param {Feature} feature
-       * @returns {boolean}
-       */
-      has(feature) {
-        return __privateGet(this, _map).get(feature) ?? __privateMethod(this, _RuntimeFeatures_instances, detectRuntimeFeature_fn).call(this, feature);
-      }
-      /**
-       * @param {Feature} feature
-       * @param {boolean} value
-       */
-      set(feature, value) {
-        if (runtimeFeaturesAsNodeModule.includes(feature) === false) {
-          throw new TypeError(`unknown feature: ${feature}`);
-        }
-        __privateGet(this, _map).set(feature, value);
-      }
-    };
-    _map = new WeakMap();
-    _RuntimeFeatures_instances = new WeakSet();
-    /**
-     * @param {Feature} feature
-     * @returns {boolean}
-     */
-    detectRuntimeFeature_fn = function(feature) {
-      const result = detectRuntimeFeature(feature);
-      __privateGet(this, _map).set(feature, result);
-      return result;
-    };
-    var instance = new RuntimeFeatures();
-    module2.exports.runtimeFeatures = instance;
-    module2.exports.default = instance;
-  }
-});
-
-// addons/pro/node_modules/undici/lib/web/fetch/formdata.js
-var require_formdata = __commonJS({
-  "addons/pro/node_modules/undici/lib/web/fetch/formdata.js"(exports2, module2) {
-    "use strict";
-    var { iteratorMixin } = require_util2();
-    var { kEnumerableProperty } = require_util();
-    var { webidl } = require_webidl();
-    var nodeUtil = require("node:util");
-    var { runtimeFeatures } = require_runtime_features();
-    var random = runtimeFeatures.has("crypto") ? require("node:crypto").randomInt : (max) => Math.floor(Math.random() * max);
-    var _state, _boundary;
-    var _FormData = class _FormData {
-      constructor(form = void 0) {
-        __privateAdd(this, _state, []);
-        __privateAdd(this, _boundary, null);
-        webidl.util.markAsUncloneable(this);
-        if (form !== void 0) {
-          throw webidl.errors.conversionFailed({
-            prefix: "FormData constructor",
-            argument: "Argument 1",
-            types: ["undefined"]
-          });
-        }
-      }
-      append(name, value, filename = void 0) {
-        webidl.brandCheck(this, _FormData);
-        const prefix = "FormData.append";
-        webidl.argumentLengthCheck(arguments, 2, prefix);
-        name = webidl.converters.USVString(name);
-        if (arguments.length === 3 || webidl.is.Blob(value)) {
-          value = webidl.converters.Blob(value, prefix, "value");
-          if (filename !== void 0) {
-            filename = webidl.converters.USVString(filename);
-          }
-        } else {
-          value = webidl.converters.USVString(value);
-        }
-        const entry = makeEntry(name, value, filename);
-        __privateGet(this, _state).push(entry);
-      }
-      delete(name) {
-        webidl.brandCheck(this, _FormData);
-        const prefix = "FormData.delete";
-        webidl.argumentLengthCheck(arguments, 1, prefix);
-        name = webidl.converters.USVString(name);
-        __privateSet(this, _state, __privateGet(this, _state).filter((entry) => entry.name !== name));
-      }
-      get(name) {
-        webidl.brandCheck(this, _FormData);
-        const prefix = "FormData.get";
-        webidl.argumentLengthCheck(arguments, 1, prefix);
-        name = webidl.converters.USVString(name);
-        const idx = __privateGet(this, _state).findIndex((entry) => entry.name === name);
-        if (idx === -1) {
-          return null;
-        }
-        return __privateGet(this, _state)[idx].value;
-      }
-      getAll(name) {
-        webidl.brandCheck(this, _FormData);
-        const prefix = "FormData.getAll";
-        webidl.argumentLengthCheck(arguments, 1, prefix);
-        name = webidl.converters.USVString(name);
-        return __privateGet(this, _state).filter((entry) => entry.name === name).map((entry) => entry.value);
-      }
-      has(name) {
-        webidl.brandCheck(this, _FormData);
-        const prefix = "FormData.has";
-        webidl.argumentLengthCheck(arguments, 1, prefix);
-        name = webidl.converters.USVString(name);
-        return __privateGet(this, _state).findIndex((entry) => entry.name === name) !== -1;
-      }
-      set(name, value, filename = void 0) {
-        webidl.brandCheck(this, _FormData);
-        const prefix = "FormData.set";
-        webidl.argumentLengthCheck(arguments, 2, prefix);
-        name = webidl.converters.USVString(name);
-        if (arguments.length === 3 || webidl.is.Blob(value)) {
-          value = webidl.converters.Blob(value, prefix, "value");
-          if (filename !== void 0) {
-            filename = webidl.converters.USVString(filename);
-          }
-        } else {
-          value = webidl.converters.USVString(value);
-        }
-        const entry = makeEntry(name, value, filename);
-        const idx = __privateGet(this, _state).findIndex((entry2) => entry2.name === name);
-        if (idx !== -1) {
-          __privateSet(this, _state, [
-            ...__privateGet(this, _state).slice(0, idx),
-            entry,
-            ...__privateGet(this, _state).slice(idx + 1).filter((entry2) => entry2.name !== name)
-          ]);
-        } else {
-          __privateGet(this, _state).push(entry);
-        }
-      }
-      [nodeUtil.inspect.custom](depth, options) {
-        const state = __privateGet(this, _state).reduce((a, b) => {
-          if (a[b.name]) {
-            if (Array.isArray(a[b.name])) {
-              a[b.name].push(b.value);
-            } else {
-              a[b.name] = [a[b.name], b.value];
-            }
-          } else {
-            a[b.name] = b.value;
-          }
-          return a;
-        }, { __proto__: null });
-        options.depth ?? (options.depth = depth);
-        options.colors ?? (options.colors = true);
-        const output = nodeUtil.formatWithOptions(options, state);
-        return `FormData ${output.slice(output.indexOf("]") + 2)}`;
-      }
-      /**
-       * @param {FormData} formData
-       */
-      static getFormDataState(formData) {
-        return __privateGet(formData, _state);
-      }
-      /**
-       * @param {FormData} formData
-       * @param {any[]} newState
-       */
-      static setFormDataState(formData, newState) {
-        __privateSet(formData, _state, newState);
-      }
-      /**
-       * @param {FormData} formData
-       * @returns {string | null}
-       */
-      static getFormDataBoundary(formData) {
-        const boundary = __privateGet(formData, _boundary);
-        if (boundary != null) return boundary;
-        return __privateSet(formData, _boundary, `----formdata-undici-0${`${random(1e11)}`.padStart(11, "0")}`);
-      }
-    };
-    _state = new WeakMap();
-    _boundary = new WeakMap();
-    var FormData = _FormData;
-    var { getFormDataState, setFormDataState, getFormDataBoundary } = FormData;
-    Reflect.deleteProperty(FormData, "getFormDataState");
-    Reflect.deleteProperty(FormData, "setFormDataState");
-    Reflect.deleteProperty(FormData, "getFormDataBoundary");
-    iteratorMixin("FormData", FormData, getFormDataState, "name", "value");
-    Object.defineProperties(FormData.prototype, {
-      append: kEnumerableProperty,
-      delete: kEnumerableProperty,
-      get: kEnumerableProperty,
-      getAll: kEnumerableProperty,
-      has: kEnumerableProperty,
-      set: kEnumerableProperty,
-      [Symbol.toStringTag]: {
-        value: "FormData",
-        configurable: true
-      }
-    });
-    function makeEntry(name, value, filename) {
-      if (typeof value === "string") {
-      } else {
-        if (!webidl.is.File(value)) {
-          value = new File([value], "blob", { type: value.type });
-        }
-        if (filename !== void 0) {
-          const options = {
-            type: value.type,
-            lastModified: value.lastModified
-          };
-          value = new File([value], filename, options);
-        }
-      }
-      return { name, value };
-    }
-    webidl.is.FormData = webidl.util.MakeTypeAssertion(FormData);
-    module2.exports = { FormData, makeEntry, setFormDataState, getFormDataBoundary };
   }
 });
 
@@ -183240,14 +185983,19 @@ var require_formdata_parser = __commonJS({
           input,
           position
         );
-        if (headerValue[0] !== 117 && headerValue[0] !== 85 || // u or U
+        const charsetSeparator = headerValue.indexOf(39);
+        const languageSeparator = charsetSeparator === -1 ? -1 : headerValue.indexOf(39, charsetSeparator + 1);
+        if (charsetSeparator === -1 || languageSeparator === -1) {
+          throw parsingError("expected charset and language separators in extended value");
+        }
+        if (charsetSeparator !== 5 || headerValue[0] !== 117 && headerValue[0] !== 85 || // u or U
         headerValue[1] !== 116 && headerValue[1] !== 84 || // t or T
         headerValue[2] !== 102 && headerValue[2] !== 70 || // f or F
         headerValue[3] !== 45 || // -
         headerValue[4] !== 56) {
-          throw parsingError("unknown encoding, expected utf-8''");
+          throw parsingError("unknown charset, expected utf-8");
         }
-        value = decodeURIComponent(decoder.decode(headerValue.subarray(7)));
+        value = decodeURIComponent(decoder.decode(headerValue.subarray(languageSeparator + 1)));
       } else if (input[position.position] === 34) {
         position.position++;
         const quotedValue = collectASequenceOfBytes(
@@ -183440,7 +186188,6 @@ var require_body = __commonJS({
     "use strict";
     var util = require_util();
     var {
-      ReadableStreamFrom,
       readableStreamClose,
       fullyReadBody,
       extractMimeType
@@ -183466,19 +186213,40 @@ var require_body = __commonJS({
     });
     function extractBody(object, keepalive = false) {
       let stream = null;
-      let controller = null;
       if (webidl.is.ReadableStream(object)) {
         stream = object;
       } else if (webidl.is.Blob(object)) {
         stream = object.stream();
       } else {
         stream = new ReadableStream({
-          pull() {
+          start() {
           },
-          start(c) {
-            controller = c;
+          async pull(controller) {
+            var _a;
+            const result = action();
+            const iterator = (_a = result == null ? void 0 : result[Symbol.asyncIterator]) == null ? void 0 : _a.call(result);
+            if (iterator == null) {
+              if ((result == null ? void 0 : result.length) && !isErrored(stream)) {
+                controller.enqueue(typeof result === "string" ? textEncoder.encode(result) : new Uint8Array(result));
+              }
+              queueMicrotask(() => readableStreamClose(controller));
+              return;
+            }
+            while (true) {
+              const { value, done } = await iterator.next();
+              if (done) {
+                queueMicrotask(() => readableStreamClose(controller));
+                return;
+              }
+              if (value.length && !isErrored(stream)) {
+                controller.enqueue(new Uint8Array(value));
+                return;
+              }
+            }
           },
-          cancel() {
+          cancel(reason) {
+            var _a, _b;
+            return (_b = (_a = action())[Symbol.asyncIterator]) == null ? void 0 : _b.call(_a).return(reason);
           },
           type: "bytes"
         });
@@ -183535,7 +186303,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
           length = null;
         }
         source = object;
-        action = async function* () {
+        const parts = (async function* () {
           for (const part of blobParts) {
             if (part.stream) {
               yield* part.stream();
@@ -183543,7 +186311,8 @@ Content-Type: ${value.type || "application/octet-stream"}\r
               yield part;
             }
           }
-        };
+        })();
+        action = () => parts;
         type = `multipart/form-data; boundary=${boundary}`;
       } else if (webidl.is.Blob(object)) {
         source = object;
@@ -183560,32 +186329,18 @@ Content-Type: ${value.type || "application/octet-stream"}\r
             "Response body object should not be disturbed or locked"
           );
         }
-        stream = webidl.is.ReadableStream(object) ? object : ReadableStreamFrom(object);
+        stream = webidl.is.ReadableStream(object) ? object : ReadableStream.from(object).pipeThrough(new TransformStream({
+          transform(chunk, controller) {
+            const bytes = isUint8Array(chunk) ? chunk : Buffer.from(chunk);
+            if (bytes.byteLength) {
+              controller.enqueue(bytes);
+            }
+          }
+        }));
       }
       if (typeof source === "string" || isUint8Array(source)) {
-        action = () => {
-          length = typeof source === "string" ? Buffer.byteLength(source) : source.length;
-          return source;
-        };
-      }
-      if (action != null) {
-        ;
-        (async () => {
-          var _a;
-          const result = action();
-          const iterator = (_a = result == null ? void 0 : result[Symbol.asyncIterator]) == null ? void 0 : _a.call(result);
-          if (iterator) {
-            for await (const bytes of iterator) {
-              if (isErrored(stream)) break;
-              if (bytes.length) {
-                controller.enqueue(new Uint8Array(bytes));
-              }
-            }
-          } else if ((result == null ? void 0 : result.length) && !isErrored(stream)) {
-            controller.enqueue(typeof result === "string" ? textEncoder.encode(result) : new Uint8Array(result));
-          }
-          queueMicrotask(() => readableStreamClose(controller));
-        })();
+        action = () => source;
+        length = typeof source === "string" ? Buffer.byteLength(source) : source.length;
       }
       const body = { stream, source, length };
       return [body, type];
@@ -183606,7 +186361,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
         source: body.source
       };
     }
-    function bodyMixinMethods(instance, getInternalState) {
+    function bodyMixinMethods(brandCheck, getInternalState) {
       const methods = {
         blob() {
           return consumeBody(this, (bytes) => {
@@ -183617,18 +186372,18 @@ Content-Type: ${value.type || "application/octet-stream"}\r
               mimeType = serializeAMimeType(mimeType);
             }
             return new Blob([bytes], { type: mimeType });
-          }, instance, getInternalState);
+          }, brandCheck, getInternalState);
         },
         arrayBuffer() {
           return consumeBody(this, (bytes) => {
             return new Uint8Array(bytes).buffer;
-          }, instance, getInternalState);
+          }, brandCheck, getInternalState);
         },
         text() {
-          return consumeBody(this, utf8DecodeBytes, instance, getInternalState);
+          return consumeBody(this, utf8DecodeBytes, brandCheck, getInternalState);
         },
         json() {
-          return consumeBody(this, parseJSONFromBytes, instance, getInternalState);
+          return consumeBody(this, parseJSONFromBytes, brandCheck, getInternalState);
         },
         formData() {
           return consumeBody(this, (value) => {
@@ -183654,12 +186409,12 @@ Content-Type: ${value.type || "application/octet-stream"}\r
             throw new TypeError(
               'Content-Type was not one of "multipart/form-data" or "application/x-www-form-urlencoded".'
             );
-          }, instance, getInternalState);
+          }, brandCheck, getInternalState);
         },
         bytes() {
           return consumeBody(this, (bytes) => {
             return new Uint8Array(bytes);
-          }, instance, getInternalState);
+          }, brandCheck, getInternalState);
         },
         textStream() {
           const this_ = getInternalState(this);
@@ -183687,12 +186442,12 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       };
       return methods;
     }
-    function mixinBody(prototype, getInternalState) {
-      Object.assign(prototype.prototype, bodyMixinMethods(prototype, getInternalState));
+    function mixinBody(prototype, getInternalState, brandCheck) {
+      Object.assign(prototype.prototype, bodyMixinMethods(brandCheck, getInternalState));
     }
-    function consumeBody(object, convertBytesToJSValue, instance, getInternalState) {
+    function consumeBody(object, convertBytesToJSValue, brandCheck, getInternalState) {
       try {
-        webidl.brandCheck(object, instance);
+        webidl.brandCheck(object, brandCheck);
       } catch (e) {
         return Promise.reject(e);
       }
@@ -183758,6 +186513,7 @@ var require_client_h1 = __commonJS({
       InformationalError,
       BodyTimeoutError,
       HTTPParserError,
+      WebAssemblyNotSupportedError,
       ResponseExceededMaxSizeError
     } = require_errors();
     var {
@@ -183792,9 +186548,11 @@ var require_client_h1 = __commonJS({
       kOnError,
       kResume,
       kHTTPContext,
-      kClosed
+      kClosed,
+      kUseMilo
     } = require_symbols();
-    var constants = require_constants2();
+    var constants = require_constants3();
+    var { H1Parser, getMiloEnabled } = typeof esbuildDetection === "undefined" ? require_parser_h1() : {};
     var EMPTY_BUF = Buffer.alloc(0);
     var FastBuffer = Buffer[Symbol.species];
     var removeAllListeners = util.removeAllListeners;
@@ -183804,9 +186562,18 @@ var require_client_h1 = __commonJS({
     var kTypeOfService = /* @__PURE__ */ Symbol("kTypeOfService");
     var extractBody;
     function lazyllhttp() {
+      if (typeof WebAssembly === "undefined") {
+        throw new WebAssemblyNotSupportedError();
+      }
       const llhttpWasmData = process.env.JEST_WORKER_ID ? require_llhttp_wasm() : void 0;
       let mod;
-      let useWasmSIMD = process.arch !== "ppc64";
+      let useWasmSIMD = true;
+      if (process.arch === "ppc64") {
+        const [major, minor] = process.versions.node.split(".").map((n) => parseInt(n, 10));
+        if (major < 24 || major === 24 && minor < 12) {
+          useWasmSIMD = false;
+        }
+      }
       if (process.env.UNDICI_NO_WASM_SIMD === "1") {
         useWasmSIMD = false;
       } else if (process.env.UNDICI_NO_WASM_SIMD === "0") {
@@ -183919,10 +186686,10 @@ var require_client_h1 = __commonJS({
     var TIMEOUT_KEEP_ALIVE = 8 | USE_NATIVE_TIMER;
     var Parser = class {
       /**
-         * @param {import('./client.js')} client
-         * @param {import('net').Socket} socket
-         * @param {*} llhttp
-         */
+       * @param {import('./client.js')} client
+       * @param {import('net').Socket} socket
+       * @param {*} llhttp
+       */
       constructor(client, socket, { exports: exports3 }) {
         this.llhttp = exports3;
         this.ptr = this.llhttp.llhttp_alloc(constants.TYPE.RESPONSE);
@@ -183944,7 +186711,8 @@ var require_client_h1 = __commonJS({
         this.bytesRead = 0;
         this.keepAlive = "";
         this.contentLength = -1;
-        this.connectionKeepAlive = false;
+        this.hasTransferEncoding = false;
+        this.connection = "";
         this.maxResponseSize = client[kMaxResponseSize];
       }
       setTimeout(delay, type) {
@@ -184144,6 +186912,7 @@ var require_client_h1 = __commonJS({
        */
       onHeaderValue(buf) {
         let len = this.headers.length;
+        const isContinuation = (len & 1) === 0;
         if ((len & 1) === 1) {
           this.headers.push(buf);
           len += 1;
@@ -184154,9 +186923,9 @@ var require_client_h1 = __commonJS({
         if (key.length === 10) {
           const headerName = util.bufferToLowerCasedHeaderName(key);
           if (headerName === "keep-alive") {
-            this.keepAlive += buf.toString();
+            this.keepAlive += (isContinuation || this.keepAlive.length === 0 ? "" : ",") + buf.toString();
           } else if (headerName === "connection") {
-            this.connectionKeepAlive = this.headers[len - 1].length === 10 && util.bufferToLowerCasedHeaderName(this.headers[len - 1]) === "keep-alive";
+            this.connection += (isContinuation || this.connection.length === 0 ? "" : ",") + buf.toString();
           }
         } else if (key.length === 14 && util.bufferToLowerCasedHeaderName(key) === "content-length") {
           if (this.contentLength === -1) {
@@ -184165,6 +186934,8 @@ var require_client_h1 = __commonJS({
           for (let i = 0; i < buf.length; i++) {
             this.contentLength = this.contentLength * 10 + (buf[i] - 48);
           }
+        } else if (key.length === 17 && util.bufferToLowerCasedHeaderName(key) === "transfer-encoding") {
+          this.hasTransferEncoding = true;
         }
         this.trackHeader(buf.length);
         return 0;
@@ -184182,7 +186953,7 @@ var require_client_h1 = __commonJS({
        * @param {Buffer} head
        */
       onUpgrade(head) {
-        const { upgrade, client, socket, headers, statusCode } = this;
+        const { upgrade, client, socket, headers, statusCode, statusText } = this;
         assert(upgrade);
         assert(client[kSocket] === socket);
         assert(!socket.destroyed);
@@ -184207,8 +186978,9 @@ var require_client_h1 = __commonJS({
         client[kQueue][client[kRunningIdx]++] = null;
         client.emit("disconnect", client[kUrl], [client], new InformationalError("upgrade"));
         try {
-          request.onRequestUpgrade(statusCode, headers, socket);
+          request.onRequestUpgrade(statusCode, headers, socket, statusText);
         } catch (err) {
+          util.errorRequest(client, request, err);
           util.destroy(socket, err);
         }
         client[kResume]();
@@ -184245,7 +187017,13 @@ var require_client_h1 = __commonJS({
         assert(this.timeoutType === TIMEOUT_HEADERS);
         this.statusCode = statusCode;
         this.shouldKeepAlive = shouldKeepAlive || // Override llhttp value which does not allow keepAlive for HEAD.
-        request.method === "HEAD" && !socket[kReset] && this.connectionKeepAlive;
+        request.method === "HEAD" && !socket[kReset] && /(?:^|,)[\t ]*keep-alive[\t ]*(?:,|$)/i.test(this.connection) && !/(?:^|,)[\t ]*close[\t ]*(?:,|$)/i.test(this.connection);
+        if (request.method === "HEAD" || statusCode === 204 || statusCode === 304) {
+          if (request.method !== "HEAD" && (this.contentLength > 0 || this.hasTransferEncoding)) {
+            this.shouldKeepAlive = false;
+          }
+          this.contentLength = -1;
+        }
         if (this.statusCode >= 200) {
           const bodyTimeout = request.bodyTimeout != null ? request.bodyTimeout : client[kBodyTimeout];
           this.setTimeout(bodyTimeout, TIMEOUT_BODY);
@@ -184270,10 +187048,7 @@ var require_client_h1 = __commonJS({
         if (this.shouldKeepAlive && client[kPipelining]) {
           const keepAliveTimeout = this.keepAlive ? util.parseKeepAliveTimeout(this.keepAlive) : null;
           if (keepAliveTimeout != null) {
-            const timeout = Math.min(
-              keepAliveTimeout - client[kKeepAliveTimeoutThreshold],
-              client[kKeepAliveMaxTimeout]
-            );
+            const timeout = Math.min(keepAliveTimeout - client[kKeepAliveTimeoutThreshold], client[kKeepAliveMaxTimeout]);
             if (timeout <= 0) {
               socket[kReset] = true;
             } else {
@@ -184348,14 +187123,15 @@ var require_client_h1 = __commonJS({
         this.statusText = "";
         this.bytesRead = 0;
         this.contentLength = -1;
+        this.hasTransferEncoding = false;
         this.keepAlive = "";
-        this.connectionKeepAlive = false;
+        this.connection = "";
         this.headers = [];
         this.headersSize = 0;
         if (statusCode < 200) {
           return 0;
         }
-        if (request.method !== "HEAD" && contentLength !== -1 && bytesRead !== contentLength) {
+        if (contentLength !== -1 && bytesRead !== contentLength) {
           util.destroy(socket, new ResponseContentLengthMismatchError());
           return -1;
         }
@@ -184418,7 +187194,7 @@ var require_client_h1 = __commonJS({
       socket[kIdleSocketValidation] = 0;
       socket[kIdleSocketValidationTimeout] = null;
       socket[kSocketUsed] = false;
-      socket[kParser] = new Parser(client, socket, llhttpInstance);
+      socket[kParser] = typeof esbuildDetection === "undefined" && (client[kUseMilo] ?? getMiloEnabled()) ? new H1Parser(client, socket) : new Parser(client, socket, llhttpInstance);
       util.addListener(socket, "error", onHttpSocketError);
       util.addListener(socket, "readable", onHttpSocketReadable);
       util.addListener(socket, "end", onHttpSocketEnd);
@@ -184476,7 +187252,6 @@ var require_client_h1 = __commonJS({
       };
     }
     function onHttpSocketError(err) {
-      assert(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
       const parser = this[kParser];
       if (err.code === "ECONNRESET" && parser.statusCode && !parser.shouldKeepAlive) {
         const parserErr = parser.finish();
@@ -184540,22 +187315,20 @@ var require_client_h1 = __commonJS({
     }
     function clearIdleSocketValidation(socket) {
       if (socket[kIdleSocketValidationTimeout]) {
-        clearTimeout(socket[kIdleSocketValidationTimeout]);
+        clearImmediate(socket[kIdleSocketValidationTimeout]);
         socket[kIdleSocketValidationTimeout] = null;
       }
       socket[kIdleSocketValidation] = 0;
     }
     function scheduleIdleSocketValidation(client, socket) {
-      var _a, _b;
       socket[kIdleSocketValidation] = 1;
-      socket[kIdleSocketValidationTimeout] = setTimeout(() => {
+      socket[kIdleSocketValidationTimeout] = setImmediate(() => {
         socket[kIdleSocketValidationTimeout] = null;
         socket[kIdleSocketValidation] = 2;
         if (client[kSocket] === socket && !socket.destroyed) {
           client[kResume]();
         }
-      }, 0);
-      (_b = (_a = socket[kIdleSocketValidationTimeout]).unref) == null ? void 0 : _b.call(_a);
+      });
     }
     function resumeH1(client) {
       const socket = client[kSocket];
@@ -184936,7 +187709,22 @@ upgrade: ${upgrade}\r
         this.expectsPayload = expectsPayload;
         this.header = header;
         this.abort = abort;
+        this.lengthMismatch = false;
         socket[kWriting] = true;
+      }
+      /**
+       * The body doesn't match the declared content-length and strictContentLength
+       * is off. Warn once, and mark the socket so it isn't reused: on the wire this
+       * request's body no longer ends where the server expects, so anything sent
+       * after it on the same connection would be misread.
+       * @returns {void}
+       */
+      onLengthMismatch() {
+        this.socket[kReset] = true;
+        if (!this.lengthMismatch) {
+          this.lengthMismatch = true;
+          process.emitWarning(new RequestContentLengthMismatchError());
+        }
       }
       /**
        * @param {string|Uint8Array} chunk
@@ -184950,7 +187738,7 @@ upgrade: ${upgrade}\r
         if (socket.destroyed) {
           return false;
         }
-        const len = chunk instanceof Uint8Array ? chunk.byteLength : Buffer.byteLength(chunk);
+        let len = chunk instanceof Uint8Array ? chunk.byteLength : Buffer.byteLength(chunk);
         if (!len) {
           return true;
         }
@@ -184958,7 +187746,13 @@ upgrade: ${upgrade}\r
           if (client[kStrictContentLength]) {
             throw new RequestContentLengthMismatchError();
           }
-          process.emitWarning(new RequestContentLengthMismatchError());
+          this.onLengthMismatch();
+          const remaining = contentLength - bytesWritten;
+          if (remaining === 0) {
+            return true;
+          }
+          chunk = (typeof chunk === "string" ? Buffer.from(chunk) : chunk).subarray(0, remaining);
+          len = remaining;
         }
         socket.cork();
         if (bytesWritten === 0) {
@@ -185020,9 +187814,8 @@ ${len.toString(16)}\r
         if (contentLength !== null && bytesWritten !== contentLength) {
           if (client[kStrictContentLength]) {
             throw new RequestContentLengthMismatchError();
-          } else {
-            process.emitWarning(new RequestContentLengthMismatchError());
           }
+          this.onLengthMismatch();
         }
         if (socket[kParser].timeout && socket[kParser].timeoutType === TIMEOUT_HEADERS) {
           if (socket[kParser].timeout.refresh) {
@@ -185057,12 +187850,14 @@ var require_client_h2 = __commonJS({
     var util = require_util();
     var {
       RequestContentLengthMismatchError,
+      ResponseContentLengthMismatchError,
       RequestAbortedError,
       SocketError,
       InformationalError,
       InvalidArgumentError,
       HeadersTimeoutError,
-      BodyTimeoutError
+      BodyTimeoutError,
+      ResponseExceededMaxSizeError
     } = require_errors();
     var {
       kUrl,
@@ -185091,7 +187886,8 @@ var require_client_h2 = __commonJS({
       kRemoteSettings,
       kHTTP2Stream,
       kHTTP2SessionState,
-      kHTTP2Options
+      kHTTP2Options,
+      kMaxResponseSize
     } = require_symbols();
     var { channels } = require_diagnostics();
     var kOpenStreams = /* @__PURE__ */ Symbol("open streams");
@@ -185103,6 +187899,7 @@ var require_client_h2 = __commonJS({
     var kGoAwayReplayAttempts = /* @__PURE__ */ Symbol("goaway replay attempts");
     var kRefusedStreamRetry = /* @__PURE__ */ Symbol("refused stream retry");
     var MAX_GOAWAY_REPLAY_ATTEMPTS = 1;
+    var MIN_PROBE_TIMEOUT = 1e3;
     var extractBody;
     var http2;
     try {
@@ -185204,6 +188001,11 @@ var require_client_h2 = __commonJS({
       const { body } = request;
       return body == null || util.isBuffer(body) || util.isBlobLike(body);
     }
+    function hasResponseStarted(request) {
+      var _a;
+      const state = (_a = request[kRequestStream]) == null ? void 0 : _a[kRequestStreamState];
+      return (state == null ? void 0 : state.responseReceived) === true;
+    }
     function registerGoAwayRefusal(request) {
       const attempts = (request[kGoAwayReplayAttempts] ?? 0) + 1;
       request[kGoAwayReplayAttempts] = attempts;
@@ -185260,6 +188062,9 @@ var require_client_h2 = __commonJS({
         // Armed while the peer advertises MAX_CONCURRENT_STREAMS = 0 and we have
         // work that cannot start. See setNoStreamsTimeout.
         noStreamsTimeout: null,
+        // Armed while a PING checks whether the peer is still there after a
+        // stream timed out. See probeHttp2Session.
+        probeTimeout: null,
         // Sockets start out ref'd. Session ref/unref proxies to the socket, so a
         // single cached flag lets us skip redundant uv ref/unref calls, provided
         // every ref/unref of the session or its socket goes through
@@ -185329,6 +188134,9 @@ var require_client_h2 = __commonJS({
           if (session[kRemoteSettings] === false && client[kRunning] > 0) {
             return true;
           }
+          if (session[kHTTP2SessionState].probeTimeout != null) {
+            return true;
+          }
           if (client[kRunning] >= client[kMaxConcurrentStreams]) {
             return true;
           }
@@ -185361,7 +188169,7 @@ var require_client_h2 = __commonJS({
       const socket = client[kSocket];
       const session = client[kHTTP2Session];
       if ((socket == null ? void 0 : socket.destroyed) === false) {
-        if (client[kSize] === 0 || client[kMaxConcurrentStreams] === 0) {
+        if (session[kOpenStreams] === 0 && client[kSize] === 0) {
           unrefH2Session(session);
         } else {
           refH2Session(session);
@@ -185413,6 +188221,41 @@ var require_client_h2 = __commonJS({
       session[kError] = err;
       resetHttp2Session(session, err);
     }
+    function probeHttp2Session(session, timeout) {
+      const state = session[kHTTP2SessionState];
+      if (state.probeTimeout != null || session.closed || session.destroyed) {
+        return;
+      }
+      try {
+        session.ping(onHttp2ProbeAck.bind(session));
+      } catch {
+        return;
+      }
+      state.probeTimeout = setTimeout(onHttp2ProbeTimeout, Math.max(timeout, MIN_PROBE_TIMEOUT), session).unref();
+    }
+    function clearHttp2ProbeTimeout(session) {
+      const state = session[kHTTP2SessionState];
+      if ((state == null ? void 0 : state.probeTimeout) != null) {
+        clearTimeout(state.probeTimeout);
+        state.probeTimeout = null;
+      }
+    }
+    function onHttp2ProbeAck() {
+      if (this[kHTTP2SessionState].probeTimeout == null) {
+        return;
+      }
+      clearHttp2ProbeTimeout(this);
+      this[kClient][kResume]();
+    }
+    function onHttp2ProbeTimeout(session) {
+      session[kHTTP2SessionState].probeTimeout = null;
+      if (session.closed || session.destroyed) {
+        return;
+      }
+      const err = new SocketError("HTTP/2: connection unresponsive", util.getSocketInfo(session[kSocket]));
+      session[kError] = err;
+      resetHttp2Session(session, err);
+    }
     function clearHttp2IdleTimeout(session) {
       const state = session[kHTTP2SessionState];
       if ((state == null ? void 0 : state.idleTimeout) != null) {
@@ -185455,7 +188298,10 @@ var require_client_h2 = __commonJS({
       }
     }
     function onHttp2RemoteSettings(settings) {
-      this[kClient][kMaxConcurrentStreams] = settings.maxConcurrentStreams ?? this[kClient][kMaxConcurrentStreams];
+      const client = this[kClient];
+      const localMaxConcurrentStreams = client[kHTTP2Options].maxConcurrentStreams;
+      const remoteMaxConcurrentStreams = settings.maxConcurrentStreams ?? client[kMaxConcurrentStreams] ?? localMaxConcurrentStreams;
+      client[kMaxConcurrentStreams] = Math.min(remoteMaxConcurrentStreams, localMaxConcurrentStreams);
       if (this[kRemoteSettings] === true && this[kEnableConnectProtocol] === true && settings.enableConnectProtocol === false) {
         const err = new InformationalError("HTTP/2: Server disabled extended CONNECT protocol against RFC-8441");
         this[kSocket][kError] = err;
@@ -185487,7 +188333,6 @@ var require_client_h2 = __commonJS({
       }
     }
     function onHttp2SessionError(err) {
-      assert(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
       this[kSocket][kError] = err;
       if (this[kReceivedGoAway]) {
         return;
@@ -185518,8 +188363,9 @@ var require_client_h2 = __commonJS({
       for (let i = pendingIdx; i < previousPendingIdx; i++) {
         const request = client[kQueue][i];
         if (request != null) {
+          const responseStarted = hasResponseStarted(request);
           streamsToClose.push(detachRequestStreamForClose(request));
-          if (canReplayRequest(request) && registerGoAwayRefusal(request)) {
+          if (!responseStarted && canReplayRequest(request) && registerGoAwayRefusal(request)) {
             retriableRequests.push(request);
           } else {
             util.errorRequest(client, request, err);
@@ -185539,8 +188385,12 @@ var require_client_h2 = __commonJS({
         client[kHTTPContext] = null;
         client[kHTTP2Session] = null;
       }
+      if (this[kOpenStreams] === 0) {
+        unrefH2Session(this);
+      }
       clearHttp2IdleTimeout(this);
       clearNoStreamsTimeout(this);
+      clearHttp2ProbeTimeout(this);
       if (!this.closed && !this.destroyed) {
         this.close();
       }
@@ -185558,6 +188408,7 @@ var require_client_h2 = __commonJS({
       }
       clearHttp2IdleTimeout(this);
       clearNoStreamsTimeout(this);
+      clearHttp2ProbeTimeout(this);
       if (state.ping.interval != null) {
         clearInterval(state.ping.interval);
         state.ping.interval = null;
@@ -185595,7 +188446,6 @@ var require_client_h2 = __commonJS({
     }
     function onHttp2SocketError(err) {
       var _a, _b, _c;
-      assert(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
       this[kError] = err;
       if ((_a = this[kHTTP2Session]) == null ? void 0 : _a[kReceivedGoAway]) {
         return;
@@ -185612,9 +188462,10 @@ var require_client_h2 = __commonJS({
     }
     function closeStreamSession(stream) {
       const session = stream[kHTTP2Session];
+      const client = session[kClient];
       stream[kHTTP2Session] = null;
       session[kOpenStreams] -= 1;
-      if (session[kOpenStreams] === 0) {
+      if (session[kOpenStreams] === 0 && (client[kSize] === 0 || session[kReceivedGoAway])) {
         unrefH2Session(session);
         setHttp2IdleTimeout(session);
       }
@@ -185653,21 +188504,21 @@ var require_client_h2 = __commonJS({
       for (let n = 0; n < reqHeaders.length; n += 2) {
         const key = reqHeaders[n + 0];
         const val = reqHeaders[n + 1];
-        const current = headers[key];
+        const current = Object.hasOwn(headers, key) ? headers[key] : void 0;
         if (key === "cookie") {
           if (current != null) {
-            headers[key] = Array.isArray(current) ? (current.push(val), current) : [current, val];
+            util.setHeader(headers, key, Array.isArray(current) ? (current.push(val), current) : [current, val]);
           } else {
-            headers[key] = val;
+            util.setHeader(headers, key, val);
           }
           continue;
         }
         if (typeof val === "string") {
-          headers[key] = current ? `${current}, ${val}` : val;
+          util.setHeader(headers, key, current ? `${current}, ${val}` : val);
           continue;
         }
         for (let i = 0; i < val.length; i++) {
-          headers[key] = headers[key] ? `${headers[key]}, ${val[i]}` : val[i];
+          util.setHeader(headers, key, Object.hasOwn(headers, key) ? `${headers[key]}, ${val[i]}` : val[i]);
         }
       }
       return headers;
@@ -185729,8 +188580,13 @@ var require_client_h2 = __commonJS({
       state.responseReceived = true;
       const statusCode = headers[HTTP2_HEADER_STATUS];
       delete headers[HTTP2_HEADER_STATUS];
-      request.onRequestUpgrade(statusCode, headers, stream);
-      if (request.aborted || request.completed) {
+      try {
+        request.onRequestUpgrade(statusCode, headers, stream);
+      } catch (err) {
+        state.abort(err);
+        return;
+      }
+      if (request.aborted) {
         return;
       }
       removeUpgradeStreamListeners(stream);
@@ -185797,13 +188653,16 @@ var require_client_h2 = __commonJS({
       const state = {
         abort: null,
         body: request.body,
+        bytesRead: 0,
         client,
         contentLength: null,
         expectsPayload: false,
+        maxResponseSize: client[kMaxResponseSize],
         request,
         headersTimeout,
         bodyTimeout,
         requestFinalized: false,
+        responseContentLength: null,
         responseReceived: false,
         bodySent: false,
         pendingEnd: false,
@@ -185938,6 +188797,7 @@ var require_client_h2 = __commonJS({
         stream.once("continue", writeBodyH2);
       }
       stream.on("response", onResponse);
+      stream.on("headers", onInterimResponse);
       stream.on("end", onEnd);
       stream.on("error", onError);
       stream.on("frameError", onFrameError);
@@ -185955,6 +188815,7 @@ var require_client_h2 = __commonJS({
       stream.off("error", noop);
       stream.off("continue", writeBodyH2);
       stream.off("response", onResponse);
+      stream.off("headers", onInterimResponse);
       stream.off("end", onEnd);
       stream.off("error", onError);
       stream.off("frameError", onFrameError);
@@ -185986,13 +188847,50 @@ var require_client_h2 = __commonJS({
       if (state == null) {
         return;
       }
+      const { request, maxResponseSize, responseContentLength } = state;
+      if (request.aborted || request.completed) {
+        return;
+      }
+      if (responseContentLength != null && state.bytesRead + chunk.length > responseContentLength) {
+        state.abort(new ResponseContentLengthMismatchError());
+        return;
+      }
+      if (maxResponseSize > -1 && state.bytesRead + chunk.length > maxResponseSize) {
+        state.abort(new ResponseExceededMaxSizeError());
+        return;
+      }
+      state.bytesRead += chunk.length;
+      if (request.onResponseData(chunk) === false) {
+        pauseResponseStream(stream, state);
+      }
+    }
+    function pauseResponseStream(stream, state) {
+      stream.pause();
+      if (state.bodyTimeout) {
+        stream.setTimeout(0);
+      }
+    }
+    function resumeResponseStream() {
+      const stream = this;
+      const state = stream[kRequestStreamState];
+      if (state != null && state.bodyTimeout && stream.isPaused()) {
+        stream.setTimeout(state.bodyTimeout);
+      }
+      stream.resume();
+    }
+    function onInterimResponse(headers) {
+      const stream = this;
+      const state = stream[kRequestStreamState];
+      if (state == null) {
+        return;
+      }
       const { request } = state;
       if (request.aborted || request.completed) {
         return;
       }
-      if (request.onResponseData(chunk) === false) {
-        stream.pause();
-      }
+      const statusCode = headers[HTTP2_HEADER_STATUS];
+      delete headers[HTTP2_HEADER_STATUS];
+      request.onResponseStart(Number(statusCode), headers, noop, "");
     }
     function onResponse(headers) {
       const stream = this;
@@ -186006,10 +188904,14 @@ var require_client_h2 = __commonJS({
         stream.removeListener("continue", writeBodyH2);
         stream.end();
       }
-      const statusCode = headers[HTTP2_HEADER_STATUS];
+      const statusCode = Number(headers[HTTP2_HEADER_STATUS]);
       delete headers[HTTP2_HEADER_STATUS];
       request.onResponseStarted();
       state.responseReceived = true;
+      if (request.method !== "HEAD" && statusCode !== 304) {
+        const contentLength = headers[HTTP2_HEADER_CONTENT_LENGTH];
+        state.responseContentLength = contentLength == null ? null : Number(contentLength);
+      }
       if (state.headersTimeout || state.bodyTimeout) {
         stream.setTimeout(state.bodyTimeout);
       }
@@ -186017,8 +188919,8 @@ var require_client_h2 = __commonJS({
         releaseRequestStream(stream);
         return;
       }
-      if (request.onResponseStart(Number(statusCode), headers, stream.resume.bind(stream), "") === false) {
-        stream.pause();
+      if (request.onResponseStart(statusCode, headers, resumeResponseStream.bind(stream), "") === false) {
+        pauseResponseStream(stream, state);
       }
       stream.on("data", onData);
     }
@@ -186032,6 +188934,10 @@ var require_client_h2 = __commonJS({
       stream.off("end", onEnd);
       if (state.responseReceived) {
         if (!request.aborted && !request.completed) {
+          if (state.responseContentLength != null && state.bytesRead !== state.responseContentLength) {
+            state.abort(new ResponseContentLengthMismatchError());
+            return;
+          }
           state.pendingEnd = true;
           completeRequestStream.call(stream);
         }
@@ -186060,6 +188966,9 @@ var require_client_h2 = __commonJS({
         return;
       }
       stream.off("error", onError);
+      if (state.responseContentLength != null && state.bytesRead !== state.responseContentLength) {
+        err = new ResponseContentLengthMismatchError();
+      }
       if (typeof stream.rstCode === "number" && stream.rstCode !== NGHTTP2_NO_ERROR) {
         err.http2ErrorCode = stream.rstCode;
       }
@@ -186087,7 +188996,9 @@ var require_client_h2 = __commonJS({
         return;
       }
       stream.off("timeout", onTimeout);
-      const err = state.responseReceived ? new BodyTimeoutError(`HTTP/2: "stream timeout after ${state.bodyTimeout}"`) : new HeadersTimeoutError(`HTTP/2: "headers timeout after ${state.headersTimeout}"`);
+      const { responseReceived, session, bodyTimeout, headersTimeout } = state;
+      const err = responseReceived ? new BodyTimeoutError(`HTTP/2: "stream timeout after ${bodyTimeout}"`) : new HeadersTimeoutError(`HTTP/2: "headers timeout after ${headersTimeout}"`);
+      probeHttp2Session(session, responseReceived ? bodyTimeout : headersTimeout);
       state.abort(err);
     }
     function onTrailers(trailers) {
@@ -186348,7 +189259,8 @@ var require_client = __commonJS({
       kMaxConcurrentStreams,
       kHostAuthority,
       kResume,
-      kHTTP2Options
+      kHTTP2Options,
+      kUseMilo
     } = require_symbols();
     var connectH1 = require_client_h1();
     var connectH2 = require_client_h2();
@@ -186414,8 +189326,10 @@ var require_client = __commonJS({
         initialWindowSize,
         connectionWindowSize,
         pingInterval,
+        useMilo,
         webSocket,
-        h2Options
+        h2Options,
+        eventSource
       } = {}) {
         var _a;
         if (keepAlive !== void 0) {
@@ -186487,7 +189401,7 @@ var require_client = __commonJS({
             if (((_a = h2Options.settings) == null ? void 0 : _a.initialWindowSize) != null && (!Number.isInteger(h2Options.settings.initialWindowSize) || h2Options.settings.initialWindowSize < 1)) {
               throw new InvalidArgumentError("h2Options.settings.initialWindowSize must be a positive integer, greater than 0");
             }
-            if (h2Options.maxConcurrentStreams != null && (!Number.isInteger(h2Options.connectionWindowSize) || h2Options.maxConcurrentStreams < 1)) {
+            if (h2Options.maxConcurrentStreams != null && (!Number.isInteger(h2Options.maxConcurrentStreams) || h2Options.maxConcurrentStreams < 1)) {
               throw new InvalidArgumentError("h2Options.maxConcurrentStreams must be a positive integer, greater than 0");
             }
             if (h2Options.connectionWindowSize != null && (!Number.isInteger(h2Options.connectionWindowSize) || h2Options.connectionWindowSize < 1)) {
@@ -186519,7 +189433,7 @@ var require_client = __commonJS({
             }
           }
         }
-        super({ webSocket });
+        super({ webSocket, eventSource });
         if (typeof connect2 !== "function") {
           connect2 = buildConnector({
             ...tls,
@@ -186576,6 +189490,7 @@ var require_client = __commonJS({
             initialWindowSize: (h2Options == null ? void 0 : h2Options.initialWindowSize) ?? initialWindowSize ?? 262144
           }
         };
+        this[kUseMilo] = useMilo;
         this[kQueue] = [];
         this[kRunningIdx] = 0;
         this[kPendingIdx] = 0;
@@ -186851,6 +189766,10 @@ var require_client = __commonJS({
         if (request === null) {
           return;
         }
+        if (request.aborted) {
+          client[kQueue].splice(client[kPendingIdx], 1);
+          continue;
+        }
         if (client[kUrl].protocol === "https:" && client[kServerName] !== request.servername) {
           if (client[kRunning] > 0) {
             return;
@@ -186961,6 +189880,7 @@ var require_fixed_queue = __commonJS({
 var require_pool_base = __commonJS({
   "addons/pro/node_modules/undici/lib/dispatcher/pool-base.js"(exports2, module2) {
     "use strict";
+    var { AsyncResource } = require("node:async_hooks");
     var { PoolStats } = require_stats();
     var DispatcherBase = require_dispatcher_base();
     var FixedQueue = require_fixed_queue();
@@ -186973,40 +189893,106 @@ var require_pool_base = __commonJS({
     var kOnConnect = /* @__PURE__ */ Symbol("onConnect");
     var kOnDisconnect = /* @__PURE__ */ Symbol("onDisconnect");
     var kOnConnectionError = /* @__PURE__ */ Symbol("onConnectionError");
+    var kOnClientBusy = /* @__PURE__ */ Symbol("on client busy");
+    var kOnClientDrain = /* @__PURE__ */ Symbol("on client drain");
+    var kDrainQueue = /* @__PURE__ */ Symbol("drain queue");
     var kGetDispatcher = /* @__PURE__ */ Symbol("get dispatcher");
     var kHasDispatcher = /* @__PURE__ */ Symbol("has dispatcher");
     var kAddClient = /* @__PURE__ */ Symbol("add client");
     var kRemoveClient = /* @__PURE__ */ Symbol("remove client");
+    var kRetireClient = /* @__PURE__ */ Symbol("retire client");
+    var kRetiring = /* @__PURE__ */ Symbol("retiring clients");
+    var QueuedRequest = class extends AsyncResource {
+      constructor(opts, handler) {
+        super("UNDICI_POOL_QUEUED_REQUEST");
+        this.opts = opts;
+        this.handler = handler;
+      }
+      dispatch(dispatcher) {
+        return this.runInAsyncScope(dispatcher.dispatch, dispatcher, this.opts, this.handler);
+      }
+    };
+    function closeClients(pool) {
+      const closeAll = [];
+      for (let i = 0; i < pool[kClients].length; i++) {
+        const client = pool[kClients][i];
+        if (!client.destroyed) {
+          closeAll.push(client.close());
+        }
+      }
+      for (const closed of pool[kRetiring].values()) {
+        closeAll.push(closed);
+      }
+      return Promise.all(closeAll);
+    }
     var PoolBase = class extends DispatcherBase {
       [kQueue] = new FixedQueue();
       [kQueued] = 0;
       [kClients] = [];
+      // Clients removed from kClients that have not finished closing,
+      // mapped to a promise that settles once they have.
+      [kRetiring] = /* @__PURE__ */ new Map();
       [kNeedDrain] = false;
       [kOnDrain](client, origin, targets) {
+        if (client.closed || client.destroyed) {
+          return;
+        }
         const queue = this[kQueue];
         let needDrain = false;
+        this[kOnClientDrain](client);
         while (!needDrain) {
           const item = queue.shift();
           if (!item) {
             break;
           }
           this[kQueued]--;
-          needDrain = !client.dispatch(item.opts, item.handler);
+          needDrain = !item.dispatch(client);
         }
         client[kNeedDrain] = needDrain;
+        if (needDrain) {
+          this[kOnClientBusy](client);
+          if (!queue.isEmpty()) {
+            return this[kDrainQueue](origin, targets);
+          }
+        }
         if (!needDrain && this[kNeedDrain]) {
           this[kNeedDrain] = false;
           this.emit("drain", origin, [this, ...targets]);
         }
         if (this[kClosedResolve] && queue.isEmpty()) {
-          const closeAll = [];
-          for (let i = 0; i < this[kClients].length; i++) {
-            const client2 = this[kClients][i];
-            if (!client2.destroyed) {
-              closeAll.push(client2.close());
+          return closeClients(this).then(this[kClosedResolve]);
+        }
+      }
+      [kOnClientBusy]() {
+      }
+      [kOnClientDrain]() {
+      }
+      [kDrainQueue](origin, targets) {
+        const queue = this[kQueue];
+        let hasDispatcher = true;
+        while (!queue.isEmpty()) {
+          const dispatcher = this[kGetDispatcher]();
+          if (!dispatcher) {
+            hasDispatcher = false;
+            break;
+          }
+          const item = queue.shift();
+          this[kQueued]--;
+          if (!item.dispatch(dispatcher)) {
+            dispatcher[kNeedDrain] = true;
+            this[kOnClientBusy](dispatcher);
+            hasDispatcher = this[kHasDispatcher]();
+            if (!hasDispatcher) {
+              break;
             }
           }
-          return Promise.all(closeAll).then(this[kClosedResolve]);
+        }
+        if (hasDispatcher && this[kNeedDrain]) {
+          this[kNeedDrain] = false;
+          this.emit("drain", origin, [this, ...targets]);
+        }
+        if (this[kClosedResolve] && queue.isEmpty()) {
+          return closeClients(this).then(this[kClosedResolve]);
         }
       }
       [kOnConnect] = (origin, targets) => {
@@ -187061,14 +190047,7 @@ var require_pool_base = __commonJS({
       }
       [kClose]() {
         if (this[kQueue].isEmpty()) {
-          const closeAll = [];
-          for (let i = 0; i < this[kClients].length; i++) {
-            const client = this[kClients][i];
-            if (!client.destroyed) {
-              closeAll.push(client.close());
-            }
-          }
-          return Promise.all(closeAll);
+          return closeClients(this);
         } else {
           return new Promise((resolve) => {
             this[kClosedResolve] = resolve;
@@ -187087,16 +190066,20 @@ var require_pool_base = __commonJS({
         for (let i = 0; i < this[kClients].length; i++) {
           destroyAll[i] = this[kClients][i].destroy(err);
         }
+        for (const client of this[kRetiring].keys()) {
+          destroyAll.push(client.destroy(err));
+        }
         return Promise.all(destroyAll);
       }
       [kDispatch](opts, handler) {
         const dispatcher = this[kGetDispatcher]();
         if (!dispatcher) {
           this[kNeedDrain] = true;
-          this[kQueue].push({ opts, handler });
+          this[kQueue].push(new QueuedRequest(opts, handler));
           this[kQueued]++;
         } else if (!dispatcher.dispatch(opts, handler)) {
           dispatcher[kNeedDrain] = true;
+          this[kOnClientBusy](dispatcher);
           this[kNeedDrain] = !this[kHasDispatcher]();
         }
         return !this[kNeedDrain];
@@ -187115,20 +190098,41 @@ var require_pool_base = __commonJS({
         this[kClients].push(client);
         if (this[kNeedDrain]) {
           queueMicrotask(() => {
-            if (this[kNeedDrain]) {
+            if (this[kNeedDrain] && !client[kNeedDrain]) {
               this[kOnDrain](client, client[kUrl], [client, this]);
             }
           });
         }
         return this;
       }
-      [kRemoveClient](client) {
+      // Takes a client out of rotation. A closed client no longer takes requests
+      // from the pool queue (see kOnDrain), but it finishes the requests it
+      // already has. Until it has, pool.close() waits for it and pool.destroy()
+      // destroys it.
+      [kRetireClient](client) {
         const idx = this[kClients].indexOf(client);
         if (idx !== -1) {
           this[kClients].splice(idx, 1);
         }
-        client.close(() => {
+        if (client.destroyed || this[kRetiring].has(client)) {
+          return;
+        }
+        let done = false;
+        let resolveClosed;
+        const closed = new Promise((resolve) => {
+          resolveClosed = resolve;
         });
+        this[kRetiring].set(client, closed);
+        client.close(() => {
+          if (!done) {
+            done = true;
+            this[kRetiring].delete(client);
+            resolveClosed();
+          }
+        });
+      }
+      [kRemoveClient](client) {
+        this[kRetireClient](client);
         this[kNeedDrain] = !this[kClients].some((dispatcher) => !dispatcher[kNeedDrain] && dispatcher.closed !== true && dispatcher.destroyed !== true);
       }
     };
@@ -187138,6 +190142,10 @@ var require_pool_base = __commonJS({
       kNeedDrain,
       kAddClient,
       kRemoveClient,
+      kRetireClient,
+      kDrainQueue,
+      kOnClientBusy,
+      kOnClientDrain,
       kGetDispatcher,
       kHasDispatcher
     };
@@ -187153,22 +190161,39 @@ var require_pool = __commonJS({
       kClients,
       kNeedDrain,
       kAddClient,
+      kDrainQueue,
+      kOnClientBusy,
+      kOnClientDrain,
       kGetDispatcher,
       kHasDispatcher,
-      kRemoveClient
+      kRemoveClient,
+      kRetireClient
     } = require_pool_base();
     var Client = require_client();
     var {
       InvalidArgumentError
     } = require_errors();
     var util = require_util();
-    var { kUrl } = require_symbols();
+    var { kConnecting, kHTTPContext, kUrl, kQueued } = require_symbols();
     var buildConnector = require_connect();
     var kOptions = /* @__PURE__ */ Symbol("options");
     var kConnections = /* @__PURE__ */ Symbol("connections");
     var kFactory = /* @__PURE__ */ Symbol("factory");
+    var kProtocol = /* @__PURE__ */ Symbol("protocol");
+    var kProtocolProbe = /* @__PURE__ */ Symbol("protocol probe");
     function defaultFactory(origin, opts) {
       return new Client(origin, opts);
+    }
+    function shouldCreateProtocolProbe(pool, dispatcher) {
+      return dispatcher instanceof Client && pool[kProtocol] !== "h1" && (pool[kOptions].useH2c === true || pool[kUrl].protocol === "https:" && pool[kOptions].allowH2 !== false);
+    }
+    function createClient(pool) {
+      const dispatcher = pool[kFactory](pool[kUrl], pool[kOptions]);
+      if (shouldCreateProtocolProbe(pool, dispatcher)) {
+        pool[kProtocolProbe] = dispatcher;
+      }
+      pool[kAddClient](dispatcher);
+      return dispatcher;
     }
     var Pool = class extends PoolBase {
       constructor(origin, {
@@ -187212,21 +190237,57 @@ var require_pool = __commonJS({
         this[kUrl] = util.parseOrigin(origin);
         this[kOptions] = { ...util.deepClone(options), connect, allowH2, useH2c, clientTtl, socketPath };
         this[kFactory] = factory;
+        this[kProtocol] = null;
+        this[kProtocolProbe] = null;
         this.on("connect", (origin2, targets) => {
+          var _a;
           if (clientTtl != null && clientTtl > 0) {
             for (const target of targets) {
               Object.assign(target, { ttl: Date.now() });
             }
           }
-        });
-        this.on("connectionError", (origin2, targets, error) => {
-          for (const target of targets) {
-            const idx = this[kClients].indexOf(target);
-            if (idx !== -1) {
-              this[kClients].splice(idx, 1);
+          const client = targets[targets.length - 1];
+          if (client instanceof Client) {
+            this[kProtocol] = (_a = client[kHTTPContext]) == null ? void 0 : _a.version;
+          }
+          if (client === this[kProtocolProbe]) {
+            if (this[kProtocol] !== "h2") {
+              this[kProtocolProbe] = null;
+              this[kDrainQueue](origin2, targets.slice(1));
             }
           }
         });
+        this.on("disconnect", (origin2, targets) => {
+          if (targets.includes(this[kProtocolProbe])) {
+            this[kProtocolProbe] = null;
+            this[kDrainQueue](origin2, targets.slice(1));
+          }
+        });
+        this.on("connectionError", (origin2, targets) => {
+          let resumeQueued = false;
+          for (const target of targets) {
+            if (target === this[kProtocolProbe]) {
+              this[kProtocolProbe] = null;
+              resumeQueued = true;
+            }
+            if (this[kClients].includes(target)) {
+              this[kRetireClient](target);
+            }
+          }
+          if (resumeQueued || this[kQueued] > 0) {
+            this[kDrainQueue](origin2, targets.slice(1));
+          }
+        });
+      }
+      [kOnClientBusy](client) {
+        if (this[kProtocolProbe] === null && client[kConnecting] && shouldCreateProtocolProbe(this, client)) {
+          this[kProtocolProbe] = client;
+        }
+      }
+      [kOnClientDrain](client) {
+        if (client === this[kProtocolProbe]) {
+          this[kProtocolProbe] = null;
+        }
       }
       [kGetDispatcher]() {
         const clientTtlOption = this[kOptions].clientTtl;
@@ -187239,10 +190300,11 @@ var require_pool = __commonJS({
             return client;
           }
         }
+        if (this[kProtocolProbe] !== null) {
+          return;
+        }
         if (!this[kConnections] || this[kClients].length < this[kConnections]) {
-          const dispatcher = this[kFactory](this[kUrl], this[kOptions]);
-          this[kAddClient](dispatcher);
-          return dispatcher;
+          return createClient(this);
         }
       }
       [kHasDispatcher]() {
@@ -187256,9 +190318,11 @@ var require_pool = __commonJS({
             return true;
           }
         }
+        if (this[kProtocolProbe] !== null) {
+          return false;
+        }
         if (!this[kConnections] || this[kClients].length < this[kConnections]) {
-          const dispatcher = this[kFactory](this[kUrl], this[kOptions]);
-          this[kAddClient](dispatcher);
+          createClient(this);
           return true;
         }
         return false;
@@ -187285,7 +190349,7 @@ var require_balanced_pool = __commonJS({
       kGetDispatcher
     } = require_pool_base();
     var Pool = require_pool();
-    var { kUrl } = require_symbols();
+    var { kOriginless, kUrl } = require_symbols();
     var util = require_util();
     var kFactory = /* @__PURE__ */ Symbol("factory");
     var kOptions = /* @__PURE__ */ Symbol("options");
@@ -187308,12 +190372,15 @@ var require_balanced_pool = __commonJS({
       return new Pool(origin, opts);
     }
     var BalancedPool = class extends PoolBase {
-      constructor(upstreams = [], { factory = defaultFactory, ...opts } = {}) {
+      constructor(upstreams = [], { factory = defaultFactory, connect, tls, ...opts } = {}) {
         if (typeof factory !== "function") {
           throw new InvalidArgumentError("factory must be a function.");
         }
-        super();
-        this[kOptions] = { ...util.deepClone(opts) };
+        super(opts);
+        this[kOriginless] = true;
+        if (connect && typeof connect !== "function") connect = { ...connect };
+        if (tls && typeof tls !== "function") tls = { ...tls };
+        this[kOptions] = { ...util.deepClone(opts), connect, tls };
         this[kIndex] = -1;
         this[kCurrentWeight] = 0;
         this[kMaxWeightPerServer] = this[kOptions].maxWeightPerServer || 100;
@@ -187424,14 +190491,16 @@ var require_round_robin_pool = __commonJS({
       kAddClient,
       kGetDispatcher,
       kHasDispatcher,
-      kRemoveClient
+      kRemoveClient,
+      kRetireClient,
+      kDrainQueue
     } = require_pool_base();
     var Client = require_client();
     var {
       InvalidArgumentError
     } = require_errors();
     var util = require_util();
-    var { kUrl } = require_symbols();
+    var { kUrl, kQueued } = require_symbols();
     var buildConnector = require_connect();
     var kOptions = /* @__PURE__ */ Symbol("options");
     var kConnections = /* @__PURE__ */ Symbol("connections");
@@ -187475,7 +190544,7 @@ var require_round_robin_pool = __commonJS({
             ...connect
           });
         }
-        super();
+        super(options);
         this[kConnections] = connections || null;
         this[kUrl] = util.parseOrigin(origin);
         this[kOptions] = { ...util.deepClone(options), connect, allowH2, clientTtl, socketPath };
@@ -187490,10 +190559,12 @@ var require_round_robin_pool = __commonJS({
         });
         this.on("connectionError", (origin2, targets, error) => {
           for (const target of targets) {
-            const idx = this[kClients].indexOf(target);
-            if (idx !== -1) {
-              this[kClients].splice(idx, 1);
+            if (this[kClients].includes(target)) {
+              this[kRetireClient](target);
             }
+          }
+          if (this[kQueued] > 0) {
+            this[kDrainQueue](origin2, targets.slice(1));
           }
         });
       }
@@ -187555,7 +190626,7 @@ var require_agent = __commonJS({
   "addons/pro/node_modules/undici/lib/dispatcher/agent.js"(exports2, module2) {
     "use strict";
     var { InvalidArgumentError, MaxOriginsReachedError } = require_errors();
-    var { kBusy, kClients, kConnected, kRunning, kClose, kDestroy, kDispatch, kUrl } = require_symbols();
+    var { kBusy, kClients, kConnected, kRunning, kPending, kClose, kDestroy, kDispatch, kUrl } = require_symbols();
     var DispatcherBase = require_dispatcher_base();
     var Pool = require_pool();
     var Client = require_client();
@@ -187571,7 +190642,7 @@ var require_agent = __commonJS({
       return opts && opts.connections === 1 ? new Client(origin, opts) : new Pool(origin, opts);
     }
     var Agent = class extends DispatcherBase {
-      constructor({ factory = defaultFactory, maxOrigins = Infinity, connect, ...options } = {}) {
+      constructor({ factory = defaultFactory, maxOrigins = Infinity, connect, tls, ...options } = {}) {
         if (typeof factory !== "function") {
           throw new InvalidArgumentError("factory must be a function.");
         }
@@ -187585,7 +190656,10 @@ var require_agent = __commonJS({
         if (connect && typeof connect !== "function") {
           connect = { ...connect };
         }
-        this[kOptions] = { ...util.deepClone(options), maxOrigins, connect };
+        if (tls && typeof tls !== "function") {
+          tls = { ...tls };
+        }
+        this[kOptions] = { ...util.deepClone(options), maxOrigins, connect, tls };
         this[kFactory] = factory;
         this[kClients] = /* @__PURE__ */ new Map();
         this[kOrigins] = /* @__PURE__ */ new Set();
@@ -187628,7 +190702,7 @@ var require_agent = __commonJS({
             if (this[kClients].get(key) !== dispatcher) {
               return;
             }
-            if (dispatcher[kConnected] > 0 || dispatcher[kBusy]) {
+            if (dispatcher[kConnected] > 0 || dispatcher[kBusy] || dispatcher[kPending] > 0) {
               return;
             }
             this[kClients].delete(key);
@@ -187695,6 +190769,7 @@ var require_dispatcher1_wrapper = __commonJS({
     var Dispatcher = require_dispatcher();
     var { InvalidArgumentError } = require_errors();
     var { toRawHeaders } = require_util();
+    var { kOriginless, kUrl } = require_symbols();
     var _handler;
     var LegacyHandlerWrapper = class {
       constructor(handler) {
@@ -187707,12 +190782,12 @@ var require_dispatcher1_wrapper = __commonJS({
       }
       onRequestUpgrade(controller, statusCode, headers, socket) {
         var _a, _b;
-        const rawHeaders = (controller == null ? void 0 : controller.rawHeaders) ?? toRawHeaders(headers ?? {});
+        const rawHeaders = Array.isArray(controller == null ? void 0 : controller.rawHeaders) ? controller.rawHeaders : toRawHeaders((controller == null ? void 0 : controller.rawHeaders) ?? headers ?? {});
         (_b = (_a = __privateGet(this, _handler)).onUpgrade) == null ? void 0 : _b.call(_a, statusCode, rawHeaders, socket);
       }
       onResponseStart(controller, statusCode, headers, statusMessage) {
         var _a, _b;
-        const rawHeaders = (controller == null ? void 0 : controller.rawHeaders) ?? toRawHeaders(headers ?? {});
+        const rawHeaders = Array.isArray(controller == null ? void 0 : controller.rawHeaders) ? controller.rawHeaders : toRawHeaders((controller == null ? void 0 : controller.rawHeaders) ?? headers ?? {});
         if (((_b = (_a = __privateGet(this, _handler)).onHeaders) == null ? void 0 : _b.call(_a, statusCode, rawHeaders, () => controller.resume(), statusMessage)) === false) {
           controller.pause();
         }
@@ -187725,7 +190800,7 @@ var require_dispatcher1_wrapper = __commonJS({
       }
       onResponseEnd(controller, trailers) {
         var _a, _b;
-        const rawTrailers = (controller == null ? void 0 : controller.rawTrailers) ?? toRawHeaders(trailers ?? {});
+        const rawTrailers = Array.isArray(controller == null ? void 0 : controller.rawTrailers) ? controller.rawTrailers : toRawHeaders((controller == null ? void 0 : controller.rawTrailers) ?? trailers ?? {});
         (_b = (_a = __privateGet(this, _handler)).onComplete) == null ? void 0 : _b.call(_a, rawTrailers);
       }
       onResponseError(_controller, err) {
@@ -187757,6 +190832,8 @@ var require_dispatcher1_wrapper = __commonJS({
           throw new InvalidArgumentError("Argument dispatcher must implement dispatch");
         }
         __privateSet(this, _dispatcher, dispatcher);
+        this[kUrl] = dispatcher[kUrl];
+        this[kOriginless] = dispatcher[kOriginless];
       }
       static wrapHandler(handler) {
         if (!handler || typeof handler !== "object") {
@@ -187772,6 +190849,15 @@ var require_dispatcher1_wrapper = __commonJS({
           opts = { ...opts, allowH2: false };
         }
         return __privateGet(this, _dispatcher).dispatch(opts, _Dispatcher1Wrapper.wrapHandler(handler));
+      }
+      // Older undici versions read WebSocket and EventSource receive limits from
+      // the (legacy) global dispatcher, which is this wrapper, so report the
+      // wrapped dispatcher's settings.
+      get webSocketOptions() {
+        return __privateGet(this, _dispatcher).webSocketOptions;
+      }
+      get eventSourceOptions() {
+        return __privateGet(this, _dispatcher).eventSourceOptions;
       }
       close(...args) {
         return __privateGet(this, _dispatcher).close(...args);
@@ -188287,25 +191373,34 @@ var require_socks5_proxy_agent = __commonJS({
     var { URL: URL2 } = require("node:url");
     var tls;
     var DispatcherBase = require_dispatcher_base();
-    var { InvalidArgumentError } = require_errors();
+    var { ConnectTimeoutError, InvalidArgumentError } = require_errors();
     var { Socks5Client, STATES } = require_socks5_client();
     var { kBusy, kConnected, kDispatch, kClose, kDestroy } = require_symbols();
     var Pool = require_pool();
     var buildConnector = require_connect();
+    var { setupConnectTimeout } = require_util();
     var { debuglog } = require("node:util");
     var debug = debuglog("undici:socks5-proxy");
+    var DEFAULT_SOCKS5_CONNECT_TIMEOUT = 5e3;
     var kProxyUrl = /* @__PURE__ */ Symbol("proxy url");
     var kProxyHeaders = /* @__PURE__ */ Symbol("proxy headers");
     var kProxyAuth = /* @__PURE__ */ Symbol("proxy auth");
     var kProxyProtocol = /* @__PURE__ */ Symbol("proxy protocol");
     var kPools = /* @__PURE__ */ Symbol("pools");
     var kConnector = /* @__PURE__ */ Symbol("connector");
+    var kConnectTimeout = /* @__PURE__ */ Symbol("connect timeout");
     var kRequestTls = /* @__PURE__ */ Symbol("request tls settings");
+    var kRequestTlsTimeout = /* @__PURE__ */ Symbol("request tls timeout");
+    function createConnectTimeoutError(hostname, port, timeout) {
+      return new ConnectTimeoutError(
+        `Connect Timeout Error (attempted address: ${hostname}:${port}, timeout: ${timeout}ms)`
+      );
+    }
     var experimentalWarningEmitted = false;
     var Socks5ProxyAgent = class extends DispatcherBase {
       constructor(proxyUrl, options = {}) {
-        var _a;
-        super();
+        var _a, _b;
+        super(options);
         if (!experimentalWarningEmitted) {
           process.emitWarning(
             "SOCKS5 proxy support is experimental and subject to change",
@@ -188323,14 +191418,30 @@ var require_socks5_proxy_agent = __commonJS({
         this[kProxyUrl] = url;
         this[kProxyHeaders] = options.headers || {};
         this[kProxyProtocol] = options.proxyTls ? "https:" : "http:";
-        this[kRequestTls] = options.requestTls;
+        const connectTimeout = options.connectTimeout ?? DEFAULT_SOCKS5_CONNECT_TIMEOUT;
+        if (!Number.isFinite(connectTimeout) || connectTimeout < 0) {
+          throw new InvalidArgumentError("invalid connectTimeout");
+        }
+        this[kConnectTimeout] = connectTimeout;
+        const { timeout, ...requestTls } = options.requestTls || {};
+        const requestTlsTimeout = timeout ?? connectTimeout;
+        if (!Number.isFinite(requestTlsTimeout) || requestTlsTimeout < 0) {
+          throw new InvalidArgumentError("invalid requestTls.timeout");
+        }
+        this[kRequestTls] = requestTls;
+        this[kRequestTlsTimeout] = requestTlsTimeout;
         this[kProxyAuth] = {
           username: options.username || (url.username ? decodeURIComponent(url.username) : null),
           password: options.password || (url.password ? decodeURIComponent(url.password) : null)
         };
+        const proxyTlsTimeout = ((_a = options.proxyTls) == null ? void 0 : _a.timeout) ?? connectTimeout;
+        if (!Number.isFinite(proxyTlsTimeout) || proxyTlsTimeout < 0) {
+          throw new InvalidArgumentError("invalid proxyTls.timeout");
+        }
         this[kConnector] = options.connect || buildConnector({
           ...options.proxyTls,
-          servername: ((_a = options.proxyTls) == null ? void 0 : _a.servername) || url.hostname
+          timeout: proxyTlsTimeout,
+          servername: ((_b = options.proxyTls) == null ? void 0 : _b.servername) || url.hostname
         });
         this[kPools] = /* @__PURE__ */ new Map();
       }
@@ -188362,17 +191473,24 @@ var require_socks5_proxy_agent = __commonJS({
         });
         await socks5Client.handshake();
         const authenticationReady = Promise.withResolvers();
-        const authenticationTimeout = setTimeout(() => {
-          authenticationReady.reject(new Error("SOCKS5 authentication timeout"));
-        }, 5e3);
-        const onAuthenticated = () => {
+        const authenticationTimeout = this[kConnectTimeout] === 0 ? null : setTimeout(() => {
+          cleanupAuthenticationListeners();
+          socks5Client.destroy();
+          authenticationReady.reject(
+            createConnectTimeoutError(proxyHost, proxyPort, this[kConnectTimeout])
+          );
+        }, this[kConnectTimeout]);
+        const cleanupAuthenticationListeners = () => {
           clearTimeout(authenticationTimeout);
+          socks5Client.removeListener("authenticated", onAuthenticated);
           socks5Client.removeListener("error", onAuthenticationError);
+        };
+        const onAuthenticated = () => {
+          cleanupAuthenticationListeners();
           authenticationReady.resolve();
         };
         const onAuthenticationError = (err) => {
-          clearTimeout(authenticationTimeout);
-          socks5Client.removeListener("authenticated", onAuthenticated);
+          cleanupAuthenticationListeners();
           authenticationReady.reject(err);
         };
         if (socks5Client.state === STATES.AUTHENTICATED) {
@@ -188385,18 +191503,25 @@ var require_socks5_proxy_agent = __commonJS({
         await authenticationReady.promise;
         await socks5Client.connect(targetHost, targetPort);
         const connectionReady = Promise.withResolvers();
-        const connectionTimeout = setTimeout(() => {
-          connectionReady.reject(new Error("SOCKS5 connection timeout"));
-        }, 5e3);
+        const connectionTimeout = this[kConnectTimeout] === 0 ? null : setTimeout(() => {
+          cleanupConnectionListeners();
+          socks5Client.destroy();
+          connectionReady.reject(
+            createConnectTimeoutError(targetHost, targetPort, this[kConnectTimeout])
+          );
+        }, this[kConnectTimeout]);
+        const cleanupConnectionListeners = () => {
+          clearTimeout(connectionTimeout);
+          socks5Client.removeListener("connected", onConnected);
+          socks5Client.removeListener("error", onConnectionError);
+        };
         const onConnected = (info) => {
           debug("SOCKS5 tunnel established to", targetHost, targetPort, "via", info);
-          clearTimeout(connectionTimeout);
-          socks5Client.removeListener("error", onConnectionError);
+          cleanupConnectionListeners();
           connectionReady.resolve();
         };
         const onConnectionError = (err) => {
-          clearTimeout(connectionTimeout);
-          socks5Client.removeListener("connected", onConnected);
+          cleanupConnectionListeners();
           connectionReady.reject(err);
         };
         socks5Client.once("connected", onConnected);
@@ -188437,8 +191562,26 @@ var require_socks5_proxy_agent = __commonJS({
                       servername: ((_a = this[kRequestTls]) == null ? void 0 : _a.servername) || targetHost
                     });
                     const tlsReady = Promise.withResolvers();
-                    finalSocket.once("secureConnect", tlsReady.resolve);
-                    finalSocket.once("error", tlsReady.reject);
+                    const cleanupTlsListeners = () => {
+                      queueMicrotask(clearTlsTimeout);
+                      finalSocket.removeListener("secureConnect", onSecureConnect);
+                      finalSocket.removeListener("error", onTlsError);
+                    };
+                    const onSecureConnect = () => {
+                      cleanupTlsListeners();
+                      tlsReady.resolve();
+                    };
+                    const onTlsError = (err) => {
+                      cleanupTlsListeners();
+                      tlsReady.reject(err);
+                    };
+                    const clearTlsTimeout = setupConnectTimeout(new WeakRef(finalSocket), {
+                      timeout: this[kRequestTlsTimeout],
+                      hostname: targetHost,
+                      port: targetPort
+                    });
+                    finalSocket.once("secureConnect", onSecureConnect);
+                    finalSocket.once("error", onTlsError);
                     await tlsReady.promise;
                   }
                   callback(null, finalSocket);
@@ -188509,6 +191652,7 @@ var require_proxy_agent = __commonJS({
     var Client = require_client();
     var { channels } = require_diagnostics();
     var Socks5ProxyAgent = require_socks5_proxy_agent();
+    var { hasSafeIterator } = require_util();
     var kAgent = /* @__PURE__ */ Symbol("proxy agent");
     var kClient = /* @__PURE__ */ Symbol("proxy client");
     var kProxyHeaders = /* @__PURE__ */ Symbol("proxy headers");
@@ -188569,11 +191713,10 @@ var require_proxy_agent = __commonJS({
           headers = {}
         } = opts;
         opts.path = origin + path;
-        if (!("host" in headers) && !("Host" in headers)) {
-          const { host } = new URL(origin);
-          headers.host = host;
-        }
         opts.headers = { ...this[kProxyHeaders], ...headers };
+        if (!hasHostHeader(headers)) {
+          opts.headers.host = new URL(origin).host;
+        }
         if (__privateGet(this, _proxyServername) != null) {
           opts.servername = __privateGet(this, _proxyServername);
         }
@@ -188599,7 +191742,7 @@ var require_proxy_agent = __commonJS({
           throw new InvalidArgumentError("Proxy opts.clientFactory must be a function.");
         }
         const { proxyTunnel, connectTimeout } = opts;
-        super();
+        super(opts);
         __privateAdd(this, _ProxyAgent_instances);
         const url = __privateMethod(this, _ProxyAgent_instances, getUrl_fn).call(this, opts);
         const { href, origin, port, protocol, username, password, hostname: proxyHostname } = url;
@@ -188634,6 +191777,7 @@ var require_proxy_agent = __commonJS({
               factory: agentFactory,
               username: opts.username || username,
               password: opts.password || password,
+              connectTimeout,
               proxyTls: opts.proxyTls,
               requestTls: opts.requestTls
             });
@@ -188723,11 +191867,13 @@ var require_proxy_agent = __commonJS({
         });
       }
       dispatch(opts, handler) {
-        const headers = buildHeaders(opts.headers);
+        let headers = buildHeaders(opts.headers);
         throwIfProxyAuthIsSent(headers);
-        if (headers && !("host" in headers) && !("Host" in headers)) {
-          const { host } = new URL(opts.origin);
-          headers.host = host;
+        if (headers && !hasHostHeader(headers)) {
+          if (headers === opts.headers) {
+            headers = { ...headers };
+          }
+          headers.host = new URL(opts.origin).host;
         }
         return this[kAgent].dispatch(
           {
@@ -188777,6 +191923,25 @@ var require_proxy_agent = __commonJS({
         }
         return headersPair;
       }
+      if (headers && typeof headers === "object" && hasSafeIterator(headers)) {
+        const headersPair = {};
+        for (const [key, value] of headers) {
+          if (!Object.hasOwn(headersPair, key)) {
+            headersPair[key] = value;
+            continue;
+          }
+          const previous = headersPair[key];
+          const values = [];
+          if (previous !== void 0) {
+            values.push(...Array.isArray(previous) ? previous : [previous]);
+          }
+          if (value !== void 0) {
+            values.push(...Array.isArray(value) ? value : [value]);
+          }
+          headersPair[key] = values.length > 1 ? values : values[0];
+        }
+        return headersPair;
+      }
       return headers;
     }
     function throwIfProxyAuthIsSent(headers) {
@@ -188788,6 +191953,14 @@ var require_proxy_agent = __commonJS({
     }
     function isProxyAuthorizationHeader(key) {
       return key.length === proxyAuthorization.length && key.toLowerCase() === proxyAuthorization;
+    }
+    function hasHostHeader(headers) {
+      for (const key in headers) {
+        if (key.length === 4 && key.toLowerCase() === "host") {
+          return true;
+        }
+      }
+      return false;
     }
     function throwProxyAuthError() {
       throw new InvalidArgumentError("Proxy-Authorization should be sent in ProxyAgent constructor");
@@ -188811,7 +191984,7 @@ var require_env_http_proxy_agent = __commonJS({
     var _noProxyValue, _noProxyEntries, _opts, _EnvHttpProxyAgent_instances, getProxyAgentForUrl_fn, shouldProxy_fn, parseNoProxy_fn, noProxyChanged_get, noProxyEnv_get;
     var EnvHttpProxyAgent = class extends DispatcherBase {
       constructor(opts = {}) {
-        super();
+        super(opts);
         __privateAdd(this, _EnvHttpProxyAgent_instances);
         __privateAdd(this, _noProxyValue, null);
         __privateAdd(this, _noProxyEntries, null);
@@ -188860,6 +192033,9 @@ var require_env_http_proxy_agent = __commonJS({
     getProxyAgentForUrl_fn = function(url) {
       let { protocol, host: hostname, port } = url;
       hostname = hostname.replace(/:\d*$/, "").replace(/^\[(.+)\]$/, "$1").toLowerCase();
+      if (hostname.length > 1 && hostname.charCodeAt(hostname.length - 1) === 46) {
+        hostname = hostname.slice(0, -1);
+      }
       port = Number.parseInt(port, 10) || DEFAULT_PORTS[protocol] || 0;
       if (!__privateMethod(this, _EnvHttpProxyAgent_instances, shouldProxy_fn).call(this, hostname, port)) {
         return this[kNoProxyAgent];
@@ -188876,15 +192052,18 @@ var require_env_http_proxy_agent = __commonJS({
       if (__privateGet(this, _noProxyEntries).length === 0) {
         return true;
       }
-      if (__privateGet(this, _noProxyValue) === "*") {
-        return false;
-      }
       for (let i = 0; i < __privateGet(this, _noProxyEntries).length; i++) {
         const entry = __privateGet(this, _noProxyEntries)[i];
+        if (entry.hostname === "*") {
+          if (entry.port && entry.port !== port) {
+            continue;
+          }
+          return false;
+        }
         if (entry.port && entry.port !== port) {
           continue;
         }
-        if (hostname === entry.hostname) {
+        if (!entry.wildcard && hostname === entry.hostname) {
           return false;
         }
         if (hostname.slice(-(entry.hostname.length + 1)) === `.${entry.hostname}`) {
@@ -188914,10 +192093,12 @@ var require_env_http_proxy_agent = __commonJS({
           hostname = parsed ? parsed[1] : unbracketed;
           port = parsed ? Number.parseInt(parsed[2], 10) : 0;
         }
+        const wildcard = entry.charCodeAt(0) === 42;
         noProxyEntries.push({
-          // strip leading dot or asterisk with dot
-          hostname: hostname.replace(/^\*?\./, "").toLowerCase(),
-          port
+          // strip leading dot or asterisk with dot, and any trailing dot
+          hostname: hostname.replace(/^\*?\./, "").replace(/^(.+)\.$/, "$1").toLowerCase(),
+          port,
+          wildcard
         });
       }
       __privateSet(this, _noProxyValue, noProxyValue);
@@ -188942,8 +192123,9 @@ var require_retry_handler = __commonJS({
     "use strict";
     var assert = require("node:assert");
     var { kRetryHandlerDefaultRetry } = require_symbols();
-    var { RequestRetryError } = require_errors();
+    var { RequestRetryError, RequestAbortedError } = require_errors();
     var {
+      hasSafeIterator,
       isDisturbed,
       parseRangeHeader,
       wrapRequestBody
@@ -188969,45 +192151,76 @@ var require_retry_handler = __commonJS({
         });
       }
     }
+    var _onAbort, _paused, _target;
     var RetryController = class {
-      constructor() {
-        this.target = null;
+      constructor(onAbort) {
+        __privateAdd(this, _onAbort);
+        __privateAdd(this, _paused, false);
+        __privateAdd(this, _target, null);
+        __privateSet(this, _onAbort, onAbort);
+      }
+      set target(target) {
+        __privateSet(this, _target, target);
+        if (__privateGet(this, _paused)) {
+          target == null ? void 0 : target.pause();
+        }
+      }
+      get target() {
+        return __privateGet(this, _target);
       }
       pause() {
         var _a;
-        (_a = this.target) == null ? void 0 : _a.pause();
+        __privateSet(this, _paused, true);
+        (_a = __privateGet(this, _target)) == null ? void 0 : _a.pause();
       }
       resume() {
         var _a;
-        (_a = this.target) == null ? void 0 : _a.resume();
+        __privateSet(this, _paused, false);
+        (_a = __privateGet(this, _target)) == null ? void 0 : _a.resume();
       }
       abort(reason) {
         var _a;
-        (_a = this.target) == null ? void 0 : _a.abort(reason);
+        (_a = __privateGet(this, _target)) == null ? void 0 : _a.abort(reason);
+        __privateGet(this, _onAbort).call(this, reason);
       }
       get paused() {
         var _a;
-        return ((_a = this.target) == null ? void 0 : _a.paused) ?? false;
+        return __privateGet(this, _paused) || (((_a = __privateGet(this, _target)) == null ? void 0 : _a.paused) ?? false);
       }
       get aborted() {
         var _a;
-        return ((_a = this.target) == null ? void 0 : _a.aborted) ?? false;
+        return ((_a = __privateGet(this, _target)) == null ? void 0 : _a.aborted) ?? false;
       }
       get reason() {
         var _a;
-        return ((_a = this.target) == null ? void 0 : _a.reason) ?? null;
+        return ((_a = __privateGet(this, _target)) == null ? void 0 : _a.reason) ?? null;
       }
       get rawHeaders() {
         var _a;
-        return ((_a = this.target) == null ? void 0 : _a.rawHeaders) ?? null;
+        return ((_a = __privateGet(this, _target)) == null ? void 0 : _a.rawHeaders) ?? null;
+      }
+      set rawHeaders(value) {
+        if (__privateGet(this, _target)) {
+          __privateGet(this, _target).rawHeaders = value;
+        }
       }
       get rawTrailers() {
         var _a;
-        return ((_a = this.target) == null ? void 0 : _a.rawTrailers) ?? null;
+        return ((_a = __privateGet(this, _target)) == null ? void 0 : _a.rawTrailers) ?? null;
+      }
+      set rawTrailers(value) {
+        if (__privateGet(this, _target)) {
+          __privateGet(this, _target).rawTrailers = value;
+        }
       }
     };
-    var RetryHandler = class _RetryHandler {
+    _onAbort = new WeakMap();
+    _paused = new WeakMap();
+    _target = new WeakMap();
+    var _RetryHandler_instances, onAbort_fn;
+    var _RetryHandler = class _RetryHandler {
       constructor(opts, { dispatch, handler }) {
+        __privateAdd(this, _RetryHandler_instances);
         const { retryOptions, ...dispatchOpts } = opts;
         const {
           // Retry scoped
@@ -189062,14 +192275,25 @@ var require_retry_handler = __commonJS({
         this.etag = null;
         this.statusCode = null;
         this.headers = null;
-        this.controllerProxy = new RetryController();
+        this.controllerProxy = new RetryController((reason) => __privateMethod(this, _RetryHandler_instances, onAbort_fn).call(this, reason));
+        this.retryPending = false;
+        this.retryTimer = null;
+        this.pendingResponseData = null;
+        this.pendingResponseTrailers = null;
+        this.pendingResponseEnded = false;
+        this.aborted = false;
       }
       onResponseStartWithRetry(controller, statusCode, headers, statusMessage, err) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e, _f;
         if (this.retryOpts.throwOnError) {
           if (this.retryOpts.statusCodes.includes(statusCode) === false) {
-            this.headersSent = true;
-            (_b = (_a = this.handler).onResponseStart) == null ? void 0 : _b.call(_a, this.controllerProxy, statusCode, headers, statusMessage);
+            if (this.headersSent) {
+              (_b = (_a = this.handler).onResponseError) == null ? void 0 : _b.call(_a, this.controllerProxy, err);
+            } else {
+              this.headersSent = true;
+              this.checkpointResponseEnd(headers);
+              (_d = (_c = this.handler).onResponseStart) == null ? void 0 : _d.call(_c, this.controllerProxy, statusCode, headers, statusMessage);
+            }
           } else {
             this.error = err;
           }
@@ -189077,29 +192301,72 @@ var require_retry_handler = __commonJS({
         }
         if (isDisturbed(this.opts.body)) {
           this.headersSent = true;
-          (_d = (_c = this.handler).onResponseStart) == null ? void 0 : _d.call(_c, this.controllerProxy, statusCode, headers, statusMessage);
+          this.checkpointResponseEnd(headers);
+          (_f = (_e = this.handler).onResponseStart) == null ? void 0 : _f.call(_e, this.controllerProxy, statusCode, headers, statusMessage);
           return;
         }
         function shouldRetry(passedErr) {
-          var _a2, _b2;
+          var _a2, _b2, _c2, _d2;
+          if (this.aborted) {
+            return;
+          }
+          this.retryPending = false;
+          this.retryTimer = null;
+          const pendingData = this.pendingResponseData;
+          const pendingTrailers = this.pendingResponseTrailers;
+          const pendingEnd = this.pendingResponseEnded;
+          this.pendingResponseData = null;
+          this.pendingResponseTrailers = null;
+          this.pendingResponseEnded = false;
           if (passedErr) {
-            this.headersSent = true;
-            (_b2 = (_a2 = this.handler).onResponseStart) == null ? void 0 : _b2.call(_a2, this.controllerProxy, statusCode, headers, statusMessage);
+            if (this.headersSent) {
+              (_b2 = (_a2 = this.handler).onResponseError) == null ? void 0 : _b2.call(_a2, this.controllerProxy, passedErr);
+            } else {
+              this.headersSent = true;
+              this.checkpointResponseEnd(headers);
+              (_d2 = (_c2 = this.handler).onResponseStart) == null ? void 0 : _d2.call(_c2, this.controllerProxy, statusCode, headers, statusMessage);
+              controller.resume();
+              if (pendingEnd) {
+                for (const chunk of pendingData) {
+                  this.onResponseData(controller, chunk);
+                }
+                this.onResponseEnd(controller, pendingTrailers);
+              }
+              return;
+            }
             controller.resume();
             return;
           }
           this.error = err;
           controller.resume();
+          if (pendingEnd) {
+            this.onResponseEnd(controller, pendingTrailers);
+          }
         }
         controller.pause();
-        this.retryOpts.retry(
+        this.retryPending = true;
+        this.pendingResponseData = [];
+        this.pendingResponseTrailers = null;
+        this.pendingResponseEnded = false;
+        this.retryTimer = this.retryOpts.retry(
           err,
           {
             state: { counter: this.retryCount },
             opts: { retryOptions: this.retryOpts, ...this.opts }
           },
           shouldRetry.bind(this)
-        );
+        ) ?? null;
+      }
+      checkpointResponseEnd(headers) {
+        if (this.end == null && this.opts.method !== "HEAD") {
+          const contentLength = headers["content-length"];
+          this.end = contentLength != null ? Number(contentLength) - 1 : null;
+          assert(
+            this.end == null || Number.isFinite(this.end),
+            "invalid content-length"
+          );
+          this.resume = this.end != null;
+        }
       }
       onRequestStart(controller, context) {
         var _a, _b;
@@ -189107,6 +192374,14 @@ var require_retry_handler = __commonJS({
         if (!this.headersSent) {
           (_b = (_a = this.handler).onRequestStart) == null ? void 0 : _b.call(_a, this.controllerProxy, context);
         }
+      }
+      onBodySent(chunk) {
+        var _a, _b;
+        (_b = (_a = this.handler).onBodySent) == null ? void 0 : _b.call(_a, chunk);
+      }
+      onRequestSent() {
+        var _a, _b;
+        (_b = (_a = this.handler).onRequestSent) == null ? void 0 : _b.call(_a);
       }
       onRequestUpgrade(_controller, statusCode, headers, socket) {
         var _a, _b;
@@ -189122,7 +192397,8 @@ var require_retry_handler = __commonJS({
           timeoutFactor,
           statusCodes,
           errorCodes,
-          methods
+          methods,
+          retryAfter
         } = retryOptions;
         const { counter } = state;
         if (code && code !== "UND_ERR_REQ_RETRY" && !errorCodes.includes(code)) {
@@ -189141,13 +192417,13 @@ var require_retry_handler = __commonJS({
           cb(err);
           return;
         }
-        let retryAfterHeader = headers == null ? void 0 : headers["retry-after"];
+        let retryAfterHeader = retryAfter === false ? void 0 : headers == null ? void 0 : headers["retry-after"];
         if (retryAfterHeader) {
           retryAfterHeader = Number(retryAfterHeader);
           retryAfterHeader = Number.isNaN(retryAfterHeader) ? calculateRetryAfterHeader(headers["retry-after"]) : retryAfterHeader * 1e3;
         }
         const retryTimeout = retryAfterHeader === 0 ? 0 : retryAfterHeader > 0 ? Math.min(retryAfterHeader, maxTimeout) : Math.min(minTimeout * timeoutFactor ** (counter - 1), maxTimeout);
-        setTimeout(() => cb(null), retryTimeout);
+        return setTimeout(() => cb(null), retryTimeout);
       }
       onResponseStart(controller, statusCode, headers, statusMessage) {
         var _a, _b, _c, _d, _e, _f;
@@ -189159,16 +192435,6 @@ var require_retry_handler = __commonJS({
         this.retryCount += 1;
         this.statusCode = statusCode;
         this.headers = headers;
-        if (statusCode >= 300) {
-          const err = new RequestRetryError("Request failed", statusCode, {
-            headers,
-            data: {
-              count: this.retryCount
-            }
-          });
-          this.onResponseStartWithRetry(controller, statusCode, headers, statusMessage, err);
-          return;
-        }
         if (this.headersSent) {
           if (statusCode !== 206 && (this.start > 0 || statusCode !== 200)) {
             throw new RequestRetryError("server does not support the range header and the payload was partially consumed", statusCode, {
@@ -189191,8 +192457,22 @@ var require_retry_handler = __commonJS({
           }
           validatePartialResponseContentLength(headers, contentRange, statusCode, this.retryCount);
           const { start, size, end = size ? size - 1 : null } = contentRange;
-          assert(this.start === start, "content-range mismatch");
-          assert(this.end == null || this.end === end, "content-range mismatch");
+          if (this.start !== start || this.end != null && this.end !== end) {
+            throw new RequestRetryError("Content-Range mismatch", statusCode, {
+              headers,
+              data: { count: this.retryCount }
+            });
+          }
+          return;
+        }
+        if (statusCode >= 300) {
+          const err = new RequestRetryError("Request failed", statusCode, {
+            headers,
+            data: {
+              count: this.retryCount
+            }
+          });
+          this.onResponseStartWithRetry(controller, statusCode, headers, statusMessage, err);
           return;
         }
         if (this.end == null) {
@@ -189250,6 +192530,10 @@ var require_retry_handler = __commonJS({
       }
       onResponseData(_controller, chunk) {
         var _a, _b;
+        if (this.pendingResponseData !== null) {
+          this.pendingResponseData.push(chunk);
+          return;
+        }
         if (this.error) {
           return;
         }
@@ -189258,6 +192542,11 @@ var require_retry_handler = __commonJS({
       }
       onResponseEnd(_controller, trailers) {
         var _a, _b;
+        if (this.pendingResponseData !== null) {
+          this.pendingResponseTrailers = trailers;
+          this.pendingResponseEnded = true;
+          return;
+        }
         if (this.error && this.retryOpts.throwOnError) {
           throw this.error;
         }
@@ -189278,16 +192567,9 @@ var require_retry_handler = __commonJS({
       retry() {
         var _a, _b;
         if (this.start !== 0) {
-          const headers = { range: `bytes=${this.start}-${this.end ?? ""}` };
-          if (this.etag != null) {
-            headers["if-match"] = this.etag;
-          }
           this.opts = {
             ...this.opts,
-            headers: {
-              ...this.opts.headers,
-              ...headers
-            }
+            headers: buildResumeHeaders(this.opts.headers, `bytes=${this.start}-${this.end ?? ""}`, this.etag)
           };
         }
         try {
@@ -189299,12 +192581,20 @@ var require_retry_handler = __commonJS({
       }
       onResponseError(controller, err) {
         var _a, _b;
-        if ((controller == null ? void 0 : controller.aborted) || isDisturbed(this.opts.body)) {
+        if (this.aborted) {
+          return;
+        }
+        if ((controller == null ? void 0 : controller.aborted) || isDisturbed(this.opts.body) || this.headersSent && !this.resume) {
           (_b = (_a = this.handler).onResponseError) == null ? void 0 : _b.call(_a, this.controllerProxy, err);
           return;
         }
         function shouldRetry(returnedErr) {
           var _a2, _b2;
+          if (this.aborted) {
+            return;
+          }
+          this.retryPending = false;
+          this.retryTimer = null;
           if (!returnedErr) {
             this.retry();
             return;
@@ -189316,16 +192606,71 @@ var require_retry_handler = __commonJS({
         } else {
           this.retryCount += 1;
         }
-        this.retryOpts.retry(
+        this.retryPending = true;
+        this.retryTimer = this.retryOpts.retry(
           err,
           {
             state: { counter: this.retryCount },
             opts: { retryOptions: this.retryOpts, ...this.opts }
           },
           shouldRetry.bind(this)
-        );
+        ) ?? null;
       }
     };
+    _RetryHandler_instances = new WeakSet();
+    onAbort_fn = function(reason) {
+      var _a, _b;
+      if (!this.retryPending) {
+        return;
+      }
+      this.aborted = true;
+      this.retryPending = false;
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+      this.pendingResponseData = null;
+      this.pendingResponseTrailers = null;
+      this.pendingResponseEnded = false;
+      (_b = (_a = this.handler).onResponseError) == null ? void 0 : _b.call(_a, this.controllerProxy, reason ?? new RequestAbortedError());
+    };
+    var RetryHandler = _RetryHandler;
+    function isReplacedHeader(key, etag) {
+      const name = key.toLowerCase();
+      return name === "range" || etag != null && name === "if-match";
+    }
+    function buildResumeHeaders(headers, range, etag) {
+      if (Array.isArray(headers) || headers && typeof headers === "object" && hasSafeIterator(headers)) {
+        const ret2 = [];
+        if (Array.isArray(headers)) {
+          for (let i = 0; i < headers.length; i += 2) {
+            if (!isReplacedHeader(headers[i], etag)) {
+              ret2.push(headers[i], headers[i + 1]);
+            }
+          }
+        } else {
+          for (const [key, value] of headers) {
+            if (!isReplacedHeader(key, etag)) {
+              ret2.push(key, value);
+            }
+          }
+        }
+        ret2.push("range", range);
+        if (etag != null) {
+          ret2.push("if-match", etag);
+        }
+        return ret2;
+      }
+      const ret = {};
+      for (const key in headers) {
+        if (Object.hasOwn(headers, key) && !isReplacedHeader(key, etag)) {
+          ret[key] = headers[key];
+        }
+      }
+      ret.range = range;
+      if (etag != null) {
+        ret["if-match"] = etag;
+      }
+      return ret;
+    }
     module2.exports = RetryHandler;
   }
 });
@@ -189336,6 +192681,7 @@ var require_retry_agent = __commonJS({
     "use strict";
     var Dispatcher = require_dispatcher();
     var RetryHandler = require_retry_handler();
+    var { kOriginless, kUrl } = require_symbols();
     var _agent, _options;
     var RetryAgent = class extends Dispatcher {
       constructor(agent, options = {}) {
@@ -189344,6 +192690,8 @@ var require_retry_agent = __commonJS({
         __privateAdd(this, _options, null);
         __privateSet(this, _agent, agent);
         __privateSet(this, _options, options);
+        this[kUrl] = agent[kUrl];
+        this[kOriginless] = agent[kOriginless];
       }
       dispatch(opts, handler) {
         const retry = new RetryHandler({
@@ -189354,6 +192702,14 @@ var require_retry_agent = __commonJS({
           handler
         });
         return __privateGet(this, _agent).dispatch(opts, retry);
+      }
+      // WebSocket and EventSource read their receive limits from the dispatcher
+      // they are given, so report the wrapped agent's settings rather than none.
+      get webSocketOptions() {
+        return __privateGet(this, _agent).webSocketOptions;
+      }
+      get eventSourceOptions() {
+        return __privateGet(this, _agent).eventSourceOptions;
       }
       close() {
         return __privateGet(this, _agent).close();
@@ -189420,7 +192776,6 @@ var require_readable = __commonJS({
     var { Readable } = require("node:stream");
     var { RequestAbortedError, NotSupportedError, InvalidArgumentError, AbortError } = require_errors();
     var util = require_util();
-    var { ReadableStreamFrom } = require_util();
     var kConsume = /* @__PURE__ */ Symbol("kConsume");
     var kReading = /* @__PURE__ */ Symbol("kReading");
     var kBody = /* @__PURE__ */ Symbol("kBody");
@@ -189607,7 +192962,7 @@ var require_readable = __commonJS({
        */
       get body() {
         if (!this[kBody]) {
-          this[kBody] = ReadableStreamFrom(this);
+          this[kBody] = ReadableStream.from(this);
           if (this[kConsume]) {
             this[kBody].getReader();
             assert(this[kBody].locked);
@@ -191022,8 +194377,7 @@ var require_mock_utils = __commonJS({
                 handler.onResponseError(null, new InvalidArgumentError("reply options callback must return an object"));
                 return;
               }
-              mockDispatch2.data = { ...responseDefaults, ...resolvedData };
-              dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler);
+              dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler, { ...responseDefaults, ...resolvedData });
             },
             (error) => {
               handler.onResponseError(null, error);
@@ -191034,13 +194388,14 @@ var require_mock_utils = __commonJS({
         if (callbackResult == null || typeof callbackResult !== "object") {
           throw new InvalidArgumentError("reply options callback must return an object");
         }
-        mockDispatch2.data = { ...responseDefaults, ...callbackResult };
+        return dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler, { ...responseDefaults, ...callbackResult });
       }
       return dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler);
     }
-    function dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler) {
+    function dispatchMockReply(mockDispatches, mockDispatch2, key, opts, handler, resolvedResponse) {
       var _a;
-      const { data: response, delay } = mockDispatch2;
+      const { data: responseData, delay } = mockDispatch2;
+      const response = resolvedResponse ?? responseData;
       if (response.error !== null) {
         deleteMockDispatch(mockDispatches, key);
         handler.onResponseError(null, response.error);
@@ -191115,8 +194470,7 @@ var require_mock_utils = __commonJS({
                   handler.onResponseError(null, new InvalidArgumentError("reply options callback must return an object"));
                   return;
                 }
-                mockDispatch2.data = { ...responseDefaults, ...resolvedData };
-                handleReply(dispatches, mockDispatch2.data);
+                handleReply(dispatches, { ...responseDefaults, ...resolvedData });
               },
               (err) => {
                 handler.onResponseError(null, err);
@@ -191127,8 +194481,7 @@ var require_mock_utils = __commonJS({
           if (callbackResult == null || typeof callbackResult !== "object") {
             throw new InvalidArgumentError("reply options callback must return an object");
           }
-          mockDispatch2.data = { ...responseDefaults, ...callbackResult };
-          handleReply(dispatches, mockDispatch2.data);
+          handleReply(dispatches, { ...responseDefaults, ...callbackResult });
           return;
         }
         if (typeof delay === "number" && delay > 0) {
@@ -191154,13 +194507,13 @@ var require_mock_utils = __commonJS({
         if (aborted) {
           return;
         }
-        const responseData = getResponseData(body);
+        const responseData2 = getResponseData(body);
         const responseHeaders = generateKeyValues(headers ?? {});
         const responseTrailers = generateKeyValues(trailers ?? {});
         controller.rawHeaders = responseHeaders;
         controller.rawTrailers = responseTrailers;
         (_a2 = handler.onResponseStart) == null ? void 0 : _a2.call(handler, controller, statusCode, parseHeaders(responseHeaders), getStatusText(statusCode));
-        (_b = handler.onResponseData) == null ? void 0 : _b.call(handler, controller, Buffer.from(responseData));
+        (_b = handler.onResponseData) == null ? void 0 : _b.call(handler, controller, Buffer.from(responseData2));
         (_c = handler.onResponseEnd) == null ? void 0 : _c.call(handler, controller, parseHeaders(responseTrailers));
         deleteMockDispatch(mockDispatches2, key);
       }
@@ -191913,6 +195266,15 @@ var require_mock_agent = __commonJS({
           this[kMockAgentRegisterCallHistory]();
         }
       }
+      // WebSocket and EventSource read their receive limits from the dispatcher
+      // they are given, so report the settings of the agent that makes real
+      // connections.
+      get webSocketOptions() {
+        return this[kAgent].webSocketOptions;
+      }
+      get eventSourceOptions() {
+        return this[kAgent].eventSourceOptions;
+      }
       get(origin) {
         const normalizedOrigin = normalizeOrigin(origin);
         const originKey = this[kIgnoreTrailingSlash] ? normalizedOrigin.replace(/\/$/, "") : normalizedOrigin;
@@ -191925,10 +195287,18 @@ var require_mock_agent = __commonJS({
       }
       dispatch(opts, handler) {
         opts.origin = normalizeOrigin(opts.origin);
-        this.get(opts.origin);
+        const mockDispatcher = this.get(opts.origin);
         this[kMockAgentAddCallHistoryLog](opts);
         const acceptNonStandardSearchParameters = this[kMockAgentAcceptsNonStandardSearchParameters];
         const dispatchOpts = { ...opts };
+        if (dispatchOpts.allowH2 === false) {
+          const http1OnlyKey = `${dispatchOpts.origin}#http1-only`;
+          if (!this[kClients].has(http1OnlyKey)) {
+            const http1OnlyDispatcher = this[kFactory](dispatchOpts.origin);
+            http1OnlyDispatcher[kDispatches] = mockDispatcher[kDispatches];
+            this[kMockAgentSet](http1OnlyKey, http1OnlyDispatcher);
+          }
+        }
         if (acceptNonStandardSearchParameters && dispatchOpts.path) {
           const [path, searchParams] = dispatchOpts.path.split("?");
           const normalizedSearchParams = normalizeSearchParams(searchParams, acceptNonStandardSearchParameters);
@@ -192051,6 +195421,7 @@ var require_snapshot_utils = __commonJS({
   "addons/pro/node_modules/undici/lib/mock/snapshot-utils.js"(exports2, module2) {
     "use strict";
     var { InvalidArgumentError } = require_errors();
+    var { setHeader } = require_util();
     var { runtimeFeatures } = require_runtime_features();
     function createHeaderFilters(matchOptions = {}) {
       const { ignoreHeaders = [], excludeHeaders = [], matchHeaders = [], caseSensitive = false } = matchOptions;
@@ -192098,7 +195469,7 @@ var require_snapshot_utils = __commonJS({
           if (key && value !== void 0) {
             const keyStr = Buffer.isBuffer(key) ? key.toString() : key;
             const valueStr = Buffer.isBuffer(value) ? value.toString() : value;
-            normalizedHeaders[keyStr.toLowerCase()] = valueStr;
+            setHeader(normalizedHeaders, keyStr.toLowerCase(), valueStr);
           }
         }
         return normalizedHeaders;
@@ -192106,7 +195477,7 @@ var require_snapshot_utils = __commonJS({
       if (headers && typeof headers === "object") {
         for (const [key, value] of Object.entries(headers)) {
           if (key && typeof key === "string") {
-            normalizedHeaders[key.toLowerCase()] = Array.isArray(value) ? value.join(", ") : String(value);
+            setHeader(normalizedHeaders, key.toLowerCase(), Array.isArray(value) ? value.join(", ") : String(value));
           }
         }
       }
@@ -192140,6 +195511,7 @@ var require_snapshot_recorder = __commonJS({
     var { dirname, resolve } = require("node:path");
     var { setTimeout: setTimeout2, clearTimeout: clearTimeout2 } = require("node:timers");
     var { InvalidArgumentError, UndiciError } = require_errors();
+    var { setHeader } = require_util();
     var { hashId, isUrlExcludedFactory, normalizeHeaders, createHeaderFilters } = require_snapshot_utils();
     function normalizeUrlForMatching(url, matchQuery, normalizeQuery) {
       if (matchQuery === false) return `${url.origin}${url.pathname}`;
@@ -192181,7 +195553,7 @@ var require_snapshot_recorder = __commonJS({
         if (match.size !== 0) {
           if (!match.has(headerKey)) continue;
         }
-        filtered[headerKey] = value;
+        setHeader(filtered, headerKey, value);
       }
       return filtered;
     }
@@ -192195,7 +195567,7 @@ var require_snapshot_recorder = __commonJS({
       for (const [key, value] of Object.entries(headers)) {
         const headerKey = caseSensitive ? key : key.toLowerCase();
         if (excludeSet.has(headerKey)) continue;
-        filtered[headerKey] = value;
+        setHeader(filtered, headerKey, value);
       }
       return filtered;
     }
@@ -192962,7 +196334,13 @@ var require_decorator_handler = __commonJS({
       /**
        * @deprecated
        */
-      onBodySent() {
+      onBodySent(...args) {
+        var _a2, _b;
+        return (_b = (_a2 = __privateGet(this, _handler)).onBodySent) == null ? void 0 : _b.call(_a2, ...args);
+      }
+      onRequestSent(...args) {
+        var _a2, _b;
+        return (_b = (_a2 = __privateGet(this, _handler)).onRequestSent) == null ? void 0 : _b.call(_a2, ...args);
       }
     }, _handler = new WeakMap(), _onCompleteCalled = new WeakMap(), _onErrorCalled = new WeakMap(), _onResponseStartCalled = new WeakMap(), _a);
   }
@@ -192974,7 +196352,8 @@ var require_redirect_handler = __commonJS({
     "use strict";
     var util = require_util();
     var assert = require("node:assert");
-    var { InvalidArgumentError } = require_errors();
+    var { InvalidArgumentError, MaxRedirectsError } = require_errors();
+    var { kRequestOrigin, kRedirectCacheControl } = require_symbols();
     var redirectableStatusCodes = [300, 301, 302, 303, 307, 308];
     var noop = () => {
     };
@@ -193003,19 +196382,32 @@ var require_redirect_handler = __commonJS({
         this.maxRedirections = maxRedirections;
         this.handler = handler;
         this.history = [];
+        Object.defineProperty(this.history, kRedirectCacheControl, {
+          value: [],
+          enumerable: false
+        });
       }
       onRequestStart(controller, context) {
         var _a, _b;
         (_b = (_a = this.handler).onRequestStart) == null ? void 0 : _b.call(_a, controller, { ...context, history: this.history });
+      }
+      onBodySent(chunk) {
+        var _a, _b;
+        (_b = (_a = this.handler).onBodySent) == null ? void 0 : _b.call(_a, chunk);
+      }
+      onRequestSent() {
+        var _a, _b;
+        (_b = (_a = this.handler).onRequestSent) == null ? void 0 : _b.call(_a);
       }
       onRequestUpgrade(controller, statusCode, headers, socket) {
         var _a, _b;
         (_b = (_a = this.handler).onRequestUpgrade) == null ? void 0 : _b.call(_a, controller, statusCode, headers, socket);
       }
       onResponseStart(controller, statusCode, headers, statusMessage) {
-        var _a, _b;
-        if (this.opts.throwOnMaxRedirect && this.history.length >= this.maxRedirections) {
-          throw new Error("max redirects");
+        var _a, _b, _c, _d;
+        if (statusCode < 200) {
+          (_b = (_a = this.handler).onResponseStart) == null ? void 0 : _b.call(_a, controller, statusCode, headers, statusMessage);
+          return;
         }
         let removeContentHeaders = statusCode === 303;
         if ((statusCode === 301 || statusCode === 302) && this.opts.method === "POST") {
@@ -193033,15 +196425,24 @@ var require_redirect_handler = __commonJS({
           }
           this.opts.body = null;
         }
-        this.location = this.history.length >= this.maxRedirections || util.isDisturbed(this.opts.body) || redirectableStatusCodes.indexOf(statusCode) === -1 ? null : headers.location;
-        if (this.opts.origin) {
-          this.history.push(new URL(this.opts.path, this.opts.origin));
+        this.location = util.isDisturbed(this.opts.body) || redirectableStatusCodes.indexOf(statusCode) === -1 ? null : headers.location || null;
+        if (this.location && this.history.length >= this.maxRedirections) {
+          if (this.opts.throwOnMaxRedirect) {
+            throw new MaxRedirectsError();
+          }
+          this.location = null;
+        }
+        const requestOrigin = this.opts[kRequestOrigin] === void 0 ? this.opts.origin : this.opts[kRequestOrigin];
+        if (requestOrigin) {
+          this.history.push(new URL(this.opts.path, requestOrigin));
         }
         if (!this.location) {
-          (_b = (_a = this.handler).onResponseStart) == null ? void 0 : _b.call(_a, controller, statusCode, headers, statusMessage);
+          (_d = (_c = this.handler).onResponseStart) == null ? void 0 : _d.call(_c, controller, statusCode, headers, statusMessage);
           return;
         }
-        const { origin, pathname, search } = util.parseURL(new URL(this.location, this.opts.origin && new URL(this.opts.path, this.opts.origin)));
+        this.history[kRedirectCacheControl].push(headers["cache-control"]);
+        const baseUrl = requestOrigin ? new URL(this.opts.path, requestOrigin) : void 0;
+        const { origin, pathname, search } = util.parseURL(new URL(this.location, baseUrl));
         const path = search ? `${pathname}${search}` : pathname;
         const redirectUrlString = `${origin}${path}`;
         for (const historyUrl of this.history) {
@@ -193049,9 +196450,10 @@ var require_redirect_handler = __commonJS({
             throw new InvalidArgumentError(`Redirect loop detected. Cannot redirect to ${origin}. This typically happens when using a Client or Pool with cross-origin redirects. Use an Agent for cross-origin redirects.`);
           }
         }
-        this.opts.headers = cleanRequestHeaders(this.opts.headers, removeContentHeaders, this.opts.origin !== origin, this.stripHeadersOnRedirect, this.stripHeadersOnCrossOriginRedirect);
+        this.opts.headers = cleanRequestHeaders(this.opts.headers, removeContentHeaders, requestOrigin !== origin, this.stripHeadersOnRedirect, this.stripHeadersOnCrossOriginRedirect);
         this.opts.path = path;
         this.opts.origin = origin;
+        this.opts[kRequestOrigin] = origin;
         this.opts.query = null;
       }
       onResponseData(controller, chunk) {
@@ -193156,10 +196558,11 @@ var require_response_error = __commonJS({
   "addons/pro/node_modules/undici/lib/interceptor/response-error.js"(exports2, module2) {
     "use strict";
     var DecoratorHandler = require_decorator_handler();
-    var { ResponseError } = require_errors();
-    var _statusCode, _contentType, _decoder, _headers, _body, _ResponseErrorHandler_instances, checkContentType_fn;
+    var { InvalidArgumentError, ResponseError } = require_errors();
+    var defaultMaxSize = 1024 * 1024;
+    var _statusCode, _contentType, _decoder, _headers, _body, _bodySize, _bodyTruncated, _maxSize, _ResponseErrorHandler_instances, checkContentType_fn, createResponseError_fn;
     var ResponseErrorHandler = class extends DecoratorHandler {
-      constructor(_opts, { handler }) {
+      constructor({ maxSize }, { handler }) {
         super(handler);
         __privateAdd(this, _ResponseErrorHandler_instances);
         __privateAdd(this, _statusCode);
@@ -193167,6 +196570,10 @@ var require_response_error = __commonJS({
         __privateAdd(this, _decoder);
         __privateAdd(this, _headers);
         __privateAdd(this, _body);
+        __privateAdd(this, _bodySize);
+        __privateAdd(this, _bodyTruncated);
+        __privateAdd(this, _maxSize);
+        __privateSet(this, _maxSize, maxSize);
       }
       onRequestStart(controller, context) {
         __privateSet(this, _statusCode, 0);
@@ -193174,6 +196581,8 @@ var require_response_error = __commonJS({
         __privateSet(this, _decoder, null);
         __privateSet(this, _headers, null);
         __privateSet(this, _body, "");
+        __privateSet(this, _bodySize, 0);
+        __privateSet(this, _bodyTruncated, false);
         return super.onRequestStart(controller, context);
       }
       onResponseStart(controller, statusCode, headers, statusMessage) {
@@ -193188,34 +196597,33 @@ var require_response_error = __commonJS({
         }
       }
       onResponseData(controller, chunk) {
-        var _a;
         if (__privateGet(this, _statusCode) < 400) {
           return super.onResponseData(controller, chunk);
         }
-        __privateSet(this, _body, __privateGet(this, _body) + (((_a = __privateGet(this, _decoder)) == null ? void 0 : _a.decode(chunk, { stream: true })) ?? ""));
+        if (__privateGet(this, _decoder) == null) {
+          return;
+        }
+        if (__privateGet(this, _maxSize) === 0) {
+          __privateSet(this, _body, __privateGet(this, _body) + __privateGet(this, _decoder).decode(chunk, { stream: true }));
+          return;
+        }
+        const remaining = __privateGet(this, _maxSize) - __privateGet(this, _bodySize);
+        if (chunk.length <= remaining) {
+          __privateSet(this, _bodySize, __privateGet(this, _bodySize) + chunk.length);
+          __privateSet(this, _body, __privateGet(this, _body) + __privateGet(this, _decoder).decode(chunk, { stream: true }));
+          return;
+        }
+        if (remaining > 0) {
+          __privateSet(this, _body, __privateGet(this, _body) + __privateGet(this, _decoder).decode(chunk.subarray(0, remaining), { stream: true }));
+          __privateSet(this, _bodySize, __privateGet(this, _maxSize));
+        }
+        __privateSet(this, _bodyTruncated, true);
+        __privateSet(this, _body, __privateGet(this, _body) + __privateGet(this, _decoder).decode(void 0, { stream: false }));
+        __privateSet(this, _decoder, null);
       }
       onResponseEnd(controller, trailers) {
-        var _a;
         if (__privateGet(this, _statusCode) >= 400) {
-          __privateSet(this, _body, __privateGet(this, _body) + (((_a = __privateGet(this, _decoder)) == null ? void 0 : _a.decode(void 0, { stream: false })) ?? ""));
-          if (__privateMethod(this, _ResponseErrorHandler_instances, checkContentType_fn).call(this, "application/json")) {
-            try {
-              __privateSet(this, _body, JSON.parse(__privateGet(this, _body)));
-            } catch {
-            }
-          }
-          let err;
-          const stackTraceLimit = Error.stackTraceLimit;
-          Error.stackTraceLimit = 0;
-          try {
-            err = new ResponseError("Response Error", __privateGet(this, _statusCode), {
-              body: __privateGet(this, _body),
-              headers: __privateGet(this, _headers)
-            });
-          } finally {
-            Error.stackTraceLimit = stackTraceLimit;
-          }
-          super.onResponseError(controller, err);
+          super.onResponseError(controller, __privateMethod(this, _ResponseErrorHandler_instances, createResponseError_fn).call(this));
         } else {
           super.onResponseEnd(controller, trailers);
         }
@@ -193229,14 +196637,45 @@ var require_response_error = __commonJS({
     _decoder = new WeakMap();
     _headers = new WeakMap();
     _body = new WeakMap();
+    _bodySize = new WeakMap();
+    _bodyTruncated = new WeakMap();
+    _maxSize = new WeakMap();
     _ResponseErrorHandler_instances = new WeakSet();
     checkContentType_fn = function(contentType) {
       return (__privateGet(this, _contentType) ?? "").indexOf(contentType) === 0;
     };
-    module2.exports = () => {
+    createResponseError_fn = function() {
+      var _a;
+      __privateSet(this, _body, __privateGet(this, _body) + (((_a = __privateGet(this, _decoder)) == null ? void 0 : _a.decode(void 0, { stream: false })) ?? ""));
+      __privateSet(this, _decoder, null);
+      if (!__privateGet(this, _bodyTruncated) && __privateMethod(this, _ResponseErrorHandler_instances, checkContentType_fn).call(this, "application/json")) {
+        try {
+          __privateSet(this, _body, JSON.parse(__privateGet(this, _body)));
+        } catch {
+        }
+      }
+      let err;
+      const stackTraceLimit = Error.stackTraceLimit;
+      Error.stackTraceLimit = 0;
+      try {
+        err = new ResponseError("Response Error", __privateGet(this, _statusCode), {
+          body: __privateGet(this, _body),
+          bodyTruncated: __privateGet(this, _bodyTruncated),
+          headers: __privateGet(this, _headers)
+        });
+      } finally {
+        Error.stackTraceLimit = stackTraceLimit;
+      }
+      return err;
+    };
+    module2.exports = (opts = {}) => {
+      const { maxSize = defaultMaxSize } = opts;
+      if (!Number.isSafeInteger(maxSize) || maxSize < 0) {
+        throw new InvalidArgumentError("maxSize must be a non-negative integer");
+      }
       return (dispatch) => {
-        return function Intercept(opts, handler) {
-          return dispatch(opts, new ResponseErrorHandler(opts, { handler }));
+        return function Intercept(opts2, handler) {
+          return dispatch(opts2, new ResponseErrorHandler({ maxSize }, { handler }));
         };
       };
     };
@@ -193273,7 +196712,7 @@ var require_dump = __commonJS({
     "use strict";
     var { InvalidArgumentError, RequestAbortedError } = require_errors();
     var DecoratorHandler = require_decorator_handler();
-    var _maxSize, _dumped, _size, _controller, _DumpHandler_instances, abort_fn;
+    var _maxSize, _dumped, _size, _DumpHandler_instances, abort_fn;
     var DumpHandler = class extends DecoratorHandler {
       constructor({ maxSize, signal }, handler) {
         if (maxSize != null && (!Number.isFinite(maxSize) || maxSize < 1)) {
@@ -193284,14 +196723,12 @@ var require_dump = __commonJS({
         __privateAdd(this, _maxSize, 1024 * 1024);
         __privateAdd(this, _dumped, false);
         __privateAdd(this, _size, 0);
-        __privateAdd(this, _controller, null);
         __publicField(this, "aborted", false);
         __publicField(this, "reason", false);
         __privateSet(this, _maxSize, maxSize ?? __privateGet(this, _maxSize));
       }
       onRequestStart(controller, context) {
         controller.abort = __privateMethod(this, _DumpHandler_instances, abort_fn).bind(this);
-        __privateSet(this, _controller, controller);
         return super.onRequestStart(controller, context);
       }
       onResponseStart(controller, statusCode, headers, statusMessage) {
@@ -193307,40 +196744,31 @@ var require_dump = __commonJS({
         return super.onResponseStart(controller, statusCode, headers, statusMessage);
       }
       onResponseError(controller, err) {
-        var _a;
-        if (__privateGet(this, _dumped)) {
-          return;
-        }
-        err = ((_a = __privateGet(this, _controller)) == null ? void 0 : _a.reason) ?? err;
-        super.onResponseError(controller, err);
+        super.onResponseError(controller, this.aborted === true ? this.reason : err);
       }
       onResponseData(controller, chunk) {
         __privateSet(this, _size, __privateGet(this, _size) + chunk.length);
-        if (__privateGet(this, _size) >= __privateGet(this, _maxSize)) {
+        if (__privateGet(this, _size) > __privateGet(this, _maxSize)) {
+          throw new RequestAbortedError(
+            `Response size (${__privateGet(this, _size)}) larger than maxSize (${__privateGet(this, _maxSize)})`
+          );
+        }
+        if (__privateGet(this, _size) === __privateGet(this, _maxSize)) {
           __privateSet(this, _dumped, true);
-          if (this.aborted === true) {
-            super.onResponseError(controller, this.reason);
-          } else {
-            super.onResponseEnd(controller, {});
-          }
         }
         return true;
       }
       onResponseEnd(controller, trailers) {
-        if (__privateGet(this, _dumped)) {
-          return;
-        }
-        if (__privateGet(this, _controller).aborted === true) {
+        if (this.aborted === true) {
           super.onResponseError(controller, this.reason);
           return;
         }
-        super.onResponseEnd(controller, trailers);
+        super.onResponseEnd(controller, __privateGet(this, _dumped) ? {} : trailers);
       }
     };
     _maxSize = new WeakMap();
     _dumped = new WeakMap();
     _size = new WeakMap();
-    _controller = new WeakMap();
     _DumpHandler_instances = new WeakSet();
     abort_fn = function(reason) {
       this.aborted = true;
@@ -193369,6 +196797,7 @@ var require_dns = __commonJS({
     var { lookup } = require("node:dns");
     var DecoratorHandler = require_decorator_handler();
     var { InvalidArgumentError, InformationalError } = require_errors();
+    var { kRequestOrigin } = require_symbols();
     var maxInt = Math.pow(2, 31) - 1;
     function hasSafeIterator(headers) {
       const prototype = Object.getPrototypeOf(headers);
@@ -193522,6 +196951,11 @@ var require_dns = __commonJS({
               records,
               newOpts.affinity
             );
+            if (ip == null) {
+              this.storage.delete(origin.hostname);
+              cb(new InformationalError("No DNS entries found"));
+              return;
+            }
             let port;
             if (typeof ip.port === "number") {
               port = `:${ip.port}`;
@@ -193582,6 +197016,7 @@ var require_dns = __commonJS({
         }
         if (Date.now() - ip.timestamp > ip.ttl) {
           family.ips.splice(position, 1);
+          return this.pickFamily(origin, ipFamily);
         }
         return ip;
       }
@@ -193718,6 +197153,7 @@ var require_dns = __commonJS({
               const dispatchOpts = {
                 ...__privateGet(this, _opts),
                 origin: `${__privateGet(this, _origin).protocol}//${ip.family === 6 ? `[${ip.address}]` : ip.address}${port}`,
+                [kRequestOrigin]: __privateGet(this, _opts)[kRequestOrigin] === void 0 ? __privateGet(this, _origin) : __privateGet(this, _opts)[kRequestOrigin],
                 headers: withHostHeader(__privateGet(this, _origin).host, __privateGet(this, _opts).headers)
               };
               __privateGet(this, _dispatch).call(this, dispatchOpts, this);
@@ -193804,6 +197240,7 @@ var require_dns = __commonJS({
               servername: origin.hostname,
               // For SNI on TLS
               origin: newOrigin.origin,
+              [kRequestOrigin]: origDispatchOpts[kRequestOrigin] === void 0 ? origin : origDispatchOpts[kRequestOrigin],
               headers: withHostHeader(origin.host, origDispatchOpts.headers)
             };
             dispatch(
@@ -193829,9 +197266,11 @@ var require_cache = __commonJS({
       safeHTTPMethods,
       pathHasQueryOrFragment,
       hasSafeIterator,
-      isValidHTTPToken
+      isValidHTTPToken,
+      setHeader
     } = require_util();
     var { serializePathWithQuery } = require_util();
+    var { kRequestOrigin } = require_symbols();
     var MAX_DELTA_SECONDS = 2147483647;
     var RESTRICTIVE_DIRECTIVE_NAMES = ["no-store", "private", "no-cache"];
     var kInvalidCacheControlDirectives = /* @__PURE__ */ Symbol("invalid cache-control directives");
@@ -193944,14 +197383,39 @@ var require_cache = __commonJS({
         return tokenOnlyKey;
       }
     }
-    function makeCacheKey(opts) {
-      const origin = opts.origin ? opts.origin.toString() : "";
+    function getRequestOrigin(opts) {
+      const origin = opts[kRequestOrigin] === void 0 ? opts.origin : opts[kRequestOrigin];
+      return typeof origin === "string" || origin instanceof URL ? origin : null;
+    }
+    function getInterceptorOrigin(opts, interceptorOrigin) {
+      const requestOrigin = getRequestOrigin(opts);
+      if (interceptorOrigin === void 0) {
+        return requestOrigin;
+      }
+      if (interceptorOrigin === null) {
+        return null;
+      }
+      if (requestOrigin) {
+        try {
+          if (new URL(requestOrigin).origin !== interceptorOrigin) {
+            return null;
+          }
+        } catch {
+          return interceptorOrigin;
+        }
+      }
+      return interceptorOrigin;
+    }
+    function makeCacheKey(opts, origin = getRequestOrigin(opts)) {
+      if (!origin) {
+        throw new Error("opts.origin is undefined");
+      }
       let fullPath = opts.path || "/";
       if (opts.query && !pathHasQueryOrFragment(fullPath)) {
         fullPath = serializePathWithQuery(fullPath, opts.query);
       }
       return {
-        origin,
+        origin: origin.toString(),
         method: opts.method,
         path: fullPath,
         headers: opts.headers
@@ -193959,14 +197423,14 @@ var require_cache = __commonJS({
     }
     function appendHeader(headers, key, val) {
       const headerName = key.toLowerCase();
-      const current = headers[headerName];
+      const current = Object.hasOwn(headers, headerName) ? headers[headerName] : void 0;
       const values = Array.isArray(val) ? val : [val];
       if (current === void 0) {
-        headers[headerName] = Array.isArray(val) ? val.slice() : val;
+        setHeader(headers, headerName, Array.isArray(val) ? val.slice() : val);
       } else if (Array.isArray(current)) {
         current.push(...values);
       } else {
-        headers[headerName] = [current, ...values];
+        setHeader(headers, headerName, [current, ...values]);
       }
     }
     function normalizeHeaders(opts) {
@@ -194320,12 +197784,14 @@ var require_cache = __commonJS({
           if (excludeHeaders == null ? void 0 : excludeHeaders.has(header.toLowerCase())) {
             continue;
           }
-          headers[header] = cacheKey.headers[header];
+          setHeader(headers, header, cacheKey.headers[header]);
         }
       }
       return JSON.stringify([cacheKey.origin, cacheKey.method, cacheKey.path, headers]);
     }
     module2.exports = {
+      getInterceptorOrigin,
+      getRequestOrigin,
       makeCacheKey,
       normalizeHeaders,
       assertCacheKey,
@@ -194848,6 +198314,7 @@ var require_cache_handler = __commonJS({
   "addons/pro/node_modules/undici/lib/handler/cache-handler.js"(exports2, module2) {
     "use strict";
     var util = require_util();
+    var { kRedirectCacheControl } = require_symbols();
     var {
       parseCacheControlHeader,
       hasInvalidCacheControlDirective,
@@ -194858,6 +198325,66 @@ var require_cache_handler = __commonJS({
     } = require_cache();
     var { parseHttpDate } = require_date();
     function noop() {
+    }
+    var _blocked, _downstreamPaused;
+    var CacheController = class {
+      constructor(target) {
+        __privateAdd(this, _blocked, false);
+        __privateAdd(this, _downstreamPaused, false);
+        this.target = target;
+      }
+      block() {
+        __privateSet(this, _blocked, true);
+      }
+      release() {
+        __privateSet(this, _blocked, false);
+        if (!__privateGet(this, _downstreamPaused)) {
+          this.target.resume();
+        }
+      }
+      pause() {
+        __privateSet(this, _downstreamPaused, true);
+        this.target.pause();
+      }
+      resume() {
+        __privateSet(this, _downstreamPaused, false);
+        if (!__privateGet(this, _blocked)) {
+          this.target.resume();
+        }
+      }
+      abort(reason) {
+        this.target.abort(reason);
+      }
+      get paused() {
+        return __privateGet(this, _downstreamPaused);
+      }
+      get aborted() {
+        return this.target.aborted;
+      }
+      get reason() {
+        return this.target.reason;
+      }
+      get rawHeaders() {
+        return this.target.rawHeaders;
+      }
+      set rawHeaders(value) {
+        this.target.rawHeaders = value;
+      }
+      get rawTrailers() {
+        return this.target.rawTrailers;
+      }
+      set rawTrailers(value) {
+        this.target.rawTrailers = value;
+      }
+    };
+    _blocked = new WeakMap();
+    _downstreamPaused = new WeakMap();
+    function sameOrigin(a, b) {
+      try {
+        return new URL(String(a)).origin === new URL(String(b)).origin;
+      } catch {
+        return String(a) === String(b);
+      }
     }
     var HEURISTICALLY_CACHEABLE_STATUS_CODES = [
       200,
@@ -194950,7 +198477,7 @@ var require_cache_handler = __commonJS({
       deleteLocationTargets(store, cacheKey, resHeaders.location);
       deleteLocationTargets(store, cacheKey, resHeaders["content-location"]);
     }
-    var _cacheKey, _cacheType, _cacheByDefault, _store, _handler, _writeStream;
+    var _cacheKey, _cacheType, _cacheByDefault, _store, _handler, _downstreamController, _writeStream, _history;
     var CacheHandler = class {
       /**
        * @param {import('../../types/cache-interceptor.d.ts').default.CacheHandlerOptions} opts
@@ -194979,9 +198506,20 @@ var require_cache_handler = __commonJS({
          */
         __privateAdd(this, _handler);
         /**
+         * @type {CacheController | undefined}
+         */
+        __privateAdd(this, _downstreamController);
+        /**
          * @type {import('node:stream').Writable | undefined}
          */
         __privateAdd(this, _writeStream);
+        /**
+         * The URLs visited while following redirects, shared by reference from the
+         * redirect handler through the request context. Carries the suppressed hops'
+         * cache-control under {@link kRedirectCacheControl}.
+         * @type {URL[] | undefined}
+         */
+        __privateAdd(this, _history);
         __privateSet(this, _store, store);
         __privateSet(this, _cacheType, type);
         __privateSet(this, _cacheByDefault, cacheByDefault);
@@ -194992,11 +198530,21 @@ var require_cache_handler = __commonJS({
         var _a, _b, _c;
         (_a = __privateGet(this, _writeStream)) == null ? void 0 : _a.destroy();
         __privateSet(this, _writeStream, void 0);
-        (_c = (_b = __privateGet(this, _handler)).onRequestStart) == null ? void 0 : _c.call(_b, controller, context);
+        __privateSet(this, _downstreamController, new CacheController(controller));
+        __privateSet(this, _history, context == null ? void 0 : context.history);
+        (_c = (_b = __privateGet(this, _handler)).onRequestStart) == null ? void 0 : _c.call(_b, __privateGet(this, _downstreamController), context);
       }
-      onRequestUpgrade(controller, statusCode, headers, socket) {
+      onBodySent(chunk) {
         var _a, _b;
-        (_b = (_a = __privateGet(this, _handler)).onRequestUpgrade) == null ? void 0 : _b.call(_a, controller, statusCode, headers, socket);
+        (_b = (_a = __privateGet(this, _handler)).onBodySent) == null ? void 0 : _b.call(_a, chunk);
+      }
+      onRequestSent() {
+        var _a, _b;
+        (_b = (_a = __privateGet(this, _handler)).onRequestSent) == null ? void 0 : _b.call(_a);
+      }
+      onRequestUpgrade(_controller, statusCode, headers, socket) {
+        var _a, _b;
+        (_b = (_a = __privateGet(this, _handler)).onRequestUpgrade) == null ? void 0 : _b.call(_a, __privateGet(this, _downstreamController), statusCode, headers, socket);
       }
       /**
        * @param {import('../../types/dispatcher.d.ts').default.DispatchController} controller
@@ -195005,11 +198553,12 @@ var require_cache_handler = __commonJS({
        * @param {string} statusMessage
        */
       onResponseStart(controller, statusCode, resHeaders, statusMessage) {
+        var _a;
         const downstreamOnHeaders = () => {
-          var _a, _b;
-          return (_b = (_a = __privateGet(this, _handler)).onResponseStart) == null ? void 0 : _b.call(
-            _a,
-            controller,
+          var _a2, _b;
+          return (_b = (_a2 = __privateGet(this, _handler)).onResponseStart) == null ? void 0 : _b.call(
+            _a2,
+            __privateGet(this, _downstreamController),
             statusCode,
             resHeaders,
             statusMessage
@@ -195020,7 +198569,27 @@ var require_cache_handler = __commonJS({
           invalidateUnsafeRequest(__privateGet(this, _store), __privateGet(this, _cacheKey), resHeaders);
           return downstreamOnHeaders();
         }
+        if (__privateGet(this, _history) && __privateGet(this, _history).length > 0) {
+          const finalUrl = __privateGet(this, _history)[__privateGet(this, _history).length - 1];
+          if (!sameOrigin(finalUrl.origin, __privateGet(this, _cacheKey).origin)) {
+            return downstreamOnHeaders();
+          }
+        }
+        const redirectCacheControl = (_a = __privateGet(this, _history)) == null ? void 0 : _a[kRedirectCacheControl];
+        if (redirectCacheControl) {
+          for (const hopCacheControl of redirectCacheControl) {
+            const hopDirectives = hopCacheControl ? parseCacheControlHeader(hopCacheControl) : {};
+            if (hopDirectives["no-store"] === true || __privateGet(this, _cacheType) === "shared" && hopDirectives.private === true) {
+              return downstreamOnHeaders();
+            }
+          }
+        }
         const cacheControlHeader = resHeaders["cache-control"];
+        const cacheControlDirectives = cacheControlHeader ? parseCacheControlHeader(cacheControlHeader) : {};
+        if (revalidationResponseDisallowsCachedReuse(__privateGet(this, _cacheType), resHeaders, cacheControlDirectives)) {
+          deleteCachedValue(__privateGet(this, _store), __privateGet(this, _cacheKey));
+          return downstreamOnHeaders();
+        }
         const heuristicallyCacheable = resHeaders["last-modified"] && arrayIncludes(HEURISTICALLY_CACHEABLE_STATUS_CODES, statusCode);
         if (!cacheControlHeader && !resHeaders["expires"] && !heuristicallyCacheable && !__privateGet(this, _cacheByDefault)) {
           if (statusCode === 304 && resHeaders.vary && isInvalidOrWildcardVaryHeader(resHeaders.vary)) {
@@ -195028,8 +198597,7 @@ var require_cache_handler = __commonJS({
           }
           return downstreamOnHeaders();
         }
-        const cacheControlDirectives = cacheControlHeader ? parseCacheControlHeader(cacheControlHeader) : {};
-        if (!canCacheResponse(__privateGet(this, _cacheType), statusCode, resHeaders, cacheControlDirectives, __privateGet(this, _cacheKey).headers)) {
+        if (!canCacheResponse(__privateGet(this, _cacheType), __privateGet(this, _cacheKey).method, statusCode, resHeaders, cacheControlDirectives, __privateGet(this, _cacheKey).headers)) {
           if (statusCode === 304 && (cacheControlHeader || revalidationResponseDisallowsCachedReuse(__privateGet(this, _cacheType), resHeaders, cacheControlDirectives))) {
             deleteCachedValue(__privateGet(this, _store), __privateGet(this, _cacheKey));
           }
@@ -195084,9 +198652,19 @@ var require_cache_handler = __commonJS({
           deleteAt
         };
         if (statusCode === 304) {
+          let done = false;
+          const finish304 = () => {
+            if (done) {
+              return;
+            }
+            done = true;
+            __privateGet(this, _downstreamController).release();
+          };
           const handle304 = (cachedValue) => {
             if (!cachedValue) {
-              return downstreamOnHeaders();
+              downstreamOnHeaders();
+              finish304();
+              return;
             }
             value.statusCode = cachedValue.statusCode;
             value.statusMessage = cachedValue.statusMessage;
@@ -195096,41 +198674,51 @@ var require_cache_handler = __commonJS({
             downstreamOnHeaders();
             __privateSet(this, _writeStream, __privateGet(this, _store).createWriteStream(__privateGet(this, _cacheKey), value));
             if (!__privateGet(this, _writeStream) || !(cachedValue == null ? void 0 : cachedValue.body)) {
+              finish304();
               return;
             }
             if (typeof cachedValue.body.values === "function") {
               const bodyIterator = cachedValue.body.values();
               const streamCachedBody = () => {
-                var _a, _b;
+                var _a2, _b, _c;
+                if (done) {
+                  return;
+                }
                 for (const chunk of bodyIterator) {
-                  const full = __privateGet(this, _writeStream).write(chunk) === false;
-                  (_b = (_a = __privateGet(this, _handler)).onResponseData) == null ? void 0 : _b.call(_a, controller, chunk);
+                  const full = ((_a2 = __privateGet(this, _writeStream)) == null ? void 0 : _a2.write(chunk)) === false;
+                  (_c = (_b = __privateGet(this, _handler)).onResponseData) == null ? void 0 : _c.call(_b, __privateGet(this, _downstreamController), chunk);
                   if (full) {
-                    break;
+                    return;
                   }
                 }
+                finish304();
               };
               __privateGet(this, _writeStream).on("error", function() {
                 __privateSet(handler, _writeStream, void 0);
                 __privateGet(handler, _store).delete(__privateGet(handler, _cacheKey));
+                streamCachedBody();
               }).on("drain", () => {
                 streamCachedBody();
               }).on("close", function() {
                 if (__privateGet(handler, _writeStream) === this) {
                   __privateSet(handler, _writeStream, void 0);
+                  streamCachedBody();
                 }
               });
               streamCachedBody();
             } else if (typeof cachedValue.body.on === "function") {
               cachedValue.body.on("data", (chunk) => {
-                var _a, _b;
-                __privateGet(this, _writeStream).write(chunk);
-                (_b = (_a = __privateGet(this, _handler)).onResponseData) == null ? void 0 : _b.call(_a, controller, chunk);
+                var _a2, _b, _c;
+                (_a2 = __privateGet(this, _writeStream)) == null ? void 0 : _a2.write(chunk);
+                (_c = (_b = __privateGet(this, _handler)).onResponseData) == null ? void 0 : _c.call(_b, __privateGet(this, _downstreamController), chunk);
               }).on("end", () => {
-                __privateGet(this, _writeStream).end();
+                var _a2;
+                (_a2 = __privateGet(this, _writeStream)) == null ? void 0 : _a2.end();
+                finish304();
               }).on("error", () => {
                 __privateSet(this, _writeStream, void 0);
                 __privateGet(this, _store).delete(__privateGet(this, _cacheKey));
+                finish304();
               });
               __privateGet(this, _writeStream).on("error", function() {
                 __privateSet(handler, _writeStream, void 0);
@@ -195140,11 +198728,17 @@ var require_cache_handler = __commonJS({
                   __privateSet(handler, _writeStream, void 0);
                 }
               });
+            } else {
+              finish304();
             }
           };
           const result = __privateGet(this, _store).get(__privateGet(this, _cacheKey));
+          __privateGet(this, _downstreamController).block();
+          controller.pause();
           if (result && typeof result.then === "function") {
-            result.then(handle304);
+            result.then(handle304, () => handle304(void 0)).catch((err) => {
+              controller.abort(err);
+            });
           } else {
             handle304(result);
           }
@@ -195173,18 +198767,18 @@ var require_cache_handler = __commonJS({
         if (((_a = __privateGet(this, _writeStream)) == null ? void 0 : _a.write(chunk)) === false) {
           controller.pause();
         }
-        (_c = (_b = __privateGet(this, _handler)).onResponseData) == null ? void 0 : _c.call(_b, controller, chunk);
+        (_c = (_b = __privateGet(this, _handler)).onResponseData) == null ? void 0 : _c.call(_b, __privateGet(this, _downstreamController), chunk);
       }
       onResponseEnd(controller, trailers) {
         var _a, _b, _c;
         (_a = __privateGet(this, _writeStream)) == null ? void 0 : _a.end();
-        (_c = (_b = __privateGet(this, _handler)).onResponseEnd) == null ? void 0 : _c.call(_b, controller, trailers);
+        (_c = (_b = __privateGet(this, _handler)).onResponseEnd) == null ? void 0 : _c.call(_b, __privateGet(this, _downstreamController), trailers);
       }
       onResponseError(controller, err) {
         var _a, _b, _c;
         (_a = __privateGet(this, _writeStream)) == null ? void 0 : _a.destroy(err);
         __privateSet(this, _writeStream, void 0);
-        (_c = (_b = __privateGet(this, _handler)).onResponseError) == null ? void 0 : _c.call(_b, controller, err);
+        (_c = (_b = __privateGet(this, _handler)).onResponseError) == null ? void 0 : _c.call(_b, __privateGet(this, _downstreamController), err);
       }
     };
     _cacheKey = new WeakMap();
@@ -195192,7 +198786,9 @@ var require_cache_handler = __commonJS({
     _cacheByDefault = new WeakMap();
     _store = new WeakMap();
     _handler = new WeakMap();
+    _downstreamController = new WeakMap();
     _writeStream = new WeakMap();
+    _history = new WeakMap();
     function deleteCachedValue(store, cacheKey) {
       var _a, _b;
       try {
@@ -195206,9 +198802,12 @@ var require_cache_handler = __commonJS({
       }
     }
     function revalidationResponseDisallowsCachedReuse(cacheType, resHeaders, cacheControlDirectives) {
-      return cacheControlDirectives["no-store"] === true || cacheType === "shared" && cacheControlDirectives.private === true || (resHeaders.vary ? isInvalidOrWildcardVaryHeader(resHeaders.vary) : false);
+      return cacheControlDirectives["no-store"] === true || cacheType === "shared" && (cacheControlDirectives.private === true || Object.hasOwn(resHeaders, "set-cookie")) || (resHeaders.vary ? isInvalidOrWildcardVaryHeader(resHeaders.vary) : false);
     }
-    function canCacheResponse(cacheType, statusCode, resHeaders, cacheControlDirectives, reqHeaders) {
+    function canCacheResponse(cacheType, method, statusCode, resHeaders, cacheControlDirectives, reqHeaders) {
+      if (!arrayIncludes(util.safeHTTPMethods, method)) {
+        return false;
+      }
       if (statusCode < 200 || arrayIncludes(NOT_UNDERSTOOD_STATUS_CODES, statusCode)) {
         return false;
       }
@@ -195219,7 +198818,7 @@ var require_cache_handler = __commonJS({
       if (cacheControlDirectives["no-store"]) {
         return false;
       }
-      if (cacheType === "shared" && cacheControlDirectives.private === true) {
+      if (cacheType === "shared" && (cacheControlDirectives.private === true || Object.hasOwn(resHeaders, "set-cookie"))) {
         return false;
       }
       if (resHeaders.vary && hasVaryStar(resHeaders.vary)) {
@@ -195400,13 +198999,14 @@ var require_memory_cache_store = __commonJS({
     var { Writable } = require("node:stream");
     var { EventEmitter } = require("node:events");
     var { assertCacheKey, assertCacheValue } = require_cache();
-    var _maxCount, _maxSize, _maxEntrySize, _size, _count, _entries, _hasEmittedMaxSizeEvent;
+    var _maxCount, _maxSize, _maxEntrySize, _size, _count, _entries, _hasEmittedMaxSizeEvent, _MemoryCacheStore_instances, evict_fn;
     var MemoryCacheStore = class extends EventEmitter {
       /**
        * @param {import('../../types/cache-interceptor.d.ts').default.MemoryCacheStoreOpts | undefined} [opts]
        */
       constructor(opts) {
         super();
+        __privateAdd(this, _MemoryCacheStore_instances);
         __privateAdd(this, _maxCount, 1024);
         __privateAdd(this, _maxSize, 104857600);
         // 100MB
@@ -195455,7 +199055,7 @@ var require_memory_cache_store = __commonJS({
         return __privateGet(this, _size) >= __privateGet(this, _maxSize) || __privateGet(this, _count) >= __privateGet(this, _maxCount);
       }
       /**
-       * @param {import('../../types/cache-interceptor.d.ts').default.CacheKey} req
+       * @param {import('../../types/cache-interceptor.d.ts').default.CacheKey} key
        * @returns {import('../../types/cache-interceptor.d.ts').default.GetResult | undefined}
        */
       get(key) {
@@ -195464,6 +199064,10 @@ var require_memory_cache_store = __commonJS({
         const now = Date.now();
         const entries = __privateGet(this, _entries).get(topLevelKey);
         const entry = entries ? findEntry(key, entries, now) : null;
+        if (entry != null) {
+          __privateGet(this, _entries).delete(topLevelKey);
+          __privateGet(this, _entries).set(topLevelKey, entries);
+        }
         return entry == null ? void 0 : {
           statusMessage: entry.statusMessage,
           statusCode: entry.statusCode,
@@ -195502,12 +199106,15 @@ var require_memory_cache_store = __commonJS({
             callback(null);
           },
           final(callback) {
+            var _a;
             let entries = __privateGet(store, _entries).get(topLevelKey);
-            if (!entries) {
+            if (entries) {
+              __privateGet(store, _entries).delete(topLevelKey);
+            } else {
               entries = [];
-              __privateGet(store, _entries).set(topLevelKey, entries);
             }
-            const previousEntry = findEntry(key, entries, Date.now());
+            __privateGet(store, _entries).set(topLevelKey, entries);
+            const previousEntry = findEntry(key, entries, -Infinity);
             if (previousEntry) {
               const index = entries.indexOf(previousEntry);
               entries.splice(index, 1, entry);
@@ -195527,15 +199134,7 @@ var require_memory_cache_store = __commonJS({
                 });
                 __privateSet(store, _hasEmittedMaxSizeEvent, true);
               }
-              for (const [key2, entries2] of __privateGet(store, _entries)) {
-                for (const entry2 of entries2.splice(0, entries2.length / 2)) {
-                  __privateSet(store, _size, __privateGet(store, _size) - entry2.size);
-                  __privateSet(store, _count, __privateGet(store, _count) - 1);
-                }
-                if (entries2.length === 0) {
-                  __privateGet(store, _entries).delete(key2);
-                }
-              }
+              __privateMethod(_a = store, _MemoryCacheStore_instances, evict_fn).call(_a, entry);
               if (__privateGet(store, _size) < __privateGet(store, _maxSize) && __privateGet(store, _count) < __privateGet(store, _maxCount)) {
                 __privateSet(store, _hasEmittedMaxSizeEvent, false);
               }
@@ -195566,6 +199165,39 @@ var require_memory_cache_store = __commonJS({
     _count = new WeakMap();
     _entries = new WeakMap();
     _hasEmittedMaxSizeEvent = new WeakMap();
+    _MemoryCacheStore_instances = new WeakSet();
+    evict_fn = function(keep) {
+      const targetSize = __privateGet(this, _maxSize) / 2;
+      const targetCount = __privateGet(this, _maxCount) / 2;
+      for (const [key, entries] of __privateGet(this, _entries)) {
+        for (let i = 0; i < entries.length && (__privateGet(this, _size) > targetSize || __privateGet(this, _count) > targetCount); ) {
+          const entry = entries[i];
+          if (entry === keep) {
+            i++;
+            continue;
+          }
+          entries.splice(i, 1);
+          __privateSet(this, _size, __privateGet(this, _size) - entry.size);
+          __privateSet(this, _count, __privateGet(this, _count) - 1);
+        }
+        if (entries.length === 0) {
+          __privateGet(this, _entries).delete(key);
+        }
+        if (__privateGet(this, _size) <= targetSize && __privateGet(this, _count) <= targetCount) {
+          return;
+        }
+      }
+      if (__privateGet(this, _size) > __privateGet(this, _maxSize) || __privateGet(this, _count) > __privateGet(this, _maxCount)) {
+        const topLevelKey = `${keep.origin}:${keep.path}`;
+        const entries = __privateGet(this, _entries).get(topLevelKey);
+        entries.splice(entries.indexOf(keep), 1);
+        __privateSet(this, _size, __privateGet(this, _size) - keep.size);
+        __privateSet(this, _count, __privateGet(this, _count) - 1);
+        if (entries.length === 0) {
+          __privateGet(this, _entries).delete(topLevelKey);
+        }
+      }
+    };
     function findEntry(key, entries, now) {
       for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
@@ -195724,7 +199356,16 @@ var require_cache2 = __commonJS({
     var CacheHandler = require_cache_handler();
     var MemoryCacheStore = require_memory_cache_store();
     var CacheRevalidationHandler = require_cache_revalidation_handler();
-    var { assertCacheStore, assertCacheMethods, makeCacheKey, normalizeHeaders, parseCacheControlHeader, isInvalidOrWildcardVaryHeader } = require_cache();
+    var {
+      assertCacheStore,
+      assertCacheMethods,
+      getInterceptorOrigin,
+      makeCacheKey,
+      normalizeHeaders,
+      parseCacheControlHeader,
+      isInvalidOrWildcardVaryHeader,
+      parseVaryHeader
+    } = require_cache();
     var { AbortError } = require_errors();
     var { parseHttpDate } = require_date();
     function assertCacheOrigins(origins, name) {
@@ -195792,7 +199433,7 @@ var require_cache2 = __commonJS({
       ((_c = result.cacheControlDirectives) == null ? void 0 : _c["s-maxage"]) !== void 0);
     }
     function revalidationResponseDisallowsCachedReuse(cacheType, headers) {
-      if (headers.vary && isInvalidOrWildcardVaryHeader(headers.vary)) {
+      if (headers.vary && isInvalidOrWildcardVaryHeader(headers.vary) || cacheType === "shared" && Object.hasOwn(headers, "set-cookie")) {
         return true;
       }
       const cacheControl = headers["cache-control"];
@@ -195804,6 +199445,17 @@ var require_cache2 = __commonJS({
     }
     function revalidationResponseUpdatesCacheControl(headers) {
       return headers["cache-control"] !== void 0;
+    }
+    function revalidationResponseAddsVary(result, varyDirectives) {
+      if (!varyDirectives) {
+        return false;
+      }
+      for (const key in varyDirectives) {
+        if (result.vary == null || !Object.hasOwn(result.vary, key)) {
+          return true;
+        }
+      }
+      return false;
     }
     function deleteCachedValue(store, cacheKey) {
       var _a, _b;
@@ -195837,7 +199489,7 @@ var require_cache2 = __commonJS({
     }
     function isStale(result, cacheControlDirectives, cacheType) {
       const now = Date.now();
-      if (now > result.staleAt) {
+      if (now > result.staleAt || result.staleAt <= result.cachedAt) {
         if (!staleResponseRequiresRevalidation(result, cacheType) && (cacheControlDirectives == null ? void 0 : cacheControlDirectives["max-stale"])) {
           const gracePeriod = result.staleAt + cacheControlDirectives["max-stale"] * 1e3;
           return now > gracePeriod;
@@ -195905,6 +199557,8 @@ var require_cache2 = __commonJS({
       const stream = util.isStream(result.body) ? result.body : Readable.from(result.body ?? []);
       assert(!stream.destroyed, "stream should not be destroyed");
       assert(!stream.readableDidRead, "stream should not be readableDidRead");
+      let aborted = false;
+      let abortReason = null;
       const controller = {
         rawHeaders: [],
         rawTrailers: [],
@@ -195918,13 +199572,18 @@ var require_cache2 = __commonJS({
           return stream.isPaused();
         },
         get aborted() {
-          return stream.destroyed;
+          return aborted;
         },
         get reason() {
-          return stream.errored;
+          return abortReason;
         },
         abort(reason) {
-          stream.destroy(reason ?? new AbortError());
+          if (aborted) {
+            return;
+          }
+          aborted = true;
+          abortReason = reason ?? new AbortError();
+          stream.destroy(abortReason);
         }
       };
       stream.on("error", function(err) {
@@ -195962,6 +199621,13 @@ var require_cache2 = __commonJS({
     }
     function handleResult(dispatch, globalOpts, cacheKey, handler, opts, reqCacheControl, result) {
       if (!result) {
+        return handleUncachedResponse(dispatch, globalOpts, cacheKey, handler, opts, reqCacheControl);
+      }
+      if (globalOpts.type === "shared" && Object.hasOwn(result.headers, "set-cookie")) {
+        if (util.isStream(result.body)) {
+          result.body.on("error", nop).destroy();
+        }
+        deleteCachedValue(globalOpts.store, cacheKey);
         return handleUncachedResponse(dispatch, globalOpts, cacheKey, handler, opts, reqCacheControl);
       }
       const now = Date.now();
@@ -196030,6 +199696,12 @@ var require_cache2 = __commonJS({
                   }
                   if (revalidationResponseUpdatesCacheControl(headers2)) {
                     deleteCachedValue(globalOpts.store, cacheKey);
+                  } else if (revalidationResponseAddsVary(result, headers2.vary ? parseVaryHeader(headers2.vary, opts.headers) : void 0)) {
+                    if (util.isStream(result.body)) {
+                      result.body.on("error", nop).destroy();
+                    }
+                    deleteCachedValue(globalOpts.store, cacheKey);
+                    return dispatch(opts, new CacheHandler(globalOpts, cacheKey, handler));
                   }
                 }
                 sendCachedValue(handler, opts, result, age, context, stale);
@@ -196080,26 +199752,24 @@ var require_cache2 = __commonJS({
           safeMethodsToNotCache.push(method);
         }
       }
-      return (dispatch) => {
+      return (dispatch, interceptorOrigin) => {
         return (opts2, handler) => {
           var _a;
-          if (arrayIncludes(safeMethodsToNotCache, opts2.method)) {
+          const requestOrigin = getInterceptorOrigin(opts2, interceptorOrigin);
+          if (!requestOrigin || arrayIncludes(safeMethodsToNotCache, opts2.method)) {
             return dispatch(opts2, handler);
           }
           if (origins !== void 0) {
-            if (!opts2.origin) {
-              return dispatch(opts2, handler);
-            }
-            const requestOrigin = opts2.origin.toString().toLowerCase();
+            const normalizedRequestOrigin = requestOrigin.toString().toLowerCase();
             let isAllowed = false;
             for (let i = 0; i < origins.length; i++) {
               const allowed = origins[i];
               if (typeof allowed === "string") {
-                if (allowed.toLowerCase() === requestOrigin) {
+                if (allowed.toLowerCase() === normalizedRequestOrigin) {
                   isAllowed = true;
                   break;
                 }
-              } else if (allowed.test(requestOrigin)) {
+              } else if (allowed.test(normalizedRequestOrigin)) {
                 isAllowed = true;
                 break;
               }
@@ -196116,7 +199786,10 @@ var require_cache2 = __commonJS({
           if (reqCacheControl == null ? void 0 : reqCacheControl["no-store"]) {
             return dispatch(opts2, handler);
           }
-          const cacheKey = makeCacheKey(opts2);
+          const cacheKey = makeCacheKey(opts2, requestOrigin);
+          if (!arrayIncludes(util.safeHTTPMethods, opts2.method)) {
+            return dispatch(opts2, new CacheHandler(globalOpts, cacheKey, handler));
+          }
           const result = store.get(cacheKey);
           if (result && typeof result.then === "function") {
             return result.then((result2) => handleResult(
@@ -196149,29 +199822,115 @@ var require_cache2 = __commonJS({
 var require_decompress2 = __commonJS({
   "addons/pro/node_modules/undici/lib/interceptor/decompress.js"(exports2, module2) {
     "use strict";
-    var { createInflate, createGunzip, createBrotliDecompress, createZstdDecompress } = require("node:zlib");
-    var { pipeline } = require("node:stream");
+    var { createInflate, createGunzip, createBrotliDecompress, createZstdDecompress, constants } = require("node:zlib");
+    var { pipeline, Transform: TransformStream2 } = require("node:stream");
+    var { InvalidArgumentError, ResponseExceededMaxSizeError } = require_errors();
     var DecoratorHandler = require_decorator_handler();
+    var _onPause, _onResume, _onAbort, _paused;
+    var DecompressController = class {
+      constructor(onPause, onResume, onAbort) {
+        __privateAdd(this, _onPause);
+        __privateAdd(this, _onResume);
+        __privateAdd(this, _onAbort);
+        __privateAdd(this, _paused, false);
+        __privateSet(this, _onPause, onPause);
+        __privateSet(this, _onResume, onResume);
+        __privateSet(this, _onAbort, onAbort);
+        this.target = null;
+      }
+      pause() {
+        if (__privateGet(this, _paused)) {
+          return;
+        }
+        __privateSet(this, _paused, true);
+        __privateGet(this, _onPause).call(this);
+      }
+      resume() {
+        if (!__privateGet(this, _paused)) {
+          return;
+        }
+        __privateSet(this, _paused, false);
+        __privateGet(this, _onResume).call(this);
+      }
+      abort(reason) {
+        var _a;
+        (_a = this.target) == null ? void 0 : _a.abort(reason);
+        __privateGet(this, _onAbort).call(this, reason);
+      }
+      get paused() {
+        return __privateGet(this, _paused);
+      }
+      get aborted() {
+        var _a;
+        return ((_a = this.target) == null ? void 0 : _a.aborted) ?? false;
+      }
+      get reason() {
+        var _a;
+        return ((_a = this.target) == null ? void 0 : _a.reason) ?? null;
+      }
+      get rawHeaders() {
+        var _a;
+        return ((_a = this.target) == null ? void 0 : _a.rawHeaders) ?? null;
+      }
+      set rawHeaders(value) {
+        if (this.target) {
+          this.target.rawHeaders = value;
+        }
+      }
+      get rawTrailers() {
+        var _a;
+        return ((_a = this.target) == null ? void 0 : _a.rawTrailers) ?? null;
+      }
+      set rawTrailers(value) {
+        if (this.target) {
+          this.target.rawTrailers = value;
+        }
+      }
+    };
+    _onPause = new WeakMap();
+    _onResume = new WeakMap();
+    _onAbort = new WeakMap();
+    _paused = new WeakMap();
     var supportedEncodings = {
+      __proto__: null,
       gzip: createGunzip,
       "x-gzip": createGunzip,
       br: createBrotliDecompress,
       deflate: createInflate,
-      compress: createInflate,
-      "x-compress": createInflate,
-      zstd: createZstdDecompress
+      // https://www.rfc-editor.org/rfc/rfc9659.html#section-3
+      zstd: createZstdDecompress.bind(null, { params: { [constants.ZSTD_d_windowLogMax]: 23 } })
     };
     var defaultSkipStatusCodes = (
       /** @type {const} */
       [204, 304]
     );
+    var defaultMaxSize = 0;
+    function createMaxSizeLimiter(maxSize) {
+      let size = 0;
+      return new TransformStream2({
+        transform(chunk, _encoding, callback) {
+          const decompressedSize = size + chunk.length;
+          if (decompressedSize > maxSize) {
+            callback(new ResponseExceededMaxSizeError(
+              `Decompressed response size (${decompressedSize}) exceeded maxSize (${maxSize})`
+            ));
+            return;
+          }
+          size = decompressedSize;
+          callback(null, chunk);
+        }
+      });
+    }
     var warningEmitted = (
       /** @type {boolean} */
       false
     );
-    var _decompressors, _trailers, _skipStatusCodes, _skipErrorResponses, _DecompressHandler_instances, shouldSkipDecompression_fn, createDecompressionChain_fn, setupDecompressorEvents_fn, setupSingleDecompressor_fn, setupMultipleDecompressors_fn, cleanupDecompressors_fn;
+    var _decompressors, _trailers, _skipStatusCodes, _skipErrorResponses, _maxSize, _decompressedSize, _terminated, _inputEnded, _inputBackpressured, _upstreamPaused, _draining, _drainRequested, _completionPending, _finalDecompressor, _controller, _DecompressHandler_instances, onDownstreamPause_fn, onDownstreamResume_fn, pauseUpstream_fn, resumeUpstreamIfNeeded_fn, drainOutput_fn, finishIfReady_fn, onDecompressionEnd_fn, shouldSkipDecompression_fn, createDecompressionChain_fn, fail_fn, setupDecompressorEvents_fn, setupSingleDecompressor_fn, setupMultipleDecompressors_fn, setupInputBackpressure_fn, cleanupDecompressors_fn;
     var _DecompressHandler = class _DecompressHandler extends DecoratorHandler {
-      constructor(handler, { skipStatusCodes = defaultSkipStatusCodes, skipErrorResponses = true } = {}) {
+      constructor(handler, { skipStatusCodes = defaultSkipStatusCodes, skipErrorResponses = true, maxSize = defaultMaxSize } = {}) {
+        if (!Number.isSafeInteger(maxSize) || maxSize < 0) {
+          throw new InvalidArgumentError("maxSize must be a non-negative integer");
+        }
         super(handler);
         __privateAdd(this, _DecompressHandler_instances);
         /** @type {Transform[]} */
@@ -196182,8 +199941,47 @@ var require_decompress2 = __commonJS({
         __privateAdd(this, _skipStatusCodes);
         /** @type {boolean} */
         __privateAdd(this, _skipErrorResponses);
+        /** @type {number} */
+        __privateAdd(this, _maxSize);
+        /** @type {number} */
+        __privateAdd(this, _decompressedSize, 0);
+        /** @type {boolean} */
+        __privateAdd(this, _terminated, false);
+        /** @type {boolean} */
+        __privateAdd(this, _inputEnded, false);
+        /** @type {boolean} */
+        __privateAdd(this, _inputBackpressured, false);
+        /** @type {boolean} */
+        __privateAdd(this, _upstreamPaused, false);
+        /** @type {boolean} */
+        __privateAdd(this, _draining, false);
+        /** @type {boolean} */
+        __privateAdd(this, _drainRequested, false);
+        /** @type {boolean} */
+        __privateAdd(this, _completionPending, false);
+        /** @type {DecompressorStream | undefined} */
+        __privateAdd(this, _finalDecompressor);
+        /** @type {DecompressController} */
+        __privateAdd(this, _controller);
         __privateSet(this, _skipStatusCodes, skipStatusCodes);
         __privateSet(this, _skipErrorResponses, skipErrorResponses);
+        __privateSet(this, _maxSize, maxSize);
+        __privateSet(this, _controller, new DecompressController(
+          () => __privateMethod(this, _DecompressHandler_instances, onDownstreamPause_fn).call(this),
+          () => __privateMethod(this, _DecompressHandler_instances, onDownstreamResume_fn).call(this),
+          (reason) => {
+            if (__privateGet(this, _inputEnded) && !__privateGet(this, _terminated)) {
+              this.onResponseError(__privateGet(this, _controller), reason);
+            }
+          }
+        ));
+      }
+      onRequestStart(controller, context) {
+        __privateGet(this, _controller).target = controller;
+        return super.onRequestStart(__privateGet(this, _controller), context);
+      }
+      onRequestUpgrade(controller, statusCode, headers, socket) {
+        return super.onRequestUpgrade(__privateGet(this, _controller), statusCode, headers, socket);
       }
       /**
        * @param {Controller} controller
@@ -196193,19 +199991,20 @@ var require_decompress2 = __commonJS({
        * @returns {void}
        */
       onResponseStart(controller, statusCode, headers, statusMessage) {
-        const contentEncoding = headers["content-encoding"];
+        const rawContentEncoding = headers["content-encoding"];
+        const contentEncoding = Array.isArray(rawContentEncoding) ? rawContentEncoding.join(",") : rawContentEncoding;
         if (__privateMethod(this, _DecompressHandler_instances, shouldSkipDecompression_fn).call(this, contentEncoding, statusCode)) {
-          return super.onResponseStart(controller, statusCode, headers, statusMessage);
+          return super.onResponseStart(__privateGet(this, _controller), statusCode, headers, statusMessage);
         }
         const decompressors = __privateMethod(this, _DecompressHandler_instances, createDecompressionChain_fn).call(this, contentEncoding.toLowerCase());
         if (decompressors.length === 0) {
           __privateMethod(this, _DecompressHandler_instances, cleanupDecompressors_fn).call(this);
-          return super.onResponseStart(controller, statusCode, headers, statusMessage);
+          return super.onResponseStart(__privateGet(this, _controller), statusCode, headers, statusMessage);
         }
         __privateSet(this, _decompressors, decompressors);
         const { "content-encoding": _, "content-length": __, ...newHeaders } = headers;
-        if (controller == null ? void 0 : controller.rawHeaders) {
-          const rawHeaders = controller.rawHeaders;
+        if (__privateGet(this, _controller).rawHeaders) {
+          const rawHeaders = __privateGet(this, _controller).rawHeaders;
           if (Array.isArray(rawHeaders)) {
             const filteredHeaders = [];
             for (let i = 0; i < rawHeaders.length; i += 2) {
@@ -196217,7 +200016,7 @@ var require_decompress2 = __commonJS({
               }
               filteredHeaders.push(rawHeaders[i], rawHeaders[i + 1]);
             }
-            controller.rawHeaders = filteredHeaders;
+            rawHeaders.splice(0, rawHeaders.length, ...filteredHeaders);
           } else if (typeof rawHeaders === "object") {
             for (const name of Object.keys(rawHeaders)) {
               const lowerName = name.toLowerCase();
@@ -196227,12 +200026,13 @@ var require_decompress2 = __commonJS({
             }
           }
         }
+        __privateMethod(this, _DecompressHandler_instances, setupInputBackpressure_fn).call(this);
         if (__privateGet(this, _decompressors).length === 1) {
-          __privateMethod(this, _DecompressHandler_instances, setupSingleDecompressor_fn).call(this, controller);
+          __privateMethod(this, _DecompressHandler_instances, setupSingleDecompressor_fn).call(this);
         } else {
-          __privateMethod(this, _DecompressHandler_instances, setupMultipleDecompressors_fn).call(this, controller);
+          __privateMethod(this, _DecompressHandler_instances, setupMultipleDecompressors_fn).call(this);
         }
-        return super.onResponseStart(controller, statusCode, newHeaders, statusMessage);
+        return super.onResponseStart(__privateGet(this, _controller), statusCode, newHeaders, statusMessage);
       }
       /**
        * @param {Controller} controller
@@ -196241,10 +200041,13 @@ var require_decompress2 = __commonJS({
        */
       onResponseData(controller, chunk) {
         if (__privateGet(this, _decompressors).length > 0) {
-          __privateGet(this, _decompressors)[0].write(chunk);
+          if (!__privateGet(this, _decompressors)[0].write(chunk)) {
+            __privateSet(this, _inputBackpressured, true);
+            __privateMethod(this, _DecompressHandler_instances, pauseUpstream_fn).call(this);
+          }
           return;
         }
-        super.onResponseData(controller, chunk);
+        return super.onResponseData(__privateGet(this, _controller), chunk);
       }
       /**
        * @param {Controller} controller
@@ -196253,12 +200056,12 @@ var require_decompress2 = __commonJS({
        */
       onResponseEnd(controller, trailers) {
         if (__privateGet(this, _decompressors).length > 0) {
+          __privateSet(this, _inputEnded, true);
           __privateSet(this, _trailers, trailers);
           __privateGet(this, _decompressors)[0].end();
-          __privateMethod(this, _DecompressHandler_instances, cleanupDecompressors_fn).call(this);
           return;
         }
-        super.onResponseEnd(controller, trailers);
+        return super.onResponseEnd(__privateGet(this, _controller), trailers);
       }
       /**
        * @param {Controller} controller
@@ -196266,20 +200069,122 @@ var require_decompress2 = __commonJS({
        * @returns {void}
        */
       onResponseError(controller, err) {
-        if (__privateGet(this, _decompressors).length > 0) {
-          for (const decompressor of __privateGet(this, _decompressors)) {
-            decompressor.destroy(err);
-          }
-          __privateMethod(this, _DecompressHandler_instances, cleanupDecompressors_fn).call(this);
+        if (__privateGet(this, _terminated)) {
+          return;
         }
-        super.onResponseError(controller, err);
+        __privateSet(this, _terminated, true);
+        for (const decompressor of __privateGet(this, _decompressors)) {
+          decompressor.destroy();
+        }
+        __privateMethod(this, _DecompressHandler_instances, cleanupDecompressors_fn).call(this);
+        super.onResponseError(__privateGet(this, _controller), err);
       }
     };
     _decompressors = new WeakMap();
     _trailers = new WeakMap();
     _skipStatusCodes = new WeakMap();
     _skipErrorResponses = new WeakMap();
+    _maxSize = new WeakMap();
+    _decompressedSize = new WeakMap();
+    _terminated = new WeakMap();
+    _inputEnded = new WeakMap();
+    _inputBackpressured = new WeakMap();
+    _upstreamPaused = new WeakMap();
+    _draining = new WeakMap();
+    _drainRequested = new WeakMap();
+    _completionPending = new WeakMap();
+    _finalDecompressor = new WeakMap();
+    _controller = new WeakMap();
     _DecompressHandler_instances = new WeakSet();
+    onDownstreamPause_fn = function() {
+      __privateMethod(this, _DecompressHandler_instances, pauseUpstream_fn).call(this);
+    };
+    onDownstreamResume_fn = function() {
+      const drainWasDeferred = __privateGet(this, _draining);
+      __privateMethod(this, _DecompressHandler_instances, drainOutput_fn).call(this);
+      if (!drainWasDeferred) {
+        __privateMethod(this, _DecompressHandler_instances, resumeUpstreamIfNeeded_fn).call(this);
+        __privateMethod(this, _DecompressHandler_instances, finishIfReady_fn).call(this);
+      }
+    };
+    pauseUpstream_fn = function() {
+      var _a;
+      if (!__privateGet(this, _upstreamPaused) && !__privateGet(this, _terminated)) {
+        __privateSet(this, _upstreamPaused, true);
+        (_a = __privateGet(this, _controller).target) == null ? void 0 : _a.pause();
+      }
+    };
+    resumeUpstreamIfNeeded_fn = function() {
+      var _a;
+      if (__privateGet(this, _upstreamPaused) && !__privateGet(this, _controller).paused && !__privateGet(this, _inputBackpressured)) {
+        __privateSet(this, _upstreamPaused, false);
+        if (!__privateGet(this, _inputEnded)) {
+          (_a = __privateGet(this, _controller).target) == null ? void 0 : _a.resume();
+        }
+      }
+    };
+    drainOutput_fn = function() {
+      if (__privateGet(this, _terminated) || __privateGet(this, _controller).paused || !__privateGet(this, _finalDecompressor)) {
+        return;
+      }
+      if (__privateGet(this, _draining)) {
+        __privateSet(this, _drainRequested, true);
+        return;
+      }
+      __privateSet(this, _draining, true);
+      try {
+        do {
+          __privateSet(this, _drainRequested, false);
+          let chunk;
+          while (!__privateGet(this, _terminated) && !__privateGet(this, _controller).paused && (chunk = __privateGet(this, _finalDecompressor).read()) !== null) {
+            if (__privateGet(this, _maxSize) > 0) {
+              const decompressedSize = __privateGet(this, _decompressedSize) + chunk.length;
+              if (decompressedSize > __privateGet(this, _maxSize)) {
+                __privateMethod(this, _DecompressHandler_instances, fail_fn).call(this, new ResponseExceededMaxSizeError(
+                  `Decompressed response size (${decompressedSize}) exceeded maxSize (${__privateGet(this, _maxSize)})`
+                ));
+                return;
+              }
+              __privateSet(this, _decompressedSize, decompressedSize);
+            }
+            try {
+              const result = __superGet(_DecompressHandler.prototype, this, "onResponseData").call(this, __privateGet(this, _controller), chunk);
+              if (result === false && !__privateGet(this, _controller).paused) {
+                __privateGet(this, _controller).pause();
+              }
+            } catch (err) {
+              __privateMethod(this, _DecompressHandler_instances, fail_fn).call(this, err);
+              return;
+            }
+          }
+        } while (__privateGet(this, _drainRequested) && !__privateGet(this, _terminated) && !__privateGet(this, _controller).paused);
+      } finally {
+        __privateSet(this, _draining, false);
+      }
+      __privateMethod(this, _DecompressHandler_instances, resumeUpstreamIfNeeded_fn).call(this);
+      __privateMethod(this, _DecompressHandler_instances, finishIfReady_fn).call(this);
+    };
+    finishIfReady_fn = function() {
+      if (__privateGet(this, _terminated) || !__privateGet(this, _completionPending) || __privateGet(this, _controller).paused || __privateGet(this, _draining)) {
+        return;
+      }
+      __privateMethod(this, _DecompressHandler_instances, cleanupDecompressors_fn).call(this);
+      try {
+        __superGet(_DecompressHandler.prototype, this, "onResponseEnd").call(this, __privateGet(this, _controller), __privateGet(this, _trailers));
+      } catch (err) {
+        __privateMethod(this, _DecompressHandler_instances, fail_fn).call(this, err);
+        return;
+      }
+      __privateSet(this, _terminated, true);
+    };
+    onDecompressionEnd_fn = function() {
+      if (__privateGet(this, _terminated)) {
+        return;
+      }
+      __privateSet(this, _completionPending, true);
+      __privateMethod(this, _DecompressHandler_instances, drainOutput_fn).call(this);
+      __privateMethod(this, _DecompressHandler_instances, finishIfReady_fn).call(this);
+    };
     /**
      * Determines if decompression should be skipped based on encoding and status code
      * @param {string} contentEncoding - Content-Encoding header value
@@ -196296,7 +200201,7 @@ var require_decompress2 = __commonJS({
      * Creates a chain of decompressors for multiple content encodings
      *
      * @param {string} encodings - Comma-separated list of content encodings
-     * @returns {Array<DecompressorStream>} - Array of decompressor streams
+     * @returns {Array<Transform>} - Array of decompressor and limiting streams
      * @throws {Error} - If the number of content-encodings exceeds the maximum allowed
      */
     createDecompressionChain_fn = function(encodings) {
@@ -196315,54 +200220,81 @@ var require_decompress2 = __commonJS({
         }
         decompressors.push(supportedEncodings[encoding]());
       }
-      return decompressors;
+      if (decompressors.length < 2) {
+        return decompressors;
+      }
+      const streams = [];
+      for (let i = 0; i < decompressors.length; i++) {
+        streams.push(decompressors[i]);
+        if (i < decompressors.length - 1 && __privateGet(this, _maxSize) > 0) {
+          streams.push(createMaxSizeLimiter(__privateGet(this, _maxSize)));
+        }
+      }
+      return streams;
     };
     /**
-     * Sets up event handlers for a decompressor stream using readable events
-     * @param {DecompressorStream} decompressor - The decompressor stream
-     * @param {Controller} controller - The controller to coordinate with
+     * Stops decompression and reports an error.
+     * @param {Error} error - The decompression error
      * @returns {void}
      */
-    setupDecompressorEvents_fn = function(decompressor, controller) {
-      decompressor.on("readable", () => {
-        let chunk;
-        while ((chunk = decompressor.read()) !== null) {
-          const result = __superGet(_DecompressHandler.prototype, this, "onResponseData").call(this, controller, chunk);
-          if (result === false) {
-            break;
-          }
-        }
-      });
-      decompressor.on("error", (error) => {
-        __superGet(_DecompressHandler.prototype, this, "onResponseError").call(this, controller, error);
-      });
+    fail_fn = function(error) {
+      if (__privateGet(this, _terminated)) {
+        return;
+      }
+      if (__privateGet(this, _inputEnded)) {
+        this.onResponseError(__privateGet(this, _controller), error);
+      } else {
+        __privateGet(this, _controller).abort(error);
+      }
+    };
+    /**
+     * Sets up event handlers for the final decompressor stream.
+     * @param {DecompressorStream} decompressor - The decompressor stream
+     * @returns {void}
+     */
+    setupDecompressorEvents_fn = function(decompressor) {
+      __privateSet(this, _finalDecompressor, decompressor);
+      decompressor.on("readable", () => __privateMethod(this, _DecompressHandler_instances, drainOutput_fn).call(this));
+      decompressor.on("error", (error) => __privateMethod(this, _DecompressHandler_instances, fail_fn).call(this, error));
     };
     /**
      * Sets up event handling for a single decompressor
-     * @param {Controller} controller - The controller to handle events
      * @returns {void}
      */
-    setupSingleDecompressor_fn = function(controller) {
+    setupSingleDecompressor_fn = function() {
       const decompressor = __privateGet(this, _decompressors)[0];
-      __privateMethod(this, _DecompressHandler_instances, setupDecompressorEvents_fn).call(this, decompressor, controller);
-      decompressor.on("end", () => {
-        __superGet(_DecompressHandler.prototype, this, "onResponseEnd").call(this, controller, __privateGet(this, _trailers));
-      });
+      __privateMethod(this, _DecompressHandler_instances, setupDecompressorEvents_fn).call(this, decompressor);
+      decompressor.on("end", () => __privateMethod(this, _DecompressHandler_instances, onDecompressionEnd_fn).call(this));
     };
     /**
      * Sets up event handling for multiple chained decompressors using pipeline
-     * @param {Controller} controller - The controller to handle events
      * @returns {void}
      */
-    setupMultipleDecompressors_fn = function(controller) {
+    setupMultipleDecompressors_fn = function() {
       const lastDecompressor = __privateGet(this, _decompressors)[__privateGet(this, _decompressors).length - 1];
-      __privateMethod(this, _DecompressHandler_instances, setupDecompressorEvents_fn).call(this, lastDecompressor, controller);
+      __privateMethod(this, _DecompressHandler_instances, setupDecompressorEvents_fn).call(this, lastDecompressor);
       pipeline(__privateGet(this, _decompressors), (err) => {
-        if (err) {
-          __superGet(_DecompressHandler.prototype, this, "onResponseError").call(this, controller, err);
+        if (__privateGet(this, _terminated)) {
           return;
         }
-        __superGet(_DecompressHandler.prototype, this, "onResponseEnd").call(this, controller, __privateGet(this, _trailers));
+        if (err) {
+          __privateMethod(this, _DecompressHandler_instances, fail_fn).call(this, err);
+          return;
+        }
+        __privateMethod(this, _DecompressHandler_instances, onDecompressionEnd_fn).call(this);
+      });
+    };
+    setupInputBackpressure_fn = function() {
+      const decompressor = __privateGet(this, _decompressors)[0];
+      decompressor.on("drain", () => {
+        if (__privateGet(this, _terminated)) {
+          return;
+        }
+        __privateSet(this, _inputBackpressured, false);
+        if (!__privateGet(this, _controller).paused) {
+          __privateMethod(this, _DecompressHandler_instances, drainOutput_fn).call(this);
+          __privateMethod(this, _DecompressHandler_instances, resumeUpstreamIfNeeded_fn).call(this);
+        }
       });
     };
     /**
@@ -196371,6 +200303,7 @@ var require_decompress2 = __commonJS({
      */
     cleanupDecompressors_fn = function() {
       __privateGet(this, _decompressors).length = 0;
+      __privateSet(this, _finalDecompressor, void 0);
     };
     var DecompressHandler = _DecompressHandler;
     function createDecompressInterceptor(options = {}) {
@@ -196401,7 +200334,7 @@ var require_deduplication_handler = __commonJS({
     "use strict";
     var { RequestAbortedError } = require_errors();
     var DEFAULT_MAX_BUFFER_SIZE = 5 * 1024 * 1024;
-    var _primaryHandler, _waitingHandlers, _maxBufferSize, _statusCode, _headers, _statusMessage, _aborted, _responseStarted, _responseDataStarted, _completed, _controller, _onComplete, _DeduplicationHandler_instances, createWaitingHandler_fn, bufferWaitingChunk_fn, flushWaitingHandler_fn, errorWaitingHandler_fn, pruneDoneWaitingHandlers_fn;
+    var _primaryHandler, _requestStarted, _context, _waitingHandlers, _maxBufferSize, _statusCode, _headers, _statusMessage, _aborted, _responseStarted, _responseDataStarted, _completed, _controller, _onComplete, _DeduplicationHandler_instances, cleanup_fn, createWaitingHandler_fn, bufferWaitingChunk_fn, flushWaitingHandler_fn, endWaitingHandler_fn, errorWaitingHandler_fn, pruneDoneWaitingHandlers_fn;
     var DeduplicationHandler = class {
       /**
        * @param {DispatchHandler} primaryHandler The primary handler
@@ -196414,6 +200347,18 @@ var require_deduplication_handler = __commonJS({
          * @type {DispatchHandler}
          */
         __privateAdd(this, _primaryHandler);
+        /**
+         * Whether the primary request has started (onRequestStart received). Until
+         * then the request context is unknown and cannot be given to waiting handlers.
+         * @type {boolean}
+         */
+        __privateAdd(this, _requestStarted, false);
+        /**
+         * The primary request context, replayed to waiting handlers so they observe
+         * the same redirect history as the primary.
+         * @type {any}
+         */
+        __privateAdd(this, _context, null);
         /**
          * @type {WaitingHandler[]}
          */
@@ -196477,19 +200422,23 @@ var require_deduplication_handler = __commonJS({
         const waitingHandler = __privateMethod(this, _DeduplicationHandler_instances, createWaitingHandler_fn).call(this, handler);
         const waitingController = waitingHandler.controller;
         try {
-          (_a = handler.onRequestStart) == null ? void 0 : _a.call(handler, waitingController, null);
-          if (waitingController.aborted) {
-            waitingHandler.done = true;
-            return true;
-          }
-          if (__privateGet(this, _responseStarted)) {
-            (_b = handler.onResponseStart) == null ? void 0 : _b.call(
-              handler,
-              waitingController,
-              __privateGet(this, _statusCode),
-              __privateGet(this, _headers),
-              __privateGet(this, _statusMessage)
-            );
+          if (__privateGet(this, _requestStarted)) {
+            (_a = handler.onRequestStart) == null ? void 0 : _a.call(handler, waitingController, __privateGet(this, _context));
+            if (waitingController.aborted) {
+              waitingHandler.done = true;
+              return true;
+            }
+            if (__privateGet(this, _responseStarted)) {
+              (_b = handler.onResponseStart) == null ? void 0 : _b.call(
+                handler,
+                waitingController,
+                __privateGet(this, _statusCode),
+                __privateGet(this, _headers),
+                __privateGet(this, _statusMessage)
+              );
+            }
+          } else {
+            waitingHandler.pendingStart = true;
           }
         } catch {
           waitingHandler.done = true;
@@ -196505,9 +200454,24 @@ var require_deduplication_handler = __commonJS({
        * @param {any} context
        */
       onRequestStart(controller, context) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         __privateSet(this, _controller, controller);
-        (_b = (_a = __privateGet(this, _primaryHandler)).onRequestStart) == null ? void 0 : _b.call(_a, controller, context);
+        if (!__privateGet(this, _requestStarted)) {
+          __privateSet(this, _requestStarted, true);
+          __privateSet(this, _context, context);
+          for (const waitingHandler of __privateGet(this, _waitingHandlers)) {
+            if (waitingHandler.pendingStart && !waitingHandler.done && !waitingHandler.controller.aborted) {
+              waitingHandler.pendingStart = false;
+              try {
+                (_b = (_a = waitingHandler.handler).onRequestStart) == null ? void 0 : _b.call(_a, waitingHandler.controller, context);
+              } catch {
+                waitingHandler.done = true;
+              }
+            }
+          }
+          __privateMethod(this, _DeduplicationHandler_instances, pruneDoneWaitingHandlers_fn).call(this);
+        }
+        (_d = (_c = __privateGet(this, _primaryHandler)).onRequestStart) == null ? void 0 : _d.call(_c, controller, context);
       }
       /**
        * @param {import('../../types/dispatcher.d.ts').default.DispatchController} controller
@@ -196592,55 +200556,61 @@ var require_deduplication_handler = __commonJS({
        * @param {object} trailers
        */
       onResponseEnd(controller, trailers) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d;
         if (__privateGet(this, _aborted) || __privateGet(this, _completed)) {
           return;
         }
         __privateSet(this, _completed, true);
-        (_b = (_a = __privateGet(this, _primaryHandler)).onResponseEnd) == null ? void 0 : _b.call(_a, controller, trailers);
-        for (const waitingHandler of __privateGet(this, _waitingHandlers)) {
-          if (waitingHandler.done || waitingHandler.controller.aborted) {
-            waitingHandler.done = true;
-            continue;
+        __privateMethod(this, _DeduplicationHandler_instances, cleanup_fn).call(this);
+        try {
+          (_b = (_a = __privateGet(this, _primaryHandler)).onResponseEnd) == null ? void 0 : _b.call(_a, controller, trailers);
+        } catch (err) {
+          (_d = (_c = __privateGet(this, _primaryHandler)).onResponseError) == null ? void 0 : _d.call(_c, controller, err);
+        } finally {
+          for (const waitingHandler of __privateGet(this, _waitingHandlers)) {
+            if (waitingHandler.done || waitingHandler.controller.aborted) {
+              waitingHandler.done = true;
+              continue;
+            }
+            __privateMethod(this, _DeduplicationHandler_instances, flushWaitingHandler_fn).call(this, waitingHandler);
+            if (waitingHandler.done || waitingHandler.controller.aborted) {
+              waitingHandler.done = true;
+              continue;
+            }
+            if (waitingHandler.controller.paused) {
+              waitingHandler.pendingTrailers = trailers;
+              continue;
+            }
+            __privateMethod(this, _DeduplicationHandler_instances, endWaitingHandler_fn).call(this, waitingHandler, trailers);
           }
-          __privateMethod(this, _DeduplicationHandler_instances, flushWaitingHandler_fn).call(this, waitingHandler);
-          if (waitingHandler.done || waitingHandler.controller.aborted) {
-            waitingHandler.done = true;
-            continue;
-          }
-          if (waitingHandler.controller.paused && waitingHandler.bufferedChunks.length > 0) {
-            waitingHandler.pendingTrailers = trailers;
-            continue;
-          }
-          try {
-            (_d = (_c = waitingHandler.handler).onResponseEnd) == null ? void 0 : _d.call(_c, waitingHandler.controller, trailers);
-          } catch {
-          }
-          waitingHandler.done = true;
+          __privateMethod(this, _DeduplicationHandler_instances, pruneDoneWaitingHandlers_fn).call(this);
         }
-        __privateMethod(this, _DeduplicationHandler_instances, pruneDoneWaitingHandlers_fn).call(this);
-        (_e = __privateGet(this, _onComplete)) == null ? void 0 : _e.call(this);
       }
       /**
        * @param {import('../../types/dispatcher.d.ts').default.DispatchController} controller
        * @param {Error} err
        */
       onResponseError(controller, err) {
-        var _a, _b, _c;
+        var _a, _b;
         if (__privateGet(this, _completed)) {
           return;
         }
         __privateSet(this, _aborted, true);
         __privateSet(this, _completed, true);
-        (_b = (_a = __privateGet(this, _primaryHandler)).onResponseError) == null ? void 0 : _b.call(_a, controller, err);
-        for (const waitingHandler of __privateGet(this, _waitingHandlers)) {
-          __privateMethod(this, _DeduplicationHandler_instances, errorWaitingHandler_fn).call(this, waitingHandler, err);
+        __privateMethod(this, _DeduplicationHandler_instances, cleanup_fn).call(this);
+        try {
+          (_b = (_a = __privateGet(this, _primaryHandler)).onResponseError) == null ? void 0 : _b.call(_a, controller, err);
+        } finally {
+          for (const waitingHandler of __privateGet(this, _waitingHandlers)) {
+            __privateMethod(this, _DeduplicationHandler_instances, errorWaitingHandler_fn).call(this, waitingHandler, err);
+          }
+          __privateSet(this, _waitingHandlers, []);
         }
-        __privateSet(this, _waitingHandlers, []);
-        (_c = __privateGet(this, _onComplete)) == null ? void 0 : _c.call(this);
       }
     };
     _primaryHandler = new WeakMap();
+    _requestStarted = new WeakMap();
+    _context = new WeakMap();
     _waitingHandlers = new WeakMap();
     _maxBufferSize = new WeakMap();
     _statusCode = new WeakMap();
@@ -196653,6 +200623,11 @@ var require_deduplication_handler = __commonJS({
     _controller = new WeakMap();
     _onComplete = new WeakMap();
     _DeduplicationHandler_instances = new WeakSet();
+    cleanup_fn = function() {
+      const onComplete = __privateGet(this, _onComplete);
+      __privateSet(this, _onComplete, null);
+      onComplete == null ? void 0 : onComplete();
+    };
     /**
      * @param {DispatchHandler} handler
      * @returns {WaitingHandler}
@@ -196664,7 +200639,8 @@ var require_deduplication_handler = __commonJS({
         bufferedChunks: [],
         bufferedBytes: 0,
         pendingTrailers: null,
-        done: false
+        done: false,
+        pendingStart: false
       };
       const state = {
         aborted: false,
@@ -196673,19 +200649,13 @@ var require_deduplication_handler = __commonJS({
       };
       waitingHandler.controller = {
         resume: () => {
-          var _a, _b;
           if (state.aborted) {
             return;
           }
           state.paused = false;
           __privateMethod(this, _DeduplicationHandler_instances, flushWaitingHandler_fn).call(this, waitingHandler);
           if (__privateGet(this, _completed) && waitingHandler.pendingTrailers && waitingHandler.bufferedChunks.length === 0 && !state.paused && !state.aborted) {
-            try {
-              (_b = (_a = waitingHandler.handler).onResponseEnd) == null ? void 0 : _b.call(_a, waitingHandler.controller, waitingHandler.pendingTrailers);
-            } catch {
-            }
-            waitingHandler.pendingTrailers = null;
-            waitingHandler.done = true;
+            __privateMethod(this, _DeduplicationHandler_instances, endWaitingHandler_fn).call(this, waitingHandler, waitingHandler.pendingTrailers);
           }
           __privateMethod(this, _DeduplicationHandler_instances, pruneDoneWaitingHandlers_fn).call(this);
         },
@@ -196704,12 +200674,20 @@ var require_deduplication_handler = __commonJS({
           return state.reason;
         },
         abort: (reason) => {
+          var _a;
+          if (state.aborted) {
+            return;
+          }
           state.aborted = true;
           state.reason = reason ?? null;
           waitingHandler.done = true;
           waitingHandler.pendingTrailers = null;
           waitingHandler.bufferedChunks = [];
           waitingHandler.bufferedBytes = 0;
+          try {
+            (_a = handler.onResponseError) == null ? void 0 : _a.call(handler, waitingHandler.controller, state.reason ?? new RequestAbortedError());
+          } catch {
+          }
         }
       };
       return waitingHandler;
@@ -196730,7 +200708,7 @@ var require_deduplication_handler = __commonJS({
       waitingHandler.bufferedBytes += bufferedChunk.length;
       if (waitingHandler.bufferedBytes > __privateGet(this, _maxBufferSize)) {
         const err = new RequestAbortedError(`Deduplicated waiting handler exceeded maxBufferSize (${__privateGet(this, _maxBufferSize)} bytes) while paused`);
-        __privateMethod(this, _DeduplicationHandler_instances, errorWaitingHandler_fn).call(this, waitingHandler, err);
+        waitingHandler.controller.abort(err);
       }
     };
     /**
@@ -196757,6 +200735,23 @@ var require_deduplication_handler = __commonJS({
     };
     /**
      * @param {WaitingHandler} waitingHandler
+     * @param {object} trailers
+     */
+    endWaitingHandler_fn = function(waitingHandler, trailers) {
+      var _a, _b, _c, _d;
+      waitingHandler.done = true;
+      waitingHandler.pendingTrailers = null;
+      try {
+        (_b = (_a = waitingHandler.handler).onResponseEnd) == null ? void 0 : _b.call(_a, waitingHandler.controller, trailers);
+      } catch (err) {
+        try {
+          (_d = (_c = waitingHandler.handler).onResponseError) == null ? void 0 : _d.call(_c, waitingHandler.controller, err);
+        } catch {
+        }
+      }
+    };
+    /**
+     * @param {WaitingHandler} waitingHandler
      * @param {Error} err
      */
     errorWaitingHandler_fn = function(waitingHandler, err) {
@@ -196769,7 +200764,6 @@ var require_deduplication_handler = __commonJS({
       waitingHandler.bufferedChunks = [];
       waitingHandler.bufferedBytes = 0;
       try {
-        waitingHandler.controller.abort(err);
         (_b = (_a = waitingHandler.handler).onResponseError) == null ? void 0 : _b.call(_a, waitingHandler.controller, err);
       } catch {
       }
@@ -196788,7 +200782,7 @@ var require_deduplicate = __commonJS({
     var diagnosticsChannel = require("node:diagnostics_channel");
     var util = require_util();
     var DeduplicationHandler = require_deduplication_handler();
-    var { normalizeHeaders, makeCacheKey, makeDeduplicationKey } = require_cache();
+    var { getInterceptorOrigin, normalizeHeaders, makeCacheKey, makeDeduplicationKey } = require_cache();
     var pendingRequestsChannel = diagnosticsChannel.channel("undici:request:pending-requests");
     module2.exports = (opts = {}) => {
       const {
@@ -196820,9 +200814,10 @@ var require_deduplicate = __commonJS({
       const skipHeaderNamesSet = new Set(skipHeaderNames.map((name) => name.toLowerCase()));
       const excludeHeaderNamesSet = new Set(excludeHeaderNames.map((name) => name.toLowerCase()));
       const pendingRequests = /* @__PURE__ */ new Map();
-      return (dispatch) => {
+      return (dispatch, interceptorOrigin) => {
         return (opts2, handler) => {
-          if (opts2.upgrade || methods.includes(opts2.method) === false) {
+          const requestOrigin = getInterceptorOrigin(opts2, interceptorOrigin);
+          if (!requestOrigin || opts2.upgrade || methods.includes(opts2.method) === false) {
             return dispatch(opts2, handler);
           }
           opts2 = {
@@ -196836,7 +200831,7 @@ var require_deduplicate = __commonJS({
               }
             }
           }
-          const cacheKey = makeCacheKey(opts2);
+          const cacheKey = makeCacheKey(opts2, requestOrigin);
           const dedupeKey = makeDeduplicationKey(cacheKey, excludeHeaderNamesSet);
           const pendingHandler = pendingRequests.get(dedupeKey);
           if (pendingHandler) {
@@ -196872,10 +200867,13 @@ var require_sqlite_cache_store = __commonJS({
     "use strict";
     var { Writable } = require("node:stream");
     var { assertCacheKey, assertCacheValue } = require_cache();
+    var { zstdCompressSync, zstdDecompressSync } = require("node:zlib");
     var DatabaseSync;
-    var VERSION = 3;
+    var VERSION = 4;
     var MAX_ENTRY_SIZE = 2 * 1e3 * 1e3 * 1e3;
-    var _maxEntrySize, _maxCount, _db, _getValuesQuery, _updateValueQuery, _insertValueQuery, _deleteExpiredValuesQuery, _deleteByUrlQuery, _countEntriesQuery, _deleteOldValuesQuery, _SqliteCacheStore_instances, prune_fn, makeValueUrl_fn, findValue_fn, _a;
+    var COMPRESS_THRESHOLD = 1024 * 1024;
+    var hasZstd = typeof zstdCompressSync === "function" && typeof zstdDecompressSync === "function";
+    var _maxEntrySize, _maxCount, _compressThreshold, _db, _getValuesQuery, _updateValueQuery, _insertValueQuery, _deleteExpiredValuesQuery, _deleteByUrlQuery, _countEntriesQuery, _deleteOldValuesQuery, _SqliteCacheStore_instances, prune_fn, makeValueUrl_fn, findValue_fn, _a;
     module2.exports = (_a = class {
       /**
        * @param {import('../../types/cache-interceptor.d.ts').default.SqliteCacheStoreOpts | undefined} opts
@@ -196884,6 +200882,7 @@ var require_sqlite_cache_store = __commonJS({
         __privateAdd(this, _SqliteCacheStore_instances);
         __privateAdd(this, _maxEntrySize, MAX_ENTRY_SIZE);
         __privateAdd(this, _maxCount, Infinity);
+        __privateAdd(this, _compressThreshold, COMPRESS_THRESHOLD);
         /**
          * @type {import('node:sqlite').DatabaseSync}
          */
@@ -196935,6 +200934,12 @@ var require_sqlite_cache_store = __commonJS({
             }
             __privateSet(this, _maxCount, opts.maxCount);
           }
+          if (opts.compressThreshold !== void 0) {
+            if (typeof opts.compressThreshold !== "number" || !Number.isInteger(opts.compressThreshold) || opts.compressThreshold < 0) {
+              throw new TypeError("SqliteCacheStore options.compressThreshold must be a non-negative integer");
+            }
+            __privateSet(this, _compressThreshold, opts.compressThreshold);
+          }
         }
         if (!DatabaseSync) {
           DatabaseSync = require("node:sqlite").DatabaseSync;
@@ -196954,6 +200959,7 @@ var require_sqlite_cache_store = __commonJS({
 
         -- Data returned to the interceptor
         body BUF NULL,
+        compressed TEXT NULL,
         deleteAt INTEGER NOT NULL,
         statusCode INTEGER NOT NULL,
         statusMessage TEXT NOT NULL,
@@ -196972,6 +200978,7 @@ var require_sqlite_cache_store = __commonJS({
       SELECT
         id,
         body,
+        compressed,
         deleteAt,
         statusCode,
         statusMessage,
@@ -196991,6 +200998,7 @@ var require_sqlite_cache_store = __commonJS({
         __privateSet(this, _updateValueQuery, __privateGet(this, _db).prepare(`
       UPDATE cacheInterceptorV${VERSION} SET
         body = ?,
+        compressed = ?,
         deleteAt = ?,
         statusCode = ?,
         statusMessage = ?,
@@ -197008,6 +201016,7 @@ var require_sqlite_cache_store = __commonJS({
         url,
         method,
         body,
+        compressed,
         deleteAt,
         statusCode,
         statusMessage,
@@ -197017,7 +201026,7 @@ var require_sqlite_cache_store = __commonJS({
         vary,
         cachedAt,
         staleAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `));
         __privateSet(this, _deleteByUrlQuery, __privateGet(this, _db).prepare(
           `DELETE FROM cacheInterceptorV${VERSION} WHERE url = ?`
@@ -197050,7 +201059,7 @@ var require_sqlite_cache_store = __commonJS({
         assertCacheKey(key);
         const value = __privateMethod(this, _SqliteCacheStore_instances, findValue_fn).call(this, key);
         return value ? {
-          body: value.body ? Buffer.from(value.body.buffer, value.body.byteOffset, value.body.byteLength) : void 0,
+          body: value.body ? value.compressed === "zstd" ? zstdDecompressSync(Buffer.from(value.body.buffer, value.body.byteOffset, value.body.byteLength)) : Buffer.from(value.body.buffer, value.body.byteOffset, value.body.byteLength) : void 0,
           statusCode: value.statusCode,
           statusMessage: value.statusMessage,
           headers: value.headers ? JSON.parse(value.headers) : void 0,
@@ -197074,10 +201083,20 @@ var require_sqlite_cache_store = __commonJS({
         if (size && size > __privateGet(this, _maxEntrySize)) {
           return;
         }
+        let compressed = null;
+        let storedBody = body;
+        if (body && hasZstd && (size > __privateGet(this, _compressThreshold) || isCompressibleContentType(getContentType(value.headers)))) {
+          const candidate = zstdCompressSync(body);
+          if (candidate.byteLength < body.byteLength) {
+            storedBody = candidate;
+            compressed = "zstd";
+          }
+        }
         const existingValue = __privateMethod(this, _SqliteCacheStore_instances, findValue_fn).call(this, key, true);
         if (existingValue) {
           __privateGet(this, _updateValueQuery).run(
-            body,
+            storedBody,
+            compressed,
             value.deleteAt,
             value.statusCode,
             value.statusMessage,
@@ -197093,7 +201112,8 @@ var require_sqlite_cache_store = __commonJS({
           __privateGet(this, _insertValueQuery).run(
             url,
             key.method,
-            body,
+            storedBody,
+            compressed,
             value.deleteAt,
             value.statusCode,
             value.statusMessage,
@@ -197152,7 +201172,7 @@ var require_sqlite_cache_store = __commonJS({
         const { total } = __privateGet(this, _countEntriesQuery).get();
         return total;
       }
-    }, _maxEntrySize = new WeakMap(), _maxCount = new WeakMap(), _db = new WeakMap(), _getValuesQuery = new WeakMap(), _updateValueQuery = new WeakMap(), _insertValueQuery = new WeakMap(), _deleteExpiredValuesQuery = new WeakMap(), _deleteByUrlQuery = new WeakMap(), _countEntriesQuery = new WeakMap(), _deleteOldValuesQuery = new WeakMap(), _SqliteCacheStore_instances = new WeakSet(), prune_fn = function() {
+    }, _maxEntrySize = new WeakMap(), _maxCount = new WeakMap(), _compressThreshold = new WeakMap(), _db = new WeakMap(), _getValuesQuery = new WeakMap(), _updateValueQuery = new WeakMap(), _insertValueQuery = new WeakMap(), _deleteExpiredValuesQuery = new WeakMap(), _deleteByUrlQuery = new WeakMap(), _countEntriesQuery = new WeakMap(), _deleteOldValuesQuery = new WeakMap(), _SqliteCacheStore_instances = new WeakSet(), prune_fn = function() {
       var _a2;
       if (Number.isFinite(__privateGet(this, _maxCount)) && this.size <= __privateGet(this, _maxCount)) {
         return 0;
@@ -197229,6 +201249,25 @@ var require_sqlite_cache_store = __commonJS({
       }
       return lhs === rhs;
     }
+    function getContentType(headers) {
+      if (headers == null) {
+        return void 0;
+      }
+      for (const key in headers) {
+        if (key.toLowerCase() === "content-type") {
+          const value = headers[key];
+          return Array.isArray(value) ? value[0] : value;
+        }
+      }
+      return void 0;
+    }
+    function isCompressibleContentType(contentType) {
+      if (contentType == null) {
+        return false;
+      }
+      const type = contentType.toLowerCase();
+      return /^text\//.test(type) || /^application\/(json|xml|javascript|x-www-form-urlencoded|graphql)(\s|;|$)/.test(type) || /\+(json|xml)(\s|;|$)/.test(type);
+    }
   }
 });
 
@@ -197237,7 +201276,7 @@ var require_headers = __commonJS({
   "addons/pro/node_modules/undici/lib/web/fetch/headers.js"(exports2, module2) {
     "use strict";
     var { kConstruct } = require_symbols();
-    var { kEnumerableProperty } = require_util();
+    var { kEnumerableProperty, setHeader } = require_util();
     var {
       iteratorMixin,
       isValidHeaderName,
@@ -197427,7 +201466,7 @@ var require_headers = __commonJS({
         const headers = {};
         if (this.headersMap.size !== 0) {
           for (const { name, value } of this.headersMap.values()) {
-            headers[name] = value;
+            setHeader(headers, name, value);
           }
         }
         return headers;
@@ -197498,8 +201537,12 @@ var require_headers = __commonJS({
         }
       }
     };
+    var getHeadersGuard;
+    var setHeadersGuard;
+    var getHeadersList;
+    var setHeadersList;
     var _guard, _headersList;
-    var _Headers = class _Headers {
+    var Headers = class {
       /**
        * @param {HeadersInit|Symbol} [init]
        * @returns
@@ -197523,7 +201566,7 @@ var require_headers = __commonJS({
       }
       // https://fetch.spec.whatwg.org/#dom-headers-append
       append(name, value) {
-        webidl.brandCheck(this, _Headers);
+        webidl.brandCheck(this, webidl.is.Headers);
         webidl.argumentLengthCheck(arguments, 2, "Headers.append");
         const prefix = "Headers.append";
         name = webidl.converters.ByteString(name, prefix, "name");
@@ -197532,7 +201575,7 @@ var require_headers = __commonJS({
       }
       // https://fetch.spec.whatwg.org/#dom-headers-delete
       delete(name) {
-        webidl.brandCheck(this, _Headers);
+        webidl.brandCheck(this, webidl.is.Headers);
         webidl.argumentLengthCheck(arguments, 1, "Headers.delete");
         const prefix = "Headers.delete";
         name = webidl.converters.ByteString(name, prefix, "name");
@@ -197553,7 +201596,7 @@ var require_headers = __commonJS({
       }
       // https://fetch.spec.whatwg.org/#dom-headers-get
       get(name) {
-        webidl.brandCheck(this, _Headers);
+        webidl.brandCheck(this, webidl.is.Headers);
         webidl.argumentLengthCheck(arguments, 1, "Headers.get");
         const prefix = "Headers.get";
         name = webidl.converters.ByteString(name, prefix, "name");
@@ -197568,7 +201611,7 @@ var require_headers = __commonJS({
       }
       // https://fetch.spec.whatwg.org/#dom-headers-has
       has(name) {
-        webidl.brandCheck(this, _Headers);
+        webidl.brandCheck(this, webidl.is.Headers);
         webidl.argumentLengthCheck(arguments, 1, "Headers.has");
         const prefix = "Headers.has";
         name = webidl.converters.ByteString(name, prefix, "name");
@@ -197583,7 +201626,7 @@ var require_headers = __commonJS({
       }
       // https://fetch.spec.whatwg.org/#dom-headers-set
       set(name, value) {
-        webidl.brandCheck(this, _Headers);
+        webidl.brandCheck(this, webidl.is.Headers);
         webidl.argumentLengthCheck(arguments, 2, "Headers.set");
         const prefix = "Headers.set";
         name = webidl.converters.ByteString(name, prefix, "name");
@@ -197609,7 +201652,7 @@ var require_headers = __commonJS({
       }
       // https://fetch.spec.whatwg.org/#dom-headers-getsetcookie
       getSetCookie() {
-        webidl.brandCheck(this, _Headers);
+        webidl.brandCheck(this, webidl.is.Headers);
         const list = __privateGet(this, _headersList).cookies;
         if (list) {
           return [...list];
@@ -197620,35 +201663,21 @@ var require_headers = __commonJS({
         options.depth ?? (options.depth = depth);
         return `Headers ${util.formatWithOptions(options, __privateGet(this, _headersList).entries)}`;
       }
-      static getHeadersGuard(o) {
-        return __privateGet(o, _guard);
-      }
-      static setHeadersGuard(o, guard) {
-        __privateSet(o, _guard, guard);
-      }
-      /**
-       * @param {Headers} o
-       */
-      static getHeadersList(o) {
-        return __privateGet(o, _headersList);
-      }
-      /**
-       * @param {Headers} target
-       * @param {HeadersList} list
-       */
-      static setHeadersList(target, list) {
-        __privateSet(target, _headersList, list);
-      }
     };
     _guard = new WeakMap();
     _headersList = new WeakMap();
-    var Headers = _Headers;
-    var { getHeadersGuard, setHeadersGuard, getHeadersList, setHeadersList } = Headers;
-    Reflect.deleteProperty(Headers, "getHeadersGuard");
-    Reflect.deleteProperty(Headers, "setHeadersGuard");
-    Reflect.deleteProperty(Headers, "getHeadersList");
-    Reflect.deleteProperty(Headers, "setHeadersList");
-    iteratorMixin("Headers", Headers, headersListSortAndCombine, 0, 1);
+    getHeadersGuard = (headers) => __privateGet(headers, _guard);
+    setHeadersGuard = (headers, guard) => {
+      __privateSet(headers, _guard, guard);
+    };
+    getHeadersList = (headers) => __privateGet(headers, _headersList);
+    setHeadersList = (target, list) => {
+      __privateSet(target, _headersList, list);
+    };
+    webidl.is.Headers = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_guard, arg);
+    };
+    iteratorMixin("Headers", Headers, headersListSortAndCombine, 0, 1, webidl.is.Headers);
     Object.defineProperties(Headers.prototype, {
       append: kEnumerableProperty,
       delete: kEnumerableProperty,
@@ -197717,15 +201746,19 @@ var require_response = __commonJS({
     var {
       redirectStatusSet,
       nullBodyStatus
-    } = require_constants3();
+    } = require_constants2();
     var { webidl } = require_webidl();
     var { URLSerializer } = require_data_url();
     var { kConstruct } = require_symbols();
     var assert = require("node:assert");
     var { isomorphicEncode, serializeJavascriptValueToJSONString } = require_infra();
     var textEncoder = new TextEncoder("utf-8");
+    var getResponseHeaders;
+    var setResponseHeaders;
+    var getResponseState;
+    var setResponseState;
     var _headers, _state;
-    var _Response = class _Response {
+    var Response = class {
       // https://fetch.spec.whatwg.org/#dom-response
       constructor(body = null, init = void 0) {
         /** @type {Headers} */
@@ -197789,12 +201822,12 @@ var require_response = __commonJS({
       }
       // Returns response’s type, e.g., "cors".
       get type() {
-        webidl.brandCheck(this, _Response);
+        webidl.brandCheck(this, webidl.is.Response);
         return __privateGet(this, _state).type;
       }
       // Returns response’s URL, if it has one; otherwise the empty string.
       get url() {
-        webidl.brandCheck(this, _Response);
+        webidl.brandCheck(this, webidl.is.Response);
         const urlList = __privateGet(this, _state).urlList;
         const url = urlList[urlList.length - 1] ?? null;
         if (url === null) {
@@ -197804,41 +201837,41 @@ var require_response = __commonJS({
       }
       // Returns whether response was obtained through a redirect.
       get redirected() {
-        webidl.brandCheck(this, _Response);
+        webidl.brandCheck(this, webidl.is.Response);
         return __privateGet(this, _state).urlList.length > 1;
       }
       // Returns response’s status.
       get status() {
-        webidl.brandCheck(this, _Response);
+        webidl.brandCheck(this, webidl.is.Response);
         return __privateGet(this, _state).status;
       }
       // Returns whether response’s status is an ok status.
       get ok() {
-        webidl.brandCheck(this, _Response);
+        webidl.brandCheck(this, webidl.is.Response);
         return __privateGet(this, _state).status >= 200 && __privateGet(this, _state).status <= 299;
       }
       // Returns response’s status message.
       get statusText() {
-        webidl.brandCheck(this, _Response);
+        webidl.brandCheck(this, webidl.is.Response);
         return __privateGet(this, _state).statusText;
       }
       // Returns response’s headers as Headers.
       get headers() {
-        webidl.brandCheck(this, _Response);
+        webidl.brandCheck(this, webidl.is.Response);
         return __privateGet(this, _headers);
       }
       get body() {
-        webidl.brandCheck(this, _Response);
+        webidl.brandCheck(this, webidl.is.Response);
         return __privateGet(this, _state).body ? __privateGet(this, _state).body.stream : null;
       }
       get bodyUsed() {
-        webidl.brandCheck(this, _Response);
+        webidl.brandCheck(this, webidl.is.Response);
         return !!__privateGet(this, _state).body && util.isDisturbed(__privateGet(this, _state).body.stream);
       }
       // Returns a clone of response.
       clone() {
         var _a;
-        webidl.brandCheck(this, _Response);
+        webidl.brandCheck(this, webidl.is.Response);
         if (bodyUnusable(__privateGet(this, _state))) {
           throw webidl.errors.exception({
             header: "Response.clone",
@@ -197869,42 +201902,25 @@ var require_response = __commonJS({
         };
         return `Response ${nodeUtil.formatWithOptions(options, properties)}`;
       }
-      /**
-       * @param {Response} response
-       */
-      static getResponseHeaders(response) {
-        return __privateGet(response, _headers);
-      }
-      /**
-       * @param {Response} response
-       * @param {Headers} newHeaders
-       */
-      static setResponseHeaders(response, newHeaders) {
-        __privateSet(response, _headers, newHeaders);
-      }
-      /**
-       * @param {Response} response
-       */
-      static getResponseState(response) {
-        return __privateGet(response, _state);
-      }
-      /**
-       * @param {Response} response
-       * @param {any} newState
-       */
-      static setResponseState(response, newState) {
-        __privateSet(response, _state, newState);
-      }
     };
     _headers = new WeakMap();
     _state = new WeakMap();
-    var Response = _Response;
-    var { getResponseHeaders, setResponseHeaders, getResponseState, setResponseState } = Response;
-    Reflect.deleteProperty(Response, "getResponseHeaders");
-    Reflect.deleteProperty(Response, "setResponseHeaders");
-    Reflect.deleteProperty(Response, "getResponseState");
-    Reflect.deleteProperty(Response, "setResponseState");
-    mixinBody(Response, getResponseState);
+    getResponseHeaders = (response) => {
+      return __privateGet(response, _headers);
+    };
+    setResponseHeaders = (response, newHeaders) => {
+      __privateSet(response, _headers, newHeaders);
+    };
+    getResponseState = (response) => {
+      return __privateGet(response, _state);
+    };
+    setResponseState = (response, newState) => {
+      __privateSet(response, _state, newState);
+    };
+    webidl.is.Response = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_state, arg);
+    };
+    mixinBody(Response, getResponseState, webidl.is.Response);
     Object.defineProperties(Response.prototype, {
       type: kEnumerableProperty,
       url: kEnumerableProperty,
@@ -198109,7 +202125,6 @@ var require_response = __commonJS({
         converter: webidl.converters.HeadersInit
       }
     ]);
-    webidl.is.Response = webidl.util.MakeTypeAssertion(Response);
     module2.exports = {
       isNetworkError,
       makeNetworkError,
@@ -198146,7 +202161,7 @@ var require_request2 = __commonJS({
       requestCredentials,
       requestCache,
       requestDuplex
-    } = require_constants3();
+    } = require_constants2();
     var { kEnumerableProperty, normalizedMethodRecordsBase, normalizedMethodRecords } = util;
     var { webidl } = require_webidl();
     var { URLSerializer } = require_data_url();
@@ -198189,8 +202204,15 @@ var require_request2 = __commonJS({
       }
     }
     var patchMethodWarning = false;
+    var setRequestSignal;
+    var getRequestDispatcher;
+    var setRequestDispatcher;
+    var setRequestHeaders;
+    var getRequestState;
+    var setRequestState;
+    var removeRequestAbortListener;
     var _signal, _dispatcher, _headers, _state, _abortCleanup;
-    var _Request = class _Request {
+    var Request = class {
       // https://fetch.spec.whatwg.org/#dom-request
       constructor(input, init = void 0) {
         /** @type {AbortSignal} */
@@ -198481,25 +202503,25 @@ var require_request2 = __commonJS({
       }
       // Returns request’s HTTP method, which is "GET" by default.
       get method() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).method;
       }
       // Returns the URL of request as a string.
       get url() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return URLSerializer(__privateGet(this, _state).url);
       }
       // Returns a Headers object consisting of the headers associated with request.
       // Note that headers added in the network layer by the user agent will not
       // be accounted for in this object, e.g., the "Host" header.
       get headers() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _headers);
       }
       // Returns the kind of resource requested by request, e.g., "document"
       // or "script".
       get destination() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).destination;
       }
       // Returns the referrer of request. Its value can be a same-origin URL if
@@ -198508,7 +202530,7 @@ var require_request2 = __commonJS({
       // during fetching to determine the value of the `Referer` header of the
       // request being made.
       get referrer() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         if (__privateGet(this, _state).referrer === "no-referrer") {
           return "";
         }
@@ -198521,28 +202543,28 @@ var require_request2 = __commonJS({
       // This is used during fetching to compute the value of the request’s
       // referrer.
       get referrerPolicy() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).referrerPolicy;
       }
       // Returns the mode associated with request, which is a string indicating
       // whether the request will use CORS, or will be restricted to same-origin
       // URLs.
       get mode() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).mode;
       }
       // Returns the credentials mode associated with request,
       // which is a string indicating whether credentials will be sent with the
       // request always, never, or only when sent to a same-origin URL.
       get credentials() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).credentials;
       }
       // Returns the cache mode associated with request,
       // which is a string indicating how the request will
       // interact with the browser’s cache when fetching.
       get cache() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).cache;
       }
       // Returns the redirect mode associated with request,
@@ -198550,56 +202572,56 @@ var require_request2 = __commonJS({
       // request will be handled during fetching. A request
       // will follow redirects by default.
       get redirect() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).redirect;
       }
       // Returns request’s subresource integrity metadata, which is a
       // cryptographic hash of the resource being fetched. Its value
       // consists of multiple hashes separated by whitespace. [SRI]
       get integrity() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).integrity;
       }
       // Returns a boolean indicating whether or not request can outlive the
       // global in which it was created.
       get keepalive() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).keepalive;
       }
       // Returns a boolean indicating whether or not request is for a reload
       // navigation.
       get isReloadNavigation() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).reloadNavigation;
       }
       // Returns a boolean indicating whether or not request is for a history
       // navigation (a.k.a. back-forward navigation).
       get isHistoryNavigation() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).historyNavigation;
       }
       // Returns the signal associated with request, which is an AbortSignal
       // object indicating whether or not request has been aborted, and its
       // abort event handler.
       get signal() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _signal);
       }
       get body() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return __privateGet(this, _state).body ? __privateGet(this, _state).body.stream : null;
       }
       get bodyUsed() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return !!__privateGet(this, _state).body && util.isDisturbed(__privateGet(this, _state).body.stream);
       }
       get duplex() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         return "half";
       }
       // Returns a clone of request.
       clone() {
-        webidl.brandCheck(this, _Request);
+        webidl.brandCheck(this, webidl.is.Request);
         if (bodyUnusable(__privateGet(this, _state))) {
           throw new TypeError("unusable");
         }
@@ -198646,72 +202668,38 @@ var require_request2 = __commonJS({
         };
         return `Request ${nodeUtil.formatWithOptions(options, properties)}`;
       }
-      /**
-       * @param {Request} request
-       * @param {AbortSignal} newSignal
-       */
-      static setRequestSignal(request, newSignal) {
-        __privateSet(request, _signal, newSignal);
-        return request;
-      }
-      /**
-       * @param {Request} request
-       */
-      static getRequestDispatcher(request) {
-        return __privateGet(request, _dispatcher);
-      }
-      /**
-       * @param {Request} request
-       * @param {import('../../dispatcher/dispatcher')} newDispatcher
-       */
-      static setRequestDispatcher(request, newDispatcher) {
-        __privateSet(request, _dispatcher, newDispatcher);
-      }
-      /**
-       * @param {Request} request
-       * @param {Headers} newHeaders
-       */
-      static setRequestHeaders(request, newHeaders) {
-        __privateSet(request, _headers, newHeaders);
-      }
-      /**
-       * @param {Request} request
-       */
-      static getRequestState(request) {
-        return __privateGet(request, _state);
-      }
-      /**
-       * @param {Request} request
-       * @param {any} newState
-       */
-      static setRequestState(request, newState) {
-        __privateSet(request, _state, newState);
-      }
-      /**
-       * Removes the `abort` listener that makes this request's signal follow the
-       * signal passed to its constructor, if any. Idempotent.
-       * @param {Request} request
-       */
-      static removeRequestAbortListener(request) {
-        var _a;
-        (_a = __privateGet(request, _abortCleanup)) == null ? void 0 : _a.call(request);
-      }
     };
     _signal = new WeakMap();
     _dispatcher = new WeakMap();
     _headers = new WeakMap();
     _state = new WeakMap();
     _abortCleanup = new WeakMap();
-    var Request = _Request;
-    var { setRequestSignal, getRequestDispatcher, setRequestDispatcher, setRequestHeaders, getRequestState, setRequestState, removeRequestAbortListener } = Request;
-    Reflect.deleteProperty(Request, "setRequestSignal");
-    Reflect.deleteProperty(Request, "getRequestDispatcher");
-    Reflect.deleteProperty(Request, "setRequestDispatcher");
-    Reflect.deleteProperty(Request, "setRequestHeaders");
-    Reflect.deleteProperty(Request, "getRequestState");
-    Reflect.deleteProperty(Request, "setRequestState");
-    Reflect.deleteProperty(Request, "removeRequestAbortListener");
-    mixinBody(Request, getRequestState);
+    setRequestSignal = (request, newSignal) => {
+      __privateSet(request, _signal, newSignal);
+    };
+    getRequestDispatcher = (request) => {
+      return __privateGet(request, _dispatcher);
+    };
+    setRequestDispatcher = (request, newDispatcher) => {
+      __privateSet(request, _dispatcher, newDispatcher);
+    };
+    setRequestHeaders = (request, newHeaders) => {
+      __privateSet(request, _headers, newHeaders);
+    };
+    getRequestState = (request) => {
+      return __privateGet(request, _state);
+    };
+    setRequestState = (request, newState) => {
+      __privateSet(request, _state, newState);
+    };
+    removeRequestAbortListener = (request) => {
+      var _a;
+      (_a = __privateGet(request, _abortCleanup)) == null ? void 0 : _a.call(request);
+    };
+    webidl.is.Request = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_state, arg);
+    };
+    mixinBody(Request, getRequestState, webidl.is.Request);
     function makeRequest(init) {
       return {
         method: init.method ?? "GET",
@@ -198726,7 +202714,7 @@ var require_request2 = __commonJS({
         serviceWorkers: init.serviceWorkers ?? "all",
         initiator: init.initiator ?? "",
         destination: init.destination ?? "",
-        priority: init.priority ?? null,
+        priority: init.priority ?? "auto",
         origin: init.origin ?? "client",
         policyContainer: init.policyContainer ?? "client",
         referrer: init.referrer ?? "client",
@@ -198801,7 +202789,6 @@ var require_request2 = __commonJS({
         configurable: true
       }
     });
-    webidl.is.Request = webidl.util.MakeTypeAssertion(Request);
     webidl.converters.RequestInfo = function(V) {
       if (typeof V === "string") {
         return webidl.converters.USVString(V);
@@ -198895,8 +202882,7 @@ var require_request2 = __commonJS({
       {
         key: "priority",
         converter: webidl.converters.DOMString,
-        allowedValues: ["high", "low", "auto"],
-        defaultValue: () => "auto"
+        allowedValues: ["high", "low", "auto"]
       }
     ]);
     module2.exports = {
@@ -198917,6 +202903,7 @@ var require_subresource_integrity = __commonJS({
     "use strict";
     var assert = require("node:assert");
     var { runtimeFeatures } = require_runtime_features();
+    var { asciiLowercase } = require_infra();
     var validSRIHashAlgorithmTokenSet = /* @__PURE__ */ new Map([["sha256", 0], ["sha384", 1], ["sha512", 2]]);
     var crypto;
     if (runtimeFeatures.has("crypto")) {
@@ -198939,10 +202926,7 @@ var require_subresource_integrity = __commonJS({
         validSRIHashAlgorithmTokenSet
       )
     );
-    var isValidSRIHashAlgorithm = (
-      /** @type {IsValidSRIHashAlgorithm} */
-      Map.prototype.has.bind(validSRIHashAlgorithmTokenSet)
-    );
+    var isValidSRIHashAlgorithm = (algorithm) => validSRIHashAlgorithmTokenSet.has(asciiLowercase(algorithm));
     var bytesMatch = runtimeFeatures.has("crypto") === false || validSRIHashAlgorithmTokenSet.size === 0 ? () => true : (bytes, metadataList) => {
       const parsedMetadata = parseMetadata(metadataList);
       if (parsedMetadata.length === 0) {
@@ -199003,7 +202987,8 @@ var require_subresource_integrity = __commonJS({
           base64Value = algorithmAndValue[1];
         }
         const metadata2 = {
-          alg: algorithm,
+          // Possible spec bug?
+          alg: asciiLowercase(algorithm),
           val: base64Value
         };
         result.push(metadata2);
@@ -199107,10 +203092,11 @@ var require_fetch = __commonJS({
       safeMethodsSet,
       requestBodyHeader,
       subresourceSet
-    } = require_constants3();
+    } = require_constants2();
     var EE = require("node:events");
     var { Readable, pipeline, finished, isErrored, isReadable } = require("node:stream");
     var { addAbortListener, bufferToLowerCasedHeaderName } = require_util();
+    var { SocketError } = require_errors();
     var { dataURLProcessor, serializeAMimeType, minimizeSupportedMimeType } = require_data_url();
     var { getGlobalDispatcher } = require_global2();
     var { webidl } = require_webidl();
@@ -199476,7 +203462,7 @@ var require_fetch = __commonJS({
       }
     }
     function schemeFetch(fetchParams) {
-      if (isCancelled(fetchParams) && fetchParams.request.redirectCount === 0) {
+      if (isCancelled(fetchParams)) {
         return Promise.resolve(makeAppropriateNetworkError(fetchParams));
       }
       const { request } = fetchParams;
@@ -199574,11 +203560,11 @@ var require_fetch = __commonJS({
     }
     function fetchFinale(fetchParams, response) {
       let timingInfo = fetchParams.timingInfo;
+      if (fetchParams.request.destination === "document") {
+        fetchParams.controller.fullTimingInfo = timingInfo;
+      }
       const processResponseEndOfBody = () => {
         const unsafeEndTime = Date.now();
-        if (fetchParams.request.destination === "document") {
-          fetchParams.controller.fullTimingInfo = timingInfo;
-        }
         fetchParams.controller.reportTimingSteps = () => {
           if (!urlIsHttpHttpsScheme(fetchParams.request.url)) {
             return;
@@ -199627,6 +203613,15 @@ var require_fetch = __commonJS({
           processResponseEndOfBody();
         });
       }
+      if (fetchParams.processResponseConsumeBody != null) {
+        const processBody = (nullOrBytes) => fetchParams.processResponseConsumeBody(response, nullOrBytes);
+        const processBodyError = () => fetchParams.processResponseConsumeBody(response, "failure");
+        if (internalResponse.body == null) {
+          queueMicrotask(() => processBody(null));
+        } else {
+          fullyReadBody(internalResponse.body, processBody, processBodyError);
+        }
+      }
     }
     async function httpFetch(fetchParams) {
       const request = fetchParams.request;
@@ -199657,7 +203652,7 @@ var require_fetch = __commonJS({
       }
       if (redirectStatusSet.has(actualResponse.status)) {
         if (request.redirect !== "manual") {
-          fetchParams.controller.connection.destroy(void 0, false);
+          fetchParams.controller.connection.destroy();
         }
         if (request.redirect === "error") {
           response = makeNetworkError("unexpected redirect");
@@ -199889,13 +203884,11 @@ var require_fetch = __commonJS({
       fetchParams.controller.connection = {
         abort: null,
         destroyed: false,
-        destroy(err, abort = true) {
+        destroy(err) {
           var _a;
           if (!this.destroyed) {
             this.destroyed = true;
-            if (abort) {
-              (_a = this.abort) == null ? void 0 : _a.call(this, err ?? new DOMException("The operation was aborted.", "AbortError"));
-            }
+            (_a = this.abort) == null ? void 0 : _a.call(this, err ?? new DOMException("The operation was aborted.", "AbortError"));
           }
         }
       };
@@ -200094,7 +204087,6 @@ var require_fetch = __commonJS({
                 const headersList = new HeadersList();
                 appendHeadersListFromResponseHeaders(headersList, headers, rawHeaders);
                 const location = headersList.get("location", true);
-                this.body = new Readable({ read: () => controller.resume() });
                 const willFollow = location && request.redirect === "follow" && redirectStatusSet.has(status);
                 const decoders = [];
                 if (request.method !== "HEAD" && request.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) {
@@ -200102,7 +204094,7 @@ var require_fetch = __commonJS({
                   const codings = contentEncoding ? contentEncoding.toLowerCase().split(",") : [];
                   const maxContentEncodings = 5;
                   if (codings.length > maxContentEncodings) {
-                    reject(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`));
+                    controller.abort(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`));
                     return;
                   }
                   for (let i = codings.length - 1; i >= 0; --i) {
@@ -200129,7 +204121,11 @@ var require_fetch = __commonJS({
                     } else if (coding === "zstd") {
                       decoders.push(zlib.createZstdDecompress({
                         flush: zlib.constants.ZSTD_e_continue,
-                        finishFlush: zlib.constants.ZSTD_e_end
+                        finishFlush: zlib.constants.ZSTD_e_end,
+                        params: {
+                          // https://www.rfc-editor.org/rfc/rfc9659.html#section-3
+                          [zlib.constants.ZSTD_d_windowLogMax]: 23
+                        }
                       }));
                     } else {
                       decoders.length = 0;
@@ -200137,6 +204133,7 @@ var require_fetch = __commonJS({
                     }
                   }
                 }
+                this.body = new Readable({ read: () => controller.resume() });
                 const onError = (err) => this.onResponseError(controller, err);
                 resolve({
                   status,
@@ -200167,7 +204164,7 @@ var require_fetch = __commonJS({
                 fetchParams.controller.ended = true;
                 (_a = this.body) == null ? void 0 : _a.push(null);
               },
-              onResponseError(_controller, error) {
+              onResponseError(controller, error) {
                 var _a;
                 if (this.abort) {
                   fetchParams.controller.off("terminated", this.abort);
@@ -200177,11 +204174,16 @@ var require_fetch = __commonJS({
                   return;
                 }
                 (_a = this.body) == null ? void 0 : _a.destroy(error);
-                fetchParams.controller.terminate(error);
+                if (!(controller == null ? void 0 : controller.aborted)) {
+                  fetchParams.controller.terminate(error);
+                }
                 reject(error);
               },
               onRequestUpgrade(controller, status, headers, socket) {
                 if (socket.session != null && status !== 200 || socket.session == null && status !== 101) {
+                  if (socket.session != null) {
+                    controller.abort(new SocketError("bad upgrade", null));
+                  }
                   return false;
                 }
                 const rawHeaders = (controller == null ? void 0 : controller.rawHeaders) ?? [];
@@ -200253,7 +204255,7 @@ var require_cache3 = __commonJS({
     var { fetching } = require_fetch();
     var { urlIsHttpHttpsScheme, readAllBytes } = require_util2();
     var _relevantRequestResponseList, _Cache_instances, batchCacheOperations_fn, queryCache_fn, requestMatchesCachedItem_fn, internalMatchAll_fn;
-    var _Cache = class _Cache {
+    var Cache = class {
       constructor() {
         __privateAdd(this, _Cache_instances);
         /**
@@ -200268,7 +204270,7 @@ var require_cache3 = __commonJS({
         __privateSet(this, _relevantRequestResponseList, arguments[1]);
       }
       async match(request, options = {}) {
-        webidl.brandCheck(this, _Cache);
+        webidl.brandCheck(this, webidl.is.Cache);
         const prefix = "Cache.match";
         webidl.argumentLengthCheck(arguments, 1, prefix);
         request = webidl.converters.RequestInfo(request);
@@ -200280,14 +204282,14 @@ var require_cache3 = __commonJS({
         return p[0];
       }
       async matchAll(request = void 0, options = {}) {
-        webidl.brandCheck(this, _Cache);
+        webidl.brandCheck(this, webidl.is.Cache);
         const prefix = "Cache.matchAll";
         if (request !== void 0) request = webidl.converters.RequestInfo(request);
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
         return __privateMethod(this, _Cache_instances, internalMatchAll_fn).call(this, request, options);
       }
       async add(request) {
-        webidl.brandCheck(this, _Cache);
+        webidl.brandCheck(this, webidl.is.Cache);
         const prefix = "Cache.add";
         webidl.argumentLengthCheck(arguments, 1, prefix);
         request = webidl.converters.RequestInfo(request);
@@ -200296,7 +204298,7 @@ var require_cache3 = __commonJS({
         return await responseArrayPromise;
       }
       async addAll(requests) {
-        webidl.brandCheck(this, _Cache);
+        webidl.brandCheck(this, webidl.is.Cache);
         const prefix = "Cache.addAll";
         webidl.argumentLengthCheck(arguments, 1, prefix);
         const responsePromises = [];
@@ -200358,7 +204360,10 @@ var require_cache3 = __commonJS({
                 }
               }
             },
-            processResponseEndOfBody(response) {
+            // Possible spec bug. If the body is never read, `processResponseEndOfBody` (which is attached to a TransformStream's flush hook)
+            // never runs, so this would hang. This hook, on the other hand, always reads the body.
+            // https://github.com/nodejs/undici/issues/5615
+            processResponseConsumeBody(response) {
               if (response.aborted) {
                 responsePromise.reject(new DOMException("aborted", "AbortError"));
                 return;
@@ -200401,7 +204406,7 @@ var require_cache3 = __commonJS({
         return cacheJobPromise.promise;
       }
       async put(request, response) {
-        webidl.brandCheck(this, _Cache);
+        webidl.brandCheck(this, webidl.is.Cache);
         const prefix = "Cache.put";
         webidl.argumentLengthCheck(arguments, 2, prefix);
         request = webidl.converters.RequestInfo(request);
@@ -200482,7 +204487,7 @@ var require_cache3 = __commonJS({
         return cacheJobPromise.promise;
       }
       async delete(request, options = {}) {
-        webidl.brandCheck(this, _Cache);
+        webidl.brandCheck(this, webidl.is.Cache);
         const prefix = "Cache.delete";
         webidl.argumentLengthCheck(arguments, 1, prefix);
         request = webidl.converters.RequestInfo(request);
@@ -200528,7 +204533,7 @@ var require_cache3 = __commonJS({
        * @returns {Promise<readonly Request[]>}
        */
       async keys(request = void 0, options = {}) {
-        webidl.brandCheck(this, _Cache);
+        webidl.brandCheck(this, webidl.is.Cache);
         const prefix = "Cache.keys";
         if (request !== void 0) request = webidl.converters.RequestInfo(request);
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
@@ -200740,7 +204745,9 @@ var require_cache3 = __commonJS({
       }
       return Object.freeze(responseList);
     };
-    var Cache = _Cache;
+    webidl.is.Cache = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_relevantRequestResponseList, arg);
+    };
     Object.defineProperties(Cache.prototype, {
       [Symbol.toStringTag]: {
         value: "Cache",
@@ -200801,7 +204808,7 @@ var require_cachestorage = __commonJS({
     var { kEnumerableProperty } = require_util();
     var { kConstruct } = require_symbols();
     var _caches;
-    var _CacheStorage = class _CacheStorage {
+    var CacheStorage = class {
       constructor() {
         /**
          * @see https://w3c.github.io/ServiceWorker/#dfn-relevant-name-to-cache-map
@@ -200814,7 +204821,7 @@ var require_cachestorage = __commonJS({
         webidl.util.markAsUncloneable(this);
       }
       async match(request, options = {}) {
-        webidl.brandCheck(this, _CacheStorage);
+        webidl.brandCheck(this, webidl.is.CacheStorage);
         webidl.argumentLengthCheck(arguments, 1, "CacheStorage.match");
         request = webidl.converters.RequestInfo(request);
         options = webidl.converters.MultiCacheQueryOptions(options);
@@ -200840,7 +204847,7 @@ var require_cachestorage = __commonJS({
        * @returns {Promise<boolean>}
        */
       async has(cacheName) {
-        webidl.brandCheck(this, _CacheStorage);
+        webidl.brandCheck(this, webidl.is.CacheStorage);
         const prefix = "CacheStorage.has";
         webidl.argumentLengthCheck(arguments, 1, prefix);
         cacheName = webidl.converters.DOMString(cacheName, prefix, "cacheName");
@@ -200852,7 +204859,7 @@ var require_cachestorage = __commonJS({
        * @returns {Promise<Cache>}
        */
       async open(cacheName) {
-        webidl.brandCheck(this, _CacheStorage);
+        webidl.brandCheck(this, webidl.is.CacheStorage);
         const prefix = "CacheStorage.open";
         webidl.argumentLengthCheck(arguments, 1, prefix);
         cacheName = webidl.converters.DOMString(cacheName, prefix, "cacheName");
@@ -200870,7 +204877,7 @@ var require_cachestorage = __commonJS({
        * @returns {Promise<boolean>}
        */
       async delete(cacheName) {
-        webidl.brandCheck(this, _CacheStorage);
+        webidl.brandCheck(this, webidl.is.CacheStorage);
         const prefix = "CacheStorage.delete";
         webidl.argumentLengthCheck(arguments, 1, prefix);
         cacheName = webidl.converters.DOMString(cacheName, prefix, "cacheName");
@@ -200881,13 +204888,15 @@ var require_cachestorage = __commonJS({
        * @returns {Promise<string[]>}
        */
       async keys() {
-        webidl.brandCheck(this, _CacheStorage);
+        webidl.brandCheck(this, webidl.is.CacheStorage);
         const keys = __privateGet(this, _caches).keys();
         return [...keys];
       }
     };
     _caches = new WeakMap();
-    var CacheStorage = _CacheStorage;
+    webidl.is.CacheStorage = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_caches, arg);
+    };
     Object.defineProperties(CacheStorage.prototype, {
       [Symbol.toStringTag]: {
         value: "CacheStorage",
@@ -201096,8 +205105,12 @@ var require_util4 = __commonJS({
         validateCookiePath(cookie.path);
         out.push(`Path=${cookie.path}`);
       }
-      if (cookie.expires && cookie.expires.toString() !== "Invalid Date") {
-        out.push(`Expires=${toIMFDate(cookie.expires)}`);
+      if (cookie.expires != null) {
+        const expiresMs = cookie.expires instanceof Date ? cookie.expires.getTime() : cookie.expires;
+        const maxTimeValue = 864e13;
+        if (typeof expiresMs === "number" && Number.isFinite(expiresMs) && Math.abs(expiresMs) <= maxTimeValue) {
+          out.push(`Expires=${toIMFDate(cookie.expires)}`);
+        }
       }
       if (cookie.sameSite) {
         out.push(`SameSite=${cookie.sameSite}`);
@@ -201172,90 +205185,93 @@ var require_parse4 = __commonJS({
       };
     }
     function parseUnparsedAttributes(unparsedAttributes, cookieAttributeList = {}) {
-      if (unparsedAttributes.length === 0) {
-        return cookieAttributeList;
-      }
-      assert(unparsedAttributes[0] === ";");
-      unparsedAttributes = unparsedAttributes.slice(1);
-      let cookieAv = "";
-      if (unparsedAttributes.includes(";")) {
-        cookieAv = collectASequenceOfCodePointsFast(
-          ";",
-          unparsedAttributes,
-          { position: 0 }
-        );
-        unparsedAttributes = unparsedAttributes.slice(cookieAv.length);
-      } else {
-        cookieAv = unparsedAttributes;
-        unparsedAttributes = "";
-      }
-      let attributeName = "";
-      let attributeValue = "";
-      if (cookieAv.includes("=")) {
-        const position = { position: 0 };
-        attributeName = collectASequenceOfCodePointsFast(
-          "=",
-          cookieAv,
-          position
-        );
-        attributeValue = cookieAv.slice(position.position + 1);
-      } else {
-        attributeName = cookieAv;
-      }
-      attributeName = attributeName.trim();
-      attributeValue = attributeValue.trim();
-      if (attributeValue.length > maxAttributeValueSize) {
-        return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
-      }
-      const attributeNameLowercase = attributeName.toLowerCase();
-      if (attributeNameLowercase === "expires") {
-        const expiryTime = new Date(attributeValue);
-        if (!Number.isNaN(expiryTime.getTime())) {
-          cookieAttributeList.expires = expiryTime;
+      while (true) {
+        if (unparsedAttributes.length === 0) {
+          return cookieAttributeList;
         }
-      } else if (attributeNameLowercase === "max-age") {
-        const charCode = attributeValue.charCodeAt(0);
-        if ((charCode < 48 || charCode > 57) && attributeValue[0] !== "-") {
-          return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
-        }
-        if (!/^\d+$/.test(attributeValue)) {
-          return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
-        }
-        const deltaSeconds = Number(attributeValue);
-        cookieAttributeList.maxAge = deltaSeconds;
-      } else if (attributeNameLowercase === "domain") {
-        let cookieDomain = attributeValue;
-        if (cookieDomain[0] === ".") {
-          cookieDomain = cookieDomain.slice(1);
-        }
-        cookieDomain = cookieDomain.toLowerCase();
-        cookieAttributeList.domain = cookieDomain;
-      } else if (attributeNameLowercase === "path") {
-        let cookiePath = "";
-        if (attributeValue.length === 0 || attributeValue[0] !== "/") {
-          cookiePath = "/";
+        assert(unparsedAttributes[0] === ";");
+        unparsedAttributes = unparsedAttributes.slice(1);
+        let cookieAv = "";
+        if (unparsedAttributes.includes(";")) {
+          cookieAv = collectASequenceOfCodePointsFast(
+            ";",
+            unparsedAttributes,
+            { position: 0 }
+          );
+          unparsedAttributes = unparsedAttributes.slice(cookieAv.length);
         } else {
-          cookiePath = attributeValue;
+          cookieAv = unparsedAttributes;
+          unparsedAttributes = "";
         }
-        cookieAttributeList.path = cookiePath;
-      } else if (attributeNameLowercase === "secure") {
-        cookieAttributeList.secure = true;
-      } else if (attributeNameLowercase === "httponly") {
-        cookieAttributeList.httpOnly = true;
-      } else if (attributeNameLowercase === "samesite") {
-        const attributeValueLowercase = attributeValue.toLowerCase();
-        if (attributeValueLowercase === "none") {
-          cookieAttributeList.sameSite = "None";
-        } else if (attributeValueLowercase === "strict") {
-          cookieAttributeList.sameSite = "Strict";
-        } else if (attributeValueLowercase === "lax") {
-          cookieAttributeList.sameSite = "Lax";
+        let attributeName = "";
+        let attributeValue = "";
+        if (cookieAv.includes("=")) {
+          const position = { position: 0 };
+          attributeName = collectASequenceOfCodePointsFast(
+            "=",
+            cookieAv,
+            position
+          );
+          attributeValue = cookieAv.slice(position.position + 1);
+        } else {
+          attributeName = cookieAv;
         }
-      } else {
-        cookieAttributeList.unparsed ?? (cookieAttributeList.unparsed = []);
-        cookieAttributeList.unparsed.push(`${attributeName}=${attributeValue}`);
+        attributeName = attributeName.trim();
+        attributeValue = attributeValue.trim();
+        if (attributeValue.length > maxAttributeValueSize) {
+          continue;
+        }
+        const attributeNameLowercase = attributeName.toLowerCase();
+        if (attributeNameLowercase === "expires") {
+          const expiryTime = new Date(attributeValue);
+          if (!Number.isNaN(expiryTime.getTime())) {
+            cookieAttributeList.expires = expiryTime;
+          }
+        } else if (attributeNameLowercase === "max-age") {
+          const charCode = attributeValue.charCodeAt(0);
+          const startsWithDigit = charCode >= 48 && charCode <= 57;
+          const startsWithSignedDigit = attributeValue[0] === "-" && attributeValue.length > 1;
+          if (!startsWithDigit && !startsWithSignedDigit) {
+            continue;
+          }
+          if (/[^\d]/.test(attributeValue.slice(1))) {
+            continue;
+          }
+          const deltaSeconds = Number(attributeValue);
+          cookieAttributeList.maxAge = deltaSeconds;
+        } else if (attributeNameLowercase === "domain") {
+          let cookieDomain = attributeValue;
+          if (cookieDomain[0] === ".") {
+            cookieDomain = cookieDomain.slice(1);
+          }
+          cookieDomain = cookieDomain.toLowerCase();
+          cookieAttributeList.domain = cookieDomain;
+        } else if (attributeNameLowercase === "path") {
+          let cookiePath = "";
+          if (attributeValue.length === 0 || attributeValue[0] !== "/") {
+            cookiePath = "/";
+          } else {
+            cookiePath = attributeValue;
+          }
+          cookieAttributeList.path = cookiePath;
+        } else if (attributeNameLowercase === "secure") {
+          cookieAttributeList.secure = true;
+        } else if (attributeNameLowercase === "httponly") {
+          cookieAttributeList.httpOnly = true;
+        } else if (attributeNameLowercase === "samesite") {
+          const attributeValueLowercase = attributeValue.toLowerCase();
+          if (attributeValueLowercase === "none") {
+            cookieAttributeList.sameSite = "None";
+          } else if (attributeValueLowercase === "strict") {
+            cookieAttributeList.sameSite = "Strict";
+          } else if (attributeValueLowercase === "lax") {
+            cookieAttributeList.sameSite = "Lax";
+          }
+        } else {
+          cookieAttributeList.unparsed ?? (cookieAttributeList.unparsed = []);
+          cookieAttributeList.unparsed.push(`${attributeName}=${attributeValue}`);
+        }
       }
-      return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList);
     }
     module2.exports = {
       parseSetCookie,
@@ -201271,13 +205287,21 @@ var require_cookies = __commonJS({
     var { parseSetCookie } = require_parse4();
     var { stringify } = require_util4();
     var { webidl } = require_webidl();
-    var { Headers } = require_headers();
-    var brandChecks = webidl.brandCheckMultiple([Headers, globalThis.Headers].filter(Boolean));
+    var globalHeadersBrandCheck = (arg) => webidl.brandCheck(arg, webidl.util.MakeTypeAssertion(globalThis.Headers));
+    var undiciHeadersBrandCheck = (arg) => webidl.brandCheck(arg, webidl.is.Headers);
+    function brandCheckHeaders(arg) {
+      try {
+        undiciHeadersBrandCheck(arg);
+        return;
+      } catch {
+      }
+      globalHeadersBrandCheck(arg);
+    }
     function getCookies(headers) {
       webidl.argumentLengthCheck(arguments, 1, "getCookies");
-      brandChecks(headers);
+      brandCheckHeaders(headers);
       const cookie = headers.get("cookie");
-      const out = {};
+      const out = { __proto__: null };
       if (!cookie) {
         return out;
       }
@@ -201288,7 +205312,7 @@ var require_cookies = __commonJS({
       return out;
     }
     function deleteCookie(headers, name, attributes) {
-      brandChecks(headers);
+      brandCheckHeaders(headers);
       const prefix = "deleteCookie";
       webidl.argumentLengthCheck(arguments, 2, prefix);
       name = webidl.converters.DOMString(name, prefix, "name");
@@ -201302,7 +205326,7 @@ var require_cookies = __commonJS({
     }
     function getSetCookies(headers) {
       webidl.argumentLengthCheck(arguments, 1, "getSetCookies");
-      brandChecks(headers);
+      brandCheckHeaders(headers);
       const cookies = headers.getSetCookie();
       if (!cookies) {
         return [];
@@ -201315,7 +205339,7 @@ var require_cookies = __commonJS({
     }
     function setCookie(headers, cookie) {
       webidl.argumentLengthCheck(arguments, 2, "setCookie");
-      brandChecks(headers);
+      brandCheckHeaders(headers);
       cookie = webidl.converters.Cookie(cookie);
       const str = stringify(cookie);
       if (str) {
@@ -201406,6 +205430,7 @@ var require_events = __commonJS({
     var { webidl } = require_webidl();
     var { kEnumerableProperty } = require_util();
     var { kConstruct } = require_symbols();
+    var createFastMessageEvent;
     var _eventInit;
     var _MessageEvent = class _MessageEvent extends Event {
       constructor(type, eventInitDict = {}) {
@@ -201428,30 +205453,30 @@ var require_events = __commonJS({
         webidl.util.markAsUncloneable(this);
       }
       get data() {
-        webidl.brandCheck(this, _MessageEvent);
+        webidl.brandCheck(this, webidl.is.MessageEvent);
         return __privateGet(this, _eventInit).data;
       }
       get origin() {
-        webidl.brandCheck(this, _MessageEvent);
+        webidl.brandCheck(this, webidl.is.MessageEvent);
         return __privateGet(this, _eventInit).origin;
       }
       get lastEventId() {
-        webidl.brandCheck(this, _MessageEvent);
+        webidl.brandCheck(this, webidl.is.MessageEvent);
         return __privateGet(this, _eventInit).lastEventId;
       }
       get source() {
-        webidl.brandCheck(this, _MessageEvent);
+        webidl.brandCheck(this, webidl.is.MessageEvent);
         return __privateGet(this, _eventInit).source;
       }
       get ports() {
-        webidl.brandCheck(this, _MessageEvent);
+        webidl.brandCheck(this, webidl.is.MessageEvent);
         if (!Object.isFrozen(__privateGet(this, _eventInit).ports)) {
           Object.freeze(__privateGet(this, _eventInit).ports);
         }
         return __privateGet(this, _eventInit).ports;
       }
       initMessageEvent(type, bubbles = false, cancelable = false, data = null, origin = "", lastEventId = "", source = null, ports = []) {
-        webidl.brandCheck(this, _MessageEvent);
+        webidl.brandCheck(this, webidl.is.MessageEvent);
         webidl.argumentLengthCheck(arguments, 1, "MessageEvent.initMessageEvent");
         return new _MessageEvent(type, {
           bubbles,
@@ -201463,24 +205488,25 @@ var require_events = __commonJS({
           ports
         });
       }
-      static createFastMessageEvent(type, init) {
-        var _a, _b, _c, _d, _e;
-        const messageEvent = new _MessageEvent(kConstruct, type, init);
-        __privateSet(messageEvent, _eventInit, init);
-        (_a = __privateGet(messageEvent, _eventInit)).data ?? (_a.data = null);
-        (_b = __privateGet(messageEvent, _eventInit)).origin ?? (_b.origin = "");
-        (_c = __privateGet(messageEvent, _eventInit)).lastEventId ?? (_c.lastEventId = "");
-        (_d = __privateGet(messageEvent, _eventInit)).source ?? (_d.source = null);
-        (_e = __privateGet(messageEvent, _eventInit)).ports ?? (_e.ports = []);
-        return messageEvent;
-      }
     };
     _eventInit = new WeakMap();
+    createFastMessageEvent = (type, init) => {
+      var _a, _b, _c, _d, _e;
+      const messageEvent = new _MessageEvent(kConstruct, type, init);
+      __privateSet(messageEvent, _eventInit, init);
+      (_a = __privateGet(messageEvent, _eventInit)).data ?? (_a.data = null);
+      (_b = __privateGet(messageEvent, _eventInit)).origin ?? (_b.origin = "");
+      (_c = __privateGet(messageEvent, _eventInit)).lastEventId ?? (_c.lastEventId = "");
+      (_d = __privateGet(messageEvent, _eventInit)).source ?? (_d.source = null);
+      (_e = __privateGet(messageEvent, _eventInit)).ports ?? (_e.ports = []);
+      return messageEvent;
+    };
+    webidl.is.MessageEvent = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_eventInit, arg);
+    };
     var MessageEvent = _MessageEvent;
-    var { createFastMessageEvent } = MessageEvent;
-    delete MessageEvent.createFastMessageEvent;
     var _eventInit2;
-    var _CloseEvent = class _CloseEvent extends Event {
+    var CloseEvent = class extends Event {
       constructor(type, eventInitDict = {}) {
         const prefix = "CloseEvent constructor";
         webidl.argumentLengthCheck(arguments, 1, prefix);
@@ -201492,22 +205518,24 @@ var require_events = __commonJS({
         webidl.util.markAsUncloneable(this);
       }
       get wasClean() {
-        webidl.brandCheck(this, _CloseEvent);
+        webidl.brandCheck(this, webidl.is.CloseEvent);
         return __privateGet(this, _eventInit2).wasClean;
       }
       get code() {
-        webidl.brandCheck(this, _CloseEvent);
+        webidl.brandCheck(this, webidl.is.CloseEvent);
         return __privateGet(this, _eventInit2).code;
       }
       get reason() {
-        webidl.brandCheck(this, _CloseEvent);
+        webidl.brandCheck(this, webidl.is.CloseEvent);
         return __privateGet(this, _eventInit2).reason;
       }
     };
     _eventInit2 = new WeakMap();
-    var CloseEvent = _CloseEvent;
+    webidl.is.CloseEvent = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_eventInit2, arg);
+    };
     var _eventInit3;
-    var _ErrorEvent = class _ErrorEvent extends Event {
+    var ErrorEvent = class extends Event {
       constructor(type, eventInitDict) {
         const prefix = "ErrorEvent constructor";
         webidl.argumentLengthCheck(arguments, 1, prefix);
@@ -201519,28 +205547,30 @@ var require_events = __commonJS({
         __privateSet(this, _eventInit3, eventInitDict);
       }
       get message() {
-        webidl.brandCheck(this, _ErrorEvent);
+        webidl.brandCheck(this, webidl.is.ErrorEvent);
         return __privateGet(this, _eventInit3).message;
       }
       get filename() {
-        webidl.brandCheck(this, _ErrorEvent);
+        webidl.brandCheck(this, webidl.is.ErrorEvent);
         return __privateGet(this, _eventInit3).filename;
       }
       get lineno() {
-        webidl.brandCheck(this, _ErrorEvent);
+        webidl.brandCheck(this, webidl.is.ErrorEvent);
         return __privateGet(this, _eventInit3).lineno;
       }
       get colno() {
-        webidl.brandCheck(this, _ErrorEvent);
+        webidl.brandCheck(this, webidl.is.ErrorEvent);
         return __privateGet(this, _eventInit3).colno;
       }
       get error() {
-        webidl.brandCheck(this, _ErrorEvent);
+        webidl.brandCheck(this, webidl.is.ErrorEvent);
         return __privateGet(this, _eventInit3).error;
       }
     };
     _eventInit3 = new WeakMap();
-    var ErrorEvent = _ErrorEvent;
+    webidl.is.ErrorEvent = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_eventInit3, arg);
+    };
     Object.defineProperties(MessageEvent.prototype, {
       [Symbol.toStringTag]: {
         value: "MessageEvent",
@@ -202063,11 +206093,11 @@ var require_connection = __commonJS({
           var _a, _b, _c, _d;
           if (response.type === "error" || response.status !== 101) {
             if (((_a = response.socket) == null ? void 0 : _a.session) == null) {
-              failWebsocketConnection(handler, 1002, "Received network error or non-101 status code.", response.error);
+              failHandshake(handler, response, 1002, "Received network error or non-101 status code.", response.error);
               return;
             }
             if (response.status !== 200) {
-              failWebsocketConnection(handler, 1002, "Received network error or non-200 status code.", response.error);
+              failHandshake(handler, response, 1002, "Received network error or non-200 status code.", response.error);
               return;
             }
           }
@@ -202076,39 +206106,44 @@ var require_connection = __commonJS({
             warningEmitted = true;
           }
           if (protocols.length !== 0 && !response.headersList.get("Sec-WebSocket-Protocol")) {
-            failWebsocketConnection(handler, 1002, "Server did not respond with sent protocols.");
+            failHandshake(handler, response, 1002, "Server did not respond with sent protocols.");
             return;
           }
           if (response.socket.session == null && ((_c = response.headersList.get("Upgrade")) == null ? void 0 : _c.toLowerCase()) !== "websocket") {
-            failWebsocketConnection(handler, 1002, 'Server did not set Upgrade header to "websocket".');
+            failHandshake(handler, response, 1002, 'Server did not set Upgrade header to "websocket".');
             return;
           }
           if (response.socket.session == null && ((_d = response.headersList.get("Connection")) == null ? void 0 : _d.toLowerCase()) !== "upgrade") {
-            failWebsocketConnection(handler, 1002, 'Server did not set Connection header to "upgrade".');
+            failHandshake(handler, response, 1002, 'Server did not set Connection header to "upgrade".');
             return;
           }
-          const secWSAccept = response.headersList.get("Sec-WebSocket-Accept");
-          const digest = crypto.hash("sha1", keyValue + uid, "base64");
-          if (secWSAccept !== digest) {
-            failWebsocketConnection(handler, 1002, "Incorrect hash received in Sec-WebSocket-Accept header.");
-            return;
+          if (response.socket.session == null) {
+            const secWSAccept = response.headersList.get("Sec-WebSocket-Accept");
+            const digest = crypto.hash("sha1", keyValue + uid, "base64");
+            if (secWSAccept !== digest) {
+              failHandshake(handler, response, 1002, "Incorrect hash received in Sec-WebSocket-Accept header.");
+              return;
+            }
           }
           const secExtension = response.headersList.get("Sec-WebSocket-Extensions");
           let extensions;
           if (secExtension !== null) {
             extensions = parseExtensions(secExtension);
             if (!extensions.has("permessage-deflate")) {
-              failWebsocketConnection(handler, 1002, "Sec-WebSocket-Extensions header does not match.");
+              failHandshake(handler, response, 1002, "Sec-WebSocket-Extensions header does not match.");
               return;
             }
           }
           const secProtocol = response.headersList.get("Sec-WebSocket-Protocol");
           if (secProtocol !== null) {
             const requestProtocols = getDecodeSplit("sec-websocket-protocol", request.headersList);
-            if (!requestProtocols.includes(secProtocol)) {
-              failWebsocketConnection(handler, 1002, "Protocol was not set in the opening handshake.");
+            if (requestProtocols === null || !requestProtocols.includes(secProtocol)) {
+              failHandshake(handler, response, 1002, "Protocol was not set in the opening handshake.");
               return;
             }
+          }
+          if (response.socket.session != null) {
+            response.socket.allowHalfOpen = false;
           }
           response.socket.on("data", handler.onSocketData);
           response.socket.on("close", handler.onSocketClose);
@@ -202151,6 +206186,13 @@ var require_connection = __commonJS({
       } else {
         object.readyState = states.CLOSING;
       }
+    }
+    function failHandshake(handler, response, code, reason, cause) {
+      var _a;
+      if (((_a = response.socket) == null ? void 0 : _a.session) != null && !response.socket.destroyed) {
+        response.socket.destroy();
+      }
+      failWebsocketConnection(handler, code, reason, cause);
     }
     function failWebsocketConnection(handler, code, reason, cause) {
       var _a;
@@ -202225,6 +206267,7 @@ var require_permessage_deflate = __commonJS({
             if (__privateGet(this, _maxPayloadSize) > 0 && __privateGet(this, _inflate)[kLength] > __privateGet(this, _maxPayloadSize)) {
               callback(new MessageSizeExceededError());
               __privateGet(this, _inflate).removeAllListeners();
+              __privateGet(this, _inflate).destroy();
               __privateSet(this, _inflate, null);
               return;
             }
@@ -202277,12 +206320,14 @@ var require_receiver = __commonJS({
     var { WebsocketFrameSend } = require_frame();
     var { PerMessageDeflate } = require_permessage_deflate();
     var { MessageSizeExceededError } = require_errors();
+    var { defaultWebSocketMaxFragments, defaultWebSocketMaxPayloadSize } = require_constants();
     var _buffers, _fragmentsBytes, _byteOffset, _loop, _state, _info, _fragments, _extensions, _handler, _maxFragments, _maxPayloadSize, _ByteParser_instances, validatePayloadLength_fn;
     var ByteParser = class extends Writable {
       /**
        * @param {import('./websocket').Handler} handler
        * @param {Map<string, string>|null} extensions
-       * @param {{ maxPayloadSize?: number }} [options]
+       * @param {{ maxFragments?: number, maxPayloadSize?: number }} [options]
+       *   A missing value uses the default limit; `0` disables the limit.
        */
       constructor(handler, extensions, options = {}) {
         super();
@@ -202304,10 +206349,12 @@ var require_receiver = __commonJS({
         __privateAdd(this, _maxPayloadSize);
         __privateSet(this, _handler, handler);
         __privateSet(this, _extensions, extensions == null ? /* @__PURE__ */ new Map() : extensions);
-        __privateSet(this, _maxFragments, options.maxFragments ?? 0);
-        __privateSet(this, _maxPayloadSize, options.maxPayloadSize ?? 0);
+        __privateSet(this, _maxFragments, options.maxFragments ?? defaultWebSocketMaxFragments);
+        __privateSet(this, _maxPayloadSize, options.maxPayloadSize ?? defaultWebSocketMaxPayloadSize);
         if (__privateGet(this, _extensions).has("permessage-deflate")) {
-          __privateGet(this, _extensions).set("permessage-deflate", new PerMessageDeflate(extensions, options));
+          __privateGet(this, _extensions).set("permessage-deflate", new PerMessageDeflate(extensions, {
+            maxPayloadSize: __privateGet(this, _maxPayloadSize)
+          }));
         }
       }
       /**
@@ -202429,6 +206476,15 @@ var require_receiver = __commonJS({
             if (isControlFrame(__privateGet(this, _info).opcode)) {
               __privateSet(this, _loop, this.parseControlFrame(body));
               __privateSet(this, _state, parserStates.INFO);
+              if (__privateGet(this, _loop) && __privateGet(this, _handler).socket.writableNeedDrain) {
+                __privateSet(this, _loop, false);
+                __privateGet(this, _handler).socket.once("drain", () => {
+                  if (this.destroyed) return;
+                  __privateSet(this, _loop, true);
+                  this.run(callback);
+                });
+                return;
+              }
             } else {
               if (!__privateGet(this, _info).compressed) {
                 if (!this.writeFragments(body)) {
@@ -202525,6 +206581,7 @@ var require_receiver = __commonJS({
       }
       consumeFragments() {
         const fragments = __privateGet(this, _fragments);
+        __privateGet(this, _info).compressed = false;
         if (fragments.length === 1) {
           __privateSet(this, _fragmentsBytes, 0);
           return fragments.shift();
@@ -202753,6 +206810,7 @@ var require_websocket = __commonJS({
     var { channels } = require_diagnostics();
     var kRef = /* @__PURE__ */ Symbol.for("nodejs.ref");
     var kUnref = /* @__PURE__ */ Symbol.for("nodejs.unref");
+    var ping;
     function getSocketAddress(socket) {
       var _a, _b;
       if (typeof (socket == null ? void 0 : socket.address) === "function") {
@@ -202858,15 +206916,15 @@ var require_websocket = __commonJS({
         __privateGet(this, _handler).readyState = _WebSocket.CONNECTING;
         __privateSet(this, _binaryType, "blob");
       }
+      // TODO: remove this
       [kRef]() {
         var _a, _b;
-        webidl.brandCheck(this, _WebSocket);
         __privateSet(this, _refed, true);
         (_b = (_a = __privateGet(this, _handler).socket) == null ? void 0 : _a.ref) == null ? void 0 : _b.call(_a);
       }
+      // TODO: remove this
       [kUnref]() {
         var _a, _b;
-        webidl.brandCheck(this, _WebSocket);
         __privateSet(this, _refed, false);
         (_b = (_a = __privateGet(this, _handler).socket) == null ? void 0 : _a.unref) == null ? void 0 : _b.call(_a);
       }
@@ -202876,7 +206934,7 @@ var require_websocket = __commonJS({
        * @param {string|undefined} reason
        */
       close(code = void 0, reason = void 0) {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         const prefix = "WebSocket.close";
         if (code !== void 0) {
           code = webidl.converters["unsigned short"](code, prefix, "code", webidl.attributes.Clamp);
@@ -202893,7 +206951,7 @@ var require_websocket = __commonJS({
        * @param {NodeJS.TypedArray|ArrayBuffer|Blob|string} data
        */
       send(data) {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         const prefix = "WebSocket.send";
         webidl.argumentLengthCheck(arguments, 1, prefix);
         data = webidl.converters.WebSocketSendData(data, prefix, "data");
@@ -202927,31 +206985,31 @@ var require_websocket = __commonJS({
         }
       }
       get readyState() {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         return __privateGet(this, _handler).readyState;
       }
       get bufferedAmount() {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         return __privateGet(this, _bufferedAmount);
       }
       get url() {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         return URLSerializer(__privateGet(this, _url));
       }
       get extensions() {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         return __privateGet(this, _extensions);
       }
       get protocol() {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         return __privateGet(this, _protocol);
       }
       get onopen() {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         return __privateGet(this, _events).open;
       }
       set onopen(fn) {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         if (__privateGet(this, _events).open) {
           this.removeEventListener("open", __privateGet(this, _events).open);
         }
@@ -202964,11 +207022,11 @@ var require_websocket = __commonJS({
         }
       }
       get onerror() {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         return __privateGet(this, _events).error;
       }
       set onerror(fn) {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         if (__privateGet(this, _events).error) {
           this.removeEventListener("error", __privateGet(this, _events).error);
         }
@@ -202981,11 +207039,11 @@ var require_websocket = __commonJS({
         }
       }
       get onclose() {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         return __privateGet(this, _events).close;
       }
       set onclose(fn) {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         if (__privateGet(this, _events).close) {
           this.removeEventListener("close", __privateGet(this, _events).close);
         }
@@ -202998,11 +207056,11 @@ var require_websocket = __commonJS({
         }
       }
       get onmessage() {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         return __privateGet(this, _events).message;
       }
       set onmessage(fn) {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         if (__privateGet(this, _events).message) {
           this.removeEventListener("message", __privateGet(this, _events).message);
         }
@@ -203015,33 +207073,15 @@ var require_websocket = __commonJS({
         }
       }
       get binaryType() {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         return __privateGet(this, _binaryType);
       }
       set binaryType(type) {
-        webidl.brandCheck(this, _WebSocket);
+        webidl.brandCheck(this, webidl.is.WebSocket);
         if (type !== "blob" && type !== "arraybuffer") {
           __privateSet(this, _binaryType, "blob");
         } else {
           __privateSet(this, _binaryType, type);
-        }
-      }
-      /**
-       * @param {WebSocket} ws
-       * @param {Buffer|undefined} buffer
-       */
-      static ping(ws, buffer) {
-        if (Buffer.isBuffer(buffer)) {
-          if (buffer.length > 125) {
-            throw new TypeError("A PING frame cannot have a body larger than 125 bytes.");
-          }
-        } else if (buffer !== void 0) {
-          throw new TypeError("Expected buffer payload");
-        }
-        const readyState = __privateGet(ws, _handler).readyState;
-        if (isEstablished(readyState) && !isClosing(readyState) && !isClosed(readyState)) {
-          const frame = new WebsocketFrameSend(buffer);
-          __privateGet(ws, _handler).socket.write(frame.createFrame(opcodes.PING));
         }
       }
     };
@@ -203161,9 +207201,24 @@ var require_websocket = __commonJS({
         });
       }
     };
+    ping = (ws, buffer) => {
+      if (Buffer.isBuffer(buffer)) {
+        if (buffer.length > 125) {
+          throw new TypeError("A PING frame cannot have a body larger than 125 bytes.");
+        }
+      } else if (buffer !== void 0) {
+        throw new TypeError("Expected buffer payload");
+      }
+      const readyState = __privateGet(ws, _handler).readyState;
+      if (isEstablished(readyState) && !isClosing(readyState) && !isClosed(readyState)) {
+        const frame = new WebsocketFrameSend(buffer);
+        __privateGet(ws, _handler).socket.write(frame.createFrame(opcodes.PING));
+      }
+    };
+    webidl.is.WebSocket = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_handler, arg);
+    };
     var WebSocket = _WebSocket;
-    var { ping } = WebSocket;
-    Reflect.deleteProperty(WebSocket, "ping");
     WebSocket.CONNECTING = WebSocket.prototype.CONNECTING = states.CONNECTING;
     WebSocket.OPEN = WebSocket.prototype.OPEN = states.OPEN;
     WebSocket.CLOSING = WebSocket.prototype.CLOSING = states.CLOSING;
@@ -203272,6 +207327,7 @@ var require_websocketerror = __commonJS({
         }
       });
     }
+    var createUnvalidatedWebSocketError;
     var _closeCode, _reason;
     var _WebSocketError = class _WebSocketError extends createInheritableDOMException() {
       constructor(message = "", init = void 0) {
@@ -203299,23 +207355,19 @@ var require_websocketerror = __commonJS({
       get reason() {
         return __privateGet(this, _reason);
       }
-      /**
-       * @param {string} message
-       * @param {number|null} code
-       * @param {string} reason
-       */
-      static createUnvalidatedWebSocketError(message, code, reason) {
-        const error = new _WebSocketError(message, kConstruct);
-        __privateSet(error, _closeCode, code);
-        __privateSet(error, _reason, reason);
-        return error;
-      }
     };
     _closeCode = new WeakMap();
     _reason = new WeakMap();
+    createUnvalidatedWebSocketError = (message, code, reason) => {
+      const error = new _WebSocketError(message, kConstruct);
+      __privateSet(error, _closeCode, code);
+      __privateSet(error, _reason, reason);
+      return error;
+    };
+    webidl.is.WebSocketError = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_reason, arg);
+    };
     var WebSocketError = _WebSocketError;
-    var { createUnvalidatedWebSocketError } = WebSocketError;
-    delete WebSocketError.createUnvalidatedWebSocketError;
     Object.defineProperties(WebSocketError.prototype, {
       closeCode: kEnumerableProperty,
       reason: kEnumerableProperty,
@@ -203326,7 +207378,6 @@ var require_websocketerror = __commonJS({
         configurable: true
       }
     });
-    webidl.is.WebSocketError = webidl.util.MakeTypeAssertion(WebSocketError);
     module2.exports = { WebSocketError, createUnvalidatedWebSocketError };
   }
 });
@@ -203348,7 +207399,7 @@ var require_websocketstream = __commonJS({
     var { kEnumerableProperty } = require_util();
     var { utf8DecodeBytes } = require_encoding();
     var emittedExperimentalWarning = false;
-    var _url, _openedPromise, _closedPromise, _readableStream, _readableStreamController, _writableStream, _handshakeAborted, _handler, _parser, _WebSocketStream_instances, write_fn, onConnectionEstablished_fn, onMessage_fn, onSocketClose_fn, closeUsingReason_fn, cancel_fn;
+    var _url, _openedPromise, _closedPromise, _readableStream, _readableStreamController, _writableStreamController, _handshakeAborted, _handler, _parser, _WebSocketStream_instances, write_fn, onConnectionEstablished_fn, onMessage_fn, onSocketClose_fn, closeUsingReason_fn, pull_fn, cancel_fn;
     var WebSocketStream = class {
       constructor(url, options = void 0) {
         __privateAdd(this, _WebSocketStream_instances);
@@ -203366,9 +207417,9 @@ var require_websocketstream = __commonJS({
         __privateAdd(this, _readableStream);
         /** @type {ReadableStreamDefaultController} */
         __privateAdd(this, _readableStreamController);
-        // Each WebSocketStream object has an associated writable stream , which is a WritableStream .
-        /** @type {WritableStream} */
-        __privateAdd(this, _writableStream);
+        // Retain the controller so the writable stream can be errored while locked.
+        /** @type {WritableStreamDefaultController} */
+        __privateAdd(this, _writableStreamController);
         // Each WebSocketStream object has an associated boolean handshake aborted , which is initially false.
         __privateAdd(this, _handshakeAborted, false);
         /** @type {import('../websocket').Handler} */
@@ -203390,7 +207441,9 @@ var require_websocketstream = __commonJS({
             }
             __privateGet(this, _handler).socket.destroy();
           },
-          onSocketClose: () => __privateMethod(this, _WebSocketStream_instances, onSocketClose_fn).call(this),
+          // When the WebSocket connection is closed for a WebSocketStream stream, possibly cleanly, the user agent must
+          // queue a global task on the WebSocket task source given stream ’s relevant global object to run the following substeps:
+          onSocketClose: () => queueMicrotask(() => __privateMethod(this, _WebSocketStream_instances, onSocketClose_fn).call(this)),
           onPing: () => {
           },
           onPong: () => {
@@ -203479,7 +207532,7 @@ var require_websocketstream = __commonJS({
     _closedPromise = new WeakMap();
     _readableStream = new WeakMap();
     _readableStreamController = new WeakMap();
-    _writableStream = new WeakMap();
+    _writableStreamController = new WeakMap();
     _handshakeAborted = new WeakMap();
     _handler = new WeakMap();
     _parser = new WeakMap();
@@ -203508,6 +207561,8 @@ var require_websocketstream = __commonJS({
         __privateGet(this, _handler).socket.write(frame.createFrame(opcode), () => {
           promise.resolve(void 0);
         });
+      } else {
+        promise.resolve(void 0);
       }
       return promise.promise;
     };
@@ -203525,21 +207580,24 @@ var require_websocketstream = __commonJS({
       parser.on("error", (err) => __privateGet(this, _handler).onParserError(err));
       __privateSet(this, _parser, parser);
       __privateGet(this, _handler).readyState = states.OPEN;
-      const extensions = parsedExtensions ?? "";
+      const extensions = response.headersList.get("sec-websocket-extensions") ?? "";
       const protocol = response.headersList.get("sec-websocket-protocol") ?? "";
       const readable = new ReadableStream({
         start: (controller) => {
           __privateSet(this, _readableStreamController, controller);
         },
+        pull: () => __privateMethod(this, _WebSocketStream_instances, pull_fn).call(this),
         cancel: (reason) => __privateMethod(this, _WebSocketStream_instances, cancel_fn).call(this, reason)
       });
       const writable = new WritableStream({
+        start: (controller) => {
+          __privateSet(this, _writableStreamController, controller);
+        },
         write: (chunk) => __privateMethod(this, _WebSocketStream_instances, write_fn).call(this, chunk),
         close: () => closeWebSocketConnection(__privateGet(this, _handler), null, null),
         abort: (reason) => __privateMethod(this, _WebSocketStream_instances, closeUsingReason_fn).call(this, reason)
       });
       __privateSet(this, _readableStream, readable);
-      __privateSet(this, _writableStream, writable);
       __privateGet(this, _openedPromise).resolve({
         extensions,
         protocol,
@@ -203564,6 +207622,9 @@ var require_websocketstream = __commonJS({
         chunk = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
       }
       __privateGet(this, _readableStreamController).enqueue(chunk);
+      if (__privateGet(this, _readableStreamController).desiredSize <= 0) {
+        __privateGet(this, _handler).socket.pause();
+      }
     };
     /** @type {import('../websocket').Handler['onSocketClose']} */
     onSocketClose_fn = function() {
@@ -203578,15 +207639,13 @@ var require_websocketstream = __commonJS({
       }
       const result = (_a = __privateGet(this, _parser)) == null ? void 0 : _a.closingInfo;
       let code = (result == null ? void 0 : result.code) ?? 1005;
-      if (!__privateGet(this, _handler).closeState.has(sentCloseFrameState.SENT) && !__privateGet(this, _handler).closeState.has(sentCloseFrameState.RECEIVED)) {
+      if (!__privateGet(this, _handler).closeState.has(sentCloseFrameState.RECEIVED)) {
         code = 1006;
       }
       const reason = (result == null ? void 0 : result.reason) == null ? "" : utf8DecodeBytes(Buffer.from(result.reason));
       if (wasClean) {
         readableStreamClose(__privateGet(this, _readableStreamController));
-        if (!__privateGet(this, _writableStream).locked) {
-          __privateGet(this, _writableStream).abort(new DOMException("A closed WebSocketStream cannot be written to", "InvalidStateError"));
-        }
+        __privateGet(this, _writableStreamController).error(new DOMException("A closed WebSocketStream cannot be written to", "InvalidStateError"));
         __privateGet(this, _closedPromise).resolve({
           closeCode: code,
           reason
@@ -203594,7 +207653,7 @@ var require_websocketstream = __commonJS({
       } else {
         const error = createUnvalidatedWebSocketError("unclean close", code, reason);
         (_b = __privateGet(this, _readableStreamController)) == null ? void 0 : _b.error(error);
-        (_c = __privateGet(this, _writableStream)) == null ? void 0 : _c.abort(error);
+        (_c = __privateGet(this, _writableStreamController)) == null ? void 0 : _c.error(error);
         __privateGet(this, _closedPromise).reject(error);
       }
     };
@@ -203606,6 +207665,10 @@ var require_websocketstream = __commonJS({
         reasonString = reason.reason;
       }
       closeWebSocketConnection(__privateGet(this, _handler), code, reasonString);
+    };
+    // To pull bytes from a WebSocketStream stream , if stream is currently applying backpressure, release backpressure.
+    pull_fn = function() {
+      __privateGet(this, _handler).socket.resume();
     };
     //  To cancel a WebSocketStream stream given reason , close using reason giving stream and reason .
     cancel_fn = function(reason) {
@@ -203700,6 +207763,7 @@ var require_util6 = __commonJS({
 var require_eventsource_stream = __commonJS({
   "addons/pro/node_modules/undici/lib/web/eventsource/eventsource-stream.js"(exports2, module2) {
     "use strict";
+    var buffer = require("node:buffer");
     var { Transform } = require("node:stream");
     var { isASCIINumber, isValidLastEventId } = require_util6();
     var BOM = [239, 187, 191];
@@ -203707,24 +207771,28 @@ var require_eventsource_stream = __commonJS({
     var CR = 13;
     var COLON = 58;
     var SPACE = 32;
+    var defaultMaxEventSize = buffer.kStringMaxLength;
     var DATA = Buffer.from("data");
     var EVENT = Buffer.from("event");
     var ID = Buffer.from("id");
     var RETRY = Buffer.from("retry");
-    function isASCIINumberBytes(buffer, start) {
-      if (start >= buffer.length) {
+    var minParserItems = 1024;
+    var maxParserItems = 131072;
+    var bytesPerParserItem = 128;
+    function isASCIINumberBytes(buffer2, start) {
+      if (start >= buffer2.length) {
         return false;
       }
-      for (let i = start; i < buffer.length; i++) {
-        if (buffer[i] < 48 || buffer[i] > 57) {
+      for (let i = start; i < buffer2.length; i++) {
+        if (buffer2[i] < 48 || buffer2[i] > 57) {
           return false;
         }
       }
       return true;
     }
-    function isValidLastEventIdBytes(buffer, start) {
-      for (let i = start; i < buffer.length; i++) {
-        if (buffer[i] === 0) {
+    function isValidLastEventIdBytes(buffer2, start) {
+      for (let i = start; i < buffer2.length; i++) {
+        if (buffer2[i] === 0) {
           return false;
         }
       }
@@ -203740,6 +207808,11 @@ var require_eventsource_stream = __commonJS({
         }
       }
       return true;
+    }
+    function createMaxEventSizeExceededError() {
+      const error = new Error("EventSource message size exceeded");
+      error.aborted = false;
+      return error;
     }
     var EventSourceStream = class extends Transform {
       /**
@@ -203767,6 +207840,13 @@ var require_eventsource_stream = __commonJS({
       pos = 0;
       lineChunkIndex = 0;
       linePos = 0;
+      lineLength = 0;
+      eventSize = 0;
+      eventFieldSizes = { data: 0, event: 0, id: 0, retry: 0 };
+      dataLineCount = 0;
+      maxEventSize;
+      maxDataLines;
+      maxBufferedChunks;
       event = {
         data: void 0,
         event: void 0,
@@ -203776,6 +207856,7 @@ var require_eventsource_stream = __commonJS({
       /**
        * @param {object} options
        * @param {boolean} [options.readableObjectMode]
+       * @param {number} [options.maxEventSize]
        * @param {eventSourceSettings} [options.eventSourceSettings]
        * @param {(chunk: any, encoding?: BufferEncoding | undefined) => boolean} [options.push]
        */
@@ -203783,6 +207864,10 @@ var require_eventsource_stream = __commonJS({
         options.readableObjectMode = true;
         super(options);
         this.state = options.eventSourceSettings || {};
+        this.maxEventSize = options.maxEventSize ?? defaultMaxEventSize;
+        const parserItemLimit = this.maxEventSize > 0 ? Math.min(maxParserItems, Math.max(minParserItems, Math.floor(this.maxEventSize / bytesPerParserItem))) : 0;
+        this.maxDataLines = parserItemLimit;
+        this.maxBufferedChunks = parserItemLimit;
         if (options.push) {
           this.push = options.push;
         }
@@ -203796,6 +207881,10 @@ var require_eventsource_stream = __commonJS({
       _transform(chunk, _encoding, callback) {
         if (chunk.length === 0) {
           callback();
+          return;
+        }
+        if (this.maxEventSize > 0 && this.chunks.length >= this.maxBufferedChunks && chunk[0] !== LF && chunk[0] !== CR) {
+          callback(createMaxEventSizeExceededError());
           return;
         }
         this.chunks.push(chunk);
@@ -203834,14 +207923,28 @@ var require_eventsource_stream = __commonJS({
             if (byte === CR) {
               this.crlfCheck = true;
             }
-            this.parseLine(this.readLine(), this.event);
+            try {
+              this.parseLine(this.readLine(), this.event);
+            } catch (error) {
+              callback(error);
+              return;
+            }
             this.consumeCurrentByte();
             this.eventEndCheck = true;
             continue;
           }
+          if (this.maxEventSize > 0 && ++this.lineLength > this.maxEventSize + 7) {
+            callback(createMaxEventSizeExceededError());
+            return;
+          }
           this.advanceCursor();
         }
         callback();
+      }
+      _destroy(error, callback) {
+        this.chunks.length = 0;
+        this.clearEvent();
+        super._destroy(error, callback);
       }
       /**
        * @param {Buffer} line
@@ -203865,6 +207968,12 @@ var require_eventsource_stream = __commonJS({
           }
         }
         if (isFieldName(line, fieldLength, DATA)) {
+          if (this.maxEventSize > 0 && this.dataLineCount >= this.maxDataLines) {
+            throw createMaxEventSizeExceededError();
+          }
+          const valueBytes = line.length - valueStart;
+          const dataSize = this.eventFieldSizes.data + (event.data === void 0 ? 0 : 1) + valueBytes;
+          this.setEventFieldSize("data", dataSize);
           const value = line.toString("utf8", valueStart);
           if (event.data === void 0) {
             event.data = value;
@@ -203872,26 +207981,37 @@ var require_eventsource_stream = __commonJS({
             event.data += `
 ${value}`;
           }
+          this.dataLineCount++;
           return;
         }
         if (isFieldName(line, fieldLength, RETRY)) {
           if (isASCIINumberBytes(line, valueStart)) {
+            this.setEventFieldSize("retry", line.length - valueStart);
             event.retry = line.toString("utf8", valueStart);
           }
           return;
         }
         if (isFieldName(line, fieldLength, ID)) {
           if (isValidLastEventIdBytes(line, valueStart)) {
+            this.setEventFieldSize("id", line.length - valueStart);
             event.id = line.toString("utf8", valueStart);
           }
           return;
         }
         if (isFieldName(line, fieldLength, EVENT)) {
-          const value = line.toString("utf8", valueStart);
-          if (value.length > 0) {
-            event.event = value;
+          if (valueStart < line.length) {
+            this.setEventFieldSize("event", line.length - valueStart);
+            event.event = line.toString("utf8", valueStart);
           }
         }
+      }
+      setEventFieldSize(field, size) {
+        const eventSize = this.eventSize - this.eventFieldSizes[field] + size;
+        if (this.maxEventSize > 0 && eventSize > this.maxEventSize) {
+          throw createMaxEventSizeExceededError();
+        }
+        this.eventSize = eventSize;
+        this.eventFieldSizes[field] = size;
       }
       /**
        * @param {EventSourceStreamEvent} event
@@ -203919,6 +208039,12 @@ ${value}`;
         this.event.event = void 0;
         this.event.id = void 0;
         this.event.retry = void 0;
+        this.eventSize = 0;
+        this.dataLineCount = 0;
+        this.eventFieldSizes.data = 0;
+        this.eventFieldSizes.event = 0;
+        this.eventFieldSizes.id = 0;
+        this.eventFieldSizes.retry = 0;
       }
       hasPendingEvent() {
         return this.event.data !== void 0 || this.event.event !== void 0 || this.event.id !== void 0 || this.event.retry !== void 0;
@@ -203943,13 +208069,15 @@ ${value}`;
       syncLineStartToCursor() {
         this.lineChunkIndex = this.chunkIndex;
         this.linePos = this.pos;
+        this.lineLength = 0;
         this.dropConsumedChunks();
       }
       dropConsumedChunks() {
-        while (this.lineChunkIndex > 0) {
-          this.chunks.shift();
-          this.lineChunkIndex--;
-          this.chunkIndex--;
+        if (this.lineChunkIndex > 0) {
+          const consumed = this.lineChunkIndex;
+          this.chunks.splice(0, consumed);
+          this.lineChunkIndex = 0;
+          this.chunkIndex -= consumed;
         }
         if (this.chunkIndex === this.chunks.length) {
           this.chunks.length = 0;
@@ -204048,18 +208176,23 @@ var require_eventsource = __commonJS({
     var { parseMIMEType } = require_data_url();
     var { createFastMessageEvent } = require_events();
     var { isNetworkError } = require_response();
-    var { kEnumerableProperty } = require_util();
+    var { cloneRequest } = require_request2();
+    var { isValidHeaderValue, kEnumerableProperty } = require_util();
     var { environmentSettingsObject } = require_util2();
     var { createPotentialCORSRequest } = require_util6();
+    var { getGlobalDispatcher } = require_global2();
+    var { isomorphicDecode } = require_infra();
+    var textEncoder = new TextEncoder();
     var experimentalWarned = false;
     var defaultReconnectionTime = 3e3;
+    var maxReconnectionTime = 2 ** 31 - 1;
     var CONNECTING = 0;
     var OPEN = 1;
     var CLOSED = 2;
     var ANONYMOUS = "anonymous";
     var USE_CREDENTIALS = "use-credentials";
     var _events, _url, _withCredentials, _readyState, _request, _controller, _dispatcher, _state, _EventSource_instances, connect_fn, reconnect_fn;
-    var _EventSource = class _EventSource extends EventTarget {
+    var EventSource = class extends EventTarget {
       /**
        * Creates a new EventSource object.
        * @param {string} url
@@ -204132,6 +208265,7 @@ var require_eventsource = __commonJS({
        * @readonly
        */
       get readyState() {
+        webidl.brandCheck(this, webidl.is.EventSource);
         return __privateGet(this, _readyState);
       }
       /**
@@ -204140,6 +208274,7 @@ var require_eventsource = __commonJS({
        * @returns {string}
        */
       get url() {
+        webidl.brandCheck(this, webidl.is.EventSource);
         return __privateGet(this, _url);
       }
       /**
@@ -204147,6 +208282,7 @@ var require_eventsource = __commonJS({
        * instantiated with CORS credentials set (true), or not (false, the default).
        */
       get withCredentials() {
+        webidl.brandCheck(this, webidl.is.EventSource);
         return __privateGet(this, _withCredentials);
       }
       /**
@@ -204154,16 +208290,18 @@ var require_eventsource = __commonJS({
        * CLOSED.
        */
       close() {
-        webidl.brandCheck(this, _EventSource);
+        webidl.brandCheck(this, webidl.is.EventSource);
         if (__privateGet(this, _readyState) === CLOSED) return;
         __privateSet(this, _readyState, CLOSED);
         __privateGet(this, _controller).abort();
         __privateSet(this, _request, null);
       }
       get onopen() {
+        webidl.brandCheck(this, webidl.is.EventSource);
         return __privateGet(this, _events).open;
       }
       set onopen(fn) {
+        webidl.brandCheck(this, webidl.is.EventSource);
         if (__privateGet(this, _events).open) {
           this.removeEventListener("open", __privateGet(this, _events).open);
         }
@@ -204176,9 +208314,11 @@ var require_eventsource = __commonJS({
         }
       }
       get onmessage() {
+        webidl.brandCheck(this, webidl.is.EventSource);
         return __privateGet(this, _events).message;
       }
       set onmessage(fn) {
+        webidl.brandCheck(this, webidl.is.EventSource);
         if (__privateGet(this, _events).message) {
           this.removeEventListener("message", __privateGet(this, _events).message);
         }
@@ -204191,9 +208331,11 @@ var require_eventsource = __commonJS({
         }
       }
       get onerror() {
+        webidl.brandCheck(this, webidl.is.EventSource);
         return __privateGet(this, _events).error;
       }
       set onerror(fn) {
+        webidl.brandCheck(this, webidl.is.EventSource);
         if (__privateGet(this, _events).error) {
           this.removeEventListener("error", __privateGet(this, _events).error);
         }
@@ -204218,8 +208360,10 @@ var require_eventsource = __commonJS({
     connect_fn = function() {
       if (__privateGet(this, _readyState) === CLOSED) return;
       __privateSet(this, _readyState, CONNECTING);
+      const request = cloneRequest(__privateGet(this, _request));
+      request.urlList = [...__privateGet(this, _request).urlList];
       const fetchParams = {
-        request: __privateGet(this, _request),
+        request,
         dispatcher: __privateGet(this, _dispatcher)
       };
       const processEventSourceEndOfBody = (response) => {
@@ -204229,6 +208373,7 @@ var require_eventsource = __commonJS({
       };
       fetchParams.processResponseEndOfBody = processEventSourceEndOfBody;
       fetchParams.processResponse = (response) => {
+        var _a;
         if (isNetworkError(response)) {
           if (response.aborted) {
             this.close();
@@ -204252,6 +208397,7 @@ var require_eventsource = __commonJS({
         __privateGet(this, _state).origin = response.urlList[response.urlList.length - 1].origin;
         const eventSourceStream = new EventSourceStream({
           eventSourceSettings: __privateGet(this, _state),
+          maxEventSize: (_a = __privateGet(this, _dispatcher).eventSourceOptions) == null ? void 0 : _a.maxEventSize,
           push: (event) => {
             this.dispatchEvent(createFastMessageEvent(
               event.type,
@@ -204283,13 +208429,19 @@ var require_eventsource = __commonJS({
       this.dispatchEvent(new Event("error"));
       (_a = setTimeout(() => {
         if (__privateGet(this, _readyState) !== CONNECTING) return;
+        __privateGet(this, _request).headersList.delete("last-event-id", true);
         if (__privateGet(this, _state).lastEventId.length) {
-          __privateGet(this, _request).headersList.set("last-event-id", __privateGet(this, _state).lastEventId, true);
+          const lastEventId = isomorphicDecode(textEncoder.encode(__privateGet(this, _state).lastEventId));
+          if (isValidHeaderValue(lastEventId)) {
+            __privateGet(this, _request).headersList.set("last-event-id", lastEventId, true);
+          }
         }
         __privateMethod(this, _EventSource_instances, connect_fn).call(this);
-      }, __privateGet(this, _state).reconnectionTime)) == null ? void 0 : _a.unref();
+      }, Math.min(__privateGet(this, _state).reconnectionTime, maxReconnectionTime))) == null ? void 0 : _a.unref();
     };
-    var EventSource = _EventSource;
+    webidl.is.EventSource = (arg) => {
+      return arg != null && typeof arg === "object" && __privateIn(_events, arg);
+    };
     var constantsPropertyDescriptors = {
       CONNECTING: {
         __proto__: null,
@@ -204333,7 +208485,8 @@ var require_eventsource = __commonJS({
       {
         key: "dispatcher",
         // undici only
-        converter: webidl.converters.any
+        converter: webidl.converters.any,
+        defaultValue: () => getGlobalDispatcher()
       },
       {
         key: "node",
