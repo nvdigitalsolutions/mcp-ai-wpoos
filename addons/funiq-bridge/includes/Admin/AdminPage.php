@@ -90,6 +90,29 @@ class AdminPage {
 			);
 		}
 
+		// Bridge the esbuild IIFE externals to the WordPress-provided globals.
+		// esbuild (format iife) emits a `require` shim for every external — in
+		// a browser that shim throws "Dynamic require of X is not supported"
+		// unless a global `require` exists. The script deps above guarantee
+		// window.wp.* / window.React / window.ReactDOM are present.
+		wp_add_inline_script(
+			'funiq-admin',
+			'window.require = window.require || function ( name ) {'
+			. ' var map = {'
+			. '  "@wordpress/element": window.wp.element,'
+			. '  "@wordpress/components": window.wp.components,'
+			. '  "@wordpress/api-fetch": window.wp.apiFetch,'
+			. '  "@wordpress/block-editor": window.wp.blockEditor,'
+			. '  "@wordpress/i18n": window.wp.i18n,'
+			. '  "@wordpress/data": window.wp.data,'
+			. '  react: window.React,'
+			. '  "react-dom": window.ReactDOM'
+			. ' };'
+			. ' return map[ name ] || map[ name.split( "/" ).pop() ];'
+			. '};',
+			'before'
+		);
+
 		// Pass config to the SPA.
 		wp_add_inline_script(
 			'funiq-admin',
