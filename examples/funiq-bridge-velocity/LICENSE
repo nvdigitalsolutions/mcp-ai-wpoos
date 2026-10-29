@@ -1,0 +1,14 @@
+Copyright (c) 2026 NV Digital Solutions (https://nvdigitalsolutions.com).
+
+The NV-authored files in this example (server.js, scripts/serve.mjs,
+scripts/lib/proxy-headers.mjs, scripts/lib/proxy-headers.d.mts,
+scripts/sync-dist.mjs, package.json, README.md, this LICENSE) are
+PROPRIETARY software of NV Digital Solutions, consistent with the
+funiq-bridge addon's licensing (`addons/funiq-bridge/LICENSE` in the
+nvdigitalsolutions/mcp-ai-wpoos monorepo). No license is granted for use,
+modification, or redistribution outside NV-owned deployments.
+
+The `dist/` directory, when present, contains the purchased Funiq PWA
+bundle — a third-party Envato Market item subject to its own license terms.
+Its license proof (purchase metadata) is stored privately with the
+`nvoos-funiq-pwa` repository and is never distributed with this tree.

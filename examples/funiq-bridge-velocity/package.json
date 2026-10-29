@@ -1,0 +1,16 @@
+{
+	"name": "nvoos-funiq-velocity",
+	"version": "0.1.0",
+	"description": "Licensed Funiq PWA storefront on Cloudways Velocity — zero-dependency static server + bridge reverse proxy (Proposal 085).",
+	"license": "UNLICENSED",
+	"type": "module",
+	"main": "server.js",
+	"private": true,
+	"scripts": {
+		"serve": "node scripts/serve.mjs",
+		"sync:dist": "node scripts/sync-dist.mjs"
+	},
+	"engines": {
+		"node": ">=20"
+	}
+}
