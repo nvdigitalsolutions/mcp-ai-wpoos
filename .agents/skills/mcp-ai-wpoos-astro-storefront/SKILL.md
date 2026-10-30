@@ -258,6 +258,30 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   late-load bug fixed by PR #7296). Remediate: `wp cap add administrator
   manage_astro` on the backend or re-activate the bridge plugin; never
   chase the frontend for this error.
+- **REST cookie-auth on single-site HTTPS (the 2026-10-30 outage):** no
+  cookie authenticates /wp-json before `rest_cookie_check_errors()` runs —
+  the secure auth cookie is path-scoped to /wp-admin, and whenever the
+  logged-in cookie DOES validate (via `determine_current_user`),
+  `auth_cookie_valid` flips `$wp_rest_auth_cookie`, which makes
+  `rest_cookie_check_errors()` skip its early return and force nonce-less
+  requests back to user 0. Symptom: login 200 with `canManage:true`, then
+  every follow-up 401s — while the same session works in wp-admin and the
+  whole flow works in tests (HTTP, `is_ssl()` false). Fix (shipped): the
+  bridge's permission callbacks re-resolve the session from the logged-in
+  cookie right before the cap check (`REST/AuthSupport.php` — the console's
+  per-endpoint pattern), plus a scoped `determine_current_user` filter.
+  Nonces minted via `/api/auth/nonce` stay valid: `wp_create_nonce`/
+  `wp_verify_nonce` derive the session token from the logged-in cookie
+  directly, so uid 0 on both sides of the round-trip still verifies.
+- **Deploy-zip separators (2026-10-30):** a PowerShell `Compress-Archive`
+  zip carries backslash entry separators; on the backend's Linux PHP the
+  upgrader then fails to see the single top-level folder and installs the
+  zip into a random-suffix container (`nvoos-astro-bridge-v1.0.1-<rand>/
+  nvoos-astro-bridge/...`). Build the zip with Python `zipfile` (forward
+  slashes, top-level folder) — verified to install flat. And NEVER delete
+  the bridge plugin via wp-admin: its `uninstall.php` wipes the live
+  catalog + caps. Updates go through the upload flow's
+  "Replace current with uploaded" step (no uninstall runs).
 - **Bridge media endpoint:** image fields use a native uploader against
   `POST /media` (multipart, manage-cap gated; `GET /media/{id}` for
   previews) — `wp_handle_upload` with a filterable action
@@ -292,14 +316,17 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   → GitHub `repository_dispatch` → the sync workflow.
 - Mirror repo is public (owner Q6). A/B coexistence rules and rollback:
   `docs/operations/deployment/nvoos-astro-velocity-setup.md`.
-- **Bridge packaging for zip upload (learned 2026-10-29):** the deploy zip
-  must contain the plugin as a **top-level `nvoos-astro-bridge/` folder**
-  (main file `nvoos-astro-bridge.php` inside). Build it with PowerShell
-  `Compress-Archive` of the folder — `tar -a` produces a broken zip, and
-  zipping `folder\*` (files at zip root) installs `nvoos-astro-bridge.php` directly
-  into `wp-content/plugins/`, colliding with other plugins' `includes/`.
-  Uploading twice with the same folder name creates a random-suffix folder —
-  delete the old copy first.
+- **Bridge packaging for zip upload (learned 2026-10-29, revised
+  2026-10-30):** the deploy zip must contain the plugin as a **top-level
+  `nvoos-astro-bridge/` folder** (main file `nvoos-astro-bridge.php`
+  inside). Build it with **Python `zipfile` (forward-slash separators)** —
+  PowerShell `Compress-Archive` writes backslash entries that the backend's
+  upgrader can't see as folders (random-suffix container install), and
+  `tar -a` produces a broken zip. Zipping `folder\*` (files at zip root)
+  installs the main file directly into `wp-content/plugins/`, colliding
+  with other plugins' `includes/`. Re-uploading an existing folder goes
+  through the "Replace current with uploaded" step — never delete the
+  plugin via wp-admin, its uninstall.php wipes the live catalog + caps.
 - **Bridge code standards:** the addon carries its own
   `addons/nvoos-astro-bridge/phpcs.xml.dist` (PSR-4 filename sniffs, short
   ternaries and the deliberate meta_key/tax_query slow-query warnings are
