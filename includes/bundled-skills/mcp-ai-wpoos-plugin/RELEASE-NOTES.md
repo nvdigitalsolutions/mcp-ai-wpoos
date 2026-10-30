@@ -1,4 +1,4 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.13)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.14)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
@@ -6,6 +6,12 @@ Operational content stays in SKILL.md; append new per-version sections here.
 ---
 
 ---
+
+## Astro Storefront Lands, Bridge Rename + /manage Cookie-Auth Restored, F&B Multi-Connection, Gateway Policy Layer (v1.2.14)
+
+- **The /manage cookie-auth outage (PRs #7306/#7307)** — on single-site HTTPS no cookie authenticates `/wp-json` before `rest_cookie_check_errors()` runs; the secure auth cookie is path-scoped to `/wp-admin`, and whenever the logged-in cookie DOES validate, `auth_cookie_valid` flips `$wp_rest_auth_cookie`, which force-resets nonce-less requests to user 0. Symptom: login 200 with `canManage:true`, then every follow-up 401/403s while wp-admin works. The bridge (renamed **nvoos-astro-bridge 1.0.1**) now re-resolves the session from the logged-in cookie inside its permission callbacks and mints `/auth/nonce` for the restored session (guest-minted nonces fail verification once the session resolves — the 403-every-collection follow-up). Same trap applies to ANY custom REST cookie-auth surface on fleet HTTPS sites.
+- **Proposals 092/093/094/095 shipped** — the Astro storefront + standalone Astro CMS `/manage` + Woo product source + ADS tokens + `nvoos-astro-mcp`; F&B multi-connection Drive routing; the MCP gateway policy & governance layer (addon 0.2.0). Commerce sync toolkits now render as E-Commerce subtabs (`subtab_of`; `register_tab()` merges over existing definitions).
+- **Ops notes** — deploying the bridge ZIP to a Linux backend: build it with Python `zipfile` (forward slashes); PowerShell `Compress-Archive` backslash entries install into a random-suffix container. NEVER delete the bridge via wp-admin (uninstall.php wipes the live catalog + caps); updates go through the "Replace current with uploaded" step. wp-admin uploads via curl need a browser UA + Referer (Cloudflare JS challenge blocks bare curl).
 
 ## Dify Parity Gap-Fill, Console Pagination, Session Identity & OAuth Hardening (v1.2.13)
 

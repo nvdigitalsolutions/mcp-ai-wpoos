@@ -1,10 +1,45 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.2.14] - 2026-10-30
 
-### Fixed — wp-admin commerce tabs grouped under E-Commerce
+### Changed — wp-admin commerce tabs grouped under E-Commerce (#7262/#7264)
 
-- **EZuite ERP / Shopify Sync / FlowHub are no longer top-level dashboard tabs.** The three sync toolkits were never meant to sit beside E-Commerce in the wp-admin nav; they now render as subtabs of the E-Commerce tab (the Tools → Connections pattern) via a declarative `subtab_of` tab-definition key. The four registry tabs stay registered untouched (the settings schema + the SPA commerce pages filter fields by tab id), `WP_MCP_AI_Settings_Dashboard::get_sections_for_tab()` pulls child-tab sections into both render and save so subtabbed saves sanitize correctly, and legacy `?tab=<toolkit>` URLs still resolve to the parent tab with the right subtab selected. New `tests/test-commerce-settings-subtabs.php` (8 tests) + extended `tests/test-settings-dashboard-tab-order.php`.
+- **EZuite ERP / Shopify Sync / FlowHub are no longer top-level dashboard tabs.** The three sync toolkits now render as subtabs of the E-Commerce tab (the Tools → Connections pattern) via a declarative `subtab_of` tab-definition key. The four registry tabs stay registered untouched (the settings schema + the SPA commerce pages filter fields by tab id), `WP_MCP_AI_Settings_Dashboard::get_sections_for_tab()` pulls child-tab sections into both render and save so subtabbed saves sanitize correctly, and legacy `?tab=<toolkit>` URLs still resolve to the parent tab with the right subtab selected. Hardening: `register_tab()` now merges over the existing definition, so re-registrations can update keys but never silently drop structural keys like `subtab_of` (registration-order independence). New `tests/test-commerce-settings-subtabs.php` (8 tests) + extended `tests/test-settings-dashboard-tab-order.php`.
+
+### Added — Proposal 092 Astro storefront: Astro Bridge rename, /manage CMS, REST cookie-auth (PR #7274–#7307)
+
+- **Astro Bridge (the renamed `nvoos-astro-bridge`, addon 1.0.1)** — the funiq-bridge → nvoos-astro-bridge plugin-identity cutover (folder, main file, `NvoosAstroBridge` namespace, constants, error codes); data-layer identifiers (`funiq_product`, `funiq/v1`, `_funiq_*`) deliberately unchanged (separate data-migration project). The storefront wave lands end-to-end: the standalone Astro CMS `/manage` surface with sign-in through the contract's own auth routes (no admin proxy), the WooCommerce product source behind the same `nvoos-commerce/v1` envelope, the managers surface, the late-load-safe bootstrap + cap migration, and the mirror deploy-loop hardening (BFF admin-proxy header rewrites, SSR base-resolution precedence, serve.mjs runtime libs in the deploy tree, esbuild JS API bundle builds).
+- **REST cookie-auth restored on single-site HTTPS (the /manage outage fixes)** — WP's REST pipeline force-logs-out cookie sessions on single-site HTTPS (`auth_cookie_valid` flips `$wp_rest_auth_cookie`, nonce-less requests reset to user 0). The bridge now re-resolves the session from the logged-in cookie inside its permission callbacks (`AuthSupport`) and mints `/auth/nonce` for the restored session — login → `/auth/me` → every collection works again on production (verified live).
+- **Proposal 092 docs + ops** — the storefront proposal, phase 1/2 (image optimization, audits, revalidation), the PWA rollback-leg decision record, and the `mcp-ai-wpoos-astro-storefront` + `mcp-ai-wpoos-git-ops` coding-time skills.
+
+### Added — Proposal 093: F&B multi-connection Drive source routing (#7263/#7266/#7268)
+
+- **Per-table source catalog** — `table_map` entries accept `connection_id` + `folder_id`; `resolve_source()` precedence = tool override > table_map > global settings > Drive auto-fallback; ambiguity errors re-wrap as `wp_mcp_ai_fnb_source_unresolved` with actionable Table Sources guidance. Readers gain per-connection token caches, per-table folder routing, source-scoped transient keys, and `connection_id`/`connection_name` in responses; `fnb_read_table`/`fnb_search_table` gain an optional `connection_id` override and cross-connection joins (dish margin = Menu from one connection + Recipes/Supplier prices from another) just work.
+- **Table Sources UI** — 18-row grid (connection dropdown from enabled Remote Sites Drive connections, folder, file hint) + Scan & propose + tiered review (bulk-apply ≥ 0.7 confidence, individual review with sample headers, discard); operator-authored mappings win unless overwrite is checked. Fixed: the review panel rendered inside the `options.php` form, so nested-form stripping made Apply/Discard submit the outer settings form (buttons dead); the panel now renders as a sibling form before the settings form with `redirect_and_exit()` test seams, and dotted spec IDs (`6.0`) survive as checkbox values instead of mangled form keys.
+
+### Added — Proposal 094: MCP gateway policy & governance layer (#7269)
+
+- **Gateway 0.2.0** — the five WSO2-comparison governance gaps close with a zero-dependency policy layer: W3C `traceparent` start-or-inherit propagation (upstream + log stamps), per-tool token-bucket quotas scoped `(key × site × tool)` with RFC 9558 headers and 429/`-32099` responses, tool/scope deny-lists, and fail-closed env/Git configuration throughout.
+
+### Added — Google Workspace fallback + restricted-assistant settings grant (#7265/#7267)
+
+- **Auto-fallback** — Calendar and Gmail tools resolve an omitted `connection_id` to the only enabled Remote Sites connection with usable credentials (the Drive pattern); restricted assistants resolve within their allowed connections; the Integrations page lists Remote Sites Gmail connections.
+- **Site-wide settings grant** — the assistant editor metabox gains a synthetic "settings" grant row (shown when any base-settings family has credentials); Gmail, Drive (both clients + `search_drive`), Calendar, FlowHub, QuickBooks, and iSAMS gates honour it, and `list_*_connections` surface it — restricted assistants without it keep fail-closed behaviour.
+
+### Added — Proposal 095: Astro Design System tokens + nvoos-astro-mcp (#7301–#7303)
+
+- **ADS tokens** — the DTCG-sourced three-layer token system (core → semantic → component, light/dark + brand-theme files), committed generated artifacts with a CI drift gate, legacy `--nv-*` aliases for the zero-visual-change rollout, and the `/tokens` reference page.
+- **nvoos-astro-mcp** — the assistant-control surface at `/mcp` (SDK v2, dual-era Streamable HTTP) with the design/CMS tool slice, transactional bulk token writes with rollback snapshots, and fail-closed write auth — plus the `mcp-ai-sdk-v2-server-ops` coding-time skill.
+
+### Fixed — front-end asset leaks, OKF neighbour order, misc (#7271/#7275)
+
+- **Visitor-page asset leaks** — the Quick Actions widget is register-only outside wp-admin/Elementor editor contexts (its `render()` enqueues explicitly); `cron-status.css` no longer declares as a chat-style dependency (enqueued only for logged-in users); the markup Konva shim moved to `wp_footer` and gates on `enqueued` not `registered`. Regression suite `tests/test-frontend-asset-leak-guards.php` pins all three guards.
+- **OKF neighbour order** — `ordered_concepts()` sorts by `concept_id` inside each bundle instead of filesystem-dependent iterator order; prev/next neighbours and manifest `order` are now deterministic.
+
+### Dependency advisories + build (#7273/#7288)
+
+- **fast-uri** override floor raised to ≥ 4.2.3 in the four carrying manifests (GHSA-333x-w4r6-6crp, 16 alerts closed); **undici** bumped to patched 6.29.1/7.30.1/8.12.2 in media-worker (GHSA-xjj6-f33q-929c).
+- Kaya CLS fixes and the performance-audit skill updates (#7272).
 
 ## [1.2.13] - 2026-10-27
 
