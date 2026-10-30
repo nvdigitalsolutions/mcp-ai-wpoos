@@ -43,6 +43,18 @@ const TARGET_SITE = (process.env.NVOOS_TARGET_SITE || '').replace(/\/+$/, '');
 const PROXY_CACHE_DISABLED = process.env.NVOOS_PROXY_CACHE === '0';
 const PROXY_CACHE_MAX_TTL = Number(process.env.NVOOS_PROXY_CACHE_MAX_TTL) || 300;
 
+// The /mcp mount (Proposal 095) ships as a bundled module in dist/ — built
+// by `npm run build:mcp` (wired into `npm run build`). Absent in a dev tree
+// without a build; /mcp then falls through to the Astro handler.
+const mcpHandler = await import('../dist/mcp-entry.mjs')
+	.then((mod) => mod.createAstroMcpNodeHandler(process.env))
+	.catch((error) => {
+		if (error.code !== 'ERR_MODULE_NOT_FOUND') {
+			console.error('[serve] /mcp disabled — dist/mcp-entry.mjs failed to load:', error.message);
+		}
+		return null;
+	});
+
 if (!TARGET_SITE) {
 	console.error('[serve] NVOOS_TARGET_SITE is not set — the /api and media proxies have no backend.');
 	// Continue booting: the Astro layer still serves (REST islands will fail).
@@ -231,6 +243,13 @@ function proxyWithCache(target, req, res) {
 function route(req, res) {
 	const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
 	const path = url.pathname;
+
+	// Proposal 095 — assistant-controlled design/CMS surface (MCP Streamable
+	// HTTP). Deliberately NOT under /api/* (that prefix is the commerce
+	// contract proxy).
+	if (mcpHandler && path === '/mcp') {
+		return mcpHandler(req, res);
+	}
 
 	if (path.startsWith('/api/')) {
 		const rest = path.slice('/api/'.length);
