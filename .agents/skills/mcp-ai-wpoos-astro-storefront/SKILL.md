@@ -120,6 +120,13 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   values verbatim (string OR array).
 - Tests: `tests/unit/{dtcg,tokens,tokens-service}.test.ts` +
   `tests/e2e/theme.spec.ts` (Playwright).
+- **Generated TS is linted** — `src/lib/tokens.generated.ts` sits under
+  `src/`, so `npm run lint` covers it. The generator
+  (`scripts/lib/tokens-build.mjs`) must emit repo style — tabs (one per
+  level) and single-quoted strings via the `tsString()` helper, never raw
+  `JSON.stringify` — or the lint gate fails (~149 errors; PR #7301 → #7302).
+  `tests/unit/tokens.test.ts` pins the format (tabs + single quotes) so the
+  regression cannot recur silently.
 
 ### nvoos-astro-mcp (`/mcp`)
 
@@ -127,6 +134,13 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   `npm run build:mcp` bundles `bff.ts` → `dist/mcp-entry.mjs`, which
   `scripts/serve.mjs` mounts at `/mcp` (deliberately NOT under `/api/*`).
   `npm run mcp:stdio` serves the same tools over stdio for local profiles.
+- **Never spawn `node` against `node_modules/esbuild/bin/esbuild`
+  (2026-10-30):** esbuild's install fallback can replace that file with the
+  native platform binary — an ELF executable on Linux — and node dies with
+  `SyntaxError: Invalid or unexpected token` on the ELF header. This broke
+  the Linux CI `npm run build` at `build:mcp` (PR #7303). Use the esbuild JS
+  API (`import { build } from 'esbuild'`) — it resolves the platform binary
+  itself; `scripts/build-mcp.mjs` was rewritten this way.
 - **10 design tools** (`tokens_get/set/import_dtcg/rollback`, `theme_*`,
   `contrast_check`); bulk writes are transactional (validate → dry-run diff →
   snapshot → all-or-nothing). State is **process-local** — durability is the
@@ -261,6 +275,12 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 - **Mirror deploy tree (PR #7291):** `sync-dist.mjs` must ship every runtime
   import of `serve.mjs` (now `scripts/lib/`); a staged-tree boot smoke fails
   the assemble step when the tree crashes at boot (the 2026-10-29 502).
+- **no-FOUC boot semantics:** `BaseLayout.astro`'s inline theme script
+  resolves stored theme → `prefers-color-scheme` (`? 'light' : 'dark'`, the
+  Starlight pattern) before paint. Editing that block for lint
+  (`var`→`const`, `catch (e)`→`catch`) must keep the ternary meaningful —
+  the #7301 merge shipped `? 'light' : 'light'`, silently killing the dark
+  fallback (fixed in #7302).
 
 ## Deploy & revalidation
 

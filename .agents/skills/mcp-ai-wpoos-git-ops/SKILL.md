@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-git-ops
-description: Git/GitHub workflow discipline for the mcp-ai-wpoos repo — PRs against `alpha-working` with owner-merge, commit style, staged commits (no `git add -A`), the stacked-PR rebase recipe for when a parent PR gets squash-merged, conflict verification via `git merge-tree`, and gh CLI gotchas (`gh workflow run` 404 on non-default branches, long PHP lint checks). Use when creating/rebasing/fixing PRs, resolving PR conflicts, or dispatching workflows.
+description: Git/GitHub workflow discipline for the mcp-ai-wpoos repo — PRs against `alpha-working` with owner-merge, commit style, staged commits (no `git add -A`), the stacked-PR rebase recipe for when a parent PR gets squash-merged, shared-worktree discipline for the multi-agent repo (check the branch before committing, never `reset --hard` over other agents' unstaged edits, `--autostash` rebases), conflict verification via `git merge-tree`, and gh CLI gotchas (`gh workflow run` 404 on non-default branches, long PHP lint checks). Use when creating/rebasing/fixing PRs, resolving PR conflicts, or dispatching workflows.
 ---
 
 # mcp-ai-wpoos — Git & PR ops
@@ -45,6 +45,29 @@ git push --force-with-lease origin <branch>
   `gh pr view <n> --json mergeable,mergeStateStatus` (`MERGEABLE`).
 - GitHub Docs reference: "Managing stacked pull requests" /
   "Troubleshooting stacked pull requests" (`gh stack rebase` alternative).
+
+## Shared worktree discipline (multi-agent repo, learned 2026-10-30)
+
+Parallel agents share the same checkout and switch branches between tasks.
+Four rules, each from a session that cost a recovery:
+
+- **Check the branch before committing.** `git branch --show-current` and
+  `git log --oneline -1` before `git add`/`commit` — a commit lands on
+  whatever branch is checked out, and the worktree may have been switched
+  under you (a build fix once landed on another agent's
+  `feat/mcp-sdk-skill-updates`).
+- **Recovering a stray commit:** cherry-pick it onto your branch, then
+  restore the foreign branch with `git reset --mixed <its-old-head>` +
+  `git restore --worktree -- <only-the-files-you-touched>`. **Never
+  `git reset --hard` in a shared worktree** — it wipes other agents'
+  uncommitted tracked edits (e.g. a modified `SKILL.md`).
+- **Rebasing with foreign unstaged edits present:** plain `git rebase`
+  refuses ("You have unstaged changes"); use `git rebase --autostash` — it
+  stashes only tracked changes and pops them back.
+- **Merged PRs freeze their head.** A squash-merged (closed) PR stops
+  tracking branch pushes — `gh pr view` keeps showing the stale `head_sha`.
+  After the owner merges, run the stacked-PR recipe above and open a fresh
+  PR for the delta (PRs #7302 → #7303).
 
 ## Windows reserved-name artifacts (learned 2026-10-29)
 
