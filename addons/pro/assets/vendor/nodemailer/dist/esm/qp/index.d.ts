@@ -14,7 +14,11 @@ export declare function wrap(str: string, lineLength?: number): string;
 export interface QPEncoderOptions {
     /** Maximum length for lines, set to false to disable wrapping */
     lineLength?: number | false | undefined;
+    /** The input is binary data: a CR or LF that is not part of a CRLF pair is encoded */
+    binary?: boolean | undefined;
 }
+/** The name @types/nodemailer used for QPEncoderOptions */
+export type EncoderOptions = QPEncoderOptions;
 /**
  * Creates a transform stream for encoding data to Quoted-Printable encoding
  *

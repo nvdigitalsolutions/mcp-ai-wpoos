@@ -21,6 +21,12 @@ export function isPlainText(value, isParam) {
     const re = isParam ? /[\x00-\x1f\x7f"\u0080-\uFFFF]/ : /[\x00-\x08\x0b\x0c\x0e-\x1f\u0080-\uFFFF]/;
     return typeof value === 'string' && !re.test(value);
 }
+// A parameter value goes out as is only when it is plain text that does not look like an encoded
+// word. Receivers decode encoded words found in parameter values (libmime does so for unencoded
+// continuations), so as plain text it would come back as something else
+function isPlainParamValue(value) {
+    return isPlainText(value, true) && !value.includes('=?');
+}
 /**
  * Wraps a value into a quoted-string. Inside one a quote would end the string early
  * and a backslash would escape whatever follows it, so both go out as quoted-pairs.
@@ -39,6 +45,7 @@ export function quoteString(value) {
  * no need to encode the values in any way. If the value is plaintext but has
  * longer lines then allowed, then use format=flowed
  *
+ * @param str Multi line string to check
  * @param lineLength Max line length to check for
  * @returns Returns true if there is at least one line longer than lineLength chars
  */
@@ -136,26 +143,38 @@ export function encodeWord(data, mimeWordEncoding, maxLength) {
  */
 export function encodeWords(value, mimeWordEncoding, maxLength, encodeAll) {
     maxLength = maxLength || 0;
-    // find first word with a non-printable ascii or special symbol in it
-    const firstMatch = value.match(/(?:^|\s)([^\s]*["\u0080-\uFFFF])/);
-    if (!firstMatch) {
+    // find the first and the last character that needs encoding, a quote or anything outside
+    // printable ascii. A scan rather than a regex: matching the last such word with a
+    // backtracking pattern took quadratic time on a long word of non-ascii characters
+    let firstSpecial = -1;
+    let lastSpecial = -1;
+    for (let i = 0; i < value.length; i++) {
+        const code = value.charCodeAt(i);
+        if (code === 0x22 || code >= 0x80) {
+            if (firstSpecial < 0) {
+                firstSpecial = i;
+            }
+            lastSpecial = i;
+        }
+    }
+    if (firstSpecial < 0) {
         return value;
     }
     if (encodeAll) {
         // if it is requested to encode everything or the string contains something that resebles encoded word, then encode everything
         return encodeWord(value, mimeWordEncoding, maxLength);
     }
-    // find the last word with a non-printable ascii in it
-    const lastMatch = value.match(/(["\u0080-\uFFFF][^\s]*)[^"\u0080-\uFFFF]*$/);
-    if (!lastMatch) {
-        // should not happen
-        return value;
+    // encode from the start of the word holding the first such character to the end of the
+    // word holding the last one, so the encoded words stay separated from the plain text by
+    // the whitespace that was already there
+    let startIndex = firstSpecial;
+    while (startIndex > 0 && !/\s/.test(value.charAt(startIndex - 1))) {
+        startIndex--;
     }
-    const startIndex = firstMatch.index +
-        (firstMatch[0].match(/[^\s]/) || {
-            index: 0
-        }).index;
-    const endIndex = lastMatch.index + (lastMatch[1] || '').length;
+    let endIndex = lastSpecial + 1;
+    while (endIndex < value.length && !/\s/.test(value.charAt(endIndex))) {
+        endIndex++;
+    }
     return ((startIndex ? value.substr(0, startIndex) : '') +
         encodeWord(value.substring(startIndex, endIndex), mimeWordEncoding || 'Q', maxLength) +
         (endIndex < value.length ? value.substr(endIndex) : ''));
@@ -175,7 +194,7 @@ export function buildHeaderValue(structured) {
         const value = structured.params[key];
         // a parameter name is a token too and it is emitted without any quoting around it
         const param = key.replace(/[\x00-\x1f\x7f]/g, '');
-        if (!isPlainText(value, true) || value.length >= 75) {
+        if (!isPlainParamValue(value) || value.length >= 75) {
             buildHeaderParam(param, value, 50).forEach(encodedParam => {
                 if (!/[\s"\\;:/=(),<>@[\]?]|^[-']|'$/.test(encodedParam.value) || encodedParam.key.substr(-1) === '*') {
                     paramsArray.push(encodedParam.key + '=' + encodedParam.value);
@@ -185,7 +204,10 @@ export function buildHeaderValue(structured) {
                 }
             });
         }
-        else if (/[\s'"\\;:/=(),<>@[\]?]|^-/.test(value)) {
+        else if (!value.length || /[\s'"\\;:/=(),<>@[\]?]|^-/.test(value)) {
+            // a parameter value is a token or a quoted-string and a token is never empty, so
+            // a valueless parameter such as the 'flag' of 'multipart/mixed; flag; boundary=b'
+            // goes out as 'flag=""' rather than as the 'flag=' that parses as neither
             paramsArray.push(param + '=' + JSON.stringify(value));
         }
         else {
@@ -207,9 +229,9 @@ export function buildHeaderValue(structured) {
  *     title*0*=utf-8''unicode
  *     title*1*=%20string
  *
+ * @param key Parameter name the generated keys are built from, for example title
  * @param data String to be encoded
  * @param [maxLength=50] Max length for generated chunks
- * @param [fromCharset='UTF-8'] Source sharacter set
  * @return A list of encoded keys and headers
  */
 export function buildHeaderParam(key, data, maxLength) {
@@ -221,7 +243,7 @@ export function buildHeaderParam(key, data, maxLength) {
     let i, len;
     maxLength = maxLength || 50;
     // process ascii only text
-    if (isPlainText(data, true)) {
+    if (isPlainParamValue(data)) {
         // check if conversion is even needed
         if (encodedStr.length <= maxLength) {
             return [
@@ -337,6 +359,46 @@ export function buildHeaderParam(key, data, maxLength) {
     }));
 }
 /**
+ * An RFC 2045 token: printable ASCII without SPACE, the control characters, DEL and the
+ * tspecials. A charset name is one, and the name a continuation carries is written into
+ * the encoded word the parameter value becomes, so it is checked against this before it
+ * goes in. Whitespace used to come off it only because the value was trimmed first.
+ */
+const TOKEN = /^[^\x00-\x20\x7f()<>@,;:\\"/[\]?=]+$/;
+/**
+ * Offset of the ')' that closes the RFC 822 comment opening at `start`, or -1 when the
+ * comment never closes. Comments nest, and a backslash escapes the character after it
+ */
+function _findCommentEnd(str, start) {
+    let depth = 0;
+    for (let i = start, len = str.length; i < len; i++) {
+        const c = str.charAt(i);
+        if (c === '\\') {
+            i++;
+        }
+        else if (c === '(') {
+            depth++;
+        }
+        else if (c === ')' && --depth === 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+/**
+ * Whether a string can be a header parameter name.
+ *
+ * A parameter name is a token, so it is never empty. A "__proto__" name would target the
+ * prototype chain of the params object instead of an own property of it and read back as
+ * Object.prototype, so it is no name either.
+ *
+ * @param name Candidate parameter name, already lowercased
+ * @return true when the name can be used
+ */
+function _isParamName(name) {
+    return !!name && !isProtoKey(name);
+}
+/**
  * Parses a header value with key=value arguments into a structured
  * object.
  *
@@ -349,140 +411,252 @@ export function buildHeaderParam(key, data, maxLength) {
  *   }
  *
  * @param str Header value
+ * @param options Options, see ParseHeaderValueOptions
  * @return Header value as a parsed structure
  */
-export function parseHeaderValue(str) {
+export function parseHeaderValue(str, options) {
     const response = {
-        value: false,
+        value: '',
         params: {}
     };
-    // Parameter names come from a caller supplied contentType/contentDisposition. A
-    // "__proto__" name would target the prototype chain of the params object instead of
-    // an own property of it, and read back as Object.prototype, so it is dropped.
+    // Cleared again by an unclosed '(', see the loop
+    let stripComments = !!options?.stripComments;
+    // A duplicated parameter resolves to its first occurrence, the way a duplicated header
+    // does. Letting the last one win disagrees with the receivers that take the first, and
+    // the two readings of 'boundary="b"; boundary="c"' name different delimiters. The
+    // continuation join below is the only writer of the name it builds, so it tests the
+    // name with _isParamName directly rather than taking that rule along from here.
     const setParam = (name, value) => {
-        if (!isProtoKey(name)) {
+        name = name.toLowerCase();
+        if (_isParamName(name) && !Object.prototype.hasOwnProperty.call(response.params, name)) {
             response.params[name] = value;
         }
     };
     let key = false;
     let value = '';
-    let type = 'value';
+    let stage = 'value';
     let quote = false;
     let escaped = false;
     let chr;
+    // Whitespace seen outside a quoted string is held back until a significant character
+    // follows it, so the whitespace around a value is dropped without trimming spaces the
+    // sender quoted on purpose. Trimming the stored value instead loses the trailing space
+    // of 'filename*0="Annual Report "', which the next continuation section is appended to.
+    let pendingSpace = '';
+    let quoteClosed = false;
+    // Whitespace ahead of the first character of a value is padding and is dropped, the
+    // whitespace between two characters of it is content
+    const flushSpace = () => {
+        if (value.length) {
+            value += pendingSpace;
+        }
+        pendingSpace = '';
+    };
+    const addChr = (c) => {
+        flushSpace();
+        value += c;
+    };
+    const takeValue = () => {
+        const taken = value;
+        value = '';
+        pendingSpace = '';
+        quoteClosed = false;
+        return taken;
+    };
+    const storeValue = () => {
+        const taken = takeValue();
+        if (key === false) {
+            response.value = taken;
+        }
+        else {
+            setParam(key, taken);
+        }
+    };
+    // A parameter name with no '=' is a valueless parameter, not the start of the next one.
+    // Without this the name keeps growing across the ';' and swallows whatever follows, which
+    // is how 'multipart/mixed; flag; boundary="AAA"' lost its boundary to a parameter named
+    // 'flag; boundary' and left the node declaring the generated boundary beside the asked
+    // for one, so a receiver reading the first of the two found no delimiter it matched.
+    const storeEmptyKey = () => {
+        setParam(takeValue().trim(), '');
+    };
     for (let i = 0, len = str.length; i < len; i++) {
         chr = str.charAt(i);
-        if (type === 'key') {
+        // With stripComments, an RFC 822 comment stands anywhere outside a quoted string but
+        // right behind a token it would continue, see ParseHeaderValueOptions. In the value
+        // of a parameter, no pending whitespace means the last significant character was the
+        // '=' or a character of the token
+        if (stripComments && chr === '(' && !quote && !quoteClosed && !(stage === 'value' && key !== false && !pendingSpace)) {
+            let end = _findCommentEnd(str, i);
+            if (end < 0 && str.indexOf(';', i) < 0) {
+                // a comment that never closes runs to the end of the value, unless a
+                // parameter follows it, which is content then and survives
+                end = len - 1;
+            }
+            if (end >= 0) {
+                i = end;
+                continue;
+            }
+            // looking for a closing ')' again would scan a run of unclosed '(' to its end
+            // once for each of them
+            stripComments = false;
+        }
+        if (stage === 'key') {
             if (chr === '=') {
-                key = value.trim().toLowerCase();
-                type = 'value';
-                value = '';
+                key = takeValue().trim();
+                stage = 'value';
+                continue;
+            }
+            if (chr === ';') {
+                storeEmptyKey();
                 continue;
             }
             value += chr;
         }
         else {
-            if (escaped) {
-                value += chr;
+            if (quoteClosed && chr !== ';') {
+                // Nothing behind a closed quoted string reaches the value. RFC 2045 says a
+                // parameter value is a token or a quoted string and not both, so what follows
+                // one is junk and only the ';' that ends the parameter still counts. Tested
+                // ahead of the branches rather than beside the append at the foot of them,
+                // where each branch above was a way around it: a second '"' reopened quoting
+                // and swallowed the rest of the header, so 'boundary="AAA" "; boundary=BBB"'
+                // read as a single boundary of 'AAA ', and the junk of
+                // 'boundary="AAA" (unterminated comment' still joined the declared boundary
+                // through the escape branch. quoteClosed is only ever set while no quote is
+                // open, and this is what keeps one from being opened afterwards.
+                escaped = false;
+                continue;
             }
-            else if (chr === '\\') {
+            if (escaped) {
+                addChr(chr);
+            }
+            else if (quote && chr === '\\') {
+                // a backslash only escapes inside a quoted string, everywhere else it is an
+                // ordinary character. Treating it as an escape turns the parameter value
+                // 'C:\Users\me\report.txt' into 'C:Usersmereport.txt'
                 escaped = true;
                 continue;
             }
             else if (quote && chr === quote) {
                 quote = false;
+                quoteClosed = true;
             }
             else if (!quote && chr === '"') {
                 quote = chr;
+                flushSpace();
             }
             else if (!quote && chr === ';') {
-                if (key === false) {
-                    response.value = value.trim();
-                }
-                else {
-                    setParam(key, value.trim());
-                }
-                type = 'key';
-                value = '';
+                storeValue();
+                stage = 'key';
+            }
+            else if (!quote && (chr === ' ' || chr === '\t')) {
+                pendingSpace += chr;
             }
             else {
-                value += chr;
+                addChr(chr);
             }
             escaped = false;
         }
     }
-    if (type === 'value') {
-        if (key === false) {
-            response.value = value.trim();
-        }
-        else {
-            setParam(key, value.trim());
-        }
+    if (stage === 'value') {
+        storeValue();
     }
-    else if (value.trim()) {
-        setParam(value.trim().toLowerCase(), '');
+    else {
+        // a key with no value, as in 'Header-Key: somevalue; key=value; emptykey'
+        storeEmptyKey();
     }
     // handle parameter value continuations
     // https://tools.ietf.org/html/rfc2231#section-3
-    // preprocess values
+    // Sections are collected in a list and ordered below rather than written into an array
+    // at their own section number. An index write makes the array as long as the number the
+    // header asked for, and the join that follows walks all of it, so the 55 byte value
+    // "attachment; filename*0*=utf-8''a; filename*4000000000=b" held a core for over two
+    // minutes.
+    const continuations = new Map();
     Object.keys(response.params).forEach(key => {
-        let actualKey, nr, match, value;
-        if ((match = key.match(/(\*(\d+)|\*(\d+)\*|\*)$/))) {
-            actualKey = key.substr(0, match.index);
-            nr = Number(match[2] || match[3]) || 0;
-            if (isProtoKey(actualKey)) {
-                // see setParam. Reading it back would yield Object.prototype, which is
-                // an object, so the initializer below would be skipped and the write
-                // that follows would throw out of a header build the caller can not catch
-                delete response.params[key];
-                return;
-            }
-            if (!response.params[actualKey] || typeof response.params[actualKey] !== 'object') {
-                response.params[actualKey] = {
-                    charset: false,
-                    values: []
-                };
-            }
-            value = response.params[key];
-            if (nr === 0 && match[0].substr(-1) === '*' && (match = value.match(/^([^']*)'[^']*'(.*)$/))) {
-                response.params[actualKey].charset = match[1] || 'iso-8859-1';
-                value = match[2];
-            }
-            response.params[actualKey].values[nr] = value;
-            // remove the old reference
-            delete response.params[key];
+        const match = key.match(/(\*(\d+)|\*(\d+)\*|\*)$/);
+        if (!match) {
+            // not a continuation parameter, there is nothing to join
+            return;
         }
+        const actualKey = key.substr(0, match.index);
+        const nr = Number(match[2] || match[3]) || 0;
+        // RFC 2231 section 4.1: only a section whose name ends in '*' is percent encoded
+        const encoded = match[0].substr(-1) === '*';
+        // remove the old reference
+        let value = response.params[key];
+        delete response.params[key];
+        if (!_isParamName(actualKey)) {
+            // the joined value can not be written back under this name. It is empty when the
+            // continuation suffix was all there was of it, as in the bare '*' of 'text/plain; a;*'
+            return;
+        }
+        let continuation = continuations.get(actualKey);
+        if (!continuation) {
+            continuation = { charset: false, sections: [] };
+            continuations.set(actualKey, continuation);
+        }
+        const charsetMatch = nr === 0 && encoded ? value.match(/^([^']*)'[^']*'(.*)$/) : null;
+        if (charsetMatch) {
+            // the charset is a token, and anything else named as one is no charset a consumer
+            // could resolve, so it reads as the unnamed case rather than being carried into
+            // the encoded word below. A "\r\n" of a prefix would otherwise reach a consumer
+            // of the parsed value as the charset of a word that no decoder can act on
+            continuation.charset = TOKEN.test(charsetMatch[1]) ? charsetMatch[1] : 'iso-8859-1';
+            value = charsetMatch[2];
+        }
+        continuation.sections.push({ nr, value, encoded });
     });
     // concatenate split rfc2231 strings and convert encoded strings to mime encoded words
-    Object.keys(response.params).forEach(key => {
-        let value;
-        if (response.params[key] && Array.isArray(response.params[key].values)) {
-            value = response.params[key].values.map((val) => val || '').join('');
-            if (response.params[key].charset) {
-                // convert "%AB" to "=?charset?Q?=AB?="
-                response.params[key] =
-                    '=?' +
-                        response.params[key].charset +
-                        '?Q?' +
-                        value
-                            // fix invalidly encoded chars
-                            .replace(/[=?_\s]/g, s => {
-                            const c = s.charCodeAt(0).toString(16);
-                            if (s === ' ') {
-                                return '_';
-                            }
-                            return '%' + (c.length < 2 ? '0' : '') + c;
-                        })
-                            // change from urlencoding to percent encoding
-                            .replace(/%/g, '=') +
-                        '?=';
-            }
-            else {
-                response.params[key] = value;
-            }
+    continuations.forEach((continuation, key) => {
+        if (Object.prototype.hasOwnProperty.call(response.params, key)) {
+            // The same name was also given as a plain parameter, which the starred keys were
+            // just deleted from around, so this write would be the only one in the function
+            // to override a name already taken. 'filename=plain.txt; filename*0=evil.txt'
+            // resolves to the plain parameter either way round, so the reading does not come
+            // down to which of the two spellings the sender put first
+            return;
         }
+        continuation.sections.sort((a, b) => a.nr - b.nr);
+        if (!continuation.charset) {
+            // nothing said which charset the percent escapes of an encoded section are in,
+            // so every section is passed on as the text it already is
+            response.params[key] = continuation.sections.map(section => section.value).join('');
+            return;
+        }
+        // convert "%AB" to "=?charset?Q?=AB?="
+        response.params[key] = '=?' + continuation.charset + '?Q?' + continuation.sections.map(_encodeContinuationSection).join('') + '?=';
     });
     return response;
+}
+/**
+ * Renders one parameter value continuation section as the payload of a Q encoded word.
+ *
+ * A section whose name ends in '*' is percent encoded and its escapes carry the bytes of
+ * the value, so they only have to be rewritten into the "=AB" spelling a Q encoded word
+ * uses. A section without the '*' is literal text (RFC 2231 section 4.1), so its '%' is a
+ * '%' and is escaped along with the characters a Q encoded word can not carry bare.
+ * Decoding a literal section invents bytes that never appeared on the wire: it is how the
+ * value 'filename*0*=utf-8''safe; filename*1=%2F..%2F..%2Fetc%2Fpasswd' was emitted as a
+ * filename every receiving client reads back as 'safe/../../etc/passwd'.
+ *
+ * @param section One collected continuation section
+ * @return The section as Q encoded word payload
+ */
+function _encodeContinuationSection(section) {
+    const specials = section.encoded ? /[=?_\s]/g : /[=?_\s%]/g;
+    return (section.value
+        // fix invalidly encoded chars
+        .replace(specials, s => {
+        const c = s.charCodeAt(0).toString(16);
+        if (s === ' ') {
+            return '_';
+        }
+        return '%' + (c.length < 2 ? '0' : '') + c;
+    })
+        // change from urlencoding to percent encoding
+        .replace(/%/g, '='));
 }
 /**
  * Returns file extension for a content type string. If no suitable extensions

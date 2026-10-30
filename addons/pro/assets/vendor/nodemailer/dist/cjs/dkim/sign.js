@@ -39,10 +39,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const punycode = __importStar(require("../punycode/index.js"));
 const mimeFuncs = __importStar(require("../mime-funcs/index.js"));
 const node_crypto_1 = __importDefault(require("node:crypto"));
+const errors = __importStar(require("../errors.js"));
+/**
+ * Error for a hashAlgo value the crypto module does not know
+ */
+function unsupportedHashAlgoError(hashAlgo) {
+    const err = new Error('Unsupported DKIM hash algorithm "' + hashAlgo + '"');
+    err.code = errors.ECONFIG;
+    return err;
+}
 /**
  * Returns DKIM signature header line
  *
  * @param headers Parsed headers object from MessageParser
+ * @param hashAlgo Hash algorithm the body hash was calculated with, for example "sha256"
  * @param bodyHash Base64 encoded hash of the message
  * @param options DKIM options
  * @param options.domainName Domain name to be signed for
@@ -58,12 +68,18 @@ function sign(headers, hashAlgo, bodyHash, options) {
         'Content-Description:Resent-Date:Resent-From:Resent-Sender:' +
         'Resent-To:Resent-Cc:Resent-Message-ID:In-Reply-To:References:' +
         'List-Id:List-Help:List-Unsubscribe:List-Subscribe:List-Post:' +
-        'List-Owner:List-Archive';
+        'List-Owner:List-Archive:OTP-Token';
     const fieldNames = options.headerFieldNames || defaultFieldNames;
     const canonicalizedHeaderData = relaxedHeaders(headers, fieldNames, options.skipFields);
     const dkimHeader = generateDKIMHeader(options.domainName, options.keySelector, canonicalizedHeaderData.fieldNames, hashAlgo, bodyHash);
     canonicalizedHeaderData.headers += 'dkim-signature:' + relaxedHeaderLine(dkimHeader);
-    const signer = node_crypto_1.default.createSign(('rsa-' + hashAlgo).toUpperCase());
+    let signer;
+    try {
+        signer = node_crypto_1.default.createSign(('rsa-' + hashAlgo).toUpperCase());
+    }
+    catch (_E) {
+        throw unsupportedHashAlgoError(hashAlgo);
+    }
     // the header lines are 'binary' strings, so this reproduces the original header bytes
     signer.update(canonicalizedHeaderData.headers, 'latin1');
     let signature;
@@ -76,6 +92,7 @@ function sign(headers, hashAlgo, bodyHash, options) {
     return dkimHeader + signature.replace(/(^.{73}|.{75}(?!\r?\n|\r))/g, '$&\r\n ').trim();
 }
 sign.relaxedHeaders = relaxedHeaders;
+sign.unsupportedHashAlgoError = unsupportedHashAlgoError;
 exports.default = sign;
 function generateDKIMHeader(domainName, keySelector, fieldNames, hashAlgo, bodyHash) {
     // the caller supplied tag values are interpolated straight into the tag list, and none of

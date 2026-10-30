@@ -9,6 +9,14 @@ import net from 'node:net';
 import * as errors from '../errors.js';
 import { isProtoKey } from '../shared/objects.js';
 const MAX_REDIRECTS = 5;
+// a stalled server would otherwise hold the request, and whatever waits on it, open forever
+const DEFAULT_TIMEOUT = 60 * 1000;
+// the inactivity timeout above is reset by every byte, so a server dripping one within each
+// window could still hold the request, and the message being built from it, open for as
+// long as it liked. The whole request, redirects included, has to be done within this
+const DEFAULT_MAX_TIME = 2 * 60 * 1000;
+// the body is usually buffered in memory by the caller, so an unbounded download is refused
+const DEFAULT_MAX_BYTES = 64 * 1024 * 1024;
 // Only genuine TLS settings are taken from options.tls. That object reaches us straight
 // from a user supplied attachment (content.tls), so keys like host, port, path, socketPath
 // or lookup would otherwise repoint the request at a destination that never went through
@@ -40,6 +48,17 @@ const TLS_OPTION_KEYS = [
     'sigalgs'
 ];
 /**
+ * Marks an error of the request as a fetch error, unless it is a permission model
+ * denial, which keeps its own code (see ERR_ACCESS_DENIED)
+ *
+ * @param err Error to mark
+ */
+function setFetchCode(err) {
+    if (err.code !== errors.ERR_ACCESS_DENIED) {
+        err.code = errors.EFETCH;
+    }
+}
+/**
  * Resolves a URL only if it is one this module is willing to request.
  *
  * urllib.parse throws for a host that contains forbidden bytes, and it is called for
@@ -63,12 +82,22 @@ function parseFetchUrl(url) {
     }
     return parsed;
 }
+// the port a request to the URL goes to, explicit or the default of its scheme
+function fetchPort(parsed) {
+    return parsed.port ? Number(parsed.port) : parsed.protocol === 'https:' ? 443 : 80;
+}
 function nmfetch(url, options) {
     options = options || {};
     options.fetchRes = options.fetchRes || new PassThrough();
     options.cookies = options.cookies || new Cookies();
     options.redirects = options.redirects || 0;
     options.maxRedirects = isNaN(options.maxRedirects) ? MAX_REDIRECTS : options.maxRedirects;
+    if (!options.deadline) {
+        options.maxTime = typeof options.maxTime === 'number' && options.maxTime >= 0 ? options.maxTime : DEFAULT_MAX_TIME;
+        // the one deadline is shared with the requests the redirects lead to, every hop
+        // gets the time that is left rather than starting over
+        options.deadline = options.maxTime ? Date.now() + options.maxTime : 0;
+    }
     const fetchRes = options.fetchRes;
     const parsed = parseFetchUrl(url);
     if (!parsed) {
@@ -135,7 +164,7 @@ function nmfetch(url, options) {
                     return;
                 }
                 finished = true;
-                err.code = errors.EFETCH;
+                setFetchCode(err);
                 err.sourceUrl = url;
                 fetchRes.emit('error', err);
             });
@@ -155,14 +184,14 @@ function nmfetch(url, options) {
                         .join('&'));
                 }
                 catch (E) {
-                    if (finished) {
-                        return undefined;
-                    }
+                    // the caller attaches its error listener once nmfetch has returned, so
+                    // the error is emitted on the next tick and the stream is handed back
+                    // the way every other failure is reported
                     finished = true;
                     E.code = errors.EFETCH;
                     E.sourceUrl = url;
-                    fetchRes.emit('error', E);
-                    return undefined;
+                    setImmediate(() => fetchRes.emit('error', E));
+                    return fetchRes;
                 }
             }
             else {
@@ -179,7 +208,7 @@ function nmfetch(url, options) {
         method,
         host: parsed.hostname,
         path: parsed.path,
-        port: parsed.port ? parsed.port : parsed.protocol === 'https:' ? 443 : 80,
+        port: fetchPort(parsed),
         headers,
         // Validate TLS certificates by default. Callers that genuinely need to
         // reach a self-signed/internal host opt out explicitly with
@@ -195,11 +224,7 @@ function nmfetch(url, options) {
             }
         });
     }
-    if (parsed.protocol === 'https:' &&
-        parsed.hostname &&
-        parsed.hostname !== reqOptions.host &&
-        !net.isIP(parsed.hostname) &&
-        !reqOptions.servername) {
+    if (parsed.protocol === 'https:' && parsed.hostname && parsed.hostname !== reqOptions.host && !net.isIP(parsed.hostname) && !reqOptions.servername) {
         reqOptions.servername = parsed.hostname;
     }
     try {
@@ -208,33 +233,52 @@ function nmfetch(url, options) {
     catch (E) {
         finished = true;
         setImmediate(() => {
-            E.code = errors.EFETCH;
+            setFetchCode(E);
             E.sourceUrl = url;
             fetchRes.emit('error', E);
         });
         return fetchRes;
     }
-    if (options.timeout) {
-        req.setTimeout(options.timeout, () => {
-            if (finished) {
-                return;
-            }
-            finished = true;
-            req.abort();
-            const err = new Error('Request Timeout');
-            err.code = errors.EFETCH;
-            err.sourceUrl = url;
-            fetchRes.emit('error', err);
-        });
-    }
-    req.on('error', (err) => {
+    // the whole request has to be done by options.deadline, see maxTime. The timer is
+    // released on every way out of the request, so it never outlives it
+    let deadlineTimer;
+    const clearDeadline = () => {
+        if (deadlineTimer) {
+            clearTimeout(deadlineTimer);
+            deadlineTimer = undefined;
+        }
+    };
+    // reports the first failure of this request on fetchRes and releases the request
+    const fail = (err, sourceUrl = url) => {
         if (finished) {
             return;
         }
         finished = true;
-        err.code = errors.EFETCH;
-        err.sourceUrl = url;
+        clearDeadline();
+        setFetchCode(err);
+        err.sourceUrl = sourceUrl;
         fetchRes.emit('error', err);
+        req.abort();
+    };
+    const timeout = typeof options.timeout === 'number' && options.timeout >= 0 ? options.timeout : DEFAULT_TIMEOUT;
+    if (timeout) {
+        req.setTimeout(timeout, () => fail(new Error('Request Timeout')));
+    }
+    if (options.deadline) {
+        deadlineTimer = setTimeout(() => fail(new Error('Request exceeded the allowed ' + options.maxTime + ' ms')), Math.max(options.deadline - Date.now(), 1));
+        // a pending deadline is no reason to keep the process alive
+        deadlineTimer.unref();
+    }
+    req.on('error', (err) => fail(err));
+    // a consumer that destroys the response stream before it ended does not want the rest of
+    // the body, release the request now instead of when the timeout fires
+    fetchRes.once('close', () => {
+        clearDeadline();
+        if (finished || fetchRes.readableEnded) {
+            return;
+        }
+        finished = true;
+        req.destroy();
     });
     req.on('response', res => {
         let inflate;
@@ -256,13 +300,7 @@ function nmfetch(url, options) {
             // redirect
             options.redirects++;
             if (options.redirects > options.maxRedirects) {
-                finished = true;
-                const err = new Error('Maximum redirect count exceeded');
-                err.code = errors.EFETCH;
-                err.sourceUrl = url;
-                fetchRes.emit('error', err);
-                req.abort();
-                return;
+                return fail(new Error('Maximum redirect count exceeded'));
             }
             // redirect does not include POST body
             options.method = 'GET';
@@ -282,64 +320,53 @@ function nmfetch(url, options) {
                 // call: that call gets its own `finished` flag and no handle on this
                 // request, so this one would stay open and could emit a second error on
                 // the shared fetchRes once it times out. Callers listen with req.once().
-                finished = true;
-                const err = new Error('Unsupported protocol for URL ' + redirectUrl);
-                err.code = errors.EFETCH;
-                err.sourceUrl = redirectUrl;
-                fetchRes.emit('error', err);
-                req.abort();
-                return;
+                return fail(new Error('Unsupported protocol for URL ' + redirectUrl), redirectUrl);
             }
-            // Do not forward credentials when the redirect leaves the original
-            // security context: a different host, or a downgrade from https to
-            // http (which would otherwise put them on the wire in cleartext).
-            // Strip sensitive request headers so an attacker who controls the
-            // redirect target cannot harvest them.
-            const crossHost = redirectParsed.hostname !== parsed.hostname;
-            const downgrade = parsed.protocol === 'https:' && redirectParsed.protocol === 'http:';
-            if (options.headers && (crossHost || downgrade)) {
+            // Do not forward credentials when the redirect leaves the origin: a different
+            // scheme, host or port is a different security context (an https to http
+            // downgrade would also put them on the wire in cleartext). Strip sensitive
+            // request headers so an attacker who controls the redirect target cannot
+            // harvest them.
+            const crossOrigin = redirectParsed.protocol !== parsed.protocol || redirectParsed.hostname !== parsed.hostname || fetchPort(redirectParsed) !== fetchPort(parsed);
+            if (options.headers && crossOrigin) {
                 const sensitive = ['authorization', 'cookie', 'proxy-authorization'];
                 Object.keys(options.headers).forEach(key => {
-                    if (sensitive.includes(key.toLowerCase())) {
+                    // normalized the way the request headers are built above, a padded name is sent too
+                    if (sensitive.includes(key.toLowerCase().trim())) {
                         delete options.headers[key];
                     }
                 });
             }
+            // this request is done with, release it so its socket and timeout do not
+            // outlive it and report a late error on the shared fetchRes
+            finished = true;
+            clearDeadline();
+            res.resume();
+            req.abort();
             return nmfetch(redirectUrl, options);
         }
         fetchRes.statusCode = res.statusCode;
         fetchRes.headers = res.headers;
         if (res.statusCode >= 300 && !options.allowErrorResponse) {
-            finished = true;
-            const err = new Error('Invalid status code ' + res.statusCode);
-            err.code = errors.EFETCH;
-            err.sourceUrl = url;
-            fetchRes.emit('error', err);
-            req.abort();
-            return;
+            return fail(new Error('Invalid status code ' + res.statusCode));
         }
-        res.on('error', (err) => {
-            if (finished) {
+        res.on('error', (err) => fail(err));
+        // the response is in, whatever is left of it is in memory and no longer on the network
+        res.once('end', () => clearDeadline());
+        const maxBytes = typeof options.maxBytes === 'number' && options.maxBytes > 0 ? options.maxBytes : DEFAULT_MAX_BYTES;
+        const source = inflate || res;
+        let received = 0;
+        source.on('data', (chunk) => {
+            received += chunk.length;
+            if (received <= maxBytes || finished) {
                 return;
             }
-            finished = true;
-            err.code = errors.EFETCH;
-            err.sourceUrl = url;
-            fetchRes.emit('error', err);
-            req.abort();
+            source.unpipe(fetchRes);
+            fail(new Error('Response size exceeds the allowed ' + maxBytes + ' bytes'));
         });
         if (inflate) {
             res.pipe(inflate).pipe(fetchRes);
-            inflate.on('error', (err) => {
-                if (finished) {
-                    return;
-                }
-                finished = true;
-                err.code = errors.EFETCH;
-                err.sourceUrl = url;
-                fetchRes.emit('error', err);
-                req.abort();
-            });
+            inflate.on('error', (err) => fail(err));
         }
         else {
             res.pipe(fetchRes);
@@ -354,11 +381,7 @@ function nmfetch(url, options) {
                 req.write(body);
             }
             catch (err) {
-                finished = true;
-                err.code = errors.EFETCH;
-                err.sourceUrl = url;
-                fetchRes.emit('error', err);
-                return;
+                return fail(err);
             }
         }
         req.end();
@@ -366,4 +389,6 @@ function nmfetch(url, options) {
     return fetchRes;
 }
 nmfetch.Cookies = Cookies;
+nmfetch.DEFAULT_TIMEOUT = DEFAULT_TIMEOUT;
+nmfetch.DEFAULT_MAX_TIME = DEFAULT_MAX_TIME;
 export default nmfetch;

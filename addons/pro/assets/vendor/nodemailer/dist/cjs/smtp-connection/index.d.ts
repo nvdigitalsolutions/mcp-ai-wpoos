@@ -3,8 +3,9 @@ import net from 'node:net';
 import tls from 'node:tls';
 import { type Readable } from 'node:stream';
 import * as shared from '../shared/index.js';
-import type { NodemailerError } from '../errors.js';
+import { type Callback, type NodemailerError } from '../errors.js';
 import type XOAuth2 from '../xoauth2/index.js';
+import type { XOAuth2Options } from '../xoauth2/index.js';
 /**
  * Custom authentication handlers keyed by (case insensitive) SASL method name
  */
@@ -25,11 +26,11 @@ export interface SMTPConnectionOptions {
     secured?: boolean | undefined;
     /** Server name for SNI, defaults to host when that is not an IP address */
     servername?: string | undefined;
-    /** Ignore STARTTLS even when the server advertises it */
+    /** Ignore STARTTLS even when the server advertises it, has no effect when requireTLS is set */
     ignoreTLS?: boolean | undefined;
-    /** Force STARTTLS, fail when the server does not support it */
+    /** Force STARTTLS, fail when the server does not support it. Takes precedence over ignoreTLS and opportunisticTLS */
     requireTLS?: boolean | undefined;
-    /** Continue unencrypted when the STARTTLS upgrade fails */
+    /** Continue unencrypted when the STARTTLS upgrade fails, has no effect when requireTLS is set */
     opportunisticTLS?: boolean | undefined;
     /** Name of the client server, sent with EHLO/HELO, CRLF is stripped */
     name?: string | undefined;
@@ -41,6 +42,8 @@ export interface SMTPConnectionOptions {
     greetingTimeout?: number | undefined;
     /** Time of inactivity in ms until the connection is closed, defaults to 10 minutes */
     socketTimeout?: number | undefined;
+    /** Largest single server response to accept in bytes, defaults to 1 MB */
+    maxResponseSize?: number | undefined;
     /** Time to wait in ms for the DNS requests to be resolved, defaults to 30 seconds */
     dnsTimeout?: number | undefined;
     /** Use LMTP instead of SMTP */
@@ -116,11 +119,22 @@ export interface SMTPConnectionCustomAuthResponse {
  */
 export type SMTPConnectionCustomAuthCommandCallback = (err: Error | null, data: SMTPConnectionCustomAuthResponse) => void;
 /**
+ * The auth object as a custom authentication handler sees it: the object handed to login()
+ * with the credentials filled in from its user and pass values
+ */
+export interface SMTPConnectionCustomAuthData extends SMTPConnectionAuth {
+    /** The user and pass values of the auth object, the way @types/nodemailer declared them */
+    credentials: SMTPConnectionCredentials & {
+        user: string;
+        pass: string;
+    };
+}
+/**
  * The object a custom authentication handler is run with
  */
 export interface SMTPConnectionCustomAuthContext {
-    /** The auth object handed to login() */
-    auth: SMTPConnectionAuth;
+    /** The auth object handed to login(), with the credentials filled in */
+    auth: SMTPConnectionCustomAuthData;
     /** Selected authentication method name */
     method: string;
     /** SMTP extensions the server advertised */
@@ -129,17 +143,20 @@ export interface SMTPConnectionCustomAuthContext {
     authMethods: string[];
     /** Maximum message size the server accepts, false when not advertised */
     maxAllowedSize: number | false;
-    /** Sends a command to the server. Returns a promise when no callback is given */
-    sendCommand(cmd: string, done?: SMTPConnectionCustomAuthCommandCallback): Promise<SMTPConnectionCustomAuthResponse> | undefined;
+    /** Sends a command to the server and resolves with the parsed reply */
+    sendCommand(cmd: string): Promise<SMTPConnectionCustomAuthResponse>;
+    /** Sends a command to the server and hands the parsed reply to the callback */
+    sendCommand(cmd: string, done: SMTPConnectionCustomAuthCommandCallback): void;
     /** Marks the user as authenticated */
     resolve(): void;
     /** Fails the authentication with an error */
     reject(err: Error | string): void;
 }
 /**
- * A custom authentication handler. Calls resolve() or reject() on the context, or returns a promise
+ * A custom authentication handler. Calls resolve() or reject() on the context, or returns a
+ * promise that settles the authentication. Any other return value is ignored
  */
-export type SMTPConnectionCustomAuthHandler = (ctx: SMTPConnectionCustomAuthContext) => void | Promise<unknown>;
+export type SMTPConnectionCustomAuthHandler = (ctx: SMTPConnectionCustomAuthContext) => unknown;
 /**
  * An envelope address, either a plain string or an object with an address property
  */
@@ -167,11 +184,15 @@ export interface SMTPEnvelopeDsn {
     orcpt?: string | null | undefined;
 }
 /**
+ * A single DSN notify value
+ */
+export type SMTPEnvelopeDsnNotify = 'NEVER' | 'SUCCESS' | 'FAILURE' | 'DELAY';
+/**
  * Envelope object accepted by send()
  */
 export interface SMTPEnvelope {
-    /** Sender address */
-    from?: string | SMTPEnvelopeAddress | undefined;
+    /** Sender address, false for the null sender of a bounce message (MAIL FROM:<>) */
+    from?: string | SMTPEnvelopeAddress | false | undefined;
     /** Recipient address or addresses */
     to?: string | SMTPEnvelopeAddress | Array<string | SMTPEnvelopeAddress> | undefined;
     /** Message size in bytes, sent as the SIZE parameter when the server supports it */
@@ -200,9 +221,9 @@ export interface SMTPConnectionEnvelope extends SMTPEnvelope {
     accepted: string[];
 }
 /**
- * Result of a sent message
+ * The recipient bookkeeping of a sent message, known once the envelope is accepted
  */
-export interface SMTPConnectionSendInfo {
+export interface SMTPConnectionEnvelopeInfo {
     /** Recipients the server accepted */
     accepted: string[];
     /** Recipients the server rejected */
@@ -211,19 +232,31 @@ export interface SMTPConnectionSendInfo {
     ehlo?: string[] | undefined;
     /** Errors for the rejected recipients */
     rejectedErrors?: NodemailerError[] | undefined;
-    /** Time in ms spent on the envelope commands */
-    envelopeTime?: number | undefined;
-    /** Time in ms spent on streaming the message */
-    messageTime?: number | undefined;
-    /** Size of the encoded message in bytes */
-    messageSize?: number | undefined;
-    /** Final server response for the message */
-    response?: string | undefined;
 }
 /**
- * Callback for send()
+ * Result of a sent message
  */
-export type SMTPConnectionSendCallback = (err: NodemailerError | null, info?: SMTPConnectionSendInfo) => void;
+export interface SMTPConnectionSendInfo extends SMTPConnectionEnvelopeInfo {
+    /** Time in ms spent on the envelope commands */
+    envelopeTime: number;
+    /** Time in ms spent on streaming the message */
+    messageTime: number;
+    /** Size of the encoded message in bytes */
+    messageSize: number;
+    /** Final server response for the message */
+    response: string;
+    /**
+     * Message-ID the server gave the message, with angle brackets, when its final reply names
+     * one in a known format (Microsoft 365 and Outlook.com, Amazon SES). Such a server replaces
+     * the Message-ID header, so the delivered copy carries this id instead of messageId
+     */
+    serverMessageId?: string | undefined;
+}
+/**
+ * Callback for send(), receives the result once the server accepted the message. The error
+ * path hands over the error alone
+ */
+export type SMTPConnectionSendCallback = Callback<SMTPConnectionSendInfo>;
 /**
  * Callback for login() and reset(), the result is true on success
  */
@@ -248,6 +281,12 @@ export interface SMTPConnectionConnectOptions extends tls.ConnectionOptions {
     allowInternalNetworkInterfaces?: boolean | undefined;
     /** DNS lookup timeout in ms */
     timeout?: number | undefined;
+    /** Try the resolved addresses in turn, see net.connect */
+    autoSelectFamily?: boolean | undefined;
+    /** Time in ms an address gets before the next one is tried, see net.connect */
+    autoSelectFamilyAttemptTimeout?: number | undefined;
+    /** Hands the resolved addresses to net.connect */
+    lookup?: net.LookupFunction | undefined;
 }
 /**
  * A queued handler for the next server response
@@ -261,13 +300,14 @@ export type SMTPConnectionResponseAction = (str: string) => void;
  *  * **port** - is the port to connect to (defaults to 587 or 465)
  *  * **host** - is the hostname or IP address to connect to (defaults to 'localhost')
  *  * **secure** - use SSL
- *  * **ignoreTLS** - ignore server support for STARTTLS
- *  * **requireTLS** - forces the client to use STARTTLS
+ *  * **ignoreTLS** - ignore server support for STARTTLS (has no effect when requireTLS is set)
+ *  * **requireTLS** - forces the client to use STARTTLS, takes precedence over ignoreTLS and opportunisticTLS
  *  * **name** - the name of the client server
  *  * **localAddress** - outbound address to bind to (see: http://nodejs.org/api/net.html#net_net_connect_options_connectionlistener)
  *  * **greetingTimeout** - Time to wait in ms until greeting message is received from the server (defaults to 30 seconds)
  *  * **connectionTimeout** - how many milliseconds to wait for the connection to establish (defaults to 2 minutes)
  *  * **socketTimeout** - Time of inactivity until the connection is closed (defaults to 10 minutes)
+ *  * **maxResponseSize** - Largest single server response to accept in bytes (defaults to 1 MB)
  *  * **dnsTimeout** - Time to wait in ms for the DNS requests to be resolved (defaults to 30 seconds)
  *  * **lmtp** - if true, uses LMTP instead of SMTP protocol
  *  * **logger** - bunyan compatible logger interface
@@ -282,7 +322,7 @@ export type SMTPConnectionResponseAction = (str: string) => void;
  */
 declare class SMTPConnection extends EventEmitter {
     id: string;
-    stage: string;
+    stage: 'init' | 'connected';
     options: SMTPConnectionOptions;
     secureConnection: boolean;
     alreadySecured: boolean;
@@ -351,7 +391,7 @@ declare class SMTPConnection extends EventEmitter {
      *
      * @param envelope Envelope object, {from: addr, to: [addr]}
      * @param message String, Buffer or a Stream
-     * @param callback Callback to return once sending is completed
+     * @param done Callback to return once sending is completed
      */
     send(envelope: SMTPEnvelope, message: string | Buffer | Readable, done: SMTPConnectionSendCallback): void;
     /**
@@ -367,12 +407,22 @@ declare class SMTPConnection extends EventEmitter {
 declare namespace SMTPConnection {
     type Options = SMTPConnectionOptions;
     type AuthenticationType = SMTPConnectionAuth;
+    type AuthenticationTypeLogin = SMTPConnectionAuth;
+    type AuthenticationTypeOAuth2 = SMTPConnectionAuth;
+    type AuthenticationTypeCustom = SMTPConnectionAuth;
+    type AuthenticationCredentials = SMTPConnectionAuth;
+    type AuthenticationOAuth2 = SMTPConnectionAuth;
     type Credentials = SMTPConnectionCredentials;
+    type OAuth2 = XOAuth2Options;
     type Envelope = SMTPEnvelope;
     type DSNOptions = SMTPEnvelopeDsn;
+    type DSNOption = SMTPEnvelopeDsnNotify;
     type SentMessageInfo = SMTPConnectionSendInfo;
+    type SMTPError = NodemailerError;
     type CustomAuthenticationContext = SMTPConnectionCustomAuthContext;
     type CustomAuthenticationResponse = SMTPConnectionCustomAuthResponse;
     type CustomAuthenticationHandlers = SMTPConnectionCustomAuthHandlers;
 }
+/** The same aliases as module level exports, for `import * as SMTPConnection` and `import SMTPConnection = require()` */
+export type { SMTPConnectionOptions as Options, SMTPConnectionAuth as AuthenticationType, SMTPConnectionAuth as AuthenticationTypeLogin, SMTPConnectionAuth as AuthenticationTypeOAuth2, SMTPConnectionAuth as AuthenticationTypeCustom, SMTPConnectionAuth as AuthenticationCredentials, SMTPConnectionAuth as AuthenticationOAuth2, SMTPConnectionCredentials as Credentials, XOAuth2Options as OAuth2, SMTPEnvelope as Envelope, SMTPEnvelopeDsn as DSNOptions, SMTPEnvelopeDsnNotify as DSNOption, SMTPConnectionSendInfo as SentMessageInfo, NodemailerError as SMTPError, SMTPConnectionCustomAuthContext as CustomAuthenticationContext, SMTPConnectionCustomAuthResponse as CustomAuthenticationResponse, SMTPConnectionCustomAuthHandlers as CustomAuthenticationHandlers };
 export default SMTPConnection;

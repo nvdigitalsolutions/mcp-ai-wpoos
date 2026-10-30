@@ -80,7 +80,7 @@ function formatSize(bytes) {
 console.log(`${colors.blue}🚀 Copying Pro addon dependencies to vendor directory...${colors.reset}\n`);
 
 const startTime = Date.now();
-const proPath = __dirname.replace('/scripts', '');
+const proPath = path.join(__dirname, '..');
 const vendorPath = path.join(proPath, 'assets', 'vendor');
 
 // Ensure vendor directory exists

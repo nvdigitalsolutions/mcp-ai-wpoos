@@ -10,7 +10,7 @@
  *   err.code = errors.ECONNECTION;
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EFETCH = exports.EURLACCESS = exports.EFILEACCESS = exports.EPROXY = exports.ECONFIG = exports.ESES = exports.ESENDMAIL = exports.EMAXRECIPIENTS = exports.EMAXLIMIT = exports.EOAUTH2 = exports.ENOAUTH = exports.EAUTH = exports.ESTREAM = exports.EMESSAGE = exports.EENVELOPE = exports.EPROTOCOL = exports.EREQUIRETLS = exports.ETLS = exports.EDNS = exports.ESOCKET = exports.ETIMEDOUT = exports.ECONNECTION = exports.ERROR_CODES = void 0;
+exports.ERR_ACCESS_DENIED = exports.isPermanentResponseCode = exports.isTransientError = exports.EFETCH = exports.EURLACCESS = exports.EFILEACCESS = exports.EPROXY = exports.ECONFIG = exports.ESES = exports.ESENDMAIL = exports.EMAXRECIPIENTS = exports.EMAXLIMIT = exports.EOAUTH2 = exports.ENOAUTH = exports.EAUTH = exports.ESTREAM = exports.EOTP = exports.EMESSAGE = exports.EENVELOPE = exports.EPROTOCOL = exports.EREQUIRETLS = exports.ETLS = exports.EDNS = exports.ESOCKET = exports.ETIMEDOUT = exports.ECONNECTION = exports.ERROR_CODES = void 0;
 /**
  * Error code descriptions for documentation and debugging
  */
@@ -27,6 +27,7 @@ exports.ERROR_CODES = {
     EPROTOCOL: 'Invalid SMTP server response',
     EENVELOPE: 'Invalid mail envelope (sender or recipients)',
     EMESSAGE: 'Message delivery error',
+    EOTP: 'Invalid one-time passcode data (otp option)',
     ESTREAM: 'Stream processing error',
     // Authentication errors
     EAUTH: 'Authentication failed',
@@ -55,6 +56,7 @@ exports.EREQUIRETLS = 'EREQUIRETLS';
 exports.EPROTOCOL = 'EPROTOCOL';
 exports.EENVELOPE = 'EENVELOPE';
 exports.EMESSAGE = 'EMESSAGE';
+exports.EOTP = 'EOTP';
 exports.ESTREAM = 'ESTREAM';
 exports.EAUTH = 'EAUTH';
 exports.ENOAUTH = 'ENOAUTH';
@@ -68,3 +70,27 @@ exports.EPROXY = 'EPROXY';
 exports.EFILEACCESS = 'EFILEACCESS';
 exports.EURLACCESS = 'EURLACCESS';
 exports.EFETCH = 'EFETCH';
+/**
+ * Tells whether the error ended the connection rather than rejected what was sent over it
+ */
+const isTransientError = (err) => err.responseCode === 421 || err.code === exports.ECONNECTION || err.code === exports.ESOCKET || err.code === exports.ETIMEDOUT;
+exports.isTransientError = isTransientError;
+/**
+ * Tells whether an SMTP reply code is a permanent rejection, one that retrying the same
+ * message would get again. RFC 5321 makes every 5yz reply a permanent negative completion
+ * and every 4yz reply a transient one. 503 (bad sequence of commands) is the exception: it
+ * says the session was in the wrong state for the command rather than that the message was
+ * refused, so the same message can go through on a new connection. 2yz and 3yz replies are
+ * only an error when the client expected something else, and are not permanent either.
+ *
+ * @param responseCode SMTP reply code
+ * @returns true for a permanent rejection
+ */
+const isPermanentResponseCode = (responseCode) => responseCode >= 500 && responseCode < 600 && responseCode !== 503;
+exports.isPermanentResponseCode = isPermanentResponseCode;
+/**
+ * Code Node.js sets on an error when its permission model (`--permission`) denies an
+ * operation. It is not replaced with the Nodemailer code of the failing step (`ESOCKET`,
+ * `EDNS`, `EFETCH`, ...), so a missing grant such as `--allow-net` stays recognizable.
+ */
+exports.ERR_ACCESS_DENIED = 'ERR_ACCESS_DENIED';
