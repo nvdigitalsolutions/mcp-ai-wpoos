@@ -162,8 +162,23 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   `media_upload` over `commerce/client.ts`, collection allowlist, `limit` ≤ 100),
   ops (5 — `site_status`, `preview_url`, `rebuild_trigger`, `screenshot`,
   `nds_export` — the NDS DTCG document + mapping report for the 4.2 round-trip).
+  Every mutating design write (`tokens_set`, `tokens_import_dtcg`,
+  `theme_create`, `theme_apply`, `theme_delete`) echoes the pre-write
+  `snapshot_id` it captured, so `tokens_rollback` can undo exactly that write
+  (not just the latest snapshot).
   Tool handlers read the request cookie/env through `mcp/context.ts`
   (AsyncLocalStorage set in `bff.ts`).
+- **Tool annotations + titles (2026-10-31):** every tool carries a `title`
+  and spec `annotations` (`readOnlyHint`/`destructiveHint`/`idempotentHint`/
+  `openWorldHint` — presets in `mcp/tools/util.ts`: `READ_ONLY_TOOL`,
+  `WRITE_TOOL`, `IDEMPOTENT_WRITE_TOOL`, `DESTRUCTIVE_WRITE_TOOL`;
+  `openWorldHint` stays false everywhere — no tool mutates external state).
+  Pinned by `tests/mcp/handshake.test.ts`. `preview_url` / `screenshot`
+  resolve their origin as `NVOOS_STOREFRONT_ORIGIN` → inbound request Host
+  (scheme from `X-Forwarded-Proto`, then socket TLS) → `http://localhost:4321`;
+  `requestOrigin()` lives in `mcp/bff.ts`, tool-side resolution in
+  `storefrontOrigin()` (`mcp/tools/ops.ts`), pinned by
+  `tests/unit/storefront-origin.test.ts` + the mcp-tools preview tests.
 - **Auth is fail-closed, split by surface:** reads open; design writes accept
   bearer `NVOOS_MCP_TOKEN` (timing-safe) OR a manager session (`canManage`
   via `/auth/me`); **contract writes (`cms_*` writes, `media_upload`) require

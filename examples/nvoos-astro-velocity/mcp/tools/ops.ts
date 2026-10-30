@@ -7,10 +7,18 @@
 
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { renderOrigin } from '../../src/lib/images';
 import type { TokenService } from '../../src/lib/tokens/service';
+import { getMcpRequestContext } from '../context';
 import { designService } from './design';
-import { envValue, errorResult, image, resolveApiBase, text } from './util';
+import {
+	IDEMPOTENT_WRITE_TOOL,
+	READ_ONLY_TOOL,
+	envValue,
+	errorResult,
+	image,
+	resolveApiBase,
+	text,
+} from './util';
 
 /**
  * ADS semantic token → NDS token mapping (Proposal 095 §4.2 round-trip).
@@ -37,9 +45,26 @@ const ADS_UNMAPPED: Array<{ ads: string; reason: string }> = [
 	{ ads: 'focus-ring', reason: 'NDS has no composite shadow token' },
 ];
 
-/** Storefront origin used by preview/screenshot URLs (no request URL here). */
-function storefrontOrigin(): string {
-	return renderOrigin(undefined, undefined);
+/**
+ * The storefront's own origin for preview/screenshot URLs. Precedence:
+ * an explicit NVOOS_STOREFRONT_ORIGIN env (http/https only, normalised),
+ * else the inbound request origin carried in the MCP request context
+ * (scheme + Host — set by the BFF, absent in stdio mode), else the local
+ * dev default. Exported for unit tests.
+ */
+export function storefrontOrigin(): string {
+	const configured = envValue('NVOOS_STOREFRONT_ORIGIN');
+	if (configured) {
+		try {
+			const url = new URL(configured.trim());
+			if (url.protocol === 'http:' || url.protocol === 'https:') {
+				return url.origin;
+			}
+		} catch {
+			// Fall through to the request origin / default.
+		}
+	}
+	return getMcpRequestContext()?.origin ?? 'http://localhost:4321';
 }
 
 /** Runtime (non-static, non-mode) theme count from the token service. */
@@ -58,8 +83,10 @@ export function registerOpsTools(server: McpServer, service: TokenService = desi
 	server.registerTool(
 		'site_status',
 		{
+			title: 'Storefront status',
 			description:
 				'Storefront operational status: commerce-contract reachability, active theme, runtime theme count, and opt-in capability flags. Read-only.',
+			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({}),
 		},
 		async () => {
@@ -95,8 +122,10 @@ export function registerOpsTools(server: McpServer, service: TokenService = desi
 	server.registerTool(
 		'preview_url',
 		{
+			title: 'Storefront preview URL',
 			description:
 				'Render a storefront preview URL for a path (path-only input, must start with /). Read-only.',
+			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({ path: z.string() }),
 		},
 		async (args) => {
@@ -114,8 +143,10 @@ export function registerOpsTools(server: McpServer, service: TokenService = desi
 	server.registerTool(
 		'nds_export',
 		{
+			title: 'Export NDS tokens',
 			description:
 				'Export the active ADS semantic tokens as an NV oOS Design System (NDS) DTCG document (group to token-id to $type/$value — the NDS exporter shape) for the Proposal 095 4.2 round-trip. Tokens without an NDS equivalent are reported, never silently dropped. Read-only.',
+			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({}),
 		},
 		async () => {
@@ -144,8 +175,10 @@ export function registerOpsTools(server: McpServer, service: TokenService = desi
 	server.registerTool(
 		'rebuild_trigger',
 		{
+			title: 'Trigger mirror rebuild',
 			description:
 				'Trigger the mirror rebuild webhook (POST {} to NVOOS_REBUILD_WEBHOOK_URL, optional NVOOS_REBUILD_WEBHOOK_TOKEN as a bearer credential). Write-gated.',
+			annotations: IDEMPOTENT_WRITE_TOOL,
 			inputSchema: z.object({}),
 		},
 		async () => {
@@ -187,8 +220,10 @@ export function registerOpsTools(server: McpServer, service: TokenService = desi
 	server.registerTool(
 		'screenshot',
 		{
+			title: 'Storefront screenshot',
 			description:
 				'Capture a PNG screenshot of a storefront path (opt-in via NVOOS_MCP_SCREENSHOT=1; path-only SSRF-safe input, must start with /). Write-gated.',
+			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({
 				path: z.string(),
 				width: z.number().int().min(320).max(2560).optional(),

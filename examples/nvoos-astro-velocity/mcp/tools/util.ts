@@ -7,8 +7,43 @@
 // for process globals directly (stdio mode falls back to process.env).
 // ---------------------------------------------------------------------------
 
+import type { ToolAnnotations } from '@modelcontextprotocol/server';
 import { getMcpRequestContext } from '../context';
 import { resolveBase } from '../../src/lib/commerce/client';
+
+/**
+ * Tool annotation presets (MCP spec 2025-06-18 tool annotations).
+ *
+ * The spec defaults are deliberately pessimistic (readOnlyHint false,
+ * destructiveHint true), so every tool declares its hints explicitly —
+ * clients (Zed, NV oOS assistants, ChatGPT read-only mode) gate on these.
+ * openWorldHint is false everywhere: this server's domain is closed (a
+ * fixed tool set against one commerce contract).
+ */
+export const READ_ONLY_TOOL: ToolAnnotations = {
+	readOnlyHint: true,
+	destructiveHint: false,
+	idempotentHint: false,
+	openWorldHint: false,
+};
+export const WRITE_TOOL: ToolAnnotations = {
+	readOnlyHint: false,
+	destructiveHint: false,
+	idempotentHint: false,
+	openWorldHint: false,
+};
+export const IDEMPOTENT_WRITE_TOOL: ToolAnnotations = {
+	readOnlyHint: false,
+	destructiveHint: false,
+	idempotentHint: true,
+	openWorldHint: false,
+};
+export const DESTRUCTIVE_WRITE_TOOL: ToolAnnotations = {
+	readOnlyHint: false,
+	destructiveHint: true,
+	idempotentHint: false,
+	openWorldHint: false,
+};
 
 /** Text tool result — plain-text content plus an optional structured payload. */
 export function text(content: string, structured?: unknown) {

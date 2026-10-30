@@ -11,6 +11,8 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 
 export interface McpRequestContext {
 	cookie?: string;
+	/** The inbound request origin (scheme + Host), set by the BFF; absent in stdio mode. */
+	origin?: string;
 	env: Record<string, string | undefined>;
 }
 

@@ -50,8 +50,9 @@ the request URL takes priority over any baked `NVOOS_API_BASE` at runtime
 
 ## `/mcp` assistant surface (Proposal 095)
 
-`/mcp` is the Streamable HTTP mount of `nvoos-astro-mcp` (20 tools: design,
-CMS, ops). It ships in the mirror build via the `astro:build:done`
+`/mcp` is the Streamable HTTP mount of `nvoos-astro-mcp` (21 tools: design,
+CMS, ops — each carrying a `title` + spec `annotations` for client-side
+rendering/gating). It ships in the mirror build via the `astro:build:done`
 integration (`dist/mcp-entry.mjs`) and needs these vars to be useful — and
 to stay secure — on Velocity:
 
@@ -65,6 +66,7 @@ to stay secure — on Velocity:
 | `NVOOS_SSR_API_ORIGIN` | no | Origin the server uses to verify manager sessions (`/auth/me`) and to resolve contract calls from tools; falls back to `NVOOS_API_BASE` |
 | `NVOOS_MCP_SCREENSHOT` | no | Opt-in `screenshot` tool. Off by default — the browser binary + headless launch cost only makes sense where an assistant does visual verification |
 | `NVOOS_REBUILD_WEBHOOK_URL` (+ `_TOKEN`) | no | Enables the `rebuild_trigger` tool. Point it at the mirror sync `repository_dispatch` URL (repo-scoped PAT as `_TOKEN`) or any rebuild webhook; the tool errors when unset |
+| `NVOOS_STOREFRONT_ORIGIN` | no | Override for the origin `preview_url` / `screenshot` render (http/https only). Defaults to the inbound request Host (scheme from `X-Forwarded-Proto`, then socket TLS state), so behind Velocity it usually needs no value; set it only when a proxy rewrites the Host |
 
 Auth model: reads are public; design writes accept the bearer token **or** a
 manager session cookie; contract writes (`cms_*` writes, `media_upload`)
