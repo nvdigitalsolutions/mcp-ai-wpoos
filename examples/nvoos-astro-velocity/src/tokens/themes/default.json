@@ -1,0 +1,23 @@
+{
+	"$comment": "Proposal 095 — default theme: light + dark modes. Mode values override the semantic layer. Dark values are additive (no legacy alias changes, so 092 visuals are unchanged in light mode).",
+	"light": {
+		"ink": "#1a1a1a",
+		"muted": "#6b6b6b",
+		"surface": "#ffffff",
+		"surface-alt": "#f5f5f4",
+		"line": "#e4e4e2",
+		"accent": "#0f6b4f",
+		"accent-ink": "#ffffff",
+		"danger": "#b3261e"
+	},
+	"dark": {
+		"ink": "#f5f5f4",
+		"muted": "#a3a3a3",
+		"surface": "#141414",
+		"surface-alt": "#1f1f1f",
+		"line": "#2e2e2e",
+		"accent": "#3d9c7d",
+		"accent-ink": "#0b0f0d",
+		"danger": "#ff6b5e"
+	}
+}

@@ -11,6 +11,8 @@
 import { ClientRouter } from 'astro:transitions';
 import CartBadge from '../islands/CartBadge';
 import ManageLink from '../islands/ManageLink';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import '../styles/generated/tokens.css';
 import '../styles/global.css';
 
 interface Props {
@@ -50,6 +52,24 @@ const {
 			))
 		}
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<script is:inline>
+			// ADS no-FOUC theme boot (Proposal 095): set data-theme before first
+			// paint so dark/brand themes never flash (Starlight pattern).
+			(function () {
+				var stored = null;
+				try {
+					stored = localStorage.getItem('nvoos-theme');
+				} catch (e) { /* storage unavailable */ }
+				var theme =
+					stored ||
+					(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+						? 'light'
+						: 'light');
+				if (theme && theme !== 'light') {
+					document.documentElement.setAttribute('data-theme', theme);
+				}
+			})();
+		</script>
 		<ClientRouter />
 		<script>
 			// Analytics forwarding (R4/D9): client-side navigations via
@@ -72,6 +92,7 @@ const {
 					<a href="/account/">Account</a>
 				</nav>
 				<CartBadge client:load transition:persist />
+				<ThemeToggle />
 				<ManageLink client:load />
 			</div>
 		</header>

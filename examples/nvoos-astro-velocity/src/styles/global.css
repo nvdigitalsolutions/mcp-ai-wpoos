@@ -1,21 +1,22 @@
 /* ---------------------------------------------------------------------------
- * Global styles — minimal design tokens for the storefront (Proposal 092).
- * Component styles live next to components; this file carries tokens,
- * resets and shared layout primitives only.
+ * Global styles — design tokens for the storefront (Proposals 092 + 095).
+ * The ADS token layer (src/tokens/*.json → generated/tokens.css) is the
+ * source of truth; the legacy --nv-* names below are ALIASES over the
+ * semantic layer so existing component styles keep working unchanged.
  * ------------------------------------------------------------------------- */
 
 :root {
-	--nv-ink: #1a1a1a;
-	--nv-muted: #6b6b6b;
-	--nv-surface: #ffffff;
-	--nv-surface-alt: #f5f5f4;
-	--nv-line: #e4e4e2;
-	--nv-accent: #0f6b4f;
-	--nv-accent-ink: #ffffff;
-	--nv-danger: #b3261e;
-	--nv-radius: 8px;
-	--nv-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-	--nv-space: 1rem;
+	--nv-ink: var(--ads-semantic-ink);
+	--nv-muted: var(--ads-semantic-muted);
+	--nv-surface: var(--ads-semantic-surface);
+	--nv-surface-alt: var(--ads-semantic-surface-alt);
+	--nv-line: var(--ads-semantic-line);
+	--nv-accent: var(--ads-semantic-accent);
+	--nv-accent-ink: var(--ads-semantic-accent-ink);
+	--nv-danger: var(--ads-semantic-danger);
+	--nv-radius: var(--ads-semantic-radius);
+	--nv-font: var(--ads-semantic-font);
+	--nv-space: var(--ads-semantic-space);
 }
 
 * {
