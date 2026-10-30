@@ -18,12 +18,19 @@ const relationshipValue = z.union([
 /** An upload value: attachment ID, URL string, or unset. */
 const uploadValue = z.union([z.number().positive(), z.string(), z.null()]);
 
+/** Structural view of a schema that carries zod 4's `.refine()` method. */
+type Refineable = {
+	refine(check: (v: unknown) => boolean, message?: string): z.ZodTypeAny;
+};
+
 /**
  * Apply the required refinement per field type.
  *
  * Number requiredness is baked into the inner schema (the preprocess maps
  * empty → undefined, which the required inner number rejects); everything
- * else uses nullish() + a refine so the field's label lands in the message.
+ * else uses an explicit null/undefined union + a refine so the field's
+ * label lands in the message. (zod 4 skips refinements on undefined for
+ * `.nullish()` schemas, so the union must name null/undefined explicitly.)
  */
 function refineRequired(base: z.ZodTypeAny, field: FieldConfig): z.ZodTypeAny {
 	const message = `${field.label} is required.`;
@@ -36,12 +43,12 @@ function refineRequired(base: z.ZodTypeAny, field: FieldConfig): z.ZodTypeAny {
 			if (field.hasMany) {
 				return (base as z.ZodArray<any>).min(1, message);
 			}
-			return (base as z.ZodEffects<any>).refine(
+			return (base as Refineable).refine(
 				(v) => v !== null && v !== undefined,
 				message
 			);
 		case 'upload':
-			return (base as z.ZodEffects<any>).refine(
+			return (base as Refineable).refine(
 				(v) =>
 					(typeof v === 'number' && v > 0) ||
 					(typeof v === 'string' && v !== ''),
@@ -67,7 +74,7 @@ export function buildSchema(config: CollectionConfig): z.ZodObject<any> {
 		switch (field.type) {
 			case 'number': {
 				let numberSchema = z.number({
-					invalid_type_error: field.required
+					error: field.required
 						? `${field.label} is required.`
 						: `${field.label} must be a number.`,
 				});
@@ -95,10 +102,10 @@ export function buildSchema(config: CollectionConfig): z.ZodObject<any> {
 			case 'relationship':
 				base = field.hasMany
 					? z.array(relationshipValue).default([])
-					: relationshipValue.nullish();
+					: z.union([relationshipValue, z.null(), z.undefined()]);
 				break;
 			case 'upload':
-				base = uploadValue.nullish();
+				base = z.union([uploadValue, z.undefined()]);
 				break;
 			case 'array':
 				base = z.any();

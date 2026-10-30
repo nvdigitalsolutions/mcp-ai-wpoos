@@ -21,6 +21,32 @@ export interface SESTransportOptions extends TransportOptions {
         SendEmailCommand: new (input: any) => unknown;
     };
 }
+/** The SESv2Client shape the transport needs */
+export type SESTransportClient = SESTransportOptions['SES']['sesClient'];
+/** The SendEmailCommand constructor shape the transport needs */
+export type SESTransportSendEmailCommand = SESTransportOptions['SES']['SendEmailCommand'];
+/**
+ * SendEmailCommand parameters, the shape of the `ses` message option that is merged into
+ * the API call. Any further SendEmailCommandInput field is accepted as well
+ */
+export interface SESSendEmailRequest {
+    FromEmailAddress?: string | undefined;
+    Destination?: {
+        ToAddresses?: string[] | undefined;
+        CcAddresses?: string[] | undefined;
+        BccAddresses?: string[] | undefined;
+    } | undefined;
+    ReplyToAddresses?: string[] | undefined;
+    Content?: unknown;
+    EmailTags?: Array<{
+        Name?: string | undefined;
+        Value?: string | undefined;
+    }> | undefined;
+    ConfigurationSetName?: string | undefined;
+    ListManagementOptions?: unknown;
+    FeedbackForwardingEmailAddress?: string | undefined;
+    [key: string]: unknown;
+}
 /**
  * The value the SES transport hands to the send callback
  */
@@ -47,7 +73,7 @@ declare class SESTransport extends EventEmitter {
     name: string;
     version: string;
     logger: Logger;
-    constructor(options?: SESTransportOptions);
+    constructor(options: SESTransportOptions);
     getRegion(cb: (err: Error | null, region?: string | false) => void): void;
     /**
      * Compiles a mailcomposer message and forwards it to SES
@@ -59,9 +85,14 @@ declare class SESTransport extends EventEmitter {
     /**
      * Verifies SES configuration
      *
-     * @param callback Callback function
+     * @returns Promise that resolves to true if the configuration is usable
      */
     verify(): Promise<true>;
+    /**
+     * Verifies SES configuration
+     *
+     * @param callback Callback function
+     */
     verify(callback: VerifyCallback): void;
 }
 /**
@@ -71,5 +102,11 @@ declare namespace SESTransport {
     type Options = SESTransportOptions;
     type MailOptions = SendMailOptions;
     type SentMessageInfo = SESSentMessageInfo;
+    type SESv2ClientLike = SESTransportClient;
+    type SendEmailCommandConstructorLike = SESTransportSendEmailCommand;
+    type SendEmailRequestLike = SESSendEmailRequest;
+    type MailSesOptions = SESSendEmailRequest;
 }
+/** The same aliases as module level exports, for `import * as SESTransport` and `import SESTransport = require()` */
+export type { SESTransportOptions as Options, SendMailOptions as MailOptions, SESSentMessageInfo as SentMessageInfo, SESTransportClient as SESv2ClientLike, SESTransportSendEmailCommand as SendEmailCommandConstructorLike, SESSendEmailRequest as SendEmailRequestLike, SESSendEmailRequest as MailSesOptions };
 export default SESTransport;

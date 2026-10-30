@@ -1,10 +1,16 @@
 import Mail from './mailer/index.js';
 import type { MailDefaults, SentMessageInfo, Transport, TransportOptions } from './mailer/index.js';
+import SMTPPool from './smtp-pool/index.js';
 import type { SMTPPoolOptions, SMTPPoolSentMessageInfo } from './smtp-pool/index.js';
+import SMTPTransport from './smtp-transport/index.js';
 import type { SMTPTransportOptions, SMTPSentMessageInfo } from './smtp-transport/index.js';
+import SendmailTransport from './sendmail-transport/index.js';
 import type { SendmailTransportOptions, SendmailSentMessageInfo } from './sendmail-transport/index.js';
+import StreamTransport from './stream-transport/index.js';
 import type { StreamTransportOptions, StreamSentMessageInfo } from './stream-transport/index.js';
-import type { JSONTransportOptions, JSONSentMessageInfo } from './json-transport/index.js';
+import JSONTransport from './json-transport/index.js';
+import type { JSONTransportOptions, JSONSentMessageInfo, JSONSentMessageObjectInfo } from './json-transport/index.js';
+import SESTransport from './ses-transport/index.js';
 import type { SESTransportOptions, SESSentMessageInfo } from './ses-transport/index.js';
 /**
  * Connection details of a service endpoint of an Ethereal test account
@@ -43,32 +49,48 @@ export type TransportConfig = SMTPTransportOptions | SMTPPoolOptions | SendmailT
  * @param defaults Default message fields that are merged into every message
  * @returns Mail instance wrapping the transport
  */
-export declare function createTransport(transporter: SMTPPoolOptions & {
+export declare function createTransport(transporter: SMTPPool | (SMTPPoolOptions & {
     pool: true;
-}, defaults?: MailDefaults): Mail<SMTPPoolSentMessageInfo>;
-export declare function createTransport(transporter: SendmailTransportOptions & {
+}), defaults?: MailDefaults): Mail<SMTPPoolSentMessageInfo, SMTPPoolOptions>;
+export declare function createTransport(transporter: SendmailTransport | (SendmailTransportOptions & {
     sendmail: true | string;
-}, defaults?: MailDefaults): Mail<SendmailSentMessageInfo>;
-export declare function createTransport(transporter: StreamTransportOptions & {
+}), defaults?: MailDefaults): Mail<SendmailSentMessageInfo, SendmailTransportOptions>;
+export declare function createTransport(transporter: StreamTransport | (StreamTransportOptions & {
     streamTransport: true;
-}, defaults?: MailDefaults): Mail<StreamSentMessageInfo>;
+}), defaults?: MailDefaults): Mail<StreamSentMessageInfo, StreamTransportOptions>;
 export declare function createTransport(transporter: JSONTransportOptions & {
     jsonTransport: true;
-}, defaults?: MailDefaults): Mail<JSONSentMessageInfo>;
-export declare function createTransport(transporter: SESTransportOptions & {
+    skipEncoding: true;
+}, defaults?: MailDefaults): Mail<JSONSentMessageObjectInfo, JSONTransportOptions>;
+export declare function createTransport(transporter: JSONTransport | (JSONTransportOptions & {
+    jsonTransport: true;
+}), defaults?: MailDefaults): Mail<JSONSentMessageInfo, JSONTransportOptions>;
+export declare function createTransport(transporter: SESTransport | (SESTransportOptions & {
     SES: object;
-}, defaults?: MailDefaults): Mail<SESSentMessageInfo>;
-export declare function createTransport<T = SentMessageInfo>(transporter: Transport<T>, defaults?: MailDefaults): Mail<T>;
-export declare function createTransport(transporter?: SMTPTransportOptions | string, defaults?: MailDefaults): Mail<SMTPSentMessageInfo>;
-export declare function createTransport(transporter?: TransportConfig | Transport<any> | string, defaults?: MailDefaults): Mail<any>;
+}), defaults?: MailDefaults): Mail<SESSentMessageInfo, SESTransportOptions>;
+export declare function createTransport(transporter: SMTPTransport, defaults?: MailDefaults): Mail<SMTPSentMessageInfo, SMTPTransportOptions>;
+export declare function createTransport<T = SentMessageInfo, D extends TransportOptions = TransportOptions>(transporter: Transport<T, D>, defaults?: MailDefaults): Mail<T, D>;
+export declare function createTransport(transporter?: SMTPTransportOptions | string, defaults?: MailDefaults): Mail<SMTPSentMessageInfo, SMTPTransportOptions>;
+export declare function createTransport(transporter?: TransportConfig | Transport<any, any> | string, defaults?: MailDefaults): Mail<any, any>;
 /**
  * Creates a test account from the Ethereal service (https://ethereal.email)
  *
- * @param apiUrl Optional API endpoint, defaults to https://api.nodemailer.com
- * @param callback Callback function to run with the account object. If not set, a Promise is returned
+ * @param callback Callback function to run with the account object
  */
 export declare function createTestAccount(callback: TestAccountCallback): void;
+/**
+ * Creates a test account from the Ethereal service (https://ethereal.email)
+ *
+ * @param apiUrl API endpoint, defaults to https://api.nodemailer.com
+ * @param callback Callback function to run with the account object
+ */
 export declare function createTestAccount(apiUrl: string | false | null | undefined, callback: TestAccountCallback): void;
+/**
+ * Creates a test account from the Ethereal service (https://ethereal.email)
+ *
+ * @param [apiUrl] API endpoint, defaults to https://api.nodemailer.com
+ * @returns Promise that resolves with the account object
+ */
 export declare function createTestAccount(apiUrl?: string | false | null): Promise<TestAccount>;
 /**
  * Resolves the Ethereal web URL for a message sent through an Ethereal test account
@@ -89,7 +111,7 @@ export type { Mail, MailDefaults, SentMessageInfo, Transport, TransportOptions }
 export type { SendMailOptions, Transporter } from './mailer/index.js';
 export type { NodemailerError, ErrorCode } from './errors.js';
 export type { MailMessage, MailMessageData, PluginFunction, VerifyCallback } from './mailer/index.js';
-export type { MailComposerOptions, MailComposerAttachment as Attachment, MailComposerAlternative as AttachmentLike, MailComposerIcalEvent as IcalAttachment, MailComposerListHeaders as ListHeaders } from './mail-composer/index.js';
+export type { MailComposerOptions, MailComposerAttachment as Attachment, MailComposerAlternative as AttachmentLike, MailComposerIcalEvent as IcalAttachment, MailComposerListHeaders as ListHeaders, MailComposerOtp as Otp } from './mail-composer/index.js';
 export type { MimeNodeAddress as Address, MimeNodeHeaders as Headers } from './mime-node/index.js';
 export type { SMTPConnectionOptions, SMTPConnectionAuth, SMTPEnvelope, SMTPEnvelopeDsn } from './smtp-connection/index.js';
 export type { DKIMOptions } from './dkim/index.js';
@@ -98,5 +120,5 @@ export type { SMTPTransportOptions, SMTPSentMessageInfo };
 export type { SMTPPoolOptions, SMTPPoolSentMessageInfo };
 export type { SendmailTransportOptions, SendmailSentMessageInfo };
 export type { StreamTransportOptions, StreamSentMessageInfo };
-export type { JSONTransportOptions, JSONSentMessageInfo };
+export type { JSONTransportOptions, JSONSentMessageInfo, JSONSentMessageObjectInfo };
 export type { SESTransportOptions, SESSentMessageInfo };

@@ -73,6 +73,21 @@ export interface MailComposerListHeaders {
     [key: string]: MailComposerListHeaderEntry | (MailComposerListHeaderEntry | MailComposerListHeaderEntry[])[];
 }
 /**
+ * The otp value: a one-time passcode and the origin it is bound to, sent as the OTP-Token
+ * header (draft-goto-otp-token)
+ */
+export interface MailComposerOtp {
+    /** The passcode, printable ascii */
+    code: string;
+    /** Origin the code is bound to, https or a loopback http origin. A full url is reduced to its origin */
+    origin: string;
+}
+/**
+ * Encoding for the non-ascii header values: quoted-printable ('Q', the default) or base64
+ * ('B'). Only the first letter is read, so the short forms work as well
+ */
+export type MailComposerTextEncoding = 'quoted-printable' | 'base64' | 'Q' | 'B';
+/**
  * Mail options, the message data MailComposer builds the MIME tree from. The address
  * fields, subject, messageId, date, inReplyTo and references become headers of the root
  * node. Some fields are read by the mailer that hands the data to MailComposer rather than
@@ -109,12 +124,14 @@ export interface MailComposerOptions {
     headers?: MimeNodeHeaders | undefined;
     /** List-* headers, read by the mailer */
     list?: MailComposerListHeaders | undefined;
+    /** One-time passcode for the OTP-Token header. An invalid value makes compile() throw an EOTP error */
+    otp?: MailComposerOtp | undefined;
     /** SMTP envelope to use instead of the one generated from the headers */
     envelope?: MimeNodeEnvelopeInput | undefined;
     /** Content-Transfer-Encoding to force for the text/* nodes that do not set their own */
     encoding?: string | undefined;
     /** Header string encoding, 'Q' (the default) or 'B', 'quoted-printable' and 'base64' are accepted as well */
-    textEncoding?: string | undefined;
+    textEncoding?: MailComposerTextEncoding | undefined;
     /** Pregenerated rfc822 message, used as is instead of building one */
     raw?: MimeNodeContent | undefined;
     /** Reject content that points to a URL */
@@ -129,8 +146,6 @@ export interface MailComposerOptions {
     baseBoundary?: string | undefined;
     /** 'win' for CRLF and 'linux' for LF line breaks in the generated message, kept as is when not set */
     newline?: string | undefined;
-    /** Keep the Bcc header in the generated message, listed for completeness, the transports set it on the message directly */
-    keepBcc?: boolean | undefined;
     /** Method to normalize header keys for custom caseing */
     normalizeHeaderKey?: MimeNodeOptions['normalizeHeaderKey'] | undefined;
     /** 'high', 'normal' or 'low', sets the priority headers, read by the mailer */
@@ -166,4 +181,6 @@ declare class MailComposer {
 declare namespace MailComposer {
     type Options = MailComposerOptions;
 }
+/** The same alias as a module level export, for `import * as MailComposer` and `import MailComposer = require()` */
+export type { MailComposerOptions as Options };
 export default MailComposer;

@@ -2,7 +2,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import * as punycode from '../punycode/index.js';
-import { PassThrough } from 'node:stream';
+import { PassThrough, finished, pipeline } from 'node:stream';
 import * as shared from '../shared/index.js';
 import urlModule from 'node:url';
 import * as mimeFuncs from '../mime-funcs/index.js';
@@ -26,6 +26,35 @@ const QUOTED_STRING = /^"(?:[^"\\]|\\[\s\S])*"$/;
 // else goes into angle brackets so that the header can not be read as more addresses than
 // the envelope carries
 const PLAIN_ADDRESS = /^[^\s"(),:;<>@[\\\]]+@[^\s"(),:;<>@[\\\]]+$/;
+/**
+ * A domain literal that ends an address, see _normalizeAddress
+ */
+const DOMAIN_LITERAL_TAIL = /@(\[[^[\]\\]*\])$/;
+/**
+ * Removes the whitespace inside every <...> of a References value. A "<" with no ">" after
+ * it is left as it is. An index scan, the regex /<[^>]*>/g rescans the rest of the value
+ * from every such "<"
+ *
+ * @param value References header value
+ * @returns The value with the msg-ids closed up
+ */
+function stripWhitespaceInAngleBrackets(value) {
+    let result = '';
+    let pos = 0;
+    for (;;) {
+        const open = value.indexOf('<', pos);
+        if (open < 0) {
+            break;
+        }
+        const close = value.indexOf('>', open + 1);
+        if (close < 0) {
+            break;
+        }
+        result += value.slice(pos, open) + value.slice(open, close + 1).replace(/\s/g, '');
+        pos = close + 1;
+    }
+    return result + value.slice(pos);
+}
 // domainToASCII and domainToUnicode are WHATWG host parsers rather than plain IDNA
 // mappers, so they do more than map: they cut the host at '/', '\\', '?' and '#', drop C0
 // controls, and percent-decode. Handing them 'evil.example/mail.corp.example' returns the
@@ -33,6 +62,42 @@ const PLAIN_ADDRESS = /^[^\s"(),:;<>@[\\\]]+@[^\s"(),:;<>@[\\\]]+$/;
 // unroutable garbage into mail for a domain the sender never named. None of these
 // characters are legal in a domain, so keep them away from the mapper.
 const URL_PARSER_UNSAFE = /[/\\?#%\x00-\x20\x7F]/;
+// RFC 1035 bounds a label at 63 octets and a domain at 253. An A-label is never shorter than
+// the code points it encodes, so anything past these bounds could not have become a valid
+// domain whichever way it is encoded. The bundled codec is super-linear in the length of a
+// label, a 60 KB label of distinct code points took seconds to encode, several times per
+// address, so it is only handed what could be a domain
+const MAX_DOMAIN_LENGTH = 253;
+const MAX_LABEL_LENGTH = 63;
+// pipeline() needs a callback to not throw, the errors it sees reach the last stream anyway
+const PIPELINE_NOOP = () => false;
+// The error a node streaming into an output that was destroyed stops with
+function abortedError() {
+    const err = new Error('Message stream was closed before the message was generated');
+    err.code = errors.ESTREAM;
+    return err;
+}
+/**
+ * Checks a domain against the DNS length limits, counted in code points per label and in
+ * total. The label separators are the ones the bundled codec splits on.
+ *
+ * @param domain Domain to check
+ * @return true if a label or the domain as a whole is too long to be a valid domain
+ */
+function exceedsDomainLimits(domain) {
+    let total = 0;
+    let label = 0;
+    for (const char of domain) {
+        total++;
+        if (char === '.' || char === '。' || char === '．' || char === '｡') {
+            label = 0;
+        }
+        else if (++label > MAX_LABEL_LENGTH) {
+            return true;
+        }
+    }
+    return total > MAX_DOMAIN_LENGTH;
+}
 /**
  * Encodes a domain the way browsers, the WHATWG URL Standard and DNS facing resolvers do,
  * which is with UTS-46 mapping applied before the Punycode step.
@@ -52,12 +117,19 @@ const URL_PARSER_UNSAFE = /[/\\?#%\x00-\x20\x7F]/;
  */
 function normalizeDomain(domain, toUnicode) {
     // domainToASCII and domainToUnicode landed in Node 7, the bundled codec covers Node 6
-    const mapper = toUnicode ? urlModule.domainToUnicode : urlModule.domainToASCII;
-    if (typeof mapper === 'function' && !URL_PARSER_UNSAFE.test(domain)) {
-        const mapped = mapper(domain);
+    if (typeof urlModule.domainToASCII === 'function' && typeof urlModule.domainToUnicode === 'function' && !URL_PARSER_UNSAFE.test(domain)) {
+        // The U-label form is decoded from the A-label form rather than from the input:
+        // Deno's domainToASCII returns an empty string for a label it cannot decode, while
+        // its domainToUnicode returns the label with U+FFFD in place of the bad part
+        const ascii = urlModule.domainToASCII(domain);
+        const mapped = ascii && toUnicode ? urlModule.domainToUnicode(ascii) : ascii;
         if (mapped) {
             return mapped;
         }
+    }
+    if (exceedsDomainLimits(domain)) {
+        // too long to be a domain whichever way it is encoded, keep it as supplied
+        return domain;
     }
     return toUnicode ? punycode.toUnicode(domain) : punycode.toASCII(domain);
 }
@@ -406,11 +478,7 @@ class MimeNode {
         if (typeof this.content.pipe === 'function') {
             // pre-stream handler. might be triggered if a stream is set as content
             // and 'error' fires before anything is done with this stream
-            this._contentErrorHandler = err => {
-                this.content.removeListener('error', this._contentErrorHandler);
-                this.content = err;
-            };
-            this.content.once('error', this._contentErrorHandler);
+            shared.recordStreamErrors(this.content);
         }
         else if (typeof this.content === 'string') {
             this._isPlainText = mimeFuncs.isPlainText(this.content);
@@ -548,24 +616,36 @@ class MimeNode {
                 return;
             }
             switch (header.key) {
+                // The comments of a MIME header are not part of its value and are dropped, so a
+                // caller supplied 'boundary=b (comment)' is the boundary b it names, and the
+                // header goes out without the comment
                 case 'Content-Disposition':
-                    structured = mimeFuncs.parseHeaderValue(value);
+                    structured = mimeFuncs.parseHeaderValue(value, { stripComments: true });
                     if (this.filename) {
                         structured.params.filename = this.filename;
                     }
                     value = mimeFuncs.buildHeaderValue(structured);
                     break;
                 case 'Content-Type':
-                    structured = mimeFuncs.parseHeaderValue(value);
+                    structured = mimeFuncs.parseHeaderValue(value, { stripComments: true });
                     // the type token decides multipart and charset below, so clean it before
                     // those run and not just on the way out, otherwise a control char makes
                     // the checks miss and the header ends up claiming a type it is not set up for
                     structured.value = (structured.value || '').toString().replace(/[\x00-\x1f\x7f]/g, '');
                     this._handleContentType(structured);
-                    if (structured.value.match(/^text\/plain\b/) &&
-                        typeof this.content === 'string' &&
-                        /[\u0080-\uFFFF]/.test(this.content)) {
+                    if (structured.value.match(/^text\/plain\b/) && typeof this.content === 'string' && /[\u0080-\uFFFF]/.test(this.content)) {
                         structured.params.charset = 'utf-8';
+                    }
+                    if (this.filename) {
+                        // the name parameter is derived from the filename below, so a name that
+                        // arrived inside the content type is dropped first (a plain parameter or
+                        // rfc2231 continuation sections), otherwise the header carries two and a
+                        // receiver that reads the first sees a name the filename does not match
+                        for (const paramKey of Object.keys(structured.params)) {
+                            if (/^name(\*|$)/i.test(paramKey)) {
+                                delete structured.params[paramKey];
+                            }
+                        }
                     }
                     value = mimeFuncs.buildHeaderValue(structured);
                     if (this.filename) {
@@ -594,7 +674,7 @@ class MimeNode {
                     }
                     break;
             }
-            value = this._encodeHeaderValue(key, value);
+            value = this.encodeHeaderValue(key, value);
             // skip empty lines
             if (!(value || '').toString().trim()) {
                 return;
@@ -622,40 +702,45 @@ class MimeNode {
     createReadStream(options) {
         options = options || {};
         const stream = new PassThrough(options);
-        let outputStream = stream;
-        let transform;
         this.stream(stream, options, err => {
             if (err) {
-                outputStream.emit('error', err);
+                stream.destroy(err);
                 return;
             }
             stream.end();
         });
-        for (let i = 0, len = this._transforms.length; i < len; i++) {
-            transform =
-                typeof this._transforms[i] === 'function' ? this._transforms[i]() : this._transforms[i];
-            outputStream.once('error', err => {
-                transform.emit('error', err);
-            });
-            outputStream = outputStream.pipe(transform);
+        // the content streams of the nodes the message did not get to are not going to be read
+        stream.once('close', () => {
+            if (!stream.writableFinished) {
+                this._destroyContentStreams();
+            }
+        });
+        // The stages are joined with pipeline, which destroys all of them when any one fails
+        // or is destroyed. An error anywhere reaches the returned stream exactly once, and a
+        // consumer that destroys the returned stream stops the tree from reading its sources
+        const stages = [stream];
+        for (const transform of this._transforms) {
+            stages.push(typeof transform === 'function' ? transform() : transform);
         }
         // ensure terminating newline after possible user transforms
-        transform = new LastNewline();
-        outputStream.once('error', err => {
-            transform.emit('error', err);
-        });
-        outputStream = outputStream.pipe(transform);
-        // dkim and stuff
-        for (let i = 0, len = this._processFuncs.length; i < len; i++) {
-            transform = this._processFuncs[i];
-            outputStream = transform(outputStream);
+        stages.push(new LastNewline());
+        let outputStream = pipeline(stages, PIPELINE_NOOP);
+        // dkim and stuff. A process function reads its input itself and reports the errors of
+        // that input on its output, so only a consumer abort has to be carried back upstream
+        for (const processFunc of this._processFuncs) {
+            const input = outputStream;
+            outputStream = processFunc(input);
+            if (outputStream !== input) {
+                finished(outputStream, err => {
+                    if (err) {
+                        input.destroy();
+                    }
+                });
+            }
         }
         if (this.newline) {
             const winbreak = ['win', 'windows', 'dos', '\r\n'].includes(this.newline.toString().toLowerCase());
-            const newlineTransform = winbreak ? new LeWindows() : new LeUnix();
-            const stream = outputStream.pipe(newlineTransform);
-            outputStream.on('error', err => stream.emit('error', err));
-            return stream;
+            outputStream = pipeline(outputStream, winbreak ? new LeWindows() : new LeUnix(), PIPELINE_NOOP);
         }
         return outputStream;
     }
@@ -681,8 +766,10 @@ class MimeNode {
     }
     stream(outputStream, options, done) {
         const transferEncoding = this.getTransferEncoding();
-        let contentStream;
-        let localStream;
+        // the streams this node is reading from. A consumer that goes away mid-message destroys
+        // the output, and these are released with it instead of staying paused with a file or a
+        // socket open behind them
+        let activeStreams = [];
         // protect actual callback against multiple triggering
         let returned = false;
         const callback = (err) => {
@@ -690,13 +777,39 @@ class MimeNode {
                 return;
             }
             returned = true;
+            outputStream.removeListener('close', onOutputClose);
             done(err);
+        };
+        function onOutputClose() {
+            for (const stream of activeStreams) {
+                stream.destroy();
+            }
+            return callback(abortedError());
+        }
+        // reads the streams into the output. The listener is only attached while the node reads
+        // something, a deeply nested tree would otherwise stack one per level on the output
+        const readInto = (...streams) => {
+            if (!activeStreams.length) {
+                outputStream.once('close', onOutputClose);
+            }
+            activeStreams = streams;
+        };
+        // stops here if the output was destroyed in the meantime
+        const aborted = () => {
+            if (outputStream.destroyed) {
+                callback(abortedError());
+                return true;
+            }
+            return false;
         };
         // for multipart nodes, push child nodes
         // for content nodes end the stream
         const finalize = () => {
             let childId = 0;
             const processChildNode = () => {
+                if (aborted()) {
+                    return;
+                }
                 if (childId >= this.childNodes.length) {
                     outputStream.write('\r\n--' + this.boundary + '--\r\n');
                     return callback();
@@ -719,89 +832,80 @@ class MimeNode {
         };
         // pushes node content
         const sendContent = () => {
-            if (this.content) {
-                if (Object.prototype.toString.call(this.content) === '[object Error]') {
-                    // content is already errored
-                    return callback(this.content);
-                }
-                if (typeof this.content.pipe === 'function') {
-                    this.content.removeListener('error', this._contentErrorHandler);
-                    this._contentErrorHandler = err => callback(err);
-                    this.content.once('error', this._contentErrorHandler);
-                }
-                const createStream = () => {
-                    if (['quoted-printable', 'base64'].includes(transferEncoding)) {
-                        contentStream = new (transferEncoding === 'base64' ? base64 : qp).Encoder(options);
-                        contentStream.pipe(outputStream, {
-                            end: false
-                        });
-                        contentStream.once('end', finalize);
-                        contentStream.once('error', err => callback(err));
-                        localStream = this._getStream(this.content);
-                        localStream.pipe(contentStream);
-                    }
-                    else {
-                        // anything that is not QP or Base54 passes as-is
-                        localStream = this._getStream(this.content);
-                        localStream.pipe(outputStream, {
-                            end: false
-                        });
-                        localStream.once('end', finalize);
-                    }
-                    localStream.once('error', err => callback(err));
-                };
-                if (this.content._resolve) {
-                    const chunks = [];
-                    let chunklen = 0;
-                    let returned = false;
-                    const sourceStream = this._getStream(this.content);
-                    sourceStream.on('error', err => {
-                        if (returned) {
-                            return;
-                        }
-                        returned = true;
-                        callback(err);
-                    });
-                    sourceStream.on('readable', () => {
-                        let chunk;
-                        while ((chunk = sourceStream.read()) !== null) {
-                            chunks.push(chunk);
-                            chunklen += chunk.length;
-                        }
-                    });
-                    sourceStream.on('end', () => {
-                        if (returned) {
-                            return;
-                        }
-                        returned = true;
-                        this.content._resolve = false;
-                        this.content._resolvedValue = Buffer.concat(chunks, chunklen);
-                        setImmediate(createStream);
-                    });
-                }
-                else {
-                    setImmediate(createStream);
-                }
+            if (aborted()) {
                 return;
             }
-            return setImmediate(finalize);
+            if (!this.content) {
+                return setImmediate(finalize);
+            }
+            const createStream = () => {
+                if (aborted()) {
+                    return;
+                }
+                const contentError = this._takeStreamContent(this.content);
+                if (contentError) {
+                    return callback(contentError);
+                }
+                const localStream = this._getStream(this.content);
+                if (['quoted-printable', 'base64'].includes(transferEncoding)) {
+                    const contentStream = transferEncoding === 'base64'
+                        ? new base64.Encoder(options)
+                        : // outside of text a lone CR or LF is data, encoding it keeps it from being
+                            // turned into a line break by a newline transform or the receiving side
+                            new qp.Encoder(Object.assign({}, options, { binary: !/^text\//i.test(this.contentType || '') }));
+                    readInto(localStream, contentStream);
+                    contentStream.pipe(outputStream, {
+                        end: false
+                    });
+                    // pipeline reports errors and tears both streams down. It calls back once the
+                    // encoder took all of its input, the encoded output may still be waiting to
+                    // be read, so the node is only done once the encoder's readable side ended
+                    pipeline(localStream, contentStream, err => err && callback(err));
+                    finished(contentStream, { writable: false }, err => (err ? callback(err) : finalize()));
+                }
+                else {
+                    // anything that is not QP or Base54 passes as-is
+                    readInto(localStream);
+                    localStream.pipe(outputStream, {
+                        end: false
+                    });
+                    finished(localStream, { writable: false }, err => (err ? callback(err) : finalize()));
+                }
+            };
+            if (this.content._resolve) {
+                const sourceStream = this._getStream(this.content);
+                readInto(sourceStream);
+                shared.resolveStream(sourceStream, (err, value) => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    if (returned) {
+                        return;
+                    }
+                    this.content._resolve = false;
+                    this.content._resolvedValue = value;
+                    setImmediate(createStream);
+                });
+            }
+            else {
+                setImmediate(createStream);
+            }
         };
         if (this._raw) {
             setImmediate(() => {
-                if (Object.prototype.toString.call(this._raw) === '[object Error]') {
-                    // content is already errored
-                    return callback(this._raw);
+                if (aborted()) {
+                    return;
                 }
-                // remove default error handler (if set)
-                if (typeof this._raw.pipe === 'function') {
-                    this._raw.removeListener('error', this._contentErrorHandler);
+                const rawError = this._takeStreamContent(this._raw);
+                if (rawError) {
+                    return callback(rawError);
                 }
                 const raw = this._getStream(this._raw);
+                readInto(raw);
                 raw.pipe(outputStream, {
                     end: false
                 });
-                raw.on('error', err => outputStream.emit('error', err));
-                raw.on('end', finalize);
+                finished(raw, { writable: false }, err => (err ? callback(err) : finalize()));
             });
         }
         else {
@@ -917,11 +1021,7 @@ class MimeNode {
         if (this._raw && typeof this._raw.pipe === 'function') {
             // pre-stream handler. might be triggered if a stream is set as content
             // and 'error' fires before anything is done with this stream
-            this._contentErrorHandler = err => {
-                this._raw.removeListener('error', this._contentErrorHandler);
-                this._raw = err;
-            };
-            this._raw.once('error', this._contentErrorHandler);
+            shared.recordStreamErrors(this._raw);
         }
         return this;
     }
@@ -946,6 +1046,37 @@ class MimeNode {
             node = node.parentNode;
         }
         return false;
+    }
+    /**
+     * Destroys the content streams of this node and of every node below it
+     *
+     * @internal
+     */
+    _destroyContentStreams() {
+        shared.destroyStream(this.content);
+        shared.destroyStream(this._raw);
+        for (const child of this.childNodes) {
+            child._destroyContentStreams();
+        }
+    }
+    /**
+     * Checks that a content value can still be read before the node streams it. A stream is
+     * refused once it errored, ended or was destroyed: piping it would either never finish or
+     * produce an empty body without any error
+     *
+     * @param content Node content or raw value
+     * @returns The error to stop with, or null when the content can be read
+     * @internal
+     */
+    _takeStreamContent(content) {
+        if (Object.prototype.toString.call(content) === '[object Error]') {
+            return content;
+        }
+        if (!content || typeof content.pipe !== 'function' || content._resolvedValue) {
+            // the value of a resolved stream is read from the buffered copy
+            return null;
+        }
+        return shared.unreadableStreamError(content);
     }
     /**
      * Detects and returns handle to a stream related with the content.
@@ -1125,15 +1256,15 @@ class MimeNode {
     _normalizeHeaderKey(key) {
         key = (key || '')
             .toString()
-            // no newlines in keys
-            .replace(/\r?\n|\r/g, ' ')
-            // a field name is printable ascii without the colon, so a control char or DEL
-            // can only be dropped, there is no quoting construct around a field name
-            .replace(/[\x00-\x1f\x7f]/g, '')
-            .trim()
+            // a field name is printable ascii without the colon, so a control char, DEL,
+            // whitespace or a colon can only be dropped, there is no quoting construct
+            // around a field name. A colon or a space left in place ends the name early on
+            // the wire: the key 'From: ceo@example.com (' with the value ')' was emitted as a
+            // second From header that neither setHeader() nor the Bcc filter could match
+            .replace(/[\s\x00-\x20\x7f:]/g, '')
             .toLowerCase()
             // use uppercase words, except MIME
-            .replace(/^X-SMTPAPI$|^(MIME|DKIM|ARC|BIMI)\b|^[a-z]|-(SPF|FBL|ID|MD5)$|-[a-z]/gi, c => c.toUpperCase())
+            .replace(/^X-SMTPAPI$|^(MIME|DKIM|ARC|BIMI)\b|^OTP(?=-Token$)|^[a-z]|-(SPF|FBL|ID|MD5)$|-[a-z]/gi, c => c.toUpperCase())
             // special case
             .replace(/^Content-Features$/i, 'Content-features');
         return key;
@@ -1161,8 +1292,7 @@ class MimeNode {
             // where it came from. MimeNode is exported and subclassable, so the generator is
             // not necessarily the one below. Stripping twice costs nothing, it is idempotent.
             const declared = _stripBoundaryControls(structured.params.boundary || this.boundary || '');
-            this.boundary = structured.params.boundary =
-                declared || _stripBoundaryControls(this._generateBoundary());
+            this.boundary = structured.params.boundary = declared || _stripBoundaryControls(this._generateBoundary());
         }
         else {
             this.boundary = false;
@@ -1180,13 +1310,19 @@ class MimeNode {
         return _stripBoundaryControls(this.rootNode.boundaryPrefix + '-' + this.rootNode.baseBoundary) + '-Part_' + this._nodeId;
     }
     /**
-     * Encodes a header value for use in the generated rfc2822 email.
+     * Encodes a header value the way this node encodes it in the generated message:
+     * address headers are punycoded and mime encoded, message id headers get their
+     * angle brackets, a Date object is formatted and any other value is mime encoded
+     * when it holds non-ascii or control characters (using the node's `textEncoding`).
      *
-     * @param key Header key
+     * The result is a single unfolded line without the key. Fold it before writing it
+     * into a message, `key + ': ' + value` folded at 76 characters is what the node does.
+     *
+     * @param key Header key, case insensitive
      * @param value Header value
-     * @internal
+     * @returns Encoded header value
      */
-    _encodeHeaderValue(key, value) {
+    encodeHeaderValue(key, value) {
         key = this._normalizeHeaderKey(key);
         switch (key) {
             // Structured headers
@@ -1200,7 +1336,7 @@ class MimeNode {
             // values enclosed in <>
             case 'Message-ID':
             case 'In-Reply-To':
-            case 'Content-Id':
+            case 'Content-ID':
                 // a msg-id is structured, so an encoded word inside the angle brackets would
                 // be read as literal text. drop the characters that can not appear in a header
                 // at all, but leave HT alone, it separates the ids of a multi id value
@@ -1215,27 +1351,35 @@ class MimeNode {
                     value = value + '>';
                 }
                 return value;
+            // a structured field (RFC 9651) that can not be mime encoded, an encoded word would
+            // turn its quoted strings into text that no structured field parser reads. Only
+            // the characters that can not appear in a header at all are removed
+            case 'OTP-Token':
+                return (value || '')
+                    .toString()
+                    .replace(/\r?\n|\r/g, ' ')
+                    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
             // space separated list of values enclosed in <>
-            case 'References':
-                value = [].concat
-                    .apply([], [].concat(value || '').map(elm => {
-                    elm = (elm || '')
+            case 'References': {
+                const ids = [];
+                for (const entry of [].concat(value || '')) {
+                    const elm = (entry || '')
                         .toString()
                         .replace(/\r?\n|\r/g, ' ')
                         .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')
                         .trim();
-                    return elm.replace(/<[^>]*>/g, str => str.replace(/\s/g, '')).split(/\s+/);
-                }))
-                    .map(elm => {
-                    if (elm.charAt(0) !== '<') {
-                        elm = '<' + elm;
+                    for (let id of stripWhitespaceInAngleBrackets(elm).split(/\s+/)) {
+                        if (id.charAt(0) !== '<') {
+                            id = '<' + id;
+                        }
+                        if (id.charAt(id.length - 1) !== '>') {
+                            id = id + '>';
+                        }
+                        ids.push(id);
                     }
-                    if (elm.charAt(elm.length - 1) !== '>') {
-                        elm = elm + '>';
-                    }
-                    return elm;
-                });
-                return value.join(' ').trim();
+                }
+                return ids.join(' ').trim();
+            }
             case 'Date':
                 if (Object.prototype.toString.call(value) === '[object Date]') {
                     return value.toUTCString().replace(/GMT/, '+0000');
@@ -1252,10 +1396,32 @@ class MimeNode {
         }
     }
     /**
+     * Encodes a header value without a node at hand. Same as the instance method of a
+     * node created with the given options.
+     *
+     * @param key Header key, case insensitive
+     * @param value Header value
+     * @param [options] Encoding options
+     * @param [options.textEncoding] either 'Q' (the default) or 'B'
+     * @returns Encoded header value
+     */
+    static encodeHeaderValue(key, value, options) {
+        return new MimeNode(false, { textEncoding: options?.textEncoding }).encodeHeaderValue(key, value);
+    }
+    /**
+     * Alias of encodeHeaderValue, kept for callers that used the method before it was public
+     *
+     * @internal
+     */
+    _encodeHeaderValue(key, value) {
+        return this.encodeHeaderValue(key, value);
+    }
+    /**
      * Rebuilds address object using punycode and other adjustments
      *
      * @param addresses An array of address objects
      * @param [uniqueList] An array to be populated with addresses
+     * @param [seenAddresses] Addresses already added to uniqueList, shared with recursive calls to keep deduplication linear
      * @return address string
      * @internal
      */
@@ -1313,7 +1479,10 @@ class MimeNode {
             // callers use an empty value to detect a missing address
             return address;
         }
-        const lastAt = address.lastIndexOf('@');
+        // dtext includes '@', so a domain literal is split off at the '@' in front of it and
+        // not at the last one, which delivered 'a@[x@evil.com]' to evil.com
+        const literal = address.charAt(address.length - 1) === ']' ? DOMAIN_LITERAL_TAIL.exec(address) : null;
+        const lastAt = literal ? address.length - literal[1].length - 1 : address.lastIndexOf('@');
         if (lastAt < 0) {
             // Bare username, there is no domain to split off
             return this._normalizeLocalPart(address);
@@ -1393,7 +1562,7 @@ class MimeNode {
     /**
      * If needed, mime encodes the name part
      *
-     * @param name Name part of an address
+     * @param value Name part of an address
      * @returns Mime word encoded string if needed
      * @internal
      */

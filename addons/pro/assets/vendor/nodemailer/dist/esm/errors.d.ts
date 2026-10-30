@@ -21,6 +21,7 @@ export declare const ERROR_CODES: {
     readonly EPROTOCOL: "Invalid SMTP server response";
     readonly EENVELOPE: "Invalid mail envelope (sender or recipients)";
     readonly EMESSAGE: "Message delivery error";
+    readonly EOTP: "Invalid one-time passcode data (otp option)";
     readonly ESTREAM: "Stream processing error";
     readonly EAUTH: "Authentication failed";
     readonly ENOAUTH: "Authentication credentials not provided";
@@ -48,6 +49,7 @@ export declare const EREQUIRETLS = "EREQUIRETLS";
 export declare const EPROTOCOL = "EPROTOCOL";
 export declare const EENVELOPE = "EENVELOPE";
 export declare const EMESSAGE = "EMESSAGE";
+export declare const EOTP = "EOTP";
 export declare const ESTREAM = "ESTREAM";
 export declare const EAUTH = "EAUTH";
 export declare const ENOAUTH = "ENOAUTH";
@@ -62,19 +64,52 @@ export declare const EFILEACCESS = "EFILEACCESS";
 export declare const EURLACCESS = "EURLACCESS";
 export declare const EFETCH = "EFETCH";
 /**
+ * Tells whether the error ended the connection rather than rejected what was sent over it
+ */
+export declare const isTransientError: (err: {
+    code?: string | undefined;
+    responseCode?: number | undefined;
+}) => boolean;
+/**
+ * Tells whether an SMTP reply code is a permanent rejection, one that retrying the same
+ * message would get again. RFC 5321 makes every 5yz reply a permanent negative completion
+ * and every 4yz reply a transient one. 503 (bad sequence of commands) is the exception: it
+ * says the session was in the wrong state for the command rather than that the message was
+ * refused, so the same message can go through on a new connection. 2yz and 3yz replies are
+ * only an error when the client expected something else, and are not permanent either.
+ *
+ * @param responseCode SMTP reply code
+ * @returns true for a permanent rejection
+ */
+export declare const isPermanentResponseCode: (responseCode: number) => boolean;
+/**
+ * Code Node.js sets on an error when its permission model (`--permission`) denies an
+ * operation. It is not replaced with the Nodemailer code of the failing step (`ESOCKET`,
+ * `EDNS`, `EFETCH`, ...), so a missing grant such as `--allow-net` stays recognizable.
+ */
+export declare const ERR_ACCESS_DENIED = "ERR_ACCESS_DENIED";
+/**
  * An Error together with the properties Nodemailer attaches to the errors it
  * hands to callers. Every property is optional, the set that is present
- * depends on where the error originated.
+ * depends on where the error originated. Socket level errors keep the errno
+ * and syscall fields Node.js sets on them. `code` (see ERROR_CODES) is
+ * inherited from ErrnoException, not redeclared, so it follows the
+ * consumer's @types/node.
  */
-export interface NodemailerError extends Error {
-    /** Nodemailer error code, see ERROR_CODES */
-    code?: string | undefined;
+export interface NodemailerError extends NodeJS.ErrnoException {
     /** SMTP command that was in flight when the server replied with an error */
     command?: string | undefined;
     /** Raw SMTP server response */
     response?: string | undefined;
     /** Numeric SMTP response code */
     responseCode?: number | undefined;
+    /**
+     * Set together with responseCode, from the reply class: true when the server rejected the
+     * message for good (5xx except 503), false when the same message may be accepted on a later
+     * attempt (4xx, 503, or an unexpected 2xx or 3xx). Not set on an error that carries no SMTP
+     * reply, such as a connection failure or missing credentials, see isPermanentResponseCode
+     */
+    permanent?: boolean | undefined;
     /** URL of the resource that could not be fetched */
     sourceUrl?: string | undefined;
     /** Recipient address the error applies to */
@@ -83,6 +118,10 @@ export interface NodemailerError extends Error {
     rejected?: string[] | undefined;
     /** Per-recipient errors for the rejected addresses */
     rejectedErrors?: NodemailerError[] | undefined;
+    /** The code the error had before Nodemailer set its own, such as ECONNREFUSED for an ESOCKET error */
+    originalCode?: string | undefined;
+    /** Which wait an ETIMEDOUT error ended: connecting, the greeting, a TLS upgrade or an idle socket */
+    timeoutType?: 'CONNECT_TIMEOUT' | 'GREETING_TIMEOUT' | 'UPGRADE_TIMEOUT' | 'SOCKET_TIMEOUT' | undefined;
 }
 /**
  * Node style callback: called with an error, or with null and the result

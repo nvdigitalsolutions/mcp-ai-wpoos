@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import type { NodemailerError } from '../errors.js';
 import type { MessageParserHeaderLine } from './message-parser.js';
 /**
  * Private key accepted by crypto.Sign#sign: a PEM string, a Buffer, a KeyObject or an
@@ -35,6 +36,7 @@ export interface DKIMRelaxedHeaders {
  * Returns DKIM signature header line
  *
  * @param headers Parsed headers object from MessageParser
+ * @param hashAlgo Hash algorithm the body hash was calculated with, for example "sha256"
  * @param bodyHash Base64 encoded hash of the message
  * @param options DKIM options
  * @param options.domainName Domain name to be signed for
@@ -45,5 +47,6 @@ export interface DKIMRelaxedHeaders {
 declare function sign(headers: MessageParserHeaderLine[], hashAlgo: string, bodyHash: string, options?: DKIMSignOptions): string | false;
 declare namespace sign {
     var relaxedHeaders: (headers: MessageParserHeaderLine[], fieldNames?: string, skipFields?: string) => DKIMRelaxedHeaders;
+    var unsupportedHashAlgoError: (hashAlgo: string) => NodemailerError;
 }
 export default sign;

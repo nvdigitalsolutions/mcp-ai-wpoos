@@ -17,8 +17,10 @@ export interface SMTPPoolOptions extends SMTPTransportOptions {
     rateLimit?: number | undefined;
     /** Time window for rateLimit in milliseconds, defaults to 1000 */
     rateDelta?: number | undefined;
-    /** How many times a message is requeued when its connection closes while sending, unlimited when not set or negative */
+    /** How many times a message is requeued when its connection closes while sending, defaults to 5, a negative value means unlimited */
     maxRequeues?: number | undefined;
+    /** Time in milliseconds a connection may stay idle before it is closed, defaults to 4 minutes, 0 keeps it open until the server closes it */
+    idleTimeout?: number | undefined;
 }
 /**
  * The pool options once the constructor has applied the defaults
@@ -26,6 +28,8 @@ export interface SMTPPoolOptions extends SMTPTransportOptions {
 export type SMTPPoolResolvedOptions = SMTPPoolOptions & {
     maxConnections: number;
     maxMessages: number;
+    maxRequeues: number;
+    idleTimeout: number;
 };
 /**
  * Result of a message sent through the pool, same as for the SMTP transport
@@ -80,7 +84,7 @@ declare class SMTPPool extends EventEmitter {
     /**
      * The Mail instance using this transport, assigned by Mail
      */
-    mailer?: Mail<SMTPPoolSentMessageInfo> | undefined;
+    mailer?: Mail<SMTPPoolSentMessageInfo, SMTPPoolOptions> | undefined;
     constructor(options?: SMTPPoolOptions | string);
     /**
      * Placeholder function for creating proxy sockets. This method immediatelly returns
@@ -96,7 +100,7 @@ declare class SMTPPool extends EventEmitter {
      * @param mail Mail object
      * @param callback Callback function
      */
-    send(mail: MailMessage, callback: SMTPPoolSendCallback): boolean;
+    send(mail: MailMessage<SMTPPoolSentMessageInfo>, callback: SMTPPoolSendCallback): boolean;
     /**
      * Closes all connections in the pool. If there is a message being sent, the connection
      * is closed later
@@ -107,11 +111,27 @@ declare class SMTPPool extends EventEmitter {
      */
     isIdle(): boolean;
     /**
+     * Counts the messages the pool has not finished with yet: the ones waiting in the queue
+     * plus the ones a connection is transmitting right now. isIdle() only tells whether the
+     * pool can take another message, it is already true while a message is still being sent,
+     * so use this to check that nothing would be lost by closing the pool. A message that is
+     * re-queued after its connection dropped is counted until its callback runs, also while it waits to be put back on the queue, and
+     * it is no longer counted by the time its callback runs.
+     *
+     * @returns Number of queued and in-flight messages
+     */
+    pendingCount(): number;
+    /**
+     * Verifies SMTP configuration
+     *
+     * @returns Promise that resolves to true if the configuration is usable
+     */
+    verify(): Promise<true>;
+    /**
      * Verifies SMTP configuration
      *
      * @param callback Callback function
      */
-    verify(): Promise<true>;
     verify(callback: VerifyCallback): void;
 }
 /**
@@ -122,4 +142,6 @@ declare namespace SMTPPool {
     type MailOptions = SendMailOptions;
     type SentMessageInfo = SMTPPoolSentMessageInfo;
 }
+/** The same aliases as module level exports, for `import * as SMTPPool` and `import SMTPPool = require()` */
+export type { SMTPPoolOptions as Options, SendMailOptions as MailOptions, SMTPPoolSentMessageInfo as SentMessageInfo };
 export default SMTPPool;

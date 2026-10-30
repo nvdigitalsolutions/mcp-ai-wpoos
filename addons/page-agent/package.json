@@ -10,9 +10,12 @@
   "dependencies": {
     "page-agent": "^1.11.0"
   },
-  "devDependencies": {
-    "esbuild": "^0.28.1"
-  },
+  	"devDependencies": {
+  		"esbuild": "^0.28.1"
+  	},
+  	"overrides": {
+  		"zod@^4": ">=4.6.6 <5"
+  	},
   "keywords": [
     "wordpress",
     "nvoos",

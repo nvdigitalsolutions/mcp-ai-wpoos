@@ -43,6 +43,10 @@ const index_js_2 = __importDefault(require("../well-known/index.js"));
 const shared = __importStar(require("../shared/index.js"));
 const errors = __importStar(require("../errors.js"));
 const packageData = __importStar(require("../package-info.js"));
+/** First delay before a requeued message is retried, doubled on every further requeue */
+const REQUEUE_BASE_DELAY = 50;
+/** Upper bound for the requeue delay */
+const REQUEUE_MAX_DELAY = 2000;
 /**
  * Creates a SMTP pool transport object for Nodemailer
  *
@@ -74,6 +78,11 @@ class SMTPPool extends node_events_1.EventEmitter {
         );
         this.options.maxConnections = this.options.maxConnections || 5;
         this.options.maxMessages = this.options.maxMessages || 100;
+        // a default bound, a server that closes every connection before the greeting would otherwise be retried forever
+        this.options.maxRequeues = typeof this.options.maxRequeues === 'number' ? this.options.maxRequeues : 5;
+        // below the 5 minutes RFC 5321 asks servers to wait at least, the connection is closed by us
+        // and not by the server in the middle of handing it a message
+        this.options.idleTimeout = typeof this.options.idleTimeout === 'number' ? this.options.idleTimeout : 4 * 60 * 1000;
         this.logger = shared.getLogger(this.options, {
             component: this.options.component || 'smtp-pool'
         });
@@ -91,6 +100,7 @@ class SMTPPool extends node_events_1.EventEmitter {
         this._queue = [];
         this._connections = [];
         this._connectionCounter = 0;
+        this._pending = 0;
         this.idling = true;
         setImmediate(() => {
             if (this.idling) {
@@ -117,12 +127,26 @@ class SMTPPool extends node_events_1.EventEmitter {
      */
     send(mail, callback) {
         if (this._closed) {
+            // Mail.sendMail ignores the return value, so without a callback its promise would never settle
+            const err = new Error('Connection pool was closed');
+            err.code = errors.ECONNECTION;
+            setImmediate(() => callback(err));
             return false;
         }
+        // counted until the callback runs, whichever path runs it: delivered, failed, requeued
+        // until it gives up, or drained by close()
+        let counted = true;
+        this._pending++;
         this._queue.push({
             mail,
             requeueAttempts: 0,
-            callback
+            callback: (err, info) => {
+                if (counted) {
+                    counted = false;
+                    this._pending--;
+                }
+                callback(err, info);
+            }
         });
         if (this.idling && this._queue.length >= this.options.maxConnections) {
             this.idling = false;
@@ -330,15 +354,22 @@ class SMTPPool extends node_events_1.EventEmitter {
                 // Note that we must wait a bit.. because the callback of the 'error' handler might be called
                 // in the next event loop
                 setTimeout(() => {
+                    let delay = 0;
                     if (connection.queueEntry) {
                         if (this._shouldRequeuOnConnectionClose(connection.queueEntry)) {
-                            this._requeueEntryOnConnectionClose(connection);
+                            delay = this._requeueEntryOnConnectionClose(connection);
                         }
                         else {
                             this._failDeliveryOnConnectionClose(connection);
                         }
                     }
-                    this._continueProcessing();
+                    if (delay) {
+                        // back off, a server that keeps dropping connections is not hammered
+                        setTimeout(() => this._continueProcessing(), delay);
+                    }
+                    else {
+                        this._continueProcessing();
+                    }
                 }, 50);
             }
             else {
@@ -353,7 +384,7 @@ class SMTPPool extends node_events_1.EventEmitter {
     }
     /** @internal */
     _shouldRequeuOnConnectionClose(queueEntry) {
-        if (this.options.maxRequeues === undefined || this.options.maxRequeues < 0) {
+        if (this.options.maxRequeues < 0) {
             return true;
         }
         return queueEntry.requeueAttempts < this.options.maxRequeues;
@@ -362,7 +393,9 @@ class SMTPPool extends node_events_1.EventEmitter {
     _failDeliveryOnConnectionClose(connection) {
         if (connection.queueEntry && connection.queueEntry.callback) {
             try {
-                connection.queueEntry.callback(new Error('Reached maximum number of retries after connection was closed'));
+                const err = new Error('Reached maximum number of retries after connection was closed');
+                err.code = errors.ECONNECTION;
+                connection.queueEntry.callback(err);
             }
             catch (E) {
                 this.logger.error({
@@ -377,6 +410,7 @@ class SMTPPool extends node_events_1.EventEmitter {
     }
     /** @internal */
     _requeueEntryOnConnectionClose(connection) {
+        const delay = Math.min(REQUEUE_BASE_DELAY * 2 ** connection.queueEntry.requeueAttempts, REQUEUE_MAX_DELAY);
         connection.queueEntry.requeueAttempts += 1;
         this.logger.debug({
             tnx: 'pool',
@@ -386,6 +420,7 @@ class SMTPPool extends node_events_1.EventEmitter {
         }, 'Re-queued message <%s> for #%s. Attempt: #%s', connection.queueEntry.messageId, connection.id, connection.queueEntry.requeueAttempts);
         this._queue.unshift(connection.queueEntry);
         connection.queueEntry = false;
+        return delay;
     }
     /**
      * Continue to process message if the pool hasn't closed
@@ -455,6 +490,19 @@ class SMTPPool extends node_events_1.EventEmitter {
     isIdle() {
         return this.idling;
     }
+    /**
+     * Counts the messages the pool has not finished with yet: the ones waiting in the queue
+     * plus the ones a connection is transmitting right now. isIdle() only tells whether the
+     * pool can take another message, it is already true while a message is still being sent,
+     * so use this to check that nothing would be lost by closing the pool. A message that is
+     * re-queued after its connection dropped is counted until its callback runs, also while it waits to be put back on the queue, and
+     * it is no longer counted by the time its callback runs.
+     *
+     * @returns Number of queued and in-flight messages
+     */
+    pendingCount() {
+        return this._pending;
+    }
     verify(callback) {
         let promise;
         if (!callback) {
@@ -462,10 +510,14 @@ class SMTPPool extends node_events_1.EventEmitter {
                 callback = shared.callbackPromise(resolve, reject);
             });
         }
+        // the error paths hand over the error alone
+        const done = callback;
         const auth = new pool_resource_js_1.default(this).auth;
-        this.getSocket(this.options, (err, socketOptions) => {
+        // the proxy handshake, if any, counts against connectionTimeout as well
+        const connectStartedAt = Date.now();
+        this.getSocket(Object.assign({}, this.options, { connectStartedAt }), (err, socketOptions) => {
             if (err) {
-                return callback(err);
+                return done(err);
             }
             let options = this.options;
             if (socketOptions && socketOptions.connection) {
@@ -480,6 +532,7 @@ class SMTPPool extends node_events_1.EventEmitter {
                 options = Object.assign(shared.assign(false, options), socketOptions);
             }
             const connection = new index_js_1.default(options);
+            connection._connectStartedAt = connectStartedAt;
             let returned = false;
             connection.once('error', err => {
                 if (returned) {
@@ -487,14 +540,14 @@ class SMTPPool extends node_events_1.EventEmitter {
                 }
                 returned = true;
                 connection.close();
-                return callback(err);
+                return done(err);
             });
             connection.once('end', () => {
                 if (returned) {
                     return;
                 }
                 returned = true;
-                return callback(new Error('Connection closed'));
+                return done(new Error('Connection closed'));
             });
             const finalize = () => {
                 if (returned) {
@@ -502,11 +555,16 @@ class SMTPPool extends node_events_1.EventEmitter {
                 }
                 returned = true;
                 connection.quit();
-                return callback(null, true);
+                return done(null, true);
             };
-            connection.connect(() => {
+            connection.connect(err => {
                 if (returned) {
                     return;
+                }
+                if (err) {
+                    returned = true;
+                    connection.close();
+                    return done(err);
                 }
                 if (auth && (connection.allowsAuth || options.forceAuth)) {
                     connection.login(auth, err => {
@@ -516,7 +574,7 @@ class SMTPPool extends node_events_1.EventEmitter {
                         if (err) {
                             returned = true;
                             connection.close();
-                            return callback(err);
+                            return done(err);
                         }
                         finalize();
                     });
@@ -526,7 +584,7 @@ class SMTPPool extends node_events_1.EventEmitter {
                     err.code = errors.ENOAUTH;
                     returned = true;
                     connection.close();
-                    return callback(err);
+                    return done(err);
                 }
                 else {
                     finalize();
