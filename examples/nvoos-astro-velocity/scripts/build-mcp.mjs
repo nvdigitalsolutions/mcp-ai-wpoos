@@ -1,42 +1,17 @@
 // ---------------------------------------------------------------------------
-// build-mcp.mjs — bundle the MCP HTTP mount into dist/mcp-entry.mjs so
-// scripts/serve.mjs (plain Node) can route /mcp without a TS loader.
-// Wired into `npm run build` (before `astro build`).
+// build-mcp.mjs — CLI wrapper (npm run build:mcp) around
+// scripts/lib/mcp-build.mjs for dev/manual builds.
 //
-// Uses esbuild's JavaScript API instead of spawning `node` against
-// node_modules/esbuild/bin/esbuild: esbuild's install fallback can replace
-// that file with the native platform binary (an ELF executable on Linux),
-// which node cannot parse — the API resolves the platform binary itself.
-//
-// TODO(095): `astro build` empties dist/ after this runs, erasing
-// dist/mcp-entry.mjs from production builds — add a post-build sync step
-// (sync-dist.mjs) before shipping the /mcp env docs.
+// Production builds get the same bundle from the `astro:build:done`
+// integration hook (scripts/lib/mcp-build-integration.mjs), which runs
+// after `astro build` has rewritten dist/ — the old npm-chain position ran
+// BEFORE astro build and was wiped by astro's dist/ clean, so /mcp 404ed in
+// every production build (incident 2026-10-30).
 // ---------------------------------------------------------------------------
 
-import { build } from 'esbuild';
-import { mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { buildMcpEntry } from './lib/mcp-build.mjs';
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(HERE, '..');
-const OUT_FILE = join(ROOT, 'dist', 'mcp-entry.mjs');
-
-mkdirSync(join(ROOT, 'dist'), { recursive: true });
-
-try {
-	await build({
-		entryPoints: [join(ROOT, 'mcp', 'bff.ts')],
-		bundle: true,
-		platform: 'node',
-		format: 'esm',
-		target: 'node20',
-		outfile: OUT_FILE,
-		external: ['node:*'],
-		logLevel: 'warning',
-	});
-} catch (error) {
-	console.error(`[build-mcp] esbuild failed: ${error instanceof Error ? error.message : error}`);
+buildMcpEntry().catch((error) => {
+	console.error(error.message);
 	process.exit(1);
-}
-console.log('[build-mcp] wrote dist/mcp-entry.mjs');
+});
