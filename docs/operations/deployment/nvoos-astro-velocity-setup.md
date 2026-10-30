@@ -48,6 +48,29 @@ to the same-origin `/api/*` proxy and needs no origin config. Since PR #7284
 the request URL takes priority over any baked `NVOOS_API_BASE` at runtime
 (regression: SSR pages 500ed fetching the baked fixture origin).
 
+## `/mcp` assistant surface (Proposal 095)
+
+`/mcp` is the Streamable HTTP mount of `nvoos-astro-mcp` (20 tools: design,
+CMS, ops). It ships in the mirror build via the `astro:build:done`
+integration (`dist/mcp-entry.mjs`) and needs these vars to be useful — and
+to stay secure — on Velocity:
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `NVOOS_MCP_TOKEN` | **yes** | Bearer token accepted by the write gate (constant-time compare). Generate a long random value; store in Vault and in the NV oOS Remote Sites connection credentials — never in the repo |
+| `NVOOS_MCP_HOSTS` | **yes** | Comma-separated Host allowlist (MCP DNS-rebinding guard). Default is `localhost,127.0.0.1,[::1]` — on Velocity set `astro.nvoos.cloud` (plus any test hostname) or every `/mcp` request is rejected |
+| `NVOOS_MCP_ORIGINS` | no | Comma-separated browser-origin allowlist. Empty = browser-based clients denied (CLI/plugin clients don't send Origin) |
+| `NVOOS_MCP_RATE_MAX` / `NVOOS_MCP_RATE_WINDOW_MS` | no | Per-IP rate limit (default 120 requests / 60 000 ms). Per-instance, not fleet-wide |
+| `NVOOS_MCP_STATE_FILE` | no | Durable design-state path (default off). Set e.g. `/var/data/nvoos-design-state.json` so token/theme changes survive restarts; the dir must be writable by the node process |
+| `NVOOS_SSR_API_ORIGIN` | no | Origin the server uses to verify manager sessions (`/auth/me`) and to resolve contract calls from tools; falls back to `NVOOS_API_BASE` |
+| `NVOOS_MCP_SCREENSHOT` | no | Opt-in `screenshot` tool. Off by default — the browser binary + headless launch cost only makes sense where an assistant does visual verification |
+| `NVOOS_REBUILD_WEBHOOK_URL` (+ `_TOKEN`) | no | Enables the `rebuild_trigger` tool. Point it at the mirror sync `repository_dispatch` URL (repo-scoped PAT as `_TOKEN`) or any rebuild webhook; the tool errors when unset |
+
+Auth model: reads are public; design writes accept the bearer token **or** a
+manager session cookie; contract writes (`cms_*` writes, `media_upload`)
+require the manager cookie (the backend enforces `manage_astro` anyway).
+Every write emits an audit log line `[mcp] audit tool=… via=… ip=…`.
+
 ## Troubleshooting
 
 - **Pages 500 while `/api/*` returns 200** — the SSR fetch layer is hitting a

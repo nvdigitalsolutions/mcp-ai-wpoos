@@ -132,16 +132,16 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ### nvoos-astro-mcp (`/mcp`)
 
-- `mcp/` (`auth.ts`, `bff.ts`, `server.ts`, `stdio.ts`, `tools/design.ts`);
-  the shared bundler `scripts/lib/mcp-build.mjs` writes `dist/mcp-entry.mjs`
-  (which `scripts/serve.mjs` mounts at `/mcp`, deliberately NOT under
-  `/api/*`). Two call sites: `npm run build:mcp` (dev/manual —
-  `scripts/build-mcp.mjs` CLI wrapper) and the `nvoos-astro-mcp-build`
-  Astro integration in `astro.config.mjs`, whose `astro:build:done` hook
-  rebuilds the bundle after every `astro build` (astro wipes `dist/`, so a
-  pre-build step in the npm chain would be erased — the 2026-10-30 /mcp
-  outage). `npm run mcp:stdio` serves the same tools over stdio for local
-  profiles.
+- `mcp/` (`auth.ts`, `bff.ts`, `context.ts`, `ratelimit.ts`, `server.ts`,
+  `stdio.ts`, `tools/{design,cms,ops,util}.ts`); the shared bundler
+  `scripts/lib/mcp-build.mjs` writes `dist/mcp-entry.mjs` (which
+  `scripts/serve.mjs` mounts at `/mcp`, deliberately NOT under `/api/*`).
+  Two call sites: `npm run build:mcp` (dev/manual — `scripts/build-mcp.mjs`
+  CLI wrapper) and the `nvoos-astro-mcp-build` Astro integration in
+  `astro.config.mjs`, whose `astro:build:done` hook rebuilds the bundle
+  after every `astro build` (astro wipes `dist/`, so a pre-build step in the
+  npm chain would be erased — the 2026-10-30 /mcp outage).
+  `npm run mcp:stdio` serves the same tools over stdio for local profiles.
 - **Never spawn `node` against `node_modules/esbuild/bin/esbuild`
   (2026-10-30):** esbuild's install fallback can replace that file with the
   native platform binary — an ELF executable on Linux — and node dies with
@@ -149,17 +149,34 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   the Linux CI `npm run build` at `build:mcp` (PR #7303). Use the esbuild JS
   API (`import { build } from 'esbuild'`) — it resolves the platform binary
   itself; `scripts/build-mcp.mjs` was rewritten this way.
-- **10 design tools** (`tokens_get/set/import_dtcg/rollback`, `theme_*`,
-  `contrast_check`); bulk writes are transactional (validate → dry-run diff →
-  snapshot → all-or-nothing). State is **process-local** — durability is the
-  TODO'd Phase 4 (`/manage` Design tab + NDS round-trip).
-- **Auth is fail-closed:** write tools require bearer `NVOOS_MCP_TOKEN`
-  (timing-safe) or a manager session (`canManage` via `/auth/me`); reads are
-  open. Env: `NVOOS_MCP_TOKEN`, `NVOOS_MCP_HOSTS`, `NVOOS_MCP_ORIGINS`.
+- **20 tools** (`SERVER_VERSION` 0.2.0): design (10 — `tokens_get/set/import_dtcg/rollback`,
+  `theme_*`, `contrast_check`; bulk writes transactional: validate → dry-run
+  diff → snapshot → all-or-nothing), CMS (6 — `cms_list/get/create/update/delete`,
+  `media_upload` over `commerce/client.ts`, collection allowlist, `limit` ≤ 100),
+  ops (4 — `site_status`, `preview_url`, `rebuild_trigger`, `screenshot`).
+  Tool handlers read the request cookie/env through `mcp/context.ts`
+  (AsyncLocalStorage set in `bff.ts`).
+- **Auth is fail-closed, split by surface:** reads open; design writes accept
+  bearer `NVOOS_MCP_TOKEN` (timing-safe) OR a manager session (`canManage`
+  via `/auth/me`); **contract writes (`cms_*` writes, `media_upload`) require
+  the manager cookie** (backend enforces `manage_astro` anyway — fail fast
+  with a useful error). Per-IP rate limit (429 `-32029`,
+  `NVOOS_MCP_RATE_MAX`/`_WINDOW_MS`, default 120/min), Host/Origin allowlists
+  (`NVOOS_MCP_HOSTS` **must** include the public hostname — default is
+  localhost-only), audit line per write call. `screenshot` is opt-in
+  (`NVOOS_MCP_SCREENSHOT=1`) and path-only input (SSRF-safe by construction,
+  per MCP Security Best Practices).
+- **Durability:** token/theme runtime state persists across restarts when
+  `NVOOS_MCP_STATE_FILE` is set (atomic tmp+rename writes,
+  `src/lib/tokens/persistence.ts`); otherwise process-local.
 - **Dual-era wire serving** (modern 2026-07-28 + 2025 stateless fallback) —
   all wire shapes, the validation ladder, and the `registerTool` factory
   gotcha live in the `mcp-ai-sdk-v2-server-ops` skill; conformance tests in
   `tests/mcp/handshake.test.ts` cover both eras + the write-auth gate.
+- The hermetic assistant loop lives in `tests/mcp/rebrand-loop.test.ts`
+  (fixture server on :8131: tokens_get → dry-run → apply → contrast →
+  rollback → cms_list); `tests/unit/contrast-audit.test.ts` is the WCAG 2.2
+  gate (SC 1.4.3 4.5:1 / SC 1.4.11 3:1 per pair, with coverage meta-tests).
 
 ### Known TODOs (annotated `TODO(095-*)` in code)
 
@@ -168,9 +185,12 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   `nvoos-astro-mcp-build` integration (`astro:build:done` →
   `scripts/lib/mcp-build.mjs`); the npm `build` chain no longer runs
   `build:mcp` pre-build.
-- Phase 1: dark-theme contrast audit; Phase 3: CMS tool slice (`cms.ts`
-  over `commerce/client.ts`) + `screenshot` tool; Phase 4: `/manage` Design
-  tab + durable NDS round-trip.
+- ~~Phase 1 contrast audit; Phase 3 CMS/ops slices + screenshot; Phase 4
+  durability~~ — all closed 2026-10-30 (gap-closure cluster). Remaining
+  (single follow-up issue): `/manage` Design tab (4.1 — bridge admin SPA,
+  cross-addon), NDS round-trip push-back (4.2 — needs the NDS addon), the
+  `field.border` sub-AA sweep (SC 1.4.11, documented-not-gated in
+  `tests/unit/contrast-audit.test.ts`), and the browser-level rebrand e2e.
 - Cross-surface sharing of these tokens (NDS addon + Pro SPA v2 palettes) is
   scoped in Proposal 097.
 
