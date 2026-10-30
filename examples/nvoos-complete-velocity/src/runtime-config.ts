@@ -53,6 +53,26 @@ async function readJson<T>(response: Response, context: string): Promise<T> {
 }
 
 /**
+ * Fetch the WordPress site title (blogname) from the public REST index
+ * (`GET /wp-json/` → `name`). Used for the console's branded nav logo.
+ * Fail-open: any failure yields '' and the caller falls back.
+ */
+export async function fetchSiteName(): Promise<string> {
+  try {
+    const response = await fetch(`${window.location.origin}/wp-json/`, {
+      credentials: 'same-origin',
+    });
+    if (!response.ok) {
+      return '';
+    }
+    const data = await readJson<{ name?: string }>(response, 'site-name');
+    return typeof data.name === 'string' && data.name.trim() ? data.name.trim() : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Build the console endpoint map, mirroring the server SPA config's
  * capability gating (WP_MCP_AI_Pro_SPA_Config::build()): admin-gated
  * endpoints are empty strings for non-admin sessions so pages skip the
@@ -138,6 +158,8 @@ export interface ConsoleRuntimeOptions {
    * nav and the optional-surface endpoints. Absent = fail open (show).
    */
   features?: Record<string, boolean>;
+  /** WordPress site title (blogname) for branding surfaces. */
+  siteName?: string;
 }
 
 /**
@@ -201,6 +223,7 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
     assistants: undefined,
     profiles: undefined,
     features,
+    siteName: options.siteName ?? '',
   };
 }
 

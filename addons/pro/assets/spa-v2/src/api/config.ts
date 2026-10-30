@@ -219,6 +219,8 @@ export interface ProSpaRuntime {
 	 * gate their navigation on it. Absent = unknown = fail open.
 	 */
 	features?: Record< string, boolean >;
+	/** WordPress site title (blogname) — empty when unavailable. */
+	siteName?: string;
 }
 
 export interface ProSpaUser {
@@ -360,5 +362,6 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			g.features && typeof g.features === 'object' && ! Array.isArray( g.features )
 				? ( g.features as Record< string, boolean > )
 				: undefined,
+		siteName: typeof g.siteName === 'string' ? g.siteName : '',
 	};
 }

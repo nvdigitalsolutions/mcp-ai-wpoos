@@ -347,4 +347,15 @@ class Test_WP_MCP_AI_Pro_SPA_Shortcode extends WP_UnitTestCase {
 		$default = WP_MCP_AI_Pro_SPA_Config::build( array( 'mode' => 'embedded' ) );
 		$this->assertFalse( $default['config']['pinnedAssistant'] );
 	}
+
+	/**
+	 * The runtime carries the WordPress site title (blogname) for branding
+	 * surfaces; the SPA renders its first few words and falls back to the
+	 * product name when the value is empty.
+	 */
+	public function test_build_includes_site_name() {
+		$runtime = WP_MCP_AI_Pro_SPA_Config::build();
+
+		$this->assertSame( get_bloginfo( 'name' ), $runtime['siteName'] );
+	}
 }
