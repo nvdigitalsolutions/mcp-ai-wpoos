@@ -3,7 +3,7 @@
  * dock toggle, collapse rail, and the visibility matrix.
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -45,6 +45,40 @@ function renderSidebar(
 describe('ConsoleSidebar', () => {
   beforeEach(() => {
     window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    delete (window as unknown as { NVOOS_PRO_SPA?: unknown }).NVOOS_PRO_SPA;
+  });
+
+  describe('nav logo', () => {
+    it('falls back to the product name when the site title is missing', () => {
+      renderSidebar();
+      expect(screen.getByText('NV oOS Complete').className).toBe(
+        'nvoos-console-nav__logo',
+      );
+    });
+
+    it('shows the first three words of the WordPress site title', () => {
+      (window as unknown as { NVOOS_PRO_SPA?: unknown }).NVOOS_PRO_SPA = {
+        apiUrl: 'https://example.com/wp-json/mcp-ai/v1',
+        endpoints: {
+          chat: '/chat',
+          chatClient: '/chat-client',
+          transcripts: '/transcripts',
+          threads: '/threads',
+          tools: '/tools',
+          assistants: '/assistants',
+          settings: '/settings',
+        },
+        siteName: 'Acme Widget Co. — Official Store',
+      };
+      renderSidebar();
+      expect(screen.getByText('Acme Widget Co.').className).toBe(
+        'nvoos-console-nav__logo',
+      );
+      expect(screen.queryByText('NV oOS Complete')).not.toBeInTheDocument();
+    });
   });
 
   it('shows only the workspace by default and reveals collapsed groups on demand', async () => {
