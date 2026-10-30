@@ -5,6 +5,10 @@
 // in Vite, esbuild and vitest), applies runtime theme/token overrides with
 // the 058 transactional discipline (snapshot → all-or-nothing apply →
 // rollback), and exposes the WCAG contrast checker used by the MCP tools.
+// Phase 4: when a persist path is configured (constructor option or
+// NVOOS_MCP_STATE_FILE), the design state hydrates on construction and is
+// re-persisted after every successful mutation (best-effort, never on dry
+// runs).
 // ---------------------------------------------------------------------------
 
 import bundle from '../../tokens/bundle.generated.json';
@@ -17,6 +21,7 @@ import {
 	type TokenTree,
 	type ValidationReport,
 } from './dtcg';
+import { loadDesignState, saveDesignState, type PersistedDesignState } from './persistence';
 
 export interface TokenBundle {
 	groups: Record<string, TokenTree>;
@@ -129,13 +134,59 @@ export function contrastCheck(fg: string, bg: string): ContrastResult | null {
  */
 export class TokenService {
 	private readonly bundle: TokenBundle;
+	private readonly persistPath: string | null;
 	private overrides: Record<string, string> = {};
 	private activeTheme = 'light';
 	private runtimeThemes: Record<string, ThemeDescriptor> = {};
 	private snapshots: TokenSnapshot[] = [];
 
-	constructor(bundleData?: TokenBundle) {
+	constructor(bundleData?: TokenBundle, options?: { persistPath?: string }) {
 		this.bundle = bundleData ?? cloneBundle();
+		// Persistence is OFF unless explicitly configured (keeps the service
+		// hermetic in tests and on pages that just read the static bundle).
+		this.persistPath = options?.persistPath ?? process.env.NVOOS_MCP_STATE_FILE ?? null;
+		if (this.persistPath) {
+			const persisted = loadDesignState(this.persistPath);
+			if (persisted) this.hydrate(persisted);
+		}
+	}
+
+	/**
+	 * Adopt persisted state — only the fields the loaded shape carries.
+	 * Runtime themes hydrate before the active theme so the theme gate can
+	 * verify it still resolves; snapshots keep the same 50-entry cap as
+	 * takeSnapshot.
+	 */
+	private hydrate(persisted: PersistedDesignState): void {
+		if (persisted.overrides && typeof persisted.overrides === 'object') {
+			this.overrides = { ...persisted.overrides };
+		}
+		if (persisted.runtimeThemes && typeof persisted.runtimeThemes === 'object') {
+			this.runtimeThemes = JSON.parse(JSON.stringify(persisted.runtimeThemes)) as Record<string, ThemeDescriptor>;
+		}
+		if (Array.isArray(persisted.snapshots)) {
+			this.snapshots = JSON.parse(JSON.stringify(persisted.snapshots)) as TokenSnapshot[];
+			if (this.snapshots.length > 50) this.snapshots = this.snapshots.slice(-50);
+		}
+		if (typeof persisted.activeTheme === 'string' && this.themeDescriptor(persisted.activeTheme)) {
+			this.activeTheme = persisted.activeTheme;
+		}
+	}
+
+	/**
+	 * Persist the current design state (best-effort). Called only after a
+	 * successful mutation — rejected writes and dry runs never reach here.
+	 * Snapshot entries mirror takeSnapshot's shape (overrides, activeTheme,
+	 * runtimeThemes, takenAt, id).
+	 */
+	private persist(): void {
+		if (!this.persistPath) return;
+		saveDesignState(this.persistPath, {
+			overrides: { ...this.overrides },
+			activeTheme: this.activeTheme,
+			runtimeThemes: JSON.parse(JSON.stringify(this.runtimeThemes)),
+			snapshots: this.snapshots.map((snapshot) => JSON.parse(JSON.stringify(snapshot))),
+		});
 	}
 
 	groups(): TokenTree {
@@ -213,6 +264,7 @@ export class TokenService {
 		}
 		const snapshotId = this.takeSnapshot();
 		this.overrides = next;
+		this.persist();
 		return { applied: true, report, diff, snapshotId };
 	}
 
@@ -255,6 +307,9 @@ export class TokenService {
 			}
 		};
 		walk(semanticTree, []);
+		// Persistence happens inside applyOverrides on the applied (non-dry)
+		// path — the parsed document itself is not part of the persisted
+		// state, so there is nothing extra to save here.
 		return { ...this.applyOverrides(changes, dryRun), parsed };
 	}
 
@@ -285,6 +340,7 @@ export class TokenService {
 		this.overrides = { ...target.overrides };
 		this.activeTheme = target.activeTheme;
 		this.runtimeThemes = JSON.parse(JSON.stringify(target.runtimeThemes));
+		this.persist();
 		return { ok: true, message: `rolled back to ${target.id}` };
 	}
 
@@ -293,6 +349,7 @@ export class TokenService {
 			return { ok: false, message: `unknown theme: ${name}` };
 		}
 		this.activeTheme = name;
+		this.persist();
 		return { ok: true, message: `active theme is now ${name}` };
 	}
 
@@ -308,6 +365,7 @@ export class TokenService {
 		}
 		const snapshotId = this.takeSnapshot();
 		this.runtimeThemes[descriptor.name] = descriptor;
+		this.persist();
 		return { applied: true, report, diff: [], snapshotId };
 	}
 
@@ -321,6 +379,7 @@ export class TokenService {
 		this.takeSnapshot();
 		delete this.runtimeThemes[name];
 		if (this.activeTheme === name) this.activeTheme = 'light';
+		this.persist();
 		return { ok: true, message: `theme "${name}" deleted` };
 	}
 }
