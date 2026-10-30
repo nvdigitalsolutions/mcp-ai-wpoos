@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-git-ops
-description: Git/GitHub workflow discipline for the mcp-ai-wpoos repo — PRs against `alpha-working` with owner-merge, commit style, staged commits (no `git add -A`), the stacked-PR rebase recipe for when a parent PR gets squash-merged, shared-worktree discipline for the multi-agent repo (check the branch before committing, never `reset --hard` over other agents' unstaged edits, `--autostash` rebases), conflict verification via `git merge-tree`, and gh CLI gotchas (`gh workflow run` 404 on non-default branches, long PHP lint checks). Use when creating/rebasing/fixing PRs, resolving PR conflicts, or dispatching workflows.
+description: Git/GitHub workflow discipline for the mcp-ai-wpoos repo — PRs against `alpha-working` with owner-merge, commit style, staged commits (no `git add -A`), the stacked-PR rebase recipe for when a parent PR gets squash-merged, owner-merge race verification (check the merged tree's content, follow-up PR for straggler commits), shared-worktree discipline for the multi-agent repo (check the branch before committing, never `reset --hard` over other agents' unstaged edits, `--autostash` rebases), conflict verification via `git merge-tree`, and gh CLI gotchas (`gh workflow run` 404 on non-default branches, long PHP lint checks). Use when creating/rebasing/fixing PRs, resolving PR conflicts, or dispatching workflows.
 ---
 
 # mcp-ai-wpoos — Git & PR ops
@@ -68,6 +68,16 @@ Four rules, each from a session that cost a recovery:
   tracking branch pushes — `gh pr view` keeps showing the stale `head_sha`.
   After the owner merges, run the stacked-PR recipe above and open a fresh
   PR for the delta (PRs #7302 → #7303).
+- **Owner merge can race a session's final commit (2026-10-30, PRs
+  #7306 → #7307).** The merge content is a snapshot — never assume
+  `state: MERGED` means the branch tip is in. Verify by CONTENT, not
+  commits: `git show origin/alpha-working:<path> | grep -c
+  <string-your-latest-commit-added>` (squash rewrites messages, so
+  `--grep` lies). When the straggler is missing: `git switch -c
+  fix/<slug>-followup origin/alpha-working`, `git cherry-pick
+  <straggler-sha>` (applies cleanly when the squashed tree matches your
+  baseline), push, open the follow-up PR. Production may already run the
+  fix — the PR exists to make the repo state match reality.
 
 ## Windows reserved-name artifacts (learned 2026-10-29)
 

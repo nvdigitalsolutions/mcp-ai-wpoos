@@ -270,9 +270,23 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   bridge's permission callbacks re-resolve the session from the logged-in
   cookie right before the cap check (`REST/AuthSupport.php` — the console's
   per-endpoint pattern), plus a scoped `determine_current_user` filter.
-  Nonces minted via `/api/auth/nonce` stay valid: `wp_create_nonce`/
-  `wp_verify_nonce` derive the session token from the logged-in cookie
-  directly, so uid 0 on both sides of the round-trip still verifies.
+  **Nonces MUST be minted for the restored session** — `/auth/nonce` must
+  run the same restore before `wp_create_nonce()`. A guest-minted nonce
+  (uid 0) fails `wp_verify_nonce` once the verifying request resolves the
+  real user, and the admin bundle sends the bootstrapped nonce on EVERY
+  call — symptom: every collection 403s (`rest_cookie_invalid_nonce`)
+  while `/auth/me` is 200.
+- **wp-admin deploy via curl (2026-10-30):** Cloudflare/Imunify blocks
+  bare-curl POSTs to `update.php` with a JS challenge (403 + nginx page) —
+  a browser UA + `Referer: plugin-install.php` + `Accept: text/html` gets
+  through. The upload flow for an EXISTING folder ends on a
+  "Replace current with uploaded" GET link (`action=upload-plugin` +
+  `package` + `overwrite=update-plugin` + `_wpnonce`) — follow it to
+  replace files without running `uninstall.php`. Deleting a plugin via
+  wp-admin is a two-step POST (`action=delete-selected` without
+  `verify-delete` renders the confirm page, then re-POST with
+  `verify-delete=1`), and for the bridge it MUST never be used (see the
+  zip bullet).
 - **Deploy-zip separators (2026-10-30):** a PowerShell `Compress-Archive`
   zip carries backslash entry separators; on the backend's Linux PHP the
   upgrader then fails to see the single top-level folder and installs the

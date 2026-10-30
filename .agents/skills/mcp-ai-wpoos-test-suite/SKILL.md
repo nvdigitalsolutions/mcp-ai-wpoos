@@ -1434,6 +1434,29 @@ the changed files is the substantive gate; plan CI waits accordingly.
       exercisable — but re-running `Plugin::init()` via reflection
       double-registers unguarded hooks (e.g. `RebuildWebhook::init()`); test
       the migration method's behaviour instead of re-booting the plugin.
+  89. **REST cookie-auth tests — the `$current_user` global and
+      `$wp_rest_auth_cookie` trap (2026-10-30, /manage outage, PR #7306/7307).**
+      `_wp_get_current_user()` consults the `determine_current_user` filter
+      chain ONLY when the `$current_user` global is untouched —
+      `wp_set_current_user( 0 )` in a test poisons the global with a
+      `WP_User(0)` instance and the chain never runs, so a
+      "cookie-only request authenticates" test silently passes for the wrong
+      reason (or 401s). Simulate a fresh request with
+      `unset( $GLOBALS['current_user'] )`, not `wp_set_current_user( 0 )`.
+      To reproduce the PRODUCTION pipeline state for single-site HTTPS
+      REST, set BOTH: `wp_set_current_user( 0 )` (forced logout) AND
+      `$GLOBALS['wp_rest_auth_cookie'] = true` (an earlier
+      `auth_cookie_valid` fire) — that is the state in which
+      `rest_cookie_check_errors()` force-resets nonce-less requests, and the
+      permission callback must re-resolve the session itself (the console's
+      per-endpoint `wp_validate_auth_cookie($_COOKIE[LOGGED_IN_COOKIE],
+      'logged_in')` + `wp_set_current_user()` pattern). Unset
+      `$GLOBALS['wp_rest_auth_cookie']` in tearDown. Related nonce trap:
+      nonces minted for user 0 fail `wp_verify_nonce` once the verifying
+      request resolves the real user — `wp_create_nonce()` must run AFTER
+      the session restore; pin it by asserting
+      `wp_verify_nonce( $minted, 'wp_rest' )` against the real user (a
+      guest-minted nonce fails that assertion).
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
