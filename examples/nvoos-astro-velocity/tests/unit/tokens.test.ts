@@ -58,6 +58,11 @@ describe('ADS token generator', () => {
 	});
 
 	it('generated TS exposes the resolved font stack', () => {
-		expect(ts).toContain('"font": "system-ui, -apple-system, \'Segoe UI\', Roboto, sans-serif"');
+		expect(ts).toContain("'font': 'system-ui, -apple-system, \\'Segoe UI\\', Roboto, sans-serif'");
+	});
+
+	it('generated TS satisfies the repo lint style (tabs, single quotes)', () => {
+		expect(ts).not.toContain('"');
+		expect(ts).not.toContain('\t\t');
 	});
 });
