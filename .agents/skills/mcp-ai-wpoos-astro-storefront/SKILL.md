@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-astro-storefront
-description: Operational guide for the NV-authored headless storefront (Proposal 092) — the funiq-bridge Payload-shaped commerce contract (`nvoos-commerce/v1`), the `examples/nvoos-astro-velocity` Astro app, its hermetic dev/test loop (fixture server, vitest, Playwright, Lighthouse CI), the contract drift guard, the rebuild webhook, and the sync workflow + public mirror deployment. Use when working on the storefront, the bridge contract, image optimization, SEO/crawlability, or the mirror deploy loop.
+description: Operational guide for the NV-authored headless storefront (Proposal 092) — the funiq-bridge Payload-shaped commerce contract (`nvoos-commerce/v1`), the `examples/nvoos-astro-velocity` Astro app, its hermetic dev/test loop (fixture server, vitest, Playwright, Lighthouse CI), the contract drift guard, the rebuild webhook, the sync workflow + public mirror deployment, the ADS design system (DTCG tokens, generator + drift gate, dark/light theming, Proposal 095), and the `nvoos-astro-mcp` assistant-control surface at `/mcp` (dual-era Streamable HTTP, design tool slice, fail-closed write auth). Use when working on the storefront, the bridge contract, image optimization, SEO/crawlability, design tokens/themes, the MCP mount, or the mirror deploy loop.
 ---
 
 # NV oOS Astro Storefront — ops guide (Proposal 092)
@@ -70,18 +70,85 @@ cd examples/nvoos-astro-velocity
 node scripts/fixture-server.mjs            # :8123 — hermetic contract + media
 cd ../../addons/funiq-bridge && npm install && cd -   # standalone CMS bundle deps
 NVOOS_API_BASE=http://localhost:8123/wp-json/nvoos-commerce/v1 npm run build   # prerenders catalog + /manage bundle
-NVOOS_TARGET_SITE=http://localhost:8123 PORT=4321 npm run serve                # BFF + app (/, /manage/, /api/*, /media/*)
-npm run check && npm run lint && npm run test          # astro check · eslint · vitest (unit + contract)
+NVOOS_TARGET_SITE=http://localhost:8123 PORT=4321 npm run serve                # BFF + app (/, /manage/, /api/*, /media/*, /mcp)
+npm run check && npm run lint && npm run test          # astro check + tokens drift gate · eslint · vitest (101 tests / 15 files)
 npx playwright install chromium && npm run test:e2e    # 2 specs — JS-disabled SEO + islands
 npm run lhci:ci                                        # CHROME_PATH → Playwright's Chromium
 ```
 
+- **Windows gotcha:** `astro check` OOMs at the default 4 GB heap on this
+  machine — run `NODE_OPTIONS=--max-old-space-size=8192 npm run check` (and
+  the same for `npm run build`, which chains `astro check` first).
 - The fixture server returns **401 on `/auth/me` without a cookie** and serves
   a real 1×1 PNG on `/wp-content/uploads/` — keep both behaviours.
 - PHP side (bridge): `php -l` + phpcs, then PHPUnit in Docker (`oos-wp`
   container, isolated DB `wordpress_test_astro`) — see the
   `mcp-ai-wpoos-test-suite` skill for the exact recipe. Run against WP 6.9
   **and** WP 7.1.
+
+## Design system + assistant control (Proposal 095, PR #7301)
+
+### ADS tokens — architecture
+
+- **Sources** (`src/tokens/`, DTCG 2025.10 JSON): `core.json` →
+  `semantic.json` → `component.json` + `themes/{default,example-brand}.json`
+  (light/dark mode blocks that override the semantic layer). Cross-file refs
+  (`{core.palette.ink}`) are a documented ADS extension of DTCG.
+- **Generated artifacts are COMMITTED and drift-gated:** `npm run
+  build:tokens` regenerates `src/styles/generated/tokens.css`,
+  `src/lib/tokens.generated.ts`, `src/tokens/bundle.generated.json`;
+  `npm run check:tokens` (chained into `npm run check`) fails CI when the
+  source JSON changed without regeneration.
+- **Zero-visual-regression rollout:** the app binds `--ads-*` vars; legacy
+  `--nv-*` names are aliases over the semantic layer in `global.css`.
+  Theme contract: `[data-theme="light"|"dark"]`, `prefers-color-scheme`
+  default, `ThemeToggle` island, `/tokens` reference page.
+- **Runtime:** `src/lib/tokens/service.ts` `TokenService` — always read the
+  **`_resolved`** bundle tree (raw groups keep unresolved `{core.x}` refs),
+  `resolveActiveSemantic()`, `resolvedGroups()`, theme CRUD + rollback
+  snapshots, WCAG `contrastCheck`.
+
+### Token-pipeline gotchas (each cost a fix)
+
+- `scripts/lib/tokens-build.mjs` `TOKENS_DIR` resolves relative to
+  `scripts/` — the correct depth is `join(HERE, '..', '..', 'src', 'tokens')`
+  (one `..` silently writes artifacts to the wrong tree).
+- **`$comment` keys leak** as theme names / resolution targets — filter
+  `mode.startsWith('$')` everywhere (theme names, brand-token skips).
+- **`$value` arrays (`fontFamily`)** broke reference resolution when
+  stringified with `join(' ')` — both validators must keep single-ref
+  values verbatim (string OR array).
+- Tests: `tests/unit/{dtcg,tokens,tokens-service}.test.ts` +
+  `tests/e2e/theme.spec.ts` (Playwright).
+
+### nvoos-astro-mcp (`/mcp`)
+
+- `mcp/` (`auth.ts`, `bff.ts`, `server.ts`, `stdio.ts`, `tools/design.ts`);
+  `npm run build:mcp` bundles `bff.ts` → `dist/mcp-entry.mjs`, which
+  `scripts/serve.mjs` mounts at `/mcp` (deliberately NOT under `/api/*`).
+  `npm run mcp:stdio` serves the same tools over stdio for local profiles.
+- **10 design tools** (`tokens_get/set/import_dtcg/rollback`, `theme_*`,
+  `contrast_check`); bulk writes are transactional (validate → dry-run diff →
+  snapshot → all-or-nothing). State is **process-local** — durability is the
+  TODO'd Phase 4 (`/manage` Design tab + NDS round-trip).
+- **Auth is fail-closed:** write tools require bearer `NVOOS_MCP_TOKEN`
+  (timing-safe) or a manager session (`canManage` via `/auth/me`); reads are
+  open. Env: `NVOOS_MCP_TOKEN`, `NVOOS_MCP_HOSTS`, `NVOOS_MCP_ORIGINS`.
+- **Dual-era wire serving** (modern 2026-07-28 + 2025 stateless fallback) —
+  all wire shapes, the validation ladder, and the `registerTool` factory
+  gotcha live in the `mcp-ai-sdk-v2-server-ops` skill; conformance tests in
+  `tests/mcp/handshake.test.ts` cover both eras + the write-auth gate.
+
+### Known TODOs (annotated `TODO(095-*)` in code)
+
+- `astro build` **empties `dist/` AFTER `build:mcp`**, erasing
+  `dist/mcp-entry.mjs` from production builds — a `sync-dist.mjs` post-build
+  step is still owed.
+- Phase 1: dark-theme contrast audit; Phase 3: CMS tool slice (`cms.ts`
+  over `commerce/client.ts`) + `screenshot` tool; Phase 4: `/manage` Design
+  tab + durable NDS round-trip.
+- Cross-surface sharing of these tokens (NDS addon + Pro SPA v2 palettes) is
+  scoped in Proposal 097.
 
 ## Image optimization (Phase 1.7) — the two rules that cost a session
 
@@ -231,8 +298,9 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ## References
 
-- Proposal 092 (design, phases, owner decisions) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
+- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 097 (cross-surface token sharing) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
 - `examples/nvoos-astro-velocity/README.md` (architecture, env, commands)
 - `addons/funiq-bridge/README.md` (REST surface, data map)
+- Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`
 - Related: Proposal 085 + appendix (contract invariant, Strangler Fig),
   Proposal 090 (Laravel backend flip — the storefront survives it unchanged).
