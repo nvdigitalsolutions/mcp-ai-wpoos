@@ -147,9 +147,18 @@ class AuthController extends BaseController {
 	 * GET /auth/nonce — REST nonce for CSRF-protected register (and future
 	 * state-changing calls).
 	 *
+	 * The nonce must be minted for the restored session, not user 0: the
+	 * admin bundle sends this nonce on every call, and wp_verify_nonce
+	 * recomputes with the user the determine_current_user chain resolves on
+	 * that request — a guest-minted nonce fails with rest_cookie_invalid_nonce
+	 * (HTTP 403) the moment the session is restored (the 2026-10-30 403s on
+	 * /manage).
+	 *
 	 * @return WP_REST_Response
 	 */
 	public function get_nonce() {
+		AuthSupport::maybe_restore_user_from_logged_in_cookie();
+
 		return rest_ensure_response(
 			array(
 				'nonce' => wp_create_nonce( 'wp_rest' ),
