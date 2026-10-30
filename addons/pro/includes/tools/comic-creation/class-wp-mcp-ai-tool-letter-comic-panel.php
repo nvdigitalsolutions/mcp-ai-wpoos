@@ -68,10 +68,12 @@ class WP_MCP_AI_Tool_Letter_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'panel_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the `mcp_ai_comic_panel` post to add lettering to.', 'mcp-ai-wpoos-pro' ),
 				),
 				'image_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of a WordPress attachment/image to letter. Used when panel_id is not provided.', 'mcp-ai-wpoos-pro' ),
 				),
 				'text_elements' => array(

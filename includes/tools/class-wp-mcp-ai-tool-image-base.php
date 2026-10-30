@@ -1045,6 +1045,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'attachment_id' => array(
 				'type'        => 'integer',
+				'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				'description' => __( 'WordPress attachment ID of the image to process.', 'mcp-ai-wpoos' ),
 			),
 			'file_id'       => $this->get_file_id_parameter_schema(),

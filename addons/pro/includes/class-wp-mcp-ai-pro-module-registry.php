@@ -476,7 +476,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					if ( file_exists( $f ) ) {
 						require_once $f;
 						WP_MCP_AI_Content_Format_Template_CPT::init();
-						WP_MCP_AI_Content_Format_Template_CPT::seed_defaults();
+						// Seeding runs wp_insert_post(), whose slug generator
+						// reads $wp_rewrite — but WP core instantiates that
+						// global only AFTER `init` fires (wp-settings.php),
+						// so an init-time insert raises a PHP 8 "property
+						// on null" warning on every fresh boot. Defer to
+						// wp_loaded, which fires after $wp_rewrite exists.
+						if ( did_action( 'wp_loaded' ) ) {
+							WP_MCP_AI_Content_Format_Template_CPT::seed_defaults();
+						} else {
+							add_action( 'wp_loaded', array( 'WP_MCP_AI_Content_Format_Template_CPT', 'seed_defaults' ) );
+						}
 					}
 					$engine = $p . 'services/class-wp-mcp-ai-content-template-engine.php';
 					if ( file_exists( $engine ) ) {
@@ -646,6 +656,41 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'rest_okf_docs',
+				'OKF Knowledge Docs REST (Docs Hub contract)',
+				array(),
+				array(),
+				function () use ( $p ) {
+					// Proposal 087 Phase 2 — serves OKF bundles in the Docs Hub
+					// manifest/pages/search shape so the vendored Docs Hub island
+					// can browse curated knowledge without the Docs Hub plugin.
+					$f = $p . 'rest/class-wp-mcp-ai-pro-rest-okf-docs.php';
+					if ( file_exists( $f ) ) {
+						require_once $f;
+						add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_REST_Okf_Docs', 'register_routes' ) );
+					}
+				}
+			);
+
+			$this->add_module(
+				'rest_remote_sites',
+				'Remote Sites REST',
+				array(),
+				array(),
+				function () use ( $p ) {
+					// Console Connections page (nvoos-complete-velocity). Always
+					// loaded: the console issues REST calls from a front-end
+					// origin where is_admin() is false. The controller only
+					// hooks rest_api_init and gates every route on manage_options.
+					$f = $p . 'rest/class-wp-mcp-ai-pro-remote-sites-rest-controller.php';
+					if ( file_exists( $f ) ) {
+						require_once $f;
+						WP_MCP_AI_Pro_Remote_Sites_REST_Controller::init();
+					}
+				}
+			);
+
+			$this->add_module(
 				'rest_console_bridges',
 				'Console REST Bridges',
 				array(),
@@ -659,6 +704,49 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					// request method"). Each controller is idempotent and only
 					// hooks rest_api_init (records also hooks init at priority
 					// 20 for meta-in-REST), so booting on every request is safe.
+
+					// The workflow-presets bridge wraps WP_MCP_AI_Pro_Workflow_Presets,
+					// which the admin-gated admin_sections module only loads when
+					// is_admin() is true. On front-end REST requests the class
+					// was never loaded, so GET /workflow-presets silently returned
+					// an empty catalogue (ok: true, presets: []) and the console
+					// Presets tab rendered "No presets available." Loading the
+					// class file is side-effect free (a guarded, static data
+					// registry with no hooks), so require it here for every request.
+					$presets_class = $p . 'class-wp-mcp-ai-pro-workflow-presets.php';
+					if ( file_exists( $presets_class ) ) {
+						require_once $presets_class;
+					}
+
+					// Proposal 091 Track A — DSL seams (preset export bridge +
+					// Dify import adapter). Filters only, safe on every request.
+					$dsl_bridge = $p . 'class-wp-mcp-ai-pro-workflow-dsl-bridge.php';
+					if ( file_exists( $dsl_bridge ) ) {
+						require_once $dsl_bridge;
+					}
+
+					// Same gate for the two bridge providers that wrap wp-admin
+					// page classes which admin_sections only loads in admin
+					// context: the workflow node executor
+					// (WP_MCP_AI_Pro_Workflow_Builder_Page — POST
+					// /workflow-builder/nodes/execute 501'd "builder_unavailable"
+					// on the console) and the ops overview webhook collector
+					// (WP_MCP_AI_Pro_Webhook_Status_Page — the console Operations
+					// page silently rendered an empty webhook list). Both files
+					// self-instantiate, but their constructors only register
+					// admin_menu / admin_enqueue_scripts / wp_ajax_* hooks, all
+					// dormant on front-end requests — the same rationale as the
+					// blueprints page module.
+					$bridge_providers = array(
+						$p . 'admin/class-wp-mcp-ai-pro-workflow-builder-page.php',
+						$p . 'admin/class-wp-mcp-ai-pro-webhook-status-page.php',
+					);
+					foreach ( $bridge_providers as $provider_file ) {
+						if ( file_exists( $provider_file ) ) {
+							require_once $provider_file;
+						}
+					}
+
 					$controllers = array(
 						'class-wp-mcp-ai-pro-rest-ops-controller.php'              => 'WP_MCP_AI_Pro_REST_Ops_Controller',
 						'class-wp-mcp-ai-pro-workflow-presets-rest-controller.php' => 'WP_MCP_AI_Pro_Workflow_Presets_REST_Controller',
@@ -668,6 +756,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						'class-wp-mcp-ai-pro-media-cc-rest-controller.php'         => 'WP_MCP_AI_Pro_Media_CC_REST_Controller',
 						'class-wp-mcp-ai-pro-blueprints-rest-controller.php'       => 'WP_MCP_AI_Pro_Blueprints_REST_Controller',
 						'class-wp-mcp-ai-pro-command-center-rest-controller.php'    => 'WP_MCP_AI_Pro_Command_Center_REST_Controller',
+						// Proposal 089 Phase 3c — read-only sync receipts for the
+						// four commerce toolkits.
+						'class-wp-mcp-ai-pro-commerce-sync-runs-rest-controller.php' => 'WP_MCP_AI_Pro_Commerce_Sync_Runs_REST_Controller',
 					);
 					foreach ( $controllers as $file => $class ) {
 						$path = $p . 'rest/' . $file;
@@ -677,6 +768,63 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 						require_once $path;
 						if ( class_exists( $class ) ) {
 							$class::init();
+						}
+					}
+
+					// Commerce toolkit settings sections (Proposal 089 Phase 2b).
+					// The schema-driven settings surface (GET /mcp-ai/v1/settings/
+					// schema) must include the four toolkit option groups on
+					// front-end REST requests too (same non-admin gate note as the
+					// controllers above), so sections and their tabs register here
+					// on every request. WooCommerce presence mirrors the wp-admin
+					// pages: no WooCommerce, no commerce settings.
+					if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) && class_exists( 'WooCommerce' ) ) {
+						$commerce_sections = array(
+							'abstract-wp-mcp-ai-commerce-toolkit-section.php'      => 'WP_MCP_AI_Commerce_Toolkit_Settings_Section',
+							'class-wp-mcp-ai-section-ecommerce-toolkit.php'         => 'WP_MCP_AI_Section_Ecommerce_Toolkit',
+							'class-wp-mcp-ai-section-ezuite-toolkit.php'            => 'WP_MCP_AI_Section_Ezuite_Toolkit',
+							'class-wp-mcp-ai-section-shopify-sync-toolkit.php'      => 'WP_MCP_AI_Section_Shopify_Sync_Toolkit',
+							'class-wp-mcp-ai-section-flowhub-toolkit.php'           => 'WP_MCP_AI_Section_FlowHub_Toolkit',
+						);
+						// The four toolkits keep their own registry tabs (the
+						// settings schema + the SPA commerce pages filter
+						// fields by tab id), but the wp-admin settings
+						// dashboard renders the three sync toolkits as
+						// subtabs of the E-Commerce tab (Tools → Connections
+						// pattern) instead of top-level nav tabs.
+						$commerce_tabs = array(
+							'ecommerce'    => array(
+								'title' => __( 'E-Commerce', 'mcp-ai-wpoos-pro' ),
+								'icon'  => 'dashicons-cart',
+							),
+							'ezuite'       => array(
+								'title'     => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
+								'icon'      => 'dashicons-networking',
+								'subtab_of' => 'ecommerce',
+							),
+							'shopify_sync' => array(
+								'title'     => __( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),
+								'icon'      => 'dashicons-store',
+								'subtab_of' => 'ecommerce',
+							),
+							'flowhub'      => array(
+								'title'     => __( 'FlowHub', 'mcp-ai-wpoos-pro' ),
+								'icon'      => 'dashicons-shield-alt',
+								'subtab_of' => 'ecommerce',
+							),
+						);
+						foreach ( $commerce_tabs as $tab_id => $tab ) {
+							WP_MCP_AI_Settings_Registry::register_tab( $tab_id, $tab );
+						}
+						foreach ( $commerce_sections as $file => $class ) {
+							$path = $p . 'admin/sections/' . $file;
+							if ( ! file_exists( $path ) ) {
+								continue;
+							}
+							require_once $path;
+							if ( class_exists( $class ) && is_subclass_of( $class, 'WP_MCP_AI_Commerce_Toolkit_Settings_Section' ) ) {
+								WP_MCP_AI_Settings_Registry::register_section( new $class() );
+							}
 						}
 					}
 				}

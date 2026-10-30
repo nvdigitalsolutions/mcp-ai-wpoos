@@ -100,6 +100,7 @@ class WP_MCP_AI_Tool_QMS_Create_Controlled_Document implements WP_MCP_AI_Tool_In
 				'owner_id'         => array(
 					'type'    => 'integer',
 					'minimum' => 1,
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'reviewer_ids'     => array(
 					'type'  => 'array',
@@ -144,6 +145,7 @@ class WP_MCP_AI_Tool_QMS_Create_Controlled_Document implements WP_MCP_AI_Tool_In
 				'template_id'      => array(
 					'type'    => 'integer',
 					'minimum' => 1,
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'change_summary'   => array(
 					'type'      => 'string',

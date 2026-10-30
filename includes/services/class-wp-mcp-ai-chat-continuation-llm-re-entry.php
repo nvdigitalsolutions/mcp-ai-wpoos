@@ -234,6 +234,24 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_LLM_Re_Entry' ) ) {
 				);
 			}
 
+			// Provider adapters and test stubs can return a non-array (null,
+			// false, string). Normalize to a WP_Error so the caller's
+			// array|WP_Error contract holds and extract_text() never receives
+			// a value that fails its strict array type hint.
+			if ( ! is_array( $response ) && ! is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'chat_continuation_llm_invalid_response',
+					array(
+						'assistant_id' => $assistant_id,
+						'type'         => gettype( $response ),
+					)
+				);
+				return new WP_Error(
+					'wp_mcp_ai_continuation_invalid_response',
+					__( 'The language model returned an invalid response.', 'mcp-ai-wpoos' )
+				);
+			}
+
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error(
 					'chat_continuation_llm_error',

@@ -84,6 +84,7 @@ class WP_MCP_AI_Tool_SEO_Generate_Schema implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'ID of the post the schema describes.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'schema_type' => array(
 					'type'        => 'string',

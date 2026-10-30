@@ -84,6 +84,7 @@ class WP_MCP_AI_Tool_Export_ECA_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 							'type'        => 'integer',
 							'description' => __( 'Filter by specific ECA post ID', 'mcp-ai-wpoos-pro' ),
 							'minimum'     => 1,
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						),
 					),
 				),

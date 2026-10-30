@@ -85,11 +85,12 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		/**
 		 * Job types.
 		 */
-		const TYPE_COMMAND             = 'command';
-		const TYPE_WORKFLOW            = 'workflow';
-		const TYPE_TOOL                = 'tool';
-		const TYPE_AGENTIC_LOOP        = 'agentic_loop';
-		const TYPE_CONVERSATION_IMPORT = 'conversation_import';
+		const TYPE_COMMAND                  = 'command';
+		const TYPE_WORKFLOW                 = 'workflow';
+		const TYPE_TOOL                     = 'tool';
+		const TYPE_AGENTIC_LOOP             = 'agentic_loop';
+		const TYPE_CONVERSATION_IMPORT      = 'conversation_import';
+		const TYPE_CHAT_STREAM_CONTINUATION = 'chat_stream_continuation';
 
 		/**
 		 * Cron hook for job processing.
@@ -823,6 +824,9 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				case self::TYPE_CONVERSATION_IMPORT:
 					return self::execute_conversation_import_job( $job );
 
+				case self::TYPE_CHAT_STREAM_CONTINUATION:
+					return self::execute_chat_stream_continuation_job( $job );
+
 				default:
 					throw new Exception(
 						sprintf(
@@ -850,6 +854,29 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			}
 
 			return WP_MCP_AI_Conversation_Import_Queue::execute( $job['job_data'], (int) $job['id'] );
+		}
+
+		/**
+		 * Execute a chat stream continuation job (SSE long-run offload).
+		 *
+		 * Delegates to the offload worker, which resumes the agentic loop
+		 * from the continuation snapshot off the request thread.
+		 *
+		 * @param array $job Job data.
+		 * @return array Job result.
+		 * @throws Exception If the offload worker is unavailable.
+		 */
+		private static function execute_chat_stream_continuation_job( $job ) {
+			if ( ! class_exists( 'WP_MCP_AI_Chat_Stream_Offload_Worker' ) ) {
+				if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-stream-offload-worker.php' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-stream-offload-worker.php';
+				}
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Chat_Stream_Offload_Worker' ) ) {
+				throw new Exception( __( 'Chat stream offload worker not available.', 'mcp-ai-wpoos' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception thrown, not echoed to output.
+			}
+
+			return WP_MCP_AI_Chat_Stream_Offload_Worker::run( $job['job_data'], (int) $job['id'] );
 		}
 
 		/**

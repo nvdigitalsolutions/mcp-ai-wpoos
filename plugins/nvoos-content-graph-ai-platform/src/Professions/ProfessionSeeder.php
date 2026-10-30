@@ -187,6 +187,27 @@ class ProfessionSeeder {
 
 		$repository = new ProfessionRepository();
 
+		// Build a slug-to-post-ID map of existing professions so a re-seed
+		// (seeded option missing on a database that already has
+		// professions) updates existing posts instead of inserting
+		// duplicate copies of the whole catalog.
+		$existing_by_slug = array();
+		$existing_posts   = get_posts(
+			array(
+				'post_type'      => ProfessionCpt::POST_TYPE,
+				'posts_per_page' => -1,
+				'post_status'    => 'any',
+				'fields'         => 'ids',
+			)
+		);
+
+		foreach ( $existing_posts as $post_id ) {
+			$post = get_post( $post_id );
+			if ( $post && ! empty( $post->post_name ) ) {
+				$existing_by_slug[ $post->post_name ] = $post_id;
+			}
+		}
+
 		// Try to load from JSON files first.
 		$loader      = new ProfessionKnowledgeBaseLoader();
 		$professions = $loader->load_all();
@@ -218,6 +239,13 @@ class ProfessionSeeder {
 				if ( ! empty( $datasets ) ) {
 					$profession_data['preferred_datasets'] = $datasets;
 				}
+			}
+
+			// Update an existing profession matched by slug instead of
+			// inserting a duplicate copy.
+			$slug = isset( $profession_data['slug'] ) ? sanitize_title( $profession_data['slug'] ) : '';
+			if ( '' !== $slug && isset( $existing_by_slug[ $slug ] ) ) {
+				$profession_data['id'] = $existing_by_slug[ $slug ];
 			}
 
 			$repository->save( $profession_data );

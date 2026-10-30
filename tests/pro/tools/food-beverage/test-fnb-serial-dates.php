@@ -155,10 +155,13 @@ class Test_Fnb_Serial_Dates extends WP_UnitTestCase {
 			/**
 			 * Return two months of daily-sales rows with serial dates.
 			 *
-			 * @param string $table_id Spec table ID.
+			 * @param string $table_id           Spec table ID.
+			 * @param string $connection_override Connection override (ignored).
 			 * @return array|WP_Error
 			 */
-			public function read_table( $table_id ) {
+			public function read_table( $table_id, $connection_override = '' ) {
+				unset( $connection_override );
+
 				if ( '6.0' === $table_id ) {
 					return array(
 						'columns' => array( 'date', 'month', 'item_id', 'item', 'type', 'qty_sold', 'price', 'revenue' ),

@@ -72,6 +72,7 @@ class WP_MCP_AI_Tool_Detect_Stale_Tasks implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'project_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional project ID to scope detection to a single project.', 'mcp-ai-wpoos-pro' ),
 				),
 				'auto_flag'  => array(

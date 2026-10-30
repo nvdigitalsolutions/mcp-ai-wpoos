@@ -66,6 +66,7 @@ class WP_MCP_AI_Tool_Fnb_Pr_Supersede extends WP_MCP_AI_Fnb_Tool_Base {
 			'properties' => array(
 				'post_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Released purchase-request record ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'reason'  => array(

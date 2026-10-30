@@ -70,10 +70,12 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 				),
 				'project_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Filter by specific project ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'user_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Filter by specific user ID (shows items assigned to or attended by user) (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'include_types' => array(

@@ -1,0 +1,19 @@
+{
+	"carousel": [
+		{
+			"image": "http://localhost:8000/wp-content/uploads/2026/10/slide-1.jpg",
+			"promotion": {
+				"id": 1,
+				"title": "Autumn Sale",
+				"description": "<p>Up to 25% off selected pieces.</p>",
+				"startDate": "2026-10-01",
+				"endDate": "2026-11-30",
+				"active": true
+			}
+		},
+		{
+			"image": "http://localhost:8000/wp-content/uploads/2026/10/slide-2.jpg",
+			"promotion": null
+		}
+	]
+}

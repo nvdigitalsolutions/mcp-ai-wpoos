@@ -85,7 +85,12 @@ class WP_MCP_AI_Tool_Get_Consent_Audit implements WP_MCP_AI_Tool_Interface, WP_M
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
-			'properties' => array( 'contact_id' => array( 'type' => 'integer' ) ),
+			'properties' => array(
+				'contact_id' => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
+			),
 			'required'   => array( 'contact_id' ),
 		);
 	}

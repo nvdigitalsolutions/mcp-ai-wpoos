@@ -123,6 +123,7 @@ class WP_MCP_AI_Tool_Update_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 			'properties' => array(
 				'appointment_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Appointment ID to update (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'client_name'       => array(

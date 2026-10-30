@@ -198,11 +198,36 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				);
 			}
 
+			// Assistant-level restriction: an assistant with a configured Remote
+			// Site Connections list may only use connections from that list.
+			if ( ! $this->is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_isams_connection_not_enabled',
+					sprintf(
+						/* translators: %s: connection name. */
+						__( 'iSAMS connection "%s" is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
+						isset( $connection['name'] ) ? (string) $connection['name'] : $connection_id
+					),
+					array( 'status' => 403 )
+				);
+			}
+
 			// Get credentials from connection.
 			$api_url    = isset( $connection['url'] ) ? trailingslashit( $connection['url'] ) : '';
 			$api_key    = ! empty( $connection['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] ) : '';
 			$api_secret = ! empty( $connection['api_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] ) : '';
 		} else {
+			// A restricted assistant may only fall back to the site-wide settings
+			// when the assistant editor granted the "settings" row.
+			$allowed_ids = $this->get_allowed_connection_ids( $context );
+			if ( null !== $allowed_ids && ! in_array( 'settings', $allowed_ids, true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_isams_settings_not_allowed',
+					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide iSAMS settings cannot be used. Enable the site-wide iSAMS settings row (or an iSAMS connection) for the assistant in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
+
 			// Fallback to settings (old approach - for backward compatibility).
 			$settings   = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 			$api_url    = isset( $settings['isams_api_url'] ) ? trailingslashit( $settings['isams_api_url'] ) : '';
@@ -428,5 +453,49 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'success' => true,
 			'data'    => $data,
 		);
+	}
+
+	/**
+	 * Resolve the assistant's allowed connection IDs from the execution context.
+	 *
+	 * Returns null when unrestricted (no assistant context, or the assistant
+	 * has no configured Remote Site Connections list) — mirroring the
+	 * remote_wp_connection semantics — or the allowed connection IDs as strings.
+	 *
+	 * @param array $context Execution context.
+	 * @return array|null Allowed connection IDs, or null when unrestricted.
+	 */
+	private function get_allowed_connection_ids( array $context ) {
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		if ( ! $assistant_id ) {
+			return null;
+		}
+
+		$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+
+		if ( ! is_array( $enabled_connections ) ) {
+			// Not configured — legacy behaviour allows all connections.
+			return null;
+		}
+
+		return array_map( 'strval', $enabled_connections );
+	}
+
+	/**
+	 * Whether a connection is enabled for the assistant in the execution context.
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param array  $context       Execution context.
+	 * @return bool True when allowed (or unrestricted), false otherwise.
+	 */
+	private function is_connection_enabled_for_assistant( $connection_id, array $context ) {
+		$allowed_ids = $this->get_allowed_connection_ids( $context );
+
+		if ( null === $allowed_ids ) {
+			return true;
+		}
+
+		return in_array( (string) $connection_id, $allowed_ids, true );
 	}
 }

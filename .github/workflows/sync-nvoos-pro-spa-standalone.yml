@@ -6,7 +6,9 @@ name: Sync nvoos-pro-spa-standalone
 # The app shells the spa-v2 React sources via a relative alias
 # (../../addons/pro/assets/spa-v2/src from examples/nvoos-pro-spa-vite), so
 # BOTH prefixes must land in the standalone repo — the layout mirrors the
-# monorepo exactly and the alias/tsconfig paths resolve unchanged.
+# monorepo exactly and the alias/tsconfig paths resolve unchanged. The
+# Media Studio / Document Editor island bundles are shipped the same way
+# (runtime-config.ts imports them via Vite ?url).
 #
 # The standalone repo history is intentionally flat (one commit per sync,
 # force-pushed). Never commit to the standalone repo directly.
@@ -19,6 +21,11 @@ on:
     paths:
       - 'examples/nvoos-pro-spa-vite/**'
       - 'addons/pro/assets/spa-v2/**'
+      # Island bundles the standalone app ships with itself (Proposal 087
+      # Phase 3): runtime-config.ts imports them via Vite ?url, so the
+      # mirror must carry the same relative paths.
+      - 'addons/media-studio/assets/dist/**'
+      - 'addons/document-editor/assets/dist/**'
   # Manual runs let you force a sync without waiting for a merge (first-run
   # verification after adding the token, backfills, etc.).
   workflow_dispatch:
@@ -33,7 +40,7 @@ jobs:
       - name: Assemble standalone tree
         run: |
           rm -rf /tmp/nvoos-pro-spa-standalone
-          mkdir -p /tmp/nvoos-pro-spa-standalone/examples /tmp/nvoos-pro-spa-standalone/addons/pro/assets
+          mkdir -p /tmp/nvoos-pro-spa-standalone/examples /tmp/nvoos-pro-spa-standalone/addons/pro/assets /tmp/nvoos-pro-spa-standalone/addons/media-studio/assets /tmp/nvoos-pro-spa-standalone/addons/document-editor/assets
           # cp -r, not git archive: the repo .gitattributes export-ignores
           # package.json/package-lock.json, which would break the build.
           # The app must land under examples/ — Velocity's root directory is
@@ -41,6 +48,10 @@ jobs:
           # root makes the build die on a missing package.json.
           cp -r examples/nvoos-pro-spa-vite /tmp/nvoos-pro-spa-standalone/examples/
           cp -r addons/pro/assets/spa-v2 /tmp/nvoos-pro-spa-standalone/addons/pro/assets/
+          # Island bundles (Media Studio / Document Editor) — loaded lazily by
+          # the #/media and #/documents pages from these same relative paths.
+          cp -r addons/media-studio/assets/dist /tmp/nvoos-pro-spa-standalone/addons/media-studio/assets/
+          cp -r addons/document-editor/assets/dist /tmp/nvoos-pro-spa-standalone/addons/document-editor/assets/
           cat > /tmp/nvoos-pro-spa-standalone/README.md <<'EOF'
           # nvoos-pro-spa-standalone
 
@@ -50,6 +61,8 @@ jobs:
 
           - App: `examples/nvoos-pro-spa-vite/` (Velocity root directory)
           - SPA sources: `addons/pro/assets/spa-v2/` (vendored for the alias)
+          - Island bundles: `addons/media-studio/assets/dist/` +
+            `addons/document-editor/assets/dist/` (lazy-loaded island assets)
           EOF
           cd /tmp/nvoos-pro-spa-standalone
           # Pin the initial branch to main: git init alone honours the runner's

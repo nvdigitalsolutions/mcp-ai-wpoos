@@ -1,0 +1,46 @@
+---
+// Manage surface — the standalone Astro CMS (Proposal 092 admin story).
+//
+// Client-side gate island: /api/auth/me decides sign-in vs CMS. The CMS
+// bundle itself lives in public/manage-assets/ (built from the bridge's
+// standalone esbuild target by scripts/sync-manage-assets.mjs) and binds to
+// the contract through the same-origin /api/* proxy — the page never
+// references backend admin surfaces (contract-grep gate).
+import ManageGate from '../../islands/ManageGate';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Manage store — NV Store</title>
+		<link rel="stylesheet" href="/manage-assets/astro-admin.css" />
+		<style is:global>
+			body {
+				margin: 0;
+				background: #f0f0f1;
+				font-family:
+					-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			}
+			.manage__state,
+			.manage__auth {
+				max-width: 480px;
+				margin: 48px auto;
+				padding: 24px 32px;
+				background: #fff;
+				border: 1px solid #c3c4c7;
+				border-radius: 8px;
+			}
+			.manage__auth h1,
+			.manage__state h1 {
+				margin: 0 0 16px;
+				font-size: 22px;
+			}
+		</style>
+	</head>
+	<body>
+		<ManageGate client:load />
+	</body>
+</html>

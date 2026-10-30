@@ -65,6 +65,7 @@ class WP_MCP_AI_Tool_Fnb_Pr_Audit extends WP_MCP_AI_Fnb_Tool_Base {
 			'properties' => array(
 				'post_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional purchase-request record ID; omit to list all PR audit rows.', 'mcp-ai-wpoos-pro' ),
 				),
 				'limit'   => array(

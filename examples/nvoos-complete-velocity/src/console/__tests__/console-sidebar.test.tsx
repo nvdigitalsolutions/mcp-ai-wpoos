@@ -24,6 +24,7 @@ function makeProps(overrides: Partial<Parameters<typeof ConsoleSidebar>[0]> = {}
     onToggleDock: vi.fn(),
     isChatRoute: false,
     user,
+    onSignOut: vi.fn(),
     ...overrides,
   };
 }
@@ -183,5 +184,25 @@ describe('ConsoleSidebar', () => {
     const crm = screen.getByRole('link', { name: 'CRM' });
     expect(crm).toBeInTheDocument();
     expect(crm).toHaveAttribute('title', 'CRM');
+  });
+
+  it('signs out through the footer action and disables the button while in flight', async () => {
+    let resolveSignOut: () => void = () => {};
+    const onSignOut = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSignOut = resolve;
+        }),
+    );
+    renderSidebar({ onSignOut });
+
+    const button = screen.getByRole('button', { name: 'Sign out' });
+    await userEvent.click(button);
+
+    expect(onSignOut).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Signing out…' })).toBeDisabled();
+
+    resolveSignOut();
+    await screen.findByRole('button', { name: 'Sign out' });
   });
 });

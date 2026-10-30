@@ -1,0 +1,177 @@
+---
+// ---------------------------------------------------------------------------
+// /tokens — ADS token browser (Proposal 095, dev surface). Renders the
+// generated bundle + active theme; MCP tools and /manage operate on the same
+// TokenService data, so this page is the human-readable mirror of the
+// assistant's view.
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+	TokenService,
+	contrastCheck,
+} from '../../lib/tokens/service';
+import type { TokenTree } from '../../lib/tokens/dtcg';
+
+const service = new TokenService();
+const themes = service.listThemes();
+const activeTheme = service.getActiveTheme();
+const semantic = service.resolveActiveSemantic();
+
+interface FlatToken {
+	name: string;
+	value: string;
+	type: string;
+}
+
+function flattenGroup(tree: TokenTree, groupName: string): FlatToken[] {
+	const out: FlatToken[] = [];
+	const walk = (node: unknown, parts: string[]): void => {
+		if (node === null || typeof node !== 'object') return;
+		const token = node as { $value?: unknown; $type?: string };
+		if ((typeof token.$value === 'string' || Array.isArray(token.$value)) && typeof token.$type === 'string') {
+			out.push({
+				name: `${groupName}.${parts.join('.')}`,
+				value: Array.isArray(token.$value) ? token.$value.join(', ') : (token.$value as string),
+				type: token.$type,
+			});
+			return;
+		}
+		for (const [key, child] of Object.entries(node as Record<string, unknown>)) {
+			if (key.startsWith('$')) continue;
+			walk(child, [...parts, key]);
+		}
+	};
+	walk(tree, []);
+	return out;
+}
+
+const groups = service.resolvedGroups();
+const coreTokens = flattenGroup(groups.core ?? {}, 'core');
+const semanticTokens = flattenGroup(groups.semantic ?? {}, 'semantic');
+const componentTokens = flattenGroup(groups.component ?? {}, 'component');
+
+const contrastSamples = [
+	['ink on surface', semantic.ink, semantic.surface],
+	['muted on surface', semantic.muted, semantic.surface],
+	['accent-ink on accent', semantic['accent-ink'], semantic.accent],
+	['danger on surface-alt', semantic.danger, semantic['surface-alt']],
+].map(([label, fg, bg]) => ({ label, fg, bg, result: contrastCheck(fg, bg) }));
+
+const isColor = (token: FlatToken) => token.type === 'color' && /^#|^rgb|^hsl/.test(token.value);
+---
+
+<BaseLayout title="Design Tokens — ADS" description="NV oOS Astro Design System token browser (Proposal 095)">
+	<h1>Design Tokens</h1>
+	<p>
+		Active theme: <strong>{activeTheme}</strong> — themes: {themes.join(', ')}.
+		Source of truth: <code>src/tokens/*.json</code> (DTCG 2025.10).
+	</p>
+
+	<h2>Contrast (WCAG 2.2)</h2>
+	<table class="tokens-table">
+		<thead>
+			<tr><th>Pair</th><th>FG</th><th>BG</th><th>Ratio</th><th>AA</th><th>AAA</th></tr>
+		</thead>
+		<tbody>
+			{
+				contrastSamples.map((sample) => (
+					<tr>
+						<td>{sample.label}</td>
+						<td><span class="swatch" style={`background:${sample.fg}`} /> {sample.fg}</td>
+						<td><span class="swatch" style={`background:${sample.bg}`} /> {sample.bg}</td>
+						<td>{sample.result ? sample.result.ratio : 'n/a'}</td>
+						<td>{sample.result ? (sample.result.aaNormal ? '✓' : '✗') : '—'}</td>
+						<td>{sample.result ? (sample.result.aaaNormal ? '✓' : '✗') : '—'}</td>
+					</tr>
+				))
+			}
+		</tbody>
+	</table>
+
+	<h2>Semantic layer (resolved, theme: {activeTheme})</h2>
+	<table class="tokens-table">
+		<thead>
+			<tr><th>Token</th><th>Type</th><th>Value</th><th>Preview</th></tr>
+		</thead>
+		<tbody>
+			{
+				semanticTokens.map((token) => (
+					<tr>
+						<td><code>{token.name}</code></td>
+						<td>{token.type}</td>
+						<td><code>{token.value}</code></td>
+						<td>{isColor(token) ? <span class="swatch swatch--lg" style={`background:${token.value}`} /> : '—'}</td>
+					</tr>
+				))
+			}
+		</tbody>
+	</table>
+
+	<h2>Core layer</h2>
+	<table class="tokens-table">
+		<thead>
+			<tr><th>Token</th><th>Type</th><th>Value</th></tr>
+		</thead>
+		<tbody>
+			{
+				coreTokens.map((token) => (
+					<tr>
+						<td><code>{token.name}</code></td>
+						<td>{token.type}</td>
+						<td><code>{token.value}</code></td>
+					</tr>
+				))
+			}
+		</tbody>
+	</table>
+
+	<h2>Component layer</h2>
+	<table class="tokens-table">
+		<thead>
+			<tr><th>Token</th><th>Type</th><th>Value</th></tr>
+		</thead>
+		<tbody>
+			{
+				componentTokens.map((token) => (
+					<tr>
+						<td><code>{token.name}</code></td>
+						<td>{token.type}</td>
+						<td><code>{token.value}</code></td>
+					</tr>
+				))
+			}
+		</tbody>
+	</table>
+</BaseLayout>
+
+<style>
+	.tokens-table {
+		width: 100%;
+		border-collapse: collapse;
+		margin-block: 1rem;
+		font-size: 0.9rem;
+	}
+
+	.tokens-table th,
+	.tokens-table td {
+		text-align: left;
+		padding: 0.4rem 0.6rem;
+		border-bottom: 1px solid var(--nv-line);
+	}
+
+	.swatch {
+		display: inline-block;
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		border: 1px solid var(--nv-line);
+		vertical-align: middle;
+	}
+
+	.swatch--lg {
+		width: 24px;
+		height: 24px;
+		border-radius: 4px;
+	}
+</style>

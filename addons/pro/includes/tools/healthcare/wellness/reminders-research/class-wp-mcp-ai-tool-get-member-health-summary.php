@@ -65,6 +65,7 @@ class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'integer',
 					'description' => __( 'Member ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'include_records' => array(
 					'type'        => 'boolean',

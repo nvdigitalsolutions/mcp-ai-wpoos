@@ -121,13 +121,15 @@ class WP_MCP_AI_Pro_Workflow_Presets_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function list_presets() {
+		// The rest_console_bridges module loads the presets class on every
+		// request; if it is still missing here (stripped build, broken
+		// install), fail loudly instead of returning an empty catalogue that
+		// masks the problem as "No presets available." in the console.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
-			return rest_ensure_response(
-				array(
-					'ok'         => true,
-					'categories' => array(),
-					'presets'    => array(),
-				)
+			return new WP_Error(
+				'presets_unavailable',
+				__( 'Workflow presets are not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 501 )
 			);
 		}
 

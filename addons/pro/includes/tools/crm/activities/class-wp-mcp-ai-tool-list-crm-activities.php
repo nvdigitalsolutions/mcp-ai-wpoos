@@ -90,7 +90,10 @@ class WP_MCP_AI_Tool_List_CRM_Activities implements WP_MCP_AI_Tool_Interface, WP
 					'enum'    => array( '', 'lead', 'deal', 'contact' ),
 					'default' => '',
 				),
-				'related_id'    => array( 'type' => 'integer' ),
+				'related_id'    => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'assigned_to'   => array( 'type' => 'integer' ),
 				'due_before'    => array( 'type' => 'string' ),
 				'completed'     => array(

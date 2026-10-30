@@ -130,6 +130,7 @@ class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, W
 			'properties' => array(
 				'customer_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Customer ID to export (required if no email)', 'mcp-ai-wpoos-pro' ),
 				),
 				'email'             => array(

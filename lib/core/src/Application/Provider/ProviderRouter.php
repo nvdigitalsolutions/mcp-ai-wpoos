@@ -35,6 +35,38 @@ class ProviderRouter {
 	 */
 	private ?ProviderHealthTracker $healthTracker = null;
 
+	/**
+	 * Ordered fallback chain (Proposal 091, Track D) — normalized slugs.
+	 *
+	 * @var string[]
+	 */
+	private array $fallbackChain = array();
+
+	/**
+	 * Provider cooldown expiry timestamps (unix seconds).
+	 *
+	 * @var array<string, int>
+	 */
+	private array $cooldowns = array();
+
+	/**
+	 * Default cooldown TTL when the provider sends no Retry-After.
+	 *
+	 * @since 1.2.13
+	 *
+	 * @var int
+	 */
+	private const DEFAULT_COOLDOWN_SECONDS = 60;
+
+	/**
+	 * Hard cap on cooldown TTLs (never cool a provider down longer).
+	 *
+	 * @since 1.2.13
+	 *
+	 * @var int
+	 */
+	private const MAX_COOLDOWN_SECONDS = 300;
+
 	public function __construct(
 		private readonly SettingsStoreInterface $settings,
 		private readonly ErrorFactoryInterface $errors,
@@ -50,6 +82,66 @@ class ProviderRouter {
 	 */
 	public function setHealthTracker( ProviderHealthTracker $tracker ): void {
 		$this->healthTracker = $tracker;
+	}
+
+	/**
+	 * Set the ordered fallback chain (Proposal 091, Track D).
+	 *
+	 * Slugs are normalized and de-duplicated; unknown slugs are kept for
+	 * late registration but skipped at failover time.
+	 *
+	 * @since 1.2.13
+	 *
+	 * @param string[] $slugs Ordered provider slugs.
+	 * @return void
+	 */
+	public function setFallbackChain( array $slugs ): void {
+		$normalized = array();
+		foreach ( $slugs as $slug ) {
+			$slug = $this->normalizeSlug( (string) $slug );
+			if ( '' !== $slug && ! \in_array( $slug, $normalized, true ) ) {
+				$normalized[] = $slug;
+			}
+		}
+		$this->fallbackChain = $normalized;
+	}
+
+	/**
+	 * Get the configured ordered fallback chain.
+	 *
+	 * @since 1.2.13
+	 *
+	 * @return string[]
+	 */
+	public function getFallbackChain(): array {
+		return $this->fallbackChain;
+	}
+
+	/**
+	 * Cool a provider down for a TTL (Proposal 091, Track D).
+	 *
+	 * @since 1.2.13
+	 *
+	 * @param string $slug       Provider slug.
+	 * @param int    $ttlSeconds Cooldown seconds (clamped ≥ 1).
+	 * @return void
+	 */
+	public function coolDown( string $slug, int $ttlSeconds = self::DEFAULT_COOLDOWN_SECONDS ): void {
+		$slug                          = $this->normalizeSlug( $slug );
+		$this->cooldowns[ $slug ] = \time() + \max( 1, $ttlSeconds );
+	}
+
+	/**
+	 * Whether a provider is currently cooled down.
+	 *
+	 * @since 1.2.13
+	 *
+	 * @param string $slug Provider slug.
+	 * @return bool
+	 */
+	public function isCooledDown( string $slug ): bool {
+		$slug = $this->normalizeSlug( $slug );
+		return isset( $this->cooldowns[ $slug ] ) && $this->cooldowns[ $slug ] > \time();
 	}
 
 	/**
@@ -150,7 +242,7 @@ class ProviderRouter {
 				$this->healthTracker->recordFailure( $slug, $this->classifyError( $result ) );
 			}
 
-			$fallback = $this->attemptFailover( $messages, $options, $assistantConfig, $slug );
+			$fallback = $this->attemptFailover( $messages, $options, $assistantConfig, $slug, null, $result );
 			if ( null !== $fallback ) {
 				return $fallback;
 			}
@@ -190,7 +282,7 @@ class ProviderRouter {
 			if ( $this->healthTracker ) {
 				$this->healthTracker->recordFailure( $slug, $this->classifyError( $result ) );
 			}
-			$fallback = $this->attemptFailover( $messages, $options, $assistantConfig, $slug, $onChunk );
+			$fallback = $this->attemptFailover( $messages, $options, $assistantConfig, $slug, $onChunk, $result );
 			if ( null !== $fallback ) {
 				return $fallback;
 			}
@@ -293,8 +385,17 @@ class ProviderRouter {
 		array $options,
 		array $assistantConfig,
 		string $failedSlug,
-		?callable $onChunk = null
+		?callable $onChunk = null,
+		mixed $failedResult = null
 	): mixed {
+		// Ordered fallback chains (Proposal 091, Track D) take precedence
+		// over health-based failover whenever one is configured.
+		$chain = $this->resolveFallbackCandidates( $assistantConfig );
+		if ( ! empty( $chain ) ) {
+			$this->coolDown( $failedSlug, $this->retryAfterSeconds( $failedResult ) );
+			return $this->attemptChain( $messages, $options, $chain, $onChunk );
+		}
+
 		if ( ! $this->failoverEnabled() || null === $this->healthTracker ) {
 			return null;
 		}
@@ -321,6 +422,107 @@ class ProviderRouter {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Walk the ordered fallback chain, skipping cooled-down providers.
+	 *
+	 * @since 1.2.13
+	 *
+	 * @param array         $messages Chat messages.
+	 * @param array         $options  Request options.
+	 * @param string[]      $chain    Ordered provider slugs.
+	 * @param callable|null $onChunk  Optional stream callback.
+	 * @return mixed|null First successful result, or null when exhausted.
+	 */
+	private function attemptChain( array $messages, array $options, array $chain, ?callable $onChunk ): mixed {
+		foreach ( $chain as $slug ) {
+			if ( $this->isCooledDown( $slug ) ) {
+				continue;
+			}
+
+			$provider = $this->get( $slug );
+			if ( null === $provider ) {
+				continue;
+			}
+
+			$result = null !== $onChunk
+				? $provider->stream( $messages, $options, $onChunk )
+				: $provider->chat( $messages, $options );
+
+			if ( ! $this->isError( $result ) ) {
+				if ( $this->healthTracker ) {
+					$this->healthTracker->recordSuccess( $slug, 0 );
+				}
+				return $result;
+			}
+
+			if ( $this->healthTracker ) {
+				$this->healthTracker->recordFailure( $slug, $this->classifyError( $result ) );
+			}
+			$this->coolDown( $slug, $this->retryAfterSeconds( $result ) );
+		}
+
+		return null;
+	}
+
+	/**
+	 * Resolve the ordered chain: assistant config wins over the router-level
+	 * chain; only registered, normalized, unique slugs are returned.
+	 *
+	 * @since 1.2.13
+	 *
+	 * @param array $assistantConfig Assistant config.
+	 * @return string[]
+	 */
+	private function resolveFallbackCandidates( array $assistantConfig ): array {
+		$chain = array();
+		if ( ! empty( $assistantConfig['fallback_chain'] ) && \is_array( $assistantConfig['fallback_chain'] ) ) {
+			$chain = $assistantConfig['fallback_chain'];
+		} elseif ( ! empty( $this->fallbackChain ) ) {
+			$chain = $this->fallbackChain;
+		}
+
+		$normalized = array();
+		foreach ( $chain as $slug ) {
+			$slug = $this->normalizeSlug( (string) $slug );
+			if ( isset( $this->providers[ $slug ] ) && ! \in_array( $slug, $normalized, true ) ) {
+				$normalized[] = $slug;
+			}
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Extract a Retry-After value from a failed provider result (best effort).
+	 *
+	 * @since 1.2.13
+	 *
+	 * @param mixed $result Failed provider response.
+	 * @return int Cooldown seconds (default when absent; capped).
+	 */
+	private function retryAfterSeconds( mixed $result ): int {
+		$retryAfter = null;
+
+		if ( $result instanceof \WP_Error ) {
+			$data = $result->get_error_data();
+			if ( \is_array( $data ) ) {
+				if ( isset( $data['retry_after'] ) && \is_numeric( $data['retry_after'] ) ) {
+					$retryAfter = (int) $data['retry_after'];
+				} elseif ( isset( $data['headers']['retry-after'] ) && \is_numeric( $data['headers']['retry-after'] ) ) {
+					$retryAfter = (int) $data['headers']['retry-after'];
+				}
+			}
+		} elseif ( \is_array( $result ) && isset( $result['error']['data']['retry_after'] ) && \is_numeric( $result['error']['data']['retry_after'] ) ) {
+			$retryAfter = (int) $result['error']['data']['retry_after'];
+		}
+
+		if ( null === $retryAfter || $retryAfter < 0 ) {
+			return self::DEFAULT_COOLDOWN_SECONDS;
+		}
+
+		return \min( $retryAfter, self::MAX_COOLDOWN_SECONDS );
 	}
 
 	// ─── Helpers ──────────────────────────────────────────────────────

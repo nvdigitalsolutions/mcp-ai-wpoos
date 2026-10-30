@@ -72,7 +72,10 @@ class WP_MCP_AI_Tool_Auto_Route_Inbound_Message implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id'  => array( 'type' => 'integer' ),
+				'lead_id'  => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'strategy' => array(
 					'type'    => 'string',
 					'enum'    => array( 'auto', 'round_robin', 'weighted' ),

@@ -111,6 +111,7 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 						),
 						'attachment_id'  => array(
 							'type'        => 'integer',
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							'description' => __( 'Single WordPress attachment ID.', 'mcp-ai-wpoos-pro' ),
 						),
 						'urls'           => array(

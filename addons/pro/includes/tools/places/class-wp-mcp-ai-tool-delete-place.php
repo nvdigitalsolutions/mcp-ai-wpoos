@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Delete_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'place_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Place ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 				),
 			),

@@ -99,6 +99,7 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the video to edit. Required unless continuing a previous edit session via previous_video_id.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'previous_video_id' => array(
 					'type'        => 'string',

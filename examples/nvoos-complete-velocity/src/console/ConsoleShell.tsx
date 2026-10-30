@@ -124,6 +124,9 @@ const TokenManagerPage = lazy(() =>
     default: m.TokenManagerPage,
   })),
 );
+
+// Host-local page (Proposal 094, Phase 5) — fleet gateway catalog + policy.
+const GatewayPage = lazy(() => import('./GatewayPage').then((m) => ({ default: m.GatewayPage })));
 const OrchestrationStatsPage = lazy(() =>
   import('@nvoos/pro-spa-v2/features/orchestration-stats/OrchestrationStatsPage').then((m) => ({
     default: m.OrchestrationStatsPage,
@@ -137,6 +140,11 @@ const ProOpsPage = lazy(() =>
 const ScheduleManagerPage = lazy(() =>
   import('@nvoos/pro-spa-v2/features/schedule-manager/ScheduleManagerPage').then((m) => ({
     default: m.ScheduleManagerPage,
+  })),
+);
+const PaperStorePage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/paper-store/PaperStorePage').then((m) => ({
+    default: m.PaperStorePage,
   })),
 );
 const RecordsPage = lazy(() =>
@@ -154,6 +162,11 @@ const ChatChannelsPage = lazy(() =>
     default: m.ChatChannelsPage,
   })),
 );
+const RemoteSitesPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/remote-sites/RemoteSitesPage').then((m) => ({
+    default: m.RemoteSitesPage,
+  })),
+);
 const MediaOpsPage = lazy(() =>
   import('@nvoos/pro-spa-v2/features/media-ops/MediaOpsPage').then((m) => ({
     default: m.MediaOpsPage,
@@ -162,6 +175,11 @@ const MediaOpsPage = lazy(() =>
 const BlueprintsPage = lazy(() =>
   import('@nvoos/pro-spa-v2/features/blueprints/BlueprintsPage').then((m) => ({
     default: m.BlueprintsPage,
+  })),
+);
+const CommerceToolkitPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/commerce/CommerceToolkitPage').then((m) => ({
+    default: m.CommerceToolkitPage,
   })),
 );
 
@@ -205,7 +223,7 @@ function MissingConfigScreen(): JSX.Element {
 /**
  * Inner component — rendered inside HashRouter so it can read the location.
  */
-function ConsoleApp(): JSX.Element {
+function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
   const location = useLocation();
   const isChatRoute = location.pathname === '/chat';
 
@@ -292,6 +310,7 @@ function ConsoleApp(): JSX.Element {
         isChatRoute={isChatRoute}
         user={runtime.user}
         features={features}
+        onSignOut={onSignOut}
       />
 
       <main className="nvoos-console-content" id="nvoos-console-main-content">
@@ -531,6 +550,18 @@ function ConsoleApp(): JSX.Element {
                 }
               />
               <Route
+                path="/connections"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/connections')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <RemoteSitesPage />
+                  </RequireGate>
+                }
+              />
+              <Route
                 path="/media-ops"
                 element={
                   <RequireGate
@@ -542,18 +573,105 @@ function ConsoleApp(): JSX.Element {
                   </RequireGate>
                 }
               />
+              {/* Proposal 089 — the four commerce toolkit pages share one
+                  parameterized page component (tabs: Overview, Settings,
+                  Sync Runs). */}
               <Route
-                path="/blueprints"
+                path="/ecommerce"
                 element={
                   <RequireGate
-                    gate={gateForPath('/blueprints')}
+                    gate={gateForPath('/ecommerce')}
                     features={features}
                     capabilities={runtime.user.capabilities}
                   >
-                    <BlueprintsPage />
+                    <CommerceToolkitPage toolkit="ecommerce" />
                   </RequireGate>
                 }
               />
+              <Route
+                path="/ezuite"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/ezuite')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <CommerceToolkitPage toolkit="ezuite" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/shopify-sync"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/shopify-sync')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <CommerceToolkitPage toolkit="shopify_sync" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/flowhub"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/flowhub')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <CommerceToolkitPage toolkit="flowhub" />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/products"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/products')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    									<RecordsPage group="commerce" allowRemote />
+                    								</RequireGate>
+                    							}
+                    						/>
+                    						<Route
+                    							path="/content"
+                    							element={
+                    								<RequireGate
+                    									gate={gateForPath('/content')}
+                    									features={features}
+                    									capabilities={runtime.user.capabilities}
+                    								>
+                    									<RecordsPage group="content" allowRemote />
+                    								</RequireGate>
+                    							}
+                    						/>
+              				<Route
+              					path="/blueprints"
+              					element={
+              						<RequireGate
+              							gate={ gateForPath( '/blueprints' ) }
+              							features={ features }
+              							capabilities={ runtime.user.capabilities }
+              						>
+              							<BlueprintsPage />
+              						</RequireGate>
+              					}
+              				/>
+              				<Route
+              					path="/paper-store"
+              					element={
+              						<RequireGate
+              							gate={ gateForPath( '/paper-store' ) }
+              							features={ features }
+              							capabilities={ runtime.user.capabilities }
+              						>
+              							<PaperStorePage />
+              						</RequireGate>
+              					}
+              				/>
               <Route
                 path="/portability"
                 element={
@@ -611,6 +729,18 @@ function ConsoleApp(): JSX.Element {
                     capabilities={runtime.user.capabilities}
                   >
                     <TokenManagerPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/gateway"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/gateway')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <GatewayPage />
                   </RequireGate>
                 }
               />
@@ -686,10 +816,15 @@ function CommandPaletteGate(): JSX.Element | null {
   return isOpen ? <CommandPalette /> : null;
 }
 
+export interface ConsoleShellProps {
+  /** End the WordPress session and return to the sign-in screen. */
+  onSignOut: () => Promise<void> | void;
+}
+
 /**
  * Public shell — bootstrap gate, then the HashRouter'd console.
  */
-export function ConsoleShell(): JSX.Element {
+export function ConsoleShell({ onSignOut }: ConsoleShellProps): JSX.Element {
   const { loading, error } = useBootstrap();
 
   if (loading) {
@@ -712,7 +847,7 @@ export function ConsoleShell(): JSX.Element {
 
   return (
     <HashRouter>
-      <ConsoleApp />
+      <ConsoleApp onSignOut={onSignOut} />
     </HashRouter>
   );
 }

@@ -568,6 +568,67 @@ class WP_MCP_AI_Fnb_Data_Source {
 	}
 
 	/**
+	 * Resolve the physical source for a spec table.
+	 *
+	 * Precedence (highest first):
+	 * 1. An explicit connection override (tool argument).
+	 * 2. The operator-authored `table_map` entry for the table (connection,
+	 *    folder and file/sheet hints) — highest-trust configuration.
+	 * 3. The toolkit-global settings (`connection_id`, `data_folder_id` /
+	 *    `setup_folder_id`, `data_workbook_id`).
+	 * 4. Empty connection — the Drive client's own auto-fallback then applies
+	 *    (single enabled connection resolves; several = the loud ambiguous
+	 *    error).
+	 *
+	 * @since 1.6.0
+	 *
+	 * @param string $table_id           Spec table ID.
+	 * @param string $connection_override Optional connection ID override (tool argument).
+	 * @return array<string,string> {
+	 *     @type string $table_id        Spec table ID.
+	 *     @type string $connection_id   Remote Sites Drive connection ID (may be empty).
+	 *     @type string $connection_name Human-readable connection name (may be empty).
+	 *     @type string $folder_id       Drive folder ID (may be empty).
+	 *     @type string $file            Operator file-name hint (may be empty).
+	 *     @type string $sheet           Operator sheet/tab-name hint (may be empty).
+	 *     @type string $workbook_id     Shared-workbook file ID (may be empty).
+	 * }
+	 */
+	public static function resolve_source( $table_id, $connection_override = '' ) {
+		$override = is_string( $connection_override ) ? sanitize_key( $connection_override ) : '';
+		$entry    = WP_MCP_AI_Fnb_Settings::source_map( $table_id );
+
+		$connection_id = $override;
+		if ( '' === $connection_id && isset( $entry['connection_id'] ) ) {
+			$connection_id = sanitize_key( (string) $entry['connection_id'] );
+		}
+		if ( '' === $connection_id ) {
+			$connection_id = sanitize_key( (string) WP_MCP_AI_Fnb_Settings::get( 'connection_id', '' ) );
+		}
+
+		$folder_id = isset( $entry['folder_id'] ) ? trim( (string) $entry['folder_id'] ) : '';
+		if ( '' === $folder_id ) {
+			$folder_id = trim( (string) WP_MCP_AI_Fnb_Settings::get( 'assumptions' === $table_id ? 'setup_folder_id' : 'data_folder_id', '' ) );
+		}
+
+		$connection_name = '';
+		if ( '' !== $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection      = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			$connection_name = ! empty( $connection['name'] ) ? trim( (string) $connection['name'] ) : $connection_id;
+		}
+
+		return array(
+			'table_id'        => $table_id,
+			'connection_id'   => $connection_id,
+			'connection_name' => $connection_name,
+			'folder_id'       => $folder_id,
+			'file'            => isset( $entry['file'] ) ? (string) $entry['file'] : '',
+			'sheet'           => isset( $entry['sheet'] ) ? (string) $entry['sheet'] : '',
+			'workbook_id'     => trim( (string) WP_MCP_AI_Fnb_Settings::workbook_id() ),
+		);
+	}
+
+	/**
 	 * Read a table (cached) and return columns + normalised rows.
 	 *
 	 * When native storage is enabled, the five transactional tables resolve
@@ -575,11 +636,12 @@ class WP_MCP_AI_Fnb_Data_Source {
 	 * The import bridge passes `$native = false` to always read the source
 	 * backend, and metrics/reports pass nothing to follow the toggle.
 	 *
-	 * @param string    $table_id Spec table ID.
-	 * @param bool|null $native   Optional backend override: true = CPT, false = Drive/CSV, null = follow the toggle.
-	 * @return array|WP_Error array{table_id,label,columns,rows,count,source}
+	 * @param string    $table_id           Spec table ID.
+	 * @param bool|null $native             Optional backend override: true = CPT, false = Drive/CSV, null = follow the toggle.
+	 * @param string    $connection_override Optional Drive connection ID override for this read.
+	 * @return array|WP_Error array{table_id,label,columns,rows,count,source,connection_id,connection_name}
 	 */
-	public static function get_table( $table_id, $native = null ) {
+	public static function get_table( $table_id, $native = null, $connection_override = '' ) {
 		if ( ! isset( self::$tables[ $table_id ] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_fnb_unknown_table',
@@ -588,8 +650,10 @@ class WP_MCP_AI_Fnb_Data_Source {
 			);
 		}
 
+		$source    = self::resolve_source( $table_id, $connection_override );
 		$use_native = null === $native ? self::is_native_table( $table_id ) : (bool) $native;
-		$cache_key  = 'fnb_table_' . md5( $table_id . ( $use_native ? ':cpt' : '' ) );
+		$source_key = $use_native ? 'cpt' : $source['connection_id'] . '|' . $source['folder_id'] . '|' . $source['workbook_id'];
+		$cache_key  = 'fnb_table_' . md5( $table_id . ':' . $source_key );
 		$cached     = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
 			return $cached;
@@ -600,7 +664,7 @@ class WP_MCP_AI_Fnb_Data_Source {
 			return $reader;
 		}
 
-		$raw = $reader->read_table( $table_id );
+		$raw = $reader->read_table( $table_id, $connection_override );
 		if ( is_wp_error( $raw ) ) {
 			return self::maybe_add_native_hint( $table_id, $raw, $use_native );
 		}
@@ -620,6 +684,11 @@ class WP_MCP_AI_Fnb_Data_Source {
 			'source'       => $use_native ? 'fnb_native_cpt' : 'fnb_data_source',
 			'header_index' => $normalised_headers,
 		);
+
+		if ( ! $use_native ) {
+			$out['connection_id']   = $source['connection_id'];
+			$out['connection_name'] = $source['connection_name'];
+		}
 
 		set_transient( $cache_key, $out, self::CACHE_TTL );
 
@@ -731,10 +800,11 @@ class WP_MCP_AI_Fnb_Data_Source {
 	 * @param string|null $from     Start date (Y-m-d).
 	 * @param string|null $to       End date (Y-m-d).
 	 * @param int         $limit    Row limit.
+	 * @param string      $connection_override Optional Drive connection ID override.
 	 * @return array|WP_Error
 	 */
-	public static function search_table( $table_id, $column = '', $value = '', $date_column = 'date', $from = null, $to = null, $limit = 500 ) {
-		$table = self::get_table( $table_id );
+	public static function search_table( $table_id, $column = '', $value = '', $date_column = 'date', $from = null, $to = null, $limit = 500, $connection_override = '' ) {
+		$table = self::get_table( $table_id, null, $connection_override );
 		if ( is_wp_error( $table ) ) {
 			return $table;
 		}
@@ -769,7 +839,7 @@ class WP_MCP_AI_Fnb_Data_Source {
 			}
 		}
 
-		return array(
+		$out = array(
 			'success'      => true,
 			'table_id'     => $table_id,
 			'label'        => $table['label'],
@@ -779,6 +849,13 @@ class WP_MCP_AI_Fnb_Data_Source {
 			'count'        => count( $matches ),
 			'source'       => 'fnb_data_source',
 		);
+
+		if ( isset( $table['connection_id'] ) ) {
+			$out['connection_id']   = $table['connection_id'];
+			$out['connection_name'] = isset( $table['connection_name'] ) ? $table['connection_name'] : '';
+		}
+
+		return $out;
 	}
 
 	/**

@@ -107,6 +107,7 @@ class WP_MCP_AI_Tool_Delete_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties' => array(
 				'deal_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Deal ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'confirm' => array(

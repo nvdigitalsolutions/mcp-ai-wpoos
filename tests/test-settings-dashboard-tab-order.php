@@ -120,11 +120,16 @@ class Test_Settings_Dashboard_Tab_Order extends WP_UnitTestCase {
 
 	/**
 	 * Test that all expected tabs are present in the correct order.
+	 *
+	 * The nine base tabs must lead, with General first. Addon-owned tabs
+	 * (the four commerce toolkit settings tabs from Proposal 089 Phase 2b)
+	 * are appended after `advanced` by the Pro module registry when
+	 * WooCommerce is active, so they are asserted separately.
 	 */
 	public function test_tabs_are_in_expected_order() {
 		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
 
-		$expected_order = array(
+		$base_expected_order = array(
 			'general',
 			'overview',
 			'providers',
@@ -138,10 +143,111 @@ class Test_Settings_Dashboard_Tab_Order extends WP_UnitTestCase {
 
 		$actual_order = array_keys( $tabs );
 
+		$base_actual = array_slice( $actual_order, 0, count( $base_expected_order ) );
 		$this->assertEquals(
-			$expected_order,
-			$actual_order,
-			'Tabs should be in the expected order with General first'
+			$base_expected_order,
+			$base_actual,
+			'Base tabs should lead in the expected order with General first'
 		);
+
+		// The commerce toolkit tabs register only when WooCommerce is
+		// active (mirrors the gate in the Pro module registry), and form
+		// the final block of the tab list in registration order.
+		$commerce_expected_order = array(
+			'ecommerce',
+			'ezuite',
+			'shopify_sync',
+			'flowhub',
+		);
+
+		$commerce_position = array_search( 'ecommerce', $actual_order, true );
+		if ( class_exists( 'WooCommerce' ) ) {
+			$this->assertNotFalse( $commerce_position, 'E-Commerce tab should be registered when WooCommerce is active' );
+			$commerce_actual = array_slice( $actual_order, (int) $commerce_position );
+			$this->assertEquals(
+				$commerce_expected_order,
+				$commerce_actual,
+				'Commerce toolkit tabs should be appended after the base tabs in registration order'
+			);
+		} else {
+			$this->assertFalse( $commerce_position, 'Commerce toolkit tabs should only be registered when WooCommerce is active' );
+		}
+	}
+
+	/**
+	 * Test that the three sync toolkit tabs declare E-Commerce as their
+	 * parent (subtab_of) so the dashboard renders them as subtabs instead
+	 * of top-level nav tabs, while E-Commerce itself stays a top-level tab.
+	 */
+	public function test_commerce_child_tabs_declare_subtab_of() {
+		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+
+		if ( ! isset( $tabs['ecommerce'] ) ) {
+			$this->markTestSkipped( 'Commerce tabs are not registered (WooCommerce inactive).' );
+		}
+
+		$this->assertArrayNotHasKey( 'subtab_of', $tabs['ecommerce'], 'E-Commerce should remain a top-level tab' );
+
+		foreach ( array( 'ezuite', 'shopify_sync', 'flowhub' ) as $child_tab ) {
+			$this->assertArrayHasKey( $child_tab, $tabs, 'Child commerce tab should stay registered: ' . $child_tab );
+			$this->assertSame(
+				'ecommerce',
+				isset( $tabs[ $child_tab ]['subtab_of'] ) ? $tabs[ $child_tab ]['subtab_of'] : null,
+				'Child commerce tab should declare E-Commerce as its parent: ' . $child_tab
+			);
+		}
+	}
+
+	/**
+	 * Test that legacy ?tab=<child-toolkit> URLs resolve to the parent
+	 * E-Commerce tab (the sections map the legacy tab to their subtab).
+	 */
+	public function test_child_tab_param_resolves_to_parent() {
+		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+
+		if ( ! isset( $tabs['ezuite'] ) || empty( $tabs['ezuite']['subtab_of'] ) ) {
+			$this->markTestSkipped( 'Commerce child tabs are not registered (WooCommerce inactive).' );
+		}
+
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_active_tab' );
+		$method->setAccessible( true );
+
+		$_GET['tab'] = 'ezuite';
+		$active_tab  = $method->invoke( $dashboard );
+		$this->assertEquals( 'ecommerce', $active_tab, 'A child tab parameter should resolve to its parent tab' );
+
+		// Clean up.
+		unset( $_GET['tab'] );
+	}
+
+	/**
+	 * A later re-registration without `subtab_of` must not strip a child
+	 * tab's parent — register_tab() merges over the existing definition, so
+	 * the shared tab catalogue is registration-order independent.
+	 */
+	public function test_register_tab_preserves_subtab_of_on_re_registration() {
+		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+
+		if ( ! isset( $tabs['ecommerce'] ) ) {
+			$this->markTestSkipped( 'Commerce tabs are not registered (WooCommerce inactive).' );
+		}
+
+		// Mirror the drift this pins: a definition without subtab_of (as an
+		// addon or test mirror would register).
+		WP_MCP_AI_Settings_Registry::register_tab(
+			'ezuite',
+			array(
+				'title' => 'EZuite ERP',
+				'icon'  => 'dashicons-networking',
+			)
+		);
+
+		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+
+		$this->assertSame( 'ecommerce', $tabs['ezuite']['subtab_of'], 'Re-registration must preserve the subtab_of parent.' );
+		$this->assertSame( 'EZuite ERP', $tabs['ezuite']['title'], 'Re-registration must still update supplied keys.' );
 	}
 }

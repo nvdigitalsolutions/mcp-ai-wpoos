@@ -94,6 +94,7 @@ class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, W
 			'properties' => array(
 				'matter_id'        => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Matter ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'date_from'        => array(

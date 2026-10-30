@@ -107,7 +107,10 @@ class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'type' => 'string',
 					'enum' => array( 'list', 'create', 'update', 'get' ),
 				),
-				'project_id'      => array( 'type' => 'integer' ),
+				'project_id'      => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'rfi_id'          => array( 'type' => 'string' ),
 				'subject'         => array( 'type' => 'string' ),
 				'question'        => array( 'type' => 'string' ),

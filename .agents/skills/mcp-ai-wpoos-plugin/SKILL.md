@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
-  last-updated: "2026-10-22"
+  plugin-version: "1.2.14"
+  plugin-version-tested: "1.2.14"
+  last-updated: "2026-10-30"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -47,7 +47,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~355 base / ~1,731 full tools
+     │  Tool Registry     │  ~355 base / ~1,732 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -1195,6 +1195,12 @@ curl -s -D - -o /dev/null -H "Origin: https://bogus.example.com" \
 **Cause:** `wp_safe_redirect()` rejects off-site consent-page hosts missing from the `allowed_redirect_hosts` allowlist and silently falls back to `admin_url()` — the connect click lands on the dashboard instead of the provider's consent page.
 **Fix (v1.1.91+):** LinkedIn (`www.linkedin.com`), QuickBooks (`appcenter.intuit.com`), Mailjet (`app.mailjet.com`), and Yahoo Sports (`api.login.yahoo.com`) are now allowlisted via per-provider filters deriving the host from the authorize-endpoint filter. When wiring a **new** OAuth flow, register its consent host the same way — the GitHub/Meta pattern in `includes/integrations/` is the template.
 
+### OAuth connect fails with redirect_uri_mismatch / returns to the bare Remote Sites URL
+
+**Cause:** `add_query_arg()` deliberately leaves array values **unencoded**, so every authorize URL built as `add_query_arg( $params, $authorize_endpoint )` sent the `redirect_uri` value with raw `&` characters. Providers parse everything after the first `&` inside the value as separate top-level parameters — the effective redirect URI becomes the bare `admin.php?page=wp-mcp-ai-remote-sites` and the `oauth_handler` is silently dropped. Sites only "worked" while the bare URI happened to be registered in the console; the callback then landed without `oauth_handler` and `handle_actions()` dropped the code.
+**Diagnosis (verified live, scm.nvdigital.solutions 2026-10-26):** capture the 302 Location from the `oauth_handler=…_oauth_connect` click — the auth URL shows `redirect_uri=https://…/admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=…` with a **raw** `&` inside the value. Google's error page (`authError` protobuf field 2) echoes the truncated redirect URI; deleting the bare URI from the console and retrying yields `redirect_uri_mismatch`.
+**Fix (PR #7242, with the #7240 bare-URL fallback):** `rawurlencode()` the `redirect_uri` value (and space-delimited `scope`) in every authorize-URL builder — the Pro Remote Sites Gmail/Drive/Chat/Teams/Upwork/LinkedIn starts plus the Gmail direct-link button, the shared `WP_MCP_AI_Google_OAuth_Service::build_authorize_url()` (Calendar/Classroom), and the base OAuth manager's `build_google_oauth_url()` fallback (CG Pro + CG-AI platform mirrors byte-identical). `wp_sanitize_redirect()` preserves percent-encoding, so the encoded value reaches the provider intact. `handle_actions()` also gained a bare-URL return fallback that routes `state` + `code`/`error` to the matching callback when a live per-service OAuth state transient exists (all eight flows; Composio excluded — hosted `session_uri` flow) — defense in depth if a provider still returns to the bare URL. CSRF posture is unchanged. State transient keys: `wp_mcp_ai_{gmail|google_drive|google_chat|teams|upwork|linkedin}_oauth_state_<md5(state)>` plus the shared-service keys `wp_mcp_ai_google_calendar_remote_oauth_state_…` / `wp_mcp_ai_google_classroom_remote_oauth_state_…` (`WP_MCP_AI_Google_OAuth_Service::state_transient_key()`). Keep the `oauth_handler` URIs as the canonical console registrations.
+
 ### Vision requests fail with "Failed to download image from https://…" (OpenAI/DeepSeek)
 
 **Cause:** pre-1.1.92 clients handed the raw image URL to the provider's servers to download — that fetch fails on hotlink-protected, CDN-fronted, staged, or freshly uploaded media, and the whole request errors (`execution failed: …[image[0]: Failed to download image…`).
@@ -1303,6 +1309,28 @@ longer than Cloudflare's ~100s cutoff (524) — the request dies mid-wait.
 default 15) and kicks stuck jobs inline (`kick_inline_if_stale`) so hosts
 with a dead WP-Cron loopback self-heal; timeouts now surface as visible
 errors instead of resets.
+
+### Google tools (Drive/Gmail/Calendar) report "not configured" or "ambiguous" despite a healthy Remote Sites connection
+
+**Cause (pre-fix):** an omitted `connection_id` resolved only through the
+base-plugin settings, so a Pro site that stores Google credentials solely
+in a Remote Sites connection got `*_missing_credentials` — which assistants
+read as "the connection is broken" and then disabled or removed.
+
+**Behaviour now:** credential resolution order for Drive, Gmail and Google
+Calendar is (1) explicit `connection_id`, (2) settings-based credentials,
+(3) legacy `wp_mcp_ai_google_*` filters, (4) auto-fallback to the only
+enabled Remote Sites connection of the right type with complete
+credentials. Several enabled connections = a loud
+`wp_mcp_ai_{drive,gmail,calendar}_ambiguous_connection` ("enabled and
+healthy … will not guess") — pass `connection_id` explicitly.
+Settings-based credentials keep priority, and restricted assistants only
+auto-resolve among their allowed connections
+(`wp_mcp_ai_*_no_allowed_connection`, 403). The admin Connections page
+(Tools → Connections → Gmail/Drive/Calendar) mirrors this: a neutral
+"No settings-based … credentials — using the Remote Sites connection"
+state with the connection list and a "Manage in Remote Sites" link
+replaces the misleading red "Credentials Required" block.
 
 ### Cloudflare blocks non-browser clients (error 1010) or 524 timeouts
 

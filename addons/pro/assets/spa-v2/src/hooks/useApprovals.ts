@@ -8,6 +8,10 @@ import { ApprovalsClient, type ApprovalRecord } from '../api/approvals';
 export interface UseApprovalsOptions {
 	endpoint: string;
 	nonce: string;
+	/** 1-based page to fetch (default 1). */
+	page?: number;
+	/** Rows per page (default 25). */
+	perPage?: number;
 }
 
 export interface UseApprovalsReturn {
@@ -41,7 +45,10 @@ export function useApprovals( options: UseApprovalsOptions ): UseApprovalsReturn
 		setLoading( true );
 		setError( null );
 		try {
-			const result = await client.list();
+			const result = await client.list( {
+				page: options.page ?? 1,
+				perPage: options.perPage,
+			} );
 			setApprovals( result.approvals );
 			setTotal( result.total );
 		} catch ( err ) {
@@ -49,7 +56,7 @@ export function useApprovals( options: UseApprovalsOptions ): UseApprovalsReturn
 		} finally {
 			setLoading( false );
 		}
-	}, [ client, options.endpoint ] );
+	}, [ client, options.endpoint, options.page, options.perPage ] );
 
 	useEffect( () => {
 		void fetchApprovals();

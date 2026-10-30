@@ -47,7 +47,7 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_reseed_teams' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - AJAX handlers call wp_die().
 		}
 
@@ -88,7 +88,7 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_reseed_teams' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -134,7 +134,7 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_reseed_teams' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -166,7 +166,7 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_reseed_teams' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -216,7 +216,7 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_reseed_teams' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -244,7 +244,7 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_reseed_professions' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -263,6 +263,94 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 			)
 		);
 		$this->assertGreaterThan( 0, count( $professions ), 'Professions should be created' );
+	}
+
+	/**
+	 * Test reseed professions AJAX endpoint heals a ballooned database.
+	 *
+	 * Regression net for the profession-ballooning bug: the update path
+	 * must match existing professions by slug (falling back to title) and
+	 * delete duplicate copies, instead of inserting a fresh copy of the
+	 * whole catalog. It must also invalidate the post-type counts cache so
+	 * the admin panel stops showing the stale, ballooned number.
+	 */
+	public function test_reseed_professions_update_heals_ballooned_db() {
+		// Detach the admin_init seeders so they can't re-seed behind us.
+		remove_action( 'admin_init', array( 'WP_MCP_AI_Profession_Seeder', 'seed_professions' ), 20 );
+		remove_action( 'admin_init', array( 'WP_MCP_AI_Profession_Base_Knowledge_Seeder', 'seed_base_knowledge' ), 30 );
+		remove_action( 'admin_init', array( 'WP_MCP_AI_Profession_Playbook_Seeder', 'seed_playbooks_incremental' ), 30 );
+
+		// Clean slate: remove every existing profession.
+		$existing = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_profession',
+				'posts_per_page' => -1,
+				'post_status'    => 'any',
+				'fields'         => 'ids',
+			)
+		);
+		foreach ( $existing as $post_id ) {
+			wp_delete_post( $post_id, true );
+		}
+
+		// Seed the KB once, then add duplicate copies of the first three
+		// professions to simulate a ballooned database.
+		$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+		$professions = $loader->load_all();
+		$repository  = new WP_MCP_AI_Profession_Repository();
+		foreach ( $professions as $profession_data ) {
+			$repository->save( $profession_data );
+		}
+		foreach ( array_slice( $professions, 0, 3 ) as $profession_data ) {
+			$repository->save( $profession_data );
+			$repository->save( $profession_data );
+		}
+
+		$ballooned = count(
+			get_posts(
+				array(
+					'post_type'      => 'mcp_ai_profession',
+					'posts_per_page' => -1,
+					'post_status'    => 'publish',
+					'fields'         => 'ids',
+				)
+			)
+		);
+		$this->assertEquals( count( $professions ) + 6, $ballooned, 'Fixture should be ballooned by six copies' );
+
+		// Create admin user and dispatch the update.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$_POST['action']      = 'wp_mcp_ai_reseed_professions';
+		$_POST['action_type'] = 'update';
+		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_reseed_professions' );
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_reseed_professions' );
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertTrue( isset( $response['success'] ) && $response['success'], 'Update should succeed' );
+
+		// The duplicate copies must be gone from the database.
+		$after = count(
+			get_posts(
+				array(
+					'post_type'      => 'mcp_ai_profession',
+					'posts_per_page' => -1,
+					'post_status'    => 'publish',
+					'fields'         => 'ids',
+				)
+			)
+		);
+		$this->assertEquals( count( $professions ), $after, 'Update should heal the ballooned database back to the KB count' );
+
+		// wp_count_posts() must agree — the counts cache is invalidated.
+		$counts = wp_count_posts( 'mcp_ai_profession' );
+		$this->assertEquals( count( $professions ), isset( $counts->publish ) ? (int) $counts->publish : 0, 'The post-type counts cache must not stay stale after the update' );
 	}
 
 	/**
@@ -290,7 +378,7 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_regenerate_playbook' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -320,7 +408,7 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_sync_all_playbooks' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -348,7 +436,7 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_seed_task_templates' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -375,7 +463,7 @@ class Test_Async_AJAX_Data_Seeding extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_seed_orchestration' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 

@@ -74,6 +74,7 @@ class WP_MCP_AI_Tool_SEO_Get_Live_Data implements WP_MCP_AI_Tool_Interface, WP_M
 					'type'        => 'integer',
 					'description' => __( 'ID of the post to read SEO data for.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'include_analysis'        => array(
 					'type'        => 'boolean',

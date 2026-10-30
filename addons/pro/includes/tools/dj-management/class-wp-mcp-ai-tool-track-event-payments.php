@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Track_Event_Payments implements WP_MCP_AI_Tool_Interface, W
 			'properties'           => array(
 				'booking_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Booking ID to track payment for (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'payment_amount' => array(

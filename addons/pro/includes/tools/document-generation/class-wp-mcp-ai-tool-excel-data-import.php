@@ -69,6 +69,7 @@ class WP_MCP_AI_Tool_Excel_Data_Import implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties' => array(
 				'attachment_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress attachment ID of the Excel file to import.', 'mcp-ai-wpoos-pro' ),
 				),
 				'sheet_index'   => array(

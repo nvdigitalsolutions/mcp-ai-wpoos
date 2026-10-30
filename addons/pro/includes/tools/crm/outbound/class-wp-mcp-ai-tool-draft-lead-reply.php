@@ -90,7 +90,10 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id'          => array( 'type' => 'integer' ),
+				'lead_id'          => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'incoming_message' => array(
 					'type'        => 'string',
 					'description' => __( 'The message you are replying to.', 'mcp-ai-wpoos-pro' ),

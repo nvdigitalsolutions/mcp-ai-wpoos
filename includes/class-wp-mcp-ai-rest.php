@@ -620,6 +620,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$portability_controller = new WP_MCP_AI_REST_Assistant_Portability_Controller();
 			$portability_controller->register_routes();
 
+			// Proposal 091 Track B — assistant prompt versioning (lite).
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-prompt-versions-controller.php';
+			$prompt_versions_controller = new WP_MCP_AI_REST_Prompt_Versions_Controller();
+			$prompt_versions_controller->register_routes();
+
+			// Proposal 091 Track E — annotation dataset export.
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-annotation-controller.php';
+			$annotation_controller = new WP_MCP_AI_REST_Annotation_Controller();
+			$annotation_controller->register_routes();
+
 			// Note: /mcp route now handled by MCP Controller (Phase 3.3).
 		}
 
@@ -2799,9 +2809,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
 			$default_assistant = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 
-			$record                    = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
-			$config                    = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
-			$record['system_prompt']   = isset( $config['system_prompt'] ) ? (string) $config['system_prompt'] : '';
+			$record                  = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
+			$config                  = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			$record['system_prompt'] = isset( $config['system_prompt'] ) ? (string) $config['system_prompt'] : '';
 
 			return rest_ensure_response(
 				array(
@@ -4816,6 +4826,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Track request start time for timing indicators.
 			$request_start_timestamp = time();
 
+			// Phase 4b (long-run offload): high-resolution start time for the
+			// proxy-idle deadline check. A blocking tool or LLM call that
+			// outlives the proxy read-timeout (~60-100 s) gets the stream reset
+			// mid-turn, so before each blocking step we compare this against
+			// wp_mcp_ai_sse_offload_elapsed_seconds.
+			$stream_started_at = microtime( true );
+
 			// Send initial status.
 			$this->send_sse_event(
 				'status',
@@ -5129,6 +5146,29 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// keeps proxy idle-timeouts (Cloudflare 524, nginx
 					// proxy_read_timeout) from resetting the connection.
 					$this->send_sse_keepalive();
+
+					// Phase 4b (long-run offload): when the stream is close to
+					// the proxy idle-read deadline, hand the remaining work to
+					// the background job queue BEFORE blocking inside this tool
+					// call — no in-process mechanism can emit bytes while the
+					// tool runs, so the connection would otherwise reset and
+					// lose the whole turn.
+					if ( $this->sse_offload_deadline_exceeded( $stream_started_at ) ) {
+						if ( $this->offload_stream_to_job(
+							$messages,
+							$options,
+							$assistant_id,
+							$assistant_config,
+							$user_id,
+							$transcript_context,
+							$iteration,
+							$max_iterations,
+							$agentic_cost_accumulator,
+							$tool_calls
+						) ) {
+							return;
+						}
+					}
 
 					// Wrap tool execution in try-catch to handle any uncaught exceptions
 					// and ensure SSE stream continues even if tool execution fails.
@@ -5521,6 +5561,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// silently for a while before emitting tokens (or none at all
 				// when native streaming is disabled).
 				$this->send_sse_keepalive();
+
+				// Phase 4b (long-run offload): same deadline check before the
+				// in-loop LLM call. Tool results are already appended to
+				// $messages, so the worker resumes with an LLM call (no
+				// pending tool batch).
+				if ( $this->sse_offload_deadline_exceeded( $stream_started_at ) ) {
+					if ( $this->offload_stream_to_job(
+						$messages,
+						$options,
+						$assistant_id,
+						$assistant_config,
+						$user_id,
+						$transcript_context,
+						$iteration,
+						$max_iterations,
+						$agentic_cost_accumulator,
+						array()
+					) ) {
+						return;
+					}
+				}
 
 				$response = $this->client->create_chat_completion( $messages, $options );
 				unset( $options['stream'], $options['stream_callback'] );
@@ -6001,6 +6062,269 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Whether the stream is close enough to the proxy idle-read deadline
+		 * that the remaining work should be handed to the background queue.
+		 *
+		 * Phase 4b (SSE long-run offload). The threshold is filterable via
+		 * `wp_mcp_ai_sse_offload_elapsed_seconds` (default 75 — safely inside
+		 * the common 60-100 s Cloudflare/nginx read-timeout window); returning
+		 * 0 disables offload entirely (4a keepalive behavior only).
+		 *
+		 * @since 1.2.10
+		 *
+		 * @param float $stream_started_at microtime(true) captured at stream start.
+		 * @return bool True when the remaining agentic work should offload.
+		 */
+		protected function sse_offload_deadline_exceeded( $stream_started_at ) {
+			$threshold = (float) apply_filters( 'wp_mcp_ai_sse_offload_elapsed_seconds', 75 );
+			if ( $threshold <= 0 ) {
+				return false;
+			}
+
+			return ( microtime( true ) - (float) $stream_started_at ) >= $threshold;
+		}
+
+		/**
+		 * Hand the remaining agentic work to the background job queue and close
+		 * the SSE stream with a `job_offload` event (Phase 4b).
+		 *
+		 * Snapshot → continuation store, queue → async job queue (Action
+		 * Scheduler bridge dispatches it), then the stream ends cleanly well
+		 * inside the proxy idle-read window. The client follows the job via
+		 * the existing job-stream machinery and renders the final message from
+		 * the session frame buffer (`chat:resumed`).
+		 *
+		 * @since 1.2.10
+		 *
+		 * @param array $messages                 Conversation messages at the offload point.
+		 * @param array $options                  Provider options.
+		 * @param int   $assistant_id             Assistant identifier.
+		 * @param array $assistant_config         Assistant configuration (tool allowlist).
+		 * @param int   $user_id                  User identifier (0 for guests).
+		 * @param array $transcript_context       Transcript context (session_key).
+		 * @param int   $iteration                Current agentic-loop iteration.
+		 * @param int   $max_iterations           Iteration budget.
+		 * @param array $agentic_cost_accumulator Cost accumulator so far.
+		 * @param array $pending_tool_calls       Tool calls not yet executed (pre-tool offload) or empty (pre-LLM offload).
+		 * @return bool True when the turn was offloaded (caller must return).
+		 */
+		protected function offload_stream_to_job(
+			$messages,
+			$options,
+			$assistant_id,
+			$assistant_config,
+			$user_id,
+			$transcript_context,
+			$iteration,
+			$max_iterations,
+			$agentic_cost_accumulator,
+			$pending_tool_calls
+		) {
+			if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) || ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
+				return false;
+			}
+
+			$session_key     = isset( $transcript_context['session_key'] )
+				? (string) $transcript_context['session_key']
+				: '';
+			$chat_session_id = '' !== $session_key
+				? $session_key
+				: WP_MCP_AI_Chat_Continuation_Store::generate_session_id(
+					array(
+						'assistant_id' => (int) $assistant_id,
+						'user_id'      => (int) $user_id,
+					)
+				);
+
+			// Strip transient/large keys before persisting (mirrors the
+			// async-pending snapshot path).
+			$persisted_options = is_array( $options ) ? $options : array();
+			unset(
+				$persisted_options['attachments'],
+				$persisted_options['memory_documents'],
+				$persisted_options['tools'],
+				$persisted_options['stream'],
+				$persisted_options['stream_callback']
+			);
+
+			$continuation_key = (string) wp_generate_uuid4();
+			$payload          = array(
+				'chat_session_id'          => $chat_session_id,
+				'assistant_id'             => (int) $assistant_id,
+				'user_id'                  => (int) $user_id,
+				'provider'                 => isset( $persisted_options['provider'] ) ? (string) $persisted_options['provider'] : '',
+				'model'                    => isset( $persisted_options['model'] ) ? (string) $persisted_options['model'] : '',
+				'options'                  => $persisted_options,
+				'assistant_config'         => is_array( $assistant_config ) ? $assistant_config : array(),
+				'messages'                 => is_array( $messages ) ? $messages : array(),
+				'iteration'                => (int) $iteration,
+				'max_iterations'           => (int) $max_iterations,
+				'agentic_cost_accumulator' => is_array( $agentic_cost_accumulator ) ? $agentic_cost_accumulator : array(),
+				'pending_tool_calls'       => is_array( $pending_tool_calls ) ? $pending_tool_calls : array(),
+				'continuation_kind'        => 'stream_offload',
+				'created_at'               => time(),
+			);
+
+			$stored = WP_MCP_AI_Chat_Continuation_Store::store( $continuation_key, $payload );
+			if ( is_wp_error( $stored ) ) {
+				// Oversize snapshot or persistence failure — stay on the stream
+				// (degrade to 4a keepalive behavior) and let the proxy timeout
+				// be the outer bound, rather than losing the turn.
+				WP_MCP_AI_Logger::log_error(
+					'sse_offload_store_failed',
+					array(
+						'assistant_id' => $assistant_id,
+						'error_code'   => $stored->get_error_code(),
+						'error'        => $stored->get_error_message(),
+					)
+				);
+				return false;
+			}
+
+			$job_id = WP_MCP_AI_Async_Job_Queue::queue_job(
+				array(
+					'job_type'     => WP_MCP_AI_Chat_Stream_Offload_Worker::JOB_TYPE,
+					// chat_session_id / assistant_id / user_id ride along in the
+					// payload so the worker can record a terminal failure in the
+					// notifier and session buffer even when the snapshot is gone.
+					'job_data'     => array(
+						'continuation_key' => $continuation_key,
+						'chat_session_id'  => $chat_session_id,
+						'assistant_id'     => (int) $assistant_id,
+						'user_id'          => (int) $user_id,
+					),
+					'priority'     => WP_MCP_AI_Async_Job_Queue::PRIORITY_HIGH,
+					'user_id'      => (int) $user_id,
+					'assistant_id' => (int) $assistant_id,
+					'chat_session' => $chat_session_id,
+					'max_retries'  => 0, // Terminal on failure — the client falls back to re-sending.
+				)
+			);
+			if ( is_wp_error( $job_id ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'sse_offload_queue_failed',
+					array(
+						'assistant_id' => $assistant_id,
+						'error_code'   => $job_id->get_error_code(),
+						'error'        => $job_id->get_error_message(),
+					)
+				);
+				return false;
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
+				WP_MCP_AI_Job_Notifier::handle_job_started(
+					(string) $job_id,
+					array(
+						'context' => array(
+							'kind'         => 'chat_stream_offload',
+							'assistant_id' => (int) $assistant_id,
+							'user_id'      => (int) $user_id,
+						),
+					)
+				);
+			}
+
+			$this->send_sse_event(
+				'job_offload',
+				array(
+					'job_id'      => (string) $job_id,
+					'session_key' => $chat_session_id,
+					'message'     => __( 'Long-running turn handed to the background worker — progress continues below.', 'mcp-ai-wpoos' ),
+				)
+			);
+			$this->send_sse_done();
+			$this->finish_sse();
+
+			return true;
+		}
+
+		/**
+		 * Public seam: execute a single tool call for the offload worker.
+		 *
+		 * The worker runs off the request thread, so it cannot reach the
+		 * protected `execute_tool_call_internal()` directly. This wrapper
+		 * supplies a synthetic REST request and returns the provider-facing
+		 * tool message (sanitized for the LLM) ready to append to the
+		 * conversation.
+		 *
+		 * @since 1.2.10
+		 *
+		 * @param array  $tool_call          OpenAI-style tool call.
+		 * @param int    $assistant_id       Assistant identifier.
+		 * @param array  $assistant_config   Assistant configuration (tool allowlist).
+		 * @param int    $user_id            User identifier.
+		 * @param int    $iteration          Current iteration.
+		 * @param int    $max_iterations     Iteration budget.
+		 * @param string $session_key        Chat session key (for async tool routing).
+		 * @return array|WP_Error Provider-facing tool message or error.
+		 */
+		public function execute_offloaded_tool_call( $tool_call, $assistant_id, $assistant_config, $user_id, $iteration, $max_iterations, $session_key ) {
+			$synthetic = new WP_REST_Request();
+			$synthetic->set_param( 'assistant_id', (int) $assistant_id );
+
+			$result = $this->execute_tool_call_internal(
+				$tool_call,
+				$assistant_id,
+				$assistant_config,
+				$user_id,
+				$synthetic,
+				$iteration,
+				$max_iterations,
+				array( 'session_key' => $session_key )
+			);
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			$result = $this->normalize_tool_result( $result );
+
+			$tool_name    = isset( $tool_call['function']['name'] ) ? (string) $tool_call['function']['name'] : '';
+			$tool_call_id = isset( $tool_call['id'] ) ? (string) $tool_call['id'] : '';
+			if ( '' === $tool_call_id ) {
+				$tool_call_id = uniqid( 'tool_', true );
+			}
+
+			$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+			$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
+			$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
+			$tool_instance   = null;
+			if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
+				$tool_instance = $this->registry->get_tool( $tool_slug );
+			}
+
+			$sanitized = $this->validator->sanitize_tool_result_for_llm( $result, $tool_name, $assistant_config, $tool_instance );
+
+			$message = array(
+				'role'         => 'tool',
+				'content'      => $sanitized,
+				'tool_call_id' => $tool_call_id,
+			);
+			if ( '' !== $tool_name ) {
+				$message['name'] = $tool_name;
+			}
+
+			return $message;
+		}
+
+		/**
+		 * Public seam: attribute a resumed LLM response's cost.
+		 *
+		 * @since 1.2.10
+		 *
+		 * @param array  $response     Raw LLM response.
+		 * @param array  $options      Provider options.
+		 * @param int    $assistant_id Assistant identifier.
+		 * @param int    $user_id      User identifier.
+		 * @param string $label        Cost-tracking label.
+		 * @return array|null Cost envelope, or null.
+		 */
+		public function calculate_offloaded_response_cost( $response, $options, $assistant_id, $user_id, $label ) {
+			return $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, $label );
+		}
+
+		/**
 		 * Send an SSE event.
 		 *
 		 * Delegates to SSE handler.
@@ -6476,11 +6800,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Handle GET requests to list available tools for an assistant.
 		 *
+		 * Default behaviour (and the MCP tools/list contract): a missing
+		 * `assistant_id` resolves to the token/site default assistant, so the
+		 * listing is scoped to that assistant's allowed tools. Pass
+		 * `scope=all` for the explicit full-registry opt-out (the SPA
+		 * assistant tool picker needs the whole catalogue).
+		 *
 		 * @param WP_REST_Request $request REST request.
 		 * @return WP_REST_Response|WP_Error
 		 */
 		public function handle_tools_list( WP_REST_Request $request ) {
-			$assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
+			// `scope=all` skips the default-assistant fallback below; token-bound
+			// credentials remain scoped by apply_token_assistant_scope().
+			$scope_all = 'all' === $request->get_param( 'scope' );
+
+			$assistant_id = $scope_all
+			? 0
+			: $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
 			$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
 
 			if ( is_wp_error( $scoped_id ) ) {
@@ -6489,9 +6825,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $scoped_id;
 
-			// Try to serve from cache (keyed on assistant_id).
+			// Try to serve from cache (keyed on assistant_id + scope).
 			$cache_params = array_filter(
-				array( 'assistant_id' => $assistant_id ? $assistant_id : null ),
+				array(
+					'assistant_id' => $assistant_id ? $assistant_id : null,
+					'scope'        => $scope_all ? 'all' : null,
+				),
 				static function ( $v ) {
 					return null !== $v;
 				}
@@ -6552,11 +6891,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							continue;
 						}
 
+						// Capability flags power severity colour coding in the
+						// SPA (read-only/write/destructive…) — the same flags the
+						// legacy assistant editor chip bar consumes.
+						$flags = array();
+						if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+							$flags = $tool->get_capability_flags();
+						}
+
 						$tools_list[] = array(
 							'name'                => $tool->get_slug(),
 							'slug'                => $tool->get_slug(),
 							'description'         => $tool->get_description(),
 							'required_capability' => $tool->get_required_capability(),
+							'flags'               => $flags,
 							'inputSchema'         => $schema,
 						);
 					} catch ( Exception $e ) {
@@ -6595,7 +6943,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( $fields_param && is_string( $fields_param ) ) {
 				$allowed_fields = wp_parse_list( $fields_param );
 				// Valid tool fields: name, description, inputSchema. 'name' is always included.
-				$valid_fields   = array( 'name', 'description', 'inputSchema' );
+				$valid_fields   = array( 'name', 'description', 'inputSchema', 'flags' );
 				$allowed_fields = array_intersect( $allowed_fields, $valid_fields );
 				if ( ! empty( $allowed_fields ) ) {
 					if ( ! in_array( 'name', $allowed_fields, true ) ) {

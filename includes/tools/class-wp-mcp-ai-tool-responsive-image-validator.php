@@ -55,6 +55,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 			'category'            => 'performance',
 			'required_capability' => 'edit_posts',
 			'parameters'          => array(
+				'type'             => 'object',
 				'action'           => array(
 					'type'        => 'string',
 					'description' => __( 'Action: validate_page, validate_images, check_lcp, or audit_cwv', 'mcp-ai-wpoos' ),

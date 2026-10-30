@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a202c">
+<title>NV oOS — Site Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #27272a;
+    --blue: #2b6cb0;
+    --navy: #1a202c;
+    --navy-mid: #2d3748;
+    --navy-deep: #10141c;
+    --navy-card: #215387;
+    --accent: #319b88;
+    --accent-bright: #45b8a2;
+    --accent-deep: #1d443e;
+    --accent-mid: #319b88;
+    --mint: #2b6cb0;
+    --mint-deep: #215387;
+    --bg: #fafafa;
+    --bg-alt: #f7fafc;
+    --white: #fff;
+    --grey-300: #cbd5e0;
+    --grey-500: #718096;
+    --grey-700: #3f3f46;
+    --border-subtle: #edf2f7;
+    --font-display: "Plus Jakarta Sans", "Inter Tight", sans-serif;
+    --font-body: "Inter Tight", sans-serif;
+    --radius-card: 20px;
+    --max-width: 1180px;
+  }
+  *, :before, :after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 17.5px; scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 16.5px;
+    line-height: 1.65;
+    color: var(--grey-700);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; text-decoration: none; }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+  em { color: var(--accent-deep); font-style: italic; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: #eef2f7; padding: 0.1rem 0.4rem; border-radius: 6px; font-size: 0.85em; color: var(--navy-mid); }
+  section[id] { scroll-margin-top: 74px; }
+  .wrap { width: 100%; max-width: var(--max-width); margin-inline: auto; padding-inline: clamp(1.1rem, 3.5vw, 2rem); }
+
+  /* ---------- Eyebrow ---------- */
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--blue); font-weight: 700; margin-bottom: 0.4rem; }
+  .eyebrow--dark { color: var(--accent-bright); }
+
+  /* ---------- Topnav ---------- */
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(16, 20, 28, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid #ffffff1a;
+  }
+  .topnav .wrap { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-block: 0.55rem; }
+  .topnav__brand { font-family: var(--font-display); font-size: 0.95rem; color: #ffffffd9; white-space: nowrap; letter-spacing: 0.02em; }
+  .topnav__brand strong { color: var(--accent-bright); font-weight: 500; }
+  .topnav__links { display: flex; gap: 0.15rem; overflow-x: auto; scrollbar-width: none; }
+  .topnav__links::-webkit-scrollbar { display: none; }
+  .topnav__links a { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.03em; color: #ffffffb8; padding: 0.38rem 0.75rem; border-radius: 999px; white-space: nowrap; transition: all 0.2s; }
+  .topnav__links a:hover { color: var(--accent-bright); background: #ffffff14; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    background: linear-gradient(105deg, var(--navy) 0%, var(--navy-mid) 55%, var(--navy-card) 130%);
+    color: var(--white);
+    padding: clamp(2.5rem, 5vw, 3.75rem) 0 clamp(2rem, 4vw, 2.75rem);
+    position: relative; overflow: hidden;
+  }
+  .hero:before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(70% 60% at 85% 15%, #319b8840 0%, #0000 60%),
+      radial-gradient(45% 45% at 5% 95%, #2b6cb026 0%, #0000 55%);
+    pointer-events: none;
+  }
+  .hero .wrap { position: relative; }
+  .hero__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1.5rem; }
+  .hero__brand { font-family: var(--font-display); font-size: 1.05rem; color: #ffffffb8; letter-spacing: 0.02em; }
+  .hero__brand strong { color: var(--accent-bright); font-weight: 500; }
+  .hero__meta { text-align: right; font-size: 0.8rem; color: #ffffff73; line-height: 1.7; }
+  .hero h1 { color: var(--white); font-size: clamp(2.2rem, 4.6vw, 3.4rem); max-width: 22ch; margin: 1.6rem 0 1rem; }
+  .hero h1 em { color: var(--accent-bright); }
+  .hero__lead { font-size: 1.1rem; font-weight: 400; line-height: 1.75; color: #ffffffbf; max-width: 64rem; }
+  .hero__lead strong { color: #fff; font-weight: 600; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    font-size: 0.88rem; letter-spacing: 0.04em; font-weight: 500;
+    border-radius: 999px; padding: 0.7rem 1.4rem;
+    border: 1px solid #ffffff33; color: #ffffffd9;
+    display: inline-flex; align-items: center; gap: 0.45rem; transition: all 0.2s;
+  }
+  .btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn--solid { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+  .btn--solid:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+
+  /* ---------- Stats ---------- */
+  .stats { background: var(--navy-deep); border-top: 1px solid #ffffff1a; }
+  .stats .wrap { display: grid; grid-template-columns: repeat(4, 1fr); border-left: 1px solid #ffffff1a; }
+  .stat { padding: 1.4rem 1.4rem; border-right: 1px solid #ffffff1a; }
+  .stat__value { font-family: var(--font-display); color: var(--white); font-size: 2.2rem; line-height: 1; margin-bottom: 0.4rem; }
+  .stat__value em { color: var(--accent-bright); }
+  .stat__label { color: #ffffff73; font-size: 0.82rem; font-weight: 400; line-height: 1.5; }
+  .stat--wide { grid-column: span 2; display: flex; align-items: center; }
+
+  /* ---------- Sections ---------- */
+  .section { padding: clamp(2.2rem, 5vw, 3.2rem) 0; }
+  .section--cream-dark { background: var(--bg-alt); }
+  .section--white { background: var(--white); }
+  .section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1.6rem; }
+  .section-head h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); margin-top: 0.35rem; }
+  .section-head .aside { color: var(--grey-500); font-size: 0.94rem; max-width: 43rem; text-align: right; line-height: 1.65; }
+  .lead { font-size: 1.05rem; color: var(--grey-700); max-width: 56rem; line-height: 1.75; }
+  .lead strong { color: var(--navy); font-weight: 600; }
+
+  /* ---------- Cards ---------- */
+  .model-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.4rem; }
+  .model-card {
+    background: var(--white); border: 1px solid var(--border-subtle); border-radius: var(--radius-card);
+    padding: 1.6rem 1.5rem; display: flex; flex-direction: column;
+    transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  }
+  .model-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 14px 34px rgba(26, 32, 44, 0.08); }
+  .model-card__tag {
+    display: inline-block; align-self: flex-start;
+    background: var(--navy); color: #fff; border-radius: 999px;
+    padding: 0.32rem 0.75rem; font-size: 0.7rem; letter-spacing: 0.12em;
+    text-transform: uppercase; font-weight: 600; margin-bottom: 0.9rem;
+  }
+  .model-card--teal .model-card__tag { background: var(--accent); color: #fff; }
+  .model-card h3 { font-size: 1.4rem; margin-bottom: 0.9rem; }
+  .model-list { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+  .model-list li { font-size: 0.92rem; color: var(--grey-700); line-height: 1.6; padding-left: 1.1rem; position: relative; }
+  .model-list li:before { content: ""; background: var(--accent-mid); border-radius: 50%; width: 6px; height: 6px; position: absolute; top: 0.55em; left: 0; }
+
+  .toolkit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; margin-top: 1.4rem; }
+  .tk-card {
+    background: var(--white); border: 1px solid var(--border-subtle); border-radius: 16px;
+    padding: 1.15rem 1.1rem; display: flex; flex-direction: column;
+    transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  }
+  .tk-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 12px 30px rgba(26, 32, 44, 0.08); }
+  .tk-card__num { font-family: var(--font-display); color: var(--accent-deep); font-size: 1.3rem; line-height: 1; }
+  .tk-card h3 { font-size: 1.25rem; margin: 0.5rem 0 0.15rem; }
+  .tk-card__svc { font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey-500); font-weight: 700; margin-bottom: 0.6rem; }
+  .tk-card p { font-size: 0.92rem; color: var(--grey-700); line-height: 1.6; flex: 1; margin-bottom: 0.7rem; }
+  .tk-card__model {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--mint-deep); background: #2b6cb01f; border: 1px solid #2b6cb04d;
+    border-radius: 999px; padding: 0.22rem 0.6rem; margin-bottom: 0.6rem; align-self: flex-start;
+  }
+
+  .qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.4rem; }
+  .qa-card { background: var(--white); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.5rem 1.4rem; border-top: 3px solid var(--accent); }
+  .qa-card__q { font-family: var(--font-display); font-size: 1.2rem; color: var(--navy); line-height: 1.3; margin-bottom: 0.8rem; font-weight: 500; }
+  .qa-card__a { font-size: 0.92rem; line-height: 1.7; color: var(--grey-700); }
+  .qa-card__a strong { color: var(--navy); font-weight: 600; }
+
+  .std-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 1.4rem; }
+  .std { background: var(--white); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 0.85rem 0.95rem; font-size: 0.88rem; line-height: 1.55; color: var(--grey-700); }
+  .std strong { display: block; color: var(--navy); font-weight: 600; font-size: 0.92rem; margin-bottom: 0.15rem; }
+  .std strong:before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-mid); margin-right: 0.45rem; vertical-align: 1px; }
+
+  /* ---------- Seam / chips / flow / steps / quote ---------- */
+  .seam { background: var(--white); border: 1px dashed var(--accent-mid); border-radius: 12px; padding: 1rem 1.4rem; text-align: center; margin-top: 1.1rem; font-size: 0.95rem; color: var(--grey-700); line-height: 1.7; }
+  .seam strong { color: var(--navy); font-weight: 600; }
+  .tool-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1.1rem; }
+  .chip { background: var(--white); border: 1px solid #e2e8f0; border-radius: 999px; padding: 0.32rem 0.65rem; font-size: 0.8rem; color: var(--navy); font-weight: 500; }
+  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.1rem; margin-top: 1.4rem; }
+  .flow-step {
+    background: var(--white); border: 1px solid var(--border-subtle); border-radius: 16px;
+    padding: 1.2rem 1.1rem; position: relative;
+    transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  }
+  .flow-step:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 12px 30px rgba(26, 32, 44, 0.08); }
+  .flow-step:not(:last-child):after { content: "\2192"; color: var(--accent-mid); font-size: 1.15rem; position: absolute; top: 50%; right: -0.85rem; transform: translateY(-50%); z-index: 2; }
+  .flow-step__num { font-family: var(--font-display); color: var(--accent-deep); font-size: 1.5rem; line-height: 1; }
+  .flow-step p { font-size: 0.9rem; line-height: 1.6; color: var(--grey-700); margin-top: 0.5rem; }
+  .flow-step p strong { color: var(--navy); font-weight: 600; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.4rem; }
+  .step { background: var(--white); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.4rem 1.3rem; position: relative; }
+  .step__num { font-family: var(--font-display); color: var(--accent-deep); font-size: 2rem; line-height: 1; }
+  .step h3 { font-size: 1.3rem; margin: 0.5rem 0 0.4rem; }
+  .step p { font-size: 0.94rem; line-height: 1.65; color: var(--grey-700); }
+  .step p strong { color: var(--navy); font-weight: 600; }
+  .quote { font-family: var(--font-display); font-size: clamp(1.3rem, 2.6vw, 1.7rem); font-weight: 500; line-height: 1.5; color: var(--navy); max-width: 56rem; margin-top: 1.4rem; }
+  .quote cite { display: block; font-family: var(--font-body); font-style: normal; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--grey-500); font-weight: 600; margin-top: 1rem; }
+
+  /* ---------- CTA ---------- */
+  .cta-card {
+    background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 55%, var(--navy-card) 100%);
+    border-radius: 24px; padding: clamp(2.2rem, 5vw, 3.2rem); text-align: center; position: relative; overflow: hidden;
+  }
+  .cta-card:before { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 70% at 50% 120%, #2b6cb045 0%, #0000 60%); pointer-events: none; }
+  .cta-card h2 { color: #fff; font-size: clamp(1.8rem, 3.4vw, 2.6rem); margin: 0.4rem 0 0.8rem; position: relative; }
+  .cta-card h2 em { color: var(--accent-bright); }
+  .cta-card p { color: #ffffffb3; font-size: 0.98rem; max-width: 40rem; margin: 0 auto 1.5rem; position: relative; line-height: 1.7; }
+  .cta-card .btn { position: relative; }
+
+  /* ---------- Dark band (gateway) ---------- */
+  .gateway {
+    background: linear-gradient(120deg, var(--navy-deep) 0%, var(--navy) 55%, var(--navy-card) 100%);
+    color: #fff; position: relative; overflow: hidden; padding: clamp(2.2rem, 5vw, 3.2rem) 0;
+  }
+  .gateway:before { content: ""; position: absolute; inset: 0; background: radial-gradient(55% 60% at 85% 10%, #319b8826 0%, #0000 60%), radial-gradient(40% 45% at 10% 100%, #2b6cb01f 0%, #0000 55%); pointer-events: none; }
+  .gateway .wrap { position: relative; }
+  .gateway .section-head h2 { color: #fff; }
+  .gateway .section-head h2 em { color: var(--accent-bright); }
+  .gateway .aside { color: #ffffff99; }
+  .gateway-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; align-items: start; margin-top: 1.4rem; }
+  .gateway-card { background: #ffffff0d; border: 1px solid #ffffff1f; border-radius: 16px; padding: 1.2rem 1.25rem; }
+  .gateway-card h3 { color: #fff; font-size: 1.12rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem; }
+  .gateway-card h3:before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-bright); flex: none; }
+  .gateway-card p { color: #ffffffa6; font-size: 0.9rem; line-height: 1.65; }
+  .gateway-card p strong { color: #fff; font-weight: 600; }
+  .gateway-card .chip { background: #ffffff12; border-color: #ffffff2e; color: #ffffffd9; }
+  .gateway-note { margin-top: 1.25rem; text-align: center; color: #ffffff99; font-size: 0.95rem; line-height: 1.7; }
+  .gateway-note strong { color: var(--accent-bright); font-weight: 600; }
+
+  /* ---------- Footer ---------- */
+  .footer { background: var(--navy); color: #ffffff8c; padding: 1.6rem 0 2rem; font-size: 0.82rem; line-height: 1.8; position: relative; }
+  .footer:before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--mint) 50%, var(--accent)); }
+  .footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
+  .footer strong { color: #ffffffd9; font-weight: 600; }
+  .footer .src { max-width: 44rem; color: #ffffff61; font-size: 0.78rem; line-height: 1.7; }
+  .footer a { color: var(--accent-bright); }
+
+  /* ---------- Style-guide scaffolding (doc-only, not part of the brand) ---------- */
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.7rem; margin-top: 1.4rem; }
+  .swatch { background: var(--white); border: 1px solid var(--border-subtle); border-radius: 12px; overflow: hidden; }
+  .swatch__color { height: 74px; }
+  .swatch__body { padding: 0.6rem 0.7rem; }
+  .swatch__name { font-family: var(--font-display); font-weight: 700; font-size: 0.82rem; color: var(--navy); }
+  .swatch__hex { font-size: 0.72rem; color: var(--grey-500); font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .swatch__use { font-size: 0.74rem; color: var(--grey-700); margin-top: 0.15rem; line-height: 1.4; }
+  .spec {
+    background: var(--navy-deep); border: 1px solid #ffffff1f; border-radius: 14px;
+    padding: 0.9rem 1.05rem; margin-top: 1rem; overflow-x: auto;
+    font-size: 0.72rem; line-height: 1.65; color: #d7ecff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre;
+  }
+  .spec .c { color: #7b8db3; }
+  .comp-block { margin-top: 2rem; }
+  .comp-block > h3 { font-size: 1.25rem; margin-bottom: 0.2rem; }
+  .comp-block > .comp-meta { font-size: 0.82rem; color: var(--grey-500); margin-bottom: 0.9rem; }
+  .comp-demo { background: var(--bg-alt); border: 1px dashed var(--grey-300); border-radius: 16px; padding: 1.4rem; }
+  .comp-demo--dark { background: var(--navy-deep); border-color: #2d3748; }
+  .dos-donts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 0.9rem; }
+  .dos, .donts { border-radius: 12px; padding: 0.9rem 1rem; font-size: 0.86rem; line-height: 1.6; }
+  .dos { background: #15803d14; border: 1px solid #15803d4d; color: var(--grey-700); }
+  .donts { background: #b91c1c14; border: 1px solid #b91c1c4d; color: var(--grey-700); }
+  .dos strong, .donts strong { color: var(--navy); }
+  table.tokens { font-size: 0.84rem; }
+  table.tokens td.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.78rem; color: var(--navy-mid); }
+  .swatch--dark-border { box-shadow: inset 0 0 0 1px #ffffff26; }
+
+  @media (max-width: 1024px) { .toolkit-grid { grid-template-columns: repeat(2, 1fr); } .stats .wrap { grid-template-columns: repeat(2, 1fr); } .flow { grid-template-columns: repeat(2, 1fr); } .flow-step:after { display: none; } }
+  @media (max-width: 720px) { .model-grid, .qa-grid { grid-template-columns: 1fr; } .steps { grid-template-columns: 1fr; } .section-head .aside { text-align: left; } .hero__meta { text-align: left; } html { font-size: 22px; } body { font-size: 20.5px; } }
+  @media (max-width: 560px) { .toolkit-grid, .flow { grid-template-columns: 1fr; } .stats .wrap { grid-template-columns: 1fr; border-left: none; } .stat { border-right: none; border-bottom: 1px solid #ffffff1a; } .std-grid, .dos-donts { grid-template-columns: 1fr; } .gateway-cards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="wrap">
+    <div class="topnav__brand">NV <strong>oOS</strong> · Site Design System</div>
+    <div class="topnav__links">
+      <a href="#tokens">Foundations</a>
+      <a href="#type">Typography</a>
+      <a href="#components">Components</a>
+      <a href="#dark">Dark surfaces</a>
+      <a href="#layout">Layout</a>
+      <a href="#appendix">Appendix</a>
+    </div>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="hero__top">
+      <div class="hero__brand">NV oOS — <strong>Open Operator System</strong> · Brand Manual</div>
+      <div class="hero__meta">Design System v1 · October 2026<br>Extracted from nv-oos-sm-executive-summary-v1.html (v7)<br>Authoritative source: the live marketing pages</div>
+    </div>
+    <div class="eyebrow eyebrow--dark">Site Design Document · v1</div>
+    <h1>The NV oOS <em>brand system</em>,<br>extracted &amp; documented</h1>
+    <p class="hero__lead">Everything that defines the NV oOS look — <strong>tokens, type, components, dark surfaces, layout rules and print behavior</strong> — pulled from the Sales &amp; Marketing executive summary and written down as a reference for every new page, doc, and comparison we ship.</p>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="wrap">
+    <div class="stat">
+      <div class="stat__value">19</div>
+      <div class="stat__label">colour tokens — navy, teal, blue, neutrals &amp; semantic accents</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value">2</div>
+      <div class="stat__label">typefaces — Plus Jakarta Sans (display) + Inter Tight (body)</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value">21</div>
+      <div class="stat__label">components — hero to footer, every block documented with spec</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value">5</div>
+      <div class="stat__label">breakpoints + a mobile type scale and a single-sheet print mode</div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ============ FOUNDATIONS ============ -->
+<section id="tokens" class="section section--white">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">01 · Foundations</div>
+      <h2>Colour, <em>by role</em></h2>
+    </div>
+    <div class="aside">Every colour ships as a CSS custom property under <code>:root</code>. Never hardcode hex in components — reference the token. The palette splits into four families: navy (dark surfaces), teal (the accent), blue (the "mint" secondary), and neutrals.</div>
+  </div>
+
+  <div class="swatch-grid">
+    <div class="swatch"><div class="swatch__color" style="background:#10141c"></div><div class="swatch__body"><div class="swatch__name">--navy-deep</div><div class="swatch__hex">#10141c</div><div class="swatch__use">Stats strip, code blocks, CTA gradient start</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#1a202c"></div><div class="swatch__body"><div class="swatch__name">--navy</div><div class="swatch__hex">#1a202c</div><div class="swatch__use">Hero base, footer, topnav backdrop, model-card tags</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#2d3748"></div><div class="swatch__body"><div class="swatch__name">--navy-mid</div><div class="swatch__hex">#2d3748</div><div class="swatch__use">Hero gradient mid-stop</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#215387"></div><div class="swatch__body"><div class="swatch__name">--navy-card</div><div class="swatch__hex">#215387</div><div class="swatch__use">Hero/CTA gradient end-stop</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#319b88"></div><div class="swatch__body"><div class="swatch__name">--accent</div><div class="swatch__hex">#319b88</div><div class="swatch__use">Solid buttons, hover borders, model-card--teal tag</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#45b8a2"></div><div class="swatch__body"><div class="swatch__name">--accent-bright</div><div class="swatch__hex">#45b8a2</div><div class="swatch__use">Accent words on dark: h1 em, eyebrows, stat em, links</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#1d443e"></div><div class="swatch__body"><div class="swatch__name">--accent-deep</div><div class="swatch__hex">#1d443e</div><div class="swatch__use">Accent words on light: em, step numbers, card numbers</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#2b6cb0"></div><div class="swatch__body"><div class="swatch__name">--blue / --mint</div><div class="swatch__hex">#2b6cb0</div><div class="swatch__use">Eyebrows, footer gradient mid, model-pill tint</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#215387"></div><div class="swatch__body"><div class="swatch__name">--mint-deep</div><div class="swatch__hex">#215387</div><div class="swatch__use">Model-pill text, badge text (blue family)</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#fafafa"></div><div class="swatch__body"><div class="swatch__name">--bg</div><div class="swatch__hex">#fafafa</div><div class="swatch__use">Page background</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#f7fafc"></div><div class="swatch__body"><div class="swatch__name">--bg-alt</div><div class="swatch__hex">#f7fafc</div><div class="swatch__use">Alternating sections (--cream-dark)</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#edf2f7"></div><div class="swatch__body"><div class="swatch__name">--border-subtle</div><div class="swatch__hex">#edf2f7</div><div class="swatch__use">Card &amp; table borders on light surfaces</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#27272a"></div><div class="swatch__body"><div class="swatch__name">--ink</div><div class="swatch__hex">#27272a</div><div class="swatch__use">Heading colour (display font)</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#3f3f46"></div><div class="swatch__body"><div class="swatch__name">--grey-700</div><div class="swatch__hex">#3f3f46</div><div class="swatch__use">Body copy colour</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#718096"></div><div class="swatch__body"><div class="swatch__name">--grey-500</div><div class="swatch__hex">#718096</div><div class="swatch__use">Muted labels, asides, card meta</div></div></div>
+    <div class="swatch"><div class="swatch__color" style="background:#cbd5e0"></div><div class="swatch__body"><div class="swatch__name">--grey-300</div><div class="swatch__hex">#cbd5e0</div><div class="swatch__use">Demo boundaries, secondary borders</div></div></div>
+  </div>
+
+  <div class="dos-donts">
+    <div class="dos"><strong>Do:</strong> reference tokens everywhere (<code>var(--accent)</code>), keep dark surfaces on the navy family, and pair teal only as accent — never as a fill for large light backgrounds.</div>
+    <div class="donts"><strong>Don't:</strong> introduce new hues without a token, use pure black text, or put accent-bright on light backgrounds (it belongs on dark).</div>
+  </div>
+</section>
+
+<!-- ============ TYPOGRAPHY ============ -->
+<section id="type" class="section section--cream-dark">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">02 · Typography &amp; voice</div>
+      <h2>Two typefaces, <em>one voice</em></h2>
+    </div>
+    <div class="aside">Plus Jakarta Sans is the display face — every heading, number, and brand word. Inter Tight carries body copy. The signature voice move: the last phrase of every heading is italic teal — accent-bright on dark, accent-deep on light.</div>
+  </div>
+
+  <table class="tokens">
+    <tr><th>Role</th><th>Font</th><th>Size</th><th>Weight</th><th>Colour</th><th>Notes</th></tr>
+    <tr><td class="dim" style="width:22%">Hero h1</td><td class="mono">Plus Jakarta Sans</td><td class="mono">clamp(2.2rem, 4.6vw, 3.4rem)</td><td>600</td><td class="mono">#fff</td><td>max-width 22ch; <code>&lt;em&gt;</code> phrase in accent-bright</td></tr>
+    <tr><td class="dim">Section h2</td><td class="mono">Plus Jakarta Sans</td><td class="mono">clamp(1.6rem, 3vw, 2.2rem)</td><td>600</td><td class="mono">--ink</td><td>tracks -0.02em; italic tail in accent-deep</td></tr>
+    <tr><td class="dim">Card h3</td><td class="mono">Plus Jakarta Sans</td><td class="mono">1.25–1.4rem</td><td>600</td><td class="mono">--ink</td><td>model-card h3 is 1.4rem</td></tr>
+    <tr><td class="dim">Eyebrow</td><td class="mono">Inter Tight</td><td class="mono">0.72rem</td><td>700</td><td class="mono">--blue</td><td>uppercase, letter-spacing 0.2em; dark variant in accent-bright</td></tr>
+    <tr><td class="dim">Lead</td><td class="mono">Inter Tight</td><td class="mono">1.05rem</td><td>400</td><td class="mono">--grey-700</td><td>max-width 56rem; strong in navy</td></tr>
+    <tr><td class="dim">Body</td><td class="mono">Inter Tight</td><td class="mono">16.5px</td><td>400</td><td class="mono">--grey-700</td><td>line-height 1.65</td></tr>
+    <tr><td class="dim">Stat value</td><td class="mono">Plus Jakarta Sans</td><td class="mono">2.2–2.4rem</td><td>600</td><td class="mono">#fff</td><td>em suffix in accent-bright</td></tr>
+    <tr><td class="dim">Card meta</td><td class="mono">Inter Tight</td><td class="mono">0.72–0.74rem</td><td>700</td><td class="mono">--grey-500</td><td>uppercase, letter-spacing 0.14em (tk-card__svc)</td></tr>
+    <tr><td class="dim">Code</td><td class="mono">ui-monospace</td><td class="mono">0.85em</td><td>400</td><td class="mono">--navy-mid</td><td>on #eef2f7 chip; dark surfaces use #d7ecff</td></tr>
+  </table>
+
+  <div class="comp-block">
+    <h3>The heading pattern</h3>
+    <p class="comp-meta">Every section head follows the same grammar: uppercase eyebrow → declarative h2 → italic teal tail phrase. The italic carries the emotional word.</p>
+    <div class="comp-demo" style="background:var(--white)">
+      <div class="eyebrow">Positioning</div>
+      <h2>The two platforms, <em>at a glance</em></h2>
+      <div class="eyebrow" style="margin-top:1.4rem">The short version</div>
+      <h2>Same protocol, <em>different jobs</em></h2>
+    </div>
+<pre class="spec"><span class="c">&lt;!-- light context --&gt;</span>
+&lt;div class="eyebrow"&gt;Positioning&lt;/div&gt;
+&lt;h2&gt;The two platforms, &lt;em&gt;at a glance&lt;/em&gt;&lt;/h2&gt;
+
+<span class="c">/* em colour: --accent-deep on light, --accent-bright on dark */</span>
+em { color: var(--accent-deep); font-style: italic; }
+.hero h1 em, .cta-card h2 em { color: var(--accent-bright); }</pre>
+  </div>
+</section>
+
+<!-- ============ COMPONENTS ============ -->
+<section id="components" class="section section--white">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">03 · Components</div>
+      <h2>The building blocks, <em>one by one</em></h2>
+    </div>
+    <div class="aside">Each component below is rendered live with the production CSS. The spec block under each one is the canonical recipe. Card components share one behaviour contract: white surface, subtle border, hover lift with teal border.</div>
+  </div>
+
+  <div class="comp-block">
+    <h3>Topnav</h3>
+    <p class="comp-meta">Sticky, navy-glass, brand + pill links. Links are scrollable on small screens; hover turns teal.</p>
+    <div class="comp-demo comp-demo--dark">
+      <div class="topnav__brand" style="color:#ffffffd9;font-family:var(--font-display);font-size:0.95rem">NV <strong style="color:var(--accent-bright);font-weight:500">oOS</strong> · Platform Research</div>
+      <div class="tool-chips" style="margin-top:0.7rem">
+        <span class="chip" style="background:#ffffff12;border-color:#ffffff2e;color:#ffffffd9">Summary</span>
+        <span class="chip" style="background:#ffffff12;border-color:#ffffff2e;color:#ffffffd9">Architecture</span>
+        <span class="chip" style="background:#ffffff12;border-color:#ffffff2e;color:#ffffffd9">Scorecard</span>
+      </div>
+    </div>
+<pre class="spec"><span class="c">/* sticky navy glass, blur 12px, hairline bottom border */</span>
+.topnav { position: sticky; top: 0; z-index: 50;
+  background: rgba(16,20,28,.94); backdrop-filter: blur(12px); }
+.topnav__brand strong { color: var(--accent-bright); }
+.topnav__links a:hover { color: var(--accent-bright); background: #ffffff14; }</pre>
+  </div>
+
+  <div class="comp-block">
+    <h3>Stats strip</h3>
+    <p class="comp-meta">Navy-deep band directly under the hero. Four cells divided by hairline borders; big display numbers with an optional teal suffix; grey labels.</p>
+    <div class="comp-demo comp-demo--dark" style="padding:0">
+      <div class="stats" style="border-top:none">
+        <div class="wrap" style="padding:0">
+          <div class="stat"><div class="stat__value">~1,648</div><div class="stat__label">native vertical tools per site</div></div>
+          <div class="stat"><div class="stat__value">12</div><div class="stat__label">security classes governing every call</div></div>
+          <div class="stat"><div class="stat__value">2</div><div class="stat__label">official MCP Registry entries</div></div>
+          <div class="stat"><div class="stat__value">50</div><div class="stat__label">target sites per gateway</div></div>
+        </div>
+      </div>
+    </div>
+<pre class="spec">.stats { background: var(--navy-deep); border-top: 1px solid #ffffff1a; }
+.stat__value { font-family: var(--font-display); color: #fff; font-size: 2.4rem; }
+.stat__value em { color: var(--accent-bright); }   <span class="c">/* e.g. "1_ day_" */</span>
+.stat__label { color: #ffffff73; font-size: 0.84rem; }</pre>
+  </div>
+
+  <div class="comp-block">
+    <h3>Model card &amp; list (division-of-labour card)</h3>
+    <p class="comp-meta">The 20px-radius card. Tag pill is navy by default, teal in the <code>--teal</code> variant; bullets are 6px teal dots.</p>
+    <div class="comp-demo">
+      <div class="model-grid" style="margin-top:0">
+        <div class="model-card">
+          <span class="model-card__tag">NV oOS — The AI Staff</span>
+          <h3>What we supply</h3>
+          <ul class="model-list">
+            <li>Assistants set up on your own server, trained on your brand voice</li>
+            <li>Seven ready-made starters — social, content, documents, campaigns</li>
+            <li>Security built in: permission controls, audit logs, encrypted storage</li>
+          </ul>
+        </div>
+        <div class="model-card model-card--teal">
+          <span class="model-card__tag">Your Team — The Brand</span>
+          <h3>What your team brings</h3>
+          <ul class="model-list">
+            <li>The brand: your voice, tone, products and offers</li>
+            <li>The strategy: what to say, to whom, and when</li>
+            <li>The sign-off: assistants draft — a human approves</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+<pre class="spec">.model-card { border-radius: var(--radius-card); <span class="c">/* 20px */</span> }
+.model-card__tag { background: var(--navy); border-radius: 999px;
+  font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; }
+.model-card--teal .model-card__tag { background: var(--accent); }
+.model-list li:before { <span class="c">/* 6px teal dot */</span> background: var(--accent-mid); }</pre>
+  </div>
+
+  <div class="comp-block">
+    <h3>Toolkit card (tk-card)</h3>
+    <p class="comp-meta">The roster/feature card: teal-deep number, uppercase service label, blue model pill, divider-separated footer line.</p>
+    <div class="comp-demo">
+      <div class="toolkit-grid" style="margin-top:0">
+        <div class="tk-card">
+          <div class="tk-card__num">01</div>
+          <h3>The Onboarding Guide</h3>
+          <div class="tk-card__svc">Your first AI colleague</div>
+          <span class="tk-card__model">DeepSeek V4.1 Flash</span>
+          <p>Knows your site inside out, answers questions about your products, drafts content — drafts only, publishing stays human.</p>
+          <div class="tk-card__dev"><strong>You provide:</strong> your brand, products and site content.</div>
+        </div>
+        <div class="tk-card">
+          <div class="tk-card__num">02</div>
+          <h3>Campaign &amp; Project Manager</h3>
+          <div class="tk-card__svc">Campaigns &amp; back office</div>
+          <span class="tk-card__model">Claude Sonnet 5</span>
+          <p>Runs your campaigns, tasks, milestones and sprints — with goal-driven to-do lists and research that cites its sources.</p>
+          <div class="tk-card__dev"><strong>You provide:</strong> your campaign calendar + workflows.</div>
+        </div>
+        <div class="tk-card">
+          <div class="tk-card__num">03</div>
+          <h3>The Care Assistant</h3>
+          <div class="tk-card__svc">Proof it works in any industry</div>
+          <span class="tk-card__model">Gemini 2.5 Pro</span>
+          <p>A privacy-safe health tracker — vitals, medications, allergies — read-only and never medical advice.</p>
+          <div class="tk-card__dev"><strong>You provide:</strong> the industry know-how.</div>
+        </div>
+      </div>
+    </div>
+<pre class="spec">.tk-card__num { color: var(--accent-deep); }
+.tk-card__svc { font-size: .74rem; letter-spacing: .14em; uppercase; color: var(--grey-500); }
+.tk-card__model { <span class="c">/* blue pill */</span> color: var(--mint-deep); background: #2b6cb01f; border: 1px solid #2b6cb04d; }
+.tk-card__dev { border-top: 1px solid #edf2f7; color: var(--grey-500); }
+.tk-card--featured { grid-column: 1/-1; border-color: var(--accent-mid); }</pre>
+  </div>
+
+  <div class="comp-block">
+    <h3>QA card &amp; standards cell</h3>
+    <p class="comp-meta">FAQ cards carry a 3px teal top edge. Standards cells get a 6px teal dot before their title.</p>
+    <div class="comp-demo">
+      <div class="qa-grid" style="margin-top:0">
+        <div class="qa-card">
+          <div class="qa-card__q">Where does our data live?</div>
+          <div class="qa-card__a"><strong>On your own server — not ours.</strong> AI calls go directly to the provider you choose, with nothing in between.</div>
+        </div>
+        <div class="qa-card">
+          <div class="qa-card__q">Will it post without our approval?</div>
+          <div class="qa-card__a"><strong>Never.</strong> Assistants draft and schedule; publishing waits for a human.</div>
+        </div>
+      </div>
+      <div class="std-grid">
+        <div class="std"><strong>Permission-Gated Skills</strong>Every skill runs behind role-based permissions and assistant-scoped grants.</div>
+        <div class="std"><strong>Audit Logging</strong>Every action and tool call recorded in the built-in audit trail.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="comp-block">
+    <h3>Flow steps &amp; numbered steps</h3>
+    <p class="comp-meta">Two step families: the 5-up flow with teal arrows between cards (campaign timeline), and the 3-up steps grid with 2rem display numbers (how-it-works).</p>
+    <div class="comp-demo">
+      <div class="flow" style="margin-top:0;grid-template-columns:repeat(4,1fr)">
+        <div class="flow-step"><div class="flow-step__num">1</div><p><strong>Brief</strong> — product, audience, offer agreed.</p></div>
+        <div class="flow-step"><div class="flow-step__num">2</div><p><strong>Import</strong> — the closest assistants, pointed at brand guidelines.</p></div>
+        <div class="flow-step"><div class="flow-step__num">3</div><p><strong>Drafts</strong> — posts, captions, email, landing brief.</p></div>
+        <div class="flow-step"><div class="flow-step__num">4</div><p><strong>Approve</strong> — human sign-off, then scheduled live.</p></div>
+      </div>
+      <div class="steps" style="grid-template-columns:repeat(3,1fr)">
+        <div class="step"><div class="step__num">1</div><h3>Pick</h3><p>One assistant from the roster and agree what your team will ask it to do.</p></div>
+        <div class="step"><div class="step__num">2</div><h3>Set up</h3><p>We import the starter, train it on your brand, stand it up on your server.</p></div>
+        <div class="step"><div class="step__num">3</div><h3>Use &amp; grow</h3><p>Work with it from your favourite chat app — then roll the setup onward.</p></div>
+      </div>
+    </div>
+<pre class="spec">.flow-step:not(:last-child):after { content: "\2192"; color: var(--accent-mid); <span class="c">/* arrow */</span> }
+.flow-step__num { color: var(--accent-deep); font-size: 1.5rem; }
+.step__num { color: var(--accent-deep); font-size: 2rem; }</pre>
+  </div>
+
+  <div class="comp-block">
+    <h3>Seam, chips &amp; quote</h3>
+    <p class="comp-meta">The seam is the brand's callout voice: a dashed-teal, centered sentence that connects two sections. Chips are white pills; the quote is the founder voice.</p>
+    <div class="comp-demo">
+      <div class="seam" style="margin-top:0"><strong>The seam:</strong> You ask in plain English — "draft next week's posts" — the assistant does it with your tools and data, then waits for your approval.</div>
+      <div class="tool-chips"><span class="chip">Site Knowledge</span><span class="chip">Memory</span><span class="chip">Draft-Only</span><span class="chip">Schedules</span></div>
+      <div class="quote">"I wanted something everyone could use safely: your keys, your server, your rules."<cite>Vijay Samtani · Co-Founder &amp; Technical Director, NV Digital Solutions</cite></div>
+    </div>
+<pre class="spec">.seam { border: 1px dashed var(--accent-mid); border-radius: 12px; text-align: center; }
+.chip { border: 1px solid #e2e8f0; border-radius: 999px; color: var(--navy); }
+.quote { font-family: var(--font-display); color: var(--navy); font-size: clamp(1.3rem,2.6vw,1.7rem); }</pre>
+  </div>
+
+  <div class="comp-block">
+    <h3>CTA card &amp; footer</h3>
+    <p class="comp-meta">The closer: a navy-deep gradient card with a radial glow and centered h2 with teal italic. The footer is flat navy with a 3px teal→blue gradient top edge.</p>
+    <div class="comp-demo" style="background:var(--bg-alt);border-style:solid">
+      <div class="cta-card">
+        <h2>One AI team — <em>every campaign you run</em></h2>
+        <p>Seven ready-made assistants prove the use cases. One connection opens them in the apps you already use — on your own server.</p>
+        <a class="btn btn--solid" style="cursor:default">Get your AI team started →</a>
+      </div>
+    </div>
+<pre class="spec">.cta-card { background: linear-gradient(135deg, var(--navy-deep), var(--navy) 55%, var(--navy-card));
+  border-radius: 24px; }
+.footer:before { <span class="c">/* 3px gradient top edge */</span>
+  background: linear-gradient(90deg, var(--accent), var(--mint) 50%, var(--accent)); }</pre>
+  </div>
+</section>
+
+<!-- ============ DARK SURFACES ============ -->
+<section id="dark" class="section section--cream-dark">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">04 · Dark surfaces</div>
+      <h2>The gateway band, <em>and its cards</em></h2>
+    </div>
+    <div class="aside">For technical stories (gateways, connections, configs) the system has a second dark treatment: a navy gradient band with glass cards — 8% white fill, 12% white border, teal dot markers — and a dark code-block family for configs.</div>
+  </div>
+
+  <div class="gateway">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow eyebrow--dark">One connection</div>
+          <h2>Every assistant, <em>in one link</em></h2>
+        </div>
+        <div class="aside">The gateway band is the technical mirror of the hero: same navy family, teal glow, white type.</div>
+      </div>
+      <div class="gateway-cards">
+        <div class="gateway-card">
+          <h3>One Link</h3>
+          <p>A single link opens your whole AI team in any chat app — <strong>acme-social.schedule_post</strong> style names.</p>
+          <div class="tool-chips"><span class="chip">Claude Desktop</span><span class="chip">Cursor / Zed</span></div>
+        </div>
+        <div class="gateway-card">
+          <h3>Locked-Down</h3>
+          <p>Key rotation, rate limits and request caps <strong>built in</strong> — no secrets in any export.</p>
+        </div>
+        <div class="gateway-card">
+          <h3>Open Source</h3>
+          <p>GPL-3.0, deployed on Node 22+ — <strong>nothing proprietary</strong> to get locked into.</p>
+        </div>
+      </div>
+      <div class="gateway-note"><strong>The rule:</strong> dark bands carry white display type, accent-bright italics, and 8%/12% glass cards — never white cards on dark.</div>
+    </div>
+  </div>
+
+  <div class="comp-block">
+    <h3>Config block (appendix-config)</h3>
+    <p class="comp-meta">Dark code panels with a header row and a teal tag pill. The companion note block is the one light-blue callout in the system (--blue family).</p>
+    <div class="comp-demo comp-demo--dark">
+      <div style="background:var(--navy-deep);border:1px solid #ffffff1f;border-radius:16px;overflow:hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.75rem 1.05rem;background:#ffffff0d;border-bottom:1px solid #ffffff1f">
+          <div style="font-family:var(--font-display);color:#fff;font-size:0.98rem">Zed · context_servers</div>
+          <span style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;color:var(--accent-bright);background:#319b881f;border:1px solid #45b8a24d;border-radius:999px;padding:0.2rem 0.6rem">Streamable HTTP</span>
+        </div>
+        <pre style="margin:0;padding:1.05rem 1.1rem;font-size:0.74rem;line-height:1.6;color:#d7ecff">"nv-oos": {
+  "command": { "path": "npx",
+    "args": ["-y", "@nvdigitalsolutions/nvoos-mcp-bridge@latest"],
+    "env": { "MCP_AI_BASE_URL": "https://…/mcp", "MCP_AI_TOKEN": "op_…" } }
+}</pre>
+      </div>
+      <div style="margin-top:1rem;background:#f0f7fd;border:1px solid #b8d4ec;border-radius:12px;padding:1rem 1.25rem;font-size:0.9rem;color:#2d3748"><strong style="color:#215387">Appendix note:</strong> config snippets always show the full env contract — tokens redacted, never the real secret.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LAYOUT ============ -->
+<section id="layout" class="section section--white">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">05 · Layout, responsive &amp; print</div>
+      <h2>The grid rules, <em>and the type math</em></h2>
+    </div>
+    <div class="aside">One container (<code>.wrap</code>, 1180px, fluid padding), sections that alternate white and cream-dark, and a mobile type scale that grows the whole page by 25% — plus a single-sheet A4 print mode.</div>
+  </div>
+
+  <table class="tokens">
+    <tr><th>Rule</th><th>Spec</th><th>Behaviour</th></tr>
+    <tr><td class="dim">Container</td><td class="mono">.wrap { max-width: 1180px; padding-inline: clamp(1.1rem, 3.5vw, 2rem) }</td><td>Single fluid container; never nested full-bleed inside cards</td></tr>
+    <tr><td class="dim">Section rhythm</td><td class="mono">.section { padding: clamp(2.2rem, 5vw, 3.2rem) 0 }</td><td>Alternate <code>--white</code> / <code>--cream-dark</code>; dark bands break the rhythm deliberately</td></tr>
+    <tr><td class="dim">Grids</td><td class="mono">toolkit 3-col · flow 5-col · steps 3-col · model/qa 2-col · stats 4-col</td><td>Collapse: 2-col at 1024px → 1-col at 560px</td></tr>
+    <tr><td class="dim">Breakpoints</td><td class="mono">1024 / 860 / 720 / 560</td><td>1024: grids halve · 860: nav brand shrinks · 720: asides left-align · 560: everything single-column</td></tr>
+    <tr><td class="dim">Type scale</td><td class="mono">html 17.5px desktop → 22px ≤720px (+25%)</td><td>All rem sizes and clamp() floors scale together — body syncs at 20.5px</td></tr>
+    <tr><td class="dim">Print</td><td class="mono">@page A4, 12mm; html 16px; body 10.5pt</td><td>Topnav &amp; buttons hidden; sections avoid page breaks; single-sheet friendly</td></tr>
+    <tr><td class="dim">Motion</td><td class="mono">transform 0.25s, box-shadow 0.25s, border-color 0.25s</td><td>Hover lifts cards -4px with teal border + soft shadow; no other motion</td></tr>
+  </table>
+
+  <div class="dos-donts">
+    <div class="dos"><strong>Do:</strong> keep every page to the same section rhythm, use the stats strip right after the hero, and end marketing pages with the CTA card + navy footer.</div>
+    <div class="donts"><strong>Don't:</strong> put light cards on dark bands (use glass cards), mix a third typeface, or animate anything besides the card hover lift.</div>
+  </div>
+</section>
+
+<!-- ============ APPENDIX ============ -->
+<section id="appendix" class="section section--cream-dark">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Appendix</div>
+      <h2>Token reference, <em>complete</em></h2>
+    </div>
+    <div class="aside">The full <code>:root</code> block as shipped — copy it into any new page verbatim, together with the two Google Fonts links.</div>
+  </div>
+
+<pre class="spec" style="white-space:pre-wrap">:root {
+  --ink: #27272a;            --blue: #2b6cb0;
+  --navy: #1a202c;           --navy-mid: #2d3748;
+  --navy-deep: #10141c;      --navy-card: #215387;
+  --accent: #319b88;         --accent-bright: #45b8a2;
+  --accent-deep: #1d443e;    --accent-mid: #319b88;
+  --mint: #2b6cb0;           --mint-deep: #215387;
+  --bg: #fafafa;             --bg-alt: #f7fafc;
+  --white: #fff;             --grey-300: #cbd5e0;
+  --grey-500: #718096;       --grey-700: #3f3f46;
+  --border-subtle: #edf2f7;
+  --font-display: "Plus Jakarta Sans", "Inter Tight", sans-serif;
+  --font-body: "Inter Tight", sans-serif;
+  --radius-card: 20px;
+  --max-width: 1180px;
+}</pre>
+
+  <table class="tokens" style="margin-top:1.2rem">
+    <tr><th>Component</th><th>Selector</th><th>Signature detail</th></tr>
+    <tr><td class="dim">Topnav</td><td class="mono">.topnav</td><td>sticky navy glass · blur 12px</td></tr>
+    <tr><td class="dim">Hero</td><td class="mono">.hero</td><td>navy gradient 105° + two radial glows · h1 em in accent-bright</td></tr>
+    <tr><td class="dim">Buttons</td><td class="mono">.btn / .btn--solid</td><td>999px pills · solid = teal, hover = accent-deep</td></tr>
+    <tr><td class="dim">Stats</td><td class="mono">.stats / .stat</td><td>navy-deep band · hairline cell borders</td></tr>
+    <tr><td class="dim">Sections</td><td class="mono">.section / .section-head</td><td>white ↔ cream-dark alternation · eyebrow + aside</td></tr>
+    <tr><td class="dim">Model card</td><td class="mono">.model-card</td><td>20px radius · navy/teal tag pill · teal dot list</td></tr>
+    <tr><td class="dim">Toolkit card</td><td class="mono">.tk-card</td><td>accent-deep number · blue model pill · dev footer line</td></tr>
+    <tr><td class="dim">QA / standards</td><td class="mono">.qa-card / .std</td><td>3px teal top edge / 6px teal dot</td></tr>
+    <tr><td class="dim">Callout</td><td class="mono">.seam</td><td>dashed teal · centered · the brand's speaking voice</td></tr>
+    <tr><td class="dim">Chips</td><td class="mono">.chip</td><td>white pills, navy text · dark variant = glass</td></tr>
+    <tr><td class="dim">Flows</td><td class="mono">.flow-step / .step</td><td>teal → arrows / 2rem display numbers</td></tr>
+    <tr><td class="dim">Quote</td><td class="mono">.quote</td><td>display font, navy, uppercase cite</td></tr>
+    <tr><td class="dim">CTA card</td><td class="mono">.cta-card</td><td>24px radius · navy-deep gradient · radial glow</td></tr>
+    <tr><td class="dim">Dark band</td><td class="mono">.gateway</td><td>navy gradient · glass cards 8%/12% · teal dots</td></tr>
+    <tr><td class="dim">Configs</td><td class="mono">.appendix-config</td><td>dark code panels · teal tag pill · #d7ecff code</td></tr>
+    <tr><td class="dim">Note</td><td class="mono">.appendix-note</td><td>light-blue callout · the only blue fill in the system</td></tr>
+    <tr><td class="dim">Footer</td><td class="mono">.footer</td><td>navy · 3px teal→blue gradient top edge</td></tr>
+  </table>
+
+  <div class="seam"><strong>Where this document ends:</strong> every new page starts from the same <code>:root</code>, the same two fonts, and the same section rhythm — then composes from these 21 components. When a page needs something new, add it here first.</div>
+</section>
+
+</div>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="src">
+      <strong>Source of truth:</strong> extracted from <a href="https://nvdigitalsolutions.com/nv-oos-sm-executive-summary-v1.html">nv-oos-sm-executive-summary-v1.html</a> (Executive Summary v7, October 2026) — CSS block, component inventory, and responsive/print rules captured verbatim. Extended components (tables, badges, diagram nodes) first used in <code>docs/nv-oos-vs-wso2-mcp-gateway-comparison.html</code>. Fonts: <a href="https://fonts.google.com/specimen/Plus+Jakarta+Sans">Plus Jakarta Sans</a> + <a href="https://fonts.google.com/specimen/Inter+Tight">Inter Tight</a> (Google Fonts).
+    </div>
+    <div>
+      <strong>NV oOS × Site Design System</strong> · v1 · October 2026 · mcp-ai-wpoos repository
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

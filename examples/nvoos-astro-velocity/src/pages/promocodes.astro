@@ -1,0 +1,39 @@
+---
+// Promocodes listing — SSR + cached (codes are validated at the field).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPromocodes } from '../lib/commerce/client';
+import { pageTitle, plainExcerpt } from '../lib/seo/meta';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+const { docs: promocodes } = await getPromocodes(Astro.url, {
+	page: 1,
+	limit: 50,
+	sort: 'date',
+});
+const active = promocodes.filter((promocode) => promocode.isActive);
+---
+
+<BaseLayout
+	title={pageTitle('Promo codes')}
+	description={plainExcerpt('Active promo codes.')}
+>
+	<h1>Promo codes</h1>
+	{
+		active.length === 0 ? (
+			<p>No active promo codes right now.</p>
+		) : (
+			<ul>
+				{active.map((promocode) => (
+					<li>
+						<strong>{promocode.code}</strong> — {promocode.discount}% off
+						{promocode.expiresAt ? ` until ${promocode.expiresAt}` : ''}
+					</li>
+				))}
+			</ul>
+		)
+	}
+</BaseLayout>

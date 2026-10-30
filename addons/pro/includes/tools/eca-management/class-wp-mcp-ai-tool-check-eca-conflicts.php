@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Check_ECA_Conflicts implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'Student post ID (required for student check)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'teacher_name'   => array(
 					'type'        => 'string',
@@ -94,6 +95,7 @@ class WP_MCP_AI_Tool_Check_ECA_Conflicts implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'ECA ID to exclude from conflict check (e.g. when updating an existing ECA)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'             => array( 'check_type', 'day', 'start_time', 'end_time' ),

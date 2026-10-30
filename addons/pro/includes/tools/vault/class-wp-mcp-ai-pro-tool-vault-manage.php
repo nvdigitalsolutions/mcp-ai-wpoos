@@ -51,6 +51,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 					),
 					'item_id'       => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Vault item ID (required for update/delete)',
 					),
 					'name'          => array(
@@ -64,6 +65,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 					),
 					'folder_id'     => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Folder ID for organization (optional)',
 					),
 					'favorite'      => array(

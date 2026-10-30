@@ -103,6 +103,7 @@ class WP_MCP_AI_Tool_Compress_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties' => array(
 				'video_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Video media ID',
 				),
 				'quality'        => array(

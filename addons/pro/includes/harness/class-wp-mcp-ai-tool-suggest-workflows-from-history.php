@@ -79,6 +79,7 @@ class WP_MCP_AI_Tool_Suggest_Workflows_From_History implements WP_MCP_AI_Tool_In
 			'properties' => array(
 				'assistant_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Restrict mining to one assistant, or 0 to mine every assistant\'s history.', 'mcp-ai-wpoos' ),
 					'default'     => 0,
 				),

@@ -120,10 +120,12 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 			'properties'           => array(
 				'image_attachment_id'    => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress Media Library attachment ID of a product image. The tool will use Google Vision to identify the product and search for prices.', 'mcp-ai-wpoos-pro' ),
 				),
 				'document_attachment_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress Media Library attachment ID of a document (invoice, quote, spec sheet PDF). The tool will extract line items and look up prices for each.', 'mcp-ai-wpoos-pro' ),
 				),
 				'urls'                   => array(

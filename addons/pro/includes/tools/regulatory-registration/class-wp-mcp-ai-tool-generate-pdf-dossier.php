@@ -63,6 +63,7 @@ class WP_MCP_AI_Tool_Generate_Pdf_Dossier implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'Registration ID for dossier generation (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'include_toc'          => array(
 					'type'        => 'boolean',

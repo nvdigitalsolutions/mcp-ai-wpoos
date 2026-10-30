@@ -72,7 +72,10 @@ class WP_MCP_AI_Tool_Simulate_Workflow_Rule implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'rule_id'        => array( 'type' => 'integer' ),
+				'rule_id'        => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'sample_message' => array(
 					'type'        => 'string',
 					'description' => __( 'Test message body to simulate.', 'mcp-ai-wpoos-pro' ),

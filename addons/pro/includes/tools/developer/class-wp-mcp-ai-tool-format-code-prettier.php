@@ -117,6 +117,7 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'Optional WPCode snippet ID to format (updates the snippet)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'   => array( 'code' ),

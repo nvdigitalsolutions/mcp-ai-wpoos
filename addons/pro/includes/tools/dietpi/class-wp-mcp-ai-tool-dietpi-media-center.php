@@ -61,6 +61,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Media_Center' ) ) {
 					),
 					'library_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'Library section ID (required for refresh_library, optional for recently_added).', 'mcp-ai-wpoos-pro' ),
 					),
 					'limit'      => array(

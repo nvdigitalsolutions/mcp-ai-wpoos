@@ -114,6 +114,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of a reference image to guide video generation (optional).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'reference_image_file_id' => $this->get_file_id_parameter_schema(),
 				'reference_image_url'     => $this->get_url_parameter_schema( 'image', __( 'URL of a reference image to guide video generation (optional).', 'mcp-ai-wpoos' ) ),

@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Mark_ECA_Attendance implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'WordPress post ID of the ECA (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'session_date'  => array(
 					'type'        => 'string',
@@ -79,6 +80,7 @@ class WP_MCP_AI_Tool_Mark_ECA_Attendance implements WP_MCP_AI_Tool_Interface, WP
 								'type'        => 'integer',
 								'description' => __( 'WordPress post ID of the student', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 1,
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							),
 							'status'     => array(
 								'type'        => 'string',

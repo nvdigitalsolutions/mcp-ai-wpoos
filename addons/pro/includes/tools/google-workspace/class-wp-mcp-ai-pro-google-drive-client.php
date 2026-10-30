@@ -24,8 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Pro_Google_Drive_Client {
 
-	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
-	const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
+	const TOKEN_ENDPOINT  = 'https://oauth2.googleapis.com/token';
+	const DRIVE_API_BASE  = 'https://www.googleapis.com/drive/v3';
 	const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4';
 
 	/**
@@ -43,11 +43,16 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 	/**
 	 * Resolve Drive credentials from a Remote Sites connection or from base settings.
 	 *
+	 * When the execution context carries an assistant whose Remote Site
+	 * Connections are restricted (the assistant editor metabox), resolution is
+	 * limited to the enabled connections and the settings fallback is refused.
+	 *
 	 * @param string $connection_id Optional Remote Sites connection ID. Empty falls back to settings.
+	 * @param array  $context       Optional execution context (assistant_id is honoured).
 	 * @return array|WP_Error Credentials array with keys client_id, client_secret,
 	 *         refresh_token, configured_user and source — or WP_Error.
 	 */
-	public static function resolve_credentials( $connection_id ) {
+	public static function resolve_credentials( $connection_id, array $context = array() ) {
 		$connection_id = sanitize_key( (string) $connection_id );
 
 		// The tool schema documents the fallback as "settings-based
@@ -64,6 +69,8 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 		$refresh_token   = '';
 		$configured_user = '';
 		$source          = 'settings';
+		$resolved_id     = '';
+		$resolved_name   = '';
 
 		if ( '' !== $connection_id ) {
 			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -94,6 +101,20 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 				);
 			}
 
+			// Assistant-level restriction: an assistant with a configured Remote
+			// Site Connections list may only use connections from that list.
+			if ( ! self::is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_drive_connection_not_enabled',
+					sprintf(
+						/* translators: %s: connection name. */
+						__( 'Google Drive connection "%s" is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections, or use one of the connections returned by list_drive_connections.', 'mcp-ai-wpoos-pro' ),
+						isset( $connection['name'] ) ? (string) $connection['name'] : $connection_id
+					),
+					array( 'status' => 403 )
+				);
+			}
+
 			$client_id       = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
 			$client_secret   = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
 			$refresh_token   = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
@@ -107,7 +128,9 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 				$refresh_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $refresh_token );
 			}
 
-			$source = 'connection';
+			$source        = 'connection';
+			$resolved_id   = $connection_id;
+			$resolved_name = isset( $connection['name'] ) ? trim( (string) $connection['name'] ) : '';
 		} else {
 			$settings = self::get_settings();
 
@@ -115,13 +138,63 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 			$client_secret   = isset( $settings['google_drive_client_secret'] ) ? trim( (string) $settings['google_drive_client_secret'] ) : '';
 			$refresh_token   = isset( $settings['google_drive_refresh_token'] ) ? trim( (string) $settings['google_drive_refresh_token'] ) : '';
 			$configured_user = isset( $settings['google_drive_user_email'] ) ? trim( (string) $settings['google_drive_user_email'] ) : '';
+
+			// A restricted assistant may only use the site-wide settings fallback
+			// when the assistant editor explicitly granted it (the "settings"
+			// row in the Remote Site Connections metabox). Checked only when
+			// settings credentials are actually configured, so a restricted
+			// assistant without them can still auto-resolve below.
+			if ( ! self::is_settings_fallback_allowed( $context ) && '' !== $client_id && '' !== $client_secret && '' !== $refresh_token ) {
+				return new WP_Error(
+					'wp_mcp_ai_drive_settings_not_allowed',
+					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide Google Drive settings cannot be used. Enable the site-wide Google Drive settings row (or a Drive connection) for the assistant in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
+		// Self-correcting fallback: when no connection was named and the
+		// settings-based credentials are absent, resolve to the Remote Sites
+		// Drive connection instead of failing. Pro sites commonly keep Drive
+		// credentials only inside a named connection, and an omitted
+		// connection_id must then use that connection rather than report the
+		// integration as unconfigured (which previously led assistants to
+		// disable or remove the perfectly valid connection). A restricted
+		// assistant only ever auto-resolves to one of its allowed connections.
+		if ( '' === $connection_id && ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) ) {
+			$auto = self::resolve_auto_connection( $context );
+			if ( is_wp_error( $auto ) ) {
+				return $auto;
+			}
+			if ( is_array( $auto ) ) {
+				$client_id       = $auto['client_id'];
+				$client_secret   = $auto['client_secret'];
+				$refresh_token   = $auto['refresh_token'];
+				$configured_user = $auto['configured_user'];
+				$source          = 'connection';
+				$resolved_id     = $auto['id'];
+				$resolved_name   = $auto['name'];
+			} elseif ( null !== self::get_allowed_connection_ids( $context ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_drive_no_allowed_connection',
+					__( 'None of the Google Drive connections enabled for this assistant have usable credentials. Enable a Drive connection in the assistant editor (Remote Site Connections) and complete its OAuth flow under Remote Sites.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
 		}
 
 		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
-			return new WP_Error(
-				'wp_mcp_ai_drive_missing_credentials',
-				__( 'Google Drive API credentials are not configured. Add the client ID, client secret, and refresh token either in a Google Drive connection (Remote Sites) or in the NV oOS settings.', 'mcp-ai-wpoos-pro' )
-			);
+			$message = __( 'Google Drive API credentials are not configured. Add the client ID, client secret, and refresh token either in a Google Drive connection (Remote Sites) or in the NV oOS settings.', 'mcp-ai-wpoos-pro' );
+
+			if ( '' !== $connection_id ) {
+				$message = sprintf(
+					/* translators: %s: connection ID. */
+					__( 'Google Drive connection "%s" has no usable credentials. Complete its OAuth flow under Remote Sites, or pass another connection_id (see list_drive_connections).', 'mcp-ai-wpoos-pro' ),
+					$connection_id
+				);
+			}
+
+			return new WP_Error( 'wp_mcp_ai_drive_missing_credentials', $message );
 		}
 
 		return array(
@@ -130,7 +203,244 @@ class WP_MCP_AI_Pro_Google_Drive_Client {
 			'refresh_token'   => $refresh_token,
 			'configured_user' => $configured_user,
 			'source'          => $source,
+			'connection_id'   => $resolved_id,
+			'connection_name' => $resolved_name,
 		);
+	}
+
+	/**
+	 * Enumerate the Remote Sites Google Drive connections that auto-resolution
+	 * considers: enabled, typed google_drive, with complete credentials.
+	 *
+	 * When the context carries a restricted assistant, only connections from
+	 * the assistant's Remote Site Connections list are considered — the same
+	 * rules resolve_auto_connection() applies.
+	 *
+	 * @param array $context Optional execution context (assistant_id is honoured).
+	 * @return array<string,array> Connection ID => connection array.
+	 */
+	public static function get_auto_connection_candidates( array $context = array() ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$allowed_ids = self::get_allowed_connection_ids( $context );
+		$candidates  = array();
+
+		foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $candidate_id => $connection ) {
+			if ( ! is_array( $connection ) ) {
+				continue;
+			}
+
+			if ( null !== $allowed_ids && ! in_array( (string) $candidate_id, $allowed_ids, true ) ) {
+				continue;
+			}
+
+			$connection_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+			if ( 'google_drive' !== $connection_type || empty( $connection['enabled'] ) ) {
+				continue;
+			}
+
+			$candidate_client_id = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+			$candidate_secret    = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
+			$candidate_refresh   = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
+
+			if ( '' === $candidate_client_id || '' === $candidate_secret || '' === $candidate_refresh ) {
+				continue;
+			}
+
+			$candidates[ (string) $candidate_id ] = $connection;
+		}
+
+		return $candidates;
+	}
+
+	/**
+	 * Find the Remote Sites Google Drive connection to use when no
+	 * connection_id was given and the settings-based credentials are absent.
+	 *
+	 * Returns null when no usable connection exists, the single enabled
+	 * connection when exactly one does, or a WP_Error listing the candidates
+	 * when several are enabled (ambiguous — the caller must name one).
+	 *
+	 * When the context carries a restricted assistant, only connections from
+	 * the assistant's Remote Site Connections list are considered.
+	 *
+	 * @param array $context Optional execution context (assistant_id is honoured).
+	 * @return array|null|WP_Error
+	 */
+	private static function resolve_auto_connection( array $context = array() ) {
+		$candidates = self::get_auto_connection_candidates( $context );
+
+		if ( empty( $candidates ) ) {
+			return null;
+		}
+
+		if ( count( $candidates ) > 1 ) {
+			$labels = array();
+			foreach ( $candidates as $candidate_id => $connection ) {
+				$labels[] = sprintf(
+					'%1$s (%2$s)',
+					(string) $candidate_id,
+					isset( $connection['name'] ) ? (string) $connection['name'] : (string) $candidate_id
+				);
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_drive_ambiguous_connection',
+				sprintf(
+					/* translators: %s: comma-separated connection IDs and names. */
+					__( 'Multiple Google Drive connections are enabled and healthy, but no connection_id was given — the tool will not guess which account to use. Pass one of: %s. Call list_drive_connections for their names and enabled state.', 'mcp-ai-wpoos-pro' ),
+					implode( ', ', $labels )
+				)
+			);
+		}
+
+		$auto_id         = (string) array_key_first( $candidates );
+		$auto_connection = $candidates[ $auto_id ];
+
+		return array(
+			'id'              => $auto_id,
+			'name'            => isset( $auto_connection['name'] ) ? trim( (string) $auto_connection['name'] ) : $auto_id,
+			'client_id'       => trim( (string) $auto_connection['client_id'] ),
+			'client_secret'   => WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( trim( (string) $auto_connection['client_secret'] ) ),
+			'refresh_token'   => WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( trim( (string) $auto_connection['refresh_token'] ) ),
+			'configured_user' => isset( $auto_connection['user_email'] ) ? trim( (string) $auto_connection['user_email'] ) : '',
+		);
+	}
+
+	/**
+	 * Resolve the assistant's allowed connection IDs from the execution context.
+	 *
+	 * Returns null when unrestricted (no assistant context, or the assistant
+	 * has no configured Remote Site Connections list) — mirroring the
+	 * remote_wp_connection semantics — or the allowed connection IDs as strings.
+	 *
+	 * @param array $context Execution context.
+	 * @return array|null Allowed connection IDs, or null when unrestricted.
+	 */
+	public static function get_allowed_connection_ids( array $context ) {
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		if ( ! $assistant_id ) {
+			return null;
+		}
+
+		$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+
+		if ( ! is_array( $enabled_connections ) ) {
+			// Not configured — legacy behaviour allows all connections.
+			return null;
+		}
+
+		return array_map( 'strval', $enabled_connections );
+	}
+
+	/**
+	 * Whether a connection is enabled for the assistant in the execution context.
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param array  $context       Execution context.
+	 * @return bool True when allowed (or unrestricted), false otherwise.
+	 */
+	public static function is_connection_enabled_for_assistant( $connection_id, array $context ) {
+		$allowed_ids = self::get_allowed_connection_ids( $context );
+
+		if ( null === $allowed_ids ) {
+			return true;
+		}
+
+		return in_array( (string) $connection_id, $allowed_ids, true );
+	}
+
+	/**
+	 * Whether the site-wide settings fallback is allowed in the execution context.
+	 *
+	 * Unrestricted assistants (no Remote Site Connections list) may always use
+	 * the fallback; restricted assistants must have the literal "settings"
+	 * entry checked in the assistant editor metabox.
+	 *
+	 * @param array $context Execution context.
+	 * @return bool True when allowed, false otherwise.
+	 */
+	public static function is_settings_fallback_allowed( array $context ) {
+		$allowed_ids = self::get_allowed_connection_ids( $context );
+
+		if ( null === $allowed_ids ) {
+			return true;
+		}
+
+		return in_array( 'settings', $allowed_ids, true );
+	}
+
+	/**
+	 * Whether a Drive file belongs to the given folder tree.
+	 *
+	 * The scoped folder itself always counts as in scope. Otherwise the file's
+	 * parent chain is walked (bounded breadth-first) looking for the scoped
+	 * folder. Files with no parents — and chains that cannot be verified — are
+	 * treated as out of scope (fail closed).
+	 *
+	 * @param array  $metadata     Files.get metadata for the file (must include parents).
+	 * @param string $file_id      Drive file ID.
+	 * @param string $folder_id    Scoped folder ID.
+	 * @param string $access_token OAuth access token.
+	 * @param int    $timeout      Request timeout in seconds.
+	 * @return bool|WP_Error True when in scope, false when outside, WP_Error when
+	 *                       the chain could not be verified.
+	 */
+	public static function is_file_within_folder_tree( array $metadata, $file_id, $folder_id, $access_token, $timeout ) {
+		$file_id   = (string) $file_id;
+		$folder_id = (string) $folder_id;
+
+		if ( $file_id === $folder_id ) {
+			return true;
+		}
+
+		$queue     = array( $file_id );
+		$visited   = array();
+		$max_depth = 8;
+
+		while ( ! empty( $queue ) && $max_depth > 0 ) {
+			$next = array();
+
+			foreach ( $queue as $current_id ) {
+				$current_id = (string) $current_id;
+
+				if ( isset( $visited[ $current_id ] ) ) {
+					continue;
+				}
+				$visited[ $current_id ] = true;
+
+				if ( $current_id === $file_id ) {
+					// The starting node's parents come from the metadata we already hold.
+					$parent_ids = isset( $metadata['parents'] ) && is_array( $metadata['parents'] )
+						? array_map( 'strval', $metadata['parents'] )
+						: array();
+				} else {
+					$parent_meta = self::get_metadata( $current_id, $access_token, $timeout );
+					if ( is_wp_error( $parent_meta ) ) {
+						return $parent_meta;
+					}
+
+					$parent_ids = isset( $parent_meta['parents'] ) && is_array( $parent_meta['parents'] )
+						? array_map( 'strval', $parent_meta['parents'] )
+						: array();
+				}
+
+				foreach ( $parent_ids as $parent_id ) {
+					if ( $folder_id === $parent_id ) {
+						return true;
+					}
+					$next[] = $parent_id;
+				}
+			}
+
+			$queue = $next;
+			--$max_depth;
+		}
+
+		return false;
 	}
 
 	/**

@@ -127,6 +127,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				),
 				'item_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'CCT item ID for get/update actions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page' => array(

@@ -95,6 +95,7 @@ class WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator implements WP_MCP_AI_Tool_
 			'properties' => array(
 				'matter_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Post ID of the legal matter (mcp_ai_lf_matter CPT).', 'mcp-ai-wpoos-pro' ),
 				),
 				'ai_tools_used'   => array(

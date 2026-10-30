@@ -1,0 +1,5 @@
+[
+	{ "id": 1, "name": "Sofas", "image": "http://localhost:8000/wp-content/uploads/2026/10/cat-sofas.jpg", "productsCount": 2 },
+	{ "id": 2, "name": "Chairs", "image": "http://localhost:8000/wp-content/uploads/2026/10/cat-chairs.jpg", "productsCount": 2 },
+	{ "id": 3, "name": "Tables", "image": "http://localhost:8000/wp-content/uploads/2026/10/cat-tables.jpg", "productsCount": 4 }
+]

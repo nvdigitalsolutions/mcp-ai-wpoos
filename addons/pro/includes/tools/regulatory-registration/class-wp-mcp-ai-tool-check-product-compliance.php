@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'integer',
 					'description' => __( 'Product ID to check (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'country'           => array(
 					'type'        => 'string',

@@ -95,6 +95,7 @@ class WP_MCP_AI_Tool_LF_Contract_Reviewer implements WP_MCP_AI_Tool_Interface, W
 			'properties' => array(
 				'document_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the document to review.', 'mcp-ai-wpoos-pro' ),
 				),
 				'review_focus' => array(

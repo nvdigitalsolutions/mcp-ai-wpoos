@@ -1,0 +1,204 @@
+name: Sync nvoos-funiq-velocity
+
+# One-way mirror of the licensed Funiq Payload admin to the PRIVATE repo
+# nvdigitalsolutions/nvoos-funiq-velocity (Proposal 085 Phase 4, re-scoped
+# 2026-10-29 — the Envato item contains no web PWA; the rollback leg is the
+# Payload CMS admin. See the decision record in
+# docs/project/plans/funiq-bridge-velocity-storefront-implementation.md).
+#
+# Pipeline (validated locally 2026-10-29 against Payload 3.64 / Next 15.4 /
+# PostgreSQL 16):
+#   1. Clone the licensed CMS source from the PRIVATE repo nvoos-funiq-pwa.
+#   2. Enable Next standalone output, `npm ci`, `next build`.
+#   3. Generate + apply Payload migrations against a throwaway Postgres.
+#   4. Assemble the mirror tree (standalone entry + .next + vendor
+#      manifest — Velocity runs `npm install` + `node server.js`, no build).
+#   5. Hermetic smoke: boot the assembled app and assert the licensed
+#      mobile app's Payload contract (/admin, /api/products {docs,totalDocs},
+#      globals, assets, /).
+#   6. License-boundary guard (mirror MUST be private) + force-push.
+#
+# The mirror repo history is intentionally flat (one commit per sync,
+# force-pushed). Never commit to the mirror directly.
+#
+# No content rebuild loop exists: Payload serves the database live, so
+# content changes never need a redeploy. Re-sync only when the licensed
+# source or this recipe changes (workflow_dispatch).
+#
+# Security hardening (per the repo's research notes for this track):
+#   - least-privilege `permissions: contents: read` at the workflow level;
+#   - tokens are referenced via env only, never inlined into command
+#     arguments (arg lists leak into process tables/logs);
+#   - the license boundary is enforced by CI: the mirror target MUST be
+#     private or the sync fails.
+#
+# Activation (owner steps, one-time — Proposal 085 Phase 1; repos + tokens
+# created 2026-10-29):
+#   1. Repo nvdigitalsolutions/nvoos-funiq-pwa (private) with the licensed
+#      source (payload-cms/funiq-cms) + LICENSE.txt. DONE.
+#   2. Repo nvdigitalsolutions/nvoos-funiq-velocity (private, empty) —
+#      this workflow backfills it. DONE.
+#   3. Monorepo secrets NVOOS_FUNIQ_PWA_READ_TOKEN (read-only clone) and
+#      NVOOS_FUNIQ_VELOCITY_REPO_TOKEN (push to the mirror). DONE.
+#   4. Run this workflow once via workflow_dispatch (backfills the mirror).
+#   5. In Velocity: connect the mirror, root directory = repo root, entry
+#      server.js, no build command, Node 22, env DATABASE_URI /
+#      PAYLOAD_SECRET / HOSTNAME=0.0.0.0 / NODE_ENV=production.
+#
+# Until step 3 is complete the workflow SKIPS with a notice (exit 0) so
+# alpha-working stays green; the notice repeats the checklist above.
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/funiq-bridge-velocity/**'
+      - '.github/workflows/sync-nvoos-funiq-velocity.yml'
+  # Manual runs let you force a sync without waiting for a merge (first-run
+  # verification after adding the tokens, backfills, licensed-source bumps).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: funiq_smoke
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Gate on owner Phase 1 (skip until the private repos + tokens exist)
+        env:
+          PWA_READ_TOKEN: ${{ secrets.NVOOS_FUNIQ_PWA_READ_TOKEN }}
+          VELOCITY_REPO_TOKEN: ${{ secrets.NVOOS_FUNIQ_VELOCITY_REPO_TOKEN }}
+        run: |
+          if [ -z "$PWA_READ_TOKEN" ] || [ -z "$VELOCITY_REPO_TOKEN" ]; then
+            echo "::notice::Skipping sync — owner Phase 1 incomplete. Create the private repos nvoos-funiq-pwa and nvoos-funiq-velocity and add the NVOOS_FUNIQ_PWA_READ_TOKEN / NVOOS_FUNIQ_VELOCITY_REPO_TOKEN secrets (see this workflow's header)."
+            exit 0
+          fi
+          echo "Phase 1 tokens present — proceeding with sync."
+
+      - name: Clone the licensed CMS source from the private repo
+        env:
+          PWA_READ_TOKEN: ${{ secrets.NVOOS_FUNIQ_PWA_READ_TOKEN }}
+        run: |
+          # Token via env + http.extraheader — never inlined into argv.
+          AUTH_HEADER=$(printf 'x-access-token:%s' "$PWA_READ_TOKEN" | base64 -w0)
+          rm -rf /tmp/nvoos-funiq-pwa
+          git -c http.extraheader="AUTHORIZATION: basic $AUTH_HEADER" \
+            clone --depth 1 https://github.com/nvdigitalsolutions/nvoos-funiq-pwa.git /tmp/nvoos-funiq-pwa
+          test -f /tmp/nvoos-funiq-pwa/payload-cms/funiq-cms/package.json || {
+            echo "::error::nvoos-funiq-pwa has no payload-cms/funiq-cms — the licensed CMS checkout is missing."
+            exit 1
+          }
+          echo "CMS source cloned."
+
+      - name: Build the Payload admin (standalone)
+        env:
+          PAYLOAD_SECRET: ci-build-stub-not-used-at-runtime
+        run: |
+          CMS=/tmp/nvoos-funiq-pwa/payload-cms/funiq-cms
+          # The vendor config lacks `output: 'standalone'` (its own
+          # Dockerfile comment says the flag must be added). The replacement
+          # drops only an identity webpack passthrough — behaviour-equivalent.
+          node "$GITHUB_WORKSPACE/examples/funiq-bridge-velocity/scripts/enable-standalone.mjs" "$CMS"
+          cd "$CMS"
+          npm ci --no-audit --no-fund
+          NEXT_TELEMETRY_DISABLED=1 npm run build
+          test -f .next/standalone/server.js || { echo "::error::standalone build missing server.js"; exit 1; }
+          test -f .next/BUILD_ID || { echo "::error::build missing BUILD_ID"; exit 1; }
+          echo "Payload admin built (standalone)."
+
+      - name: License boundary guard — the mirror target must be private
+        env:
+          VELOCITY_REPO_TOKEN: ${{ secrets.NVOOS_FUNIQ_VELOCITY_REPO_TOKEN }}
+        run: |
+          VISIBILITY=$(curl -sS -H "Authorization: Bearer $VELOCITY_REPO_TOKEN" \
+            https://api.github.com/repos/nvdigitalsolutions/nvoos-funiq-velocity \
+            | grep -o '"private": *[a-z]*' | cut -d' ' -f2)
+          if [ "$VISIBILITY" != "true" ]; then
+            echo "::error::nvoos-funiq-velocity is not private ($VISIBILITY) — licensed bytes must never reach a public repo. Aborting sync."
+            exit 1
+          fi
+          echo "License boundary verified: mirror is private."
+
+      - name: Assemble mirror tree
+        run: |
+          node "$GITHUB_WORKSPACE/examples/funiq-bridge-velocity/scripts/assemble-mirror.mjs" \
+            /tmp/nvoos-funiq-pwa/payload-cms/funiq-cms /tmp/nvoos-funiq-velocity
+          test -f /tmp/nvoos-funiq-velocity/LICENSE.txt || {
+            echo "::error::LICENSE.txt (Envato purchase proof) missing from the private repo root — the license boundary requires it in the mirror."
+            exit 1
+          }
+
+      - name: Migrate a throwaway Postgres (schema for the smoke)
+        env:
+          DATABASE_URI: postgres://postgres:postgres@127.0.0.1:5432/funiq_smoke
+          PAYLOAD_SECRET: ci-smoke-secret
+        run: |
+          CMS=/tmp/nvoos-funiq-pwa/payload-cms/funiq-cms
+          # Wait for the postgres service container.
+          for i in $(seq 1 60); do
+            if (echo > /dev/tcp/127.0.0.1/5432) 2>/dev/null; then echo "postgres up"; break; fi
+            sleep 1
+            [ "$i" = "60" ] && { echo "::error::postgres service did not come up"; exit 1; }
+          done
+          cd "$CMS"
+          # Payload production never auto-pushes schema: create + apply the
+          # initial migration (validated: fully non-interactive with a name).
+          npx payload migrate:create initial
+          npx payload migrate
+          echo "Migrations applied."
+
+      - name: Smoke-test the assembled app (Payload contract)
+        env:
+          DATABASE_URI: postgres://postgres:postgres@127.0.0.1:5432/funiq_smoke
+          PAYLOAD_SECRET: ci-smoke-secret
+        run: |
+          # Velocity installs node_modules from the vendor manifest; the CI
+          # smoke reuses the checkout's install (identical tree).
+          cp -r /tmp/nvoos-funiq-pwa/payload-cms/funiq-cms/node_modules /tmp/nvoos-funiq-velocity/node_modules
+          cd /tmp/nvoos-funiq-velocity
+          node --check server.js
+          node --check scripts/smoke.mjs
+          node scripts/smoke.mjs .
+
+      - name: Push to nvoos-funiq-velocity (private mirror)
+        working-directory: /tmp/nvoos-funiq-velocity
+        env:
+          VELOCITY_REPO_TOKEN: ${{ secrets.NVOOS_FUNIQ_VELOCITY_REPO_TOKEN }}
+        run: |
+          # Pin the initial branch to main: git init alone honours the runner's
+          # init.defaultBranch (or falls back to master), which makes the later
+          # `git push ... main --force` fail with "src refspec main does not match any".
+          git init -q -b main
+          git add .
+          git -c user.name="GitHub Actions" -c user.email="actions@github.com" \
+            commit -q -m "Sync Funiq Payload admin Velocity app ($GITHUB_SHA)" || echo "No changes to commit."
+          # Token via env + http.extraheader — never inlined into argv.
+          AUTH_HEADER=$(printf 'x-access-token:%s' "$VELOCITY_REPO_TOKEN" | base64 -w0)
+          git -c http.extraheader="AUTHORIZATION: basic $AUTH_HEADER" \
+            push https://github.com/nvdigitalsolutions/nvoos-funiq-velocity.git main --force

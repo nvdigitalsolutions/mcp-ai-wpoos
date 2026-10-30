@@ -100,6 +100,7 @@ class WP_MCP_AI_Tool_LF_Court_Deadline_Tracker implements WP_MCP_AI_Tool_Interfa
 				),
 				'matter_id'            => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The matter ID to manage deadlines for.', 'mcp-ai-wpoos-pro' ),
 				),
 				'deadline_description' => array(

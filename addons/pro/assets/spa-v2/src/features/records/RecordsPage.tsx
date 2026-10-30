@@ -10,18 +10,23 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import {
 	DataTable,
 	type DataTableColumn,
 	type DataTableRow,
 } from '../../components/shared/DataTable';
+import { Pagination } from '../../components/shared/Pagination';
 import {
 	RecordsClient,
+	RECORDS_PER_PAGE,
 	type RecordEntityConfig,
 	type RecordSummary,
 } from '../../api/records';
+import { SitePicker } from '../commerce/SitePicker';
+
+const REMOTE_SITE_KEY = 'nvoos-console.records.site';
 
 function useRecords(
 	schemaEndpoint: string,
@@ -125,6 +130,15 @@ export const RECORDS_GROUP_COPY: Record< string, { title: string; subtitle: stri
 		title: __( 'Food & Beverage', 'nvoos-pro-spa' ),
 		subtitle: __( 'Sales, purchases, stock counts, waste and bookings.', 'nvoos-pro-spa' ),
 	},
+	// Proposal 089 Phase 4e — commerce products and core content records.
+	commerce: {
+		title: __( 'Products', 'nvoos-pro-spa' ),
+		subtitle: __( 'WooCommerce product catalogue (read-mostly; edits stay in wp-admin).', 'nvoos-pro-spa' ),
+	},
+	content: {
+		title: __( 'Content', 'nvoos-pro-spa' ),
+		subtitle: __( 'Posts and pages — browse here, edit in wp-admin.', 'nvoos-pro-spa' ),
+	},
 	records: {
 		title: __( 'Records', 'nvoos-pro-spa' ),
 		subtitle: __( 'Entity records across the toolkits.', 'nvoos-pro-spa' ),
@@ -134,15 +148,30 @@ export const RECORDS_GROUP_COPY: Record< string, { title: string; subtitle: stri
 export interface RecordsPageProps {
 	/** Command-center partition to render (undefined = every entity). */
 	group?: string;
+	/**
+	 * Enable Phase B remote browsing: a site picker switches the list and
+	 * detail fetches to the read-only remote proxy. Research/create are
+	 * hidden while a remote site is selected.
+	 */
+	allowRemote?: boolean;
 }
 
-export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
+export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
 	const { entities: allEntities, schemaLoading, schemaError, client } = useRecords(
 		runtime?.endpoints.recordsSchema ?? '',
 		runtime?.endpoints.wpBase ?? '',
 		runtime?.nonce ?? ''
 	);
+
+	// Phase B — the selected remote site (empty = local records).
+	const [ remoteSite, setRemoteSite ] = useState< string >( () => {
+		try {
+			return window.localStorage.getItem( REMOTE_SITE_KEY ) ?? '';
+		} catch {
+			return '';
+		}
+	} );
 
 	const entities = useMemo(
 		() => filterEntitiesByGroup( allEntities, group ),
@@ -153,10 +182,42 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 
 	const [ entityKey, setEntityKey ] = useState< string >( '' );
 	const [ search, setSearch ] = useState( '' );
+	// The search term the list was actually fetched with — typing does not
+	// refetch, submitting the form does (see the search form below).
+	const [ appliedSearch, setAppliedSearch ] = useState( '' );
 	const [ records, setRecords ] = useState< RecordSummary[] >( [] );
 	const [ loading, setLoading ] = useState< boolean >( false );
 	const [ error, setError ] = useState< string | null >( null );
+	// Server-side pagination (wp/v2 reports the true counts through the
+	// X-WP-Total / X-WP-TotalPages headers). The console must never present a
+	// truncated first page as if it were the whole collection.
+	const [ page, setPage ] = useState< number >( 1 );
+	const [ perPage, setPerPage ] = useState< number >( RECORDS_PER_PAGE );
+	const [ total, setTotal ] = useState< number >( 0 );
+	// Bumped to force a refetch when the query has not changed (retry, or a
+	// record was just created).
+	const [ reloadToken, setReloadToken ] = useState< number >( 0 );
+
+	/**
+	 * Clear the visible page while a new query (entity, connection or search)
+	 * is in flight — otherwise stale rows would render under the new columns,
+	 * and the pager would advertise the previous collection's totals.
+	 * `loading` is set here so the loading state shows on the very next render
+	 * instead of flashing “No records found.” before the effect fires.
+	 */
+	const resetList = (): void => {
+		setRecords( [] );
+		setTotal( 0 );
+		setLoading( true );
+	};
+	// Master-detail (Teams/Blueprints pattern): the expanded row's full
+	// record is fetched on expand — the bottom detail panel is gone, and
+	// values render once, already populated, instead of popping in.
+	const [ expandedId, setExpandedId ] = useState< number | null >( null );
 	const [ selected, setSelected ] = useState< RecordSummary | null >( null );
+	const [ detailLoading, setDetailLoading ] = useState< boolean >( false );
+	const [ detailError, setDetailError ] = useState< string | null >( null );
+	const detailAbort = useRef< AbortController | null >( null );
 
 	// Research & Add (4a-b): query → suggested fields → reviewed create.
 	const [ researchQuery, setResearchQuery ] = useState( '' );
@@ -171,31 +232,49 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 	const [ createBusy, setCreateBusy ] = useState< boolean >( false );
 	const [ notice, setNotice ] = useState< string | null >( null );
 
-	// The entity-change effect applies the current search without
-	// subscribing to every keystroke (the form submit triggers re-fetch).
-	const searchRef = useRef( search );
-	searchRef.current = search;
-
 	const entity = useMemo(
 		() => entities.find( ( e ) => e.key === entityKey ) ?? entities[ 0 ] ?? null,
 		[ entities, entityKey ]
 	);
 
 	const refresh = useCallback(
-		( currentEntity: RecordEntityConfig | null, currentSearch: string ) => {
+		(
+			currentEntity: RecordEntityConfig | null,
+			currentSearch: string,
+			currentPage: number,
+			currentPerPage: number
+		) => {
 			if ( ! currentEntity ) {
 				return;
 			}
 			setLoading( true );
 			setError( null );
 			const controller = new AbortController();
-			client
-				.list( currentEntity, currentSearch, controller.signal )
-				.then( ( rows ) => {
-					setRecords( rows );
+			const options = {
+				search: currentSearch,
+				page: currentPage,
+				perPage: currentPerPage,
+				signal: controller.signal,
+			};
+			const request = remoteSite
+				? client.listRemote( currentEntity, options, remoteSite )
+				: client.list( currentEntity, options );
+			request
+				.then( ( result ) => {
+					setRecords( result.items );
+					setTotal( result.total );
 					setLoading( false );
 				} )
 				.catch( ( err: unknown ) => {
+					// WordPress answers 400 (rest_post_invalid_page_number) once a
+					// page scrolls past the end — e.g. after deleting the last row
+					// of the last page. Fall back to the first page instead of
+					// dead-ending the console.
+					if ( ( err as { status?: number } | null )?.status === 400 && currentPage > 1 ) {
+						setLoading( false );
+						setPage( 1 );
+						return;
+					}
 					setError(
 						err instanceof Error ? err.message : __( 'Failed to load records.', 'nvoos-pro-spa' )
 					);
@@ -203,20 +282,72 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 				} );
 			return () => controller.abort();
 		},
-		[ client ]
+		[ client, remoteSite ]
 	);
 
 	useEffect( () => {
 		if ( ! entity ) {
 			return;
 		}
+		detailAbort.current?.abort();
+		detailAbort.current = null;
+		setExpandedId( null );
 		setSelected( null );
-		refresh( entity, searchRef.current );
-	}, [ entity, refresh ] );
+		setDetailError( null );
+		setDetailLoading( false );
+		return refresh( entity, appliedSearch, page, perPage );
+	}, [ entity, appliedSearch, page, perPage, reloadToken, refresh ] );
 
-	const openRecord = ( record: RecordSummary ): void => {
-		setSelected( record );
-	};
+	/**
+	 * Expand/collapse a row, fetching the full record on expand (the list
+	 * summary carries only the first columns' meta). The detail row shows a
+	 * loading state while the fetch is in flight — no field-by-field pop-in.
+	 */
+	const openRecord = useCallback(
+		( record: RecordSummary ): void => {
+			if ( expandedId === record.id ) {
+				detailAbort.current?.abort();
+				detailAbort.current = null;
+				setExpandedId( null );
+				setDetailLoading( false );
+				return;
+			}
+			setExpandedId( record.id );
+			setSelected( null );
+			setDetailError( null );
+			if ( ! entity ) {
+				return;
+			}
+
+			detailAbort.current?.abort();
+			const controller = new AbortController();
+			detailAbort.current = controller;
+			setDetailLoading( true );
+			const request = remoteSite
+				? client.getRemote( entity, record.id, remoteSite, controller.signal )
+				: client.get( entity, record.id, controller.signal );
+			request
+				.then( ( full ) => {
+					setSelected( full ?? record );
+					setDetailLoading( false );
+				} )
+				.catch( ( err: unknown ) => {
+					if ( err instanceof Error && err.name === 'AbortError' ) {
+						return;
+					}
+					setDetailError(
+						err instanceof Error ? err.message : __( 'Failed to load the record.', 'nvoos-pro-spa' )
+					);
+					setDetailLoading( false );
+				} );
+		},
+		[ client, entity, expandedId, remoteSite ]
+	);
+
+	// Abort an in-flight detail fetch when the page unmounts. The list fetch is
+	// already aborted by its own effect cleanup; this covers the detail request,
+	// which lives in a ref rather than an effect.
+	useEffect( () => () => detailAbort.current?.abort(), [] );
 
 	const runResearch = (): void => {
 		if ( ! entity || ! researchQuery.trim() ) {
@@ -253,7 +384,9 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 				setNotice( __( 'Record created.', 'nvoos-pro-spa' ) );
 				setSuggestion( null );
 				setResearchQuery( '' );
-				refresh( entity, searchRef.current );
+				// New records are ordered by date desc, so they land on page 1.
+				setPage( 1 );
+				setReloadToken( ( token ) => token + 1 );
 			} )
 			.catch( ( err: unknown ) => {
 				setCreateBusy( false );
@@ -291,7 +424,7 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 					<button
 						type="button"
 						className="nvoos-pro-spa-tools-list__name nvoos-pro-spa-tools-list__name--button"
-						aria-expanded={ selected?.id === record.id }
+						aria-expanded={ expandedId === record.id }
 						onClick={ () => openRecord( record ) }
 					>
 						{ record.title }
@@ -301,8 +434,30 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 						.map( ( column ) => formatValue( record.meta[ column.key ] ) ),
 					<span className="nvoos-pro-spa-tools-list__badge">{ record.status }</span>,
 				],
+				detail:
+					expandedId === record.id ? (
+						detailLoading ? (
+							<p role="status">{ __( 'Loading record…', 'nvoos-pro-spa' ) }</p>
+						) : detailError ? (
+							<p
+								className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error"
+								role="alert"
+							>
+								{ detailError }
+							</p>
+						) : selected ? (
+							<dl className="nvoos-pro-spa-records-detail__grid">
+								{ entity?.columns.map( ( column ) => (
+									<div key={ column.key } className="nvoos-pro-spa-records-detail__item">
+										<dt>{ column.label }</dt>
+										<dd>{ formatValue( selected.meta[ column.key ] ) }</dd>
+									</div>
+								) ) }
+							</dl>
+						) : null
+					) : undefined,
 			} ) ),
-		[ records, entity, selected ]
+		[ records, entity, expandedId, selected, detailLoading, detailError, openRecord ]
 	);
 
 	if ( bootstrapLoading ) {
@@ -358,6 +513,31 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 				<p className="nvoos-pro-spa-page__subtitle">{ pageCopy.subtitle }</p>
 			</header>
 
+			{ allowRemote && (
+				<SitePicker
+					value={ remoteSite }
+					onChange={ ( siteId ) => {
+						try {
+							window.localStorage.setItem( REMOTE_SITE_KEY, siteId );
+						} catch {
+							// localStorage unavailable — session-only.
+						}
+						setRemoteSite( siteId );
+						setExpandedId( null );
+						setSelected( null );
+						// The connection changes the dataset entirely — start over.
+						setPage( 1 );
+						resetList();
+					} }
+				/>
+			) }
+
+			{ remoteSite && (
+				<p className="nvoos-pro-spa-settings__hint" role="status">
+					{ __( 'Browsing a remote site — read-only. Create and Research are hidden.', 'nvoos-pro-spa' ) }
+				</p>
+			) }
+
 			{ entities.length > 1 && (
 				<div className="nvoos-pro-spa-records-tabs" role="tablist" aria-label={ __( 'Entities', 'nvoos-pro-spa' ) }>
 					{ entities.map( ( e ) => (
@@ -370,7 +550,13 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 								'nvoos-pro-spa-records-tab' +
 								( ( entity?.key ?? '' ) === e.key ? ' is-active' : '' )
 							}
-							onClick={ () => setEntityKey( e.key ) }
+							onClick={ () => {
+								setEntityKey( e.key );
+								setPage( 1 );
+								// Columns come from the schema, so rows from the previous
+								// entity must not linger under the new headers.
+								resetList();
+							} }
 						>
 							{ e.icon } { e.label }
 						</button>
@@ -383,7 +569,9 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 					className="nvoos-pro-spa-records-search"
 					onSubmit={ ( event ) => {
 						event.preventDefault();
-						refresh( entity, search );
+						setAppliedSearch( search );
+						setPage( 1 );
+						resetList();
 					} }
 				>
 					<label className="nvoos-pro-spa-records-search__label" htmlFor="records-search">
@@ -402,7 +590,7 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 				</form>
 			) }
 
-			{ entity && (
+			{ entity && ! remoteSite && (
 				<section className="nvoos-pro-spa-records-research" aria-label={ __( 'Research & Add', 'nvoos-pro-spa' ) }>
 					<h3 className="nvoos-pro-spa-records-detail__title">
 						{ __( 'Research & Add', 'nvoos-pro-spa' ) } { entity.singular.toLowerCase() }
@@ -506,44 +694,78 @@ export function RecordsPage( { group }: RecordsPageProps ): JSX.Element {
 					<button
 						type="button"
 						className="nvoos-pro-spa-page__retry"
-						onClick={ () => refresh( entity, search ) }
+						onClick={ () => setReloadToken( ( token ) => token + 1 ) }
 					>
 						{ __( 'Retry', 'nvoos-pro-spa' ) }
 					</button>
 				</div>
 			) }
 
-			{ entity && loading && records.length === 0 ? (
+			{ ! entity ? (
+				<div className="nvoos-pro-spa-tools-page__empty" role="status">
+					<p>
+						{ __(
+							'No record types are available for this command center yet.',
+							'nvoos-pro-spa'
+						) }
+					</p>
+				</div>
+			) : loading && records.length === 0 ? (
 				<div className="nvoos-pro-spa-tools-page__empty" role="status">
 					<p>{ __( 'Loading records…', 'nvoos-pro-spa' ) }</p>
 				</div>
-			) : entity && ! error && records.length === 0 ? (
+			) : ! error && records.length === 0 ? (
 				<div className="nvoos-pro-spa-tools-page__empty" role="status">
-					<p>{ __( 'No records found.', 'nvoos-pro-spa' ) }</p>
+					<p>
+						{ appliedSearch
+							? sprintf(
+									/* translators: %s: the search term */
+									__( 'No records match “%s”.', 'nvoos-pro-spa' ),
+									appliedSearch
+							  )
+							: __( 'No records found.', 'nvoos-pro-spa' ) }
+					</p>
+					{ appliedSearch ? (
+						<button
+							type="button"
+							className="nvoos-pro-spa-page__retry"
+							onClick={ () => {
+								setSearch( '' );
+								setAppliedSearch( '' );
+								setPage( 1 );
+								resetList();
+							} }
+						>
+							{ __( 'Clear search', 'nvoos-pro-spa' ) }
+						</button>
+					) : null }
 				</div>
 			) : (
 				<DataTable
 					columns={ listColumns }
 					rows={ listRows }
 					caption={ entity?.label ?? __( 'Records', 'nvoos-pro-spa' ) }
+					busy={ loading }
+					footer={
+						<Pagination
+							page={ page }
+							perPage={ perPage }
+							total={ total }
+							itemLabel={ ( entity?.label ?? __( 'Records', 'nvoos-pro-spa' ) ).toLowerCase() }
+							label={ sprintf(
+								/* translators: %s: entity plural label (e.g. "Professions") */
+								__( '%s pagination', 'nvoos-pro-spa' ),
+								entity?.label ?? __( 'Records', 'nvoos-pro-spa' )
+							) }
+							busy={ loading }
+							onPageChange={ setPage }
+							onPerPageChange={ ( next ) => {
+								setPerPage( next );
+								setPage( 1 );
+							} }
+						/>
+					}
 				/>
-			) }
-
-			{ selected && entity && (
-				<section className="nvoos-pro-spa-records-detail" aria-label={ __( 'Record detail', 'nvoos-pro-spa' ) }>
-					<h3 className="nvoos-pro-spa-records-detail__title">{ selected.title }</h3>
-					<p className="nvoos-pro-spa-page__subtitle">
-						{ entity.singular } · { selected.status }
-					</p>
-					<dl className="nvoos-pro-spa-records-detail__grid">
-						{ entity.columns.map( ( column ) => (
-							<div key={ column.key } className="nvoos-pro-spa-records-detail__item">
-								<dt>{ column.label }</dt>
-								<dd>{ formatValue( selected.meta[ column.key ] ) }</dd>
-							</div>
-						) ) }
-					</dl>
-				</section>
 			) }
 		</div>
 	);

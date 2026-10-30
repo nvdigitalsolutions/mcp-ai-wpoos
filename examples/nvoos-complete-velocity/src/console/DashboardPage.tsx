@@ -134,16 +134,20 @@ export function DashboardPage(props: DashboardPageProps): JSX.Element {
   const sessionsLoading = transcripts.sessions === null;
   const sessionCount = transcripts.sessions?.length ?? 0;
 
-  // Command Center (Proposal 084 Phase 5d) — the wp-admin overview tab's
-  // KPIs + activity feed. Fail-soft: any fetch error leaves the section
-  // hidden (the dashboard never blocks on it).
-  const [commandCenter, setCommandCenter] = useState<CommandCenterOverview | null>(null);
+  	// Command Center (Proposal 084 Phase 5d) — the wp-admin overview tab's
+  	// KPIs + activity feed. Fail-soft: any fetch error leaves the section
+  	// hidden (the dashboard never blocks on it). Defense-in-depth: the
+  	// runtime already empties the endpoint for non-admins, but never fire an
+  	// admin-only fetch for a user who cannot see the data.
+  	const canManageCommandCenter =
+  		user?.capabilities?.includes( 'manage_options' ) ?? false;
+  	const [commandCenter, setCommandCenter] = useState<CommandCenterOverview | null>(null);
 
-  useEffect(() => {
-    if (!commandCenterEndpoint) {
-      return;
-    }
-    let cancelled = false;
+  	useEffect(() => {
+  		if (!commandCenterEndpoint || !canManageCommandCenter) {
+  			return;
+  		}
+  		let cancelled = false;
     const controller = new AbortController();
     new CommandCenterClient({ endpoint: commandCenterEndpoint, nonce })
       .overview(controller.signal)
@@ -155,11 +159,11 @@ export function DashboardPage(props: DashboardPageProps): JSX.Element {
       .catch(() => {
         // Fail-soft — the section simply does not render.
       });
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [commandCenterEndpoint, nonce]);
+    		return () => {
+    			cancelled = true;
+    			controller.abort();
+    		};
+    	}, [commandCenterEndpoint, nonce, canManageCommandCenter]);
 
   const visibleActions = QUICK_ACTIONS.filter((action) =>
     isNavItemVisible(action, features, user.capabilities),

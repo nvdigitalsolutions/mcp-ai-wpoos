@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Get_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'integer',
 					'description' => __( 'WordPress post ID of the student (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'include_schedule' => array(
 					'type'        => 'boolean',

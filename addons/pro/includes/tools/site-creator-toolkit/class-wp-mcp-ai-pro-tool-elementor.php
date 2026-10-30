@@ -112,6 +112,7 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				),
 				'template_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Template ID for get action.', 'mcp-ai-wpoos-pro' ),
 				),
 				'template_type' => array(

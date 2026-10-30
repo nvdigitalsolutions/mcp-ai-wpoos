@@ -75,6 +75,7 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'project_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Project ID to update (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'name'        => array(

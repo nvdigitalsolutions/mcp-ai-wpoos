@@ -82,6 +82,7 @@ class WP_MCP_AI_Tool_Check_Member_Allergies implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'integer',
 					'description' => __( 'Member post ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'allergens' => array(
 					'type'        => 'array',

@@ -89,6 +89,75 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
+	// on_continuation_ready — invalid router response
+	// -----------------------------------------------------------------------
+
+	/**
+	 * A router response that is neither an array nor a WP_Error must not crash
+	 * the re-entry path (regression: TypeError on extract_text( null )).
+	 *
+	 * @test
+	 */
+	public function test_null_router_response_pushes_error_frame() {
+		$container = WP_MCP_AI_Container::get_instance();
+		if ( ! $container->has( 'router' ) ) {
+			$this->markTestSkipped( 'Language model router is not registered in the container' );
+		}
+
+		$original = $container->get( 'router' );
+
+		// Stub the router with a provider adapter that returns an invalid
+		// (null) response instead of the array|WP_Error contract.
+		$stub = new class() {
+			/**
+			 * Return null to simulate a broken provider adapter.
+			 *
+			 * @param array $messages Messages.
+			 * @param array $options  Options.
+			 *
+			 * @return null
+			 */
+			public function create_chat_completion( array $messages, array $options = array() ) {
+				return null;
+			}
+		};
+		$container->set( 'router', $stub );
+
+		try {
+			$snapshot = array(
+				'chat_session_id' => $this->session_id,
+				'job_id'          => 'job_null',
+				'tool_call_id'    => 'tc_null',
+				'messages'        => array(
+					array(
+						'role'    => 'user',
+						'content' => 'Hello',
+					),
+				),
+				'options'         => array(),
+				'assistant_id'    => 1,
+			);
+
+			$result = WP_MCP_AI_Chat_Continuation_LLM_Re_Entry::on_continuation_ready(
+				$snapshot,
+				'completed',
+				array()
+			);
+
+			// The invalid response is normalized to a WP_Error and surfaced as
+			// a chat:error frame instead of throwing a TypeError. Pushing the
+			// error frame is a handled outcome, so the handler reports true.
+			$this->assertTrue( $result );
+
+			$frames = WP_MCP_AI_Chat_Session_Frame_Buffer::get_frames_since( $this->session_id, 0 );
+			$this->assertNotEmpty( $frames );
+			$this->assertSame( 'chat:error', $frames[0]['event'] );
+		} finally {
+			$container->set( 'router', $original );
+		}
+	}
+
+	// -----------------------------------------------------------------------
 	// on_continuation_ready — failed/cancelled
 	// -----------------------------------------------------------------------
 

@@ -81,6 +81,7 @@ class WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_MCP_AI_Validated_Tool 
 					'type'        => 'integer',
 					'description' => __( 'Unix timestamp for when the event should first run. Defaults to 20 seconds from now.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'schedule'  => array(
 					'type'        => 'string',

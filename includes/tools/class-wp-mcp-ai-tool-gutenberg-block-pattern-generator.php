@@ -55,6 +55,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 			'category'            => 'content',
 			'required_capability' => 'edit_posts',
 			'parameters'          => array(
+				'type'           => 'object',
 				'action'         => array(
 					'type'        => 'string',
 					'description' => __( 'Action: generate_pattern, list_patterns, sync_theme_json, or validate_pattern', 'mcp-ai-wpoos' ),

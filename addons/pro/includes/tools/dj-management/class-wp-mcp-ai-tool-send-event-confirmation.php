@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'booking_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Booking ID to send confirmation for (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'custom_message'   => array(

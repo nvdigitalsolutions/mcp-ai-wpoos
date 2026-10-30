@@ -113,6 +113,7 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'contact_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Contact ID (required for read, update, delete)', 'mcp-ai-wpoos-pro' ),
 				),
 				'contact_data' => array(

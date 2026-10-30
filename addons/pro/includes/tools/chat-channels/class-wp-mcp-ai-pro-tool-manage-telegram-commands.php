@@ -99,6 +99,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Commands implements WP_MCP_AI_Tool_Inte
 				),
 				'user_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'User identifier. Required when scope is "chat_member".', 'mcp-ai-wpoos-pro' ),
 				),
 				'language_code' => array(

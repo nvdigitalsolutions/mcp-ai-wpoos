@@ -53,6 +53,35 @@ export interface RecordsClientOptions {
 	nonce: string;
 }
 
+/**
+ * One page of records (server-side pagination).
+ *
+ * `total`/`totalPages` come from WordPress' `X-WP-Total` and
+ * `X-WP-TotalPages` response headers, so the pager can show the true result
+ * count instead of the length of the current slice.
+ */
+export interface RecordListPage {
+	items: RecordSummary[];
+	total: number;
+	totalPages: number;
+	page: number;
+	perPage: number;
+}
+
+/** Arguments for a paginated record list request. */
+export interface RecordListOptions {
+	/** Free-text search term (WordPress `search` argument). */
+	search?: string;
+	/** 1-based page number (default 1). */
+	page?: number;
+	/** Rows per page (default 50, capped at WordPress' 100). */
+	perPage?: number;
+	signal?: AbortSignal;
+}
+
+/** Default page size for record lists (WordPress caps per_page at 100). */
+export const RECORDS_PER_PAGE = 50;
+
 /** Fields to request from wp/v2 — keeps payloads lean. */
 const WP_FIELDS = 'id,date,status,title,meta';
 
@@ -80,29 +109,45 @@ export class RecordsClient {
 			: {};
 	}
 
-	/** List one entity's records (wp/v2 with search + edit context). */
+	/**
+	 * List one entity's records (wp/v2 with search + edit context).
+	 *
+	 * Returns the page slice plus the collection total read from
+	 * `X-WP-Total` / `X-WP-TotalPages`; both headers are exposed by WordPress
+	 * core on every collection route, so pagination never has to guess.
+	 */
 	async list(
 		entity: RecordEntityConfig,
-		search: string,
-		signal?: AbortSignal
-	): Promise< RecordSummary[] > {
+		options: RecordListOptions = {}
+	): Promise< RecordListPage > {
+		const page = Math.max( 1, Math.floor( options.page ?? 1 ) );
+		const perPage = clampPerPage( options.perPage );
 		const params = new URLSearchParams( {
-			per_page: '50',
+			per_page: String( perPage ),
+			page: String( page ),
 			context: 'edit',
 			_fields: WP_FIELDS,
 			orderby: 'date',
 			order: 'desc',
 		} );
-		if ( search.trim() ) {
-			params.set( 'search', search.trim() );
+		const search = ( options.search ?? '' ).trim();
+		if ( search ) {
+			params.set( 'search', search );
 		}
-		const data = await this.request< unknown >(
+		const { data, headers } = await this.requestWithMeta< unknown >(
 			'GET',
 			`${ this.wpBase }/${ entity.restBase }?${ params.toString() }`,
 			undefined,
-			signal
+			options.signal
 		);
-		return Array.isArray( data ) ? data.map( mapRecord ) : [];
+		const items = Array.isArray( data ) ? data.map( mapRecord ) : [];
+		const total = readIntHeader( headers, 'X-WP-Total', items.length );
+		const totalPages = readIntHeader(
+			headers,
+			'X-WP-TotalPages',
+			Math.max( 1, Math.ceil( total / perPage ) )
+		);
+		return { items, total, totalPages, page, perPage };
 	}
 
 	/** Fetch a single record (wp/v2). */
@@ -118,6 +163,71 @@ export class RecordsClient {
 			signal
 		);
 		return data && typeof data === 'object' ? mapRecord( data ) : null;
+	}
+
+	/**
+	 * List one entity's records on a remote WordPress site (Proposal 089
+	 * Phase B — the read-only proxy; credentials stay server-side).
+	 *
+	 * The proxy forwards `page` to the remote site and returns the remote
+	 * collection's `total` / `total_pages` alongside the slice, so remote
+	 * browsing paginates exactly like the local list.
+	 */
+	async listRemote(
+		entity: RecordEntityConfig,
+		options: RecordListOptions,
+		remoteSite: string
+	): Promise< RecordListPage > {
+		const recordsBase = this.schemaEndpoint.replace( /\/schema\/?$/, '' );
+		const page = Math.max( 1, Math.floor( options.page ?? 1 ) );
+		const perPage = clampPerPage( options.perPage );
+		const params = new URLSearchParams( {
+			per_page: String( perPage ),
+			page: String( page ),
+			remote_site: remoteSite,
+		} );
+		const search = ( options.search ?? '' ).trim();
+		if ( search ) {
+			params.set( 'search', search );
+		}
+		const data = await this.request< {
+			data?: { items?: unknown[]; total?: number; total_pages?: number };
+		} >(
+			'GET',
+			`${ recordsBase }/remote/${ entity.key }?${ params.toString() }`,
+			undefined,
+			options.signal
+		);
+		const items = Array.isArray( data?.data?.items ) ? data.data.items.map( mapRecord ) : [];
+		const reportedTotal = data?.data?.total;
+		const total =
+			typeof reportedTotal === 'number' && reportedTotal >= items.length
+				? reportedTotal
+				: items.length;
+		const reportedPages = data?.data?.total_pages;
+		const totalPages =
+			typeof reportedPages === 'number' && reportedPages >= 1
+				? reportedPages
+				: Math.max( 1, Math.ceil( total / perPage ) );
+		return { items, total, totalPages, page, perPage };
+	}
+
+	/** Fetch a single record on a remote WordPress site (Phase B proxy). */
+	async getRemote(
+		entity: RecordEntityConfig,
+		id: number,
+		remoteSite: string,
+		signal?: AbortSignal
+	): Promise< RecordSummary | null > {
+		const recordsBase = this.schemaEndpoint.replace( /\/schema\/?$/, '' );
+		const params = new URLSearchParams( { remote_site: remoteSite } );
+		const data = await this.request< { data?: { item?: unknown } } >(
+			'GET',
+			`${ recordsBase }/remote/${ entity.key }/${ id }?${ params.toString() }`,
+			undefined,
+			signal
+		);
+		return data?.data?.item && typeof data.data.item === 'object' ? mapRecord( data.data.item ) : null;
 	}
 
 	/**
@@ -175,6 +285,22 @@ export class RecordsClient {
 		body?: unknown,
 		signal?: AbortSignal
 	): Promise< T > {
+		const { data } = await this.requestWithMeta< T >( method, url, body, signal );
+		return data;
+	}
+
+	/**
+	 * Perform a request and keep the response headers.
+	 *
+	 * Collection routes return `X-WP-Total` / `X-WP-TotalPages`, which is the
+	 * only reliable way for the pager to know the real result count.
+	 */
+	private async requestWithMeta< T >(
+		method: 'GET' | 'POST',
+		url: string,
+		body?: unknown,
+		signal?: AbortSignal
+	): Promise< { data: T; headers: Headers } > {
 		const headers: Record< string, string > = {
 			Accept: 'application/json',
 			'X-WP-Nonce': this.nonce,
@@ -197,14 +323,38 @@ export class RecordsClient {
 			} catch {
 				// Not JSON — keep the generic message.
 			}
-			throw new Error( detail || __( 'Records request failed.', 'nvoos-pro-spa' ) );
+			const error = new Error(
+				detail || __( 'Records request failed.', 'nvoos-pro-spa' )
+			) as Error & { status?: number };
+			error.status = response.status;
+			throw error;
 		}
+		let data: T;
 		try {
-			return ( await response.json() ) as T;
+			data = ( await response.json() ) as T;
 		} catch {
-			return undefined as unknown as T;
+			data = undefined as unknown as T;
 		}
+		// Some test doubles (and a few exotic fetch polyfills) omit `headers`;
+		// fall back to an empty Headers so pagination degrades to item counts.
+		return { data, headers: response.headers ?? new Headers() };
 	}
+}
+
+/** Clamp a requested page size into WordPress' 1–100 range. */
+function clampPerPage( perPage: number | undefined ): number {
+	const value = Math.floor( perPage ?? RECORDS_PER_PAGE );
+	if ( ! Number.isFinite( value ) || value < 1 ) {
+		return RECORDS_PER_PAGE;
+	}
+	return Math.min( 100, value );
+}
+
+/** Read an integer response header, falling back when absent or malformed. */
+function readIntHeader( headers: Headers, name: string, fallback: number ): number {
+	const raw = headers.get( name );
+	const parsed = raw === null ? NaN : parseInt( raw, 10 );
+	return Number.isFinite( parsed ) && parsed >= 0 ? parsed : fallback;
 }
 
 /** Map a raw wp/v2 post onto the RecordSummary shape. */

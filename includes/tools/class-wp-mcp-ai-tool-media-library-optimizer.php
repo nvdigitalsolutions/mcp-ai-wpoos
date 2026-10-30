@@ -55,6 +55,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 			'category'            => 'media',
 			'required_capability' => 'upload_files',
 			'parameters'          => array(
+				'type'              => 'object',
 				'action'            => array(
 					'type'        => 'string',
 					'description' => __( 'Action: analyze, compress, convert, detect_unused, or configure_lazy_loading', 'mcp-ai-wpoos' ),

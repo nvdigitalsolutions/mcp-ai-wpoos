@@ -65,6 +65,7 @@ class WP_MCP_AI_Tool_Assess_Project_Risk implements WP_MCP_AI_Tool_Interface, WP
 			'properties'           => array(
 				'project_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Project ID (required).', 'mcp-ai-wpoos-pro' ),
 				),
 			),

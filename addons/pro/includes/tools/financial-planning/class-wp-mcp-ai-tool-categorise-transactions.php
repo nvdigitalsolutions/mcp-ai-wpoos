@@ -82,6 +82,7 @@ class WP_MCP_AI_Tool_Categorise_Transactions implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'Category term ID from the transaction_category taxonomy, if one exists.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'rule'            => array(
 					'type'        => 'string',

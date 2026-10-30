@@ -100,6 +100,7 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 				),
 				'matter_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Associated matter ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'court'         => array(

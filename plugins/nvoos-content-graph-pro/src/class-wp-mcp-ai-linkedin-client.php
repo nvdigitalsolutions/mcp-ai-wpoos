@@ -84,6 +84,50 @@ if ( ! class_exists( 'WP_MCP_AI_LinkedIn_Client' ) ) {
 		protected $connection = null;
 
 		/**
+		 * Resolve the assistant's allowed connection IDs from the execution context.
+		 *
+		 * Returns null when unrestricted (no assistant context, or the assistant
+		 * has no configured Remote Site Connections list) — mirroring the
+		 * remote_wp_connection semantics — or the allowed connection IDs as strings.
+		 *
+		 * @param array $context Execution context.
+		 * @return array|null Allowed connection IDs, or null when unrestricted.
+		 */
+		public static function get_allowed_connection_ids( array $context ) {
+			$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+			if ( ! $assistant_id ) {
+				return null;
+			}
+
+			$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+
+			if ( ! is_array( $enabled_connections ) ) {
+				// Not configured — legacy behaviour allows all connections.
+				return null;
+			}
+
+			return array_map( 'strval', $enabled_connections );
+		}
+
+		/**
+		 * Whether a connection is enabled for the assistant in the execution context.
+		 *
+		 * @param string $connection_id Connection ID.
+		 * @param array  $context       Execution context.
+		 * @return bool True when allowed (or unrestricted), false otherwise.
+		 */
+		public static function is_connection_enabled_for_assistant( $connection_id, array $context ) {
+			$allowed_ids = self::get_allowed_connection_ids( $context );
+
+			if ( null === $allowed_ids ) {
+				return true;
+			}
+
+			return in_array( (string) $connection_id, $allowed_ids, true );
+		}
+
+		/**
 		 * Constructor.
 		 *
 		 * @param string|null $connection_id Optional Remote Sites connection ID.

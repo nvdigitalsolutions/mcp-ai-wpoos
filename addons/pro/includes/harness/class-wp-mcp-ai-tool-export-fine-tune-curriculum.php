@@ -102,6 +102,7 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 					'type'        => 'integer',
 					'description' => __( 'Assistant CPT post ID to export curriculum for.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'suite_slugs'   => array(
 					'type'        => 'array',

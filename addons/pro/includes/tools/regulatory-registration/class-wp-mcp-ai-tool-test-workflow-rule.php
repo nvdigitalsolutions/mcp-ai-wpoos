@@ -67,7 +67,10 @@ class WP_MCP_AI_Tool_Test_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'object',
 					'description' => __( 'Test data to simulate (optional)', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'registration_id' => array( 'type' => 'integer' ),
+						'registration_id' => array(
+							'type'    => 'integer',
+							'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+						),
 						'event_type'      => array( 'type' => 'string' ),
 					),
 				),

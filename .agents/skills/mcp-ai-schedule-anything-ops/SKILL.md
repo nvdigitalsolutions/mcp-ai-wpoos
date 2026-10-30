@@ -4,9 +4,9 @@ description: Operational guide for the Schedule Anything SaaS surface — the 3-
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
-  last-updated: "2026-10-23"
+  plugin-version: "1.2.13"
+  plugin-version-tested: "1.2.13"
+  last-updated: "2026-10-27"
 ---
 
 # Schedule Anything SaaS — Operational Guide
@@ -237,6 +237,21 @@ a bundle zip alongside would collide:
 - Cookie-auth proxy: `/wp-json` etc. proxied, login page re-scoped (relative
   form action + redirect_to), Set-Cookie Domain stripped → **no CORS config
   needed** in proxy mode.
+- **serve.mjs caching contract (2026-10-23, #7197 — both Velocity apps):**
+  `index.html` serves `no-cache` + weak ETag (304 revalidation); hashed
+  `/assets/*` are `public, max-age=31536000, immutable`; unversioned root
+  files (favicon) get `max-age=86400` + ETag; gzip/brotli from an in-memory
+  file cache with `Vary: Accept-Encoding`. A **default-deny proxy
+  micro-cache** stores proxied GETs only when WordPress itself declares
+  `Cache-Control: public` + explicit `max-age`/`s-maxage` with no
+  `Set-Cookie` and `Vary` ≠ Cookie/Origin/* — the nonce + SSE endpoints
+  (`no-store`) can never be cached, `X-WP-Nonce` is stripped from cached
+  entries, and every proxied response carries `X-Cache-Status:
+  HIT/MISS/BYPASS` + `Age`. Knobs: `NVOOS_PROXY_CACHE=0` (kill switch),
+  `NVOOS_PROXY_CACHE_MAX_TTL` (default 300 s). The sync workflow smoke-asserts
+  the contract — cache-related console symptoms (`features` HIT without a
+  fresh `x-wp-nonce`, stale nonce rejections after an addon activation) are
+  the 60 s `/features` TTL, not a proxy bug.
 - Sync: `.github/workflows/sync-nvoos-schedule-anything-velocity.yml` triggers
   on pushes touching `examples/schedule-anything-velocity/**` (main or
   alpha-working) + dispatch. It drops the dev-only `sync-dist.mjs` from the
@@ -265,6 +280,20 @@ addon SPA):
   `NVOOS_COMPLETE_VELOCITY_REPO_TOKEN`. Ships at the repo ROOT (entry
   `server.js` → `scripts/serve.mjs`), no build command, env
   `NVOOS_TARGET_SITE=<complete-bundle-wordpress-site>`.
+- **Live-console staleness diagnosis** — when the console is missing a
+  feature that landed in spa-v2 (e.g. pagination on the Records groups,
+  #7239), the recipe is: compare the live chunk hashes (DevTools Network)
+  against `examples/nvoos-complete-velocity/dist/assets/`, then
+  `git show --stat <feature-commit> -- examples/nvoos-complete-velocity`
+  and rebuild the console dist. Full playbook (incl. the grep caveat and
+  the one-sided two-bundle case) lives in the `mcp-ai-wpoos-spa-ui`
+  skill → "Live-console staleness diagnosis (learned 2026-10-27)".
+- **The sync workflow makes zero backend requests (verified 2026-10-27).**
+  A 06:37:18 UTC mirror sync produced no traffic in the WP backend's access
+  log (window 06:15–06:55: only the admin's own browsing + server-self
+  cron) — the CI smoke test runs against the assembled mirror, not through
+  the live proxy. A backend load spike right after a sync is coincidence
+  (case: the 07:01 MariaDB restart on the MCP server), not the deploy.
 - The app proxies `/wp-json`, `/wp-admin`, `/wp-login.php` and
   `/wp-includes` to `NVOOS_TARGET_SITE` (cookie-auth mode — same-origin
   cookies + the wp_rest nonce handshake; the login page is re-scoped to the
@@ -275,6 +304,39 @@ addon SPA):
   part of this app's backend). Any SPA-consumed Pro route must therefore
   ship in the complete zip. Never point `NVOOS_TARGET_SITE` at a URL you
   do not control — the proxy forwards cookies for those prefixes.
+- **Author-role 403 wall + stale-nonce boot failure (learned 2026-10-27,
+  victory.nvoos.cloud → victory.nvdigital.solutions).** Symptom: console
+  boots, `users/me?context=edit` 403s (core `list_users` gate — expected for
+  non-admin roles), and every authenticated request then answers 403
+  `rest_cookie_invalid_nonce` ("Cookie check failed"). Root cause: the
+  console's `fetchSessionNonce()` scraped `"nonce":"…"` from `/wp-admin/`
+  HTML; the target 302s `/wp-admin/` → `/dashboard/` (non-admin redirect)
+  and the browser lands on a **cached** `/dashboard/` copy embedding a nonce
+  minted for an earlier session — the scraped stale nonce was adopted as the
+  runtime nonce while the fallback's freshly minted valid nonce was
+  discarded. Fix (examples/nvoos-complete-velocity): `fetchSessionNonce()`
+  mints from `GET /mcp-ai/v1/session/nonce` first (scrape only as fallback),
+  and `fetchCurrentUser()` returns `{ user, nonce }` so the recovered nonce
+  reaches `buildConsoleRuntime()`. Companion hardening: new
+  `GET /mcp-ai/v1/session/me` (session identity + capability map without
+  core's `list_users` gate — the console's view-context fallback now recovers
+  capabilities so author nav gating works) and a Breeze cache integration
+  (`includes/integrations/class-wp-mcp-ai-breeze-cache-integration.php`)
+  excluding `/dashboard/` + `/wp-admin/` from `breeze_exclude_urls` so
+  session-bearing HTML is never served from cache.
+- **Follow-up (2026-10-27, PR #7259): admin-surface gating for non-admin
+  roles.** After #7257 the author console still logged 403s on admin-only
+  routes (HITL `/approvals` polling, AssistantsPage `GET /assistants/{id}`,
+  Dashboard `command-center/overview`): the console's `buildEndpoints()`
+  hardcoded the full endpoint set, bypassing
+  `WP_MCP_AI_Pro_SPA_Config::build()`'s capability gating. Fix: the console
+  endpoint map mirrors the server matrix (admin-gated = empty string for
+  non-admins) + a central `usePermissions()`/`can()` layer in spa-v2
+  (`addons/pro/assets/spa-v2/src/auth/permissions.ts`). Any new admin
+  endpoint must be gated in both the PHP config and the console map — see
+  the mcp-ai-wpoos-spa-ui skill → "Access gating for non-admin roles".
+  Rule of thumb: every admin-route 403 in an author's network tab is a
+  gating bug, not a feature.
 - **Feature gating (2026-10-22):** the console nav + route guards gate
   `/crm`, `/pm`, `/calendar`, `/fnb` on toolkit toggles from the features map
   (`GET /mcp-ai/v1/features` now carries `crm`, `project_management`,

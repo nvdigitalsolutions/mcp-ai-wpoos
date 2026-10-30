@@ -65,6 +65,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 					'type'        => 'integer',
 					'description' => __( 'Member ID to analyze (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'focus'     => array(
 					'type'        => 'string',

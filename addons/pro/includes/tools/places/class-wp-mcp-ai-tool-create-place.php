@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'place_id'          => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional place ID. If provided, updates the existing place instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'name'              => array(
@@ -181,6 +182,7 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				),
 				'parent_place_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Parent place ID for hierarchical organisation (e.g., an attraction under a city)', 'mcp-ai-wpoos-pro' ),
 				),
 				'relationship_type' => array(

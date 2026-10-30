@@ -72,6 +72,7 @@ class WP_MCP_AI_Tool_PARA_List_Areas implements WP_MCP_AI_Tool_Interface, WP_MCP
 				'owner_id'       => array(
 					'type'    => 'integer',
 					'minimum' => 1,
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'review_cadence' => array(
 					'type' => 'string',

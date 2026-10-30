@@ -62,10 +62,12 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 			'properties'           => array(
 				'client_id'          => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Client ID (optional, can use booking_id instead)', 'mcp-ai-wpoos-pro' ),
 				),
 				'booking_id'         => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Booking ID (optional, can use client_id instead)', 'mcp-ai-wpoos-pro' ),
 				),
 				'communication_type' => array(

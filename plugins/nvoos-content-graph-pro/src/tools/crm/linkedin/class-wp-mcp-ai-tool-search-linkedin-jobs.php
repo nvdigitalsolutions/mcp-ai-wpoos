@@ -180,6 +180,17 @@ class WP_MCP_AI_Tool_Search_LinkedIn_Jobs implements WP_MCP_AI_Tool_Interface, W
 		$connection_id = sanitize_text_field( $arguments['connection_id'] );
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-linkedin-client.php';
+
+		// Assistant-level restriction: an assistant with a configured Remote
+		// Site Connections list may only use connections from that list.
+		if ( ! WP_MCP_AI_LinkedIn_Client::is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_linkedin_connection_not_enabled',
+				__( 'This LinkedIn connection is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'nvoos-content-graph-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
 		$client = new WP_MCP_AI_LinkedIn_Client( $connection_id );
 
 		$filters = array();

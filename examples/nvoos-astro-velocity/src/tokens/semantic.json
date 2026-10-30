@@ -1,0 +1,19 @@
+{
+	"$comment": "Proposal 095 — semantic layer. Components may only reference THIS layer. Values are DTCG references into the core layer (cross-file references are a documented ADS extension) or literal values.",
+	"ink": { "$type": "color", "$value": "{core.palette.ink}" },
+	"muted": { "$type": "color", "$value": "{core.palette.muted}" },
+	"surface": { "$type": "color", "$value": "{core.palette.surface}" },
+	"surface-alt": { "$type": "color", "$value": "{core.palette.surface-alt}" },
+	"line": { "$type": "color", "$value": "{core.palette.line}" },
+	"accent": { "$type": "color", "$value": "{core.palette.accent}" },
+	"accent-ink": { "$type": "color", "$value": "{core.palette.accent-ink}" },
+	"danger": { "$type": "color", "$value": "{core.palette.danger}" },
+	"radius": { "$type": "dimension", "$value": "{core.radius.md}" },
+	"font": { "$type": "fontFamily", "$value": "{core.type.family-body}" },
+	"space": { "$type": "dimension", "$value": "{core.space.md}" },
+	"focus-ring": {
+		"$type": "dimension",
+		"$value": "0 0 0 2px {core.palette.surface}, 0 0 0 4px {core.palette.accent}",
+		"$description": "Accessible focus outline (shadow-based). Additive."
+	}
+}

@@ -16,6 +16,7 @@ import {
 	type DataTableColumn,
 	type DataTableRow,
 } from '../../components/shared/DataTable';
+import { Pagination } from '../../components/shared/Pagination';
 
 const CRON_COLUMNS: DataTableColumn[] = [
 	{ key: 'job', label: __( 'Job', 'nvoos-pro-spa' ), width: 'minmax(220px, 1.2fr)' },
@@ -80,6 +81,15 @@ export function OperationsPage(): JSX.Element {
 	);
 
 	const [ activeTab, setActiveTab ] = useState< 'cron' | 'dlq' | 'timeline' >( 'cron' );
+	// `loading` from the hook covers the initial cron/DLQ/timeline load only;
+	// timeline page turns need their own busy flag so the pager locks while
+	// the next page is in flight.
+	const [ timelineBusy, setTimelineBusy ] = useState< boolean >( false );
+
+	const goToTimelinePage = ( next: number ): void => {
+		setTimelineBusy( true );
+		void loadTimelinePage( next ).finally( () => setTimelineBusy( false ) );
+	};
 
 	const cronRows = useMemo< DataTableRow[] >(
 		() =>
@@ -293,31 +303,17 @@ export function OperationsPage(): JSX.Element {
 					empty={
 						<p>{ __( 'No recorded runs yet.', 'nvoos-pro-spa' ) }</p>
 					}
+					busy={ timelineBusy }
 					footer={
-						( timeline.page > 1 ||
-							timeline.total > timeline.page * timeline.per_page ) && (
-							<div className="nvoos-pro-spa-tools-page__pager">
-								<span className="nvoos-pro-spa-tools-page__pager-label">
-									{ __( 'Page', 'nvoos-pro-spa' ) } { timeline.page }
-								</span>
-								<button
-									type="button"
-									className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
-									disabled={ timeline.page <= 1 }
-									onClick={ () => void loadTimelinePage( timeline.page - 1 ) }
-								>
-									{ __( 'Previous', 'nvoos-pro-spa' ) }
-								</button>
-								<button
-									type="button"
-									className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--small"
-									disabled={ timeline.total <= timeline.page * timeline.per_page }
-									onClick={ () => void loadTimelinePage( timeline.page + 1 ) }
-								>
-									{ __( 'Next', 'nvoos-pro-spa' ) }
-								</button>
-							</div>
-						)
+						<Pagination
+							page={ timeline.page }
+							perPage={ timeline.per_page }
+							total={ timeline.total }
+							itemLabel={ __( 'runs', 'nvoos-pro-spa' ) }
+							label={ __( 'Run timeline pagination', 'nvoos-pro-spa' ) }
+							busy={ timelineBusy }
+							onPageChange={ goToTimelinePage }
+						/>
 					}
 				/>
 			) }

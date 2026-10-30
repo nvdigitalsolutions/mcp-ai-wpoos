@@ -225,4 +225,86 @@ class WP_MCP_AI_Team_Repository {
 		// Clear all teams cache.
 		wp_cache_delete( 'all_teams_' . md5( wp_json_encode( array() ) ), self::CACHE_GROUP );
 	}
+
+	/**
+	 * Re-link team member IDs after a destructive profession Replace All.
+	 *
+	 * Teams store resolved profession post IDs in their members meta. The
+	 * "Replace All Professions" reseed force-deletes every profession post
+	 * and re-creates fresh ones with new IDs, orphaning each team's member
+	 * list — the members endpoint then resolves zero members while the
+	 * teams catalogue still counts the raw meta entries. This re-resolves
+	 * every stored member ID through the pre-delete ID → slug map to the
+	 * re-seeded profession posts, keeps IDs that still resolve to a live
+	 * profession, and drops the rest.
+	 *
+	 * @since 1.9.6
+	 * @param array<int, string> $old_slug_by_id Pre-delete map of profession post ID → post_name.
+	 * @return int Number of teams whose member meta was updated.
+	 */
+	public static function relink_members_after_profession_replace( array $old_slug_by_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) && file_exists( WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Team_CPT' ) && file_exists( WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-cpt.php' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-cpt.php';
+		}
+
+		if ( empty( $old_slug_by_id ) || ! post_type_exists( WP_MCP_AI_Profession_CPT::POST_TYPE ) || ! post_type_exists( WP_MCP_AI_Team_CPT::POST_TYPE ) ) {
+			return 0;
+		}
+
+		// Fresh slug → ID map of the re-seeded professions.
+		$new_id_by_slug = array();
+		$fresh          = get_posts(
+			array(
+				'post_type'      => WP_MCP_AI_Profession_CPT::POST_TYPE,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'no_found_rows'  => true,
+			)
+		);
+		foreach ( $fresh as $profession ) {
+			if ( ! empty( $profession->post_name ) ) {
+				$new_id_by_slug[ $profession->post_name ] = $profession->ID;
+			}
+		}
+
+		$teams    = get_posts(
+			array(
+				'post_type'      => WP_MCP_AI_Team_CPT::POST_TYPE,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'no_found_rows'  => true,
+			)
+		);
+		$relinked = 0;
+
+		foreach ( $teams as $team ) {
+			$members = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
+			if ( ! is_array( $members ) || empty( $members ) ) {
+				continue;
+			}
+
+			$remapped = array();
+			foreach ( $members as $member_id ) {
+				$member_id = absint( $member_id );
+				if ( isset( $old_slug_by_id[ $member_id ] ) && isset( $new_id_by_slug[ $old_slug_by_id[ $member_id ] ] ) ) {
+					$remapped[] = $new_id_by_slug[ $old_slug_by_id[ $member_id ] ];
+				} elseif ( 'mcp_ai_profession' === get_post_type( $member_id ) ) {
+					// Not part of the replace set — still a live profession.
+					$remapped[] = $member_id;
+				}
+			}
+
+			$remapped   = array_values( array_unique( $remapped ) );
+			$normalized = array_values( array_unique( array_map( 'absint', $members ) ) );
+			if ( $remapped !== $normalized ) {
+				update_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, $remapped );
+				++$relinked;
+			}
+		}
+
+		return $relinked;
+	}
 }

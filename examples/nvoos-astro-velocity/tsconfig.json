@@ -1,0 +1,17 @@
+{
+	"extends": "astro/tsconfigs/strict",
+	"include": [".astro/types.d.ts", "**/*"],
+	// public/ is static passthrough (Astro copies it verbatim). The
+	// standalone admin bundle in public/manage-assets/ is minified esbuild
+	// output — full checkJs inference over it OOMs the checker (~4 GB).
+	"exclude": ["dist", "node_modules", "public"],
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"jsxImportSource": "react",
+		"strictNullChecks": true,
+		"baseUrl": ".",
+		"paths": {
+			"@lib/*": ["src/lib/*"]
+		}
+	}
+}

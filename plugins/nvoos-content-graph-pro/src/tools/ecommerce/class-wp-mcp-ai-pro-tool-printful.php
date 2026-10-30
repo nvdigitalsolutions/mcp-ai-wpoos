@@ -462,7 +462,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Printful' ) ) {
 			}
 
 			$assistant_id        = absint( $context['assistant_id'] );
-			$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_enabled_remote_sites', true );
+			$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
 
 			if ( ! is_array( $enabled_connections ) ) {
 				return true; // No restrictions configured.

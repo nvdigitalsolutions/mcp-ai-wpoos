@@ -276,6 +276,12 @@ class ProfessionRepository {
 		wp_cache_delete( 'all_professions_' . md5( wp_json_encode( array() ) ), self::CACHE_GROUP );
 		wp_cache_delete( 'category_counts', self::CACHE_GROUP );
 
+		// Invalidate the post-type counts cache so wp_count_posts() never
+		// serves a stale "published professions" number after bulk
+		// force-deletes or publish-to-publish updates that don't fire
+		// status transitions.
+		wp_cache_delete( _count_posts_cache_key( ProfessionCpt::POST_TYPE ), 'counts' );
+
 		// Clear category caches.
 		$categories = array( 'advisory', 'creative', 'technical', 'healthcare', 'legal', 'financial', 'other' );
 		foreach ( $categories as $category ) {

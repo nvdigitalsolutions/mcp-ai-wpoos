@@ -1,0 +1,192 @@
+name: Sync nvoos-astro-velocity
+
+# One-way mirror of the NV Astro storefront to the PUBLIC repo
+# nvdigitalsolutions/nvoos-astro-velocity (owner decision Q6 — no licensed
+# bytes anywhere; the Astro app replaces the licensed PWA).
+#
+# Unlike the zero-dependency console mirrors, the Astro SSR runtime needs
+# its dependencies, so the mirror ships a real package.json (deps intact,
+# build-adjacent scripts no-op'd) + the prebuilt dist/. The build runs HERE
+# in the monorepo, hermetic against the fixture contract server.
+#
+# Mirror history is intentionally flat (one commit per sync, force-pushed).
+# Never commit to the mirror directly.
+#
+# Revalidation loop (Phase 2.3): the bridge's RebuildWebhook POSTs
+# `nvoos-storefront-content-changed` to this repo's dispatches endpoint when
+# catalog content changes; the repository_dispatch trigger below re-runs the
+# sync, which rebuilds the prerendered catalog and redeploys Velocity.
+#
+# Activation (owner steps, one-time):
+#   1. Create the repo nvdigitalsolutions/nvoos-astro-velocity (public).
+#   2. Add a repo-scoped deploy token as the repository secret
+#      NVOOS_ASTRO_VELOCITY_REPO_TOKEN.
+#   3. Run this workflow once via workflow_dispatch (backfills the mirror).
+#   4. In Velocity: connect the mirror repo, root directory = repo root,
+#      entry server.js, no build command,
+#      env NVOOS_TARGET_SITE=<backend>, ASTRO_SITE=<canonical host>.
+#   5. On the backend: set funiq_bridge_rebuild_webhook_url to
+#      https://api.github.com/repos/nvdigitalsolutions/mcp-ai-wpoos/dispatches
+#      and funiq_bridge_rebuild_webhook_token to a repo-scoped PAT.
+#
+# Note: manual `gh workflow run` dispatches resolve against the DEFAULT
+# branch (main) — push-triggered and repository_dispatch runs work from
+# alpha-working regardless.
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/nvoos-astro-velocity/**'
+      - 'addons/nvoos-astro-bridge/**'
+      - '.github/workflows/sync-nvoos-astro-velocity.yml'
+  repository_dispatch:
+    types: [nvoos-storefront-content-changed]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: examples/nvoos-astro-velocity/package-lock.json
+
+      - name: Install
+        working-directory: examples/nvoos-astro-velocity
+        run: npm ci
+
+      # The /manage surface ships the Astro CMS standalone bundle (built from
+      # the bridge's SPA source). `npm run build` in the app runs
+      # scripts/sync-manage-assets.mjs, which invokes the bridge's esbuild
+      # target — so the bridge deps must be installed first.
+      - name: Install bridge deps
+        working-directory: addons/nvoos-astro-bridge
+        run: npm ci
+
+      - name: Start fixture contract server
+        working-directory: examples/nvoos-astro-velocity
+        run: |
+          PORT=8123 node scripts/fixture-server.mjs &
+          echo $! > /tmp/fixtures.pid
+          sleep 1
+          curl -fsS http://localhost:8123/wp-json/nvoos-commerce/v1/products | head -c 200
+
+      - name: Lint (eslint src — Astro components included)
+        working-directory: examples/nvoos-astro-velocity
+        run: npm run lint
+
+      - name: Unit tests + contract gate
+        working-directory: examples/nvoos-astro-velocity
+        run: npm test
+
+      - name: Contract drift guard (Phase 2.7)
+        working-directory: examples/nvoos-astro-velocity
+        run: |
+          npm run sync:bridge-fixtures
+          cd "$GITHUB_WORKSPACE"
+          git diff --exit-code -- \
+            examples/nvoos-astro-velocity/tests/fixtures/ || {
+            echo "::error::Storefront fixtures drifted from the bridge goldens. Run 'npm run sync:bridge-fixtures' and commit the updated fixtures."
+            exit 1
+          }
+
+      - name: Build test artifact (localhost origin — feeds smoke/e2e/LHCI)
+        working-directory: examples/nvoos-astro-velocity
+        env:
+          NVOOS_API_BASE: http://localhost:8123/wp-json/nvoos-commerce/v1
+          ASTRO_SITE: http://localhost:4321
+        run: npm run build
+
+      # The build above re-syncs the Astro CMS admin bundle into
+      # public/manage-assets/ (scripts/sync-manage-assets.mjs). If the
+      # committed copy drifts from the bridge sources, fail here instead of
+      # shipping a stale admin on the mirror — the spa-v2 two-bundle rule,
+      # enforced. Rebuild + commit public/manage-assets in the same PR as
+      # any addons/nvoos-astro-bridge/src change.
+      - name: Astro CMS bundle staleness gate
+        working-directory: examples/nvoos-astro-velocity
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git diff --exit-code -- \
+            examples/nvoos-astro-velocity/public/manage-assets/ || {
+            echo "::error::The committed /manage admin bundle is stale relative to addons/nvoos-astro-bridge/src. Run 'npm run build:standalone' in addons/nvoos-astro-bridge and 'node scripts/sync-manage-assets.mjs' in examples/nvoos-astro-velocity, then commit public/manage-assets/ in the same PR."
+            exit 1
+          }
+
+      - name: BFF smoke test (P6)
+        working-directory: examples/nvoos-astro-velocity
+        env:
+          NVOOS_TARGET_SITE: http://localhost:8123
+          PORT: '4321'
+        run: |
+          node server.js &
+          echo $! > /tmp/serve.pid
+          sleep 2
+          npm run smoke
+
+      - name: Playwright e2e (no-JS crawlability + islands, Phase 2.5)
+        working-directory: examples/nvoos-astro-velocity
+        env:
+          NVOOS_TARGET_SITE: http://localhost:8123
+          PORT: '4321'
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+
+      - name: Lighthouse CI (Phase 2.6)
+        working-directory: examples/nvoos-astro-velocity
+        env:
+          NVOOS_TARGET_SITE: http://localhost:8123
+          PORT: '4321'
+        run: |
+          # Point chrome-launcher at the Playwright Chromium IN PLACE —
+          # copying the bare binary out of chrome-linux/ drops icudtl.dat and
+          # the .pak resources, and Chrome dies at ICU init with
+          # "Invalid file descriptor to ICU data received".
+          export CHROME_PATH="$(find "$HOME/.cache/ms-playwright" -type f -name chrome -path '*chromium*' | head -n 1)"
+          test -n "$CHROME_PATH" || { echo 'Chromium not found in the Playwright cache'; exit 1; }
+          echo "LHCI chrome: $CHROME_PATH"
+          npm run lhci:ci
+
+      - name: Assemble mirror tree
+        working-directory: examples/nvoos-astro-velocity
+        env:
+          NVOOS_API_BASE: http://localhost:8123/wp-json/nvoos-commerce/v1
+          # Canonical host for the production artifact. Overridable per
+          # dispatch (client_payload.astro_site) and per repo variable
+          # (ASTRO_SITE); defaults to the live storefront host.
+          ASTRO_SITE: ${{ github.event.client_payload.astro_site || vars.ASTRO_SITE || 'https://astro.nvoos.cloud' }}
+        run: |
+          # Production artifact: canonical tags + /_image hrefs must use the
+          # real host — rebuild before assembling the deploy tree.
+          npm run build
+          node scripts/sync-dist.mjs
+
+      - name: Push mirror
+        working-directory: examples/nvoos-astro-velocity
+        env:
+          MIRROR_TOKEN: ${{ secrets.NVOOS_ASTRO_VELOCITY_REPO_TOKEN }}
+        run: |
+          cd scripts/.mirror-staging
+          git init -b main
+          git config user.name "nv oOS bot"
+          git config user.email "bot@nvoos.cloud"
+          git add -A
+          git commit -m "Sync nvoos-astro-velocity from mcp-ai-wpoos@${GITHUB_SHA::8}" \
+            --allow-empty
+          git push -f \
+            "https://x-access-token:${MIRROR_TOKEN}@github.com/nvdigitalsolutions/nvoos-astro-velocity.git" \
+            main
+
+      - name: Stop servers
+        if: always()
+        run: |
+          kill "$(cat /tmp/serve.pid)" 2>/dev/null || true
+          kill "$(cat /tmp/fixtures.pid)" 2>/dev/null || true

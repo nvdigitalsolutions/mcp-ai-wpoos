@@ -107,6 +107,7 @@ class WP_MCP_AI_Tool_Get_CRM_Handover implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'entity_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Lead or deal ID (required).', 'mcp-ai-wpoos-pro' ),
 				),
 				'include'   => array(

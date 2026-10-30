@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'integer',
 					'description' => __( 'Registration ID to get timeline for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 			),
 			'required'             => array( 'registration_id' ),

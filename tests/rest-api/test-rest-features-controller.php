@@ -55,6 +55,24 @@ class WP_MCP_AI_REST_Features_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The map is user-invariant, so the response opts into shared caching —
+	 * the Complete Console BFF micro-cache keys on this header to absorb the
+	 * boot-time fetch (a change here silently disables that offload).
+	 */
+	public function test_get_features_is_shared_cacheable() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$response = ( new WP_MCP_AI_REST_Features_Controller() )->get_features();
+		$headers  = $response->get_headers();
+
+		$this->assertSame(
+			'public, max-age=60, s-maxage=60',
+			$headers['Cache-Control']
+		);
+	}
+
+	/**
 	 * The toolkit enable toggles flow into the map — the console gates its
 	 * command-center nav items on these, so a disabled toolkit must come
 	 * back as explicit `false` (never absent).

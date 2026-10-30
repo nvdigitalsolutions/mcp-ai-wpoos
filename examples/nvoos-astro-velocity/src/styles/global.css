@@ -1,0 +1,298 @@
+/* ---------------------------------------------------------------------------
+ * Global styles — design tokens for the storefront (Proposals 092 + 095).
+ * The ADS token layer (src/tokens/*.json → generated/tokens.css) is the
+ * source of truth; the legacy --nv-* names below are ALIASES over the
+ * semantic layer so existing component styles keep working unchanged.
+ * ------------------------------------------------------------------------- */
+
+:root {
+	--nv-ink: var(--ads-semantic-ink);
+	--nv-muted: var(--ads-semantic-muted);
+	--nv-surface: var(--ads-semantic-surface);
+	--nv-surface-alt: var(--ads-semantic-surface-alt);
+	--nv-line: var(--ads-semantic-line);
+	--nv-accent: var(--ads-semantic-accent);
+	--nv-accent-ink: var(--ads-semantic-accent-ink);
+	--nv-danger: var(--ads-semantic-danger);
+	--nv-radius: var(--ads-semantic-radius);
+	--nv-font: var(--ads-semantic-font);
+	--nv-space: var(--ads-semantic-space);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	margin: 0;
+	font-family: var(--nv-font);
+	color: var(--nv-ink);
+	background: var(--nv-surface);
+	line-height: 1.6;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+}
+
+a {
+	color: var(--nv-ink);
+}
+
+a:hover {
+	color: var(--nv-accent);
+}
+
+/* Shared layout primitives ---------------------------------------------- */
+
+.container {
+	max-width: 1200px;
+	margin-inline: auto;
+	padding-inline: var(--nv-space);
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.site-header {
+	border-bottom: 1px solid var(--nv-line);
+	background: var(--nv-surface);
+}
+
+.site-header__inner {
+	display: flex;
+	align-items: center;
+	gap: var(--nv-space);
+	padding-block: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.site-header__brand {
+	font-weight: 700;
+	font-size: 1.15rem;
+	text-decoration: none;
+	margin-right: auto;
+}
+
+.site-nav {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.site-nav a {
+	text-decoration: none;
+	font-size: 0.95rem;
+}
+
+/* Manager dashboard entry point (ManageLink island — renders only for
+   signed-in store managers). */
+.site-nav__manage {
+	text-decoration: none;
+	font-size: 0.95rem;
+	font-weight: 600;
+	border: 1px solid var(--nv-line);
+	border-radius: var(--nv-radius);
+	padding: 0.25rem 0.6rem;
+}
+
+.site-footer {
+	border-top: 1px solid var(--nv-line);
+	margin-top: 3rem;
+	padding-block: 1.5rem;
+	color: var(--nv-muted);
+	font-size: 0.9rem;
+}
+
+/* Product grid ---------------------------------------------------------- */
+
+.product-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 1.25rem;
+}
+
+.product-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	text-decoration: none;
+}
+
+.product-card__media {
+	position: relative;
+	aspect-ratio: 4 / 5;
+	background: var(--nv-surface-alt);
+	border-radius: var(--nv-radius);
+	overflow: hidden;
+}
+
+.product-card__media img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.product-card__name {
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.product-card__price {
+	font-weight: 700;
+}
+
+.product-card__old-price {
+	color: var(--nv-muted);
+	text-decoration: line-through;
+	margin-left: 0.4rem;
+	font-weight: 400;
+}
+
+.promo-badge {
+	position: absolute;
+	top: 0.5rem;
+	left: 0.5rem;
+	background: var(--nv-danger);
+	color: #fff;
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 0.2rem 0.5rem;
+	border-radius: 4px;
+}
+
+/* Buttons & forms ------------------------------------------------------- */
+
+.btn {
+	display: inline-block;
+	border: 1px solid var(--nv-accent);
+	background: var(--nv-accent);
+	color: var(--nv-accent-ink);
+	padding: 0.5rem 1rem;
+	border-radius: var(--nv-radius);
+	font: inherit;
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.btn:hover {
+	opacity: 0.92;
+	color: var(--nv-accent-ink);
+}
+
+.btn--ghost {
+	background: transparent;
+	color: var(--nv-ink);
+	border-color: var(--nv-line);
+}
+
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	margin-block: 0.75rem;
+}
+
+.field input {
+	padding: 0.5rem;
+	border: 1px solid var(--nv-line);
+	border-radius: var(--nv-radius);
+	font: inherit;
+}
+
+/* PLP layout ------------------------------------------------------------ */
+
+.plp {
+	display: grid;
+	grid-template-columns: 240px 1fr;
+	gap: 2rem;
+}
+
+@media (max-width: 800px) {
+	.plp {
+		grid-template-columns: 1fr;
+	}
+}
+
+.filters {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.filter-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	text-decoration: none;
+	font-size: 0.9rem;
+}
+
+.swatch {
+	display: inline-block;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	border: 1px solid var(--nv-line);
+}
+
+/* PDP ------------------------------------------------------------------- */
+
+.pdp {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 2rem;
+	margin-top: 1.5rem;
+}
+
+@media (max-width: 800px) {
+	.pdp {
+		grid-template-columns: 1fr;
+	}
+}
+
+.pdp__price {
+	font-size: 1.6rem;
+	font-weight: 700;
+}
+
+.pdp__old-price {
+	color: var(--nv-muted);
+	text-decoration: line-through;
+	font-weight: 400;
+	font-size: 1.1rem;
+	margin-left: 0.5rem;
+}
+
+.breadcrumbs {
+	font-size: 0.9rem;
+	color: var(--nv-muted);
+	margin-block: 1rem;
+}
+
+.breadcrumbs a {
+	color: var(--nv-muted);
+}
+
+.pagination {
+	display: flex;
+	gap: 0.75rem;
+	justify-content: center;
+	margin-block: 2rem;
+}

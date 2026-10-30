@@ -89,10 +89,12 @@ class WP_MCP_AI_Tool_Create_Task_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 					),
 					'project_id'  => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Optional project ID to link this task plan to',
 					),
 					'template_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Optional template ID if using a pre-built template',
 					),
 				),

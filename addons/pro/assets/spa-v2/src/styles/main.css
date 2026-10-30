@@ -12,6 +12,8 @@
 	--nvoos-text: #1e1e1e;
 	--nvoos-text-secondary: #787c82;
 	--nvoos-border: #dcdcde;
+	--nvoos-chip-bg: #f0f0f1;
+	--nvoos-muted: #757575;
 	--nvoos-primary: #2271b1;
 	--nvoos-primary-hover: #135e96;
 	--nvoos-danger: #d63638;
@@ -26,6 +28,8 @@
 	--nvoos-text: #e0e0e0;
 	--nvoos-text-secondary: #a0a0a0;
 	--nvoos-border: #444;
+	--nvoos-chip-bg: transparent;
+	--nvoos-muted: #a0a0a0;
 	--nvoos-primary: #4f94d4;
 	--nvoos-primary-hover: #72aee6;
 	--nvoos-danger: #f86363;
@@ -39,6 +43,8 @@
 		--nvoos-text: #e0e0e0;
 		--nvoos-text-secondary: #a0a0a0;
 		--nvoos-border: #444;
+		--nvoos-chip-bg: transparent;
+		--nvoos-muted: #a0a0a0;
 		--nvoos-primary: #4f94d4;
 		--nvoos-primary-hover: #72aee6;
 		--nvoos-danger: #f86363;
@@ -1695,15 +1701,24 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-settings__footer {
 	position: sticky;
-	bottom: 0;
+	/* Tuck the footer 30px below the scroll edge so it sits flush against
+	   the bottom of the content area (no visible gap under the border-top).
+	   Narrow screens need less tuck — see the media query below. */
+	bottom: -30px;
 	z-index: 10;
 	display: flex;
 	align-items: center;
 	gap: 12px;
 	margin-top: 16px;
 	padding: 12px 0;
-	border-top: 1px solid var(--nvoos-border, #dcdcde);
-	background: var(--nvoos-bg, #f0f0f1);
+	border-top: 1px solid var( --nvoos-border, #dcdcde );
+	background: var( --nvoos-bg, #f0f0f1 );
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-settings__footer {
+		bottom: -15px;
+	}
 }
 
 .nvoos-pro-spa-settings__dirty-hint {
@@ -3051,6 +3066,19 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 }
 .nvoos-pro-spa-usage-badge--cost {
 	border: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+/* Chip surfaces go transparent in dark mode (the --nvoos-chip-bg token) —
+   add a border so attachment chips and usage badges keep their shape. */
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-attachment-chip,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-usage-badge {
+	border: 1px solid var(--nvoos-border);
+}
+@media (prefers-color-scheme: dark) {
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-attachment-chip,
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-usage-badge {
+		border: 1px solid var(--nvoos-border);
+	}
 }
 
 /* ------------------------------------------------------------------ */
@@ -4481,6 +4509,12 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	animation: nvoos-pro-spa-spin 0.8s linear infinite;
 }
 
+.nvoos-pro-spa-page__spinner--small {
+	width: 16px;
+	height: 16px;
+	border-width: 2px;
+}
+
 /* Generic console action button. Every page reuses this class for its
    primary actions, so it carries the full interactive treatment — variants
    below (`--primary`, `--danger`, `--small`) replace ad-hoc one-off buttons. */
@@ -4551,6 +4585,12 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	min-height: 26px;
 	padding: 0 10px;
 	font-size: 12px;
+}
+
+/* Adjacent action buttons in a table cell (e.g. Install + Details) need a
+   gutter so they don't read as one control. */
+.nvoos-pro-spa-page__retry + .nvoos-pro-spa-page__retry {
+	margin-left: 6px;
 }
 
 /* =========================================================================
@@ -4750,7 +4790,15 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	font-weight: 600;
 }
 
+/* Edit mode holds the whole form behind this block until the full record
+   (system prompt + tools) has loaded, so values render populated once
+   instead of popping in field by field. */
 .nvoos-pro-spa-assistants-form__loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	min-height: 160px;
 	margin: 0 0 16px;
 	font-size: 13px;
 	color: var( --nvoos-pro-spa-muted, #757575 );
@@ -4844,6 +4892,361 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-assistants-form__cancel-btn:hover {
 	background: var(--nvoos-bg, #f0f0f1);
+}
+
+/* =========================================================================
+   Assistant tool picker (Proposal 088)
+   ========================================================================= */
+
+.nvoos-pro-spa-tool-picker {
+	position: relative;
+}
+
+.nvoos-pro-spa-tool-picker__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0 0 8px;
+	padding: 0;
+	list-style: none;
+}
+
+.nvoos-pro-spa-tool-picker__chip {
+	margin: 0;
+}
+
+.nvoos-pro-spa-tool-picker__chip-remove {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border: 1px solid var(--nvoos-primary, #2271b1);
+	border-radius: 999px;
+	background: var(--nvoos-primary-soft, #eef6fc);
+	color: var(--nvoos-primary, #2271b1);
+	font-size: 12px;
+	line-height: 1.4;
+	cursor: pointer;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tool-picker__chip-remove:hover,
+.nvoos-pro-spa-tool-picker__chip-remove:focus-visible {
+	background: var(--nvoos-primary, #2271b1);
+	color: #fff;
+}
+
+.nvoos-pro-spa-tool-picker__chip--unknown .nvoos-pro-spa-tool-picker__chip-remove {
+	border-color: var(--nvoos-warning, #b26a00);
+	color: #000000;
+	background: #fcf0df;
+	border-style: dashed;
+}
+
+.nvoos-pro-spa-tool-picker__chip--unknown .nvoos-pro-spa-tool-picker__chip-remove:hover {
+	background: var(--nvoos-warning, #b26a00);
+	color: #fff;
+}
+
+/* Severity colour coding (Proposal 088) — mirrors the legacy assistant
+   editor's `getChipColours()` flag palette. */
+.nvoos-pro-spa-tool-picker__chip--danger .nvoos-pro-spa-tool-picker__chip-remove {
+	border-color: #fecaca;
+	background: #fee2e2;
+	color: #991b1b;
+}
+
+.nvoos-pro-spa-tool-picker__chip--danger .nvoos-pro-spa-tool-picker__chip-remove:hover {
+	background: #dc2626;
+	color: #fff;
+}
+
+.nvoos-pro-spa-tool-picker__chip--warning .nvoos-pro-spa-tool-picker__chip-remove {
+	border-color: #fed7aa;
+	background: #ffedd5;
+	color: #9a3412;
+}
+
+.nvoos-pro-spa-tool-picker__chip--warning .nvoos-pro-spa-tool-picker__chip-remove:hover {
+	background: #ea580c;
+	color: #fff;
+}
+
+.nvoos-pro-spa-tool-picker__chip--caution .nvoos-pro-spa-tool-picker__chip-remove {
+	border-color: #fef08a;
+	background: #fef9c3;
+	color: #854d0e;
+}
+
+.nvoos-pro-spa-tool-picker__chip--caution .nvoos-pro-spa-tool-picker__chip-remove:hover {
+	background: #ca8a04;
+	color: #fff;
+}
+
+.nvoos-pro-spa-tool-picker__chip--safe .nvoos-pro-spa-tool-picker__chip-remove {
+	border-color: #bbf7d0;
+	background: #dcfce7;
+	color: #166534;
+}
+
+.nvoos-pro-spa-tool-picker__chip--safe .nvoos-pro-spa-tool-picker__chip-remove:hover {
+	background: #16a34a;
+	color: #fff;
+}
+
+.nvoos-pro-spa-tool-picker__chip--neutral .nvoos-pro-spa-tool-picker__chip-remove {
+	border-color: #c7d2fe;
+	background: #e0e7ff;
+	color: #3730a3;
+}
+
+.nvoos-pro-spa-tool-picker__chip--neutral .nvoos-pro-spa-tool-picker__chip-remove:hover {
+	background: #6366f1;
+	color: #fff;
+}
+
+.nvoos-pro-spa-tool-picker__chip-x {
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.nvoos-pro-spa-tool-picker__field {
+	display: flex;
+	gap: 0;
+}
+
+.nvoos-pro-spa-tool-picker__input {
+	flex: 1;
+	min-width: 0;
+	padding: 8px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px 0 0 6px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	font-size: 14px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tool-picker__input:focus {
+	outline: 2px solid var(--nvoos-primary, #2271b1);
+	outline-offset: -1px;
+	border-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-tool-picker__toggle {
+	padding: 8px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-left: 0;
+	border-radius: 0 6px 6px 0;
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text, #1e1e1e);
+	cursor: pointer;
+	font-size: 12px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tool-picker__summary {
+	margin-top: 6px;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tool-picker__warning {
+	color: var(--nvoos-warning, #b26a00);
+}
+
+.nvoos-pro-spa-tool-picker__popup {
+	position: absolute;
+	z-index: 100;
+	top: calc(100% + 4px);
+	left: 0;
+	right: 0;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: var(--nvoos-bg-secondary, #fff);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.nvoos-pro-spa-tool-picker__listbox {
+	max-height: 260px;
+	overflow-y: auto;
+	margin: 0;
+	padding: 4px;
+	list-style: none;
+}
+
+.nvoos-pro-spa-tool-picker__group {
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-pro-spa-tool-picker__group-label {
+	position: sticky;
+	top: -4px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 6px 8px 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tool-picker__group-count {
+	font-weight: 400;
+}
+
+.nvoos-pro-spa-tool-picker__options {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.nvoos-pro-spa-tool-picker__option {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 6px 8px;
+	border-left: 3px solid transparent;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.nvoos-pro-spa-tool-picker__option--danger {
+	border-left-color: #dc2626;
+}
+
+.nvoos-pro-spa-tool-picker__option--warning {
+	border-left-color: #ea580c;
+}
+
+.nvoos-pro-spa-tool-picker__option--caution {
+	border-left-color: #ca8a04;
+}
+
+.nvoos-pro-spa-tool-picker__option--safe {
+	border-left-color: #16a34a;
+}
+
+.nvoos-pro-spa-tool-picker__option--neutral {
+	border-left-color: #6366f1;
+}
+
+.nvoos-pro-spa-tool-picker__option--active {
+	background: var(--nvoos-primary-soft, #eef6fc);
+}
+
+.nvoos-pro-spa-tool-picker__option--disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.nvoos-pro-spa-tool-picker__option-check {
+	flex-shrink: 0;
+	width: 14px;
+	padding-top: 1px;
+	color: var(--nvoos-primary, #2271b1);
+	font-weight: 700;
+	text-align: center;
+}
+
+.nvoos-pro-spa-tool-picker__option-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.nvoos-pro-spa-tool-picker__option-name {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-tool-picker__option-desc {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	margin-top: 1px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tool-picker__option-slug {
+	flex-shrink: 0;
+	max-width: 40%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: monospace;
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tool-picker__option-cap {
+	flex-shrink: 0;
+	padding: 1px 6px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 999px;
+	font-size: 10px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tool-picker__state {
+	padding: 16px;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+	text-align: center;
+}
+
+.nvoos-pro-spa-tool-picker__state--error {
+	color: var(--nvoos-error, #b32d2e);
+}
+
+.nvoos-pro-spa-tool-picker__retry {
+	margin-left: 8px;
+	padding: 2px 10px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text, #1e1e1e);
+	cursor: pointer;
+	font-size: 12px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tool-picker__footer {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 8px;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-tool-picker__footer-btn {
+	padding: 4px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text, #1e1e1e);
+	cursor: pointer;
+	font-size: 12px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tool-picker__footer-btn:hover {
+	border-color: var(--nvoos-primary, #2271b1);
+	color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-tool-picker__footer-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 /* =========================================================================
@@ -4956,6 +5359,18 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	color: var(--nvoos-text-secondary, #787c82);
 }
 
+/* In-flight page fetch: inline spinner + label next to the range text
+   (keep-previous-data pattern — the pager owns the progress signal while
+   the table dims its stale rows). */
+.nvoos-pro-spa-tools-page__pager-busy {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
 .nvoos-pro-spa-tools-page__pager-size {
 	display: inline-flex;
 	align-items: center;
@@ -5061,6 +5476,15 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	min-width: 640px;
 	border-collapse: separate;
 	border-spacing: 0;
+}
+
+/* Keep-previous-data busy state: stale rows stay mounted but read as
+   clearly inactive while the next page fetches (opacity dim + pointer
+   shield so a stale row can never be acted on). */
+.nvoos-pro-spa-tools-list--busy {
+	opacity: 0.5;
+	pointer-events: none;
+	transition: opacity 0.15s ease;
 }
 
 .nvoos-pro-spa-tools-list--table thead th {
@@ -5330,6 +5754,285 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 }
 
 /* =========================================================================
+   Dashboards page — empty state (toolkits disabled)
+   ========================================================================= */
+
+.nvoos-pro-spa-dashboards-empty {
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	padding: 32px 24px;
+	text-align: center;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-dashboards-empty__icon {
+	font-size: 34px;
+	line-height: 1;
+	margin-bottom: 8px;
+}
+
+.nvoos-pro-spa-dashboards-empty__title {
+	margin: 0 0 8px;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-dashboards-empty__message {
+	margin: 0 auto 16px;
+	max-width: 520px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-dashboards-empty__list {
+	margin: 0 auto 16px;
+	padding: 0;
+	max-width: 640px;
+	list-style: none;
+	text-align: left;
+}
+
+.nvoos-pro-spa-dashboards-empty__item {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	padding: 12px 0;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-dashboards-empty__item-icon {
+	font-size: 20px;
+	line-height: 1.4;
+	flex: 0 0 auto;
+}
+
+.nvoos-pro-spa-dashboards-empty__item-body {
+	min-width: 0;
+}
+
+.nvoos-pro-spa-dashboards-empty__item-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-dashboards-empty__item-description {
+	margin: 2px 0 4px;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-dashboards-empty__item-hint {
+	margin: 0;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-dashboards-empty__actions {
+	margin-top: 4px;
+}
+
+/* =========================================================================
+   Security Center page (2.4.2 — structured posture UI)
+   ========================================================================= */
+
+.nvoos-pro-spa-security__score-card {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	flex-wrap: wrap;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	padding: 16px 20px;
+	margin-bottom: 16px;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-security__score-gauge {
+	flex: 0 0 auto;
+	width: 140px;
+}
+
+.nvoos-pro-spa-security__score-gauge .nvoos-pro-spa-chart-recipe {
+	border: 0;
+	background: transparent;
+	padding: 0;
+}
+
+.nvoos-pro-spa-security__score-gauge .nvoos-pro-spa-chart-recipe-title {
+	display: none;
+}
+
+.nvoos-pro-spa-security__score-body {
+	flex: 1 1 220px;
+	min-width: 200px;
+}
+
+.nvoos-pro-spa-security__score-line {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.nvoos-pro-spa-security__score-number {
+	font-size: 30px;
+	font-weight: 700;
+	line-height: 1;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-security__score-meta {
+	margin: 6px 0 0;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-security__card {
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	padding: 16px;
+	margin-bottom: 16px;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-security__card-title {
+	margin: 0 0 12px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-security__group + .nvoos-pro-spa-security__group {
+	margin-top: 16px;
+}
+
+.nvoos-pro-spa-security__group-title {
+	margin: 0 0 6px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-security__muted {
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-security__badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+	vertical-align: middle;
+}
+
+.nvoos-pro-spa-security__badge--ok {
+	background: rgba( 0, 170, 102, 0.12 );
+	color: #007a4d;
+}
+
+.nvoos-pro-spa-security__badge--warning {
+	background: rgba( 217, 119, 6, 0.12 );
+	color: #9a5b00;
+}
+
+.nvoos-pro-spa-security__badge--error {
+	background: rgba( 214, 54, 56, 0.12 );
+	color: #b32d2e;
+}
+
+.nvoos-pro-spa-security__header-status {
+	margin: 0 0 10px;
+}
+
+.nvoos-pro-spa-security__quick-wins {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.nvoos-pro-spa-security__quick-win {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	padding: 8px 0;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-security__quick-win:first-child {
+	border-top: 0;
+	padding-top: 0;
+}
+
+.nvoos-pro-spa-security__quick-win-icon {
+	flex: 0 0 auto;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.nvoos-pro-spa-security__quick-win-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-security__quick-win-detail {
+	margin: 2px 0 0;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-security__action--error {
+	border-color: rgba( 214, 54, 56, 0.4 );
+}
+
+.nvoos-pro-spa-security__action--ok {
+	border-color: rgba( 0, 170, 102, 0.4 );
+}
+
+.nvoos-pro-spa-security__action-detail {
+	margin: 0;
+	font-size: 13px;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-security__checks {
+	margin: 10px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.nvoos-pro-spa-security__check {
+	display: flex;
+	gap: 8px;
+	align-items: baseline;
+	flex-wrap: wrap;
+	padding: 6px 0;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-security__check-label {
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-security__check-message {
+	color: var(--nvoos-text-secondary, #787c82);
+	flex-basis: 100%;
+}
+
+/* =========================================================================
    Token Manager page (2.4.0 — Proposal 084 Phase 3)
    ========================================================================= */
 
@@ -5421,15 +6124,133 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-workflows-page__layout {
 	display: grid;
-	grid-template-columns: 300px minmax( 0, 1fr );
+	/* minmax( 0, … ) tracks: the workflow-list DataTable carries a 640px
+	   min-width, and a fixed/bare-1fr track would let that content minimum
+	   push the panes past the page width (card spilling off the right). */
+	grid-template-columns: minmax( 0, 300px ) minmax( 0, 1fr );
 	gap: 16px;
 	align-items: start;
 }
 
+/* Pane containment: let each card shrink with its track and scroll its
+   oversize content (wide tables, long tag rows) instead of widening the
+   page — grid items default to min-width: auto (min-content floor). */
+.nvoos-pro-spa-workflows-page__layout > * {
+	min-width: 0;
+	overflow-x: auto;
+}
+
 @media screen and ( max-width: 782px ) {
 	.nvoos-pro-spa-workflows-page__layout {
-		grid-template-columns: 1fr;
+		grid-template-columns: minmax( 0, 1fr );
 	}
+}
+
+/* ── Teams page ───────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-teams__members {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+/* ── Paper Store page ──────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-paper-store__layout {
+	display: grid;
+	grid-template-columns: minmax( 0, 260px ) minmax( 0, 1fr );
+	gap: 16px;
+	align-items: start;
+}
+
+.nvoos-pro-spa-paper-store__layout > * {
+	min-width: 0;
+	overflow-x: auto;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-paper-store__layout {
+		grid-template-columns: minmax( 0, 1fr );
+	}
+}
+
+.nvoos-pro-spa-paper-store__collections {
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.nvoos-pro-spa-paper-store__collection {
+	display: block;
+	width: 100%;
+	padding: 7px 10px;
+	border: none;
+	border-radius: 6px;
+	background: transparent;
+	font-family: inherit;
+	font-size: 13px;
+	text-align: left;
+	color: var( --nvoos-text, #1e1e1e );
+	cursor: pointer;
+	font-family: ui-monospace, Cascadia Code, Source Code Pro, Menlo, Consolas, monospace;
+}
+
+.nvoos-pro-spa-paper-store__collection:hover {
+	background: var( --nvoos-bg, #f0f0f1 );
+}
+
+.nvoos-pro-spa-paper-store__collection[aria-current='true'] {
+	background: var( --nvoos-selected-bg, #e5e5ff );
+	color: var( --nvoos-primary, #2271b1 );
+}
+
+.nvoos-pro-spa-paper-store__collection:focus-visible {
+	outline: 2px solid var( --nvoos-primary, #2271b1 );
+	outline-offset: 2px;
+}
+
+.nvoos-pro-spa-paper-store__records {
+	margin: 12px 0 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.nvoos-pro-spa-paper-store__record-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-paper-store__record-row .nvoos-pro-spa-tools-list__name--button {
+	flex: 1;
+	min-width: 180px;
+}
+
+.nvoos-pro-spa-paper-store__detail {
+	margin-top: 8px;
+	padding: 10px 12px;
+	border: 1px solid var( --nvoos-border, #dcdcde );
+	border-radius: 6px;
+	background: var( --nvoos-bg, #f0f0f1 );
+}
+
+.nvoos-pro-spa-paper-store__detail .nvoos-pro-spa-wf-editor__json {
+	margin: 0;
+	max-height: 320px;
+	overflow: auto;
+	white-space: pre-wrap;
 }
 
 /* ── Workflow canvas (Phase 3b W10.2b) ──────────────────────────────── */
@@ -5506,6 +6327,55 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	height: 8px;
 	background: var(--nvoos-wf-accent, #2271b1);
 	border: 2px solid var(--nvoos-bg-secondary, #fff);
+}
+
+/* ── Workflow node editor panel (Phase 3b W10.2b follow-up) ─────────── */
+
+.nvoos-pro-spa-wf-editor {
+	margin-bottom: 12px;
+	padding: 12px 14px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.nvoos-pro-spa-wf-editor__field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	max-width: 560px;
+}
+
+.nvoos-pro-spa-wf-editor__label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-wf-editor__json {
+	width: 100%;
+	box-sizing: border-box;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	padding: 6px 8px;
+	font-family: Consolas, Monaco, 'Courier New', monospace;
+	font-size: 12px;
+	line-height: 1.45;
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-wf-editor__hint {
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-wf-editor__json-error {
+	font-size: 11px;
+	color: #b32d2e;
 }
 
 .nvoos-pro-spa-tools-page__footer {
@@ -6919,4 +7789,91 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-page__message--success {
 	color: var(--nvoos-positive, #008a20);
+}
+
+/* =========================================================================
+   Workflow DSL import panel (2.5.0 — Proposal 091, Track A)
+   ========================================================================= */
+
+.nvoos-pro-spa-dsl-import {
+	margin-top: 12px;
+	padding: 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-dsl-import__input {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text, #1e1e1e);
+	font-family: monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	resize: vertical;
+}
+
+.nvoos-pro-spa-dsl-import__input:focus {
+	border-color: var(--nvoos-primary, #2271b1);
+	outline: 1px solid var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-dsl-import__controls {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 8px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-dsl-import__controls label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-dsl-import__findings {
+	width: 100%;
+	margin-top: 12px;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.nvoos-pro-spa-dsl-import__findings th,
+.nvoos-pro-spa-dsl-import__findings td {
+	padding: 6px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	text-align: left;
+	vertical-align: top;
+}
+
+.nvoos-pro-spa-dsl-import__findings th {
+	background: var(--nvoos-bg, #f0f0f1);
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-dsl-import__findings tr[data-severity='error'] td:first-child {
+	color: #b32d2e;
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-dsl-import__findings tr[data-severity='warning'] td:first-child {
+	color: #996800;
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-dsl-import__blocked {
+	margin-top: 8px;
+	padding: 8px 10px;
+	border-left: 4px solid #b32d2e;
+	background: rgba( 179, 45, 46, 0.06 );
+	color: #b32d2e;
+	font-size: 13px;
 }

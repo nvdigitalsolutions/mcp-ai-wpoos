@@ -60,6 +60,16 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 			return;
 		}
 
+		/**
+		 * Kill-switch for the wp-admin Shopify Sync surface (Proposal 089
+		 * Phase 2b). The Complete Console renders the same toolkit settings
+		 * through the schema-driven settings surface; flip this filter off
+		 * per cohort once console parity is verified.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_shopify_sync_toolkit', true ) ) {
+			return;
+		}
+
 		add_menu_page(
 			__( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),
 			__( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),

@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 74 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 85 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, fallback-autoloader masking, init-time post-insert $wp_rewrite warnings, wp-phpunit _delete_all_posts boot wiping, queue-worker failure contract, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-23"
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
+  last-updated: "2026-10-30"
+  plugin-version: "1.2.14"
+  plugin-version-tested: "1.2.14"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -93,8 +93,10 @@ sharing the WP-core volume, with your worktree mounted over the plugin path:
 #    breaks inside Linux — classmap paths with backslashes →
 #    'Class "PHPUnit\\TextUI\\Application" not found').
 #    REUSE an existing complete volume when present (docker volume ls):
-#    mcp-ai-wpoos-vendor / mcp-ai-wpoos-alpha-vendor ship with PHPUnit +
-#    wp-phpunit and need no build.
+#    mcp-ai-wpoos-vendor / mcp-ai-wpoos-alpha-vendor / alpha-working-vendor
+#    ship with PHPUnit + wp-phpunit and need no build. On this box
+#    (2026-10-27) only `alpha-working-vendor` exists — verify with
+#    docker volume ls, never assume the name.
 #
 #    Session note (2026-10-17): the main checkout may have no vendor/ at all;
 #    `docker exec oos-wp ... vendor/bin/phpunit` then fails with
@@ -161,13 +163,16 @@ Linux vendor volume is the fix for container runs; for host-side runs,
 `composer install` on the host rebuilds a Windows vendor that then breaks
 INSIDE Linux — pick one environment per session.
 
-Also true for the MAIN checkout on this box (2026-10-22): `vendor/` exists
-but is pruned, so even a direct `docker exec oos-wp … vendor/bin/phpunit`
-fails the same way. Use the one-off runner with the existing **complete**
-`mcp-ai-wpoos-vendor` volume (verified: 934 PHPUnit classmap entries) and,
-for the WP 7.1 matrix, the reusable `wp71-core` named volume mounted at
-`/tmp/wp71` (DB `wordpress_test_wp71`) — no `docker cp` dance needed when
-`/tmp/wp71` is gone from the container.
+Also true for the MAIN checkout on this box (2026-10-22, re-verified
+2026-10-27): `vendor/` exists but is pruned, so even a direct
+`docker exec oos-wp … vendor/bin/phpunit` fails the same way. Use the
+one-off runner with the existing **complete** `alpha-working-vendor`
+volume (verified: 934 PHPUnit classmap entries + wp-phpunit present;
+ran the Gmail/Calendar auto-fallback suites green on
+`wordpress:6.9-php8.2-apache`) and, for the WP 7.1 matrix, the reusable
+`wp71-core` named volume mounted at `/tmp/wp71` (DB
+`wordpress_test_wp71`) — no `docker cp` dance needed when `/tmp/wp71` is
+gone from the container.
 
 **Host-side recovery without the volume (2026-10-23, main checkout):**
 the pruned classmap can be fixed in place — run
@@ -228,10 +233,14 @@ Mounting the parent silently runs the WRONG code — verify with
 the allowed directory even when the terminal's repo root is the main
 checkout; trust `git rev-parse`, not the tool metadata.
 
-# Write the wp-phpunit config the plugin bootstrap expects. Default lookup is
-# vendor/wp-phpunit/wp-phpunit/wp-tests-config.php (dirname of includes/).
-# vendor/ paths are excluded from repo file tools — use the shell:
-cat > vendor/wp-phpunit/wp-phpunit/wp-tests-config.php <<'EOF'
+# Write the wp-phpunit config the plugin bootstrap expects. wp-phpunit 7.x
+# ships vendor/wp-phpunit/wp-phpunit/wp-tests-config.php as a "DO NOT EDIT"
+# LOADER stub that requires the file named by the WP_PHPUNIT__TESTS_CONFIG
+# env var (and reads WP_PHPUNIT__TABLE_PREFIX). Write the real config to a
+# sibling path and point the env var at it — overwriting the loader with the
+# config also works, but the loader + env-var pattern survives vendor
+# refreshes. vendor/ paths are excluded from repo file tools — use the shell:
+cat > vendor/wp-tests-config.php <<'EOF'
 <?php
 define( 'ABSPATH', '/var/www/html/' );
 define( 'DB_NAME', 'wordpress_test' );
@@ -259,6 +268,8 @@ MSYS_NO_PATHCONV=1 docker run --rm --entrypoint php \
   -v F:/GITHUB/mcp-ai-wpoos:/var/www/html/wp-content/plugins/mcp-ai-wpoos \
   --network oos-wp_default \
   -e WP_TESTS_DIR=/var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/wp-phpunit/wp-phpunit \
+  -e WP_PHPUNIT__TESTS_CONFIG=/var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/wp-tests-config.php \
+  -e WP_PHPUNIT__TABLE_PREFIX=wptests_ \
   wordpress:6.9-php8.2-apache \
   /var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/bin/phpunit \
   -c /var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/phpunit.xml.dist --testsuite=Unit
@@ -312,15 +323,26 @@ test (hundreds — not failures). A summary of "OK, but there were issues"
 with only warnings/deprecations/skips is a pass.
 - phpcs for the addon: `--standard=plugins/nvoos-content-graph-pro/phpcs.xml.dist`
 (phpcbf exit 1 = fixed files, not an error; re-run phpcs to confirm exit 0).
-- **content-graph session notes (1.0.9 pass):** the plugin's `vendor/` may
-  be PRUNED of PHPUnit entirely (`vendor/phpunit` gone; `vendor/bin/phpunit`
-  points at nothing) — a plain `composer install` in the plugin dir restores
-  the locked set (PHPUnit 9.6.35 + wp-phpunit 7.0.2) and the recipe above
-  then works as written. Point the plugin's gitignored
-  `vendor/wp-phpunit/wp-phpunit/wp-tests-config.php` at an isolated DB
-  (`wordpress_test_nvooscg` pattern) before the run. Current sizes: Unit
-  154 tests / 725 assertions (~7 s) and Integration 18 / 57 (~8 s) on
-  `wordpress:6.9-php8.2-apache`.
+- **content-graph session notes (1.0.9 → 1.0.12 passes):** the plugin's
+  `vendor/` may be PRUNED of PHPUnit — sometimes partially, with
+  `vendor/bin/phpunit` present while `vendor/phpunit/phpunit/phpunit` is
+  gone (the run then dies with a PHP file-open warning from the bin shim,
+  `Failed to open stream: .../phpunit/phpunit/phpunit`, not "Could not open
+  input file") — a plain `composer install` in the plugin dir restores the
+  locked set (PHPUnit 9.6.35 + wp-phpunit 7.0.2) and the recipe above then
+  works as written. Point the gitignored `vendor/wp-tests-config.php` at an
+  isolated DB (`wordpress_test_cg12` pattern) before the run. Current
+  sizes: Unit 164 tests / 743 assertions (~7 s) and Integration 29 / 80
+  (~10 s) on `wordpress:6.9-php8.2-apache`, green on WP 6.9 AND WP 7.1
+  (for 7.1 mount the `wp71-core` volume at `/tmp/wp71`, set `ABSPATH` to
+  `/tmp/wp71/`, and reuse the same isolated DB).
+- **Do not let local test configs leak into the standalone ZIP.** The
+  config file above lives in the gitignored `vendor/`, and
+  `bin/build-nvoos-content-graph.sh` rsyncs `vendor/` wholesale into the
+  distribution ZIP — DB credentials and all. Delete `vendor/wp-tests-config*.php`
+  before building and verify the built ZIP listing has no `wp-tests-config`
+  entries (hit on the 1.0.12 pass: the first build shipped the scratch
+  config).
 
 ## Cluster → PR workflow
 
@@ -695,6 +717,15 @@ the changed files is the substantive gate; plan CI waits accordingly.
     $controller->register_routes() )`, then force a fresh server
     (`$GLOBALS['wp_rest_server'] = null; rest_get_server();`) so
     `rest_api_init` re-fires and the hook runs on the correct action.
+    Related fatal (learned 2026-10-25, `tests/test-remote-sites-rest.php`):
+    `register_routes()` CANNOT be declared `static` on a
+    `WP_REST_Controller` subclass — PHP fatals with *"Cannot make non
+    static method WP_REST_Controller::register_routes() static"* the moment
+    the class is loaded. Use the instance pattern
+    (`public static function init() { $c = new self();
+    add_action( 'rest_api_init', array( $c, 'register_routes' ) ); }` +
+    non-static `register_routes()`), and have tests register through the
+    `rest_api_init` hook rather than calling it directly.
 45. **`rest_url()` in tests uses the `?rest_route=` query form** (plain
     permalinks), e.g. `http://example.org/index.php?rest_route=/ns/route` —
     never assert a `/wp-json/` URL shape. Assert
@@ -935,6 +966,14 @@ the changed files is the substantive gate; plan CI waits accordingly.
         `addons/pro/tests/tools/.coverage-manifest.txt`, pattern 57); new base
         tool classes must land in both the preset(s) and the base manifest, or
         `test_tool_class_manifest_is_up_to_date` fails too.
+      - **The recurrence (v1.2.13, PR #7256)** — Proposal 091's
+        `export_annotation_dataset` shipped registered in the Pro map but
+        orphaned from **both** gate surfaces (presets + Pro manifest); CI
+        failed 2 tests until #7256 added it to the `assistant_management`
+        preset (next to its sibling `run_assistant_eval`) and regenerated
+        both manifests via `bin/generate-tool-coverage-manifest.sh`. A new
+        Pro tool is not done until the preset **and** the Pro manifest move
+        in the same PR.
       - **Image/attachment assertions follow the pipeline** — a test pinning
         an earlier behavior (e.g. `convert_image_files_to_image_url` asserting
         `http` URLs after #6846 switched to inline `data:image/…;base64`)
@@ -1200,6 +1239,201 @@ the changed files is the substantive gate; plan CI waits accordingly.
       `update_option( OPTION_NAME, … )` in a test, or the logger keeps
       reading the pre-update cache and the `wp_mcp_ai_log_entry` filter
       never fires.
+
+   75. **`class_exists()` guards pass for the wrong reason — the bootstrap's
+      Pro fallback autoloader loads the class on demand (2026-10-23, console
+      REST provider-loading pass).** `tests/bootstrap.php` registers
+      `wp_mcp_ai_register_pro_classmap_fallback_autoloader()`, which globs
+      any `WP_MCP_AI_*` class out of `addons/pro/includes` (up to three
+      levels deep) the moment `class_exists()` asks. A production bug where a
+      REST handler's provider class is only `require_once`d by the
+      admin-gated `admin_sections` module therefore does NOT reproduce in
+      PHPUnit: the handler test passes because the autoloader supplies the
+      class, while the live front-end-originated console request silently
+      degrades (empty catalogue `ok: true`, 501s, `success: false`). Honest
+      pin recipe, used in `tests/rest-api/test-rest-console-bridges.php`:
+
+      - Assert the provider FILE is **eagerly** included right after the
+        registry boot — scan `get_included_files()` before any handler runs
+        (a lazy autoload include only happens once a handler calls
+        `class_exists()`, so the eager scan distinguishes the real loader).
+      - Prove the pin bites: `git stash push -- <production-file>`, run the
+        test (must FAIL), `git stash pop` (must PASS). A pin you haven't
+        watched fail is a pin you can't trust.
+      - End-to-end handler tests remain useful as response-contract tests,
+        but they cannot detect this bug class in this bootstrap — say so in
+        the test docblock instead of pretending they pin it.
+	      - PHPUnit 11 requires data providers to be `public static`; a
+	        non-static provider errors at suite construction, not in the test.
+
+	   76. **Init-time `wp_insert_post()` → "Attempt to read property 'feeds' on
+	      null" (PHP 8, bootstrap logs; 2026-10-24, SSE offload pass).**
+	      `wp_unique_post_slug()` reads the `$wp_rewrite` global, which WP core
+	      instantiates only AFTER `init` finishes (`wp-settings.php`: `init`
+	      fires ~line 630, `$GLOBALS['wp_rewrite'] = new WP_Rewrite()` at ~line
+	      671). Any module seeding posts during `init` raises this warning on
+	      every fresh boot — first request after activation in production, every
+	      suite boot in tests (fixed in the Pro module registry's
+	      `content_format_templates` factory). Fix: defer seeding to
+	      `wp_loaded` (fires after `$wp_rewrite` exists) with a
+	      `did_action( 'wp_loaded' )` guard for late boots. Diagnostic: a
+	      scratch `auto_prepend_file` error handler printing
+	      `debug_backtrace()` shows `wp_unique_post_slug ← wp_insert_post ←
+	      seed_defaults`. Warning-absence is NOT proof the seeding ran — see
+	      #77; verify with a production-like boot.
+
+	   77. **Posts seeded during bootstrap never survive to test time —
+	      wp-phpunit calls `_delete_all_posts()` right after requiring
+	      `wp-settings.php`.** Default-seeding modules therefore show 0 rows at
+	      test time regardless of when the seed hook fires — that is the
+	      historical baseline, not a regression. Verify seeding with a
+	      production-like boot instead: (1) scratch `wp_install()` — define
+	      `WP_INSTALLING` + `DISABLE_WP_CRON`, set `$_SERVER['HTTP_HOST']`
+	      (CLI boots otherwise warn "Undefined array key HTTP_HOST"), require
+	      `wp-config.php` + `wp-settings.php` + `wp-admin/includes/upgrade.php`,
+	      `wp_install()`, `update_option( 'active_plugins', … )`; (2) a second
+	      scratch `wp-load` run counts the posts. Fresh scratch DBs must be
+	      GRANTed first: root-created DBs do not inherit the `wordpress` user's
+	      grants ("Access denied for user 'wordpress'@'%'") —
+	      `GRANT ALL ON <db>.* TO 'wordpress'@'%'`.
+
+	   78. **Queue-worker failure contract — the notifier only reads `WP_Error`;
+	      returning a `WP_Error` marks the row completed; only a thrown
+	      `Exception` marks it failed (2026-10-24, chat_stream_continuation).**
+	      `WP_MCP_AI_Job_Notifier::handle_job_failed()` records
+	      "Unknown error"/"unknown_error" for array errors — always pass a
+	      `WP_Error`. `WP_MCP_AI_Async_Job_Queue` marks a job `completed`
+	      whenever the worker RETURNS (even a `WP_Error` result); a thrown
+	      `Exception` is what marks the row `failed`. Terminal pattern for
+	      workers: record notifier + session frame, THEN throw. Client UX
+	      rule: without a notifier entry the job-bus `watchJob` hangs its full
+	      budget before a generic error — every failure path must call
+	      `handle_job_failed()`, using payload fallbacks
+	      (`chat_session_id`/`assistant_id` in `job_data`) for context when
+	      the primary data is gone. Prove it in the suite: assert
+	      `get_job_status()` = `failed` + the `chat:error` frame after a
+	      catch of the worker's exception.
+
+	   79. **PHPUnit 11 "Metadata found in doc-comment" deprecation noise from
+	      vendored wp-phpunit.** `WP_UnitTestCase_Base::checkRequirements()`
+	      carries an `@deprecated 5.9.0` docblock; PHPUnit 11 reports a
+	      test-runner deprecation per concrete test class ("Metadata in
+	      doc-comments is deprecated and will no longer be supported in
+	      PHPUnit 12"). The "PHPUnit Deprecations: 2" in a 2-class run is
+	      this, one per class — pre-existing suite-wide, not your code.
+	      Not actionable per-branch (vendor patch or a repo-wide shared base
+	      class); PHPUnit 12 removes doc-comment metadata entirely, so plan
+	      for it when the wp-phpunit pin moves. Similarly, run PHPUnit with
+	      `--no-coverage` (the canonical runner already does): without it the
+	      container has no coverage driver and the run reports
+	      "No code coverage driver available" + exit 1 even though every
+	      test passed — read "OK, but there were issues!" as green tests.
+
+   80. **PHPUnit 11 `assertMatchesRegularExpression()` — the 3rd arg is
+      `$message`, not `$matches`.** Passing a capture array as the third
+      argument throws `TypeError: Argument #3 ($message) must be of type
+      string` (hit in the magic-login tests, 2026-10-24). To capture
+      groups, call `preg_match()` directly and assert the return:
+      `$this->assertSame( 1, preg_match( $pattern, $subject, $matches ) );`
+      then read `$matches[1]`.
+
+  81. **Direct REST-handler calls never populate route params.** Calling a
+      controller method directly (`WP_MCP_AI_Pro_REST_Okf_Docs::handle_page(
+      $request )` — the Pro SPA test pattern) leaves `$request->get_param(
+      'slug' )` null because route captures (`(?P<slug>...)`) only exist
+      when the request is DISPATCHED through the REST server. Symptom:
+      handlers return 404s or null payloads in direct-call tests even though
+      the route is correct (hit in test-pro-okf-docs-rest.php, 2026-10-24).
+      Fix: the test's `request()` helper must `$request->set_param( 'slug',
+      'site-knowledge/policies/refunds' )` for every path segment — the
+      route string in the helper is decorative. **Sharper edge (learned
+      2026-10-25, `tests/test-remote-sites-rest.php`):
+      `WP_REST_Request::set_body_params()` REPLACES the whole `$params`
+      array — a `set_param( 'id', … )` issued before it is silently wiped.
+      Put route params INSIDE the body-params array when a handler reads
+      both:**
+      `$request->set_body_params( array( 'id' => $id, 'name' => … ) );`
+      (missing the id then 404s as `get_param( 'id' )` returns null →
+      `sanitize_key( '' )` → lookup fails).
+
+  82. **WPCS "Only one object structure is allowed in a file" — split stub
+      classes.** A shared test-stub file defining two stand-in classes fails
+      phpcs with this error. One class per file (`class-media-studio-stub.php`,
+      `class-document-editor-stub.php`), required lazily from inside test
+      methods. Related ordering trap: a stub loaded by an EARLIER test file
+      in the same run poisons later "plugin inactive" assertions — guard
+      those with `class_exists()` + `markTestSkipped` (the pattern in
+      test-pro-spa-config-docs-hub.php), and keep the inactive-path test
+      FIRST in the file (hit 2026-10-24, Proposal 087).
+
+  83. **wp-phpunit `unregister_all_meta_keys()` wipes bootstrap-registered
+      meta — end-to-end wp/v2 schema pins must re-register inside the test
+      body (2026-10-25, professions meta fix, PR #7219).**
+      `WP_UnitTestCase`'s teardown unregisters EVERY registered meta key
+      after each test (in
+      `vendor/wp-phpunit/wp-phpunit/includes/abstract-testcase.php`),
+      including keys registered at suite bootstrap. A test that merely
+      asserts pre-registered meta in a wp/v2 response therefore skips or
+      fails order-dependently. Fix: re-run the idempotent registration in
+      the test body — `new WP_MCP_AI_Profession_CPT();
+      register_post_type(); register_meta();` — so each assertion owns its
+      schema (`tests/rest-api/test-rest-records-schema.php`).
+
+  84. **Registered meta sanitizers fire on `add_post_meta`/`update_post_meta`
+      (pattern 10) — fabricate legacy/orphaned rows with a raw
+      `$wpdb->insert` into `postmeta` (2026-10-25, team-member relink tests,
+      PR #7219).** The team-members meta sanitizer drops dead/foreign IDs on
+      write, so `add_post_meta()` can never produce the orphaned legacy data
+      the relink must be tested against. Insert the raw row directly into
+      the `postmeta` table to bypass the sanitizer, then assert the relink
+      remaps it (`tests/test-team-member-relink.php`).
+  85. **`$this->factory()->post->create()` with an unregistered CPT returns
+      `WP_Error`, which then explodes inside typed signatures** (Proposal 091
+      Pro observability tests, 2026-10-27). Passing `'post_type' =>
+      'mcp_ai_*'` when the Pro CPT is not registered in the test bootstrap
+      yields `WP_Error` — surfaced only later as a `TypeError` when the value
+      hits a typed param (e.g. `WP_MCP_AI_Annotation_Store::record( int
+      $transcript_id )`). Convention (see `tests/test-annotation-store.php`):
+      fixtures use plain `post_type => 'post'` via `wp_insert_post()` unless
+      the test itself registers the CPT. Same trap applies to Pro tests under
+      `addons/pro/tests/`.
+  86. **phpcs "Line indented incorrectly; expected at least 3 tabs" in a
+      mixed HTML/PHP admin template** (2026-10-27, the Gmail/Calendar
+      auto-fallback footer blocks in `class-wp-mcp-ai-section-integrations.php`).
+      WPCS scope-indents PHP constructs (`<?php if … : ?>`) inside a
+      `render_*_footer()` method at method-body + 1 (3 tabs) even when the
+      surrounding inline HTML (`<tr>`, `<td>`) sits shallower — a block that
+      "looks aligned" with its neighbours still fails, and the error names
+      ONLY the PHP line. Match a sibling block (the Gmail footer's Remote
+      Sites block is the reference) and verify raw tabs with
+      `sed -n 'X,Yp' file | cat -A` (`^I` = one tab). Related: the Zed edit
+      tool can silently normalize leading-tab indentation written in
+      `new_text` (3 tabs landed as 2, fuzzy-matched whitespace) — when
+      re-indenting a template block, fix deterministically with
+      `sed -i 'X,Ys/^/\t/' file` instead of re-applying the edit.
+  87. **Optional-plugin availability checks fooled by stubs** (funiq-bridge
+      Woo tests, 2026-10-29). `tests/helpers/woocommerce-stubs.php` defines a
+      bare `class WooCommerce {}` when the plugin is absent, so
+      `class_exists( 'WooCommerce' )` alone is a false positive — the Woo
+      suite then fatals on `WC_Product_Simple` instead of skipping. Gate on
+      `class_exists( 'WooCommerce' ) && function_exists( 'wc_get_product' )`
+      (the stub provides no functions). Corollary: the **WP 7.1 matrix env
+      has NO WooCommerce plugin** (its `wp71-core` volume ships only
+      `mcp-ai-wpoos`) — optional-plugin-dependent tests MUST
+      `markTestSkipped` in `setUp()` there; N pass + N skipped is the correct
+      green, not a failure to chase.
+  88. **`add_action( 'init' )` registered from a late-loaded addon never
+      fires** (funiq-bridge cap migration, PR #7296, 2026-10-29). The fleet
+      addon-manager includes plugin files after `init` fired, so
+      one-shot-on-boot work hooked inside `Plugin::init()` silently never
+      runs — the brand-cutover capability migration never granted
+      `manage_astro` and production managers hit a permission wall. Follow
+      the PR #7281 direct-registration pattern: `if ( did_action( 'init' ) )
+      { $obj->migrate(); } else { add_action( 'init', … ); }`. In PHPUnit,
+      `did_action('init')` is already true, so the direct branch is
+      exercisable — but re-running `Plugin::init()` via reflection
+      double-registers unguarded hooks (e.g. `RebuildWebhook::init()`); test
+      the migration method's behaviour instead of re-booting the plugin.
 
  ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 

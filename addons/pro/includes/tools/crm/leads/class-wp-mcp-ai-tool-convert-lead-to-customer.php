@@ -125,6 +125,7 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 			'properties'           => array(
 				'lead_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the lead to convert (required).', 'mcp-ai-wpoos-pro' ),
 				),
 				'create_deal' => array(

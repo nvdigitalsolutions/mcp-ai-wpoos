@@ -1372,4 +1372,158 @@ class WP_MCP_AI_Gmail_Read_Tools_Test extends WP_UnitTestCase {
 			'list_gmail_connections properties must encode as an empty object, not [].'
 		);
 	}
+
+	/**
+	 * Omitted connection_id must auto-resolve to the only enabled Remote Sites
+	 * Gmail connection when the settings-based credentials are absent.
+	 *
+	 * Previously this returned wp_mcp_ai_gmail_missing_credentials, which led
+	 * assistants to conclude the working named connection was misconfigured
+	 * and disable or remove it — the Gmail counterpart of the Drive
+	 * auto-fallback.
+	 */
+	public function test_resolve_credentials_falls_back_to_single_enabled_connection() {
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'conn_gmail' => array(
+					'connection_type' => 'gmail',
+					'name'            => 'Support Inbox',
+					'enabled'         => true,
+					'user_email'      => 'inbox@example.com',
+					'client_id'       => 'client-id-a',
+					'client_secret'   => 'client-secret-a',
+					'refresh_token'   => 'refresh-token-a',
+				),
+			)
+		);
+
+		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( '' );
+
+		$this->assertNotWPError( $credentials );
+		$this->assertSame( 'connection', $credentials['source'] );
+		$this->assertSame( 'conn_gmail', $credentials['connection_id'] );
+		$this->assertSame( 'Support Inbox', $credentials['connection_name'] );
+		$this->assertSame( 'client-id-a', $credentials['client_id'] );
+		$this->assertSame( 'client-secret-a', $credentials['client_secret'] );
+		$this->assertSame( 'refresh-token-a', $credentials['refresh_token'] );
+		$this->assertSame( 'inbox@example.com', $credentials['configured_user'] );
+	}
+
+	/**
+	 * Several enabled Gmail connections with no explicit connection_id must
+	 * fail loudly with an actionable list instead of guessing.
+	 */
+	public function test_resolve_credentials_ambiguous_when_multiple_enabled() {
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'conn_a' => array(
+					'connection_type' => 'gmail',
+					'name'            => 'Inbox A',
+					'enabled'         => true,
+					'client_id'       => 'client-id-a',
+					'client_secret'   => 'client-secret-a',
+					'refresh_token'   => 'refresh-token-a',
+				),
+				'conn_b' => array(
+					'connection_type' => 'gmail',
+					'name'            => 'Inbox B',
+					'enabled'         => true,
+					'client_id'       => 'client-id-b',
+					'client_secret'   => 'client-secret-b',
+					'refresh_token'   => 'refresh-token-b',
+				),
+			)
+		);
+
+		$result = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( '' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_gmail_ambiguous_connection', $result->get_error_code() );
+		$this->assertStringContainsString( 'conn_a', $result->get_error_message() );
+		$this->assertStringContainsString( 'conn_b', $result->get_error_message() );
+		// The error must reassure that the connections are healthy so an
+		// assistant cannot mistake ambiguity for misconfiguration.
+		$this->assertStringContainsString( 'healthy', $result->get_error_message() );
+		$this->assertStringContainsString( 'will not guess', $result->get_error_message() );
+	}
+
+	/**
+	 * Disabled, incomplete, and non-Gmail connections must never be
+	 * auto-selected.
+	 */
+	public function test_resolve_credentials_ignores_disabled_and_incomplete_connections() {
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'conn_off'     => array(
+					'connection_type' => 'gmail',
+					'enabled'         => false,
+					'client_id'       => 'client-id-x',
+					'client_secret'   => 'client-secret-x',
+					'refresh_token'   => 'refresh-token-x',
+				),
+				'conn_partial' => array(
+					'connection_type' => 'gmail',
+					'enabled'         => true,
+					'client_id'       => 'client-id-y',
+				),
+				'conn_other'   => array(
+					'connection_type' => 'google_drive',
+					'enabled'         => true,
+					'client_id'       => 'client-id-z',
+					'client_secret'   => 'client-secret-z',
+					'refresh_token'   => 'refresh-token-z',
+				),
+			)
+		);
+
+		$result = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( '' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_gmail_missing_credentials', $result->get_error_code() );
+	}
+
+	/**
+	 * Configured settings credentials keep priority over the Remote Sites
+	 * fallback for an omitted connection_id.
+	 */
+	public function test_resolve_credentials_prefers_settings_when_configured() {
+		$this->configure_settings_credentials();
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'conn_gmail' => array(
+					'connection_type' => 'gmail',
+					'name'            => 'Support Inbox',
+					'enabled'         => true,
+					'client_id'       => 'client-id-a',
+					'client_secret'   => 'client-secret-a',
+					'refresh_token'   => 'refresh-token-a',
+				),
+			)
+		);
+
+		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( '' );
+
+		$this->assertNotWPError( $credentials );
+		$this->assertSame( 'settings', $credentials['source'] );
+		$this->assertSame( '', $credentials['connection_id'] );
+		$this->assertSame( 'client-id', $credentials['client_id'] );
+	}
+
+	/**
+	 * The literal "settings" connection_id must keep resolving to the
+	 * settings-based credentials.
+	 */
+	public function test_resolve_credentials_treats_settings_literal_as_fallback() {
+		$this->configure_settings_credentials();
+
+		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( 'settings' );
+
+		$this->assertNotWPError( $credentials );
+		$this->assertSame( 'settings', $credentials['source'] );
+		$this->assertSame( 'client-id', $credentials['client_id'] );
+	}
 }

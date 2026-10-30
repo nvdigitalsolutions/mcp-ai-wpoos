@@ -15054,6 +15054,31 @@
                                     }
                                 }
                             }
+                        } else if (eventType === 'job_offload') {
+                            // Phase 4b (SSE long-run offload): the server handed
+                            // the remaining turn to the background job queue to
+                            // survive proxy idle-read timeouts. The final
+                            // assistant message arrives through the
+                            // session-frame stream (chat:resumed — already
+                            // wired); here we surface the transition and any
+                            // terminal failure only.
+                            const jobId = data && data.job_id;
+                            handleStatusEvent(state, {
+                                type: 'offloaded',
+                                message: (data && data.message) || 'Continuing in the background…'
+                            });
+                            if (jobId && window.wpMcpAiJobBus && typeof window.wpMcpAiJobBus.subscribe === 'function') {
+                                window.wpMcpAiJobBus.subscribe(jobId, function (jobEventType, payload) {
+                                    if (jobEventType === 'job:failed' || jobEventType === 'failed') {
+                                        handleStatusEvent(state, {
+                                            type: 'job_failed',
+                                            message: (payload && payload.error && payload.error.message)
+                                                ? payload.error.message
+                                                : 'The background worker failed to complete the turn.'
+                                        });
+                                    }
+                                });
+                            }
                         } else if (eventType === 'error') {
                             handleErrorEvent(state, data);
                         } else if (eventType === 'message' || !eventType) {

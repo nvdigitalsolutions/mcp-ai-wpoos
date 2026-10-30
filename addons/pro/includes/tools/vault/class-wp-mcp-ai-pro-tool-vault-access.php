@@ -56,6 +56,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 					),
 					'folder_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Filter by folder ID (optional)',
 					),
 					'query'     => array(
@@ -64,6 +65,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 					),
 					'item_id'   => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Vault item ID (required for get action)',
 					),
 					'per_page'  => array(

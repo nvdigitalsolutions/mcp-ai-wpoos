@@ -103,6 +103,7 @@ class WP_MCP_AI_Tool_Resize_Video_Resolution implements WP_MCP_AI_Tool_Interface
 			'properties' => array(
 				'video_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Video media ID',
 				),
 				'resolution'   => array(

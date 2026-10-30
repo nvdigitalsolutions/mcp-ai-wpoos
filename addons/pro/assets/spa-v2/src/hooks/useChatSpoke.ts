@@ -16,6 +16,21 @@ import { createChatFetch } from '../sse-adapter';
 import { TranscriptsClient } from '../api/transcripts';
 import { useUIStore } from '../stores/uiStore';
 
+/**
+ * Minimal typing for the global job event bus (chat.js assets bundle).
+ * The bus emits `job:completed` / `job:failed` events and offers a
+ * promise-based `watchJob` used here for the SSE long-run offload flow.
+ */
+interface JobBusShape {
+	watchJob?: (
+		jobId: string
+	) => Promise< { result?: { message?: string } } >;
+}
+
+interface JobBusWindow {
+	wpMcpAiJobBus?: JobBusShape;
+}
+
 export interface UseChatSpokeOptions {
 	chatClientEndpoint: string;
 	nonce: string;
@@ -85,8 +100,8 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 					sessionKey,
 					allowSensitiveTools,
 				} ),
-				[ chatClientEndpoint, nonce, assistantId, guest, guestToken, model, provider, sessionKey, allowSensitiveTools ]
-	);
+			[ chatClientEndpoint, nonce, assistantId, guest, guestToken, model, provider, sessionKey, allowSensitiveTools ]
+);
 
 	// Keep a ref to the current message list so `onFinish` (which is captured
 	// at construction time) can read the latest array. Reading `messages`
@@ -190,6 +205,73 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 	useEffect( () => {
 		messagesRef.current = messages;
 	}, [ messages ] );
+
+	// ── SSE long-run offload (Phase 4b) ───────────────────────────────────
+	// The sse-adapter dispatches a window event when the server hands the
+	// remaining turn to the background job queue. Follow the job through
+	// the global event bus and append the final assistant message when the
+	// worker completes (or toast the failure).
+	useEffect( () => {
+		const onOffload = ( event: Event ) => {
+			const detail = (
+				event as CustomEvent< {
+					job_id?: string;
+					assistant_id?: number | null;
+					session_key?: string;
+					message?: string;
+				} >
+			).detail;
+			if ( ! detail || ! detail.job_id ) {
+				return;
+			}
+			if (
+				detail.assistant_id != null &&
+				detail.assistant_id !== assistantId
+			) {
+				return;
+			}
+			if ( detail.session_key && sessionKey && detail.session_key !== sessionKey ) {
+				return;
+			}
+			if ( detail.message ) {
+				addToast( detail.message, 'info' );
+			}
+			const bus = ( window as unknown as JobBusWindow ).wpMcpAiJobBus;
+			if ( ! bus || typeof bus.watchJob !== 'function' ) {
+				return;
+			}
+			const jobId = detail.job_id;
+			bus
+				.watchJob( jobId )
+				.then( ( completed ) => {
+					const text =
+						completed &&
+						typeof completed.result?.message === 'string'
+							? completed.result.message
+							: '';
+					if ( text ) {
+						setMessages( ( prev ) => [
+							...prev,
+							{
+								id: `offload-${ jobId }`,
+								role: 'assistant',
+								content: text,
+							} as Message,
+						] );
+					}
+				} )
+				.catch( () => {
+					addToast(
+						'The background worker failed to complete the turn.',
+						'error'
+					);
+				} );
+		};
+		window.addEventListener( 'nvoos:job_offload', onOffload );
+		return () => {
+			window.removeEventListener( 'nvoos:job_offload', onOffload );
+		};
+	}, [ assistantId, sessionKey, setMessages, addToast ] );
 
 	// Usage tracking (v0.9.0).
 	const [ usageMap, setUsageMap ] = useState< Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; costUsd?: number; model?: string; provider?: string } > >( {} );

@@ -2234,7 +2234,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		$events = get_option( self::ACTIVITY_LOG_OPTION, array() );
 
 		// Merge assistant activity entries from the core Logger.
-		$events = $this->merge_logger_activity_entries( $events );
+		$events = self::merge_logger_activity_entries( $events );
 
 		// Timeframe filter.
 		$cutoff = $this->get_timeframe_cutoff( $timeframe );
@@ -2382,17 +2382,17 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 			// Determine the normalised type and human-readable message.
 			if ( 'chat_interaction' === $entry_type ) {
 				$normalised_type = 'chat_interaction';
-				$message         = $this->build_chat_interaction_message( $entry, $assistant_name );
+				$message         = self::build_chat_interaction_message( $entry, $assistant_name );
 			} elseif ( in_array( $entry_type, $api_request_types, true ) ) {
 				$normalised_type = 'api_request';
-				$provider        = $this->extract_provider_from_type( $entry_type );
+				$provider        = self::extract_provider_from_type( $entry_type );
 				$message         = isset( $entry['message'] ) && '' !== $entry['message']
 					? $entry['message']
 					/* translators: %s: AI provider name */
 					: sprintf( __( 'API request to %s', 'mcp-ai-wpoos-pro' ), ucfirst( $provider ) );
 			} elseif ( in_array( $entry_type, $api_response_types, true ) ) {
 				$normalised_type = 'api_response';
-				$provider        = $this->extract_provider_from_type( $entry_type );
+				$provider        = self::extract_provider_from_type( $entry_type );
 				$message         = isset( $entry['message'] ) && '' !== $entry['message']
 					? $entry['message']
 					/* translators: %s: AI provider name */
@@ -2435,7 +2435,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @param string $assistant_name Resolved assistant title.
 	 * @return string Formatted message.
 	 */
-	private function build_chat_interaction_message( $entry, $assistant_name ) {
+	private static function build_chat_interaction_message( $entry, $assistant_name ) {
 		$user_id      = isset( $entry['context']['user_id'] ) ? absint( $entry['context']['user_id'] ) : 0;
 		$user_display = '';
 
@@ -2463,7 +2463,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @param string $type Logger event type (e.g. 'openai_request', 'gemini_stream_response').
 	 * @return string Provider name (e.g. 'openai', 'gemini', 'anthropic', 'lm_studio').
 	 */
-	private function extract_provider_from_type( $type ) {
+	private static function extract_provider_from_type( $type ) {
 		$providers = array( 'openai_external_action', 'openai', 'anthropic', 'gemini', 'deepseek', 'openrouter', 'huggingface', 'nvidia', 'digitalocean', 'kimi', 'baseten', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 		foreach ( $providers as $provider ) {
 			if ( 0 === strpos( $type, $provider . '_' ) ) {

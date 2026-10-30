@@ -104,6 +104,7 @@ class WP_MCP_AI_Tool_LF_Deposition_Summary_Generator implements WP_MCP_AI_Tool_I
 				),
 				'matter_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional WordPress post ID of the related matter.', 'mcp-ai-wpoos-pro' ),
 				),
 				'focus_topics'    => array(

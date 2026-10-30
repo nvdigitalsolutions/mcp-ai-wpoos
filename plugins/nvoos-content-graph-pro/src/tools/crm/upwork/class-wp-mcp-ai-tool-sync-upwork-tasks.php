@@ -189,6 +189,17 @@ class WP_MCP_AI_Tool_Sync_Upwork_Tasks implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-upwork-client.php';
+
+		// Assistant-level restriction: an assistant with a configured Remote
+		// Site Connections list may only use connections from that list.
+		if ( ! WP_MCP_AI_Upwork_Client::is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_upwork_connection_not_enabled',
+				__( 'This Upwork connection is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'nvoos-content-graph-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
 		$client = new WP_MCP_AI_Upwork_Client( $connection_id );
 
 		$limit = isset( $arguments['limit'] ) ? min( 50, max( 1, absint( $arguments['limit'] ) ) ) : 25;

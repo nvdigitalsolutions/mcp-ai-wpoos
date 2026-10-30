@@ -64,10 +64,12 @@ class WP_MCP_AI_Tool_Get_Burndown_Chart implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'project_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Project ID (required).', 'mcp-ai-wpoos-pro' ),
 				),
 				'sprint_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional sprint CPT ID. If provided, uses sprint start/end dates instead of project dates.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

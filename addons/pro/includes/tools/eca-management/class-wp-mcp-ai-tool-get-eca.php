@@ -60,6 +60,7 @@ class WP_MCP_AI_Tool_Get_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 					'type'        => 'integer',
 					'description' => __( 'ECA ID to retrieve (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'include_enrollments' => array(
 					'type'        => 'boolean',

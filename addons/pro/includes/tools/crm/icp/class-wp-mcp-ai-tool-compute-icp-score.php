@@ -157,10 +157,12 @@ class WP_MCP_AI_Tool_Compute_ICP_Score implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'company_id'              => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of a Company CPT post to score. Mutually exclusive with lead_id and manual data.', 'mcp-ai-wpoos-pro' ),
 				),
 				'lead_id'                 => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of a Lead CPT post to score. Mutually exclusive with company_id and manual data.', 'mcp-ai-wpoos-pro' ),
 				),
 				'profile_slug'            => array(

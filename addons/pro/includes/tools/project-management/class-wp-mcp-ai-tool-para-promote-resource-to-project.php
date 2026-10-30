@@ -76,6 +76,7 @@ class WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project implements WP_MCP_AI_Tool_
 				'resource_post_id' => array(
 					'type'    => 'integer',
 					'minimum' => 1,
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'project_title'    => array(
 					'type'      => 'string',

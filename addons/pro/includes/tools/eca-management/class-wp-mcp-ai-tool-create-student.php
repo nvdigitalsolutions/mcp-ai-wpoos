@@ -58,6 +58,7 @@ class WP_MCP_AI_Tool_Create_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'student_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional student ID. If provided, updates the existing student instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'first_name' => array(

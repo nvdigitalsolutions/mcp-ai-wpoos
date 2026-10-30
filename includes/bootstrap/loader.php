@@ -827,6 +827,9 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-too
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-schema-auditor.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-schema-auditor.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-schema-helper.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-schema-helper.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 }
@@ -935,8 +938,38 @@ add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_meta' ), 12 );
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dsl-codec.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dsl-codec.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dispatcher.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dispatcher.php';
+}
+
+// ---------------------------------------------------------------------------
+// Proposal 091 Track B — assistant prompt versioning (lite)
+// ---------------------------------------------------------------------------
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-prompt-versions.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-prompt-versions.php';
+}
+WP_MCP_AI_Prompt_Versions::init();
+
+// ---------------------------------------------------------------------------
+// Proposal 091 Track E — GenAI span emitter + annotation store
+// ---------------------------------------------------------------------------
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-genai-span-emitter.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-genai-span-emitter.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/chat/class-wp-mcp-ai-annotation-store.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/chat/class-wp-mcp-ai-annotation-store.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/observability/class-wp-mcp-ai-otlp-exporter.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/observability/class-wp-mcp-ai-otlp-exporter.php';
+}
+WP_MCP_AI_OTLP_Exporter::init();
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-prompt-versions-command.php';
+	require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-workflow-command.php';
 }
 
 // ---------------------------------------------------------------------------
@@ -1072,6 +1105,9 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/clas
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-magic-login-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-magic-login-controller.php';
+}
 
 // ---------------------------------------------------------------------------
 // Third-party plugin integrations (full version only, or when Pro is active)
@@ -1197,6 +1233,9 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	}
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-breeze-cache-integration.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-breeze-cache-integration.php';
 	}
 	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php' );
 	wp_mcp_ai_require_if_exists( WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php' );
@@ -1827,6 +1866,14 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/clas
 if ( class_exists( 'WP_MCP_AI_Rate_Limit_Headers' ) ) {
 	WP_MCP_AI_Rate_Limit_Headers::register();
 }
+// Preserve explicit Cache-Control: public/s-maxage declarations against
+// WP 6.9's authenticated no-cache injection (rest_send_nocache_headers).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cache-control.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cache-control.php';
+}
+if ( class_exists( 'WP_MCP_AI_REST_Cache_Control' ) ) {
+	WP_MCP_AI_REST_Cache_Control::register();
+}
 add_action(
 	'rest_api_init',
 	function () {
@@ -1881,6 +1928,9 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	}
 	if ( class_exists( 'WP_MCP_AI_Comments' ) ) {
 		WP_MCP_AI_Comments::get_instance();
+	}
+	if ( class_exists( 'WP_MCP_AI_Breeze_Cache_Integration' ) ) {
+		WP_MCP_AI_Breeze_Cache_Integration::init();
 	}
 }
 

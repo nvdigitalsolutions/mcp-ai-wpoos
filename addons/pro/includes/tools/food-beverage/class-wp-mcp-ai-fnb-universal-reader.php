@@ -48,37 +48,40 @@ class WP_MCP_AI_Fnb_Universal_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	);
 
 	/**
-	 * Per-request auth cache.
+	 * Per-connection auth cache (connection ID → auth array or WP_Error).
 	 *
-	 * @var array|null
+	 * Empty-string key = the toolkit-default source.
+	 *
+	 * @var array<string,array|WP_Error>
 	 */
-	private $auth = null;
+	private $auth_cache = array();
 
 	/**
-	 * Resolve Drive credentials/token.
+	 * Resolve Drive credentials/token for a connection.
 	 *
+	 * @param string $connection_id Remote Sites Drive connection ID (empty = default source).
 	 * @return array|WP_Error array{access_token:string,timeout:int}
 	 */
-	private function token() {
-		if ( null !== $this->auth ) {
-			return $this->auth;
+	private function token( $connection_id = '' ) {
+		$connection_id = is_string( $connection_id ) ? sanitize_key( $connection_id ) : '';
+		if ( isset( $this->auth_cache[ $connection_id ] ) ) {
+			return $this->auth_cache[ $connection_id ];
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Drive_Client' ) ) {
-			$this->auth = new WP_Error(
+			$this->auth_cache[ $connection_id ] = new WP_Error(
 				'wp_mcp_ai_fnb_no_drive_client',
 				__( 'The Google Workspace toolkit (Drive client) is not available.', 'mcp-ai-wpoos-pro' )
 			);
 
-			return $this->auth;
+			return $this->auth_cache[ $connection_id ];
 		}
 
-		$connection_id = WP_MCP_AI_Fnb_Settings::get( 'connection_id', '' );
-		$credentials   = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials( $connection_id );
+		$credentials = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials( $connection_id );
 		if ( is_wp_error( $credentials ) ) {
-			$this->auth = $credentials;
+			$this->auth_cache[ $connection_id ] = $this->annotate_connection_error( $credentials, $connection_id );
 
-			return $this->auth;
+			return $this->auth_cache[ $connection_id ];
 		}
 
 		$timeout      = WP_MCP_AI_Pro_Google_Drive_Client::get_request_timeout();
@@ -89,17 +92,45 @@ class WP_MCP_AI_Fnb_Universal_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			$timeout
 		);
 		if ( is_wp_error( $access_token ) ) {
-			$this->auth = $access_token;
+			$this->auth_cache[ $connection_id ] = $access_token;
 
-			return $this->auth;
+			return $this->auth_cache[ $connection_id ];
 		}
 
-		$this->auth = array(
+		$this->auth_cache[ $connection_id ] = array(
 			'access_token' => $access_token,
 			'timeout'      => $timeout,
 		);
 
-		return $this->auth;
+		return $this->auth_cache[ $connection_id ];
+	}
+
+	/**
+	 * Re-wrap an unresolved Drive connection error with F&B-specific guidance.
+	 *
+	 * The Drive client's ambiguous-connection error ("Multiple Google Drive
+	 * connections are enabled …") is technically correct but not actionable
+	 * for F&B operators, whose data is *supposed* to span connections. Point
+	 * them at the per-table source mapping instead.
+	 *
+	 * @param WP_Error $error         Original Drive client error.
+	 * @param string   $connection_id Requested connection (may be empty).
+	 * @return WP_Error
+	 */
+	private function annotate_connection_error( WP_Error $error, $connection_id ) {
+		if ( ! in_array( $error->get_error_code(), array( 'wp_mcp_ai_drive_ambiguous_connection', 'wp_mcp_ai_drive_missing_credentials' ), true ) ) {
+			return $error;
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_fnb_source_unresolved',
+			sprintf(
+				/* translators: 1: original error message, 2: connection id (may be empty) */
+				__( 'The F&B table source could not be resolved (%1$s%2$s). Map each table to its Drive connection on the F&B settings page (Table Sources), or set a default Drive Connection — the toolkit refuses to guess between several connections.', 'mcp-ai-wpoos-pro' ),
+				$error->get_error_message(),
+				'' !== $connection_id ? ' [' . $connection_id . ']' : ''
+			)
+		);
 	}
 
 	/**
@@ -116,13 +147,19 @@ class WP_MCP_AI_Fnb_Universal_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	}
 
 	/**
-	 * List candidate files in the configured single data folder.
+	 * List candidate files in a Drive folder.
 	 *
+	 * @param array  $auth      Auth array from token().
+	 * @param string $folder_id Optional folder ID override (defaults to the
+	 *                          toolkit-global data folder).
 	 * @return array<int,array> File metadata list (possibly empty).
 	 */
-	private function list_candidates( $auth ) {
-		$folder_id = WP_MCP_AI_Fnb_Settings::get( 'data_folder_id', '' );
+	private function list_candidates( $auth, $folder_id = '' ) {
 		$folder_id = is_string( $folder_id ) ? trim( $folder_id ) : '';
+		if ( '' === $folder_id ) {
+			$folder_id = WP_MCP_AI_Fnb_Settings::get( 'data_folder_id', '' );
+			$folder_id = is_string( $folder_id ) ? trim( $folder_id ) : '';
+		}
 		if ( '' === $folder_id ) {
 			return array();
 		}
@@ -582,6 +619,57 @@ class WP_MCP_AI_Fnb_Universal_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	}
 
 	/**
+	 * Scan a single (connection, folder) pair and propose a table role per file.
+	 *
+	 * The multi-connection counterpart of `build_manifest()`: each proposal
+	 * carries the connection and folder it was found in so the auto-map review
+	 * can apply a source mapping (connection + folder + file) per table.
+	 * Never persists anything — proposals live in the caller's option.
+	 *
+	 * @since 1.6.0
+	 *
+	 * @param string $connection_id Remote Sites Drive connection ID (empty = default source).
+	 * @param string $folder_id     Drive folder ID (empty = toolkit-default data folder).
+	 * @return array{error:string,proposals:array<int,array{file:string,file_id:string,table_id:string,confidence:float,sample_columns:array<int,string>,connection_id:string,folder_id:string}>}
+	 */
+	public function scan_folder( $connection_id = '', $folder_id = '' ) {
+		$out = array(
+			'error'     => '',
+			'proposals' => array(),
+		);
+
+		$auth = $this->token( $connection_id );
+		if ( is_wp_error( $auth ) ) {
+			$out['error'] = $auth->get_error_message();
+
+			return $out;
+		}
+
+		foreach ( $this->list_candidates( $auth, $folder_id ) as $file ) {
+			$result = $this->read_file( $file, $auth );
+			if ( is_wp_error( $result ) ) {
+				continue;
+			}
+			$assigned = $this->assign_role( $file, $result['columns'] );
+			if ( '' === $assigned['table_id'] ) {
+				continue;
+			}
+
+			$out['proposals'][] = array(
+				'file'           => isset( $file['name'] ) ? (string) $file['name'] : '',
+				'file_id'        => isset( $file['id'] ) ? (string) $file['id'] : '',
+				'table_id'       => $assigned['table_id'],
+				'confidence'     => $assigned['confidence'],
+				'sample_columns' => array_slice( array_map( 'strval', $result['columns'] ), 0, 8 ),
+				'connection_id'  => sanitize_key( (string) $connection_id ),
+				'folder_id'      => trim( (string) $folder_id ),
+			);
+		}
+
+		return $out;
+	}
+
+	/**
 	 * Get the persisted review manifest (or build it on first access).
 	 *
 	 * @return array<int,array>
@@ -598,11 +686,13 @@ class WP_MCP_AI_Fnb_Universal_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	/**
 	 * {@inheritdoc}
 	 *
-	 * @param string $table_id Spec table ID.
+	 * @param string $table_id           Spec table ID.
+	 * @param string $connection_override Optional Drive connection ID override.
 	 * @return array|WP_Error array{columns,rows,source,provenance}
 	 */
-	public function read_table( $table_id ) {
-		$auth = $this->token();
+	public function read_table( $table_id, $connection_override = '' ) {
+		$source = WP_MCP_AI_Fnb_Data_Source::resolve_source( $table_id, $connection_override );
+		$auth   = $this->token( $source['connection_id'] );
 		if ( is_wp_error( $auth ) ) {
 			return $auth;
 		}
@@ -611,7 +701,7 @@ class WP_MCP_AI_Fnb_Universal_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 		$rows    = array();
 		$provenance = array();
 
-		foreach ( $this->list_candidates( $auth ) as $file ) {
+		foreach ( $this->list_candidates( $auth, $source['folder_id'] ) as $file ) {
 			$result = $this->read_file( $file, $auth );
 			if ( is_wp_error( $result ) ) {
 				continue;

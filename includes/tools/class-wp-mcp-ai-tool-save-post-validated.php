@@ -69,6 +69,7 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 					'type'        => 'integer',
 					'description' => __( 'Existing post ID to update. Leave empty to create a new post.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'post_type' => array(
 					'type'        => 'string',

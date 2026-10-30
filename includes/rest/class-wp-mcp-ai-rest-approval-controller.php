@@ -68,6 +68,11 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 							'sanitize_callback' => 'absint',
 							'default'           => 20,
 						),
+						'offset'       => array(
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'default'           => 0,
+						),
 					),
 				),
 			)
@@ -142,25 +147,40 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * GET /approvals u2014 list pending approvals.
+	 * GET /approvals — list pending approvals (paginated).
+	 *
+	 * `total` is the full pending-queue depth for the caller's scope, not the
+	 * length of the returned page — the console pager needs the real count to
+	 * render page numbers and the "showing X of Y" label.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_items( $request ) {
-		$queue = WP_MCP_AI_Approval_Queue::get_instance();
+		$queue   = WP_MCP_AI_Approval_Queue::get_instance();
+		$limit   = min( 100, max( 1, (int) $request['limit'] ) );
+		$offset  = max( 0, (int) $request['offset'] );
+		$filters = array(
+			'assistant_id' => (int) $request['assistant_id'],
+			'session_id'   => (string) $request['session_id'],
+		);
+
 		$items = $queue->get_pending(
-			array(
-				'assistant_id' => (int) $request['assistant_id'],
-				'session_id'   => (string) $request['session_id'],
-				'limit'        => min( 100, (int) $request['limit'] ),
+			array_merge(
+				$filters,
+				array(
+					'limit'  => $limit,
+					'offset' => $offset,
+				)
 			)
 		);
 
 		return rest_ensure_response(
 			array(
 				'approvals' => $items,
-				'total'     => count( $items ),
+				'total'     => $queue->count_pending( $filters ),
+				'limit'     => $limit,
+				'offset'    => $offset,
 			)
 		);
 	}

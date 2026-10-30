@@ -137,11 +137,13 @@ class WP_MCP_AI_Tool_Upsell_Recommendations implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'integer',
 					'description' => __( 'Product ID for product-based recommendations', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'customer_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Customer ID for customer-based recommendations', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'cart_items'           => array(
 					'type'        => 'array',

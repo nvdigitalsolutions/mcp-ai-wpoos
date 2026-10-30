@@ -140,7 +140,11 @@ class WP_MCP_AI_Tool_Pro_Excel_Document_Schema_Tests extends WP_UnitTestCase {
 	public function test_schema_has_no_empty_arrays_recursive() {
 		$schema = $this->tool->get_parameters_schema();
 
-		$this->validate_no_empty_items_recursive( $schema, 'root' );
+		$visited = $this->validate_no_empty_items_recursive( $schema, 'root' );
+
+		// A violation trips fail() inside the walk; assert the walk actually
+		// traversed the schema so a clean schema still produces an assertion.
+		$this->assertGreaterThan( 0, $visited, 'Schema walk should visit at least one array node' );
 	}
 
 	/**
@@ -148,11 +152,15 @@ class WP_MCP_AI_Tool_Pro_Excel_Document_Schema_Tests extends WP_UnitTestCase {
 	 *
 	 * @param mixed  $value Current value being validated.
 	 * @param string $path  Path to current value for error messages.
+	 *
+	 * @return int Number of array nodes visited.
 	 */
 	private function validate_no_empty_items_recursive( $value, $path ) {
 		if ( ! is_array( $value ) ) {
-			return;
+			return 0;
 		}
+
+		$visited = 1;
 
 		// Check if this is an 'items' key with an empty array value.
 		if ( isset( $value['items'] ) && is_array( $value['items'] ) ) {
@@ -164,14 +172,16 @@ class WP_MCP_AI_Tool_Pro_Excel_Document_Schema_Tests extends WP_UnitTestCase {
 			}
 
 			// Recursively validate items.
-			$this->validate_no_empty_items_recursive( $items, $path . '.items' );
+			$visited += $this->validate_no_empty_items_recursive( $items, $path . '.items' );
 		}
 
 		// Recursively check all other array elements.
 		foreach ( $value as $key => $sub_value ) {
 			if ( is_array( $sub_value ) ) {
-				$this->validate_no_empty_items_recursive( $sub_value, $path . '.' . $key );
+				$visited += $this->validate_no_empty_items_recursive( $sub_value, $path . '.' . $key );
 			}
 		}
+
+		return $visited;
 	}
 }

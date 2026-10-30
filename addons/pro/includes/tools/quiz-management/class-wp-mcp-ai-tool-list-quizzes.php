@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'type'        => 'integer',
 					'description' => __( 'Filter by quiz author ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'per_page'  => array(
 					'type'        => 'integer',

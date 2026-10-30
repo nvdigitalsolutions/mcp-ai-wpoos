@@ -10,9 +10,16 @@ export interface UseToolsOptions {
 	nonce: string;
 	/**
 	 * Optional assistant post ID — the list is scoped to that assistant's
-	 * selected tools. 0/undefined = the full registry (the server default).
+	 * selected tools. 0/undefined = the server resolves the site/token
+	 * DEFAULT assistant (MCP tools/list contract).
 	 */
 	assistantId?: number;
+	/**
+	 * Pass 'all' for the explicit full-registry opt-out (assistant tool
+	 * picker) — the server would otherwise scope the listing to the default
+	 * assistant's tools when no assistantId is given.
+	 */
+	scope?: 'all';
 }
 
 export interface UseToolsReturn {
@@ -45,7 +52,11 @@ export function useTools( options: UseToolsOptions ): UseToolsReturn {
 		setLoading( true );
 		setError( null );
 		try {
-			const result = await client.list( options.assistantId );
+			const result = await client.list(
+				options.assistantId,
+				undefined,
+				options.scope,
+			);
 			setTools( result.tools );
 			setTotal( result.total );
 		} catch ( err ) {
@@ -53,7 +64,7 @@ export function useTools( options: UseToolsOptions ): UseToolsReturn {
 		} finally {
 			setLoading( false );
 		}
-	}, [ client, options.endpoint, options.assistantId ] );
+	}, [ client, options.endpoint, options.assistantId, options.scope ] );
 
 	useEffect( () => {
 		if ( ! options.endpoint ) {

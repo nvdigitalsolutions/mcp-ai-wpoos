@@ -62,6 +62,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_Delete_Record' ) ) {
 					),
 					'record_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'The DNS record ID to delete.', 'mcp-ai-wpoos-pro' ),
 					),
 				),

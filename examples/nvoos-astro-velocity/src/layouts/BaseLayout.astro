@@ -1,0 +1,111 @@
+---
+// ---------------------------------------------------------------------------
+// Base layout — Proposal 092 §5.4.
+//
+// Owns the document head (title/meta/canonical/OG/JSON-LD slots), the site
+// header (with the cart badge island) and footer. View Transitions use the
+// opt-in ClientRouter; the analytics forwarding hook (R4/D9) fires
+// astro:page-load so tag managers work despite client-side navigation.
+// ---------------------------------------------------------------------------
+
+import { ClientRouter } from 'astro:transitions';
+import CartBadge from '../islands/CartBadge';
+import ManageLink from '../islands/ManageLink';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import '../styles/generated/tokens.css';
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+	description?: string;
+	canonical?: string;
+	image?: string;
+	jsonld?: Record<string, unknown>[];
+}
+
+const {
+	title,
+	description,
+	canonical,
+	image,
+	jsonld = [],
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		{
+			description && (
+				<meta name="description" content={description} />
+			)
+		}
+		{canonical && <link rel="canonical" href={canonical} />}
+		{image && <meta property="og:image" content={image} />}
+		{
+			jsonld.map((block) => (
+				<script type="application/ld+json" set:html={JSON.stringify(block)} />
+			))
+		}
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<script is:inline>
+			// ADS no-FOUC theme boot (Proposal 095): set data-theme before first
+			// paint so dark/brand themes never flash (Starlight pattern).
+			(function () {
+				let stored = null;
+				try {
+					stored = localStorage.getItem('nvoos-theme');
+				} catch { /* storage unavailable */ }
+				const theme =
+					stored ||
+					(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+						? 'light'
+						: 'dark');
+				if (theme && theme !== 'light') {
+					document.documentElement.setAttribute('data-theme', theme);
+				}
+			})();
+		</script>
+		<ClientRouter />
+		<script>
+			// Analytics forwarding (R4/D9): client-side navigations via
+			// ClientRouter do not fire real page loads, so tag managers must
+			// listen here instead.
+			document.addEventListener('astro:page-load', () => {
+				window.dispatchEvent(new CustomEvent('nvoos:page-load'));
+			});
+		</script>
+		<slot name="head" />
+	</head>
+	<body>
+		<header class="site-header">
+			<div class="container site-header__inner">
+				<a class="site-header__brand" href="/">NV Store</a>
+				<nav class="site-nav" aria-label="Primary">
+					<a href="/categories/">Categories</a>
+					<a href="/brands/">Brands</a>
+					<a href="/promotions/">Promotions</a>
+					<a href="/account/">Account</a>
+				</nav>
+				<CartBadge client:load transition:persist />
+				<ThemeToggle />
+				<ManageLink client:load />
+			</div>
+		</header>
+		<main class="container">
+			<slot />
+		</main>
+		<footer class="site-footer">
+			<div class="container">
+				<p>
+					NV Store — an NV-authored, MIT-licensed Astro storefront
+					(Proposal 092). <a href="/about">About</a> · <a href="/terms">Terms</a>
+				</p>
+			</div>
+		</footer>
+	</body>
+</html>

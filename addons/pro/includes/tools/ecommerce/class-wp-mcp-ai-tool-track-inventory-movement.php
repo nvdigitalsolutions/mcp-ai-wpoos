@@ -138,6 +138,7 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'integer',
 					'description' => __( 'Product ID to track', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'movement'      => array(
 					'type'        => 'object',
@@ -145,10 +146,12 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 					'properties'  => array(
 						'product_id'    => array(
 							'type'        => 'integer',
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							'description' => __( 'Product ID', 'mcp-ai-wpoos-pro' ),
 						),
 						'quantity'      => array(
 							'type'        => 'integer',
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							'description' => __( 'Quantity moved (positive for increase, negative for decrease)', 'mcp-ai-wpoos-pro' ),
 						),
 						'movement_type' => array(
@@ -166,6 +169,7 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 						),
 						'reference_id'  => array(
 							'type'        => 'integer',
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							'description' => __( 'Reference ID (e.g., order ID)', 'mcp-ai-wpoos-pro' ),
 						),
 						'notes'         => array(

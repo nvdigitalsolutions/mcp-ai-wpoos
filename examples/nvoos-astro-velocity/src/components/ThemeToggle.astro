@@ -1,0 +1,60 @@
+---
+// ---------------------------------------------------------------------------
+// ThemeToggle — ADS theme switcher (Proposal 095). Vanilla JS (no island
+// hydration): cycles light → dark → example-brand and persists the choice
+// under the nvoos-theme storage key read by the BaseLayout no-FOUC script.
+// ---------------------------------------------------------------------------
+---
+<button
+	class="theme-toggle"
+	type="button"
+	data-theme-toggle
+	aria-label="Switch colour theme"
+>
+	<span data-theme-label>Theme</span>
+</button>
+
+<style>
+	.theme-toggle {
+		border: 1px solid var(--nv-line);
+		background: transparent;
+		color: var(--nv-ink);
+		font: inherit;
+		font-size: 0.85rem;
+		padding: 0.25rem 0.6rem;
+		border-radius: var(--nv-radius);
+		cursor: pointer;
+	}
+</style>
+
+<script>
+	const THEMES = ['light', 'dark', 'example-brand'];
+	const STORAGE_KEY = 'nvoos-theme';
+
+	function currentTheme(): string {
+		return document.documentElement.getAttribute('data-theme') || 'light';
+	}
+
+	function applyTheme(theme: string): void {
+		if (theme === 'light') {
+			document.documentElement.removeAttribute('data-theme');
+		} else {
+			document.documentElement.setAttribute('data-theme', theme);
+		}
+		try {
+			localStorage.setItem(STORAGE_KEY, theme);
+		} catch {
+			/* storage unavailable */
+		}
+	}
+
+	document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach((button) => {
+		button.addEventListener('click', () => {
+			const index = THEMES.indexOf(currentTheme());
+			const next = THEMES[(index + 1) % THEMES.length];
+			applyTheme(next);
+			const label = button.querySelector<HTMLElement>('[data-theme-label]');
+			if (label) label.textContent = next;
+		});
+	});
+</script>

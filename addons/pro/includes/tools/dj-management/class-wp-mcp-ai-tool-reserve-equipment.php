@@ -70,6 +70,7 @@ class WP_MCP_AI_Tool_Reserve_Equipment implements WP_MCP_AI_Tool_Interface, WP_M
 				),
 				'event_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Event ID to reserve equipment for (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'event_name'    => array(

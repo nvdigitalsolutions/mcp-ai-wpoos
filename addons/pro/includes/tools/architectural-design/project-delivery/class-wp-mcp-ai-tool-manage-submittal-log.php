@@ -108,7 +108,10 @@ class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, W
 					'type' => 'string',
 					'enum' => array( 'list', 'create', 'update', 'get' ),
 				),
-				'project_id'      => array( 'type' => 'integer' ),
+				'project_id'      => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'submittal_id'    => array( 'type' => 'string' ),
 				'spec_section'    => array(
 					'type'        => 'string',

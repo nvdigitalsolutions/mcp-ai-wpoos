@@ -126,7 +126,7 @@ retire the legacy**. Mapped to Funiq:
 | ETL fidelity (untyped meta, gallery arrays, term relations) | Medium | Golden-contract diffing: compare old vs new API responses record-by-record during migration |
 | Streaming swap (SSE → Reverb) if AI chat ships in the admin | Medium | Ship chat after Reverb is wired; plain REST chat acceptable for v1 |
 | Scope creep — this is a full product port, not a bridge tweak | High | Sequence strictly: Prop 085 v1 (WP backend) → T1 flip → nvoos merge → admin migration; each stage is independently shippable |
-| FastAPI alternative remains open | Low | The Python track exists (`fastapi-porting-implementation-plan.md`); Laravel is the repo's primary thread — owner confirms language before Phase B |
+| FastAPI alternative remains open | Low → **Resolved 2026-10-25** | Owner confirmed **Laravel** (decision #15, `fastapi-porting-implementation-plan.md` §18). The Python track stays as the documented fallback; flip conditions in `090-laravel-adapter-spike-implementation-plan.md` §8 |
 
 ## 7. Roadmap — how this slots after Proposal 085
 

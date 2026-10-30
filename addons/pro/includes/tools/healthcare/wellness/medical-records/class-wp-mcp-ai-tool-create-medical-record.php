@@ -60,12 +60,14 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'medical_record_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional medical record ID. If provided, updates the existing record instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'member_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this record belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'record_type'         => array(
 					'type'        => 'string',

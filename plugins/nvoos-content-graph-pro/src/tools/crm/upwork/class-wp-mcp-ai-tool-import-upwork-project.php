@@ -164,6 +164,20 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 		$api_fetched = false;
 		$api_data    = array();
 		if ( ! empty( $arguments['job_id'] ) ) {
+			// Assistant-level restriction: an assistant with a configured Remote
+			// Site Connections list may only use connections from that list.
+			if ( ! empty( $arguments['connection_id'] ) ) {
+				require_once NVOOS_CONTENT_GRAPH_PRO_PATH . 'src/class-wp-mcp-ai-upwork-client.php';
+
+				if ( ! WP_MCP_AI_Upwork_Client::is_connection_enabled_for_assistant( $arguments['connection_id'], $context ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_upwork_connection_not_enabled',
+						__( 'This Upwork connection is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'nvoos-content-graph-pro' ),
+						array( 'status' => 403 )
+					);
+				}
+			}
+
 			$api_data = $this->fetch_job_details( $arguments );
 			if ( ! is_wp_error( $api_data ) && ! empty( $api_data ) ) {
 				$job_title       = ! empty( $api_data['title'] ) ? $api_data['title'] : $job_title;

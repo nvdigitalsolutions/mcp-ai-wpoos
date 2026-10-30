@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Generate_Comic_Panel implements WP_MCP_AI_Tool_Interface, W
 			'properties'           => array(
 				'panel_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of an existing `mcp_ai_comic_panel` post to generate artwork for.', 'mcp-ai-wpoos-pro' ),
 				),
 				'description'   => array(

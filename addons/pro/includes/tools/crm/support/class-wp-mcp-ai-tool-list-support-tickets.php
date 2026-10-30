@@ -87,10 +87,12 @@ class WP_MCP_AI_Tool_List_Support_Tickets implements WP_MCP_AI_Tool_Interface, W
 				),
 				'assignee_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Filter by WordPress user ID of assignee.', 'mcp-ai-wpoos-pro' ),
 				),
 				'contact_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Filter by lead/contact ID of requester.', 'mcp-ai-wpoos-pro' ),
 				),
 				'sla_status'  => array(

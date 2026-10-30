@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'Product ID to validate (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'check_completeness' => array(
 					'type'        => 'boolean',

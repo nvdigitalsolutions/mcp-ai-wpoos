@@ -69,6 +69,7 @@ class WP_MCP_AI_Tool_Breakdown_Comic_Panels implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'script_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the `mcp_ai_comic_script` post to break down.', 'mcp-ai-wpoos-pro' ),
 				),
 				'script_text' => array(

@@ -103,6 +103,7 @@ class WP_MCP_AI_Tool_RTL_Content_Optimization implements WP_MCP_AI_Tool_Interfac
 			'properties' => array(
 				'post_id'         => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Post ID to optimize for RTL',
 				),
 				'language'        => array(

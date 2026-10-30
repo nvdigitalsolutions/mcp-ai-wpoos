@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Bulk_Enroll_Students implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'WordPress post ID of the ECA (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'students'            => array(
 					'type'        => 'array',
@@ -73,6 +74,7 @@ class WP_MCP_AI_Tool_Bulk_Enroll_Students implements WP_MCP_AI_Tool_Interface, W
 								'type'        => 'integer',
 								'description' => __( 'WordPress post ID of the student', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 1,
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							),
 							'enrollment_type' => array(
 								'type'        => 'string',

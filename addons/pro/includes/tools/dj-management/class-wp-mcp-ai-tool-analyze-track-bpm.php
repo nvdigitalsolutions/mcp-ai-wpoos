@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Analyze_Track_BPM implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'track_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Track ID to analyze (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'bpm'            => array(

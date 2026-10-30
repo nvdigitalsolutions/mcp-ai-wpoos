@@ -99,6 +99,7 @@ class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_
 				),
 				'matter_id'        => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Matter ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'expense_type'     => array(

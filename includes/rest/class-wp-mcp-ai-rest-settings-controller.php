@@ -322,6 +322,15 @@ class WP_MCP_AI_REST_Settings_Controller {
 					continue;
 				}
 
+				// Sections rendered inside another section (Custom Filters,
+				// Pro Performance) declare the '__hidden__' sentinel tab —
+				// they own no tab, so their fields must not surface in the
+				// schema-driven UI (the SPA would render a literal
+				// '__hidden__' tab button).
+				if ( '__hidden__' === sanitize_key( (string) $section->get_tab() ) ) {
+					continue;
+				}
+
 				$fields[ $key ] = array(
 					'key'         => sanitize_key( (string) $key ),
 					'type'        => $type,
@@ -335,6 +344,24 @@ class WP_MCP_AI_REST_Settings_Controller {
 
 				if ( ! empty( $field['options'] ) && is_array( $field['options'] ) ) {
 					$fields[ $key ]['options'] = array_map( 'wp_strip_all_tags', $field['options'] );
+
+					// The stored value may have left the option list (provider
+					// model catalogs churn). Without it the SPA select silently
+					// displays the FIRST option — a lie about the live config.
+					// Append the stored value as an extra option so the UI always
+					// shows (and can keep) what is really configured. The key
+					// must stay RAW: sanitize_key() would mangle keys with
+					// slashes/dashes (model slugs like meta/llama-3.1-8b-instruct).
+					if ( 'select' === $type ) {
+						$stored_select = WP_MCP_AI_Settings_Registry::get_setting( $key, null );
+						if ( is_scalar( $stored_select ) && '' !== (string) $stored_select ) {
+							$stored_select_key = (string) $stored_select;
+							if ( ! array_key_exists( $stored_select_key, $fields[ $key ]['options'] ) ) {
+								/* translators: %s: the currently stored setting value. */
+								$fields[ $key ]['options'][ $stored_select_key ] = sprintf( __( '%s (stored)', 'mcp-ai-wpoos' ), $stored_select_key );
+							}
+						}
+					}
 				}
 				if ( array_key_exists( 'default', $field ) ) {
 					$fields[ $key ]['default'] = $field['default'];
@@ -520,9 +547,20 @@ class WP_MCP_AI_REST_Settings_Controller {
 				return $number;
 
 			case 'select':
-				$select_value = sanitize_key( (string) $value );
+				// Match against the RAW option keys. sanitize_key() would mangle
+				// keys containing slashes/dashes (provider model slugs like
+				// meta/llama-3.1-8b-instruct), silently rejecting every SPA save
+				// of such selects. Membership in the literal option list is the
+				// sanitizer — anything else falls back to the stored value.
+				$select_value = is_scalar( $value ) ? (string) $value : '';
 				if ( ! empty( $field['options'] ) && is_array( $field['options'] ) && ! array_key_exists( $select_value, $field['options'] ) ) {
 					return $current_value;
+				}
+				// Numeric-option selects (e.g. default_assistant) store int
+				// values; coerce so REST writes can't leave string values
+				// behind that the admin UI and readers would mishandle.
+				if ( $this->is_numeric_select( $field ) ) {
+					return absint( $select_value );
 				}
 				return $select_value;
 
@@ -540,5 +578,25 @@ class WP_MCP_AI_REST_Settings_Controller {
 			default:
 				return sanitize_text_field( (string) $value );
 		}
+	}
+
+	/**
+	 * Whether a select field's option keys are all numeric.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array<string,mixed> $field Schema field definition.
+	 * @return bool True when every option key is an int or numeric string.
+	 */
+	private function is_numeric_select( array $field ) {
+		if ( empty( $field['options'] ) || ! is_array( $field['options'] ) ) {
+			return false;
+		}
+		foreach ( array_keys( $field['options'] ) as $option_key ) {
+			if ( ! is_numeric( $option_key ) ) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

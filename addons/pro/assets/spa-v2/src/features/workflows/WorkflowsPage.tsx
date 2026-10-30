@@ -21,6 +21,14 @@ import { WorkflowCanvasWithProvider } from './WorkflowCanvas';
 import { WorkflowPresetsClient, type WorkflowPresetSummary } from '../../api/workflow-presets';
 import type { WorkflowGraph } from '../../api/workflow-builder';
 import { nodeExecutePayload, type CanvasWorkflowNode } from './workflow-graph';
+import {
+	WorkflowDslClient,
+	DslFindingsError,
+	downloadDsl,
+	hasBlockers,
+	type DslFinding,
+} from '../../api/workflow-dsl';
+import { WorkflowDslImport } from './WorkflowDslImport';
 
 function Badge( { label }: { label: string } ): JSX.Element {
 	return (
@@ -71,12 +79,29 @@ export function WorkflowsPage(): JSX.Element {
 	const [ presetError, setPresetError ] = useState< string | null >( null );
 	const [ canvasOverride, setCanvasOverride ] = useState< WorkflowGraph | null >( null );
 
+	// Proposal 091 (Track A) — DSL export/import surface on the workflow REST.
+	const [ dslFindings, setDslFindings ] = useState< DslFinding[] | null >( null );
+	const [ dslFeedback, setDslFeedback ] = useState< string | null >( null );
+	const [ dslFeedbackTone, setDslFeedbackTone ] = useState< 'error' | 'success' >( 'error' );
+	const [ dslBusy, setDslBusy ] = useState< boolean >( false );
+	const [ dslOpen, setDslOpen ] = useState< boolean >( false );
+
 	const presetsClient = useMemo( () => {
 		if ( ! runtime || ! runtime.endpoints.workflowPresets ) {
 			return null;
 		}
 		return new WorkflowPresetsClient( {
 			endpoint: runtime.endpoints.workflowPresets,
+			nonce: runtime.nonce,
+		} );
+	}, [ runtime ] );
+
+	const dslClient = useMemo( () => {
+		if ( ! runtime || ! runtime.endpoints.workflowBuilder ) {
+			return null;
+		}
+		return new WorkflowDslClient( {
+			endpoint: runtime.endpoints.workflowBuilder,
 			nonce: runtime.nonce,
 		} );
 	}, [ runtime ] );
@@ -137,6 +162,91 @@ export function WorkflowsPage(): JSX.Element {
 		void executeNode( payload ).finally( () => setBusy( null ) );
 	};
 
+	const setDslError = ( message: string ): void => {
+		setDslFeedbackTone( 'error' );
+		setDslFeedback( message );
+	};
+
+	const handleExportWorkflow = async ( id: number ): Promise< void > => {
+		if ( ! dslClient ) {
+			return;
+		}
+		setBusy( `export-${ id }` );
+		setDslFeedback( null );
+		try {
+			const dsl = await dslClient.exportWorkflow( id );
+			downloadDsl( dsl, `workflow-${ id }.json` );
+		} catch ( err ) {
+			setDslError( err instanceof Error ? err.message : String( err ) );
+		} finally {
+			setBusy( null );
+		}
+	};
+
+	const handleExportPreset = async ( id: string ): Promise< void > => {
+		if ( ! dslClient ) {
+			return;
+		}
+		setBusy( `preset-export-${ id }` );
+		setDslFeedback( null );
+		try {
+			const dsl = await dslClient.exportPreset( id );
+			downloadDsl( dsl, `preset-${ id }.json` );
+		} catch ( err ) {
+			setDslError( err instanceof Error ? err.message : String( err ) );
+		} finally {
+			setBusy( null );
+		}
+	};
+
+	const handleDslSubmit = async ( text: string, source: 'native' | 'dify' ): Promise< void > => {
+		if ( ! dslClient ) {
+			return;
+		}
+		setDslBusy( true );
+		setDslFeedback( null );
+		setDslFindings( null );
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse( text );
+		} catch ( parseErr ) {
+			setDslError( __( 'The pasted DSL is not valid JSON.', 'nvoos-pro-spa' ) );
+			setDslBusy( false );
+			return;
+		}
+		try {
+			// Dry run first — findings with blockers stop the import before
+			// anything is written (parity with the wp-admin DAG builder flow).
+			const dryRun = await dslClient.importDsl( parsed, { dryRun: true, source } );
+			const findings = dryRun.findings ?? [];
+			if ( findings.length > 0 ) {
+				setDslFindings( findings );
+				if ( hasBlockers( findings ) ) {
+					setDslError( __( 'Dry run reported blockers — import was not started.', 'nvoos-pro-spa' ) );
+					return;
+				}
+			}
+			// eslint-disable-next-line no-alert -- parity with the wp-admin confirm().
+			if ( ! window.confirm( __( 'Dry run passed. Import this workflow?', 'nvoos-pro-spa' ) ) ) {
+				return;
+			}
+			const result = await dslClient.importDsl( parsed, { dryRun: false, source } );
+			setDslFindings( result.findings ?? null );
+			setDslFeedbackTone( 'success' );
+			setDslFeedback( __( 'Workflow imported.', 'nvoos-pro-spa' ) );
+			await refresh();
+		} catch ( err ) {
+			if ( err instanceof DslFindingsError ) {
+				setDslFindings( err.findings );
+				setDslError( err.message );
+			} else {
+				setDslError( err instanceof Error ? err.message : String( err ) );
+			}
+		} finally {
+			setDslBusy( false );
+		}
+	};
+
 	const visiblePresets = presetCategory
 			? presets.filter( ( preset ) => preset.category === presetCategory )
 			: presets;
@@ -165,10 +275,18 @@ export function WorkflowsPage(): JSX.Element {
 							<strong className="nvoos-pro-spa-tools-list__name">{ workflow.title }</strong>
 						</button>
 						<code className="nvoos-pro-spa-tools-list__slug">v{ workflow.version }</code>
+						<button
+							type="button"
+							className="nvoos-pro-spa-token-manager__action"
+							disabled={ busy !== null || ! dslClient }
+							onClick={ () => void handleExportWorkflow( workflow.id ) }
+						>
+							{ __( 'Export', 'nvoos-pro-spa' ) }
+						</button>
 					</>,
 				],
 			} ) ),
-		[ workflows ]
+		[ workflows, busy, dslClient ]
 	);
 
 	const presetColumns = useMemo< DataTableColumn[] >(
@@ -203,17 +321,27 @@ export function WorkflowsPage(): JSX.Element {
 					<span className="nvoos-pro-spa-tools-list__desc-clamp">
 						{ preset.description || '—' }
 					</span>,
-					<button
-						type="button"
-						className="nvoos-pro-spa-token-manager__action"
-						disabled={ busy !== null || ! selected }
-						onClick={ () => void loadPreset( preset.id ) }
-					>
-						{ __( 'Load into canvas', 'nvoos-pro-spa' ) }
-					</button>,
+					<>
+						<button
+							type="button"
+							className="nvoos-pro-spa-token-manager__action"
+							disabled={ busy !== null || ! selected }
+							onClick={ () => void loadPreset( preset.id ) }
+						>
+							{ __( 'Load into canvas', 'nvoos-pro-spa' ) }
+						</button>
+						<button
+							type="button"
+							className="nvoos-pro-spa-token-manager__action"
+							disabled={ busy !== null || ! dslClient }
+							onClick={ () => void handleExportPreset( preset.id ) }
+						>
+							{ __( 'Export', 'nvoos-pro-spa' ) }
+						</button>
+					</>,
 				],
 			} ) ),
-		[ visiblePresets, presetCategories, busy, selected ]
+		[ visiblePresets, presetCategories, busy, selected, dslClient ]
 	);
 
 	const runColumns = useMemo< DataTableColumn[] >(
@@ -308,9 +436,9 @@ export function WorkflowsPage(): JSX.Element {
 				</button>
 			</header>
 
-			{ ( error || actionError || presetError ) && (
+			{ ( error || actionError || presetError || ( dslOpen ? null : dslFeedback ) ) && (
 				<div className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error" role="alert">
-					<p>{ presetError ?? actionError ?? error }</p>
+					<p>{ presetError ?? actionError ?? ( dslOpen ? null : dslFeedback ) ?? error }</p>
 				</div>
 			) }
 
@@ -390,6 +518,29 @@ export function WorkflowsPage(): JSX.Element {
 							columns={ workflowColumns }
 							rows={ workflowRows }
 							caption={ __( 'Workflows', 'nvoos-pro-spa' ) }
+						/>
+					) }
+
+					<p>
+						<button
+							type="button"
+							className="nvoos-pro-spa-token-manager__action"
+							disabled={ ! dslClient }
+							onClick={ () => setDslOpen( ( value ) => ! value ) }
+						>
+							{ dslOpen
+								? __( 'Hide import panel', 'nvoos-pro-spa' )
+								: __( 'Import DSL…', 'nvoos-pro-spa' ) }
+						</button>
+					</p>
+
+					{ dslOpen && dslClient && (
+						<WorkflowDslImport
+							onSubmit={ ( text, source ) => void handleDslSubmit( text, source ) }
+							busy={ dslBusy }
+							findings={ dslFindings }
+							feedback={ dslFeedback }
+							feedbackTone={ dslFeedbackTone }
 						/>
 					) }
 				</aside>

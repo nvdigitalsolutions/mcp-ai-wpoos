@@ -88,8 +88,15 @@ class WP_MCP_AI_Tool_Outbound_Import_Leads implements WP_MCP_AI_Tool_Interface, 
 						),
 					),
 				),
-				'sequence_id' => array( 'type' => 'integer', 'default' => 0 ),
-				'consent'     => array( 'type' => 'boolean', 'default' => true ),
+				'sequence_id' => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+					'default' => 0,
+				),
+				'consent'     => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
 			),
 			'required'   => array( 'rows' ),
 		);

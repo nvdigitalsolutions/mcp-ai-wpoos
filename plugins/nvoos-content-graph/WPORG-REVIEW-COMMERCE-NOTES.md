@@ -90,6 +90,10 @@ feature-locked.**
 - v1.0.11: new read-only /graph/visual-config route and assistant
   credential (bearer) authentication on read routes. No commerce-surface
   changes, no new data collected or sent.
+- v1.0.12: guest-token validation restored on the read routes, and the
+  plugin self-declares as the memory-graph bridge for the base plugin's
+  provenance/RRF streams. No commerce-surface changes, no new data
+  collected or sent.
 
 ## Review-team questions, pre-answered
 

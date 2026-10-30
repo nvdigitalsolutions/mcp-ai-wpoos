@@ -1,0 +1,10 @@
+{
+	"$comment": "Proposal 095 — example brand theme. Brand themes override semantic tokens only (the 092 Phase 4 rebrand primitive). Applied via data-theme=\"example-brand\".",
+	"name": "example-brand",
+	"description": "Example brand theme — override semantic tokens only.",
+	"tokens": {
+		"accent": "#1d4ed8",
+		"accent-ink": "#ffffff",
+		"surface-alt": "#f0f4ff"
+	}
+}

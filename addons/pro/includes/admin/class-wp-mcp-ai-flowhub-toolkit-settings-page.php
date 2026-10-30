@@ -57,6 +57,16 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 			return;
 		}
 
+		/**
+		 * Kill-switch for the wp-admin FlowHub Toolkit surface (Proposal 089
+		 * Phase 2b). The Complete Console renders the same toolkit settings
+		 * through the schema-driven settings surface; flip this filter off
+		 * per cohort once console parity is verified.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_admin_page_enabled_flowhub_toolkit', true ) ) {
+			return;
+		}
+
 		add_menu_page(
 			__( 'FlowHub Toolkit', 'mcp-ai-wpoos-pro' ),
 			__( 'FlowHub Toolkit', 'mcp-ai-wpoos-pro' ),

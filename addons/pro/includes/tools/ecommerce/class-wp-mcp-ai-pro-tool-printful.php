@@ -102,14 +102,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Printful' ) ) {
 					// Catalog filters.
 					'category_id'       => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'Filter products by Printful category ID. Use get_categories to discover available category IDs.', 'mcp-ai-wpoos-pro' ),
 					),
 					'product_id'        => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'Printful product ID for catalog lookups.', 'mcp-ai-wpoos-pro' ),
 					),
 					'variant_id'        => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'Printful variant ID for variant lookups.', 'mcp-ai-wpoos-pro' ),
 					),
 					'sync_product_id'   => array(
@@ -455,7 +458,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Printful' ) ) {
 			}
 
 			$assistant_id        = absint( $context['assistant_id'] );
-			$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_enabled_remote_sites', true );
+			$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
 
 			if ( ! is_array( $enabled_connections ) ) {
 				return true; // No restrictions configured.

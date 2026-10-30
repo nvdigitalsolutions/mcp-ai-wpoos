@@ -103,6 +103,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 			'properties' => array(
 				'file_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress attachment ID to analyze.', 'mcp-ai-wpoos' ),
 				),
 				'purpose'       => array(

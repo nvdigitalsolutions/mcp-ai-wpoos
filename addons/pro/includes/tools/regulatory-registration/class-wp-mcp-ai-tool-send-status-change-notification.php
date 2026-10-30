@@ -65,6 +65,7 @@ class WP_MCP_AI_Tool_Send_Status_Change_Notification implements WP_MCP_AI_Tool_I
 					'type'        => 'integer',
 					'description' => __( 'Registration ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'old_status'      => array(
 					'type'        => 'string',

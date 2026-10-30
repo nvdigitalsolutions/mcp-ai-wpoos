@@ -1,0 +1,34 @@
+---
+interface Props {
+	page: number;
+	totalPages: number;
+	/** Relative base URL (path + existing query params, without `page`). */
+	baseUrl: string;
+}
+
+const { page, totalPages, baseUrl } = Astro.props;
+
+const pageHref = (target: number): string => {
+	const url = new URL(baseUrl, 'https://nvoos.invalid/');
+	url.searchParams.set('page', String(target));
+	return `${url.pathname}${url.search ? `?${url.search}` : ''}`;
+};
+---
+
+{
+	totalPages > 1 && (
+		<nav class="pagination" aria-label="Pagination">
+			{page > 1 && (
+				<a class="btn btn--ghost" href={pageHref(page - 1)} rel="prev">
+					Previous
+				</a>
+			)}
+			<span aria-current="page">Page {page} of {totalPages}</span>
+			{page < totalPages && (
+				<a class="btn btn--ghost" href={pageHref(page + 1)} rel="next">
+					Next
+				</a>
+			)}
+		</nav>
+	)
+}

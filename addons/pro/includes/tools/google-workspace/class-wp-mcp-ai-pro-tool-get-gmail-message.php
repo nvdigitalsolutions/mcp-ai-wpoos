@@ -76,7 +76,7 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Message implements WP_MCP_AI_Tool_Interface, 
 				),
 				'connection_id'       => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Gmail connection ID from Remote Sites. If not provided, uses settings-based credentials.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional Gmail connection ID from Remote Sites. If not provided, uses settings-based credentials; when those are not configured, the only enabled Remote Sites Gmail connection is used automatically (if several are enabled, pass one explicitly). Call list_gmail_connections to discover IDs.', 'mcp-ai-wpoos-pro' ),
 				),
 				'max_chars'           => array(
 					'type'        => 'integer',
@@ -155,10 +155,13 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Message implements WP_MCP_AI_Tool_Interface, 
 			$format = 'plain';
 		}
 
-		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( $connection_id );
+		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( $connection_id, $context );
 		if ( is_wp_error( $credentials ) ) {
 			return $credentials;
 		}
+
+		$resolved_id   = isset( $credentials['connection_id'] ) ? (string) $credentials['connection_id'] : '';
+		$resolved_name = isset( $credentials['connection_name'] ) ? (string) $credentials['connection_name'] : '';
 
 		$timeout = WP_MCP_AI_Pro_Gmail_Client::get_request_timeout();
 
@@ -218,6 +221,9 @@ class WP_MCP_AI_Pro_Tool_Get_Gmail_Message implements WP_MCP_AI_Tool_Interface, 
 			$timeout,
 			$max_chars
 		);
+
+		$message['connection_id']   = $resolved_id;
+		$message['connection_name'] = $resolved_name;
 
 		return $this->format_success_response(
 			__( 'Gmail message retrieved.', 'mcp-ai-wpoos-pro' ),

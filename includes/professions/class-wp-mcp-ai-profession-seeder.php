@@ -170,6 +170,30 @@ class WP_MCP_AI_Profession_Seeder {
 
 		$repository = new WP_MCP_AI_Profession_Repository();
 
+		// Build a slug-to-post-ID map of existing professions. Seeding only
+		// runs when the seeded option is missing, and that can happen on a
+		// database that already contains professions (option lost through a
+		// settings reset, staging sync, or a partial previous seed). Blind
+		// inserts in that state duplicate the whole catalog on every admin
+		// page load — the classic profession-ballooning bug — so match by
+		// slug and update existing posts instead.
+		$existing_by_slug = array();
+		$existing_posts   = get_posts(
+			array(
+				'post_type'      => WP_MCP_AI_Profession_CPT::POST_TYPE,
+				'posts_per_page' => -1,
+				'post_status'    => 'any',
+				'fields'         => 'ids',
+			)
+		);
+
+		foreach ( $existing_posts as $post_id ) {
+			$post = get_post( $post_id );
+			if ( $post && ! empty( $post->post_name ) ) {
+				$existing_by_slug[ $post->post_name ] = $post_id;
+			}
+		}
+
 		// Load dataset mappings.
 		require_once WP_MCP_AI_PATH . 'includes/professions/profession-dataset-mappings.php';
 
@@ -204,6 +228,13 @@ class WP_MCP_AI_Profession_Seeder {
 				if ( ! empty( $datasets ) ) {
 					$profession_data['preferred_datasets'] = $datasets;
 				}
+			}
+
+			// Update an existing profession matched by slug instead of
+			// inserting a duplicate copy.
+			$slug = isset( $profession_data['slug'] ) ? sanitize_title( $profession_data['slug'] ) : '';
+			if ( '' !== $slug && isset( $existing_by_slug[ $slug ] ) ) {
+				$profession_data['id'] = $existing_by_slug[ $slug ];
 			}
 
 			$repository->save( $profession_data );

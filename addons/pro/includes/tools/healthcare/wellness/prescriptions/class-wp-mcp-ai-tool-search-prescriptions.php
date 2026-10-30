@@ -82,6 +82,7 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'Filter by member ID (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'medication'  => array(
 					'type'        => 'string',

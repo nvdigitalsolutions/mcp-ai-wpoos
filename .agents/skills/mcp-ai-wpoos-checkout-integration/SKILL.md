@@ -5,9 +5,9 @@ description: "Operational guide for integrating the NV oOS Complete purchase flo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.99"
-  plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-08"
+  plugin-version: "1.2.11"
+  plugin-version-tested: "1.2.11"
+  last-updated: "2026-10-24"
 ---
 
 # NV oOS Checkout Integration — Client-Side Purchase Flow Guide

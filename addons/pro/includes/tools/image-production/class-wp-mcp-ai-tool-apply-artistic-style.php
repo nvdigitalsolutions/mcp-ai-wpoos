@@ -94,7 +94,10 @@ class WP_MCP_AI_Tool_Apply_Artistic_Style extends WP_MCP_AI_Tool_Image_Base impl
 						'type'        => 'object',
 						'description' => __( 'Custom style reference image (optional). Accepted for compatibility; not applied yet.', 'mcp-ai-wpoos-pro' ),
 						'properties'  => array(
-							'attachment_id' => array( 'type' => 'integer' ),
+							'attachment_id' => array(
+								'type'    => 'integer',
+								'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+							),
 							'url'           => array( 'type' => 'string' ),
 						),
 					),

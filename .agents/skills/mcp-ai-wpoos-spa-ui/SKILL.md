@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-ui
-description: UI stack, build, and test conventions for NV oOS React SPA addons (toolkit-shell, chat-spa, schedule-anything-spa, saas-controller) — three sanctioned build patterns plus the standalone Pro SPA Vite app (examples/nvoos-pro-spa-vite), dual-React guard, headless component rules, NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map (incl. staleness detection and the vendor never-commit rule), and the TS-shadows-JS webpack gotcha. Use when building or modifying SPA addon UI, writing SPA JS tests, upgrading SPA deps, or rebuilding JS for packaging.
+description: "UI stack, build, and test conventions for NV oOS React SPA addons — the three sanctioned build patterns; the standalone Pro SPA and Complete Console apps with the spa-v2 ↔ console wiring map and two-bundle rule; the island-embed pattern (Proposal 087) with the host token bridge; NDS tokens, Tailwind v4, @xyflow/react v12, vitest/jsdom gotchas, the full-JS-rebuild map, and the TS-shadows-JS gotcha. Use when building SPA addon UI, writing SPA JS tests, or rebuilding JS."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
-  last-updated: "2026-10-23"
+  plugin-version: "1.2.13"
+  plugin-version-tested: "1.2.13"
+  last-updated: "2026-10-27"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -40,6 +40,92 @@ The canonical addon pattern itself is
 - Building or deploying the standalone Pro SPA app
   (`examples/nvoos-pro-spa-vite/`, Cloudways Velocity, `chat.nvoos.cloud`)
   — see "Standalone SPA app (pattern D)"
+- Gating admin surfaces for non-admin roles — see
+  "Access gating for non-admin roles (capability-driven)"
+
+## Access gating for non-admin roles (capability-driven)
+
+Canonized 2026-10-27 from the author-role 403 wall on the Complete Console
+(victory.nvoos.cloud, PRs #7257/#7259). Industry pattern (OWASP REST
+Security / Authorization cheat sheets, Auth0 + react-admin RBAC guidance):
+
+- **Capability-based, never role-based.** Gate on WordPress capabilities
+  (`manage_options`, `edit_posts`), never on role slugs — roles are
+  per-site, capabilities are the contract.
+- **The server is authoritative.** Every `permission_callback` check
+  server-side stays the security boundary. Client gates are UX-only: they
+  hide unavailable surfaces and skip fetches that would only answer 403.
+- **One source of truth on the client:**
+  `addons/pro/assets/spa-v2/src/auth/permissions.ts` (`can()`,
+  `usePermissions()`). No ad-hoc
+  `capabilities.includes( 'manage_options' )` memos — ChatPage (model
+  selector + HITL gate) and AssistantsPage (create/edit/delete) are the
+  reference consumers.
+
+The permission matrix (server contract mirrored client-side):
+
+| Capability | Surfaces |
+|---|---|
+| `manage_options` | workflows, workflow-builder/presets/nodes/runs, analytics, cost, approvals, triggers, teams, portability, security, operations, diagnostics, paper-store, token-manager, orchestration/stats, pro/ops, schedule-manager, records/schema, dashboards/schema, chat-channels, remote-sites, media-cc, command-center |
+| `edit_posts` | blueprints, slash-commands |
+| logged-in | transcripts, memory, threads, assistants, settings |
+| public/guest | chat, chat-client, tools, wp/v2/media upload |
+
+**Endpoint-emptiness is a gate too.** The server SPA config
+(`WP_MCP_AI_Pro_SPA_Config::build()`) emits empty endpoint strings for
+admin-gated surfaces on non-admin sessions; pages skip fetches when the
+endpoint is empty. **The Complete Console builds its own endpoint map**
+(`examples/nvoos-complete-velocity/src/runtime-config.ts`
+`buildEndpoints()`) and must mirror that matrix exactly — every new
+admin-gated route must be gated in BOTH places or non-admin users poll
+403s.
+
+**Failure class: "author hits admin-only fetch" (403 console noise).**
+Console works but the network tab shows 403s on admin routes for
+non-admin roles. Cases fixed so far: HITL approval bar polling
+`/approvals` (list + resolve are manage_options — gate the mount on
+`isAdmin`), AssistantsPage Edit firing `GET /assistants/{id}`
+(manage_options — hide create/edit/delete + guard the fetch), Dashboard
+firing `command-center/overview` (console endpoint map not emptied +
+defense-in-depth capability check in the component). Fix pattern:
+(1) mirror the endpoint gate, (2) gate the mount on `usePermissions()`,
+(3) fail-soft so the section hides rather than errors.
+
+**Verify as a non-admin role.** Log in as an author and inspect the
+network tab — every admin-route 403 is a gating bug, not a feature. 404s
+on `GET /chat-transcripts/{session_key}` are benign (the resume probe
+treats 404 as "no stored transcript" and rotates the key; the red lines
+are Chrome's own network logging).
+
+## Server-side pagination + keep-previous-data loading states (v1.2.13, PRs #7239/#7255)
+
+Every console table that can outgrow a screen uses the shared
+`Pagination` component + the `DataTable` busy prop (USWDS / W3C APG
+conventions):
+
+- **Server-side paging (true totals)** — records (professions/crm/pm/
+  calendar/fnb/products/content), chat channels, approvals, Paper Store,
+  and the operations run timeline take `page`/`page_size` and render
+  `total`/`total_pages` from the envelope. The remote records proxy
+  forwards `page` and reports totals. The `/approvals` envelope returns
+  the **pending-queue depth** as its total (not the page length) and
+  accepts an `offset`. Client-side paging stays in-memory for the
+  Blueprints catalogue and the tools registry (whole-ship + instant
+  search).
+- **Pager contract** — `nav` landmark, native buttons, `aria-current` on
+  the active page, out-of-range boundaries kept in the DOM but disabled,
+  a polite "Showing X–Y of Z" live region, a page-size selector, and an
+  ellipsis-collapsed page list. A truncated first page must never be
+  mistaken for the whole collection.
+- **Keep-previous-data busy state** — while a page fetch is in flight the
+  stale rows stay mounted but dimmed (opacity + pointer shield) with an
+  inline spinner + `aria-busy` on the scroll wrapper and nav; controls
+  are disabled. Abort in-flight list/detail/thread fetches on unmount and
+  on query change; clear stale rows when switching entity/collection/
+  search so old columns never render under new headers.
+- **phpcbf guard** — the persisted lowercase `wordpress` connection-type
+  literal is guarded so `composer run format` cannot rewrite it and break
+  saved remote connections.
 
 ## The three sanctioned build patterns — pick one, don't mix
 
@@ -77,6 +163,40 @@ Rules that follow from the matrix:
 (`../../addons/pro/assets/spa-v2/src`) and connects to **any WordPress backend**
 running the plugin — no WP host page, no fork (the app tracks the plugin SPA).
 Deploy playbook: `docs/operations/deployment/nvoos-pro-spa-velocity-setup.md`.
+
+### The spa-v2 ↔ Complete Console wiring map (connecting the dots)
+
+Agents repeatedly lose the connection between
+`examples/nvoos-complete-velocity/` (and the standalone app) and
+`addons/pro/assets/spa-v2/`. Both apps **alias spa-v2 sources** — they are
+NOT forks — so a spa-v2 source change only reaches the console when BOTH
+bundles are rebuilt, and every spa-v2-side contract has a mirror inside the
+app. Read this map when landing in either folder:
+
+| spa-v2 source | Console mirror / consumer | Sync rule |
+|---|---|---|
+| `addons/pro/assets/spa-v2/src/**` | aliased as `@nvoos/pro-spa-v2` in the console `vite.config.ts` **and** `vitest.config.ts` (the vitest config must repeat every alias + `server.fs.allow: [appRoot, repoRoot]`) | edit spa-v2 once; never copy |
+| `src/api/config.ts` (`ProSpaRuntime` / `ProSpaEndpoints` / `readProSpaConfig`) | `examples/nvoos-complete-velocity/src/runtime-config.ts` `buildConsoleRuntime()` builds the same `window.NVOOS_PRO_SPA` shape; the PHP emitter `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php` is the canonical shape both apps mirror | new endpoint key = 4 wiring points; island PRs must update the console's endpoint VALUES too |
+| `src/stores/uiStore.ts` | shared by both trees — the console shell renders `data-theme` from `useUIStore().theme`, so spa-v2 pages can follow the console theme | one store instance per app tree (alias forces the same module) |
+| `src/styles/main.css` / `drawers.css` / `embedded.css` | imported by the console `main.tsx`; console-only rules live in `src/shell.css` | never move spa-v2 tokens into shell.css or vice versa |
+| island bundles (`addons/media-studio/assets/dist/*`, `addons/document-editor/assets/dist/*`) | both apps import them via `?url` in their `runtime-config.ts`; the console `vitest.config.ts` needs `fs.allow` for them | `?url` imports are per-app — update BOTH runtime-configs |
+| `src/features/remote-sites/RemoteSitesPage.tsx` (Connections page) + `src/api/remote-sites.ts` | mounted ONLY by the console: `ConsoleShell.tsx` lazy route `/connections` + `nav-features.tsx` item under Command Centers → Channels. Its REST base `mcp-ai-pro/v1/remote-sites` (manage_options-gated controller in `addons/pro/includes/rest/`) is NOT in spa-v2's own router — a page wired this way needs no spa-v2 bundle rebuild (see the churn rule below) | new console-only page = console dist rebuild only |
+| `src/features/commerce/CommerceToolkitPage.tsx` + `src/api/commerce.ts` + `SettingsForm.tsx` extraction | mounted by BOTH apps: spa-v2's router (`/ecommerce` `/ezuite` `/shopify-sync` `/flowhub` `/products` `/content`) AND the console nav (Command Centers group). Backed by `mcp-ai-pro/v1/commerce/sync-runs` (read-only) + the SitePicker proxying through the shared `remoteSites` endpoint (wordpress-type Remote Sites) | commerce pages touch both routers → rebuild BOTH bundles |
+| `src/features/paper-store/PaperStorePage.tsx` + `src/api/paper-store.ts` | mounted by both apps (`#/paper-store` route in spa-v2's router + guarded console nav; `endpoints.paperStore` = `mcp-ai/v1/paper-store`) | four-point endpoint wiring (see the paperStore rule below) |
+| `src/features/assistants/ToolPicker.tsx` (Proposal 088) | the spa-v2 assistant editor (AssistantsPage — the surface the console mounts); its registry fetch calls `ToolsClient.list(…, scope: 'all')` — the server's new `scope=all` route arg (default assistant resolution unchanged for unscoped requests) | picker is spa-v2-only → spa-v2 dist rebuild suffices; the `scope`/`flags` contract is server-side additive |
+| vendored island (`src/features/docs-hub/upstream/`) | consumed by both apps through spa-v2's DocsPage | byte-identical upstream discipline |
+
+**"My spa-v2 fix doesn't show in the console" checklist** (the failure order
+seen live): (1) did the console build even pass — `tsc --noEmit` fails with
+TS2741 the moment a required endpoint key is missing, and nobody notices
+because nobody rebuilds; (2) was the console `dist/` rebuilt in the SAME PR
+— the sync workflow ships the committed dist and never runs Vite; (3) are
+both apps' `buildEndpoints()` key sets AND values in sync — diff them
+against each other; (4) did the console `runtime-config.ts` get the new
+island `?url` imports; (5) is the feature the page renders gated by the
+server feature map (`fetchFeatureMap`) — an unavailable feature empties the
+endpoint and renders the unavailable state, which looks like "my code is
+not running".
 
 Reusable mechanics (all learned the hard way — do not rediscover):
 
@@ -198,6 +318,113 @@ Reusable mechanics (all learned the hard way — do not rediscover):
   back to the server-resolved default assistant, then the full registry).
 	  New console pages register their gates in `nav-features.tsx` — never
 	  inline.
+- **spa-v2 theme tokens & dark mode (learned 2026-10-25, Connections PRs
+  #7220/#7225/#7226).** The ONLY theme tokens are the block defined on
+  `.nvoos-pro-spa-layout` (NOT `:root`) in `styles/main.css`: `--nvoos-bg`,
+  `--nvoos-bg-secondary`, `--nvoos-text`, `--nvoos-text-secondary`,
+  `--nvoos-border`, `--nvoos-primary`, `--nvoos-primary-hover`,
+  `--nvoos-danger`, `--nvoos-success`, `--nvoos-warning`,
+  `--nvoos-selected-bg`, plus `--nvoos-chip-bg`/`--nvoos-muted` added for
+  the usage-badge fix. There is **no `--nvoos-surface`** —
+  `var(--nvoos-surface, #fff)` silently pins white in dark mode (the bug the
+  Connections page shipped with). Rules: (1) dark values live in
+  `.nvoos-pro-spa-layout[data-theme="dark"]` AND in
+  `@media (prefers-color-scheme: dark) { .nvoos-pro-spa-layout[data-theme="auto"] {...} }`
+  — the attr stays `auto` under system dark, so both selectors are required
+  (main.css already models this pair); (2) when adding a NEW token, define
+  it in all three blocks — a token referenced with only a light fallback
+  keeps every consumer light in dark mode; (3) feature-scoped dark overrides
+  go in the feature's own CSS file using the same
+  `[data-theme="dark"]`/`[data-theme="auto"]` pair, scoped under
+  `.nvoos-pro-spa-layout` (see `features/remote-sites/remote-sites.css`);
+  (4) surface chips (attachment chips, usage badges) go transparent in dark
+  via `--nvoos-chip-bg` and need a themed border in dark so they keep their
+  shape.
+- **New endpoint key = four wiring points (learned 2026-10-24, PRs
+  #7206/#7207).** Adding `endpoints.paperStore` needed (1) the PHP emitter
+  `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php`, (2) the
+  `ProSpaEndpoints` interface + `readProSpaConfig()` mapper in
+  `api/config.ts`, and (3)+(4) **every app that builds its own endpoints
+  map** — `examples/nvoos-complete-velocity/src/runtime-config.ts` AND
+  `examples/nvoos-pro-spa-vite/src/runtime-config.ts`. Missing an app breaks
+  THAT app's sync gate with TS2741 (missing required property) — #7207 was
+  exactly that for the standalone app. When adding an endpoint key, grep
+  `runtime-config.ts` across `examples/` and update them all.
+- **Island PRs must update the console's endpoint VALUES, not just the type
+  keys (learned 2026-10-25, console audit).** #7213 rewired
+  `docsHub`/`mediaStudio`/`documentEditor` to REST bases + `?url` asset keys
+  in the standalone app but left
+  `examples/nvoos-complete-velocity/src/runtime-config.ts` carrying the
+  **iframe-era values** (`docsHub: 'https://console.nvoos.cloud/docs-hub/'`,
+  shortcode-page `mediaStudio`/`documentEditor`). Consequences: the console
+  `tsc --noEmit` gate failed with TS2741 (nobody rebuilt, so nobody
+  noticed), the sync workflow kept shipping the stale committed dist, and
+  the LIVE console served the old iframe framing (theme padding + visible
+  skip link inside the docs page). After any island/endpoint PR: diff both
+  `buildEndpoints()` key sets AND values against the standalone app, fix the
+  console, and rebuild `examples/nvoos-complete-velocity/dist/` in the SAME
+  PR.
+- **Console vitest vs `?url` island imports (learned 2026-10-25):** once
+  `runtime-config.ts` imports the media-studio/document-editor bundles via
+  `?url`, vitest dies with `Denied ID .../media-studio.js?url` — the imports
+  live outside the app root. Fix: `server.fs.allow: [appRoot, repoRoot]` in
+  the console's `vitest.config.ts` (mirror what `vite.config.ts` already
+  allows for the dev server).
+- **Magic-link emails must target the SPA origin, not the WP backend
+  (learned 2026-10-25):** `magic_login_app_origin` (Authentication → Magic
+  Link Sign-In) defaults to the WP `home_url()` — emails land on the
+  WordPress site (a "Coming Soon" page on the console backend) instead of
+  the console SPA. Set it to the SPA origin (`https://pro.nvoos.cloud` for
+  the Complete Console) via wp-admin, the console's own `#/settings` (the
+  field auto-surfaces from the schema), or `POST /settings/values`. The
+  console already consumes `#/magic-login?token=` on boot (`main.tsx`
+  `completeMagicLogin` → `POST mcp-ai/v1/magic-login/confirm` through the
+  proxy) — the token handler needs no SPA work; the origin config is the
+  whole fix. **Author 403 fallback (learned 2026-10-25, #7224):**
+  `fetchCurrentUser()` treats any `users/me?context=edit` 403 as "no
+  session" — but a logged-in author legitimately gets 403s (stale-nonce
+  `rest_cookie_invalid_nonce` or edit-context denial for roles without
+  `list_users`). The console now re-mints the nonce via `GET
+  /mcp-ai/v1/session/nonce` and retries with the **view context** (readable
+  by any logged-in role; no `capabilities` — authors get `capabilities:
+  []`, admin-gated nav hides correctly, the server still enforces every
+  capability); only a second 401/403 throws `UnauthorizedError`. Logged-out
+  requests answer 401, so the 403 path is session-specific — keep that
+  probe discipline when debugging sign-in gates.
+- **Admin settings fields auto-surface in the console `#/settings`.**
+  Fields added to a settings section (`get_fields()` + a subtab group in
+  `includes/admin/sections/`) flow through
+  `WP_MCP_AI_REST_Settings_Controller::build_schema_fields()`
+  (SUPPORTED_FIELD_TYPES) into the console settings page with **zero SPA
+  changes**. Feature code reads them via
+  `WP_MCP_AI_Settings_Registry::get_setting()` (the grouped
+  `wp_mcp_ai_settings` option) — not a standalone `get_option` — and may
+  keep a standalone-option fallback for WP-CLI compat (the magic-login
+  controller pattern, 2026-10-24).
+- **Grid overflow containment recipe (learned 2026-10-24).** When a card or
+  table blows past 100% width, the chain is track min-content → grid-item
+  `min-width: auto`. Fix with `minmax(0, …)` tracks + `min-width: 0;
+  overflow-x: auto` on the grid children (workflows page, Paper Store
+  page). The shared DataTable's 640px `min-width` is the usual culprit
+  inside narrow panes. Adjacent action buttons in a table cell get a gutter
+  via `.nvoos-pro-spa-page__retry + .nvoos-pro-spa-page__retry {
+  margin-left: 6px }` (Blueprints Install/Details, Approvals pair).
+- **SSE mid-stream frame bridging (AI SDK v1.2.12 has NO `onData` callback;
+  learned 2026-10-24, job_offload pass):** `chat-spa`'s `@ai-sdk/react@1.2.12`
+  `useChat` exposes no data-stream callback, so mid-stream server events
+  (e.g. the Phase 4b `job_offload` frame from a long-run offload) can't
+  reach React through the SDK. The shipped pattern: `sse-adapter.ts`
+  `translateFrame()` (already takes `assistantId`) dispatches a **window
+  `CustomEvent`** — `window.dispatchEvent(new CustomEvent('nvoos:job_offload',
+  { detail })`) — while also emitting the normal type-8 data annotation;
+  `useChatSpoke.ts` subscribes with `addEventListener`, filters by
+  `assistant_id`/`session_key`, toasts the status, and follows the job via
+  `wpMcPaiJobBus.watchJob(jobId)` → `setMessages` to append the final
+  assistant message. Reuse this bridge for any frame type the chat UI needs
+  but the SDK can't deliver; type the globals (`JobBusShape`/`JobBusWindow`)
+  on `window`. This is a spa-v2 source change, so the **two-bundle rule**
+  applies — rebuild BOTH `addons/pro/assets/spa-v2/assets/dist/` and
+  `examples/nvoos-complete-velocity/dist/`.
 
 ### Clean-install CI gate (the npm ci lockfile gotcha — PR #7171)
 
@@ -292,6 +519,22 @@ AND the standalone Vite app, without forking the widget.
   specifiers: from `__tests__/` mock `'../upstream/content-graph-admin'`,
   not `'./upstream/...'` — the wrong path silently leaves the REAL module
   active (symptom: `$ is not a function` from the real jQuery IIFE).
+- **Depth trap (Proposal 087):** the mock specifier must resolve to the SAME
+  absolute file as the page's own import. `vi.mock( '../../utils/x' )` from
+  `src/features/foo/__tests__/` resolves to `src/features/utils/x` — a
+  NONEXISTENT file — so the mock silently never applies and the real module
+  runs (symptom: `Number of calls: 0` on your `vi.fn()` mocks while the
+  page clearly works; no resolution error is raised). Count the levels from
+  the TEST file's directory: `features/foo/__tests__/` → `../../../utils/x`.
+- Components that call router hooks (`useNavigate`, `useLocation` — e.g.
+  ContentArea after Proposal 087) throw outside a router; wrap their test
+  renders in `<MemoryRouter>` via a `renderArea( ui )` helper instead of
+  scattering wrappers.
+- **Windows rolldown binding:** vitest on a Windows worktree can die at
+  startup with `Cannot find native binding` /
+  `Cannot find module '@rolldown/binding-win32-x64-msvc'` (npm bug #4828
+  skips optional deps). `npm install` in the addon repairs it — check the
+  lockfile stayed untouched before committing.
 - jsdom cannot run Cytoscape's canvas — mock the vendored factory + deps;
   test the config hand-off (`window.nvoosContentGraphAdmin` shape) and the
   destroy-on-unmount contract, not the vendored internals.
@@ -322,6 +565,122 @@ AND the standalone Vite app, without forking the widget.
   prefilter-removal API), never throwing. Any widget using `$.ajax` against
   the backend needs the same prefilter — the fetch wrapper alone is not
   enough.
+
+## Island embeds in the Pro SPA (Proposal 087 — self-contained React apps)
+
+Canonical case study: PR #7213 (merged 2026-10-24) replaced the sandboxed
+iframe framing of the Docs Hub / Media Studio / Document Editor with native
+imperative islands — the same shell-owns-config/auth contract as the
+knowledge-graph page, but for apps that ship their OWN React tree. Proposals:
+`docs/project/proposals/087-docs-hub-native-island-proposal.md` + the
+implementation-plan twin.
+
+### The three island variants
+
+| Variant | Apps | Mount | Asset delivery |
+|---|---|---|---|
+| **Vendored inline** | Docs Hub | static `import './upstream/docs-hub'` (IIFE executes at bundle load) | Inlined into `pro-spa.js` (~660 KB minified) |
+| **Lazy script asset** | Media Studio, Document Editor | `utils/island-assets.ts` `loadIslandScript()` (once per session) + `loadIslandStyle()` | `*Asset` / `*Css` endpoints (PHP `plugins_url`) or Vite `?url` imports in the standalone app |
+| **REST adapter** | OKF knowledge (docs page second source) | same vendored Docs Hub island, `apiUrl` remounted per source | `mcp-ai-pro/v1/okf/docs` serves the docs-hub manifest/pages/search shape |
+
+### Island API contract (the upstream apps, e.g. `addons/docs-hub/src/index.tsx`)
+
+1. Export `mountX( container: HTMLElement ): { unmount(): void }` and assign
+   it explicitly on `globalThis` (`window.NVoosDocsHub` /
+   `NVoosMediaStudio` / `NVoosDocumentEditor`) — REMOVE the esbuild
+   `globalName` option (an inlined IIFE's `var` never reaches `window`; the
+   explicit assignment does, and keeps the vendored file byte-identical).
+2. Add `defer_mount?: boolean` to the app's config type; the auto-mount DOM
+   scan returns early when it's set (the host mounts explicitly). Inject
+   the app's config global BEFORE the script loads so the scan sees the flag.
+3. Each unmount must teardown the React root (`root.unmount()`) — the page
+   calls it in its effect cleanup and deletes the injected global.
+
+### Hash ownership — islands must never write `window.location.hash`
+
+- Docs Hub uses a HashRouter internally → new MemoryRouter mode
+  (`config.router: 'memory'` + `DocRouterModeContext`); all internal links
+  normalized to path form (`to="/slug"`, not `/#/slug`), raw `#/…` content
+  anchors intercepted to `navigate()`, fragment scroll reads
+  `useLocation().hash`, skip link prevents default. Hash mode remains the
+  wp.org shortcode default.
+- Media Studio / Document Editor have no router, but their skip links
+  (`a.nvoos-skip-link[href^="#"]`) would still touch the hash — the pages
+  install `useIslandSkipLinkGuard()` (capture-phase listener: preventDefault
+  + focus the target).
+
+### Auth — postMessage bridge is gone
+
+- The `utils/auth-bridge.ts` `postAuthToChild()` was removed; pages inject
+  the headless credential straight into the island config global as an
+  `authorization` key (the islands already honoured that key for same-origin
+  hosts), origin-checked: only when `new URL(apiBase).origin ===
+  credential.siteOrigin`. Cookie mode passes the `wp_rest` nonce only.
+  `getAuthCredential()` + the `__NVOOS_AUTH__` slot remain (the standalone
+  app's `fetch-wrapper.ts` owns the slot).
+
+### Theming islands — host token bridge (2026-10-25)
+
+Industry pattern for embedded surfaces: **"map only design tokens"** — the
+host rebrands the island by remapping the island's own semantic variables at
+the boundary; it never restyles internals and never ports its design system
+in (the island stays standalone + byte-identical). The docs-hub bridge lives
+in `spa-v2/src/features/docs-hub/docs-hub.css`, with **theme forwarding** in
+DocsPage: the island theme comes from the UI store (resolved 'auto' →
+`matchMedia`), NOT the static runtime config, so the island follows the
+console's live light/dark toggle.
+
+```css
+/* Light bridge — SCOPED to a light host. The host's tokens flip with
+   data-theme, so an unscoped light bridge lets dark-host tokens leak into
+   the island's light mode (the "palettes look swapped" bug). */
+.nvoos-pro-spa-layout:not([data-theme='dark']) .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root {
+	--dh-accent-primary: var(--nds-color-accent, var(--nvoos-primary, #2563eb));
+	/* ... */
+}
+/* Independent dark — island manually toggled dark while the HOST is light:
+   the island's own palette, restored verbatim. */
+.nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root[data-theme='dark'], ... { ... }
+/* Host-dark — island dark mode follows the host's neutral dark tokens
+   (0-4-0 beats the verbatim counterpart). Plus a @media (prefers-color-scheme:
+   dark) twin for [data-theme='auto'] hosts (the attr stays 'auto'). */
+.nvoos-pro-spa-layout[data-theme='dark'] .nvoos-pro-spa-docs-hub__island .nvoos-docs-hub-root[data-theme='dark'], ... { ... }
+```
+
+Cascade rules learned: the bridge must be declared ON `.nvoos-docs-hub-root`
+(child-root declarations always beat container-level inheritance); the light
+bridge needs to outrank the island's light tokens (0-1-0); the verbatim dark
+counterpart must outrank the light bridge (same specificity, later file wins
+— the wrapper CSS imports AFTER the upstream file); the host-dark mapping
+needs one more level (0-4-0). Velocity-hosted apps never resolve `--nds-*`
+(the design-system addon generates them on WP pages only) — the fallback
+chain handles that by design.
+
+### Endpoints + mirror sync
+
+- `docsHub` / `mediaStudio` / `documentEditor` now carry **REST bases**
+  (e.g. `nvoos-media-studio/v1`), class/feature-flag-gated like
+  `contentGraph`; the `wp_mcp_ai_pro_spa_*_url` filters retained but now
+  take REST bases, not page/URLs.
+- The standalone app imports the island bundles via Vite `?url`
+  (`import x from '../../../addons/media-studio/assets/dist/media-studio.js?url'`).
+  The mirror (`sync-nvoos-pro-spa-standalone.yml`) must copy those dist
+  folders too — UNRESOLVED_IMPORT in the mirror build is the symptom when it
+  doesn't (the monorepo build stays green). Both dist folders are now in the
+  workflow's `paths` trigger as well.
+
+### Sync/release discipline
+
+- docs-hub: after ANY `addons/docs-hub/src` change, `npm run build` (dist is
+  tracked), copy `assets/dist/docs-hub.{js,css}` into
+  `spa-v2/src/features/docs-hub/upstream/` (byte-identical — verify with
+  `cmp`), rebuild `pro-spa.js`. The upstream apps' vitest suites run in CI
+  (docs-hub vitest needs `npm install` locally on Windows — see testing
+  gotchas below).
+- media-studio / document-editor: `npm run build` in the addon after src
+  changes; the dists are consumed directly (no vendored copy).
+- Bundle-size rule from the graph page still applies: media/document are
+  NOT inlined (2.7 MB + 1.7 MB) — they load lazily from their asset URLs.
 
 ## Component rules — headless only
 
@@ -458,6 +817,21 @@ bootstrap fixture and heavy-view mocks (see `api.test.tsx`).
 5. **jsdom pointer events lack `pointerType`** — Radix pointer paths are
    unreliable; prefer `user.click` on triggers/options (works form-free) or
    `fireEvent` for isolated cases.
+6. **DataTable cells need a fragment once they hold more than one element**
+   (Proposal 091, spa-v2 `WorkflowsPage`, 2026-10-27). `DataTableRow.cells`
+   entries are array items — a second sibling `<button>` in one cell fails
+   `tsc` with *TS2657: JSX expressions must have one parent element*. Wrap
+   the cell contents in `<>…</>` (see the preset-actions cell with
+   Load/Export buttons in `WorkflowsPage.tsx`).
+7. **Testing browser-download + confirm-gated flows in jsdom** (Proposal 091
+   DSL export/import tests, `workflows-page.test.tsx`). jsdom does not
+   implement `URL.createObjectURL`/`revokeObjectURL` — stub them per test
+   with `Object.defineProperty( URL, 'createObjectURL', { configurable:
+   true, value: () => 'blob:mock' } )` (same for `revokeObjectURL`), and
+   `vi.spyOn( HTMLAnchorElement.prototype, 'click' )` so the download anchor
+   never navigates. For dry-run-then-confirm flows, mock
+   `vi.spyOn( window, 'confirm' ).mockReturnValue( true )`; assert the import
+   endpoint was called twice by filtering `fetchMock.mock.calls` on the URL.
 
 ## Release bookkeeping
 
@@ -502,7 +876,7 @@ scope is the whole tree, not one addon. Verified inventory (2026-10-09):
 | Pro JS | `npm run build:js:pro` | **needs `addons/pro/node_modules`** — worktrees often lack it; run `(cd addons/pro && npm install --legacy-peer-deps --omit=optional --no-optional)` first. Bundles `generate-{pdf,word,excel}` + remotion into `addons/pro/bin/` |
 | docs-hub | `npm run build:docs-hub` | prebuild runs `npm ci` if `node_modules` missing |
 | workflow + TMA | `npm run build:workflow && npm run build:tma` | wp-scripts webpack → `addons/pro/build/` |
-| Pattern A SPAs | `toolkit-shell`, `chat-spa`, `comic-reader`, `librechat`, `media-studio`, `funiq-bridge`, `canvas-toolkit`, `document-editor`, `pro/assets/spa-v2` — esbuild `npm run build`; `page-agent` uses `node esbuild.config.js` (dev output, no `--prod`) | `npm ci` per addon when `node_modules` missing (lockfile is committed) |
+| Pattern A SPAs | `toolkit-shell`, `chat-spa`, `comic-reader`, `librechat`, `media-studio`, `nvoos-astro-bridge`, `canvas-toolkit`, `document-editor`, `pro/assets/spa-v2` — esbuild `npm run build`; `page-agent` uses `node esbuild.config.js` (dev output, no `--prod`) | `npm ci` per addon when `node_modules` missing (lockfile is committed) |
 | Pattern B SPA | `schedule-anything-spa` — `npm run build` (`tsc && vite build`) | |
 | Pattern C SPA | `saas-controller` — `npm run build` (worker esbuild + drift-manifest stamp + wp-scripts admin) | |
 | Legacy pro SPA | `addons/pro/assets/spa` — `npm run build` (wp-scripts webpack → `dist/`) | |
@@ -518,7 +892,20 @@ workflow only; use `--skip-canvas` on dev machines).
 
 Verification: deterministic bundles rebuild **byte-identical** — those files
 don't show in `git status`; only stale artifacts appear as modified. Check
-mtimes to confirm a build actually ran. Full run: ~15 min, mostly `npm ci`
+mtimes to confirm a build actually ran.
+
+**esbuild churn caveat (learned 2026-10-25, #7225/#7226):** the spa-v2
+bundle is the exception — rebuilding `pro-spa.js` with an **unchanged source
+graph** still diffs (minifier identifier churn, ~100 insertions/~100
+deletions). Before committing a rebuilt `pro-spa.js`, prove it carries a real
+change: `git show HEAD:<path> | tr -d '[:space:]'` vs the working copy +
+`cmp` (whitespace-stripped). Pure churn → `git checkout --` it. The same probe
+detects the opposite failure: a committed bundle that is STALE relative to
+its sources (someone merged spa-v2 JS changes without rebuilding) — don't
+sweep that unrelated staleness into your PR; flag it instead. `pro-spa.css`
+rebuilds cleanly for CSS-only changes (it concatenates the entry graph's CSS
+only — a console-only page like `features/remote-sites/` does NOT appear in
+it). Full run: ~15 min, mostly `npm ci`
 for saas-controller (2k+ deps). npm on dev machines blocks dependency install
 scripts (esbuild postinstall etc.) — harmless, platform binaries ship via
 optional deps.
@@ -534,6 +921,44 @@ bundle: #7158's squash only carried the plugin bundle, the console
 none of the fixes until #7159. After any rebuild-PR merge, verify each
 rebuild commit is an ancestor of the target branch
 (`git merge-base --is-ancestor <sha> origin/alpha-working`).
+
+**The sync workflow does NOT rebuild the console dist (learned
+2026-10-24).** `sync-nvoos-complete-velocity.yml` assembles the mirror from
+the **committed** `examples/nvoos-complete-velocity/dist/` (asset-closure
+check, npm-script no-ops, boot smoke) — it never runs Vite. A
+console-source change merged without `npm run sync:dist` + a dist commit
+ships the stale bundle to the mirror (case: #7206 merged carrying the
+#7205-era dist; fixed by the #7208 rebuild commit). Console source changes
+and their dist rebuild belong in the same PR.
+
+**Live-console staleness diagnosis (learned 2026-10-27, pagination #7239
+case).** A spa-v2 feature can be present in the source AND in the plugin
+`pro-spa.js` bundle yet still be missing from the live console — the
+two-bundle violation is often **one-sided**; check both trees separately.
+Browser-side signature: DevTools → Network shows the page chunk with a
+content hash (`RecordsPage-BkrX3yyH.js`); if the same hash exists in
+`examples/nvoos-complete-velocity/dist/assets/`, the repo's **committed**
+dist is stale (not the deploy). Confirm with
+`git show --stat <feature-commit> -- examples/nvoos-complete-velocity`
+(empty output = that PR never rebuilt the console) and
+`git log --oneline -1 -- examples/nvoos-complete-velocity/dist` vs the
+feature commit. The fix needs **no source edits**: `npm run build` in
+`examples/nvoos-complete-velocity` (the Vite alias compiles current spa-v2
+in), `npm test` (console gate — 87/87 as of this case), verify the new page
+chunk imports the new feature chunk (`Pagination-*.js`) and wires its props
+(`footer: …`), commit the dist, PR — the sync workflow then ships the
+committed dist to the mirror and Velocity redeploys. Grep caveat: the page
+chunk itself may show 0 hits for the feature's CSS class names (`__pager`)
+— they live in the imported feature chunk; grep for the import + the JSX
+prop wiring instead. Case: `#/professions` and the other Records groups
+showed no pager on pro.nvoos.cloud although #7239 had landed in spa-v2 —
+root cause was the console `dist/` predating the PR (live chunk hashes
+matched the stale repo chunks exactly). Backend-log tell: the old bundle's
+RecordsPage requests `/wp-json/wp/v2/<cpt>?per_page=50&context=edit&_fields=…`
+have **no `page=` param**; the paginated bundle adds `page=N` — grepping the
+app's access log for that signature dates exactly when the new bundle went
+live (verified 2026-10-27: `page=1..4` appeared at 07:10 UTC, 33 min after
+the 06:37 sync).
 
 ### Rebuild discipline — staleness, vendor, drift (learned 2026-10-22)
 
