@@ -6,7 +6,7 @@
 // same-origin /api/* proxy (cookies/CORS never involved).
 // ---------------------------------------------------------------------------
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE || '/api';
 
@@ -21,6 +21,13 @@ export default function PromoCodeField() {
 	const [result, setResult] = useState<ValidationResult | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
+	// Hydration marker: the island is client:visible, and the e2e waits on
+	// this attribute before interacting (the toPass retry pattern cannot
+	// distinguish a not-yet-hydrated island from a slow response).
+	const [hydrated, setHydrated] = useState(false);
+	useEffect(() => {
+		setHydrated(true);
+	}, []);
 
 	const validate = async (): Promise<void> => {
 		const trimmed = code.trim();
@@ -52,7 +59,7 @@ export default function PromoCodeField() {
 	};
 
 	return (
-		<div className="promo-field">
+		<div className="promo-field" data-hydrated={hydrated ? 'true' : 'false'}>
 			<label htmlFor="promo-code">Promo code</label>
 			<div className="promo-field__row">
 				<input

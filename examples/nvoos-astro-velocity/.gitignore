@@ -16,6 +16,9 @@ dist/
 # staging
 scripts/.mirror-staging/
 
+# e2e artifacts
+test-results/
+
 # runtime design state (Proposal 095 Phase 4 — durable TokenService state,
 # created next to NVOOS_MCP_STATE_FILE; never committed)
 .nvoos/

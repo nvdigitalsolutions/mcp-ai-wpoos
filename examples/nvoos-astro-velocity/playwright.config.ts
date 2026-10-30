@@ -31,6 +31,9 @@ export default defineConfig({
 			env: {
 				...process.env,
 				NVOOS_TARGET_SITE: 'http://localhost:8123',
+				// The MCP manager-session gate verifies cookies against the
+				// contract auth surface (fixture /auth/me).
+				NVOOS_SSR_API_ORIGIN: 'http://localhost:8123/wp-json/nvoos-commerce/v1',
 			},
 		},
 	],

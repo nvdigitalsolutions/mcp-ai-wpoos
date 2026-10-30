@@ -59,7 +59,7 @@ to stay secure — on Velocity:
 |---|---|---|
 | `NVOOS_MCP_TOKEN` | **yes** | Bearer token accepted by the write gate (constant-time compare). Generate a long random value; store in Vault and in the NV oOS Remote Sites connection credentials — never in the repo |
 | `NVOOS_MCP_HOSTS` | **yes** | Comma-separated Host allowlist (MCP DNS-rebinding guard). Default is `localhost,127.0.0.1,[::1]` — on Velocity set `astro.nvoos.cloud` (plus any test hostname) or every `/mcp` request is rejected |
-| `NVOOS_MCP_ORIGINS` | no | Comma-separated browser-origin allowlist. Empty = browser-based clients denied (CLI/plugin clients don't send Origin) |
+| `NVOOS_MCP_ORIGINS` | no | Comma-separated browser-origin allowlist for **cross-origin** clients. Same-origin browser requests (the /manage Design tab) are allowed automatically when the Origin host matches the Host-validated request host; empty = cross-origin browsers denied (CLI/plugin clients don't send Origin) |
 | `NVOOS_MCP_RATE_MAX` / `NVOOS_MCP_RATE_WINDOW_MS` | no | Per-IP rate limit (default 120 requests / 60 000 ms). Per-instance, not fleet-wide |
 | `NVOOS_MCP_STATE_FILE` | no | Durable design-state path (default off). Set e.g. `/var/data/nvoos-design-state.json` so token/theme changes survive restarts; the dir must be writable by the node process |
 | `NVOOS_SSR_API_ORIGIN` | no | Origin the server uses to verify manager sessions (`/auth/me`) and to resolve contract calls from tools; falls back to `NVOOS_API_BASE` |

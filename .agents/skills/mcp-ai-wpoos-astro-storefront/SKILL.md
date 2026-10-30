@@ -149,34 +149,58 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   the Linux CI `npm run build` at `build:mcp` (PR #7303). Use the esbuild JS
   API (`import { build } from 'esbuild'`) — it resolves the platform binary
   itself; `scripts/build-mcp.mjs` was rewritten this way.
-- **20 tools** (`SERVER_VERSION` 0.2.0): design (10 — `tokens_get/set/import_dtcg/rollback`,
+- **21 tools** (`SERVER_VERSION` 0.2.0): design (10 — `tokens_get/set/import_dtcg/rollback`,
   `theme_*`, `contrast_check`; bulk writes transactional: validate → dry-run
   diff → snapshot → all-or-nothing), CMS (6 — `cms_list/get/create/update/delete`,
   `media_upload` over `commerce/client.ts`, collection allowlist, `limit` ≤ 100),
-  ops (4 — `site_status`, `preview_url`, `rebuild_trigger`, `screenshot`).
+  ops (5 — `site_status`, `preview_url`, `rebuild_trigger`, `screenshot`,
+  `nds_export` — the NDS DTCG document + mapping report for the 4.2 round-trip).
   Tool handlers read the request cookie/env through `mcp/context.ts`
   (AsyncLocalStorage set in `bff.ts`).
 - **Auth is fail-closed, split by surface:** reads open; design writes accept
   bearer `NVOOS_MCP_TOKEN` (timing-safe) OR a manager session (`canManage`
   via `/auth/me`); **contract writes (`cms_*` writes, `media_upload`) require
   the manager cookie** (backend enforces `manage_astro` anyway — fail fast
-  with a useful error). Per-IP rate limit (429 `-32029`,
+  with a useful error). Same-origin browser requests (Origin host == the
+  Host-validated request host) bypass the Origin allowlist — that is what
+  the /manage Design tab rides on. Per-IP rate limit (429 `-32029`,
   `NVOOS_MCP_RATE_MAX`/`_WINDOW_MS`, default 120/min), Host/Origin allowlists
   (`NVOOS_MCP_HOSTS` **must** include the public hostname — default is
   localhost-only), audit line per write call. `screenshot` is opt-in
   (`NVOOS_MCP_SCREENSHOT=1`) and path-only input (SSRF-safe by construction,
   per MCP Security Best Practices).
+- **Env snapshot discipline:** `createAstroMcpNodeHandler` snapshots its env,
+  and `serve.mjs` passes a pre-rewrite snapshot — serve rewrites
+  `NVOOS_SSR_API_ORIGIN` to the loopback BFF origin for the SSR commerce
+  client, and without the snapshot the manager-session check pointed at the
+  BFF itself (every manager write 401; incident 2026-10-30, pinned by a
+  handshake regression test).
 - **Durability:** token/theme runtime state persists across restarts when
   `NVOOS_MCP_STATE_FILE` is set (atomic tmp+rename writes,
   `src/lib/tokens/persistence.ts`); otherwise process-local.
+- **The /manage Design System tab** (`addons/nvoos-astro-bridge`:
+  `DesignView.tsx` + `src/lib/mcp-client.ts`) is itself an MCP client — it
+  posts to the same-origin `/mcp` with the manager cookie (no extra REST
+  surface). Ships via `npm run build:standalone` → `scripts/sync-manage-assets.mjs`
+  → committed `public/manage-assets/` (two-bundle drift gate).
+- **NDS round-trip (4.2):** `nds_export` (app) emits the NDS DTCG shape;
+  `addons/nvoos-design-system` gained `class-nvoos-nds-dtcg-importer.php`
+  (static `prepare()` + all-or-nothing `import()`, 256 KB cap, rejects
+  `{core.x}` references) + an admin import surface. Mapping table lives in
+  `mcp/tools/ops.ts` (`ADS_TO_NDS`; accent-ink/danger/focus-ring reported
+  unmapped — NDS has no equivalents).
 - **Dual-era wire serving** (modern 2026-07-28 + 2025 stateless fallback) —
   all wire shapes, the validation ladder, and the `registerTool` factory
   gotcha live in the `mcp-ai-sdk-v2-server-ops` skill; conformance tests in
   `tests/mcp/handshake.test.ts` cover both eras + the write-auth gate.
 - The hermetic assistant loop lives in `tests/mcp/rebrand-loop.test.ts`
   (fixture server on :8131: tokens_get → dry-run → apply → contrast →
-  rollback → cms_list); `tests/unit/contrast-audit.test.ts` is the WCAG 2.2
-  gate (SC 1.4.3 4.5:1 / SC 1.4.11 3:1 per pair, with coverage meta-tests).
+  rollback → cms_list); the browser loop + the Design tab live in
+  `tests/e2e/rebrand-loop.spec.ts` (fixture manager seam:
+  `nvoos_fixture_manager=1` cookie grants `canManage`);
+  `tests/unit/contrast-audit.test.ts` is the WCAG 2.2 gate (SC 1.4.3 4.5:1 /
+  SC 1.4.11 3:1 per pair, with coverage meta-tests; `field.border` now rides
+  the additive `line-strong` token).
 
 ### Known TODOs (annotated `TODO(095-*)` in code)
 
@@ -186,11 +210,13 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   `scripts/lib/mcp-build.mjs`); the npm `build` chain no longer runs
   `build:mcp` pre-build.
 - ~~Phase 1 contrast audit; Phase 3 CMS/ops slices + screenshot; Phase 4
-  durability~~ — all closed 2026-10-30 (gap-closure cluster). Remaining
-  (single follow-up issue): `/manage` Design tab (4.1 — bridge admin SPA,
-  cross-addon), NDS round-trip push-back (4.2 — needs the NDS addon), the
-  `field.border` sub-AA sweep (SC 1.4.11, documented-not-gated in
-  `tests/unit/contrast-audit.test.ts`), and the browser-level rebrand e2e.
+  durability~~ — all closed 2026-10-30 (gap-closure cluster). Also closed in
+  the follow-up cluster: the /manage Design tab (4.1), the NDS importer +
+  `nds_export` round-trip (4.2), the `field.border` SC 1.4.11 fix
+  (`line-strong`), and the browser rebrand e2e. **Remaining:** the 3.4 NV
+  oOS connection recipe needs live-install verification (documented in the
+  app README + this skill); optionally the NDS WP 7.1 WooCommerce-stub
+  skip-gate fix (pre-existing, unrelated).
 - Cross-surface sharing of these tokens (NDS addon + Pro SPA v2 palettes) is
   scoped in Proposal 097.
 

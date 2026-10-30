@@ -45,6 +45,7 @@ require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-token-registry
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-css-generator.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-assets.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-dtcg-exporter.php';
+require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-dtcg-importer.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/emails/class-nvoos-nds-email-template-cpt.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/emails/class-nvoos-nds-email-template-registry.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/emails/class-nvoos-nds-email-renderer.php';

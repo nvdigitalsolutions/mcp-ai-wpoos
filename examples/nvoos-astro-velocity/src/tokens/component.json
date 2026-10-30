@@ -13,7 +13,7 @@
 		"radius": { "$type": "dimension", "$value": "{semantic.radius}" }
 	},
 	"field": {
-		"border": { "$type": "color", "$value": "{semantic.line}" },
+		"border": { "$type": "color", "$value": "{semantic.line-strong}" },
 		"radius": { "$type": "dimension", "$value": "{semantic.radius}" },
 		"padding-y": { "$type": "dimension", "$value": "0.5rem" }
 	}

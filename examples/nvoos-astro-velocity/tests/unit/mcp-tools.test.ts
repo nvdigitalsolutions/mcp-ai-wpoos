@@ -311,4 +311,19 @@ describe('ops tools', () => {
 		expect(message.result?.isError).toBe(true);
 		expect(textOf(message)).toContain('NVOOS_MCP_SCREENSHOT');
 	});
+
+	it('nds_export emits the NDS DTCG document with the mapping report', async () => {
+		const { message } = await call(mainPort, 'nds_export', {});
+		expect(message.error).toBeUndefined();
+		const sc = message.result?.structuredContent as {
+			doc?: { colors?: Record<string, { $type: string; $value: string }> };
+			imported?: string[];
+			unmapped?: unknown[];
+		};
+		expect(sc.doc?.colors?.color_accent?.$type).toBe('color');
+		expect(sc.doc?.colors?.color_accent?.$value).toMatch(/^#/);
+		expect(sc.imported).toContain('accent -> colors.color_accent');
+		expect(sc.imported).toContain('radius -> borders.radius_md');
+		expect(sc.unmapped?.length).toBeGreaterThanOrEqual(3);
+	});
 });
