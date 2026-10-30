@@ -69,13 +69,16 @@ every other surface; manager sign-in is the contract's own REST auth flow.
 - **CMS (6)** — `cms_list/get/create/update/delete`, `media_upload` over the
   commerce contract (collection allowlist, `limit` ≤ 100; writes require a
   manager session cookie — the backend enforces `manage_astro`).
-- **Ops (4)** — `site_status`, `preview_url`, `rebuild_trigger` (webhook env),
-  `screenshot` (opt-in `NVOOS_MCP_SCREENSHOT=1`, path-only input).
+- **Ops (5)** — `site_status`, `preview_url`, `rebuild_trigger` (webhook env),
+  `screenshot` (opt-in `NVOOS_MCP_SCREENSHOT=1`, path-only input),
+  `nds_export` (the NDS DTCG document for the Design System round-trip).
 
 Auth is fail-closed: reads are public; design writes accept an
-`Authorization: Bearer <NVOOS_MCP_TOKEN>` **or** a manager session cookie.
+`Authorization: Bearer <NVOOS_MCP_TOKEN>` **or** a manager session cookie;
+contract writes (cms_* writes, media_upload) require the manager cookie.
 Host/Origin allowlists (DNS-rebinding guards), a per-IP rate limit, and audit
-log lines sit in front of the handler.
+log lines sit in front of the handler. The /manage **Design System tab** is
+itself an MCP client over the same-origin endpoint (manager cookie).
 
 Connect:
 

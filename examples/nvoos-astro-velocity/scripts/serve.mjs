@@ -47,8 +47,14 @@ const PROXY_CACHE_MAX_TTL = Number(process.env.NVOOS_PROXY_CACHE_MAX_TTL) || 300
 // by the nvoos-astro-mcp-build integration's astro:build:done hook during
 // every astro build (dev/manual: npm run build:mcp). Absent in a dev tree
 // without a build; /mcp then falls through to the Astro handler.
+// Snapshot the env BEFORE the SSR-origin rewrite below — the handler reads
+// NVOOS_SSR_API_ORIGIN at request time to verify manager sessions, and the
+// rewrite (loopback BFF origin for the SSR commerce client) would otherwise
+// point that check at the BFF itself (incident 2026-10-30: /mcp manager
+// writes 401 on every deployment).
+const mcpEnv = { ...process.env };
 const mcpHandler = await import('../dist/mcp-entry.mjs')
-	.then((mod) => mod.createAstroMcpNodeHandler(process.env))
+	.then((mod) => mod.createAstroMcpNodeHandler(mcpEnv))
 	.catch((error) => {
 		if (error.code !== 'ERR_MODULE_NOT_FOUND') {
 			console.error('[serve] /mcp disabled — dist/mcp-entry.mjs failed to load:', error.message);

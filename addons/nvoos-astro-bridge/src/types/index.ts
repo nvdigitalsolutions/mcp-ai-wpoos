@@ -121,5 +121,5 @@ export type CollectionSlug =
 	| 'promotions'
 	| 'promocodes';
 
-/** Sidebar navigation targets — collections plus the managers section. */
-export type NavSlug = CollectionSlug | 'managers';
+/** Sidebar navigation targets — collections plus the managers and design sections. */
+export type NavSlug = CollectionSlug | 'managers' | 'design';

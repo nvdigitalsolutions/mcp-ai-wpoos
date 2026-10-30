@@ -164,6 +164,7 @@ class NV_oOS_Design_System_Admin_Page {
 			<div class="nvoos-nds-sidebar">
 				<?php $this->render_preview_pane( $css_vars ); ?>
 				<?php $this->render_export_section(); ?>
+				<?php $this->render_import_section(); ?>
 			</div>
 		</div>
 		<?php
@@ -417,6 +418,96 @@ class NV_oOS_Design_System_Admin_Page {
 					</a>
 				</p>
 			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the DTCG import section.
+	 *
+	 * Shows the paste form plus the report left behind by
+	 * NV_oOS_Design_System_Plugin::handle_dtcg_import() (imported count,
+	 * skipped tokens, and errors).
+	 *
+	 * @return void
+	 */
+	private function render_import_section() {
+		$import_url = admin_url( 'admin-post.php?action=nvoos_nds_import_dtcg' );
+		$report     = NV_oOS_Design_System_Plugin::consume_import_report();
+		?>
+		<div class="nvoos-nds-import postbox">
+			<div class="postbox-header">
+				<h2><?php esc_html_e( 'Import Tokens (DTCG)', 'nvoos-design-system' ); ?></h2>
+			</div>
+			<div class="inside">
+				<p class="description">
+					<?php esc_html_e( 'Paste a DTCG JSON document (from the exporter above or the ADS nds_export tool) to restore token values. The import is all-or-nothing: if any token fails validation, no token is changed.', 'nvoos-design-system' ); ?>
+				</p>
+				<form method="post" action="<?php echo esc_url( $import_url ); ?>">
+					<?php wp_nonce_field( 'nvoos_nds_dtcg_import', 'nvoos_nds_dtcg_nonce' ); ?>
+					<textarea name="nds_dtcg_json" rows="8" class="large-text code"
+						placeholder="<?php esc_attr_e( '{"colors":{"color_accent":{"$type":"color","$value":"#8b9f48"}}}', 'nvoos-design-system' ); ?>"></textarea>
+					<p>
+						<?php submit_button( __( 'Import DTCG', 'nvoos-design-system' ), 'secondary', 'nvoos_nds_import_submit', false ); ?>
+					</p>
+				</form>
+				<?php
+				if ( null !== $report ) {
+					$this->render_import_report( $report );
+				}
+				?>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render a DTCG import report.
+	 *
+	 * @param array $report Report produced by NV_oOS_Design_System_DTCG_Importer.
+	 * @return void
+	 */
+	private function render_import_report( $report ) {
+		$imported = isset( $report['imported'] ) && is_array( $report['imported'] ) ? $report['imported'] : array();
+		$skipped  = isset( $report['skipped'] ) && is_array( $report['skipped'] ) ? $report['skipped'] : array();
+		$errors   = isset( $report['errors'] ) && is_array( $report['errors'] ) ? $report['errors'] : array();
+		?>
+		<div class="nvoos-nds-import-report">
+			<?php if ( ! empty( $errors ) ) : ?>
+				<div class="notice notice-error inline">
+					<p><?php esc_html_e( 'Import failed — no tokens were applied.', 'nvoos-design-system' ); ?></p>
+					<ul>
+						<?php foreach ( $errors as $error ) : ?>
+							<li><?php echo esc_html( $error ); ?></li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php elseif ( ! empty( $imported ) ) : ?>
+				<div class="notice notice-success inline">
+					<p>
+						<?php
+						printf(
+							/* translators: %d: number of imported tokens */
+							esc_html( _n( 'Imported %d token.', 'Imported %d tokens.', count( $imported ), 'nvoos-design-system' ) ),
+							(int) count( $imported )
+						);
+						?>
+					</p>
+				</div>
+			<?php else : ?>
+				<div class="notice notice-info inline">
+					<p><?php esc_html_e( 'No tokens were imported.', 'nvoos-design-system' ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $skipped ) ) : ?>
+				<p class="description"><?php esc_html_e( 'Skipped (unknown tokens):', 'nvoos-design-system' ); ?></p>
+				<ul>
+					<?php foreach ( $skipped as $skip ) : ?>
+						<li><?php echo esc_html( isset( $skip['id'] ) ? $skip['id'] : '' ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
 		</div>
 		<?php
 	}

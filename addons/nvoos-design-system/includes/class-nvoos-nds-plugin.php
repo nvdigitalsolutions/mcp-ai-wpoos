@@ -81,6 +81,16 @@ class NV_oOS_Design_System_Plugin {
 	const AI_PROVIDER_KEY = 'nvoos_nds_ai_provider';
 
 	/**
+	 * Transient key prefix for the pending DTCG import report.
+	 *
+	 * The full key is suffixed with the current user ID so reports never
+	 * leak between admins.
+	 *
+	 * @var string
+	 */
+	const IMPORT_REPORT_KEY = 'nvoos_nds_dtcg_import_report';
+
+	/**
 	 * Legacy option keys migrated on first load.
 	 *
 	 * @var array<string, string>
@@ -161,6 +171,7 @@ class NV_oOS_Design_System_Plugin {
 			add_action( 'admin_menu', array( __CLASS__, 'register_admin_page' ), 20 );
 			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
 			add_action( 'admin_post_nvoos_nds_export_dtcg', array( __CLASS__, 'handle_dtcg_export' ) );
+			add_action( 'admin_post_nvoos_nds_import_dtcg', array( __CLASS__, 'handle_dtcg_import' ) );
 			add_action( 'admin_post_nvoos_nds_email', array( __CLASS__, 'handle_email_admin_post' ) );
 
 			// Legacy export action from the Crocoblock DS addon.
@@ -400,9 +411,57 @@ class NV_oOS_Design_System_Plugin {
 		header( 'Content-Disposition: attachment; filename="nvoos-design-system-tokens.dtcg.json"' );
 		header( 'Content-Length: ' . strlen( $json ) );
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — JSON is safe to output in a download context.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON is safe to output in a download context.
 		echo $json;
 		exit;
+	}
+
+	/**
+	 * Handle DTCG JSON import submission.
+	 *
+	 * Triggered via admin-post.php when the user submits the "Import DTCG"
+	 * form on the Tokens tab. The importer's report is stored in a
+	 * short-lived, user-scoped transient and rendered on the next page load.
+	 *
+	 * @return void
+	 */
+	public static function handle_dtcg_import() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions.', 'nvoos-design-system' ) );
+		}
+
+		check_admin_referer( 'nvoos_nds_dtcg_import', 'nvoos_nds_dtcg_nonce' );
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Missing -- raw JSON, parsed by the importer; nonce verified above.
+		$json = isset( $_POST['nds_dtcg_json'] ) ? wp_unslash( $_POST['nds_dtcg_json'] ) : '';
+
+		$importer = new NV_oOS_Design_System_DTCG_Importer( self::token_registry() );
+		$report   = $importer->import( $json );
+
+		set_transient( self::IMPORT_REPORT_KEY . '_' . get_current_user_id(), $report, 5 * MINUTE_IN_SECONDS );
+
+		$redirect = isset( $_REQUEST['_wp_http_referer'] )
+			? sanitize_text_field( wp_unslash( $_REQUEST['_wp_http_referer'] ) )
+			: admin_url( 'options-general.php?page=nvoos-nds-settings&tab=tokens' );
+
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
+	/**
+	 * Read (and clear) the pending DTCG import report for the current user.
+	 *
+	 * Used by the admin page to render the import result after the
+	 * admin-post redirect.
+	 *
+	 * @return array|null Import report, or null when none is pending.
+	 */
+	public static function consume_import_report() {
+		$key    = self::IMPORT_REPORT_KEY . '_' . get_current_user_id();
+		$report = get_transient( $key );
+		delete_transient( $key );
+
+		return is_array( $report ) ? $report : null;
 	}
 
 	/**

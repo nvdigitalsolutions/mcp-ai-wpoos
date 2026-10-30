@@ -16,16 +16,19 @@ Shipped in the gap-closure cluster (PR stacked on #7318):
 
 | Gap | Where it landed |
 |---|---|
-| P1 contrast gate | `tests/unit/contrast-audit.test.ts` — WCAG 2.2 pairs per theme + coverage meta-tests (every semantic/component color must be gated or documented). Current values pass; no theme fixes needed. One known sub-AA pair (`field.border` line-on-surface, ~1.27–1.36:1) is documented-not-gated — see the issue filed for the Phase 4 sweep |
+| P1 contrast gate | `tests/unit/contrast-audit.test.ts` — WCAG 2.2 pairs per theme + coverage meta-tests (every semantic/component color must be gated or documented). 2026-10-30: `field.border` moved to the new additive `line-strong` token (light #767676 / dark #8a8a8a) and is now gated at SC 1.4.11; `line` is documented-ungated (decorative hairline, SC 1.4.11 covers only identifying parts) |
 | P3.1 CMS slice | `mcp/tools/cms.ts` — `cms_list/get/create/update/delete` + `media_upload` over the commerce contract (collection allowlist, `limit` ≤ 100, manager-cookie-gated writes, backend 401/404 passthrough as `isError`) |
 | P3.2 ops slice | `mcp/tools/ops.ts` — `site_status`, `preview_url`, `rebuild_trigger` (env-configured webhook, disabled when unset) |
 | P4.3 screenshot | `screenshot` tool in `mcp/tools/ops.ts` — opt-in (`NVOOS_MCP_SCREENSHOT=1`), path-only input (SSRF-safe by construction), viewport-capped PNG |
 | P4 durability | `src/lib/tokens/persistence.ts` + `TokenService({ persistPath })` — atomic (tmp+rename) state file, fail-safe load, persist-after-commit only; env `NVOOS_MCP_STATE_FILE` |
-| Security checklist | rate limiter (`mcp/ratelimit.ts`, 429 `-32029`), audit log line per write call, `mcp/` added to the contract grep gate, request context (`mcp/context.ts`, AsyncLocalStorage) for per-request cookie/env |
-| P3.3 rebrand loop | `tests/mcp/rebrand-loop.test.ts` — hermetic HTTP loop against the real fixture server (dry-run → apply → contrast AA → rollback → cms_list) |
-| Tool count | 20 tools total (10 design + 6 cms + 4 ops) — handshake `tools/list` assertion updated; `SERVER_VERSION` 0.2.0 |
+| Security checklist | rate limiter (`mcp/ratelimit.ts`, 429 `-32029`), audit log line per write call, `mcp/` added to the contract grep gate, request context (`mcp/context.ts`, AsyncLocalStorage), same-origin Origin pass-through for browser clients |
+| P3.3 rebrand loop | `tests/mcp/rebrand-loop.test.ts` (hermetic HTTP loop) **+ `tests/e2e/rebrand-loop.spec.ts`** (real-browser loop + the /manage Design tab, manager-cookie auth over /mcp, fixture manager seam) |
+| P4.1 `/manage` Design tab | `addons/nvoos-astro-bridge` — `DesignView.tsx` + `mcp-client.ts` (SPA is an MCP client over same-origin `/mcp`, manager cookie), System nav section, shipped in `public/manage-assets/` via the standalone build + sync loop |
+| P4.2 NDS round-trip | App side: `nds_export` tool (ADS semantic → NDS DTCG doc + mapping report). NDS side: `addons/nvoos-design-system/includes/class-nvoos-nds-dtcg-importer.php` (prepare/apply split, all-or-nothing, 256 KB cap, reference rejection) + admin import surface + 10-test PHPUnit suite |
+| Tool count | 21 tools total (10 design + 6 cms + 5 ops) — handshake `tools/list` assertion updated; `SERVER_VERSION` 0.2.0 |
+| BFF env bug | `serve.mjs` snapshots env for the MCP handler BEFORE its SSR-origin rewrite (`NVOOS_SSR_API_ORIGIN` → loopback), and `createAstroMcpNodeHandler` snapshots its env — without both, every manager-cookie write 401'd (incident 2026-10-30, regression test in `tests/mcp/handshake.test.ts`) |
 
-Still open (single follow-up cluster, issue filed): 4.1 `/manage` Design System tab (bridge admin SPA — cross-addon), 4.2 NDS round-trip push-back (needs the NDS addon import API), the `field.border` SC 1.4.11 sweep, and the browser-level rebrand e2e (`tests/e2e/rebrand-loop.spec.ts`).
+Still open: only **3.4 live verification** — the NV oOS Remote Sites → MCP Server connection recipe is documented (app README + ops skill) but needs a live NV oOS install to verify end-to-end; plus the optional NDS WP 7.1 WooCommerce-stub skip-gate fix (pre-existing, unrelated to this track).
 
 ### Standards applied (researched 2026-10-30, with sources)
 
@@ -204,6 +207,7 @@ For every new tool added to `mcp/` (applied in the 2026-10-30 pass):
 - [x] Rate limiting on `/mcp` — in-memory fixed-window per IP (`NVOOS_MCP_RATE_MAX`/`NVOOS_MCP_RATE_WINDOW_MS`, defaults 120/min), 429 JSON-RPC `-32029` before any handler work (denial-of-service + write-amplification guard; documented as per-instance, not fleet-wide).
 - [x] Tool-execution telemetry + activity log lines for every MCP write call (`[mcp] audit tool=… via=… ip=…`); plugin-side bridged tools already emit telemetry.
 - [x] Contract grep gate extended to `mcp/` (no WP-specific endpoints).
+- [x] Same-origin browser requests bypass the Origin allowlist only when the Origin host matches the Host-validated request host (the /manage Design tab path); cross-origin browsers still require `NVOOS_MCP_ORIGINS`.
 
 ## 10. Effort & sequencing
 

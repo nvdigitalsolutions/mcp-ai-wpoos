@@ -39,6 +39,8 @@ const TEXT_PAIRS: Array<{ fg: string; bg: string }> = [
 // same floor SC 1.4.3 applies to large text). Threshold: 3:1.
 const UI_PAIRS: Array<{ fg: string; bg: string }> = [
 	{ fg: 'accent', bg: 'surface' },
+	{ fg: 'line-strong', bg: 'surface' },
+	{ fg: 'line-strong', bg: 'surface-alt' },
 ];
 
 // --- Component pairs ---------------------------------------------------------
@@ -83,16 +85,13 @@ interface ComponentPair {
 //   - btn.border vs surface — the button boundary against the page surface;
 //     a non-text UI part required to identify the control → UI pair,
 //     SC 1.4.11 → 3:1.
-//   - field.border vs surface — resolves to {semantic.line}, a hairline
-//     (~1.27:1 light / ~1.36:1 dark) below SC 1.4.11's 3:1. Deliberately NOT
-//     gated this phase: the legacy --nv-line value is pinned by the zero-
-//     visual-drift gate and default.json.light is not emitted to CSS, so a
-//     theme-only value fix would desync the runtime from the rendered site.
-//     Flagged for the Phase 4 UI sweep, which can also adjust core.json.
+//   - field.border vs surface — resolves to {semantic.line-strong} (the
+//     additive SC 1.4.11 fix, 2026-10-30): a form-field boundary must reach
+//     3:1 against the page surface → UI pair, SC 1.4.11 → 3:1.
 const COMPONENT_PAIRS: ComponentPair[] = [
 	{ fg: 'btn.color', bg: 'btn.background', min: 4.5, sc: '1.4.3', note: 'button label text on the button fill — text pair' },
 	{ fg: 'btn.border', bg: 'surface', min: 3, sc: '1.4.11', note: 'button boundary on the page surface — UI pair' },
-	{ fg: 'field.border', bg: 'surface', min: null, sc: '1.4.11', note: 'hairline border — below 3:1 by design; deferred to the Phase 4 UI sweep' },
+	{ fg: 'field.border', bg: 'surface', min: 3, sc: '1.4.11', note: 'form-field boundary on the page surface — UI pair (line-strong)' },
 ];
 
 // --- Mode palettes -----------------------------------------------------------
@@ -138,6 +137,15 @@ function semanticColorNames(tree: unknown): string[] {
 
 const SEMANTIC_COLORS = semanticColorNames(semanticSource);
 
+/**
+ * Semantic colors deliberately not gated, with rationale. SC 1.4.11 applies
+ * to parts required to identify a component — decorative hairlines are
+ * exempt, and the form-field boundary uses the gated line-strong instead.
+ */
+const DOCUMENTED_UNGATED: Record<string, string> = {
+	line: 'decorative hairline/divider — not required to identify a control; field borders use line-strong',
+};
+
 function checkPair(fg: string, bg: string, min: number, label: string): void {
 	const ratio = contrastRatio(fg, bg);
 	expect(ratio, `${label}: ${fg} on ${bg}`).not.toBeNull();
@@ -170,6 +178,7 @@ describe('WCAG 2.2 contrast audit (Phase 1 gate)', () => {
 		}
 		for (const name of Object.values(COMPONENT_REFS)) covered.add(name);
 		for (const name of SEMANTIC_COLORS) {
+			if (DOCUMENTED_UNGATED[name]) continue; // documented, deliberately ungated
 			expect(covered.has(name), `semantic color ${name} is not covered by the audit`).toBe(true);
 		}
 	});

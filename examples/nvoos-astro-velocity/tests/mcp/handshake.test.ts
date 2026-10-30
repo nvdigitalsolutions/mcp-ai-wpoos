@@ -105,6 +105,7 @@ const EXPECTED_TOOLS = [
 	'preview_url',
 	'rebuild_trigger',
 	'screenshot',
+	'nds_export',
 ];
 
 describe('nvoos-astro-mcp HTTP conformance', () => {
@@ -205,6 +206,72 @@ describe('nvoos-astro-mcp HTTP conformance', () => {
 		);
 		expect(status).toBe(401);
 		expect(message.error?.code).toBe(-32001);
+	});
+
+	it('allows same-origin browser requests (the /manage Design tab)', async () => {
+		const { status } = await rpc(
+			{
+				jsonrpc: '2.0',
+				id: 60,
+				method: 'tools/list',
+				params: { ...modernEnvelope() },
+			},
+			{ ...modernHeaders('tools/list'), origin: `http://127.0.0.1:${PORT}` }
+		);
+		expect(status).toBe(200);
+	});
+
+	it('rejects cross-origin browser requests when no origin allowlist is set', async () => {
+		const { status } = await rpc(
+			{
+				jsonrpc: '2.0',
+				id: 61,
+				method: 'tools/list',
+				params: { ...modernEnvelope() },
+			},
+			{ ...modernHeaders('tools/list'), origin: 'https://evil.example' }
+		);
+		expect(status).toBeGreaterThanOrEqual(400);
+	});
+
+	it('snapshots the env at construction (caller mutations do not leak into auth)', async () => {
+		const token = 'snapshot-token';
+		const env: Record<string, string | undefined> = {
+			NVOOS_MCP_TOKEN: token,
+			NVOOS_SSR_API_ORIGIN: 'http://localhost:8123/wp-json/nvoos-commerce/v1',
+		};
+		const handler = createAstroMcpNodeHandler(env);
+		// serve.mjs rewrites NVOOS_SSR_API_ORIGIN after boot (loopback BFF
+		// origin for the SSR client) — the handler must keep its snapshot.
+		env.NVOOS_MCP_TOKEN = 'mutated';
+		const authed = createServer((req, res) => {
+			void handler(req, res);
+		});
+		await new Promise<void>((resolve) => authed.listen(4393, '127.0.0.1', resolve));
+		try {
+			const response = await fetch('http://127.0.0.1:4393/mcp', {
+				method: 'POST',
+				headers: {
+					accept: 'application/json, text/event-stream',
+					'content-type': 'application/json',
+					authorization: `Bearer ${token}`,
+					...modernHeaders('tools/call', 'tokens_set'),
+				},
+				body: JSON.stringify({
+					jsonrpc: '2.0',
+					id: 62,
+					method: 'tools/call',
+					params: {
+						name: 'tokens_set',
+						arguments: { changes: { accent: '#0f6b4f' } },
+						...modernEnvelope(),
+					},
+				}),
+			});
+			expect(response.status).toBe(200);
+		} finally {
+			await new Promise<void>((resolve) => authed.close(() => resolve()));
+		}
 	});
 
 	it('allows write tools with a valid bearer token', async () => {

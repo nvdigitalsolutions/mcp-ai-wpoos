@@ -77,9 +77,32 @@ function toolNameFrom(body: unknown): string {
 }
 
 /**
+ * Same-origin pass-through for browser clients: when the Origin header's
+ * hostname matches the (already Host-validated) request host, the request is
+ * same-origin and safe by construction — the /manage Design tab posts here
+ * with the manager cookie and no explicit Origin allowlist entry.
+ * Cross-origin browser clients still require NVOOS_MCP_ORIGINS.
+ */
+function isSameOrigin(req: IncomingMessage): boolean {
+	const origin = firstHeaderValue(req.headers.origin);
+	if (!origin) return false;
+	try {
+		const originHost = new URL(origin).hostname.toLowerCase();
+		const host = (firstHeaderValue(req.headers.host) ?? '').split(':')[0].toLowerCase();
+		return originHost === host;
+	} catch {
+		return false;
+	}
+}
+
+/**
  * Build the `(req, res) => Promise<void>` handler served at /mcp.
  */
 export function createAstroMcpNodeHandler(env: McpEnv = process.env) {
+	// Snapshot at construction: callers (serve.mjs) mutate process.env after
+	// boot (the SSR-origin rewrite), and auth must keep reading the env the
+	// handler was configured with (2026-10-30 manager-session 401 incident).
+	const effectiveEnv: McpEnv = { ...env };
 	const handler = createMcpHandler(() => buildServer(), {
 		legacy: 'stateless',
 		onerror: (error) => {
@@ -113,9 +136,9 @@ export function createAstroMcpNodeHandler(env: McpEnv = process.env) {
 			return;
 		}
 		if (!validateHost(req, res)) return;
-		if (!validateOrigin(req, res)) return;
+		if (!isSameOrigin(req) && !validateOrigin(req, res)) return;
 		const body = await readBody(req);
-		const auth = await authorizeRequest(req, body, env);
+		const auth = await authorizeRequest(req, body, effectiveEnv);
 		if (!auth.ok) {
 			if (!res.headersSent) {
 				res.writeHead(401, { 'content-type': 'application/json', 'cache-control': 'no-store' });
