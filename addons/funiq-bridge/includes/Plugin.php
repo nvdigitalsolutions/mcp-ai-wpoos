@@ -99,6 +99,11 @@ final class Plugin {
 		// 2b. Cache headers on public GETs (B1, Proposal 092).
 		add_filter( 'rest_post_dispatch', array( BaseController::class, 'set_cache_headers_on_public_gets' ), 10, 3 );
 
+		// 2c. REST cookie auth on single-site HTTPS — core never resolves the
+		// user for /wp-json requests there (see the method docblock), so the
+		// contract's cookie surface 401s in production without this shim.
+		add_filter( 'determine_current_user', array( self::class, 'determine_rest_user_from_logged_in_cookie' ), 25 );
+
 		// 3. Seed default options on activation.
 		add_action( 'init', array( $plugin, 'seed_default_options' ) );
 
@@ -176,6 +181,73 @@ final class Plugin {
 			$controller->set_namespace( Schema::REST_NAMESPACE_NV );
 			$controller->register_routes();
 		}
+	}
+
+	/**
+	 * Resolve the REST current user from the logged-in auth cookie.
+	 *
+	 * Single-site HTTPS quirk: core's wp_validate_logged_in_cookie() is skipped
+	 * on single sites (is_blog_admin() is always true there), and over HTTPS the
+	 * secure auth cookie (wordpress_sec_*) is path-scoped to /wp-admin and
+	 * /wp-content/plugins. No cookie therefore authenticates /wp-json/*
+	 * requests, and WP 6.9's rest_cookie_check_errors() additionally forces
+	 * user 0 on any REST request that carries no nonce. The result: a session
+	 * that works in wp-admin 401s on every contract route (auth/me, managers,
+	 * media, writes) — exactly what the /manage gate experienced in
+	 * production on 2026-10-30.
+	 *
+	 * This filter validates the path=/-scoped logged-in cookie explicitly for
+	 * the bridge's own REST namespaces only, restoring the multisite behavior
+	 * without widening cookie auth for any other REST consumer on the site.
+	 *
+	 * @param int|false $user_id Currently determined user ID.
+	 * @return int|false
+	 */
+	public static function determine_rest_user_from_logged_in_cookie( $user_id ) {
+		if ( $user_id ) {
+			return $user_id;
+		}
+		if ( ! self::is_bridge_rest_request() ) {
+			return $user_id;
+		}
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- Auth material compared via wp_validate_auth_cookie(), never echoed or stored.
+		if ( empty( $_COOKIE[ LOGGED_IN_COOKIE ] ) ) {
+			return $user_id;
+		}
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$cookie_user = wp_validate_auth_cookie( wp_unslash( $_COOKIE[ LOGGED_IN_COOKIE ] ), 'logged_in' );
+
+		return $cookie_user ? (int) $cookie_user : 0;
+	}
+
+	/**
+	 * Whether the current request is a REST request into the bridge namespaces.
+	 *
+	 * @return bool
+	 */
+	private static function is_bridge_rest_request(): bool {
+		if ( ! defined( 'REST_REQUEST' ) || ! REST_REQUEST ) {
+			return false;
+		}
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- Read-only substring match, never echoed.
+		if ( empty( $_SERVER['REQUEST_URI'] ) ) {
+			return false;
+		}
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$uri        = (string) $_SERVER['REQUEST_URI'];
+		$wp_json    = '/' . rest_get_url_prefix() . '/';
+		$namespaces = array(
+			$wp_json . Schema::REST_NAMESPACE,
+			$wp_json . Schema::REST_NAMESPACE_NV,
+		);
+
+		foreach ( $namespaces as $namespace ) {
+			if ( false !== strpos( $uri, $namespace ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

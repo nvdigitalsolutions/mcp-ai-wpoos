@@ -363,8 +363,8 @@ class TestCommerceContractExtensions extends WP_Test_REST_TestCase {
 
 		$this->assertEquals( 200, $response->get_status() );
 		$data = $response->get_data();
-		$this->assertTrue( $data['can_manage'] );
-		$this->assertStringContainsString( 'admin.php?page=' . Schema::ADMIN_PAGE_SLUG, $data['admin_url'] );
+		$this->assertTrue( $data['canManage'] );
+		$this->assertStringContainsString( 'admin.php?page=' . Schema::ADMIN_PAGE_SLUG, $data['adminUrl'] );
 
 		wp_set_current_user( 0 );
 	}
@@ -381,8 +381,8 @@ class TestCommerceContractExtensions extends WP_Test_REST_TestCase {
 
 		$this->assertEquals( 200, $response->get_status() );
 		$data = $response->get_data();
-		$this->assertFalse( $data['can_manage'] );
-		$this->assertSame( '', $data['admin_url'] );
+		$this->assertFalse( $data['canManage'] );
+		$this->assertSame( '', $data['adminUrl'] );
 
 		wp_set_current_user( 0 );
 	}
