@@ -21,6 +21,13 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
 
 ## Contract rules (CI-enforced — never weaken)
 
+- **Licensing split (owner decision Q8, drafted 2026-10-31):** the app is
+  MIT; `addons/nvoos-astro-bridge/src/` (the admin SPA) is MIT via its own
+  `src/LICENSE` carve-out; the bridge PHP plugin remains proprietary.
+  `public/manage-assets/` ships in the public mirror, so never build it
+  from non-MIT bridge source. The app's `NOTICE` records the bundled
+  GPL-2.0-or-later `@wordpress/*` components; `sync-dist.mjs` ships
+  `NOTICE` to the mirror.
 - The Astro app binds **only** to the Payload envelope (`nvoos-commerce/v1`
   REST namespace alias). Never call WP-specific endpoints from `src/`.
 - The word **"funiq" is banned from `examples/nvoos-astro-velocity/src/`**

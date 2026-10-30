@@ -197,6 +197,8 @@ migration rail.
 Contrast with 085 §3.2: the licensed-bundle injection step disappears from
 the **Astro** pipeline — the sync workflow assembles only public bytes. The
 PWA injection step remains in place only for the transitional A/B gate.
+The bridge admin SPA embedded in the mirror is MIT-carved-out so that
+statement holds for every shipped byte (§7 Q8).
 
 ### 3.6 Relationship to the Laravel track (Proposal 090)
 
@@ -349,3 +351,17 @@ timeline (disjoint scopes, no shared files).
   NV-authored bytes.
 - **Q7 — Currency:** **USD** default, env-overridable per deployment
   (`NVOOS_CURRENCY`) until the contract grows a currency field.
+- **Q8 — Bridge admin SPA licensing (drafted 2026-10-31, pending owner
+  sign-off):** **MIT carve-out.** `addons/nvoos-astro-bridge/src/` (the
+  React admin SPA) is licensed MIT (`src/LICENSE`); the PHP plugin and
+  `includes/` remain proprietary. Rationale: the standalone build of the
+  SPA is committed to `public/manage-assets/` and shipped in the public
+  mirror (Q6), so the published source of those bytes cannot credibly stay
+  proprietary — the mirror's MIT grant would otherwise contradict the
+  bridge's proprietary license for them. Rejected alternatives: stop
+  shipping the bundle (the mirror is the deploy tree — production `/manage`
+  would break) and an open rewrite of the SPA (duplicated work). The
+  storefront carries a `NOTICE` recording the bundled GPL-2.0-or-later
+  `@wordpress/*` components; the wp-admin build of the same source inside
+  the proprietary plugin is unaffected (MIT code may be incorporated
+  there).

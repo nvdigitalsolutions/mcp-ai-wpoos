@@ -1,0 +1,45 @@
+# NOTICE — nvoos-astro-velocity
+
+## Overall license
+
+The NV-authored Astro storefront (this app) is licensed under the MIT
+License — see `LICENSE`. Copyright (c) 2025-2026 NV Digital Solutions
+(https://nvdigitalsolutions.com).
+
+## The /manage admin bundle (`public/manage-assets/astro-admin.{js,css}`)
+
+These committed files are the **standalone build** of the Astro CMS admin
+SPA. Their source lives in `addons/nvoos-astro-bridge/src/` and is licensed
+under the MIT License (`addons/nvoos-astro-bridge/src/LICENSE`, owner
+decision Q8 in Proposal 092) — so the bundle published here is consistent
+with this app's MIT license.
+
+The standalone build bundles the following third-party packages, which
+retain their own licenses (license banners are preserved in the bundle by
+esbuild's `@license`/`@preserve` comment handling):
+
+| Package | License |
+|---|---|
+| `@wordpress/api-fetch`, `@wordpress/components`, `@wordpress/element`, `@wordpress/i18n` | GPL-2.0-or-later (WordPress Foundation / contributors) |
+| `react`, `react-dom` | MIT (Meta Platforms, Inc.) |
+| `@tanstack/react-query` | MIT (TanStack) |
+| `zod` | MIT (Colin McDonnell et al.) |
+
+The WordPress packages' source is available from
+https://github.com/WordPress/gutenberg under GPL-2.0-or-later; the MIT
+packages' source is available from their npm package registries.
+
+## Not included in this app or the public mirror
+
+The proprietary parts of the NV oOS ecosystem — the nvoos-astro-bridge
+WordPress plugin (PHP, `includes/`), the Pro addon toolkits, and any
+licensed third-party frontend — are deliberately NOT distributed here. The
+mirror sync workflow (`sync-nvoos-astro-velocity.yml`) assembles only the
+bytes licensed above plus this app's own MIT-licensed source.
+
+## Runtime npm dependencies
+
+The mirror ships `package.json` with the app's runtime dependencies intact
+(each carries its own license file under `node_modules/` at install time).
+Run `npm ls --all --json` or a license tool of your choice against the
+installed tree for the complete dependency attribution.
