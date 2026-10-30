@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.13
+Stable tag: 1.2.14
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.14 - October 30, 2026 =
+
+Bumped to 1.2.14 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. The Astro storefront lands end-to-end (Proposal 092): the bridge renames to Astro Bridge 1.0.1 (nvoos-astro-bridge) with the standalone Astro CMS /manage surface (contract-auth sign-in, managers section, WooCommerce product source) and REST cookie-auth restored on single-site HTTPS — permission callbacks re-resolve the session and /auth/nonce mints for it, fixing the /manage 401/403 outage. The Astro Design System tokens + nvoos-astro-mcp assistant-control surface ship (Proposal 095), and the mirror deploy loop hardens. F&B gains multi-connection Drive source routing with a Table Sources review panel (Proposal 093); Google Workspace tools auto-fallback to enabled Remote Sites connections and restricted assistants gain the site-wide settings grant; the MCP gateway ships its policy & governance layer (Proposal 094, addon 0.2.0); the commerce sync toolkits move under E-Commerce subtabs. Fixed: front-end asset leaks on visitor pages, OKF neighbour ordering, F&B mapping proposals stuck on apply/discard, and 16 fast-uri advisories. Tool count unchanged: ~355 base + ~1,378 Pro (~1,732 total; live registry authoritative). Coding-time skills 76 → 79. Stale 1.2.12 build ZIPs removed.
 
 = 1.2.13 - October 27, 2026 =
 
