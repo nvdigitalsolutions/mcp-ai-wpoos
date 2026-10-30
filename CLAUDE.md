@@ -90,7 +90,7 @@ addons/
 ├── fleet-operator/                      ← Hermes Fleet Operator addon (scoped op_ credentials, MCP tools/list scoping, WP-CLI)
 ├── media-worker/                        ← Media Worker sidecar (v3.0.0, multi-tenant + security-hardened)
 ├── librechat/                          ← LibreChat addon (code interpreter, speech)
-├── funiq-bridge/                       ← Funiq Bridge addon (v1.0.0)
+├── nvoos-astro-bridge/                  ← Astro Bridge addon (v1.0.1)
 ├── checkout-api/                        ← Checkout API addon (v0.1.0, vendor-side Stripe checkout/licensing)
 ├── schedule-anything/                  ← Schedule Anything SaaS platform
 └── ...                                 ← 27 addons total

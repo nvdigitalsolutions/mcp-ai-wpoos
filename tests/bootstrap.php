@@ -1002,8 +1002,8 @@ if ( file_exists( __DIR__ . '/../addons/schedule-anything-platform/tests/bootstr
 	require_once __DIR__ . '/../addons/schedule-anything-platform/tests/bootstrap.php';
 }
 
-// Funiq Bridge addon tests (addons/funiq-bridge). Same self-guarding
+// Funiq Bridge addon tests (addons/nvoos-astro-bridge). Same self-guarding
 // pattern — Proposal 092: the bridge serves the NV commerce contract.
-if ( file_exists( __DIR__ . '/../addons/funiq-bridge/tests/bootstrap.php' ) ) {
-	require_once __DIR__ . '/../addons/funiq-bridge/tests/bootstrap.php';
+if ( file_exists( __DIR__ . '/../addons/nvoos-astro-bridge/tests/bootstrap.php' ) ) {
+	require_once __DIR__ . '/../addons/nvoos-astro-bridge/tests/bootstrap.php';
 }

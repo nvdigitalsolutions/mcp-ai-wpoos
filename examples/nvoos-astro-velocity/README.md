@@ -69,8 +69,8 @@ npm install
 node scripts/fixture-server.mjs            # :8123
 
 # Build against the fixtures (prerenders the full catalog; also builds the
-# Astro CMS bundle from addons/funiq-bridge — install its deps first):
-cd ../../addons/funiq-bridge && npm install && cd -
+# Astro CMS bundle from addons/nvoos-astro-bridge — install its deps first):
+cd ../../addons/nvoos-astro-bridge && npm install && cd -
 NVOOS_API_BASE=http://localhost:8123/wp-json/nvoos-commerce/v1 npm run build
 
 # Serve the built app + BFF against the fixtures:
@@ -94,7 +94,7 @@ PUBLIC_API_BASE=http://localhost:8123/wp-json/nvoos-commerce/v1 npm run dev
 ## Contract drift guard (Phase 2.7)
 
 The bridge's golden snapshot test
-(`addons/funiq-bridge/tests/phpunit/Transformers/TestTransformerGolden.php`)
+(`addons/nvoos-astro-bridge/tests/phpunit/Transformers/TestTransformerGolden.php`)
 pins the transformer output; `npm run sync:bridge-fixtures` propagates the
 goldens into `tests/fixtures/`. CI runs the generator and fails on any diff —
 a contract change must update both sides in the same PR.

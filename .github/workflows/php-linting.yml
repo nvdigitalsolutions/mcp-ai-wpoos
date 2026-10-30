@@ -65,14 +65,14 @@ jobs:
             plugins/nvoos-content-graph-ai-platform/**
             plugins/nvoos-content-graph-pro/**
 
-      - name: Run WPCS on funiq-bridge addon (own ruleset)
+      - name: Run WPCS on nvoos-astro-bridge addon (own ruleset)
         run: |
-          # The funiq-bridge addon is excluded from the base plugin's
+          # The nvoos-astro-bridge addon is excluded from the base plugin's
           # phpcs.xml.dist (PSR-4 layout, deliberate idioms) and carries its
-          # own ruleset at addons/funiq-bridge/phpcs.xml.dist. Enforce it here
+          # own ruleset at addons/nvoos-astro-bridge/phpcs.xml.dist. Enforce it here
           # so addon changes stay covered on PRs and pushes.
-          vendor/bin/phpcs --standard=addons/funiq-bridge/phpcs.xml.dist \
-            addons/funiq-bridge/includes addons/funiq-bridge/funiq-bridge.php addons/funiq-bridge/uninstall.php
+          vendor/bin/phpcs --standard=addons/nvoos-astro-bridge/phpcs.xml.dist \
+            addons/nvoos-astro-bridge/includes addons/nvoos-astro-bridge/nvoos-astro-bridge.php addons/nvoos-astro-bridge/uninstall.php
 
       - name: Run WPCS on changed files
         if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'

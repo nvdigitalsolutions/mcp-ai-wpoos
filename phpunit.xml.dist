@@ -14,7 +14,7 @@
             <directory suffix=".php">addons/checkout-api/tests</directory>
             <directory suffix=".php">addons/nvoos-design-system/tests</directory>
             			<directory suffix=".php">addons/schedule-anything-platform/tests</directory>
-            			<directory suffix=".php">addons/funiq-bridge/tests</directory>
+            			<directory suffix=".php">addons/nvoos-astro-bridge/tests</directory>
             <exclude>tests/manual-test-preset-preview.php</exclude>
             <exclude>tests/manual-verify-auto-aspect-ratio.php</exclude>
             <exclude>tests/manual</exclude>
@@ -54,7 +54,7 @@
             <exclude>addons/checkout-api/tests/bootstrap.php</exclude>
             <exclude>addons/nvoos-design-system/tests/bootstrap.php</exclude>
             			<exclude>addons/schedule-anything-platform/tests/bootstrap.php</exclude>
-            			<exclude>addons/funiq-bridge/tests/bootstrap.php</exclude>
+            			<exclude>addons/nvoos-astro-bridge/tests/bootstrap.php</exclude>
         </testsuite>
     </testsuites>
     <groups>

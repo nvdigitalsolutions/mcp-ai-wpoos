@@ -4,7 +4,7 @@
 // standalone bundle into public/manage-assets/, which the /manage page
 // loads.
 //
-// The CMS SPA source lives in addons/funiq-bridge/src (shared with the
+// The CMS SPA source lives in addons/nvoos-astro-bridge/src (shared with the
 // backend plugin's wp-admin build). The standalone esbuild target bundles
 // @wordpress/* + React so the SPA runs on the storefront origin with no
 // backend admin script chain. The CI grep gate only scans src/, so the
@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
-const BRIDGE = resolve(ROOT, '..', '..', 'addons', 'funiq-bridge');
+const BRIDGE = resolve(ROOT, '..', '..', 'addons', 'nvoos-astro-bridge');
 const BRIDGE_SRC = join(BRIDGE, 'src');
 const BRIDGE_OUT = join(BRIDGE, 'build', 'standalone');
 const DEST = join(ROOT, 'public', 'manage-assets');

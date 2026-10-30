@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-astro-storefront
-description: Operational guide for the NV-authored headless storefront (Proposal 092) — the funiq-bridge Payload-shaped commerce contract (`nvoos-commerce/v1`), the `examples/nvoos-astro-velocity` Astro app, its hermetic dev/test loop (fixture server, vitest, Playwright, Lighthouse CI), the contract drift guard, the rebuild webhook, the sync workflow + public mirror deployment, the ADS design system (DTCG tokens, generator + drift gate, dark/light theming, Proposal 095), and the `nvoos-astro-mcp` assistant-control surface at `/mcp` (dual-era Streamable HTTP, design tool slice, fail-closed write auth). Use when working on the storefront, the bridge contract, image optimization, SEO/crawlability, design tokens/themes, the MCP mount, or the mirror deploy loop.
+description: Operational guide for the NV-authored headless storefront (Proposal 092) — the nvoos-astro-bridge Payload-shaped commerce contract (`nvoos-commerce/v1`), the `examples/nvoos-astro-velocity` Astro app, its hermetic dev/test loop (fixture server, vitest, Playwright, Lighthouse CI), the contract drift guard, the rebuild webhook, the sync workflow + public mirror deployment, the ADS design system (DTCG tokens, generator + drift gate, dark/light theming, Proposal 095), and the `nvoos-astro-mcp` assistant-control surface at `/mcp` (dual-era Streamable HTTP, design tool slice, fail-closed write auth). Use when working on the storefront, the bridge contract, image optimization, SEO/crawlability, design tokens/themes, the MCP mount, or the mirror deploy loop.
 ---
 
 # NV oOS Astro Storefront — ops guide (Proposal 092)
@@ -14,7 +14,7 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
 
 | Piece | Location | Role |
 |---|---|---|
-| Bridge addon | `addons/funiq-bridge/` | Serves the Payload envelope from WordPress + WooCommerce data (transitional backend; Laravel takes over at T1 per Proposals 085/090) |
+| Bridge addon | `addons/nvoos-astro-bridge/` | Serves the Payload envelope from WordPress + WooCommerce data (transitional backend; Laravel takes over at T1 per Proposals 085/090) |
 | Storefront source | `examples/nvoos-astro-velocity/` | Astro SSR + prerendered catalog, React islands (cart badge, gallery), View Transitions |
 | Sync workflow | `.github/workflows/sync-nvoos-astro-velocity.yml` | Builds + tests, then rebuilds for the mirror |
 | Public mirror | `nvdigitalsolutions/nvoos-astro-velocity` (PUBLIC) | Assembled deploy tree (Astro `dist/` + server shim) — zero licensed bytes |
@@ -24,12 +24,14 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
 - The Astro app binds **only** to the Payload envelope (`nvoos-commerce/v1`
   REST namespace alias). Never call WP-specific endpoints from `src/`.
 - The word **"funiq" is banned from `examples/nvoos-astro-velocity/src/`**
-  (CI grep gate). The bridge addon and docs may still name it (data-layer
-  identifiers); the app may not. The standalone admin bundle is built output
-  in `public/` and contains zero brand strings anyway.
+  (CI grep gate). The bridge addon and docs may still carry it in data-layer
+  identifiers (`funiq_product` CPTs, `funiq/v1` legacy namespace, `_funiq_*`
+  meta — the deferred data-migration project); the app may not. The
+  standalone admin bundle is built output in `public/` and contains zero
+  brand strings anyway.
 - Golden fixtures are the contract test: `examples/nvoos-astro-velocity/tests/fixtures/products.json`
   must stay semantically identical to the bridge transformer output pinned by
-  `addons/funiq-bridge/tests/phpunit/Transformers/TestTransformerGolden.php`.
+  `addons/nvoos-astro-bridge/tests/phpunit/Transformers/TestTransformerGolden.php`.
 
 ## WooCommerce integration (2026-10-29)
 
@@ -40,7 +42,7 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
   `funiq_bridge_products_source`; `woo`/`both` degrade to `native` when
   WooCommerce is missing. Product docs carry an additive `source` field
   (`native`|`woocommerce`).
-- **Source layer:** `addons/funiq-bridge/includes/Sources/` —
+- **Source layer:** `addons/nvoos-astro-bridge/includes/Sources/` —
   `ProductSource` interface, `NativeProductSource`, `WooProductSource`,
   `ProductSources` (registry: `active()`/`primary()`/`resolve()`/
   `from_name()`), `WooTaxonomy` (pa_brand/pa_color/product_cat/stock-status
@@ -68,7 +70,7 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
 ```bash
 cd examples/nvoos-astro-velocity
 node scripts/fixture-server.mjs            # :8123 — hermetic contract + media
-cd ../../addons/funiq-bridge && npm install && cd -   # standalone CMS bundle deps
+cd ../../addons/nvoos-astro-bridge && npm install && cd -   # standalone CMS bundle deps
 NVOOS_API_BASE=http://localhost:8123/wp-json/nvoos-commerce/v1 npm run build   # prerenders catalog + /manage bundle
 NVOOS_TARGET_SITE=http://localhost:8123 PORT=4321 npm run serve                # BFF + app (/, /manage/, /api/*, /media/*, /mcp)
 npm run check && npm run lint && npm run test          # astro check + tokens drift gate · eslint · vitest (101 tests / 15 files)
@@ -181,7 +183,7 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   is too slow for Playwright e2e.
 - Playwright islands with `client:visible` hydrate lazily → use `toPass()` +
   scroll; keep header elements on `client:load`.
-- **RebuildWebhook** (`addons/funiq-bridge/includes/RebuildWebhook.php`):
+- **RebuildWebhook** (`addons/nvoos-astro-bridge/includes/RebuildWebhook.php`):
   shutdown closures double-fire on Cloudways and full `shutdown` actions trip
   output buffers — the class keeps a static `$pending` flag with
   `send_pending()`/`reset_pending()` seams. Test through those seams, not the
@@ -231,14 +233,14 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   `loginOnly` AuthForms, then injects the prebuilt bundle which self-mounts
   on `#astro-admin-root`). The bundle lives in `public/manage-assets/` —
   built by the bridge's **standalone esbuild target**
-  (`npm run build:standalone` in `addons/funiq-bridge/`, output
+  (`npm run build:standalone` in `addons/nvoos-astro-bridge/`, output
   `build/standalone/astro-admin.{js,css}`; bundles `@wordpress/*` + React
   instead of the wp-admin externals) and copied by
   `scripts/sync-manage-assets.mjs` (wired into `npm run build` +
   `build-hermetic.mjs`). Manager login never touches a proxied login page:
   `POST /api/auth/login` sets the auth cookie, the BFF strips `Domain=`
   (host-only), and `/api/auth/me`'s `canManage` gates everything. The sync
-  workflow installs bridge deps (`npm ci` in `addons/funiq-bridge/`) before
+  workflow installs bridge deps (`npm ci` in `addons/nvoos-astro-bridge/`) before
   the app build and re-runs on bridge path changes.
 - **Standalone build — jsx-runtime (learned 2026-10-29):**
   `@wordpress/element` ships NO `./jsx-runtime` export — a standalone
@@ -256,6 +258,30 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   late-load bug fixed by PR #7296). Remediate: `wp cap add administrator
   manage_astro` on the backend or re-activate the bridge plugin; never
   chase the frontend for this error.
+- **REST cookie-auth on single-site HTTPS (the 2026-10-30 outage):** no
+  cookie authenticates /wp-json before `rest_cookie_check_errors()` runs —
+  the secure auth cookie is path-scoped to /wp-admin, and whenever the
+  logged-in cookie DOES validate (via `determine_current_user`),
+  `auth_cookie_valid` flips `$wp_rest_auth_cookie`, which makes
+  `rest_cookie_check_errors()` skip its early return and force nonce-less
+  requests back to user 0. Symptom: login 200 with `canManage:true`, then
+  every follow-up 401s — while the same session works in wp-admin and the
+  whole flow works in tests (HTTP, `is_ssl()` false). Fix (shipped): the
+  bridge's permission callbacks re-resolve the session from the logged-in
+  cookie right before the cap check (`REST/AuthSupport.php` — the console's
+  per-endpoint pattern), plus a scoped `determine_current_user` filter.
+  Nonces minted via `/api/auth/nonce` stay valid: `wp_create_nonce`/
+  `wp_verify_nonce` derive the session token from the logged-in cookie
+  directly, so uid 0 on both sides of the round-trip still verifies.
+- **Deploy-zip separators (2026-10-30):** a PowerShell `Compress-Archive`
+  zip carries backslash entry separators; on the backend's Linux PHP the
+  upgrader then fails to see the single top-level folder and installs the
+  zip into a random-suffix container (`nvoos-astro-bridge-v1.0.1-<rand>/
+  nvoos-astro-bridge/...`). Build the zip with Python `zipfile` (forward
+  slashes, top-level folder) — verified to install flat. And NEVER delete
+  the bridge plugin via wp-admin: its `uninstall.php` wipes the live
+  catalog + caps. Updates go through the upload flow's
+  "Replace current with uploaded" step (no uninstall runs).
 - **Bridge media endpoint:** image fields use a native uploader against
   `POST /media` (multipart, manage-cap gated; `GET /media/{id}` for
   previews) — `wp_handle_upload` with a filterable action
@@ -290,16 +316,19 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   → GitHub `repository_dispatch` → the sync workflow.
 - Mirror repo is public (owner Q6). A/B coexistence rules and rollback:
   `docs/operations/deployment/nvoos-astro-velocity-setup.md`.
-- **Bridge packaging for zip upload (learned 2026-10-29):** the deploy zip
-  must contain the plugin as a **top-level `nvoos-funiq-bridge/` folder**
-  (main file `funiq-bridge.php` inside). Build it with PowerShell
-  `Compress-Archive` of the folder — `tar -a` produces a broken zip, and
-  zipping `folder\*` (files at zip root) installs `funiq-bridge.php` directly
-  into `wp-content/plugins/`, colliding with other plugins' `includes/`.
-  Uploading twice with the same folder name creates a random-suffix folder —
-  delete the old copy first.
+- **Bridge packaging for zip upload (learned 2026-10-29, revised
+  2026-10-30):** the deploy zip must contain the plugin as a **top-level
+  `nvoos-astro-bridge/` folder** (main file `nvoos-astro-bridge.php`
+  inside). Build it with **Python `zipfile` (forward-slash separators)** —
+  PowerShell `Compress-Archive` writes backslash entries that the backend's
+  upgrader can't see as folders (random-suffix container install), and
+  `tar -a` produces a broken zip. Zipping `folder\*` (files at zip root)
+  installs the main file directly into `wp-content/plugins/`, colliding
+  with other plugins' `includes/`. Re-uploading an existing folder goes
+  through the "Replace current with uploaded" step — never delete the
+  plugin via wp-admin, its uninstall.php wipes the live catalog + caps.
 - **Bridge code standards:** the addon carries its own
-  `addons/funiq-bridge/phpcs.xml.dist` (PSR-4 filename sniffs, short
+  `addons/nvoos-astro-bridge/phpcs.xml.dist` (PSR-4 filename sniffs, short
   ternaries and the deliberate meta_key/tax_query slow-query warnings are
   excluded) and is excluded from the base `phpcs.xml.dist` scan. A dedicated
   step in `.github/workflows/php-linting.yml` enforces the addon ruleset on
@@ -320,7 +349,7 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 - Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 097 (cross-surface token sharing) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
 - `examples/nvoos-astro-velocity/README.md` (architecture, env, commands)
-- `addons/funiq-bridge/README.md` (REST surface, data map)
+- `addons/nvoos-astro-bridge/README.md` (REST surface, data map)
 - Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`
 - Related: Proposal 085 + appendix (contract invariant, Strangler Fig),
   Proposal 090 (Laravel backend flip — the storefront survives it unchanged).

@@ -3,7 +3,7 @@
 // sync-bridge-fixtures.mjs — the storefront side of the Phase 2.7 contract
 // drift guard.
 //
-// Reads the bridge's golden snapshots (addons/funiq-bridge/tests/golden/)
+// Reads the bridge's golden snapshots (addons/nvoos-astro-bridge/tests/golden/)
 // and upserts the matching docs into the app's committed fixtures. CI runs
 // this script and diffs the result: any drift between the bridge contract
 // (goldens) and the storefront fixtures fails the build.
@@ -21,7 +21,7 @@ const BRIDGE_GOLDEN = resolve(
 	'..',
 	'..',
 	'addons',
-	'funiq-bridge',
+	'nvoos-astro-bridge',
 	'tests',
 	'golden'
 );
