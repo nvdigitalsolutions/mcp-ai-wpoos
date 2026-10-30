@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **October 27, 2026** (v1.2.13)
+> Last reviewed: **October 30, 2026** (v1.2.14)
 
 ### Related Files
 
