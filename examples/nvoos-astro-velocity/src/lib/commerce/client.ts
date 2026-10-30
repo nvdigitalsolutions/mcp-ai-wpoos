@@ -59,7 +59,7 @@ type CollectionSlug =
  *   render fetches localhost:8123 and 500s (incident 2026-10-29).
  * - Build time (getStaticPaths): no request URL, so NVOOS_API_BASE applies.
  */
-function resolveBase(requestUrl: string | URL | undefined): string {
+export function resolveBase(requestUrl: string | URL | undefined): string {
 	const ssrOrigin = process.env.NVOOS_SSR_API_ORIGIN;
 	if (ssrOrigin) {
 		return `${ssrOrigin.replace(/\/+$/, '')}/api`;
@@ -76,7 +76,7 @@ function resolveBase(requestUrl: string | URL | undefined): string {
 	);
 }
 
-function joinPath(base: string, path: string): string {
+export function joinPath(base: string, path: string): string {
 	return `${base}/${path}`;
 }
 

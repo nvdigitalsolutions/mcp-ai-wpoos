@@ -1,6 +1,9 @@
 // tokens-service.test.ts — runtime TokenService: transactional overrides,
-// snapshots/rollback, themes, contrast (Proposal 095).
-import { describe, expect, it } from 'vitest';
+// snapshots/rollback, themes, contrast, Phase 4 durable state (Proposal 095).
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
 import { TokenService, contrastCheck, contrastRatio } from '../../src/lib/tokens/service';
 
 describe('TokenService', () => {
@@ -91,6 +94,76 @@ describe('TokenService', () => {
 		const service = new TokenService();
 		const bad = service.createTheme({ name: 'Bad Name!', tokens: {} });
 		expect(bad.applied).toBe(false);
+	});
+});
+
+describe('TokenService persistence (Proposal 095 Phase 4)', () => {
+	let dir: string;
+
+	afterEach(() => {
+		if (dir) rmSync(dir, { recursive: true, force: true });
+	});
+
+	it('persists successful mutations and hydrates them into a new instance', () => {
+		dir = mkdtempSync(join(tmpdir(), 'nvoos-tok-'));
+		const persistPath = join(dir, '.nvoos', 'design-state.json');
+		const first = new TokenService(undefined, { persistPath });
+
+		expect(first.applyOverrides({ accent: '#7c3aed' }).applied).toBe(true);
+		expect(
+			first.createTheme({ name: 'client-b', description: 'Client B brand', tokens: { accent: '#123456' } }).applied
+		).toBe(true);
+		expect(first.applyTheme('client-b').ok).toBe(true);
+		expect(existsSync(persistPath)).toBe(true);
+
+		const second = new TokenService(undefined, { persistPath });
+		expect(second.resolveActiveSemantic().accent).toBe('#7c3aed'); // overrides hydrated
+		expect(second.getActiveTheme()).toBe('client-b'); // activeTheme hydrated
+		expect(second.listThemes()).toContain('client-b'); // runtimeThemes hydrated
+		expect(second.listSnapshots().length).toBe(2); // snapshots hydrated
+	});
+
+	it('dry runs never create or update the state file', () => {
+		dir = mkdtempSync(join(tmpdir(), 'nvoos-tok-'));
+		const persistPath = join(dir, 'design-state.json');
+		const service = new TokenService(undefined, { persistPath });
+
+		expect(service.applyOverrides({ accent: '#7c3aed' }, true).applied).toBe(false);
+		expect(existsSync(persistPath)).toBe(false); // dry run creates nothing
+
+		expect(service.applyOverrides({ accent: '#7c3aed' }).applied).toBe(true);
+		expect(existsSync(persistPath)).toBe(true); // the real apply creates it
+
+		const contentBefore = readFileSync(persistPath, 'utf8');
+		expect(service.applyOverrides({ muted: '#101010' }, true).applied).toBe(false);
+		expect(readFileSync(persistPath, 'utf8')).toBe(contentBefore); // dry run leaves it untouched
+	});
+
+	it('treats a corrupt state file as absent (fail-safe)', () => {
+		dir = mkdtempSync(join(tmpdir(), 'nvoos-tok-'));
+		const persistPath = join(dir, 'design-state.json');
+		writeFileSync(persistPath, '{ not json');
+
+		const service = new TokenService(undefined, { persistPath });
+		expect(service.getActiveTheme()).toBe('light');
+		expect(service.resolveActiveSemantic().accent).toBe('#0f6b4f');
+
+		expect(service.applyOverrides({ accent: '#111111' }).applied).toBe(true);
+		expect(readFileSync(persistPath, 'utf8')).not.toBe('{ not json'); // next save recovers the file
+	});
+
+	it('resolves the persist path from NVOOS_MCP_STATE_FILE', () => {
+		dir = mkdtempSync(join(tmpdir(), 'nvoos-tok-'));
+		const persistPath = join(dir, 'env-state.json');
+		process.env.NVOOS_MCP_STATE_FILE = persistPath;
+		try {
+			const service = new TokenService();
+			expect(service.applyOverrides({ accent: '#7c3aed' }).applied).toBe(true);
+			expect(existsSync(persistPath)).toBe(true);
+			expect(new TokenService().resolveActiveSemantic().accent).toBe('#7c3aed');
+		} finally {
+			delete process.env.NVOOS_MCP_STATE_FILE;
+		}
 	});
 });
 

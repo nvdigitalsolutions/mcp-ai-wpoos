@@ -59,6 +59,45 @@ every other surface; manager sign-in is the contract's own REST auth flow.
 | `NVOOS_CURRENCY` | build/runtime | Price formatting + JSON-LD (default `USD`) |
 | `PORT` | `serve.mjs` | Listen port (Velocity injects it) |
 
+## MCP assistant surface (`/mcp`)
+
+`nvoos-astro-mcp` serves 20 tools over Streamable HTTP at `/mcp` (bundled into
+`dist/mcp-entry.mjs` on `astro:build:done`):
+
+- **Design (10)** — `tokens_get/set/import_dtcg/rollback`, `theme_*`,
+  `contrast_check` (WCAG 2.2 AA/AAA levels).
+- **CMS (6)** — `cms_list/get/create/update/delete`, `media_upload` over the
+  commerce contract (collection allowlist, `limit` ≤ 100; writes require a
+  manager session cookie — the backend enforces `manage_astro`).
+- **Ops (4)** — `site_status`, `preview_url`, `rebuild_trigger` (webhook env),
+  `screenshot` (opt-in `NVOOS_MCP_SCREENSHOT=1`, path-only input).
+
+Auth is fail-closed: reads are public; design writes accept an
+`Authorization: Bearer <NVOOS_MCP_TOKEN>` **or** a manager session cookie.
+Host/Origin allowlists (DNS-rebinding guards), a per-IP rate limit, and audit
+log lines sit in front of the handler.
+
+Connect:
+
+```jsonc
+// 1. NV oOS assistant — Remote Sites → MCP Server connection
+{ "url": "https://astro.nvoos.cloud/mcp", "auth_type": "bearer", "token": "<NVOOS_MCP_TOKEN>" }
+// then attach it as an assistant MCP App (connection_ref); tools bridge as
+// mcp_app_astro_* in chat. Allowlist the host in Security Center.
+
+// 2. Claude Desktop / generic client
+{ "mcpServers": { "nvoos-astro": { "url": "https://astro.nvoos.cloud/mcp", "headers": { "Authorization": "Bearer <NVOOS_MCP_TOKEN>" } } } }
+
+// 3. Manager browser session — sign in at /manage; the session cookie gates writes.
+
+// 4. Local coding agent (same registry over stdio, from this repo)
+npm run mcp:stdio
+```
+
+Runtime state (token overrides, runtime themes, snapshots) is process-local
+unless `NVOOS_MCP_STATE_FILE` points at a writable path (atomic persistence).
+See the deployment doc for the full env matrix.
+
 ## Development
 
 ```bash

@@ -16,6 +16,10 @@ dist/
 # staging
 scripts/.mirror-staging/
 
+# runtime design state (Proposal 095 Phase 4 — durable TokenService state,
+# created next to NVOOS_MCP_STATE_FILE; never committed)
+.nvoos/
+
 # editor / OS
 .DS_Store
 Thumbs.db

@@ -95,6 +95,16 @@ const EXPECTED_TOOLS = [
 	'theme_apply',
 	'theme_delete',
 	'contrast_check',
+	'cms_list',
+	'cms_get',
+	'cms_create',
+	'cms_update',
+	'cms_delete',
+	'media_upload',
+	'site_status',
+	'preview_url',
+	'rebuild_trigger',
+	'screenshot',
 ];
 
 describe('nvoos-astro-mcp HTTP conformance', () => {

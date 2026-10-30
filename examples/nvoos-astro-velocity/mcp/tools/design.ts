@@ -2,27 +2,17 @@
 // design.ts — nvoos-astro-mcp design tool slice (Proposal 095 §3.3).
 // Tokens/themes/contrast over the ADS TokenService. Every bulk write is
 // transactional: validate → dry-run diff → snapshot → all-or-nothing apply.
-//
-// TODO(095-Phase-1): dark-theme contrast audit against WCAG AA across the
-// example-brand theme; TODO(095-Phase-3): CMS tool slice (cms.ts over
-// commerce/client.ts) and the screenshot tool land in a follow-up tranche.
 // ---------------------------------------------------------------------------
 
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { TokenService, contrastCheck } from '../../src/lib/tokens/service';
+import { text } from './util';
 
 /** Process-wide service — the BFF is long-lived, so MCP state persists
  *  across requests within the process (not across restarts; the durable
  *  path is the /manage Design tab + NDS round-trip, Proposal 095 Phase 4). */
 export const designService = new TokenService();
-
-function text(content: string, structured?: unknown) {
-	return {
-		content: [{ type: 'text' as const, text: content }],
-		...(structured !== undefined ? { structuredContent: structured } : {}),
-	};
-}
 
 export function registerDesignTools(server: McpServer, service: TokenService = designService): void {
 	server.registerTool(
