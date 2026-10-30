@@ -20,9 +20,7 @@ class DKIMSigner {
         this.chunks = [];
         this.chunklen = 0;
         this.readPos = 0;
-        this.cachePath = this.cacheDir
-            ? path.join(this.cacheDir, 'message.' + Date.now() + '-' + crypto.randomBytes(14).toString('hex'))
-            : false;
+        this.cachePath = this.cacheDir ? path.join(this.cacheDir, 'message.' + Date.now() + '-' + crypto.randomBytes(14).toString('hex')) : false;
         this.cache = false;
         this.headers = false;
         this.bodyHash = false;
@@ -32,51 +30,67 @@ class DKIMSigner {
         this.output = output;
         this.output.usingCache = false;
         this.hasErrored = false;
-        this.input.on('error', err => {
+        this.input.on('error', err => this.fail(err));
+        // A consumer that goes away before the signed message was read in full destroys the
+        // output. Stop reading the input and drop the cache file instead of leaving them open
+        this.output.once('close', () => {
+            if (this.output.writableFinished) {
+                return;
+            }
             this.hasErrored = true;
+            this.input.unpipe();
+            this.input.destroy();
             this.cleanup();
-            output.emit('error', err);
         });
+    }
+    /**
+     * Ends the output with an error and releases the cache file
+     */
+    fail(err) {
+        this.hasErrored = true;
+        this.cleanup();
+        this.output.destroy(err);
     }
     cleanup() {
         if (!this.cache || !this.cachePath) {
             return;
         }
+        const cache = this.cache;
+        this.cache = false;
+        cache.destroy();
         fs.unlink(this.cachePath, () => false);
     }
     createReadCache() {
         // pipe remainings to cache file
         this.cache = fs.createReadStream(this.cachePath);
-        this.cache.once('error', err => {
-            this.cleanup();
-            this.output.emit('error', err);
-        });
+        this.cache.once('error', err => this.fail(err));
         this.cache.once('close', () => {
             this.cleanup();
         });
         this.cache.pipe(this.output);
     }
     sendNextChunk() {
+        while (!this.hasErrored) {
+            if (this.readPos >= this.chunks.length) {
+                if (!this.cache) {
+                    this.output.end();
+                    return;
+                }
+                return this.createReadCache();
+            }
+            const chunk = this.chunks[this.readPos++];
+            if (this.output.write(chunk) === false) {
+                this.output.once('drain', () => {
+                    this.sendNextChunk();
+                });
+                return;
+            }
+        }
+    }
+    sendSignedOutput() {
         if (this.hasErrored) {
             return;
         }
-        if (this.readPos >= this.chunks.length) {
-            if (!this.cache) {
-                this.output.end();
-                return;
-            }
-            return this.createReadCache();
-        }
-        const chunk = this.chunks[this.readPos++];
-        if (this.output.write(chunk) === false) {
-            this.output.once('drain', () => {
-                this.sendNextChunk();
-            });
-            return;
-        }
-        setImmediate(() => this.sendNextChunk());
-    }
-    sendSignedOutput() {
         let keyPos = 0;
         const signNextKey = () => {
             if (keyPos >= this.keys.length) {
@@ -85,13 +99,20 @@ class DKIMSigner {
                 return;
             }
             const key = this.keys[keyPos++];
-            const dkimField = sign(this.headers, this.hashAlgo, this.bodyHash, {
-                domainName: key.domainName,
-                keySelector: key.keySelector,
-                privateKey: key.privateKey,
-                headerFieldNames: this.options.headerFieldNames,
-                skipFields: this.options.skipFields
-            });
+            let dkimField;
+            try {
+                dkimField = sign(this.headers, this.hashAlgo, this.bodyHash, {
+                    domainName: key.domainName,
+                    keySelector: key.keySelector,
+                    privateKey: key.privateKey,
+                    headerFieldNames: this.options.headerFieldNames,
+                    skipFields: this.options.skipFields
+                });
+            }
+            catch (err) {
+                this.fail(err);
+                return;
+            }
             if (dkimField) {
                 this.output.write(Buffer.from(dkimField + '\r\n'));
             }
@@ -105,10 +126,10 @@ class DKIMSigner {
     }
     createWriteCache() {
         this.output.usingCache = true;
-        // pipe remainings to cache file
-        this.cache = fs.createWriteStream(this.cachePath);
+        // pipe remainings to cache file. It holds the message body and cacheDir is often a
+        // shared directory such as /tmp, so nobody but the owner gets to read it
+        this.cache = fs.createWriteStream(this.cachePath, { mode: 0o600 });
         this.cache.once('error', err => {
-            this.cleanup();
             // drain input
             this.relaxedBody.unpipe(this.cache);
             this.relaxedBody.on('readable', () => {
@@ -116,11 +137,12 @@ class DKIMSigner {
                     // do nothing
                 }
             });
-            this.hasErrored = true;
-            // emit error
-            this.output.emit('error', err);
+            this.fail(err);
         });
         this.cache.once('close', () => {
+            if (this.hasErrored) {
+                return;
+            }
             this.sendSignedOutput();
         });
         this.relaxedBody.removeAllListeners('readable');
@@ -191,7 +213,15 @@ class DKIM {
         }
         const signer = new DKIMSigner(options, this.keys, inputStream, output);
         setImmediate(() => {
-            signer.signStream();
+            try {
+                signer.signStream();
+            }
+            catch (_E) {
+                // the body hash is created here, an unknown hashAlgo throws inside this timer
+                // where nothing else could catch it
+                signer.fail(sign.unsupportedHashAlgoError(signer.hashAlgo));
+                return;
+            }
             if (writeValue) {
                 setImmediate(() => {
                     inputStream.end(writeValue);

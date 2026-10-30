@@ -2,8 +2,8 @@
  * A header value split into the value token and its parameters, the result of parseHeaderValue
  */
 export interface ParsedHeaderValue {
-    /** The value ahead of the parameters, for example the content type */
-    value: string | false;
+    /** The value ahead of the parameters, for example the content type, an empty string when there is none */
+    value: string;
     /** Parameter values keyed by lowercase parameter name */
     params: Record<string, string>;
 }
@@ -25,6 +25,9 @@ export interface EncodedHeaderParam {
     /** Parameter value of this part */
     value: string;
 }
+/** The names @types/nodemailer used for the two types above */
+export type HeaderValue = StructuredHeaderValue;
+export type ParsedHeaderParam = EncodedHeaderParam;
 /**
  * Checks if a value is plaintext string (uses only printable 7bit chars)
  *
@@ -56,6 +59,7 @@ export declare function quoteString(value?: string): string;
  * no need to encode the values in any way. If the value is plaintext but has
  * longer lines then allowed, then use format=flowed
  *
+ * @param str Multi line string to check
  * @param lineLength Max line length to check for
  * @returns Returns true if there is at least one line longer than lineLength chars
  */
@@ -97,12 +101,28 @@ export declare function buildHeaderValue(structured: StructuredHeaderValue): str
  *     title*0*=utf-8''unicode
  *     title*1*=%20string
  *
+ * @param key Parameter name the generated keys are built from, for example title
  * @param data String to be encoded
  * @param [maxLength=50] Max length for generated chunks
- * @param [fromCharset='UTF-8'] Source sharacter set
  * @return A list of encoded keys and headers
  */
 export declare function buildHeaderParam(key: string, data: string | Buffer, maxLength?: number): EncodedHeaderParam[];
+/**
+ * Options of parseHeaderValue()
+ */
+export interface ParseHeaderValueOptions {
+    /**
+     * Drop the RFC 822 comments outside quoted strings, which the MIME headers allow and
+     * which are not part of the value: 'boundary=b (comment)' names the boundary 'b'. A
+     * parenthesis right behind the '=' of a parameter or behind a token character of its
+     * value continues the token, as it does for Python and postal-mime, so 'Invoice(1).pdf'
+     * keeps its name and 'boundary=(c)b' names the boundary '(c)b'. A comment that never
+     * closes runs to the end of the value, unless a parameter follows it, in which case it is
+     * content and the parameter survives. Comments are kept by default for the sake of the
+     * callers of this exported function, not because keeping them is ever the better reading
+     */
+    stripComments?: boolean | undefined;
+}
 /**
  * Parses a header value with key=value arguments into a structured
  * object.
@@ -116,9 +136,10 @@ export declare function buildHeaderParam(key: string, data: string | Buffer, max
  *   }
  *
  * @param str Header value
+ * @param options Options, see ParseHeaderValueOptions
  * @return Header value as a parsed structure
  */
-export declare function parseHeaderValue(str: string): ParsedHeaderValue;
+export declare function parseHeaderValue(str: string, options?: ParseHeaderValueOptions): ParsedHeaderValue;
 /**
  * Returns file extension for a content type string. If no suitable extensions
  * are found, 'bin' is used as the default extension

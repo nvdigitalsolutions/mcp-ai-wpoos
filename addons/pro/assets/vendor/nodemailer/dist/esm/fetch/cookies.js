@@ -8,7 +8,7 @@ const SESSION_TIMEOUT = 1800; // 30 min
  * @constructor
  * @param [options] Optional options object
  */
-export default class Cookies {
+class Cookies {
     constructor(options) {
         this.options = options || {};
         this.cookies = [];
@@ -92,19 +92,31 @@ export default class Cookies {
      */
     parse(cookieStr) {
         const cookie = {};
+        let hasNameValue = false;
         (cookieStr || '')
             .toString()
             .split(';')
             .forEach(cookiePart => {
-            const valueParts = cookiePart.split('=');
-            const key = valueParts.shift().trim().toLowerCase();
-            let value = valueParts.join('=').trim();
-            let domain;
-            if (!key) {
+            if (!cookiePart.trim()) {
                 // skip empty parts
                 return;
             }
-            switch (key) {
+            const valueParts = cookiePart.split('=');
+            const name = valueParts.shift().trim();
+            let value = valueParts.join('=').trim();
+            let domain;
+            // the first part is always the name-value pair, so a cookie named
+            // like an attribute is not mistaken for one (RFC 6265 section 5.2)
+            if (!hasNameValue) {
+                hasNameValue = true;
+                if (name) {
+                    // cookie names are case-sensitive, only attribute names are not
+                    cookie.name = name;
+                    cookie.value = value;
+                }
+                return;
+            }
+            switch (name.toLowerCase()) {
                 case 'expires': {
                     const expires = new Date(value);
                     // ignore date if can not parse it
@@ -132,11 +144,6 @@ export default class Cookies {
                 case 'httponly':
                     cookie.httponly = true;
                     break;
-                default:
-                    if (!cookie.name) {
-                        cookie.name = key;
-                        cookie.value = value;
-                    }
             }
         });
         return cookie;
@@ -153,16 +160,14 @@ export default class Cookies {
         // check if hostname matches
         // .foo.com also matches subdomains, foo.com does not
         if (urlparts.hostname !== cookie.domain &&
-            (cookie.domain.charAt(0) !== '.' ||
-                ('.' + urlparts.hostname).substr(-cookie.domain.length) !== cookie.domain)) {
+            (cookie.domain.charAt(0) !== '.' || ('.' + urlparts.hostname).substr(-cookie.domain.length) !== cookie.domain)) {
             return false;
         }
         // check if the request path path-matches the cookie path (RFC 6265 section 5.1.4):
         // identical paths match, otherwise the cookie path must be a directory prefix
         const pathname = urlparts.pathname || '/';
         const cookiePath = cookie.path;
-        const pathMatches = pathname === cookiePath ||
-            (pathname.startsWith(cookiePath) && (cookiePath.endsWith('/') || pathname.charAt(cookiePath.length) === '/'));
+        const pathMatches = pathname === cookiePath || (pathname.startsWith(cookiePath) && (cookiePath.endsWith('/') || pathname.charAt(cookiePath.length) === '/'));
         if (!pathMatches) {
             return false;
         }
@@ -239,3 +244,4 @@ export default class Cookies {
         return path;
     }
 }
+export default Cookies;

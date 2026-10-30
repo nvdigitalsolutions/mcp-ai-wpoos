@@ -39,6 +39,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_js_1 = __importDefault(require("../mime-node/index.js"));
 const mimeFuncs = __importStar(require("../mime-funcs/index.js"));
+const errors = __importStar(require("../errors.js"));
 const index_js_2 = require("../shared/index.js");
 /**
  * Creates the object for composing a MimeNode instance out from the mail options
@@ -53,6 +54,40 @@ const index_js_2 = require("../shared/index.js");
 function isContentObject(value) {
     const content = value;
     return typeof value === 'object' && !!(content.content || content.path || content.href || content.raw);
+}
+/**
+ * Tells whether attachment content is a string or a Buffer that 7bit can describe: ASCII
+ * only, no NUL and no line over the 998 octets of RFC 5322. Anything else, a stream or a
+ * file path included, can not be checked here
+ */
+function fitsSevenBit(content) {
+    let at;
+    let length;
+    if (typeof content === 'string') {
+        at = i => content.charCodeAt(i);
+        length = content.length;
+    }
+    else if (Buffer.isBuffer(content)) {
+        at = i => content[i];
+        length = content.length;
+    }
+    else {
+        return false;
+    }
+    let lineLength = 0;
+    for (let i = 0; i < length; i++) {
+        const c = at(i);
+        if (c === 0 || c > 0x7f) {
+            return false;
+        }
+        if (c === 0x0a || c === 0x0d) {
+            lineLength = 0;
+        }
+        else if (++lineLength > 998) {
+            return false;
+        }
+    }
+    return true;
 }
 class MailComposer {
     constructor(mail) {
@@ -99,6 +134,10 @@ class MailComposer {
         if (this.mail.headers) {
             this.message.addHeader(this.mail.headers);
         }
+        // after the custom headers, so it replaces an OTP-Token from them, the field may appear only once
+        if (this.mail.otp) {
+            this.message.setHeader('OTP-Token', formatOtpToken(this.mail.otp));
+        }
         // Add headers to the root node, always overrides custom headers
         ['from', 'sender', 'to', 'cc', 'bcc', 'reply-to', 'in-reply-to', 'references', 'subject', 'message-id', 'date'].forEach(header => {
             const key = header.replace(/-(\w)/g, (o, c) => c.toUpperCase());
@@ -136,8 +175,11 @@ class MailComposer {
                 contentTransferEncoding = attachment.contentTransferEncoding;
             }
             else if (isMessageNode) {
-                // the content might include non-ASCII bytes but at this point we do not know it yet
-                contentTransferEncoding = '8bit';
+                // a message/* part can not be encoded (RFC 2046 5.2.1), so the label has to describe
+                // the content as it is. A stream or a file might hold non-ASCII bytes that can not be
+                // checked here, so only content at hand that fits 7bit is labelled as such
+                // content with an `encoding` is decoded later, so what it decodes to is not known here either
+                contentTransferEncoding = !attachment.encoding && fitsSevenBit(attachment.content) ? '7bit' : '8bit';
             }
             else {
                 contentTransferEncoding = 'base64'; // the default
@@ -151,8 +193,8 @@ class MailComposer {
                 data.filename = attachment.filename;
             }
             else if (!isMessageNode && attachment.filename !== false) {
-                data.filename =
-                    (attachment.path || attachment.href || '').split('/').pop().split('?').shift() || 'attachment-' + (i + 1);
+                // a backslash separates as well, so a Windows path does not put the sender's directories in the headers
+                data.filename = (attachment.path || attachment.href || '').split(/[/\\]/).pop().split('?').shift() || 'attachment-' + (i + 1);
                 if (data.filename.indexOf('.') < 0) {
                     data.filename += '.' + mimeFuncs.detectExtension(data.contentType);
                 }
@@ -313,8 +355,7 @@ class MailComposer {
         if (this.mail.icalEvent) {
             eventObject = Object.assign({}, this._getIcalEvent());
             eventObject.filename = false;
-            eventObject.contentType =
-                'text/calendar; charset=utf-8; method=' + (eventObject.method || 'PUBLISH').toString().trim().toUpperCase();
+            eventObject.contentType = 'text/calendar; charset=utf-8; method=' + (eventObject.method || 'PUBLISH').toString().trim().toUpperCase();
             if (!eventObject.headers) {
                 eventObject.headers = {};
             }
@@ -342,8 +383,7 @@ class MailComposer {
                 alternative = this._processDataUrl(alternative);
             }
             const data = {
-                contentType: alternative.contentType ||
-                    mimeFuncs.detectMimeType(alternative.filename || alternative.path || alternative.href || 'txt'),
+                contentType: alternative.contentType || mimeFuncs.detectMimeType(alternative.filename || alternative.path || alternative.href || 'txt'),
                 contentTransferEncoding: alternative.contentTransferEncoding
             };
             if (alternative.filename) {
@@ -605,6 +645,54 @@ class MailComposer {
         }
         return element;
     }
+}
+/**
+ * Returns the value of the OTP-Token header for the otp option. The header is defined by
+ * draft-goto-otp-token-01, an Internet-Draft that expires on 25 March 2027. By then check
+ * for a newer revision of the draft or a published RFC, the header name and its
+ * parameters are still open questions in the draft.
+ */
+function formatOtpToken(otp) {
+    // a structured field String can only hold printable ascii. The code is a secret the recipient
+    // compares against the one in the message body, so it is rejected rather than cleaned up
+    if (typeof otp.code !== 'string' || !/^[\x20-\x7e]+$/.test(otp.code)) {
+        throw otpError('The otp code must be a non-empty string of printable ASCII characters');
+    }
+    // a structured field String escapes the same two characters as a quoted-string
+    return mimeFuncs.quoteString(otp.code) + '; origin=' + mimeFuncs.quoteString(getOtpOrigin(otp.origin));
+}
+/**
+ * Returns the canonical ascii serialization of the origin the code is bound to. The draft
+ * requires a potentially trustworthy origin, so only https is accepted, plus http on a
+ * loopback host for local development
+ */
+function getOtpOrigin(origin) {
+    let url;
+    try {
+        url = new URL(String(origin));
+    }
+    catch {
+        // handled below
+    }
+    // the WHATWG parser lets characters such as a quote or a brace into a host, which the
+    // origin grammar the draft requires (RFC 6454) does not allow, so a receiver would discard
+    // the header. Only a DNS name, an IPv4 address or a bracketed IPv6 address is accepted.
+    // Userinfo is refused as well, an origin never has it and it turns a value built as
+    // 'https://example.com' + input into the origin of whatever host follows an "@"
+    if (!url || url.username || url.password || !/^([a-z0-9_-]+\.)*[a-z0-9_-]+$|^\[[0-9a-f:.]+\]$/.test(url.hostname)) {
+        throw otpError('The otp origin must be an absolute https URL');
+    }
+    const isLoopback = /^(localhost|.+\.localhost|127(\.\d+){3}|\[::1\])$/.test(url.hostname);
+    if (url.protocol !== 'https:' && !(url.protocol === 'http:' && isLoopback)) {
+        throw otpError('The otp origin must be an https URL, or an http URL on a loopback host');
+    }
+    // the URL parser already lowercases the host, converts it to punycode and drops the default port
+    return url.origin;
+}
+function otpError(message) {
+    const err = new Error(message);
+    err.code = errors.EOTP;
+    return err;
 }
 exports.default = MailComposer;
 module.exports = exports.default;

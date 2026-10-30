@@ -1,6 +1,7 @@
+import type { NodemailerError } from '../errors.js';
 import { isProtoKey, copyOwnKeys } from './objects.js';
 import os from 'node:os';
-import type { Readable } from 'node:stream';
+import { type Readable } from 'node:stream';
 import type { OutgoingHttpHeaders } from 'node:http';
 export { isProtoKey, copyOwnKeys };
 /**
@@ -34,6 +35,8 @@ export interface ResolvedHostname {
     /** The resolver error when a cached value was used because of it */
     error?: Error | undefined;
 }
+/** The name @types/nodemailer used for ResolvedHostname */
+export type ResolveHostnameValue = ResolvedHostname;
 /**
  * Resolved addresses as stored in the DNS cache
  */
@@ -83,6 +86,8 @@ export interface LogEntry {
     [key: string]: any;
 }
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+/** The name @types/nodemailer used for LogLevel */
+export type LoggerLevel = LogLevel;
 /**
  * A logger supplied by the caller, bunyan style. Any object works, a level it does not
  * implement is routed to one it does, see _logFunc
@@ -105,15 +110,23 @@ export interface GetLoggerOptions {
     logger?: ExternalLogger | boolean | undefined;
 }
 /**
+ * A bunyan style log method: a data object followed by a printf style message, or the
+ * message alone
+ */
+export interface LogMethod {
+    (data: LogEntry | undefined, message?: string, ...args: any[]): void;
+    (message?: string, ...args: any[]): void;
+}
+/**
  * The bunyan compatible logger interface returned by getLogger
  */
 export interface Logger {
-    trace(data?: LogEntry, message?: string, ...args: any[]): void;
-    debug(data?: LogEntry, message?: string, ...args: any[]): void;
-    info(data?: LogEntry, message?: string, ...args: any[]): void;
-    warn(data?: LogEntry, message?: string, ...args: any[]): void;
-    error(data?: LogEntry, message?: string, ...args: any[]): void;
-    fatal(data?: LogEntry, message?: string, ...args: any[]): void;
+    trace: LogMethod;
+    debug: LogMethod;
+    info: LogMethod;
+    warn: LogMethod;
+    error: LogMethod;
+    fatal: LogMethod;
 }
 /**
  * A parsed data URI
@@ -175,6 +188,7 @@ export declare const parseConnectionUrl: (str?: string | null) => ConnectionUrlO
  * creates a default console logger
  *
  * @param [options] Options object that might include 'logger' value
+ * @param [defaults] Fields merged into every log entry, overridden by the fields of the entry itself
  * @return bunyan compatible logger
  */
 export declare const getLogger: (options?: GetLoggerOptions, defaults?: LogEntry) => Logger;
@@ -198,18 +212,41 @@ export declare const parseDataURI: (uri: unknown) => ParsedDataURI | null;
  *
  * @param data An object or an Array you want to resolve an element for, see ContentDescriptor for the values it understands
  * @param key Property name or an Array index
- * @param [options] Optional access policy: { disableFileAccess, disableUrlAccess }
  * @param callback Callback function with (err, value)
  */
 export declare function resolveContent(data: {
     [key: string]: any;
 }, key: string | number, callback: ResolveContentCallback): void;
+/**
+ * Resolves a String or a Buffer value for content value
+ *
+ * @param data An object or an Array you want to resolve an element for, see ContentDescriptor for the values it understands
+ * @param key Property name or an Array index
+ * @param options Access policy: { disableFileAccess, disableUrlAccess }
+ * @param callback Callback function with (err, value)
+ */
 export declare function resolveContent(data: {
     [key: string]: any;
 }, key: string | number, options: ResolveContentOptions | false | undefined, callback: ResolveContentCallback): void;
+/**
+ * Resolves a String or a Buffer value for content value
+ *
+ * @param data An object or an Array you want to resolve an element for, see ContentDescriptor for the values it understands
+ * @param key Property name or an Array index
+ * @param [options] Optional access policy: { disableFileAccess, disableUrlAccess }
+ * @returns Promise that resolves with the value
+ */
 export declare function resolveContent(data: {
     [key: string]: any;
 }, key: string | number, options?: ResolveContentOptions | false): Promise<any>;
+/**
+ * Resolves a String or a Buffer value for content value
+ *
+ * @param data An object or an Array you want to resolve an element for, see ContentDescriptor for the values it understands
+ * @param key Property name or an Array index
+ * @param options Access policy: { disableFileAccess, disableUrlAccess }
+ * @param callback Callback function with (err, value), a Promise is returned if not set
+ */
 export declare function resolveContent(data: {
     [key: string]: any;
 }, key: string | number, options: ResolveContentOptions | false | undefined, callback: ResolveContentCallback | undefined): Promise<any> | void;
@@ -222,3 +259,33 @@ export declare const assign: (...args: ({
     [key: string]: any;
 };
 export declare const encodeXText: (str: string) => string;
+/**
+ * Keeps the first error a content stream emits before it is read, so the error is reported
+ * when the stream is read instead of being thrown as unhandled. The listener stays attached
+ * for good, a stream that emits 'error' more than once never throws the later ones either
+ *
+ * @param stream Readable stream
+ */
+export declare function recordStreamErrors(stream: Readable): void;
+/**
+ * Destroys a value if it is a readable stream that was not destroyed yet
+ *
+ * @param value Any content value
+ */
+export declare function destroyStream(value: unknown): void;
+/**
+ * Tells why a stream can not be read from start to end anymore. A stream that ended or was
+ * destroyed before anyone read it would never emit 'end' to a new reader, or, when piped, would
+ * end the destination right away and turn into an empty value without any error
+ *
+ * @param stream Readable stream
+ * @returns The error the stream failed with, an ESTREAM error, or null when it can be read
+ */
+export declare function unreadableStreamError(stream: Readable): NodemailerError | null;
+/**
+ * Streams a stream value into a Buffer
+ *
+ * @param stream Readable stream
+ * @param callback Callback function with (err, value)
+ */
+export declare function resolveStream(stream: Readable, callback: (err: Error | null, value?: Buffer) => void): void;

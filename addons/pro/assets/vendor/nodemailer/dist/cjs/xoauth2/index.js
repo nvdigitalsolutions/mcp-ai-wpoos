@@ -74,12 +74,14 @@ class XOAuth2 extends node_stream_1.Stream {
     constructor(options, logger) {
         super();
         this.options = options || {};
+        this.configError = false;
         if (options && options.serviceClient) {
             if (!options.privateKey || !options.user) {
+                // reported through getToken() rather than an 'error' event: the transports forward
+                // that event up to the Mail object, where nothing may be listening
                 const err = new Error('Options "privateKey" and "user" are required for service account!');
                 err.code = errors.EOAUTH2;
-                setImmediate(() => this.emit('error', err));
-                return;
+                this.configError = err;
             }
             const serviceRequestTimeout = Math.min(Math.max(Number(this.options.serviceRequestTimeout) || 0, 0), 3600);
             this.options.serviceRequestTimeout = serviceRequestTimeout || 5 * 60;
@@ -111,6 +113,11 @@ class XOAuth2 extends node_stream_1.Stream {
      * @param callback Callback function with error object and token string
      */
     getToken(renew, callback) {
+        // the error paths hand over the error alone
+        const done = callback;
+        if (this.configError) {
+            return done(this.configError);
+        }
         if (!renew && this.accessToken && (!this.expires || this.expires > Date.now())) {
             this.logger.debug({
                 tnx: 'OAUTH2',
@@ -136,11 +143,11 @@ class XOAuth2 extends node_stream_1.Stream {
             }, 'Cannot renew access token for %s: No refresh mechanism available', this.options.user);
             const err = new Error("Can't create new access token for user");
             err.code = errors.EOAUTH2;
-            return callback(err);
+            return done(err);
         }
         // If renewal already in progress, queue this request instead of starting another
         if (this.renewing) {
-            this.renewalQueue.push({ renew, callback });
+            this.renewalQueue.push({ renew, callback: done });
             return;
         }
         this.renewing = true;
@@ -165,7 +172,7 @@ class XOAuth2 extends node_stream_1.Stream {
                 }, 'Generated new Access Token for %s', this.options.user);
             }
             // Complete original request
-            callback(err, accessToken);
+            done(err, accessToken);
         };
         if (this.provisionCallback) {
             this.provisionCallback(this.options.user, !!renew, (err, accessToken, expires) => {
@@ -204,6 +211,8 @@ class XOAuth2 extends node_stream_1.Stream {
      * @param callback Callback function with error object and token string
      */
     generateToken(callback) {
+        // the error paths hand over the error alone
+        const done = callback;
         let urlOptions;
         let loggedUrlOptions;
         if (this.options.serviceClient) {
@@ -224,7 +233,7 @@ class XOAuth2 extends node_stream_1.Stream {
             catch (_err) {
                 const err = new Error("Can't generate token. Check your auth options");
                 err.code = errors.EOAUTH2;
-                return callback(err);
+                return done(err);
             }
             urlOptions = {
                 grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
@@ -239,7 +248,7 @@ class XOAuth2 extends node_stream_1.Stream {
             if (!this.options.refreshToken) {
                 const err = new Error("Can't create new access token for user");
                 err.code = errors.EOAUTH2;
-                return callback(err);
+                return done(err);
             }
             // web app - https://developers.google.com/identity/protocols/OAuth2WebServer
             urlOptions = {
@@ -255,8 +264,14 @@ class XOAuth2 extends node_stream_1.Stream {
                 grant_type: 'refresh_token'
             };
         }
-        Object.assign(urlOptions, this.options.customParams);
-        Object.assign(loggedUrlOptions, this.options.customParams);
+        const customParams = this.options.customParams || {};
+        Object.assign(urlOptions, customParams);
+        // a custom param is as likely to be a client assertion or an API key as a tenant
+        // name, so the log gets the same glimpse of it that it gets of the client secret
+        for (const key of Object.keys(customParams)) {
+            const param = customParams[key];
+            loggedUrlOptions[key] = (param === undefined || param === null ? '' : String(param)).substr(0, 6) + '...';
+        }
         this.logger.debug({
             tnx: 'OAUTH2',
             user: this.options.user,
@@ -265,13 +280,13 @@ class XOAuth2 extends node_stream_1.Stream {
         this.postRequest(this.options.accessUrl, urlOptions, this.options, (error, body) => {
             let data;
             if (error) {
-                return callback(error);
+                return done(error);
             }
             try {
                 data = JSON.parse(body.toString());
             }
             catch (E) {
-                return callback(E);
+                return done(E);
             }
             if (!data || typeof data !== 'object') {
                 this.logger.debug({
@@ -281,7 +296,7 @@ class XOAuth2 extends node_stream_1.Stream {
                 }, 'Response: %s', (body || '').toString());
                 const err = new Error('Invalid authentication response');
                 err.code = errors.EOAUTH2;
-                return callback(err);
+                return done(err);
             }
             const logData = Object.assign({}, data);
             if (logData.access_token) {
@@ -303,7 +318,7 @@ class XOAuth2 extends node_stream_1.Stream {
                 }
                 const err = new Error(errorMessage);
                 err.code = errors.EOAUTH2;
-                return callback(err);
+                return done(err);
             }
             if (data.access_token) {
                 this.updateToken(data.access_token, data.expires_in);
@@ -311,7 +326,7 @@ class XOAuth2 extends node_stream_1.Stream {
             }
             const err = new Error('No access token');
             err.code = errors.EOAUTH2;
-            return callback(err);
+            return done(err);
         });
     }
     /**
@@ -345,7 +360,10 @@ class XOAuth2 extends node_stream_1.Stream {
             method: 'post',
             headers: params.customHeaders,
             body: payload,
-            allowErrorResponse: true
+            allowErrorResponse: true,
+            // unset falls back to the fetch default, a stalled token endpoint would otherwise keep
+            // `renewing` set and queue every later request
+            timeout: params.requestTimeout
         };
         // OAuth2 token endpoints are credential-bearing. src/fetch already
         // validates certs by default; pin rejectUnauthorized:true here so the

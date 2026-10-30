@@ -1,12 +1,15 @@
 {
     "name": "nodemailer",
-    "version": "10.0.9",
+    "version": "10.3.1",
     "description": "Easy as cake e-mail sending from your Node.js applications",
     "type": "module",
     "main": "./dist/cjs/nodemailer.js",
     "typesVersions": {
         "*": {
             "lib/well-known/services.json": [
+                "dist/well-known/services.json"
+            ],
+            "lib/well-known/services": [
                 "dist/well-known/services.json"
             ],
             "lib/*": [
@@ -97,6 +100,7 @@
             "require": "./dist/cjs/well-known/index.js"
         },
         "./lib/well-known/services.json": "./dist/well-known/services.json",
+        "./lib/well-known/services": "./dist/well-known/services.json",
         "./lib/xoauth2": {
             "import": "./dist/esm/xoauth2/index.js",
             "require": "./dist/cjs/xoauth2/index.js"
@@ -124,6 +128,8 @@
         "test": "node --import tsx --test --test-concurrency=1 $(find test \\( -name '*-test.ts' -o -name '*.test.ts' \\))",
         "pretest:coverage": "npm run build",
         "test:coverage": "c8 node --import tsx --test --test-concurrency=1 $(find test \\( -name '*-test.ts' -o -name '*.test.ts' \\))",
+        "pretest:cjs": "npm run build",
+        "test:cjs": "NODE_OPTIONS=--no-experimental-require-module node test/package/cjs-smoke.cjs",
         "pretest:bun": "npm run build",
         "test:bun": "bun test --timeout 60000 $(find ./test \\( -name '*-test.ts' -o -name '*.test.ts' \\))",
         "format": "prettier --write \"**/*.{js,cjs,ts,json,md}\"",
@@ -147,24 +153,24 @@
     },
     "homepage": "https://nodemailer.com/",
     "devDependencies": {
-        "@aws-sdk/client-sesv2": "3.1131.0",
+        "@aws-sdk/client-sesv2": "3.1159.0",
         "@types/node": "20.19.43",
         "bunyan": "1.8.15",
         "c8": "12.0.0",
-        "eslint": "10.10.0",
+        "eslint": "10.13.0",
         "eslint-config-prettier": "10.1.8",
-        "globals": "17.12.0",
-        "libbase64": "1.3.0",
-        "libmime": "5.4.3",
-        "libqp": "2.1.1",
-        "mailauth": "5.0.3",
-        "prettier": "3.9.6",
+        "globals": "17.13.0",
+        "libbase64": "1.4.1",
+        "libmime": "5.6.3",
+        "libqp": "3.0.1",
+        "mailauth": "8.0.4",
+        "prettier": "3.9.10",
         "proxy": "1.0.2",
         "proxy-test-server": "1.0.0",
-        "smtp-server": "3.19.11",
-        "tsx": "4.23.13",
+        "smtp-server": "3.21.2",
+        "tsx": "4.23.15",
         "typescript": "6.0.3",
-        "typescript-eslint": "8.70.0"
+        "typescript-eslint": "8.72.1"
     },
     "engines": {
         "node": ">=20.0.0"
