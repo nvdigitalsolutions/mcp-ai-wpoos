@@ -173,6 +173,14 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 		}
 	} );
 
+	// The persisted site is shared with the `allowRemote` surfaces (Posts &
+	// Pages, Products) that render the picker. Pages without the picker
+	// (CRM, Projects, Professions, …) must keep browsing the local site —
+	// otherwise a connection chosen elsewhere would silently retarget their
+	// fetches at a remote site whose access controls may not allow the
+	// entity's post type (a 403 on every list/detail request).
+	const effectiveRemoteSite = allowRemote ? remoteSite : '';
+
 	const entities = useMemo(
 		() => filterEntitiesByGroup( allEntities, group ),
 		[ allEntities, group ]
@@ -256,8 +264,8 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 				perPage: currentPerPage,
 				signal: controller.signal,
 			};
-			const request = remoteSite
-				? client.listRemote( currentEntity, options, remoteSite )
+			const request = effectiveRemoteSite
+				? client.listRemote( currentEntity, options, effectiveRemoteSite )
 				: client.list( currentEntity, options );
 			request
 				.then( ( result ) => {
@@ -282,7 +290,7 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 				} );
 			return () => controller.abort();
 		},
-		[ client, remoteSite ]
+		[ client, effectiveRemoteSite ]
 	);
 
 	useEffect( () => {
@@ -323,8 +331,8 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 			const controller = new AbortController();
 			detailAbort.current = controller;
 			setDetailLoading( true );
-			const request = remoteSite
-				? client.getRemote( entity, record.id, remoteSite, controller.signal )
+			const request = effectiveRemoteSite
+				? client.getRemote( entity, record.id, effectiveRemoteSite, controller.signal )
 				: client.get( entity, record.id, controller.signal );
 			request
 				.then( ( full ) => {
@@ -341,7 +349,7 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 					setDetailLoading( false );
 				} );
 		},
-		[ client, entity, expandedId, remoteSite ]
+		[ client, entity, expandedId, effectiveRemoteSite ]
 	);
 
 	// Abort an in-flight detail fetch when the page unmounts. The list fetch is
@@ -532,7 +540,7 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 				/>
 			) }
 
-			{ remoteSite && (
+			{ effectiveRemoteSite && (
 				<p className="nvoos-pro-spa-settings__hint" role="status">
 					{ __( 'Browsing a remote site — read-only. Create and Research are hidden.', 'nvoos-pro-spa' ) }
 				</p>
@@ -590,7 +598,7 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 				</form>
 			) }
 
-			{ entity && ! remoteSite && (
+			{ entity && ! effectiveRemoteSite && (
 				<section className="nvoos-pro-spa-records-research" aria-label={ __( 'Research & Add', 'nvoos-pro-spa' ) }>
 					<h3 className="nvoos-pro-spa-records-detail__title">
 						{ __( 'Research & Add', 'nvoos-pro-spa' ) } { entity.singular.toLowerCase() }
