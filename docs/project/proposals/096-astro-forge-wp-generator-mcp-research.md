@@ -1,0 +1,84 @@
+# Proposal 096 — Research Notes: MCP-Driven WP→Astro Generation (Verified 2026-10-30)
+
+Companion to `096-astro-forge-wp-generator-mcp-proposal.md` §2. All sources verified live 2026-10-30 (fetched, not recalled), except repo-internal references (verified earlier in this session).
+
+---
+
+## 1. Competitor & ecosystem survey
+
+### 1.1 `vapvarun/wp-astro-mcp` — the only real WP+Astro+MCP generator
+
+GitHub search `wordpress+astro+mcp` (2026-10-30): 5 total results; 3 are irrelevant (a landing page for a WordPress Abilities-MCP plugin, `corsen-context` — a read-only content MCP with a WP plugin, and a portfolio). `wp-astro-mcp` (12★, MIT, TypeScript, 113 tests, 57 tools, pushed 2026-09-13) is the only genuine generator. Full README reviewed. Architecture in one line: **extract → convert (HTML→Markdown, 13 steps) → materialize files → SQLite state machine → sync by `modified_gmt` → git/GitHub publish → Vercel/Netlify/Cloudflare configs**, plus an optional `wp-astro-bridge` WordPress plugin (HMAC webhooks, single-use draft-preview tokens, normalized SEO REST field, health endpoint).
+
+Weaknesses we verified from its own documentation (our proposal fixes each):
+1. **Plaintext credentials** — `config/sites.json` stores application passwords + a GitHub PAT unencrypted ("no encryption layer; the file is the credential store").
+2. **No SSRF guard** — "There is no allowlist; whatever base URL you configure is fetched" (its own security section).
+3. **Git argv token exposure** — during `github_push` the PAT "may briefly appear in the push process's argv (visible via `ps`)".
+4. **Layout loss on page builders** — its own FAQ: Elementor/WPBakery/Divi content "will lose their visual structure … you get the content, not the layout."
+5. **OOM at scale** — ≥500 Markdown files OOM the Astro build; the fix is a JSON escape hatch (a workaround for the materialization model itself).
+6. **Astro 6** target — a full major behind the Astro 7 storefront we already operate.
+
+Strengths worth adopting: capability auto-detection (`site_add`/`site_analyze`), `_fields`/`_embed`-aware extraction, content audit tooling, the bridge-plugin feature set (webhooks/preview/SEO field/health), setup-wizard UX, router-vs-full tool modes, single-source-of-truth Zod registry with a CI coverage test, structured output, per-site token-bucket rate limiting.
+
+### 1.2 Adjacent signals
+
+- **`RegionallyFamous/dashless`** (1★, PHP, "WordPress without the dashboard: conversational publishing through local Codex, with an owned Astro frontend and first-class WP Cloud deployment") — confirms the product direction (assistant-driven WP + owned Astro frontend) is being pursued independently.
+- **`starwind-ui`** (759★) — the component-library option wp-astro-mcp's scaffolder uses; for us, 092's own components are the donor library (no new dependency).
+- **No reusable "Astro WP content loader" npm package exists** (GitHub search `astro+wordpress+loader`: 2 irrelevant results). The loader is greenfield — built once, reusable (→ `packages/` extraction later, per the 065 npm-packages precedent).
+
+## 2. Astro's official position (the standards anchor)
+
+The official [Headless WordPress & Astro guide](https://docs.astro.build/en/guides/cms/wordpress/) (re-verified 2026-10-30) prescribes:
+
+- **REST-first**: `/wp-json/wp/v2/` is the default ("available by default with any WordPress site"); WPGraphQL/Gato GraphQL are optional. Consistent with 092 §2.2's decision.
+- **Field pruning + embedding**: use `_fields` to restrict responses and `_embed` for related resources (featured media, authors, terms) — the standard anti-N+1 discipline; our loader implements both.
+- **Render HTML, don't convert**: the guide's examples use `set:html={post.content.rendered}` — WordPress HTML is the rendering format. This is the industry-standard alternative to wp-astro-mcp's Markdown conversion and is the reason the 096 loader preserves page-builder layouts.
+- **Prerender via `getStaticPaths`**; SSR as the dynamic option. The Content Layer API is the Astro-5+ mechanism for both; the guide's own community-resources list links "Shattering Headless WordPress Build Times with Astro's Content Layer API" and "Your client clicks Publish. Then what? Automatic rebuilds for headless WordPress and Astro" — i.e. the two community articles that describe exactly the loader + webhook-rebuild architecture 096 adopts.
+- **Public REST is read-only by default** ("does not allow users to modify your data"); authentication is opt-in — the trust model for read loaders.
+
+## 3. The loader-first architecture (decision basis)
+
+| Concern | Materialize (wp-astro-mcp) | Content Layer loader (096) |
+|---|---|---|
+| Content copies vs CMS | Files copied; sync engine reconciles drift | WordPress stays the single source of truth |
+| Page-builder layouts | Lost (their FAQ) | Preserved (sanitized HTML render) |
+| Scale | OOM ≥500 MD files → JSON workaround | Loader + Astro content cache; no file explosion |
+| Sync complexity | SQLite jobs, resumable exports, change detection | Webhook → rebuild (the repo's shipped funiq-bridge pattern) or SSR |
+| Repo hygiene | Content churn in git history | Repos hold code + templates only |
+| Offline/archival | Inherent | Opt-in `content_materialize` export |
+
+Adopted: B (loader), with A kept as an opt-in escape hatch — this is the *superset* of wp-astro-mcp's capability with a fraction of the state machinery, and it matches the direction of the Astro docs' own community references.
+
+## 4. Security standards applied (industry + repo)
+
+- **Application passwords**: WordPress-native, per-user scoped, revocable — the Elementor MCP / WordPress MCP Adapter guidance (already encoded in the `design-elementor-mcp-connection` skill).
+- **No plaintext credential stores**: the repo's Vault discipline (encrypted at rest, masked in UI/logs); 096's `vault.ts` is the MCP-side equivalent, directly remediating wp-astro-mcp weakness #1.
+- **SSRF guard before fetch**: `is_url_allowed` pattern (repo standard) — remediates wp-astro-mcp weakness #2.
+- **No subprocess secrets**: octokit over `git` CLI — remediates weakness #3.
+- **XSS at the content boundary**: `sanitize-html` (already a dependency of `examples/nvoos-astro-velocity`) with a versioned allowlist — the DOMPurify discipline wp-astro-mcp uses, on the library we already ship.
+- **Bridge plugin wp.org discipline**: nonce/cap checks, output escaping, HMAC fail-closed, single-use + capability-checked preview tokens, redacted health endpoint — per the `mcp-ai-wpoos-wporg-submission` skill and the wp-astro-bridge security model (which we re-implement, not copy).
+
+## 5. MCP craft (carried from 095)
+
+- SDK v2 (`@modelcontextprotocol/server`), protocol 2026-07-28 (matches the NV oOS MCP Apps client) — verified in the 095 research session.
+- Tool annotations (read-only/destructive/open-world) — the MCP spec's own tool-annotation feature; wp-astro-mcp demonstrates them in production.
+- Single-source-of-truth registry (Zod schemas drive validation AND discovery; CI coverage test) — wp-astro-mcp's `registry.ts` pattern, adopted in 095 §8 and here.
+- `structuredContent` + text blocks for machine-readable results.
+- Router mode (small promoted tool list) vs full mode — context-budget discipline for LLM clients.
+
+## 6. Repo assets this builds on (verified locations)
+
+| Asset | Role |
+|---|---|
+| `examples/nvoos-astro-velocity/` | Template donor: Astro 7 config, product components, cart/gallery islands, image pipeline, `resolveBase` env pattern |
+| `addons/funiq-bridge/includes/RebuildWebhook.php` | The debounced webhook → `repository_dispatch` → rebuild pattern, generalized to posts/pages |
+| `.github/workflows/sync-nvoos-astro-velocity.yml` | The mirror deploy recipe, parameterized per client for `deploy_config` (Velocity) |
+| 095 output (`src/tokens/`, ADS generator) | Token layer every generated site ships; `tokens_apply` rebrand primitive |
+| Proposal 054 / 061 | npx packaging + MCP registry publishing rails for Forge itself |
+| `mcp-ai-wpoos-playground-demos` skill | WordPress Playground blueprints = the hermetic CI fixture + the public demo |
+| `mcp-ai-wpoos-wporg-submission` skill | Bridge plugin gate (plugin-check, escaping, readme) |
+
+## 7. Corrections / clarifications to prior repo statements
+
+- **092 Phase 4** (`nvoos-astro-starter` as a static template) is superseded by 096: the blog template inside Forge *is* the starter, now MCP-driven, loader-based, and brand-themed at scaffold time (owner decision Q2).
+- **092 §2.5 / 095 research** (Astro's official MCP = docs-only): Forge is the repo's own *generation* MCP — the third node in the ecosystem picture: Astro Docs MCP (knowledge) + Forge (generation) + 095's `nvoos-astro-mcp` (runtime ops).
