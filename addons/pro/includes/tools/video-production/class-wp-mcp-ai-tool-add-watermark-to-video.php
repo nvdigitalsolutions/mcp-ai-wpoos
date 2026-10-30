@@ -103,10 +103,12 @@ class WP_MCP_AI_Tool_Add_Watermark_To_Video implements WP_MCP_AI_Tool_Interface,
 			'properties' => array(
 				'video_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Video media ID',
 				),
 				'watermark_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Watermark image ID',
 				),
 				'position'     => array(

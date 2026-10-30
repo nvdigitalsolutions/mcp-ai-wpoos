@@ -84,6 +84,7 @@ class WP_MCP_AI_Tool_Get_JetBooking_Units implements WP_MCP_AI_Tool_Interface, W
 			'properties' => array(
 				'instance_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Booking instance ID (required).', 'mcp-ai-wpoos-pro' ),
 				),
 				'check_in'    => array(

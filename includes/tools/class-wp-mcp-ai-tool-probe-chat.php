@@ -63,6 +63,7 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'assistant_id' => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Published assistant post ID to probe.', 'mcp-ai-wpoos' ),
 				),
 				'message'      => array(

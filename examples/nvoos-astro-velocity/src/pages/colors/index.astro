@@ -1,0 +1,31 @@
+---
+// Color index — SSR + cached.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllColors } from '../../lib/commerce/client';
+import { colorPath } from '../../lib/url';
+import { pageTitle, plainExcerpt } from '../../lib/seo/meta';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+const colors = await getAllColors(Astro.url);
+---
+
+<BaseLayout
+	title={pageTitle('Colors')}
+	description={plainExcerpt('Browse products by color.')}
+>
+	<h1>Colors</h1>
+	<ul>
+		{colors.map((color) => (
+			<li>
+				<a class="filter-chip" href={colorPath(color.id, color.name)}>
+					<span class="swatch" style={`background:${color.hexCode || '#ccc'}`} />
+					{color.name}
+				</a>
+			</li>
+		))}
+	</ul>
+</BaseLayout>

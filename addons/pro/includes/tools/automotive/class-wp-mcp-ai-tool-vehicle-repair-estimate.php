@@ -160,6 +160,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 				),
 				'price_sheet_attachment_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress attachment ID for the price sheet (CSV, XLSX, or JSON). Columns: line_item_code, description, vehicle_applicability, operation, unit_cost, labor_hours, labor_rate_group, notes.', 'mcp-ai-wpoos' ),
 				),
 				'vin'                       => array(
@@ -170,6 +171,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 				),
 				'vin_image_attachment_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Attachment ID for a VIN photo (windshield or door jamb label). Prioritized for VIN OCR.', 'mcp-ai-wpoos' ),
 				),
 				'vehicle_overrides'         => array(

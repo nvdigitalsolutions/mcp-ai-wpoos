@@ -13,6 +13,9 @@
  *   so wide or long tables never break the page layout.
  * - An optional footer slot (pagination, counts) rendered outside the scroll
  *   wrapper so it stays visible, and an empty state rendered in-body.
+ * - An optional `busy` state that dims the stale rows and sets `aria-busy`
+ *   while a page fetch is in flight (keep-previous-data pattern — the body
+ *   is never blanked between pages).
  *
  * The markup reuses the legacy `nvoos-pro-spa-tools-list` class family so the
  * shared stylesheet covers every table in the app from one place.
@@ -68,6 +71,13 @@ interface DataTableProps {
 	onSort?: ( key: string ) => void;
 	/** Hide the header row (e.g. for two-column message logs). */
 	hideHeader?: boolean;
+	/**
+	 * Dim the table body while a page fetch is in flight and mark the scroll
+	 * wrapper `aria-busy`. Follows the keep-previous-data pattern: the stale
+	 * rows stay mounted (no blank flash) but read as clearly inactive — the
+	 * paired `Pagination` carries the visible loading indicator.
+	 */
+	busy?: boolean;
 }
 
 /**
@@ -83,11 +93,23 @@ export function DataTable( {
 	sortDir,
 	onSort,
 	hideHeader = false,
+	busy = false,
 }: DataTableProps ): JSX.Element {
 	return (
 		<>
-			<div className="nvoos-pro-spa-tools-list-scroll">
-				<table className="nvoos-pro-spa-tools-list nvoos-pro-spa-tools-list--table">
+			<div
+				className="nvoos-pro-spa-tools-list-scroll"
+				aria-busy={ busy || undefined }
+			>
+				<table
+					className={ [
+						'nvoos-pro-spa-tools-list',
+						'nvoos-pro-spa-tools-list--table',
+						busy ? 'nvoos-pro-spa-tools-list--busy' : '',
+					]
+						.filter( Boolean )
+						.join( ' ' ) }
+				>
 					{ caption ? (
 						<caption className="nvoos-pro-spa-sr-only">
 							{ caption }

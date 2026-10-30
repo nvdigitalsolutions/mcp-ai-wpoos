@@ -1,0 +1,28 @@
+---
+// Brand index — SSR + cached.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllBrands } from '../../lib/commerce/client';
+import { brandPath } from '../../lib/url';
+import { pageTitle, plainExcerpt } from '../../lib/seo/meta';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+const brands = await getAllBrands(Astro.url);
+---
+
+<BaseLayout
+	title={pageTitle('Brands')}
+	description={plainExcerpt('Browse all brands.')}
+>
+	<h1>Brands</h1>
+	<ul>
+		{brands.map((brand) => (
+			<li>
+				<a href={brandPath(brand.id, brand.name)}>{brand.name}</a>
+			</li>
+		))}
+	</ul>
+</BaseLayout>

@@ -113,12 +113,12 @@ class WP_MCP_AI_Feature_Flags {
 	 */
 	public static function all() {
 		return array(
-			'docs_hub'        => self::docs_hub(),
-			'knowledge_graph' => self::knowledge_graph(),
-			'media_studio'    => self::media_studio(),
-			'document_editor' => self::document_editor(),
-			'pro'             => self::pro(),
-			'okf'             => self::okf(),
+			'docs_hub'           => self::docs_hub(),
+			'knowledge_graph'    => self::knowledge_graph(),
+			'media_studio'       => self::media_studio(),
+			'document_editor'    => self::document_editor(),
+			'pro'                => self::pro(),
+			'okf'                => self::okf(),
 			// Toolkit enable toggles — the console gates the command-center
 			// pages (CRM, Projects, Calendar, F&B) on these so disabled
 			// features do not show in the app.
@@ -126,6 +126,29 @@ class WP_MCP_AI_Feature_Flags {
 			'crm'                => self::toolkit_flag( 'enable_crm_toolkit' ),
 			'project_management' => self::toolkit_flag( 'enable_project_management' ),
 			'calendar_booking'   => self::toolkit_flag( 'enable_calendar_booking_toolkit' ),
+			// Commerce toolkits (Proposal 089 Phase 2b) — same toggle gate,
+			// plus WooCommerce presence: every toolkit bootstraps on
+			// `class_exists( 'WooCommerce' )`, so the console nav must mirror
+			// that or it would link to a dead surface.
+			'ecommerce'          => self::commerce_toolkit_flag(
+				'wp_mcp_ai_is_ecommerce_toolkit_enabled',
+				'enable_ecommerce_toolkit'
+			),
+			'ezuite'             => self::commerce_toolkit_flag(
+				'wp_mcp_ai_is_ezuite_toolkit_enabled',
+				'enable_ezuite_toolkit'
+			),
+			'shopify_sync'       => self::commerce_toolkit_flag(
+				'wp_mcp_ai_is_shopify_sync_toolkit_enabled',
+				'enable_shopify_sync_toolkit'
+			),
+			'flowhub'            => self::commerce_toolkit_flag(
+				'wp_mcp_ai_is_flowhub_toolkit_enabled',
+				'enable_flowhub_toolkit'
+			),
+			// Content records (posts/pages) — always available in core; the
+			// filter lets deployments hide the console surface.
+			'content_records'    => (bool) apply_filters( 'wp_mcp_ai_feature_available_content_records', true ),
 		);
 	}
 
@@ -139,5 +162,30 @@ class WP_MCP_AI_Feature_Flags {
 	private static function toolkit_flag( $key ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		return is_array( $settings ) && ! empty( $settings[ $key ] );
+	}
+
+	/**
+	 * Commerce toolkit flag — toolkit toggle AND WooCommerce presence.
+	 *
+	 * The toolkit enable helpers live in each toolkit's `init.php` inside
+	 * the Pro addon, which may not have loaded when this map is built, so
+	 * resolve through the helper when available and fall back to the raw
+	 * settings option otherwise.
+	 *
+	 * @since 2.4.0 (Proposal 089)
+	 * @param string $helper     Toolkit enable helper function name.
+	 * @param string $option_key Settings key holding the toggle.
+	 * @return bool
+	 */
+	private static function commerce_toolkit_flag( $helper, $option_key ) {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return false;
+		}
+
+		if ( function_exists( $helper ) ) {
+			return (bool) call_user_func( $helper );
+		}
+
+		return self::toolkit_flag( $option_key );
 	}
 }

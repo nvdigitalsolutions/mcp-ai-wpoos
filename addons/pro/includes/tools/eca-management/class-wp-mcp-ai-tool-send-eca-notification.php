@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Send_ECA_Notification implements WP_MCP_AI_Tool_Interface, 
 					'type'        => 'integer',
 					'description' => __( 'WordPress post ID of the ECA (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'notification_type' => array(
 					'type'        => 'string',

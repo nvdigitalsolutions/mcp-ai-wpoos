@@ -1,24 +1,105 @@
 # Funiq Bridge Velocity Storefront — Comprehensive Implementation Plan
 
-> **Status:** Implementation Plan (companion to Proposal 085) · **Target:** Phase 1–5 MVP in ~3 focused PRs + 1 private-repo scaffold · **Platform:** Cloudways Velocity (Node static + BFF proxy) + WordPress running `addons/funiq-bridge`
+> **Status:** Superseded in part (storefront track) — see the Decision Record below · **Superseded by:** Proposal 092 (Astro storefront, phases 0–2 done 2026-10-29) · **Retained scope:** A/B rollback leg (re-scoped 2026-10-29 to the Payload admin — the licensed item contains no web PWA) + parity review · **Target:** Phase 1–5 MVP in ~3 focused PRs + 1 private-repo scaffold (original) · **Platform:** Cloudways Velocity (Node standalone, Payload admin) + WordPress running `addons/funiq-bridge`
 >
-> **Last Updated:** 2026-10-21
+> **Last Updated:** 2026-10-29 (status update; plan body unchanged since 2026-10-21)
 > **Author:** NV Digital Solutions
 >
 > **Based on:** Proposal 085 (industry research: Envato Market licensing, Auth0/Duende BFF same-origin session pattern, headless-ecommerce SEO constraints, licensed-asset CI hygiene), the two proven Velocity apps (`examples/schedule-anything-velocity`, `examples/nvoos-complete-velocity`), Proposal 072 (proprietary marking), and PR #7166 (console client/hook/test patterns for the deferred admin track).
 
 ---
 
+## Status & Decision Record (added 2026-10-29)
+
+ADR-style resolution of the gap between this plan and what shipped. The
+phase text below is left as written (records are immutable); this section
+records what actually happened.
+
+**Context:** this plan landed 2026-10-21 with the PWA as THE storefront
+(Phases 0–6). Six days later Proposal 092 landed and re-scoped the PWA to
+an A/B rollback leg behind the Astro storefront (owner decision Q1: keep
+A/B until parity review, then retire). Phases 1–6 were never executed in
+the monorepo — the PWA stayed on its pre-existing manual Velocity deploy,
+and Phase 0's owner gates were never cleared.
+
+**Decision (supersedes the original plan's storefront intent):** the
+storefront track follows 092; this plan retains only (a) the governed A/B
+rollback leg (Phases 2/4/5/6 as re-scoped), (b) the parity review gate
+(092 Phase 3), and (c) the Phase B Laravel placeholder (unchanged,
+still gated).
+
+**Consequences:**
+
+- The rollback leg is now scaffolded in the monorepo:
+  `examples/funiq-bridge-velocity/` (NV-authored server/proxy shell,
+  zero licensed bytes) + `.github/workflows/sync-nvoos-funiq-velocity.yml`
+  (licensed-bundle injection from the private PWA repo, private-target
+  license-boundary guard, hardened secrets handling). The workflow skips
+  with a notice until the owner completes Phase 1 below.
+- The parity gate lives in
+  [`funiq-pwa-parity-review-checklist.md`](funiq-pwa-parity-review-checklist.md)
+  (research-backed hard gates + owner sign-off template).
+- Research backing: `docs/project/proposals/085-pwa-parity-rollback-research-notes.md`.
+
+**Per-phase status (what actually happened vs. the text below):**
+
+| Phase | Status | Note |
+|---|---|---|
+| 0 — Decision gates | Partially superseded | Q1 resolved by 092 §7 Q1 (keep A/B); license-tier question closes at PWA retirement; vendor-code audit still pending |
+| 1 — Private repo scaffolding | ✅ Done 2026-10-29 | `nvoos-funiq-pwa` (licensed source committed, incl. `LICENSE.txt`) + `nvoos-funiq-velocity` (empty mirror) + both monorepo secrets |
+| 2 — Monorepo example tree | ✅ Done 2026-10-29, re-scoped 2026-10-29 | First: SA-style shell + `/api` bridge mapping. Then: item forensics showed no web PWA → rebuilt as the Payload-admin deploy recipe (second decision below) |
+| 3 — Bridge nonce seed | ✅ Done in substance | `/funiq/v1/auth/nonce` + `/nvoos-commerce/v1` alias shipped in the bridge B4 surface; cache-header bug fixed 2026-10-29 |
+| 4 — Sync workflow | ✅ Done 2026-10-29, rebuilt 2026-10-29 | First: licensed-`dist` injection + static-shell smoke. Now: standalone build + Postgres migrations + Payload-contract smoke + private-boundary guard |
+| 5 — Velocity deploy runbook | ✅ Done 2026-10-29 | `docs/operations/deployment/nvoos-funiq-velocity-setup.md` + leg README (Velocity settings, DB, uploads, MAIN_URL) |
+| 6 — Release bookkeeping | ✅ Done in this change | `THIRD_PARTY_NOTICES.md`, `LICENSE`, README mirror notice |
+| B — Laravel port | Unchanged — gated placeholder | See §8; no gates cleared |
+
+---
+
+## Decision Record — Second Entry (2026-10-29): the "PWA" is not a web app
+
+**Context:** owner Phase 1 completed (private repos + tokens,
+2026-10-29). Opening the purchased Envato item revealed it contains **no
+web PWA**: it ships a React Native 0.82 mobile app (Android/iOS only) and
+a Payload 3.64 CMS on Next.js 15. The rollback-leg premise in the first
+entry (serve a `dist/index.html` CSR SPA behind a `/api/*` → bridge proxy)
+was therefore invalid. Owner decision **option (a)**: repackage the
+rollback leg around the **Payload admin** — the licensed React backend.
+
+**Decision (supersedes the first entry's leg design):** the leg hosts the
+Payload admin natively on Velocity (`node server.js` — Next standalone +
+PostgreSQL). No proxy layer: Payload serves its own REST API (`/api/*`,
+the exact contract the mobile app binds to) and its admin (`/admin`). The
+`/api/*` → bridge mapping and the admin-proxy hardening move out of this
+leg (same-origin WP admin access remains an Astro-leg feature, PR #7289).
+
+**Consequences:**
+
+- `examples/funiq-bridge-velocity/` rebuilt: `enable-standalone.mjs`,
+  `assemble-mirror.mjs`, `smoke.mjs` + runbook README. The static shell
+  (`serve.mjs`, `sync-dist.mjs`, `proxy-headers`) is deleted.
+- `sync-nvoos-funiq-velocity.yml` rebuilt: clone licensed source → build
+  standalone → generate/apply migrations against a throwaway Postgres →
+  assemble mirror → hermetic Payload-contract smoke → private-boundary
+  guard → force-push. Validated locally end-to-end 2026-10-29.
+- Parity review updated with the forensic baseline + field-level matrix
+  (`funiq-pwa-parity-review-checklist.md` §1–§2).
+- Open owner decisions recorded in the leg README: media persistence (S3
+  adapter vs local disk), app `MAIN_URL` rebuild (incl. the list-hook
+  image-prefix fix), public-write lockdown on the licensed products
+  collection, `LICENSE.txt` tier field.
+
 ## Table of Contents
 
-1. [Architecture Decisions](#1-architecture-decisions)
-2. [Repository Structure](#2-repository-structure)
-3. [Phase-by-Phase Build Plan](#3-phase-by-phase-build-plan)
-4. [Testing Strategy](#4-testing-strategy)
-5. [Deploy & Sync Runbook](#5-deploy--sync-runbook)
-6. [Verification Matrix](#6-verification-matrix)
-7. [Follow-on Work (deferred)](#7-follow-on-work-deferred)
-8. [Phase B — Laravel Standalone Port (gated placeholder)](#8-phase-b--laravel-standalone-port-gated-placeholder)
+1. [Status & Decision Record](#status--decision-record-added-2026-10-29)
+2. [Architecture Decisions](#1-architecture-decisions)
+3. [Repository Structure](#2-repository-structure)
+4. [Phase-by-Phase Build Plan](#3-phase-by-phase-build-plan)
+5. [Testing Strategy](#4-testing-strategy)
+6. [Deploy & Sync Runbook](#5-deploy--sync-runbook)
+7. [Verification Matrix](#6-verification-matrix)
+8. [Follow-on Work (deferred)](#7-follow-on-work-deferred)
+9. [Phase B — Laravel Standalone Port (gated placeholder)](#8-phase-b--laravel-standalone-port-gated-placeholder)
 
 ---
 
@@ -234,8 +315,9 @@ README pointers, and workflow targets.
 
 - [ ] Proposal 085 Phase 0–6 v1 is shipped and verified (WP-backend Velocity
       storefront live).
-- [ ] Owner confirms **Laravel over FastAPI** (the Python alternative is a
-      live open option — appendix §6).
+- [x] Owner confirms **Laravel over FastAPI** — resolved 2026-10-25
+      (decision #15, `fastapi-porting-implementation-plan.md` §18; flip
+      conditions in `090-laravel-adapter-spike-implementation-plan.md` §8).
 - [ ] **Laravel adapter spike** completed in dev: `nvoos/core` +
       `nvoos/laravel-adapter` on Octane (FrankenPHP) with one real tool
       executed end-to-end — the repo's stated v1.4.0 spike, de-risking the

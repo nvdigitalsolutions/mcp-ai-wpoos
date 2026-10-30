@@ -81,6 +81,7 @@ class WP_MCP_AI_Tool_Get_Customer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties' => array(
 				'customer_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the customer to retrieve.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

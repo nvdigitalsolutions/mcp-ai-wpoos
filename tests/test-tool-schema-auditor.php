@@ -301,4 +301,67 @@ class WP_MCP_AI_Tool_Schema_Auditor_Test extends WP_UnitTestCase {
 		$this->assertSame( 2, $summary['counts'][ WP_MCP_AI_Tool_Schema_Auditor::FINDING_BRACKET_PROPERTY ] );
 		$this->assertSame( array( 'one', 'two' ), $summary['samples'][ WP_MCP_AI_Tool_Schema_Auditor::FINDING_BRACKET_PROPERTY ] );
 	}
+
+	/**
+	 * The live registry carries no root-shape or integer-bound hazards.
+	 *
+	 * Canary for the proposal 066 schema sweep: any plugin-owned tool class
+	 * (file under WP_MCP_AI_PATH, so test-suite stubs are excluded) whose
+	 * schema reintroduces a missing root type, a root combinator next to
+	 * properties, or an unbounded integer-like field fails this test.
+	 */
+	public function test_registry_schema_hazards_are_zero() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+		if ( ! method_exists( $registry, 'get_all_tools' ) ) {
+			$this->markTestSkipped( 'Registry has no get_all_tools() in this environment.' );
+		}
+
+		$findings = array();
+		foreach ( $registry->get_all_tools() as $slug => $tool ) {
+			if ( ! is_object( $tool ) ) {
+				continue;
+			}
+			$ref     = new ReflectionClass( $tool );
+			$file    = $ref->getFileName();
+			if ( false === $file || 0 !== strpos( $file, WP_MCP_AI_PATH ) ) {
+				// Test-suite stubs live outside the plugin tree; they are not
+				// bound by the production schema contract.
+				continue;
+			}
+			if ( false !== strpos( str_replace( '\\', '/', $file ), '/tests/' ) ) {
+				// Fixture/mock tools defined inside tests/ directories are
+				// registered by other suites during the single-process run and
+				// carry deliberately loose schemas.
+				continue;
+			}
+			$schema  = $tool->get_parameters_schema();
+			$audited = WP_MCP_AI_Tool_Schema_Auditor::audit_schema( $slug, is_array( $schema ) ? $schema : array() );
+			if ( ! empty( $audited ) ) {
+				$findings[ $slug ] = $audited;
+			}
+		}
+
+		$banned = array(
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_ROOT_TYPE_MISSING,
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_ROOT_COMBINATOR,
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_UNSAFE_INTEGER,
+		);
+
+		foreach ( $banned as $code ) {
+			$offenders = array();
+			foreach ( $findings as $slug => $slug_findings ) {
+				foreach ( $slug_findings as $finding ) {
+					if ( $code === $finding['code'] ) {
+						$offenders[] = $slug . ' @ ' . $finding['path'];
+					}
+				}
+			}
+			$this->assertSame(
+				array(),
+				$offenders,
+				'Registry tools still carry hazard ' . $code . ': ' . implode( ', ', $offenders )
+			);
+		}
+	}
 }

@@ -140,7 +140,7 @@ class Test_Fnb_Data_Resolution extends WP_UnitTestCase {
 	public function test_menu_recipe_cost_columns_resolve() {
 		$this->maybe_skip();
 
-		$menu    = WP_MCP_AI_Fnb_Data_Source::get_table( '1.0' );
+		$menu = WP_MCP_AI_Fnb_Data_Source::get_table( '1.0' );
 		$this->assertNotInstanceOf( 'WP_Error', $menu );
 
 		$headers = $menu['header_index'];
@@ -244,14 +244,15 @@ class Test_Fnb_Data_Resolution extends WP_UnitTestCase {
 			 * Fail only the daily-covers table.
 			 *
 			 * @param string $table_id Spec table ID.
+			 * @param string $connection_override Connection override (delegated).
 			 * @return array|WP_Error
 			 */
-			public function read_table( $table_id ) {
+			public function read_table( $table_id, $connection_override = '' ) {
 				if ( '7.0' === $table_id ) {
 					return new WP_Error( 'wp_mcp_ai_fnb_sheet_not_found', 'Daily covers sheet missing (test).' );
 				}
 
-				return $this->fixture->read_table( $table_id );
+				return $this->fixture->read_table( $table_id, $connection_override );
 			}
 		};
 
@@ -292,14 +293,15 @@ class Test_Fnb_Data_Resolution extends WP_UnitTestCase {
 			 * Fail only the daily-covers table.
 			 *
 			 * @param string $table_id Spec table ID.
+			 * @param string $connection_override Connection override (delegated).
 			 * @return array|WP_Error
 			 */
-			public function read_table( $table_id ) {
+			public function read_table( $table_id, $connection_override = '' ) {
 				if ( '7.0' === $table_id ) {
 					return new WP_Error( 'wp_mcp_ai_fnb_sheet_not_found', 'Daily covers sheet missing (test).' );
 				}
 
-				return $this->fixture->read_table( $table_id );
+				return $this->fixture->read_table( $table_id, $connection_override );
 			}
 		};
 
@@ -343,14 +345,15 @@ class Test_Fnb_Data_Resolution extends WP_UnitTestCase {
 			 * Fail the bookings table (native-backed in the toolkit).
 			 *
 			 * @param string $table_id Spec table ID.
+			 * @param string $connection_override Connection override (delegated).
 			 * @return array|WP_Error
 			 */
-			public function read_table( $table_id ) {
+			public function read_table( $table_id, $connection_override = '' ) {
 				if ( '16.0' === $table_id ) {
 					return new WP_Error( 'wp_mcp_ai_fnb_sheet_tab_missing', 'No bookings worksheet (test).' );
 				}
 
-				return $this->fixture->read_table( $table_id );
+				return $this->fixture->read_table( $table_id, $connection_override );
 			}
 		};
 

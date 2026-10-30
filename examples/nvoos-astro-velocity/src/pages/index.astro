@@ -1,0 +1,62 @@
+---
+// ---------------------------------------------------------------------------
+// Home — SSR with CDN cache headers (D4). Featured/bestsellers are filtered
+// from the newest + top-rated pages; the banner/carousel come from the
+// globals endpoints. JSON-LD: Organization + WebSite (industry baseline).
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Banner from '../components/Banner.astro';
+import Carousel from '../components/Carousel.astro';
+import ProductGrid from '../components/ProductGrid.astro';
+import { getGlobal, getProducts } from '../lib/commerce/client';
+import { normalizeProductMedia } from '../lib/commerce/normalize';
+import { organizationJsonLd, webSiteJsonLd } from '../lib/seo/jsonld';
+import { pageTitle } from '../lib/seo/meta';
+import { absoluteUrl } from '../lib/url';
+import type { Banner as BannerData } from '../lib/commerce/types';
+
+// Home is dynamic (globals/promotions change) — cacheable, not prerendered.
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+const [banner, newest, topRated] = await Promise.all([
+	getGlobal('banner', Astro.url),
+	getProducts(Astro.url, { page: 1, limit: 50, sort: 'date' }),
+	getProducts(Astro.url, { page: 1, limit: 50, sort: '-rating' }),
+]);
+
+const normalizeList = (list: typeof newest.docs) =>
+	list.map(normalizeProductMedia);
+
+const featured = normalizeList(
+	newest.docs.filter((p) => p.isFeatured).slice(0, 8)
+);
+const bestsellers = normalizeList(
+	topRated.docs.filter((p) => p.isBestseller).slice(0, 8)
+);
+const fallback = normalizeList(newest.docs.slice(0, 8));
+
+const site = Astro.site ?? new URL('https://store.nvoos.cloud');
+const bannerData = banner as BannerData | null;
+---
+
+<BaseLayout
+	title={pageTitle()}
+	description="NV Store — the NV-authored headless storefront."
+	canonical={absoluteUrl(site, '/')}
+	jsonld={[organizationJsonLd('NV Store', site), webSiteJsonLd('NV Store', site)]}
+>
+	<Banner banner={bannerData} />
+	<Carousel />
+	<section>
+		<h2>Featured</h2>
+		<ProductGrid products={featured.length > 0 ? featured : fallback} />
+	</section>
+	<section>
+		<h2>Bestsellers</h2>
+		<ProductGrid products={bestsellers.length > 0 ? bestsellers : fallback} />
+	</section>
+</BaseLayout>

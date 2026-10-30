@@ -80,6 +80,13 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	private $workbook_cache = null;
 
 	/**
+	 * Per-connection auth cache (connection ID → auth array or WP_Error).
+	 *
+	 * @var array<string,array|WP_Error>
+	 */
+	private $auth_cache = array();
+
+	/**
 	 * Per-instance WP_Error from the last explicit-workbook metadata lookup.
 	 *
 	 * @var WP_Error|null
@@ -169,11 +176,17 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	}
 
 	/**
-	 * Resolve the Drive client credentials/token or a WP_Error.
+	 * Resolve the Drive client credentials/token for a connection or a WP_Error.
 	 *
+	 * @param string $connection_id Remote Sites Drive connection ID (empty = default source).
 	 * @return array|WP_Error array{access_token:string,timeout:int}
 	 */
-	private function token() {
+	private function token( $connection_id = '' ) {
+		$connection_id = is_string( $connection_id ) ? sanitize_key( $connection_id ) : '';
+		if ( isset( $this->auth_cache[ $connection_id ] ) ) {
+			return $this->auth_cache[ $connection_id ];
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Drive_Client' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_fnb_no_drive_client',
@@ -181,10 +194,11 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			);
 		}
 
-		$connection_id = WP_MCP_AI_Fnb_Settings::get( 'connection_id', '' );
-		$credentials   = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials( $connection_id );
+		$credentials = WP_MCP_AI_Pro_Google_Drive_Client::resolve_credentials( $connection_id );
 		if ( is_wp_error( $credentials ) ) {
-			return $credentials;
+			$this->auth_cache[ $connection_id ] = $this->annotate_connection_error( $credentials, $connection_id );
+
+			return $this->auth_cache[ $connection_id ];
 		}
 
 		$timeout      = WP_MCP_AI_Pro_Google_Drive_Client::get_request_timeout();
@@ -198,21 +212,53 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			return $access_token;
 		}
 
-		return array(
+		$this->auth_cache[ $connection_id ] = array(
 			'access_token' => $access_token,
 			'timeout'      => $timeout,
+		);
+
+		return $this->auth_cache[ $connection_id ];
+	}
+
+	/**
+	 * Re-wrap an unresolved Drive connection error with F&B-specific guidance.
+	 *
+	 * @param WP_Error $error         Original Drive client error.
+	 * @param string   $connection_id Requested connection (may be empty).
+	 * @return WP_Error
+	 */
+	private function annotate_connection_error( WP_Error $error, $connection_id ) {
+		if ( ! in_array( $error->get_error_code(), array( 'wp_mcp_ai_drive_ambiguous_connection', 'wp_mcp_ai_drive_missing_credentials' ), true ) ) {
+			return $error;
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_fnb_source_unresolved',
+			sprintf(
+				/* translators: 1: original error message, 2: connection id (may be empty) */
+				__( 'The F&B table source could not be resolved (%1$s%2$s). Map each table to its Drive connection on the F&B settings page (Table Sources), or set a default Drive Connection — the toolkit refuses to guess between several connections.', 'mcp-ai-wpoos-pro' ),
+				$error->get_error_message(),
+				'' !== $connection_id ? ' [' . $connection_id . ']' : ''
+			)
 		);
 	}
 
 	/**
 	 * The configured Drive folder IDs to search, in order.
 	 *
+	 * A per-table folder override is searched first, then the toolkit-global
+	 * data and setup folders.
+	 *
+	 * @param string $folder_override Optional per-table folder ID.
 	 * @return array<int,string>
 	 */
-	private function folders() {
+	private function folders( $folder_override = '' ) {
+		$folder_override = is_string( $folder_override ) ? trim( $folder_override ) : '';
+
 		return array_values(
 			array_filter(
 				array(
+					$folder_override,
 					WP_MCP_AI_Fnb_Settings::get( 'data_folder_id', '' ),
 					WP_MCP_AI_Fnb_Settings::get( 'setup_folder_id', '' ),
 				)
@@ -352,11 +398,13 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	 * demo layout. Matching is case-insensitive and matches the bare sheet
 	 * name, or the sheet name with a .csv / .xlsx / .xls extension.
 	 *
-	 * @param string $table_id Spec table ID.
-	 * @param array  $auth     Auth array from token().
+	 * @param string $table_id       Spec table ID.
+	 * @param array  $auth           Auth array from token().
+	 * @param string $folder_override Optional folder ID checked before the
+	 *                                toolkit-global folders (per-table source).
 	 * @return array{id:string,name:string,mime_type:string}|WP_Error
 	 */
-	private function locate_split_file( $table_id, $auth ) {
+	private function locate_split_file( $table_id, $auth, $folder_override = '' ) {
 		$names = $this->sheet_names( $table_id );
 
 		// Operator-authored file hint (highest trust): match the raw name directly.
@@ -364,7 +412,7 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 		$hint = isset( $map[ $table_id ]['file'] ) ? (string) $map[ $table_id ]['file'] : '';
 		if ( '' !== $hint ) {
 			$hint_norm = $this->normalise_name( $hint );
-			foreach ( $this->folders() as $folder_id ) {
+			foreach ( $this->folders( $folder_override ) as $folder_id ) {
 				foreach ( $this->list_folder( $folder_id, $auth ) as $file ) {
 					if ( $this->normalise_name( (string) $file['name'] ) === $hint_norm ) {
 						return array(
@@ -377,7 +425,7 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 			}
 		}
 
-		foreach ( $this->folders() as $folder_id ) {
+		foreach ( $this->folders( $folder_override ) as $folder_id ) {
 			foreach ( $this->list_folder( $folder_id, $auth ) as $file ) {
 				$file_name = isset( $file['name'] ) ? (string) $file['name'] : '';
 				$stem      = $this->normalise_name( pathinfo( $file_name, PATHINFO_FILENAME ) );
@@ -797,11 +845,13 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 	/**
 	 * {@inheritdoc}
 	 *
-	 * @param string $table_id Spec table ID.
+	 * @param string $table_id           Spec table ID.
+	 * @param string $connection_override Optional Drive connection ID override.
 	 * @return array|WP_Error
 	 */
-	public function read_table( $table_id ) {
-		$auth = $this->token();
+	public function read_table( $table_id, $connection_override = '' ) {
+		$source = WP_MCP_AI_Fnb_Data_Source::resolve_source( $table_id, $connection_override );
+		$auth   = $this->token( $source['connection_id'] );
 		if ( is_wp_error( $auth ) ) {
 			return $auth;
 		}
@@ -848,7 +898,7 @@ class WP_MCP_AI_Fnb_Google_Sheets_Reader implements WP_MCP_AI_Fnb_Table_Reader {
 		}
 
 		// Fallback: one file per table (original demo layout).
-		$file = $this->locate_split_file( $table_id, $auth );
+		$file = $this->locate_split_file( $table_id, $auth, $source['folder_id'] );
 		if ( is_wp_error( $file ) ) {
 			// Prefer the precise "worksheet missing from the workbook" error when
 			// the workbook itself was read successfully.

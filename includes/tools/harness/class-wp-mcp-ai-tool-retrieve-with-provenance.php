@@ -84,6 +84,7 @@ class WP_MCP_AI_Tool_Retrieve_With_Provenance implements WP_MCP_AI_Tool_Interfac
 				),
 				'assistant_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Optional assistant post ID to scope retrieval.',
 				),
 				'task_class'    => array(

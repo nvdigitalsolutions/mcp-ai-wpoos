@@ -61,6 +61,7 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_League implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'ESPN Fantasy Football league ID. Found in the league URL (e.g., 387659).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'season'    => array(
 					'type'        => 'integer',

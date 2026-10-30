@@ -86,7 +86,10 @@ class WP_MCP_AI_Tool_Log_Call_Outcome implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id'          => array( 'type' => 'integer' ),
+				'lead_id'          => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'disposition'      => array(
 					'type'        => 'string',
 					'description' => __( 'Call outcome slug (connected, voicemail, no_answer, callback_scheduled, not_interested, qualified, demo_scheduled).', 'mcp-ai-wpoos-pro' ),

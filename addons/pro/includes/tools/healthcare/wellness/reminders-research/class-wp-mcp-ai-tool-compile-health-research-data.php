@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 					'type'        => 'integer',
 					'description' => __( 'Member post ID (mcp_ai_member) to compile data for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'days_back'              => array(
 					'type'        => 'integer',
@@ -100,6 +101,7 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 					'type'        => 'integer',
 					'description' => __( 'Assistant post ID to read vector_store_id / corpus_name from (optional; auto-detected from context if omitted)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'vital_types'            => array(
 					'type'        => 'array',

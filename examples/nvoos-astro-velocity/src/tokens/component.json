@@ -1,0 +1,20 @@
+{
+	"$comment": "Proposal 095 — component layer. Consumed by .btn/.card/.field etc. Values reference the semantic layer.",
+	"btn": {
+		"background": { "$type": "color", "$value": "{semantic.accent}" },
+		"color": { "$type": "color", "$value": "{semantic.accent-ink}" },
+		"border": { "$type": "color", "$value": "{semantic.accent}" },
+		"radius": { "$type": "dimension", "$value": "{semantic.radius}" },
+		"padding-y": { "$type": "dimension", "$value": "0.5rem" },
+		"padding-x": { "$type": "dimension", "$value": "1rem" }
+	},
+	"card": {
+		"gap": { "$type": "dimension", "$value": "0.4rem" },
+		"radius": { "$type": "dimension", "$value": "{semantic.radius}" }
+	},
+	"field": {
+		"border": { "$type": "color", "$value": "{semantic.line}" },
+		"radius": { "$type": "dimension", "$value": "{semantic.radius}" },
+		"padding-y": { "$type": "dimension", "$value": "0.5rem" }
+	}
+}

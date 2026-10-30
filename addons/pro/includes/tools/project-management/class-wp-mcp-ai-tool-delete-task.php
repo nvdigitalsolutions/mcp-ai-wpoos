@@ -75,6 +75,7 @@ class WP_MCP_AI_Tool_Delete_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'task_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Task ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 				),
 			),

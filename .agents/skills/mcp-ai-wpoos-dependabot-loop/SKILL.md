@@ -5,16 +5,20 @@ description: "Operational guide for the NV oOS Dependabot alert triage-and-remed
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
-  last-updated: "2026-10-23"
+  plugin-version: "1.2.14"
+  plugin-version-tested: "1.2.14"
+  last-updated: "2026-10-30"
 ---
 
 # NV oOS Dependabot Loop — Alert Triage, Safe Bumps & Dismissal
 
 Playbook for the recurring Dependabot sweep in this repo, distilled from the
 executed 2026-09-30 run (PR #6817: js-yaml + webpack-dev-middleware bumps;
-alerts 803/804, 898, 901, 922–976 triaged; issues #6647/#6818). It covers the
+alerts 803/804, 898, 901, 922–976 triaged; issues #6647/#6818) and the
+2026-10-23 run (PR #7195: vitest-mocker/dompurify/sharp/ip-address/vite/
+esbuild in-major patches across 21 trees — 67 of 74 alerts closed; tracked
+bundles rebuilt where stale; deferred as tracked issues: #7090
+`@ai-sdk/provider-utils` 3.x, #7089 react-router 7, #7194 glib/gtk-rs). It covers the
 full loop: discovery → forensics → fix decision → lockfile regen → bundle
 rebuild → dismissal → issue housekeeping → CI triage. The workflow implements Dependabot's own
 dismissal semantics (`fix_started` vs `tolerable_risk`) adapted to this repo's
@@ -85,7 +89,7 @@ addons, each with its own `package-lock.json`; the set grows, so `find_path` for
 `**/package-lock.json` first):
 
 ```sh
-node -e "const fs=require('fs'); const files=['package-lock.json','addons/pro/package-lock.json','addons/pro/assets/spa/package-lock.json','addons/pro/assets/spa-v2/package-lock.json','addons/chat-spa/package-lock.json','addons/cloud-worker/package-lock.json','addons/cloudways-dashboard/package-lock.json','addons/saas-controller/package-lock.json','addons/toolkit-shell/package-lock.json','addons/docs-hub/package-lock.json','addons/media-studio/package-lock.json','addons/media-worker/package-lock.json','addons/canvas-toolkit/package-lock.json','addons/comic-reader/package-lock.json','addons/document-editor/package-lock.json','addons/funiq-bridge/package-lock.json','addons/librechat/package-lock.json','addons/page-agent/package-lock.json','addons/schedule-anything-spa/package-lock.json','addons/tenant-router/package-lock.json','addons/mcp-wordpress-gateway/package-lock.json']; const names=['js-yaml','undici','webpack-dev-middleware','body-parser','qs','@ai-sdk/provider-utils']; for(const f of files){ if(!fs.existsSync(f)) continue; const l=JSON.parse(fs.readFileSync(f,'utf8')); const pk=l.packages||{}; for(const p in pk){ const n=p.split('node_modules/').pop(); if(names.includes(n)) console.log(f,'|',p,'|',pk[p].version); } }"
+node -e "const fs=require('fs'); const files=['package-lock.json','addons/pro/package-lock.json','addons/pro/assets/spa/package-lock.json','addons/pro/assets/spa-v2/package-lock.json','addons/chat-spa/package-lock.json','addons/cloud-worker/package-lock.json','addons/cloudways-dashboard/package-lock.json','addons/saas-controller/package-lock.json','addons/toolkit-shell/package-lock.json','addons/docs-hub/package-lock.json','addons/media-studio/package-lock.json','addons/media-worker/package-lock.json','addons/canvas-toolkit/package-lock.json','addons/comic-reader/package-lock.json','addons/document-editor/package-lock.json','addons/nvoos-astro-bridge/package-lock.json','addons/librechat/package-lock.json','addons/page-agent/package-lock.json','addons/schedule-anything-spa/package-lock.json','addons/tenant-router/package-lock.json','addons/mcp-wordpress-gateway/package-lock.json']; const names=['js-yaml','undici','webpack-dev-middleware','body-parser','qs','@ai-sdk/provider-utils']; for(const f of files){ if(!fs.existsSync(f)) continue; const l=JSON.parse(fs.readFileSync(f,'utf8')); const pk=l.packages||{}; for(const p in pk){ const n=p.split('node_modules/').pop(); if(names.includes(n)) console.log(f,'|',p,'|',pk[p].version); } }"
 ```
 
 Multi-line range checker (flags any copy inside any undici advisory range; adapt
@@ -363,6 +367,15 @@ vulnerable until alpha-working merges — call that out and recommend the merge.
   `-H "Accept: application/vnd.github.raw"` (see Step 2B).
 - The root `package-lock.json` carries a stale `version` until regen — the
   diff will always include that sync line; do not hand-edit it out.
+- **npm version vs lockfile format (2026-10-30, multer run):** the repo's
+  lockfiles are tab-indented (npm 10/11 output). A local **npm 12** regen
+  rewrites EVERY line with 2-space indent — `git diff --stat` shows
+  ~11k/11k churn. Regen with `npx -y npm@11.3.0 install
+  --package-lock-only --ignore-scripts --no-audit --no-fund` instead. Also:
+  Windows npm writes CRLF — strip with `sed -i 's/\r$//'` before staging
+  (`.gitattributes` pins `eol=lf`), and expect npm 11 to drop the `libc`
+  platform markers newer regens added (~79 lines per lockfile) — benign
+  metadata-only churn, note it in the PR. `npm ci --dry-run` still passes.
 - `npm ci --dry-run` does not touch node_modules; it only proves
   `package.json`/lockfile consistency — the real install happens in CI.
 

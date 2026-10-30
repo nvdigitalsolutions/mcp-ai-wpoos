@@ -84,6 +84,7 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 				),
 				'timestamp'         => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'New next-run Unix timestamp. Must be in the future.', 'mcp-ai-wpoos-pro' ),
 				),
 				'enabled'           => array(
@@ -196,6 +197,7 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 					'properties'  => array(
 						'assistant_id' => array(
 							'type'        => 'integer',
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							'description' => __( 'Post ID of the NV oOS assistant to run.', 'mcp-ai-wpoos-pro' ),
 						),
 						'message'      => array(

@@ -147,6 +147,42 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 		}
 
 		/**
+		 * Register a tab definition.
+		 *
+		 * Addon-owned tabs (e.g. the commerce toolkit settings tabs from
+		 * Proposal 089) register here so the wp-admin settings dashboard and
+		 * the schema-driven settings surface share one tab catalogue.
+		 *
+		 * @since 2.4.0
+		 * @param string $tab_id     Tab ID.
+		 * @param array  $definition Tab definition (title, icon).
+		 */
+		public static function register_tab( $tab_id, $definition ) {
+			$tab_id = sanitize_key( (string) $tab_id );
+			if ( '' === $tab_id ) {
+				return;
+			}
+
+			$definition = is_array( $definition ) ? $definition : array();
+			if ( empty( $definition['title'] ) ) {
+				$definition['title'] = ucwords( str_replace( '_', ' ', $tab_id ) );
+			}
+			if ( empty( $definition['icon'] ) ) {
+				$definition['icon'] = 'dashicons-admin-generic';
+			}
+
+			// Merge over any existing definition so a later re-registration
+			// (an addon, or a test mirror that drifted from the production
+			// closure) cannot silently drop structural keys such as
+			// `subtab_of`. The tab catalogue is shared by the wp-admin
+			// dashboard and the schema-driven settings surface, and
+			// registration order must not change the rendered hierarchy.
+			$existing              = isset( self::$tabs[ $tab_id ] ) ? self::$tabs[ $tab_id ] : array();
+			$existing              = is_array( $existing ) ? $existing : array();
+			self::$tabs[ $tab_id ] = array_merge( $existing, $definition );
+		}
+
+		/**
 		 * Get a setting value.
 		 *
 		 * Reads from both wp_mcp_ai_settings (non-secrets) and

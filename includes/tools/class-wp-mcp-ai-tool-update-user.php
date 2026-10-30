@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Update_User implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'integer',
 					'description' => __( 'The ID of the user to update.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'email'        => array(
 					'type'        => 'string',

@@ -132,6 +132,7 @@ class WP_MCP_AI_Tool_Refund_Order_Advanced implements WP_MCP_AI_Tool_Interface, 
 					'type'        => 'integer',
 					'description' => __( 'Order ID to refund', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'refund_type'       => array(
 					'type'        => 'string',
@@ -152,6 +153,7 @@ class WP_MCP_AI_Tool_Refund_Order_Advanced implements WP_MCP_AI_Tool_Interface, 
 						'properties' => array(
 							'item_id'      => array(
 								'type'        => 'integer',
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 								'description' => __( 'Order item ID', 'mcp-ai-wpoos-pro' ),
 							),
 							'qty'          => array(

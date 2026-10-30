@@ -67,6 +67,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interfa
 					),
 					'plan_id'    => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Task plan ID to start session for (required for "start" action)',
 					),
 					'session_id' => array(
@@ -89,6 +90,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interfa
 							),
 							'assistant_id'   => array(
 								'type'        => 'integer',
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 								'description' => 'Assistant ID to use',
 							),
 						),
@@ -99,6 +101,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interfa
 						'properties'  => array(
 							'iteration_count' => array(
 								'type'        => 'integer',
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 								'description' => 'Current iteration number',
 							),
 							'token_usage'     => array(
@@ -111,6 +114,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interfa
 							),
 							'error_count'     => array(
 								'type'        => 'integer',
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 								'description' => 'Number of errors encountered',
 							),
 							'last_tool'       => array(

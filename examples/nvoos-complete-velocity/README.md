@@ -82,6 +82,33 @@ WordPress session cookie through the proxy; login via the re-scoped
 the plugin's `mcp-ai/v1/session/nonce` endpoint as fallback; the real user +
 capabilities come from `wp/v2/users/me?context=edit`.
 
+**Magic-link sign-in (opt-in):** the sign-in screen also offers a
+passwordless "Magic link" mode against the plugin's `/magic-login/*` REST
+routes (off by default — enable `wp_mcp_ai_magic_login_enabled` and point
+`wp_mcp_ai_magic_login_app_origin` at the console origin). Emailed links
+resolve at `#/magic-login?token=…` and confirm through the same proxy;
+full contract in the deploy doc
+(`docs/operations/deployment/nvoos-complete-velocity-setup.md`).
+
+## Caching
+
+`scripts/serve.mjs` keeps load off the WordPress backend on three fronts:
+
+- **Hashed `/assets/*` → `public, max-age=31536000, immutable`** — the
+  browser and the Velocity CDN cache every chunk for a year (Vite hashes
+  rotate URLs on redeploy).
+- **`index.html` → `no-cache` + ETag** — revalidation returns 304s instead
+  of re-downloads; unversioned root files (favicon) get `max-age=86400` +
+  ETag.
+- **gzip/brotli from an in-memory file cache** (`Vary: Accept-Encoding`).
+- **Default-deny proxy micro-cache** — proxied `GET` responses are cached
+  only when WordPress marks them `Cache-Control: public` with an explicit
+  TTL and no `Set-Cookie`/`Vary: Cookie`; nonce + SSE (`no-store`) can never
+  be cached. Observability via `X-Cache-Status: HIT/MISS/BYPASS`. Disable
+  with `NVOOS_PROXY_CACHE=0`; cap TTL with `NVOOS_PROXY_CACHE_MAX_TTL`
+  (default 300 s). Full contract + backend opt-in guide:
+  `docs/operations/deployment/nvoos-complete-velocity-setup.md`.
+
 ## Open decisions
 
 - Cross-app SSO with the Schedule Anything app (shared-domain cookie) —

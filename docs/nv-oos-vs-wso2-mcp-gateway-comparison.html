@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a202c">
+<title>NV oOS vs WSO2 — MCP Gateways &amp; the AI Tooling Layer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #27272a;
+    --blue: #2b6cb0;
+    --navy: #1a202c;
+    --navy-mid: #2d3748;
+    --navy-deep: #10141c;
+    --navy-card: #215387;
+    --accent: #319b88;
+    --accent-bright: #45b8a2;
+    --accent-deep: #1d443e;
+    --accent-mid: #319b88;
+    --mint: #2b6cb0;
+    --mint-deep: #215387;
+    --bg: #fafafa;
+    --bg-alt: #f7fafc;
+    --white: #fff;
+    --grey-300: #cbd5e0;
+    --grey-500: #718096;
+    --grey-700: #3f3f46;
+    --border-subtle: #edf2f7;
+    --wso2: #c2410c;
+    --amber: #b45309;
+    --red: #b91c1c;
+    --green: #15803d;
+    --font-display: "Plus Jakarta Sans", "Inter Tight", sans-serif;
+    --font-body: "Inter Tight", sans-serif;
+    --radius-card: 20px;
+    --max-width: 1180px;
+  }
+  *, :before, :after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 17.5px; scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+  em { color: var(--accent-deep); font-style: italic; }
+  code {
+    background: #eef2f7;
+    padding: 0.1rem 0.4rem;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    color: var(--navy-mid);
+  }
+  section[id] { scroll-margin-top: 74px; }
+  .wrap { max-width: var(--max-width); margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ---------- Eyebrows ---------- */
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--blue);
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+  .eyebrow--dark { color: var(--accent-bright); }
+
+  /* ---------- Sticky top nav ---------- */
+  .topnav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(16, 20, 28, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #ffffff1a;
+  }
+  .topnav .wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+  }
+  .topnav__brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: #fff;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+  }
+  .topnav__brand strong { color: var(--accent-bright); font-weight: 700; }
+  .topnav__links { display: flex; flex-wrap: wrap; gap: 0.15rem; }
+  .topnav__links a {
+    color: #ffffffa6;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .topnav__links a:hover { color: #fff; background: #ffffff1a; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    background: linear-gradient(105deg, var(--navy) 0%, var(--navy-mid) 55%, var(--navy-card) 130%);
+    color: var(--white);
+    padding: clamp(2.5rem, 5vw, 3.75rem) 0 clamp(2rem, 4vw, 2.75rem);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(70% 60% at 85% 15%, #319b8840 0%, #0000 60%),
+      radial-gradient(45% 45% at 5% 95%, #2b6cb026 0%, #0000 55%);
+    pointer-events: none;
+  }
+  .hero .wrap { position: relative; }
+  .hero__top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  .hero__brand {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: #ffffffb8;
+    letter-spacing: 0.02em;
+  }
+  .hero__brand strong { color: var(--accent-bright); font-weight: 500; }
+  .hero__meta {
+    text-align: right;
+    font-size: 0.8rem;
+    color: #ffffff73;
+    line-height: 1.7;
+    max-width: 26rem;
+  }
+  .hero h1 {
+    color: var(--white);
+    font-size: clamp(2.2rem, 4.6vw, 3.2rem);
+    max-width: 24ch;
+    margin: 1.6rem 0 1rem;
+  }
+  .hero h1 em { color: var(--accent-bright); }
+  .hero__lead {
+    font-size: 1.08rem;
+    font-weight: 400;
+    line-height: 1.75;
+    color: #ffffffbf;
+    max-width: 64rem;
+  }
+  .hero__lead strong { color: #fff; font-weight: 600; }
+
+  /* ---------- Stats strip ---------- */
+  .stats {
+    background: var(--navy-deep);
+    border-top: 1px solid #ffffff1a;
+  }
+  .stats .wrap {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-left: 1px solid #ffffff1a;
+  }
+  .stat {
+    padding: 1.4rem 1.4rem;
+    border-right: 1px solid #ffffff1a;
+  }
+  .stat__value {
+    font-family: var(--font-display);
+    color: var(--white);
+    font-size: 2.2rem;
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+  .stat__value em { color: var(--accent-bright); }
+  .stat__label { color: #ffffff73; font-size: 0.82rem; font-weight: 400; line-height: 1.5; }
+
+  /* ---------- Sections ---------- */
+  .section { padding: clamp(2.2rem, 5vw, 3.2rem) 0; }
+  .section--cream-dark { background: var(--bg-alt); }
+  .section--white { background: var(--white); }
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 1.6rem;
+  }
+  .section-head h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); margin-top: 0.35rem; }
+  .section-head .aside {
+    color: var(--grey-500);
+    font-size: 0.94rem;
+    max-width: 43rem;
+    text-align: right;
+    line-height: 1.65;
+  }
+  .lead {
+    font-size: 1.05rem;
+    color: var(--grey-700);
+    max-width: 56rem;
+    line-height: 1.75;
+  }
+  .lead strong { color: var(--navy); font-weight: 600; }
+
+  /* ---------- Seam / note ---------- */
+  .seam {
+    background: var(--white);
+    border: 1px dashed var(--accent-mid);
+    border-radius: 12px;
+    padding: 1rem 1.4rem;
+    text-align: center;
+    margin-top: 1.4rem;
+    font-size: 0.95rem;
+    color: var(--grey-700);
+    line-height: 1.7;
+  }
+  .seam strong { color: var(--navy); font-weight: 600; }
+
+  /* ---------- Cards ---------- */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.9rem; margin-top: 1.4rem; }
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 1.15rem 1.1rem;
+    transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  }
+  .card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 12px 30px rgba(26, 32, 44, 0.08); }
+  .card h4 { font-size: 1.05rem; margin-bottom: 0.5rem; }
+  .card ul { margin: 0; padding-left: 1.1rem; }
+  .card li { margin: 0.4rem 0; font-size: 0.92rem; color: var(--grey-700); }
+  .card li strong { color: var(--navy); font-weight: 600; }
+
+  /* ---------- Verdict boxes ---------- */
+  .verdict { display: flex; gap: 0.9rem; flex-wrap: wrap; margin-top: 1.4rem; }
+  .verdict .box {
+    flex: 1 1 300px;
+    background: var(--white);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 1.15rem 1.2rem;
+  }
+  .verdict .box.ahead { border-top: 4px solid var(--accent); }
+  .verdict .box.behind { border-top: 4px solid var(--wso2); }
+  .verdict .box h4 { font-size: 1.02rem; margin-bottom: 0.6rem; }
+
+  /* ---------- Tables ---------- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    overflow: hidden;
+    font-size: 0.88rem;
+    margin-top: 1.4rem;
+    box-shadow: 0 14px 34px rgba(26, 32, 44, 0.05);
+  }
+  th, td { padding: 0.8rem 0.9rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border-subtle); }
+  th {
+    background: var(--bg-alt);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--grey-500);
+    font-weight: 700;
+  }
+  tr:last-child td { border-bottom: none; }
+  td.dim { width: 26%; font-weight: 600; color: var(--navy); }
+  td strong { color: var(--navy); }
+
+  /* ---------- Badges ---------- */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    white-space: nowrap;
+  }
+  .b-nvoos { color: var(--accent-deep); background: #319b8814; border: 1px solid #319b884d; }
+  .b-wso2 { color: var(--wso2); background: #c2410c14; border: 1px solid #c2410c4d; }
+  .b-good { color: var(--green); background: #15803d14; border: 1px solid #15803d4d; }
+  .b-warn { color: var(--amber); background: #b4530914; border: 1px solid #b453094d; }
+  .b-tie { color: var(--mint-deep); background: #2b6cb014; border: 1px solid #2b6cb04d; }
+
+  /* ---------- Diagrams ---------- */
+  .diagram { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: stretch; font-size: 0.82rem; margin-top: 1.4rem; }
+  .diagram .node {
+    background: var(--white);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 0.7rem 0.85rem;
+    box-shadow: 0 6px 18px rgba(26, 32, 44, 0.05);
+    min-width: 160px;
+    flex: 1 1 auto;
+    color: var(--grey-700);
+  }
+  .diagram .node .t { font-family: var(--font-display); font-weight: 700; color: var(--navy); margin-bottom: 0.25rem; }
+  .diagram .node.wso2 { border-left: 4px solid var(--wso2); }
+  .diagram .node.nvoos { border-left: 4px solid var(--accent); }
+  .diagram .arrow { align-self: center; color: var(--grey-500); font-weight: 700; }
+
+  /* ---------- Footer ---------- */
+  .footer {
+    background: var(--navy);
+    color: #ffffff8c;
+    padding: 1.6rem 0 2rem;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    position: relative;
+  }
+  .footer:before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--mint) 50%, var(--accent));
+  }
+  .footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
+  .footer strong { color: #ffffffd9; font-weight: 600; }
+  .footer .src { max-width: 46rem; color: #ffffff61; font-size: 0.76rem; line-height: 1.7; }
+  .footer a { color: var(--accent-bright); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 780px) {
+    .stats .wrap { grid-template-columns: 1fr 1fr; }
+    .stat { border-bottom: 1px solid #ffffff1a; }
+    table { font-size: 0.8rem; }
+    th, td { padding: 0.65rem 0.7rem; }
+    .section-head .aside { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="wrap">
+    <div class="topnav__brand">NV <strong>oOS</strong> · Platform Research</div>
+    <div class="topnav__links">
+      <a href="#summary">Summary</a>
+      <a href="#platforms">Platforms</a>
+      <a href="#architectures">Architecture</a>
+      <a href="#features">Deep dive</a>
+      <a href="#scorecard">Scorecard</a>
+      <a href="#takeaways">Takeaways</a>
+    </div>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="hero__top">
+      <div class="hero__brand">NV oOS — <strong>Open Operator System</strong> · Platform Comparison</div>
+      <div class="hero__meta">Compiled 28 Oct 2026 · Sources: wso2.com MCP Gateway blog &amp; docs · wso2 GitHub org · mcp-ai-wpoos repo (<code style="background:transparent;color:#ffffffa6">addons/mcp-gateway</code>, <code style="background:transparent;color:#ffffffa6">addons/mcp-wordpress-gateway</code>, <code style="background:transparent;color:#ffffffa6">examples/nvoos-complete-velocity</code>, <code style="background:transparent;color:#ffffffa6">packages/nvoos-mcp-bridge</code>, addon fleet, Pro addon)</div>
+    </div>
+    <div class="eyebrow eyebrow--dark">Platform Comparison · Research Memo</div>
+    <h1>NV oOS vs WSO2:<br><em>MCP Gateways &amp; the AI Tooling Layer</em></h1>
+    <p class="hero__lead">A deep-dive on how the NV oOS MCP Gateway stack — the fleet gateway at <strong>mcp.nvoos.pro</strong>, the site-management gateway, and the in-platform MCP governance surface — compares with the <strong>WSO2 MCP Gateway</strong>, feature by feature.</p>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="wrap">
+    <div class="stat">
+      <div class="stat__value">~1,648</div>
+      <div class="stat__label">native vertical tools per site — the largest tool surface behind any gateway here</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value">12</div>
+      <div class="stat__label">security classes governing every tool call — gates, guards, audit, cost</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value">2</div>
+      <div class="stat__label">official MCP Registry entries — fleet gateway + stdio bridge, one-line onboarding</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value">50</div>
+      <div class="stat__label">target sites per site-management gateway — least-privilege credentials each</div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ================= 1. SUMMARY ================= -->
+<section id="summary" class="section section--white">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">The short version</div>
+      <h2>Same protocol, <em>different jobs</em></h2>
+    </div>
+    <div class="aside">WSO2 governs any MCP traffic org-wide; NV oOS aggregates its own fleet of tool-rich sites behind one key. The comparison that matters is policy model vs policy model.</div>
+  </div>
+  <p class="lead">WSO2 and NV oOS occupy different layers of the AI stack, but they meet at exactly one point — the <strong>MCP gateway</strong>. The result is split: WSO2 wins on enterprise governance breadth; NV oOS wins on multi-site aggregation, self-hosting simplicity, and deep vertical tool surface.</p>
+
+  <div class="verdict">
+    <div class="box ahead">
+      <h4>🏆 Where NV oOS leads</h4>
+      <ul>
+        <li><strong>Fleet aggregation</strong> — one API key fans out to many bound sites with <code>&lt;site&gt;.&lt;tool&gt;</code> namespacing; WSO2 virtualizes single APIs.</li>
+        <li><strong>Fail-closed, self-hostable</strong> — a single Node process on managed hosting; GPL; no enterprise sales motion required.</li>
+        <li><strong>No confused-deputy passthrough</strong> — OAuth tokens are exchanged for per-site operator tokens, never forwarded upstream.</li>
+        <li><strong>Tool depth</strong> — ~1,648 native vertical tools behind the gateway, not generic API connectors.</li>
+        <li><strong>Abuse self-defense</strong> — the nefarious-usage monitor pattern-scans arguments and chat, then auto-disables tools (5 strikes → 503 shutdown) before a runaway loop can burn budget.</li>
+        <li><strong>Hosted ops console</strong> — the Complete Console ships analytics, approvals, dashboards, and a persistent chat dock without a platform contract.</li>
+      </ul>
+    </div>
+    <div class="box behind">
+      <h4>🏆 Where WSO2 leads</h4>
+      <ul>
+        <li><strong>Policy breadth</strong> — OPA-style rules, time-of-day, geo-origin, agent-persona, RBAC — enforced centrally at the gateway.</li>
+        <li><strong>OpenAPI virtualization</strong> — any REST API becomes an MCP server automatically.</li>
+        <li><strong>Enterprise IAM</strong> — OAuth 2.1 scopes enforced by WSO2 Identity Server, multi-tenant MCP discovery.</li>
+        <li><strong>Operational tooling</strong> — MCP Hub catalog, MCP Inspector sandbox, LLM Gateway pairing, monetization.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="seam">
+    <strong>Bottom line:</strong> NV oOS built the <em>train tracks</em> (fleet of vertical tools with per-site governance) <em>and then added the traffic control center</em> (fleet-scoped quotas + policy rules at the gateway, shipped 2026-10-28 as Proposal 094 / gateway 0.2.0). WSO2 built the org-wide control plane over <em>any</em> MCP traffic. They remain complementary: in an enterprise running both, an NV oOS gateway instance is exactly the kind of upstream a WSO2 MCP Gateway would front — and with quotas, time/geo rules, trace propagation, and a signed audit sink now native to our gateway, we no longer need to borrow the control-plane basics from them.
+  </div>
+</section>
+
+<!-- ================= 2. PLATFORMS ================= -->
+<section id="platforms" class="section section--cream-dark">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Positioning</div>
+      <h2>The two platforms, <em>at a glance</em></h2>
+    </div>
+    <div class="aside">Category check first: these products are not direct competitors. WSO2 is enterprise API/integration/identity middleware; NV oOS is a self-mutating REST API.</div>
+  </div>
+  <p class="lead">WSO2 is enterprise API/integration/identity middleware; NV oOS is a <strong>self-mutating REST API</strong> — an AI-assistant and MCP platform whose REST/JSON-RPC surface extends itself at runtime. The overlap is the MCP &amp; AI-governance layer.</p>
+
+  <div class="seam"><strong>Framing note:</strong> throughout this document NV oOS is described by its <em>interface</em>, not its substrate — a <strong>self-mutating REST API</strong>. Every enabled toolkit, registered tool, and MCP server extends the platform's own API surface at runtime; the hosting runtime underneath is an implementation detail, the same way WSO2's Java heritage is not its identity.</div>
+
+  <table>
+    <tr><th>Dimension</th><th>NV oOS (this repo)</th><th>WSO2</th></tr>
+    <tr><td class="dim">What it is</td><td>Open Operator System — a self-mutating REST API: an AI-assistant framework + MCP tool platform whose REST/JSON-RPC surface extends itself at runtime (base + Pro addon + 4 standalone ecosystem distributions + 2 gateway addons + stdio bridge)</td><td>Enterprise middleware company: API Platform (API Manager, MCP Gateway, AI Gateway), Integration Platform (Integrator), Identity Platform (Identity Server, Agent ID), Agent Platform (Agent Manager)</td></tr>
+    <tr><td class="dim">MCP posture</td><td><span class="badge b-nvoos">Server + Client + Gateway</span> — hosts ~1,648 tools, consumes external MCP servers (MCP Apps, Remote Sites, 33 toolkit servers), exposes a fleet gateway</td><td><span class="badge b-wso2">Governance layer</span> — MCP Gateway, MCP Hub, MCP Inspector, MCP connectors, FHIR MCP server, Arazzo→MCP generator</td></tr>
+    <tr><td class="dim">Deployment</td><td>A self-hosted runtime per site + one Node gateway on managed hosting (Cloudways Velocity); fully self-hosted</td><td>Cloud platform or on-prem Java/K8s; enterprise rollout</td></tr>
+    <tr><td class="dim">Buyer</td><td>Site owners, agencies, SMBs, freelancers (self-hosted)</td><td>Enterprise API/IT/platform teams</td></tr>
+    <tr><td class="dim">License</td><td>GPL-3.0-or-later</td><td>Apache-2.0 (core products)</td></tr>
+    <tr><td class="dim">Tool surface</td><td>~1,648 built-in vertical tools (CRM, commerce, healthcare, legal, CRE, PM, food-beverage…)</td><td>~0 built-in — you bring your own APIs; FHIR MCP server is the exception</td></tr>
+    <tr><td class="dim">AI providers</td><td>OpenAI, Gemini, Ollama, Zai + chat orchestration, provider router, cost tracking</td><td>Provider-agnostic middleware; LLM Gateway manages prompts/routing/spend, no chat runtime</td></tr>
+    <tr><td class="dim">Control plane</td><td>Hosted <strong>Complete Console</strong> (<code>examples/nvoos-complete-velocity</code> → <code>console.nvoos.cloud</code>): full spa-v2 surface — chat dock, assistants, tools, workflows, analytics, knowledge graph, docs, media, documents, approvals, operations — cookie-auth BFF proxy, magic-link sign-in, proxy micro-cache, plus the gateway health registry and the native admin surface</td><td>API Platform console + <strong>MCP Hub</strong> catalog + <strong>MCP Inspector</strong> sandbox + MCP server lifecycle (create → test → publish → version) + monetization</td></tr>
+    <tr><td class="dim">Platform fleet</td><td>stdio bridge (<code>@nvdigitalsolutions/nvoos-mcp-bridge</code> — HTTPS + SSH relay) · Complete Console · fleet MCP gateway · site-management gateway · media worker sidecar · NV oOS Cloud (cloud worker + tenant router + SaaS controller) · LibreChat · page agent · chat SPA · docs hub · 20+ npm client packages · framework-agnostic <code>nvoos/core</code> + Craft/Laravel adapters</td><td>Multi-product portfolio under one governance platform: API Manager, AI Gateway, LLM Gateway, Integrator, Identity Server, Agent Manager, Agent ID</td></tr>
+  </table>
+</section>
+
+<!-- ================= 3. ARCHITECTURES ================= -->
+<section id="architectures" class="section section--white">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Architecture</div>
+      <h2>Gateway architectures, <em>side by side</em></h2>
+    </div>
+    <div class="aside">One governance gateway at WSO2; four surfaces on our side — the fleet gateway, the site-management gateway, the hosted console, and the stdio bridge.</div>
+  </div>
+
+  <h3>3.1 WSO2 — the governance gateway</h3>
+  <div class="diagram">
+    <div class="node wso2"><div class="t">MCP Clients</div>VS Code Copilot · Claude Desktop · custom agents</div>
+    <div class="arrow">→</div>
+    <div class="node wso2"><div class="t">WSO2 MCP Gateway</div>token validation · OAuth2 scopes · tool quotas · IP/RBAC/OPA rules · routing · audit metadata</div>
+    <div class="arrow">→</div>
+    <div class="node wso2"><div class="t">Backends</div>OpenAPI-virtualized MCP servers · proxied MCP servers (on-prem / cloud / 3rd-party)</div>
+    <div class="arrow">+</div>
+    <div class="node wso2"><div class="t">Control plane</div>MCP Hub (catalog) · MCP Inspector (sandbox) · Identity Server (OAuth) · LLM Gateway</div>
+  </div>
+  <p class="lead">WSO2's gateway is an <strong>org-wide smart interceptor</strong>: every tool call is routed through it, checked against scopes and policies, then dispatched to whichever backend serves the tool — and enriched with identity, correlation IDs, and cost metadata before it's logged. The killer feature is <strong>OpenAPI virtualization</strong>: point the console at an existing REST API and it auto-derives tool definitions, turning any API into a governed MCP server without writing code.</p>
+
+  <h3>3.2 NV oOS — the aggregation gateway (this repo)</h3>
+  <div class="diagram">
+    <div class="node nvoos"><div class="t">MCP Clients</div>Claude Code (plugin) · Zed · Cursor · any streamable-HTTP client</div>
+    <div class="arrow">→</div>
+    <div class="node nvoos"><div class="t">NV oOS MCP Gateway</div><code>mcp.nvoos.pro</code> — public key auth (fail-closed) · opt-in OAuth 2.1 RS · per-key rate budgets · <strong>per-tool quotas</strong> (RFC 9558) · <strong>policy rules</strong> (allow/deny/approval, time/geo) · tool namespacing · health registry · <strong>traceparent + fleet audit sink</strong></div>
+    <div class="arrow">→</div>
+    <div class="node nvoos"><div class="t">Bound sites</div><code>site-a</code> · <code>site-b</code> · … each exposing its MCP endpoint with Fleet Operator tokens</div>
+    <div class="arrow">+</div>
+    <div class="node nvoos"><div class="t">In-platform governance</div>12-class security stack · per-tool capability gates · rate limiter · destructive-ops gate · cost tracker · audit log</div>
+  </div>
+  <p class="lead">The NV oOS gateway is a <strong>multi-site aggregating proxy</strong>: one API key unlocks every bound site, and tools surface as <code>site-slug.tool_name</code>. Auth is static keys today with an opt-in OAuth 2.1 protected-resource mode (RFC 9728 metadata, JWKS validation, RFC 8707 resource binding, scope-based <code>site:&lt;slug&gt;</code> access). A failing upstream degrades its slice of the tool list to a <code>_meta.gateway.errors</code> entry instead of failing the whole call. Upstream requests always use per-site Fleet Operator tokens — OAuth tokens are never forwarded upstream.</p>
+
+  <h3>3.3 NV oOS — the site-management gateway (second gateway)</h3>
+  <div class="diagram">
+    <div class="node nvoos"><div class="t">NV oOS assistants</div>Remote Sites → MCP Server connection type</div>
+    <div class="arrow">→</div>
+    <div class="node nvoos"><div class="t">Site-management gateway</div>X-MCP-Token (timing-safe) · tool allow/deny policy at registration · Streamable HTTP</div>
+    <div class="arrow">→</div>
+    <div class="node nvoos"><div class="t">Up to 50 target sites</div>least-privilege Application Passwords · 71 site-management tools</div>
+  </div>
+  <p class="lead">A second, narrower gateway wraps the 71-tool site-management server (the <code>mcp-wordpress</code> upstream) for multi-site administration: defense-in-depth tool policy (<code>MCP_TOOLS_ALLOW</code>/<code>MCP_TOOLS_DENY</code>, deny wins, filtered tools are absent from <code>tools/list</code> <em>and</em> rejected on <code>tools/call</code>), timing-safe token auth with a rotation-window token, and least-privilege Application Passwords per target site.</p>
+
+  <p class="lead">Beneath both gateways sits the <strong>per-site governance layer</strong> every NV oOS install already ships: 12 security classes (request guard, SSRF URL guard, concurrency guard, cost tracker, destructive-ops gate, CSP, audit logger, load guard, read-only profile gate, API key store, security posture scoring, circuit breaker), the nefarious-usage monitor (suspicious-pattern detection + auto-shutdown), per-tool capability gates, and 33 per-toolkit MCP servers with their own OAuth surface and token lifecycle.</p>
+
+  <h3>3.4 NV oOS — the hosted console (Complete Console)</h3>
+  <div class="diagram">
+    <div class="node nvoos"><div class="t">Browser</div><code>console.nvoos.cloud</code></div>
+    <div class="arrow">→</div>
+    <div class="node nvoos"><div class="t">Complete Console (BFF)</div>prebuilt <code>dist/</code> · zero-dependency <code>serve.mjs</code> proxy · cookie session · magic-link · default-deny micro-cache</div>
+    <div class="arrow">→</div>
+    <div class="node nvoos"><div class="t">Site backend (REST + admin)</div>same-origin proxy of the site's API, admin, and login surfaces</div>
+  </div>
+  <p class="lead">The fourth surface is the <strong>Complete Console</strong> — a hosted React SPA serving the full Pro spa-v2 UI (compiled in via a Vite alias, <strong>no fork</strong>) for NV oOS Complete customers. Its shell is Schedule-Anything-style: collapsible left nav, dashboard home, one page per addon (<code>#/assistants</code>, <code>#/tools</code>, <code>#/workflows</code>, <code>#/analytics</code>, <code>#/knowledge-graph</code>, <code>#/docs</code>, <code>#/media</code>, <code>#/documents</code>, <code>#/settings</code>), and a <strong>persistent chat dock</strong> that keeps streaming while you browse. Auth is a platform session cookie through the same-origin proxy (opt-in passwordless magic-link sign-in), and the proxy layers CDN-grade caching: immutable hashed assets, ETag revalidation, gzip/brotli, and a default-deny <code>Cache-Control</code>-gated micro-cache that can never cache nonces or SSE streams.</p>
+
+  <h3>3.5 NV oOS — the stdio bridge &amp; the wider service fleet</h3>
+  <div class="diagram">
+    <div class="node nvoos"><div class="t">Desktop agents</div>Zed · Claude Desktop · Cursor · Codex (stdio clients)</div>
+    <div class="arrow">→</div>
+    <div class="node nvoos"><div class="t">nvoos-mcp-bridge</div>zero-dependency stdio↔HTTP relay · <code>npx -y @nvdigitalsolutions/nvoos-mcp-bridge</code> · SSH tunnel mode</div>
+    <div class="arrow">→</div>
+    <div class="node nvoos"><div class="t">Any NV oOS site</div>native MCP endpoint (<code>mcp-ai/v1/mcp</code>) · Fleet Operator tokens</div>
+  </div>
+  <p class="lead">Most editors spawn MCP servers over <strong>stdio</strong>, but every NV oOS site speaks <strong>HTTP</strong> — so the npm bridge (<code>packages/nvoos-mcp-bridge</code>) relays the two transports. Two binaries: <code>nvoos-mcp</code> for HTTPS-reachable sites and <code>nvoos-mcp-ssh</code> for SSH-only hosts (it owns the <code>ssh -N -L</code> port-forward). It's a one-line install (<code>npx -y @nvdigitalsolutions/nvoos-mcp-bridge@latest</code> + env config), authenticates with Fleet Operator tokens, and is itself listed in the official MCP Registry as <code>io.github.nvdigitalsolutions/nvoos-mcp-bridge</code> — the second registry entry alongside the fleet gateway.</p>
+  <p class="lead">Beyond the bridge, the addon tree carries the rest of a distributed platform: the <strong>media worker</strong> (Node sidecar for heavy NPM operations), <strong>NV oOS Cloud</strong> (<code>cloud-worker</code> reference implementation on <code>nvoos.cloud</code>, an edge <code>tenant-router</code> mapping subdomains to multisite tenants, and a <code>saas-controller</code> that deploys the control plane on Cloudflare Workers + D1 + KV), a <strong>LibreChat</strong> integration, a <strong>page agent</strong> (browser-control bridge), the <strong>chat SPA</strong>, the <strong>docs hub</strong>, plus 20+ published npm client packages (<code>packages/</code>: chat-memory, sse-client, llm-worker, vad, transcription, offline-sync…) and framework adapters (<code>nvoos/core</code>, Craft CMS, Laravel). The honest read: NV oOS is better described by its <em>interface</em> than its substrate — a self-mutating REST API with a service fleet in the same <em>shape</em> as WSO2's product portfolio, just a fraction of the depth in each slice.</p>
+</section>
+
+<!-- ================= 4. FEATURES ================= -->
+<section id="features" class="section section--cream-dark">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Deep dive</div>
+      <h2>Feature-by-feature, <em>policy model vs policy model</em></h2>
+    </div>
+    <div class="aside">The policy model is where the gateways actually compete. This maps WSO2's documented MCP Gateway surface against the NV oOS gateway stack (fleet gateway + site-management gateway + in-platform layer).</div>
+  </div>
+
+  <table>
+    <tr><th>Capability</th><th>NV oOS gateway stack</th><th>WSO2 MCP Gateway</th><th>Read</th></tr>
+
+    <tr><td class="dim">Transport</td><td>Streamable HTTP (stateless, 2026-07-28 negotiation; per-client revision negotiation on the site-management gateway)</td><td>Streamable HTTP (connection bridging between clients and remote servers)</td><td><span class="badge b-good">Parity</span></td></tr>
+
+    <tr><td class="dim">Primary auth</td><td>Static public API keys, per-key site bindings; <code>AUTH_MODE=strict</code> fails closed at boot; 401 + <code>WWW-Authenticate</code> for unknown keys</td><td>OAuth 2.1 via Identity Server; opaque + JWT tokens; signature/issuer/audience validation; PKCE; delegated identity ("on behalf of" user)</td><td><span class="badge b-wso2">WSO2 ahead</span></td></tr>
+
+    <tr><td class="dim">OAuth / fine-grained auth</td><td>Opt-in RFC 9728 protected resource: RFC 8414 metadata, JWKS validation, RFC 8707 audience binding, scope-based <code>site:&lt;slug&gt;</code> binding; dynamic client registration delegated to the AS</td><td>Full OAuth 2.1 flows with granular per-tool scopes (e.g. <code>get_user_email</code> vs <code>delete_database</code>); resource indicators in token requests; multi-tenant B2B discovery on the roadmap</td><td><span class="badge b-wso2">WSO2 ahead</span></td></tr>
+
+    <tr><td class="dim">Rate limits</td><td><strong>Gateway (0.2.0):</strong> per-tool fleet quotas — <code>TOOL_QUOTAS</code> token buckets scoped <code>(key × site × tool)</code>, RFC 9558 <code>RateLimit-*</code> headers, 429 + <code>-32099</code> on breach, dry-run peek — on top of per-public-key budgets (<code>RATE_LIMIT_GLOBAL/_MCP/_HEALTH</code>). <strong>Platform:</strong> per-tool quotas — <code>requests_per_minute</code> per tool slug, 300-executions/60s tool rate limiting, per-tool token budgets (tiers × multipliers × session accounting), per-MCP-server <code>requests_per_minute</code> + <code>max_iterations</code> (−32099 JSON-RPC rejection), capability-boundary rate maps per session</td><td>Request-volume <em>and</em> token-consumption quotas; <strong>tool-based rate limiting</strong> (per-tool execution limits) explicitly to stop runaway agent loops — configured and enforced centrally at the gateway</td><td><span class="badge b-nvoos">NV oOS ahead — same centralized tool quotas, plus deeper per-site budgets, token accounting, and iteration caps</span></td></tr>
+
+        <tr><td class="dim">Runaway-loop / abuse defense</td><td><strong>Nefarious Usage Monitor</strong> (security layer): scans tool arguments + chat content for suspicious patterns (phishing etc.), watches rapid-fire messaging tools (<code>send_group_email</code>, WhatsApp…), flags rate-limit violations, and <strong>auto-disables tools</strong> — 5 violations triggers an emergency 503 shutdown with admin email. Backed by the 12-class security stack (cost tracker, concurrency guard, destructive-ops gate)</td><td>Tool-based rate limiting + quotas designed to "prevent autonomous agents from triggering runaway infinite loops" — enforcement only, no pattern detection or auto-shutdown</td><td><span class="badge b-nvoos">NV oOS ahead</span></td></tr>
+
+    <tr><td class="dim">Access control rules</td><td><strong>Gateway (0.2.0):</strong> declarative policy engine — <code>allow | deny | require_approval</code> rules over tool globs, site, key, time window (IANA tz, day-of-week, midnight-crossing) and geo country (<code>CF-IPCountry</code> + <code>GEO_MAP</code>); first-match-wins; denied tools filtered from <code>tools/list</code>; 403 + <code>-32001</code> / 428 + <code>-32002</code> + redacted preview; <code>SHADOW_POLICY</code> log-only mode. <strong>Platform:</strong> per-tool capability gates (role capabilities), destructive-ops confirmation gate, read-only profile gate, assistant scoping — enforced per site</td><td>IP filtering, RBAC, OPA policy-engine integration, time-of-day, geographical origin, and <strong>agent-persona</strong> rules</td><td><span class="badge b-tie">Split — we now ship time/geo/allow-deny/approval rules at the fleet edge; they retain OPA ecosystem integration, IP filtering, and persona rules</span></td></tr>
+
+    <tr><td class="dim">Multi-tenant / fleet scope</td><td>Fleet-scoped by design: one key → many sites; <code>&lt;site&gt;.&lt;tool&gt;</code> namespacing; per-site health registry; graceful per-site degradation</td><td>Org-level single entry point; multi-tenant MCP discovery (root org publishes, sub-orgs subscribe) is a filed requirement, not yet shipped</td><td><span class="badge b-nvoos">NV oOS ahead</span></td></tr>
+
+    <tr><td class="dim">API virtualization</td><td>Not present — the gateway fronts NV oOS sites only (the site-management gateway fronts the 71 site-management tools)</td><td><strong>OpenAPI → virtual MCP server</strong>: auto-derive tool definitions from existing REST APIs</td><td><span class="badge b-wso2">WSO2 ahead</span></td></tr>
+
+    <tr><td class="dim">Tool surface behind gateway</td><td>~1,648 native tools (per site) + 71 site-management tools</td><td>Your own APIs — zero domain tools out of the box (FHIR MCP server aside)</td><td><span class="badge b-nvoos">NV oOS ahead</span></td></tr>
+
+    <tr><td class="dim">Discovery &amp; onboarding</td><td>Two entries in the official MCP Registry — <code>io.github.nvdigitalsolutions/nvoos-mcp-gateway</code> (fleet gateway) + <code>io.github.nvdigitalsolutions/nvoos-mcp-bridge</code> (stdio bridge) — community directories, Claude Code marketplace plugin, one-line <code>npx</code> onboarding</td><td>MCP Hub: searchable internal catalog, standardized tool docs, copy-ready configs for VS Code Copilot / Claude Desktop, lifecycle management (create → test → publish → version)</td><td><span class="badge b-tie">Split — external discovery + one-line onboarding (us) vs internal catalog with lifecycle (them)</span></td></tr>
+
+    <tr><td class="dim">Testing / sandbox</td><td><code>node:test</code> suites + full-chain smoke harness (fake upstreams); Test Connection → Discover Tools flow in the platform</td><td>MCP Inspector sandbox — simulate agentic calls and observe policies (rate limits, scopes, sanitization) in real time; MCP Playground pre-publish</td><td><span class="badge b-wso2">WSO2 ahead</span></td></tr>
+
+    <tr><td class="dim">Hosted console / ops surface</td><td>Complete Console: dashboard home, analytics, approvals, dashboards, operations, diagnostics, docs, media studio, knowledge graph — with the chat dock persistent across every page</td><td>API Platform console + MCP Hub (catalog + lifecycle) + MCP Inspector (policy sandbox)</td><td><span class="badge b-tie">Closer than it looks — we ship a hosted ops console; they add MCP-specific lifecycle + policy sandbox</span></td></tr>
+
+    <tr><td class="dim">Observability / audit</td><td>Per-site health registry, <code>_meta.gateway.errors</code> degradation, in-platform audit logger (security events table, REST endpoint, purge cron), cost tracker per assistant — plus <strong>W3C <code>traceparent</code> propagation (0.2.0)</strong>: the gateway starts or inherits a trace, stamps every upstream request and log line, and passes it through so gateway logs join the slash-command <code>correlation_id</code> and OTEL <code>trace_id</code> on one ID; optional HMAC-<code>sha256=</code> <strong>fleet audit webhook</strong> (<code>AUDIT_SINK_URL</code>) emitting deny / quota_exceeded / require_approval / call_ok (arguments never included)</td><td>Gateway logs + enriches every call with user identity, correlation IDs, and cost-tracking tags; unified logging shared with the LLM Gateway</td><td><span class="badge b-nvoos">NV oOS ahead — one trace ID across the fleet + a signed audit sink; they still own the platform-wide unified log</span></td></tr>
+
+    <tr><td class="dim">Token hygiene upstream</td><td><strong>No confused-deputy passthrough</strong> — OAuth tokens never forwarded upstream; gateway always exchanges for per-site Fleet Operator tokens; upstream tokens header-only, never in responses/logs/errors</td><td>Delegated identity is the point — the agent acts "on behalf of" the verified user with the MCP authorization context carried through the chain</td><td><span class="badge b-tie">Different models — ours is safer for fleet fan-out; theirs enables true impersonation-aware flows</span></td></tr>
+
+    <tr><td class="dim">LLM governance pairing</td><td>In-platform: provider router, model config store, cost tracker, token limits, circuit breaker — per site, not fleet-wide; NV oOS Cloud worker (<code>cloud-worker</code>) adds edge inference routing + billing (Phase 3 reference implementation)</td><td>Dedicated LLM Gateway for prompts/model routing/token spend, sharing policies + logs with the MCP Gateway ("full-stack governance")</td><td><span class="badge b-wso2">WSO2 ahead — productized gateway vs our reference-grade edge</span></td></tr>
+
+    <tr><td class="dim">Tool allow/deny policy</td><td>Site-management gateway: <code>MCP_TOOLS_ALLOW</code>/<code>MCP_TOOLS_DENY</code> applied at registration time — filtered tools absent from <code>tools/list</code> AND rejected on <code>tools/call</code>; deny wins; per-assistant gating in the platform as the primary UX</td><td>Scope-based least privilege per tool + gateway policy rules</td><td><span class="badge b-good">Parity in spirit</span></td></tr>
+
+    <tr><td class="dim">Deployment &amp; scale</td><td>Single Node process on Cloudways Velocity; docker-friendly; boot fails closed with no keys</td><td>K8s-ready platform, org-scale, high availability, monetization built in</td><td><span class="badge b-wso2">WSO2 ahead at org scale</span></td></tr>
+  </table>
+</section>
+
+<!-- ================= 5. SCORECARD ================= -->
+<section id="scorecard" class="section section--white">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Scorecard</div>
+      <h2>Where we win, <em>where they win</em></h2>
+    </div>
+    <div class="aside">Twelve categories, scored honestly: ties where the protocol work is equal, and a clear split on policy vs fleet.</div>
+  </div>
+
+  <table>
+    <tr><th>Category</th><th>Winner</th><th>Why</th></tr>
+    <tr><td>Transport &amp; protocol handling</td><td><span class="badge b-tie">Tie</span></td><td>Both speak modern Streamable HTTP with protocol negotiation; both stateless-first.</td></tr>
+    <tr><td>Auth &amp; identity</td><td><span class="badge b-wso2">WSO2</span></td><td>Full OAuth 2.1 with Identity Server, per-tool scopes, delegated identity, multi-tenant discovery roadmap.</td></tr>
+    <tr><td>Policy model (quotas, rules)</td><td><span class="badge b-tie">Split</span></td><td>Central per-tool quotas + declarative time/geo/allow-deny/approval rules now ship at our gateway (0.2.0), enforced over our own fleet with catalog filtering — closing their edge. They retain OPA ecosystem integration, IP filtering, and persona rules.</td></tr>
+    <tr><td>Abuse &amp; runaway-loop defense</td><td><span class="badge b-nvoos">NV oOS</span></td><td>They limit tool calls; we limit <em>and</em> detect — the nefarious-usage monitor pattern-scans arguments and chat, checks rapid-fire messaging, and auto-disables tools with a 503 emergency shutdown. WSO2 has nothing equivalent documented.</td></tr>
+    <tr><td>Fleet aggregation</td><td><span class="badge b-nvoos">NV oOS</span></td><td>One key → many sites with namespaced tools and per-site degradation is our core design; WSO2's multi-tenant discovery is still an issue, not a product.</td></tr>
+    <tr><td>Tool depth</td><td><span class="badge b-nvoos">NV oOS</span></td><td>~1,648 native vertical tools vs "bring your own API".</td></tr>
+    <tr><td>API virtualization</td><td><span class="badge b-wso2">WSO2</span></td><td>OpenAPI → virtual MCP server is genuinely differentiating; we have nothing equivalent.</td></tr>
+    <tr><td>Discovery &amp; onboarding</td><td><span class="badge b-tie">Split</span></td><td>We win external discovery (two official MCP Registry entries, directories, Claude plugin, npx one-liner); they win internal lifecycle (Hub publish/version flows).</td></tr>
+    <tr><td>Platform breadth</td><td><span class="badge b-tie">Split</span></td><td>Our fleet (2 gateways + stdio bridge + console + workers + SPAs + adapters) matches WSO2's portfolio <em>in shape</em>; their individual products (IAM, API lifecycle, LLM gateway) are far deeper and sold as one suite.</td></tr>
+    <tr><td>Testing &amp; observability</td><td><span class="badge b-tie">Split</span></td><td>Their inspector sandbox remains ahead, but the policy dry-run gap is closed: <code>POST /admin/policy-sim</code> replays candidates against the recorded-call ring buffer, <code>dryRun: true</code> returns the decision envelope without executing, and W3C <code>traceparent</code> + the signed audit sink join the fleet on one trace ID (0.2.0).</td></tr>
+    <tr><td>Simplicity &amp; cost of adoption</td><td><span class="badge b-nvoos">NV oOS</span></td><td>One Node process, env config, self-host, GPL. No platform contract required.</td></tr>
+    <tr><td>Enterprise scale &amp; monetization</td><td><span class="badge b-wso2">WSO2</span></td><td>K8s, HA, billing — an enterprise platform by construction.</td></tr>
+  </table>
+
+  <div class="grid">
+    <div class="card">
+      <h4>✅ What we borrowed from WSO2 — all five shipped (gateway 0.2.0, 2026-10-28, Proposal 094)</h4>
+      <ul>
+        <li><strong>Central policy configuration</strong> — <span class="badge b-good">SHIPPED</span> per-tool quotas configured fleet-wide at the gateway via <code>TOOL_QUOTAS</code>, layered over the per-site RPM / token-budget / iteration-cap depth.</li>
+        <li><strong>Policy rules engine</strong> — <span class="badge b-good">SHIPPED</span> time-of-day (IANA tz, day-of-week, midnight-crossing), geo (<code>CF-IPCountry</code> + <code>GEO_MAP</code>), and allow/deny/require_approval conditions with first-match-wins and catalog filtering. (Per-session persona stays covered by capability boundaries; OPA migration is a documented later option.)</li>
+        <li><strong>Fleet-wide audit aggregation</strong> — <span class="badge b-good">SHIPPED</span> W3C <code>traceparent</code> propagation end-to-end plus an HMAC-signed fleet audit webhook (<code>AUDIT_SINK_URL</code>), joining gateway logs to per-site audit trails on one trace ID.</li>
+        <li><strong>A general policy inspector</strong> — <span class="badge b-good">SHIPPED</span> <code>POST /admin/policy-sim</code> replay against the recorded-call ring buffer, <code>dryRun: true</code> on <code>tools/call</code>, and <code>SHADOW_POLICY</code> log-only evaluation — policy can be tested before it is enforced.</li>
+        <li><strong>A Hub-style catalog UI</strong> — <span class="badge b-good">PARTIAL</span> the Complete Console gained a Gateway page (live tool catalog + policy/quotas read-only view); the full create → test → publish lifecycle console remains a follow-on.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔍 What they'd envy</h4>
+      <ul>
+        <li><strong>Fail-closed simplicity</strong> — our strict-mode boot and env-only config is a one-command deployment.</li>
+        <li><strong>Confused-deputy hygiene</strong> — token exchange per upstream, tokens never logged or forwarded.</li>
+        <li><strong>Real vertical tools</strong> — a gateway is only as useful as what's behind it; we ship the largest native vertical tool surface in existence.</li>
+        <li><strong>Registry presence</strong> — we're already in the official MCP Registry; their hub is walled-garden internal.</li>
+        <li><strong>Hosted ops console</strong> — the Complete Console ships a zero-dependency BFF with a persistent chat dock and CDN-grade caching; theirs requires the full platform.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🧭 The strategic read</h4>
+      <ul>
+        <li><strong>We're not a rival — we're an upstream.</strong> In an enterprise running both, the topology is NV oOS sites → fleet gateway → WSO2 MCP Gateway → agents.</li>
+        <li><strong>Depth per slice, not breadth.</strong> Our fleet already has WSO2's shape; the question is how deep each slice goes.</li>
+        <li><strong>Cheapest parity banked — now go deep.</strong> The five borrowed items shipped in 0.2.0; the remaining depth play is persona rules, the OPA migration path, and the full catalog lifecycle.</li>
+        <li><strong>The reframe is the moat.</strong> We sell a self-mutating REST API, not a CMS plugin — the interface is the product.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 6. TAKEAWAYS ================= -->
+<section id="takeaways" class="section section--cream-dark">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Takeaways</div>
+      <h2>The verdict, <em>in five points</em></h2>
+    </div>
+    <div class="aside">The short version for anyone who needs it in a meeting.</div>
+  </div>
+
+  <div class="card">
+    <ol style="padding-left:1.3rem;display:grid;gap:0.7rem;font-size:0.98rem;color:var(--grey-700);">
+      <li><strong>Same protocol, different jobs.</strong> WSO2 governs <em>any</em> MCP traffic org-wide; we aggregate <em>our</em> fleet of tool-rich sites behind one key. Neither replaces the other.</li>
+      <li><strong>Complementary in the enterprise.</strong> The natural topology is: NV oOS sites → NV oOS fleet gateway → WSO2 MCP Gateway (policy/identity) → agents. We'd be an upstream they proxy, not a rival they displace.</li>
+      <li><strong>The gap is lifecycle tooling, not governance breadth anymore.</strong> Our auth (fail-closed, OAuth 2.1 RS, no confused-deputy), rate limits (per-key + per-tool, RFC 9558), policy rules (allow/deny/approval over time/geo/site/key/tool), trace propagation, and audit sink are real, and the Complete Console ships a hosted multi-page ops surface — now including a Gateway page. What remains is <em>MCP lifecycle depth</em> (an inspector-grade sandbox, hub-style create → test → publish → version, persona rules) — theirs is a platform, ours is a fleet.</li>
+      <li><strong>Parity executed:</strong> per-tool quotas, the rules engine, trace-correlated fleet audit, and the policy dry-run sandbox shipped in <code>addons/mcp-gateway</code> 0.2.0 (Proposal 094) — the five items this doc originally flagged as "borrow" are closed or partial. The honest next moves are depth, not breadth: persona rules + OPA migration behind the same evaluator seam, and a hub-style lifecycle console (the Complete Console Gateway page already surfaces the catalog).</li>
+      <li><strong>Our moat is depth + self-hosting — and increasingly, fleet shape.</strong> WSO2 will keep winning enterprises that already run their stack; we win everyone who wants governed AI tooling on a self-hosted runtime without an enterprise platform — and with two gateways, a stdio bridge, a hosted console, and framework adapters, the fleet is already shaped like a platform. The strategic question is depth per slice, not breadth.</li>
+    </ol>
+  </div>
+</section>
+
+</div>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="src">
+      <strong>Sources:</strong> <a href="https://wso2.com/library/blogs/unified-governance-wso2-mcp-gateway/">WSO2 — "Operationalizing the Model Context Protocol: Unified Governance with the WSO2 MCP Gateway"</a> · <a href="https://wso2.com/api-platform/learn/mcp-implementations/">WSO2 API Platform — MCP Implementations</a> · <a href="https://is.docs.wso2.com/en/next/guides/agentic-ai/mcp/">WSO2 Identity Server — MCP Authorization</a> · <a href="https://github.com/wso2">github.com/wso2</a> (fhir-mcp-server, wso2-mcp-playground, arazzo-mcp-generator, mcp-transformer-java, product-is #27525) · NV oOS repo: <code>addons/mcp-gateway/README.md</code>, <code>addons/mcp-wordpress-gateway/README.md</code>, <code>examples/nvoos-complete-velocity/README.md</code>, <code>packages/nvoos-mcp-bridge/README.md</code>, <code>addons/{cloud-worker,tenant-router,saas-controller,media-worker}/README.md</code>, <code>.github/workflows/sync-*.yml</code>, <code>docs/project/proposals/055-*.md</code>, Pro addon security stack.
+    </div>
+    <div>
+      <strong>NV oOS × Platform Research</strong> · Generated from the mcp-ai-wpoos repository · 28 Oct 2026
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

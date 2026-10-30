@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Create_Comic_Layout implements WP_MCP_AI_Tool_Interface, WP
 			'properties'           => array(
 				'comic_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the comic script post.', 'mcp-ai-wpoos-pro' ),
 				),
 				'page_number'  => array(

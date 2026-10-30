@@ -52,6 +52,69 @@ Deploy runbook for the Complete Console on Cloudways Velocity. Companion to
    carry the session nonce.
 5. Capability check: a lower-cap user gets server-enforced gating.
 
+## Magic-link sign-in (passwordless, opt-in)
+
+The console sign-in screen also offers a **Magic link** mode, backed by the
+plugin's public `/wp-json/mcp-ai/v1/magic-login/*` routes
+(`WP_MCP_AI_REST_Magic_Login_Controller` in `includes/rest/`). Disabled by
+default — while disabled the routes 404.
+
+**Enable it in the UI** on the `NVOOS_TARGET_SITE` WordPress install:
+`Settings → NV oOS → Authentication → Magic Link Sign-In` — tick *Enable
+Magic Link Sign-In* and set *Magic Link App Origin* to the console address
+(e.g. `https://console.example.com`; empty falls back to the site address).
+
+Or via WP-CLI (the controller also honours these standalone options):
+
+```bash
+wp option update wp_mcp_ai_magic_login_enabled 1
+# Emailed links land on the console app (default: the site's home_url):
+wp option update wp_mcp_ai_magic_login_app_origin https://console.example.com
+```
+
+Both options have matching filters (`wp_mcp_ai_magic_login_enabled`,
+`wp_mcp_ai_magic_login_app_origin`) for code-based deployments.
+
+Security contract: ~256-bit tokens via `wp_generate_password(43)`
+(SHA-256-hashed at rest), 15-minute expiry, single-use, one outstanding
+link per user, uniform anti-enumeration responses, transient rate limits
+(3 requests/identifier/15 min, 10/IP/hour), and the confirm route fires
+`wp_login` so login-auditing plugins still observe the sign-in. The client
+never chooses the link target — the emailed URL is always the configured
+app origin — and the console consumes the token at `#/magic-login` with a
+hard reload into the dashboard on success.
+
+## Caching — keeping load off WordPress
+
+`scripts/serve.mjs` ships a three-layer caching contract; the Velocity
+NGINX edge + CDN sit in front and honor the same headers.
+
+| Layer | Behavior |
+|---|---|
+| Hashed `/assets/*` | `public, max-age=31536000, immutable` — cached by the browser **and the Velocity CDN** for a year; WordPress never sees these requests. Vite content-hashes every chunk, so a redeploy rotates the URLs and old entries age out naturally. |
+| `index.html` | `no-cache` + weak ETag → browsers revalidate and get a 304 instead of a full re-download on every route change. |
+| Unversioned root files (favicon…) | `public, max-age=86400` + ETag — bounded because their URLs cannot rotate. |
+| Text assets (JS/CSS/HTML/SVG) | gzip/brotli from an in-memory file cache with `Vary: Accept-Encoding` (entry chunk ~90 KB gzip vs ~300 KB raw). |
+| Proxied `GET /wp-json` | **Default-deny micro-cache**: responses are stored only when WordPress itself marks them cacheable (`Cache-Control: public` + `max-age`/`s-maxage`, no `Set-Cookie`, `Vary` ≠ Cookie/Origin/*), capped at `NVOOS_PROXY_CACHE_MAX_TTL` (default 300 s). The nonce + SSE endpoints already send `no-store` and can never be cached. `X-Cache-Status: HIT/MISS/BYPASS` + `Age` on every proxied response. |
+
+Env knobs: `NVOOS_PROXY_CACHE=0` disables the micro-cache; `NVOOS_PROXY_CACHE_MAX_TTL=<seconds>`
+changes the cap.
+
+**Backend opt-in:** `GET /mcp-ai/v1/features` (user-invariant, fetched on
+every console boot) now emits `Cache-Control: public, max-age=60,
+s-maxage=60`, so the micro-cache absorbs it immediately; the WP status
+endpoints emit `public, max-age=60/300` the same way. To offload more
+console GETs, emit the same header from the controller. Never mark
+per-user payloads (transcripts, `users/me`) cacheable.
+
+**WP 6.9 caveat (handled):** core sends `no-cache, … no-store, private` on
+every logged-in REST response (`rest_send_nocache_headers` defaults to
+`is_user_logged_in()`), overwriting a controller's `Cache-Control`.
+`WP_MCP_AI_REST_Cache_Control` (`includes/rest/class-wp-mcp-ai-rest-cache-control.php`)
+opts the request out when — and only when — the response explicitly
+declares `public`/`s-maxage`; default-deny is preserved for everything
+else.
+
 ## Troubleshooting — nonce endpoint returns the Imunify360 challenge page
 
 If the console fails with `nonce endpoint: expected JSON but got text/html`

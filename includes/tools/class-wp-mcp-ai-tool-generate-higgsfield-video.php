@@ -263,6 +263,7 @@ class WP_MCP_AI_Tool_Generate_Higgsfield_Video implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of a reference image to guide image-to-video generation (optional). The image must be publicly reachable.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'reference_image_url' => array(
 					'type'        => 'string',

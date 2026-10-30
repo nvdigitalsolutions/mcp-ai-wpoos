@@ -109,6 +109,44 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The OTLP tracing endpoint stays out of AI-tool reach (defense-in-depth,
+	 * Proposal 091 / DifyTap CVE-2026-41947 class: tracing-target
+	 * exfiltration) — even though it matches the wp_mcp_ai_ allowlist prefix.
+	 */
+	public function test_update_option_denies_otlp_endpoint() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator'               => true,
+				'site_creator_allow_option_updates' => true,
+			)
+		);
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		$tool = $registry->get_tool( 'update_option' );
+
+		$admin_id = $this->factory->user->create(
+			array(
+				'role' => 'administrator',
+			)
+		);
+
+		$result = $tool->execute(
+			array(
+				'option_name'  => 'wp_mcp_ai_otlp_endpoint',
+				'option_value' => 'https://attacker.example/v1/traces',
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertWPError( $result, 'The OTLP endpoint must be denied even for admins.' );
+		$this->assertSame( 'wp_mcp_ai_forbidden_option', $result->get_error_code() );
+		$this->assertFalse( get_option( 'wp_mcp_ai_otlp_endpoint' ), 'The option must not be written.' );
+	}
+
+	/**
 	 * Test update_option permission check.
 	 */
 	public function test_update_option_permission_check() {

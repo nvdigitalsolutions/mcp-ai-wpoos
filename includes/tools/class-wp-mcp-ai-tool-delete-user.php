@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Delete_User implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'integer',
 					'description' => __( 'The ID of the user to delete.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'reassign' => array(
 					'type'        => 'integer',

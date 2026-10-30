@@ -34,7 +34,8 @@ const buildOptions = {
 	bundle:      true,
 	outfile:     path.join( outDir, 'docs-hub.js' ),
 	format:      'iife',
-	globalName:  'NVoOSDocsHub',
+	// No `globalName`: the entry assigns `window.NVoosDocsHub` explicitly so
+	// host apps (the Pro SPA docs island) can call mountDocsHub().
 	platform:    'browser',
 	target:      [ 'es2017', 'chrome80', 'firefox78', 'safari15' ],
 	jsx:         'automatic',

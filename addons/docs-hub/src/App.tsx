@@ -12,10 +12,11 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, MemoryRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { fetchManifest } from './api/manifest-client';
 import { indexManifest } from './search/flexsearch-adapter';
 import type { Manifest } from './api/manifest-client';
+import { DocRouterModeContext, type DocRouterMode } from './navigation';
 import Sidebar from './components/Sidebar';
 import SearchBox from './components/SearchBox';
 import DocPage from './routes/DocPage';
@@ -69,6 +70,12 @@ export default function App() {
 	const [ manifestError, setManifestError ] = useState<string | null>( null );
 	const [ theme, setTheme ] = useState<string>( getInitialTheme );
 	const [ mobileSidebarOpen, setMobileSidebarOpen ] = useState( false );
+
+	// Host islands (the Pro SPA) inject `router: 'memory'` so the app never
+	// writes window.location.hash — the host owns it.
+	const appConfig = window.NVOOS_DOCS_HUB?.config ?? {};
+	const routerMode: DocRouterMode = appConfig.router === 'memory' ? 'memory' : 'hash';
+	const Router = routerMode === 'memory' ? MemoryRouter : HashRouter;
 
 	// Set of every indexed slug — used by ContentArea to rewrite internal
 	// `.md` links into `#/slug` hash routes.
@@ -127,10 +134,21 @@ export default function App() {
 
 	return (
 		<div { ...rootAttrs }>
-			<HashRouter>
-				<a href="#nvoos-dh-main" className="dh-skip-link">
-					Skip to main content
-				</a>
+			<DocRouterModeContext.Provider value={ routerMode }>
+				<Router>
+					<a
+						href="#nvoos-dh-main"
+						className="dh-skip-link"
+						onClick={ ( e ) => {
+							// MemoryRouter islands must not touch the host's hash.
+							if ( routerMode === 'memory' ) {
+								e.preventDefault();
+								document.getElementById( 'nvoos-dh-main' )?.focus();
+							}
+						} }
+					>
+						Skip to main content
+					</a>
 				<div className="dh-layout">
 					{ /* Header */ }
 					<header className="dh-header-area">
@@ -185,8 +203,9 @@ export default function App() {
 							 already matches everything. */ }
 						<Route path="/*" element={ <DocPage slugSet={ slugSet } /> } />
 					</Routes>
-				</div>
-			</HashRouter>
+					</div>
+				</Router>
+			</DocRouterModeContext.Provider>
 		</div>
 	);
 }

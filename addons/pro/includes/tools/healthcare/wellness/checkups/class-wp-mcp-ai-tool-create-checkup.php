@@ -60,12 +60,14 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'checkup_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional checkup ID. If provided, updates the existing checkup instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'member_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this checkup belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'title'            => array(
 					'type'        => 'string',

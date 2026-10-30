@@ -205,6 +205,7 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 						),
 						'stock_quantity'    => array(
 							'type'        => 'integer',
+							'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							'description' => 'New stock quantity',
 						),
 						'stock_status'      => array(

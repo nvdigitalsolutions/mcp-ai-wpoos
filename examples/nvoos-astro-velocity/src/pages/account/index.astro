@@ -1,0 +1,12 @@
+---
+// Account page (Q5) — server shell + client-hydrated AccountGate island.
+// Auth state is cookie-based through the same-origin /api proxy.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AccountGate from '../../islands/AccountGate';
+import { pageTitle } from '../../lib/seo/meta';
+---
+
+<BaseLayout title={pageTitle('Account')}>
+	<h1>Account</h1>
+	<AccountGate client:load />
+</BaseLayout>

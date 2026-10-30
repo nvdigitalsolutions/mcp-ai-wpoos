@@ -226,3 +226,58 @@ name, which intentionally carries the base plugin's prefix so the base
 plugin's own setting governs raw-header acceptance (same cross-plugin
 pattern as the existing `wp_mcp_ai_graph_score_weights` hook in
 `Memory/Bridge.php`). No allowlist required.
+
+## Re-verification (2026-10-24, 1.0.12 pre-upload pass)
+
+The 1.0.12 release ships the memory-graph bridge seams (self-declared
+provenance + RRF bridges for the base plugin) and the guest-token read-route
+fix. Re-checked against guidelines 1–18 before upload:
+
+- **Guideline 6/7 — services & disclosure:** both changes are local-only
+  (filter registrations and a permission-check fix). No new hosts, no new
+  `wp_remote_*` call sites — the sweep confirms remote calls remain confined
+  to `Remote/HttpClient.php` and `Commerce/Vendor.php`, matching the
+  `== External services ==` readme list exactly.
+- **REST surface:** the guest-token path now mirrors the base plugin's
+  chat-transcript permission layer — the token is read from the
+  `X-WP-MCP-AI-Guest` header (or `guest_token` parameter) and validated via
+  `WP_MCP_AI_Shortcode::validate_guest_token()`, `class_exists()`-guarded so
+  standalone installs are unaffected. Write routes stay `manage_options`-only.
+- **Guideline 15 — version bump:** header `Version` and
+  `NVOOS_CONTENT_GRAPH_VERSION` 1.0.11 → 1.0.12; readme `Stable tag: 1.0.12`;
+  readme changelog 1.0.12 entry dated 2026-10-24; `CHANGELOG.md` sections
+  folded into 1.0.12 (the memory-graph section dated 2026-10-19 was
+  re-dated); `blueprints/demo.json` points at the 1.0.12 ZIP;
+  `.wordpress-org/README.md` SVN examples updated.
+- **i18n:** POT regenerated via `wp i18n make-pot` —
+  `Project-Id-Version: NV oOS Content Graph 1.0.12`, 0 msgids lost, 0 new
+  (no new translatable strings in 1.0.12); only header metadata and two
+  `#:` source line references changed. `Report-Msgid-Bugs-To` still points at
+  the plugin's support URL. Text Domain `nvoos-content-graph` == slug
+  throughout.
+- **Sweeps re-run clean:** no CDN hosts; no `load_plugin_textdomain` calls;
+  no `Tested up to` in the PHP header (readme-only, still `7.1`); rebuild
+  cron still scheduled on `init` (unchanged since the 1.0.9 fix).
+- **Automated gates:** PHPUnit Unit 164 tests / 743 assertions and
+  Integration 29 tests / 80 assertions green on WP 6.9 AND WP 7.1 (Docker,
+  isolated DBs); phpcs (plugin `phpcs.xml.dist`) 0 errors (one pre-existing
+  empty-catch error in `tests/Unit/Admin/RemoteAdminTest.php` resolved with
+  an inline `phpcs:ignore`; the 58 array-alignment warnings in
+  `src/Admin/SettingsPage.php` are pre-existing, phpcbf-fixable, and
+  non-gating); `php -l` clean.
+- **Packaging:** tri-sync verified (`.distignore` ↔ workflow ↔
+  `bin/build-nvoos-content-graph.sh` — no exclusion changes needed); ZIP
+  rebuilt (508 KB, 152 files, readme.txt at the root, `vendor/autoload.php`
+  intact, no dev/test files); SHA-256 recorded in `build/`.
+- **Commerce:** `WPORG-REVIEW-COMMERCE-NOTES.md` updated — 1.0.12 carries no
+  commerce-surface changes.
+
+### PCP (Plugin Check) — 1.0.12 pre-upload run
+
+Executed 2026-10-24 against the built 1.0.12 ZIP (exact shipping tree,
+extracted and copied into a fresh WP latest install with plugin-check
+active): **PCP exit 0, 0 ERRORs, 171 WARNINGs** — identical to the 1.0.11
+profile, all in the known non-blocking categories (DirectDB/
+UnescapedDBParameter/NoCaching on constant-derived table names, dynamic-hook
+indirection from prefixed constants, slow meta-query pattern on the graph
+tables, and prefixed-globals warnings). No new rows, no allowlist required.

@@ -1,0 +1,50 @@
+---
+// Search — SSR + cached; uses the contract's name.like operator (B2).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductGrid from '../components/ProductGrid.astro';
+import Pagination from '../components/Pagination.astro';
+import { getProducts, PAGE_SIZE } from '../lib/commerce/client';
+import type { SortValue, WhereClause } from '../lib/commerce/types';
+import { normalizeProductMedia } from '../lib/commerce/normalize';
+import { pageTitle, plainExcerpt } from '../lib/seo/meta';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+const url = Astro.url;
+const q = url.searchParams.get('q')?.trim() ?? '';
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const sort = (url.searchParams.get('sort') as SortValue | null) ?? 'date';
+
+const where: WhereClause = q ? { name: { like: q } } : {};
+const data = q
+	? await getProducts(Astro.url, { page, limit: PAGE_SIZE, where, sort })
+	: { docs: [], totalDocs: 0, limit: PAGE_SIZE, totalPages: 1, page: 1, hasNextPage: false, hasPrevPage: false };
+const products = data.docs.map(normalizeProductMedia);
+const baseHref = `${url.pathname}?${url.searchParams.toString()}`;
+---
+
+<BaseLayout
+	title={pageTitle(q ? `Search: ${q}` : 'Search')}
+	description={plainExcerpt('Search the catalog.')}
+>
+	<slot name="head">
+		<meta name="robots" content="noindex, follow" />
+	</slot>
+
+	<h1>Search</h1>
+	<form method="get" action="/search/" class="field">
+		<label for="q" class="sr-only">
+			Search
+		</label>
+		<input id="q" type="search" name="q" value={q} placeholder="Search products…" />
+		<button type="submit" class="btn">
+			Search
+		</button>
+	</form>
+	{q && <p>{data.totalDocs} result{data.totalDocs === 1 ? '' : 's'} for “{q}”.</p>}
+	<ProductGrid products={products} />
+	<Pagination page={page} totalPages={data.totalPages} baseUrl={baseHref} />
+</BaseLayout>

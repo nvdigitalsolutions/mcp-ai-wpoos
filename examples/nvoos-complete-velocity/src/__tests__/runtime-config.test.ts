@@ -10,6 +10,7 @@ import {
   fetchCurrentUser,
   fetchFeatureMap,
   fetchSessionNonce,
+  UnauthorizedError,
 } from '../runtime-config';
 
 const jsonResponse = (body: unknown, status = 200): Response =>
@@ -34,6 +35,41 @@ describe('buildConsoleRuntime', () => {
     expect(runtime.endpoints.chat).toContain('/mcp-ai/v1/chat');
   });
 
+  it('empties admin-gated endpoints for non-admin users (mirrors the server config)', () => {
+    const runtime = buildConsoleRuntime({ user: { id: 7, capabilities: ['edit_posts'] } });
+
+    // manage_options surfaces must be empty so pages skip the fetch instead
+    // of hitting a 403.
+    expect(runtime.endpoints.commandCenter).toBe('');
+    expect(runtime.endpoints.approvals).toBe('');
+    expect(runtime.endpoints.workflows).toBe('');
+    expect(runtime.endpoints.remoteSites).toBe('');
+    expect(runtime.endpoints.mediaCc).toBe('');
+    // Logged-in surfaces stay available.
+    expect(runtime.endpoints.settings).not.toBe('');
+    expect(runtime.endpoints.assistants).not.toBe('');
+    expect(runtime.endpoints.slashCommands).not.toBe('');
+    // edit_posts surfaces stay available.
+    expect(runtime.endpoints.blueprints).not.toBe('');
+  });
+
+  it('keeps admin-gated endpoints for administrators', () => {
+    const runtime = buildConsoleRuntime({
+      user: { id: 1, capabilities: ['manage_options', 'edit_posts'] },
+    });
+
+    expect(runtime.endpoints.commandCenter).toContain('/command-center');
+    expect(runtime.endpoints.approvals).toContain('/approvals');
+    expect(runtime.endpoints.blueprints).not.toBe('');
+  });
+
+  it('empties edit_posts surfaces for users without the capability', () => {
+    const runtime = buildConsoleRuntime({ user: { id: 9, capabilities: [] } });
+
+    expect(runtime.endpoints.blueprints).toBe('');
+    expect(runtime.endpoints.commandCenter).toBe('');
+  });
+
   it('pins the default assistant id when provided', () => {
     const runtime = buildConsoleRuntime({ defaultAssistantId: 42 });
     expect(runtime.config?.assistantId).toBe(42);
@@ -52,22 +88,24 @@ describe('buildConsoleRuntime', () => {
     expect(runtime.endpoints.documentEditor).not.toBe('');
   });
 
-  it('empties optional endpoints the server reports unavailable', () => {
-    const runtime = buildConsoleRuntime({
-      features: {
-        docs_hub: false,
-        knowledge_graph: false,
-        media_studio: false,
-        document_editor: false,
-      },
-    });
-    expect(runtime.endpoints.docsHub).toBe('');
-    expect(runtime.endpoints.contentGraph).toBe('');
-    expect(runtime.endpoints.mediaStudio).toBe('');
-    expect(runtime.endpoints.documentEditor).toBe('');
-  });
+	  it( 'empties optional endpoints the server reports unavailable', () => {
+		  const runtime = buildConsoleRuntime( {
+			  features: {
+				  docs_hub: false,
+				  knowledge_graph: false,
+				  media_studio: false,
+				  document_editor: false,
+				  okf: false,
+			  },
+		  } );
+		  expect( runtime.endpoints.docsHub ).toBe( '' );
+		  expect( runtime.endpoints.contentGraph ).toBe( '' );
+		  expect( runtime.endpoints.mediaStudio ).toBe( '' );
+		  expect( runtime.endpoints.documentEditor ).toBe( '' );
+		  expect( runtime.endpoints.okf ).toBe( '' );
+	  } );
 
-  it('keeps available surfaces wired when the map says so', () => {
+	  it( 'keeps available surfaces wired when the map says so', () => {
     const runtime = buildConsoleRuntime({
       features: { docs_hub: true, knowledge_graph: true },
     });
@@ -82,20 +120,17 @@ describe('fetchSessionNonce', () => {
     vi.restoreAllMocks();
   });
 
-  it('prefers the wp-admin embedded nonce', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response('<script>var wpApiSettings={"nonce":"0123456789"};</script>', {
-          status: 200,
-          headers: { 'Content-Type': 'text/html' },
-        }),
-      ),
-    );
-    await expect(fetchSessionNonce()).resolves.toBe('0123456789');
+  it('prefers the session nonce endpoint', async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ nonce: 'fedcba9876' }));
+    vi.stubGlobal('fetch', mockFetch);
+    await expect(fetchSessionNonce()).resolves.toBe('fedcba9876');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch.mock.calls[0][0] as string).toContain('/wp-json/mcp-ai/v1/session/nonce');
   });
 
-  it('falls back to the session nonce endpoint', async () => {
+  it('falls back to the wp-admin embedded nonce when the endpoint is unavailable', async () => {
     vi.stubGlobal(
       'fetch',
       vi
@@ -103,18 +138,26 @@ describe('fetchSessionNonce', () => {
         .mockResolvedValueOnce(
           new Response('', { status: 404, headers: { 'Content-Type': 'text/html' } }),
         )
-        .mockResolvedValueOnce(jsonResponse({ nonce: 'fedcba9876' })),
+        .mockResolvedValueOnce(
+          new Response('<script>var wpApiSettings={"nonce":"0123456789"};</script>', {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' },
+          }),
+        ),
     );
-    await expect(fetchSessionNonce()).resolves.toBe('fedcba9876');
+    await expect(fetchSessionNonce()).resolves.toBe('0123456789');
   });
 
-  it('rejects a non-JSON nonce response', async () => {
+  it('rejects a non-JSON nonce response (challenge page) when the scrape also fails', async () => {
     vi.stubGlobal(
       'fetch',
       vi
         .fn()
         .mockResolvedValueOnce(
-          new Response('', { status: 404, headers: { 'Content-Type': 'text/html' } }),
+          new Response('<!doctype html><html>', {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' },
+          }),
         )
         .mockResolvedValueOnce(
           new Response('<!doctype html><html>', {
@@ -197,22 +240,77 @@ describe('fetchCurrentUser', () => {
         }),
       ),
     );
-    const user = await fetchCurrentUser('nonce');
+    const { user, nonce: usedNonce } = await fetchCurrentUser('nonce');
     expect(user).toEqual({
       id: 3,
       login: 'console-admin',
       displayName: 'Console Admin',
       capabilities: ['manage_options'],
     });
+    expect(usedNonce).toBe('nonce');
   });
 
-  it('surfaces login-required errors', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse({ code: 'rest_forbidden' }, 403),
-      ),
-    );
-    await expect(fetchCurrentUser('nonce')).rejects.toThrow(/log into WordPress/);
-  });
-});
+  	it( 'treats 403 as not-signed-in (hardened cookie auth)', async () => {
+  		vi.stubGlobal(
+  			'fetch',
+  			vi.fn().mockResolvedValue(
+  				jsonResponse( { code: 'rest_forbidden' }, 403 ),
+  			),
+  		);
+		await expect( fetchCurrentUser( 'nonce' ) ).rejects.toBeInstanceOf( UnauthorizedError );
+	} );
+
+	it( 'recovers a session when the edit context 403s (author role) via fresh nonce + view context', async () => {
+		const mockFetch = vi
+			.fn()
+			.mockResolvedValueOnce( jsonResponse( { code: 'rest_forbidden' }, 403 ) )
+			.mockResolvedValueOnce( jsonResponse( { nonce: 'fresh456' } ) )
+			.mockResolvedValueOnce(
+				jsonResponse( { id: 9, name: 'An Author', slug: 'author-one' } ),
+			)
+			.mockResolvedValueOnce(
+				jsonResponse( { capabilities: { edit_posts: true, upload_files: true } } ),
+			);
+		vi.stubGlobal( 'fetch', mockFetch );
+
+		await expect( fetchCurrentUser( 'stale123' ) ).resolves.toEqual( {
+			user: {
+				id: 9,
+				login: 'author-one',
+				displayName: 'An Author',
+				capabilities: [ 'edit_posts', 'upload_files' ],
+			},
+			nonce: 'fresh456',
+		} );
+
+		expect( mockFetch ).toHaveBeenCalledTimes( 4 );
+		const retryUrl = mockFetch.mock.calls[ 2 ][ 0 ] as string;
+		const [, retryInit] = mockFetch.mock.calls[ 2 ] as [ string, RequestInit ];
+		expect( retryUrl ).toContain( '/wp-json/wp/v2/users/me' );
+		expect( retryUrl ).not.toContain( 'context' );
+		expect( retryInit.headers ).toEqual( { 'X-WP-Nonce': 'fresh456' } );
+
+		const meUrl = mockFetch.mock.calls[ 3 ][ 0 ] as string;
+		const [, meInit] = mockFetch.mock.calls[ 3 ] as [ string, RequestInit ];
+		expect( meUrl ).toContain( '/wp-json/mcp-ai/v1/session/me' );
+		expect( meInit.headers ).toEqual( { 'X-WP-Nonce': 'fresh456' } );
+	} );
+
+	it( 'reuses the rejected nonce when minting fails but the view context succeeds', async () => {
+		const mockFetch = vi
+			.fn()
+			.mockResolvedValueOnce( jsonResponse( { code: 'rest_forbidden' }, 403 ) )
+			.mockResolvedValueOnce( jsonResponse( { code: 'rest_forbidden' }, 403 ) )
+			.mockResolvedValueOnce( jsonResponse( { id: 4, name: 'A', slug: 'a' } ) )
+			.mockResolvedValueOnce( jsonResponse( { code: 'rest_forbidden' }, 403 ) );
+		vi.stubGlobal( 'fetch', mockFetch );
+
+		const result = await fetchCurrentUser( 'stale123' );
+		await expect( result.user ).toMatchObject( { id: 4 } );
+		expect( result.user.capabilities ).toEqual( [] );
+		expect( result.nonce ).toBe( 'stale123' );
+
+		const [, retryInit] = mockFetch.mock.calls[ 2 ] as [ string, RequestInit ];
+		expect( retryInit.headers ).toEqual( { 'X-WP-Nonce': 'stale123' } );
+	} );
+} );

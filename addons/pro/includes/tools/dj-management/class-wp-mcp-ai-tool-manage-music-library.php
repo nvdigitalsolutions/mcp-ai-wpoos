@@ -67,6 +67,7 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 				),
 				'track_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Track ID (required for update/delete)', 'mcp-ai-wpoos-pro' ),
 				),
 				'title'        => array(

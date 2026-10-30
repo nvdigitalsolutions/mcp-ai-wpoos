@@ -132,6 +132,7 @@ class WP_MCP_AI_Tool_Import_Services implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'default_place_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Default place ID to link all imported services to.', 'mcp-ai-wpoos-pro' ),
 				),
 				'auto_create_categories' => array(

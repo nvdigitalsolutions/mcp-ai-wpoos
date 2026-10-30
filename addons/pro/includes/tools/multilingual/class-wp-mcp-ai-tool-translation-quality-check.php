@@ -103,10 +103,12 @@ class WP_MCP_AI_Tool_Translation_Quality_Check implements WP_MCP_AI_Tool_Interfa
 			'properties' => array(
 				'post_id'        => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Translated post ID to check',
 				),
 				'source_post_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Original post ID',
 				),
 				'checks'         => array(

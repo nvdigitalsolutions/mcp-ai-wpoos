@@ -62,10 +62,12 @@ class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'track_a_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'First track ID (current track) (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'track_b_id'       => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Second track ID (next track) (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'transition_style' => array(

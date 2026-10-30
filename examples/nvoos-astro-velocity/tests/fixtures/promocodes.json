@@ -1,0 +1,22 @@
+[
+	{
+		"id": 1,
+		"name": "Summer",
+		"title": "Summer 10",
+		"code": "SUMMER10",
+		"discount": 10,
+		"expiresAt": "Jun 30, 2027",
+		"isActive": true,
+		"logo": ""
+	},
+	{
+		"id": 2,
+		"name": "Welcome",
+		"title": "Welcome 5",
+		"code": "WELCOME5",
+		"discount": 5,
+		"expiresAt": "Jan 1, 2026",
+		"isActive": true,
+		"logo": ""
+	}
+]

@@ -8,6 +8,11 @@
  * 2. Base-plugin settings (`wp_mcp_ai_settings`), the single-connection surface.
  * 3. The legacy `wp_mcp_ai_google_calendar_*` filters, so any site already
  *    injecting a service account or a pre-minted access token keeps working.
+ * 4. Auto-fallback to the only enabled Remote Sites `google_calendar`
+ *    connection with complete credentials when none of the above resolve —
+ *    mirroring the Drive/Gmail auto-fallback so an omitted `connection_id`
+ *    never reports Calendar as unconfigured while a healthy named
+ *    connection exists.
  *
  * Centralising this prevents the copy-paste divergence visible between the Gmail
  * and Drive tools, where the same resolution block is duplicated inline in each
@@ -74,6 +79,10 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 		 *     Resolved credentials on success.
 		 *
 		 *     @type string $source         One of the SOURCE_* constants.
+		 *     @type string $connection_id  Remote Sites connection ID when resolved
+		 *                                  from a connection, otherwise empty.
+		 *     @type string $connection_name Human-readable connection name, when
+		 *                                  resolved from a connection.
 		 *     @type string $client_id      OAuth client ID.
 		 *     @type string $client_secret  OAuth client secret (plaintext).
 		 *     @type string $refresh_token  OAuth refresh token (plaintext).
@@ -90,8 +99,40 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 		public static function resolve( $connection_id = '', array $context = array(), array $arguments = array() ) {
 			$connection_id = is_string( $connection_id ) ? sanitize_key( $connection_id ) : '';
 
+			// The literal "settings" is the documented way to force the
+			// settings-based credentials, mirroring the Gmail client.
+			if ( 'settings' === $connection_id ) {
+				$connection_id = '';
+			}
+
 			if ( '' !== $connection_id ) {
-				return self::resolve_from_connection( $connection_id );
+				return self::resolve_from_connection( $connection_id, $context );
+			}
+
+			// A restricted assistant may only fall back to the site-wide settings
+			// credentials when the assistant editor explicitly granted the
+			// "settings" row. Without that grant it can only use its allowed
+			// Remote Sites connections: auto-resolve an omitted connection_id to
+			// the only allowed Google Calendar connection with usable
+			// credentials; the site-wide settings and filter surfaces are
+			// refused (a client cannot widen its own grant).
+			$allowed_ids = self::get_allowed_connection_ids( $context );
+			if ( null !== $allowed_ids && ! in_array( 'settings', $allowed_ids, true ) ) {
+				$auto = self::resolve_auto_connection( $context );
+
+				if ( is_wp_error( $auto ) ) {
+					return $auto;
+				}
+
+				if ( is_array( $auto ) ) {
+					return $auto;
+				}
+
+				return new WP_Error(
+					'wp_mcp_ai_calendar_no_allowed_connection',
+					__( 'None of the Google Calendar connections enabled for this assistant have usable credentials. Enable a Google Calendar connection in the assistant editor (Remote Site Connections) and complete its OAuth flow under Remote Sites.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
+				);
 			}
 
 			$settings = self::resolve_from_settings();
@@ -106,6 +147,20 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 				return $filtered;
 			}
 
+			// Self-correcting fallback: when no connection was named and neither
+			// the settings nor the legacy filter surface has credentials, resolve
+			// to the only enabled Remote Sites Google Calendar connection instead
+			// of failing. Pro sites commonly keep Calendar credentials only
+			// inside a named connection, and an omitted connection_id must then
+			// use that connection rather than report the integration as
+			// unconfigured (which previously led assistants to disable or remove
+			// the perfectly valid connection).
+			$auto = self::resolve_auto_connection( $context );
+
+			if ( is_wp_error( $auto ) || is_array( $auto ) ) {
+				return $auto;
+			}
+
 			// Prefer the settings-level error: it is the actionable one for admins.
 			return $settings;
 		}
@@ -116,9 +171,10 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 		 * @since 1.0.0
 		 *
 		 * @param string $connection_id Connection ID.
+		 * @param array  $context       Optional execution context (assistant_id is honoured).
 		 * @return array<string,mixed>|WP_Error
 		 */
-		protected static function resolve_from_connection( $connection_id ) {
+		protected static function resolve_from_connection( $connection_id, array $context = array() ) {
 			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 				if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 					return new WP_Error(
@@ -169,6 +225,20 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 				);
 			}
 
+			// Assistant-level restriction: an assistant with a configured Remote
+			// Site Connections list may only use connections from that list.
+			if ( ! self::is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_calendar_connection_not_enabled',
+					sprintf(
+						/* translators: %s: connection name. */
+						__( 'Google Calendar connection "%s" is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos' ),
+						isset( $connection['name'] ) ? (string) $connection['name'] : $connection_id
+					),
+					array( 'status' => 403 )
+				);
+			}
+
 			if ( isset( $connection['enabled'] ) && ! $connection['enabled'] ) {
 				return new WP_Error(
 					'wp_mcp_ai_calendar_connection_disabled',
@@ -200,6 +270,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 			return array(
 				'source'          => self::SOURCE_CONNECTION,
 				'connection_id'   => $connection_id,
+				'connection_name' => isset( $connection['name'] ) ? trim( (string) $connection['name'] ) : '',
 				'client_id'       => $client_id,
 				'client_secret'   => $client_secret,
 				'refresh_token'   => $refresh_token,
@@ -214,6 +285,161 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 				),
 				'timezone'        => self::default_timezone(),
 				'cache_key'       => 'connection:' . $connection_id,
+				'service_account' => array(),
+			);
+		}
+
+		/**
+		 * Resolve the assistant's allowed connection IDs from the execution context.
+		 *
+		 * Returns null when unrestricted (no assistant context, or the assistant
+		 * has no configured Remote Site Connections list) — mirroring the
+		 * remote_wp_connection semantics — or the allowed connection IDs as strings.
+		 *
+		 * @param array $context Execution context.
+		 * @return array|null Allowed connection IDs, or null when unrestricted.
+		 */
+		private static function get_allowed_connection_ids( array $context ) {
+			$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+			if ( ! $assistant_id ) {
+				return null;
+			}
+
+			$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+
+			if ( ! is_array( $enabled_connections ) ) {
+				// Not configured — legacy behaviour allows all connections.
+				return null;
+			}
+
+			return array_map( 'strval', $enabled_connections );
+		}
+
+		/**
+		 * Whether a connection is enabled for the assistant in the execution context.
+		 *
+		 * @param string $connection_id Connection ID.
+		 * @param array  $context       Execution context.
+		 * @return bool True when allowed (or unrestricted), false otherwise.
+		 */
+		private static function is_connection_enabled_for_assistant( $connection_id, array $context ) {
+			$allowed_ids = self::get_allowed_connection_ids( $context );
+
+			if ( null === $allowed_ids ) {
+				return true;
+			}
+
+			return in_array( (string) $connection_id, $allowed_ids, true );
+		}
+
+		/**
+		 * Find the Remote Sites Google Calendar connection to use when no
+		 * connection_id was given and the settings-based credentials are absent.
+		 *
+		 * Returns null when no usable connection exists, the single enabled
+		 * connection when exactly one does, or a WP_Error listing the candidates
+		 * when several are enabled (ambiguous — the caller must name one).
+		 *
+		 * When the context carries a restricted assistant, only connections from
+		 * the assistant's Remote Site Connections list are considered.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $context Optional execution context (assistant_id is honoured).
+		 * @return array<string,mixed>|null|WP_Error
+		 */
+		private static function resolve_auto_connection( array $context = array() ) {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+					// Without the Pro addon there are no Remote Sites connections.
+					return null;
+				}
+
+				$manager_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+
+				if ( ! file_exists( $manager_file ) ) {
+					return null;
+				}
+
+				require_once $manager_file;
+			}
+
+			$allowed_ids = self::get_allowed_connection_ids( $context );
+			$candidates  = array();
+
+			foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $candidate_id => $connection ) {
+				if ( ! is_array( $connection ) ) {
+					continue;
+				}
+
+				if ( null !== $allowed_ids && ! in_array( (string) $candidate_id, $allowed_ids, true ) ) {
+					continue;
+				}
+
+				$connection_type = isset( $connection['connection_type'] ) ? sanitize_key( $connection['connection_type'] ) : '';
+
+				if ( self::CONNECTION_TYPE !== $connection_type || empty( $connection['enabled'] ) ) {
+					continue;
+				}
+
+				$candidate_client_id = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+				$candidate_secret    = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
+				$candidate_refresh   = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
+
+				if ( '' === $candidate_client_id || '' === $candidate_secret || '' === $candidate_refresh ) {
+					continue;
+				}
+
+				$candidates[ (string) $candidate_id ] = $connection;
+			}
+
+			if ( empty( $candidates ) ) {
+				return null;
+			}
+
+			if ( count( $candidates ) > 1 ) {
+				$labels = array();
+
+				foreach ( $candidates as $candidate_id => $connection ) {
+					$labels[] = sprintf(
+						'%1$s (%2$s)',
+						(string) $candidate_id,
+						isset( $connection['name'] ) ? (string) $connection['name'] : (string) $candidate_id
+					);
+				}
+
+				return new WP_Error(
+					'wp_mcp_ai_calendar_ambiguous_connection',
+					sprintf(
+						/* translators: %s: comma-separated connection IDs and names. */
+						__( 'Multiple Google Calendar connections are enabled and healthy, but no connection_id was given — the tool will not guess which calendar to use. Pass one of: %s. Their names and enabled state are listed under Remote Sites.', 'mcp-ai-wpoos' ),
+						implode( ', ', $labels )
+					)
+				);
+			}
+
+			$auto_id         = (string) array_key_first( $candidates );
+			$auto_connection = $candidates[ $auto_id ];
+
+			return array(
+				'source'          => self::SOURCE_CONNECTION,
+				'connection_id'   => $auto_id,
+				'connection_name' => isset( $auto_connection['name'] ) ? trim( (string) $auto_connection['name'] ) : $auto_id,
+				'client_id'       => trim( (string) $auto_connection['client_id'] ),
+				'client_secret'   => WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( trim( (string) $auto_connection['client_secret'] ) ),
+				'refresh_token'   => WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( trim( (string) $auto_connection['refresh_token'] ) ),
+				'access_token'    => '',
+				'user_email'      => isset( $auto_connection['user_email'] ) ? trim( (string) $auto_connection['user_email'] ) : '',
+				'calendar_id'     => isset( $auto_connection['calendar_id'] ) && '' !== trim( (string) $auto_connection['calendar_id'] )
+					? trim( (string) $auto_connection['calendar_id'] )
+					: 'primary',
+				'granted_scopes'  => isset( $auto_connection['granted_scopes'] ) ? (string) $auto_connection['granted_scopes'] : '',
+				'scope_profile'   => WP_MCP_AI_Google_Calendar_Scopes::normalise_profile(
+					isset( $auto_connection['scope_profile'] ) ? $auto_connection['scope_profile'] : ''
+				),
+				'timezone'        => self::default_timezone(),
+				'cache_key'       => 'connection:' . $auto_id,
 				'service_account' => array(),
 			);
 		}
@@ -253,6 +479,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 			return array(
 				'source'          => self::SOURCE_SETTINGS,
 				'connection_id'   => '',
+				'connection_name' => '',
 				'client_id'       => $client_id,
 				'client_secret'   => $client_secret,
 				'refresh_token'   => $refresh_token,
@@ -332,6 +559,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Credentials' ) ) {
 			return array(
 				'source'          => self::SOURCE_FILTER,
 				'connection_id'   => '',
+				'connection_name' => '',
 				'client_id'       => '',
 				'client_secret'   => '',
 				'refresh_token'   => '',

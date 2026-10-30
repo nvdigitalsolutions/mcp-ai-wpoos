@@ -387,6 +387,30 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
 				'expires_at'      => isset( $payload['expires_at'] ) ? (int) $payload['expires_at'] : ( $now + self::DEFAULT_TTL ),
 			);
 
+			// SSE long-run offload (Phase 4b) fields. Legacy async-tool
+			// continuations simply omit them; the offload worker reads them
+			// to resume the agentic loop where the live stream stopped.
+			$offload_fields = array(
+				'assistant_config'         => array(),
+				'iteration'                => 0,
+				'max_iterations'           => 5,
+				'agentic_cost_accumulator' => array(),
+				'pending_tool_calls'       => array(),
+				'continuation_kind'        => '',
+			);
+			foreach ( $offload_fields as $field => $default ) {
+				if ( ! array_key_exists( $field, $payload ) ) {
+					continue;
+				}
+				if ( 'assistant_config' === $field || 'agentic_cost_accumulator' === $field || 'pending_tool_calls' === $field ) {
+					$normalized[ $field ] = is_array( $payload[ $field ] ) ? $payload[ $field ] : $default;
+				} elseif ( 'iteration' === $field || 'max_iterations' === $field ) {
+					$normalized[ $field ] = absint( $payload[ $field ] );
+				} else {
+					$normalized[ $field ] = (string) $payload[ $field ];
+				}
+			}
+
 			// Preserve dispatcher-managed passthrough keys when callers (e.g. the
 			// dispatcher) round-trip a snapshot back through store() to record
 			// terminal state alongside the conversation snapshot.

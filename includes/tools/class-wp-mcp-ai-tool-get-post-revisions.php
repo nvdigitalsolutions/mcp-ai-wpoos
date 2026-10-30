@@ -67,6 +67,7 @@ class WP_MCP_AI_Tool_Get_Post_Revisions implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'The ID of the post whose revisions to list.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'per_page' => array(
 					'type'        => 'integer',

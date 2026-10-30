@@ -148,11 +148,18 @@ class WP_MCP_AI_Fnb_Settings {
 	}
 
 	/**
-	 * Operator-authored table mapping (table_id => { sheet|file => name }).
+	 * Operator-authored table mapping (highest trust).
 	 *
-	 * Used as the highest-trust resolution hint before the structural matcher
-	 * and the legacy name-based guess. Empty when the operator has not specified
-	 * a mapping (auto-map then applies when `infer_tables` is on).
+	 * Each entry maps a spec table to its physical source:
+	 * `{ sheet|file => name, connection_id => Remote Sites Drive connection,
+	 * folder_id => Drive folder }`. The `connection_id`/`folder_id` keys are
+	 * the multi-connection routing layer (Proposal 093): a table mapped to a
+	 * connection is read from that connection's folder even when the toolkit
+	 * default points elsewhere, so metrics can join tables that live across
+	 * several Drive connections in one calculation.
+	 *
+	 * Empty when the operator has not specified a mapping (auto-map then
+	 * applies when `infer_tables` is on).
 	 *
 	 * @return array<string,array<string,string>>
 	 */
@@ -168,13 +175,29 @@ class WP_MCP_AI_Fnb_Settings {
 				continue;
 			}
 			foreach ( $hint as $k => $v ) {
-				if ( in_array( $k, array( 'sheet', 'file' ), true ) && is_string( $v ) ) {
-					$clean[ $table_id ][ $k ] = $v;
+				if ( in_array( $k, array( 'sheet', 'file', 'connection_id', 'folder_id' ), true ) && is_string( $v ) ) {
+					$clean[ $table_id ][ $k ] = ( 'connection_id' === $k ) ? sanitize_key( $v ) : $v;
 				}
 			}
 		}
 
 		return $clean;
+	}
+
+	/**
+	 * The operator-authored source entry for a single table.
+	 *
+	 * Convenience accessor over `table_map()`; returns an empty array when the
+	 * operator has not mapped this table.
+	 *
+	 * @param string $table_id Spec table ID.
+	 * @return array<string,string>
+	 */
+	public static function source_map( $table_id ) {
+		$map   = self::table_map();
+		$entry = isset( $map[ $table_id ] ) && is_array( $map[ $table_id ] ) ? $map[ $table_id ] : array();
+
+		return $entry;
 	}
 
 	/**

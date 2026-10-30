@@ -80,6 +80,7 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 			'properties' => array(
 				'attachment_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress attachment ID of the file to prepare.', 'mcp-ai-wpoos-pro' ),
 				),
 				'output_format'      => array(

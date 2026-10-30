@@ -78,6 +78,7 @@ class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'WebChat room post ID to retrieve messages from.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'limit'        => array(
 					'type'        => 'integer',

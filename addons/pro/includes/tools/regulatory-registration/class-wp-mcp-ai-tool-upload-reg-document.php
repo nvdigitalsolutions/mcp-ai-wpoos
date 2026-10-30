@@ -82,11 +82,13 @@ class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'Product ID to attach document to (optional, must provide product_id or registration_id)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'registration_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Registration ID to attach document to (optional, must provide product_id or registration_id)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'issue_date'      => array(
 					'type'        => 'string',

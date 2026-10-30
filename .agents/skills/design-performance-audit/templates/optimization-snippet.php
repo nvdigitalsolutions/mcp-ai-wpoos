@@ -64,6 +64,17 @@ add_filter('elementor_pro_custom_fonts_font_display', fn() => 'swap'); // No-op 
 add_action('wp_head', function() { ?>
 <style>
 	/* @font-face { font-family: 'FamilyName'; font-style: normal; font-weight: 700; font-display: swap; src: url('https://SITE/wp-content/uploads/...') format('woff'); } */
+	/*
+	 * swap alone does NOT fix font CLS — the pre-swap fallback text must
+	 * occupy the same width as the webfont. Add metric-matched fallback
+	 * faces (size-adjust measured with fontTools vs Arial + Roboto, then
+	 * tuned live in the browser against the real element — kerning makes
+	 * live measurement authoritative), and push them into the stacks:
+	 *
+	 * @font-face { font-family: 'Brand-fallback'; src: local('Arial'), local('Helvetica Neue'), local('Helvetica'); size-adjust: 117.9%; }
+	 * @font-face { font-family: 'Brand-fallback'; src: local('Roboto'); size-adjust: 121.5%; }
+	 * .selector { font-family: "Brand", "Brand-fallback", sans-serif; }
+	 */
 </style>
 <?php }, 30);
 
@@ -161,7 +172,45 @@ add_action('wp_head', function() { ?>
 <?php }, 20);
 
 // ============================================================================
-// 8. CACHE-BUSTING FIX — goes in the child theme functions.php, NOT here.
+// 8. HEADER/MENU FIRST-PAINT STABILIZATION (safe)
+// Include when the CLS report flags the header nav row and the site is
+// Elementor (+ JupiterX sticky header). On the first layout — before
+// Elementor's linked CSS applies — nav <ul>s render as unstyled blocks with
+// ALL sub-menu dropdowns visible; the header renders huge (e.g. 1202px) and
+// collapses when the CSS lands → the shift (and the "mobile menu flash").
+// These rules replicate the final state inline (no fetch = first-layout
+// availability). NO !important on the dropdown hide: SmartMenus opens
+// sub-menus via inline display:block, which must keep winning.
+// Diagnose first with a first-frame rAF probe (SKILL.md Step 8.5).
+// ============================================================================
+add_action('wp_head', function() { ?>
+<style>
+	.jupiterx-header .elementor-nav-menu--dropdown,
+	.jupiterx-header .sub-menu {
+		display: none;
+	}
+	.jupiterx-header .elementor-nav-menu--layout-horizontal .elementor-nav-menu {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	.elementor-invisible {
+		visibility: hidden;
+	}
+	@media (max-width: 767px) {
+		.elementor-hidden-mobile {
+			display: none;
+		}
+	}
+	@media (min-width: 768px) and (max-width: 1024px) {
+		.elementor-hidden-tablet {
+			display: none;
+		}
+	}
+</style>
+<?php }, 31);
+
+// ============================================================================
+// 9. CACHE-BUSTING FIX — goes in the child theme functions.php, NOT here.
 // Replace rand()/time() enqueue versions with filemtime():
 //
 //   $ver = (string) ( filemtime( get_stylesheet_directory() . '/style.css' ) ?: 1 );

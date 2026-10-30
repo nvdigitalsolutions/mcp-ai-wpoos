@@ -1,6 +1,6 @@
 # NV oOS Content Graph — Changelog
 
-## Unreleased
+## 1.0.12 — 2026-10-24
 
 ### Fixed — Guest tokens were rejected on every read route
 
@@ -15,8 +15,6 @@
   guarded by `class_exists()` so standalone installs are unaffected.
 - Tests: guest accept/reject cases for `GET /graph/visual-config` in
   `RestApiTest`.
-
-## 1.0.12 — 2026-10-19
 
 ### Added — Self-declared memory-graph bridge for NV oOS base+Pro
 

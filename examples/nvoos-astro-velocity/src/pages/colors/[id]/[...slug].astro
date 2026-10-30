@@ -1,0 +1,67 @@
+---
+// Color PLP — SSR + cached (see the category PLP for the full rationale).
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProductGrid from '../../../components/ProductGrid.astro';
+import Pagination from '../../../components/Pagination.astro';
+import { getAllColors, getProducts, PAGE_SIZE } from '../../../lib/commerce/client';
+import type { SortValue, WhereClause } from '../../../lib/commerce/types';
+import { normalizeProductMedia } from '../../../lib/commerce/normalize';
+import { colorPath, absoluteUrl } from '../../../lib/url';
+import { breadcrumbJsonLd } from '../../../lib/seo/jsonld';
+import { pageTitle, plainExcerpt } from '../../../lib/seo/meta';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+const colorId = Number(Astro.params.id ?? 0);
+if (!Number.isInteger(colorId) || colorId <= 0) {
+	return new Response('Not found', { status: 404 });
+}
+
+const colors = await getAllColors(Astro.url);
+const color = colors.find((item) => item.id === colorId);
+if (!color) {
+	return new Response('Color not found', { status: 404 });
+}
+
+const url = Astro.url;
+const sort = (url.searchParams.get('sort') as SortValue | null) ?? 'date';
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+
+const where: WhereClause = { colors: { equals: colorId } };
+const data = await getProducts(Astro.url, { page, limit: PAGE_SIZE, where, sort });
+const products = data.docs.map(normalizeProductMedia);
+
+const hasFilters = page > 1;
+const canonical = absoluteUrl(Astro.site ?? new URL('https://store.nvoos.cloud'), colorPath(color.id, color.name));
+const baseHref = `${url.pathname}?${url.searchParams.toString()}`;
+
+const site = Astro.site ?? new URL('https://store.nvoos.cloud');
+const jsonld = [
+	breadcrumbJsonLd([
+		{ name: 'Home', url: absoluteUrl(site, '/') },
+		{ name: color.name, url: canonical },
+	]),
+];
+---
+
+<BaseLayout
+	title={pageTitle(color.name)}
+	description={plainExcerpt(`Browse all ${color.name} products.`)}
+	canonical={canonical}
+	jsonld={jsonld}
+>
+	<slot name="head">
+		{hasFilters && <meta name="robots" content="noindex, follow" />}
+	</slot>
+
+	<nav class="breadcrumbs" aria-label="Breadcrumb">
+		<a href="/">Home</a> {' / '} <span>{color.name}</span>
+	</nav>
+
+	<h1>{color.name}</h1>
+	<ProductGrid products={products} />
+	<Pagination page={page} totalPages={data.totalPages} baseUrl={baseHref} />
+</BaseLayout>

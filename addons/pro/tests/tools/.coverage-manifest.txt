@@ -681,6 +681,7 @@ wp-mcp-ai-tool-excel-data-import
 wp-mcp-ai-tool-execute-shell-command
 wp-mcp-ai-tool-expense-tracker
 wp-mcp-ai-tool-export-analytics-api
+wp-mcp-ai-tool-export-annotation-dataset
 wp-mcp-ai-tool-export-architectural-documents
 wp-mcp-ai-tool-export-assistant-blueprint
 wp-mcp-ai-tool-export-calendar-ics

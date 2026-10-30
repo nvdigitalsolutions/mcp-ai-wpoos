@@ -125,9 +125,10 @@ class WP_MCP_AI_Composio_Tools {
 	 *
 	 * @param array      $arguments  Tool arguments.
 	 * @param array|null $connection Output. Resolved connection record.
+	 * @param array      $context    Optional execution context (assistant_id is honoured).
 	 * @return WP_Error|array Connection record or error.
 	 */
-	public static function resolve_connection( array $arguments, &$connection = null ) {
+	public static function resolve_connection( array $arguments, &$connection = null, array $context = array() ) {
 		self::maybe_load_manager();
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -180,9 +181,28 @@ class WP_MCP_AI_Composio_Tools {
 					)
 				);
 			}
+
+			// Assistant-level restriction: an assistant with a configured
+			// Remote Site Connections list may only use connections from it.
+			if ( ! self::is_connection_enabled_for_assistant( sanitize_key( $supplied ), $context ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_composio_connection_not_enabled',
+					sprintf(
+						/* translators: %s: connection name. */
+						__( 'Composio connection "%s" is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
+						isset( $connection['name'] ) ? (string) $connection['name'] : (string) sanitize_key( $supplied )
+					),
+					array( 'status' => 403 )
+				);
+			}
 		} else {
-			$all = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
-			foreach ( $all as $candidate ) {
+			$allowed_ids = self::get_allowed_connection_ids( $context );
+			$all         = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+			foreach ( $all as $candidate_id => $candidate ) {
+				if ( null !== $allowed_ids && ! in_array( (string) $candidate_id, $allowed_ids, true ) ) {
+					continue;
+				}
+
 				if ( 'composio' === ( isset( $candidate['connection_type'] ) ? $candidate['connection_type'] : '' ) && ! empty( $candidate['enabled'] ) ) {
 					$connection = $candidate;
 					break;
@@ -190,11 +210,63 @@ class WP_MCP_AI_Composio_Tools {
 			}
 
 			if ( null === $connection ) {
+				if ( null !== $allowed_ids ) {
+					return new WP_Error(
+						'wp_mcp_ai_composio_no_allowed_connection',
+						__( 'None of the Composio connections enabled for this assistant are usable. Enable a Composio connection for the assistant in the assistant editor (Remote Site Connections).', 'mcp-ai-wpoos-pro' ),
+						array( 'status' => 403 )
+					);
+				}
+
 				return new WP_Error( 'wp_mcp_ai_composio_no_connection', __( 'No enabled Composio connection found. Create one in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ) );
 			}
 		}
 
 		return $connection;
+	}
+
+	/**
+	 * Resolve the assistant's allowed connection IDs from the execution context.
+	 *
+	 * Returns null when unrestricted (no assistant context, or the assistant
+	 * has no configured Remote Site Connections list) — mirroring the
+	 * remote_wp_connection semantics — or the allowed connection IDs as strings.
+	 *
+	 * @param array $context Execution context.
+	 * @return array|null Allowed connection IDs, or null when unrestricted.
+	 */
+	private static function get_allowed_connection_ids( array $context ) {
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		if ( ! $assistant_id ) {
+			return null;
+		}
+
+		$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+
+		if ( ! is_array( $enabled_connections ) ) {
+			// Not configured — legacy behaviour allows all connections.
+			return null;
+		}
+
+		return array_map( 'strval', $enabled_connections );
+	}
+
+	/**
+	 * Whether a connection is enabled for the assistant in the execution context.
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param array  $context       Execution context.
+	 * @return bool True when allowed (or unrestricted), false otherwise.
+	 */
+	private static function is_connection_enabled_for_assistant( $connection_id, array $context ) {
+		$allowed_ids = self::get_allowed_connection_ids( $context );
+
+		if ( null === $allowed_ids ) {
+			return true;
+		}
+
+		return in_array( (string) $connection_id, $allowed_ids, true );
 	}
 
 	/**

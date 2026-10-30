@@ -91,7 +91,7 @@ class WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event implements WP_MCP_AI_Tool_
 			'properties'           => array(
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Google Calendar connection ID from Remote Sites. When omitted, the connection configured under Tools → Connections → Google Calendar is used.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional Google Calendar connection ID from Remote Sites. If not provided, uses settings-based credentials; when those are not configured, the only enabled Remote Sites Google Calendar connection is used automatically (if several are enabled, pass one explicitly).', 'mcp-ai-wpoos-pro' ),
 				),
 				'calendar_id'   => array(
 					'type'        => 'string',
@@ -239,6 +239,8 @@ class WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event implements WP_MCP_AI_Tool_
 			'already_deleted'   => $already_deleted,
 			'message'           => $message,
 			'credential_source' => isset( $credentials['source'] ) ? (string) $credentials['source'] : '',
+			'connection_id'     => isset( $credentials['connection_id'] ) ? (string) $credentials['connection_id'] : '',
+			'connection_name'   => isset( $credentials['connection_name'] ) ? (string) $credentials['connection_name'] : '',
 		);
 	}
 

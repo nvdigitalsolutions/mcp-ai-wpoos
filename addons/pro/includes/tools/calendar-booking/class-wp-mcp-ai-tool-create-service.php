@@ -92,6 +92,7 @@ class WP_MCP_AI_Tool_Create_Service implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'service_id'          => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional service ID. If provided, updates the existing service instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'name'                => array(
@@ -127,6 +128,7 @@ class WP_MCP_AI_Tool_Create_Service implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				),
 				'place_id'            => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Linked place ID (e.g., the destination or attraction this service relates to)', 'mcp-ai-wpoos-pro' ),
 				),
 				'max_participants'    => array(

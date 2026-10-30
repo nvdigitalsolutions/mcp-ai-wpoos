@@ -74,6 +74,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 				array(
 					'image_id'        => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'WordPress attachment ID of the source image.', 'mcp-ai-wpoos' ),
 					),
 					'model'           => array(

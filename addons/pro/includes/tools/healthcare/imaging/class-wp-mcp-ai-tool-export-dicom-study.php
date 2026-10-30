@@ -89,6 +89,7 @@ class WP_MCP_AI_Tool_Export_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'study_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Local imaging study post ID. Either study_uid or study_id is required.', 'mcp-ai-wpoos-pro' ),
 				),
 				'deidentify' => array(

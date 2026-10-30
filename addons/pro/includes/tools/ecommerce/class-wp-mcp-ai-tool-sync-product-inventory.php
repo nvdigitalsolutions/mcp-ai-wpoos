@@ -138,6 +138,7 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'integer',
 					'description' => __( 'Product ID for single sync', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'product_ids'         => array(
 					'type'        => 'array',
@@ -152,6 +153,7 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 						'properties' => array(
 							'product_id' => array(
 								'type'        => 'integer',
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 								'description' => __( 'Product ID', 'mcp-ai-wpoos-pro' ),
 							),
 							'location'   => array(
@@ -162,6 +164,7 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 								'type'        => 'integer',
 								'description' => __( 'Stock quantity', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 0,
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 							),
 						),
 					),

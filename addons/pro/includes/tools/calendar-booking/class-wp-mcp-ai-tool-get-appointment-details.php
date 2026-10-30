@@ -123,6 +123,7 @@ class WP_MCP_AI_Tool_Get_Appointment_Details implements WP_MCP_AI_Tool_Interface
 			'properties' => array(
 				'appointment_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Appointment ID to retrieve (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'include_history'  => array(

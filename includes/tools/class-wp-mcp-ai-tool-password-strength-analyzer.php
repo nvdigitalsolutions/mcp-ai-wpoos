@@ -84,6 +84,7 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 					'type'        => 'integer',
 					'description' => __( 'Analyze password for specific user (requires admin).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'bulk_audit'          => array(
 					'type'        => 'boolean',
@@ -107,10 +108,14 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 					'default'     => true,
 				),
 			),
-			'anyOf'      => array(
-				array( 'required' => array( 'password' ) ),
-				array( 'required' => array( 'user_id' ) ),
-				array( 'required' => array( 'bulk_audit' ) ),
+			'allOf'      => array(
+				array(
+					'anyOf' => array(
+						array( 'required' => array( 'password' ) ),
+						array( 'required' => array( 'user_id' ) ),
+						array( 'required' => array( 'bulk_audit' ) ),
+					),
+				),
 			),
 		);
 	}

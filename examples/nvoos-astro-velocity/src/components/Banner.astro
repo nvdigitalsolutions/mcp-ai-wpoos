@@ -1,0 +1,67 @@
+---
+import type { Promotion } from '../lib/commerce/types';
+import { fixedImage, renderOrigin } from '../lib/images';
+
+interface Props {
+	banner: { image: string; promotion: Promotion | null } | null;
+}
+
+const { banner } = Astro.props;
+
+const origin = renderOrigin(Astro.url, Astro.site);
+const image = banner?.image
+	? fixedImage(origin, banner.image, 1200, 300)
+	: null;
+---
+
+{
+	banner && (banner.image || banner.promotion) && (
+		<section class="banner">
+			{image && (
+				<img
+					src={image.src}
+					srcset={image.srcset}
+					width={image.width}
+					height={image.height}
+					alt=""
+					loading="eager"
+					decoding="async"
+				/>
+			)}
+			{banner.promotion?.active && (
+				<p class="banner__promo">
+					<a href="/promotions/">
+						<strong>{banner.promotion.title}</strong>
+					</a>
+				</p>
+			)}
+		</section>
+	)
+}
+
+<style>
+	.banner {
+		margin-block: 1rem;
+		position: relative;
+	}
+
+	.banner img {
+		border-radius: var(--nv-radius);
+		width: 100%;
+		object-fit: cover;
+	}
+
+	.banner__promo {
+		position: absolute;
+		bottom: 1rem;
+		left: 1rem;
+		margin: 0;
+		background: rgb(0 0 0 / 60%);
+		padding: 0.4rem 0.8rem;
+		border-radius: var(--nv-radius);
+	}
+
+	.banner__promo a {
+		color: #fff;
+	}
+</style>

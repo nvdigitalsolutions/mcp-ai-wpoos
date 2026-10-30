@@ -101,6 +101,7 @@ class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interf
 				),
 				'matter_id'        => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The matter ID for the task.', 'mcp-ai-wpoos-pro' ),
 				),
 				'task_description' => array(
@@ -109,6 +110,7 @@ class WP_MCP_AI_Tool_LF_Task_Assignment_Manager implements WP_MCP_AI_Tool_Interf
 				),
 				'assignee_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress user ID of the assignee.', 'mcp-ai-wpoos-pro' ),
 				),
 				'due_date'         => array(

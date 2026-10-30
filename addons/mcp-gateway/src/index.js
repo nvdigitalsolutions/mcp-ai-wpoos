@@ -14,11 +14,13 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { loadConfig, assertConfig } from './utils/config.js';
+import { traceMiddleware } from './trace/context.js';
 import { requestLogger } from './middleware/log.js';
 import { globalLimiter, mcpLimiter, healthLimiter } from './middleware/rate-limit.js';
 import { authMiddleware } from './middleware/auth.js';
 import { healthRouter } from './routes/health.js';
 import { landingRouter } from './routes/landing.js';
+import { adminRouter } from './admin/router.js';
 import { mcpRouter, discoveryHandler } from './routes/mcp.js';
 import { oauthRouter } from './routes/oauth.js';
 
@@ -46,6 +48,7 @@ export function createApp( overrides = {} ) {
 
 	app.disable( 'x-powered-by' );
 	app.use( helmet( { crossOriginResourcePolicy: { policy: 'cross-origin' } } ) );
+	app.use( traceMiddleware );
 	app.use( requestLogger );
 	app.use( globalLimiter );
 
@@ -78,6 +81,10 @@ export function createApp( overrides = {} ) {
 	// ── Public surfaces (no auth) ─────────────────────────────────
 	app.use( '/', landingRouter() );
 	app.use( '/', healthLimiter, healthRouter() );
+
+	// ── Operator surface (GATEWAY_ADMIN_TOKEN) ────────────────────
+	// Inert (401) until the admin token is configured.
+	app.use( '/admin', adminRouter() );
 
 	// MCP discovery is public (directory reviewers read it); the JSON-RPC
 	// POST surface below it is auth-gated.

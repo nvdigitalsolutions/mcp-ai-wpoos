@@ -1,0 +1,16 @@
+{
+	"name": "nvoos-funiq-velocity-leg",
+	"version": "0.2.0",
+	"private": true,
+	"description": "NV-authored deploy recipe + smoke harness for the licensed Funiq Payload admin on Cloudways Velocity (Proposal 085 rollback leg, repackaged 2026-10-29).",
+	"license": "UNLICENSED",
+	"type": "module",
+	"scripts": {
+		"assemble": "node scripts/assemble-mirror.mjs",
+		"smoke": "node scripts/smoke.mjs",
+		"standalone": "node scripts/enable-standalone.mjs"
+	},
+	"engines": {
+		"node": ">=20.9"
+	}
+}

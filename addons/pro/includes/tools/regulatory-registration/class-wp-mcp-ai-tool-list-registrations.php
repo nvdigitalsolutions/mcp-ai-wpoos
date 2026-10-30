@@ -72,6 +72,7 @@ class WP_MCP_AI_Tool_List_Registrations implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'Filter by product ID (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'expiring_within_days' => array(
 					'type'        => 'integer',

@@ -87,7 +87,10 @@ class WP_MCP_AI_Tool_Qualify_Lead_Meddic implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lead_id'          => array( 'type' => 'integer' ),
+				'lead_id'          => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
 				'message_or_notes' => array( 'type' => 'string' ),
 			),
 			'required'   => array( 'lead_id' ),

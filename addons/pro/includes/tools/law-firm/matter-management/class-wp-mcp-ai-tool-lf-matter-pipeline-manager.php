@@ -104,6 +104,7 @@ class WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager implements WP_MCP_AI_Tool_Interf
 				),
 				'client_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Associated client ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'practice_area' => array(
@@ -116,6 +117,7 @@ class WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager implements WP_MCP_AI_Tool_Interf
 				),
 				'matter_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Matter ID (required for update_status and get_summary).', 'mcp-ai-wpoos-pro' ),
 				),
 				'case_number'   => array(

@@ -103,6 +103,7 @@ class WP_MCP_AI_Tool_Record_CRM_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties' => array(
 				'lead_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Lead ID to record the reply against.', 'mcp-ai-wpoos-pro' ),
 				),
 				'email'        => array(
@@ -111,6 +112,7 @@ class WP_MCP_AI_Tool_Record_CRM_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'deal_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional deal ID to advance when advance_deal is true.', 'mcp-ai-wpoos-pro' ),
 				),
 				'snippet'      => array(

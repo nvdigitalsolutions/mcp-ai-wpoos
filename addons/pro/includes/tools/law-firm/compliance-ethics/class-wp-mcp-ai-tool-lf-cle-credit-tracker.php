@@ -107,6 +107,7 @@ class WP_MCP_AI_Tool_LF_CLE_Credit_Tracker implements WP_MCP_AI_Tool_Interface, 
 				),
 				'attorney_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress user ID of the attorney.', 'mcp-ai-wpoos-pro' ),
 				),
 				'course_name' => array(

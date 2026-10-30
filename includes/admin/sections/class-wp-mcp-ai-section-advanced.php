@@ -610,6 +610,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 * Render the data management content.
 		 */
 		private function render_data_management() {
+			// Bust the post-type counts cache before reading it: core only
+			// invalidates this cache on status transitions, and bulk
+			// force-deletes/updates (the reseed paths) don't fire any. With
+			// a persistent object cache (Redis/Memcached) the panel would
+			// otherwise keep showing a stale, pre-deduplication total — the
+			// "professions ballooned" symptom that drives users to the
+			// destructive Replace All. One COUNT query per panel render is
+			// cheap and keeps the displayed number truthful.
+			wp_cache_delete( _count_posts_cache_key( 'mcp_ai_profession' ), 'counts' );
+
 			// Get profession counts.
 			$profession_count = wp_count_posts( 'mcp_ai_profession' );
 			$total_count      = isset( $profession_count->publish ) ? $profession_count->publish : 0;
@@ -624,9 +634,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$seeded_class = $is_seeded ? 'success' : 'warning';
 
 			// Determine sync status.
-			$sync_needed      = ( $total_count < $available_count );
-			$sync_status_text = $sync_needed ? __( 'Updates Available', 'mcp-ai-wpoos' ) : __( 'Up to Date', 'mcp-ai-wpoos' );
-			$sync_class       = $sync_needed ? 'warning' : 'success';
+			$sync_needed = ( $total_count < $available_count );
+			$duplicates  = ( ! $sync_needed && $total_count > $available_count );
+
+			if ( $sync_needed ) {
+				$sync_status_text = __( 'Updates Available', 'mcp-ai-wpoos' );
+				$sync_class       = 'warning';
+			} elseif ( $duplicates ) {
+				$sync_status_text = __( 'Duplicates Detected', 'mcp-ai-wpoos' );
+				$sync_class       = 'error';
+			} else {
+				$sync_status_text = __( 'Up to Date', 'mcp-ai-wpoos' );
+				$sync_class       = 'success';
+			}
 			?>
 			<div class="wp-mcp-ai-data-management-section" style="margin-top: 30px;">
 				<h3><?php esc_html_e( 'Profession Data Management', 'mcp-ai-wpoos' ); ?></h3>
@@ -654,6 +674,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 											/* translators: %d: Number of new professions */
 											_n( '(%d new profession available)', '(%d new professions available)', $available_count - $total_count, 'mcp-ai-wpoos' ),
 											$available_count - $total_count
+										)
+									);
+									?>
+								</span>
+							<?php elseif ( $duplicates ) : ?>
+								<span class="description">
+									<?php
+									echo esc_html(
+										sprintf(
+											/* translators: %d: Number of extra professions beyond the knowledge base */
+											__( '(%d more than the knowledge base — run "Update Professions" to deduplicate. This preserves existing professions and assistant links.)', 'mcp-ai-wpoos' ),
+											$total_count - $available_count
 										)
 									);
 									?>

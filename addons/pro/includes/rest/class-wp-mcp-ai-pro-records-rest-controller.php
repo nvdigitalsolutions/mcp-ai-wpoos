@@ -155,6 +155,32 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			'icon'      => '🍽️',
 			'group'     => 'fnb',
 		),
+		// Proposal 089 Phase 4e — commerce products (WooCommerce native
+		// post type; present only while WooCommerce is active) and core
+		// posts/pages as console-browsable content records. These carry no
+		// private `_*` meta schema, so register_meta_in_rest() is a no-op
+		// for them and wp/v2 serves them as usual.
+		'product'     => array(
+			'post_type' => 'product',
+			'label'     => 'Products',
+			'singular'  => 'Product',
+			'icon'      => '🛍️',
+			'group'     => 'commerce',
+		),
+		'post'        => array(
+			'post_type' => 'post',
+			'label'     => 'Posts',
+			'singular'  => 'Post',
+			'icon'      => '📰',
+			'group'     => 'content',
+		),
+		'page'        => array(
+			'post_type' => 'page',
+			'label'     => 'Pages',
+			'singular'  => 'Page',
+			'icon'      => '📄',
+			'group'     => 'content',
+		),
 	);
 
 	/**
@@ -214,6 +240,78 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 				),
 			)
 		);
+
+		// Proposal 089 Phase B — read-only browsing of a remote WordPress
+		// site's records through the Remote Sites connection manager.
+		// Credentials stay server-side; access controls apply per post type.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::ROUTE_BASE . '/remote/(?P<entity>[a-z0-9_-]+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_remote_items' ),
+				'permission_callback' => array( $this, 'permissions_check' ),
+				'args'                => array(
+					'entity'      => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'remote_site' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'search'      => array(
+						'required'          => false,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'per_page'    => array(
+						'required'          => false,
+						'type'              => 'integer',
+						'default'           => 50,
+						'minimum'           => 1,
+						'maximum'           => 100,
+						'sanitize_callback' => 'absint',
+					),
+					'page'        => array(
+						'required'          => false,
+						'type'              => 'integer',
+						'default'           => 1,
+						'minimum'           => 1,
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			self::ROUTE_BASE . '/remote/(?P<entity>[a-z0-9_-]+)/(?P<record_id>\d+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_remote_item' ),
+				'permission_callback' => array( $this, 'permissions_check' ),
+				'args'                => array(
+					'entity'      => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'record_id'   => array(
+						'required'          => true,
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+					),
+					'remote_site' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -262,7 +360,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			$entities[ $key ] = array(
 				'key'      => $key,
 				'postType' => $post_type,
-				'restBase' => $post_type,
+				'restBase' => $this->get_post_type_rest_base( $post_type ),
 				'label'    => $config['label'],
 				'singular' => $config['singular'],
 				'icon'     => $config['icon'],
@@ -272,6 +370,26 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 		}
 
 		return rest_ensure_response( array( 'entities' => $entities ) );
+	}
+
+	/**
+	 * Resolve the wp/v2 route base for a record post type.
+	 *
+	 * The raw post type slug is not always the REST base: core's built-in
+	 * `post`/`page` types register `posts`/`pages` (plural), and third-party
+	 * types (e.g. WooCommerce `product`) register an explicit `rest_base`.
+	 * Falls back to the slug when the registration is unavailable.
+	 *
+	 * @since 2.4.0
+	 * @param string $post_type Post type slug.
+	 * @return string REST route base (e.g. `posts`, `pages`, `mcp_ai_company`).
+	 */
+	private function get_post_type_rest_base( $post_type ) {
+		$post_type_object = get_post_type_object( $post_type );
+
+		return ( $post_type_object && ! empty( $post_type_object->rest_base ) )
+			? $post_type_object->rest_base
+			: $post_type;
 	}
 
 	/**
@@ -312,12 +430,236 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 	}
 
 	/**
+	 * Resolve and validate a remote browsing request (Proposal 089 Phase B).
+	 *
+	 * Read-only: credentials never leave the server, the connection must be
+	 * an enabled WordPress Remote Site, and the per-post-type access
+	 * controls apply exactly as they do for the remote-wp-connection tool.
+	 *
+	 * @since 2.4.0
+	 * @param WP_REST_Request $request Request object.
+	 * @return array{connection: array, post_type: string, rest_base: string}|WP_Error
+	 */
+	private function resolve_remote_target( WP_REST_Request $request ) {
+		$entity = $request->get_param( 'entity' );
+		if ( ! isset( self::RECORD_ENTITIES[ $entity ] ) ) {
+			return new WP_Error(
+				'records_unknown_entity',
+				__( 'Unknown record entity.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return new WP_Error(
+				'records_remote_unavailable',
+				__( 'Remote Sites is unavailable on this site.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 501 )
+			);
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $request->get_param( 'remote_site' ) );
+		if ( null === $connection ) {
+			return new WP_Error(
+				'records_remote_unknown_site',
+				__( 'Unknown remote site connection.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( empty( $connection['enabled'] ) ) {
+			return new WP_Error(
+				'records_remote_site_disabled',
+				__( 'The remote site connection is disabled.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$type = isset( $connection['connection_type'] ) ? sanitize_key( (string) $connection['connection_type'] ) : '';
+		// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- intentional lowercase comparison
+		if ( 'wordpress' !== $type ) {
+			return new WP_Error(
+				'records_remote_site_not_wordpress',
+				__( 'Only WordPress remote sites expose records.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$post_type = self::RECORD_ENTITIES[ $entity ]['post_type'];
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_post_type_operation_allowed( $connection, $post_type, 'read' ) ) {
+			return new WP_Error(
+				'records_remote_access_denied',
+				sprintf(
+					/* translators: %s: post type slug */
+					__( 'Read access to post type "%s" is not permitted for this connection.', 'mcp-ai-wpoos-pro' ),
+					$post_type
+				),
+				array( 'status' => 403 )
+			);
+		}
+
+		return array(
+			'connection' => $connection,
+			'post_type'  => $post_type,
+			'rest_base'  => $this->get_post_type_rest_base( $post_type ),
+		);
+	}
+
+	/**
+	 * GET /records/remote/{entity} — browse a remote WordPress site's
+	 * records (list, read-only, Phase B).
+	 *
+	 * @since 2.4.0
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_remote_items( WP_REST_Request $request ) {
+		$target = $this->resolve_remote_target( $request );
+		if ( is_wp_error( $target ) ) {
+			return $target;
+		}
+
+		$per_page = absint( $request->get_param( 'per_page' ) );
+		$page     = max( 1, absint( $request->get_param( 'page' ) ) );
+		$params   = array(
+			'per_page' => $per_page,
+			'page'     => $page,
+			'_fields'  => 'id,date,status,title,meta',
+		);
+		$search   = (string) $request->get_param( 'search' );
+		if ( '' !== $search ) {
+			$params['search'] = $search;
+		}
+
+		$endpoint = add_query_arg( $params, 'wp/v2/' . $target['rest_base'] );
+		// Ask for the remote WordPress collection's pagination headers so the
+		// console pager can show the true total instead of the slice length.
+		$response_meta = array();
+		$response      = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $target['connection'], $endpoint, 'GET', array(), $response_meta );
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'records_remote_failed',
+				sprintf(
+					/* translators: %s: remote error message */
+					__( 'Remote records request failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				),
+				array( 'status' => 502 )
+			);
+		}
+
+		$items = is_array( $response ) ? array_map( array( $this, 'sanitize_remote_record' ), $response ) : array();
+
+		$total       = isset( $response_meta['total'] ) && '' !== $response_meta['total']
+			? absint( $response_meta['total'] )
+			: count( $items );
+		$total_pages = isset( $response_meta['total_pages'] ) && '' !== $response_meta['total_pages']
+			? absint( $response_meta['total_pages'] )
+			: max( 1, (int) ceil( $total / max( 1, $per_page ) ) );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'items'       => $items,
+					'total'       => $total,
+					'total_pages' => $total_pages,
+					'page'        => $page,
+					'per_page'    => $per_page,
+					'entity'      => sanitize_key( (string) $request->get_param( 'entity' ) ),
+					'remote_site' => sanitize_key( (string) $request->get_param( 'remote_site' ) ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * GET /records/remote/{entity}/{record_id} — one remote record
+	 * (detail, read-only, Phase B).
+	 *
+	 * @since 2.4.0
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_remote_item( WP_REST_Request $request ) {
+		$target = $this->resolve_remote_target( $request );
+		if ( is_wp_error( $target ) ) {
+			return $target;
+		}
+
+		$record_id = absint( $request->get_param( 'record_id' ) );
+		$endpoint  = add_query_arg(
+			array( '_fields' => 'id,date,status,title,meta' ),
+			'wp/v2/' . $target['rest_base'] . '/' . $record_id
+		);
+
+		$response = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $target['connection'], $endpoint );
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'records_remote_failed',
+				sprintf(
+					/* translators: %s: remote error message */
+					__( 'Remote records request failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				),
+				array( 'status' => 502 )
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'item'        => is_array( $response ) ? $this->sanitize_remote_record( $response ) : array(),
+					'entity'      => sanitize_key( (string) $request->get_param( 'entity' ) ),
+					'remote_site' => sanitize_key( (string) $request->get_param( 'remote_site' ) ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Whitelist-map a proxied wp/v2 post onto the records summary shape
+	 * (two-gate rule: every proxied value re-sanitizes at exit).
+	 *
+	 * @since 2.4.0
+	 * @param mixed $post Raw remote post payload.
+	 * @return array
+	 */
+	private function sanitize_remote_record( $post ) {
+		if ( ! is_array( $post ) ) {
+			return array();
+		}
+
+		$title = '';
+		if ( isset( $post['title'] ) && is_array( $post['title'] ) ) {
+			$title = isset( $post['title']['rendered'] ) ? wp_strip_all_tags( (string) $post['title']['rendered'] ) : '';
+		} elseif ( isset( $post['title'] ) && is_scalar( $post['title'] ) ) {
+			$title = sanitize_text_field( (string) $post['title'] );
+		}
+
+		return array(
+			'id'     => isset( $post['id'] ) ? absint( $post['id'] ) : 0,
+			'title'  => $title,
+			'date'   => isset( $post['date'] ) ? sanitize_text_field( (string) $post['date'] ) : '',
+			'status' => isset( $post['status'] ) ? sanitize_key( (string) $post['status'] ) : '',
+			'meta'   => ( isset( $post['meta'] ) && is_array( $post['meta'] ) ) ? $post['meta'] : array(),
+		);
+	}
+
+	/**
 	 * Expose every schema meta key through the core wp/v2 REST.
 	 *
 	 * Without this, wp/v2/{post_type} responses carry no `meta` (the
 	 * `_*`-prefixed keys are private), and the audit's wp-core strategy
 	 * could not render anything but title/content. Sanitizers mirror the
 	 * schema types.
+	 *
+	 * Each entity post type also gains custom-fields support: WP core only
+	 * attaches the `meta` property to the posts REST schema for
+	 * custom-fields-supporting types, so without it every
+	 * register_post_meta( show_in_rest ) key below stays invisible to
+	 * wp/v2 (the response context filter strips it).
 	 *
 	 * @since 2.4.0
 	 * @return void
@@ -334,6 +676,23 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			}
 
 			$meta_schema = WP_MCP_AI_Pro_CPT_Meta_Schema::get( $post_type );
+
+			// Entities without a private meta schema (core posts/pages,
+			// WooCommerce products — Proposal 089 Phase 4e) are served by
+			// wp/v2 as-is. Never grant custom-fields support to
+			// platform-owned post types: that would surface the legacy
+			// custom-fields metabox in the block editor.
+			if ( empty( $meta_schema ) ) {
+				continue;
+			}
+
+			// WP core's posts controller only adds `meta` to the REST
+			// schema when the post type supports custom-fields — grant it
+			// so the meta keys registered below are actually served.
+			if ( ! post_type_supports( $post_type, 'custom-fields' ) ) {
+				add_post_type_support( $post_type, 'custom-fields' );
+			}
+
 			foreach ( $meta_schema as $field ) {
 				if ( ! is_array( $field ) || empty( $field['meta_key'] ) ) {
 					continue;

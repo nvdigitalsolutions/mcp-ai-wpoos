@@ -1,0 +1,67 @@
+---
+// Brand PLP — SSR + cached (see the category PLP for the full rationale).
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProductGrid from '../../../components/ProductGrid.astro';
+import Pagination from '../../../components/Pagination.astro';
+import { getAllBrands, getProducts, PAGE_SIZE } from '../../../lib/commerce/client';
+import type { SortValue, WhereClause } from '../../../lib/commerce/types';
+import { normalizeProductMedia } from '../../../lib/commerce/normalize';
+import { brandPath, absoluteUrl } from '../../../lib/url';
+import { breadcrumbJsonLd } from '../../../lib/seo/jsonld';
+import { pageTitle, plainExcerpt } from '../../../lib/seo/meta';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+const brandId = Number(Astro.params.id ?? 0);
+if (!Number.isInteger(brandId) || brandId <= 0) {
+	return new Response('Not found', { status: 404 });
+}
+
+const brands = await getAllBrands(Astro.url);
+const brand = brands.find((item) => item.id === brandId);
+if (!brand) {
+	return new Response('Brand not found', { status: 404 });
+}
+
+const url = Astro.url;
+const sort = (url.searchParams.get('sort') as SortValue | null) ?? 'date';
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+
+const where: WhereClause = { brand: { equals: brandId } };
+const data = await getProducts(Astro.url, { page, limit: PAGE_SIZE, where, sort });
+const products = data.docs.map(normalizeProductMedia);
+
+const hasFilters = page > 1;
+const canonical = absoluteUrl(Astro.site ?? new URL('https://store.nvoos.cloud'), brandPath(brand.id, brand.name));
+const baseHref = `${url.pathname}?${url.searchParams.toString()}`;
+
+const site = Astro.site ?? new URL('https://store.nvoos.cloud');
+const jsonld = [
+	breadcrumbJsonLd([
+		{ name: 'Home', url: absoluteUrl(site, '/') },
+		{ name: brand.name, url: canonical },
+	]),
+];
+---
+
+<BaseLayout
+	title={pageTitle(brand.name)}
+	description={plainExcerpt(`Browse all ${brand.name} products.`)}
+	canonical={canonical}
+	jsonld={jsonld}
+>
+	<slot name="head">
+		{hasFilters && <meta name="robots" content="noindex, follow" />}
+	</slot>
+
+	<nav class="breadcrumbs" aria-label="Breadcrumb">
+		<a href="/">Home</a> {' / '} <span>{brand.name}</span>
+	</nav>
+
+	<h1>{brand.name}</h1>
+	<ProductGrid products={products} />
+	<Pagination page={page} totalPages={data.totalPages} baseUrl={baseHref} />
+</BaseLayout>

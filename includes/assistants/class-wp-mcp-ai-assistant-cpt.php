@@ -28,6 +28,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_MODEL                   = '_wp_mcp_ai_model';
 		const META_TEMPERATURE             = '_wp_mcp_ai_temperature';
 		const META_SYSTEM_PROMPT           = '_wp_mcp_ai_system_prompt';
+		const META_FALLBACK_CHAIN          = '_wp_mcp_ai_fallback_chain';
 		const META_ADAPTIVE_TOOL_CAP       = '_wp_mcp_ai_adaptive_tool_cap';
 		const META_MEMORY_FILES            = '_wp_mcp_ai_memory_files';
 		const META_VECTOR_STORE_ID         = '_wp_mcp_ai_vector_store_id';
@@ -1399,6 +1400,23 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				)
 			);
 
+			// Proposal 091 Track D — ordered provider fallback chain.
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_FALLBACK_CHAIN,
+				array(
+					'type'              => 'array',
+					'single'            => true,
+					'show_in_rest'      => array(
+						'schema' => array(
+							'items' => array( 'type' => 'string' ),
+						),
+					),
+					'sanitize_callback' => array( __CLASS__, 'sanitize_fallback_chain_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
+
 			register_post_meta(
 				self::POST_TYPE,
 				self::META_ADAPTIVE_TOOL_CAP,
@@ -1846,6 +1864,37 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Sanitize the ordered provider fallback chain meta (Proposal 091).
+		 *
+		 * Accepts a JSON string or an array of slugs; returns a de-duplicated
+		 * array of sanitized slugs.
+		 *
+		 * @since 1.2.13
+		 *
+		 * @param mixed $chain Raw chain value.
+		 * @return string[]
+		 */
+		public static function sanitize_fallback_chain_meta( $chain ) {
+			if ( is_string( $chain ) && '' !== trim( $chain ) ) {
+				$decoded = json_decode( wp_unslash( $chain ), true );
+				$chain   = is_array( $decoded ) ? $decoded : array();
+			}
+			if ( ! is_array( $chain ) ) {
+				return array();
+			}
+
+			$clean = array();
+			foreach ( $chain as $slug ) {
+				$slug = sanitize_key( (string) $slug );
+				if ( '' !== $slug && ! in_array( $slug, $clean, true ) ) {
+					$clean[] = $slug;
+				}
+			}
+
+			return $clean;
+		}
+
+		/**
 		 * Sanitize prompt caching meta value.
 		 *
 		 * @param mixed $value Raw value.
@@ -2091,6 +2140,26 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'high'
 			);
 
+			// Proposal 091 Track B — prompt version history + restore/promote.
+			add_meta_box(
+				'wp-mcp-ai-prompt-versions',
+				__( 'Prompt Versions', 'mcp-ai-wpoos' ),
+				array( $this, 'render_prompt_versions_meta_box' ),
+				self::POST_TYPE,
+				'side',
+				'default'
+			);
+
+			// Proposal 091 Track D — ordered provider fallback chain.
+			add_meta_box(
+				'wp-mcp-ai-fallback-chain',
+				__( 'Fallback Chain', 'mcp-ai-wpoos' ),
+				array( $this, 'render_fallback_chain_meta_box' ),
+				self::POST_TYPE,
+				'side',
+				'default'
+			);
+
 			add_meta_box(
 				'wp-mcp-ai-tools',
 				__( 'Available Tools', 'mcp-ai-wpoos' ),
@@ -2246,6 +2315,96 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$metabox->get_priority()
 				);
 			}
+		}
+
+		/**
+		 * Render the prompt versions meta box (Proposal 091, Track B).
+		 *
+		 * Lists immutable prompt snapshots with the production badge and
+		 * Restore/Promote actions backed by the prompt-versions REST routes.
+		 *
+		 * @since 1.2.13
+		 *
+		 * @param WP_Post $post Assistant post.
+		 * @return void
+		 */
+		public function render_prompt_versions_meta_box( $post ) {
+			if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+				return;
+			}
+
+			$versions   = WP_MCP_AI_Prompt_Versions::get_versions( $post->ID );
+			$production = WP_MCP_AI_Prompt_Versions::get_production( $post->ID );
+
+			if ( empty( $versions ) ) {
+				echo '<p>' . esc_html__( 'No versions yet — the first prompt save creates version 1.', 'mcp-ai-wpoos' ) . '</p>';
+				return;
+			}
+
+			wp_enqueue_script(
+				'wp-mcp-ai-prompt-versions-metabox',
+				WP_MCP_AI_URL . 'assets/js/prompt-versions-metabox.js',
+				array(),
+				(string) filemtime( WP_MCP_AI_PATH . 'assets/js/prompt-versions-metabox.js' ),
+				true
+			);
+			wp_add_inline_script(
+				'wp-mcp-ai-prompt-versions-metabox',
+				'window.wpMcpAiPromptVersions = ' . wp_json_encode(
+					array(
+						'restBase' => esc_url_raw( rest_url( 'mcp-ai/v1/assistants/' . $post->ID . '/prompt-versions' ) ),
+						'nonce'    => wp_create_nonce( 'wp_rest' ),
+					)
+				) . ';',
+				'before'
+			);
+
+			echo '<ul class="wp-mcp-ai-prompt-versions-list">';
+			foreach ( array_reverse( $versions ) as $entry ) {
+				$is_production = $entry['v'] === $production;
+				$created       = $entry['created'] ? mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), gmdate( 'Y-m-d H:i:s', $entry['created'] ) ) : '';
+
+				echo '<li class="wp-mcp-ai-prompt-version' . ( $is_production ? ' is-production' : '' ) . '">';
+				echo '<strong>v' . esc_html( (string) $entry['v'] ) . '</strong>';
+				if ( $is_production ) {
+					echo ' <span class="wp-mcp-ai-prompt-production-badge">' . esc_html__( 'production', 'mcp-ai-wpoos' ) . '</span>';
+				}
+				if ( $created ) {
+					echo '<br><small>' . esc_html( $created ) . '</small>';
+				}
+				echo '<br>';
+				echo '<button type="button" class="button button-small wp-mcp-ai-prompt-restore" data-version="' . esc_attr( (string) $entry['v'] ) . '">' . esc_html__( 'Restore', 'mcp-ai-wpoos' ) . '</button> ';
+				if ( ! $is_production ) {
+					echo '<button type="button" class="button button-small wp-mcp-ai-prompt-promote" data-version="' . esc_attr( (string) $entry['v'] ) . '">' . esc_html__( 'Promote', 'mcp-ai-wpoos' ) . '</button>';
+				}
+				echo '</li>';
+			}
+			echo '</ul>';
+			echo '<p class="description">' . esc_html__( 'Restoring a version snapshots the restore itself, so it can be undone.', 'mcp-ai-wpoos' ) . '</p>';
+		}
+
+		/**
+		 * Render the fallback-chain meta box (Proposal 091, Track D).
+		 *
+		 * Ordered, comma-separated provider slugs tried after the primary
+		 * provider fails; failed providers cool down automatically.
+		 *
+		 * @since 1.2.13
+		 *
+		 * @param WP_Post $post Assistant post.
+		 * @return void
+		 */
+		public function render_fallback_chain_meta_box( $post ) {
+			if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+				return;
+			}
+
+			$chain = get_post_meta( $post->ID, self::META_FALLBACK_CHAIN, true );
+			$chain = is_array( $chain ) ? $chain : array();
+
+			echo '<p><label for="wp-mcp-ai-fallback-chain"><strong>' . esc_html__( 'Ordered fallback providers', 'mcp-ai-wpoos' ) . '</strong></label></p>';
+			echo '<input type="text" id="wp-mcp-ai-fallback-chain" name="wp_mcp_ai_fallback_chain" class="widefat" value="' . esc_attr( implode( ', ', $chain ) ) . '" placeholder="openai, gemini, anthropic">';
+			echo '<p class="description">' . esc_html__( 'Comma-separated provider slugs, tried in order when the primary provider fails. Failed providers are cooled down automatically (Retry-After honored). Leave empty to use health-based failover only.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
 		/**
@@ -5075,6 +5234,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$system_prompt = isset( $_POST['wp_mcp_ai_system_prompt'] ) ? self::sanitize_system_prompt_meta( wp_unslash( $_POST['wp_mcp_ai_system_prompt'] ) ) : '';
 				update_post_meta( $post_id, self::META_SYSTEM_PROMPT, $system_prompt );
 
+				// Proposal 091 Track D — ordered provider fallback chain.
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_fallback_chain_meta().
+				$fallback_raw = isset( $_POST['wp_mcp_ai_fallback_chain'] ) ? wp_unslash( $_POST['wp_mcp_ai_fallback_chain'] ) : '';
+				$fallback_raw = is_string( $fallback_raw ) ? array_map( 'trim', explode( ',', $fallback_raw ) ) : array();
+				update_post_meta( $post_id, self::META_FALLBACK_CHAIN, self::sanitize_fallback_chain_meta( $fallback_raw ) );
+
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_adaptive_tool_cap_meta().
 				$adaptive_tool_cap = isset( $_POST['wp_mcp_ai_adaptive_tool_cap'] ) ? self::sanitize_adaptive_tool_cap_meta( wp_unslash( $_POST['wp_mcp_ai_adaptive_tool_cap'] ) ) : '';
 				if ( '' === $adaptive_tool_cap ) {
@@ -5366,6 +5531,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'model'                      => get_post_meta( $assistant_id, self::META_MODEL, true ),
 				'temperature'                => get_post_meta( $assistant_id, self::META_TEMPERATURE, true ),
 				'system_prompt'              => get_post_meta( $assistant_id, self::META_SYSTEM_PROMPT, true ),
+				'fallback_chain'             => get_post_meta( $assistant_id, self::META_FALLBACK_CHAIN, true ),
 				'adaptive_tool_cap'          => get_post_meta( $assistant_id, self::META_ADAPTIVE_TOOL_CAP, true ),
 				'memory_files'               => get_post_meta( $assistant_id, self::META_MEMORY_FILES, true ),
 				'vector_store_id'            => get_post_meta( $assistant_id, self::META_VECTOR_STORE_ID, true ),
@@ -5410,6 +5576,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			} else {
 				$config['system_prompt'] = self::sanitize_system_prompt_meta( $config['system_prompt'] );
 			}
+
+			$config['fallback_chain'] = self::sanitize_fallback_chain_meta( $config['fallback_chain'] );
 
 			// Build prompt from primary roles if assigned.
 			$primary_roles = get_post_meta( $assistant_id, self::META_PRIMARY_ROLES, true );

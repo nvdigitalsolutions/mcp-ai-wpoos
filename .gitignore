@@ -293,3 +293,10 @@ docs/videos/base/*.mp4
 docs/videos/pro/*.webm
 docs/videos/pro/*.mp4
 docs/videos/narration/audio/
+
+# Local-only folders (client audits, perf captures) — never commit
+/projects/
+/.perf-kaya/
+/.perf-tp/
+/kaya-*
+/tp-*

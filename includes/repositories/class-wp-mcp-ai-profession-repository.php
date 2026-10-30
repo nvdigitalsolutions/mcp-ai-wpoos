@@ -256,6 +256,15 @@ class WP_MCP_AI_Profession_Repository {
 		wp_cache_delete( 'all_professions_' . md5( wp_json_encode( array() ) ), self::CACHE_GROUP );
 		wp_cache_delete( 'category_counts', self::CACHE_GROUP );
 
+		// Invalidate the post-type counts cache so wp_count_posts() never
+		// serves a stale "published professions" number. Core only
+		// invalidates this cache on status transitions, so force-deletes
+		// and publish-to-publish updates (exactly what the reseed and
+		// seed paths do) leave it stale — with a persistent object cache
+		// (Redis/Memcached) the admin Data Management panel then keeps
+		// reporting the old, ballooned count across requests.
+		wp_cache_delete( _count_posts_cache_key( WP_MCP_AI_Profession_CPT::POST_TYPE ), 'counts' );
+
 		// Clear category caches.
 		$categories = array( 'advisory', 'creative', 'technical', 'healthcare', 'legal', 'financial', 'other' );
 		foreach ( $categories as $category ) {

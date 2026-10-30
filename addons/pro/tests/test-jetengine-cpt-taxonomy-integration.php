@@ -143,6 +143,12 @@ class Test_JetEngine_CPT_Taxonomy_Integration extends WP_UnitTestCase {
 		$supported_method->setAccessible( true );
 		$supported_post_types = $supported_method->invoke( $integration );
 
+		// Assert the shape regardless of whether any JetEngine CPTs exist — an
+		// empty JetEngine CPT list is a valid environment state and must not
+		// leave the test assertion-less.
+		$this->assertIsArray( $jetengine_cpts );
+		$this->assertIsArray( $supported_post_types );
+
 		// If there are JetEngine CPTs, they should be in supported post types.
 		if ( ! empty( $jetengine_cpts ) ) {
 			$jetengine_cpt_slugs = wp_list_pluck( $jetengine_cpts, 'slug' );
@@ -181,6 +187,12 @@ class Test_JetEngine_CPT_Taxonomy_Integration extends WP_UnitTestCase {
 		$supported_method = $reflection->getMethod( 'get_supported_taxonomies' );
 		$supported_method->setAccessible( true );
 		$supported_taxonomies = $supported_method->invoke( $integration );
+
+		// Assert the shape regardless of whether any JetEngine taxonomies
+		// exist — an empty taxonomy list is a valid environment state and
+		// must not leave the test assertion-less.
+		$this->assertIsArray( $jetengine_taxonomies );
+		$this->assertIsArray( $supported_taxonomies );
 
 		// If there are JetEngine taxonomies, they should be in supported taxonomies.
 		if ( ! empty( $jetengine_taxonomies ) ) {

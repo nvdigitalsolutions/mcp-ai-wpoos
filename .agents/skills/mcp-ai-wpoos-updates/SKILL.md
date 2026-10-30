@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.10"
-  plugin-version-tested: "1.2.10"
-  last-updated: "2026-10-23"
+  plugin-version: "1.2.14"
+  plugin-version-tested: "1.2.14"
+  last-updated: "2026-10-30"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -864,7 +864,76 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.97-docs-catch-up.md`,
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
   `docs/project/plans/v1.1.99-docs-catch-up.md`,
-  `docs/project/plans/1.2.10-docs-catch-up.md` (latest executed — the
+  `docs/project/plans/1.2.11-docs-catch-up.md`,
+  `docs/project/plans/1.2.13-docs-catch-up.md` (latest executed — the
+1.2.13 pass over PRs #7239–#7260: the Dify parity gap-fill (#7246/#7247, Proposal 091 — the workflow DSL codec + routes + CLI + Pro SPA panel, prompt versioning lite, the `lib/core` ProviderRouter fallback chains with assistant-meta precedence, the `gen_ai.*` spans + opt-in OTLP exporter, the annotation store, and the +1 Pro `export_annotation_dataset` with the #7256 preset/manifest fold-in), the console pagination + loading states (#7239/#7255 — true totals, the `/approvals` pending-depth envelope, keep-previous-data busy states) and admin-only gating (#7259), `GET /mcp-ai/v1/session/me` + the Breeze cache integration + the console stale-nonce fix (#7257), the OAuth `rawurlencode()` + bare-URL fallback (#7240/#7242), the Drive auto-fallback (#7244), the Remote Sites assistant-scoping wave (#7258 — 12 families, CG-Pro mirrors), the OTLP endpoint deny-list (#7251), and Proposal 092 (#7260, docs-only). New scope rules executed: the `[Unreleased]` conversion (#7260's pre-staged docs entry); the RELEASE-NOTES "unreleased — post-1.2.12" section conversion + the Zed/base-bundled plugin-skill byte-identical re-sync (the in-window PRs touched only the Zed copy); the toolkit-audit class 11 addition. OI-1: group 60 extension (+1 `2.4.0` in the Pro remote-site-manager) + the CG-AI Embeddings `1.1.0` ×3 sub-project convention note; `@since 1.2.13` ×110 correctly pre-tagged in-window. Tool count +1 Pro → ~355/~1,378/~1,732, skill count 76 unchanged, zero catalog diff, no addon bumps, and the stale 1.2.11 build-set removal (30 files — 9 + 2 + 19))
+
+Preceding windows:
+  `docs/project/plans/1.2.12-docs-catch-up.md` (executed — the
+1.2.12 pass over PRs #7205–#7235: the magic-login REST controller (#7206 —
+unauthenticated-by-design with a named permission callback, CSPRNG tokens
+hashed at rest, rate-limited; #7208 adds the settings subtab), the native
+addon islands (Proposal 087, #7213 — the vendored docs-hub IIFE + the
+`mcp-ai-pro/v1/okf/docs` adapter; the three addon sources gain island APIs
+**without version bumps** — shipped ZIPs stay current, the inventory note
+refreshed), the registry-backed tool picker (Proposal 088, #7221/#7232 —
+per-tool `flags` + the `scope=all` tools-route opt-out), the console
+Connections page (`mcp-ai-pro/v1/remote-sites`, #7220), the Commerce
+console surfaces (Proposal 089, #7231), the tool-schema bounds sweep
+(#7210 — 763 integer fields to the 2^53−1 ceiling, zero tool-count
+change), the profession-meta/team-relink + records `restBase` fixes
+(#7219/#7233), the settings-coercion + dark-mode + author-403 fixes
+(#7215/#7224–#7226), and Proposal 090 (#7230, docs-only). New scope rules
+executed: the two-set build retention convention (each pass removes the
+N−2 artifact set — 1.2.12 removed 1.2.10 while 1.2.11 stays as the
+fallback); the correctly-pre-tagged new file (`@since 1.2.12` ×6, #7210 —
+no action); proposals 087/088/089/090 shipped **unregistered** in-window
+(the pass owns the README registration — unlike #7203's 086); in-window
+skill updates (spa-ui/spa-rest-contract/test-suite ×4 PRs) still left the
+commerce wiring row + ToolPicker note + the three new controllers missing
+— the pass extended both skills in-pass. OI-1: group 60 extension (+46
+`2.4.0`) + group 40 extension (+4 addon-level `0.1.0`) + new groups 63
+(`2.1.2` ×23 OKF-docs), 64 (magic-login controller — missing tags), 65
+(`1.9.6` ×1 team-repository), zero tool-count change, zero catalog diff,
+three skill frontmatter reconciliations (spa-ui, spa-rest-contract,
+test-suite → 1.2.12) + the plugin ×3 + RELEASE-NOTES 1.2.12 section, and
+the stale 1.2.10 build-set removal (30 files — 9 + 2 + 19))
+
+Preceding windows:
+  `docs/project/plans/1.2.11-docs-catch-up.md` (executed — the
+1.2.11 pass over PRs #7189–#7203: the Velocity caching layers + REST
+cache opt-in (#7197 — both Velocity `serve.mjs` apps gain the caching
+contract with the default-deny proxy micro-cache + `NVOOS_PROXY_CACHE`
+knobs; `GET /mcp-ai/v1/features` emits `public, max-age=60, s-maxage=60`;
+the new `WP_MCP_AI_REST_Cache_Control` opts out of WP 6.9's authenticated
+no-cache injection only for explicitly public responses), the SSE long-run
+offload Phase 4b (#7199 — `WP_MCP_AI_Chat_Stream_Offload_Worker` +
+`job_offload` event + the extended continuation snapshot; the
+`content_format_templates` seeding deferred to `wp_loaded`), the Complete
+Console login/sign-out/session gate (#7190/#7192/#7196), the front-end
+REST bridge-provider fix (#7189 — eager-require + lazy `load_provider()`
+seam + 501 `WP_Error` branches), the profession ballooning fix (#7191 —
+counts-cache invalidation + slug-match seeder dedupe, mirrored to
+CG-AI-platform), the dashboards `disabled` map + Security Center UI +
+workflow NodeEditor (#7193), the dependency sweep (#7195 — 67 of 74
+alerts, deferred #7089/#7090/#7194 tracked), the continuation null-safety
++ risky-test repairs (#7201), the console mobile fixes (#7200/#7202),
+Proposal 086 (#7203, docs-only), and the content-graph 1.0.12 upload prep
+(#7198 — sub-project flag-not-edited, ZIP built). New scope rules
+executed: the `[Unreleased]` pre-staging conversion (#6809 rule); the
+in-window sub-project version bump corrected the ADDON_INVENTORY row
+in-pass (1.0.11 → 1.0.12); the wporg-submission skill's frontmatter was
+found two versions stale (1.1.99) despite its in-window content update.
+OI-1 group 62 (new: `@since 1.2.10` ×7 one-behind) + group 60 extension
+(+2 `2.4.x`), zero tool-count change, zero catalog diff, seven skill
+reconciliations (plugin ×3 + RELEASE-NOTES, spa-rest-contract, spa-ui,
+wporg-submission, test-suite, dependabot-loop, schedule-anything-ops,
+content-graph-spa, checkout-integration → 1.2.11), and the stale 1.2.9
+build-set removal (30 files — 9 + 2 + 19) + the superseded content-graph
+v1.0.11 ZIP (2 files — v1.0.12 built in-window))
+
+Preceding windows:
+`docs/project/plans/1.2.10-docs-catch-up.md` (latest executed — the
 1.2.10 pass over PRs #7178–#7186: the console-migration Phase 5b–5d
 continuation (#7180, Proposal 084 — the orphaned cost/analytics
 REST-controller registration fix in `includes/bootstrap/loader.php`,

@@ -96,7 +96,7 @@ class WP_MCP_AI_Tool_Sync_Google_Calendar implements WP_MCP_AI_Tool_Interface, W
 				),
 				'connection_id'  => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Google Calendar connection ID from Remote Sites. When omitted, the connection configured under Tools → Connections → Google Calendar is used.', 'nvoos-content-graph-pro' ),
+					'description' => __( 'Optional Google Calendar connection ID from Remote Sites. If not provided, uses settings-based credentials; when those are not configured, the only enabled Remote Sites Google Calendar connection is used automatically (if several are enabled, pass one explicitly).', 'nvoos-content-graph-pro' ),
 				),
 				'send_updates'   => array(
 					'type'        => 'string',
@@ -331,6 +331,8 @@ class WP_MCP_AI_Tool_Sync_Google_Calendar implements WP_MCP_AI_Tool_Interface, W
 			'google_event_id' => $event_id,
 			'calendar_id'     => $calendar_id,
 			'html_link'       => isset( $result['htmlLink'] ) ? (string) $result['htmlLink'] : '',
+			'connection_id'   => isset( $credentials['connection_id'] ) ? (string) $credentials['connection_id'] : '',
+			'connection_name' => isset( $credentials['connection_name'] ) ? (string) $credentials['connection_name'] : '',
 			'message'         => __( 'Appointment synced to Google Calendar.', 'nvoos-content-graph-pro' ),
 		);
 	}

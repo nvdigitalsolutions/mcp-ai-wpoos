@@ -59,10 +59,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_DietPi_Media_Request_Flow' ) ) {
 					),
 					'tvdb_id'    => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'TheTVDB ID (for TV, alternative to title).', 'mcp-ai-wpoos-pro' ),
 					),
 					'tmdb_id'    => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'TMDB ID (for movies, alternative to title).', 'mcp-ai-wpoos-pro' ),
 					),
 					'imdb_id'    => array(

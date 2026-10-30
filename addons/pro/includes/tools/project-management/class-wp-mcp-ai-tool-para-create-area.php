@@ -92,6 +92,7 @@ class WP_MCP_AI_Tool_PARA_Create_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => 'integer',
 					'description' => __( 'WordPress user ID of the area owner.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'review_cadence' => array(
 					'type'        => 'string',

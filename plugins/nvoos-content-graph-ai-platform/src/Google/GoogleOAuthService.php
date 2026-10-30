@@ -256,9 +256,9 @@ class GoogleOAuthService {
 
 		$params = array(
 			'client_id'              => $client_id,
-			'redirect_uri'           => $redirect_uri,
+			'redirect_uri'           => rawurlencode( $redirect_uri ),
 			'response_type'          => 'code',
-			'scope'                  => $scope,
+			'scope'                  => rawurlencode( $scope ),
 			'access_type'            => 'offline',
 			'include_granted_scopes' => 'true',
 			'prompt'                 => 'consent',

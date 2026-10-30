@@ -1235,6 +1235,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'probe_chat',
 					'probe_remote_mcp',
 					'run_assistant_eval',
+					'export_annotation_dataset',
 					'scan_assistant_security',
 					'query_mesh_intelligent',
 					'list_professions',

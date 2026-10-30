@@ -165,6 +165,7 @@ class WP_MCP_AI_Tool_Auto_Respond_Messages implements WP_MCP_AI_Tool_Interface, 
 					'type'        => 'integer',
 					'description' => __( 'Template ID for create/update actions', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'template_name'        => array(
 					'type'        => 'string',

@@ -43,7 +43,7 @@ export default function Breadcrumbs( { slug, title }: BreadcrumbsProps ) {
 
 			{ crumbs.map( ( crumb ) => (
 				<React.Fragment key={ crumb.slug }>
-					<Link to={ `/#/${ crumb.slug }` }>{ crumb.label }</Link>
+					<Link to={ `/${ crumb.slug }` }>{ crumb.label }</Link>
 					<span className="dh-breadcrumb-sep" aria-hidden="true">/</span>
 				</React.Fragment>
 			) ) }

@@ -134,12 +134,16 @@ class Test_Media_Template_Tools_Capability_Flags extends WP_UnitTestCase {
 			'apply_media_template'  => 'class-wp-mcp-ai-tool-apply-media-template.php',
 		);
 
+		$checked = 0;
+
 		foreach ( $tools as $tool_name => $filename ) {
-			$class_file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/' . $filename;
+			$class_file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/media/' . $filename;
 
 			if ( ! file_exists( $class_file ) ) {
 				continue;
 			}
+
+			++$checked;
 
 			require_once $class_file;
 
@@ -159,6 +163,10 @@ class Test_Media_Template_Tools_Capability_Flags extends WP_UnitTestCase {
 				$tool,
 				sprintf( '%s should implement WP_MCP_AI_Tool_Interface', $class_name )
 			);
+		}
+
+		if ( 0 === $checked ) {
+			$this->markTestSkipped( 'Media template tools not available (Pro addon)' );
 		}
 	}
 }

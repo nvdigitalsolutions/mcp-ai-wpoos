@@ -138,6 +138,7 @@ class WP_MCP_AI_Tool_Import_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				),
 				'parent_place_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Default parent place ID for all imported items.', 'mcp-ai-wpoos-pro' ),
 				),
 				'image_sideload'       => array(

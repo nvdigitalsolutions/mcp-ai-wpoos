@@ -2,14 +2,14 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.nvdigitalsolutions/nvoos-mcp-gateway",
   "title": "NV oOS Gateway",
-  "description": "Streamable HTTP MCP gateway exposing your NV oOS WordPress fleet behind one API key.",
+  "description": "Streamable HTTP MCP gateway exposing your NV oOS fleet — self-mutating REST APIs — behind one API key, with per-tool quotas, declarative policy rules, W3C trace propagation, and a fleet audit sink.",
   "websiteUrl": "https://mcp.nvoos.pro/",
   "repository": {
     "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
     "source": "github",
     "subfolder": "addons/mcp-gateway"
   },
-  "version": "0.1.1",
+  "version": "0.2.0",
   "remotes": [
     {
       "type": "streamable-http",
@@ -28,6 +28,13 @@
     "io.modelcontextprotocol.registry/publisher-provided": {
       "tool": "mcp-publisher",
       "version": "1.0.0"
+    },
+    "capabilities": {
+      "quotas": "per-tool token buckets scoped key × site × tool, RFC 9558 RateLimit-* headers, 429 + -32099 on breach",
+      "policy": "declarative allow/deny/require_approval rules over tool/site/key/time(tz)/geo, first-match-wins, tools/list catalog filtering, 403 + -32001 / 428 + -32002",
+      "trace": "W3C traceparent start-or-inherit, propagated upstream and stamped on every log line",
+      "audit": "optional HMAC-SHA256 fleet audit webhook (deny / quota_exceeded / require_approval / call_ok, arguments never included)",
+      "admin": "operator-token GET /admin/policy, POST /admin/policy-sim replay against the recorded-call ring buffer, dryRun mode, SHADOW_POLICY log-only evaluation"
     }
   }
 }

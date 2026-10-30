@@ -87,6 +87,7 @@ class WP_MCP_AI_Tool_Create_Support_Ticket implements WP_MCP_AI_Tool_Interface, 
 				),
 				'contact_id'  => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Lead or contact ID of the requester.', 'mcp-ai-wpoos-pro' ),
 				),
 				'priority'    => array(
@@ -103,6 +104,7 @@ class WP_MCP_AI_Tool_Create_Support_Ticket implements WP_MCP_AI_Tool_Interface, 
 				),
 				'assignee_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'WordPress user ID of the assignee. Default: 0 (unassigned).', 'mcp-ai-wpoos-pro' ),
 				),
 				'tags'        => array(

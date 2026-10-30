@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Get_Task_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'properties' => array(
 					'plan_id'         => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Task plan ID',
 					),
 					'include_history' => array(

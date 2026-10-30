@@ -62,6 +62,7 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 			'properties'           => array(
 				'booking_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Booking ID to generate invoice for (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'invoice_number' => array(

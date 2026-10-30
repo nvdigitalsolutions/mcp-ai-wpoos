@@ -37,6 +37,8 @@ export interface ConsoleSidebarProps {
   user: ProSpaUser;
   /** Server-reported feature availability (absent = fail open). */
   features?: Record<string, boolean>;
+  /** End the WordPress session (footer action). */
+  onSignOut: () => Promise<void> | void;
 }
 
 const COLLAPSED_PREF_KEY = 'nvoos-complete-console.nav-collapsed';
@@ -72,10 +74,25 @@ function writeGroupPrefs(prefs: Record<string, boolean>): void {
 }
 
 export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
-  const { dockOpen, onToggleDock, isChatRoute, user, features } = props;
+  const { dockOpen, onToggleDock, isChatRoute, user, features, onSignOut } = props;
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
   const [groupPrefs, setGroupPrefs] = useState<Record<string, boolean>>(readGroupPrefs);
+  const [signingOut, setSigningOut] = useState(false);
   const location = useLocation();
+
+  const handleSignOut = async (): Promise<void> => {
+    if (signingOut) {
+      return;
+    }
+    setSigningOut(true);
+    try {
+      await onSignOut();
+    } finally {
+      // The shell unmounts when the parent switches to the sign-in screen;
+      // resetting state afterwards is a harmless no-op there.
+      setSigningOut(false);
+    }
+  };
 
   const toggleCollapsed = (): void => {
     setCollapsed((prev) => {
@@ -248,6 +265,22 @@ export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
         {!collapsed && user.displayName && (
           <p className="nvoos-console-nav__user">{user.displayName}</p>
         )}
+        <button
+          type="button"
+          className="nvoos-console-nav__btn nvoos-console-nav__btn--signout"
+          onClick={() => void handleSignOut()}
+          disabled={signingOut}
+          title="Sign out"
+        >
+          <span className="nvoos-console-nav__icon" aria-hidden="true">
+            ⏻
+          </span>
+          {!collapsed && (
+            <span className="nvoos-console-nav__label">
+              {signingOut ? 'Signing out…' : 'Sign out'}
+            </span>
+          )}
+        </button>
       </div>
     </aside>
   );

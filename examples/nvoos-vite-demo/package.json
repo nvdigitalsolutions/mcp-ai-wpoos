@@ -21,13 +21,13 @@
     "@nvdigitalsolutions/nvoos-markdown": "^0.1.0-alpha.3",
     "@nvdigitalsolutions/nvoos-slash-commands": "^0.1.0-alpha.3",
     "@nvdigitalsolutions/nvoos-storage": "^0.1.0-alpha.3",
-    "dompurify": "^3.1.6",
+    "dompurify": "^3.4.17",
     "marked": "^9.1.6"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "typescript": "^5.5.4",
-    "vite": "^5.4.11"
+    "vite": "^6.4.4"
   },
   "engines": {
     "node": ">=18.0.0"

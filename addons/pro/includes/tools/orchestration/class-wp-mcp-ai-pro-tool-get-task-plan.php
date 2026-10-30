@@ -44,6 +44,7 @@ class WP_MCP_AI_Pro_Tool_Get_Task_Plan {
 				'properties' => array(
 					'plan_id'         => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Task plan ID',
 					),
 					'include_history' => array(

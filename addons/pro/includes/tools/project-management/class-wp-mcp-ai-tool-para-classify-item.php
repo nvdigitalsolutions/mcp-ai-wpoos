@@ -77,6 +77,7 @@ class WP_MCP_AI_Tool_PARA_Classify_Item implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'ID of the post (project/task/event/area/document) to classify.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'bucket'  => array(
 					'type'        => 'string',
@@ -87,6 +88,7 @@ class WP_MCP_AI_Tool_PARA_Classify_Item implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'Optional sub-bucket term ID. If provided, takes precedence over `bucket`.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'reason'  => array(
 					'type'        => 'string',

@@ -330,7 +330,7 @@ class WP_MCP_AI_Approval_Queue {
 	}
 
 	/**
-	 * Get pending approvals, optionally filtered.
+	 * Get pending approvals, optionally filtered and paginated.
 	 *
 	 * @param array $args {
 	 *     Filter arguments.
@@ -338,17 +338,55 @@ class WP_MCP_AI_Approval_Queue {
 	 *   @type int    $assistant_id  Filter by assistant.
 	 *   @type int    $requester_id  Filter by requesting user.
 	 *   @type string $session_id    Filter by chat session.
-	 *   @type int    $limit         Max records (default 20).
+	 *   @type int    $limit         Max records (default 20, capped at 100).
+	 *   @type int    $offset        Records to skip (default 0).
 	 * }.
 	 * @return array
 	 */
 	public function get_pending( array $args = array() ) {
+		$query_args                   = $this->build_pending_query_args( $args );
+		$query_args['posts_per_page'] = min( 100, max( 1, (int) ( $args['limit'] ?? 20 ) ) );
+		$query_args['offset']         = max( 0, (int) ( $args['offset'] ?? 0 ) );
+
+		$posts = get_posts( $query_args );
+		return array_map( array( $this, 'post_to_array' ), $posts );
+	}
+
+	/**
+	 * Count pending approvals matching the same filters as get_pending().
+	 *
+	 * Uses WP_Query::found_posts so the value is the whole queue depth, not
+	 * the current page length — the console pager needs the real total to
+	 * render page numbers and the "showing X of Y" label.
+	 *
+	 * @param array $args Filter arguments (assistant_id / requester_id / session_id).
+	 * @return int
+	 */
+	public function count_pending( array $args = array() ) {
+		$query_args                   = $this->build_pending_query_args( $args );
+		$query_args['posts_per_page'] = 1;
+		$query_args['fields']         = 'ids';
+
+		$query = new WP_Query( $query_args );
+
+		return (int) $query->found_posts;
+	}
+
+	/**
+	 * Build the shared WP_Query args for the pending queue.
+	 *
+	 * Kept in one place so the list and the count can never drift apart
+	 * (a filtered count that ignores a filter would break pagination).
+	 *
+	 * @param array $args Filter arguments.
+	 * @return array
+	 */
+	private function build_pending_query_args( array $args ) {
 		$query_args = array(
-			'post_type'      => self::CPT,
-			'post_status'    => 'pending',
-			'posts_per_page' => min( 100, (int) ( $args['limit'] ?? 20 ) ),
-			'orderby'        => 'date',
-			'order'          => 'DESC',
+			'post_type'   => self::CPT,
+			'post_status' => 'pending',
+			'orderby'     => 'date',
+			'order'       => 'DESC',
 		);
 
 		$meta_query = array();
@@ -375,8 +413,7 @@ class WP_MCP_AI_Approval_Queue {
 			$query_args['meta_query'] = $meta_query;
 		}
 
-		$posts = get_posts( $query_args );
-		return array_map( array( $this, 'post_to_array' ), $posts );
+		return $query_args;
 	}
 
 	/**

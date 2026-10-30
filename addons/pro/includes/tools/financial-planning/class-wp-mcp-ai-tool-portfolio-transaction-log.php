@@ -161,6 +161,7 @@ class WP_MCP_AI_Tool_Portfolio_Transaction_Log implements WP_MCP_AI_Tool_Interfa
 				),
 				'transaction_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Transaction post ID (required for "remove").', 'mcp-ai-wpoos-pro' ),
 				),
 				'limit'          => array(

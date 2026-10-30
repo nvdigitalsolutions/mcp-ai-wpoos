@@ -62,11 +62,13 @@ class WP_MCP_AI_Tool_Get_ECA_Attendance_Report implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'integer',
 					'description' => __( 'WordPress post ID of the ECA (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'student_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter attendance for a specific student', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'date_from'  => array(
 					'type'        => 'string',

@@ -89,6 +89,60 @@ class WP_MCP_AI_Pro_Command_Center_REST_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The overview must survive merging real Logger activity entries.
+	 *
+	 * Regression: merge_logger_activity_entries() is static, but its message
+	 * and provider helpers were instance methods — so any stored
+	 * chat_interaction / api_request entry fatals the static REST path with
+	 * "Using $this when not in object context" (HTTP 500 on the console).
+	 */
+	public function test_overview_survives_logger_activity_merge() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$assistant_id = $this->factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Merge Assistant',
+			)
+		);
+
+		// Seed the core Logger's recent-activity buffer the way production
+		// chat/API traffic stores it (same option shape as
+		// WP_MCP_AI_Logger::store_recent_activity_entry()).
+		update_option(
+			'wp_mcp_ai_recent_activity',
+			array(
+				array(
+					'timestamp' => current_time( 'mysql', true ),
+					'type'      => 'chat_interaction',
+					'message'   => 'Chat request executed.',
+					'context'   => array(
+						'assistant_id' => $assistant_id,
+						'user_id'      => $user_id,
+					),
+				),
+				array(
+					'timestamp' => current_time( 'mysql', true ),
+					'type'      => 'openai_request',
+					'message'   => 'API request.',
+					'context'   => array( 'assistant_id' => $assistant_id ),
+				),
+			),
+			false
+		);
+
+		$controller = new WP_MCP_AI_Pro_Command_Center_REST_Controller();
+		$data       = $controller->get_overview()->get_data();
+
+		$this->assertTrue( $data['success'], 'Overview must not fatal when Logger entries need merging.' );
+		$event_types = array_column( $data['data']['recent_events'], 'type' );
+		$this->assertContains( 'chat_interaction', $event_types, 'Chat interactions must merge into the activity feed.' );
+		$this->assertContains( 'api_request', $event_types, 'API requests must merge into the activity feed.' );
+	}
+
+	/**
 	 * The route is registered under the Pro namespace.
 	 */
 	public function test_route_is_registered() {

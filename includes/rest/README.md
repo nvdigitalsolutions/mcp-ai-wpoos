@@ -22,7 +22,7 @@ All controllers extend `WP_MCP_AI_REST_Controller_Base` and share its `REST_NAME
 | `WP_MCP_AI_REST_Controller_Base` (abstract) | `class-wp-mcp-ai-rest-controller-base.php` | Every controller in this folder + Pro REST controllers |
 | `WP_MCP_AI_REST_Authenticator` | `class-wp-mcp-ai-rest-authenticator.php` | All controllers — nonce / bearer credential / Auth0 / guest token / mesh API key |
 | `WP_MCP_AI_REST_Validator` | `class-wp-mcp-ai-rest-validator.php` | All controllers — request shape + schema enforcement |
-| `WP_MCP_AI_REST_Chat_Controller` | `class-wp-mcp-ai-rest-chat-controller.php` | `POST /chat`, `POST /chat/save`, related transcript routes, `GET /session/nonce` (fresh session-bound nonce for chat surfaces) |
+| `WP_MCP_AI_REST_Chat_Controller` | `class-wp-mcp-ai-rest-chat-controller.php` | `POST /chat`, `POST /chat/save`, related transcript routes, `GET /session/nonce` (fresh session-bound nonce for chat surfaces), `GET /session/me` (requesting session's identity + capabilities without core's `list_users` gate) |
 | `WP_MCP_AI_REST_Chat_Memory_Controller` | `class-wp-mcp-ai-rest-chat-memory-controller.php` | `/chat-memory/*` (long-term memory toggle, autosummarise) |
 | `WP_MCP_AI_REST_Chat_Session_Stream_Controller` | `class-wp-mcp-ai-rest-chat-session-stream-controller.php` | Per-session SSE stream |
 | `WP_MCP_AI_REST_MCP_Controller` | `class-wp-mcp-ai-rest-mcp-controller.php` | MCP protocol JSON-RPC methods |
@@ -40,9 +40,11 @@ All controllers extend `WP_MCP_AI_REST_Controller_Base` and share its `REST_NAME
 | `WP_MCP_AI_REST_Transcript_Mining_Controller` | `class-wp-mcp-ai-rest-transcript-mining-controller.php` | Background transcript-mining jobs |
 | `WP_MCP_AI_REST_Restrictions_Controller` | `class-wp-mcp-ai-rest-restrictions-controller.php` | User-restriction routes: `GET /restrictions`, `GET|POST /users/{id}/restrictions`, `DELETE /users/{id}/restrictions/{type}` |
 | `WP_MCP_AI_Rate_Limit_Headers` | `class-wp-mcp-ai-rate-limit-headers.php` | IETF rate-limit response headers (`RateLimit-Policy`, `RateLimit`, `Retry-After`) on rate-limited REST responses |
+| `WP_MCP_AI_REST_Cache_Control` | `class-wp-mcp-ai-rest-cache-control.php` | Preserves explicit `Cache-Control: public`/`s-maxage` declarations against WP 6.9's authenticated no-cache injection (`rest_send_nocache_headers`) — the gate the Complete Console BFF micro-cache keys on |
 | `WP_MCP_AI_REST_Analytics_Manager`, `WP_MCP_AI_REST_Cost_Manager`, `WP_MCP_AI_REST_Token_Manager` | `class-wp-mcp-ai-rest-{analytics,cost,token}-manager.php` | Admin analytics dashboards |
 | `WP_MCP_AI_SSE_Handler` | `class-wp-mcp-ai-sse-handler.php` | Server-Sent Events transport |
 | `WP_MCP_AI_Asset_Inventory_REST`, `WP_MCP_AI_Security_Training_REST`, `WP_MCP_AI_Supplier_Security_REST` | `class-wp-mcp-ai-{asset-inventory,security-training,supplier-security}-rest.php` | Compliance dashboard routes |
+| `WP_MCP_AI_REST_Magic_Login_Controller` | `class-wp-mcp-ai-rest-magic-login-controller.php` | Passwordless sign-in: `POST /magic-login/request` (email a one-shot link) and `POST /magic-login/confirm` (consume token + start session). Public routes by design (pre-session visitors); opt-in via the `wp_mcp_ai_magic_login_enabled` option/filter |
 
 ## Inputs / Outputs / Neighbors
 

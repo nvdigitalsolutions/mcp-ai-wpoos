@@ -234,6 +234,7 @@ class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'integer',
 					'description' => __( 'WooCommerce order ID (required for pack_order action).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'items'    => array(
 					'type'        => 'array',
@@ -269,6 +270,7 @@ class WP_MCP_AI_Tool_Shipping_Box_Packer implements WP_MCP_AI_Tool_Interface, WP
 								'type'        => 'integer',
 								'description' => __( 'Number of this item (default: 1).', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 1,
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 								'default'     => 1,
 							),
 							'keep_flat' => array(

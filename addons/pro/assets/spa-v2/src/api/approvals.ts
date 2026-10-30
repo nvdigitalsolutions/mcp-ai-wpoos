@@ -27,8 +27,24 @@ export interface ApprovalRecord {
 
 export interface ApprovalsListResponse {
 	approvals: ApprovalRecord[];
+	/** Full pending-queue depth (not the page length). */
 	total: number;
+	/** 1-based page that was returned. */
+	page: number;
+	/** Rows requested per page. */
+	perPage: number;
 }
+
+export interface ApprovalsListOptions {
+	/** 1-based page (default 1). */
+	page?: number;
+	/** Rows per page (default 25, capped at the API's 100). */
+	perPage?: number;
+	signal?: AbortSignal;
+}
+
+/** Default page size for the approval queue. */
+export const APPROVALS_PER_PAGE = 25;
 
 export interface ApprovalsClientOptions {
 	endpoint: string;
@@ -45,19 +61,37 @@ export class ApprovalsClient {
 	}
 
 	/**
-	 * List the pending approval queue (up to 100 items, newest first).
+	 * List one page of the pending approval queue (newest first).
+	 *
+	 * The server reports `total` as the whole queue depth for this scope, so
+	 * the pager can render real page numbers instead of guessing from the
+	 * returned slice.
 	 */
-	async list( signal?: AbortSignal ): Promise< ApprovalsListResponse > {
+	async list( options: ApprovalsListOptions = {} ): Promise< ApprovalsListResponse > {
+		const page = Math.max( 1, Math.floor( options.page ?? 1 ) );
+		const perPage = Math.min(
+			100,
+			Math.max( 1, Math.floor( options.perPage ?? APPROVALS_PER_PAGE ) )
+		);
 		const url = new URL( this.endpoint, window.location.origin );
-		url.searchParams.set( 'limit', '100' );
+		url.searchParams.set( 'limit', String( perPage ) );
+		url.searchParams.set( 'offset', String( ( page - 1 ) * perPage ) );
 		const data = await this.request< {
 			approvals?: ApprovalRecord[];
 			total?: number;
-		} >( 'GET', url.toString(), undefined, signal );
+		} >( 'GET', url.toString(), undefined, options.signal );
+
+		const approvals = Array.isArray( data?.approvals ) ? data.approvals : [];
+		const reportedTotal = data?.total;
 
 		return {
-			approvals: Array.isArray( data.approvals ) ? data.approvals : [],
-			total: typeof data.total === 'number' ? data.total : 0,
+			approvals,
+			total:
+				typeof reportedTotal === 'number' && reportedTotal >= approvals.length
+					? reportedTotal
+					: approvals.length,
+			page,
+			perPage,
 		};
 	}
 

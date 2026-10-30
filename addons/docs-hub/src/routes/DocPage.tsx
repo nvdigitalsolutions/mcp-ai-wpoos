@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { fetchPage } from '../api/manifest-client';
 import type { DocPage as DocPageData } from '../api/manifest-client';
 import ContentArea from '../components/ContentArea';
@@ -24,6 +24,7 @@ interface DocPageProps {
 
 export default function DocPage( { slugSet }: DocPageProps ) {
 	const params = useParams<{ '*': string }>();
+	const location = useLocation();
 	const slug = params[ '*' ] ?? '';
 
 	const [ page, setPage ] = useState<DocPageData | null>( null );
@@ -80,8 +81,12 @@ export default function DocPage( { slugSet }: DocPageProps ) {
 		if ( loading || ! page ) {
 			return;
 		}
-		const hash = window.location.hash;
-		const frag = /#([^#]+)$/.exec( hash );
+		// Read the fragment from the router location instead of
+		// window.location.hash: MemoryRouter islands (the Pro SPA embed) never
+		// write the host's hash, so the fragment only exists on the in-memory
+		// location. HashRouter mounts behave identically (the router strips
+		// the route part off the window hash into location.hash).
+		const frag = /#([^#]+)$/.exec( location.hash );
 		if ( ! frag ) {
 			return;
 		}
@@ -93,7 +98,7 @@ export default function DocPage( { slugSet }: DocPageProps ) {
 		if ( target ) {
 			target.scrollIntoView( { behavior: 'smooth', block: 'start' } );
 		}
-	}, [ loading, page, slug ] );
+	}, [ loading, page, slug, location ] );
 
 	if ( loading ) {
 		return (

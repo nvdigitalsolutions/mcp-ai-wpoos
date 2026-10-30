@@ -72,6 +72,7 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'integer',
 					'description' => __( 'Post ID to check freshness.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'post_types'         => array(
 					'type'        => 'array',

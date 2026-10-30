@@ -94,7 +94,7 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				),
 				'folder_id'      => array(
 					'type'        => 'string',
-					'description' => __( 'Optional folder ID to limit search to a specific folder.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional folder ID to limit search to a specific folder. When the resolved Drive connection is scoped to a folder, this argument may only repeat that folder (or be omitted); searching another folder is rejected.', 'mcp-ai-wpoos' ),
 				),
 				'include_shared' => array(
 					'type'        => 'boolean',
@@ -181,6 +181,20 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				);
 			}
 
+			// Assistant-level restriction: an assistant with a configured Remote
+			// Site Connections list may only use connections from that list.
+			if ( ! $this->is_connection_enabled_for_assistant( $connection_id, $context ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_drive_connection_not_enabled',
+					sprintf(
+						/* translators: %s: connection name. */
+						__( 'Google Drive connection "%s" is not enabled for this assistant. Ask the user to enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos' ),
+						isset( $connection['name'] ) ? (string) $connection['name'] : $connection_id
+					),
+					array( 'status' => 403 )
+				);
+			}
+
 			$client_id       = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
 			$client_secret   = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
 			$refresh_token   = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
@@ -202,6 +216,18 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$client_secret   = isset( $settings['google_drive_client_secret'] ) ? trim( (string) $settings['google_drive_client_secret'] ) : '';
 			$refresh_token   = isset( $settings['google_drive_refresh_token'] ) ? trim( (string) $settings['google_drive_refresh_token'] ) : '';
 			$configured_user = isset( $settings['google_drive_user_email'] ) ? trim( (string) $settings['google_drive_user_email'] ) : '';
+
+			// A restricted assistant may only use the site-wide settings fallback
+			// when the assistant editor granted the "settings" row. Checked only
+			// when settings credentials are actually configured.
+			$allowed_ids = $this->get_allowed_connection_ids( $context );
+			if ( null !== $allowed_ids && ! in_array( 'settings', $allowed_ids, true ) && '' !== $client_id && '' !== $client_secret && '' !== $refresh_token ) {
+				return new WP_Error(
+					'wp_mcp_ai_drive_settings_not_allowed',
+					__( 'This assistant is restricted to specific Remote Sites connections, so the site-wide Google Drive settings cannot be used. Enable the site-wide Google Drive settings row (or a Drive connection) for the assistant in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
+				);
+			}
 		}
 
 		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
@@ -242,9 +268,25 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		$page_token = isset( $arguments['page_token'] ) ? trim( (string) $arguments['page_token'] ) : '';
 
-		// Check if folder_id is provided in arguments (overrides connection setting).
-		if ( isset( $arguments['folder_id'] ) && '' !== trim( (string) $arguments['folder_id'] ) ) {
-			$folder_id = trim( (string) $arguments['folder_id'] );
+		// Folder scope enforcement: a connection-scoped folder is a hard limit.
+		// An explicit folder_id argument may only repeat that folder; anything
+		// else is rejected instead of silently overriding the scope.
+		$argument_folder_id = isset( $arguments['folder_id'] ) ? trim( (string) $arguments['folder_id'] ) : '';
+
+		if ( '' !== $folder_id ) {
+			if ( '' !== $argument_folder_id && $argument_folder_id !== $folder_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_drive_folder_not_allowed',
+					sprintf(
+						/* translators: %s: scoped folder ID. */
+						__( 'The Drive connection is scoped to a single folder (%s). Searching another folder is not allowed; omit folder_id to search the connection\'s scoped folder.', 'mcp-ai-wpoos' ),
+						$folder_id
+					),
+					array( 'status' => 403 )
+				);
+			}
+		} else {
+			$folder_id = $argument_folder_id;
 		}
 
 		// Modify query if folder_id is set.
@@ -365,6 +407,50 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				'connection'      => $configured_user ? $configured_user : __( 'Connected', 'mcp-ai-wpoos' ),
 			)
 		);
+	}
+
+	/**
+	 * Resolve the assistant's allowed connection IDs from the execution context.
+	 *
+	 * Returns null when unrestricted (no assistant context, or the assistant
+	 * has no configured Remote Site Connections list) — mirroring the
+	 * remote_wp_connection semantics — or the allowed connection IDs as strings.
+	 *
+	 * @param array $context Execution context.
+	 * @return array|null Allowed connection IDs, or null when unrestricted.
+	 */
+	private function get_allowed_connection_ids( array $context ) {
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		if ( ! $assistant_id ) {
+			return null;
+		}
+
+		$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+
+		if ( ! is_array( $enabled_connections ) ) {
+			// Not configured — legacy behaviour allows all connections.
+			return null;
+		}
+
+		return array_map( 'strval', $enabled_connections );
+	}
+
+	/**
+	 * Whether a connection is enabled for the assistant in the execution context.
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param array  $context       Execution context.
+	 * @return bool True when allowed (or unrestricted), false otherwise.
+	 */
+	private function is_connection_enabled_for_assistant( $connection_id, array $context ) {
+		$allowed_ids = $this->get_allowed_connection_ids( $context );
+
+		if ( null === $allowed_ids ) {
+			return true;
+		}
+
+		return in_array( (string) $connection_id, $allowed_ids, true );
 	}
 
 	/**

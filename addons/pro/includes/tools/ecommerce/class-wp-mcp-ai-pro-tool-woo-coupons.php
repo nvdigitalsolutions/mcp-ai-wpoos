@@ -113,6 +113,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'coupon_id'              => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Coupon ID for get, update, or delete actions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'code'                   => array(

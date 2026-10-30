@@ -73,7 +73,12 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 			$enabled_connections = array();
 		}
 
-		if ( empty( $connections ) ) {
+		// Site-wide base settings (Gmail / Google Drive credentials stored in the
+		// NV oOS settings, not in a Remote Sites connection) can be granted to a
+		// restricted assistant via a synthetic "settings" entry.
+		$base_settings_families = self::get_configured_base_settings_families();
+
+		if ( empty( $connections ) && empty( $base_settings_families ) ) {
 			?>
 			<p><?php esc_html_e( 'No remote site connections configured.', 'mcp-ai-wpoos-pro' ); ?></p>
 			<p>
@@ -89,6 +94,14 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 		<p><?php esc_html_e( 'Select which remote site connections this assistant can access:', 'mcp-ai-wpoos-pro' ); ?></p>
 
 		<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">
+			<?php if ( empty( $connections ) ) : ?>
+				<p style="color: #666;"><?php esc_html_e( 'No remote site connections configured.', 'mcp-ai-wpoos-pro' ); ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>">
+						<?php esc_html_e( 'Add Remote Site Connection', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+				</p>
+			<?php endif; ?>
+
 			<?php foreach ( $connections as $connection_key => $connection ) : ?>
 				<?php
 				// Use the array key as the connection ID (most reliable).
@@ -131,6 +144,28 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 			<?php endforeach; ?>
 		</div>
 
+		<?php if ( ! empty( $base_settings_families ) ) : ?>
+			<?php $is_settings_enabled = in_array( 'settings', $enabled_connections, true ); ?>
+			<p style="margin-bottom: 0;"><?php esc_html_e( 'Site-wide base settings:', 'mcp-ai-wpoos-pro' ); ?></p>
+			<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">
+				<div style="margin-bottom: 10px; padding: 8px; background: #f9f9f9; border-left: 3px solid #46b450;">
+					<label style="display: block; margin-bottom: 5px;">
+						<input type="checkbox" name="wp_mcp_ai_pro_remote_connections[]" value="settings" <?php checked( $is_settings_enabled ); ?>>
+						<strong><?php esc_html_e( 'NV oOS site-wide settings (default connection)', 'mcp-ai-wpoos-pro' ); ?></strong>
+					</label>
+					<div style="font-size: 11px; color: #666; margin-left: 22px;">
+						<?php
+						printf(
+							/* translators: %s: comma-separated family names configured in the site settings. */
+							esc_html__( 'Grants base-settings credentials for: %s', 'mcp-ai-wpoos-pro' ),
+							esc_html( implode( ', ', $base_settings_families ) )
+						);
+						?>
+					</div>
+				</div>
+			</div>
+		<?php endif; ?>
+
 		<p style="margin-top: 10px;">
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>" style="font-size: 11px;">
 				<?php esc_html_e( 'Manage Remote Site Connections', 'mcp-ai-wpoos-pro' ); ?>
@@ -138,9 +173,61 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 		</p>
 
 		<p class="description">
-			<?php esc_html_e( 'Only enabled connections can be selected. Remote connections allow this assistant to query posts, products, orders, and other data from external WordPress/WooCommerce sites.', 'mcp-ai-wpoos-pro' ); ?>
+			<?php esc_html_e( 'Only enabled connections can be selected. Remote connections allow this assistant to query posts, products, orders, and other data from external WordPress/WooCommerce sites. The site-wide settings row grants the base-settings credentials of the configured families (Gmail, Google Drive, Google Calendar, FlowHub, QuickBooks, iSAMS).', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
+	}
+
+	/**
+	 * Which site-wide base-settings connection families currently hold
+	 * credentials (in the NV oOS settings option, or in the FlowHub toolkit
+	 * settings option).
+	 *
+	 * @since 1.2.14
+	 *
+	 * @return string[] Human-readable family labels.
+	 */
+	private function get_configured_base_settings_families() {
+		$families = array();
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			if ( ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_refresh_token'] ) ) {
+				$families[] = __( 'Gmail', 'mcp-ai-wpoos-pro' );
+			}
+
+			if ( ! empty( $settings['google_drive_client_id'] ) && ! empty( $settings['google_drive_refresh_token'] ) ) {
+				$families[] = __( 'Google Drive', 'mcp-ai-wpoos-pro' );
+			}
+
+			if ( ! empty( $settings['google_calendar_client_id'] ) && ! empty( $settings['google_calendar_refresh_token'] ) ) {
+				$families[] = __( 'Google Calendar', 'mcp-ai-wpoos-pro' );
+			}
+
+			if ( ! empty( $settings['quickbooks_company_id'] ) && ! empty( $settings['quickbooks_api_key'] ) ) {
+				$families[] = __( 'QuickBooks', 'mcp-ai-wpoos-pro' );
+			}
+
+			if ( ! empty( $settings['isams_api_url'] ) && ! empty( $settings['isams_api_key'] ) ) {
+				$families[] = __( 'iSAMS', 'mcp-ai-wpoos-pro' );
+			}
+
+			if ( ! empty( $settings['flowhub_client_id'] ) && ! empty( $settings['flowhub_api_key'] ) ) {
+				$families[] = __( 'FlowHub', 'mcp-ai-wpoos-pro' );
+			}
+		}
+
+		// FlowHub credentials can also live in the FlowHub toolkit settings
+		// option rather than the main NV oOS settings array.
+		if ( ! in_array( __( 'FlowHub', 'mcp-ai-wpoos-pro' ), $families, true ) ) {
+			$flowhub_settings = get_option( 'wp_mcp_ai_flowhub_toolkit_settings', array() );
+			if ( is_array( $flowhub_settings ) && ! empty( $flowhub_settings['client_id'] ) && ! empty( $flowhub_settings['api_key'] ) ) {
+				$families[] = __( 'FlowHub', 'mcp-ai-wpoos-pro' );
+			}
+		}
+
+		return $families;
 	}
 
 	/**

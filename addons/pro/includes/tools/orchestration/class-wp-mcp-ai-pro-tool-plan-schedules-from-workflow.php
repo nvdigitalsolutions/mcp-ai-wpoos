@@ -117,6 +117,7 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 				),
 				'default_assistant_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional NV oOS assistant post ID. When provided, scheduled events fire as assistant_run; when omitted they fall back to a wp_mcp_ai_workflow_reminder task hook.', 'mcp-ai-wpoos-pro' ),
 				),
 				'default_cadence'      => array(

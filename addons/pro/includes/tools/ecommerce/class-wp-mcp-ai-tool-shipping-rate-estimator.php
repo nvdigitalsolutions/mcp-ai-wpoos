@@ -145,6 +145,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'WooCommerce order ID (required for estimate_order_rates action).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'items'           => array(
 					'type'        => 'array',
@@ -180,6 +181,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 								'type'        => 'integer',
 								'description' => __( 'Quantity (default: 1).', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 1,
+								'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 								'default'     => 1,
 							),
 						),

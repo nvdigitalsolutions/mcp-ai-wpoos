@@ -67,10 +67,21 @@ export class ChatChannelsClient {
 
 	/** List conversations with optional filters. */
 	async conversations(
-		filters: { channel?: string; status?: string; search?: string } = {},
+		filters: {
+			channel?: string;
+			status?: string;
+			search?: string;
+			page?: number;
+			perPage?: number;
+		} = {},
 		signal?: AbortSignal
 	): Promise< ConversationsEnvelope > {
-		const params = new URLSearchParams( { page: '1', per_page: '50' } );
+		const perPage = Math.min( 100, Math.max( 1, Math.floor( filters.perPage ?? 50 ) ) );
+		const page = Math.max( 1, Math.floor( filters.page ?? 1 ) );
+		const params = new URLSearchParams( {
+			page: String( page ),
+			per_page: String( perPage ),
+		} );
 		if ( filters.channel ) {
 			params.set( 'channel', filters.channel );
 		}
@@ -89,8 +100,8 @@ export class ChatChannelsClient {
 		return {
 			items: Array.isArray( data?.items ) ? data.items : [],
 			total: typeof data?.total === 'number' ? data.total : 0,
-			page: typeof data?.page === 'number' ? data.page : 1,
-			per_page: typeof data?.per_page === 'number' ? data.per_page : 50,
+			page: typeof data?.page === 'number' ? data.page : page,
+			per_page: typeof data?.per_page === 'number' ? data.per_page : perPage,
 		};
 	}
 

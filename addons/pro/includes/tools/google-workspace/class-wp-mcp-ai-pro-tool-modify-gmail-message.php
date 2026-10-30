@@ -80,7 +80,7 @@ class WP_MCP_AI_Pro_Tool_Modify_Gmail_Message implements WP_MCP_AI_Tool_Interfac
 				),
 				'connection_id'       => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Gmail connection ID from Remote Sites. If not provided, uses settings-based credentials.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional Gmail connection ID from Remote Sites. If not provided, uses settings-based credentials; when those are not configured, the only enabled Remote Sites Gmail connection is used automatically (if several are enabled, pass one explicitly). Call list_gmail_connections to discover IDs.', 'mcp-ai-wpoos-pro' ),
 				),
 				'add_label_ids'       => array(
 					'type'        => 'array',
@@ -184,7 +184,7 @@ class WP_MCP_AI_Pro_Tool_Modify_Gmail_Message implements WP_MCP_AI_Tool_Interfac
 			return new WP_Error( 'wp_mcp_ai_gmail_modify_nothing_to_do', __( 'No label operations were requested. Provide add_label_ids, remove_label_ids, mark_read, mark_unread, or archive.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( $connection_id );
+		$credentials = WP_MCP_AI_Pro_Gmail_Client::resolve_credentials( $connection_id, $context );
 		if ( is_wp_error( $credentials ) ) {
 			return $credentials;
 		}

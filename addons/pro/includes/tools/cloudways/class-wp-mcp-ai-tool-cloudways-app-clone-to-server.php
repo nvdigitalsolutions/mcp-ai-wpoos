@@ -57,14 +57,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Clone_To_Server' ) ) {
 				'properties' => array(
 					'server_id'        => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'The source server ID.', 'mcp-ai-wpoos-pro' ),
 					),
 					'app_id'           => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'The source application ID.', 'mcp-ai-wpoos-pro' ),
 					),
 					'target_server_id' => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => __( 'The target server ID.', 'mcp-ai-wpoos-pro' ),
 					),
 					'label'            => array(

@@ -66,6 +66,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'project_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'The ID of the project to generate a report for (required).', 'mcp-ai-wpoos-pro' ),
 				),
 				'format'     => array(

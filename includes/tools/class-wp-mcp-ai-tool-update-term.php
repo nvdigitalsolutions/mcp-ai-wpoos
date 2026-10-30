@@ -65,6 +65,7 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'integer',
 					'description' => __( 'ID of the term to update.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'taxonomy'    => array(
 					'type'        => 'string',

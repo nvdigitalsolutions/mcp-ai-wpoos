@@ -177,7 +177,7 @@ class WP_MCP_AI_Tool_Flowhub_Get_Orders implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
-		$resolved      = WP_MCP_AI_FlowHub_Connection_Helper::resolve_connection( $connection_id );
+		$resolved      = WP_MCP_AI_FlowHub_Connection_Helper::resolve_connection( $connection_id, $context );
 
 		if ( is_wp_error( $resolved ) ) {
 			return $resolved;

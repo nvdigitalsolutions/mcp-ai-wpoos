@@ -98,6 +98,7 @@ class WP_MCP_AI_Tool_Export_Trajectory_Corpus implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'integer',
 					'description' => __( 'Assistant CPT post ID whose trace runs are exported.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'max_runs'         => array(
 					'type'        => 'integer',

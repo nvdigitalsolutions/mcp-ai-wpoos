@@ -101,6 +101,7 @@ class WP_MCP_AI_Tool_LF_Discovery_Request_Builder implements WP_MCP_AI_Tool_Inte
 				),
 				'matter_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Associated matter ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'topic_areas'    => array(

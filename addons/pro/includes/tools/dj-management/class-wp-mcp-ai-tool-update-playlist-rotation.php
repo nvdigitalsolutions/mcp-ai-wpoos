@@ -64,6 +64,7 @@ class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interfac
 			'properties' => array(
 				'playlist_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'ID of the playlist to update rotation for.', 'mcp-ai-wpoos-pro' ),
 				),
 				'track_ids'   => array(

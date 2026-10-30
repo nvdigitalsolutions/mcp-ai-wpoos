@@ -29,6 +29,13 @@ if ( process.env.NODE_ENV !== 'production' ) {
 }
 
 function mount() {
+	// Host apps (e.g. the NV oOS Pro SPA docs island) mount explicitly via
+	// mountDocsHub() and set this flag in their injected config so the
+	// auto-scan never races the host's own container.
+	if ( window.NVOOS_DOCS_HUB?.config?.defer_mount ) {
+		return;
+	}
+
 	const containers = document.querySelectorAll<HTMLElement>( '.nvoos-docs-hub-root[data-config]' );
 
 	containers.forEach( ( container ) => {
@@ -70,3 +77,28 @@ if ( document.readyState === 'loading' ) {
 } else {
 	mount();
 }
+
+/**
+ * Mount the Docs Hub SPA into a host-provided container element.
+ *
+ * Imperative island API for host apps (the NV oOS Pro SPA embeds the built
+ * bundle this way): the host owns the container's lifecycle and calls the
+ * returned `unmount` before removing it. The host must inject
+ * `window.NVOOS_DOCS_HUB` (apiUrl + nonce + config) before mounting.
+ *
+ * @param container Root element the app renders into.
+ * @return Handle with `unmount` for React root teardown.
+ */
+export function mountDocsHub( container: HTMLElement ): { unmount: () => void } {
+	const root = createRoot( container );
+	root.render( <App /> );
+	return {
+		unmount: () => root.unmount(),
+	};
+}
+
+// Expose the island API on the global for host apps. The built bundle is a
+// plain IIFE with no module system, so this explicit assignment is the only
+// reliable hand-off (the esbuild `globalName` option is intentionally not
+// used — host apps read `window.NVoosDocsHub` directly).
+( globalThis as unknown as { NVoosDocsHub?: unknown } ).NVoosDocsHub = { mountDocsHub };

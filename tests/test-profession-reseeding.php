@@ -221,6 +221,109 @@ class Test_Profession_Reseeding extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that re-seeding with the seeded option missing does NOT
+	 * duplicate professions that already exist in the database.
+	 *
+	 * The classic ballooning bug: the seeder runs on admin_init whenever
+	 * the seeded option is absent and blindly inserted the whole catalog,
+	 * so a database that already had professions (option lost via a
+	 * settings reset or staging sync) gained a full duplicate set on
+	 * every admin page load.
+	 */
+	public function test_seeder_updates_existing_instead_of_duplicating() {
+		$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+		$professions = $loader->load_all();
+		$this->assertNotEmpty( $professions );
+
+		$repository = new WP_MCP_AI_Profession_Repository();
+
+		// Pre-seed the first two KB professions so the DB already contains
+		// professions when the seeder runs.
+		$pre_seeded_slugs = array();
+		foreach ( array_slice( $professions, 0, 2 ) as $profession_data ) {
+			$repository->save( $profession_data );
+			$pre_seeded_slugs[] = sanitize_title( $profession_data['slug'] );
+		}
+
+		// Ensure the seeded option is absent, then run the seeder.
+		delete_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION );
+		WP_MCP_AI_Profession_Seeder::seed_professions();
+
+		// Each pre-seeded profession must still exist exactly once.
+		foreach ( $pre_seeded_slugs as $slug ) {
+			$matches = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_profession',
+					'name'           => $slug,
+					'posts_per_page' => -1,
+					'post_status'    => 'publish',
+					'fields'         => 'ids',
+				)
+			);
+			$this->assertCount( 1, $matches, 'Seeding must not duplicate existing profession: ' . $slug );
+		}
+
+		// The total published count must equal the KB count — no duplicates.
+		$counts = wp_count_posts( 'mcp_ai_profession' );
+		$this->assertEquals( count( $professions ), isset( $counts->publish ) ? $counts->publish : 0, 'Seeding must not balloon the published profession count' );
+
+		// Clean up the seeded option so later tests don't skip seeding.
+		delete_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION );
+	}
+
+	/**
+	 * Test that clear_cache() invalidates the wp_count_posts() counts cache.
+	 *
+	 * Core only invalidates the post-type counts cache on status
+	 * transitions; force-deletes (what the reseed handler uses to remove
+	 * duplicate copies) leave it stale. With a persistent object cache the
+	 * admin Data Management panel would keep showing the ballooned count
+	 * forever. The plugin's delete_post hook routes through clear_cache(),
+	 * so this pins the end-to-end healing path.
+	 */
+	public function test_clear_cache_invalidates_count_posts() {
+		$repository      = new WP_MCP_AI_Profession_Repository();
+		$profession_data = array(
+			'title'            => 'Counts Cache Test',
+			'slug'             => 'test_counts_cache',
+			'description'      => 'Test',
+			'category'         => 'technical',
+			'role_description' => 'Test',
+			'expertise'        => array(),
+			'warnings'         => array(),
+			'knowledge_base'   => 'Test',
+			'default_tools'    => array(),
+		);
+
+		$post_id_1 = $repository->save( $profession_data );
+		$post_id_2 = $repository->save(
+			array_merge(
+				$profession_data,
+				array(
+					'title' => 'Counts Cache Test 2',
+					'slug'  => 'test_counts_cache_2',
+				)
+			)
+		);
+
+		// Prime the counts cache with the current total.
+		$counts = wp_count_posts( 'mcp_ai_profession' );
+		$before = isset( $counts->publish ) ? (int) $counts->publish : 0;
+		$this->assertGreaterThanOrEqual( 2, $before );
+
+		// Force-delete one post directly — the plugin's delete_post hook
+		// routes through clear_cache(), which must invalidate the counts
+		// cache so wp_count_posts() never serves a stale total.
+		wp_delete_post( $post_id_2, true );
+
+		$fresh = wp_count_posts( 'mcp_ai_profession' );
+		$this->assertEquals( $before - 1, isset( $fresh->publish ) ? (int) $fresh->publish : 0, 'Deleting a profession must invalidate the post-type counts cache' );
+
+		// Clean up.
+		wp_delete_post( $post_id_1, true );
+	}
+
+	/**
 	 * Test profession count after seeding.
 	 */
 	public function test_profession_count_after_seeding() {

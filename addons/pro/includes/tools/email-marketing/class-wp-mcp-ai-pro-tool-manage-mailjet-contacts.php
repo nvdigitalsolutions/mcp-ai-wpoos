@@ -79,6 +79,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 				),
 				'list_id'     => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Contact list ID for add_contact or remove_contact actions (optional).', 'mcp-ai-wpoos-pro' ),
 				),
 				'is_excluded' => array(

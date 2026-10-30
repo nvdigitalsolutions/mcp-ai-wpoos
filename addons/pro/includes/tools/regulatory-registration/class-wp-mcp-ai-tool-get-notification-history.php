@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Get_Notification_History implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'integer',
 					'description' => __( 'Filter by registration ID (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'start_date'        => array(
 					'type'        => 'string',

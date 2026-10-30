@@ -87,6 +87,7 @@ class WP_MCP_AI_Tool_Scope_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties' => array(
 				'assistant_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => 'Assistant post ID (0 = global).',
 				),
 				'task_class'   => array(

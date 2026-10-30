@@ -82,6 +82,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 			'properties'           => array(
 				'attachment_id'      => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Media Library attachment ID of the template kit ZIP file.', 'mcp-ai-wpoos' ),
 				),
 				'file_id'            => $this->get_file_id_parameter_schema(),

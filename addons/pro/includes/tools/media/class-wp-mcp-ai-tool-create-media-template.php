@@ -61,6 +61,7 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 			'properties' => array(
 				'template_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional template ID. If provided, updates the existing template instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
 				'title'       => array(

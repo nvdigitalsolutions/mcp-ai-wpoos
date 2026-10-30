@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.2.10' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.2.14' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -757,6 +757,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Create_Post_From_Research' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-post-from-research.php',
 			// Assistant portability (blueprint exporter closes the blueprint-installer loop).
 			'WP_MCP_AI_Tool_Export_Assistant_Blueprint'    => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-tool-export-assistant-blueprint.php',
+			// Proposal 091 Track E — annotation eval dataset export (Pro).
+			'WP_MCP_AI_Tool_Export_Annotation_Dataset'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-annotation-dataset.php',
 			// Template Management tools (Ralph pattern - Phase 3).
 			'WP_MCP_AI_Pro_Tool_Create_Template'           => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-template.php',
 			'WP_MCP_AI_Pro_Tool_Instantiate_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-instantiate-template.php',

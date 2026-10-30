@@ -1,0 +1,16 @@
+Copyright (c) 2026 NV Digital Solutions (https://nvdigitalsolutions.com).
+
+The NV-authored files in this example (README.md, package.json,
+.env.example, scripts/enable-standalone.mjs, scripts/assemble-mirror.mjs,
+scripts/smoke.mjs, this LICENSE) are PROPRIETARY software of NV Digital
+Solutions, consistent with the funiq-bridge addon's licensing
+(`addons/funiq-bridge/LICENSE` in the nvdigitalsolutions/mcp-ai-wpoos
+monorepo). No license is granted for use, modification, or redistribution
+outside NV-owned deployments.
+
+The licensed Funiq Payload CMS (source in the private `nvoos-funiq-pwa`
+repository, build output in the private `nvoos-funiq-velocity` mirror) is a
+purchased third-party Envato Market item subject to its own license terms.
+Its license proof (purchase metadata) is stored privately in
+`nvoos-funiq-pwa/LICENSE.txt` and is copied into the mirror by the sync
+workflow — it is never distributed with the public monorepo tree.

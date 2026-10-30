@@ -63,6 +63,7 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'integer',
 					'description' => __( 'ID of the media collection to process', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'template_ids'  => array(
 					'type'        => 'array',

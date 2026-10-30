@@ -78,6 +78,7 @@ class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interfa
 			'properties' => array(
 				'appointment_id' => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Appointment ID', 'mcp-ai-wpoos-pro' ),
 				),
 				'reminder_type'  => array(

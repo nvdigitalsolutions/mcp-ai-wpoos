@@ -102,6 +102,19 @@ jobs:
           CSS_PATH=$(grep -o '/assets/[A-Za-z0-9_.-]*\.css' dist/index.html | head -n1)
           MIME=$(curl -s -o /dev/null -w '%{content_type}' "http://localhost:4180$CSS_PATH")
           case "$MIME" in text/css*) ;; *) { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; } ;; esac
+          # Caching contract: entry HTML revalidates (no-cache + ETag → 304),
+          # hashed assets are immutable for a year, and text assets serve
+          # gzip when the client negotiates it.
+          ENTRY_HEADERS=$(curl -s -D - -o /dev/null http://localhost:4180/)
+          echo "$ENTRY_HEADERS" | grep -qi '^Cache-Control: no-cache' || { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          ETAG=$(echo "$ENTRY_HEADERS" | grep -i '^etag' | tr -d '\r' | cut -d' ' -f2)
+          test -n "$ETAG" || { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' -H "If-None-Match: $ETAG" http://localhost:4180/)
+          test "$STATUS" = "304" || { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          ASSET_HEADERS=$(curl -s -D - -o /dev/null "http://localhost:4180$CSS_PATH")
+          echo "$ASSET_HEADERS" | grep -qi 'max-age=31536000, immutable' || { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; }
+          COMPRESSED=$(curl -s -D - -o /dev/null -H 'Accept-Encoding: gzip' "http://localhost:4180$CSS_PATH")
+          echo "$COMPRESSED" | grep -qi '^Content-Encoding: gzip' || { cat /tmp/sa-velocity-smoke.log; kill $SERVER_PID; exit 1; }
           kill $SERVER_PID
 
       - name: Push to nvoos-schedule-anything-velocity

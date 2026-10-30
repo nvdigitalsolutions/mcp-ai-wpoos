@@ -61,11 +61,13 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Roster implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'ESPN Fantasy Football league ID.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'team_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Team ID within the league.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'season'    => array(
 					'type'        => 'integer',

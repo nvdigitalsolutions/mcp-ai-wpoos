@@ -67,6 +67,7 @@ class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_I
 					'type'        => 'integer',
 					'description' => __( 'WordPress post ID of a specific ECA to sync enrollments for. If omitted, syncs enrollments for all ECAs with an iSAMS sync ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 				),
 				'sync_mode'     => array(
 					'type'        => 'string',

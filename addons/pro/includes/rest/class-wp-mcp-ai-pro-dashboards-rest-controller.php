@@ -158,7 +158,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	 */
 	private function dashboard_catalogue() {
 		return array(
-			'cre'          => array(
+			'cre'           => array(
 				'label'       => __( 'CRE Debt Portfolio', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Commercial real-estate loan portfolio: balances, averages and distributions with loan-type and status filters.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🏦',
@@ -268,7 +268,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'law'          => array(
+			'law'           => array(
 				'label'       => __( 'Law Firm', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Active matters, clients, time entries and trust transactions.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '⚖️',
@@ -296,7 +296,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'registration' => array(
+			'registration'  => array(
 				'label'       => __( 'Registration', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Product registrations by status and country.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '📋',
@@ -362,7 +362,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'eca'          => array(
+			'eca'           => array(
 				'label'       => __( 'ECA', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Extra-curricular activities: enrollments, capacity, participation and attendance.', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🏫',
@@ -449,7 +449,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'health'       => array(
+			'health'        => array(
 				'label'       => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Daily health metrics history per member (steps, water, sleep, calories, mood).', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🫀',
@@ -505,7 +505,7 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
-			'vitals'       => array(
+			'vitals'        => array(
 				'label'       => __( 'Medical Vitals', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Vital signs history per member (heart rate, temperature, blood pressure, weight).', 'mcp-ai-wpoos-pro' ),
 				'icon'        => '🩺',
@@ -561,6 +561,192 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 					),
 				),
 			),
+			// Proposal 089 Phase 4f — the commerce toolkit dashboards
+			// (formerly wp-admin dashboard widgets; same promoted seams).
+			'ezuite'        => array(
+				'label'       => __( 'EZuite Inventory', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'EZuite ERP inventory health: stock buckets, cached rows, total value and top warehouses.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '🏭',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'in_stock',
+						'label'  => __( 'In Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'low_stock',
+						'label'  => __( 'Low Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'out_of_stock',
+						'label'  => __( 'Out of Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_items',
+						'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_value',
+						'label'  => __( 'Total Value', 'mcp-ai-wpoos-pro' ),
+						'format' => 'money',
+					),
+				),
+				'lists'       => array(
+					array(
+						'key'     => 'warehouses',
+						'title'   => __( 'Top Warehouses', 'mcp-ai-wpoos-pro' ),
+						'columns' => array(
+							array(
+								'key'   => 'name',
+								'label' => __( 'Warehouse', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'count',
+								'label' => __( 'Items', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+			),
+			'shopify'       => array(
+				'label'       => __( 'Shopify Sync', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Shopify GraphQL cost budget, cached items and sync health per connection.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '🛍️',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'cost_remaining_pct',
+						'label'  => __( 'Cost Budget', 'mcp-ai-wpoos-pro' ),
+						'format' => 'percent',
+					),
+					array(
+						'key'    => 'cost_used',
+						'label'  => __( 'Points Used', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'cost_limit',
+						'label'  => __( 'Point Limit', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'cached_items',
+						'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'connections',
+						'label'  => __( 'Connections', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+				),
+			),
+			'flowhub'       => array(
+				'label'       => __( 'FlowHub Inventory', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'FlowHub POS inventory health: stock buckets, cached rows, total value and top locations. Read-mostly — compliance reporting stays in FlowHub.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '🌿',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'in_stock',
+						'label'  => __( 'In Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'low_stock',
+						'label'  => __( 'Low Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'out_of_stock',
+						'label'  => __( 'Out of Stock', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_items',
+						'label'  => __( 'Cached Items', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'total_value',
+						'label'  => __( 'Total Value', 'mcp-ai-wpoos-pro' ),
+						'format' => 'money',
+					),
+				),
+				'lists'       => array(
+					array(
+						'key'     => 'locations',
+						'title'   => __( 'Top Locations', 'mcp-ai-wpoos-pro' ),
+						'columns' => array(
+							array(
+								'key'   => 'name',
+								'label' => __( 'Location', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'key'   => 'count',
+								'label' => __( 'Items', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+			),
+			// Proposal 091 Track E — AI observability (annotations + recent
+			// GenAI spans). Ungated: core observability, not a toolkit.
+			'observability' => array(
+				'label'       => __( 'AI Observability', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Chat annotation totals and recent GenAI span counts from the audit activity log.', 'mcp-ai-wpoos-pro' ),
+				'icon'        => '📡',
+				'filters'     => array(),
+				'metrics'     => array(
+					array(
+						'key'    => 'annotations_total',
+						'label'  => __( 'Annotations', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'annotations_positive',
+						'label'  => __( 'Positive', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'annotations_negative',
+						'label'  => __( 'Negative', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'transcripts_annotated',
+						'label'  => __( 'Transcripts Annotated', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'spans_chat',
+						'label'  => __( 'Chat Spans (recent)', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+					array(
+						'key'    => 'spans_tool',
+						'label'  => __( 'Tool Spans (recent)', 'mcp-ai-wpoos-pro' ),
+						'format' => 'number',
+					),
+				),
+				'charts'      => array(
+					array(
+						'key'   => 'by_rating',
+						'title' => __( 'Annotations by Rating', 'mcp-ai-wpoos-pro' ),
+						'type'  => 'bar',
+					),
+					array(
+						'key'   => 'spans_by_operation',
+						'title' => __( 'Spans by Operation (recent)', 'mcp-ai-wpoos-pro' ),
+						'type'  => 'bar',
+					),
+				),
+				'lists'       => array(),
+			),
 		);
 	}
 
@@ -579,7 +765,46 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			'eca'          => 'enable_eca_management',
 			'health'       => 'enable_health_wellness_management',
 			'vitals'       => 'enable_medical_vitals',
+			// Proposal 089 Phase 4f — commerce toolkit dashboards.
+			'ezuite'       => 'enable_ezuite_toolkit',
+			'shopify'      => 'enable_shopify_sync_toolkit',
+			'flowhub'      => 'enable_flowhub_toolkit',
 		);
+	}
+
+	/**
+	 * The effective settings flag that gates a dashboard.
+	 *
+	 * Unknown ids return an empty string — the callers treat them as
+	 * ungated. Medical Vitals falls back to the Health & Wellness toggle
+	 * for BC, mirroring includes/tools/healthcare/init.php.
+	 *
+	 * @since 2.4.2
+	 * @param string $id Dashboard key.
+	 * @return string Settings flag key, or '' when ungated.
+	 */
+	public static function effective_flag_key( $id ) {
+		$flag_keys = self::dashboard_flag_keys();
+		if ( ! isset( $flag_keys[ $id ] ) ) {
+			return '';
+		}
+
+		$flag_key = $flag_keys[ $id ];
+
+		// Medical Vitals mirrors includes/tools/healthcare/init.php: the
+		// dedicated toggle wins when present, otherwise the dashboard
+		// follows the Health & Wellness toggle for BC.
+		if ( 'vitals' === $id ) {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( ! is_array( $settings ) ) {
+				$settings = array();
+			}
+			if ( ! array_key_exists( 'enable_medical_vitals', $settings ) ) {
+				$flag_key = 'enable_health_wellness_management';
+			}
+		}
+
+		return $flag_key;
 	}
 
 	/**
@@ -594,8 +819,8 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 	 * @return bool
 	 */
 	public static function is_dashboard_available( $id ) {
-		$flag_keys = self::dashboard_flag_keys();
-		if ( ! isset( $flag_keys[ $id ] ) ) {
+		$flag_key = self::effective_flag_key( $id );
+		if ( '' === $flag_key ) {
 			return true;
 		}
 
@@ -604,21 +829,17 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			$settings = array();
 		}
 
-		$flag_key = $flag_keys[ $id ];
-
-		// Medical Vitals mirrors includes/tools/healthcare/init.php: the
-		// dedicated toggle wins when present, otherwise the dashboard
-		// follows the Health & Wellness toggle for BC.
-		if ( 'vitals' === $id && ! array_key_exists( 'enable_medical_vitals', $settings ) ) {
-			$flag_key = 'enable_health_wellness_management';
-		}
-
 		return ! empty( $settings[ $flag_key ] );
 	}
 
 	/**
 	 * GET /dashboards/schema — dashboard configs with resolved filter
 	 * options (taxonomy terms fetched live).
+	 *
+	 * The envelope also carries a `disabled` map (label/icon/description +
+	 * the settings flag that gates it) for dashboards whose toolkit is off,
+	 * so the console can explain an empty catalogue instead of rendering a
+	 * blank page when every toolkit is disabled (the default state).
 	 *
 	 * @since 2.4.0
 	 * @param WP_REST_Request $request Request object.
@@ -630,11 +851,27 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 		// Only expose dashboards whose toolkit is enabled — the console
 		// renders this catalogue verbatim, so disabled features must not
 		// show up in the app (REST is the enforcement).
+		$catalogue  = $this->dashboard_catalogue();
 		$dashboards = array_filter(
-			$this->dashboard_catalogue(),
+			$catalogue,
 			array( __CLASS__, 'is_dashboard_available' ),
 			ARRAY_FILTER_USE_KEY
 		);
+
+		// Metadata-only entries for the dashboards that were filtered out.
+		// The console renders these as guidance in its empty state.
+		$disabled = array();
+		foreach ( $catalogue as $id => $config ) {
+			if ( isset( $dashboards[ $id ] ) ) {
+				continue;
+			}
+			$disabled[ $id ] = array(
+				'label'        => $config['label'],
+				'description'  => $config['description'],
+				'icon'         => $config['icon'],
+				'toolkit_flag' => self::effective_flag_key( $id ),
+			);
+		}
 
 		foreach ( $dashboards as $id => $config ) {
 			foreach ( $config['filters'] as $index => $filter ) {
@@ -674,7 +911,12 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			$dashboards[ $id ]['id'] = $id;
 		}
 
-		return rest_ensure_response( array( 'dashboards' => $dashboards ) );
+		return rest_ensure_response(
+			array(
+				'dashboards' => $dashboards,
+				'disabled'   => $disabled,
+			)
+		);
 	}
 
 	/**
@@ -861,6 +1103,56 @@ class WP_MCP_AI_Pro_Dashboards_REST_Controller {
 			$days_back = isset( $filters['days_back'] ) ? absint( $filters['days_back'] ) : 90;
 
 			return WP_MCP_AI_Medical_Vitals_Dashboard_Page::get_history( $member_id, $days_back );
+		}
+
+		// Proposal 089 Phase 4f — the commerce dashboard widgets (promoted
+		// public seams on the widget classes; the wp-admin widgets render
+		// the same payloads).
+		$commerce_providers = array(
+			'ezuite'  => array(
+				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-ezuite-dashboard-widget.php',
+				'class' => 'WP_MCP_AI_EZuite_Dashboard_Widget',
+			),
+			'shopify' => array(
+				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-shopify-sync-dashboard-widget.php',
+				'class' => 'WP_MCP_AI_Shopify_Sync_Dashboard_Widget',
+			),
+			'flowhub' => array(
+				'file'  => WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-flowhub-dashboard-widget.php',
+				'class' => 'WP_MCP_AI_FlowHub_Dashboard_Widget',
+			),
+		);
+		if ( isset( $commerce_providers[ $dashboard_id ] ) ) {
+			$provider = $commerce_providers[ $dashboard_id ];
+			if ( ! class_exists( $provider['class'] ) && file_exists( $provider['file'] ) ) {
+				require_once $provider['file'];
+			}
+			if ( ! class_exists( $provider['class'] ) ) {
+				return new WP_Error(
+					'dashboards_provider_unavailable',
+					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 501 )
+				);
+			}
+
+			return call_user_func( array( $provider['class'], 'get_dashboard_data' ) );
+		}
+
+		// Proposal 091 Track E — AI observability dashboard (ungated).
+		if ( 'observability' === $dashboard_id ) {
+			$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-analytics-service-page.php';
+			if ( ! class_exists( 'WP_MCP_AI_Analytics_Service_Page' ) && file_exists( $page_file ) ) {
+				require_once $page_file;
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Analytics_Service_Page' ) ) {
+				return new WP_Error(
+					'dashboards_provider_unavailable',
+					__( 'The dashboard provider is not available on this site.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 501 )
+				);
+			}
+
+			return WP_MCP_AI_Analytics_Service_Page::get_observability_data();
 		}
 
 		return new WP_Error(

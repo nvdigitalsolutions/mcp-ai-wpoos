@@ -98,6 +98,15 @@ class WP_MCP_AI_Admin_DAG_Builder {
 			true
 		);
 
+		// Proposal 091 Track A — DSL export/import controls.
+		wp_enqueue_script(
+			'wp-mcp-ai-dag-builder-dsl',
+			WP_MCP_AI_URL . 'assets/js/admin-dag-builder-dsl.js',
+			array(),
+			$js_version,
+			true
+		);
+
 		// Resolve workflow_id from query string; verify it belongs to the right CPT.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only URL parameter for page display; value is cast to absint() and ownership is verified via get_post() check below.
 		$workflow_id = isset( $_GET['workflow_id'] ) ? absint( wp_unslash( $_GET['workflow_id'] ) ) : 0;
@@ -168,6 +177,12 @@ class WP_MCP_AI_Admin_DAG_Builder {
 						<?php esc_html_e( 'New Workflow', 'mcp-ai-wpoos' ); ?>
 					</a>
 
+					<button type="button"
+							class="button mcp-ai-dag-import-btn">
+						<?php esc_html_e( 'Import DSL', 'mcp-ai-wpoos' ); ?>
+					</button>
+					</a>
+
 					<?php if ( $workflows ) : ?>
 					<ul class="mcp-ai-dag-workflow-list">
 						<?php foreach ( $workflows as $wf ) : ?>
@@ -183,6 +198,11 @@ class WP_MCP_AI_Admin_DAG_Builder {
 										class="button button-small mcp-ai-dag-run-btn"
 										data-workflow-id="<?php echo esc_attr( $wf->ID ); ?>">
 									<?php esc_html_e( 'Run', 'mcp-ai-wpoos' ); ?>
+								</button>
+								<button type="button"
+										class="button button-small mcp-ai-dag-export-btn"
+										data-workflow-id="<?php echo esc_attr( $wf->ID ); ?>">
+									<?php esc_html_e( 'Export', 'mcp-ai-wpoos' ); ?>
 								</button>
 							</div>
 						</li>

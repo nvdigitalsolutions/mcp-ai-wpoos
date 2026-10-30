@@ -54,6 +54,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			'category'            => 'security',
 			'required_capability' => 'manage_options',
 			'parameters'          => array(
+				'type'             => 'object',
 				'time_period'      => array(
 					'type'        => 'string',
 					'description' => __( 'Time period to analyze: 1hour, 24hours, 7days, 30days, or custom', 'mcp-ai-wpoos' ),

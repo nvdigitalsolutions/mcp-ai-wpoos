@@ -78,6 +78,7 @@ class WP_MCP_AI_Tool_Create_Classroom_Course implements WP_MCP_AI_Tool_Interface
 				),
 				'link_eca_id'   => array(
 					'type'        => 'integer',
+					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Optional ECA post ID to link to the newly created course.', 'mcp-ai-wpoos-pro' ),
 				),
 			),

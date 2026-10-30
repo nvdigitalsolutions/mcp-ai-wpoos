@@ -1,6 +1,6 @@
 # SSE Stream Hardening: Long-Run Offload Proposal
 
-**Status:** Proposal (Phase 4a shipped separately; 4b pending)
+**Status:** Shipped — Phase 4a (keepalive) and Phase 4b (long-run offload) both implemented. 4b shipped 2026-10-24 in the `fix/sse-long-run-offload` branch: default-on at 75 s (`wp_mcp_ai_sse_offload_elapsed_seconds` filter, 0 disables), 240 s worker cap, `job_offload` SSE event + client job-bus follow-up.
 **Date:** 2026-10-04
 **Context:** nirmanawellness (Cloudways nginx → Apache, Cloudflare front) chat
 client failures — `net::ERR_HTTP2_PROTOCOL_ERROR` / `SSE stream processing
@@ -118,7 +118,11 @@ a 300 s budget (`WP_MCP_AI_SSE_Stream::stream_job_status()`).
 
 ### Interim server-side mitigations (no code)
 
-Until 4b ships, sites with long tool runs can reduce resets:
+4b is now shipped — offload is on by default at 75 s and hands long turns to
+the background job queue before proxies reset the stream. For sites that
+still hit resets (e.g. offload disabled via the filter, or very long single
+tool calls that also exceed the worker cap), the following server-side
+mitigations remain available:
 
 - **Cloudflare:** raise the origin read timeout (paid plans:
   `proxy_read_timeout` is not customer-tunable on free/pro — on paid plans

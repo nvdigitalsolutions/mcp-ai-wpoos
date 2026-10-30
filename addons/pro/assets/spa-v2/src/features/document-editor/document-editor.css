@@ -1,8 +1,12 @@
 /**
- * DocumentEditorPage — SPA shell styles for the embedded Document Editor iframe.
+ * DocumentEditorPage — SPA shell styles for the native Document Editor island.
+ *
+ * The vendored island brings its own design system; this file only sizes the
+ * island container so it fills the page shell with a sensible minimum height,
+ * plus the shared unavailable/error state.
  */
 
-.nvoos-pro-spa-document-editor__frame {
+.nvoos-pro-spa-document-editor__island {
 	display: block;
 	width: 100%;
 	height: calc( 100vh - 160px );
@@ -10,6 +14,12 @@
 	border: 1px solid var( --nvoos-border, #dcdcde );
 	border-radius: 8px;
 	background: var( --nvoos-bg-secondary, #fff );
+	overflow: hidden;
+}
+
+/* The island app fills its container edge-to-edge. */
+.nvoos-pro-spa-document-editor__island .nvoos-document-editor-app {
+	height: 100%;
 }
 
 .nvoos-pro-spa-document-editor__unavailable {

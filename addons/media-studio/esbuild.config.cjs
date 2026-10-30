@@ -37,7 +37,9 @@ const buildOptions = {
 	bundle:      true,
 	outfile:     path.join( outDir, 'media-studio.js' ),
 	format:      'iife',
-	globalName:  'NVoOS_Media_Studio',
+	// No `globalName`: the entry assigns `window.NVoosMediaStudio` explicitly
+	// so host apps (the Pro SPA media island) can call mountMediaStudio().
+	// No : the entry assigns  explicitly// so host apps (the Pro SPA media island) can call mountMediaStudio().
 	platform:    'browser',
 	target:      [ 'es2017', 'chrome80', 'firefox78', 'safari15' ],
 	jsx:         'automatic',

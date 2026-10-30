@@ -254,6 +254,10 @@ body,
   display: flex;
   flex-direction: column;
   gap: 4px;
+  /* The status bar is absolutely positioned over the shell's bottom 32px
+     (z-index 120), which covers the sign-out button — lift the footer clear
+     of it so the button stays visible and clickable. */
+  margin-bottom: 35px;
 }
 
 .nvoos-console-nav__btn {
@@ -312,6 +316,43 @@ body,
   overflow: auto;
   padding: 24px;
   padding-bottom: 48px; /* reserve space for the fixed status bar */
+}
+
+/* ── Docs Hub — full-bleed, viewport-height integration ────────────────────
+   The docs route drops the page gutters: the header (title + source toggle)
+   stays, and the island fills the remaining viewport height edge-to-edge with
+   no border or radius. The small bottom reserve keeps the fixed status bar
+   from covering the island's last row (the island scrolls internally). */
+.nvoos-console-shell .nvoos-console-page:has(> .nvoos-pro-spa-docs-hub) {
+  padding: 0 0 30px;
+}
+
+.nvoos-console-shell .nvoos-pro-spa-docs-hub {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+
+.nvoos-console-shell .nvoos-pro-spa-docs-hub .nvoos-pro-spa-page__header {
+  flex-shrink: 0;
+  margin-bottom: 0; /* flush against the island below */
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+  background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-console-shell .nvoos-pro-spa-docs-hub__island {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.nvoos-console-shell .nvoos-pro-spa-docs-hub__unavailable {
+  margin: 24px;
 }
 
 /* ── Chat dock / full-page breakout ──────────────────────────────────────── */
@@ -425,6 +466,39 @@ body,
   border-right: none;
 }
 
+/* Mobile: spa-v2 re-parents its sidebar into a viewport-fixed drawer that
+   only slides in via .nvoos-pro-spa-layout--sidebar-open — a class the
+   console shell never sets (the dock's own --sidebar-collapsed modifier
+   drives the same store state instead), so the ☰ toggle does nothing on
+   phones. Re-anchor the conversation list inside the dock as an overlay
+   drawer: expanded covers the dock's chat column, collapsed slides off the
+   dock's left edge (clipped by the dock's overflow: hidden). */
+@media screen and (max-width: 782px) {
+  .nvoos-console-dock__body {
+    position: relative;
+  }
+
+  .nvoos-console-dock .nvoos-pro-spa-sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    height: auto;
+    max-width: none;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease !important;
+    /* Beats spa-v2's :not(.nvoos-pro-spa-layout--sidebar-open) rule, which
+       keeps the drawer translated off-canvas regardless of dock state. */
+    transform: none !important;
+  }
+
+  .nvoos-console-dock--sidebar-collapsed .nvoos-pro-spa-sidebar {
+    width: 260px !important;
+    min-width: 260px !important;
+    transform: translateX(-100%) !important;
+  }
+}
+
 .nvoos-console-dock__chat {
   flex: 1;
   min-width: 0;
@@ -484,8 +558,7 @@ body,
 /* Narrow screens: the dock overlays instead of squeezing the content. */
 @media screen and (max-width: 1440px) {
   .nvoos-console-dock {
-    width: 600px;
-    min-width: 600px;
+    width: 100%;
   }
 }
 
@@ -499,6 +572,41 @@ body,
     width: min(660px, calc(100vw - 60px));
     min-width: min(660px, calc(100vw - 60px));
     box-shadow: -8px 0 24px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* Mobile: slim horizontal gutters so the main body and chat dock sit edge-to-edge. */
+@media screen and (max-width: 782px) {
+  .nvoos-console-page {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .nvoos-console-dock__chat .nvoos-pro-spa-chat-page {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .nvoos-console-dock__chat .nvoos-pro-spa-agent-panel__messages {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .nvoos-pro-spa-agent-panel__composer {
+    margin-bottom: 10px;
+    padding: 15px 12px 50px;
+  }
+
+  /* Overrides spa-v2's mobile margin-top of 50px (that value assumes the
+     full-page layout with the admin bar; the console dock starts lower). */
+  .nvoos-pro-spa-chat-page {
+    margin-top: 20px;
+  }
+
+  /* Slim the page gutter (spa-v2 default: 24px) so tables and dashboards
+     get the full viewport width on phones. */
+  .nvoos-pro-spa-page {
+    padding: 5px;
   }
 }
 
@@ -747,4 +855,350 @@ body,
   margin: 0;
   max-width: 560px;
   color: var(--shell-muted);
+}
+
+.nvoos-console-error__login {
+  margin-top: 12px;
+  min-height: 44px;
+  padding: 0 22px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(90deg, var(--shell-accent), #9d6bff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.nvoos-console-error__login:focus-visible {
+  outline: 2px solid var(--shell-accent-2);
+  outline-offset: 2px;
+}
+
+/* ── Sign-in screen (replaces the proxied wp-login.php page) ────────────── */
+
+.nvoos-login {
+  flex: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 70% -10%, rgba(124, 92, 255, 0.14), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(53, 208, 165, 0.1), transparent 60%),
+    var(--shell-bg);
+}
+
+.nvoos-login__card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--shell-card);
+  border: 1px solid var(--shell-border);
+  border-radius: 14px;
+  padding: 32px;
+  box-sizing: border-box;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.nvoos-login__header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.nvoos-login__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--shell-accent), var(--shell-accent-2));
+  margin-bottom: 12px;
+}
+
+.nvoos-login__mark img {
+  width: 30px;
+  height: 30px;
+  display: block;
+}
+
+.nvoos-login__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--shell-text);
+}
+
+.nvoos-login__subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--shell-muted);
+}
+
+.nvoos-login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Sign-in method tabs (WAI-ARIA tablist — segmented control). */
+.nvoos-login__modes {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 20px;
+  background: #0d0f17;
+  border: 1px solid var(--shell-border);
+  border-radius: 10px;
+}
+
+.nvoos-login__mode-tab {
+  flex: 1;
+  min-height: 40px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shell-muted);
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nvoos-login__mode-tab:hover {
+  color: var(--shell-text);
+}
+
+.nvoos-login__mode-tab[aria-selected='true'] {
+  color: var(--shell-text);
+  background: #171b28;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.nvoos-login__mode-tab:focus-visible {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 2px;
+}
+
+.nvoos-login__sent {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #a8f0cd;
+  background: rgba(53, 208, 165, 0.08);
+  border: 1px solid rgba(53, 208, 165, 0.35);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.nvoos-login__secondary {
+  min-height: 40px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shell-muted);
+  background: transparent;
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.nvoos-login__secondary:hover:not(:disabled) {
+  color: var(--shell-text);
+  border-color: var(--shell-accent);
+}
+
+.nvoos-login__secondary:focus-visible {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 2px;
+}
+
+.nvoos-login__secondary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.nvoos-login__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nvoos-login__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nvoos-login__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shell-text);
+}
+
+.nvoos-login__input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 16px; /* ≥16px — prevents iOS focus zoom (NN/g mobile checklist) */
+  padding: 10px 12px;
+  color: var(--shell-text);
+  background: #10131b;
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.nvoos-login__input:focus-visible {
+  outline: none;
+  border-color: var(--shell-accent);
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.25);
+}
+
+.nvoos-login__input:disabled {
+  opacity: 0.6;
+}
+
+.nvoos-login__toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--shell-accent);
+  padding: 2px 4px;
+}
+
+.nvoos-login__toggle:focus-visible {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.nvoos-login__remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--shell-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.nvoos-login__remember input {
+  accent-color: var(--shell-accent);
+  width: 16px;
+  height: 16px;
+}
+
+.nvoos-login__error {
+  margin: 0;
+  font-size: 13px;
+  color: #ff8f8f;
+  background: rgba(255, 90, 90, 0.08);
+  border: 1px solid rgba(255, 90, 90, 0.35);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.nvoos-login__submit {
+  min-height: 44px; /* NN/g: ≥44px touch target */
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(90deg, var(--shell-accent), #9d6bff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.15s, opacity 0.15s;
+}
+
+.nvoos-login__submit:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.nvoos-login__submit:focus-visible {
+  outline: 2px solid var(--shell-accent-2);
+  outline-offset: 2px;
+}
+
+.nvoos-login__submit:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.nvoos-login__notice {
+  margin: 0;
+  font-size: 13px;
+  color: #ffd58a;
+  background: rgba(255, 190, 90, 0.08);
+  border: 1px solid rgba(255, 190, 90, 0.35);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* ── Sidebar sign-out action ────────────────────────────────────────────── */
+
+.nvoos-console-nav__btn--signout {
+  margin-top: 6px;
+  color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-console-nav__btn--signout:hover:not(:disabled) {
+  color: #d64545;
+}
+
+.nvoos-console-nav__btn--signout:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ---------- Gateway page (Proposal 094, Phase 5) ---------- */
+.nvoos-gateway-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0.75rem 0 1.5rem;
+	font-size: 0.9rem;
+}
+.nvoos-gateway-table th,
+.nvoos-gateway-table td {
+	text-align: left;
+	padding: 0.45rem 0.6rem;
+	border-bottom: 1px solid var(--nvoos-line, #e3e7ef);
+}
+.nvoos-gateway-table th {
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #718096;
+}
+.nvoos-gateway-badge {
+	display: inline-block;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	border: 1px solid;
+	border-radius: 999px;
+	padding: 0.12rem 0.5rem;
+}
+.nvoos-gateway-empty,
+.nvoos-gateway-error {
+	max-width: 44rem;
+	line-height: 1.6;
+}
+.nvoos-gateway-error {
+	color: #b91c1c;
 }

@@ -95,8 +95,23 @@ class WP_MCP_AI_REST_Workflow_CPT_Controller extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'write_permissions_check' ),
 					'args'                => array(
 						'workflow_json' => array(
-							'required' => true,
+							'required' => false,
 							'type'     => 'object',
+						),
+						'dsl'           => array(
+							'required' => false,
+							'type'     => 'string',
+						),
+						'dry_run'       => array(
+							'required' => false,
+							'type'     => 'boolean',
+							'default'  => false,
+						),
+						'source'        => array(
+							'required' => false,
+							'type'     => 'string',
+							'enum'     => array( 'native', 'dify' ),
+							'default'  => 'native',
 						),
 					),
 				),
@@ -175,6 +190,40 @@ class WP_MCP_AI_REST_Workflow_CPT_Controller extends WP_REST_Controller {
 							'type'              => 'integer',
 							'sanitize_callback' => 'absint',
 							'required'          => true,
+						),
+					),
+				),
+			)
+		);
+
+		// Export-by-source route (Proposal 091): saved workflow or bundled preset.
+		register_rest_route(
+			self::NAMESPACE,
+			'/' . self::BASE . '/export',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'export_any' ),
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'args'                => array(
+						'source'              => array(
+							'required' => false,
+							'type'     => 'string',
+							'enum'     => array( 'workflow', 'preset' ),
+							'default'  => 'workflow',
+						),
+						'id'                  => array(
+							'required' => false,
+							'type'     => 'integer',
+						),
+						'preset_slug'         => array(
+							'required' => false,
+							'type'     => 'string',
+						),
+						'include_credentials' => array(
+							'required' => false,
+							'type'     => 'boolean',
+							'default'  => false,
 						),
 					),
 				),
@@ -448,25 +497,131 @@ class WP_MCP_AI_REST_Workflow_CPT_Controller extends WP_REST_Controller {
 			return new WP_Error( 'not_found', __( 'Workflow not found.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
 		}
 
-		$payload = WP_MCP_AI_Workflow_CPT::export_json( $id );
+		$workflow = WP_MCP_AI_Workflow_CPT::export_json( $id );
+		$dsl      = WP_MCP_AI_Workflow_DSL_Codec::encode_workflow( $workflow );
 
-		return rest_ensure_response( $payload );
+		if ( is_wp_error( $dsl ) ) {
+			return $dsl;
+		}
+
+		return rest_ensure_response( $dsl );
 	}
 
 	/**
-	 * POST /orchestration/workflows/import — import from JSON body.
+	 * POST /orchestration/workflows/export — export a saved workflow or a
+	 * bundled preset (Proposal 091: presets export directly, no save-first).
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function export_any( $request ) {
+		$source = $request->get_param( 'source' );
+
+		if ( 'preset' === $source ) {
+			$preset_slug = sanitize_text_field( (string) $request->get_param( 'preset_slug' ) );
+			if ( '' === $preset_slug ) {
+				return new WP_Error( 'invalid_data', __( 'preset_slug is required when source is preset.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+			}
+
+			/**
+			 * Filter: resolve a workflow preset slug to a canonical workflow
+			 * array. The Pro addon bridges its presets class here.
+			 *
+			 * @since 1.2.13
+			 *
+			 * @param array|null $workflow    Resolved workflow array or null.
+			 * @param string     $preset_slug Preset slug.
+			 */
+			$workflow = apply_filters( 'wp_mcp_ai_workflow_preset_export', null, $preset_slug );
+
+			if ( null === $workflow || ! is_array( $workflow ) ) {
+				return new WP_Error( 'not_found', __( 'Preset not found.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
+			}
+		} else {
+			$id = absint( $request->get_param( 'id' ) );
+			if ( 0 === $id ) {
+				return new WP_Error( 'invalid_data', __( 'id is required when source is workflow.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+			}
+
+			$workflow = WP_MCP_AI_Workflow_CPT::export_json( $id );
+			if ( empty( $workflow ) ) {
+				return new WP_Error( 'not_found', __( 'Workflow not found.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
+			}
+		}
+
+		$options = array(
+			'include_credentials' => (bool) $request->get_param( 'include_credentials' ),
+		);
+		$dsl     = WP_MCP_AI_Workflow_DSL_Codec::encode_workflow( $workflow, $options );
+
+		if ( is_wp_error( $dsl ) ) {
+			return $dsl;
+		}
+
+		return rest_ensure_response( $dsl );
+	}
+
+	/**
+	 * POST /orchestration/workflows/import — import a DSL envelope, a legacy
+	 * JSON object, or (Pro) a Dify DSL with optional dry-run validation.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function import_item( $request ) {
 		$workflow_json = $request->get_param( 'workflow_json' );
+		$dsl_raw       = $request->get_param( 'dsl' );
+		$dry_run       = (bool) $request->get_param( 'dry_run' );
+		$source        = $request->get_param( 'source' );
 
-		if ( ! is_array( $workflow_json ) ) {
-			return new WP_Error( 'invalid_data', __( 'workflow_json must be an object.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		if ( is_array( $workflow_json ) ) {
+			$payload = $workflow_json;
+		} elseif ( is_string( $dsl_raw ) && '' !== trim( $dsl_raw ) ) {
+			$payload = json_decode( wp_unslash( $dsl_raw ), true );
+			if ( ! is_array( $payload ) ) {
+				return new WP_Error( 'invalid_data', __( 'dsl must be a JSON object.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+			}
+		} else {
+			return new WP_Error( 'invalid_data', __( 'Provide workflow_json (object) or dsl (JSON string).', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
-		$post_id = WP_MCP_AI_Workflow_CPT::import_json( $workflow_json );
+		// Pro-only Dify import adapter (Proposal 091, decision D1 — one-way).
+		if ( 'dify' === $source ) {
+			/**
+			 * Filter: adapt a Dify workflow DSL to the canonical workflow
+			 * array. The Pro addon bridges its adapter here.
+			 *
+			 * @since 1.2.13
+			 *
+			 * @param array|null $canonical Adapted workflow array or null.
+			 * @param array      $payload   Dify DSL payload.
+			 */
+			$payload = apply_filters( 'wp_mcp_ai_workflow_dify_import', null, $payload );
+			if ( null === $payload || ! is_array( $payload ) ) {
+				return new WP_Error( 'dify_adapter_unavailable', __( 'The Dify import adapter is not available on this site.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+			}
+		}
+
+		$decoded = WP_MCP_AI_Workflow_DSL_Codec::decode_workflow( $payload, $dry_run );
+
+		if ( is_wp_error( $decoded ) ) {
+			return $decoded;
+		}
+
+		$findings = isset( $decoded['findings'] ) ? $decoded['findings'] : array();
+
+		if ( $dry_run ) {
+			return rest_ensure_response(
+				array(
+					'dry_run'  => true,
+					'findings' => $findings,
+					'preview'  => $decoded,
+				)
+			);
+		}
+
+		unset( $decoded['findings'] );
+		$post_id = WP_MCP_AI_Workflow_CPT::import_json( $decoded );
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
@@ -474,8 +629,9 @@ class WP_MCP_AI_REST_Workflow_CPT_Controller extends WP_REST_Controller {
 
 		return rest_ensure_response(
 			array(
-				'id'      => $post_id,
-				'message' => __( 'Workflow imported.', 'mcp-ai-wpoos' ),
+				'id'       => $post_id,
+				'findings' => $findings,
+				'message'  => __( 'Workflow imported.', 'mcp-ai-wpoos' ),
 			)
 		);
 	}

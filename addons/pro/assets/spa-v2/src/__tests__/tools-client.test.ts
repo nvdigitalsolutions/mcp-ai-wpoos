@@ -36,6 +36,7 @@ describe( 'ToolsClient.list', () => {
 					slug: 'create_deal',
 					description: 'Create a CRM deal.',
 					required_capability: 'edit_posts',
+					flags: [ 'write', 'state-changing' ],
 					inputSchema: { type: 'object', properties: {} },
 				},
 			],
@@ -53,6 +54,7 @@ describe( 'ToolsClient.list', () => {
 			description: 'Create a CRM deal.',
 			category: 'Core',
 			required_capability: 'edit_posts',
+			flags: [ 'write', 'state-changing' ],
 			parameters: { type: 'object', properties: {} },
 		} );
 	} );
@@ -163,6 +165,42 @@ describe( 'ToolsClient.list', () => {
 		const client = new ToolsClient( { endpoint: ENDPOINT, nonce: 'n' } );
 		await client.list( 0 );
 
+		expect( requestedUrl ).not.toContain( 'assistant_id' );
+	} );
+
+	it( 'sends scope=all for the full-registry opt-out (no assistant_id)', async () => {
+		let requestedUrl = '';
+		global.fetch = vi.fn( ( input: RequestInfo | URL ) => {
+			requestedUrl = String( input );
+			return Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () => Promise.resolve( { tools: [], total: 0 } ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+
+		const client = new ToolsClient( { endpoint: ENDPOINT, nonce: 'n' } );
+		await client.list( undefined, undefined, 'all' );
+
+		expect( requestedUrl ).toContain( 'scope=all' );
+		expect( requestedUrl ).not.toContain( 'assistant_id' );
+	} );
+
+	it( 'scope=all wins over an assistant_id when both are set', async () => {
+		let requestedUrl = '';
+		global.fetch = vi.fn( ( input: RequestInfo | URL ) => {
+			requestedUrl = String( input );
+			return Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () => Promise.resolve( { tools: [], total: 0 } ),
+			} as Response );
+		} ) as unknown as typeof fetch;
+
+		const client = new ToolsClient( { endpoint: ENDPOINT, nonce: 'n' } );
+		await client.list( 42, undefined, 'all' );
+
+		expect( requestedUrl ).toContain( 'scope=all' );
 		expect( requestedUrl ).not.toContain( 'assistant_id' );
 	} );
 } );

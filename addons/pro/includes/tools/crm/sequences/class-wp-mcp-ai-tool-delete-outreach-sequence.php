@@ -73,7 +73,12 @@ class WP_MCP_AI_Tool_Delete_Outreach_Sequence implements WP_MCP_AI_Tool_Interfac
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
-			'properties' => array( 'sequence_id' => array( 'type' => 'integer' ) ),
+			'properties' => array(
+				'sequence_id' => array(
+					'type'    => 'integer',
+					'maximum' => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
+				),
+			),
 			'required'   => array( 'sequence_id' ),
 		);
 	}

@@ -42,6 +42,7 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 				'properties' => array(
 					'template_id'       => array(
 						'type'        => 'integer',
+						'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 						'description' => 'Optional template ID. If provided, updates the existing template instead of creating a new one.',
 					),
 					'template_name'     => array(
