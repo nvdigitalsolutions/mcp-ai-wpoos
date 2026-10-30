@@ -211,6 +211,35 @@ class TestRestCookieAuth extends WP_UnitTestCase {
 	}
 
 	/**
+	 * /auth/nonce must mint for the restored session, not user 0 — the admin
+	 * bundle sends the nonce on every call, and a guest-minted nonce fails
+	 * wp_verify_nonce once the session is resolved (403 on every collection).
+	 */
+	public function test_nonce_mints_for_the_restored_session(): void {
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		wp_set_current_user( 0 );
+		$GLOBALS['wp_rest_auth_cookie'] = true;
+		unset( $_SERVER['HTTP_X_WP_NONCE'] );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $user_id, time() + HOUR_IN_SECONDS, 'logged_in' );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$_SERVER['REQUEST_URI'] = '/' . rest_get_url_prefix() . '/' . Schema::REST_NAMESPACE_NV . '/auth/nonce';
+
+		$request  = new WP_REST_Request( 'GET', '/' . Schema::REST_NAMESPACE_NV . '/auth/nonce' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$nonce = $response->get_data()['nonce'];
+
+		// The minted nonce verifies for the session's real user + token.
+		wp_set_current_user( $user_id );
+		$this->assertNotFalse( wp_verify_nonce( $nonce, 'wp_rest' ) );
+
+		unset( $GLOBALS['wp_rest_auth_cookie'] );
+	}
+
+	/**
 	 * A cookie minted for the legacy namespace authenticates there too.
 	 */
 	public function test_legacy_namespace_is_covered(): void {
