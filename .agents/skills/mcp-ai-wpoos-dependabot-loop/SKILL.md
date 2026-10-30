@@ -367,6 +367,15 @@ vulnerable until alpha-working merges — call that out and recommend the merge.
   `-H "Accept: application/vnd.github.raw"` (see Step 2B).
 - The root `package-lock.json` carries a stale `version` until regen — the
   diff will always include that sync line; do not hand-edit it out.
+- **npm version vs lockfile format (2026-10-30, multer run):** the repo's
+  lockfiles are tab-indented (npm 10/11 output). A local **npm 12** regen
+  rewrites EVERY line with 2-space indent — `git diff --stat` shows
+  ~11k/11k churn. Regen with `npx -y npm@11.3.0 install
+  --package-lock-only --ignore-scripts --no-audit --no-fund` instead. Also:
+  Windows npm writes CRLF — strip with `sed -i 's/\r$//'` before staging
+  (`.gitattributes` pins `eol=lf`), and expect npm 11 to drop the `libc`
+  platform markers newer regens added (~79 lines per lockfile) — benign
+  metadata-only churn, note it in the PR. `npm ci --dry-run` still passes.
 - `npm ci --dry-run` does not touch node_modules; it only proves
   `package.json`/lockfile consistency — the real install happens in CI.
 
