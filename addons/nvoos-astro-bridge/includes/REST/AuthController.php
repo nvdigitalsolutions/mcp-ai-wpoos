@@ -137,7 +137,7 @@ class AuthController extends BaseController {
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_me' ),
-					'permission_callback' => 'is_user_logged_in',
+					'permission_callback' => array( $this, 'get_me_permissions_check' ),
 				),
 			)
 		);
@@ -270,6 +270,19 @@ class AuthController extends BaseController {
 	 */
 	public function get_me() {
 		return rest_ensure_response( $this->me_payload( get_current_user_id() ) );
+	}
+
+	/**
+	 * Permission check for GET /auth/me.
+	 *
+	 * The REST pipeline force-logs-out cookie sessions before the callback
+	 * runs on single-site HTTPS installs (see AuthSupport) — restore the
+	 * session from the logged-in cookie here, then require it.
+	 *
+	 * @return bool
+	 */
+	public function get_me_permissions_check(): bool {
+		return (bool) AuthSupport::maybe_restore_user_from_logged_in_cookie();
 	}
 
 	/**

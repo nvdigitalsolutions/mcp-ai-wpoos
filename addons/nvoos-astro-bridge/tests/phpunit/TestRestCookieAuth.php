@@ -61,6 +61,8 @@ class TestRestCookieAuth extends WP_UnitTestCase {
 		if ( ! defined( 'REST_REQUEST' ) ) {
 			define( 'REST_REQUEST', true );
 		}
+
+		unset( $GLOBALS['wp_rest_auth_cookie'] );
 	}
 
 	/**
@@ -70,6 +72,7 @@ class TestRestCookieAuth extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $GLOBALS['wp_rest_auth_cookie'] );
 
 		// phpcs:disable WordPress.Security.ValidatedSanitizedInput
 		if ( null === $this->saved_cookie ) {
@@ -153,6 +156,58 @@ class TestRestCookieAuth extends WP_UnitTestCase {
 		$data = $response->get_data();
 		$this->assertSame( $user_id, $data['id'] );
 		$this->assertTrue( $data['canManage'] );
+	}
+
+	/**
+	 * Production sequence: the REST pipeline has already forced the session to
+	 * user 0 (auth_cookie_valid flipped $wp_rest_auth_cookie, so
+	 * rest_cookie_check_errors ran wp_set_current_user(0) on the nonce-less
+	 * request). The permission callback must re-resolve the session itself.
+	 */
+	public function test_dispatch_authenticates_after_forced_logout(): void {
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		// Force-logged-out state: user 0 with the auth-cookie-validated flag set.
+		wp_set_current_user( 0 );
+		$GLOBALS['wp_rest_auth_cookie'] = true;
+		unset( $_SERVER['HTTP_X_WP_NONCE'] );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $user_id, time() + HOUR_IN_SECONDS, 'logged_in' );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$_SERVER['REQUEST_URI'] = '/' . rest_get_url_prefix() . '/' . Schema::REST_NAMESPACE_NV . '/auth/me';
+
+		$request  = new WP_REST_Request( 'GET', '/' . Schema::REST_NAMESPACE_NV . '/auth/me' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertSame( $user_id, $data['id'] );
+		$this->assertTrue( $data['canManage'] );
+
+		unset( $GLOBALS['wp_rest_auth_cookie'] );
+	}
+
+	/**
+	 * The capability-gated collections survive the same forced-logout
+	 * sequence (managers list = item_permissions_check path).
+	 */
+	public function test_cap_gated_route_authenticates_after_forced_logout(): void {
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		wp_set_current_user( 0 );
+		$GLOBALS['wp_rest_auth_cookie'] = true;
+		unset( $_SERVER['HTTP_X_WP_NONCE'] );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $user_id, time() + HOUR_IN_SECONDS, 'logged_in' );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$_SERVER['REQUEST_URI'] = '/' . rest_get_url_prefix() . '/' . Schema::REST_NAMESPACE_NV . '/managers';
+
+		$request  = new WP_REST_Request( 'GET', '/' . Schema::REST_NAMESPACE_NV . '/managers' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		unset( $GLOBALS['wp_rest_auth_cookie'] );
 	}
 
 	/**

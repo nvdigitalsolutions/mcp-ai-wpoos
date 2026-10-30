@@ -57,6 +57,11 @@ abstract class BaseController extends WP_REST_Controller {
 	 * @return true|\WP_Error
 	 */
 	public function item_permissions_check( $request ) {
+		// The REST pipeline force-logs-out cookie sessions before the callback
+		// runs (see AuthSupport) — restore the session here, then gate on the
+		// capability.
+		AuthSupport::maybe_restore_user_from_logged_in_cookie();
+
 		if ( ! current_user_can( \NvoosAstroBridge\Schema::CAP_MANAGE ) ) {
 			return new \WP_Error(
 				'rest_forbidden',
