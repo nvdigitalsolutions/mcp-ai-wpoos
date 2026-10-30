@@ -25,8 +25,12 @@ export interface FetchOptions {
     tls?: {
         [key: string]: any;
     } | undefined;
-    /** Request timeout in milliseconds */
+    /** Socket inactivity timeout in milliseconds, defaults to 60000, 0 disables it */
     timeout?: number | undefined;
+    /** Time limit for the whole request in milliseconds, redirects included, defaults to 120000, 0 disables it */
+    maxTime?: number | undefined;
+    /** Maximum size of the (decoded) response body in bytes, defaults to 64 MB, Infinity disables the limit */
+    maxBytes?: number | undefined;
     /** Maximum number of redirects to follow (default 5) */
     maxRedirects?: number | undefined;
     /** Resolve responses with a status code of 300 or above instead of emitting an error */
@@ -35,6 +39,8 @@ export interface FetchOptions {
     redirects?: number | undefined;
     /** Response stream shared across redirects, set by nmfetch itself */
     fetchRes?: FetchResponse | undefined;
+    /** Timestamp the whole request has to be done by, shared across redirects, set by nmfetch itself */
+    deadline?: number | undefined;
 }
 /**
  * The stream nmfetch returns. The response body is piped into it, the status code and
@@ -47,5 +53,18 @@ export interface FetchResponse extends PassThrough {
 declare function nmfetch(url: string, options?: FetchOptions): FetchResponse;
 declare namespace nmfetch {
     var Cookies: typeof import("./cookies.js").default;
+    var DEFAULT_TIMEOUT: number;
+    var DEFAULT_MAX_TIME: number;
 }
+type CookiesJar = Cookies;
+/**
+ * Type aliases in the layout of @types/nodemailer, so `fetch.Options` style references keep working
+ */
+declare namespace nmfetch {
+    type Options = FetchOptions;
+    type WritableResponse = FetchResponse;
+    type Cookies = CookiesJar;
+}
+/** The same aliases as module level exports, for `import * as fetch` and `import fetch = require()` */
+export type { FetchOptions as Options, FetchResponse as WritableResponse, Cookies };
 export default nmfetch;

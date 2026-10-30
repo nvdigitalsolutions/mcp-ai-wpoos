@@ -24,6 +24,7 @@ export const ERROR_CODES = {
     EPROTOCOL: 'Invalid SMTP server response',
     EENVELOPE: 'Invalid mail envelope (sender or recipients)',
     EMESSAGE: 'Message delivery error',
+    EOTP: 'Invalid one-time passcode data (otp option)',
     ESTREAM: 'Stream processing error',
     // Authentication errors
     EAUTH: 'Authentication failed',
@@ -52,6 +53,7 @@ export const EREQUIRETLS = 'EREQUIRETLS';
 export const EPROTOCOL = 'EPROTOCOL';
 export const EENVELOPE = 'EENVELOPE';
 export const EMESSAGE = 'EMESSAGE';
+export const EOTP = 'EOTP';
 export const ESTREAM = 'ESTREAM';
 export const EAUTH = 'EAUTH';
 export const ENOAUTH = 'ENOAUTH';
@@ -65,3 +67,25 @@ export const EPROXY = 'EPROXY';
 export const EFILEACCESS = 'EFILEACCESS';
 export const EURLACCESS = 'EURLACCESS';
 export const EFETCH = 'EFETCH';
+/**
+ * Tells whether the error ended the connection rather than rejected what was sent over it
+ */
+export const isTransientError = (err) => err.responseCode === 421 || err.code === ECONNECTION || err.code === ESOCKET || err.code === ETIMEDOUT;
+/**
+ * Tells whether an SMTP reply code is a permanent rejection, one that retrying the same
+ * message would get again. RFC 5321 makes every 5yz reply a permanent negative completion
+ * and every 4yz reply a transient one. 503 (bad sequence of commands) is the exception: it
+ * says the session was in the wrong state for the command rather than that the message was
+ * refused, so the same message can go through on a new connection. 2yz and 3yz replies are
+ * only an error when the client expected something else, and are not permanent either.
+ *
+ * @param responseCode SMTP reply code
+ * @returns true for a permanent rejection
+ */
+export const isPermanentResponseCode = (responseCode) => responseCode >= 500 && responseCode < 600 && responseCode !== 503;
+/**
+ * Code Node.js sets on an error when its permission model (`--permission`) denies an
+ * operation. It is not replaced with the Nodemailer code of the failing step (`ESOCKET`,
+ * `EDNS`, `EFETCH`, ...), so a missing grant such as `--allow-net` stays recognizable.
+ */
+export const ERR_ACCESS_DENIED = 'ERR_ACCESS_DENIED';

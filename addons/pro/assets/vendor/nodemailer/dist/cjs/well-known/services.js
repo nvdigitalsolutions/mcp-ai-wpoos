@@ -208,6 +208,13 @@ exports.services = {
         "host": "smtp.europe.secureserver.net",
         "port": 25
     },
+    "Groundmail": {
+        "description": "Groundmail",
+        "host": "smtp.groundmail.dev",
+        "port": 587,
+        "secure": false,
+        "requireTLS": true
+    },
     "hot.ee": {
         "description": "Hot.ee (Estonian email provider)",
         "host": "mail.hot.ee"
@@ -314,6 +321,12 @@ exports.services = {
         "host": "mailosaur.io",
         "port": 25
     },
+    "MailSenpai": {
+        "description": "MailSenpai (SMTP Senpai, EU)",
+        "host": "relay.mailsenpai.com",
+        "port": 2525,
+        "secure": false
+    },
     "Mailtrap": {
         "description": "Mailtrap",
         "host": "live.smtp.mailtrap.io",
@@ -356,6 +369,13 @@ exports.services = {
         "host": "smtp.office365.com",
         "port": 587,
         "secure": false
+    },
+    "Oveyon": {
+        "description": "Oveyon",
+        "host": "smtp.oveyon.com",
+        "port": 587,
+        "secure": false,
+        "requireTLS": true
     },
     "Postmark": {
         "description": "Postmark",

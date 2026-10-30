@@ -43,6 +43,13 @@ const shared = __importStar(require("../shared/index.js"));
 const index_js_3 = __importDefault(require("../xoauth2/index.js"));
 const errors = __importStar(require("../errors.js"));
 const packageData = __importStar(require("../package-info.js"));
+// The keys a message's `auth` may set on top of the transport's auth settings: the ones that
+// say who logs in and with what. Everything else in the auth block (accessUrl, clientId,
+// clientSecret, customHeaders, customParams, tls, privateKey, serviceClient and the rest)
+// names the endpoint the credentials go to or is a secret of the application itself, and
+// a message that could set `auth.accessUrl` and force a refresh would have the transport's
+// client secret and refresh token posted to a URL of its choosing
+const MESSAGE_AUTH_KEYS = ['type', 'user', 'pass', 'accessToken', 'refreshToken', 'expires'];
 /**
  * Creates a SMTP transport object for Nodemailer
  *
@@ -102,7 +109,11 @@ class SMTPTransport extends node_events_1.EventEmitter {
             }
             return this.auth;
         }
-        const authData = Object.assign({}, this.options.auth && typeof this.options.auth === 'object' ? this.options.auth : {}, typeof authOpts === 'object' ? authOpts : {});
+        const authData = Object.assign({}, this.options.auth && typeof this.options.auth === 'object' ? this.options.auth : {});
+        if (typeof authOpts === 'object') {
+            // see MESSAGE_AUTH_KEYS
+            shared.copyOwnKeys(authData, authOpts, key => !MESSAGE_AUTH_KEYS.includes(key));
+        }
         if (Object.keys(authData).length === 0) {
             return false;
         }
@@ -142,7 +153,9 @@ class SMTPTransport extends node_events_1.EventEmitter {
      * @param callback Callback function
      */
     send(mail, callback) {
-        this.getSocket(this.options, (err, socketOptions) => {
+        // the proxy handshake, if any, counts against connectionTimeout as well
+        const connectStartedAt = Date.now();
+        this.getSocket(Object.assign({}, this.options, { connectStartedAt }), (err, socketOptions) => {
             if (err) {
                 return callback(err);
             }
@@ -161,6 +174,7 @@ class SMTPTransport extends node_events_1.EventEmitter {
                 options = Object.assign(shared.assign(false, options), socketOptions);
             }
             const connection = new index_js_1.default(options);
+            connection._connectStartedAt = connectStartedAt;
             let perCallAuth;
             const cleanupPerCallAuth = () => {
                 if (perCallAuth && perCallAuth !== this.auth && perCallAuth.oauth2) {
@@ -176,31 +190,6 @@ class SMTPTransport extends node_events_1.EventEmitter {
                 cleanupPerCallAuth();
                 connection.close();
                 return callback(err);
-            });
-            connection.once('end', () => {
-                if (returned) {
-                    return;
-                }
-                const timer = setTimeout(() => {
-                    if (returned) {
-                        return;
-                    }
-                    returned = true;
-                    cleanupPerCallAuth();
-                    // still have not returned, this means we have an unexpected connection close
-                    const err = new Error('Unexpected socket close');
-                    if (connection && connection._socket && connection._socket.upgrading) {
-                        // starttls connection errors
-                        err.code = errors.ETLS;
-                    }
-                    callback(err);
-                }, 1000);
-                try {
-                    timer.unref();
-                }
-                catch (_E) {
-                    // Ignore. Happens on envs with non-node timer implementation
-                }
             });
             const sendMessage = () => {
                 const envelope = mail.message.getEnvelope();
@@ -221,6 +210,10 @@ class SMTPTransport extends node_events_1.EventEmitter {
                     messageId
                 }, 'Sending message %s to <%s>', messageId, recipients.join(', '));
                 connection.send(envelope, mail.message.createReadStream(), (err, info) => {
+                    if (returned) {
+                        // the connection error handler has already reported this send
+                        return;
+                    }
                     returned = true;
                     cleanupPerCallAuth();
                     connection.close();
@@ -247,9 +240,15 @@ class SMTPTransport extends node_events_1.EventEmitter {
                     }
                 });
             };
-            connection.connect(() => {
+            connection.connect(err => {
                 if (returned) {
                     return;
+                }
+                if (err) {
+                    // the server closed the connection before the greeting
+                    returned = true;
+                    connection.close();
+                    return callback(err);
                 }
                 perCallAuth = this.getAuth(mail.data.auth);
                 if (perCallAuth && (connection.allowsAuth || options.forceAuth)) {
@@ -279,9 +278,13 @@ class SMTPTransport extends node_events_1.EventEmitter {
                 callback = shared.callbackPromise(resolve, reject);
             });
         }
-        this.getSocket(this.options, (err, socketOptions) => {
+        // the error paths hand over the error alone
+        const done = callback;
+        // the proxy handshake, if any, counts against connectionTimeout as well
+        const connectStartedAt = Date.now();
+        this.getSocket(Object.assign({}, this.options, { connectStartedAt }), (err, socketOptions) => {
             if (err) {
-                return callback(err);
+                return done(err);
             }
             let options = this.options;
             if (socketOptions && socketOptions.connection) {
@@ -296,6 +299,7 @@ class SMTPTransport extends node_events_1.EventEmitter {
                 options = Object.assign(shared.assign(false, options), socketOptions);
             }
             const connection = new index_js_1.default(options);
+            connection._connectStartedAt = connectStartedAt;
             let returned = false;
             let perCallAuth;
             const cleanupPerCallAuth = () => {
@@ -311,7 +315,7 @@ class SMTPTransport extends node_events_1.EventEmitter {
                 returned = true;
                 cleanupPerCallAuth();
                 connection.close();
-                return callback(err);
+                return done(err);
             });
             connection.once('end', () => {
                 if (returned) {
@@ -319,7 +323,7 @@ class SMTPTransport extends node_events_1.EventEmitter {
                 }
                 returned = true;
                 cleanupPerCallAuth();
-                return callback(new Error('Connection closed'));
+                return done(new Error('Connection closed'));
             });
             const finalize = () => {
                 if (returned) {
@@ -328,11 +332,16 @@ class SMTPTransport extends node_events_1.EventEmitter {
                 returned = true;
                 cleanupPerCallAuth();
                 connection.quit();
-                return callback(null, true);
+                return done(null, true);
             };
-            connection.connect(() => {
+            connection.connect(err => {
                 if (returned) {
                     return;
+                }
+                if (err) {
+                    returned = true;
+                    connection.close();
+                    return done(err);
                 }
                 perCallAuth = this.getAuth({});
                 if (perCallAuth && (connection.allowsAuth || options.forceAuth)) {
@@ -344,7 +353,7 @@ class SMTPTransport extends node_events_1.EventEmitter {
                         if (err) {
                             returned = true;
                             connection.close();
-                            return callback(err);
+                            return done(err);
                         }
                         finalize();
                     });
@@ -355,7 +364,7 @@ class SMTPTransport extends node_events_1.EventEmitter {
                     returned = true;
                     cleanupPerCallAuth();
                     connection.close();
-                    return callback(err);
+                    return done(err);
                 }
                 else {
                     finalize();

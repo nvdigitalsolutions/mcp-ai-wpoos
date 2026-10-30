@@ -59,6 +59,13 @@ export interface MimeNodePreparedHeaderValue {
  */
 export type MimeNodeHeaderValue = string | number | boolean | Date | MimeNodeAddress | MimeNodePreparedHeaderValue | MimeNodeHeaderValue[] | null | undefined;
 /**
+ * Options for the static MimeNode.encodeHeaderValue
+ */
+export interface MimeNodeHeaderEncodingOptions {
+    /** Either 'Q' (the default) or 'B' */
+    textEncoding?: string | undefined;
+}
+/**
  * A single header, the shape the headers are stored in and one of the list forms
  * setHeader and addHeader accept
  */
@@ -108,10 +115,11 @@ export interface MimeNodeEnvelope {
 }
 /**
  * Envelope as accepted by setEnvelope. Recipients are collected from to, cc and bcc, any
- * other field is copied to the envelope as is
+ * other field is copied to the envelope as is. A `from` of false is the null sender of a
+ * bounce message, it is sent as MAIL FROM:<>
  */
 export interface MimeNodeEnvelopeInput {
-    from?: MimeNodeAddressInput | undefined;
+    from?: MimeNodeAddressInput | false | undefined;
     to?: MimeNodeAddressInput | undefined;
     cc?: MimeNodeAddressInput | undefined;
     bcc?: MimeNodeAddressInput | undefined;
@@ -180,7 +188,7 @@ declare class MimeNode {
     childNodes: MimeNode[];
     /** Filename for this node. Useful with attachments */
     filename?: string | undefined;
-    /** Body content, or the error a content stream emitted before it was read */
+    /** Body content */
     content?: MimeNodeContent | Error | undefined;
     /** Lowercase content type, set when the headers are built */
     contentType?: string | undefined;
@@ -318,6 +326,31 @@ declare class MimeNode {
      * @param raw Raw MIME contents
      */
     setRaw(raw: MimeNodeContent): this;
+    /**
+     * Encodes a header value the way this node encodes it in the generated message:
+     * address headers are punycoded and mime encoded, message id headers get their
+     * angle brackets, a Date object is formatted and any other value is mime encoded
+     * when it holds non-ascii or control characters (using the node's `textEncoding`).
+     *
+     * The result is a single unfolded line without the key. Fold it before writing it
+     * into a message, `key + ': ' + value` folded at 76 characters is what the node does.
+     *
+     * @param key Header key, case insensitive
+     * @param value Header value
+     * @returns Encoded header value
+     */
+    encodeHeaderValue(key: string, value: MimeNodeHeaderValue): string;
+    /**
+     * Encodes a header value without a node at hand. Same as the instance method of a
+     * node created with the given options.
+     *
+     * @param key Header key, case insensitive
+     * @param value Header value
+     * @param [options] Encoding options
+     * @param [options.textEncoding] either 'Q' (the default) or 'B'
+     * @returns Encoded header value
+     */
+    static encodeHeaderValue(key: string, value: MimeNodeHeaderValue, options?: MimeNodeHeaderEncodingOptions): string;
 }
 /**
  * Type aliases in the layout of @types/nodemailer, so `MimeNode.Options` style references keep working
@@ -326,5 +359,8 @@ declare namespace MimeNode {
     type Options = MimeNodeOptions;
     type Addresses = MimeNodeAddresses;
     type Envelope = MimeNodeEnvelope;
+    type HeaderEncodingOptions = MimeNodeHeaderEncodingOptions;
 }
+/** The same aliases as module level exports, for `import * as MimeNode` and `import MimeNode = require()` */
+export type { MimeNodeOptions as Options, MimeNodeAddresses as Addresses, MimeNodeEnvelope as Envelope, MimeNodeHeaderEncodingOptions as HeaderEncodingOptions };
 export default MimeNode;

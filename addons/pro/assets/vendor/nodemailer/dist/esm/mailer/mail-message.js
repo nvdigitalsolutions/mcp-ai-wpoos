@@ -69,9 +69,9 @@ export default class MailMessage {
         if (this.data.attachments && this.data.attachments.length) {
             this.data.attachments.forEach((attachment, i) => {
                 if (!attachment.filename) {
+                    // a backslash separates as well, so a Windows path does not put the sender's directories in the headers
                     attachment.filename =
-                        (attachment.path || attachment.href || '').split('/').pop().split('?').shift() ||
-                            'attachment-' + (i + 1);
+                        (attachment.path || attachment.href || '').split(/[/\\]/).pop().split('?').shift() || 'attachment-' + (i + 1);
                     if (attachment.filename.indexOf('.') < 0) {
                         attachment.filename += '.' + mimeFuncs.detectExtension(attachment.contentType);
                     }
@@ -135,6 +135,29 @@ export default class MailMessage {
         };
         setImmediate(() => resolveNext());
     }
+    /**
+     * Destroys the content streams of the message once sending failed. A stream that was not
+     * read to the end would otherwise keep the file or the socket behind it open
+     */
+    releaseStreams() {
+        const data = this.data;
+        const values = [data.html, data.text, data.watchHtml, data.amp, data.raw, data.icalEvent];
+        for (const key of ['attachments', 'alternatives']) {
+            if (Array.isArray(data[key])) {
+                // one at a time, spreading a long enough list into the arguments throws
+                for (const entry of data[key]) {
+                    values.push(entry);
+                }
+            }
+        }
+        for (const value of values) {
+            if (value && typeof value === 'object') {
+                shared.destroyStream(value);
+                shared.destroyStream(value.content);
+                shared.destroyStream(value.raw);
+            }
+        }
+    }
     normalize(callback) {
         const envelope = this.message.getEnvelope();
         const messageId = this.message.messageId();
@@ -183,7 +206,7 @@ export default class MailMessage {
                 value = (value && value.value) || value;
                 if (value) {
                     if (['references', 'in-reply-to', 'message-id', 'content-id'].includes(key)) {
-                        value = this.message._encodeHeaderValue(key, value);
+                        value = this.message.encodeHeaderValue(key, value);
                     }
                     data.normalizedHeaders[key] = value;
                 }
@@ -195,10 +218,10 @@ export default class MailMessage {
                 });
             }
             if (data.references) {
-                data.normalizedHeaders.references = this.message._encodeHeaderValue('references', data.references);
+                data.normalizedHeaders.references = this.message.encodeHeaderValue('references', data.references);
             }
             if (data.inReplyTo) {
-                data.normalizedHeaders['in-reply-to'] = this.message._encodeHeaderValue('in-reply-to', data.inReplyTo);
+                data.normalizedHeaders['in-reply-to'] = this.message.encodeHeaderValue('in-reply-to', data.inReplyTo);
             }
             return callback(null, data);
         });
@@ -267,7 +290,7 @@ export default class MailMessage {
                             comment = needsEncoding ? mimeFuncs.encodeWord(comment) : mimeFuncs.quoteString(comment);
                             // List-ID expects a bare domain-like identifier, so strip the
                             // scheme prefix that _formatListUrl adds or passes through
-                            return ((value.comment ? comment + ' ' : '') + this._formatListUrl(value.url).replace(/^<[^:]+:\/{0,2}/, '<'));
+                            return (value.comment ? comment + ' ' : '') + this._formatListUrl(value.url).replace(/^<[^:]+:\/{0,2}/, '<');
                         }
                         // List-*: <http://domain> (comment)
                         // the ctext specials go out as quoted-pairs, otherwise a ")" closes the

@@ -3,6 +3,7 @@ import type { MailComposerOptions } from '../mail-composer/index.js';
 import type { DKIMOptions } from '../dkim/index.js';
 import type { SMTPEnvelopeDsn } from '../smtp-connection/index.js';
 import type { SMTPTransportAuthOptions } from '../smtp-transport/index.js';
+import type { SESSendEmailRequest } from '../ses-transport/index.js';
 import type { NodemailerError } from '../errors.js';
 import type { ResolveContentOptions } from '../shared/index.js';
 import type Mail from './index.js';
@@ -14,18 +15,22 @@ import type { SentMessageInfo } from './index.js';
 export interface SendMailOptions extends MailComposerOptions {
     /** DKIM signing options for this message, used instead of the ones of the transporter */
     dkim?: DKIMOptions | undefined;
+    /** Extra DKIM options for this message, merged over the options of the signer. The SES transport sets skipFields here, the option is not meant for callers */
+    _dkim?: DKIMOptions | undefined;
     /** Recipients allowed on this message, 0 disables the limit, defaults to 100000 */
     maxRecipients?: number | undefined;
     /** SMTP transports: DSN parameters for the envelope, sent when the server supports the DSN extension */
     dsn?: SMTPEnvelopeDsn | undefined;
     /** SMTP transports: RFC 8689, send the REQUIRETLS parameter with MAIL FROM */
     requireTLSExtensionEnabled?: boolean | undefined;
-    /** SMTP transports: per-message authentication settings, used instead of the transport level auth */
+    /**
+     * SMTP transports: per-message authentication settings, used instead of the transport level auth.
+     * Only the credential fields are taken from it (type, user, pass, accessToken, refreshToken, expires),
+     * the token endpoint and client settings stay those of the transport
+     */
     auth?: SMTPTransportAuthOptions | undefined;
     /** SES transport: extra SendEmailCommand parameters merged into the API call */
-    ses?: {
-        [key: string]: unknown;
-    } | undefined;
+    ses?: SESSendEmailRequest | undefined;
 }
 /**
  * Default message fields, the third argument of createTransport. Applied to every message
@@ -71,7 +76,13 @@ export interface MailMessageListHeader {
 export default class MailMessage<T = SentMessageInfo> {
     mailer: Mail<T>;
     data: MailMessageData;
-    message: MimeNode | null;
+    /**
+     * The compiled MIME tree. Set once the compile step is done, so it is null while the
+     * 'compile' plugins run and set by the time the 'stream' plugins and the transport see
+     * the message. Declared as always set, the way @types/nodemailer declared it, since the
+     * plugins that read it are the ones that run after it is set
+     */
+    message: MimeNode;
     constructor(mailer: Mail<T>, data?: SendMailOptions);
     resolveContent(data: {
         [key: string]: any;
@@ -83,6 +94,11 @@ export default class MailMessage<T = SentMessageInfo> {
         [key: string]: any;
     }, key: string | number, options?: ResolveContentOptions | false): Promise<any>;
     resolveAll(callback: MailMessageDataCallback): void;
+    /**
+     * Destroys the content streams of the message once sending failed. A stream that was not
+     * read to the end would otherwise keep the file or the socket behind it open
+     */
+    releaseStreams(): void;
     normalize(callback: MailMessageDataCallback): void;
     setMailerHeader(): void;
     setPriorityHeaders(): void;
