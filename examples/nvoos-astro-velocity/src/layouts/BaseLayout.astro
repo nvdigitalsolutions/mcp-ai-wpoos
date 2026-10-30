@@ -56,15 +56,15 @@ const {
 			// ADS no-FOUC theme boot (Proposal 095): set data-theme before first
 			// paint so dark/brand themes never flash (Starlight pattern).
 			(function () {
-				var stored = null;
+				let stored = null;
 				try {
 					stored = localStorage.getItem('nvoos-theme');
-				} catch (e) { /* storage unavailable */ }
-				var theme =
+				} catch { /* storage unavailable */ }
+				const theme =
 					stored ||
 					(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
 						? 'light'
-						: 'light');
+						: 'dark');
 				if (theme && theme !== 'light') {
 					document.documentElement.setAttribute('data-theme', theme);
 				}
