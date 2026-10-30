@@ -292,7 +292,24 @@ describe('ops tools', () => {
 	it('preview_url renders the storefront origin + path', async () => {
 		const { message } = await call(mainPort, 'preview_url', { path: '/collections/new' });
 		expect(message.error).toBeUndefined();
-		expect(message.result?.structuredContent?.url).toBe('http://localhost:4321/collections/new');
+		// The origin is derived from the request Host when no
+		// NVOOS_STOREFRONT_ORIGIN override is configured.
+		expect(message.result?.structuredContent?.url).toBe(
+			`http://127.0.0.1:${mainPort}/collections/new`
+		);
+	});
+
+	it('preview_url honours the NVOOS_STOREFRONT_ORIGIN override', async () => {
+		const port = await listen({
+			NVOOS_API_BASE: stubBase,
+			NVOOS_SSR_API_ORIGIN: undefined,
+			NVOOS_STOREFRONT_ORIGIN: 'https://astro.nvoos.cloud',
+		});
+		const { message } = await call(port, 'preview_url', { path: '/collections/new' });
+		expect(message.error).toBeUndefined();
+		expect(message.result?.structuredContent?.url).toBe(
+			'https://astro.nvoos.cloud/collections/new'
+		);
 	});
 
 	it('preview_url rejects paths that do not start with /', async () => {
@@ -325,5 +342,41 @@ describe('ops tools', () => {
 		expect(sc.imported).toContain('accent -> colors.color_accent');
 		expect(sc.imported).toContain('radius -> borders.radius_md');
 		expect(sc.unmapped?.length).toBeGreaterThanOrEqual(3);
+	});
+});
+
+describe('design tools', () => {
+	it('theme_apply echoes a snapshot_id that tokens_rollback restores', async () => {
+		// Fresh mount so design state stays isolated from the other suites.
+		const port = await listen({
+			NVOOS_API_BASE: stubBase,
+			NVOOS_SSR_API_ORIGIN: undefined,
+			NVOOS_MCP_TOKEN: TOKEN,
+		});
+
+		const apply = await call(
+			port,
+			'theme_apply',
+			{ name: 'dark' },
+			{ authorization: `Bearer ${TOKEN}` }
+		);
+		expect(apply.message.error).toBeUndefined();
+		expect(apply.message.result?.structuredContent).toMatchObject({ ok: true });
+		const snapshotId = apply.message.result?.structuredContent?.snapshot_id as string;
+		expect(snapshotId).toBeTruthy();
+
+		const listed = await call(port, 'theme_list', {});
+		expect(listed.message.result?.structuredContent?.active).toBe('dark');
+
+		const rollback = await call(
+			port,
+			'tokens_rollback',
+			{ snapshot_id: snapshotId },
+			{ authorization: `Bearer ${TOKEN}` }
+		);
+		expect(rollback.message.result?.structuredContent).toMatchObject({ ok: true });
+
+		const restored = await call(port, 'theme_list', {});
+		expect(restored.message.result?.structuredContent?.active).toBe('light'); // pre-apply theme restored
 	});
 });

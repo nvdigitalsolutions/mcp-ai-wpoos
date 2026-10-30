@@ -16,7 +16,14 @@ import {
 } from '../../src/lib/commerce/client';
 import type { SortValue, WhereClause } from '../../src/lib/commerce/types';
 import { getMcpRequestContext } from '../context';
-import { errorResult, resolveApiBase, text } from './util';
+import {
+	DESTRUCTIVE_WRITE_TOOL,
+	READ_ONLY_TOOL,
+	WRITE_TOOL,
+	errorResult,
+	resolveApiBase,
+	text,
+} from './util';
 
 /** Collections the CMS slice may touch — an allowlist, never a passthrough. */
 const COLLECTIONS = [
@@ -112,8 +119,10 @@ export function registerCmsTools(server: McpServer): void {
 	server.registerTool(
 		'cms_list',
 		{
+			title: 'List CMS documents',
 			description:
 				'List a collection from the commerce contract (paginated envelope: docs, totals, page). Read-only.',
+			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({
 				collection: collectionSchema,
 				page: z.number().int().positive().optional(),
@@ -167,8 +176,10 @@ export function registerCmsTools(server: McpServer): void {
 	server.registerTool(
 		'cms_get',
 		{
+			title: 'Get CMS document',
 			description:
 				'Fetch one collection document by id (or by slug via a where-equals lookup). A missing document surfaces as a typed error result. Read-only.',
+			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({
 				collection: collectionSchema,
 				id: z.number().int().positive().optional(),
@@ -187,9 +198,9 @@ export function registerCmsTools(server: McpServer): void {
 				args.id !== undefined
 					? joinPath(base, `${args.collection}/${args.id}`)
 					: `${joinPath(base, args.collection)}?${buildCollectionQuery({
-							limit: 1,
-							where: { slug: { equals: args.slug ?? '' } } as WhereClause,
-						})}`;
+						limit: 1,
+						where: { slug: { equals: args.slug ?? '' } } as WhereClause,
+					})}`;
 			let res: Response;
 			try {
 				res = await fetch(url, { headers: { accept: 'application/json' } });
@@ -225,8 +236,10 @@ export function registerCmsTools(server: McpServer): void {
 	server.registerTool(
 		'cms_create',
 		{
+			title: 'Create CMS document',
 			description:
 				'Create a document in a commerce-contract collection (POST). Manager session required.',
+			annotations: WRITE_TOOL,
 			inputSchema: z.object({
 				collection: collectionSchema,
 				body: z.record(z.string(), z.unknown()),
@@ -238,8 +251,10 @@ export function registerCmsTools(server: McpServer): void {
 	server.registerTool(
 		'cms_update',
 		{
+			title: 'Update CMS document',
 			description:
 				'Update one collection document by id (PATCH). Manager session required.',
+			annotations: WRITE_TOOL,
 			inputSchema: z.object({
 				collection: collectionSchema,
 				id: z.number().int().positive(),
@@ -252,8 +267,10 @@ export function registerCmsTools(server: McpServer): void {
 	server.registerTool(
 		'cms_delete',
 		{
+			title: 'Delete CMS document',
 			description:
 				'Delete one collection document by id (DELETE). Manager session required.',
+			annotations: DESTRUCTIVE_WRITE_TOOL,
 			inputSchema: z.object({
 				collection: collectionSchema,
 				id: z.number().int().positive(),
@@ -265,8 +282,10 @@ export function registerCmsTools(server: McpServer): void {
 	server.registerTool(
 		'media_upload',
 		{
+			title: 'Upload media',
 			description:
 				'Upload a media file to the commerce-contract media collection (multipart form, field "file"). Manager session required.',
+			annotations: WRITE_TOOL,
 			inputSchema: z.object({
 				name: z.string().min(1),
 				mime_type: z.string().min(1),

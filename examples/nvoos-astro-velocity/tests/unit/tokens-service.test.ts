@@ -17,10 +17,10 @@ describe('TokenService', () => {
 
 	it('switches themes and applies brand overrides', () => {
 		const service = new TokenService();
-		expect(service.applyTheme('dark')).toEqual({ ok: true, message: expect.stringContaining('dark') });
+		expect(service.applyTheme('dark')).toMatchObject({ ok: true, message: expect.stringContaining('dark') });
 		expect(service.resolveActiveSemantic().surface).toBe('#141414');
 
-		expect(service.applyTheme('example-brand')).toEqual({ ok: true, message: expect.stringContaining('example-brand') });
+		expect(service.applyTheme('example-brand')).toMatchObject({ ok: true, message: expect.stringContaining('example-brand') });
 		expect(service.resolveActiveSemantic().accent).toBe('#1d4ed8');
 	});
 
@@ -90,6 +90,33 @@ describe('TokenService', () => {
 		expect(service.getActiveTheme()).toBe('light'); // falls back after delete
 	});
 
+	it('applyTheme snapshots the prior theme so rollback restores it', () => {
+		const service = new TokenService();
+		const applied = service.applyTheme('dark');
+		expect(applied.ok).toBe(true);
+		expect(service.getActiveTheme()).toBe('dark');
+		expect(applied.snapshotId).toBeTruthy();
+		const rollback = service.rollback(applied.snapshotId);
+		expect(rollback.ok).toBe(true);
+		expect(service.getActiveTheme()).toBe('light'); // prior theme restored
+	});
+
+	it('deleteTheme snapshots before deleting so rollback restores the theme', () => {
+		const service = new TokenService();
+		expect(service.createTheme({ name: 'client-a', tokens: { accent: '#7c3aed' } }).applied).toBe(true);
+		expect(service.applyTheme('client-a').ok).toBe(true);
+
+		const deleted = service.deleteTheme('client-a');
+		expect(deleted.ok).toBe(true);
+		expect(service.listThemes()).not.toContain('client-a');
+		expect(deleted.snapshotId).toBeTruthy();
+
+		const rollback = service.rollback(deleted.snapshotId);
+		expect(rollback.ok).toBe(true);
+		expect(service.listThemes()).toContain('client-a'); // deleted theme restored
+		expect(service.getActiveTheme()).toBe('client-a'); // active theme restored too
+	});
+
 	it('rejects invalid theme names', () => {
 		const service = new TokenService();
 		const bad = service.createTheme({ name: 'Bad Name!', tokens: {} });
@@ -120,7 +147,7 @@ describe('TokenService persistence (Proposal 095 Phase 4)', () => {
 		expect(second.resolveActiveSemantic().accent).toBe('#7c3aed'); // overrides hydrated
 		expect(second.getActiveTheme()).toBe('client-b'); // activeTheme hydrated
 		expect(second.listThemes()).toContain('client-b'); // runtimeThemes hydrated
-		expect(second.listSnapshots().length).toBe(2); // snapshots hydrated
+		expect(second.listSnapshots().length).toBe(3); // one snapshot per mutation (overrides, create, apply)
 	});
 
 	it('dry runs never create or update the state file', () => {

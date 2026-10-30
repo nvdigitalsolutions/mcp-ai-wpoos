@@ -27,6 +27,8 @@ Shipped in the gap-closure cluster (PR stacked on #7318):
 | P4.2 NDS round-trip | App side: `nds_export` tool (ADS semantic → NDS DTCG doc + mapping report). NDS side: `addons/nvoos-design-system/includes/class-nvoos-nds-dtcg-importer.php` (prepare/apply split, all-or-nothing, 256 KB cap, reference rejection) + admin import surface + 10-test PHPUnit suite |
 | Tool count | 21 tools total (10 design + 6 cms + 5 ops) — handshake `tools/list` assertion updated; `SERVER_VERSION` 0.2.0 |
 | BFF env bug | `serve.mjs` snapshots env for the MCP handler BEFORE its SSR-origin rewrite (`NVOOS_SSR_API_ORIGIN` → loopback), and `createAstroMcpNodeHandler` snapshots its env — without both, every manager-cookie write 401'd (incident 2026-10-30, regression test in `tests/mcp/handshake.test.ts`) |
+| Tool annotations + titles (2026-10-31) | Every tool carries a `title` + spec `annotations` (`readOnlyHint`/`destructiveHint`/`idempotentHint`/`openWorldHint`, presets in `mcp/tools/util.ts`) so MCP clients (Zed, NV oOS assistants) render/gate the registry natively — pinned in `tests/mcp/handshake.test.ts` |
+| Preview origin (2026-10-31) | `preview_url`/`screenshot` no longer hardcode `localhost:4321` — `storefrontOrigin()` resolves `NVOOS_STOREFRONT_ORIGIN` → request Host (scheme via `X-Forwarded-Proto`, then socket TLS) → local dev fallback; `requestOrigin()` in `mcp/bff.ts`, pinned by `tests/unit/storefront-origin.test.ts` |
 
 Still open: only **3.4 live verification** — the NV oOS Remote Sites → MCP Server connection recipe is documented (app README + ops skill) but needs a live NV oOS install to verify end-to-end; plus the optional NDS WP 7.1 WooCommerce-stub skip-gate fix (pre-existing, unrelated to this track).
 
@@ -38,6 +40,7 @@ Still open: only **3.4 live verification** — the NV oOS Remote Sites → MCP S
 - **Astro Integration API** (`docs.astro.build` → `astro:build:done`) → the /mcp bundle fix (PR #7318): the documented extension point for post-build output work, invocation-agnostic — vs an npm `postbuild` script which only fires when npm drives the build (npm docs, lifecycle scripts).
 - **WCAG 2.2** — SC 1.4.3 (4.5:1 normal text) and SC 1.4.11 (3:1 UI/large text) are the audit thresholds, pinned per pair in `tests/unit/contrast-audit.test.ts`.
 - **DTCG 2025.10** (W3C Design Tokens Community Group) with the documented ADS extension of cross-file references — unchanged from P0.
+- **MCP tool annotations** (2026-07-28 tool schema: `annotations` + `title` fields) → the headline 2026 best practice for tool registries (client-side gating/rendering without parsing descriptions; the spec defaults every hint to `true` when absent — the pessimistic default — so every tool here sets them explicitly). Never emulate via description tags — clients do not parse those.
 
 ---
 

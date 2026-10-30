@@ -7,7 +7,13 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { TokenService, contrastCheck } from '../../src/lib/tokens/service';
-import { text } from './util';
+import {
+	DESTRUCTIVE_WRITE_TOOL,
+	IDEMPOTENT_WRITE_TOOL,
+	READ_ONLY_TOOL,
+	WRITE_TOOL,
+	text,
+} from './util';
 
 /** Process-wide service — the BFF is long-lived, so MCP state persists
  *  across requests within the process (not across restarts; the durable
@@ -18,8 +24,10 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 	server.registerTool(
 		'tokens_get',
 		{
+			title: 'Read design tokens',
 			description:
 				'Read the ADS design tokens. Returns the resolved semantic layer for the active theme (plus the full group trees when include_groups is true). Read-only.',
+			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({
 				group: z.enum(['core', 'semantic', 'component']).optional(),
 				include_groups: z.boolean().optional(),
@@ -41,8 +49,10 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 	server.registerTool(
 		'tokens_set',
 		{
+			title: 'Set design tokens',
 			description:
-				'Apply semantic token overrides transactionally. Validation errors reject the whole change (all-or-nothing). Pass dry_run to receive the diff without applying. Requires a write credential.',
+				'Apply semantic token overrides transactionally. Validation errors reject the whole change (all-or-nothing). Pass dry_run to receive the diff without applying. On apply, the result carries a snapshot_id that undoes exactly this write when passed to tokens_rollback. Requires a write credential.',
+			annotations: IDEMPOTENT_WRITE_TOOL,
 			inputSchema: z.object({
 				changes: z.record(z.string(), z.string()),
 				dry_run: z.boolean().optional(),
@@ -60,8 +70,10 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 	server.registerTool(
 		'tokens_import_dtcg',
 		{
+			title: 'Import DTCG tokens',
 			description:
 				'Import a DTCG 2025.10 JSON document (paste or {"groups": ..., "themes": ...}). Validates, then applies the semantic layer transactionally. Requires a write credential.',
+			annotations: IDEMPOTENT_WRITE_TOOL,
 			inputSchema: z.object({
 				json: z.string(),
 				dry_run: z.boolean().optional(),
@@ -69,18 +81,23 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 		},
 		async (args) => {
 			const result = service.importDTCG(args.json, args.dry_run === true);
-			return text(
-				JSON.stringify({ applied: result.applied, diff: result.diff, report: result.report }, null, 2),
-				{ applied: result.applied, diff: result.diff, report: result.report }
-			);
+			const payload = {
+				applied: result.applied,
+				diff: result.diff,
+				report: result.report,
+				snapshot_id: result.snapshotId ?? null,
+			};
+			return text(JSON.stringify(payload, null, 2), payload);
 		}
 	);
 
 	server.registerTool(
 		'tokens_rollback',
 		{
+			title: 'Roll back tokens',
 			description:
-				'Restore the token/theme state captured by a snapshot. Without a snapshot_id, rolls back to the most recent snapshot. Requires a write credential.',
+				'Restore the token/theme state captured by a snapshot. Pass the snapshot_id returned by a previous write (tokens_set, tokens_import_dtcg, theme_create, theme_apply, theme_delete) to undo exactly that write; without a snapshot_id, rolls back to the most recent snapshot. Requires a write credential.',
+			annotations: WRITE_TOOL,
 			inputSchema: z.object({ snapshot_id: z.string().optional() }),
 		},
 		async (args) => {
@@ -92,7 +109,9 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 	server.registerTool(
 		'theme_list',
 		{
+			title: 'List themes',
 			description: 'List available themes (light, dark, static brand themes, runtime themes). Read-only.',
+			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({}),
 		},
 		async () => {
@@ -110,7 +129,9 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 	server.registerTool(
 		'theme_get',
 		{
+			title: 'Get theme',
 			description: 'Read one theme descriptor (name, description, semantic overrides). Read-only.',
+			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({ name: z.string() }),
 		},
 		async (args) => {
@@ -125,8 +146,10 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 	server.registerTool(
 		'theme_create',
 		{
+			title: 'Create runtime theme',
 			description:
 				'Create a runtime brand theme from semantic token overrides. Name must match [a-z0-9-]. Requires a write credential.',
+			annotations: WRITE_TOOL,
 			inputSchema: z.object({
 				name: z.string(),
 				description: z.string().optional(),
@@ -139,42 +162,60 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 				description: args.description,
 				tokens: args.tokens,
 			});
-			return text(
-				JSON.stringify({ applied: result.applied, report: result.report }, null, 2),
-				{ applied: result.applied, report: result.report }
-			);
+			const payload = {
+				applied: result.applied,
+				report: result.report,
+				snapshot_id: result.snapshotId ?? null,
+			};
+			return text(JSON.stringify(payload, null, 2), payload);
 		}
 	);
 
 	server.registerTool(
 		'theme_apply',
 		{
+			title: 'Apply theme',
 			description: 'Set the active theme by name. Requires a write credential.',
+			annotations: IDEMPOTENT_WRITE_TOOL,
 			inputSchema: z.object({ name: z.string() }),
 		},
 		async (args) => {
 			const result = service.applyTheme(args.name);
-			return text(JSON.stringify(result), result);
+			const payload = {
+				ok: result.ok,
+				message: result.message,
+				snapshot_id: result.snapshotId ?? null,
+			};
+			return text(JSON.stringify(payload), payload);
 		}
 	);
 
 	server.registerTool(
 		'theme_delete',
 		{
+			title: 'Delete runtime theme',
 			description: 'Delete a runtime theme (static themes cannot be deleted). Requires a write credential.',
+			annotations: DESTRUCTIVE_WRITE_TOOL,
 			inputSchema: z.object({ name: z.string() }),
 		},
 		async (args) => {
 			const result = service.deleteTheme(args.name);
-			return text(JSON.stringify(result), result);
+			const payload = {
+				ok: result.ok,
+				message: result.message,
+				snapshot_id: result.snapshotId ?? null,
+			};
+			return text(JSON.stringify(payload), payload);
 		}
 	);
 
 	server.registerTool(
 		'contrast_check',
 		{
+			title: 'Check color contrast',
 			description:
 				'Compute the WCAG 2.2 contrast ratio between two colors (hex preferred) and report AA/AAA pass levels. Read-only.',
+			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({ fg: z.string(), bg: z.string() }),
 		},
 		async (args) => {

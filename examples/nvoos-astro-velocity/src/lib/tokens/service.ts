@@ -344,13 +344,14 @@ export class TokenService {
 		return { ok: true, message: `rolled back to ${target.id}` };
 	}
 
-	applyTheme(name: string): { ok: boolean; message: string } {
+	applyTheme(name: string): { ok: boolean; message: string; snapshotId?: string } {
 		if (!this.themeDescriptor(name)) {
 			return { ok: false, message: `unknown theme: ${name}` };
 		}
+		const snapshotId = this.takeSnapshot();
 		this.activeTheme = name;
 		this.persist();
-		return { ok: true, message: `active theme is now ${name}` };
+		return { ok: true, message: `active theme is now ${name}`, snapshotId };
 	}
 
 	createTheme(descriptor: ThemeDescriptor): ApplyResult {
@@ -369,18 +370,18 @@ export class TokenService {
 		return { applied: true, report, diff: [], snapshotId };
 	}
 
-	deleteTheme(name: string): { ok: boolean; message: string } {
+	deleteTheme(name: string): { ok: boolean; message: string; snapshotId?: string } {
 		if (name in (this.bundle.themes ?? {})) {
 			return { ok: false, message: `static theme "${name}" cannot be deleted at runtime` };
 		}
 		if (!(name in this.runtimeThemes)) {
 			return { ok: false, message: `unknown theme: ${name}` };
 		}
-		this.takeSnapshot();
+		const snapshotId = this.takeSnapshot();
 		delete this.runtimeThemes[name];
 		if (this.activeTheme === name) this.activeTheme = 'light';
 		this.persist();
-		return { ok: true, message: `theme "${name}" deleted` };
+		return { ok: true, message: `theme "${name}" deleted`, snapshotId };
 	}
 }
 

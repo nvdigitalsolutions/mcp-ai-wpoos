@@ -32,6 +32,7 @@ interface McpEnv {
 	NVOOS_API_BASE?: string;
 	NVOOS_MCP_RATE_MAX?: string;
 	NVOOS_MCP_RATE_WINDOW_MS?: string;
+	NVOOS_STOREFRONT_ORIGIN?: string;
 }
 
 function allowedHosts(env: McpEnv): string[] {
@@ -92,6 +93,28 @@ function isSameOrigin(req: IncomingMessage): boolean {
 		return originHost === host;
 	} catch {
 		return false;
+	}
+}
+
+/**
+ * The inbound request origin (scheme + Host) for tool code that needs the
+ * storefront's own URL (preview_url / screenshot). The Host header has
+ * already passed hostHeaderValidation; the scheme honours a proxy's
+ * X-Forwarded-Proto first (Velocity terminates TLS) and the socket
+ * encryption state second. Undefined when the request carries no Host.
+ */
+function requestOrigin(req: IncomingMessage): string | undefined {
+	const host = firstHeaderValue(req.headers.host);
+	if (!host) return undefined;
+	const forwarded = firstHeaderValue(req.headers['x-forwarded-proto']);
+	// IncomingMessage.socket is typed as net.Socket; encrypted only exists
+	// on a TLS socket (https servers). Duck-typed so astro check stays green.
+	const encrypted = (req.socket as { encrypted?: boolean }).encrypted === true;
+	const proto = (forwarded ? forwarded.split(',')[0].trim().toLowerCase() : '') || (encrypted ? 'https' : 'http');
+	try {
+		return new URL(`${proto}://${host}`).origin;
+	} catch {
+		return undefined;
 	}
 }
 
@@ -157,7 +180,11 @@ export function createAstroMcpNodeHandler(env: McpEnv = process.env) {
 			console.log(`[mcp] audit tool=${toolNameFrom(body)} via=${via} ip=${ip}`);
 		}
 		await mcpRequestContext.run(
-			{ cookie: firstHeaderValue(req.headers.cookie), env: contextEnv },
+			{
+				cookie: firstHeaderValue(req.headers.cookie),
+				origin: requestOrigin(req),
+				env: contextEnv,
+			},
 			() => nodeHandler(req, res, body)
 		);
 	};

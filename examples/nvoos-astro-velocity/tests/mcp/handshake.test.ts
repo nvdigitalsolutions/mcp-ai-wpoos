@@ -35,7 +35,16 @@ interface JsonRpcResult {
 		protocolVersion?: string;
 		supportedVersions?: string[];
 		resultType?: string;
-		tools?: Array<{ name: string }>;
+		tools?: Array<{
+			name: string;
+			title?: string;
+			annotations?: {
+				readOnlyHint?: boolean;
+				destructiveHint?: boolean;
+				idempotentHint?: boolean;
+				openWorldHint?: boolean;
+			};
+		}>;
 		content?: Array<{ type: string; text: string }>;
 		structuredContent?: { applied?: boolean; diff?: unknown };
 	};
@@ -175,6 +184,57 @@ describe('nvoos-astro-mcp HTTP conformance', () => {
 		for (const expected of EXPECTED_TOOLS) {
 			expect(names).toContain(expected);
 		}
+	});
+
+	it('publishes tool annotations per the MCP spec (2025-06-18)', async () => {
+		const { status, message } = await rpc(
+			{
+				jsonrpc: '2.0',
+				id: 41,
+				method: 'tools/list',
+				params: { ...modernEnvelope() },
+			},
+			modernHeaders('tools/list')
+		);
+		expect(status).toBe(200);
+		const byName = new Map((message.result?.tools ?? []).map((tool) => [tool.name, tool]));
+		// Reads declare themselves read-only and non-destructive.
+		expect(byName.get('site_status')?.annotations).toEqual({
+			readOnlyHint: true,
+			destructiveHint: false,
+			idempotentHint: false,
+			openWorldHint: false,
+		});
+		// Deletes declare the destructive hint.
+		expect(byName.get('cms_delete')?.annotations?.destructiveHint).toBe(true);
+		expect(byName.get('theme_delete')?.annotations?.destructiveHint).toBe(true);
+		// Retry-safe writes declare the idempotent hint.
+		expect(byName.get('tokens_set')?.annotations?.idempotentHint).toBe(true);
+		expect(byName.get('rebuild_trigger')?.annotations?.idempotentHint).toBe(true);
+		// Every tool declares all four hints (spec defaults are pessimistic).
+		for (const tool of message.result?.tools ?? []) {
+			expect(tool.annotations, `missing annotations on ${tool.name}`).toBeDefined();
+			expect(tool.annotations?.readOnlyHint, `missing readOnlyHint on ${tool.name}`).toBeDefined();
+			expect(tool.annotations?.destructiveHint, `missing destructiveHint on ${tool.name}`).toBeDefined();
+			expect(tool.annotations?.idempotentHint, `missing idempotentHint on ${tool.name}`).toBeDefined();
+			expect(tool.annotations?.openWorldHint, `missing openWorldHint on ${tool.name}`).toBe(false);
+		}
+	});
+
+	it('resolves preview_url origins from the request Host (no more localhost-only)', async () => {
+		const { status, message } = await rpc(
+			{
+				jsonrpc: '2.0',
+				id: 42,
+				method: 'tools/call',
+				params: { name: 'preview_url', arguments: { path: '/products' }, ...modernEnvelope() },
+			},
+			modernHeaders('tools/call', 'preview_url')
+		);
+		expect(status).toBe(200);
+		expect(message.error).toBeUndefined();
+		const text = (message.result?.content ?? []).map((entry) => entry.text).join('');
+		expect(text).toContain(`http://127.0.0.1:${PORT}/products`);
 	});
 
 	it('calls a read tool end-to-end over the modern dialect', async () => {

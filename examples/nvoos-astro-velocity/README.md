@@ -61,11 +61,16 @@ every other surface; manager sign-in is the contract's own REST auth flow.
 
 ## MCP assistant surface (`/mcp`)
 
-`nvoos-astro-mcp` serves 20 tools over Streamable HTTP at `/mcp` (bundled into
-`dist/mcp-entry.mjs` on `astro:build:done`):
+`nvoos-astro-mcp` serves 21 tools over Streamable HTTP at `/mcp` (bundled into
+`dist/mcp-entry.mjs` on `astro:build:done`). Every tool carries a
+human-readable `title` and spec `annotations` (readOnly/destructive/idempotent/
+openWorld hints) so MCP clients — Zed, NV oOS assistants, Claude — can render
+and gate the registry without scraping descriptions:
 
 - **Design (10)** — `tokens_get/set/import_dtcg/rollback`, `theme_*`,
-  `contrast_check` (WCAG 2.2 AA/AAA levels).
+  `contrast_check` (WCAG 2.2 AA/AAA levels). Every mutating design write
+  echoes its pre-write `snapshot_id`, so `tokens_rollback` can undo exactly
+  that write (no argument rolls back to the latest snapshot).
 - **CMS (6)** — `cms_list/get/create/update/delete`, `media_upload` over the
   commerce contract (collection allowlist, `limit` ≤ 100; writes require a
   manager session cookie — the backend enforces `manage_astro`).
@@ -79,6 +84,12 @@ contract writes (cms_* writes, media_upload) require the manager cookie.
 Host/Origin allowlists (DNS-rebinding guards), a per-IP rate limit, and audit
 log lines sit in front of the handler. The /manage **Design System tab** is
 itself an MCP client over the same-origin endpoint (manager cookie).
+
+`preview_url` / `screenshot` resolve the storefront origin as
+`NVOOS_STOREFRONT_ORIGIN` → the inbound request Host (scheme from
+`X-Forwarded-Proto`, then socket TLS state) → `http://localhost:4321` (local
+dev fallback). Set the env override when the request Host is rewritten by a
+proxy.
 
 Connect:
 
