@@ -133,9 +133,15 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 ### nvoos-astro-mcp (`/mcp`)
 
 - `mcp/` (`auth.ts`, `bff.ts`, `server.ts`, `stdio.ts`, `tools/design.ts`);
-  `npm run build:mcp` bundles `bff.ts` → `dist/mcp-entry.mjs`, which
-  `scripts/serve.mjs` mounts at `/mcp` (deliberately NOT under `/api/*`).
-  `npm run mcp:stdio` serves the same tools over stdio for local profiles.
+  the shared bundler `scripts/lib/mcp-build.mjs` writes `dist/mcp-entry.mjs`
+  (which `scripts/serve.mjs` mounts at `/mcp`, deliberately NOT under
+  `/api/*`). Two call sites: `npm run build:mcp` (dev/manual —
+  `scripts/build-mcp.mjs` CLI wrapper) and the `nvoos-astro-mcp-build`
+  Astro integration in `astro.config.mjs`, whose `astro:build:done` hook
+  rebuilds the bundle after every `astro build` (astro wipes `dist/`, so a
+  pre-build step in the npm chain would be erased — the 2026-10-30 /mcp
+  outage). `npm run mcp:stdio` serves the same tools over stdio for local
+  profiles.
 - **Never spawn `node` against `node_modules/esbuild/bin/esbuild`
   (2026-10-30):** esbuild's install fallback can replace that file with the
   native platform binary — an ELF executable on Linux — and node dies with
@@ -157,9 +163,11 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ### Known TODOs (annotated `TODO(095-*)` in code)
 
-- `astro build` **empties `dist/` AFTER `build:mcp`**, erasing
-  `dist/mcp-entry.mjs` from production builds — a `sync-dist.mjs` post-build
-  step is still owed.
+- ~~`astro build` empties `dist/` AFTER `build:mcp`, erasing
+  `dist/mcp-entry.mjs` from production builds~~ — fixed 2026-10-30 via the
+  `nvoos-astro-mcp-build` integration (`astro:build:done` →
+  `scripts/lib/mcp-build.mjs`); the npm `build` chain no longer runs
+  `build:mcp` pre-build.
 - Phase 1: dark-theme contrast audit; Phase 3: CMS tool slice (`cms.ts`
   over `commerce/client.ts`) + `screenshot` tool; Phase 4: `/manage` Design
   tab + durable NDS round-trip.

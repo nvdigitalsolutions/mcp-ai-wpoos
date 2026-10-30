@@ -44,7 +44,8 @@ const PROXY_CACHE_DISABLED = process.env.NVOOS_PROXY_CACHE === '0';
 const PROXY_CACHE_MAX_TTL = Number(process.env.NVOOS_PROXY_CACHE_MAX_TTL) || 300;
 
 // The /mcp mount (Proposal 095) ships as a bundled module in dist/ — built
-// by `npm run build:mcp` (wired into `npm run build`). Absent in a dev tree
+// by the nvoos-astro-mcp-build integration's astro:build:done hook during
+// every astro build (dev/manual: npm run build:mcp). Absent in a dev tree
 // without a build; /mcp then falls through to the Astro handler.
 const mcpHandler = await import('../dist/mcp-entry.mjs')
 	.then((mod) => mod.createAstroMcpNodeHandler(process.env))
