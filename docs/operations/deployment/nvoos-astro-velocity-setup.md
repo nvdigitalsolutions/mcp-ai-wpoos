@@ -58,11 +58,11 @@ the request URL takes priority over any baked `NVOOS_API_BASE` at runtime
 - **Bridge contract 404s on the backend** — a mid-request late-loader can load
   the bridge after `rest_api_init`. `Plugin::init()` is idempotent and
   registers routes directly when hooks already fired (PR #7281). If a WPCode
-  snippet (`probe-funiq-bridge`) was used as an interim fix, remove it once
+  snippet (`probe-nvoos-astro-bridge`) was used as an interim fix, remove it once
   the permanent build is deployed.
 - **Zip upload creates a random-suffix plugin folder** — an earlier copy of
   the folder exists. Delete both entries, then re-upload a zip whose
-  top-level folder is `nvoos-funiq-bridge/` (PowerShell `Compress-Archive`;
+  top-level folder is `nvoos-astro-bridge/` (PowerShell `Compress-Archive`;
   `tar -a` produces broken zips).
 
 ## Caching contract

@@ -876,7 +876,7 @@ scope is the whole tree, not one addon. Verified inventory (2026-10-09):
 | Pro JS | `npm run build:js:pro` | **needs `addons/pro/node_modules`** — worktrees often lack it; run `(cd addons/pro && npm install --legacy-peer-deps --omit=optional --no-optional)` first. Bundles `generate-{pdf,word,excel}` + remotion into `addons/pro/bin/` |
 | docs-hub | `npm run build:docs-hub` | prebuild runs `npm ci` if `node_modules` missing |
 | workflow + TMA | `npm run build:workflow && npm run build:tma` | wp-scripts webpack → `addons/pro/build/` |
-| Pattern A SPAs | `toolkit-shell`, `chat-spa`, `comic-reader`, `librechat`, `media-studio`, `funiq-bridge`, `canvas-toolkit`, `document-editor`, `pro/assets/spa-v2` — esbuild `npm run build`; `page-agent` uses `node esbuild.config.js` (dev output, no `--prod`) | `npm ci` per addon when `node_modules` missing (lockfile is committed) |
+| Pattern A SPAs | `toolkit-shell`, `chat-spa`, `comic-reader`, `librechat`, `media-studio`, `nvoos-astro-bridge`, `canvas-toolkit`, `document-editor`, `pro/assets/spa-v2` — esbuild `npm run build`; `page-agent` uses `node esbuild.config.js` (dev output, no `--prod`) | `npm ci` per addon when `node_modules` missing (lockfile is committed) |
 | Pattern B SPA | `schedule-anything-spa` — `npm run build` (`tsc && vite build`) | |
 | Pattern C SPA | `saas-controller` — `npm run build` (worker esbuild + drift-manifest stamp + wp-scripts admin) | |
 | Legacy pro SPA | `addons/pro/assets/spa` — `npm run build` (wp-scripts webpack → `dist/`) | |

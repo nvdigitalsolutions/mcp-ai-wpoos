@@ -38,7 +38,7 @@ on:
     branches: [main, alpha-working]
     paths:
       - 'examples/nvoos-astro-velocity/**'
-      - 'addons/funiq-bridge/**'
+      - 'addons/nvoos-astro-bridge/**'
       - '.github/workflows/sync-nvoos-astro-velocity.yml'
   repository_dispatch:
     types: [nvoos-storefront-content-changed]
@@ -67,7 +67,7 @@ jobs:
       # scripts/sync-manage-assets.mjs, which invokes the bridge's esbuild
       # target — so the bridge deps must be installed first.
       - name: Install bridge deps
-        working-directory: addons/funiq-bridge
+        working-directory: addons/nvoos-astro-bridge
         run: npm ci
 
       - name: Start fixture contract server
@@ -109,14 +109,14 @@ jobs:
       # committed copy drifts from the bridge sources, fail here instead of
       # shipping a stale admin on the mirror — the spa-v2 two-bundle rule,
       # enforced. Rebuild + commit public/manage-assets in the same PR as
-      # any addons/funiq-bridge/src change.
+      # any addons/nvoos-astro-bridge/src change.
       - name: Astro CMS bundle staleness gate
         working-directory: examples/nvoos-astro-velocity
         run: |
           cd "$GITHUB_WORKSPACE"
           git diff --exit-code -- \
             examples/nvoos-astro-velocity/public/manage-assets/ || {
-            echo "::error::The committed /manage admin bundle is stale relative to addons/funiq-bridge/src. Run 'npm run build:standalone' in addons/funiq-bridge and 'node scripts/sync-manage-assets.mjs' in examples/nvoos-astro-velocity, then commit public/manage-assets/ in the same PR."
+            echo "::error::The committed /manage admin bundle is stale relative to addons/nvoos-astro-bridge/src. Run 'npm run build:standalone' in addons/nvoos-astro-bridge and 'node scripts/sync-manage-assets.mjs' in examples/nvoos-astro-velocity, then commit public/manage-assets/ in the same PR."
             exit 1
           }
 
