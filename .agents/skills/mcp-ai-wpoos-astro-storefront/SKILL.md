@@ -174,7 +174,14 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   `NVOOS_SSR_API_ORIGIN` to the loopback BFF origin for the SSR commerce
   client, and without the snapshot the manager-session check pointed at the
   BFF itself (every manager write 401; incident 2026-10-30, pinned by a
-  handshake regression test).
+  handshake regression test). Boot paths that only set `NVOOS_TARGET_SITE`
+  (the CI smoke step boots the BFF before Playwright, which **reuses** it,
+  so the `playwright.config.ts` env never applies; the Velocity activation
+  notes likewise) get the contract base seeded by `seedMcpEnv`
+  (`scripts/lib/mcp-env.mjs`) — without it every manager write 401s and
+  `cms_*` reports `no_commerce_base` (incident 2026-10-31, pinned by the
+  rebrand-loop e2e + `tests/unit/mcp-env.test.ts`). Explicit
+  `NVOOS_SSR_API_ORIGIN` / `NVOOS_API_BASE` always win.
 - **Durability:** token/theme runtime state persists across restarts when
   `NVOOS_MCP_STATE_FILE` is set (atomic tmp+rename writes,
   `src/lib/tokens/persistence.ts`); otherwise process-local.
