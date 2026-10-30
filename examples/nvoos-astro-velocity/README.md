@@ -178,3 +178,10 @@ runs its normal `npm install` (build is a no-op — `dist/` is prebuilt).
 ## License
 
 MIT — see `LICENSE`.
+
+The committed `/manage` admin bundle (`public/manage-assets/`) is built from
+`addons/nvoos-astro-bridge/src`, which carries its own MIT grant
+(`src/LICENSE` there — owner decision Q8). Bundled third-party components
+(`@wordpress/*`, React, TanStack Query, zod) keep their licenses; see
+`NOTICE` for attribution. The proprietary bridge PHP plugin is not part of
+this app or its public mirror.

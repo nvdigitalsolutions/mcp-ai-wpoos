@@ -329,6 +329,25 @@ npm run build:standalone
 
 The addon uses PSR-4 autoloading via `spl_autoload_register` (no Composer `vendor/` required at runtime). If you have Composer available, run `composer install` for dev tooling.
 
+---
+
+## License
+
+Split license (Proposal 092, owner decision Q8):
+
+- **The WordPress plugin** (main plugin file, `includes/`, build tooling) —
+  **proprietary** (`LICENSE`). Self-hosted distribution only; not
+  wp.org-compatible.
+- **The React admin SPA source in `src/`** — **MIT** (`src/LICENSE`). This
+  carve-out exists because the standalone build
+  (`build/standalone/astro-admin.{js,css}`) is committed to the MIT-licensed
+  Astro storefront (`examples/nvoos-astro-velocity/public/manage-assets/`)
+  and shipped in its public mirror — the source of bytes published under
+  MIT must itself be MIT.
+- Bundled third-party packages (`@wordpress/*`, React) keep their own
+  licenses (GPL-2.0-or-later / MIT); attribution lives in the storefront's
+  `NOTICE`.
+
 ### Code standards
 
 The addon carries its own ruleset, `phpcs.xml.dist`, and is excluded from the

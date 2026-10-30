@@ -37,6 +37,7 @@ import {
 	requestOrigin,
 	stripDomainFromSetCookie,
 } from './lib/proxy-headers.mjs';
+import { seedMcpEnv } from './lib/mcp-env.mjs';
 
 const PORT = Number(process.env.PORT) || 4321;
 const TARGET_SITE = (process.env.NVOOS_TARGET_SITE || '').replace(/\/+$/, '');
@@ -51,8 +52,11 @@ const PROXY_CACHE_MAX_TTL = Number(process.env.NVOOS_PROXY_CACHE_MAX_TTL) || 300
 // NVOOS_SSR_API_ORIGIN at request time to verify manager sessions, and the
 // rewrite (loopback BFF origin for the SSR commerce client) would otherwise
 // point that check at the BFF itself (incident 2026-10-30: /mcp manager
-// writes 401 on every deployment).
-const mcpEnv = { ...process.env };
+// writes 401 on every deployment). Boot paths that only set
+// NVOOS_TARGET_SITE (CI smoke step, Velocity activation notes) get the
+// contract base derived from the proxy target — the same value
+// playwright.config.ts sets explicitly for its own cold boot.
+const mcpEnv = seedMcpEnv(process.env);
 const mcpHandler = await import('../dist/mcp-entry.mjs')
 	.then((mod) => mod.createAstroMcpNodeHandler(mcpEnv))
 	.catch((error) => {
