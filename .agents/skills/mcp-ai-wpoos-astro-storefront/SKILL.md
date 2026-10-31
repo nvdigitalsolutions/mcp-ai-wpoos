@@ -56,6 +56,10 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
   `from_name()`), `WooTaxonomy` (pa_brand/pa_color/product_cat/stock-status
   mapping), `WhereClause`/`SortClause` (shared operators).
   `ProductsController` is a thin delegator — the contract never changes.
+- **Draft support (PR #7331):** create/update accept
+  `status: 'draft' | 'publish'` (default publish —
+  `NativeProductSource::normalize_status()`); listings accept `status=any` to
+  include drafts. Internal/test products ride this via the MCP `cms_*` tools.
 - **Woo availability check is `class_exists('WooCommerce') &&
   function_exists('wc_get_product')`** — the repo's test bootstrap defines a
   stub `WooCommerce` class when the plugin is absent, so class_exists alone
@@ -480,9 +484,9 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ## References
 
-- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
+- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
 - `examples/nvoos-astro-velocity/README.md` (architecture, env, commands)
 - `addons/nvoos-astro-bridge/README.md` (REST surface, data map)
-- Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`
+- Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`, `mcp-ai-wpoos-astro-forge` (the generator that turns a WP/Woo site into an Astro frontend — this skill covers the serving side)
 - Related: Proposal 085 + appendix (contract invariant, Strangler Fig),
   Proposal 090 (Laravel backend flip — the storefront survives it unchanged).

@@ -4,7 +4,9 @@ Turns a WordPress/WooCommerce site into a native **Astro 7** headless
 frontend. WordPress stays the CMS; the generated project pulls content
 through an Astro **content-layer loader** at build time (freshness via
 webhook → rebuild), renders sanitized HTML, and ships SEO-complete static
-output. The customer driver is **MYYCO** (`https://myyco.com/`).
+output. The pilot customer is a WooCommerce storefront (Proposal 098 has
+already extracted its design language — the tokens feed the template's
+`--forge-*` variables).
 
 > This is Phase 0 (the generation core). Phases 1–3 (CLI polish, WooCommerce
 > collections, `/mcp` integration + deploy) follow Proposal 096 §5.
@@ -40,8 +42,8 @@ npm run test:e2e         # fixture WP → scaffold → npm install → astro che
 # 1. Write the operator profile (the allowlist — the forge never takes arbitrary URLs).
 cat > site.json <<'EOF'
 {
-  "url": "https://myyco.com",
-  "name": "MYYCO",
+  "url": "https://shop.example.com",
+  "name": "Example Store",
   "collections": [
     { "slug": "posts", "restBase": "wp/v2/posts",
       "fields": ["id", "date_gmt", "modified_gmt", "title", "slug", "link", "content", "excerpt"],
@@ -54,11 +56,11 @@ cat > site.json <<'EOF'
 EOF
 
 # 2. Check the source first — a build must never silently truncate.
-node scripts/forge.mjs site.json --target ./myyco-frontend --check
+node scripts/forge.mjs site.json --target ./customer-frontend --check
 
 # 3. Scaffold + build.
-node scripts/forge.mjs site.json --target ./myyco-frontend
-cd myyco-frontend && npm install && npm run build
+node scripts/forge.mjs site.json --target ./customer-frontend
+cd customer-frontend && npm install && npm run build
 ```
 
 ## Safety invariants (Proposal 096 §2)
