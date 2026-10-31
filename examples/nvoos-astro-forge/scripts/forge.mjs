@@ -95,4 +95,7 @@ console.log(`\u2713 Scaffolded ${result.collections.length} collection(s) into $
 for (const collection of result.manifest.collections) {
 	console.log(`  - ${collection.slug} <- ${collection.restBase}`);
 }
+for (const warning of result.warnings) {
+	console.warn(`\u26a0 ${warning}`);
+}
 console.log('Next: cd into the project, `npm install`, `npm run dev` (or `npm run build`).');

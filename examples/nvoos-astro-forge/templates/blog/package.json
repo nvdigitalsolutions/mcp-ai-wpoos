@@ -6,7 +6,7 @@
 	"description": "NV oOS Astro Forge — blog frontend generated from a WordPress source",
 	"scripts": {
 		"dev": "astro dev",
-		"build": "astro build",
+		"build": "astro build && node scripts/postbuild.mjs",
 		"preview": "astro preview",
 		"check": "astro check"
 	},

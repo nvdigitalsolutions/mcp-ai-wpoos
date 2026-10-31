@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { scaffold, renderContentConfig, resolveTemplateDir, rewriteContentConfig } from '../lib/scaffold.ts';
+import { scaffold, renderContentConfig, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -194,6 +194,59 @@ describe('scaffold — safety guards', () => {
 	it('rejects unknown built-in template names', async () => {
 		const root = await tempDir();
 		await expect(resolveTemplateDir('does-not-exist')).rejects.toThrow(/not found/);
+	});
+});
+
+describe('tokens_apply', () => {
+	it('merges profile overrides over the defaults in the token block', () => {
+		const out = renderTokenBlock({ accent: '#720eec', ink: '#7a7a7a' });
+		expect(out).toContain('--forge-accent: #720eec;');
+		expect(out).toContain('--forge-ink: #7a7a7a;');
+		expect(out).toContain('--forge-surface: #ffffff;'); // default survives
+		expect(out).toContain('--forge-space: 1rem;'); // layout tokens survive
+	});
+
+	it('rewrites only the marked span in global.css', () => {
+		const css = ['/* FORGE:tokens */', ':root {', '\t--forge-accent: #old;', '}', '/* FORGE:tokens-end */', 'body { color: red; }'].join('\n');
+		const out = rewriteGlobalCss(css, { accent: '#720eec' });
+		expect(out).toContain('--forge-accent: #720eec;');
+		expect(out).toContain('body { color: red; }');
+		expect(out).not.toContain('#old');
+		expect(out).toContain('/* FORGE:tokens */');
+		expect(out).toContain('/* FORGE:tokens-end */');
+	});
+
+	it('fails loudly when the markers are missing', () => {
+		expect(() => rewriteGlobalCss(':root {}', {})).toThrow(/FORGE:tokens/);
+	});
+
+	it('warns when rendered pairs fail WCAG AA', () => {
+		const warnings = tokenWarnings({ accent: '#ffffff', 'accent-ink': '#ffffff' });
+		expect(warnings.some((w) => w.includes('WCAG') && w.includes('accent'))).toBe(true);
+	});
+
+	it('warns on unparseable tokens and stays quiet on clean ones', () => {
+		expect(tokenWarnings({ ink: 'red' }).length).toBeGreaterThan(0);
+		expect(tokenWarnings({})).toEqual([]); // ADS defaults pass
+	});
+
+	it('writes the tokens into the scaffold output and ships the NOTICE', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'themed');
+		const result = await scaffold({
+			profile: { ...PROFILE, tokens: { accent: '#0b5f4e' } },
+			targetDir: target,
+			template: 'blog',
+		});
+
+		const css = await readFile(path.join(target, 'src', 'styles', 'global.css'), 'utf8');
+		expect(css).toContain('--forge-accent: #0b5f4e;');
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.tokens).toEqual({ accent: '#0b5f4e' });
+		const notice = await readFile(path.join(target, 'NOTICE'), 'utf8');
+		expect(notice).toContain('MIT');
+		expect(notice).toContain('Generated output');
+		expect(result.warnings).toEqual([]);
 	});
 });
 

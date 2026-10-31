@@ -137,6 +137,28 @@ customer, 2026-10-31): 49 pages built from the production site** — 2 posts,
 vectors in built HTML, brand chrome correct. Commerce data (prices) awaits
 Woo REST consumer keys from the customer (env-only, never in-repo).
 
+### 2.3 Phase 1b status — license + tokens_apply + SEO, shipped 2026-10-31
+
+- **License (owner decision Q7 — mirrors 092 Q8):** the forge package is
+  **MIT** via `LICENSE` + `NOTICE` inside the GPL-3.0-or-later repo; the
+  scaffold ships the NOTICE (MIT notice + generated-output rule) into every
+  generated project; `private: true` until Phase 3 publishing.
+- **`tokens_apply`:** profile `tokens` (098 design-language output) merges
+  over the `--forge-*` defaults between the line-anchored
+  `/* FORGE:tokens */` markers; the manifest records the applied tokens; a
+  dependency-free WCAG 2.2 contrast gate (`lib/contrast.ts`) warns (never
+  blocks) when ink/surface or accent-ink/accent fail SC 1.4.3 — the CLI
+  prints the warnings.
+- **SEO suite:** `/feed.xml` (RSS 2.0, linked from the chrome), branded
+  `/404.html`, and `/redirects.json` — the structured 301 map from the WP
+  URL structure to the generated one (single-hop, front-page → `/`).
+  `scripts/postbuild.mjs` materializes the host-agnostic `dist/_redirects`
+  (Netlify/Cloudflare/static-server compatible).
+
+**Validation:** 61 unit tests (contrast known-pairs, token rewrite/merge,
+NOTICE ship, marker gates) + e2e 9/9 (baked accent CSS, RSS items/guids,
+404, redirect map with the front-page and product entries).
+
 ---
 
 ## 3. Phase 1 — Storefront template (~2 wks)

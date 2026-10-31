@@ -44,6 +44,13 @@ export interface SiteProfile {
 	name?: string;
 	/** Page slug to render at `/` (the WordPress static front page). */
 	frontPage?: string;
+	/**
+	 * Design-token overrides (Proposal 098 output) applied over the
+	 * template defaults at scaffold time. Keys are the `--forge-*` names
+	 * without the prefix (accent, accent-ink, ink, muted, surface,
+	 * surface-alt, line, radius, font); values are CSS values.
+	 */
+	tokens?: Record<string, string>;
 	/** Collections to wire into the generated project. */
 	collections: WpCollection[];
 }

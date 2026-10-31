@@ -76,6 +76,8 @@ const PROFILE: SiteProfile = {
 	// The fixture's About page becomes the static front page — the home
 	// renders page content, and /about/ must disappear (one canonical URL).
 	frontPage: 'about',
+	// tokens_apply: the 098 design language lands over the --forge-* defaults.
+	tokens: { accent: '#0b5f4e' },
 	collections: [
 		{
 			slug: 'posts',
@@ -222,6 +224,37 @@ describe('forge e2e — emitted site', () => {
 		expect(detail).toContain('application/ld+json');
 		expect(detail).toContain('"BlogPosting"');
 		expect(detail).toContain(`<link rel="canonical" href="${origin}/posts/4/studio-notes-autumn/"`);
+	});
+
+	it('applies the design tokens, RSS, 404 and the redirect map', async () => {
+		// tokens_apply: the accent override is baked into the built CSS.
+		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
+		expect(index).toContain('--forge-accent:#0b5f4e');
+		expect(index).toContain('type="application/rss+xml"');
+
+		const feed = await readFile(path.join(workDir, 'dist', 'feed.xml'), 'utf8');
+		expect(feed).toContain('<rss version="2.0"');
+		expect(feed).toContain('<title>Fjord merino sweater, first look</title>');
+		expect(feed).toContain(`<guid isPermaLink="true">${origin}/posts/1/fjord-merino-sweater/</guid>`);
+
+		const notFound = await readFile(path.join(workDir, 'dist', '404.html'), 'utf8');
+		expect(notFound).toContain('404');
+
+		// The 301 map: WP paths -> generated paths, one hop, front page home.
+		// /redirects.json is the structured document; postbuild materializes
+		// the host-agnostic _redirects file.
+		const map = JSON.parse(await readFile(path.join(workDir, 'dist', 'redirects.json'), 'utf8'));
+		expect(map).toContainEqual({
+			from: '/fjord-merino-sweater/',
+			to: '/posts/1/fjord-merino-sweater/',
+			status: 301,
+		});
+		expect(map).toContainEqual({ from: '/about/', to: '/', status: 301 });
+
+		const redirects = await readFile(path.join(workDir, 'dist', '_redirects'), 'utf8');
+		expect(redirects).toContain('/fjord-merino-sweater/\t/posts/1/fjord-merino-sweater/\t301');
+		expect(redirects).toContain('/about/\t/\t301');
+		expect(redirects).toContain('/product/fjord-merino-sweater/\t/products/101/fjord-merino-sweater/\t301');
 	});
 
 	it('renders the care-guide rich content (tables, figures, quotes)', async () => {

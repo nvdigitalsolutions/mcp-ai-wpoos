@@ -75,6 +75,23 @@ Gap-filling pass run before implementing the Phase 0 spike (`examples/nvoos-astr
   maps to `frontPage` in the profile; it renders at `/` and is skipped by
   the slug route + sitemap — one canonical URL per the §0 SEO rule.
 
+**Phase 1b learnings (verified in code 2026-10-31):**
+
+- **Astro ignores underscore-prefixed files in `src/pages/`** (the partial
+  convention) — a `_redirects.ts` endpoint never becomes a route and emits
+  nothing. Emit the structured document at `/redirects.json` and materialize
+  `dist/_redirects` in a post-build script (host-agnostic: Netlify,
+  Cloudflare Pages, and plain static servers all read the publish-root
+  `_redirects` format).
+- **Token rewrites must keep their markers** — the `/* FORGE:tokens */`
+  span stays re-writable and self-documenting; the replacement must cover
+  every token the template block defines (layout tokens like `space`/
+  `measure` included) or the rewrite silently drops them.
+- **WCAG gating is warnings-not-blocks** at scaffold time: the template
+  pairs that actually render are ink/surface and accent-ink/accent;
+  dependency-free luminance math (21-line `lib/contrast.ts`) beats pulling a
+  color library into the scaffold path.
+
 ---
 
 ## 1. Competitor & ecosystem survey

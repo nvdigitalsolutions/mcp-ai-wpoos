@@ -39,7 +39,9 @@ Environment (see `.env.example`):
   (the pages are pruned by the scaffold when the profile has no products)
 - `/{slug}/` — WordPress pages (the front page slug is skipped to keep one
   canonical URL)
-- `/sitemap.xml`, `/robots.txt`
+- `/sitemap.xml`, `/robots.txt`, `/feed.xml` (RSS 2.0), `/404.html`
+- `/redirects.json` + `dist/_redirects` (post-build) — the 301 map from the
+  old WordPress URL structure to the generated one
 
 ## Safety invariants (Proposal 096 §2.4)
 
@@ -52,9 +54,15 @@ Environment (see `.env.example`):
 - Truncated fetches are never silent: entries carry a `truncated` flag, the
   loader warns, and pages show a notice.
 
-## Design tokens
+## Design tokens (`tokens_apply`)
 
 `src/styles/global.css` defines `--forge-*` tokens defaulting to the ADS core
-palette. The Forge pipeline applies a site's design language (Proposal 098
-`design_theme` output) over these variables — content is re-themed, never
-re-cloned.
+palette inside `/* FORGE:tokens */` markers. The Forge pipeline applies a
+site's design language (Proposal 098 output) over these variables at scaffold
+time — content is re-themed, never re-cloned — and warns when the rendered
+ink/surface and accent-ink/accent pairs fail WCAG AA (SC 1.4.3).
+
+## License
+
+The Forge template and vendored libraries are MIT (`NOTICE` at the project
+root). Generated sites are the customer's own.

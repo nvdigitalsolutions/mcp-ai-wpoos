@@ -16,6 +16,7 @@ import { cp, copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from 'nod
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { contrastRatio, passesAaText } from './contrast.ts';
 import type { SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
@@ -42,6 +43,8 @@ export interface ForgeManifest {
 	name: string;
 	/** Page slug rendered at `/` (the WordPress static front page). */
 	frontPage?: string;
+	/** Applied design-token overrides (098 output, tokens_apply). */
+	tokens?: Record<string, string>;
 	generatedAt: string;
 	collections: Array<{ slug: string; restBase: string; kind?: string; exclude?: string[] }>;
 }
@@ -50,6 +53,8 @@ export interface ScaffoldResult {
 	targetDir: string;
 	manifest: ForgeManifest;
 	collections: string[];
+	/** WCAG/parse warnings collected during the token gate. */
+	warnings: string[];
 }
 
 /** Resolve a template: built-in name under templates/, or an explicit path. */
@@ -161,6 +166,75 @@ export function rewriteContentConfig(source: string, profile: SiteProfile): stri
 	return [...lines.slice(0, startLine), replacement, ...lines.slice(endLine)].join('\n');
 }
 
+/** Default `--forge-*` values (ADS core palette) — overrides merge on top. */
+const DEFAULT_TOKENS: Record<string, string> = {
+	accent: '#0f6b4f',
+	'accent-ink': '#ffffff',
+	ink: '#1a1a1a',
+	muted: '#6b6b6b',
+	surface: '#ffffff',
+	'surface-alt': '#f5f5f4',
+	line: '#e4e4e2',
+	radius: '8px',
+	font: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+	space: '1rem',
+	measure: '72ch',
+};
+
+/** Render the :root token block (defaults + profile overrides). */
+export function renderTokenBlock(tokens?: Record<string, string>): string {
+	const merged = { ...DEFAULT_TOKENS, ...(tokens ?? {}) };
+	const lines = Object.entries(merged).map(([name, value]) => `\t--forge-${name}: ${value};`);
+	return `:root {\n${lines.join('\n')}\n}`;
+}
+
+/** Rewrite the FORGE:tokens span in global.css (line-anchored markers). */
+export function rewriteGlobalCss(source: string, tokens?: Record<string, string>): string {
+	const lines = source.split(/\r?\n/);
+	let start = -1;
+	let end = -1;
+	for (let i = 0; i < lines.length; i++) {
+		const trimmed = lines[i].trim();
+		if (trimmed === '/* FORGE:tokens */') start = i;
+		if (trimmed === '/* FORGE:tokens-end */') {
+			end = i;
+			break;
+		}
+	}
+	if (start === -1 || end === -1 || end <= start) {
+		throw new Error('global.css is missing the FORGE:tokens markers — the template is corrupt.');
+	}
+	// Keep both marker lines — the span stays re-writable and self-documenting.
+	return [
+		...lines.slice(0, start),
+		lines[start],
+		renderTokenBlock(tokens),
+		lines[end],
+		...lines.slice(end + 1),
+	].join('\n');
+}
+
+/** WCAG contrast gate over the pairs the template renders — warns, never blocks. */
+export function tokenWarnings(tokens?: Record<string, string>): string[] {
+	const merged = { ...DEFAULT_TOKENS, ...(tokens ?? {}) };
+	const warnings: string[] = [];
+	const pairs: Array<[string, string, string]> = [
+		['ink', 'surface', 'body text (ink on surface)'],
+		['accent-ink', 'accent', 'text on accent (accent-ink on accent)'],
+	];
+	for (const [fgKey, bgKey, label] of pairs) {
+		const ratio = contrastRatio(merged[fgKey], merged[bgKey]);
+		if (ratio === undefined) {
+			warnings.push(`Token ${fgKey}/${bgKey} failed to parse — ${label} contrast not checked.`);
+		} else if (!passesAaText(ratio)) {
+			warnings.push(
+				`WCAG: ${label} contrast is ${ratio.toFixed(2)}:1 — below the 4.5:1 AA minimum (SC 1.4.3).`
+			);
+		}
+	}
+	return warnings;
+}
+
 /** Ensure the target .gitignore covers the built-artifact gate. */
 async function ensureGitignore(targetDir: string): Promise<void> {
 	const gitignorePath = path.join(targetDir, '.gitignore');
@@ -231,10 +305,21 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 		await copyFile(path.join(FORGE_ROOT, 'lib', file), path.join(forgeDir, file));
 	}
 
+	// 2b. Ship the NOTICE — MIT attribution for the vendored libs plus the
+	//     generated-output rule (the customer owns the site).
+	await copyFile(path.join(FORGE_ROOT, 'NOTICE'), path.join(targetDir, 'NOTICE'));
+
 	// 3. Rewrite the content config for this profile.
 	const configPath = path.join(targetDir, 'src', 'content.config.ts');
 	const source = await readFile(configPath, 'utf8');
 	await writeFile(configPath, rewriteContentConfig(source, profile), 'utf8');
+
+	// 3a. Apply the design language (tokens_apply — Proposal 098 output) over
+	//     the --forge-* defaults, and gate the rendered pairs against WCAG.
+	const cssPath = path.join(targetDir, 'src', 'styles', 'global.css');
+	const css = await readFile(cssPath, 'utf8');
+	await writeFile(cssPath, rewriteGlobalCss(css, profile.tokens), 'utf8');
+	const warnings = tokenWarnings(profile.tokens);
 
 	// 3b. Prune template pages for collections the profile doesn't declare
 	//     (e.g. a blog-only profile must not ship product routes that would
@@ -251,6 +336,7 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 		url: profile.url.replace(/\/+$/, ''),
 		name: profile.name ?? 'Forge Site',
 		frontPage: profile.frontPage,
+		tokens: profile.tokens,
 		generatedAt: new Date().toISOString(),
 		collections: profile.collections.map((c) => ({
 			slug: c.slug,
@@ -289,5 +375,6 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 		targetDir,
 		manifest,
 		collections: profile.collections.map((c) => c.slug),
+		warnings,
 	};
 }

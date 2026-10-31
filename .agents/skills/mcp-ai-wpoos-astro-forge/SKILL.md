@@ -121,6 +121,12 @@ wired. The workflow runs on `paths: examples/nvoos-astro-forge/**`.
   the build.
 - **The WP static front page** maps to profile `frontPage` — rendered at
   `/`, skipped by the slug route + sitemap (one canonical URL).
+- **Astro ignores underscore-prefixed files in `src/pages/`** (the partial
+  convention) — `_redirects.ts` never becomes a route. Emit
+  `/redirects.json` and materialize `dist/_redirects` post-build.
+- **Token rewrites must keep their FORGE markers** and cover every token
+  the template block defines (layout tokens included) — see the
+  `/* FORGE:tokens */` span contract below.
 - **The scaffold CLI is operator-run and has no rate limiting** — rate
   limiting/retry belongs on the future MCP surface, not the CLI.
 
@@ -154,14 +160,19 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,
   sanitizer, scaffold CLI, blog template, hermetic fixture, CI exit gate.
-- **Phase 1a — shipped 2026-10-31**: Woo collections (`kind: 'product'`,
-  wc/v3 + wp/v2 shapes, wc-consumer auth env), storefront template pages
-  (`/products/` + detail, Product JSON-LD), static front page (`frontPage`),
-  per-collection `exclude`, `optional` sources, scaffold page pruning, brand
-  name from `nvoos.json`. Live pilot forge: 49 pages from production.
-- **Phase 1b (remaining):** RSS/404/search (Pagefind), full `site_analyze`
-  discovery (CPTs/SEO plugin/Woo/REST lockdown), `tokens_apply` at scaffold
-  time (ADS DTCG in).
+- **Phase 1a — shipped 2026-10-31** (PR #7337): Woo collections (`kind:
+  'product'`, wc/v3 + wp/v2 shapes, wc-consumer auth env), storefront
+  template pages (`/products/` + detail, Product JSON-LD), static front page
+  (`frontPage`), per-collection `exclude`, `optional` sources, scaffold page
+  pruning, brand name from `nvoos.json`. Live pilot forge: 49 pages from
+  production.
+- **Phase 1b — shipped 2026-10-31:** MIT license carve-out (owner decision
+  Q7, mirrors 092 Q8 — NOTICE ships into generated projects), `tokens_apply`
+  (098 design language over the `--forge-*` markers + WCAG contrast gate
+  warnings), SEO suite (`/feed.xml`, `/404.html`, `/redirects.json` →
+  `dist/_redirects` post-build).
+- **Phase 1c (remaining):** search (Pagefind), full `site_analyze` discovery
+  (CPTs/SEO plugin/Woo/REST lockdown), media pipeline (Astro Image).
 - **Phase 2:** `nvoos-astro-bridge` plugin — HMAC-fail-closed rebuild
   webhook, preview tokens, wp.org checklist (see `mcp-ai-wpoos-wporg-submission`).
 - **Phase 3–4:** publishing + multi-site, wizard + packaging (octokit deploy,
