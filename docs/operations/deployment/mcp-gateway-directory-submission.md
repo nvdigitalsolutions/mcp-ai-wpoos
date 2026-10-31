@@ -100,6 +100,7 @@ npx -y @nvdigitalsolutions/nvoos-mcp-bridge
    listing goes up; include the status-page URL in the listing if available.
    In-fleet option: the media worker's status module monitors the gateway as
    a synthetic-only external target
-   (`STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health` +
-   `STATUS_GATEWAY_SYNTHETIC=1`), with the worker's public `/status` page
+   (`STATUS_ENABLED=1` +
+   `STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health` +
+   `STATUS_SYNTHETIC_ENABLED=1`), with the worker's public `/status` page
    (`STATUS_PUBLIC_PAGE=1`) as the listing's status URL.

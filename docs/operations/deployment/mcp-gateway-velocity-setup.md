@@ -97,10 +97,12 @@ Map keys to site slugs in `GATEWAY_PUBLIC_KEYS`
   (e.g. `demo`) so the unauthenticated endpoint does not advertise private
   slugs; the keyed `/health/full` always reports every site.
 - In-fleet option: the media worker's status module monitors the gateway as
-  a synthetic-only external target — `STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health`
-  plus `STATUS_GATEWAY_SYNTHETIC=1` (probes `/health` through the SSRF
-  guard; HMAC-signed webhook/email alerts on confirmed transitions; the
-  worker's public `/status` page needs `STATUS_PUBLIC_PAGE=1`).
+  a synthetic-only external target — `STATUS_ENABLED=1`,
+  `STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health`, and
+  `STATUS_SYNTHETIC_ENABLED=1` (probes `/health` through the SSRF guard;
+  HMAC-signed webhook/email alerts on confirmed transitions via
+  `STATUS_ALERT_WEBHOOKS` + `STATUS_ALERT_WEBHOOK_SECRET`; the worker's
+  public `/status` page needs `STATUS_PUBLIC_PAGE=1`).
 - Alert on 5xx spikes and on `429` counts (rate limiting misconfiguration
   shows up here first).
 - Watch logs for `[Auth]` warnings (previous-key use, short keys) and
