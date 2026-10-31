@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, waitFor, within, fireEvent } from '@testing-library/react';
 
 import { RecordsPage } from '../RecordsPage';
 
@@ -154,5 +154,48 @@ describe( 'RecordsPage remote-site scoping', () => {
 			expect.stringContaining( '/records/remote/profession' ),
 			expect.anything()
 		);
+	} );
+} );
+
+describe( 'RecordsPage expanded-record detail', () => {
+	it( 'renders core fields when the entity ships no columns', async () => {
+		setRuntime();
+		setFetchRoutes( {
+			'/records/schema': { entities: { profession: PROFESSION_ENTITY } },
+			// Detail route first — the mock matches the first route whose key
+			// is contained in the URL.
+			'/wp/v2/mcp_ai_profession/7': {
+				id: 7,
+				date: '2026-10-30T10:00:00',
+				status: 'publish',
+				title: { rendered: 'Radiologist' },
+				meta: {},
+			},
+			'/wp/v2/mcp_ai_profession': [
+				{
+					id: 7,
+					date: '2026-10-30T10:00:00',
+					status: 'publish',
+					title: { rendered: 'Radiologist' },
+					meta: {},
+				},
+			],
+		} );
+
+		const { container } = render( <RecordsPage group="professions" /> );
+
+		const rowButton = await screen.findByRole( 'button', { name: 'Radiologist' } );
+		fireEvent.click( rowButton );
+
+		await waitFor( () => {
+			const grid = container.querySelector( '.nvoos-pro-spa-records-detail__grid' );
+			expect( grid?.children.length ?? 0 ).toBeGreaterThan( 0 );
+		} );
+
+		const grid = container.querySelector( '.nvoos-pro-spa-records-detail__grid' ) as HTMLElement;
+		const detail = within( grid );
+		expect( detail.getByText( 'Date' ) ).toBeInTheDocument();
+		expect( detail.getByText( 'Status' ) ).toBeInTheDocument();
+		expect( detail.getByText( 'ID' ) ).toBeInTheDocument();
 	} );
 } );

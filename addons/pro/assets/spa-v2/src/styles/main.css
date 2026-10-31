@@ -1699,6 +1699,12 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	color: var(--nvoos-text-secondary, #787c82);
 }
 
+/* Page-level notices (e.g. the Records remote-site banner) — clearance
+   from the content that follows, which the inline field hints don't need. */
+.nvoos-pro-spa-settings__hint--page {
+	margin: 4px 0 8px;
+}
+
 .nvoos-pro-spa-settings__footer {
 	position: sticky;
 	/* Tuck the footer 30px below the scroll edge so it sits flush against
