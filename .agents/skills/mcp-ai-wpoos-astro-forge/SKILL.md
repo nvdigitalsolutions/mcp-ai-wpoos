@@ -183,9 +183,16 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   probes, wc/v3-auth count fallback; live-verified against the pilot — all
   ten junk pages found automatically) + the media pipeline (SmartImage:
   Astro Image with `inferSize` for same-host images, CDN passthrough).
-- **Phase 1d (remaining):** search (Pagefind), Payload-envelope
-  (`nvoos-commerce/v1`) collection variant. Then Phases 2–4 (bridge webhook,
-  publishing/deploy, wizard) and the `/mcp` tool surface (096 §1).
+- **Phase 1d — shipped 2026-10-31:** Pagefind search (post-build index,
+  lazy-loaded `/search/` shell) + the `source: 'payload'` collection variant
+  (nvoos-commerce/v1 envelope — body pagination, `oldPrice` sale semantics,
+  slugify for missing slugs; discovery offers the payload candidate when
+  the namespace is advertised and no product CPT exists).
+- **Phase 2 (next):** the bridge plugin — HMAC rebuild webhook → GitHub
+  dispatch, single-use preview tokens, redacted health endpoint (Q4
+  standalone wp.org plugin; the existing `addons/nvoos-astro-bridge`
+  RebuildWebhook class is the reference). Then Phases 3–4 (publishing/
+  deploy, wizard) and the `/mcp` tool surface (096 §1).
 - **Phase 2:** `nvoos-astro-bridge` plugin — HMAC-fail-closed rebuild
   webhook, preview tokens, wp.org checklist (see `mcp-ai-wpoos-wporg-submission`).
 - **Phase 3–4:** publishing + multi-site, wizard + packaging (octokit deploy,

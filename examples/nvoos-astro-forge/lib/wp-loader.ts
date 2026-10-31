@@ -79,6 +79,11 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 		load: async (context: LoaderContext) => {
 			const client = WpClient.fromProfile(site, { auth });
 
+			if (collection.source === 'payload') {
+				await loadPayloadEntries(context, client, collection);
+				return;
+			}
+
 			let fetched;
 			try {
 				fetched = await client.fetchAll(collection.restBase, {
@@ -246,6 +251,148 @@ function extractCommerce(entry: Record<string, unknown>, keys: string[]): string
 		}
 	}
 	return undefined;
+}
+
+/**
+ * Payload-envelope branch — the nvoos-commerce/v1 wire format served by the
+ * nvoos-astro-bridge: `{ docs, totalDocs, limit, totalPages, page,
+ * hasNextPage, hasPrevPage }` pagination over flat documents (no `_fields`
+ * pruning, no X-WP headers). Reads are public; auth is not sent.
+ */
+async function loadPayloadEntries(
+	context: LoaderContext,
+	client: WpClient,
+	collection: WpCollection
+): Promise<void> {
+	const perPage = collection.perPage ?? 100;
+	const maxPages = collection.maxPages ?? 50;
+	const entries: Array<Record<string, unknown>> = [];
+	let truncated = false;
+	let pages = 0;
+
+	for (let page = 1; page <= maxPages; page++) {
+		const { body } = await client.get<PayloadPage>(collection.restBase, {
+			page: String(page),
+			limit: String(perPage),
+		});
+		entries.push(...(body.docs ?? []));
+		pages = page;
+		const totalPages = Math.max(1, Number(body.totalPages ?? 1));
+		if (page >= totalPages) {
+			break;
+		}
+		if (page === maxPages) {
+			truncated = true;
+		}
+	}
+
+	context.store.clear();
+	for (const entry of entries) {
+		if (collection.exclude?.includes(String(entry.slug ?? ''))) {
+			continue;
+		}
+		const raw = extractPayloadRaw(entry);
+		const modified = raw.modified || raw.date;
+		context.store.set({
+			id: String(entry.id ?? raw.slug),
+			data: {
+				id: Number(entry.id),
+				title: raw.title,
+				slug: raw.slug,
+				date: raw.date,
+				modified,
+				excerpt: raw.excerpt ? sanitizeHtml(raw.excerpt) : undefined,
+				link: raw.link,
+				author: raw.author,
+				featuredImage: raw.featuredImage,
+				price: raw.price,
+				regularPrice: raw.regularPrice,
+				salePrice: raw.salePrice,
+				stockStatus: raw.stockStatus,
+				sku: raw.sku,
+				categories: raw.categories,
+				images: raw.images,
+				truncated: truncated ? true : undefined,
+			},
+			digest: context.generateDigest(modified),
+			rendered: { html: sanitizeHtml(raw.html) },
+		});
+	}
+
+	if (truncated) {
+		context.logger.warn(
+			`[nvoos-wp] ${collection.slug}: fetch stopped at ${maxPages} pages — the build is incomplete. Raise maxPages in the site profile.`
+		);
+	}
+}
+
+interface PayloadPage {
+	docs?: Array<Record<string, unknown>>;
+	totalDocs?: number;
+	totalPages?: number;
+	page?: number;
+}
+
+/** Map one flat nvoos-commerce/v1 document into the stable entry shape. */
+export function extractPayloadRaw(entry: Record<string, unknown>): RawEntry {
+	const title = typeof entry.name === 'string' ? entry.name : String(entry.id ?? '');
+	const html = typeof entry.description === 'string' ? entry.description : '';
+	const date = String(entry.createdAt ?? entry.created_at ?? '');
+	const modified = String(entry.updatedAt ?? entry.updated_at ?? date);
+
+	// Price semantics: `price` is the CURRENT price; `oldPrice` present means
+	// a sale (strike-through = oldPrice). Mirrors the Woo mapping.
+	const price = extractCommerce(entry, ['price']);
+	const oldPrice = extractCommerce(entry, ['oldPrice', 'old_price', 'regular_price']);
+	const regularPrice = oldPrice ?? price;
+	const salePrice = oldPrice && price && oldPrice !== price ? price : undefined;
+
+	const images = Array.isArray(entry.images)
+		? entry.images.map((image) => String(image)).filter(Boolean)
+		: [];
+	const featured = typeof entry.image === 'string' && entry.image.length > 0 ? entry.image : images[0];
+
+	const categories: string[] = [];
+	if (Array.isArray(entry.categories)) {
+		for (const category of entry.categories) {
+			if (category && typeof category === 'object' && 'name' in category) {
+				categories.push(String(category.name));
+			}
+		}
+	} else if (entry.category && typeof entry.category === 'object' && 'name' in entry.category) {
+		categories.push(String(entry.category.name));
+	}
+
+	// Stock statuses are named objects in the envelope (e.g. "In Stock").
+	const stockStatus = Array.isArray(entry.statuses) && entry.statuses.length > 0
+		? String((entry.statuses[0] as { name?: unknown })?.name ?? '')
+		: undefined;
+
+	return {
+		title,
+		slug: slugify(title),
+		date,
+		modified,
+		html,
+		link: undefined,
+		featuredImage: featured,
+		price,
+		regularPrice,
+		salePrice,
+		stockStatus: stockStatus || undefined,
+		sku: undefined,
+		categories: categories.length > 0 ? categories : undefined,
+		images: images.length > 0 ? images : undefined,
+	};
+}
+
+/** Deterministic slug for envelope documents that carry none. */
+export function slugify(value: string): string {
+	return value
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '')
+		.slice(0, 80);
 }
 
 /** Extract rendered HTML from a wp/v2 `content`/`excerpt` object. */

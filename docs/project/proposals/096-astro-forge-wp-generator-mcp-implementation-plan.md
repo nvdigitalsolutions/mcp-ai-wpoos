@@ -184,6 +184,27 @@ woo-count fallback, junk heuristics; profile drafting) + e2e 11/11
 (optimized `/_astro/*.webp` srcset in the listing, CDN passthrough,
 `forge analyze` against the fixture server drafting the full profile).
 
+### 2.5 Phase 1d status — Pagefind search + Payload-envelope variant, shipped 2026-10-31
+
+- **Search (Pagefind):** the template's build chains
+  `astro build && postbuild && pagefind --site dist`; `/search/` is a thin
+  shell that lazily imports the runtime on first input (debounced, results
+  with excerpts/marks). e2e asserts the emitted `pagefind/` runtime +
+  entry manifest.
+- **Payload-envelope collections** (`source: 'payload'`): the loader reads
+  the `nvoos-commerce/v1` bridge envelope — body pagination
+  (`{ docs, totalDocs, totalPages }`, `page`/`limit` params, no `_fields`),
+  flat documents mapped to the stable shape (`name` → title, slugified;
+  `oldPrice` = strike-through regular price → sale when it differs from
+  `price`; `image(s)`, single `category`, named `statuses`). Discovery
+  offers the payload candidate when the namespace is advertised and no
+  product CPT exists.
+
+**Validation:** 68 unit tests (payload extraction incl. oldPrice sale
+mapping + slugify, envelope pagination + truncation, discovery payload
+candidate) + e2e 12/12 (Pagefind runtime + index asserted in the built
+output).
+
 ---
 
 ## 3. Phase 1 — Storefront template (~2 wks)

@@ -114,6 +114,23 @@ Gap-filling pass run before implementing the Phase 0 spike (`examples/nvoos-astr
   the public wp/v2 CPT when wc/v3 returns 401/403, and keep wc/v3 as the
   profile restBase (env consumer keys unlock prices later).
 
+**Phase 1d learnings (verified in code 2026-10-31):**
+
+- **Pagefind chains cleanly post-build** (`pagefind --site dist` after
+  `astro build` + postbuild); the search page lazily
+  `import('/pagefind/pagefind.js')` on first input — no framework, no
+  build-time coupling.
+- **The nvoos-commerce/v1 envelope paginates in the BODY**
+  (`{ docs, totalDocs, totalPages }` with `page`/`limit` params) — no
+  X-WP headers, no `_fields`; the loader needs its own pagination loop.
+- **Payload sale semantics differ from Woo's:** `price` is current and
+  `oldPrice` present means a sale (strike-through = oldPrice), vs Woo's
+  `price` = current + `sale_price`/`regular_price` pair. Map BOTH to
+  `regularPrice`/`salePrice` in the stable shape and let the template's
+  single `onSale` rule (salePrice !== regularPrice) stay the only rule.
+- **Envelope documents carry no slug** — derive deterministically via
+  slugify(name) so URLs stay stable between builds.
+
 ---
 
 ## 1. Competitor & ecosystem survey

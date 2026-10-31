@@ -1,0 +1,75 @@
+---
+// /search/ — client-side full-text search over the built site (Pagefind).
+// The index is generated post-build by `pagefind --site dist`; this page
+// stays a thin shell that loads the runtime lazily on first input.
+import Base from '../layouts/Base.astro';
+
+const pageUrl = Astro.site ? new URL('/search/', Astro.site).href : undefined;
+---
+
+<Base title="Search" description="Search the site." canonical={pageUrl}>
+	<h1>Search</h1>
+	<form class="search-form" role="search" onsubmit="return false">
+		<input
+			type="search"
+			id="search-input"
+			class="search-input"
+			placeholder="Search posts and products…"
+			autocomplete="off"
+		/>
+	</form>
+	<ul id="search-results" class="post-list"></ul>
+	<p id="search-status" class="search-status" role="status"></p>
+	<script is:inline>
+		(() => {
+			const input = document.getElementById('search-input');
+			const results = document.getElementById('search-results');
+			const status = document.getElementById('search-status');
+			let pagefind;
+			let timer;
+
+			async function ensurePagefind() {
+				if (!pagefind) {
+					pagefind = await import('/pagefind/pagefind.js');
+				}
+				return pagefind;
+			}
+
+			async function run() {
+				const query = input.value.trim();
+				if (query.length < 2) {
+					results.innerHTML = '';
+					status.textContent = '';
+					return;
+				}
+				status.textContent = 'Searching…';
+				try {
+					const mod = await ensurePagefind();
+					const search = await mod.search(query);
+					results.innerHTML = '';
+					status.textContent = search.results.length === 0 ? 'No results.' : '';
+					for (const result of search.results.slice(0, 10)) {
+						const data = await result.data();
+						const item = document.createElement('li');
+						const link = document.createElement('a');
+						link.href = data.url;
+						link.textContent = data.meta.title || data.url;
+						item.appendChild(link);
+						const excerpt = document.createElement('div');
+						excerpt.className = 'search-excerpt';
+						excerpt.innerHTML = data.excerpt || '';
+						item.appendChild(excerpt);
+						results.appendChild(item);
+					}
+				} catch {
+					status.textContent = 'Search is unavailable.';
+				}
+			}
+
+			input.addEventListener('input', () => {
+				clearTimeout(timer);
+				timer = setTimeout(run, 200);
+			});
+		})();
+	</script>
+</Base>
