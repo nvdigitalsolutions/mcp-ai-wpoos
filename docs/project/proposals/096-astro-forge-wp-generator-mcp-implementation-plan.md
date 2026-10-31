@@ -84,6 +84,29 @@ docs + skills:
 
 **Exit:** one `forge scaffold` command → `astro check && astro build` green in CI against the fixture; loader unit tests green; `< 2 min` scaffold on the fixture.
 
+### 2.1 Phase 0 status — shipped 2026-10-31 (PR to `alpha-working`)
+
+The generation core is live in `examples/nvoos-astro-forge/` as a **CLI-first
+package** (the MCP tool surface from §1 lands in Phase 1+ — the CLI is the
+standalone delivery seam, per the `docs-hub`/`content-graph` standalone-plugin
+precedent):
+
+| Plan item | Shipped as | Notes |
+|---|---|---|
+| 0.1 `wp-client.ts` | `lib/wp-client.ts` | Pagination via `X-WP-TotalPages`, `_fields`/`_embed`, typed `WpClientError` codes, explicit `truncated` flag. Rate limiting deferred to the MCP surface (CLI is operator-run) |
+| 0.2 `wp-loader.ts` | `lib/wp-loader.ts` | Astro 7 content-layer loader: ID-keyed entries, `generateDigest(modified_gmt)`, sanitized `rendered.html`, `store.clear()` propagates deletions, truncation warning |
+| 0.3 Discovery | partial — `forge.mjs --check` | Root doc + per-collection size-vs-cap report; full `site_analyze` (CPTs, SEO plugin, Woo, REST lockdown) stays in Phase 1 |
+| 0.4 Blog template | `templates/blog/` | index/posts listing/post detail/page/sitemap/robots, canonical + `BlogPosting` JSON-LD, `--forge-*` tokens defaulting to the ADS core palette (098 output applies over them). 404/RSS/Pagefind search deferred to Phase 1 |
+| 0.5 `scaffold_project` | `lib/scaffold.ts` + `scripts/forge.mjs` | Template copy (dir-basename filter), FORGE-marker line-anchored rewrite, `nvoos.json` manifest, `.env.example`, gitignore gate (`dist/`/`.astro/` never pushed), overwrite guard that refuses non-forge dirs |
+| 0.6 CI fixture | `scripts/wp-fixture-server.mjs` + `.github/workflows/astro-forge.yml` | Hermetic wp/v2 wire server (real headers/params) stands in for the WordPress Playground blueprint until Phase 2; e2e = fixture → scaffold → `npm install` → `astro check` + `astro build` → HTML asserts (XSS dead, SEO wired) |
+
+**Exit-gate result (local, 2026-10-31):** 38 unit tests green · typecheck clean ·
+e2e 6/6 green — scaffolded blog passes `astro check` + `astro build` against
+the fixture and emits 9 pages; `alert`/`onerror`/`javascript:` count = 0 in
+built HTML. Build learnings that cost fixes are recorded in the research doc
+§0 (Astro 7 spread-params-as-strings, line-anchored marker rewriting,
+dir-basename copy filter, template-literal regex escaping, truncation math).
+
 ---
 
 ## 3. Phase 1 — Storefront template (~2 wks)

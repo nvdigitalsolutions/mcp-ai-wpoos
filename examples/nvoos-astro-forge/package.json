@@ -1,0 +1,28 @@
+{
+	"name": "nvoos-astro-forge",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Proposal 096 — WP→Astro generation: REST client, content-layer loader, sanitizer, blog template, scaffold CLI",
+	"type": "module",
+	"scripts": {
+		"test": "vitest run --exclude tests/forge-e2e.test.ts",
+		"test:e2e": "vitest run tests/forge-e2e.test.ts",
+		"test:all": "vitest run",
+		"typecheck": "tsc --noEmit",
+		"fixture:wp": "node scripts/wp-fixture-server.mjs",
+		"forge": "node scripts/forge.mjs"
+	},
+	"engines": {
+		"node": ">=22.6.0"
+	},
+	"dependencies": {
+		"sanitize-html": "^2.18.1"
+	},
+	"devDependencies": {
+		"@types/node": "^26.6.6",
+		"@types/sanitize-html": "^2.16.2",
+		"astro": "^7.4.4",
+		"typescript": "^6.0.3",
+		"vitest": "^5.0.5"
+	}
+}
