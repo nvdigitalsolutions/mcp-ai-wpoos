@@ -125,6 +125,12 @@ jobs:
         env:
           NVOOS_TARGET_SITE: http://localhost:8123
           PORT: '4321'
+          # Dev-mount opt-in: the design-import e2e analyzes a loopback
+          # design source. Playwright REUSES this pre-booted server (the
+          # playwright.config.ts env never applies on the reuse path — see
+          # the astro-storefront skill's env-snapshot note), so the opt-in
+          # must live on the boot step itself.
+          NVOOS_MCP_FETCH_ALLOW_PRIVATE: '1'
         run: |
           node server.js &
           echo $! > /tmp/serve.pid
@@ -136,6 +142,8 @@ jobs:
         env:
           NVOOS_TARGET_SITE: http://localhost:8123
           PORT: '4321'
+          # Covers the non-reuse path (a runner without a pre-booted BFF).
+          NVOOS_MCP_FETCH_ALLOW_PRIVATE: '1'
         run: |
           npx playwright install --with-deps chromium
           npm run test:e2e
