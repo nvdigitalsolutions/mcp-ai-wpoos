@@ -8,7 +8,7 @@ content moved — signed, debounced, and fail-closed.
 
 | Surface | Detail |
 | --- | --- |
-| Rebuild webhook | Content changes (posts, pages, products, terms, front-page/title/tagline options) schedule one debounced `repository_dispatch` POST with an `X-Forge-Signature: sha256=<hex>` HMAC header (10-minute debounce, in-request dedupe, sent on shutdown so saves never block). |
+| Rebuild webhook | Content changes (posts, pages, products, terms, front-page/title/tagline options) schedule one debounced `repository_dispatch` POST with an `X-Forge-Signature: sha256=<hex>` HMAC header (10-minute debounce, in-request dedupe, sent on shutdown so saves never block). The payload carries a self-verifying signature over `time.nonce` as well — GitHub's dispatch delivery re-serializes the body, so the generated pipeline (`verify-dispatch.mjs`, Forge Phase 3.3) re-verifies that value and fails closed on stale or mismatched dispatches. |
 | Inbound trigger | `POST /wp-json/nvoos-forge/v1/rebuild` — accepted only with a valid signature over the body. |
 | Preview tokens | `POST /wp-json/nvoos-forge/v1/preview-tokens` (editors+) mints a single-use, 15-minute token; `GET /wp-json/nvoos-forge/v1/preview-tokens/verify?token=…` consumes it. Stored hashed only. |
 | Health | `GET /wp-json/nvoos-forge/v1/health` — redacted (versions, booleans, webhook host). |

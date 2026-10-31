@@ -139,22 +139,35 @@ final class Rebuild_Webhook {
 	 * POST the signed content-changed notification (bounded timeout, never
 	 * logs the token or secret).
 	 *
+	 * The dispatch carries two proofs: the `X-Forge-Signature` header over the
+	 * exact body (defense in depth for consumers that see the raw request),
+	 * and a self-verifying `signature` inside `client_payload` — HMAC-SHA256
+	 * over "<time>.<nonce>" — because GitHub's dispatch delivery re-serializes
+	 * the body and the header does not survive into the workflow event. The
+	 * generated pipeline (Forge Phase 3.3 `verify-dispatch.mjs`) re-verifies
+	 * that payload proof and fails closed.
+	 *
 	 * @param string $type Change kind.
 	 * @return array|\WP_Error wp_remote_post result.
 	 */
 	public static function send( string $type ): array {
-		$url  = Settings::rebuild_url();
-		$body = wp_json_encode(
+		$url       = Settings::rebuild_url();
+		$time      = time();
+		$nonce     = bin2hex( random_bytes( 12 ) );
+		$signature = self::payload_signature( (string) $time, $nonce );
+		$body      = wp_json_encode(
 			array(
 				'event_type'     => Settings::rebuild_event(),
 				'client_payload' => array(
-					'site' => wp_parse_url( home_url(), PHP_URL_HOST ),
-					'type' => $type,
-					'time' => time(),
+					'site'      => wp_parse_url( home_url(), PHP_URL_HOST ),
+					'type'      => $type,
+					'time'      => $time,
+					'nonce'     => $nonce,
+					'signature' => $signature,
 				),
 			)
 		);
-		$args = array(
+		$args      = array(
 			'method'  => 'POST',
 			'timeout' => 10,
 			'headers' => array(
@@ -166,8 +179,27 @@ final class Rebuild_Webhook {
 			),
 			'body'    => $body,
 		);
-		$args = apply_filters( 'nvoos_forge_bridge_http_args', $args, $type );
+		$args      = apply_filters( 'nvoos_forge_bridge_http_args', $args, $type );
 		return wp_remote_post( $url, $args );
+	}
+
+	/**
+	 * The payload-level proof: HMAC-SHA256 over "<time>.<nonce>", hex.
+	 *
+	 * Survives GitHub's dispatch re-serialization (the header signature does
+	 * not) — the generated pipeline re-verifies this value. Empty string when
+	 * no secret is set.
+	 *
+	 * @param string $time  Unix timestamp string.
+	 * @param string $nonce Random hex nonce.
+	 * @return string
+	 */
+	public static function payload_signature( string $time, string $nonce ): string {
+		$secret = Settings::rebuild_secret();
+		if ( '' === $secret ) {
+			return '';
+		}
+		return hash_hmac( 'sha256', $time . '.' . $nonce, $secret );
 	}
 
 	/**
