@@ -35,10 +35,11 @@ describe( 'tool registry coverage', () => {
 	it( 'the catalog covers every 096 §3.3 slice', () => {
 		const names = new Set( ALL_TOOLS.map( ( tool ) => tool.name ) );
 		for ( const expected of [
-			'site_add', 'site_test', 'site_list', 'site_get', 'site_remove', 'site_set_default',
+			'site_add', 'site_test', 'site_list', 'site_get', 'site_update', 'site_remove', 'site_set_default',
 			'site_analyze',
 			'scaffold_project', 'scaffold_status', 'tokens_apply', 'scaffold_package',
-			'rebuild_config', 'rebuild_trigger',
+			'content_audit', 'content_preview', 'redirects_generate', 'media_audit', 'collections_generate',
+			'rebuild_config', 'rebuild_trigger', 'preview_token', 'webhook_verify',
 			'github_create_repo', 'github_commit', 'github_status',
 			'deploy_config', 'setup_wizard',
 		] ) {

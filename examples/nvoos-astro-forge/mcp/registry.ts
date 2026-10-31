@@ -12,6 +12,7 @@ import { z } from 'zod/v4';
 
 import { forgeHome } from '../lib/vault.ts';
 import type { ToolDef, ToolEnv, ToolResult } from './tool-def.ts';
+import { CONTENT_TOOLS } from './tools/content.ts';
 import { DEPLOY_TOOLS } from './tools/deploy.ts';
 import { DISCOVERY_TOOLS } from './tools/discovery.ts';
 import { GITHUB_TOOLS } from './tools/github.ts';
@@ -57,6 +58,7 @@ export const ALL_TOOLS: ToolDef[] = [
 	...SITE_TOOLS,
 	...DISCOVERY_TOOLS,
 	...SCAFFOLD_TOOLS,
+	...CONTENT_TOOLS,
 	...REBUILD_TOOLS,
 	...GITHUB_TOOLS,
 	...DEPLOY_TOOLS,
