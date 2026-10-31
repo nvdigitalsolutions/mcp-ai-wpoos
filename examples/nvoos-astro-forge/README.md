@@ -1,4 +1,4 @@
-# nvoos-astro-forge — WP → Astro frontend generator (Proposal 096, Phase 0)
+# nvoos-astro-forge — WP → Astro frontend generator (Proposal 096, Phases 0–3)
 
 Turns a WordPress/WooCommerce site into a native **Astro 7** headless
 frontend. WordPress stays the CMS; the generated project pulls content
@@ -8,11 +8,11 @@ output. The pilot customer is a WooCommerce storefront (Proposal 098 has
 already extracted its design language — the tokens feed the template's
 `--forge-*` variables).
 
-> This is Phase 0 + Phase 1a (the generation core + Woo collections).
-> Remaining Phase 1 (RSS/404/search, `site_analyze`, `tokens_apply` at
-> scaffold, `/mcp` surface) and Phases 2–4 follow Proposal 096 §5.
-> Design-language application (Proposal 098 `design_theme` output) lands on
-> top of the generated `--forge-*` tokens.
+> Phases 0–1d (generation core, Woo collections, SEO/media/search) and
+> Phase 2 (the `nvoos-forge-bridge` companion plugin) are shipped. Phase 3
+> landed here: the credential vault, multi-site registry, GitHub deploy, and
+> the generated deploy pipeline. Phase 4 (wizard + `/mcp` surface) follows
+> Proposal 096 §5–6.
 
 ## Layout
 
@@ -25,6 +25,10 @@ already extracted its design language — the tokens feed the template's
 | `lib/scaffold.ts` | Template copy + FORGE-marker rewrite + manifest + gitignore gate + storefront-page pruning |
 | `scripts/forge.mjs` | CLI: `analyze <url> [--write]` (site_analyze) + `node scripts/forge.mjs <site.json> --target <dir> [--template blog] [--check]` (Node ≥ 22.6) |
 | `lib/discovery.ts` | `site_analyze` — root/types/counts/front-page/junk/Woo/SEO probes → draft site.json |
+| `lib/vault.ts` | Phase 3.1 credential store — AES-256-GCM entries under `~/.nvoos-forge/vault.json`, key from `NVOOS_FORGE_VAULT_KEY`, masked output |
+| `lib/sites.ts` | Phase 3.4 multi-site registry — named profile refs + default flag in `~/.nvoos-forge/sites.json` |
+| `lib/github.ts` | Phase 3.2 octokit deploy — private-by-default repo create + git-data commit/push, sanitized errors |
+| `lib/deploy-config.ts` | Phase 3.3 generated pipeline — deploy.yml + rebuild.yml + the fail-closed `verify-dispatch.mjs` |
 | `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 + wc/v3 wire fixture (`:8473`) — stands in for WordPress Playground in CI |
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
 | `templates/blog/` | The production template — posts/pages/products, static front page, RSS, 404, 301 redirect map, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens |
@@ -35,7 +39,7 @@ already extracted its design language — the tokens feed the template's
 
 ```sh
 npm install
-npm test                 # unit: client, loader, sanitizer, scaffold (30 tests)
+npm test                 # unit: client, loader, sanitizer, scaffold, vault, github, deploy-config, sites
 npm run typecheck
 npm run test:e2e         # fixture WP → scaffold → npm install → astro check + build → HTML asserts
 ```
@@ -119,8 +123,9 @@ host (CDNs, external) pass through as plain `<img>` — never a build failure.
 
 MIT via `LICENSE` + `NOTICE` (owner decision 096 Q7 — mirrors the 092 Q8
 storefront split). The scaffold ships the NOTICE into every generated
-project; generated sites are the customer's own. `private: true` until
-Phase 3 publishing.
+project; generated sites are the customer's own. Published to npm as
+`@nvdigitalsolutions/nvoos-astro-forge` (tag `nvoos-astro-forge-vX.Y.Z`
+through `.github/workflows/publish-astro-forge.yml`).
 
 ## Safety invariants (Proposal 096 §2)
 
@@ -137,6 +142,45 @@ Phase 3 publishing.
    loader warns, entries carry the flag, pages show a notice.
 5. **Built assets never ship** — the scaffold gate guarantees `dist/` and
    `.astro/` are git-ignored in the customer repo.
+6. **Deploys default private, auth never persists** — repos are created
+   private unless `--public` is explicit; the GitHub token comes from
+   `GITHUB_TOKEN` or the vault for one invocation, is masked in every
+   output, and is never written to disk.
+7. **Fail-closed rebuilds** — the generated pipeline refuses stale or
+   mis-signed dispatch events before any build runs (Phase 3.3
+   `verify-dispatch.mjs`).
+
+## Phase 3 — vault, multi-site, deploy
+
+```sh
+# Register named sites (profiles stay operator-owned files).
+export NVOOS_FORGE_HOME=~/.nvoos-forge
+node scripts/forge.mjs site add store site.json --default
+node scripts/forge.mjs site list
+node scripts/forge.mjs site use store
+
+# Store the deploy token (value on stdin — never argv, never the shell
+# history). Requires NVOOS_FORGE_VAULT_KEY (any passphrase).
+export NVOOS_FORGE_VAULT_KEY='a long passphrase'
+printf 'ghp_…' | node scripts/forge.mjs vault set github
+
+# Deploy: scaffold if needed, emit the pipeline, create a PRIVATE repo,
+# push the source. The workflow builds + ships to the target; configure
+# FORGE_WEBHOOK_SECRET (plus CLOUDFLARE_* / VELOCITY_* per mode) as repo
+# secrets afterwards.
+node scripts/forge.mjs deploy store --target ./customer-frontend \
+  --to github-pages                 # or cloudflare-pages (--cloudflare-project X) / velocity
+```
+
+Deploy modes are adapter-generic: `github-pages` (Pages artifact deploy),
+`cloudflare-pages` (wrangler), or `velocity` (connected-repo mirror of
+`dist/`). Every mode gets the same `rebuild.yml` — a `repository_dispatch`
+wrapper whose `verify-dispatch.mjs` re-verifies the bridge plugin's HMAC
+proof (freshness window + constant-time compare) before building.
+
+The vault is AES-256-GCM per entry (wrong key or tampering fails closed);
+`NVOOS_FORGE_VAULT_PLAINTEXT=1` is the documented 0600-file fallback for
+fixtures only.
 
 ## Research basis
 

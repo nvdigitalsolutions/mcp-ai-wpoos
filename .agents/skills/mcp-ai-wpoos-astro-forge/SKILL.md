@@ -34,6 +34,10 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 | `lib/wp-loader.ts` | Astro 7 content-layer loader (`createWpLoader`) |
 | `lib/sanitize.ts` | `SANITIZE_VERSION` + allowlist + `sanitizeHtml()` |
 | `lib/scaffold.ts` | Template copy, FORGE-marker rewrite, manifest, gates |
+| `lib/vault.ts` | Phase 3.1 credential store — AES-256-GCM per-entry (`~/.nvoos-forge/vault.json`), `NVOOS_FORGE_VAULT_KEY` passphrase, plaintext opt-in, `maskSecret` |
+| `lib/sites.ts` | Phase 3.4 multi-site registry (`sites.json`) — named profile refs + default flag |
+| `lib/github.ts` | Phase 3.2 octokit deploy — private-by-default repo create, git-data commit/push, sanitized errors |
+| `lib/deploy-config.ts` | Phase 3.3 generated pipeline — deploy.yml/rebuild.yml + fail-closed `verify-dispatch.mjs` |
 | `scripts/forge.mjs` | CLI (Node ≥ 22.6 — native TS type stripping, zero build step) |
 | `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 wire fixture — the Phase 0 CI stand-in for WordPress Playground |
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
@@ -136,6 +140,20 @@ wired. The workflow runs on `paths: examples/nvoos-astro-forge/**`.
   graceful `exitCode` + natural drain in the CLI.
 - **The scaffold CLI is operator-run and has no rate limiting** — rate
   limiting/retry belongs on the future MCP surface, not the CLI.
+- **`forge.mjs` is plain JS, never TS syntax** — `.mjs` gets NO type
+  stripping: `import type` and inline `type` specifiers are syntax errors
+  there (strip them; the runtime DEPLOY_MODES check carries the constraint).
+- **Node strip-only mode bans parameter properties** —
+  `constructor(private readonly x)` fails with
+  `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` at CLI runtime even though vitest
+  (esbuild) accepts it. Declare the field explicitly and assign in the
+  constructor. Also banned: enums/namespaces; inline `type` specifiers in
+  named imports need a separate `import type` statement.
+- **Secret grep gates must not match empty assignments** — `PATTERN=[^ ]+`
+  matches the newline after an empty `=` (and the quote in the scaffold's
+  own emission). Use value-shaped classes (`[^[:space:]"']{4,}` in GNU
+  grep, `[^'"\n]{4,}` in JS) so `.env.example` placeholders and scaffold.ts
+  stay clean while real values still trip.
 
 ## Template contract (FORGE markers)
 
@@ -188,23 +206,26 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   (nvoos-commerce/v1 envelope — body pagination, `oldPrice` sale semantics,
   slugify for missing slugs; discovery offers the payload candidate when
   the namespace is advertised and no product CPT exists).
-- **Phase 2 — core shipped 2026-10-31:** the standalone companion plugin
+- **Phase 2 — shipped 2026-10-31:** the standalone companion plugin
   **`plugins/nvoos-forge-bridge`** (Q4 naming amendment — `nvoos-astro-bridge`
   was taken by the velocity bridge addon): signed, debounced rebuild
   webhook (X-Forge-Signature, `send_pending()`/`reset_pending()` seams),
   inbound signature-verified `/rebuild` route, single-use hashed preview
   tokens, redacted health, settings page with write-only secrets,
-  uninstall.php, own phpcs + PHPUnit (23/23 green on WP 6.9 + 7.1 in Docker)
-  + `.github/workflows/phpunit-forge-bridge.yml`. Remaining: PCP gate +
-  listing assets, and CI-side signature verification (Phase 3).
-- **Phase 3 (next):** publishing/deploy — npm publish of the forge package,
-  octokit GitHub deploy for generated sites, the CI-side of the signature
-  loop, multi-site management. Then Phase 4 (wizard) + the `/mcp` tool
-  surface (096 §1).
-- **Phase 2:** `nvoos-astro-bridge` plugin — HMAC-fail-closed rebuild
-  webhook, preview tokens, wp.org checklist (see `mcp-ai-wpoos-wporg-submission`).
-- **Phase 3–4:** publishing + multi-site, wizard + packaging (octokit deploy,
-  vault-backed credentials).
+  uninstall.php, own phpcs + PHPUnit (24/24 on WP latest in Docker; the
+  payload now also carries a self-verifying `time`/`nonce`/`signature`
+  proof — `payload_signature()`) + `.github/workflows/phpunit-forge-bridge.yml`
+  with the PCP gate, `.distignore`, and `.wordpress-org/` listing assets.
+- **Phase 3 — shipped 2026-10-31:** vault + multi-site + GitHub deploy +
+  generated pipeline (see `-implementation-plan.md` §2.7): `forge vault` /
+  `forge site` / `forge deploy` commands; repos private by default;
+  per-invocation auth (never persisted, masked); the emitted
+  `verify-dispatch.mjs` is the CI-side signature verification — the bridge
+  payload proof exists because the `X-Forge-Signature` header does not
+  survive GitHub's dispatch delivery. Publish: `@nvdigitalsolutions/nvoos-
+  astro-forge`, tag `nvoos-astro-forge-v*` → `publish-astro-forge.yml`
+  (provenance). Secret grep gates in CI + the e2e credential-hygiene walk.
+  Then Phase 4 (wizard) + the `/mcp` tool surface (096 §1).
 
 ## Repo conventions
 
