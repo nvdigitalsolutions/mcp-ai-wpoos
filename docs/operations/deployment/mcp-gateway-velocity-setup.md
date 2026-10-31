@@ -119,7 +119,7 @@ official MCP Registry:
 - [x] Example config (Claude Desktop + Zed via `nvoos-mcp-bridge`)
 - [x] Landing page: `https://mcp.nvoos.pro/`
 - [x] GitHub repo: `nvdigitalsolutions/nvoos-mcp-gateway` (public) — ships `LICENSE` (GPL-3.0-or-later) and a `license` field in `package.json`
-- [ ] Logo + one-line description (NV oOS branding)
+- [x] Logo + one-line description (NV oOS branding) — `addons/mcp-gateway/assets/nvoos-logo.png` (512×512), served at `https://mcp.nvoos.pro/assets/nvoos-logo.png` after the sync + auto-deploy
 - [ ] Uptime monitor on `/health`
 - [ ] Demo tool that succeeds end-to-end: the `demo` key currently allowlists only `deep_research`, which needs a web-search provider key on the demo site — allowlist a self-contained read-only tool (e.g. `get_environment_status`) or configure a search provider before reviewers probe it
 

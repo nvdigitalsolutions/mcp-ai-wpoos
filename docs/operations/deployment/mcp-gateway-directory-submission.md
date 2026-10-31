@@ -38,7 +38,7 @@ MCP directories. Verify the live endpoint before submitting:
 | Auth | Bearer API key in the `Authorization` header (required) |
 | Demo key | `<DEMO_KEY>` — read-only, bound to the `demo` site. **Insert the real key at submission time; never commit it to this repo.** |
 | Health | `https://mcp.nvoos.pro/health` (public, no auth) |
-| Logo | TODO — NV oOS branding asset (square PNG/SVG); host next to the landing page |
+| Logo | `https://mcp.nvoos.pro/assets/nvoos-logo.png` (512×512, NV oOS branding) |
 
 ## Install config — Claude Desktop / Claude Code
 
@@ -75,23 +75,27 @@ npx -y @nvdigitalsolutions/nvoos-mcp-bridge
   item below) because reviewers probe the listing.
 - **mcp.directory / pulsemcp** — same fields; follow each site's current
   submission form.
-- **Official MCP Registry (registry.modelcontextprotocol.io)** — **blocked
-  until OAuth 2.1 ships** (RFC 8414/9728 discovery + dynamic client
-  registration). Remote servers with static API-key auth are not accepted;
-  the gateway's static-key auth is the v1 state and OAuth is the documented
-  upgrade path (`addons/mcp-gateway/README.md`).
-- **ChatGPT native MCP connector** — same blocker: requires OAuth. Until
+- **Official MCP Registry (registry.modelcontextprotocol.io)** — ✅
+  **PUBLISHED 2026-11-01** as
+  `io.github.nvdigitalsolutions/nvoos-mcp-gateway` v0.2.0 (`active`,
+  `isLatest`) via `mcp-publisher` — a remote-only entry declaring the
+  required `Authorization` header (`isSecret`), with the demo key issued
+  per-consumer by the operator (never embedded in metadata). The earlier
+  assumption that static-key remotes were rejected was wrong: the registry
+  accepts bearer-authenticated public remotes.
+- **ChatGPT native MCP connector** — still blocked: requires OAuth. Until
   then the ChatGPT route is the `addons/chatgpt-plugin` package (per-site
   bridge, experimental).
 
 ## Open items before submitting
 
-1. **Demo tool that succeeds** — the `demo` key allowlists only
-   `deep_research`, which fails on `nvoos.pro` until a web-search provider
-   key is configured there. Either configure the search provider or
-   allowlist a self-contained read-only tool (e.g. `get_environment_status`)
-   on the `demo` operator (Settings → External Operators → Allowed tools).
-2. **Logo** — add a square branding asset and update the Logo field above.
+1. ~~Demo tool that succeeds~~ — DONE 2026-11-01: `get_environment_status`
+   allowlisted on the demo operator and verified end-to-end through the
+   gateway (`tools/call demo.get_environment_status` returns a live report).
+2. ~~Logo~~ — DONE 2026-11-01: `addons/mcp-gateway/assets/nvoos-logo.png`
+   (512×512, converted from the NV oOS favicon), served at
+   `https://mcp.nvoos.pro/assets/nvoos-logo.png` once the mirror sync +
+   auto-deploy lands.
 3. **Uptime monitor** — point an external monitor at `/health` before the
    listing goes up; include the status-page URL in the listing if available.
    In-fleet option: the media worker's status module monitors the gateway as

@@ -19,9 +19,13 @@
 
 Follow-ups (later phases): Auth0 tenant provisioning (RFC 8414 + DCR +
 PKCE, scopes, consent); scripted PKCE end-to-end + ChatGPT "Add custom MCP
-server" test; registry re-publish via `mcp-publisher` (0.2.0 metadata);
-Hub-style create → test → publish lifecycle console (the Complete Console
-Gateway page shipped the read-only catalog in 0.2.0).
+server" test; Hub-style create → test → publish lifecycle console (the
+Complete Console Gateway page shipped the read-only catalog in 0.2.0).
+
+Registry status: published 2026-11-01 as
+`io.github.nvdigitalsolutions/nvoos-mcp-gateway` v0.2.0 (`active`,
+`isLatest`) — a remote-only entry with the required `Authorization` header
+declared `isSecret`.
 
 ## 0.2.0 — 2026-10-28
 

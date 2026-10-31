@@ -165,25 +165,36 @@ Execution record:
   - NOTE: the per-server path `/v0.1/servers/<name>` 404s ("Endpoint not
     found") — the search endpoint is the verification surface; the exact
     single-record URL lives in the registry's API docs.
-- [ ] **Gateway pre-flight (before publishing the remotes entry):**
+- [x] **Gateway pre-flight (before publishing the remotes entry):**
   - [x] Draft landed: `addons/mcp-gateway/server.json` — remote-only entry
         (no `packages`/ownership marker required per the registry
         remote-servers doc); URL verified live 2026-10-08 (protocol
         2026-07-28, bearer auth, `GET /` reviewer landing page).
-  - [ ] Fix the `ideabits` upstream 401 — re-mint the site's `op_` token in
-        Fleet Operator, update the Velocity env, redeploy, and re-verify
-        `tools/list` returns a non-empty `tools` array.
-  - [ ] Confirm the key-issuance story (D6) — the registry models it via the
+  - [x] Fix the `ideabits` upstream 401 — re-minted the site's `op_` token
+        in Fleet Operator, updated the Velocity env, redeployed, and
+        re-verified `tools/list` returns a non-empty `tools` array
+        (2026-11-01; alongside the `demo` token re-mint + the
+        `get_environment_status` allowlist addition).
+  - [x] Confirm the key-issuance story (D6) — the registry models it via the
         declared `Authorization` header (`isSecret: true`); each consumer
         supplies their own key; the real key is never embedded in metadata.
-  - [ ] One-URL rule: each remote URL can be claimed by only one server name
-        — publish under `io.github.nvdigitalsolutions/nvoos-mcp-gateway`
-        only, never a duplicate entry.
-- [ ] `mcp-publisher validate` (gateway dir) → `mcp-publisher publish`
-      (gateway dir).
-- [ ] Verify (gateway):
-  - `curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.nvdigitalsolutions/nvoos-mcp-gateway"` → entry present, `remotes[0].url` = `https://mcp.nvoos.pro/mcp`
-- [ ] Record the publish evidence (API JSON) in the Phase 0 baseline folder.
+        Demo key issued + verified end-to-end 2026-11-01; client sites carry
+        their own keys (per-key bindings).
+  - [x] One-URL rule: each remote URL can be claimed by only one server name
+        — published under `io.github.nvdigitalsolutions/nvoos-mcp-gateway`
+        only (no duplicate entry).
+- [x] `mcp-publisher validate` (gateway dir) → `mcp-publisher publish`
+      (gateway dir) — "✓ Server io.github.nvdigitalsolutions/nvoos-mcp-gateway
+      version 0.2.0" (2026-11-01 ~22:41 UTC). Note: the description had to
+      be trimmed to ≤100 chars first (registry 422; PR #7346), and the
+      saved device-flow session had expired — re-login via
+      `mcp-publisher login github` before publishing.
+- [x] Verify (gateway):
+  - `curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.nvdigitalsolutions/nvoos-mcp-gateway"` → `count: 1`, `_meta.io.modelcontextprotocol.registry/official.status: active`, `isLatest: true`, `remotes[0].url` = `https://mcp.nvoos.pro/mcp` (2026-11-01).
+- [x] Record the publish evidence (API JSON) — saved as
+      `docs/project/proposals/061-registry-publish-evidence/gateway-v0.2.0-publish.json`
+      (the search-response envelope; the Phase 0 baseline folder was never
+      created, so the evidence lives beside the plan).
 
 ## Phase 4 — CI automation (GitHub OIDC) (3 h)
 
