@@ -31,6 +31,8 @@ monitoring) as the public, fleet-scoped MCP endpoint at
    | `TRUST_PROXY` | yes | `1` (NGINX in front) |
    | `AUTH_MODE` | yes | `strict` |
    | `GATEWAY_PUBLIC_KEYS` | **yes** | `demo-key=site-a,site-b;internal-key=site-c` (see §3) |
+   | `GATEWAY_PUBLIC_KEYS_PREVIOUS` | no | Previous key map during rotation (see §3) |
+   | `PUBLIC_SITE_SLUGS` | **recommended** | Comma-separated slugs shown on the public `/health` endpoint — e.g. `demo` — so private client sites stay invisible to unauthenticated callers. Unset or `*` = all configured sites. `/health/full` always reports every site. |
    | `NVOOS_SITE_<SLUG>_URL` | per site | Full upstream URL incl. `/wp-json/mcp-ai/v1/mcp` |
    | `NVOOS_SITE_<SLUG>_TOKEN` | per site | Fleet Operator token (see §2) |
    | `ALLOWED_ORIGINS` | no | Comma-separated origins for browser clients |
@@ -90,7 +92,10 @@ Map keys to site slugs in `GATEWAY_PUBLIC_KEYS`
 
 ## 5. Monitoring & Alerts
 
-- Uptime check on `GET /health` (no auth, minimal data).
+- Uptime check on `GET /health` (no auth, minimal data). On fleets that
+  bind private client sites, set `PUBLIC_SITE_SLUGS` to the public slugs
+  (e.g. `demo`) so the unauthenticated endpoint does not advertise private
+  slugs; the keyed `/health/full` always reports every site.
 - In-fleet option: the media worker's status module monitors the gateway as
   a synthetic-only external target — `STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health`
   plus `STATUS_GATEWAY_SYNTHETIC=1` (probes `/health` through the SSRF
