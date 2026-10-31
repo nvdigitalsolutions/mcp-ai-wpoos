@@ -102,6 +102,8 @@ test('inspired-by recreation loop over /mcp from a real browser', async ({ page 
 	// 1. Analyze the local design source (private host, dev-mount opt-in).
 	const analyzed = await call('design_analyze', { url: designUrl });
 	expect(analyzed.error).toBeUndefined();
+	expect(analyzed.result?.isError, 'design_analyze returned a typed tool error').toBeUndefined();
+	expect(analyzed.result?.structuredContent, 'design_analyze returned no structured content').toBeDefined();
 	const analysis = analyzed.result?.structuredContent as
 		| {
 				source?: { mode?: string };
